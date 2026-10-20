@@ -1,7 +1,9 @@
 /*
   Conferência de entrada e de saída (ordem 404cd213, item 1) — regras puras, sem banco.
   As duas partes (proprietário e inquilino) registram cômodos, itens e fotos; cada uma
-  confirma ou contesta uma vez; depois da primeira resposta nada mais muda.
+  confirma ou contesta uma vez. Os itens de cada parte congelam quando ela responde; tudo
+  congela quando as duas respondem. Só se responde depois que as duas registraram itens
+  (ou, na entrada, depois da janela de 48 h) — ordem 99c7c1e0.
   O banco repete estas regras (migração 0110); aqui ficam testáveis.
 */
 
@@ -30,9 +32,15 @@ export function estadoConferencia(respostas: RespostaConferencia[]): EstadoConfe
   return new Set(respostas.map((r) => r.parte)).size >= 2 ? "confirmada" : "aguardando_outra_parte";
 }
 
-/** Imutável depois de confirmado ou contestado: itens só mudam antes da primeira resposta. */
-export function podeEditarItens(respostas: RespostaConferencia[]): boolean {
-  return respostas.length === 0;
+/** Os itens de uma parte mudam até ela responder; quando as duas respondem, nada mais muda. */
+export function podeEditarItens(respostas: RespostaConferencia[], parte: ParteConferencia): boolean {
+  const partes = new Set(respostas.map((r) => r.parte));
+  return !partes.has(parte) && partes.size < 2;
+}
+
+/** A janela de 48 h só existe na entrada; na saída ninguém "perde o prazo" de registrar. */
+export function janelaEncerrada(tipo: TipoConferencia, inicioContrato: string | Date | null, agora: Date = new Date()): boolean {
+  return tipo === "entrada" && inicioContrato !== null && agora.getTime() > prazoEntrada(inicioContrato).getTime();
 }
 
 export type Decisao = { ok: true; motivo: string | null } | { ok: false; erro: string };
@@ -42,10 +50,16 @@ export function decidirResposta(p: {
   parte: ParteConferencia;
   decisao: "confirmou" | "contestou";
   motivo: string;
-  qtdItens: number;
+  /** Itens já registrados por cada parte. */
+  itensPorParte: Record<ParteConferencia, number>;
+  /** Entrada com a janela de 48 h fechada: dá para responder mesmo que a outra parte não tenha registrado. */
+  janelaEncerrada?: boolean;
 }): Decisao {
   if (p.respostas.some((r) => r.parte === p.parte)) return { ok: false, erro: "Você já respondeu esta conferência e ela não pode mais ser alterada." };
-  if (p.qtdItens < 1) return { ok: false, erro: "Registre ao menos um item antes de responder." };
+  if (p.itensPorParte[p.parte] < 1) return { ok: false, erro: "Registre ao menos um item antes de responder." };
+  if (!p.janelaEncerrada && (p.itensPorParte.proprietario < 1 || p.itensPorParte.inquilino < 1)) {
+    return { ok: false, erro: "Você só pode responder depois que a outra parte registrar ao menos um item." };
+  }
   const motivo = p.motivo.trim();
   if (p.decisao === "contestou") {
     if (!motivo) return { ok: false, erro: "Conte o motivo da contestação." };
@@ -86,10 +100,18 @@ function tipoFoto(b: Uint8Array): { tipo: string; ext: string } | null {
   return null;
 }
 
+export const ERRO_LAUDO_GRANDE = "O laudo deve ter até 15 MB.";
+
+/** Confere o tamanho antes de enviar: acima do limite do corpo das Server Actions o Next recusa sem chegar à validação. */
+export function erroTamanhoLaudo(tamanho: number): string | null {
+  if (tamanho <= 0) return "Arquivo vazio.";
+  return tamanho > LAUDO_MAX_BYTES ? ERRO_LAUDO_GRANDE : null;
+}
+
 /** Laudo de parceiro independente: PDF de verdade, até 15 MB. */
 export function validarLaudo(a: { bytes: Uint8Array; tamanho: number }): ArquivoValidado {
-  if (a.tamanho <= 0) return { ok: false, erro: "Arquivo vazio." };
-  if (a.tamanho > LAUDO_MAX_BYTES) return { ok: false, erro: "O laudo deve ter até 15 MB." };
+  const tam = erroTamanhoLaudo(a.tamanho);
+  if (tam) return { ok: false, erro: tam };
   if (!ehPdf(a.bytes)) return { ok: false, erro: "Envie o laudo em PDF." };
   return { ok: true, tipo: "application/pdf", ext: "pdf" };
 }
@@ -106,4 +128,44 @@ export function validarFotoConferencia(a: { bytes: Uint8Array; tamanho: number }
 /** Quando existe laudo independente, ele prevalece sobre as fotos das partes. */
 export function fonteDaConferencia(temLaudo: boolean): "fotos" | "laudo_independente" {
   return temLaudo ? "laudo_independente" : "fotos";
+}
+
+/** Item de cômodo como a tela o mostra (foto já com link temporário). */
+export type ItemTela = {
+  id: string;
+  parte: ParteConferencia;
+  comodo: string;
+  descricao: string;
+  fotoUrl: string | null;
+  criadoEm: string;
+};
+
+/**
+ * Junta os itens vindos do servidor com os que a própria pessoa acabou de registrar.
+ * O item novo aparece na hora, sem esperar a página recarregar; quando o servidor já o
+ * traz, vale a versão do servidor (sem repetir). Ordem: do mais antigo para o mais novo.
+ */
+export function mesclarItens(servidor: ItemTela[], locais: ItemTela[]): ItemTela[] {
+  const ids = new Set(servidor.map((i) => i.id));
+  return [...servidor, ...locais.filter((i) => !ids.has(i.id))].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm));
+}
+
+/** Laudo como a tela o mostra (o link temporário só vem do servidor, depois do refresh). */
+export type LaudoTela = { url: string | null; parte: ParteConferencia; criadoEm: string };
+
+/** O laudo recém-anexado aparece na hora; quando o servidor já o traz, vale o do servidor (com o link do PDF). */
+export function mesclarLaudo(servidor: LaudoTela | null, local: LaudoTela | null): LaudoTela | null {
+  return servidor ?? local;
+}
+
+/** Resposta como a tela a mostra (com a hora em que foi dada). */
+export type RespostaTela = RespostaConferencia & { decididoEm: string };
+
+/**
+ * Junta as respostas do servidor com a que a própria pessoa acabou de dar, para o estado
+ * ("Aguardando a outra parte") mudar na hora. Uma resposta por parte; vale a do servidor.
+ */
+export function mesclarRespostas(servidor: RespostaTela[], locais: RespostaTela[]): RespostaTela[] {
+  const partes = new Set(servidor.map((r) => r.parte));
+  return [...servidor, ...locais.filter((r) => !partes.has(r.parte))];
 }

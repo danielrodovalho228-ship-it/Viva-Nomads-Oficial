@@ -8,6 +8,9 @@ import {
   decidirResposta,
   estadoConferencia,
   fonteDaConferencia,
+  janelaEncerrada,
+  type ItemTela,
+  type LaudoTela,
   podeEditarItens,
   prazoEntrada,
   validarFotoConferencia,
@@ -15,6 +18,7 @@ import {
   validarLaudo,
   type ParteConferencia,
   type RespostaConferencia,
+  type RespostaTela,
   type TipoConferencia,
 } from "@/lib/conferencia";
 
@@ -28,7 +32,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const STATUS_ENTRADA = ["ativo"];
 const STATUS_SAIDA = ["ativo", "concluido", "encerrado_sem_renovacao"];
 
-type Resultado = { ok: true; id?: string } | { ok: false; error: string };
+type Resultado = { ok: true; id?: string; item?: ItemTela; resposta?: RespostaTela; laudo?: LaudoTela } | { ok: false; error: string };
 const erro = (error: string): Resultado => ({ ok: false, error });
 
 /** Quem é a pessoa neste contrato: "inquilino", "proprietario" ou null (não é parte). */
@@ -85,7 +89,7 @@ export async function registrarItemConferencia(input: {
   if (!confId) return erro("Não foi possível abrir a conferência. Tente de novo.");
 
   const { data: respostas } = await admin.from("conferencia_respostas").select("parte, decisao, motivo").eq("conferencia_id", confId);
-  if (!podeEditarItens((respostas ?? []) as RespostaConferencia[])) return erro("A conferência já foi respondida e não pode mais ser alterada.");
+  if (!podeEditarItens((respostas ?? []) as RespostaConferencia[], ctx.parte)) return erro("Você já respondeu esta conferência e ela não pode mais ser alterada.");
 
   const { data, error } = await admin
     .from("conferencia_itens")
@@ -97,11 +101,14 @@ export async function registrarItemConferencia(input: {
       descricao: input.descricao.trim(),
       foto_path: input.fotoPath ?? null,
     })
-    .select("id")
+    .select("id, criado_em")
     .single();
   if (error) return erro("Não foi possível salvar o item. Tente de novo.");
   revalidatePath("/dashboard/locacoes");
-  return { ok: true, id: data.id as string };
+  revalidatePath("/dashboard/contratos");
+  const fotoUrl = input.fotoPath ? ((await admin.storage.from(BUCKET).createSignedUrl(input.fotoPath, URL_SEGUNDOS)).data?.signedUrl ?? null) : null;
+  const item: ItemTela = { id: data.id as string, parte: ctx.parte, comodo: input.comodo.trim(), descricao: input.descricao.trim(), fotoUrl, criadoEm: String(data.criado_em) };
+  return { ok: true, id: item.id, item };
 }
 
 /** Confirma ou contesta (uma vez por parte). Depois disso a conferência fica imutável. */
@@ -119,16 +126,19 @@ export async function responderConferencia(input: {
   const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", input.tipo).maybeSingle();
   if (!conf) return erro("Ainda não há itens registrados nesta conferência.");
 
-  const [{ data: respostas }, { count }] = await Promise.all([
+  const [{ data: respostas }, { data: itens }] = await Promise.all([
     admin.from("conferencia_respostas").select("parte, decisao, motivo").eq("conferencia_id", conf.id),
-    admin.from("conferencia_itens").select("id", { count: "exact", head: true }).eq("conferencia_id", conf.id),
+    admin.from("conferencia_itens").select("parte").eq("conferencia_id", conf.id),
   ]);
+  const itensPorParte = { proprietario: 0, inquilino: 0 };
+  for (const i of (itens ?? []) as { parte: ParteConferencia }[]) itensPorParte[i.parte] += 1;
   const d = decidirResposta({
     respostas: (respostas ?? []) as RespostaConferencia[],
     parte: ctx.parte,
     decisao: input.decisao,
     motivo: input.motivo ?? "",
-    qtdItens: count ?? 0,
+    itensPorParte,
+    janelaEncerrada: janelaEncerrada(input.tipo, ctx.inicio),
   });
   if (!d.ok) return erro(d.erro);
 
@@ -137,7 +147,8 @@ export async function responderConferencia(input: {
     .insert({ conferencia_id: conf.id, parte: ctx.parte, autor_id: ctx.uid, decisao: input.decisao, motivo: d.motivo });
   if (error) return erro("Não foi possível registrar sua resposta. Ela pode já ter sido enviada.");
   revalidatePath("/dashboard/locacoes");
-  return { ok: true };
+  revalidatePath("/dashboard/contratos");
+  return { ok: true, resposta: { parte: ctx.parte, decisao: input.decisao, motivo: d.motivo, decididoEm: new Date().toISOString() } };
 }
 
 export interface ConferenciaView {
@@ -221,7 +232,7 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
   }
   revalidatePath("/dashboard/locacoes");
   revalidatePath("/dashboard/contratos");
-  return { ok: true };
+  return { ok: true, laudo: { url: null, parte: ctx.parte, criadoEm: new Date().toISOString() } };
 }
 
 /** As conferências do contrato, lidas pelo RLS (só as partes e a equipe enxergam). */

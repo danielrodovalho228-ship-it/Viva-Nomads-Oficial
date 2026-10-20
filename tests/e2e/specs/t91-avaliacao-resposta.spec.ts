@@ -76,8 +76,8 @@ test.describe("T91 — Resposta e revisão de avaliação (0128)", () => {
       await page.goto(`/imoveis/${imovel!.id}`, { waitUntil: "networkidle" });
       await expect(async () => {
         await page.reload({ waitUntil: "networkidle" });
-        await expect(page.getByTestId("avaliacao-resposta").filter({ hasText: `Obrigado pela estadia ${marca}` })).toBeVisible({ timeout: 2_000 });
-      }).toPass({ intervals: [1_000, 5_000, 10_000], timeout: 75_000 });
+        await expect(page.getByTestId("avaliacao-resposta").filter({ hasText: `Obrigado pela estadia ${marca}` })).toBeVisible({ timeout: 4_000 });
+      }).toPass({ intervals: [1_000, 5_000, 10_000], timeout: 115_000 });
     } finally {
       await adm.from("contratos").delete().eq("id", ct!.id);
     }

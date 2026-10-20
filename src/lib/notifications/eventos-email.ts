@@ -1,0 +1,118 @@
+/*
+  Texto de cada evento de notificação (assunto, frase, imagem, botão e destino) — PURO,
+  sem imports "@/…", para teste unitário. Ordem d250ea2f, item 2.
+*/
+/** Eventos que disparam notificação no funil (sem isso o funil vaza). */
+export type NotificationEvent =
+  | "new_lead" // proprietário recebe um interessado
+  | "new_message" // nova mensagem no chat (proprietário OU inquilino)
+  | "application_received" // candidatura recebida
+  | "candidatura_aceita" // proprietário aceitou a candidatura → inquilino
+  | "saved_search_match" // alerta de busca salva do inquilino
+  | "verification_ready" // laudo CAF pronto
+  | "contract_status" // status do contrato
+  | "subscription_status" // status da assinatura
+  // Pedido de Moradia (Fase 4)
+  | "pedido_novo_cidade" // (legado) novo pedido na cidade → proprietários
+  | "pedido_compativel" // pedido compatível com um imóvel do dono → proprietário
+  | "pedido_resumo" // resumo diário dos pedidos compatíveis além do limite → proprietário
+  | "pedido_imovel_novo" // imóvel compatível publicado depois → inquilino
+  | "pedido_resposta" // proprietário respondeu → inquilino
+  | "pedido_aceito" // inquilino aceitou para conversa → proprietário
+  | "pedido_expirando" // pedido expira em 3 dias → inquilino
+  | "pedido_moderado" // pedido ocultado pela moderação → inquilino
+  | "pedido_confirmar_telefone" // chave SMS_ATIVO ligada: 7 dias para confirmar o telefone → inquilino (Prompt 30)
+  | "pedido_encerrado" // o inquilino excluiu o pedido que você respondeu → proprietário (Prompt 30)
+  // Verificação do documento do imóvel (anti-fraude) → proprietário
+  | "documento_aprovado"
+  | "documento_recusado"
+  | "documento_recebido" // novo documento na fila → admin
+  // Checklist de qualificação revisado pela equipe → proprietário
+  | "checklist_aprovado"
+  | "checklist_recusado"
+  // Atendimento (chamados) — assunto específico vem em `subject` (com o número)
+  | "chamado_aberto" // → quem abriu
+  | "chamado_respondido" // → quem abriu
+  | "chamado_resolvido" // → quem abriu (com a nota de 1 a 5)
+  | "chamado_equipe" // P1/P2, aprovação, prazo em risco → admins
+  | "manutencao_nova" // inquilino abriu manutenção → proprietário
+  | "manutencao_atrasada" // prazo da manutenção vencido → proprietário
+  | "manutencao_atualizada" // status da ordem mudou → a outra parte
+  | "manutencao_mensagem" // nova mensagem dentro da ordem → a outra parte
+  | "checkin_lembrete" // entrada em 2 dias / amanhã → proprietário e inquilino
+  // Automações por data (cron /api/cron/automacoes, ordem d250ea2f item 5)
+  | "anuncio_incompleto" // rascunho parado há 1 e 3 dias → proprietário
+  | "saida_lembrete" // saída em 3 dias → proprietário e inquilino
+  | "avaliacao_pedido" // 1 dia após a saída → proprietário e inquilino
+  | "renovacao_aviso" // 15 dias antes do fim do bloco → proprietário e inquilino
+  // Propostas (prompt 17)
+  | "proposta_recebida" // proposta ou contraproposta nova → a outra parte
+  | "proposta_respondida" // proposta aceita ou recusada → a outra parte
+  | "proposta_vencendo" // 24 h antes de vencer → quem tem de responder (prompt 27, cron de automações)
+  // Visitas (prompt 23): vídeo e presencial, sempre pela plataforma
+  | "visita_pedida" // morador pediu → proprietário
+  | "visita_confirmada" // horário confirmado → a outra parte
+  | "visita_remarcada" // proprietário propôs outro horário → morador
+  | "visita_cancelada" // cancelada ou recusada (com motivo) → a outra parte
+  // Candidatura e contrato (prompt 23): nunca e-mail de "recusada"
+  | "anuncio_compartilhar" // contrato assinado pelas duas partes → proprietário: o cartão do anúncio para compartilhar (push)
+  | "candidatura_nova" // candidatura recebida → proprietário (contrato pronto/assinado: contract_status, prompt 24)
+  // Parceiros (prompt 31a)
+  | "parceria_recebida" // pedido de parceria recebido → quem pediu
+  | "parceria_recusada" // pedido de parceria recusado (com o motivo) → quem pediu
+  | "parceria_convite" // a equipe abriu o pedido pela pessoa (suporte) → a pessoa completa e confirma
+  | "parceria_equipe"; // pedido novo, novo link pedido → admins
+
+// Assunto SEM a marca (o envio põe "· Viva Nomads"; regras em assuntos.ts). A imagem de cada evento mora em
+// imagens-email.ts (IMAGEM por tema, fonte única).
+export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; cta: string; path: string }> = {
+  new_lead: { subject: "Novo interessado no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um novo interessado no Viva Nomads.`, cta: "Ver interessado", path: "/dashboard/leads" },
+  new_message: { subject: "Você tem uma nova mensagem", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma nova mensagem no Viva Nomads.`, cta: "Ver mensagem", path: "/dashboard/mensagens" },
+  application_received: { subject: "Candidatura recebida", body: () => "Recebemos sua candidatura. O proprietário foi notificado.", cta: "Acompanhar candidatura", path: "/dashboard/candidaturas" },
+  candidatura_aceita: { subject: "Sua candidatura foi aceita", body: (n) => `Boa notícia${n ? ", " + n : ""}! O proprietário aceitou sua candidatura. A conversa está liberada em Mensagens — a negociação segue toda pela plataforma.`, cta: "Abrir a conversa", path: "/dashboard/mensagens" },
+  saved_search_match: { subject: "Novo imóvel para sua busca", body: () => "Um imóvel novo combina com sua busca salva no Viva Nomads.", cta: "Ver imóvel", path: "/dashboard/buscas" },
+  verification_ready: { subject: "Sua verificação está pronta", body: () => "A conferência da sua identidade foi concluída. Veja o resultado no painel.", cta: "Ver resultado", path: "/dashboard/verificacao" },
+  contract_status: { subject: "Atualização do seu contrato", body: () => "Há uma atualização no seu contrato de locação.", cta: "Ver contrato", path: "/dashboard/contratos" },
+  subscription_status: { subject: "Atualização da sua assinatura", body: () => "Há uma atualização na sua assinatura Viva Nomads.", cta: "Ver detalhes", path: "/dashboard" },
+  pedido_novo_cidade: { subject: "Novo pedido de moradia na sua cidade", body: (n) => `Olá${n ? " " + n : ""}, um inquilino publicou um pedido de moradia na cidade de um dos seus imóveis. Veja se algum atende.`, cta: "Ver pedidos", path: "/dashboard/pedidos-cidade" },
+  pedido_compativel: { subject: "Pedido de moradia compatível com o seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, um pedido de moradia combina com um imóvel seu. Veja por que e responda pela plataforma.`, cta: "Ver pedido e responder", path: "/dashboard/pedidos-cidade" },
+  pedido_resumo: { subject: "Resumo do dia: pedidos compatíveis com seus imóveis", body: (n) => `Olá${n ? " " + n : ""}, estes pedidos de moradia combinam com imóveis seus.`, cta: "Ver pedidos do dia", path: "/dashboard/pedidos-cidade" },
+  pedido_imovel_novo: { subject: "Surgiu um imóvel compatível com o seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um imóvel publicado agora combina com o seu pedido de moradia. O proprietário também foi avisado.`, cta: "Ver o imóvel", path: "/dashboard/pedidos" },
+  pedido_resposta: { subject: "Um proprietário respondeu ao seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.`, cta: "Ver a resposta", path: "/dashboard/pedidos" },
+  pedido_aceito: { subject: "Seu imóvel foi aceito para conversa", body: (n) => `Olá${n ? " " + n : ""}, um inquilino aceitou sua resposta e abriu a conversa. Responda pela plataforma.`, cta: "Abrir a conversa", path: "/dashboard/mensagens" },
+  pedido_expirando: { subject: "Ainda procurando? Renove com um clique", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 5 dias. Ainda procurando? Renove com um clique; se já resolveu, marque como atendido.`, cta: "Renovar pedido", path: "/dashboard/pedidos" },
+  pedido_confirmar_telefone: { subject: "Confirme seu telefone para manter o pedido visível", body: (n) => `Olá${n ? " " + n : ""}, para o seu pedido de moradia continuar visível aos proprietários, confirme o seu telefone nos próximos 7 dias.`, cta: "Confirmar telefone", path: "/dashboard/conta/perfil" },
+  pedido_encerrado: { subject: "Um pedido de moradia que você respondeu foi encerrado", body: (n) => `Olá${n ? " " + n : ""}, o inquilino encerrou um pedido de moradia que você respondeu. Ele não aparece mais na sua lista.`, cta: "Ver pedidos", path: "/dashboard/pedidos-cidade" },
+  pedido_moderado: { subject: "Seu pedido de moradia foi ocultado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia foi ocultado pela moderação. Veja o motivo e ajuste se necessário.`, cta: "Ver o motivo", path: "/dashboard/pedidos" },
+  documento_aprovado: { subject: "Documento aprovado", body: (n) => `Olá${n ? " " + n : ""}, a documentação do seu imóvel foi verificada e aprovada. Seu anúncio já pode ser publicado.`, cta: "Publicar meu anúncio", path: "/dashboard/imoveis" },
+  documento_recusado: { subject: "Documento precisa de ajuste", body: (n) => `Olá${n ? " " + n : ""}, a documentação enviada não pôde ser aprovada. Veja o motivo, ajuste e reenvie para liberar a publicação.`, cta: "Reenviar documento", path: "/dashboard/imoveis" },
+  checklist_aprovado: { subject: "Qualificação do imóvel aprovada", body: (n) => `Olá${n ? " " + n : ""}, a equipe Viva Nomads revisou e aprovou a qualificação do seu imóvel.`, cta: "Ver meu imóvel", path: "/dashboard/imoveis" },
+  checklist_recusado: { subject: "Qualificação do imóvel não aprovada", body: (n) => `Olá${n ? " " + n : ""}, a equipe Viva Nomads revisou a qualificação do seu imóvel e ela não foi aprovada. Veja o motivo, ajuste e envie de novo.`, cta: "Ajustar e reenviar", path: "/dashboard/imoveis" },
+  chamado_aberto: { subject: "Recebemos seu chamado", body: (n) => `Olá${n ? " " + n : ""}, recebemos seu chamado na Central de Ajuda do Viva Nomads. Você acompanha e responde por lá.`, cta: "Acompanhar chamado", path: "/ajuda" },
+  chamado_respondido: { subject: "Seu chamado foi respondido", body: (n) => `Olá${n ? " " + n : ""}, há uma resposta da equipe Viva Nomads no seu chamado.`, cta: "Ver resposta", path: "/ajuda" },
+  chamado_resolvido: { subject: "Seu chamado foi resolvido", body: (n) => `Olá${n ? " " + n : ""}, marcamos seu chamado como resolvido. Se algo ficou pendente, é só responder por lá.`, cta: "Ver chamado", path: "/ajuda" },
+  chamado_equipe: { subject: "Atendimento: chamado precisa da equipe", body: () => "Um chamado na Central de Ajuda precisa da equipe.", cta: "Abrir no atendimento", path: "/admin/atendimento" },
+  manutencao_nova: { subject: "Pedido de manutenção no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, o inquilino abriu um pedido de manutenção no seu imóvel. Responda pela plataforma dentro do prazo.`, cta: "Responder pedido", path: "/dashboard/solicitacoes" },
+  manutencao_atrasada: { subject: "Manutenção sem resposta: prazo vencido", body: (n) => `Olá${n ? " " + n : ""}, o pedido de manutenção do seu inquilino passou do prazo sem resposta. Responda pela plataforma.`, cta: "Responder agora", path: "/dashboard/solicitacoes" },
+  manutencao_atualizada: { subject: "Atualização na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, a ordem de manutenção do imóvel mudou de status. Veja o histórico pela plataforma.`, cta: "Ver histórico", path: "/dashboard/solicitacoes" },
+  manutencao_mensagem: { subject: "Nova mensagem na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, há uma nova mensagem na ordem de manutenção do imóvel. Responda pela plataforma.`, cta: "Ver mensagem", path: "/dashboard/solicitacoes" },
+  checkin_lembrete: { subject: "Lembrete: a entrada no imóvel está chegando", body: (n) => `Olá${n ? " " + n : ""}, a entrada no imóvel do seu contrato está chegando. Confira o horário e as instruções de entrada pela plataforma.`, cta: "Ver instruções de entrada", path: "/dashboard/contratos" },
+  anuncio_incompleto: { subject: "Falta pouco para publicar seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, seu cadastro de imóvel ficou pela metade. Termine, envie a documentação e publique.`, cta: "Continuar o cadastro", path: "/dashboard/imoveis" },
+  saida_lembrete: { subject: "Lembrete: a saída está chegando", body: (n) => `Olá${n ? " " + n : ""}, a saída do imóvel do seu contrato é em 3 dias. Combine a conferência de saída pela plataforma.`, cta: "Ver conferência de saída", path: "/dashboard/contratos" },
+  avaliacao_pedido: { subject: "Como foi a estadia? Deixe sua avaliação", body: (n) => `Olá${n ? " " + n : ""}, a estadia terminou. Sua avaliação leva 2 minutos e ajuda os próximos moradores e proprietários.`, cta: "Avaliar a estadia", path: "/dashboard/contratos" },
+  renovacao_aviso: { subject: "Seu período termina em 15 dias: quer renovar?", body: (n) => `Olá${n ? " " + n : ""}, o bloco do seu contrato termina em 15 dias. Se quiserem seguir, combinem a renovação pela plataforma.`, cta: "Ver o contrato", path: "/dashboard/contratos" },
+  proposta_recebida: { subject: "Você recebeu uma proposta", body: (n) => `Olá${n ? " " + n : ""}, há uma proposta nova para você no Viva Nomads. Confira os valores e responda pela plataforma.`, cta: "Ver a proposta", path: "/dashboard/orcamentos" },
+  visita_pedida: { subject: "Pedido de visita no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, um interessado pediu uma visita ao seu imóvel. Confirme um horário, proponha outro ou recuse pela plataforma.`, cta: "Responder o pedido", path: "/dashboard/visitas" },
+  visita_confirmada: { subject: "Visita confirmada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi confirmada. O horário é sempre de Brasília.`, cta: "Ver a visita", path: "/dashboard/visitas" },
+  visita_remarcada: { subject: "Proposta de novo horário para a visita", body: (n) => `Olá${n ? " " + n : ""}, o proprietário propôs outro horário para a visita. Aceite ou cancele pela plataforma.`, cta: "Ver o horário", path: "/dashboard/visitas" },
+  visita_cancelada: { subject: "Visita cancelada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi cancelada. Veja os detalhes pela plataforma.`, cta: "Ver detalhes", path: "/dashboard/visitas" },
+  candidatura_nova: { subject: "Nova candidatura no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma candidatura para o seu imóvel. Veja o pedido e responda pela plataforma.`, cta: "Ver a candidatura", path: "/dashboard/leads" },
+  proposta_vencendo: { subject: "Sua proposta vence em menos de 24 horas", body: (n) => `Olá${n ? " " + n : ""}, uma proposta aguardando a sua resposta vence em menos de 24 horas. Responda pela plataforma.`, cta: "Ver a proposta", path: "/dashboard/propostas" },
+  proposta_respondida: { subject: "Sua proposta foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a sua proposta teve resposta no Viva Nomads.`, cta: "Ver a resposta", path: "/dashboard/orcamentos" },
+  anuncio_compartilhar: { subject: "Seu anúncio está no ar: compartilhe o cartão", body: (n) => `Olá${n ? " " + n : ""}, o cartão do seu anúncio está pronto, com um QR que leva direto ao imóvel. Compartilhe no WhatsApp em um toque.`, cta: "Ver o cartão", path: "/dashboard/imoveis" },
+  parceria_recebida: { subject: "Recebemos o seu pedido de parceria", body: (n) => `Olá${n ? " " + n : ""}, recebemos o seu pedido para ser parceiro da Viva Nomads. A equipe analisa os dados e responde por e-mail. Você pode acompanhar pela sua conta.`, cta: "Acompanhar o pedido", path: "/dashboard/parceiro" },
+  parceria_recusada: { subject: "Sobre o seu pedido de parceria", body: (n) => `Olá${n ? " " + n : ""}, analisamos o seu pedido de parceria e, por enquanto, não foi possível aprovar. O motivo está abaixo. A sua conta continua normal para alugar ou anunciar.`, cta: "Ver o pedido", path: "/dashboard/parceiro" },
+  parceria_convite: { subject: "Complete o seu pedido de parceria", body: (n) => `Olá${n ? " " + n : ""}, a equipe da Viva Nomads começou um pedido de parceria em seu nome, como combinado no atendimento. Entre (ou crie a conta) com este e-mail, confira os dados e confirme o envio.`, cta: "Completar o pedido", path: "/parceiros?seja=1#quero-ser-parceiro" },
+  parceria_equipe: { subject: "Pedido de parceria para analisar", body: () => "Há um pedido de parceria aguardando a equipe. Confira a ficha, o checklist e decida pelo painel.", cta: "Abrir parceiros", path: "/admin/parceiros" },
+  documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", cta: "Conferir documento", path: "/admin/documentos" },
+};

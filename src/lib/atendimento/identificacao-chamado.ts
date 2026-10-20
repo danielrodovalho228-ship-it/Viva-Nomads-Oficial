@@ -15,14 +15,30 @@ export function emailMascaradoDaConta(email: string | null | undefined): string 
   return `${t.slice(0, Math.min(2, i))}***${t.slice(i)}`;
 }
 
-export type VisitanteValidado = { ok: true; nome: string; email: string } | { ok: false; error: string };
+export type VisitanteValidado = { ok: true; nome: string; email: string; telefone?: string } | { ok: false; error: string };
 
-export function validarVisitante(entrada: { nome?: string; email?: string }): VisitanteValidado {
+/** Telefone opcional: só dígitos (10 a 13, com DDD e, se quiser, 55). Vazio = "". */
+export function normalizarTelefone(bruto: string | undefined): string {
+  return (bruto ?? "").replace(/[\s().+-]/g, "");
+}
+
+export function validarVisitante(entrada: { nome?: string; email?: string; telefone?: string }): VisitanteValidado {
   const nome = (entrada.nome ?? "").trim().replace(/\s+/g, " ").slice(0, 60);
   if (nome.length < 2) return { ok: false, error: "Informe seu nome para a equipe saber com quem falar." };
   const email = (entrada.email ?? "").trim().toLowerCase().slice(0, 254);
   if (!isValidEmail(email)) return { ok: false, error: "Informe um e-mail válido para receber a resposta." };
   const dominio = dominioDoEmail(email);
   if (!dominio || dominioReservado(dominio)) return { ok: false, error: MSG_EMAIL_INUTILIZAVEL };
-  return { ok: true, nome, email };
+  const telefone = normalizarTelefone(entrada.telefone);
+  if (!telefone) return { ok: true, nome, email };
+  if (!/^\d{10,13}$/.test(telefone)) return { ok: false, error: "Telefone inválido. Informe com DDD (ex.: 34 99999-1234) ou deixe em branco." };
+  return { ok: true, nome, email, telefone };
+}
+
+/** "34999991234" → "(34) •••••-1234". A equipe vê só o fim; nunca o número inteiro na tela. */
+export function telefoneMascarado(tel: string | null | undefined): string | null {
+  const d = (tel ?? "").replace(/\D/g, "");
+  if (d.length < 10) return null;
+  const ddd = d.length > 11 ? d.slice(-11, -9) : d.slice(0, 2);
+  return `(${ddd}) •••••-${d.slice(-4)}`;
 }

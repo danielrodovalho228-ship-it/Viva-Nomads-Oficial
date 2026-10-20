@@ -12,6 +12,8 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
   test.use({ storageState: authFile("proprietario") });
 
   test("rascunho mostra o score e a dica abre o campo certo (390 px)", async ({ page }) => {
+    // Sobe foto, espera o autosave e tenta o painel por até 40 s: não cabe nos 45 s padrão.
+    test.setTimeout(150_000);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => {
       try {
@@ -23,8 +25,11 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
     await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
     const comecarOutro = page.getByRole("button", { name: "Começar outro" });
     if (await comecarOutro.isVisible().catch(() => false)) await comecarOutro.click();
-    await page.locator('input[type="file"]').first().setInputFiles("public/images/imoveis/ube/ube-001-sala.webp");
-    await expect(page.getByText(/^1\/40 fotos/)).toBeVisible({ timeout: 20_000 });
+    // Cadastro em 5 etapas (prompt 10): a 1ª etapa é "Onde fica"; o endereço já cria o rascunho.
+    await expect(page.getByRole("heading", { name: "Onde fica" })).toBeVisible({ timeout: 20_000 });
+    await page.getByTestId("cadastro-rua").fill("Rua do Score");
+    await page.getByTestId("cadastro-numero").fill("10");
+    await page.getByTestId("cadastro-bairro").fill("Centro");
     await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 20_000 });
 
     await expect(async () => {
@@ -40,5 +45,20 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
     await expect(dicas.first()).toBeVisible();
     await dicas.first().click();
     await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=\d/);
+
+    // Editar um campo faz o score subir (ordem 0f9b9d58): descrição com 40+ palavras = +6 pontos.
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    const antes = Number((await page.getByTestId("anuncio-score-valor").innerText()).replace("%", ""));
+    // Painel mostra só as dicas que mais valem: com a descrição obrigatória (60+ caracteres, f9753c6), é ela que aparece.
+    await page.getByTestId("score-dica").filter({ hasText: /Descrição com/ }).first().click();
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=2/);
+    const descricao = Array.from({ length: 45 }, (_, i) => `palavra${i}`).join(" ");
+    await page.getByTestId("cadastro-descricao").fill(descricao);
+    await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 20_000 });
+    await expect(async () => {
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      const depois = Number((await page.getByTestId("anuncio-score-valor").innerText({ timeout: 4_000 })).replace("%", ""));
+      expect(depois).toBeGreaterThan(antes);
+    }).toPass({ timeout: 40_000, intervals: [2_000, 3_000] });
   });
 });

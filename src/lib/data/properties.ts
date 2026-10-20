@@ -10,6 +10,17 @@ import { semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
 import { ROTULOS_FILTRAVEIS, chavesFiltroDe } from "@/lib/busca/filtro-comodidades";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
+import { normalizarNegociacao } from "@/lib/anuncio/negociacao";
+
+/** Negociação pública e Mbps (0152); linha ausente ou sem configuração = nada. */
+function negociacaoDaLinha(l: { negociacao?: unknown; internet_mbps?: unknown } | null) {
+  return {
+    negociacao: l?.negociacao ? normalizarNegociacao(l.negociacao) : undefined,
+    internetMbps: mbpsValido(l?.internet_mbps) ?? undefined,
+  };
+}
+import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
 
 /**
@@ -119,7 +130,7 @@ interface PropertyRow {
   assim a busca/home nunca aparecem vazias. Para esconder os demos quando houver
   catálogo real suficiente, defina NEXT_PUBLIC_SHOW_DEMO_PROPERTIES=false na Vercel.
 */
-function showDemoProperties(): boolean {
+export function showDemoProperties(): boolean {
   return process.env.NEXT_PUBLIC_SHOW_DEMO_PROPERTIES !== "false";
 }
 
@@ -211,7 +222,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
@@ -222,6 +233,10 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("properties").select("pets_regras").eq("id", base.id).maybeSingle()),
     // 0116: leitura à parte — sem a migração a consulta falha e o anúncio abre igual.
     safe(supabase.from("properties").select("sem_cameras_interior, cameras_externas, tipo_acesso, senha_trocada_estadia").eq("id", base.id).maybeSingle()),
+    // Pacote de limpeza (0144): leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("limpeza_estadia").eq("id", base.id).maybeSingle()),
+    // Negociação pública e Mbps (0152): leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("negociacao, internet_mbps").eq("id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
 
@@ -285,6 +300,8 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
       reply: respostasPorAvaliacao.get(r.id),
     })),
     petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
+    limpezaEstadia: normalizarLimpezaEstadia((limpezaLinha as { limpeza_estadia?: unknown } | null)?.limpeza_estadia) ?? undefined,
+    ...negociacaoDaLinha(negLinha as { negociacao?: unknown; internet_mbps?: unknown } | null),
     privacidade,
     ownerName: ownerRow?.full_name ?? base.ownerName,
     ownerId: ownerId ?? base.ownerId,
@@ -329,6 +346,27 @@ export async function listProperties(): Promise<Property[]> {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
     console.error("[listProperties] consulta falhou:", e instanceof Error ? e.message : e);
     return withDemos([]);
+  }
+}
+
+/** Imóveis ATIVOS de um proprietário, para a página pública dele (prompt 6). Anúncio de teste fica de fora. */
+export async function listPropertiesDoProprietario(donoId: string): Promise<Property[]> {
+  const supabase = createPublicClient();
+  if (!supabase || !/^[0-9a-f-]{36}$/i.test(donoId)) return [];
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select(PROPERTY_PUBLIC_COLUMNS)
+      .eq("owner_id", donoId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+    if (error || !data) return [];
+    const mapped = semAnunciosDeTeste((data as unknown as PropertyRow[]).map(rowToProperty).map(comCoordenadaAproximada));
+    await attachCoverPhotos(supabase, mapped);
+    await attachReviewAggregates(supabase, mapped);
+    return mapped;
+  } catch {
+    return [];
   }
 }
 

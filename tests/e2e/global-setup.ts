@@ -3,6 +3,7 @@ import path from "node:path";
 import { chromium, type FullConfig } from "@playwright/test";
 import { ALL_ROLES, OPTIONAL_ROLES, hasAccount } from "./fixtures/accounts";
 import { authFile, loginAs } from "./fixtures/auth";
+import { comTentativas } from "./fixtures/tentativas";
 
 /**
  * Loga UMA vez cada papel (inquilino, proprietário, admin) e salva o
@@ -33,11 +34,24 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   const browser = await chromium.launch({ executablePath });
   try {
     for (const role of roles) {
-      const context = await browser.newContext({ baseURL, ...(extraHTTPHeaders ? { extraHTTPHeaders } : {}) });
-      const page = await context.newPage();
-      await loginAs(page, role);
-      await context.storageState({ path: authFile(role) });
-      await context.close();
+      // Cada papel tem até 3 tentativas, cada uma num contexto novo. Se mesmo assim não logar, grava uma sessão
+      // vazia e segue: só os specs desse papel falham (com o motivo no log) e a suíte NÃO aborta com 0 testes
+      // (lab ec62b16, c03ff36 e bb86a49 gravaram 0/0/0 porque um único login quebrou o global-setup).
+      try {
+        await comTentativas(async () => {
+          const context = await browser.newContext({ baseURL, ...(extraHTTPHeaders ? { extraHTTPHeaders } : {}) });
+          try {
+            const page = await context.newPage();
+            await loginAs(page, role);
+            await context.storageState({ path: authFile(role) });
+          } finally {
+            await context.close();
+          }
+        });
+      } catch (e) {
+        console.error(`[global-setup] login de "${role}" falhou depois de 3 tentativas: ${(e as Error).message.split("\n")[0]}`);
+        fs.writeFileSync(authFile(role), JSON.stringify({ cookies: [], origins: [] }));
+      }
     }
   } finally {
     await browser.close();

@@ -1,5 +1,7 @@
 "use client";
 
+import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,6 +16,7 @@ import { ehNotaResumo } from "@/lib/atendimento/resumo";
 import { ResumoEAcoes } from "./resumo-acoes";
 import { respostaDaSugestao } from "@/lib/atendimento/acolhimento";
 import { mascararEmail, podeDevolverParaViva } from "@/lib/atendimento/copiloto-regras";
+import { telefoneMascarado } from "@/lib/atendimento/identificacao-chamado";
 import { QuemEAPessoa } from "./copiloto";
 import { relogio } from "../atendimento-client";
 import { EXPLICA_AGUARDANDO_APROVACAO } from "@/lib/atendimento/dono";
@@ -41,6 +44,7 @@ const ACAO: Record<string, string> = {
   respondido_viva: "respondido pela Viva",
   escalado_2h: "2 h sem resposta da equipe (aviso ao Daniel)",
   escalado_6h: "6 h sem resposta da equipe (vermelho na Central)",
+  prioridade_subiu: "prioridade subiu por falta de resposta",
   devolvido_ia: "devolveu para a Viva",
   mensagem: "mensagem da pessoa",
 };
@@ -51,7 +55,7 @@ function respostaDaNota(corpo: string): string {
   return i >= 0 ? corpo.slice(i + "Resposta sugerida:\n".length).trim() : corpo;
 }
 
-const fmt = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+const fmt = (iso: string) => dataHoraBRT(iso, { tabela: true });
 
 export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; macros: Macro[]; agoraISO: string }) {
   const router = useRouter();
@@ -123,7 +127,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
       <Link href="/admin/atendimento" className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-forest">
         <ArrowLeft className="h-4 w-4" /> Fila
       </Link>
-      <PageTitle title={c.assunto} subtitle={`${c.numero_publico} · ${c.tipo} · ${c.canal} · ${STATUS[c.status] ?? c.status}`} />
+      <PageTitle title={c.assunto} subtitle={`${c.numero_publico} · ${c.tipo} · ${c.canal} · ${STATUS[c.status] ?? c.status} · Aberto em ${dataHoraBRT(c.criado_em)}`} />
       {c.status === "aguardando_aprovacao" && (
         <p className="-mt-2 mb-4 text-xs text-muted" data-testid="explica-aprovacao">
           {EXPLICA_AGUARDANDO_APROVACAO}
@@ -316,6 +320,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
               <p className="text-sm text-ink">
                 Visitante (sem conta)
                 <span className="block text-xs text-muted">{mascararEmail(c.visitante_email)}</span>
+                {telefoneMascarado(c.visitante_telefone) && <span data-testid="chamado-visitante-telefone" className="block text-xs text-muted">{telefoneMascarado(c.visitante_telefone)}</span>}
               </p>
             )}
             {c.contexto_tipo && (
@@ -370,13 +375,15 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 </Button>
               )}
               {c.status !== "encerrado" && (
-                <Button
-                  variant="outline"
+                <ConfirmarNaPagina
+                  aviso="Encerrar? A pessoa não poderá mais responder neste chamado."
+                  confirmar="Encerrar"
                   disabled={ocupado}
-                  onClick={() => window.confirm("Encerrar? A pessoa não poderá mais responder neste chamado.") && agir(() => alterarChamado(c.id, { status: "encerrado" }))}
+                  onConfirmar={() => agir(() => alterarChamado(c.id, { status: "encerrado" }))}
+                  testid="chamado-encerrar"
                 >
                   Encerrar
-                </Button>
+                </ConfirmarNaPagina>
               )}
             </div>
           </Panel>

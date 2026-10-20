@@ -1,5 +1,7 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
+import { reaisOu } from "@/lib/reais";
 import {
   ESPECIES_PET,
   PORTES_PET,
@@ -20,7 +22,6 @@ export interface RegrasPetsForm {
   especies: EspeciePet[];
   porteMax: PortePet;
   qtdMax: string;
-  reforcoCaucao: string;
   regrasCondominio: string;
   valorPet: string;
   valorPetTipo: TipoValorPet;
@@ -31,7 +32,6 @@ export function formDeRegras(r?: RegrasPets): RegrasPetsForm {
     especies: r?.especies ?? ["cao", "gato"],
     porteMax: r?.porteMax ?? "M",
     qtdMax: String(r?.qtdMax ?? 1),
-    reforcoCaucao: r && r.reforcoCaucao > 0 ? String(r.reforcoCaucao) : "",
     regrasCondominio: r?.regrasCondominio ?? "",
     valorPet: r?.valorPet && r.valorPet > 0 ? String(r.valorPet) : "",
     valorPetTipo: r?.valorPetTipo ?? "reembolsavel",
@@ -78,20 +78,17 @@ export function PetsRegrasCampos({ value, onChange }: { value: RegrasPetsForm; o
           </select>
         </label>
       </div>
-      <label className="grid gap-1 text-sm font-semibold text-ink">
-        Reforço de Caução por causa do pet (R$, opcional)
-        <input className={campo} inputMode="decimal" placeholder="0" value={value.reforcoCaucao} onChange={(e) => onChange({ ...value, reforcoCaucao: e.target.value.replace(",", ".") })} />
-      </label>
       <div className="grid gap-3 sm:grid-cols-2" data-testid="valor-pet-campos">
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Valor pet (R$, opcional)
-          <input
+          <CampoReais
+            semPrefixo
+            centavos
             className={campo}
-            inputMode="decimal"
             placeholder="0"
-            data-testid="valor-pet"
-            value={value.valorPet}
-            onChange={(e) => onChange({ ...value, valorPet: e.target.value.replace(",", ".") })}
+            testid="valor-pet"
+            value={reaisOu(value.valorPet, NaN) >= 0 ? reaisOu(value.valorPet, NaN) : null}
+            onChange={(v) => onChange({ ...value, valorPet: v == null ? "" : String(v) })}
           />
         </label>
         <label className="grid gap-1 text-sm font-semibold text-ink">

@@ -1,5 +1,6 @@
 "use server";
 
+import { linhaQuemRespondeuHtml } from "@/lib/atendimento/quem-respondeu";
 import crypto from "node:crypto";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -9,7 +10,8 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { situacaoLimite, HORA } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
-import { validarVisitante } from "@/lib/atendimento/identificacao-chamado";
+import { verificarCaptchaServidor } from "@/lib/seguranca/captcha-servidor";
+import { validarVisitanteComDns } from "@/lib/atendimento/identificacao-chamado-dns";
 import {
   calcularPrazos,
   mensagemPrazo,
@@ -97,6 +99,10 @@ export interface AbrirChamadoInput {
   pedePessoa?: boolean;
   visitanteNome?: string;
   visitanteEmail?: string;
+  /** Telefone opcional do visitante (só para a equipe; nunca em log nem URL). */
+  visitanteTelefone?: string;
+  /** Token do Turnstile (só visitante, e só quando o captcha está ligado). */
+  captchaToken?: string;
 }
 
 export async function abrirChamado(
@@ -115,11 +121,18 @@ export async function abrirChamado(
 
   let visitanteEmail: string | null = null;
   let visitanteNome: string | null = null;
+  let visitanteTelefone: string | null = null;
   if (!user) {
-    const v = validarVisitante({ nome: input.visitanteNome, email: input.visitanteEmail });
+    const v = await validarVisitanteComDns({ nome: input.visitanteNome, email: input.visitanteEmail, telefone: input.visitanteTelefone });
     if (!v.ok) return { ok: false, error: v.error };
+    const cap = await verificarCaptchaServidor(input.captchaToken, {
+      chavePublica: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+      segredo: process.env.TURNSTILE_SECRET_KEY,
+    });
+    if (!cap.ok) return { ok: false, error: cap.error };
     visitanteEmail = v.email;
     visitanteNome = v.nome;
+    visitanteTelefone = v.telefone ?? null;
   }
 
   // Limite: 8 chamados por hora por pessoa (ou por IP, para visitante).
@@ -188,6 +201,7 @@ export async function abrirChamado(
       usuario_id: user?.id ?? null,
       visitante_email: visitanteEmail,
       visitante_nome: visitanteNome,
+      visitante_telefone: visitanteTelefone,
       tipo,
       categoria: cat.key,
       prioridade,
@@ -480,10 +494,11 @@ export interface ChamadoAdmin extends ChamadoLista {
   usuario_id: string | null;
   visitante_email: string | null;
   visitante_nome: string | null;
+  visitante_telefone: string | null;
 }
 
 const COLS_ADMIN =
-  "id, numero_publico, assunto, status, prioridade, tipo, canal, categoria, contexto_tipo, contexto_id, service_order_id, responsavel_tipo, responsavel_admin, prazo_primeira_resposta, prazo_resolucao, primeira_resposta_em, sla_estado, nota_satisfacao, usuario_id, visitante_email, visitante_nome, criado_em, atualizado_em";
+  "id, numero_publico, assunto, status, prioridade, tipo, canal, categoria, contexto_tipo, contexto_id, service_order_id, responsavel_tipo, responsavel_admin, prazo_primeira_resposta, prazo_resolucao, primeira_resposta_em, sla_estado, nota_satisfacao, usuario_id, visitante_email, visitante_nome, visitante_telefone, criado_em, atualizado_em";
 
 export interface FiltrosFila {
   status?: string;
@@ -599,7 +614,7 @@ export async function responderComoAdmin(id: string, texto: string, interno: boo
     // Respondido: o prazo passa a ser o de resolução (ou fica "estourado" se a resposta atrasou).
     await ctx.admin.rpc("atendimento_varrer_prazos");
     await ctx.admin.from("chamado_eventos").insert({ chamado_id: id, ator_tipo: "admin", ator_id: ctx.userId, acao: "respondido", de: c.status as string, para: "aguardando_usuario" });
-    await avisarUsuario(c as ChamadoResumo, "chamado_respondido", `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(corpo, 1500)}</blockquote>`);
+    await avisarUsuario(c as ChamadoResumo, "chamado_respondido", `${linhaQuemRespondeuHtml("equipe")}<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(corpo, 1500)}</blockquote>`);
   }
   return { ok: true };
 }

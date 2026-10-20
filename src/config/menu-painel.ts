@@ -14,11 +14,13 @@
  * Função PURA (testada em menu-painel.test.ts); quem desenha é o DashboardShell.
  */
 
+import { MIN_IMOVEIS_ANALISE_CARTEIRA } from "../lib/cobranca/regra.ts";
+
 export type IconeMenu =
   | "visao" | "moradia" | "buscar" | "favoritos" | "buscas" | "pedidos" | "candidaturas"
-  | "estadias" | "solicitacoes" | "mensagens" | "notificacoes" | "imoveis" | "interessados"
+  | "visitas" | "estadias" | "solicitacoes" | "mensagens" | "notificacoes" | "imoveis" | "interessados"
   | "pedidosCidade" | "fechamento" | "contratos" | "garantias" | "conferencia" | "ferramentas"
-  | "simulador" | "roi" | "viabilidade" | "orcamentos" | "conta" | "verificacao" | "assinatura"
+  | "simulador" | "roi" | "carteira" | "orcamentos" | "conta" | "verificacao" | "assinatura"
   | "admin" | "documentos" | "atendimento" | "parceiros" | "fotografos" | "financeiro"
   | "socios" | "marketing" | "agentes" | "operacao" | "rede" | "dinheiro" | "anunciar";
 
@@ -39,6 +41,10 @@ export interface ContextoMenu {
   /** Há estadia ativa — revela "Solicitações". */
   estadiaAtiva: boolean;
   plano?: string;
+  /** Imóveis ATIVOS do dono: com 3 ou mais (regra das faixas), aparece a "Análise da carteira". */
+  imoveisAtivos?: number;
+  /** Prompt 31a: a conta tem o papel de parceiro (ou um pedido de parceria) — revela o item "Parceiro". */
+  parceiro?: boolean;
 }
 
 export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
@@ -52,13 +58,26 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
       filhos: [
         { id: "admin-painel", rotulo: "Painel da equipe", icone: "admin", href: "/admin" },
         {
+          id: "admin-cadastros",
+          rotulo: "Cadastros",
+          icone: "imoveis",
+          filhos: [
+            { id: "admin-imoveis", rotulo: "Imóveis", icone: "imoveis", href: "/admin/imoveis" },
+            { id: "admin-contratos", rotulo: "Contratos", icone: "contratos", href: "/admin/contratos" },
+            { id: "admin-usuarios", rotulo: "Usuários", icone: "conta", href: "/admin/usuarios" },
+          ],
+        },
+        {
           id: "admin-operacao",
           rotulo: "Operação",
           icone: "operacao",
           filhos: [
             { id: "admin-pedidos", rotulo: "Moderar pedidos", icone: "pedidos", href: "/admin/pedidos" },
+            { id: "admin-ajuda-publicacao", rotulo: "Publicamos para você", icone: "documentos", href: "/admin/ajuda-publicacao" },
             { id: "admin-documentos", rotulo: "Documentos", icone: "documentos", href: "/admin/documentos" },
             { id: "admin-atendimento", rotulo: "Atendimento", icone: "atendimento", href: "/admin/atendimento" },
+            { id: "admin-solicitacoes", rotulo: "Solicitações de manutenção", icone: "solicitacoes", href: "/admin/solicitacoes" },
+            { id: "admin-servicos", rotulo: "Serviços do morador", icone: "solicitacoes", href: "/admin/servicos" },
           ],
         },
         {
@@ -79,6 +98,15 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
             { id: "admin-socios", rotulo: "Caixa dos Sócios", icone: "socios", href: "/admin/socios" },
           ],
         },
+        {
+          id: "admin-ferramentas",
+          rotulo: "Ferramentas",
+          icone: "ferramentas",
+          filhos: [
+            { id: "admin-dados-teste", rotulo: "Dados de teste", icone: "ferramentas", href: "/admin/dados-de-teste" },
+            { id: "admin-emails-teste", rotulo: "E-mails de teste", icone: "ferramentas", href: "/admin/emails-teste" },
+          ],
+        },
         { id: "admin-marketing", rotulo: "Marketing", icone: "marketing", href: "/admin/marketing" },
         { id: "admin-agentes", rotulo: "Agentes", icone: "agentes", href: "/admin/agentes" },
       ],
@@ -90,11 +118,24 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     { id: "favoritos", rotulo: "Favoritos & comparações", icone: "favoritos", href: "/dashboard/favoritos" },
     { id: "buscas", rotulo: "Buscas salvas", icone: "buscas", href: "/dashboard/buscas" },
     { id: "pedidos", rotulo: "Meus pedidos", icone: "pedidos", href: "/dashboard/pedidos" },
+    // Prompt 30, item 6: a porta do pedido no menu do inquilino (o formulário é a página pública /pedidos/novo).
+    { id: "publicar-pedido", rotulo: "Publicar pedido de moradia", icone: "pedidos", href: "/pedidos/novo" },
     { id: "candidaturas", rotulo: "Candidaturas", icone: "candidaturas", href: "/dashboard/candidaturas" },
-    { id: "estadias", rotulo: "Minhas estadias", icone: "estadias", href: "/dashboard/locacoes" },
+    // Prompt 27 (item 7): as propostas que os proprietários enviaram, com o número das que esperam a resposta.
+    { id: "propostas-inquilino", rotulo: "Propostas", icone: "orcamentos", href: "/dashboard/propostas" },
+    { id: "visitas", rotulo: "Visitas por vídeo", icone: "visitas", href: "/dashboard/visitas" },
+    // Prompt 28: contrato aguardando assinatura ainda não é locação — "Contratos" (com o número do que falta assinar)
+    // e "Locações" (as ativas e as encerradas).
+    { id: "contratos-inquilino", rotulo: "Contratos", icone: "contratos", href: "/dashboard/contratos" },
+    // Adendo ao prompt 28: o dono (tem imóvel) sem estadia própria não vê "Locações" — o lugar dele é
+    // "Contratos & blocos"; o inquilino continua vendo.
+    ...(ctx.temImovel && !ctx.estadiaAtiva ? [] : [{ id: "estadias" as const, rotulo: "Locações", icone: "estadias" as const, href: "/dashboard/locacoes" }]),
   ];
-  if (ctx.estadiaAtiva)
+  if (ctx.estadiaAtiva) {
     moradia.push({ id: "solicitacoes", rotulo: "Solicitações", icone: "solicitacoes", href: "/dashboard/solicitacoes" });
+    // Ordem 521c5af7 (S1): serviços de parceiros, só para quem tem locação ativa.
+    moradia.push({ id: "servicos", rotulo: "Serviços", icone: "ferramentas", href: "/dashboard/servicos" });
+  }
   menu.push({ id: "moradia", rotulo: "Minha moradia", icone: "moradia", filhos: moradia });
 
   menu.push({
@@ -131,15 +172,21 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     });
   }
 
+  // Prompt 31a: o papel de parceiro é a tabela parceiros (conta única); o item aparece quando ela existe.
+  if (ctx.parceiro) menu.push({ id: "parceiro", rotulo: "Parceiro", icone: "parceiros", href: "/dashboard/parceiro" });
+
   menu.push({
     id: "ferramentas",
     rotulo: "Ferramentas",
     icone: "ferramentas",
     filhos: [
       { id: "ferramentas-todas", rotulo: "Todas as ferramentas", icone: "ferramentas", href: "/dashboard/ferramentas" },
+      ...(ctx.temImovel ? [{ id: "agenda", rotulo: "Agenda", icone: "visitas" as const, href: "/dashboard/agenda" }] : []),
       { id: "simulador", rotulo: "Simulador de rentabilidade", icone: "simulador", href: "/dashboard/simulador" },
       { id: "roi", rotulo: "Calculadora de ROI", icone: "roi", href: "/dashboard/roi-imovel" },
-      { id: "viabilidade", rotulo: "Viabilidade", icone: "viabilidade", href: "/dashboard/viabilidade" },
+      ...((ctx.imoveisAtivos ?? 0) >= MIN_IMOVEIS_ANALISE_CARTEIRA
+        ? [{ id: "carteira", rotulo: "Análise da carteira", icone: "carteira" as const, href: "/dashboard/carteira" }]
+        : []),
       ...(ctx.temImovel
         ? [{ id: "orcamentos", rotulo: "Orçamentos", icone: "orcamentos" as const, href: "/dashboard/orcamentos" }]
         : []),
@@ -153,10 +200,7 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     filhos: [
       { id: "conta-dados", rotulo: "Perfil e dados", icone: "conta", href: "/dashboard/conta" },
       { id: "avaliacoes", rotulo: "Avaliações recebidas", icone: "conta", href: "/dashboard/avaliacoes" },
-      { id: "verificacao", rotulo: "Verificação", icone: "verificacao", href: "/dashboard/verificacao" },
-      ...(ctx.temImovel
-        ? [{ id: "assinatura", rotulo: "Plano e assinatura", icone: "assinatura" as const, href: "/dashboard/assinatura" }]
-        : []),
+      { id: "verificacao", rotulo: "Verificação", icone: "verificacao", href: "/dashboard/conta#confianca" },
     ],
   });
 
@@ -187,4 +231,13 @@ export function rotaAtiva(href: string, pathname: string): boolean {
   const base = href.split("#")[0];
   if (base === "/dashboard" || base === "/admin") return pathname === base;
   return pathname === base || pathname.startsWith(base + "/");
+}
+
+/**
+ * Para onde vai quem abre uma rota do OUTRO papel e não tem esse papel (o guarda do painel no navegador).
+ * "Locações" de quem só é proprietário vira "Contratos & blocos" — a mesma regra da página no servidor (adendo ao
+ * prompt 28). No celular o guarda corria antes do redirecionamento do servidor e levava o dono à Visão geral.
+ */
+export function destinoForaDoPapel(pathname: string): string {
+  return pathname === "/dashboard/locacoes" ? "/dashboard/contratos" : "/dashboard";
 }

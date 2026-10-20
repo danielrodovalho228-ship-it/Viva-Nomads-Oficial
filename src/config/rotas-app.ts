@@ -39,18 +39,23 @@ export const ROTAS_APP: Regra[] = [
   ramo("/app"), // boas-vindas do app
   ramo("/buscar"),
   ramo("/imoveis"), // anúncio público
+  ramo("/proprietario"), // perfil público de quem anuncia (aberto pelo anúncio)
   ramo("/pedidos"), // mural e "Publicar pedido"
   ramo("/ajuda"), // Central de Ajuda e chamados
   exato("/dashboard"), // painel
   ramo("/dashboard/mensagens"),
+  exato("/favoritos"), // lista pública de favoritos (guardada no aparelho)
   ramo("/dashboard/favoritos"),
   ramo("/dashboard/candidaturas"),
+  ramo("/dashboard/visitas"),
+  ramo("/dashboard/agenda"),
   ramo("/dashboard/leads"), // interessados (proprietário)
   ramo("/dashboard/pedidos"),
   ramo("/dashboard/pedidos-cidade"),
   ramo("/dashboard/contratos"),
   ramo("/dashboard/locacoes"),
   ramo("/dashboard/solicitacoes"), // manutenção
+  ramo("/dashboard/servicos"), // serviços de parceiros para o morador
   ramo("/dashboard/buscas"), // buscas salvas
   ramo("/dashboard/imoveis"), // meus imóveis, criar e editar anúncio (fotos pelo celular)
   ramo("/qualificar"), // qualificação, que vem antes do anúncio
@@ -66,6 +71,7 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/ferramentas"),
   ramo("/dashboard/simulador"),
   ramo("/dashboard/roi-imovel"),
+  ramo("/dashboard/tributacao"),
   ramo("/dashboard/assinatura"),
   ramo("/dashboard/fechamento"),
   ramo("/dashboard/conta"), // perfil

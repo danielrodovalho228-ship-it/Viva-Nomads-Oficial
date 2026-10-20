@@ -1,68 +1,34 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { TIPOS_PARCEIRO, validarInteresse } from "./interesse.ts";
+import { readFileSync } from "node:fs";
 
-const base = { tipo: "fotografo", nome: "Ana Fotos", cidade: "Uberlândia", uf: "mg", contato: "(34) 99999-1234", site: "", aceite: true };
+/*
+  Prompt 31a: o formulário de interesse (parceiros_interesse, 0104) saiu. Os interesses viraram pedidos de parceria
+  pendentes (0190) e o "Seja parceiro" grava em parceiro_solicitacoes (servidor, conta com e-mail confirmado).
+*/
+const lei = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
-test("interesse válido normaliza UF, WhatsApp e tipo", () => {
-  const v = validarInteresse(base);
-  assert.ok(v.ok);
-  if (!v.ok) return;
-  assert.equal(v.dados.uf, "MG");
-  assert.equal(v.dados.whatsapp, "34999991234");
-  assert.equal(v.dados.email, null);
-  assert.equal(v.dados.tipo, "fotografo");
-});
-
-test("contato por e-mail também vale; site sem https ganha https e http é recusado", () => {
-  const v = validarInteresse({ ...base, contato: "ana@exemplo.com", site: "instagram.com/ana" });
-  assert.ok(v.ok);
-  if (v.ok) { assert.equal(v.dados.email, "ana@exemplo.com"); assert.equal(v.dados.site, "https://instagram.com/ana"); }
-  const ruim = validarInteresse({ ...base, site: "javascript:alert(1)" });
-  assert.equal(ruim.ok, false);
-  const http = validarInteresse({ ...base, site: "http://x.com" });
-  assert.ok(http.ok && http.dados.site === "https://x.com/");
-});
-
-test("casos negativos: tipo fora da lista, sem aceite, contato inválido, UF inválida, nome curto", () => {
-  assert.equal(validarInteresse({ ...base, tipo: "admin" }).ok, false);
-  assert.equal(validarInteresse({ ...base, aceite: false }).ok, false);
-  assert.equal(validarInteresse({ ...base, contato: "123" }).ok, false);
-  assert.equal(validarInteresse({ ...base, uf: "ZZ" }).ok, false);
-  assert.equal(validarInteresse({ ...base, nome: "A" }).ok, false);
-  assert.equal(validarInteresse({ ...base, cidade: "x".repeat(81) }).ok, false);
-});
-
-test("armadilha preenchida (robô) é marcada para descartar sem erro", () => {
-  const v = validarInteresse({ ...base, armadilha: "http://spam" });
-  assert.ok(v.ok && v.descartar);
-});
-
-test("tipos cobrem os cards da tela", () => {
-  assert.deepEqual([...TIPOS_PARCEIRO.map((t) => t.valor)].sort(), ["empresa", "fotografo", "gestor", "seguros", "servicos"]);
-});
-
-test("migração 0104: anon só insere com aceite, admin lê, aplicar registra 0104_", async () => {
-  const { readFileSync } = await import("node:fs");
-  const lei = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
+test("migração 0104 continua no histórico; 0190 copia os interesses para pedidos pendentes (origem site)", () => {
   const mig = lei("supabase/migrations/0104_parceiros_interesse.sql");
-  assert.match(mig, /grant insert \(tipo, nome, cidade, uf, whatsapp, email, site, aceite_contato\) on public\.parceiros_interesse to anon/);
-  assert.doesNotMatch(mig, /grant select[^;]*to[^;]*anon/);
   assert.match(mig, /with check \(aceite_contato and status = 'novo'\)/);
-  assert.match(mig, /using \(public\.is_admin\(\)\)/);
-  const ap = lei("supabase/producao/aplicar-0104.sql");
-  assert.match(ap, /^begin;$/m);
-  assert.match(ap, /'0104_parceiros_interesse'/);
+  const m190 = lei("supabase/migrations/0190_parceiros_ciclo.sql");
+  assert.match(m190, /insert into public\.parceiro_solicitacoes \(interesse_id,[\s\S]*'pendente', 'site', i\.criado_em\s+from public\.parceiros_interesse i/);
+  assert.match(m190, /not exists \(select 1 from public\.parceiro_solicitacoes s where s\.interesse_id = i\.id\)/);
 });
 
-test("rota e página: limite por IP, sem dangerouslySetInnerHTML, textos da marca", async () => {
-  const { readFileSync } = await import("node:fs");
-  const lei = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-  assert.match(lei("src/app/api/parceiros-interesse/route.ts"), /consumirLimite\(`parceiros:ip:\$\{ipHash\(request\)\}`/);
-  const tela = lei("src/app/(public)/parceiros/page.tsx") + lei("src/app/(public)/parceiros/parceiro-form.tsx");
+test("página /parceiros: Seja parceiro, regras claras, sem dangerouslySetInnerHTML nem palavras proibidas", () => {
+  const tela = lei("src/app/(public)/parceiros/page.tsx") + lei("src/components/parceiros/seja-parceiro-form.tsx");
   assert.doesNotMatch(tela, /dangerouslySetInnerHTML/);
   assert.doesNotMatch(tela, /apartamentos?|comiss[ãa]o|corretagem|intermedia[çc][ãa]o|vistoria|aluguel/i);
-  assert.match(tela, /taxa de parceria/i);
-  assert.match(tela, /a Viva não recebe esse dinheiro/);
-  assert.doesNotMatch(tela, /Uberl[âa]ndia/);
+  assert.match(tela, /<RegrasParceiros pagamentoAtivo=\{PAGAMENTO_PARCEIROS_ATIVO\}/);
+  assert.match(tela, /<SejaParceiroForm /);
+  assert.doesNotMatch(tela, /todo o Brasil/i);
+});
+
+test("pedido de parceria: armadilha, limite por IP e por conta, e-mail confirmado", () => {
+  const acao = lei("src/lib/parceiros/solicitacao-actions.ts");
+  assert.match(acao, /if \(String\(entrada\?\.armadilha \?\? ""\)\.trim\(\)\) return \{ ok: true/);
+  assert.match(acao, /consumirLimite\(`parceria:ip:\$\{ip\}`, 5, HORA\)/);
+  assert.match(acao, /consumirLimite\(`parceria:uid:\$\{s\.user\.id\}`, 5, HORA\)/);
+  assert.match(acao, /email_confirmed_at/);
 });

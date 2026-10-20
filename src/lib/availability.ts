@@ -22,6 +22,22 @@ export function diaDisponivel(diaISO: string, fromISO: string, untilISO?: string
   return dia >= from && dia <= until;
 }
 
+export type EstadoDia = "disponivel" | "passado" | "indisponivel";
+
+/**
+ * Como o dia aparece no calendário (ordem dd15064d, D11): "passado" fica só
+ * esmaecido; "indisponivel" (fora da janela do anúncio ou fechado pelo dono) vem
+ * riscado e com fundo próprio, para não parecer um dia que já passou.
+ */
+export function estadoDiaCalendario(
+  diaISO: string,
+  opcoes: { fromISO: string; untilISO?: string | null; bloqueados?: ReadonlySet<string>; hojeISO?: string | null },
+): EstadoDia {
+  if (opcoes.hojeISO && diaISO < opcoes.hojeISO) return "passado";
+  if (!diaDisponivel(diaISO, opcoes.fromISO, opcoes.untilISO) || opcoes.bloqueados?.has(diaISO)) return "indisponivel";
+  return "disponivel";
+}
+
 /** Início efetivo do calendário: a data do anúncio, ou "hoje" se não houver. */
 export function inicioEfetivo(fromISO: string | null | undefined, hojeISO: string): string {
   return fromISO && fromISO.length >= 10 ? fromISO.slice(0, 10) : hojeISO;

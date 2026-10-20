@@ -34,7 +34,7 @@ const BASE: DadosDocumento = {
 test("recibo: partes com CPF, imóvel, período, aluguel + encargos = total, e nunca 'nota fiscal' como título", () => {
   const c = conteudoDocumento(BASE);
   const t = textoDocumento(c);
-  assert.equal(c.titulo, "Recibo de aluguel");
+  assert.equal(c.titulo, "Recibo de pagamento");
   assert.equal(totalComEncargos(BASE), 3570.5);
   for (const trecho of ["Dono Um (CPF/CNPJ 123.456.789-00)", "Inquilina Dois (CPF/CNPJ 987.654.321-00)", "Rua das Flores 123, Uberlândia", "01/10/2026 a 30/11/2026", "Condomínio", "IPTU", "R$ 3.570,50", "CT-D7400000", "Não é nota fiscal", "não recebe aluguel nem caução"]) {
     assert.ok(t.includes(trecho), trecho);
@@ -98,7 +98,7 @@ function corpo(fonte: string, nome: string): string {
 }
 
 test("servidor: recibo só depois da confirmação do inquilino; papéis conferidos na devolução", () => {
-  assert.match(corpo(ler("lib/data/contratos-actions.ts"), "confirmarPagamento"), /after\(\(\) => emitirDoPagamento\(pagamentoId\)\)/);
+  assert.match(corpo(ler("lib/data/contratos-actions.ts"), "confirmarPagamento"), /after\(\(\) => emitirDoPagamento(ComRegistro)?\(pagamentoId\)\)/);
   assert.match(corpo(ler("lib/fiscal/emitir.ts"), "emitirDoPagamento"), /!pg\.confirmado_pelo_inquilino/);
   const docs = ler("lib/data/documentos-actions.ts");
   assert.match(corpo(docs, "registrarDevolucaoCaucao"), /ctx\.papel !== "dono"/);

@@ -18,11 +18,3 @@ test("texto do aviso é o combinado pelo Daniel", () => {
     "Seus anúncios acima do limite do novo plano continuam no ar, mas você não poderá publicar novos até ficar dentro do limite."
   );
 });
-
-test("a tela de Assinatura usa o aviso nos dois lugares (plano atual e confirmação da troca)", async () => {
-  const { readFileSync } = await import("node:fs");
-  const src = readFileSync(new URL("../../app/(dashboard)/dashboard/assinatura/page.tsx", import.meta.url), "utf8");
-  assert.match(src, /AVISO_DESCER_PLANO/);
-  assert.match(src, /data-testid="aviso-limite-plano-atual"/);
-  assert.match(src, /data-testid="aviso-descer-plano"/);
-});

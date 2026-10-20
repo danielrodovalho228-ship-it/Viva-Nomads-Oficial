@@ -16,8 +16,17 @@ export const LUMINANCIA_ESCURA = 70;
 export const LUMINANCIA_CLARA = 205;
 /** Variância do laplaciano (em cinza 0–255) abaixo da qual a foto está tremida. */
 export const NITIDEZ_MIN = 40;
-/** Distância de Hamming (0–64) até a qual duas fotos contam como repetidas. */
-export const DISTANCIA_REPETIDA = 5;
+/**
+ * Foto repetida (Q6, prompt 10): só QUASE IDÊNTICA — a mesma foto recortada, comprimida ou reenviada. Dois ângulos
+ * do mesmo cômodo NÃO são repetidos. Compara a "assinatura" (miniatura 16×16 em cinza, normalizada por média e
+ * desvio): distância média ≤ LIMIAR_REPETIDA. Nos testes, recorte de 10% + compressão fica em ~0,18 e outro ângulo
+ * do mesmo quarto em ≥ 0,30.
+ */
+export const LIMIAR_REPETIDA = 0.22;
+/** Fotos antigas (sem assinatura): dHash de 64 bits, só quase igual. */
+export const DISTANCIA_REPETIDA = 3;
+/** Lado da miniatura da assinatura. */
+export const LADO_ASSINATURA = 16;
 
 export type Orientacao = "horizontal" | "vertical" | "quadrada";
 
@@ -76,6 +85,8 @@ export interface Analise {
   nitidez: number;
   /** dHash de 64 bits em 16 caracteres hexadecimais. */
   hash: string;
+  /** Miniatura 16×16 normalizada (512 hex) — detecta foto quase idêntica. */
+  assinatura?: string;
 }
 
 /** Cinza (0–255) de pixels RGBA. */
@@ -134,16 +145,70 @@ export function distanciaHash(a: string, b: string): number {
   return d;
 }
 
+/** Reduz uma imagem em cinza (W×H) para w×h pela média de cada área. PURO. */
+export function reduzirCinza(cinza: ArrayLike<number>, W: number, H: number, w: number, h: number): Float32Array {
+  const o = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const x0 = Math.floor((x * W) / w);
+      const x1 = Math.max(x0 + 1, Math.floor(((x + 1) * W) / w));
+      const y0 = Math.floor((y * H) / h);
+      const y1 = Math.max(y0 + 1, Math.floor(((y + 1) * H) / h));
+      let soma = 0;
+      let n = 0;
+      for (let yy = y0; yy < y1; yy++) for (let xx = x0; xx < x1; xx++) (soma += cinza[yy * W + xx]), n++;
+      o[y * w + x] = n ? soma / n : 0;
+    }
+  }
+  return o;
+}
+
+/** Assinatura da foto: miniatura em cinza normalizada (média 0, desvio 1), limitada a ±4 e guardada em 1 byte. */
+export function assinaturaFoto(miniatura: ArrayLike<number>): string {
+  const n = miniatura.length;
+  let media = 0;
+  for (let i = 0; i < n; i++) media += miniatura[i];
+  media /= n || 1;
+  let v = 0;
+  for (let i = 0; i < n; i++) v += (miniatura[i] - media) ** 2;
+  const desvio = Math.sqrt(v / (n || 1)) || 1;
+  let hex = "";
+  for (let i = 0; i < n; i++) {
+    const z = Math.max(-4, Math.min(4, (miniatura[i] - media) / desvio));
+    hex += Math.round(((z + 4) / 8) * 255).toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
+/** Distância média (em desvios) entre duas assinaturas; Infinity se alguma for inválida. */
+export function distanciaAssinatura(a: string | undefined, b: string | undefined): number {
+  if (!a || !b || a.length !== b.length || a.length % 2 || !/^[0-9a-f]+$/.test(a + b)) return Infinity;
+  let d = 0;
+  const n = a.length / 2;
+  for (let i = 0; i < n; i++) d += Math.abs(parseInt(a.slice(2 * i, 2 * i + 2), 16) - parseInt(b.slice(2 * i, 2 * i + 2), 16));
+  return (d / n) * (8 / 255);
+}
+
+/** As duas fotos são a mesma (quase idênticas)? Usa a assinatura; sem ela, o dHash bem estrito. */
+export function fotosRepetidas(a: { hash?: string; assinatura?: string }, b: { hash?: string; assinatura?: string }): boolean {
+  if (a.assinatura && b.assinatura) return distanciaAssinatura(a.assinatura, b.assinatura) <= LIMIAR_REPETIDA;
+  return !!a.hash && !!b.hash && distanciaHash(a.hash, b.hash) <= DISTANCIA_REPETIDA;
+}
+
 export type CodigoAviso = "pequena" | "escura" | "estourada" | "tremida" | "repetida";
 
 export interface AvisoFoto {
   codigo: CodigoAviso;
   mensagem: string;
   dica: string;
+  /** Na "repetida": id da foto parecida (o card mostra a miniatura dela). */
+  parecidaCom?: string;
 }
 
-/** Avisos de qualidade de uma foto. `outrosHashes` = fotos já no anúncio. */
-export function avisosDaFoto(a: Analise, outrosHashes: readonly string[] = []): AvisoFoto[] {
+export type FotoComparavel = string | { id?: string; hash?: string; assinatura?: string };
+
+/** Avisos de qualidade de uma foto. `outras` = fotos já no anúncio (hash antigo ou {id, hash, assinatura}). */
+export function avisosDaFoto(a: Analise, outras: readonly FotoComparavel[] = []): AvisoFoto[] {
   const avisos: AvisoFoto[] = [];
   if (Math.max(a.largura, a.altura) < LADO_MAIOR_MIN_PX) {
     avisos.push({
@@ -172,11 +237,15 @@ export function avisosDaFoto(a: Analise, outrosHashes: readonly string[] = []): 
       dica: "Apoie o celular com as duas mãos, toque na tela para focar e tire de novo.",
     });
   }
-  if (outrosHashes.some((h) => distanciaHash(a.hash, h) <= DISTANCIA_REPETIDA)) {
+  const parecida = outras
+    .map((o) => (typeof o === "string" ? { hash: o } : o))
+    .find((o) => fotosRepetidas(a, o));
+  if (parecida) {
     avisos.push({
       codigo: "repetida",
       mensagem: "Parece repetida.",
-      dica: "Já há uma foto muito parecida neste anúncio. Troque por outro ângulo do cômodo.",
+      dica: "Esta foto é quase igual a outra do anúncio. Troque por outro ângulo do cômodo.",
+      ...(parecida.id ? { parecidaCom: parecida.id } : {}),
     });
   }
   return avisos;

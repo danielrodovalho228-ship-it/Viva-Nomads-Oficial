@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { PROD_HOST } from "../fixtures/accounts";
+import { NO_LABORATORIO, liberarLimitePedidos } from "../fixtures/laboratorio";
 import { marcadorPedido, preencherPedido, publicarPreenchido, encerrarPedido } from "../fixtures/pedido";
 
 // Trecho estável do aviso de contato (lib/pedidos/pedidos.ts → CONTATO_AVISO).
@@ -26,6 +27,11 @@ const podeEscrever = !isProd || process.env.TESTES_ALLOW_PROD_WRITES === "1";
 
 test.describe("T5 — Pedido de moradia", () => {
   test.use({ storageState: authFile("inquilino") });
+
+  // Laboratório: a conta fixa do inquilino publica pedidos em vários specs; o limite de 3 por dia estourava aqui.
+  test.beforeAll(async () => {
+    if (NO_LABORATORIO) await liberarLimitePedidos();
+  });
 
   test("telefone na apresentação → bloqueio visível e publicação impedida", async ({ page }) => {
     await preencherPedido(page, {

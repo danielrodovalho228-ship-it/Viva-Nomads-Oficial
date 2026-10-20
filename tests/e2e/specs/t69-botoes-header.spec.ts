@@ -82,17 +82,19 @@ test.describe("T69 — header e botões padronizados", () => {
     });
   }
 
+  // Um teste por página e largura: se uma rota travar (compilação fria no lab), só ela falha e o nome do teste diz qual.
   for (const largura of [360, 390, 768, 1280]) {
-    test(`botões das páginas públicas a ${largura}px: uma linha, sem estourar, mesmo padrão`, async ({ page }) => {
-      // 9 páginas por largura: sem esperar "networkidle" (o mapa de /buscar e os pings não deixam a rede
-      // ociosa a 768 px e estouravam os 120 s), só o HTML e o primeiro botão renderizado.
-      test.setTimeout(240_000);
-      await page.setViewportSize({ width: largura, height: 900 });
-      const problemas: string[] = [];
-      const estilos = new Set<string>();
-      for (const rota of PAGINAS) {
-        await page.goto(rota, { waitUntil: "domcontentloaded" });
-        await page.waitForLoadState("load");
+    for (const rota of PAGINAS) {
+      test(`botões de ${rota} a ${largura}px: uma linha, sem estourar, mesmo padrão`, async ({ page }) => {
+        test.setTimeout(90_000);
+        await page.setViewportSize({ width: largura, height: 900 });
+        // Sem esperar "load" nem "networkidle": o mapa de /buscar e os pings seguram a rede além do limite.
+        // Aquece a rota pelo servidor (sem navegador) e registra o tempo: se travar de novo, o log do lab diz se foi o servidor ou o navegador.
+        const t0 = Date.now();
+        const aquecimento = await page.request.get(rota, { timeout: 60_000 }).catch(() => null);
+        const servidorMs = Date.now() - t0;
+        await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 60_000 });
+        test.info().annotations.push({ type: "tempo", description: `${rota} ${largura}px: servidor ${servidorMs} ms (HTTP ${aquecimento?.status() ?? "sem resposta"}), página ${Date.now() - t0} ms` });
         await page.locator("[data-cta]").first().waitFor({ state: "attached", timeout: 10_000 }).catch(() => undefined);
         // Abre o menu mobile do header (se a página tiver o header público) para medir os botões dele também.
         // Só clica no botão visível (a 768 px podem existir dois "Abrir menu", um escondido).
@@ -113,20 +115,16 @@ test.describe("T69 — header e botões padronizados", () => {
           }
           return out;
         });
-        for (const x of r) {
-          if (x.prob) problemas.push(`${rota} "${x.txt}": ${x.prob}`);
-          if (x.estilo) estilos.add(x.estilo);
+        const problemas = r.filter((x) => x.prob).map((x) => `"${x.txt}": ${x.prob}`);
+        expect(problemas, "botões que quebram/estouram").toEqual([]);
+        for (const e of new Set(r.filter((x) => x.estilo).map((x) => x.estilo!))) {
+          const [bg, raio, peso] = e.split("|");
+          expect(raio, e).toBe("8px");
+          expect(peso, e).toBe("600");
+          expect([PRIMARIO, "rgb(255, 255, 255)", "rgba(0, 0, 0, 0)"], e).toContain(bg);
         }
-      }
-      expect(problemas, "botões que quebram/estouram").toEqual([]);
-      for (const e of estilos) {
-        const [bg, raio, peso] = e.split("|");
-        expect(raio, e).toBe("8px");
-        expect(peso, e).toBe("600");
-        expect([PRIMARIO, "rgb(255, 255, 255)", "rgba(0, 0, 0, 0)"], e).toContain(bg);
-      }
-      expect([...estilos].some((e) => e.startsWith(PRIMARIO))).toBe(true);
-    });
+      });
+    }
   }
 
   test("foco pelo teclado mostra o anel no botão primário", async ({ page }) => {

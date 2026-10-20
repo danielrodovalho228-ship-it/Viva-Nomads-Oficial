@@ -17,6 +17,7 @@ test.describe("T81 — dono (já anunciou)", () => {
   test.use({ storageState: authFile("proprietario") });
 
   test("grupos de dono no mesmo menu; grupo da tela atual abre sozinho", async ({ page }) => {
+    test.setTimeout(120_000); // duas navegações com networkidle no servidor frio do laboratório
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     await expect.poll(() => topo(page)).toEqual([
@@ -50,8 +51,10 @@ test.describe("T81 — dono (já anunciou)", () => {
     await page.goto("/dashboard/simulador", { waitUntil: "networkidle" });
     const g = menu(page).getByRole("button", { name: "Ferramentas" });
     await expect(g).toHaveAttribute("aria-expanded", "true");
-    for (const r of ["Todas as ferramentas", "Simulador de rentabilidade", "Calculadora de ROI", "Viabilidade", "Orçamentos"])
+    for (const r of ["Todas as ferramentas", "Simulador de rentabilidade", "Calculadora de ROI", "Orçamentos"])
       await expect(menu(page).getByRole("link", { name: r })).toBeVisible();
+    // Prompt 16: "Viabilidade" saiu do menu (a página redireciona para a Calculadora de ROI).
+    await expect(menu(page).getByRole("link", { name: "Viabilidade" })).toHaveCount(0);
     await expect(menu(page).getByRole("link", { name: "Simulador de rentabilidade" })).toHaveAttribute("aria-current", "page");
   });
 });
@@ -64,7 +67,7 @@ test.describe("T81 — quem nunca anunciou", () => {
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     await expect.poll(() => topo(page)).toEqual(["Visão geral", "Minha moradia", "Mensagens", "Ferramentas", "Minha conta"]);
     await menu(page).getByRole("button", { name: "Minha moradia" }).click();
-    for (const r of ["Buscar imóveis", "Favoritos & comparações", "Candidaturas", "Minhas estadias"])
+    for (const r of ["Buscar imóveis", "Favoritos & comparações", "Candidaturas", "Contratos", "Locações"])
       await expect(menu(page).getByRole("link", { name: r })).toBeVisible();
     await page.screenshot({ path: "tests/laboratorio/saida/t79-menu-sem-imovel-1440.png" });
 
@@ -81,9 +84,9 @@ test.describe("T81 — quem nunca anunciou", () => {
     const gaveta = page.locator("aside").filter({ has: page.getByTestId("menu-cascata") }).last();
     await expect(gaveta).toBeVisible();
     await gaveta.getByRole("button", { name: "Minha moradia" }).click();
-    await expect(gaveta.getByRole("link", { name: "Minhas estadias" })).toBeVisible();
+    await expect(gaveta.getByRole("link", { name: "Locações" })).toBeVisible();
     await page.screenshot({ path: "tests/laboratorio/saida/t79-menu-390.png" });
-    await gaveta.getByRole("link", { name: "Minhas estadias" }).click();
+    await gaveta.getByRole("link", { name: "Locações" }).click();
     await expect(page).toHaveURL(/\/dashboard\/locacoes/);
   });
 });

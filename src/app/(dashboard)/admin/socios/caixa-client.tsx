@@ -1,5 +1,6 @@
 "use client";
 
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Image as ImageIcon, Inbox, Loader2, Mic, Paperclip, RotateCw, Send, Square, X } from "lucide-react";
@@ -18,7 +19,7 @@ const COR_STATUS: Record<ItemCaixa["status"], string> = {
 const ACEITA = "audio/*,image/*,.pdf,.docx,.xlsx,.txt,.m4a,.opus,.ogg";
 
 const quando = (iso: string) =>
-  new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  dataHoraBRT(iso, { tabela: true });
 
 function IconeTipo({ tipo }: { tipo: ItemCaixa["tipo"] }) {
   const cls = "h-4 w-4 shrink-0 text-sage";

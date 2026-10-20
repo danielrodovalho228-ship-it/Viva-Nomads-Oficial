@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { imovelPublicado } from "@/lib/anuncio/publicados";
 import { useState } from "react";
 import Link from "next/link";
@@ -36,20 +37,21 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
   // Ids excluídos nesta sessão (rascunhos descartados) — some da lista na hora.
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
   const [excluindo, setExcluindo] = useState<string | null>(null);
+  const [erroExcluir, setErroExcluir] = useState<string | null>(null);
   const properties = (demoOn ? DEMO_PROPERTIES : real).filter((p) => !removidos.has(p.id));
 
   async function excluirRascunho(id: string) {
-    if (!confirm("Excluir este rascunho? Esta ação não pode ser desfeita.")) return;
+    setErroExcluir(null);
     setExcluindo(id);
     const res = await deleteProperty(id);
     setExcluindo(null);
     if (res.ok) setRemovidos((s) => new Set(s).add(id));
-    else alert(res.error ?? "Não foi possível excluir agora.");
+    else setErroExcluir(res.error ?? "Não foi possível excluir agora.");
   }
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="imoveis"
         title="Meus imóveis"
         subtitle="Gerencie seus anúncios e o status de publicação."
         action={
@@ -61,6 +63,11 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
           </div>
         }
       />
+      {erroExcluir && (
+        <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" data-testid="imoveis-erro">
+          {erroExcluir}
+        </p>
+      )}
 
       {properties.length === 0 ? (
         <EmptyState
@@ -195,6 +202,12 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                         >
                           {p.status === "draft" ? "Continuar editando" : "Editar"}
                         </ButtonLink>
+                        {/* Cartões compartilháveis (T2): o cartão do anúncio publicado, com QR para o WhatsApp. */}
+                        {p.status === "active" && (
+                          <ButtonLink href={`/dashboard/imoveis/${p.id}/cartao`} variant="outline" size="sm" data-testid="cartao-anuncio-link">
+                            Cartão para compartilhar
+                          </ButtonLink>
+                        )}
                         {/* Qualificação é POR IMÓVEL: cada rascunho qualifica o seu. */}
                         {p.status === "draft" && (
                           <ButtonLink href={`/qualificar?imovel=${p.id}`} variant="outline" size="sm">
@@ -203,15 +216,17 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                         )}
                         {/* Excluir rascunho (item 1 do reteste — limpa órfãos). */}
                         {p.status === "draft" && (
-                          <button
-                            type="button"
-                            onClick={() => excluirRascunho(p.id)}
+                          <ConfirmarNaPagina
+                            aviso="Excluir este rascunho? Esta ação não pode ser desfeita."
+                            confirmar="Excluir"
+                            onConfirmar={() => excluirRascunho(p.id)}
                             disabled={excluindo === p.id}
-                            title="Excluir rascunho"
-                            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            ariaLabel="Excluir rascunho"
+                            botaoClassName="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            testid="excluir-rascunho"
                           >
                             <Trash2 className="h-4 w-4" />
-                          </button>
+                          </ConfirmarNaPagina>
                         )}
                       </div>
                     )}

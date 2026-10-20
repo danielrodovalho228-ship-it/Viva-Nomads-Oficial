@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { getProperty, listProperties } from "@/lib/data/properties";
 import { isDemoMode } from "@/lib/env";
-import { isExemplo } from "@/lib/demo-listing";
-import { formatBRL } from "@/lib/utils";
+import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
+import { tituloAbaImovel, descricaoAbaImovel } from "@/lib/anuncio/metadados-imovel";
 import { PropertyJsonLd } from "@/components/seo/property-json-ld";
 import { PropertyDetail } from "./property-detail";
+import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
+import { getPerfilProprietario } from "@/lib/data/perfil-proprietario";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -18,10 +20,10 @@ interface Params {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const property = await getProperty(id);
-  if (!property) return { title: "Imóvel não encontrado" };
+  if (!property) return { title: "Página não encontrada", robots: { index: false, follow: false } };
 
-  const title = `${property.title} — ${formatBRL(property.monthlyPrice)}/mês`;
-  const description = `${property.propertyType} ${adjetivoMobiliado(property.propertyType)} em ${property.neighborhood}, ${property.city}. ${property.bedrooms} quartos · ${property.areaM2} m² · período mínimo ${property.minPeriodDays} dias.`;
+  const title = tituloAbaImovel(property);
+  const description = descricaoAbaImovel(property);
 
   return {
     title,
@@ -30,7 +32,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     alternates: { canonical: `/imoveis/${property.id}` },
     // Anúncio de EXEMPLO (ilustrativo): fora do Google (noindex), mas ainda
     // visível ao visitante com o selo "Exemplo ilustrativo".
-    ...(isExemplo(property.id) ? { robots: { index: false, follow: true } } : {}),
+    ...(isExemplo(property.id) || ehAnuncioDeTeste(property.title) ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title,
       description,
@@ -56,18 +58,19 @@ export default async function PropertyDetailPage({ params }: Params) {
   const property = await getProperty(id);
   if (!property) notFound();
 
-  const similar = (await listProperties()).filter((p) => p.id !== property.id).slice(0, 3);
+  const [similares, proprietario] = await Promise.all([
+    listProperties(),
+    // Exemplo nunca busca perfil (continua "Proprietário (exemplo)", sem números).
+    isExemplo(property) ? Promise.resolve(null) : getPerfilProprietario(property.ownerId),
+  ]);
+  const similar = similares.filter((p) => p.id !== property.id).slice(0, 3);
   return (
     <>
       <PropertyJsonLd property={property} />
-      <PropertyDetail property={property} similar={similar} />
+      <PropertyDetail property={property} similar={similar} proprietario={proprietario} />
+      {/* Cartões compartilháveis: visita por QR/link assinado (ref + UTM) é conferida no servidor. */}
+      <RefDaVisita imovelId={property.id} />
     </>
   );
 }
 
-/** Concordância: "Casa mobiliada", "Apartamento mobiliado". */
-function adjetivoMobiliado(tipo: string | null | undefined): string {
-  return /^(casa|kitnet|quitinete|cobertura|su[ií]te|ch[aá]cara|loja|sala)/i.test(String(tipo ?? "").trim())
-    ? "mobiliada"
-    : "mobiliado";
-}

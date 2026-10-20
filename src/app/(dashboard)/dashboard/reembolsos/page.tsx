@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useMemo, useState } from "react";
 import {
   Plus,
@@ -57,7 +58,7 @@ export default function ReembolsosPage() {
 function ReembolsoReal() {
   return (
     <div className="w-full">
-      <PageTitle
+      <PageTitle capa="reembolsos"
         title="Reembolso da caução"
         subtitle="O cálculo do reembolso abre quando uma locação é encerrada."
       />
@@ -115,13 +116,13 @@ function ReembolsoPreview() {
 
   return (
     <div>
-      <PageTitle
+      <PageTitle capa="reembolsos"
         title="Reembolso da caução"
         subtitle="A plataforma calcula, notifica e documenta. O pagamento é feito pelo locador — a plataforma nunca movimenta o valor."
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="space-y-6">
           {/* Contexto da locação */}
           <Panel>
             <div className="rounded-xl bg-surface-2 p-4 text-sm">
@@ -185,12 +186,13 @@ function ReembolsoPreview() {
                 placeholder="Motivo (ex.: reparo de parede)"
                 className="rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
               />
-              <input
-                type="number"
-                min={0}
-                value={valor || ""}
-                onChange={(e) => setValor(Number(e.target.value))}
-                placeholder="Valor"
+              <CampoReais
+                semPrefixo
+                centavos
+                value={valor || null}
+                onChange={(v) => setValor(v ?? 0)}
+                placeholder="Valor (R$)"
+                ariaLabel="Valor (R$)"
                 className="rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
               />
               <input

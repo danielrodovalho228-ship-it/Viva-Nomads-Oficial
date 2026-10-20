@@ -8,7 +8,8 @@ const ler = (caminho: string) => readFileSync(new URL(`../../${caminho}`, import
 
 test("#67: /precos e /para-proprietarios não prometem seguro-fiança nem 'garante o aluguel'", () => {
   for (const f of ["src/app/(public)/precos/page.tsx", "src/app/(public)/para-proprietarios/page.tsx"]) {
-    const t = ler(f);
+    // /precos: o conteúdo das caixas fica em src/lib/precos-pagina.ts (prompt 13).
+    const t = f.includes("precos/") ? ler(f) + ler("src/lib/precos-pagina.ts") : ler(f);
     assert.doesNotMatch(t, /seguro-fian/i, f);
     assert.doesNotMatch(t, /garante o aluguel/i, f);
     assert.match(t, /não é a garantidora/, f);
@@ -38,8 +39,8 @@ test("#69: aviso de testes único, no layout público, sem cópias nas páginas"
 
 test("#70: /parceiros/fotografos tem 'pedir é grátis' e botão para /parceiros", () => {
   const t = ler("src/app/(public)/parceiros/fotografos/page.tsx");
-  assert.match(t, /Pedir é grátis: a Viva não cobra nada de você; o fotógrafo paga a taxa de parceria só quando aceita o pedido\./);
-  assert.match(t, /href="\/parceiros"[^>]*>É fotógrafo\? Seja parceiro</);
+  assert.match(t, /Pedir é grátis: a Viva não cobra nada de você pelo pedido\./);
+  assert.match(t, /href="\/parceiros(\?[^"]*)?"[^>]*>É fotógrafo\? Seja parceiro</);
 });
 
 test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e frase do Plano Gestor", () => {
@@ -48,7 +49,8 @@ test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e fras
   assert.equal(titulo, "Seja parceiro: fotógrafos e gestores");
   assert.ok(`${titulo} · Viva Nomads`.length <= 60);
   assert.doesNotMatch(titulo, /Viva Nomads/);
-  const p = ler("src/app/(public)/precos/page.tsx");
+  // Prompt 13: a frase do Plano Gestor está na janela do formulário (a caixa cinza repetia a tabela).
+  const p = ler("src/components/precos/plano-gestor-form.tsx");
   assert.match(p, /31 imóveis ou mais\? Plano Gestor: condições negociadas, entre em contato\./);
   assert.doesNotMatch(p, /a conversa é direta/);
 });
@@ -116,9 +118,9 @@ test("F5: /seguranca sem a frase cortada sobre corretagem/CRECI (até o parecer)
 test("F4: comparativo de preços monta frases com números em uma só string (sem texto colado)", () => {
   const t = ler("src/components/precos/comparativo-precos.tsx");
   // texto + {expressão} lado a lado no JSX vira nós separados; o QA leu "de3meses aR$ 4.320por mês"
-  assert.doesNotMatch(t, /Reserva de \{COMPARE_MESES\}/);
+  assert.doesNotMatch(t, /Contrato de \{COMPARE_MESES\}/);
   assert.doesNotMatch(t, /^\s*, conferido em \{/m);
-  assert.match(t, /`Reserva de \$\{COMPARE_MESES\} meses a \$\{reaisInteiros\(COMPARE_ALUGUEL\)\} por mês/);
+  assert.match(t, /`Contrato de \$\{COMPARE_MESES\} meses a \$\{reaisInteiros\(COMPARE_ALUGUEL\)\} por mês/);
   assert.match(t, /`, conferido em \$\{dataBR\(l\.conferidoEm\)\}`/);
 });
 

@@ -1,35 +1,32 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { MIN_IMOVEIS_ANALISE_CARTEIRA } from "../../../src/lib/cobranca/regra";
 
 /**
- * T97 — "Ver planos" das ferramentas bloqueadas leva a /precos (ordens 3a136e90 e
- * 90181c57 #93, Moacir 15/10/2026). A Viva não vende mensalidade: o cartão de
- * recurso bloqueado (PlanGate) nunca aponta para /dashboard/assinatura.
- * Se a conta de teste já tiver plano Gestor a ferramenta abre e o teste se pula
- * (nunca passa em falso).
+ * T97 — Ferramentas sem trava de plano (prompt 16, antes "PlanGate leva a /precos"):
+ *  - /dashboard/viabilidade saiu e leva à Calculadora de ROI;
+ *  - a "Análise da carteira" abre a partir de 3 imóveis ATIVOS (regra das faixas). Abaixo disso, a tela diz quantos
+ *    faltam — nada de "Faça upgrade", "Ver planos" ou link para a assinatura.
  */
-const FERRAMENTAS = ["/dashboard/carteira", "/dashboard/viabilidade"];
+test.describe("T97 — Análise da carteira pela regra das faixas e Viabilidade → ROI @criticos", () => {
+  test.use({ storageState: authFile("proprietario") });
 
-test.describe("T97 — PlanGate leva a /precos @criticos", () => {
-  test.use({ storageState: authFile("proprietario"), viewport: { width: 390, height: 844 } });
+  for (const largura of [390, 1280]) {
+    test(`${largura}px — viabilidade redireciona; carteira sem trava de plano`, async ({ page }) => {
+      await page.setViewportSize({ width: largura, height: 900 });
+      await page.goto("/dashboard/viabilidade", { waitUntil: "domcontentloaded" });
+      await expect(page).toHaveURL(/\/dashboard\/roi-imovel$/);
 
-  for (const rota of FERRAMENTAS) {
-    test(`${rota}: ferramenta bloqueada → Ver planos → /precos`, async ({ page }) => {
-      await page.goto(rota, { waitUntil: "domcontentloaded" });
-      const bloqueio = page.getByRole("heading", { name: /Recurso do plano/i });
-      const aberta = await bloqueio.waitFor({ state: "visible", timeout: 15_000 }).then(() => false, () => true);
-      test.skip(aberta, "Conta de teste com plano que já libera a ferramenta.");
-
-      const ver = page.getByRole("link", { name: "Ver planos" });
-      await expect(ver).toHaveAttribute("href", "/precos");
-      // Caso negativo: nenhum link da tela aponta para a assinatura aposentada.
-      await expect(page.locator('main a[href*="/dashboard/assinatura"]')).toHaveCount(0);
-      const rolagem = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(rolagem).toBeLessThanOrEqual(1);
-
-      await ver.click();
-      await expect(page).toHaveURL(/\/precos$/);
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await page.goto("/dashboard/carteira", { waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("heading", { name: "Análise da carteira" }).first()).toBeVisible({ timeout: 15_000 });
+      const corpo = await page.locator("main").innerText();
+      expect(corpo).not.toMatch(/Recurso do plano|upgrade|Ver planos|Plano Gestor/i);
+      await expect(page.locator('main a[href="/precos"], main a[href*="/dashboard/assinatura"]')).toHaveCount(0);
+      if (await page.getByTestId("carteira-fechada").count()) {
+        await expect(page.getByTestId("carteira-fechada")).toContainText(`Abre com ${MIN_IMOVEIS_ANALISE_CARTEIRA} imóveis ativos`);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+      await page.screenshot({ path: `tests/laboratorio/saida/t97-carteira-${largura}.png`, fullPage: true });
     });
   }
 });

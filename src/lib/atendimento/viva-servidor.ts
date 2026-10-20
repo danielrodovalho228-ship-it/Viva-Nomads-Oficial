@@ -1,9 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { linhaQuemRespondeuHtml } from "@/lib/atendimento/quem-respondeu";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA, situacaoLimite } from "@/lib/limites";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { agoraBRTexto } from "@/lib/atendimento/data-br";
 import { notify } from "@/lib/notifications";
+import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
 import { calcularPrazos, frasePrazo, prazoPrometido, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
@@ -285,7 +287,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
           name: (dono.full_name as string) ?? undefined,
           userId: lead.owner_id as string,
           pushUrl: "/dashboard/leads",
-          subject: "Lembrete: um interessado aguarda sua resposta",
+          subject: ASSUNTOS.lembreteInteressado,
         }).catch(() => null);
       }
       await registrarAcaoViva(admin, c, "viva_lembrete_dono", "candidatura");
@@ -370,7 +372,7 @@ async function aplicar(admin: Admin, c: ChamadoViva, r: ResultadoViva, agora: Da
   const resumo: ChamadoResumo = { ...c, prioridade };
   if (r.resposta) {
     const pessoa = r.destino === "ia" ? `<p style="margin:12px 0 0;"><a href="${linkPessoa(c.id)}" style="color:#1c6b3a;font-weight:600;">Falar com uma pessoa</a></p>` : "";
-    await avisarUsuario(resumo, "chamado_respondido", `<p style="margin:12px 0 0;color:#334155;white-space:pre-line;">${textoEmail(r.resposta, 2500)}</p>${pessoa}`);
+    await avisarUsuario(resumo, "chamado_respondido", `${linhaQuemRespondeuHtml("viva")}<p style="margin:12px 0 0;color:#334155;white-space:pre-line;">${textoEmail(r.resposta, 2500)}</p>${pessoa}`);
   }
   // P1/P2 já avisaram a equipe na abertura (PR 1); aprovação sempre avisa.
   const jaAvisada = ehAbertura && (c.prioridade === "p1" || c.prioridade === "p2") && r.destino !== "aprovacao";
@@ -556,7 +558,7 @@ export async function responderNaEquipe(chamadoId: string, momento: "abertura" |
       const resposta = `${texto!.slice(0, 4800)}\n\n${RODAPE_AUTOMATICO}`;
       await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "ia", simulacao, corpo: resposta });
       await registrarAcaoViva(admin, c, "respondido_viva", `respondido pela Viva (informação oficial)${fontes.length ? ` · fontes: ${fontes.join(", ")}` : ""}`);
-      await avisarUsuario(c as unknown as ChamadoResumo, "chamado_respondido", `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(resposta, 1600)}</blockquote>`);
+      await avisarUsuario(c as unknown as ChamadoResumo, "chamado_respondido", `${linhaQuemRespondeuHtml("viva")}<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(resposta, 1600)}</blockquote>`);
     } else {
       if (momento === "abertura") await registrarAcaoViva(admin, c, "acolhido", `acolhimento automático; aguarda o Daniel: ${motivo ?? "sem sugestão"}`);
       if (texto) {

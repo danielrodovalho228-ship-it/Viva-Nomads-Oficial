@@ -32,6 +32,9 @@ interface Conferido {
   locatario: string;
   /** Anulado (0083): o documento existiu, mas não vale mais. Documento fiscal nunca é apagado. */
   anulado_em: string | null;
+  /** 0182: motivo da anulação e o contrato no formato da plataforma (VN-CT-…). Antes da 0182: ausentes. */
+  anulado_motivo?: string | null;
+  contrato?: string | null;
 }
 
 async function consultar(codigo: string): Promise<{ estado: "ok" | "nao" | "limite" | "indisponivel"; doc: Conferido | null }> {
@@ -61,7 +64,8 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
           <>
             {doc.anulado_em ? (
               <p className="mt-3 inline-flex items-start gap-2 text-sm font-semibold text-red-700" data-testid="conferir-anulado">
-                <XCircle className="mt-0.5 h-5 w-5 shrink-0" /> Documento ANULADO em {dataBR(doc.anulado_em)}. Foi gerado pela plataforma, mas não vale mais.
+                <XCircle className="mt-0.5 h-5 w-5 shrink-0" /> Documento ANULADO em {dataBR(doc.anulado_em)}
+                {doc.anulado_motivo ? ` (${doc.anulado_motivo})` : ""}. Foi gerado pela plataforma, mas não vale mais.
               </p>
             ) : (
               <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-forest" data-testid="conferir-ok">
@@ -72,6 +76,7 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
               {[
                 ["Documento", ROTULO_TIPO[doc.tipo as TipoDocumento] ?? doc.tipo],
                 ["Número", doc.numero],
+                ...(doc.contrato ? [["Contrato", doc.contrato]] : []),
                 ["Emitido em", dataBR(doc.emitido_em)],
                 ["Valor", brl(Number(doc.valor))],
                 ...(doc.periodo_inicio ? [["Período", `${dataBR(doc.periodo_inicio)} a ${dataBR(doc.periodo_fim)}`]] : []),
@@ -84,7 +89,7 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
                 </div>
               ))}
             </dl>
-            <p className="mt-4 text-xs text-muted">Por privacidade, mostramos só as iniciais das partes. Não é nota fiscal: a Viva Nomads não recebe aluguel nem caução.</p>
+            <p className="mt-4 text-xs text-muted">Por privacidade, mostramos só as iniciais das partes. Não é nota fiscal: a Viva Nomads não recebe o valor mensal nem a caução.</p>
           </>
         ) : (
           <p className="mt-3 inline-flex items-start gap-2 text-sm text-ink" data-testid="conferir-nao">

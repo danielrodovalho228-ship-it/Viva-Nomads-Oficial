@@ -75,11 +75,14 @@ test("rota /api/ai/fotos: login de proprietário, flag, limite diário e corpo l
   assert.doesNotMatch(src, /NEXT_PUBLIC_/);
 });
 
-test("tela: botão 'Preencher com IA' no passo Fotos, marcado 'sugerido pela IA', só preenche o que está vazio", () => {
-  const src = readFileSync(join(process.cwd(), "src/app/(dashboard)/dashboard/imoveis/novo/page.tsx"), "utf8");
-  assert.match(src, /Preencher com IA/);
-  assert.match(src, /Sugerido pela IA/);
-  assert.match(src, /\/api\/ai\/fotos/);
+test("tela (prompt 10): a IA roda sozinha ao terminar o envio das fotos, uma vez por rascunho, e marca 'Sugerido · confira'", () => {
+  const dir = join(process.cwd(), "src/app/(dashboard)/dashboard/imoveis/novo");
+  const pagina = readFileSync(join(dir, "page.tsx"), "utf8");
+  assert.match(pagina, /\/api\/ai\/fotos/);
+  assert.match(pagina, /precisaReanalisar\(iaAnalisadas, fotosUrls\)/);
+  assert.match(pagina, /miniaturaBase64\(u, FOTOS_LADO_MAX_PX\)/);
+  assert.match(readFileSync(join(dir, "campos.tsx"), "utf8"), /MARCA_SUGERIDO/);
+  assert.match(readFileSync(join(dir, "etapa-fotos.tsx"), "utf8"), /Analisando as fotos/);
 });
 
 test("IA das fotos: 7 fotos bloqueia, 8 libera (ordem abc34d72)", async () => {
@@ -90,4 +93,43 @@ test("IA das fotos: 7 fotos bloqueia, 8 libera (ordem abc34d72)", async () => {
   assert.equal(mensagemFaltamFotosIa(6), "Faltam 2 fotos para a IA montar seu anúncio.");
   assert.equal(mensagemFaltamFotosIa(7), "Falta 1 foto para a IA montar seu anúncio.");
   assert.equal(mensagemFaltamFotosIa(8), "");
+});
+
+test("prompt 10: rejeita comodidade fora da lista, título acima de 60, palavra proibida; sinais de trabalho viram comodidades", async () => {
+  const { sanearSugestao: s, SUGESTAO_LAB_BRUTA, TITULO_MAX } = await import("./fotos-prompt.ts");
+  const base = { ehImovel: true, tipo: "apartamento", quartos: 1, banheiros: 1, mobiliado: true, comodos: [], capa: null };
+  const r = s({
+    ...base,
+    comodidades: ["piscina_olimpica", "ar_condicionado"],
+    titulo: "x".repeat(TITULO_MAX + 1),
+    descricao: "Ótimo para temporada e para hóspedes.",
+    trabalho: { mesa: true, cadeira: false, iluminacao: true },
+  });
+  assert.equal(r.ok, true);
+  if (!r.ok) return;
+  assert.deepEqual(r.sugestao.comodidades, ["ar_condicionado", "mesa_trabalho", "iluminacao_boa"]);
+  assert.equal(r.sugestao.titulo, undefined);
+  assert.equal(r.sugestao.descricao, undefined);
+  for (const proibida of ["Aluguel mensal", "Vistoria feita", "Para 2 hóspedes"]) {
+    const x = s({ ...base, comodidades: [], trabalho: { mesa: false, cadeira: false, iluminacao: false }, titulo: proibida, descricao: null });
+    assert.ok(x.ok && x.sugestao.titulo === undefined, proibida);
+  }
+  const lab = s(SUGESTAO_LAB_BRUTA);
+  assert.ok(lab.ok);
+  if (!lab.ok) return;
+  assert.ok((lab.sugestao.titulo ?? "").length <= 60);
+  assert.equal(lab.sugestao.capa, 0);
+  assert.equal(lab.sugestao.comodos?.length, 6);
+  assert.ok(lab.sugestao.comodidades.includes("mesa_trabalho") && lab.sugestao.comodidades.includes("cadeira_ergonomica"));
+});
+
+test("prompt 10: uma análise por rascunho; refaz só quando mais de 3 fotos mudaram", async () => {
+  const { precisaReanalisar } = await import("./fotos-prompt.ts");
+  const fotos = ["a", "b", "c", "d", "e", "f", "g", "h"];
+  assert.equal(precisaReanalisar(null, fotos), true);
+  assert.equal(precisaReanalisar(fotos, fotos), false);
+  assert.equal(precisaReanalisar(fotos, [...fotos.slice(0, 5), "x", "y", "z"]), false); // 3 trocadas
+  assert.equal(precisaReanalisar(fotos, [...fotos.slice(0, 4), "w", "x", "y", "z"]), true); // 4 trocadas
+  assert.equal(precisaReanalisar(fotos, [...fotos, "x", "y", "z"]), false); // 3 novas
+  assert.equal(precisaReanalisar(fotos, [...fotos, "w", "x", "y", "z"]), true); // 4 novas
 });

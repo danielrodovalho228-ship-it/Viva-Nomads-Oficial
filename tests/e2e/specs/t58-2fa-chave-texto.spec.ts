@@ -34,10 +34,11 @@ for (const largura of [360, 390]) {
     test.use({ storageState: authFile("proprietario"), viewport: { width: largura, height: 800 }, permissions: ["clipboard-read", "clipboard-write"] });
 
     test("mostra a chave, copia e oferece o link do app antes do QR", async ({ page }) => {
+      // O prazo vale desde o início: antes ele só era ampliado depois do goto/clique e o teste estourava os 45 s.
+      test.setTimeout(150000);
       await page.goto("/dashboard/conta/seguranca");
       await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
 
-      test.setTimeout(90000);
       const chave = page.getByTestId("chave-2fa");
       await expect(chave).toBeVisible();
       const texto = (await chave.textContent())?.trim() ?? "";
@@ -59,7 +60,7 @@ for (const largura of [360, 390]) {
       for (let i = 0; i < n; i++) {
         const el = alvos.nth(i);
         if (!(await el.isVisible())) continue;
-        await el.evaluate((e) => e.scrollIntoView({ block: "center" }));
+        await el.evaluate((e) => e.scrollIntoView({ block: "center", behavior: "instant" }));
         const livre = await el.evaluate((e) => {
           const r = e.getBoundingClientRect();
           const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
@@ -79,7 +80,7 @@ for (const largura of [360, 390]) {
         expect(caixa.height).toBeGreaterThanOrEqual(44);
         expect(caixa.x + caixa.width).toBeLessThanOrEqual(largura);
         const livreAtivo = await remover.evaluate((e) => {
-          e.scrollIntoView({ block: "center" });
+          e.scrollIntoView({ block: "center", behavior: "instant" });
           const r = e.getBoundingClientRect();
           const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
           return !!topo && (e === topo || e.contains(topo));
@@ -95,6 +96,36 @@ for (const largura of [360, 390]) {
         await expect(page.getByRole("button", { name: /Ativar duas etapas/ })).toBeVisible();
       } finally {
         // Limpeza garantida: mesmo se o teste falhar no meio, remove o fator para a conta não ficar com 2FA.
+        await removerFator(page, segredo);
+      }
+    });
+    // Ordem c09fadd5 item 3 (achado do Moacir, 458dd4ad): no cenário obrigatório (admin) o botão
+    // "Continuar para o destino" aparece sozinho na linha, com fonte ≥ 12 px e altura ≥ 44 px.
+    test("cenário obrigatório: 'Continuar para o destino' tem 44 px e fonte legível", async ({ page }) => {
+      test.setTimeout(150000);
+      await page.goto("/dashboard/conta/seguranca?obrigatorio=admin&redirect=%2Fadmin");
+      await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
+      const segredo = ((await page.getByTestId("chave-2fa").textContent()) ?? "").replace(/\s/g, "");
+      try {
+        await page.locator("#codigo-ativar").fill(gerarCodigoTotp(segredo));
+        await page.getByRole("button", { name: "Confirmar código e ativar" }).click();
+        const continuar = page.getByRole("link", { name: "Continuar para o destino" });
+        await expect(continuar).toBeVisible();
+        const caixa = (await continuar.boundingBox())!;
+        expect(caixa.height).toBeGreaterThanOrEqual(44);
+        expect(caixa.x + caixa.width).toBeLessThanOrEqual(largura);
+        const fonte = await continuar.evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+        expect(fonte).toBeGreaterThanOrEqual(12);
+        // Um por linha: nenhum outro link/botão da tela divide a faixa vertical do botão.
+        const outros = await page.locator("main a[href], main button").evaluateAll((els, alvo) => {
+          return els.filter((e) => {
+            const r = e.getBoundingClientRect();
+            return r.width > 0 && !(e as HTMLElement).innerText.includes("Continuar para o destino") &&
+              r.top < alvo.bottom && r.bottom > alvo.top;
+          }).length;
+        }, { top: caixa.y, bottom: caixa.y + caixa.height });
+        expect(outros, "outro alvo na mesma linha do botão").toBe(0);
+      } finally {
         await removerFator(page, segredo);
       }
     });

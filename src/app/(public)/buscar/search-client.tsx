@@ -4,9 +4,12 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users, Search } from "lucide-react";
+import { CHAVE_ULTIMA_BUSCA, serializarUltimaBusca } from "@/lib/marcas/regra";
+import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users, Search, Megaphone } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
+import { BarraComparar } from "@/components/busca/barra-comparar";
+import { alternarSelecao } from "@/lib/busca/comparar";
 // O mapa (Mapbox com chave; senão Leaflet + CARTO) só carrega no navegador e
 // só no computador (ordem ca0e7dad: no celular a busca segue sem mapa).
 const SearchMap = dynamic(
@@ -16,20 +19,26 @@ const SearchMap = dynamic(
 import { EmptySearchIllustration } from "@/components/illustrations";
 import { cn, distanceKm, formatBRL } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
+import { comTotalMes } from "@/lib/precos";
 import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
 import { registrarEvento } from "@/lib/eventos/registrar";
+import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 import { SELO_NF_UI } from "@/lib/flags";
 import { PainelFiltrosCelular } from "@/components/busca/painel-filtros-celular";
 import { COMODIDADES_FILTRO, ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
+import { isExemplo } from "@/lib/demo-listing";
+import { exemplosForcadosNaUrl, mostrarCartaoPedido, semExemplosQuandoHaReal, TEXTO_CARTAO_PEDIDO, TEXTO_PUBLICAR_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
+import { DescricaoBusca } from "@/components/busca/descricao-busca";
+import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -75,7 +84,9 @@ function aceitaGarantia(p: Property, g: string): boolean {
   return arr.includes(g); // caucao_avista | caucao_parcelada | titulo
 }
 
-export function SearchClient({ properties, topo }: { properties: Property[]; /** Título (e banner do tablet) vindo da página. */ topo?: React.ReactNode }) {
+export function SearchClient({ properties: imoveis, topo }: { properties: Property[]; /** Título (e banner do tablet) vindo da página. */ topo?: React.ReactNode }) {
+  // Filtro, ordem e pino usam o total do mês do cartão (ordem 826719b1, D1).
+  const properties = useMemo(() => imoveis.map((p) => comTotalMes(p)), [imoveis]);
   const [locationQuery, setLocationQuery] = useState("");
   // Coordenadas de um endereço escolhido no autocomplete (filtra por raio).
   const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -92,6 +103,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   const [dataEntrada, setDataEntrada] = useState(""); // disponível até esta data de entrada
   const [garantia, setGarantia] = useState(""); // "" | caucao_avista | caucao_parcelada | titulo | seguro_fianca
   const [petsOnly, setPetsOnly] = useState(false);
+  const [exemplosForcados, setExemplosForcados] = useState(false); // ?exemplos=1: laboratório/QA
+
   const [petPorte, setPetPorte] = useState<FiltrosPainel["petPorte"]>("");
   const [furnishedOnly, setFurnishedOnly] = useState(false);
   const [readyToLiveOnly, setReadyToLiveOnly] = useState(false);
@@ -105,6 +118,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   const [painelAberto, setPainelAberto] = useState(false); // painel de filtros do celular (ordem 314f764e)
   const [drawerOpen, setDrawerOpen] = useState(false); // painel "Mais filtros" (Fase 2)
   const [activeId, setActiveId] = useState<string | null>(null); // hover: card ↔ pin (só destaque)
+  const [comparar, setComparar] = useState<string[]>([]); // ordem fdd61de0: até 3 imóveis marcados
+  const [avisoComparar, setAvisoComparar] = useState<string | null>(null);
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null); // pin clicado: card aberto no mapa
   // Mapa só a partir de 1024 px (lg): no celular/tablet nem carrega o componente.
   const [comMapa, setComMapa] = useState(false);
@@ -165,6 +180,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   // compartilhados e reloads mostrarem exatamente os filtros ativos (M7).
   const restaurarFiltrosDaURL = useCallback(() => {
     const sp = new URLSearchParams(window.location.search);
+    if (exemplosForcadosNaUrl(window.location.search)) setExemplosForcados(true);
     const local = sp.get("local");
     const lat = Number(sp.get("lat"));
     const lng = Number(sp.get("lng"));
@@ -178,7 +194,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     const num = (k: string) => Number(sp.get(k)) || 0;
     // Preço: aceita `orcamento` (busca do hero) OU `preco` (sync interno) — A3.
     const orc = num("orcamento") || num("preco");
-    if ([2500, 3500, 5000].includes(orc)) setMaxPrice(orc);
+    if (orc >= 300 && orc <= 50000) setMaxPrice(orc);
     if ([1, 2, 3].includes(num("quartos"))) setMinBedrooms(num("quartos"));
     if (num("adultos") >= 1) setAdults(Math.min(16, num("adultos")));
     if (num("criancas") >= 1) setChildren(Math.min(10, num("criancas")));
@@ -218,6 +234,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   // popstate, marca skipNextSync para não reescrever a URL que o histórico
   // acabou de restaurar.
   useEffect(() => {
+    // Lê a URL (sistema externo) e aplica nos controles; só roda no navegador.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     restaurarFiltrosDaURL();
   }, [restaurarFiltrosDaURL]);
 
@@ -283,6 +301,21 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades,
   ]);
 
+  // Pedido pré-preenchido (ordem 8302024d): guarda no aparelho a data de entrada e o período da última
+  // busca; a página do imóvel usa para sugerir a data (editável). Nada de dado pessoal, nada vai ao servidor.
+  useEffect(() => {
+    try {
+      if (dataEntrada || maxPeriod > 0 || adults + children > 1) {
+        window.localStorage.setItem(
+          CHAVE_ULTIMA_BUSCA,
+          serializarUltimaBusca({ inicio: dataEntrada, meses: maxPeriod > 0 ? Math.round(maxPeriod / 30) : 0, pessoas: adults + children })
+        );
+      }
+    } catch {
+      /* localStorage bloqueado: segue sem guardar */
+    }
+  }, [dataEntrada, maxPeriod, adults, children]);
+
   // Evento anônimo "busca" (0067): 1 por local pesquisado, depois que a pessoa
   // para de digitar. Só a CIDADE vai (e só se for de um anúncio da lista) —
   // nunca o texto digitado, que pode ser um endereço.
@@ -299,8 +332,11 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     return () => window.clearTimeout(timer);
   }, [locationQuery, properties]);
 
+  // Muda a cada "Limpar filtros": remonta a busca por descrição (campo e chips) — ordem 826719b1, D5.
+  const [reinicioDescricao, setReinicioDescricao] = useState(0);
   // Zera todos os filtros (usado no estado vazio para o usuário recomeçar).
   function clearFilters() {
+    setReinicioDescricao((n) => n + 1);
     setLocationQuery("");
     setGeoCenter(null);
     setRadiusKm(DEFAULT_RADIUS_KM);
@@ -367,12 +403,17 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     return { base: list, dist };
   }, [properties, locationQuery, geoCenter, radiusKm, adults, children, maxPeriod, typeFilter, faixa, dataEntrada, garantia, furnishedOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly]);
 
-  const contarComPainel = useCallback((f: FiltrosPainel) => base.filter((p) => passaNoPainel(p, f)).length, [base]);
+  const contarComPainel = useCallback(
+    (f: FiltrosPainel) => semExemplosQuandoHaReal(base.filter((p) => passaNoPainel(p, f)), (p) => isExemplo(p.id), exemplosForcados).length,
+    [base, exemplosForcados]
+  );
 
   const results = useMemo(() => {
     let list = base.filter((p) => passaNoPainel(p, filtrosPainel));
-    if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
-    else if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
+    // Prompt 30, item 6: com imóvel real no resultado, os exemplos saem; só exemplos → aparecem marcados "exemplo".
+    list = semExemplosQuandoHaReal(list, (p) => isExemplo(p.id), exemplosForcados);
+    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
+    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
     else if (sort === "recent")
       list = [...list].sort(
@@ -388,7 +429,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
           prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto)
       );
     return list;
-  }, [base, dist, filtrosPainel, sort]);
+  }, [base, dist, exemplosForcados, filtrosPainel, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +
@@ -446,6 +487,43 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     setFurnishedOnly(false);
   }
 
+  // Busca por descrição (ordem c470bb63): cidades e bairros que existem no catálogo.
+  const locaisDoCatalogo = useMemo(
+    () => [...new Set(properties.flatMap((p) => [p.city, p.neighborhood]).filter(Boolean))],
+    [properties]
+  );
+  // Só mexe no que a descrição citou; o resto dos filtros fica como a pessoa deixou.
+  function aplicarDescricao(f: FiltrosDescricao) {
+    if (f.maxPrice) setMaxPrice(f.maxPrice);
+    if (f.minBedrooms) setMinBedrooms(f.minBedrooms);
+    if (f.petsOnly) {
+      setPetsOnly(true);
+      setPetPorte(f.petPorte);
+    }
+    if (f.homeOfficeOnly) setHomeOfficeOnly(true);
+    if (f.readyToLiveOnly) setReadyToLiveOnly(true);
+    if (f.furnishedOnly) setFurnishedOnly(true);
+    if (f.comodidades.length) setComodidades((l) => [...new Set([...l, ...f.comodidades])]);
+    if (f.local) {
+      setLocationQuery(f.local);
+      setGeoCenter(null);
+    }
+  }
+  function removerDescricao(chave: ChaveChip) {
+    if (chave === "local") {
+      setLocationQuery("");
+      setGeoCenter(null);
+    } else if (chave === "maxPrice") setMaxPrice(0);
+    else if (chave === "minBedrooms") setMinBedrooms(0);
+    else if (chave === "petsOnly") {
+      setPetsOnly(false);
+      setPetPorte("");
+    } else if (chave === "homeOfficeOnly") setHomeOfficeOnly(false);
+    else if (chave === "readyToLiveOnly") setReadyToLiveOnly(false);
+    else if (chave === "furnishedOnly") setFurnishedOnly(false);
+    else setComodidades((l) => l.filter((c) => c !== chave));
+  }
+
   const nPainel = contarFiltrosPainel(filtrosPainel);
   // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
   const versaoBusca = [
@@ -478,16 +556,29 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     <TituloBuscaContexto.Provider value={tituloBusca}>
     <div className="flex flex-col py-4 sm:py-6 lg:px-6 lg:py-0" data-testid="busca">
       {topo && <div className="-mt-4 sm:-mt-6 lg:order-2 lg:mt-0">{topo}</div>}
+      <DescricaoBusca key={reinicioDescricao} locais={locaisDoCatalogo} onAplicar={aplicarDescricao} onRemover={removerDescricao} />
       {slotHeader &&
         createPortal(
-          <BuscaCompacta
-            local={locationQuery.trim()}
-            periodo={PERIODO_LABEL[maxPeriod] ?? (dataEntrada ? `Entrada ${formatDatePtBR(dataEntrada)}` : "")}
-            hospedes={adults + children}
-            nFiltros={activeCount}
-            aberto={painelFiltros}
-            onAlternar={() => setPainelFiltros((v) => !v)}
-          />,
+          <div className="flex min-w-0 max-w-full items-center gap-2">
+            <BuscaCompacta
+              local={locationQuery.trim()}
+              periodo={PERIODO_LABEL[maxPeriod] ?? (dataEntrada ? `Entrada ${formatDatePtBR(dataEntrada)}` : "")}
+              hospedes={adults + children}
+              nFiltros={activeCount}
+              aberto={painelFiltros}
+              onAlternar={() => setPainelFiltros((v) => !v)}
+            />
+            {/* Prompt 30, item 6: "Publicar pedido" sempre visível, também na barra condensada. */}
+            {PEDIDO_MORADIA_ON && (
+              <Link
+                href={pedidoHref}
+                data-testid="busca-publicar-pedido-topo"
+                className="hidden h-12 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-white px-4 text-sm font-semibold text-forest transition hover:border-forest lg:inline-flex"
+              >
+                <Megaphone className="h-4 w-4" aria-hidden /> {TEXTO_PUBLICAR_PEDIDO}
+              </Link>
+            )}
+          </div>,
           slotHeader
         )}
 
@@ -528,8 +619,23 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
           </button>
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <div className="flex min-w-0 items-center gap-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-1">
             <SalvarBusca versao={versaoBusca} />
+            {PEDIDO_MORADIA_ON && (
+              <Link href={pedidoHref} data-testid="busca-publicar-pedido" className="ml-2 inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-forest underline">
+                <Megaphone className="h-4 w-4" aria-hidden /> {TEXTO_PUBLICAR_PEDIDO}
+              </Link>
+            )}
+            {activeCount > 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                data-testid="limpar-filtros-celular"
+                className="ml-2 whitespace-nowrap text-sm font-medium text-forest underline hover:text-blue-700"
+              >
+                Limpar filtros ({activeCount})
+              </button>
+            )}
           </div>
           <Select
             label="Ordenar resultados"
@@ -676,6 +782,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
               ["2500", "Até R$ 2.500"],
               ["3500", "Até R$ 3.500"],
               ["5000", "Até R$ 5.000"],
+              // Teto vindo da busca por descrição (ex.: 2.000): aparece como opção para o select não ficar em branco.
+              ...(maxPrice > 0 && ![2500, 3500, 5000].includes(maxPrice) ? ([[String(maxPrice), `Até ${formatBRL(maxPrice)}`]] as [string, string][]) : []),
             ]}
           />
           <GuestsPicker
@@ -777,7 +885,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
                 💻 Para trabalhar de casa
               </Chip>
               <Chip on={petsOnly} onClick={() => { setPetsOnly((v) => !v); setPetPorte(""); }}>
-                🐾 Aceita pet
+                🐾 Aceita pets
               </Chip>
               {petsOnly && (
                 <div data-testid="filtro-porte-pet" className="contents">
@@ -824,7 +932,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             )}
             {(adults > 1 || children > 0) && (
               <ActiveChip
-                label={`${adults + children} ${adults + children === 1 ? "hóspede" : "hóspedes"}`}
+                label={`${adults + children} ${adults + children === 1 ? "morador" : "moradores"}`}
                 onClear={() => {
                   setAdults(1);
                   setChildren(0);
@@ -858,7 +966,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             {homeOfficeOnly && (
               <ActiveChip label="Trabalhar de casa" onClear={() => setHomeOfficeOnly(false)} />
             )}
-            {petsOnly && <ActiveChip label={petPorte ? `Aceita pet ${ROTULO_PORTE_CURTO[petPorte]}` : "Aceita pet"} onClear={() => { setPetsOnly(false); setPetPorte(""); }} />}
+            {petsOnly && <ActiveChip label={petPorte ? `Aceita pets ${ROTULO_PORTE_CURTO[petPorte]}` : "Aceita pets"} onClear={() => { setPetsOnly(false); setPetPorte(""); }} />}
             {SELO_NF_UI && invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
             {insuranceOnly && (
               <ActiveChip label="Seguro-Fiança" onClear={() => setInsuranceOnly(false)} />
@@ -872,6 +980,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             <button
               type="button"
               onClick={clearFilters}
+              data-testid="limpar-filtros-chips"
               className="ml-1 text-sm font-medium text-forest underline hover:text-blue-700"
             >
               Limpar filtros
@@ -892,6 +1001,11 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             R$ 0 de taxa para você
           </p>
           <SalvarBusca versao={versaoBusca} />
+          {PEDIDO_MORADIA_ON && (
+            <Link href={pedidoHref} data-testid="busca-publicar-pedido" className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-forest underline lg:hidden">
+              <Megaphone className="h-4 w-4" aria-hidden /> {TEXTO_PUBLICAR_PEDIDO}
+            </Link>
+          )}
         </div>
             <div className="hidden shrink-0 items-center gap-3 lg:flex">
               {activeCount > 0 && (
@@ -928,6 +1042,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
                   ? `Ainda não temos imóvel para essa busca em ${locationQuery.trim()}.`
                   : "Ainda não há imóveis para esta busca"}
               </p>
+              <ConviteCidade texto={locationQuery} />
               {/* Zero resultado vira PORTA do Pedido de Moradia (Fase 4). */}
               {PEDIDO_MORADIA_ON ? (
                 <>
@@ -973,6 +1088,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
               </Link>
             </div>
           ) : (
+            // EXCEÇÃO da regra de grade par (ordem 86dcb4db, B2; decidido pela coordenação):
+            // ao lado do mapa a /buscar mantém 3 cards por linha em telas largas (aprovado na ordem ca0e7dad).
             <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 sm:gap-6 lg:gap-4 xl:grid-cols-3" data-testid="grade-resultados">
               {/* h2 (invisível) entre o h1 do topo e os h3 dos cards — sem pular nível. */}
               <h2 className="sr-only">Imóveis encontrados</h2>
@@ -985,26 +1102,39 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
                   onMouseEnter={() => setActiveId(p.id)}
                   onMouseLeave={() => setActiveId(null)}
                   className={cn(
-                    "h-full rounded-2xl transition-all",
+                    "flex h-full flex-col rounded-2xl transition-all",
                     (activeId === p.id || selecionadoId === p.id) && "ring-2 ring-forest ring-offset-2"
                   )}
                 >
-                  <PropertyCard
-                    property={p}
-                    periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined}
-                  />
+                  <div className="min-h-0 flex-1">
+                    <PropertyCard
+                      property={p}
+                      periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined}
+                    />
+                  </div>
+                  <label className="mt-1.5 flex cursor-pointer items-center gap-2 px-1 py-1 text-sm text-ink">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 accent-forest"
+                      data-testid="marcar-comparar"
+                      checked={comparar.includes(p.id)}
+                      onChange={() => {
+                        const r = alternarSelecao(comparar, p.id);
+                        setComparar(r.ids);
+                        setAvisoComparar(r.aviso);
+                      }}
+                    />
+                    Comparar
+                  </label>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Poucos resultados (1–3): card discreto do Pedido de Moradia (Fase 4). */}
-          {PEDIDO_MORADIA_ON && results.length > 0 && results.length <= 3 && (
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-champagne/40 bg-champagne/10 px-5 py-4">
-              <p className="text-sm text-ink">
-                Não achou o ideal?{" "}
-                <span className="text-muted">Publique um Pedido de Moradia e receba ofertas.</span>
-              </p>
+          {/* Menos de 3 imóveis REAIS (Prompt 30, item 6): a porta do pedido, já com cidade, datas e valor. */}
+          {PEDIDO_MORADIA_ON && results.length > 0 && mostrarCartaoPedido(results, (p) => isExemplo(p.id)) && (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-champagne/40 bg-champagne/10 px-5 py-4" data-testid="busca-cartao-pedido">
+              <p className="min-w-0 text-sm font-medium text-ink">{TEXTO_CARTAO_PEDIDO}</p>
               <Link
                 href={pedidoHref}
                 className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-bold text-forest transition-colors hover:brightness-105"
@@ -1013,6 +1143,10 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
               </Link>
             </div>
           )}
+
+          {/* Respiro: a barra fixa não cobre as caixinhas dos últimos cartões. */}
+          {comparar.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro" className="h-32" />}
+          <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
 
           {/* O botão flutuante "Fale com a Viva" não aparece aqui (cobria "Mais filtros"). */}
           <p className="mt-6 text-center text-sm text-muted" data-testid="buscar-ajuda">
@@ -1150,14 +1284,14 @@ function GuestsPicker({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label="Hóspedes"
+        aria-label="Moradores"
         className={cn(
           "inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border bg-white px-4 py-2 text-sm outline-none lg:px-3 xl:px-4",
           ativo ? "border-sage text-forest" : "border-sage-200 text-ink focus:border-sage"
         )}
       >
         <Users className="h-4 w-4 text-sage" />
-        {ativo ? (total === 1 ? "1 hóspede" : `${total} hóspedes`) : "Hóspedes"}
+        {ativo ? (total === 1 ? "1 morador" : `${total} moradores`) : "Moradores"}
         <ChevronDown className="h-4 w-4 text-muted" />
       </button>
       {open && (
@@ -1250,7 +1384,7 @@ function BuscaCompacta({
   const partes = [
     { rotulo: local || "Qualquer cidade", forte: true },
     { rotulo: periodo || "Qualquer período", forte: false },
-    { rotulo: hospedes > 1 ? `${hospedes} hóspedes` : "Hóspedes", forte: false },
+    { rotulo: hospedes > 1 ? `${hospedes} moradores` : "Moradores", forte: false },
   ];
   return (
     <button

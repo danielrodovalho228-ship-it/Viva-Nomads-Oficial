@@ -1,12 +1,13 @@
 "use client";
 
+import { CampoData } from "@/components/ui/campo-data";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Download, FileText, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/lib/utils";
 import { dataBR } from "@/lib/fiscal/documento";
-import type { AcertoView, DocumentoView } from "@/lib/data/documentos-actions";
+import type { AcertoView, DocumentoView, ReciboView } from "@/lib/data/documentos-actions";
 import { registrarDevolucaoCaucao, responderDevolucaoCaucao } from "@/lib/data/documentos-actions";
 import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-actions";
 
@@ -18,18 +19,41 @@ import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-act
 
 const input = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-1.5 text-sm text-ink outline-none focus:border-sage";
 
-export function ListaDocumentos({ documentos }: { documentos: DocumentoView[] }) {
-  if (documentos.length === 0) return null;
+export function ListaDocumentos({ documentos, recibos = [] }: { documentos: DocumentoView[]; recibos?: ReciboView[] }) {
+  if (documentos.length === 0 && recibos.length === 0) return null;
   return (
     <div className="mt-4 border-t border-sage-200 pt-3" data-testid="documentos-contrato">
       <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
         <FileText className="h-3.5 w-3.5" /> Documentos
       </p>
+      {recibos.length > 0 && (
+        <ul className="mb-2 space-y-1.5" data-testid="recibos-pagamentos">
+          {recibos.map((r) => (
+            <li key={r.pagamentoId} className="flex flex-wrap items-center justify-between gap-2 text-sm" data-testid="recibo-pagamento" data-emitido={r.documentoId ? "sim" : "nao"}>
+              <span className="min-w-0 text-ink">
+                {r.rotulo}
+                {r.numero && <span className="text-muted"> · {r.numero}</span>}
+                {r.anulado && <SeloAnulado motivo={r.anulado} />}
+              </span>
+              {r.documentoId ? (
+                <a href={`/api/documentos/${r.documentoId}`} className="inline-flex items-center gap-1 text-xs font-medium text-forest underline" data-testid="baixar-recibo">
+                  <Download className="h-3.5 w-3.5" /> Baixar recibo (PDF)
+                </a>
+              ) : (
+                <span className="text-xs text-muted" data-testid="recibo-em-preparacao">
+                  Recibo em preparação
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       <ul className="space-y-1.5">
         {documentos.map((d) => (
           <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="min-w-0 text-ink">
               {d.rotulo} <span className="text-muted">· {d.numero} · {formatBRL(d.valor)}</span>
+              {d.anulado && <SeloAnulado motivo={d.anulado} />}
               {d.periodoInicio && (
                 <span className="block text-xs text-muted">
                   {dataBR(d.periodoInicio)} a {dataBR(d.periodoFim)}
@@ -43,6 +67,15 @@ export function ListaDocumentos({ documentos }: { documentos: DocumentoView[] })
         ))}
       </ul>
     </div>
+  );
+}
+
+/** "Anulado: registro em duplicidade" — o documento existiu, o PDF continua acessível, mas não vale mais. */
+function SeloAnulado({ motivo }: { motivo: string }) {
+  return (
+    <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700" data-testid="selo-anulado">
+      Anulado: {motivo}
+    </span>
   );
 }
 
@@ -105,7 +138,7 @@ export function DevolucaoCaucaoDono({
         </label>
         <label className="text-xs text-muted">
           Data
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={input} />
+          <CampoData value={data} onChange={(e) => setData(e.target.value)} className={input} />
         </label>
         <label className="text-xs text-muted">
           Como
@@ -200,7 +233,7 @@ export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[
         {pendentes.map((p) => (
           <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="text-ink">
-              {p.tipo === "caucao" ? "Caução" : "Aluguel"} de {formatBRL(p.valor)} em {dataBR(p.dataPagamento)}, por {FORMA[p.forma] ?? p.forma}
+              {p.rotulo} · pago em {dataBR(p.dataPagamento)}, por {FORMA[p.forma] ?? p.forma}
             </span>
             <Button
               size="sm"
@@ -221,7 +254,7 @@ export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[
         ))}
       </ul>
       {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
-      <p className="mt-2 text-[11px] text-muted">Confirme só o que você realmente pagou. Ao confirmar, sai o recibo em PDF para você e para o proprietário.</p>
+      <p className="mt-2 text-[11px] text-muted">Confirme só o que você realmente pagou. Ao confirmar, o recibo em PDF fica disponível aqui e vai por e-mail para você e para o proprietário.</p>
     </div>
   );
 }

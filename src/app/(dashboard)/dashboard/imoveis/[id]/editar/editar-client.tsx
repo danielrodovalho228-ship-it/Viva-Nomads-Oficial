@@ -1,7 +1,9 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
+import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/components/anuncio/limpeza-estadia-campos";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { DateFieldBR } from "@/components/ui/date-field-br";
 import {
@@ -20,7 +22,11 @@ import {
   Dog,
   Cigarette,
   Baby,
+  Handshake,
+  MapPin,
 } from "lucide-react";
+import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
+import { NEGOCIACAO_PADRAO, ITENS_NEGOCIAVEIS, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
@@ -30,7 +36,7 @@ import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { MIN_FOTOS, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
 import { TERMO_IA_TEXTO, aceiteDoEditor } from "@/lib/anuncio/termo-ia";
-import { updateProperty, type PropertyInput } from "@/lib/data/actions";
+import { carregarLimitesNegociacao, salvarLimitesNegociacao, updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
 
@@ -59,9 +65,12 @@ export function EditarImovelClient({
   property,
   demo,
   fatos,
+  enderecoExatoInicial = "",
 }: {
   property: Property;
   demo: boolean;
+  /** Rua, número e complemento gravados (coluna restrita; só o dono lê). */
+  enderecoExatoInicial?: string;
   /** Fatos do banco (documento, plano, garantia, selo…). null = sem backend. */
   fatos: FatosAnuncio | null;
 }) {
@@ -87,6 +96,7 @@ export function EditarImovelClient({
   const [privacidade, setPrivacidade] = useState<Privacidade>(property.privacidade ?? PRIVACIDADE_VAZIA);
   const [petsAllowed, setPetsAllowed] = useState(property.petsAllowed ?? false);
   const [petsRegras, setPetsRegras] = useState<RegrasPetsForm>(formDeRegras(property.petsRegras));
+  const [limpeza, setLimpeza] = useState<LimpezaEstadiaForm>(formDeLimpeza(property.limpezaEstadia));
   const [smokingAllowed, setSmokingAllowed] = useState(property.smokingAllowed ?? false);
   const [childrenAllowed, setChildrenAllowed] = useState(property.childrenAllowed ?? true);
   const [bedrooms, setBedrooms] = useState(String(property.bedrooms || ""));
@@ -95,6 +105,20 @@ export function EditarImovelClient({
   const [maxGuests, setMaxGuests] = useState(String(property.maxGuests || ""));
   const [monthlyPrice, setMonthlyPrice] = useState(String(property.monthlyPrice || ""));
   const [condoFee, setCondoFee] = useState(String(property.condoFee || ""));
+  // Negociação (prompt 27, item 5): o anúncio publicado abre ESTE editor, que não tinha o bloco do passo 4.
+  const [negociacao, setNegociacao] = useState<Negociacao>(property.negociacao ?? NEGOCIACAO_PADRAO);
+  const [limites, setLimites] = useState<LimitesPrivados>({ valorMinimo: null, limpezasMax: null });
+  useEffect(() => {
+    if (demo) return;
+    let vivo = true;
+    carregarLimitesNegociacao(property.id)
+      .then((l) => vivo && setLimites(l))
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [demo, property.id]);
+  const [enderecoExato, setEnderecoExato] = useState(enderecoExatoInicial);
 
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [savedSection, setSavedSection] = useState<string | null>(null);
@@ -178,6 +202,7 @@ export function EditarImovelClient({
       furnished: property.furnished,
       petsAllowed,
       petsRegras: petsAllowed ? petsRegras : undefined,
+      limpezaEstadia: limpeza,
       smokingAllowed,
       childrenAllowed,
       // Só manda quando a coluna existe (property.privacidade definida): senão não grava nada.
@@ -190,6 +215,8 @@ export function EditarImovelClient({
           }
         : {}),
       maxGuests: Number(maxGuests) || undefined,
+      negociacao,
+      enderecoExato,
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
       googlePlaces: property.googlePlaces ?? [],
       proximities: (property.proximities ?? []).map((p) => ({
@@ -205,6 +232,15 @@ export function EditarImovelClient({
     setErro(null);
     setSavedSection(null);
     const res = await updateProperty(property.id, buildInput(asDraft));
+    // O limite PRIVADO vai à parte (tabela só do dono), nunca no anúncio.
+    if (res.ok && key === "negociacao") {
+      const l = await salvarLimitesNegociacao(property.id, negociacao.aceita ? limites : { valorMinimo: null, limpezasMax: null });
+      if (!l.ok) {
+        setSavingSection(null);
+        setErro(l.error ?? "Não foi possível salvar o seu limite.");
+        return false;
+      }
+    }
     setSavingSection(null);
     if (res.ok) {
       setSavedSection(key);
@@ -330,6 +366,31 @@ export function EditarImovelClient({
             definir a capa. Mínimo de {MIN_FOTOS} para publicar.
           </p>
           <PhotoUploader photos={photos} onChange={setPhotos} max={20} />
+        </Section>
+
+        {/* Endereço exato (complemento do prompt 23): sem ele, a visita presencial confirmada não mostra rua e número. */}
+        <Section
+          icon={MapPin}
+          title="Endereço exato"
+          summary={enderecoExato.trim() ? "Preenchido · só aparece para visita confirmada e inquilino aceito" : "Falta a rua e o número"}
+          saving={savingSection === "endereco"}
+          saved={savedSection === "endereco"}
+          onSave={() => saveSection("endereco")}
+        >
+          <label className="block text-sm font-medium text-ink">
+            Rua, número e complemento
+            <input
+              value={enderecoExato}
+              onChange={(e) => setEnderecoExato(e.target.value)}
+              maxLength={300}
+              placeholder="Ex.: Rua Modesta Maria, 120, apto 302"
+              className="mt-1 h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+              data-testid="editar-endereco-exato"
+            />
+          </label>
+          <p className="mt-2 text-xs text-muted">
+            Não aparece no anúncio. Só quem tem a visita presencial confirmada (até o horário da visita) ou a candidatura aceita vê.
+          </p>
         </Section>
 
         {/* Disponibilidade — 2 inputs claros */}
@@ -509,6 +570,9 @@ export function EditarImovelClient({
             />
           </div>
           {petsAllowed && <PetsRegrasCampos value={petsRegras} onChange={setPetsRegras} />}
+          <div className="mt-5">
+            <LimpezaEstadiaCampos value={limpeza} onChange={setLimpeza} />
+          </div>
           {property.privacidade && (
             <div className="mt-5">
               <PrivacidadeCampos valor={privacidade} onChange={setPrivacidade} />
@@ -530,9 +594,26 @@ export function EditarImovelClient({
             <NumField label="Banheiros" value={bathrooms} onChange={setBathrooms} />
             <NumField label="Área (m²)" value={areaM2} onChange={setAreaM2} />
             <NumField label="Capacidade (pessoas)" value={maxGuests} onChange={setMaxGuests} />
-            <NumField label="Aluguel (R$/mês)" value={monthlyPrice} onChange={setMonthlyPrice} />
-            <NumField label="Condomínio (R$/mês)" value={condoFee} onChange={setCondoFee} />
+            <ReaisField label="Valor mensal (R$/mês)" value={monthlyPrice} onChange={setMonthlyPrice} testid="editar-preco" />
+            <ReaisField label="Condomínio (R$/mês)" value={condoFee} onChange={setCondoFee} centavos />
           </div>
+        </Section>
+
+        {/* Negociação: o mesmo bloco do passo 4 do cadastro (Preço e disponibilidade). */}
+        <Section
+          icon={Handshake}
+          title="Negociação"
+          testid="editar-negociacao"
+          summary={
+            negociacao.aceita
+              ? `Aceito negociar: Sim · ${negociacao.itens.length ? negociacao.itens.map((i) => ITENS_NEGOCIAVEIS.find((x) => x.chave === i)?.rotulo).join(", ") : "nenhum item marcado"}`
+              : "Aceito negociar: Não (valor fixo)"
+          }
+          saving={savingSection === "negociacao"}
+          saved={savedSection === "negociacao"}
+          onSave={() => saveSection("negociacao")}
+        >
+          <BlocoNegociacao valor={negociacao} onValor={setNegociacao} limites={limites} onLimites={setLimites} valorMensal={Number(monthlyPrice) || 0} />
         </Section>
       </div>
 
@@ -558,9 +639,11 @@ function Section({
   saving,
   saved,
   onSave,
+  testid,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
+  testid?: string;
   summary: string;
   children: React.ReactNode;
   saving: boolean;
@@ -569,7 +652,7 @@ function Section({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <section className="overflow-hidden rounded-2xl border border-sage-200 bg-white">
+    <section className="overflow-hidden rounded-2xl border border-sage-200 bg-white" data-testid={testid}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -666,6 +749,23 @@ function NumField({
         value={value}
         onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
         className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
+      />
+    </label>
+  );
+}
+
+/** Dinheiro no formato brasileiro ("3.300"), pela fonte única lerReais (complemento do prompt 27, parte B). */
+function ReaisField({ label, value, onChange, centavos, testid }: { label: string; value: string; onChange: (v: string) => void; centavos?: boolean; testid?: string }) {
+  return (
+    <label className="text-sm">
+      <span className="mb-1 block font-medium text-ink">{label}</span>
+      <CampoReais
+        semPrefixo
+        centavos={centavos}
+        value={value === "" ? null : Number(value)}
+        onChange={(v) => onChange(v == null ? "" : String(v))}
+        className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
+        testid={testid}
       />
     </label>
   );

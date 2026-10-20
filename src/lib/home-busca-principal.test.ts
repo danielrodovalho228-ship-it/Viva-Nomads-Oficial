@@ -39,11 +39,12 @@ test("atalhos por categoria usam filtros que a /buscar realmente lê da URL", as
   assert.ok(rotulos.includes("3+ quartos"));
   const busca = ler("app/(public)/buscar/search-client.tsx");
   const lidos: Record<string, RegExp> = {
-    orcamento: /num\("orcamento"\)/,
+    preco: /num\("preco"\)/,
     pet: /on\("pet"\)/,
     homeoffice: /on\("homeoffice"\)/,
     quartos: /num\("quartos"\)/,
     local: /sp\.get\("local"\)/,
+    comod: /sp\.get\("comod"\)/,
   };
   for (const a of ATALHOS_CATEGORIA) {
     const u = new URL(a.href, "https://x");
@@ -52,7 +53,7 @@ test("atalhos por categoria usam filtros que a /buscar realmente lê da URL", as
     assert.ok(a.icone.length > 2, `${a.rotulo}: ícone lucide definido`);
   }
   // Valores aceitos pela /buscar (a busca ignora outros).
-  assert.match(busca, /\[2500, 3500, 5000\]\.includes\(orc\)/);
+  assert.match(busca, /orc >= 300 && orc <= 50000/); // faixa aceita (a busca por descrição pode citar 2.000)
   assert.match(busca, /\[1, 2, 3\]\.includes\(num\("quartos"\)\)/);
 });
 

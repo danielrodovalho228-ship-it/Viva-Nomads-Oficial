@@ -7,7 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  *  1. Push simulado: o app (Expo) avisa o site pelo evento `viva:push-token`; com o usuário logado o token
  *     é gravado em `push_tokens` (upsert pelo token, dono = sessão). Token malformado NÃO grava.
  *  2. Aviso por e-mail: mensagem do inquilino ao dono cai no LAB_OUTBOX (nada sai para a rede), sem telefone.
- *  3. Tela de Notificações da Conta (o "sininho" do menu): os avisos por e-mail e WhatsApp podem ser desligados.
+ *  3. Tela de Notificações da Conta (o "sininho" do menu): o aviso por e-mail pode ser desligado (WhatsApp saiu na ordem p30).
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -72,7 +72,7 @@ test.describe("T43 — Notificações", () => {
     test.setTimeout(90_000);
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard/conta/notificacoes", { waitUntil: "networkidle" });
-    await expect(page.getByText("Avisos por WhatsApp")).toBeVisible();
+    await expect(page.getByText("Avisos por WhatsApp")).toHaveCount(0); // saiu na ordem p30 item 8
     const chave = page.getByRole("switch", { name: "Avisos por e-mail" });
     await expect(chave).toBeEnabled({ timeout: 15_000 });
     await chave.click();

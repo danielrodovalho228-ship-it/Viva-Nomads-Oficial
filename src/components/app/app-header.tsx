@@ -23,7 +23,7 @@ export function AppHeader({ direita }: { direita?: React.ReactNode }) {
           type="button"
           onClick={() => (voltaParaAdmin(pathname) ? router.push("/admin") : router.back())}
           aria-label="Voltar"
-          className="grid h-10 w-10 place-items-center rounded-lg text-forest"
+          className="grid h-11 w-11 place-items-center rounded-lg text-forest"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>

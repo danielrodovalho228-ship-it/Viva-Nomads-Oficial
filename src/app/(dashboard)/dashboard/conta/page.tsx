@@ -1,24 +1,22 @@
 "use client";
 
 import { PetsFicha } from "@/components/account/pets-ficha";
-import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { ButtonLink } from "@/components/ui/button";
+import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
+import { PageTitle } from "@/components/dashboard/primitives";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
+import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
+import { CaixaEmailsTeste } from "@/components/account/caixa-emails-teste";
 import { ContaMenu } from "@/components/account/conta-menu";
-import {
-  AjudaContato,
-  ChangePassword,
-  DadosPessoais,
-  DangerZone,
-  DocumentoPessoa,
-  NotificationsPanel,
-  PerfilDoModo,
-} from "@/components/account/conta-secoes";
+import { AjudaContato, DadosPessoais, DangerZone, DocumentoPessoa, NotificationsPanel, QueroSerParceiro } from "@/components/account/conta-secoes";
+import { BlocoConta, ConfiancaLista, PerfilProfissional, VerComoOutrosVeem } from "@/components/account/conta-blocos";
 
 /**
- * Conta. No SITE: a página completa (todas as seções). No APP: um menu de itens
- * que abrem subtelas (/dashboard/conta/[secao]) — a página longa (2,3 telas de
- * rolagem no celular) vira uma lista curta.
+ * Conta (prompt 18). No SITE: 4 blocos, cada assunto uma vez —
+ * 1. Perfil público (foto, bio, idiomas, cidade e "Ver como os outros veem");
+ * 2. Dados da conta (nome, e-mail, celular com SMS, documento, pets);
+ * 3. Confiança e segurança (uma lista: e-mail, celular, identidade, LinkedIn, duas etapas e senha);
+ * 4. Preferências (notificações, ajuda, excluir conta).
+ * O simulador tributário fica só em Ferramentas (/dashboard/tributacao). No APP: o menu de subtelas.
  */
 export default function AccountPage() {
   return (
@@ -27,37 +25,34 @@ export default function AccountPage() {
         <ContaMenu />
       </div>
       <div className="web-only">
-        <PageTitle title="Conta" subtitle="Seus dados pessoais e preferências." />
-        <DadosPessoais />
-        <DocumentoPessoa />
-        <PetsFicha />
-        {/* Foto de perfil (Fase 2) — opcional; visibilidade decidida no servidor. */}
-        <AvatarUploader />
-        <PerfilDoModo />
-        <Panel title="Verificação" className="mt-6">
-          {/* Sem progresso inventado: a verificação ainda não existe (em breve). */}
-          <p className="text-sm text-muted">
-            A verificação de identidade abre em breve, por meio de um parceiro. Você pode usar a
-            plataforma normalmente enquanto isso.
-          </p>
-          <ButtonLink href="/dashboard/verificacao" variant="outline" className="mt-5">
-            Saber mais
-          </ButtonLink>
-        </Panel>
-        <Panel title="Segurança" className="mt-6">
-          <p className="text-sm text-muted">Verificação em duas etapas (obrigatória para a equipe) e senha.</p>
-          <ButtonLink href="/dashboard/conta/seguranca" variant="outline" className="mt-5">
-            Abrir segurança
-          </ButtonLink>
-        </Panel>
-        {/* Alterar senha (Atualização 20.7) */}
-        <ChangePassword />
-        {/* Notificações (Atualização 20.7) */}
-        <NotificationsPanel />
-        {/* Ajuda & contato — canal oficial de saída (Fase 3.3). */}
-        <AjudaContato />
-        {/* Zona de risco — excluir conta com dupla confirmação (Atualização 20.7) */}
-        <DangerZone />
+        <PageTitle capa="conta" title="Conta" subtitle="Seu perfil, seus dados e suas preferências." />
+
+        <BlocoConta id="perfil-publico" numero={1} titulo="Perfil público" subtitulo="O que os outros veem de você.">
+          <AvatarUploader />
+          <PerfilPublicoForm />
+          <PerfilProfissional />
+          <VerComoOutrosVeem />
+        </BlocoConta>
+
+        <BlocoConta id="dados" numero={2} titulo="Dados da conta" subtitulo="Só a Viva vê. Vão no contrato e nos avisos.">
+          <DadosPessoais />
+          <TelefoneVerificacao />
+          <DocumentoPessoa />
+          <PetsFicha />
+        </BlocoConta>
+
+        <BlocoConta id="confianca" numero={3} titulo="Confiança e segurança" subtitulo="O que já está verificado e como proteger a conta.">
+          <ConfiancaLista />
+        </BlocoConta>
+
+        <BlocoConta id="preferencias" numero={4} titulo="Preferências" subtitulo="Avisos, ajuda e a sua conta.">
+          <NotificationsPanel />
+          <AjudaContato />
+          <QueroSerParceiro />
+          <DangerZone />
+          {/* Por último: carrega depois da tela e não pode empurrar "Excluir conta" para fora do alcance (t183). */}
+          <CaixaEmailsTeste />
+        </BlocoConta>
       </div>
     </>
   );

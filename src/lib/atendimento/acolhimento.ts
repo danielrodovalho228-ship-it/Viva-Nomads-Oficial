@@ -87,6 +87,13 @@ export function nivelEscalonamento(c: { status: string; responsavel_tipo: string
   return h >= ESCALONAMENTO_H.vermelho ? 6 : h >= ESCALONAMENTO_H.aviso ? 2 : 0;
 }
 
+/** No 2º aviso (vermelho) a prioridade sobe um degrau: p4→p3→p2→p1; p1 fica em p1. */
+export function prioridadeSubida(atual: string): string {
+  const ordem = ["p4", "p3", "p2", "p1"];
+  const i = ordem.indexOf(atual);
+  return i < 0 ? atual : ordem[Math.min(i + 1, ordem.length - 1)];
+}
+
 /**
  * Status do chamado depois que a VIVA responde (decisão do Daniel, 13/10 — F22).
  * A resposta automática NÃO muda o status: o chamado nasce e fica "Aberto".

@@ -1,5 +1,6 @@
 "use client";
 
+import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Send, ArrowLeft } from "lucide-react";
@@ -17,6 +18,8 @@ import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
 import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/mensagens-filtros";
 import { cn } from "@/lib/utils";
+import { CartaoVisita } from "@/components/visitas/cartao-visita";
+import { visitaDaConversa } from "@/lib/data/visitas-video-actions";
 
 /**
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
@@ -202,14 +205,27 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
             >
               <ArrowLeft className="h-5 w-5 text-ink" />
             </button>
-            <Avatar name={active.name} size={36} photoUrl={avatars[active.id] ?? undefined} />
+            <span className="shrink-0" data-testid="conversa-avatar">
+              <Avatar name={active.name} size={36} photoUrl={avatars[active.id] ?? undefined} />
+            </span>
             <div className="min-w-0">
-              <p className="truncate font-medium text-ink">{active.name}</p>
+              <p className="truncate font-medium text-ink" data-testid="conversa-nome">{active.name}</p>
               {active.property && (
                 <p className="truncate text-xs text-muted">Sobre: {active.property}</p>
               )}
             </div>
           </header>
+          {!demo && active.propertyId && active.otherId && (
+            <VisitaNaConversa key={active.id} propertyId={active.propertyId} outroId={active.otherId} />
+          )}
+          {/* Ficha do pet da candidatura: só aparece para o DONO daquela candidatura (o servidor confere). */}
+          {!demo && active.propertyId && active.otherId && (
+            <FichaPetCandidatura
+              key={`pet-${active.id}`}
+              alvo={{ propertyId: active.propertyId, tenantId: active.otherId }}
+              className="border-b border-line bg-white px-4 py-3"
+            />
+          )}
           <div className="flex-1 space-y-3 overflow-y-auto bg-surface-2 p-5">
             {active.messages.map((m) => (
               <div key={m.id} className={cn("flex flex-col gap-1", m.from === "me" ? "items-end" : "items-start")}>
@@ -222,6 +238,15 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
                   )}
                 >
                   {m.text}
+                  {m.propostaId && (
+                    <Link
+                      href={`/dashboard/propostas/${m.propostaId}`}
+                      className={cn("mt-2 block rounded-lg px-3 py-1.5 text-center text-xs font-semibold", m.from === "me" ? "bg-white/15 text-white" : "bg-sage-100 text-forest")}
+                      data-testid="cartao-proposta"
+                    >
+                      Ver proposta
+                    </Link>
+                  )}
                 </span>
                 {m.from !== "me" && !active.contratoFechado && pareceDadoBancario(m.text) && (
                   <span data-testid="alerta-antigolpe-mensagem" role="alert" className="max-w-[75%] rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900">
@@ -257,5 +282,32 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
         </section>
       </div>
     </>
+  );
+}
+
+/**
+ * Prompt 23: a visita (vídeo ou presencial) em aberto entre as duas pessoas aparece no topo da conversa, com as mesmas
+ * ações do painel Visitas (confirmar, propor outro horário, recusar com motivo; o morador aceita o novo horário).
+ */
+function VisitaNaConversa({ propertyId, outroId }: { propertyId: string; outroId: string }) {
+  const [visita, setVisita] = useState<Awaited<ReturnType<typeof visitaDaConversa>>>(null);
+  const [versao, setVersao] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    visitaDaConversa(propertyId, outroId)
+      .then((v) => {
+        if (alive) setVisita(v);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [propertyId, outroId, versao]);
+  if (!visita) return null;
+  const { papel, ...v } = visita;
+  return (
+    <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita">
+      <CartaoVisita key={`${v.id}-${v.status}`} v={v} papel={papel} compacto onMudou={() => setVersao((n) => n + 1)} />
+    </div>
   );
 }

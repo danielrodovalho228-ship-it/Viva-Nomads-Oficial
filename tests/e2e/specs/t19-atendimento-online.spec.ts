@@ -45,7 +45,7 @@ test.describe("T19 — Visitante @criticos", () => {
     await expect(page.getByTestId("chamado-aberto-chat")).toContainText(/confirmação para o seu e-mail/);
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
       const linhas = fs.readFileSync(LAB_OUTBOX, "utf8");
-      expect(linhas, "confirmação do chamado registrada (modo de teste)").toContain(`Recebemos seu chamado — ${numero}`);
+      expect(linhas, "confirmação do chamado registrada (modo de teste)").toContain(`Recebemos seu chamado (${numero}) · Viva Nomads`);
     }
   });
 

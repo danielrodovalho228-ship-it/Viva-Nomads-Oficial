@@ -3,17 +3,20 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { getContratoParaAssinar } from "@/lib/data/contrato-assinar-actions";
-import { ROTULO_ETAPA, etapaContrato } from "@/lib/contrato-etapas";
 import { conferenciasDoContrato } from "@/lib/data/conferencia-actions";
 import { tipoAcessoDoContrato } from "@/lib/data/contrato-acesso";
 import { DICAS_CONFERENCIA_CAMERAS, ITEM_CONFERENCIA_CAMERAS, LEMBRETE_SENHA_ENTRADA, mostrarChecklistCameras, mostrarLembreteSenha } from "@/lib/anuncio/privacidade";
 import { instrucoesDoContrato } from "@/lib/data/checkin-actions";
 import { podeEditarInstrucoes, podeNaoConsegui } from "@/lib/checkin";
 import { dataBR } from "@/lib/utils";
+import { tomDoSelo } from "@/lib/contrato-estado";
 import { AssinarContrato } from "./assinar-contrato";
+import { AvisoAssinatura } from "./aviso-assinatura";
 import { CheckinContrato } from "./checkin-contrato";
 import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
 import { ConferenciaContrato } from "./conferencia-contrato";
+import { meuCartaoPostal } from "@/lib/data/cartoes-actions";
+import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
 
 /**
  * Detalhe do contrato para as DUAS partes (ordens 0fd301f0 e f375fdc1): o inquilino chega por
@@ -31,11 +34,6 @@ export async function ContratoDetalhe({
 }) {
   const c = await getContratoParaAssinar(id);
   if (!c) notFound();
-  const etapa = etapaContrato({
-    assinadoProprietarioEm: c.assinadoProprietarioEm,
-    assinadoInquilinoEm: c.assinadoInquilinoEm,
-    primeiroPagamentoConfirmado: false,
-  });
   // Conferência de entrada e de saída: só com contrato em andamento ou encerrado e assinado pelas duas partes.
   const mostraConferencia = ["ativo", "concluido", "encerrado_sem_renovacao"].includes(c.status) && !!c.assinadoProprietarioEm && !!c.assinadoInquilinoEm;
   const conferencia = mostraConferencia ? await conferenciasDoContrato(c.id) : null;
@@ -51,12 +49,28 @@ export async function ContratoDetalhe({
   // Check-in garantido: instruções de entrada (dono preenche; inquilino vê após as duas assinaturas) e "Não consegui entrar".
   const dadosCheckin = { status: c.status, papel: c.papel, assinadoProprietarioEm: c.assinadoProprietarioEm, assinadoInquilinoEm: c.assinadoInquilinoEm };
   const checkin = c.status === "ativo" ? await instrucoesDoContrato(c.id) : null;
+  // Cartão-postal pós-estadia (cartões compartilháveis, T1): só para o morador, depois da saída.
+  const postal = c.papel === "inquilino" ? await meuCartaoPostal(c.id) : null;
   return (
     <>
       <Link href={voltarHref} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" /> {voltarRotulo}
       </Link>
-      <PageTitle title={c.imovel} subtitle={c.status === "ativo" ? ROTULO_ETAPA[etapa] : c.status} />
+      <PageTitle title={c.imovel} />
+      <p className="-mt-2 mb-4">
+        <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${tomDoSelo(c.estado)}`} data-testid="contrato-selo" data-chave={c.estado.chave}>
+          {c.estado.selo}
+        </span>
+      </p>
+      {postal?.ok && (
+        <Panel className="mb-5 p-5" data-testid="cartao-postal-painel">
+          <h2 className="font-title text-base font-bold text-ink">Seu cartão-postal da estadia</h2>
+          <p className="mt-1 text-sm text-muted">Uma lembrança para compartilhar no WhatsApp, com um QR para o imóvel. Mostra a cidade e o mês/ano; seu nome só se você quiser.</p>
+          <div className="mt-4">
+            <CartaoCompartilhar inicial={postal.valor} />
+          </div>
+        </Panel>
+      )}
       <Panel className="p-5">
         <h2 className="font-title text-base font-bold text-ink">Contrato</h2>
         <ul className="mt-3 space-y-1.5 text-sm text-ink" data-testid="contrato-resumo">
@@ -72,9 +86,7 @@ export async function ContratoDetalhe({
             Início da estadia: {dataBR(c.inicioEstadia)}
           </p>
         )}
-        <p className="mt-4 text-sm text-muted [overflow-wrap:anywhere]" data-testid="contrato-aviso-assinatura">
-          {c.aviso}
-        </p>
+        <AvisoAssinatura contratoId={c.id} aviso={c.aviso} />
         {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
       </Panel>
       {lembreteSenha && (
@@ -92,6 +104,21 @@ export async function ContratoDetalhe({
         </Panel>
       )}
       <LinhaDoTempoEstadia etapas={c.linhaDoTempo} />
+      {(c.assinadoProprietarioEm || c.assinadoInquilinoEm) && (
+        <Panel className="mt-5 p-5">
+          <h2 className="font-title text-base font-bold text-ink">Pacote de provas</h2>
+          <p className="mt-1 text-sm text-muted">
+            Um PDF com o resumo do contrato, o código de cada assinatura, os pagamentos marcados e as respostas da conferência, em ordem de data.
+          </p>
+          <a
+            href={`/api/contrato/${c.id}/provas`}
+            data-testid="baixar-provas"
+            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-sage-300 bg-white px-4 text-sm font-medium text-forest hover:bg-sage-50 sm:w-auto"
+          >
+            Baixar pacote de provas (PDF)
+          </a>
+        </Panel>
+      )}
       {conferencia && (
         <Panel className="mt-5 p-5">
           <h2 className="font-title text-base font-bold text-ink">Conferência de entrada e saída</h2>

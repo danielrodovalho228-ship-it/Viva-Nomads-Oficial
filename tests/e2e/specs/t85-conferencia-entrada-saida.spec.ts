@@ -41,7 +41,9 @@ async function semRolagemLateral(page: Page, largura: number) {
 
 async function adicionarItem(page: Page, tipo: "entrada" | "saida", comodo: string, descricao: string, comFoto: boolean) {
   const form = page.getByTestId(`conferencia-${tipo}-form`);
-  await form.getByLabel("Cômodo").fill(comodo);
+  // Espera a hidratação: preencher antes dela faz o envio recarregar a página e perder o item.
+  await page.waitForLoadState("networkidle").catch(() => undefined);
+  await form.getByLabel("Cômodo", { exact: true }).fill(comodo);
   await form.getByLabel("Itens e estado do cômodo").fill(descricao);
   if (comFoto) await form.getByLabel("Foto do cômodo").setInputFiles({ name: "comodo.png", mimeType: "image/png", buffer: pngDeTeste(3) });
   await form.getByRole("button", { name: "Adicionar item" }).click();
@@ -108,6 +110,8 @@ test.describe("T85 — Conferência de entrada e saída: fotos, confirmar/contes
     await expect(page.getByTestId("conferencia-entrada-estado")).toHaveText("Em andamento");
     await adicionarItem(page, "entrada", SALA, "Sofá sem manchas, TV na parede.", true);
     const itens = page.getByTestId("conferencia-entrada-itens");
+    // Se o servidor recusar o item, a tela mostra o motivo: sem ele a falha vira só "não encontrado".
+    await expect(page.getByTestId("conferencia-erro")).toHaveCount(0);
     await expect(itens).toContainText(SALA, { timeout: 20_000 });
     await expect(itens.getByRole("img", { name: `Foto: ${SALA}` })).toBeVisible();
     await semRolagemLateral(page, 390);

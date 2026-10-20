@@ -6,6 +6,9 @@ import { documentoParaContrato } from "@/lib/documento-pessoa";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
+import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
+import { RESERVA_EXPIRA_MS, type ReservaLida } from "@/lib/fechamento-contrato";
 
 /**
  * A5: os dados de uma cobrança/contrato de fechamento vêm SÓ do banco, a partir
@@ -46,7 +49,7 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   // Candidatura ACEITA em que o usuário logado é o DONO (sessão + RLS "leads das partes").
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, owner_id, tenant_id, property_id, accepted_commission_rate, accepted_plan")
+    .select("id, owner_id, tenant_id, property_id")
     .eq("id", leadId)
     .eq("owner_id", user.id)
     .eq("status", "accepted")
@@ -61,11 +64,15 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
     lerDocumento(admin, lead.tenant_id as string),
   ]);
   if (!imovel || imovel.owner_id !== lead.owner_id) return { status: 404, error: "Imóvel não encontrado." };
-  const aluguel = Number(imovel.monthly_price);
+  // Prompt 17: com proposta aceita, vale o valor mensal ACORDADO (não o do anúncio).
+  const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
+  const aluguel = acordada ? acordada.valorMensal : Number(imovel.monthly_price);
   if (!Number.isFinite(aluguel) || aluguel <= 0) return { status: 400, error: "Imóvel sem valor de aluguel." };
 
   // Taxa congelada no aceite; NULL cai para a do plano no aceite (nunca 0).
-  const comissaoRate = taxaDoContrato(lead.accepted_commission_rate, lead.accepted_plan);
+  // Plano e taxa do aceite pelo servidor (a sessão não lê mais essas colunas — 0177); o dono já foi conferido acima.
+  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
+  const comissaoRate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
   // Cadastro confiável + F32: documento das DUAS partes e documentos do inquilino
   // (B2; null = sem a 0093 → não trava). A MESMA trava vale em registrarContrato.
   const bloqueio = motivoBloqueioContrato({
@@ -92,13 +99,34 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   };
 }
 
+/** Reserva atual da cobrança/contrato desta candidatura (null = nenhuma). */
+export async function lerReservaFechamento(leadId: string, tipo: "comissao" | "contrato"): Promise<ReservaLida | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin
+    .from("cobrancas_fechamento")
+    .select("externo_id, criado_em")
+    .eq("lead_id", leadId)
+    .eq("tipo", tipo)
+    .maybeSingle();
+  return data ? { externoId: (data.externo_id as string | null) ?? null, criadoEm: String(data.criado_em) } : null;
+}
+
 /**
  * Reserva o direito de criar a cobrança/contrato desta candidatura (uma vez).
- * true = pode criar; false = já existe (idempotente).
+ * true = pode criar; false = já existe (idempotente). Prompt 24: reserva SEM conclusão (a resposta nunca chegou)
+ * vence em RESERVA_EXPIRA_MS e é liberada aqui — nenhum caminho deixa a candidatura presa.
  */
 export async function reservarFechamento(leadId: string, tipo: "comissao" | "contrato"): Promise<boolean> {
   const admin = createAdminClient();
   if (!admin) return false;
+  await admin
+    .from("cobrancas_fechamento")
+    .delete()
+    .eq("lead_id", leadId)
+    .eq("tipo", tipo)
+    .is("externo_id", null)
+    .lt("criado_em", new Date(Date.now() - RESERVA_EXPIRA_MS).toISOString());
   const { error } = await admin.from("cobrancas_fechamento").insert({ lead_id: leadId, tipo });
   return !error;
 }

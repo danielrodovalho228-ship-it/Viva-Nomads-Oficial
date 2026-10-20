@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { EyeOff, RotateCcw, Megaphone, Sparkles, Mail, MessageSquare, Clock } from "lucide-react";
 import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
 import type { MetricasPedidos } from "@/lib/data/pedidos-compat";
+import type { Recorte } from "@/lib/admin/indicadores";
 import { Button } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { motivoLabel, PEDIDO_STATUS_LABEL } from "@/lib/pedidos/pedidos";
 import { moderarPedido, reativarPedido } from "@/lib/data/pedidos-admin";
 import { MotivoDialog } from "@/components/admin/motivo-dialog";
+import { dataPedidoBR, textoBairros, textoFaixaValor } from "@/lib/pedidos/campos";
+import type { ColunasPedidoAdmin } from "@/lib/data/pedidos-admin-colunas";
 
 type Pedido = {
   id: string;
@@ -23,6 +26,11 @@ type Pedido = {
   status: string;
   removido_motivo: string | null;
   criado_em: string;
+  data_inicio: string;
+  orcamento_min: number | null;
+  bairros: string[] | null;
+  compativeis_ao_publicar: number | null;
+  colunas: ColunasPedidoAdmin | null;
 };
 
 const TONE: Record<string, string> = {
@@ -31,14 +39,25 @@ const TONE: Record<string, string> = {
   atendido: "bg-blue-50 text-blue-700",
   expirado: "bg-surface-2 text-muted",
   removido_admin: "bg-red-50 text-red-700",
+  excluido: "bg-surface-2 text-muted",
 };
+
+type Resposta = { total: number; comResposta: number; taxa: number | null; medianaHoras: number | null; janela: string; compativel: string };
 
 export function AdminPedidosClient({
   pedidos,
   metricas,
+  resposta,
+  rotuloFiltro,
+  recorte,
+  filtroUrl,
 }: {
   pedidos: Record<string, unknown>[];
   metricas: MetricasPedidos | null;
+  resposta: Resposta;
+  rotuloFiltro: string | null;
+  recorte: Recorte;
+  filtroUrl: { de: string; ate: string; cidade: string | null; status: string | null; expirando: boolean };
 }) {
   const router = useRouter();
   const lista = pedidos as unknown as Pedido[];
@@ -69,16 +88,43 @@ export function AdminPedidosClient({
         title="Moderação de pedidos"
         subtitle="Ocultar pedidos impróprios (com motivo, notificando o inquilino) e reativar."
       />
-      <MetricasPedidosPainel m={metricas} />
+      {/* Recorte único dos cartões e da lista (complemento do P29, item 5b). */}
+      <form method="get" action="/admin/pedidos" className="mb-4 flex flex-wrap items-end gap-2" data-testid="pedidos-recorte">
+        <input type="hidden" name="de" value={filtroUrl.de} />
+        <input type="hidden" name="ate" value={filtroUrl.ate} />
+        {filtroUrl.cidade && <input type="hidden" name="cidade" value={filtroUrl.cidade} />}
+        {filtroUrl.status && <input type="hidden" name="status" value={filtroUrl.status} />}
+        {filtroUrl.expirando && <input type="hidden" name="expirando" value="1" />}
+        <label className="grid gap-1 text-sm text-muted">
+          Contas
+          <select name="tipo" defaultValue={recorte} className="rounded-xl border border-line px-3 py-2 text-sm text-ink" data-testid="filtro-tipo">
+            <option value="real">Real</option>
+            <option value="teste">Teste</option>
+            <option value="todos">Todos</option>
+          </select>
+        </label>
+        <Button type="submit" size="sm">
+          Aplicar
+        </Button>
+      </form>
+      <MetricasPedidosPainel m={metricas} r={resposta} />
+      <p className="mb-3 text-sm text-ink">
+        <strong data-testid="lista-total">{lista.length}</strong> {lista.length === 1 ? "pedido" : "pedidos"} nesta lista
+        {rotuloFiltro ? ` · ${rotuloFiltro}` : ""}
+      </p>
       <Panel className="p-0 pt-6">
         <div className="overflow-x-auto px-6 pb-6">
           {lista.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">Nenhum pedido no sistema.</p>
           ) : (
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[960px] text-sm">
               <thead className="text-left text-muted">
                 <tr>
-                  <th className="py-2 font-medium">Motivo/Cidade</th>
+                  <th className="py-2 font-medium">Inquilino · motivo · cidade</th>
+                  <th className="py-2 font-medium">Entrada</th>
+                  <th className="py-2 font-medium">Faixa · bairros</th>
+                  <th className="py-2 font-medium">Selos</th>
+                  <th className="py-2 font-medium">Respostas</th>
                   <th className="py-2 font-medium">Detalhes</th>
                   <th className="py-2 font-medium">Status</th>
                   <th className="py-2 font-medium text-right">Ação</th>
@@ -87,13 +133,28 @@ export function AdminPedidosClient({
               <tbody className="divide-y divide-sage-200">
                 {lista.map((p) => (
                   <tr key={p.id} className={cn(p.status === "removido_admin" && "opacity-70")}>
-                    <td className="py-3">
-                      <p className="font-medium text-ink">{motivoLabel(p.motivo)}</p>
+                    <td className="py-3" data-testid="admin-pedido-linha" data-pedido={p.id}>
+                      <p className="font-medium text-ink" data-testid="admin-pedido-nome">{p.colunas?.nome ?? "—"}</p>
                       <p className="text-xs text-muted">
-                        {p.cidade}
+                        {motivoLabel(p.motivo)} · {p.cidade}
                         {p.uf ? `/${p.uf}` : ""}
                       </p>
                     </td>
+                    <td className="py-3 whitespace-nowrap text-ink">{dataPedidoBR(`${p.data_inicio}T12:00:00Z`)}</td>
+                    <td className="py-3 text-ink">
+                      <span className="block whitespace-nowrap">{textoFaixaValor(p.orcamento_min, p.orcamento_mensal)}</span>
+                      <span className="block text-xs text-muted">{textoBairros(p.bairros)}</span>
+                    </td>
+                    <td className="py-3">
+                      <ul className="flex flex-wrap gap-1">
+                        {(p.colunas?.selos ?? []).map((s) => (
+                          <li key={s.codigo} className={cn("rounded-full px-1.5 py-0.5 text-[11px]", s.ok ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900")}>
+                            {s.texto}
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                    <td className="py-3 text-ink" data-testid="admin-pedido-respostas">{p.colunas?.respostas ?? 0}</td>
                     <td className="py-3 text-muted">
                       {p.prazo_meses}m · {p.qtd_ocupantes}p · {formatBRL(p.orcamento_mensal)}/mês
                       {p.apresentacao && (
@@ -167,26 +228,30 @@ export function AdminPedidosClient({
   );
 }
 
-/** Números do funil de pedidos (últimos 30 dias). "—" quando não há dado. */
-function MetricasPedidosPainel({ m }: { m: MetricasPedidos | null }) {
-  const pct =
-    m && m.pedidos > 0 ? `${Math.round((m.pedidos_com_compativel / m.pedidos) * 100)}%` : "—";
-  const taxa =
-    m && m.avisos_email + m.avisos_resumo > 0
-      ? `${Math.round((m.avisos_respondidos / (m.avisos_email + m.avisos_resumo)) * 100)}%`
-      : "—";
-  const horas =
-    m?.horas_media_resposta == null ? "—" : `${String(m.horas_media_resposta).replace(".", ",")} h`;
+/**
+ * Números dos pedidos. "Pedidos", "Pedidos com resposta" e "Tempo até a 1ª resposta" são os da home (respostaPedidos);
+ * compatível e avisos continuam da 0059 (últimos 30 dias). "—" quando não há dado.
+ */
+function MetricasPedidosPainel({ m, r }: { m: MetricasPedidos | null; r: Resposta }) {
+  const taxa = r.taxa === null ? "—" : `${Math.round(r.taxa * 1000) / 10}%`.replace(".", ",");
+  const horas = r.medianaHoras === null ? "—" : `${String(r.medianaHoras).replace(".", ",")} h`;
   return (
     <div className="mb-6">
-      <p className="mb-2 text-sm text-muted">Últimos 30 dias</p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
-        <StatCard label="Pedidos" value={m?.pedidos ?? "—"} icon={Megaphone} />
-        <StatCard label="Com compatível ao publicar" value={pct} icon={Sparkles} />
-        <StatCard label="Avisos enviados" value={m ? m.avisos_email + m.avisos_resumo : "—"} icon={Mail} />
-        <StatCard label="Taxa de resposta" value={taxa} icon={MessageSquare} />
-        <StatCard label="Tempo médio de resposta" value={horas} icon={Clock} />
+      <p className="mb-2 text-sm text-muted" data-testid="pedidos-janela">{r.janela}</p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+        <StatCard label="Pedidos do período" value={r.total} icon={Megaphone} />
+        <StatCard label="Pedidos com resposta" value={taxa} icon={MessageSquare} />
+        <StatCard label="Tempo até a 1ª resposta (mediana)" value={horas} icon={Clock} />
+        <StatCard label="Pedidos respondidos" value={r.comResposta} icon={MessageSquare} />
+        <StatCard label="Com compatível ao publicar" value={r.compativel.match(/\d+%$/)?.[0] ?? "—"} hint={r.compativel} icon={Sparkles} />
+        <StatCard label="Avisos enviados (30 dias)" value={m ? m.avisos_email + m.avisos_resumo : "—"} icon={Mail} />
       </div>
+      <ul className="mt-2 space-y-0.5 text-xs text-muted" data-testid="formulas-pedidos">
+        <li>Pedidos com resposta = pedidos do período que receberam pelo menos 1 contato ou proposta ÷ pedidos do período. A mesma conta da visão geral.</li>
+        <li>Tempo até a 1ª resposta = mediana do tempo entre a publicação e o 1º contato ou proposta.</li>
+        <li>Com compatível ao publicar = pedidos dos últimos 30 dias com pelo menos 1 imóvel compatível no momento da publicação (compativeis_ao_publicar &gt; 0) ÷ pedidos dos últimos 30 dias.</li>
+        <li>Avisos enviados = avisos aos donos de imóveis compatíveis (e-mail no resumo diário), últimos 30 dias.</li>
+      </ul>
     </div>
   );
 }

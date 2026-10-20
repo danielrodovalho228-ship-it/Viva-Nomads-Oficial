@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
 import { useSearchParams } from "next/navigation";
 import {
   ShieldCheck,
@@ -27,6 +28,9 @@ import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { useDashDemo, DemoBadge } from "@/lib/demo/demo-mode";
 import { cn } from "@/lib/utils";
+import type { EstadoIdentidade } from "@/lib/identidade/estado";
+import { NOTA_VERIFICACAO_TESTE, ramoVerificacao } from "@/lib/contas-de-teste";
+import { validadeDoLaudo } from "@/lib/caf/validade";
 
 /**
  * Estados futuros da verificação (preparados; a integração real entra depois):
@@ -92,8 +96,163 @@ export default function VerificationPage() {
 
   return (
     <div className="w-full">
-      <PageTitle title={C.title} subtitle={C.subtitle} />
-      {demo ? <DemoFlow copy={C} mode={mode} /> : <RealNaoVerificado copy={C} perfil={perfilCopy} />}
+      <PageTitle capa="verificacao" title={C.title} subtitle={C.subtitle} />
+      {demo ? <DemoFlow copy={C} mode={mode} /> : <VerificacaoDaConta copy={C} perfil={perfilCopy} />}
+    </div>
+  );
+}
+
+type StatusCaf = { teste: boolean; feita: boolean; ok: boolean; validoAte: string | null; identidade: EstadoIdentidade | null };
+
+/** A linha do estado da identidade: o texto vem SEMPRE da fonte única (complemento do prompt 23). */
+function LinhaIdentidade({ id }: { id: EstadoIdentidade }) {
+  return (
+    <p
+      className={cn(
+        "rounded-xl px-4 py-3 text-sm font-semibold",
+        id.estado === "confirmada" ? "bg-green-50 text-green-900" : id.estado === "em_breve" ? "bg-amber-50 text-amber-900" : "bg-surface-2 text-ink",
+      )}
+      data-testid="identidade-estado"
+      data-estado={id.estado}
+    >
+      {id.texto}
+    </p>
+  );
+}
+
+/**
+ * Prompt 23 (item 3): o servidor diz se a conta é de teste (/api/caf/status lê profiles.is_teste). Conta de teste →
+ * laudo SIMULADO pela /api/caf/verify, rotulado "TESTE — verificação simulada"; conta real → segue "em breve".
+ */
+function VerificacaoDaConta({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant" | "owner" }) {
+  const [status, setStatus] = useState<StatusCaf | null>(null);
+  const [erro, setErro] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/caf/status")
+      .then((r) => (r.ok ? (r.json() as Promise<Partial<StatusCaf>>) : Promise.reject(new Error(String(r.status)))))
+      .then((d) => {
+        if (vivo) setStatus({ teste: d.teste === true, feita: d.feita === true, ok: d.ok === true, validoAte: d.validoAte ?? null, identidade: d.identidade ?? null });
+      })
+      .catch(() => {
+        if (vivo) setErro(true);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  // O ramo segue o estado único: "em breve" → conta real sem a CAF; os demais (confirmada, vencida, simulável) → laudo.
+  const ramo = ramoVerificacao({ demo: false, teste: erro ? false : status ? status.identidade?.estado !== "em_breve" : null });
+  if (ramo === "carregando") {
+    return (
+      <Panel className="flex items-center gap-2 text-sm text-muted">
+        <Loader2 className="h-4 w-4 animate-spin" /> Carregando a sua verificação…
+      </Panel>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      {status?.identidade && <LinhaIdentidade id={status.identidade} />}
+      {ramo === "teste" && status ? (
+        <TesteFlow copy={copy} perfil={perfil} inicial={status} onStatus={(st) => setStatus(st)} />
+      ) : (
+        <RealNaoVerificado copy={copy} perfil={perfil} />
+      )}
+    </div>
+  );
+}
+
+/* Conta de TESTE (is_teste): laudo simulado de ponta a ponta, sempre rotulado — nunca vale como verificação real. */
+function TesteFlow({ copy, perfil, inicial, onStatus }: { copy: VerifyCopy; perfil: "tenant" | "owner"; inicial: StatusCaf; onStatus: (s: StatusCaf) => void }) {
+  const [laudo, setLaudo] = useState<{ ok: boolean; validoAte: string | null } | null>(
+    inicial.feita ? { ok: inicial.ok, validoAte: inicial.validoAte } : null
+  );
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function verificar() {
+    setCarregando(true);
+    setErro(null);
+    try {
+      const res = await fetch("/api/caf/verify", { method: "POST" });
+      const r = (await res.json().catch(() => ({}))) as Partial<CafResult> & { error?: string };
+      if (!res.ok || !r.light) {
+        setErro(r.error ?? "Não foi possível fazer a verificação simulada agora. Tente de novo.");
+        return;
+      }
+      const st = (await fetch("/api/caf/status").then((x) => x.json()).catch(() => ({}))) as Partial<StatusCaf>;
+      setLaudo({ ok: r.identity === true && r.liveness === true && r.document === true, validoAte: st.validoAte ?? null });
+      // A linha do estado (topo) passa a "Identidade confirmada · válida até …", pela fonte única.
+      onStatus({ teste: st.teste === true, feita: st.feita === true, ok: st.ok === true, validoAte: st.validoAte ?? null, identidade: st.identidade ?? null });
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4" data-testid="verificacao-teste">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">
+        Conta de teste
+      </span>
+      {!laudo ? (
+        <Panel className="text-center">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-sage-100">
+            <ShieldCheck className="h-8 w-8 text-forest" />
+          </div>
+          <h2 className="mt-4 font-title text-xl font-bold text-ink">{copy.heading}</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted">
+            Esta é uma conta de teste: a verificação é <strong>simulada</strong>, sem documento, sem CPF e sem consulta ao
+            parceiro. Serve para seguir a jornada até a assinatura.
+          </p>
+          <Button variant="gold" className="mt-6" onClick={verificar} disabled={carregando} data-testid="verificacao-teste-verificar">
+            {carregando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {carregando ? "Verificando..." : "Fazer a verificação simulada"}
+          </Button>
+          {erro && (
+            <p role="alert" className="mt-3 text-sm text-red-600">
+              {erro}
+            </p>
+          )}
+        </Panel>
+      ) : (
+        <>
+          <Panel data-testid="verificacao-teste-laudo">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-champagne text-forest">
+                <BadgeCheck className="h-7 w-7" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="font-title text-lg font-bold text-ink">{laudo.ok ? copy.badge : "Verificação simulada"}</h2>
+                <p className="text-sm font-semibold text-amber-800" data-testid="verificacao-teste-rotulo">
+                  {NOTA_VERIFICACAO_TESTE}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-2">
+              <Item icon={Fingerprint} label="Identidade" ok={laudo.ok} />
+              <Item icon={ScanFace} label="Prova de vida" ok={laudo.ok} />
+              <Item icon={FileCheck2} label="Documento" ok={laudo.ok} />
+            </div>
+
+          </Panel>
+          {perfil === "tenant" && (
+            <Panel>
+              <h3 className="font-title font-bold text-ink">Siga a jornada</h3>
+              <p className="mt-1 text-sm text-muted">
+                Candidate-se a um imóvel; depois do aceite, o fechamento usa este resultado simulado até a assinatura.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <ButtonLink href="/dashboard/candidaturas" variant="primary" data-testid="verificacao-teste-continuar">
+                  Minhas candidaturas
+                </ButtonLink>
+                <ButtonLink href="/buscar" variant="outline">
+                  <Search className="h-4 w-4" /> Buscar imóveis
+                </ButtonLink>
+              </div>
+            </Panel>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -103,24 +262,14 @@ export default function VerificationPage() {
    Nunca nasce verificada nem exibe selo sem verificação real concluída.
    ───────────────────────────────────────────────────────────────────────── */
 function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant" | "owner" }) {
-  const [avisar, setAvisar] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem("vivanomads-verif-interesse")) setAvisar(true);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const [avisarLocal, setAvisar] = useState(false);
+  const interesseGravado = useLocalStorageBruto("vivanomads-verif-interesse");
+  const avisar = avisarLocal || !!interesseGravado;
 
   function registrarInteresse() {
     // Placeholder honesto: registra o interesse no navegador. Quando existir a
     // lista de espera no servidor, este clique passa a gravá-la também.
-    try {
-      localStorage.setItem("vivanomads-verif-interesse", "1");
-    } catch {
-      /* ignore */
-    }
+    gravarLocalStorageBruto("vivanomads-verif-interesse", "1");
     setAvisar(true);
   }
 
@@ -134,9 +283,7 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
             </span>
             <div>
               <h2 className="font-title text-lg font-bold text-ink">Não verificado</h2>
-              <p className="text-sm text-muted">
-                A verificação de identidade abre em breve — via parceiro, em estruturação.
-              </p>
+              <p className="text-sm text-muted">A verificação de identidade ainda não abriu para contas reais.</p>
             </div>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800">
@@ -169,9 +316,11 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
 
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          Você já pode se candidatar sem o selo — o proprietário vê{" "}
-          <strong className="text-ink">verificação pendente</strong> no lugar do resultado até a
-          verificação abrir. Seus dados serão tratados apenas para a verificação (LGPD).
+          <span className="min-w-0">
+            Você já pode se candidatar sem o selo — o proprietário vê{" "}
+            <strong className="text-ink">verificação pendente</strong> no lugar do resultado até a
+            verificação abrir. Seus dados serão tratados apenas para a verificação (LGPD).
+          </span>
         </p>
 
         {/* Inquilino: caminho REAL de conclusão — a candidatura acontece no
@@ -221,7 +370,7 @@ function DemoFlow({
         body: JSON.stringify({ name: user?.fullName ?? "Inquilino" }),
       });
       setResult((await res.json()) as CafResult);
-      setValidUntil(new Date(Date.now() + 90 * 86400000).toLocaleDateString("pt-BR"));
+      setValidUntil(validadeDoLaudo(new Date()).toLocaleDateString("pt-BR"));
     } finally {
       setLoading(false);
     }
@@ -271,7 +420,7 @@ function DemoFlow({
               <VerificationBadge />
             </div>
 
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="mt-4 grid gap-2">
               <Item icon={Fingerprint} label="Identidade" ok={result.identity} />
               <Item icon={ScanFace} label="Prova de vida" ok={result.liveness} />
               <Item icon={FileCheck2} label="Documento" ok={result.document} />
@@ -281,7 +430,7 @@ function DemoFlow({
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               Verificação de <strong>demonstração</strong> (válida só nesta vitrine). A real é
               feita <strong>via parceiro — em estruturação</strong>; só então o selo vale de fato
-              e a validade de {validUntil ? `até ${validUntil}` : "90 dias"} passa a contar.
+              e a validade de {validUntil ? `até ${validUntil}` : "12 meses"} passa a contar.
             </p>
           </Panel>
 

@@ -81,10 +81,10 @@ export const PREMISSAS_PJ: Premissa[] = [
   },
   {
     chave: "pj_custos_ignorados",
-    rotulo: "Custos da PJ ignorados no imposto",
-    valor: "contador, ITBI na integralização, ganho de capital, distribuição, pró-labore",
+    rotulo: "Custo de manter a empresa",
+    valor: `${brl(PJ_ACCOUNTING_YEAR)} por ano (contador, taxas, certificado) — descontado da vantagem da PJ`,
     status: "implicito",
-    nota: `Só um custo anual estimado de ${brl(PJ_ACCOUNTING_YEAR)} entra — e apenas no LIMIAR da recomendação PF×PJ, não no imposto.`,
+    nota: "A comparação PF × PJ soma esse custo ao imposto da PJ. Ficam de fora: ITBI na integralização, ganho de capital, distribuição e pró-labore.",
   },
 ];
 

@@ -7,6 +7,18 @@
   0%, NaN ou Infinity.
 */
 import { PLANOS } from "../../config/planos.ts";
+import {
+  FORMULA_1A_RESPOSTA_ATENDIMENTO,
+  FORMULA_CHAMADOS_ABERTOS,
+  FORMULA_PEDIDOS_COM_RESPOSTA,
+  FORMULA_RESOLVIDOS_ATENDIMENTO,
+  FORMULA_TAKE_RATE,
+  FORMULA_TAXA,
+  FORMULA_TEMPO_1A_RESPOSTA_PEDIDO,
+  FORMULA_VALOR_MENSAL,
+  FORMULA_VALOR_TOTAL,
+  fmtTempoMin,
+} from "./indicadores.ts";
 
 // ── Período ──────────────────────────────────────────────────────────────────
 export type PeriodoId = "7" | "30" | "90" | "ano" | "custom";
@@ -42,6 +54,14 @@ function dataValida(s: unknown): s is string {
 
 export function somarDias(data: string, n: number): string {
   return deDia(paraDia(data) + n);
+}
+
+/**
+ * As Métricas do atendimento contam uma janela móvel ("últimos N dias" até agora): a home passa N = dias do início
+ * do período até hoje, para os dois lados contarem a mesma janela.
+ */
+export function diasAteHoje(f: { inicio: string }, hoje: string = new Date().toISOString().slice(0, 10)): number {
+  return Math.min(400, Math.max(1, paraDia(hoje) - paraDia(f.inicio) + 1));
 }
 
 /** Resolve o período da URL. Qualquer coisa inválida cai em 30 dias. */
@@ -145,7 +165,21 @@ export function mrr(assinaturas: Record<string, unknown> | null | undefined): { 
 
 // ── Indicadores ──────────────────────────────────────────────────────────────
 export type Metricas = Record<string, unknown>;
-export type Formato = "inteiro" | "pct" | "reais" | "horas";
+export type Formato = "inteiro" | "pct" | "reais" | "horas" | "minutos";
+
+/** Filtro da home levado para a lista de destino (Prompt 29: cada número abre a lista que ele conta). */
+export interface FiltroHome {
+  inicio: string;
+  fim: string;
+  cidade: string | null;
+}
+
+/** "periodo=custom&de=…&ate=…[&cidade=…]" — o mesmo período (e cidade) da home na lista de destino. */
+export function qsPeriodo(f: FiltroHome): string {
+  const q = new URLSearchParams({ periodo: "custom", de: f.inicio, ate: f.fim });
+  if (f.cidade) q.set("cidade", f.cidade);
+  return q.toString();
+}
 
 export interface Indicador {
   chave: string;
@@ -159,6 +193,10 @@ export interface Indicador {
   /** Subir é ruim (ex.: tempo de resposta) — inverte a cor da variação. */
   menorMelhor?: boolean;
   nota?: string;
+  /** A lista que este número conta, com o mesmo filtro (Prompt 29). Sem lista: contagem de eventos anônimos. */
+  href?: (f: FiltroHome) => string;
+  /** "agora" (fila do momento) ou "dias" (janela móvel até hoje); padrão: o período escolhido. */
+  janela?: "agora" | "dias";
 }
 
 export interface Bloco {
@@ -185,6 +223,7 @@ export const BLOCOS: Bloco[] = [
         formato: "inteiro",
         calc: soma("novos_proprietarios", "novos_inquilinos"),
         serie: "cadastros",
+        href: (f) => `/admin/usuarios?${qsPeriodo(f)}`,
       },
       {
         chave: "novos_proprietarios",
@@ -192,6 +231,7 @@ export const BLOCOS: Bloco[] = [
         formula: "Contas novas com papel proprietário no período.",
         formato: "inteiro",
         calc: campo("novos_proprietarios"),
+        href: (f) => `/admin/usuarios?papel=proprietario&${qsPeriodo(f)}`,
       },
       {
         chave: "novos_inquilinos",
@@ -199,13 +239,16 @@ export const BLOCOS: Bloco[] = [
         formula: "Contas novas com papel inquilino no período.",
         formato: "inteiro",
         calc: campo("novos_inquilinos"),
+        href: (f) => `/admin/usuarios?papel=inquilino&${qsPeriodo(f)}`,
       },
       {
         chave: "conclusao_cadastro",
         rotulo: "Conclusão do cadastro",
         formula: "Cadastros concluídos ÷ formulários de cadastro abertos (eventos anônimos). Sem formulário aberto no período: \"—\".",
         formato: "pct",
-        calc: (m) => razao(num(m.cadastros_concluidos), num(m.cadastros_iniciados)),
+        calc: (m) => razao(num(m.x_ev_concluir_cadastro), num(m.x_ev_iniciar_cadastro)),
+        // O % não tem lista; o link abre quem ficou com o cadastro incompleto (pedido do coordenador).
+        href: () => "/admin/usuarios?cadastro=incompleto",
       },
     ],
   },
@@ -219,13 +262,15 @@ export const BLOCOS: Bloco[] = [
         formula: "Imóveis criados no período que hoje estão ativos (na busca).",
         formato: "inteiro",
         calc: campo("anuncios_novos"),
+        href: (f) => `/admin/imoveis?tipo=real&status=active&${qsPeriodo(f)}`,
       },
       {
         chave: "conclusao_anuncio",
         rotulo: "Anúncios iniciados → publicados",
         formula: "Publicações ÷ anúncios começados no período (eventos anônimos). Sem anúncio começado: \"—\".",
         formato: "pct",
-        calc: (m) => razao(num(m.anuncios_publicados_evento), num(m.anuncios_iniciados)),
+        calc: (m) => razao(num(m.x_ev_publicar_anuncio), num(m.x_ev_iniciar_anuncio)),
+        href: (f) => `/admin/eventos?tipo=iniciar_anuncio&${qsPeriodo(f)}`,
       },
     ],
   },
@@ -238,7 +283,8 @@ export const BLOCOS: Bloco[] = [
         rotulo: "Buscas",
         formula: "Buscas feitas no site e no app (1 por local pesquisado), registradas de forma anônima.",
         formato: "inteiro",
-        calc: campo("buscas"),
+        calc: campo("x_ev_busca"),
+        href: (f) => `/admin/eventos?tipo=busca&${qsPeriodo(f)}`,
         serie: "buscas",
       },
       {
@@ -246,7 +292,8 @@ export const BLOCOS: Bloco[] = [
         rotulo: "Anúncios vistos",
         formula: "Aberturas de página de anúncio (anúncios de exemplo não contam).",
         formato: "inteiro",
-        calc: campo("visualizacoes"),
+        calc: campo("x_ev_ver_anuncio"),
+        href: (f) => `/admin/eventos?tipo=ver_anuncio&${qsPeriodo(f)}`,
         serie: "visualizacoes",
       },
       {
@@ -254,16 +301,18 @@ export const BLOCOS: Bloco[] = [
         rotulo: "Candidaturas",
         formula: "Candidaturas enviadas a imóveis no período (pela cidade do imóvel).",
         formato: "inteiro",
-        calc: campo("candidaturas"),
+        calc: campo("x_candidaturas"),
+        href: (f) => `/admin/candidaturas?${qsPeriodo(f)}`,
         serie: "candidaturas",
       },
       {
         chave: "pedidos",
         rotulo: "Pedidos de Moradia",
-        formula: "Pedidos de Moradia publicados por inquilinos no período.",
+        formula: "Pedidos de Moradia publicados no período por contas reais (contas de teste ficam fora). O mesmo número de /admin/pedidos com o mesmo período.",
         formato: "inteiro",
-        calc: campo("pedidos"),
+        calc: campo("x_pedidos"),
         serie: "pedidos",
+        href: (f) => `/admin/pedidos?${qsPeriodo(f)}`,
       },
     ],
   },
@@ -276,29 +325,50 @@ export const BLOCOS: Bloco[] = [
         rotulo: "Candidaturas respondidas",
         formula: "Candidaturas do período que o proprietário aceitou ou recusou ÷ candidaturas do período.",
         formato: "pct",
-        calc: (m) => razao(num(m.candidaturas_decididas), num(m.candidaturas)),
+        calc: (m) => razao(num(m.x_cand_decididas), num(m.x_candidaturas)),
+        href: (f) => `/admin/candidaturas?status=respondida&${qsPeriodo(f)}`,
       },
       {
         chave: "taxa_aceite",
         rotulo: "Candidaturas aceitas",
         formula: "Candidaturas aceitas ÷ candidaturas do período.",
         formato: "pct",
-        calc: (m) => razao(num(m.candidaturas_aceitas), num(m.candidaturas)),
+        calc: (m) => razao(num(m.x_cand_aceitas), num(m.x_candidaturas)),
+        href: (f) => `/admin/candidaturas?status=aceita&${qsPeriodo(f)}`,
       },
       {
         chave: "tempo_decisao",
-        rotulo: "Tempo até a resposta",
+        rotulo: "Candidaturas: tempo até a resposta",
         formula: "Mediana do tempo entre a candidatura e a resposta do proprietário (só as respondidas).",
         formato: "horas",
-        calc: campo("horas_mediana_decisao"),
+        calc: campo("x_cand_mediana_h"),
+        href: (f) => `/admin/candidaturas?status=respondida&${qsPeriodo(f)}`,
         menorMelhor: true,
       },
       {
         chave: "pedidos_respondidos",
         rotulo: "Pedidos com resposta",
-        formula: "Pedidos de Moradia do período com ao menos uma resposta de proprietário ÷ pedidos do período.",
+        formula: FORMULA_PEDIDOS_COM_RESPOSTA,
         formato: "pct",
-        calc: (m) => razao(num(m.pedidos_com_resposta), num(m.pedidos)),
+        calc: campo("x_pedidos_taxa"),
+        href: (f) => `/admin/pedidos?${qsPeriodo(f)}`,
+      },
+      {
+        chave: "pedidos_com_resposta_n",
+        rotulo: "Pedidos respondidos",
+        formula: "Pedidos do período que receberam pelo menos 1 contato ou proposta (contas de teste fora).",
+        formato: "inteiro",
+        calc: campo("x_pedidos_com_resposta"),
+        href: (f) => `/admin/pedidos?${qsPeriodo(f)}`,
+      },
+      {
+        chave: "pedidos_tempo_1a_resposta",
+        rotulo: "Pedidos: tempo até a 1ª resposta",
+        formula: FORMULA_TEMPO_1A_RESPOSTA_PEDIDO,
+        formato: "horas",
+        calc: campo("x_pedidos_mediana_h"),
+        menorMelhor: true,
+        href: (f) => `/admin/pedidos?${qsPeriodo(f)}`,
       },
     ],
   },
@@ -309,32 +379,52 @@ export const BLOCOS: Bloco[] = [
       {
         chave: "contratos",
         rotulo: "Contratos fechados",
-        formula: "Contratos registrados no período (pela cidade do imóvel).",
+        formula: "Contratos registrados no período (pela cidade do imóvel). Contas e anúncios de teste ficam fora. A mesma lista de /admin/contratos.",
         formato: "inteiro",
-        calc: campo("contratos"),
+        calc: campo("x_contratos"),
         serie: "contratos",
+        href: (f) => `/admin/contratos?${qsPeriodo(f)}`,
       },
       {
-        chave: "comissao_gerada",
-        rotulo: "Comissão gerada",
-        formula: "Soma da comissão dos contratos do período (cobrada só do proprietário, uma vez por contrato).",
+        chave: "valor_total_contratos",
+        rotulo: "Valor total dos contratos",
+        formula: FORMULA_VALOR_TOTAL,
         formato: "reais",
-        calc: campo("comissao_gerada"),
+        calc: campo("x_valor_total"),
+        nota: "valor contratado entre as partes (não passa pela plataforma)",
+        href: (f) => `/admin/contratos?${qsPeriodo(f)}`,
       },
       {
-        chave: "comissao_recebida",
-        rotulo: "Comissão recebida",
-        formula: "Soma das comissões com pagamento confirmado no período.",
+        chave: "taxa_gerada",
+        rotulo: "Taxa de serviço gerada",
+        formula: FORMULA_TAXA,
+        formato: "reais",
+        calc: campo("x_taxa"),
+        href: (f) => `/admin/financeiro?${qsPeriodo(f)}`,
+      },
+      {
+        chave: "take_rate",
+        rotulo: "Take rate",
+        formula: FORMULA_TAKE_RATE,
+        formato: "pct",
+        calc: campo("x_take_rate"),
+        href: (f) => `/admin/financeiro?${qsPeriodo(f)}`,
+      },
+      {
+        chave: "valor_mensal_contratado",
+        rotulo: "Valor mensal contratado (soma)",
+        formula: FORMULA_VALOR_MENSAL,
+        formato: "reais",
+        calc: campo("x_valor_mensal"),
+        href: (f) => `/admin/contratos?${qsPeriodo(f)}`,
+      },
+      {
+        chave: "taxa_recebida",
+        rotulo: "Taxa de serviço recebida",
+        formula: "Soma das taxas de serviço com pagamento confirmado no período.",
         formato: "reais",
         calc: campo("comissao_recebida"),
-      },
-      {
-        chave: "aluguel_contratado",
-        rotulo: "Aluguel contratado",
-        formula: "Soma do aluguel mensal dos contratos do período. É o valor contratado entre as partes e não passa pela plataforma.",
-        formato: "reais",
-        calc: campo("aluguel_contratado"),
-        nota: "valor contratado entre as partes (não passa pela plataforma)",
+        href: (f) => `/admin/financeiro?${qsPeriodo(f)}`,
       },
     ],
   },
@@ -344,25 +434,56 @@ export const BLOCOS: Bloco[] = [
     indicadores: [
       {
         chave: "chamados",
-        rotulo: "Chamados abertos",
-        formula: "Chamados de manutenção abertos por inquilinos no período.",
+        rotulo: "Solicitações de manutenção abertas",
+        formula: "Solicitações de manutenção abertas por inquilinos no período (imóveis reais; simulações e contas de teste ficam fora). Não é a fila de atendimento.",
         formato: "inteiro",
-        calc: campo("chamados"),
+        calc: campo("x_solicitacoes"),
+        href: (f) => `/admin/solicitacoes?${qsPeriodo(f)}`,
       },
       {
         chave: "chamados_resolvidos",
-        rotulo: "Chamados resolvidos",
-        formula: "Chamados do período já resolvidos ÷ chamados do período.",
+        rotulo: "Solicitações de manutenção resolvidas",
+        formula: "Solicitações de manutenção do período já resolvidas ÷ solicitações do período.",
         formato: "pct",
-        calc: (m) => razao(num(m.chamados_resolvidos), num(m.chamados)),
+        calc: (m) => razao(num(m.x_solicitacoes_resolvidas), num(m.x_solicitacoes)),
+        href: (f) => `/admin/solicitacoes?${qsPeriodo(f)}`,
       },
       {
         chave: "tempo_1a_resposta",
-        rotulo: "1ª resposta a chamado",
-        formula: "Mediana do tempo entre a abertura do chamado e a 1ª resposta do proprietário.",
+        rotulo: "Manutenção: 1ª resposta do proprietário",
+        formula: "Mediana do tempo entre a abertura da solicitação de manutenção e a 1ª resposta do proprietário.",
         formato: "horas",
         calc: campo("horas_mediana_1a_resposta"),
         menorMelhor: true,
+        href: (f) => `/admin/solicitacoes?${qsPeriodo(f)}`,
+      },
+      {
+        chave: "atendimento_abertos",
+        rotulo: "Atendimento: chamados abertos",
+        formula: FORMULA_CHAMADOS_ABERTOS,
+        formato: "inteiro",
+        calc: campo("x_atd_abertos_agora"),
+        janela: "agora",
+        href: () => "/admin/atendimento?aba=fila",
+      },
+      {
+        chave: "atendimento_resolvidos",
+        rotulo: "Atendimento: resolvidos",
+        formula: FORMULA_RESOLVIDOS_ATENDIMENTO,
+        formato: "pct",
+        calc: campo("x_atd_resolvidos"),
+        janela: "dias",
+        href: (f) => `/admin/atendimento?aba=metricas&dias=${diasAteHoje(f)}`,
+      },
+      {
+        chave: "atendimento_1a_resposta",
+        rotulo: "Atendimento: 1ª resposta média",
+        formula: FORMULA_1A_RESPOSTA_ATENDIMENTO,
+        formato: "minutos",
+        calc: campo("x_atd_1a_resposta_min"),
+        menorMelhor: true,
+        janela: "dias",
+        href: (f) => `/admin/atendimento?aba=metricas&dias=${diasAteHoje(f)}`,
       },
     ],
   },
@@ -372,17 +493,19 @@ export function formatar(v: Num, f: Formato): string {
   if (f === "pct") return fmtPct(v);
   if (f === "reais") return fmtReais(v);
   if (f === "horas") return fmtHoras(v);
+  if (f === "minutos") return fmtTempoMin(v);
   return fmtInteiro(v);
 }
 
 // ── Funil ────────────────────────────────────────────────────────────────────
-export const FUNIL: { rotulo: string; calc: (m: Metricas) => Num }[] = [
-  { rotulo: "Buscas", calc: campo("buscas") },
-  { rotulo: "Anúncios vistos", calc: campo("visualizacoes") },
-  { rotulo: "Começaram a candidatura", calc: campo("candidaturas_iniciadas") },
-  { rotulo: "Candidaturas enviadas", calc: campo("candidaturas") },
-  { rotulo: "Aceitas", calc: campo("candidaturas_aceitas") },
-  { rotulo: "Contratos", calc: campo("contratos") },
+/** Funil: cada etapa abre a lista da etapa, no mesmo período (complemento do P29, item 4). */
+export const FUNIL: { rotulo: string; calc: (m: Metricas) => Num; href: (f: FiltroHome) => string }[] = [
+  { rotulo: "Buscas", calc: campo("x_ev_busca"), href: (f) => `/admin/eventos?tipo=busca&${qsPeriodo(f)}` },
+  { rotulo: "Anúncios vistos", calc: campo("x_ev_ver_anuncio"), href: (f) => `/admin/eventos?tipo=ver_anuncio&${qsPeriodo(f)}` },
+  { rotulo: "Começaram a candidatura", calc: campo("x_ev_iniciar_candidatura"), href: (f) => `/admin/eventos?tipo=iniciar_candidatura&${qsPeriodo(f)}` },
+  { rotulo: "Candidaturas enviadas", calc: campo("x_candidaturas"), href: (f) => `/admin/candidaturas?${qsPeriodo(f)}` },
+  { rotulo: "Aceitas", calc: campo("x_cand_aceitas"), href: (f) => `/admin/candidaturas?status=aceita&${qsPeriodo(f)}` },
+  { rotulo: "Contratos", calc: campo("x_contratos"), href: (f) => `/admin/contratos?${qsPeriodo(f)}` },
 ];
 
 /** Etapas do funil com % sobre a etapa anterior (null quando a anterior é 0). */
@@ -398,36 +521,37 @@ export function funil(m: Metricas): { rotulo: string; valor: Num; daAnterior: Nu
 
 // ── "Precisa de você agora" ──────────────────────────────────────────────────
 /** href null = ainda sem tela própria (chega nos PRs D/E). */
-export const PRECISA: { chave: string; rotulo: string; detalhe: string; href: string | null }[] = [
+/** Toda fila abre a lista que ela conta (complemento do P29, item 4: nenhum número sem link). */
+export const PRECISA: { chave: string; rotulo: string; detalhe: string; href: string }[] = [
   {
     chave: "documentos_pendentes",
     rotulo: "Documentos de imóvel para conferir",
-    detalhe: "Só documento aprovado libera a publicação.",
+    detalhe: "Na fila agora: documentos de imóvel + matrículas em revisão. Só documento aprovado libera a publicação.",
     href: "/admin/documentos",
   },
   {
     chave: "candidaturas_sem_resposta_48h",
     rotulo: "Candidaturas sem resposta há mais de 48 h",
     detalhe: "O proprietário ainda não aceitou nem recusou.",
-    href: null,
+    href: "/admin/candidaturas?status=sem_resposta",
   },
   {
     chave: "chamados_urgentes_sem_resposta",
     rotulo: "Chamados urgentes sem resposta há mais de 4 h",
     detalhe: "Prioridade urgente e nenhuma resposta do proprietário.",
-    href: null,
+    href: "/admin/solicitacoes?prioridade=urgente&sem_resposta=1",
   },
   {
     chave: "comissoes_vencidas",
-    rotulo: "Comissões vencidas",
-    detalhe: "Cobrança de comissão que passou do vencimento.",
-    href: null,
+    rotulo: "Taxas vencidas",
+    detalhe: "Cobrança da taxa de serviço (contratos reais) que passou do vencimento.",
+    href: "/admin/financeiro?situacao=vencida",
   },
   {
     chave: "pedidos_sem_resposta_expirando",
     rotulo: "Pedidos expirando sem nenhuma resposta",
     detalhe: "Pedidos ativos que vencem em até 3 dias.",
-    href: "/admin/pedidos",
+    href: "/admin/pedidos?expirando=1",
   },
 ];
 

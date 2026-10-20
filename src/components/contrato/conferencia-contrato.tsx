@@ -12,7 +12,7 @@ import {
   type ConferenciaView,
   type ConferenciasContrato,
 } from "@/lib/data/conferencia-actions";
-import type { TipoConferencia } from "@/lib/conferencia";
+import { erroTamanhoLaudo, estadoConferencia, mesclarItens, mesclarLaudo, mesclarRespostas, type ItemTela, type LaudoTela, type RespostaTela, type TipoConferencia } from "@/lib/conferencia";
 
 const ROTULO_TIPO: Record<TipoConferencia, string> = { entrada: "Conferência de entrada", saida: "Conferência de saída" };
 const ROTULO_ESTADO = {
@@ -50,24 +50,36 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const [contestando, setContestando] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [locais, setLocais] = useState<ItemTela[]>([]);
+  const [respostasLocais, setRespostasLocais] = useState<RespostaTela[]>([]);
+  const [laudoLocal, setLaudoLocal] = useState<LaudoTela | null>(null);
 
   const parte = dados.minhaParte;
-  const respondeu = !!conf?.respostas.some((r) => r.parte === parte);
-  const travada = (conf?.respostas.length ?? 0) > 0;
-  const estado = conf?.estado ?? "em_andamento";
+  const respostas = mesclarRespostas(conf?.respostas ?? [], respostasLocais);
+  const respondeu = respostas.some((r) => r.parte === parte);
+  // cada parte registra até responder; com as duas respostas tudo congela
+  const travada = respondeu || new Set(respostas.map((r) => r.parte)).size >= 2;
+  const estado = conf ? estadoConferencia(respostas) : "em_andamento";
+  const itens = mesclarItens(conf?.itens ?? [], locais);
+  const laudo = mesclarLaudo(conf?.laudo ?? null, laudoLocal);
 
-  async function rodar(fn: () => Promise<{ ok: boolean; error?: string }>) {
+  async function rodar(fn: () => Promise<{ ok: boolean; error?: string; item?: ItemTela; resposta?: RespostaTela; laudo?: LaudoTela }>) {
     setErro(null);
     setOcupado(true);
     try {
       const r = await fn();
       if (!r.ok) return setErro(r.error ?? "Não foi possível concluir.");
+      if (r.item) setLocais((l) => [...l, r.item!]);
+      if (r.resposta) setRespostasLocais((l) => [...l, r.resposta!]);
+      if (r.laudo) setLaudoLocal(r.laudo);
       setComodo("");
       setDescricao("");
       setFoto(null);
       setMotivo("");
       setContestando(false);
       router.refresh();
+    } catch {
+      setErro("Não foi possível enviar o arquivo. Confira o tamanho e tente de novo.");
     } finally {
       setOcupado(false);
     }
@@ -91,6 +103,8 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
 
   const anexarLaudo = (arquivo: File | undefined) => {
     if (!arquivo) return;
+    const grande = erroTamanhoLaudo(arquivo.size);
+    if (grande) return setErro(grande);
     rodar(() => {
       const fd = new FormData();
       fd.set("contratoId", contratoId);
@@ -112,13 +126,13 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         <p className="mt-1 text-xs text-muted">Registre fotos e itens por cômodo até {fmt(dados.prazoEntradaEm)} (48 h depois do início).</p>
       )}
 
-      {conf?.laudo && (
+      {laudo && (
         <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-50 p-3 text-sm text-ink" data-testid="conferencia-laudo">
           <FileCheck2 className="h-4 w-4 shrink-0 text-forest" />
           <span>
-            <strong>Laudo independente</strong> anexado em {fmt(conf.laudo.criadoEm)} — prevalece sobre as fotos.{" "}
-            {conf.laudo.url && (
-              <a href={conf.laudo.url} target="_blank" rel="noopener noreferrer" className="font-medium text-forest underline">
+            <strong>Laudo independente</strong> anexado em {fmt(laudo.criadoEm)} — prevalece sobre as fotos.{" "}
+            {laudo.url && (
+              <a href={laudo.url} target="_blank" rel="noopener noreferrer" className="font-medium text-forest underline">
                 Abrir PDF
               </a>
             )}
@@ -126,9 +140,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         </p>
       )}
 
-      {conf && conf.itens.length > 0 ? (
+      {itens.length > 0 ? (
         <ul className="mt-3 divide-y divide-line text-sm" data-testid={`conferencia-${tipo}-itens`}>
-          {conf.itens.map((i) => (
+          {itens.map((i) => (
             <li key={i.id} className="flex items-start gap-3 py-2">
               {i.fotoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -148,9 +162,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         <p className="mt-3 text-sm text-muted">Nenhum item registrado ainda.</p>
       )}
 
-      {conf && conf.respostas.length > 0 && (
+      {conf && respostas.length > 0 && (
         <ul className="mt-3 space-y-1 text-sm text-ink" data-testid={`conferencia-${tipo}-respostas`}>
-          {conf.respostas.map((r) => (
+          {respostas.map((r) => (
             <li key={r.parte}>
               {ROTULO_PARTE[r.parte]} {r.decisao === "confirmou" ? "confirmou" : "contestou"} em {fmt(r.decididoEm)}
               {r.motivo ? ` — ${r.motivo}` : ""}
@@ -170,14 +184,14 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         </form>
       )}
 
-      {parte && !conf?.laudo && (
+      {parte && !laudo && (
         <label className="mt-3 block text-sm text-muted">
           Anexar laudo independente (PDF, até 15 MB)
           <input type="file" accept="application/pdf" disabled={ocupado} onChange={(e) => anexarLaudo(e.target.files?.[0])} className="mt-1 block w-full min-w-0 max-w-full text-sm" data-testid={`conferencia-${tipo}-laudo-input`} />
         </label>
       )}
 
-      {parte && conf && conf.itens.length > 0 && !respondeu && (
+      {parte && conf && itens.length > 0 && !respondeu && (
         <div className="mt-4 space-y-2">
           {contestando ? (
             <>

@@ -49,17 +49,25 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
       const cartao = page.getByTestId("avaliacao-recebida").filter({ hasText: marca });
       await expect(cartao).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-      await cartao.getByTestId("avaliacao-responder").click();
+      // O clique antes da hidratação não abre o formulário: repete o toque até o campo aparecer.
+      await expect(async () => {
+        await cartao.getByTestId("avaliacao-responder").click();
+        await expect(cartao.getByLabel(/sua resposta/i)).toBeVisible({ timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
       await cartao.getByLabel(/sua resposta/i).fill(`Obrigado pela estadia ${marca}`);
       await cartao.getByTestId("avaliacao-enviar").click();
-      await expect(cartao.getByTestId("avaliacao-resposta")).toContainText(`Obrigado pela estadia ${marca}`);
+      // A resposta grava no servidor e a tela recarrega: no lab lento passa de 10 s. Se não vier, mostra o que a tela disse.
+      await expect(cartao.getByTestId("avaliacao-resposta"), `alerta da tela: ${await cartao.getByRole("alert").allTextContents()}`).toContainText(`Obrigado pela estadia ${marca}`, { timeout: 30_000 });
 
       // 2) Pede revisão pela tela.
-      await cartao.getByTestId("avaliacao-pedir-revisao").click();
-      await cartao.getByLabel("Motivo").selectOption("fato_falso");
+      await expect(async () => {
+        await cartao.getByTestId("avaliacao-pedir-revisao").click();
+        await expect(cartao.getByLabel("Motivo", { exact: true })).toBeVisible({ timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
+      await cartao.getByLabel("Motivo", { exact: true }).selectOption("fato_falso");
       await cartao.getByLabel(/explique o motivo/i).fill(`O comentário cita um fato que não aconteceu ${marca}, tenho comprovação`);
       await cartao.getByTestId("avaliacao-enviar").click();
-      await expect(cartao.getByTestId("revisao-em-analise")).toBeVisible();
+      await expect(cartao.getByTestId("revisao-em-analise")).toBeVisible({ timeout: 30_000 });
 
       // 3) O admin decide pela tela.
       const ctxAdmin = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 800 } });
@@ -70,7 +78,7 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
         await expect(pedido).toBeVisible();
         await pedido.getByLabel(/justificativa/i).fill("Conferido: o comentário é opinião sobre a estadia.");
         await pedido.getByRole("button", { name: /manter no ar/i }).click();
-        await expect(pedido).toContainText("Mantida");
+        await expect(pedido).toContainText("Mantida", { timeout: 30_000 });
       } finally {
         await ctxAdmin.close();
       }

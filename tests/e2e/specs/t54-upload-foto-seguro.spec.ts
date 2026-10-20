@@ -26,12 +26,34 @@ test.describe("T54 — Upload de foto seguro", () => {
       expect(svg.status()).toBe(415);
       const txt = await post(request, "x.png", "image/png", Buffer.from("só texto"));
       expect(txt.status()).toBe(415);
+      const txtJpg = await post(request, "x.jpg", "image/jpeg", Buffer.from("só texto renomeado para jpg"));
+      expect(txtJpg.status()).toBe(415);
+    });
+
+    test("foto verdadeira (JPEG) → 200 e salva como WebP; cabeçalho de JPEG sem imagem → 415", async ({ request }) => {
+      const sharp = (await import("sharp")).default;
+      const jpeg = await sharp({ create: { width: 640, height: 480, channels: 3, background: "#336699" } })
+        .withExif({ IFD0: { Copyright: "Dono Fulano" } })
+        .jpeg()
+        .toBuffer();
+      const ok = await post(request, "casa.jpg", "image/jpeg", jpeg);
+      expect(ok.status()).toBe(200);
+      expect((await ok.json()).path).toMatch(/\.webp$/);
+      const falso = await post(request, "falsa.jpg", "image/jpeg", Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0]));
+      expect(falso.status()).toBe(415);
     });
 
     test("F47 na tela: SVG é recusado com mensagem visível e o contador não sobe", async ({ page }) => {
       await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
+      const outro = page.getByRole("button", { name: "Começar outro" });
+      if (await outro.isVisible().catch(() => false)) await outro.click();
+      // Cadastro em 5 etapas (prompt 10): as fotos são a 2ª etapa, depois de "Onde fica".
+      await page.getByTestId("cadastro-rua").fill("Rua do Upload");
+      await page.getByTestId("cadastro-numero").fill("1");
+      await page.getByTestId("cadastro-bairro").fill("Centro");
+      await page.getByRole("button", { name: "Continuar", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible();
-      await page.locator('input[type="file"]').first().setInputFiles({
+      await page.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles({
         name: "x.svg",
         mimeType: "image/svg+xml",
         buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'),

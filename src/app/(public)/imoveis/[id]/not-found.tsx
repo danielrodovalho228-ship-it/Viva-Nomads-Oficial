@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Search, Home } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { NotFoundIllustration } from "@/components/illustrations";
+
+// Título próprio já no HTML inicial (o streaming do notFound() servia o padrão da home).
+// robots: null — fica só o noindex do Next, sem o "index, follow" da raiz.
+export const metadata: Metadata = {
+  title: "Página não encontrada",
+  robots: null,
+};
 
 /**
  * 404 branded da rota de detalhe do imóvel (App Router).
@@ -13,7 +21,7 @@ export default function ImovelNotFound() {
     <div className="container-page flex flex-col items-center py-20 text-center">
       <NotFoundIllustration />
       <h1 className="mt-8 font-title text-2xl font-bold text-ink sm:text-3xl">
-        Imóvel não encontrado
+        Página não encontrada
       </h1>
       <p className="mt-2 max-w-md text-muted">
         Este anúncio não existe mais ou foi removido.

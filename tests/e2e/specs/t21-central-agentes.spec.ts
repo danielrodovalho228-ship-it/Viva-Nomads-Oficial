@@ -16,8 +16,23 @@ async function abrirAba(page: Page, nome: string) {
   await expect(page.getByRole("tab", { name: nome })).toHaveAttribute("aria-selected", "true");
 }
 
+/** Banco do LABORATÓRIO (cliente de serviço): só para conferir e apagar o que este teste criou. */
+const bancoLab = () =>
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+    : null;
+
 test.describe("T21 — Central de Agentes v2", () => {
   test.use({ storageState: authFile("admin") });
+  // Apaga as ordens e conversas que o t21 criou (e as de rodadas antigas, antes da marca "[teste-lab]").
+  test.afterAll(async () => {
+    const db = bancoLab();
+    if (!db) return;
+    for (const padrao of ["%[teste-lab] t21%", "%(t21-1%", "%(t21b-1%"]) {
+      await db.from("agentes_ordens").delete().like("texto", padrao);
+      await db.from("agentes_conversas").delete().like("texto", padrao);
+    }
+  });
 
   test("Equipe: Daniel → Moacir → Otávio, foto, status da última ronda e achados P1 reais", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });
@@ -101,7 +116,7 @@ test.describe("T21 — Central de Agentes v2", () => {
   });
 
   test("Executar agora: correção pedida ao Bruno vai para o Renato, dispara e a ordem aparece como Enviada", async ({ page }) => {
-    const marca = `t21-${Date.now()}`;
+    const marca = `[teste-lab] t21-${Date.now()}`;
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Bruno/ }).click();
@@ -126,11 +141,25 @@ test.describe("T21 — Central de Agentes v2", () => {
     // Sem os 3 botões antigos: só o campo e o botão redondo de enviar.
     await expect(page.getByRole("button", { name: "Deixar ordem" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Perguntar" })).toHaveCount(0);
-    const marca = `t21b-${Date.now()}`;
+    const marca = `[teste-lab] t21b-${Date.now()}`;
     await page.getByPlaceholder("Escreva para Bruno…").fill(`corrige o bug do /conferir (${marca})`);
     await page.getByRole("button", { name: "Enviar" }).click();
-    await expect(page.getByTestId("bolha-agente").filter({ hasText: /Registrei a ordem para Renato/ }).last()).toBeVisible();
+    // 30 s: a ação do servidor fica lenta no lab (como no t57). Se ainda falhar, o erro traz o que a tela mostrou.
+    const registrou = page.getByTestId("bolha-agente").filter({ hasText: /Registrei a ordem para Renato/ }).last();
+    try {
+      await expect(registrou).toBeVisible({ timeout: 30_000 });
+    } catch (e) {
+      const balões = await page.getByTestId("bolha-agente").allInnerTexts();
+      const tela = (await page.locator("main").innerText()).slice(-500);
+      throw new Error(`Balões do agente: ${JSON.stringify(balões.slice(-3))}; fim da tela: ${JSON.stringify(tela)}\n${(e as Error).message}`);
+    }
     await expect(page.getByTestId("ordem").filter({ hasText: marca })).toHaveCount(1);
+    // A prova é a ORDEM gravada (não o texto exato da resposta): uma só, para o Renato, aberta.
+    const db = bancoLab();
+    if (db) {
+      const { data } = await db.from("agentes_ordens").select("agente_slug, status").like("texto", `%${marca}%`);
+      expect(data).toEqual([{ agente_slug: "renato", status: "pendente" }]);
+    }
   });
 
   test("Moacir gerente: 'chegou chamado novo?' consulta o banco, pergunta à Viva e responde com código e prazo", async ({ page, browser }) => {

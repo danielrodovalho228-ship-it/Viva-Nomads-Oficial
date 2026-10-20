@@ -11,7 +11,6 @@ import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PasswordInput } from "@/components/ui/password-input";
-import { TaxSimulator } from "@/components/tax-simulator";
 import { CategoriaProfissional } from "@/components/account/categoria-profissional";
 import { createClient } from "@/lib/supabase/client";
 import { nomeCompletoLimpo } from "@/lib/display-name";
@@ -20,6 +19,7 @@ import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { Switch } from "@/components/ui/switch";
 import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
 import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
+import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 
@@ -36,6 +36,7 @@ export function DadosPessoais() {
   const [nome, setNome] = useState(nomeCompletoLimpo(user?.fullName));
   const [telefone, setTelefone] = useState("");
   const [linkedin, setLinkedin] = useState("");
+  const [motivoEstadia, setMotivoEstadia] = useState("");
   const [email, setEmail] = useState(user?.email ?? "");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -50,6 +51,7 @@ export function DadosPessoais() {
         setNome(nomeCompletoLimpo(d.fullName));
         setTelefone(d.phone);
         setLinkedin(d.linkedin);
+        setMotivoEstadia(d.motivoEstadia);
         setEmail(d.email);
       })
       .catch(() => {});
@@ -66,7 +68,7 @@ export function DadosPessoais() {
     const r = await salvarMeusDados({
       fullName: nome,
       phone: telefone,
-      ...(mode === "tenant" ? { linkedin } : {}),
+      ...(mode === "tenant" ? { linkedin, motivoEstadia } : {}),
     }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo.", dados: undefined }));
     setSalvando(false);
     if (!r.ok || !r.dados) {
@@ -75,7 +77,10 @@ export function DadosPessoais() {
     }
     setNome(r.dados.fullName);
     setTelefone(r.dados.phone ?? "");
-    if (mode === "tenant") setLinkedin(r.dados.linkedin ?? "");
+    if (mode === "tenant") {
+      setLinkedin(r.dados.linkedin ?? "");
+      setMotivoEstadia(r.dados.motivoEstadia ?? "");
+    }
     // O nome novo aparece já no menu e no topo.
     const atual = useAuthStore.getState().user;
     if (atual) setUser({ ...atual, name: r.dados.fullName, fullName: r.dados.fullName });
@@ -112,6 +117,27 @@ export function DadosPessoais() {
               placeholder="https://linkedin.com/in/seu-perfil"
               inputMode="url"
             />
+          )}
+          {mode === "tenant" && (
+            <label className="block text-sm font-medium text-ink">
+              Motivo da estadia (opcional)
+              <select
+                data-testid="perfil-motivo-estadia"
+                value={motivoEstadia}
+                onChange={(e) => setMotivoEstadia(e.target.value)}
+                className="mt-1 block min-h-11 w-full rounded-lg border border-border bg-white px-3 text-base font-normal text-ink"
+              >
+                <option value="">Prefiro não informar</option>
+                {MOTIVOS.map((m) => (
+                  <option key={m.key} value={m.key}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs font-normal text-muted">
+                Já vem preenchido nos seus próximos pedidos. Você pode trocar a qualquer hora.
+              </span>
+            </label>
           )}
         </div>
         <p className="mt-3 text-xs text-muted">
@@ -195,9 +221,15 @@ export function DocumentoPessoa() {
       <section id="documento" className="scroll-mt-24" data-testid="documento-secao">
         <Panel title="Documento (CPF)" className="mt-6">
           {doc === undefined ? (
-            <div role="status" aria-label="Carregando documento" data-testid="documento-carregando" className="space-y-3">
-              <Skeleton className="h-4 w-3/4" />
+            // Mesma altura do bloco carregado (texto + campo + confirmação): a tela não "pula" quando o CPF chega.
+            <div role="status" aria-label="Carregando documento" data-testid="documento-carregando" className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="!mt-4 h-5 w-16" />
               <Skeleton className="h-11 w-full sm:w-1/2" />
+              <Skeleton className="!mt-3 h-5 w-3/4" />
             </div>
           ) : (
             <div data-testid="documento-erro">
@@ -276,33 +308,6 @@ export function DocumentoPessoa() {
   );
 }
 
-export function PerfilDoModo() {
-  const { mode } = useViewMode();
-  return (
-    <>
-      {mode !== "tenant" && (
-        <div className="mt-6">
-          <h2 className="mb-3 font-title text-lg font-bold text-ink">Tributação dos aluguéis</h2>
-          <TaxSimulator />
-        </div>
-      )}
-
-      {mode === "tenant" && (
-        <Panel title="Perfil profissional" className="mt-6">
-          <p className="text-sm text-muted">
-            Estes dados ajudam o proprietário a conhecer você. Complementam a verificação de identidade — não
-            o substituem.
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <CategoriaProfissional />
-            <p className="self-end text-xs text-muted">O LinkedIn fica em Dados pessoais.</p>
-          </div>
-        </Panel>
-      )}
-    </>
-  );
-}
-
 export function AjudaContato() {
   return (
     <Panel title="Ajuda & contato" className="mt-6">
@@ -324,6 +329,21 @@ export function AjudaContato() {
           Abrir chamado
         </a>
       </div>
+    </Panel>
+  );
+}
+
+/** Prompt 31a: "Quero ser parceiro" — abre o mesmo formulário do site, pré-preenchido pela conta (papel extra). */
+export function QueroSerParceiro() {
+  return (
+    <Panel title="Quero ser parceiro" className="mt-6" data-testid="conta-quero-ser-parceiro">
+      <p className="text-sm text-muted">
+        Faz fotografia, mudança, limpeza, montagem ou manutenção? Peça a parceria com esta mesma conta: você continua
+        alugando ou anunciando normalmente.
+      </p>
+      <a href="/dashboard/parceiro" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage">
+        Quero ser parceiro
+      </a>
     </Panel>
   );
 }
@@ -471,10 +491,10 @@ function PwdField({
 }
 
 export function NotificationsPanel() {
-  // Preferências GRAVADAS no perfil (notif_email / notif_whatsapp). Antes os
-  // interruptores só mudavam na tela e não correspondiam a nada no banco.
-  const [prefs, setPrefs] = useState<{ email: boolean; whatsapp: boolean } | null>(null);
-  const [salvando, setSalvando] = useState<"email" | "whatsapp" | "equipe" | null>(null);
+  // Preferência GRAVADA no perfil (notif_email). Prompt 30, item 8: sem aviso por WhatsApp (ficam e-mail e o aviso
+  // no app; o canal da Viva é "Falar com a Viva").
+  const [prefs, setPrefs] = useState<{ email: boolean } | null>(null);
+  const [salvando, setSalvando] = useState<"email" | "equipe" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   // null = não é admin (o interruptor nem aparece). Alertas da equipe: ordem 27cfd36a.
@@ -484,7 +504,7 @@ export function NotificationsPanel() {
     let vivo = true;
     getNotifPrefs()
       .then((p) => vivo && setPrefs(p))
-      .catch(() => vivo && setPrefs({ email: true, whatsapp: true }));
+      .catch(() => vivo && setPrefs({ email: true }));
     getAlertasEquipe()
       .then((v) => vivo && setAlertasEquipeUi(v))
       .catch(() => vivo && setAlertasEquipeUi(null));
@@ -493,7 +513,7 @@ export function NotificationsPanel() {
     };
   }, []);
 
-  async function alternar(chave: "email" | "whatsapp") {
+  async function alternar(chave: "email") {
     if (!prefs) return;
     const anterior = prefs;
     const novo = { ...prefs, [chave]: !prefs[chave] };
@@ -528,16 +548,11 @@ export function NotificationsPanel() {
     setOk(true);
   }
 
-  const items: { key: "email" | "whatsapp"; label: string; hint: string }[] = [
+  const items: { key: "email"; label: string; hint: string }[] = [
     {
       key: "email",
       label: "Avisos por e-mail",
-      hint: "Manutenção, novos interessados, mensagens e respostas aos seus pedidos. Ligado por padrão.",
-    },
-    {
-      key: "whatsapp",
-      label: "Avisos por WhatsApp",
-      hint: "Os mesmos avisos pelo WhatsApp, quando o canal estiver ativo.",
+      hint: "Manutenção, novos interessados, mensagens e respostas aos seus pedidos. Ligado por padrão. Os avisos no app sempre aparecem.",
     },
   ];
   return (

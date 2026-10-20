@@ -1,5 +1,7 @@
 "use client";
 
+import { FRASE_CONVERSA_CHAT } from "@/config/conversa-chat";
+import { ETAPAS_CANDIDATURA, TERMOS_CANDIDATURA, LIMITE_APRESENTACAO, etapaAnterior, proximaEtapa, progressoEtapa, validarApresentacao, type EtapaCandidatura } from "@/lib/candidatura-etapas";
 import { AvisoPetCandidatura } from "@/components/property/aviso-pet-candidatura";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { numBR, hojeBR } from "@/lib/utils";
@@ -19,7 +21,7 @@ import {
   CheckCircle2,
   FileSignature,
   MessageSquare,
-  CalendarCheck,
+  MessageCircle,
   ShieldCheck,
   ArrowRight,
   CalendarDays,
@@ -30,17 +32,28 @@ import {
 import type { Property } from "@/lib/types";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { ShareButton } from "@/components/share-button";
+import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
+import { useAuthStore } from "@/lib/store";
+import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
+import { IdealPara } from "@/components/property/ideal-para";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyGallery } from "@/components/property-gallery";
 import { VideoWalkthrough } from "@/components/video-walkthrough";
 import { requestLead } from "@/lib/data/actions";
+import { getMeusDados } from "@/lib/data/perfil-actions";
+import { MOTIVOS, isMotivo } from "@/lib/pedidos/pedidos";
+import { marcarVisto } from "@/lib/marcas/actions";
+import { useMarcasStore } from "@/lib/marcas/store";
+import { CHAVE_ULTIMA_BUSCA, ultimaBuscaParaPedido } from "@/lib/marcas/regra";
 import type { LeadKind } from "@/lib/leads";
 import { PriceCard } from "@/components/property/price-card";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
+import { calcularTotalMensal } from "@/lib/precos";
+import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { AmenitiesGrid } from "@/components/property/amenities-grid";
 import { WorkspaceSection } from "@/components/property/workspace-section";
 import { LocationNearby } from "@/components/property/location-nearby";
@@ -52,13 +65,28 @@ import { BomSaber } from "@/components/property/bom-saber";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
+import type { PerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { Reviews } from "@/components/property/reviews";
-import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
+import { CampoData } from "@/components/ui/campo-data";
+import { AvaliacoesExemplo } from "@/components/property/avaliacoes-exemplo";
+import { FaixaProprietario } from "@/components/property/faixa-proprietario";
+import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo } from "@/config/exemplo-proprietarios";
+import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
+import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
+import { videoTourPermitido } from "@/lib/video-tour";
 
-export function PropertyDetail({ property: anuncio, similar }: { property: Property; similar: Property[] }) {
+export function PropertyDetail({
+  property: anuncio,
+  similar,
+  proprietario = null,
+}: {
+  property: Property;
+  similar: Property[];
+  proprietario?: PerfilProprietario | null;
+}) {
   // Anúncio de EXEMPLO: sem nota, avaliações, selos do dono, taxa de resposta,
   // "Aceita Seguro-Fiança" (em estruturação) nem dados do Google — nada disso
   // existe de verdade para um anúncio ilustrativo.
@@ -71,14 +99,46 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   const [candidatouSe, setCandidatouSe] = useState(false);
   // F37: quando a pessoa quer entrar (opcional); o Fechamento do dono abre com essa data.
   const [inicioDesejado, setInicioDesejado] = useState("");
-  // Composer de dúvida/visita: o inquilino escreve a mensagem de verdade.
-  const [composeKind, setComposeKind] = useState<"duvida" | "visita" | null>(null);
+  // Motivo da estadia (lista única MOTIVOS): vem do perfil, editável; o servidor revalida.
+  const [motivoEstadia, setMotivoEstadia] = useState("");
+  // Prompt 8: quantas pessoas vão morar (vai na candidatura; o servidor confere com a capacidade).
+  const [pessoas, setPessoas] = useState(1);
+  // Composer de dúvida: o inquilino escreve a mensagem de verdade. A visita presencial (prompt 23) tem o próprio pedido,
+  // com até 3 horários em horário de Brasília, como a visita por vídeo.
+  const [composeKind, setComposeKind] = useState<"duvida" | null>(null);
   const [composeText, setComposeText] = useState("");
+  // QA do Muse (18/10): sem login, "Agendar visita" e "Visita por vídeo" levam ao login e voltam com a janela aberta.
+  const usuario = useAuthStore((s) => s.user);
+  const authChecked = useAuthStore((s) => s.authChecked);
+  const semLogin = authChecked && !usuario && !isExemplo(property);
+  const [abrirVideo, setAbrirVideo] = useState(false);
+  const [abrirPresencial, setAbrirPresencial] = useState(false);
+  const irParaLogin = (alvo: AlvoAbrir) => router.push(urlLoginParaAbrir(property.id, alvo));
+  useEffect(() => {
+    const alvo = alvoAbrir(window.location.search);
+    if (!alvo) return;
+    const t = setTimeout(() => {
+      if (alvo === "visita") setAbrirPresencial(true);
+      else setAbrirVideo(true);
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+  // Passo de confirmação do "Enviar candidatura": resumo + (exemplo) aviso de demonstração.
+  const [solicitacaoAberta, setSolicitacaoAberta] = useState(false);
+  const [solicitacaoErro, setSolicitacaoErro] = useState<string | null>(null);
+  // Candidatura em etapas (ordem eb4b11d8): revisar → mensagem → confirmar → confirmação.
+  const [etapa, setEtapa] = useState<EtapaCandidatura>("revisar");
+  const [apresentacao, setApresentacao] = useState("");
 
   // Avaliações — FONTE ÚNICA (A2): usa o array real de reviews, igual à seção de
   // avaliações. `rating` só é usado como média quando há review real.
   const exemplo = isExemplo(property);
   const reviewsReais = property.reviews?.length ?? 0;
+  // Exemplo ilustrativo (prompt 9): dados de demonstração, só em anúncio de exemplo e sempre marcados.
+  const donoExemplo = exemplo ? proprietarioDoExemplo(property.id) : null;
+  const avaliacoesExemplo = exemplo ? avaliacoesDoExemplo(property.id) : [];
+  const resumoExemplo = exemplo ? resumoAvaliacoesExemplo(property.id) : null;
+  const temFaixa = !!donoExemplo || !!proprietario;
   const mediaReal =
     reviewsReais > 0
       ? property.rating > 0
@@ -87,21 +147,60 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
       : 0;
 
   // Dúvida / visita / candidatura: registra o interesse e avisa o proprietário
-  // (e-mail/WhatsApp). Candidatura segue para o fluxo de fechamento.
+  // (pela plataforma). Candidatura segue para o fluxo de fechamento.
   // Evento anônimo de uso (0067): uma visualização por abertura do anúncio.
   useEffect(() => {
     if (!isExemplo(property)) registrarEvento("ver_anuncio", { imovelId: property.id, cidade: property.city });
   }, [property]);
 
+  // Marca "Visto" (ordem 8302024d): só logado grava; deslogado/exemplo ignoram em silêncio.
+  const marcarVistoLocal = useMarcasStore((s) => s.marcarVistoLocal);
+  useEffect(() => {
+    if (isExemplo(property)) return;
+    void marcarVisto(property.id).then((r) => {
+      if (r.ok) marcarVistoLocal(property.id);
+    });
+  }, [property, marcarVistoLocal]);
+
+  // Pedido pré-preenchido: data de entrada da última busca (editável; vencida ou estranha é descartada).
+  useEffect(() => {
+    try {
+      const { inicio } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o localStorage só no navegador (SSR não tem)
+      if (inicio) setInicioDesejado((atual) => atual || inicio);
+    } catch {
+      /* localStorage bloqueado: segue sem pré-preencher */
+    }
+  }, []);
+
+  // Candidatura pré-preenchida com o motivo do perfil (deslogado: sem sessão, fica vazio).
+  useEffect(() => {
+    if (isExemplo(property)) return;
+    let vivo = true;
+    void getMeusDados()
+      .then((d) => {
+        if (vivo && d && isMotivo(d.motivoEstadia)) setMotivoEstadia((atual) => atual || d.motivoEstadia);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [property]);
+
   async function handleLead(kind: LeadKind, note?: string) {
+    // DEMONSTRAÇÃO (anúncio de exemplo): abre o mesmo fluxo, mas não chama o servidor nem grava nada.
+    if (exemplo) {
+      setLeadErro(EXEMPLO_AVISO_DEMO);
+      return false;
+    }
     if (kind === "candidatura") registrarEvento("iniciar_candidatura", { imovelId: property.id, cidade: property.city });
     setPending(kind);
     setLeadErro(null);
-    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined).catch(() => null);
+    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined, kind === "candidatura" ? motivoEstadia : undefined, kind === "candidatura" ? pessoas : undefined).catch(() => null);
     setPending(null);
     if (r?.needsAuth) {
-      // Sem sessão: leva ao login e volta para este anúncio depois de entrar.
-      router.push(`/auth?redirect=/imoveis/${property.id}`);
+      // Sem sessão: leva ao login e volta para este anúncio depois de entrar (a visita volta com a janela aberta).
+      router.push(kind === "visita" ? urlLoginParaAbrir(property.id, "visita") : `/auth?redirect=/imoveis/${property.id}`);
       return false;
     }
     if (r?.selfOwned) {
@@ -126,6 +225,26 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     }
     setSent((s) => ({ ...s, [kind]: true }));
     return true;
+  }
+
+  // "Enviar candidatura" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total });
+  function abrirSolicitacao() {
+    setLeadErro(null);
+    setSolicitacaoErro(resumo.erro);
+    setEtapa("revisar");
+    setSolicitacaoAberta(true);
+  }
+  async function enviarSolicitacao() {
+    if (resumo.erro) return;
+    const msg = validarApresentacao(apresentacao);
+    if (!msg.ok) {
+      setSolicitacaoErro(msg.erro);
+      setEtapa("mensagem");
+      return;
+    }
+    // A confirmação aparece na própria janela (candidatouSe); o servidor mascara contato de novo.
+    await handleLead("candidatura", msg.texto || undefined);
   }
 
   const citySlug = property.city
@@ -159,105 +278,120 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
       >
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
         <span>
-          <strong>Verificação de identidade: em breve.</strong> Complete seu perfil enquanto isso
-          — ajuda o proprietário a decidir. <ArrowRight className="inline h-3 w-3" />
+          <strong>Complete seu perfil</strong> — ajuda o proprietário a decidir. <ArrowRight className="inline h-3 w-3" />
         </span>
       </Link>
     </div>
   );
 
-  // T9: anúncio de EXEMPLO não tem proprietário — sem candidatura, dúvida ou
-  // visita (nada é enviado a ninguém). Nota neutra no lugar dos botões.
-  const notaExemplo = (
-    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-white p-4 text-center">
-      <p className="text-sm font-semibold text-ink">Anúncio de exemplo</p>
-      <p className="text-xs text-muted">{EXEMPLO_SEM_CONTATO}</p>
-      <Link
-        href="/buscar"
-        className="inline-flex items-center justify-center gap-1.5 rounded-full border border-forest px-4 py-2 text-sm font-semibold text-forest transition-colors hover:bg-sage-100"
-      >
-        Ver imóveis <ArrowRight className="h-4 w-4" />
-      </Link>
-    </div>
-  );
+  // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono fica mascarado até o aceite.
+  const contatoViva = destinoContatoViva(property.id);
 
   // Bloco de ações reutilizado dentro do card de preço.
-  const actions = exemplo ? (
-    notaExemplo
-  ) : candidatouSe ? (
+  const actions = candidatouSe ? (
     confirmacaoCandidatura
   ) : (
     <div className="flex flex-col gap-2">
-      <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
-      <AvisoAntigolpe />
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Quando quer entrar? (opcional)
-        <input
-          type="date"
+        <CampoData
           data-testid="candidatura-inicio"
           min={hojeBR()}
           value={inicioDesejado}
           onChange={(e) => setInicioDesejado(e.target.value)}
-          className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+          className="h-11 rounded-xl border border-line bg-white px-3 text-base text-ink"
         />
       </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-ink">
+        Quantas pessoas vão morar?
+        <select
+          data-testid="candidatura-pessoas"
+          value={pessoas}
+          onChange={(e) => setPessoas(Number(e.target.value))}
+          className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+        >
+          {Array.from({ length: Math.max(1, Math.min(20, property.maxGuests ?? 10)) }, (_, i) => i + 1).map((n) => (
+            <option key={n} value={n}>
+              {n === 1 ? "1 pessoa" : `${n} pessoas`}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-ink">
+        Motivo da estadia (opcional)
+        <select
+          data-testid="candidatura-motivo"
+          value={motivoEstadia}
+          onChange={(e) => setMotivoEstadia(e.target.value)}
+          className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+        >
+          <option value="">Prefiro não informar</option>
+          {MOTIVOS.map((m) => (
+            <option key={m.key} value={m.key}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {exemplo && (
+        <p data-testid="aviso-demo" className="rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
+          {EXEMPLO_AVISO_DEMO}
+        </p>
+      )}
       <Button
-        variant="gold"
+        variant="primary"
         size="lg"
         className="w-full"
-        onClick={() => handleLead("candidatura")}
+        data-cta
+        onClick={abrirSolicitacao}
         disabled={pending !== null}
       >
         <FileSignature className="h-4 w-4" />
-        {pending === "candidatura" ? "Enviando..." : "Candidatar-se"}
+        {pending === "candidatura" ? "Enviando..." : "Enviar candidatura"}
       </Button>
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setComposeText("");
-            setComposeKind("duvida");
-          }}
-          disabled={pending !== null || sent.duvida}
-        >
-          {sent.duvida ? (
-            <>
-              <Check className="h-4 w-4" /> Dúvida enviada
-            </>
-          ) : (
-            <>
-              <MessageSquare className="h-4 w-4" />
-              {pending === "duvida" ? "Enviando..." : "Tirar dúvida"}
-            </>
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setComposeText("");
-            setComposeKind("visita");
-          }}
-          disabled={pending !== null || sent.visita}
-        >
-          {sent.visita ? (
-            <>
-              <Check className="h-4 w-4" /> Visita solicitada
-            </>
-          ) : (
-            <>
-              <CalendarCheck className="h-4 w-4" />
-              {pending === "visita" ? "Enviando..." : "Agendar visita"}
-            </>
-          )}
-        </Button>
-      </div>
-      {(sent.duvida || sent.visita) && (
-        <p className="text-center text-xs text-sage">
-          Enviamos seu contato ao proprietário — ele responde por e-mail/WhatsApp.
-        </p>
-      )}
+      <VisitaVideo propertyId={property.id} exemplo={exemplo} semLogin={semLogin} abrirInicial={abrirVideo} onEntrar={() => irParaLogin("video")} />
+      <Button
+        variant="secondary"
+        size="md"
+        className="w-full"
+        data-cta
+        onClick={() => {
+          setComposeText("");
+          setComposeKind("duvida");
+        }}
+        disabled={pending !== null || sent.duvida}
+      >
+        {sent.duvida ? (
+          <>
+            <Check className="h-4 w-4" /> Mensagem enviada
+          </>
+        ) : (
+          <>
+            <MessageSquare className="h-4 w-4" />
+            {pending === "duvida" ? "Enviando..." : "Enviar mensagem"}
+          </>
+        )}
+      </Button>
+      <a
+        data-cta
+        href={contatoViva.href}
+        className={buttonClasses({ variant: "secondary", size: "md", className: "w-full" })}
+      >
+        <MessageCircle className="h-4 w-4" /> {contatoViva.rotulo}
+      </a>
+      <p className="text-center text-xs text-muted">
+        {FRASE_CONVERSA_CHAT}
+      </p>
+      <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} exemplo={exemplo} />
+      <AvisoAntigolpe />
+      <VisitaPresencial
+        propertyId={property.id}
+        exemplo={exemplo}
+        semLogin={semLogin}
+        abrirInicial={abrirPresencial}
+        onEntrar={() => irParaLogin("visita")}
+      />
+      {sent.duvida && <p className="text-center text-xs text-sage">Mensagem enviada. O proprietário responde aqui na plataforma.</p>}
       {leadErro && <p className="text-center text-xs text-red-600">{leadErro}</p>}
       {selfNote && (
         <p className="text-center text-xs text-muted">
@@ -284,23 +418,17 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-title text-lg font-bold text-ink">
-          {composeKind === "duvida" ? "Tirar uma dúvida" : "Agendar uma visita"}
+          Tirar uma dúvida
         </h3>
         <p className="mt-1 text-sm text-muted">
-          {composeKind === "duvida"
-            ? "Escreva sua pergunta sobre o imóvel. O proprietário responde pela plataforma."
-            : "Diga os dias e horários que funcionam para você. O proprietário confirma pela plataforma."}
+          Escreva sua pergunta sobre o imóvel. O proprietário responde pela plataforma.
         </p>
         <textarea
           rows={4}
           autoFocus
           value={composeText}
           onChange={(e) => setComposeText(e.target.value)}
-          placeholder={
-            composeKind === "duvida"
-              ? "Ex.: O condomínio tem academia? Aceita 2 pessoas?"
-              : "Ex.: Posso visitar quinta ou sexta à tarde?"
-          }
+          placeholder="Ex.: O condomínio tem academia? Aceita 2 pessoas?"
           className="mt-3 w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
         />
         <p className="mt-1 flex items-center gap-1 text-xs text-muted">
@@ -328,13 +456,161 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     </div>
   );
 
+  // Candidatura em etapas (modal no celular e no computador): barra de progresso, Revisar → Mensagem → Confirmar.
+  const fotoCapa = property.photos?.[0];
+  const solicitacao = solicitacaoAberta && (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-night/40 p-0 sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="solicitacao-titulo"
+      data-testid="solicitacao-passo"
+      onClick={() => !candidatouSe && setSolicitacaoAberta(false)}
+    >
+      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        {candidatouSe ? (
+          <div data-testid="candidatura-confirmada" className="flex flex-col gap-3 text-center">
+            <CheckCircle2 className="mx-auto h-8 w-8 text-forest" />
+            <h3 id="solicitacao-titulo" className="font-title text-lg font-bold text-ink">Candidatura enviada</h3>
+            {fotoCapa && (
+              // eslint-disable-next-line @next/next/no-img-element -- miniatura da capa; a foto já está carregada na galeria
+              <img src={fotoCapa} alt={property.title} className="mx-auto h-28 w-full rounded-xl object-cover" />
+            )}
+            <p className="text-sm font-medium text-ink">{property.title}</p>
+            <p className="text-sm text-muted">{resumo.linhas.find((l) => l.rotulo === "Entrada")?.rotulo}: {resumo.linhas.find((l) => l.rotulo === "Entrada")?.valor}</p>
+            <div className="rounded-lg bg-surface-2 px-3 py-3 text-left text-sm text-muted">
+              <p className="font-medium text-ink">O que acontece agora</p>
+              <p className="mt-1">O proprietário recebeu seu perfil e responde pela plataforma. Se ele aceitar, vocês conversam e seguem para o fechamento. Você acompanha tudo em Mensagens.</p>
+            </div>
+            <Link href="/dashboard/mensagens" className={buttonClasses({ size: "sm" })}>
+              <MessageSquare className="h-4 w-4" /> Acompanhar em Mensagens
+            </Link>
+            <Button variant="ghost" size="sm" onClick={() => setSolicitacaoAberta(false)}>Fechar</Button>
+          </div>
+        ) : (
+          <>
+            <div className="mb-3" data-testid="candidatura-progresso">
+              <div className="flex justify-between text-xs font-medium text-muted">
+                {ETAPAS_CANDIDATURA.map((e, i) => (
+                  <span key={e.chave} className={e.chave === etapa ? "text-forest" : undefined}>{i + 1}. {e.rotulo}</span>
+                ))}
+              </div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sage-100" role="progressbar" aria-valuenow={progressoEtapa(etapa)} aria-valuemin={0} aria-valuemax={100}>
+                <div className="h-full bg-forest transition-all" style={{ width: `${progressoEtapa(etapa)}%` }} />
+              </div>
+            </div>
+            <h3 id="solicitacao-titulo" className="font-title text-lg font-bold text-ink">
+              {etapa === "revisar" ? "Revisar solicitação" : etapa === "mensagem" ? "Mensagem ao proprietário" : "Confirmar candidatura"}
+            </h3>
+            <p className="mt-1 text-sm text-muted">{property.title}</p>
+            {etapa === "mensagem" ? (
+              <label className="mt-3 flex flex-col gap-1 text-sm font-medium text-ink">
+                Apresente-se (opcional): conte o motivo da estadia e quem vai morar.
+                <textarea
+                  data-testid="candidatura-apresentacao"
+                  value={apresentacao}
+                  maxLength={LIMITE_APRESENTACAO}
+                  rows={5}
+                  onChange={(e) => setApresentacao(e.target.value)}
+                  className="rounded-xl border border-line bg-white p-3 text-base font-normal text-ink"
+                />
+                <span className="text-xs font-normal text-muted">Telefone e e-mail não podem ser enviados: a conversa segue pela plataforma e eles são ocultados.</span>
+              </label>
+            ) : (
+              <>
+                <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
+                  {(etapa === "revisar" ? resumo.linhas.slice(0, 3) : resumo.linhas).map((l) => (
+                    <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
+                      <dt className="text-muted">{l.rotulo}</dt>
+                      <dd className="text-right font-medium text-ink">{l.valor}</dd>
+                    </div>
+                  ))}
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-muted">Pessoas</dt>
+                    <dd className="text-right font-medium text-ink">{pessoas === 1 ? "1 pessoa" : `${pessoas} pessoas`}</dd>
+                  </div>
+                </dl>
+                {etapa === "revisar" && (
+                  <>
+                    <button type="button" className="mt-2 text-sm font-medium text-forest underline" onClick={() => setSolicitacaoAberta(false)}>
+                      Alterar período, pessoas ou motivo
+                    </button>
+                    <details className="mt-3 rounded-lg border border-line px-3 py-2 text-sm" data-testid="candidatura-detalhes">
+                      <summary className="cursor-pointer font-medium text-ink">Detalhes dos valores</summary>
+                      <dl className="mt-2 space-y-2">
+                        {resumo.linhas.slice(3).map((l) => (
+                          <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
+                            <dt className="text-muted">{l.rotulo}</dt>
+                            <dd className="text-right text-ink">{l.valor}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </details>
+                  </>
+                )}
+                {etapa === "confirmar" && apresentacao.trim() && (
+                  <p className="mt-3 rounded-lg border border-line px-3 py-2 text-sm text-muted">
+                    <span className="font-medium text-ink">Sua mensagem: </span>{apresentacao.trim().slice(0, 200)}
+                  </p>
+                )}
+                {etapa === "confirmar" && <p className="mt-3 text-xs text-muted">{TERMOS_CANDIDATURA} <Link href="/termos" className="underline">Ler os termos</Link></p>}
+              </>
+            )}
+            {exemplo && (
+              <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
+                Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
+              </p>
+            )}
+            {solicitacaoErro && (
+              <p role="alert" data-testid="solicitacao-erro" className="mt-3 text-sm text-red-600">
+                {solicitacaoErro}
+              </p>
+            )}
+            {!solicitacaoErro && leadErro && !exemplo && <p role="alert" className="mt-3 text-sm text-red-600">{leadErro}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => (etapa === "revisar" ? setSolicitacaoAberta(false) : (setSolicitacaoErro(resumo.erro), setEtapa(etapaAnterior(etapa))))}
+                disabled={pending !== null}
+              >
+                {etapa === "revisar" ? (exemplo ? "Entendi" : "Cancelar") : "Voltar"}
+              </Button>
+              {etapa !== "confirmar" ? (
+                <Button variant="primary" size="sm" disabled={!!resumo.erro} onClick={() => setEtapa(proximaEtapa(etapa))}>
+                  Continuar
+                </Button>
+              ) : (
+                !exemplo && (
+                  <Button variant="primary" size="sm" disabled={pending !== null || !!resumo.erro} onClick={enviarSolicitacao}>
+                    {pending === "candidatura" ? "Enviando..." : "Enviar candidatura"}
+                  </Button>
+                )
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="container-page py-8 pb-40 lg:pb-8">
+    // Página PÚBLICA com fotos: "largura total" = a medida do container (1536 px, como o Furnished Finder), nunca a
+    // tela inteira (ordem 4252e0d6, Daniel 16/10). A regra "painel sem mx-auto max-w-*" vale
+    // só para dashboards, não para páginas públicas com galeria. Celular: ocupa a largura toda.
+    <div className="mx-auto w-full max-w-[1536px] px-5 py-8 pb-64 sm:px-8 lg:px-7 lg:pb-8" data-testid="imovel-largura-total">
       {composer}
+      {solicitacao}
       <BarraFixaCelular
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, exemplo, candidatouSe, availableFrom: property.availableFrom })}
+        key={property.id}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
-        onCandidatar={() => handleLead("candidatura")}
+        onSolicitar={abrirSolicitacao}
+        onMensagem={() => {
+          setComposeText("");
+          setComposeKind("duvida");
+        }}
+        contato={contatoViva}
       />
       {/* Breadcrumb (navegação + SEO) */}
       <nav
@@ -355,14 +631,15 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         photos={property.photos}
         title={property.title}
         readyToLive={property.readyToLiveBadge}
+        videoUrl={property.videoUrl}
       />
 
       {/* Abas âncora presas ao rolar (ordem d943f893). */}
-      <NavSecoes secoes={secoesDoImovel({ avaliacoes: reviewsReais, temDono: !!(property.owner?.name ?? property.ownerName) })} />
+      <NavSecoes secoes={secoesDoImovel({ avaliacoes: exemplo ? avaliacoesExemplo.length : reviewsReais, temDono: !!(property.owner?.name ?? property.ownerName) })} />
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-3">
+      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12">
         {/* Conteúdo (seções roláveis) */}
-        <div className="min-w-0 space-y-10 lg:col-span-2">
+        <div className="min-w-0 space-y-10">
           {/* Visão geral: cabeçalho, sinais de confiança, destaques, medidas, vídeo e descrição. */}
           <div id="visao-geral" className="scroll-mt-36 space-y-10">
           <header>
@@ -377,9 +654,14 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
             </div>
             <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
 
+            {/* Faixa: tempo de resposta · calendário · proprietário (prompt 9). */}
+            <FaixaProprietario real={exemplo ? null : proprietario} exemplo={donoExemplo} hoje={hojeBR()} />
+
             {/* Sinais de confiança (só dado real): disponibilidade, resposta, tempo de casa, código. */}
             <ul data-testid="sinais-confianca" className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
-              {sinaisDeConfianca(property, new Date().toISOString().slice(0, 10)).map((s) => (
+              {sinaisDeConfianca(property, new Date().toISOString().slice(0, 10))
+                .filter((s) => !(temFaixa || exemplo) || (s.tipo !== "resposta" && s.tipo !== "desde"))
+                .map((s) => (
                 <li key={s.tipo} className={s.tipo === "codigo" ? "inline-flex items-center gap-1.5 text-xs text-muted" : "inline-flex items-center gap-1.5 text-ink"}>
                   <IconeSinal tipo={s.tipo} />
                   <span className={s.tipo === "disponibilidade" ? "font-semibold text-forest" : undefined}>{s.texto}</span>
@@ -396,7 +678,12 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
               )}
               {/* Fonte ÚNICA (A2): a contagem vem das avaliações REAIS (reviews),
                   igual à seção de avaliações. Sem review real → selo honesto. */}
-              {reviewsReais > 0 ? (
+              {resumoExemplo ? (
+                <a href="#avaliacoes" data-testid="estrelas-titulo" className="inline-flex items-center gap-1 text-sm font-medium text-forest hover:underline">
+                  <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
+                  {numBR(resumoExemplo.media, 1)} · {resumoExemplo.n} avaliações
+                </a>
+              ) : reviewsReais > 0 ? (
                 <span className="inline-flex items-center gap-1 text-sm font-medium text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" />
                   {numBR(mediaReal, 1)} · {reviewsReais}{" "}
@@ -412,6 +699,8 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
               {property.precoJusto && <PrecoJustoBadge />}
             </div>
 
+            <IdealPara property={property} className="mt-3 text-sm" />
+
             <div className="mt-3">
               <PropertyTags property={property} />
             </div>
@@ -423,10 +712,10 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
             {/* Specs com ícones */}
             <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted">
               <span className="inline-flex items-center gap-1.5">
-                <BedDouble className="h-4 w-4" /> {property.bedrooms} quartos
+                <BedDouble className="h-4 w-4" /> {quartosTexto(property.bedrooms)}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Bath className="h-4 w-4" /> {property.bathrooms} banheiros
+                <Bath className="h-4 w-4" /> {banheirosTexto(property.bathrooms)}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Ruler className="h-4 w-4" /> {property.areaM2} m²
@@ -452,9 +741,9 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
           </header>
 
           {/* Walk-through em vídeo */}
-          {property.videoUrl && (
+          {videoTourPermitido(property.videoUrl) && (
             <section>
-              <VideoWalkthrough url={property.videoUrl} title={property.title} />
+              <VideoWalkthrough url={property.videoUrl!} title={property.title} />
               <p className="mt-1.5 text-xs text-muted">
                 {isExemplo(property) ? "Vídeo ilustrativo." : "Tour em vídeo gravado pelo proprietário."}
               </p>
@@ -477,10 +766,21 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
             <AvailabilityCalendar property={property} />
           </div>
           <div id="avaliacoes" className="scroll-mt-36">
-            <Reviews property={property} />
+            {avaliacoesExemplo.length > 0 ? <AvaliacoesExemplo avaliacoes={avaliacoesExemplo} /> : <Reviews property={property} />}
           </div>
           <div id="proprietario" className="scroll-mt-36 empty:hidden">
-            <OwnerCard property={property} />
+            <OwnerCard
+              property={property}
+              proprietario={proprietario}
+              onMensagem={
+                exemplo
+                  ? undefined
+                  : () => {
+                      setComposeText("");
+                      setComposeKind("duvida");
+                    }
+              }
+            />
           </div>
           <div id="localizacao" className="scroll-mt-36 space-y-10">
             <LocationNearby property={property} />
@@ -489,7 +789,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         </div>
 
         {/* Card de preço (sticky no desktop, empilhado no mobile) */}
-        <aside className="lg:col-span-1">
+        <aside>
           <PriceCard property={property} actions={actions} />
         </aside>
       </div>

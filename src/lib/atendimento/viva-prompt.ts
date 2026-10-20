@@ -7,6 +7,7 @@
 import { blocoParceirosPrompt } from "./parceiros-texto.ts";
 import { FAQ } from "./faq.ts";
 import { REGRAS_CONTRATO } from "../../config/planos.ts";
+import { CAUCAO_FRASE } from "../faixas.ts";
 import { PROMESSA_ATENDIMENTO, frasePrazosManutencao } from "../../config/atendimento.ts";
 import { SITUACAO_VIVA } from "../../config/situacao-viva.ts";
 
@@ -27,12 +28,12 @@ export function fontes(): string {
     "Vocabulário ao falar da cobrança da Viva: use \"reserva\", \"contrato\" e \"valor mensal\"; nunca \"aluguel\", \"locação\", \"imobiliária\", \"corretagem\", \"comissão\" ou \"intermediação\".",
     "",
     "## Regras do contrato (fonte oficial)",
-    `- Estadias de 30 a 180 dias: de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, no máximo ${REGRAS_CONTRATO.prazoMaxDias} dias, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
-    `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total, depositada em poupança. Volta no fim, depois da conferência de saída.`,
+    `- Estadias de 30 a ${REGRAS_CONTRATO.prazoMaxDias} dias (de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses). Não fale em blocos.`,
+    `- ${CAUCAO_FRASE} Volta no fim, depois da conferência de saída. Nunca cite percentual por bloco.`,
     "- Contato direto (telefone, e-mail, redes) nunca é trocado: a conversa fica toda na plataforma.",
     "",
     "## Parcerias (fonte oficial)",
-    "Quando perguntarem como virar parceiro, pergunte qual é o caso e explique: fotógrafo parceiro → /parceiros/fotografos (\"Quero ser parceiro\"); empresa que hospeda equipes → /empresas; proprietário que anuncia → /auth; seguro, limpeza, mobília e outros serviços → /parceiros (em breve, deixe seu contato). A Viva não recebe o dinheiro do serviço; ao falar do modelo, use \"taxa de parceria\".",
+    "Quando perguntarem como virar parceiro, pergunte qual é o caso e explique: fotógrafo parceiro → /parceiros/fotografos (\"Quero ser parceiro\"); empresa que hospeda equipes → /empresas; proprietário que anuncia → /auth; seguro, limpeza, mobília e outros serviços → /parceiros (em breve, deixe seu contato). A Viva não guarda o dinheiro do serviço; ao falar do modelo, use \"taxa de serviço\" (10% sobre o valor do serviço, para todas as categorias).",
     blocoParceirosPrompt(),
     "",
     "## Situação da Viva hoje (fonte oficial)",

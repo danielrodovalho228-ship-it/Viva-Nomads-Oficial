@@ -9,14 +9,28 @@ export interface Lead {
   id: string;
   /** Status cru persistido (leads.status): 'new' | 'accepted' | 'rejected'. */
   status?: string;
-  name: string; // primeiro nome; nome COMPLETO só após o aceite. Nunca contato.
+  name: string; // "Candidato(a)" antes do aceite; nome curto (Maria S.) depois. Nunca contato.
+  /** Foto só depois do aceite. */
+  fotoUrl?: string | null;
+  /** Sinais do candidato (início desejado, pets, "Na Viva desde"). */
+  sinais?: string[];
+  /** Selos REAIS (hoje: e-mail confirmado). */
+  selos?: string[];
+  /** Avaliações de outros proprietários (só com pelo menos 1 publicada). */
+  reputacao?: { media: number; n: number } | null;
   property: string;
   category: string;
   riskCategories: string[];
   light: Light;
   verified: boolean;
+  /** Estado ÚNICO da identidade do candidato (complemento do prompt 23); null no exemplo de demonstração. */
+  identidade?: import("@/lib/identidade/estado").EstadoIdentidade | null;
   desiredPeriodDays?: number; // período pretendido (para o resumo em uma linha)
   budgetMatch?: boolean; // orçamento compatível com o aluguel
+  /** Motivo da estadia (rótulo público; "Saúde" para tratamento médico). Só categoria, nunca texto livre. */
+  motivo?: string;
+  /** Resumo da ficha do pet ("Com 1 pet · Totó (cão, porte médio)") enquanto a candidatura dá acesso; senão null. */
+  fichaPet?: string | null;
   // PRIVACIDADE: telefone/e-mail/LinkedIn NÃO entram aqui. O proprietário
   // decide pelo perfil de risco e responde pela plataforma (conversa já aberta).
 }
@@ -40,6 +54,7 @@ export function leadScore(l: Lead): number {
 /** Resumo do candidato em uma linha. */
 export function leadSummary(l: Lead): string {
   const parts = [l.category, LIGHT_SHORT[l.light]];
+  if (l.motivo) parts.push(`motivo: ${l.motivo}`);
   if (l.desiredPeriodDays) parts.push(`quer ${l.desiredPeriodDays} dias`);
   if (l.budgetMatch !== undefined) parts.push(l.budgetMatch ? "orçamento ok" : "orçamento a confirmar");
   return parts.join(" · ");

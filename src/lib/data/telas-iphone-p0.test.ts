@@ -8,8 +8,18 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
-test("datas de disponibilidade usam o campo dd/mm/aaaa, não <input type=date> (vazio no iOS)", () => {
-  for (const p of ["src/app/(dashboard)/dashboard/imoveis/novo/page.tsx", "src/app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx"]) {
+test("cadastro novo (prompt 10, Q8/Q9): UM seletor de data — o calendário nativo, sem máscara — com exemplo dd/mm/aaaa no iOS", () => {
+  const campos = ler("src/app/(dashboard)/dashboard/imoveis/novo/campos.tsx");
+  const preco = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx");
+  assert.match(campos, /type="date"/);
+  assert.match(campos, />\s*dd\/mm\/aaaa\s*</);
+  assert.match(campos, /min-w-0 max-w-full appearance-none/);
+  assert.doesNotMatch(preco, /DateFieldBR|inputMode="numeric"/);
+  assert.equal((preco.match(/<CampoDataUnico/g) ?? []).length, 2);
+});
+
+test("edição: datas de disponibilidade usam o campo dd/mm/aaaa, não <input type=date> (vazio no iOS)", () => {
+  for (const p of ["src/app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx"]) {
     const src = ler(p);
     assert.ok(!/type="date"/.test(src), `${p} ainda tem type="date"`);
     assert.ok(src.includes("DateFieldBR"), `${p} sem DateFieldBR`);

@@ -49,6 +49,11 @@ export function motivoLabel(key: string): string {
 export function motivoPublico(key: string): string {
   return MOTIVO_BY_KEY[key]?.publico ?? "Interessado";
 }
+/** Rótulo mostrado ao PROPRIETÁRIO: saúde nunca vira diagnóstico nem "tratamento" (LGPD art. 11). */
+export function motivoParaDono(key: string | null | undefined): string {
+  if (!key || !isMotivo(key)) return "";
+  return key === "tratamento_medico" ? "Saúde" : motivoPublico(key);
+}
 export function isMotivo(key: string): key is MotivoPedido {
   return key in MOTIVO_BY_KEY;
 }

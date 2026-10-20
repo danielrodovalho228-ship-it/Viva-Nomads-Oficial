@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { PLANOS } from "../../../src/config/planos";
+import { FAIXAS_COMISSAO_PADRAO } from "../../../src/lib/cobranca/regra";
 import {
   NO_LABORATORIO,
   adm,
@@ -27,11 +27,11 @@ import {
  *  3. Admin: pré-conferência "Parece OK" → checklist → Aprovar.
  *  4. Dono publica pelo editor.
  *  5. Inquilina se candidata; o dono vê só o primeiro nome (identidade oculta).
- *  6. Dono aceita: nome completo aparece, comissão do Essencial (8%) congelada
+ *  6. Dono aceita: nome curto aparece (prompt 6: antes do aceite, "Candidato(a)"), taxa da faixa do proprietário (1–2 imóveis: 12%) congelada
  *     no aceite — continua 8% depois de o dono subir para o Profissional.
  *  7. Inquilina envia os documentos (identidade e vínculo) depois do aceite.
- *  8. Fechamento: documentos completos, sem aviso pendente; contrato (ZapSign
- *     simulado) gerado uma vez só — a segunda tentativa é recusada.
+ *  8. Fechamento: documentos completos, sem aviso pendente; contrato com contas reais e sem assinatura digital
+ *     ligada: 503 "inativa" antes de reservar, e repetir não prende nada (prompt 24).
  * Limite desta versão: o contrato é gerado pela rota /api/contrato (a mesma que
  * a tela chama); o passo a passo visual do Fechamento tem seus próprios testes.
  */
@@ -104,14 +104,20 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     await donoPage.context().close();
   });
 
-  test("5 e 6: candidatura (identidade oculta), aceite e comissão do Essencial congelada", async ({ browser }) => {
+  test("5 e 6: candidatura (identidade oculta), aceite e taxa da faixa congelada", async ({ browser }) => {
     test.setTimeout(150_000);
 
     // 5) Inquilina se candidata pela página pública do imóvel.
     const inq = await entrar(browser, inquilina.email, senha);
     await inq.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
     // No celular o botão aparece no cartão E na barra fixa (t75): as duas fazem a mesma candidatura.
-    await inq.getByRole("button", { name: /Candidatar-se/ }).first().click();
+    await inq.getByRole("button", { name: /Enviar candidatura/ }).first().click();
+    // Passo de confirmação (resumo) antes de enviar (610a1d5).
+    const passo = inq.getByTestId("solicitacao-passo");
+    await expect(passo).toBeVisible();
+    await passo.getByRole("button", { name: "Continuar" }).click();
+    await passo.getByRole("button", { name: "Continuar" }).click();
+    await passo.getByRole("button", { name: "Enviar candidatura" }).click();
     // A confirmação aparece no cartão E no chip da barra fixa (celular): basta uma visível.
     await expect(inq.getByText("Candidatura enviada").first()).toBeVisible({ timeout: 20_000 });
     await inq.screenshot({ path: "tests/laboratorio/saida/t36-3-candidatura-enviada.png", fullPage: true });
@@ -124,28 +130,26 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     const donoPage = await entrar(browser, dono.email, senha);
     await donoPage.goto("/dashboard/leads", { waitUntil: "networkidle" });
     const antes = await donoPage.locator("body").innerText();
-    expect(antes).toContain("Iara");
+    expect(antes).toContain("Candidato(a)");
     expect(antes).not.toContain("Sobrenomeoculto");
     expect(antes).not.toContain(inquilina.email);
     await donoPage.screenshot({ path: "tests/laboratorio/saida/t36-4-dono-ve-primeiro-nome.png", fullPage: true });
 
-    // 6) Aceite: nome completo aparece; comissão do plano (Essencial) fica congelada.
+    // 6) Aceite: nome curto aparece (prompt 6); a taxa da faixa do proprietário (regra única de regra.ts, sem assinatura) fica congelada.
     await donoPage.getByRole("button", { name: /Aprovar e responder/i }).first().click();
     await expect.poll(async () => (await adm().from("leads").select("status").eq("id", ids.lead!).single()).data?.status, { timeout: 20_000 }).toBe("accepted");
     await expect(donoPage.getByTestId("aceite-erro")).toHaveCount(0);
-    const essencial = PLANOS.find((p) => p.id === "essential")!;
+    const taxaFaixa = FAIXAS_COMISSAO_PADRAO[0].taxa; // dono com 1 imóvel ativo
     const aceito = (await adm().from("leads").select("accepted_commission_rate, accepted_plan").eq("id", ids.lead!).single()).data!;
-    expect(Number(aceito.accepted_commission_rate)).toBe(essencial.comissao);
-    expect(aceito.accepted_plan).toBe("essential");
+    expect(Number(aceito.accepted_commission_rate)).toBe(taxaFaixa);
     await donoPage.reload({ waitUntil: "networkidle" });
-    expect(await donoPage.locator("body").innerText()).toContain(inquilina.nome);
+    expect(await donoPage.locator("body").innerText()).toContain("Iara S.");
     expect(await donoPage.content()).not.toContain(inquilina.email);
 
     // Subir de plano depois do aceite NÃO muda a comissão deste contrato.
     await definirPlano(ids.dono!, "pro");
     const depois = (await adm().from("leads").select("accepted_commission_rate, accepted_plan").eq("id", ids.lead!).single()).data!;
-    expect(Number(depois.accepted_commission_rate)).toBe(essencial.comissao);
-    expect(depois.accepted_plan).toBe("essential");
+    expect(Number(depois.accepted_commission_rate)).toBe(taxaFaixa);
     await donoPage.context().close();
   });
 
@@ -172,14 +176,16 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     await expect(donoPage.getByTestId("documento-pendente")).toHaveCount(0);
     await donoPage.screenshot({ path: "tests/laboratorio/saida/t36-6-fechamento.png", fullPage: true });
 
-    // Contrato (ZapSign simulado): sai uma vez; a segunda tentativa é recusada.
+    // Contrato com contas REAIS e sem assinatura digital ligada (laboratório): prompt 24 — 503 "inativa" ANTES de
+    // reservar, e repetir dá a mesma resposta (nada fica preso; o botão continua disponível para depois).
     const corpo = { leadId: ids.lead, termMonths: 2, guarantee: "Caução", costSplit: {} };
     const primeira = await donoPage.request.post("/api/contrato", { data: corpo });
-    expect(primeira.status()).toBe(200);
+    expect(primeira.status()).toBe(503);
+    expect((await primeira.json()).modo).toBe("inativa");
     const segunda = await donoPage.request.post("/api/contrato", { data: corpo });
-    expect(segunda.status()).toBe(409);
+    expect(segunda.status()).toBe(503);
     const { data: reservas } = await adm().from("cobrancas_fechamento").select("tipo").eq("lead_id", ids.lead!);
-    expect((reservas ?? []).filter((r) => r.tipo === "contrato")).toHaveLength(1);
+    expect((reservas ?? []).filter((r) => r.tipo === "contrato")).toHaveLength(0);
     await donoPage.context().close();
   });
 });

@@ -1,5 +1,7 @@
 "use server";
 
+import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
+import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
@@ -16,6 +18,10 @@ import { lerDocumento, temDocumento } from "@/lib/data/documento-servidor";
 import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
+import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor";
+import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
+import { periodoDaEstadia } from "@/lib/contrato-periodo";
 
 interface ActionResult {
   ok: boolean;
@@ -59,12 +65,22 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   if (!admin) return { ok: false, error: "Serviço indisponível." };
   // Cadastro confiável: o documento do dono vai no contrato — exigido ANTES do aceite.
   if (!(await temDocumento(admin, user.id))) return { ok: false, error: MSG_DOCUMENTO.aceitar };
+  // Disponibilidade por datas (0176): a entrada desejada (estadia mínima de 1 mês) não pode cair em outro contrato ativo.
+  // (O dono não lê inicio_desejado pelo RLS/grant de colunas: a leitura é do servidor, depois de provar que ele é o dono.)
+  const { data: datas } = await admin.from("leads").select("property_id, inicio_desejado").eq("id", leadId).maybeSingle();
+  if (datas?.inicio_desejado) {
+    const conflito = await conflitoNoImovel(admin, datas.property_id as string, periodoDaEstadia(String(datas.inicio_desejado).slice(0, 10), 1));
+    if (conflito) return { ok: false, error: conflito };
+  }
 
   // Snapshot do plano do DONO agora → congela a comissão do contrato. O plano
   // só muda pelo servidor (0057: assinatura é só leitura para o dono).
   // Assinatura ATIVA; sem ela, Profissional se Fundador nos 12 meses grátis.
   const plano = await planoDoProprietario(admin, user.id);
-  const comissao = COMISSAO_POR_PLANO[plano] ?? COMISSAO_POR_PLANO.free;
+  // R6 (especificação da taxa, 19/10): contrato sem proposta congela a taxa da regra única de regra.ts no aceite —
+  // faixa pelos imóveis ativos, queda de 30 dias e fixação do admin. Antes saía do plano (COMISSAO_POR_PLANO).
+  const t = await taxaDoDonoAgora(admin, user.id);
+  const comissao = t.taxa;
 
   const { error: uErr } = await admin
     .from("leads")
@@ -74,6 +90,8 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
       decided_by: user.id,
       accepted_plan: plano,
       accepted_commission_rate: comissao,
+      accepted_commission_origem: t.origem,
+      accepted_commission_faixa: t.faixaNoFechamento.taxa,
     })
     .eq("id", leadId)
     .eq("owner_id", user.id)
@@ -154,6 +172,8 @@ export interface MinhaCandidatura {
   propertyTitle: string;
   situacao: RotuloCandidatura;
   createdAt: string | null;
+  /** Prompt 24: contrato registrado desta candidatura (aparece no cartão com o status da assinatura). */
+  contrato: { id: string; status: string } | null;
 }
 
 /**
@@ -185,6 +205,17 @@ export async function listMinhasCandidaturas(): Promise<MinhaCandidatura[]> {
     .select("sender_id, property_id")
     .eq("receiver_id", user.id);
   const engajou = new Set((msgs ?? []).map((m) => `${m.sender_id}_${m.property_id}`));
+  // Contrato de cada candidatura (o RLS deixa o inquilino ler os próprios contratos).
+  const { data: contratos } = await supabase
+    .from("contratos")
+    .select(`id, lead_id, ${COLUNAS_ESTADO_CONTRATO}`)
+    .eq("tenant_id", user.id);
+  // O selo do contrato pela fonte única (o mesmo de Contratos e da página do contrato).
+  const contratoDoLead = new Map(
+    ((contratos ?? []) as unknown as ({ id: string; lead_id: string | null } & LinhaEstadoContrato)[])
+      .filter((c) => c.lead_id)
+      .map((c) => [c.lead_id as string, { id: c.id, status: estadoDoContratoUnico(c, "inquilino").selo }]),
+  );
 
   type Row = {
     id: string;
@@ -199,6 +230,7 @@ export async function listMinhasCandidaturas(): Promise<MinhaCandidatura[]> {
     propertyTitle: r.property?.title ?? "Imóvel",
     situacao: situacaoCandidatura(r.status, engajou.has(`${r.owner_id}_${r.property_id}`)),
     createdAt: r.created_at,
+    contrato: contratoDoLead.get(r.id) ?? null,
   }));
 }
 
@@ -230,6 +262,10 @@ export interface FechamentoContexto {
   documentoPendente?: { quem: "dono" | "inquilino"; mensagem: string } | null;
   /** F37: data de início que o Fechamento abre preenchida (a da candidatura, se ainda vale; senão hoje). */
   inicioSugerido?: string;
+  /** Prompt 17: proposta ACEITA desta candidatura — o fechamento abre com estes valores, sem redigitar. */
+  proposta?: { id: string; numero: string; valorMensal: number; meses: number; dataEntrada: string } | null;
+  /** Prompt 8: quantas pessoas vão morar, da candidatura (o Fechamento abre com o número). */
+  ocupantesSugerido?: number | null;
 }
 
 export async function getFechamentoContext(
@@ -245,7 +281,7 @@ export async function getFechamentoContext(
   // A candidatura aceita mais recente do dono (ou a apontada por leadId).
   let q = supabase
     .from("leads")
-    .select("id, tenant_id, property_id, accepted_plan, accepted_commission_rate, accepted_at")
+    .select("id, tenant_id, property_id, accepted_at")
     .eq("owner_id", user.id)
     .eq("status", "accepted")
     .order("accepted_at", { ascending: false })
@@ -263,12 +299,20 @@ export async function getFechamentoContext(
   let tenantName = "Candidato(a)";
   let documentoPendente: FechamentoContexto["documentoPendente"] = null;
   let inicioDesejado: string | null = null;
+  let proposta: FechamentoContexto["proposta"] = null;
+  let ocupantesSugerido: number | null = null;
+  // Plano e taxa congelados no aceite: só pelo servidor, depois de conferir que a candidatura é deste dono (0177).
+  let taxaLead: TaxaDoLead | null = null;
   try {
     const admin = createAdminClient();
     if (admin) {
+      taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
       // O SELECT de leads é por coluna para o usuário; a data desejada vem pelo servidor.
-      const { data: d } = await admin.from("leads").select("inicio_desejado").eq("id", lead.id).maybeSingle();
+      const { data: d } = await admin.from("leads").select("inicio_desejado, qtd_ocupantes").eq("id", lead.id).maybeSingle();
       inicioDesejado = (d?.inicio_desejado as string | null) ?? null;
+      const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
+      if (acordada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada };
+      ocupantesSugerido = (d?.qtd_ocupantes as number | null) ?? null;
       const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
       if (!documentoCompleto(docDono)) documentoPendente = { quem: "dono", mensagem: MSG_DOCUMENTO.fecharDono };
       else if (!documentoCompleto(docInq)) documentoPendente = { quem: "inquilino", mensagem: MSG_DOCUMENTO.fecharInquilino };
@@ -284,11 +328,11 @@ export async function getFechamentoContext(
     /* mantém o neutro */
   }
 
-  const planoId = ((lead.accepted_plan as string) ?? "free") as PlanoId;
+  const planoId = (taxaLead?.acceptedPlan ?? "free") as PlanoId;
   // Comissão CONGELADA no aceite; retrocompatível se o snapshot faltar.
   const comissaoRate =
-    typeof lead.accepted_commission_rate === "number"
-      ? lead.accepted_commission_rate
+    typeof taxaLead?.acceptedCommissionRate === "number"
+      ? taxaLead.acceptedCommissionRate
       : COMISSAO_POR_PLANO[planoId] ?? COMISSAO_POR_PLANO.free;
 
   return {
@@ -301,6 +345,8 @@ export async function getFechamentoContext(
     acceptedAt: (lead.accepted_at as string) ?? null,
     contractNumber: numeroContrato(lead.id as string, (lead.accepted_at as string) ?? null),
     documentoPendente,
-    inicioSugerido: inicioSugerido(inicioDesejado, hojeBR()),
+    inicioSugerido: inicioSugerido(proposta?.dataEntrada ?? inicioDesejado, hojeBR()),
+    proposta,
+    ocupantesSugerido,
   };
 }

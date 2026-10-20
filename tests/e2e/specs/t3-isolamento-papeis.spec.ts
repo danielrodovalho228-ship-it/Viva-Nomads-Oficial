@@ -37,8 +37,10 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.locator("aside nav")).toBeVisible(); // o menu carregou (sem isso, "não contém" passaria no vazio)
     await expect(page.locator("aside nav")).not.toContainText(/Admin|Moderar/);
-    await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/dashboard(?!\/)/, { timeout: 40_000 }); // redirecionado para a Visão geral
+    // Não-admin recebe 404 de verdade (a área de admin não revela que existe): sem redirect, a URL fica em /admin.
+    const resposta = await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    expect(resposta?.status()).toBe(404);
+    await expect(page.getByRole("heading", { name: "Administração" })).toHaveCount(0);
   });
 
   test("páginas internas pedem o código dos sócios (redirect)", async ({ page }) => {
@@ -67,8 +69,9 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
       as.map((a) => (a as HTMLAnchorElement).getAttribute("href")!).filter(Boolean)
     );
     expect(hrefs.length).toBeGreaterThan(15);
-    // A busca é a página pública (fora da casca, de propósito); âncoras viram a própria tela.
-    for (const href of [...new Set(hrefs.map((h) => h.split("#")[0]))].filter((h) => h !== "/buscar")) {
+    // A busca e o formulário de pedido são páginas públicas (fora da casca, de propósito); âncoras viram a própria tela.
+    const PUBLICAS_FORA_DA_CASCA = ["/buscar", "/pedidos/novo"];
+    for (const href of [...new Set(hrefs.map((h) => h.split("#")[0]))].filter((h) => !PUBLICAS_FORA_DA_CASCA.includes(h))) {
       await page.goto(href, { waitUntil: "domcontentloaded" });
       await expect(page.locator("aside nav"), `casca ausente em ${href}`).toBeVisible();
     }

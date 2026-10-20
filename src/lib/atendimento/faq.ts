@@ -40,7 +40,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "caucao",
     pergunta: "Como funciona a caução?",
-    resposta: `${CAUCAO_FRASE} Em cada bloco do contrato, a caução é de ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor do bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total. Ela volta para o inquilino no fim, depois da conferência de saída.`,
+    resposta: `${CAUCAO_FRASE} Ela volta para o inquilino no fim, depois da conferência de saída.`,
     termos: ["caucao", "deposito", "garantia", "poupanca", "devolucao"],
   },
   {
@@ -50,23 +50,16 @@ export const FAQ: Pergunta[] = [
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
   },
   {
-    id: "parceiro",
-    pergunta: "Como posso virar parceiro da Viva?",
-    resposta:
-      "Depende do tipo de parceria. Fotógrafo: cadastre-se em /parceiros/fotografos (\"Quero ser parceiro\"). Empresa que hospeda equipes: veja /empresas. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Seguro, limpeza, mobília e outros serviços: deixe seu contato em /parceiros (em breve). Qual é o seu caso?",
-    termos: ["parceiro", "parceria", "parceiros", "fotografo", "empresa", "servico", "limpeza", "seguro", "mobilia"],
-  },
-  {
     id: "como-virar-parceiro",
-    pergunta: "Como virar parceiro",
+    pergunta: "Como posso virar parceiro da Viva?",
     resposta: `${TIPOS_PARCEIRO} ${MODOS_CONTA} ${CADASTRO_PARCEIRO} ${EMPRESAS_E_GESTORES}`,
-    termos: ["parceiro", "parceria", "virar parceiro", "modo parceiro", "cadastro", "cnpj", "mei", "empresa", "gestor"],
+    termos: ["parceiro", "parceria", "virar parceiro", "modo parceiro", "cadastro", "cnpj", "mei", "empresa", "gestor", "fotografo", "servico", "limpeza", "seguro", "mobilia"],
   },
   {
     id: "taxa-parceria",
-    pergunta: "Taxa de parceria",
+    pergunta: "Taxa de serviço dos parceiros",
     resposta: `${TAXA_PARCERIA_TEXTO} ${CONTATO_NO_ACEITE} ${REGRAS_ENTREGA}`,
-    termos: ["taxa de parceria", "taxa parceiro", "40", "60", "80", "fotos", "advertencia", "suspensao", "credito", "mensalidade", "dinheiro do servico", "contato", "aceite", "liberado", "entregar"],
+    termos: ["taxa de parceria", "taxa de servico", "taxa parceiro", "10%", "90%", "fotos", "advertencia", "suspensao", "mensalidade", "dinheiro do servico", "contato", "aceite", "liberado", "entregar"],
   },
   {
     id: "contratar-fotografo",
@@ -84,13 +77,13 @@ export const FAQ: Pergunta[] = [
   {
     id: "prazo",
     pergunta: "Qual o prazo mínimo e máximo da locação?",
-    resposta: `De ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses — de 30 a ${REGRAS_CONTRATO.prazoMaxDias} dias no total, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
+    resposta: `Estadias de 30 a ${REGRAS_CONTRATO.prazoMaxDias} dias, de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses.`,
     termos: ["prazo", "minimo", "maximo", "meses", "dias", "duracao"],
   },
   {
     id: "renovar",
     pergunta: "Posso renovar o contrato?",
-    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação é um novo bloco, só vale com o aceite do proprietário e do inquilino, e é cobrada à parte do proprietário: a taxa da faixa dele sobre o valor total do período renovado (cada período é cobrado uma só vez). Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
+    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação só vale com o aceite do proprietário e do inquilino, e é cobrada à parte do proprietário: a taxa da faixa dele sobre o valor total do período renovado (cada período é cobrado uma só vez). Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
     termos: ["renovar", "renovacao", "prorrogar", "estender"],
   },
   {
@@ -100,6 +93,13 @@ export const FAQ: Pergunta[] = [
       // Mesma lista da prontidão (lib/anuncio/prontidao): o que o FAQ diz é o que o Publicar confere.
       `Para publicar, o anúncio precisa de: ${OBRIGATORIOS_ROTULOS.map((r) => r.charAt(0).toLowerCase() + r.slice(1)).join("; ")}. Selo Pronto para Morar e vídeo ajudam, mas não impedem a publicação. Em Meus imóveis e na etapa Revisão aparece exatamente o que falta. Se o documento está "Em análise", é só aguardar: avisamos por e-mail quando for aprovado.`,
     termos: ["publicar", "anuncio", "documento", "analise", "fotos", "travado"],
+  },
+  {
+    id: "limpeza-estadia",
+    pergunta: "Posso oferecer limpezas durante a estadia?",
+    resposta:
+      "Sim, é opcional. No editor do anúncio você escolhe quantas limpezas por mês (1, 2 ou 4), o que cada uma inclui e o valor do pacote por mês. Se houver valor, ele entra no total por mês que o inquilino vê no anúncio, na busca e no contrato; com valor zero, aparece como incluída no valor mensal.",
+    termos: ["limpeza", "faxina", "durante a estadia", "pacote", "total por mes"],
   },
   {
     id: "email-confirmacao",

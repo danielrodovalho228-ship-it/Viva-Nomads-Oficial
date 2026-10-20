@@ -1,3 +1,4 @@
+import { readdirSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
@@ -8,20 +9,29 @@ import { authFile } from "../fixtures/auth";
  * chamado aberto. Perguntamos "alguma pendência?" antes e depois de resolver o
  * chamado: o que já foi resolvido NÃO pode aparecer como pendente.
  * Laboratório: resposta montada pelas regras (sem IA), com a mesma conferência.
+ * A conferência vê só as 60 migrações mais recentes (0088): o teste usa a ÚLTIMA migração do repositório como
+ * "já aplicada" (a 0083 saiu dessa janela) e um número que não existe como "ainda pendente".
  */
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const adm = () => createClient(URL!, SERVICE!, { auth: { persistSession: false } });
 
+const ULTIMA_MIGRACAO = readdirSync("supabase/migrations").filter((n) => /^\d{4}_.*\.sql$/.test(n)).sort().pop()!.slice(0, 4);
+const NAO_APLICADA = "0999";
+
+const bolhasDaRonda = (page: Page) => page.getByTestId("bolha-agente").filter({ hasText: /^Da minha ronda de / });
+/** Linhas do balão sem as vazias (cada linha da resposta é um parágrafo). */
+const linhasDe = (t: string) => t.split("\n").map((l) => l.trim()).filter(Boolean);
+
 async function perguntarAoOtavio(page: Page, texto: string) {
   await page.goto("/admin/agentes", { waitUntil: "networkidle" });
   await page.getByRole("tab", { name: "Conversar" }).click();
   await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Otávio/ }).click();
-  const antes = await page.getByText(/^Da minha ronda de /).count();
+  const antes = await bolhasDaRonda(page).count();
   await page.getByPlaceholder("Escreva para Otávio…").fill(texto);
   await page.getByRole("button", { name: "Enviar" }).click();
-  await expect(page.getByText(/^Da minha ronda de /)).toHaveCount(antes + 1, { timeout: 20_000 });
-  return page.getByText(/^Da minha ronda de /).last();
+  await expect(bolhasDaRonda(page)).toHaveCount(antes + 1, { timeout: 20_000 });
+  return bolhasDaRonda(page).last();
 }
 
 test.describe("T27 — Agentes com dados ao vivo", () => {
@@ -42,9 +52,9 @@ test.describe("T27 — Agentes com dados ao vivo", () => {
     const { error } = await db.rpc("registrar_ronda", {
       p_slug: "otavio", p_inicio: agora, p_fim: agora, p_status: "alerta", p_resumo: "[lab] T27: fila conferida.",
       p_achados: [
-        { prioridade: "P1", titulo: "Precisa de você: OK da 0083" },
+        { prioridade: "P1", titulo: `Precisa de você: OK da ${ULTIMA_MIGRACAO}` },
         { prioridade: "P1", titulo: `${numero} aguardando resposta` },
-        { prioridade: "P2", titulo: "Precisa de você: OK da 0099" },
+        { prioridade: "P2", titulo: `Precisa de você: OK da ${NAO_APLICADA}` },
       ],
       p_ordens: [], p_link: null,
     });
@@ -53,24 +63,24 @@ test.describe("T27 — Agentes com dados ao vivo", () => {
     // 1) Chamado ainda aberto: ele continua pendente; a 0083 (aplicada) já não.
     const r1 = await perguntarAoOtavio(page, "alguma pendência?");
     const t1 = await r1.innerText();
-    const [res1, pen1] = [t1.split("\n")[1], t1.split("\n")[2]];
-    expect(res1).toContain("0083");
+    const [res1, pen1] = [linhasDe(t1)[1], linhasDe(t1)[2]];
+    expect(res1).toContain(ULTIMA_MIGRACAO);
     expect(res1).toContain("já aplicada");
     expect(pen1).toContain(numero);
-    expect(pen1).toContain("0099");
-    expect(pen1).not.toContain("0083");
+    expect(pen1).toContain(NAO_APLICADA);
+    expect(pen1).not.toContain(ULTIMA_MIGRACAO);
     expect(t1).toMatch(/dados de \d{2}\/\d{2} \d{2}:\d{2}/);
 
     // 2) Resolve o chamado e pergunta de novo: agora ele sai das pendências.
     await db.from("chamados").update({ status: "resolvido", resolvido_em: new Date().toISOString(), nota_satisfacao: 5 }).eq("id", ch!.id);
     const r2 = await perguntarAoOtavio(page, "alguma pendência?");
     const t2 = await r2.innerText();
-    const [res2, pen2] = [t2.split("\n")[1], t2.split("\n")[2]];
+    const [res2, pen2] = [linhasDe(t2)[1], linhasDe(t2)[2]];
     expect(res2).toContain(`${numero}: resolvido`);
     expect(res2).toContain("nota 5");
     expect(pen2).not.toContain(numero);
-    expect(pen2).not.toContain("0083");
-    expect(pen2).toContain("0099");
+    expect(pen2).not.toContain(ULTIMA_MIGRACAO);
+    expect(pen2).toContain(NAO_APLICADA);
     await db.from("chamados").update({ status: "encerrado" }).eq("id", ch!.id);
   });
 
@@ -78,7 +88,7 @@ test.describe("T27 — Agentes com dados ao vivo", () => {
     test.skip(process.env.INTEGRACOES_SIMULADAS !== "on" || !URL || !SERVICE, "Só no laboratório.");
     const { data, error } = await adm().rpc("migracoes_aplicadas");
     expect(error).toBeNull();
-    expect((data as { name: string }[]).some((m) => m.name.startsWith("0083_"))).toBe(true);
+    expect((data as { name: string; version: string }[]).some((m) => m.name.startsWith(`${ULTIMA_MIGRACAO}_`) || m.version === ULTIMA_MIGRACAO || m.version.endsWith(ULTIMA_MIGRACAO))).toBe(true);
     expect(Object.keys((data as object[])[0]).sort()).toEqual(["name", "version"]);
     // Logado (mesmo admin) não chama a função direto: só o servidor.
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });

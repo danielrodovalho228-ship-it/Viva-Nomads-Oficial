@@ -233,7 +233,7 @@ test("vocabulário (ordens 12eea681/5faa3903): a cobrança da Viva nas páginas 
 
 test("Compare: mantém a seção e os diferenciais da Viva (só a coluna da Viva, concorrente só com fonte)", () => {
   assert.equal(DIFERENCIAIS_VIVA.length, 8);
-  assert.ok(DIFERENCIAIS_VIVA.includes("Você só paga quando a reserva é fechada"));
+  assert.ok(DIFERENCIAIS_VIVA.includes("Você só paga quando o contrato é fechado"));
   assert.ok(DIFERENCIAIS_VIVA.includes("Nenhuma taxa para quem vem morar"));
   const comp = ler("src/components/precos/comparativo-precos.tsx");
   assert.match(comp, /DIFERENCIAIS_VIVA/);
@@ -241,17 +241,17 @@ test("Compare: mantém a seção e os diferenciais da Viva (só a coluna da Viva
 });
 
 
-test("painel do dono: 'Taxa de serviço: 12% do valor total do contrato = R$ 1.080,00' (3 meses a R$ 3.000)", () => {
+test("painel do dono (prompt 27): 'Taxa de serviço: 12% sobre o valor mensal × meses (R$ 3.000 × 3 = R$ 9.000) = R$ 1.080'", () => {
   const t = textoTaxaPainel(0.12, 3000, 3);
-  assert.equal(t, "Taxa de serviço: 12% do valor total do contrato = R$ 1.080,00");
-  assert.equal(textoTaxaPainel(0.06, 4320, 1), "Taxa de serviço: 6% do valor total do contrato = R$ 259,20");
+  assert.equal(t, "Taxa de serviço: 12% sobre o valor mensal × meses (R$ 3.000 × 3 = R$ 9.000) = R$ 1.080");
+  assert.equal(textoTaxaPainel(0.06, 4320, 1), "Taxa de serviço: 6% sobre o valor mensal × meses (R$ 4.320 × 1 = R$ 4.320) = R$ 259,20");
   assert.doesNotMatch(t, /primeiro|plano/i);
 });
 
 test("painel do dono: valor mensal ou prazo inválido não inventa valor", () => {
-  assert.equal(textoTaxaPainel(0.12, 0, 3), "Taxa de serviço: 12% do valor total do contrato");
-  assert.equal(textoTaxaPainel(0.12, Number.NaN, 3), "Taxa de serviço: 12% do valor total do contrato");
-  assert.equal(textoTaxaPainel(0.12, 3000, 0), "Taxa de serviço: 12% do valor total do contrato");
+  assert.equal(textoTaxaPainel(0.12, 0, 3), "Taxa de serviço: 12% sobre o valor mensal × meses");
+  assert.equal(textoTaxaPainel(0.12, Number.NaN, 3), "Taxa de serviço: 12% sobre o valor mensal × meses");
+  assert.equal(textoTaxaPainel(0.12, 3000, 0), "Taxa de serviço: 12% sobre o valor mensal × meses");
 });
 
 test("F6: tabela pública — 31+ (Plano Gestor) é 'Negociado'; as demais faixas mostram o percentual", async () => {

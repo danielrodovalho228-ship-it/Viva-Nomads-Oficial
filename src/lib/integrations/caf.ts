@@ -1,12 +1,14 @@
 /*
-  Integração CAF — verificação de inquilino (seção 8.1).
+  Integração CAF — verificação de identidade (seção 8.1). Prompt 19: vale para qualquer conta (inquilino e
+  proprietário — o dono confirma a identidade antes da conferência da matrícula).
   Identidade, documento (OCR), prova de vida (biometria) e risco contextual.
   Cobre estrangeiros (CRNM/RNE). Sem CAF_API_TOKEN, retorna laudo simulado.
 
   Docs: https://docs.caf.io
 */
 
-import type { CafResult, TrafficLight } from "@/lib/closing";
+import type { CafResult } from "@/lib/closing";
+import { idSemResultado, lerRespostaCaf } from "@/lib/integrations/caf-resposta";
 
 import { exigirChaveEmProducao, integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 
@@ -58,24 +60,46 @@ export async function verifyTenant(req: CafRequest): Promise<CafResult> {
     throw new Error(`CAF ${res.status}: ${await res.text()}`);
   }
 
-  const data = (await res.json()) as {
-    status?: string;
-    validations?: { identity?: boolean; liveness?: boolean; document?: boolean };
-    risk?: { level?: string; reasons?: string[] };
-  };
+  // A documentação descreve a criação da transação devolvendo só o id; o resultado vem no GET da transação.
+  let data: unknown = await res.json();
+  const id = idSemResultado(data);
+  if (id) {
+    const det = await fetch(`${API_BASE}/v1/transactions/${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bearer ${process.env.CAF_API_TOKEN}` },
+    });
+    if (det.ok) data = await det.json();
+  }
 
-  // Mapeia o nível de risco do CAF para o semáforo da plataforma.
-  const level = data.risk?.level?.toUpperCase();
-  const light: TrafficLight =
-    level === "HIGH" ? "red" : level === "MEDIUM" ? "yellow" : "green";
-
+  // Leitura defensiva (formato do template não confirmado sem contrato): ver src/lib/integrations/caf-resposta.ts.
+  const l = lerRespostaCaf(data, { name: req.name, cpf: req.cpf });
   return {
-    light,
-    identity: data.validations?.identity ?? false,
-    liveness: data.validations?.liveness ?? false,
-    document: data.validations?.document ?? false,
+    light: l.light,
+    identity: l.identity,
+    liveness: l.liveness,
+    document: l.document,
     coversForeigners: true,
     demo: false,
-    notes: data.risk?.reasons ?? ["Análise concluída."],
+    notes: l.notes,
+    ocrConfere: l.ocrConfere,
+    receitaConfere: l.receitaConfere,
+    pendente: l.pendente,
   };
+}
+
+/*
+  Certta (ex-CAF) — Verif AI Smart OCR para COMPROVANTE DE RESIDÊNCIA (prompt 11, camada preparada).
+  DESLIGADO até o contrato: só liga com CERTTA_SMART_OCR=on + CAF_API_TOKEN. Tem a mesma interface do conferidor
+  da IA (src/lib/documento/conferidor.ts), para trocar por configuração. Enquanto o endpoint e o formato da resposta
+  não forem confirmados no contrato, devolve null (o caso vai para a revisão humana).
+*/
+export function certtaOcrAtivo(): boolean {
+  return process.env.CERTTA_SMART_OCR === "on" && !!process.env.CAF_API_TOKEN && !integracoesSimuladas();
+}
+
+export async function lerComprovanteCertta(
+  _bytes: Uint8Array,
+  _mime: string,
+): Promise<import("@/lib/documento/conferencia").LeituraDocumento | null> {
+  // TODO(certta): chamar o Smart OCR (conferência do código de barras incluída) quando o contrato sair.
+  return null;
 }

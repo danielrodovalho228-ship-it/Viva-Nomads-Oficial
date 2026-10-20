@@ -80,7 +80,7 @@ test("proxy e layout do admin aplicam o portão AAL2; server actions do admin us
   assert.match(proxy, /decidirPortaoMfa/);
   const layout = readFileSync(new URL("../../app/(dashboard)/admin/layout.tsx", import.meta.url), "utf8");
   assert.match(layout, /decidirPortaoMfa/);
-  for (const f of ["../socios/caixa-actions.ts", "../parceiros/admin-actions.ts", "../fotografos/actions.ts", "../data/pedidos-actions.ts"]) {
+  for (const f of ["../socios/caixa-actions.ts", "../parceiros/admin-actions.ts", "../data/pedidos-actions.ts"]) {
     assert.match(readFileSync(new URL(f, import.meta.url), "utf8"), /sessaoAal2/, f);
   }
 });

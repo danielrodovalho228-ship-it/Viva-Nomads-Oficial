@@ -61,3 +61,25 @@ test("texto do agente: **negrito** e listas viram blocos; nada de HTML passa", a
   assert.deepEqual(b[4], { tipo: "p", trechos: [{ texto: "<script>alert(1)</script> **x", negrito: false }] });
   assert.ok(!b.some((x) => x.trechos.some((t) => t.negrito && t.texto.includes("*"))));
 });
+
+test("pedido para outro agente: a troca de mensagens segue o chat para o agente alvo", async () => {
+  const { moverTrocaParaAgente } = await import("./conversa.ts");
+  const msgs = [
+    { id: "antiga", agente_slug: "bruno" },
+    { id: "p-1", agente_slug: "bruno" },
+    { id: "r-1", agente_slug: "bruno" },
+  ];
+  const r = moverTrocaParaAgente(msgs, ["p-1", "r-1"], "renato");
+  assert.deepEqual(r.map((m) => m.agente_slug), ["bruno", "renato", "renato"]);
+  assert.equal(msgs[1].agente_slug, "bruno"); // não muda o original
+});
+
+test("moverTrocaParaAgente: resposta do dono antigo vira do novo dono (não cai na trilha); passo do Moacir continua dele", async () => {
+  const { moverTrocaParaAgente } = await import("./conversa.ts");
+  const msgs = [
+    { id: "t-1", agente_slug: "bruno", autor_slug: "moacir" },
+    { id: "r-1", agente_slug: "bruno", autor_slug: "bruno" },
+  ];
+  const r = moverTrocaParaAgente(msgs, ["t-1", "r-1"], "renato");
+  assert.deepEqual(r.map((m) => [m.agente_slug, m.autor_slug]), [["renato", "moacir"], ["renato", "renato"]]);
+});

@@ -37,20 +37,21 @@ test.describe("T17 — Conta salva de verdade", () => {
 
   test("preferência de notificação grava e volta depois do F5", async ({ page }) => {
     await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
-    const sw = page.getByRole("switch", { name: "Avisos por WhatsApp" });
+    const sw = page.getByRole("switch", { name: "Avisos por e-mail" });
     await expect(sw).toBeEnabled();
     const antes = await sw.getAttribute("aria-checked");
     await sw.click();
     await expect(page.getByText("Preferência salva.")).toBeVisible();
     await page.reload({ waitUntil: "networkidle" });
-    const depois = page.getByRole("switch", { name: "Avisos por WhatsApp" });
+    const depois = page.getByRole("switch", { name: "Avisos por e-mail" });
     await expect(depois).toHaveAttribute("aria-checked", antes === "true" ? "false" : "true");
     await depois.click(); // devolve
     await expect(page.getByText("Preferência salva.")).toBeVisible();
   });
 
   test("senha atual errada não troca a senha", async ({ page }) => {
-    await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    // Prompt 18: a troca de senha fica numa tela só (Confiança e segurança); a Conta tem só o link.
+    await page.goto("/dashboard/conta/seguranca", { waitUntil: "networkidle" });
     const painel = page.locator("form").filter({ hasText: "Salvar nova senha" });
     const campos = painel.locator('input[type="password"]');
     await campos.nth(0).fill("senha-errada-de-proposito");

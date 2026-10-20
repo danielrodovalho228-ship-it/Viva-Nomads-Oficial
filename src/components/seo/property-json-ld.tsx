@@ -3,6 +3,7 @@ import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { isExemplo } from "@/lib/demo-listing";
 import { avaliacaoReal } from "@/lib/reviews";
 import { hojeBR } from "@/lib/utils";
+import { ofertaDoAnuncio } from "@/lib/seo/anuncio-cidade";
 
 /**
  * Disponibilidade Schema.org derivada das datas REAIS (não só do status):
@@ -66,21 +67,8 @@ export function PropertyJsonLd({ property }: { property: Property }) {
     url: pageUrl,
     ...(images.length > 0 ? { image: images } : {}),
     brand: { "@type": "Brand", name: SITE_NAME },
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "BRL",
-      price: property.monthlyPrice,
-      // Locação por temporada: o preço é mensal.
-      priceSpecification: {
-        "@type": "UnitPriceSpecification",
-        price: property.monthlyPrice,
-        priceCurrency: "BRL",
-        unitCode: "MON",
-        referenceQuantity: { "@type": "QuantitativeValue", value: 1, unitCode: "MON" },
-      },
-      availability: disponibilidadeSchema(property),
-      url: pageUrl,
-    },
+    // Oferta mensal com o imóvel como Accommodation (estadia mín/máx, mobiliado).
+    offers: ofertaDoAnuncio(SITE_URL, property, disponibilidadeSchema(property)),
     // Localização aproximada (sem endereço exato — liberado só após o aceite).
     address: {
       "@type": "PostalAddress",

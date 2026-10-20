@@ -19,6 +19,9 @@ const LEITURA_PUBLICA = new Set([
   // tabelas de preço e catálogo: leitura pública de propósito (/precos, simuladores).
   // Só SELECT: escrita anônima continua barrada pelas três checagens abaixo.
   "faixas_comissao", "faixas_assinatura", "garantias", "servicos_adicionais",
+  // cidades liberadas (migração 0159): a busca e o pedido precisam saber se a cidade está liberada.
+  // Só nome da cidade e a marca liberada/pausada; escrita só do admin, interesse_cidade NÃO é público.
+  "cidades_liberadas",
 ]);
 
 function tabelasDasMigracoes(): string[] {

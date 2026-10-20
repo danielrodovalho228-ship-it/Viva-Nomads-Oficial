@@ -33,15 +33,15 @@ test("a marca da minuta é a do parecer pendente", () => {
   assert.equal(MARCA_MINUTA, "MINUTA DE TESTE — sem validade");
 });
 
-test("as telas de contratos e locações usam a etapa, não o rótulo fixo Ativo/Em vigência", async () => {
+test("as telas de contratos e locações usam o selo da fonte única, não o rótulo fixo Ativo/Em vigência", async () => {
   const { readFileSync } = await import("node:fs");
   const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
   const contratos = ler("../app/(dashboard)/dashboard/contratos/contratos-client.tsx");
   const locacoes = ler("../app/(dashboard)/dashboard/locacoes/locacoes-client.tsx");
-  assert.match(contratos, /ROTULO_ETAPA\[contrato\.etapa\]/);
+  assert.match(contratos, /\{contrato\.estado\.selo\}/);
   assert.doesNotMatch(contratos, /\? "Ativo"/);
   assert.match(contratos, /statusMeta\(bloco\.status, etapa\)/);
-  assert.match(locacoes, /ROTULO_ETAPA\[l\.etapa\]/);
+  assert.match(locacoes, /\{l\.estado\.selo\}/);
   assert.doesNotMatch(locacoes, /"Ativa"/);
 });
 

@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { periodosOcupados } from "@/lib/data/periodo-servidor";
 
 export interface BlocoDatas {
   id: string;
@@ -27,6 +29,18 @@ export async function getBlocks(propertyId: string): Promise<BlocoDatas[]> {
     inicio: String(b.inicio),
     fim: String(b.fim),
   }));
+}
+
+/**
+ * Datas indisponíveis no calendário público: os bloqueios do dono + os períodos com contrato ativo (0176). Só datas —
+ * nunca quem mora. [] em demo/sem backend.
+ */
+export async function getDatasIndisponiveis(propertyId: string): Promise<{ inicio: string; fim: string }[]> {
+  if (!UUID_RE.test(propertyId)) return [];
+  const bloqueios = (await getBlocks(propertyId)).map((b) => ({ inicio: b.inicio, fim: b.fim }));
+  const admin = createAdminClient();
+  const contratos = admin ? await periodosOcupados(admin, propertyId).catch(() => []) : [];
+  return [...bloqueios, ...contratos];
 }
 
 /** Proprietário BLOQUEIA um intervalo. RLS garante que só o dono insere. */

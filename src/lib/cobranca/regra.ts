@@ -30,6 +30,11 @@ export const FAIXAS_COMISSAO_PADRAO: readonly FaixaComissao[] = [
 ];
 
 export const TAXA_COMISSAO_PADRAO = FAIXAS_COMISSAO_PADRAO[0].taxa; // 1–2 imóveis
+/**
+ * Prompt 16: a "Análise da carteira" abre a partir da 2ª faixa (3 imóveis ativos), pela MESMA regra das taxas —
+ * sem plano pago nem trava de upgrade.
+ */
+export const MIN_IMOVEIS_ANALISE_CARTEIRA = FAIXAS_COMISSAO_PADRAO[1].minImoveis;
 export const DIAS_PARA_NOVA_TAXA_APOS_QUEDA = 30;
 const DIA_MS = 86_400_000;
 
@@ -166,12 +171,32 @@ export function taxaPublicaTexto(f: FaixaComissao): string {
   return f.gestor ? TAXA_NEGOCIADA_TEXTO : pctTexto(f.taxa);
 }
 
-/** Linha do painel do proprietário, ANTES de aceitar contrato/renovação (ordens 12eea681, 5faa3903 e b3c9d76e). */
+/** "R$ 3.200" (inteiro) / "R$ 259,20" (com centavos). */
+export function brlTaxa(v: number): string {
+  const inteiro = Math.abs(v - Math.round(v)) < 0.005;
+  return `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: inteiro ? 0 : 2, maximumFractionDigits: inteiro ? 0 : 2 })}`;
+}
+
+/**
+ * Rótulo ÚNICO da taxa de serviço (prompt 27, item 6), em todo lugar que mostra a taxa (proposta, orçamento,
+ * Fechamento, contrato, simuladores): "Taxa de serviço: 12% sobre o valor mensal × meses (R$ 3.200 × 4 = R$ 12.800)
+ * = R$ 1.536". A base é só o valor mensal × meses — nunca o "total do contrato", que inclui consumo, limpeza e pet.
+ * `valorGravado`: a taxa já gravada (congelada no aceite), quando houver; senão, calculada pela regra.
+ */
+export function rotuloTaxaServico(taxa: number, valorMensal: number, meses: number, valorGravado?: number | null): string {
+  const inicio = `Taxa de serviço: ${pctTexto(taxa)} sobre o valor mensal × meses`;
+  const v = Number.isFinite(valorMensal) && valorMensal > 0 ? valorMensal : 0;
+  const m = Number.isFinite(meses) && meses > 0 ? meses : 0;
+  if (!(v > 0 && m > 0)) return inicio;
+  const valor = valorGravado != null && Number.isFinite(valorGravado) ? valorGravado : comissaoSobreContrato(v, m, taxa);
+  return `${inicio} (${brlTaxa(v)} × ${numMeses(m)} = ${brlTaxa(Math.round(v * m * 100) / 100)}) = ${brlTaxa(valor)}`;
+}
+
+const numMeses = (m: number) => `${Math.round(m * 10) / 10}`.replace(".", ",");
+
+/** Linha do painel do proprietário, ANTES de aceitar contrato/renovação: o rótulo único (prompt 27). */
 export function textoTaxaPainel(taxa: number, valorMensal: number, meses: number): string {
-  const base = `Taxa de serviço: ${pctTexto(taxa)} do valor total do contrato`;
-  const valor = comissaoSobreContrato(valorMensal, meses, taxa);
-  if (valor <= 0) return base;
-  return `${base} = R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return rotuloTaxaServico(taxa, valorMensal, meses);
 }
 
 /**
@@ -182,6 +207,10 @@ export const TEXTO_REGRA_UNICA =
   "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.";
 
 export const TEXTO_REGRA_CURTO = TEXTO_REGRA_UNICA;
+
+/** Meta description de /precos (≤155 caracteres; ordem 218c62ad, #153). */
+export const DESCRICAO_PRECOS =
+  "Anunciar é grátis. A Viva cobra 12% do contrato fechado, menor com mais imóveis (até 6%). Sem mensalidade. Para imóveis mobiliados.";
 
 /** Frase padrão (ordem b3c9d76e), com a taxa da faixa. */
 export function fraseComissaoUnica(taxaTexto: string): string {
@@ -195,4 +224,4 @@ export function comissaoCurta(taxaTexto: string): string {
 
 /** Renovação/prorrogação (decisão do Daniel, 14/10): cobrada à parte, sobre o valor total do período renovado. */
 export const TEXTO_RENOVACAO_COMISSAO =
-  "A comissão é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.";
+  "A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.";

@@ -9,7 +9,7 @@
   - Garantidor digital (parceiro): slot "Em breve" controlado por feature flag —
     vira selecionável SEM mexer em código (mudar a flag + status para 'ativo').
   - Serviços (ex.: Aqui Resolve): NÃO são garantia — seção separada, opcional, a
-    plataforma só intermedeia e roteia o pagamento.
+    plataforma só indica o parceiro; o pagamento é direto ao prestador.
 
   Esta é a fonte de verdade do catálogo (mesmo formato da tabela em
   0014_guarantees_catalog.sql) — ligar um parceiro = editar um registro + flag.
@@ -161,9 +161,10 @@ export const SERVICOS_ADICIONAIS: ServicoAdicional[] = [
     categoria: "assistencia_inquilino",
     quemPaga: "inquilino",
     parceiroNome: null,
-    status: "ativo",
+    // Sem parceiro real hoje (ordem 3e2b7030): aparece como "Em breve", sem poder contratar.
+    status: "em_breve",
     descricao:
-      "Chaveiro, encanador, elétrica e mais — acionável a qualquer hora. A plataforma intermedeia e roteia o pagamento ao prestador; não executa o serviço.",
+      "Chaveiro, encanador, elétrica e mais, com prestador parceiro independente. Você contrata e paga direto ao prestador; a Viva não recebe esse valor nem executa o serviço.",
   },
   {
     id: "plano_manutencao",
@@ -173,7 +174,7 @@ export const SERVICOS_ADICIONAIS: ServicoAdicional[] = [
     parceiroNome: null,
     status: "ativo",
     descricao:
-      "Manutenção preventiva e corretiva do imóvel. A plataforma intermedeia e roteia o pagamento ao prestador; não executa o serviço.",
+      "Manutenção preventiva e corretiva do imóvel, com prestador parceiro independente. Você contrata e paga direto ao prestador; a Viva não recebe esse valor nem executa o serviço.",
   },
 ];
 

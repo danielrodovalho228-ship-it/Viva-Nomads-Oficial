@@ -73,7 +73,15 @@ test("workflow do laboratório: sem segredos, banco local, modo simulado", () =>
   assert.ok(passo, "passo Registrar no banco existe");
   assert.doesNotMatch(antes, /secrets\./);
   assert.deepEqual([...wf.matchAll(/secrets\.(\w+)/g)].map((m) => m[1]), ["SUPABASE_DB_URL"]);
-  assert.match(passo.split("- name:")[0], /github\.event_name != 'pull_request'/);
+  // Em PR só grava o do próprio repositório (fork não recebe segredo); o commit gravado é o da cabeça do PR (ordem 1424d64a).
+  const registrar = passo.split("- name:")[0];
+  assert.match(registrar, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
+  assert.match(registrar, /COMMIT_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
+  assert.match(registrar, /-v sha="\$COMMIT_SHA"/);
+  assert.doesNotMatch(registrar, /-v sha="\$GITHUB_SHA"/);
+  // Boletim por categoria (ordem 35527eb1): a cobertura por tipo entra na coluna por_categoria (migração 0173).
+  assert.match(registrar, /gerar-cobertura\.mjs --json/);
+  assert.match(registrar, /por_categoria/);
   assert.match(wf, /push:\s+branches: \[main\]/);
   assert.match(wf, /NEXT_PUBLIC_SUPABASE_URL: http:\/\/127\.0\.0\.1:54321/);
   assert.match(wf, /INTEGRACOES_SIMULADAS: "on"/);
@@ -97,4 +105,20 @@ test("seed do laboratório liga os alertas operacionais da admin (senão o e-mai
   assert.match(seed, /p\.role === "admin" \? \{ recebe_alertas_operacionais: true \}/);
   // avisarEquipe só escreve para quem tem a marca ligada
   assert.match(raiz("src/lib/notifications/destinatarios-admin.ts"), /recebe_alertas_operacionais === true/);
+});
+
+test("alinhar-producao: políticas que citam profiles.role são recriadas ao trocar o tipo (0136 quebrou o lab inteiro)", () => {
+  const sql = raiz("supabase/lab/alinhar-producao.sql");
+  // O Postgres recusa `alter column role type` com política dependente (emails_teste_admin_le, 0136):
+  // o script precisa achar essas políticas, apagar antes do alter e recriar depois.
+  const apagar = sql.indexOf("drop policy %I");
+  const alterar = sql.indexOf("alter table public.profiles alter column role type text");
+  const recriar = sql.indexOf("execute comando");
+  assert.ok(apagar > 0, "apaga as políticas dependentes");
+  assert.ok(alterar > apagar, "o alter vem depois de apagar as políticas");
+  assert.ok(recriar > alterar, "recria as políticas depois do alter");
+  assert.match(sql, /pg_policy/);
+  assert.match(sql, /replace\([^)]*'::user_role', '::text'\)/);
+  // Já em texto (produção/2ª execução): não faz nada.
+  assert.match(sql, /= 'text' then\s+return;/);
 });

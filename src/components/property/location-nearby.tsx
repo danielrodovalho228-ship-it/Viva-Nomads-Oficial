@@ -5,23 +5,7 @@ import { HeartPulse, GraduationCap, Briefcase, ShoppingCart, Bus, MapPin, Maximi
 import type { ProximityCategory, Property } from "@/lib/types";
 import type { MapMarker } from "@/components/property-map";
 import { PropertyMap } from "@/components/property-map-lazy";
-
-/**
- * Distância APROXIMADA para o anúncio público (item 2 do QA): arredonda os
- * minutos para o múltiplo de 5 mais próximo (mín. 5) e prefixa "~", para não
- * dar precisão que ajude a triangular o endereço antes do aceite. Sem minutos
- * no texto (ex.: "a pé"), devolve nada — evita combinação hiperespecífica.
- */
-function distanciaAprox(note?: string): string | undefined {
-  if (!note) return undefined;
-  const m = note.match(/(\d+)\s*min/i);
-  if (!m) return undefined;
-  const min = parseInt(m[1], 10);
-  if (!Number.isFinite(min)) return undefined;
-  const arred = Math.max(5, Math.round(min / 5) * 5);
-  const modo = /p[ée]/i.test(note) ? " a pé" : /carro|autom[óo]vel|dirig/i.test(note) ? " de carro" : "";
-  return `~${arred} min${modo}`;
-}
+import { distanciaAprox, proximidadesDoImovel } from "@/lib/anuncio/proximidades";
 
 const PROXIMITY_META: Record<ProximityCategory, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   saude: { label: "Saúde", icon: HeartPulse },
@@ -47,7 +31,7 @@ export function LocationNearby({ property }: { property: Property }) {
   // Antes do aceite, limitamos os POIs exibidos para não re-identificar o
   // endereço por combinação (item 4 do QA): no máximo 4, sem a lista completa.
   const MAX_POIS_PUBLICOS = 4;
-  const todosProximities = property.proximities ?? [];
+  const todosProximities = proximidadesDoImovel(property);
   const proximities = todosProximities.slice(0, MAX_POIS_PUBLICOS);
   const ocultos = todosProximities.length - proximities.length;
   const hasProximities = proximities.length > 0;

@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { avisarFilaDocumentosMudou } from "@/lib/admin/fila-evento";
+import { textoFilaDocumentos, FORMULA_FILA_DOCUMENTOS } from "@/lib/admin/indicadores";
+import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
 import {
   FileText,
   ExternalLink,
@@ -13,7 +17,13 @@ import {
 } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
-import { moderarDocumento, type DocumentoPendente } from "@/lib/data/documentos-admin";
+import {
+  moderarDocumento,
+  reabrirConferencia,
+  type ConferidoAutomatico,
+  type ConferenciaResumo,
+  type DocumentoPendente,
+} from "@/lib/data/documentos-admin";
 import {
   CHECKLIST_CONFERENCIA,
   MOTIVOS_RECUSA,
@@ -31,21 +41,105 @@ import { cn } from "@/lib/utils";
  * Nota (jurídico): conferimos o DOCUMENTO — não atestamos propriedade. Ver a
  * regra de vocabulário em scripts/check-consistency.mjs.
  */
-export function AdminDocumentosClient({ docs }: { docs: DocumentoPendente[] }) {
+export function AdminDocumentosClient({
+  docs,
+  auto = [],
+  contadores = { automaticos: 0, corrija: 0, revisao: 0 },
+  filaAgora = null,
+}: {
+  docs: DocumentoPendente[];
+  auto?: ConferidoAutomatico[];
+  contadores?: { automaticos: number; corrija: number; revisao: number };
+  /** "Na fila agora" (Prompt 29, item 9): documentos + matrículas — a mesma função da home e do selo da barra lateral. */
+  filaAgora?: { documentos: number; matriculas: number; total: number; maisAntigoEm: string | null } | null;
+}) {
   const [fila, setFila] = useState(docs);
+  const [aba, setAba] = useState<"revisao" | "automaticos">("revisao");
+  const [autos, setAutos] = useState(auto);
 
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+
+  // Prompt 36, item 3b: tira o card, avisa o selo da barra lateral e atualiza os números do servidor ("na fila
+  // agora") dentro de uma transição — a fila (estado local) não é remontada.
   function sair(id: string) {
     setFila((f) => f.filter((d) => d.id !== id));
+    avisarFilaDocumentosMudou();
+    startTransition(() => router.refresh());
   }
 
   return (
     <div>
       <PageTitle
         title="Documentos em conferência"
-        subtitle="Confira a matrícula ou o contrato de gestão antes de liberar a publicação. Conferimos o documento — não atestamos a propriedade."
+        subtitle="A conferência automática aprova o que bate e devolve ao dono o que está claramente errado. Aqui ficam só os casos em revisão. Conferimos o documento, não atestamos a propriedade."
       />
 
-      {fila.length === 0 ? (
+      {/* Prompt 29, item 9: "Na fila agora" é a soma explicada (documentos + matrículas); os 7 dias são outra métrica. */}
+      {filaAgora && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/60 p-3" data-testid="fila-agora">
+          <p className="font-title text-lg font-bold text-ink">
+            <span data-testid="fila-agora-total">{filaAgora.total}</span> na fila agora{" "}
+            <span className="text-base font-medium text-muted">({textoFilaDocumentos(filaAgora).replace(/^\d+ na fila \(|\)$/g, "")})</span>
+          </p>
+          <p className="text-xs text-muted">
+            {FORMULA_FILA_DOCUMENTOS}
+            {filaAgora.maisAntigoEm ? ` Mais antigo: ${dataHoraBRT(filaAgora.maisAntigoEm)}.` : ""}
+          </p>
+        </div>
+      )}
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="conferencia-contadores">
+        {[
+          { rotulo: "Aprovados automaticamente", valor: contadores.automaticos },
+          { rotulo: "Corrija (devolvidos ao dono)", valor: contadores.corrija },
+          { rotulo: "Foram para revisão", valor: contadores.revisao },
+          { rotulo: "Documentos de imóvel em revisão", valor: fila.length },
+        ].map((c) => (
+          <div key={c.rotulo} className="rounded-xl border border-sage-200 bg-white p-3">
+            <p className="font-title text-2xl font-bold text-forest">{c.valor}</p>
+            <p className="text-xs text-muted">{c.rotulo}</p>
+          </div>
+        ))}
+        <p className="col-span-2 text-xs text-muted lg:col-span-4">Aprovados, devolvidos e &quot;foram para revisão&quot;: últimos 7 dias. Em revisão: agora.</p>
+      </div>
+
+      <div className="mb-4 flex gap-2" role="tablist">
+        {(
+          [
+            ["revisao", `Em revisão (${fila.length})`],
+            ["automaticos", `Conferidos automaticamente (${autos.length})`],
+          ] as const
+        ).map(([k, rotulo]) => (
+          <button
+            key={k}
+            type="button"
+            role="tab"
+            aria-selected={aba === k}
+            onClick={() => setAba(k)}
+            className={cn(
+              "rounded-full px-3 py-1.5 text-sm font-medium",
+              aba === k ? "bg-forest text-white" : "bg-sage-100 text-forest hover:bg-sage-200",
+            )}
+          >
+            {rotulo}
+          </button>
+        ))}
+      </div>
+
+      {aba === "automaticos" ? (
+        autos.length === 0 ? (
+          <EmptyState icon={ShieldCheck} title="Nenhum ainda" text="Os documentos aprovados pela conferência automática aparecem aqui para amostragem." />
+        ) : (
+          <div className="space-y-4" data-testid="conferidos-automaticamente">
+            {autos.map((a) => (
+              <AutoCard key={a.id} doc={a} onReaberto={() => {
+                  setAutos((l) => l.filter((x) => x.id !== a.id));
+                  avisarFilaDocumentosMudou();
+                }} />
+            ))}
+          </div>
+        )
+      ) : fila.length === 0 ? (
         <EmptyState
           icon={ShieldCheck}
           title="Nada na fila"
@@ -59,13 +153,97 @@ export function AdminDocumentosClient({ docs }: { docs: DocumentoPendente[] }) {
         </div>
       )}
 
+      {/* fim das abas */}
       <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid var(--color-sage-200);background:#fff;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-sage)}`}</style>
     </div>
   );
 }
 
+/** O que a conferência automática leu e por que o caso veio para a revisão (o admin decide). */
+function ConferenciaIaBox({ c, revisaoAte }: { c: ConferenciaResumo; revisaoAte?: string | null }) {
+  const [agora] = useState(() => Date.now());
+  const vencido = !!revisaoAte && Date.parse(revisaoAte) < agora;
+  return (
+    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="conferencia-ia">
+      <p className="font-semibold">Conferência automática</p>
+      {c.motivos.length > 0 && (
+        <ul className="mt-1 list-disc space-y-0.5 pl-5" data-testid="conferencia-ia-motivos">
+          {c.motivos.map((m) => (
+            <li key={m}>{m}</li>
+          ))}
+        </ul>
+      )}
+      {c.leitura && (
+        <p className="mt-1 text-xs">
+          Leu: {[c.leitura.tipo, c.leitura.titular, c.leitura.endereco, c.leitura.data, c.leitura.cpf].filter(Boolean).join(" · ") || "nada legível"}
+          {c.leitura.sinais.length > 0 && ` · sinais: ${c.leitura.sinais.join(", ")}`}
+        </p>
+      )}
+      {revisaoAte && (
+        <p className={cn("mt-1 text-xs font-semibold", vencido ? "text-red-700" : "text-amber-900")} data-testid="conferencia-prazo">
+          {vencido ? "Prazo de 48 h vencido" : `Prazo: até ${dataHoraBRT(revisaoAte)}`}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function AutoCard({ doc, onReaberto }: { doc: ConferidoAutomatico; onReaberto: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  return (
+    <div data-testid="auto-card">
+      <Panel>
+        <p className="font-medium text-ink">
+          {doc.ownerNome}
+          <span className="font-normal text-muted"> · {doc.tituloImovel ?? "sem imóvel ligado ainda"}</span>
+        </p>
+        <p className="text-xs text-muted">Aprovado em {dataBRT(doc.criadoEm)}</p>
+        {doc.conferencia && (
+          <ul className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
+            {CHECKLIST_CONFERENCIA.map((i) => (
+              <li key={i.key} className="flex items-center gap-1.5">
+                {doc.conferencia?.checklist[i.key] ? <Check className="h-4 w-4 text-forest" /> : <X className="h-4 w-4 text-red-600" />}
+                {i.label}
+              </li>
+            ))}
+          </ul>
+        )}
+        <details className="mt-2 text-xs">
+          <summary className="cursor-pointer font-medium text-forest">Ver o que a conferência leu</summary>
+          <pre className="mt-1 overflow-x-auto rounded-lg bg-surface-2 p-2" data-testid="auto-card-json">{JSON.stringify(doc.conferencia, null, 2)}</pre>
+        </details>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {doc.docUrl && (
+            <a href={doc.docUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:underline">
+              <ExternalLink className="h-4 w-4" /> Abrir documento
+            </a>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setErro(null);
+              const r = await reabrirConferencia(doc.id);
+              setBusy(false);
+              if (!r.ok) return setErro(r.error ?? "Não foi possível reabrir.");
+              onReaberto();
+            }}
+          >
+            Reabrir para revisão
+          </Button>
+        </div>
+        {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
+      </Panel>
+    </div>
+  );
+}
+
 function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }) {
-  const [marks, setMarks] = useState<Record<string, boolean>>({});
+  // Checklist PRÉ-MARCADO pela conferência automática (o admin confere e ajusta).
+  const [marks, setMarks] = useState<Record<string, boolean>>(() => ({ ...(doc.conferenciaIa?.checklist ?? {}) }));
   const [rejeitando, setRejeitando] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [detalhe, setDetalhe] = useState("");
@@ -95,7 +273,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
   }
 
   return (
-    <div data-testid="doc-card" data-imovel={doc.tituloImovel ?? ""}>
+    <div data-testid="doc-card" data-imovel={doc.tituloImovel ?? ""} data-sem-imovel={doc.semImovel ? "1" : undefined} data-dono={doc.ownerNomeCompleto ?? doc.ownerNome}>
     <Panel>
       {/* Cabeçalho: dono + data */}
       <div className="flex items-center gap-3">
@@ -107,14 +285,17 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
             {doc.ownerNome}
             <span className="font-normal text-muted">
               {" · "}
-              {doc.tituloImovel ?? "sem imóvel cadastrado ainda"}
+              {/* 35A: enviado no /qualificar antes de existir imóvel — liga ao próximo imóvel criado pelo dono. */}
+              {doc.semImovel ? "Documento sem imóvel ligado" : doc.tituloImovel ?? "sem imóvel cadastrado ainda"}
             </span>
           </p>
           <p className="text-xs text-muted">
-            Enviado {doc.criadoEm ? new Date(doc.criadoEm).toLocaleDateString("pt-BR") : "—"}
+            Enviado {doc.semImovel ? dataHoraBRT(doc.criadoEm) : dataBRT(doc.criadoEm)}
           </p>
         </div>
       </div>
+
+      {doc.conferenciaIa && <ConferenciaIaBox c={doc.conferenciaIa} revisaoAte={doc.revisaoAte} />}
 
       {/* Alerta de arquivo reutilizado (anti-fraude) */}
       {doc.duplicado > 0 && (
@@ -187,7 +368,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
             <div className="flex items-start gap-2">
               <Home className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
               <div className="min-w-0">
-                <dt className="text-xs text-muted">Imóvel do cadastro</dt>
+                <dt className="text-xs text-muted">{doc.semImovel ? "Imóvel mais recente do dono" : "Imóvel do cadastro"}</dt>
                 <dd className="font-medium text-ink">
                   {doc.refImovel ?? "— (sem imóvel cadastrado ainda)"}
                 </dd>

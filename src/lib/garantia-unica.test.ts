@@ -52,7 +52,7 @@ test("registrarContrato grava a garantia e zera a caução dos blocos com seguro
 
 test("fechamento: 'Sua proteção' com as duas frases e 'Li e entendi' obrigatório; garantia enviada ao servidor", () => {
   const f = ler("app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
-  assert.match(f, /Em qualquer opção, você responde pelos danos que causar\./);
+  assert.match(f, /Em qualquer opção, o inquilino responde pelos danos que causar\./);
   assert.match(f, /Desgaste normal e defeitos são do proprietário\./);
   assert.match(f, /Li e entendi\./);
   assert.match(f, /\(step === 1 && !!guaranteeId && cienteProtecao\)/);

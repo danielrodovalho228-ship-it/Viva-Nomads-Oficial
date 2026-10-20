@@ -94,3 +94,57 @@ mudar código.
 
 > Dica: se preferir, me mande os arquivos aqui que eu otimizo (recorto 3:1,
 > comprimo) e faço o commit por você.
+
+---
+
+## Temas novos (rota rápida "e-mails profissionais", 19/10) — 11 imagens
+
+Mesma especificação técnica: **JPG 1500×500 (3:1)**, qualidade 80, **até 120 KB**, sem texto, sem logo, sem marca
+d'água, sem rosto famoso, e o **estilo** de cima colado em cada prompt. Gerar no Google Flow e subir em
+`public/media/email/` com **exatamente** estes nomes. Depois de subir, acrescentar o nome em
+`IMAGENS_NO_REPOSITORIO` (`src/lib/notifications/imagens-email.ts`): o teste de auditoria avisa se esquecer. Até
+lá, cada tema usa a imagem provisória indicada (nunca a de outro assunto).
+
+### 1. `visita.jpg` — visita pedida, confirmada, remarcada, cancelada (provisória: novo-interessado)
+> A welcoming front door of a bright furnished apartment slightly open, a person's hand holding the door handle,
+> soft hallway light, feeling of an expected and friendly visit, no faces. [ + estilo ]
+
+### 2. `contrato.jpg` — status do contrato, código de assinatura, entrada, saída e renovação (provisória: transacional)
+> A neat wooden desk with a printed rental agreement and a pen beside a tablet, a set of apartment keys on top,
+> calm morning light, feeling of a clear and safe agreement, no readable text. [ + estilo ]
+
+### 3. `proposta.jpg` — proposta recebida, respondida, aceita, vencendo (provisória: pedido-resposta)
+> Two coffee cups on a small table in a furnished living room, a notebook with blank pages and a pen between
+> them, suggesting a friendly negotiation, soft natural light, no people. [ + estilo ]
+
+### 4. `documento-pdf.jpg` — recibo, comprovante de Caução, termo de devolução (provisória: transacional)
+> A clean folder with a few blank printed sheets and a paperclip on a light wood table, a laptop softly blurred
+> behind, organized and trustworthy mood, no readable text. [ + estilo ]
+
+### 5. `seguranca.jpg` — código de segurança (2FA) e exclusão de conta (provisória: reautenticacao)
+> A smartphone lying on a table with a soft glowing shield-like reflection on the screen (no text, no icons),
+> a small plant beside it, calm and protected mood. [ + estilo ]
+
+### 6. `atendimento.jpg` — chamados abertos, respondidos, resolvidos (provisória: nova-mensagem)
+> A friendly support desk corner with a headset resting next to a laptop and a cup of tea, warm light,
+> feeling of attentive and human help, no faces. [ + estilo ]
+
+### 7. `manutencao.jpg` — pedidos de manutenção (provisória: nova-mensagem)
+> A small toolbox with a screwdriver and a wrench on the floor of a bright furnished apartment, a lamp being
+> fixed in soft focus, tidy and reassuring mood, no faces. [ + estilo ]
+
+### 8. `verificacao.jpg` — verificação pronta, qualificação aprovada ou recusada (provisória: confirmar-cadastro)
+> A magnifying glass resting on a blank checklist card on a light desk, a green checkmark-shaped plant leaf
+> beside it (no text), feeling of a careful review. [ + estilo ]
+
+### 9. `documentos.jpg` — tema Documentos: aprovado, precisa de ajuste, resultado agrupado (provisória: transacional)
+> A neat stack of paper folders with a rubber review stamp beside them on a wooden desk, sheets slightly fanned
+> out, no readable text, soft daylight, organized and trustworthy mood. [ + estilo ]
+
+### 10. `avaliacao.jpg` — pedido de avaliação da estadia (provisória: transacional)
+> A suitcase standing by the door of a tidy furnished apartment at sunset, a thank-you card (blank) on the
+> console table, warm feeling of a good stay coming to an end. [ + estilo ]
+
+### 11. `busca.jpg` — alerta de busca salva e pedidos compatíveis (provisória: transacional)
+> A laptop on a sofa showing a blurred grid of apartment photos (no readable text), a cozy blanket and a coffee
+> mug, feeling of finding the right place. [ + estilo ]

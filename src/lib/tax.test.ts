@@ -3,7 +3,7 @@
  *  chamam a MESMA função → mesmo resultado). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { simulateTax, irpfMensal, irpfMensalTabela, PF_CONTRIBUTOR_MIN_ANNUAL } from "./tax.ts";
+import { simulateTax, irpfMensal, irpfMensalTabela, PF_CONTRIBUTOR_MIN_ANNUAL, AVISO_IBS_CBS_LIBERADO, AVISO_IBS_CBS_PF } from "./tax.ts";
 import { simulateTax as simulateTaxMemoria } from "./tributario.ts";
 
 test("PF de 1 imóvel a R$ 3.200/mês: redutor da Lei 15.270 zera o carnê-leão", () => {
@@ -35,7 +35,10 @@ test("R$ 10 mil/mês: PF ~R$ 22 mil/ano; PJ presumido 11,33% (IBS/CBS 2026 = tes
   const r = simulateTax({ monthlyRent: 10000, propertyCount: 1 });
   assert.equal(r.pfAnnualTax, 22095);
   assert.equal(r.pjAnnualTax, 13596); // 120.000 × 11,33%
-  assert.equal(r.taxSavings, 8499);
+  assert.equal(r.taxDifference, 8499);
+  // Prompt 18: a vantagem real desconta o custo de manter a empresa (~R$ 5 mil/ano).
+  assert.equal(r.pjAnnualCost, 5000);
+  assert.equal(r.taxSavings, 3499);
 });
 
 test("despesas dedutíveis reduzem o imposto da PF", () => {
@@ -64,13 +67,32 @@ test("aluguel moderado: PF paga menos e a recomendação é PF", () => {
 
 test("recomendação só vira PJ quando a economia supera o custo de manter a PJ", () => {
   const r = simulateTax({ monthlyRent: 10000, propertyCount: 1 });
-  assert.ok(r.taxSavings > 5000);
+  assert.ok(r.taxDifference > 5000);
   assert.equal(r.recommendation, "pj");
   const quase = simulateTax({ monthlyRent: 10000, propertyCount: 1, monthlyDeductions: 3000 });
-  assert.equal(quase.recommendation, quase.taxSavings > 5000 ? "pj" : "pf");
+  assert.equal(quase.recommendation, quase.taxSavings > 0 ? "pj" : "pf");
 });
 
 test("PARIDADE: Conta e /tributario produzem resultado idêntico (mesma função)", () => {
   const input = { monthlyRent: 4500, propertyCount: 2 };
   assert.deepEqual(simulateTax(input), simulateTaxMemoria(input));
+});
+
+test("prompt 18 — outros rendimentos: o aluguel soma ao salário na tabela (o imposto do aluguel sobe)", () => {
+  const so = simulateTax({ monthlyRent: 3200, propertyCount: 1 });
+  const com = simulateTax({ monthlyRent: 3200, propertyCount: 1, otherMonthlyIncome: 8000 });
+  assert.equal(so.pfAnnualTax, 0); // sozinho, o redutor zera
+  assert.ok(com.pfAnnualTax > 9000); // 3.200 por mês na faixa de 27,5% ≈ R$ 880/mês
+  assert.equal(com.pfAnnualTax, Math.round((irpfMensal(11200) - irpfMensal(8000)) * 12));
+});
+
+test("prompt 18 — PJ sem '+ IBS/CBS' e aviso de IBS/CBS só pela regra cumulativa (desligado até a revisão)", () => {
+  const r = simulateTax({ monthlyRent: 10000, propertyCount: 1 });
+  assert.equal(r.pjRate, 0.1133);
+  assert.equal(r.ibsCbsAviso, false);
+  assert.equal(simulateTax({ monthlyRent: 25000, propertyCount: 4 }).ibsCbsAviso, true);
+  assert.equal(simulateTax({ monthlyRent: 25000, propertyCount: 3 }).ibsCbsAviso, false);
+  assert.equal(AVISO_IBS_CBS_LIBERADO, false);
+  assert.match(AVISO_IBS_CBS_PF.texto, /a partir de 2027|começa em 2027/);
+  assert.doesNotMatch(AVISO_IBS_CBS_PF.texto, /ago\/2026/);
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { dataHoraBRT, horaBRT } from "@/lib/datas-brasilia";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -25,7 +26,7 @@ import {
   type Ronda,
   type StatusAgente,
 } from "@/lib/agentes/central";
-import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, lerTextoSimples, textoFeito } from "@/lib/agentes/conversa";
+import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, lerTextoSimples, moverTrocaParaAgente, textoFeito } from "@/lib/agentes/conversa";
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
@@ -100,8 +101,9 @@ function useAgora(ms = 30_000): Date | null {
   return agora;
 }
 
-const hora = (d: Date | null, tz: string) => (d ? d.toLocaleTimeString("pt-BR", { timeZone: tz, hour: "2-digit", minute: "2-digit" }) : "--:--");
-const dataHora = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+// Relógio do Texas (sócio nos EUA): o único fuso fora de Brasília no admin, de propósito.
+const horaTexas = (d: Date | null) => (d ? d.toLocaleTimeString("pt-BR", { timeZone: "America/Chicago", hour: "2-digit", minute: "2-digit" }) : "--:--");
+const dataHora = (iso: string) => dataHoraBRT(iso, { tabela: true });
 
 /** Marca fixa: deixa claro que todo agente da Central é uma IA (a persona é só o jeito de falar). */
 function MarcaIA() {
@@ -234,15 +236,15 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
           </div>
           <div className="flex flex-wrap gap-3.5 text-xs text-[#8C9AC4] sm:ml-auto" style={mono}>
             <span>
-              Brasília <b className="font-medium text-white">{hora(agora, "America/Sao_Paulo")}</b>
+              Brasília <b className="font-medium text-white">{agora ? horaBRT(agora) : "--:--"}</b>
             </span>
             <span>
-              Texas <b className="font-medium text-white">{hora(agora, "America/Chicago")}</b>
+              Texas <b className="font-medium text-white">{horaTexas(agora)}</b>
             </span>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-2.5 py-1 text-xs text-[#8C9AC4]">
             <span className={styles.ponto} />
-            Ao vivo · dados de {hora(lidoEm, "America/Chicago")} TX
+            Ao vivo · dados de {horaTexas(lidoEm)} TX
           </span>
         </div>
         <nav className="-mb-px flex gap-1 overflow-x-auto pb-2" role="tablist" style={{ scrollbarWidth: "none" }}>
@@ -292,7 +294,7 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
               [kpi?.ativos, "agentes ativos"],
               [kpi?.rondas24h, "rondas em 24 h"],
               [kpi?.falhas, "falharam na última"],
-              [kpi?.p1, "achados P1"],
+              [kpi?.p1, "achados P1 (última ronda)"],
             ].map(([v, l]) => (
               <div key={String(l)} className="min-w-0 rounded-xl border border-white/10 bg-[#0D1838]/60 px-2 py-2 sm:px-3 sm:py-2.5">
                 <b className="block text-lg font-medium text-white sm:text-[22px]" style={mono}>
@@ -508,7 +510,7 @@ function Diario({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Recor
                     <b className="text-white">{a?.nome ?? r.agente_slug}</b>
                     <Chip cor={COR_RONDA[r.status]}>{ROTULO_RONDA[r.status]}</Chip>
                     <span className="text-xs text-[#8C9AC4]" style={mono}>
-                      {dataHora(r.iniciada_em)} BR{agora ? ` · ${tempoRelativo(r.iniciada_em, agora)}` : ""}
+                      {dataHora(r.iniciada_em)}{agora ? ` · ${tempoRelativo(r.iniciada_em, agora)}` : ""}
                     </span>
                   </div>
                   {r.resumo && <p className="mt-1 text-[13px] text-[#C3CDEB]">{resumoCurto(r.resumo, 260)}</p>}
@@ -704,7 +706,12 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
         const o = await deixarOrdem(alvo.slug, pergunta);
         feito = o.ok ? textoFeito(alvo.nome, false, new Date().toISOString()) : (o.erro ?? "Não consegui registrar a ordem agora.");
       }
-      setExtra((e) => [...e, ...passos, { ...resposta, texto: feito }]);
+      const troca = [...passos, { ...resposta, texto: feito }];
+      setExtra((e) => {
+        const todas = [...e, ...troca];
+        // Se o chat vai para o agente alvo, a troca deste pedido vai junto (senão o balão some).
+        return alvo.slug !== slug ? moverTrocaParaAgente(todas, [`p-${agoraIso}`, ...troca.map((m) => m.id)], alvo.slug) : todas;
+      });
       if (alvo.slug !== slug) setSlug(alvo.slug);
       startTransition(() => router.refresh());
     } catch {

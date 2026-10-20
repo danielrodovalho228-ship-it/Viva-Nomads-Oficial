@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { dataBR } from "@/lib/utils";
+import { statusHumano } from "@/lib/status-humano";
 import { quemEAPessoa, sugerirResposta } from "@/lib/data/atendimento-actions";
 import type { PessoaResumo } from "@/lib/atendimento/copiloto-regras";
 
@@ -62,7 +63,7 @@ export function QuemEAPessoa({ chamadoId }: { chamadoId: string }) {
           <Bloco titulo="Anúncios" vazio="Nenhum anúncio.">
             {p.anuncios.map((a, i) => (
               <li key={i}>
-                {a.titulo} · {STATUS_ANUNCIO[a.status] ?? a.status}
+                {a.titulo} · {STATUS_ANUNCIO[a.status] ?? statusHumano(a.status)}
                 {a.status !== "active" && (
                   <span className="block text-muted">{a.podePublicar ? "100% · pronto para publicar" : `falta: ${a.faltam.join("; ")}`}</span>
                 )}
@@ -72,7 +73,7 @@ export function QuemEAPessoa({ chamadoId }: { chamadoId: string }) {
           <Bloco titulo="Contratos" vazio="Nenhum contrato.">
             {p.contratos.map((k, i) => (
               <li key={i}>
-                {k.imovel} · {k.papel} · {k.status}
+                {k.imovel} · {k.papel} · {statusHumano(k.status)}
                 {k.inicio ? ` · ${dataBR(k.inicio)} a ${k.fim ? dataBR(k.fim) : "—"}` : ""}
               </li>
             ))}
@@ -80,14 +81,14 @@ export function QuemEAPessoa({ chamadoId }: { chamadoId: string }) {
           <Bloco titulo="Pedidos de Moradia" vazio="Nenhum pedido.">
             {p.pedidos.map((x) => (
               <li key={x.status}>
-                {x.quantidade} {x.status}
+                {x.quantidade} {statusHumano(x.status)}
               </li>
             ))}
           </Bloco>
           <Bloco titulo="Chamados anteriores" vazio="Primeiro chamado.">
             {p.chamadosAnteriores.map((k) => (
               <li key={k.numero}>
-                {k.numero} · {k.assunto} · {k.status}
+                {k.numero} · {k.assunto} · {statusHumano(k.status)}
               </li>
             ))}
           </Bloco>

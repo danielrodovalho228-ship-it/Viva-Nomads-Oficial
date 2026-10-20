@@ -1,23 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Upload, X, Loader2, Star, AlertTriangle, Undo2 } from "lucide-react";
 import {
   uploadPropertyPhoto,
   removePropertyPhoto,
   type UploadedPhoto,
 } from "@/lib/data/storage";
-import { validarArquivoFotoImovel } from "@/lib/upload-limits";
 import { useAuthStore } from "@/lib/store";
 import { tratarFoto } from "@/lib/fotos/processar";
-import { avisosDaFoto, MAX_FOTOS_POR_ANUNCIO, type AvisoFoto } from "@/lib/fotos/qualidade";
+import { enviarFotos } from "@/lib/fotos/enviar";
+import { MAX_FOTOS_POR_ANUNCIO, type AvisoFoto } from "@/lib/fotos/qualidade";
 import { cn } from "@/lib/utils";
 
 export interface PhotoItem extends UploadedPhoto {
   id: string;
   name: string;
-  /** Hash de aparência (detecta foto repetida) e avisos de qualidade, quando a foto foi tratada. */
+  /** Hash e assinatura de aparência (detectam foto repetida) e avisos de qualidade, quando a foto foi tratada. */
   hash?: string;
+  assinatura?: string;
   avisos?: AvisoFoto[];
   /** A foto passou por ajuste leve de exposição (dá para voltar ao original). */
   melhorada?: boolean;
@@ -57,6 +58,11 @@ export function PhotoUploader({
   const [error, setError] = useState<string | null>(null);
   // Índice sendo arrastado (reordenar por drag — a 1ª posição é a capa).
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  // Prompt 22 (item 8): "Adicionar" é um BOTÃO que abre a escolha de arquivos, e a galeria aceita ARRASTAR E SOLTAR
+  // arquivos do computador (antes o soltar só reordenava as fotos, apesar do texto "arraste e solte").
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [soltando, setSoltando] = useState(false);
+  const temArquivos = (e: React.DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
 
   /** Reordena a galeria movendo `from` para a posição `to` (a[0] = capa). */
   function reorder(from: number, to: number) {
@@ -70,53 +76,20 @@ export function PhotoUploader({
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     setError(null);
-    const slots = max - photos.length;
-    const chosen = Array.from(files).slice(0, slots);
-    const excedeu = files.length > slots;
-
     setUploading(true);
-    setProgresso({ feitas: 0, total: chosen.length });
     try {
-      const uploaded: PhotoItem[] = [];
-      const novosOriginais: Record<string, File> = {};
-      const hashes = photos.map((p) => p.hash).filter((h): h is string => !!h);
-      let feitas = 0;
-      for (const file of chosen) {
-        // Validação de tipo/tamanho no cliente (feedback rápido). O bucket do
-        // Supabase revalida no servidor (migration 0040) — o accept do input não
-        // é a trava real.
-        const invalido = validarArquivoFotoImovel({ type: file.type, size: file.size, name: file.name });
-        if (invalido) {
-          setError(invalido);
-        } else {
-          const t = tratar ? await tratarFoto(file) : null;
-          let result: UploadedPhoto;
-          try {
-            result = await uploader(t?.arquivo ?? file, ownerId);
-          } catch (e) {
-            // Falha real de envio: erro visível, a foto NÃO entra na galeria.
-            setError(e instanceof Error ? e.message : "Não foi possível enviar a foto agora.");
-            feitas += 1;
-            setProgresso({ feitas, total: chosen.length });
-            continue;
-          }
-          const id = crypto.randomUUID();
-          const item: PhotoItem = { ...result, id, name: file.name };
-          if (t?.analise) {
-            item.hash = t.analise.hash;
-            item.avisos = avisosDaFoto(t.analise, hashes);
-            item.melhorada = t.melhorada;
-            hashes.push(t.analise.hash);
-          }
-          if (t?.melhorada) novosOriginais[id] = t.original;
-          uploaded.push(item);
-        }
-        feitas += 1;
-        setProgresso({ feitas, total: chosen.length });
-      }
-      onChange([...photos, ...uploaded]);
-      setOriginais((o) => ({ ...o, ...novosOriginais }));
-      if (excedeu) setError(`Limite de ${max} fotos: as que passaram disso não foram enviadas.`);
+      // Um caminho só para enviar fotos (prompt 20): o mesmo do cartão "Preencher com IA" e da barra do celular.
+      const r = await enviarFotos(Array.from(files), {
+        atuais: photos,
+        max,
+        ownerId,
+        tratar,
+        uploader,
+        aoProgresso: (feitas, total) => setProgresso({ feitas, total }),
+      });
+      onChange([...photos, ...r.novas]);
+      setOriginais((o) => ({ ...o, ...r.originais }));
+      if (r.erro) setError(r.erro);
     } finally {
       setUploading(false);
       setProgresso(null);
@@ -151,7 +124,25 @@ export function PhotoUploader({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div
+        className={cn("grid grid-cols-2 gap-3 rounded-xl sm:grid-cols-3", soltando && "ring-2 ring-forest ring-offset-2")}
+        data-testid="fotos-galeria"
+        onDragOver={(e) => {
+          if (!temArquivos(e)) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          setSoltando(true);
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setSoltando(false);
+        }}
+        onDrop={(e) => {
+          setSoltando(false);
+          if (!e.dataTransfer?.files?.length) return; // arrastar uma foto da galeria: só reordena (tratado no item)
+          e.preventDefault();
+          void handleFiles(e.dataTransfer.files);
+        }}
+      >
         {photos.map((p, i) => (
           <div key={p.id} className={cn(i === 0 && "col-span-2")}>
           <div
@@ -171,6 +162,28 @@ export function PhotoUploader({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.url} alt={p.name} className="h-full w-full object-cover" />
+
+            {/* Q6: o aviso de repetida fica DENTRO do card da foto repetida, com a miniatura da parecida. */}
+            {p.avisos
+              ?.filter((a) => a.codigo === "repetida")
+              .map((a) => {
+                const parecida = photos.find((x) => x.id === a.parecidaCom);
+                return (
+                  <div
+                    key="repetida"
+                    className="absolute inset-x-1.5 bottom-1.5 flex items-center gap-1.5 rounded-lg bg-amber-50/95 p-1.5 text-[11px] leading-tight text-amber-900 shadow"
+                    data-testid="aviso-foto-repetida"
+                  >
+                    {parecida && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={parecida.url} alt="Foto parecida" className="h-8 w-10 shrink-0 rounded object-cover" data-testid="aviso-foto-repetida-miniatura" />
+                    )}
+                    <span>
+                      <strong>{a.mensagem}</strong> {parecida ? "Quase igual a esta foto." : a.dica}
+                    </span>
+                  </div>
+                );
+              })}
 
             {i === 0 && (
               <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-forest">
@@ -204,9 +217,9 @@ export function PhotoUploader({
               </button>
             </div>
           </div>
-          {(p.avisos?.length || p.melhorada) ? (
+          {(p.avisos?.some((a) => a.codigo !== "repetida") || p.melhorada) ? (
             <div className="mt-1 space-y-1 text-xs">
-              {p.avisos?.map((a) => (
+              {p.avisos?.filter((a) => a.codigo !== "repetida").map((a) => (
                 <p key={a.codigo} className="flex items-start gap-1 text-amber-800" data-testid={`aviso-foto-${a.codigo}`}>
                   <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                   <span><strong>{a.mensagem}</strong> {a.dica}</span>
@@ -227,11 +240,15 @@ export function PhotoUploader({
         ))}
 
         {photos.length < max && (
-          <label
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
             className={cn(
-              "flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sage-200 text-sage transition-colors hover:border-sage",
+              "flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sage-200 text-sage transition-colors hover:border-sage focus-visible:outline focus-visible:outline-2 focus-visible:outline-forest",
               uploading && "pointer-events-none opacity-60"
             )}
+            data-testid="fotos-adicionar"
           >
             {uploading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -239,15 +256,24 @@ export function PhotoUploader({
               <Upload className="h-5 w-5" />
             )}
             <span className="text-xs">{uploading ? (progresso ? `Enviando ${Math.min(progresso.feitas + 1, progresso.total)} de ${progresso.total}…` : "Enviando...") : "Adicionar"}</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              className="hidden"
-              onChange={(e) => handleFiles(e.target.files)}
-            />
-          </label>
+            <span className="hidden text-[11px] text-muted sm:block">ou arraste as fotos para cá</span>
+          </button>
         )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          className="hidden"
+          data-testid="fotos-input"
+          onChange={(e) => {
+            const files = e.target.files;
+            void handleFiles(files).finally(() => {
+              // Escolher o MESMO arquivo de novo também dispara (antes ficava sem resposta).
+              if (inputRef.current) inputRef.current.value = "";
+            });
+          }}
+        />
       </div>
 
       <p className="mt-2 text-xs text-muted">

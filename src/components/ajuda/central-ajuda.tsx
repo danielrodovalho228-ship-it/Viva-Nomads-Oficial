@@ -1,15 +1,19 @@
 "use client";
 
+import { ROTULO_QUEM_RESPONDEU } from "@/lib/atendimento/quem-respondeu";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, LifeBuoy, MessageSquare, Search, Send, UserRound } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
+import { abertoEmBR } from "@/lib/atendimento/data-br";
 import { useAuthStore } from "@/lib/store";
 import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { podeMarcarResolvido } from "@/lib/atendimento/acolhimento";
+import { useCaptcha } from "@/components/seguranca/captcha";
+import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
 import { emailMascaradoDaConta } from "@/lib/atendimento/identificacao-chamado";
 import {
   abrirChamado,
@@ -38,7 +42,7 @@ const STATUS: Record<string, string> = {
   resolvido: "Resolvido",
   encerrado: "Encerrado",
 };
-const AUTOR: Record<string, string> = { usuario: "Você", admin: "Equipe Viva Nomads", ia: "Viva (assistente virtual) · Resposta automática da Viva Nomads", sistema: "Viva Nomads" };
+const AUTOR: Record<string, string> = { usuario: "Você", admin: ROTULO_QUEM_RESPONDEU.equipe, ia: "Viva (assistente virtual) · Resposta automática da Viva Nomads", sistema: "Viva Nomads" };
 const CONTEXTO_ROTULO: Record<string, string> = { pedido: "seu Pedido de Moradia", contrato: "seu contrato", anuncio: "este anúncio" };
 
 function lerParams(): URLSearchParams {
@@ -50,6 +54,8 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   const [aba, setAba] = useState<"inicio" | "novo" | "chamado">("inicio");
   const [numeroAberto, setNumeroAberto] = useState<string | null>(null);
   const [contexto, setContexto] = useState<{ tipo: string; id: string } | null>(null);
+  // Ordem 521c5af7 (S3): "Algo deu errado? Fale com a Viva" chega com o código do pedido de serviço.
+  const [codigoServico, setCodigoServico] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [pessoaLink, setPessoaLink] = useState<{ c: string; s: string } | null>(null);
   const [lista, setLista] = useState<ChamadoLista[] | null>(null);
@@ -72,6 +78,11 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
     if (tipo && id && CONTEXTO_ROTULO[tipo]) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setContexto({ tipo, id });
+      setAba("novo");
+    }
+    const servico = (p.get("servico") ?? "").toUpperCase();
+    if (/^SV-[0-9A-F]{8}$/.test(servico)) {
+      setCodigoServico(servico);
       setAba("novo");
     }
     const chamado = p.get("chamado");
@@ -123,6 +134,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
         <NovoChamado
           canal={canal}
           contexto={contexto}
+          codigoServico={codigoServico}
           logado={!!user}
           emailConta={user?.email ?? null}
           contratos={contratos}
@@ -210,6 +222,8 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
         <span className="sr-only">Buscar nas perguntas frequentes</span>
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         <input
+          aria-label="Buscar nas perguntas frequentes"
+          type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Ex.: caução, senha, anúncio não publica"
@@ -244,6 +258,7 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
 function NovoChamado({
   canal,
   contexto,
+  codigoServico,
   logado,
   emailConta,
   contratos,
@@ -252,6 +267,7 @@ function NovoChamado({
 }: {
   canal: "site" | "app";
   contexto: { tipo: string; id: string } | null;
+  codigoServico: string | null;
   logado: boolean;
   emailConta?: string | null;
   contratos: { id: string; titulo: string }[];
@@ -259,9 +275,10 @@ function NovoChamado({
   onAberto: (numero: string) => void;
 }) {
   const [cat, setCat] = useState(contexto?.tipo === "contrato" ? "contrato" : contexto?.tipo === "anuncio" ? "anuncio" : "duvida");
-  const [mensagem, setMensagem] = useState("");
+  const [mensagem, setMensagem] = useState(codigoServico ? `Sobre o pedido de serviço ${codigoServico}: ` : "");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [contratoId, setContratoId] = useState<string>(contexto?.tipo === "contrato" ? contexto.id : "");
   const [urgencia, setUrgencia] = useState<"urgente" | "media" | "baixa">("media");
   const [catManut, setCatManut] = useState("outros");
@@ -272,11 +289,13 @@ function NovoChamado({
   const manutencao = cat === "manutencao";
   const camera = cat === "camera";
   const emailMascarado = emailMascaradoDaConta(emailConta);
+  const captcha = useCaptcha();
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    setEnviando(true);
     setErro(null);
+    if (!logado && !podeEnviar(captcha.ligado, captcha.token)) return setErro(MSG_CAPTCHA_PENDENTE);
+    setEnviando(true);
     const r = await abrirChamado({
       categoria: cat,
       mensagem,
@@ -288,7 +307,10 @@ function NovoChamado({
       categoriaManutencao: manutencao ? catManut : undefined,
       visitanteNome: logado ? undefined : nome,
       visitanteEmail: logado ? undefined : email,
+      visitanteTelefone: logado ? undefined : telefone,
+      captchaToken: logado ? undefined : (captcha.token ?? undefined),
     }).catch(() => ({ ok: false as const, error: "Falha de conexão. Tente de novo." }));
+    if (!logado) captcha.reset(); // o token vale uma vez só
     setEnviando(false);
     if (!r.ok) {
       setErro(r.error);
@@ -387,12 +409,17 @@ function NovoChamado({
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink">Seu nome</span>
-              <input required minLength={2} value={nome} onChange={(e) => setNome(e.target.value)} maxLength={60} autoComplete="name" className={campo} />
+              <input required minLength={2} name="nome" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={60} autoComplete="name" className={campo} />
             </label>
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink">Seu e-mail (para a resposta)</span>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={campo} />
+              <input type="email" required name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={campo} />
             </label>
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block font-medium text-ink">Telefone com DDD (opcional)</span>
+              <input type="tel" inputMode="tel" name="telefone" autoComplete="tel" maxLength={20} value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(34) 99999-1234" className={campo} />
+            </label>
+            {captcha.widget && <div className="sm:col-span-2">{captcha.widget}</div>}
             <p data-testid="chamado-aviso-dados" className="text-xs text-muted sm:col-span-2">
               Usamos esses dados só para responder este chamado. Tem conta? <Link href="/auth?redirect=/ajuda" className="font-medium text-forest underline">Entre</Link> para acompanhar o chamado aqui.
             </p>
@@ -547,6 +574,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
           <h2 className="font-title text-lg font-bold text-ink">{dados.chamado.assunto}</h2>
           <p className="mt-1 text-sm text-muted">
             {dados.chamado.numero_publico} · {STATUS[dados.chamado.status] ?? dados.chamado.status}
+            <span data-testid="chamado-aberto-em"> · {abertoEmBR(dados.chamado.criado_em)}</span>
             {comViva ? " · com a Viva (assistente virtual)" : ""}
           </p>
           <ol className="mt-4 space-y-3">

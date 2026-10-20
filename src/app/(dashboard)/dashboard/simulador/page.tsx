@@ -2,56 +2,73 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { TrendingUp, Home, Sparkles, Download } from "lucide-react";
+import { TrendingUp, Home, Download } from "lucide-react";
 import { imprimirSimulacao } from "@/lib/print-simulacao";
 import { PageTitle } from "@/components/dashboard/primitives";
-import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { useProperties } from "@/lib/use-properties";
-import { PLANOS, plano as getPlano, pctDoValorTotal, textoComissao, type PlanoId } from "@/config/planos";
-import {
-  simularRentabilidade,
-  compararPlanos,
-  recomendarPlano,
-  type EntradaRentabilidade,
-  type PlanoCalc,
-} from "@/lib/simulador";
-import { PLANO_FUNDADOR } from "@/lib/flags";
+import { FAIXAS_COMISSAO_PADRAO, faixaPorImoveisAtivos, pctTexto, rotuloTaxaServico, taxaPublicaTexto } from "@/lib/cobranca/regra";
+import { cenariosOcupacao, simularRentabilidade, type Cobranca, type EntradaRentabilidade } from "@/lib/simulador";
 import { formatBRL, numBR } from "@/lib/utils";
-import { NumInput, ResultCard, SimDisclaimer, SimHero, PlanoPills } from "@/components/simulador/ui";
-import { MAX_ALUGUEL_MENSAL } from "@/lib/campos-valor";
+import { BarraValor, CobrancaToggle, ComoCalculamos, NumInput, ResultCard, SimDisclaimer, SimHero } from "@/components/simulador/ui";
+import { MAX_ALUGUEL_MENSAL, MAX_INVESTIMENTO } from "@/lib/campos-valor";
 import { buttonClasses } from "@/components/ui/button";
 
 const PRAZOS = [2, 3, 4, 6];
-const PLANOS_CALC: PlanoCalc[] = PLANOS.map((p) => ({
-  id: p.id,
-  nome: p.nome,
-  comissao: p.comissao,
-  assinaturaAnual: p.assinaturaAnual,
-}));
+
+/** Fórmulas da tela, em texto simples (prompt 15). A mesma função do mobiliado na Calculadora de ROI: liquidoMobiliadoAnual. */
+const COMO_CALCULAMOS = [
+  "Receita bruta do ano = valor mensal × meses ocupados.",
+  "Taxa de serviço = taxa da sua faixa sobre o valor mensal × meses ocupados. Ela nunca incide sobre condomínio, IPTU ou contas cobrados à parte, nem sobre limpeza ou taxa pet.",
+  "Condomínio + IPTU cobrados à parte: o morador paga junto com o valor mensal nos meses ocupados; você paga só nos meses vazios. Incluídos no valor mensal: você paga os 12 meses.",
+  "Contas de consumo cobradas à parte: o morador paga. Incluídas no valor mensal: você paga nos meses ocupados.",
+  "Reposição e desgaste da mobília = investimento na mobília × % ao ano (o mesmo campo da Calculadora de ROI). Use 0 para não considerar.",
+  "Receita líquida = receita bruta − custos − taxa de serviço − reposição da mobília. A média mensal é a líquida do ano dividida por 12. É a mesma conta do mobiliado na Calculadora de ROI.",
+  "Rentabilidade sobre o imóvel = receita líquida do ano ÷ valor do imóvel (só aparece se você informar o valor).",
+  "Cenários: a mesma conta com 2 meses ocupados a menos e 2 a mais que o seu número, entre 6 e 12 meses.",
+];
 
 export default function SimuladorPage() {
-  const user = useAuthStore((s) => s.user);
-  const planoAtivo = ((user ?? DEMO_USER).plan ?? "free") as PlanoId;
   const { properties } = useProperties("/api/properties/mine");
 
-  const [planoId, setPlanoId] = useState<PlanoId>(planoAtivo);
+  const [imoveisAtivos, setImoveisAtivos] = useState(1);
   const [aluguelMensal, setAluguel] = useState(3000);
   const [condoIptu, setCondoIptu] = useState(550);
   const [contas, setContas] = useState(350);
+  const [condoCobranca, setCondoCobranca] = useState<Cobranca>("aparte");
+  const [contasCobranca, setContasCobranca] = useState<Cobranca>("aparte");
+  const [valorImovel, setValorImovel] = useState(0);
   const [mesesOcupados, setMeses] = useState(10);
   const [prazoMedioMeses, setPrazo] = useState(4);
+  // Padrão R$ 0: sem inventar custo de mobília; quem informa o investimento vê a reposição (a mesma conta do ROI).
+  const [investimentoMobilia, setInvest] = useState(0);
+  const [reposicaoPct, setReposicao] = useState(10);
 
-  const entrada: EntradaRentabilidade = { aluguelMensal, condoIptu, contas, mesesOcupados, prazoMedioMeses };
-  const p = getPlano(planoId);
-  // Gestor: assinatura "sob consulta" (null) — não é grátis.
-  const sobConsulta = p?.assinaturaAnual === null;
+  const entrada: EntradaRentabilidade = {
+    aluguelMensal,
+    condoIptu,
+    contas,
+    mesesOcupados,
+    prazoMedioMeses,
+    condoCobranca,
+    contasCobranca,
+    valorImovel,
+    investimentoMobilia,
+    reposicaoAnualPct: reposicaoPct / 100,
+  };
+  // Regra única: taxa de serviço por contrato fechado, pela faixa do nº de imóveis ativos. Sem assinatura.
+  // No Plano Gestor (31+) a taxa é negociada: o cálculo usa a da faixa anterior só como referência.
+  const faixa = faixaPorImoveisAtivos(imoveisAtivos);
+  const taxaTexto = taxaPublicaTexto(faixa);
   const res = useMemo(
-    () => simularRentabilidade(entrada, p?.comissao ?? 0, p?.assinaturaAnual ?? 0),
-    [aluguelMensal, condoIptu, contas, mesesOcupados, prazoMedioMeses, p?.comissao, p?.assinaturaAnual]
+    () => simularRentabilidade(entrada, faixa.taxa, 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `entrada` é recriada a cada render; os campos dela estão aqui
+    [aluguelMensal, condoIptu, contas, mesesOcupados, prazoMedioMeses, condoCobranca, contasCobranca, valorImovel, investimentoMobilia, reposicaoPct, faixa.taxa]
   );
-  const comparador = useMemo(() => compararPlanos(entrada, PLANOS_CALC), [aluguelMensal, condoIptu, contas, mesesOcupados, prazoMedioMeses]);
-  // Recomendação honesta pelo volume real (regra 3) — pode ser o Gratuito.
-  const recomendado = useMemo(() => recomendarPlano(entrada, PLANOS_CALC), [aluguelMensal, condoIptu, contas, mesesOcupados, prazoMedioMeses]);
+  const cenarios = cenariosOcupacao(mesesOcupados).map((c) => ({
+    ...c,
+    liquida: simularRentabilidade({ ...entrada, mesesOcupados: c.mesesOcupados }, faixa.taxa, 0).receitaLiquidaAnual,
+  }));
+  const maxBarra = Math.max(1, res.receitaBrutaAnual);
 
   function usarMeuImovel() {
     const im = properties[0];
@@ -63,16 +80,15 @@ export default function SimuladorPage() {
 
   return (
     <>
-      <PageTitle title="Simulador de rentabilidade" subtitle="Quanto o seu imóvel rende por mês na Viva Nomads." />
+      <PageTitle capa="simulador" title="Simulador de rentabilidade" subtitle="Quanto o seu imóvel rende por mês na Viva Nomads." />
 
       <SimHero
         icon={TrendingUp}
         titulo="Simule a rentabilidade do seu imóvel"
-        subtitulo="Ajuste os valores e veja a receita líquida estimada — e quanto você pagaria em cada plano."
+        subtitulo="Ajuste os valores e veja a receita líquida estimada, já descontada a taxa de serviço da sua faixa."
         stats={[
-          { label: "Aluguel médio mobiliado · Uberlândia", valor: "R$ 2.800–3.400" },
-          { label: "Prazo médio de estadia", valor: "3–4 meses" },
-          { label: "Ocupação típica", valor: "~10 meses/ano" },
+          { label: "Taxa de serviço da sua faixa", valor: taxaTexto },
+          { label: "Média mensal no bolso (sua simulação)", valor: formatBRL(res.mediaMensal) },
         ]}
       />
 
@@ -92,14 +108,32 @@ export default function SimuladorPage() {
             )}
           </div>
           <div className="mt-4 space-y-4">
-            <NumInput label="Aluguel mensal pretendido" value={aluguelMensal} onChange={setAluguel} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
-            <NumInput label="Condomínio + IPTU (mês)" value={condoIptu} onChange={setCondoIptu} step={50} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
-            <NumInput label="Contas incluídas — água/luz/internet (mês)" value={contas} onChange={setContas} step={50} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+            <NumInput label="Valor mensal pretendido" value={aluguelMensal} onChange={setAluguel} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+            <div>
+              <NumInput label="Condomínio + IPTU (mês)" value={condoIptu} onChange={setCondoIptu} step={50} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+              <CobrancaToggle rotulo="Como o condomínio + IPTU chega ao morador" value={condoCobranca} onChange={setCondoCobranca} testid="cobranca-condo" />
+            </div>
+            <div>
+              <NumInput label="Contas de consumo — água, luz, internet (mês)" value={contas} onChange={setContas} step={50} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+              <CobrancaToggle rotulo="Como as contas chegam ao morador" value={contasCobranca} onChange={setContasCobranca} testid="cobranca-contas" />
+            </div>
+            <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0" data-testid="sim-reposicao">
+              <NumInput label="Investimento na mobília" value={investimentoMobilia} onChange={setInvest} step={1000} prefix="R$" max={MAX_INVESTIMENTO} />
+              <NumInput label="Reposição e desgaste da mobília (% do investimento por ano)" value={reposicaoPct} onChange={setReposicao} step={1} max={100} />
+            </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">
                 Meses ocupados no ano: <strong className="text-forest">{mesesOcupados}</strong>
               </label>
-              <input type="range" min={6} max={12} value={mesesOcupados} onChange={(e) => setMeses(Number(e.target.value))} className="w-full accent-forest" />
+              <input
+                type="range"
+                min={6}
+                max={12}
+                value={mesesOcupados}
+                onChange={(e) => setMeses(Number(e.target.value))}
+                className="w-full accent-forest"
+                aria-label="Meses ocupados no ano"
+              />
             </div>
             <div>
               <p className="mb-1 text-sm font-medium text-ink">Prazo médio por contrato</p>
@@ -117,8 +151,23 @@ export default function SimuladorPage() {
               </div>
             </div>
             <div>
-              <p className="mb-1 text-sm font-medium text-ink">Simular no plano</p>
-              <PlanoPills value={planoId} onChange={(v) => setPlanoId(v as PlanoId)} />
+              <NumInput label="Valor do imóvel (opcional)" value={valorImovel} onChange={setValorImovel} step={10000} prefix="R$" max={MAX_INVESTIMENTO * 10} />
+              <p className="mt-1 text-xs text-muted">Para ver a rentabilidade sobre o valor do imóvel. Deixe 0 se não quiser.</p>
+            </div>
+            <div>
+              <label htmlFor="imoveis-ativos" className="mb-1 block text-sm font-medium text-ink">
+                Imóveis ativos na Viva: <strong className="text-forest" data-testid="imoveis-ativos">{imoveisAtivos}</strong> · taxa de serviço{" "}
+                <strong className="text-forest" data-testid="taxa-faixa">{taxaTexto}</strong> sobre o valor mensal × meses de cada contrato
+              </label>
+              <input
+                id="imoveis-ativos"
+                type="range"
+                min={1}
+                max={FAIXAS_COMISSAO_PADRAO[FAIXAS_COMISSAO_PADRAO.length - 1].minImoveis}
+                value={imoveisAtivos}
+                onChange={(e) => setImoveisAtivos(Number(e.target.value))}
+                className="w-full accent-forest"
+              />
             </div>
           </div>
         </div>
@@ -127,42 +176,70 @@ export default function SimuladorPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <ResultCard label="Receita bruta / ano" value={formatBRL(res.receitaBrutaAnual)} />
-            <ResultCard label="Custos / ano" value={`− ${formatBRL(res.custosAnuais)}`} />
-            <ResultCard label={`Comissão Viva (${textoComissao(p?.comissao ?? 0)})`} value={`− ${formatBRL(res.comissaoAnual)}`} hint={`${numBR(res.contratosPorAno, 1)} contrato(s)/ano · % do valor total do contrato`} />
-            <ResultCard label="Assinatura / ano" value={sobConsulta ? "Sob consulta" : res.assinaturaAnual > 0 ? `− ${formatBRL(res.assinaturaAnual)}` : "Grátis"} />
+            <ResultCard
+              label="Custos / ano"
+              value={`− ${formatBRL(res.custosAnuais)}`}
+              hint={condoCobranca === "aparte" && contasCobranca === "aparte" ? "condomínio só nos meses vazios" : undefined}
+            />
+            <ResultCard label={`Taxa de serviço (${taxaTexto})`} value={`− ${formatBRL(res.comissaoAnual)}`} hint={`${numBR(res.contratosPorAno, 1)} contrato(s)/ano`} />
+            <ResultCard label="Reposição e desgaste da mobília / ano" value={`− ${formatBRL(res.reposicaoAnual)}`} hint={`${numBR(reposicaoPct, 1)}% de ${formatBRL(investimentoMobilia)}`} />
           </div>
-          <div className="rounded-2xl border border-forest bg-forest p-5 text-white">
+          <p className="rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted" data-testid="sim-taxa-rotulo">
+            {rotuloTaxaServico(faixa.taxa, aluguelMensal, mesesOcupados, res.comissaoAnual)} no ano.
+          </p>
+          <div className="rounded-2xl border border-forest bg-forest p-5 text-white" data-testid="sim-liquida">
             <p className="text-sm text-white/80">Receita líquida estimada / ano</p>
             <p className="font-title text-3xl font-bold">{formatBRL(res.receitaLiquidaAnual)}</p>
             <p className="mt-1 text-sm text-white/85">
-              {sobConsulta ? (
-                <>Antes da assinatura do plano Gestor (sob consulta) — o valor final depende dela.</>
+              {faixa.gestor ? (
+                <>Taxa do Plano Gestor é negociada: este valor usa {pctTexto(faixa.taxa)} só como referência.</>
               ) : (
                 <>Média de <strong>{formatBRL(res.mediaMensal)}/mês</strong> no bolso.</>
               )}
             </p>
+            {res.rentabilidadeImovel !== null && (
+              <p className="mt-2 border-t border-white/20 pt-2 text-sm text-white/90" data-testid="sim-rentabilidade-imovel">
+                Rentabilidade sobre o valor do imóvel: <strong>{numBR(res.rentabilidadeImovel * 100, 1)}% ao ano</strong> (
+                {numBR((res.rentabilidadeImovel * 100) / 12, 2)}% ao mês)
+              </p>
+            )}
           </div>
+
+          {/* Gráfico: para onde vai a receita do ano. */}
+          <div className="rounded-2xl border border-sage-200 bg-white p-5" data-testid="sim-grafico">
+            <p className="text-sm font-medium text-ink">Para onde vai a receita do ano</p>
+            <div className="mt-3 space-y-2">
+              <BarraValor label="Receita bruta" valor={res.receitaBrutaAnual} max={maxBarra} tone="sage" formatar={formatBRL} />
+              <BarraValor label="Custos" valor={-res.custosAnuais} max={maxBarra} tone="champagne" formatar={(v) => `− ${formatBRL(Math.abs(v))}`} />
+              <BarraValor label="Taxa de serviço" valor={-res.comissaoAnual} max={maxBarra} tone="champagne" formatar={(v) => `− ${formatBRL(Math.abs(v))}`} />
+              <BarraValor label="Reposição" valor={-res.reposicaoAnual} max={maxBarra} tone="champagne" formatar={(v) => `− ${formatBRL(Math.abs(v))}`} />
+              <BarraValor label="Líquida" valor={res.receitaLiquidaAnual} max={maxBarra} tone="forest" formatar={formatBRL} />
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() =>
               imprimirSimulacao({
                 titulo: "Simulação de rentabilidade",
-                subtitulo: `Plano ${p?.nome ?? "—"}`,
+                subtitulo: rotuloTaxaServico(faixa.taxa, aluguelMensal, mesesOcupados, res.comissaoAnual),
                 entradas: [
-                  { label: "Aluguel mensal pretendido", valor: formatBRL(aluguelMensal) },
-                  { label: "Condomínio + IPTU (mês)", valor: formatBRL(condoIptu) },
-                  { label: "Contas incluídas (mês)", valor: formatBRL(contas) },
+                  { label: "Valor mensal pretendido", valor: formatBRL(aluguelMensal) },
+                  { label: "Condomínio + IPTU (mês)", valor: `${formatBRL(condoIptu)} · ${condoCobranca === "aparte" ? "cobrado à parte" : "incluído"}` },
+                  { label: "Contas de consumo (mês)", valor: `${formatBRL(contas)} · ${contasCobranca === "aparte" ? "cobradas à parte" : "incluídas"}` },
                   { label: "Meses ocupados no ano", valor: String(mesesOcupados) },
                   { label: "Prazo médio por contrato", valor: `${prazoMedioMeses} meses` },
+                  { label: "Reposição e desgaste da mobília", valor: `${numBR(reposicaoPct, 1)}% de ${formatBRL(investimentoMobilia)} por ano` },
                 ],
                 resultados: [
                   { label: "Receita bruta / ano", valor: formatBRL(res.receitaBrutaAnual) },
                   { label: "Custos / ano", valor: `− ${formatBRL(res.custosAnuais)}` },
-                  { label: `Comissão Viva (${pctDoValorTotal(p?.comissao ?? 0)} por contrato)`, valor: `− ${formatBRL(res.comissaoAnual)}` },
-                  { label: "Assinatura / ano", valor: sobConsulta ? "Sob consulta" : res.assinaturaAnual > 0 ? `− ${formatBRL(res.assinaturaAnual)}` : "Grátis" },
+                  { label: `Taxa de serviço (${taxaTexto} por contrato)`, valor: `− ${formatBRL(res.comissaoAnual)}` },
+                  { label: "Reposição e desgaste da mobília / ano", valor: `− ${formatBRL(res.reposicaoAnual)}` },
                   { label: "Receita líquida / ano", valor: formatBRL(res.receitaLiquidaAnual) },
                   { label: "Média mensal no bolso", valor: `${formatBRL(res.mediaMensal)}/mês` },
                 ],
+                cenarios: cenarios.map((c) => ({ label: `${c.nome} (${c.mesesOcupados} meses)`, valor: `${formatBRL(c.liquida)}/ano` })),
               })
             }
             className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage"
@@ -172,60 +249,36 @@ export default function SimuladorPage() {
         </div>
       </div>
 
-      {/* Comparador de planos */}
-      <section className="mt-8">
-        <h2 className="font-title text-lg font-bold text-ink">Compare os planos com os mesmos números</h2>
-        <p className="text-sm text-muted">Assinatura, comissão e o que sobra para você em cada plano.</p>
-
-        {PLANO_FUNDADOR && (
-          <p className="mt-3 flex items-start gap-2 rounded-xl border border-champagne bg-champagne/15 px-4 py-3 text-sm text-ink">
-            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-champagne-600" />
-            <span>
-              <strong>Piloto Fundador:</strong> no piloto a assinatura é <strong>R$ 0</strong> — você só paga a
-              comissão do Profissional no fechamento: <strong>{textoComissao(getPlano("pro")!.comissao, aluguelMensal)}</strong>.
-            </span>
-          </p>
-        )}
-
-        {recomendado && (
-          <p
-            data-testid="plano-recomendado"
-            className="mt-4 flex items-start gap-2 rounded-xl border border-forest/30 bg-forest/5 px-4 py-3 text-sm text-ink"
-          >
-            <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
-            <span>
-              <strong>Recomendado para você: {recomendado.nome}.</strong> {recomendado.motivo} A
-              gente diz na lata — mesmo quando o melhor plano é o Gratuito.
-            </span>
-          </p>
-        )}
-
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-sage-200 text-left text-xs uppercase tracking-wide text-muted">
-                <th className="py-2 pr-4 font-medium">Plano</th>
-                <th className="py-2 pr-4 font-medium">Comissão</th>
-                <th className="py-2 pr-4 font-medium">Assinatura/ano</th>
-                <th className="py-2 pr-4 font-medium">Total à Viva/ano</th>
-                <th className="py-2 pr-4 font-medium">Você recebe/ano</th>
+      <section aria-labelledby="sim-cenarios" className="mt-6 rounded-2xl border border-sage-200 bg-white p-5" data-testid="sim-cenarios">
+        <h2 id="sim-cenarios" className="font-title text-lg font-bold text-ink">
+          Cenários de ocupação
+        </h2>
+        <p className="mt-1 text-xs text-muted">A mesma conta com 2 meses a menos e 2 a mais que o seu número.</p>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[18rem] text-left text-sm">
+            <thead className="text-xs text-muted">
+              <tr>
+                <th className="py-1.5 pr-3 font-medium">Cenário</th>
+                <th className="py-1.5 pr-3 font-medium">Meses ocupados</th>
+                <th className="py-1.5 pr-3 text-right font-medium">Líquida / ano</th>
+                <th className="py-1.5 text-right font-medium">Por mês</th>
               </tr>
             </thead>
-            <tbody>
-              {comparador.map((l) => (
-                <tr key={l.planoId} className={`border-b border-sage-100 ${l.planoId === planoId ? "bg-sage-50" : ""}`}>
-                  <td className="py-2.5 pr-4 font-medium text-ink">{l.nome}</td>
-                  <td className="py-2.5 pr-4 text-ink">{pctDoValorTotal(l.comissaoPct)} por contrato</td>
-                  <td className="py-2.5 pr-4 text-ink">{l.sobConsulta ? "Sob consulta" : l.assinaturaAnual === 0 ? "Grátis" : formatBRL(l.assinaturaAnual)}</td>
-                  {/* Assinatura "sob consulta" não é R$ 0: sem o valor, o total fica em aberto. */}
-                  <td className="py-2.5 pr-4 text-ink">{l.sobConsulta ? "—" : formatBRL(l.totalVivaAnual)}</td>
-                  <td className="py-2.5 pr-4 font-semibold text-forest">{l.sobConsulta ? "Sob consulta" : formatBRL(l.liquidoProprietario)}</td>
+            <tbody className="divide-y divide-sage-200">
+              {cenarios.map((c) => (
+                <tr key={c.nome} className={c.nome === "Realista" ? "font-semibold text-forest" : "text-ink"}>
+                  <td className="py-2 pr-3">{c.nome}</td>
+                  <td className="py-2 pr-3">{c.mesesOcupados}</td>
+                  <td className="py-2 pr-3 text-right">{formatBRL(c.liquida)}</td>
+                  <td className="py-2 text-right">{formatBRL(Math.round(c.liquida / 12))}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </section>
+
+      <ComoCalculamos itens={COMO_CALCULAMOS} testid="sim-como-calculamos" />
 
       <SimDisclaimer />
 

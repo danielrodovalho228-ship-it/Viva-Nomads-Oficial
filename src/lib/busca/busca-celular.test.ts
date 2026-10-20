@@ -52,7 +52,9 @@ test("painel: contador do botão, texto de aplicar e resumo do topo", () => {
 test("busca usa UMA regra para a lista e para a contagem do painel", () => {
   const s = ler("app/(public)/buscar/search-client.tsx");
   assert.match(s, /let list = base\.filter\(\(p\) => passaNoPainel\(p, filtrosPainel\)\)/);
-  assert.match(s, /const contarComPainel = useCallback\(\(f: FiltrosPainel\) => base\.filter\(\(p\) => passaNoPainel\(p, f\)\)\.length/);
+  // Prompt 30: a lista e a contagem tiram os exemplos do mesmo jeito (semExemplosQuandoHaReal).
+  assert.match(s, /\(f: FiltrosPainel\) => semExemplosQuandoHaReal\(base\.filter\(\(p\) => passaNoPainel\(p, f\)\), \(p\) => isExemplo\(p\.id\), exemplosForcados\)\.length/);
+  assert.match(s, /list = semExemplosQuandoHaReal\(list, \(p\) => isExemplo\(p\.id\), exemplosForcados\)/);
   // As 5 regras saíram do filtro antigo (sem duplicar).
   assert.doesNotMatch(s, /if \(petsOnly && !p\.petsAllowed\) return false/);
   assert.doesNotMatch(s, /if \(maxPrice && p\.monthlyPrice > maxPrice\) return false/);
@@ -62,7 +64,7 @@ test("busca usa UMA regra para a lista e para a contagem do painel", () => {
   assert.match(s, /placeholder="Cidade, bairro ou endereço"/);
   assert.match(s, /"container-page hidden sm:block lg:order-1"/);
   // Computador (ordem eac7e3a1): busca compacta no cabeçalho abre o painel de filtros.
-  assert.match(s, /createPortal\(\s*<BuscaCompacta/);
+  assert.match(s, /createPortal\(\s*<div[^>]*>\s*<BuscaCompacta/);
   assert.match(s, /data-testid="busca-compacta"/);
 });
 
@@ -79,10 +81,10 @@ test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () 
 
 test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e disponibilidade", () => {
   const c = ler("components/property-card.tsx");
-  assert.match(c, /\{property\.bedrooms === 1 \? "quarto" : "quartos"\}/);
-  assert.match(c, /\{property\.bathrooms === 1 \? "banheiro" : "banheiros"\}/);
+  assert.match(c, /\{quartosTexto\(property\.bedrooms\)\}/); // plural único (ordem dd15064d, D7b)
+  assert.match(c, /\{banheirosTexto\(property\.bathrooms\)\}/);
   assert.match(c, /\{property\.neighborhood\}, \{property\.city\}/);
-  assert.match(c, /<span className="text-sm text-muted">\/mês<\/span>/);
+  assert.match(c, /\/mês total<\/span>/); // custo total do mês em destaque (ordem 1a555bfa)
   const hoje = new Date("2026-10-14T12:00:00Z");
   assert.equal(disponivelAPartirDe("2026-11-15", hoje), "15/11");
   assert.equal(disponivelAPartirDe("2027-01-05", hoje), "05/01/2027");

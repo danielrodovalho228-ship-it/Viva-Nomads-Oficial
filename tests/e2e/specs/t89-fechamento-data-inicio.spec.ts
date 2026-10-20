@@ -50,6 +50,27 @@ test.describe("T89 — data de início no Fechamento", () => {
     expect(await pagina.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await pagina.context().close();
   });
+  test("o contrato registrado com início futuro mostra a data no resumo do inquilino (390 px)", async ({ browser }) => {
+    test.setTimeout(120_000);
+    const inicio = addDiasISO(hojeBR(), 20);
+    const fim = addDiasISO(inicio, 59);
+    const { data: contrato, error } = await adm().from("contratos").insert({
+      lead_id: ids.lead, property_id: ids.imovel, tenant_id: ids.inq, owner_plan: "essential", faixa: "media_estadia",
+      prazo_total_dias: 60, aluguel_mensal: 3000, tamanho_bloco_meses: 2, comissao_percent: 0.12, comissao_valor: 720,
+      qtd_ocupantes: 1,
+    }).select("id").single();
+    expect(error).toBeNull();
+    const { error: e2 } = await adm().from("contrato_blocos").insert({
+      contrato_id: contrato!.id, numero_bloco: 1, inicio, fim, meses: 2, valor: 6000, caucao: 3000, status: "agendado",
+    });
+    expect(e2).toBeNull();
+    const [a, m, d] = inicio.split("-");
+    const pagina = await entrar(browser, inq.email, senha);
+    await pagina.goto(`/dashboard/locacoes/${contrato!.id}`, { waitUntil: "networkidle" });
+    await expect(pagina.getByTestId("contrato-resumo")).toContainText(`Início da estadia: ${d}/${m}/${a}`, { timeout: 15_000 });
+    expect(await pagina.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await pagina.context().close();
+  });
 
   test("a data que o inquilino pôs na candidatura já vem preenchida; data que já passou volta para hoje", async ({ browser }) => {
     test.setTimeout(120_000);
@@ -72,6 +93,8 @@ test.describe("T89 — data de início no Fechamento", () => {
     test.setTimeout(120_000);
     const futura = addDiasISO(hojeBR(), 20);
     const fim = addDiasISO(futura, 89);
+    // O teste anterior já registrou um contrato para este lead (lead_id é único): começa limpo.
+    await adm().from("contratos").delete().eq("lead_id", ids.lead!);
     const { data: contrato, error } = await adm()
       .from("contratos")
       .insert({

@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { expect, type Browser, type Page } from "@playwright/test";
 
@@ -24,6 +24,30 @@ export const adm = (): SupabaseClient => createClient(URL_SUPABASE!, CHAVE_SERVI
  */
 export async function liberarLimiteChamados(): Promise<void> {
   await adm().from("limites_uso").delete().like("chave", "chamado:%");
+}
+
+/**
+ * Zera o limite diário de pedidos de moradia (3 por conta por dia). As contas fixas do laboratório publicam
+ * pedidos em vários specs (e nas repetições); sem isto o último recebe "Você já publicou 3 pedidos hoje".
+ */
+export async function liberarLimitePedidos(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "pedido:%");
+}
+
+/**
+ * Deixa e-mail e telefone da conta confirmados, como o pedido de moradia exige para chegar aos proprietários
+ * (migração 0160: auth.users + public.telefone_verificacao). Só no laboratório; idempotente.
+ */
+export async function confirmarContatoDaConta(email: string): Promise<void> {
+  const { data: perfil, error } = await adm().from("profiles").select("id").eq("email", email).maybeSingle();
+  if (error || !perfil) throw new Error(`conta do laboratório não encontrada: ${email}`);
+  const id = perfil.id as string;
+  const { error: e1 } = await adm().auth.admin.updateUserById(id, { email_confirm: true, phone: "5562999991234", phone_confirm: true });
+  if (e1) throw e1;
+  const { error: e2 } = await adm()
+    .from("telefone_verificacao")
+    .upsert({ user_id: id, verificado_em: new Date().toISOString() }, { onConflict: "user_id" });
+  if (e2) throw e2;
 }
 
 export const novaSenha = (): string => randomBytes(12).toString("hex");
@@ -214,11 +238,36 @@ export async function contarAtivos(ownerId: string): Promise<number> {
   return count ?? 0;
 }
 
+/**
+ * Zera o contador de login POR IP (40 por 15 min). O laboratório inteiro sai do mesmo IP e passa disso
+ * (lab b5fb67f6: t55 recebeu 429 em vez de 401 e t82 não entrou). Só o laboratório chama.
+ */
+export async function liberarLimiteLoginIp(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "login:ip:%");
+}
+
+/**
+ * Zera o atraso progressivo do login SÓ deste e-mail (5 por minuto, src/lib/seguranca/limite-login.ts). Os specs
+ * entram com a mesma conta várias vezes em menos de um minuto (390 e 1280, um passo atrás do outro); sem isto o
+ * login recebe "Muitas tentativas" e o teste para na tela de entrar.
+ */
+export async function liberarLimiteLogin(email: string): Promise<void> {
+  const hash = createHash("sha256").update(`login:${email.trim().toLowerCase()}`).digest("hex").slice(0, 32);
+  await adm().from("limites_uso").delete().like("chave", `login:email:%:${hash}`);
+  // O limite por IP (40 a cada 15 min) também: no laboratório todos os logins saem do mesmo IP e uma rodada longa
+  // (16 suítes) passa disso. O t82 não depende dele (aceita a mensagem de "Muitas tentativas" como prova do fluxo).
+  await adm().from("limites_uso").delete().like("chave", "login:ip:%");
+}
+
 /** Login pela tela, em contexto próprio de 390 px (celular). */
 export async function entrar(browser: Browser, email: string, senha: string): Promise<Page> {
+  await liberarLimiteLogin(email);
+  await liberarLimiteLoginIp();
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
-  await page.goto("/auth", { waitUntil: "networkidle" });
+  // networkidle sem teto pendurava até o fim do teste na 1ª carga fria (t168 a 390 px, lab 17/10): espera até 10 s e segue.
+  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   await page.locator('input[name="email"], input[type="email"]').first().fill(email);
   await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
   await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
@@ -303,11 +352,12 @@ export async function tornarContratoVigente(contratoId: string, donoId: string, 
   const hoje = new Date();
   const fim = new Date(hoje.getTime() + 59 * 86_400_000);
   const dia = (d: Date) => d.toISOString().slice(0, 10);
-  const { data: bloco, error: e2 } = await adm()
-    .from("contrato_blocos")
-    .insert({ contrato_id: contratoId, numero_bloco: 1, inicio: dia(hoje), fim: dia(fim), meses: 2, valor: aluguel * 2, caucao: aluguel, status: "ativo" })
-    .select("id")
-    .single();
+  // O contrato gerado pela tela já pode ter o bloco 1 (aguardando assinatura): reaproveita e põe em vigência.
+  const linhaBloco = { inicio: dia(hoje), fim: dia(fim), meses: 2, valor: aluguel * 2, caucao: aluguel, status: "ativo" };
+  const { data: existente } = await adm().from("contrato_blocos").select("id").eq("contrato_id", contratoId).eq("numero_bloco", 1).maybeSingle();
+  const { data: bloco, error: e2 } = existente
+    ? await adm().from("contrato_blocos").update(linhaBloco).eq("id", existente.id).select("id").single()
+    : await adm().from("contrato_blocos").insert({ contrato_id: contratoId, numero_bloco: 1, ...linhaBloco }).select("id").single();
   if (e2) throw e2;
   const { error: e3 } = await adm().from("pagamentos_bloco").insert({
     bloco_id: bloco.id,
@@ -320,4 +370,33 @@ export async function tornarContratoVigente(contratoId: string, donoId: string, 
     confirmado_em: agora,
   });
   if (e3) throw e3;
+}
+
+/**
+ * Um bloco do contrato ainda SEM pagamento de valor mensal (0182: um por bloco). Se todos já têm, cria o próximo
+ * bloco, já aceito pelas duas partes (renovação, 0065), logo depois do último.
+ */
+export async function blocoSemValorMensal(contratoId: string): Promise<string> {
+  const { data: blocos } = await adm().from("contrato_blocos").select("id, numero_bloco, fim, meses, valor, caucao").eq("contrato_id", contratoId).order("numero_bloco");
+  const { data: pgs } = await adm().from("pagamentos_bloco").select("bloco_id").eq("contrato_id", contratoId).eq("tipo", "aluguel").is("anulado_em", null);
+  const usados = new Set(((pgs ?? []) as { bloco_id: string | null }[]).map((p) => p.bloco_id));
+  const lista = (blocos ?? []) as { id: string; numero_bloco: number; fim: string; meses: number; valor: number; caucao: number }[];
+  const livre = lista.find((b) => !usados.has(b.id));
+  if (livre) return livre.id;
+  const ultimo = lista[lista.length - 1];
+  const ini = new Date(`${ultimo.fim}T12:00:00Z`);
+  ini.setUTCDate(ini.getUTCDate() + 1);
+  const fim = new Date(ini);
+  fim.setUTCDate(fim.getUTCDate() + 59);
+  const agora = new Date().toISOString();
+  const { data, error } = await adm()
+    .from("contrato_blocos")
+    .insert({
+      contrato_id: contratoId, numero_bloco: ultimo.numero_bloco + 1, inicio: ini.toISOString().slice(0, 10), fim: fim.toISOString().slice(0, 10),
+      meses: ultimo.meses, valor: ultimo.valor, caucao: 0, status: "ativo", aceite_proprietario_em: agora, aceite_inquilino_em: agora,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
 }

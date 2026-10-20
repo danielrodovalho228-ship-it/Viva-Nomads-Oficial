@@ -141,10 +141,11 @@ test("checklist do anúncio em andamento: ✓/○, cada pendência leva à etapa
   assert.equal(c.itens.length, p.obrigatorios.length);
   assert.equal(c.itens.filter((i) => !i.ok).length, p.faltam.length);
   assert.equal(c.proximo?.key, "fotos");
-  assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=3");
-  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=5");
-  // documento não é etapa do editor: leva à Revisão (6), onde aparece o estado da moderação.
-  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=6");
+  // Cadastro em 5 etapas (prompt 10): 0 Onde fica · 1 Fotos · 2 O que encontramos · 3 Preço · 4 Revisar.
+  assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=1");
+  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=2");
+  // o documento agora é enviado e conferido na etapa Onde fica (prompt 11).
+  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=0");
   assert.equal(c.itens.find((i) => i.key === "endereco")?.ok, true);
 });
 
@@ -169,4 +170,22 @@ test("vaga no plano: texto curto com o número, 2 botões, e só aparece se for 
 test("checklist: o id do rascunho vai codificado na URL", () => {
   const c = checklistAnuncio(prontidaoAnuncio({ ...completo(), fotos: 0 }), "a&b=1");
   assert.ok(c.proximo?.href.includes("draft=a%26b%3D1"));
+});
+
+import { ROTULO_QUALIFICACAO } from "./prontidao.ts";
+
+test("p22 — portão único: no cadastro, 'Antes de anunciar' é item da mesma lista desde o início; fora dele não aparece", () => {
+  const fatos = {
+    enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Studio mobiliado", preco: 3000, garantiaOk: true,
+    sublocacaoOk: true, privacidadeOk: true, documento: "approved" as const, limitePlanoOk: null, descricao: "x".repeat(200), selo: false, video: false,
+  };
+  const sem = prontidaoAnuncio({ ...fatos, qualificacaoOk: false });
+  const item = sem.obrigatorios.find((i) => i.key === "qualificacao");
+  assert.ok(item);
+  assert.equal(item.label, ROTULO_QUALIFICACAO);
+  assert.equal(item.ok, false);
+  assert.equal(sem.podePublicar, false, "sem a qualificação não publica — e isso aparece na lista, não num segundo bloqueio");
+  assert.ok(sem.faltam.some((f) => f.startsWith(ROTULO_QUALIFICACAO)));
+  assert.equal(prontidaoAnuncio({ ...fatos, qualificacaoOk: true }).podePublicar, true);
+  assert.equal(prontidaoAnuncio(fatos).obrigatorios.some((i) => i.key === "qualificacao"), false, "editor/lista: não se aplica");
 });

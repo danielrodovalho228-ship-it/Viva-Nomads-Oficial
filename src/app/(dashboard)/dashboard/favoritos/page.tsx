@@ -6,18 +6,14 @@ import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyTripIllustration } from "@/components/illustrations";
 import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
-import { useFavoritesStore } from "@/lib/favorites-store";
-import { useProperties } from "@/lib/use-properties";
+import { useFavoritos } from "@/lib/use-favoritos";
 
 export default function FavoritesPage() {
-  const ids = useFavoritesStore((s) => s.ids);
-  const { properties } = useProperties("/api/properties");
-  const favorites = properties.filter((p) => ids.includes(p.id));
+  const { favoritos: favorites } = useFavoritos();
 
   return (
     <>
-      <FavoritosTabs />
-      <PageTitle
+      <PageTitle capa="favoritos"
         title="Favoritos"
         subtitle="Imóveis que você salvou para comparar depois."
         action={
@@ -28,6 +24,7 @@ export default function FavoritesPage() {
           ) : undefined
         }
       />
+      <FavoritosTabs />
 
       {favorites.length === 0 ? (
         <EmptyState
@@ -41,7 +38,7 @@ export default function FavoritesPage() {
           }
         />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid auto-rows-fr gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {favorites.map((p) => (
             <PropertyCard key={p.id} property={p} />
           ))}

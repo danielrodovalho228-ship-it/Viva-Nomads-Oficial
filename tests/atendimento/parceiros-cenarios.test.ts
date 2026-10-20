@@ -12,13 +12,12 @@ import { SYSTEM_VIVA } from "../../src/lib/atendimento/viva-prompt.ts";
 const PROIBIDAS = /apartamentos?|comiss[ãa]o|corretagem|intermedia[çc][ãa]o|aluguel|aluguéis/i;
 
 const CASOS: { pergunta: string; artigo: string; resposta: RegExp[] }[] = [
-  { pergunta: "Como virar parceiro da Viva?", artigo: "como-virar-parceiro", resposta: [/Fotografia/, /tr[eê]s modos/, /4 passos/, /CNPJ ou MEI/, /\/empresas/, /Plano Gestor/] },
-  { pergunta: "Como ativar o modo parceiro na minha conta?", artigo: "como-virar-parceiro", resposta: [/Ativar perfil de parceiro/, /sem novo cadastro/] },
-  { pergunta: "Qual é a taxa de parceria?", artigo: "taxa-parceria", resposta: [/R\$ 40 até 20 fotos/, /R\$ 60 de 21 a 40/, /R\$ 80 acima de 40/, /só ao aceitar/, /sem mensalidade/] },
-  { pergunta: "A Viva fica com o dinheiro do serviço do fotógrafo?", artigo: "taxa-parceria", resposta: [/não recebe o dinheiro do serviço/] },
+  { pergunta: "Como virar parceiro da Viva?", artigo: "como-virar-parceiro", resposta: [/Fotografia/, /Uma conta só/, /CPF/, /CNPJ/, /\/empresas/, /Plano Gestor/] },
+  { pergunta: "Como ativar o modo parceiro na minha conta?", artigo: "como-virar-parceiro", resposta: [/Quero ser parceiro/, /link para ativar a página/] },
+  { pergunta: "Qual é a taxa de parceria?", artigo: "taxa-parceria", resposta: [/10% sobre o valor do serviço/, /todas as categorias/, /90% direto ao parceiro/, /sem mensalidade/i] },
+  { pergunta: "A Viva fica com o dinheiro do serviço do fotógrafo?", artigo: "taxa-parceria", resposta: [/não guarda o dinheiro/] },
   { pergunta: "Quando o parceiro vê o contato do proprietário?", artigo: "taxa-parceria", resposta: [/só são liberados/, /aceita o pedido/] },
-  { pergunta: "O que acontece se o fotógrafo não entregar? Tem advertência?", artigo: "taxa-parceria", resposta: [/5 dias/, /advert[êe]ncia/, /suspenso/, /cr[ée]dito/] },
-  { pergunta: "Quero contratar um fotógrafo para o meu imóvel", artigo: "contratar-fotografo", resposta: [/Contratar fotógrafo parceiro/, /todo o Brasil/, /CEP/] },
+  { pergunta: "Quero contratar um fotógrafo para o meu imóvel", artigo: "contratar-fotografo", resposta: [/Quer um fotógrafo profissional\?/, /Uberlândia \(MG\)/, /CEP/] },
 ];
 
 for (const c of CASOS) {
@@ -31,11 +30,13 @@ for (const c of CASOS) {
   });
 }
 
-test("parceiros: o prompt da Viva traz tipos, modos, taxa 40/60/80, aceite e Brasil inteiro", () => {
-  for (const re of [/lista de espera por cidade/, /tr[eê]s modos/, /R\$ 40 até 20 fotos/, /só são liberados/, /todo o Brasil/, /Plano Gestor/, /12\/10\/8\/6%/]) {
+test("parceiros: o prompt da Viva traz tipos, modos, taxa de serviço de 10%, aceite e começo por Uberlândia", () => {
+  for (const re of [/Categorias abertas/, /Uma conta só/, /10% sobre o valor do serviço/, /só são liberados/, /Uberlândia \(MG\)/, /Plano Gestor/, /12\/10\/8\/6%/]) {
     assert.match(SYSTEM_VIVA, re);
   }
   assert.doesNotMatch(SYSTEM_VIVA, /até 4%/);
+  assert.doesNotMatch(SYSTEM_VIVA, /R\$ ?(40|60|80)(?![\d.,])/, "a taxa fixa dos fotógrafos saiu");
+  assert.doesNotMatch(SYSTEM_VIVA, /todo o Brasil/i);
 });
 
 test("parceiros: os três artigos novos existem uma vez só e não prometem o que a Viva não faz", () => {

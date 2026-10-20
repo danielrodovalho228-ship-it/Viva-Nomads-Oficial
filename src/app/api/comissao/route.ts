@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createCommissionCharge } from "@/lib/payments/asaas";
 import { IntegracaoNaoConfigurada, MSG_NAO_CONFIGURADA } from "@/lib/integracoes";
-import { carregarFechamento, comissaoDoContrato, reservarFechamento, concluirFechamento } from "@/lib/data/fechamento-servidor";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { contaEhDeTeste, cobrancaSimuladaTeste } from "@/lib/contas-de-teste";
+import { carregarFechamento, comissaoDoContrato, reservarFechamento, concluirFechamento, lerReservaFechamento } from "@/lib/data/fechamento-servidor";
 
 /**
  * Comissão de fechamento: cobrança À PARTE, do PROPRIETÁRIO, sobre o valor total
@@ -19,10 +21,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Registre o contrato antes de gerar a cobrança da comissão." }, { status: 409 });
   }
 
+  // Prompt 24: repetir é seguro — a taxa já gerada volta com 200 (a tela não trava num 2º clique ou ao recarregar).
+  const reserva = await lerReservaFechamento(f.leadId, "comissao");
+  if (reserva?.externoId) return NextResponse.json({ existente: true, chargeId: reserva.externoId });
   if (!(await reservarFechamento(f.leadId, "comissao"))) {
-    return NextResponse.json({ error: "A comissão desta candidatura já foi gerada." }, { status: 409 });
+    return NextResponse.json({ error: "A taxa de serviço desta candidatura está sendo gerada. Tente de novo em instantes." }, { status: 409 });
   }
   try {
+    // Conta de teste (is_teste): cobrança SIMULADA, rótulo TESTE, nada vai ao Asaas (ordem ee7d27b8).
+    const admin = createAdminClient();
+    if ((await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId))) {
+      const simulada = cobrancaSimuladaTeste({ aluguelMensal: contrato.aluguelMensal, meses: contrato.meses, commissionRate: contrato.taxa });
+      await concluirFechamento(f.leadId, "comissao", simulada.chargeId);
+      return NextResponse.json(simulada);
+    }
     const result = await createCommissionCharge({
       aluguelMensal: contrato.aluguelMensal,
       meses: contrato.meses,

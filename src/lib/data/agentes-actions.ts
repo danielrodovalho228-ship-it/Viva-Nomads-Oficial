@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { categoria } from "@/lib/atendimento/classificar";
 import { ehAdmin } from "@/lib/data/admin-guard";
+import { contarAguardandoOk } from "@/lib/data/admin-indicadores";
 import { PREFIXO_MOACIR } from "@/lib/agentes/gerente";
 import { avisoOrdem, contarP1, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
 import { JANELA_EVENTOS_H, montarEventos, type ChamadoEvento, type EventoRede, type FontesRede } from "@/lib/agentes/eventos";
@@ -117,7 +118,23 @@ export async function chamadosEmVermelho(): Promise<ChamadoVermelho[]> {
   return (await chamadosEsperandoEquipe(admin)).filter((c) => c.nivel === 6).map((c) => ({ id: c.id, numero: c.numero_publico, categoria: categoria(c.categoria)?.rotulo ?? c.categoria, horas: c.horas }));
 }
 
-/** Achados P1 nas rondas das últimas 24h — badge do item "Agentes" no menu. */
+/**
+ * Aprovações que esperam o OK do Daniel — badge do item "Agentes" no menu (mesma regra
+ * dos cartões do chat: pendentes e dentro do prazo). Só admin; os demais recebem 0.
+ */
+export async function contarAprovacoesPendentes(): Promise<number> {
+  const supabase = await createClient();
+  if (!supabase) return 0;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return 0;
+  // Prompt 29, item 10: a MESMA função de "Aguardando o seu OK" da página de Agentes e da home.
+  const admin = createAdminClient();
+  return admin ? contarAguardandoOk(admin) : 0;
+}
+
+/** Achados P1 nas rondas das últimas 24h (número informativo; NÃO é o badge do menu). */
 export async function contarAchadosP1(): Promise<number> {
   const supabase = await createClient();
   if (!supabase) return 0;

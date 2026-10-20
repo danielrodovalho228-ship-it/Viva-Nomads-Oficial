@@ -1,3 +1,5 @@
+import { VideoInstitucional } from "@/components/institucional/video-institucional";
+import { PASSO_CONVERSE_TEXTO } from "@/config/conversa-chat";
 import type { Metadata } from "next";
 import {
   Search,
@@ -29,7 +31,7 @@ const IMG = "/images/como-funciona";
 
 const TENANT_STEPS = [
   { icon: Search, img: `${IMG}/01-busque.webp`, alt: "Profissional pesquisando imóveis mobiliados no notebook", title: "Busque", text: "Encontre imóveis mobiliados por cidade, período e orçamento." },
-  { icon: MessageSquare, img: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e combine os detalhes." },
+  { icon: MessageSquare, img: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", title: "Converse", text: PASSO_CONVERSE_TEXTO },
   { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, alt: "Verificação de identidade com documento", title: "Candidate-se", text: "Envie sua candidatura pela plataforma. A verificação de identidade chega em breve." },
   { icon: FileSignature, img: "/media/como-funciona-02-assine.webp", alt: "Homem assinando o contrato pelo celular", title: "Assine", text: "Assine o contrato digital com validade jurídica e receba as chaves." },
 ];
@@ -48,6 +50,8 @@ export default function HowItWorksPage() {
       <BannerTopo
         foto={PHOTOS.heroProfessional}
         alt="Pessoa chegando com a mala a um imóvel mobiliado"
+        // A pessoa está à direita da foto: no celular o corte central mostrava só a sala vazia sob o degradê (QA do Muse).
+        posicaoFoto="78% 30%"
         eyebrow="Passo a passo"
         titulo="Como funciona"
         subtitulo={
@@ -66,6 +70,9 @@ export default function HowItWorksPage() {
 
       {/* Sub-navegação ancorada — atalhos para as três partes da história. */}
       <SubNav />
+
+      {/* Vídeo institucional v3 no topo, antes dos passos (só toca no play). */}
+      <VideoInstitucional />
 
       <Steps id="para-inquilinos" title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para inquilinos" />
 
@@ -111,7 +118,7 @@ export default function HowItWorksPage() {
 function GarantiasInquilino() {
   return (
     <section id="garantias" className="container-page section-y scroll-mt-24">
-      <h2 className="font-title text-3xl font-bold text-ink">Garantias da locação</h2>
+      <h2 className="font-title text-3xl font-bold text-ink">Caução da locação</h2>
       <p className="mt-3 max-w-2xl text-muted">
         Por lei, cada contrato usa <strong>uma</strong> garantia. Hoje a garantia é a
         Caução, com a mesma proteção para as duas partes — e nada fica com a plataforma.
@@ -134,7 +141,7 @@ function GarantiasInquilino() {
               <dt className="font-semibold text-ink">Para o proprietário</dt>
               <dd className="text-muted">
                 {CAUCAO_FRASE} Depositada antes da entrada, cobre
-                danos ou aluguel em aberto conforme o contrato — com tudo documentado.
+                danos ou valor mensal em aberto conforme o contrato — com tudo documentado.
               </dd>
             </div>
           </dl>
@@ -181,7 +188,7 @@ function DoisCaminhos() {
       </p>
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         <div className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
-          <StepImage src="/images/busca/busca-hero-villa.webp" alt="Imóvel mobiliado disponível para estadias de 30 a 180 dias" />
+          <StepImage src="/images/unicas/cf-buscar-imoveis.webp" alt="Imóvel mobiliado disponível para estadias de 30 a 180 dias" />
           <div className="flex flex-1 flex-col p-6">
             <h3 className="font-title text-lg font-bold text-ink">Buscar imóveis</h3>
             <p className="mt-2 flex-1 text-sm text-muted">
@@ -219,19 +226,19 @@ function DoisCaminhos() {
 function DuranteDepois() {
   const itens = [
     {
-      img: "/images/home/home-diferencial-homeoffice.webp",
+      img: "/images/unicas/cf-pagamentos.webp",
       alt: "Pessoa organizando os pagamentos no computador em casa",
       title: "Pagamentos",
       text: "Vão direto ao proprietário e ficam registrados na plataforma. Nada passa pela Viva Nomads.",
     },
     {
-      img: "/images/home/home-hero-chegada.webp",
+      img: "/images/unicas/cf-renovacao.webp",
       alt: "Hóspede chegando com a bagagem para mais um período de estadia",
       title: "Renovação",
-      text: "A estadia se renova em blocos, com aceite das duas partes. A comissão do proprietário é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período.",
+      text: "A estadia se renova em blocos, com aceite das duas partes. A taxa do proprietário é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período.",
     },
     {
-      img: "/images/home/home-proprietarios-chaves.webp",
+      img: "/images/unicas/cf-devolucao.webp",
       alt: "Entrega das chaves ao fim da estadia",
       title: "Devolução da caução",
       text: "Ao fim da estadia, conforme o contrato, com tudo documentado.",
@@ -240,7 +247,7 @@ function DuranteDepois() {
   return (
     <section className="container-page pb-4">
       <h2 className="font-title text-2xl font-bold text-ink">Durante e depois da estadia</h2>
-      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+      <div className="mt-6 grid gap-6 sm:grid-cols-2">
         {itens.map((it) => (
           <div key={it.title} className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
             <StepImage src={it.img} alt={it.alt} />
@@ -262,27 +269,21 @@ function DuranteDepois() {
 /**
  * Faixa "Você fica protegido por" (proprietário): 3 camadas de segurança já
  * existentes. Sem vistoria/dossiê — só entram quando forem construídos (pós-QA).
- * Seguro incêndio: obrigação legal em toda locação; contratação via parceiro.
+ * Seguro incêndio: não é proteção ainda — aparece só como "Em breve" (ordem #141).
  */
 function ProtegidoPor() {
   const itens = [
     {
-      img: "/images/como-funciona/02-converse.webp",
-      alt: "Proprietária respondendo a um pedido por vídeo",
+      img: "/images/unicas/cf-conversa-registrada.webp",
+      alt: "Proprietária respondendo a um pedido pelo celular",
       title: "Conversa registrada",
       text: "Toda a negociação acontece na plataforma, com o contato protegido até o aceite.",
     },
     {
       img: "/images/como-funciona/08-feche.webp",
       alt: "Aperto de mãos fechando o contrato de locação",
-      title: "Garantia do contrato",
+      title: "Caução do contrato",
       text: `${CAUCAO_FRASE} Combinada entre proprietário e inquilino. A Viva não é garantidora.`,
-    },
-    {
-      img: "/images/home/home-condominio-tranquilo.webp",
-      alt: "Fachada de um condomínio residencial",
-      title: "Seguro incêndio",
-      text: "Obrigatório por lei em toda locação; contratação via parceiro (em estruturação).",
     },
   ];
   return (
@@ -299,6 +300,7 @@ function ProtegidoPor() {
           </div>
         ))}
       </div>
+      <p className="mt-4 text-sm text-muted">Em breve: seguro incêndio via parceiro.</p>
     </section>
   );
 }
@@ -311,7 +313,7 @@ function ProtegidoPor() {
 function SubNav() {
   const links = [
     { href: "#para-inquilinos", label: "Para quem busca" },
-    { href: "#garantias", label: "Garantias e estadia" },
+    { href: "#garantias", label: "Caução e estadia" },
     { href: "#para-proprietarios", label: "Para proprietários" },
   ];
   return (

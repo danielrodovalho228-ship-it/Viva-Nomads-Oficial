@@ -23,8 +23,9 @@ export function listarPaginas() {
     .sort();
 }
 export function listarRotas() {
-  return varrer(join(RAIZ, "src/app"), (p) => p.endsWith(`${sep}route.ts`))
-    .map((p) => "/" + posix(relative(join(RAIZ, "src/app"), p)).replace(/\/?route\.ts$/, ""))
+  // route.tsx também (rotas que desenham imagem com JSX, ex.: cartões compartilháveis).
+  return varrer(join(RAIZ, "src/app"), (p) => p.endsWith(`${sep}route.ts`) || p.endsWith(`${sep}route.tsx`))
+    .map((p) => "/" + posix(relative(join(RAIZ, "src/app"), p)).replace(/\/?route\.tsx?$/, ""))
     .map((r) => r.replace(/\/\([^)]+\)/g, ""))
     .sort();
 }
@@ -89,7 +90,10 @@ const mapa = {
   rotas: montar(listarRotas(), personaRota, "rotas"),
   actions: montar(listarActions(), personaAction, "actions"),
 };
-if (process.argv[1]?.endsWith("gerar-cobertura.mjs")) {
+if (process.argv[1]?.endsWith("gerar-cobertura.mjs") && process.argv.includes("--json")) {
+  // Só o resumo por tipo, em uma linha, sem tocar no arquivo (gravado em lab_execucoes.por_categoria pela Action).
+  console.log(JSON.stringify(resumoPorTipo(mapa)));
+} else if (process.argv[1]?.endsWith("gerar-cobertura.mjs")) {
   writeFileSync(SAIDA, JSON.stringify(mapa, null, 2) + "\n");
   const conta = (g) => { const v = Object.values(g); return `${v.filter((e) => e.specs.length).length}/${v.length}`; };
   console.log("páginas", conta(mapa.paginas), "rotas", conta(mapa.rotas), "actions", conta(mapa.actions));

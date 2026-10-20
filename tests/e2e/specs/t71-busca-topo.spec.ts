@@ -33,7 +33,12 @@ test.describe("T71 — topo da /buscar", () => {
     const cBox = (await compacta.boundingBox())!;
     expect(cBox.y).toBeGreaterThanOrEqual(hBox.y);
     expect(cBox.y + cBox.height).toBeLessThanOrEqual(hBox.y + hBox.height);
-    expect(Math.abs(cBox.x + cBox.width / 2 - 720), "busca compacta centralizada").toBeLessThanOrEqual(48);
+    // Centralizada no espaço entre o logo e as ações (o slot é flex-1): o logo é mais estreito que as
+    // ações, então o centro da tela não é o alvo certo (ordem 75553f0a: spec acompanha o produto).
+    // O que se centraliza é o grupo "busca compacta + Publicar pedido" (prompt 30, item 6), não só a pílula.
+    const sBoxSlot = (await header.getByTestId("slot-busca-header").boundingBox())!;
+    const gBox = (await compacta.locator("xpath=..").boundingBox())!;
+    expect(Math.abs(gBox.x + gBox.width / 2 - (sBoxSlot.x + sBoxSlot.width / 2)), "busca compacta centralizada").toBeLessThanOrEqual(4);
     await expect(page.getByTestId("filtros-caixa")).toBeHidden();
 
     // Sem espaço branco morto: o título vem logo abaixo do cabeçalho.
@@ -101,6 +106,7 @@ test.describe("T71 — topo da /buscar", () => {
   });
 
   test("6. celular 390 px e 1024 px adaptam sem quebrar", async ({ page }) => {
+    test.setTimeout(120_000); // duas cargas da /buscar no servidor frio do laboratório (45 s não bastava)
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "networkidle" });
     await expect(page.getByTestId("busca-celular")).toBeVisible();
@@ -118,6 +124,7 @@ test.describe("T71 — topo da /buscar", () => {
 
   for (const [largura, altura] of [[1440, 900], [1280, 800], [1024, 800], [390, 844]] as const) {
     test(`7. cards da grade todos do mesmo tamanho a ${largura}px`, async ({ page }) => {
+      test.setTimeout(120_000); // carga da /buscar com mapa no servidor frio do laboratório (45 s não bastava)
       await page.setViewportSize({ width: largura, height: altura });
       await page.goto("/buscar", { waitUntil: "networkidle" });
       const cards = page.getByTestId("card-resultado");
@@ -125,7 +132,8 @@ test.describe("T71 — topo da /buscar", () => {
       const caixas = await cards.evaluateAll((els) =>
         els.slice(0, 12).map((el) => {
           const r = el.getBoundingClientRect();
-          const img = el.querySelector("img")?.getBoundingClientRect();
+          // Caixa da foto (aspect 4:3), não o <img>: cartão sem foto real usa o espaço reservado (sem <img>) e dava 0 px (lab 5d5f433e).
+          const img = (el.querySelector('[class*="aspect-"]') ?? el.querySelector("img"))?.getBoundingClientRect();
           return { w: Math.round(r.width), h: Math.round(r.height), iw: Math.round(img?.width ?? 0), ih: Math.round(img?.height ?? 0) };
         })
       );

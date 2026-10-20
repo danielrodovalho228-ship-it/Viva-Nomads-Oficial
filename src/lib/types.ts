@@ -68,6 +68,8 @@ export interface Property {
   areaM2: number;
   minPeriodDays: number;
   monthlyPrice: number;
+  /** Custo total do mês (calcularTotalMensal): preenchido na /buscar para filtro, ordem e pino. */
+  totalMes?: number;
   /** Equivalente mensal que o dono informou ter no Airbnb (opcional; 0130). Só o dono lê de volta no editor. */
   airbnbMonthlyPrice?: number;
   /** Selo "Preço justo": aluguel abaixo do Airbnb informado (coluna gerada da 0130). */
@@ -121,6 +123,12 @@ export interface Property {
   petsAllowed?: boolean;
   /** Regras detalhadas de pets (espécies, porte, quantidade, reforço de Caução). */
   petsRegras?: import("@/lib/anuncio/pets-regras").RegrasPets;
+  /** Pacote de limpeza durante a estadia (ordem 4c74ac38; requer migração 0144). */
+  limpezaEstadia?: import("@/lib/anuncio/limpeza-estadia").LimpezaEstadia;
+  /** Negociação pública (aceita? itens; desconto por estadia longa) — prompt 17 §8, requer 0152. */
+  negociacao?: import("@/lib/anuncio/negociacao").Negociacao;
+  /** Velocidade da internet informada pelo dono (Mbps), opcional — requer 0152. */
+  internetMbps?: number;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;

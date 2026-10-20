@@ -14,7 +14,7 @@ import { FAIXAS_COMISSAO_PADRAO, comissaoSobreContrato, taxaPublicaTexto } from 
  *  3. Caução: 50% de cada bloco, soma limitada a 3 aluguéis (cálculo puro).
  *  4. /precos: tabela de faixas (12 / 10 / 8 / 6% do valor total do contrato, Plano Gestor 31+),
  *     sem mensalidade; a marca ("imóveis mobiliados", "Caução") e a Viva sem tocar em dinheiro.
- *  5. Simulador do painel: a comissão anual de cada plano é a do cálculo da config.
+ *  5. Simulador do painel: a taxa de serviço de cada faixa é a da regra única (sem planos).
  */
 const limpo = (t: string) => t.replace(/ /g, " ").replace(/\s+/g, " ");
 
@@ -63,11 +63,13 @@ test.describe("T37 — /precos (visitante)", () => {
 
   // Regra vigente (ordens 75553f0a / 5df28a7b): sem cartões de plano com mensalidade; uma tabela de faixas
   // 12 / 10 / 8 / 6% sobre o valor TOTAL do contrato e o Plano Gestor a partir de 31 imóveis.
-  test("a tabela de faixas mostra a taxa e o exemplo em reais de cada faixa; sem mensalidade", async ({ page }) => {
-    await page.goto("/precos", { waitUntil: "networkidle" });
-    const tabela = page.getByTestId("faixas-taxa");
-    await expect(tabela).toBeVisible();
-    const linhas = tabela.locator("tbody tr");
+  // A 390 px a tabela some (hidden sm:table) e as mesmas faixas aparecem em cartões (t185).
+  test("390 px: os cartões de faixa mostram a taxa e o exemplo em reais de cada faixa; sem mensalidade", async ({ page }) => {
+    await page.goto("/precos", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("faixas-taxa")).toBeHidden();
+    const cartoes = page.getByTestId("faixas-taxa-cartoes");
+    await expect(cartoes).toBeVisible();
+    const linhas = cartoes.locator(":scope > li");
     await expect(linhas).toHaveCount(FAIXAS_COMISSAO_PADRAO.length);
     for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
       const texto = limpo(await linhas.nth(i).innerText());
@@ -75,7 +77,14 @@ test.describe("T37 — /precos (visitante)", () => {
       if (f.gestor) expect(texto).toContain("Plano Gestor");
       else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
-    await expect(page.getByTestId("plano-gestor")).toContainText("31 imóveis ou mais");
+    // O Plano Gestor é um botão que abre a janela de contato (t185); não há mais bloco fixo na página.
+    // O clique antes da hidratação não abre a janela: repete o toque até o formulário aparecer.
+    await expect(async () => {
+      await page.getByTestId("plano-gestor-botao").click();
+      await expect(page.getByTestId("plano-gestor-form")).toBeVisible({ timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
+    await expect(page.getByTestId("plano-gestor-form")).toContainText("31 imóveis ou mais");
+    await page.keyboard.press("Escape");
     const corpo = limpo(await page.locator("body").innerText());
     expect(corpo).toContain("Sem mensalidade");
     expect(corpo).toMatch(/Caução/);
@@ -86,22 +95,44 @@ test.describe("T37 — /precos (visitante)", () => {
   });
 });
 
+test.describe("T37 — /precos (visitante, 1280 px)", () => {
+  test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 1280, height: 800 } });
+
+  test("a tabela de faixas mostra a taxa e o exemplo em reais de cada faixa", async ({ page }) => {
+    await page.goto("/precos", { waitUntil: "domcontentloaded" });
+    const tabela = page.getByTestId("faixas-taxa");
+    await expect(tabela).toBeVisible();
+    await expect(page.getByTestId("faixas-taxa-cartoes")).toBeHidden();
+    const linhas = tabela.locator("tbody tr");
+    await expect(linhas).toHaveCount(FAIXAS_COMISSAO_PADRAO.length);
+    for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
+      const texto = limpo(await linhas.nth(i).innerText());
+      expect(texto).toContain(limpo(taxaPublicaTexto(f)));
+      if (f.gestor) expect(texto).toContain("Plano Gestor");
+      else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
+    }
+  });
+});
+
 test.describe("T37 — Simulador do painel (proprietário)", () => {
   test.use({ storageState: authFile("proprietario"), viewport: { width: 390, height: 844 } });
 
-  test("a comissão anual de cada plano é a do cálculo da config (aluguel R$ 3.000, 10 meses, 4 por contrato)", async ({ page }) => {
+  test("a taxa de serviço de cada faixa é a da regra única (aluguel R$ 3.000, 10 meses, 4 por contrato), sem planos", async ({ page }) => {
     await page.goto("/dashboard/simulador", { waitUntil: "networkidle" });
+    const corpo = limpo(await page.locator("body").innerText());
+    expect(corpo).not.toMatch(/Gratuito|Essencial|Profissional|Simular no plano|Assinatura \/ ano/);
     const entrada = { aluguelMensal: 3000, condoIptu: 550, contas: 350, mesesOcupados: 10, prazoMedioMeses: 4 };
-    for (const p of PLANOS) {
-      await page.getByRole("button", { name: p.nome, exact: true }).click();
-      const esperado = simularRentabilidade(entrada, p.comissao, p.assinaturaAnual ?? 0);
-      const cartao = page.getByText(/^Comissão Viva \(/).locator("xpath=..");
-      await expect(cartao).toContainText(limpo(textoComissao(p.comissao)));
+    for (const f of FAIXAS_COMISSAO_PADRAO) {
+      await page.locator("#imoveis-ativos").fill(String(f.minImoveis));
+      await expect(page.getByTestId("imoveis-ativos")).toHaveText(String(f.minImoveis));
+      await expect(page.getByTestId("taxa-faixa")).toHaveText(limpo(taxaPublicaTexto(f)));
+      const esperado = simularRentabilidade(entrada, f.taxa, 0);
+      const cartao = page.getByText(/^Taxa de serviço \(/).first().locator("xpath=..");
       await expect(cartao).toContainText(limpo(`− ${formatBRL(esperado.comissaoAnual)}`));
     }
-    // Valores de referência: Gratuito 12% de (3.000 × 4 meses) × 2,5 contratos = R$ 3.600; Gestor = R$ 0.
+    // Valores de referência: 12% de (3.000 × 4 meses) × 2,5 contratos = R$ 3.600; 6% = R$ 1.800.
     expect(simularRentabilidade(entrada, 0.12, 0).comissaoAnual).toBe(3600);
-    expect(simularRentabilidade(entrada, 0, 0).comissaoAnual).toBe(0);
+    expect(simularRentabilidade(entrada, 0.06, 0).comissaoAnual).toBe(1800);
     await page.screenshot({ path: "tests/laboratorio/saida/t37-2-simulador.png", fullPage: true });
   });
 });

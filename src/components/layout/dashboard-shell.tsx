@@ -12,15 +12,19 @@ import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
-import { contarAchadosP1 } from "@/lib/data/agentes-actions";
+import { EVENTO_FILA_DOCUMENTOS } from "@/lib/admin/fila-evento";
+import { contarContratosParaAssinar } from "@/lib/data/contratos-actions";
+import { contarPropostasAguardando } from "@/lib/data/propostas-actions";
+import { contarAprovacoesPendentes } from "@/lib/data/agentes-actions";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, identidadeUsuario } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
-import { ANUNCIAR, menuDoPainel } from "@/config/menu-painel";
-import { temImovelAnunciado } from "@/lib/data/menu-actions";
+import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
+import { imoveisAtivosDoDono, temImovelAnunciado } from "@/lib/data/menu-actions";
+import { temPapelParceiro } from "@/lib/parceiros/painel-actions";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -46,13 +50,13 @@ const OWNER_ONLY = [
   "/dashboard/leads",
   "/dashboard/orcamentos",
   "/dashboard/fechamento",
-  "/dashboard/contratos",
   "/dashboard/ferramentas",
   "/dashboard/reembolsos",
   "/dashboard/assinatura",
   "/dashboard/pedidos-cidade",
   "/dashboard/simulador",
   "/dashboard/roi-imovel",
+  "/dashboard/tributacao",
   "/dashboard/garantias",
 ];
 const TENANT_ONLY = [
@@ -65,6 +69,12 @@ const TENANT_ONLY = [
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  // F13: o drawer fecha quando a rota muda (não no clique, que desmontava o Link antes de navegar).
+  const [pathnameDrawer, setPathnameDrawer] = useState(pathname);
+  if (pathnameDrawer !== pathname) {
+    setPathnameDrawer(pathname);
+    setOpen(false);
+  }
   const router = useRouter();
   const { signOut, setActiveMode } = useAuthStore();
   const { mode, isOwner, isTenant } = useViewMode();
@@ -95,8 +105,46 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     };
   }, [displayUser?.id]);
 
+  // Prompt 28: contratos esperando a assinatura do inquilino — número no item "Contratos".
+  const [contratosParaAssinar, setContratosParaAssinar] = useState(0);
+  useEffect(() => {
+    if (!displayUser?.id) return;
+    let alive = true;
+    contarContratosParaAssinar()
+      .then((n) => {
+        if (alive) setContratosParaAssinar(n);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [displayUser?.id, pathname]);
+
+  // Prompt 27: propostas esperando a resposta do inquilino — número no item "Propostas".
+  const [propostasAguardando, setPropostasAguardando] = useState(0);
+  useEffect(() => {
+    if (!displayUser?.id) return;
+    let alive = true;
+    contarPropostasAguardando()
+      .then((n) => {
+        if (alive) setPropostasAguardando(n);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [displayUser?.id, pathname]);
+
   // Documentos aguardando conferência — badge no item "Documentos" do nav admin.
+  // Prompt 36, item 3b: lê de novo também quando a fila avisa uma decisão (aprovar/recusar não muda a rota).
   const [docsPendentes, setDocsPendentes] = useState(0);
+  const [filaMudou, setFilaMudou] = useState(0);
+  useEffect(() => {
+    if (display.role !== "admin") return;
+    const aoMudar = () => setFilaMudou((n) => n + 1);
+    window.addEventListener(EVENTO_FILA_DOCUMENTOS, aoMudar);
+    return () => window.removeEventListener(EVENTO_FILA_DOCUMENTOS, aoMudar);
+  }, [display.role]);
   useEffect(() => {
     if (display.role !== "admin") return;
     let alive = true;
@@ -108,16 +156,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     return () => {
       alive = false;
     };
-  }, [display.role, pathname]);
+  }, [display.role, pathname, filaMudou]);
 
-  // Achados P1 das rondas nas últimas 24h — badge do item "Agentes".
-  const [achadosP1, setAchadosP1] = useState(0);
+  // Aprovações esperando o OK do Daniel — badge do item "Agentes" (F15: antes contava achados P1).
+  const [aprovacoesPendentes, setAprovacoesPendentes] = useState(0);
   useEffect(() => {
     if (display.role !== "admin") return;
     let alive = true;
-    contarAchadosP1()
+    contarAprovacoesPendentes()
       .then((n) => {
-        if (alive) setAchadosP1(n);
+        if (alive) setAprovacoesPendentes(n);
       })
       .catch(() => {});
     return () => {
@@ -129,6 +177,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // quem já anunciou; "Solicitações" só com estadia ativa; Administração só para admin.
   const estadiaAtiva = useHasActiveLocacao(true);
   const [temImovel, setTemImovel] = useState(false);
+  const [imoveisAtivos, setImoveisAtivos] = useState(0);
+  const [parceiro, setParceiro] = useState(false);
   const naAreaDeImoveis = pathname.startsWith("/dashboard/imoveis");
   useEffect(() => {
     let alive = true;
@@ -137,13 +187,23 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         if (alive) setTemImovel(t);
       })
       .catch(() => {});
+    imoveisAtivosDoDono()
+      .then((n) => {
+        if (alive) setImoveisAtivos(n);
+      })
+      .catch(() => {});
+    temPapelParceiro()
+      .then((t) => {
+        if (alive) setParceiro(t);
+      })
+      .catch(() => {});
     return () => {
       alive = false;
     };
     // Reavalia ao sair do cadastro de imóvel (o primeiro anúncio revela as seções de dono).
   }, [displayUser?.id, naAreaDeImoveis]);
-  const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan });
-  const badges = { "admin-documentos": docsPendentes, "admin-agentes": achadosP1 };
+  const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan, imoveisAtivos, parceiro });
+  const badges = { "admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando };
 
   // Guarda de rota por papel (B1). Ao abrir por URL/deep-link uma tela exclusiva
   // do OUTRO modo, a regra deixou de ser "sempre redireciona": se a conta TEM o
@@ -179,7 +239,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       setActiveMode(target);
       salvarModo(target).catch(() => {});
     } else {
-      router.replace("/dashboard");
+      router.replace(destinoForaDoPapel(pathname));
     }
   }, [pathname, mode, isOwner, isTenant, router, setActiveMode]);
 
@@ -219,8 +279,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
    * papel (ex.: quem nunca anunciou tocando em "Anunciar meu imóvel"): troca aqui antes.
    */
   async function aoNavegar(href: string, e: React.MouseEvent) {
-    setOpen(false);
     const rota = href.split("#")[0];
+    if (rota === pathname) setOpen(false);
     const de = (lista: string[]) => lista.some((p) => rota === p || rota.startsWith(p + "/"));
     const alvo: ViewMode | null = de(OWNER_ONLY) ? "owner" : de(TENANT_ONLY) ? "tenant" : null;
     if (!alvo || alvo === mode) return;
@@ -313,7 +373,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
         <DemoBanner />
 
-        <main key={mode} className="mode-transition flex-1 p-5 sm:p-8 lg:overflow-y-auto print:overflow-visible">
+        <main key={mode} className="mode-transition flex-1 p-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:p-8 lg:overflow-y-auto print:overflow-visible">
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />
@@ -322,7 +382,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Barra inferior do app (ciente do modo); esconde-se no desktop e nas
           telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
-      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: docsPendentes + achadosP1 }} />
+      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: docsPendentes + aprovacoesPendentes }} />
     </div>
   );
 }

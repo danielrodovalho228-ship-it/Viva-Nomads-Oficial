@@ -1,9 +1,10 @@
-import { ChevronDown, FileText, MapPinned, ShieldCheck } from "lucide-react";
-import Link from "next/link";
+import { FileText, MapPinned } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
-import { calcularTudoIncluido } from "@/lib/precos";
+import { calcularTotalMensal } from "@/lib/precos";
 import { SELO_NF_UI } from "@/lib/flags";
+import { linhasDeTaxas } from "@/lib/reserva-imovel";
+import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
 
 /** Formata uma data ISO (YYYY-MM-DD) para DD/MM/AAAA. */
 function formatDate(iso?: string): string | null {
@@ -30,90 +31,72 @@ function disponivelFuturo(iso?: string): string | null {
  * botões de ação (recebidos via `actions`). Mantém a regra de ouro visível.
  */
 export function PriceCard({ property, actions }: { property: Property; actions: React.ReactNode }) {
-  // "Tudo incluído" pela FONTE ÚNICA — o mesmo número do card da busca.
-  const inc = calcularTudoIncluido(property);
-  const condo = inc.condominio;
-  const allIncluded = inc.total;
+  // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
+  const mes = calcularTotalMensal(property);
   const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
-    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-2xl border border-sage-200 bg-white p-6 shadow-sm">
-      <div className="flex items-baseline gap-1">
-        <span className="font-title text-3xl font-bold text-forest">
-          {formatBRL(property.monthlyPrice)}
-        </span>
-        <span className="text-muted">/mês</span>
-      </div>
+    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-2xl border border-sage-200 bg-white p-5 xl:p-6 shadow-sm">
+      <p className="text-sm font-semibold text-ink">Quanto você paga por mês</p>
+      <ul data-testid="total-mensal" className="mt-2 space-y-1.5 text-sm">
+        {mes.linhas.map((l) => (
+          <li key={l.chave} data-taxa={l.chave === "contas" ? "consumo" : l.chave} className="flex items-baseline justify-between gap-3">
+            <span className={l.chave === "mensal" ? "font-medium text-ink" : "text-muted"}>{l.rotulo}</span>
+            <span className={l.chave === "viva" ? "font-semibold text-forest" : "font-medium text-ink"}>{l.incluida ? "incluída" : formatBRL(l.valor)}</span>
+          </li>
+        ))}
+        <li data-testid="total-por-mes" className="flex items-baseline justify-between gap-3 border-t border-line pt-2">
+          <span className="font-semibold text-ink">Total por mês</span>
+          <span className="font-title text-2xl font-bold text-forest">{formatBRL(mes.total)}</span>
+        </li>
+      </ul>
+      <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}</p>
       <p className="mt-0.5 text-xs text-muted">R$ 0 de taxa para você: o inquilino não paga nada à plataforma.</p>
-
-      {allIncluded > property.monthlyPrice && (
-        <p className="mt-1 text-sm text-muted">
-          ≈ {formatBRL(allIncluded)}/mês com tudo incluído
-        </p>
+      {/* Negociação configurada pelo dono (prompt 17 §8): "Valor fixo" ou o desconto por estadia mais longa. */}
+      {property.negociacao && (
+        <div className="mt-2 flex flex-wrap gap-1.5" data-testid="negociacao-anuncio">
+          {!property.negociacao.aceita && (
+            <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink">{ROTULO_VALOR_FIXO}</span>
+          )}
+          {property.negociacao.aceita && (
+            <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-forest">Aceita negociar</span>
+          )}
+          {fraseDescontoCard(property.negociacao.descontos) && (
+            <span className="rounded-full bg-champagne/30 px-2.5 py-1 text-xs font-semibold text-forest" data-testid="desconto-estadia">
+              {fraseDescontoCard(property.negociacao.descontos)}
+            </span>
+          )}
+        </div>
       )}
 
-      {/* Composição do custo — transparente, sem sobrecarregar */}
-      <details className="group mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-ink">
-          Detalhes do custo
-          <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="mt-2 space-y-1.5">
-          <Line label="Aluguel" value={formatBRL(property.monthlyPrice)} />
-          {condo > 0 && <Line label="Condomínio" value={formatBRL(condo)} />}
-          {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 ? (
-            <p className="text-ink">
-              + consumo estimado <strong>{formatBRL(property.utilitiesEstimate)}</strong>/mês
-              <span className="block text-xs text-muted">
-                Água, luz e gás em valor fixo no contrato (ajuste se exceder{" "}
-                {property.utilitiesOverageMargin}%).
-              </span>
-            </p>
-          ) : (
-            <p className="text-ink">
-              + consumo conforme medição
-              <span className="block text-xs text-muted">
-                Contas repassadas ao inquilino mediante comprovante.
-              </span>
-            </p>
-          )}
-          {property.prepFee > 0 && (
-            <p className="text-ink">
-              + preparação <strong>{formatBRL(property.prepFee)}</strong>
-              <span className="block text-xs text-muted">
-                Limpeza profunda antes da entrada — cobrada uma única vez.
-              </span>
-            </p>
-          )}
-          {SELO_NF_UI && property.issuesInvoice && (
-            <p className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
-              <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do aluguel
-            </p>
-          )}
-          <p className="text-xs text-sage">Sem taxa da plataforma para o inquilino.</p>
-        </div>
-      </details>
+      {/* Fora do total: pagamentos únicos, pet e Caução (devolvida após a conferência de saída). */}
+      <ul data-testid="taxas-itemizadas" className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
+        <li className="text-xs font-semibold uppercase tracking-wide text-muted">Fora do total mensal</li>
+        {linhasDeTaxas(property)
+          .filter((l) => ["preparacao", "saida", "pet", "caucao"].includes(l.chave))
+          .map((l) => (
+            <li key={l.chave} data-taxa={l.chave} className={l.chave === "caucao" ? "border-t border-line pt-2" : undefined}>
+              <div className="flex items-baseline justify-between gap-3 text-ink">
+                <span className="text-muted">{l.rotulo}</span>
+                {l.valor && <span className="font-medium">{l.valor}</span>}
+              </div>
+              {l.nota && <p className="text-xs text-muted">{l.nota}</p>}
+            </li>
+          ))}
+        {SELO_NF_UI && property.issuesInvoice && (
+          <li className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
+            <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do valor mensal
+          </li>
+        )}
+      </ul>
 
-      <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-sage">
+      {/* Ações (Enviar candidatura / Enviar mensagem / WhatsApp) — vêm da página */}
+      <div className="mt-3">{actions}</div>
+
+      <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-sage">
         <span className="h-2 w-2 rounded-full bg-sage" />
         {availableFrom ? `Disponível a partir de ${availableFrom}` : "Disponível agora"}
       </p>
-
-      {/* Promoção do Inquilino Verificado no funil — leva à verificação já no
-          contexto de INQUILINO (candidatura é ação de inquilino), mesmo que quem
-          navega seja um proprietário-admin. */}
-      <Link
-        href="/dashboard/verificacao?como=inquilino"
-        className="mt-5 flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-800 transition-colors hover:bg-blue-100"
-      >
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
-        <span>
-          <strong>Verificação de identidade: em breve.</strong> Por enquanto, candidate-se direto pela plataforma.
-        </span>
-      </Link>
-
-      {/* Ações (Candidatar-se / Tirar dúvida / Agendar visita) — vêm da página */}
-      <div className="mt-3">{actions}</div>
 
       <p className="mt-4 flex items-start gap-1.5 text-xs text-muted">
         <MapPinned className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -121,18 +104,9 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
         aproximada ({property.neighborhood}).
       </p>
       <p className="mt-3 text-center text-xs text-muted">
-        O pagamento do aluguel é feito direto ao proprietário. A plataforma conecta e documenta —
-        não intermedeia a transação.
+        O valor mensal é pago direto ao proprietário. A plataforma conecta e documenta —
+        não participa do pagamento.
       </p>
-    </div>
-  );
-}
-
-function Line({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between text-ink">
-      <span className="text-muted">{label}</span>
-      <span className="font-medium">{value}</span>
     </div>
   );
 }

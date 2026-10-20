@@ -25,6 +25,10 @@ test("colunas de pets, câmeras e acesso lidas pelo anúncio têm SELECT para an
     assert.ok(g.has(c), `falta "grant select (${c}) on public.properties to anon, authenticated"`);
 });
 
+test("pacote de limpeza (0144) lido pelo anúncio tem SELECT para anon e authenticated", () => {
+  assert.ok(concedidas().has("limpeza_estadia"), 'falta "grant select (limpeza_estadia) on public.properties to anon, authenticated"');
+});
+
 test("endereço exato e coordenadas exatas continuam sem SELECT público", () => {
   const g = concedidas();
   for (const c of ["exact_address", "lat_exata", "lng_exata"]) assert.ok(!g.has(c), `${c} não pode ser público`);

@@ -11,7 +11,7 @@
  * Nunca lança: se algo falhar, devolve o original sem análise.
  */
 import {
-  dHash, fatorAplicado, luminanciaMedia, nitidezLaplaciano, paraCinza, tamanhoFinal, type Analise,
+  assinaturaFoto, LADO_ASSINATURA, dHash, fatorAplicado, luminanciaMedia, nitidezLaplaciano, paraCinza, tamanhoFinal, type Analise,
 } from "./qualidade";
 
 export interface FotoTratada {
@@ -61,6 +61,7 @@ export async function tratarFoto(file: File, opcoes: OpcoesTratamento = {}): Pro
     const pequeno = tamanhoFinal(largura, altura, 256);
     const px = lerPixels(bmp, pequeno.largura, pequeno.altura);
     const grade = lerPixels(bmp, 9, 8);
+    const mini = lerPixels(bmp, LADO_ASSINATURA, LADO_ASSINATURA);
     if (!px || !grade) return falha;
     const cinza = paraCinza(px, pequeno.largura * pequeno.altura);
     const analise: Analise = {
@@ -69,6 +70,7 @@ export async function tratarFoto(file: File, opcoes: OpcoesTratamento = {}): Pro
       luminancia: luminanciaMedia(cinza),
       nitidez: nitidezLaplaciano(cinza, pequeno.largura, pequeno.altura),
       hash: dHash(paraCinza(grade, 72)),
+      ...(mini ? { assinatura: assinaturaFoto(paraCinza(mini, LADO_ASSINATURA * LADO_ASSINATURA)) } : {}),
     };
 
     // Saída: redimensiona + exposição leve + re-codifica (sem EXIF).

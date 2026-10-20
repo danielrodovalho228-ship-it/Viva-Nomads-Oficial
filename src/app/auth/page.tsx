@@ -19,13 +19,19 @@ import {
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
-import { TaxSimulator } from "@/components/tax-simulator";
 import { useAuthStore } from "@/lib/store";
 import { resetPropertiesCache } from "@/lib/use-properties";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { SITE_URL } from "@/lib/site";
 import { MSG_EMAIL_INUTILIZAVEL } from "@/lib/email-dominio";
-import { friendlyAuthError, isEmailSendError, isValidEmail, MIN_PASSWORD } from "@/lib/auth-errors";
+import {
+  cadastroDuplicadoOfuscado,
+  friendlyAuthError,
+  isEmailSendError,
+  isValidEmail,
+  MIN_PASSWORD,
+  MSG_CADASTRO_NEUTRO,
+} from "@/lib/auth-errors";
 import type { UserRole } from "@/lib/types";
 import type { PersonType } from "@/lib/tax";
 import { cn } from "@/lib/utils";
@@ -36,9 +42,10 @@ import { useIsNative } from "@/lib/use-native";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
+import { LoginPorCodigo } from "@/components/auth/login-por-codigo";
 import { chaveFalhas, exigeCaptchaPorFalhas, lerFalhas, segundosRestantes } from "@/lib/seguranca/tentativas-login";
 
-type Mode = "login" | "signup" | "forgot";
+type Mode = "login" | "signup" | "forgot" | "codigo";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -52,7 +59,6 @@ export default function AuthPage() {
   // OU inquilino no cadastro (evita criar proprietário sem querer).
   const [role, setRole] = useState<UserRole | null>(null);
   const [personType, setPersonType] = useState<PersonType>("pf");
-  const [showSimulator, setShowSimulator] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,6 +92,8 @@ export default function AuthPage() {
     const papel = params.get("papel");
     if (papel === "owner" || papel === "tenant") setRole(papel);
     if (params.get("cadastro") === "1") setMode("signup");
+    // Pedido de moradia (prompt 12): "Ao publicar, você entra com um código enviado por e-mail" (?codigo=1).
+    if (params.get("codigo") === "1") setMode("codigo");
     const ref = params.get("ref")?.trim().slice(0, 40);
     if (ref) {
       setReferral(ref);
@@ -361,13 +369,12 @@ export default function AuthPage() {
             })
           );
           if (error) throw error;
-          // E-mail JÁ cadastrado: com "Confirm email" ligado, o Supabase NÃO
-          // devolve erro no signUp — retorna um usuário "ofuscado" sem
-          // identities (anti-enumeração interna). Sem checar isso, um e-mail
-          // repetido cairia na tela "confirme seu e-mail" em vez de avisar que
-          // a conta já existe (Caso 3 do QA). Aqui o sinal é claro ao usuário.
-          if (data.user && data.user.identities && data.user.identities.length === 0) {
-            setError("Este e-mail já possui uma conta. Faça login ou recupere a senha.");
+          // E-mail JÁ cadastrado: o Supabase devolve usuário "ofuscado" (sem identities).
+          // Anti-enumeração (dddccd2f): mesma tela neutra de um cadastro novo, sem
+          // registrar "concluir_cadastro" e sem revelar que a conta existe.
+          if (cadastroDuplicadoOfuscado(data.user)) {
+            setNotice(MSG_CADASTRO_NEUTRO);
+            setAwaitingConfirm(true);
             setLoading(false);
             return;
           }
@@ -379,24 +386,41 @@ export default function AuthPage() {
             return;
           }
         } else {
-          const { data, error } = await withTimeout(
-            supabase.auth.signInWithPassword({ email: emailLimpo, password, options: comCaptcha({}, captcha.token) })
+          // O atraso progressivo vale no servidor (/api/auth/entrar); ele grava a sessão nos cookies.
+          const resp = await withTimeout(
+            fetch("/api/auth/entrar", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: emailLimpo, password, captchaToken: captcha.token }),
+            })
           );
-          if (error) {
-            const m = (error.message || "").toLowerCase();
+          const res = (await resp.json().catch(() => ({}))) as {
+            ok?: boolean;
+            codigo?: string;
+            error?: string;
+            espera?: number;
+            user?: { id: string; email: string; fullName: string | null; role: string };
+          };
+          if (!res.ok) {
             // E-mail ainda não confirmado → tela "Confirme seu e-mail", que tem o
             // botão "Reenviar e-mail de confirmação" (não é senha errada).
-            if (m.includes("not confirmed") || m.includes("confirm")) {
+            if (res.codigo === "nao_confirmado") {
               setNotice("Seu e-mail ainda não foi confirmado. Verifique a caixa de entrada (e o spam) ou reenvie abaixo.");
               setAwaitingConfirm(true);
               setLoading(false);
               return;
             }
+            if (res.codigo === "espera") {
+              setEspera(Math.max(1, Math.min(res.espera ?? 60, 60)));
+              throw new Error("Muitas tentativas. Aguarde um pouco para tentar de novo.");
+            }
+            if (res.codigo === "captcha") throw new Error(res.error || "captcha");
             // Credenciais inválidas: SEMPRE a mesma mensagem (F43) — nunca revela
             // se o e-mail tem conta. Conta a falha para o atraso progressivo (F44).
             registrarFalha();
-            throw error;
+            throw new Error("Invalid login credentials");
           }
+          const data = { user: res.user ? { id: res.user.id, email: res.user.email, user_metadata: { full_name: res.user.fullName ?? undefined, role: res.user.role } } : null };
           // Seta o usuário SÍNCRONO a partir da sessão VALIDADA pelo Supabase —
           // não é "fabricar" sessão (o login já passou). Sem isto, o painel
           // dependia do AuthProvider (assíncrono) e o AuthGuard podia quicar de
@@ -526,7 +550,11 @@ export default function AuthPage() {
               {notice && (
                 <p className="mt-4 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">{notice}</p>
               )}
-              {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+              {error && (
+<p role="alert" data-testid="auth-erro" className="mt-4 text-sm text-red-600">
+{error}
+</p>
+)}
               {captcha.widget && <div className="mt-4 flex justify-center">{captcha.widget}</div>}
               <Button
                 variant="outline"
@@ -545,6 +573,25 @@ export default function AuthPage() {
                 <ArrowLeft className="h-4 w-4" /> Voltar para entrar
               </button>
             </div>
+          ) : mode === "codigo" ? (
+            /* ── Entrar com código por e-mail (ordem d250ea2f, item 4) ── */
+            <LoginPorCodigo
+              email={email}
+              onEmail={setEmail}
+              onVoltar={() => switchMode("login")}
+              onEntrou={(u) => {
+                setUser({
+                  id: u.id,
+                  name: u.nome ?? u.email ?? "Usuário",
+                  fullName: u.nome,
+                  email: u.email,
+                  role: (u.papel as UserRole) ?? "tenant",
+                });
+                startSession();
+                resetPropertiesCache();
+                window.location.assign(postAuthTarget());
+              }}
+            />
           ) : mode === "forgot" ? (
             /* ── Recuperação de senha (Atualização 20.3) ── */
             <div>
@@ -570,7 +617,11 @@ export default function AuthPage() {
                   name="email"
                   autoComplete="email"
                 />
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && (
+<p role="alert" data-testid="auth-erro" className="text-sm text-red-600">
+{error}
+</p>
+)}
                 {notice && (
                   <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> {notice}
@@ -647,19 +698,10 @@ export default function AuthPage() {
                       text="CNPJ"
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowSimulator((v) => !v)}
-                    className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
-                  >
-                    <Calculator className="h-4 w-4" />
-                    {showSimulator ? "Fechar simulador" : "Não sei qual escolher? Simule aqui"}
-                  </button>
-                  {showSimulator && (
-                    <div className="mt-3">
-                      <TaxSimulator />
-                    </div>
-                  )}
+                  {/* Prompt 18: o simulador PF × PJ fica só em Ferramentas (painel), não no cadastro. */}
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted" data-testid="dica-simulador-tributario">
+                    <Calculator className="h-4 w-4 shrink-0" aria-hidden /> Não sabe qual escolher? Depois de entrar, compare em Ferramentas › Tributação PF × PJ.
+                  </p>
                 </div>
               )}
 
@@ -737,6 +779,16 @@ export default function AuthPage() {
                     </button>
                   </div>
                 )}
+                {mode === "login" && (
+                  <button
+                    type="button"
+                    data-testid="entrar-com-codigo"
+                    onClick={() => switchMode("codigo")}
+                    className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:bg-sage-100"
+                  >
+                    Entrar com código por e-mail (sem senha)
+                  </button>
+                )}
                 {mode === "login" && noApp && !LOGIN_GOOGLE_ATIVO && (
                   <p className="text-xs text-muted" data-testid="dica-google-app">
                     Entrou com Google no site? Toque em &quot;Esqueci minha senha&quot; para criar uma senha e usar o app.
@@ -772,7 +824,11 @@ export default function AuthPage() {
                   </label>
                 )}
 
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && (
+<p role="alert" data-testid="auth-erro" className="text-sm text-red-600">
+{error}
+</p>
+)}
 
                 {/* Links FIXOS no login (F43): iguais com ou sem conta, nunca dizem se o e-mail existe. */}
                 {mode === "login" && error === friendlyAuthError("invalid login credentials") && (

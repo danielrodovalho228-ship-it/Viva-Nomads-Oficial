@@ -1,12 +1,23 @@
 "use client";
 
 import type { TipoEvento } from "@/lib/eventos/eventos";
+import { primeiraVezNaSessao } from "@/lib/eventos/uma-vez";
 
 /**
  * Registra um evento anônimo de uso (0067) sem atrasar a navegação: usa
  * navigator.sendBeacon (o navegador entrega mesmo se a página trocar) e cai
  * para fetch keepalive. Nunca lança erro, nunca espera resposta.
  */
+export function registrarEventoUmaVez(tipo: TipoEvento): void {
+  let armazem: Storage | null = null;
+  try {
+    armazem = typeof window === "undefined" ? null : window.sessionStorage;
+  } catch {
+    armazem = null;
+  }
+  if (primeiraVezNaSessao(armazem, tipo)) registrarEvento(tipo);
+}
+
 export function registrarEvento(
   tipo: TipoEvento,
   extra: { imovelId?: string | null; cidade?: string | null } = {}
