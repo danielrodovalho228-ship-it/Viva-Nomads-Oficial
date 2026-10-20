@@ -318,8 +318,11 @@ test.describe("T193 — propostas", () => {
       await b.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
       await expect(b.getByTestId("proposta-rodada")).toHaveText("Rodada 1 de 3");
       await expect(b.getByTestId("proposta-ultima-rodada")).toHaveCount(0);
-      await b.getByTestId("proposta-contrapropor").click();
-      await expect(b.getByTestId("contra-valor-ajuda")).toHaveText("Se o valor ficar abaixo do que o proprietário aceita, avisamos quando você enviar.");
+      // O clique antes da hidratação não abre o campo (instável no lab 3084c6f3): repete até a ajuda aparecer.
+      await expect(async () => {
+        if ((await b.getByTestId("contra-valor-ajuda").count()) === 0) await b.getByTestId("proposta-contrapropor").click();
+        await expect(b.getByTestId("contra-valor-ajuda")).toHaveText("Se o valor ficar abaixo do que o proprietário aceita, avisamos quando você enviar.", { timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
       const campo = b.getByTestId("contra-valor");
       const digitado = valor === "desconto" ? "3.050" : valor;
       await campo.fill("");

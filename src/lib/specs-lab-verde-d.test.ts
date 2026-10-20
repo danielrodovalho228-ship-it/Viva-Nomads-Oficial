@@ -96,3 +96,19 @@ test("t235 dá tempo à 1ª imagem do cartão gerada a frio no lab", () => {
   assert.match(spec, /naturalHeight\), \{ timeout: 45_000 \}/);
   assert.match(spec, /1\. dono[\s\S]{0,260}test\.setTimeout\(240_000\)/);
 });
+
+test("t117, t125, t143 e t152 têm janela de 120 s nos testes de várias navegações (lab 3084c6f3: 45 s esgotados)", () => {
+  for (const f of ["t117-polos-cidade", "t125-alerta-busca-salva", "t143-custo-total-mes", "t152-barra-fixa-imovel"]) {
+    const spec = ler(`tests/e2e/specs/${f}.spec.ts`);
+    const m = spec.match(/test\.setTimeout\(([\d_]+)\)/g) ?? [];
+    assert.ok(m.length >= 1, `${f}: test.setTimeout`);
+    for (const x of m) assert.ok(Number(x.match(/[\d_]+/)![0].replace(/_/g, "")) >= 120_000);
+  }
+  assert.equal((ler("tests/e2e/specs/t152-barra-fixa-imovel.spec.ts").match(/test\.setTimeout/g) ?? []).length, 3);
+});
+
+test("t193 repete o clique de contrapropor até a ajuda do valor aparecer (clique antes da hidratação)", () => {
+  const spec = ler("tests/e2e/specs/t193-propostas.spec.ts");
+  assert.match(spec, /toPass\(\{ timeout: 30_000 \}\)/);
+  assert.match(spec, /count\(\)\) === 0\) await b\.getByTestId\("proposta-contrapropor"\)\.click\(\)/);
+});
