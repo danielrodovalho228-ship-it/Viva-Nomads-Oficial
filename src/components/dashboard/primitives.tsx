@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BRAND_BLUR } from "@/lib/media";
-import { CAPAS, type CapaPainel } from "@/components/dashboard/capas";
+import { CAPAS, CAPA_MORADOR, type CapaPainel } from "@/components/dashboard/capas";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight, HardHat } from "lucide-react";
 
@@ -47,7 +47,7 @@ export function PageTitle({
   capa?: CapaPainel;
 }) {
   if (capa) {
-    const foto = CAPAS[capa];
+    const foto = capa === "morador" ? CAPA_MORADOR : CAPAS[capa];
     // Faixa de capa: foto cobrindo toda a largura do conteúdo, véu escuro da
     // esquerda para a direita (legibilidade) e ação à direita no desktop / abaixo
     // do texto no mobile. Altura mínima fixa para todas as telas ficarem iguais.

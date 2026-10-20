@@ -80,6 +80,31 @@ for (const largura of [360, 390]) {
         await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
         await nadaTampa(page);
       });
+
+      // Ordem b36ca0ee (D6): no fim da rolagem, o último card do painel fica inteiro fora da área do flutuante.
+      for (const rota of ["/dashboard", "/dashboard/locacoes", "/dashboard/solicitacoes"]) {
+        test(`${rota}: botão flutuante não cobre o último card`, async ({ page }) => {
+          await page.goto(rota, { waitUntil: "networkidle" });
+          await rolarAteOFim(page);
+          const flut = page.getByTestId("fale-com-a-viva-raiz");
+          if ((await flut.count()) === 0 || !(await flut.isVisible())) return; // sem flutuante nesta tela
+          const cobre = await page.evaluate(() => {
+            let el: Element | null = document.querySelector("main");
+            let ultimo: Element | null = null;
+            while (el && el.lastElementChild) {
+              el = el.lastElementChild;
+              const r = el.getBoundingClientRect();
+              if (r.height >= 40 && r.width >= 120) ultimo = el;
+            }
+            const f = document.querySelector('[data-testid="fale-com-a-viva-raiz"]')!.getBoundingClientRect();
+            if (!ultimo) return false;
+            const c = ultimo.getBoundingClientRect();
+            const sobrepoe = c.left < f.right && c.right > f.left && c.top < f.bottom && c.bottom > f.top;
+            return sobrepoe;
+          });
+          expect(cobre, "o flutuante cobre o último card").toBe(false);
+        });
+      }
     });
   });
 }
