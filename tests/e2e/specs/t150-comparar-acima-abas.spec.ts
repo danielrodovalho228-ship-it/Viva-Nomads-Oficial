@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { MAX_COMPARAR } from "../../../src/lib/busca/comparar";
 
 /**
  * Ordem 7ffea8c7 — a barra "Comparar" não pode ficar atrás da barra de abas do celular
@@ -32,7 +33,7 @@ test.describe("T150 — Barra Comparar acima das abas (390 px)", () => {
     };
 
     // Cartão por cartão (até o limite da comparação): a barra segue acima da nav e sem tocar no Fale com a Viva.
-    const total = Math.min(await marcas.count(), 4);
+    const total = Math.min(await marcas.count(), MAX_COMPARAR);
     for (let i = 0; i < total; i++) {
       await marcas.nth(i).check();
       await conferir();

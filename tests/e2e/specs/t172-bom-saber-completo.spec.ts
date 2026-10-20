@@ -21,9 +21,12 @@ for (const largura of [390, 1280]) {
         await expect(page.getByTestId("bom-saber-seguranca")).not.toContainText("Não informado");
 
         for (const chave of ["cancelamento", "regras", "seguranca"]) {
-          await page.getByTestId(`bom-saber-${chave}`).click();
           const janela = page.getByRole("dialog");
-          await expect(janela).toBeVisible();
+          // Com o HTML ainda sem hidratar o clique se perde (lab 3c9bd126): repete o clique até a janela abrir.
+          await expect(async () => {
+            if (!(await janela.isVisible())) await page.getByTestId(`bom-saber-${chave}`).click();
+            await expect(janela).toBeVisible({ timeout: 3_000 });
+          }).toPass({ timeout: 20_000 });
           const texto = await janela.innerText();
           expect(achadosNoTexto(texto, { termos: true, vocabulario: true }), `${id} · ${chave}`).toEqual([]);
           if (chave === "cancelamento") {
