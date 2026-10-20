@@ -35,7 +35,7 @@ test("PDF do pacote é um PDF de verdade com a marca de minuta", async () => {
     conteudoPacoteProvas({
       contratoId: "11111111-2222-3333-4444-555555555555",
       imovel: "Studio",
-      status: "ativo",
+      situacao: "Em vigência",
       registradoEm: "2026-10-01T12:00:00Z",
       resumo,
       assinaturas: [{ papel: "inquilino", em: "2026-10-03T15:30:00Z", hash: hashResumo(resumo) }],
