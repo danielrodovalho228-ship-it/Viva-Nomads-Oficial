@@ -183,7 +183,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t201-qa-muse",
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t239-cartao-parceiro"
       ]
     },
     "/admin/pedidos": {
@@ -1317,7 +1318,8 @@
         "proprietario"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t239-cartao-parceiro"
       ]
     },
     "/parceiros/[slug]": {
@@ -1325,7 +1327,8 @@
         "publico"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t239-cartao-parceiro"
       ]
     },
     "/parceiros/ativar": {
@@ -1785,7 +1788,8 @@
         "publico"
       ],
       "specs": [
-        "t235-cartoes-compartilhaveis"
+        "t235-cartoes-compartilhaveis",
+        "t239-cartao-parceiro"
       ]
     },
     "/cartoes/[curto]/imagem": {
@@ -1793,7 +1797,8 @@
         "publico"
       ],
       "specs": [
-        "t235-cartoes-compartilhaveis"
+        "t235-cartoes-compartilhaveis",
+        "t239-cartao-parceiro"
       ]
     },
     "/api/cartoes/visita": {
@@ -1801,7 +1806,8 @@
         "publico"
       ],
       "specs": [
-        "t235-cartoes-compartilhaveis"
+        "t235-cartoes-compartilhaveis",
+        "t239-cartao-parceiro"
       ]
     }
   },
@@ -3638,19 +3644,23 @@
     },
     "src/lib/data/cartoes-actions.ts#definirNomeNoCartao": {
       "personas": [
-        "inquilino"
+        "inquilino",
+        "parceiro"
       ],
       "specs": [
-        "t235-cartoes-compartilhaveis"
+        "t235-cartoes-compartilhaveis",
+        "t239-cartao-parceiro"
       ]
     },
     "src/lib/data/cartoes-actions.ts#registrarCompartilhamento": {
       "personas": [
         "inquilino",
-        "proprietario"
+        "proprietario",
+        "parceiro"
       ],
       "specs": [
-        "t235-cartoes-compartilhaveis"
+        "t235-cartoes-compartilhaveis",
+        "t239-cartao-parceiro"
       ]
     },
     "src/lib/data/cartoes-actions.ts#trocarMeuCodigo": {
@@ -3891,6 +3901,14 @@
       ],
       "specs": [
         "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/data/cartoes-actions.ts#meuCartaoDoParceiro": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t239-cartao-parceiro"
       ]
     }
   }
