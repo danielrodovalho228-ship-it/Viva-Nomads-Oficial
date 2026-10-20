@@ -9,6 +9,7 @@ import { PropertyJsonLd } from "@/components/seo/property-json-ld";
 import { PropertyDetail } from "./property-detail";
 import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { getPerfilProprietario } from "@/lib/data/perfil-proprietario";
+import { quantosDestaques } from "@/lib/home-imagens";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -63,7 +64,9 @@ export default async function PropertyDetailPage({ params }: Params) {
     // Exemplo nunca busca perfil (continua "Proprietário (exemplo)", sem números).
     isExemplo(property) ? Promise.resolve(null) : getPerfilProprietario(property.ownerId),
   ]);
-  const similar = similares.filter((p) => p.id !== property.id).slice(0, 3);
+  // Imóveis parecidos em grade par (Prompt 40): 4, ou 2 (a mesma conta dos destaques da home).
+  const outros = similares.filter((p) => p.id !== property.id);
+  const similar = outros.slice(0, quantosDestaques(outros.length));
   return (
     <>
       <PropertyJsonLd property={property} />

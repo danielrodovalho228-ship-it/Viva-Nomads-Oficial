@@ -18,7 +18,7 @@ export function MarcaImovel({ propertyId }: { propertyId: string }) {
   return (
     <span
       data-testid="marca-imovel"
-      className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-forest shadow-sm"
+      className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-ink"
     >
       <Icone className="h-3 w-3" aria-hidden /> {rotulo}
     </span>

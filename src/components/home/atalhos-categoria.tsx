@@ -22,10 +22,10 @@ export function AtalhosCategoria({ imoveis }: { imoveis: Property[] }) {
   return (
     <section className="bg-surface py-10 sm:py-14" aria-labelledby="atalhos-titulo">
       <div className="container-page">
-        <h2 id="atalhos-titulo" className="text-center font-title text-2xl font-bold text-ink sm:text-3xl">
+        <h2 id="atalhos-titulo" className="text-center font-title text-2xl font-semibold text-ink sm:text-3xl">
           Encontre o imóvel do seu jeito
         </h2>
-        <ul className="mx-auto mt-6 grid max-w-6xl auto-rows-fr grid-cols-2 gap-3 sm:mt-10 sm:gap-5 lg:grid-cols-6" data-testid="atalhos-categoria">
+        <ul className="mx-auto mt-6 grid max-w-6xl auto-rows-fr grid-cols-2 gap-x-4 gap-y-6 sm:mt-10 sm:gap-x-6 lg:grid-cols-6" data-testid="atalhos-categoria">
           {atalhos.map((a) => {
             const Icone = ICONES[a.icone] ?? MapPin;
             return (
@@ -33,9 +33,10 @@ export function AtalhosCategoria({ imoveis }: { imoveis: Property[] }) {
                 <Link
                   href={a.href}
                   data-testid="atalho-cartao"
-                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white outline-none transition-shadow hover:shadow-[0_16px_32px_-24px_rgba(11,42,102,0.45)] focus-visible:ring-2 focus-visible:ring-forest"
+                  className="group flex h-full flex-col gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
                 >
-                  <span className="relative block aspect-[4/3] overflow-hidden bg-surface-2">
+                  {/* Sem caixa: foto 4:3 com raio de 12 px e o texto solto (mesmo padrão do cartão de anúncio). */}
+                  <span className="relative block aspect-[4/3] overflow-hidden rounded-xl bg-surface-2">
                     <Image
                       src={a.foto}
                       alt={a.alt}
@@ -45,12 +46,12 @@ export function AtalhosCategoria({ imoveis }: { imoveis: Property[] }) {
                       blurDataURL={BRAND_BLUR}
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <span className="absolute left-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-white/95 text-forest shadow-sm">
+                    <span className="absolute left-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-white text-ink">
                       <Icone aria-hidden className="h-4 w-4" />
                     </span>
                   </span>
-                  <span className="flex flex-1 flex-col gap-0.5 p-3">
-                    <span className="line-clamp-2 font-title text-sm font-bold leading-snug text-ink sm:text-base">{a.rotulo}</span>
+                  <span className="flex flex-1 flex-col gap-1">
+                    <span className="line-clamp-2 font-title text-[15px] font-semibold leading-snug text-ink sm:text-base">{a.rotulo}</span>
                     <span className="mt-auto text-xs text-muted" data-testid="atalho-total">
                       {a.total} {a.total === 1 ? "imóvel" : "imóveis"}
                     </span>

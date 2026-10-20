@@ -6,7 +6,7 @@ import { toggleFavorite } from "@/lib/data/actions";
 import { cn } from "@/lib/utils";
 import { registrarEvento } from "@/lib/eventos/registrar";
 
-/** Botão de favoritar (coração). Persiste no store e sincroniza best-effort. */
+/** Botão de favoritar (coração). Persiste no store e sincroniza best-effort (mesma regra de sempre: quem pode favoritar não muda). */
 export function FavoriteButton({
   propertyId,
   className,
@@ -26,21 +26,23 @@ export function FavoriteButton({
     if (next) registrarEvento("favoritar", { imovelId: propertyId });
   }
 
+  // 1 toque salva, outro desfaz (Prompt 40): botão de alternar com aria-pressed. O nome
+  // acessível acompanha a ação ("Adicionar"/"Remover"), como os testes e leitores de tela já usam.
   return (
     <button
       type="button"
       onClick={handleClick}
+      aria-pressed={isFavorite}
       aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      data-testid="coracao"
       className={cn(
-        "grid h-9 w-9 place-items-center rounded-full bg-white/90 shadow transition-colors hover:bg-white",
+        "grid h-10 w-10 place-items-center rounded-full bg-white/90 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest",
         className
       )}
     >
       <Heart
-        className={cn(
-          "h-4.5 w-4.5 transition-colors",
-          isFavorite ? "fill-red-500 text-red-500" : "text-forest"
-        )}
+        aria-hidden
+        className={cn("h-5 w-5 transition-colors", isFavorite ? "fill-forest text-forest" : "text-ink")}
       />
     </button>
   );

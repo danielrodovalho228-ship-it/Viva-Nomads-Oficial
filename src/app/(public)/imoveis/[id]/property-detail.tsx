@@ -38,7 +38,7 @@ import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir
 import { IdealPara } from "@/components/property/ideal-para";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
-import { PropertyCard } from "@/components/property-card";
+import { ImoveisParecidos } from "@/components/property/imoveis-parecidos";
 import { PropertyGallery } from "@/components/property-gallery";
 import { VideoWalkthrough } from "@/components/video-walkthrough";
 import { requestLead } from "@/lib/data/actions";
@@ -794,17 +794,8 @@ export function PropertyDetail({
         </aside>
       </div>
 
-      {/* Similares */}
-      {similar.length > 0 && (
-        <section className="mt-16">
-          <h2 className="font-title text-2xl font-bold text-ink">Imóveis similares</h2>
-          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {similar.map((p) => (
-              <PropertyCard key={p.id} property={p} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Imóveis parecidos (Prompt 40): o mesmo cartão da busca, em grade par. */}
+      <ImoveisParecidos imoveis={similar} />
     </div>
   );
 }

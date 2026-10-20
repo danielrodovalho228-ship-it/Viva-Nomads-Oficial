@@ -72,7 +72,7 @@ export default async function HomePage() {
         {/* Fundo: poster = LCP; vídeo só em desktop sem reduced-motion. */}
         <HeroVideoBg />
         <div className="container-page relative z-10 flex min-h-[26rem] flex-col items-center justify-center py-12 text-center sm:min-h-[28rem] lg:min-h-[30rem]">
-          <h1 className="max-w-3xl font-title text-3xl font-bold leading-tight sm:text-5xl">
+          <h1 className="max-w-3xl font-title text-3xl font-semibold leading-tight sm:text-5xl">
             Imóveis mobiliados para morar por meses
           </h1>
           <p className="mt-3 text-base font-medium text-white/85 sm:text-lg">
@@ -82,7 +82,7 @@ export default async function HomePage() {
             <BuscaPrincipal />
           </div>
           {/* Prompt 30, item 6: a porta do pedido de moradia na home. */}
-          <Link href="/pedidos/novo" data-testid="home-publicar-pedido" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-white underline underline-offset-4 hover:text-champagne">
+          <Link href="/pedidos/novo" data-testid="home-publicar-pedido" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-white underline underline-offset-4 hover:text-white/80">
             Não achou? Publicar pedido de moradia
           </Link>
         </div>
@@ -109,12 +109,12 @@ export default async function HomePage() {
         <div className="container-page">
           <div className="max-w-2xl">
             <Eyebrow>Para quem é</Eyebrow>
-            <h2 className="mt-4 font-title font-bold text-ink display-lg">
+            <h2 className="mt-4 font-title font-semibold text-ink display-lg">
               Feito para morar de verdade, pelo tempo que a vida pedir
             </h2>
           </div>
 
-          <div className="mt-6 md:mt-8 flex flex-col gap-px overflow-hidden rounded-3xl border border-line bg-line">
+          <div className="mt-6 md:mt-8 flex flex-col gap-px overflow-hidden rounded-xl border border-line bg-line">
             {PERSONAS.map((p, i) => {
               const Icon = PERSONA_ICONS[p.icon] ?? Briefcase;
               return (
@@ -133,17 +133,17 @@ export default async function HomePage() {
                     />
                   </div>
                   <div className="sm:col-span-1 sm:[direction:ltr]">
-                    <span className="font-title text-4xl font-bold text-line">
+                    <span className="font-title text-4xl font-semibold text-line">
                       0{i + 1}
                     </span>
                   </div>
                   <div className="sm:col-span-8 sm:[direction:ltr]">
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-500">
+                      <span className="grid h-9 w-9 place-items-center rounded-lg bg-surface-2 text-ink">
                         <Icon className="h-5 w-5" />
                       </span>
-                      <h3 className="font-title text-xl font-bold text-ink">{p.title}</h3>
-                      <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-900">
+                      <h3 className="font-title text-xl font-semibold text-ink">{p.title}</h3>
+                      <span className="rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold text-ink">
                         {p.period}
                       </span>
                     </div>
@@ -164,19 +164,17 @@ export default async function HomePage() {
               src={PHOTOS.homeOffice}
               alt="Home office montado no imóvel"
               sizes="(max-width: 1024px) 100vw, 50vw"
-              className="aspect-[5/4] w-full rounded-3xl"
+              className="aspect-[5/4] w-full rounded-xl"
             />
-            <div className="absolute -right-4 -top-4 rounded-2xl bg-gradient-brand p-[1px] shadow-xl">
-              <div className="rounded-2xl bg-white px-4 py-3">
-                <p className="font-title text-lg font-bold text-ink">Internet para home office</p>
-                <p className="text-xs text-muted">aguenta videochamadas pesadas</p>
-              </div>
+            <div className="absolute -right-4 -top-4 rounded-xl border border-line bg-white px-4 py-3">
+              <p className="font-title text-lg font-semibold text-ink">Internet para home office</p>
+              <p className="text-xs text-muted">aguenta videochamadas pesadas</p>
             </div>
           </div>
 
           <div className="order-1 lg:order-2">
             <Eyebrow>O diferencial</Eyebrow>
-            <h2 className="mt-4 font-title font-bold text-ink display-lg">
+            <h2 className="mt-4 font-title font-semibold text-ink display-lg">
               Pronto para morar — e para trabalhar, se for o caso
             </h2>
             <p className="mt-5 text-lg text-muted">
@@ -201,7 +199,7 @@ export default async function HomePage() {
         <div className="container-page">
           <div className="mx-auto max-w-2xl text-center">
             <Eyebrow light>Outra categoria</Eyebrow>
-            <h2 className="mt-4 font-title font-bold text-white display-lg">
+            <h2 className="mt-4 font-title font-semibold text-white display-lg">
               Uma categoria à parte: estadia de meses, com contrato de verdade.
             </h2>
             <p className="mt-5 text-lg text-white/65">
@@ -214,8 +212,8 @@ export default async function HomePage() {
           <p className="mx-auto mt-12 max-w-4xl px-1 text-xs text-white/45 sm:hidden">
             Deslize para comparar →
           </p>
-          <div className="mx-auto mt-2 max-w-4xl rounded-2xl border border-white/10 sm:mt-14">
-            <div className="overflow-x-auto rounded-2xl [scrollbar-width:thin]">
+          <div className="mx-auto mt-2 max-w-4xl rounded-xl border border-white/10 sm:mt-14">
+            <div className="overflow-x-auto rounded-xl [scrollbar-width:thin]">
               <table className="w-full min-w-[34rem] text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/[0.03]">
@@ -223,12 +221,12 @@ export default async function HomePage() {
                       Comparativo
                     </th>
                     <th className="p-5">
-                      <span className="font-title text-base font-bold text-gradient-brand">
+                      <span className="font-title text-base font-semibold text-white">
                         Viva Nomads
                       </span>
                     </th>
-                    <th className="p-5 font-title text-base font-bold text-white/70">Airbnb</th>
-                    <th className="p-5 font-title text-base font-bold text-white/70">QuintoAndar</th>
+                    <th className="p-5 font-title text-base font-semibold text-white/70">Airbnb</th>
+                    <th className="p-5 font-title text-base font-semibold text-white/70">QuintoAndar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06]">
@@ -254,7 +252,7 @@ export default async function HomePage() {
         <div className="container-page">
           <div className="max-w-2xl">
             <Eyebrow>Como funciona</Eyebrow>
-            <h2 className="mt-4 font-title font-bold text-ink display-lg">
+            <h2 className="mt-4 font-title font-semibold text-ink display-lg">
               Do anúncio ao contrato em 4 passos
             </h2>
           </div>
@@ -271,7 +269,7 @@ export default async function HomePage() {
       {/* ───────── FAIXA PROPRIETÁRIOS (preto de impacto) ───────── */}
       <section className="bg-surface section-y">
         <div className="container-page">
-          <div className="relative overflow-hidden rounded-3xl bg-night px-8 py-14 text-white md:px-16 md:py-20" data-testid="bloco-proprietarios">
+          <div className="relative overflow-hidden rounded-xl bg-night px-8 py-14 text-white md:px-16 md:py-20" data-testid="bloco-proprietarios">
             {HOME_PROPRIETARIOS_FUNDO.pronta && (
               <>
                 <BrandImage src={HOME_PROPRIETARIOS_FUNDO.src} alt="" sizes="100vw" rounded="rounded-none" treat={false} className="absolute inset-0 h-full w-full" />
@@ -282,9 +280,9 @@ export default async function HomePage() {
             <div className="relative grid items-center gap-10 md:grid-cols-2">
               <div>
                 <Eyebrow light>Para proprietários</Eyebrow>
-                <h2 className="mt-4 font-title font-bold display-lg">
+                <h2 className="mt-4 font-title font-semibold display-lg">
                   Mais estabilidade e{" "}
-                  <span className="text-gradient-brand">menos tempo com o imóvel parado</span>.
+                  <span className="text-white">menos tempo com o imóvel parado</span>.
                 </h2>
                 <p className="mt-5 max-w-md text-white/65">
                   Um inquilino por uma estadia inteira traz previsibilidade: agenda estável,
@@ -296,7 +294,7 @@ export default async function HomePage() {
                 <ButtonLink href="/para-proprietarios" variant="accent" size="lg">
                   Quero anunciar meu imóvel <ArrowRight className="h-4 w-4" />
                 </ButtonLink>
-                <Link href="/precos" className="text-sm text-white/55 transition-colors hover:text-green-300">
+                <Link href="/precos" className="text-sm text-white/70 underline underline-offset-4 transition-colors hover:text-white">
                   Ver preços
                 </Link>
               </div>
@@ -311,26 +309,26 @@ export default async function HomePage() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-xl">
               <Eyebrow>{soExemplos ? "Anúncios de exemplo" : "Imóveis em destaque"}</Eyebrow>
-              <h2 className="mt-4 font-title font-bold text-ink display-lg">
+              <h2 className="mt-4 font-title font-semibold text-ink display-lg">
                 {soExemplos ? "Veja como os imóveis aparecem" : "Imóveis mobiliados para morar"}
               </h2>
             </div>
             <Link
               href="/buscar"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-500 hover:text-blue-700"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest"
             >
               Ver todos os imóveis <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           {featured.length > 0 ? (
-            <div className="mt-6 md:mt-8 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4" data-testid="destaques-home">
+            <div className="mt-6 md:mt-8 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-8 lg:grid-cols-4" data-testid="destaques-home">
               {featured.map((p) => (
                 <PropertyCard key={p.id} property={p} />
               ))}
             </div>
           ) : (
-            <div className="mt-6 md:mt-8 rounded-3xl border border-dashed border-line bg-surface px-6 py-14 text-center">
-              <p className="font-title text-xl font-bold text-ink">
+            <div className="mt-6 md:mt-8 rounded-xl border border-dashed border-line bg-surface px-6 py-14 text-center">
+              <p className="font-title text-xl font-semibold text-ink">
                 Os primeiros imóveis estão chegando.
               </p>
               <p className="mx-auto mt-2 max-w-md text-muted">
@@ -358,11 +356,11 @@ function WorkFeature({
 }) {
   return (
     <li className="flex gap-4">
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-brand text-white">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-ink">
         <Icon className="h-5 w-5" />
       </span>
       <div>
-        <h3 className="font-title text-base font-bold text-ink">{title}</h3>
+        <h3 className="font-title text-base font-semibold text-ink">{title}</h3>
         <p className="text-sm text-muted">{text}</p>
       </div>
     </li>
@@ -386,12 +384,12 @@ function Step({
     <div className="relative">
       <BrandImage src={img.src} alt={img.alt} sizes="(max-width: 640px) 100vw, 50vw" className="mb-5 aspect-[16/9] w-full" />
       <div className="flex items-center gap-4">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-night font-title text-xl font-bold text-white ring-8 ring-surface">
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-night font-title text-xl font-semibold text-white ring-8 ring-surface">
           {n}
         </span>
-        <Icon className="h-6 w-6 text-blue-500" />
+        <Icon className="h-6 w-6 text-ink" />
       </div>
-      <h3 className="mt-6 font-title text-xl font-bold text-ink">{title}</h3>
+      <h3 className="mt-6 font-title text-xl font-semibold text-ink">{title}</h3>
       <p className="mt-2 text-muted">{text}</p>
     </div>
   );
@@ -405,8 +403,8 @@ function TrustItem({
   text: string;
 }) {
   return (
-    <span className="flex flex-col items-center gap-1.5 text-center text-xs text-ink sm:flex-row sm:gap-2 sm:text-sm">
-      <Icon className="h-6 w-6 text-forest sm:h-4 sm:w-4" />
+    <span className="flex flex-col items-center gap-2 text-center text-xs text-ink sm:flex-row sm:gap-2 sm:text-sm">
+      <Icon className="h-6 w-6 text-ink sm:h-4 sm:w-4" />
       <span className="leading-tight">{text}</span>
     </span>
   );
@@ -446,13 +444,13 @@ function Mark({ v, brand = false }: { v: "yes" | "no" | "partial"; brand?: boole
   const dot =
     v === "yes"
       ? brand
-        ? "bg-green-500 text-night"
-        : "bg-white/10 text-green-300"
+        ? "bg-white text-night"
+        : "bg-white/10 text-white"
       : v === "partial"
         ? "bg-white/10 text-white/50"
         : "bg-white/5 text-white/30";
   return (
-    <span className="inline-flex items-center gap-1.5">
+    <span className="inline-flex items-center gap-2">
       <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${dot}`}>
         <Icon className="h-4 w-4" aria-hidden />
       </span>
