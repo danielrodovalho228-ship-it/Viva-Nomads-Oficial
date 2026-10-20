@@ -328,7 +328,7 @@ html[data-app] .vn-barra-comparar {
 }
 /* Barra fixa do imóvel (celular): fica logo acima da barra de abas. */
 .vn-barra-fixa {
-  bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
 }
 @media (min-width: 768px) {
   .vn-barra-fixa {
@@ -336,7 +336,7 @@ html[data-app] .vn-barra-comparar {
   }
 }
 html[data-app] .vn-barra-fixa {
-  bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
 }
 /* No app a barra inferior existe em qualquer largura: o conteúdo não fica por baixo dela. */
 html[data-app] .vn-main {
