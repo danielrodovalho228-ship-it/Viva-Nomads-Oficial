@@ -185,8 +185,22 @@ test.describe("T239 — cartão do parceiro (partnercard)", () => {
     expect(await contar("cards_generated")).toBe(1); // um cartão por parceiro, não um por acesso
     const { data: linhas } = await adm().from("cartoes_compartilhaveis").select("tipo, parceiro_id, property_id").eq("usuario_id", ids.parc!);
     expect(linhas).toEqual([{ tipo: "partnercard", parceiro_id: ids.parceiro, property_id: null }]);
+    // Cartão já gerado com mostrar_nome = false: o campo é ignorado no partnercard (o nome do negócio sai sempre).
+    await adm().from("cartoes_compartilhaveis").update({ mostrar_nome: false }).eq("curto", curto);
     await imagem(request, "retrato");
     await imagem(request, "quadrado");
+    // Nome longo (mais de 50 caracteres): o título é cortado em 50, sem quebrar o cartão.
+    const longo = `Lia Fotografia de Imóveis Mobiliados e Interiores T239 ${sufixo}`;
+    expect(longo.length).toBeGreaterThan(50);
+    await adm().from("parceiros").update({ nome_publico: longo }).eq("id", ids.parceiro!);
+    for (const formato of ["retrato", "quadrado"] as const) {
+      const r = await request.get(`/cartoes/${curto}/imagem?formato=${formato}`);
+      expect(r.status()).toBe(200);
+      const buf = await r.body();
+      expect(dimensoesPng(buf)).toEqual(formato === "retrato" ? { w: 1080, h: 1350 } : { w: 1080, h: 1080 });
+      writeFileSync(`${SAIDA}/t239-imagem-parceiro-nome-longo-${formato}.png`, buf);
+    }
+    await adm().from("parceiros").update({ nome_publico: nomePublico }).eq("id", ids.parceiro!);
   });
 
   test("2. URL do QR abre a página do parceiro e conta qr_scans e ref_partner_views; assinatura adulterada não conta", async ({ browser, request }) => {
