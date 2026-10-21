@@ -225,3 +225,40 @@ export const MENSAGENS_AUTOMATICAS = {
   entrega: "O parceiro marcou a entrega. Confira os arquivos e confirme a conclusão.",
   avaliacao: "Serviço concluído. Conte como foi: a avaliação ajuda outras pessoas.",
 } as const;
+
+// ── Rótulos e próximo passo (telas do cliente, do parceiro e do admin) ────────────────────────────────────────
+export const ROTULO_STATUS: Record<StatusPedido, string> = {
+  solicitado: "Aguardando orçamento",
+  orcado: "Orçamento recebido",
+  aceito: "Orçamento aceito",
+  agendado: "Horário confirmado",
+  em_execucao: "Em execução",
+  entregue: "Entregue",
+  concluido: "Concluído",
+  recusado: "Recusado pelo parceiro",
+  cancelado: "Cancelado",
+};
+export const rotuloStatus = (s: string) => ROTULO_STATUS[s as StatusPedido] ?? s;
+
+/** A frase do próximo passo para quem está olhando (null = nada a fazer agora). */
+export function proximoPasso(status: string, papel: PapelNoPedido): string | null {
+  const cliente: Partial<Record<StatusPedido, string>> = {
+    solicitado: "Aguarde o orçamento do parceiro.",
+    orcado: "Confira o orçamento e aceite ou recuse.",
+    aceito: "Aguarde o parceiro confirmar o horário.",
+    agendado: "Serviço marcado. Combine os detalhes pelas mensagens.",
+    em_execucao: "O serviço está em andamento.",
+    entregue: "Confira a entrega e confirme a conclusão.",
+    concluido: "Avalie o serviço.",
+  };
+  const parceiro: Partial<Record<StatusPedido, string>> = {
+    solicitado: "Envie o orçamento ou recuse o pedido.",
+    orcado: "Aguarde o cliente decidir.",
+    aceito: "Confirme um dos horários.",
+    agendado: "No dia, marque o início do serviço.",
+    em_execucao: "Envie a entrega e marque como entregue.",
+    entregue: "Aguarde o cliente confirmar a conclusão.",
+    concluido: "Avalie o cliente.",
+  };
+  return (papel === "cliente" ? cliente : parceiro)[status as StatusPedido] ?? null;
+}

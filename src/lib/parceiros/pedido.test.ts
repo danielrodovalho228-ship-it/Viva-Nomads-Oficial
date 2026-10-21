@@ -116,3 +116,12 @@ test("lembrete de 24 h cai em exatamente uma rodada diária; aviso de conclusão
   assert.equal(precisaAvisoConclusao("entregue", "2026-10-14T12:00:00Z", AGORA), true);
   assert.equal(precisaAvisoConclusao("entregue", "2026-10-16T12:00:00Z", AGORA), false);
 });
+
+test("todo estado tem rótulo; próximo passo só nos estados em andamento", async () => {
+  const { ROTULO_STATUS, proximoPasso } = await import("./pedido.ts");
+  for (const s of STATUS_PEDIDO) assert.ok(ROTULO_STATUS[s], s);
+  assert.equal(proximoPasso("orcado", "cliente"), "Confira o orçamento e aceite ou recuse.");
+  assert.equal(proximoPasso("solicitado", "parceiro"), "Envie o orçamento ou recuse o pedido.");
+  assert.equal(proximoPasso("recusado", "cliente"), null);
+  assert.equal(proximoPasso("cancelado", "parceiro"), null);
+});

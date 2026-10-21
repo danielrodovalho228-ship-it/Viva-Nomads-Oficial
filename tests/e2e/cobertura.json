@@ -1366,6 +1366,16 @@
       "specs": [
         "t240-conferencia-provas-admin"
       ]
+    },
+    "/dashboard/servicos/pedidos/[id]": {
+      "personas": [
+        "proprietario",
+        "inquilino",
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
     }
   },
   "rotas": {
@@ -3975,6 +3985,198 @@
       ],
       "specs": [
         "t239-cartao-parceiro"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#solicitarOrcamento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#enviarOrcamento": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#recusarPedido": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#aceitarOrcamento": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#recusarOrcamento": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#cancelarPedido": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#confirmarHorario": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#proporOutroHorario": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#simularPagamento": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#iniciarExecucao": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#enviarEntrega": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#enviarDocumentoParceiro": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#marcarEntregue": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#concluirPedido": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#linkArquivoDoPedido": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#usarFotosNoAnuncio": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#avaliarPedido": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#enviarMensagemDoPedido": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#detalheDoPedido": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#meusPedidosDeServico": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#pedidosDoMeuParceiro": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#registrarVistaDoAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#cidadeDosMeusServicos": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
       ]
     }
   }

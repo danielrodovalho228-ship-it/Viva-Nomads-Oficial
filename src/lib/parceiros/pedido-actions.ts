@@ -25,6 +25,7 @@ import {
   podeSimularPagamento,
   provedorSimulado,
   STATUS_ABERTOS,
+  STATUS_COM_DADOS_LIBERADOS,
   tetoAtingido,
   textoTeto,
   validarOrcamento,
@@ -611,7 +612,7 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
   const parceiroUser = p.parceiros!.user_id;
   const [cli, imo, ent, msgs, avs, propostaParceiro] = await Promise.all([
     admin.from("profiles").select("full_name").eq("id", p.cliente_id).maybeSingle(),
-    p.property_id ? admin.from("properties").select("title, address, exact_address, city, area_m2, bedrooms, owner_id").eq("id", p.property_id).maybeSingle() : Promise.resolve({ data: null }),
+    p.property_id ? admin.from("properties").select("title, address, city, area_m2, bedrooms, owner_id").eq("id", p.property_id).maybeSingle() : Promise.resolve({ data: null }),
     admin.from("parceiro_entregas").select("id, legenda").eq("pedido_id", p.id).order("criado_em"),
     admin
       .from("messages")
@@ -624,9 +625,16 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
     admin.from("parceiro_avaliacoes").select("autor_id, nota, texto, status").eq("pedido_id", p.id),
     admin.from("parceiro_pedido_eventos").select("dados").eq("pedido_id", p.id).eq("tipo", "propor_horario").order("criado_em", { ascending: false }).limit(1).maybeSingle(),
   ]);
-  const im = imo.data as { title: string | null; address: string | null; exact_address: string | null; city: string | null; area_m2: number | null; bedrooms: number | null; owner_id: string } | null;
+  const im = imo.data as { title: string | null; address: string | null; city: string | null; area_m2: number | null; bedrooms: number | null; owner_id: string } | null;
   const nomeCliente = (cli.data as { full_name: string | null } | null)?.full_name ?? null;
-  const imovelBase = im ? { bairro: im.address, cidade: im.city, areaM2: im.area_m2, quartos: im.bedrooms, endereco: im.exact_address } : null;
+  // Endereço exato só é LIDO quando pode ser mostrado: ao cliente (o imóvel é dele ou da estadia dele) e ao parceiro
+  // depois do aceite. Antes disso a linha nem sai do banco.
+  let endereco: string | null = null;
+  if (im && p.property_id && (papel === "cliente" || (STATUS_COM_DADOS_LIBERADOS as readonly string[]).includes(p.status))) {
+    const { data: ex } = await admin.from("properties").select("exact_address").eq("id", p.property_id).maybeSingle(); // consistency-ignore: Prompt 31b — endereço exato só ao cliente e ao parceiro DEPOIS do aceite
+    endereco = (ex as { exact_address: string | null } | null)?.exact_address ?? null;
+  }
+  const imovelBase = im ? { bairro: im.address, cidade: im.city, areaM2: im.area_m2, quartos: im.bedrooms, endereco } : null;
   // Privacidade: o parceiro só vê endereço e nome completo depois do aceite.
   const visao = papel === "parceiro" ? visaoDoParceiro(p.status, imovelBase, { nomeCompleto: nomeCliente }) : { nome: nomeCliente ?? "Você", imovel: imovelBase };
   const avaliacoes = (avs.data ?? []) as { autor_id: string; nota: number; texto: string | null; status: string }[];
@@ -718,4 +726,15 @@ export async function registrarVistaDoAdmin(pedidoId: string): Promise<boolean> 
   if (!user || !(await ehAdmin(supabase, user.id))) return false;
   await logModeracao(supabase, user.id, "ver_pedido_parceiro", "parceiro_pedido", pedidoId);
   return true;
+}
+
+/** Cidade para a busca de parceiros: a do contrato ativo como morador ou a do imóvel mais recente da pessoa. */
+export async function cidadeDosMeusServicos(): Promise<string | null> {
+  const s = await sessao();
+  if ("erro" in s) return null;
+  const { data: k } = await s.admin.from("contratos").select("properties(city)").eq("tenant_id", s.userId).eq("status", "ativo").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const doContrato = (k as { properties?: { city?: string | null } | null } | null)?.properties?.city ?? null;
+  if (doContrato) return doContrato;
+  const { data: p } = await s.admin.from("properties").select("city").eq("owner_id", s.userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  return (p as { city?: string | null } | null)?.city ?? null;
 }
