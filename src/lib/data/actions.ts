@@ -3,7 +3,7 @@
 import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { gravarMarca } from "@/lib/marcas/servidor";
 import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
-import { atualizarRascunhoDoDono } from "@/lib/data/rascunho-dono";
+import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascunho-dono";
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
@@ -1926,15 +1926,17 @@ export async function saveDraftData(snap: {
     draft_data: snap.data as object,
   };
 
-  if (snap.id) {
-    const { atualizou, error } = await atualizarRascunhoDoDono(supabase, snap.id, user.id, fields);
+  // Anúncio novo (sem id): continua o rascunho vazio de menos de 72 h em vez de abrir outro igual (ordem 378c07c4).
+  const rascunhoId = snap.id || (await rascunhoVazioRecente(supabase, user.id));
+  if (rascunhoId) {
+    const { atualizou, error } = await atualizarRascunhoDoDono(supabase, rascunhoId, user.id, fields);
     if (error) return { ok: false, error: erroBancoPT(error as Parameters<typeof erroBancoPT>[0]) };
     // 0 linhas = rascunho de outro dono (ou já publicado): não liga foto nem qualificação.
-    if (!atualizou) return { ok: true, id: snap.id };
-    await sincronizarFotos(supabase, snap.id, user.id, urlsDoRascunho(snap.data));
-    await ligarQualificacaoAoImovel(supabase, user.id, snap.id);
-    await ligarMatriculaAoImovel(createAdminClient(), user.id, snap.id);
-    return { ok: true, id: snap.id };
+    if (!atualizou) return { ok: true, id: rascunhoId };
+    await sincronizarFotos(supabase, rascunhoId, user.id, urlsDoRascunho(snap.data));
+    await ligarQualificacaoAoImovel(supabase, user.id, rascunhoId);
+    await ligarMatriculaAoImovel(createAdminClient(), user.id, rascunhoId);
+    return { ok: true, id: rascunhoId };
   }
   const { data, error } = await supabase.from("properties").insert(fields).select("id").single();
   if (error) return { ok: false, error: erroBancoPT(error) };
