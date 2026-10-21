@@ -84,8 +84,12 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
   page.on("requestfailed", (r) => {
     // Pré-carregamento de link do Next (RSC, `?_rsc=`) cancelado pelo próprio navegador ao trocar de tela: não é erro da
     // página. Rodada 1 da t249 (21/10): era a única coisa no critério d, em todas as 16 telas, nos dois tamanhos.
-    if (r.failure()?.errorText === "net::ERR_ABORTED" && (/[?&]_rsc=/.test(r.url()) || r.headers()["rsc"] === "1")) return;
-    brutos.push(`requisição falhou: ${r.url()}`);
+    const motivo = r.failure()?.errorText ?? "?";
+    if (motivo === "net::ERR_ABORTED" && (/[?&]_rsc=/.test(r.url()) || r.headers()["rsc"] === "1")) return;
+    // Tipo, método e erro do navegador vão junto: a rodada 2 (21/10) acusou a URL da própria tela (sem `_rsc`) e só a URL
+    // não diz se é documento, ação do servidor (POST com next-action) ou outra coisa.
+    const acao = r.headers()["next-action"] ? ", ação do servidor" : "";
+    brutos.push(`requisição falhou (${r.resourceType()} ${r.method()}${acao}, ${motivo}): ${r.url()}`);
   });
   const ehExcecao = (t: string) => EXCECOES_TERCEIROS.some((x) => x.padrao.test(t));
   const limpa = (t: string) => t.replace(/\?.*$/, "").slice(0, 200); // sem query string (pode ter token/dado pessoal)
