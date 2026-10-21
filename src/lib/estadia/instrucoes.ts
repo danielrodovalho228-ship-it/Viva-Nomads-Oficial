@@ -48,6 +48,28 @@ export function instrucoesEfetivas(doImovel: Instrucoes | null, doContrato: stri
   return { ...(doImovel ?? {}), ...(sobrescrita ? { como_entrar: sobrescrita } : {}) };
 }
 
+/**
+ * O que o EDITOR do dono mostra (achado do QA, 21/10): exatamente o que está publicado para este contrato. Com o texto
+ * do contrato (combinação de check-in), "Como entrar" abre com ele — antes, o editor lia só o imóvel e abria vazio
+ * enquanto o morador via o texto do contrato.
+ */
+export function instrucoesParaEditar(doImovel: Instrucoes | null, doContrato: string | null | undefined): Instrucoes {
+  return instrucoesEfetivas(doImovel, doContrato) ?? {};
+}
+
+/**
+ * Para onde vai cada campo salvo: com texto do contrato, "Como entrar" volta para o contrato (só este contrato) e o
+ * "como entrar" do imóvel fica como estava; o resto vai para o imóvel (vale para as próximas estadias).
+ */
+export function separarSalvamento(
+  campos: Instrucoes,
+  doImovel: Instrucoes | null,
+  temTextoDoContrato: boolean,
+): { imovel: Instrucoes; comoEntrarDoContrato: string | null } {
+  if (!temTextoDoContrato) return { imovel: campos, comoEntrarDoContrato: null };
+  return { imovel: { ...campos, como_entrar: doImovel?.como_entrar ?? null }, comoEntrarDoContrato: (campos.como_entrar ?? "").trim() || null };
+}
+
 /** Dia (AAAA-MM-DD) em que as instruções ficam visíveis ao morador. */
 export function diaDaLiberacao(inicio: string | null): string | null {
   if (!inicio) return null;

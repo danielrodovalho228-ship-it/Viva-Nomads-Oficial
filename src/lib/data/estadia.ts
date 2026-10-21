@@ -29,7 +29,7 @@ import {
   type PeriodoEstadia,
   type TopoEstadia,
 } from "@/lib/estadia/estadia";
-import { instrucoesEfetivas, instrucoesLiberadas, instrucoesPreenchidas, normalizarInstrucoes, textoAntesDaLiberacao, type Instrucoes } from "@/lib/estadia/instrucoes";
+import { instrucoesEfetivas, instrucoesLiberadas, instrucoesParaEditar, instrucoesPreenchidas, normalizarInstrucoes, textoAntesDaLiberacao, type Instrucoes } from "@/lib/estadia/instrucoes";
 import { blocoIniciado, linhaDoHistorico, mesesNaoIniciados, type BlocoAtual, type MudancasAditivo } from "@/lib/estadia/aditivo";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -98,13 +98,14 @@ export function assinadoPelasDuas(c: Pick<LinhaContratoEstadia, "assinado_propri
 }
 
 /** Instruções do imóvel com a sobrescrita do contrato (contratos_checkin.instrucoes). */
-export async function lerInstrucoes(admin: SupabaseClient, c: LinhaContratoEstadia): Promise<{ doImovel: Instrucoes | null; efetivas: Instrucoes | null }> {
+export async function lerInstrucoes(admin: SupabaseClient, c: LinhaContratoEstadia): Promise<{ doImovel: Instrucoes | null; efetivas: Instrucoes | null; doContrato: string | null }> {
   const [{ data: im }, { data: ck }] = await Promise.all([
     admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id).maybeSingle(),
     admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", c.id).maybeSingle(),
   ]);
   const doImovel = im ? normalizarInstrucoes(im as Record<string, unknown>) : null;
-  return { doImovel, efetivas: instrucoesEfetivas(doImovel, (ck as { instrucoes?: string | null } | null)?.instrucoes ?? null) };
+  const doContrato = ((ck as { instrucoes?: string | null } | null)?.instrucoes ?? "").trim() || null;
+  return { doImovel, efetivas: instrucoesEfetivas(doImovel, doContrato), doContrato };
 }
 
 export interface OcupanteView {
@@ -149,7 +150,8 @@ export interface EstadiaView {
   ocupantesPrevistos: number;
   capacidade: number;
   podeEditarOcupantes: boolean;
-  instrucoes: { liberadas: boolean; texto: string; campos: Instrucoes | null };
+  /** campos: o que o morador vê; para o dono, o que o editor abre (o publicado, com o texto do contrato). */
+  instrucoes: { liberadas: boolean; texto: string; campos: Instrucoes | null; comoEntrarDoContrato: boolean };
   nota: string;
   aditivos: AditivoView[];
   encerramento: { id: string; motivo: string; status: string; criadoEm: string; texto: string | null } | null;
@@ -286,7 +288,9 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
     instrucoes: {
       liberadas,
       texto: liberadas ? "" : textoAntesDaLiberacao({ inicio: periodo.inicio, assinadoPelasDuas: ambos, primeiroPagamento: primeiro }),
-      campos: liberadas ? (papel === "proprietario" ? instr.doImovel : instr.efetivas) : null,
+      // Dono: o editor abre com o PUBLICADO (achado do QA, 21/10: abria só com o imóvel e ficava vazio).
+      campos: liberadas ? (papel === "proprietario" ? instrucoesParaEditar(instr.doImovel, instr.doContrato) : instr.efetivas) : null,
+      comoEntrarDoContrato: papel === "proprietario" && !!instr.doContrato,
     },
     nota: (nota as { texto?: string } | null)?.texto ?? "",
     aditivos,

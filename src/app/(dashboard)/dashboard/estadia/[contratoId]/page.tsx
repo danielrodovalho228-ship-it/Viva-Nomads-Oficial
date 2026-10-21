@@ -134,7 +134,7 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
 
       <Panel title="Instruções de chegada" id="instrucoes" data-testid="estadia-instrucoes">
         {dono ? (
-          <EditorInstrucoes propertyId={e.imovel.id} inicial={e.instrucoes.campos ?? {}} />
+          <EditorInstrucoes propertyId={e.imovel.id} contratoId={e.id} inicial={e.instrucoes.campos ?? {}} comoEntrarDoContrato={e.instrucoes.comoEntrarDoContrato} />
         ) : e.instrucoes.liberadas && e.instrucoes.campos ? (
           <dl className="space-y-3" data-testid="instrucoes-liberadas">
             {CAMPOS_INSTRUCOES.filter((c) => (e.instrucoes.campos?.[c.chave] ?? "").trim()).map((c) => (
