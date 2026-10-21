@@ -28,6 +28,7 @@ import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarD
 import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos } from "@/lib/estadia/ocupantes";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { conferenciasParaFechar, type ConferenciaAberta } from "@/lib/fiscal/fechamento";
+import { precalcularTempos } from "@/lib/data/tempos";
 
 /**
  * Automações por data (ordem d250ea2f, item 5): rascunho de imóvel parado (1 e 3 dias), lembrete de saída (3 dias),
@@ -249,7 +250,10 @@ export async function GET(request: Request) {
   // Documentos (Prompt 56, D5): a conferência de entrada e a de saída fecham quando a janela de 48 h do tipo encerra
   // (hash de fechamento + CND, registrando quem não respondeu). Na simulação, só conta.
   const conferenciasFechadas = await fecharConferenciasVencidas(admin, agora, simular).catch(() => 0);
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas });
+  // Tempo até o trabalho (Prompt 37): destinos ativos e pedidos com destino — pares que faltam ou com +30 dias.
+  // Na simulação, só conta.
+  const tempos = await precalcularTempos(admin, simular).catch(() => ({ temposCalculados: 0, temposFaltando: 0 }));
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos });
 }
 
 /** Retenção dos ocupantes (90 dias depois do fim) e aditivos vencidos. `simular`: só conta, não apaga nem muda nada. */

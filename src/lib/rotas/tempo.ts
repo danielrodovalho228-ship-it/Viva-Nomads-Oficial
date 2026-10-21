@@ -124,3 +124,14 @@ export function rotuloLimpo(texto: string): string {
     .filter((p) => p && !/^(brasil|brazil)$/i.test(p) && /[a-zà-ú]/i.test(p));
   return partes.slice(0, 3).join(", ").slice(0, 80);
 }
+
+/**
+ * Há provedor para o meio, dado o ambiente? Sem token (ou com o ônibus desligado), não: quem chama cai para a linha
+ * reta. No laboratório, só com o rotas-falso (LAB_ROTAS_URL).
+ */
+export function provedorNoAmbiente(env: Record<string, string | undefined>, modo: ModoRota, simulado: boolean): boolean {
+  const onibus = env.ROTAS_ONIBUS_ATIVO === "on";
+  if (simulado) return Boolean(env.LAB_ROTAS_URL) && (modo !== "onibus" || onibus);
+  if (modo === "onibus") return onibus && Boolean(env.GOOGLE_ROUTES_API_KEY);
+  return Boolean(env.MAPBOX_SERVER_TOKEN || env.NEXT_PUBLIC_MAPBOX_TOKEN);
+}

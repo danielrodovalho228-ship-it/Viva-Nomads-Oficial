@@ -78,3 +78,32 @@ test("GUARDA: o módulo de tempo é puro (nada de rede, banco ou window)", () =>
   const src = readFileSync(new URL("./tempo.ts", import.meta.url), "utf8");
   assert.doesNotMatch(src, /fetch\(|supabase|window\.|process\.env/);
 });
+
+test("sem token ou com o provedor fora, não há minutos: cai para a linha reta", async () => {
+  const { provedorNoAmbiente } = await import("./tempo.ts");
+  assert.equal(provedorNoAmbiente({}, "carro", false), false);
+  assert.equal(provedorNoAmbiente({ NEXT_PUBLIC_MAPBOX_TOKEN: "pk.x" }, "carro", false), true);
+  assert.equal(provedorNoAmbiente({ NEXT_PUBLIC_MAPBOX_TOKEN: "pk.x" }, "onibus", false), false, "ônibus só com a chave ligada");
+  assert.equal(provedorNoAmbiente({ ROTAS_ONIBUS_ATIVO: "on" }, "onibus", false), false, "e com a chave do Google");
+  assert.equal(provedorNoAmbiente({ ROTAS_ONIBUS_ATIVO: "on", GOOGLE_ROUTES_API_KEY: "k" }, "onibus", false), true);
+  assert.equal(provedorNoAmbiente({ NEXT_PUBLIC_MAPBOX_TOKEN: "pk.x" }, "carro", true), false, "no laboratório nada sai para a rede");
+  assert.equal(provedorNoAmbiente({ LAB_ROTAS_URL: "http://127.0.0.1:3998" }, "a_pe", true), true);
+  // O dado: sem provedor, o servidor usa rotuloReta — que nunca fala em minutos.
+  const src = readFileSync(new URL("../data/tempos.ts", import.meta.url), "utf8");
+  assert.match(src, /rotuloReta\(/);
+  assert.match(src, /if \(faltam\.length === 0 \|\| !provedorDisponivel\(modo\)\) return 0;/);
+});
+
+test("PRIVACIDADE: as rotas de tempo nunca devolvem coordenada nem metros", () => {
+  for (const rota of ["../../app/api/tempos/route.ts", "../../app/api/tempos/imovel/[id]/route.ts"]) {
+    const src = readFileSync(new URL(rota, import.meta.url), "utf8");
+    const respostas = [...src.matchAll(/NextResponse\.json\(([\s\S]*?)\{ (?:status|headers)/g)].map((m) => m[1]).join("\n");
+    assert.ok(respostas.length > 0, rota);
+    assert.doesNotMatch(respostas, /\b(lat|lng|lat_exata|lng_exata|metros|ponto)\b/, `${rota} devolve só textos arredondados`);
+  }
+  const dados = readFileSync(new URL("../data/tempos.ts", import.meta.url), "utf8");
+  const tela = dados.slice(dados.indexOf("export interface TempoNaTela"), dados.indexOf("export async function destinosAtivos"));
+  assert.doesNotMatch(tela, /\b(lat|lng|metros)\b/, "TempoNaTela não carrega coordenada nem metros");
+  // A linha reta da tela é medida sobre o ponto público (aproximado), nunca o exato.
+  assert.match(dados, /rotuloReta\(metrosEntre\(\{ lat: Number\(p\.lat\), lng: Number\(p\.lng\) \}/);
+});
