@@ -949,7 +949,9 @@
       "personas": [
         "socio"
       ],
-      "specs": []
+      "specs": [
+        "t252-dev-emails"
+      ]
     },
     "/empresas": {
       "personas": [
