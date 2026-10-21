@@ -86,8 +86,9 @@ test.describe("T260 — Documentos: registro único e /conferir (Prompt 56)", ()
     expect(reg).toHaveLength(2);
     for (const r of reg!) expect(r).toMatchObject({ prefixo: "PRV", status: "valido" });
     const { data: ct } = await adm().from("documentos_registro").select("prefixo, numero, registro_seq").eq("ref_tabela", "contratos").eq("ref_id", ids.contrato!);
-    expect(ct).toHaveLength(1);
-    expect(ct![0].prefixo).toBe("VN-CT");
+    // O PRV também aponta para o contrato (ref = contrato); o legado é um VN-CT só.
+    expect(ct!.filter((r) => r.prefixo === "VN-CT"), "o contrato legado tem um único registro").toHaveLength(1);
+    expect(ct!.filter((r) => r.prefixo === "PRV").map((r) => r.numero)).toEqual(expect.arrayContaining([a.numero, b.numero]));
     await m.context().close();
   });
 
