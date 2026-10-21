@@ -74,8 +74,11 @@ export default async function AdminContratoPage({ params }: { params: Promise<{ 
             {c.assinaturas.length === 0 && <li className="text-muted">Nenhuma assinatura ainda.</li>}
             {c.assinaturas.map((a) => (
               <li key={a.papel} className="break-words">
-                {PARTE[a.papel]} assinou em {dataHoraBRT(a.em)} —{" "}
-                <span className={a.igual ? "text-forest" : "text-red-700"}>{a.igual ? "hash igual ao resumo atual" : "hash diferente do resumo atual"}</span>
+                {PARTE[a.papel]} assinou em {dataHoraBRT(a.em)}
+                <span className="block break-all text-xs text-muted">Hash do resumo assinado: {a.hash}</span>
+                <span data-estado-hash={a.comparacao.estado} className={a.comparacao.estado === "diferente" ? "text-red-700" : "text-forest"}>
+                  {a.comparacao.texto}
+                </span>
               </li>
             ))}
           </ul>
