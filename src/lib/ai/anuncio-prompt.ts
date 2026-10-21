@@ -91,7 +91,8 @@ const RE_TEL = /(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?9?\d{4}[-\s]?\d{4}/g;
 
 /** Há contato (telefone/e-mail/URL) no texto? (defesa em profundidade.) */
 export function contemContato(texto: string): boolean {
-  return RE_EMAIL.test(texto) || RE_URL.test(texto) || RE_TEL.test(texto);
+  // Cópias sem a flag "g": regex global guarda lastIndex entre chamadas e o mesmo texto dava true/false alternado.
+  return [RE_EMAIL, RE_URL, RE_TEL].some((re) => new RegExp(re.source, re.flags.replace("g", "")).test(texto));
 }
 
 /** Remove qualquer contato que escape para o texto gerado (best-effort). */
