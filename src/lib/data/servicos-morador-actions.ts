@@ -5,21 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { erroBancoPT } from "@/lib/erros-banco";
-import { consumirLimite } from "@/lib/limites";
-import { fotoDoServico } from "@/config/fotos-servicos";
-import { proximosEstados, servicoAceitaPedido, servicosDoInquilino, type EstadoPedidoServico } from "@/lib/servicos-morador";
-
-export interface ServicoView {
-  id: string;
-  nome: string;
-  /** Linha curta do cartão. */
-  resumo: string;
-  descricao: string;
-  /** Foto da categoria (4:3). Sem foto, o cartão não aparece. */
-  foto: { src: string; alt: string };
-  /** false = "Em breve": sem parceiro aprovado (ou o pedido do 31b ainda não está no ar). */
-  aceitaPedido: boolean;
-}
+import { proximosEstados, type EstadoPedidoServico } from "@/lib/servicos-morador";
 
 export interface PedidoServicoView {
   id: string;
@@ -43,66 +29,6 @@ interface Resultado {
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * Catálogo do morador (tela S1): só as categorias pagas pelo INQUILINO (o Plano de manutenção do dono fica fora) e só
- * as que já têm foto — cartão sem foto não aparece (nada de ícone no lugar).
- */
-export async function catalogoServicosMorador(): Promise<ServicoView[]> {
-  const supabase = await createClient();
-  if (!supabase) return [];
-  const { data } = await supabase
-    .from("servicos_adicionais")
-    .select("id, nome, resumo, descricao, quem_paga, parceiro_nome, status")
-    .order("nome");
-  const lista = servicosDoInquilino((data ?? []) as { id: string; nome: string; resumo: string | null; descricao: string; quem_paga: string; parceiro_nome: string | null; status: string }[]);
-  return lista.flatMap((s) => {
-    const foto = fotoDoServico(String(s.id));
-    if (!foto) return [];
-    return [
-      {
-        id: String(s.id),
-        nome: String(s.nome),
-        resumo: String(s.resumo ?? s.descricao),
-        descricao: String(s.descricao),
-        foto,
-        aceitaPedido: servicoAceitaPedido(s),
-      },
-    ];
-  });
-}
-
-/** "Avise-me quando estiver disponível" (cartão "Em breve"). Quem pede vem da sessão; uma linha por pessoa e categoria. */
-export async function avisarServicoDisponivel(servicoId: string): Promise<Resultado> {
-  if (typeof servicoId !== "string" || !/^[a-z0-9_]{2,60}$/.test(servicoId)) return { ok: false, error: "Serviço não encontrado." };
-  const supabase = await createClient();
-  if (!supabase) return { ok: false, error: "Indisponível no modo demonstração." };
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Entre na sua conta para receber o aviso." };
-  if (!(await consumirLimite(`aviso-servico:${user.id}`, 20, 3600))) return { ok: false, error: "Muitas tentativas. Tente de novo mais tarde." };
-  const { data: servico } = await supabase.from("servicos_adicionais").select("id, quem_paga").eq("id", servicoId).maybeSingle();
-  if (!servico || servico.quem_paga !== "inquilino") return { ok: false, error: "Serviço não encontrado." };
-  const { error } = await supabase
-    .from("interesse_servico")
-    .upsert({ user_id: user.id, servico_id: servicoId }, { onConflict: "user_id,servico_id", ignoreDuplicates: true });
-  if (error) return { ok: false, error: "Não foi possível registrar agora. Tente novamente." };
-  return { ok: true };
-}
-
-/** O contrato ativo do morador (a tela só vale para quem tem; contrato e imóvel vão pré-preenchidos no pedido do 31b). */
-export async function contratoAtivoDoMorador(): Promise<{ contratoId: string; propertyId: string } | null> {
-  const supabase = await createClient();
-  if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase.from("contratos").select("id, property_id").eq("tenant_id", user.id).eq("status", "ativo").limit(1);
-  const c = (data ?? [])[0] as { id: string; property_id: string } | undefined;
-  return c ? { contratoId: c.id, propertyId: c.property_id } : null;
-}
 
 const paraView = (p: Record<string, unknown>): PedidoServicoView => ({
   id: String(p.id),

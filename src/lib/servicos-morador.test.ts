@@ -1,6 +1,6 @@
 /*
-  Serviços para o morador (ordem 521c5af7): serviço sem parceiro não aceita pedido (o pedido S2 e o acompanhamento
-  S3 viram o 31b), estados do admin e a migração 0174 (RLS: o morador só vê os próprios pedidos).
+  Serviços para o morador (ordem 521c5af7): estados do admin e a migração 0174 (RLS: o morador só vê os próprios
+  pedidos). O pedido e o acompanhamento são os do Prompt 31b (parceiro_pedidos).
   Roda: node --experimental-strip-types --test src/lib/servicos-morador.test.ts
 */
 import assert from "node:assert/strict";
@@ -11,19 +11,7 @@ import {
   codigoDoPedido,
   proximosEstados,
   rotuloEstado,
-  servicoAceitaPedido,
 } from "./servicos-morador.ts";
-
-const comParceiro = { id: "limpeza", status: "ativo", parceiro_nome: "Limpa Bem", preco_texto: "R$ 120 por visita" };
-
-test("serviço sem parceiro ou 'em breve' não aceita pedido (e nenhum aceita antes do 31b no ar)", () => {
-  assert.equal(servicoAceitaPedido(comParceiro), false, "o pedido do 31b ainda não está no ar");
-  assert.equal(servicoAceitaPedido(comParceiro, true), true);
-  assert.equal(servicoAceitaPedido({ ...comParceiro, parceiro_nome: null }, true), false);
-  assert.equal(servicoAceitaPedido({ ...comParceiro, parceiro_nome: "   " }, true), false);
-  assert.equal(servicoAceitaPedido({ ...comParceiro, status: "em_breve" }, true), false);
-  assert.equal(servicoAceitaPedido({ ...comParceiro, status: "inativo" }, true), false);
-});
 
 test("estados, código do pedido e nota de pagamento direto", () => {
   assert.equal(rotuloEstado("enviado"), "Pedido enviado");
