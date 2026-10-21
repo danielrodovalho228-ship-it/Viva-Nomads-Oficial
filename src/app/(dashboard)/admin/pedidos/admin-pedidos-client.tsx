@@ -13,6 +13,7 @@ import { moderarPedido, reativarPedido } from "@/lib/data/pedidos-admin";
 import { MotivoDialog } from "@/components/admin/motivo-dialog";
 import { dataPedidoBR, textoBairros, textoFaixaValor } from "@/lib/pedidos/campos";
 import type { ColunasPedidoAdmin } from "@/lib/data/pedidos-admin-colunas";
+import { abasPedidos, filtrarPedidosAdmin } from "@/lib/admin/pedidos-filtro";
 
 type Pedido = {
   id: string;
@@ -60,7 +61,11 @@ export function AdminPedidosClient({
   filtroUrl: { de: string; ate: string; cidade: string | null; status: string | null; expirando: boolean };
 }) {
   const router = useRouter();
-  const lista = pedidos as unknown as Pedido[];
+  const todos = pedidos as unknown as Pedido[];
+  const [q, setQ] = useState("");
+  const [aba, setAba] = useState("todos");
+  const abas = abasPedidos(todos);
+  const lista = filtrarPedidosAdmin(todos, { q, aba });
   const [busy, setBusy] = useState<string | null>(null);
   const [erro, setErro] = useState<Record<string, string>>({});
   const [ocultando, setOcultando] = useState<Pedido | null>(null);
@@ -112,10 +117,37 @@ export function AdminPedidosClient({
         <strong data-testid="lista-total">{lista.length}</strong> {lista.length === 1 ? "pedido" : "pedidos"} nesta lista
         {rotuloFiltro ? ` · ${rotuloFiltro}` : ""}
       </p>
+      <div className="mb-3 grid gap-2" data-testid="pedidos-busca-abas">
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          maxLength={60}
+          placeholder="Buscar por nome, cidade ou bairro"
+          aria-label="Buscar pedidos"
+          className="min-h-11 w-full rounded-xl border border-line px-3 py-2 text-sm text-ink"
+          data-testid="pedidos-busca"
+        />
+        <div role="tablist" aria-label="Situação do pedido" className="flex flex-wrap gap-2">
+          {abas.map((a) => (
+            <button
+              key={a.valor}
+              type="button"
+              role="tab"
+              aria-selected={aba === a.valor}
+              onClick={() => setAba(a.valor)}
+              className={cn("min-h-11 rounded-full border px-3 text-sm", aba === a.valor ? "border-forest bg-sage-100 font-semibold text-forest" : "border-line text-ink")}
+              data-testid={`pedidos-aba-${a.valor}`}
+            >
+              {a.rotulo} ({a.total})
+            </button>
+          ))}
+        </div>
+      </div>
       <Panel className="p-0 pt-6">
         <div className="overflow-x-auto px-6 pb-6">
           {lista.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted">Nenhum pedido no sistema.</p>
+            <p className="py-8 text-center text-sm text-muted">{todos.length === 0 ? "Nenhum pedido no sistema." : "Nenhum pedido com esse filtro."}</p>
           ) : (
             <table className="w-full min-w-[960px] text-sm">
               <thead className="text-left text-muted">
