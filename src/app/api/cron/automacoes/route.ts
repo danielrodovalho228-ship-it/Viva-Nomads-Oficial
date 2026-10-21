@@ -7,6 +7,7 @@ import { notify, type NotificationEvent } from "@/lib/notifications";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { expirarVencidas } from "@/lib/data/propostas-servidor";
 import { STATUS_ABERTOS, daVez, venceEm24h, type Autor } from "@/lib/propostas/regras";
+import { limparSombra } from "@/lib/data/ranking";
 import {
   avisoAnuncioIncompleto,
   avisarRenovacao,
@@ -165,5 +166,7 @@ export async function GET(request: Request) {
   const documentosSemFila = await avisarDocumentosOrfaos(admin, agora, simular);
   // Cartões compartilháveis: cartão-postal depois da saída e cartão de todo anúncio publicado (nunca no simulado).
   const cartoes = simular ? null : await gerarCartoesAutomaticos(admin, hoje).catch(() => null);
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila });
+  // Ordem dos imóveis (Prompt 33): o modo sombra guarda 30 dias, sem dados pessoais (nunca no simulado).
+  const sombraApagada = simular ? 0 : await limparSombra(admin).catch(() => 0);
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada });
 }
