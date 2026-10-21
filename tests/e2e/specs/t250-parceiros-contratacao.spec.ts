@@ -153,7 +153,7 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
       { name: "sala.png", mimeType: "image/png", buffer: pngDeTeste(1) },
       { name: "quarto.png", mimeType: "image/png", buffer: pngDeTeste(2) },
     ]);
-    await p.getByTestId("pedido-enviar-entrega").getByRole("button", { name: "Enviar" }).click();
+    await p.getByTestId("pedido-enviar-entrega").getByRole("button", { name: "Enviar", exact: true }).click();
     await expect(p.getByTestId("pedido-entrega")).toContainText("sala.png", { timeout: 30_000 });
     await p.getByTestId("pedido-marcar-entregue").click();
     await expect(p.getByTestId("pedido-status")).toHaveText("Entregue", { timeout: 20_000 });
