@@ -350,6 +350,11 @@ test('/buscar: o campo "Descreva o lugar ideal" é pill como a busca do cabeçal
 
 test("rodapé: títulos de coluna 14/600, sem caixa alta nem tracking", () => {
   const r = ler("components/layout/footer.tsx");
-  assert.match(r, /<h2 className="mb-4 font-title text-sm font-semibold text-white">/);
-  assert.doesNotMatch(r, /uppercase|tracking-/);
+  assert.match(r, /<h2 className="mb-4 text-sm font-semibold text-white">/);
+  assert.doesNotMatch(r, /uppercase|tracking-|font-title|font-bold|gradient/);
+  // Veredito do #953 (opção b): fundo escuro mantido, sem a faixa de marca no topo (nem gradiente nem substituto).
+  assert.match(r, /<footer className="mt-auto bg-night /);
+  assert.doesNotMatch(r, /className="h-1 w-full/);
+  // Textos de apoio: só /60–/80; /50 só no miúdo.
+  for (const m of r.matchAll(/text-white\/(\d+)/g)) assert.ok(Number(m[1]) >= 50, m[0]);
 });

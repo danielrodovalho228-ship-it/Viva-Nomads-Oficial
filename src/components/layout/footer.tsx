@@ -8,8 +8,6 @@ import { RedesOficiais } from "@/components/layout/redes-oficiais";
 export function Footer() {
   return (
     <footer className="mt-auto bg-night text-white/70">
-      {/* fio de marca no topo (liso: sem gradiente em tela do produto, adendo do Prompt 40) */}
-      <div className="h-1 w-full bg-forest" />
       <div className="container-page grid gap-12 py-16 md:grid-cols-4">
         <div className="md:col-span-1">
           <Logo href="/" light />
@@ -74,7 +72,7 @@ function FooterCol({ title, children }: { title: string; children: React.ReactNo
     <div>
       {/* QA do Prompt 40: título de coluna 14/600, capitalização normal, sem caixa alta nem tracking largo.
           A cor é a tinta do rodapé (branco): o #222 some sobre o fundo #0A0A0A (contraste ~1,2:1). */}
-      <h2 className="mb-4 font-title text-sm font-semibold text-white">
+      <h2 className="mb-4 text-sm font-semibold text-white">
         {title}
       </h2>
       <ul className="space-y-3 text-sm">{children}</ul>
