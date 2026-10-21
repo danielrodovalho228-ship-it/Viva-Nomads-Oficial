@@ -54,22 +54,19 @@ test("nota fixa: os dois textos no mesmo lugar, escolhidos pela chave PAGAMENTO_
   assert.match(ler("../app/(dashboard)/dashboard/servicos/page.tsx"), /notaPagamentoServicos\(PAGAMENTO_PARCEIROS_ATIVO\)/);
 });
 
-test("'Meus pedidos' só com o estado vazio até o 31b; nada de formulário de pedido nem lista paralela", () => {
+test("'Meus pedidos' (Prompt 31b): os pedidos de parceiro do cliente; o catálogo antigo não é mais lido pela tela", () => {
   assert.equal(MEUS_PEDIDOS_VAZIO, "Quando você pedir um serviço, ele aparece aqui com o andamento.");
   const pagina = ler("../app/(dashboard)/dashboard/servicos/page.tsx");
-  assert.match(pagina, /\{MEUS_PEDIDOS_VAZIO\}/);
-  assert.doesNotMatch(pagina + ler(CATALOGO), /pedirServico|meusPedidosServico|type="date"|servico-form/);
+  assert.match(pagina, /text=\{MEUS_PEDIDOS_VAZIO\}/);
+  assert.match(pagina, /meusPedidosDeServico\(\)/);
+  assert.doesNotMatch(pagina, /catalogoServicosMorador|servicos_adicionais|CatalogoServicos/);
+  assert.equal(existsSync(fileURLToPath(new URL(CATALOGO, import.meta.url))), false, "o catálogo antigo saiu da tela");
   assert.doesNotMatch(ler("./data/servicos-morador-actions.ts"), /export async function (pedirServico|meusPedidosServico)/);
-  assert.equal(existsSync(fileURLToPath(new URL("../app/(dashboard)/dashboard/servicos/pedidos-servico.tsx", import.meta.url))), false);
-  // Com parceiro aprovado (31b no ar), o cartão leva ao pedido com contrato e imóvel preenchidos.
+  // Regra antiga preservada (sem uso novo).
   assert.equal(hrefPedidoServico("limpeza", "c1", "p1"), "/dashboard/servicos/pedido?servico=limpeza&contrato=c1&imovel=p1");
 });
 
 test("guarda: cartão de categoria só com FOTO (sem foto não aparece; nenhum ícone no lugar)", () => {
-  const cat = ler(CATALOGO);
-  assert.doesNotMatch(cat, /lucide-react/, "nenhum ícone no catálogo");
-  assert.match(cat, /<Image src=\{s\.foto\.src\} alt=\{s\.foto\.alt\}/);
-  assert.match(cat, /grid grid-cols-2 gap-3 lg:grid-cols-4/, "grade par: 2 a 390 px, 4 a 1280 px");
   const acoes = ler("./data/servicos-morador-actions.ts");
   assert.match(acoes, /const foto = fotoDoServico\(String\(s\.id\)\);\s*if \(!foto\) return \[\];/);
   // Toda foto declarada existe em public/images/servicos, em webp.

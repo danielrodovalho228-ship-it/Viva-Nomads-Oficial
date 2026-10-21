@@ -22,7 +22,7 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 /**
  * Serviços (Prompt 31b, item 7): a porta dos parceiros nos painéis do morador e do dono — categorias → parceiros
  * publicados na cidade → página do parceiro → "Solicitar orçamento" — e "Meus pedidos" com o estado e o próximo passo.
- * O catálogo antigo (servicos_adicionais) ficou obsoleto: esta tela não lê mais dele.
+ * O catálogo antigo do morador ficou obsoleto: esta tela não lê mais dele.
  */
 export default async function ServicosPage() {
   const [cidade, pedidos] = await Promise.all([cidadeDosMeusServicos(), meusPedidosDeServico()]);

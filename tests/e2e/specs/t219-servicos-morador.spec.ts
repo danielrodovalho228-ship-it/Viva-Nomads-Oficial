@@ -1,17 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { FOTOS_SERVICOS } from "../../../src/config/fotos-servicos";
 
 /**
- * T219 — Serviços do morador (ordem 521c5af7 + complemento do coordenador, reteste do #869). 390 e 1280 px.
- * S1: catálogo em grade par (2 colunas a 390 px, 4 a 1280 px) só com as categorias do INQUILINO que já têm FOTO;
- * cartão "Em breve" abre o "Avise-me quando estiver disponível" (grava em interesse_servico); nota fixa pela chave;
- * "Meus pedidos" só com o estado vazio (o pedido e o acompanhamento chegam com o 31b); o Plano de manutenção do dono
- * não aparece; nenhum cartão sem foto (nada de ícone no lugar).
+ * T219 — Serviços do morador e do dono (ordem 521c5af7; desde o Prompt 31b, a fusão com os parceiros). 390 e 1280 px.
+ * A tela não mostra mais o catálogo antigo (servicos_adicionais, obsoleto): mostra as categorias de parceiros da cidade
+ * (link para /parceiros/buscar), a nota fixa pela chave e "Meus pedidos" (vazio sem pedidos). Nenhum formulário de
+ * data na tela; o pedido é feito na página do parceiro (t249). O banco antigo continua com os nomes acentuados.
  */
-const COM_FOTO = Object.keys(FOTOS_SERVICOS);
-
-test.describe("T219 — Serviços do morador: catálogo com foto, Em breve → avise-me", () => {
+test.describe("T219 — Serviços: categorias de parceiros e Meus pedidos", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -53,49 +49,26 @@ test.describe("T219 — Serviços do morador: catálogo com foto, Em breve → a
   });
 
   for (const largura of [390, 1280]) {
-    test(`S1 a ${largura}px: só cartões com foto, grade par, nota fixa e Meus pedidos vazio`, async ({ browser }) => {
+    test(`a ${largura}px: categorias de parceiros na cidade, nota fixa e Meus pedidos vazio; sem catálogo antigo`, async ({ browser }) => {
       test.setTimeout(120_000);
       const page = await entrar(browser, inq.email, senha);
       await page.setViewportSize({ width: largura, height: largura > 500 ? 900 : 844 });
       await page.goto("/dashboard/servicos", { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { name: "Serviços", level: 1 })).toBeVisible({ timeout: 30_000 });
       await expect(page.getByText("Você paga direto ao prestador. A Viva indica parceiros e acompanha o pedido.").first()).toBeVisible();
-      await expect(page.getByTestId("servicos-pedidos-vazio")).toHaveText("Quando você pedir um serviço, ele aparece aqui com o andamento.");
+      await expect(page.getByTestId("servicos-pedidos")).toContainText("Quando você pedir um serviço, ele aparece aqui com o andamento.");
       await expect(page.locator('[data-testid="servico-form"], input[type="date"]')).toHaveCount(0);
-      // O Plano de manutenção do dono não aparece para o inquilino.
-      await expect(page.getByTestId("servico-plano_manutencao")).toHaveCount(0);
+      // Catálogo antigo fora: nem os cartões nem o Plano de manutenção do dono.
+      await expect(page.getByTestId("servico-cartao")).toHaveCount(0);
       await expect(page.locator("main")).not.toContainText("Plano de manutenção");
-      // Só aparece cartão com foto: um por foto pronta, cada um com a imagem e sem ícone no lugar.
-      const cartoes = page.getByTestId("servico-cartao");
-      await expect(cartoes).toHaveCount(COM_FOTO.length);
-      for (let i = 0; i < COM_FOTO.length; i++) {
-        await expect(cartoes.nth(i).getByTestId("servico-foto")).toBeVisible();
-        expect(await cartoes.nth(i).locator("svg").count()).toBe(0);
-      }
-      if (COM_FOTO.length === 0) await expect(page.getByTestId("servicos-vazio")).toBeVisible();
-      else {
-        // Grade par: 2 colunas a 390 px, 4 a 1280 px.
-        const colunas = await page.getByTestId("servicos-lista").evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").length);
-        expect(colunas).toBe(largura > 1000 ? 4 : 2);
-      }
+      // Categorias de parceiros com a cidade da estadia.
+      const limpeza = page.getByTestId("servicos-limpeza");
+      await expect(limpeza).toBeVisible();
+      expect(await limpeza.getAttribute("href")).toMatch(/^\/parceiros\/buscar\?categoria=limpeza&cidade=Uberl/);
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(sobra, "rolagem horizontal").toBeLessThanOrEqual(1);
       await page.screenshot({ path: `tests/laboratorio/saida/t219-servicos-${largura}.png`, fullPage: true });
       await page.context().close();
     });
   }
-
-  test("cartão 'Em breve' → 'Avise-me quando estiver disponível' gravado (quando as fotos estiverem prontas)", async ({ browser }) => {
-    test.skip(COM_FOTO.length === 0, "Aguarda as 4 fotos do Moacir (public/images/servicos): sem foto, o cartão não aparece.");
-    const page = await entrar(browser, inq.email, senha);
-    await page.goto("/dashboard/servicos", { waitUntil: "domcontentloaded" });
-    const id = COM_FOTO[0];
-    await page.getByTestId(`servico-${id}`).getByTestId("servico-cartao").click();
-    await expect(page.getByTestId("servico-aviseme")).toBeVisible();
-    await page.getByTestId("servico-aviseme-enviar").click();
-    await expect(page.getByTestId("servico-aviseme-ok")).toBeVisible({ timeout: 20_000 });
-    const { data } = await adm().from("interesse_servico").select("servico_id").eq("user_id", ids.inq!);
-    expect((data ?? []).map((r) => r.servico_id)).toContain(id);
-    await page.context().close();
-  });
 });
