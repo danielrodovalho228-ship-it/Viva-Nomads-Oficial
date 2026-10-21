@@ -115,7 +115,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
   return (
     <>
       <PageTitle
-        title={`Proposta ${p.numero}`}
+        title={`Proposta ${p.registro?.numero ?? p.numero}`}
         subtitle={`${p.imovel.titulo} · ${p.papel === "owner" ? "Interessado" : "Proprietário"}: ${p.outraParte}`}
         action={
           <Button variant="secondary" size="sm" onClick={() => window.print()} data-testid="proposta-pdf">
@@ -123,6 +123,12 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
           </Button>
         }
       />
+
+      {/* Prompt 56 (D4): as duas partes pelo nome completo, sem CPF/CNPJ; e o caminho da conferência da versão vigente. */}
+      <p className="-mt-2 mb-4 text-sm text-muted" data-testid="proposta-partes">
+        Proprietário: <span className="font-medium text-ink">{p.partes.proprietario}</span> · Interessado:{" "}
+        <span className="font-medium text-ink">{p.partes.interessado}</span>
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-5">
@@ -387,6 +393,11 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
               Ver todos os orçamentos
             </Link>
           </p>
+          {p.registro && (
+            <p className="text-[12px] text-muted" data-testid="proposta-conferir">
+              {p.registro.conferir}
+            </p>
+          )}
         </aside>
       </div>
     </>

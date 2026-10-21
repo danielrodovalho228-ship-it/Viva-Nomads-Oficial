@@ -175,9 +175,11 @@ begin
       if anterior.numero is distinct from p_numero then
         raise exception 'A versão nova mantém o número % (veio %).', anterior.numero, p_numero using errcode = '22023';
       end if;
-      v := anterior.v + 1;
-      if p_versao is not null and p_versao <> v then
-        raise exception 'Versão esperada %, a próxima é %.', p_versao, v using errcode = '40001';
+      -- A versão pode pular (a proposta que já tinha rodadas antes do registro entrou só como v1 no backfill),
+      -- mas nunca repete nem volta.
+      v := greatest(anterior.v + 1, coalesce(p_versao, 0));
+      if p_versao is not null and p_versao <= anterior.v then
+        raise exception 'A versão % já existe (a última é %).', p_versao, anterior.v using errcode = '40001';
       end if;
       update public.documentos_registro r set status = 'substituido'
        where r.prefixo = p_prefixo and r.ref_tabela = p_ref_tabela and r.ref_id = p_ref_id and r.status = 'valido';

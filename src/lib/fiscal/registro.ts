@@ -1,6 +1,6 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
-import type { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { sha256 } from "@/lib/fiscal/pdf";
 import { PREFIXOS, temRps, type Prefixo } from "@/lib/fiscal/prefixos";
 
@@ -14,7 +14,8 @@ import { PREFIXOS, temRps, type Prefixo } from "@/lib/fiscal/prefixos";
  *   4. registrar_documento grava a linha (e, em versão nova, marca a anterior como "substituído" na mesma transação).
  */
 
-type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
+/** O cliente do SERVIDOR (service role): registrar_documento só executa com ele. */
+type Admin = SupabaseClient;
 
 export interface Identificacao {
   numero: string;
@@ -35,6 +36,8 @@ export interface EntradaRegistro {
   numero?: string;
   /** Versão nova do documento desta referência: mesmo número, versão + 1. */
   novaVersao?: boolean;
+  /** A versão do próprio documento (ex.: a rodada da proposta), quando ele já numera as versões. */
+  versao?: number;
   /** Monta o conteúdo com o número, a versão e o código que vão impressos. */
   conteudo: (id: Identificacao) => Promise<Uint8Array | string> | Uint8Array | string;
 }
@@ -72,8 +75,10 @@ export async function registrarDocumento(admin: Admin, e: EntradaRegistro): Prom
       .maybeSingle();
     if (anterior) {
       numero = anterior.numero as string;
-      versao = Number(anterior.versao) + 1;
+      versao = Math.max(Number(anterior.versao) + 1, e.versao ?? 0);
     }
+  } else if (e.versao) {
+    versao = e.versao;
   }
   numero ??= await numeroDoContador(admin, e.prefixo);
   if (temRps(numero)) throw new ErroRegistro("RPS não é prefixo da Viva");

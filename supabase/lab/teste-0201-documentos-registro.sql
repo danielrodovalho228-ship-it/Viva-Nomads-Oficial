@@ -74,6 +74,16 @@ select 'versão nova: mesmo número, v2' as caso, (select versao from v2) = 2 an
 select 'versão anterior virou substituído' as caso,
        (select status from documentos_registro where id = (select id from v1)) = 'substituido'
    and (select status from documentos_registro where id = (select id from v2)) = 'valido' as ok;
+create temp table v4 as
+  select * from registrar_documento('ORC', 'proposta', 'ORC-2026-9001', 'propostas', '56000000-0000-4000-8000-0000000000f9',
+                                    repeat('4', 64), null, '{}'::uuid[], false, null, true, 4);
+select 'versão pode pular (proposta com rodadas antes do registro), nunca repetir' as caso, (select versao from v4) = 4 as ok;
+do $$ begin
+  perform registrar_documento('ORC', 'proposta', 'ORC-2026-9001', 'propostas', '56000000-0000-4000-8000-0000000000f9',
+                              repeat('5', 64), null, '{}'::uuid[], false, null, true, 3);
+  raise exception 'DEVIA_RECUSAR';
+exception when serialization_failure then raise notice 'ok: versão antiga recusada';
+end $$;
 select 'registro_seq sem reuso' as caso, (select registro_seq from v2) > (select registro_seq from v1) as ok;
 do $$ begin
   perform registrar_documento('ORC', 'proposta', 'ORC-2026-9999', 'propostas', '56000000-0000-4000-8000-0000000000f9',
@@ -108,7 +118,7 @@ end $$;
 
 -- 6) /conferir: só pelo código; sem valor nem iniciais; status, versão vigente e teste.
 select 'conferir pelo código devolve status, número e versão' as caso,
-       c.numero = 'ORC-2026-9001' and c.versao = 1 and c.status = 'substituido' and c.versao_vigente = 2 as ok
+       c.numero = 'ORC-2026-9001' and c.versao = 1 and c.status = 'substituido' and c.versao_vigente = 4 as ok
   from conferir_documento((select codigo_verificacao from v1)) c;
 select 'conferir de documento de teste avisa' as caso, c.is_teste as ok from conferir_documento(repeat('b', 32)) c;
 select 'número sozinho não responde' as caso, count(*) = 0 as ok from conferir_documento('ORC-2026-9001');

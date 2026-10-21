@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, HORA } from "@/lib/limites";
+import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
+import { prontaParaFechar } from "@/lib/fiscal/fechamento";
 import {
   decidirResposta,
   estadoConferencia,
@@ -36,6 +39,13 @@ const STATUS_SAIDA = ["ativo", "concluido", "encerrado_sem_renovacao"];
 
 type Resultado = { ok: true; id?: string; item?: ItemTela; resposta?: RespostaTela; laudo?: LaudoTela } | { ok: false; error: string };
 const erro = (error: string): Resultado => ({ ok: false, error });
+
+/** Prompt 56 (D5): depois do fechamento nada muda — o banco recusa; aqui a pessoa recebe o motivo em português. */
+const ERRO_FECHADA = "Esta conferência já foi fechada: nada muda depois do fechamento. Uma correção vira uma versão nova, pela equipe.";
+async function estaFechada(admin: NonNullable<ReturnType<typeof createAdminClient>>, contratoId: string, tipo: TipoConferencia): Promise<boolean> {
+  const { data } = await admin.from("conferencias").select("fechada_em").eq("contrato_id", contratoId).eq("tipo", tipo).maybeSingle();
+  return !!data?.fechada_em;
+}
 
 /** Quem é a pessoa neste contrato: "inquilino", "proprietario" ou null (não é parte). */
 async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte: ParteConferencia; status: string; entrada: EntradaDoContrato } | null> {
@@ -82,6 +92,7 @@ export async function registrarItemConferencia(input: {
   if (!(await consumirLimite(`conferencia-item:${ctx.uid}`, 200, HORA))) return erro("Muitos registros em pouco tempo. Tente de novo em instantes.");
 
   const admin = createAdminClient()!;
+  if (await estaFechada(admin, input.contratoId, input.tipo)) return erro(ERRO_FECHADA);
   const { data: conf } = await admin
     .from("conferencias")
     .upsert({ contrato_id: input.contratoId, tipo: input.tipo, aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true })
@@ -127,6 +138,7 @@ export async function responderConferencia(input: {
   const ctx = await parteDoContrato(input.contratoId);
   if (!ctx) return erro("Você não faz parte deste contrato.");
   const admin = createAdminClient()!;
+  if (await estaFechada(admin, input.contratoId, input.tipo)) return erro(ERRO_FECHADA);
   const encerrada = janelaEncerrada(input.tipo, ctx.entrada);
   let { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", input.tipo).maybeSingle();
   if (!conf) {
@@ -159,6 +171,9 @@ export async function responderConferencia(input: {
     .from("conferencia_respostas")
     .insert({ conferencia_id: conf.id, parte: ctx.parte, autor_id: ctx.uid, decisao: input.decisao, motivo: d.motivo });
   if (error) return erro("Não foi possível registrar sua resposta. Ela pode já ter sido enviada.");
+  // As duas partes responderam: fecha (hash de fechamento + CND), depois da resposta, sem atrasar a pessoa.
+  const confId = conf.id as string;
+  if (prontaParaFechar([...((respostas ?? []) as RespostaConferencia[]), { parte: ctx.parte }])) after(() => fecharConferencia(admin, confId, "duas_respostas"));
   revalidatePath("/dashboard/locacoes");
   revalidatePath("/dashboard/contratos");
   return { ok: true, resposta: { parte: ctx.parte, decisao: input.decisao, motivo: d.motivo, decididoEm: new Date().toISOString() } };
@@ -228,6 +243,7 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
   if (!(await consumirLimite(`conferencia-arquivo:${ctx.uid}`, 60, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
 
   const admin = createAdminClient()!;
+  if (await estaFechada(admin, contratoId, tipo)) return erro(ERRO_FECHADA);
   await admin
     .from("conferencias")
     .upsert({ contrato_id: contratoId, tipo, aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true });
