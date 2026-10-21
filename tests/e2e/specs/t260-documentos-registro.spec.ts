@@ -103,7 +103,7 @@ test.describe("T260 — Documentos: registro único e /conferir (Prompt 56)", ()
       await expect(p.getByTestId("conferir-numero")).toHaveText(doc.numero);
       await expect(p.getByTestId("conferir-documento")).toHaveText("Pacote de provas");
       await expect(p.getByTestId("conferir-emitido-em")).toContainText("horário de Brasília");
-      const corpo = await p.locator("main").innerText();
+      const corpo = await p.locator("#conteudo").innerText();
       expect(corpo).not.toMatch(/R\$|Dalva|Moacir|D\. R\.|M\. R\./);
       await p.getByTestId("conferir-arquivo").setInputFiles({ name: "pacote.pdf", mimeType: "application/pdf", buffer: Buffer.from(doc.bytes) });
       await expect(p.getByTestId("conferir-hash-ok")).toBeVisible();
