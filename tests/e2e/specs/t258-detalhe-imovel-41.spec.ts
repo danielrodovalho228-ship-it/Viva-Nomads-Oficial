@@ -33,6 +33,9 @@ import {
 
 const LARGURAS = [390, 1280] as const;
 const SOMBRA_FLUTUANTE = "rgba(0, 0, 0, 0.12) 0px 6px 16px 0px";
+/** O Tailwind v4 compõe a sombra com as camadas vazias de anel ("rgba(0, 0, 0, 0) 0px 0px 0px 0px"); só a visível conta. */
+const sombraVisivel = (s: string) =>
+  s.split(/,\s*(?![^(]*\))/).filter((c) => !/^rgba\(0, 0, 0, 0\) 0px 0px 0px 0px$/.test(c.trim())).join(", ");
 const semRolagem = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 /** Primários visíveis da tela (fora do cabeçalho público, das barras de navegação e de janelas abertas). */
@@ -204,7 +207,7 @@ test.describe("T258 — barra inferior por papel (390 px)", () => {
       await expect(papel).toHaveAttribute("data-papel", "morador");
       await expect(papel).toContainText("Morador");
       const sombra = await page.locator('nav[aria-label="Navegação principal"]').evaluate((el) => getComputedStyle(el).boxShadow);
-      expect(sombra).toBe(SOMBRA_FLUTUANTE);
+      expect(sombraVisivel(sombra)).toBe(SOMBRA_FLUTUANTE);
       expect(await semRolagem(page)).toBeLessThanOrEqual(0);
     });
   });
@@ -471,7 +474,7 @@ test.describe("T258 — cogumelo na estadia (laboratório)", () => {
         await page.goto(rota(), { waitUntil: "domcontentloaded" });
         const cog = page.getByTestId("cogumelo");
         await expect(cog).toBeVisible({ timeout: 25_000 });
-        expect(await cog.evaluate((el) => getComputedStyle(el).boxShadow)).toBe(SOMBRA_FLUTUANTE);
+        expect(sombraVisivel(await cog.evaluate((el) => getComputedStyle(el).boxShadow))).toBe(SOMBRA_FLUTUANTE);
         // Não cobre o "Fale com a Viva" (o Viva sobe acima dele).
         const viva = page.getByTestId("fale-com-a-viva");
         if (await viva.isVisible()) {
