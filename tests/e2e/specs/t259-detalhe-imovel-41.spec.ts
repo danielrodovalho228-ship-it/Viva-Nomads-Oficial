@@ -569,7 +569,8 @@ test.describe("T259 — cogumelo na página da estadia (laboratório)", () => {
           await folha.getByRole("link", { name: "Ver instruções de chegada" }).click();
           await expect(folha).toHaveCount(0);
           await expect(page.locator("#instrucoes")).toBeInViewport();
-          if (quem === "morador") await expect(page.getByTestId("instrucoes-bloqueadas")).toHaveCount(0);
+          // Liberadas: some o "Liberadas em…" (se o dono ainda não publicou, o aviso diz só isso).
+          if (quem === "morador") expect((await page.getByTestId("instrucoes-bloqueadas").allTextContents()).join(" ")).not.toMatch(/Liberadas em/);
         } else {
           // Antes da liberação o morador vê só o aviso na página, e o item não aparece no cogumelo.
           await expect(page.getByTestId("instrucoes-bloqueadas")).toContainText(/^Liberadas em \d{2}\/\d{2}\/\d{4}\.$/);
