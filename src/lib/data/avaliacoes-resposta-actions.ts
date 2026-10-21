@@ -32,6 +32,9 @@ export async function responderAvaliacao(avaliacaoId: string, texto: string): Pr
     if (error.code === "42501") return { ok: false, error: "Só a pessoa avaliada responde." };
     return { ok: false, error: erroBancoPT(error, "Não foi possível publicar a resposta.") };
   }
+  // A resposta volta na MESMA ida ao servidor da ação (a tela não depende só do router.refresh() do cliente,
+  // que corre depois de um await dentro da transição e podia não chegar — t93 no lab do #953).
+  revalidatePath("/dashboard/avaliacoes");
   return { ok: true };
 }
 
@@ -55,6 +58,7 @@ export async function pedirRevisaoAvaliacao(avaliacaoId: string, motivo: string,
     return { ok: false, error: erroBancoPT(error, "Não foi possível enviar o pedido.") };
   }
   revalidatePath("/admin/avaliacoes");
+  revalidatePath("/dashboard/avaliacoes");
   return { ok: true };
 }
 
