@@ -45,9 +45,9 @@ async function pronta(page: Page) {
   await page.waitForTimeout(300);
 }
 
-async function print(page: Page, nome: string, alvo?: Locator, tolerancia?: number) {
+async function print(page: Page, nome: string, alvo?: Locator, tolerancia?: number, extras: Locator[] = []) {
   await pronta(page);
-  const opcoes = { mask: mascaras(page), ...(tolerancia ? { maxDiffPixelRatio: tolerancia } : {}) };
+  const opcoes = { mask: [...mascaras(page), ...extras], ...(tolerancia ? { maxDiffPixelRatio: tolerancia } : {}) };
   if (alvo) {
     await alvo.scrollIntoViewIfNeeded();
     await expect(alvo).toHaveScreenshot(`${nome}.png`, opcoes);
@@ -130,7 +130,13 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
         await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
         const bloco = page.getByTestId("imoveis-parecidos");
         test.skip((await bloco.count()) === 0, "Sem parecidos nesta base.");
-        await print(page, `09-imoveis-parecidos-${largura}`, bloco);
+        // Os parecidos empatam na semelhança: quais entram e em que ordem muda a cada base semeada. O texto dos
+        // cartões e a barra fixa do imóvel (que passa por cima do bloco no celular) vão mascarados; a forma do
+        // cartão (foto 4:3, linhas, espaçamento) continua comparada.
+        const textoDosCartoes = bloco.locator(
+          '[data-testid="cartao-local"], [data-testid="cartao-titulo"], [data-testid="cartao-total-mes"], [data-testid="cartao-sintese"]',
+        );
+        await print(page, `09-imoveis-parecidos-${largura}`, bloco, undefined, [textoDosCartoes, page.getByTestId("barra-fixa-imovel")]);
       });
 
       for (const [n, rota, nome] of [
