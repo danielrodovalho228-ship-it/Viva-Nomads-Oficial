@@ -1407,7 +1407,7 @@
         "admin"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "/dashboard/estadia/[contratoId]": {
@@ -1416,7 +1416,7 @@
         "proprietario"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -1424,7 +1424,7 @@
         "inquilino"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "/dashboard/estadia/[contratoId]/encerrar": {
@@ -1432,7 +1432,7 @@
         "inquilino"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "/dashboard/estadia/[contratoId]/ocupantes": {
@@ -1440,7 +1440,7 @@
         "inquilino"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     }
   },
@@ -4235,7 +4235,7 @@
         "inquilino"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "src/lib/data/estadia-actions.ts#assinarAditivo": {
@@ -4244,7 +4244,7 @@
         "proprietario"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "src/lib/data/estadia-actions.ts#atualizarPedidoEncerramento": {
@@ -4258,7 +4258,7 @@
         "proprietario"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "src/lib/data/estadia-actions.ts#pedirCodigoAditivo": {
@@ -4267,7 +4267,7 @@
         "proprietario"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "src/lib/data/estadia-actions.ts#pedirEncerramento": {
@@ -4275,7 +4275,7 @@
         "inquilino"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "src/lib/data/estadia-actions.ts#proporAlteracao": {
@@ -4283,7 +4283,7 @@
         "inquilino"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "src/lib/data/estadia-actions.ts#removerOcupante": {
@@ -4297,7 +4297,7 @@
         "proprietario"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "src/lib/data/estadia-actions.ts#salvarInstrucoes": {
@@ -4305,7 +4305,7 @@
         "proprietario"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     },
     "src/lib/data/estadia-actions.ts#salvarNota": {
@@ -4313,7 +4313,7 @@
         "proprietario"
       ],
       "specs": [
-        "t254-pagina-da-estadia"
+        "t255-pagina-da-estadia"
       ]
     }
   }
