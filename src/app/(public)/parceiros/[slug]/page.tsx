@@ -4,7 +4,8 @@ import { Clock, MapPin, Star } from "lucide-react";
 import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
-import { Button } from "@/components/ui/button";
+import { SolicitarOrcamento } from "@/components/parceiros/solicitar-orcamento";
+import { createClient } from "@/lib/supabase/server";
 import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { parceiroPorSlug } from "@/lib/data/parceiros-publico";
 import { REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
@@ -15,7 +16,7 @@ import { REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
   publicada; conta de teste fica fora do Google (noindex) e da busca pública.
 */
 
-type Params = { params: Promise<{ slug: string }> };
+type Params = { params: Promise<{ slug: string }>; searchParams?: Promise<{ imovel?: string; cadastro?: string }> };
 
 // Sempre do banco: publicar, pausar ou editar no painel aparece na hora (sem cache da página).
 export const dynamic = "force-dynamic";
@@ -33,10 +34,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export default async function ParceiroPage({ params }: Params) {
+export default async function ParceiroPage({ params, searchParams }: Params) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
   const d = await parceiroPorSlug(slug);
   if (!d) notFound();
+  // Prompt 31b: "Solicitar orçamento" ativo. Vindo do passo de fotos do cadastro, o imóvel já vem escolhido.
+  const supabase = await createClient();
+  const logado = !!(supabase && (await supabase.auth.getUser()).data.user);
+  const imovelDoCadastro = sp.imovel && /^[0-9a-f-]{36}$/i.test(sp.imovel) ? sp.imovel : null;
+  const voltarPara = `/parceiros/${slug}${imovelDoCadastro ? `?imovel=${imovelDoCadastro}&cadastro=1` : ""}`;
   const { parceiro: p, servicos, galeria } = d;
   const redes = REDES.filter((r) => p.redes[r.chave]);
 
@@ -122,10 +129,17 @@ export default async function ParceiroPage({ params }: Params) {
           </div>
           <aside className="min-w-0 space-y-4">
             <div className="rounded-2xl border border-line bg-white p-5 shadow-sm">
-              <Button className="w-full" disabled data-testid="solicitar-orcamento">
-                Solicitar orçamento
-              </Button>
-              <p className="mt-2 text-sm text-muted">Em breve: o pedido de orçamento e a conversa pelas mensagens da Viva. Contato e endereço só depois do aceite.</p>
+              <SolicitarOrcamento
+                parceiroId={p.id}
+                nomeParceiro={p.nomePublico}
+                categorias={p.categorias}
+                servicos={servicos.map((s) => ({ id: s.id, titulo: s.titulo, categoria: s.categoria }))}
+                logado={logado}
+                voltarPara={voltarPara}
+                imovelInicial={imovelDoCadastro}
+                doCadastroDoImovel={!!imovelDoCadastro && sp.cadastro === "1"}
+              />
+              <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Contato e endereço só depois do aceite.</p>
             </div>
             {redes.length > 0 && (
               <div className="rounded-2xl border border-line bg-white p-5" data-testid="parceiro-redes">

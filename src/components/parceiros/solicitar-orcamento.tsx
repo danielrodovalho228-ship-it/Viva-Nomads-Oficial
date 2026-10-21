@@ -53,7 +53,7 @@ export function SolicitarOrcamento({
 
   if (!logado) {
     return (
-      <ButtonLink href={`/auth?redirect=${encodeURIComponent(voltarPara)}`} variant="primary" data-testid="solicitar-orcamento">
+      <ButtonLink href={`/auth?redirect=${encodeURIComponent(voltarPara)}`} variant="primary" className="w-full" data-testid="solicitar-orcamento">
         Solicitar orçamento
       </ButtonLink>
     );
@@ -82,7 +82,7 @@ export function SolicitarOrcamento({
 
   return (
     <>
-      <Button variant="primary" onClick={abrir} data-testid="solicitar-orcamento">
+      <Button variant="primary" className="w-full" onClick={abrir} data-testid="solicitar-orcamento">
         Solicitar orçamento
       </Button>
       <BottomSheet
