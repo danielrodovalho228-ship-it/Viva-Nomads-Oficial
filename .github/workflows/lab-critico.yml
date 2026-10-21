@@ -93,7 +93,7 @@ jobs:
 
       - name: Criar a massa da varredura visual (t249)
         # Contas @varredura.lab.vivanomads.test e tests/laboratorio/saida/varredura.json. Sem este passo a t249 ficava
-        # pulada em toda execução. Aqui no portão, falhar deixa o job vermelho (nada de continue-on-error).
+        # pulada em toda execução. Aqui no portão, se falhar, o job fica vermelho.
         run: node scripts/lab/massa-varredura.mjs
 
       - name: Build do site (modo simulado)
