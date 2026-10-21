@@ -420,8 +420,9 @@ html[data-app] body {
     right: 1.5rem;
   }
 }
+/* Prompt 41: o rodapé fixo do imóvel ganhou o total da estadia e "A Viva não segura dinheiro" (mais alto). */
 body:has([data-testid="imovel-largura-total"]) {
-  --ajuda-bottom: 11rem;
+  --ajuda-bottom: 13rem;
 }
 @media (min-width: 1024px) {
   body:has([data-testid="imovel-largura-total"]) {

@@ -31,6 +31,7 @@ function disponivelFuturo(iso?: string): string | null {
  * Cartão lateral (fixo no desktop, empilhado no celular — Prompt 41): no topo "R$ X/mês · R$ Y em N meses"
  * (N = 1 → só "/mês", a regra do cartão da busca), "A Viva não segura dinheiro", o detalhamento do total do mês,
  * os pagamentos fora do total, a disponibilidade e as ações (recebidas via `actions`, com UM primário: "Solicitar").
+ * No desktop o cartão fica preso ao rolar; se for mais alto que a tela, rola por dentro (nunca some da vista).
  */
 export function PriceCard({ property, actions, meses = 1 }: { property: Property; actions: React.ReactNode; meses?: number }) {
   // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
@@ -39,7 +40,7 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
   const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
-    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-xl border border-line bg-white p-5 xl:p-6">
+    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-xl border border-line bg-white p-5 lg:max-h-[calc(100dvh-10rem)] lg:overflow-y-auto xl:p-6">
       <p className="tabular-nums" data-testid="cartao-lateral-preco">
         <span className="text-xl font-semibold text-ink" data-testid="cartao-lateral-mes">
           {preco.valor}
