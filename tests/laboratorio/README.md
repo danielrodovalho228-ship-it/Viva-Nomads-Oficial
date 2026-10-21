@@ -45,6 +45,12 @@ fluxos críticos (login, publicar anúncio, candidatura→contrato→assinatura,
 (colar no corpo do PR). Para exigi-lo antes de mesclar, só o Daniel liga: GitHub > Settings > Branches > regra da `main` >
 *Require status checks to pass* > marcar `lab-critico` (depois da primeira execução, para o nome aparecer na lista).
 
+**Portão de PR** (decisão do Muse, 21/10): em PR, o `lab-critico` roda a lista crítica **mais os specs que o próprio PR
+cria ou altera** em `tests/e2e/specs/`. Qualquer teste que falhe, inclusive o que só passa no retry
+(`--fail-on-flaky-tests`), deixa o job vermelho. A suíte completa (`laboratorio.yml`) **não roda em PR**: ela não cabia
+no teto e ficava verde com teste falhando. Roda na `main` e no noturno, onde falha também deixa o job vermelho. Para ver
+a lista que o PR vai rodar: `node scripts/lab/fluxos-criticos.mjs --alterados-desde origin/main`.
+
 Resultado: resumo na própria execução do Actions (tabela passou/falhou por spec) e o artefato
 `laboratorio-<id>` com o relatório HTML, prints, vídeos e `resultado.json`.
 
