@@ -61,7 +61,16 @@ export type NotificationEvent =
   | "parceria_recebida" // pedido de parceria recebido → quem pediu
   | "parceria_recusada" // pedido de parceria recusado (com o motivo) → quem pediu
   | "parceria_convite" // a equipe abriu o pedido pela pessoa (suporte) → a pessoa completa e confirma
-  | "parceria_equipe"; // pedido novo, novo link pedido → admins
+  | "parceria_equipe" // pedido novo, novo link pedido → admins
+  // Contratação de parceiros (Prompt 31b)
+  | "parceiro_pedido_novo" // pedido de orçamento novo → parceiro
+  | "parceiro_orcamento_recebido" // o parceiro orçou → cliente
+  | "parceiro_orcamento_aceito" // o cliente aceitou → parceiro
+  | "parceiro_horario_confirmado" // horário confirmado → as duas partes
+  | "parceiro_lembrete" // lembrete do dia anterior → as duas partes
+  | "parceiro_entrega_feita" // o parceiro marcou a entrega → cliente
+  | "parceiro_conclusao_pendente" // entrega há 7 dias sem confirmação → cliente (nada conclui sozinho)
+  | "parceiro_avaliacao"; // serviço concluído → as duas partes avaliam
 
 // Assunto SEM a marca (o envio põe "· Viva Nomads"; regras em assuntos.ts). A imagem de cada evento mora em
 // imagens-email.ts (IMAGEM por tema, fonte única).
@@ -114,5 +123,13 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   parceria_recusada: { subject: "Sobre o seu pedido de parceria", body: (n) => `Olá${n ? " " + n : ""}, analisamos o seu pedido de parceria e, por enquanto, não foi possível aprovar. O motivo está abaixo. A sua conta continua normal para alugar ou anunciar.`, cta: "Ver o pedido", path: "/dashboard/parceiro" },
   parceria_convite: { subject: "Complete o seu pedido de parceria", body: (n) => `Olá${n ? " " + n : ""}, a equipe da Viva Nomads começou um pedido de parceria em seu nome, como combinado no atendimento. Entre (ou crie a conta) com este e-mail, confira os dados e confirme o envio.`, cta: "Completar o pedido", path: "/parceiros?seja=1#quero-ser-parceiro" },
   parceria_equipe: { subject: "Pedido de parceria para analisar", body: () => "Há um pedido de parceria aguardando a equipe. Confira a ficha, o checklist e decida pelo painel.", cta: "Abrir parceiros", path: "/admin/parceiros" },
+  parceiro_pedido_novo: { subject: "Novo pedido de orçamento", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um pedido de orçamento pela Viva Nomads. Veja o que a pessoa precisa e responda pelas mensagens da plataforma.`, cta: "Ver o pedido", path: "/dashboard/parceiro" },
+  parceiro_orcamento_recebido: { subject: "Você recebeu um orçamento", body: (n) => `Olá${n ? " " + n : ""}, o parceiro enviou o orçamento do seu pedido. Confira o valor e aceite ou recuse pela plataforma.`, cta: "Ver o orçamento", path: "/dashboard/servicos" },
+  parceiro_orcamento_aceito: { subject: "Seu orçamento foi aceito", body: (n) => `Boa notícia${n ? ", " + n : ""}! O cliente aceitou o seu orçamento. Confirme o horário pelo pedido.`, cta: "Confirmar o horário", path: "/dashboard/parceiro" },
+  parceiro_horario_confirmado: { subject: "Horário do serviço confirmado", body: (n) => `Olá${n ? " " + n : ""}, o horário do serviço está confirmado. Os detalhes estão no pedido.`, cta: "Ver o pedido", path: "/dashboard/servicos" },
+  parceiro_lembrete: { subject: "Lembrete: o serviço está chegando", body: (n) => `Olá${n ? " " + n : ""}, o serviço combinado pela Viva Nomads está marcado para as próximas horas. Os detalhes estão no pedido.`, cta: "Ver o pedido", path: "/dashboard/servicos" },
+  parceiro_entrega_feita: { subject: "O parceiro marcou a entrega", body: (n) => `Olá${n ? " " + n : ""}, o parceiro marcou o serviço como entregue. Confira e confirme a conclusão pelo pedido.`, cta: "Conferir a entrega", path: "/dashboard/servicos" },
+  parceiro_conclusao_pendente: { subject: "Confirme a conclusão do serviço", body: (n) => `Olá${n ? " " + n : ""}, o parceiro marcou a entrega há 7 dias. Se está tudo certo, confirme a conclusão; se não, fale com ele pelas mensagens do pedido.`, cta: "Abrir o pedido", path: "/dashboard/servicos" },
+  parceiro_avaliacao: { subject: "Conte como foi o serviço", body: (n) => `Olá${n ? " " + n : ""}, o serviço foi concluído. A sua avaliação ajuda outras pessoas e só aparece depois que as duas partes avaliarem.`, cta: "Avaliar", path: "/dashboard/servicos" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", cta: "Conferir documento", path: "/admin/documentos" },
 };

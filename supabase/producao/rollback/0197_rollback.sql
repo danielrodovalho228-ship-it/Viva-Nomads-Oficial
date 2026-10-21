@@ -4,6 +4,8 @@
 begin;
 drop function if exists public.publicar_avaliacoes_parceiro(uuid);
 drop table if exists public.parceiro_avaliacoes;
+drop index if exists public.messages_parceiro_pedido;
+alter table public.messages drop column if exists parceiro_pedido_id;
 update public.parceiro_pedidos set status = 'agendado' where status = 'em_execucao';
 alter table public.parceiro_pedidos drop constraint if exists parceiro_pedidos_contratacao_check;
 alter table public.parceiro_pedidos drop constraint if exists parceiro_pedidos_status_check;

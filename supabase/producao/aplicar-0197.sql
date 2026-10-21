@@ -51,6 +51,11 @@ create index if not exists parceiro_pedidos_cliente_abertos on public.parceiro_p
 create index if not exists parceiro_pedidos_agendados on public.parceiro_pedidos (horario_confirmado)
   where status = 'agendado';
 
+-- Conversa do pedido: as mensagens ficam em messages, marcadas com o pedido (separadas das conversas de imóvel).
+-- Quem grava é o servidor, depois de conferir que a pessoa é parte do pedido (o filtro de contato do banco vale igual).
+alter table public.messages add column if not exists parceiro_pedido_id uuid references public.parceiro_pedidos (id) on delete set null;
+create index if not exists messages_parceiro_pedido on public.messages (parceiro_pedido_id) where parceiro_pedido_id is not null;
+
 -- ── 2. Avaliações do pedido (a tabela avaliacoes exige contrato de imóvel: não serve para pedido de parceiro) ──
 create table if not exists public.parceiro_avaliacoes (
   id uuid primary key default gen_random_uuid(),
