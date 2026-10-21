@@ -26,3 +26,32 @@ export async function atualizarRascunhoDoDono(
     .select("id");
   return { atualizou: !error && Array.isArray(data) && data.length === 1, error: error ?? null };
 }
+
+/** Janela (h) em que um rascunho vazio ainda é reaproveitado em vez de criar outro (ordem 378c07c4). */
+export const JANELA_RASCUNHO_VAZIO_H = 72;
+
+/**
+ * Rascunho do dono criado há menos de 72 h, ainda sem preço e sem endereço: o autosave de um anúncio novo
+ * (sem `id`) continua esse em vez de abrir um 2º rascunho idêntico a cada entrada no assistente.
+ * Só lê linhas do próprio dono; nunca apaga nada. Devolve o id ou null.
+ */
+export async function rascunhoVazioRecente(
+  cliente: Cliente,
+  ownerId: string,
+  agora: Date = new Date(),
+): Promise<string | null> {
+  const desde = new Date(agora.getTime() - JANELA_RASCUNHO_VAZIO_H * 3_600_000).toISOString();
+  const { data, error } = await cliente
+    .from("properties")
+    .select("id")
+    .eq("owner_id", ownerId)
+    .eq("status", "draft")
+    .eq("monthly_price", 0)
+    .eq("address", "")
+    .gte("created_at", desde)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data || typeof data.id !== "string") return null;
+  return data.id;
+}
