@@ -51,7 +51,8 @@
         "t204-cadastro-ia-real",
         "t207-cep-matricula-identidade",
         "t231-admin-numeros-com-lista",
-        "t254-admin-aviso-atendimento"
+        "t254-admin-aviso-atendimento",
+        "t255-admin-f15-f16-f18-f20"
       ]
     },
     "/admin/2fa/refazer": {
@@ -75,7 +76,8 @@
         "t30-atendimento-autonomo",
         "t30-chat-ir-para-o-fim",
         "t39-app-ida-e-volta",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t255-admin-f15-f16-f18-f20"
       ]
     },
     "/admin/ajuda-publicacao": {
@@ -94,7 +96,8 @@
         "t19-atendimento-online",
         "t24-atendimento-acolhimento",
         "t25-chamado-resumo",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t255-admin-f15-f16-f18-f20"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -199,7 +202,8 @@
         "t15-admin-real",
         "t183-telas-logadas-390",
         "t231-admin-numeros-com-lista",
-        "t232-pedido-moradia-completo"
+        "t232-pedido-moradia-completo",
+        "t255-admin-f15-f16-f18-f20"
       ]
     },
     "/admin/socios": {
