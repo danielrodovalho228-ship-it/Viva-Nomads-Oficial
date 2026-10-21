@@ -84,10 +84,12 @@ test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () 
 
 test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e disponibilidade", () => {
   const c = ler("components/property-card.tsx");
-  assert.match(c, /\{quartosTexto\(property\.bedrooms\)\}/); // plural único (ordem dd15064d, D7b)
-  assert.match(c, /\{banheirosTexto\(property\.bathrooms\)\}/);
+  // Plural único (ordem dd15064d, D7b) pela síntese do cartão (src/lib/cartao-sintese.ts, quartosTexto/banheirosTexto).
+  assert.match(c, /const sintese = itensSintese\(property\);/);
+  assert.match(ler("lib/cartao-sintese.ts"), /quartosTexto\(p\.bedrooms\)[\s\S]*banheirosTexto\(p\.bathrooms\)/);
   assert.match(c, /\{property\.neighborhood\}, \{property\.city\}/);
-  assert.match(c, /\/mês total<\/span>/); // custo total do mês em destaque (ordem 1a555bfa)
+  // Custo total do mês em destaque (ordem 1a555bfa), no formato do QA: "R$ X/mês · R$ Y em N meses".
+  assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/);
   const hoje = new Date("2026-10-14T12:00:00Z");
   assert.equal(disponivelAPartirDe("2026-11-15", hoje), "15/11");
   assert.equal(disponivelAPartirDe("2027-01-05", hoje), "05/01/2027");

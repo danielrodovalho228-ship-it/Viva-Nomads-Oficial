@@ -23,6 +23,13 @@ import { Chip } from "@/components/ui/chip";
  * aplicar ("Mostrar 23 imóveis" usa a MESMA função da lista). "Limpar tudo"
  * (terciário) zera o rascunho. Todas as escolhas são chips: tocar de novo
  * desliga — sem opção "Qualquer", "Ambos", "Indiferente" ou "Tanto faz".
+ *
+ * Regra de forma por tipo de controle (veredito do coordenador, QA do Prompt 40; guarda em
+ * src/lib/estilo/estilo-padrao.test.ts):
+ *   - chip de opção = pill (<Chip>, variante "chip");
+ *   - campo (número, seleção, data) = 8 px (rounded-lg);
+ *   - botão "Mostrar N imóveis" = 8 px (primário de buttonClasses);
+ *   - "Limpar tudo" = texto (terciário, sublinhado, sem caixa).
  */
 export function FolhaFiltros({
   inicial,

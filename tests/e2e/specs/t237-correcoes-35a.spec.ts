@@ -144,10 +144,10 @@ for (const largura of LARGURAS) {
   test.describe(`T237 — públicas a ${largura} px`, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
-    test("2. /buscar: o ube-001 mostra \"Com pet\" em 1º no \"Ideal para\"", async ({ page }) => {
-      // Com anúncios reais no ar, os exemplos só aparecem com ?exemplos=1 (regra do Prompt 30), como no t234.
-      await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
-      const linha = page.locator('a[href="/imoveis/ube-001"]').first().getByTestId("ideal-para");
+    test("2. página do imóvel: o ube-001 mostra \"Com pet\" em 1º no \"Ideal para\"", async ({ page }) => {
+      // QA do Prompt 40: o "Ideal para" saiu do cartão e fica na página do imóvel, depois da linha-síntese.
+      await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
+      const linha = page.getByTestId("ideal-para").first();
       await expect(linha).toContainText(/Ideal para:\s*Com pet · /, { timeout: 20_000 });
       await semRolagemLateral(page);
     });

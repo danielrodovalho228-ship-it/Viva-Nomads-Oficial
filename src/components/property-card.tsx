@@ -1,25 +1,19 @@
 import Link from "next/link";
 import { BadgeCheck, BadgePercent, PawPrint, Star } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { formatBRL, numBR } from "@/lib/utils";
+import { numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
-import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
+import { mesesDoCartao, rotuloPrecoCartao } from "@/lib/cartao-preco";
+import { itensSintese } from "@/lib/cartao-sintese";
 import { isExemplo } from "@/lib/demo-listing";
 import { disponivelAPartirDe } from "@/lib/busca/disponibilidade";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ROTULO_SELO_UNICO, seloDoCartao, type SeloUnico } from "@/lib/card-selos";
 import { MarcaImovel } from "@/components/property/marca-imovel";
-import { IdealPara } from "@/components/property/ideal-para";
 import { FotosCartao, SetasFotos } from "@/components/property/fotos-cartao";
 
 const ehFoto = (src: unknown): src is string => typeof src === "string" && (/^https?:\/\//.test(src) || src.startsWith("/"));
-
-/** Meses do total do cartão: a duração da busca ou, sem busca, a estadia mínima do imóvel (adendo do Prompt 40). */
-export function mesesDoCartao(periodMonths: number | undefined, minPeriodDays: number | undefined): number {
-  if (periodMonths && periodMonths > 0) return periodMonths;
-  return Math.max(1, Math.ceil((minPeriodDays ?? 30) / 30));
-}
 
 export function PropertyCard({
   property,
@@ -34,7 +28,8 @@ export function PropertyCard({
   // "Tudo incluído" pela FONTE ÚNICA (valor mensal + condomínio + consumo fixo) — o mesmo número da página
   // do imóvel e do pino do mapa. O total da estadia = total do mês × meses (da busca ou a estadia mínima).
   const inc = calcularTudoIncluido(property);
-  const meses = mesesDoCartao(periodMonths, property.minPeriodDays);
+  const preco = rotuloPrecoCartao(inc.total, mesesDoCartao(periodMonths, property.minPeriodDays));
+  const sintese = itensSintese(property);
   const disponivel = disponivelAPartirDe(property.availableFrom);
   const selo = seloDoCartao({
     // Verificação do dono só quando o dado chega com o anúncio; exemplo nunca.
@@ -44,9 +39,10 @@ export function PropertyCard({
   });
 
   return (
-    // Prompt 40 + adendo: cartão SEM caixa, borda ou sombra. Ordem: foto 4:3 (raio 12, carrossel com pontos,
-    // coração no canto) → bairro + nota → título (até 2 linhas) → "R$ X/mês total · R$ Y em N meses" →
-    // quartos · banheiros · m² · mobiliado → "Disponível a partir de [data]". No máximo 1 selo.
+    // Prompt 40 + adendo + QA do Muse: cartão SEM caixa, borda ou sombra. Ordem CONGELADA: foto 4:3 (raio 12,
+    // carrossel com pontos, coração no canto) → bairro + nota → título (até 2 linhas) → "R$ X/mês · R$ Y em
+    // N meses" (N = 1: só "R$ X/mês") → quartos · banheiros · m² · mobiliado → "Disponível a partir de [data]".
+    // No máximo 1 selo. "Ideal para" fica na página do imóvel.
     // O coração e as setas ficam FORA do <a> (botão dentro de link é HTML inválido): ordem 826719b1, D12.
     <div className="group relative h-full" data-testid="cartao-imovel">
     <Link
@@ -94,40 +90,40 @@ export function PropertyCard({
           {property.title}
         </p>
 
-        {/* Custo total do mês (ordem 1a555bfa) + total da estadia; o preço é o maior texto (18/600, verde). */}
+        {/* Total do mês (ordem 1a555bfa: valor mensal + condomínio + consumo fixo, o mesmo do pino do mapa)
+            + total da estadia; o preço é o maior texto (18/600, verde). Rótulo em src/lib/cartao-preco.ts. */}
         <p className="tabular-nums" data-testid="cartao-total-mes">
-          <span className="font-title text-lg font-semibold text-forest">{formatBRL(inc.total)}</span>
-          <span className="text-sm text-ink">/mês total</span>
-          <span className="text-sm text-muted" data-testid="cartao-total-estadia">
-            {" · "}
-            {formatBRL(inc.total * meses)} em {meses} {meses === 1 ? "mês" : "meses"}
+          <span className="font-title text-lg font-semibold text-forest" data-testid="cartao-preco-mes">
+            {preco.valor}
           </span>
-        </p>
-
-        {/* Linha-síntese: quartos · banheiros · m² · mobiliado. */}
-        <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted" data-testid="cartao-sintese">
-          <span data-testid="card-quartos">{quartosTexto(property.bedrooms)}</span>
-          <span aria-hidden>·</span>
-          <span>{banheirosTexto(property.bathrooms)}</span>
-          {property.areaM2 > 0 && (
-            <>
-              <span aria-hidden>·</span>
-              <span className="tabular-nums">{property.areaM2} m²</span>
-            </>
-          )}
-          {property.furnished !== false && (
-            <>
-              <span aria-hidden>·</span>
-              <span>mobiliado</span>
-            </>
-          )}
-          {property.petsAllowed && (
-            <span className="ml-1 inline-flex items-center" title="Aceita pets">
-              <PawPrint className="h-4 w-4" aria-hidden="true" />
-              <span className="sr-only">Aceita pets</span>
+          <span className="text-sm text-ink">/mês</span>
+          {preco.estadia && (
+            <span className="text-sm text-muted" data-testid="cartao-total-estadia">
+              {" · "}
+              {preco.estadia}
             </span>
           )}
         </p>
+
+        {/* Linha-síntese: cada item só com o dado; a linha some se não houver nenhum (src/lib/cartao-sintese.ts). */}
+        {sintese.length > 0 && (
+          <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted" data-testid="cartao-sintese">
+            {sintese.map((item, i) => (
+              <span key={item.chave} className="inline-flex items-center gap-x-1">
+                {i > 0 && <span aria-hidden>·</span>}
+                <span className={item.chave === "area" ? "tabular-nums" : undefined} data-testid={item.chave === "quartos" ? "card-quartos" : undefined}>
+                  {item.texto}
+                </span>
+              </span>
+            ))}
+            {property.petsAllowed && (
+              <span className="ml-1 inline-flex items-center" title="Aceita pets">
+                <PawPrint className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only">Aceita pets</span>
+              </span>
+            )}
+          </p>
+        )}
 
         {/* Data de available_from (a agenda de bloqueios não vem na lista: ver "funcional pendente" do PR). */}
         {disponivel && (
@@ -135,8 +131,6 @@ export function PropertyCard({
             Disponível a partir de {disponivel}
           </p>
         )}
-
-        <IdealPara property={property} className="line-clamp-1" />
       </div>
     </Link>
     {fotos.length > 1 && <SetasFotos />}

@@ -44,8 +44,10 @@ for (const id of ["ube-001", "ube-005"]) {
       const totalPagina = num(await page.locator("#cartao-preco").getByTestId("total-por-mes").innerText());
       await page.goto("/buscar?exemplos=1", { waitUntil: "networkidle" });
       const cartao = page.locator(`a[href="/imoveis/${id}"]`).first();
-      await expect(cartao.getByTestId("cartao-total-mes")).toContainText("/mês total");
-      expect(num(await cartao.getByTestId("cartao-total-mes").innerText())).toBe(totalPagina);
+      // QA do Prompt 40: "R$ X/mês · R$ Y em N meses" (sem "total" solto); X continua sendo o total do mês da página.
+      await expect(cartao.getByTestId("cartao-total-mes")).toContainText("/mês");
+      await expect(cartao.getByTestId("cartao-total-mes")).not.toContainText("total");
+      expect(num(await cartao.getByTestId("cartao-preco-mes").innerText())).toBe(totalPagina);
     });
   });
 }

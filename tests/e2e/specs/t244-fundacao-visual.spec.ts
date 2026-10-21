@@ -62,7 +62,9 @@ async function conferirCartao(cartao: Locator, onde: string) {
   const foto = await estilo(cartao.getByTestId("cartao-foto"));
   expect(foto.raio, `${onde}: foto com raio de 12 px`).toBe("12px");
   expect(Math.abs(foto.largura / foto.altura - 4 / 3), `${onde}: foto 4:3 (${foto.largura}×${foto.altura})`).toBeLessThan(0.03);
-  await expect(cartao.getByTestId("cartao-total-mes")).toContainText("/mês total");
+  await expect(cartao.getByTestId("cartao-total-mes")).toContainText("/mês");
+  await expect(cartao.getByTestId("cartao-total-mes"), `${onde}: sem "total" solto`).not.toContainText("total");
+  await expect(cartao.getByTestId("ideal-para"), `${onde}: "Ideal para" fora do cartão`).toHaveCount(0);
   const preco = await estilo(cartao.getByTestId("cartao-total-mes").locator("span").first());
   expect(preco.peso, `${onde}: valor mensal em 600`).toBe("600");
   expect(preco.cor, `${onde}: valor mensal no verde de marca`).toBe(VERDE);
@@ -91,7 +93,8 @@ async function conferirCartao(cartao: Locator, onde: string) {
   expect(ys, `${onde}: ordem do cartão`).toEqual([...ys].sort((a, b) => a - b));
   const linhasTitulo = await cartao.getByTestId("cartao-titulo").evaluate((el) => Math.round(el.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(el).lineHeight)));
   expect(linhasTitulo, `${onde}: título em até 2 linhas`).toBeLessThanOrEqual(2);
-  await expect(cartao.getByTestId("cartao-total-estadia")).toHaveText(/·\s*R\$\s?[\d.,]+ em \d+ m(ês|eses)/);
+  // "R$ Y em N meses" só com N ≥ 2 (com N = 1, só "R$ X/mês").
+  if (await cartao.getByTestId("cartao-total-estadia").count()) await expect(cartao.getByTestId("cartao-total-estadia")).toHaveText(/·\s*R\$\s?[\d.,]+ em \d+ meses/);
   await expect(cartao.getByTestId("cartao-sintese")).toContainText(/\d+ quartos?/);
   expect((await estilo(cartao.getByTestId("cartao-titulo"))).cor, `${onde}: texto secundário #3F3F3F`).toBe(SECUNDARIO);
 }

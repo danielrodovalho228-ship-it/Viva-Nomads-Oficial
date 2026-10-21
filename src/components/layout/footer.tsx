@@ -8,8 +8,6 @@ import { RedesOficiais } from "@/components/layout/redes-oficiais";
 export function Footer() {
   return (
     <footer className="mt-auto bg-night text-white/70">
-      {/* fio gradiente de marca no topo */}
-      <div className="h-1 w-full bg-gradient-brand" />
       <div className="container-page grid gap-12 py-16 md:grid-cols-4">
         <div className="md:col-span-1">
           <Logo href="/" light />
@@ -26,7 +24,7 @@ export function Footer() {
             <span className="text-xs text-white/50">{PROMESSA_ATENDIMENTO}</span>
           </p>
           {/* Redes oficiais (src/config/redes.ts — Prompt 35A, item 4). */}
-          <RedesOficiais className="mt-4" linkClassName="text-white/70 transition-colors hover:text-green-300" />
+          <RedesOficiais className="mt-4" linkClassName="text-white/70 transition-colors hover:text-white" />
         </div>
 
         <FooterCol title="Plataforma">
@@ -72,7 +70,9 @@ export function Footer() {
 function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="mb-4 font-title text-sm font-bold uppercase tracking-wider text-white">
+      {/* QA do Prompt 40: título de coluna 14/600, capitalização normal, sem caixa alta nem tracking largo.
+          A cor é a tinta do rodapé (branco): o #222 some sobre o fundo #0A0A0A (contraste ~1,2:1). */}
+      <h2 className="mb-4 text-sm font-semibold text-white">
         {title}
       </h2>
       <ul className="space-y-3 text-sm">{children}</ul>
@@ -83,7 +83,7 @@ function FooterCol({ title, children }: { title: string; children: React.ReactNo
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <li>
-      <Link href={href} className="text-white/60 transition-colors hover:text-green-300">
+      <Link href={href} className="text-white/60 transition-colors hover:text-white">
         {children}
       </Link>
     </li>

@@ -699,8 +699,6 @@ export function PropertyDetail({
               {property.precoJusto && <PrecoJustoBadge />}
             </div>
 
-            <IdealPara property={property} className="mt-3 text-sm" />
-
             <div className="mt-3">
               <PropertyTags property={property} />
             </div>
@@ -709,8 +707,8 @@ export function PropertyDetail({
               <DestaquesImovel property={property} />
             </div>
 
-            {/* Specs com ícones */}
-            <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted">
+            {/* Specs com ícones (linha-síntese) */}
+            <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted" data-testid="imovel-sintese">
               <span className="inline-flex items-center gap-1.5">
                 <BedDouble className="h-4 w-4" /> {quartosTexto(property.bedrooms)}
               </span>
@@ -738,6 +736,9 @@ export function PropertyDetail({
                 </span>
               )}
             </div>
+
+            {/* "Ideal para" (QA do Prompt 40): saiu do cartão e mora aqui, logo depois da linha-síntese; regra em src/lib/ideal-para.ts ("Com pet" em 1º). */}
+            <IdealPara property={property} className="mt-3 text-sm" />
           </header>
 
           {/* Walk-through em vídeo */}
