@@ -3,7 +3,7 @@
 import { Briefcase, X } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { LocationSearch } from "@/components/location-search";
-import type { GeoSuggestion } from "@/lib/integrations/geocoding";
+import { geocodingEnabled, type GeoSuggestion } from "@/lib/integrations/geocoding";
 import { ATE_OPCOES, ROTULO_MODO, rotuloLimpo, type ModoRota } from "@/lib/rotas/tempo";
 import type { DestinoBusca, EstadoDestino } from "@/lib/busca/destino-busca";
 import { useState } from "react";
@@ -31,6 +31,8 @@ export function CampoDestino({
 }) {
   const [texto, setTexto] = useState("");
   const { destino, modo, ate } = valor;
+  // Sem destino cadastrado e sem busca de endereço, o campo não teria o que oferecer: não aparece.
+  if (destinos.length === 0 && !geocodingEnabled && !destino) return null;
   const slug = destino && "slug" in destino ? destino.slug : null;
   const digitado = destino && !("slug" in destino) ? destino : null;
   const escolher = (d: DestinoBusca | null) => onChange({ destino: d, modo, ate: d ? ate : 0 });
@@ -50,7 +52,7 @@ export function CampoDestino({
         </div>
       )}
       <div className="mt-3 min-w-0">
-        {digitado ? (
+        {!geocodingEnabled && !digitado ? null : digitado ? (
           <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-line px-3 py-2 text-sm text-ink" data-testid="destino-digitado">
             <span className="truncate">{digitado.rot || "Endereço informado"}</span>
             <button type="button" aria-label="Tirar o endereço" onClick={() => escolher(null)} className="shrink-0 text-muted hover:text-ink">

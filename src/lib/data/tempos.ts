@@ -186,7 +186,14 @@ export async function temposAte(
   const ids = opcoes.ids?.filter((id) => UUID.test(id)).slice(0, 400);
   const imoveis = await imoveisAtivos(admin, ids);
   let cache = await lerCache(admin, destino.chave, modo, ids);
-  const faltam = imoveis.filter((p) => !cache.has(p.id));
+  // Endereço digitado: só os 40 mais próximos (sempre os mesmos) entram no cálculo — o resto fica na linha reta e a
+  // busca repetida não chama o provedor de novo.
+  const alvo = destino.destinoId
+    ? imoveis
+    : escolherCandidatos(imoveis.map((p) => ({ ...p, lat: Number(p.lat_exata), lng: Number(p.lng_exata) })), destino.ponto).map(
+        (c) => imoveis.find((p) => p.id === c.id)!,
+      );
+  const faltam = alvo.filter((p) => !cache.has(p.id));
 
   let calculando = false;
   if (faltam.length) {

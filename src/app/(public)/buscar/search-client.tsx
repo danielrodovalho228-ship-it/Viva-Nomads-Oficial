@@ -22,7 +22,7 @@ import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { comTotalMes } from "@/lib/precos";
 import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
-import type { GeoSuggestion } from "@/lib/integrations/geocoding";
+import { geocodingEnabled, type GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
@@ -1019,14 +1019,16 @@ export function SearchClient({
 
       <div className="container-page mt-4 lg:order-4 lg:mt-0 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
         <div data-testid="busca-lista" className="min-w-0 lg:w-[58%] lg:py-5">
-          <div className="mb-6">
-            <CampoDestino destinos={destinos} modos={modos} valor={estadoDestino} onChange={escolherDestino} />
-            {estadoDestino.destino && tempoEmLinhaReta && (
-              <p className="mt-2 text-sm text-muted" data-testid="tempo-indisponivel">
-                Tempo de deslocamento indisponível agora: mostramos a distância em linha reta.
-              </p>
-            )}
-          </div>
+          {(destinos.length > 0 || geocodingEnabled || estadoDestino.destino) && (
+            <div className="mb-6">
+              <CampoDestino destinos={destinos} modos={modos} valor={estadoDestino} onChange={escolherDestino} />
+              {estadoDestino.destino && tempoEmLinhaReta && (
+                <p className="mt-2 text-sm text-muted" data-testid="tempo-indisponivel">
+                  Tempo de deslocamento indisponível agora: mostramos a distância em linha reta.
+                </p>
+              )}
+            </div>
+          )}
           {results.length === 0 ? (
             <div className="flex flex-col items-center rounded-xl border border-dashed border-line p-12 text-center">
               <EmptySearchIllustration />

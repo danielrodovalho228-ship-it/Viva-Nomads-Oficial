@@ -1447,6 +1447,22 @@
       "specs": [
         "t256-pagina-da-estadia"
       ]
+    },
+    "/admin/destinos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t261-tempo-ate-o-trabalho"
+      ]
+    },
+    "/imoveis-perto-de/[slug]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t261-tempo-ate-o-trabalho"
+      ]
     }
   },
   "rotas": {
@@ -1923,6 +1939,38 @@
       ],
       "specs": [
         "t240-conferencia-provas-admin"
+      ]
+    },
+    "/api/conta/local-trabalho": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t261-tempo-ate-o-trabalho"
+      ]
+    },
+    "/api/destinos": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t261-tempo-ate-o-trabalho"
+      ]
+    },
+    "/api/tempos": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t261-tempo-ate-o-trabalho"
+      ]
+    },
+    "/api/tempos/imovel/[id]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t261-tempo-ate-o-trabalho"
       ]
     }
   },
@@ -4331,6 +4379,26 @@
       "specs": [
         "t256-pagina-da-estadia"
       ]
+    },
+    "src/lib/data/local-trabalho-actions.ts#salvarLocalTrabalho": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t261-tempo-ate-o-trabalho"
+      ]
+    },
+    "src/lib/destinos/actions.ts#alternarDestino": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/destinos/actions.ts#salvarDestino": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
     }
   }
 }
