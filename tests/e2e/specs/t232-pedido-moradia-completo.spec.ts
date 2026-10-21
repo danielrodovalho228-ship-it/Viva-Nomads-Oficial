@@ -146,6 +146,7 @@ test.describe("T232 — pedido de moradia completo", () => {
     await expect(page.locator("main")).not.toContainText("WhatsApp");
     await meu.getByTestId("pedido-editar").click();
     await expect(page.getByRole("heading", { name: "Editar seu pedido" })).toBeVisible();
+    await expect(page.getByText("Carregando o pedido…")).toHaveCount(0, { timeout: 45_000 });
     await expect(page.getByTestId("pedido-orcamento")).toHaveValue("3.500", { timeout: 20_000 });
     await page.getByTestId("pedido-orcamento").fill("4000");
     await page.getByRole("button", { name: "Salvar alterações" }).click();

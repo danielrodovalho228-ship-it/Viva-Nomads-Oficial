@@ -21,7 +21,7 @@ const esc = (s: string) =>
   );
 
 const PIN_BASE =
-  "cursor-pointer select-none whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold shadow transition-transform";
+  "cursor-pointer select-none whitespace-nowrap rounded-full px-2 py-1 text-xs font-semibold tabular-nums shadow-flutuante transition-transform";
 const pinClass = (active: boolean) =>
   cn(
     PIN_BASE,
@@ -252,7 +252,7 @@ function SearchMapbox({
     if (focus) {
       const el = document.createElement("div");
       el.className =
-        "grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-night text-white shadow-lg ring-2 ring-champagne";
+        "grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-night text-white shadow-flutuante";
       el.setAttribute("aria-label", "Endereço buscado");
       el.innerHTML =
         '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg>';
@@ -441,7 +441,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
       icon: L.divIcon({
         className: "",
         iconSize: [0, 0],
-        html: '<div aria-label="Endereço buscado" class="absolute left-0 top-0 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-night shadow-lg ring-2 ring-champagne"></div>',
+        html: '<div aria-label="Endereço buscado" class="absolute left-0 top-0 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-night shadow-flutuante"></div>',
       }),
     }).addTo(g);
     focusLayerRef.current = g;

@@ -14,9 +14,10 @@ export function CityAutocomplete({
   value,
   onChange,
   placeholder = "Cidade ou bairro",
-  pillClassName = "flex items-center gap-2 rounded-xl bg-surface-2 px-3.5 py-3",
+  pillClassName = "flex items-center gap-2 rounded-lg bg-surface-2 px-4 py-3",
   inputId,
   inputClassName = "w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted",
+  semIcone = false,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -25,6 +26,8 @@ export function CityAutocomplete({
   /** Com `id`, o campo é nomeado por um <label htmlFor> visível (em vez do aria-label). */
   inputId?: string;
   inputClassName?: string;
+  /** Sem o alfinete à esquerda (a barra em pill já tem a lupa). */
+  semIcone?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -43,7 +46,7 @@ export function CityAutocomplete({
   return (
     <div ref={boxRef} className="relative">
       <div className={pillClassName}>
-        <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
+        {!semIcone && <MapPin className="h-4 w-4 shrink-0 text-ink" aria-hidden />}
         <input
           value={value}
           onChange={(e) => {
@@ -59,7 +62,7 @@ export function CityAutocomplete({
         />
       </div>
       {open && matches.length > 0 && (
-        <ul className="absolute left-0 top-full z-30 mt-1 max-h-64 w-full min-w-[12rem] overflow-auto rounded-xl border border-line bg-white py-1 shadow-xl">
+        <ul className="absolute left-0 top-full z-30 mt-1 max-h-64 w-full min-w-[12rem] overflow-auto rounded-xl border border-line bg-white py-1 shadow-flutuante">
           {matches.map((s) => (
             <li key={s}>
               <button
@@ -74,7 +77,7 @@ export function CityAutocomplete({
                   "flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-2"
                 )}
               >
-                <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
+                <MapPin className="h-4 w-4 shrink-0 text-muted" aria-hidden />
                 <span className="text-ink">{s}</span>
               </button>
             </li>

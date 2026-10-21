@@ -1334,6 +1334,7 @@ export default function NewPropertyPage() {
 
             {step === 2 && (
               <EtapaEncontramos
+                neighborhood={neighborhood}
                 iaEstado={iaEstado}
                 sugerido={sugerido}
                 tirarSugestao={tirarSugestao}

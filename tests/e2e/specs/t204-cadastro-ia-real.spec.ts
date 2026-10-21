@@ -44,8 +44,11 @@ async function novoDono(browser: Browser, largura: number, opcoes: BrowserContex
     await expect(campoEmail).toHaveValue(email, { timeout: 1_000 });
     await expect(campoSenha).toHaveValue(senha, { timeout: 1_000 });
   }).toPass({ timeout: 15_000 });
-  await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-  await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
+  // O envio pode se perder se a tela hidratar no meio (lab 39456130138): repete o clique até sair de /auth.
+  await expect(async () => {
+    await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
+    await page.waitForURL(/\/dashboard/, { timeout: 20_000, waitUntil: "commit" });
+  }).toPass({ timeout: 60_000 });
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
   return { page, id, fechar: () => ctx.close() };
 }

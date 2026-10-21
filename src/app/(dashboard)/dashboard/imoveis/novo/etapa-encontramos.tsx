@@ -8,6 +8,7 @@ import { ESSENCIAIS_TRABALHO, OPCIONAIS_TRABALHO } from "@/lib/anuncio/sugestoes
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import type { Privacidade } from "@/lib/anuncio/privacidade";
 import { ProntoParaTrabalhar, ProximidadesAutomaticas } from "@/components/anuncio/blocos-cadastro";
+import { avisoTituloBairro } from "@/lib/anuncio/titulo-bairro";
 import { cn } from "@/lib/utils";
 import { Erro, Labeled, Toggle } from "./campos";
 import type { CampoSugerido, EstadoIaFotos } from "./tipos";
@@ -46,6 +47,7 @@ export function EtapaEncontramos(p: {
   setProxDesmarcados: (fn: (s: string[]) => string[]) => void;
   manualProximities: Proximity[];
   setManualProximities: (p: Proximity[]) => void;
+  neighborhood: string;
   title: string;
   setTitle: (v: string) => void;
   description: string;
@@ -157,6 +159,7 @@ export function EtapaEncontramos(p: {
       <Labeled label="Título do anúncio" sugerido={p.sugerido("titulo")}>
         <input value={p.title} onChange={campo("titulo", p.setTitle)} maxLength={80} placeholder="Ex.: Studio mobiliado no Centro" className="input" data-testid="cadastro-titulo" />
         <Erro msg={p.erros.titulo} />
+        <AvisoBairro titulo={p.title} bairro={p.neighborhood} />
       </Labeled>
       <Labeled label="Descrição" sugerido={p.sugerido("descricao")}>
         <textarea rows={5} value={p.description} onChange={campo("descricao", p.setDescription)} className="input" placeholder="Descreva o imóvel…" data-testid="cadastro-descricao" />
@@ -181,4 +184,11 @@ export function EtapaEncontramos(p: {
       <PrivacidadeCampos valor={p.privacidade} onChange={p.setPrivacidade} />
     </div>
   );
+}
+
+function AvisoBairro({ titulo, bairro }: { titulo: string; bairro: string }) {
+  const aviso = avisoTituloBairro(titulo, bairro);
+  return aviso ? (
+    <p role="status" className="mt-1 text-xs text-amber-700" data-testid="aviso-titulo-bairro">{aviso}</p>
+  ) : null;
 }

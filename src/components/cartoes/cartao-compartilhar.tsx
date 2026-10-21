@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Download, Link2, MessageCircle } from "lucide-react";
+import { Download, Link2, MessageCircle, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
@@ -12,6 +12,8 @@ import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
  * Compartilhar um cartão (Fase 1): prévia, formato (1080×1350 ou 1080×1080) e UM toque para o WhatsApp — com a
  * imagem quando o aparelho deixa (compartilhar do sistema), senão a legenda pronta com o link curto. Modelo travado:
  * nada de texto livre; no cartão-postal, a pessoa só escolhe mostrar ou não o primeiro nome.
+ * Cartão do parceiro (partnercard, 31c): prévia nos dois formatos, "Compartilhar" pelo compartilhar do aparelho
+ * (Web Share API; sem suporte, copia o link). O título é sempre o nome público do negócio (sem opt-in).
  */
 export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar }) {
   const [pacote, setPacote] = useState(inicial);
@@ -20,7 +22,29 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
   const [msg, setMsg] = useState<string | null>(null);
   const [pendente, iniciar] = useTransition();
   const imagem = `${formato === "retrato" ? pacote.imagemRetrato : pacote.imagemQuadrado}&v=${versao}`;
-  const nomeArquivo = `viva-nomads-${pacote.tipo === "poststay" ? "cartao-postal" : "anuncio"}-${formato}.png`;
+  const parceiro = pacote.tipo === "partnercard";
+  const nomeArquivo = `viva-nomads-${pacote.tipo === "poststay" ? "cartao-postal" : parceiro ? "parceiro" : "anuncio"}-${formato}.png`;
+
+  /** Parceiro: compartilhar do aparelho (com a imagem quando dá; senão o link); sem suporte, copia o link. */
+  async function compartilharParceiro() {
+    setMsg(null);
+    void registrarCompartilhamento(pacote.curto, "sistema");
+    try {
+      const blob = await (await fetch(imagem)).blob();
+      const arquivo = new File([blob], nomeArquivo, { type: "image/png" });
+      if (navigator.canShare?.({ files: [arquivo] })) {
+        await navigator.share({ files: [arquivo], text: pacote.legenda });
+        return;
+      }
+      if (typeof navigator.share === "function") {
+        await navigator.share({ url: pacote.link, text: pacote.legenda });
+        return;
+      }
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+    }
+    await copiar();
+  }
 
   async function compartilhar() {
     setMsg(null);
@@ -73,15 +97,34 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_1fr]" data-testid="cartao-compartilhar" data-curto={pacote.curto} data-tipo={pacote.tipo}>
       <div className="min-w-0">
-        {/* eslint-disable-next-line @next/next/no-img-element -- imagem gerada no servidor, já no tamanho final */}
-        <img
-          src={imagem}
-          alt={pacote.tipo === "poststay" ? "Prévia do seu cartão-postal" : "Prévia do cartão do seu anúncio"}
-          className="w-full rounded-2xl border border-line bg-surface-2 shadow-sm"
-          width={1080}
-          height={formato === "retrato" ? 1350 : 1080}
-          data-testid="cartao-previa"
-        />
+        {parceiro ? (
+          <div className="grid grid-cols-2 gap-3" data-testid="cartao-previas">
+            {(["retrato", "quadrado"] as const).map((f) => (
+              <figure key={f} className="min-w-0">
+                {/* eslint-disable-next-line @next/next/no-img-element -- imagem gerada no servidor, já no tamanho final */}
+                <img
+                  src={`${f === "retrato" ? pacote.imagemRetrato : pacote.imagemQuadrado}&v=${versao}`}
+                  alt={`Prévia do cartão do parceiro (${f === "retrato" ? "1080×1350" : "1080×1080"})`}
+                  className="w-full rounded-xl border border-line bg-surface-2 shadow-sm"
+                  width={1080}
+                  height={f === "retrato" ? 1350 : 1080}
+                  data-testid={f === "retrato" ? "cartao-previa" : "cartao-previa-quadrado"}
+                />
+                <figcaption className="mt-1 text-center text-xs text-muted">{f === "retrato" ? "1080×1350" : "1080×1080"}</figcaption>
+              </figure>
+            ))}
+          </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element -- imagem gerada no servidor, já no tamanho final
+          <img
+            src={imagem}
+            alt={pacote.tipo === "poststay" ? "Prévia do seu cartão-postal" : "Prévia do cartão do seu anúncio"}
+            className="w-full rounded-2xl border border-line bg-surface-2 shadow-sm"
+            width={1080}
+            height={formato === "retrato" ? 1350 : 1080}
+            data-testid="cartao-previa"
+          />
+        )}
         <div className="mt-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Formato">
           {(["retrato", "quadrado"] as const).map((f) => (
             <button
@@ -100,9 +143,15 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
       </div>
 
       <div className="min-w-0 space-y-4">
-        <Button size="lg" className="w-full sm:w-auto" onClick={compartilhar} data-testid="cartao-compartilhar-whatsapp">
-          <MessageCircle className="h-5 w-5" /> Compartilhar no WhatsApp
-        </Button>
+        {parceiro ? (
+          <Button size="lg" className="w-full sm:w-auto" onClick={compartilharParceiro} data-testid="cartao-compartilhar-sistema">
+            <Share2 className="h-5 w-5" /> Compartilhar
+          </Button>
+        ) : (
+          <Button size="lg" className="w-full sm:w-auto" onClick={compartilhar} data-testid="cartao-compartilhar-whatsapp">
+            <MessageCircle className="h-5 w-5" /> Compartilhar no WhatsApp
+          </Button>
+        )}
         <p className="text-sm text-muted [overflow-wrap:anywhere]" data-testid="cartao-legenda">
           {pacote.legenda}
         </p>
@@ -126,10 +175,16 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
             <span data-testid="cartao-nome-opcao">Mostrar meu primeiro nome no cartão (só o primeiro nome; sem sobrenome nem contato)</span>
           </label>
         )}
-        <p className="text-xs text-muted">
-          O QR e o link levam à página do imóvel na Viva Nomads. Quem abre não precisa entrar na conta. O cartão só mostra
-          {pacote.tipo === "poststay" ? " a cidade e o mês/ano da estadia" : " título, bairro, cidade, valor mensal e período"}.
-        </p>
+        {parceiro ? (
+          <p className="text-sm text-ink" data-testid="cartao-parceiro-explicacao">
+            Quem escanear cai na sua página na Viva e pede orçamento por lá. Contato sempre pela plataforma.
+          </p>
+        ) : (
+          <p className="text-xs text-muted">
+            O QR e o link levam à página do imóvel na Viva Nomads. Quem abre não precisa entrar na conta. O cartão só mostra
+            {pacote.tipo === "poststay" ? " a cidade e o mês/ano da estadia" : " título, bairro, cidade, valor mensal e período"}.
+          </p>
+        )}
         <div className="border-t border-line pt-3">
           <ConfirmarNaPagina
             aviso="Trocar o código do QR? Os cartões e links que você já mandou continuam abrindo o imóvel, mas deixam de contar como seus."

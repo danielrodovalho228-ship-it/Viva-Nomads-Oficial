@@ -10,8 +10,12 @@ import {
   caminhoDoDonoValido,
   documentoJaNaFila,
   documentoNoSalvar,
+  formularioComTitular,
   hashValido,
+  limparTitularDocumento,
   linhaDoEnvio,
+  salvarNaMesmaLinha,
+  CAMPOS_FIXOS_DA_FILA,
 } from "./fila-envio.ts";
 import { documentosOrfaos, chaveOrfao, textoAvisoOrfaos } from "./orfaos.ts";
 
@@ -135,4 +139,49 @@ test("o cron não apaga arquivos do bucket", () => {
   assert.doesNotMatch(src, /\.delete\(/);
   const cron = readFileSync(new URL("../../app/api/cron/automacoes/route.ts", import.meta.url), "utf8");
   assert.match(cron, /avisarDocumentosOrfaos\(admin, agora, simular\)/);
+});
+
+// ── Prompt 36, item 3a: o nome do titular chega ao admin desde o ENVIO ─────────────────────────────────────────────
+
+test("o envio grava o titular digitado em formulario.elig.titularDocumento (sem perder as outras respostas)", () => {
+  const agora = new Date("2026-10-20T12:00:00Z");
+  const anterior = { id: "v", owner_id: DONO, property_id: null, furnished: true, formulario: { versao: 1, elig: { furnished: true, titularDocumento: "Antigo" }, quality: { wifi: true } } };
+  const l = linhaDoEnvio(anterior, { ownerId: DONO, propertyId: null, path: ARQ, hash: null, agora, titular: "  Maria   da Silva<> " });
+  assert.deepEqual(l.formulario, { versao: 1, elig: { furnished: true, titularDocumento: "Maria da Silva" }, quality: { wifi: true } });
+  // Sem qualificação anterior: o formulário nasce só com o titular.
+  const nova = linhaDoEnvio(null, { ownerId: DONO, propertyId: null, path: ARQ, hash: null, agora, titular: "João Souza" });
+  assert.deepEqual(nova.formulario, { versao: 1, elig: { titularDocumento: "João Souza" } });
+  // Campo vazio: mantém o formulário herdado como estava.
+  const vazio = linhaDoEnvio(anterior, { ownerId: DONO, propertyId: null, path: ARQ, hash: null, agora, titular: "   " });
+  assert.deepEqual(vazio.formulario, anterior.formulario);
+  assert.equal(limparTitularDocumento(123), undefined);
+  assert.equal(limparTitularDocumento("x".repeat(200))?.length, 150);
+  assert.deepEqual(formularioComTitular([1, 2], "A"), { versao: 1, elig: { titularDocumento: "A" } });
+});
+
+test("o salvar ATUALIZA a mesma linha só quando ela tem o MESMO arquivo e ainda está em análise", () => {
+  assert.equal(salvarNaMesmaLinha({ id: "l1", document_path: ARQ, document_status: "pending" }, ARQ), true);
+  assert.equal(salvarNaMesmaLinha({ id: "l1", document_path: ARQ, document_status: "approved" }, ARQ), false);
+  assert.equal(salvarNaMesmaLinha({ id: "l1", document_path: ARQ2, document_status: "pending" }, ARQ), false);
+  assert.equal(salvarNaMesmaLinha({ id: "l1", document_path: ARQ, document_status: "pending" }, null), false);
+  assert.equal(salvarNaMesmaLinha(null, ARQ), false);
+  assert.deepEqual([...CAMPOS_FIXOS_DA_FILA].sort(), ["document_hash_sha256", "document_path", "document_status", "document_uploaded_at", "owner_id", "property_id"]);
+});
+
+test("actions: o envio recebe o titular; o salvar atualiza a linha da fila pelo serviço, presa ao id, ao dono e ao 'pending'", () => {
+  const src = readFileSync(new URL("../data/actions.ts", import.meta.url), "utf8");
+  const ini = src.indexOf("export async function saveQualification(");
+  const fim = src.indexOf("export async function enviarDocumentoParaConferencia(");
+  const salvar = src.slice(ini, fim);
+  assert.match(salvar, /\.select\("id, document_path, document_status"\)/);
+  assert.match(salvar, /if \(salvarNaMesmaLinha\(ultimo, documentPath\)\) \{/);
+  assert.match(salvar, /for \(const k of CAMPOS_FIXOS_DA_FILA\) delete respostas\[k\];/);
+  assert.match(salvar, /\.update\(\{ \.\.\.respostas, formulario \}\)\s*\.eq\("id", ultimo\.id\)\s*\.eq\("owner_id", user\.id\)\s*\.eq\("document_status", "pending"\)/);
+  // Atualizou a linha: volta sem inserir outra e sem segundo aviso.
+  assert.ok(salvar.indexOf("return { ok: true, id: ultimo.id }") < salvar.indexOf(".insert({ ...linha, formulario })"));
+  const enviar = src.slice(fim, src.indexOf("export type DocumentStatus"));
+  assert.match(enviar, /titularDocumento\?: string \| null/);
+  assert.match(enviar, /titular: titularDocumento,/);
+  const cli = readFileSync(new URL("../../app/(dashboard)/qualificar/qualificar-client.tsx", import.meta.url), "utf8");
+  assert.match(cli, /enviarDocumentoParaConferencia\(imovel\?\.id \?\? imovelPedido\.current, d\.path, d\.hash, elig\.titularDocumento \?\? null\)/);
 });

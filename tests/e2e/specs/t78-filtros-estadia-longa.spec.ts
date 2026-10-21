@@ -15,12 +15,21 @@ test.describe("T78 — Filtros de estadia longa", () => {
     const antes = await total();
     // Computador (ordem eac7e3a1): os filtros abrem pela busca compacta do cabeçalho.
     await page.getByTestId("busca-compacta").click();
-    await page.getByRole("button", { name: /Mais filtros/ }).first().click();
-    await page.getByRole("button", { name: "Máquina de lavar", exact: true }).click();
+    // Prompt 40: "Mais filtros" abre a folha lateral; a escolha vale ao tocar em "Mostrar N imóveis".
+    const aplicar = async (nome: string) => {
+      await page.getByRole("button", { name: /Mais filtros/ }).first().click();
+      const folha = page.getByRole("dialog", { name: "Filtros" });
+      await folha.getByRole("button", { name: nome, exact: true }).click();
+      const botao = folha.getByTestId("aplicar-filtros");
+      test.skip(await botao.isDisabled(), `Sem imóvel com ${nome} nesta base.`);
+      await botao.click();
+      await expect(folha).toHaveCount(0);
+    };
+    await aplicar("Máquina de lavar");
     await expect(page).toHaveURL(/comod=lavar/);
     const um = await total();
     expect(um).toBeLessThanOrEqual(antes);
-    await page.getByRole("button", { name: "Cozinha equipada", exact: true }).click();
+    await aplicar("Cozinha equipada");
     await expect(page).toHaveURL(/comod=lavar(%2C|,)cozinha/);
     expect(await total()).toBeLessThanOrEqual(um);
   });

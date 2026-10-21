@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { TrendingUp, FileSignature, Receipt, ShieldCheck, Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { BannerTopo } from "@/components/institucional/banner-topo";
+import { FotoCartao } from "@/components/institucional/foto-cartao";
+import { cartaoSecao } from "@/lib/cartoes-secao";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -99,10 +101,10 @@ export default function ForLandlordsPage() {
           </p>
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
-          <Benefit icon={TrendingUp} title="Menos imóvel parado" text="Um inquilino por uma estadia inteira, inclusive nos meses fracos do turismo." />
-          <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de 30 a 180 dias gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit icon={ShieldCheck} title="Caução" text={`Caução documentada, combinada entre proprietário e inquilino. ${CAUCAO_FRASE} Outras modalidades de garantia locatícia: em breve. A plataforma organiza e documenta; não é a garantidora.`} />
+          <Benefit id="custos" title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
+          <Benefit id="ocupacao" title="Menos imóvel parado" text="Um inquilino por uma estadia inteira, inclusive nos meses fracos do turismo." />
+          <Benefit id="contrato" title="Contrato com validade jurídica" text="Contrato de 30 a 180 dias gerado e assinado digitalmente, com validade jurídica." />
+          <Benefit id="caucao" title="Caução" text={`Caução documentada, combinada entre proprietário e inquilino. ${CAUCAO_FRASE} Outras modalidades de garantia locatícia: em breve. A plataforma organiza e documenta; não é a garantidora.`} />
         </div>
       </section>
 
@@ -144,21 +146,21 @@ export default function ForLandlordsPage() {
 }
 
 function Benefit({
-  icon: Icon,
+  id,
   title,
   text,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  id: string;
   title: string;
   text: string;
 }) {
   return (
-    <div className="rounded-2xl border border-sage-200 bg-white p-6">
-      <div className="grid h-12 w-12 place-items-center rounded-xl bg-sage-100 text-forest">
-        <Icon className="h-6 w-6" />
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
+      <FotoCartao cartao={cartaoSecao("para-proprietarios", id)} />
+      <div className="p-6">
+        <h3 className="line-clamp-2 font-title text-lg font-bold text-ink">{title}</h3>
+        <p className="mt-2 text-sm text-muted">{text}</p>
       </div>
-      <h3 className="mt-4 font-title text-lg font-bold text-ink">{title}</h3>
-      <p className="mt-2 text-sm text-muted">{text}</p>
     </div>
   );
 }

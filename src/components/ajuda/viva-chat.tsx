@@ -151,7 +151,8 @@ export function VivaChatFlutuante() {
         </div>
       )}
       {/* Mesmo botão primário do site (tokens do <Button>), igual em todas as
-          páginas e larguras: ícone + texto. Clique curto abre; arrastar move. */}
+          páginas e larguras: ícone + texto. Clique curto abre; arrastar move.
+          É o botão flutuante: o ÚNICO com sombra (shadow-flutuante, Prompt 40). */}
       <button
         ref={botao}
         type="button"
@@ -165,7 +166,7 @@ export function VivaChatFlutuante() {
         onPointerCancel={aoSoltar}
         aria-expanded={aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className={cn(buttonClasses(), "touch-none select-none", compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0 max-lg:shadow-lg", arrastando && "cursor-grabbing shadow-xl")}
+        className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0", arrastando && "cursor-grabbing")}
         data-testid="fale-com-a-viva"
         data-compacto={compacto && !aberto ? "1" : undefined}
       >

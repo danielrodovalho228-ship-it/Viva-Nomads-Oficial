@@ -45,19 +45,21 @@ async function larguraConteudo(page: Page): Promise<number> {
   return medir();
 }
 
+// Uma rota por teste: as 10 rotas em sequência estouravam os 135 s de um teste só quando o lab estava lento
+// (lab fe04ddf6: T64 1280 px por timeout). Cada teste mede a Visão geral e a própria rota, com prazo próprio.
 for (const largura of [1280, 1920]) {
-  test(`T64 — conteúdo em largura cheia a ${largura}px (±24 px da Visão geral)`, async ({ page }) => {
-    test.slow(); // 10 rotas em sequência: o prazo de 45 s de um teste só não cobre
-    await page.setViewportSize({ width: largura, height: 900 });
-    await abrir(page, "/dashboard");
-    const referencia = await larguraConteudo(page);
-    expect(referencia).toBeGreaterThan(largura * 0.6);
-    for (const rota of ROTAS.slice(1)) {
+  for (const rota of ROTAS.slice(1)) {
+    test(`T64 — ${rota} em largura cheia a ${largura}px (±24 px da Visão geral)`, async ({ page }) => {
+      test.slow();
+      await page.setViewportSize({ width: largura, height: 900 });
+      await abrir(page, "/dashboard");
+      const referencia = await larguraConteudo(page);
+      expect(referencia).toBeGreaterThan(largura * 0.6);
       await abrir(page, rota);
       const w = await larguraConteudo(page);
       expect(Math.abs(w - referencia), `${rota}: ${w}px contra ${referencia}px da Visão geral`).toBeLessThanOrEqual(24);
-    }
-  });
+    });
+  }
 }
 
 for (const largura of [360, 390]) {

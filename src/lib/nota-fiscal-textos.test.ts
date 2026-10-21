@@ -18,7 +18,10 @@ test("/empresas: recibo da estadia em nome do proprietário, sem nota da Viva pa
 
 test("busca: filtro 'Com Nota Fiscal' só com a chave do selo (SELO_NF_UI)", () => {
   const s = ler("app/(public)/buscar/search-client.tsx");
-  assert.match(s, /\{SELO_NF_UI && \(\s*<Chip on=\{invoiceOnly\}/);
+  // Prompt 40: o chip mora na folha de filtros, que só o mostra com a chave (comNotaFiscal={SELO_NF_UI}).
+  assert.match(s, /comNotaFiscal=\{SELO_NF_UI\}/);
+  assert.match(s, /notaOnly: SELO_NF_UI && invoiceOnly/);
+  assert.match(ler("components/busca/painel-filtros-celular.tsx"), /\{comNotaFiscal && \(\s*<Chip ativo=\{rascunho\.notaOnly\}/);
   assert.match(s, /SELO_NF_UI && on\("nota"\)/);
   assert.match(s, /SELO_NF_UI && invoiceOnly && <ActiveChip/);
 });

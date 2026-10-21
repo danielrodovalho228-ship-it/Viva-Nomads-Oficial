@@ -176,6 +176,7 @@ export async function decidirMatriculaAdmin(id: string, acao: "aprovar" | "pedir
     .neq("owner_id", user.id);
   revalidarAnuncio(alvo.property_id as string | null, revalidatePath);
   revalidatePath("/admin/documentos");
+  revalidatePath("/admin", "layout"); // Prompt 36, item 3b: selo da barra lateral e "na fila agora"
   await logModeracao(supabase, user.id, `matricula_${acao}`, "matricula", id, acao === "aprovar" ? null : motivoLimpo);
 
   // Aviso agrupado por imóvel (rota rápida dos e-mails, item 3b): sai quando o último documento do imóvel é decidido.

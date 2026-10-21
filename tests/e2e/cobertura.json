@@ -138,7 +138,8 @@
         "t183-telas-logadas-390",
         "t195-matricula-caf",
         "t220-recibo-assinatura",
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t241-contas-teste-36"
       ]
     },
     "/admin/emails-teste": {
@@ -184,7 +185,9 @@
       "specs": [
         "t183-telas-logadas-390",
         "t201-qa-muse",
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t239-cartao-parceiro",
+        "t241-contas-teste-36"
       ]
     },
     "/admin/pedidos": {
@@ -215,7 +218,8 @@
         "t101-admin-usuarios",
         "t178-telefone-sms",
         "t48-varredura",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t241-contas-teste-36"
       ]
     },
     "/ajuda": {
@@ -1166,7 +1170,8 @@
         "t18-seo-a11y",
         "t40-novo-anuncio-fotos",
         "t183-telas-logadas-390",
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t241-contas-teste-36"
       ]
     },
     "/roi": {
@@ -1324,7 +1329,8 @@
         "proprietario"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t239-cartao-parceiro"
       ]
     },
     "/parceiros/[slug]": {
@@ -1332,7 +1338,8 @@
         "publico"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t239-cartao-parceiro"
       ]
     },
     "/parceiros/ativar": {
@@ -1348,7 +1355,8 @@
         "publico"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t241-contas-teste-36"
       ]
     },
     "/admin/contratos/[id]": {
@@ -1546,6 +1554,7 @@
         "proprietario"
       ],
       "specs": [
+        "t238-pacote-provas",
         "t240-conferencia-provas-admin"
       ]
     },
@@ -1804,7 +1813,8 @@
         "publico"
       ],
       "specs": [
-        "t235-cartoes-compartilhaveis"
+        "t235-cartoes-compartilhaveis",
+        "t239-cartao-parceiro"
       ]
     },
     "/cartoes/[curto]/imagem": {
@@ -1812,7 +1822,8 @@
         "publico"
       ],
       "specs": [
-        "t235-cartoes-compartilhaveis"
+        "t235-cartoes-compartilhaveis",
+        "t239-cartao-parceiro"
       ]
     },
     "/api/cartoes/visita": {
@@ -1820,7 +1831,8 @@
         "publico"
       ],
       "specs": [
-        "t235-cartoes-compartilhaveis"
+        "t235-cartoes-compartilhaveis",
+        "t239-cartao-parceiro"
       ]
     },
     "/api/admin/contratos/[id]/provas": {
@@ -1930,7 +1942,8 @@
         "proprietario"
       ],
       "specs": [
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t241-contas-teste-36"
       ]
     },
     "src/lib/data/actions.ts#getLatestDraft": {
@@ -2020,7 +2033,8 @@
         "proprietario"
       ],
       "specs": [
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t241-contas-teste-36"
       ]
     },
     "src/lib/data/actions.ts#sendMessage": {
@@ -2550,6 +2564,14 @@
         "t240-conferencia-provas-admin"
       ]
     },
+    "src/lib/data/conta-teste-actions.ts#marcarContaTeste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t241-contas-teste-36"
+      ]
+    },
     "src/lib/data/contrato-assinar-actions.ts#assinarContrato": {
       "personas": [
         "inquilino",
@@ -2672,7 +2694,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t241-contas-teste-36"
+      ]
     },
     "src/lib/data/documentos-admin.ts#reabrirConferencia": {
       "personas": [
@@ -3677,19 +3701,23 @@
     },
     "src/lib/data/cartoes-actions.ts#definirNomeNoCartao": {
       "personas": [
-        "inquilino"
+        "inquilino",
+        "parceiro"
       ],
       "specs": [
-        "t235-cartoes-compartilhaveis"
+        "t235-cartoes-compartilhaveis",
+        "t239-cartao-parceiro"
       ]
     },
     "src/lib/data/cartoes-actions.ts#registrarCompartilhamento": {
       "personas": [
         "inquilino",
-        "proprietario"
+        "proprietario",
+        "parceiro"
       ],
       "specs": [
-        "t235-cartoes-compartilhaveis"
+        "t235-cartoes-compartilhaveis",
+        "t239-cartao-parceiro"
       ]
     },
     "src/lib/data/cartoes-actions.ts#trocarMeuCodigo": {
@@ -3746,7 +3774,8 @@
         "admin"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t241-contas-teste-36"
       ]
     },
     "src/lib/parceiros/admin-actions.ts#suspenderParceiro": {
@@ -3938,6 +3967,14 @@
       ],
       "specs": [
         "t240-conferencia-provas-admin"
+      ]
+    },
+    "src/lib/data/cartoes-actions.ts#meuCartaoDoParceiro": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t239-cartao-parceiro"
       ]
     }
   }

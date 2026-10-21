@@ -43,7 +43,7 @@ export function Switch({
     >
       <span
         aria-hidden
-        className="pointer-events-none h-5 w-5 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform"
+        className="pointer-events-none h-5 w-5 rounded-full bg-white ring-1 ring-black/10 transition-transform"
         // 44px de trilho, bolinha de 20px, folga de 2px: off=2px, on=22px (mantém DENTRO do trilho).
         style={{ transform: checked ? "translateX(22px)" : "translateX(2px)" }}
       />

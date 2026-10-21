@@ -94,6 +94,9 @@ export function PedidosClient({
   const [aviso, setAviso] = useState<string | null>(editado ? "Pedido atualizado. As mudanças já valem para os proprietários." : null);
   // Erro na própria página (adendo ao prompt 28: nada de alert, que o QA automatizado não enxerga).
   const [erro, setErro] = useState<string | null>(null);
+  // Pedido excluído some na hora: não depende só do router.refresh() (o lab viu o cartão ficar com o banco já "excluido").
+  const [excluidos, setExcluidos] = useState<string[]>([]);
+  const visiveis = pedidos.filter((p) => !excluidos.includes(p.id));
 
   async function run(key: string, fn: () => Promise<{ ok: boolean; error?: string }>) {
     setBusy(key);
@@ -102,6 +105,7 @@ export function PedidosClient({
     setBusy(null);
     if (!res.ok) setErro(res.error ?? "Não foi possível agora. Tente de novo.");
     router.refresh();
+    return res.ok;
   }
 
   const respostasPorPedido = (pedidoId: string) =>
@@ -132,7 +136,7 @@ export function PedidosClient({
         </p>
       )}
 
-      {pedidos.length === 0 ? (
+      {visiveis.length === 0 ? (
         <Panel>
           <EmptyState
             illustration={<Image src="/media/empty-pedidos.webp" alt="" width={176} height={176} className="h-44 w-44" />}
@@ -149,7 +153,7 @@ export function PedidosClient({
         </Panel>
       ) : (
         <div className="space-y-4">
-          {pedidos.map((p) => {
+          {visiveis.map((p) => {
             const rs = respostasPorPedido(p.id);
             const expira = Date.parse(p.expira_em);
             const pertoDeVencer = p.status === "ativo" && expira > agora && expira - agora <= DIAS_AVISO_RENOVAR * 86_400_000;
@@ -254,8 +258,11 @@ export function PedidosClient({
                         data-testid="pedido-excluir-confirmar"
                         onClick={() => {
                           setConfirmarExcluir(null);
-                          setAviso("Pedido excluído. Ele não aparece mais para os proprietários.");
-                          void run(`del-${p.id}`, () => excluirPedido(p.id));
+                          void run(`del-${p.id}`, () => excluirPedido(p.id)).then((ok) => {
+                            if (!ok) return;
+                            setExcluidos((l) => [...l, p.id]);
+                            setAviso("Pedido excluído. Ele não aparece mais para os proprietários.");
+                          });
                         }}
                       >
                         Excluir pedido

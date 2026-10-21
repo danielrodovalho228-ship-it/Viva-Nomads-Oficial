@@ -21,7 +21,7 @@ export function Logo({
   className?: string;
 }) {
   return (
-    <Link href={href} className={cn("inline-flex items-center gap-2.5", className)} aria-label="Viva Nomads">
+    <Link href={href} className={cn("inline-flex items-center gap-2", className)} aria-label="Viva Nomads">
       <BrandMark onDark={light} />
       <Wordmark light={light} />
     </Link>
@@ -46,7 +46,7 @@ export function BrandMark({ size = 32, onDark = false }: { size?: number; onDark
 
 function Wordmark({ light }: { light?: boolean }) {
   return (
-    <span className="font-title text-[1.2rem] font-bold tracking-tight leading-none">
+    <span className="font-title text-[1.2rem] font-semibold tracking-tight leading-none">
       <span style={{ color: light ? "#FFFFFF" : "#0A4FD6" }}>Viva</span>
       <span style={{ color: light ? "#8FD63A" : "#5DBB1E" }}>Nomads</span>
     </span>

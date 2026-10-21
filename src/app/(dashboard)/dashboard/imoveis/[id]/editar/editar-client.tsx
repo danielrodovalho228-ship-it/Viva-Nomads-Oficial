@@ -38,6 +38,8 @@ import { MIN_FOTOS, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/pr
 import { TERMO_IA_TEXTO, aceiteDoEditor } from "@/lib/anuncio/termo-ia";
 import { carregarLimitesNegociacao, salvarLimitesNegociacao, updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
+import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
+import { avisoTituloBairro } from "@/lib/anuncio/titulo-bairro";
 import { formatBRL, cn } from "@/lib/utils";
 
 const MIN_DESC = 60;
@@ -231,6 +233,11 @@ export function EditarImovelClient({
     setSavingSection(key);
     setErro(null);
     setSavedSection(null);
+    if (!periodoDisponivelValido(availableFrom, availableUntil)) {
+      setErro(MSG_DISPONIVEL_ATE_ANTES);
+      setSavingSection(null);
+      return false;
+    }
     const res = await updateProperty(property.id, buildInput(asDraft));
     // O limite PRIVADO vai à parte (tabela só do dono), nunca no anúncio.
     if (res.ok && key === "negociacao") {
@@ -463,6 +470,11 @@ export function EditarImovelClient({
               placeholder="Ex.: Studio mobiliado com home office no Centro"
               className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
             />
+            {avisoTituloBairro(title, property.neighborhood ?? "") && (
+              <span role="status" className="mt-1 block text-xs text-amber-700" data-testid="aviso-titulo-bairro">
+                {avisoTituloBairro(title, property.neighborhood ?? "")}
+              </span>
+            )}
           </label>
           <label className="mt-4 block text-sm">
             <span className="mb-1 block font-medium text-ink">Descrição</span>

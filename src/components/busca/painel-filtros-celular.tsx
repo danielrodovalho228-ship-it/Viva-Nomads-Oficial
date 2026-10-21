@@ -1,177 +1,177 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
 import {
   FILTROS_PAINEL_VAZIOS,
+  OPCOES_ESTADIA,
   OPCOES_PORTE_PET,
   OPCOES_PRECO,
   OPCOES_QUARTOS,
+  OPCOES_TIPO,
   rotuloMostrar,
   type FiltrosPainel,
 } from "@/lib/busca/painel-filtros";
 import { COMODIDADES_FILTRO } from "@/lib/busca/filtro-comodidades";
 import { buttonClasses } from "@/components/ui/button";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { Chip } from "@/components/ui/chip";
 
 /**
- * Painel de filtros do celular (ordem 314f764e, print 03): sobe de baixo,
- * edita um RASCUNHO e mostra quantos imóveis aparecem antes de aplicar.
- * "Mostrar N imóveis" aplica e volta à lista já filtrada; "Limpar" zera.
+ * Folha de filtros da /buscar (ordem 314f764e; Prompt 40): no celular sobe de
+ * baixo (bottom-sheet.tsx); no computador é um painel na lateral direita.
+ * Edita um RASCUNHO e mostra, ao vivo, quantos imóveis aparecem antes de
+ * aplicar ("Mostrar 23 imóveis" usa a MESMA função da lista). "Limpar tudo"
+ * (terciário) zera o rascunho. Todas as escolhas são chips: tocar de novo
+ * desliga — sem opção "Qualquer", "Ambos", "Indiferente" ou "Tanto faz".
  */
-export function PainelFiltrosCelular({
+export function FolhaFiltros({
   inicial,
   contar,
   onAplicar,
   onFechar,
+  garantias,
+  comNotaFiscal = false,
 }: {
   inicial: FiltrosPainel;
   contar: (f: FiltrosPainel) => number;
   onAplicar: (f: FiltrosPainel) => void;
   onFechar: () => void;
+  /** Garantias do filtro público (caução unificada + seguro-fiança). */
+  garantias: { key: string; label: string }[];
+  /** "Com Nota Fiscal" só com a chave do selo ligada. */
+  comNotaFiscal?: boolean;
 }) {
   const [rascunho, setRascunho] = useState<FiltrosPainel>(inicial);
   const n = contar(rascunho);
   const muda = <K extends keyof FiltrosPainel>(k: K, v: FiltrosPainel[K]) => setRascunho((r) => ({ ...r, [k]: v }));
-
-  // Esc fecha; a página por trás não rola enquanto o painel está aberto.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onFechar();
-    document.addEventListener("keydown", onKey);
-    const antes = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = antes;
-    };
-  }, [onFechar]);
+  /** Escolha única: tocar na escolhida desliga o filtro (volta ao valor vazio). */
+  const alterna = <K extends "maxPrice" | "minBedrooms" | "periodo" | "tipo" | "petPorte" | "garantia">(k: K, v: FiltrosPainel[K]) =>
+    setRascunho((r) => ({ ...r, [k]: r[k] === v ? FILTROS_PAINEL_VAZIOS[k] : v }));
 
   return (
-    <div className="fixed inset-0 z-[90] sm:hidden">
-      <button type="button" aria-label="Fechar filtros" onClick={onFechar} className="absolute inset-0 bg-night/50" />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="painel-filtros-titulo"
-        data-testid="painel-filtros"
-        className="absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-3xl bg-white shadow-2xl"
-      >
-        <div className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-sage-200" aria-hidden />
-        <div className="flex items-center justify-between border-b border-line px-5 py-3">
-          <h2 id="painel-filtros-titulo" className="font-title text-lg font-bold text-ink">
-            Filtros
-          </h2>
-          <button type="button" onClick={onFechar} aria-label="Fechar" className="grid h-10 w-10 place-items-center rounded-full text-ink hover:bg-surface-2">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
-          <Grupo titulo="Preço por mês">
-            {OPCOES_PRECO.map((o) => (
-              <Opcao key={o.valor} nome="preco" ativo={rascunho.maxPrice === o.valor} onClick={() => muda("maxPrice", o.valor)}>
-                {o.rotulo}
-              </Opcao>
-            ))}
-          </Grupo>
-          <Grupo titulo="Quartos">
-            {OPCOES_QUARTOS.map((o) => (
-              <Opcao key={o.valor} nome="quartos" ativo={rascunho.minBedrooms === o.valor} onClick={() => muda("minBedrooms", o.valor)}>
-                {o.rotulo}
-              </Opcao>
-            ))}
-          </Grupo>
-          <fieldset>
-            <legend className="mb-2 text-sm font-semibold text-ink">Do seu jeito</legend>
-            <div className="divide-y divide-line rounded-2xl border border-line">
-              <Marcar rotulo="Aceita pets" dica="Cachorro, gato e outros, conforme as regras do imóvel" ligado={rascunho.petsOnly} onChange={(v) => muda("petsOnly", v)} />
-              <Marcar rotulo="Para trabalhar de casa" dica="Home office com mesa, cadeira e internet boa" ligado={rascunho.homeOfficeOnly} onChange={(v) => muda("homeOfficeOnly", v)} />
-              <Marcar rotulo="Pronto para Morar" dica="Selo do imóvel equipado para entrar com a mala" ligado={rascunho.readyToLiveOnly} onChange={(v) => muda("readyToLiveOnly", v)} />
-            </div>
-          </fieldset>
-          <fieldset data-testid="painel-comodidades">
-            <legend className="mb-2 text-sm font-semibold text-ink">Comodidades</legend>
-            <div className="divide-y divide-line rounded-2xl border border-line">
-              {COMODIDADES_FILTRO.map((c) => (
-                <Marcar
-                  key={c.chave}
-                  rotulo={c.rotulo}
-                  dica={c.dica}
-                  ligado={rascunho.comodidades.includes(c.chave)}
-                  onChange={(v) =>
-                    muda("comodidades", v ? [...rascunho.comodidades, c.chave] : rascunho.comodidades.filter((x) => x !== c.chave))
-                  }
-                />
-              ))}
-            </div>
-          </fieldset>
-          {rascunho.petsOnly && (
-            <div data-testid="painel-porte-pet">
-              <Grupo titulo="Porte do pet">
-                {OPCOES_PORTE_PET.map((o) => (
-                  <Opcao key={o.valor || "qualquer"} nome="porte-pet" ativo={rascunho.petPorte === o.valor} onClick={() => muda("petPorte", o.valor)}>
-                    {o.rotulo}
-                  </Opcao>
-                ))}
-              </Grupo>
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-[auto_1fr] gap-3 border-t border-line px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <BottomSheet
+      open
+      onClose={onFechar}
+      title="Filtros"
+      lateral
+      testId="painel-filtros"
+      footer={
+        <div className="flex items-center justify-between gap-4">
           <button
             type="button"
             onClick={() => setRascunho(FILTROS_PAINEL_VAZIOS)}
-            className="h-12 rounded-xl px-4 text-sm font-semibold text-forest underline underline-offset-2 hover:bg-surface-2"
+            data-testid="limpar-tudo"
+            className={buttonClasses({ variant: "tertiary" })}
           >
-            Limpar
+            Limpar tudo
           </button>
           <button
             type="button"
             onClick={() => onAplicar(rascunho)}
             disabled={n === 0}
             data-testid="aplicar-filtros"
-            className={buttonClasses({ className: "px-4 sm:px-4" })}
+            data-total={n}
+            className={buttonClasses({ className: "min-w-0 flex-1 px-4 tabular-nums sm:flex-none sm:px-6" })}
           >
             {rotuloMostrar(n)}
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-  return (
-    <fieldset>
-      <legend className="mb-2 text-sm font-semibold text-ink">{titulo}</legend>
-      <div className="grid grid-cols-4 gap-2">{children}</div>
-    </fieldset>
-  );
-}
-
-function Opcao({ nome, ativo, onClick, children }: { nome: string; ativo: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <label
-      className={cn(
-        "flex min-h-11 cursor-pointer items-center justify-center rounded-xl border px-1 text-center text-xs font-semibold leading-tight transition-colors",
-        ativo ? "border-forest bg-forest text-white" : "border-line bg-white text-ink hover:border-sage"
-      )}
+      }
     >
-      <input type="radio" name={nome} checked={ativo} onChange={onClick} className="sr-only" />
-      {children}
-    </label>
+      <div className="space-y-6">
+        <Grupo titulo="Preço por mês">
+          {OPCOES_PRECO.map((o) => (
+            <Chip key={o.valor} ativo={rascunho.maxPrice === o.valor} onClick={() => alterna("maxPrice", o.valor)}>
+              {o.rotulo}
+            </Chip>
+          ))}
+        </Grupo>
+        <Grupo titulo="Quartos">
+          {OPCOES_QUARTOS.map((o) => (
+            <Chip key={o.valor} ativo={rascunho.minBedrooms === o.valor} onClick={() => alterna("minBedrooms", o.valor)}>
+              {o.rotulo}
+            </Chip>
+          ))}
+        </Grupo>
+        <Grupo titulo="Estadia" testId="painel-estadia">
+          {OPCOES_ESTADIA.map((o) => (
+            <Chip key={o.valor} ativo={rascunho.periodo === o.valor} onClick={() => alterna("periodo", o.valor)}>
+              {o.rotulo}
+            </Chip>
+          ))}
+        </Grupo>
+        <Grupo titulo="Tipo de imóvel" testId="painel-tipo">
+          {OPCOES_TIPO.map((o) => (
+            <Chip key={o.valor} ativo={rascunho.tipo === o.valor} onClick={() => alterna("tipo", o.valor)}>
+              {o.rotulo}
+            </Chip>
+          ))}
+        </Grupo>
+        <Grupo titulo="Do seu jeito">
+          <Chip ativo={rascunho.petsOnly} onClick={() => setRascunho((r) => ({ ...r, petsOnly: !r.petsOnly, petPorte: "" }))}>
+            Aceita pets
+          </Chip>
+          <Chip ativo={rascunho.homeOfficeOnly} onClick={() => muda("homeOfficeOnly", !rascunho.homeOfficeOnly)}>
+            Para trabalhar de casa
+          </Chip>
+          <Chip ativo={rascunho.readyToLiveOnly} onClick={() => muda("readyToLiveOnly", !rascunho.readyToLiveOnly)}>
+            Pronto para Morar
+          </Chip>
+        </Grupo>
+        {rascunho.petsOnly && (
+          <div data-testid="painel-porte-pet">
+            <Grupo titulo="Porte do pet">
+              {OPCOES_PORTE_PET.map((o) => (
+                <Chip key={o.valor} ativo={rascunho.petPorte === o.valor} onClick={() => alterna("petPorte", o.valor)}>
+                  {o.rotulo}
+                </Chip>
+              ))}
+            </Grupo>
+          </div>
+        )}
+        <Grupo titulo="Contrato" testId="painel-garantia">
+          {garantias.map((g) => (
+            <Chip key={g.key} ativo={rascunho.garantia === g.key} onClick={() => alterna("garantia", g.key)}>
+              {g.label}
+            </Chip>
+          ))}
+          <Chip ativo={rascunho.seguroOnly} onClick={() => muda("seguroOnly", !rascunho.seguroOnly)}>
+            Aceita Seguro-Fiança
+          </Chip>
+          <Chip ativo={rascunho.gestorOnly} onClick={() => muda("gestorOnly", !rascunho.gestorOnly)}>
+            Gestor profissional
+          </Chip>
+          {comNotaFiscal && (
+            <Chip ativo={rascunho.notaOnly} onClick={() => muda("notaOnly", !rascunho.notaOnly)}>
+              Com Nota Fiscal
+            </Chip>
+          )}
+        </Grupo>
+        <Grupo titulo="Comodidades" testId="painel-comodidades">
+          {COMODIDADES_FILTRO.map((c) => {
+            const ligado = rascunho.comodidades.includes(c.chave);
+            return (
+              <Chip
+                key={c.chave}
+                ativo={ligado}
+                title={c.dica}
+                onClick={() => muda("comodidades", ligado ? rascunho.comodidades.filter((x) => x !== c.chave) : [...rascunho.comodidades, c.chave])}
+              >
+                {c.rotulo}
+              </Chip>
+            );
+          })}
+        </Grupo>
+      </div>
+    </BottomSheet>
   );
 }
 
-function Marcar({ rotulo, dica, ligado, onChange }: { rotulo: string; dica: string; ligado: boolean; onChange: (v: boolean) => void }) {
+function Grupo({ titulo, testId, children }: { titulo: string; testId?: string; children: React.ReactNode }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3 px-4 py-3">
-      <input type="checkbox" checked={ligado} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-forest" />
-      <span>
-        <span className="block text-sm font-medium text-ink">{rotulo}</span>
-        <span className="block text-xs text-muted">{dica}</span>
-      </span>
-    </label>
+    <fieldset data-testid={testId}>
+      <legend className="mb-3 text-base font-semibold text-ink">{titulo}</legend>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </fieldset>
   );
 }

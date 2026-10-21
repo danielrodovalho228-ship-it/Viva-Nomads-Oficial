@@ -25,34 +25,55 @@
   --color-green-700: #4fa01e;
   --color-green-900: #2f6310;
 
-  /* ── Neutros frios ── */
+  /* ── Neutros (Prompt 40, Estudo 1): tinta, secundário, borda e divisor ── */
   --color-night: #0a0a0a; /* preto de marca */
-  --color-ink: #0f1722; /* texto principal */
-  --color-muted: #5b6573; /* texto secundário */
-  --color-line: #e2e7ee; /* bordas/divisores */
+  /* Adendo do Prompt 40: secundário #3F3F3F; o #6A6A6A (apoio) é só para miúdo e legenda, nunca corpo. */
+  --color-ink: #222222; /* tinta: texto principal */
+  --color-muted: #3f3f3f; /* secundário: texto corrido de apoio */
+  --color-apoio: #6a6a6a; /* apoio: só miúdo (≤ 14 px) e legenda */
+  --color-line: #dddddd; /* linha de borda 1 px (campos, chips, cartões de lista) */
+  --color-divisor: #ebebeb; /* divisor 1 px entre blocos e cinza do esqueleto */
   --color-surface: #ffffff;
-  --color-surface-2: #f5f7fa;
+  --color-surface-2: #f7f7f7; /* superfície */
+  --color-surface-3: #f2f2f2; /* superfície mais funda */
 
   /* ── Aliases semânticos (compat. com componentes existentes) ── */
+  /* Cor de marca ÚNICA (Prompt 40): o verde Viva, só no botão primário, no preço e no estado ativo. */
   --color-forest: #1c6b3a; /* primária (verde-marca, alinhado ao deck) */
   --color-forest-700: #123b26;
   --color-forest-600: #238049;
   --color-sage: #2e7d5b; /* secundária (verde médio) */
   --color-sage-100: #eef6ef;
   --color-sage-200: #dce9e0;
-  --color-champagne: #6cbe2a; /* CTA/selo */
+  --color-champagne: #6cbe2a; /* só selo (Pronto para Morar) — nunca texto nem botão */
   --color-champagne-600: #4fa01e;
 
   /* Fontes — Inter para tudo (Atualização 18), variando só o peso */
   --font-title: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  --radius-card: 18px;
+  /*
+    Prompt 40 (Estudo 1) — fonte única do padrão visual. A guarda é
+    src/lib/estilo/estilo-padrao.test.ts.
+    Raios: só três. 8 px nos controles (botões, campos) = rounded-control ou
+    rounded-lg; 12 px nas fotos e mídias = rounded-media ou rounded-xl; e pill
+    (rounded-full) na busca, nos chips e na ação flutuante.
+  */
+  --radius-control: 8px;
+  --radius-media: 12px;
+
+  /* Pesos: só 400 e 600. Quem ainda escreve font-bold/extrabold/black cai em 600. */
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 600;
+  --font-weight-black: 600;
+
+  /* Sombra: UMA no app inteiro, a do botão flutuante (shadow-flutuante). O resto sem sombra. */
+  --shadow-flutuante: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 :root {
   --background: #ffffff;
-  --foreground: #0f1722;
+  --foreground: #222222;
   /* Gradiente assinatura azul→verde (só em elementos de marca) */
   --gradient-brand: linear-gradient(135deg, #123b26 0%, #1c6b3a 45%, #6cbe2a 100%);
 }
@@ -72,6 +93,16 @@ body {
   (Não forçar overflow aqui — isso anulava o line-clamp dos títulos.)
 */
 @layer base {
+  /* Corpo 16/400 com linha 1,5 (adendo do Prompt 40). */
+  body {
+    line-height: 1.5;
+  }
+  /* Negrito do navegador é 700; o padrão é 600 (Prompt 40). */
+  b,
+  strong,
+  th {
+    font-weight: 600;
+  }
   h1, h2, h3, h4, h5 {
     font-family: var(--font-title);
     letter-spacing: -0.02em;
@@ -108,7 +139,7 @@ textarea:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--color-blue-500);
   outline-offset: 2px;
-  border-radius: 4px;
+  /* Sem border-radius aqui: o contorno segue o raio do próprio elemento (pill continua pill). */
 }
 
 /* Utilitários de marca */
@@ -138,13 +169,14 @@ textarea:focus-visible,
   /* Título fluido editorial — escala bem do mobile (375px) ao desktop.
      Mínimos menores evitam vazamento/scroll horizontal com palavras longas
      como "Uberlândia". Quebra de palavra protege casos extremos. */
+  /* Teto de tamanho (adendo do Prompt 40): 40 px só no h1 do hero (home e páginas de marketing); o resto, 28 px. */
   .display-xl {
-    font-size: clamp(2rem, 7vw, 5rem);
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
     overflow-wrap: break-word;
     word-break: break-word;
   }
   .display-lg {
-    font-size: clamp(1.75rem, 5.5vw, 3.5rem);
+    font-size: clamp(1.375rem, 4vw, 1.75rem);
     overflow-wrap: break-word;
     word-break: break-word;
   }
@@ -204,12 +236,12 @@ textarea:focus-visible,
 
   /* Destaque rápido (amarelo) ao mudar um valor — feedback do slider de ROI */
   .flash-value {
-    border-radius: 6px;
+    border-radius: 8px;
     animation: flash-bg 0.6s ease-out;
   }
   @keyframes flash-bg {
-    from { background-color: #fde68a; box-shadow: 0 0 0 4px #fde68a; }
-    to { background-color: transparent; box-shadow: 0 0 0 4px transparent; }
+    from { background-color: #fde68a; outline: 4px solid #fde68a; }
+    to { background-color: transparent; outline: 4px solid transparent; }
   }
 }
 
@@ -234,7 +266,6 @@ textarea:focus-visible,
   font-size: 0.875rem;
   font-weight: 600;
   color: #fff;
-  box-shadow: 0 10px 30px -10px rgba(11, 42, 102, 0.5);
   transition: transform 0.18s ease;
 }
 .skip-link:focus {
@@ -328,7 +359,7 @@ html[data-app] .vn-barra-comparar {
 }
 /* Barra fixa do imóvel (celular): fica logo acima da barra de abas. */
 .vn-barra-fixa {
-  bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
 }
 @media (min-width: 768px) {
   .vn-barra-fixa {
@@ -336,7 +367,7 @@ html[data-app] .vn-barra-comparar {
   }
 }
 html[data-app] .vn-barra-fixa {
-  bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
 }
 /* No app a barra inferior existe em qualquer largura: o conteúdo não fica por baixo dela. */
 html[data-app] .vn-main {
@@ -409,11 +440,11 @@ body:has([data-testid="imovel-largura-total"]) {
 }
 
 /* Card do imóvel ancorado no pin do mapa da busca (ordem ca0e7dad): sem a
-   moldura padrão do Leaflet/Mapbox — o card já tem cantos e sombra. */
+   moldura padrão do Leaflet/Mapbox — o card já tem cantos e borda. */
 .vn-popup .leaflet-popup-content-wrapper,
 .vn-popup.mapboxgl-popup .mapboxgl-popup-content {
   padding: 0;
-  border-radius: 1rem;
+  border-radius: 12px;
   background: transparent;
   box-shadow: none;
 }

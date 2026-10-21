@@ -7,9 +7,10 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyTripIllustration } from "@/components/illustrations";
 import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
 import { useFavoritos } from "@/lib/use-favoritos";
+import { SkeletonCartao } from "@/components/ui/skeleton";
 
 export default function FavoritesPage() {
-  const { favoritos: favorites } = useFavoritos();
+  const { favoritos: favorites, ids, loading } = useFavoritos();
 
   return (
     <>
@@ -26,7 +27,13 @@ export default function FavoritesPage() {
       />
       <FavoritosTabs />
 
-      {favorites.length === 0 ? (
+      {loading && favorites.length === 0 && ids.length > 0 ? (
+        <div className="grid auto-rows-fr gap-x-6 gap-y-8 sm:grid-cols-2 xl:grid-cols-4" aria-busy="true" data-testid="favoritos-carregando">
+          {ids.map((id) => (
+            <SkeletonCartao key={id} />
+          ))}
+        </div>
+      ) : favorites.length === 0 ? (
         <EmptyState
           illustration={<EmptyTripIllustration />}
           title="Nenhum favorito ainda"
@@ -38,7 +45,7 @@ export default function FavoritesPage() {
           }
         />
       ) : (
-        <div className="grid auto-rows-fr gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid auto-rows-fr gap-x-6 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
           {favorites.map((p) => (
             <PropertyCard key={p.id} property={p} />
           ))}

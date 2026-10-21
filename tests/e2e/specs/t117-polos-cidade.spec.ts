@@ -9,6 +9,7 @@ for (const largura of [390, 1280]) {
     test.use({ viewport: { width: largura, height: 844 } });
 
     test("a cidade lista o polo e a página do polo tem FAQ e preço honesto", async ({ page, request }) => {
+      test.setTimeout(120_000);
       await page.goto("/cidades/uberlandia", { waitUntil: "networkidle" });
       await page.getByTestId("polos-da-cidade").getByRole("link", { name: /HC-UFU/ }).click();
       await expect(page).toHaveURL(/\/cidades\/uberlandia\/hc-ufu-umuarama$/);

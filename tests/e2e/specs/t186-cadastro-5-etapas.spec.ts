@@ -194,8 +194,15 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
       await expect(de).toHaveValue("01/11/2026");
       // Q9: rótulo curto; no celular os dois campos ficam um embaixo do outro, com a mesma largura.
       await expect(page.getByTestId("disponibilidade")).toContainText("Disponível até");
-      const bde = (await de.boundingBox())!;
-      const bate = (await ate.boundingBox())!;
+      // As duas caixas na MESMA leitura: lidas uma depois da outra, a sugestão de preço chegando entre as duas
+      // deslocava a página e a conta falhava (lab 2f1fb872: 1073 < 1135).
+      const [bde, bate] = await page.evaluate(() => {
+        const ler = (id: string) => {
+          const r = document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect();
+          return { x: r.x, y: r.y, width: r.width, height: r.height };
+        };
+        return [ler("disponivel-de"), ler("disponivel-ate")];
+      });
       if (largura === 390) {
         expect(bate.y).toBeGreaterThanOrEqual(bde.y + bde.height - 1);
         expect(Math.abs(bate.width - bde.width)).toBeLessThanOrEqual(1);
