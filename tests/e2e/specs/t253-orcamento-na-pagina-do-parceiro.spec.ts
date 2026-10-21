@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
- * T252 — "Solicitar orçamento" vivo na página pública do parceiro (QA do Muse no 31b, 21/10).
+ * T253 — "Solicitar orçamento" vivo na página pública do parceiro (QA do Muse no 31b, 21/10).
  * Em produção o botão aparecia desabilitado, com o texto antigo "Em breve: o pedido de orçamento…": o deploy do merge
  * do #967 não tinha chegado. Este spec falha nesse caso, nos dois alvos:
  *  - no laboratório: cria um parceiro publicado e abre a página dele;
@@ -17,13 +17,13 @@ const senha = novaSenha();
 const ids: { conta?: string; parceiro?: string } = {};
 let slug = process.env.TESTES_PARCEIRO_SLUG || "paulo-fotos-teste-qa";
 
-test.describe("T252 — Solicitar orçamento na página pública do parceiro", () => {
+test.describe("T253 — Solicitar orçamento na página pública do parceiro", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeAll(async () => {
     if (!NO_LABORATORIO) return;
-    slug = `fotos-t252-${sufixo}`;
-    ids.conta = await criarConta({ email: `foto.t252.${sufixo}@lab.vivanomads.test`, nome: "Fábio Fotos", role: "owner" }, senha);
+    slug = `fotos-t253-${sufixo}`;
+    ids.conta = await criarConta({ email: `foto.t253.${sufixo}@lab.vivanomads.test`, nome: "Fábio Fotos", role: "owner" }, senha);
     const { data, error } = await adm()
       .from("parceiros")
       .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Fábio Fotos ${sufixo}`, slug, categorias: ["fotografia"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })

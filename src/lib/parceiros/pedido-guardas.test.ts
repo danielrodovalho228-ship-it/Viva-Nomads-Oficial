@@ -105,10 +105,10 @@ test("página pública do parceiro: 'Solicitar orçamento' ativo, sem o 'Em brev
   // O botão que abre a folha nunca é desabilitado; sem login ele vira link para a entrada.
   assert.match(botao, /<ButtonLink href=\{`\/auth\?redirect=\$\{encodeURIComponent\(voltarPara\)\}`\}[^>]*data-testid="solicitar-orcamento"/);
   assert.match(botao, /<Button variant="primary" className="w-full" onClick=\{abrir\} data-testid="solicitar-orcamento">/);
-  // E o deploy de produção roda o T252 (subconjunto público), que falha com o botão morto ou o texto antigo.
+  // E o deploy de produção roda o T253 (subconjunto público), que falha com o botão morto ou o texto antigo.
   const pkg = JSON.parse(ler("package.json")) as { scripts: Record<string, string> };
-  assert.match(pkg.scripts["testes:publico"], /t252-orcamento-na-pagina-do-parceiro/);
-  const spec = ler("tests/e2e/specs/t252-orcamento-na-pagina-do-parceiro.spec.ts");
+  assert.match(pkg.scripts["testes:publico"], /t253-orcamento-na-pagina-do-parceiro/);
+  const spec = ler("tests/e2e/specs/t253-orcamento-na-pagina-do-parceiro.spec.ts");
   assert.match(spec, /toBeEnabled\(\)/);
   assert.match(spec, /not\.toContainText\(TEXTO_ANTIGO\)/);
 });
