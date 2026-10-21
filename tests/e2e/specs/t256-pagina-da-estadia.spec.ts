@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
@@ -30,10 +30,27 @@ function semDialogo(page: Page) {
 async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
+/** Diagnóstico: console, erros da página e ações do servidor (POST com next-action), impressos só quando o teste falha. */
+const registro: string[] = [];
+function registrar(page: Page, quem: string) {
+  const t0 = Date.now();
+  const marca = (s: string) => registro.push(`[${quem} +${((Date.now() - t0) / 1000).toFixed(1)}s] ${s}`);
+  page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") marca(`console.${m.type()}: ${m.text()}`); });
+  page.on("pageerror", (e) => marca(`pageerror: ${e.message}`));
+  page.on("requestfailed", (r) => marca(`requestfailed: ${r.method()} ${r.url()} ${r.failure()?.errorText ?? ""}`));
+  page.on("request", (r) => { if (r.method() === "POST" && r.headers()["next-action"]) marca(`ação → ${r.url()}`); });
+  page.on("requestfinished", async (r) => {
+    if (r.method() !== "POST" || !r.headers()["next-action"]) return;
+    const resp = await r.response();
+    marca(`ação ← ${resp?.status()} ${r.url()} (${Math.round(r.timing().responseEnd)} ms)`);
+  });
+  page.on("framenavigated", (f) => { if (f === page.mainFrame()) marca(`navegou: ${f.url()}`); });
+}
 async function abrir(browser: Browser, email: string, largura = 1280): Promise<Page> {
   const page = await entrar(browser, email, senha);
   await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
   semDialogo(page);
+  registrar(page, email.startsWith("dono") ? "dono" : "morador");
   return page;
 }
 /** Linha de base visual NOVA (tela nova): compara quando a linha de base existe; senão, só guarda o print. */
@@ -101,6 +118,16 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
       .from("contrato_blocos")
       .insert({ contrato_id: ids.contrato, numero_bloco: 2, inicio: dia(68), fim: dia(97), meses: 1, valor: 3000, caucao: 0, status: "agendado", aceite_proprietario_em: agora, aceite_inquilino_em: agora });
     if (e2) throw e2;
+  });
+
+  test.beforeEach(() => {
+    registro.length = 0;
+  });
+  test.afterEach(async ({}, info) => {
+    if (info.status === info.expectedStatus) return;
+    console.log(`── diagnóstico de "${info.title}" ──\n${registro.join("\n")}`);
+    const log = `${SAIDA}/servidor.log`;
+    if (existsSync(log)) console.log(`── servidor.log (fim) ──\n${readFileSync(log, "utf8").split("\n").slice(-120).join("\n")}`);
   });
 
   test.afterAll(async () => {
