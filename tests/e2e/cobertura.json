@@ -1401,6 +1401,47 @@
       "specs": [
         "t250-parceiros-contratacao"
       ]
+    },
+    "/admin/contratos/encerramentos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "/dashboard/estadia/[contratoId]": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "/dashboard/estadia/[contratoId]/alteracao": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "/dashboard/estadia/[contratoId]/encerrar": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "/dashboard/estadia/[contratoId]/ocupantes": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
     }
   },
   "rotas": {
@@ -4197,6 +4238,92 @@
       ],
       "specs": [
         "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/data/estadia-actions.ts#adicionarOcupante": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "src/lib/data/estadia-actions.ts#assinarAditivo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "src/lib/data/estadia-actions.ts#atualizarPedidoEncerramento": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/estadia-actions.ts#listaParaPortaria": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "src/lib/data/estadia-actions.ts#pedirCodigoAditivo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "src/lib/data/estadia-actions.ts#pedirEncerramento": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "src/lib/data/estadia-actions.ts#proporAlteracao": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "src/lib/data/estadia-actions.ts#removerOcupante": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/estadia-actions.ts#responderAditivo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "src/lib/data/estadia-actions.ts#salvarInstrucoes": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
+      ]
+    },
+    "src/lib/data/estadia-actions.ts#salvarNota": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t256-pagina-da-estadia"
       ]
     }
   }

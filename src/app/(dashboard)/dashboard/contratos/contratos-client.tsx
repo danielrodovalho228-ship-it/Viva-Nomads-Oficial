@@ -7,6 +7,7 @@ import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import Image from "next/image";
 import {
   ShieldCheck,
@@ -234,7 +235,7 @@ function ContratoCard({
   const caucaoRegistrada = contrato.pagamentos.find((p) => p.tipo === "caucao") ?? null;
 
   return (
-    <Panel className="p-5" data-testid="contrato-cartao" data-contrato={contrato.id}>
+    <Panel className="p-5" id={`contrato-${contrato.id}`} data-testid="contrato-cartao" data-contrato={contrato.id}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-title text-lg font-bold text-ink">{contrato.propertyTitle}</h2>
@@ -273,6 +274,12 @@ function ContratoCard({
           data-testid="contrato-ver-assinar"
         >
           {contrato.status === "ativo" && contrato.etapa === "aguardando_assinatura" ? "Ver e assinar contrato" : "Ver contrato"}
+        </Link>
+      )}
+      {/* Prompt 32: a página da estadia junta datas, checklist, ocupantes, valores, instruções e alterações. */}
+      {!demo && (
+        <Link href={HREF_ESTADIA(contrato.id)} className="ml-4 mt-3 inline-block text-sm font-medium text-forest underline" data-testid="contrato-abrir-estadia">
+          Abrir a página da estadia
         </Link>
       )}
 

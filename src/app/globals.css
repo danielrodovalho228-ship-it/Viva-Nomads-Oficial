@@ -432,6 +432,11 @@ body:has([data-testid="imovel-largura-total"]) {
     left: 1.5rem;
   }
 }
+/* Rolagem até um elemento (âncora, foco, "rolar até o botão") para acima do botão flutuante da Viva, em qualquer
+   largura: o flutuante não cobre a ação principal da tela (t241, #953). */
+html:has([data-testid="fale-com-a-viva-raiz"]) {
+  scroll-padding-bottom: calc(var(--ajuda-bottom, 1.5rem) + 4.5rem);
+}
 /* F49: folga no fim da página no celular (site), só onde o botão existe (t16: telas de 100dvh como /app/boas-vindas não rolam) para o botão redondo da Viva nunca tampar o último botão/campo. */
 @media (max-width: 767px) {
   html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]) {

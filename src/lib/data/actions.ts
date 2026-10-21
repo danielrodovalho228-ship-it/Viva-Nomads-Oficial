@@ -51,7 +51,7 @@ import { atribuirLead, garantirCartao } from "@/lib/data/cartoes-servidor";
 import { REF_COOKIE } from "@/lib/cartoes/compartilhar";
 import { scoreAnuncio, type ScoreAnuncio } from "@/lib/anuncio/score";
 import type { Prontidao } from "@/lib/anuncio/prontidao";
-import { guardContactInfo } from "@/lib/messages/contact-guard";
+import { guardContactInfo, DOCUMENTO_BLOQUEADO } from "@/lib/messages/contact-guard";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { SITE_URL } from "@/lib/site";
@@ -1769,7 +1769,9 @@ export async function sendMessage(input: {
   // Proteção de contato: telefones/e-mails/links de mensageria são mascarados
   // ANTES de gravar — a negociação fica registrada na plataforma e o contato
   // direto só é liberado no fluxo oficial (após o aceite do proprietário).
-  const { text: safeBody } = guardContactInfo(input.body);
+  const { text: safeBody, documento } = guardContactInfo(input.body);
+  // Prompt 32: CPF/RG não vai pelo chat (nem mascarado) — vai no campo Ocupantes da estadia.
+  if (documento) return { ok: false, error: `${DOCUMENTO_BLOQUEADO}.` };
 
   const { data: gravada, error } = await supabase
     .from("messages")

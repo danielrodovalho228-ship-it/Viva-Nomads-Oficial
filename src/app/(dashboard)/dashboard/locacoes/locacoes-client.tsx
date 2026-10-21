@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { Home, CircleDollarSign } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,7 @@ export function LocacoesClient({
       ) : (
         <div className="space-y-5">
           {locacoes.map((l) => (
-            <Panel key={l.id} className="p-5" data-testid="locacao-cartao" data-contrato={l.id}>
+            <Panel key={l.id} className="p-5" id={`contrato-${l.id}`} data-testid="locacao-cartao" data-contrato={l.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="font-title text-lg font-semibold text-ink">
@@ -123,6 +124,12 @@ export function LocacoesClient({
                   <Button variant="secondary">
                     {l.etapa === "aguardando_assinatura" && l.status === "ativo" ? "Ver e assinar contrato" : "Ver contrato"}
                   </Button>
+                </Link>
+              )}
+              {/* Prompt 32: a página da estadia (datas, checklist, ocupantes, instruções de chegada e alterações). */}
+              {!demoOn && (
+                <Link href={HREF_ESTADIA(l.id)} className="ml-3 mt-4 inline-block" data-testid="locacao-abrir-estadia">
+                  <Button variant="outline">Abrir a página da estadia</Button>
                 </Link>
               )}
 

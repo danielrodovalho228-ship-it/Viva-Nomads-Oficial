@@ -382,7 +382,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
         <DemoBanner />
 
-        <main key={mode} className="mode-transition flex-1 p-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:p-8 lg:overflow-y-auto print:overflow-visible">
+        {/* Folga no fim (sm+: pb-28 = 112 px) e scroll-padding no contêiner que rola (lg): o botão flutuante "Fale com a
+            Viva" (48 px, 24 px acima da borda) nunca fica por cima da última ação da tela (t241: "Salvar qualificação"
+            coberto a 1280 px depois que os botões passaram a 56 px no #953). */}
+        <main key={mode} className="mode-transition flex-1 p-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:p-8 sm:pb-28 lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />

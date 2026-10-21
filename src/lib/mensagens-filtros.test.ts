@@ -9,8 +9,26 @@ import { FILTROS, type PapelConversa, papelDaConversa, filtrarConversas, contarP
 
 const U = "user-1";
 
-test("chips na ordem pedida", () => {
-  assert.deepEqual(FILTROS.map((f) => f.rotulo), ["Todas", "Como inquilino", "Como proprietário", "Suporte"]);
+test("chips na ordem pedida (Prompt 32)", () => {
+  assert.deepEqual(FILTROS.map((f) => f.rotulo), ["Todas", "Como proprietário", "Como morador", "Parceiros", "Falar com a Viva"]);
+  assert.deepEqual(FILTROS.map((f) => f.id), ["todas", "proprietario", "inquilino", "parceiros", "suporte"]);
+});
+
+test("conversa de pedido de serviço (31b) cai em Parceiros, mesmo com imóvel", () => {
+  assert.equal(papelDaConversa({ propertyId: "p1", donoDoImovelId: U, pedidoParceiroId: "ped-1" }, U), "parceiros");
+});
+
+test("conta que é dona e moradora: cada conversa no filtro certo", () => {
+  const conversas = [
+    { id: "meu-imovel", papel: papelDaConversa({ propertyId: "p1", donoDoImovelId: U }, U) },
+    { id: "onde-moro", papel: papelDaConversa({ propertyId: "p2", donoDoImovelId: "dona" }, U) },
+    { id: "fotografo", papel: papelDaConversa({ propertyId: "p1", donoDoImovelId: U, pedidoParceiroId: "x" }, U) },
+    { id: "viva", papel: papelDaConversa({}, U) },
+  ];
+  assert.deepEqual(filtrarConversas(conversas, "proprietario").map((c) => c.id), ["meu-imovel"]);
+  assert.deepEqual(filtrarConversas(conversas, "inquilino").map((c) => c.id), ["onde-moro"]);
+  assert.deepEqual(filtrarConversas(conversas, "parceiros").map((c) => c.id), ["fotografo"]);
+  assert.deepEqual(filtrarConversas(conversas, "suporte").map((c) => c.id), ["viva"]);
 });
 
 test("papel: imóvel meu = proprietário; imóvel de outro = inquilino; sem imóvel = suporte", () => {
@@ -29,7 +47,7 @@ test("filtra por chip e Todas devolve tudo", () => {
   assert.equal(filtrarConversas(lista, "todas").length, 4);
   assert.deepEqual(filtrarConversas(lista, "inquilino").map((c) => c.id), ["a", "d"]);
   assert.deepEqual(filtrarConversas(lista, "suporte").map((c) => c.id), ["c"]);
-  assert.deepEqual(contarPorFiltro(lista), { todas: 4, inquilino: 2, proprietario: 1, suporte: 1 });
+  assert.deepEqual(contarPorFiltro(lista), { todas: 4, inquilino: 2, proprietario: 1, parceiros: 0, suporte: 1 });
 });
 
 test("conversa sem papel conhecido aparece só em Todas", () => {
@@ -39,7 +57,7 @@ test("conversa sem papel conhecido aparece só em Todas", () => {
 });
 
 test("período legível, ou vazio quando não há contrato", () => {
-  assert.equal(formatarPeriodo("2026-11-01", "2027-01-30"), "01 nov – 30 jan");
+  assert.equal(formatarPeriodo("2026-11-13", "2027-02-15"), "13/11 – 15/02");
   assert.equal(formatarPeriodo(null, null), "");
 });
 

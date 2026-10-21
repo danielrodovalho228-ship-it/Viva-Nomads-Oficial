@@ -3,9 +3,10 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T84 — chips da caixa de Mensagens (Clareza UX6-b, ordem f1b437bb): Todas / Como inquilino /
- * Como proprietário / Suporte. O dono vê a conversa em "Como proprietário"; o inquilino, em
- * "Como inquilino"; nenhum dos dois tem conversa em "Suporte" (sem imóvel).
+ * T84 — chips da caixa de Mensagens (Clareza UX6-b, ordem f1b437bb; Prompt 32): Todas / Como proprietário /
+ * Como morador / Parceiros / Falar com a Viva (ids: todas, proprietario, inquilino, parceiros, suporte). O dono vê a
+ * conversa em "Como proprietário"; o morador, em "Como morador"; nenhum dos dois tem conversa em "Parceiros" nem em
+ * "Falar com a Viva".
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -54,6 +55,9 @@ test.describe("T84 — filtros da caixa de Mensagens", () => {
     await expect(pagina.getByTestId("mensagens-filtro-vazio")).toBeVisible();
 
     await (await contagem(pagina, "suporte")).click();
+    await expect(pagina.getByTestId("mensagens-conversa")).toHaveCount(0);
+
+    await (await contagem(pagina, "parceiros")).click();
     await expect(pagina.getByTestId("mensagens-conversa")).toHaveCount(0);
 
     await (await contagem(pagina, "todas")).click();

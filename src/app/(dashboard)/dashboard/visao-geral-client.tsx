@@ -39,6 +39,7 @@ import { formatBRL } from "@/lib/utils";
 import { textoVencimento } from "@/lib/propostas/regras";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { ServicosPainel } from "@/components/parceiros/servicos-painel";
+import type { EstadiaNaHome } from "@/lib/data/estadia";
 
 export interface PropostaAguardando {
   id: string;
@@ -52,10 +53,13 @@ export function VisaoGeral({
   interessados = { atual: 0, anterior: 0 },
   propostasAguardando = [],
   cidadePerfil = null,
+  estadias = [],
 }: {
   imoveisDono: Property[];
   interessados?: { atual: number; anterior: number };
   propostasAguardando?: PropostaAguardando[];
+  /** Prompt 32: estadias em vigor da pessoa, com o que ela decide e a lista "Ações desta estadia". */
+  estadias?: EstadiaNaHome[];
   /** Prompt 31a: cidade do perfil, para a busca de serviços de parceiros já preenchida. */
   cidadePerfil?: string | null;
 }) {
@@ -72,9 +76,9 @@ export function VisaoGeral({
       {/* Pergunta de papel no primeiro login (uma vez só). */}
       <RoleWelcomeModal />
       {mode === "tenant" ? (
-        <TenantDashboard name={firstName} propostas={propostasAguardando} cidade={cidadePerfil} />
+        <TenantDashboard name={firstName} propostas={propostasAguardando} cidade={cidadePerfil} estadias={estadias.filter((e) => e.papel === "inquilino")} />
       ) : (
-        <OwnerDashboard name={firstName} imoveisDono={imoveisDono} interessados={interessados} cidade={cidadePerfil} />
+        <OwnerDashboard name={firstName} imoveisDono={imoveisDono} interessados={interessados} cidade={cidadePerfil} estadias={estadias.filter((e) => e.papel === "proprietario")} />
       )}
     </>
   );
@@ -85,11 +89,13 @@ function OwnerDashboard({
   imoveisDono,
   interessados,
   cidade,
+  estadias,
 }: {
   name: string;
   imoveisDono: Property[];
   interessados: { atual: number; anterior: number };
   cidade: string | null;
+  estadias: EstadiaNaHome[];
 }) {
   // Fonte demo: build de demonstração OU modo demonstração do admin. Os dados
   // reais e o seed NUNCA se misturam — a fonte é uma ou outra.
@@ -148,6 +154,7 @@ function OwnerDashboard({
           </ButtonLink>
         }
       />
+      <CartaoDecisoesEstadias estadias={estadias} />
 
       {/* Convite à verificação (sem progresso fabricado no modo real) */}
       <Panel className="mb-6 bg-forest text-white">
@@ -287,6 +294,46 @@ function OwnerDashboard({
   );
 }
 
+/**
+ * "Decisões" das estadias em vigor (Prompt 32; cadeado do painel liberado pelo Muse para o #975): cada estadia com o
+ * topo, o que a pessoa decide agora e a lista "Ações desta estadia" (a mesma que a folha do Prompt 41 vai listar).
+ */
+function CartaoDecisoesEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
+  if (!estadias.length) return null;
+  return (
+    <Panel title="Decisões das suas estadias" className="mb-5" data-testid="home-decisoes-estadias">
+      <ul className="divide-y divide-sage-200">
+        {estadias.map((e) => (
+          <li key={e.contratoId} className="py-3 first:pt-0 last:pb-0" data-testid="home-estadia" data-contrato={e.contratoId}>
+            <Link href={`/dashboard/estadia/${e.contratoId}`} className="block min-w-0 hover:underline">
+              <span className="block truncate font-semibold text-ink">{e.imovel}</span>
+              <span className="block text-sm text-muted">{e.topo}</span>
+            </Link>
+            {e.decisoes.length > 0 && (
+              <ul className="mt-2 space-y-1" data-testid="home-estadia-decisoes">
+                {e.decisoes.map((d) => (
+                  <li key={d.id}>
+                    <Link href={d.href} className="text-sm font-semibold text-forest underline" data-testid={`home-decisao-${d.id}`}>
+                      {d.rotulo}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1" data-testid="home-estadia-acoes">
+              {e.acoes.map((a) => (
+                <Link key={a.id} href={a.href} className="text-xs text-muted underline hover:text-ink">
+                  {a.rotulo}
+                </Link>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Panel>
+  );
+}
+
 /** "Você recebeu uma proposta — vence em 5 dias" (prompt 27, item 7). */
 function CartaoPropostas({ propostas }: { propostas: PropostaAguardando[] }) {
   if (!propostas.length) return null;
@@ -314,7 +361,7 @@ function CartaoPropostas({ propostas }: { propostas: PropostaAguardando[] }) {
   );
 }
 
-function TenantDashboard({ name, propostas, cidade }: { name: string; propostas: PropostaAguardando[]; cidade: string | null }) {
+function TenantDashboard({ name, propostas, cidade, estadias }: { name: string; propostas: PropostaAguardando[]; cidade: string | null; estadias: EstadiaNaHome[] }) {
   const demo = useDashDemo();
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
   return (
@@ -322,6 +369,7 @@ function TenantDashboard({ name, propostas, cidade }: { name: string; propostas:
       {/* Título da tela (h1): sem ele a Visão geral do inquilino não tinha cabeçalho principal (varredura t48). */}
       <PageTitle title="Visão geral" subtitle="Candidaturas, favoritos, buscas salvas e mensagens num lugar só." />
       <CartaoPropostas propostas={propostas} />
+      <CartaoDecisoesEstadias estadias={estadias} />
       {/* Primeiro acesso: checklist de 3 passos (ou o banner, quando concluído/oculto). */}
       <TenantOnboarding name={name} />
 

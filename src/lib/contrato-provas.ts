@@ -52,6 +52,40 @@ export interface DadosProvas {
   prazoEntradaEm?: string | null;
   /** Pacote gerado pela equipe (admin › contrato): a linha "Gerado pela equipe Viva Nomads em …". */
   geradoPelaEquipeEm?: string | null;
+  /** Aditivos (Prompt 32): o que mudou, a situação e as assinaturas com o hash do texto do aditivo. */
+  aditivos?: AditivoProva[];
+}
+
+export interface AditivoProva {
+  numero: number;
+  resumo: string;
+  status: string;
+  propostoEm: string;
+  assinadoEm: string | null;
+  hash: string | null;
+  assinaturas: { papel: Parte; em: string; hash: string }[];
+}
+
+const SITUACAO_ADITIVO: Record<string, string> = {
+  proposto: "proposto, aguardando a outra parte",
+  recusado: "recusado (o contrato não mudou)",
+  expirado: "vencido sem resposta (o contrato não mudou)",
+  aceito: "aceito, aguardando as duas assinaturas",
+  assinado: "assinado pelas duas partes",
+};
+
+/** As linhas da seção ADITIVOS. */
+export function linhasAditivos(aditivos: AditivoProva[] | undefined): string[] {
+  if (!aditivos?.length) return ["Nenhum aditivo."];
+  const out: string[] = [];
+  for (const a of [...aditivos].sort((x, y) => x.numero - y.numero)) {
+    out.push(`Aditivo ${a.numero} (${SITUACAO_ADITIVO[a.status] ?? a.status}): ${a.resumo}`);
+    if (a.hash) out.push(`Hash do texto do aditivo: ${a.hash}`);
+    for (const s of [...a.assinaturas].sort((x, y) => (x.em < y.em ? -1 : 1))) {
+      out.push(`${PAPEL[s.papel]} assinou o aditivo ${a.numero} em ${dataHoraAssinatura(s.em)}.`);
+    }
+  }
+  return out;
 }
 
 export interface EventoProva {
@@ -101,6 +135,10 @@ export function eventosDoContrato(d: DadosProvas): EventoProva[] {
     }
     ev.push({ em: `${p.dia}T12:00:00Z`, texto: `${marcado}${p.confirmadoEm ? "" : "; aguardando confirmação do inquilino"}.` });
     if (p.confirmadoEm) ev.push({ em: p.confirmadoEm, texto: `${o} de ${brl(p.valor)} confirmado pelo inquilino.` });
+  }
+  for (const a of d.aditivos ?? []) {
+    ev.push({ em: a.propostoEm, texto: `Aditivo ${a.numero} proposto: ${a.resumo}` });
+    if (a.status === "assinado" && a.assinadoEm) ev.push({ em: a.assinadoEm, texto: `Aditivo ${a.numero} assinado pelas duas partes.` });
   }
   for (const c of d.conferencias) {
     const nome = nomeConferencia(c.tipo);
@@ -173,6 +211,8 @@ export function conteudoPacoteProvas(d: DadosProvas): ConteudoDocumento {
               `${PAPEL[a.papel]} em ${dataHoraAssinatura(a.em)} — Hash do resumo assinado: ${a.hash} (${compararHashComResumo(d.resumo, a.hash, d.registradoEm).texto}).`
           )
         : ["Nenhuma assinatura ainda."]),
+      "ADITIVOS",
+      ...linhasAditivos(d.aditivos),
       "PAGAMENTOS",
       ...(d.pagamentos.length
         ? [
@@ -217,6 +257,15 @@ export interface LinhasProvas {
   itens: { conferencia_id: unknown; parte: unknown; comodo?: unknown; descricao?: unknown; foto_path?: unknown }[];
   respostas: { conferencia_id: unknown; parte: unknown; decisao: unknown; motivo?: unknown; decidido_em: unknown }[];
   laudos: { conferencia_id: unknown; path: unknown; parte: unknown; criado_em: unknown }[];
+  aditivos?: {
+    numero: unknown;
+    resumo: unknown;
+    status: unknown;
+    criado_em: unknown;
+    assinado_em?: unknown;
+    hash_documento?: unknown;
+    contrato_aditivo_assinaturas?: { papel: unknown; assinado_em: unknown; hash_documento: unknown }[] | null;
+  }[];
 }
 
 const parteDe = (p: unknown): Parte => (p === "proprietario" ? "proprietario" : "inquilino");
@@ -226,6 +275,15 @@ export const nomeDoLaudo = (path: unknown) => String(path ?? "").split("/").pop(
 
 export function montarDadosProvas(l: LinhasProvas): DadosProvas {
   return {
+    aditivos: (l.aditivos ?? []).map((a) => ({
+      numero: Number(a.numero),
+      resumo: String(a.resumo ?? ""),
+      status: String(a.status ?? ""),
+      propostoEm: String(a.criado_em),
+      assinadoEm: textoOuNulo(a.assinado_em),
+      hash: textoOuNulo(a.hash_documento),
+      assinaturas: (a.contrato_aditivo_assinaturas ?? []).map((x) => ({ papel: parteDe(x.papel), em: String(x.assinado_em), hash: String(x.hash_documento) })),
+    })),
     contratoId: l.contratoId,
     imovel: l.imovel,
     situacao: l.situacao,
@@ -269,4 +327,5 @@ export const COLUNAS_PROVAS = {
   itens: "conferencia_id, parte, comodo, descricao, foto_path",
   respostas: "conferencia_id, parte, decisao, motivo, decidido_em",
   laudos: "conferencia_id, path, parte, criado_em",
+  aditivos: "numero, resumo, status, criado_em, assinado_em, hash_documento, contrato_aditivo_assinaturas(papel, assinado_em, hash_documento)",
 } as const;

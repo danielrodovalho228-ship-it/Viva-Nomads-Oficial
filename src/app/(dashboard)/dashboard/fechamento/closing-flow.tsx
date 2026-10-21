@@ -1250,6 +1250,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <a href={`/dashboard/contratos/${contratoId}`} className="font-medium text-forest underline" data-testid="resumo-ver-contrato">
                     Ver contrato
                   </a>
+                  {" · "}
+                  <a href={`/dashboard/estadia/${contratoId}`} className="font-medium text-forest underline" data-testid="resumo-ver-estadia">
+                    Página da estadia
+                  </a>
                 </p>
               )}
               <Row

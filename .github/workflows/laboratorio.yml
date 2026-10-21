@@ -13,16 +13,9 @@ on:
   # public.lab_execucoes (ordem 225d0648).
   push:
     branches: [main]
-  # Valida o próprio laboratório quando ele muda (o PR não fica vermelho por
-  # falhas conhecidas da suíte: elas vão no resumo e no relatório).
-  pull_request:
-    paths:
-      - ".github/workflows/laboratorio.yml"
-      - "supabase/config.toml"
-      - "supabase/lab/**"
-      - "supabase/migrations/**"
-      - "scripts/lab/**"
-      - "tests/e2e/**"
+  # Em PR não roda (decisão do Muse, 21/10): a suíte inteira não cabe no teto e ficava verde com teste falhando.
+  # O portão de PR é o lab-critico (lista crítica + specs do próprio PR, falha = vermelho). Aqui, na main e no
+  # noturno, falha também deixa o job vermelho (último passo).
 
 permissions:
   contents: read

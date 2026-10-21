@@ -130,13 +130,37 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
         await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
         const bloco = page.getByTestId("imoveis-parecidos");
         test.skip((await bloco.count()) === 0, "Sem parecidos nesta base.");
-        // Os parecidos empatam na semelhança: quais entram e em que ordem muda a cada base semeada. O texto dos
-        // cartões e a barra fixa do imóvel (que passa por cima do bloco no celular) vão mascarados; a forma do
-        // cartão (foto 4:3, linhas, espaçamento) continua comparada.
-        const textoDosCartoes = bloco.locator(
-          '[data-testid="cartao-local"], [data-testid="cartao-titulo"], [data-testid="cartao-total-mes"], [data-testid="cartao-sintese"]',
-        );
-        await print(page, `09-imoveis-parecidos-${largura}`, bloco, undefined, [textoDosCartoes, page.getByTestId("barra-fixa-imovel")]);
+        // Quais parecidos entram, quantos e em que ordem muda a cada base semeada (e com isso a altura do bloco).
+        // Para ficar determinística, a tela compara só o PRIMEIRO cartão do bloco, com o conteúdo do anúncio
+        // trocado por um texto fixo de mesma estrutura (bairro + nota, título, preço, síntese): o que se compara
+        // é a FORMA do cartão (foto 4:3 com raio 12, coração, linhas, tipografia e espaçamento), não os dados.
+        const cartao = bloco.getByTestId("cartao-imovel").first();
+        await cartao.scrollIntoViewIfNeeded();
+        await cartao.evaluate((el) => {
+          const por = (id: string) => el.querySelector<HTMLElement>(`[data-testid="${id}"]`);
+          const texto = (id: string, t: string) => {
+            const n = por(id);
+            if (n) n.textContent = t;
+          };
+          texto("cartao-local", "Centro, Uberlândia");
+          const nota = por("cartao-local")?.nextElementSibling as HTMLElement | null;
+          if (nota) nota.textContent = "Novo na plataforma";
+          texto("cartao-titulo", "Imóvel mobiliado de exemplo");
+          texto("cartao-preco-mes", "R$ 3.000");
+          por("cartao-total-estadia")?.remove();
+          const sintese = por("cartao-sintese");
+          if (sintese) sintese.textContent = "1 quarto · 1 banheiro · 40 m² · mobiliado";
+          por("cartao-disponivel")?.remove();
+          el.querySelector('[data-testid="ideal-para"]')?.remove();
+          const selos = por("selos-foto");
+          if (selos) selos.innerHTML = "";
+          por("cartao-pontos")?.remove();
+          el.querySelector('[data-testid="marca-imovel"]')?.remove();
+        });
+        // Fixos que passariam por cima do cartão conforme a rolagem (barra do imóvel no celular, botão da Viva) saem do print.
+        await page.addStyleTag({ content: '[data-testid="barra-fixa-imovel"], [data-testid="fale-com-a-viva-raiz"] { display: none !important; }' });
+        await pronta(page);
+        await expect(cartao).toHaveScreenshot(`09-imoveis-parecidos-${largura}.png`, { mask: mascaras(page) });
       });
 
       for (const [n, rota, nome] of [

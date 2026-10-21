@@ -71,3 +71,24 @@ test("conferência sem resposta aparece como em andamento", () => {
 test("nome do arquivo: só o início do número do contrato", () => {
   assert.equal(nomeArquivoProvas(dados.contratoId), "provas-contrato-11111111.pdf");
 });
+
+test("Prompt 32: o pacote inclui os aditivos (o que mudou, a situação, o hash e as assinaturas) e a linha do tempo", async () => {
+  const { linhasAditivos } = await import("./contrato-provas.ts");
+  const aditivos = [
+    { numero: 1, resumo: "Meses: de 3 para 4", status: "assinado", propostoEm: "2026-11-01T10:00:00Z", assinadoEm: "2026-11-03T12:00:00Z", hash: "abc123", assinaturas: [
+      { papel: "inquilino" as const, em: "2026-11-02T12:00:00Z", hash: "abc123" },
+      { papel: "proprietario" as const, em: "2026-11-03T12:00:00Z", hash: "abc123" },
+    ] },
+    { numero: 2, resumo: "Ocupantes: de 2 para 3", status: "recusado", propostoEm: "2026-11-05T10:00:00Z", assinadoEm: null, hash: null, assinaturas: [] },
+  ];
+  const l = linhasAditivos(aditivos);
+  assert.match(l[0], /^Aditivo 1 \(assinado pelas duas partes\): Meses: de 3 para 4$/);
+  assert.match(l[1], /Hash do texto do aditivo: abc123/);
+  assert.equal(l.filter((x) => /assinou o aditivo 1/.test(x)).length, 2);
+  assert.match(l.at(-1)!, /Aditivo 2 \(recusado \(o contrato não mudou\)\)/);
+  assert.deepEqual(linhasAditivos([]), ["Nenhum aditivo."]);
+  const c = conteudoPacoteProvas({ ...dados, aditivos });
+  const corpo = c.corpo.join("\n");
+  assert.match(corpo, /ADITIVOS\nAditivo 1/);
+  assert.match(corpo, /Aditivo 1 assinado pelas duas partes\./);
+});
