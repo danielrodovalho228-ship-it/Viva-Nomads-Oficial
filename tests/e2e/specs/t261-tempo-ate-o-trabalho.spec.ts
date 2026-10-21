@@ -172,7 +172,8 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
       await page.goto(`/imoveis-perto-de/lab-t261-${sufixo}`, { waitUntil: "domcontentloaded" });
       expect(await page.locator('meta[name="robots"]').first().getAttribute("content")).toMatch(/noindex/);
       const avise = page.getByTestId("perto-de-avise-me");
-      await expect(avise).toContainText(`Avise-me quando surgir um imóvel perto da Clínica Lab ${sufixo}`);
+      await expect(page.getByTestId("perto-de-avise-me-texto")).toHaveText(`Avise-me quando surgir um imóvel perto da Clínica Lab ${sufixo}.`);
+      await expect(avise).toHaveText("Avise-me");
       await expect(avise).toHaveAttribute("href", new RegExp(`destino=lab-t261-${sufixo}`));
       await semRolagemLateral(page);
       await ctx.close();

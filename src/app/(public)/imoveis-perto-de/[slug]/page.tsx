@@ -110,8 +110,11 @@ export default async function PertoDePage({ params }: Params) {
             <p className="mt-2 text-sm text-muted">
               Publique um pedido de moradia: os proprietários de {d.cidade} veem o que você precisa e falam com você pela plataforma.
             </p>
-            <Link href={pedido} className={buttonClasses({ className: "mt-5" })} data-testid="perto-de-avise-me">
-              <Megaphone className="h-4 w-4" aria-hidden /> Avise-me quando surgir um imóvel {perto}
+            <p className="mt-4 text-sm font-medium text-ink" data-testid="perto-de-avise-me-texto">
+              Avise-me quando surgir um imóvel {perto}.
+            </p>
+            <Link href={pedido} className={buttonClasses({ className: "mt-3" })} data-testid="perto-de-avise-me">
+              <Megaphone className="h-4 w-4" aria-hidden /> Avise-me
             </Link>
           </div>
         )}
