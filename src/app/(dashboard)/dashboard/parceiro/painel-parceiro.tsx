@@ -72,7 +72,7 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="text-sm text-muted">Situação da página</p>
-            <p className="font-title text-lg font-bold text-ink" data-testid="parceiro-status">
+            <p className="font-title text-lg font-semibold text-ink" data-testid="parceiro-status">
               {STATUS[p.status] ?? p.status}
             </p>
             {suspenso && p.suspensoMotivo && <p className="text-sm text-ink">Motivo: {p.suspensoMotivo}</p>}
@@ -230,7 +230,7 @@ function AbaPagina({ p, rodar, recarregar }: { p: PainelParceiro; rodar: Rodar; 
               </div>
             ))}
           </div>
-          <Button onClick={() => rodar(() => salvarPagina({ nomePublico: nome, descricao, descricaoCurta: curta, redes }))} data-testid="parceiro-salvar-pagina">
+          <Button variant="secondary" onClick={() => rodar(() => salvarPagina({ nomePublico: nome, descricao, descricaoCurta: curta, redes }))} data-testid="parceiro-salvar-pagina">
             Salvar apresentação
           </Button>
         </div>
@@ -278,14 +278,14 @@ function FotoGaleria({ g, primeira, ultima, rodar, aoRemover }: { g: PainelParce
         onBlur={() => legenda !== (g.legenda ?? "") && rodar(() => legendarFotoGaleria(g.id, legenda), "Legenda salva.")}
         maxLength={120}
         placeholder="Legenda"
-        className="mt-2 w-full rounded-md border border-sage-200 px-2 py-1 text-sm"
+        className="mt-2 w-full rounded-lg border border-sage-200 px-2 py-1 text-sm"
       />
       <div className="mt-2 flex items-center justify-between gap-1">
         <div className="flex gap-1">
-          <button type="button" aria-label="Mover para antes" disabled={primeira} onClick={() => rodar(() => moverFotoGaleria(g.id, "antes"), "Ordem salva.")} className="grid h-9 w-9 place-items-center rounded-md border border-line disabled:opacity-40">
+          <button type="button" aria-label="Mover para antes" disabled={primeira} onClick={() => rodar(() => moverFotoGaleria(g.id, "antes"), "Ordem salva.")} className="grid h-9 w-9 place-items-center rounded-lg border border-line disabled:opacity-40">
             <ArrowUp className="h-4 w-4" aria-hidden />
           </button>
-          <button type="button" aria-label="Mover para depois" disabled={ultima} onClick={() => rodar(() => moverFotoGaleria(g.id, "depois"), "Ordem salva.")} className="grid h-9 w-9 place-items-center rounded-md border border-line disabled:opacity-40">
+          <button type="button" aria-label="Mover para depois" disabled={ultima} onClick={() => rodar(() => moverFotoGaleria(g.id, "depois"), "Ordem salva.")} className="grid h-9 w-9 place-items-center rounded-lg border border-line disabled:opacity-40">
             <ArrowDown className="h-4 w-4" aria-hidden />
           </button>
         </div>
@@ -373,7 +373,7 @@ function AbaServicos({ p, rodar }: { p: PainelParceiro; rodar: Rodar }) {
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button
+          <Button variant="secondary"
             onClick={() => {
               rodar(() => salvarServico({ ...f, id: f.id || null }), "Serviço salvo.");
               setF(vazio);
@@ -421,12 +421,12 @@ function AbaAtendimento({ p, rodar }: { p: PainelParceiro; rodar: Rodar }) {
             <input id="at-raio" inputMode="numeric" value={raio} onChange={(e) => setRaio(e.target.value)} className={campo} />
           </div>
         </div>
-        <Button className="mt-4" onClick={() => rodar(() => salvarAtendimento({ cidades: cidades.split(/[,;\n]/).map((c) => c.trim()).filter(Boolean), cepBase: cep, raioKm: raio }))} data-testid="parceiro-salvar-atendimento">
+        <Button variant="secondary" className="mt-4" onClick={() => rodar(() => salvarAtendimento({ cidades: cidades.split(/[,;\n]/).map((c) => c.trim()).filter(Boolean), cepBase: cep, raioKm: raio }))} data-testid="parceiro-salvar-atendimento">
           Salvar atendimento
         </Button>
       </Panel>
 
-      <Panel title="Agenda">
+      <Panel id="agenda" title="Agenda" className="scroll-mt-24">
         <p className="text-sm font-medium text-ink">Janelas da semana</p>
         <ul className="mt-2 space-y-1 text-sm" data-testid="parceiro-janelas">
           {janelas.length === 0 && <li className="text-muted">Nenhuma janela ainda.</li>}
@@ -576,7 +576,7 @@ function AbaCartao({ publicada }: { publicada: boolean }) {
           </div>
         ) : (
           <div className="mt-4 space-y-2">
-            <Button onClick={gerar} disabled={!publicada || pendente} data-testid="parceiro-gerar-cartao">
+            <Button variant="secondary" onClick={gerar} disabled={!publicada || pendente} data-testid="parceiro-gerar-cartao">
               <QrCode className="h-4 w-4" aria-hidden /> {pendente ? "Gerando…" : "Gerar meu cartão"}
             </Button>
             {!publicada && (

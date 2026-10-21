@@ -70,10 +70,10 @@ export function CartaoVisita({
     <div id={`visita-${v.id}`} data-testid="cartao-visita" data-status={v.status} data-modalidade={v.modalidade} className={cn(compacto && "text-sm")}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-forest">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase text-forest">
             <Icone className="h-3.5 w-3.5" aria-hidden /> Visita {MODALIDADE_ROTULO[v.modalidade].toLowerCase()}
           </p>
-          {!compacto && <h3 className="line-clamp-2 font-title text-base font-bold text-ink">{v.imovel}</h3>}
+          {!compacto && <h3 className="line-clamp-2 font-title text-base font-semibold text-ink">{v.imovel}</h3>}
           {v.motivo && <p className="text-xs text-muted">Motivo da estadia: {v.motivo}</p>}
         </div>
         <span data-testid="visita-status" className={`rounded-full px-3 py-1 text-xs font-semibold ${TOM[status]}`}>
@@ -102,7 +102,7 @@ export function CartaoVisita({
         <>
           <ul className="mt-3 flex flex-wrap gap-2 text-sm text-ink" data-testid="visita-horarios">
             {v.horarios.map((h) => (
-              <li key={h} className="rounded-lg bg-surface-2 px-3 py-1.5">
+              <li key={h} className="rounded-lg bg-surface-2 px-3 py-2">
                 {formatarHorario(h)}
               </li>
             ))}
@@ -120,8 +120,8 @@ export function CartaoVisita({
       {papel === "morador" && v.modalidade === "presencial" && (v.status === "pedido" || v.status === "remarcar" || v.status === "confirmado") && (
         v.status === "confirmado" && v.endereco ? (
           <div className="mt-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-ink" data-testid="visita-endereco">
-            <p className="flex items-start gap-1.5">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-forest" aria-hidden /> {v.endereco}
+            <p className="flex items-start gap-2">
+              <MapPin className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden /> {v.endereco}
             </p>
             {v.enderecoMapa && (
               <a href={v.enderecoMapa} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block font-medium text-forest underline" data-testid="visita-abrir-mapa">
@@ -200,7 +200,7 @@ function AcoesDono({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () => 
         />
       </label>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" size="sm" disabled={ocupado} data-testid="visita-recusar-enviar" onClick={() => rodar({ acao: "cancelar", id: v.id, motivo })}>
+        <Button variant="destructive" size="sm" disabled={ocupado} data-testid="visita-recusar-enviar" onClick={() => rodar({ acao: "cancelar", id: v.id, motivo })}>
           Recusar pedido
         </Button>
         <Button variant="ghost" size="sm" disabled={ocupado} onClick={() => setRecusando(false)}>
@@ -261,7 +261,7 @@ function AcoesDono({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () => 
                 Propor este horário
               </Button>
             ) : (
-              <Button variant="primary" size="sm" disabled={ocupado} data-testid="visita-confirmar" onClick={() => rodar({ acao: "confirmar", id: v.id, horario, link: video ? link : undefined })}>
+              <Button variant="secondary" size="sm" disabled={ocupado} data-testid="visita-confirmar" onClick={() => rodar({ acao: "confirmar", id: v.id, horario, link: video ? link : undefined })}>
                 Confirmar horário
               </Button>
             )}
@@ -278,7 +278,7 @@ function AcoesDono({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () => 
       )}
       {v.status === "confirmado" && (
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" size="sm" disabled={ocupado} data-testid="visita-concluir" onClick={() => rodar({ acao: "concluir", id: v.id })}>
+          <Button variant="secondary" size="sm" disabled={ocupado} data-testid="visita-concluir" onClick={() => rodar({ acao: "concluir", id: v.id })}>
             Marcar como feita
           </Button>
           <Button variant="ghost" size="sm" disabled={ocupado} data-testid="visita-cancelar" onClick={() => rodar({ acao: "cancelar", id: v.id })}>
@@ -299,7 +299,7 @@ function AcoesMorador({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () 
   return (
     <div className="mt-3 flex flex-wrap gap-2">
       {v.status === "remarcar" && (
-        <Button variant="primary" size="sm" disabled={ocupado} data-testid="visita-aceitar-remarcacao" onClick={() => rodar({ acao: "aceitar_remarcacao", id: v.id })}>
+        <Button variant="secondary" size="sm" disabled={ocupado} data-testid="visita-aceitar-remarcacao" onClick={() => rodar({ acao: "aceitar_remarcacao", id: v.id })}>
           Aceitar o novo horário
         </Button>
       )}

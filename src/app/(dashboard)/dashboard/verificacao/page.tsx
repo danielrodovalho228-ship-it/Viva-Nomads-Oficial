@@ -191,7 +191,7 @@ function TesteFlow({ copy, perfil, inicial, onStatus }: { copy: VerifyCopy; perf
 
   return (
     <div className="space-y-4" data-testid="verificacao-teste">
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">
+      <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase text-amber-800">
         Conta de teste
       </span>
       {!laudo ? (
@@ -199,7 +199,7 @@ function TesteFlow({ copy, perfil, inicial, onStatus }: { copy: VerifyCopy; perf
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-sage-100">
             <ShieldCheck className="h-8 w-8 text-forest" />
           </div>
-          <h2 className="mt-4 font-title text-xl font-bold text-ink">{copy.heading}</h2>
+          <h2 className="mt-4 font-title text-xl font-semibold text-ink">{copy.heading}</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted">
             Esta é uma conta de teste: a verificação é <strong>simulada</strong>, sem documento, sem CPF e sem consulta ao
             parceiro. Serve para seguir a jornada até a assinatura.
@@ -222,7 +222,7 @@ function TesteFlow({ copy, perfil, inicial, onStatus }: { copy: VerifyCopy; perf
                 <BadgeCheck className="h-7 w-7" />
               </span>
               <div className="min-w-0">
-                <h2 className="font-title text-lg font-bold text-ink">{laudo.ok ? copy.badge : "Verificação simulada"}</h2>
+                <h2 className="font-title text-lg font-semibold text-ink">{laudo.ok ? copy.badge : "Verificação simulada"}</h2>
                 <p className="text-sm font-semibold text-amber-800" data-testid="verificacao-teste-rotulo">
                   {NOTA_VERIFICACAO_TESTE}
                 </p>
@@ -237,7 +237,7 @@ function TesteFlow({ copy, perfil, inicial, onStatus }: { copy: VerifyCopy; perf
           </Panel>
           {perfil === "tenant" && (
             <Panel>
-              <h3 className="font-title font-bold text-ink">Siga a jornada</h3>
+              <h3 className="font-title font-semibold text-ink">Siga a jornada</h3>
               <p className="mt-1 text-sm text-muted">
                 Candidate-se a um imóvel; depois do aceite, o fechamento usa este resultado simulado até a assinatura.
               </p>
@@ -282,21 +282,21 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
               <ShieldAlert className="h-7 w-7" />
             </span>
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Não verificado</h2>
+              <h2 className="font-title text-lg font-semibold text-ink">Não verificado</h2>
               <p className="text-sm text-muted">A verificação de identidade ainda não abriu para contas reais.</p>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800">
+          <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-800">
             <Info className="h-3.5 w-3.5" /> Disponível em breve
           </span>
         </div>
 
         <div className="mt-5 rounded-xl border border-sage-200 bg-surface-2 p-4">
           <p className="text-sm font-medium text-ink">O que a verificação destrava:</p>
-          <ul className="mt-2 space-y-1.5">
+          <ul className="mt-2 space-y-2">
             {copy.unlocks.map((u) => (
               <li key={u} className="flex items-start gap-2 text-sm text-muted">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> {u}
+                <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" /> {u}
               </li>
             ))}
           </ul>
@@ -315,7 +315,7 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
         </div>
 
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
-          <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <Lock className="mt-1 h-3.5 w-3.5 shrink-0" />
           <span className="min-w-0">
             Você já pode se candidatar sem o selo — o proprietário vê{" "}
             <strong className="text-ink">verificação pendente</strong> no lugar do resultado até a
@@ -333,7 +333,7 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
               <strong className="text-ink">Candidatar-se</strong> — o proprietário recebe seu perfil
               com a verificação marcada como pendente.
             </p>
-            <ButtonLink href="/buscar" variant="gold" className="mt-3">
+            <ButtonLink href="/buscar" variant="secondary" className="mt-3">
               <Search className="h-4 w-4" /> Explorar imóveis
             </ButtonLink>
           </div>
@@ -387,7 +387,7 @@ function DemoFlow({
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-sage-100">
             <ShieldCheck className="h-8 w-8 text-forest" />
           </div>
-          <h2 className="mt-4 font-title text-xl font-bold text-ink">{copy.heading}</h2>
+          <h2 className="mt-4 font-title text-xl font-semibold text-ink">{copy.heading}</h2>
           <p className="mx-auto mt-2 max-w-md text-muted">
             Confirmamos sua <strong>identidade</strong> (documento + foto) para dar segurança à
             negociação.
@@ -411,7 +411,7 @@ function DemoFlow({
                   <BadgeCheck className="h-7 w-7" />
                 </span>
                 <div>
-                  <h2 className="font-title text-lg font-bold text-ink">
+                  <h2 className="font-title text-lg font-semibold text-ink">
                     {copy.badge} {TRAFFIC_LIGHT_META[result.light].emoji}
                   </h2>
                   <p className="text-sm text-muted">Verificação de demonstração</p>
@@ -427,7 +427,7 @@ function DemoFlow({
             </div>
 
             <p className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <Info className="mt-1 h-3.5 w-3.5 shrink-0" />
               Verificação de <strong>demonstração</strong> (válida só nesta vitrine). A real é
               feita <strong>via parceiro — em estruturação</strong>; só então o selo vale de fato
               e a validade de {validUntil ? `até ${validUntil}` : "12 meses"} passa a contar.
@@ -435,9 +435,9 @@ function DemoFlow({
           </Panel>
 
           <Panel className="flex items-start gap-3 bg-forest text-white">
-            <Zap className="mt-0.5 h-5 w-5 shrink-0 text-champagne" />
+            <Zap className="mt-1 h-5 w-5 shrink-0 text-champagne" />
             <div>
-              <h3 className="font-title font-bold">{copy.ctaTitle}</h3>
+              <h3 className="font-title font-semibold">{copy.ctaTitle}</h3>
               <p className="text-sm text-white/80">{copy.ctaBody}</p>
             </div>
           </Panel>
@@ -446,7 +446,7 @@ function DemoFlow({
               (emenda no passo 2 do checklist de primeiro acesso do inquilino). */}
           {mode === "tenant" && (
             <Panel>
-              <h3 className="font-title font-bold text-ink">Agora é encontrar seu lugar</h3>
+              <h3 className="font-title font-semibold text-ink">Agora é encontrar seu lugar</h3>
               <div className="mt-3 flex flex-wrap gap-2">
                 <ButtonLink href="/buscar" variant="primary">
                   <Search className="h-4 w-4" /> Buscar imóveis
@@ -468,7 +468,7 @@ function DemoFlow({
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
     <p className="flex items-start gap-2 text-muted">
-      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+      <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" />
       <span>{children}</span>
     </p>
   );

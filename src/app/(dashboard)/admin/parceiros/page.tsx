@@ -123,10 +123,10 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
         subtitle="Pedidos de parceria, páginas ativas e avisos por cidade."
         action={
           <span className="flex flex-wrap gap-2">
-            <Link href="/admin/parceiros/pedidos" className={buttonClasses({ size: "sm" })} data-testid="admin-parceiros-pedidos-link">
+            <Link href="/admin/parceiros/pedidos" className={buttonClasses({ variant: "secondary", size: "sm" })} data-testid="admin-parceiros-pedidos-link">
               Pedidos de serviço
             </Link>
-            <Link href="/admin/fotografos" className={buttonClasses({ size: "sm" })}>
+            <Link href="/admin/fotografos" className={buttonClasses({ variant: "secondary", size: "sm" })}>
               <Camera className="h-4 w-4" /> Fotógrafos
             </Link>
           </span>
@@ -144,13 +144,13 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
         <dl className="grid grid-cols-2 gap-3 text-sm" data-testid="admin-cartao-parceiro">
           <div className="rounded-lg bg-surface-2 px-3 py-2">
             <dt className="text-muted">Cartões gerados</dt>
-            <dd className="font-title text-2xl font-bold text-ink" data-testid="admin-cartoes-gerados">
+            <dd className="font-title text-2xl font-semibold text-ink" data-testid="admin-cartoes-gerados">
               {numCartao.total.gerados}
             </dd>
           </div>
           <div className="rounded-lg bg-surface-2 px-3 py-2">
             <dt className="text-muted">Pedidos vindos de cartão</dt>
-            <dd className="font-title text-2xl font-bold text-ink" data-testid="admin-pedidos-cartao">
+            <dd className="font-title text-2xl font-semibold text-ink" data-testid="admin-pedidos-cartao">
               {numCartao.total.pedidos}
             </dd>
           </div>

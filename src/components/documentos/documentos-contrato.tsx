@@ -17,17 +17,17 @@ import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-act
  * dinheiro: a plataforma registra, a outra parte confirma, e o PDF sai.
  */
 
-const input = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-1.5 text-sm text-ink outline-none focus:border-sage";
+const input = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-2 text-sm text-ink outline-none focus:border-sage";
 
 export function ListaDocumentos({ documentos, recibos = [] }: { documentos: DocumentoView[]; recibos?: ReciboView[] }) {
   if (documentos.length === 0 && recibos.length === 0) return null;
   return (
     <div className="mt-4 border-t border-sage-200 pt-3" data-testid="documentos-contrato">
-      <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+      <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase text-muted">
         <FileText className="h-3.5 w-3.5" /> Documentos
       </p>
       {recibos.length > 0 && (
-        <ul className="mb-2 space-y-1.5" data-testid="recibos-pagamentos">
+        <ul className="mb-2 space-y-2" data-testid="recibos-pagamentos">
           {recibos.map((r) => (
             <li key={r.pagamentoId} className="flex flex-wrap items-center justify-between gap-2 text-sm" data-testid="recibo-pagamento" data-emitido={r.documentoId ? "sim" : "nao"}>
               <span className="min-w-0 text-ink">
@@ -48,7 +48,7 @@ export function ListaDocumentos({ documentos, recibos = [] }: { documentos: Docu
           ))}
         </ul>
       )}
-      <ul className="space-y-1.5">
+      <ul className="space-y-2">
         {documentos.map((d) => (
           <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="min-w-0 text-ink">
@@ -73,7 +73,7 @@ export function ListaDocumentos({ documentos, recibos = [] }: { documentos: Docu
 /** "Anulado: registro em duplicidade" — o documento existiu, o PDF continua acessível, mas não vale mais. */
 function SeloAnulado({ motivo }: { motivo: string }) {
   return (
-    <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700" data-testid="selo-anulado">
+    <span className="ml-2 rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-700" data-testid="selo-anulado">
       Anulado: {motivo}
     </span>
   );
@@ -128,7 +128,7 @@ export function DevolucaoCaucaoDono({
   }
   return (
     <div className="mt-3 rounded-xl border border-sage-200 bg-white p-3" data-testid="devolucao-caucao">
-      <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-ink">
+      <p className="mb-2 flex items-center gap-2 text-xs font-medium text-ink">
         <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Devolução da caução — você devolve direto ao inquilino; a plataforma só registra
       </p>
       <div className="grid gap-2 sm:grid-cols-3">
@@ -205,7 +205,7 @@ export function DevolucaoCaucaoInquilino({ acerto }: { acerto: AcertoView | null
       </p>
       {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
-        <Button size="sm" variant="gold" disabled={ocupado} onClick={() => responder("confirmar")}>
+        <Button size="sm" variant="secondary" disabled={ocupado} onClick={() => responder("confirmar")}>
           <Check className="h-4 w-4" /> Sim, recebi
         </Button>
         <Button size="sm" variant="outline" disabled={ocupado} onClick={() => responder("contestar")}>
@@ -228,7 +228,7 @@ export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[
   if (pendentes.length === 0) return null;
   return (
     <div className="mt-4 border-t border-sage-200 pt-3" data-testid="confirmar-pagamentos">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Pagamentos para confirmar</p>
+      <p className="mb-2 text-xs font-semibold uppercase text-muted">Pagamentos para confirmar</p>
       <ul className="space-y-2">
         {pendentes.map((p) => (
           <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -237,7 +237,7 @@ export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[
             </span>
             <Button
               size="sm"
-              variant="gold"
+              variant="secondary"
               disabled={ocupado === p.id}
               onClick={async () => {
                 setOcupado(p.id);

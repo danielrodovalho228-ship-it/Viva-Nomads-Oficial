@@ -104,7 +104,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
         />
       ) : (
         <>
-          <p className="mb-3 flex items-center gap-1.5 text-xs text-muted">
+          <p className="mb-3 flex items-center gap-2 text-xs text-muted">
             <ArrowDownWideNarrow className="h-3.5 w-3.5" />
             Ordenados por qualidade — verificados e compatíveis no topo.
           </p>
@@ -128,14 +128,14 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       {/* Semáforo em destaque, primeiro (o que decide) */}
-                      <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", LIGHT[l.light].tone)}>
+                      <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", LIGHT[l.light].tone)}>
                         {LIGHT[l.light].label}
                       </span>
-                      <h3 className="font-title text-lg font-bold text-ink" data-testid="candidato-nome">{l.name}</h3>
+                      <h3 className="font-title text-lg font-semibold text-ink" data-testid="candidato-nome">{l.name}</h3>
                       {l.identidade ? (
                         <span
                           className={cn(
-                            "rounded-full px-2 py-0.5 text-xs font-semibold",
+                            "rounded-full px-2 py-1 text-xs font-semibold",
                             l.identidade.estado === "confirmada" ? "bg-champagne text-night" : "bg-surface-2 text-muted",
                           )}
                           data-testid="candidato-identidade"
@@ -145,7 +145,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                         </span>
                       ) : (
                         l.verified && (
-                          <span className="rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-night">Identidade conferida</span>
+                          <span className="rounded-full bg-champagne px-2 py-1 text-xs font-semibold text-night">Identidade conferida</span>
                         )
                       )}
                     </div>
@@ -176,7 +176,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                     {l.fichaPet && <FichaPetCandidatura alvo={{ leadId: l.id }} resumo={l.fichaPet} className="mt-2" />}
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {l.riskCategories.map((c) => (
-                        <span key={c} className="rounded-full bg-blue-50 px-2.5 py-1 text-xs text-blue-700">
+                        <span key={c} className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700">
                           {c}
                         </span>
                       ))}
@@ -186,25 +186,25 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
 
                   <div className="text-right">
                     {open ? (
-                      <ButtonLink href="/dashboard/mensagens" variant="primary" size="sm">
+                      <ButtonLink href="/dashboard/mensagens" variant="secondary" size="sm">
                         <MessageSquare className="h-4 w-4" /> Responder pela plataforma
                       </ButtonLink>
                     ) : st === "rejected" ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-sm font-medium text-red-600">
                         <X className="h-4 w-4" /> Recusado
                       </span>
                     ) : st !== "rejecting" ? (
                       <div className="flex flex-wrap justify-end gap-2">
                         <button
                           onClick={() => set(l.id, "rejecting")}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-3.5 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                          className="inline-flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
                         >
                           <X className="h-4 w-4" /> Recusar
                         </button>
                         <button
                           onClick={() => aprovar(l.id)}
                           disabled={pending}
-                          className={buttonClasses({ size: "sm" })}
+                          className={buttonClasses({ variant: "secondary", size: "sm" })}
                         >
                           <Check className="h-4 w-4" /> Aprovar e responder
                         </button>
@@ -221,14 +221,14 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                       o interessado vê apenas que a candidatura não seguiu adiante)
                     </p>
                     {/* Motivos pré-definidos em um clique (quick win #3) */}
-                    <div className="mt-2 flex flex-wrap gap-1.5">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       {REJECT_REASONS.map((r) => (
                         <button
                           key={r}
                           type="button"
                           onClick={() => setReasons((p) => ({ ...p, [l.id]: r }))}
                           className={cn(
-                            "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                            "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                             reasons[l.id] === r
                               ? "border-red-400 bg-red-100 text-red-700"
                               : "border-red-200 bg-white text-red-600 hover:bg-red-100"
@@ -248,14 +248,14 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                     <div className="mt-2 flex justify-end gap-2">
                       <button
                         onClick={() => set(l.id, "open")}
-                        className="rounded-full px-3.5 py-1.5 text-sm font-medium text-muted hover:text-ink"
+                        className="rounded-full px-4 py-2 text-sm font-medium text-muted hover:text-ink"
                       >
                         Cancelar
                       </button>
                       <button
                         onClick={() => recusar(l.id)}
                         disabled={!(reasons[l.id] ?? "").trim() || pending}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
                       >
                         <Send className="h-4 w-4" /> Confirmar recusa
                       </button>
@@ -264,14 +264,14 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                 )}
 
                 {st === "rejected" && reasons[l.id] && (
-                  <p className="mt-3 flex items-start gap-1.5 text-xs text-muted">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <p className="mt-3 flex items-start gap-2 text-xs text-muted">
+                    <Check className="mt-1 h-3.5 w-3.5 shrink-0" />
                     Motivo registrado (não enviado ao interessado): “{reasons[l.id]}”
                   </p>
                 )}
 
                 {st === "open" && (
-                  <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
+                  <p className="mt-3 flex items-center gap-2 text-xs text-muted">
                     <Lock className="h-3.5 w-3.5" />
                     Telefone e e-mail nunca são exibidos — a conversa segue pela plataforma. O
                     endereço exato do imóvel é liberado após o aceite.
@@ -285,7 +285,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                       Enviar proposta
                     </ButtonLink>
                     {open && (
-                      <ButtonLink href={`/dashboard/fechamento?c=${l.id}`} variant="accent" size="sm">
+                      <ButtonLink href={`/dashboard/fechamento?c=${l.id}`} variant="secondary" size="sm">
                         Iniciar fechamento
                       </ButtonLink>
                     )}

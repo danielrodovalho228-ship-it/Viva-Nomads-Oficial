@@ -154,7 +154,7 @@ export function DadosPessoais() {
           </p>
         )}
         <div className="mt-6">
-          <Button type="submit" disabled={salvando}>
+          <Button variant="secondary" type="submit" disabled={salvando}>
             {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Salvar alterações
           </Button>
@@ -237,7 +237,7 @@ export function DocumentoPessoa() {
                 {falhou ? "Não conseguimos carregar seu documento agora." : "Seu documento ainda não carregou."}
               </p>
               <div className="mt-4">
-                <Button
+                <Button variant="secondary"
                   type="button"
                   onClick={() => {
                     setDoc(undefined);
@@ -296,7 +296,7 @@ export function DocumentoPessoa() {
             )}
             {ok && <p className="mt-3 text-sm text-forest">Documento salvo.</p>}
             <div className="mt-5">
-              <Button type="submit" disabled={salvando}>
+              <Button variant="secondary" type="submit" disabled={salvando}>
                 {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Salvar documento
               </Button>
@@ -318,13 +318,13 @@ export function AjudaContato() {
       <div className="mt-3 flex flex-wrap gap-2">
         <a
           href="/ajuda"
-          className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage"
+          className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:border-sage"
         >
           Central de Ajuda
         </a>
         <a
           href="/ajuda?novo=1"
-          className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage"
+          className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:border-sage"
         >
           Abrir chamado
         </a>
@@ -341,7 +341,7 @@ export function QueroSerParceiro() {
         Faz fotografia, mudança, limpeza, montagem ou manutenção? Peça a parceria com esta mesma conta: você continua
         alugando ou anunciando normalmente.
       </p>
-      <a href="/dashboard/parceiro" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage">
+      <a href="/dashboard/parceiro" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:border-sage">
         Quero ser parceiro
       </a>
     </Panel>
@@ -435,7 +435,7 @@ export function ChangePassword() {
         <PwdField label="Confirmar nova senha" value={confirm} onChange={setConfirm} />
         {pedirCodigo && (
           <label className="block sm:col-span-2">
-            <span className="mb-1.5 block text-sm font-medium text-ink">Código de 6 dígitos do app autenticador</span>
+            <span className="mb-2 block text-sm font-medium text-ink">Código de 6 dígitos do app autenticador</span>
             <input
               inputMode="numeric"
               autoComplete="one-time-code"
@@ -443,7 +443,7 @@ export function ChangePassword() {
               value={codigo}
               onChange={(e) => setCodigo(e.target.value.replace(/[^\d\s]/g, ""))}
               placeholder="000000"
-              className="h-11 w-full rounded-xl border border-sage-200 bg-white px-3.5 text-sm tracking-[0.3em] focus:border-sage focus:outline-none sm:max-w-xs"
+              className="h-11 w-full rounded-xl border border-sage-200 bg-white px-4 text-sm tracking-[0.3em] focus:border-sage focus:outline-none sm:max-w-xs"
             />
           </label>
         )}
@@ -455,7 +455,7 @@ export function ChangePassword() {
             </p>
           )}
           {captcha.widget && <div className="mb-3">{captcha.widget}</div>}
-          <Button type="submit" disabled={loading || !podeEnviar(captcha.ligado, captcha.token)}>
+          <Button variant="secondary" type="submit" disabled={loading || !podeEnviar(captcha.ligado, captcha.token)}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
             Salvar nova senha
           </Button>
@@ -478,12 +478,12 @@ function PwdField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
+      <span className="mb-2 block text-sm font-medium text-ink">{label}</span>
       <PasswordInput
         value={value}
         onChange={onChange}
         autoComplete={autoComplete}
-        className="rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 focus-within:border-sage"
+        className="rounded-xl border border-sage-200 bg-white px-4 py-3 focus-within:border-sage"
         inputClassName="text-sm"
       />
     </label>
@@ -568,7 +568,7 @@ export function NotificationsPanel() {
                 <Bell className="h-4 w-4 text-sage" /> {it.label}
                 {salvando === it.key && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" />}
               </span>
-              <span className="mt-0.5 block text-xs text-muted">{it.hint}</span>
+              <span className="mt-1 block text-xs text-muted">{it.hint}</span>
             </span>
             <Switch
               checked={prefs ? prefs[it.key] : false}
@@ -585,7 +585,7 @@ export function NotificationsPanel() {
                 <Bell className="h-4 w-4 text-sage" /> Receber alertas da equipe
                 {salvando === "equipe" && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" />}
               </span>
-              <span className="mt-0.5 block text-xs text-muted">Documento na fila, chamados e parceiros em análise.</span>
+              <span className="mt-1 block text-xs text-muted">Documento na fila, chamados e parceiros em análise.</span>
             </span>
             <Switch checked={alertasEquipe} onChange={alternarEquipe} label="Receber alertas da equipe" disabled={salvando !== null} />
           </div>
@@ -675,7 +675,7 @@ export function DangerZone() {
       </p>
 
       {step === 0 && (
-        <Button variant="outline" className="mt-4 border-red-300 text-red-600 hover:bg-red-50" onClick={() => setStep(1)}>
+        <Button variant="destructive" className="mt-4" onClick={() => setStep(1)}>
           <Trash2 className="h-4 w-4" /> Quero excluir minha conta
         </Button>
       )}
@@ -729,8 +729,8 @@ export function DangerZone() {
               Cancelar
             </Button>
             <Button
+              variant="destructive"
               size="sm"
-              className="bg-red-600 text-white hover:bg-red-700"
               disabled={password.length === 0 || loading || !podeEnviar(captcha.ligado, captcha.token)}
               onClick={confirmDelete}
             >
@@ -757,10 +757,10 @@ function Field({
 }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
+      <span className="mb-2 block text-sm font-medium text-ink">{label}</span>
       <input
         {...props}
-        className="w-full rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-sage read-only:bg-surface-2 read-only:text-muted"
+        className="w-full rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm outline-none focus:border-sage read-only:bg-surface-2 read-only:text-muted"
       />
     </label>
   );

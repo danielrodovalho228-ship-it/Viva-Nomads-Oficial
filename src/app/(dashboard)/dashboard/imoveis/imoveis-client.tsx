@@ -75,7 +75,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
           title="Você ainda não tem imóveis"
           text="Comece pelas fotos do seu imóvel: o resto do cadastro vem depois."
           action={
-            <ButtonLink href="/dashboard/imoveis/novo" variant="gold">
+            <ButtonLink href="/dashboard/imoveis/novo" variant="secondary">
               Cadastrar imóvel
             </ButtonLink>
           }
@@ -89,7 +89,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
             return (
               <div
                 key={p.id}
-                className="flex flex-col gap-4 rounded-2xl border border-sage-200 bg-white p-4 sm:flex-row"
+                className="flex flex-col gap-4 rounded-xl border border-sage-200 bg-white p-4 sm:flex-row"
               >
                 {hasPhoto(p.photos[0]) ? (
                   <BrandImage
@@ -108,13 +108,13 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={cn(
-                        "rounded-full px-2.5 py-1 text-xs font-medium",
+                        "rounded-full px-3 py-1 text-xs font-medium",
                         STATUS_META[p.status].tone
                       )}
                     >
                       {STATUS_META[p.status].label}
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-sage-200 px-2.5 py-1 text-xs font-medium text-ink">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-sage-200 px-3 py-1 text-xs font-medium text-ink">
                       {p.ownershipType !== "own" ? (
                         <>
                           <Handshake className="h-3.5 w-3.5 text-sage" /> {p.ownershipType === "managed" ? "Administrado" : "Operado"}
@@ -129,11 +129,11 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                     {demoItem && <DemoBadge />}
                   </div>
                   {demoItem ? (
-                    <span className="mt-2 font-title text-lg font-bold text-ink">{p.title}</span>
+                    <span className="mt-2 font-title text-lg font-semibold text-ink">{p.title}</span>
                   ) : (
                     <Link
                       href={`/imoveis/${p.id}`}
-                      className="mt-2 font-title text-lg font-bold text-ink hover:text-forest"
+                      className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest"
                     >
                       {p.title}
                     </Link>
@@ -173,11 +173,11 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                         <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${comp.pct}%` }} />
                       </div>
                       {comp.faltam.length > 0 && <p className="mt-1 text-[11px] text-amber-800">Falta para publicar: {comp.faltam.join(" · ")}</p>}
-                      {comp.melhorar.length > 0 && <p className="mt-0.5 text-[11px] text-muted">Para melhorar (opcional): {comp.melhorar.join(" · ")}</p>}
+                      {comp.melhorar.length > 0 && <p className="mt-1 text-[11px] text-muted">Para melhorar (opcional): {comp.melhorar.join(" · ")}</p>}
                     </div>
                   )}
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
-                    <span className="font-title text-xl font-bold text-forest">
+                    <span className="font-title text-xl font-semibold text-forest">
                       {formatBRL(p.monthlyPrice)}
                       <span className="text-sm font-normal text-muted">/mês</span>
                     </span>
@@ -197,7 +197,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                               ? `/dashboard/imoveis/novo?draft=${p.id}`
                               : `/dashboard/imoveis/${p.id}/editar`
                           }
-                          variant={p.status === "draft" ? "gold" : "ghost"}
+                          variant={p.status === "draft" ? "secondary" : "ghost"}
                           size="sm"
                         >
                           {p.status === "draft" ? "Continuar editando" : "Editar"}

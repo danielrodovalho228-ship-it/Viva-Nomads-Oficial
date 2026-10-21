@@ -60,7 +60,7 @@ export function BuscaEndereco(p: { ufInicial: string; cidadeInicial: string; rua
           type="button"
           onClick={() => void buscar()}
           disabled={buscando || !podeBuscarEndereco(uf, cidade, rua)}
-          className={buttonClasses({ className: "disabled:opacity-50" })}
+          className={buttonClasses({ variant: "secondary", className: "disabled:opacity-50" })}
           data-testid="busca-endereco-buscar"
         >
           {buscando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Search className="h-4 w-4" aria-hidden />} Buscar

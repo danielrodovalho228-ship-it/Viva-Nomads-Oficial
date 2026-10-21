@@ -77,7 +77,7 @@ export function LocacoesClient({
             <Panel key={l.id} className="p-5" data-testid="locacao-cartao" data-contrato={l.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="font-title text-lg font-bold text-ink">
+                  <h2 className="font-title text-lg font-semibold text-ink">
                     {demoOn ? (
                       l.propertyTitle
                     ) : (
@@ -88,7 +88,7 @@ export function LocacoesClient({
                   </h2>
                   {!demoOn && (
                     <p
-                      className="mt-1 inline-flex max-w-full items-center gap-1.5 text-xs font-medium text-forest"
+                      className="mt-1 inline-flex max-w-full items-center gap-2 text-xs font-medium text-forest"
                       data-testid="locacao-selo"
                       aria-label={selos[l.id] ? `Anfitrião: ${selos[l.id].rotulo}` : "Sua estadia"}
                     >
@@ -101,7 +101,7 @@ export function LocacoesClient({
                   </p>
                 </div>
                 <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${tomDoSelo(l.estado)}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${tomDoSelo(l.estado)}`}
                   data-testid="locacao-etapa"
                   data-chave={l.estado.chave}
                 >
@@ -120,7 +120,7 @@ export function LocacoesClient({
 
               {!demoOn && (
                 <Link href={`/dashboard/locacoes/${l.id}`} className="mt-4 inline-block" data-testid="locacao-ver-contrato">
-                  <Button variant={l.etapa === "aguardando_assinatura" ? "gold" : "outline"}>
+                  <Button variant="secondary">
                     {l.etapa === "aguardando_assinatura" && l.status === "ativo" ? "Ver e assinar contrato" : "Ver contrato"}
                   </Button>
                 </Link>

@@ -156,7 +156,7 @@ export function AvatarUploader() {
               className="hidden"
               onChange={onPick}
             />
-            <Button onClick={() => inputRef.current?.click()} disabled={busy}>
+            <Button variant="secondary" onClick={() => inputRef.current?.click()} disabled={busy}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
               {photoUrl ? "Trocar foto" : "Enviar foto"}
             </Button>
@@ -169,13 +169,13 @@ export function AvatarUploader() {
 
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           {okMsg && (
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-forest">
+            <p className="mt-2 flex items-center gap-2 text-sm text-forest">
               <Check className="h-4 w-4" /> {okMsg}
             </p>
           )}
 
-          <p className="mt-3 flex items-start gap-1.5 text-xs text-muted">
-            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
+          <p className="mt-3 flex items-start gap-2 text-xs text-muted">
+            <ShieldCheck className="mt-1 h-3.5 w-3.5 shrink-0 text-sage" />
             Recortamos, reduzimos e removemos os metadados (inclusive localização) antes de guardar.
             Esta foto é separada da verificação de identidade.
           </p>
