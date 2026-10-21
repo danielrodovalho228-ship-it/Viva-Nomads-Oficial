@@ -26,6 +26,10 @@ jobs:
       - name: Testes
         run: npm test
 
+      # Prompt 33: invariantes da ordem dos imóveis com 200 ofertas sintéticas (sai 1 se algum quebrar).
+      - name: Simulação da ordem
+        run: node scripts/simular-ordem.ts
+
       # DNS do e-mail (SPF, DKIM do Resend, DMARC): informativo, nunca derruba o CI.
       - name: DNS do e-mail
         continue-on-error: true
