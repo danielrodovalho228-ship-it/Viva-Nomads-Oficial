@@ -84,11 +84,12 @@ test("#143: /parceiros e o texto da Viva não prometem cobertura nacional", () =
   assert.doesNotMatch(ler("lib/atendimento/parceiros-texto.ts"), /todo o Brasil/i);
 });
 
-test("#142 (t118 no lab 4f5a): o botão do anúncio é 'Enviar candidatura', sem 'reserva' no texto visível", () => {
+test("#142 (t118 no lab 4f5a) + Prompt 41: o primário do anúncio é 'Solicitar' (a candidatura) e o passo final 'Enviar candidatura', sem 'reserva' no texto visível", () => {
   for (const arq of ["components/property/barra-fixa-celular.tsx", "app/(public)/imoveis/[id]/property-detail.tsx"]) {
     const src = ler(arq);
     assert.doesNotMatch(src, /"Solicitar reserva"/, arq);
-    assert.match(src, /"Enviar candidatura"/, arq);
+    assert.match(src, /"Solicitar"/, arq);
   }
-  assert.deepEqual(achadosNoTexto("Enviar candidatura Mensagem Viva", { vocabulario: true }), []);
+  assert.match(ler("app/(public)/imoveis/[id]/property-detail.tsx"), /"Enviar candidatura"/);
+  assert.deepEqual(achadosNoTexto("Solicitar Agendar visita Enviar candidatura Mensagem Viva", { vocabulario: true }), []);
 });

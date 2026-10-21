@@ -10,7 +10,7 @@ for (const largura of [390, 1280]) {
 
     test("barra de progresso, mensagem opcional e confirmação com termos", async ({ page }) => {
       await page.goto("/imoveis/ube-002", { waitUntil: "domcontentloaded" });
-      await page.getByRole("button", { name: "Enviar candidatura" }).locator("visible=true").first().click();
+      await page.getByRole("button", { name: "Solicitar", exact: true }).locator("visible=true").first().click();
       const passo = page.getByTestId("solicitacao-passo");
       await expect(passo).toBeVisible();
       await expect(passo.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "33");

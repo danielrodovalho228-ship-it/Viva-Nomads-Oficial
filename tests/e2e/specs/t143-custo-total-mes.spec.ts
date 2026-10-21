@@ -31,7 +31,8 @@ for (const id of ["ube-001", "ube-005"]) {
       const barra = page.getByTestId("barra-fixa-imovel");
       await expect(barra).toBeVisible();
       expect(num(await barra.getByTestId("barra-total").innerText())).toBe(totalPagina);
-      await expect(barra.getByTestId("barra-total")).toContainText("/mês total");
+      // Prompt 41: "R$ X/mês · R$ Y em N meses" (sem o "total" solto, a regra do cartão).
+      await expect(barra.getByTestId("barra-total")).toContainText("/mês");
       await barra.getByTestId("barra-total").click();
       await expect(page).toHaveURL(/#cartao-preco$/);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

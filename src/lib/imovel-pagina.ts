@@ -15,10 +15,11 @@ export function secoesDoImovel(p: { avaliacoes: number; temDono: boolean }): Sec
     { id: "visao-geral", rotulo: "Visão geral" },
     { id: "comodidades", rotulo: "Comodidades" },
     { id: "disponibilidade", rotulo: "Disponibilidade" },
+    // Prompt 41: o mapa aproximado vem antes das avaliações; o cartão do proprietário fecha a página.
+    { id: "localizacao", rotulo: "Localização" },
     { id: "avaliacoes", rotulo: p.avaliacoes > 0 ? `Avaliações (${p.avaliacoes})` : "Avaliações" },
   ];
   if (p.temDono) s.push({ id: "proprietario", rotulo: "Proprietário" });
-  s.push({ id: "localizacao", rotulo: "Localização" });
   return s;
 }
 
