@@ -1,6 +1,6 @@
 /*
   Ações da página da estadia (Prompt 41, adendo da estadia): o cogumelo, o primário "Mensagem" e o "Encerrar" no fim.
-  O E2E t259 confere o mesmo na tela (morador e proprietário, antes e depois da liberação das instruções, 390 e 1280).
+  O E2E t262 confere o mesmo na tela (morador e proprietário, antes e depois da liberação das instruções, 390 e 1280).
   Roda: node --test src/lib/estadia/acoes.test.ts
 */
 import { test } from "node:test";

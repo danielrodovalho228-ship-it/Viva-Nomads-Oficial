@@ -1368,7 +1368,7 @@
       "specs": [
         "t236-parceiros-ciclo",
         "t241-contas-teste-36",
-        "t259-detalhe-imovel-41"
+        "t262-detalhe-imovel-41"
       ]
     },
     "/admin/contratos/[id]": {
@@ -1420,8 +1420,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t259-detalhe-imovel-41",
-        "t260-visual-41"
+        "t262-detalhe-imovel-41",
+        "t263-visual-41"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -3993,7 +3993,7 @@
         "parceiro"
       ],
       "specs": [
-        "t259-detalhe-imovel-41"
+        "t262-detalhe-imovel-41"
       ]
     },
     "src/lib/parceiros/painel-actions.ts#temPapelParceiro": {

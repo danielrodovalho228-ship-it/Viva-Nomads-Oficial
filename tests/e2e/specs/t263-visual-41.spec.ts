@@ -16,8 +16,8 @@ import {
 } from "../fixtures/laboratorio";
 
 /*
-  T260 — Regressão visual do Prompt 41 (mesmo padrão do t245: snapshotPathTemplate estável do playwright.config,
-  linha de base em tests/e2e/visual/t260-visual-41.spec.ts/, só muda no PR que muda a tela), a 390 e 1280 px:
+  T263 — Regressão visual do Prompt 41 (mesmo padrão do t245: snapshotPathTemplate estável do playwright.config,
+  linha de base em tests/e2e/visual/t263-visual-41.spec.ts/, só muda no PR que muda a tela), a 390 e 1280 px:
     01 página do imóvel INTEIRA (de cima a baixo), ube-001;
     02–04 barra inferior dos 3 papéis (morador, proprietário, parceiro) — 390 no site e 1280 no app (a barra do site
           some no computador; no app ela existe em qualquer largura);
@@ -25,7 +25,7 @@ import {
           liberação das instruções de chegada, 07 morador depois, 08 proprietário. (A antiga 05, o cogumelo no detalhe
           do contrato, saiu: o cogumelo agora mora só na página da estadia.)
   Gerar / atualizar a linha de base (no laboratório, base recém-semeada):
-    npx playwright test t260 --update-snapshots
+    npx playwright test t263 --update-snapshots
   Estabilidade: fotos, mapa, datas, contagens, nomes e o calendário vão MASCARADOS; a duração da busca é fixada
   (localStorage vazio = estadia mínima do imóvel); os "imóveis parecidos" (que mudam com a base) mascaram o texto dos
   cartões e mantêm a forma (como a tela 09 do t245). As telas 04 e 06–08 criam contas próprias: só no laboratório.
@@ -78,7 +78,7 @@ async function entrarComo(browser: Browser, email: string, senha: string, largur
   return page;
 }
 
-test.describe("T260 — Regressão visual do Prompt 41", () => {
+test.describe("T263 — Regressão visual do Prompt 41", () => {
   test.describe.configure({ timeout: 120_000 });
 
   // ── 01 página do imóvel inteira ──

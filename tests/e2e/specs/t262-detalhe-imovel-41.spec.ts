@@ -17,7 +17,7 @@ import {
 } from "../fixtures/laboratorio";
 
 /*
-  T259 — Prompt 41 (funcional, a 390 e 1280 px):
+  T262 — Prompt 41 (funcional, a 390 e 1280 px):
    1. página do imóvel: galeria em tela cheia no celular ("1/N", coração e compartilhar como ícones) e mosaico de 5
       com "Ver todas as fotos" no computador; a ordem título → síntese → anfitrião → comodidades → mapa → avaliações;
       sem "Onde você vai dormir" (as fotos ainda não têm o cômodo); rodapé fixo / cartão lateral com
@@ -30,7 +30,7 @@ import {
       dela; a folha "Ações desta estadia" com os itens exatos de cada papel, antes e depois da liberação das
       instruções de chegada; sem a fileira de ações; um primário só ("Mensagem"); "Encerrar contrato" em texto vermelho
       no fim da página; sombra única; não cobre o "Fale com a Viva" nem o "Encerrar".
-  A regressão visual das mesmas telas fica no t260.
+  A regressão visual das mesmas telas fica no t263.
 */
 
 const LARGURAS = [390, 1280] as const;
@@ -74,7 +74,7 @@ async function primariosSemMarca(page: Page): Promise<string[]> {
 // ─────────────────────────── 1. Página do imóvel ───────────────────────────
 
 for (const largura of LARGURAS) {
-  test.describe(`T259 — página do imóvel a ${largura} px`, () => {
+  test.describe(`T262 — página do imóvel a ${largura} px`, () => {
     test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
     test("galeria: tela cheia + '1/N' + ícones (celular) · mosaico de 5 + 'Ver todas as fotos' (computador)", async ({ page }) => {
@@ -187,7 +187,7 @@ async function abas(page: Page): Promise<{ nome: string; href: string | null }[]
   return barra.getByRole("link").evaluateAll((els) => els.map((e) => ({ nome: (e.textContent ?? "").trim(), href: e.getAttribute("href") })));
 }
 
-test.describe("T259 — barra inferior por papel (390 px)", () => {
+test.describe("T262 — barra inferior por papel (390 px)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test.describe("morador", () => {
@@ -400,7 +400,7 @@ const ROTAS_PRIMARIO: Record<"inquilino" | "proprietario" | "admin", string[]> =
 
 for (const largura of LARGURAS) {
   for (const papel of ["inquilino", "proprietario", "admin"] as const) {
-    test.describe(`T259 — um primário por tela (${papel}, ${largura} px)`, () => {
+    test.describe(`T262 — um primário por tela (${papel}, ${largura} px)`, () => {
       test.skip(!hasAccount(papel), `sem a conta ${papel}`);
       test.use({ storageState: authFile(papel), viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
       test.describe.configure({ timeout: 300_000 });
@@ -445,7 +445,7 @@ async function acoesDaPagina(page: Page): Promise<string[]> {
   );
 }
 
-test.describe("T259 — cogumelo na página da estadia (laboratório)", () => {
+test.describe("T262 — cogumelo na página da estadia (laboratório)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (cria dono, morador, imóvel e um contrato vigente).");
   test.describe.configure({ mode: "serial" });
   const senha = novaSenha();

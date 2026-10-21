@@ -1,5 +1,5 @@
 /*
-  Prompt 41 — guardas de código (o E2E t259 confere o mesmo na tela, a 390 e 1280 px):
+  Prompt 41 — guardas de código (o E2E t262 confere o mesmo na tela, a 390 e 1280 px):
    - cogumelo: mora na página da estadia — as guardas estão em src/lib/estadia/acoes.test.ts;
    - página do imóvel: a ordem, o "Solicitar" (a candidatura de sempre), a visita em texto terciário, o total pela
      duração e "a Viva não segura dinheiro" em todo rótulo de valor;
