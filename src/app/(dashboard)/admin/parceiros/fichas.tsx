@@ -324,7 +324,7 @@ export function SuporteForm() {
       <p className="text-sm text-muted">A pessoa recebe um convite por e-mail, entra com esta conta, completa os dados e confirma o envio.</p>
       <input aria-label="E-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
       <input aria-label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome" className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
-      <Button size="sm" disabled={pendente} onClick={() => rodar(() => criarSolicitacaoSuporte({ email, nome }), "Convite enviado.", (r) => r.ok && (setEmail(""), setNome("")))}>
+      <Button size="sm" variant="secondary" disabled={pendente} onClick={() => rodar(() => criarSolicitacaoSuporte({ email, nome }), "Convite enviado.", (r) => r.ok && (setEmail(""), setNome("")))}>
         Abrir pedido e enviar convite
       </Button>
       {aviso}

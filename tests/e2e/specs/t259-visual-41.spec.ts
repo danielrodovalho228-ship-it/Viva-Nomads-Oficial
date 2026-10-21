@@ -48,12 +48,16 @@ function mascaras(page: Page): Locator[] {
 
 async function pronta(page: Page) {
   await page.evaluate(() => document.fonts.ready);
+  // Desce a página aos poucos para os blocos tardios (avaliações, parecidos) carregarem antes da captura inteira.
   await page.evaluate(async () => {
-    window.scrollTo(0, document.body.scrollHeight);
-    await new Promise((r) => setTimeout(r, 300));
+    for (let y = 0; y < document.body.scrollHeight; y += window.innerHeight) {
+      window.scrollTo(0, y);
+      await new Promise((r) => setTimeout(r, 150));
+    }
     window.scrollTo(0, 0);
   });
-  await page.waitForTimeout(300);
+  await page.waitForLoadState("networkidle").catch(() => {});
+  await page.waitForTimeout(800);
 }
 
 async function entrarComo(browser: Browser, email: string, senha: string, largura: number, app: boolean): Promise<Page> {
@@ -65,7 +69,7 @@ async function entrarComo(browser: Browser, email: string, senha: string, largur
   await page.locator('input[name="email"], input[type="email"]').first().fill(email);
   await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
   await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-  await page.waitForURL(/\/(dashboard|buscar|app)/, { timeout: 20_000 });
+  await page.waitForURL((u) => !u.pathname.startsWith("/auth"), { timeout: 45_000 });
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
   return page;
 }
