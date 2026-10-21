@@ -87,7 +87,7 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     ids.dono = data.user.id;
     const { error: e2 } = await adm().from("profiles").upsert({ id: ids.dono, email: dono.email, full_name: dono.nome, role: "owner", cpf: cpfAleatorio() }, { onConflict: "id" });
     if (e2) throw e2;
-    ids.proprio = await imovel(titulos.proprio, { ownership_type: "own", sublease_authorized: true });
+    ids.proprio = await imovel(titulos.proprio, { ownership_type: "own", sublease_authorized: false });
     ids.administrado = await imovel(titulos.administrado, { ownership_type: "managed", sublease_authorized: true });
     await documentoPendente(ids.proprio, dono.nome);
     await documentoPendente(ids.administrado, "Carlos Proprietário");
