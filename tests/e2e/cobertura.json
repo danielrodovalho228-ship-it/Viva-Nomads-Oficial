@@ -1374,7 +1374,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "/admin/parceiros/pedidos": {
@@ -1382,7 +1382,7 @@
         "admin"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "/admin/parceiros/pedidos/[id]": {
@@ -1390,7 +1390,7 @@
         "admin"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     }
   },
@@ -4009,7 +4009,7 @@
         "proprietario"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#enviarOrcamento": {
@@ -4017,7 +4017,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#recusarPedido": {
@@ -4025,7 +4025,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#aceitarOrcamento": {
@@ -4033,7 +4033,7 @@
         "proprietario"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#recusarOrcamento": {
@@ -4041,7 +4041,7 @@
         "proprietario"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#cancelarPedido": {
@@ -4049,7 +4049,7 @@
         "proprietario"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#confirmarHorario": {
@@ -4058,7 +4058,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#proporOutroHorario": {
@@ -4066,7 +4066,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#simularPagamento": {
@@ -4074,7 +4074,7 @@
         "proprietario"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#iniciarExecucao": {
@@ -4082,7 +4082,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#enviarEntrega": {
@@ -4090,7 +4090,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#enviarDocumentoParceiro": {
@@ -4098,7 +4098,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#marcarEntregue": {
@@ -4106,7 +4106,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#concluirPedido": {
@@ -4114,7 +4114,7 @@
         "proprietario"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#linkArquivoDoPedido": {
@@ -4123,7 +4123,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#usarFotosNoAnuncio": {
@@ -4131,7 +4131,7 @@
         "proprietario"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#avaliarPedido": {
@@ -4140,7 +4140,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#enviarMensagemDoPedido": {
@@ -4149,7 +4149,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#detalheDoPedido": {
@@ -4158,7 +4158,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#meusPedidosDeServico": {
@@ -4167,7 +4167,7 @@
         "proprietario"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#pedidosDoMeuParceiro": {
@@ -4175,7 +4175,7 @@
         "parceiro"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#registrarVistaDoAdmin": {
@@ -4183,7 +4183,7 @@
         "admin"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#cidadeDosMeusServicos": {
@@ -4192,7 +4192,7 @@
         "proprietario"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#meusImoveisParaServico": {
@@ -4201,7 +4201,7 @@
         "proprietario"
       ],
       "specs": [
-        "t249-parceiros-contratacao"
+        "t250-parceiros-contratacao"
       ]
     }
   }

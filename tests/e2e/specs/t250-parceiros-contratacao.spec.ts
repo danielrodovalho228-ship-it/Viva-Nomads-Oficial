@@ -4,7 +4,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 
 /**
- * T249 — Contratação de parceiros (Prompt 31b), 390 e 1280 px, só no laboratório.
+ * T250 — Contratação de parceiros (Prompt 31b), 390 e 1280 px, só no laboratório.
  * Roteiro principal: o dono pede orçamento a um fotógrafo pelo passo de fotos do cadastro (fotógrafos da cidade com o
  * imóvel junto) → a conversa abre → o parceiro orça (vê os 10% e o líquido) e não vê o endereço → o dono aceita →
  * horário confirmado → "Simular pagamento" (90/10 registrado, sem dinheiro) → em execução → entrega das fotos →
@@ -15,12 +15,12 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const slugFoto = `fotos-t249-${sufixo}`;
-const slugLimpa = `limpa-t249-${sufixo}`;
-const dono = { email: `dono.t249.${sufixo}@lab.vivanomads.test`, nome: "Dora Contrata", role: "owner" as const };
-const morador = { email: `mor.t249.${sufixo}@lab.vivanomads.test`, nome: "Mauro Morador", role: "tenant" as const };
-const fotografo = { email: `foto.t249.${sufixo}@lab.vivanomads.test`, nome: "Fabi Fotografa", role: "owner" as const };
-const limpeza = { email: `limpa.t249.${sufixo}@lab.vivanomads.test`, nome: "Lia Limpeza", role: "owner" as const };
+const slugFoto = `fotos-t250-${sufixo}`;
+const slugLimpa = `limpa-t250-${sufixo}`;
+const dono = { email: `dono.t250.${sufixo}@lab.vivanomads.test`, nome: "Dora Contrata", role: "owner" as const };
+const morador = { email: `mor.t250.${sufixo}@lab.vivanomads.test`, nome: "Mauro Morador", role: "tenant" as const };
+const fotografo = { email: `foto.t250.${sufixo}@lab.vivanomads.test`, nome: "Fabi Fotografa", role: "owner" as const };
+const limpeza = { email: `limpa.t250.${sufixo}@lab.vivanomads.test`, nome: "Lia Limpeza", role: "owner" as const };
 const ids: { dono?: string; morador?: string; foto?: string; limpa?: string; parceiroFoto?: string; parceiroLimpa?: string; imovel?: string; pedido?: string; contrato?: string } = {};
 
 function semDialogo(page: Page) {
@@ -57,7 +57,7 @@ async function pedidoDoBanco(id: string) {
   return data as Record<string, unknown>;
 }
 
-test.describe("T249 — Contratação de parceiros (31b)", () => {
+test.describe("T250 — Contratação de parceiros (31b)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -69,7 +69,7 @@ test.describe("T249 — Contratação de parceiros (31b)", () => {
     ids.limpa = await criarConta(limpeza, senha);
     ids.parceiroFoto = await parceiro(ids.foto, `Fabi Fotos ${sufixo}`, slugFoto, ["fotografia"]);
     ids.parceiroLimpa = await parceiro(ids.limpa, `Lia Limpa ${sufixo}`, slugLimpa, ["limpeza"]);
-    ids.imovel = await criarImovelPronto(ids.dono, `Studio T249 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Studio T250 ${sufixo}`, { ativo: true });
     await adm().from("properties").update({ exact_address: "Rua das Flores, 249" }).eq("id", ids.imovel);
     const { data, error } = await adm()
       .from("contratos")
@@ -102,7 +102,7 @@ test.describe("T249 — Contratação de parceiros (31b)", () => {
     await d.getByTestId("solicitar-orcamento-horario-0").fill(amanha(10));
     await d.getByTestId("solicitar-orcamento-mais-horario").click();
     await d.getByTestId("solicitar-orcamento-horario-1").fill(amanha(15));
-    await d.screenshot({ path: `${SAIDA}/t249-formulario-1280.png` });
+    await d.screenshot({ path: `${SAIDA}/t250-formulario-1280.png` });
     await d.getByTestId("solicitar-orcamento-enviar").click();
     await expect(d).toHaveURL(/\/dashboard\/servicos\/pedidos\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     ids.pedido = d.url().split("/").pop()!;
@@ -116,14 +116,14 @@ test.describe("T249 — Contratação de parceiros (31b)", () => {
     // Painel do parceiro: o pedido novo aparece primeiro, com o próximo passo.
     await p.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("parceiro-pedido").first()).toContainText("Envie o orçamento ou recuse o pedido.", { timeout: 20_000 });
-    await p.screenshot({ path: `${SAIDA}/t249-painel-parceiro-1280.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t250-painel-parceiro-1280.png`, fullPage: true });
     await p.getByTestId("parceiro-pedido").first().click();
     await expect(p).toHaveURL(new RegExp(`/dashboard/servicos/pedidos/${ids.pedido}$`));
     await expect(p.getByTestId("pedido-endereco")).toHaveCount(0);
     await expect(p.locator("main")).not.toContainText("Rua das Flores");
     await p.locator("#pedido-valor-campo").fill("350");
     await expect(p.getByTestId("pedido-orcar")).toContainText("Taxa de serviço da Viva: 10% = R$ 35,00. Você recebe R$ 315,00.");
-    await p.screenshot({ path: `${SAIDA}/t249-orcamento-1280.png` });
+    await p.screenshot({ path: `${SAIDA}/t250-orcamento-1280.png` });
     await p.getByTestId("pedido-enviar-orcamento").click();
     await expect(p.getByTestId("pedido-status")).toHaveText("Orçamento recebido", { timeout: 20_000 });
 
@@ -186,7 +186,7 @@ test.describe("T249 — Contratação de parceiros (31b)", () => {
       for (const largura of [390, 1280]) {
         await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
         await semRolagemLateral(page);
-        await page.screenshot({ path: `${SAIDA}/t249-pedido-${quem}-${largura}.png`, fullPage: true });
+        await page.screenshot({ path: `${SAIDA}/t250-pedido-${quem}-${largura}.png`, fullPage: true });
       }
     }
     await d.context().close();
@@ -196,7 +196,7 @@ test.describe("T249 — Contratação de parceiros (31b)", () => {
   test("teto: o 4º pedido aberto na mesma categoria é bloqueado com o texto", async ({ browser }) => {
     test.setTimeout(120_000);
     for (let i = 0; i < 3; i++) {
-      await adm().from("parceiro_pedidos").insert({ codigo: `VN-SV-T249${sufixo.slice(0, 3).toUpperCase()}${i}`, parceiro_id: ids.parceiroLimpa, cliente_id: ids.morador, categoria: "limpeza", descricao: "Limpeza de laboratório", status: i === 0 ? "orcado" : "solicitado" });
+      await adm().from("parceiro_pedidos").insert({ codigo: `VN-SV-T250${sufixo.slice(0, 3).toUpperCase()}${i}`, parceiro_id: ids.parceiroLimpa, cliente_id: ids.morador, categoria: "limpeza", descricao: "Limpeza de laboratório", status: i === 0 ? "orcado" : "solicitado" });
     }
     const m = await abrir(browser, morador.email, 390);
     await m.goto(`/parceiros/${slugLimpa}`, { waitUntil: "domcontentloaded" });
@@ -225,7 +225,7 @@ test.describe("T249 — Contratação de parceiros (31b)", () => {
     const pedido = m.url().split("/").pop()!;
     await m.goto("/dashboard/servicos", { waitUntil: "domcontentloaded" });
     await expect(m.getByTestId("servicos-pedido-status").first()).toHaveText("Aguardando orçamento");
-    await m.screenshot({ path: `${SAIDA}/t249-meus-pedidos-1280.png`, fullPage: true });
+    await m.screenshot({ path: `${SAIDA}/t250-meus-pedidos-1280.png`, fullPage: true });
 
     const l = await abrir(browser, limpeza.email, 390);
     await l.goto(`/dashboard/servicos/pedidos/${pedido}`, { waitUntil: "domcontentloaded" });
@@ -248,13 +248,13 @@ test.describe("T249 — Contratação de parceiros (31b)", () => {
       expect(r?.status()).toBe(200);
       const v = Number(await a.getByTestId("admin-pedidos-de-cartao").getAttribute("data-valor", { timeout: 20_000 }));
       await semRolagemLateral(a);
-      await a.screenshot({ path: `${SAIDA}/t249-admin-pedidos-${largura}.png`, fullPage: true });
+      await a.screenshot({ path: `${SAIDA}/t250-admin-pedidos-${largura}.png`, fullPage: true });
       await ctx.close();
       return v;
     };
     const antes = await vindosDeCartao(1280);
 
-    const codigo = "T249-CXRD";
+    const codigo = "T25X-CXRD";
     await adm().from("codigos_compartilhamento").insert({ codigo, usuario_id: ids.foto });
     // A visita assinada (cookie gravado só depois da assinatura HMAC conferida) é o t239; aqui o cookie já existe.
     const m = await abrir(browser, morador.email, 1280);
