@@ -2,6 +2,7 @@ import { listMyProperties } from "@/lib/data/properties";
 import { createClient } from "@/lib/supabase/server";
 import { contarInteressados } from "@/lib/painel/kpi-interessados";
 import { listarPropostas } from "@/lib/data/propostas-actions";
+import { estadiasDaHome } from "@/lib/data/estadia";
 import { VisaoGeral, type PropostaAguardando } from "./visao-geral-client";
 
 /**
@@ -46,6 +47,8 @@ export default async function DashboardPage() {
   const interessadosPromessa = interessadosDoDono();
   // Propostas esperando a resposta do inquilino (prompt 27): cartão "vence em N dias" na Visão geral.
   const propostasPromessa = listarPropostas().catch(() => []);
+  // Prompt 32: card "Decisões das suas estadias" (página da estadia + ações da folha do 41).
+  const estadiasPromessa = estadiasDaHome().catch(() => []);
   const imoveisDono = await listMyProperties();
   const cidadePerfil = await cidadeDoPerfil();
   const interessados = await interessadosPromessa;
@@ -53,5 +56,5 @@ export default async function DashboardPage() {
     .filter((p) => p.papel === "tenant" && p.aguardandoVoce)
     .sort((a, b) => a.validaAte.localeCompare(b.validaAte))
     .map((p) => ({ id: p.id, numero: p.numero, imovel: p.imovel, validaAte: p.validaAte }));
-  return <VisaoGeral imoveisDono={imoveisDono} interessados={interessados} propostasAguardando={propostas} cidadePerfil={cidadePerfil} />;
+  return <VisaoGeral imoveisDono={imoveisDono} interessados={interessados} propostasAguardando={propostas} cidadePerfil={cidadePerfil} estadias={await estadiasPromessa} />;
 }

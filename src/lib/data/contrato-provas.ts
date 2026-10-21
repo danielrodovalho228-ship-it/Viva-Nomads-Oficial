@@ -16,11 +16,12 @@ export async function carregarProvas(contratoId: string): Promise<DadosProvas | 
   const visao = await getContratoParaAssinar(contratoId);
   if (!visao) return null;
 
-  const [{ data: contrato }, { data: ass }, { data: pags }, { data: confs }] = await Promise.all([
+  const [{ data: contrato }, { data: ass }, { data: pags }, { data: confs }, { data: aditivos }] = await Promise.all([
     supabase.from("contratos").select("created_at").eq("id", contratoId).maybeSingle(),
     supabase.from("contrato_assinaturas").select(COLUNAS_PROVAS.assinaturas).eq("contrato_id", contratoId),
     supabase.from("pagamentos_bloco").select(COLUNAS_PROVAS.pagamentos).eq("contrato_id", contratoId),
     supabase.from("conferencias").select(COLUNAS_PROVAS.conferencias).eq("contrato_id", contratoId),
+    supabase.from("contrato_aditivos").select(COLUNAS_PROVAS.aditivos).eq("contrato_id", contratoId),
   ]);
   const ids = (confs ?? []).map((c) => c.id as string);
   const [{ data: itens }, { data: respostas }, { data: laudos }] = ids.length
@@ -45,5 +46,6 @@ export async function carregarProvas(contratoId: string): Promise<DadosProvas | 
     itens: itens ?? [],
     respostas: respostas ?? [],
     laudos: laudos ?? [],
+    aditivos: aditivos ?? [],
   });
 }

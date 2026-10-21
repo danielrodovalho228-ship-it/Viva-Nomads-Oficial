@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { ArrowLeft } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { getContratoParaAssinar } from "@/lib/data/contrato-assinar-actions";
@@ -57,7 +58,13 @@ export async function ContratoDetalhe({
         <ArrowLeft className="h-4 w-4" /> {voltarRotulo}
       </Link>
       <PageTitle title={c.imovel} />
-      <p className="-mt-2 mb-4">
+      <p className="-mt-2 mb-2">
+        {/* Prompt 32: a página da estadia junta o que estava espalhado em Contratos, Locações e Fechamento. */}
+        <Link href={HREF_ESTADIA(c.id)} className="text-sm font-semibold text-forest underline" data-testid="contrato-abrir-estadia">
+          Abrir a página da estadia
+        </Link>
+      </p>
+      <p className="mb-4">
         <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${tomDoSelo(c.estado)}`} data-testid="contrato-selo" data-chave={c.estado.chave}>
           {c.estado.selo}
         </span>

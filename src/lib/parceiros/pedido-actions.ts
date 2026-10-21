@@ -572,6 +572,7 @@ export async function enviarMensagemDoPedido(pedidoId: string, texto: string): P
   if (!t) return { ok: false, erro: "Escreva a mensagem." };
   if (t.length > 2000) return { ok: false, erro: "A mensagem pode ter até 2000 caracteres." };
   if (["recusado", "cancelado"].includes(c.p.status)) return { ok: false, erro: "Este pedido foi encerrado." };
+  if (guardContactInfo(t).documento) return { ok: false, erro: "Dados de documento não vão pelo chat." };
   const ok = await mensagem(c.admin, c.p, c.userId, t);
   if (!ok) return { ok: false, erro: "Não foi possível enviar agora. Tente de novo." };
   revalidatePath(rota(c.p.id));

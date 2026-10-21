@@ -70,7 +70,15 @@ export type NotificationEvent =
   | "parceiro_lembrete" // lembrete do dia anterior → as duas partes
   | "parceiro_entrega_feita" // o parceiro marcou a entrega → cliente
   | "parceiro_conclusao_pendente" // entrega há 7 dias sem confirmação → cliente (nada conclui sozinho)
-  | "parceiro_avaliacao"; // serviço concluído → as duas partes avaliam
+  | "parceiro_avaliacao" // serviço concluído → as duas partes avaliam
+  // Página da estadia (Prompt 32)
+  | "estadia_instrucoes_liberadas" // D-7, com o contrato assinado e o 1º pagamento → morador
+  | "estadia_instrucoes_pendentes" // D-10 sem instruções de chegada → proprietário
+  | "estadia_aditivo_proposto" // proposta de alteração → a outra parte (7 dias para responder)
+  | "estadia_aditivo_respondido" // aceita (assinar) ou recusada → quem propôs
+  | "estadia_remarcada" // aditivo assinado pelas duas partes: blocos e datas mudaram → as duas partes
+  | "estadia_encerramento_pedido" // pedido de encerramento → a outra parte (a Viva conduz)
+  | "estadia_encerramento_equipe"; // pedido de encerramento novo → admins
 
 // Assunto SEM a marca (o envio põe "· Viva Nomads"; regras em assuntos.ts). A imagem de cada evento mora em
 // imagens-email.ts (IMAGEM por tema, fonte única).
@@ -131,5 +139,12 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   parceiro_entrega_feita: { subject: "O parceiro marcou a entrega", body: (n) => `Olá${n ? " " + n : ""}, o parceiro marcou o serviço como entregue. Confira e confirme a conclusão pelo pedido.`, cta: "Conferir a entrega", path: "/dashboard/servicos" },
   parceiro_conclusao_pendente: { subject: "Confirme a conclusão do serviço", body: (n) => `Olá${n ? " " + n : ""}, o parceiro marcou a entrega há 7 dias. Se está tudo certo, confirme a conclusão; se não, fale com ele pelas mensagens do pedido.`, cta: "Abrir o pedido", path: "/dashboard/servicos" },
   parceiro_avaliacao: { subject: "Conte como foi o serviço", body: (n) => `Olá${n ? " " + n : ""}, o serviço foi concluído. A sua avaliação ajuda outras pessoas e só aparece depois que as duas partes avaliarem.`, cta: "Avaliar", path: "/dashboard/servicos" },
+  estadia_instrucoes_liberadas: { subject: "As instruções de chegada estão liberadas", body: (n) => `Olá${n ? " " + n : ""}, a sua entrada está chegando. Como entrar, o Wi-Fi e as regras do prédio já estão na página da estadia.`, cta: "Ver as instruções", path: "/dashboard/locacoes" },
+  estadia_instrucoes_pendentes: { subject: "Preencha as instruções de chegada", body: (n) => `Olá${n ? " " + n : ""}, a entrada do morador é daqui a 10 dias. Preencha as instruções de chegada do imóvel: o morador recebe 7 dias antes.`, cta: "Preencher as instruções", path: "/dashboard/contratos" },
+  estadia_aditivo_proposto: { subject: "Proposta de alteração da estadia", body: (n) => `Olá${n ? " " + n : ""}, a outra parte propôs uma alteração no contrato. Confira o que muda e aceite ou recuse em até 7 dias.`, cta: "Ver a proposta", path: "/dashboard/contratos" },
+  estadia_aditivo_respondido: { subject: "Sua proposta de alteração foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a outra parte respondeu à sua proposta de alteração. Veja a resposta na página da estadia.`, cta: "Ver a resposta", path: "/dashboard/contratos" },
+  estadia_remarcada: { subject: "O aditivo foi assinado", body: (n) => `Olá${n ? " " + n : ""}, o aditivo foi assinado pelas duas partes. As datas e os blocos do contrato já estão atualizados na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/contratos" },
+  estadia_encerramento_pedido: { subject: "Pedido de encerramento do contrato", body: (n) => `Olá${n ? " " + n : ""}, a outra parte pediu o encerramento do contrato. A Viva recebeu o pedido e vai conduzir o encerramento com vocês.`, cta: "Ver a estadia", path: "/dashboard/contratos" },
+  estadia_encerramento_equipe: { subject: "Novo pedido de encerramento", body: () => "Uma das partes pediu o encerramento de um contrato. O pedido está na fila de encerramentos.", cta: "Abrir a fila", path: "/admin/contratos/encerramentos" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", cta: "Conferir documento", path: "/admin/documentos" },
 };

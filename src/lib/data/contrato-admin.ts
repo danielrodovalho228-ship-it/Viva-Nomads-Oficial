@@ -49,11 +49,12 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
   const admin = createAdminClient();
   if (!admin) return null;
 
-  const [{ data: extra }, { data: ass }, { data: pags }, { data: confs }] = await Promise.all([
+  const [{ data: extra }, { data: ass }, { data: pags }, { data: confs }, { data: aditivos }] = await Promise.all([
     admin.from("contratos").select("property_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, leads(accepted_at)").eq("id", contratoId).maybeSingle(),
     admin.from("contrato_assinaturas").select(COLUNAS_PROVAS.assinaturas).eq("contrato_id", contratoId),
     admin.from("pagamentos_bloco").select(COLUNAS_PROVAS.pagamentos).eq("contrato_id", contratoId).order("data_pagamento"),
     admin.from("conferencias").select(COLUNAS_PROVAS.conferencias).eq("contrato_id", contratoId),
+    admin.from("contrato_aditivos").select(COLUNAS_PROVAS.aditivos).eq("contrato_id", contratoId),
   ]);
   const ids = (confs ?? []).map((c) => c.id as string);
   const [{ data: itens }, { data: respostas }, { data: laudos }] = ids.length
@@ -78,6 +79,7 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
     itens: itens ?? [],
     respostas: respostas ?? [],
     laudos: laudos ?? [],
+    aditivos: aditivos ?? [],
   });
 
   const assinar = async (path: unknown) =>
