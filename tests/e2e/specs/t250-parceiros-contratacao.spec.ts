@@ -119,8 +119,6 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     await p.screenshot({ path: `${SAIDA}/t250-painel-parceiro-1280.png`, fullPage: true });
     await p.getByTestId("parceiro-pedido").first().click();
     await expect(p).toHaveURL(new RegExp(`/dashboard/servicos/pedidos/${ids.pedido}$`));
-    // Página do pedido assentada antes de orçar (mesmo cuidado do cenário de recusa).
-    await p.waitForLoadState("networkidle");
     await expect(p.getByTestId("pedido-endereco")).toHaveCount(0);
     await expect(p.locator("main")).not.toContainText("Rua das Flores");
     await p.locator("#pedido-valor-campo").fill("350");
@@ -219,15 +217,20 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     await m.getByTestId("servicos-limpeza").click();
     await expect(m).toHaveURL(/\/parceiros\/buscar\?.*categoria=limpeza/);
     await m.locator(`[data-testid="cartao-parceiro"][data-slug="${slugLimpa}"]`).click();
-    // Como no roteiro principal: só abre a folha com a página do parceiro carregada. Clicar ainda na navegação
-    // abria a folha e a página terminava de carregar por cima, fechando-a (o "Enviar pedido" sumia).
     await expect(m).toHaveURL(new RegExp(`/parceiros/${slugLimpa}`));
-    await m.waitForLoadState("networkidle");
-    await m.getByTestId("solicitar-orcamento").click();
-    await expect(m.getByTestId("solicitar-orcamento-folha")).toBeVisible();
-    await m.getByTestId("solicitar-orcamento-descricao").fill("Limpeza semanal do studio, 1 quarto.");
-    await m.getByTestId("solicitar-orcamento-horario-0").fill(amanha(9));
-    await m.getByTestId("solicitar-orcamento-enviar").click();
+    // Vindo da busca por navegação do cliente, a página do parceiro ainda termina de carregar depois que a folha
+    // abre e pode fechá-la ("Enviar pedido" sumia, lab-crítico do #989). Abre e preenche até a folha ficar de pé;
+    // o envio (que cria o pedido) é feito uma vez só, fora da repetição.
+    const folha = m.getByTestId("solicitar-orcamento-folha");
+    const enviar = m.getByTestId("solicitar-orcamento-enviar");
+    await expect(async () => {
+      if (!(await folha.isVisible())) await m.getByTestId("solicitar-orcamento").click();
+      await expect(folha).toBeVisible({ timeout: 3_000 });
+      await m.getByTestId("solicitar-orcamento-descricao").fill("Limpeza semanal do studio, 1 quarto.");
+      await m.getByTestId("solicitar-orcamento-horario-0").fill(amanha(9));
+      await expect(enviar).toBeEnabled({ timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
+    await enviar.click();
     await expect(m).toHaveURL(/\/dashboard\/servicos\/pedidos\//, { timeout: 30_000 });
     const pedido = m.url().split("/").pop()!;
     await m.goto("/dashboard/servicos", { waitUntil: "domcontentloaded" });
