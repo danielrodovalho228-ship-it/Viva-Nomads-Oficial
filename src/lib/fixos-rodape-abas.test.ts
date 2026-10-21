@@ -18,12 +18,13 @@ function tsx(dir: string): string[] {
   });
 }
 
-test("item 6: --altura-abas bate com a altura real da barra de abas (py-2 + ícone 20 px + gap + texto 11 px)", () => {
+test("item 6: --altura-abas bate com a altura real da barra de abas (min-h-14 = 56 px; ícone 20 px + gap + texto 11 px)", () => {
   const abas = readFileSync(join(RAIZ, "components/layout/mobile-tab-bar.tsx"), "utf8");
   assert.match(css, /--altura-abas:\s*3\.5rem/);
+  assert.match(abas, /min-h-14/);
   assert.match(abas, /py-2/);
   assert.match(abas, /h-5 w-5/);
-  assert.match(abas, /gap-0\.5/);
+  assert.match(abas, /gap-1/);
   assert.match(abas, /text-\[11px\]/);
 });
 

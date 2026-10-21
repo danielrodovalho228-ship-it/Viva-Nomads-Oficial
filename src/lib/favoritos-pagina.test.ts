@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { destinoDaRota } from "../config/rotas-app.ts";
-import { TENANT_TABS, TENANT_APP_TABS, ehAbaRaizApp, tituloDaTelaApp } from "./nav-mobile.ts";
+import { MORADOR_TABS, tituloDaTelaApp } from "./nav-mobile.ts";
 
 const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
 
@@ -32,25 +32,7 @@ test("o app abre /favoritos dentro dele; /favoritosx continua no site", () => {
   assert.equal(destinoDaRota("/favoritosx"), "site");
 });
 
-test("aba Favoritos leva a /favoritos sem exigir login (site e app)", () => {
-  for (const abas of [TENANT_TABS, TENANT_APP_TABS]) {
-    const aba = abas.find((a) => a.label === "Favoritos");
-    assert.equal(aba?.href, "/favoritos");
-    assert.ok(!aba?.authRequired);
-  }
-  assert.ok(ehAbaRaizApp("/favoritos"));
+test("Prompt 41: Favoritos saiu da barra (5 itens por papel); /favoritos segue aberta pelo coração e pelo cabeçalho", () => {
+  assert.ok(!MORADOR_TABS.some((a) => a.href === "/favoritos"));
   assert.equal(tituloDaTelaApp("/favoritos"), "Favoritos");
-});
-
-test("cabeçalho tem o link Favoritos com contador e o coração informa o estado", () => {
-  const navbar = ler("../components/layout/navbar.tsx");
-  assert.match(navbar, /data-testid="link-favoritos"/);
-  assert.match(navbar, /href="\/favoritos"/);
-  assert.match(ler("../components/favorite-button.tsx"), /aria-label=\{isFavorite \? "Remover dos favoritos" : "Adicionar aos favoritos"\}/);
-});
-
-test("cabeçalho a 1280 px: Favoritos vira só o coração (texto acessível) e o texto volta em 2xl; menu mobile mantém o texto (t69)", () => {
-  const navbar = ler("../components/layout/navbar.tsx");
-  assert.match(navbar, /sr-only 2xl:not-sr-only/);
-  assert.match(navbar, /<LinkFavoritos className="[^"]*"/); // menu mobile passa className → texto sempre visível
 });

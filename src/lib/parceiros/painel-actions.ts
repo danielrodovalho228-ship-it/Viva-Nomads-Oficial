@@ -422,3 +422,18 @@ export async function temPapelParceiro(): Promise<boolean> {
   ]);
   return (p ?? 0) + (s ?? 0) > 0;
 }
+
+/**
+ * Parceria APROVADA (a linha em parceiros nasce na aprovação) e não suspensa — só leitura, para a barra inferior
+ * do parceiro (Prompt 41, item 2). Um pedido de parceria ainda em análise não conta.
+ */
+export async function ehParceiroAprovado(): Promise<boolean> {
+  const supabase = await createClient();
+  if (!supabase) return false;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { count } = await supabase.from("parceiros").select("id", { count: "exact", head: true }).eq("user_id", user.id).neq("status", "suspenso");
+  return (count ?? 0) > 0;
+}

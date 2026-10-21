@@ -22,7 +22,7 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
   const liquido = fechados.reduce((t, p) => t + Math.round((p.valorParceiro ?? 0) * 100), 0) / 100;
   return (
     <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <Panel title="Pedidos" data-testid="parceiro-pedidos">
+      <Panel id="pedidos" title="Pedidos" className="scroll-mt-24" data-testid="parceiro-pedidos">
         {pedidos.length === 0 ? (
           <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text="Quando alguém pedir um orçamento pela sua página, o pedido aparece aqui." />
         ) : (
@@ -47,7 +47,7 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
           </ul>
         )}
       </Panel>
-      <Panel title="Ganhos" data-testid="parceiro-ganhos">
+      <Panel id="ganhos" title="Ganhos" className="scroll-mt-24" data-testid="parceiro-ganhos">
         <dl className="grid grid-cols-[1fr_auto] gap-y-1 text-sm">
           <dt className="text-muted">Serviços fechados</dt>
           <dd className="text-right text-ink">{brl(total)}</dd>

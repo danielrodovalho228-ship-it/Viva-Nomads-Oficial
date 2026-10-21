@@ -1,20 +1,24 @@
 import {
   Search,
-  Heart,
   MessageSquare,
-  LayoutDashboard,
+  House,
   Building2,
-  Users,
-  Settings,
-  FileText,
+  KeyRound,
+  Wallet,
+  ClipboardList,
+  CalendarDays,
   UserRound,
-  ShieldCheck,
 } from "lucide-react";
 
 /**
- * Abas da BARRA INFERIOR do app (Fase 1b) — conjunto reduzido por modo, separado
- * dos menus laterais do painel. Dois "mundos" pela mesma conta (seção 2.1 do
- * mapa): inquilino e proprietário.
+ * Abas da BARRA INFERIOR (Prompt 41, item 2): 5 itens por PAPEL, a mesma lista no site (celular) e no app.
+ * Três papéis pela mesma conta (conta única; a troca fica no Perfil): morador, proprietário e parceiro — este
+ * só com a parceria aprovada. Admin não tem barra (fica fora do app).
+ * Cada aba aponta para uma rota que JÁ existe com essa função (nenhuma tela nova):
+ *  - morador:      Início /dashboard · Buscar /buscar · Mensagens · Estadias /dashboard/locacoes · Perfil /dashboard/conta
+ *  - proprietário: Início · Anúncios /dashboard/imoveis · Mensagens · Ganhos /dashboard/contratos · Perfil
+ *    ("Ganhos" = os recebimentos registrados em Contratos & blocos; rótulo "pago direto na sua conta")
+ *  - parceiro:     Início · Pedidos · Agenda · Ganhos (as seções do painel /dashboard/parceiro) · Perfil
  */
 export interface MobileTab {
   href: string;
@@ -22,65 +26,85 @@ export interface MobileTab {
   icon: React.ComponentType<{ className?: string }>;
   /** Exige login — sem sessão, a aba leva a /auth?redirect=<href>. */
   authRequired?: boolean;
+  /** Sem sessão, a aba leva aqui em vez do login (ex.: Início do visitante = a home). */
+  hrefSemLogin?: string;
   /** Chave de contador (badge). Preenchido pela casca quando houver dado. */
   badge?: "mensagens" | "interessados" | "equipe";
   /** Rótulo curto quando a barra tem mais de 5 abas (ex.: admin com "Equipe"), para não encavalar. */
   curto?: string;
   /** Prefixo que também deixa a aba ativa (ex.: /admin para a aba Equipe). */
   ativoEm?: string;
+  /** Nome acessível mais completo que o rótulo (ex.: "Ganhos: pago direto na sua conta"). */
+  descricao?: string;
 }
 
-/** Modo inquilino — 5 abas (mesmas do app: Buscar, Favoritos, Candidaturas, Mensagens, Conta). */
-export const TENANT_TABS: MobileTab[] = [
-  { href: "/buscar", label: "Buscar", icon: Search },
-  { href: "/favoritos", label: "Favoritos", icon: Heart },
-  { href: "/dashboard/candidaturas", label: "Candidaturas", icon: FileText, authRequired: true },
-  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, authRequired: true, badge: "mensagens" },
-  { href: "/dashboard/conta", label: "Conta", icon: Settings, authRequired: true },
-];
+export type PapelBarra = "morador" | "proprietario" | "parceiro";
 
-/** Modo proprietário — 5 abas. */
-export const OWNER_TABS: MobileTab[] = [
-  { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
-  { href: "/dashboard/imoveis", label: "Imóveis", icon: Building2 },
-  { href: "/dashboard/leads", label: "Interessados", icon: Users, badge: "interessados" },
-  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, badge: "mensagens" },
-  { href: "/dashboard/conta", label: "Conta", icon: Settings },
-];
-
-/**
- * MODO APP (Android/iPhone) — 5 abas por papel (mapa de telas, seções 2 e 3).
- * Inquilino abre em Buscar; proprietário, no Painel. A troca de papel fica em Conta.
- */
-export const TENANT_APP_TABS: MobileTab[] = [
-  { href: "/buscar", label: "Buscar", icon: Search },
-  { href: "/favoritos", label: "Favoritos", icon: Heart },
-  { href: "/dashboard/candidaturas", label: "Candidaturas", icon: FileText, authRequired: true },
-  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, authRequired: true, badge: "mensagens" },
-  { href: "/dashboard/conta", label: "Conta", icon: UserRound, authRequired: true },
-];
-
-export const OWNER_APP_TABS: MobileTab[] = [
-  { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
-  { href: "/dashboard/imoveis", label: "Imóveis", icon: Building2 },
-  { href: "/dashboard/leads", label: "Interessados", curto: "Interesse", icon: Users, badge: "interessados" },
-  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, badge: "mensagens" },
-  { href: "/dashboard/conta", label: "Conta", icon: UserRound },
-];
-
-/** Aba extra só para role admin: painel /admin (o servidor ainda confere o papel). O badge segue sendo o da Equipe. */
-export const ADMIN_APP_TAB: MobileTab = {
-  href: "/admin",
-  label: "Admin",
-  icon: ShieldCheck,
-  badge: "equipe",
-  ativoEm: "/admin",
+/** Rótulo do papel ativo no cabeçalho (foto pequena + papel). */
+export const ROTULO_PAPEL: Record<PapelBarra, string> = {
+  morador: "Morador",
+  proprietario: "Proprietário",
+  parceiro: "Parceiro",
 };
 
-/** Abas do app por papel; admin ganha "Admin" ao final. */
-export function abasDoApp(mundo: "tenant" | "owner", ehAdmin: boolean): MobileTab[] {
-  const base = mundo === "owner" ? OWNER_APP_TABS : TENANT_APP_TABS;
-  return ehAdmin ? [...base, ADMIN_APP_TAB] : base;
+/** "Ganhos" do proprietário: o valor mensal vai direto do morador para o dono (a Viva não segura dinheiro). */
+export const ROTULO_GANHOS_DONO = "pago direto na sua conta";
+
+const INICIO: MobileTab = { href: "/dashboard", label: "Início", icon: House, authRequired: true, hrefSemLogin: "/" };
+const MENSAGENS: MobileTab = { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, authRequired: true, badge: "mensagens" };
+const PERFIL: MobileTab = { href: "/dashboard/conta", label: "Perfil", icon: UserRound, authRequired: true };
+
+export const MORADOR_TABS: MobileTab[] = [
+  INICIO,
+  { href: "/buscar", label: "Buscar", icon: Search },
+  MENSAGENS,
+  { href: "/dashboard/locacoes", label: "Estadias", icon: KeyRound, authRequired: true },
+  PERFIL,
+];
+
+export const PROPRIETARIO_TABS: MobileTab[] = [
+  INICIO,
+  { href: "/dashboard/imoveis", label: "Anúncios", icon: Building2, authRequired: true },
+  MENSAGENS,
+  { href: "/dashboard/contratos", label: "Ganhos", icon: Wallet, authRequired: true, descricao: `Ganhos: ${ROTULO_GANHOS_DONO}` },
+  PERFIL,
+];
+
+/** Parceiro aprovado: as três abas do meio são as seções do painel do parceiro (âncoras em /dashboard/parceiro). */
+export const PARCEIRO_TABS: MobileTab[] = [
+  INICIO,
+  { href: "/dashboard/parceiro#pedidos", label: "Pedidos", icon: ClipboardList, authRequired: true, ativoEm: "/dashboard/servicos/pedidos" },
+  { href: "/dashboard/parceiro#agenda", label: "Agenda", icon: CalendarDays, authRequired: true },
+  { href: "/dashboard/parceiro#ganhos", label: "Ganhos", icon: Wallet, authRequired: true },
+  PERFIL,
+];
+
+export const ABAS_POR_PAPEL: Record<PapelBarra, MobileTab[]> = {
+  morador: MORADOR_TABS,
+  proprietario: PROPRIETARIO_TABS,
+  parceiro: PARCEIRO_TABS,
+};
+
+/**
+ * Papel da barra: admin → nenhum (sem barra); parceiro só com a parceria APROVADA e quando a pessoa escolheu usar a
+ * conta como parceiro (no Perfil) ou está no painel do parceiro; senão o modo ativo (proprietário/morador).
+ */
+export function papelDaBarra(p: {
+  admin: boolean;
+  modo: "owner" | "tenant";
+  parceiroAprovado: boolean;
+  preferenciaParceiro?: boolean;
+  pathname?: string;
+}): PapelBarra | null {
+  if (p.admin) return null;
+  const noPainelDoParceiro = !!p.pathname && (p.pathname === "/dashboard/parceiro" || p.pathname.startsWith("/dashboard/parceiro/"));
+  if (p.parceiroAprovado && (p.preferenciaParceiro || noPainelDoParceiro)) return "parceiro";
+  return p.modo === "owner" ? "proprietario" : "morador";
+}
+
+/** Abas do papel (admin: nenhuma). */
+export function abasDoPapel(papel: PapelBarra | null): MobileTab[] {
+  return papel ? ABAS_POR_PAPEL[papel] : [];
 }
 
 /** Títulos das telas no cabeçalho curto do app. */
@@ -135,9 +159,9 @@ export function tituloDaTelaApp(pathname: string): string {
   return "Viva Nomads";
 }
 
-/** Abas principais do app (sem botão Voltar no cabeçalho). */
+/** Abas principais do app (sem botão Voltar no cabeçalho); o painel /admin também é raiz. */
 export function ehAbaRaizApp(pathname: string): boolean {
-  return [...TENANT_APP_TABS, ...OWNER_APP_TABS, ADMIN_APP_TAB].some((t) => t.href === pathname);
+  return pathname === "/admin" || [...MORADOR_TABS, ...PROPRIETARIO_TABS, ...PARCEIRO_TABS].some((t) => t.href.split("#")[0] === pathname);
 }
 
 /** Telas /admin/* (exceto o painel): o Voltar do app leva sempre ao painel /admin, não ao histórico. */

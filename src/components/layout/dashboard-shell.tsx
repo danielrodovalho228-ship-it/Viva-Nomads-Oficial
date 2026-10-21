@@ -25,6 +25,9 @@ import { MenuCascata } from "@/components/layout/menu-cascata";
 import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
 import { imoveisAtivosDoDono, temImovelAnunciado } from "@/lib/data/menu-actions";
 import { temPapelParceiro } from "@/lib/parceiros/painel-actions";
+import { PapelAtivo } from "@/components/layout/papel-ativo";
+import { papelDaBarra } from "@/lib/nav-mobile";
+import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -294,6 +297,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   // Conta única (ordem a8c05cd0): sem seletor Inquilino/Proprietário no cabeçalho.
   const chipModo = <DemoToggle />;
+  // Prompt 41: cabeçalho com foto pequena + papel ativo (o mesmo da barra inferior), sem faixa extra; leva ao Perfil.
+  const parceiroAprovado = useParceiroAprovado();
+  const preferenciaParceiro = usePreferenciaParceiro();
+  const papelAtivo = papelDaBarra({ admin: display.role === "admin", modo: mode === "owner" ? "owner" : "tenant", parceiroAprovado, preferenciaParceiro, pathname });
+  const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeSidebar} foto={myPhoto} />;
 
   const sidebar = (
     <div className="flex h-full flex-col">
@@ -308,7 +316,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             href={ANUNCIAR.href!}
             onClick={(e) => aoNavegar(ANUNCIAR.href!, e)}
             data-testid="menu-anunciar"
-            className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-champagne px-3 py-2.5 text-sm font-semibold text-forest transition-colors hover:bg-white"
+            className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-champagne px-3 py-3 text-sm font-semibold text-forest transition-colors hover:bg-white"
           >
             <Plus className="h-4 w-4" />
             {ANUNCIAR.rotulo}
@@ -326,7 +334,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
         <button
           onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
         >
           <LogOut className="h-4.5 w-4.5" />
           Sair
@@ -354,11 +362,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden print:overflow-visible">
         {/* Topbar mobile (logo + menu) */}
         {/* Modo app: cabeçalho curto (voltar + título), no lugar do topo do site. */}
-        <AppHeader direita={chipModo} />
+        <AppHeader direita={<>{papelChip}{chipModo}</>} />
 
         <div className="web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden">
           <Logo className="lg:hidden" />
           <div className="flex items-center gap-2">
+            {papelChip}
             {chipModo}
           <button
             className="grid h-10 w-10 place-items-center rounded-lg text-forest lg:hidden"

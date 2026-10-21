@@ -3939,6 +3939,16 @@
         "t236-parceiros-ciclo"
       ]
     },
+    "src/lib/parceiros/painel-actions.ts#ehParceiroAprovado": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t258-detalhe-imovel-41"
+      ]
+    },
     "src/lib/parceiros/painel-actions.ts#temPapelParceiro": {
       "personas": [
         "inquilino",
