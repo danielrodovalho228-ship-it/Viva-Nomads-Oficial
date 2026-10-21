@@ -64,9 +64,10 @@ export type MinutosAte = (destino: DestinoBusca, modo: ModoRota) => number | nul
 /** O imóvel combina com a busca salva (query string normalizada)? */
 export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minutosAte?: MinutosAte): boolean {
   const sp = new URLSearchParams(normalizarBusca(parametros));
-  // Prompt 37: "até N min" do trabalho — só com tempo de rota conferido (sem tempo, não alertamos por palpite).
+  // Prompt 37: "até N min" de um DESTINO CADASTRADO — só com tempo de rota conferido (sem tempo, não alertamos por
+  // palpite). Endereço digitado fica como hoje: sem alerta por tempo (decisão do Muse, 21/10).
   const d = destinoDaUrl(sp);
-  if (d.destino && d.ate) {
+  if (d.destino && "slug" in d.destino && d.ate) {
     const m = minutosAte?.(d.destino, d.modo);
     if (m == null || !dentroDoTempo(m, d.ate)) return false;
   }

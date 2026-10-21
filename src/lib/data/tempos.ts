@@ -227,13 +227,14 @@ export async function contarBuscaDestino(destinoId: string, admin: Admin | null 
   if (error) console.error("[destinos] contagem:", error.message);
 }
 
-/** Pré-cálculo do cron diário: por destino ativo × meio, os pares que faltam ou passaram de 30 dias. */
+/**
+ * Pré-cálculo do cron diário: por destino CADASTRADO ativo × meio, os pares que faltam ou passaram de 30 dias. Endereço
+ * digitado não entra no job diário nesta fase (decisão do Muse, 21/10): é calculado só quando alguém busca ou publica.
+ */
 const PRECALCULO_MAX_POR_DESTINO = 240;
 
 export async function precalcularTempos(admin: Admin, simular: boolean): Promise<{ temposCalculados: number; temposFaltando: number }> {
   const { data: dests } = await admin.from("destinos").select("id, slug, nome, artigo, cidade, lat, lng").eq("ativo", true);
-  // Pedidos de moradia com destino: o "até N min" da compatibilidade precisa do tempo no cache.
-  const { data: peds } = await admin.from("pedidos_moradia").select("cidade, destino").eq("status", "ativo").not("destino", "is", null);
   const alvos: { destino: DestinoResolvido; cidade: string; modos: ModoRota[] }[] = [];
   for (const d of (dests ?? []) as { id: string; slug: string; nome: string; artigo: "o" | "a" | ""; cidade: string; lat: number | null; lng: number | null }[]) {
     if (d.lat == null || d.lng == null) continue;
@@ -242,12 +243,6 @@ export async function precalcularTempos(admin: Admin, simular: boolean): Promise
       cidade: d.cidade,
       modos: modosDisponiveis(),
     });
-  }
-  for (const p of (peds ?? []) as { cidade: string; destino: { destino_id?: string; lat: number; lng: number; rotulo: string; modo_preferido?: string } }[]) {
-    if (p.destino.destino_id) continue; // destino cadastrado já entra acima
-    const ponto = { lat: Number(p.destino.lat), lng: Number(p.destino.lng) };
-    const modo = (p.destino.modo_preferido ?? "carro") as ModoRota;
-    alvos.push({ destino: { chave: chaveDestino(ponto), ponto, rotulo: p.destino.rotulo }, cidade: p.cidade, modos: [modo] });
   }
 
   let temposCalculados = 0;

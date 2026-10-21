@@ -95,16 +95,17 @@ async function pendentes(admin: Admin, buscaId: string): Promise<ImovelNoAlerta[
 }
 
 /**
- * Prompt 37: tempos do imóvel até os destinos das buscas salvas com "até N min" (calculados agora se faltarem, com o
- * ponto exato, no servidor). Devolve a consulta usada por imovelBateComBusca.
+ * Prompt 37: tempos do imóvel até os DESTINOS CADASTRADOS das buscas salvas com "até N min" (calculados agora se
+ * faltarem, com o ponto exato, no servidor). Devolve a consulta usada por imovelBateComBusca.
  */
 async function minutosDoImovel(admin: NonNullable<ReturnType<typeof createAdminClient>>, imovelId: string, buscas: BuscaLinha[]): Promise<MinutosAte> {
   const tempos = new Map<string, number | null>();
   const chave = (d: DestinoBusca, modo: ModoRota) => `${chaveDoDestino(d)}|${modo}`;
   for (const b of buscas) {
     const e = destinoDaUrl(new URLSearchParams(b.parametros));
-    if (!e.destino || !e.ate || tempos.has(chave(e.destino, e.modo))) continue;
-    const destino = await resolverDestino("slug" in e.destino ? { destino: e.destino.slug } : { dlat: String(e.destino.lat), dlng: String(e.destino.lng), drot: e.destino.rot }, admin);
+    // Só destino cadastrado: endereço digitado não tem alerta por tempo (nem cálculo por causa do alerta).
+    if (!e.destino || !("slug" in e.destino) || !e.ate || tempos.has(chave(e.destino, e.modo))) continue;
+    const destino = await resolverDestino({ destino: e.destino.slug }, admin);
     const r = destino ? await temposAte(destino, e.modo, { ids: [imovelId] }, admin) : null;
     tempos.set(chave(e.destino, e.modo), r?.itens[0]?.min ?? null);
   }

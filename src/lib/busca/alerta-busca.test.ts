@@ -141,4 +141,8 @@ test("37: alerta com destino e 'até N min' só bate com tempo de rota dentro do
   let modo = "";
   imovelBateComBusca("local=Uberl%C3%A2ndia&destino=hc-ufu&modo=a_pe&ate=30", imovel, (_d, m) => ((modo = m), 10));
   assert.equal(modo, "a_pe");
+  // Endereço digitado: sem alerta por tempo (fica como hoje) — o "até" não filtra nem consulta tempo.
+  let consultou = false;
+  assert.equal(imovelBateComBusca("local=Uberl%C3%A2ndia&dlat=-18.92&dlng=-48.26&drot=Av.+Par%C3%A1&modo=carro&ate=10", imovel, () => ((consultou = true), 99)), true);
+  assert.equal(consultou, false);
 });

@@ -250,7 +250,7 @@ export async function GET(request: Request) {
   // Documentos (Prompt 56, D5): a conferência de entrada e a de saída fecham quando a janela de 48 h do tipo encerra
   // (hash de fechamento + CND, registrando quem não respondeu). Na simulação, só conta.
   const conferenciasFechadas = await fecharConferenciasVencidas(admin, agora, simular).catch(() => 0);
-  // Tempo até o trabalho (Prompt 37): destinos ativos e pedidos com destino — pares que faltam ou com +30 dias.
+  // Tempo até o trabalho (Prompt 37): destinos cadastrados ativos — pares que faltam ou com +30 dias (endereço digitado não entra).
   // Na simulação, só conta.
   const tempos = await precalcularTempos(admin, simular).catch(() => ({ temposCalculados: 0, temposFaltando: 0 }));
   return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos });

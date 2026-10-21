@@ -10,6 +10,7 @@ import { chaveCidade } from "@/lib/cidades";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyMap } from "@/components/property-map-lazy";
 import { buttonClasses } from "@/components/ui/button";
+import { poloDoDestino } from "@/lib/polos";
 
 export const revalidate = 300;
 
@@ -55,6 +56,8 @@ export default async function PertoDePage({ params }: Params) {
   const { d, imoveis, tempo } = dados;
   const perto = pertoDe(d.nome, d.artigo);
   const pedido = `/pedidos/novo?cidade=${encodeURIComponent(d.cidade)}&destino=${slug}`;
+  // A página do polo é o guia do bairro; esta é a lista por tempo até o destino. Uma liga para a outra.
+  const polo = poloDoDestino(slug);
 
   return (
     <>
@@ -111,6 +114,13 @@ export default async function PertoDePage({ params }: Params) {
               <Megaphone className="h-4 w-4" aria-hidden /> Avise-me quando surgir um imóvel {perto}
             </Link>
           </div>
+        )}
+        {polo && (
+          <p className="mt-6 text-sm" data-testid="perto-de-polo">
+            <Link href={`/cidades/${polo.cidade}/${polo.slug}`} className="font-semibold text-forest underline">
+              Guia da região: {polo.nome.charAt(0).toLowerCase() + polo.nome.slice(1)}
+            </Link>
+          </p>
         )}
       </section>
     </>

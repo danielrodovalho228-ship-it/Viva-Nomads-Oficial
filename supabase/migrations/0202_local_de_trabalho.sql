@@ -175,7 +175,7 @@ grant execute on function public.registrar_busca_destino(uuid) to service_role;
 
 -- ── 5. Compatibilidade com o "até N min" ─────────────────────────────────────────────────────────────────────────
 -- A função inteira da 0184 com a regra r12: com destino e "até", só é compatível o imóvel com tempo do cache dentro
--- do limite (o cron e o envio do pedido calculam os tempos que faltam).
+-- do limite (o envio do pedido calcula os tempos que faltam; o cron diário completa os destinos cadastrados).
 create or replace function public.compatibilidade_pedidos(
   p_pedido uuid default null,
   p_imovel uuid default null,

@@ -161,6 +161,8 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
       const cartoes = page.getByTestId("perto-de-cartao");
       expect(await cartoes.count()).toBeGreaterThanOrEqual(3);
       await expect(page.getByTestId("perto-de-anuncios")).toContainText(/min de carro até o HC-UFU/);
+      // As duas páginas ficam, com papéis distintos e links entre elas (decisão do Muse, 21/10).
+      await expect(page.getByTestId("perto-de-polo").getByRole("link")).toHaveAttribute("href", "/cidades/uberlandia/hc-ufu-umuarama");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t261-perto-de-hc-ufu-${largura}.png` });
 
