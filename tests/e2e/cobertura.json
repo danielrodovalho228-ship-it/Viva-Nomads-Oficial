@@ -405,7 +405,7 @@
         "t21-central-agentes",
         "t22-pacote-otavio",
         "t23-pacote-seguranca",
-        "t259-documentos-registro"
+        "t260-documentos-registro"
       ]
     },
     "/conferir/[codigo]": {
@@ -417,7 +417,7 @@
         "t21-central-agentes",
         "t22-pacote-otavio",
         "t23-pacote-seguranca",
-        "t259-documentos-registro"
+        "t260-documentos-registro"
       ]
     },
     "/dashboard": {
@@ -1634,7 +1634,7 @@
       "specs": [
         "t238-pacote-provas",
         "t240-conferencia-provas-admin",
-        "t259-documentos-registro"
+        "t260-documentos-registro"
       ]
     },
     "/api/cron/atendimento": {

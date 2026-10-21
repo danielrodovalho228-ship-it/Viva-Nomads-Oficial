@@ -3,7 +3,7 @@ import { textoDasPaginas } from "../../../src/lib/fiscal/pdf-texto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T259 — Documentos (Prompt 56), no laboratório:
+ * T260 — Documentos (Prompt 56), no laboratório:
  * pacote de provas baixado pela parte = PRV novo a cada geração, com número, emissão e "Confira em …/conferir com o
  * código …" no PDF → /conferir com esse código mostra o documento válido, sem valor e sem nome → o PDF baixado confere
  * no navegador e o PDF alterado não → número sozinho não confere nada → o contrato (legado) tem Registro nº →
@@ -12,8 +12,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t259.${sufixo}@lab.vivanomads.test`, nome: "Dalva Registro", role: "owner" as const };
-const morador = { email: `mor.t259.${sufixo}@lab.vivanomads.test`, nome: "Moacir Registro", role: "tenant" as const };
+const dono = { email: `dono.t260.${sufixo}@lab.vivanomads.test`, nome: "Dalva Registro", role: "owner" as const };
+const morador = { email: `mor.t260.${sufixo}@lab.vivanomads.test`, nome: "Moacir Registro", role: "tenant" as const };
 const ids: { dono?: string; morador?: string; imovel?: string; lead?: string; contrato?: string } = {};
 
 const dia = (n: number) => new Date(Date.now() - 3 * 3_600_000 + n * 86_400_000).toISOString().slice(0, 10);
@@ -37,7 +37,7 @@ async function baixarPacote(page: Page): Promise<{ bytes: Uint8Array; numero: st
   return { bytes, numero, codigo, texto };
 }
 
-test.describe("T259 — Documentos: registro único e /conferir (Prompt 56)", () => {
+test.describe("T260 — Documentos: registro único e /conferir (Prompt 56)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -111,7 +111,7 @@ test.describe("T259 — Documentos: registro único e /conferir (Prompt 56)", ()
       await p.getByTestId("conferir-arquivo").setInputFiles({ name: "alterado.pdf", mimeType: "application/pdf", buffer: alterado });
       await expect(p.getByTestId("conferir-hash-falhou")).toBeVisible();
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t259-conferir-${largura}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t260-conferir-${largura}.png`, fullPage: true });
       await p.context().close();
     }
   });
