@@ -1,6 +1,7 @@
 "use client";
 
 import { PetsFicha } from "@/components/account/pets-ficha";
+import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
 import { use } from "react";
 import { notFound } from "next/navigation";
@@ -40,6 +41,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
           <TelefoneVerificacao />
           <DocumentoPessoa />
           <PetsFicha />
+          <MeuLocalTrabalho />
         </div>
       );
     case "seguranca":

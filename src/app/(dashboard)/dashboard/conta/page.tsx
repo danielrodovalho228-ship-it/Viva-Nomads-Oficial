@@ -1,6 +1,7 @@
 "use client";
 
 import { PetsFicha } from "@/components/account/pets-ficha";
+import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
@@ -39,6 +40,7 @@ export default function AccountPage() {
           <TelefoneVerificacao />
           <DocumentoPessoa />
           <PetsFicha />
+          <MeuLocalTrabalho />
         </BlocoConta>
 
         <BlocoConta id="confianca" numero={3} titulo="Confiança e segurança" subtitulo="O que já está verificado e como proteger a conta.">

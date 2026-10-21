@@ -40,6 +40,10 @@ import { isExemplo } from "@/lib/demo-listing";
 import { exemplosForcadosNaUrl, mostrarCartaoPedido, semExemplosQuandoHaReal, TEXTO_CARTAO_PEDIDO, TEXTO_PUBLICAR_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
+import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
+import { useTempos } from "@/components/busca/use-tempos";
+import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
+import type { ModoRota } from "@/lib/rotas/tempo";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -65,7 +69,19 @@ const PERIODO_LABEL: Record<number, string> = {
   180: "5–6 meses",
 };
 
-export function SearchClient({ properties: imoveis, topo }: { properties: Property[]; /** Título (e banner do tablet) vindo da página. */ topo?: React.ReactNode }) {
+export function SearchClient({
+  properties: imoveis,
+  topo,
+  destinos = [],
+  modos = ["carro", "a_pe", "bicicleta"],
+}: {
+  properties: Property[];
+  /** Título (e banner do tablet) vindo da página. */
+  topo?: React.ReactNode;
+  /** Prompt 37: destinos cadastrados (chips) e meios com dado (ônibus só com a chave). */
+  destinos?: DestinoChip[];
+  modos?: ModoRota[];
+}) {
   // Filtro, ordem e pino usam o total do mês do cartão (ordem 826719b1, D1).
   const properties = useMemo(() => imoveis.map((p) => comTotalMes(p)), [imoveis]);
   const [locationQuery, setLocationQuery] = useState("");
@@ -152,7 +168,15 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
     mq.addEventListener("change", aplicar);
     return () => mq.removeEventListener("change", aplicar);
   }, []);
-  const [sort, setSort] = useState<"relevance" | "recent" | "price-asc" | "price-desc">("relevance");
+  const [sort, setSort] = useState<"relevance" | "trabalho" | "recent" | "price-asc" | "price-desc">("relevance");
+  // Prompt 37: onde a pessoa vai trabalhar ou estudar (destino cadastrado ou endereço), meio e "até N min".
+  const [estadoDestino, setEstadoDestino] = useState<EstadoDestino>({ destino: null, modo: "carro", ate: 0 });
+  const escolherDestino = (e: EstadoDestino) => {
+    setEstadoDestino(e);
+    // Com destino, a ordem padrão vira "Mais perto do trabalho"; sem, volta à relevância.
+    if (e.destino && sort === "relevance") setSort("trabalho");
+    if (!e.destino && sort === "trabalho") setSort("relevance");
+  };
 
   // Pula a 1ª execução do efeito de sync (no mount, com estado ainda vazio):
   // como os setState da restauração são assíncronos, deixar o sync rodar no
@@ -187,7 +211,10 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
     const perMap: Record<number, number> = { 30: 60, 60: 60, 90: 120, 120: 120, 180: 180 };
     if (perMap[per]) setMaxPeriod(perMap[per]);
     const ordem = sp.get("ordem");
+    const ed = destinoDaUrl(sp);
+    setEstadoDestino(ed);
     if (ordem === "recent" || ordem === "price-asc" || ordem === "price-desc") setSort(ordem);
+    else if (ed.destino) setSort("trabalho");
     const tipo = sp.get("tipo");
     if (tipo && PROPERTY_TYPES.some((t) => t.value === tipo)) setTypeFilter(tipo);
     const fx = sp.get("faixa");
@@ -272,6 +299,8 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
     put("seguro", insuranceOnly, "1");
     put("gestor", operatedOnly, "1");
     put("comod", comodidades.length > 0, comodidades.join(","));
+    destinoNaUrl(params, estadoDestino);
+    if (sort === "trabalho") params.delete("ordem");
     const qs = params.toString();
     window.history.replaceState(
       null,
@@ -281,8 +310,27 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
-    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades,
+    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades, estadoDestino,
   ]);
+
+  // Prompt 37: sem destino na URL, o "Meu local de trabalho" salvo na conta vira o padrão (só para quem está logado;
+  // a resposta vem só para a própria pessoa).
+  useEffect(() => {
+    if (destinoDaUrl(new URLSearchParams(window.location.search)).destino) return;
+    let vivo = true;
+    fetch("/api/conta/local-trabalho")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { estado?: EstadoDestino } | null) => {
+        if (vivo && j?.estado?.destino) {
+          setEstadoDestino(j.estado);
+          setSort((s) => (s === "relevance" ? "trabalho" : s));
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   // Pedido pré-preenchido (ordem 8302024d): guarda no aparelho a data de entrada e o período da última
   // busca; a página do imóvel usa para sugerir a data (editável). Nada de dado pessoal, nada vai ao servidor.
@@ -341,6 +389,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
     setInsuranceOnly(false);
     setOperatedOnly(false);
     setComodidades([]);
+    setEstadoDestino({ destino: null, modo: "carro", ate: 0 });
     setSort("relevance");
   }
 
@@ -389,7 +438,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
     [base, exemplosForcados]
   );
 
-  const results = useMemo(() => {
+  const semTempo = useMemo(() => {
     let list = base.filter((p) => passaNoPainel(p, filtrosPainel));
     // Prompt 30, item 6: com imóvel real no resultado, os exemplos saem; só exemplos → aparecem marcados "exemplo".
     list = semExemplosQuandoHaReal(list, (p) => isExemplo(p.id), exemplosForcados);
@@ -411,6 +460,31 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
       );
     return list;
   }, [base, dist, exemplosForcados, filtrosPainel, sort]);
+
+  // Prompt 37: tempos até o destino (do servidor, arredondados). O filtro "até N min" só vale com tempo de rota — sem
+  // provedor, tudo fica "em linha reta" e ninguém some; a ordem "Mais perto do trabalho" usa as faixas de minutos.
+  const idsSemTempo = useMemo(() => semTempo.map((p) => p.id), [semTempo]);
+  const { tempos, carregando: calculandoTempos, reta: tempoEmLinhaReta } = useTempos(estadoDestino.destino, estadoDestino.modo, idsSemTempo);
+  const results = useMemo(() => {
+    if (!estadoDestino.destino || tempos.size === 0) return semTempo;
+    let list = semTempo;
+    if (estadoDestino.ate && !tempoEmLinhaReta) list = list.filter((p) => {
+      const t = tempos.get(p.id);
+      return t?.min != null && t.min <= estadoDestino.ate;
+    });
+    if (sort === "trabalho") {
+      const pos = (id: string) => tempos.get(id)?.pos ?? Number.MAX_SAFE_INTEGER;
+      list = [...list].sort((a, b) => pos(a.id) - pos(b.id));
+    }
+    return list;
+  }, [semTempo, estadoDestino, tempos, tempoEmLinhaReta, sort]);
+  const opcoesOrdem = (recentes: string): [string, string][] => [
+    ...(estadoDestino.destino ? ([["trabalho", "Mais perto do trabalho"]] as [string, string][]) : []),
+    ["relevance", "Relevância"],
+    ["recent", recentes],
+    ["price-asc", "Menor preço"],
+    ["price-desc", "Maior preço"],
+  ];
 
   const activeCount =
     (maxPrice ? 1 : 0) +
@@ -631,12 +705,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
             label="Ordenar resultados"
             value={sort}
             onChange={(v) => setSort(v as typeof sort)}
-            options={[
-              ["relevance", "Relevância"],
-              ["recent", "Mais recentes"],
-              ["price-asc", "Menor preço"],
-              ["price-desc", "Maior preço"],
-            ]}
+            options={opcoesOrdem("Mais recentes")}
           />
         </div>
       </div>
@@ -695,12 +764,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
             label="Ordenar resultados"
             value={sort}
             onChange={(v) => setSort(v as typeof sort)}
-            options={[
-              ["relevance", "Relevância"],
-              ["recent", "Adicionados recentemente"],
-              ["price-asc", "Menor preço"],
-              ["price-desc", "Maior preço"],
-            ]}
+            options={opcoesOrdem("Adicionados recentemente")}
           />
         </div>
 
@@ -948,18 +1012,21 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
                 label="Ordenar resultados"
                 value={sort}
                 onChange={(v) => setSort(v as typeof sort)}
-                options={[
-                  ["relevance", "Relevância"],
-                  ["recent", "Mais recentes"],
-                  ["price-asc", "Menor preço"],
-                  ["price-desc", "Maior preço"],
-                ]}
+                options={opcoesOrdem("Mais recentes")}
               />
             </div>
       </div>
 
       <div className="container-page mt-4 lg:order-4 lg:mt-0 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
         <div data-testid="busca-lista" className="min-w-0 lg:w-[58%] lg:py-5">
+          <div className="mb-6">
+            <CampoDestino destinos={destinos} modos={modos} valor={estadoDestino} onChange={escolherDestino} />
+            {estadoDestino.destino && tempoEmLinhaReta && (
+              <p className="mt-2 text-sm text-muted" data-testid="tempo-indisponivel">
+                Tempo de deslocamento indisponível agora: mostramos a distância em linha reta.
+              </p>
+            )}
+          </div>
           {results.length === 0 ? (
             <div className="flex flex-col items-center rounded-xl border border-dashed border-line p-12 text-center">
               <EmptySearchIllustration />
@@ -1027,6 +1094,11 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
                       periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined}
                     />
                   </div>
+                  {estadoDestino.destino && (
+                    <p className="mt-2 text-sm font-medium text-ink" data-testid="tempo-cartao">
+                      {tempos.get(p.id)?.texto ?? (calculandoTempos ? "calculando…" : null)}
+                    </p>
+                  )}
                   <label className="mt-2 flex cursor-pointer items-center gap-2 py-1 text-sm text-ink">
                     <input
                       type="checkbox"
