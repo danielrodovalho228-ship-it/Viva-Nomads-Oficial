@@ -252,6 +252,8 @@ test.describe("T255 — Página da estadia (Prompt 32)", () => {
     const d = await abrir(browser, dono.email);
     await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
     await d.getByTestId("aditivo-aceitar").click();
+    // A mensagem vem antes do status: se a ação falhar, o erro da tela aparece no relatório.
+    await expect(d.getByTestId("estadia-ok").or(d.getByTestId("estadia-erro"))).toHaveText("Proposta aceita. Agora as duas partes assinam o aditivo.", { timeout: 30_000 });
     await expect(d.getByTestId("estadia-aditivo")).toHaveAttribute("data-status", "aceito", { timeout: 20_000 });
     // Taxa só sobre o mês acrescentado, na faixa atual, com a base escrita — só na visão do dono.
     await expect(d.getByTestId("aditivo-taxa")).toContainText(/R\$ 3\.000,00 × 1 mês acrescentado × \d+(,\d)?% \(faixa atual\)/);
@@ -259,11 +261,11 @@ test.describe("T255 — Página da estadia (Prompt 32)", () => {
       await pagina.reload({ waitUntil: "networkidle" });
       const desde = new Date().toISOString();
       await pagina.getByTestId("aditivo-pedir-codigo").click();
-      await expect(pagina.getByTestId("estadia-ok")).toHaveText("Código enviado para o seu e-mail.", { timeout: 30_000 });
+      await expect(pagina.getByTestId("estadia-ok").or(pagina.getByTestId("estadia-erro"))).toHaveText("Código enviado para o seu e-mail.", { timeout: 30_000 });
       await pagina.getByTestId("aditivo-codigo").fill(await codigoDaCaixa(quem, desde));
       await pagina.getByTestId("aditivo-aceite").check();
       await pagina.getByTestId("aditivo-assinar").click();
-      await expect(pagina.getByTestId("estadia-ok")).toHaveText("Assinatura registrada.", { timeout: 30_000 });
+      await expect(pagina.getByTestId("estadia-ok").or(pagina.getByTestId("estadia-erro"))).toHaveText("Assinatura registrada.", { timeout: 30_000 });
     }
     const { data: blocos } = await adm().from("contrato_blocos").select("numero_bloco, meses, status").eq("contrato_id", ids.contrato!).order("numero_bloco");
     expect(blocos!.reduce((s, b) => s + Number(b.meses), 0)).toBe(4);

@@ -32,24 +32,33 @@ const dataBR = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { time
 /** Proposta de alteração aberta: responder (a outra parte) e assinar com código (as duas partes). */
 export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; papel: PapelEstadia }) {
   const router = useRouter();
-  const [pendente, iniciar] = useTransition();
+  // "Ocupado" cobre só a ação. O refresh vai numa transição à parte: dentro da mesma transição, os botões
+  // ficavam desabilitados até a página inteira renderizar de novo (t255: "Assinar aditivo" preso).
+  const [pendente, setPendente] = useState(false);
+  const [, iniciarRefresh] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [codigo, setCodigo] = useState("");
   const [aceite, setAceite] = useState(false);
   const euAssinei = a.assinaturas.includes(papel);
 
-  const rodar = (f: () => Promise<{ ok: boolean; erro?: string }>, msg: string) =>
-    iniciar(async () => {
-      setErro(null);
-      setOk(null);
+  const rodar = async (f: () => Promise<{ ok: boolean; erro?: string }>, msg: string, atualizar = true) => {
+    setPendente(true);
+    setErro(null);
+    setOk(null);
+    try {
       const r = await f();
       if (!r.ok) setErro(r.erro ?? "Não foi possível concluir.");
       else {
         setOk(msg);
-        router.refresh();
+        if (atualizar) iniciarRefresh(() => router.refresh());
       }
-    });
+    } catch {
+      setErro("Sem conexão. Tente de novo.");
+    } finally {
+      setPendente(false);
+    }
+  };
 
   return (
     <Panel title={`Aditivo ${a.numero}: proposta de alteração`} data-testid="estadia-aditivo" data-status={a.status}>
@@ -74,7 +83,7 @@ export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; p
         {a.status === "aceito" && !euAssinei && (
           <div className="space-y-3">
             <p className="text-sm text-ink">Assine o aditivo com o código de 6 dígitos enviado ao seu e-mail (o mesmo fluxo da assinatura do contrato).</p>
-            <Button variant="secondary" size="sm" disabled={pendente} onClick={() => rodar(() => pedirCodigoAditivo(a.id).then(conv), "Código enviado para o seu e-mail.")} data-testid="aditivo-pedir-codigo">
+            <Button variant="secondary" size="sm" disabled={pendente} onClick={() => rodar(() => pedirCodigoAditivo(a.id).then(conv), "Código enviado para o seu e-mail.", false)} data-testid="aditivo-pedir-codigo">
               Enviar código por e-mail
             </Button>
             <label className="grid gap-1 text-sm font-semibold text-ink">
