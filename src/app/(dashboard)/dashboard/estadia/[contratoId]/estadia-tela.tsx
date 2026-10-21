@@ -6,7 +6,7 @@ import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import type { AditivoView } from "@/lib/data/estadia";
-import { assinarAditivo, listaParaPortaria, pedirCodigoAditivo, responderAditivo, salvarInstrucoes, salvarNota } from "@/lib/data/estadia-actions";
+import { assinarAditivo, listaParaPortaria, pedirCodigoAditivo, responderAditivo, salvarInstrucoes, salvarNota, type Res } from "@/lib/data/estadia-actions";
 import { CAMPOS_INSTRUCOES, type Instrucoes } from "@/lib/estadia/instrucoes";
 import type { PapelEstadia } from "@/lib/estadia/estadia";
 
@@ -40,16 +40,22 @@ export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; p
   const [ok, setOk] = useState<string | null>(null);
   const [codigo, setCodigo] = useState("");
   const [aceite, setAceite] = useState(false);
-  const euAssinei = a.assinaturas.includes(papel);
+  // O que o servidor já confirmou nesta tela. O refresh da página pode ser descartado pelo roteador (o painel dispara
+  // ações e prefetches ao mesmo tempo; t256), então o painel mostra o resultado confirmado sem esperar por ele.
+  const [confirmado, setConfirmado] = useState<{ status?: string; taxaBase?: string | null; assinei?: boolean }>({});
+  const status = maisAdiante(a.status, confirmado.status);
+  const euAssinei = a.assinaturas.includes(papel) || confirmado.assinei === true;
+  const taxaBase = a.taxa?.base ?? confirmado.taxaBase ?? null;
 
-  const rodar = async (f: () => Promise<{ ok: boolean; erro?: string }>, msg: string, atualizar = true) => {
+  const rodar = async <T,>(f: () => Promise<Res<T>>, msg: string, depois?: (v: T) => void, atualizar = true) => {
     setPendente(true);
     setErro(null);
     setOk(null);
     try {
       const r = await f();
-      if (!r.ok) setErro(r.erro ?? "Não foi possível concluir.");
+      if (!r.ok) setErro(r.erro || "Não foi possível concluir.");
       else {
+        depois?.(r.valor);
         setOk(msg);
         if (atualizar) iniciarRefresh(() => router.refresh());
       }
@@ -61,29 +67,29 @@ export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; p
   };
 
   return (
-    <Panel title={`Aditivo ${a.numero}: proposta de alteração`} data-testid="estadia-aditivo" data-status={a.status}>
+    <Panel title={`Aditivo ${a.numero}: proposta de alteração`} data-testid="estadia-aditivo" data-status={status}>
       <p className="text-sm text-ink" data-testid="aditivo-resumo">{a.resumo}</p>
-      {a.taxa && <p className="mt-1 text-xs text-muted" data-testid="aditivo-taxa">{a.taxa.base}</p>}
+      {taxaBase && <p className="mt-1 text-xs text-muted" data-testid="aditivo-taxa">{taxaBase}</p>}
       <div className="mt-3 space-y-3">
-        {a.status === "proposto" && a.propostoPorMim && (
+        {status === "proposto" && a.propostoPorMim && (
           <p className="text-sm text-muted">Aguardando a resposta da outra parte até {dataBR(a.expiraEm)}. Nada muda no contrato antes do aceite e das duas assinaturas.</p>
         )}
-        {a.status === "proposto" && !a.propostoPorMim && (
+        {status === "proposto" && !a.propostoPorMim && (
           <div className="flex flex-wrap items-center gap-3">
-            <Button variant="primary" size="sm" disabled={pendente} onClick={() => rodar(() => responderAditivo(a.id, "aceitar").then(conv), "Proposta aceita. Agora as duas partes assinam o aditivo.")} data-testid="aditivo-aceitar">
+            <Button variant="primary" size="sm" disabled={pendente} onClick={() => rodar(() => responderAditivo(a.id, "aceitar"), "Proposta aceita. Agora as duas partes assinam o aditivo.", (v) => setConfirmado((c) => ({ ...c, status: "aceito", taxaBase: v.taxaBase })))} data-testid="aditivo-aceitar">
               Aceitar
             </Button>
-            <ConfirmarNaPagina aviso="Recusar mantém o contrato como está." confirmar="Recusar" onConfirmar={() => rodar(() => responderAditivo(a.id, "recusar").then(conv), "Proposta recusada. O contrato continua como estava.")} size="sm" testid="aditivo-recusar">
+            <ConfirmarNaPagina aviso="Recusar mantém o contrato como está." confirmar="Recusar" onConfirmar={() => rodar(() => responderAditivo(a.id, "recusar"), "Proposta recusada. O contrato continua como estava.", () => setConfirmado((c) => ({ ...c, status: "recusado" })))} size="sm" testid="aditivo-recusar">
               Recusar
             </ConfirmarNaPagina>
             <span className="text-xs text-muted">Responda até {dataBR(a.expiraEm)}.</span>
           </div>
         )}
-        {a.status === "aceito" && euAssinei && <p className="text-sm text-muted">Você já assinou. Falta a assinatura da outra parte; os blocos e as datas mudam depois dela.</p>}
-        {a.status === "aceito" && !euAssinei && (
+        {status === "aceito" && euAssinei && <p className="text-sm text-muted">Você já assinou. Falta a assinatura da outra parte; os blocos e as datas mudam depois dela.</p>}
+        {status === "aceito" && !euAssinei && (
           <div className="space-y-3">
             <p className="text-sm text-ink">Assine o aditivo com o código de 6 dígitos enviado ao seu e-mail (o mesmo fluxo da assinatura do contrato).</p>
-            <Button variant="secondary" size="sm" disabled={pendente} onClick={() => rodar(() => pedirCodigoAditivo(a.id).then(conv), "Código enviado para o seu e-mail.", false)} data-testid="aditivo-pedir-codigo">
+            <Button variant="secondary" size="sm" disabled={pendente} onClick={() => rodar(() => pedirCodigoAditivo(a.id), "Código enviado para o seu e-mail.", undefined, false)} data-testid="aditivo-pedir-codigo">
               Enviar código por e-mail
             </Button>
             <label className="grid gap-1 text-sm font-semibold text-ink">
@@ -98,7 +104,7 @@ export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; p
               variant="primary"
               size="sm"
               disabled={pendente || codigo.length !== 6 || !aceite}
-              onClick={() => rodar(() => assinarAditivo(a.id, codigo, aceite).then(conv), "Assinatura registrada.")}
+              onClick={() => rodar(() => assinarAditivo(a.id, codigo, aceite), "Assinatura registrada.", (v) => setConfirmado((c) => ({ ...c, assinei: true, status: v.completo ? "assinado" : c.status })))}
               data-testid="aditivo-assinar"
             >
               Assinar aditivo
@@ -111,9 +117,12 @@ export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; p
   );
 }
 
-/** Converte o Res das ações para o formato que a tela usa. */
-function conv(r: { ok: true } | { ok: false; erro: string }): { ok: boolean; erro?: string } {
-  return r.ok ? { ok: true } : { ok: false, erro: r.erro };
+/** Ordem do aditivo: o status confirmado nesta tela só avança, nunca volta para trás do que o servidor mandou. */
+const ORDEM_ADITIVO = ["proposto", "aceito", "assinado"];
+function maisAdiante(doServidor: string, confirmado?: string): string {
+  if (!confirmado) return doServidor;
+  if (confirmado === "recusado") return doServidor === "proposto" ? confirmado : doServidor;
+  return ORDEM_ADITIVO.indexOf(confirmado) > ORDEM_ADITIVO.indexOf(doServidor) ? confirmado : doServidor;
 }
 
 /** Instruções de chegada: o dono preenche uma vez (valem para as próximas estadias do imóvel). */

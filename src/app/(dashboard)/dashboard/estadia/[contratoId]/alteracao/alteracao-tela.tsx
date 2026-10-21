@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { CampoData } from "@/components/ui/campo-data";
@@ -22,7 +21,6 @@ export function AlteracaoTela({
   entradaAberta: boolean;
   temFuturo: boolean;
 }) {
-  const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
   const [inicio, setInicio] = useState(atual.inicio ?? "");
@@ -40,7 +38,9 @@ export function AlteracaoTela({
         valorMensal: temFuturo && valor != null && valor !== atual.valorMensal ? valor : null,
       });
       if (!r.ok) setErro(r.erro);
-      else router.push(HREF_ESTADIA(contratoId));
+      // Navegação completa: um router.push depois da ação pode ser descartado pelas ações e prefetches que o painel
+      // dispara ao mesmo tempo (t256), e a proposta enviada deixaria a pessoa parada no formulário.
+      else window.location.assign(HREF_ESTADIA(contratoId));
     });
 
   return (

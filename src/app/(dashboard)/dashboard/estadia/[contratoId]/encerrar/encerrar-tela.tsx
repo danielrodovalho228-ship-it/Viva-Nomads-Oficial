@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
@@ -13,7 +12,6 @@ const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm t
 
 /** Motivo → consequências → confirmar na página (nunca um diálogo do navegador). */
 export function EncerrarTela({ contratoId }: { contratoId: string }) {
-  const router = useRouter();
   const [passo, setPasso] = useState<"motivo" | "consequencias">("motivo");
   const [motivo, setMotivo] = useState<MotivoEncerramento | "">("");
   const [texto, setTexto] = useState("");
@@ -59,7 +57,7 @@ export function EncerrarTela({ contratoId }: { contratoId: string }) {
                   setErro(null);
                   const r = await pedirEncerramento(contratoId, motivo, texto);
                   if (!r.ok) setErro(r.erro);
-                  else router.push(HREF_ESTADIA(contratoId));
+                  else window.location.assign(HREF_ESTADIA(contratoId)); // navegação completa: ver alteracao-tela
                 })
               }
               disabled={pendente}

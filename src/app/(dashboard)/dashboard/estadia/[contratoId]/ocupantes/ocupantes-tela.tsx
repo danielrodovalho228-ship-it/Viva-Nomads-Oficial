@@ -14,7 +14,7 @@ const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm t
 
 export function OcupantesTela({
   contratoId,
-  ocupantes,
+  ocupantes: doServidor,
   previstos,
   podeEditar,
   motivoBloqueio,
@@ -31,6 +31,9 @@ export function OcupantesTela({
   const [nome, setNome] = useState("");
   const [documento, setDocumento] = useState("");
   const [relacao, setRelacao] = useState("");
+  // A lista é desta tela: o resultado de cada ação já confirmada entra aqui, sem esperar pelo refresh da página
+  // (que o roteador pode descartar enquanto o painel dispara ações e prefetches; t256).
+  const [ocupantes, setOcupantes] = useState<OcupanteView[]>(doServidor);
   const cabe = podeAdicionarOcupante(ocupantes.length, previstos);
 
   const salvar = () =>
@@ -39,6 +42,7 @@ export function OcupantesTela({
       const r = await adicionarOcupante(contratoId, { nome, documento, parentescoOuRelacao: relacao });
       if (!r.ok) setErro(r.erro);
       else {
+        setOcupantes((l) => [...l, r.valor]);
         setNome("");
         setDocumento("");
         setRelacao("");
@@ -60,7 +64,7 @@ export function OcupantesTela({
                   {o.relacao ? <span className="text-muted"> · {o.relacao}</span> : null}
                 </span>
                 {podeEditar && (
-                  <ConfirmarNaPagina aviso={`Tirar ${o.nome} da lista?`} confirmar="Tirar" size="sm" onConfirmar={() => iniciar(async () => { await removerOcupante(contratoId, o.id); router.refresh(); })} testid="ocupante-remover">
+                  <ConfirmarNaPagina aviso={`Tirar ${o.nome} da lista?`} confirmar="Tirar" size="sm" onConfirmar={() => iniciar(async () => { const r = await removerOcupante(contratoId, o.id); if (!r.ok) setErro(r.erro); else { setOcupantes((l) => l.filter((x) => x.id !== o.id)); router.refresh(); } })} testid="ocupante-remover">
                     Tirar
                   </ConfirmarNaPagina>
                 )}

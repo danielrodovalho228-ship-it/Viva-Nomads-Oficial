@@ -57,6 +57,7 @@ import {
   periodoDoContrato,
   type Contexto,
   type LinhaContratoEstadia,
+  type OcupanteView,
 } from "@/lib/data/estadia";
 
 export type Res<T = undefined> = { ok: true; valor: T } | { ok: false; erro: string };
@@ -112,7 +113,8 @@ export async function salvarInstrucoes(propertyId: string, campos: Record<string
 
 // ── Ocupantes (lista para a portaria) ────────────────────────────────────────────────────────────────────────────
 
-export async function adicionarOcupante(contratoId: string, entrada: OcupanteEntrada): Promise<Res> {
+/** Devolve o ocupante salvo: a tela atualiza a lista sem depender do refresh da página. */
+export async function adicionarOcupante(contratoId: string, entrada: OcupanteEntrada): Promise<Res<OcupanteView>> {
   const ctx = await contextoDaEstadia(contratoId);
   if ("erro" in ctx) return { ok: false, erro: ctx.erro };
   if (ctx.papel !== "inquilino") return { ok: false, erro: "Quem preenche os ocupantes é o morador." };
@@ -122,11 +124,11 @@ export async function adicionarOcupante(contratoId: string, entrada: OcupanteEnt
   const { count } = await ctx.admin.from("contrato_ocupantes").select("id", { count: "exact", head: true }).eq("contrato_id", ctx.c.id);
   const previstos = Math.max(1, Number(ctx.c.qtd_ocupantes) || 1);
   if (!podeAdicionarOcupante(count ?? 0, previstos)) return { ok: false, erro: textoTetoOcupantes(previstos) };
-  const { error } = await ctx.admin.from("contrato_ocupantes").insert({ contrato_id: ctx.c.id, ...v.valor, criado_por: ctx.userId });
+  const { data: novo, error } = await ctx.admin.from("contrato_ocupantes").insert({ contrato_id: ctx.c.id, ...v.valor, criado_por: ctx.userId }).select("id").single();
   // O gatilho da 0198 repete o teto no banco (dois cliques ao mesmo tempo não passam do limite).
-  if (error) return { ok: false, erro: error.code === "23514" ? textoTetoOcupantes(previstos) : "Não foi possível salvar o ocupante." };
+  if (error || !novo) return { ok: false, erro: error?.code === "23514" ? textoTetoOcupantes(previstos) : "Não foi possível salvar o ocupante." };
   revalidar(ctx.c.id);
-  return { ok: true, valor: undefined };
+  return { ok: true, valor: { id: novo.id as string, nome: v.valor.nome, documento: v.valor.documento, relacao: v.valor.parentesco_ou_relacao } };
 }
 
 export async function removerOcupante(contratoId: string, ocupanteId: string): Promise<Res> {
@@ -245,7 +247,8 @@ function documentoDoAditivo(a: LinhaAditivo): string[] {
   return linhasDoAditivo({ numeroContrato: numeroPublicoContrato(a.contrato_id), numero: a.numero, mudancas: a.mudancas, propostoEm: a.criado_em.slice(0, 10) });
 }
 
-export async function responderAditivo(aditivoId: string, resposta: "aceitar" | "recusar"): Promise<Res> {
+/** Devolve a base da taxa para o dono mostrar na hora, sem depender do refresh da página. */
+export async function responderAditivo(aditivoId: string, resposta: "aceitar" | "recusar"): Promise<Res<{ taxaBase: string | null }>> {
   const r = await carregarAditivo(aditivoId);
   if ("erro" in r) return { ok: false, erro: r.erro };
   const { ctx, a } = r;
@@ -255,6 +258,7 @@ export async function responderAditivo(aditivoId: string, resposta: "aceitar" | 
     await expirarVencidos(ctx.admin, a.contrato_id);
     return { ok: false, erro: "A proposta venceu (7 dias). Quem propôs pode enviar outra." };
   }
+  let taxaBase: string | null = null;
   if (resposta === "recusar") {
     // Recusar não muda nada no contrato.
     const { data } = await ctx.admin.from("contrato_aditivos").update({ status: "recusado", respondido_em: new Date().toISOString() }).eq("id", a.id).eq("status", "proposto").select("id");
@@ -280,10 +284,11 @@ export async function responderAditivo(aditivoId: string, resposta: "aceitar" | 
     if (!data?.length) return { ok: false, erro: "Esta proposta já foi respondida." };
     await ctx.admin.from("contrato_aditivo_taxa").upsert({ aditivo_id: a.id, valor: t.valor, percentual: t.percentualFaixa, base_texto: t.baseTexto }, { onConflict: "aditivo_id" });
     await evento(ctx.admin, a.contrato_id, ctx.userId, "aditivo_aceito", { aditivo: a.id });
+    if (ctx.papel === "proprietario") taxaBase = t.baseTexto;
   }
   avisar(ctx.admin, a.proposto_por, "estadia_aditivo_respondido", a.contrato_id);
   revalidar(a.contrato_id);
-  return { ok: true, valor: undefined };
+  return { ok: true, valor: { taxaBase } };
 }
 
 /** Código de 6 dígitos por e-mail, como na assinatura do contrato (15 min, uso único). */
