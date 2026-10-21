@@ -97,8 +97,11 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
       await expect(page).toHaveURL(/destino=hc-ufu&modo=carro&ate=20/);
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t261-busca-destino-${largura}.png` });
-      await page.getByTestId("card-resultado").filter({ has: page.locator(`[data-id="${ids.perto}"]`) }).first().scrollIntoViewIfNeeded().catch(() => {});
-      await page.locator(`[data-testid="card-resultado"][data-id="${ids.perto}"]`).screenshot({ path: `${SAIDA}/t261-cartao-${largura}.png` });
+      // Print do cartão: recorte da página (o print do elemento espera o cartão "parar", e a foto do cartão não para).
+      const cartao = page.locator(`[data-testid="card-resultado"][data-id="${ids.perto}"]`);
+      await cartao.scrollIntoViewIfNeeded();
+      const caixa = await cartao.boundingBox();
+      if (caixa) await page.screenshot({ path: `${SAIDA}/t261-cartao-${largura}.png`, clip: caixa });
       await ctx.close();
     });
   }
