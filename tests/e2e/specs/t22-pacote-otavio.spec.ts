@@ -80,7 +80,8 @@ test.describe("T22 pacote do Otávio (0083) @seguranca", () => {
 
     const conf = await cliente().rpc("conferir_documento", { p_codigo: codigo });
     expect(conf.error).toBeNull();
-    expect((conf.data as { anulado_em: string | null }[])[0].anulado_em).toBeTruthy();
+    // Prompt 56: a conferência responde pelo registro único (status "anulado", com o motivo).
+    expect((conf.data as { status: string; anulado_motivo: string | null }[])[0]).toMatchObject({ status: "anulado", anulado_motivo: "teste T22: emitido em duplicidade" });
     const html = await (await request.get(`/conferir/${codigo}`)).text();
     expect(html).toContain('data-testid="conferir-anulado"');
     expect(html).not.toContain('data-testid="conferir-ok"');

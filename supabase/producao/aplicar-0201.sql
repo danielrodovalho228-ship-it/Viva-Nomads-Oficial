@@ -287,6 +287,24 @@ $$;
 drop trigger if exists parceiro_pedidos_registro on public.parceiro_pedidos;
 create trigger parceiro_pedidos_registro after insert on public.parceiro_pedidos for each row execute function public.registrar_pedido_novo();
 
+-- Documento fiscal gravado sem passar pelo registro (seed do laboratório, inserção manual da equipe) entra nele mesmo
+-- assim, com o número, o hash e o código já impressos. A emissão normal registra antes e este gatilho não duplica.
+create or replace function public.registrar_documento_fiscal_novo() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  ps uuid[] := array_remove(array[new.owner_id, new.tenant_id], null);
+begin
+  insert into public.documentos_registro (prefixo, numero, tipo, ref_tabela, ref_id, hash_sha256, codigo_verificacao, partes, is_teste, emitido_em)
+  select split_part(new.numero, '-', 1), new.numero, new.tipo, 'documentos_fiscais', new.id, new.hash, new.codigo_verificacao, ps,
+         public.alguma_parte_teste(ps), new.criado_em
+   where not exists (select 1 from public.documentos_registro r where r.ref_tabela = 'documentos_fiscais' and r.ref_id = new.id);
+  return new;
+end;
+$$;
+drop trigger if exists documentos_fiscais_registro on public.documentos_fiscais;
+create trigger documentos_fiscais_registro after insert on public.documentos_fiscais
+  for each row execute function public.registrar_documento_fiscal_novo();
+
 -- Anulação de documento fiscal (0083) segue para o registro.
 create or replace function public.documentos_fiscais_anulacao_registro() returns trigger
 language plpgsql security definer set search_path = public as $$

@@ -20,9 +20,11 @@ insert into contratos (id, property_id, tenant_id, faixa, prazo_total_dias, alug
 values ('56000000-0000-4000-8000-0000000000c1', '56000000-0000-4000-8000-0000000000b1', '56000000-0000-4000-8000-0000000000a1',
         'media_estadia', 90, 3200, 1, '2020-01-01 10:00+00');
 alter table contratos enable trigger contratos_registro;
+alter table documentos_fiscais disable trigger documentos_fiscais_registro;
 insert into documentos_fiscais (id, tipo, numero, ano, tenant_id, locatario_nome, valor, hash, codigo_verificacao, pdf_path, criado_em)
 values ('56000000-0000-4000-8000-0000000000f1', 'informe_anual', 'INF-2020-000007', 2020, '56000000-0000-4000-8000-0000000000a1',
         'Morador Lab', 0, repeat('a', 64), repeat('b', 32), '2020/informe_anual/INF-2020-000007.pdf', '2020-01-02 10:00+00');
+alter table documentos_fiscais enable trigger documentos_fiscais_registro;
 \i supabase/migrations/0201_documentos_registro.sql
 select 'backfill: contrato legado registrado com o VN-CT de sempre' as caso,
        count(*) = 1 and min(numero) = 'VN-CT-56000000' and min(prefixo) = 'VN-CT' as ok
@@ -39,6 +41,14 @@ select 'backfill: parte de teste marca o documento como teste' as caso,
 \i supabase/migrations/0201_documentos_registro.sql
 select 'backfill idempotente: reaplicar não duplica' as caso, count(*) = 2 as ok
   from documentos_registro where ref_id in ('56000000-0000-4000-8000-0000000000c1', '56000000-0000-4000-8000-0000000000f1');
+
+-- 1b) Documento fiscal gravado direto (seed do laboratório) entra no registro com o próprio código.
+insert into documentos_fiscais (id, tipo, numero, ano, tenant_id, locatario_nome, valor, hash, codigo_verificacao, pdf_path)
+values ('56000000-0000-4000-8000-0000000000f2', 'informe_anual', 'INF-LAB-1', 2031, '56000000-0000-4000-8000-0000000000e1',
+        'Terceiro Lab', 0, repeat('7', 64), repeat('8', 32), 'lab/inf.pdf');
+select 'documento fiscal direto registrado com o próprio código' as caso,
+       count(*) = 1 and min(codigo_verificacao) = repeat('8', 32) and min(prefixo) = 'INF' as ok
+  from documentos_registro where ref_id = '56000000-0000-4000-8000-0000000000f2';
 
 -- 2) Contrato novo entra no registro pelo gatilho — mesmo quando o VN-CT coincide com o de outro contrato.
 insert into contratos (id, property_id, tenant_id, faixa, prazo_total_dias, aluguel_mensal, qtd_ocupantes)

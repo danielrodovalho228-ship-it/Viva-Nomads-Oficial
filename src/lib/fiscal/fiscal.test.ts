@@ -127,7 +127,8 @@ test("#14 (0083): documento fiscal não se apaga; anulação lógica aparece na 
   assert.match(sql, /revoke delete, truncate on public\.documentos_fiscais from anon, authenticated, service_role/);
   assert.doesNotMatch(sql, /raise notice/i);
   const conferir = ler("app/(public)/conferir/[codigo]/page.tsx");
-  assert.match(conferir, /doc\.anulado_em \?/);
+  // Prompt 56: a situação vem do registro único (status "anulado", com o motivo).
+  assert.match(conferir, /situacao\.estado === "anulado"/);
   assert.match(conferir, /data-testid="conferir-anulado"/);
   // Nenhum código apaga documento fiscal.
   for (const f of ["lib/fiscal/emitir.ts", "lib/data/documentos-actions.ts", "app/api/documentos/[id]/route.ts"]) {
