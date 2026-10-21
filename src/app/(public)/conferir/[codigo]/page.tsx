@@ -73,7 +73,7 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
               {camposExibidos(doc, emitidoEmBrasilia).map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-3 border-b border-line pb-2">
                   <dt className="text-muted">{k}</dt>
-                  <dd className="text-right font-medium text-ink" data-testid={`conferir-${k.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <dd className="text-right font-medium text-ink" data-testid={`conferir-${k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "-")}`}>
                     {v}
                   </dd>
                 </div>
