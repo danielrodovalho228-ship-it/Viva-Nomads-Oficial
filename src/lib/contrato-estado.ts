@@ -10,13 +10,13 @@ import { etapaContrato, type EtapaContrato } from "./contrato-etapas.ts";
 export type Papel = "inquilino" | "proprietario";
 
 /** Colunas de `contratos` que o estado precisa (use no select, junto de `id`). */
-export const COLUNAS_ESTADO_CONTRATO = "status, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(tipo, confirmado_pelo_inquilino)";
+export const COLUNAS_ESTADO_CONTRATO = "status, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
 
 export interface LinhaEstadoContrato {
   status?: string | null;
   assinado_proprietario_em?: string | null;
   assinado_inquilino_em?: string | null;
-  pagamentos_bloco?: { tipo?: string | null; confirmado_pelo_inquilino?: boolean | null }[] | null;
+  pagamentos_bloco?: { tipo?: string | null; confirmado_pelo_inquilino?: boolean | null; anulado_em?: string | null }[] | null;
 }
 
 export type ChaveEstado =
@@ -42,9 +42,12 @@ export interface EstadoContrato {
   ativo: boolean;
 }
 
-/** 1º pagamento do aluguel declarado pelo proprietário E confirmado pelo inquilino. */
+/**
+ * 1º pagamento do aluguel declarado pelo proprietário E confirmado pelo inquilino. Pagamento anulado (0182) não conta
+ * (Prompt 32: um registro anulado não pode liberar as instruções de chegada nem mudar a etapa).
+ */
 export function primeiroPagamentoConfirmado(pagamentos: LinhaEstadoContrato["pagamentos_bloco"]): boolean {
-  return (pagamentos ?? []).some((p) => p?.tipo === "aluguel" && p?.confirmado_pelo_inquilino === true);
+  return (pagamentos ?? []).some((p) => p?.tipo === "aluguel" && p?.confirmado_pelo_inquilino === true && !p?.anulado_em);
 }
 
 const ENCERRADOS: Record<string, { chave: ChaveEstado; selo: string }> = {

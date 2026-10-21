@@ -1,24 +1,27 @@
 /*
-  Filtros em chips da caixa de mensagens (ordem f1b437bb, Pacote Clareza UX6, item b) — regra pura.
-  Papel da conversa: imóvel do próprio usuário = "Como proprietário"; imóvel de outra pessoa = "Como
-  inquilino"; conversa sem imóvel (equipe da Viva) = "Suporte".
+  Filtros em chips da caixa de mensagens (ordem f1b437bb, Pacote Clareza UX6, item b; Prompt 32, item 4) — regra pura.
+  Papel da conversa (sai da posição da pessoa em CADA conversa): imóvel do próprio usuário = "Como proprietário";
+  imóvel de outra pessoa = "Como morador"; conversa de pedido de serviço (31b, "pedido:") = "Parceiros"; conversa
+  sem imóvel (equipe da Viva) = "Falar com a Viva". Os ids ficam estáveis (os testes e o E2E usam os ids).
 */
-import { formatarDiaCurto } from "./estadia-linha-tempo.ts";
 
-export type PapelConversa = "inquilino" | "proprietario" | "suporte";
+
+export type PapelConversa = "inquilino" | "proprietario" | "parceiros" | "suporte";
 export type Filtro = "todas" | PapelConversa;
 
 export const FILTROS: { id: Filtro; rotulo: string }[] = [
   { id: "todas", rotulo: "Todas" },
-  { id: "inquilino", rotulo: "Como inquilino" },
   { id: "proprietario", rotulo: "Como proprietário" },
-  { id: "suporte", rotulo: "Suporte" },
+  { id: "inquilino", rotulo: "Como morador" },
+  { id: "parceiros", rotulo: "Parceiros" },
+  { id: "suporte", rotulo: "Falar com a Viva" },
 ];
 
 export function papelDaConversa(
-  c: { propertyId?: string; donoDoImovelId?: string },
+  c: { propertyId?: string; donoDoImovelId?: string; pedidoParceiroId?: string | null },
   userId: string
 ): PapelConversa {
+  if (c.pedidoParceiroId) return "parceiros";
   if (!c.propertyId || !c.donoDoImovelId) return "suporte";
   return c.donoDoImovelId === userId ? "proprietario" : "inquilino";
 }
@@ -32,11 +35,17 @@ export function contarPorFiltro(lista: { papel?: PapelConversa }[]): Record<Filt
     todas: lista.length,
     inquilino: filtrarConversas(lista, "inquilino").length,
     proprietario: filtrarConversas(lista, "proprietario").length,
+    parceiros: filtrarConversas(lista, "parceiros").length,
     suporte: filtrarConversas(lista, "suporte").length,
   };
 }
 
+/** Datas do contrato na lista de conversas: "13/11 – 15/02" (Prompt 32, item 4). */
 export function formatarPeriodo(inicio?: string | null, fim?: string | null): string {
   if (!inicio || !fim) return "";
-  return `${formatarDiaCurto(inicio)} – ${formatarDiaCurto(fim)}`;
+  const ddmm = (iso: string) => {
+    const [, m, d] = iso.slice(0, 10).split("-");
+    return `${d}/${m}`;
+  };
+  return `${ddmm(inicio)} – ${ddmm(fim)}`;
 }

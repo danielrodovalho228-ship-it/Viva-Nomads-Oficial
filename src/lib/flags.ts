@@ -84,3 +84,11 @@ export const PRE_LANCAMENTO = process.env.NEXT_PUBLIC_PRE_LANCAMENTO !== "off";
  * serviços troca de texto pela chave (servicos-morador.ts, notaPagamentoServicos).
  */
 export const PAGAMENTO_PARCEIROS_ATIVO = process.env.NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO === "on";
+
+/**
+ * Regras de encerramento de contrato (Prompt 32, item 7). OFF por padrão: "Encerrar contrato" registra o pedido para
+ * as duas partes e o admin, sem calcular multa nem devolução (a Viva conduz). Liga com
+ * NEXT_PUBLIC_ENCERRAMENTO_REGRAS_ATIVO="on" depois do parecer jurídico; o cálculo entra em
+ * src/lib/estadia/encerramento.ts (consequenciasDoEncerramento).
+ */
+export const ENCERRAMENTO_REGRAS_ATIVO = process.env.NEXT_PUBLIC_ENCERRAMENTO_REGRAS_ATIVO === "on";

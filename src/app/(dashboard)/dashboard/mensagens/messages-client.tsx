@@ -14,7 +14,7 @@ import { sendMessage } from "@/lib/data/actions";
 import { enviarMensagemDoPedido } from "@/lib/parceiros/pedido-actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
-import { guardContactInfo, GUARD_NOTICE } from "@/lib/messages/contact-guard";
+import { guardContactInfo, GUARD_NOTICE, DOCUMENTO_BLOQUEADO } from "@/lib/messages/contact-guard";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
 import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/mensagens-filtros";
@@ -68,6 +68,8 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
   }, [demo, conversations.map((c) => c.id).join(",")]);
   // Aviso de contato protegido (aparece quando algo foi mascarado no envio).
   const [guardNotice, setGuardNotice] = useState(false);
+  // Prompt 32: CPF/RG não vai pelo chat; a mensagem fica no campo e o aviso leva aos Ocupantes da estadia.
+  const [docBloqueado, setDocBloqueado] = useState(false);
   // No mobile, alterna entre lista e conversa (master-detail). No desktop, ambos.
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 
@@ -86,7 +88,9 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
     if (!draft.trim() || !active) return;
     // Mesma máscara do servidor: o eco otimista mostra exatamente o que será
     // gravado (telefones/e-mails sempre protegidos — a conversa fica na plataforma).
-    const { text, masked } = guardContactInfo(draft);
+    const { text, masked, documento } = guardContactInfo(draft);
+    setDocBloqueado(documento);
+    if (documento) return;
     setGuardNotice(masked);
     setDraft("");
     // Atualização otimista
@@ -222,6 +226,11 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
                   Abrir o pedido
                 </Link>
               )}
+              {active.contratoId && (
+                <Link href={`/dashboard/estadia/${active.contratoId}`} className="text-xs font-semibold text-forest underline" data-testid="conversa-abrir-estadia">
+                  Abrir a página da estadia
+                </Link>
+              )}
             </div>
           </header>
           {!demo && active.propertyId && active.otherId && (
@@ -269,6 +278,21 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
           {guardNotice && (
             <p className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">
               {GUARD_NOTICE}
+            </p>
+          )}
+          {docBloqueado && (
+            <p role="alert" className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800" data-testid="mensagens-documento-bloqueado">
+              {DOCUMENTO_BLOQUEADO}
+              {active.contratoId ? (
+                <>
+                  {": "}
+                  <Link href={`/dashboard/estadia/${active.contratoId}/ocupantes`} className="font-semibold underline">
+                    abrir Ocupantes
+                  </Link>
+                </>
+              ) : (
+                "."
+              )}
             </p>
           )}
           {/* Conversa com imóvel = entre pessoas; "Suporte" é a equipe, não há o que denunciar. */}
