@@ -18,7 +18,13 @@ import {
   mora em playwright.config.ts, fora do escopo desta ordem.
 */
 const MASSA = lerMassa();
-const PODE = NO_LABORATORIO && !!MASSA;
+/**
+  No laboratório, faltar a massa é FALHA, não pulo: até 21/10 nenhum workflow rodava massa-varredura.mjs e a t249 saiu
+  "pulada" nas 19 execuções registradas em lab_execucoes — verde sem varrer tela nenhuma. Fora do laboratório, pula.
+*/
+function exigirMassa(): void {
+  expect(MASSA, "laboratório sem a massa da varredura: o passo `node scripts/lab/massa-varredura.mjs` não rodou ou falhou (ver o log do workflow)").not.toBeNull();
+}
 
 interface Tela {
   conta: ChaveConta | null; // null = visitante
@@ -61,8 +67,11 @@ const excecoes = new Set<string>();
 const inicio = Date.now();
 
 test.describe("T249 — varredura visual (tela × tamanho × critério)", () => {
-  test.skip(!PODE, "precisa do laboratório com a massa: node scripts/lab/massa-varredura.mjs");
-  test.beforeEach(({}, info) => test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do spec)"));
+  test.skip(!NO_LABORATORIO, "precisa do laboratório (Supabase local + integrações simuladas)");
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do spec)");
+    exigirMassa();
+  });
 
   test.afterAll(() => {
     const seg = Math.round((Date.now() - inicio) / 1000);
@@ -125,8 +134,11 @@ test.describe("T249 — varredura visual (tela × tamanho × critério)", () => 
   Quem corrigir o produto remove o `test.fail` no mesmo PR (o Playwright avisa quando passa sozinho).
 */
 test.describe("T249 — defeitos conhecidos (D-V)", () => {
-  test.skip(!PODE, "precisa do laboratório com a massa: node scripts/lab/massa-varredura.mjs");
-  test.beforeEach(({}, info) => test.skip(info.project.name !== "chromium", "só chromium"));
+  test.skip(!NO_LABORATORIO, "precisa do laboratório (Supabase local + integrações simuladas)");
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name !== "chromium", "só chromium");
+    exigirMassa();
+  });
 
   test("D-V1 — imagens acima da dobra do anúncio de 17 fotos carregam sem rolar (lazy-load)", async ({ browser }) => {
     test.fail(true, "D-V1: lazy-load segura imagens da primeira tela");

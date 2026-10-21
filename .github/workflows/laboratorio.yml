@@ -94,6 +94,12 @@ jobs:
       - name: Criar as personas e os imóveis de teste
         run: node scripts/lab/seed-lab.mjs
 
+      - name: Criar a massa da varredura visual (t249)
+        # Contas @varredura.lab.vivanomads.test e tests/laboratorio/saida/varredura.json. Sem este passo a t249 ficava
+        # pulada em toda execução. Se falhar, a suíte segue e a t249 reprova dizendo que falta a massa.
+        continue-on-error: true
+        run: node scripts/lab/massa-varredura.mjs
+
       - name: Build do site (modo simulado)
         run: npm run build
 
