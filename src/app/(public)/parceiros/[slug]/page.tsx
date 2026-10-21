@@ -16,7 +16,7 @@ import { REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
   publicada; conta de teste fica fora do Google (noindex) e da busca pública.
 */
 
-type Params = { params: Promise<{ slug: string }>; searchParams?: Promise<{ imovel?: string; cadastro?: string }> };
+type Params = { params: Promise<{ slug: string }>; searchParams?: Promise<{ imovel?: string; cadastro?: string; categoria?: string }> };
 
 // Sempre do banco: publicar, pausar ou editar no painel aparece na hora (sem cache da página).
 export const dynamic = "force-dynamic";
@@ -43,8 +43,16 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
   const supabase = await createClient();
   const logado = !!(supabase && (await supabase.auth.getUser()).data.user);
   const imovelDoCadastro = sp.imovel && /^[0-9a-f-]{36}$/i.test(sp.imovel) ? sp.imovel : null;
-  const voltarPara = `/parceiros/${slug}${imovelDoCadastro ? `?imovel=${imovelDoCadastro}&cadastro=1` : ""}`;
   const { parceiro: p, servicos, galeria } = d;
+  // Vindo da página da estadia pela busca (Prompt 41): a categoria pedida já vem escolhida na folha.
+  const categoriaInicial = sp.categoria && p.categorias.includes(sp.categoria) ? sp.categoria : null;
+  const doCadastro = !!imovelDoCadastro && sp.cadastro === "1";
+  const consulta = new URLSearchParams({
+    ...(imovelDoCadastro ? { imovel: imovelDoCadastro } : {}),
+    ...(doCadastro ? { cadastro: "1" } : {}),
+    ...(categoriaInicial ? { categoria: categoriaInicial } : {}),
+  }).toString();
+  const voltarPara = `/parceiros/${slug}${consulta ? `?${consulta}` : ""}`;
   const redes = REDES.filter((r) => p.redes[r.chave]);
 
   return (
@@ -62,12 +70,12 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
         <div className="-mt-12 flex flex-col gap-4 sm:-mt-16 sm:flex-row sm:items-end">
           {p.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- imagem do bucket público, já reduzida no envio
-            <img src={p.avatarUrl} alt={`Foto de ${p.nomePublico}`} width={128} height={128} className="h-24 w-24 rounded-full border-4 border-white bg-white object-cover shadow sm:h-32 sm:w-32" data-testid="parceiro-avatar" />
+            <img src={p.avatarUrl} alt={`Foto de ${p.nomePublico}`} width={128} height={128} className="h-24 w-24 rounded-full border-4 border-white bg-white object-cover sm:h-32 sm:w-32" data-testid="parceiro-avatar" />
           ) : (
-            <span className="grid h-24 w-24 place-items-center rounded-full border-4 border-white bg-sage-100 font-title text-3xl font-bold text-forest shadow sm:h-32 sm:w-32">{p.nomePublico.slice(0, 1)}</span>
+            <span className="grid h-24 w-24 place-items-center rounded-full border-4 border-white bg-sage-100 font-title text-[28px] font-semibold text-forest sm:h-32 sm:w-32">{p.nomePublico.slice(0, 1)}</span>
           )}
           <div className="min-w-0 flex-1 pb-1">
-            <h1 className="font-title text-2xl font-bold text-ink sm:text-3xl">{p.nomePublico}</h1>
+            <h1 className="font-title text-2xl font-semibold text-ink sm:text-[28px]">{p.nomePublico}</h1>
             <p className="mt-1 text-muted">{p.categorias.map(rotuloCategoria).join(" · ")}</p>
             <p className="mt-1 flex items-center gap-1 text-sm text-ink">
               <MapPin className="h-4 w-4 shrink-0" aria-hidden /> {p.cidades.join(", ")}
@@ -88,16 +96,16 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
           <div className="min-w-0 space-y-8">
             {p.descricao && (
               <section aria-labelledby="h-sobre">
-                <h2 id="h-sobre" className="font-title text-xl font-bold text-ink">Sobre</h2>
+                <h2 id="h-sobre" className="font-title text-xl font-semibold text-ink">Sobre</h2>
                 <p className="mt-2 whitespace-pre-line text-ink">{p.descricao}</p>
               </section>
             )}
             <section aria-labelledby="h-servicos">
-              <h2 id="h-servicos" className="font-title text-xl font-bold text-ink">Serviços</h2>
+              <h2 id="h-servicos" className="font-title text-xl font-semibold text-ink">Serviços</h2>
               <ul className="mt-3 grid gap-3 sm:grid-cols-2" data-testid="parceiro-servicos">
                 {servicos.map((s) => (
                   <li key={s.id} className="rounded-xl border border-line bg-white p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-forest">{rotuloCategoria(s.categoria)}</p>
+                    <p className="text-xs font-semibold text-forest">{rotuloCategoria(s.categoria)}</p>
                     <h3 className="mt-1 font-semibold text-ink">{s.titulo}</h3>
                     {s.descricao && <p className="mt-1 text-sm text-muted">{s.descricao}</p>}
                     <p className="mt-2 text-sm font-semibold text-ink">{textoPreco(s.precoBase, s.unidade)}</p>
@@ -112,7 +120,7 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
             </section>
             {galeria.length > 0 && (
               <section aria-labelledby="h-galeria">
-                <h2 id="h-galeria" className="font-title text-xl font-bold text-ink">Galeria</h2>
+                <h2 id="h-galeria" className="font-title text-xl font-semibold text-ink">Galeria</h2>
                 <ul className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-3" data-testid="parceiro-galeria">
                   {galeria.map((g) => (
                     <li key={g.id} className="min-w-0">
@@ -128,7 +136,7 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
             )}
           </div>
           <aside className="min-w-0 space-y-4">
-            <div className="rounded-2xl border border-line bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-line bg-white p-5">
               <SolicitarOrcamento
                 parceiroId={p.id}
                 nomeParceiro={p.nomePublico}
@@ -137,13 +145,14 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
                 logado={logado}
                 voltarPara={voltarPara}
                 imovelInicial={imovelDoCadastro}
-                doCadastroDoImovel={!!imovelDoCadastro && sp.cadastro === "1"}
+                categoriaInicial={categoriaInicial}
+                doCadastroDoImovel={doCadastro}
               />
               <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Contato e endereço só depois do aceite.</p>
             </div>
             {redes.length > 0 && (
-              <div className="rounded-2xl border border-line bg-white p-5" data-testid="parceiro-redes">
-                <h2 className="font-title text-base font-bold text-ink">Redes</h2>
+              <div className="rounded-xl border border-line bg-white p-5" data-testid="parceiro-redes">
+                <h2 className="font-title text-base font-semibold text-ink">Redes</h2>
                 <ul className="mt-2 space-y-1 text-sm">
                   {redes.map((r) => (
                     <li key={r.chave}>

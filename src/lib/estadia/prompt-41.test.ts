@@ -1,6 +1,6 @@
 /*
-  Prompt 41 — guardas de código (o E2E t258 confere o mesmo na tela, a 390 e 1280 px):
-   - cogumelo: só ações cuja função existe, nunca cancelar/avaliar/pagar, só no detalhe da estadia;
+  Prompt 41 — guardas de código (o E2E t259 confere o mesmo na tela, a 390 e 1280 px):
+   - cogumelo: mora na página da estadia — as guardas estão em src/lib/estadia/acoes.test.ts;
    - página do imóvel: a ordem, o "Solicitar" (a candidatura de sempre), a visita em texto terciário, o total pela
      duração e "a Viva não segura dinheiro" em todo rótulo de valor;
    - botão: data-cta="primary" só no primário.
@@ -8,76 +8,12 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ACOES_QUE_ESPERAM, PROIBIDAS_NO_COGUMELO, acoesDaEstadia } from "./acoes-estadia.ts";
 
 const SRC = new URL("../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(join(SRC, p), "utf8");
 const semComentarios = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
-
-function arquivos(dir: string, out: string[] = []): string[] {
-  for (const f of readdirSync(join(SRC, dir))) {
-    const rel = join(dir, f);
-    if (statSync(join(SRC, rel)).isDirectory()) arquivos(rel, out);
-    else if (/\.tsx$/.test(f)) out.push(rel);
-  }
-  return out;
-}
-
-test("cogumelo: morador com estadia ativa e instruções → falar, contrato, instruções e manutenção", () => {
-  const a = acoesDaEstadia({ papel: "inquilino", status: "ativo", temInstrucoes: true });
-  assert.deepEqual(
-    a.map((x) => x.rotulo),
-    ["Falar com o proprietário", "Ver o contrato", "Ver instruções de chegada", "Pedir manutenção"],
-  );
-  assert.deepEqual(a.map((x) => x.href), ["/dashboard/mensagens", "#contrato", "#checkin-painel", "/dashboard/solicitacoes"]);
-});
-
-test("cogumelo: proprietário fala com o morador e vê o contrato; manutenção é pedido do morador", () => {
-  const a = acoesDaEstadia({ papel: "proprietario", status: "ativo", temInstrucoes: false });
-  assert.deepEqual(a.map((x) => x.rotulo), ["Falar com o morador", "Ver o contrato"]);
-  // Estadia encerrada: sem manutenção nem instruções.
-  assert.deepEqual(
-    acoesDaEstadia({ papel: "inquilino", status: "concluido", temInstrucoes: false }).map((x) => x.chave),
-    ["falar", "contrato"],
-  );
-});
-
-test("cogumelo: nunca cancelar, avaliar, pagar ou link genérico; o que espera fica listado", () => {
-  for (const papel of ["inquilino", "proprietario"] as const) {
-    for (const a of acoesDaEstadia({ papel, status: "ativo", temInstrucoes: true })) {
-      assert.doesNotMatch(a.rotulo, PROIBIDAS_NO_COGUMELO, a.rotulo);
-      assert.ok(a.href.startsWith("#") || a.href.startsWith("/dashboard/"), a.href);
-    }
-  }
-  assert.deepEqual(
-    ACOES_QUE_ESPERAM.map((x) => x.rotulo),
-    ["Pedir limpeza", "Avisar um problema", "Propor alteração de datas"],
-  );
-});
-
-test("cogumelo: as âncoras e a rota de cada ação existem; ele só aparece no detalhe da estadia", () => {
-  const detalhe = ler("components/contrato/contrato-detalhe.tsx");
-  assert.match(detalhe, /<Panel id="contrato"/);
-  assert.match(detalhe, /<Panel id="checkin-painel"/);
-  assert.match(detalhe, /<AcoesEstadia acoes=\{acoesDaEstadia\(\{ papel: c\.papel, status: c\.status, temInstrucoes: !!checkin \}\)\} \/>/);
-  assert.ok(existsSync(join(SRC, "app/(dashboard)/dashboard/solicitacoes/page.tsx")));
-  assert.ok(existsSync(join(SRC, "app/(dashboard)/dashboard/mensagens/page.tsx")));
-  const usos = [...arquivos("app"), ...arquivos("components")].filter((f) => /<AcoesEstadia\b/.test(ler(f)));
-  assert.deepEqual(usos, ["components/contrato/contrato-detalhe.tsx"]);
-  // Os dois caminhos da estadia (morador e proprietário) usam o mesmo detalhe.
-  assert.match(ler("app/(dashboard)/dashboard/locacoes/[id]/page.tsx"), /<ContratoDetalhe /);
-  assert.match(ler("app/(dashboard)/dashboard/contratos/[id]/page.tsx"), /<ContratoDetalhe /);
-});
-
-test("cogumelo: flutuante com a sombra única, folha 'Ações desta estadia' e o Fale com a Viva sobe acima dele", () => {
-  const c = ler("components/estadia/acoes-estadia.tsx");
-  assert.match(c, /buttonClasses\(\{ variant: "flutuante"/);
-  assert.match(c, /title="Ações desta estadia"/);
-  const css = ler("app/globals.css");
-  assert.match(css, /body:has\(\[data-testid="cogumelo"\]\) \{\s*--ajuda-bottom: calc\(var\(--cogumelo-bottom\) \+ 4rem\);\s*--viva-piso:/);
-});
 
 test("página do imóvel: ordem do Prompt 41 (galeria → título → síntese → anfitrião → comodidades → regras → mapa → avaliações)", () => {
   const d = semComentarios(ler("app/(public)/imoveis/[id]/property-detail.tsx"));

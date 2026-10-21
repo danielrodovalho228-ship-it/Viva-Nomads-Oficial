@@ -21,22 +21,27 @@ export const metadata: Metadata = {
 const UFS = Object.keys(MUNICIPIOS).sort();
 const campo = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-3 py-2 text-base text-ink";
 
-export default async function BuscarParceirosPage({ searchParams }: { searchParams: Promise<{ categoria?: string; cidade?: string; uf?: string; cep?: string; avisar?: string }> }) {
+export default async function BuscarParceirosPage({ searchParams }: { searchParams: Promise<{ categoria?: string; cidade?: string; uf?: string; cep?: string; avisar?: string; imovel?: string }> }) {
   const sp = await searchParams;
   const categoria = sp.categoria && categoriaValida(sp.categoria) ? sp.categoria : "";
   const r = await buscarParceiros({ categoria, cidade: sp.cidade, uf: sp.uf, cep: sp.cep });
   const supabase = await createClient();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   const geral = r.lista.length ? null : await lerParceiroGeralServidor();
+  // Vindo da página da estadia (Prompt 41, "Pedir limpeza"/"Pedir manutenção"): o imóvel e a categoria seguem até o
+  // "Solicitar orçamento" do parceiro (o mesmo caminho do /parceiros/fotografos).
+  const imovel = sp.imovel && /^[0-9a-f-]{36}$/i.test(sp.imovel) ? sp.imovel : "";
+  const consultaDoImovel = imovel ? new URLSearchParams({ imovel, ...(categoria ? { categoria } : {}) }).toString() : undefined;
   const qs = new URLSearchParams({ ...(categoria ? { categoria } : {}), ...(r.cidade ? { cidade: r.cidade } : {}), ...(r.uf ? { uf: r.uf } : {}) }).toString();
 
   return (
     <div className="container-page py-8">
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros" }, { nome: "Buscar", caminho: "/parceiros/buscar" }])} />
-      <h1 className="font-title text-2xl font-bold text-ink sm:text-3xl">Encontre um parceiro{categoria ? `: ${rotuloCategoria(categoria).toLowerCase()}` : ""}</h1>
+      <h1 className="font-title text-2xl font-semibold text-ink sm:text-[28px]">Encontre um parceiro{categoria ? `: ${rotuloCategoria(categoria).toLowerCase()}` : ""}</h1>
       <p className="mt-2 max-w-2xl text-muted">Profissionais aprovados pela Viva. Você combina e agenda tudo pelas mensagens da Viva; contato e endereço só depois do aceite.</p>
 
-      <form method="get" className="mt-6 grid gap-3 rounded-2xl border border-sage-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_0.6fr_1fr_auto] lg:items-end" data-testid="busca-parceiros-filtros">
+      <form method="get" className="mt-6 grid gap-3 rounded-xl border border-sage-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_0.6fr_1fr_auto] lg:items-end" data-testid="busca-parceiros-filtros">
+        {imovel && <input type="hidden" name="imovel" value={imovel} />}
         <div>
           <label htmlFor="bp-categoria" className="block text-sm font-medium text-ink">Categoria</label>
           <select id="bp-categoria" name="categoria" defaultValue={categoria} className={campo}>
@@ -87,7 +92,7 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
             </p>
             <ul className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {r.lista.map((p) => (
-                <CartaoParceiro key={p.id} p={p} />
+                <CartaoParceiro key={p.id} p={p} consulta={consultaDoImovel} />
               ))}
             </ul>
           </>

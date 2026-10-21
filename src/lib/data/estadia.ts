@@ -35,7 +35,7 @@ import { blocoIniciado, linhaDoHistorico, mesesNaoIniciados, type BlocoAtual, ty
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const COLUNAS_ESTADIA =
-  "id, property_id, tenant_id, status, encerrado_em, created_at, qtd_ocupantes, capacidade_snapshot, aluguel_mensal, tamanho_bloco_meses, garantia, comissao_percent, comissao_valor, assinado_proprietario_em, assinado_inquilino_em, properties(id, title, owner_id, checkin_after, checkout_before, max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status), pagamentos_bloco(id, tipo, confirmado_pelo_inquilino, anulado_em)";
+  "id, property_id, tenant_id, status, encerrado_em, created_at, qtd_ocupantes, capacidade_snapshot, aluguel_mensal, tamanho_bloco_meses, garantia, comissao_percent, comissao_valor, assinado_proprietario_em, assinado_inquilino_em, properties(id, title, city, owner_id, checkin_after, checkout_before, max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status), pagamentos_bloco(id, tipo, confirmado_pelo_inquilino, anulado_em)";
 
 export interface LinhaContratoEstadia {
   id: string;
@@ -53,7 +53,7 @@ export interface LinhaContratoEstadia {
   comissao_valor: number | string | null;
   assinado_proprietario_em: string | null;
   assinado_inquilino_em: string | null;
-  properties: { id: string; title: string | null; owner_id: string; checkin_after: string | null; checkout_before: string | null; max_guests: number | null } | null;
+  properties: { id: string; title: string | null; city?: string | null; owner_id: string; checkin_after: string | null; checkout_before: string | null; max_guests: number | null } | null;
   contrato_blocos: (BlocoAtual & { id: string; caucao_status: string })[] | null;
   pagamentos_bloco: { id: string; tipo: string; confirmado_pelo_inquilino: boolean; anulado_em: string | null }[] | null;
 }
@@ -136,7 +136,7 @@ export interface EstadiaView {
   numero: string;
   papel: PapelEstadia;
   status: string;
-  imovel: { id: string; titulo: string; foto: string | null };
+  imovel: { id: string; titulo: string; foto: string | null; cidade: string | null };
   periodo: PeriodoEstadia;
   topo: TopoEstadia;
   checklist: ItemChecklist[];
@@ -271,7 +271,7 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
     numero: numeroPublicoContrato(c.id),
     papel,
     status: c.status,
-    imovel: { id: c.property_id, titulo: c.properties?.title ?? "Imóvel", foto },
+    imovel: { id: c.property_id, titulo: c.properties?.title ?? "Imóvel", foto, cidade: c.properties?.city ?? null },
     periodo,
     topo: topoDaEstadia(periodo, c, agora),
     checklist,

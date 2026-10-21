@@ -5,9 +5,11 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Avatar } from "@/components/ui/avatar";
 import { ButtonLink } from "@/components/ui/button";
 import { carregarEstadia } from "@/lib/data/estadia";
-import { HREF_ESTADIA, acoesDaEstadia, textoEntrada, textoSaida } from "@/lib/estadia/estadia";
+import { HREF_ESTADIA, textoEntrada, textoSaida } from "@/lib/estadia/estadia";
+import { acoesDaEstadia, encerrarDaEstadia, mensagemDaEstadia, type ContratoDaEstadia } from "@/lib/estadia/acoes";
 import { CAMPOS_INSTRUCOES } from "@/lib/estadia/instrucoes";
 import { ROTULO_STATUS_ENCERRAMENTO, rotuloMotivo } from "@/lib/estadia/encerramento";
+import { AcoesEstadia } from "@/components/estadia/acoes-estadia";
 import { AditivoPendente, EditorInstrucoes, ListaPortaria, NotasPrivadas } from "./estadia-tela";
 
 export const metadata: Metadata = {
@@ -23,6 +25,9 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * Página da estadia (Prompt 32, referência: a tela de reserva do anfitrião). A mesma URL para o dono e o morador;
  * cada papel vê a própria visão. Junta o que estava em Contratos, Locações e Fechamento (as telas continuam e apontam
  * para cá). Quem não é parte do contrato vê 404.
+ * Prompt 41 (adendo da estadia): um primário só, "Mensagem", no cartão de status; o resto das ações mora no cogumelo
+ * "Ações desta estadia"; "Encerrar contrato" fica no fim da página, em texto vermelho (a confirmação é na /encerrar).
+ * A lista sai de src/lib/estadia/acoes.ts.
  */
 export default async function EstadiaPage({ params }: { params: Promise<{ contratoId: string }> }) {
   const { contratoId } = await params;
@@ -30,7 +35,16 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
   const e = await carregarEstadia(contratoId);
   if (!e) notFound();
   const dono = e.papel === "proprietario";
-  const acoes = acoesDaEstadia(e.id, e.topo.fase, `/dashboard/mensagens?conversa=${e.conversaId}`, dono ? "/dashboard/agenda" : `/dashboard/locacoes/${e.id}`);
+  const contrato: ContratoDaEstadia = {
+    id: e.id,
+    fase: e.topo.fase,
+    conversaId: e.conversaId,
+    imovelId: e.imovel.id,
+    cidade: e.imovel.cidade,
+    instrucoesLiberadas: e.instrucoes.liberadas,
+  };
+  const mensagem = mensagemDaEstadia(contrato);
+  const encerrar = encerrarDaEstadia(e.papel, contrato);
   const aberto = e.aditivos.find((a) => a.status === "proposto" || a.status === "aceito");
   const assinados = e.aditivos.filter((a) => a.status === "assinado");
 
@@ -44,22 +58,20 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
           <img src={e.imovel.foto} alt={`Foto de ${e.imovel.titulo}`} className="aspect-[4/3] w-full rounded-xl object-cover sm:w-48" />
         )}
         <div className="min-w-0 space-y-1">
-          <p className="font-title text-xl font-bold text-ink" data-testid="estadia-topo-texto">
+          <p className="font-title text-xl font-semibold text-ink" data-testid="estadia-topo-texto">
             {e.topo.texto}
           </p>
           <p className="text-sm text-ink" data-testid="estadia-entrada">{textoEntrada(e.periodo)}</p>
           <p className="text-sm text-ink" data-testid="estadia-saida">{textoSaida(e.periodo)}</p>
           <p className="text-xs text-muted">Horário de Brasília.</p>
+          <div className="pt-2">
+            {/* O único primário da tela (Prompt 41). */}
+            <ButtonLink href={mensagem.href} variant="primary" size="sm" data-testid="estadia-acao-mensagem">
+              {mensagem.rotulo}
+            </ButtonLink>
+          </div>
         </div>
       </Panel>
-
-      <nav aria-label="Ações desta estadia" className="flex flex-wrap gap-2" data-testid="estadia-acoes">
-        {acoes.map((a) => (
-          <ButtonLink key={a.id} href={a.href} variant={a.primaria ? "primary" : "secondary"} size="sm" data-testid={`estadia-acao-${a.id}`}>
-            {a.rotulo}
-          </ButtonLink>
-        ))}
-      </nav>
 
       {e.encerramento && (
         <Panel title="Pedido de encerramento" data-testid="estadia-encerramento">
@@ -77,7 +89,7 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
           <ul className="space-y-3">
             {e.checklist.map((i) => (
               <li key={i.chave} className="flex items-start gap-3" data-testid={`checklist-${i.chave}`} data-feito={i.feito ? "sim" : "nao"}>
-                {i.feito ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-forest" aria-hidden /> : <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted" aria-hidden />}
+                {i.feito ? <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-forest" aria-hidden /> : <Circle className="mt-1 h-5 w-5 shrink-0 text-muted" aria-hidden />}
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-ink">{i.rotulo}</span>
                   <span className="block text-sm text-muted">{i.detalhe}</span>
@@ -178,6 +190,17 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
           </ul>
         </Panel>
       )}
+
+      {encerrar && (
+        // Destrutivo = texto vermelho, nunca primário; a confirmação é na própria página /encerrar (motivo → consequências → confirmar).
+        <div className="border-t border-divisor pt-4" data-testid="estadia-fim">
+          <ButtonLink href={encerrar.href} variant="destructive" size="sm" data-testid="estadia-acao-encerrar">
+            {encerrar.rotulo}
+          </ButtonLink>
+        </div>
+      )}
+
+      <AcoesEstadia acoes={acoesDaEstadia(e.papel, contrato)} />
     </div>
   );
 }

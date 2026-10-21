@@ -2,21 +2,25 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, DoorOpen, FileText, MessageSquare, Sparkles, Wrench } from "lucide-react";
+import { CalendarClock, CalendarDays, ChevronRight, DoorOpen, FileText, MessageSquare, Sparkles, SprayCan, Wrench } from "lucide-react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { buttonClasses } from "@/components/ui/button";
-import type { AcaoEstadia, ChaveAcaoEstadia } from "@/lib/estadia/acoes-estadia";
+import type { AcaoEstadia, ChaveAcaoEstadia } from "@/lib/estadia/acoes";
 
 const ICONE: Record<ChaveAcaoEstadia, React.ComponentType<{ className?: string }>> = {
   falar: MessageSquare,
   contrato: FileText,
+  alteracao: CalendarClock,
   instrucoes: DoorOpen,
+  limpeza: SprayCan,
   manutencao: Wrench,
+  calendario: CalendarDays,
 };
 
 /**
- * Botão flutuante "cogumelo" (Prompt 41, item 4): só no detalhe de uma estadia, para o morador e o proprietário dela.
- * Abre a folha "Ações desta estadia" (lista com ícone, só ações que já existem — src/lib/estadia/acoes-estadia.ts).
+ * Botão flutuante "cogumelo" (Prompt 41, item 4 e adendo da estadia): só na página da estadia
+ * (/dashboard/estadia/[contratoId]), para o morador e o proprietário dela. Abre a folha "Ações desta estadia" (lista
+ * com ícone, só ações que já existem — a lista sai de src/lib/estadia/acoes.ts).
  * Flutua: sombra única --shadow-flutuante. Fica no canto onde o "Fale com a Viva" mora, e o "Fale com a Viva" sobe
  * acima dele (globals.css, .vn-cogumelo); o espaço no fim da tela impede que ele cubra a última ação da página.
  */

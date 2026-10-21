@@ -18,8 +18,6 @@ import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
 import { ConferenciaContrato } from "./conferencia-contrato";
 import { meuCartaoPostal } from "@/lib/data/cartoes-actions";
 import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
-import { AcoesEstadia } from "@/components/estadia/acoes-estadia";
-import { acoesDaEstadia } from "@/lib/estadia/acoes-estadia";
 
 /**
  * Detalhe do contrato para as DUAS partes (ordens 0fd301f0 e f375fdc1): o inquilino chega por
@@ -147,8 +145,6 @@ export async function ContratoDetalhe({
           </div>
         </Panel>
       )}
-      {/* Prompt 41: o "cogumelo" (Ações desta estadia) — só aqui, no contexto da estadia, para as duas partes. */}
-      <AcoesEstadia acoes={acoesDaEstadia({ papel: c.papel, status: c.status, temInstrucoes: !!checkin })} />
     </>
   );
 }
