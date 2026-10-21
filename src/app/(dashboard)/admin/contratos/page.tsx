@@ -71,9 +71,14 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
         title="Contratos"
         subtitle={`${p ? rotuloPeriodo(p.inicio, p.fim) : "Todos os períodos"}${cidade ? ` · ${cidade}` : ""} · ${tipo === "real" ? "só reais" : tipo === "teste" ? "só de teste" : "reais e de teste"}`}
         action={
-          <Link href="/admin/financeiro" className="text-sm text-forest underline">
-            Ver o financeiro
-          </Link>
+          <span className="flex flex-wrap gap-3">
+            <Link href="/admin/contratos/encerramentos" className="text-sm text-forest underline" data-testid="admin-link-encerramentos">
+              Pedidos de encerramento
+            </Link>
+            <Link href="/admin/financeiro" className="text-sm text-forest underline">
+              Ver o financeiro
+            </Link>
+          </span>
         }
       />
       <form action="/admin/contratos" method="get" className="mb-4 flex flex-wrap items-end gap-2" role="search">

@@ -12,6 +12,7 @@ import { estadoConferencia, type RespostaConferencia } from "@/lib/conferencia";
 import { nomeCurto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
 import { diaBRT } from "@/lib/datas-brasilia";
+import { conversationId } from "@/lib/messages/conversation-id";
 import {
   checklistAntesDaEntrada,
   mesesDoPeriodo,
@@ -139,6 +140,8 @@ export interface EstadiaView {
   valores: LinhaValor[];
   morador: { nome: string; foto: string | null };
   outraParteId: string;
+  /** A conversa do contrato na caixa de Mensagens (morador × dono, no imóvel). */
+  conversaId: string;
   ocupantes: OcupanteView[];
   ocupantesPrevistos: number;
   capacidade: number;
@@ -272,6 +275,7 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
     valores,
     morador: { nome: nomeMorador, foto: fotoMorador },
     outraParteId: papel === "inquilino" ? ownerId : c.tenant_id,
+    conversaId: conversationId(c.tenant_id, ownerId, c.property_id),
     ocupantes,
     ocupantesPrevistos: previstos,
     capacidade: Math.max(previstos, Number(c.capacidade_snapshot ?? c.properties?.max_guests ?? previstos) || previstos),

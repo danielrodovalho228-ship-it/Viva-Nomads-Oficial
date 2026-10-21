@@ -8,6 +8,7 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { carregarContratoAdmin, type ConferenciaAdmin } from "@/lib/data/contrato-admin";
 import { ROTULO_ESTADO_CONFERENCIA, textoPrazoConferencia } from "@/lib/conferencia";
+import { linhasAditivos } from "@/lib/contrato-provas";
 import { refContratoVN } from "@/lib/fiscal/fila-falhas";
 import { fmtReais } from "@/lib/admin/visao-geral";
 import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
@@ -107,6 +108,17 @@ export default async function AdminContratoPage({ params }: { params: Promise<{ 
           </p>
         </Panel>
       </div>
+
+      {/* Prompt 32: aditivos (o que mudou, situação, hash e assinaturas) — as mesmas linhas do pacote de provas. */}
+      <Panel title="Aditivos" className="mt-4" data-testid="admin-contrato-aditivos">
+        <ul className="space-y-1 text-sm text-ink">
+          {linhasAditivos(c.provas.aditivos).map((l, i) => (
+            <li key={i} className="break-words">
+              {l}
+            </li>
+          ))}
+        </ul>
+      </Panel>
 
       <Panel title="Conferências" className="mt-4" data-testid="admin-contrato-conferencias">
         {c.prazoEntradaEm && (

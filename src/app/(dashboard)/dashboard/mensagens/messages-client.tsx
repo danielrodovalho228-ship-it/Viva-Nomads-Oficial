@@ -26,20 +26,21 @@ import { visitaDaConversa } from "@/lib/data/visitas-video-actions";
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
  * `key` (o estado interno nasce da prop). Em demo, o envio não persiste nada.
  */
-export function MessagesClient({ initial }: { initial: Conversation[] }) {
+export function MessagesClient({ initial, abrir }: { initial: Conversation[]; /** Conversa a abrir (ex.: "Mensagem" da página da estadia). */ abrir?: string }) {
   const { on: demoOn } = useDemoMode();
   return (
     <MessagesInner
       key={demoOn ? "demo" : "real"}
       initial={demoOn ? DEMO_CONVERSATIONS : initial}
       demo={demoOn}
+      abrir={demoOn ? undefined : abrir}
     />
   );
 }
 
-function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boolean }) {
+function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo: boolean; abrir?: string }) {
   const [conversations, setConversations] = useState<Conversation[]>(initial);
-  const [activeId, setActiveId] = useState<string>(initial[0]?.id ?? "");
+  const [activeId, setActiveId] = useState<string>((abrir && initial.some((c) => c.id === abrir) ? abrir : initial[0]?.id) ?? "");
   const [draft, setDraft] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todas");
   // Fotos das conversas (map conversationId → URL). O SERVIDOR decide: foto do
@@ -71,7 +72,7 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
   // Prompt 32: CPF/RG não vai pelo chat; a mensagem fica no campo e o aviso leva aos Ocupantes da estadia.
   const [docBloqueado, setDocBloqueado] = useState(false);
   // No mobile, alterna entre lista e conversa (master-detail). No desktop, ambos.
-  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  const [mobileView, setMobileView] = useState<"list" | "chat">(abrir && initial.some((c) => c.id === abrir) ? "chat" : "list");
 
   const contagem = contarPorFiltro(conversations);
   const visiveis = filtrarConversas(conversations, filtro);
