@@ -675,6 +675,8 @@ export interface ResumoPedido {
   categoria: string;
   outroLado: string;
   valor: number | null;
+  valorTaxa: number | null;
+  valorParceiro: number | null;
   horario: string | null;
   criadoEm: string;
 }
@@ -687,6 +689,8 @@ function resumo(rows: LinhaPedido[], papel: PapelNoPedido, nomes: Map<string, st
     categoria: p.categoria,
     outroLado: papel === "cliente" ? (p.parceiros?.nome_publico ?? "Parceiro") : (nomes.get(p.cliente_id) ?? "Cliente"),
     valor: p.valor_combinado == null ? null : Number(p.valor_combinado),
+    valorTaxa: p.valor_taxa == null ? null : Number(p.valor_taxa),
+    valorParceiro: p.valor_parceiro == null ? null : Number(p.valor_parceiro),
     horario: p.horario_confirmado,
     criadoEm: p.criado_em,
   }));

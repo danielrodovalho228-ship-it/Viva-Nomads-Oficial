@@ -113,7 +113,12 @@ test.describe("T249 — Contratação de parceiros (31b)", () => {
 
     // 2) Parceiro: não vê o endereço antes do aceite; orça e vê os 10% e o líquido.
     const p = await abrir(browser, fotografo.email);
-    await p.goto(`/dashboard/servicos/pedidos/${ids.pedido}`, { waitUntil: "domcontentloaded" });
+    // Painel do parceiro: o pedido novo aparece primeiro, com o próximo passo.
+    await p.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
+    await expect(p.getByTestId("parceiro-pedido").first()).toContainText("Envie o orçamento ou recuse o pedido.", { timeout: 20_000 });
+    await p.screenshot({ path: `${SAIDA}/t249-painel-parceiro-1280.png`, fullPage: true });
+    await p.getByTestId("parceiro-pedido").first().click();
+    await expect(p).toHaveURL(new RegExp(`/dashboard/servicos/pedidos/${ids.pedido}$`));
     await expect(p.getByTestId("pedido-endereco")).toHaveCount(0);
     await expect(p.locator("main")).not.toContainText("Rua das Flores");
     await p.locator("#pedido-valor-campo").fill("350");

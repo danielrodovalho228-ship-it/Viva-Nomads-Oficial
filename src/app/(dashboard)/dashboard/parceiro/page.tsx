@@ -6,6 +6,7 @@ import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { meuPainelParceiro } from "@/lib/parceiros/painel-actions";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { PainelParceiroCliente } from "./painel-parceiro";
+import { PedidosDoParceiro } from "@/components/parceiros/pedidos-do-parceiro";
 
 export const metadata: Metadata = { title: "Parceiro", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -26,6 +27,8 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
             Parceria ativada. Complete a página e publique quando estiver pronta.
           </p>
         )}
+        {/* Prompt 31b: pedidos (novos primeiro) e ganhos com a divisão 90/10. */}
+        <PedidosDoParceiro pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
         <PainelParceiroCliente inicial={painel} pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
       </>
     );
