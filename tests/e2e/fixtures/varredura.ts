@@ -128,7 +128,14 @@ export async function imagensAcimaDaDobra(page: Page): Promise<string[]> {
   return ruins.map((r) => `imagem acima da dobra não carregou em 5 s sem rolar: ${r}`);
 }
 
-/** (b) Fecha modais/folhas e confere, no TOPO e no FIM da página, se algo cobre o centro de algum controle visível. */
+/**
+ * (b) Fecha modais/folhas e confere, no TOPO e no FIM da página, se algo cobre algum controle visível.
+ * Régua do Muse (21/10): controle sob elemento fixo só é defeito quando o usuário não consegue revelá-lo. Por isso cada
+ * controle coberto por algo fixo é rolado até o meio da tela (no fim da página, até onde a rolagem deixa) e conferido de
+ * novo, no centro e perto dos quatro cantos: se algo fixo continua por cima, é defeito; se a rolagem o revela por inteiro,
+ * não é (conteúdo passar sob cabeçalho ou barra fixa durante a rolagem é normal). Sobreposição por elemento NÃO fixo
+ * continua sendo defeito direto (rolar não resolve).
+ */
 export async function controlesCobertos(page: Page): Promise<string[]> {
   await page.keyboard.press("Escape").catch(() => {});
   const problemas: string[] = [];
@@ -153,6 +160,23 @@ export async function controlesCobertos(page: Page): Promise<string[]> {
         return false;
       };
       const nome = (el: Element) => (el.textContent || el.getAttribute("aria-label") || el.getAttribute("name") || el.tagName).trim().replace(/\s+/g, " ").slice(0, 40);
+      const cobre = (el: Element, t: Element | null) => !!t && !(el === t || el.contains(t) || t.contains(el)) && fixoOuSticky(t) && !fixoOuSticky(el);
+      // Rola o controle até o meio da tela e devolve o fixo que ainda o cobre (centro ou cantos), ou null se ficou à mostra.
+      const continuaCoberto = (el: HTMLElement): Element | null => {
+        const salvo = window.scrollY;
+        el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+        const r = el.getBoundingClientRect();
+        let achou: Element | null = null;
+        for (const [fx, fy] of [[0.5, 0.5], [0.15, 0.15], [0.85, 0.15], [0.15, 0.85], [0.85, 0.85]]) {
+          const px = r.left + r.width * fx;
+          const py = r.top + r.height * fy;
+          if (px < 0 || py < 0 || px > window.innerWidth - 1 || py > window.innerHeight - 1) continue; // maior que a tela
+          const t = document.elementFromPoint(px, py);
+          if (cobre(el, t)) { achou = t; break; }
+        }
+        window.scrollTo({ top: salvo, behavior: "instant" });
+        return achou;
+      };
       const out: string[] = [];
       for (const el of Array.from(document.querySelectorAll<HTMLElement>(SEL))) {
         if (el.closest("[aria-hidden='true'], [inert], dialog:not([open])")) continue;
@@ -174,7 +198,10 @@ export async function controlesCobertos(page: Page): Promise<string[]> {
         const topo = document.elementFromPoint(x, y);
         if (!topo || el === topo || el.contains(topo) || topo.contains(el)) continue;
         if (topo instanceof HTMLLabelElement && topo.control === el) continue;
-        if (fixoOuSticky(topo) && !fixoOuSticky(el)) out.push(`"${nome(el)}" coberto por elemento fixo (${topo.tagName.toLowerCase()} "${nome(topo)}")`);
+        if (fixoOuSticky(topo) && !fixoOuSticky(el)) {
+          const fixo = continuaCoberto(el);
+          if (fixo) out.push(`"${nome(el)}" coberto por elemento fixo mesmo depois de rolar até ele (${fixo.tagName.toLowerCase()} "${nome(fixo)}")`);
+        }
         else if (!fixoOuSticky(topo)) out.push(`"${nome(el)}" coberto por ${topo.tagName.toLowerCase()} "${nome(topo)}"`);
         if (out.length >= 5) break;
       }
