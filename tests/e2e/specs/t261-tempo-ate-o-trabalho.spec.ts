@@ -114,7 +114,7 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
     const depoisDaPrimeira = await chamadas();
     expect(depoisDaPrimeira, "a 1ª busca chama o provedor").toBeGreaterThan(0);
     await expect(page).toHaveURL(/dlat=-18\.69&dlng=-48\.10&drot=Rua\+do\+Lab%2C\+Centro/);
-    expect(page.url()).not.toContain("123");
+    expect(new URL(page.url()).search, "nem o número da casa na URL").not.toContain("123");
     await page.reload({ waitUntil: "domcontentloaded" });
     await temposNaTela(page);
     expect(await chamadas(), "a 2ª busca vem do cache (nenhuma chamada nova)").toBe(depoisDaPrimeira);
