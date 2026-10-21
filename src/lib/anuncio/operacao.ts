@@ -25,6 +25,14 @@ export function operacaoValida(v: unknown): v is Operacao {
 
 export const exigeAutorizacao = (op: string | null | undefined) => op === "subleased" || op === "managed";
 
+/**
+ * Valor de sublease_authorized a gravar. Imóvel próprio não tem sublocação
+ * (o banco recusa own + true — migração 0200); tipo desconhecido vira "own".
+ */
+export function subleaseParaGravar(op: unknown, declarado: boolean | undefined): boolean {
+  return operacaoValida(op) && op !== "own" ? declarado ?? false : false;
+}
+
 /** O que anexar, por tipo de operação. */
 export const DOC_AUTORIZACAO: Record<Exclude<Operacao, "own">, { titulo: string; declaracao: string; aviso: string }> = {
   subleased: {
