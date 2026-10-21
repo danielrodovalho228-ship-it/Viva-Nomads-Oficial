@@ -262,3 +262,39 @@ export function proximoPasso(status: string, papel: PapelNoPedido): string | nul
   };
   return (papel === "cliente" ? cliente : parceiro)[status as StatusPedido] ?? null;
 }
+
+// ── Números do admin (contas de teste fora) ───────────────────────────────────────────────────────────────────
+export interface PedidoParaNumeros {
+  status: string;
+  cliente_id: string;
+  parceiro_id: string;
+  valor_taxa: number | string | null;
+  ref_tipo: string | null;
+  pagamento_status: string;
+}
+export const FORMULAS_PEDIDOS_PARCEIRO = {
+  total: "Pedidos de orçamento criados (sem contas de teste do cliente ou do parceiro).",
+  abertos: "Pedidos em 'Aguardando orçamento' ou 'Orçamento recebido'.",
+  fechados: "Pedidos com orçamento aceito: aceito, agendado, em execução, entregue ou concluído.",
+  concluidos: "Pedidos concluídos pelo cliente.",
+  conversao: "Fechados ÷ total, em %.",
+  taxaRegistrada: "Soma da taxa de serviço (10%) congelada no aceite dos pedidos fechados — registro, sem dinheiro enquanto o pagamento pela plataforma estiver desligado.",
+  vindosDeCartao: "Pedidos com a referência do cartão do parceiro (ref_tipo = partnercard).",
+} as const;
+
+const FECHADOS = ["aceito", "agendado", "em_execucao", "entregue", "concluido"];
+
+export function numerosPedidosParceiro(pedidos: PedidoParaNumeros[], contasTeste: Set<string>, donoDoParceiro: Map<string, string>) {
+  const reais = pedidos.filter((p) => !contasTeste.has(p.cliente_id) && !contasTeste.has(donoDoParceiro.get(p.parceiro_id) ?? ""));
+  const fechados = reais.filter((p) => FECHADOS.includes(p.status));
+  const centavos = fechados.reduce((t, p) => t + Math.round(Number(p.valor_taxa ?? 0) * 100), 0);
+  return {
+    total: reais.length,
+    abertos: reais.filter((p) => (STATUS_ABERTOS as readonly string[]).includes(p.status)).length,
+    fechados: fechados.length,
+    concluidos: reais.filter((p) => p.status === "concluido").length,
+    conversao: reais.length ? Math.round((fechados.length / reais.length) * 100) : 0,
+    taxaRegistrada: centavos / 100,
+    vindosDeCartao: reais.filter((p) => p.ref_tipo === "partnercard").length,
+  };
+}

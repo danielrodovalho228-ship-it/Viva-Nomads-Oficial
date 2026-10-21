@@ -1376,6 +1376,22 @@
       "specs": [
         "t249-parceiros-contratacao"
       ]
+    },
+    "/admin/parceiros/pedidos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "/admin/parceiros/pedidos/[id]": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
     }
   },
   "rotas": {
@@ -4171,6 +4187,15 @@
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#cidadeDosMeusServicos": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t249-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#meusImoveisParaServico": {
       "personas": [
         "inquilino",
         "proprietario"

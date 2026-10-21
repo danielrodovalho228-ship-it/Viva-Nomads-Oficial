@@ -4,11 +4,12 @@ import { rotuloCategoria } from "@/lib/parceiros/regras";
 import type { ParceiroPublico } from "@/lib/data/parceiros-publico";
 
 /** Cartão do parceiro na busca: foto, nome, categorias, cidades e a nota real (ou "Novo na Viva"). Sem contato. */
-export function CartaoParceiro({ p }: { p: ParceiroPublico }) {
+/** `consulta`: parâmetros que seguem para a página do parceiro (ex.: o imóvel do cadastro, Prompt 31b). */
+export function CartaoParceiro({ p, consulta }: { p: ParceiroPublico; consulta?: string }) {
   return (
     <li className="min-w-0">
       <Link
-        href={`/parceiros/${p.slug}`}
+        href={`/parceiros/${p.slug}${consulta ? `?${consulta}` : ""}`}
         className="flex h-full gap-4 rounded-2xl border border-line bg-white p-4 shadow-sm transition hover:shadow-md"
         data-testid="cartao-parceiro"
         data-slug={p.slug}

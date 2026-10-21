@@ -125,3 +125,22 @@ test("todo estado tem rótulo; próximo passo só nos estados em andamento", asy
   assert.equal(proximoPasso("recusado", "cliente"), null);
   assert.equal(proximoPasso("cancelado", "parceiro"), null);
 });
+
+test("números do admin: contas de teste (cliente ou parceiro) fora; taxa só dos fechados; vindos de cartão", async () => {
+  const { numerosPedidosParceiro, FORMULAS_PEDIDOS_PARCEIRO } = await import("./pedido.ts");
+  const base = { parceiro_id: "pa", valor_taxa: null, ref_tipo: null, pagamento_status: "indisponivel" };
+  const n = numerosPedidosParceiro(
+    [
+      { ...base, status: "solicitado", cliente_id: "c1" },
+      { ...base, status: "concluido", cliente_id: "c2", valor_taxa: "35.00", ref_tipo: "partnercard" },
+      { ...base, status: "agendado", cliente_id: "c3", valor_taxa: 12.5 },
+      { ...base, status: "cancelado", cliente_id: "c4", valor_taxa: 99 },
+      { ...base, status: "concluido", cliente_id: "teste1", valor_taxa: 50 },
+      { ...base, status: "concluido", cliente_id: "c5", parceiro_id: "pteste", valor_taxa: 50 },
+    ],
+    new Set(["teste1", "uteste"]),
+    new Map([["pa", "ua"], ["pteste", "uteste"]]),
+  );
+  assert.deepEqual(n, { total: 4, abertos: 1, fechados: 2, concluidos: 1, conversao: 50, taxaRegistrada: 47.5, vindosDeCartao: 1 });
+  for (const k of Object.keys(n)) assert.ok(FORMULAS_PEDIDOS_PARCEIRO[k as keyof typeof FORMULAS_PEDIDOS_PARCEIRO], `fórmula de ${k}`);
+});

@@ -27,6 +27,8 @@ export interface Conversation {
   periodo?: string;
   /** Contrato ASSINADO pelas duas partes desta conversa (o alerta antigolpe só vale antes disso). */
   contratoFechado?: boolean;
+  /** Conversa de pedido de serviço de parceiro (Prompt 31b): a resposta vai pela rota do pedido. */
+  pedidoParceiroId?: string;
   messages: ChatMessage[];
 }
 
@@ -61,6 +63,7 @@ interface MsgRow {
   body: string;
   created_at: string;
   proposta_id?: string | null;
+  parceiro_pedido_id?: string | null;
   property: { title: string | null; owner_id: string | null } | null;
 }
 
@@ -81,7 +84,7 @@ export async function listConversations(): Promise<Conversation[]> {
   const { data, error } = await supabase
     .from("messages")
     .select(
-      `id, conversation_id, sender_id, receiver_id, property_id, body, created_at, proposta_id,
+      `id, conversation_id, sender_id, receiver_id, property_id, body, created_at, proposta_id, parceiro_pedido_id,
        property:properties!messages_property_id_fkey ( title, owner_id )`
     )
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
@@ -102,6 +105,7 @@ export async function listConversations(): Promise<Conversation[]> {
         otherId,
         propertyId: m.property_id ?? undefined,
         papel: papelDaConversa({ propertyId: m.property_id ?? undefined, donoDoImovelId: m.property?.owner_id ?? undefined }, user.id),
+        ...(m.parceiro_pedido_id ? { pedidoParceiroId: m.parceiro_pedido_id, property: "Pedido de serviço" } : {}),
         messages: [],
       });
     }

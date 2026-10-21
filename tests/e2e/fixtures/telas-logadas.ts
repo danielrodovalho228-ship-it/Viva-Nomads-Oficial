@@ -60,6 +60,7 @@ export const TELAS_ADMIN = [
   "/admin/fotografos",
   "/admin/marketing",
   "/admin/parceiros",
+  "/admin/parceiros/pedidos",
   "/admin/servicos",
   "/admin/ajuda-publicacao",
   "/admin/cidades",
@@ -81,6 +82,7 @@ export const TELAS_ADMIN = [
 export const ROTAS_COM_PARAMETRO: Record<string, readonly string[]> = {
   "/admin/atendimento/[id]": [],
   "/admin/contratos/[id]": [],
+  "/admin/parceiros/pedidos/[id]": [],
   "/dashboard/contratos/[id]": [],
   "/dashboard/imoveis/[id]/cartao": [],
   "/dashboard/imoveis/[id]/editar": [],
