@@ -7,7 +7,7 @@
 */
 import type { ConteudoDocumento } from "./fiscal/documento.ts";
 import { brl, dataBR } from "./fiscal/documento.ts";
-import { dataHoraAssinatura, hashConfereComResumo, hashResumo } from "./contrato-assinar.ts";
+import { compararHashComResumo, dataHoraAssinatura, hashResumo } from "./contrato-assinar.ts";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
 import { ROTULO_ESTADO_CONFERENCIA, estadoConferencia, textoPrazoConferencia } from "./conferencia.ts";
 import { ETIQUETA_BRASILIA } from "./datas-brasilia.ts";
@@ -169,8 +169,8 @@ export function conteudoPacoteProvas(d: DadosProvas): ConteudoDocumento {
       ...(ass.length
         ? ass.map(
             (a) =>
-              // Prompt 35B (ii): quem assinou o "Registrado em" antigo (dia em UTC ou ISO) continua "igual".
-              `${PAPEL[a.papel]} em ${dataHoraAssinatura(a.em)} — hash ${a.hash} (${hashConfereComResumo(d.resumo, a.hash, d.registradoEm) ? "igual ao resumo atual" : "diferente do resumo atual"}).`
+              // QA do Muse no 35B: cada assinatura mostra o próprio hash e um de três estados; "igual" só com o mesmo hash.
+              `${PAPEL[a.papel]} em ${dataHoraAssinatura(a.em)} — Hash do resumo assinado: ${a.hash} (${compararHashComResumo(d.resumo, a.hash, d.registradoEm).texto}).`
           )
         : ["Nenhuma assinatura ainda."]),
       "PAGAMENTOS",

@@ -9,7 +9,7 @@ import { PDFDocument } from "pdf-lib";
 import { gerarPdf } from "./fiscal/pdf.ts";
 import { textoDoPdf } from "./fiscal/pdf-texto.ts";
 import { conteudoPacoteProvas, eventosDoContrato, montarDadosProvas, totaisPagamentos, type DadosProvas, type LinhasProvas } from "./contrato-provas.ts";
-import { hashConfereComResumo, hashResumo, linhasParaHash, resumoContrato } from "./contrato-assinar.ts";
+import { compararHashComResumo, hashConfereComResumo, hashResumo, linhasParaHash, resumoContrato } from "./contrato-assinar.ts";
 import { seloParaEquipe } from "./contrato-estado.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
@@ -32,7 +32,7 @@ test("(ii) o resumo diz o dia de Brasília: 'Registrado em: 18/10/2026' (era o d
   assert.match(acoes, /linhasParaHash\(visao\.resumo, hashDaOutraParte, c\.created_at\)/);
 });
 
-test("(ii) compatibilidade de hash: quem assinou o texto antigo (dia em UTC, pt-BR ou ISO) continua 'igual'", () => {
+test("(ii) compatibilidade de hash: quem assinou o texto antigo (dia em UTC, pt-BR ou ISO) continua conferindo", () => {
   for (const antigo of [resumoAssinadoUtc, resumoAssinadoIso]) {
     const h = hashResumo(antigo);
     assert.notEqual(h, hashResumo(resumoAtual), "o texto mudou de fato");
@@ -49,8 +49,53 @@ test("(ii) compatibilidade de hash: quem assinou o texto antigo (dia em UTC, pt-
   const pacote = JSON.stringify(
     conteudoPacoteProvas({ contratoId: dadosResumo.contratoId, imovel: "Studio", situacao: "Em vigência", registradoEm: CRIADO, resumo: resumoAtual, assinaturas: [{ papel: "proprietario", em: "2026-10-19T02:00:00Z", hash: hashResumo(resumoAssinadoUtc) }], pagamentos: [], conferencias: [] }),
   );
-  assert.match(pacote, /igual ao resumo atual/);
+  // QA do Muse: hash diferente do cabeçalho nunca é "igual" — é o estado 2 (texto anterior do mesmo resumo).
+  assert.doesNotMatch(pacote, /\(igual ao resumo atual\)/);
+  assert.match(pacote, /confere com o resumo atual — mesmo conteúdo, data registrada no formato anterior \(UTC\)/);
   assert.doesNotMatch(pacote, /diferente do resumo atual/);
+});
+
+test("três estados do hash (QA do Muse): 11281a61 = 2, contrato novo = 1, resumo alterado = 3", () => {
+  // 11281a61: criado às 22:48 de 18/10 em Brasília, assinado com o dia em UTC ("19/10/2026" ou "2026-10-19").
+  for (const antigo of [resumoAssinadoUtc, resumoAssinadoIso]) {
+    const c = compararHashComResumo(resumoAtual, hashResumo(antigo), CRIADO);
+    assert.equal(c.estado, "variante");
+    assert.equal(c.texto, "confere com o resumo atual — mesmo conteúdo, data registrada no formato anterior (UTC)");
+  }
+  // Contrato novo: assinado com o texto atual.
+  assert.deepEqual(compararHashComResumo(resumoAtual, hashResumo(resumoAtual), CRIADO), { estado: "igual", texto: "igual ao resumo atual" });
+  // Resumo alterado depois da assinatura.
+  assert.deepEqual(compararHashComResumo(resumoAtual, hashResumo([...resumoAtual, "Valor mensal: R$ 9.999,00"]), CRIADO), {
+    estado: "diferente",
+    texto: "diferente do resumo atual",
+  });
+  // Antes da linha "Início da estadia": confere, mas não é "mesmo conteúdo".
+  const semInicio = compararHashComResumo(resumoAtual, hashResumo(resumoAtual.filter((l) => !l.startsWith("Início da estadia:"))), CRIADO);
+  assert.equal(semInicio.estado, "variante");
+  assert.doesNotMatch(semInicio.texto, /mesmo conteúdo/);
+  // Garantia: "igual" só quando o hash é exatamente o do cabeçalho.
+  for (const h of [hashResumo(resumoAssinadoUtc), hashResumo(resumoAssinadoIso), hashResumo(["outro"])]) {
+    assert.notEqual(compararHashComResumo(resumoAtual, h, CRIADO).estado, "igual");
+  }
+});
+
+test("pacote: cabeçalho com o hash atual e cada assinatura com o próprio hash e o estado", () => {
+  const atual = hashResumo(resumoAtual);
+  const assinado = hashResumo(resumoAssinadoUtc);
+  const pacote = JSON.stringify(
+    conteudoPacoteProvas({ contratoId: dadosResumo.contratoId, imovel: "Studio", situacao: "Em vigência", registradoEm: CRIADO, resumo: resumoAtual, assinaturas: [{ papel: "proprietario", em: "2026-10-19T02:00:00Z", hash: assinado }, { papel: "inquilino", em: "2026-10-21T02:00:00Z", hash: atual }], pagamentos: [], conferencias: [] }),
+  );
+  assert.ok(pacote.includes(`"Hash do resumo atual","${atual}"`));
+  assert.ok(pacote.includes(`Hash do resumo assinado: ${assinado} (confere com o resumo atual`));
+  assert.ok(pacote.includes(`Hash do resumo assinado: ${atual} (igual ao resumo atual)`));
+});
+
+test("tela do admin usa o mesmo comparador de três estados (nunca o booleano antigo)", () => {
+  const tela = ler("src/app/(dashboard)/admin/contratos/[id]/page.tsx");
+  assert.match(tela, /Hash do resumo assinado: \{a\.hash\}/);
+  assert.match(tela, /a\.comparacao\.texto/);
+  assert.doesNotMatch(tela, /hash igual ao resumo atual/);
+  assert.match(ler("src/lib/data/contrato-admin.ts"), /compararHashComResumo\(v\.resumo, a\.hash, base\.criadoEm\)/);
 });
 
 /* Pacote do contrato de teste com a conferência confirmada pelas duas partes, 40 itens e pagamentos (um anulado). */

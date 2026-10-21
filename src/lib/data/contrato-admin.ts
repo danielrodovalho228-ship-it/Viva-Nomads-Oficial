@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getContratoParaEquipe } from "@/lib/data/contrato-assinar-actions";
 import { COLUNAS_PROVAS, montarDadosProvas, nomeDoLaudo, totaisPagamentos, type DadosProvas, type PagamentoProva } from "@/lib/contrato-provas";
-import { hashConfereComResumo, hashResumo } from "@/lib/contrato-assinar";
+import { compararHashComResumo, hashResumo, type ComparacaoHash } from "@/lib/contrato-assinar";
 import { estadoConferencia, estadoConferenciaLista, type EstadoConferencia, type EstadoConferenciaLista, type ParteConferencia, type RespostaConferencia, type TipoConferencia } from "@/lib/conferencia";
 import { mesesDoContrato } from "@/lib/admin/indicadores";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
@@ -33,7 +33,7 @@ export interface ContratoAdminView {
   criadoEm: string;
   resumo: string[];
   hashAtual: string;
-  assinaturas: { papel: ParteConferencia; em: string; hash: string; igual: boolean }[];
+  assinaturas: { papel: ParteConferencia; em: string; hash: string; comparacao: ComparacaoHash }[];
   pagamentos: PagamentoProva[];
   totais: ReturnType<typeof totaisPagamentos>;
   taxa: string;
@@ -131,7 +131,7 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
     resumo: v.resumo,
     hashAtual,
     assinaturas: provas.assinaturas
-      .map((a) => ({ ...a, igual: hashConfereComResumo(v.resumo, a.hash, base.criadoEm) }))
+      .map((a) => ({ ...a, comparacao: compararHashComResumo(v.resumo, a.hash, base.criadoEm) }))
       .sort((a, b) => (a.em < b.em ? -1 : 1)),
     pagamentos: provas.pagamentos,
     totais: totaisPagamentos(provas.pagamentos),

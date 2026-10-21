@@ -143,32 +143,76 @@ export function linhasParaHash(linhas: string[], hashDaOutraParte: string | null
   return variantesDoResumo(linhas, criadoEm).find((v) => hashResumo(v) === hashDaOutraParte) ?? linhas;
 }
 
+/** Um texto do resumo que alguém pode ter assinado, com o que mudou em relação ao atual. */
+export interface VarianteResumo {
+  linhas: string[];
+  /** "atual" = data como hoje; "iso" = o mesmo dia em AAAA-MM-DD (até 19/10); "utc" = o dia em UTC (até o Prompt 35B). */
+  data: "atual" | "iso" | "utc";
+  /** Assinado antes de a linha "Início da estadia" (F37) entrar no resumo. */
+  semInicio: boolean;
+}
+
 /**
  * Os textos do resumo que alguém pode ter assinado: o atual; "Registrado em" em ISO (até 19/10); "Registrado em"
  * com o dia em UTC, em pt-BR e em ISO (até o Prompt 35B, que passou a usar o dia de Brasília); cada um com e
  * sem a linha "Início da estadia" (F37). A ordem importa: o atual primeiro.
  */
-export function variantesDoResumo(linhas: string[], criadoEm?: string | null): string[][] {
+export function variantesRotuladas(linhas: string[], criadoEm?: string | null): VarianteResumo[] {
   const registrado = (texto: string) => linhas.map((l) => (l.startsWith("Registrado em: ") ? `Registrado em: ${texto}` : l));
-  const bases: string[][] = [linhas, linhas.map((l) => l.replace(/^Registrado em: (\d{2})\/(\d{2})\/(\d{4})$/, "Registrado em: $3-$2-$1"))];
+  const bases: { linhas: string[]; data: VarianteResumo["data"] }[] = [
+    { linhas, data: "atual" },
+    { linhas: linhas.map((l) => l.replace(/^Registrado em: (\d{2})\/(\d{2})\/(\d{4})$/, "Registrado em: $3-$2-$1")), data: "iso" },
+  ];
   const utc = criadoEm ? diaUtcAssinado(criadoEm) : null;
-  if (utc) bases.push(registrado(dataDoResumo(utc) ?? utc), registrado(utc));
+  if (utc) bases.push({ linhas: registrado(dataDoResumo(utc) ?? utc), data: "utc" }, { linhas: registrado(utc), data: "utc" });
   const vistas = new Set<string>();
-  const out: string[][] = [];
+  const out: VarianteResumo[] = [];
   for (const b of bases) {
-    for (const v of [b, b.filter((l) => !l.startsWith("Início da estadia:"))]) {
+    for (const [v, semInicio] of [[b.linhas, false], [b.linhas.filter((l) => !l.startsWith("Início da estadia:")), true]] as const) {
       const chave = v.join("\n");
       if (vistas.has(chave)) continue;
       vistas.add(chave);
-      out.push(v);
+      // Se a linha não existia, "sem ela" é o próprio texto: não conta como diferença.
+      out.push({ linhas: v, data: b.data, semInicio: semInicio && v.length !== b.linhas.length });
     }
   }
   return out;
 }
 
+export function variantesDoResumo(linhas: string[], criadoEm?: string | null): string[][] {
+  return variantesRotuladas(linhas, criadoEm).map((v) => v.linhas);
+}
+
 /** O hash gravado na assinatura bate com o resumo atual (em qualquer variante já assinada)? */
 export function hashConfereComResumo(linhas: string[], hash: string, criadoEm?: string | null): boolean {
-  return variantesDoResumo(linhas, criadoEm).some((v) => hashResumo(v) === hash);
+  return compararHashComResumo(linhas, hash, criadoEm).estado !== "diferente";
+}
+
+export type EstadoHash = "igual" | "variante" | "diferente";
+export interface ComparacaoHash {
+  estado: EstadoHash;
+  /** Texto para o pacote de provas e para o admin. Nunca diz "igual" para dois hashes diferentes. */
+  texto: string;
+}
+
+export const TEXTO_HASH_IGUAL = "igual ao resumo atual";
+export const TEXTO_HASH_DIFERENTE = "diferente do resumo atual";
+
+function textoDaVariante(v: VarianteResumo): string {
+  const data = v.data === "utc" ? "data registrada no formato anterior (UTC)" : v.data === "iso" ? "data registrada no formato anterior" : "";
+  const inicio = v.semInicio ? "assinado antes de a linha “Início da estadia” entrar no resumo" : "";
+  if (data && !inicio) return `confere com o resumo atual — mesmo conteúdo, ${data}`;
+  return `confere com o resumo atual — ${[data, inicio].filter(Boolean).join(" e ")}`;
+}
+
+/**
+ * Três estados (Prompt 35B, QA do Muse): (1) o hash é o do resumo atual → "igual ao resumo atual"; (2) bate com um
+ * texto anterior do mesmo resumo → "confere com o resumo atual — …" dizendo o que mudou; (3) nenhum → "diferente".
+ */
+export function compararHashComResumo(linhas: string[], hash: string, criadoEm?: string | null): ComparacaoHash {
+  if (hashResumo(linhas) === hash) return { estado: "igual", texto: TEXTO_HASH_IGUAL };
+  const v = variantesRotuladas(linhas, criadoEm).find((x) => hashResumo(x.linhas) === hash);
+  return v ? { estado: "variante", texto: textoDaVariante(v) } : { estado: "diferente", texto: TEXTO_HASH_DIFERENTE };
 }
 
 export function motivoNaoPodeAssinar(c: {
