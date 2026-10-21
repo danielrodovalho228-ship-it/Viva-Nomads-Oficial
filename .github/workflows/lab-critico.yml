@@ -2,7 +2,10 @@ name: Lab crítico (fluxos críticos)
 
 # Ordem d86d0678: em CADA PR e a cada merge na main roda um conjunto curto de fluxos críticos (login, publicar
 # anúncio, candidatura→contrato→assinatura, abrir chamado, upload de foto) e publica o status check "lab-critico".
-# A lista fica em tests/laboratorio/fluxos-criticos.json. Mesmo ambiente do laboratório completo (Supabase local,
+# A lista fica em tests/laboratorio/fluxos-criticos.json.
+# Portão de PR (decisão do Muse, 21/10): em PR roda também os specs que o próprio PR cria ou altera, e qualquer teste
+# que falhe — inclusive o que só passa no retry — deixa o job vermelho. A suíte completa roda na main e no noturno
+# (laboratorio.yml), não em PR. Mesmo ambiente do laboratório completo (Supabase local,
 # integrações simuladas, nada de segredo de produção). Para EXIGIR este check antes de mesclar, só o Daniel liga:
 # GitHub > Settings > Branches > regra da main > "Require status checks to pass" > marcar "lab-critico".
 on:
@@ -32,6 +35,9 @@ jobs:
       TESTES_BASE_URL: http://localhost:3123
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Histórico até a base do PR, para listar os specs que o PR alterou.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -101,11 +107,18 @@ jobs:
       - name: Rodar os fluxos críticos
         id: e2e
         run: |
-          mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs)
-          npx playwright test "${SPECS[@]}" --reporter=list,json --workers=2 --retries=1 2>&1 | tee tests/laboratorio/saida/e2e.txt
+          if [ -n "$BASE_SHA" ]; then
+            mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs --alterados-desde "$BASE_SHA")
+          else
+            mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs)
+          fi
+          echo "Specs do portão: ${SPECS[*]}"
+          # O retry fica para o relatório mostrar as duas tentativas; passar só no retry também reprova.
+          npx playwright test "${SPECS[@]}" --reporter=list,json --workers=2 --retries=1 --fail-on-flaky-tests 2>&1 | tee tests/laboratorio/saida/e2e.txt
           exit "${PIPESTATUS[0]}"
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
 
       - name: Resultado (cole no corpo do PR)
         if: ${{ !cancelled() }}
