@@ -89,10 +89,13 @@ test.describe("T70 — busca split-screen no computador", () => {
     await cards.first().hover();
     await expect(page.locator(`[data-testid="pin-mapa"][data-id="${id}"]`)).toHaveAttribute("data-ativo", "1");
 
+    // Os pinos livres são medidos SEM realce: com o pino do card em destaque (na frente, camada +1000), a conta
+    // apontava um pino que voltava a ficar coberto assim que o mouse saía do card (lab do #953).
+    await page.mouse.move(5, 5);
+    await expect(page.locator('[data-testid="pin-mapa"][data-ativo="1"]')).toHaveCount(0);
     const livres = await pinsLivres(page);
     expect(livres.length).toBeGreaterThan(0);
     const idPin = livres[livres.length - 1];
-    await page.mouse.move(5, 5);
     await page.locator(`[data-testid="pin-mapa"][data-id="${idPin}"]`).hover();
     await expect(page.locator(`[data-testid="pin-mapa"][data-id="${idPin}"]`)).toHaveAttribute("data-ativo", "1");
     await expect(page.locator(`[data-testid="card-resultado"][data-id="${idPin}"]`)).toHaveAttribute("data-destaque", "1");

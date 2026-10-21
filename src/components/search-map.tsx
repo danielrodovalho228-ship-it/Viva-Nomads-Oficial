@@ -20,15 +20,16 @@ const esc = (s: string) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)
   );
 
+/*
+  Pino de preço do mapa (botão flutuante: shadow-flutuante). O realce troca SÓ cor, anel e camada, na hora:
+  sem escala nem transição (QA do #953 / t70). Com os pinos empilhados no mesmo ponto, o "scale-110" do
+  ativo e o "hover:scale-105" animado do vizinho mudavam a caixa sob o ponteiro: o pino de baixo crescia por
+  cima do alvo e nunca ficava estável.
+*/
 const PIN_BASE =
-  "cursor-pointer select-none whitespace-nowrap rounded-full px-2 py-1 text-xs font-semibold tabular-nums shadow-flutuante transition-transform";
+  "cursor-pointer select-none whitespace-nowrap rounded-full px-2 py-1 text-xs font-semibold tabular-nums shadow-flutuante transition-none";
 const pinClass = (active: boolean) =>
-  cn(
-    PIN_BASE,
-    active
-      ? "z-20 scale-110 bg-night text-white ring-2 ring-champagne"
-      : "z-10 bg-white text-ink ring-1 ring-line hover:scale-105"
-  );
+  cn(PIN_BASE, active ? "z-20 bg-night text-white ring-2 ring-forest" : "z-10 bg-white text-ink ring-1 ring-line hover:ring-ink");
 
 // Cor primária de marca (forest) para o traçado do raio.
 const RADIUS_COLOR = "#123b26";
