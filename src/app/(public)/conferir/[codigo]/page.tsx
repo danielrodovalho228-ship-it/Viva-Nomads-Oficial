@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { headers } from "next/headers";
 import crypto from "node:crypto";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, FlaskConical, XCircle } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { situacaoLimite, HORA } from "@/lib/limites";
-import { CODIGO_RE, ROTULO_TIPO, brl, dataBR, type TipoDocumento } from "@/lib/fiscal/documento";
+import { CODIGO_RE } from "@/lib/fiscal/documento";
+import { aceitaArquivo, camposExibidos, normalizarCodigo, situacaoDoDocumento, type LinhaConferida } from "@/lib/fiscal/conferir";
+import { emitidoEmBrasilia } from "@/lib/fiscal/prefixos";
+import { ConferirArquivo } from "./conferir-arquivo";
 
 export const metadata: Metadata = {
   title: "Conferir documento",
@@ -21,75 +25,64 @@ async function ipHashAtual(): Promise<string> {
   return crypto.createHmac("sha256", process.env.SUPABASE_SERVICE_ROLE_KEY ?? "viva-nomads").update(`ip:${ip}`).digest("hex").slice(0, 32);
 }
 
-interface Conferido {
-  numero: string;
-  tipo: string;
-  valor: number;
-  emitido_em: string;
-  periodo_inicio: string | null;
-  periodo_fim: string | null;
-  locador: string;
-  locatario: string;
-  /** Anulado (0083): o documento existiu, mas não vale mais. Documento fiscal nunca é apagado. */
-  anulado_em: string | null;
-  /** 0182: motivo da anulação e o contrato no formato da plataforma (VN-CT-…). Antes da 0182: ausentes. */
-  anulado_motivo?: string | null;
-  contrato?: string | null;
-}
-
-async function consultar(codigo: string): Promise<{ estado: "ok" | "nao" | "limite" | "indisponivel"; doc: Conferido | null }> {
+async function consultar(codigo: string): Promise<{ estado: "ok" | "nao" | "limite" | "indisponivel"; doc: LinhaConferida | null }> {
   const admin = createAdminClient();
   if (!admin) return { estado: "indisponivel", doc: null };
   if ((await situacaoLimite(`conferir:${await ipHashAtual()}`, LIMITE_HORA, HORA)) === "estourou") return { estado: "limite", doc: null };
   if (!CODIGO_RE.test(codigo)) return { estado: "nao", doc: null };
   const { data } = await admin.rpc("conferir_documento", { p_codigo: codigo });
-  const linha = (Array.isArray(data) ? data[0] : data) as Conferido | null | undefined;
+  const linha = (Array.isArray(data) ? data[0] : data) as LinhaConferida | null | undefined;
   return linha ? { estado: "ok", doc: linha } : { estado: "nao", doc: null };
 }
 
 /**
- * Conferência PÚBLICA de um documento gerado pela plataforma: mostra só número,
- * tipo, data, valor, período e as INICIAIS das partes. Sem CPF, e-mail,
- * telefone ou endereço (a função do banco nem devolve esses campos).
+ * Conferência PÚBLICA de um documento da plataforma (Prompt 56, D3), só pelo código de verificação impresso nele:
+ * status (válido, anulado com motivo, substituído pela versão N), tipo, número, versão e data. Nenhum valor, nome,
+ * CPF, e-mail ou endereço (a função do banco nem devolve). O PDF, quando existe, é conferido no navegador.
  */
 export default async function ConferirPage({ params }: { params: Promise<{ codigo: string }> }) {
-  const { codigo } = await params;
+  const { codigo: bruto } = await params;
+  const codigo = normalizarCodigo(decodeURIComponent(bruto));
   const { estado, doc } = await consultar(codigo);
+  const situacao = doc ? situacaoDoDocumento(doc) : null;
 
   return (
     <main className="container-page section-y">
       <div className="mx-auto max-w-lg rounded-2xl border border-line bg-white p-6">
         <h1 className="font-title text-2xl font-bold text-ink">Conferir documento</h1>
-        {estado === "ok" && doc ? (
+        {estado === "ok" && doc && situacao ? (
           <>
-            {doc.anulado_em ? (
+            {situacao.estado === "valido" ? (
+              <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-forest" data-testid="conferir-ok">
+                <CheckCircle2 className="h-5 w-5" /> {situacao.texto}
+              </p>
+            ) : situacao.estado === "teste" ? (
+              <p className="mt-3 inline-flex items-start gap-2 text-sm font-semibold text-ink" data-testid="conferir-teste">
+                <FlaskConical className="mt-0.5 h-5 w-5 shrink-0" /> {situacao.texto}
+              </p>
+            ) : situacao.estado === "anulado" ? (
               <p className="mt-3 inline-flex items-start gap-2 text-sm font-semibold text-red-700" data-testid="conferir-anulado">
-                <XCircle className="mt-0.5 h-5 w-5 shrink-0" /> Documento ANULADO em {dataBR(doc.anulado_em)}
-                {doc.anulado_motivo ? ` (${doc.anulado_motivo})` : ""}. Foi gerado pela plataforma, mas não vale mais.
+                <XCircle className="mt-0.5 h-5 w-5 shrink-0" /> {situacao.texto}
               </p>
             ) : (
-              <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-forest" data-testid="conferir-ok">
-                <CheckCircle2 className="h-5 w-5" /> Documento autêntico, gerado pela plataforma Viva Nomads.
+              <p className="mt-3 inline-flex items-start gap-2 text-sm font-semibold text-red-700" data-testid="conferir-substituido">
+                <XCircle className="mt-0.5 h-5 w-5 shrink-0" /> {situacao.texto}
               </p>
             )}
             <dl className="mt-4 space-y-2 text-sm">
-              {[
-                ["Documento", ROTULO_TIPO[doc.tipo as TipoDocumento] ?? doc.tipo],
-                ["Número", doc.numero],
-                ...(doc.contrato ? [["Contrato", doc.contrato]] : []),
-                ["Emitido em", dataBR(doc.emitido_em)],
-                ["Valor", brl(Number(doc.valor))],
-                ...(doc.periodo_inicio ? [["Período", `${dataBR(doc.periodo_inicio)} a ${dataBR(doc.periodo_fim)}`]] : []),
-                ["Locador", doc.locador],
-                ["Locatário", doc.locatario],
-              ].map(([k, v]) => (
+              {camposExibidos(doc, emitidoEmBrasilia).map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-3 border-b border-line pb-2">
                   <dt className="text-muted">{k}</dt>
-                  <dd className="text-right font-medium text-ink">{v}</dd>
+                  <dd className="text-right font-medium text-ink" data-testid={`conferir-${k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "-")}`}>
+                    {v}
+                  </dd>
                 </div>
               ))}
             </dl>
-            <p className="mt-4 text-xs text-muted">Por privacidade, mostramos só as iniciais das partes. Não é nota fiscal: a Viva Nomads não recebe o valor mensal nem a caução.</p>
+            {doc.hash_sha256 && aceitaArquivo(doc.prefixo) && <ConferirArquivo hash={doc.hash_sha256} />}
+            <p className="mt-4 text-xs text-muted">
+              Por privacidade, a conferência mostra só o tipo, o número, a versão e a data. A Viva Nomads não recebe o valor mensal nem a Caução.
+            </p>
           </>
         ) : (
           <p className="mt-3 inline-flex items-start gap-2 text-sm text-ink" data-testid="conferir-nao">
@@ -98,9 +91,14 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
               ? "Muitas conferências em pouco tempo. Tente de novo mais tarde."
               : estado === "indisponivel"
                 ? "Conferência indisponível agora."
-                : "Nenhum documento com este código. Confira se o link está completo."}
+                : "Nenhum documento com este código. Confira se o código está completo: são 32 letras e números."}
           </p>
         )}
+        <p className="mt-5 text-sm">
+          <Link href="/conferir" className="font-semibold text-forest underline">
+            Conferir outro documento
+          </Link>
+        </p>
       </div>
     </main>
   );

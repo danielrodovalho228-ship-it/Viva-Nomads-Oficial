@@ -18,6 +18,9 @@ import { emailCodigoAssinatura } from "@/lib/notifications/montar-email";
 import { SITE_URL } from "@/lib/site";
 import { hashResumo } from "@/lib/contrato-assinar";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
+import { registrarDocumento } from "@/lib/fiscal/registro";
+import { linhaConferir, numeroAditivo } from "@/lib/fiscal/prefixos";
+import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
@@ -47,7 +50,7 @@ import {
   type MudancasAditivo,
   type PropostaAditivo,
 } from "@/lib/estadia/aditivo";
-import { consequenciasDoEncerramento, validarPedidoEncerramento } from "@/lib/estadia/encerramento";
+import { consequenciasDoEncerramento, rotuloMotivo, validarPedidoEncerramento } from "@/lib/estadia/encerramento";
 import {
   assinadoPelasDuas,
   blocosOrdenados,
@@ -178,13 +181,24 @@ export async function listaParaPortaria(contratoId: string): Promise<Res<string>
   if ("erro" in ctx) return { ok: false, erro: ctx.erro };
   const { data } = await ctx.admin.from("contrato_ocupantes").select("nome, documento").eq("contrato_id", ctx.c.id).order("criado_em");
   const p = periodoDoContrato(ctx.c);
-  return {
-    ok: true,
-    valor: textoListaPortaria(
-      { numero: numeroPublicoContrato(ctx.c.id), imovel: ctx.c.properties?.title ?? "Imóvel", inicio: p.inicio, fim: p.fim },
-      (data ?? []) as { nome: string; documento: string }[],
-    ),
-  };
+  const texto = textoListaPortaria(
+    { numero: numeroPublicoContrato(ctx.c.id), imovel: ctx.c.properties?.title ?? "Imóvel", inicio: p.inicio, fim: p.fim },
+    (data ?? []) as { nome: string; documento: string }[],
+  );
+  // Prompt 56: cada geração da lista é um PRT no registro único, com o número e o código no fim do texto.
+  try {
+    const reg = await registrarDocumento(ctx.admin, {
+      prefixo: "PRT",
+      tipo: "lista_portaria",
+      ref: { tabela: "contratos", id: ctx.c.id },
+      partes: [ctx.c.properties?.owner_id, ctx.c.tenant_id],
+      emitidoPor: ctx.userId,
+      conteudo: ({ numero, codigo }) => `${texto}\n\nLista ${numero} · ${linhaConferir(SITE_URL, codigo)}`,
+    });
+    return { ok: true, valor: reg.bytes as string };
+  } catch {
+    return { ok: false, erro: "Não foi possível gerar a lista agora. Tente de novo." };
+  }
 }
 
 // ── Notas privadas (só o autor lê) ───────────────────────────────────────────────────────────────────────────────
@@ -390,6 +404,17 @@ export async function assinarAditivo(aditivoId: string, codigo: string, aceite: 
   if (completo) {
     const aplicado = await aplicarAditivo(ctx, a);
     if (!aplicado.ok) return aplicado;
+    // Prompt 56: com as duas assinaturas, o aditivo entra no registro único como VN-CT-…-ADn, com o MESMO hash que as
+    // duas partes assinaram (o conteúdo é o documento do aditivo). A falha fica no log; o aditivo já valeu.
+    await registrarDocumento(ctx.admin, {
+      prefixo: "VN-CT",
+      tipo: "aditivo",
+      ref: { tabela: "contrato_aditivos", id: a.id },
+      partes: [ctx.c.properties?.owner_id, ctx.c.tenant_id],
+      emitidoPor: ctx.userId,
+      numero: numeroAditivo(numeroPublicoContrato(a.contrato_id), a.numero),
+      conteudo: () => documentoDoAditivo(a).join("\n"),
+    }).catch((e: unknown) => console.error("[aditivo] registro:", e instanceof Error ? e.message : e));
   } else {
     avisar(ctx.admin, outraParte(ctx), "estadia_aditivo_respondido", a.contrato_id);
   }
@@ -471,6 +496,40 @@ export async function pedirEncerramento(contratoId: string, motivo: string, text
 }
 
 /** Admin: conduzir ou concluir o pedido. Concluir encerra o contrato (acerto de saída) e emite "contrato_encerrado". */
+/**
+ * Prompt 56: o encerramento concluído vira o ENC no registro único (hash do pedido e da conclusão), e a conferência de
+ * saída aberta fecha junto, registrando quem não respondeu (sem janela automática nova na saída).
+ */
+async function registrarEncerramento(
+  admin: SupabaseClient,
+  pedido: { id: string; contrato_id: string; papel: string; motivo: string; texto: string | null; criado_em: string },
+  adminId: string,
+): Promise<void> {
+  try {
+    const { data: c } = await admin.from("contratos").select("tenant_id, properties(owner_id)").eq("id", pedido.contrato_id).maybeSingle();
+    const ownerId = (c?.properties as unknown as { owner_id: string } | null)?.owner_id;
+    const concluidoEm = new Date().toISOString();
+    await registrarDocumento(admin, {
+      prefixo: "ENC",
+      tipo: "encerramento",
+      ref: { tabela: "contrato_encerramento_pedidos", id: pedido.id },
+      partes: [ownerId, c?.tenant_id as string | undefined],
+      emitidoPor: adminId,
+      conteudo: ({ numero }) =>
+        [
+          `Encerramento ${numero} · contrato ${numeroPublicoContrato(pedido.contrato_id)}`,
+          `Pedido por: ${pedido.papel === "proprietario" ? "proprietário" : "morador"} em ${pedido.criado_em}`,
+          `Motivo: ${rotuloMotivo(pedido.motivo)}${pedido.texto ? ` · ${pedido.texto}` : ""}`,
+          `Concluído pela equipe em ${concluidoEm}; contrato em acerto de saída.`,
+        ].join("\n"),
+    });
+    const { data: saida } = await admin.from("conferencias").select("id").eq("contrato_id", pedido.contrato_id).eq("tipo", "saida").is("fechada_em", null).maybeSingle();
+    if (saida) await fecharConferencia(admin, saida.id as string, "encerramento_concluido");
+  } catch (e) {
+    console.error("[encerramento] registro:", e instanceof Error ? e.message : e);
+  }
+}
+
 export async function atualizarPedidoEncerramento(pedidoId: string, status: "em_conducao" | "concluido"): Promise<Res> {
   if (!UUID_RE.test(String(pedidoId))) return { ok: false, erro: "Pedido inválido." };
   const supabase = await createClient();
@@ -480,13 +539,14 @@ export async function atualizarPedidoEncerramento(pedidoId: string, status: "em_
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, erro: "Só a equipe." };
-  const { data: p } = await admin.from("contrato_encerramento_pedidos").select("id, contrato_id, status").eq("id", pedidoId).maybeSingle();
-  const pedido = p as { id: string; contrato_id: string; status: string } | null;
+  const { data: p } = await admin.from("contrato_encerramento_pedidos").select("id, contrato_id, status, papel, motivo, texto, criado_em").eq("id", pedidoId).maybeSingle();
+  const pedido = p as { id: string; contrato_id: string; status: string; papel: string; motivo: string; texto: string | null; criado_em: string } | null;
   if (!pedido || pedido.status === "concluido") return { ok: false, erro: "Pedido não encontrado ou já concluído." };
   await admin.from("contrato_encerramento_pedidos").update({ status, atualizado_em: new Date().toISOString() }).eq("id", pedido.id).neq("status", "concluido");
   if (status === "concluido") {
     await admin.from("contratos").update({ status: "encerrado_em_acerto", encerrado_em: new Date().toISOString() }).eq("id", pedido.contrato_id).eq("status", "ativo");
     await evento(admin, pedido.contrato_id, user.id, "contrato_encerrado", { pedido: pedido.id });
+    await registrarEncerramento(admin, pedido, user.id);
   }
   await logModeracao(supabase, user.id, status === "concluido" ? "concluir_encerramento" : "conduzir_encerramento", "contrato", pedido.contrato_id);
   revalidatePath("/admin/contratos/encerramentos");

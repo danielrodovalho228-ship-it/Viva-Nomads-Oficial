@@ -24,7 +24,7 @@ export default async function PedidoParceiroPage({ params }: { params: Promise<{
   const titulo = d.papel === "cliente" ? `${rotuloCategoria(d.categoria)} com ${d.parceiro.nome}` : `${rotuloCategoria(d.categoria)} para ${d.cliente.nome}`;
   return (
     <>
-      <PageTitle title={titulo} subtitle={`Pedido ${d.codigo}`} />
+      <PageTitle title={titulo} subtitle={`Pedido ${d.orcamentoRotulo ?? d.codigo}`} />
       <PedidoParceiroTela d={d} pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
     </>
   );

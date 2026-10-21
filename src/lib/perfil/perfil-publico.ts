@@ -148,6 +148,16 @@ export function nomeNaConversa(p: {
   return p.primeiroNome || "Conversa";
 }
 
+/**
+ * Nomes das partes NA PROPOSTA (Prompt 56, D4): nome completo, nunca o curto ("Daniel Teste 1" virava "Daniel 1.") e
+ * sem CPF/CNPJ. O interessado continua "Candidato(a)" para o proprietário até o aceite da candidatura (prompt 6).
+ */
+export function nomeNaProposta(p: { quemVe: "owner" | "tenant"; nomeCompleto: string | null; aceito: boolean }): string {
+  const nome = (p.nomeCompleto ?? "").replace(/\s+/g, " ").trim() || null;
+  if (p.quemVe === "owner") return p.aceito && nome ? nome : "Candidato(a)";
+  return nome ?? "Proprietário";
+}
+
 export interface ItemProgresso {
   chave: "foto" | "bio" | "idiomas" | "cidade" | "profissao" | "motivo" | "telefone";
   rotulo: string;

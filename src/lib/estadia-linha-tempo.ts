@@ -3,11 +3,11 @@
   Mostra ao inquilino (e ao proprietário) Entrada, Conferência de entrada e Saída, cada uma com dia e
   horário. O horário vem do cadastro do imóvel; sem ele, diz "a combinar" em vez de inventar.
 */
-import { prazoConferenciaEntrada, textoPrazoConferencia } from "./conferencia.ts";
+import { prazoConferenciaEntrada, prazoConferenciaSaida, textoPrazoConferencia } from "./conferencia.ts";
 import { diaBRT } from "./datas-brasilia.ts";
 
 export interface EtapaEstadia {
-  chave: "entrada" | "conferencia" | "saida";
+  chave: "entrada" | "conferencia" | "saida" | "conferencia_saida";
   titulo: string;
   /** yyyy-mm-dd */
   dia: string;
@@ -41,6 +41,7 @@ export function montarLinhaDoTempo(p: {
   if (!p.inicio || !p.fim || !DIA_RE.test(p.inicio) || !DIA_RE.test(p.fim)) return [];
   // F2 (Prompt 35B): o prazo vem da fonte única — dia de início + horário de entrada, em Brasília, + 48 h.
   const prazo = prazoConferenciaEntrada({ inicio: p.inicio, checkinAfter: p.checkinAfter });
+  const prazoSaida = prazoConferenciaSaida({ fim: p.fim, checkoutBefore: p.checkoutBefore });
   return [
     { chave: "entrada", titulo: "Entrada", dia: p.inicio, horario: horario(p.checkinAfter, "a partir das") },
     {
@@ -51,5 +52,13 @@ export function montarLinhaDoTempo(p: {
       prazo: prazo?.toISOString(),
     },
     { chave: "saida", titulo: "Saída", dia: p.fim, horario: horario(p.checkoutBefore, "até as") },
+    // Prompt 56: a conferência de saída também tem prazo (48 h depois da saída), da fonte única prazoConferenciaSaida.
+    {
+      chave: "conferencia_saida",
+      titulo: "Conferência de saída",
+      dia: diaBRT(prazoSaida) ?? p.fim,
+      horario: textoPrazoConferencia(prazoSaida),
+      prazo: prazoSaida?.toISOString(),
+    },
   ];
 }

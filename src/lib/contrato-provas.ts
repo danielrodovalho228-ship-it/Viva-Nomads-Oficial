@@ -5,7 +5,7 @@
   sem as fotos, respostas com o motivo, laudos só pelo nome) e a linha do tempo, em ordem de data. Não leva IP,
   contato nem documento. A plataforma não recebe dinheiro: o pacote só registra o que as partes declararam.
 */
-import type { ConteudoDocumento } from "./fiscal/documento.ts";
+import type { CabecalhoDocumento, ConteudoDocumento } from "./fiscal/documento.ts";
 import { brl, dataBR } from "./fiscal/documento.ts";
 import { compararHashComResumo, dataHoraAssinatura, hashResumo } from "./contrato-assinar.ts";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
@@ -50,6 +50,8 @@ export interface DadosProvas {
   conferencias: ConferenciaProva[];
   /** Instante do prazo da conferência de entrada (prazoConferenciaEntrada). */
   prazoEntradaEm?: string | null;
+  /** Instante do prazo da conferência de saída (prazoConferenciaSaida, Prompt 56). */
+  prazoSaidaEm?: string | null;
   /** Pacote gerado pela equipe (admin › contrato): a linha "Gerado pela equipe Viva Nomads em …". */
   geradoPelaEquipeEm?: string | null;
   /** Aditivos (Prompt 32): o que mudou, a situação e as assinaturas com o hash do texto do aditivo. */
@@ -154,7 +156,7 @@ export function eventosDoContrato(d: DadosProvas): EventoProva[] {
 }
 
 /** As linhas da seção CONFERÊNCIAS: estado, prazo, itens por parte (sem foto), respostas com motivo e laudos. */
-export function linhasConferencias(d: Pick<DadosProvas, "conferencias" | "prazoEntradaEm">): string[] {
+export function linhasConferencias(d: Pick<DadosProvas, "conferencias" | "prazoEntradaEm" | "prazoSaidaEm">): string[] {
   if (!d.conferencias.length) return ["Nenhuma conferência aberta."];
   const out: string[] = [];
   const ordem = [...d.conferencias].sort((a, b) => (a.tipo === b.tipo ? 0 : a.tipo === "entrada" ? -1 : 1));
@@ -162,6 +164,7 @@ export function linhasConferencias(d: Pick<DadosProvas, "conferencias" | "prazoE
     const nome = nomeConferencia(c.tipo);
     out.push(`${maiuscula(nome)}: ${ROTULO_ESTADO_CONFERENCIA[estadoConferencia(c.respostas.map((r) => ({ parte: r.parte, decisao: r.decisao, motivo: r.motivo ?? null })))]}.`);
     if (c.tipo === "entrada" && d.prazoEntradaEm) out.push(`Prazo para registrar e responder: ${textoPrazoConferencia(d.prazoEntradaEm)}.`);
+    if (c.tipo === "saida" && d.prazoSaidaEm) out.push(`Prazo para registrar e responder: ${textoPrazoConferencia(d.prazoSaidaEm)}.`);
     const itens = c.itens ?? [];
     for (const parte of ["proprietario", "inquilino"] as const) {
       const meus = itens.filter((i) => i.parte === parte);
@@ -186,15 +189,26 @@ export function nomeArquivoProvas(contratoId: string): string {
   return `provas-contrato-${contratoId.slice(0, 8)}.pdf`;
 }
 
-export function conteudoPacoteProvas(d: DadosProvas): ConteudoDocumento {
+/**
+ * Registro do pacote (Prompt 56): cada geração é um PRV novo, com cabeçalho e rodapé comuns. `contrato` é o número do
+ * contrato com o Registro nº ("VN-CT-11281A61 · Registro nº 000001"); sem ele, fica o id (como antes).
+ */
+export interface RegistroPacote {
+  cabecalho: Omit<CabecalhoDocumento, "marca" | "emissor">;
+  contrato?: string;
+}
+
+export function conteudoPacoteProvas(d: DadosProvas, registro?: RegistroPacote): ConteudoDocumento {
   const hashAtual = hashResumo(d.resumo);
   const ass = [...d.assinaturas].sort((a, b) => (a.em < b.em ? -1 : 1));
   const t = totaisPagamentos(d.pagamentos);
   return {
+    // Documento da plataforma (D1-a): só a marca Viva.
+    ...(registro ? { cabecalho: { marca: "plataforma" as const, ...registro.cabecalho } } : {}),
     titulo: "Pacote de provas do contrato",
     subtitulo: MARCA_MINUTA,
     quadro: [
-      ["Contrato", d.contratoId],
+      ["Contrato", registro?.contrato ?? d.contratoId],
       ["Imóvel", d.imovel],
       ["Situação", d.situacao],
       ["Hash do resumo atual", hashAtual],
@@ -242,6 +256,7 @@ export interface LinhasProvas {
   registradoEm: string;
   resumo: string[];
   prazoEntradaEm: string | null;
+  prazoSaidaEm?: string | null;
   assinaturas: { papel: unknown; assinado_em: unknown; hash_documento: unknown }[];
   pagamentos: {
     tipo: unknown;
@@ -290,6 +305,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
     registradoEm: l.registradoEm,
     resumo: l.resumo,
     prazoEntradaEm: l.prazoEntradaEm,
+    prazoSaidaEm: l.prazoSaidaEm ?? null,
     assinaturas: l.assinaturas.map((a) => ({ papel: parteDe(a.papel), em: String(a.assinado_em), hash: String(a.hash_documento) })),
     pagamentos: l.pagamentos.map((p) => ({
       tipo: p.tipo === "caucao" ? "caucao" : "aluguel",

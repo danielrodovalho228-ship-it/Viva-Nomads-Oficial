@@ -40,6 +40,7 @@ export async function carregarProvas(contratoId: string): Promise<DadosProvas | 
     registradoEm: String((contrato as { created_at?: string } | null)?.created_at ?? new Date(0).toISOString()),
     resumo: visao.resumo,
     prazoEntradaEm: visao.prazoConferenciaEm,
+    prazoSaidaEm: visao.prazoConferenciaSaidaEm,
     assinaturas: ass ?? [],
     pagamentos: pags ?? [],
     conferencias: confs ?? [],

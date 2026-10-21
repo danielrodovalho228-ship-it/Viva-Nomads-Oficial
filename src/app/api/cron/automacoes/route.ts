@@ -26,6 +26,8 @@ import { COLUNAS_ESTADO_CONTRATO, primeiroPagamentoConfirmado, type LinhaEstadoC
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarDono, liberaHoje, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
 import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos } from "@/lib/estadia/ocupantes";
+import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
+import { conferenciasParaFechar, type ConferenciaAberta } from "@/lib/fiscal/fechamento";
 
 /**
  * Automações por data (ordem d250ea2f, item 5): rascunho de imóvel parado (1 e 3 dias), lembrete de saída (3 dias),
@@ -244,7 +246,10 @@ export async function GET(request: Request) {
   // Página da estadia (Prompt 32): ocupantes apagados RETENCAO_OCUPANTES_DIAS depois do fim do contrato; aditivos sem
   // resposta em 7 dias vencem (nada muda no contrato). Na simulação, só conta.
   const estadia = await manutencaoDaEstadia(admin, agora, simular).catch(() => ({ ocupantesApagados: 0, aditivosVencidos: 0 }));
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia });
+  // Documentos (Prompt 56, D5): a conferência de entrada e a de saída fecham quando a janela de 48 h do tipo encerra
+  // (hash de fechamento + CND, registrando quem não respondeu). Na simulação, só conta.
+  const conferenciasFechadas = await fecharConferenciasVencidas(admin, agora, simular).catch(() => 0);
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas });
 }
 
 /** Retenção dos ocupantes (90 dias depois do fim) e aditivos vencidos. `simular`: só conta, não apaga nem muda nada. */
@@ -267,4 +272,36 @@ async function manutencaoDaEstadia(admin: NonNullable<ReturnType<typeof createAd
     if (data?.length) await admin.from("contrato_eventos").insert({ contrato_id: a.contrato_id, tipo: "aditivo_expirado", dados: { aditivo: a.id } });
   }
   return { ocupantesApagados: vencidos.size, aditivosVencidos: abertos?.length ?? 0 };
+}
+
+/** Conferências abertas (entrada e saída) com a janela de 48 h encerrada → fecha. `simular`: só conta. */
+async function fecharConferenciasVencidas(admin: NonNullable<ReturnType<typeof createAdminClient>>, agora: Date, simular: boolean): Promise<number> {
+  const { data } = await admin
+    .from("conferencias")
+    .select("id, tipo, contratos(properties(checkin_after, checkout_before), contrato_blocos(inicio, fim, status))")
+    .is("fechada_em", null)
+    .limit(500);
+  type Linha = {
+    id: string;
+    tipo: "entrada" | "saida";
+    contratos: { properties: { checkin_after: string | null; checkout_before: string | null } | null; contrato_blocos: { inicio: string; fim: string; status: string | null }[] | null } | null;
+  };
+  const abertas: ConferenciaAberta[] = ((data ?? []) as unknown as Linha[]).map((c) => {
+    const blocos = (c.contratos?.contrato_blocos ?? []).filter((b) => b.status !== "nao_aceito");
+    return {
+      id: c.id,
+      tipo: c.tipo,
+      datas: {
+        inicio: blocos.map((b) => b.inicio).sort()[0] ?? null,
+        checkinAfter: c.contratos?.properties?.checkin_after ?? null,
+        fim: blocos.map((b) => b.fim).sort().at(-1) ?? null,
+        checkoutBefore: c.contratos?.properties?.checkout_before ?? null,
+      },
+    };
+  });
+  const vencidas = conferenciasParaFechar(abertas, agora);
+  if (simular) return vencidas.length;
+  let n = 0;
+  for (const c of vencidas) if ((await fecharConferencia(admin, c.id, "janela_encerrada")).fechou) n += 1;
+  return n;
 }

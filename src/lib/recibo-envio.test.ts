@@ -82,10 +82,12 @@ test("3. telefone e e-mail das pessoas continuam bloqueados", () => {
 test("3. a checagem roda ANTES de reservar o número (falha não queima número)", () => {
   const e = ler("./fiscal/emitir.ts");
   const checa = e.indexOf("if (temContato(textoDocumento(conteudoDocumento(dados))))");
-  const reserva = e.indexOf('admin.rpc("proximo_numero_documento"');
-  assert.ok(checa > 0 && reserva > 0 && checa < reserva, "temContato antes de proximo_numero_documento");
+  // Prompt 56: o número é reservado dentro de registrarDocumento (registro único), chamado depois da checagem.
+  const reserva = e.indexOf("registrarDocumento(admin, {");
+  assert.ok(checa > 0 && reserva > 0 && checa < reserva, "temContato antes de registrarDocumento");
   assert.match(e, /numero: NUMERO_PROVISORIO,/);
-  assert.equal((e.match(/proximo_numero_documento/g) ?? []).length, 1);
+  assert.equal((e.match(/proximo_numero_documento/g) ?? []).length, 0);
+  assert.equal((ler("./fiscal/registro.ts").match(/rpc\("proximo_numero_documento"/g) ?? []).length, 1);
 });
 
 test("1. resultado por destinatário: só conta o envio confirmado (resposta real com id do Resend)", () => {

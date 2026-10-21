@@ -11,7 +11,7 @@ import { escaparHtml } from "@/lib/escapar-html";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
-import { nomeNaConversa } from "@/lib/perfil/perfil-publico";
+import { nomeNaProposta } from "@/lib/perfil/perfil-publico";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { temDocumento } from "@/lib/data/documento-servidor";
 import { MSG_DOCUMENTO } from "@/lib/documento-pessoa";
@@ -63,6 +63,9 @@ import {
   type LinhaVersao,
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
+import { registrarDocumento } from "@/lib/fiscal/registro";
+import { linhaConferir, numeroExibido } from "@/lib/fiscal/prefixos";
+import { SITE_URL } from "@/lib/site";
 
 /*
   Propostas (prompt 17): proposta → contraproposta → aceite/recusa → fechamento. Tudo pelo SERVIDOR: a tela manda
@@ -146,6 +149,29 @@ async function nomeDe(admin: Admin, userId: string): Promise<string | null> {
   return n && !n.includes("@") ? n : null;
 }
 
+/**
+ * Registro da proposta (Prompt 56): cada versão enviada é o ORC no registro único — o mesmo número com a versão
+ * ("ORC-2026-0002 v2"), o hash do conteúdo daquela versão e o código de conferência. Sem PDF por enquanto. A falha
+ * fica no log e não desfaz o envio (a proposta já está gravada e avisada).
+ */
+async function registrarVersaoDaProposta(admin: Admin, p: Pick<LinhaProposta, "id" | "numero" | "owner_id" | "tenant_id">, versao: number, linha: object, autorId: string): Promise<void> {
+  try {
+    await registrarDocumento(admin, {
+      prefixo: "ORC",
+      tipo: "proposta",
+      ref: { tabela: "propostas", id: p.id },
+      partes: [p.owner_id, p.tenant_id],
+      emitidoPor: autorId,
+      numero: p.numero,
+      novaVersao: true,
+      versao,
+      conteudo: ({ numero, versao: v, codigo }) => JSON.stringify({ numero, versao: v, codigo, proposta: linha }),
+    });
+  } catch (e) {
+    console.error(`[propostas] registro de ${p.numero} v${versao}:`, e instanceof Error ? e.message : e);
+  }
+}
+
 /** Cartão da proposta na conversa + aviso no site/app/e-mail à outra parte. Best-effort: nunca quebra o fluxo. */
 async function avisarOutraParte(
   admin: Admin,
@@ -227,7 +253,7 @@ export async function interessadosParaProposta(): Promise<InteressadoParaPropost
     const aceito = l.status === "accepted";
     out.push({
       leadId: l.id,
-      nome: nomeNaConversa({ papel: "proprietario", nomeCompleto: aceito ? await nomeDe(s.admin, l.tenant_id) : null, aceito }),
+      nome: nomeNaProposta({ quemVe: "owner", nomeCompleto: aceito ? await nomeDe(s.admin, l.tenant_id) : null, aceito }),
       imovel: { id: l.property_id, titulo: l.property?.title ?? "Imóvel" },
       aceito,
       temPropostaAberta: comAberta.has(l.id),
@@ -263,7 +289,7 @@ export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem |
   const aceito = lead.status === "accepted";
   return {
     leadId,
-    interessado: nomeNaConversa({ papel: "proprietario", nomeCompleto: aceito ? await nomeDe(s.admin, lead.tenant_id as string) : null, aceito }),
+    interessado: nomeNaProposta({ quemVe: "owner", nomeCompleto: aceito ? await nomeDe(s.admin, lead.tenant_id as string) : null, aceito }),
     imovel: { id: im.id, titulo: im.title },
     termos: termosDoAnuncio(im, Math.min(lim.mesesMax, Math.max(lim.mesesMin, 4)), entrada, neg),
     limites: lim,
@@ -352,11 +378,13 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
     return { ok: false, error: "Não foi possível enviar a proposta." };
   }
   const mensagem = e.mensagem ? guardContactInfo(String(e.mensagem).slice(0, MENSAGEM_MAX)).text : null;
-  const { error: eV } = await s.admin.from("proposta_versoes").insert(linhaDaVersao(p.id as string, 1, "owner", termos, pessoas, mensagem));
+  const linhaV1 = linhaDaVersao(p.id as string, 1, "owner", termos, pessoas, mensagem);
+  const { error: eV } = await s.admin.from("proposta_versoes").insert(linhaV1);
   if (eV) {
     await s.admin.from("propostas").delete().eq("id", p.id);
     return { ok: false, error: "Não foi possível enviar a proposta." };
   }
+  await registrarVersaoDaProposta(s.admin, p as LinhaProposta, 1, linhaV1, s.user.id);
   const tot = calcularTotais(termos);
   await avisarOutraParte(
     s.admin,
@@ -392,6 +420,10 @@ export interface PropostaView {
   leadId: string;
   imovel: { id: string; titulo: string };
   outraParte: string;
+  /** As duas partes pelo nome completo, sem CPF/CNPJ (Prompt 56, D4). */
+  partes: { proprietario: string; interessado: string };
+  /** Registro da versão vigente (Prompt 56): número com a versão e a linha do /conferir. */
+  registro: { numero: string; conferir: string } | null;
   versaoAtual: number;
   validaAte: string;
   vistoEm: string | null;
@@ -426,13 +458,35 @@ export interface PropostaResumo {
   aguardandoVoce: boolean;
 }
 
+/** O outro lado da proposta pelo NOME COMPLETO (Prompt 56, D4); o interessado só depois do aceite da candidatura. */
 async function nomeOutraParte(admin: Admin, p: LinhaProposta, papel: Autor): Promise<string> {
   if (papel === "owner") {
     const { data: lead } = await admin.from("leads").select("status").eq("id", p.lead_id).maybeSingle();
     const aceito = lead?.status === "accepted";
-    return nomeNaConversa({ papel: "proprietario", nomeCompleto: aceito ? await nomeDe(admin, p.tenant_id) : null, aceito });
+    return nomeNaProposta({ quemVe: "owner", nomeCompleto: aceito ? await nomeDe(admin, p.tenant_id) : null, aceito });
   }
-  return nomeNaConversa({ papel: "inquilino", nomeCompleto: await nomeDe(admin, p.owner_id), aceito: true });
+  return nomeNaProposta({ quemVe: "tenant", nomeCompleto: await nomeDe(admin, p.owner_id), aceito: true });
+}
+
+/** As duas partes pelo nome completo (o interessado só depois do aceite da candidatura, para o proprietário). */
+async function partesDaProposta(admin: Admin, p: LinhaProposta, papel: Autor): Promise<PropostaView["partes"]> {
+  const outra = await nomeOutraParte(admin, p, papel);
+  const minha = nomeNaProposta({ quemVe: "tenant", nomeCompleto: await nomeDe(admin, papel === "owner" ? p.owner_id : p.tenant_id), aceito: true });
+  return papel === "owner" ? { proprietario: minha === "Proprietário" ? "Você" : minha, interessado: outra } : { proprietario: outra, interessado: minha === "Proprietário" ? "Você" : minha };
+}
+
+/** Número exibido ("ORC-2026-0002 v2") e a linha do /conferir da versão vigente da proposta, quando registrada. */
+async function registroDaProposta(admin: Admin, propostaId: string): Promise<PropostaView["registro"]> {
+  const { data } = await admin
+    .from("documentos_registro")
+    .select("numero, versao, codigo_verificacao")
+    .eq("ref_tabela", "propostas")
+    .eq("ref_id", propostaId)
+    .eq("status", "valido")
+    .order("versao", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data ? { numero: numeroExibido(data.numero as string, Number(data.versao)), conferir: linhaConferir(SITE_URL, data.codigo_verificacao as string) } : null;
 }
 
 /** Lista de Orçamentos: as propostas em que a pessoa é parte (dono ou interessado). */
@@ -559,6 +613,8 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
     leadId: p.lead_id,
     imovel: { id: p.property_id, titulo: im?.title ?? "Imóvel" },
     outraParte: await nomeOutraParte(s.admin, p, papel),
+    partes: await partesDaProposta(s.admin, p, papel),
+    registro: await registroDaProposta(s.admin, p.id),
     versaoAtual: p.versao_atual,
     validaAte: p.valida_ate,
     vistoEm: p.visto_em,
@@ -663,8 +719,10 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   const versao = p.versao_atual + 1;
   if (versao > MAX_VERSOES) return { ok: false, error: "Esta proposta já teve 3 rodadas: agora é aceitar ou recusar." };
   const mensagem = r.mensagem ? guardContactInfo(String(r.mensagem).slice(0, MENSAGEM_MAX)).text : null;
-  const { error: eV } = await s.admin.from("proposta_versoes").insert(linhaDaVersao(p.id, versao, papel, nova, v.pessoas, mensagem));
+  const linhaNova = linhaDaVersao(p.id, versao, papel, nova, v.pessoas, mensagem);
+  const { error: eV } = await s.admin.from("proposta_versoes").insert(linhaNova);
   if (eV) return { ok: false, error: eV.code === "23505" ? "A proposta mudou enquanto você respondia. Abra de novo." : "Não foi possível enviar a contraproposta." };
+  await registrarVersaoDaProposta(s.admin, p, versao, linhaNova, s.user.id);
   const agora = new Date();
   await s.admin
     .from("propostas")

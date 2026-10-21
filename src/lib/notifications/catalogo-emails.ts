@@ -82,7 +82,7 @@ export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
   lista.push(doApp("conta:exclusao", emailExclusaoConta(siteUrl, { url: `${siteUrl}/excluir-conta/confirmar?token=exemplo` })));
   lista.push(doApp("parceria:aprovada", emailParceriaAprovada(siteUrl, { url: `${siteUrl}/parceiros/ativar?t=exemplo`, nome: "Marina Souza" })));
   const fiscal = { numero: "REC-2026-000004", contratoRef: "VN-CT-2026-0007", conferirUrl: `${siteUrl}/conferir/ABCD1234`, papel: "locatario" as const };
-  lista.push(doApp("fiscal:recibo", emailDocumentoFiscal(siteUrl, { ...fiscal, tipo: "recibo_aluguel", rotulo: "Recibo de pagamento" })));
+  lista.push(doApp("fiscal:recibo", emailDocumentoFiscal(siteUrl, { ...fiscal, tipo: "recibo_aluguel", rotulo: "Recibo de locação" })));
   lista.push(doApp("fiscal:comprovante", emailDocumentoFiscal(siteUrl, { ...fiscal, tipo: "comprovante_caucao", rotulo: "Comprovante de Caução", numero: "CAU-2026-000001" })));
   lista.push(doApp("fiscal:termo", emailDocumentoFiscal(siteUrl, { ...fiscal, tipo: "termo_devolucao_caucao", rotulo: "Termo de devolução da Caução", numero: "TDC-2026-000001" })));
 
