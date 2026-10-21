@@ -33,7 +33,7 @@ const dataBR = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { time
 export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; papel: PapelEstadia }) {
   const router = useRouter();
   // "Ocupado" cobre só a ação. O refresh vai numa transição à parte: dentro da mesma transição, os botões
-  // ficavam desabilitados até a página inteira renderizar de novo (t255: "Assinar aditivo" preso).
+  // ficavam desabilitados até a página inteira renderizar de novo (t256: "Assinar aditivo" preso).
   const [pendente, setPendente] = useState(false);
   const [, iniciarRefresh] = useTransition();
   const [erro, setErro] = useState<string | null>(null);

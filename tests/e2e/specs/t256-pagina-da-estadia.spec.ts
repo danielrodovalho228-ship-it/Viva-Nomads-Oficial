@@ -5,7 +5,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T255 — Página da estadia (Prompt 32), com a jornada de teste do laboratório:
+ * T256 — Página da estadia (Prompt 32), com a jornada de teste do laboratório:
  * contrato assinado → página da estadia com o checklist (dono e morador) → card "Decisões" na home do painel →
  * morador preenche os ocupantes → dono baixa a
  * lista da portaria → instruções de chegada liberadas no D-7 e não no D-8 (data simulada pelos blocos) e não sem o 1º
@@ -38,10 +38,10 @@ async function abrir(browser: Browser, email: string, largura = 1280): Promise<P
 }
 /** Linha de base visual NOVA (tela nova): compara quando a linha de base existe; senão, só guarda o print. */
 async function print(page: Page, nome: string) {
-  await page.screenshot({ path: `${SAIDA}/t255-${nome}.png` });
+  await page.screenshot({ path: `${SAIDA}/t256-${nome}.png` });
   const base = test.info().snapshotPath(`${nome}.png`);
   if (existsSync(base)) await expect(page).toHaveScreenshot(`${nome}.png`, { mask: [page.locator("img, time, [data-visual='muda']")] });
-  else test.info().annotations.push({ type: "linha-de-base-nova", description: `${nome}.png: gerar a partir de ${SAIDA}/t255-${nome}.png` });
+  else test.info().annotations.push({ type: "linha-de-base-nova", description: `${nome}.png: gerar a partir de ${SAIDA}/t256-${nome}.png` });
 }
 /** Entrada do contrato em `n` dias: os blocos andam juntos (a data simulada do D-7/D-8). */
 async function entradaEm(n: number) {
@@ -65,7 +65,7 @@ async function codigoDaCaixa(usuarioId: string, depoisDe: string): Promise<strin
   throw new Error("O código do aditivo não chegou à caixa de testes em 30 s.");
 }
 
-test.describe("T255 — Página da estadia (Prompt 32)", () => {
+test.describe("T256 — Página da estadia (Prompt 32)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
