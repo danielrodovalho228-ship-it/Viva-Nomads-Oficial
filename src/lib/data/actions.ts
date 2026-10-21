@@ -6,7 +6,7 @@ import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/pe
 import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascunho-dono";
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
-import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
+import { caminhoDoDono, operacaoValida, subleaseParaGravar } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { cookies } from "next/headers";
@@ -713,8 +713,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
       ownership_type: operacaoValida(input.ownershipType) ? input.ownershipType : "own",
-      sublease_authorized:
-        (input.ownershipType ?? "own") === "own" ? true : input.subleaseAuthorized ?? false,
+      sublease_authorized: subleaseParaGravar(input.ownershipType, input.subleaseAuthorized),
       // Só um arquivo da PASTA DO DONO no bucket privado (nunca link externo/preview local).
       sublease_doc_url: caminhoDoDono(input.subleaseDocUrl, user.id) ? input.subleaseDocUrl! : null,
       utilities_mode: input.utilitiesMode ?? "fixed",
@@ -961,8 +960,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
       ownership_type: operacaoValida(input.ownershipType) ? input.ownershipType : "own",
-      sublease_authorized:
-        (input.ownershipType ?? "own") === "own" ? true : input.subleaseAuthorized ?? false,
+      sublease_authorized: subleaseParaGravar(input.ownershipType, input.subleaseAuthorized),
       // Só grava o documento da operação quando o dono enviou um nesta edição.
       // A edição não recarrega esse campo — mandar null por ausência APAGAVA o
       // documento a cada edição (mesmo padrão do risco do endereço).
