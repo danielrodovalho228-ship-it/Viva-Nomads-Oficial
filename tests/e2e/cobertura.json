@@ -50,7 +50,8 @@
         "t183-telas-logadas-390",
         "t204-cadastro-ia-real",
         "t207-cep-matricula-identidade",
-        "t231-admin-numeros-com-lista"
+        "t231-admin-numeros-com-lista",
+        "t254-admin-aviso-atendimento"
       ]
     },
     "/admin/2fa/refazer": {
