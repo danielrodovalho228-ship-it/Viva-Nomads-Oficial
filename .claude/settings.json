@@ -28,7 +28,15 @@
       "Bash(npx eslint*)",
       "Bash(npx playwright *)",
       "Bash(supabase *)",
-      "Bash(npx supabase *)"
+      "Bash(npx supabase *)",
+      "mcp__Supabase__execute_sql",
+      "mcp__Supabase__apply_migration",
+      "mcp__Supabase__list_tables",
+      "mcp__Supabase__list_migrations",
+      "mcp__Supabase__query_logs",
+      "mcp__Supabase__get_advisors",
+      "mcp__Supabase__generate_typescript_types",
+      "mcp__Supabase__get_project_url"
     ],
     "deny": [
       "Bash(rm -rf *)",
