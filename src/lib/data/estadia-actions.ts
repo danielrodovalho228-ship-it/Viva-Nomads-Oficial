@@ -33,7 +33,7 @@ import {
 } from "@/lib/contrato-codigo";
 import { ENCERRAMENTO_REGRAS_ATIVO } from "@/lib/flags";
 import { HREF_ESTADIA, type PapelEstadia } from "@/lib/estadia/estadia";
-import { normalizarInstrucoes } from "@/lib/estadia/instrucoes";
+import { normalizarInstrucoes, separarSalvamento, type Instrucoes } from "@/lib/estadia/instrucoes";
 import { podeAdicionarOcupante, textoListaPortaria, textoTetoOcupantes, validarOcupante, type OcupanteEntrada } from "@/lib/estadia/ocupantes";
 import {
   blocosDepoisDoAditivo,
@@ -92,7 +92,15 @@ function outraParte(ctx: Contexto): string {
 
 // ── Instruções de chegada (o dono preenche uma vez, no imóvel) ───────────────────────────────────────────────────
 
-export async function salvarInstrucoes(propertyId: string, campos: Record<string, unknown>): Promise<Res> {
+/** Limite do texto do contrato (contratos_checkin.instrucoes, 0127). */
+const COMO_ENTRAR_CONTRATO_MAX = 600;
+
+/**
+ * Salva as instruções. Com `contratoId` e texto do contrato (combinação de check-in), "Como entrar" volta para esse
+ * texto — só deste contrato — e o resto vai para o imóvel (achado do QA, 21/10: o dono não conseguia corrigir o que
+ * estava publicado).
+ */
+export async function salvarInstrucoes(propertyId: string, campos: Record<string, unknown>, contratoId?: string): Promise<Res> {
   if (!UUID_RE.test(String(propertyId))) return { ok: false, erro: "Imóvel inválido." };
   const supabase = await createClient();
   if (!supabase) return { ok: false, erro: "Serviço indisponível." };
@@ -102,10 +110,33 @@ export async function salvarInstrucoes(propertyId: string, campos: Record<string
   if (!user) return { ok: false, erro: "Entre para continuar." };
   const { data: imovel } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
   if ((imovel as { owner_id?: string } | null)?.owner_id !== user.id) return { ok: false, erro: "Só o proprietário edita as instruções." };
+  const normalizadas = normalizarInstrucoes(campos);
+  let imovelCampos: Instrucoes = normalizadas;
+  if (contratoId) {
+    if (!UUID_RE.test(String(contratoId))) return { ok: false, erro: "Contrato inválido." };
+    const admin = createAdminClient();
+    if (!admin) return { ok: false, erro: "Serviço indisponível." };
+    // O contrato precisa ser deste imóvel (e o imóvel, do dono, conferido acima).
+    const { data: k } = await admin.from("contratos").select("id").eq("id", contratoId).eq("property_id", propertyId).maybeSingle();
+    if (!k) return { ok: false, erro: "Contrato não encontrado." };
+    const [{ data: ck }, { data: atual }] = await Promise.all([
+      admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", contratoId).maybeSingle(),
+      supabase.from("imovel_instrucoes_chegada").select("*").eq("property_id", propertyId).maybeSingle(),
+    ]);
+    const temTexto = !!((ck as { instrucoes?: string | null } | null)?.instrucoes ?? "").trim();
+    const destino = separarSalvamento(normalizadas, atual ? normalizarInstrucoes(atual as Record<string, unknown>) : null, temTexto);
+    if (temTexto) {
+      if (!destino.comoEntrarDoContrato) return { ok: false, erro: "\"Como entrar\" deste contrato não pode ficar vazio." };
+      if (destino.comoEntrarDoContrato.length > COMO_ENTRAR_CONTRATO_MAX) return { ok: false, erro: `"Como entrar" deste contrato: até ${COMO_ENTRAR_CONTRATO_MAX} caracteres.` };
+      const { error: eK } = await admin.from("contratos_checkin").update({ instrucoes: destino.comoEntrarDoContrato, atualizado_em: new Date().toISOString() }).eq("contrato_id", contratoId);
+      if (eK) return { ok: false, erro: "Não foi possível salvar \"Como entrar\" deste contrato." };
+    }
+    imovelCampos = destino.imovel;
+  }
   // Gravação pela sessão do dono: a RLS da 0198 (instrucoes: só o dono) repete a conferência.
   const { error } = await supabase
     .from("imovel_instrucoes_chegada")
-    .upsert({ property_id: propertyId, ...normalizarInstrucoes(campos), atualizado_em: new Date().toISOString() }, { onConflict: "property_id" });
+    .upsert({ property_id: propertyId, ...imovelCampos, atualizado_em: new Date().toISOString() }, { onConflict: "property_id" });
   if (error) return { ok: false, erro: "Não foi possível salvar as instruções." };
   revalidatePath("/dashboard/estadia/[contratoId]", "page");
   return { ok: true, valor: undefined };
