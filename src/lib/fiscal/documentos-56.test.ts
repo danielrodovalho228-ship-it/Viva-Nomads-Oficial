@@ -6,8 +6,10 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { PREFIXOS, TEXTO_RPG, linhaConferir, numeroAditivo, numeroExibido, numeroOrcamentoParceiro, rotuloRegistro, temRps } from "./prefixos.ts";
 import { aceitaArquivo, camposExibidos, hashConfere, hexDe, normalizarCodigo, situacaoDoDocumento, type LinhaConferida } from "./conferir.ts";
-import { conteudoCorrecao, conteudoFechamento, podeMarcarReparo, prontaParaFechar, semResposta, type EstadoParaFechar } from "./fechamento.ts";
-import { conteudoDocumento, textoDocumento, temContato, type DadosDocumento } from "./documento.ts";
+import { conferenciasParaFechar, conteudoCorrecao, conteudoFechamento, podeMarcarReparo, prontaParaFechar, semResposta, type EstadoParaFechar } from "./fechamento.ts";
+import { prazoConferenciaSaida } from "../conferencia.ts";
+import { montarLinhaDoTempo } from "../estadia-linha-tempo.ts";
+import { conteudoDocumento, enderecoDoDocumento, textoDocumento, temContato, type DadosDocumento } from "./documento.ts";
 import { gerarPdf, sha256 } from "./pdf.ts";
 import { PENDENTE_ITEM_13, RETENCAO_DOCUMENTOS, podeApagarDocumento } from "../../config/retencao.ts";
 
@@ -194,4 +196,41 @@ test("retenção: uma constante; tudo pendente (item 13) menos a lista da portar
     assert.doesNotMatch(t, /from\("documentos_registro"\)\.delete|from\("documentos_fiscais"\)\.delete/, p);
     if (!p.endsWith("fiscal/emitir.ts")) assert.doesNotMatch(t, /storage\.from\(BUCKET_DOCUMENTOS\)\.remove/, p);
   }
+});
+
+test("saída (correção do coordenador): prazo de 48 h depois do checkout em Brasília; sem respostas, fecha no instante certo e grava o hash", () => {
+  const datas = { inicio: "2026-10-01", checkinAfter: "15:00", fim: "2026-12-31", checkoutBefore: "11:00" };
+  // 31/12 às 11:00 em Brasília = 14:00 UTC; + 48 h = 02/01 às 14:00 UTC.
+  assert.equal(prazoConferenciaSaida(datas)?.toISOString(), "2027-01-02T14:00:00.000Z");
+  assert.equal(prazoConferenciaSaida({ fim: "2026-12-31", checkoutBefore: "" })?.toISOString(), "2027-01-02T03:00:00.000Z", "sem horário = 00:00");
+  assert.equal(prazoConferenciaSaida({ fim: null, checkoutBefore: "11:00" }), null, "sem o último dia, sem prazo");
+  const abertas = [
+    { id: "saida-1", tipo: "saida" as const, datas },
+    { id: "entrada-1", tipo: "entrada" as const, datas },
+  ];
+  // Um minuto antes do prazo da saída: só a entrada (vencida há muito) fecha.
+  assert.deepEqual(conferenciasParaFechar(abertas, new Date("2027-01-02T13:59:00Z")).map((c) => c.id), ["entrada-1"]);
+  // Um minuto depois: a saída também.
+  assert.deepEqual(conferenciasParaFechar(abertas, new Date("2027-01-02T14:01:00Z")).map((c) => c.id), ["saida-1", "entrada-1"]);
+  // Sem respostas: o fechamento registra as duas partes como sem resposta e o hash sai do conteúdo.
+  const vazia: EstadoParaFechar = { conferenciaId: "saida-1", contrato: "VN-CT-11281A61", tipo: "saida", itens: [], respostas: [], laudo: null, hashes: {} };
+  assert.deepEqual(semResposta(vazia), ["proprietario", "inquilino"]);
+  const texto = conteudoFechamento(vazia, "janela_encerrada");
+  assert.match(texto, /Sem resposta: proprietario\nSem resposta: inquilino/);
+  assert.match(createHash("sha256").update(texto).digest("hex"), /^[0-9a-f]{64}$/);
+  // A linha do tempo mostra o mesmo prazo (fonte única).
+  const etapa = montarLinhaDoTempo(datas).find((e) => e.chave === "conferencia_saida");
+  assert.equal(etapa?.prazo, "2027-01-02T14:00:00.000Z");
+  // Tela, servidor e rotina usam a fonte única.
+  assert.match(ler("src/lib/data/conferencia-actions.ts"), /prazoSaidaEm = ctx \? \(prazoConferenciaSaida\(ctx\.entrada\)/);
+  assert.match(ler("src/components/contrato/conferencia-contrato.tsx"), /data-testid="conferencia-prazo-saida"/);
+  assert.match(ler("src/app/api/cron/automacoes/route.ts"), /conferenciasParaFechar\(abertas, agora\)/);
+});
+
+test("endereço do documento: exato + bairro + cidade/UF; sem o exato, bairro + cidade/UF (achado do QA no REC-2026-000004)", () => {
+  assert.equal(enderecoDoDocumento({ exact_address: "Rua Professor Mário Porto, 1.245, Apto 302", address: "Santa Mônica", city: "Uberlândia", state: "mg" }), "Rua Professor Mário Porto, 1.245, Apto 302, Santa Mônica, Uberlândia/MG");
+  assert.equal(enderecoDoDocumento({ exact_address: "Rua X, 10, Santa Mônica", address: "Santa Mônica", city: "Uberlândia", state: "MG" }), "Rua X, 10, Santa Mônica, Uberlândia/MG", "bairro não repete");
+  // O caso do QA: o anúncio tem bairro "Saraiva" e título "… Santa Mônica"; o documento imprime o BAIRRO cadastrado.
+  assert.equal(enderecoDoDocumento({ exact_address: null, address: "Saraiva", city: "Uberlândia", state: "MG", title: "Apto – Santa Mônica" }), "Saraiva, Uberlândia/MG");
+  assert.equal(enderecoDoDocumento({ title: "Studio" }), "Studio");
 });

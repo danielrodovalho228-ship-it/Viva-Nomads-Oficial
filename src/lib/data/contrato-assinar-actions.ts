@@ -35,7 +35,7 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { escaparHtml } from "@/lib/escapar-html";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 import { periodoDosBlocos } from "@/lib/contrato-blocos";
-import { prazoConferenciaEntrada } from "@/lib/conferencia";
+import { prazoConferenciaEntrada, prazoConferenciaSaida } from "@/lib/conferencia";
 import {
   MSG_CODIGO_BLOQUEADO,
   VALIDADE_CODIGO_ASSINATURA_MS,
@@ -73,6 +73,8 @@ export interface ContratoParaAssinar {
   estado: EstadoContrato;
   /** Prazo da conferência de entrada (ISO), pela fonte única prazoConferenciaEntrada (Prompt 35B, F2). */
   prazoConferenciaEm: string | null;
+  /** Prazo da conferência de saída (ISO), pela fonte única prazoConferenciaSaida (Prompt 56). */
+  prazoConferenciaSaidaEm: string | null;
 }
 
 interface LinhaContrato {
@@ -205,6 +207,7 @@ function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string
     estado: estadoDoContratoUnico(c, papel),
     inicioEstadia: inicio,
     prazoConferenciaEm: prazoConferenciaEntrada({ inicio, checkinAfter: c.properties?.checkin_after ?? null })?.toISOString() ?? null,
+    prazoConferenciaSaidaEm: prazoConferenciaSaida({ fim, checkoutBefore: c.properties?.checkout_before ?? null })?.toISOString() ?? null,
     linhaDoTempo: montarLinhaDoTempo({
       inicio,
       fim,

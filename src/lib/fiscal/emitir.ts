@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/notifications/email";
 import { emailDocumentoFiscal, nomeDoPdf } from "@/lib/notifications/montar-email";
 import { SITE_URL } from "@/lib/site";
-import { conteudoDocumento, NUMERO_PROVISORIO, ROTULO_TIPO, temContato, textoDocumento, type DadosDocumento, type TipoDocumento } from "@/lib/fiscal/documento";
+import { conteudoDocumento, enderecoDoDocumento, NUMERO_PROVISORIO, ROTULO_TIPO, temContato, textoDocumento, type DadosDocumento, type TipoDocumento } from "@/lib/fiscal/documento";
 import { envioConfirmado, motivoFalhaEnvio, resultadoEnvio, type EnvioDestinatario } from "@/lib/fiscal/envio";
 import { gerarPdf } from "@/lib/fiscal/pdf";
 import { registrarDocumento } from "@/lib/fiscal/registro";
@@ -39,17 +39,19 @@ interface Partes {
 async function partesDoContrato(admin: Admin, contratoId: string): Promise<Partes | null> {
   const { data: c } = await admin
     .from("contratos")
-    .select("id, tenant_id, properties!inner(owner_id, title, address, exact_address, city)")
+    .select("id, tenant_id, properties!inner(owner_id, title, address, exact_address, city, state)")
     .eq("id", contratoId)
     .maybeSingle();
   if (!c) return null;
-  const p = c.properties as unknown as { owner_id: string; title: string | null; address: string | null; exact_address: string | null; city: string | null };
+  const p = c.properties as unknown as { owner_id: string; title: string | null; address: string | null; exact_address: string | null; city: string | null; state: string | null };
   const { data: perfis } = await admin.from("profiles").select("id, full_name, cpf, cnpj, email").in("id", [p.owner_id, c.tenant_id as string]);
   const perfil = (id: string) => {
     const x = (perfis ?? []).find((r) => r.id === id);
     return { nome: ((x?.full_name as string) || "").trim() || "Não informado", doc: ((x?.cnpj as string) || (x?.cpf as string) || null) ?? null, email: (x?.email as string) ?? null };
   };
-  const endereco = [p.exact_address || p.address, p.city].filter(Boolean).join(", ") || p.title || "Imóvel";
+  // Endereço do documento (Prompt 56): o exato, o bairro (properties.address) e cidade/UF, como no modelo aprovado.
+  // Antes, com o exato preenchido, o bairro sumia; sem o exato, ficava só "bairro, cidade".
+  const endereco = enderecoDoDocumento(p);
   return { contratoId, ownerId: p.owner_id, tenantId: c.tenant_id as string, locador: perfil(p.owner_id), locatario: perfil(c.tenant_id as string), imovelEndereco: endereco };
 }
 

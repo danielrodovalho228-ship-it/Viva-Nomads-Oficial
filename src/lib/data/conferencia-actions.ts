@@ -16,6 +16,7 @@ import {
   type LaudoTela,
   podeEditarItens,
   prazoConferenciaEntrada,
+  prazoConferenciaSaida,
   ERRO_ANTES_DA_OUTRA_PARTE,
   type EntradaDoContrato,
   validarFotoConferencia,
@@ -58,17 +59,25 @@ async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte
   if (!user) return null;
   const { data: c } = await admin
     .from("contratos")
-    .select("tenant_id, status, properties(owner_id, checkin_after), contrato_blocos(inicio)")
+    .select("tenant_id, status, properties(owner_id, checkin_after, checkout_before), contrato_blocos(inicio, fim, status)")
     .eq("id", contratoId)
     .maybeSingle();
   if (!c) return null;
-  const prop = c.properties as unknown as { owner_id?: string; checkin_after?: string | null } | null;
+  const prop = c.properties as unknown as { owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
   const donoId = prop?.owner_id;
   const parte: ParteConferencia | null = c.tenant_id === user.id ? "inquilino" : donoId === user.id ? "proprietario" : null;
   if (!parte) return null;
-  const inicios = ((c.contrato_blocos ?? []) as { inicio: string }[]).map((b) => b.inicio).sort();
-  // F2: o prazo da entrada sai do dia de início + horário de entrada do imóvel (prazoConferenciaEntrada).
-  return { uid: user.id, parte, status: String(c.status), entrada: { inicio: inicios[0] ?? null, checkinAfter: prop?.checkin_after ?? null } };
+  const blocos = ((c.contrato_blocos ?? []) as { inicio: string; fim: string; status: string | null }[]).filter((b) => b.status !== "nao_aceito");
+  const inicios = blocos.map((b) => b.inicio).sort();
+  const fins = blocos.map((b) => b.fim).sort();
+  // F2: o prazo da entrada sai do dia de início + horário de entrada do imóvel (prazoConferenciaEntrada); o da saída, do
+  // último dia + horário de saída (prazoConferenciaSaida, Prompt 56).
+  return {
+    uid: user.id,
+    parte,
+    status: String(c.status),
+    entrada: { inicio: inicios[0] ?? null, checkinAfter: prop?.checkin_after ?? null, fim: fins.at(-1) ?? null, checkoutBefore: prop?.checkout_before ?? null },
+  };
 }
 
 /** Registra um item (cômodo + descrição + foto opcional) na conferência; cria a conferência na primeira vez. */
@@ -87,7 +96,7 @@ export async function registrarItemConferencia(input: {
   const v = validarItem({ comodo: input.comodo, descricao: input.descricao, fotoPath: input.fotoPath ?? null });
   if (!v.ok) return erro(v.erro);
   if (janelaEncerrada(input.tipo, ctx.entrada)) {
-    return erro("O prazo de 48 horas para a conferência de entrada já passou.");
+    return erro(`O prazo de 48 horas para a conferência de ${input.tipo === "entrada" ? "entrada" : "saída"} já passou.`);
   }
   if (!(await consumirLimite(`conferencia-item:${ctx.uid}`, 200, HORA))) return erro("Muitos registros em pouco tempo. Tente de novo em instantes.");
 
@@ -197,6 +206,9 @@ export interface ConferenciasContrato {
   prazoEntradaEm: string | null;
   /** O prazo da entrada já passou (calculado no servidor): libera responder sem itens da outra parte. */
   janelaEntradaEncerrada: boolean;
+  /** Instante do prazo da saída (ISO), pela fonte única `prazoConferenciaSaida` (Prompt 56). */
+  prazoSaidaEm: string | null;
+  janelaSaidaEncerrada: boolean;
   conferencias: ConferenciaView[];
 }
 
@@ -269,14 +281,16 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
 
 /** As conferências do contrato, lidas pelo RLS (só as partes e a equipe enxergam). */
 export async function conferenciasDoContrato(contratoId: string): Promise<ConferenciasContrato> {
-  const vazio: ConferenciasContrato = { minhaParte: null, prazoEntradaEm: null, janelaEntradaEncerrada: false, conferencias: [] };
+  const vazio: ConferenciasContrato = { minhaParte: null, prazoEntradaEm: null, janelaEntradaEncerrada: false, prazoSaidaEm: null, janelaSaidaEncerrada: false, conferencias: [] };
   const supabase = await createClient();
   if (!supabase || !UUID_RE.test(contratoId)) return vazio;
   const ctx = await parteDoContrato(contratoId);
   const prazoEntradaEm = ctx ? (prazoConferenciaEntrada(ctx.entrada)?.toISOString() ?? null) : null;
   const janelaEntradaEncerrada = ctx ? janelaEncerrada("entrada", ctx.entrada) : false;
+  const prazoSaidaEm = ctx ? (prazoConferenciaSaida(ctx.entrada)?.toISOString() ?? null) : null;
+  const janelaSaidaEncerrada = ctx ? janelaEncerrada("saida", ctx.entrada) : false;
   const { data: confs } = await supabase.from("conferencias").select("id, tipo").eq("contrato_id", contratoId);
-  if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, conferencias: [] };
+  if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, conferencias: [] };
   const ids = confs.map((c) => c.id as string);
   const [{ data: itens }, { data: respostas }, { data: laudos }] = await Promise.all([
     supabase.from("conferencia_itens").select("id, conferencia_id, parte, comodo, descricao, foto_path, criado_em").in("conferencia_id", ids).order("criado_em"),
@@ -306,5 +320,5 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
       } satisfies ConferenciaView;
     }),
   );
-  return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, conferencias };
+  return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, conferencias };
 }

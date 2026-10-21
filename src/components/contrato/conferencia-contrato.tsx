@@ -77,8 +77,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const itens = mesclarItens(conf?.itens ?? [], locais);
   const laudo = mesclarLaudo(conf?.laudo ?? null, laudoLocal);
   const itensPorParte = { proprietario: itens.filter((i) => i.parte === "proprietario").length, inquilino: itens.filter((i) => i.parte === "inquilino").length };
-  // F1 (Opção B): responde ao registro da OUTRA parte; os próprios itens são opcionais. Com o prazo da entrada encerrado, libera.
-  const liberado = parte ? podeResponder({ parte, itensPorParte, respostas, janelaEncerrada: tipo === "entrada" && dados.janelaEntradaEncerrada }) : false;
+  // F1 (Opção B): responde ao registro da OUTRA parte; os próprios itens são opcionais. Com o prazo (entrada ou saída) encerrado, libera.
+  const encerrada = tipo === "entrada" ? dados.janelaEntradaEncerrada : dados.janelaSaidaEncerrada;
+  const liberado = parte ? podeResponder({ parte, itensPorParte, respostas, janelaEncerrada: encerrada }) : false;
 
   async function rodar(fn: () => Promise<{ ok: boolean; error?: string; item?: ItemTela; resposta?: RespostaTela; laudo?: LaudoTela }>) {
     setErro(null);
@@ -143,6 +144,11 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       {tipo === "entrada" && dados.prazoEntradaEm && (
         <p className="mt-1 text-xs text-muted" data-testid="conferencia-prazo" data-prazo={dados.prazoEntradaEm}>
           Registre fotos e itens por cômodo {textoPrazoConferencia(dados.prazoEntradaEm)} (48 h depois da entrada).
+        </p>
+      )}
+      {tipo === "saida" && dados.prazoSaidaEm && (
+        <p className="mt-1 text-xs text-muted" data-testid="conferencia-prazo-saida" data-prazo={dados.prazoSaidaEm}>
+          Registre fotos e itens por cômodo {textoPrazoConferencia(dados.prazoSaidaEm)} (48 h depois da saída).
         </p>
       )}
 

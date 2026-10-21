@@ -200,6 +200,19 @@ export function conteudoDocumento(d: DadosDocumento): ConteudoDocumento {
   };
 }
 
+/**
+ * Endereço do imóvel no documento: exato + bairro + cidade/UF ("Rua X, 1.245, Apto 302, Santa Mônica, Uberlândia/MG").
+ * O bairro vem de properties.address (o campo "bairro" do anúncio); sem nada, o título do anúncio.
+ */
+export function enderecoDoDocumento(p: { exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; title?: string | null }): string {
+  const limpo = (x: string | null | undefined) => (x ?? "").replace(/\s+/g, " ").trim();
+  const exato = limpo(p.exact_address);
+  const bairro = limpo(p.address);
+  const cidade = [limpo(p.city), limpo(p.state).toUpperCase()].filter(Boolean).join("/");
+  const partes = [exato, bairro && !exato.toLowerCase().includes(bairro.toLowerCase()) ? bairro : "", cidade].filter(Boolean);
+  return partes.join(", ") || limpo(p.title) || "Imóvel";
+}
+
 /** Todo o texto do documento numa string (para testes e para o hash do conteúdo). */
 export function textoDocumento(c: ConteudoDocumento): string {
   const cab = c.cabecalho;

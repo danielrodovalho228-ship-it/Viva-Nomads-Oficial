@@ -1,9 +1,12 @@
 /*
   Fechamento da conferência de entrada/saída (Prompt 56, D5) — PURO, node --test.
   O hash de fechamento cobre itens, fotos (o hash de cada arquivo), respostas e laudo. Ele é gravado uma vez, quando
-  as duas partes respondem, quando a janela da entrada (48 h do 35B) encerra ou quando a equipe conclui o
-  encerramento (saída). Depois dele nada muda; a correção vira versão nova (CND … v2) com motivo.
+  as duas partes respondem, quando a janela de 48 h encerra (entrada: depois da entrada, 35B; saída: depois da saída)
+  ou, no encerramento antecipado, quando a equipe conclui. Depois dele nada muda; a correção vira versão nova
+  (CND … v2) com motivo. Sempre registra quem não respondeu.
 */
+
+import { janelaEncerrada, type EntradaDoContrato } from "../conferencia.ts";
 
 export type MotivoFechamento = "duas_respostas" | "janela_encerrada" | "encerramento_concluido";
 export type ParteFechamento = "proprietario" | "inquilino";
@@ -21,7 +24,7 @@ export interface EstadoParaFechar {
 
 export const ROTULO_FECHAMENTO: Record<MotivoFechamento, string> = {
   duas_respostas: "as duas partes responderam",
-  janela_encerrada: "o prazo da conferência de entrada encerrou",
+  janela_encerrada: "o prazo de 48 horas da conferência encerrou",
   encerramento_concluido: "a equipe concluiu o encerramento",
 };
 
@@ -56,6 +59,22 @@ export function conteudoFechamento(e: EstadoParaFechar, motivo: MotivoFechamento
 /** Conteúdo de uma correção (CND … vN): o hash do fechamento original, o motivo e o texto. */
 export function conteudoCorrecao(p: { fechamentoHash: string; versao: number; motivo: string; texto: string }): string {
   return [`Correção v${p.versao} da conferência fechada (sha256 ${p.fechamentoHash})`, `Motivo: ${p.motivo.trim()}`, p.texto.trim()].join("\n");
+}
+
+/** Conferência aberta como a rotina diária a enxerga: tipo e as datas do contrato (início/fim + horários do imóvel). */
+export interface ConferenciaAberta {
+  id: string;
+  tipo: "entrada" | "saida";
+  datas: EntradaDoContrato;
+}
+
+/**
+ * Quais conferências abertas a rotina fecha AGORA: as que passaram do prazo de 48 h do tipo delas (entrada: depois da
+ * entrada; saída: depois da saída — prazoConferenciaSaida, correção do coordenador). Sem respostas também fecha: o
+ * fechamento registra quem não respondeu. Antes do instante, nada.
+ */
+export function conferenciasParaFechar(abertas: ConferenciaAberta[], agora: Date): ConferenciaAberta[] {
+  return abertas.filter((c) => janelaEncerrada(c.tipo, c.datas, agora));
 }
 
 /** A marca "precisa de reparo" (Prompt 38) só pode ser feita antes do fechamento. */
