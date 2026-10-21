@@ -16,20 +16,24 @@ import {
 } from "../fixtures/laboratorio";
 
 /*
-  T259 — Regressão visual do Prompt 41 (mesmo padrão do t245: snapshotPathTemplate estável do playwright.config,
-  linha de base em tests/e2e/visual/t259-visual-41.spec.ts/, só muda no PR que muda a tela), a 390 e 1280 px:
+  T260 — Regressão visual do Prompt 41 (mesmo padrão do t245: snapshotPathTemplate estável do playwright.config,
+  linha de base em tests/e2e/visual/t260-visual-41.spec.ts/, só muda no PR que muda a tela), a 390 e 1280 px:
     01 página do imóvel INTEIRA (de cima a baixo), ube-001;
     02–04 barra inferior dos 3 papéis (morador, proprietário, parceiro) — 390 no site e 1280 no app (a barra do site
           some no computador; no app ela existe em qualquer largura);
-    05 cogumelo aberto numa estadia de teste (folha "Ações desta estadia").
+    06–08 cogumelo aberto na página da estadia (folha "Ações desta estadia", adendo do 41): 06 morador antes da
+          liberação das instruções de chegada, 07 morador depois, 08 proprietário. (A antiga 05, o cogumelo no detalhe
+          do contrato, saiu: o cogumelo agora mora só na página da estadia.)
   Gerar / atualizar a linha de base (no laboratório, base recém-semeada):
-    npx playwright test t259 --update-snapshots
+    npx playwright test t260 --update-snapshots
   Estabilidade: fotos, mapa, datas, contagens, nomes e o calendário vão MASCARADOS; a duração da busca é fixada
   (localStorage vazio = estadia mínima do imóvel); os "imóveis parecidos" (que mudam com a base) mascaram o texto dos
-  cartões e mantêm a forma (como a tela 09 do t245). As telas 04 e 05 criam contas próprias: só no laboratório.
+  cartões e mantêm a forma (como a tela 09 do t245). As telas 04 e 06–08 criam contas próprias: só no laboratório.
 */
 const LARGURAS = [390, 1280] as const;
 const altura = (l: number) => (l === 390 ? 844 : 900);
+/** Dia (AAAA-MM-DD) daqui a `n` dias no calendário de Brasília (o mesmo cálculo do t256). */
+const diaBrasilia = (n: number) => new Date(Date.now() - 3 * 3_600_000 + n * 86_400_000).toISOString().slice(0, 10);
 const UA_APP = "Mozilla/5.0 (Linux; Android 14; Pixel 7) VivaNomadsApp/1.0 (expo)";
 
 function mascaras(page: Page): Locator[] {
@@ -74,7 +78,7 @@ async function entrarComo(browser: Browser, email: string, senha: string, largur
   return page;
 }
 
-test.describe("T259 — Regressão visual do Prompt 41", () => {
+test.describe("T260 — Regressão visual do Prompt 41", () => {
   test.describe.configure({ timeout: 120_000 });
 
   // ── 01 página do imóvel inteira ──
@@ -119,27 +123,27 @@ test.describe("T259 — Regressão visual do Prompt 41", () => {
     }
   }
 
-  // ── 04 barra do parceiro aprovado e 05 cogumelo aberto (contas próprias: só no laboratório) ──
+  // ── 04 barra do parceiro aprovado e 06–08 cogumelo da estadia (contas próprias: só no laboratório) ──
   test.describe("laboratório", () => {
     test.skip(!NO_LABORATORIO, "Só no laboratório (cria parceiro aprovado e uma estadia de teste).");
     test.describe.configure({ mode: "serial" });
     const senha = novaSenha();
     const sufixo = novoSufixo();
     // Nomes fixos (o sufixo só vai no e-mail e no slug): o print não oscila entre rodadas.
-    const parceiro = { email: `parceiro.t259.${sufixo}@lab.vivanomads.test`, nome: "Paula Visual", role: "tenant" as const };
-    const dono = { email: `dono.t259.${sufixo}@lab.vivanomads.test`, nome: "Dalva Visual", role: "owner" as const };
-    const inq = { email: `inq.t259.${sufixo}@lab.vivanomads.test`, nome: "Igor Visual", role: "tenant" as const };
+    const parceiro = { email: `parceiro.t260.${sufixo}@lab.vivanomads.test`, nome: "Paula Visual", role: "tenant" as const };
+    const dono = { email: `dono.t260.${sufixo}@lab.vivanomads.test`, nome: "Dalva Visual", role: "owner" as const };
+    const inq = { email: `inq.t260.${sufixo}@lab.vivanomads.test`, nome: "Igor Visual", role: "tenant" as const };
     const ids: { parceiro?: string; dono?: string; inq?: string; imovel?: string; contrato?: string } = {};
 
     test.beforeAll(async () => {
       ids.parceiro = await criarConta(parceiro, senha);
       const { error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids.parceiro, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Paula Visual", slug: `paula-t259-${sufixo}`.toLowerCase().replace(/[^a-z0-9-]/g, "") });
+        .insert({ user_id: ids.parceiro, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Paula Visual", slug: `paula-t260-${sufixo}`.toLowerCase().replace(/[^a-z0-9-]/g, "") });
       if (error) throw error;
       ids.dono = await criarConta(dono, senha);
       ids.inq = await criarConta(inq, senha);
-      ids.imovel = await criarImovelPronto(ids.dono, "Estadia visual t259", { ativo: true });
+      ids.imovel = await criarImovelPronto(ids.dono, "Estadia visual t260", { ativo: true });
       const { data, error: e2 } = await adm()
         .from("contratos")
         .insert({
@@ -179,18 +183,37 @@ test.describe("T259 — Regressão visual do Prompt 41", () => {
         await expect(barra).toHaveScreenshot(`04-barra-parceiro-${largura}${largura === 1280 ? "-app" : ""}.png`, { mask: mascaras(page) });
         await page.context().close();
       });
+    }
 
-      test(`05 cogumelo aberto (morador) ${largura} px`, async ({ browser }) => {
-        const page = await entrarComo(browser, inq.email, senha, largura, false);
-        await page.goto(`/dashboard/locacoes/${ids.contrato}`, { waitUntil: "domcontentloaded" });
-        await page.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => undefined); // o painel mantém conexão aberta
-        await page.getByTestId("cogumelo").click();
-        const folha = page.getByRole("dialog", { name: "Ações desta estadia" });
-        await expect(folha).toBeVisible();
-        await page.waitForTimeout(400); // animação da folha
-        await expect(folha).toHaveScreenshot(`05-cogumelo-aberto-${largura}.png`, { mask: mascaras(page) });
-        await page.context().close();
-      });
+    // Antes (entrada em 20 dias) e depois (entrada em 5 dias) da liberação das instruções (D-7, como no t256).
+    for (const [n, quem, fase, entrada] of [
+      ["06", "morador", "antes", 20],
+      ["07", "morador", "depois", 5],
+      ["08", "proprietario", "", 5],
+    ] as const) {
+      for (const largura of LARGURAS) {
+        test(`${n} cogumelo da estadia (${quem}${fase ? ` ${fase}` : ""}) ${largura} px`, async ({ browser }) => {
+          const { error } = await adm()
+            .from("contrato_blocos")
+            .update({ inicio: diaBrasilia(entrada), fim: diaBrasilia(entrada + 59) })
+            .eq("contrato_id", ids.contrato!)
+            .eq("numero_bloco", 1);
+          if (error) throw error;
+          const page = await entrarComo(browser, quem === "morador" ? inq.email : dono.email, senha, largura, false);
+          await page.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+          await page.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => undefined); // o painel mantém conexão aberta
+          await expect(page.getByTestId("pagina-estadia")).toBeVisible({ timeout: 20_000 });
+          await page.getByTestId("cogumelo").click();
+          const folha = page.getByRole("dialog", { name: "Ações desta estadia" });
+          await expect(folha).toBeVisible();
+          await expect(folha.getByTestId("acoes-estadia-lista").locator("li")).toHaveCount(quem === "proprietario" ? 7 : fase === "antes" ? 5 : 6);
+          await page.evaluate(() => document.fonts.ready);
+          await page.waitForTimeout(400); // animação da folha
+          const nome = `${n}-estadia-cogumelo-${quem}${fase ? `-${fase}` : ""}-${largura}.png`;
+          await expect(folha).toHaveScreenshot(nome, { mask: mascaras(page) });
+          await page.context().close();
+        });
+      }
     }
   });
 });

@@ -17,7 +17,7 @@ import {
 } from "../fixtures/laboratorio";
 
 /*
-  T258 — Prompt 41 (funcional, a 390 e 1280 px):
+  T259 — Prompt 41 (funcional, a 390 e 1280 px):
    1. página do imóvel: galeria em tela cheia no celular ("1/N", coração e compartilhar como ícones) e mosaico de 5
       com "Ver todas as fotos" no computador; a ordem título → síntese → anfitrião → comodidades → mapa → avaliações;
       sem "Onde você vai dormir" (as fotos ainda não têm o cômodo); rodapé fixo / cartão lateral com
@@ -26,9 +26,11 @@ import {
    2. barra inferior por papel: morador, proprietário e parceiro aprovado com 5 itens; admin sem barra; cabeçalho com
       a foto pequena e o papel ativo; troca de papel no Perfil (app);
    3. um primário por tela: varredura de [data-cta="primary"] visível, no máximo 1 por rota logada (lista abaixo);
-   4. cogumelo: só no detalhe da estadia, para o morador e o proprietário dela; a folha "Ações desta estadia" só lista
-      ações que existem; sombra única; não cobre o "Fale com a Viva".
-  A regressão visual das mesmas telas fica no t259.
+   4. cogumelo (adendo da estadia): só na página da estadia (/dashboard/estadia/[id]), para o morador e o proprietário
+      dela; a folha "Ações desta estadia" com os itens exatos de cada papel, antes e depois da liberação das
+      instruções de chegada; sem a fileira de ações; um primário só ("Mensagem"); "Encerrar contrato" em texto vermelho
+      no fim da página; sombra única; não cobre o "Fale com a Viva" nem o "Encerrar".
+  A regressão visual das mesmas telas fica no t260.
 */
 
 const LARGURAS = [390, 1280] as const;
@@ -72,7 +74,7 @@ async function primariosSemMarca(page: Page): Promise<string[]> {
 // ─────────────────────────── 1. Página do imóvel ───────────────────────────
 
 for (const largura of LARGURAS) {
-  test.describe(`T258 — página do imóvel a ${largura} px`, () => {
+  test.describe(`T259 — página do imóvel a ${largura} px`, () => {
     test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
     test("galeria: tela cheia + '1/N' + ícones (celular) · mosaico de 5 + 'Ver todas as fotos' (computador)", async ({ page }) => {
@@ -185,7 +187,7 @@ async function abas(page: Page): Promise<{ nome: string; href: string | null }[]
   return barra.getByRole("link").evaluateAll((els) => els.map((e) => ({ nome: (e.textContent ?? "").trim(), href: e.getAttribute("href") })));
 }
 
-test.describe("T258 — barra inferior por papel (390 px)", () => {
+test.describe("T259 — barra inferior por papel (390 px)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test.describe("morador", () => {
@@ -242,8 +244,8 @@ test.describe("T258 — barra inferior por papel (390 px)", () => {
     test.describe.configure({ mode: "serial" });
     const senha = novaSenha();
     const sufixo = novoSufixo();
-    const conta = { email: `parceiro.t258.${sufixo}@lab.vivanomads.test`, nome: "Paula Parceira", role: "tenant" as const };
-    const pedido = { email: `pedido.t258.${sufixo}@lab.vivanomads.test`, nome: "Pedro Pedido", role: "tenant" as const };
+    const conta = { email: `parceiro.t259.${sufixo}@lab.vivanomads.test`, nome: "Paula Parceira", role: "tenant" as const };
+    const pedido = { email: `pedido.t259.${sufixo}@lab.vivanomads.test`, nome: "Pedro Pedido", role: "tenant" as const };
     const ids: { conta?: string; pedido?: string } = {};
     test.beforeAll(async () => {
       ids.conta = await criarConta(conta, senha);
@@ -251,7 +253,7 @@ test.describe("T258 — barra inferior por papel (390 px)", () => {
       // A linha em `parceiros` nasce na aprovação: é ela que faz a parceria contar como aprovada.
       const { error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Paula Parceira", slug: `paula-t258-${sufixo}`.toLowerCase().replace(/[^a-z0-9-]/g, "") });
+        .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Paula Parceira", slug: `paula-t259-${sufixo}`.toLowerCase().replace(/[^a-z0-9-]/g, "") });
       if (error) throw error;
     });
     test.afterAll(async () => {
@@ -327,7 +329,11 @@ async function entrarNoApp(browser: Browser, email: string, senha: string): Prom
 
 // ─────────────────────────── 3. Um primário por tela ───────────────────────────
 
-/** Rotas logadas varridas (no máximo 1 primário visível por rota renderizada). */
+/**
+ * Rotas logadas varridas (no máximo 1 primário visível por rota renderizada). A página da estadia
+ * (/dashboard/estadia/[id]) precisa de um contrato da conta: ela é varrida na seção 4, com o contrato do laboratório
+ * (exatamente um primário, "Mensagem"), a 390 e 1280 px, como morador e como proprietário.
+ */
 const ROTAS_PRIMARIO: Record<"inquilino" | "proprietario" | "admin", string[]> = {
   inquilino: [
     "/dashboard",
@@ -394,7 +400,7 @@ const ROTAS_PRIMARIO: Record<"inquilino" | "proprietario" | "admin", string[]> =
 
 for (const largura of LARGURAS) {
   for (const papel of ["inquilino", "proprietario", "admin"] as const) {
-    test.describe(`T258 — um primário por tela (${papel}, ${largura} px)`, () => {
+    test.describe(`T259 — um primário por tela (${papel}, ${largura} px)`, () => {
       test.skip(!hasAccount(papel), `sem a conta ${papel}`);
       test.use({ storageState: authFile(papel), viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
       test.describe.configure({ timeout: 300_000 });
@@ -416,22 +422,48 @@ for (const largura of LARGURAS) {
   }
 }
 
-// ─────────────────────────── 4. Cogumelo (Ações desta estadia) ───────────────────────────
+// ─────────────────────────── 4. Cogumelo na página da estadia (adendo do 41) ───────────────────────────
 
-test.describe("T258 — cogumelo na estadia (laboratório)", () => {
+/** Dia (AAAA-MM-DD) daqui a `n` dias no calendário de Brasília (o mesmo cálculo do t256). */
+const diaBrasilia = (n: number) => new Date(Date.now() - 3 * 3_600_000 + n * 86_400_000).toISOString().slice(0, 10);
+
+/** Entrada em `n` dias: o bloco 1 anda inteiro (o mesmo mecanismo do t256 para simular o D-7 das instruções). */
+async function entradaEm(contratoId: string, n: number) {
+  const { error } = await adm().from("contrato_blocos").update({ inicio: diaBrasilia(n), fim: diaBrasilia(n + 59) }).eq("contrato_id", contratoId).eq("numero_bloco", 1);
+  if (error) throw error;
+}
+
+/** Ações clicáveis da página (fora do cogumelo, que é flutuante, e de janelas abertas), na ordem do documento. */
+async function acoesDaPagina(page: Page): Promise<string[]> {
+  return page.getByTestId("pagina-estadia").evaluate((raiz) =>
+    Array.from(raiz.querySelectorAll<HTMLElement>("a, button"))
+      .filter((el) => {
+        const b = el.getBoundingClientRect();
+        return b.width > 0 && b.height > 0 && !el.closest('[role=dialog], [data-folha], [data-testid="cogumelo"]') && el.dataset.testid !== "cogumelo";
+      })
+      .map((el) => el.dataset.testid || (el.textContent ?? "").trim().slice(0, 40)),
+  );
+}
+
+test.describe("T259 — cogumelo na página da estadia (laboratório)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (cria dono, morador, imóvel e um contrato vigente).");
   test.describe.configure({ mode: "serial" });
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const dono = { email: `dono.t258.${sufixo}@lab.vivanomads.test`, nome: "Dalva Cogumelo", role: "owner" as const };
-  const inq = { email: `inq.t258.${sufixo}@lab.vivanomads.test`, nome: "Igor Cogumelo", role: "tenant" as const };
+  const dono = { email: `dono.t259.${sufixo}@lab.vivanomads.test`, nome: "Dalva Cogumelo", role: "owner" as const };
+  const inq = { email: `inq.t259.${sufixo}@lab.vivanomads.test`, nome: "Igor Cogumelo", role: "tenant" as const };
   const ids: { dono?: string; inq?: string; imovel?: string; contrato?: string } = {};
-  const PERMITIDAS = ["Falar com o proprietário", "Falar com o morador", "Ver o contrato", "Ver instruções de chegada", "Pedir manutenção"];
+
+  const ITENS = {
+    moradorAntes: ["Falar com o proprietário", "Ver o contrato", "Propor alteração de datas", "Pedir limpeza", "Pedir manutenção"],
+    moradorDepois: ["Falar com o proprietário", "Ver o contrato", "Propor alteração de datas", "Ver instruções de chegada", "Pedir limpeza", "Pedir manutenção"],
+    proprietario: ["Falar com o morador", "Ver o contrato", "Propor alteração de datas", "Ver instruções de chegada", "Pedir limpeza", "Pedir manutenção", "Ver no calendário"],
+  };
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.inq = await criarConta(inq, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Cogumelo t258 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Cogumelo t259 ${sufixo}`, { ativo: true });
     const { data, error } = await adm()
       .from("contratos")
       .insert({
@@ -452,6 +484,7 @@ test.describe("T258 — cogumelo na estadia (laboratório)", () => {
       .single();
     if (error) throw error;
     ids.contrato = data.id as string;
+    // Assinado pelas duas partes e com o 1º pagamento confirmado: as instruções só dependem do D-7.
     await tornarContratoVigente(ids.contrato, ids.dono);
   });
   test.afterAll(async () => {
@@ -459,23 +492,48 @@ test.describe("T258 — cogumelo na estadia (laboratório)", () => {
     await apagarContas([ids.dono, ids.inq]);
   });
 
-  for (const [quem, rota, falar] of [
-    ["morador", () => `/dashboard/locacoes/${ids.contrato}`, "Falar com o proprietário"],
-    ["proprietário", () => `/dashboard/contratos/${ids.contrato}`, "Falar com o morador"],
+  // Antes (entrada em 20 dias: liberação no D-7, ainda longe) e depois (entrada em 5 dias: já liberadas).
+  for (const [quem, fase, entrada, esperado] of [
+    ["morador", "antes", 20, ITENS.moradorAntes],
+    ["morador", "depois", 5, ITENS.moradorDepois],
+    ["proprietário", "depois", 5, ITENS.proprietario],
   ] as const) {
     for (const largura of LARGURAS) {
-      test(`${quem} a ${largura} px: folha só com ações que existem; sombra única; não cobre o Fale com a Viva`, async ({ browser }) => {
+      test(`${quem} (${fase} da liberação) a ${largura} px: folha com os itens exatos; um primário 'Mensagem'; 'Encerrar' em texto vermelho no fim`, async ({ browser }) => {
         test.setTimeout(150_000);
+        await entradaEm(ids.contrato!, entrada);
         const page = await entrar(browser, quem === "morador" ? inq.email : dono.email, senha);
         await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-        // Fora da estadia, nada de cogumelo.
-        await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+        page.on("dialog", (d) => {
+          throw new Error(`diálogo do navegador não permitido: ${d.type()} ${d.message()}`);
+        });
+        // Fora da estadia, nada de cogumelo (nem no detalhe do contrato: ele só aponta para a estadia).
+        await page.goto(quem === "morador" ? `/dashboard/locacoes/${ids.contrato}` : `/dashboard/contratos/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+        await expect(page.getByTestId("contrato-abrir-estadia")).toBeVisible({ timeout: 25_000 });
         await expect(page.getByTestId("cogumelo")).toHaveCount(0);
-        await page.goto(rota(), { waitUntil: "domcontentloaded" });
+
+        await page.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+        await expect(page.getByTestId("pagina-estadia")).toHaveAttribute("data-papel", quem === "morador" ? "inquilino" : "proprietario", { timeout: 25_000 });
+        await page.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => undefined);
+        // A fileira fixa sob o cartão de status não existe mais.
+        await expect(page.getByTestId("estadia-acoes")).toHaveCount(0);
+        // Exatamente um primário visível: "Mensagem", para a conversa do contrato.
+        await expect.poll(() => primarios(page), { timeout: 10_000 }).toEqual(["Mensagem"]);
+        await expect(page.getByTestId("estadia-acao-mensagem")).toHaveAttribute("href", /\/dashboard\/mensagens\?conversa=/);
+        // "Encerrar contrato": texto vermelho, nunca primário, a última ação da página.
+        const encerrar = page.getByTestId("estadia-acao-encerrar");
+        await expect(encerrar).toHaveText("Encerrar contrato");
+        await expect(encerrar).toHaveAttribute("href", `/dashboard/estadia/${ids.contrato}/encerrar`);
+        expect(await encerrar.getAttribute("data-cta")).not.toBe("primary");
+        await expect(encerrar).toHaveClass(/text-red-600/);
+        expect(await encerrar.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+        expect((await acoesDaPagina(page)).at(-1)).toBe("estadia-acao-encerrar");
+        expect(await semRolagem(page)).toBeLessThanOrEqual(0);
+
+        // O cogumelo: sombra única e fora do "Fale com a Viva".
         const cog = page.getByTestId("cogumelo");
-        await expect(cog).toBeVisible({ timeout: 25_000 });
+        await expect(cog).toBeVisible();
         expect(sombraVisivel(await cog.evaluate((el) => getComputedStyle(el).boxShadow))).toBe(SOMBRA_FLUTUANTE);
-        // Não cobre o "Fale com a Viva" (o Viva sobe acima dele).
         const viva = page.getByTestId("fale-com-a-viva");
         if (await viva.isVisible()) {
           const a = (await cog.boundingBox())!;
@@ -483,21 +541,45 @@ test.describe("T258 — cogumelo na estadia (laboratório)", () => {
           const cruza = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
           expect(cruza, "cogumelo e Fale com a Viva se sobrepõem").toBe(false);
         }
+        // O cogumelo não cobre o "Encerrar contrato" no fim da página.
+        await encerrar.scrollIntoViewIfNeeded();
+        {
+          const a = (await cog.boundingBox())!;
+          const b = (await encerrar.boundingBox())!;
+          const cruza = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+          expect(cruza, "cogumelo cobre o Encerrar contrato").toBe(false);
+        }
+
         await cog.click();
         const folha = page.getByRole("dialog", { name: "Ações desta estadia" });
         await expect(folha).toBeVisible();
-        const itens = (await folha.getByTestId("acoes-estadia-lista").locator("li").allInnerTexts()).map((t) => t.trim());
-        expect(itens).toContain(falar);
-        expect(itens).toContain("Ver o contrato");
-        for (const t of itens) {
-          expect(PERMITIDAS, t).toContain(t);
-          expect(t).not.toMatch(/cancelar|avaliar|pagar/i);
+        const lista = folha.getByTestId("acoes-estadia-lista");
+        expect((await lista.locator("li").allInnerTexts()).map((t) => t.trim())).toEqual([...esperado]);
+        for (const t of esperado) expect(t).not.toMatch(/cancelar|encerrar|avaliar|pagar/i);
+        // Cada item leva a uma rota que existe, com o contexto da estadia.
+        const href = (rotulo: string) => folha.getByRole("link", { name: rotulo, exact: true }).getAttribute("href");
+        expect(await href(quem === "morador" ? "Falar com o proprietário" : "Falar com o morador")).toMatch(/^\/dashboard\/mensagens\?conversa=/);
+        expect(await href("Ver o contrato")).toBe(quem === "morador" ? `/dashboard/locacoes/${ids.contrato}` : `/dashboard/contratos/${ids.contrato}`);
+        expect(await href("Propor alteração de datas")).toBe(`/dashboard/estadia/${ids.contrato}/alteracao`);
+        expect(await href("Pedir limpeza")).toBe(`/parceiros/buscar?categoria=limpeza&cidade=Uberl%C3%A2ndia&imovel=${ids.imovel}`);
+        expect(await href("Pedir manutenção")).toBe(`/parceiros/buscar?categoria=manutencao&cidade=Uberl%C3%A2ndia&imovel=${ids.imovel}`);
+        if (quem === "proprietário") expect(await href("Ver no calendário")).toBe("/dashboard/agenda");
+        if (esperado.includes("Ver instruções de chegada")) {
+          expect(await href("Ver instruções de chegada")).toBe(`/dashboard/estadia/${ids.contrato}#instrucoes`);
+          await folha.getByRole("link", { name: "Ver instruções de chegada" }).click();
+          await expect(folha).toHaveCount(0);
+          await expect(page.locator("#instrucoes")).toBeInViewport();
+          if (quem === "morador") await expect(page.getByTestId("instrucoes-bloqueadas")).toHaveCount(0);
+        } else {
+          // Antes da liberação o morador vê só o aviso na página, e o item não aparece no cogumelo.
+          await expect(page.getByTestId("instrucoes-bloqueadas")).toContainText(/^Liberadas em \d{2}\/\d{2}\/\d{4}\.$/);
+          // "Pedir limpeza" abre a busca de parceiros na categoria, levando o imóvel até o "Solicitar orçamento".
+          await folha.getByRole("link", { name: "Pedir limpeza", exact: true }).click();
+          await expect(page).toHaveURL(/\/parceiros\/buscar\?categoria=limpeza/);
+          await expect(page.locator("#bp-categoria")).toHaveValue("limpeza");
+          await expect(page.locator('input[type="hidden"][name="imovel"]')).toHaveValue(ids.imovel!);
         }
-        if (quem === "proprietário") expect(itens).not.toContain("Pedir manutenção");
-        await folha.getByRole("link", { name: "Ver o contrato" }).click();
-        await expect(folha).toHaveCount(0);
-        await expect(page.locator("#contrato")).toBeInViewport();
-        await page.screenshot({ path: `tests/laboratorio/saida/t258-cogumelo-${quem === "morador" ? "morador" : "dono"}-${largura}.png` });
+        await page.screenshot({ path: `tests/laboratorio/saida/t259-cogumelo-estadia-${quem === "morador" ? `morador-${fase}` : "dono"}-${largura}.png` });
         await page.context().close();
       });
     }
