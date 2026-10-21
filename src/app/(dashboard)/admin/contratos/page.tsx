@@ -18,6 +18,8 @@ import { fmtPct, fmtReais, rotuloPeriodo } from "@/lib/admin/visao-geral";
 import { refContratoVN } from "@/lib/fiscal/fila-falhas";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import { dataBRT } from "@/lib/datas-brasilia";
+import { estadosConferenciaEntrada } from "@/lib/data/contrato-admin";
+import { ROTULO_ESTADO_CONFERENCIA, type EstadoConferenciaLista } from "@/lib/conferencia";
 
 export const metadata = { title: "Contratos — Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -58,6 +60,8 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
       (!inquilino || (nomes.get(c.tenantId) ?? "").toLowerCase().includes(inquilino))
   );
   const ag = agregarContratos(lista);
+  // Coluna "Conferência de entrada" (Prompt 35B, F5): Não aberta / Em andamento / Aguardando a outra parte / Confirmada / Contestada.
+  const conferencias = admin ? await estadosConferenciaEntrada(admin, lista.map((c) => c.id)) : new Map<string, EstadoConferenciaLista>();
   const statusVistos = [...new Set(todos.map((c) => c.status))].sort();
   const campo = "rounded-xl border border-line px-3 py-2 text-sm text-ink";
 
@@ -144,12 +148,18 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
                     Valor mensal {fmtReais(c.aluguelMensal)} × {meses} {meses === 1 ? "mês" : "meses"} ={" "}
                     <strong>{fmtReais((c.aluguelMensal ?? 0) * meses)}</strong>
                   </p>
+                  <p className="mt-1 text-xs text-muted">
+                    Conferência de entrada:{" "}
+                    <span className="font-medium text-ink" data-testid="contrato-conferencia-entrada">
+                      {ROTULO_ESTADO_CONFERENCIA[conferencias.get(c.id) ?? "nao_aberta"]}
+                    </span>
+                  </p>
                   <p className="mt-1 text-xs text-muted" data-testid="contrato-rotulo-taxa">
                     Taxa de serviço:{" "}
                     {rotuloBaseTaxa({ valor: c.taxaValor ?? 0, percent: c.taxaPercent ?? 0, aluguelMensal: c.aluguelMensal ?? 0, meses, aceiteEm: c.aceiteEm })}
                   </p>
                   <p className="mt-2 flex flex-wrap gap-3 text-xs">
-                    <Link href={`/dashboard/contratos/${c.id}`} className="font-medium text-forest underline">
+                    <Link href={`/admin/contratos/${c.id}`} className="font-medium text-forest underline" data-testid="abrir-contrato-admin">
                       Abrir o contrato
                     </Link>
                     <Link href="/admin/financeiro" className="font-medium text-forest underline">

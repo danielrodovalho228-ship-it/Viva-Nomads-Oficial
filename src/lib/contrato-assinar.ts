@@ -5,6 +5,7 @@
 */
 import { createHash } from "node:crypto";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
+import { dataBRT } from "./datas-brasilia.ts";
 import { limpezaDoResumo, linhaLimpezaResumo, type LimpezaEstadia } from "./anuncio/limpeza-estadia.ts";
 import { linhasRegrasPets, linhaValorPetCandidatura, normalizarRegrasPets, type RegrasPets } from "./anuncio/pets-regras.ts";
 
@@ -43,6 +44,27 @@ function dataDoResumo(iso: string): string | null {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
 }
 
+/**
+ * "Registrado em" do resumo (Prompt 35B ii): o dia de criação no calendário de BRASÍLIA — o mesmo da linha do tempo.
+ * Até então saía o dia em UTC (contrato criado às 22:48 de 18/10 em Brasília dizia "19/10/2026"). Data pura
+ * (AAAA-MM-DD) fica como está.
+ */
+function registradoEmDoResumo(criadoEm: string): string {
+  const soDia = dataDoResumo(criadoEm);
+  if (soDia) return soDia;
+  const brt = dataBRT(criadoEm);
+  return brt === "—" ? criadoEm : brt;
+}
+
+/** Dia em UTC (AAAA-MM-DD) — SÓ para reproduzir o texto que alguém já assinou; nunca para mostrar. */
+function diaUtcAssinado(criadoEm: string): string | null {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(criadoEm)) return criadoEm;
+  const d = new Date(criadoEm);
+  if (Number.isNaN(d.getTime())) return null;
+  const z = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${z(d.getUTCMonth() + 1)}-${z(d.getUTCDate())}`;
+}
+
 /** Total por mês do resumo: valor mensal + condomínio e contas fixas + limpeza paga. Só existe com limpeza paga. */
 export function totalMensalDoResumo(d: Pick<DadosResumo, "aluguelMensal" | "outrosCustosMes" | "limpezaEstadia" | "semTotalMes">): number | null {
   if (d.semTotalMes) return null;
@@ -70,7 +92,7 @@ export function resumoContrato(d: DadosResumo): string[] {
     ...(d.limpezaEstadia ? [linhaLimpezaResumo(d.limpezaEstadia)] : []),
     ...(total != null ? [`Total por mês: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`] : []),
     // pt-BR (complemento do recibo, 19/10): era "2026-10-19". linhasParaHash aceita o texto antigo para a outra parte.
-    `Registrado em: ${dataDoResumo(d.criadoEm.slice(0, 10)) ?? d.criadoEm}`,
+    `Registrado em: ${registradoEmDoResumo(d.criadoEm)}`,
   ];
 }
 
@@ -116,16 +138,37 @@ export function hashResumo(linhas: string[]): string {
  * resumo depois que alguém já podia ter assinado sem ela; se a outra parte já assinou sem a linha,
  * esta assina o mesmo texto (sem a linha) para as duas partes terem o mesmo hash.
  */
-export function linhasParaHash(linhas: string[], hashDaOutraParte: string | null): string[] {
+export function linhasParaHash(linhas: string[], hashDaOutraParte: string | null, criadoEm?: string | null): string[] {
   if (!hashDaOutraParte || hashResumo(linhas) === hashDaOutraParte) return linhas;
-  // "Registrado em" saía em ISO (2026-10-19) até 19/10; quem assinou antes assinou esse texto.
-  const iso = linhas.map((l) => l.replace(/^Registrado em: (\d{2})\/(\d{2})\/(\d{4})$/, "Registrado em: $3-$2-$1"));
-  for (const base of [linhas, iso]) {
-    if (hashResumo(base) === hashDaOutraParte) return base;
-    const sem = base.filter((l) => !l.startsWith("Início da estadia:"));
-    if (hashResumo(sem) === hashDaOutraParte) return sem;
+  return variantesDoResumo(linhas, criadoEm).find((v) => hashResumo(v) === hashDaOutraParte) ?? linhas;
+}
+
+/**
+ * Os textos do resumo que alguém pode ter assinado: o atual; "Registrado em" em ISO (até 19/10); "Registrado em"
+ * com o dia em UTC, em pt-BR e em ISO (até o Prompt 35B, que passou a usar o dia de Brasília); cada um com e
+ * sem a linha "Início da estadia" (F37). A ordem importa: o atual primeiro.
+ */
+export function variantesDoResumo(linhas: string[], criadoEm?: string | null): string[][] {
+  const registrado = (texto: string) => linhas.map((l) => (l.startsWith("Registrado em: ") ? `Registrado em: ${texto}` : l));
+  const bases: string[][] = [linhas, linhas.map((l) => l.replace(/^Registrado em: (\d{2})\/(\d{2})\/(\d{4})$/, "Registrado em: $3-$2-$1"))];
+  const utc = criadoEm ? diaUtcAssinado(criadoEm) : null;
+  if (utc) bases.push(registrado(dataDoResumo(utc) ?? utc), registrado(utc));
+  const vistas = new Set<string>();
+  const out: string[][] = [];
+  for (const b of bases) {
+    for (const v of [b, b.filter((l) => !l.startsWith("Início da estadia:"))]) {
+      const chave = v.join("\n");
+      if (vistas.has(chave)) continue;
+      vistas.add(chave);
+      out.push(v);
+    }
   }
-  return linhas;
+  return out;
+}
+
+/** O hash gravado na assinatura bate com o resumo atual (em qualquer variante já assinada)? */
+export function hashConfereComResumo(linhas: string[], hash: string, criadoEm?: string | null): boolean {
+  return variantesDoResumo(linhas, criadoEm).some((v) => hashResumo(v) === hash);
 }
 
 export function motivoNaoPodeAssinar(c: {

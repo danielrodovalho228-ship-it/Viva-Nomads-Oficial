@@ -49,6 +49,7 @@ Todas as rotas de `src/app/(dashboard)/admin`. Em cada uma: 390 px e 1280 px, se
 | `/admin/candidaturas` | Abrir uma candidatura | Dados do inquilino conforme a regra de ocultação até o aceite |
 | `/admin/cidades` | Ver cidades ativas | Contagem de anúncios bate com a semente |
 | `/admin/contratos` | Abrir contrato de teste | Marca "MINUTA DE TESTE — sem validade"; linha do tempo do contrato |
+| `/admin/contratos/[id]` | Abrir o contrato pela lista (só leitura) e baixar o pacote de provas | Selo de estado, assinaturas com hash igual/diferente, pagamentos (anulados marcados), conferências com fotos e o prazo; PDF com "Gerado pela equipe Viva Nomads"; não admin recebe 404 |
 | `/admin/dados-de-teste` | Semear e limpar a massa | Só cria registros `is_teste`; limpar não toca dado real |
 | `/admin/documentos` | Aprovar e recusar um documento | Aprovado libera a publicação; recusado avisa o dono; decisão agrupada por imóvel |
 | `/admin/emails-teste` | Ler os e-mails gerados nos outros passos | Um e-mail por evento, com o modelo único |

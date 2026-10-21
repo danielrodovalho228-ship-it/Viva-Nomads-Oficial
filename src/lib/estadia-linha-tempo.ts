@@ -3,7 +3,8 @@
   Mostra ao inquilino (e ao proprietário) Entrada, Conferência de entrada e Saída, cada uma com dia e
   horário. O horário vem do cadastro do imóvel; sem ele, diz "a combinar" em vez de inventar.
 */
-import { JANELA_ENTRADA_HORAS } from "./conferencia.ts";
+import { prazoConferenciaEntrada, textoPrazoConferencia } from "./conferencia.ts";
+import { diaBRT } from "./datas-brasilia.ts";
 
 export interface EtapaEstadia {
   chave: "entrada" | "conferencia" | "saida";
@@ -11,6 +12,8 @@ export interface EtapaEstadia {
   /** yyyy-mm-dd */
   dia: string;
   horario: string;
+  /** Só na conferência: o instante do prazo (ISO), o mesmo da seção da conferência e do servidor. */
+  prazo?: string;
 }
 
 const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
@@ -29,10 +32,6 @@ function horario(valor: string | null | undefined, prefixo: string): string {
   return HORA_RE.test(v) ? `${prefixo} ${v}` : A_COMBINAR;
 }
 
-function somarHoras(diaISO: string, horas: number): string {
-  return new Date(new Date(`${diaISO}T00:00:00Z`).getTime() + horas * 3600_000).toISOString().slice(0, 10);
-}
-
 export function montarLinhaDoTempo(p: {
   inicio: string | null;
   fim: string | null;
@@ -40,13 +39,16 @@ export function montarLinhaDoTempo(p: {
   checkoutBefore: string | null;
 }): EtapaEstadia[] {
   if (!p.inicio || !p.fim || !DIA_RE.test(p.inicio) || !DIA_RE.test(p.fim)) return [];
+  // F2 (Prompt 35B): o prazo vem da fonte única — dia de início + horário de entrada, em Brasília, + 48 h.
+  const prazo = prazoConferenciaEntrada({ inicio: p.inicio, checkinAfter: p.checkinAfter });
   return [
     { chave: "entrada", titulo: "Entrada", dia: p.inicio, horario: horario(p.checkinAfter, "a partir das") },
     {
       chave: "conferencia",
       titulo: "Conferência de entrada",
-      dia: somarHoras(p.inicio, JANELA_ENTRADA_HORAS),
-      horario: "prazo para registrar e responder",
+      dia: diaBRT(prazo) ?? p.inicio,
+      horario: textoPrazoConferencia(prazo),
+      prazo: prazo?.toISOString(),
     },
     { chave: "saida", titulo: "Saída", dia: p.fim, horario: horario(p.checkoutBefore, "até as") },
   ];

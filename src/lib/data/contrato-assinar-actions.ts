@@ -30,10 +30,12 @@ import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { motivoFaltamInstrucoes } from "@/lib/checkin";
 import { instrucoesPreenchidas } from "@/lib/checkin-servidor";
 import { nomeCurto } from "@/lib/perfil/perfil-publico";
-import { estadoDoContratoUnico, type EstadoContrato } from "@/lib/contrato-estado";
+import { estadoDoContratoUnico, seloParaEquipe, type EstadoContrato } from "@/lib/contrato-estado";
+import { ehAdmin } from "@/lib/data/admin-guard";
 import { escaparHtml } from "@/lib/escapar-html";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 import { periodoDosBlocos } from "@/lib/contrato-blocos";
+import { prazoConferenciaEntrada } from "@/lib/conferencia";
 import {
   MSG_CODIGO_BLOQUEADO,
   VALIDADE_CODIGO_ASSINATURA_MS,
@@ -69,6 +71,8 @@ export interface ContratoParaAssinar {
   linhaDoTempo: EtapaEstadia[];
   /** Estado pela fonte única (o mesmo selo das listas e da carteira). */
   estado: EstadoContrato;
+  /** Prazo da conferência de entrada (ISO), pela fonte única prazoConferenciaEntrada (Prompt 35B, F2). */
+  prazoConferenciaEm: string | null;
 }
 
 interface LinhaContrato {
@@ -159,7 +163,8 @@ function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string
     aluguelMensal: Number(c.aluguel_mensal),
     prazoDias: Number(c.prazo_total_dias),
     ocupantes: Number(c.qtd_ocupantes),
-    criadoEm: c.created_at.slice(0, 10),
+    // Prompt 35B (ii): o resumo mostra o dia de criação em Brasília; quem assinou o dia em UTC continua conferindo (variantesDoResumo).
+    criadoEm: c.created_at,
     inicioEstadia: inicio,
     petsRegras: petsRegrasDoResumo({
       algumaAssinatura: !!(c.assinado_proprietario_em || c.assinado_inquilino_em),
@@ -199,6 +204,7 @@ function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string
     euAssinei: !!(papel === "inquilino" ? a.inquilino : a.proprietario),
     estado: estadoDoContratoUnico(c, papel),
     inicioEstadia: inicio,
+    prazoConferenciaEm: prazoConferenciaEntrada({ inicio, checkinAfter: c.properties?.checkin_after ?? null })?.toISOString() ?? null,
     linhaDoTempo: montarLinhaDoTempo({
       inicio,
       fim,
@@ -223,6 +229,43 @@ export async function getContratoParaAssinar(contratoId: string): Promise<Contra
   const linha = data as unknown as LinhaContrato;
   await completarPets(linha);
   return montar(linha, user.id, await nomesDasPartes(String(linha.properties?.owner_id ?? ""), linha.tenant_id));
+}
+
+export interface ContratoParaEquipe {
+  visao: ContratoParaAssinar;
+  /** Selo da fonte única, sem o "falta você" de quem é parte. */
+  selo: string;
+  ownerId: string;
+  tenantId: string;
+  nomes: { proprietario: string | null; inquilino: string | null };
+  criadoEm: string;
+}
+
+/**
+ * Admin › contrato (Prompt 35B, F5): o MESMO resumo que as partes leem e assinam, para a equipe conferir.
+ * Só admin com verificação em duas etapas (ehAdmin, no servidor); a leitura pelo cliente de serviço vem DEPOIS.
+ * Quem não é admin recebe null (a página responde 404).
+ */
+export async function getContratoParaEquipe(contratoId: string): Promise<ContratoParaEquipe | null> {
+  if (!UUID_RE.test(String(contratoId))) return null;
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  if (!data) return null;
+  const linha = data as unknown as LinhaContrato;
+  await completarPets(linha);
+  const ownerId = String(linha.properties?.owner_id ?? "");
+  const nomes = await nomesDasPartes(ownerId, linha.tenant_id);
+  // O resumo não depende do papel: monta na visão do inquilino só para reaproveitar a mesma conta.
+  const visao = montar(linha, linha.tenant_id, nomes);
+  if (!visao) return null;
+  return { visao, selo: seloParaEquipe(linha), ownerId, tenantId: linha.tenant_id, nomes, criadoEm: linha.created_at };
 }
 
 /** Nome curto das duas partes (só o nome: nunca contato nem documento) — para "Ana S. (proprietário) assinou em…". */
@@ -424,7 +467,7 @@ export async function assinarContrato(input: {
     papel: visao.papel,
     assinado_em: agora,
     ip,
-    hash_documento: hashResumo(linhasParaHash(visao.resumo, hashDaOutraParte)),
+    hash_documento: hashResumo(linhasParaHash(visao.resumo, hashDaOutraParte, c.created_at)),
   });
   if (errReg) return { ok: false, error: "Não foi possível registrar a assinatura. Tente de novo." };
 

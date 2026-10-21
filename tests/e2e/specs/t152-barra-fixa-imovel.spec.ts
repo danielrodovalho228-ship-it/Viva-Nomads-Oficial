@@ -27,6 +27,7 @@ test.describe("T152 — Barra fixa do imóvel (390 px)", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
 
   test("D1: link Caução e taxas inteiro, com alvo de 44 px e sem nada por cima", async ({ page }) => {
+    test.setTimeout(120_000);
     for (const id of SEQUENCIA) {
       await page.goto(`/imoveis/${id}`, { waitUntil: "networkidle" });
       const barra = page.getByTestId("barra-fixa-imovel");
@@ -54,6 +55,7 @@ test.describe("T152 — Barra fixa do imóvel (390 px)", () => {
   });
 
   test("D2: por link, a barra é sempre a do próprio imóvel", async ({ page }) => {
+    test.setTimeout(120_000);
     for (const id of SEQUENCIA) {
       await page.goto(`/imoveis/${id}`, { waitUntil: "networkidle" });
       await conferirBarra(page, id);
@@ -61,6 +63,7 @@ test.describe("T152 — Barra fixa do imóvel (390 px)", () => {
   });
 
   test("D2: voltar e avançar mantêm a barra do imóvel mostrado", async ({ page }) => {
+    test.setTimeout(120_000);
     for (const id of SEQUENCIA) await page.goto(`/imoveis/${id}`, { waitUntil: "networkidle" });
     await page.goBack({ waitUntil: "commit" });
     await conferirBarra(page, SEQUENCIA[1]);

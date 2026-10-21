@@ -76,10 +76,11 @@ test("t70: todos os testes da busca dividida têm prazo de 120 s (servidor frio 
   assert.match(spec, /test\.describe\.configure\(\{\s*timeout:\s*120_000\s*\}\)/);
 });
 
-test("t160 confere a grade pelos favoritos que ainda estão no ar, não pelo título", () => {
+test("t160 confere a grade pelos cartões da própria tela, sem cruzar com outra leitura da API", () => {
   const spec = ler("tests/e2e/specs/t160-favoritos-pagina.spec.ts");
   assert.match(spec, /aria-busy", "false"/);
-  assert.match(spec, /request\.get\("\/api\/properties"\)/);
+  assert.doesNotMatch(spec, /request\.get\("\/api\/properties"\)/);
+  assert.match(spec, /toHaveCount\(antes - 1\)/);
   assert.doesNotMatch(spec, /toHaveCount\(2\);\n\n\s*await page\.getByRole\("button", \{ name: "Remover dos favoritos" \}\)\.first/);
 });
 
@@ -87,4 +88,27 @@ test("t93 diz se a resposta foi gravada no banco antes de cobrar a tela", () => 
   const spec = ler("tests/e2e/specs/t93-avaliacao-tela.spec.ts");
   assert.match(spec, /from\("avaliacao_respostas"\)/);
   assert.match(spec, /NÃO gravada no banco/);
+});
+
+test("t235 dá tempo à 1ª imagem do cartão gerada a frio no lab", () => {
+  const spec = ler("tests/e2e/specs/t235-cartoes-compartilhaveis.spec.ts");
+  assert.match(spec, /naturalWidth\), \{ timeout: 45_000 \}/);
+  assert.match(spec, /naturalHeight\), \{ timeout: 45_000 \}/);
+  assert.match(spec, /1\. dono[\s\S]{0,260}test\.setTimeout\(240_000\)/);
+});
+
+test("t117, t125, t143 e t152 têm janela de 120 s nos testes de várias navegações (lab 3084c6f3: 45 s esgotados)", () => {
+  for (const f of ["t117-polos-cidade", "t125-alerta-busca-salva", "t143-custo-total-mes", "t152-barra-fixa-imovel"]) {
+    const spec = ler(`tests/e2e/specs/${f}.spec.ts`);
+    const m = spec.match(/test\.setTimeout\(([\d_]+)\)/g) ?? [];
+    assert.ok(m.length >= 1, `${f}: test.setTimeout`);
+    for (const x of m) assert.ok(Number(x.match(/[\d_]+/)![0].replace(/_/g, "")) >= 120_000);
+  }
+  assert.equal((ler("tests/e2e/specs/t152-barra-fixa-imovel.spec.ts").match(/test\.setTimeout/g) ?? []).length, 3);
+});
+
+test("t193 repete o clique de contrapropor até a ajuda do valor aparecer (clique antes da hidratação)", () => {
+  const spec = ler("tests/e2e/specs/t193-propostas.spec.ts");
+  assert.match(spec, /toPass\(\{ timeout: 30_000 \}\)/);
+  assert.match(spec, /count\(\)\) === 0\) await b\.getByTestId\("proposta-contrapropor"\)\.click\(\)/);
 });

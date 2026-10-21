@@ -15,7 +15,12 @@ import {
   mesclarRespostas,
   estadoConferencia,
   podeEditarItens,
-  prazoEntrada,
+  prazoConferenciaEntrada,
+  textoPrazoConferencia,
+  rotuloConfirmar,
+  ajudaConfirmar,
+  estadoConferenciaLista,
+  ROTULO_ESTADO_CONFERENCIA,
   validarItem,
   type RespostaConferencia,
 } from "./conferencia.ts";
@@ -26,9 +31,30 @@ const R = (parte: "proprietario" | "inquilino", decisao: "confirmou" | "contesto
   motivo: decisao === "contestou" ? "Falta a foto da cozinha" : null,
 });
 
-test("entrada: prazo é até 48 h depois do início do contrato", () => {
+test("F2: prazo = dia de início + horário de entrada (Brasília) + 48 h, um instante só", () => {
   assert.equal(JANELA_ENTRADA_HORAS, 48);
-  assert.equal(prazoEntrada("2026-11-01T12:00:00Z").toISOString(), "2026-11-03T12:00:00.000Z");
+  // 18/10 às 15:00 em Brasília (UTC−3) = 18:00 UTC; + 48 h = 20/10 18:00 UTC = 20/10 às 15:00 em Brasília.
+  assert.equal(prazoConferenciaEntrada({ inicio: "2026-10-18", checkinAfter: "15:00" })?.toISOString(), "2026-10-20T18:00:00.000Z");
+  assert.equal(textoPrazoConferencia(prazoConferenciaEntrada({ inicio: "2026-10-18", checkinAfter: "15:00" })), "até 20/10 às 15:00, horário de Brasília");
+  // Sem horário (ou horário inválido): 00:00 em Brasília, nunca meia-noite UTC.
+  assert.equal(prazoConferenciaEntrada({ inicio: "2026-10-18", checkinAfter: null })?.toISOString(), "2026-10-20T03:00:00.000Z");
+  assert.equal(prazoConferenciaEntrada({ inicio: "2026-10-18", checkinAfter: "<b>" })?.toISOString(), "2026-10-20T03:00:00.000Z");
+  assert.equal(textoPrazoConferencia(prazoConferenciaEntrada({ inicio: "2026-10-18" })), "até 20/10 às 00:00, horário de Brasília");
+  assert.equal(prazoConferenciaEntrada({ inicio: null }), null);
+  assert.equal(textoPrazoConferencia(null), "");
+});
+
+test("F2: o prazo não depende do fuso do processo (America/Chicago e America/Sao_Paulo)", async () => {
+  const { execFileSync } = await import("node:child_process");
+  const roda = (tz: string) =>
+    execFileSync(
+      process.execPath,
+      ["--input-type=module", "-e", `import { prazoConferenciaEntrada as p, textoPrazoConferencia as t } from "./src/lib/conferencia.ts"; const x = p({ inicio: "2026-10-18", checkinAfter: "15:00" }); console.log(x.toISOString() + "|" + t(x));`],
+      { env: { ...process.env, TZ: tz }, encoding: "utf8" },
+    ).trim();
+  const chicago = roda("America/Chicago");
+  assert.equal(chicago, "2026-10-20T18:00:00.000Z|até 20/10 às 15:00, horário de Brasília");
+  assert.equal(roda("America/Sao_Paulo"), chicago);
 });
 
 test("estado: sem respostas = em andamento; uma confirmou = aguardando a outra; as duas = confirmada", () => {
@@ -55,7 +81,7 @@ test("itens: cada parte edita até responder; com as duas respostas nada mais mu
 
 const AMBOS = { proprietario: 2, inquilino: 1 };
 
-test("resposta: cada parte responde uma vez; contestar exige motivo; confirmar sem itens é recusado", () => {
+test("resposta: cada parte responde uma vez; contestar exige motivo; sem itens da outra parte é recusado", () => {
   assert.deepEqual(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: AMBOS }), { ok: true, motivo: null });
   const jaRespondeu = decidirResposta({ respostas: [R("inquilino", "confirmou")], parte: "inquilino", decisao: "contestou", motivo: "mudei de ideia", itensPorParte: AMBOS });
   assert.equal(jaRespondeu.ok, false);
@@ -67,19 +93,57 @@ test("resposta: cada parte responde uma vez; contestar exige motivo; confirmar s
   assert.deepEqual(comMotivo, { ok: true, motivo: "Parede riscada" });
 });
 
+test("F1: confirmar com 0 itens próprios funciona (Opção B: responder ao registro da outra parte)", () => {
+  assert.deepEqual(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 2, inquilino: 0 } }), { ok: true, motivo: null });
+  assert.deepEqual(decidirResposta({ respostas: [], parte: "proprietario", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 0, inquilino: 1 } }), { ok: true, motivo: null });
+  // contestar continua exigindo motivo, mesmo sem itens próprios
+  assert.equal(decidirResposta({ respostas: [], parte: "inquilino", decisao: "contestou", motivo: " ", itensPorParte: { proprietario: 2, inquilino: 0 } }).ok, false);
+  // a trava antiga ("Registre ao menos um item") saiu
+  const r = decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 0, inquilino: 0 } });
+  assert.equal(r.ok, false);
+  assert.equal(r.ok ? "" : r.erro, "Você só pode responder depois que a outra parte registrar ao menos um item.");
+});
+
+test("F1: quem confirmou com 0 itens não trava a outra parte (os itens dela congelaram; a saída não tem prazo)", () => {
+  // o inquilino confirmou sem itens; o proprietário (com itens) responde em seguida
+  const r = decidirResposta({ respostas: [R("inquilino", "confirmou")], parte: "proprietario", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 2, inquilino: 0 } });
+  assert.deepEqual(r, { ok: true, motivo: null });
+});
+
+test("F1: texto do botão e da ajuda nomeiam a outra parte", () => {
+  assert.equal(rotuloConfirmar("inquilino"), "Confirmar o registro do proprietário");
+  assert.equal(rotuloConfirmar("proprietario"), "Confirmar o registro do inquilino");
+  assert.equal(ajudaConfirmar("inquilino"), "Confirmar o registro do proprietário. Seus próprios itens são opcionais.");
+});
+
+test("F1: duas confirmações = confirmada e tudo travado (regressão)", () => {
+  const duas = [R("inquilino", "confirmou"), R("proprietario", "confirmou")];
+  assert.equal(ROTULO_ESTADO_CONFERENCIA[estadoConferencia(duas)], "Confirmada pelas duas partes");
+  assert.equal(podeEditarItens(duas, "inquilino"), false);
+  assert.equal(podeEditarItens(duas, "proprietario"), false);
+});
+
+test("lista do admin: estados da conferência de entrada", () => {
+  assert.equal(ROTULO_ESTADO_CONFERENCIA[estadoConferenciaLista(false, [])], "Não aberta");
+  assert.equal(ROTULO_ESTADO_CONFERENCIA[estadoConferenciaLista(true, [])], "Em andamento");
+  assert.equal(ROTULO_ESTADO_CONFERENCIA[estadoConferenciaLista(true, [R("inquilino", "confirmou")])], "Aguardando a outra parte");
+  assert.equal(ROTULO_ESTADO_CONFERENCIA[estadoConferenciaLista(true, [R("inquilino", "confirmou"), R("proprietario", "confirmou")])], "Confirmada pelas duas partes");
+  assert.equal(ROTULO_ESTADO_CONFERENCIA[estadoConferenciaLista(true, [R("inquilino", "contestou")])], "Contestada");
+});
+
 test("resposta: parte que responde antes de a outra registrar é recusada (caso negativo da ordem 99c7c1e0)", () => {
   const antes = decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 0, inquilino: 3 } });
   assert.equal(antes.ok, false);
   assert.match(antes.ok ? "" : antes.erro, /outra parte/);
   // depois de a outra registrar, passa
   assert.equal(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 1, inquilino: 3 } }).ok, true);
-  // janela de 48 h da entrada fechada: responde mesmo sem a outra parte, desde que tenha item próprio
+  // janela de 48 h da entrada fechada: responde mesmo sem itens da outra parte (e sem itens próprios)
   assert.equal(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 0, inquilino: 3 }, janelaEncerrada: true }).ok, true);
-  assert.equal(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 2, inquilino: 0 }, janelaEncerrada: true }).ok, false);
+  assert.equal(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 0, inquilino: 0 }, janelaEncerrada: true }).ok, true);
 });
 
-test("janela: só a entrada tem prazo de 48 h", () => {
-  const inicio = "2026-11-01T12:00:00Z";
+test("janela: só a entrada tem prazo de 48 h (pela fonte única do prazo)", () => {
+  const inicio = { inicio: "2026-11-01", checkinAfter: "09:00" }; // 01/11 09:00 BRT = 12:00 UTC
   assert.equal(janelaEncerrada("entrada", inicio, new Date("2026-11-03T11:59:00Z")), false);
   assert.equal(janelaEncerrada("entrada", inicio, new Date("2026-11-03T12:01:00Z")), true);
   assert.equal(janelaEncerrada("entrada", null, new Date("2030-01-01T00:00:00Z")), false);
@@ -250,5 +314,8 @@ test("ação: a parte que respondeu não registra mais itens; a resposta pede it
   const src = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
   assert.match(src, /podeEditarItens\(\(respostas \?\? \[\]\) as RespostaConferencia\[\], ctx\.parte\)/);
   assert.match(src, /itensPorParte/);
-  assert.match(src, /janelaEncerrada\(input\.tipo, ctx\.inicio\)/);
+  assert.match(src, /janelaEncerrada\(input\.tipo, ctx\.entrada\)/);
+  // F2: um prazo só — o servidor não soma horas por conta própria
+  assert.doesNotMatch(src, /prazoEntrada\(/);
+  assert.match(src, /prazoConferenciaEntrada\(ctx\.entrada\)/);
 });

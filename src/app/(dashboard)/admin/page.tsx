@@ -6,6 +6,7 @@ import { PainelIaCadastro } from "@/components/admin/painel-ia-cadastro";
 import { CartaoBackup } from "@/components/admin/cartao-backup";
 import { VisaoGeralClient } from "./visao-geral-client";
 import { AtalhosAdmin } from "./atalhos-admin";
+import { AvisoAtendimentoAdmin } from "@/components/admin/aviso-atendimento";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { showDemoProperties } from "@/lib/data/properties";
 
@@ -45,6 +46,7 @@ export default async function AdminPage({
 
   return (
     <>
+      <AvisoAtendimentoAdmin />
       <VisaoGeralClient
         dados={resultado.ok ? resultado.dados : null}
         aviso={aviso}

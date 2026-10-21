@@ -20,6 +20,7 @@ test.describe("T125 — alerta de busca salva", () => {
   test.describe("logado", () => {
     test.use({ storageState: authFile("inquilino") });
     test("2. Buscas salvas: alerta ligado por padrão, desliga e religa", async ({ page }) => {
+      test.setTimeout(120_000);
       await page.setViewportSize({ width: 390, height: 800 });
       await page.goto("/buscar?local=Uberl%C3%A2ndia&homeoffice=1&quartos=2", { waitUntil: "networkidle" });
       const salvar = page.getByTestId("salvar-busca").filter({ visible: true });

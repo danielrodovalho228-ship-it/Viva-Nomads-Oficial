@@ -43,6 +43,7 @@ import { Button } from "@/components/ui/button";
 import { ReadyToLiveBadge, DocConferidaBadge } from "@/components/ui/badge";
 import { saveQualification, enviarDocumentoParaConferencia, getMyDocumentStatus, resumoImovelDoDono, carregarQualificacao, type DocumentStatus } from "@/lib/data/actions";
 import { cn, numBR } from "@/lib/utils";
+import { rotaVoltarAoAnuncio } from "@/lib/qualificar-link";
 
 const initialEligibility: EligibilityState = {
   furnished: false,
@@ -746,16 +747,6 @@ export default function QualificationChecklistPage({
       )}
     </div>
   );
-}
-
-/**
- * Para onde "Voltar ao anúncio" leva: rascunho reabre pelo `?draft=` (retoma o
- * snapshot salvo — `?id=` abria o editor de anúncio publicado, vazio para um
- * rascunho); publicado, pela edição; sem imóvel, um anúncio novo.
- */
-function rotaVoltarAoAnuncio(imovel: { id: string; rascunho: boolean } | null): string {
-  if (!imovel) return "/dashboard/imoveis/novo";
-  return imovel.rascunho ? `/dashboard/imoveis/novo?draft=${imovel.id}` : `/dashboard/imoveis/novo?id=${imovel.id}`;
 }
 
 /** Ícone temático por item de etiqueta (upgrade visual dos cards). */
