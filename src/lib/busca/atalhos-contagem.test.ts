@@ -55,3 +55,21 @@ test("#544b148a D15: atalho de preço usa ?preco com as faixas do filtro e conta
   assert.equal(contarAtalho(atalho.href, lista), 1);
   assert.equal(atalhosComContagem(ATALHOS_CATEGORIA, [lista[0]]).some((a) => a === atalho || a.href === atalho.href), false);
 });
+
+test("#978 (t162): a home conta como a /buscar — com imóvel real no resultado, os exemplos saem", () => {
+  const ex = (id: string) => id.startsWith("ube-");
+  const lista = [
+    { ...base, id: "ube-001", monthlyPrice: 2200, bedrooms: 1 },
+    { ...base, id: "real-1", monthlyPrice: 2100, bedrooms: 1 },
+    { ...base, id: "real-2", monthlyPrice: 2500, bedrooms: 1 },
+    { ...base, id: "real-3", monthlyPrice: 3200, bedrooms: 1 },
+  ];
+  // Antes: 3 (contava o exemplo); a /buscar?preco=2500 mostra 2 (só os reais).
+  assert.equal(contarAtalho("/buscar?preco=2500", lista, (p) => ex(p.id)), 2);
+  // Só exemplos no resultado: aparecem (como na /buscar).
+  assert.equal(contarAtalho("/buscar?preco=2300", [lista[0], lista[3]], (p) => ex(p.id)), 1);
+  // Capacidade conhecida abaixo de 1 morador não aparece na /buscar.
+  assert.equal(contarAtalho("/buscar?preco=2500", [{ ...lista[1], maxGuests: 0 }]), 0);
+  const vis = atalhosComContagem(ATALHOS_CATEGORIA, lista, (p) => ex(p.id));
+  assert.equal(vis.find((a) => a.href.includes("preco=2500"))?.total, 2);
+});

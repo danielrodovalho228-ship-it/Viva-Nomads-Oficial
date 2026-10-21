@@ -49,8 +49,25 @@ async function temH1(page: Page): Promise<string[]> {
   const h1 = page.locator("h1:visible").first();
   // No lab carregado o esqueleto às vezes não troca (lab 39456130138: admin /dashboard/favoritos a 1280):
   // espera 15 s e recarrega a rota até 2 vezes, esperando mais 15 s a cada vez.
+  // Rota que a casca do painel redireciona depois de montar (ex.: /dashboard/imoveis/novo para conta só inquilina →
+  // /dashboard): o h1 da tela de ORIGEM aparece, a casca troca de rota e a contagem caía no esqueleto do destino
+  // (lab do #978/#953: "sem h1 visível (rota final /dashboard)"). Só conta depois que a URL para de mudar.
+  const urlParada = async () => {
+    for (let i = 0; i < 10; i++) {
+      const antes = page.url();
+      await page.waitForTimeout(500);
+      if (page.url() === antes) return;
+    }
+  };
   for (let tentativa = 0; tentativa < 3; tentativa++) {
-    if (await h1.waitFor({ timeout: 15_000 }).then(() => true, () => false)) break;
+    await urlParada();
+    if (await h1.waitFor({ timeout: 15_000 }).then(() => true, () => false)) {
+      const url = page.url();
+      await urlParada();
+      if (page.url() === url) break;
+      // Mudou de rota depois do h1: espera o h1 da tela de destino.
+      if (await h1.waitFor({ timeout: 15_000 }).then(() => true, () => false)) break;
+    }
     if (tentativa < 2) await page.reload({ waitUntil: "domcontentloaded" }).catch(() => {});
   }
   const visiveis = await page.locator("h1:visible").count();
