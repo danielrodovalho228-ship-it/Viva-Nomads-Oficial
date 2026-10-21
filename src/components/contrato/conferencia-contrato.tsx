@@ -12,18 +12,30 @@ import {
   type ConferenciaView,
   type ConferenciasContrato,
 } from "@/lib/data/conferencia-actions";
-import { erroTamanhoLaudo, estadoConferencia, mesclarItens, mesclarLaudo, mesclarRespostas, type ItemTela, type LaudoTela, type RespostaTela, type TipoConferencia } from "@/lib/conferencia";
+import {
+  ajudaConfirmar,
+  ERRO_ANTES_DA_OUTRA_PARTE,
+  erroTamanhoLaudo,
+  estadoConferencia,
+  mesclarItens,
+  mesclarLaudo,
+  mesclarRespostas,
+  podeResponder,
+  ROTULO_ESTADO_CONFERENCIA as ROTULO_ESTADO,
+  rotuloConfirmar,
+  textoPrazoConferencia,
+  type ItemTela,
+  type LaudoTela,
+  type RespostaTela,
+  type TipoConferencia,
+} from "@/lib/conferencia";
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 
 const ROTULO_TIPO: Record<TipoConferencia, string> = { entrada: "Conferência de entrada", saida: "Conferência de saída" };
-const ROTULO_ESTADO = {
-  em_andamento: "Em andamento",
-  aguardando_outra_parte: "Aguardando a outra parte",
-  confirmada: "Confirmada pelas duas partes",
-  contestada: "Contestada",
-} as const;
 const ROTULO_PARTE = { proprietario: "Proprietário", inquilino: "Inquilino" } as const;
 
-const fmt = (iso: string) => new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+/** Data e hora sempre no horário de Brasília, qualquer que seja o fuso do navegador. */
+const fmt = (iso: string) => dataHoraBRT(iso, { semEtiqueta: true });
 
 /**
  * Conferência de entrada e de saída, nos dois painéis (ordens 404cd213 e d3c60126).
@@ -46,6 +58,8 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const [comodo, setComodo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [foto, setFoto] = useState<File | null>(null);
+  // F3: o campo de arquivo não é controlado; trocar a chave depois de adicionar recria o campo vazio.
+  const [chaveFoto, setChaveFoto] = useState(0);
   const [motivo, setMotivo] = useState("");
   const [contestando, setContestando] = useState(false);
   const [ocupado, setOcupado] = useState(false);
@@ -62,6 +76,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const estado = conf ? estadoConferencia(respostas) : "em_andamento";
   const itens = mesclarItens(conf?.itens ?? [], locais);
   const laudo = mesclarLaudo(conf?.laudo ?? null, laudoLocal);
+  const itensPorParte = { proprietario: itens.filter((i) => i.parte === "proprietario").length, inquilino: itens.filter((i) => i.parte === "inquilino").length };
+  // F1 (Opção B): responde ao registro da OUTRA parte; os próprios itens são opcionais. Com o prazo da entrada encerrado, libera.
+  const liberado = parte ? podeResponder({ parte, itensPorParte, respostas, janelaEncerrada: tipo === "entrada" && dados.janelaEntradaEncerrada }) : false;
 
   async function rodar(fn: () => Promise<{ ok: boolean; error?: string; item?: ItemTela; resposta?: RespostaTela; laudo?: LaudoTela }>) {
     setErro(null);
@@ -75,6 +92,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       setComodo("");
       setDescricao("");
       setFoto(null);
+      setChaveFoto((k) => k + 1);
       setMotivo("");
       setContestando(false);
       router.refresh();
@@ -123,7 +141,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         </span>
       </div>
       {tipo === "entrada" && dados.prazoEntradaEm && (
-        <p className="mt-1 text-xs text-muted">Registre fotos e itens por cômodo até {fmt(dados.prazoEntradaEm)} (48 h depois do início).</p>
+        <p className="mt-1 text-xs text-muted" data-testid="conferencia-prazo" data-prazo={dados.prazoEntradaEm}>
+          Registre fotos e itens por cômodo {textoPrazoConferencia(dados.prazoEntradaEm)} (48 h depois da entrada).
+        </p>
       )}
 
       {laudo && (
@@ -177,7 +197,12 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         <form onSubmit={adicionar} className="mt-4 grid grid-cols-1 gap-2" data-testid={`conferencia-${tipo}-form`}>
           <input value={comodo} onChange={(e) => setComodo(e.target.value)} maxLength={60} placeholder="Cômodo (ex.: Sala)" aria-label="Cômodo" className="h-11 rounded-lg border border-line px-3 text-sm" />
           <textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} maxLength={300} rows={2} placeholder="Itens e estado do cômodo" aria-label="Itens e estado do cômodo" className="rounded-lg border border-line p-3 text-sm" />
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFoto(e.target.files?.[0] ?? null)} aria-label="Foto do cômodo" className="block w-full min-w-0 max-w-full text-sm" />
+          <input type="file" key={chaveFoto} accept="image/jpeg,image/png,image/webp" onChange={(e) => setFoto(e.target.files?.[0] ?? null)} aria-label="Foto do cômodo" className="block w-full min-w-0 max-w-full text-sm" data-testid={`conferencia-${tipo}-foto`} />
+          {foto && (
+            <p className="break-all text-xs text-muted" data-testid={`conferencia-${tipo}-foto-escolhida`}>
+              Foto escolhida: {foto.name}
+            </p>
+          )}
           <Button type="submit" variant="outline" disabled={ocupado || !comodo.trim() || !descricao.trim()}>
             {ocupado && <Loader2 className="h-4 w-4 animate-spin" />} Adicionar item
           </Button>
@@ -191,7 +216,13 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         </label>
       )}
 
-      {parte && conf && itens.length > 0 && !respondeu && (
+      {parte && !respondeu && !travada && !liberado && (
+        <p className="mt-4 text-xs text-muted" data-testid={`conferencia-${tipo}-aguardando-registro`}>
+          {ERRO_ANTES_DA_OUTRA_PARTE}
+        </p>
+      )}
+
+      {parte && !respondeu && !travada && liberado && (
         <div className="mt-4 space-y-2">
           {contestando ? (
             <>
@@ -208,12 +239,14 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
           ) : (
             <div className="flex flex-wrap gap-2">
               <Button disabled={ocupado} onClick={() => rodar(() => responderConferencia({ contratoId, tipo, decisao: "confirmou" }))} data-testid={`conferencia-${tipo}-confirmar`}>
-                Confirmar
+                {rotuloConfirmar(parte)}
               </Button>
               <Button variant="outline" disabled={ocupado} onClick={() => setContestando(true)}>
                 Contestar
               </Button>
-              <p className="w-full text-xs text-muted">Depois de confirmar ou contestar, a conferência não pode mais ser alterada.</p>
+              <p className="w-full text-xs text-muted" data-testid={`conferencia-${tipo}-ajuda`}>
+                {ajudaConfirmar(parte)} Depois de confirmar ou contestar, a conferência não pode mais ser alterada.
+              </p>
             </div>
           )}
         </div>

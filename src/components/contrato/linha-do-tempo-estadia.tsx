@@ -17,6 +17,7 @@ export function LinhaDoTempoEstadia({ etapas }: { etapas: EtapaEstadia[] }) {
           <li
             key={e.chave}
             data-testid={`estadia-etapa-${e.chave}`}
+            data-prazo={e.prazo}
             className="flex items-center gap-4 rounded-xl border border-sage-200 bg-white p-3"
           >
             <span className="w-16 shrink-0 text-center font-title text-sm font-bold uppercase text-forest">

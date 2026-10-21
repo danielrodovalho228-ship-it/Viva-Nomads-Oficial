@@ -600,7 +600,8 @@
         "t57-contrato-assinar",
         "t205-fechamento-sem-beco",
         "t220-recibo-assinatura",
-        "t221-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t240-conferencia-provas-admin"
       ]
     },
     "/dashboard/favoritos": {
@@ -1282,7 +1283,8 @@
       ],
       "specs": [
         "t229-admin-conversa-com-tudo",
-        "t48-varredura"
+        "t48-varredura",
+        "t240-conferencia-provas-admin"
       ]
     },
     "/admin/solicitacoes": {
@@ -1355,6 +1357,14 @@
       "specs": [
         "t236-parceiros-ciclo",
         "t241-contas-teste-36"
+      ]
+    },
+    "/admin/contratos/[id]": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t240-conferencia-provas-admin"
       ]
     }
   },
@@ -1544,7 +1554,8 @@
         "proprietario"
       ],
       "specs": [
-        "t238-pacote-provas"
+        "t238-pacote-provas",
+        "t240-conferencia-provas-admin"
       ]
     },
     "/api/cron/atendimento": {
@@ -1822,6 +1833,14 @@
       "specs": [
         "t235-cartoes-compartilhaveis",
         "t239-cartao-parceiro"
+      ]
+    },
+    "/api/admin/contratos/[id]/provas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t240-conferencia-provas-admin"
       ]
     }
   },
@@ -2531,7 +2550,8 @@
         "proprietario"
       ],
       "specs": [
-        "t85-conferencia-entrada-saida"
+        "t85-conferencia-entrada-saida",
+        "t240-conferencia-provas-admin"
       ]
     },
     "src/lib/data/conferencia-actions.ts#responderConferencia": {
@@ -2540,7 +2560,8 @@
         "proprietario"
       ],
       "specs": [
-        "t85-conferencia-entrada-saida"
+        "t85-conferencia-entrada-saida",
+        "t240-conferencia-provas-admin"
       ]
     },
     "src/lib/data/conta-teste-actions.ts#marcarContaTeste": {
@@ -3938,6 +3959,14 @@
       ],
       "specs": [
         "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/data/contrato-assinar-actions.ts#getContratoParaEquipe": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t240-conferencia-provas-admin"
       ]
     },
     "src/lib/data/cartoes-actions.ts#meuCartaoDoParceiro": {

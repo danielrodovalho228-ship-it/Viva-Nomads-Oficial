@@ -12,7 +12,9 @@ import {
   type ItemTela,
   type LaudoTela,
   podeEditarItens,
-  prazoEntrada,
+  prazoConferenciaEntrada,
+  ERRO_ANTES_DA_OUTRA_PARTE,
+  type EntradaDoContrato,
   validarFotoConferencia,
   validarItem,
   validarLaudo,
@@ -36,7 +38,7 @@ type Resultado = { ok: true; id?: string; item?: ItemTela; resposta?: RespostaTe
 const erro = (error: string): Resultado => ({ ok: false, error });
 
 /** Quem é a pessoa neste contrato: "inquilino", "proprietario" ou null (não é parte). */
-async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte: ParteConferencia; status: string; inicio: string | null } | null> {
+async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte: ParteConferencia; status: string; entrada: EntradaDoContrato } | null> {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin || !UUID_RE.test(contratoId)) return null;
@@ -46,15 +48,17 @@ async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte
   if (!user) return null;
   const { data: c } = await admin
     .from("contratos")
-    .select("tenant_id, status, properties(owner_id), contrato_blocos(inicio)")
+    .select("tenant_id, status, properties(owner_id, checkin_after), contrato_blocos(inicio)")
     .eq("id", contratoId)
     .maybeSingle();
   if (!c) return null;
-  const donoId = (c.properties as unknown as { owner_id?: string } | null)?.owner_id;
+  const prop = c.properties as unknown as { owner_id?: string; checkin_after?: string | null } | null;
+  const donoId = prop?.owner_id;
   const parte: ParteConferencia | null = c.tenant_id === user.id ? "inquilino" : donoId === user.id ? "proprietario" : null;
   if (!parte) return null;
   const inicios = ((c.contrato_blocos ?? []) as { inicio: string }[]).map((b) => b.inicio).sort();
-  return { uid: user.id, parte, status: String(c.status), inicio: inicios[0] ?? null };
+  // F2: o prazo da entrada sai do dia de início + horário de entrada do imóvel (prazoConferenciaEntrada).
+  return { uid: user.id, parte, status: String(c.status), entrada: { inicio: inicios[0] ?? null, checkinAfter: prop?.checkin_after ?? null } };
 }
 
 /** Registra um item (cômodo + descrição + foto opcional) na conferência; cria a conferência na primeira vez. */
@@ -72,7 +76,7 @@ export async function registrarItemConferencia(input: {
   if (input.fotoPath && !input.fotoPath.startsWith(`${ctx.uid}/`)) return erro("Foto inválida.");
   const v = validarItem({ comodo: input.comodo, descricao: input.descricao, fotoPath: input.fotoPath ?? null });
   if (!v.ok) return erro(v.erro);
-  if (input.tipo === "entrada" && ctx.inicio && Date.now() > prazoEntrada(ctx.inicio).getTime()) {
+  if (janelaEncerrada(input.tipo, ctx.entrada)) {
     return erro("O prazo de 48 horas para a conferência de entrada já passou.");
   }
   if (!(await consumirLimite(`conferencia-item:${ctx.uid}`, 200, HORA))) return erro("Muitos registros em pouco tempo. Tente de novo em instantes.");
@@ -123,8 +127,17 @@ export async function responderConferencia(input: {
   const ctx = await parteDoContrato(input.contratoId);
   if (!ctx) return erro("Você não faz parte deste contrato.");
   const admin = createAdminClient()!;
-  const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", input.tipo).maybeSingle();
-  if (!conf) return erro("Ainda não há itens registrados nesta conferência.");
+  const encerrada = janelaEncerrada(input.tipo, ctx.entrada);
+  let { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", input.tipo).maybeSingle();
+  if (!conf) {
+    // Sem conferência = a outra parte não registrou nada. Com o prazo da entrada encerrado, responde mesmo assim.
+    if (!encerrada) return erro(ERRO_ANTES_DA_OUTRA_PARTE);
+    await admin
+      .from("conferencias")
+      .upsert({ contrato_id: input.contratoId, tipo: input.tipo, aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true });
+    ({ data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", input.tipo).maybeSingle());
+    if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
+  }
 
   const [{ data: respostas }, { data: itens }] = await Promise.all([
     admin.from("conferencia_respostas").select("parte, decisao, motivo").eq("conferencia_id", conf.id),
@@ -138,7 +151,7 @@ export async function responderConferencia(input: {
     decisao: input.decisao,
     motivo: input.motivo ?? "",
     itensPorParte,
-    janelaEncerrada: janelaEncerrada(input.tipo, ctx.inicio),
+    janelaEncerrada: encerrada,
   });
   if (!d.ok) return erro(d.erro);
 
@@ -165,7 +178,10 @@ export interface ConferenciaView {
 export interface ConferenciasContrato {
   /** Quem está olhando: "inquilino", "proprietario" ou null (equipe/leitura). */
   minhaParte: ParteConferencia | null;
+  /** Instante do prazo da entrada (ISO), pela fonte única `prazoConferenciaEntrada`. */
   prazoEntradaEm: string | null;
+  /** O prazo da entrada já passou (calculado no servidor): libera responder sem itens da outra parte. */
+  janelaEntradaEncerrada: boolean;
   conferencias: ConferenciaView[];
 }
 
@@ -237,13 +253,14 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
 
 /** As conferências do contrato, lidas pelo RLS (só as partes e a equipe enxergam). */
 export async function conferenciasDoContrato(contratoId: string): Promise<ConferenciasContrato> {
-  const vazio: ConferenciasContrato = { minhaParte: null, prazoEntradaEm: null, conferencias: [] };
+  const vazio: ConferenciasContrato = { minhaParte: null, prazoEntradaEm: null, janelaEntradaEncerrada: false, conferencias: [] };
   const supabase = await createClient();
   if (!supabase || !UUID_RE.test(contratoId)) return vazio;
   const ctx = await parteDoContrato(contratoId);
-  const prazoEntradaEm = ctx?.inicio ? prazoEntrada(ctx.inicio).toISOString() : null;
+  const prazoEntradaEm = ctx ? (prazoConferenciaEntrada(ctx.entrada)?.toISOString() ?? null) : null;
+  const janelaEntradaEncerrada = ctx ? janelaEncerrada("entrada", ctx.entrada) : false;
   const { data: confs } = await supabase.from("conferencias").select("id, tipo").eq("contrato_id", contratoId);
-  if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, conferencias: [] };
+  if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, conferencias: [] };
   const ids = confs.map((c) => c.id as string);
   const [{ data: itens }, { data: respostas }, { data: laudos }] = await Promise.all([
     supabase.from("conferencia_itens").select("id, conferencia_id, parte, comodo, descricao, foto_path, criado_em").in("conferencia_id", ids).order("criado_em"),
@@ -273,5 +290,5 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
       } satisfies ConferenciaView;
     }),
   );
-  return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, conferencias };
+  return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, conferencias };
 }
