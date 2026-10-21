@@ -55,3 +55,12 @@ test("limparSaida: remove contato que escapar para o texto", () => {
   assert.equal(contemContato(out), false);
   assert.ok(out.includes("Apartamento no Centro"));
 });
+
+test("contemContato dá a mesma resposta em chamadas repetidas (sem estado de regex global)", () => {
+  for (const t of ["fale com a@b.com", "ligue 11 91234-5678", "veja www.exemplo.com.br"]) {
+    const r = [1, 2, 3, 4].map(() => contemContato(t));
+    assert.deepEqual(r, [true, true, true, true], t);
+  }
+  assert.equal(contemContato("Imóvel mobiliado perto do centro"), false);
+  assert.equal(contemContato("Imóvel mobiliado perto do centro"), false);
+});
