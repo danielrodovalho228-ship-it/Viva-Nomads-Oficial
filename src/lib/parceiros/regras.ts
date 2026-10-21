@@ -25,10 +25,13 @@ export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS
 // ── Taxa de serviço (10%, todas as categorias; fotógrafos inclusive) ────────────────────────────────────────────
 export const TAXA_SERVICO_PARCEIRO = 0.1;
 
-/** Valor do serviço → taxa da Viva (10%) e o que o parceiro recebe, em centavos inteiros (arredonda a taxa). */
+/**
+ * Valor do serviço → taxa da Viva (10%) e o que o parceiro recebe, em centavos inteiros. A taxa arredonda para 2 casas
+ * com meio para cima, em conta inteira (sem erro de ponto flutuante): 10% de c centavos = floor((c + 5) / 10).
+ */
 export function dividirValor(valor: number): { taxa: number; parceiro: number } {
   const centavos = Math.round(Math.max(0, Number(valor) || 0) * 100);
-  const taxa = Math.round(centavos * TAXA_SERVICO_PARCEIRO);
+  const taxa = Math.floor((centavos + 5) / 10);
   return { taxa: taxa / 100, parceiro: (centavos - taxa) / 100 };
 }
 
