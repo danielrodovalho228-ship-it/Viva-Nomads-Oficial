@@ -154,7 +154,7 @@ test.describe("T227 — e-mail do recibo na caixa de teste + fila de falhas leg�
           const linha = page.getByTestId("documento-falha").filter({ hasText: numeros[i] });
           await expect(linha).toHaveCount(1, { timeout: 20_000 });
           await expect(linha.getByTestId("falha-numero")).toHaveText(numeros[i]);
-          await expect(linha.getByTestId("falha-tipo")).toHaveText("Recibo de pagamento");
+          await expect(linha.getByTestId("falha-tipo")).toHaveText("Recibo de locação");
           await expect(linha.getByTestId("falha-contrato")).toHaveText(ref);
           await expect(linha.getByTestId("falha-proprietario")).toHaveText("Clara S.");
           await expect(linha.getByTestId("falha-inquilino")).toHaveText("Bruno L.");

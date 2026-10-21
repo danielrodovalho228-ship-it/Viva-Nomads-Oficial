@@ -1,12 +1,14 @@
 import "server-only";
-import { randomBytes } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/notifications/email";
 import { emailDocumentoFiscal, nomeDoPdf } from "@/lib/notifications/montar-email";
 import { SITE_URL } from "@/lib/site";
 import { conteudoDocumento, NUMERO_PROVISORIO, ROTULO_TIPO, temContato, textoDocumento, type DadosDocumento, type TipoDocumento } from "@/lib/fiscal/documento";
 import { envioConfirmado, motivoFalhaEnvio, resultadoEnvio, type EnvioDestinatario } from "@/lib/fiscal/envio";
-import { gerarPdf, sha256 } from "@/lib/fiscal/pdf";
+import { gerarPdf } from "@/lib/fiscal/pdf";
+import { registrarDocumento } from "@/lib/fiscal/registro";
+import type { Prefixo } from "@/lib/fiscal/prefixos";
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 
@@ -68,7 +70,6 @@ async function emitir(
     .maybeSingle();
   if (existente) return { ok: true, id: existente.id as string, numero: existente.numero as string };
 
-  const codigo = randomBytes(16).toString("hex"); // 128 bits, nunca sequencial
   const agora = new Date();
   const dados: DadosDocumento = {
     tipo,
@@ -78,27 +79,52 @@ async function emitir(
     locatario: { nome: partes.locatario.nome, doc: partes.locatario.doc },
     imovelEndereco: partes.imovelEndereco,
     contratoRef: numeroPublicoContrato(partes.contratoId),
-    conferirUrl: `${SITE_URL}/conferir/${codigo}`,
+    conferirUrl: `${SITE_URL}/conferir`,
+    siteUrl: SITE_URL,
     ...extra,
   };
   // A trava de contato roda com o número PROVISÓRIO, antes de reservar o definitivo: a tentativa que falha não queima
   // número (a lacuna 000001–000003 de 19/10 veio daí). temContato ignora o número e a URL de conferência, então o
   // resultado é o mesmo com o número definitivo.
   if (temContato(textoDocumento(conteudoDocumento(dados)))) return { ok: false, motivo: "documento traria contato" };
-  const { data: numero, error: eNum } = await admin.rpc("proximo_numero_documento", { p_tipo: tipo });
-  if (eNum || !numero) return { ok: false, motivo: "numeração indisponível" };
-  dados.numero = numero as string;
-  const conteudo = conteudoDocumento(dados);
-  const pdf = await gerarPdf(conteudo);
+
+  // Número, código e hash pelo registro único (Prompt 56): o PDF é montado com o número e o código impressos.
+  const docId = randomUUID();
+  let pdf: Uint8Array;
+  let reg: Awaited<ReturnType<typeof registrarDocumento>>;
+  try {
+    reg = await registrarDocumento(admin, {
+      prefixo: PREFIXO_DO_TIPO[tipo],
+      tipo,
+      ref: { tabela: "documentos_fiscais", id: docId },
+      partes: [partes.ownerId, partes.tenantId],
+      conteudo: async ({ numero, codigo }) => {
+        dados.numero = numero;
+        dados.codigo = codigo;
+        dados.conferirUrl = `${SITE_URL}/conferir/${codigo}`;
+        return gerarPdf(conteudoDocumento(dados));
+      },
+    });
+    pdf = reg.bytes as Uint8Array;
+  } catch (e) {
+    return { ok: false, motivo: e instanceof Error ? e.message : "numeração indisponível" };
+  }
   const ano = Number(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo", year: "numeric" }));
   const caminho = `${ano}/${tipo}/${dados.numero}.pdf`;
+  // Registrado e não guardado: o registro fica ANULADO com o motivo (nada se apaga e a sequência não ganha buraco).
+  const anularRegistro = (motivo: string) =>
+    admin.from("documentos_registro").update({ status: "anulado", anulado_motivo: `Falha ao guardar o documento: ${motivo}`.slice(0, 300) }).eq("id", reg.id).then(undefined, () => null);
 
   const { error: eUp } = await admin.storage.from(BUCKET_DOCUMENTOS).upload(caminho, pdf, { contentType: "application/pdf", upsert: false });
-  if (eUp) return { ok: false, motivo: `upload: ${eUp.message}` };
+  if (eUp) {
+    await anularRegistro(eUp.message);
+    return { ok: false, motivo: `upload: ${eUp.message}` };
+  }
 
   const { data: doc, error: eIns } = await admin
     .from("documentos_fiscais")
     .insert({
+      id: docId,
       tipo,
       numero: dados.numero,
       ano,
@@ -117,14 +143,15 @@ async function emitir(
       periodo_fim: extra.periodoFim,
       valor: extra.valor,
       encargos: extra.encargos,
-      hash: sha256(pdf),
-      codigo_verificacao: codigo,
+      hash: reg.hash,
+      codigo_verificacao: reg.codigo,
       pdf_path: caminho,
     })
     .select("id")
     .single();
   if (eIns || !doc) {
     await admin.storage.from(BUCKET_DOCUMENTOS).remove([caminho]).catch(() => null);
+    await anularRegistro(eIns?.message ?? "registro");
     return { ok: false, motivo: `registro: ${eIns?.message ?? "falhou"}` };
   }
 
@@ -133,6 +160,13 @@ async function emitir(
 }
 
 /** Evento do e-mail na caixa de e-mails de teste, por tipo de documento. */
+/** Prefixo do registro (Prompt 56) por tipo de documento fiscal. */
+const PREFIXO_DO_TIPO: Record<TipoDocumento, Prefixo> = {
+  recibo_aluguel: "REC",
+  comprovante_caucao: "CAU",
+  termo_devolucao_caucao: "DEV",
+};
+
 const EVENTO_CAIXA: Record<TipoDocumento, string> = {
   recibo_aluguel: "recibo_emitido",
   comprovante_caucao: "comprovante_caucao_emitido",

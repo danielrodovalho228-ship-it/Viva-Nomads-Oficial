@@ -75,7 +75,8 @@ export async function gerarPdf(c: ConteudoDocumento): Promise<Uint8Array> {
   const novaPagina = () => {
     page = pdf.addPage(A4);
     y = topo;
-    const cab = limpar(regular, `Viva Nomads · ${c.titulo} (continuação)`);
+    const quem = c.cabecalho?.marca === "emissor" && c.cabecalho.emissor ? c.cabecalho.emissor.nome : "Viva Nomads";
+    const cab = limpar(regular, `${quem} · ${c.titulo}${c.cabecalho ? ` ${c.cabecalho.numero}` : ""} (continuação)`);
     page.drawText(cab, { x: margem, y, size: 8.5, font: regular, color: CINZA });
     page.drawLine({ start: { x: margem, y: y - 5 }, end: { x: margem + largura, y: y - 5 }, thickness: 0.5, color: CINZA });
     y -= 22;
@@ -99,8 +100,21 @@ export async function gerarPdf(c: ConteudoDocumento): Promise<Uint8Array> {
     page.drawLine({ start: { x: margem, y: y + 4 }, end: { x: margem + largura, y: y + 4 }, thickness: espessura, color: cor });
   };
 
-  escrever("Viva Nomads", { font: negrito, size: 12, cor: VERDE, gap: 6 });
+  const cab = c.cabecalho;
+  if (cab?.marca === "emissor" && cab.emissor) {
+    // Documento do emissor gerado pela plataforma (D1-b): o emissor em destaque; a Viva numa linha discreta.
+    escrever(cab.emissor.nome, { font: negrito, size: 17, cor: VERDE });
+    escrever(cab.emissor.linha, { size: 10, cor: CINZA });
+    escrever("Gerado pela plataforma Viva Nomads", { size: 8.5, cor: CINZA, gap: 10 });
+  } else {
+    escrever("Viva Nomads", { font: negrito, size: 12, cor: VERDE, gap: 6 });
+  }
   escrever(c.titulo, { font: negrito, size: 20, cor: VERDE });
+  if (cab) {
+    // Cabeçalho comum (Prompt 56): número (+ Registro nº no legado), versão e emissão no horário de Brasília.
+    escrever([cab.numero, cab.registro].filter(Boolean).join(" · "), { font: negrito, size: 11 });
+    escrever(`Emitido em ${cab.emitidoEm}`, { size: 9.5, cor: CINZA });
+  }
   escrever(c.subtitulo, { size: 11, cor: CINZA, gap: 10 });
   linhaHorizontal(0.8, VERDE);
   y -= 12;
@@ -138,6 +152,13 @@ export async function gerarPdf(c: ConteudoDocumento): Promise<Uint8Array> {
     const texto = `página ${i + 1} de ${paginas.length}`;
     const w = regular.widthOfTextAtSize(texto, 8);
     pg.drawText(texto, { x: A4[0] - margem - w, y: margem / 2, size: 8, font: regular, color: CINZA });
+    // Rodapé comum (Prompt 56): o caminho da conferência com o código, em toda página.
+    if (c.cabecalho?.conferir) {
+      const conf = limpar(regular, c.cabecalho.conferir);
+      let tam = 8;
+      while (tam > 6 && regular.widthOfTextAtSize(conf, tam) > largura - w - 12) tam -= 0.5;
+      pg.drawText(conf, { x: margem, y: margem / 2, size: tam, font: regular, color: CINZA });
+    }
   });
 
   return pdf.save({ useObjectStreams: false });

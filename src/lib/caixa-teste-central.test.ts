@@ -154,7 +154,7 @@ test("1. o recibo, o comprovante e o termo vão com o evento certo; a assinatura
 
 test("2. fila legível: número, tipo e contrato por linha; com 2 falhas, 2 linhas diferentes; a chave é o documento", () => {
   assert.equal(refContratoVN("11281a61-aaaa-4bbb-8ccc-000000000000"), "VN-CT-11281A61");
-  assert.equal(tipoDaFalha({ docTipo: "recibo_aluguel" }), "Recibo de pagamento");
+  assert.equal(tipoDaFalha({ docTipo: "recibo_aluguel" }), "Recibo de locação");
   assert.equal(tipoDaFalha({ pagamentoTipo: "caucao" }), "Comprovante de Caução");
   assert.equal(tipoDaFalha({ acerto: true }), "Termo de devolução da Caução");
   const a = { id: "1", documentoId: "d1", pagamentoId: "p1", acertoId: null, atualizadoEm: "2026-10-19T05:00:00Z", numero: "REC-2026-000004", contrato: "VN-CT-D9C70197" };

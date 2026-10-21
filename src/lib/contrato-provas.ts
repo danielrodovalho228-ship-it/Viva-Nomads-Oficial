@@ -5,7 +5,7 @@
   sem as fotos, respostas com o motivo, laudos só pelo nome) e a linha do tempo, em ordem de data. Não leva IP,
   contato nem documento. A plataforma não recebe dinheiro: o pacote só registra o que as partes declararam.
 */
-import type { ConteudoDocumento } from "./fiscal/documento.ts";
+import type { CabecalhoDocumento, ConteudoDocumento } from "./fiscal/documento.ts";
 import { brl, dataBR } from "./fiscal/documento.ts";
 import { compararHashComResumo, dataHoraAssinatura, hashResumo } from "./contrato-assinar.ts";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
@@ -186,15 +186,26 @@ export function nomeArquivoProvas(contratoId: string): string {
   return `provas-contrato-${contratoId.slice(0, 8)}.pdf`;
 }
 
-export function conteudoPacoteProvas(d: DadosProvas): ConteudoDocumento {
+/**
+ * Registro do pacote (Prompt 56): cada geração é um PRV novo, com cabeçalho e rodapé comuns. `contrato` é o número do
+ * contrato com o Registro nº ("VN-CT-11281A61 · Registro nº 000001"); sem ele, fica o id (como antes).
+ */
+export interface RegistroPacote {
+  cabecalho: Omit<CabecalhoDocumento, "marca" | "emissor">;
+  contrato?: string;
+}
+
+export function conteudoPacoteProvas(d: DadosProvas, registro?: RegistroPacote): ConteudoDocumento {
   const hashAtual = hashResumo(d.resumo);
   const ass = [...d.assinaturas].sort((a, b) => (a.em < b.em ? -1 : 1));
   const t = totaisPagamentos(d.pagamentos);
   return {
+    // Documento da plataforma (D1-a): só a marca Viva.
+    ...(registro ? { cabecalho: { marca: "plataforma" as const, ...registro.cabecalho } } : {}),
     titulo: "Pacote de provas do contrato",
     subtitulo: MARCA_MINUTA,
     quadro: [
-      ["Contrato", d.contratoId],
+      ["Contrato", registro?.contrato ?? d.contratoId],
       ["Imóvel", d.imovel],
       ["Situação", d.situacao],
       ["Hash do resumo atual", hashAtual],

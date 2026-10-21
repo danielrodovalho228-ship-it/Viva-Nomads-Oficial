@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { carregarContratoAdmin } from "@/lib/data/contrato-admin";
-import { conteudoPacoteProvas, nomeArquivoProvas } from "@/lib/contrato-provas";
-import { gerarPdf } from "@/lib/fiscal/pdf";
+import { nomeArquivoProvas } from "@/lib/contrato-provas";
+import { gerarPacoteProvasRegistrado } from "@/lib/fiscal/pacote-provas";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!user || !(await ehAdmin(supabase, user.id))) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
   const c = await carregarContratoAdmin(id);
   if (!c) return NextResponse.json({ error: "Contrato não encontrado." }, { status: 404 });
-  const pdf = await gerarPdf(conteudoPacoteProvas({ ...c.provas, geradoPelaEquipeEm: new Date().toISOString() }));
+  const pdf = await gerarPacoteProvasRegistrado({ ...c.provas, geradoPelaEquipeEm: new Date().toISOString() }, user.id).catch(() => null);
+  if (!pdf) return NextResponse.json({ error: "Não foi possível gerar o pacote agora." }, { status: 503 });
   await logModeracao(supabase, user.id, "baixar_pacote_provas", "contrato", id);
   return new NextResponse(Buffer.from(pdf), {
     headers: {
