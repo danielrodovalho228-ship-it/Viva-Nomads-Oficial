@@ -81,7 +81,12 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
     if (m.type() === "error") brutos.push(`console: ${m.text()} ${m.location().url ?? ""}`);
   });
   page.on("pageerror", (e) => brutos.push(`página: ${e.message}`));
-  page.on("requestfailed", (r) => brutos.push(`requisição falhou: ${r.url()}`));
+  page.on("requestfailed", (r) => {
+    // Pré-carregamento de link do Next (RSC, `?_rsc=`) cancelado pelo próprio navegador ao trocar de tela: não é erro da
+    // página. Rodada 1 da t249 (21/10): era a única coisa no critério d, em todas as 16 telas, nos dois tamanhos.
+    if (r.failure()?.errorText === "net::ERR_ABORTED" && (/[?&]_rsc=/.test(r.url()) || r.headers()["rsc"] === "1")) return;
+    brutos.push(`requisição falhou: ${r.url()}`);
+  });
   const ehExcecao = (t: string) => EXCECOES_TERCEIROS.some((x) => x.padrao.test(t));
   const limpa = (t: string) => t.replace(/\?.*$/, "").slice(0, 200); // sem query string (pode ter token/dado pessoal)
   return {
