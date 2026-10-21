@@ -15,16 +15,23 @@ import {
   avisarRenovacao,
   chaveEnvio,
   detalheAutomacao,
+  diasEntre,
   lembreteDeSaida,
   modoSimulado,
   pedirAvaliacao,
   podeReceber,
   type TipoAutomacao,
 } from "@/lib/automacoes/regras";
+import { COLUNAS_ESTADO_CONTRATO, primeiroPagamentoConfirmado, type LinhaEstadoContrato } from "@/lib/contrato-estado";
+import { HREF_ESTADIA } from "@/lib/estadia/estadia";
+import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarDono, liberaHoje, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
+import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos } from "@/lib/estadia/ocupantes";
 
 /**
  * Automações por data (ordem d250ea2f, item 5): rascunho de imóvel parado (1 e 3 dias), lembrete de saída (3 dias),
- * pedido de avaliação (1 dia após a saída) e aviso de renovação (15 dias antes do fim do bloco).
+ * pedido de avaliação (1 dia após a saída) e aviso de renovação (15 dias antes do fim do bloco). Página da estadia
+ * (Prompt 32): instruções de chegada liberadas no D-7 (morador), lembrete das instruções no D-10 (dono), ocupantes
+ * apagados 90 dias depois do fim e aditivos vencidos.
  * Cron diário da Vercel (vercel.json) com `Authorization: Bearer <CRON_SECRET>`; sem o segredo, não roda.
  * Cada aviso sai UMA vez por pessoa (automacoes_envios). Quem desligou os avisos (notif_email) não recebe.
  * `?simular=1` só conta o que sairia: não envia e não marca nada (passe obrigatório antes de ligar de verdade).
@@ -155,6 +162,47 @@ export async function GET(request: Request) {
     }
   }
 
+  // 7) Página da estadia (Prompt 32): instruções de chegada liberadas no D-7 (morador; contrato assinado pelas duas
+  // partes e 1º pagamento registrado) e lembrete ao dono no D-10 se ainda não preencheu.
+  const { data: estadias } = await admin
+    .from("contratos")
+    .select(`id, property_id, tenant_id, ${COLUNAS_ESTADO_CONTRATO}, properties(title, owner_id, checkin_after), contrato_blocos(inicio, fim, status)`)
+    .eq("status", "ativo")
+    .limit(1000);
+  for (const c of estadias ?? []) {
+    const blocos = ((c.contrato_blocos ?? []) as { inicio: string; fim: string; status: string }[]).filter((b) => b.status !== "nao_aceito");
+    const inicio = blocos.map((b) => b.inicio).sort()[0];
+    if (!inicio || inicio < hoje || inicio > dia(LEMBRETE_DONO_DIAS)) continue;
+    const prop = c.properties as unknown as { title?: string; owner_id?: string } | null;
+    const imovel = prop?.title || undefined;
+    const url = HREF_ESTADIA(c.id as string);
+    const condicao = {
+      inicio,
+      assinadoPelasDuas: !!c.assinado_proprietario_em && !!c.assinado_inquilino_em,
+      primeiroPagamento: primeiroPagamentoConfirmado(c.pagamentos_bloco as LinhaEstadoContrato["pagamentos_bloco"]),
+    };
+    if (liberaHoje(condicao, agora)) {
+      alvos.push({
+        tipo: "estadia_instrucoes_liberadas",
+        usuarioId: c.tenant_id as string,
+        refId: c.id as string,
+        url: `${url}#instrucoes`,
+        detalhe: detalheAutomacao("estadia_instrucoes_liberadas", { imovel, fim: inicio }),
+        depois: async () => admin.from("contrato_eventos").insert({ contrato_id: c.id, tipo: "instrucoes_liberadas", dados: { inicio } }),
+      });
+    }
+    if (prop?.owner_id && diasEntre(hoje, inicio) === LEMBRETE_DONO_DIAS) {
+      const [{ data: im }, { data: ck }] = await Promise.all([
+        admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id as string).maybeSingle(),
+        admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", c.id as string).maybeSingle(),
+      ]);
+      const efetivas = instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, (ck as { instrucoes?: string } | null)?.instrucoes);
+      if (lembrarDono(inicio, instrucoesPreenchidas(efetivas), agora)) {
+        alvos.push({ tipo: "estadia_instrucoes_pendentes", usuarioId: prop.owner_id, refId: c.id as string, url: `${url}#instrucoes`, detalhe: detalheAutomacao("estadia_instrucoes_pendentes", { imovel, fim: inicio }) });
+      }
+    }
+  }
+
   const contagem: Record<string, number> = {};
   for (const a of alvos) {
     const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", a.usuarioId).maybeSingle();
@@ -193,5 +241,30 @@ export async function GET(request: Request) {
   const sombraApagada = simular ? 0 : await limparSombra(admin).catch(() => 0);
   // Avaliações de pedido de parceiro: publicam 14 dias depois da conclusão, mesmo sem a outra parte (nunca no simulado).
   const avaliacoesParceiro = simular ? 0 : Number((await admin.rpc("publicar_avaliacoes_parceiro")).data ?? 0) || 0;
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro });
+  // Página da estadia (Prompt 32): ocupantes apagados RETENCAO_OCUPANTES_DIAS depois do fim do contrato; aditivos sem
+  // resposta em 7 dias vencem (nada muda no contrato). Na simulação, só conta.
+  const estadia = await manutencaoDaEstadia(admin, agora, simular).catch(() => ({ ocupantesApagados: 0, aditivosVencidos: 0 }));
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia });
+}
+
+/** Retenção dos ocupantes (90 dias depois do fim) e aditivos vencidos. `simular`: só conta, não apaga nem muda nada. */
+async function manutencaoDaEstadia(admin: NonNullable<ReturnType<typeof createAdminClient>>, agora: Date, simular: boolean) {
+  const corte = diaDeCorteRetencao(agora);
+  const { data: comOcupantes } = await admin.from("contrato_ocupantes").select("contrato_id, contratos(contrato_blocos(fim, status))").limit(2000);
+  const vencidos = new Set<string>();
+  for (const o of (comOcupantes ?? []) as unknown as { contrato_id: string; contratos: { contrato_blocos: { fim: string; status: string }[] | null } | null }[]) {
+    const fim = (o.contratos?.contrato_blocos ?? []).filter((b) => b.status !== "nao_aceito").map((b) => b.fim).sort().at(-1);
+    if (fim && fim < corte && ocupantesVencidos(fim, agora)) vencidos.add(o.contrato_id);
+  }
+  const { data: abertos } = await admin.from("contrato_aditivos").select("id, contrato_id").eq("status", "proposto").lt("expira_em", agora.toISOString());
+  if (simular) return { ocupantesApagados: vencidos.size, aditivosVencidos: abertos?.length ?? 0 };
+  for (const id of vencidos) {
+    await admin.from("contrato_ocupantes").delete().eq("contrato_id", id);
+    await admin.from("contrato_eventos").insert({ contrato_id: id, tipo: "ocupantes_apagados", dados: { retencao_dias: RETENCAO_OCUPANTES_DIAS } });
+  }
+  for (const a of (abertos ?? []) as { id: string; contrato_id: string }[]) {
+    const { data } = await admin.from("contrato_aditivos").update({ status: "expirado" }).eq("id", a.id).eq("status", "proposto").select("id");
+    if (data?.length) await admin.from("contrato_eventos").insert({ contrato_id: a.contrato_id, tipo: "aditivo_expirado", dados: { aditivo: a.id } });
+  }
+  return { ocupantesApagados: vencidos.size, aditivosVencidos: abertos?.length ?? 0 };
 }

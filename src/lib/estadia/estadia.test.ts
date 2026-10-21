@@ -197,3 +197,16 @@ test("chat: CPF com e sem máscara e RG bloqueados; 11 dígitos com DV inválido
   assert.equal(tel.masked, true, "segue mascarado como telefone");
   for (const t of ["R$ 1.250,00 por mês", "CEP 38400-000", "VN-CT-11281A61", "entrada 13/11/2026"]) assert.equal(guardContactInfo(t).masked, false, t);
 });
+
+test("rotinas da estadia no cron: D-7 ao morador, D-10 ao dono, ocupantes apagados depois de 90 dias, aditivos vencidos; simulação não apaga", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { detalheAutomacao } = await import("../automacoes/regras.ts");
+  const rota = readFileSync("src/app/api/cron/automacoes/route.ts", "utf8");
+  assert.match(rota, /tipo: "estadia_instrucoes_liberadas"/);
+  assert.match(rota, /liberaHoje\(condicao, agora\)/);
+  assert.match(rota, /lembrarDono\(inicio, instrucoesPreenchidas\(efetivas\), agora\)/);
+  assert.match(rota, /if \(simular\) return \{ ocupantesApagados: vencidos\.size/);
+  assert.ok(rota.indexOf("if (simular) return { ocupantesApagados") < rota.indexOf('from("contrato_ocupantes").delete()'), "simulação sai antes de apagar");
+  assert.match(detalheAutomacao("estadia_instrucoes_liberadas", { imovel: "Apto 12", fim: "2026-11-13" }), /Entrada em 13\/11\/2026\. As instruções de chegada estão na página da estadia\./);
+  assert.match(detalheAutomacao("estadia_instrucoes_pendentes", { imovel: "Apto 12", fim: "2026-11-13" }), /o morador recebe 7 dias antes/);
+});

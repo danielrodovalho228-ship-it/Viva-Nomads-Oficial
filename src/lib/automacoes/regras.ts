@@ -13,7 +13,10 @@ export type TipoAutomacao =
   | "proposta_vencendo"
   // Contratação de parceiros (Prompt 31b)
   | "parceiro_lembrete"
-  | "parceiro_conclusao_pendente";
+  | "parceiro_conclusao_pendente"
+  // Página da estadia (Prompt 32)
+  | "estadia_instrucoes_liberadas"
+  | "estadia_instrucoes_pendentes";
 
 const DIA_MS = 86_400_000;
 
@@ -86,6 +89,10 @@ export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fi
       return `Pedido ${ctx.numero ?? ""}: serviço marcado para ${ctx.quando ?? "as próximas horas"} (horário de Brasília). Combine os detalhes pelas mensagens do pedido.`.replace(/\s+/g, " ").trim();
     case "parceiro_conclusao_pendente":
       return `Pedido ${ctx.numero ?? ""}: a entrega foi marcada há 7 dias. Confirme a conclusão ou fale com o parceiro pelas mensagens do pedido. Nada é concluído sem você.`.replace(/\s+/g, " ").trim();
+    case "estadia_instrucoes_liberadas":
+      return `${imovel} Entrada em ${ctx.fim ? dataBr(ctx.fim) : "7 dias"}. As instruções de chegada estão na página da estadia.`.trim();
+    case "estadia_instrucoes_pendentes":
+      return `${imovel} Entrada do morador em ${ctx.fim ? dataBr(ctx.fim) : "10 dias"}. Preencha as instruções de chegada: o morador recebe 7 dias antes.`.trim();
   }
 }
 
