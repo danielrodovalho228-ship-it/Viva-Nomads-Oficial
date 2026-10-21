@@ -45,6 +45,8 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
 
   const cepBusca = normalizarCep(sp.cep) ?? cepRascunho;
   const r = await buscarParceiros({ categoria: "fotografia", cidade: sp.cidade, uf: sp.uf, cep: cepBusca });
+  // Vindo do passo de fotos do cadastro (Prompt 31b): o imóvel segue até o "Solicitar orçamento" do fotógrafo.
+  const consultaDoImovel = sp.imovel && /^[0-9a-f-]{36}$/i.test(sp.imovel) ? new URLSearchParams({ imovel: sp.imovel, cadastro: "1" }).toString() : undefined;
   const { cidade, uf } = r;
   const buscou = !!(cidade || cepBusca);
   const fotografos = cidade ? r.lista : [];
@@ -100,7 +102,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
           ) : (
             <ul className="mt-4 grid gap-4" data-testid="fotografos-lista">
               {fotografos.map((p) => (
-                <CartaoParceiro key={p.id} p={p} />
+                <CartaoParceiro key={p.id} p={p} consulta={consultaDoImovel} />
               ))}
             </ul>
           )}

@@ -106,6 +106,14 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   parceria_equipe: "atendimento",
   parceria_convite: "transacional",
   parceria_aprovada: "verificacao",
+  parceiro_pedido_novo: "novo-interessado",
+  parceiro_orcamento_recebido: "transacional",
+  parceiro_orcamento_aceito: "nova-mensagem",
+  parceiro_horario_confirmado: "visita",
+  parceiro_lembrete: "visita",
+  parceiro_entrega_feita: "transacional",
+  parceiro_conclusao_pendente: "transacional",
+  parceiro_avaliacao: "transacional",
 };
 
 /** Arquivo (sem .jpg) e texto alternativo da imagem do evento — sempre um arquivo que existe. */

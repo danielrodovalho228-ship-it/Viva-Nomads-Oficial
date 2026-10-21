@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { Wrench } from "lucide-react";
+import Link from "next/link";
+import { ClipboardList } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { ButtonLink } from "@/components/ui/button";
-import { catalogoServicosMorador, contratoAtivoDoMorador } from "@/lib/data/servicos-morador-actions";
+import { ServicosPainel } from "@/components/parceiros/servicos-painel";
+import { cidadeDosMeusServicos, meusPedidosDeServico } from "@/lib/parceiros/pedido-actions";
+import { proximoPasso, rotuloStatus } from "@/lib/parceiros/pedido";
+import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { MEUS_PEDIDOS_VAZIO, notaPagamentoServicos } from "@/lib/servicos-morador";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
-import { CatalogoServicos } from "./catalogo-servicos";
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 
 export const metadata: Metadata = {
   title: "Serviços",
@@ -14,47 +17,47 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 /**
- * Serviços para o morador (ordem 521c5af7 + complemento): o catálogo (S1). O pedido e o acompanhamento chegam com as
- * telas do inquilino do Prompt 31b — até lá "Meus pedidos" mostra só o estado vazio, sem formulário.
+ * Serviços (Prompt 31b, item 7): a porta dos parceiros nos painéis do morador e do dono — categorias → parceiros
+ * publicados na cidade → página do parceiro → "Solicitar orçamento" — e "Meus pedidos" com o estado e o próximo passo.
+ * O catálogo antigo do morador ficou obsoleto: esta tela não lê mais dele.
  */
 export default async function ServicosPage() {
-  const [contrato, catalogo] = await Promise.all([contratoAtivoDoMorador(), catalogoServicosMorador()]);
-  const ativo = !!contrato;
-  const nota = notaPagamentoServicos(PAGAMENTO_PARCEIROS_ATIVO);
-  if (!ativo) {
-    return (
-      <>
-        <PageTitle title="Serviços" subtitle={nota} />
-        <EmptyState
-          icon={Wrench}
-          title="Os serviços ficam disponíveis na sua locação"
-          text="Quando você tiver um contrato ativo, os serviços de parceiros aparecem aqui."
-          action={
-            <ButtonLink href="/dashboard/contratos" variant="primary">
-              Ver meus contratos
-            </ButtonLink>
-          }
-        />
-      </>
-    );
-  }
+  const [cidade, pedidos] = await Promise.all([cidadeDosMeusServicos(), meusPedidosDeServico()]);
   return (
     <>
-      <PageTitle title="Serviços" subtitle={nota} />
-      <div className="grid gap-6">
-        <section aria-labelledby="servicos-catalogo" data-testid="servicos-catalogo">
-          <h2 id="servicos-catalogo" className="mb-3 font-title text-lg font-bold text-ink">
-            Serviços disponíveis
-          </h2>
-          <CatalogoServicos servicos={catalogo} contratoId={contrato?.contratoId ?? null} propertyId={contrato?.propertyId ?? null} />
-        </section>
-        <Panel title="Meus pedidos" data-testid="servicos-pedidos">
-          <p className="text-sm text-muted" data-testid="servicos-pedidos-vazio">
-            {MEUS_PEDIDOS_VAZIO}
-          </p>
-        </Panel>
-      </div>
+      <PageTitle title="Serviços" subtitle={notaPagamentoServicos(PAGAMENTO_PARCEIROS_ATIVO)} />
+      <ServicosPainel cidade={cidade} />
+      <Panel title="Meus pedidos" className="mt-6" data-testid="servicos-pedidos">
+        {pedidos.length === 0 ? (
+          <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text={MEUS_PEDIDOS_VAZIO} />
+        ) : (
+          <ul className="divide-y divide-line" data-testid="servicos-pedidos-lista">
+            {pedidos.map((p) => (
+              <li key={p.id}>
+                <Link href={`/dashboard/servicos/pedidos/${p.id}`} className="flex min-h-11 flex-wrap items-center justify-between gap-2 py-3" data-testid="servicos-pedido">
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-ink">
+                      {rotuloCategoria(p.categoria)} · {p.outroLado}
+                    </span>
+                    <span className="block text-xs text-muted">
+                      {p.codigo}
+                      {p.valor != null ? ` · ${brl(p.valor)}` : ""}
+                      {p.horario ? ` · ${dataHoraBRT(p.horario)}` : ""}
+                    </span>
+                    {proximoPasso(p.status, "cliente") && <span className="block text-xs text-muted">{proximoPasso(p.status, "cliente")}</span>}
+                  </span>
+                  <span className="text-sm font-semibold text-ink" data-testid="servicos-pedido-status">
+                    {rotuloStatus(p.status)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
     </>
   );
 }

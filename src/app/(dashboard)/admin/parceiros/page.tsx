@@ -122,9 +122,14 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
         title="Parceiros"
         subtitle="Pedidos de parceria, páginas ativas e avisos por cidade."
         action={
-          <Link href="/admin/fotografos" className={buttonClasses({ size: "sm" })}>
-            <Camera className="h-4 w-4" /> Fotógrafos
-          </Link>
+          <span className="flex flex-wrap gap-2">
+            <Link href="/admin/parceiros/pedidos" className={buttonClasses({ size: "sm" })} data-testid="admin-parceiros-pedidos-link">
+              Pedidos de serviço
+            </Link>
+            <Link href="/admin/fotografos" className={buttonClasses({ size: "sm" })}>
+              <Camera className="h-4 w-4" /> Fotógrafos
+            </Link>
+          </span>
         }
       />
 

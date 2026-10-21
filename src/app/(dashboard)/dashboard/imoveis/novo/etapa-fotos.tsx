@@ -12,6 +12,18 @@ import { cn } from "@/lib/utils";
 import { Erro, Labeled } from "./campos";
 import type { EstadoIaFotos, FalhaIaFotos } from "./tipos";
 
+/** Busca de fotógrafos da cidade do imóvel; com o rascunho salvo, o imóvel vai junto até o "Solicitar orçamento". */
+function linkFotografos(cep: string, imovelId?: string | null): string {
+  const q = new URLSearchParams();
+  if (cep) q.set("cep", cep);
+  if (imovelId) {
+    q.set("imovel", imovelId);
+    q.set("cadastro", "1");
+  }
+  const s = q.toString();
+  return `/parceiros/fotografos${s ? `?${s}` : ""}`;
+}
+
 /**
  * Etapa 2 — Fotos (prompt 10): envio como antes (até 40, a 1ª é a capa, sem metadados nem GPS). Ao terminar o
  * envio, com o mínimo de fotos, a IA analisa SOZINHA (uma vez por rascunho) e as sugestões aparecem na etapa 3.
@@ -26,7 +38,10 @@ export function EtapaFotos({
   iaFalha,
   onTentarDeNovo,
   erroFotos,
+  imovelId,
 }: {
+  /** Rascunho já salvo: o pedido ao fotógrafo nasce ligado a este imóvel (Prompt 31b). */
+  imovelId?: string | null;
   photos: PhotoItem[];
   setPhotos: (p: PhotoItem[]) => void;
   cep: string;
@@ -72,7 +87,7 @@ export function EtapaFotos({
       <div className="mt-3 rounded-xl border border-sage-200 bg-sage-50 p-3 text-sm" data-testid="porta-fotografo">
         <p className="font-semibold text-ink">Quer um fotógrafo profissional?</p>
         <p className="mt-0.5 text-muted">Veja os fotógrafos parceiros que atendem a cidade deste imóvel. As fotos vão direto para o anúncio.</p>
-        <a href={`/parceiros/fotografos${cep ? `?cep=${encodeURIComponent(cep)}` : ""}`} target="_blank" rel="noopener" className="mt-1 inline-block font-medium text-forest underline">
+        <a href={linkFotografos(cep, imovelId)} target="_blank" rel="noopener" className="mt-1 inline-block font-medium text-forest underline">
           Ver fotógrafos na cidade do imóvel
         </a>
       </div>

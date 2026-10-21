@@ -59,6 +59,8 @@ Todas as rotas de `src/app/(dashboard)/admin`. Em cada uma: 390 px e 1280 px, se
 | `/admin/imoveis` | Moderar anúncio (publicar e despublicar) | Publicação exige documento aprovado; despublicar tira da busca |
 | `/admin/marketing` | Abrir a área de marketing | Carrega sem enviar nada |
 | `/admin/parceiros` | Aprovar um parceiro | Status muda; conta `is_teste` marcada |
+| `/admin/parceiros/pedidos` | Ver os pedidos de serviço de parceiros (31b) | Números com a fórmula, contas `is_teste` fora; "Pedidos vindos de cartão" conta o pedido com ref do cartão |
+| `/admin/parceiros/pedidos/[id]` | Abrir um pedido de serviço | Valores (taxa congelada no aceite), pagamento indisponível/simulado, eventos; grava `ver_pedido_parceiro` |
 | `/admin/pedidos` | Ver pedidos de moradia | Pedido da semente aparece; compatíveis são avisados |
 | `/admin/servicos` | Ver serviços para o morador | Indicadores carregam |
 | `/admin/socios` | Ver a caixa dos sócios | Pedido só some com o aceite de quem pediu |

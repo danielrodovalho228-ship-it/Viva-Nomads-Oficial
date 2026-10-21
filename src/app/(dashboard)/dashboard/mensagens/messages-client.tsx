@@ -11,6 +11,7 @@ import { AVISO_ANTIGOLPE_ALERTA, pareceDadoBancario } from "@/lib/seguranca/anti
 import { DenunciarConversa } from "@/components/mensagens/denunciar-conversa";
 import { Avatar } from "@/components/ui/avatar";
 import { sendMessage } from "@/lib/data/actions";
+import { enviarMensagemDoPedido } from "@/lib/parceiros/pedido-actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
 import { guardContactInfo, GUARD_NOTICE } from "@/lib/messages/contact-guard";
@@ -99,12 +100,15 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
     // Persiste (Supabase quando configurado). Em modo demonstração NUNCA
     // grava: a conversa é fictícia e o envio fica só na tela.
     if (!demo) {
-      await sendMessage({
-        conversationId: active.id,
-        receiverId: active.otherId,
-        propertyId: active.propertyId,
-        body: text,
-      });
+      // Conversa de pedido de serviço (Prompt 31b): o servidor confere a parte do pedido e grava na conversa dele.
+      if (active.pedidoParceiroId) await enviarMensagemDoPedido(active.pedidoParceiroId, text);
+      else
+        await sendMessage({
+          conversationId: active.id,
+          receiverId: active.otherId,
+          propertyId: active.propertyId,
+          body: text,
+        });
     }
   }
 
@@ -212,6 +216,11 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
               <p className="truncate font-medium text-ink" data-testid="conversa-nome">{active.name}</p>
               {active.property && (
                 <p className="truncate text-xs text-muted">Sobre: {active.property}</p>
+              )}
+              {active.pedidoParceiroId && (
+                <Link href={`/dashboard/servicos/pedidos/${active.pedidoParceiroId}`} className="text-xs font-semibold text-forest underline" data-testid="conversa-abrir-pedido">
+                  Abrir o pedido
+                </Link>
               )}
             </div>
           </header>

@@ -1366,6 +1366,32 @@
       "specs": [
         "t240-conferencia-provas-admin"
       ]
+    },
+    "/dashboard/servicos/pedidos/[id]": {
+      "personas": [
+        "proprietario",
+        "inquilino",
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "/admin/parceiros/pedidos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "/admin/parceiros/pedidos/[id]": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
     }
   },
   "rotas": {
@@ -3543,30 +3569,6 @@
         "t212-ferramentas-proprietario"
       ]
     },
-    "src/lib/data/servicos-morador-actions.ts#catalogoServicosMorador": {
-      "personas": [
-        "inquilino"
-      ],
-      "specs": [
-        "t219-servicos-morador"
-      ]
-    },
-    "src/lib/data/servicos-morador-actions.ts#avisarServicoDisponivel": {
-      "personas": [
-        "inquilino"
-      ],
-      "specs": [
-        "t219-servicos-morador"
-      ]
-    },
-    "src/lib/data/servicos-morador-actions.ts#contratoAtivoDoMorador": {
-      "personas": [
-        "inquilino"
-      ],
-      "specs": [
-        "t219-servicos-morador"
-      ]
-    },
     "src/lib/data/servicos-morador-actions.ts#pedidosServicoAdmin": {
       "personas": [
         "admin"
@@ -3975,6 +3977,207 @@
       ],
       "specs": [
         "t239-cartao-parceiro"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#solicitarOrcamento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#enviarOrcamento": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#recusarPedido": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#aceitarOrcamento": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#recusarOrcamento": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#cancelarPedido": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#confirmarHorario": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#proporOutroHorario": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#simularPagamento": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#iniciarExecucao": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#enviarEntrega": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#enviarDocumentoParceiro": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#marcarEntregue": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#concluirPedido": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#linkArquivoDoPedido": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#usarFotosNoAnuncio": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#avaliarPedido": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#enviarMensagemDoPedido": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#detalheDoPedido": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#meusPedidosDeServico": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#pedidosDoMeuParceiro": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#registrarVistaDoAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#cidadeDosMeusServicos": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#meusImoveisParaServico": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
       ]
     }
   }

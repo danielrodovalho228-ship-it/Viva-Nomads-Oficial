@@ -8,6 +8,8 @@ import { hojeEmBrasilia } from "@/lib/checkin";
 import { expirarVencidas } from "@/lib/data/propostas-servidor";
 import { STATUS_ABERTOS, daVez, venceEm24h, type Autor } from "@/lib/propostas/regras";
 import { limparSombra } from "@/lib/data/ranking";
+import { precisaAvisoConclusao, precisaLembrete24h } from "@/lib/parceiros/pedido";
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import {
   avisoAnuncioIncompleto,
   avisarRenovacao,
@@ -132,6 +134,27 @@ export async function GET(request: Request) {
     });
   }
 
+  // 6) Pedidos de parceiro (Prompt 31b): lembrete do serviço marcado (às duas partes) e entrega há 7 dias sem a
+  // confirmação do cliente (só aviso: nada conclui sozinho).
+  const { data: pedidosParceiro } = await admin
+    .from("parceiro_pedidos")
+    .select("id, codigo, status, cliente_id, horario_confirmado, entregue_em, parceiros(user_id)")
+    .in("status", ["agendado", "entregue"])
+    .limit(1000);
+  for (const p of pedidosParceiro ?? []) {
+    const parceiroUser = (p.parceiros as unknown as { user_id?: string } | null)?.user_id;
+    const url = `/dashboard/servicos/pedidos/${p.id}`;
+    if (precisaLembrete24h(p.status as string, p.horario_confirmado as string | null, agora)) {
+      const quando = dataHoraBRT(p.horario_confirmado as string, { semEtiqueta: true });
+      for (const quem of [p.cliente_id as string, parceiroUser].filter((x): x is string => !!x)) {
+        alvos.push({ tipo: "parceiro_lembrete", usuarioId: quem, refId: p.id as string, variante: String(p.horario_confirmado), url, detalhe: detalheAutomacao("parceiro_lembrete", { numero: p.codigo as string, quando }) });
+      }
+    }
+    if (precisaAvisoConclusao(p.status as string, p.entregue_em as string | null, agora)) {
+      alvos.push({ tipo: "parceiro_conclusao_pendente", usuarioId: p.cliente_id as string, refId: p.id as string, url, detalhe: detalheAutomacao("parceiro_conclusao_pendente", { numero: p.codigo as string }) });
+    }
+  }
+
   const contagem: Record<string, number> = {};
   for (const a of alvos) {
     const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", a.usuarioId).maybeSingle();
@@ -168,5 +191,7 @@ export async function GET(request: Request) {
   const cartoes = simular ? null : await gerarCartoesAutomaticos(admin, hoje).catch(() => null);
   // Ordem dos imóveis (Prompt 33): o modo sombra guarda 30 dias, sem dados pessoais (nunca no simulado).
   const sombraApagada = simular ? 0 : await limparSombra(admin).catch(() => 0);
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada });
+  // Avaliações de pedido de parceiro: publicam 14 dias depois da conclusão, mesmo sem a outra parte (nunca no simulado).
+  const avaliacoesParceiro = simular ? 0 : Number((await admin.rpc("publicar_avaliacoes_parceiro")).data ?? 0) || 0;
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro });
 }

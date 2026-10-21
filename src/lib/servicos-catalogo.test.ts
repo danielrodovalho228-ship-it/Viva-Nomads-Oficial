@@ -2,28 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { MEUS_PEDIDOS_VAZIO, NOMES_SERVICOS, NOTA_PAGAMENTO_DIRETO, NOTA_PAGAMENTO_PLATAFORMA, hrefPedidoServico, notaPagamentoServicos, servicosDoInquilino } from "./servicos-morador.ts";
-import { FOTOS_ESPERADAS, FOTOS_SERVICOS } from "../config/fotos-servicos.ts";
+import { MEUS_PEDIDOS_VAZIO, NOMES_SERVICOS, NOTA_PAGAMENTO_DIRETO, NOTA_PAGAMENTO_PLATAFORMA, notaPagamentoServicos } from "./servicos-morador.ts";
 
 /*
-  Complemento da ordem 521c5af7 (coordenador, reteste do #869): catálogo de serviços do morador (S1). S2/S3 viram as
-  telas do 31b — nenhum sistema paralelo sobre servicos_adicionais.
+  Complemento da ordem 521c5af7 (coordenador, reteste do #869). O catálogo antigo (S1) saiu com o Prompt 31b: o
+  pedido e o acompanhamento são os de parceiro_pedidos — nenhum sistema paralelo sobre servicos_adicionais.
 */
 const ler = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8");
 const CATALOGO = "../app/(dashboard)/dashboard/servicos/catalogo-servicos.tsx";
-
-test("a lista do inquilino traz só categorias com quem_paga = inquilino (o Plano de manutenção do dono fica fora)", () => {
-  const banco = [
-    { id: "assistencia_24h", quem_paga: "inquilino", status: "em_breve" },
-    { id: "plano_manutencao", quem_paga: "proprietario", status: "ativo" },
-    { id: "limpeza", quem_paga: "inquilino", status: "em_breve" },
-    { id: "lavanderia_enxoval", quem_paga: "inquilino", status: "em_breve" },
-    { id: "frete_mudanca", quem_paga: "inquilino", status: "em_breve" },
-    { id: "velho", quem_paga: "inquilino", status: "inativo" },
-  ];
-  assert.deepEqual(servicosDoInquilino(banco).map((s) => s.id), ["assistencia_24h", "limpeza", "lavanderia_enxoval", "frete_mudanca"]);
-  assert.match(ler("./data/servicos-morador-actions.ts"), /servicosDoInquilino\(/);
-});
 
 test("guarda: nenhum nome de serviço sem o acento devido (migração, banco do lab e telas)", () => {
   assert.deepEqual(NOMES_SERVICOS, {
@@ -54,41 +40,34 @@ test("nota fixa: os dois textos no mesmo lugar, escolhidos pela chave PAGAMENTO_
   assert.match(ler("../app/(dashboard)/dashboard/servicos/page.tsx"), /notaPagamentoServicos\(PAGAMENTO_PARCEIROS_ATIVO\)/);
 });
 
-test("'Meus pedidos' só com o estado vazio até o 31b; nada de formulário de pedido nem lista paralela", () => {
+test("'Meus pedidos' (Prompt 31b): os pedidos de parceiro do cliente; o catálogo antigo não é mais lido pela tela", () => {
   assert.equal(MEUS_PEDIDOS_VAZIO, "Quando você pedir um serviço, ele aparece aqui com o andamento.");
   const pagina = ler("../app/(dashboard)/dashboard/servicos/page.tsx");
-  assert.match(pagina, /\{MEUS_PEDIDOS_VAZIO\}/);
-  assert.doesNotMatch(pagina + ler(CATALOGO), /pedirServico|meusPedidosServico|type="date"|servico-form/);
+  assert.match(pagina, /text=\{MEUS_PEDIDOS_VAZIO\}/);
+  assert.match(pagina, /meusPedidosDeServico\(\)/);
+  assert.doesNotMatch(pagina, /catalogoServicosMorador|servicos_adicionais|CatalogoServicos/);
+  assert.equal(existsSync(fileURLToPath(new URL(CATALOGO, import.meta.url))), false, "o catálogo antigo saiu da tela");
   assert.doesNotMatch(ler("./data/servicos-morador-actions.ts"), /export async function (pedirServico|meusPedidosServico)/);
-  assert.equal(existsSync(fileURLToPath(new URL("../app/(dashboard)/dashboard/servicos/pedidos-servico.tsx", import.meta.url))), false);
-  // Com parceiro aprovado (31b no ar), o cartão leva ao pedido com contrato e imóvel preenchidos.
-  assert.equal(hrefPedidoServico("limpeza", "c1", "p1"), "/dashboard/servicos/pedido?servico=limpeza&contrato=c1&imovel=p1");
 });
 
-test("guarda: cartão de categoria só com FOTO (sem foto não aparece; nenhum ícone no lugar)", () => {
-  const cat = ler(CATALOGO);
-  assert.doesNotMatch(cat, /lucide-react/, "nenhum ícone no catálogo");
-  assert.match(cat, /<Image src=\{s\.foto\.src\} alt=\{s\.foto\.alt\}/);
-  assert.match(cat, /grid grid-cols-2 gap-3 lg:grid-cols-4/, "grade par: 2 a 390 px, 4 a 1280 px");
+test("catálogo antigo removido sem deixar código morto (decisão do Muse no #967)", () => {
   const acoes = ler("./data/servicos-morador-actions.ts");
-  assert.match(acoes, /const foto = fotoDoServico\(String\(s\.id\)\);\s*if \(!foto\) return \[\];/);
-  // Toda foto declarada existe em public/images/servicos, em webp.
-  for (const [id, f] of Object.entries(FOTOS_SERVICOS)) {
-    assert.ok((FOTOS_ESPERADAS as readonly string[]).includes(id), id);
-    assert.equal(f.src, `/images/servicos/${id}.webp`);
-    assert.ok(existsSync(fileURLToPath(new URL(`../../public${f.src}`, import.meta.url))), f.src);
-    assert.ok(f.alt.trim().length > 10, `alt de ${id}`);
+  for (const f of ["catalogoServicosMorador", "avisarServicoDisponivel", "contratoAtivoDoMorador", "ServicoView"]) {
+    assert.doesNotMatch(acoes, new RegExp(`export (async function|interface|type) ${f}\\b`), f);
   }
+  const regras = ler("./servicos-morador.ts");
+  for (const f of ["servicoAceitaPedido", "servicosDoInquilino", "hrefPedidoServico", "PEDIDO_SERVICO_31B_NO_AR", "ServicoCatalogo"]) {
+    assert.doesNotMatch(regras, new RegExp(`export (function|const|interface|type) ${f}\\b`), f);
+  }
+  assert.equal(existsSync(fileURLToPath(new URL("../config/fotos-servicos.ts", import.meta.url))), false);
+  assert.equal(existsSync(fileURLToPath(new URL("../../public/images/servicos", import.meta.url))), false);
 });
 
-test("avise-me por categoria (0178): só a própria pessoa grava e lê; o servidor confere que a categoria é do inquilino", () => {
+test("0178 continua aplicada (histórico): a tabela do avise-me é só da própria pessoa", () => {
   const mig = ler("../../supabase/migrations/0178_servicos_catalogo_inquilino.sql");
   assert.match(mig, /create table if not exists public\.interesse_servico/);
   assert.match(mig, /unique \(user_id, servico_id\)/);
   assert.match(mig, /with check \(user_id = \(select auth\.uid\(\)\)\)/);
-  const acoes = ler("./data/servicos-morador-actions.ts");
-  assert.match(acoes, /export async function avisarServicoDisponivel/);
-  assert.match(acoes, /servico\.quem_paga !== "inquilino"/);
   const prod = ler("../../supabase/producao/aplicar-0178.sql");
   assert.match(prod, /^begin;/m);
   assert.match(prod, /'20261019000178', '0178_servicos_catalogo_inquilino'/);
