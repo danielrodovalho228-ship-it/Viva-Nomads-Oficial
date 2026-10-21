@@ -5,6 +5,7 @@
     "publicar-anuncio": ["t8-rascunho", "t45-regra-8-fotos"],
     "candidatura-contrato-assinatura": ["t225-candidatura-etapas", "t57-contrato-assinar"],
     "abrir-chamado": ["t63-chamado-identificacao"],
-    "upload-de-foto": ["t54-upload-foto-seguro"]
+    "upload-de-foto": ["t54-upload-foto-seguro"],
+    "temporario-pr-975-pagina-da-estadia": ["t255-pagina-da-estadia", "t84-mensagens-filtros", "t89-fechamento-data-inicio", "t209-jornada-dois-lados", "t240-conferencia-provas-admin", "t50-rls-todas-tabelas"]
   }
 }
