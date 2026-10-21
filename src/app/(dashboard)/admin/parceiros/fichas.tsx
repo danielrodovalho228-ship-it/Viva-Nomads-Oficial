@@ -216,7 +216,7 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
             confirmar="Aprovar"
             onConfirmar={() => rodar(() => aprovarSolicitacao(f.id), "Aprovada. O e-mail de ativação foi enviado.")}
             disabled={pendente || !completo}
-            variant="primary"
+            variant="secondary"
             testid="ficha-aprovar"
           >
             Aprovar
