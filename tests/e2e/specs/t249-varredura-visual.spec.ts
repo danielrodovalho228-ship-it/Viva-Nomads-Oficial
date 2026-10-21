@@ -9,16 +9,22 @@ import {
 /*
   T249 — VARREDURA VISUAL AUTOMÁTICA: portão permanente antes da entrega (ordem do Muse, 21/10; seção 8 do plano).
   Em cada tela e em cada tamanho (1280 e 390 px), cinco critérios (fixtures/varredura.ts):
-    (a) imagens acima da dobra carregadas sem rolar · (b) nada fixo/flutuante cobre controle (topo e fim da rolagem)
-    (c) sem overflow horizontal · (d) sem erro de console/página (exceto terceiros, com motivo) · (f) clique em botão primário responde em 3 s.
-  Massa: scripts/lab/massa-varredura.mjs (contas is_teste @varredura.lab.vivanomads.test). Sem a massa, o spec se pula.
+    (a) imagens acima da dobra carregadas sem rolar · (b) nada fixo/flutuante cobre controle que a rolagem não revela (topo e fim; régua do Muse, 21/10)
+    (c) sem overflow horizontal · (d) sem erro de console/página (exceto terceiros, com motivo; requisição falhada sai com tipo, método e erro do navegador) · (f) clique em botão primário responde em 3 s.
+  Massa: scripts/lab/massa-varredura.mjs (contas is_teste @varredura.lab.vivanomads.test). Sem a massa, no laboratório o spec reprova (fora dele, pula).
   Defeitos já conhecidos entram como test.fail com o código D-V no comentário: ao corrigir, o test.fail vira falha e quem
   corrige o produto troca por test normal no mesmo PR. O varrer geral NÃO reprova a combinação coberta por um D-V (ela fica anotada).
   Roda no projeto chromium com viewport trocado dentro do spec (1280 e 390), porque o testMatch do projeto app-mobile
   mora em playwright.config.ts, fora do escopo desta ordem.
 */
 const MASSA = lerMassa();
-const PODE = NO_LABORATORIO && !!MASSA;
+/**
+  No laboratório, faltar a massa é FALHA, não pulo: até 21/10 nenhum workflow rodava massa-varredura.mjs e a t249 saiu
+  "pulada" nas 19 execuções registradas em lab_execucoes — verde sem varrer tela nenhuma. Fora do laboratório, pula.
+*/
+function exigirMassa(): void {
+  expect(MASSA, "laboratório sem a massa da varredura: o passo `node scripts/lab/massa-varredura.mjs` não rodou ou falhou (ver o log do workflow)").not.toBeNull();
+}
 
 interface Tela {
   conta: ChaveConta | null; // null = visitante
@@ -46,13 +52,8 @@ const TELAS: Tela[] = [
 
 /** Combinações (tela × tamanho × critério) cobertas por um defeito conhecido: o varrer geral só anota. */
 const ESPERADAS: Record<string, string> = {
-  "Anúncio com 17 fotos|1280|a-imagens": "D-V1",
-  "Anúncio com 17 fotos|390|a-imagens": "D-V1",
-  "Cadastro com 0 fotos|390|b-cobertura": "D-V2",
-  "Meus imóveis|1280|a-imagens": "D-V4",
-  "Meus imóveis|390|a-imagens": "D-V4",
-  "Minhas locações|1280|a-imagens": "D-V6",
-  "Minhas locações|390|a-imagens": "D-V6",
+  // Rodada 1 (lab-crítico do #984, 21/10): D-V1, D-V2, D-V4 e D-V6 passaram nas duas tentativas e viraram teste normal.
+  // D-V3 e D-V5 não têm combinação no varrer geral (são verificados só no bloco "defeitos conhecidos").
 };
 
 type Linha = { tela: string; tamanho: string; criterio: string; resultado: string };
@@ -61,8 +62,11 @@ const excecoes = new Set<string>();
 const inicio = Date.now();
 
 test.describe("T249 — varredura visual (tela × tamanho × critério)", () => {
-  test.skip(!PODE, "precisa do laboratório com a massa: node scripts/lab/massa-varredura.mjs");
-  test.beforeEach(({}, info) => test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do spec)"));
+  test.skip(!NO_LABORATORIO, "precisa do laboratório (Supabase local + integrações simuladas)");
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do spec)");
+    exigirMassa();
+  });
 
   test.afterAll(() => {
     const seg = Math.round((Date.now() - inicio) / 1000);
@@ -121,15 +125,17 @@ test.describe("T249 — varredura visual (tela × tamanho × critério)", () => 
 });
 
 /*
-  REGRESSÕES IMEDIATAS (test.fail). Cada uma afirma o comportamento CERTO; hoje falha (esperado).
+  REGRESSÕES IMEDIATAS. Cada uma afirma o comportamento CERTO; as que ainda têm test.fail falham hoje (esperado).
   Quem corrigir o produto remove o `test.fail` no mesmo PR (o Playwright avisa quando passa sozinho).
 */
 test.describe("T249 — defeitos conhecidos (D-V)", () => {
-  test.skip(!PODE, "precisa do laboratório com a massa: node scripts/lab/massa-varredura.mjs");
-  test.beforeEach(({}, info) => test.skip(info.project.name !== "chromium", "só chromium"));
+  test.skip(!NO_LABORATORIO, "precisa do laboratório (Supabase local + integrações simuladas)");
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name !== "chromium", "só chromium");
+    exigirMassa();
+  });
 
   test("D-V1 — imagens acima da dobra do anúncio de 17 fotos carregam sem rolar (lazy-load)", async ({ browser }) => {
-    test.fail(true, "D-V1: lazy-load segura imagens da primeira tela");
     for (const tam of TAMANHOS) {
       const ctx = await browser.newContext({ viewport: { width: tam.width, height: tam.height } });
       const page = await ctx.newPage();
@@ -141,7 +147,6 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
 
   test("D-V2 — a barra 'Fotos: 0 de 8' não flutua sobre o conteúdo do cadastro a 390 px", async ({ browser }) => {
     test.skip(!temContaVarredura("DONO0"), "sem a conta DONO0");
-    test.fail(true, "D-V2: barra de fotos solta cobre o cartão 'Seu progresso' ao rolar");
     const { context, page } = await abrirComoConta(browser, "DONO0", "390");
     await abrirRota(page, `/dashboard/imoveis/novo?draft=${MASSA!.rascunho0}`);
     const barraSolta = await page.evaluate(() => {
@@ -171,7 +176,6 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
 
   test("D-V4 — cartões de Meus imóveis têm miniatura carregada (ativos e rascunhos)", async ({ browser }) => {
     test.skip(!temContaVarredura("DONO17"), "sem a conta DONO17");
-    test.fail(true, "D-V4: ativos sem miniatura e rascunhos com imagem quebrada");
     const { context, page } = await abrirComoConta(browser, "DONO17", "1280");
     await abrirRota(page, "/dashboard/imoveis");
     const semFoto = await page.evaluate(async () => {
@@ -204,7 +208,6 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
 
   test("D-V6 — capa de Minhas locações carrega acima da dobra", async ({ browser }) => {
     test.skip(!temContaVarredura("INQUILINA"), "sem a conta INQUILINA");
-    test.fail(true, "D-V6: capa de Minhas locações não aparece/carrega");
     for (const tam of TAMANHOS) {
       const { context, page } = await abrirComoConta(browser, "INQUILINA", tam.nome);
       await abrirRota(page, "/dashboard/locacoes");

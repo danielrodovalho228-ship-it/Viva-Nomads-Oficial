@@ -16,6 +16,7 @@ import { logModeracao } from "@/lib/data/moderacao-log";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { categoriaValida, rotuloCategoria } from "./regras";
+import { numeroOrcamentoParceiro } from "@/lib/fiscal/prefixos";
 import {
   CHAVE_CONVERSA_PEDIDO,
   congelarValores,
@@ -584,6 +585,8 @@ export async function enviarMensagemDoPedido(pedidoId: string, texto: string): P
 export interface DetalhePedido {
   id: string;
   codigo: string;
+  /** Prompt 56: "VN-SV-LOV4CA8I · orçamento v2" (cada envio do orçamento é uma versão; congela no aceite). */
+  orcamentoRotulo: string | null;
   papel: PapelNoPedido;
   status: string;
   categoria: string;
@@ -626,6 +629,7 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
     admin.from("parceiro_avaliacoes").select("autor_id, nota, texto, status").eq("pedido_id", p.id),
     admin.from("parceiro_pedido_eventos").select("dados").eq("pedido_id", p.id).eq("tipo", "propor_horario").order("criado_em", { ascending: false }).limit(1).maybeSingle(),
   ]);
+  const { count: versoesOrcamento } = await admin.from("parceiro_pedido_eventos").select("id", { count: "exact", head: true }).eq("pedido_id", p.id).eq("tipo", "orcar");
   const im = imo.data as { title: string | null; address: string | null; city: string | null; area_m2: number | null; bedrooms: number | null; owner_id: string } | null;
   const nomeCliente = (cli.data as { full_name: string | null } | null)?.full_name ?? null;
   // Endereço exato só é LIDO quando pode ser mostrado: ao cliente (o imóvel é dele ou da estadia dele) e ao parceiro
@@ -646,6 +650,7 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
   return {
     id: p.id,
     codigo: p.codigo,
+    orcamentoRotulo: versoesOrcamento ? numeroOrcamentoParceiro(p.codigo, versoesOrcamento) : null,
     papel,
     status: p.status,
     categoria: p.categoria,

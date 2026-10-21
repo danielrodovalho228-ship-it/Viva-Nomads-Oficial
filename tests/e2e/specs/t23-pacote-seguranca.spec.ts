@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { account, hasAccount } from "../fixtures/accounts";
 import { authFile } from "../fixtures/auth";
+import { gerarCodigoTotp } from "../fixtures/totp";
 
 /**
  * T23 — Pacote de segurança (migração 0084). Fala direto com o PostgREST e,
@@ -26,6 +27,23 @@ async function logado(papel: "inquilino" | "proprietario" | "admin"): Promise<Su
   const a = account(papel);
   const { error } = await sb.auth.signInWithPassword({ email: a.email, password: a.senha });
   if (error) throw new Error(`Login da conta de teste falhou: ${error.message}`);
+  return sb;
+}
+
+const SEGREDO_TOTP = process.env.TESTES_ADMIN_TOTP_SEGREDO;
+
+/**
+ * Admin na 2ª etapa (AAL2). Desde a 0199, is_admin() só vale com aal2 quando a conta tem fator verificado,
+ * e a admin do laboratório tem (seed-lab.mjs ativa o TOTP). Só com senha ela não é admin no banco.
+ */
+async function adminAal2(): Promise<SupabaseClient> {
+  const sb = await logado("admin");
+  const { data, error } = await sb.auth.mfa.listFactors();
+  if (error) throw new Error(`Fatores da admin de teste: ${error.message}`);
+  const fator = data.totp.find((f) => f.status === "verified");
+  if (!fator) throw new Error("A admin de teste não tem fator TOTP verificado.");
+  const { error: e } = await sb.auth.mfa.challengeAndVerify({ factorId: fator.id, code: gerarCodigoTotp(SEGREDO_TOTP!) });
+  if (e) throw new Error(`2ª etapa da admin de teste: ${e.message}`);
   return sb;
 }
 
@@ -75,7 +93,10 @@ test.describe("T23 pacote de segurança (0084) @seguranca", () => {
   });
 
   test("2: logado — admin segue admin, proprietário lê o mural, inquilino não vira admin", async () => {
-    const adm = await logado("admin");
+    test.skip(!SEGREDO_TOTP, "Sem TESTES_ADMIN_TOTP_SEGREDO: a admin não chega à 2ª etapa.");
+    // 0199: só com senha (aal1) a admin com fator verificado NÃO é admin no banco; na 2ª etapa, é.
+    expect((await (await logado("admin")).rpc("is_admin")).data).toBe(false);
+    const adm = await adminAal2();
     expect((await adm.rpc("is_admin")).data).toBe(true);
     expect((await adm.from("profiles").select("id").limit(2)).data!.length).toBeGreaterThan(1);
     const dono = await logado("proprietario");
@@ -87,7 +108,8 @@ test.describe("T23 pacote de segurança (0084) @seguranca", () => {
   });
 
   test("6: Rafael Conselheiro do Dono e Bruno com SEO técnico, no banco e na Central", async ({ browser }) => {
-    const adm = await logado("admin");
+    test.skip(!SEGREDO_TOTP, "Sem TESTES_ADMIN_TOTP_SEGREDO: a admin não chega à 2ª etapa.");
+    const adm = await adminAal2();
     const { data } = await adm.from("agentes").select("slug, cargo, esquadrao, rotina_texto").in("slug", ["rafael", "bruno"]);
     const por = Object.fromEntries((data ?? []).map((a) => [a.slug, a]));
     expect(por.rafael).toMatchObject({ cargo: "Conselheiro do Dono", esquadrao: "comando", rotina_texto: "Domingos 20:47 Brasília" });

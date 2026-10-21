@@ -6,6 +6,7 @@ import {
   desdeLabel,
   metricaResposta,
   nomeCurto,
+  nomeNaProposta,
   nomeNaConversa,
   progressoPerfil,
   selosReais,
@@ -138,4 +139,11 @@ import { robotsDoProprietario } from "./perfil-publico.ts";
 test("proprietário sem imóvel visível (só anúncio de teste) fica noindex", () => {
   assert.deepEqual(robotsDoProprietario(0), { index: false, follow: false });
   assert.deepEqual(robotsDoProprietario(2), { index: true, follow: true });
+});
+
+test("proposta: nome completo das partes, nunca o curto; o interessado só depois do aceite (Prompt 56, D4)", () => {
+  assert.equal(nomeNaProposta({ quemVe: "owner", nomeCompleto: "Daniel Teste 1", aceito: true }), "Daniel Teste 1");
+  assert.equal(nomeNaProposta({ quemVe: "tenant", nomeCompleto: "Carlos  Eduardo Mendes", aceito: true }), "Carlos Eduardo Mendes");
+  assert.equal(nomeNaProposta({ quemVe: "owner", nomeCompleto: "Juliana Prado", aceito: false }), "Candidato(a)");
+  assert.equal(nomeNaProposta({ quemVe: "tenant", nomeCompleto: null, aceito: true }), "Proprietário");
 });

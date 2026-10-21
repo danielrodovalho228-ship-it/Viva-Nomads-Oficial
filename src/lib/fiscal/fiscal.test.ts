@@ -34,7 +34,7 @@ const BASE: DadosDocumento = {
 test("recibo: partes com CPF, imóvel, período, aluguel + encargos = total, e nunca 'nota fiscal' como título", () => {
   const c = conteudoDocumento(BASE);
   const t = textoDocumento(c);
-  assert.equal(c.titulo, "Recibo de pagamento");
+  assert.equal(c.titulo, "Recibo de locação");
   assert.equal(totalComEncargos(BASE), 3570.5);
   for (const trecho of ["Dono Um (CPF/CNPJ 123.456.789-00)", "Inquilina Dois (CPF/CNPJ 987.654.321-00)", "Rua das Flores 123, Uberlândia", "01/10/2026 a 30/11/2026", "Condomínio", "IPTU", "R$ 3.570,50", "CT-D7400000", "Não é nota fiscal", "não recebe aluguel nem caução"]) {
     assert.ok(t.includes(trecho), trecho);
@@ -75,7 +75,9 @@ test("PDF de verdade (pdf-lib) + hash sha256 de 64 hex; acentos e '≈' não que
 test("código de conferência: 32 hex (128 bits)", () => {
   assert.ok(CODIGO_RE.test("0123456789abcdef0123456789abcdef"));
   assert.ok(!CODIGO_RE.test("0001"));
-  assert.match(ler("lib/fiscal/emitir.ts"), /randomBytes\(16\)\.toString\("hex"\)/);
+  // Prompt 56: o código nasce no registro único (registro.ts), que toda emissão usa.
+  assert.match(ler("lib/fiscal/registro.ts"), /randomBytes\(16\)\.toString\("hex"\)/);
+  assert.match(ler("lib/fiscal/emitir.ts"), /registrarDocumento\(admin,/);
 });
 
 test("devolução da caução: só com a locação encerrada, caução confirmada e valor entre 0 e o total", () => {
@@ -125,7 +127,8 @@ test("#14 (0083): documento fiscal não se apaga; anulação lógica aparece na 
   assert.match(sql, /revoke delete, truncate on public\.documentos_fiscais from anon, authenticated, service_role/);
   assert.doesNotMatch(sql, /raise notice/i);
   const conferir = ler("app/(public)/conferir/[codigo]/page.tsx");
-  assert.match(conferir, /doc\.anulado_em \?/);
+  // Prompt 56: a situação vem do registro único (status "anulado", com o motivo).
+  assert.match(conferir, /situacao\.estado === "anulado"/);
   assert.match(conferir, /data-testid="conferir-anulado"/);
   // Nenhum código apaga documento fiscal.
   for (const f of ["lib/fiscal/emitir.ts", "lib/data/documentos-actions.ts", "app/api/documentos/[id]/route.ts"]) {

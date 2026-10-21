@@ -221,6 +221,28 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     await expect(m.getByTestId("instrucoes-liberadas")).toContainText("senha-do-lab");
     await expect(m.getByTestId("checklist-primeiro_pagamento")).toHaveAttribute("data-feito", "sim");
     await m.context().close();
+
+    // Achado do QA (21/10): com texto do contrato (combinação de check-in), o editor do dono abre com o PUBLICADO e
+    // salvar corrige o que o morador vê.
+    await adm()
+      .from("contratos_checkin")
+      .upsert({ contrato_id: ids.contrato, horario: "15:00", instrucoes: "Retire a chave na portaria apresentando documento.", plantao: "34999998888" }, { onConflict: "contrato_id" });
+    const d2 = await abrir(browser, dono.email);
+    await d2.goto(`/dashboard/estadia/${ids.contrato}#instrucoes`, { waitUntil: "networkidle" });
+    await expect(d2.getByTestId("instrucoes-como_entrar")).toHaveValue("Retire a chave na portaria apresentando documento.");
+    await expect(d2.getByTestId("instrucoes-wifi_senha")).toHaveValue("senha-do-lab");
+    await expect(d2.getByTestId("instrucoes-como-entrar-do-contrato")).toBeVisible();
+    await d2.getByTestId("instrucoes-como_entrar").fill("Chave com o zelador, das 8 h às 18 h.");
+    await d2.getByTestId("instrucoes-salvar").click();
+    await expect(d2.getByTestId("estadia-ok")).toBeVisible();
+    await d2.context().close();
+    const m2 = await abrir(browser, morador.email, 390);
+    await m2.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await expect(m2.getByTestId("instrucoes-liberadas")).toContainText("Chave com o zelador");
+    await expect(m2.getByTestId("instrucoes-liberadas")).not.toContainText("Retire a chave");
+    await m2.context().close();
+    const { data: im } = await adm().from("imovel_instrucoes_chegada").select("como_entrar").eq("property_id", ids.imovel!).single();
+    expect(im?.como_entrar, "o \"como entrar\" do imóvel fica como estava").toBe("Portaria 24 h: diga o seu nome na entrada.");
   });
 
   test("ocupantes: o morador preenche até o limite; o dono baixa a lista da portaria", async ({ browser }) => {

@@ -127,7 +127,7 @@ function maisAdiante(doServidor: string, confirmado?: string): string {
 }
 
 /** Instruções de chegada: o dono preenche uma vez (valem para as próximas estadias do imóvel). */
-export function EditorInstrucoes({ propertyId, inicial }: { propertyId: string; inicial: Instrucoes }) {
+export function EditorInstrucoes({ propertyId, contratoId, inicial, comoEntrarDoContrato = false }: { propertyId: string; contratoId?: string; inicial: Instrucoes; comoEntrarDoContrato?: boolean }) {
   const [valores, setValores] = useState<Instrucoes>(inicial);
   const [pendente, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
@@ -141,13 +141,18 @@ export function EditorInstrucoes({ propertyId, inicial }: { propertyId: string; 
         iniciar(async () => {
           setErro(null);
           setOk(null);
-          const r = await salvarInstrucoes(propertyId, valores);
+          const r = await salvarInstrucoes(propertyId, valores, contratoId);
           if (!r.ok) setErro(r.erro);
           else setOk("Instruções salvas. O morador vê 7 dias antes da entrada, com o contrato assinado e o 1º pagamento registrado.");
         });
       }}
     >
       <p className="text-sm text-muted">Só o morador com contrato assinado vê, 7 dias antes da entrada. Nunca aparece no anúncio.</p>
+      {comoEntrarDoContrato && (
+        <p className="text-sm text-ink" data-testid="instrucoes-como-entrar-do-contrato">
+          &ldquo;Como entrar&rdquo; deste contrato vem da combinação de check-in. O que você escrever nele vale só para este contrato; os outros campos valem para o imóvel.
+        </p>
+      )}
       {CAMPOS_INSTRUCOES.map((c) => (
         <label key={c.chave} className="grid gap-1 text-sm font-semibold text-ink">
           {c.rotulo}

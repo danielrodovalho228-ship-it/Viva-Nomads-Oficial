@@ -73,6 +73,7 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
     registradoEm: base.criadoEm,
     resumo: v.resumo,
     prazoEntradaEm: v.prazoConferenciaEm,
+    prazoSaidaEm: v.prazoConferenciaSaidaEm,
     assinaturas: ass ?? [],
     pagamentos: pags ?? [],
     conferencias: confs ?? [],

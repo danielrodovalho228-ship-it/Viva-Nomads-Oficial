@@ -15,6 +15,7 @@
   (ids, sem senha). Uso: NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=… LAB_SENHA=… node scripts/lab/massa-varredura.mjs
 */
 import { createClient } from "@supabase/supabase-js";
+import sharp from "sharp";
 import { deflateSync } from "node:zlib";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { createHash, randomBytes } from "node:crypto";
@@ -209,9 +210,11 @@ async function criarParceiro(userId) {
     .single();
   ok(error, "parceiro");
   const linhas = [];
-  for (let k = 0; k < 6; k++) linhas.push({ parceiro_id: data.id, path: `${userId}/varredura-${k}.png`, legenda: `Foto ${k + 1}`, ordem: k });
+  for (let k = 0; k < 6; k++) linhas.push({ parceiro_id: data.id, path: `${userId}/varredura-${k}.webp`, legenda: `Foto ${k + 1}`, ordem: k });
   for (const l of linhas) {
-    const { error: eUp } = await admin.storage.from("parceiros").upload(l.path, png(l.ordem), { contentType: "image/png", upsert: true });
+    // O bucket "parceiros" só aceita WEBP (migração 0190), como a página do parceiro grava.
+    const webp = await sharp(png(l.ordem)).webp({ quality: 90 }).toBuffer();
+    const { error: eUp } = await admin.storage.from("parceiros").upload(l.path, webp, { contentType: "image/webp", upsert: true });
     ok(eUp, "foto da galeria do parceiro");
   }
   ok((await admin.from("parceiro_galeria").insert(linhas)).error, "galeria do parceiro");

@@ -27,7 +27,8 @@ export default async function ConferirInicio({ searchParams }: { searchParams: P
           <ShieldCheck className="h-6 w-6 text-forest" /> Conferir documento
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Todo recibo e documento gerado pela Viva Nomads tem um código de conferência. Digite o código para ver se o documento é verdadeiro.
+          Todo documento gerado pela Viva Nomads tem um código de conferência no rodapé, depois de &ldquo;com o código&rdquo;. Digite o código
+          para ver se o documento é verdadeiro. O número do documento sozinho não confere nada.
         </p>
         <form method="get" action="/conferir" className="mt-5 space-y-3">
           <label className="block text-sm font-medium text-ink" htmlFor="codigo">

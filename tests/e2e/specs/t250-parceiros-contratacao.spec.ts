@@ -153,7 +153,7 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
       { name: "sala.png", mimeType: "image/png", buffer: pngDeTeste(1) },
       { name: "quarto.png", mimeType: "image/png", buffer: pngDeTeste(2) },
     ]);
-    await p.getByTestId("pedido-enviar-entrega").getByRole("button", { name: "Enviar" }).click();
+    await p.getByTestId("pedido-enviar-entrega").getByRole("button", { name: "Enviar", exact: true }).click();
     await expect(p.getByTestId("pedido-entrega")).toContainText("sala.png", { timeout: 30_000 });
     await p.getByTestId("pedido-marcar-entregue").click();
     await expect(p.getByTestId("pedido-status")).toHaveText("Entregue", { timeout: 20_000 });
@@ -217,10 +217,20 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     await m.getByTestId("servicos-limpeza").click();
     await expect(m).toHaveURL(/\/parceiros\/buscar\?.*categoria=limpeza/);
     await m.locator(`[data-testid="cartao-parceiro"][data-slug="${slugLimpa}"]`).click();
-    await m.getByTestId("solicitar-orcamento").click();
-    await m.getByTestId("solicitar-orcamento-descricao").fill("Limpeza semanal do studio, 1 quarto.");
-    await m.getByTestId("solicitar-orcamento-horario-0").fill(amanha(9));
-    await m.getByTestId("solicitar-orcamento-enviar").click();
+    await expect(m).toHaveURL(new RegExp(`/parceiros/${slugLimpa}`));
+    // Vindo da busca por navegação do cliente, a página do parceiro ainda termina de carregar depois que a folha
+    // abre e pode fechá-la ("Enviar pedido" sumia, lab-crítico do #989). Abre e preenche até a folha ficar de pé;
+    // o envio (que cria o pedido) é feito uma vez só, fora da repetição.
+    const folha = m.getByTestId("solicitar-orcamento-folha");
+    const enviar = m.getByTestId("solicitar-orcamento-enviar");
+    await expect(async () => {
+      if (!(await folha.isVisible())) await m.getByTestId("solicitar-orcamento").click();
+      await expect(folha).toBeVisible({ timeout: 3_000 });
+      await m.getByTestId("solicitar-orcamento-descricao").fill("Limpeza semanal do studio, 1 quarto.");
+      await m.getByTestId("solicitar-orcamento-horario-0").fill(amanha(9));
+      await expect(enviar).toBeEnabled({ timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
+    await enviar.click();
     await expect(m).toHaveURL(/\/dashboard\/servicos\/pedidos\//, { timeout: 30_000 });
     const pedido = m.url().split("/").pop()!;
     await m.goto("/dashboard/servicos", { waitUntil: "domcontentloaded" });

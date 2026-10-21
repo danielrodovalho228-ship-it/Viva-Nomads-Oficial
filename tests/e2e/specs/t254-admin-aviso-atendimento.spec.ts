@@ -8,6 +8,8 @@ import { adm, NO_LABORATORIO } from "../fixtures/laboratorio";
  */
 test.describe("T254 — Admin: aviso de atendimento no topo", () => {
   test.use({ storageState: authFile("admin") });
+  // Em série: o cenário 1 cria e o afterAll apaga chamados reais, o que mexe na contagem que o cenário 2 compara.
+  test.describe.configure({ mode: "serial" });
   const marca = `Lab T254 ${Date.now()}`;
   const ids: string[] = [];
 
@@ -57,6 +59,11 @@ test.describe("T254 — Admin: aviso de atendimento no topo", () => {
       await expect(aviso).toBeVisible({ timeout: 20_000 });
       return (await aviso.innerText()).split("\n")[0];
     };
+    // O aviso só aparece com chamado real atrasado. Os testes rodam em paralelo, então este cria o seu próprio
+    // em vez de depender do cenário de cima.
+    const real = await adm().from("chamados").insert(chamado(false)).select("id").single();
+    if (real.error) throw real.error;
+    ids.push(real.data.id as string);
     const antes = await lerContagem();
     const { data, error } = await adm().from("chamados").insert(chamado(true)).select("id").single();
     if (error) throw error;

@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { acoesDaEstadia, acoesDaFolhaDaEstadia, checklistAntesDaEntrada, textoEntrada, textoSaida, topoDaEstadia, valoresDaEstadia, type EstadoChecklist } from "./estadia.ts";
-import { diaDaLiberacao, instrucoesEfetivas, instrucoesLiberadas, lembrarDono, liberaHoje, textoAntesDaLiberacao } from "./instrucoes.ts";
+import { diaDaLiberacao, instrucoesEfetivas, instrucoesLiberadas, instrucoesParaEditar, lembrarDono, liberaHoje, separarSalvamento, textoAntesDaLiberacao } from "./instrucoes.ts";
 import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos, podeAdicionarOcupante, textoListaPortaria, validarOcupante } from "./ocupantes.ts";
 import { blocosDepoisDoAditivo, expirou, linhaDoHistorico, resumoDasMudancas, taxaDoAditivo, validarProposta, type BlocoAtual } from "./aditivo.ts";
 import { TEXTO_REGRAS_DESLIGADAS, consequenciasDoEncerramento, validarPedidoEncerramento } from "./encerramento.ts";
@@ -225,4 +225,16 @@ test("card 'Decisões' da home: só o que a própria pessoa decide; estadia ence
   const home = readFileSync("src/app/(dashboard)/dashboard/visao-geral-client.tsx", "utf8");
   assert.match(home, /<CartaoDecisoesEstadias estadias=\{estadias\} \/>/);
   assert.match(readFileSync("src/app/(dashboard)/dashboard/page.tsx", "utf8"), /estadiasDaHome\(\)/);
+});
+
+test("editor do dono (achado do QA, 21/10): abre com o PUBLICADO e devolve \"Como entrar\" ao texto do contrato", () => {
+  // Caso do QA: imóvel sem instruções, texto do contrato publicado → o editor abre com ele (antes abria vazio).
+  assert.deepEqual(instrucoesParaEditar(null, "Retire a chave na portaria."), { como_entrar: "Retire a chave na portaria." });
+  assert.deepEqual(instrucoesParaEditar({ como_entrar: "Portaria", wifi_rede: "Ap" }, null), { como_entrar: "Portaria", wifi_rede: "Ap" });
+  assert.deepEqual(instrucoesParaEditar(null, "  "), {});
+  // Salvar com texto do contrato: "Como entrar" vai para o contrato; o "como entrar" do imóvel fica como estava.
+  const s1 = separarSalvamento({ como_entrar: "Chave com o zelador", wifi_rede: "Ap" }, { como_entrar: "Portaria 24 h" }, true);
+  assert.deepEqual(s1, { imovel: { como_entrar: "Portaria 24 h", wifi_rede: "Ap" }, comoEntrarDoContrato: "Chave com o zelador" });
+  // Sem texto do contrato: tudo vai para o imóvel.
+  assert.deepEqual(separarSalvamento({ como_entrar: "X" }, null, false), { imovel: { como_entrar: "X" }, comoEntrarDoContrato: null });
 });

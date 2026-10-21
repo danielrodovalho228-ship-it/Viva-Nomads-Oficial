@@ -9,6 +9,7 @@
 */
 
 import { cnpjValido, cpfValido, formatarDocumento } from "../documento-pessoa.ts";
+import { emitidoEmBrasilia, linhaConferir, type Marca } from "./prefixos.ts";
 
 export type TipoDocumento = "recibo_aluguel" | "comprovante_caucao" | "termo_devolucao_caucao";
 
@@ -39,9 +40,30 @@ export interface DadosDocumento {
   caucaoTotal?: number | null;
   confirmadoEm?: string | null;
   conferirUrl: string;
+  /** Código de verificação (Prompt 56): vai no rodapé comum de toda página. */
+  codigo?: string;
+  /** Endereço do site (o rodapé mostra só o host: "vivanomads.com.br/conferir"). */
+  siteUrl?: string;
+}
+
+/** Cabeçalho e rodapé comuns dos documentos registrados (Prompt 56). */
+export interface CabecalhoDocumento {
+  marca: Marca;
+  /** Marca do emissor (D1-b): nome em destaque e a linha de identificação ("Locador — pessoa física"). */
+  emissor?: { nome: string; linha: string };
+  /** Número exibido, com a versão ("ORC-2026-0002 v2"). */
+  numero: string;
+  /** "Registro nº 000001" — só no legado (VN-CT, VN-SV). */
+  registro?: string;
+  /** "06/10/2026 às 11:03 (horário de Brasília)". */
+  emitidoEm: string;
+  /** "Confira em vivanomads.com.br/conferir com o código …" — em toda página. */
+  conferir: string;
 }
 
 export interface ConteudoDocumento {
+  /** Documentos registrados (Prompt 56): cabeçalho e rodapé comuns. */
+  cabecalho?: CabecalhoDocumento;
   titulo: string;
   subtitulo: string;
   /** Pares rótulo → valor do quadro de dados. */
@@ -52,7 +74,7 @@ export interface ConteudoDocumento {
 }
 
 export const ROTULO_TIPO: Record<TipoDocumento, string> = {
-  recibo_aluguel: "Recibo de pagamento",
+  recibo_aluguel: "Recibo de locação",
   comprovante_caucao: "Comprovante de Caução",
   termo_devolucao_caucao: "Termo de devolução da Caução",
 };
@@ -84,8 +106,13 @@ export function totalComEncargos(d: Pick<DadosDocumento, "valor" | "encargos">):
 export function conteudoDocumento(d: DadosDocumento): ConteudoDocumento {
   const periodo = d.periodoInicio ? `${dataBR(d.periodoInicio)} a ${dataBR(d.periodoFim)}` : "—";
   const base: [string, string][] = [
-    ["Número", d.numero],
-    ["Emitido em", dataBR(d.emitidoEm)],
+    // Com o código (Prompt 56), número e emissão vão no cabeçalho comum.
+    ...(d.codigo
+      ? []
+      : ([
+          ["Número", d.numero],
+          ["Emitido em", dataBR(d.emitidoEm)],
+        ] as [string, string][])),
     ["Locador", parte(d.locador)],
     ["Locatário", parte(d.locatario)],
     ["Imóvel", d.imovelEndereco],
@@ -94,12 +121,25 @@ export function conteudoDocumento(d: DadosDocumento): ConteudoDocumento {
   const rodape = [
     "Documento gerado pela plataforma Viva Nomads a partir do registro do locador e da confirmação do locatário. Não é nota fiscal.",
     "A Viva Nomads não recebe aluguel nem caução: os valores são pagos diretamente entre as partes.",
-    `Confira a autenticidade em ${d.conferirUrl}`,
+    // Com o código, a conferência vai no rodapé comum de toda página (Prompt 56).
+    ...(d.codigo ? [] : [`Confira a autenticidade em ${d.conferirUrl}`]),
   ];
+  // Documento do emissor gerado pela plataforma (D1-b): o locador em destaque, a Viva numa linha discreta.
+  const digitos = (d.locador.doc ?? "").replace(/\D/g, "");
+  const cabecalho: CabecalhoDocumento | undefined = d.codigo
+    ? {
+        marca: "emissor",
+        emissor: { nome: d.locador.nome, linha: digitos.length === 14 ? "Locador — pessoa jurídica" : digitos.length === 11 ? "Locador — pessoa física" : "Locador" },
+        numero: d.numero,
+        emitidoEm: emitidoEmBrasilia(d.emitidoEm),
+        conferir: linhaConferir(d.siteUrl ?? "https://vivanomads.com.br", d.codigo),
+      }
+    : undefined;
 
   if (d.tipo === "recibo_aluguel") {
     const total = totalComEncargos(d);
     return {
+      cabecalho,
       titulo: ROTULO_TIPO.recibo_aluguel,
       subtitulo: `Período ${periodo}`,
       quadro: [
@@ -126,6 +166,7 @@ export function conteudoDocumento(d: DadosDocumento): ConteudoDocumento {
 
   if (d.tipo === "comprovante_caucao") {
     return {
+      cabecalho,
       titulo: ROTULO_TIPO.comprovante_caucao,
       subtitulo: `Contrato ${d.contratoRef}`,
       quadro: [...base, ["Caução", brl(d.valor)], ["Depositada em", `${dataBR(d.dataPagamento)}${d.forma ? `, por ${FORMA[d.forma] ?? d.forma}` : ""}`]],
@@ -140,6 +181,7 @@ export function conteudoDocumento(d: DadosDocumento): ConteudoDocumento {
   const total = d.caucaoTotal ?? d.valor;
   const descontos = Math.max(0, Math.round((total - d.valor) * 100) / 100);
   return {
+    cabecalho,
     titulo: ROTULO_TIPO.termo_devolucao_caucao,
     subtitulo: `Contrato ${d.contratoRef}`,
     quadro: [
@@ -158,9 +200,24 @@ export function conteudoDocumento(d: DadosDocumento): ConteudoDocumento {
   };
 }
 
+/**
+ * Endereço do imóvel no documento: exato + bairro + cidade/UF ("Rua X, 1.245, Apto 302, Santa Mônica, Uberlândia/MG").
+ * O bairro vem de properties.address (o campo "bairro" do anúncio); sem nada, o título do anúncio.
+ */
+export function enderecoDoDocumento(p: { exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; title?: string | null }): string {
+  const limpo = (x: string | null | undefined) => (x ?? "").replace(/\s+/g, " ").trim();
+  const exato = limpo(p.exact_address);
+  const bairro = limpo(p.address);
+  const cidade = [limpo(p.city), limpo(p.state).toUpperCase()].filter(Boolean).join("/");
+  const partes = [exato, bairro && !exato.toLowerCase().includes(bairro.toLowerCase()) ? bairro : "", cidade].filter(Boolean);
+  return partes.join(", ") || limpo(p.title) || "Imóvel";
+}
+
 /** Todo o texto do documento numa string (para testes e para o hash do conteúdo). */
 export function textoDocumento(c: ConteudoDocumento): string {
-  return [c.titulo, c.subtitulo, ...c.quadro.map(([a, b]) => `${a}: ${b}`), ...c.corpo, ...c.rodape].join("\n");
+  const cab = c.cabecalho;
+  const topo = cab ? [cab.emissor?.nome, cab.emissor?.linha, cab.numero, cab.registro, `Emitido em ${cab.emitidoEm}`].filter((x): x is string => !!x) : [];
+  return [...topo, c.titulo, c.subtitulo, ...c.quadro.map(([a, b]) => `${a}: ${b}`), ...c.corpo, ...c.rodape, ...(cab ? [cab.conferir] : [])].join("\n");
 }
 
 /** Nenhum documento pode levar e-mail ou telefone. */
@@ -170,6 +227,7 @@ export function temContato(texto: string): boolean {
   // (REC-2026-000004) e a referência do contrato (CT-1A2B3C4D). Assim a trava só depende do que veio das pessoas.
   texto = texto
     .replace(/(?:https?:\/\/[^\s]*)?\/conferir\/[0-9a-f]{32}/gi, "")
+    .replace(/\/conferir com o código [0-9a-f]{32}/gi, "")
     .replace(/\b[A-Z]{3}-\d{4}-\d{6}\b/g, "")
     .replace(/\bCT-[0-9A-F]{8}\b/g, "");
   if (/[^\s@/]+@[^\s@]+\.[a-z]{2,}/i.test(texto)) return true;
