@@ -106,8 +106,9 @@ test("ocupantes: limite do contrato, validação, lista da portaria e retenção
 });
 
 const blocos: BlocoAtual[] = [
+  // Como o banco cria: o 1º nasce "ativo" (antes da entrada) e os seguintes "pendente_aceite".
   { numero_bloco: 1, inicio: "2026-11-13", fim: "2027-01-11", meses: 2, valor: 6000, caucao: 3000, status: "ativo" },
-  { numero_bloco: 2, inicio: "2027-01-12", fim: "2027-02-10", meses: 1, valor: 3000, caucao: 1500, status: "agendado" },
+  { numero_bloco: 2, inicio: "2027-01-12", fim: "2027-02-10", meses: 1, valor: 3000, caucao: 1500, status: "pendente_aceite" },
 ];
 const contrato = { valorMensal: 3000, ocupantes: 2, capacidade: 3, tamanhoBlocoMeses: 2, blocos };
 
@@ -118,9 +119,10 @@ test("aditivo +2 meses: taxa só sobre os 2, na faixa atual; blocos novos encade
   const t = taxaDoAditivo(v.valor, { valorMensal: 3000, mesesNaoIniciados: 1, taxaCongelada: 0.1, taxaFaixaAgora: 0.12 });
   assert.equal(t.valor, 720, "3.000 × 2 × 12%");
   assert.match(t.baseTexto, /R\$ 3\.000,00 × 2 meses acrescentados × 12% \(faixa atual\) = R\$ 720,00/);
-  const { manter, novos } = blocosDepoisDoAditivo(contrato, v.valor);
+  const { manter, refazer, novos } = blocosDepoisDoAditivo(contrato, v.valor, "2026-12-01");
   assert.deepEqual(manter.map((b) => b.numero_bloco), [1]);
-  assert.deepEqual(novos.map((b) => [b.numero_bloco, b.inicio, b.meses]), [[2, "2027-01-12", 2], [3, "2027-03-13", 1]]);
+  assert.deepEqual(refazer.map((b) => b.numero_bloco), [2]);
+  assert.deepEqual(novos.map((b) => [b.numero_bloco, b.inicio, b.meses, b.status]), [[2, "2027-01-12", 2, "agendado"], [3, "2027-03-13", 1, "agendado"]]);
   assert.equal(novos.reduce((s, b) => s + b.caucao, 0) + 3000 <= 9000, true, "Caução até 3 valores mensais");
 });
 
@@ -131,7 +133,7 @@ test("aditivo −1 mês: abatimento pela taxa congelada; meses iniciados não so
   const t = taxaDoAditivo(v.valor, { valorMensal: 3000, mesesNaoIniciados: 1, taxaCongelada: 0.1, taxaFaixaAgora: 0.12 });
   assert.equal(t.valor, -300, "abatimento de 3.000 × 1 × 10%");
   assert.match(t.baseTexto, /abatimento de R\$ 300,00/);
-  assert.deepEqual(blocosDepoisDoAditivo(contrato, v.valor).novos, []);
+  assert.deepEqual(blocosDepoisDoAditivo(contrato, v.valor, "2026-12-01").novos, []);
   assert.equal(validarProposta(contrato, { meses: 1 }, "2026-12-01").ok, false, "abaixo dos 2 meses já iniciados");
 });
 
@@ -144,19 +146,24 @@ test("aditivo valor mensal: diferença × meses restantes; aumento na faixa do a
   assert.ok(desce.ok);
   if (!desce.ok) return;
   assert.equal(taxaDoAditivo(desce.valor, { valorMensal: 3000, mesesNaoIniciados: 1, taxaCongelada: 0.1, taxaFaixaAgora: 0.12 }).valor, -20);
-  // Sem bloco por começar, valor e ocupantes não mudam.
-  const tudoIniciado = { ...contrato, blocos: blocos.map((b) => ({ ...b, status: "ativo" })) };
-  assert.equal(validarProposta(tudoIniciado, { valorMensal: 3200 }, "2026-12-01").ok, false);
-  assert.equal(validarProposta(tudoIniciado, { ocupantes: 3 }, "2026-12-01").ok, false);
+  // Sem bloco por começar (o último já começou), valor e ocupantes não mudam.
+  assert.equal(validarProposta(contrato, { valorMensal: 3200 }, "2027-01-20").ok, false);
+  assert.equal(validarProposta(contrato, { ocupantes: 3 }, "2027-01-20").ok, false);
+  // Bloco "nao_aceito" (renovação que caducou) fica fora: não conta nos meses e mantém o número.
+  const comCaducado = { ...contrato, blocos: [...blocos, { numero_bloco: 3, inicio: "2027-02-11", fim: "2027-03-12", meses: 1, valor: 3000, caucao: 0, status: "nao_aceito" }] };
+  const mais = validarProposta(comCaducado, { meses: 4 }, "2026-12-01");
+  assert.ok(mais.ok);
+  if (mais.ok) assert.deepEqual(blocosDepoisDoAditivo(comCaducado, mais.valor, "2026-12-01").novos.map((b) => [b.numero_bloco, b.meses]), [[4, 2]]);
 });
 
 test("aditivo: entrada só antes de começar; nada mudou é recusado; resumo e histórico", () => {
-  const futuro = { ...contrato, blocos: blocos.map((b) => ({ ...b, status: "agendado" })) };
+  const futuro = contrato;
   const r = validarProposta(futuro, { inicio: "2026-11-20", ocupantes: 3 }, "2026-11-01");
   assert.ok(r.ok);
   if (!r.ok) return;
   assert.equal(resumoDasMudancas(r.valor), "Entrada: de 13/11/2026 para 20/11/2026 · Ocupantes: de 2 para 3");
-  assert.deepEqual(blocosDepoisDoAditivo(futuro, r.valor).novos.map((b) => b.inicio), ["2026-11-20", "2027-01-19"]);
+  const refeitos = blocosDepoisDoAditivo(futuro, r.valor, "2026-11-01").novos;
+  assert.deepEqual(refeitos.map((b) => [b.numero_bloco, b.inicio, b.status]), [[1, "2026-11-20", "ativo"], [2, "2027-01-19", "agendado"]]);
   assert.equal(validarProposta(contrato, { inicio: "2026-12-20" }, "2026-12-01").ok, false, "a entrada já aconteceu");
   assert.equal(validarProposta(contrato, {}, "2026-12-01").ok, false);
   assert.equal(taxaDoAditivo(r.valor, { valorMensal: 3000, mesesNaoIniciados: 3, taxaCongelada: 0.1, taxaFaixaAgora: 0.12 }).valor, 0, "datas e ocupantes não mexem na taxa");

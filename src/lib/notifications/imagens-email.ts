@@ -114,6 +114,13 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   parceiro_entrega_feita: "transacional",
   parceiro_conclusao_pendente: "transacional",
   parceiro_avaliacao: "transacional",
+  estadia_instrucoes_liberadas: "contrato",
+  estadia_instrucoes_pendentes: "contrato",
+  estadia_aditivo_proposto: "contrato",
+  estadia_aditivo_respondido: "contrato",
+  estadia_remarcada: "contrato",
+  estadia_encerramento_pedido: "contrato",
+  estadia_encerramento_equipe: "atendimento",
 };
 
 /** Arquivo (sem .jpg) e texto alternativo da imagem do evento — sempre um arquivo que existe. */

@@ -141,6 +141,41 @@ set local role authenticated;
 select 'dono lê o encerramento' as caso, count(*) = 1 as ok from contrato_encerramento_pedidos;
 reset role;
 
+-- 7) aplicar_aditivo: tudo ou nada; bloco com pagamento nunca sai; só o serviço executa
+insert into contrato_blocos (id, contrato_id, numero_bloco, inicio, fim, meses, valor, caucao, status) values
+  ('32000000-0000-4000-8000-0000000000b7', '32000000-0000-4000-8000-0000000000c1', 1, current_date + 10, current_date + 69, 2, 6000, 3000, 'ativo'),
+  ('32000000-0000-4000-8000-0000000000b8', '32000000-0000-4000-8000-0000000000c1', 2, current_date + 70, current_date + 99, 1, 3000, 1500, 'pendente_aceite');
+insert into pagamentos_bloco (bloco_id, contrato_id, tipo, valor, data_pagamento, marcado_por)
+values ('32000000-0000-4000-8000-0000000000b7', '32000000-0000-4000-8000-0000000000c1', 'aluguel', 3000, current_date, '32000000-0000-4000-8000-0000000000d1');
+update contrato_aditivos set status = 'aceito' where id = '32000000-0000-4000-8000-0000000000f1';
+set local role authenticated;
+do $$ begin
+  perform aplicar_aditivo('32000000-0000-4000-8000-0000000000f1', '{}', '[]', 90, null, null);
+  raise exception 'DEVIA_NEGAR';
+exception when insufficient_privilege then raise notice 'ok: parte não aplica aditivo direto';
+end $$;
+reset role;
+-- tirar o bloco 1 (que tem pagamento) é recusado e nada muda (o aditivo continua "aceito")
+do $$ begin
+  perform aplicar_aditivo('32000000-0000-4000-8000-0000000000f1',
+    array['32000000-0000-4000-8000-0000000000b7', '32000000-0000-4000-8000-0000000000b8']::uuid[],
+    '[]'::jsonb, 30, null, null);
+  raise exception 'DEVIA_RECUSAR';
+exception when check_violation then raise notice 'ok: bloco com pagamento não sai por aditivo';
+end $$;
+select 'aditivo recusado não mudou nada' as caso, (select status from contrato_aditivos where id = '32000000-0000-4000-8000-0000000000f1') = 'aceito'
+   and (select count(*) from pagamentos_bloco where contrato_id = '32000000-0000-4000-8000-0000000000c1') = 1 as ok;
+-- +1 mês: o bloco 2 é atualizado no lugar (com os dois aceites → agendado) e o 3 é criado
+select 'aplica +1 mês' as caso, aplicar_aditivo('32000000-0000-4000-8000-0000000000f1',
+    array['32000000-0000-4000-8000-0000000000b8']::uuid[],
+    jsonb_build_array(
+      jsonb_build_object('numero_bloco', 2, 'inicio', current_date + 70, 'fim', current_date + 129, 'meses', 2, 'valor', 6000, 'caucao', 0, 'status', 'agendado')),
+    120, 3, null) as ok;
+select 'bloco 2 refeito e agendado' as caso, (select meses = 2 and status = 'agendado' and aceite_inquilino_em is not null
+   from contrato_blocos where id = '32000000-0000-4000-8000-0000000000b8') as ok;
+select 'contrato atualizado' as caso, (select prazo_total_dias = 120 and qtd_ocupantes = 3 from contratos where id = '32000000-0000-4000-8000-0000000000c1') as ok;
+select 'aditivo assinado uma vez só' as caso, aplicar_aditivo('32000000-0000-4000-8000-0000000000f1', '{}', '[]', 1, null, null) = false as ok;
+
 -- 6) retenção: apagar ocupantes de contrato encerrado há mais de 90 dias (a rotina faz o mesmo delete)
 delete from contrato_ocupantes o using contratos c
  where c.id = o.contrato_id and c.id = '32000000-0000-4000-8000-0000000000c1';

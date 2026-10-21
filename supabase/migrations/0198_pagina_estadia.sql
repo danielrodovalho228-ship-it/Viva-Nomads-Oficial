@@ -229,3 +229,73 @@ begin
   end if;
 end;
 $$;
+
+-- ── 6. Eventos do contrato (o Prompt 38 lê: "estadia_remarcada" atualiza e "contrato_encerrado" cancela os pedidos
+--       automáticos). Só o servidor grava e lê.
+create table if not exists public.contrato_eventos (
+  id uuid primary key default gen_random_uuid(),
+  contrato_id uuid not null references public.contratos(id) on delete cascade,
+  tipo text not null check (tipo in ('aditivo_proposto', 'aditivo_aceito', 'aditivo_recusado', 'aditivo_expirado', 'estadia_remarcada',
+                                     'encerramento_pedido', 'contrato_encerrado', 'instrucoes_liberadas', 'ocupantes_apagados')),
+  autor_id uuid references auth.users(id) on delete set null,
+  dados jsonb not null default '{}',
+  criado_em timestamptz not null default now()
+);
+create index if not exists contrato_eventos_contrato on public.contrato_eventos (contrato_id, criado_em);
+create index if not exists contrato_eventos_tipo on public.contrato_eventos (tipo, criado_em);
+alter table public.contrato_eventos enable row level security;
+revoke all on public.contrato_eventos from anon, authenticated;
+grant all on public.contrato_eventos to service_role;
+
+-- ── 7. Aplicar o aditivo nos blocos, tudo ou nada ──────────────────────────────────────────────────────────────
+-- Só com as duas assinaturas (o servidor confere). Marca o aditivo como assinado, atualiza no lugar os blocos não
+-- iniciados que continuam (mesmo número), cria os que faltam (com os dois aceites: o aditivo assinado) e apaga os que
+-- sobram — nunca um bloco com pagamento registrado (a FK apagaria o pagamento): nesse caso nada muda.
+create or replace function public.aplicar_aditivo(
+  p_aditivo uuid, p_refazer uuid[], p_novos jsonb, p_prazo_dias integer, p_qtd integer, p_valor numeric
+) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare
+  v_contrato uuid;
+  v_forma text;
+  x record;
+begin
+  update public.contrato_aditivos set status = 'assinado', assinado_em = now()
+   where id = p_aditivo and status = 'aceito'
+  returning contrato_id into v_contrato;
+  if v_contrato is null then
+    return false;
+  end if;
+  select coalesce(min(caucao_forma), 'avista') into v_forma from public.contrato_blocos where contrato_id = v_contrato;
+  if exists (
+    select 1 from public.pagamentos_bloco pg join public.contrato_blocos b on b.id = pg.bloco_id
+     where b.id = any(p_refazer)
+       and b.numero_bloco not in (select (j->>'numero_bloco')::int from jsonb_array_elements(p_novos) j)
+  ) then
+    raise exception 'bloco com pagamento registrado não sai por aditivo' using errcode = 'check_violation';
+  end if;
+  delete from public.contrato_blocos b
+   where b.id = any(p_refazer)
+     and b.numero_bloco not in (select (j->>'numero_bloco')::int from jsonb_array_elements(p_novos) j);
+  for x in select * from jsonb_to_recordset(p_novos) as r(numero_bloco int, inicio date, fim date, meses int, valor numeric, caucao numeric, status text)
+  loop
+    update public.contrato_blocos
+       set inicio = x.inicio, fim = x.fim, meses = x.meses, valor = x.valor, caucao = x.caucao,
+           aceite_proprietario_em = coalesce(aceite_proprietario_em, now()), aceite_inquilino_em = coalesce(aceite_inquilino_em, now()),
+           status = case when status in ('pendente_aceite', 'agendado') and x.numero_bloco > 1 then 'agendado' else status end
+     where contrato_id = v_contrato and numero_bloco = x.numero_bloco and id = any(p_refazer);
+    if not found then
+      insert into public.contrato_blocos (contrato_id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_forma, status, aceite_proprietario_em, aceite_inquilino_em)
+      values (v_contrato, x.numero_bloco, x.inicio, x.fim, x.meses, x.valor, x.caucao, v_forma, x.status, now(), now());
+    end if;
+  end loop;
+  update public.contratos
+     set prazo_total_dias = p_prazo_dias,
+         qtd_ocupantes = coalesce(p_qtd, qtd_ocupantes),
+         aluguel_mensal = coalesce(p_valor, aluguel_mensal)
+   where id = v_contrato;
+  return true;
+end;
+$$;
+revoke all on function public.aplicar_aditivo(uuid, uuid[], jsonb, integer, integer, numeric) from public, anon, authenticated;
+grant execute on function public.aplicar_aditivo(uuid, uuid[], jsonb, integer, integer, numeric) to service_role;

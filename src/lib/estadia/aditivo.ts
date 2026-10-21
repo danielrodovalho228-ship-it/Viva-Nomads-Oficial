@@ -46,8 +46,14 @@ export interface BlocoAtual {
   status: string;
 }
 
-/** Bloco iniciado: em andamento ou já encerrado/renovado (não muda por aditivo). */
-export const blocoIniciado = (b: Pick<BlocoAtual, "status">) => b.status !== "agendado";
+/**
+ * Bloco iniciado = a data de início já chegou (calendário de Brasília). Não dá para usar o status: o 1º bloco nasce
+ * "ativo" antes da entrada e os seguintes nascem "pendente_aceite" (0063). Esses não mudam por aditivo.
+ */
+export const blocoIniciado = (b: Pick<BlocoAtual, "inicio">, hojeISO: string) => b.inicio <= hojeISO;
+
+/** Proposta de renovação que caducou sem os dois aceites (0063): fora do contrato, não conta nem muda. */
+export const blocoValido = (b: Pick<BlocoAtual, "status">) => b.status !== "nao_aceito";
 
 export interface ContratoParaAditivo {
   valorMensal: number;
@@ -68,15 +74,15 @@ export type Resultado<T> = { ok: true; valor: T } | { ok: false; erro: string };
 
 const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export function mesesDoContrato(blocos: Pick<BlocoAtual, "meses">[]): number {
-  return blocos.reduce((s, b) => s + b.meses, 0);
+export function mesesDoContrato(blocos: Pick<BlocoAtual, "meses" | "status">[]): number {
+  return blocos.filter(blocoValido).reduce((s, b) => s + b.meses, 0);
 }
 
 /** Valida a proposta contra o contrato e devolve só o que muda (antes e depois). */
 export function validarProposta(c: ContratoParaAditivo, p: PropostaAditivo, hojeISO: string): Resultado<MudancasAditivo> {
-  const blocos = [...c.blocos].sort((a, b) => a.numero_bloco - b.numero_bloco);
-  const iniciados = blocos.filter(blocoIniciado);
-  const futuros = blocos.filter((b) => !blocoIniciado(b));
+  const blocos = [...c.blocos].filter(blocoValido).sort((a, b) => a.numero_bloco - b.numero_bloco);
+  const iniciados = blocos.filter((b) => blocoIniciado(b, hojeISO));
+  const futuros = blocos.filter((b) => !blocoIniciado(b, hojeISO));
   const inicioAtual = blocos[0]?.inicio ?? null;
   const mesesAtuais = mesesDoContrato(blocos);
   const m: MudancasAditivo = {};
@@ -211,6 +217,8 @@ export interface BlocoNovo {
   meses: number;
   valor: number;
   caucao: number;
+  /** O 1º bloco nasce vigente (como na criação); os seguintes entram "agendado" com os dois aceites (o aditivo assinado). */
+  status: "ativo" | "agendado";
 }
 
 /**
@@ -218,15 +226,23 @@ export interface BlocoNovo {
  * e o valor novos, encadeados a partir do dia seguinte ao último iniciado (ou da nova entrada). A Caução segue a
  * regra de sempre (50% do bloco, até 3 valores mensais no contrato).
  */
-export function blocosDepoisDoAditivo(c: ContratoParaAditivo, m: MudancasAditivo): { manter: BlocoAtual[]; novos: BlocoNovo[] } {
-  const blocos = [...c.blocos].sort((a, b) => a.numero_bloco - b.numero_bloco);
-  const manter = blocos.filter(blocoIniciado);
+export function blocosDepoisDoAditivo(
+  c: ContratoParaAditivo,
+  m: MudancasAditivo,
+  hojeISO: string,
+): { manter: BlocoAtual[]; refazer: BlocoAtual[]; novos: BlocoNovo[] } {
+  const todos = [...c.blocos].sort((a, b) => a.numero_bloco - b.numero_bloco);
+  const blocos = todos.filter(blocoValido);
+  const manter = blocos.filter((b) => blocoIniciado(b, hojeISO));
+  const refazer = blocos.filter((b) => !blocoIniciado(b, hojeISO));
   const mesesTotal = m.meses?.depois ?? mesesDoContrato(blocos);
   const valor = m.valorMensal?.depois ?? c.valorMensal;
   let restante = mesesTotal - mesesDoContrato(manter);
   const passo = Math.min(Math.max(1, c.tamanhoBlocoMeses), MAX_MESES_BLOCO);
   let cursor = manter.length ? addDiasISO(manter[manter.length - 1].fim, 1) : (m.inicio?.depois ?? blocos[0]?.inicio);
-  let numero = (manter[manter.length - 1]?.numero_bloco ?? 0) + 1;
+  // Numeração segue depois do maior número que fica no banco (um bloco "nao_aceito" mantém o número dele).
+  const ficam = todos.filter((b) => !refazer.includes(b));
+  let numero = Math.max(0, ...ficam.map((b) => b.numero_bloco)) + 1;
   let caucaoAcumulada = manter.reduce((s, b) => s + Number(b.caucao), 0);
   const novos: BlocoNovo[] = [];
   while (restante > 0 && cursor) {
@@ -235,17 +251,17 @@ export function blocosDepoisDoAditivo(c: ContratoParaAditivo, m: MudancasAditivo
     const caucao = caucaoDoBloco(v, valor, caucaoAcumulada);
     caucaoAcumulada += caucao;
     const fim = fimInclusivoISO(cursor, meses * DIAS_POR_MES);
-    novos.push({ numero_bloco: numero, inicio: cursor, fim, meses, valor: v, caucao });
+    novos.push({ numero_bloco: numero, inicio: cursor, fim, meses, valor: v, caucao, status: numero === 1 ? "ativo" : "agendado" });
     cursor = addDiasISO(fim, 1);
     restante -= meses;
     numero += 1;
   }
-  return { manter, novos };
+  return { manter, refazer, novos };
 }
 
 /** Meses ainda não iniciados no contrato atual (base da diferença do valor mensal). */
-export function mesesNaoIniciados(blocos: BlocoAtual[]): number {
-  return mesesDoContrato(blocos.filter((b) => !blocoIniciado(b)));
+export function mesesNaoIniciados(blocos: BlocoAtual[], hojeISO: string): number {
+  return mesesDoContrato(blocos.filter((b) => !blocoIniciado(b, hojeISO)));
 }
 
 /** "Aditivo 1 — 21/10/2026 — Meses: de 3 para 4" (histórico da página). */
