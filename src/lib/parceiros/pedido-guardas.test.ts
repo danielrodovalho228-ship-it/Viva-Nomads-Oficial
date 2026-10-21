@@ -95,3 +95,20 @@ test("vocabulário e custódia: telas e e-mails do pedido sem retém, repasse, i
   assert.deepEqual(achados, []);
   assert.ok(blocoEmails.length > 400, "os e-mails do 31b estão no catálogo");
 });
+
+test("página pública do parceiro: 'Solicitar orçamento' ativo, sem o 'Em breve' antigo (QA do Muse, 21/10)", () => {
+  const pagina = ler("src/app/(public)/parceiros/[slug]/page.tsx");
+  assert.match(pagina, /<SolicitarOrcamento\b/);
+  assert.match(pagina, /export const dynamic = "force-dynamic"/, "sempre do banco: sem página antiga em cache");
+  assert.doesNotMatch(pagina, /Em breve|disabled/);
+  const botao = ler("src/components/parceiros/solicitar-orcamento.tsx");
+  // O botão que abre a folha nunca é desabilitado; sem login ele vira link para a entrada.
+  assert.match(botao, /<ButtonLink href=\{`\/auth\?redirect=\$\{encodeURIComponent\(voltarPara\)\}`\}[^>]*data-testid="solicitar-orcamento"/);
+  assert.match(botao, /<Button variant="primary" className="w-full" onClick=\{abrir\} data-testid="solicitar-orcamento">/);
+  // E o deploy de produção roda o T252 (subconjunto público), que falha com o botão morto ou o texto antigo.
+  const pkg = JSON.parse(ler("package.json")) as { scripts: Record<string, string> };
+  assert.match(pkg.scripts["testes:publico"], /t252-orcamento-na-pagina-do-parceiro/);
+  const spec = ler("tests/e2e/specs/t252-orcamento-na-pagina-do-parceiro.spec.ts");
+  assert.match(spec, /toBeEnabled\(\)/);
+  assert.match(spec, /not\.toContainText\(TEXTO_ANTIGO\)/);
+});

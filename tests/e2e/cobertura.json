@@ -1339,7 +1339,9 @@
       ],
       "specs": [
         "t236-parceiros-ciclo",
-        "t239-cartao-parceiro"
+        "t239-cartao-parceiro",
+        "t250-parceiros-contratacao",
+        "t252-orcamento-na-pagina-do-parceiro"
       ]
     },
     "/parceiros/ativar": {
