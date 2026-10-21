@@ -6,6 +6,8 @@ import { caminhosDeBairros } from "@/lib/bairros";
 import { listProperties } from "@/lib/data/properties";
 import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
 import { GUIAS } from "@/lib/guias/guias";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { chaveCidade } from "@/lib/cidades";
 
 // F9: lista de imóveis sempre fresca (revalidatePath nas ações + 60 s de rede de segurança).
 export const revalidate = 60;
@@ -65,5 +67,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((c) => !poloCaminhos.has(c))
     .map((c) => ({ url: `${SITE_URL}${c}`, changeFrequency: "weekly" as const, priority: 0.6 }));
 
-  return [...staticRoutes, ...cityRoutes, ...poloRoutes, ...bairroRoutes, ...propertyRoutes];
+  // Prompt 37: "Imóveis perto de…" por destino ativo — só os que já têm imóvel (sem imóvel a página é noindex).
+  const admin = createAdminClient();
+  const { data: destinos } = admin ? await admin.from("destinos").select("slug, cidade").eq("ativo", true) : { data: [] };
+  const cidadesComImovel = new Set(properties.map((p) => chaveCidade(p.city ?? "")));
+  const destinoRoutes = ((destinos ?? []) as { slug: string; cidade: string }[])
+    .filter((d) => cidadesComImovel.has(chaveCidade(d.cidade)))
+    .map((d) => ({ url: `${SITE_URL}/imoveis-perto-de/${d.slug}`, changeFrequency: "weekly" as const, priority: 0.7 }));
+
+  return [...staticRoutes, ...cityRoutes, ...poloRoutes, ...bairroRoutes, ...destinoRoutes, ...propertyRoutes];
 }
