@@ -173,6 +173,13 @@ test("32 convertido: aditivo ADn com o hash assinado, lista PRT com o código, e
   assert.match(e, /fecharConferencia\(admin, saida\.id as string, "encerramento_concluido"\)/);
 });
 
+test("orçamento do parceiro: \"VN-SV-… · orçamento vN\" na tela do pedido, contando os envios", () => {
+  const a = ler("src/lib/parceiros/pedido-actions.ts");
+  assert.match(a, /orcamentoRotulo: versoesOrcamento \? numeroOrcamentoParceiro\(p\.codigo, versoesOrcamento\) : null/);
+  assert.match(a, /\.eq\("tipo", "orcar"\)/);
+  assert.match(ler("src/app/(dashboard)/dashboard/servicos/pedidos/[id]/page.tsx"), /d\.orcamentoRotulo \?\? d\.codigo/);
+});
+
 test("retenção: uma constante; tudo pendente (item 13) menos a lista da portaria; nada pendente se apaga", () => {
   for (const [p, r] of Object.entries(RETENCAO_DOCUMENTOS)) {
     if (p === "PRT") assert.deepEqual([r.dias, r.situacao], [90, "definido"]);
