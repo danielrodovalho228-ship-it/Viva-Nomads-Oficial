@@ -51,7 +51,7 @@ export function CampoDestino({
       )}
       <div className="mt-3 min-w-0">
         {digitado ? (
-          <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-line px-3 py-1.5 text-sm text-ink" data-testid="destino-digitado">
+          <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-line px-3 py-2 text-sm text-ink" data-testid="destino-digitado">
             <span className="truncate">{digitado.rot || "Endereço informado"}</span>
             <button type="button" aria-label="Tirar o endereço" onClick={() => escolher(null)} className="shrink-0 text-muted hover:text-ink">
               <X className="h-4 w-4" />

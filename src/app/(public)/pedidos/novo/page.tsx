@@ -30,6 +30,9 @@ import { getMeusDados } from "@/lib/data/perfil-actions";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { useAuthStore } from "@/lib/store";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
+import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
+import type { EstadoDestino } from "@/lib/busca/destino-busca";
+import type { ModoRota } from "@/lib/rotas/tempo";
 
 /** Um só estilo para todos os campos do formulário: 48 px de altura (prompt 12). */
 const CAMPO =
@@ -108,6 +111,12 @@ export default function NovoPedidoPage() {
 }
 
 /** Título pequeno de cada grupo do formulário (ONDE E QUANDO, QUEM VAI MORAR, O IMÓVEL, VALOR E MOTIVO). */
+
+/** Pedido salvo guarda o id do destino; os chips usam o slug. */
+function slugDoDestinoEstado(slugOuId: string, destinos: { id: string; slug: string }[]): string {
+  return slugOuId.startsWith("id:") ? (destinos.find((d) => d.id === slugOuId.slice(3))?.slug ?? slugOuId) : slugOuId;
+}
+
 function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <fieldset className="min-w-0 space-y-4">
@@ -158,6 +167,15 @@ function PedidoForm() {
   const [apresentacao, setApresentacao] = useState("");
   const [pets, setPets] = useState(false);
   const [criancas, setCriancas] = useState(Number(sp.get("criancas") || 0) > 0);
+  // Prompt 37: onde vai trabalhar ou estudar (padrão: ?destino= da busca, senão o local de trabalho salvo na conta).
+  const destinoQ = sp.get("destino");
+  const [destinoEstado, setDestinoEstado] = useState<EstadoDestino>({
+    destino: destinoQ && /^[a-z0-9-]{2,60}$/.test(destinoQ) ? { slug: destinoQ } : null,
+    modo: "carro",
+    ate: 0,
+  });
+  const [destinosChips, setDestinosChips] = useState<(DestinoChip & { id: string })[]>([]);
+  const [modosRota, setModosRota] = useState<ModoRota[]>(["carro", "a_pe", "bicicleta"]);
   // Prompt 30: bairros (até 3; nenhum = qualquer bairro), quartos mínimos, faixa de valor, necessidades e porte do pet.
   const [bairros, setBairros] = useState<string[]>([]);
   const [textoBairro, setTextoBairro] = useState("");
@@ -239,6 +257,8 @@ function PedidoForm() {
         setBairros(((p.bairros as string[] | null) ?? []).slice(0, BAIRROS_MAX));
         setQuartosMin(p.quartos_min == null ? null : Number(p.quartos_min));
         setNecessidades((p.necessidades as string[] | null) ?? []);
+        const d = p.destino as { destino_id?: string; rotulo: string; lat: number; lng: number; modo_preferido?: ModoRota; ate?: number } | null;
+        if (d) setDestinoEstado({ destino: d.destino_id ? { slug: `id:${d.destino_id}` } : { lat: d.lat, lng: d.lng, rot: d.rotulo }, modo: d.modo_preferido ?? "carro", ate: d.ate ?? 0 });
       })
       .catch(() => {
         if (vivo) setCarregando(false);
@@ -247,6 +267,28 @@ function PedidoForm() {
       vivo = false;
     };
   }, [editarId]);
+
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/destinos")
+      .then((r) => r.json())
+      .then((j: { destinos?: (DestinoChip & { id: string })[]; modos?: ModoRota[] }) => {
+        if (!vivo) return;
+        setDestinosChips(j.destinos ?? []);
+        if (j.modos?.length) setModosRota(j.modos);
+      })
+      .catch(() => undefined);
+    if (!editarId && !destinoQ)
+      fetch("/api/conta/local-trabalho")
+        .then((r) => (r.status === 200 ? r.json() : null))
+        .then((j: { estado?: EstadoDestino | null } | null) => {
+          if (vivo && j?.estado?.destino) setDestinoEstado(j.estado);
+        })
+        .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [editarId, destinoQ]);
 
   function adicionarBairro() {
     const b = limparBairro(textoBairro);
@@ -342,6 +384,11 @@ function PedidoForm() {
       bairros: [...bairros, ...(limparBairro(textoBairro) && bairros.length < BAIRROS_MAX ? [limparBairro(textoBairro)] : [])],
       quartosMin,
       necessidades,
+      destino: !destinoEstado.destino
+        ? null
+        : "slug" in destinoEstado.destino
+          ? { destinoSlug: slugDoDestinoEstado(destinoEstado.destino.slug, destinosChips), modo: destinoEstado.modo, ate: destinoEstado.ate || undefined }
+          : { lat: destinoEstado.destino.lat, lng: destinoEstado.destino.lng, rotulo: destinoEstado.destino.rot, modo: destinoEstado.modo, ate: destinoEstado.ate || undefined },
     };
     setEnviando(true);
     if (editarId) {
@@ -530,6 +577,16 @@ function PedidoForm() {
               )}
             </ul>
           </div>
+        </Grupo>
+
+        <Grupo titulo="Trabalho ou estudo">
+          <CampoDestino
+            destinos={destinosChips.filter((d) => !cidade || d.cidade.toLowerCase() === cidade.toLowerCase())}
+            modos={modosRota}
+            valor={{ ...destinoEstado, destino: destinoEstado.destino && "slug" in destinoEstado.destino ? { slug: slugDoDestinoEstado(destinoEstado.destino.slug, destinosChips) } : destinoEstado.destino }}
+            onChange={setDestinoEstado}
+          />
+          <p className="mt-2 text-xs text-muted">Opcional. O proprietário vê só “perto do …” e quantos minutos o imóvel dele fica — nunca o endereço que você digitar.</p>
         </Grupo>
 
         <Grupo titulo="Quem vai morar">

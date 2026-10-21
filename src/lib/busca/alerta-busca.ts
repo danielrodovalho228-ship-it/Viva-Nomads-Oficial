@@ -11,6 +11,8 @@ import { normalizarBusca, resumoDaBusca } from "./buscas-salvas.ts";
 import { FILTROS_PAINEL_VAZIOS, passaNoPainel } from "./painel-filtros.ts";
 import { comodidadesDaUrl } from "./filtro-comodidades.ts";
 import type { PortePet, RegrasPets } from "../anuncio/pets-regras.ts";
+import { destinoDaUrl, type DestinoBusca } from "./destino-busca.ts";
+import { dentroDoTempo, type ModoRota } from "../rotas/tempo.ts";
 
 export interface ImovelParaAlerta {
   id: string;
@@ -56,9 +58,18 @@ function aceitaGarantia(p: ImovelParaAlerta, g: string): boolean {
   return arr.includes(g);
 }
 
+/** Minutos (do cache do servidor) do imóvel até o destino da busca, no meio pedido; null/undefined = sem tempo. */
+export type MinutosAte = (destino: DestinoBusca, modo: ModoRota) => number | null | undefined;
+
 /** O imóvel combina com a busca salva (query string normalizada)? */
-export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta): boolean {
+export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minutosAte?: MinutosAte): boolean {
   const sp = new URLSearchParams(normalizarBusca(parametros));
+  // Prompt 37: "até N min" do trabalho — só com tempo de rota conferido (sem tempo, não alertamos por palpite).
+  const d = destinoDaUrl(sp);
+  if (d.destino && d.ate) {
+    const m = minutosAte?.(d.destino, d.modo);
+    if (m == null || !dentroDoTempo(m, d.ate)) return false;
+  }
   const on = (k: string) => sp.get(k) === "1";
   const num = (k: string) => Number(sp.get(k)) || 0;
 

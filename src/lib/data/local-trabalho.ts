@@ -46,3 +46,24 @@ export async function estadoDoLocal(local: LocalTrabalho | null, admin: Admin | 
   }
   return { destino: { lat: local.lat, lng: local.lng, rot: local.rotulo }, modo: local.modo_preferido, ate: local.ate ?? 0 };
 }
+
+/** Entrada da tela (destino cadastrado pelo slug, ou endereço escolhido) → o que se grava. null = sem destino. */
+export async function localDaEntrada(
+  admin: Admin,
+  e: { destinoSlug?: string; lat?: number; lng?: number; rotulo?: string; modo?: string; ate?: number } | null | undefined,
+): Promise<LocalTrabalho | null | "invalido"> {
+  if (!e) return null;
+  if (e.destinoSlug) {
+    const { data: d } = await admin.from("destinos").select("id, nome, lat, lng").eq("slug", e.destinoSlug).eq("ativo", true).maybeSingle();
+    if (!d) return "invalido";
+    return normalizarLocal({ destino_id: d.id, rotulo: d.nome, lat: d.lat, lng: d.lng, modo_preferido: e.modo, ate: e.ate }) ?? "invalido";
+  }
+  return normalizarLocal({ rotulo: e.rotulo, lat: e.lat, lng: e.lng, modo_preferido: e.modo, ate: e.ate }) ?? "invalido";
+}
+
+/** O que o DONO vê do destino de um pedido: o rótulo e, quando há imóvel dele, os minutos — nunca o endereço. */
+export function destinoParaDono(rotulo: string, artigo: "o" | "a" | "" | null, minutosArredondados: number | null | undefined): string {
+  const perto = artigo === "o" ? `perto do ${rotulo}` : artigo === "a" ? `perto da ${rotulo}` : `perto de ${rotulo}`;
+  if (minutosArredondados == null) return perto;
+  return `${perto} · ${minutosArredondados < 5 ? "menos de 5 min" : `~${minutosArredondados} min`} do seu imóvel`;
+}
