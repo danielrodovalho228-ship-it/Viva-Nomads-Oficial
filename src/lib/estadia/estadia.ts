@@ -250,3 +250,37 @@ export function acoesDaFolhaDaEstadia(contratoId: string, papel: PapelEstadia): 
     ...(papel === "inquilino" ? [{ id: "pedir_servico", rotulo: "Pedir limpeza/manutenção", href: "/dashboard/servicos" }] : []),
   ];
 }
+
+// ── Decisões das estadias (card da home do painel) ─────────────────────────────────────────────────────────────
+export interface EntradaDecisoes {
+  contratoId: string;
+  papel: PapelEstadia;
+  fase: FaseEstadia;
+  assinadoPelasDuas: boolean;
+  ocupantes: { preenchidos: number; previstos: number };
+  instrucoesPreenchidas: boolean;
+  /** Aditivo aberto (proposto ou aceito), se houver. */
+  aditivo: { status: "proposto" | "aceito"; propostoPorMim: boolean; euAssinei: boolean } | null;
+}
+
+export interface DecisaoEstadia {
+  id: "responder_aditivo" | "assinar_aditivo" | "preencher_ocupantes" | "preencher_instrucoes";
+  rotulo: string;
+  href: string;
+}
+
+/** O que espera esta pessoa nesta estadia — só o que ela mesma decide (nada da outra parte). */
+export function decisoesDaEstadia(e: EntradaDecisoes): DecisaoEstadia[] {
+  if (e.fase === "encerrada") return [];
+  const base = HREF_ESTADIA(e.contratoId);
+  const out: DecisaoEstadia[] = [];
+  if (e.aditivo?.status === "proposto" && !e.aditivo.propostoPorMim) out.push({ id: "responder_aditivo", rotulo: "Responder à proposta de alteração", href: base });
+  if (e.aditivo?.status === "aceito" && !e.aditivo.euAssinei) out.push({ id: "assinar_aditivo", rotulo: "Assinar o aditivo", href: base });
+  if (e.papel === "inquilino" && e.assinadoPelasDuas && e.ocupantes.preenchidos < e.ocupantes.previstos) {
+    out.push({ id: "preencher_ocupantes", rotulo: "Preencher os ocupantes para a portaria", href: `${base}/ocupantes` });
+  }
+  if (e.papel === "proprietario" && e.fase === "antes" && !e.instrucoesPreenchidas) {
+    out.push({ id: "preencher_instrucoes", rotulo: "Preencher as instruções de chegada", href: `${base}#instrucoes` });
+  }
+  return out;
+}

@@ -210,3 +210,19 @@ test("rotinas da estadia no cron: D-7 ao morador, D-10 ao dono, ocupantes apagad
   assert.match(detalheAutomacao("estadia_instrucoes_liberadas", { imovel: "Apto 12", fim: "2026-11-13" }), /Entrada em 13\/11\/2026\. As instruções de chegada estão na página da estadia\./);
   assert.match(detalheAutomacao("estadia_instrucoes_pendentes", { imovel: "Apto 12", fim: "2026-11-13" }), /o morador recebe 7 dias antes/);
 });
+
+test("card 'Decisões' da home: só o que a própria pessoa decide; estadia encerrada não pede nada", async () => {
+  const { decisoesDaEstadia } = await import("./estadia.ts");
+  const { readFileSync } = await import("node:fs");
+  const base = { contratoId: "c1", fase: "antes" as const, assinadoPelasDuas: true, ocupantes: { preenchidos: 0, previstos: 2 }, instrucoesPreenchidas: false, aditivo: null };
+  assert.deepEqual(decisoesDaEstadia({ ...base, papel: "proprietario" }).map((d) => d.id), ["preencher_instrucoes"]);
+  assert.deepEqual(decisoesDaEstadia({ ...base, papel: "inquilino" }).map((d) => [d.id, d.href]), [["preencher_ocupantes", "/dashboard/estadia/c1/ocupantes"]]);
+  const proposta = { status: "proposto" as const, propostoPorMim: false, euAssinei: false };
+  assert.equal(decisoesDaEstadia({ ...base, papel: "proprietario", instrucoesPreenchidas: true, aditivo: proposta })[0].rotulo, "Responder à proposta de alteração");
+  assert.deepEqual(decisoesDaEstadia({ ...base, papel: "proprietario", instrucoesPreenchidas: true, aditivo: { ...proposta, propostoPorMim: true } }), [], "quem propôs só espera");
+  assert.equal(decisoesDaEstadia({ ...base, papel: "inquilino", ocupantes: { preenchidos: 2, previstos: 2 }, aditivo: { status: "aceito", propostoPorMim: true, euAssinei: false } })[0].id, "assinar_aditivo");
+  assert.deepEqual(decisoesDaEstadia({ ...base, papel: "inquilino", fase: "encerrada" }), []);
+  const home = readFileSync("src/app/(dashboard)/dashboard/visao-geral-client.tsx", "utf8");
+  assert.match(home, /<CartaoDecisoesEstadias estadias=\{estadias\} \/>/);
+  assert.match(readFileSync("src/app/(dashboard)/dashboard/page.tsx", "utf8"), /estadiasDaHome\(\)/);
+});

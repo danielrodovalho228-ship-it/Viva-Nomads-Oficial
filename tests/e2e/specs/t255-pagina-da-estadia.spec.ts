@@ -6,7 +6,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 
 /**
  * T255 — Página da estadia (Prompt 32), com a jornada de teste do laboratório:
- * contrato assinado → página da estadia com o checklist (dono e morador) → morador preenche os ocupantes → dono baixa a
+ * contrato assinado → página da estadia com o checklist (dono e morador) → card "Decisões" na home do painel →
+ * morador preenche os ocupantes → dono baixa a
  * lista da portaria → instruções de chegada liberadas no D-7 e não no D-8 (data simulada pelos blocos) e não sem o 1º
  * pagamento → nota privada invisível para a outra parte → "Propor alteração" +1 mês → aceite → aditivo assinado
  * pelos dois com código → blocos e taxa (só na visão do dono) atualizados → "Encerrar" com a chave desligada → pedido no
@@ -133,6 +134,26 @@ test.describe("T255 — Página da estadia (Prompt 32)", () => {
     await expect(m.getByTestId("checklist-instrucoes")).toHaveCount(0);
     await semRolagemLateral(m);
     await print(m, "morador-390");
+    await m.context().close();
+  });
+
+  test("home do painel: o card 'Decisões das suas estadias' leva à estadia e pede o que cada um decide", async ({ browser }) => {
+    test.setTimeout(90_000);
+    const d = await abrir(browser, dono.email, 390);
+    await d.goto("/dashboard", { waitUntil: "networkidle" });
+    const cartaoDono = d.locator(`[data-testid="home-estadia"][data-contrato="${ids.contrato}"]`);
+    await expect(cartaoDono).toBeVisible();
+    await expect(cartaoDono.getByTestId("home-decisao-preencher_instrucoes")).toBeVisible();
+    await expect(cartaoDono.getByTestId("home-estadia-acoes")).toContainText("Propor alteração de datas");
+    await semRolagemLateral(d);
+    await cartaoDono.getByRole("link", { name: /Studio da estadia/ }).click();
+    await expect(d).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}$`));
+    await d.context().close();
+    const m = await abrir(browser, morador.email, 390);
+    await m.goto("/dashboard", { waitUntil: "networkidle" });
+    const cartaoMorador = m.locator(`[data-testid="home-estadia"][data-contrato="${ids.contrato}"]`);
+    await expect(cartaoMorador.getByTestId("home-decisao-preencher_ocupantes")).toBeVisible();
+    await expect(cartaoMorador.getByTestId("home-estadia-acoes")).toContainText("Pedir limpeza/manutenção");
     await m.context().close();
   });
 

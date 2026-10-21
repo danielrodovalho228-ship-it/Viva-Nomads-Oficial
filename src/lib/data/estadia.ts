@@ -14,12 +14,15 @@ import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
 import { diaBRT } from "@/lib/datas-brasilia";
 import { conversationId } from "@/lib/messages/conversation-id";
 import {
+  acoesDaFolhaDaEstadia,
   checklistAntesDaEntrada,
+  decisoesDaEstadia,
   mesesDoPeriodo,
   periodoDaEstadia,
   prazoDaConferencia,
   topoDaEstadia,
   valoresDaEstadia,
+  type DecisaoEstadia,
   type ItemChecklist,
   type LinhaValor,
   type PapelEstadia,
@@ -307,4 +310,60 @@ export function mesesFuturos(c: LinhaContratoEstadia, hojeISO: string): number {
 /** Hoje (AAAA-MM-DD) em Brasília. */
 export function hojeEmBrasilia(agora: Date = new Date()): string {
   return diaBRT(agora) ?? agora.toISOString().slice(0, 10);
+}
+
+export interface EstadiaNaHome {
+  contratoId: string;
+  papel: PapelEstadia;
+  imovel: string;
+  topo: string;
+  decisoes: DecisaoEstadia[];
+  acoes: { id: string; rotulo: string; href: string }[];
+}
+
+/**
+ * Card "Decisões" da home do painel (Prompt 32; cadeado do painel liberado pelo Muse para o #975): as estadias em
+ * vigor da pessoa (como morador ou como dono), o topo de cada uma, o que ela precisa decidir e a lista de ações da
+ * folha "Ações desta estadia". Sem sessão ou sem estadia → lista vazia (o card não aparece).
+ */
+export async function estadiasDaHome(agora: Date = new Date()): Promise<EstadiaNaHome[]> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!supabase || !admin) return [];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data: meus } = await admin.from("properties").select("id").eq("owner_id", user.id).limit(500);
+  const imoveis = ((meus ?? []) as { id: string }[]).map((p) => p.id);
+  const filtro = imoveis.length ? `tenant_id.eq.${user.id},property_id.in.(${imoveis.join(",")})` : `tenant_id.eq.${user.id}`;
+  const { data } = await admin.from("contratos").select(COLUNAS_ESTADIA).eq("status", "ativo").or(filtro).order("created_at", { ascending: false }).limit(20);
+  const contratos = (data ?? []) as unknown as LinhaContratoEstadia[];
+  if (!contratos.length) return [];
+  const ids = contratos.map((c) => c.id);
+  const [{ data: ocup }, { data: adit }] = await Promise.all([
+    admin.from("contrato_ocupantes").select("contrato_id").in("contrato_id", ids),
+    admin.from("contrato_aditivos").select("id, contrato_id, status, proposto_por, contrato_aditivo_assinaturas(papel)").in("contrato_id", ids).in("status", ["proposto", "aceito"]),
+  ]);
+  const out: EstadiaNaHome[] = [];
+  for (const c of contratos) {
+    const papel: PapelEstadia = c.tenant_id === user.id ? "inquilino" : "proprietario";
+    const periodo = periodoDoContrato(c);
+    const topo = topoDaEstadia(periodo, c, agora);
+    const a = ((adit ?? []) as unknown as { contrato_id: string; status: "proposto" | "aceito"; proposto_por: string; contrato_aditivo_assinaturas: { papel: string }[] | null }[]).find(
+      (x) => x.contrato_id === c.id,
+    );
+    const instrucoes = papel === "proprietario" && topo.fase === "antes" ? (await lerInstrucoes(admin, c)).efetivas : null;
+    const decisoes = decisoesDaEstadia({
+      contratoId: c.id,
+      papel,
+      fase: topo.fase,
+      assinadoPelasDuas: assinadoPelasDuas(c),
+      ocupantes: { preenchidos: ((ocup ?? []) as { contrato_id: string }[]).filter((o) => o.contrato_id === c.id).length, previstos: Math.max(1, Number(c.qtd_ocupantes) || 1) },
+      instrucoesPreenchidas: instrucoesPreenchidas(instrucoes),
+      aditivo: a ? { status: a.status, propostoPorMim: a.proposto_por === user.id, euAssinei: (a.contrato_aditivo_assinaturas ?? []).some((s) => s.papel === papel) } : null,
+    });
+    out.push({ contratoId: c.id, papel, imovel: c.properties?.title ?? "Imóvel", topo: topo.texto, decisoes, acoes: acoesDaFolhaDaEstadia(c.id, papel) });
+  }
+  return out;
 }
