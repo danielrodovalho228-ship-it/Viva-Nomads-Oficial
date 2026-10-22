@@ -1995,6 +1995,14 @@
       "specs": [
         "t266-painel-42"
       ]
+    },
+    "/api/automacao/pedidos/[id]": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
     }
   },
   "actions": {
