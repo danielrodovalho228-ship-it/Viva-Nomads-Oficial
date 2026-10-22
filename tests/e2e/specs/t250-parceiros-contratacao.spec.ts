@@ -1,7 +1,9 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { jpegComGps } from "../fixtures/exif";
+import { metadadoNoDeposito } from "../fixtures/exif-deposito";
 
 /**
  * T250 — Contratação de parceiros (Prompt 31b), 390 e 1280 px, só no laboratório.
@@ -21,6 +23,8 @@ const dono = { email: `dono.t250.${sufixo}@lab.vivanomads.test`, nome: "Dora Con
 const morador = { email: `mor.t250.${sufixo}@lab.vivanomads.test`, nome: "Mauro Morador", role: "tenant" as const };
 const fotografo = { email: `foto.t250.${sufixo}@lab.vivanomads.test`, nome: "Fabi Fotografa", role: "owner" as const };
 const limpeza = { email: `limpa.t250.${sufixo}@lab.vivanomads.test`, nome: "Lia Limpeza", role: "owner" as const };
+// Começo da spec (com folga para o relógio do Storage): o teste de EXIF só confere o que esta execução enviou.
+const INICIO = new Date(Date.now() - 60_000);
 const ids: { dono?: string; morador?: string; foto?: string; limpa?: string; parceiroFoto?: string; parceiroLimpa?: string; imovel?: string; pedido?: string; contrato?: string } = {};
 
 function semDialogo(page: Page) {
@@ -181,11 +185,12 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     await p.getByTestId("pedido-iniciar").click();
     await expect(p.getByTestId("pedido-status")).toHaveText("Em execução", { timeout: 20_000 });
     await p.getByTestId("pedido-enviar-entrega-arquivo").setInputFiles([
-      { name: "sala.png", mimeType: "image/png", buffer: pngDeTeste(1) },
-      { name: "quarto.png", mimeType: "image/png", buffer: pngDeTeste(2) },
+      // Fotos como saem da câmera (EXIF e GPS): o último cenário confere a entrega e a cópia para o anúncio.
+      { name: "sala.jpg", mimeType: "image/jpeg", buffer: await jpegComGps(1) },
+      { name: "quarto.jpg", mimeType: "image/jpeg", buffer: await jpegComGps(2) },
     ]);
     await p.getByTestId("pedido-enviar-entrega").getByRole("button", { name: "Enviar", exact: true }).click();
-    await expect(p.getByTestId("pedido-entrega")).toContainText("sala.png", { timeout: 30_000 });
+    await expect(p.getByTestId("pedido-entrega")).toContainText("sala.jpg", { timeout: 30_000 });
     await p.getByTestId("pedido-marcar-entregue").click();
     await expect(p.getByTestId("pedido-status")).toHaveText("Entregue", { timeout: 20_000 });
 
@@ -317,5 +322,16 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
 
     test.skip(antes === null, "conta de admin do laboratório não configurada");
     expect(await vindosDeCartao(390)).toBe(antes! + 1);
+  });
+
+  // Estudo de segurança (22/10): a entrega é baixada pelo cliente e "usar no anúncio" publica a foto para todos.
+  test("EXIF/GPS: fotos da entrega (com GPS) ficam sem metadado na entrega e na cópia pública do anúncio", async () => {
+    test.skip(!ids.pedido, "o roteiro principal não chegou a criar o pedido");
+    const entrega = await metadadoNoDeposito("parceiro-entregas", ids.pedido!, INICIO);
+    const anuncio = await metadadoNoDeposito("property-photos", `${ids.dono}/${ids.imovel}`, INICIO);
+    expect(entrega.conferidas, "as 2 fotos da entrega deveriam estar no depósito").toBeGreaterThan(0);
+    expect(anuncio.conferidas, "as 2 fotos copiadas para o anúncio deveriam estar no depósito").toBeGreaterThan(0);
+    expect.soft(entrega.problemas, "entrega do parceiro (depósito privado, o cliente baixa)").toEqual([]);
+    expect.soft(anuncio.problemas, "cópia para o anúncio (depósito PÚBLICO)").toEqual([]);
   });
 });
