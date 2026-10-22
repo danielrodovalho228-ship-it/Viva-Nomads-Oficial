@@ -50,6 +50,11 @@ test.describe("T267 — troca de conversa não deixa o cartão da anterior", () 
         throw new Error(`diálogo do navegador não permitido: ${d.message()}`);
       });
       const registro: string[] = [];
+      const erros: string[] = [];
+      page.on("console", (m) => {
+        if (m.type() === "error" || m.type() === "warning") erros.push(`${m.type()}: ${m.text().slice(0, 300)}`);
+      });
+      page.on("pageerror", (e) => erros.push(`pageerror: ${e.message.slice(0, 300)}`));
       const t0 = Date.now();
       const marca = (x: string) => registro.push(`+${((Date.now() - t0) / 1000).toFixed(1)}s ${x}`);
       page.on("framenavigated", (f) => {
@@ -73,9 +78,25 @@ test.describe("T267 — troca de conversa não deixa o cartão da anterior", () 
       // A conversa aberta fica na URL: se o painel remontar (modo acertado pelo perfil), volta na mesma conversa.
       await expect(page).toHaveURL(new RegExp(`conversa=${convB}`));
       const sobra = page.getByTestId("conversa-visita");
+      // Diagnóstico: o cartão que sobrou ainda pertence a um componente vivo do React, ou é um nó órfão no DOM?
+      const dom = () =>
+        page.evaluate(() => {
+          const c = document.querySelector('[data-testid="conversa-visita"]');
+          const chaves = (el: Element | null) => (el ? Object.keys(el).filter((k) => k.startsWith("__react")).map((k) => k.split("$")[0]) : []);
+          const sec = c?.closest("section");
+          return JSON.stringify({
+            mains: document.querySelectorAll("main").length,
+            sections: document.querySelectorAll("section").length,
+            cartoes: document.querySelectorAll('[data-testid="conversa-visita"]').length,
+            reactNoCartao: chaves(c),
+            visivel: !!c && (c as HTMLElement).offsetParent !== null,
+            secaoCabecalho: sec?.querySelector("header")?.textContent?.replace(/\s+/g, " ").slice(0, 80),
+            irmaos: sec ? Array.from(sec.children).map((e) => `${e.tagName.toLowerCase()}${e.getAttribute("data-testid") ? "#" + e.getAttribute("data-testid") : ""}`) : [],
+          });
+        });
       const estado = async () =>
         (await sobra.count())
-          ? `${await sobra.getAttribute("data-imovel")} ${await sobra.getAttribute("data-visita")} · url=${page.url()} · aberta="${await page.getByTestId("conversa-nome").innerText()}" · mensagens="${(await page.locator("section").last().innerText()).slice(0, 200).replace(/\s+/g, " ")}" · ${registro.join(" | ")}`
+          ? `${await sobra.getAttribute("data-imovel")} ${await sobra.getAttribute("data-visita")} · url=${page.url()} · aberta="${await page.getByTestId("conversa-nome").innerText()}" · dom=${await dom()} · console=${erros.join(" ¦ ")} · ${registro.join(" | ")}`
           : "";
       await expect.poll(estado, { message: `o cartão da conversa A não fica na B (B = ${ids.b}, A = ${ids.a})`, timeout: 10_000 }).toBe("");
       // E continua sem cartão depois que a resposta do servidor chega.
