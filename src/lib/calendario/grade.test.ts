@@ -31,3 +31,19 @@ test("intervalo, estadia e prioridade das marcas", () => {
   assert.equal(marcaPrincipal([]), null);
   assert.equal(ymd(2026, 0, 5), "2026-01-05");
 });
+
+test("os três calendários (imóvel, agenda do parceiro, estadia) usam o mesmo componente", async () => {
+  const { readFileSync } = await import("node:fs");
+  const usos = {
+    disponibilidade: "src/components/property/block-calendar.tsx",
+    agenda: "src/components/parceiros/pedidos-do-parceiro.tsx",
+    estadia: "src/app/(dashboard)/dashboard/estadia/[contratoId]/page.tsx",
+  };
+  for (const [tipo, f] of Object.entries(usos)) {
+    const t = readFileSync(f, "utf8");
+    assert.match(t, /from "@\/components\/calendario\/calendario-mes"/, f);
+    assert.match(t, new RegExp(`tipo="${tipo}"`), `${f}: tipo ${tipo}`);
+  }
+  // Uma grade só: nenhum calendário desenha a própria grade de 7 colunas com os nomes dos dias.
+  for (const f of Object.values(usos)) assert.doesNotMatch(readFileSync(f, "utf8"), /\["D", "S", "T", "Q", "Q", "S", "S"\]/, f);
+});

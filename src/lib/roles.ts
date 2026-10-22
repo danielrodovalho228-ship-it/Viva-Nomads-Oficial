@@ -15,10 +15,13 @@ import { primeiroNome, usuarioDoEmail } from "./display-name";
 
 export type { ViewMode };
 
-/** Papéis efetivos da conta. Sem flags explícitas, derivam-se do `role`. */
+/**
+ * Papéis efetivos da conta. Sem flags explícitas, derivam-se do `role`. Prompt 43 (conta única, papéis em camadas):
+ * toda conta é Morador — quem anuncia também busca e mora; abrir uma tela de morador troca o contexto, nunca expulsa.
+ */
 export function rolesOf(user: SessionUser): { isOwner: boolean; isTenant: boolean } {
   const isOwner = user.isOwner ?? (user.role === "owner" || user.role === "admin");
-  const isTenant = user.isTenant ?? user.role === "tenant";
+  const isTenant = user.isTenant ?? true;
   return { isOwner, isTenant };
 }
 
