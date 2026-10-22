@@ -105,6 +105,7 @@ export function MeuLocalTrabalho() {
           <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
+              variant="secondary"
               onClick={() => salvar(estado)}
               disabled={pendente || !estado.destino}
               data-testid="salvar-local-trabalho"
