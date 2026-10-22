@@ -30,6 +30,8 @@ import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { conferenciasParaFechar, type ConferenciaAberta } from "@/lib/fiscal/fechamento";
 import { precalcularTempos } from "@/lib/data/tempos";
 import { automacaoDaEstadia } from "@/lib/automacao/servidor";
+import { rodarEliminacao } from "@/lib/minimizacao/servidor";
+import { integracoesSimuladas } from "@/lib/integracoes";
 
 /**
  * Automações por data (ordem d250ea2f, item 5): rascunho de imóvel parado (1 e 3 dias), lembrete de saída (3 dias),
@@ -257,7 +259,10 @@ export async function GET(request: Request) {
   // Viva rodando automático (Prompt 38): limpeza/lavanderia da saída em até 5 dias (ou o aviso ao dono sem parceiro),
   // sugestões ao morador em até 7 dias da entrada e da saída, e o aviso de 24 h sem resposta. Na simulação, só conta.
   const automatico = await automacaoDaEstadia(admin, agora, simular).catch(() => ({ automaticos: 0, sugestoesMorador: 0, semResposta: 0 }));
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos, ...automatico });
+  // Minimização (Prompt 58): a rotina única de eliminação. Fase 1 apaga de verdade só com ELIMINACAO_ATIVA=1 (ou no
+  // laboratório); fora disso, o relatório "o que seria apagado hoje" sai sem apagar nada.
+  const eliminacao = await rodarEliminacao(admin, agora, simular || !(integracoesSimuladas() || process.env.ELIMINACAO_ATIVA === "1")).catch(() => ({ eliminados: 0, simulados: 0, falhas: 1 }));
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos, ...automatico , eliminacao });
 }
 
 /** Retenção dos ocupantes (90 dias depois do fim) e aditivos vencidos. `simular`: só conta, não apaga nem muda nada. */

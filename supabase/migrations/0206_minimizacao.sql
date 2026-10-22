@@ -71,13 +71,15 @@ alter table public.property_ownership_checks add column if not exists arquivo_el
 -- ── 5. Hash das fotos do anúncio (antifraude) ────────────────────────────────────────────────────────────────────
 create table if not exists public.fotos_anuncio_hash (
   id uuid primary key default gen_random_uuid(),
-  property_id uuid not null,        -- sem FK de propósito: o hash fica depois da remoção do anúncio
+  property_id uuid,                 -- sem FK de propósito: o hash fica depois da remoção do anúncio (preenchido ao ligar a foto)
   owner_id uuid not null,           -- idem
+  caminho text not null check (char_length(caminho) <= 200),   -- caminho da foto no bucket (dono/uuid.webp)
   hash text not null check (hash ~ '^[0-9a-f]{16}$'),
   criado_em timestamptz not null default now()
 );
 create index if not exists fotos_anuncio_hash_hash_idx on public.fotos_anuncio_hash (hash);
 create index if not exists fotos_anuncio_hash_imovel_idx on public.fotos_anuncio_hash (property_id);
+create unique index if not exists fotos_anuncio_hash_caminho_idx on public.fotos_anuncio_hash (caminho);
 alter table public.fotos_anuncio_hash enable row level security;
 drop policy if exists "fotos_anuncio_hash: admin lê" on public.fotos_anuncio_hash;
 create policy "fotos_anuncio_hash: admin lê" on public.fotos_anuncio_hash for select to authenticated using (public.is_admin());

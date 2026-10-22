@@ -154,6 +154,7 @@ export const SEM_DADO_PESSOAL: Record<string, string> = {
   destinos: "polos públicos (universidade, hospital…), não pessoa",
   documentos_falhas: "motivo técnico da falha",
   eliminacoes_registro: "o livro de eliminações (nunca guarda o conteúdo)",
+  fotos_anuncio_hash: "só o hash perceptual da foto do anúncio e o caminho (dono/uuid.webp) — exceção aprovada, antifraude",
   gastos_marketing: "observação do gasto",
   ia_chamadas: "motivo técnico da chamada de IA",
   interesse_cidade: "chave anônima de contagem",
