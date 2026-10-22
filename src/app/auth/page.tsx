@@ -517,7 +517,7 @@ export default function AuthPage() {
         <div className="absolute inset-0 flex flex-col justify-between p-12 text-white">
           <Logo href="/" light />
           <div>
-            <h1 className="font-title text-4xl font-bold leading-tight">
+            <h1 className="font-title text-[28px] font-semibold leading-tight">
               {mode === "login" ? "Bem-vindo de volta." : "Sua nova fase começa aqui."}
             </h1>
             <p className="mt-4 max-w-md text-white/75">
@@ -542,7 +542,7 @@ export default function AuthPage() {
               <div className="mx-auto mt-4 grid h-14 w-14 place-items-center rounded-full bg-sage-100">
                 <Mail className="h-7 w-7 text-forest" />
               </div>
-              <h2 className="mt-4 font-title text-2xl font-bold text-ink">Confirme seu e-mail</h2>
+              <h2 className="mt-4 font-title text-2xl font-semibold text-ink">Confirme seu e-mail</h2>
               <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
                 Enviamos um link de confirmação para <strong className="text-ink">{email}</strong>.
                 Abra-o para ativar sua conta e poder entrar.
@@ -568,7 +568,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => switchMode("login")}
-                className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
+                className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-forest hover:text-blue-700"
               >
                 <ArrowLeft className="h-4 w-4" /> Voltar para entrar
               </button>
@@ -598,11 +598,11 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => switchMode("login")}
-                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
+                className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-forest hover:text-blue-700"
               >
                 <ArrowLeft className="h-4 w-4" /> Voltar para entrar
               </button>
-              <h2 className="mt-6 font-title text-2xl font-bold text-ink">Recuperar senha</h2>
+              <h2 className="mt-6 font-title text-2xl font-semibold text-ink">Recuperar senha</h2>
               <p className="mt-2 text-sm text-muted">
                 Informe seu e-mail e enviaremos um link seguro para criar uma nova senha.
               </p>
@@ -624,7 +624,7 @@ export default function AuthPage() {
 )}
                 {notice && (
                   <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> {notice}
+                    <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" /> {notice}
                   </p>
                 )}
                 {captcha.widget}
@@ -643,7 +643,7 @@ export default function AuthPage() {
                     key={m}
                     onClick={() => switchMode(m)}
                     className={cn(
-                      "flex-1 rounded-full py-2.5 text-sm font-medium transition-colors",
+                      "flex-1 rounded-full py-3 text-sm font-medium transition-colors",
                       mode === m ? "bg-forest text-white" : "text-muted hover:text-forest"
                     )}
                   >
@@ -652,7 +652,7 @@ export default function AuthPage() {
                 ))}
               </div>
 
-              <h2 className="mt-8 font-title text-2xl font-bold text-ink">
+              <h2 className="mt-8 font-title text-2xl font-semibold text-ink">
                 {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
               </h2>
 
@@ -699,7 +699,7 @@ export default function AuthPage() {
                     />
                   </div>
                   {/* Prompt 18: o simulador PF × PJ fica só em Ferramentas (painel), não no cadastro. */}
-                  <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted" data-testid="dica-simulador-tributario">
+                  <p className="mt-2 inline-flex items-center gap-2 text-sm text-muted" data-testid="dica-simulador-tributario">
                     <Calculator className="h-4 w-4 shrink-0" aria-hidden /> Não sabe qual escolher? Depois de entrar, compare em Ferramentas › Tributação PF × PJ.
                   </p>
                 </div>
@@ -760,7 +760,7 @@ export default function AuthPage() {
                       <button
                         type="button"
                         onClick={() => setShowReferral(true)}
-                        className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
+                        className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-forest hover:text-blue-700"
                       >
                         <Gift className="h-4 w-4" /> Tenho um código de indicação
                       </button>
@@ -804,7 +804,7 @@ export default function AuthPage() {
                       onChange={(e) => setAcceptedTerms(e.target.checked)}
                       required
                       aria-label="Aceito os Termos de Uso e a Política de Privacidade"
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-forest"
+                      className="mt-1 h-4 w-4 shrink-0 accent-forest"
                     />
                     <span>
                       Li e aceito os{" "}
@@ -852,7 +852,7 @@ export default function AuthPage() {
                 {/* Aviso informativo (ex.: sessão de 24h expirou). */}
                 {notice && (
                   <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> {notice}
+                    <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" /> {notice}
                   </p>
                 )}
 
@@ -921,12 +921,12 @@ function RoleCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-2xl border-2 p-4 text-left transition-colors",
+        "rounded-xl border-2 p-4 text-left transition-colors",
         active ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
       )}
     >
       <Icon className={cn("h-6 w-6", active ? "text-forest" : "text-sage")} />
-      <p className="mt-2 font-title text-sm font-bold text-ink">{title}</p>
+      <p className="mt-2 font-title text-sm font-semibold text-ink">{title}</p>
       <p className="text-xs text-muted">{text}</p>
     </button>
   );

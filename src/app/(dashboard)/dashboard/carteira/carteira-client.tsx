@@ -65,7 +65,7 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
       </div>
 
       <Panel title="Como calculamos" className="mt-6">
-        <ul className="space-y-1.5 text-sm text-ink" data-testid="carteira-formulas">
+        <ul className="space-y-2 text-sm text-ink" data-testid="carteira-formulas">
           {Object.values(FORMULAS_CARTEIRA).map((f) => (
             <li key={f}>{f}</li>
           ))}
@@ -107,8 +107,8 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
       </div>
 
       {m.vence30.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-champagne bg-champagne/10 p-5">
-          <h2 className="flex items-center gap-2 font-title text-sm font-bold text-ink">
+        <div className="mt-6 rounded-xl border border-champagne bg-champagne/10 p-5">
+          <h2 className="flex items-center gap-2 font-title text-sm font-semibold text-ink">
             <AlertTriangle className="h-4 w-4 text-champagne" /> Atenção
           </h2>
           <p className="mt-2 text-sm text-ink">
@@ -195,7 +195,7 @@ const COR: Record<SituacaoCarteira, string> = {
 };
 
 function Situacao({ s }: { s: SituacaoCarteira }) {
-  return <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${COR[s]}`}>{ROTULO[s]}</span>;
+  return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${COR[s]}`}>{ROTULO[s]}</span>;
 }
 
 function ColunaVencimento({ titulo, tom, itens, faixa }: { titulo: string; tom: "urgente" | "atencao" | "calmo"; itens: ItemCarteira[]; faixa: string }) {
@@ -216,7 +216,7 @@ function ColunaVencimento({ titulo, tom, itens, faixa }: { titulo: string; tom: 
                 Termina em {i.fim ? dataBR(i.fim) : "—"} ({i.diasAteFim} dias){i.morador ? ` · ${i.morador}` : ""}
               </p>
               {i.fim && (
-                <p className="mt-0.5 text-xs text-muted">Sem renovação, o imóvel fica livre a partir de {dataBR(addDiasISO(i.fim, 1))}: anuncie a disponibilidade.</p>
+                <p className="mt-1 text-xs text-muted">Sem renovação, o imóvel fica livre a partir de {dataBR(addDiasISO(i.fim, 1))}: anuncie a disponibilidade.</p>
               )}
               {i.contratoId && (
                 <Link href={`/dashboard/contratos/${i.contratoId}`} className="mt-1 inline-block text-xs font-medium text-forest underline" data-testid="carteira-preparar-renovacao">

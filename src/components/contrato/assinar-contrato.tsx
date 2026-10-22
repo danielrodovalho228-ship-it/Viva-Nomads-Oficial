@@ -85,7 +85,7 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
           type="checkbox"
           checked={aceite}
           onChange={(e) => setAceite(e.target.checked)}
-          className="mt-0.5 h-4 w-4"
+          className="mt-1 h-4 w-4"
           data-testid="assinar-aceite"
         />
         Li e concordo com o contrato acima.
@@ -106,7 +106,7 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
           maxLength={6}
           value={codigo}
           onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))}
-          className="mt-1 w-full max-w-[12rem] rounded-xl border border-line bg-white px-3 py-2.5 text-base tracking-widest"
+          className="mt-1 w-full max-w-[12rem] rounded-xl border border-line bg-white px-3 py-3 text-base tracking-widest"
           data-testid="assinar-codigo"
         />
       </div>

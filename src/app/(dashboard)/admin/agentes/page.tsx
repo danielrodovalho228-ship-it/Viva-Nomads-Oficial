@@ -43,7 +43,7 @@ export default async function AgentesPage() {
         <ul className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3" data-testid="agentes-contadores">
           {(["aguardandoOk", "ordensPendentes", "ordensLidas"] as const).map((k) => (
             <li key={k} className="rounded-xl border border-sage-200 bg-white p-3" title={AGENTES_DEFINICOES[k].formula} data-testid={`agentes-${k}`}>
-              <p className="font-title text-2xl font-bold text-forest" data-valor>
+              <p className="font-title text-2xl font-semibold text-forest" data-valor>
                 {contadores[k]}
               </p>
               <p className="text-sm text-ink">{AGENTES_DEFINICOES[k].rotulo}</p>

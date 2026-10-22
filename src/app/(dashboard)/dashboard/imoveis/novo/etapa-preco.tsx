@@ -132,13 +132,13 @@ export function EtapaPreco(p: {
 
       {aluguel > 0 && (
         <div className="rounded-xl border border-sage-200 bg-sage-100/50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Prévia — o morador vê</p>
-          <p className="mt-1 font-title text-2xl font-bold text-forest">
+          <p className="text-xs font-semibold text-muted">Prévia — o morador vê</p>
+          <p className="mt-1 font-title text-2xl font-semibold text-forest">
             {formatBRL(aluguel + condo + consumoFixo)}
             <span className="text-sm font-normal text-muted">/mês tudo incluído</span>
           </p>
           <p className="mt-2 flex items-start gap-2 text-xs text-muted">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+            <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" />
             <span>
               <strong className="text-ink">Você recebe o valor mensal direto na sua conta.</strong> {TEXTO_REGRA_CURTO}
             </span>
@@ -210,7 +210,7 @@ export function EtapaPreco(p: {
       )}
 
       <div>
-        <p className="mb-1.5 text-sm font-medium text-ink">Garantias que você aceita</p>
+        <p className="mb-2 text-sm font-medium text-ink">Garantias que você aceita</p>
         <p className="mb-2 text-xs text-muted">
           Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a caução em dinheiro vai para uma
           conta poupança, como manda a lei — a plataforma não tem acesso).
@@ -220,7 +220,7 @@ export function EtapaPreco(p: {
             g.disabled ? (
               <div key={g.key} className="flex items-center justify-between gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 opacity-70">
                 <span className="text-sm font-medium text-muted">Aceito {g.label}</span>
-                {g.badge && <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800">{g.badge}</span>}
+                {g.badge && <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-800">{g.badge}</span>}
               </div>
             ) : (
               <div key={g.key}>
@@ -232,7 +232,7 @@ export function EtapaPreco(p: {
         </div>
         {!garantiaOk && (
           <p className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
             Escolha ao menos uma garantia: contrato sem garantia deixa você sem cobertura de danos.
           </p>
         )}

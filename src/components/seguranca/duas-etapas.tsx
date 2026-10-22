@@ -136,7 +136,7 @@ export function VerificarCodigoForm({ destino }: { destino: string }) {
           maxLength={12}
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}
-          className="h-12 w-full rounded-xl border border-sage-300 bg-white px-4 text-center text-lg uppercase tracking-widest text-ink focus:border-forest focus:outline-none"
+          className="h-12 w-full rounded-xl border border-sage-300 bg-white px-4 text-center text-lg text-ink focus:border-forest focus:outline-none"
           placeholder="XXXXX-XXXXX"
         />
         <p className="text-xs text-muted">Cada código vale uma vez. Ao usar, a verificação do app é desligada e você cadastra o app de novo.</p>
@@ -295,7 +295,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
     <Panel title="Verificação em duas etapas">
       {obrigatorio && estado.tipo !== "ativo" && (
         <p role="status" className="mb-4 flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" /> Obrigatório para o admin. Ative abaixo para continuar.
+          <ShieldAlert className="mt-1 h-4 w-4 shrink-0" /> Obrigatório para o admin. Ative abaixo para continuar.
         </p>
       )}
       {estado.tipo === "carregando" && (
@@ -323,7 +323,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
           </p>
           <div className="space-y-3 rounded-xl border border-sage-200 bg-sage-50 p-3">
             <p className="text-sm font-medium text-ink">Chave do autenticador</p>
-            <code data-testid="chave-2fa" className="block break-all rounded bg-white px-3 py-2 text-base tracking-wider text-ink">{agruparChave(estado.segredo)}</code>
+            <code data-testid="chave-2fa" className="block break-all rounded-lg bg-white px-3 py-2 text-base tracking-wider text-ink">{agruparChave(estado.segredo)}</code>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto" onClick={() => copiarChave(estado.segredo)}>
                 {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copiado ? "Copiado!" : "Copiar código"}

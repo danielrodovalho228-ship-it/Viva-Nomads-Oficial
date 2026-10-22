@@ -111,7 +111,7 @@ export default async function PoloPage({ params }: Params) {
             <Link href={`/cidades/${cidade}`} className="hover:text-champagne">{c.name}</Link> /{" "}
             <span className="text-white/80">{p.nome}</span>
           </nav>
-          <h1 className="mt-4 max-w-3xl font-title text-3xl font-bold md:text-5xl">
+          <h1 className="mt-4 max-w-3xl font-title text-[28px] font-semibold">
             Imóveis mobiliados {tituloDoPolo(p.nome)}
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-white/80">{p.intro}</p>
@@ -120,7 +120,7 @@ export default async function PoloPage({ params }: Params) {
       </section>
 
       <section className="container-page section-y">
-        <h2 className="font-title text-2xl font-bold text-ink">
+        <h2 className="font-title text-2xl font-semibold text-ink">
           {imoveis.length === 0 ? "Em breve, imóveis nesta região" : `${imoveis.length} ${imoveis.length === 1 ? "anúncio" : "anúncios"} nesta região`}
         </h2>
         {imoveis.length > 0 ? (
@@ -130,7 +130,7 @@ export default async function PoloPage({ params }: Params) {
             ))}
           </div>
         ) : (
-          <div className="mt-8 rounded-2xl border border-dashed border-sage-200 p-8 text-center">
+          <div className="mt-8 rounded-xl border border-dashed border-sage-200 p-8 text-center">
             <p className="text-muted">Ainda não há imóveis publicados perto de {p.referencia}.</p>
             <ButtonLink href={`/cidades/${cidade}`} variant="outline" className="mt-4">
               Ver todos os imóveis em {c.name}
@@ -151,11 +151,11 @@ export default async function PoloPage({ params }: Params) {
         )}
 
         <div className="mt-12 max-w-3xl" data-testid="polo-precos">
-          <h2 className="font-title text-2xl font-bold text-ink">Valor médio por mês na região</h2>
+          <h2 className="font-title text-2xl font-semibold text-ink">Valor médio por mês na região</h2>
           {medias.length === 0 || reais.length === 0 ? (
             <p className="mt-2 text-sm text-muted">Dados insuficientes: a média aparece quando houver pelo menos 3 anúncios reais no mesmo grupo.</p>
           ) : (
-            <ul className="mt-4 divide-y divide-sage-200 rounded-2xl border border-sage-200">
+            <ul className="mt-4 divide-y divide-sage-200 rounded-xl border border-sage-200">
               {medias.map((g) => (
                 <li key={`${g.bairro}-${g.quartos}`} className="flex items-center justify-between gap-4 px-4 py-3">
                   <span className="text-ink">{g.bairro} <span className="text-muted">· {rotuloQuartos(g.quartos)}</span></span>
@@ -169,7 +169,7 @@ export default async function PoloPage({ params }: Params) {
         </div>
 
         <div className="mt-12 max-w-3xl" data-testid="polo-faq">
-          <h2 className="font-title text-2xl font-bold text-ink">Perguntas frequentes</h2>
+          <h2 className="font-title text-2xl font-semibold text-ink">Perguntas frequentes</h2>
           <dl className="mt-4 space-y-4">
             {faq.map((f) => (
               <div key={f.q}>

@@ -18,12 +18,12 @@ export function DashboardBanner({
   className?: string;
 }) {
   return (
-    <div className={cn("relative overflow-hidden rounded-2xl", className)}>
-      <BrandImage src={image} alt={alt} rounded="rounded-2xl" treat={false} sizes="100vw" className="absolute inset-0 h-full w-full" />
-      <div className="absolute inset-0 bg-gradient-to-r from-night/85 via-night/60 to-night/20" />
+    <div className={cn("relative overflow-hidden rounded-xl", className)}>
+      <BrandImage src={image} alt={alt} rounded="rounded-xl" treat={false} sizes="100vw" className="absolute inset-0 h-full w-full" />
+      <div className="absolute inset-0 bg-night/65" />
       <div className="relative flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-8">
         <div className="max-w-lg">
-          <h1 className="font-title text-xl font-bold text-white sm:text-2xl">{title}</h1>
+          <h1 className="font-title text-xl font-semibold text-white sm:text-2xl">{title}</h1>
           {subtitle && <p className="mt-1 text-sm text-white/80">{subtitle}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}

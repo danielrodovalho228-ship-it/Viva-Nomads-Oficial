@@ -30,7 +30,7 @@ export default function BoasVindasPage() {
           sizes="100vw"
           className="object-cover object-[50%_40%]"
         />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-white/0 to-white" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-white/80" />
       </div>
 
       <div
@@ -39,7 +39,7 @@ export default function BoasVindasPage() {
       >
         <div className="relative">
           <Logo href="/app/boas-vindas" />
-          <h1 className="mt-3 font-title text-2xl font-bold leading-tight text-ink [@media(max-height:700px)]:mt-3 [@media(max-height:700px)]:text-2xl">
+          <h1 className="mt-3 font-title text-2xl font-semibold leading-tight text-ink [@media(max-height:700px)]:mt-3 [@media(max-height:700px)]:text-2xl">
             Imóveis mobiliados de 30 a 180 dias, com contrato de verdade.
           </h1>
           <p className="mt-2 text-base text-muted [@media(max-height:700px)]:text-sm">
@@ -56,7 +56,7 @@ export default function BoasVindasPage() {
           </Link>
           <Link
             href="/auth?papel=owner&cadastro=1"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-forest px-5 py-3.5 text-base font-semibold text-forest [@media(max-height:700px)]:py-3"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-forest px-5 py-4 text-base font-semibold text-forest [@media(max-height:700px)]:py-3"
           >
             <Home className="h-5 w-5" /> Quero anunciar
           </Link>

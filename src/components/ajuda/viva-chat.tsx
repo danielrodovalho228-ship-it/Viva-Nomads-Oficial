@@ -146,7 +146,7 @@ export function VivaChatFlutuante() {
       data-testid="fale-com-a-viva-raiz"
     >
       {aberto && (
-        <div className="w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-sage-200 bg-white shadow-2xl" role="dialog" aria-label="Chat com a Viva">
+        <div className="w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-sage-200 bg-white shadow-flutuante" role="dialog" aria-label="Chat com a Viva">
           <PainelChat onFechar={() => setAberto(false)} altura="h-[min(520px,calc(100dvh-9rem))]" />
         </div>
       )}
@@ -180,7 +180,7 @@ export function VivaChatFlutuante() {
 /** Bloco no topo da /ajuda (mesma conversa do botão). */
 export function VivaChatBloco() {
   return (
-    <section className="overflow-hidden rounded-2xl border border-sage-200 bg-white" aria-label="Chat com a Viva" data-testid="viva-chat-bloco">
+    <section className="overflow-hidden rounded-xl border border-sage-200 bg-white" aria-label="Chat com a Viva" data-testid="viva-chat-bloco">
       <PainelChat altura="h-[420px]" />
     </section>
   );
@@ -234,7 +234,7 @@ function PainelChat({ onFechar, altura }: { onFechar?: () => void; altura: strin
           <MessageCircle className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold">Viva</p>
+          <p className="text-sm font-semibold">Viva</p>
           <p className="text-xs text-white/80">Assistente virtual da Viva Nomads · {PROMESSA_ATENDIMENTO.split(" · ")[1]}</p>
         </div>
         {onFechar && (
@@ -252,7 +252,7 @@ function PainelChat({ onFechar, altura }: { onFechar?: () => void; altura: strin
           </Balao>
         ))}
         {enviando && (
-          <p className="flex items-center gap-1.5 text-xs text-muted">
+          <p className="flex items-center gap-2 text-xs text-muted">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> A Viva está escrevendo…
           </p>
         )}
@@ -295,7 +295,7 @@ function PainelChat({ onFechar, altura }: { onFechar?: () => void; altura: strin
             <button
               type="button"
               onClick={() => setPessoa(true)}
-              className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-semibold", sugerePessoa ? "border-forest bg-forest/5 text-forest" : "border-line text-muted hover:text-ink")}
+              className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold", sugerePessoa ? "border-forest bg-forest/5 text-forest" : "border-line text-muted hover:text-ink")}
             >
               <UserRound className="h-3.5 w-3.5" /> Falar com uma pessoa
             </button>
@@ -312,7 +312,7 @@ function PainelChat({ onFechar, altura }: { onFechar?: () => void; altura: strin
 
 function Balao({ autor, children }: { autor: "user" | "assistant"; children: React.ReactNode }) {
   return (
-    <div className={cn("max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2", autor === "user" ? "ml-auto bg-forest text-white" : "bg-white text-ink shadow-sm")}>
+    <div className={cn("max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2", autor === "user" ? "ml-auto bg-forest text-white" : "bg-white text-ink ")}>
       {children}
     </div>
   );
@@ -356,7 +356,7 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
 
   if (ok) {
     return (
-      <div className="rounded-2xl border border-sage-200 bg-white p-3 text-ink" data-testid="chamado-aberto-chat">
+      <div className="rounded-xl border border-sage-200 bg-white p-3 text-ink" data-testid="chamado-aberto-chat">
         <p className="font-semibold">Chamado {ok.numero} aberto.</p>
         <p className="mt-1 text-xs text-muted">
           A conversa foi anexada. {logado ? "Você acompanha em Ajuda → Meus chamados." : "Enviamos a confirmação para o seu e-mail; a resposta chega por lá."} Uma pessoa responde em até 24 h. Dúvidas: {SUPORTE_EMAIL}.
@@ -372,9 +372,9 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
     );
   }
 
-  const campo = "w-full rounded-lg border border-line px-2.5 py-1.5 text-sm outline-none focus:border-sage";
+  const campo = "w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-sage";
   return (
-    <div className="space-y-2 rounded-2xl border border-sage-200 bg-white p-3" data-testid="form-pessoa">
+    <div className="space-y-2 rounded-xl border border-sage-200 bg-white p-3" data-testid="form-pessoa">
       <p className="text-sm font-semibold text-ink">Falar com uma pessoa</p>
       <p className="text-xs text-muted">Abrimos um chamado com esta conversa. Uma pessoa responde em até 24 h.</p>
       {!logado && (
@@ -391,7 +391,7 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
         <button type="button" onClick={abrir} disabled={enviando} className={buttonClasses({ size: "sm" })}>
           {enviando ? "Abrindo…" : "Abrir chamado"}
         </button>
-        <button type="button" onClick={onCancelar} className="rounded-lg px-3 py-1.5 text-sm text-muted hover:text-ink">
+        <button type="button" onClick={onCancelar} className="rounded-lg px-3 py-2 text-sm text-muted hover:text-ink">
           Voltar ao chat
         </button>
       </div>

@@ -80,7 +80,7 @@ export function GoogleProximities({ property }: { property: Property }) {
 
   return (
     <section aria-labelledby="proximidades-title">
-      <h2 id="proximidades-title" className="font-title text-2xl font-bold text-ink">
+      <h2 id="proximidades-title" className="font-title text-2xl font-semibold text-ink">
         Proximidades
       </h2>
 

@@ -69,18 +69,18 @@ export default function ForLandlordsPage() {
       {/* Como funciona para o proprietário — fluxo com imagens. */}
       <section className="bg-surface-2 section-y mt-12" data-testid="proprietarios-fluxo">
         <div className="container-page">
-          <h2 className="text-center font-title text-3xl font-bold text-ink md:text-4xl">Do anúncio às chaves, em 3 passos</h2>
+          <h2 className="text-center font-title text-2xl font-semibold text-ink">Do anúncio às chaves, em 3 passos</h2>
           <ol className="mt-10 grid gap-6 md:grid-cols-3">
             {[
               { foto: "/images/unicas/prop-passo-anuncie.webp", alt: "Proprietário fotografando a sala para o anúncio", t: "Anuncie de graça", d: "Fotos, valor e regras da casa. Você pode oferecer limpezas durante a estadia, com quantidade e valor por mês. A qualificação ajuda a ganhar o selo Pronto para Morar." },
               { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o inquilino pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite." },
               { foto: "/images/unicas/prop-passo-feche.webp", alt: "Entrega das chaves ao inquilino", t: "Feche com contrato", d: "Contrato digital de 30 a 180 dias, caução combinada e o valor mensal direto na sua conta." },
             ].map((p, i) => (
-              <li key={p.t} className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+              <li key={p.t} className="overflow-hidden rounded-xl border border-line bg-white ">
                 <BrandImage src={p.foto} alt={p.alt} rounded="rounded-none" sizes="(max-width: 768px) 100vw, 33vw" className="aspect-[16/10] w-full" />
                 <div className="p-6">
-                  <span className="grid h-8 w-8 place-items-center rounded-full bg-forest text-sm font-bold text-white">{i + 1}</span>
-                  <h3 className="mt-3 font-title text-lg font-bold text-ink">{p.t}</h3>
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-forest text-sm font-semibold text-white">{i + 1}</span>
+                  <h3 className="mt-3 font-title text-lg font-semibold text-ink">{p.t}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">{p.d}</p>
                 </div>
               </li>
@@ -92,7 +92,7 @@ export default function ForLandlordsPage() {
       {/* Por que rende mais */}
       <section className="container-page section-y">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-title text-3xl font-bold text-ink md:text-4xl">
+          <h2 className="font-title text-2xl font-semibold text-ink">
             Como o modelo de média duração reduz seus custos
           </h2>
           <p className="mt-4 text-lg text-muted">
@@ -115,10 +115,10 @@ export default function ForLandlordsPage() {
             src="/images/unicas/prop-sala-preparada.webp"
             alt="Sala de imóvel mobiliado preparada para anúncio"
             sizes="(max-width: 768px) 100vw, 50vw"
-            className="aspect-square w-full rounded-3xl"
+            className="aspect-square w-full rounded-xl"
           />
           <div>
-            <h2 className="font-title text-3xl font-bold text-ink md:text-4xl">
+            <h2 className="font-title text-2xl font-semibold text-ink">
               A plataforma cuida do trabalho chato
             </h2>
             <ul className="mt-6 space-y-4">
@@ -130,7 +130,7 @@ export default function ForLandlordsPage() {
                 "Pagamento mensal direto na sua conta.",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3">
-                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-sage" />
+                  <Check className="mt-1 h-5 w-5 shrink-0 text-sage" />
                   <span className="text-ink">{item}</span>
                 </li>
               ))}
@@ -155,10 +155,10 @@ function Benefit({
   text: string;
 }) {
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-sage-200 bg-white">
       <FotoCartao cartao={cartaoSecao("para-proprietarios", id)} />
       <div className="p-6">
-        <h3 className="line-clamp-2 font-title text-lg font-bold text-ink">{title}</h3>
+        <h3 className="line-clamp-2 font-title text-lg font-semibold text-ink">{title}</h3>
         <p className="mt-2 text-sm text-muted">{text}</p>
       </div>
     </div>

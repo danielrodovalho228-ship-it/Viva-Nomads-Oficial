@@ -37,11 +37,11 @@ export function TempoAte({ imovelId }: { imovelId: string }) {
   if (!linhas || linhas.length === 0) return null;
   return (
     <div className="mt-6" data-testid="tempo-ate">
-      <h3 className="text-sm font-bold text-forest">Tempo até</h3>
+      <h3 className="text-sm font-semibold text-forest">Tempo até</h3>
       <ul className="mt-3 grid gap-2 sm:grid-cols-2">
         {linhas.map((l) => (
           <li key={l.destino} className="flex items-start gap-3 rounded-xl border border-sage-200 px-4 py-3" data-testid="tempo-ate-linha" data-busca={l.daBusca ? "1" : "0"}>
-            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-sage" aria-hidden />
+            <Clock className="mt-1 h-5 w-5 shrink-0 text-sage" aria-hidden />
             <span className="min-w-0 text-sm text-ink">
               {l.tempos.map((t) => (
                 <span key={t} className="block">

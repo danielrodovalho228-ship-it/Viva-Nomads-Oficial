@@ -29,7 +29,7 @@ export function AppHeader({ direita }: { direita?: React.ReactNode }) {
         </button>
       )}
       {/* <p>, não <h1>: o título principal (h1) é o da própria página. */}
-      <p className={raiz ? "min-w-0 flex-1 truncate px-3 font-title text-base font-bold text-ink" : "min-w-0 flex-1 truncate font-title text-base font-bold text-ink"}>
+      <p className={raiz ? "min-w-0 flex-1 truncate px-3 font-title text-base font-semibold text-ink" : "min-w-0 flex-1 truncate font-title text-base font-semibold text-ink"}>
         {tituloDaTelaApp(pathname)}
       </p>
       {direita && <div className="flex shrink-0 items-center gap-2 pr-1">{direita}</div>}

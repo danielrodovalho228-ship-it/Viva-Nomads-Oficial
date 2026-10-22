@@ -32,7 +32,7 @@ export function SeletorModo({
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-300 ease-out motion-reduce:transition-none"
+        className="pointer-events-none absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-white ring-1 ring-black/5 transition-transform duration-300 ease-out motion-reduce:transition-none"
         style={{ transform: mode === "tenant" ? "translateX(100%)" : "translateX(0)" }}
       />
       {modes.map((m) => {
@@ -46,7 +46,7 @@ export function SeletorModo({
             aria-checked={ativo}
             onClick={() => !ativo && onSwitch(m)}
             className={cn(
-              "relative z-10 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest",
+              "relative z-10 inline-flex min-h-10 items-center justify-center gap-2 rounded-full py-2 text-sm font-semibold transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest",
               ativo ? MODE_META[m].accentText : "text-muted hover:text-ink"
             )}
           >

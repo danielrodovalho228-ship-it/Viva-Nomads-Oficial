@@ -24,8 +24,8 @@ const TOM: Record<StatusVisita, string> = {
   pedido: "bg-blue-50 text-blue-700",
   confirmado: "bg-emerald-100 text-emerald-700",
   remarcar: "bg-amber-100 text-amber-800",
-  feito: "bg-slate-100 text-slate-700",
-  cancelado: "bg-slate-100 text-slate-500",
+  feito: "bg-slate-100 text-muted",
+  cancelado: "bg-slate-100 text-muted",
 };
 
 export interface VisitaNaTela {

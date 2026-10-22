@@ -25,7 +25,7 @@ const TOM: Record<ItemAgenda["tipo"], string> = {
   visita: "bg-blue-50 text-blue-800",
   entrada: "bg-emerald-100 text-emerald-800",
   saida: "bg-amber-100 text-amber-900",
-  bloqueio: "bg-slate-200 text-slate-700",
+  bloqueio: "bg-slate-200 text-muted",
 };
 
 function Icone({ i }: { i: ItemAgenda }) {
@@ -58,7 +58,7 @@ function Linha({ i }: { i: ItemAgenda }) {
       )}
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-ink">
-          {hora && <span className="mr-1.5 tabular-nums">{hora}</span>}
+          {hora && <span className="mr-2 tabular-nums">{hora}</span>}
           {rotulo(i)}
         </p>
         <p className="truncate text-xs text-muted">
@@ -109,7 +109,7 @@ export function AgendaClient({ itens, imoveis, hojeISO }: { itens: ItemAgenda[];
             aria-selected={vista === "mes"}
             onClick={() => setVista("mes")}
             data-testid="agenda-vista-mes"
-            className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm", vista === "mes" ? "bg-forest text-white" : "text-ink")}
+            className={cn("inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm", vista === "mes" ? "bg-forest text-white" : "text-ink")}
           >
             <CalendarDays className="h-4 w-4" /> Mês
           </button>
@@ -119,7 +119,7 @@ export function AgendaClient({ itens, imoveis, hojeISO }: { itens: ItemAgenda[];
             aria-selected={vista === "lista"}
             onClick={() => setVista("lista")}
             data-testid="agenda-vista-lista"
-            className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm", vista === "lista" ? "bg-forest text-white" : "text-ink")}
+            className={cn("inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm", vista === "lista" ? "bg-forest text-white" : "text-ink")}
           >
             <List className="h-4 w-4" /> Lista
           </button>
@@ -130,7 +130,7 @@ export function AgendaClient({ itens, imoveis, hojeISO }: { itens: ItemAgenda[];
             value={imovel}
             onChange={(e) => setImovel(e.target.value)}
             data-testid="agenda-filtro-imovel"
-            className="min-w-0 max-w-[14rem] rounded-lg border border-sage-200 bg-white px-2 py-1.5 text-sm text-ink"
+            className="min-w-0 max-w-[14rem] rounded-lg border border-sage-200 bg-white px-2 py-2 text-sm text-ink"
           >
             <option value="">Todos os imóveis</option>
             {imoveis.map((p) => (
@@ -148,7 +148,7 @@ export function AgendaClient({ itens, imoveis, hojeISO }: { itens: ItemAgenda[];
             <button type="button" aria-label="Mês anterior" data-testid="agenda-anterior" onClick={() => setCursor(moverMes(cursor.ano, cursor.mes, -1))} className="grid h-9 w-9 place-items-center rounded-full hover:bg-surface-2">
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <h2 className="font-title text-base font-bold capitalize text-ink" data-testid="agenda-mes-titulo">
+            <h2 className="font-title text-base font-semibold capitalize text-ink" data-testid="agenda-mes-titulo">
               {MESES[cursor.mes - 1]} de {cursor.ano}
             </h2>
             <button type="button" aria-label="Próximo mês" data-testid="agenda-proximo" onClick={() => setCursor(moverMes(cursor.ano, cursor.mes, 1))} className="grid h-9 w-9 place-items-center rounded-full hover:bg-surface-2">
@@ -179,14 +179,14 @@ export function AgendaClient({ itens, imoveis, hojeISO }: { itens: ItemAgenda[];
                 >
                   <span className={cn("block text-xs font-semibold", dia === hoje && "text-forest underline")}>{Number(dia.slice(8, 10))}</span>
                   {/* Celular: pontos coloridos; computador: até 3 linhas curtas. */}
-                  <span className="mt-1 flex flex-wrap gap-0.5 sm:hidden">
+                  <span className="mt-1 flex flex-wrap gap-1 sm:hidden">
                     {doDia.slice(0, 4).map((i) => (
                       <span key={i.id} className={cn("h-1.5 w-1.5 rounded-full", i.tipo === "visita" ? "bg-blue-500" : i.tipo === "entrada" ? "bg-emerald-500" : i.tipo === "saida" ? "bg-amber-500" : "bg-slate-400")} />
                     ))}
                   </span>
-                  <span className="mt-1 hidden space-y-0.5 sm:block">
+                  <span className="mt-1 hidden space-y-1 sm:block">
                     {doDia.slice(0, 3).map((i) => (
-                      <span key={i.id} className={cn("flex min-w-0 items-center gap-1 truncate rounded px-1 py-0.5 text-[11px]", TOM[i.tipo])}>
+                      <span key={i.id} className={cn("flex min-w-0 items-center gap-1 truncate rounded-lg px-1 py-1 text-[11px]", TOM[i.tipo])}>
                         <Icone i={i} />
                         <span className="truncate">{horaBrasilia(i.quando) ?? ROTULO_TIPO_AGENDA[i.tipo]}</span>
                       </span>

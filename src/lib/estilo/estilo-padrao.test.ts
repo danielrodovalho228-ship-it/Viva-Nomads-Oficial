@@ -8,8 +8,8 @@
     - nenhum font-bold / font-extrabold / font-black;
   e, pelo adendo: sem caixa alta espaçada (uppercase + tracking), sem gradiente,
   teto de 28 px (40 px só no h1 do hero da home) e o cinza de apoio só em miúdo.
-  O resto do app entra nos Prompts 41–43 (a contagem do que falta sai no relatório
-  do PR, por pasta). Ao levar uma tela para o padrão, acrescente-a em ALCANCE.
+  Prompt 45: a guarda vale para src/ INTEIRO (app, components, lib, config). ALCANCE fica como a lista histórica
+  das telas que entraram primeiro; o teste "src inteiro" é o que impede regressão em qualquer tela nova.
   Roda: node --test src/lib/estilo/estilo-padrao.test.ts
 */
 import { test } from "node:test";
@@ -136,7 +136,8 @@ export const ALCANCE = [
 ];
 
 /** Hero com h1 de até 40 px (adendo): home; /para-proprietarios, /como-funciona, /precos e /parceiros entram quando forem trazidas. */
-const HEROS = new Set(["app/(public)/page.tsx"]);
+// h1 que pode ir até 40 px: o hero da home e o topo das páginas de marketing (banner-topo).
+const HEROS = new Set(["app/(public)/page.tsx", "components/institucional/banner-topo.tsx"]);
 
 function arquivos(alvo: string, out: string[] = []): string[] {
   const p = join(SRC, alvo);
@@ -185,6 +186,18 @@ test("telas do alcance: sem sombra, raio, espaço ou peso fora do padrão (nem c
   const achados: string[] = [];
   for (const alvo of ALCANCE) {
     for (const f of arquivos(alvo)) {
+      const t = ler(f);
+      for (const v of [...violacoesEstilo(t), ...violacoesAdendo(t, { heroAte40: HEROS.has(f) })]) achados.push(`${f}:${v.linha} ${v.tipo} ${v.classe}`);
+    }
+  }
+  assert.deepEqual(achados, []);
+});
+
+test("Prompt 45: src inteiro sem sombra, raio, espaço, peso, caixa alta espaçada, gradiente ou tamanho fora do padrão", () => {
+  const achados: string[] = [];
+  for (const alvo of ["app", "components", "lib", "config"]) {
+    for (const f of arquivos(alvo)) {
+      if (f.startsWith("lib/estilo/")) continue; // as próprias regras e seus exemplos
       const t = ler(f);
       for (const v of [...violacoesEstilo(t), ...violacoesAdendo(t, { heroAte40: HEROS.has(f) })]) achados.push(`${f}:${v.linha} ${v.tipo} ${v.classe}`);
     }
@@ -249,16 +262,23 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
   };
   varrer("");
   assert.deepEqual(usos.sort(), [
+    "app/(dashboard)/admin/agentes/central-client.tsx", // menu suspenso e botão flutuante da Central (Prompt 45)
+    "app/(dashboard)/dashboard/imoveis/novo/painel-qualificacao.tsx", // gaveta lateral sobre a página (Prompt 45)
     "app/(public)/buscar/search-client.tsx", // faixa de filtros presa sob o cabeçalho e o seletor de moradores
-    "components/ajuda/viva-chat.tsx", // botão flutuante
+    "app/(public)/pedidos/novo/page.tsx", // menu suspenso de sugestões (Prompt 45)
+    "components/admin/motivo-dialog.tsx", // diálogo sobre a página (Prompt 45)
+    "components/ajuda/viva-chat.tsx", // botão flutuante e a janela do chat
+    "components/app/links-do-app.tsx", // diálogo sobre a página (Prompt 45)
     "components/busca/barra-comparar.tsx", // barra flutuante do Comparar
     "components/busca/card-pin-mapa.tsx", // cartão aberto sobre o mapa
     "components/city-autocomplete.tsx", // menu suspenso de sugestões
+    "components/dashboard/role-welcome-modal.tsx", // diálogo sobre a página (Prompt 45)
     "components/estadia/acoes-estadia.tsx", // botão flutuante "cogumelo" (Prompt 41)
     "components/layout/mobile-tab-bar.tsx", // barra inferior do celular/app (Prompt 41)
     "components/layout/navbar.tsx", // cabeçalho fixo (busca fixa) e menu suspenso
     "components/location-search.tsx", // menu suspenso de sugestões
     "components/property/barra-fixa-celular.tsx", // barra fixa do celular
+    "components/property/places-picker.tsx", // menu suspenso de sugestões (Prompt 45)
     "components/search-map.tsx", // botões (pinos) do mapa
     "components/ui/button.tsx", // variante flutuante
   ]);

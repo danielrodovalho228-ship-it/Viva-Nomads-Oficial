@@ -41,7 +41,7 @@ export default async function VisitasPage() {
         <div className="grid gap-6">
           {recebidos.length > 0 && (
             <section aria-labelledby="visitas-recebidas" data-testid="visitas-recebidas">
-              <h2 id="visitas-recebidas" className="mb-3 font-title text-lg font-bold text-ink">
+              <h2 id="visitas-recebidas" className="mb-3 font-title text-lg font-semibold text-ink">
                 Pedidos nos meus imóveis
               </h2>
               <div className="grid gap-3 lg:grid-cols-2">
@@ -55,7 +55,7 @@ export default async function VisitasPage() {
           )}
           {meus.length > 0 && (
             <section aria-labelledby="visitas-minhas" data-testid="visitas-minhas">
-              <h2 id="visitas-minhas" className="mb-3 font-title text-lg font-bold text-ink">
+              <h2 id="visitas-minhas" className="mb-3 font-title text-lg font-semibold text-ink">
                 Meus pedidos
               </h2>
               <div className="grid gap-3 lg:grid-cols-2">

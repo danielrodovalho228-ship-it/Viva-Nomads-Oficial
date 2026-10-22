@@ -42,7 +42,7 @@ export function CaixaEmailsTeste() {
         ) : (
           <ul className="space-y-3">
             {emails.map((e) => (
-              <li key={e.id} className="min-w-0 rounded-2xl border border-sage-200 p-3">
+              <li key={e.id} className="min-w-0 rounded-xl border border-sage-200 p-3">
                 <p className="text-xs text-muted">{quando(e.criado_em)}</p>
                 <p className="mt-1 break-words font-medium text-ink">{e.assunto}</p>
                 <details className="mt-2">

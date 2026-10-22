@@ -37,7 +37,7 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
   return (
     <div className="flex items-center justify-between py-1">
       <span className="text-muted">{label}</span>
-      <span className={strong ? "font-title font-bold text-forest" : "font-medium text-ink"}>
+      <span className={strong ? "font-title font-semibold text-forest" : "font-medium text-ink"}>
         {value}
       </span>
     </div>
@@ -248,7 +248,7 @@ function ReembolsoPreview() {
                 <CheckCircle2 className="h-5 w-5" /> Exemplo registrado. Na conta real, o termo de devolução em PDF sai quando o inquilino confirma, em Contratos &amp; blocos.
               </div>
               <p className="mt-3 flex items-start gap-2 text-sm text-muted">
-                <Lock className="mt-0.5 h-4 w-4 shrink-0" />O pagamento de{" "}
+                <Lock className="mt-1 h-4 w-4 shrink-0" />O pagamento de{" "}
                 <strong className="text-ink">{formatBRL(valorDevolver)}</strong> é feito pelo{" "}
                 <strong className="text-ink">locador</strong>, da poupança da caução direto ao
                 inquilino. A plataforma <strong className="text-ink">não transfere valores</strong>{" "}
@@ -260,7 +260,7 @@ function ReembolsoPreview() {
 
         {/* Coluna lateral: avisos honestos */}
         <aside className="space-y-4">
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
             <p className="flex items-center gap-2 font-medium">
               <AlertTriangle className="h-4 w-4" /> Atenção ao prazo
             </p>

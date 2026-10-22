@@ -26,7 +26,7 @@ export function VerificationBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700",
+        "inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700",
         className
       )}
     >
@@ -37,7 +37,7 @@ export function VerificationBadge({
             alt={partnerName as string}
             width={16}
             height={16}
-            className="h-4 w-4 rounded"
+            className="h-4 w-4 rounded-lg"
           />
           Verificação de identidade · {partnerName}
         </>

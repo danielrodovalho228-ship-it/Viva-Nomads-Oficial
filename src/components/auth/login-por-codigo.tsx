@@ -134,10 +134,10 @@ export function LoginPorCodigo({
   const enviado = enviadoEm != null;
   return (
     <div data-testid="login-por-codigo">
-      <button type="button" onClick={onVoltar} className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700">
+      <button type="button" onClick={onVoltar} className="inline-flex items-center gap-2 text-sm font-medium text-forest hover:text-blue-700">
         <ArrowLeft className="h-4 w-4" /> Voltar para entrar
       </button>
-      <h2 className="mt-6 font-title text-2xl font-bold text-ink">Entrar com código</h2>
+      <h2 className="mt-6 font-title text-2xl font-semibold text-ink">Entrar com código</h2>
       <p className="mt-2 text-sm text-muted">
         {enviado
           ? "Se este e-mail tiver conta, enviamos um código de 6 dígitos. Digite-o abaixo; ele vale por poucos minutos."
@@ -169,7 +169,7 @@ export function LoginPorCodigo({
       ) : (
         <form onSubmit={conferir} method="post" className="mt-6 space-y-4">
           <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> Código enviado para {email.trim()}.
+            <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" /> Código enviado para {email.trim()}.
           </p>
           <input
             data-testid="campo-codigo"

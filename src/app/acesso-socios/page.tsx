@@ -22,7 +22,7 @@ export default async function AcessoSociosPage({
 
   return (
     <main className="grid min-h-screen place-items-center bg-surface-2 px-4 py-10">
-      <div className="w-full max-w-sm rounded-2xl border border-sage-200 bg-white p-8 shadow-lg">
+      <div className="w-full max-w-sm rounded-xl border border-sage-200 bg-white p-8">
         <div className="flex justify-center">
           <Logo />
         </div>
@@ -31,7 +31,7 @@ export default async function AcessoSociosPage({
           <span className="grid h-12 w-12 place-items-center rounded-full bg-forest/10 text-forest">
             <Lock className="h-6 w-6" />
           </span>
-          <h1 className="mt-3 font-title text-xl font-bold text-ink">Área dos sócios</h1>
+          <h1 className="mt-3 font-title text-xl font-semibold text-ink">Área dos sócios</h1>
           <p className="mt-1 text-sm text-muted">
             Conteúdo interno. Informe o código de acesso para continuar.
           </p>
@@ -40,7 +40,7 @@ export default async function AcessoSociosPage({
         <form action={entrarSocios} className="mt-6 space-y-4">
           <input type="hidden" name="next" value={next} />
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-ink">Código de acesso</span>
+            <span className="mb-2 block text-sm font-medium text-ink">Código de acesso</span>
             <input
               type="password"
               name="codigo"
@@ -48,7 +48,7 @@ export default async function AcessoSociosPage({
               autoFocus
               autoComplete="off"
               placeholder="••••••••"
-              className="w-full rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+              className="w-full rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm outline-none focus:border-sage"
             />
           </label>
 

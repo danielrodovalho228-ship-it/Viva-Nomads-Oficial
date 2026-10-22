@@ -15,8 +15,8 @@ export default async function AtivarPage({ searchParams }: { searchParams: Promi
   const estado = await estadoAtivacao(token);
   return (
     <div className="mx-auto max-w-xl px-4 py-10 sm:px-6">
-      <h1 className="font-title text-2xl font-bold text-ink sm:text-3xl">Ativar a sua página de parceiro</h1>
-      <div className="mt-6 rounded-2xl border border-line bg-white p-5 shadow-sm sm:p-6">
+      <h1 className="font-title text-2xl font-semibold text-ink sm:text-[28px]">Ativar a sua página de parceiro</h1>
+      <div className="mt-6 rounded-xl border border-line bg-white p-5 sm:p-6">
         <AtivarParceria token={token} estado={estado} />
       </div>
     </div>

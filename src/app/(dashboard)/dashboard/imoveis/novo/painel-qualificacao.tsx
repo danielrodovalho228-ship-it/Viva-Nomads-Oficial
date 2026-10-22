@@ -31,9 +31,9 @@ export function PainelQualificacao({
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="painel-qualificacao-titulo" data-testid="painel-qualificacao">
       <button type="button" className="absolute inset-0 bg-night/40" aria-label="Fechar a qualificação" onClick={onFechar} tabIndex={-1} />
-      <div className="relative flex h-full w-full max-w-2xl flex-col bg-surface shadow-2xl">
+      <div className="relative flex h-full w-full max-w-2xl flex-col bg-surface shadow-flutuante">
         <div className="flex items-center justify-between border-b border-sage-200 bg-white px-4 py-3">
-          <p id="painel-qualificacao-titulo" className="font-title text-base font-bold text-ink">
+          <p id="painel-qualificacao-titulo" className="font-title text-base font-semibold text-ink">
             Antes de anunciar
           </p>
           <button type="button" onClick={onFechar} className="grid h-9 w-9 place-items-center rounded-full hover:bg-sage-50" aria-label="Fechar" data-testid="painel-qualificacao-fechar">

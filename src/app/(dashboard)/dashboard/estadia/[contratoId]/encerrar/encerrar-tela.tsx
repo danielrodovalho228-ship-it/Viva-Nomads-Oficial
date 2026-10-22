@@ -23,7 +23,7 @@ export function EncerrarTela({ contratoId }: { contratoId: string }) {
     <Panel data-testid="encerrar-form" data-passo={passo}>
       {passo === "motivo" ? (
         <fieldset className="grid gap-3">
-          <legend className="mb-2 font-title text-lg font-bold text-ink">Por que encerrar?</legend>
+          <legend className="mb-2 font-title text-lg font-semibold text-ink">Por que encerrar?</legend>
           {MOTIVOS_ENCERRAMENTO.map((m) => (
             <label key={m.id} className="flex items-center gap-2 text-sm text-ink">
               <input type="radio" name="motivo" value={m.id} checked={motivo === m.id} onChange={() => setMotivo(m.id)} data-testid={`encerrar-motivo-${m.id}`} />
@@ -41,7 +41,7 @@ export function EncerrarTela({ contratoId }: { contratoId: string }) {
         </fieldset>
       ) : (
         <div className="grid gap-3">
-          <h2 className="font-title text-lg font-bold text-ink">O que acontece</h2>
+          <h2 className="font-title text-lg font-semibold text-ink">O que acontece</h2>
           {/* ENCERRAMENTO_REGRAS_ATIVO desligada: nenhum valor de multa ou devolução aparece (consequenciasDoEncerramento
               não tem regras até o parecer). Quando as regras existirem, o resultado delas entra aqui. */}
           <p className="text-sm text-ink" data-testid="encerrar-consequencias">

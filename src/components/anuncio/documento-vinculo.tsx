@@ -107,11 +107,11 @@ export function DocumentoVinculo({
   return (
     <div className="rounded-xl border border-sage-200 p-4" data-testid="documento-vinculo">
       <p className="text-sm font-semibold text-ink">Documento do imóvel</p>
-      <p className="mt-0.5 text-xs text-muted">
+      <p className="mt-1 text-xs text-muted">
         Conferimos o documento na hora (o documento, não a propriedade). Ele fica em armazenamento privado e nunca
         aparece no anúncio.
       </p>
-      <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-ink" data-testid="documentos-aceitos">
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink" data-testid="documentos-aceitos">
         {DOCUMENTOS_ACEITOS_TEXTO.map((t) => (
           <li key={t}>{t}</li>
         ))}
@@ -132,7 +132,7 @@ export function DocumentoVinculo({
             <XCircle className="h-4 w-4 shrink-0" /> Corrija o documento
           </p>
           {motivos.length > 0 && (
-            <ul className="mt-1 list-disc space-y-0.5 pl-6" data-testid="documento-motivos">
+            <ul className="mt-1 list-disc space-y-1 pl-6" data-testid="documento-motivos">
               {motivos.map((m) => (
                 <li key={m}>{m}</li>
               ))}
@@ -147,13 +147,13 @@ export function DocumentoVinculo({
             <Clock className="h-4 w-4 shrink-0" /> Em revisão
           </p>
           {motivos.length > 0 && (
-            <ul className="mt-1 list-disc space-y-0.5 pl-6 text-xs" data-testid="documento-motivos">
+            <ul className="mt-1 list-disc space-y-1 pl-6 text-xs" data-testid="documento-motivos">
               {motivos.map((m) => (
                 <li key={m}>{m}</li>
               ))}
             </ul>
           )}
-          <p className="mt-0.5 text-xs">
+          <p className="mt-1 text-xs">
             Nossa equipe confere em até 48 horas e avisa por e-mail. Você pode seguir o cadastro; a publicação libera depois
             da conferência.
           </p>
@@ -208,8 +208,8 @@ export function DocumentoVinculo({
       {!enderecoPronto && <p className="mt-1 text-xs text-muted">Preencha o CEP, a rua e o número acima para enviar.</p>}
       {nome && !enviando && <p className="mt-1 truncate text-xs text-muted">Último envio: {nome}</p>}
       {erro && <p className="mt-1 text-sm text-red-600">{erro}</p>}
-      <p className="mt-2 flex items-start gap-1.5 text-xs text-muted">
-        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
+      <p className="mt-2 flex items-start gap-2 text-xs text-muted">
+        <ShieldCheck className="mt-1 h-3.5 w-3.5 shrink-0 text-sage" />
         <span>Seu CPF aparece sempre mascarado. Só a equipe de verificação vê o arquivo, e só quando precisa conferir.</span>
       </p>
     </div>

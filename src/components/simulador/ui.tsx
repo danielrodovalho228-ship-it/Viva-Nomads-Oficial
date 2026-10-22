@@ -22,25 +22,25 @@ export function SimHero({
   stats: { label: string; valor: string }[];
 }) {
   return (
-    <section className="rounded-2xl border border-sage-200 bg-white p-5 sm:p-6">
+    <section className="rounded-xl border border-sage-200 bg-white p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
             <Icon className="h-5 w-5" />
           </span>
           <div>
-            <h2 className="font-title text-lg font-bold text-ink">{titulo}</h2>
-            <p className="mt-0.5 max-w-2xl text-sm text-muted">{subtitulo}</p>
+            <h2 className="font-title text-lg font-semibold text-ink">{titulo}</h2>
+            <p className="mt-1 max-w-2xl text-sm text-muted">{subtitulo}</p>
           </div>
         </div>
-        <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted">
+        <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-muted">
           Valores de referência
         </span>
       </div>
-      <div className="mt-4 grid auto-rows-fr grid-cols-2 gap-2.5">
+      <div className="mt-4 grid auto-rows-fr grid-cols-2 gap-3">
         {stats.map((s) => (
           <div key={s.label} className="rounded-xl bg-surface-2 p-3">
-            <p className="font-title text-lg font-bold text-forest">{s.valor}</p>
+            <p className="font-title text-lg font-semibold text-forest">{s.valor}</p>
             <p className="text-xs text-muted">{s.label}</p>
           </div>
         ))}
@@ -83,7 +83,7 @@ export function NumInput({
               setPassou(acima);
               onChange(acima ? (max as number) : v);
             }}
-            className="w-full rounded-xl bg-transparent px-3 py-2.5 text-sm outline-none"
+            className="w-full rounded-xl bg-transparent px-3 py-3 text-sm outline-none"
           />
         ) : (
         <input
@@ -99,7 +99,7 @@ export function NumInput({
             setPassou(acima);
             onChange(acima ? (max as number) : v);
           }}
-          className="w-full rounded-xl bg-transparent px-3 py-2.5 text-sm outline-none"
+          className="w-full rounded-xl bg-transparent px-3 py-3 text-sm outline-none"
         />
         )}
       </div>
@@ -116,10 +116,10 @@ export function NumInput({
 /** Card de resultado (rótulo + valor + dica opcional). */
 export function ResultCard({ label, value, hint, className }: { label: string; value: string; hint?: string; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-sage-200 bg-white p-4 ${className ?? ""}`}>
+    <div className={`rounded-xl border border-sage-200 bg-white p-4 ${className ?? ""}`}>
       <p className="text-xs text-muted">{label}</p>
-      <p className="mt-1 font-title text-xl font-bold text-ink">{value}</p>
-      {hint && <p className="mt-0.5 text-[11px] text-muted">{hint}</p>}
+      <p className="mt-1 font-title text-xl font-semibold text-ink">{value}</p>
+      {hint && <p className="mt-1 text-[11px] text-muted">{hint}</p>}
     </div>
   );
 }
@@ -133,7 +133,7 @@ export function PlanoPills({ value, onChange }: { value: PlanoId; onChange: (v: 
           key={p.id}
           type="button"
           onClick={() => onChange(p.id)}
-          className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+          className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
             value === p.id ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
           }`}
         >
@@ -148,7 +148,7 @@ export function PlanoPills({ value, onChange }: { value: PlanoId; onChange: (v: 
 export function SimDisclaimer() {
   return (
     <p className="mt-6 flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-xs text-muted">
-      <Info className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+      <Info className="mt-1 h-4 w-4 shrink-0 text-sage" />
       Estimativa ilustrativa — não é promessa de rentabilidade. Depende da ocupação real, do valor
       combinado e do mercado. A Viva Nomads calcula e documenta; o valor mensal vai direto ao
       proprietário — a plataforma nunca retém valores.
@@ -169,7 +169,7 @@ export function CobrancaToggle({
   testid: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={rotulo} className="mt-1.5 grid grid-cols-2 gap-2" data-testid={testid}>
+    <div role="radiogroup" aria-label={rotulo} className="mt-2 grid grid-cols-2 gap-2" data-testid={testid}>
       {(["aparte", "incluido"] as const).map((v) => (
         <button
           key={v}
@@ -191,12 +191,12 @@ export function CobrancaToggle({
 /** "Como calculamos" (prompt 15): as fórmulas em texto simples, abertas sob demanda. */
 export function ComoCalculamos({ itens, testid }: { itens: string[]; testid: string }) {
   return (
-    <details className="group mt-6 rounded-2xl border border-sage-200 bg-white p-5" data-testid={testid}>
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-title text-base font-bold text-ink">
+    <details className="group mt-6 rounded-xl border border-sage-200 bg-white p-5" data-testid={testid}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-title text-base font-semibold text-ink">
         Como calculamos
         <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
       </summary>
-      <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-muted">
+      <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-muted">
         {itens.map((t) => (
           <li key={t}>{t}</li>
         ))}
@@ -272,7 +272,7 @@ export function GraficoColunas({
                 return (
                   <div key={serie.nome} className="relative min-w-0 flex-1">
                     <div
-                      className={`absolute inset-x-0 ${b.negativo ? "rounded-b bg-red-400" : `rounded-t ${serie.cor}`}`}
+                      className={`absolute inset-x-0 ${b.negativo ? "rounded-b-lg bg-red-400" : `rounded-t-lg ${serie.cor}`}`}
                       style={{ top: MARGEM + b.topo, height: b.altura }}
                       data-testid={testid ? `${testid}-barra` : undefined}
                       data-grupo={g.rotulo}
@@ -301,12 +301,12 @@ export function GraficoColunas({
       </div>
       <figcaption className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
         {series.map((s) => (
-          <span key={s.nome} className="inline-flex items-center gap-1.5">
-            <span className={`inline-block h-2.5 w-2.5 rounded-sm ${s.cor}`} /> {s.nome}
+          <span key={s.nome} className="inline-flex items-center gap-2">
+            <span className={`inline-block h-2.5 w-2.5 rounded-lg ${s.cor}`} /> {s.nome}
           </span>
         ))}
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-red-400" /> Abaixo de zero
+        <span className="inline-flex items-center gap-2">
+          <span className="inline-block h-2.5 w-2.5 rounded-lg bg-red-400" /> Abaixo de zero
         </span>
       </figcaption>
       <table className="sr-only">

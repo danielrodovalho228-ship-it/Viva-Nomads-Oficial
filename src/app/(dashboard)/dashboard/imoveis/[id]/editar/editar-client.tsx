@@ -302,17 +302,17 @@ export function EditarImovelClient({
       )}
 
       {/* ── Barra de completude + publicar/compartilhar ─────────────────────── */}
-      <div className="mb-6 rounded-2xl border border-sage-200 bg-white p-5">
+      <div className="mb-6 rounded-xl border border-sage-200 bg-white p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-title text-lg font-bold text-ink" data-testid="prontidao">
+            <p className="font-title text-lg font-semibold text-ink" data-testid="prontidao">
               {publicado ? "Anúncio publicado" : comp.podePublicar ? "100% · Pronto para publicar" : `Anúncio ${comp.pct}% completo`}
             </p>
             {!comp.podePublicar && (
-              <p className="mt-0.5 text-sm text-muted">Falta para publicar: {comp.faltam.join(" · ")}</p>
+              <p className="mt-1 text-sm text-muted">Falta para publicar: {comp.faltam.join(" · ")}</p>
             )}
             {comp.melhorar.length > 0 && (
-              <p className="mt-0.5 text-xs text-muted">Para melhorar (opcional): {comp.melhorar.join(" · ")}</p>
+              <p className="mt-1 text-xs text-muted">Para melhorar (opcional): {comp.melhorar.join(" · ")}</p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -349,7 +349,7 @@ export function EditarImovelClient({
               type="checkbox"
               checked={aceitouIa}
               onChange={(e) => setAceitouIa(e.target.checked)}
-              className="mt-0.5 h-5 w-5 shrink-0 accent-forest"
+              className="mt-1 h-5 w-5 shrink-0 accent-forest"
             />
             <span>{TERMO_IA_TEXTO}</span>
           </label>
@@ -416,11 +416,11 @@ export function EditarImovelClient({
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm">
               <span className="mb-1 block font-medium text-ink">Disponível a partir de</span>
-              <DateFieldBR value={availableFrom} onChange={setAvailableFrom} ariaLabel="Disponível a partir de" className="h-11 min-w-0 w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage" />
+              <DateFieldBR value={availableFrom} onChange={setAvailableFrom} ariaLabel="Disponível a partir de" className="h-11 min-w-0 w-full rounded-xl border border-sage-200 px-3 py-3 outline-none focus:border-sage" />
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-ink">Disponível até (opcional)</span>
-              <DateFieldBR value={availableUntil} onChange={setAvailableUntil} ariaLabel="Disponível até (opcional)" className="h-11 min-w-0 w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage" />
+              <DateFieldBR value={availableUntil} onChange={setAvailableUntil} ariaLabel="Disponível até (opcional)" className="h-11 min-w-0 w-full rounded-xl border border-sage-200 px-3 py-3 outline-none focus:border-sage" />
             </label>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -431,7 +431,7 @@ export function EditarImovelClient({
                 min={1}
                 value={minPeriod}
                 onChange={(e) => setMinPeriod(e.target.value)}
-                className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
+                className="w-full rounded-xl border border-sage-200 px-3 py-3 outline-none focus:border-sage"
               />
             </label>
             <label className="text-sm">
@@ -441,7 +441,7 @@ export function EditarImovelClient({
                 min={Number(minPeriod) || 1}
                 value={maxPeriod}
                 onChange={(e) => setMaxPeriod(e.target.value)}
-                className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
+                className="w-full rounded-xl border border-sage-200 px-3 py-3 outline-none focus:border-sage"
               />
             </label>
           </div>
@@ -468,7 +468,7 @@ export function EditarImovelClient({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex.: Studio mobiliado com home office no Centro"
-              className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
+              className="w-full rounded-xl border border-sage-200 px-3 py-3 outline-none focus:border-sage"
             />
             {avisoTituloBairro(title, property.neighborhood ?? "") && (
               <span role="status" className="mt-1 block text-xs text-amber-700" data-testid="aviso-titulo-bairro">
@@ -484,7 +484,7 @@ export function EditarImovelClient({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Descreva o imóvel para quem vai morar aqui…"
               className={cn(
-                "w-full rounded-xl border px-3 py-2.5 outline-none focus:border-sage",
+                "w-full rounded-xl border px-3 py-3 outline-none focus:border-sage",
                 description.trim().length > 0 && description.trim().length < MIN_DESC
                   ? "border-amber-300"
                   : "border-sage-200"
@@ -497,7 +497,7 @@ export function EditarImovelClient({
           </p>
           <div className="mt-3 rounded-xl bg-surface-2 p-3">
             <p className="text-xs font-medium text-ink">O que incluir:</p>
-            <ul className="mt-1.5 grid gap-1">
+            <ul className="mt-2 grid gap-1">
               {DESC_PROMPTS.map((p) => (
                 <li key={p} className="flex items-start gap-2 text-xs text-muted">
                   <span className="text-sage">•</span> {p}
@@ -531,7 +531,7 @@ export function EditarImovelClient({
                         aria-pressed={on}
                         onClick={() => toggleAmenity(it.key)}
                         className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                          "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors",
                           on
                             ? "border-forest bg-sage-100 text-forest"
                             : "border-sage-200 text-muted hover:border-sage"
@@ -633,7 +633,7 @@ export function EditarImovelClient({
       <div className="mt-6">
         <Link
           href={publicUrl}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:underline"
+          className="inline-flex items-center gap-2 text-sm font-medium text-forest hover:underline"
         >
           <ExternalLink className="h-4 w-4" /> Ver como aparece na busca
         </Link>
@@ -664,7 +664,7 @@ function Section({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <section className="overflow-hidden rounded-2xl border border-sage-200 bg-white" data-testid={testid}>
+    <section className="overflow-hidden rounded-xl border border-sage-200 bg-white" data-testid={testid}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -675,7 +675,7 @@ function Section({
           <Icon className="h-5 w-5" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block font-title font-bold text-ink">{title}</span>
+          <span className="block font-title font-semibold text-ink">{title}</span>
           <span className="block truncate text-sm text-muted">{summary}</span>
         </span>
         {saved && <span className="text-sm font-medium text-forest">Salvo ✓</span>}
@@ -721,7 +721,7 @@ function RuleCard({
         <Icon className="h-4 w-4 text-sage" />
         <span className="text-sm font-medium">{label}</span>
       </div>
-      <div className="mt-3 flex rounded-full bg-surface-2 p-0.5 text-sm">
+      <div className="mt-3 flex rounded-full bg-surface-2 p-1 text-sm">
         {[
           { v: true, l: "Sim" },
           { v: false, l: "Não" },
@@ -732,7 +732,7 @@ function RuleCard({
             aria-pressed={value === o.v}
             onClick={() => onChange(o.v)}
             className={cn(
-              "flex-1 rounded-full px-3 py-1.5 font-medium transition-colors",
+              "flex-1 rounded-full px-3 py-2 font-medium transition-colors",
               value === o.v ? "bg-forest text-white" : "text-muted"
             )}
           >
@@ -760,7 +760,7 @@ function NumField({
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
-        className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
+        className="w-full rounded-xl border border-sage-200 px-3 py-3 outline-none focus:border-sage"
       />
     </label>
   );
@@ -776,7 +776,7 @@ function ReaisField({ label, value, onChange, centavos, testid }: { label: strin
         centavos={centavos}
         value={value === "" ? null : Number(value)}
         onChange={(v) => onChange(v == null ? "" : String(v))}
-        className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
+        className="w-full rounded-xl border border-sage-200 px-3 py-3 outline-none focus:border-sage"
         testid={testid}
       />
     </label>

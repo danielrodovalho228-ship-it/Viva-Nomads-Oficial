@@ -213,11 +213,11 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
               {itens.map((i) => (
                 <li key={i.id} className="rounded-xl border border-sage-200 p-3 sm:p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-                    <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-2">
                       <IconeTipo tipo={i.tipo} />
                       <strong className="text-ink">{i.autor_nome}</strong> · {quando(i.criado_em)}
                     </span>
-                    <span className={`rounded-full px-2 py-0.5 font-semibold ${COR_STATUS[i.status]}`}>{ROTULO_STATUS[i.status]}</span>
+                    <span className={`rounded-full px-2 py-1 font-semibold ${COR_STATUS[i.status]}`}>{ROTULO_STATUS[i.status]}</span>
                   </div>
 
                   {i.texto && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-ink">{i.texto}</p>}

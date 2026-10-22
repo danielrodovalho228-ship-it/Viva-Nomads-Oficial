@@ -27,11 +27,11 @@ export function SimuladorBolso(p: {
   return (
     <section
       id={p.compacto ? undefined : "simulador"}
-      className={cn("rounded-2xl border border-line bg-white p-5 sm:p-8", p.className)}
+      className={cn("rounded-xl border border-line bg-white p-5 sm:p-8", p.className)}
       data-testid="simulador-bolso"
       aria-labelledby="bolso-titulo"
     >
-      <h2 id="bolso-titulo" className="font-title text-xl font-bold text-ink sm:text-2xl">
+      <h2 id="bolso-titulo" className="font-title text-xl font-semibold text-ink sm:text-2xl">
         O que vai para o seu bolso
       </h2>
       <div className={cn("mt-4 grid gap-3", doCadastro ? "grid-cols-2" : "sm:grid-cols-3")}>
@@ -114,12 +114,12 @@ function Linha(p: { rotulo: string; valor: string; detalhe?: string | null; test
       <dt className="min-w-0 text-ink">
         <span className="block">{p.rotulo}</span>
         {p.detalhe && (
-          <span className="mt-0.5 block text-xs text-muted" data-testid={`${p.testid}-detalhe`}>
+          <span className="mt-1 block text-xs text-muted" data-testid={`${p.testid}-detalhe`}>
             {p.detalhe}
           </span>
         )}
       </dt>
-      <dd className={cn("shrink-0 text-right tabular-nums", p.destaque ? "text-lg font-bold text-ink" : "font-semibold text-ink")} data-testid={p.testid}>
+      <dd className={cn("shrink-0 text-right tabular-nums", p.destaque ? "text-lg font-semibold text-ink" : "font-semibold text-ink")} data-testid={p.testid}>
         {p.valor}
       </dd>
     </div>

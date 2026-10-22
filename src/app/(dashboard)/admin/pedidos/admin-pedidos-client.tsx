@@ -180,7 +180,7 @@ export function AdminPedidosClient({
                     <td className="py-3">
                       <ul className="flex flex-wrap gap-1">
                         {(p.colunas?.selos ?? []).map((s) => (
-                          <li key={s.codigo} className={cn("rounded-full px-1.5 py-0.5 text-[11px]", s.ok ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900")}>
+                          <li key={s.codigo} className={cn("rounded-full px-2 py-1 text-[11px]", s.ok ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900")}>
                             {s.texto}
                           </li>
                         ))}
@@ -201,7 +201,7 @@ export function AdminPedidosClient({
                     <td className="py-3">
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-semibold",
+                          "rounded-full px-2 py-1 text-xs font-semibold",
                           TONE[p.status] ?? "bg-surface-2 text-muted"
                         )}
                       >
@@ -278,7 +278,7 @@ function MetricasPedidosPainel({ m, r }: { m: MetricasPedidos | null; r: Respost
         <StatCard label="Com compatível ao publicar" value={r.compativel.match(/\d+%$/)?.[0] ?? "—"} hint={r.compativel} icon={Sparkles} />
         <StatCard label="Avisos enviados (30 dias)" value={m ? m.avisos_email + m.avisos_resumo : "—"} icon={Mail} />
       </div>
-      <ul className="mt-2 space-y-0.5 text-xs text-muted" data-testid="formulas-pedidos">
+      <ul className="mt-2 space-y-1 text-xs text-muted" data-testid="formulas-pedidos">
         <li>Pedidos com resposta = pedidos do período que receberam pelo menos 1 contato ou proposta ÷ pedidos do período. A mesma conta da visão geral.</li>
         <li>Tempo até a 1ª resposta = mediana do tempo entre a publicação e o 1º contato ou proposta.</li>
         <li>Com compatível ao publicar = pedidos dos últimos 30 dias com pelo menos 1 imóvel compatível no momento da publicação (compativeis_ao_publicar &gt; 0) ÷ pedidos dos últimos 30 dias.</li>

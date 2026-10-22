@@ -56,14 +56,14 @@ export function StayRules({ property }: { property: Property }) {
 
   return (
     <section id="regras-da-estadia" aria-labelledby="regras-title">
-      <h2 id="regras-title" className="font-title text-2xl font-bold text-ink">
+      <h2 id="regras-title" className="font-title text-2xl font-semibold text-ink">
         Regras da estadia
       </h2>
 
       <ul className="mt-5 grid gap-3 sm:grid-cols-2">
         {rows.map((r) => (
           <li key={r.label} className="flex items-start gap-3 rounded-xl border border-sage-200 px-4 py-3">
-            <r.icon className="mt-0.5 h-5 w-5 shrink-0 text-sage" />
+            <r.icon className="mt-1 h-5 w-5 shrink-0 text-sage" />
             <span>
               <span className="block text-xs text-muted">{r.label}</span>
               <span className="block text-sm font-medium text-ink">{r.value}</span>
@@ -74,22 +74,22 @@ export function StayRules({ property }: { property: Property }) {
 
       {/* Caução e pagamento (diferencial brasileiro) */}
       <div className="mt-4 rounded-xl bg-sage-100/60 p-4">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-forest">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-forest">
           <ShieldCheck className="h-4 w-4 text-sage" /> Caução e pagamento
         </h3>
-        <ul className="mt-3 space-y-2.5 text-sm text-ink" data-testid="caucao-lista">
+        <ul className="mt-3 space-y-3 text-sm text-ink" data-testid="caucao-lista">
           <li className="flex items-start gap-3">
-            <Landmark className="mt-0.5 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
+            <Landmark className="mt-1 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
             Caução conforme contrato — registrada e documentada pela plataforma.
           </li>
           {property.acceptsInsurance && (
             <li className="flex items-start gap-3">
-              <FileCheck className="mt-0.5 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
+              <FileCheck className="mt-1 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
               Aceita Seguro-Fiança.
             </li>
           )}
           <li className="flex items-start gap-3 text-muted">
-            <HandCoins className="mt-0.5 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
+            <HandCoins className="mt-1 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
             <span>O pagamento do valor mensal é feito direto ao proprietário — a plataforma conecta,
             confere a documentação do imóvel e registra a negociação, mas nunca recebe o dinheiro.</span>
           </li>

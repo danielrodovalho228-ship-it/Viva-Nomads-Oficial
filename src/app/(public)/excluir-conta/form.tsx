@@ -34,7 +34,7 @@ export function ExcluirContaForm() {
   if (enviado) {
     return (
       <p className="flex items-start gap-2 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
-        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+        <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" />
         Se existir uma conta com esse e-mail, enviamos um link para confirmar a exclusão. Verifique a
         caixa de entrada e o spam. O link vale por 30 minutos e só pode ser usado uma vez.
       </p>

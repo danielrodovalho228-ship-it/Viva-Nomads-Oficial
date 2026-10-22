@@ -98,11 +98,11 @@ export function GraficoCustoPorImovel({
       </svg>
       <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
         {s.planos.map((p) => (
-          <li key={p.id} className="inline-flex items-center gap-1.5">
+          <li key={p.id} className="inline-flex items-center gap-2">
             <span className="inline-block h-0.5 w-4" style={{ background: COR[p.id] }} /> {p.nome}
           </li>
         ))}
-        <li className="inline-flex items-center gap-1.5">
+        <li className="inline-flex items-center gap-2">
           <span className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: AIRBNB }} /> Airbnb ({reaisInteiros(s.airbnb)} por imóvel: {Math.round(MERCADO.airbnbTaxa * 100)}% de todo o período)
         </li>
       </ul>

@@ -43,13 +43,13 @@ export default async function AdminEventosPage({ searchParams }: { searchParams:
           </Link>
         }
       />
-      <nav aria-label="Tipo de evento" className="mb-4 flex flex-wrap gap-1.5">
+      <nav aria-label="Tipo de evento" className="mb-4 flex flex-wrap gap-2">
         {(Object.keys(EVENTOS_HOME) as TipoEventoHome[]).map((t) => (
           <Link
             key={t}
             href={`/admin/eventos?tipo=${t}&${qs}`}
             aria-current={t === tipo ? "page" : undefined}
-            className={t === tipo ? "rounded-lg bg-forest px-3 py-1.5 text-sm text-white" : "rounded-lg border border-line px-3 py-1.5 text-sm text-ink hover:border-forest"}
+            className={t === tipo ? "rounded-lg bg-forest px-3 py-2 text-sm text-white" : "rounded-lg border border-line px-3 py-2 text-sm text-ink hover:border-forest"}
           >
             {EVENTOS_HOME[t]}
           </Link>

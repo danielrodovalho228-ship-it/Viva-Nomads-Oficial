@@ -200,23 +200,23 @@ export function FinanceiroClient({
               <table className="w-full min-w-[560px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-line text-muted">
-                    <th className="py-1.5 font-medium">Mês</th>
-                    <th className="py-1.5 text-right font-medium">Assinaturas</th>
-                    <th className="py-1.5 text-right font-medium">Taxas de serviço</th>
-                    <th className="py-1.5 text-right font-medium">Marketing</th>
-                    <th className="py-1.5 text-right font-medium">Proprietários novos</th>
-                    <th className="py-1.5 text-right font-medium">MRR fim do mês</th>
+                    <th className="py-2 font-medium">Mês</th>
+                    <th className="py-2 text-right font-medium">Assinaturas</th>
+                    <th className="py-2 text-right font-medium">Taxas de serviço</th>
+                    <th className="py-2 text-right font-medium">Marketing</th>
+                    <th className="py-2 text-right font-medium">Proprietários novos</th>
+                    <th className="py-2 text-right font-medium">MRR fim do mês</th>
                   </tr>
                 </thead>
                 <tbody>
                   {f.mensal.map((m) => (
                     <tr key={m.mes} className="border-b border-line/60">
-                      <td className="py-1.5 text-ink">{mesCurto(m.mes)}</td>
-                      <td className="py-1.5 text-right text-ink">{reais(m.receitaAssinatura)}</td>
-                      <td className="py-1.5 text-right text-ink">{reais(m.receitaComissao)}</td>
-                      <td className="py-1.5 text-right text-ink">{reais(m.gastoMarketing)}</td>
-                      <td className="py-1.5 text-right text-ink">{fmtInteiro(m.novosProprietarios)}</td>
-                      <td className="py-1.5 text-right text-ink">{reais(m.mrrFimMes)}</td>
+                      <td className="py-2 text-ink">{mesCurto(m.mes)}</td>
+                      <td className="py-2 text-right text-ink">{reais(m.receitaAssinatura)}</td>
+                      <td className="py-2 text-right text-ink">{reais(m.receitaComissao)}</td>
+                      <td className="py-2 text-right text-ink">{reais(m.gastoMarketing)}</td>
+                      <td className="py-2 text-right text-ink">{fmtInteiro(m.novosProprietarios)}</td>
+                      <td className="py-2 text-right text-ink">{reais(m.mrrFimMes)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -280,12 +280,12 @@ function Cartao({ rotulo, valor, formula, nota }: { rotulo: string; valor: strin
           aria-expanded={aberto}
           aria-controls={id}
           aria-label={`Como é calculado: ${rotulo}`}
-          className="shrink-0 rounded-full p-0.5 text-muted hover:text-forest"
+          className="shrink-0 rounded-full p-1 text-muted hover:text-forest"
         >
           <Info className="h-4 w-4" />
         </button>
       </div>
-      <p className="mt-1 font-title text-2xl font-bold text-ink" data-valor>
+      <p className="mt-1 font-title text-2xl font-semibold text-ink" data-valor>
         {valor}
       </p>
       {valor === "—" && <p className="text-xs text-muted">sem dados no período</p>}
@@ -294,7 +294,7 @@ function Cartao({ rotulo, valor, formula, nota }: { rotulo: string; valor: strin
         {base}
       </p>
       {aberto && (
-        <p id={id} className="mt-2 rounded-lg bg-sage-100 px-2.5 py-2 text-xs text-ink">
+        <p id={id} className="mt-2 rounded-lg bg-sage-100 px-3 py-2 text-xs text-ink">
           {formula}
         </p>
       )}
@@ -309,29 +309,29 @@ function TabelaComissoes({ linhas }: { linhas: ReturnType<typeof calcularFinance
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead>
           <tr className="border-b border-line text-muted">
-            <th className="py-1.5 pr-3 font-medium">Data</th>
-            <th className="py-1.5 font-medium">Imóvel</th>
-            <th className="py-1.5 font-medium">Plano</th>
-            <th className="py-1.5 pl-3 text-right font-medium">Valor mensal*</th>
-            <th className="py-1.5 pl-3 text-right font-medium">Taxa de serviço</th>
-            <th className="py-1.5 pl-4 font-medium">Situação</th>
+            <th className="py-2 pr-3 font-medium">Data</th>
+            <th className="py-2 font-medium">Imóvel</th>
+            <th className="py-2 font-medium">Plano</th>
+            <th className="py-2 pl-3 text-right font-medium">Valor mensal*</th>
+            <th className="py-2 pl-3 text-right font-medium">Taxa de serviço</th>
+            <th className="py-2 pl-4 font-medium">Situação</th>
           </tr>
         </thead>
         <tbody>
           {linhas.map((c) => (
             <tr key={c.contrato} className="border-b border-line/60" data-testid="fin-taxa-linha" data-taxa={c.comissao ?? 0} data-situacao={c.status}>
-              <td className="whitespace-nowrap py-1.5 pr-3 text-ink">{dataBR(c.data)}</td>
-              <td className="py-1.5 text-ink">
+              <td className="whitespace-nowrap py-2 pr-3 text-ink">{dataBR(c.data)}</td>
+              <td className="py-2 text-ink">
                 {c.imovel ?? "—"}
                 {c.cidade ? <span className="text-muted"> · {c.cidade}</span> : null}
               </td>
-              <td className="py-1.5 text-ink">
+              <td className="py-2 text-ink">
                 {c.plano ?? "—"}
                 {c.percentual !== null ? <span className="text-muted"> ({fmtPct(c.percentual)})</span> : null}
               </td>
-              <td className="py-1.5 pl-3 text-right text-ink">{fmtReais(c.aluguel)}</td>
-              <td className="py-1.5 pl-3 text-right text-ink">{fmtReais(c.comissao)}</td>
-              <td className={cn("py-1.5 pl-4", c.status === "vencido" ? "text-red-700" : c.status === "pago" ? "text-green-700" : "text-ink")}>
+              <td className="py-2 pl-3 text-right text-ink">{fmtReais(c.aluguel)}</td>
+              <td className="py-2 pl-3 text-right text-ink">{fmtReais(c.comissao)}</td>
+              <td className={cn("py-2 pl-4", c.status === "vencido" ? "text-red-700" : c.status === "pago" ? "text-green-700" : "text-ink")}>
                 {STATUS_COMISSAO[c.status] ?? c.status}
                 {c.pago_em ? <span className="text-muted"> · {dataBR(c.pago_em)}</span> : null}
               </td>
@@ -340,10 +340,10 @@ function TabelaComissoes({ linhas }: { linhas: ReturnType<typeof calcularFinance
         </tbody>
         <tfoot>
           <tr className="font-medium">
-            <td className="py-1.5 pr-3 text-ink" colSpan={4}>
+            <td className="py-2 pr-3 text-ink" colSpan={4}>
               Total da tabela
             </td>
-            <td className="py-1.5 pl-3 text-right text-ink" data-testid="fin-taxa-total">
+            <td className="py-2 pl-3 text-right text-ink" data-testid="fin-taxa-total">
               {fmtReais(linhas.reduce((s, c) => s + (c.comissao ?? 0), 0))}
             </td>
             <td />
@@ -367,7 +367,7 @@ function TabelaContratos({ linhas }: { linhas: ContratoLinhaAdmin[] }) {
             <Link href={`/admin/contratos?q=${c.id.slice(0, 8)}`} className="font-medium text-ink hover:text-forest">
               {c.imovel}
             </Link>
-            {ehRegraAnterior(c) && <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">regra anterior</span>}
+            {ehRegraAnterior(c) && <span className="ml-2 rounded-full bg-surface-2 px-2 py-1 text-xs text-muted">regra anterior</span>}
             <span className="block text-xs text-muted" data-testid="fin-rotulo-taxa">
               Taxa de serviço:{" "}
               {rotuloBaseTaxa({ valor: c.taxaValor ?? 0, percent: c.taxaPercent ?? 0, aluguelMensal: c.aluguelMensal ?? 0, meses, aceiteEm: c.aceiteEm })}

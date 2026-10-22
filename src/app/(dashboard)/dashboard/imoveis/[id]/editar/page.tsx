@@ -24,8 +24,8 @@ export default async function EditarImovelPage({
 
   if (!property) {
     return (
-      <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center">
-        <h1 className="font-title text-lg font-bold text-ink">Imóvel não encontrado</h1>
+      <div className="rounded-xl border border-dashed border-line bg-white p-12 text-center">
+        <h1 className="font-title text-lg font-semibold text-ink">Imóvel não encontrado</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted">
           Este anúncio não existe ou não pertence à sua conta.
         </p>

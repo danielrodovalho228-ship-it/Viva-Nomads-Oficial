@@ -51,7 +51,7 @@ export default async function AdminContratoPage({ params }: { params: Promise<{ 
           <p className="min-w-0 break-words text-sm text-ink">
             Proprietário: <strong>{c.nomes.proprietario || "—"}</strong> · Inquilino: <strong>{c.nomes.inquilino || "—"}</strong>
           </p>
-          <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest" data-testid="admin-contrato-selo">
+          <span className="rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest" data-testid="admin-contrato-selo">
             {c.selo}
           </span>
         </div>
@@ -145,8 +145,8 @@ function ConferenciaBloco({ conf }: { conf: ConferenciaAdmin }) {
   return (
     <section className="min-w-0 rounded-xl border border-line p-3" data-testid={`admin-conferencia-${conf.tipo}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-title text-base font-bold text-ink">{TIPO[conf.tipo]}</h3>
-        <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest" data-testid={`admin-conferencia-${conf.tipo}-estado`}>
+        <h3 className="font-title text-base font-semibold text-ink">{TIPO[conf.tipo]}</h3>
+        <span className="rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest" data-testid={`admin-conferencia-${conf.tipo}-estado`}>
           {ROTULO_ESTADO_CONFERENCIA[conf.estado]}
         </span>
       </div>

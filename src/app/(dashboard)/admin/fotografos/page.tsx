@@ -63,7 +63,7 @@ export default async function AdminFotografosPage() {
                     {f.nome_publico as string}
                   </a>
                   <span className="text-muted">{((f.cidades as string[]) ?? []).join(", ")}</span>
-                  <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-ink">{STATUS[f.status as string] ?? f.status}</span>
+                  <span className="rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold text-ink">{STATUS[f.status as string] ?? f.status}</span>
                 </li>
               ))}
             </ul>

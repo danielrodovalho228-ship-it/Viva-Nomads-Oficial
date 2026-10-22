@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function AjudaPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
-      <h1 className="font-title text-3xl font-bold text-ink">Central de Ajuda</h1>
+      <h1 className="font-title text-[28px] font-semibold text-ink">Central de Ajuda</h1>
       <p className="mt-2 text-muted">
         {PROMESSA_ATENDIMENTO}. E-mail:{" "}
         <a href={`mailto:${SUPORTE_EMAIL}`} className="font-semibold text-forest underline">
@@ -25,7 +25,7 @@ export default function AjudaPage() {
         </a>
       </p>
       <div className="mt-6">
-        <h2 className="mb-2 font-title text-lg font-bold text-ink">Fale com a Viva</h2>
+        <h2 className="mb-2 font-title text-lg font-semibold text-ink">Fale com a Viva</h2>
         <VivaChatBloco />
         {/* Redes oficiais (src/config/redes.ts — Prompt 35A, item 4). */}
         <div className="mt-3 flex flex-wrap items-center gap-x-2 text-sm text-muted">

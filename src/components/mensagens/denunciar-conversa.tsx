@@ -46,7 +46,7 @@ export function DenunciarConversa({ conversationId, demo }: { conversationId: st
           type="button"
           data-testid="denunciar-abrir"
           onClick={() => setAberto(true)}
-          className="inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-muted hover:text-ink"
+          className="inline-flex min-h-11 items-center gap-2 text-xs font-medium text-muted hover:text-ink"
         >
           <Flag className="h-3.5 w-3.5" aria-hidden /> Denunciar mensagem suspeita
         </button>

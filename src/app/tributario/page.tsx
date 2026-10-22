@@ -31,7 +31,7 @@ function PremissaRow({ p }: { p: Premissa }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-semibold text-ink">{p.rotulo}</span>
         <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${
             implicito ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
           }`}
         >
@@ -39,7 +39,7 @@ function PremissaRow({ p }: { p: Premissa }) {
         </span>
       </div>
       <p className="mt-1 font-mono text-sm text-forest">{p.valor}</p>
-      <p className="mt-1.5 text-sm text-muted">{p.nota}</p>
+      <p className="mt-2 text-sm text-muted">{p.nota}</p>
     </div>
   );
 }
@@ -59,10 +59,10 @@ export default async function TributarioPage() {
         </p>
         {/* 1. Cabeçalho */}
         <header>
-          <p className="text-xs font-semibold uppercase tracking-wide text-forest">
+          <p className="text-xs font-semibold text-forest">
             Documento interno dos sócios
           </p>
-          <h1 className="mt-1 font-title text-3xl font-bold text-ink">
+          <h1 className="mt-1 font-title text-[28px] font-semibold text-ink">
             Memória de cálculo — Simulador tributário PF × PJ
           </h1>
           <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-ink">
@@ -75,7 +75,7 @@ export default async function TributarioPage() {
 
         {/* 2. O que o simulador faz */}
         <section className="mt-8">
-          <h2 className="font-title text-xl font-bold text-forest">1. O que o simulador faz</h2>
+          <h2 className="font-title text-xl font-semibold text-forest">1. O que o simulador faz</h2>
           <p className="mt-2 text-sm text-muted">
             Compara a carga tributária ESTIMADA da renda de aluguel na pessoa física
             (IRPF/carnê-leão) contra a pessoa jurídica, a partir do aluguel mensal e do número de
@@ -86,7 +86,7 @@ export default async function TributarioPage() {
 
         {/* 3. Cenário PF */}
         <section className="mt-8">
-          <h2 className="font-title text-xl font-bold text-forest">2. Cenário PF (pessoa física)</h2>
+          <h2 className="font-title text-xl font-semibold text-forest">2. Cenário PF (pessoa física)</h2>
           <div className="mt-3 grid gap-3">
             {PREMISSAS_PF.map((p) => (
               <PremissaRow key={p.chave} p={p} />
@@ -104,7 +104,7 @@ export default async function TributarioPage() {
 
         {/* 4. Cenário PJ */}
         <section className="mt-8">
-          <h2 className="font-title text-xl font-bold text-forest">3. Cenário PJ (pessoa jurídica)</h2>
+          <h2 className="font-title text-xl font-semibold text-forest">3. Cenário PJ (pessoa jurídica)</h2>
           <div className="mt-3 grid gap-3">
             {PREMISSAS_PJ.map((p) => (
               <PremissaRow key={p.chave} p={p} />
@@ -124,7 +124,7 @@ export default async function TributarioPage() {
 
         {/* 5. Comparativo e limites */}
         <section className="mt-8">
-          <h2 className="font-title text-xl font-bold text-forest">4. Comparativo e simplificações assumidas</h2>
+          <h2 className="font-title text-xl font-semibold text-forest">4. Comparativo e simplificações assumidas</h2>
           <p className="mt-2 text-sm text-muted">
             Com os mesmos números, o modelo diz que a PF paga{" "}
             <strong className="text-ink">{formatBRL(exemplo.pfAnnualTax)}</strong> e a PJ{" "}
@@ -137,7 +137,7 @@ export default async function TributarioPage() {
 
         {/* 6. Reforma tributária */}
         <section className="mt-8">
-          <h2 className="font-title text-xl font-bold text-forest">5. Reforma tributária (LC 214/2025)</h2>
+          <h2 className="font-title text-xl font-semibold text-forest">5. Reforma tributária (LC 214/2025)</h2>
           <div className="mt-3">
             <PremissaRow p={PREMISSA_IBS_CBS} />
           </div>
@@ -145,11 +145,11 @@ export default async function TributarioPage() {
 
         {/* 7. Perguntas para o parecer */}
         <section className="mt-8">
-          <h2 className="font-title text-xl font-bold text-forest">6. Perguntas abertas para o parecer</h2>
+          <h2 className="font-title text-xl font-semibold text-forest">6. Perguntas abertas para o parecer</h2>
           <ul className="mt-3 space-y-2">
             {PERGUNTAS_PARECER.map((q) => (
               <li key={q} className="flex items-start gap-2 text-sm text-ink">
-                <span aria-hidden className="mt-0.5 select-none font-mono text-muted">[ ]</span>
+                <span aria-hidden className="mt-1 select-none font-mono text-muted">[ ]</span>
                 {q}
               </li>
             ))}
@@ -158,7 +158,7 @@ export default async function TributarioPage() {
 
         {/* 8. Simulador embutido */}
         <section className="mt-8">
-          <h2 className="font-title text-xl font-bold text-forest">7. Simulador embutido (teste você mesmo)</h2>
+          <h2 className="font-title text-xl font-semibold text-forest">7. Simulador embutido (teste você mesmo)</h2>
           <p className="mt-2 text-sm text-muted">
             O mesmo componente da Conta — mesma lib, mesmos números — para o revisor testar cenários
             aqui.

@@ -49,8 +49,8 @@ export default function PricingPage() {
       <section className="container-page relative z-10 -mt-10">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid="precos-destaques">
           {DESTAQUES_PRECOS.map(({ n, t }) => (
-            <div key={t} className="rounded-2xl border border-line bg-white p-5 shadow-lg">
-              <p className="font-title text-2xl font-bold text-ink">{n}</p>
+            <div key={t} className="rounded-xl border border-line bg-white p-5">
+              <p className="font-title text-2xl font-semibold text-ink">{n}</p>
               <p className="text-sm text-muted">{t}</p>
             </div>
           ))}
@@ -58,8 +58,8 @@ export default function PricingPage() {
       </section>
 
       <section className="container-page section-y">
-        <div className="mb-10 w-full rounded-2xl border border-line bg-white p-6 sm:p-8" data-testid="regra-unica">
-          <h2 className="font-title text-2xl font-bold text-ink">Quanto mais imóveis, menor a taxa</h2>
+        <div className="mb-10 w-full rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="regra-unica">
+          <h2 className="font-title text-2xl font-semibold text-ink">Quanto mais imóveis, menor a taxa</h2>
           <p className="mt-3 text-ink">{TEXTO_REGRA_UNICA}</p>
           <ul className="mt-4 grid gap-2 text-sm text-ink sm:grid-cols-3">
             {FRASES_REGRA.map((t) => (
@@ -72,9 +72,9 @@ export default function PricingPage() {
             <caption className="sr-only">Taxa por número de imóveis ativos</caption>
             <thead>
               <tr className="border-b border-line text-muted">
-                <th scope="col" className="py-2.5 pl-3 pr-3 font-medium">Imóveis ativos</th>
-                <th scope="col" className="py-2.5 pr-3 text-right font-medium">Taxa sobre o valor total do contrato</th>
-                <th scope="col" className="py-2.5 pr-3 text-right font-medium">Exemplo: 3 meses a R$ 3.000 por mês (total R$ 9.000)</th>
+                <th scope="col" className="py-3 pl-3 pr-3 font-medium">Imóveis ativos</th>
+                <th scope="col" className="py-3 pr-3 text-right font-medium">Taxa sobre o valor total do contrato</th>
+                <th scope="col" className="py-3 pr-3 text-right font-medium">Exemplo: 3 meses a R$ 3.000 por mês (total R$ 9.000)</th>
               </tr>
             </thead>
             <tbody>
@@ -84,11 +84,11 @@ export default function PricingPage() {
                   data-gestor={f.gestor ? "1" : undefined}
                   className={cn("border-b border-line text-ink even:bg-surface-2", f.gestor && "bg-sage-100 font-semibold even:bg-sage-100")}
                 >
-                  <th scope="row" className="py-2.5 pl-3 pr-3 font-medium">
+                  <th scope="row" className="py-3 pl-3 pr-3 font-medium">
                     {f.gestor ? `${f.minImoveis}+ · Plano Gestor` : f.maxImoveis === null ? `${f.minImoveis}+` : `${f.minImoveis}–${f.maxImoveis}`}
                   </th>
-                  <td className="py-2.5 pr-3 text-right tabular-nums">{taxaPublicaTexto(f)}</td>
-                  <td className="py-2.5 pr-3 text-right tabular-nums">{f.gestor ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</td>
+                  <td className="py-3 pr-3 text-right tabular-nums">{taxaPublicaTexto(f)}</td>
+                  <td className="py-3 pr-3 text-right tabular-nums">{f.gestor ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</td>
                 </tr>
               ))}
             </tbody>
@@ -126,13 +126,13 @@ export default function PricingPage() {
       {/* Incluído em todo contrato: 4 caixas (grade PAR), com foto quando houver (única no site, t112). */}
       <section className="bg-surface-2 section-y" data-testid="precos-incluido">
         <div className="container-page">
-          <h2 className="text-center font-title text-3xl font-bold text-ink">Incluído em todo contrato</h2>
+          <h2 className="text-center font-title text-2xl font-semibold text-ink">Incluído em todo contrato</h2>
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {INCLUIDO_CONTRATO.map((b) => (
-              <div key={b.titulo} className="flex flex-col overflow-hidden rounded-2xl border border-line bg-white">
+              <div key={b.titulo} className="flex flex-col overflow-hidden rounded-xl border border-line bg-white">
                 {b.foto && <BrandImage src={b.foto} alt={b.alt ?? ""} rounded="rounded-none" sizes="(max-width: 640px) 100vw, 25vw" className="aspect-[16/9] w-full" />}
                 <div className="p-5">
-                  <h3 className="font-title text-base font-bold text-ink">{b.titulo}</h3>
+                  <h3 className="font-title text-base font-semibold text-ink">{b.titulo}</h3>
                   <p className="mt-1 text-sm text-muted">{b.texto}</p>
                 </div>
               </div>
@@ -144,15 +144,15 @@ export default function PricingPage() {
       {/* Se você precisar: 4 opcionais (grade PAR), só o que existe, status honesto. */}
       <section className="container-page section-y" data-testid="precos-opcionais">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-title text-2xl font-bold text-ink">Se você precisar</h2>
+          <h2 className="font-title text-2xl font-semibold text-ink">Se você precisar</h2>
           <p className="mt-2 text-muted">{SUBTITULO_OPCIONAIS}</p>
         </div>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {OPCIONAIS_PRECOS(CAUCAO_FRASE).map((o) => (
             <li key={o.titulo}>
-              <a href={o.href} className="flex h-full flex-col rounded-2xl border border-line bg-white p-5 transition hover:border-forest hover:shadow-md">
-                <span className={cn("self-start rounded-full px-2.5 py-0.5 text-xs font-semibold", o.ok ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-700")}>{o.status}</span>
-                <h3 className="mt-3 font-title text-base font-bold text-ink">{o.titulo}</h3>
+              <a href={o.href} className="flex h-full flex-col rounded-xl border border-line bg-white p-5 transition hover:border-forest ">
+                <span className={cn("self-start rounded-full px-3 py-1 text-xs font-semibold", o.ok ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-700")}>{o.status}</span>
+                <h3 className="mt-3 font-title text-base font-semibold text-ink">{o.titulo}</h3>
                 <p className="mt-1 text-sm text-muted">{o.texto}</p>
               </a>
             </li>
@@ -162,9 +162,9 @@ export default function PricingPage() {
 
       {/* Chamada final com foto. */}
       <section className="container-page pb-16 pt-4">
-        <div className="grid items-center gap-8 overflow-hidden rounded-3xl bg-forest text-white md:grid-cols-2">
+        <div className="grid items-center gap-8 overflow-hidden rounded-xl bg-forest text-white md:grid-cols-2">
           <div className="p-8 md:p-12">
-            <h2 className="font-title text-3xl font-bold">Seu imóvel mobiliado, ocupado por meses</h2>
+            <h2 className="font-title text-2xl font-semibold">Seu imóvel mobiliado, ocupado por meses</h2>
             <p className="mt-3 text-white/80">Anuncie de graça e pague só quando o contrato for fechado.</p>
             <ButtonLink href="/dashboard/imoveis/novo" variant="inverse" size="lg" className="mt-6">
               Anunciar meu imóvel <ArrowRight className="h-4 w-4" />

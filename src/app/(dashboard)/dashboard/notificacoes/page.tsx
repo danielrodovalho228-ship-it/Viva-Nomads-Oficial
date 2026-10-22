@@ -30,7 +30,7 @@ export default async function NotificacoesPage() {
         subtitle="Avisos de manutenção, interessados, mensagens e pedidos. Tudo ligado por padrão."
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:gap-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4">
         <StatCard label="Manutenções em aberto" value={r?.abertas ?? 0} icon={Wrench} />
         <StatCard label="Atualizações recentes" value={avisos.length} icon={Bell} />
       </div>
@@ -52,7 +52,7 @@ export default async function NotificacoesPage() {
         <Panel title="Propostas para responder" className="mb-6" data-testid="avisos-propostas">
           <ul className="divide-y divide-sage-100">
             {propostas.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-start justify-between gap-2 py-2.5 text-sm" data-testid="aviso-proposta">
+              <li key={p.id} className="flex flex-wrap items-start justify-between gap-2 py-3 text-sm" data-testid="aviso-proposta">
                 <span className="min-w-0">
                   <span className="block text-ink">
                     {p.papel === "tenant" ? "Você recebeu uma proposta" : "Contraproposta para responder"} — {textoVencimento(p.validaAte, agora)}
@@ -82,7 +82,7 @@ export default async function NotificacoesPage() {
         ) : (
           <ul className="divide-y divide-sage-100">
             {avisos.map((a) => (
-              <li key={a.id} className="flex flex-wrap items-start justify-between gap-2 py-2.5 text-sm">
+              <li key={a.id} className="flex flex-wrap items-start justify-between gap-2 py-3 text-sm">
                 <span className="min-w-0">
                   <span className="block text-ink">{a.texto}</span>
                   <span className="block text-xs text-muted">

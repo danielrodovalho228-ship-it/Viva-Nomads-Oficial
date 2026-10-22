@@ -15,10 +15,10 @@ export function BomSaber({ property }: { property: Property }) {
   const atual = linhas.find((l) => l.chave === aberta);
   return (
     <section aria-labelledby="bom-saber-title" data-testid="bom-saber">
-      <h2 id="bom-saber-title" className="font-title text-2xl font-bold text-ink">
+      <h2 id="bom-saber-title" className="font-title text-2xl font-semibold text-ink">
         Bom saber
       </h2>
-      <ul className="mt-4 divide-y divide-line rounded-2xl border border-line bg-white">
+      <ul className="mt-4 divide-y divide-line rounded-xl border border-line bg-white">
         {linhas.map((l) => {
           const Icone = ICONES[l.chave];
           return (

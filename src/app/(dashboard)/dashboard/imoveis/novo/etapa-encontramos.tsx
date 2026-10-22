@@ -74,7 +74,7 @@ export function EtapaEncontramos(p: {
     <div className="space-y-5" data-testid="etapa-encontramos">
       {p.iaEstado === "feita" && (
         <p className="flex items-start gap-2 rounded-lg bg-champagne/15 px-3 py-2 text-sm text-forest" data-testid="ia-resumo">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <Sparkles className="mt-1 h-4 w-4 shrink-0" aria-hidden />
           Preenchemos pelo que aparece nas fotos. Confira cada campo marcado “Sugerido · confira”: tudo é editável.
         </p>
       )}
@@ -114,7 +114,7 @@ export function EtapaEncontramos(p: {
         if (itens.length === 0) return null;
         return (
           <div key={g.category}>
-            <p className="text-sm font-bold text-forest">{g.category === "trabalho" ? "No prédio" : g.label}</p>
+            <p className="text-sm font-semibold text-forest">{g.category === "trabalho" ? "No prédio" : g.label}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {itens.map((it) => {
                 const on = !!p.amenityKeys[it.key];
@@ -127,7 +127,7 @@ export function EtapaEncontramos(p: {
                     onClick={() => alternar(it.key)}
                     data-sugerido={sug ? "1" : undefined}
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                      "inline-flex items-center gap-1 rounded-full border px-3 py-2 text-xs font-medium transition-colors",
                       on ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
                     )}
                   >

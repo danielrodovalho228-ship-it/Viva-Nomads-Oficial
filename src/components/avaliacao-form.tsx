@@ -57,7 +57,7 @@ export function AvaliacaoForm({
 
   if (enviado) {
     return (
-      <p className="mt-4 inline-flex items-center gap-1.5 border-t border-sage-200 pt-3 text-sm text-forest">
+      <p className="mt-4 inline-flex items-center gap-2 border-t border-sage-200 pt-3 text-sm text-forest">
         <Check className="h-4 w-4" />
         {demo
           ? "Avaliação de exemplo registrada."
@@ -73,7 +73,7 @@ export function AvaliacaoForm({
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="mt-4 inline-flex items-center gap-1.5 border-t border-sage-200 pt-3 text-sm font-medium text-forest hover:underline"
+        className="mt-4 inline-flex items-center gap-2 border-t border-sage-200 pt-3 text-sm font-medium text-forest hover:underline"
       >
         <Star className="h-4 w-4" /> {abrirLabel}
       </button>

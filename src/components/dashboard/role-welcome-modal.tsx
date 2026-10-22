@@ -61,9 +61,9 @@ export function RoleWelcomeModal() {
       aria-modal="true"
       aria-labelledby="role-welcome-title"
     >
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl sm:p-8">
+      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-flutuante sm:p-8">
         <div className="flex items-start justify-between gap-4">
-          <h2 id="role-welcome-title" className="font-title text-2xl font-bold text-ink">
+          <h2 id="role-welcome-title" className="font-title text-2xl font-semibold text-ink">
             Bem-vindo ao Viva Nomads!
           </h2>
           <button
@@ -79,12 +79,12 @@ export function RoleWelcomeModal() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <button
             onClick={() => pick("tenant")}
-            className="group rounded-2xl border border-sage-200 p-5 text-left transition-colors hover:border-forest hover:bg-blue-50"
+            className="group rounded-xl border border-sage-200 p-5 text-left transition-colors hover:border-forest hover:bg-blue-50"
           >
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
               <Search className="h-5 w-5" />
             </span>
-            <span className="mt-4 block font-title text-lg font-bold text-ink">
+            <span className="mt-4 block font-title text-lg font-semibold text-ink">
               Buscar um lugar para morar
             </span>
             <span className="mt-1 block text-sm text-muted">
@@ -94,12 +94,12 @@ export function RoleWelcomeModal() {
 
           <button
             onClick={() => pick("owner")}
-            className="group rounded-2xl border border-sage-200 p-5 text-left transition-colors hover:border-forest hover:bg-blue-50"
+            className="group rounded-xl border border-sage-200 p-5 text-left transition-colors hover:border-forest hover:bg-blue-50"
           >
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-champagne text-forest">
               <Home className="h-5 w-5" />
             </span>
-            <span className="mt-4 block font-title text-lg font-bold text-ink">
+            <span className="mt-4 block font-title text-lg font-semibold text-ink">
               Anunciar meu imóvel
             </span>
             <span className="mt-1 block text-sm text-muted">

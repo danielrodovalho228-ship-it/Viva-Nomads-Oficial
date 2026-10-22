@@ -21,7 +21,7 @@ export function MarcaSugerido({ ativo, className }: { ativo: boolean; className?
   if (!ativo) return null;
   return (
     <span
-      className={cn("ml-1.5 inline-flex items-center gap-1 rounded-full bg-champagne/30 px-2 py-0.5 text-[11px] font-semibold text-forest", className)}
+      className={cn("ml-2 inline-flex items-center gap-1 rounded-full bg-champagne/30 px-2 py-1 text-[11px] font-semibold text-forest", className)}
       data-testid="marca-sugerido"
     >
       <Sparkles className="h-3 w-3" aria-hidden /> {MARCA_SUGERIDO}
@@ -57,16 +57,16 @@ export function Labeled({
       : primeiro;
   return (
     <label className="block min-w-0">
-      <span className="mb-1.5 flex flex-wrap items-center text-sm font-medium text-ink">
+      <span className="mb-2 flex flex-wrap items-center text-sm font-medium text-ink">
         <span className="whitespace-nowrap">{label}</span>
         <MarcaSugerido ativo={sugerido} />
         {daMatricula && (
-          <span className="ml-1.5 inline-flex items-center rounded-full bg-sage-50 px-2 py-0.5 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
+          <span className="ml-2 inline-flex items-center rounded-full bg-sage-50 px-2 py-1 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
             veio da matrícula
           </span>
         )}
       </span>
-      {ajuda && <span className="-mt-1 mb-1.5 block text-xs text-muted">{ajuda}</span>}
+      {ajuda && <span className="-mt-1 mb-2 block text-xs text-muted">{ajuda}</span>}
       {campo}
       {resto}
     </label>
@@ -101,7 +101,7 @@ export function Toggle({
     >
       <span
         className={cn(
-          "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+          "mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
           checked ? "border-forest bg-forest text-white" : "border-sage-200 bg-white"
         )}
       >

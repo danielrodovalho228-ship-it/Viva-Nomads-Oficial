@@ -42,7 +42,7 @@ export default async function AdminEmailsTestePage() {
             {/* Celular: cartões */}
             <ul className="space-y-3 md:hidden" data-testid="emails-teste-cartoes">
               {linhas.map((l) => (
-                <li key={l.id} className="min-w-0 rounded-2xl border border-sage-200 p-3">
+                <li key={l.id} className="min-w-0 rounded-xl border border-sage-200 p-3">
                   <p className="text-xs text-muted">
                     {quando(l.criado_em)} · {l.destinatario_mascarado}
                   </p>

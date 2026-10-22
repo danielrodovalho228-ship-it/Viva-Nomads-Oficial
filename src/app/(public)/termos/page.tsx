@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <div className="container-page max-w-3xl py-12 md:py-16">
-      <h1 className="font-title text-4xl font-bold text-ink">Termos de Uso</h1>
+      <h1 className="font-title text-[28px] font-semibold text-ink">Termos de Uso</h1>
       <p className="mt-3 text-muted">Última atualização: outubro de 2026</p>
 
       <PlatformLegalNotice className="mt-8" />
@@ -72,7 +72,7 @@ export default function TermsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="font-title text-xl font-bold text-ink">{title}</h2>
+      <h2 className="font-title text-xl font-semibold text-ink">{title}</h2>
       <p className="mt-2 leading-relaxed text-muted">{children}</p>
     </section>
   );

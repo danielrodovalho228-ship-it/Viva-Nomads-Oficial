@@ -62,7 +62,7 @@ export function EtapaRevisar(p: {
         </div>
         <div className="min-w-0 rounded-xl border border-sage-200 p-4" data-testid="previa-anuncio">
           <p className="text-sm font-medium text-ink">No anúncio</p>
-          <p className="mt-1 font-title text-lg font-bold text-ink">{p.titulo || "Sem título ainda"}</p>
+          <p className="mt-1 font-title text-lg font-semibold text-ink">{p.titulo || "Sem título ainda"}</p>
           <p className="text-xs text-muted">{p.endereco} · região aproximada no mapa</p>
           {p.descricao && <p className="mt-2 line-clamp-4 text-sm text-ink">{p.descricao}</p>}
           {p.comodidades.length > 0 && (
@@ -95,7 +95,7 @@ export function EtapaRevisar(p: {
           data-testid="revisar-documento"
           data-estado={p.docEstado}
         >
-          {p.docEstado === "aprovado" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : p.docEstado === "revisao" ? <Clock className="mt-0.5 h-4 w-4 shrink-0" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
+          {p.docEstado === "aprovado" ? <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" /> : p.docEstado === "revisao" ? <Clock className="mt-1 h-4 w-4 shrink-0" /> : <XCircle className="mt-1 h-4 w-4 shrink-0" />}
           <span>
             {p.docEstado === "aprovado" && <strong>Documentação conferida ✓</strong>}
             {p.docEstado === "revisao" && (
@@ -135,7 +135,7 @@ export function EtapaRevisar(p: {
       <div className="rounded-xl border border-sage-200 p-4" data-testid="qualidade-anuncio">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-ink">Qualidade do anúncio</span>
-          <span className="font-title font-bold text-forest">{p.quality}%</span>
+          <span className="font-title font-semibold text-forest">{p.quality}%</span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
           <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${p.quality}%` }} />
@@ -155,7 +155,7 @@ export function EtapaRevisar(p: {
       </div>
 
       <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
-        <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-forest" />
+        <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-forest" />
         <span>{TERMO_IA_TEXTO}</span>
       </label>
       {p.publishError && <p className="text-sm text-red-600">{p.publishError}</p>}

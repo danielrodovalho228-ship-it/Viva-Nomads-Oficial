@@ -19,9 +19,9 @@ export async function PainelIaCadastro() {
   if (!r) return null;
   const ligadaFotos = r.ligada.fotos;
   return (
-    <section className="rounded-2xl border border-sage-200 bg-white p-5" data-testid="painel-ia-cadastro" data-ligada={ligadaFotos ? "1" : "0"}>
+    <section className="rounded-xl border border-sage-200 bg-white p-5" data-testid="painel-ia-cadastro" data-ligada={ligadaFotos ? "1" : "0"}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 font-title text-lg font-bold text-ink">
+        <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
           <Sparkles className="h-5 w-5 text-forest" aria-hidden /> IA do cadastro
         </h2>
         <span
@@ -50,7 +50,7 @@ export async function PainelIaCadastro() {
               {r.ultimoErro.tipo ?? "—"}
               {r.ultimoErro.motivo && <span className="text-muted"> — a pessoa viu: “{MENSAGEM_FALHA_IA[r.ultimoErro.motivo]}”</span>}
               {r.ultimoErro.resumo && (
-                <span className="mt-1 block break-words rounded bg-red-50 px-2 py-1 text-xs text-red-900" data-testid="painel-ia-erro-resumo">
+                <span className="mt-1 block break-words rounded-lg bg-red-50 px-2 py-1 text-xs text-red-900" data-testid="painel-ia-erro-resumo">
                   Mensagem da API: {r.ultimoErro.resumo}
                 </span>
               )}

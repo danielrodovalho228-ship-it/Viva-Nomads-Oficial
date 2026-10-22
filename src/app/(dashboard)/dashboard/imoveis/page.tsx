@@ -28,9 +28,9 @@ export default async function MyPropertiesPage() {
   return (
     <>
       {ajudas.length > 0 && (
-        <section className="mb-4 rounded-2xl border border-sage-200 bg-sage-50 p-4 text-sm text-forest" data-testid="ajuda-andamento">
+        <section className="mb-4 rounded-xl border border-sage-200 bg-sage-50 p-4 text-sm text-forest" data-testid="ajuda-andamento">
           <h2 className="font-medium text-ink">Publicamos para você</h2>
-          <ul className="mt-1 space-y-0.5">
+          <ul className="mt-1 space-y-1">
             {ajudas.map((a) => (
               <li key={a.id}>
                 Pedido de {new Date(a.criado_em).toLocaleDateString("pt-BR")}: <strong>{ROTULO_STATUS[a.status]}</strong>

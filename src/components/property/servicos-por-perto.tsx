@@ -16,7 +16,7 @@ export function ServicosPorPerto({ proximidades }: { proximidades: Proximity[] }
   const atual = servicos.find((s) => s.tipo === ativo);
   return (
     <div className="mt-6" data-testid="servicos-por-perto">
-      <h3 className="text-sm font-bold text-forest">Serviços por perto</h3>
+      <h3 className="text-sm font-semibold text-forest">Serviços por perto</h3>
       <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Serviços por perto">
         {servicos.map((s) => (
           <Chip key={s.tipo} ativo={ativo === s.tipo} data-testid={`servico-${s.tipo}`} onClick={() => setAtivo(s.tipo)}>

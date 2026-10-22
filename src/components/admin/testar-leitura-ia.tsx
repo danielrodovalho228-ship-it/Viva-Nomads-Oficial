@@ -42,7 +42,7 @@ export function TestarLeituraIa() {
         <select
           value={tipo}
           onChange={(e) => setTipo(e.target.value === "documento" ? "documento" : "matricula")}
-          className="rounded-lg border border-sage-200 bg-white px-2 py-1.5 text-sm"
+          className="rounded-lg border border-sage-200 bg-white px-2 py-2 text-sm"
           data-testid="testar-leitura-tipo"
         >
           <option value="matricula">Matrícula</option>

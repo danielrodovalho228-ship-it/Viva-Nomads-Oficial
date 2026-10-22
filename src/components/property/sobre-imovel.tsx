@@ -10,7 +10,7 @@ export function SobreImovel({ descricao }: { descricao: string }) {
   const longo = descricaoPrecisaMostrarMais(descricao);
   return (
     <section aria-labelledby="sobre-title" data-testid="sobre-imovel">
-      <h2 id="sobre-title" className="font-title text-2xl font-bold text-ink">
+      <h2 id="sobre-title" className="font-title text-2xl font-semibold text-ink">
         Sobre o imóvel
       </h2>
       <p className={`mt-3 whitespace-pre-line break-words leading-relaxed text-ink/90 ${longo ? "line-clamp-5" : ""}`}>{descricao}</p>

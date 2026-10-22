@@ -106,13 +106,13 @@ export default function RoiImovelPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Entradas */}
         <div className="space-y-4">
-          <div className="rounded-2xl border border-sage-200 bg-white p-5">
-            <h2 className="font-title text-lg font-bold text-ink">Mobiliado na Viva</h2>
+          <div className="rounded-xl border border-sage-200 bg-white p-5">
+            <h2 className="font-title text-lg font-semibold text-ink">Mobiliado na Viva</h2>
             <div className="mt-4 space-y-4">
               <div>
                 <NumInput label="Investimento para mobiliar" value={investimentoMobiliar} onChange={setInvest} step={1000} prefix="R$" max={MAX_INVESTIMENTO} />
-                <p className="mt-1 flex items-start gap-1.5 text-xs text-muted">
-                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {INCLUI}
+                <p className="mt-1 flex items-start gap-2 text-xs text-muted">
+                  <Info className="mt-1 h-3.5 w-3.5 shrink-0" /> {INCLUI}
                 </p>
               </div>
               <NumInput label="Valor mensal MOBILIADO pretendido" value={aluguelMobiliado} onChange={setMob} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
@@ -157,8 +157,8 @@ export default function RoiImovelPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-sage-200 bg-white p-5" data-testid="roi-tradicional">
-            <h2 className="font-title text-lg font-bold text-ink">Contrato tradicional (sem mobília)</h2>
+          <div className="rounded-xl border border-sage-200 bg-white p-5" data-testid="roi-tradicional">
+            <h2 className="font-title text-lg font-semibold text-ink">Contrato tradicional (sem mobília)</h2>
             <p className="mt-1 text-xs text-muted">Padrões de referência de mercado — confira com a sua imobiliária e ajuste.</p>
             <div className="mt-4 space-y-4">
               <NumInput label="Valor mensal VAZIO de referência" value={aluguelVazio} onChange={setVazio} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
@@ -201,8 +201,8 @@ export default function RoiImovelPage() {
           </p>
 
           {/* Ponto de equilíbrio. */}
-          <div className="rounded-2xl border border-forest/30 bg-sage-100/50 p-5" data-testid="roi-equilibrio">
-            <p className="flex items-center gap-2 text-sm font-bold text-forest">
+          <div className="rounded-xl border border-forest/30 bg-sage-100/50 p-5" data-testid="roi-equilibrio">
+            <p className="flex items-center gap-2 text-sm font-semibold text-forest">
               <Scale className="h-4 w-4" aria-hidden /> Ponto de equilíbrio com o tradicional
             </p>
             <ul className="mt-2 space-y-1 text-sm text-ink">
@@ -239,7 +239,7 @@ export default function RoiImovelPage() {
           </div>
 
           {/* Gráfico: acumulado ano 1-2-3 mobiliado × tradicional */}
-          <div className="rounded-2xl border border-sage-200 bg-white p-5" data-testid="roi-grafico">
+          <div className="rounded-xl border border-sage-200 bg-white p-5" data-testid="roi-grafico">
             <p className="text-sm font-medium text-ink">Acumulado — mobiliado × tradicional</p>
             <div className="mt-4">
               <GraficoColunas
@@ -283,15 +283,15 @@ export default function RoiImovelPage() {
                 })),
               })
             }
-            className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage"
+            className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:border-sage"
           >
             <Download className="h-4 w-4" /> Baixar PDF
           </button>
         </div>
       </div>
 
-      <section aria-labelledby="roi-cenarios-titulo" className="mt-6 rounded-2xl border border-sage-200 bg-white p-5" data-testid="roi-cenarios">
-        <h2 id="roi-cenarios-titulo" className="font-title text-lg font-bold text-ink">
+      <section aria-labelledby="roi-cenarios-titulo" className="mt-6 rounded-xl border border-sage-200 bg-white p-5" data-testid="roi-cenarios">
+        <h2 id="roi-cenarios-titulo" className="font-title text-lg font-semibold text-ink">
           Cenários de ocupação
         </h2>
         <p className="mt-1 text-xs text-muted">A mesma conta com 2 meses ocupados a menos e 2 a mais que o seu número.</p>
@@ -299,10 +299,10 @@ export default function RoiImovelPage() {
           <table className="w-full min-w-[20rem] text-left text-sm">
             <thead className="text-xs text-muted">
               <tr>
-                <th className="py-1.5 pr-3 font-medium">Cenário</th>
-                <th className="py-1.5 pr-3 font-medium">Meses</th>
-                <th className="py-1.5 pr-3 text-right font-medium">Ganho / ano</th>
-                <th className="py-1.5 text-right font-medium">Payback</th>
+                <th className="py-2 pr-3 font-medium">Cenário</th>
+                <th className="py-2 pr-3 font-medium">Meses</th>
+                <th className="py-2 pr-3 text-right font-medium">Ganho / ano</th>
+                <th className="py-2 text-right font-medium">Payback</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-sage-200">
@@ -321,8 +321,8 @@ export default function RoiImovelPage() {
         </div>
       </section>
 
-      <section aria-labelledby="comparar-canais" className="mt-6 rounded-2xl border border-sage-200 bg-white p-5">
-        <h2 id="comparar-canais" className="font-title text-lg font-bold text-ink">
+      <section aria-labelledby="comparar-canais" className="mt-6 rounded-xl border border-sage-200 bg-white p-5">
+        <h2 id="comparar-canais" className="font-title text-lg font-semibold text-ink">
           Quanto fica de cada mês em cada canal
         </h2>
         <p className="mt-1 text-xs text-muted">Percentual do total pago pelo morador que o canal retém, em média.</p>

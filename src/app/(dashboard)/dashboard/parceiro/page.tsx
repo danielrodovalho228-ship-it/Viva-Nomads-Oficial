@@ -49,7 +49,7 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
         <Panel>
           {sol?.status === "recusada" && (
             <p className="mb-4 flex gap-2 text-sm text-ink" data-testid="parceiro-recusado">
-              <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden /> O último pedido não foi aprovado. A sua conta continua normal para alugar ou anunciar.
+              <XCircle className="mt-1 h-5 w-5 shrink-0 text-red-600" aria-hidden /> O último pedido não foi aprovado. A sua conta continua normal para alugar ou anunciar.
             </p>
           )}
           <SejaParceiroForm estado={estado} origem="conta" />

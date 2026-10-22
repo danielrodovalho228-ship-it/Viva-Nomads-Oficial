@@ -100,7 +100,7 @@ export function DemoToggle({ className }: { className?: string }) {
       onClick={() => setOn(!on)}
       title="Popula o painel com dados fictícios para apresentações. Não grava nada."
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+        "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors",
         on
           ? "border-amber-400 bg-amber-50 text-amber-800"
           : "border-sage-200 bg-white text-muted hover:border-sage hover:text-ink",
@@ -116,7 +116,7 @@ export function DemoToggle({ className }: { className?: string }) {
       >
         <span
           className={cn(
-            "absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform",
+            "absolute top-0.5 h-3 w-3 rounded-full bg-white  transition-transform",
             on ? "translate-x-3.5" : "translate-x-0.5"
           )}
         />
@@ -131,7 +131,7 @@ export function DemoBanner() {
   const { on } = useDemoMode();
   if (!on) return null;
   return (
-    <div className="sticky top-0 z-40 border-b border-amber-300 bg-amber-100 px-4 py-1.5 text-center text-xs font-semibold text-amber-900 print:hidden">
+    <div className="sticky top-0 z-40 border-b border-amber-300 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900 print:hidden">
       Modo demonstração · dados fictícios · não são dados reais
     </div>
   );
@@ -142,7 +142,7 @@ export function DemoBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800",
+        "inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold text-amber-800",
         className
       )}
     >

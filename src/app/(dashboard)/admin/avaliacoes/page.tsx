@@ -55,7 +55,7 @@ export default async function AdminAvaliacoesPage() {
                 <li key={c.id} className="rounded-xl border border-sage-200 p-3 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-semibold text-ink">{ehMotivoRevisao(c.motivo) ? MOTIVOS_REVISAO[c.motivo] : c.motivo}</p>
-                    <span className="rounded-full bg-sage-100 px-2 py-0.5 text-xs font-semibold text-forest">
+                    <span className="rounded-full bg-sage-100 px-2 py-1 text-xs font-semibold text-forest">
                       {c.status === "aberta" ? "Aberto" : c.status === "removida" ? "Saiu do ar" : "Mantida"} · {dataBR(c.criada_em as string)}
                     </span>
                   </div>
