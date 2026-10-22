@@ -1,5 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { jpegComGps } from "../fixtures/exif";
+import { metadadoNoDeposito } from "../fixtures/exif-deposito";
 import { authFile } from "../fixtures/auth";
 
 /*
@@ -20,6 +22,8 @@ const foto = { email: `foto.t236.${sufixo}@lab.vivanomads.test`, nome: "Marina L
 const recusado = { email: `rec.t236.${sufixo}@lab.vivanomads.test`, nome: "Otávio Recusa Lima", role: "tenant" as const };
 const dono = { email: `dono.t236.${sufixo}@lab.vivanomads.test`, nome: "Sara Dona Mudança", role: "owner" as const };
 const outro = { email: `outro.t236.${sufixo}@lab.vivanomads.test`, nome: "Caio Outra Conta", role: "tenant" as const };
+// Começo da spec (com folga para o relógio do Storage): o teste de EXIF só confere o que esta execução enviou.
+const INICIO = new Date(Date.now() - 60_000);
 const ids: Record<string, string | undefined> = {};
 let slug = "";
 let linkAtivacao = "";
@@ -210,13 +214,13 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     expect(p!.status).toBe("rascunho");
 
     // Página: foto, capa, 3 fotos na galeria (com legenda), apresentação e redes.
-    await page.getByTestId("parceiro-enviar-avatar-arquivo").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: pngDeTeste(1, 900, 700) });
+    await page.getByTestId("parceiro-enviar-avatar-arquivo").setInputFiles({ name: "foto.jpg", mimeType: "image/jpeg", buffer: await jpegComGps(1, 900, 700) }); // com GPS: ver o último cenário
     await expect(page.getByTestId("parceiro-avatar-previa")).toBeVisible({ timeout: 20_000 });
-    await page.getByTestId("parceiro-enviar-banner-arquivo").setInputFiles({ name: "capa.png", mimeType: "image/png", buffer: pngDeTeste(2, 1500, 600) });
+    await page.getByTestId("parceiro-enviar-banner-arquivo").setInputFiles({ name: "capa.jpg", mimeType: "image/jpeg", buffer: await jpegComGps(2, 1500, 600) });
     await expect(page.getByTestId("parceiro-banner-previa")).toBeVisible({ timeout: 20_000 });
     for (let i = 0; i < 3; i++) {
       await page.locator("#pp-legenda").fill(`Sala mobiliada ${i + 1}`);
-      await page.getByTestId("parceiro-enviar-galeria-arquivo").setInputFiles({ name: `g${i}.png`, mimeType: "image/png", buffer: pngDeTeste(3 + i, 800, 600) });
+      await page.getByTestId("parceiro-enviar-galeria-arquivo").setInputFiles({ name: `g${i}.jpg`, mimeType: "image/jpeg", buffer: await jpegComGps(3 + i, 800, 600) });
       await expect(page.getByTestId("parceiro-foto-galeria")).toHaveCount(i + 1, { timeout: 20_000 });
     }
     await page.locator("#pp-curta").fill("Fotos de imóveis mobiliados em Uberlândia.");
@@ -417,5 +421,14 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await expect(servicos).toBeVisible({ timeout: 20_000 });
     await expect(servicos.getByTestId("servicos-fotografia")).toHaveAttribute("href", /\/parceiros\/buscar\?categoria=fotografia/);
     await page.context().close();
+  });
+
+  // Estudo de segurança (22/10): o depósito "parceiros" é PÚBLICO.
+  test("EXIF/GPS: foto, capa e galeria enviadas com GPS ficam sem metadado no depósito público 'parceiros'", async () => {
+    const { data } = await adm().from("parceiros").select("id").eq("user_id", ids.foto!).maybeSingle();
+    test.skip(!data, "o cenário de ativação não chegou a criar o parceiro");
+    const r = await metadadoNoDeposito("parceiros", data!.id as string, INICIO);
+    expect(r.conferidas, "foto, capa e galeria deveriam estar no depósito").toBeGreaterThan(0);
+    expect(r.problemas, "foto enviada com EXIF e GPS tem de ser guardada limpa").toEqual([]);
   });
 });
