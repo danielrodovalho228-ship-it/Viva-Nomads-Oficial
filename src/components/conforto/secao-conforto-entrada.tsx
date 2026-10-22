@@ -43,7 +43,7 @@ export function SecaoConfortoEntrada({
                 {ehChaveConforto(x.chave) ? itemConforto(x.chave).rotulo : x.chave}
                 {!x.confere && x.texto ? <span className="block break-words text-xs text-muted">{x.texto}</span> : null}
                 {x.fotoUrl && (
-                  <a href={x.fotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-forest underline">
+                  <a href={x.fotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-forest underline">
                     Ver foto
                   </a>
                 )}

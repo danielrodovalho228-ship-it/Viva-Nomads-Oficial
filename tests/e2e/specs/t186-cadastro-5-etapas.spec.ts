@@ -271,6 +271,8 @@ test.describe("T186 — Anunciar em 6 passos com IA, OSM e documento simulados",
 
       await page.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=5`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { name: "Revisar e publicar" })).toBeVisible({ timeout: 20_000 });
+      // Prompt 59: o padrão mínimo de conforto é confirmado na revisão (sem ele, Publicar fica travado).
+      await page.getByTestId("conforto-marcar-todos").click();
       await page.getByTestId("aceite-ia").getByRole("checkbox").check();
       await expect(page.getByTestId("publicar-anuncio")).toBeEnabled({ timeout: 20_000 });
       await page.getByTestId("publicar-anuncio").click();

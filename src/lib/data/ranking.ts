@@ -5,6 +5,8 @@ import { CHAVE_ORDEM_NOVA, gravarSombra, ordemNovaLigada } from "@/lib/ranking/c
 import { sinaisDaLinha, type LinhaRankingSinais } from "@/lib/ranking/sinais";
 import type { SinaisAnuncio } from "@/lib/ranking/ordem";
 import { boaParaVideochamada, sinalMorador, type Rodada } from "@/lib/internet-medida";
+import { procedentes12m, pendenciaVencida, type PendenciaConforto } from "@/lib/conforto/regras";
+import { foraDoPrazo90d, type OrdemSolucao } from "@/lib/manutencao-solucao";
 
 /*
   Servidor da ordem dos imóveis (Prompt 33, itens 4 e 5). Nunca importe em componente client:
@@ -29,9 +31,16 @@ export async function sinaisDosAnuncios(ids: string[], admin: Admin | null = cre
     return [];
   }
   const linhas = data as LinhaRankingSinais[];
-  const [identidades, internet] = await Promise.all([estadosIdentidade(admin, [...new Set(linhas.map((l) => l.dono_id))]), internetDosAnuncios(admin, reais)]);
+  const donos = [...new Set(linhas.map((l) => l.dono_id))];
+  const [identidades, internet, prazos] = await Promise.all([estadosIdentidade(admin, donos), internetDosAnuncios(admin, reais), prazos59(admin, reais, donos)]);
   return linhas.map((l) =>
-    sinaisDaLinha(l, { identidadeConfirmada: identidades.get(l.dono_id)?.estado === "confirmada", ...(internet.get(l.id) ?? {}) }),
+    sinaisDaLinha(l, {
+      identidadeConfirmada: identidades.get(l.dono_id)?.estado === "confirmada",
+      ...(internet.get(l.id) ?? {}),
+      confortoProcedentes12m: prazos.procedentes.get(l.id) ?? 0,
+      manutencaoFora90d: prazos.fora90d.get(l.dono_id) ?? 0,
+      confortoPendenciasAbertas: prazos.abertas.get(l.id) ?? 0,
+    }),
   );
 }
 
@@ -69,6 +78,39 @@ async function internetDosAnuncios(admin: Admin, ids: string[]): Promise<Map<str
     /* sem 0205: a nota segue sem a internet */
   }
   return r;
+}
+
+/**
+ * Prompt 59: pendências PROCEDENTES do padrão mínimo em 12 meses (por anúncio), soluções de manutenção fora do prazo em
+ * 90 dias (por proprietário) e pendências abertas (sinal "imóvel diferente do anúncio"). Sem a 0210, nada muda.
+ */
+async function prazos59(admin: Admin, ids: string[], donos: string[]) {
+  const procedentes = new Map<string, number>();
+  const abertas = new Map<string, number>();
+  const fora90d = new Map<string, number>();
+  const agora = new Date();
+  try {
+    const desde = new Date(agora.getTime() - 400 * 86_400_000).toISOString();
+    const [{ data: pend }, { data: ordens }] = await Promise.all([
+      admin.from("conforto_pendencias").select("property_id, chave, status, aberta_em, prazo_ate, decidido_em").in("property_id", ids).gte("aberta_em", desde),
+      admin.from("service_orders").select("owner_id, priority, status, opened_at, provisoria_em, solucao_marcada_em, resolved_at, simulacao").in("owner_id", donos).gte("opened_at", new Date(agora.getTime() - 120 * 86_400_000).toISOString()),
+    ]);
+    const porImovel = new Map<string, PendenciaConforto[]>();
+    for (const p of (pend ?? []) as (PendenciaConforto & { property_id: string })[]) porImovel.set(p.property_id, [...(porImovel.get(p.property_id) ?? []), p]);
+    for (const [id, ps] of porImovel) {
+      procedentes.set(id, procedentes12m(ps, agora));
+      abertas.set(id, ps.filter((p) => p.status === "aberta" || p.status === "contestada" || pendenciaVencida(p, agora)).length);
+    }
+    const porDono = new Map<string, OrdemSolucao[]>();
+    for (const o of (ordens ?? []) as { owner_id: string; priority: OrdemSolucao["priority"]; status: string; opened_at: string; provisoria_em: string | null; solucao_marcada_em: string | null; resolved_at: string | null; simulacao: boolean | null }[]) {
+      if (o.simulacao) continue;
+      porDono.set(o.owner_id, [...(porDono.get(o.owner_id) ?? []), { priority: o.priority, openedAt: o.opened_at, provisoriaEm: o.provisoria_em, solucaoMarcadaEm: o.solucao_marcada_em, resolvedAt: o.resolved_at, status: o.status }]);
+    }
+    for (const [dono, os] of porDono) fora90d.set(dono, foraDoPrazo90d(os, agora));
+  } catch {
+    /* sem 0210: a nota e o selo seguem sem o padrão mínimo e o prazo de solução */
+  }
+  return { procedentes, abertas, fora90d };
 }
 
 /** Interruptor do admin (null = ninguém mexeu; vale a variável de ambiente). */

@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createHash, randomBytes } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { expect, type Browser, type Page } from "@playwright/test";
+import { CHAVES_CONFORTO, VERSAO_CONFORTO } from "../../../src/config/conforto-minimo";
 
 /**
  * Apoio dos specs do LABORATÓRIO (t34–t37): contas NOVAS por spec (não mexem nas
@@ -151,7 +152,7 @@ const BASE_PUBLICA = "/storage/v1/object/public/property-photos";
 export async function criarImovelPronto(
   ownerId: string,
   titulo: string,
-  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string } = {}
+  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string; /** Prompt 59: sem o padrão mínimo de conforto confirmado (padrão do laboratório: os 10 itens confirmados) */ semConforto?: boolean } = {}
 ): Promise<string> {
   const { data, error } = await adm()
     .from("properties")
@@ -205,6 +206,13 @@ export async function criarImovelPronto(
       .from("qualification_checklists")
       .insert({ owner_id: ownerId, property_id: id, document_status: "approved", document_reviewed_at: new Date().toISOString() });
     if (eDoc) throw eDoc;
+  }
+  if (!opts.semConforto) {
+    // Prompt 59: publicar exige os 10 itens do padrão mínimo confirmados pelo dono (o que a tela grava).
+    const { error: eConf } = await adm()
+      .from("conforto_declaracoes")
+      .upsert(CHAVES_CONFORTO.map((chave) => ({ property_id: id, chave, confirmado: true, confirmado_por: ownerId, confirmado_em: new Date().toISOString(), versao_lista: VERSAO_CONFORTO })), { onConflict: "property_id,chave" });
+    if (eConf) throw eConf;
   }
   if (opts.ativo) {
     const { error: eAtivo } = await adm().from("properties").update({ status: "active" }).eq("id", id);

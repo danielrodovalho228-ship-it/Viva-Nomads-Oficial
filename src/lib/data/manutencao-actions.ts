@@ -55,8 +55,8 @@ export async function minhasSolicitacoes(): Promise<MinhasSolicitacoes | null> {
   const consulta = (colunas: string) =>
     supabase.from("service_orders").select(colunas).or(`tenant_id.eq.${user.id},owner_id.eq.${user.id}`).order("opened_at", { ascending: false }).limit(200);
   // Prompt 59: colunas do prazo de solução (sem a 0210 ainda, cai nas antigas).
-  let { data: linhas, error: eLinhas } = await consulta(COLUNAS_ORDEM);
-  if (eLinhas) ({ data: linhas } = await consulta(COLUNAS_ORDEM_ANTIGAS));
+  const nova = await consulta(COLUNAS_ORDEM);
+  const linhas = nova.error ? (await consulta(COLUNAS_ORDEM_ANTIGAS)).data : nova.data;
   const todas = (linhas ?? []) as unknown as (LinhaOrdem & { tenant_id: string; owner_id: string })[];
 
   // Nome do inquilino só para o dono daquele imóvel (o contrato ativo já foi aceito).
@@ -113,8 +113,8 @@ type OrdemDaParte = LinhaOrdem & { tenant_id: string; owner_id: string };
 
 /** A ordem, lida PELO RLS (só as partes enxergam) + o lado de quem pede. */
 async function ordemDaParte(s: Sessao, id: string): Promise<{ ordem: OrdemDaParte; papel: PapelOrdem } | null> {
-  let { data, error } = await s.supabase.from("service_orders").select(COLUNAS_ORDEM).eq("id", id).maybeSingle();
-  if (error) ({ data } = await s.supabase.from("service_orders").select(COLUNAS_ORDEM_ANTIGAS).eq("id", id).maybeSingle());
+  const nova = await s.supabase.from("service_orders").select(COLUNAS_ORDEM).eq("id", id).maybeSingle();
+  const data = nova.error ? (await s.supabase.from("service_orders").select(COLUNAS_ORDEM_ANTIGAS).eq("id", id).maybeSingle()).data : nova.data;
   const ordem = data as unknown as OrdemDaParte | null;
   if (!ordem) return null;
   if (ordem.owner_id === s.uid) return { ordem, papel: "proprietario" };

@@ -12,6 +12,9 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { estadoConfortoDoImovel, pendenciasConforto, salvarDeclaracoesConforto, type PendenciaParaTela } from "@/lib/conforto/servidor";
 import { transicaoPendencia, type AcaoPendencia, type EstadoConforto, type PapelPendencia, type PendenciaConforto } from "@/lib/conforto/regras";
 import { avisarPendenciaConforto } from "@/lib/conforto/avisos";
+import { logModeracao } from "@/lib/data/moderacao-log";
+import { integracoesSimuladas } from "@/lib/integracoes";
+import { rodarPrazos59, type ResumoPrazos59 } from "@/lib/prazos-59-servidor";
 
 export type ResultadoConforto = { ok: true; mensagem?: string } | { ok: false; erro: string };
 
@@ -114,4 +117,25 @@ export async function agirNaPendencia(
   revalidatePath(`/dashboard/locacoes/${p.contrato_id}`);
   revalidatePath("/admin/conforto");
   return { ok: true, mensagem: MSG[acao] };
+}
+
+// ── Rotina dos prazos na hora (admin) ────────────────────────────────────────────────────────────────────────────
+/**
+ * O atendimento roda a rotina dos prazos do 59 na hora (a mesma do cron). A data simulada só vale no laboratório
+ * (INTEGRACOES_SIMULADAS=on), assim como o filtro de um imóvel só; fora dele, roda com a hora de agora, em tudo.
+ */
+export async function rodarPrazosAgora(agoraSimulada?: string, soImovel?: string): Promise<{ ok: true; valor: ResumoPrazos59 & { agora: string } } | { ok: false; erro: string }> {
+  const s = await sessao();
+  const admin = createAdminClient();
+  if (!s || !admin) return { ok: false, erro: "Serviço indisponível." };
+  if (!(await ehAdmin(s.supabase, s.uid))) return { ok: false, erro: "Só a equipe." };
+  const simulada = integracoesSimuladas() && typeof agoraSimulada === "string" && Number.isFinite(Date.parse(agoraSimulada)) ? new Date(agoraSimulada) : null;
+  const agora = simulada ?? new Date();
+  // No laboratório, o spec pode isolar um imóvel (os outros specs rodam ao mesmo tempo).
+  const so = integracoesSimuladas() && typeof soImovel === "string" && /^[0-9a-f-]{36}$/i.test(soImovel) ? [soImovel] : undefined;
+  const r = await rodarPrazos59(admin, agora, so);
+  await logModeracao(s.supabase, s.uid, "rodar_prazos_59", "automacao", s.uid);
+  revalidatePath("/admin/conforto");
+  revalidatePath("/admin/solicitacoes");
+  return { ok: true, valor: { ...r, agora: agora.toISOString() } };
 }

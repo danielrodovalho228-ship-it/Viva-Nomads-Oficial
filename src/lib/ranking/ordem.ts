@@ -49,6 +49,8 @@ export interface SinaisAnuncio {
   confortoProcedentes12m?: number;
   /** Soluções de manutenção fora do prazo em 90 dias móveis. */
   manutencaoFora90d?: number;
+  /** Pendências do padrão mínimo abertas/contestadas/vencidas: sinal "imóvel diferente do anúncio" (não tira ponto). */
+  confortoPendenciasAbertas?: number;
 }
 
 export interface Motivo {
@@ -146,6 +148,9 @@ export function notaQualidade(s: SinaisAnuncio, agora: Date): NotaQualidade {
   // Padrão mínimo e manutenção (Prompt 59)
   if (seloPeloConforto(s.confortoProcedentes12m ?? 0) === "perde")
     add("conforto_procedentes", `${s.confortoProcedentes12m} pendências do padrão mínimo procedentes em 12 meses`, PESOS.perdaConforto);
+  // Sinal do painel de qualidade (quebrador 4): aparece nos motivos, sem pontos — quem pesa é a decisão "procedente".
+  if ((s.confortoPendenciasAbertas ?? 0) > 0)
+    add("imovel_diferente_do_anuncio", `Imóvel diferente do anúncio: ${s.confortoPendenciasAbertas} pendência(s) do padrão mínimo em aberto`, 0);
   if (seloPelaManutencao(s.manutencaoFora90d ?? 0) === "perde")
     add("manutencao_fora_prazo", `${s.manutencaoFora90d} soluções de manutenção fora do prazo em 90 dias`, PESOS.perdaManutencao);
 

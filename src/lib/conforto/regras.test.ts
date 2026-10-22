@@ -174,3 +174,11 @@ test("GUARDA: a lista do banco (conforto_chaves, migração 0210) é a mesma de 
   const bloco = sql.match(/select array\[([\s\S]*?)\]::text\[\]/)![1];
   assert.deepEqual([...bloco.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]), [...CHAVES_CONFORTO]);
 });
+
+test("GUARDA: os seeds do laboratório confirmam a mesma lista (anúncios do seed publicam e a varredura não muda)", () => {
+  for (const f of ["../../../scripts/lab/seed-lab.mjs", "../../../scripts/lab/massa-varredura.mjs"]) {
+    const js = readFileSync(new URL(f, import.meta.url), "utf8");
+    const bloco = js.match(/const CHAVES_CONFORTO = \[([^\]]*)\]/)![1];
+    assert.deepEqual([...bloco.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]), [...CHAVES_CONFORTO], f);
+  }
+});

@@ -45,7 +45,7 @@ export function ChecklistConforto({
             <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm text-ink" data-testid={`conforto-item-${i.chave}`}>
               <input
                 type="checkbox"
-                className="mt-0.5 h-5 w-5 shrink-0 accent-forest"
+                className="mt-1 h-5 w-5 shrink-0 accent-forest"
                 checked={sel.has(i.chave)}
                 disabled={desabilitado}
                 onChange={() => alterna(i.chave)}

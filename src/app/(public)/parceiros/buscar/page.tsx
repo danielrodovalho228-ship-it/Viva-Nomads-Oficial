@@ -33,7 +33,9 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
   const imovel = sp.imovel && /^[0-9a-f-]{36}$/i.test(sp.imovel) ? sp.imovel : "";
   // Prompt 59: manutenção fora do prazo leva também a descrição da ordem para a folha do pedido.
   const descricao = (sp.descricao ?? "").trim().slice(0, 500);
-  const consultaDoImovel = imovel ? new URLSearchParams({ imovel, ...(categoria ? { categoria } : {}), ...(descricao ? { descricao } : {}) }).toString() : undefined;
+  const qImovel = imovel ? new URLSearchParams({ imovel, ...(categoria ? { categoria } : {}) }) : null;
+  if (qImovel && descricao) qImovel.set("descricao", descricao);
+  const consultaDoImovel = qImovel?.toString();
   const qs = new URLSearchParams({ ...(categoria ? { categoria } : {}), ...(r.cidade ? { cidade: r.cidade } : {}), ...(r.uf ? { uf: r.uf } : {}) }).toString();
 
   return (

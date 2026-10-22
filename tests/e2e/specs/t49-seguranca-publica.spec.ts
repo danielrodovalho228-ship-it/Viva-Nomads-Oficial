@@ -131,7 +131,7 @@ test.describe("T49 APIs privadas sem login @seguranca", () => {
   }
 
   test("cron e webhook sem segredo não executam", async ({ request }) => {
-    for (const rota of ["/api/cron/atendimento", "/api/cron/avisos-daniel", "/api/cron/resumo-pedidos"]) {
+    for (const rota of ["/api/cron/atendimento", "/api/cron/avisos-daniel", "/api/cron/resumo-pedidos", "/api/cron/prazos-conforto"]) {
       const r = await request.get(rota);
       // 503 = CRON_SECRET ausente no laboratório: recusa antes de rodar qualquer coisa.
       expect([401, 403, 405, 503], `${rota} → ${r.status()}`).toContain(r.status());

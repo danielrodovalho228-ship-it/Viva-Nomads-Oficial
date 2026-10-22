@@ -16,7 +16,7 @@ export function ReclassificarOrdem({ id, atual }: { id: string; atual: UrgenciaM
   const router = useRouter();
   if (!aberto) {
     return (
-      <button type="button" className="text-xs font-medium text-forest underline" onClick={() => setAberto(true)} data-testid="admin-reclassificar">
+      <button type="button" className="text-xs font-semibold text-forest underline" onClick={() => setAberto(true)} data-testid="admin-reclassificar">
         Reclassificar
       </button>
     );

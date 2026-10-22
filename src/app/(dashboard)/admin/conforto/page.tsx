@@ -7,6 +7,8 @@ import { contestacoesConforto } from "@/lib/data/admin-prazos-59";
 import { ehChaveConforto, itemConforto } from "@/config/conforto-minimo";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { DecidirContestacao } from "./decidir";
+import { RodarPrazos } from "@/components/conforto/rodar-prazos";
+import { integracoesSimuladas } from "@/lib/integracoes";
 
 export const metadata = { title: "Padrão mínimo — Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -68,6 +70,10 @@ export default async function AdminConfortoPage() {
             ))}
           </ul>
         )}
+      </Panel>
+      <Panel title="Prazos" className="mt-6">
+        <p className="mb-3 text-sm text-muted">A rotina roda sozinha a cada 15 minutos: lembretes do padrão mínimo, anúncios fora da busca, confirmações por prazo e avisos da manutenção.</p>
+        <RodarPrazos laboratorio={integracoesSimuladas()} />
       </Panel>
     </div>
   );
