@@ -55,3 +55,18 @@ test("item 4: o 'Fale com a Viva' parte acima da barra de abas e usa --ajuda-bot
   const viva = readFileSync(join(RAIZ, "components/ajuda/viva-chat.tsx"), "utf8");
   assert.match(viva, /var\(--viva-piso, 0px\)/);
 });
+
+test("D-V: no fim da rolagem o rodapé fica acima de tudo o que é fixo embaixo (folga pelo --ajuda-bottom)", () => {
+  assert.match(css, /body:has\(\[data-testid="fale-com-a-viva-raiz"\]\) \.vn-rodape\s*\{\s*padding-bottom: calc\(var\(--ajuda-bottom, 1\.5rem\) \+ 3\.5rem/);
+  const rodape = readFileSync(join(RAIZ, "components/layout/footer.tsx"), "utf8");
+  assert.match(rodape, /<footer className="[^"]*\bvn-rodape\b/);
+});
+
+test("D-V: na página do imóvel o 'Fale com a Viva' parte da altura MEDIDA da barra de preço (sem número fixo)", () => {
+  assert.match(css, /body:has\(\[data-testid="barra-fixa-imovel"\]\)\s*\{\s*--ajuda-bottom: calc\(var\(--altura-abas\) \+ var\(--altura-barra-fixa, 9\.5rem\) \+ 0\.75rem\)/);
+  assert.doesNotMatch(css, /--ajuda-bottom:\s*1[13]rem/);
+  const barra = readFileSync(join(RAIZ, "components/property/barra-fixa-celular.tsx"), "utf8");
+  assert.match(barra, /new ResizeObserver/);
+  assert.match(barra, /setProperty\("--altura-barra-fixa"/);
+  assert.match(barra, /removeProperty\("--altura-barra-fixa"\)/);
+});

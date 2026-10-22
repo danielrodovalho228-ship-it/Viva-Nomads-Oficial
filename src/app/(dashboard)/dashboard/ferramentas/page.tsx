@@ -221,7 +221,7 @@ export default function FerramentasPage() {
                     className="object-cover"
                   />
                 </div>
-                <div className="grid auto-rows-fr gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:auto-rows-fr sm:grid-cols-2">
                   {g.itens.map((f) => (
                     <CardFerramenta key={f.titulo} f={f} />
                   ))}

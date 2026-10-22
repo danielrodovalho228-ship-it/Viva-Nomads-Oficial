@@ -69,11 +69,20 @@ async function entrarComo(browser: Browser, email: string, senha: string, largur
   await liberarLimiteLoginIp();
   const ctx = await browser.newContext({ viewport: { width: largura, height: altura(largura) }, ...(app ? { userAgent: UA_APP } : {}) });
   const page = await ctx.newPage();
-  await page.goto("/auth", { waitUntil: "domcontentloaded" });
-  await page.locator('input[name="email"], input[type="email"]').first().fill(email);
-  await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
-  await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-  await page.waitForURL((u) => !u.pathname.startsWith("/auth"), { timeout: 45_000 });
+  // Conta recém-criada às vezes não sai do /auth na 1ª tentativa no laboratório (sessão ainda propagando): tenta 2 vezes.
+  for (let tentativa = 1; ; tentativa++) {
+    await page.goto("/auth", { waitUntil: "domcontentloaded" });
+    await page.locator('input[name="email"], input[type="email"]').first().fill(email);
+    await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
+    await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
+    try {
+      await page.waitForURL((u) => !u.pathname.startsWith("/auth"), { timeout: 25_000 });
+      break;
+    } catch (e) {
+      if (tentativa >= 2) throw e;
+      await liberarLimiteLogin(email);
+    }
+  }
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
   return page;
 }

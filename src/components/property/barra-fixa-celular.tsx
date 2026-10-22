@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { buttonClasses, marcaCta } from "@/components/ui/button";
 import type { BarraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
@@ -36,9 +36,26 @@ export function BarraFixaCelular({
     window.addEventListener("pageshow", aoVoltar);
     return () => window.removeEventListener("pageshow", aoVoltar);
   }, [router]);
+  // A altura real da barra (muda com o aviso de exemplo, a quebra de linha e a fonte) vira --altura-barra-fixa: o
+  // "Fale com a Viva" e a folga do rodapé (globals.css, D-V) se posicionam por ela, sem número fixo.
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const raiz = document.documentElement;
+    const medir = () => raiz.style.setProperty("--altura-barra-fixa", `${Math.ceil(el.getBoundingClientRect().height)}px`);
+    medir();
+    const obs = new ResizeObserver(medir);
+    obs.observe(el);
+    return () => {
+      obs.disconnect();
+      raiz.style.removeProperty("--altura-barra-fixa");
+    };
+  }, [barra.visivel]);
   if (!barra.visivel) return null;
   return (
     <div
+      ref={ref}
       data-testid="barra-fixa-imovel"
       data-cta
       className="vn-barra-fixa fixed inset-x-0 z-30 border-t border-line bg-white px-4 py-2 shadow-flutuante lg:hidden print:hidden"

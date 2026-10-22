@@ -7,7 +7,7 @@ import { RedesOficiais } from "@/components/layout/redes-oficiais";
 
 export function Footer() {
   return (
-    <footer className="mt-auto bg-night text-white/70">
+    <footer className="mt-auto bg-night vn-rodape text-white/70">
       <div className="container-page grid gap-12 py-16 md:grid-cols-4">
         <div className="md:col-span-1">
           <Logo href="/" light />

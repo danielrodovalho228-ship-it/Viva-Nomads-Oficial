@@ -617,7 +617,9 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
         }
       />
 
-      <ol className="grid auto-rows-fr gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/* D-V (print do Daniel, 22/10): sem auto-rows-fr. No celular (1 coluna) ele esticava todos os passos à altura do
+          1º (o que tem botão) e abria um vão vazio nos passos 2 a 4; lado a lado, a própria grade iguala a altura. */}
+      <ol className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="passos-proprietario">
         {passos.map((p) => (
           <li
             key={p.n}

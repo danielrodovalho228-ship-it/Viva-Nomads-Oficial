@@ -79,7 +79,7 @@ export function PerfilExemplo({ p }: { p: ProprietarioExemplo }) {
         <h2 id="imoveis-proprietario" className="font-title text-2xl font-bold text-ink">
           Imóveis de {p.nome}
         </h2>
-        <div className="mt-5 grid auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid gap-5 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
           {imoveis.map((im) => (
             <PropertyCard key={im.id} property={im} />
           ))}

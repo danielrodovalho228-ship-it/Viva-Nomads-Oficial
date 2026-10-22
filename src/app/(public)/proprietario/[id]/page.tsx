@@ -113,7 +113,7 @@ export default async function ProprietarioPage({ params }: Params) {
         {imoveis.length === 0 ? (
           <p className="mt-3 text-muted">Nenhum imóvel ativo no momento.</p>
         ) : (
-          <div className="mt-5 grid auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid gap-5 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
             {imoveis.map((im) => (
               <PropertyCard key={im.id} property={im} />
             ))}
