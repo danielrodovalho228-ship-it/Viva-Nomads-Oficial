@@ -30,7 +30,7 @@ test.describe("T28 — Avaliações fase 1 (0089)", () => {
   test.skip(!temEnv, "Sem URL/chaves do Supabase ou contas de teste.");
 
   test("só parte avalia, uma vez, em 14 dias; às cegas; moderação; notas privadas protegidas", async ({ page }) => {
-    test.setTimeout(150_000); // inclui a espera do cache de 60 s da página (passo 7)
+    test.setTimeout(210_000); // inclui a espera do cache de 60 s da página (passo 7, até 120 s)
     const adm = cliente(SERVICE!);
     const inq = await logado("inquilino");
     const outro = await logado("inquilino2");
@@ -98,11 +98,13 @@ test.describe("T28 — Avaliações fase 1 (0089)", () => {
       // A página do imóvel guarda cache de 60 s (revalidate = 60): se outro spec abriu
       // este imóvel há pouco, a avaliação nova só aparece depois da janela. Recarrega
       // até ela entrar (mesma causa do T74, PR #501), em vez de falhar no 1º render.
-      await page.goto(`/imoveis/${imovel!.id}`, { waitUntil: "networkidle" });
+      // A página do Prompt 41 (21/10) não assenta em "networkidle" a tempo: cada recarga comia o prazo e a janela
+      // de 60 s não virava (lab de 22/10, 3 execuções completas). Recarrega pelo DOM e dá folga para a revalidação.
+      await page.goto(`/imoveis/${imovel!.id}`, { waitUntil: "domcontentloaded" });
       await expect(async () => {
-        await page.reload({ waitUntil: "networkidle" });
-        await expect(page.getByText(`Imóvel impecável ${marca}`)).toBeVisible({ timeout: 2_000 });
-      }).toPass({ intervals: [1_000, 5_000, 10_000], timeout: 75_000 });
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await expect(page.locator("#avaliacoes").getByText(`Imóvel impecável ${marca}`)).toBeVisible({ timeout: 5_000 });
+      }).toPass({ intervals: [1_000, 5_000, 10_000], timeout: 120_000 });
       await expect(page.getByText("Inquilino verificado").first()).toBeVisible();
     } finally {
       await adm.from("contratos").delete().in("id", [ct!.id, velho!.id]);
