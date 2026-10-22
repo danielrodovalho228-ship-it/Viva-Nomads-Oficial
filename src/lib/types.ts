@@ -129,6 +129,8 @@ export interface Property {
   negociacao?: import("@/lib/anuncio/negociacao").Negociacao;
   /** Velocidade da internet informada pelo dono (Mbps), opcional — requer 0152. */
   internetMbps?: number;
+  /** Internet MEDIDA no imóvel (Prompt 57): a última medição validada do dono, vigente. Nunca a do morador. */
+  internetMedida?: import("@/lib/internet-medida").Medicao;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;

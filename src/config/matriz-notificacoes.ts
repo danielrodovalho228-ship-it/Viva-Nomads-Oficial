@@ -119,6 +119,8 @@ export const MATRIZ_NOTIFICACOES = {
   pedido_auto_cancelado: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
   saida_sem_parceiro: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
   sugestao_parceiros_morador: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
+  internet_remedir: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
+  internet_abaixo_medida: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   estadia_encerramento_pedido: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
   recibo_emitido: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
   comprovante_caucao: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },

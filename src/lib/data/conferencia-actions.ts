@@ -49,7 +49,7 @@ async function estaFechada(admin: NonNullable<ReturnType<typeof createAdminClien
 }
 
 /** Quem é a pessoa neste contrato: "inquilino", "proprietario" ou null (não é parte). */
-async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte: ParteConferencia; status: string; entrada: EntradaDoContrato } | null> {
+async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte: ParteConferencia; status: string; propertyId: string | null; entrada: EntradaDoContrato } | null> {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin || !UUID_RE.test(contratoId)) return null;
@@ -59,7 +59,7 @@ async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte
   if (!user) return null;
   const { data: c } = await admin
     .from("contratos")
-    .select("tenant_id, status, properties(owner_id, checkin_after, checkout_before), contrato_blocos(inicio, fim, status)")
+    .select("tenant_id, status, property_id, properties(owner_id, checkin_after, checkout_before), contrato_blocos(inicio, fim, status)")
     .eq("id", contratoId)
     .maybeSingle();
   if (!c) return null;
@@ -76,6 +76,7 @@ async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte
     uid: user.id,
     parte,
     status: String(c.status),
+    propertyId: (c.property_id as string | null) ?? null,
     entrada: { inicio: inicios[0] ?? null, checkinAfter: prop?.checkin_after ?? null, fim: fins.at(-1) ?? null, checkoutBefore: prop?.checkout_before ?? null },
   };
 }
@@ -212,6 +213,8 @@ export interface ConferenciasContrato {
   /** Instante do prazo da saída (ISO), pela fonte única `prazoConferenciaSaida` (Prompt 56). */
   prazoSaidaEm: string | null;
   janelaSaidaEncerrada: boolean;
+  /** Imóvel do contrato (Prompt 57: o morador mede a internet na conferência de entrada). */
+  propertyId: string | null;
   conferencias: ConferenciaView[];
 }
 
@@ -284,7 +287,7 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
 
 /** As conferências do contrato, lidas pelo RLS (só as partes e a equipe enxergam). */
 export async function conferenciasDoContrato(contratoId: string): Promise<ConferenciasContrato> {
-  const vazio: ConferenciasContrato = { minhaParte: null, prazoEntradaEm: null, janelaEntradaEncerrada: false, prazoSaidaEm: null, janelaSaidaEncerrada: false, conferencias: [] };
+  const vazio: ConferenciasContrato = { minhaParte: null, prazoEntradaEm: null, janelaEntradaEncerrada: false, prazoSaidaEm: null, janelaSaidaEncerrada: false, propertyId: null, conferencias: [] };
   const supabase = await createClient();
   if (!supabase || !UUID_RE.test(contratoId)) return vazio;
   const ctx = await parteDoContrato(contratoId);
@@ -293,7 +296,7 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
   const prazoSaidaEm = ctx ? (prazoConferenciaSaida(ctx.entrada)?.toISOString() ?? null) : null;
   const janelaSaidaEncerrada = ctx ? janelaEncerrada("saida", ctx.entrada) : false;
   const { data: confs } = await supabase.from("conferencias").select("id, tipo").eq("contrato_id", contratoId);
-  if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, conferencias: [] };
+  if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias: [] };
   const ids = confs.map((c) => c.id as string);
   const [{ data: itens }, { data: respostas }, { data: laudos }] = await Promise.all([
     supabase.from("conferencia_itens").select("id, conferencia_id, parte, comodo, descricao, foto_path, criado_em, precisa_reparo").in("conferencia_id", ids).order("criado_em"),
@@ -323,5 +326,5 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
       } satisfies ConferenciaView;
     }),
   );
-  return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, conferencias };
+  return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias };
 }

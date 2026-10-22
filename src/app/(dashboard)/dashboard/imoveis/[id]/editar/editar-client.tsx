@@ -41,6 +41,7 @@ import type { Property } from "@/lib/types";
 import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { avisoTituloBairro } from "@/lib/anuncio/titulo-bairro";
 import { formatBRL, cn } from "@/lib/utils";
+import { MedirInternet } from "@/components/anuncio/medir-internet";
 
 const MIN_DESC = 60;
 
@@ -545,6 +546,8 @@ export function EditarImovelClient({
                 </div>
               </div>
             ))}
+            {/* Prompt 57: a velocidade medida no imóvel (o informado continua no cadastro). */}
+            {!demo && <MedirInternet imovelId={property.id} origem="edicao" />}
           </div>
         </Section>
 
