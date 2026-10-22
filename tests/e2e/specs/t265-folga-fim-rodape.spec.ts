@@ -177,7 +177,7 @@ test.describe("T265 — menu superior e barra inferior a 390 px", () => {
     for (const rota of ["/", "/buscar", "/imoveis/ube-001", "/cidades/uberlandia"]) {
       test(`${rota}: cabeçalho e barra de 5 itens visíveis`, async ({ page }) => {
         await page.goto(rota, { waitUntil: "domcontentloaded" });
-        await expect(page.locator("header").filter({ visible: true }).first()).toBeVisible();
+        await expect(page.locator("[data-logo]").filter({ visible: true }).first()).toBeVisible();
         await expect(barraInferior(page)).toBeVisible({ timeout: 15_000 });
         await expect(barraInferior(page).getByRole("link")).toHaveCount(5);
       });
@@ -189,7 +189,7 @@ test.describe("T265 — menu superior e barra inferior a 390 px", () => {
     test.use({ storageState: authFile("proprietario") });
     test("/dashboard: cabeçalho e a barra do proprietário", async ({ page }) => {
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      await expect(page.locator("header").filter({ visible: true }).first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.locator("[data-logo]").filter({ visible: true }).first()).toBeVisible({ timeout: 20_000 });
       await expect(barraInferior(page)).toBeVisible({ timeout: 20_000 });
       await expect(barraInferior(page)).toHaveAttribute("data-papel", "proprietario");
       await expect(barraInferior(page).getByRole("link")).toHaveCount(5);
