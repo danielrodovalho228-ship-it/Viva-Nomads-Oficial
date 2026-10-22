@@ -66,7 +66,7 @@ async function pedir(page: Page, o: { categorias: string[]; portfolio?: string; 
   if (o.descricao) await form.locator("#sp-descricao").fill(o.descricao);
   await page.getByTestId("sp-aceite").check();
   await page.getByTestId("seja-parceiro-enviar").click();
-  await expect(page.getByTestId("seja-parceiro-recebido")).toContainText("Recebemos — a Viva analisa e responde por e-mail.", { timeout: 20_000 });
+  await expect(page.getByTestId("seja-parceiro-recebido")).toContainText("Aguardando aprovação da Viva. Resposta em até 1 dia útil, por e-mail.", { timeout: 20_000 }); // texto do Prompt 43 (e21e4416)
 }
 
 async function solicitacao(email: string) {
