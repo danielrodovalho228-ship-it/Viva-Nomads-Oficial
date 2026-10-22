@@ -341,7 +341,9 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("conta-quero-ser-parceiro")).toBeVisible({ timeout: 20_000 });
+    // Prompt 43: o painel "Quero ser parceiro" virou o convite da linha de parceiro em "Seus papéis".
+    const convite = page.getByTestId("seus-papeis").locator('[data-papel="parceiro"]').getByRole("link", { name: "Quero ser parceiro" });
+    await expect(convite).toHaveAttribute("href", "/dashboard/parceiro", { timeout: 20_000 });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
     const form = page.getByTestId("seja-parceiro-form");
