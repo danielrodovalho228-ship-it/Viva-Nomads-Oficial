@@ -568,7 +568,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => switchMode("login")}
-                className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
+                className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
               >
                 <ArrowLeft className="h-4 w-4" /> Voltar para entrar
               </button>
@@ -598,7 +598,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => switchMode("login")}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
               >
                 <ArrowLeft className="h-4 w-4" /> Voltar para entrar
               </button>
@@ -760,7 +760,7 @@ export default function AuthPage() {
                       <button
                         type="button"
                         onClick={() => setShowReferral(true)}
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
+                        className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
                       >
                         <Gift className="h-4 w-4" /> Tenho um código de indicação
                       </button>
@@ -773,7 +773,7 @@ export default function AuthPage() {
                     <button
                       type="button"
                       onClick={() => switchMode("forgot")}
-                      className="text-sm font-medium text-forest hover:text-blue-700"
+                      className="inline-flex min-h-11 items-center text-sm font-medium text-forest hover:text-blue-700"
                     >
                       Esqueci minha senha
                     </button>
@@ -832,12 +832,12 @@ export default function AuthPage() {
 
                 {/* Links FIXOS no login (F43): iguais com ou sem conta, nunca dizem se o e-mail existe. */}
                 {mode === "login" && error === friendlyAuthError("invalid login credentials") && (
-                  <p className="text-sm text-muted" data-testid="login-links-fixos">
-                    <button type="button" onClick={() => switchMode("signup")} className="font-medium text-forest hover:text-blue-700">
+                  <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted" data-testid="login-links-fixos">
+                    <button type="button" onClick={() => switchMode("signup")} className="inline-flex min-h-11 items-center font-medium text-forest hover:text-blue-700">
                       Criar conta
                     </button>{" "}
                     ·{" "}
-                    <button type="button" onClick={() => switchMode("forgot")} className="font-medium text-forest hover:text-blue-700">
+                    <button type="button" onClick={() => switchMode("forgot")} className="inline-flex min-h-11 items-center font-medium text-forest hover:text-blue-700">
                       Esqueci minha senha
                     </button>
                   </p>

@@ -144,8 +144,8 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
           <div className="md:col-span-2">
             <h2 id="h-form" className="font-title text-3xl font-bold text-ink">Seja parceiro</h2>
             <p className="mt-3 text-muted">Peça a parceria com a sua conta. A Viva analisa e responde por e-mail; aprovada, você ativa a sua página.</p>
-            <dl className="mt-8 space-y-5" aria-labelledby="h-duvidas">
-              <h3 id="h-duvidas" className="font-title text-lg font-bold text-ink">Dúvidas</h3>
+            <h3 id="h-duvidas" className="mt-8 font-title text-lg font-bold text-ink">Dúvidas</h3>
+            <dl className="mt-5 space-y-5" aria-labelledby="h-duvidas">
               {DUVIDAS.map((d) => (<div key={d.p}><dt className="font-semibold text-ink">{d.p}</dt><dd className="mt-1 text-sm text-muted">{d.r}</dd></div>))}
             </dl>
           </div>

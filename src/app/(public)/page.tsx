@@ -133,7 +133,7 @@ export default async function HomePage() {
                     />
                   </div>
                   <div className="sm:col-span-1 sm:[direction:ltr]">
-                    <span className="font-title text-[28px] font-semibold tabular-nums text-line">
+                    <span className="font-title text-[28px] font-semibold tabular-nums text-sage">
                       0{i + 1}
                     </span>
                   </div>

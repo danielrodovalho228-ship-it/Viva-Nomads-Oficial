@@ -26,3 +26,11 @@ export function descreverAlvos(alvos: AlvoMedido[], max = 8): string {
     .map((a) => `${a.seletor} ${Math.round(a.largura)}x${Math.round(a.altura)}`)
     .join("\n");
 }
+
+/**
+ * Caixa e botão de opção: quem recebe o toque é o rótulo que envolve o campo (o campo em si pode ser pequeno ou
+ * escondido com sr-only). Sem rótulo, vale a medida do campo.
+ */
+export function alvoDoControle(tipo: string | null, campo: { largura: number; altura: number }, rotulo?: { largura: number; altura: number } | null) {
+  return (tipo === "checkbox" || tipo === "radio") && rotulo ? rotulo : campo;
+}

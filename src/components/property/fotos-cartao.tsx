@@ -19,6 +19,7 @@ export function FotosCartao({ fotos, alt }: { fotos: string[]; alt: string }) {
     <>
       <div
         data-fotos=""
+        {...(lista.length > 1 ? { tabIndex: 0, role: "group", "aria-label": "Fotos do imóvel (use as setas para rolar)" } : {})}
         onScroll={(e) => {
           const el = e.currentTarget;
           setAtivo(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));

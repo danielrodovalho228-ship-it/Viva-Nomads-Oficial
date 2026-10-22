@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { ROTAS_AXE_PUBLICAS } from "../../../src/lib/lab/axe-regras";
-import { descreverAlvos, temRolagemLateral, type AlvoMedido } from "../../../src/lib/lab/alvos-toque";
+import { alvoDoControle, descreverAlvos, temRolagemLateral, type AlvoMedido } from "../../../src/lib/lab/alvos-toque";
 
 /*
   T259 — 390 e 1280 px nas páginas públicas (ordem 21708cca, parte D): sem rolagem lateral e, no celular, botões e
@@ -29,9 +29,15 @@ for (const largura of [390, 1280]) {
               return r.width > 0 && r.height > 0 && e.visibility !== "hidden" && e.display !== "none" && !el.closest("[aria-hidden=true]");
             })
             .map((el) => {
-              const r = el.getBoundingClientRect();
+              const caixa = el.getBoundingClientRect();
+              const rotulo = el.closest("label")?.getBoundingClientRect();
+              const r = alvoDoControle(
+                el.getAttribute("type"),
+                { largura: caixa.width, altura: caixa.height },
+                rotulo ? { largura: rotulo.width, altura: rotulo.height } : null,
+              );
               const id = el.id ? `#${el.id}` : el.getAttribute("data-testid") ? `[data-testid=${el.getAttribute("data-testid")}]` : "";
-              return { seletor: `${el.tagName.toLowerCase()}${id}`, largura: r.width, altura: r.height };
+              return { seletor: `${el.tagName.toLowerCase()}${id}`, largura: r.largura, altura: r.altura };
             }),
         }));
         expect(temRolagemLateral(medidas.scrollWidth, medidas.janela), `${rota} @${largura}: rolagem lateral`).toBe(false);
