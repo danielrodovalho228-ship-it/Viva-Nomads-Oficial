@@ -137,6 +137,33 @@ test("busca: só publicado e nunca conta de teste; cidade ou raio; nota real e d
   assert.deepEqual(filtrarParceiros(lista, { categoria: "mudanca", cidade: "Uberlândia" }), []);
 });
 
+test("QA 22/10: parceiro publicado de fotografia em Uberlândia/MG aparece na busca por categoria + cidade; o de conta de teste só para quem é teste/admin", () => {
+  const paulo: ParceiroNaBusca = { slug: "paulo-fotos-teste-qa", categorias: ["fotografia"], cidades: ["Uberlândia"], notaMedia: null, avaliacoesQtd: 0, publicadoEm: "2026-10-20T00:00:00Z", teste: false, status: "publicado" };
+  for (const cidade of ["Uberlândia", "Uberlandia", "uberlândia", " UBERLANDIA "]) {
+    assert.deepEqual(filtrarParceiros([paulo], { categoria: "fotografia", cidade }).map((x) => x.slug), ["paulo-fotos-teste-qa"], cidade);
+  }
+  // A conta do parceiro do QA é de teste: some para o público, aparece para conta de teste ou admin.
+  const deTeste = { ...paulo, teste: true };
+  assert.deepEqual(filtrarParceiros([deTeste], { categoria: "fotografia", cidade: "Uberlândia" }), []);
+  assert.deepEqual(filtrarParceiros([deTeste], { categoria: "fotografia", cidade: "Uberlândia", verTeste: true }).map((x) => x.slug), ["paulo-fotos-teste-qa"]);
+  // Rascunho nunca aparece, nem para o QA.
+  assert.deepEqual(filtrarParceiros([{ ...deTeste, status: "rascunho" }], { categoria: "fotografia", cidade: "Uberlândia", verTeste: true }), []);
+});
+
+test("GUARDA: a busca decide 'ver parceiro de teste' pela sessão (conta de teste ou admin), nunca por parâmetro da URL", () => {
+  const src = readFileSync(new URL("../data/parceiros-publico.ts", import.meta.url), "utf8");
+  assert.match(src, /verTeste: await veParceirosDeTeste\(\)/);
+  assert.match(src, /p\?\.is_teste === true \|\| p\?\.role === "admin"/);
+  assert.doesNotMatch(src.slice(src.indexOf("export async function buscarParceiros")), /f\.verTeste|searchParams/);
+});
+
+test("textos da busca vazia: cada frase é UM texto (em pedaços, leitores que aparam cada pedaço colavam as palavras)", () => {
+  const vazia = readFileSync(new URL("../../components/parceiros/busca-vazia.tsx", import.meta.url), "utf8");
+  assert.match(vazia, /\{`Ainda não temos parceiro\$\{categoria \? ` de \$\{/);
+  const doImovel = readFileSync(new URL("../../components/automacao/parceiros-do-imovel.tsx", import.meta.url), "utf8");
+  assert.match(doImovel, /\{`Nenhum parceiro de \$\{TITULO\[categoria\]\.toLowerCase\(\)\} atende \$\{cidade \?\? "a cidade do imóvel"\} ainda\. `\}/);
+});
+
 test("cartão do parceiro geral: desligado por padrão, só na busca vazia e com nome", () => {
   assert.equal(mostrarParceiroGeral(lerParceiroGeral(null, false), 0), false);
   const g = lerParceiroGeral({ nome: "AquiResolve", cidade: "Uberlândia", descricao: "Pequenos reparos" }, true);

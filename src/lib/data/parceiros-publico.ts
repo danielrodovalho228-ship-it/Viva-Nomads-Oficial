@@ -1,5 +1,6 @@
 import "server-only";
 import { createPublicClient } from "@/lib/supabase/public";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cidadeDoCep, normalizarCep } from "@/lib/fotografos/regras";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
@@ -78,6 +79,27 @@ export interface ResultadoBusca {
   cepNaoEncontrado: boolean;
 }
 
+/**
+ * Quem olha é conta de teste (profiles.is_teste, só o servidor liga) ou admin? Então enxerga os parceiros de teste na
+ * busca — o QA acha o próprio parceiro de teste. Visitante e conta real: nunca. Qualquer falha: não enxerga.
+ */
+async function veParceirosDeTeste(): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const admin = createAdminClient();
+    if (!supabase || !admin) return false;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { data } = await admin.from("profiles").select("is_teste, role").eq("id", user.id).maybeSingle();
+    const p = data as { is_teste: boolean | null; role: string | null } | null;
+    return p?.is_teste === true || p?.role === "admin";
+  } catch {
+    return false;
+  }
+}
+
 /** Busca pública: categoria, cidade e/ou CEP (o CEP vira cidade e, com o mapa ligado, um ponto para o raio). */
 export async function buscarParceiros(f: { categoria?: string | null; cidade?: string | null; uf?: string | null; cep?: string | null }): Promise<ResultadoBusca> {
   const cep = normalizarCep(f.cep) ?? "";
@@ -92,7 +114,7 @@ export async function buscarParceiros(f: { categoria?: string | null; cidade?: s
   const sb = createPublicClient();
   if (!sb) return { lista: [], cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep };
   const { data } = await sb.from("parceiros_publicos").select("*").limit(500);
-  const lista = filtrarParceiros(((data ?? []) as Linha[]).map(deLinha), { categoria: f.categoria, cidade, ponto });
+  const lista = filtrarParceiros(((data ?? []) as Linha[]).map(deLinha), { categoria: f.categoria, cidade, ponto, verTeste: await veParceirosDeTeste() });
   return { lista, cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep };
 }
 
