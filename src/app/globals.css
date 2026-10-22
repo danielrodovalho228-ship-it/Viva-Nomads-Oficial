@@ -420,9 +420,21 @@ html[data-app] body {
     right: 1.5rem;
   }
 }
-/* Prompt 41: o rodapé fixo do imóvel ganhou o total da estadia e "A Viva não segura dinheiro" (mais alto). */
-body:has([data-testid="imovel-largura-total"]) {
-  --ajuda-bottom: 13rem;
+/* Página do imóvel (D-V): o "Fale com a Viva" fica logo acima da barra fixa de preço, qualquer que seja a altura dela
+   (--altura-barra-fixa é medida pela própria barra; 9.5rem só até a primeira medida). No celular a barra fica sobre as
+   abas; de 768 a 1023 px (site) ela encosta no fim da tela; no app as abas existem em qualquer largura. */
+body:has([data-testid="barra-fixa-imovel"]) {
+  --ajuda-bottom: calc(var(--altura-abas) + var(--altura-barra-fixa, 9.5rem) + 0.75rem);
+}
+@media (min-width: 768px) {
+  body:has([data-testid="barra-fixa-imovel"]) {
+    --ajuda-bottom: calc(var(--altura-barra-fixa, 9.5rem) + 0.75rem);
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  html[data-app] body:has([data-testid="barra-fixa-imovel"]) {
+    --ajuda-bottom: calc(var(--altura-abas) + var(--altura-barra-fixa, 9.5rem) + 0.75rem);
+  }
 }
 @media (min-width: 1024px) {
   body:has([data-testid="imovel-largura-total"]) {
@@ -443,6 +455,16 @@ html:has([data-testid="fale-com-a-viva-raiz"]) {
   html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]) {
     padding-bottom: 4.5rem;
   }
+  /* Com o rodapé do site, a folga mora dentro dele (fundo escuro até o fim), não numa faixa branca abaixo. */
+  html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]):has(.vn-rodape) {
+    padding-bottom: 0;
+  }
+}
+/* D-V (QA do Muse, 22/10): no fim da rolagem, a última linha do rodapé fica ACIMA de tudo o que é fixo embaixo
+   (abas, barra de preço do imóvel, barra "Comparar", "Fale com a Viva"), em qualquer largura. O botão termina em
+   --ajuda-bottom + 3 rem (48 px); a folga soma mais 0,5 rem de respiro. */
+html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]) .vn-rodape {
+  padding-bottom: calc(var(--ajuda-bottom, 1.5rem) + 3.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Card do imóvel ancorado no pin do mapa da busca (ordem ca0e7dad): sem a
