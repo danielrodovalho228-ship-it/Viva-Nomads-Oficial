@@ -54,6 +54,8 @@ const TELAS: Tela[] = [
 const ESPERADAS: Record<string, string> = {
   // Rodada 1 (lab-crítico do #984, 21/10): D-V1, D-V2, D-V4 e D-V6 passaram nas duas tentativas e viraram teste normal.
   // D-V3 e D-V5 não têm combinação no varrer geral (são verificados só no bloco "defeitos conhecidos").
+  // D-V7 (lab-crítico do #1021, 22/10): o título do rascunho em Meus imóveis aponta para a página pública (404).
+  "Meus imóveis|1280|d-console": "D-V7",
 };
 
 type Linha = { tela: string; tamanho: string; criterio: string; resultado: string };
@@ -206,14 +208,31 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
     await context.close();
   });
 
-  test("D-V6 — capa de Minhas locações carrega acima da dobra", async ({ browser }) => {
+  // Prompt 42 (#1014, 22/10): as telas logadas perderam a capa de foto de propósito. D-V6 segue valendo para o que
+  // sobrou: toda imagem acima da dobra de Minhas locações carrega sem rolar.
+  test("D-V6 — imagens de Minhas locações carregam acima da dobra", async ({ browser }) => {
     test.skip(!temContaVarredura("INQUILINA"), "sem a conta INQUILINA");
     for (const tam of TAMANHOS) {
       const { context, page } = await abrirComoConta(browser, "INQUILINA", tam.nome);
       await abrirRota(page, "/dashboard/locacoes");
-      expect(await page.locator("main img:visible").count(), `@${tam.nome}: nenhuma imagem de capa`).toBeGreaterThan(0);
       expect(await imagensAcimaDaDobra(page), `@${tam.nome}`).toEqual([]);
       await context.close();
     }
+  });
+
+  test("D-V7 — Meus imóveis não aponta rascunho para a página pública (404)", async ({ browser }) => {
+    test.skip(!temContaVarredura("DONO17"), "sem a conta DONO17");
+    test.fail(true, "D-V7: o título do cartão de rascunho é link para /imoveis/:id, que dá 404 (o botão 'Ver' já esconde)");
+    const { context, page } = await abrirComoConta(browser, "DONO17", "1280");
+    const naoAchados: string[] = [];
+    page.on("response", (r) => {
+      if (r.status() === 404 && /\/imoveis\/[0-9a-f-]{36}/.test(new URL(r.url()).pathname)) naoAchados.push(new URL(r.url()).pathname);
+    });
+    await abrirRota(page, "/dashboard/imoveis");
+    await page.waitForTimeout(1_500); // o pré-carregamento dos links acontece logo depois da tela assentar
+    const rascunho = page.locator("main a", { hasText: "[Varredura] Rascunho com 1 foto" });
+    const destino = (await rascunho.count()) > 0 ? await rascunho.first().getAttribute("href") : null;
+    expect({ linkDoRascunho: destino, paginas404: [...new Set(naoAchados)] }).toEqual({ linkDoRascunho: null, paginas404: [] });
+    await context.close();
   });
 });
