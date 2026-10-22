@@ -16,6 +16,8 @@ import { AvisoAssinatura } from "./aviso-assinatura";
 import { CheckinContrato } from "./checkin-contrato";
 import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
 import { ConferenciaContrato } from "./conferencia-contrato";
+import { PendenciasConforto } from "@/components/conforto/pendencias-conforto";
+import { pendenciasDoContrato } from "@/lib/data/conforto-actions";
 import { meuCartaoPostal } from "@/lib/data/cartoes-actions";
 import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
 
@@ -38,6 +40,8 @@ export async function ContratoDetalhe({
   // Conferência de entrada e de saída: só com contrato em andamento ou encerrado e assinado pelas duas partes.
   const mostraConferencia = ["ativo", "concluido", "encerrado_sem_renovacao"].includes(c.status) && !!c.assinadoProprietarioEm && !!c.assinadoInquilinoEm;
   const conferencia = mostraConferencia ? await conferenciasDoContrato(c.id) : null;
+  // Prompt 59: pendências do padrão mínimo (o morador marcou "não confere" na entrada).
+  const pendencias = mostraConferencia ? await pendenciasDoContrato(c.id) : null;
   const lembreteSenha =
     c.papel === "inquilino" && c.status === "ativo" && mostraConferencia
       ? mostrarLembreteSenha({
@@ -143,6 +147,16 @@ export async function ContratoDetalhe({
           <div className="mt-4">
             <ConferenciaContrato contratoId={c.id} statusContrato={c.status} dados={conferencia} />
           </div>
+        </Panel>
+      )}
+      {pendencias && pendencias.pendencias.length > 0 && (
+        <Panel className="mt-4 scroll-mt-24 p-4" id="pendencias-conforto">
+          <h2 className="font-title text-base font-semibold text-ink">Pendências do padrão mínimo</h2>
+          <p className="mt-1 text-sm text-muted">
+            O que o morador marcou como não confere na entrada. O proprietário corrige em até 72 horas ou contesta; a contestação é decidida pelo
+            atendimento da Viva.
+          </p>
+          <PendenciasConforto papel={pendencias.papel} pendencias={pendencias.pendencias} />
         </Panel>
       )}
     </>

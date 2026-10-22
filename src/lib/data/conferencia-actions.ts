@@ -28,6 +28,8 @@ import {
   type RespostaTela,
   type TipoConferencia,
 } from "@/lib/conferencia";
+import { pendenciasDaConferencia, validarSecaoConforto } from "@/lib/conforto/regras";
+import { avisarPendenciaConforto } from "@/lib/conforto/avisos";
 
 /*
   Conferência de entrada e de saída (ordem 404cd213, item 1). Toda escrita passa por aqui,
@@ -140,6 +142,49 @@ export async function registrarItemConferencia(input: {
   return { ok: true, id: item.id, item };
 }
 
+/**
+ * Prompt 59: o MORADOR responde a seção "Padrão mínimo" da conferência de ENTRADA (uma vez; cada item confere / não
+ * confere, com texto curto e foto opcional). Cada "não confere" vira pendência do dono (72 h). Entra no hash de fechamento.
+ */
+export async function responderConfortoEntrada(input: { contratoId: string; respostas: unknown }): Promise<Resultado & { pendencias?: number }> {
+  const ctx = await parteDoContrato(input.contratoId);
+  if (!ctx) return erro("Você não faz parte deste contrato.");
+  if (ctx.parte !== "inquilino") return erro("O padrão mínimo é conferido pelo morador.");
+  if (!STATUS_ENTRADA.includes(ctx.status)) return erro("Este contrato não está em um momento de conferência.");
+  if (janelaEncerrada("entrada", ctx.entrada)) return erro("O prazo de 48 horas para a conferência de entrada já passou.");
+  const v = validarSecaoConforto(input.respostas);
+  if (!v.ok) return erro(v.erro);
+  if (v.respostas.some((r) => r.foto && !r.foto.startsWith(`${ctx.uid}/`))) return erro("Foto inválida.");
+  if (!(await consumirLimite(`conferencia-conforto:${ctx.uid}`, 20, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
+
+  const admin = createAdminClient()!;
+  if (await estaFechada(admin, input.contratoId, "entrada")) return erro(ERRO_FECHADA);
+  await admin
+    .from("conferencias")
+    .upsert({ contrato_id: input.contratoId, tipo: "entrada", aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true });
+  const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", "entrada").maybeSingle();
+  if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
+  const { data: respostas } = await admin.from("conferencia_respostas").select("parte, decisao, motivo").eq("conferencia_id", conf.id);
+  if (!podeEditarItens((respostas ?? []) as RespostaConferencia[], ctx.parte)) return erro("Você já respondeu esta conferência e ela não pode mais ser alterada.");
+  const { count } = await admin.from("conferencia_conforto").select("chave", { count: "exact", head: true }).eq("conferencia_id", conf.id);
+  if ((count ?? 0) > 0) return erro("O padrão mínimo desta entrada já foi respondido.");
+
+  const agora = new Date();
+  const { error } = await admin.from("conferencia_conforto").insert(
+    v.respostas.map((r) => ({ conferencia_id: conf.id, chave: r.chave, confere: r.confere, texto: r.confere ? null : r.texto, foto_path: r.confere ? null : (r.foto ?? null), autor_id: ctx.uid, respondido_em: agora.toISOString() })),
+  );
+  if (error) return erro("Não foi possível salvar o padrão mínimo. Tente de novo.");
+  const novas = pendenciasDaConferencia(v.respostas, agora).map((p) => ({ ...p, property_id: ctx.propertyId, contrato_id: input.contratoId, conferencia_id: conf.id }));
+  if (novas.length && ctx.propertyId) {
+    const { data: criadas } = await admin.from("conforto_pendencias").upsert(novas, { onConflict: "conferencia_id,chave", ignoreDuplicates: true }).select("id");
+    for (const p of (criadas ?? []) as { id: string }[]) await avisarPendenciaConforto(admin, p.id, "aberta").catch(() => null);
+  }
+  revalidatePath("/dashboard/locacoes");
+  revalidatePath("/dashboard/contratos");
+  revalidatePath("/dashboard");
+  return { ok: true, pendencias: novas.length };
+}
+
 /** Confirma ou contesta (uma vez por parte). Depois disso a conferência fica imutável. */
 export async function responderConferencia(input: {
   contratoId: string;
@@ -202,6 +247,8 @@ export interface ConferenciaView {
   /** Laudo de parceiro independente (PDF); quando existe, prevalece sobre as fotos. */
   laudo: { url: string | null; parte: ParteConferencia; criadoEm: string } | null;
   fonte: ReturnType<typeof fonteDaConferencia>;
+  /** Prompt 59: seção "Padrão mínimo" do morador (só na entrada). Vazia = ainda não respondeu. */
+  conforto: { chave: string; confere: boolean; texto: string | null; fotoUrl: string | null; respondidoEm: string }[];
 }
 
 export interface ConferenciasContrato {
@@ -302,10 +349,11 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
   const { data: confs } = await supabase.from("conferencias").select("id, tipo").eq("contrato_id", contratoId);
   if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias: [] };
   const ids = confs.map((c) => c.id as string);
-  const [{ data: itens }, { data: respostas }, { data: laudos }] = await Promise.all([
+  const [{ data: itens }, { data: respostas }, { data: laudos }, { data: conforto }] = await Promise.all([
     supabase.from("conferencia_itens").select("id, conferencia_id, parte, comodo, descricao, foto_path, criado_em, precisa_reparo").in("conferencia_id", ids).order("criado_em"),
     supabase.from("conferencia_respostas").select("conferencia_id, parte, decisao, motivo, decidido_em").in("conferencia_id", ids),
     supabase.from("conferencia_laudos").select("conferencia_id, path, parte, criado_em").in("conferencia_id", ids),
+    supabase.from("conferencia_conforto").select("conferencia_id, chave, confere, texto, foto_path, respondido_em").in("conferencia_id", ids),
   ]);
   // Links temporários (10 min) só para quem já passou pelo RLS acima.
   const admin = createAdminClient();
@@ -327,6 +375,11 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
         respostas: rs.map((r) => ({ parte: r.parte, decisao: r.decisao, motivo: r.motivo, decididoEm: r.decidido_em })),
         laudo: laudo ? { url: await assinar(laudo.path as string), parte: laudo.parte as ParteConferencia, criadoEm: laudo.criado_em as string } : null,
         fonte: fonteDaConferencia(!!laudo),
+        conforto: await Promise.all(
+          ((conforto ?? []) as { conferencia_id: string; chave: string; confere: boolean; texto: string | null; foto_path: string | null; respondido_em: string }[])
+            .filter((r) => r.conferencia_id === c.id)
+            .map(async (r) => ({ chave: r.chave, confere: r.confere, texto: r.texto, fotoUrl: await assinar(r.foto_path), respondidoEm: r.respondido_em })),
+        ),
       } satisfies ConferenciaView;
     }),
   );

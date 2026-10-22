@@ -31,6 +31,7 @@ import {
 } from "@/lib/conferencia";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { MedirInternet } from "@/components/anuncio/medir-internet";
+import { SecaoConfortoEntrada } from "@/components/conforto/secao-conforto-entrada";
 
 const ROTULO_TIPO: Record<TipoConferencia, string> = { entrada: "Conferência de entrada", saida: "Conferência de saída" };
 const ROTULO_PARTE = { proprietario: "Proprietário", inquilino: "Inquilino" } as const;
@@ -160,6 +161,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
           Registre fotos e itens por cômodo {textoPrazoConferencia(dados.prazoSaidaEm)} (48 h depois da saída).
         </p>
       )}
+
+      {/* Prompt 59: seção "Padrão mínimo" (o morador confere cada item na entrada; entra no hash de fechamento). */}
+      {tipo === "entrada" && <SecaoConfortoEntrada contratoId={contratoId} parte={parte} travada={travada} respondidas={conf?.conforto ?? []} />}
 
       {laudo && (
         <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-50 p-3 text-sm text-ink" data-testid="conferencia-laudo">
