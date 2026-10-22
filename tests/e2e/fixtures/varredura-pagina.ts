@@ -74,7 +74,8 @@ export async function varrerPagina(page: Page, respostasRuins: string[]): Promis
     imagens = await imagensRuins();
   }
 
-  const dom = await page.evaluate(() => {
+  const dom = await page.evaluate((ignorar: string) => {
+    const reIgnorar = new RegExp(ignorar, "i");
     const W = window.innerWidth;
     const desc = (el: Element) => {
       const r = el.getBoundingClientRect();
@@ -124,7 +125,8 @@ export async function varrerPagina(page: Page, respostasRuins: string[]): Promis
       if (r.width < 80 || r.height < 40) continue;
       if (/^(img|video|canvas|iframe|svg|picture)$/i.test(el.tagName)) continue;
       const temMidia =
-        Array.from(el.querySelectorAll("img")).some((i) => i.complete && i.naturalWidth > 0) ||
+        // Foto fictícia do laboratório (ou de terceiro) que não carrega já fica fora do critério de imagem: aqui também.
+        Array.from(el.querySelectorAll("img")).some((i) => (i.complete && i.naturalWidth > 0) || reIgnorar.test(i.currentSrc || i.src)) ||
         !!el.querySelector("video, canvas, iframe, svg") ||
         [el, ...Array.from(el.querySelectorAll("*"))].some((n) => getComputedStyle(n).backgroundImage !== "none");
       if (!temMidia) foto.push(`área de foto vazia (aspect-ratio ${cs.aspectRatio}): ${desc(el)}`);
@@ -190,7 +192,7 @@ export async function varrerPagina(page: Page, respostasRuins: string[]): Promis
       if (problemas.length) grade.push(`${[...new Set(problemas)].join("; ")}: ${desc(el)}`);
     }
     return { estouro, foto, texto, grade };
-  });
+  }, IGNORAR.source);
 
   const fixo = await controlesCobertos(page);
   return {

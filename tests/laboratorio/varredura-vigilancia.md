@@ -21,7 +21,6 @@ As 10 últimas de cada lista (cidade em diante, ferramentas, carteira, favoritos
 |---|---|---|---|---|
 | D-V3 | Editar anúncio ativo | 390 | "Enviar documento" (trava da matrícula) não responde nem aponta o campo | A |
 | D-V5 | Editar anúncio ativo | 1280 | "Anúncio publicado" e "Falta para publicar" juntos | A |
-| D-V7 | Meus imóveis | 1280 | Título do rascunho é link para a página pública (404 no console) | A |
 | D-V8 | Entrar | 390 e 1280 | Sem `<main>` (marco principal) | A |
 
 ## Sob vigilância (passaram, mas já falharam)
@@ -31,6 +30,7 @@ As 10 últimas de cada lista (cidade em diante, ferramentas, carteira, favoritos
 | D-V2 (barra de fotos a 390 px) | Voltou a falhar às 02h42 e 03h58 de 22/10, passa desde 05h07 | 22/10 |
 | D-V4 (miniaturas de Meus imóveis) | Instável às 02h42 e 05h07 de 22/10 ("imagem quebrada") | 22/10 |
 | D-V6 (imagens de Minhas locações) | Regra nova sem capa (#1023) | 22/10 |
+| D-V7 (rascunho sem link para a página pública) | Corrigido no #1028; virou teste normal | 22/10 |
 | Critério a e d com foto fictícia | Deve sumir com o #1016; se voltar, a causa é outra | 22/10 |
 | Critério d com arquivo `/_next/static` cancelado | Deve sumir com o #1021 | 22/10 |
 | Critério d com leitura `GET /api` cancelada | Regra nova no #1023 (painel e pedido de moradia) | 22/10 |

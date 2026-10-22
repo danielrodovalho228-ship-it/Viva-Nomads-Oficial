@@ -8,7 +8,7 @@ import { CLASSES, PAGINAS_PUBLICAS as PAGINAS, escutarImagens, varrerPagina, typ
   em 390 e em 1280 px, rolar a página TODA e caçar seis classes de defeito (fixtures/varredura-pagina.ts):
     imagem  vazia, quebrada ou 404, pelo carregamento real (naturalWidth) e pelo HTTP da resposta
     fixo    elemento fixo/flutuante sobre conteúdo que a rolagem não revela (régua do Muse, 21/10)
-    foto    cartão sem foto ou com a área da foto vazia
+    foto    cartão sem foto ou com a área da foto vazia (no laboratório, a foto fictícia semeada por outra spec não conta)
     estouro conteúdo vazando pela borda da tela (por elemento: html/body usam overflow-x: clip e escondem a rolagem)
     texto   texto cortado sem reticências
     grade   grade desalinhada ou cartões da mesma linha fora do tamanho uniforme
