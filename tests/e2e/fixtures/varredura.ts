@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { hasAccount } from "./accounts";
 import { entrar } from "./laboratorio";
-import { MOTIVO_ACAO_CANCELADA, canceladaPeloNavegador } from "./requisicao-cancelada";
+import { MOTIVO_ACAO_CANCELADA, MOTIVO_ARQUIVO_CANCELADO, canceladaPeloNavegador } from "./requisicao-cancelada";
 import { recursoFicticioDoLab } from "../../../src/lib/varredura-texto";
 
 /**
@@ -97,6 +97,7 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
   });
   page.on("pageerror", (e) => brutos.push(`página: ${e.message}`));
   let acaoCancelada = false;
+  let arquivoCancelado = false;
   page.on("requestfailed", (r) => {
     if (recursoFicticioDoLab(r.url())) {
       fotoFicticia = true;
@@ -107,6 +108,10 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
     if (cancelada === "prefetch") return;
     if (cancelada === "acao") {
       acaoCancelada = true;
+      return;
+    }
+    if (cancelada === "arquivo") {
+      arquivoCancelado = true;
       return;
     }
     // Tipo, método e erro do navegador vão junto: a rodada 2 (21/10) acusou a URL da própria tela (sem `_rsc`) e só a URL
@@ -122,6 +127,7 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
       ...new Set([
         ...brutos.filter(ehExcecao).map((t) => EXCECOES_TERCEIROS.find((x) => x.padrao.test(t))!.motivo),
         ...(acaoCancelada ? [MOTIVO_ACAO_CANCELADA] : []),
+        ...(arquivoCancelado ? [MOTIVO_ARQUIVO_CANCELADO] : []),
         ...(fotoFicticia ? [MOTIVO_FOTO_FICTICIA] : []),
       ]),
     ],
