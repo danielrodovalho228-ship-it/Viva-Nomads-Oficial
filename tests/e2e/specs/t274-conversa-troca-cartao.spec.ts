@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T271 — Defeito do QA (21/10, "cartão residual nas Conversas"): ao trocar de conversa, o cartão da visita da conversa
+ * T274 — Defeito do QA (21/10, "cartão residual nas Conversas"): ao trocar de conversa, o cartão da visita da conversa
  * ANTERIOR não pode ficar na tela. Duas conversas do mesmo morador com o mesmo dono, em imóveis diferentes; só a do
  * imóvel A tem visita presencial confirmada. A ↔ B ↔ A, a 1280 e a 390 px.
  */
@@ -18,7 +18,7 @@ async function abrirConversa(page: Page, id: string, largura: number) {
   await page.locator(`[data-testid="mensagens-conversa"][data-conversa="${id}"]`).click();
 }
 
-test.describe("T271 — troca de conversa não deixa o cartão da anterior", () => {
+test.describe("T274 — troca de conversa não deixa o cartão da anterior", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
 

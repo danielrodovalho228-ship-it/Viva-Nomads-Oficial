@@ -1,7 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buscarParceiros } from "@/lib/data/parceiros-publico";
-import { integracoesSimuladas } from "@/lib/integracoes";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { momentoDaSugestao, type CategoriaVinculo, type Gatilho } from "./pedidos-do-evento";
 
@@ -71,6 +70,6 @@ export async function sugestaoMorador(periodo: { inicio: string | null; fim: str
   const momento = momentoDaSugestao(periodo, hojeEmBrasilia(agora));
   if (!momento) return null;
   const categorias = momento === "entrada" ? ["mudanca", "limpeza"] : ["mudanca"];
-  const listas = await Promise.all(categorias.map((c) => buscarParceiros({ categoria: c, cidade }).then((r) => r.lista.filter((p) => !p.teste || integracoesSimuladas()).slice(0, 3).map((p) => ({ slug: p.slug, nome: p.nomePublico, categoria: c })))));
+  const listas = await Promise.all(categorias.map((c) => buscarParceiros({ categoria: c, cidade }).then((r) => r.lista.slice(0, 3).map((p) => ({ slug: p.slug, nome: p.nomePublico, categoria: c })))));
   return { momento, parceiros: listas.flat() };
 }
