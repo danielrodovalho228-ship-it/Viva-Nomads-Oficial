@@ -171,7 +171,7 @@ export function FontesDaSugestao({ s, onConferir }: { s: SugestaoVista; onConfer
       )}
       {s.aviso && <p className="mt-2 font-semibold text-amber-800">{s.aviso}</p>}
       {s.custo && <p className="mt-1 text-muted">Custo estimado: {s.custo}</p>}
-      <label className="mt-2 flex items-center gap-2 font-medium">
+      <label className="mt-2 flex items-center gap-2 font-semibold">
         <input type="checkbox" checked={s.conferida} onChange={(e) => onConferir(e.target.checked)} /> Conferi as fontes e o texto
       </label>
     </div>

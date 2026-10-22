@@ -122,7 +122,7 @@ function Convidar({ propertyId, categoria, opcoes, cidade }: { propertyId: strin
   if (!opcoes.length) {
     return (
       <p className="text-sm text-muted" data-testid={`sem-opcoes-${categoria}`}>
-        Nenhum parceiro de {TITULO[categoria].toLowerCase()} atende {cidade ?? "a cidade do imóvel"} ainda.{" "}
+        {`Nenhum parceiro de ${TITULO[categoria].toLowerCase()} atende ${cidade ?? "a cidade do imóvel"} ainda. `}
         <Link href={`/parceiros/buscar?categoria=${categoria}`} className="text-ink underline underline-offset-4">
           Ver parceiros
         </Link>

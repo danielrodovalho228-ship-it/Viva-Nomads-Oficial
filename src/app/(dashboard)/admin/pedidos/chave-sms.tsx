@@ -44,7 +44,7 @@ export function ChaveSmsPainel({ ligada, ligadaEm }: { ligada: boolean; ligadaEm
         com aviso por e-mail ao inquilino.
       </p>
       {confirmando ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900" data-testid="chave-sms-confirmacao">
+        <div className="border border-line mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-white p-3 text-sm text-amber-900" data-testid="chave-sms-confirmacao">
           <span>{ligada ? "Desligar a exigência do telefone?" : "Ligar a exigência do telefone para todos os pedidos?"}</span>
           <Button variant="secondary" size="sm" onClick={trocar} disabled={ocupado} data-testid="chave-sms-confirmar">
             {ligada ? "Desligar" : "Ligar"}

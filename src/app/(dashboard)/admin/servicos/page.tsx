@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { CheckCircle2, Inbox } from "lucide-react";
-import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
+import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { pedidosServicoAdmin } from "@/lib/data/servicos-morador-actions";
 import { FAIXAS_HORARIO, codigoDoPedido, rotuloEstado } from "@/lib/servicos-morador";
 import { MudarEstado } from "./mudar-estado";
@@ -19,11 +19,9 @@ export default async function AdminServicosPage() {
   return (
     <>
       <PageTitle title="Serviços do morador" subtitle="Pedidos feitos pelos moradores. A Viva não recebe nem repassa dinheiro: o pagamento é direto ao prestador." />
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <StatCard label="Pedidos novos" value={novos} icon={Inbox} />
-        <StatCard label="Confirmados" value={andamento} icon={CheckCircle2} />
-      </div>
-      <Panel>
+      <NumeroHeroi rotulo="Pedidos novos" valor={novos} href="#lista" />
+      <ListaNumeros className="mb-6" itens={[{ rotulo: "Confirmados", valor: andamento, href: "#lista" }]} />
+      <Panel id="lista" className="scroll-mt-24">
         {pedidos.length === 0 ? (
           <p className="text-sm text-muted">Nenhum pedido ainda.</p>
         ) : (
@@ -34,7 +32,7 @@ export default async function AdminServicosPage() {
                   <p className="font-semibold text-ink">
                     {p.servico} · {p.morador}
                   </p>
-                  <span className="rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">{rotuloEstado(p.status)}</span>
+                  <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-forest">{rotuloEstado(p.status)}</span>
                 </div>
                 <p className="mt-1 text-sm text-muted">
                   {codigoDoPedido(p.id)} · {dataBR(p.dataDesejada)} · {FAIXAS_HORARIO.find((f) => f.id === p.faixa)?.rotulo ?? p.faixa} · {p.prestador}

@@ -275,13 +275,18 @@ export function distanciaKm(a: { lat: number; lng: number }, b: { lat: number; l
 }
 
 /**
- * Busca pública: só publicado e nunca conta de teste. Filtra por categoria e por cidade (a cidade está entre as
- * atendidas) ou ponto do CEP (dentro do raio do parceiro). Ordem: nota (com avaliação real) e depois os mais recentes.
+ * Busca pública: só publicado. Conta de teste fica fora para o público e aparece só para quem também é conta de
+ * teste ou admin (`verTeste`) — o QA acha o parceiro de teste e fecha o ciclo sem que um usuário real o veja.
+ * Filtra por categoria e por cidade (a cidade está entre as atendidas) ou ponto do CEP (dentro do raio do parceiro).
+ * Ordem: nota (com avaliação real) e depois os mais recentes.
  */
-export function filtrarParceiros<T extends ParceiroNaBusca>(lista: T[], f: { categoria?: string | null; cidade?: string | null; ponto?: { lat: number; lng: number } | null }): T[] {
+export function filtrarParceiros<T extends ParceiroNaBusca>(
+  lista: T[],
+  f: { categoria?: string | null; cidade?: string | null; ponto?: { lat: number; lng: number } | null; verTeste?: boolean },
+): T[] {
   const cid = chaveCidade(f.cidade ?? "");
   return lista
-    .filter((p) => p.status === "publicado" && !p.teste)
+    .filter((p) => p.status === "publicado" && (!p.teste || f.verTeste === true))
     .filter((p) => !f.categoria || p.categorias.includes(f.categoria))
     .filter((p) => {
       if (!cid && !f.ponto) return true;

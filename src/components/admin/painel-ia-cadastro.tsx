@@ -25,7 +25,7 @@ export async function PainelIaCadastro() {
           <Sparkles className="h-5 w-5 text-forest" aria-hidden /> IA do cadastro
         </h2>
         <span
-          className={cn("rounded-full px-3 py-1 text-xs font-semibold", ligadaFotos ? "bg-green-50 text-green-900" : "bg-red-50 text-red-800")}
+          className={cn("rounded-full px-3 py-1 text-xs font-semibold", ligadaFotos ? "border border-line bg-white text-forest" : "border border-line bg-white text-red-800")}
           data-testid="painel-ia-estado"
         >
           {ligadaFotos ? "Ligada" : "Desligada"}
@@ -50,7 +50,7 @@ export async function PainelIaCadastro() {
               {r.ultimoErro.tipo ?? "—"}
               {r.ultimoErro.motivo && <span className="text-muted"> — a pessoa viu: “{MENSAGEM_FALHA_IA[r.ultimoErro.motivo]}”</span>}
               {r.ultimoErro.resumo && (
-                <span className="mt-1 block break-words rounded-lg bg-red-50 px-2 py-1 text-xs text-red-900" data-testid="painel-ia-erro-resumo">
+                <span className="border border-line mt-1 block break-words rounded-lg bg-white px-2 py-1 text-xs text-red-900" data-testid="painel-ia-erro-resumo">
                   Mensagem da API: {r.ultimoErro.resumo}
                 </span>
               )}

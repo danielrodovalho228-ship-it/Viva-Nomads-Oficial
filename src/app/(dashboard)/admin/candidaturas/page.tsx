@@ -67,7 +67,7 @@ export default async function AdminCandidaturasPage({ searchParams }: { searchPa
             {lista.map((c) => (
               <li key={c.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2 text-sm" data-testid="candidatura-linha">
                 <span className="min-w-0">
-                  <span className="font-medium text-ink">{c.imovel}</span>
+                  <span className="font-semibold text-ink">{c.imovel}</span>
                   <span className="text-muted">
                     {c.cidade ? ` · ${c.cidade}` : ""} · {situacao(c)}
                   </span>

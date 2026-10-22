@@ -89,7 +89,7 @@ export function ResumoEAcoes({ chamadoId, quemEh, sla }: { chamadoId: string; qu
               <div className="flex gap-2"><dt className="w-16 shrink-0 text-muted">Quem é</dt><dd className="text-ink" data-testid="resumo-quem">{quemEh}</dd></div>
               <div className="flex gap-2">
                 <dt className="w-16 shrink-0 text-muted">Prazo</dt>
-                <dd><span className={cn("rounded-full px-2 py-1 text-xs font-medium", sla.cor)}>{sla.texto}</span> <span className="text-xs text-muted">{sla.risco}</span></dd>
+                <dd><span className={cn("rounded-full px-2 py-1 text-xs font-semibold", sla.cor)}>{sla.texto}</span> <span className="text-xs text-muted">{sla.risco}</span></dd>
               </div>
             </dl>
           </div>

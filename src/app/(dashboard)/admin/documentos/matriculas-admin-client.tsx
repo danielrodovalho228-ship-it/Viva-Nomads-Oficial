@@ -62,7 +62,7 @@ export function MatriculasAdmin({ itens, contadores }: { itens: MatriculaNaFila[
 
 function Sim({ ok, rotulo }: { ok: boolean; rotulo: string }) {
   return (
-    <li className={cn("flex items-center gap-2", ok ? "text-green-800" : "text-red-700")}>
+    <li className={cn("flex items-center gap-2", ok ? "text-forest" : "text-red-700")}>
       {ok ? <Check className="h-3.5 w-3.5" aria-hidden /> : <X className="h-3.5 w-3.5" aria-hidden />} {rotulo}
     </li>
   );
@@ -95,7 +95,7 @@ function MatriculaCard({ m, onDecidido }: { m: MatriculaNaFila; onDecidido: () =
       <Panel>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="min-w-0">
-            <p className="font-medium text-ink">
+            <p className="font-semibold text-ink">
               {m.ownerNome}
               <span className="font-normal text-muted"> · {m.tituloImovel ?? "sem imóvel ligado ainda"}</span>
             </p>
@@ -111,7 +111,7 @@ function MatriculaCard({ m, onDecidido }: { m: MatriculaNaFila; onDecidido: () =
                 <iframe src={m.arquivoUrl} title="Matrícula enviada" className="mt-3 h-96 w-full rounded-lg border border-sage-200" />
               ) : null)}
             {m.arquivoUrl && (
-              <a href={m.arquivoUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-forest underline">
+              <a href={m.arquivoUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-forest underline">
                 Abrir a matrícula <ExternalLink className="h-3.5 w-3.5" aria-hidden />
               </a>
             )}
@@ -153,7 +153,7 @@ function MatriculaCard({ m, onDecidido }: { m: MatriculaNaFila; onDecidido: () =
                 {m.casoUrl && (
                   <>
                     {" · "}
-                    <a href={m.casoUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-forest underline">
+                    <a href={m.casoUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-forest underline">
                       abrir o documento
                     </a>
                   </>

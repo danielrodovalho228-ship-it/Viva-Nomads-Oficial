@@ -1,0 +1,121 @@
+import "server-only";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { estadoBackup } from "@/lib/backup/cartao";
+import { lerExecucoesBackup } from "@/components/admin/cartao-backup";
+import { listarFalhasDocumentos } from "@/lib/data/documentos-falhas-actions";
+import {
+  candidaturasSemResposta48h,
+  filaDocumentos,
+  idsContasTeste,
+  pedidosExpirandoSemResposta,
+  taxasVencidas,
+  urgentesSemResposta4h,
+} from "@/lib/data/admin-indicadores";
+import { textoFilaDocumentos } from "@/lib/admin/indicadores";
+import { haQuantoTempo, montarDecisoesAdmin, type ChaveDecisaoAdmin, type ContagemDecisao, type DecisoesAdmin } from "@/lib/admin/decisoes-admin";
+
+type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
+
+const horasDesde = (iso: string | null | undefined) => (iso ? (Date.now() - new Date(iso).getTime()) / 3_600_000 : null);
+const maisAntigo = (iso: string | null | undefined) => {
+  const t = haQuantoTempo(horasDesde(iso));
+  return t ? `mais antigo ${t}` : null;
+};
+
+/** Chamados abertos de uma prioridade: a mesma regra da fila do Atendimento (filaAtendimento sem filtro de status). */
+async function chamadosAbertos(admin: Admin, prioridade: "p1" | "p2"): Promise<ContagemDecisao> {
+  const { data, error } = await admin
+    .from("chamados")
+    .select("criado_em")
+    .eq("simulacao", false)
+    .eq("prioridade", prioridade)
+    .not("status", "in", "(resolvido,encerrado)")
+    .order("criado_em", { ascending: true })
+    .limit(200);
+  if (error) return { n: null };
+  const linhas = (data ?? []) as { criado_em: string | null }[];
+  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
+}
+
+/** Encerramentos abertos ou em condução: os mesmos que /admin/contratos/encerramentos mostra para conduzir. */
+async function encerramentosAbertos(admin: Admin): Promise<ContagemDecisao> {
+  const { data, error } = await admin
+    .from("contrato_encerramento_pedidos")
+    .select("criado_em")
+    .neq("status", "concluido")
+    .order("criado_em", { ascending: true })
+    .limit(500);
+  if (error) return { n: null };
+  const linhas = (data ?? []) as { criado_em: string }[];
+  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
+}
+
+/** Pedidos de parceria na aba "Pendentes" de /admin/parceiros (pendente ou aguardando o e-mail da pessoa). */
+async function parceriasPendentes(admin: Admin): Promise<ContagemDecisao> {
+  const { data, error } = await admin
+    .from("parceiro_solicitacoes")
+    .select("criado_em")
+    .in("status", ["pendente", "aguardando_email"])
+    .order("criado_em", { ascending: true })
+    .limit(500);
+  if (error) return { n: null };
+  const linhas = (data ?? []) as { criado_em: string }[];
+  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
+}
+
+/** Pedidos a parceiros ainda "solicitado" (sem orçamento), contas de teste fora — o filtro ?filtro=solicitado da lista. */
+export async function pedidosParceiroSemOrcamento(admin: Admin): Promise<{ id: string; criado_em: string }[] | null> {
+  const [{ data, error }, teste, { data: parcs }] = await Promise.all([
+    admin.from("parceiro_pedidos").select("id, cliente_id, parceiro_id, criado_em").eq("status", "solicitado").order("criado_em", { ascending: true }).limit(1000),
+    idsContasTeste(admin),
+    admin.from("parceiros").select("id, user_id").limit(5000),
+  ]);
+  if (error) return null;
+  const dono = new Map(((parcs ?? []) as { id: string; user_id: string }[]).map((p) => [p.id, p.user_id]));
+  return ((data ?? []) as { id: string; cliente_id: string; parceiro_id: string; criado_em: string }[]).filter(
+    (p) => !teste.has(p.cliente_id) && !teste.has(dono.get(p.parceiro_id) ?? ""),
+  );
+}
+
+/**
+ * As decisões do início do /admin (Prompt 46). Cada contagem vem da MESMA função da lista que a linha abre; o que não
+ * puder ser lido fica de fora da soma e a tela avisa (nunca vira zero). O layout de /admin já exige admin.
+ */
+export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const ler = <T,>(p: Promise<T>) => p.catch(() => null);
+  const [p1, p2, backup, falhas, docs, encerr, parcerias, pedidosParc, urgentes, cand48, vencidas, expirando] = await Promise.all([
+    ler(chamadosAbertos(admin, "p1")),
+    ler(chamadosAbertos(admin, "p2")),
+    ler(lerExecucoesBackup()),
+    ler(listarFalhasDocumentos()),
+    ler(filaDocumentos(admin)),
+    ler(encerramentosAbertos(admin)),
+    ler(parceriasPendentes(admin)),
+    ler(pedidosParceiroSemOrcamento(admin)),
+    ler(urgentesSemResposta4h(admin)),
+    ler(candidaturasSemResposta48h(admin)),
+    ler(taxasVencidas(admin, "real")),
+    ler(pedidosExpirandoSemResposta(admin)),
+  ]);
+
+  const contagens: Partial<Record<ChaveDecisaoAdmin, ContagemDecisao | null>> = {
+    chamados_p1: p1,
+    chamados_p2: p2,
+    encerramentos: encerr,
+    parceiros_para_aprovar: parcerias,
+  };
+  if (backup && backup !== "sem_tabela") {
+    const e = estadoBackup(backup, agora);
+    contagens.backup = { n: (e.copia.vermelho ? 1 : 0) + (e.drill.vermelho ? 1 : 0), detalhe: [e.copia.porque, e.drill.porque].filter(Boolean).join(" ") || null };
+  }
+  if (falhas) contagens.falhas_documento = { n: falhas.falhas.length + falhas.pendentes };
+  if (docs) contagens.documentos_pendentes = { n: docs.total, detalhe: [textoFilaDocumentos(docs), maisAntigo(docs.maisAntigoEm)].filter(Boolean).join(" · ") };
+  if (pedidosParc) contagens.pedidos_parceiro_sem_resposta = { n: pedidosParc.length, detalhe: maisAntigo(pedidosParc[0]?.criado_em) };
+  if (urgentes) contagens.chamados_urgentes_sem_resposta = { n: urgentes.length, detalhe: maisAntigo(urgentes[0]?.opened_at) };
+  if (cand48) contagens.candidaturas_sem_resposta_48h = { n: cand48.length, detalhe: maisAntigo(cand48[0]?.criadoEm) };
+  if (vencidas) contagens.comissoes_vencidas = { n: vencidas.length };
+  if (expirando) contagens.pedidos_sem_resposta_expirando = { n: expirando.length, detalhe: "vencem em até 3 dias" };
+  return montarDecisoesAdmin(contagens);
+}
