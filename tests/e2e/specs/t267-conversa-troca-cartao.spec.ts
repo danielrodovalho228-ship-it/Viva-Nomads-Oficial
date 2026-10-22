@@ -59,7 +59,7 @@ test.describe("T267 — troca de conversa não deixa o cartão da anterior", () 
       await expect(cartao.getByTestId("cartao-visita")).toHaveAttribute("data-status", "confirmado");
 
       await abrirConversa(page, convB, largura);
-      await expect(page.getByText("Oi! Sobre o Studio B.")).toBeVisible();
+      await expect(page.locator("section").getByText("Oi! Sobre o Studio B.")).toBeVisible();
       await expect(page.getByTestId("conversa-visita"), "o cartão da conversa A não fica na B").toHaveCount(0);
       // E continua sem cartão depois que a resposta do servidor chega.
       await page.waitForTimeout(1500);
