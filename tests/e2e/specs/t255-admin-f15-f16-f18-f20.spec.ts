@@ -19,12 +19,10 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
       const agentes = menu.getByRole("link", { name: /^Agentes/ }).first();
       await expect(agentes).toBeVisible({ timeout: 20_000 });
       const selo = agentes.locator('[aria-label$="aguardando"]');
-      const aprovacoes = await (async () => {
-        await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
-        return page.getByText(/achados P1/i).count();
-      })();
-      // o rótulo claro dos achados P1 mora dentro de /admin/agentes (não no selo do menu)
-      expect(aprovacoes).toBeGreaterThan(0);
+      await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+      // o rótulo claro dos achados P1 mora dentro de /admin/agentes (não no selo do menu); é desenhado no cliente,
+      // então espera aparecer em vez de contar logo após o domcontentloaded (contava 0).
+      await expect(page.getByText(/achados P1/i).first()).toBeVisible({ timeout: 20_000 });
       if (await selo.count()) expect(await selo.getAttribute("aria-label")).toMatch(/^\d+ aguardando$/);
       await page.screenshot({ path: info.outputPath(`f15-${largura}.png`), fullPage: false });
     });
