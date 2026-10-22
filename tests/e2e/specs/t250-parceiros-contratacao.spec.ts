@@ -223,18 +223,18 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     await expect(m).toHaveURL(/\/parceiros\/buscar\?.*categoria=limpeza/);
     await m.locator(`[data-testid="cartao-parceiro"][data-slug="${slugLimpa}"]`).click();
     await expect(m).toHaveURL(new RegExp(`/parceiros/${slugLimpa}`));
-    // Vindo da busca por navegação do cliente, a página do parceiro ainda termina de carregar depois que a folha
-    // abre e pode fechá-la ("Enviar pedido" sumia, lab-crítico do #989). Abre e preenche até a folha ficar de pé;
-    // o envio (que cria o pedido) é feito uma vez só, fora da repetição.
+    // Defeito do QA (21/10): vindo da busca por navegação do cliente, a folha fechava sozinha logo depois de abrir.
+    // Agora abre uma vez só e tem de ficar de pé (a lista de imóveis vem com a página; abrir não chama ação).
     const folha = m.getByTestId("solicitar-orcamento-folha");
     const enviar = m.getByTestId("solicitar-orcamento-enviar");
-    await expect(async () => {
-      if (!(await folha.isVisible())) await m.getByTestId("solicitar-orcamento").click();
-      await expect(folha).toBeVisible({ timeout: 3_000 });
-      await m.getByTestId("solicitar-orcamento-descricao").fill("Limpeza semanal do studio, 1 quarto.");
-      await m.getByTestId("solicitar-orcamento-horario-0").fill(amanha(9));
-      await expect(enviar).toBeEnabled({ timeout: 3_000 });
-    }).toPass({ timeout: 30_000 });
+    await m.getByTestId("solicitar-orcamento").click();
+    await expect(folha).toBeVisible();
+    await m.getByTestId("solicitar-orcamento-descricao").fill("Limpeza semanal do studio, 1 quarto.");
+    await m.getByTestId("solicitar-orcamento-horario-0").fill(amanha(9));
+    await m.waitForTimeout(2000);
+    await expect(folha, "a folha continua aberta depois que a página termina de carregar").toBeVisible();
+    await expect(m.getByTestId("solicitar-orcamento-descricao")).toHaveValue("Limpeza semanal do studio, 1 quarto.");
+    await expect(enviar).toBeEnabled();
     await enviar.click();
     await expect(m).toHaveURL(/\/dashboard\/servicos\/pedidos\//, { timeout: 30_000 });
     const pedido = m.url().split("/").pop()!;

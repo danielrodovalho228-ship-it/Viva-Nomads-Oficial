@@ -113,3 +113,10 @@ test("página pública do parceiro: 'Solicitar orçamento' ativo, sem o 'Em brev
   assert.match(spec, /toBeEnabled\(\)/);
   assert.match(spec, /not\.toContainText\(TEXTO_ANTIGO\)/);
 });
+
+test("folha 'Solicitar orçamento': abrir não chama ação (a lista de imóveis vem com a página — QA 21/10)", () => {
+  const folha = ler("src/components/parceiros/solicitar-orcamento.tsx");
+  assert.doesNotMatch(folha, /meusImoveisParaServico/);
+  assert.match(folha, /const abrir = \(\) => setAberto\(true\);/);
+  assert.match(ler("src/app/(public)/parceiros/[slug]/page.tsx"), /imoveisParaServico\(usuario\.id\)/);
+});
