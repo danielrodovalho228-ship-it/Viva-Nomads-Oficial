@@ -45,9 +45,6 @@ import { useTempos } from "@/components/busca/use-tempos";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
 import type { ModoRota } from "@/lib/rotas/tempo";
 
-/** Cartões que cabem na primeira dobra a 1280 px (2 linhas de 3): a 1ª foto deles baixa sem esperar a rolagem. */
-const CARTOES_PRIMEIRA_DOBRA = 6;
-
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
 const GARANTIAS_FILTRO = CAUCAO_PARCELADA_UI ? GARANTIAS_FAIXA : GARANTIAS_PUBLICAS;
@@ -1080,7 +1077,7 @@ export function SearchClient({
             <div className="grid auto-rows-fr gap-x-4 gap-y-8 sm:grid-cols-2 sm:gap-x-6 lg:gap-x-4 xl:grid-cols-3" data-testid="grade-resultados">
               {/* h2 (invisível) entre o h1 do topo e os h3 dos cards — sem pular nível. */}
               <h2 className="sr-only">Imóveis encontrados</h2>
-              {results.map((p, i) => (
+              {results.map((p) => (
                 <div
                   key={p.id}
                   data-testid="card-resultado"
@@ -1097,7 +1094,6 @@ export function SearchClient({
                     <PropertyCard
                       property={p}
                       periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined}
-                      carregarJa={i < CARTOES_PRIMEIRA_DOBRA}
                     />
                   </div>
                   {/* Imóvel sem ponto (ou sem tempo depois do cálculo): sem dado, sem linha. */}

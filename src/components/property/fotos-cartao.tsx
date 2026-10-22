@@ -5,14 +5,19 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BrandImage } from "@/components/brand-image";
 import { cn } from "@/lib/utils";
 
-/** Fotos do cartão (adendo do Prompt 40): carrossel 4:3 que desliza com o dedo, com pontos. Até 5 fotos. */
+/**
+ * Fotos do cartão (adendo do Prompt 40): carrossel 4:3 que desliza com o dedo, com pontos. Até 5 fotos.
+ * Só a foto visível e a próxima entram na página; as demais são um espaço do mesmo tamanho até o carrossel chegar
+ * perto (D-V, t249: a 5ª foto, escondida pelo corte do cartão, contava como "acima da dobra" sem carregar). Menos
+ * downloads na busca: 2 fotos por cartão em vez de 5.
+ */
 export const MAX_FOTOS_CARTAO = 5;
 
 /**
  * Fica DENTRO do link do cartão: nada clicável aqui (botão dentro de <a> é HTML inválido — D12).
  * Os pontos só mostram a posição; as setas do computador ficam fora do link (SetasFotos).
  */
-export function FotosCartao({ fotos, alt, carregarJa = false }: { fotos: string[]; alt: string; carregarJa?: boolean }) {
+export function FotosCartao({ fotos, alt }: { fotos: string[]; alt: string }) {
   const [ativo, setAtivo] = useState(0);
   const lista = fotos.slice(0, MAX_FOTOS_CARTAO);
   return (
@@ -26,18 +31,21 @@ export function FotosCartao({ fotos, alt, carregarJa = false }: { fotos: string[
         }}
         className="flex h-full w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {lista.map((src, i) => (
-          <BrandImage
-            key={`${src}-${i}`}
-            src={src}
-            alt={i === 0 ? alt : `${alt} — foto ${i + 1}`}
-            rounded="rounded-none"
-            treat={false}
-            sizes="(max-width: 768px) 100vw, 33vw"
-            carregarJa={carregarJa && i === 0}
-            className="h-full w-full shrink-0 snap-start"
-          />
-        ))}
+        {lista.map((src, i) =>
+          i > ativo + 1 ? (
+            <div key={`${src}-${i}`} aria-hidden className="h-full w-full shrink-0 snap-start bg-surface-2" data-foto-depois="" />
+          ) : (
+            <BrandImage
+              key={`${src}-${i}`}
+              src={src}
+              alt={i === 0 ? alt : `${alt} — foto ${i + 1}`}
+              rounded="rounded-none"
+              treat={false}
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="h-full w-full shrink-0 snap-start"
+            />
+          ),
+        )}
       </div>
       {lista.length > 1 && (
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center gap-1" data-testid="cartao-pontos">

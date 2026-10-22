@@ -18,11 +18,8 @@ const ehFoto = (src: unknown): src is string => typeof src === "string" && (/^ht
 export function PropertyCard({
   property,
   periodMonths,
-  carregarJa = false,
 }: {
   property: Property;
-  /** Cartão na primeira dobra da lista (busca): a 1ª foto baixa já, sem esperar rolar (t249, critério a). */
-  carregarJa?: boolean;
   /** Quando a busca tem período selecionado, mostra o total estimado do período. */
   periodMonths?: number;
 }) {
@@ -54,7 +51,7 @@ export function PropertyCard({
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-surface-2" data-testid="cartao-foto">
         {fotos.length > 0 ? (
-          <FotosCartao fotos={fotos} alt={property.title} carregarJa={carregarJa} />
+          <FotosCartao fotos={fotos} alt={property.title} />
         ) : (
           <PhotoPlaceholder label={property.photos[0]} className="h-full w-full" />
         )}
