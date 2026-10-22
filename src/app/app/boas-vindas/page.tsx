@@ -21,14 +21,14 @@ export default function BoasVindasPage() {
       {/* Foto no topo, colada na borda e por trás da barra de status (sem
           padding-top), inteira e sem véu: nada de faixa branca nem gradiente por
           cima. Em telas baixas (iPhone SE) encolhe para os botões caberem sem rolar. */}
-      <div className="relative h-[50vh] min-h-[280px] w-full flex-none overflow-hidden [@media(max-height:700px)]:h-[36vh] [@media(max-height:700px)]:min-h-0" data-testid="boas-vindas-foto">
+      <div className="relative h-[44vh] min-h-[280px] w-full flex-none overflow-hidden [@media(max-height:700px)]:h-[30vh] [@media(max-height:700px)]:min-h-0" data-testid="boas-vindas-foto">
         <Image
           src="/images/app/app-boas-vindas.webp"
           alt="Pessoa chegando com a mala a um imóvel mobiliado, abrindo a porta"
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[50%_40%]"
+          className="object-cover object-[50%_40%] sm:object-[50%_20%]"
         />
       </div>
 
