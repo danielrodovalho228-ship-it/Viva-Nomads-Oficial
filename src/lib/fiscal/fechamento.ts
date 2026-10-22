@@ -15,7 +15,8 @@ export interface EstadoParaFechar {
   conferenciaId: string;
   contrato: string;
   tipo: "entrada" | "saida";
-  itens: { parte: ParteFechamento; comodo: string; descricao: string; fotoPath: string | null; criadoEm: string }[];
+  /** precisaReparo (Prompt 38): só entra no texto quando marcado — o conteúdo de quem não marcou não muda. */
+  itens: { parte: ParteFechamento; comodo: string; descricao: string; fotoPath: string | null; criadoEm: string; precisaReparo?: boolean }[];
   respostas: { parte: ParteFechamento; decisao: string; motivo: string | null; decididoEm: string }[];
   laudo: { path: string; parte: ParteFechamento; criadoEm: string } | null;
   /** Hash (sha256) de cada arquivo: fotos e laudo, pelo caminho. */
@@ -49,7 +50,7 @@ export function conteudoFechamento(e: EstadoParaFechar, motivo: MotivoFechamento
   return [
     `Conferência de ${e.tipo} · contrato ${e.contrato} · ${e.conferenciaId}`,
     `Fechada porque ${ROTULO_FECHAMENTO[motivo]}.`,
-    ...itens.map((i) => `Item (${i.parte}) ${i.comodo}: ${i.descricao}${i.fotoPath ? ` · foto sha256 ${e.hashes[i.fotoPath] ?? "indisponível"}` : ""}`),
+    ...itens.map((i) => `Item (${i.parte}) ${i.comodo}: ${i.descricao}${i.precisaReparo ? " · precisa de reparo" : ""}${i.fotoPath ? ` · foto sha256 ${e.hashes[i.fotoPath] ?? "indisponível"}` : ""}`),
     ...respostas.map((r) => `Resposta (${r.parte}) ${r.decisao} em ${r.decididoEm}${r.motivo ? ` · motivo: ${r.motivo}` : ""}`),
     ...semResposta(e).map((p) => `Sem resposta: ${p}`),
     e.laudo ? `Laudo (${e.laudo.parte}) sha256 ${e.hashes[e.laudo.path] ?? "indisponível"}` : "Sem laudo",

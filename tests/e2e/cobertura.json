@@ -1467,6 +1467,14 @@
       "specs": [
         "t261-tempo-ate-o-trabalho"
       ]
+    },
+    "/dashboard/imoveis/[id]/parceiros": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
     }
   },
   "rotas": {
@@ -4414,6 +4422,79 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/automacao/acoes.ts#atualizarVinculo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
+    },
+    "src/lib/automacao/acoes.ts#confirmarPedidoAutomatico": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
+    },
+    "src/lib/automacao/acoes.ts#convidarParceiroFixo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
+    },
+    "src/lib/automacao/acoes.ts#encerrarVinculo": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
+    },
+    "src/lib/automacao/acoes.ts#meusImoveisFixos": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
+    },
+    "src/lib/automacao/acoes.ts#parceirosDoImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
+    },
+    "src/lib/automacao/acoes.ts#responderConviteFixo": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
+    },
+    "src/lib/automacao/acoes.ts#rodarAutomacaoAgora": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
+    },
+    "src/lib/automacao/acoes.ts#trocarParceiro": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t264-viva-automatico"
+      ]
     }
   }
 }

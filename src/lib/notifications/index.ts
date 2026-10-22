@@ -56,6 +56,8 @@ export async function notify(params: {
   ctaLabel?: string;
   /** Aviso só para a equipe (alerta de chamado, documento na fila): remetente de sistema, assunto como veio. */
   interno?: boolean;
+  /** Sem push (horário de silêncio, Prompt 38): o e-mail sai normalmente. */
+  semPush?: boolean;
 }): Promise<NotifyResult> {
   const base = TEMPLATES[params.event];
   const tpl = {
@@ -75,7 +77,7 @@ export async function notify(params: {
 
   // PUSH em PARALELO ao e-mail: dispara já, sem await aqui (não atrasa nada).
   // Conteúdo GENÉRICO (só o evento + link) — nunca contato, sobrenome ou valores.
-  const pushPromise = params.userId
+  const pushPromise = params.userId && !params.semPush
     ? comLimite(
         sendPush({
           userId: params.userId,

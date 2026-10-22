@@ -241,6 +241,8 @@ export type ItemTela = {
   descricao: string;
   fotoUrl: string | null;
   criadoEm: string;
+  /** Prompt 38: o dono marca na conferência de SAÍDA; vira o pedido de manutenção quando ela fecha. */
+  precisaReparo?: boolean;
 };
 
 /**

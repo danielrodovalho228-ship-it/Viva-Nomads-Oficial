@@ -21,6 +21,7 @@ import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { registrarDocumento } from "@/lib/fiscal/registro";
 import { linhaConferir, numeroAditivo } from "@/lib/fiscal/prefixos";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
+import { aoEventoDaEstadia } from "@/lib/automacao/servidor";
 import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
@@ -457,6 +458,8 @@ async function aplicarAditivo(ctx: Contexto, a: LinhaAditivo): Promise<Res<{ com
   }
   if (aplicou !== true) return { ok: true, valor: { completo: true } };
   await evento(ctx.admin, a.contrato_id, ctx.userId, "estadia_remarcada", { aditivo: a.id, numero: a.numero, mudancas: a.mudancas });
+  // Prompt 38: a limpeza/lavanderia automática da saída ganha a janela nova (mesma chave, nunca outro pedido).
+  await aoEventoDaEstadia(ctx.admin, a.contrato_id, { tipo: "estadia_remarcada" });
   for (const id of [ctx.c.tenant_id, String(ctx.c.properties?.owner_id ?? "")]) if (id) avisar(ctx.admin, id, "estadia_remarcada", a.contrato_id);
   return { ok: true, valor: { completo: true } };
 }
@@ -547,6 +550,8 @@ export async function atualizarPedidoEncerramento(pedidoId: string, status: "em_
     await admin.from("contratos").update({ status: "encerrado_em_acerto", encerrado_em: new Date().toISOString() }).eq("id", pedido.contrato_id).eq("status", "ativo");
     await evento(admin, pedido.contrato_id, user.id, "contrato_encerrado", { pedido: pedido.id });
     await registrarEncerramento(admin, pedido, user.id);
+    // Prompt 38: a limpeza/lavanderia automática ainda não aceita é cancelada, com aviso ao parceiro.
+    await aoEventoDaEstadia(admin, pedido.contrato_id, { tipo: "contrato_encerrado" });
   }
   await logModeracao(supabase, user.id, status === "concluido" ? "concluir_encerramento" : "conduzir_encerramento", "contrato", pedido.contrato_id);
   revalidatePath("/admin/contratos/encerramentos");

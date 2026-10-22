@@ -87,6 +87,7 @@ export async function registrarItemConferencia(input: {
   comodo: string;
   descricao: string;
   fotoPath?: string | null;
+  precisaReparo?: boolean;
 }): Promise<Resultado> {
   if (input.tipo !== "entrada" && input.tipo !== "saida") return erro("Tipo de conferência inválido.");
   const ctx = await parteDoContrato(input.contratoId);
@@ -124,6 +125,8 @@ export async function registrarItemConferencia(input: {
       comodo: input.comodo.trim(),
       descricao: input.descricao.trim(),
       foto_path: input.fotoPath ?? null,
+      // Só o dono, só na saída (Prompt 38). Depois do fechamento nada muda (a trava acima e a do banco).
+      precisa_reparo: input.tipo === "saida" && ctx.parte === "proprietario" && input.precisaReparo === true,
     })
     .select("id, criado_em")
     .single();
@@ -131,7 +134,7 @@ export async function registrarItemConferencia(input: {
   revalidatePath("/dashboard/locacoes");
   revalidatePath("/dashboard/contratos");
   const fotoUrl = input.fotoPath ? ((await admin.storage.from(BUCKET).createSignedUrl(input.fotoPath, URL_SEGUNDOS)).data?.signedUrl ?? null) : null;
-  const item: ItemTela = { id: data.id as string, parte: ctx.parte, comodo: input.comodo.trim(), descricao: input.descricao.trim(), fotoUrl, criadoEm: String(data.criado_em) };
+  const item: ItemTela = { id: data.id as string, parte: ctx.parte, comodo: input.comodo.trim(), descricao: input.descricao.trim(), fotoUrl, criadoEm: String(data.criado_em), precisaReparo: input.tipo === "saida" && ctx.parte === "proprietario" && input.precisaReparo === true };
   return { ok: true, id: item.id, item };
 }
 
@@ -293,7 +296,7 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
   if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, conferencias: [] };
   const ids = confs.map((c) => c.id as string);
   const [{ data: itens }, { data: respostas }, { data: laudos }] = await Promise.all([
-    supabase.from("conferencia_itens").select("id, conferencia_id, parte, comodo, descricao, foto_path, criado_em").in("conferencia_id", ids).order("criado_em"),
+    supabase.from("conferencia_itens").select("id, conferencia_id, parte, comodo, descricao, foto_path, criado_em, precisa_reparo").in("conferencia_id", ids).order("criado_em"),
     supabase.from("conferencia_respostas").select("conferencia_id, parte, decisao, motivo, decidido_em").in("conferencia_id", ids),
     supabase.from("conferencia_laudos").select("conferencia_id, path, parte, criado_em").in("conferencia_id", ids),
   ]);
@@ -312,7 +315,7 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
         itens: await Promise.all(
           (itens ?? [])
             .filter((i) => i.conferencia_id === c.id)
-            .map(async (i) => ({ id: i.id as string, parte: i.parte as ParteConferencia, comodo: i.comodo as string, descricao: i.descricao as string, fotoUrl: await assinar((i.foto_path as string) ?? null), criadoEm: i.criado_em as string })),
+            .map(async (i) => ({ id: i.id as string, parte: i.parte as ParteConferencia, comodo: i.comodo as string, descricao: i.descricao as string, fotoUrl: await assinar((i.foto_path as string) ?? null), criadoEm: i.criado_em as string, precisaReparo: i.precisa_reparo === true })),
         ),
         respostas: rs.map((r) => ({ parte: r.parte, decisao: r.decisao, motivo: r.motivo, decididoEm: r.decidido_em })),
         laudo: laudo ? { url: await assinar(laudo.path as string), parte: laudo.parte as ParteConferencia, criadoEm: laudo.criado_em as string } : null,

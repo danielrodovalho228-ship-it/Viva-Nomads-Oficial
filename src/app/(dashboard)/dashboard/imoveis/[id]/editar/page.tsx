@@ -57,5 +57,17 @@ export default async function EditarImovelPage({
     }
   }
 
-  return <EditarImovelClient property={property} demo={demo} fatos={fatos} enderecoExatoInicial={enderecoExato} />;
+  return (
+    <>
+      {/* Prompt 38: o parceiro fixo do imóvel (limpeza, manutenção, lavanderia, fotografia). */}
+      {!demo && (
+        <p className="mb-3 text-sm">
+          <Link href={`/dashboard/imoveis/${id}/parceiros`} className="text-ink underline underline-offset-4" data-testid="parceiros-imovel-editor">
+            Parceiros do imóvel
+          </Link>
+        </p>
+      )}
+      <EditarImovelClient property={property} demo={demo} fatos={fatos} enderecoExatoInicial={enderecoExato} />
+    </>
+  );
 }

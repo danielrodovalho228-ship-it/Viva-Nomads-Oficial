@@ -7,6 +7,7 @@ import { meuPainelParceiro } from "@/lib/parceiros/painel-actions";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { PainelParceiroCliente } from "./painel-parceiro";
 import { PedidosDoParceiro } from "@/components/parceiros/pedidos-do-parceiro";
+import { ImoveisFixos } from "@/components/automacao/imoveis-fixos";
 
 export const metadata: Metadata = { title: "Parceiro", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -29,6 +30,8 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
         )}
         {/* Prompt 31b: pedidos (novos primeiro) e ganhos com a divisão 90/10. */}
         <PedidosDoParceiro pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
+        {/* Prompt 38: convites e vínculos de parceiro fixo de imóvel. */}
+        <ImoveisFixos />
         <PainelParceiroCliente inicial={painel} pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
       </>
     );

@@ -47,7 +47,13 @@ export default async function ServicosPage() {
                       {p.valor != null ? ` · ${brl(p.valor)}` : ""}
                       {p.horario ? ` · ${dataHoraBRT(p.horario)}` : ""}
                     </span>
-                    {proximoPasso(p.status, "cliente") && <span className="block text-xs text-muted">{proximoPasso(p.status, "cliente")}</span>}
+                    {p.aguardandoDono && p.status === "solicitado" ? (
+                      <span className="block text-xs font-medium text-ink" data-testid="servicos-pedido-confirmar">
+                        Automático: confirme para enviar ao parceiro
+                      </span>
+                    ) : (
+                      proximoPasso(p.status, "cliente") && <span className="block text-xs text-muted">{proximoPasso(p.status, "cliente")}</span>
+                    )}
                   </span>
                   <span className="text-sm font-semibold text-ink" data-testid="servicos-pedido-status">
                     {rotuloStatus(p.status)}
