@@ -20,6 +20,9 @@ for (const largura of [390, 1280]) {
 
     test("página do imóvel: a linha vem logo depois da síntese; o cartão da busca não a mostra", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
+      // Desde o Prompt 48 a página abre no esqueleto (loading.tsx): mede só depois que o conteúdo real chegou.
+      await expect(page.getByTestId("imovel-sintese")).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByTestId("ideal-para").first()).toBeVisible();
       const sintese = (await page.getByTestId("imovel-sintese").boundingBox())!;
       const linha = (await page.getByTestId("ideal-para").first().boundingBox())!;
       expect(linha.y, "Ideal para abaixo da linha-síntese").toBeGreaterThan(sintese.y);
