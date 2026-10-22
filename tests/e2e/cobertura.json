@@ -263,7 +263,8 @@
       ],
       "specs": [
         "t14-app-mode",
-        "t16-app-boas-vindas"
+        "t16-app-boas-vindas",
+        "t282-boas-vindas-foto"
       ]
     },
     "/auth": {
