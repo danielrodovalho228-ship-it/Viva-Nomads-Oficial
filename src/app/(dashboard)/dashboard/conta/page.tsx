@@ -4,6 +4,7 @@ import { PetsFicha } from "@/components/account/pets-ficha";
 import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
 import { PageTitle } from "@/components/dashboard/primitives";
+import { ConviteFotoPerfil } from "@/components/account/convite-foto-perfil";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { CaixaEmailsTeste } from "@/components/account/caixa-emails-teste";
@@ -29,6 +30,7 @@ export default function AccountPage() {
         <PageTitle title="Conta" subtitle="Seu perfil, seus dados e suas preferências." />
 
         <BlocoConta id="perfil-publico" numero={1} titulo="Perfil público" subtitulo="O que os outros veem de você.">
+          <ConviteFotoPerfil href="#perfil-publico" className="mb-4" />
           <AvatarUploader />
           <PerfilPublicoForm />
           <PerfilProfissional />
