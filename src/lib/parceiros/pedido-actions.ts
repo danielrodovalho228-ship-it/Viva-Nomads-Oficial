@@ -16,6 +16,7 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { categoriaValida, rotuloCategoria } from "./regras";
 import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "./pedido-servidor";
+import { imoveisParaServico } from "./imoveis-servico";
 import { numeroOrcamentoParceiro } from "@/lib/fiscal/prefixos";
 import {
   CHAVE_CONVERSA_PEDIDO,
@@ -717,12 +718,5 @@ export async function cidadeDosMeusServicos(): Promise<string | null> {
 export async function meusImoveisParaServico(): Promise<{ id: string; titulo: string }[]> {
   const s = await sessao();
   if ("erro" in s) return [];
-  const [{ data: donos }, { data: estadias }] = await Promise.all([
-    s.admin.from("properties").select("id, title").eq("owner_id", s.userId).order("created_at", { ascending: false }).limit(50),
-    s.admin.from("contratos").select("property_id, properties(title)").eq("tenant_id", s.userId).eq("status", "ativo").limit(5),
-  ]);
-  const lista = new Map<string, string>();
-  for (const p of (donos ?? []) as { id: string; title: string | null }[]) lista.set(p.id, p.title ?? "Imóvel");
-  for (const k of (estadias ?? []) as unknown as { property_id: string; properties: { title: string | null } | null }[]) if (!lista.has(k.property_id)) lista.set(k.property_id, k.properties?.title ?? "Imóvel da estadia");
-  return [...lista].map(([id, titulo]) => ({ id, titulo }));
+  return imoveisParaServico(s.userId);
 }

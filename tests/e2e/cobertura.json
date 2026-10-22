@@ -2006,6 +2006,15 @@
       "specs": [
         "t264-viva-automatico"
       ]
+    },
+    "/api/parceiros/pedidos/[id]": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
     }
   },
   "actions": {

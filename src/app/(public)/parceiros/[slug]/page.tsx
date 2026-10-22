@@ -6,6 +6,7 @@ import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { SolicitarOrcamento } from "@/components/parceiros/solicitar-orcamento";
 import { createClient } from "@/lib/supabase/server";
+import { imoveisParaServico } from "@/lib/parceiros/imoveis-servico";
 import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { parceiroPorSlug } from "@/lib/data/parceiros-publico";
 import { REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
@@ -41,7 +42,10 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
   if (!d) notFound();
   // Prompt 31b: "Solicitar orçamento" ativo. Vindo do passo de fotos do cadastro, o imóvel já vem escolhido.
   const supabase = await createClient();
-  const logado = !!(supabase && (await supabase.auth.getUser()).data.user);
+  const usuario = supabase ? (await supabase.auth.getUser()).data.user : null;
+  const logado = !!usuario;
+  // A lista de imóveis da folha "Solicitar orçamento" vem com a página (abrir a folha não chama ação).
+  const imoveis = usuario ? await imoveisParaServico(usuario.id) : [];
   const imovelDoCadastro = sp.imovel && /^[0-9a-f-]{36}$/i.test(sp.imovel) ? sp.imovel : null;
   const { parceiro: p, servicos, galeria } = d;
   // Vindo da página da estadia pela busca (Prompt 41): a categoria pedida já vem escolhida na folha.
@@ -146,6 +150,7 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
                 voltarPara={voltarPara}
                 imovelInicial={imovelDoCadastro}
                 categoriaInicial={categoriaInicial}
+                imoveis={imoveis}
                 doCadastroDoImovel={doCadastro}
               />
               <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Contato e endereço só depois do aceite.</p>

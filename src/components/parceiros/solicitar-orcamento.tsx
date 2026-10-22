@@ -6,7 +6,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { DESCRICAO_PEDIDO_MAX, HORARIOS_MAX } from "@/lib/parceiros/pedido";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
-import { meusImoveisParaServico, solicitarOrcamento } from "@/lib/parceiros/pedido-actions";
+import { solicitarOrcamento } from "@/lib/parceiros/pedido-actions";
 
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
 
@@ -31,6 +31,7 @@ export function SolicitarOrcamento({
   imovelInicial,
   categoriaInicial,
   doCadastroDoImovel,
+  imoveis = [],
 }: {
   parceiroId: string;
   nomeParceiro: string;
@@ -42,12 +43,13 @@ export function SolicitarOrcamento({
   /** Categoria já escolhida (ex.: "Pedir limpeza" na página da estadia): o primeiro serviço dela vem selecionado. */
   categoriaInicial?: string | null;
   doCadastroDoImovel?: boolean;
+  /** Imóveis da pessoa (dona ou da estadia), lidos pelo servidor com a página: abrir a folha não chama ação nenhuma. */
+  imoveis?: { id: string; titulo: string }[];
 }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [pendente, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
-  const [imoveis, setImoveis] = useState<{ id: string; titulo: string }[] | null>(null);
   const servicoInicial = (categoriaInicial ? servicos.find((s) => s.categoria === categoriaInicial) : null) ?? servicos[0];
   const [servicoId, setServicoId] = useState<string>(servicoInicial?.id ?? "");
   const [categoria, setCategoria] = useState<string>(
@@ -65,10 +67,7 @@ export function SolicitarOrcamento({
     );
   }
 
-  const abrir = () => {
-    setAberto(true);
-    if (!imoveis) void meusImoveisParaServico().then(setImoveis);
-  };
+  const abrir = () => setAberto(true);
 
   const enviar = () =>
     iniciar(async () => {
@@ -148,8 +147,8 @@ export function SolicitarOrcamento({
           <label className="grid gap-1 text-sm font-semibold text-ink">
             Imóvel {doCadastroDoImovel && categoria === "fotografia" ? "" : "(opcional)"}
             <select className={campo} value={imovel} onChange={(e) => setImovel(e.target.value)} data-testid="solicitar-orcamento-imovel">
-              <option value="">{imoveis === null ? "Carregando…" : "Sem imóvel"}</option>
-              {(imoveis ?? []).map((i) => (
+              <option value="">Sem imóvel</option>
+              {imoveis.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.titulo}
                 </option>
