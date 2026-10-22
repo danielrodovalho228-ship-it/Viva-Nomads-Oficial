@@ -48,8 +48,8 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
 
   return (
     <main className="container-page section-y">
-      <div className="mx-auto max-w-lg rounded-2xl border border-line bg-white p-6">
-        <h1 className="font-title text-2xl font-bold text-ink">Conferir documento</h1>
+      <div className="mx-auto max-w-lg rounded-xl border border-line bg-white p-6">
+        <h1 className="font-title text-2xl font-semibold text-ink">Conferir documento</h1>
         {estado === "ok" && doc && situacao ? (
           <>
             {situacao.estado === "valido" ? (
@@ -58,15 +58,15 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
               </p>
             ) : situacao.estado === "teste" ? (
               <p className="mt-3 inline-flex items-start gap-2 text-sm font-semibold text-ink" data-testid="conferir-teste">
-                <FlaskConical className="mt-0.5 h-5 w-5 shrink-0" /> {situacao.texto}
+                <FlaskConical className="mt-1 h-5 w-5 shrink-0" /> {situacao.texto}
               </p>
             ) : situacao.estado === "anulado" ? (
               <p className="mt-3 inline-flex items-start gap-2 text-sm font-semibold text-red-700" data-testid="conferir-anulado">
-                <XCircle className="mt-0.5 h-5 w-5 shrink-0" /> {situacao.texto}
+                <XCircle className="mt-1 h-5 w-5 shrink-0" /> {situacao.texto}
               </p>
             ) : (
               <p className="mt-3 inline-flex items-start gap-2 text-sm font-semibold text-red-700" data-testid="conferir-substituido">
-                <XCircle className="mt-0.5 h-5 w-5 shrink-0" /> {situacao.texto}
+                <XCircle className="mt-1 h-5 w-5 shrink-0" /> {situacao.texto}
               </p>
             )}
             <dl className="mt-4 space-y-2 text-sm">
@@ -86,7 +86,7 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
           </>
         ) : (
           <p className="mt-3 inline-flex items-start gap-2 text-sm text-ink" data-testid="conferir-nao">
-            <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+            <XCircle className="mt-1 h-5 w-5 shrink-0 text-red-600" />
             {estado === "limite"
               ? "Muitas conferências em pouco tempo. Tente de novo mais tarde."
               : estado === "indisponivel"

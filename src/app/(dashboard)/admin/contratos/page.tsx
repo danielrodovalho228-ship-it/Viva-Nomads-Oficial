@@ -141,7 +141,7 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
                     <span className="font-medium text-ink">
                       {refContratoVN(c.id)} · {c.imovel}
                       {c.teste && <SeloTeste />}
-                      {ehRegraAnterior(c) && <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">regra anterior</span>}
+                      {ehRegraAnterior(c) && <span className="ml-2 rounded-full bg-surface-2 px-2 py-1 text-xs text-muted">regra anterior</span>}
                     </span>
                     <span className="text-xs text-muted">criado em {dataBRT(c.criadoEm)}</span>
                   </div>
@@ -185,7 +185,7 @@ function Total({ rotulo, valor, formula, testid }: { rotulo: string; valor: stri
   return (
     <div className="rounded-xl border border-line bg-white p-3" title={formula}>
       <p className="text-sm text-muted">{rotulo}</p>
-      <p className="mt-1 font-title text-2xl font-bold text-ink" data-testid={testid}>
+      <p className="mt-1 font-title text-2xl font-semibold text-ink" data-testid={testid}>
         {valor}
       </p>
       <p className="mt-1 text-xs text-muted">{formula}</p>

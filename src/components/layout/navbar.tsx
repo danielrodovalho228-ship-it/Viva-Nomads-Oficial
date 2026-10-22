@@ -42,7 +42,7 @@ function MenuMais() {
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
         aria-haspopup="true"
-        className="inline-flex items-center gap-1 whitespace-nowrap rounded-md text-sm font-medium text-ink/75 transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg text-sm font-medium text-ink/75 transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       >
         Mais <ChevronDown className={cn("h-4 w-4 transition-transform", aberto && "rotate-180")} aria-hidden />
       </button>
@@ -53,7 +53,7 @@ function MenuMais() {
               key={item.href}
               href={item.href}
               onClick={() => setAberto(false)}
-              className="block whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium text-ink hover:bg-blue-50"
+              className="block whitespace-nowrap rounded-lg px-3 py-3 text-sm font-medium text-ink hover:bg-blue-50"
             >
               {item.label}
             </Link>
@@ -73,7 +73,7 @@ function LinkFavoritos({ className, onClick }: { className?: string; onClick?: (
       href="/favoritos"
       data-testid="link-favoritos"
       onClick={onClick}
-      className={cn("inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-blue-500", className)}
+      className={cn("inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-blue-500", className)}
     >
       <Heart className="h-4 w-4" aria-hidden />
       {/* a 1280 px o texto não cabe ao lado dos links (t69): só o coração; o texto volta a partir de 2xl */}
@@ -93,7 +93,7 @@ function MeuPainel({ nome, foto, onClick, className }: { nome: string; foto: str
       onClick={onClick}
       data-testid="nav-meu-painel"
       className={cn(
-        "inline-flex h-10 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg pl-1.5 pr-3.5 text-sm font-semibold text-blue-500 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+        "inline-flex h-10 shrink-0 items-center gap-3 whitespace-nowrap rounded-lg pl-2 pr-4 text-sm font-semibold text-blue-500 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
         className
       )}
     >

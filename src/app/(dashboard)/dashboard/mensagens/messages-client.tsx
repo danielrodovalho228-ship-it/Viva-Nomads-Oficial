@@ -121,9 +121,9 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     return (
       <>
         <PageTitle title="Mensagens" />
-        <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center">
+        <div className="rounded-xl border border-dashed border-line bg-white p-12 text-center">
           <Image src="/media/empty-mensagens.webp" alt="" width={176} height={176} className="mx-auto h-44 w-44" />
-          <h3 className="mt-4 font-title text-lg font-bold text-ink">Nenhuma conversa ainda</h3>
+          <h3 className="mt-4 font-title text-lg font-semibold text-ink">Nenhuma conversa ainda</h3>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted">
             Quando um interessado enviar uma mensagem sobre um imóvel, a conversa aparece aqui.
           </p>
@@ -148,7 +148,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               setMobileView("list");
             }}
             className={cn(
-              "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors",
+              "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors",
               filtro === f.id ? "border-forest bg-forest text-white" : "border-sage-200 bg-white text-ink hover:bg-surface-2"
             )}
           >
@@ -157,7 +157,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           </button>
         ))}
       </div>
-      <div className="grid h-[75vh] overflow-hidden rounded-2xl border border-sage-200 bg-white md:h-[70vh] md:grid-cols-3">
+      <div className="grid h-[75vh] overflow-hidden rounded-xl border border-sage-200 bg-white md:h-[70vh] md:grid-cols-3">
         {/* Lista — no mobile some quando uma conversa está aberta */}
         <aside
           className={cn(
@@ -187,7 +187,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               ) : (
                 <Avatar name={c.name} size={48} photoUrl={avatars[c.id] ?? undefined} />
               )}
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex min-w-0 flex-1 flex-col gap-1">
                 <span className="truncate font-medium text-ink">{c.name}</span>
                 {(c.property || c.periodo) && (
                   <span className="truncate text-xs text-muted">{[c.property, c.periodo].filter(Boolean).join(" · ")}</span>
@@ -250,17 +250,17 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               <div key={m.id} className={cn("flex flex-col gap-1", m.from === "me" ? "items-end" : "items-start")}>
                 <span
                   className={cn(
-                    "max-w-[75%] rounded-2xl px-4 py-2 text-sm",
+                    "max-w-[75%] rounded-xl px-4 py-2 text-sm",
                     m.from === "me"
-                      ? "rounded-br-sm bg-forest text-white"
-                      : "rounded-bl-sm bg-white text-ink"
+                      ? "rounded-br-lg bg-forest text-white"
+                      : "rounded-bl-lg bg-white text-ink"
                   )}
                 >
                   {m.text}
                   {m.propostaId && (
                     <Link
                       href={`/dashboard/propostas/${m.propostaId}`}
-                      className={cn("mt-2 block rounded-lg px-3 py-1.5 text-center text-xs font-semibold", m.from === "me" ? "bg-white/15 text-white" : "bg-sage-100 text-forest")}
+                      className={cn("mt-2 block rounded-lg px-3 py-2 text-center text-xs font-semibold", m.from === "me" ? "bg-white/15 text-white" : "bg-sage-100 text-forest")}
                       data-testid="cartao-proposta"
                     >
                       Ver proposta
@@ -268,7 +268,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                   )}
                 </span>
                 {m.from !== "me" && !active.contratoFechado && pareceDadoBancario(m.text) && (
-                  <span data-testid="alerta-antigolpe-mensagem" role="alert" className="max-w-[75%] rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900">
+                  <span data-testid="alerta-antigolpe-mensagem" role="alert" className="max-w-[75%] rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                     {AVISO_ANTIGOLPE_ALERTA}{" "}
                     <Link href="/seguranca" className="font-semibold underline">Ver dicas</Link>
                   </span>
@@ -303,7 +303,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Escreva uma mensagem..."
-              className="flex-1 rounded-full border border-sage-200 px-4 py-2.5 text-sm outline-none focus:border-sage"
+              className="flex-1 rounded-full border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
             />
             <button
               type="submit"

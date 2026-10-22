@@ -305,7 +305,7 @@ function SearchMapbox({
 
   return (
     <>
-      <div ref={containerRef} data-testid="mapa-busca" className={cn("overflow-hidden rounded-2xl border border-line", className)} />
+      <div ref={containerRef} data-testid="mapa-busca" className={cn("overflow-hidden rounded-xl border border-line", className)} />
       {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={() => onSelect?.(null)} />, popupEl)}
     </>
   );

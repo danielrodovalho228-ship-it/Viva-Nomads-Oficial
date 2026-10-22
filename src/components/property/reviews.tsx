@@ -20,12 +20,12 @@ export function Reviews({ property }: { property: Property }) {
   if (reviews.length === 0)
     return (
       <section aria-labelledby="avaliacoes-title">
-        <h2 id="avaliacoes-title" className="font-title text-2xl font-bold text-ink">
+        <h2 id="avaliacoes-title" className="font-title text-2xl font-semibold text-ink">
           Avaliações
         </h2>
-        <div data-testid="avaliacoes-vazio" className="mt-5 flex flex-col items-center rounded-2xl border border-dashed border-sage-200 px-6 py-8 text-center">
+        <div data-testid="avaliacoes-vazio" className="mt-5 flex flex-col items-center rounded-xl border border-dashed border-sage-200 px-6 py-8 text-center">
           <MessageSquareQuote className="h-8 w-8 text-sage" aria-hidden />
-          <p className="mt-3 font-title text-lg font-bold text-ink">Este imóvel ainda não tem avaliações</p>
+          <p className="mt-3 font-title text-lg font-semibold text-ink">Este imóvel ainda não tem avaliações</p>
           <p className="mt-1 max-w-sm text-sm text-muted">
             Só quem morou aqui pode avaliar — a avaliação é liberada ao fim da estadia, e as duas partes avaliam às
             cegas.
@@ -43,7 +43,7 @@ export function Reviews({ property }: { property: Property }) {
 
   return (
     <section aria-labelledby="avaliacoes-title">
-      <h2 id="avaliacoes-title" className="flex items-center gap-2 font-title text-2xl font-bold text-ink">
+      <h2 id="avaliacoes-title" className="flex items-center gap-2 font-title text-2xl font-semibold text-ink">
         Avaliações
         <span className="inline-flex items-center gap-1 text-base font-semibold text-forest">
           <Star className="h-4 w-4 fill-champagne text-champagne" />
@@ -55,7 +55,7 @@ export function Reviews({ property }: { property: Property }) {
         {reviews.map((r, i) => {
           const date = reviewDate(r.date);
           return (
-            <div key={`${r.author}-${i}`} className="rounded-2xl border border-sage-200 p-4">
+            <div key={`${r.author}-${i}`} className="rounded-xl border border-sage-200 p-4">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-ink">{r.author}</span>
                 <span className="inline-flex items-center gap-1 text-sm text-forest">
@@ -63,7 +63,7 @@ export function Reviews({ property }: { property: Property }) {
                 </span>
               </div>
               {date && <p className="text-xs text-muted">{date}</p>}
-              <p className="mt-1.5 text-sm text-muted">{r.comment}</p>
+              <p className="mt-2 text-sm text-muted">{r.comment}</p>
               {r.reply && (
                 <div className="mt-3 rounded-xl bg-sage-50 p-3" data-testid="avaliacao-resposta">
                   <p className="text-xs font-semibold text-forest">Resposta do proprietário</p>

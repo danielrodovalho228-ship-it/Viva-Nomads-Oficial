@@ -55,7 +55,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Fotógrafos parceiros", caminho: "/parceiros/fotografos" }])} />
-      <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Fotógrafos parceiros</h1>
+      <h1 className="font-display text-2xl font-semibold text-ink sm:text-[28px]">Fotógrafos parceiros</h1>
       <p className="mt-2 text-ink/70">Fotos profissionais do seu imóvel mobiliado, feitas por fotógrafos aprovados pela Viva. As fotos vão direto para o seu anúncio.</p>
       <p className="mt-2 text-sm font-medium text-ink" data-testid="pedir-gratis">Pedir é grátis: a Viva não cobra nada de você pelo pedido.</p>
 
@@ -93,8 +93,8 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
               />
               {geral && mostrarParceiroGeral(geral, 0) && (
                 <div className="mt-4 rounded-xl border border-sage-200 bg-sage-50 p-4" data-testid="parceiro-geral">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-forest">Parceiro geral da Viva</p>
-                  <p className="mt-1 font-title text-lg font-bold text-ink">{geral.nome}</p>
+                  <p className="text-xs font-semibold text-forest">Parceiro geral da Viva</p>
+                  <p className="mt-1 font-title text-lg font-semibold text-ink">{geral.nome}</p>
                   {geral.descricao && <p className="mt-1 text-sm text-ink">{geral.descricao}</p>}
                 </div>
               )}
@@ -109,7 +109,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
         </section>
       )}
       <section className="mt-8" aria-labelledby="h-e-fotografo">
-        <h2 id="h-e-fotografo" className="font-display text-xl font-bold text-ink">É fotógrafo?</h2>
+        <h2 id="h-e-fotografo" className="font-display text-xl font-semibold text-ink">É fotógrafo?</h2>
         <p className="mb-3 mt-1 text-sm text-ink/70">Como funciona a parceria:</p>
         <RegrasParceiros pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
       </section>

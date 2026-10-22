@@ -20,7 +20,7 @@ export default function ImovelNotFound() {
   return (
     <div className="container-page flex flex-col items-center py-20 text-center">
       <NotFoundIllustration />
-      <h1 className="mt-8 font-title text-2xl font-bold text-ink sm:text-3xl">
+      <h1 className="mt-8 font-title text-2xl font-semibold text-ink sm:text-[28px]">
         Página não encontrada
       </h1>
       <p className="mt-2 max-w-md text-muted">
@@ -32,7 +32,7 @@ export default function ImovelNotFound() {
         </ButtonLink>
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-forest"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-forest"
         >
           <Home className="h-4 w-4" /> Voltar ao início
         </Link>

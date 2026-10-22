@@ -19,8 +19,8 @@ export function DestaquesImovel({ property }: { property: Property }) {
       {itens.map((d) => {
         const Icone = ICONES[d.chave];
         return (
-          <li key={d.chave} className="flex items-start gap-3 rounded-xl border border-sage-200 px-3 py-2.5">
-            <Icone className="mt-0.5 h-5 w-5 shrink-0 text-forest" aria-hidden />
+          <li key={d.chave} className="flex items-start gap-3 rounded-xl border border-sage-200 px-3 py-3">
+            <Icone className="mt-1 h-5 w-5 shrink-0 text-forest" aria-hidden />
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-ink">{d.titulo}</span>
               {d.detalhe && <span className="block truncate text-xs text-muted">{d.detalhe}</span>}

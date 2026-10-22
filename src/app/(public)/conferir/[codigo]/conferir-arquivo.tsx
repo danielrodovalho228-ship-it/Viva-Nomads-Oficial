@@ -31,12 +31,12 @@ export function ConferirArquivo({ hash }: { hash: string }) {
       <p className="mt-1 text-xs text-muted">O arquivo não sai do seu aparelho: a comparação é feita no seu navegador.</p>
       {resultado === "confere" && (
         <p className="mt-3 inline-flex items-start gap-2 text-sm font-semibold text-forest" data-testid="conferir-hash-ok">
-          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" /> O arquivo confere: é o documento registrado, sem alteração.
+          <CheckCircle2 className="mt-1 h-5 w-5 shrink-0" /> O arquivo confere: é o documento registrado, sem alteração.
         </p>
       )}
       {resultado === "nao" && (
         <p className="mt-3 inline-flex items-start gap-2 text-sm font-semibold text-red-700" data-testid="conferir-hash-falhou">
-          <XCircle className="mt-0.5 h-5 w-5 shrink-0" /> O arquivo NÃO confere: ele foi alterado ou não é este documento.
+          <XCircle className="mt-1 h-5 w-5 shrink-0" /> O arquivo NÃO confere: ele foi alterado ou não é este documento.
         </p>
       )}
       {resultado === "erro" && <p className="mt-3 text-sm text-red-700">Não foi possível ler o arquivo neste navegador.</p>}

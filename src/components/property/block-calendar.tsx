@@ -153,11 +153,11 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
 
       {estadias.length > 0 && (
         <p className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-          <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-2">
             <span className="h-2.5 w-4 rounded-full bg-forest/90" aria-hidden /> Estadia com contrato (toque para abrir)
           </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-4 rounded bg-red-100" aria-hidden /> Bloqueio seu
+          <span className="inline-flex items-center gap-2">
+            <span className="h-2.5 w-4 rounded-lg bg-red-100" aria-hidden /> Bloqueio seu
           </span>
         </p>
       )}
@@ -173,16 +173,16 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
             ...Array.from({ length: diasNoMes }, (_, i) => i + 1),
           ];
           return (
-            <div key={`${y}-${m}`} className="rounded-2xl border border-sage-200 p-3">
+            <div key={`${y}-${m}`} className="rounded-xl border border-sage-200 p-3">
               <p className="mb-2 text-center text-sm font-semibold capitalize text-ink">
                 {MESES[m]} {y}
               </p>
-              <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] text-muted">
+              <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-muted">
                 {DIAS.map((d, i) => (
                   <span key={i}>{d}</span>
                 ))}
               </div>
-              <div className="mt-1 grid grid-cols-7 gap-0.5">
+              <div className="mt-1 grid grid-cols-7 gap-1">
                 {estadias.flatMap((e) =>
                   segmentosDaPilula(e.inicio, e.fim, y, m).map((seg) => (
                     <Link
@@ -195,7 +195,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
                         gridColumn: `${seg.colIni + 1} / ${seg.colFim + 2}`,
                       }}
                       className={cn(
-                        "z-10 flex min-w-0 items-center gap-1 self-end overflow-hidden bg-forest/90 px-0.5 py-0.5 text-[10px] font-medium text-white",
+                        "z-10 flex min-w-0 items-center gap-1 self-end overflow-hidden bg-forest/90 px-1 py-1 text-[10px] font-medium text-white",
                         seg.continuaAntes ? "rounded-l-none" : "rounded-l-full",
                         seg.continuaDepois ? "rounded-r-none" : "rounded-r-full"
                       )}
@@ -222,12 +222,12 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
                       disabled={passado}
                       onClick={() => clicar(iso)}
                       className={cn(
-                        "grid aspect-square place-items-center rounded-md text-xs transition-colors",
+                        "grid aspect-square place-items-center rounded-lg text-xs transition-colors",
                         passado && "cursor-not-allowed text-muted/30",
                         !passado && "text-ink hover:bg-sage-100",
                         bloqueado && "bg-red-100 text-red-700 line-through",
                         entre && "bg-amber-100",
-                        (isIni || isFim) && "bg-amber-500 font-bold text-white"
+                        (isIni || isFim) && "bg-amber-500 font-semibold text-white"
                       )}
                     >
                       {dia}
@@ -256,7 +256,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
           onClick={bloquear}
           disabled={!sel.ini || busy}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+            "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
             sel.ini && !busy
               ? "bg-amber-500 text-white hover:bg-amber-600"
               : "cursor-not-allowed bg-surface-2 text-muted"

@@ -81,7 +81,7 @@ export function MatriculaResultado({
       {emRevisao && (
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
           <p className="flex items-start gap-2 font-semibold">
-            <Clock className="mt-0.5 h-4 w-4 shrink-0" /> <span data-testid="matricula-mensagem">{info.mensagem}</span>
+            <Clock className="mt-1 h-4 w-4 shrink-0" /> <span data-testid="matricula-mensagem">{info.mensagem}</span>
           </p>
           {info.motivo === "falha_indisponivel" && onTentarDeNovo && (
             <button type="button" onClick={onTentarDeNovo} className="mt-2 text-sm font-semibold text-forest underline underline-offset-2" data-testid="matricula-tentar-de-novo">
@@ -163,7 +163,7 @@ export function MatriculaResultado({
         <ul className="space-y-1" data-testid="matricula-avisos">
           {info.avisos.map((a) => (
             <li key={a.codigo} className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-ink" data-codigo={a.codigo}>
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" aria-hidden /> {a.texto}
+              <AlertTriangle className="mt-1 h-3.5 w-3.5 shrink-0 text-amber-700" aria-hidden /> {a.texto}
             </li>
           ))}
         </ul>

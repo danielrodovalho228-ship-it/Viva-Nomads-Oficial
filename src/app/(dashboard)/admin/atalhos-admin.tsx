@@ -64,7 +64,7 @@ export async function AtalhosAdmin() {
       <ul data-testid="admin-outras-areas" className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {OUTRAS_AREAS.map(({ href, label, icon: Icon }) => (
           <li key={href}>
-            <Link href={href} className="flex min-h-11 items-center gap-2 rounded-2xl border border-sage-200 bg-white px-3 text-sm font-medium text-forest hover:border-sage">
+            <Link href={href} className="flex min-h-11 items-center gap-2 rounded-xl border border-sage-200 bg-white px-3 text-sm font-medium text-forest hover:border-sage">
               <Icon className="h-4 w-4 shrink-0 text-sage" />
               {label}
             </Link>

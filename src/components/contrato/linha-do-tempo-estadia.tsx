@@ -11,7 +11,7 @@ export function LinhaDoTempoEstadia({ etapas }: { etapas: EtapaEstadia[] }) {
   if (etapas.length === 0) return null;
   return (
     <Panel className="mt-4 p-5" data-testid="estadia-linha-tempo">
-      <h2 className="font-title text-base font-bold text-ink">Sua estadia</h2>
+      <h2 className="font-title text-base font-semibold text-ink">Sua estadia</h2>
       <ol className="mt-3 space-y-3">
         {etapas.map((e) => (
           <li
@@ -20,7 +20,7 @@ export function LinhaDoTempoEstadia({ etapas }: { etapas: EtapaEstadia[] }) {
             data-prazo={e.prazo}
             className="flex items-center gap-4 rounded-xl border border-sage-200 bg-white p-3"
           >
-            <span className="w-16 shrink-0 text-center font-title text-sm font-bold uppercase text-forest">
+            <span className="w-16 shrink-0 text-center font-title text-sm font-semibold uppercase text-forest">
               {formatarDiaCurto(e.dia)}
             </span>
             <span className="min-w-0">

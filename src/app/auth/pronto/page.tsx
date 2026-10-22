@@ -20,7 +20,7 @@ export default async function ProntoPage({ searchParams }: { searchParams: Promi
         <div className="mx-auto mt-10 grid h-14 w-14 place-items-center rounded-full bg-sage-100">
           <CheckCircle2 className="h-7 w-7 text-forest" />
         </div>
-        <h1 className="mt-4 font-title text-2xl font-bold text-ink">Pronto! E-mail confirmado</h1>
+        <h1 className="mt-4 font-title text-2xl font-semibold text-ink">Pronto! E-mail confirmado</h1>
         <p className="mt-2 text-sm text-muted">Sua conta está ativa. Se você usa o app, é só voltar para ele e entrar.</p>
         <div className="mt-6 space-y-3">
           <VoltarParaApp />

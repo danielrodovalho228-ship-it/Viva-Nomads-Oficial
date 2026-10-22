@@ -105,7 +105,7 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
                 <img
                   src={`${f === "retrato" ? pacote.imagemRetrato : pacote.imagemQuadrado}&v=${versao}`}
                   alt={`Prévia do cartão do parceiro (${f === "retrato" ? "1080×1350" : "1080×1080"})`}
-                  className="w-full rounded-xl border border-line bg-surface-2 shadow-sm"
+                  className="w-full rounded-xl border border-line bg-surface-2 "
                   width={1080}
                   height={f === "retrato" ? 1350 : 1080}
                   data-testid={f === "retrato" ? "cartao-previa" : "cartao-previa-quadrado"}
@@ -119,7 +119,7 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
           <img
             src={imagem}
             alt={pacote.tipo === "poststay" ? "Prévia do seu cartão-postal" : "Prévia do cartão do seu anúncio"}
-            className="w-full rounded-2xl border border-line bg-surface-2 shadow-sm"
+            className="w-full rounded-xl border border-line bg-surface-2 "
             width={1080}
             height={formato === "retrato" ? 1350 : 1080}
             data-testid="cartao-previa"

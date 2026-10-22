@@ -24,7 +24,7 @@ export function OwnerRating({ propertyId }: { propertyId: string }) {
   if (!rep || rep.n === 0) return null;
 
   return (
-    <div className="mt-1.5 flex items-center gap-1.5 text-sm">
+    <div className="mt-2 flex items-center gap-2 text-sm">
       <div className="flex" aria-label={`Nota ${rep.media} de 5`}>
         {[1, 2, 3, 4, 5].map((n) => (
           <Star

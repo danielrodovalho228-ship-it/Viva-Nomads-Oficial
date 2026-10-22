@@ -66,9 +66,9 @@ export function MotivoDialog({
       aria-modal="true"
       aria-labelledby="motivo-titulo"
     >
-      <form onSubmit={enviar} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <form onSubmit={enviar} className="w-full max-w-md rounded-xl bg-white p-6 shadow-flutuante">
         <div className="flex items-start justify-between gap-4">
-          <h2 id="motivo-titulo" className="font-title text-lg font-bold text-ink">
+          <h2 id="motivo-titulo" className="font-title text-lg font-semibold text-ink">
             {titulo}
           </h2>
           <button

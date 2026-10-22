@@ -156,12 +156,12 @@ function CardFerramenta({ f }: { f: Ferramenta }) {
           <f.icone className="h-5 w-5" />
         </span>
         {f.status && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
             <Lock className="h-3 w-3" /> {f.status}
           </span>
         )}
       </div>
-      <h3 className="mt-3 line-clamp-2 min-h-[2.75rem] font-title font-bold text-ink">{f.titulo}</h3>
+      <h3 className="mt-3 line-clamp-2 min-h-[2.75rem] font-title font-semibold text-ink">{f.titulo}</h3>
       <p className="mt-1 flex-1 text-sm text-muted">{f.texto}</p>
       {f.href ? (
         <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
@@ -173,7 +173,7 @@ function CardFerramenta({ f }: { f: Ferramenta }) {
       )}
     </>
   );
-  const base = "flex h-full flex-col rounded-2xl border border-sage-200 bg-white p-5";
+  const base = "flex h-full flex-col rounded-xl border border-sage-200 bg-white p-5";
   return f.href ? (
     <Link
       href={f.href}
@@ -204,13 +204,13 @@ export default function FerramentasPage() {
           return (
             <section key={g.id} aria-labelledby={`grupo-${g.id}`} data-testid="ferramentas-grupo">
               <div className="mb-4">
-                <h2 id={`grupo-${g.id}`} className="font-title text-xl font-bold text-ink">
+                <h2 id={`grupo-${g.id}`} className="font-title text-xl font-semibold text-ink">
                   {g.titulo}
                 </h2>
                 <p className="text-sm text-muted">{g.texto}</p>
               </div>
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-                <div className="relative aspect-[16/7] overflow-hidden rounded-2xl bg-surface-2 lg:aspect-auto lg:min-h-full">
+                <div className="relative aspect-[16/7] overflow-hidden rounded-xl bg-surface-2 lg:aspect-auto lg:min-h-full">
                   <Image
                     src={foto.src}
                     alt={foto.alt}
@@ -232,7 +232,7 @@ export default function FerramentasPage() {
         })}
 
         <p className="flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-muted">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+          <Sparkles className="mt-1 h-4 w-4 shrink-0 text-sage" />
           Em todas as ferramentas, a Viva Nomads <strong>calcula, conecta e documenta</strong> — o
           dinheiro (valor mensal, caução, seguros) vai direto ao proprietário, à poupança da caução ou ao
           parceiro. A plataforma nunca retém valores.

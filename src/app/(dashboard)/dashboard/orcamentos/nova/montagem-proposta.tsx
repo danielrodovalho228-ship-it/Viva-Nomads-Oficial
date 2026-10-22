@@ -17,7 +17,7 @@ import { formatBRL, hojeBR } from "@/lib/utils";
 function Campo({ rotulo, ajuda, children }: { rotulo: string; ajuda?: string; children: React.ReactNode }) {
   return (
     <label className="block min-w-0">
-      <span className="mb-1.5 block text-sm font-medium text-ink">{rotulo}</span>
+      <span className="mb-2 block text-sm font-medium text-ink">{rotulo}</span>
       {children}
       {ajuda && <span className="mt-1 block text-[13px] text-muted">{ajuda}</span>}
     </label>
@@ -134,7 +134,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
               </Campo>
             </div>
             <p className="mt-3 flex items-start gap-2 text-[13px] text-muted">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden /> {CAUCAO_FRASE}
+              <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" aria-hidden /> {CAUCAO_FRASE}
             </p>
           </Panel>
 
@@ -206,7 +206,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <Panel title="Resumo" data-testid="proposta-resumo">
-            <dl className="space-y-1.5 text-sm">
+            <dl className="space-y-2 text-sm">
               <div className="flex justify-between gap-3">
                 <dt className="text-muted">Valor mensal</dt>
                 <dd className="font-medium text-ink" data-testid="resumo-valor-mensal">{formatBRL(tot.valorMensal)}</dd>
@@ -217,7 +217,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
               </div>
               <div className="flex justify-between gap-3 border-t border-sage-200 pt-2">
                 <dt className="font-semibold text-ink">Total do contrato</dt>
-                <dd className="font-title text-lg font-bold text-forest" data-testid="resumo-total-contrato">{formatBRL(tot.totalContrato)}</dd>
+                <dd className="font-title text-lg font-semibold text-forest" data-testid="resumo-total-contrato">{formatBRL(tot.totalContrato)}</dd>
               </div>
             </dl>
             <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted" data-testid="proposta-taxa-dono">

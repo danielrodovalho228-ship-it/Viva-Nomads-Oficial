@@ -113,14 +113,14 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
     <Panel data-testid="ficha-parceria" data-email={f.email ?? ""}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="font-title text-lg font-bold text-ink">
+          <h3 className="font-title text-lg font-semibold text-ink">
             {f.nome} {f.teste && <SeloTeste />}
           </h3>
           <p className="text-sm text-muted break-all">
             {f.email ?? "sem e-mail"} · origem {ORIGEM[f.origem] ?? f.origem} · {dataHora(f.criadoEm)}
           </p>
         </div>
-        {aguardando && <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">Aguardando a pessoa confirmar</span>}
+        {aguardando && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Aguardando a pessoa confirmar</span>}
       </div>
 
       <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
@@ -358,7 +358,7 @@ function EstadoDoItem({ chave, estado, aoTentar }: { chave: string; estado: Esta
   if (!estado) return null;
   if (estado.fase === "salvando")
     return (
-      <span className="ml-6 inline-flex items-center gap-1.5 text-xs text-muted" role="status" data-testid={`check-estado-${chave}`} data-fase="salvando">
+      <span className="ml-6 inline-flex items-center gap-2 text-xs text-muted" role="status" data-testid={`check-estado-${chave}`} data-fase="salvando">
         <span className="h-3 w-3 animate-spin rounded-full border-2 border-sage-300 border-t-forest" aria-hidden />
         {TEXTO_SALVANDO}
       </span>

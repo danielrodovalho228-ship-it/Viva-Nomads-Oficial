@@ -47,7 +47,7 @@ export default async function PropostasPage() {
                     </div>
                     <StatusChip status={p.status} />
                   </div>
-                  <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <span
                       className={cn(aberta && p.aguardandoVoce ? "font-semibold text-amber-800" : "text-muted")}
                       data-testid="proposta-inquilino-validade"

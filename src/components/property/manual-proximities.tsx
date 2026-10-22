@@ -45,7 +45,7 @@ export function ManualProximities({
           value={categoria}
           onChange={(e) => setCategoria(e.target.value as ProximityCategory)}
           aria-label="Categoria"
-          className="rounded-xl border border-sage-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-sage sm:w-40"
+          className="rounded-xl border border-sage-200 bg-white px-3 py-3 text-sm outline-none focus:border-sage sm:w-40"
         >
           {CATS.map((c) => (
             <option key={c.value} value={c.value}>{c.label}</option>
@@ -55,14 +55,14 @@ export function ManualProximities({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nome do lugar (ex.: Hospital Santa Mônica)"
-          className="flex-1 rounded-xl border border-sage-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-sage"
+          className="flex-1 rounded-xl border border-sage-200 bg-white px-3 py-3 text-sm outline-none focus:border-sage"
         />
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), add())}
           placeholder="Distância (ex.: 10 min a pé)"
-          className="rounded-xl border border-sage-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-sage sm:w-44"
+          className="rounded-xl border border-sage-200 bg-white px-3 py-3 text-sm outline-none focus:border-sage sm:w-44"
         />
         <button
           type="button"
@@ -78,7 +78,7 @@ export function ManualProximities({
         <ul className="space-y-2">
           {value.map((p, i) => (
             <li key={`${p.name}-${i}`} className="flex items-center gap-2 rounded-xl border border-sage-200 px-3 py-2 text-sm">
-              <span className="rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-forest">
+              <span className="rounded-full bg-sage-100 px-2 py-1 text-xs font-medium text-forest">
                 {CAT_LABEL[p.category] ?? p.category}
               </span>
               <span className="line-clamp-1 flex-1 text-ink">

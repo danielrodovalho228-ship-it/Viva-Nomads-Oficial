@@ -94,7 +94,7 @@ export function VisaoGeralClient({
       <PrecisaAgora precisa={dados?.precisa ?? null} filaDocs={dados?.filaDocs ?? null} />
 
       <section aria-label="Agora" className="mb-6">
-        <h2 className="mb-3 font-title text-lg font-bold text-ink">Agora</h2>
+        <h2 className="mb-3 font-title text-lg font-semibold text-ink">Agora</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4" data-testid="home-agora">
           <StatCard label="Usuários" value={fmtInteiro(num(agora.usuarios))} icon={Users} href={hrefUsuarios({})} />
           <StatCard label="Imóveis reais publicados" value={fmtInteiro(num(agora.imoveis_ativos))} icon={Home} href={comCidade("/admin/imoveis?tipo=real&status=active")} />
@@ -199,17 +199,17 @@ function CardIndicador({
           aria-expanded={aberto}
           aria-controls={idFormula}
           aria-label={`Como é calculado: ${ind.rotulo}`}
-          className="shrink-0 rounded-full p-0.5 text-muted hover:text-forest"
+          className="shrink-0 rounded-full p-1 text-muted hover:text-forest"
         >
           <Info className="h-4 w-4" />
         </button>
       </div>
       {href ? (
-        <Link href={href} className="mt-1 block font-title text-2xl font-bold text-ink underline-offset-4 hover:text-forest hover:underline" data-valor data-href={href}>
+        <Link href={href} className="mt-1 block font-title text-2xl font-semibold text-ink underline-offset-4 hover:text-forest hover:underline" data-valor data-href={href}>
           {formatar(a, ind.formato)}
         </Link>
       ) : (
-        <p className="mt-1 font-title text-2xl font-bold text-ink" data-valor>
+        <p className="mt-1 font-title text-2xl font-semibold text-ink" data-valor>
           {formatar(a, ind.formato)}
         </p>
       )}
@@ -244,7 +244,7 @@ function CardIndicador({
         </div>
       )}
       {aberto && (
-        <p id={idFormula} className="mt-2 rounded-lg bg-sage-100 px-2.5 py-2 text-xs text-ink">
+        <p id={idFormula} className="mt-2 rounded-lg bg-sage-100 px-3 py-2 text-xs text-ink">
           {ind.formula}
         </p>
       )}
@@ -292,17 +292,17 @@ function FunilPeriodo({ m, filtro }: { m: Metricas; filtro: FiltroHome }) {
         <table className="mt-2 w-full text-left text-sm">
           <thead>
             <tr className="border-b border-line text-muted">
-              <th className="py-1.5 font-medium">Etapa</th>
-              <th className="py-1.5 text-right font-medium">Quantidade</th>
-              <th className="py-1.5 text-right font-medium">Da etapa anterior</th>
+              <th className="py-2 font-medium">Etapa</th>
+              <th className="py-2 text-right font-medium">Quantidade</th>
+              <th className="py-2 text-right font-medium">Da etapa anterior</th>
             </tr>
           </thead>
           <tbody>
             {funil(m).map((e) => (
               <tr key={e.rotulo} className="border-b border-line/60">
-                <td className="py-1.5 text-ink">{e.rotulo}</td>
-                <td className="py-1.5 text-right text-ink">{fmtInteiro(e.valor)}</td>
-                <td className="py-1.5 text-right text-ink">{fmtPct(e.daAnterior)}</td>
+                <td className="py-2 text-ink">{e.rotulo}</td>
+                <td className="py-2 text-right text-ink">{fmtInteiro(e.valor)}</td>
+                <td className="py-2 text-right text-ink">{fmtPct(e.daAnterior)}</td>
               </tr>
             ))}
           </tbody>
@@ -348,7 +348,7 @@ function PrecisaAgora({ precisa, filaDocs }: { precisa: VisaoGeral["precisa"] | 
                   {i.maisAntigo !== null ? i.maisAntigo : (i.n ?? 0) > 0 && i.horas !== null ? ` Mais antigo: há ${fmtHoras(i.horas)}.` : ""}
                 </span>
               </span>
-              <span className="flex shrink-0 items-center gap-2 font-title text-lg font-bold text-forest">
+              <span className="flex shrink-0 items-center gap-2 font-title text-lg font-semibold text-forest">
                 {fmtInteiro(i.n)} <ArrowRight className="h-4 w-4" />
               </span>
             </ItemPrecisa>

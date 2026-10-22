@@ -41,7 +41,7 @@ export function ProximidadesAutomaticas({
 }) {
   return (
     <div className="rounded-xl border border-sage-200 p-4" data-testid="proximidades-osm">
-      <p className="flex items-center gap-1.5 text-sm font-bold text-forest">
+      <p className="flex items-center gap-2 text-sm font-semibold text-forest">
         <MapPin className="h-4 w-4" aria-hidden /> O que tem por perto
       </p>
       <p className="mb-3 text-xs text-muted">Achamos pelo endereço, num raio de 2 km. Desmarque o que não quiser mostrar.</p>
@@ -67,7 +67,7 @@ export function ProximidadesAutomaticas({
                     marcado ? "border-forest bg-sage-100" : "border-sage-200 text-muted",
                   )}
                 >
-                  <span className={cn("mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border", marcado ? "border-forest bg-forest text-white" : "border-sage-200")}>
+                  <span className={cn("mt-1 grid h-4 w-4 shrink-0 place-items-center rounded-lg border", marcado ? "border-forest bg-forest text-white" : "border-sage-200")}>
                     {marcado && <Check className="h-3 w-3" />}
                   </span>
                   <span className="min-w-0">
@@ -127,7 +127,7 @@ export function ProntoParaTrabalhar({
         onClick={() => onAlternar(it.chave)}
         data-testid={`trabalho-${it.chave}`}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium",
+          "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium",
           on ? "border-forest bg-forest text-white" : "border-sage-200 bg-white text-ink hover:border-sage",
         )}
       >
@@ -141,14 +141,14 @@ export function ProntoParaTrabalhar({
   return (
     <div className="rounded-xl border-2 border-forest/30 bg-sage-50 p-4" data-testid="pronto-trabalhar">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 font-title text-base font-bold text-forest">
+        <p className="flex items-center gap-2 font-title text-base font-semibold text-forest">
           <Briefcase className="h-4 w-4" aria-hidden /> Pronto para trabalhar de casa
         </p>
-        <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", n === ESSENCIAIS_TRABALHO.length ? "bg-forest text-white" : "bg-white text-forest")} data-testid="trabalho-contador">
+        <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", n === ESSENCIAIS_TRABALHO.length ? "bg-forest text-white" : "bg-white text-forest")} data-testid="trabalho-contador">
           {contadorEssenciais(marcadas)}
         </span>
       </div>
-      <p className="mt-0.5 text-xs text-muted">Profissionais procuram isso primeiro.</p>
+      <p className="mt-1 text-xs text-muted">Profissionais procuram isso primeiro.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {ESSENCIAIS_TRABALHO.map((it) => item(it, true))}
         {OPCIONAIS_TRABALHO.map((it) => item(it, false))}
@@ -226,7 +226,7 @@ export function BlocoNegociacao({
       {valor.aceita && (
         <fieldset className="mt-3">
           <legend className="text-xs font-semibold text-muted">O que pode ser negociado</legend>
-          <div className="mt-1.5 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             {itens.map((i) => {
               const on = valor.itens.includes(i.chave);
               return (
@@ -235,7 +235,7 @@ export function BlocoNegociacao({
                   type="button"
                   aria-pressed={on}
                   onClick={() => onValor({ ...valor, itens: on ? valor.itens.filter((x) => x !== i.chave) : [...valor.itens, i.chave] })}
-                  className={cn("rounded-full border px-3 py-1.5 text-xs font-medium", on ? "border-forest bg-forest text-white" : "border-sage-200 text-ink")}
+                  className={cn("rounded-full border px-3 py-2 text-xs font-medium", on ? "border-forest bg-forest text-white" : "border-sage-200 text-ink")}
                   data-testid={`negociavel-${i.chave}`}
                 >
                   {i.rotulo}
@@ -260,7 +260,7 @@ export function BlocoNegociacao({
               <input type="number" min={1} max={PCT_MAX} value={f.pct} onChange={(e) => setFaixa(i, "pct", Number(e.target.value))} className="input w-20" aria-label={`Desconto da faixa ${i + 1}`} />
               <span>%</span>
               {valorMensal > 0 && f.pct > 0 && <span className="text-xs text-muted">→ {formatBRL(Math.round(valorMensal * (1 - f.pct / 100)))}/mês</span>}
-              <button type="button" onClick={() => onValor({ ...valor, descontos: faixas.filter((_, j) => j !== i) })} className="ml-auto rounded p-1 text-muted hover:text-red-600" aria-label="Remover faixa">
+              <button type="button" onClick={() => onValor({ ...valor, descontos: faixas.filter((_, j) => j !== i) })} className="ml-auto rounded-lg p-1 text-muted hover:text-red-600" aria-label="Remover faixa">
                 <Trash2 className="h-4 w-4" />
               </button>
             </li>

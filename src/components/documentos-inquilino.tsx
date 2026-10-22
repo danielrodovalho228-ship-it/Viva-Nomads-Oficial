@@ -107,7 +107,7 @@ export function DocumentosInquilino({ leadId, modo }: { leadId: string; modo: "i
                   <span className="text-xs text-muted">pendente</span>
                 )}
               </div>
-              {modo === "inquilino" && <p className="mt-0.5 text-xs text-muted">{d.ajuda}</p>}
+              {modo === "inquilino" && <p className="mt-1 text-xs text-muted">{d.ajuda}</p>}
               <div className="mt-2 flex flex-wrap gap-3">
                 {ok && (
                   <button type="button" onClick={() => abrir(d.tipo)} className="inline-flex items-center gap-1 text-xs font-medium text-forest hover:underline">

@@ -11,13 +11,13 @@ export function RegrasParceiros({ pagamentoAtivo, extra }: { pagamentoAtivo: boo
       <ul className="space-y-3">
         {REGRAS_CLARAS.map((r) => (
           <li key={r} className="flex gap-3 text-ink">
-            <Check className="mt-0.5 h-5 w-5 shrink-0 text-forest" aria-hidden />
+            <Check className="mt-1 h-5 w-5 shrink-0 text-forest" aria-hidden />
             <span>{r}</span>
           </li>
         ))}
         {extra && (
           <li className="flex gap-3 text-ink">
-            <Check className="mt-0.5 h-5 w-5 shrink-0 text-forest" aria-hidden />
+            <Check className="mt-1 h-5 w-5 shrink-0 text-forest" aria-hidden />
             <span>{extra}</span>
           </li>
         )}

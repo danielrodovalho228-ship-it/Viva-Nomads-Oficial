@@ -140,7 +140,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                 Versão {atual.versao} · {quem(atual.autor)}
               </p>
               <div className="flex items-center gap-2">
-                <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-ink" data-testid="proposta-rodada">
+                <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-ink" data-testid="proposta-rodada">
                   {rotuloRodada(atual.versao)}
                 </span>
                 <StatusChip status={p.status} />
@@ -159,7 +159,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
             <Valores v={atual} />
             {atual.mensagem && <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink" data-testid="proposta-mensagem">“{atual.mensagem}”</p>}
             {estaAberta(p.status) && (
-              <p className="mt-3 flex items-center gap-1.5 text-[13px] text-muted">
+              <p className="mt-3 flex items-center gap-2 text-[13px] text-muted">
                 <Clock className="h-3.5 w-3.5" aria-hidden /> Válida até {dataBR(p.validaAte)}
                 {p.vistoEm && p.papel === "owner" ? ` · vista em ${dataBR(p.vistoEm)}` : ""}
               </p>
@@ -196,10 +196,10 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
               {modo === "recusar" && (
                 <div className="mt-4 space-y-3" data-testid="form-recusa">
                   <fieldset>
-                    <legend className="mb-1.5 text-sm font-medium text-ink">Motivo</legend>
+                    <legend className="mb-2 text-sm font-medium text-ink">Motivo</legend>
                     <div className="flex flex-wrap gap-2">
                       {MOTIVOS_RECUSA.map((m) => (
-                        <label key={m.chave} className={cn("cursor-pointer rounded-full border px-3 py-1.5 text-sm", motivo === m.chave ? "border-forest bg-sage-100 text-forest" : "border-sage-200 text-ink")}>
+                        <label key={m.chave} className={cn("cursor-pointer rounded-full border px-3 py-2 text-sm", motivo === m.chave ? "border-forest bg-sage-100 text-forest" : "border-sage-200 text-ink")}>
                           <input type="radio" name="motivo" value={m.chave} className="sr-only" checked={motivo === m.chave} onChange={() => setMotivo(m.chave)} />
                           {m.rotulo}
                         </label>
@@ -218,7 +218,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                   <div className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
                     {libera("valor_mensal") && (
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-ink">Valor mensal (R$)</span>
+                        <span className="mb-2 block text-sm font-medium text-ink">Valor mensal (R$)</span>
                         <CampoReais
                           semPrefixo
                           value={mud.valorBase ?? atual.termos.valorBase}
@@ -237,7 +237,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     )}
                     {libera("meses") && (
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-ink">Meses</span>
+                        <span className="mb-2 block text-sm font-medium text-ink">Meses</span>
                         <select className="input" value={nova.meses} onChange={(e) => setMud((m) => ({ ...m, meses: Number(e.target.value) }))} data-testid="contra-meses">
                           {meses.map((m) => (
                             <option key={m} value={m}>
@@ -249,13 +249,13 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     )}
                     {libera("data_entrada") && (
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-ink">Data de entrada</span>
+                        <span className="mb-2 block text-sm font-medium text-ink">Data de entrada</span>
                         <CampoData className="input" min={hojeBR()} value={nova.dataEntrada} onChange={(e) => setMud((m) => ({ ...m, dataEntrada: e.target.value }))} data-testid="contra-data" />
                       </label>
                     )}
                     {libera("limpeza") && (
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-ink">Pacote de limpeza</span>
+                        <span className="mb-2 block text-sm font-medium text-ink">Pacote de limpeza</span>
                         <select className="input" value={nova.limpezasMes} onChange={(e) => setMud((m) => ({ ...m, limpezasMes: Number(e.target.value) }))} data-testid="contra-limpezas">
                           {[0, 1, 2, 3, 4].map((n) => (
                             <option key={n} value={n}>
@@ -267,7 +267,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     )}
                     {libera("taxa_pet") && (
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-ink">Taxa pet (R$/mês)</span>
+                        <span className="mb-2 block text-sm font-medium text-ink">Taxa pet (R$/mês)</span>
                         <CampoReais semPrefixo centavos value={mud.taxaPet ?? atual.termos.taxaPet} onChange={(v) => setMud((m) => ({ ...m, taxaPet: v ?? 0 }))} testid="contra-taxa-pet" />
                       </label>
                     )}
@@ -276,7 +276,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     <button
                       type="button"
                       onClick={() => setMud((m) => ({ ...m, meses: maisTempo }))}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-forest px-3 py-1.5 text-sm font-medium text-forest hover:bg-sage-100"
+                      className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-2 text-sm font-medium text-forest hover:bg-sage-100"
                       data-testid="ficar-mais-tempo"
                     >
                       Vou ficar mais tempo <ArrowRight className="h-4 w-4" aria-hidden />
@@ -288,13 +288,13 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     </p>
                   )}
                   <label className="block">
-                    <span className="mb-1.5 block text-sm font-medium text-ink">Mensagem curta (opcional)</span>
+                    <span className="mb-2 block text-sm font-medium text-ink">Mensagem curta (opcional)</span>
                     <textarea rows={2} maxLength={500} className="input" value={mensagem} onChange={(e) => setMensagem(e.target.value)} data-testid="contra-mensagem" />
                   </label>
                   {mudou.length > 0 && (
                     <div className="rounded-lg border border-sage-200 p-3 text-sm" data-testid="resumo-mudancas">
                       <p className="mb-1 font-medium text-ink">O que muda</p>
-                      <ul className="space-y-0.5">
+                      <ul className="space-y-1">
                         {mudou.map((d) => (
                           <li key={d.campo}>
                             {d.rotulo}: <s className="text-muted">{d.antes}</s> → <strong>{d.depois}</strong>
@@ -347,7 +347,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                       {formatBRL(v.totais.valorMensal)} × {v.termos.meses} = {formatBRL(v.totais.totalContrato)}
                     </p>
                     {v.mudou.length > 0 && (
-                      <ul className="mt-2 space-y-0.5 text-[13px]">
+                      <ul className="mt-2 space-y-1 text-[13px]">
                         {v.mudou.map((d) => (
                           <li key={d.campo} className="text-ink">
                             {d.rotulo}: <s className="text-muted">{d.antes}</s> → <strong className="text-forest">{d.depois}</strong>

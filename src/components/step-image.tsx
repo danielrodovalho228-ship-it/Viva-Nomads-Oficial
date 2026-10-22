@@ -23,7 +23,7 @@ export function StepImage({
 
   if (failed) {
     return (
-      <div className="aspect-[3/2] w-full bg-gradient-to-br from-blue-100 via-surface-2 to-green-100" />
+      <div className="aspect-[3/2] w-full bg-surface-2" />
     );
   }
 

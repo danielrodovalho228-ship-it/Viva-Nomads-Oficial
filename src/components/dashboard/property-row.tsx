@@ -41,7 +41,7 @@ export function PropertyRow({
         <span className="block truncate text-sm font-medium text-ink">{title}</span>
         {/* Anúncio de exemplo: selo honesto também nas listas do painel. */}
         {isExemplo(id) && (
-          <span className="mt-0.5 inline-flex rounded-full bg-night/85 px-2 py-0.5 text-[10px] font-semibold text-white">
+          <span className="mt-1 inline-flex rounded-full bg-night/85 px-2 py-1 text-[10px] font-semibold text-white">
             Exemplo ilustrativo
           </span>
         )}
@@ -56,13 +56,13 @@ export function PropertyRow({
   );
 
   if (demo) {
-    return <div className="flex items-center gap-3 py-2.5">{inner}</div>;
+    return <div className="flex items-center gap-3 py-3">{inner}</div>;
   }
 
   return (
     <Link
       href={`/imoveis/${id}`}
-      className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-surface-2"
+      className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-surface-2"
     >
       {inner}
     </Link>

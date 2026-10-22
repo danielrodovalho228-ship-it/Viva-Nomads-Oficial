@@ -10,7 +10,7 @@ export function ServiceOrderNotice({ className }: { className?: string }) {
         className
       )}
     >
-      <Wrench className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+      <Wrench className="mt-1 h-4 w-4 shrink-0 text-blue-500" />
       <span>
         O Viva Nomads <strong className="text-ink">registra e notifica</strong> solicitações.
         A execução e o prazo da manutenção são responsabilidade do proprietário e do inquilino,
@@ -32,7 +32,7 @@ export function PlatformLegalNotice({ className }: { className?: string }) {
         className
       )}
     >
-      <Scale className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+      <Scale className="mt-1 h-4 w-4 shrink-0 text-sage" />
       <p>
         O Viva Nomads <strong className="text-forest">conecta e documenta</strong> —
         não é locador, fiador nem garantidor, e não responde pelo valor mensal. A decisão de aceitar

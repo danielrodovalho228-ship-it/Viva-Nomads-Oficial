@@ -95,15 +95,15 @@ export default function EmpresasPage() {
           <span className="inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
             <Building2 className="h-3.5 w-3.5" /> Mobilidade corporativa
           </span>
-          <h2 className="mt-4 font-title text-3xl font-bold text-ink md:text-4xl">Um lugar para morar, não um quarto de hotel</h2>
+          <h2 className="mt-4 font-title text-2xl font-semibold text-ink">Um lugar para morar, não um quarto de hotel</h2>
           <p className="mt-3 text-muted">Para times em projeto, realocação ou período de experiência em outra cidade.</p>
         </div>
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {PILARES.map((p) => (
-            <div key={p.titulo} className="flex flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+            <div key={p.titulo} className="flex flex-col overflow-hidden rounded-xl border border-line bg-white ">
               <FotoCartao cartao={cartaoSecao("empresas", p.id)} />
               <div className="p-6">
-                <h3 className="line-clamp-2 font-title text-lg font-bold text-ink">{p.titulo}</h3>
+                <h3 className="line-clamp-2 font-title text-lg font-semibold text-ink">{p.titulo}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{p.texto}</p>
               </div>
             </div>
@@ -114,14 +114,14 @@ export default function EmpresasPage() {
       {/* Fluxo do processo com imagens (estilo das páginas de processo do Furnished Finder). */}
       <section className="bg-surface-2 section-y" data-testid="empresas-como-funciona">
         <div className="container-page">
-          <h2 className="text-center font-title text-3xl font-bold text-ink md:text-4xl">Como funciona para a empresa</h2>
+          <h2 className="text-center font-title text-2xl font-semibold text-ink">Como funciona para a empresa</h2>
           <ol className="mt-10 grid gap-6 md:grid-cols-3">
             {PASSOS.map((p, i) => (
-              <li key={p.titulo} className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+              <li key={p.titulo} className="overflow-hidden rounded-xl border border-line bg-white ">
                 <BrandImage src={p.foto} alt={p.alt} rounded="rounded-none" sizes="(max-width: 768px) 100vw, 33vw" className="aspect-[16/10] w-full" />
                 <div className="p-6">
-                  <span className="grid h-8 w-8 place-items-center rounded-full bg-forest text-sm font-bold text-white">{i + 1}</span>
-                  <h3 className="mt-3 font-title text-lg font-bold text-ink">{p.titulo}</h3>
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-forest text-sm font-semibold text-white">{i + 1}</span>
+                  <h3 className="mt-3 font-title text-lg font-semibold text-ink">{p.titulo}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">{p.texto}</p>
                 </div>
               </li>
@@ -133,13 +133,13 @@ export default function EmpresasPage() {
       {/* Benefícios + foto. */}
       <section className="container-page section-y">
         <div className="grid items-center gap-10 md:grid-cols-2">
-          <BrandImage src="/images/unicas/empresas-homeoffice.webp" alt="Espaço de trabalho em casa num imóvel mobiliado" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
+          <BrandImage src="/images/unicas/empresas-homeoffice.webp" alt="Espaço de trabalho em casa num imóvel mobiliado" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-xl" />
           <div>
-            <h2 className="font-title text-3xl font-bold text-ink">O que a empresa ganha</h2>
+            <h2 className="font-title text-2xl font-semibold text-ink">O que a empresa ganha</h2>
             <ul className="mt-6 space-y-3">
               {BENEFICIOS.map((b) => (
                 <li key={b} className="flex gap-3 text-ink">
-                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-forest" aria-hidden />
+                  <Check className="mt-1 h-5 w-5 shrink-0 text-forest" aria-hidden />
                   <span>{b}</span>
                 </li>
               ))}
@@ -152,7 +152,7 @@ export default function EmpresasPage() {
               ].map(({ Icon, t }) => (
                 <div key={t} className="rounded-xl bg-surface-2 p-3">
                   <Icon className="mx-auto h-5 w-5 text-forest" aria-hidden />
-                  <p className="mt-1.5 text-xs font-medium text-ink">{t}</p>
+                  <p className="mt-2 text-xs font-medium text-ink">{t}</p>
                 </div>
               ))}
             </div>
@@ -162,7 +162,7 @@ export default function EmpresasPage() {
 
       <section className="bg-surface-2 section-y" data-testid="empresas-faq">
         <div className="container-page max-w-3xl">
-          <h2 className="font-title text-3xl font-bold text-ink">Perguntas rápidas</h2>
+          <h2 className="font-title text-2xl font-semibold text-ink">Perguntas rápidas</h2>
           <div className="mt-6 space-y-3">
             {FAQ_EMPRESAS.map((f) => (
               <details key={f.p} className="rounded-xl border border-line bg-white p-5">
@@ -177,12 +177,12 @@ export default function EmpresasPage() {
       <section id="fale-com-a-gente" className="container-page section-y scroll-mt-24">
         <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-5">
           <div className="md:col-span-2">
-            <h2 className="font-title text-3xl font-bold text-ink">Fale com a gente</h2>
+            <h2 className="font-title text-2xl font-semibold text-ink">Fale com a gente</h2>
             <p className="mt-3 text-muted">
               Conte seu volume e sua necessidade — retornamos com o que dá para fazer hoje.
             </p>
           </div>
-          <div className="rounded-2xl border border-line bg-white p-6 shadow-sm md:col-span-3">
+          <div className="rounded-xl border border-line bg-white p-6 md:col-span-3">
             <EmpresasForm />
           </div>
         </div>

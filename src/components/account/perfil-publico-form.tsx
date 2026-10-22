@@ -57,7 +57,7 @@ export function PerfilPublicoForm() {
   return (
     <Panel className="mt-6" data-testid="complete-perfil">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-title text-lg font-bold text-ink">Complete seu perfil</h2>
+        <h2 className="font-title text-lg font-semibold text-ink">Complete seu perfil</h2>
         <span className="text-sm font-semibold text-forest" data-testid="perfil-progresso">{prog.pct}% completo</span>
       </div>
       <p className="mt-1 text-sm text-muted">Opcional. Perfis completos passam mais confiança a quem vai alugar com você ou para você.</p>
@@ -68,7 +68,7 @@ export function PerfilPublicoForm() {
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2" aria-hidden>
         <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${prog.pct}%` }} />
       </div>
-      <ul className="mt-3 grid gap-1.5 text-sm sm:grid-cols-2">
+      <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
         {prog.itens.map((i) => (
           <li key={i.chave} className={i.feito ? "flex items-center gap-2 text-forest" : "flex items-center gap-2 text-muted"}>
             {i.feito ? <Check className="h-4 w-4" aria-hidden /> : <CircleDashed className="h-4 w-4" aria-hidden />} {i.rotulo}
@@ -78,7 +78,7 @@ export function PerfilPublicoForm() {
 
       <div className="mt-5 grid gap-4">
         <div>
-          <label htmlFor="perfil-bio" className="mb-1.5 block text-sm font-medium text-ink">
+          <label htmlFor="perfil-bio" className="mb-2 block text-sm font-medium text-ink">
             Uma frase sobre você
           </label>
           <textarea
@@ -90,7 +90,7 @@ export function PerfilPublicoForm() {
             aria-invalid={!bioCheck.ok}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Ex.: Médica em residência, organizada e tranquila. Gosto de cozinhar."
-            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+            className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
           />
           <p id="perfil-bio-ajuda" className="mt-1 flex justify-between text-xs text-muted">
             <span className={bioCheck.ok ? "" : "text-red-700"}>{bioCheck.ok ? "Sem telefone, e-mail, @ ou link: o contato fica protegido." : bioCheck.erro}</span>
@@ -99,7 +99,7 @@ export function PerfilPublicoForm() {
         </div>
 
         <fieldset>
-          <legend className="mb-1.5 text-sm font-medium text-ink">Idiomas</legend>
+          <legend className="mb-2 text-sm font-medium text-ink">Idiomas</legend>
           <div className="flex flex-wrap gap-2">
             {IDIOMAS.map((i) => {
               const on = idiomas.includes(i);
@@ -111,8 +111,8 @@ export function PerfilPublicoForm() {
                   onClick={() => setIdiomas(on ? idiomas.filter((x) => x !== i) : [...idiomas, i])}
                   className={
                     on
-                      ? "min-h-10 rounded-full border border-forest bg-forest px-3.5 text-sm font-medium text-white"
-                      : "min-h-10 rounded-full border border-sage-200 bg-white px-3.5 text-sm text-ink hover:border-sage"
+                      ? "min-h-10 rounded-full border border-forest bg-forest px-4 text-sm font-medium text-white"
+                      : "min-h-10 rounded-full border border-sage-200 bg-white px-4 text-sm text-ink hover:border-sage"
                   }
                 >
                   {i}
@@ -123,7 +123,7 @@ export function PerfilPublicoForm() {
         </fieldset>
 
         <div>
-          <label htmlFor="perfil-cidade" className="mb-1.5 block text-sm font-medium text-ink">
+          <label htmlFor="perfil-cidade" className="mb-2 block text-sm font-medium text-ink">
             Cidade onde você mora
           </label>
           <input
@@ -133,7 +133,7 @@ export function PerfilPublicoForm() {
             aria-describedby="perfil-cidade-ajuda"
             onChange={(e) => setCidade(e.target.value)}
             placeholder="Ex.: Uberlândia (MG)"
-            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+            className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
           />
           <p id="perfil-cidade-ajuda" className="mt-1 text-xs text-muted">Só a cidade. O endereço nunca aparece no perfil.</p>
         </div>

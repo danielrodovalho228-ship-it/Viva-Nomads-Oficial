@@ -292,7 +292,7 @@ export default function QualificationChecklistPage({
       {/* Banner de topo (item 4): foto de interior SOB o gradiente da marca (lado
           esquerdo mais escuro), texto branco. Altura contida (~180px). */}
       <header
-        className={cn("relative flex flex-col justify-center overflow-hidden rounded-2xl text-white", emPainel ? "mb-5 p-5" : "mb-8 p-6 sm:p-8")}
+        className={cn("relative flex flex-col justify-center overflow-hidden rounded-xl text-white", emPainel ? "mb-5 p-5" : "mb-8 p-6 sm:p-8")}
         style={{ minHeight: emPainel ? 120 : 180 }}
       >
         <Image
@@ -303,12 +303,12 @@ export default function QualificationChecklistPage({
           sizes="100vw"
           className="pointer-events-none object-cover"
         />
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-night/90 via-forest/85 to-forest/60" />
+        <div aria-hidden className="absolute inset-0 bg-forest/85" />
         <div className="relative">
-          <p className="font-title text-xs font-bold uppercase tracking-wide text-white/80">
+          <p className="font-title text-xs font-semibold text-white/80">
             Antes de anunciar
           </p>
-          <h1 className="mt-1 font-title text-2xl font-bold sm:text-3xl">Qualificação do imóvel</h1>
+          <h1 className="mt-1 font-title text-2xl font-semibold sm:text-[28px]">Qualificação do imóvel</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">
             Duas etapas rápidas: primeiro confirmamos que seu imóvel está pronto e regular para
             locação mobiliada de média duração. Depois, você soma pontos para conquistar o selo{" "}
@@ -336,12 +336,12 @@ export default function QualificationChecklistPage({
       )}
 
       {/* SEÇÃO 1 — REQUISITOS OBRIGATÓRIOS */}
-      <section className="rounded-2xl border border-sage-200 bg-white p-6 sm:p-8">
+      <section className="rounded-xl border border-sage-200 bg-white p-6 sm:p-8">
         <div className="flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-sm font-bold text-white">
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-sm font-semibold text-white">
             1
           </span>
-          <h2 className="font-title text-xl font-bold text-ink">Requisitos obrigatórios</h2>
+          <h2 className="font-title text-xl font-semibold text-ink">Requisitos obrigatórios</h2>
         </div>
         <p className="mt-2 text-sm text-muted">
           Se algum faltar, o imóvel não pode ser publicado.
@@ -390,13 +390,13 @@ export default function QualificationChecklistPage({
                   na revisão do anúncio). */}
               <span
                 className={cn(
-                  "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                  "rounded-full px-2 py-1 text-[11px] font-semibold",
                   docName ? "bg-sage-100 text-forest" : "bg-amber-100 text-amber-800"
                 )}
               >
                 {docName ? "Enviado para conferência" : docSemFila ? "Não enviado" : "Pendente"}
               </span>
-              <span className="rounded-full bg-forest px-3 py-1.5 text-xs font-medium text-white">
+              <span className="rounded-full bg-forest px-3 py-2 text-xs font-medium text-white">
                 {docBusy ? "Enviando…" : docName ? "Trocar" : "Enviar"}
               </span>
             </span>
@@ -501,8 +501,8 @@ export default function QualificationChecklistPage({
 
           {/* Nota de tratamento de dados (LGPD) — o documento pode conter CPF e
               matrícula. TODO(juridico): Beatriz revisar a redação final. */}
-          <p className="flex items-start gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
-            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
+          <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+            <ShieldCheck className="mt-1 h-3.5 w-3.5 shrink-0 text-sage" />
             <span>
               Guardamos este documento em <strong className="text-ink">armazenamento privado</strong>,
               com <strong className="text-ink">acesso restrito</strong> a você e à nossa equipe de
@@ -521,7 +521,7 @@ export default function QualificationChecklistPage({
             <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-forest">
               <Info className="h-3.5 w-3.5" /> Como descobrir?
             </summary>
-            <p className="mt-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+            <p className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
               Pergunte ao síndico ou consulte a convenção — em geral está no capítulo de uso das
               unidades. Imóvel fora de condomínio: marque “Sim”.
             </p>
@@ -554,7 +554,7 @@ export default function QualificationChecklistPage({
           </div>
           {condoBlocked && (
             <p className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
               Se a convenção proíbe estadias de 30 a 180 dias, o imóvel não pode ser anunciado.
             </p>
           )}
@@ -567,7 +567,7 @@ export default function QualificationChecklistPage({
             <span className="tabular-nums text-muted">
               {reqDone}/{reqTotal} requisitos
               {pendenciaConvencao && (
-                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-800">
                   +1 pendência
                 </span>
               )}
@@ -597,7 +597,7 @@ export default function QualificationChecklistPage({
             <div className={cn("mt-4 flex items-center gap-3 rounded-xl px-4 py-4", TONE.box)}>
               <VIcon className={cn("h-6 w-6 shrink-0", TONE.iconColor)} />
               <div>
-                <p className={cn("font-title font-bold", TONE.title)}>{v.titulo}</p>
+                <p className={cn("font-title font-semibold", TONE.title)}>{v.titulo}</p>
                 <p className="text-sm text-muted">{v.msg}</p>
                 {/* Selo da conferência do documento (não da propriedade). */}
                 {docStatus === "approved" && (
@@ -612,12 +612,12 @@ export default function QualificationChecklistPage({
       </section>
 
       {/* SEÇÃO 2 — SELO PRONTO PARA MORAR */}
-      <section className="mt-6 rounded-2xl border border-sage-200 bg-white p-6 sm:p-8">
+      <section className="mt-6 rounded-xl border border-sage-200 bg-white p-6 sm:p-8">
         <div className="flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-sm font-bold text-white">
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-sm font-semibold text-white">
             2
           </span>
-          <h2 className="font-title text-xl font-bold text-ink">
+          <h2 className="font-title text-xl font-semibold text-ink">
             Selo Pronto para Morar{" "}
             <span className="text-base font-medium text-muted">(opcional, recomendado)</span>
           </h2>
@@ -628,11 +628,11 @@ export default function QualificationChecklistPage({
 
         {/* Placar do selo — ESTÁTICO no fluxo (ancorado na seção). Nada de sticky:
             o placar não acompanha o scroll nem "flutua" sobre os itens. */}
-        <div className="mt-6 rounded-xl border border-sage-200 bg-white p-4 shadow-sm">
+        <div className="mt-6 rounded-xl border border-sage-200 bg-white p-4 ">
           <div className="flex items-end justify-between">
             <div className="flex items-center gap-2">
               <Award className={cn("h-5 w-5", baseBadge ? "text-champagne-600" : "text-sage")} />
-              <span className="font-title text-2xl font-bold text-forest">{score}</span>
+              <span className="font-title text-2xl font-semibold text-forest">{score}</span>
               <span className="text-sm text-muted">/ 100</span>
             </div>
             {baseBadge && <ReadyToLiveBadge />}
@@ -661,7 +661,7 @@ export default function QualificationChecklistPage({
             sizes="(max-width: 640px) 100vw, 768px"
             className="object-cover object-center"
           />
-          <span className="absolute bottom-3 left-3 rounded-full bg-night/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+          <span className="absolute bottom-3 left-3 rounded-full bg-night/70 px-3 py-2 text-xs font-medium text-white backdrop-blur-sm">
             Imóveis com o selo ganham destaque na busca
           </span>
         </div>
@@ -690,7 +690,7 @@ export default function QualificationChecklistPage({
         </div>
 
         {/* Etiquetas */}
-        <h3 className="mt-8 font-title font-bold text-ink">Etiquetas de especialização</h3>
+        <h3 className="mt-8 font-title font-semibold text-ink">Etiquetas de especialização</h3>
         <p className="text-sm text-muted">Somam ao selo base e viram filtros na busca.</p>
 
         <TagBlock
@@ -788,7 +788,7 @@ function CheckRow({
     >
       <span
         className={cn(
-          "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+          "grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
           checked ? "border-forest bg-forest text-white" : "border-sage-200 bg-white"
         )}
       >
@@ -826,7 +826,7 @@ function ScoreRow({
       <span className="flex items-center gap-3">
         <span
           className={cn(
-            "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+            "grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
             on ? "border-champagne bg-champagne text-night" : "border-sage-200 bg-white"
           )}
         >
@@ -864,7 +864,7 @@ function InternetTierRow({
         <span className="flex items-center gap-3">
           <span
             className={cn(
-              "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+              "grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
               on ? "border-champagne bg-champagne text-night" : "border-sage-200 bg-white"
             )}
           >
@@ -889,7 +889,7 @@ function InternetTierRow({
             </option>
           ))}
         </select>
-        <p className="mt-1.5 text-xs text-muted">{INTERNET_META[value].description}</p>
+        <p className="mt-2 text-xs text-muted">{INTERNET_META[value].description}</p>
       </div>
     </div>
   );
@@ -934,7 +934,7 @@ function TagBlock({
               {marcados}/{toggleaveis.length} marcados
             </span>
             {earned ? (
-              <span className="tag-earned-pop w-fit rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+              <span className="tag-earned-pop w-fit rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
                 Etiqueta conquistada ✓
               </span>
             ) : (
@@ -964,7 +964,7 @@ function TagBlock({
               >
                 <span
                   className={cn(
-                    "grid h-5 w-5 shrink-0 place-items-center rounded border",
+                    "grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
                     it.on ? "border-forest bg-forest text-white" : "border-sage-200 text-sage"
                   )}
                 >

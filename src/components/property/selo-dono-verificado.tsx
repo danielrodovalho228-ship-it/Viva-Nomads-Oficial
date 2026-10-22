@@ -8,7 +8,7 @@ import { EXPLICACAO_DONO_VERIFICADO } from "@/lib/anuncio/dono-verificado";
 export function SeloDonoVerificado() {
   return (
     <details className="group mt-1" data-testid="selo-dono-verificado">
-      <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1.5 rounded-full bg-blue-50 px-3 text-sm font-medium text-blue-700 [&::-webkit-details-marker]:hidden">
+      <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full bg-blue-50 px-3 text-sm font-medium text-blue-700 [&::-webkit-details-marker]:hidden">
         <BadgeCheck className="h-4 w-4" aria-hidden /> Dono verificado
         <span className="text-xs font-normal underline">o que significa?</span>
       </summary>

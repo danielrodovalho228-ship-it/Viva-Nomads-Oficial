@@ -67,7 +67,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
     URL.revokeObjectURL(url);
   }
 
-  const campo = "w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-forest focus:outline-none";
+  const campo = "w-full rounded-xl border border-line bg-white px-3 py-3 text-sm text-ink focus:border-forest focus:outline-none";
 
   return (
     <>
@@ -156,7 +156,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
             </div>
             <ul className="divide-y divide-line">
               {gastos.map((g) => (
-                <li key={g.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                <li key={g.id} className="flex items-center justify-between gap-3 py-3 text-sm">
                   <span className="min-w-0">
                     <span className="block text-ink">
                       <span className="capitalize">{mesLabel(g.mes)}</span> · {canalLabel(g.canal)}
@@ -171,7 +171,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
                       onConfirmar={() => apagar(g.id)}
                       disabled={apagando === g.id}
                       ariaLabel={`Apagar lançamento de ${canalLabel(g.canal)} em ${mesLabel(g.mes)}`}
-                      botaoClassName="rounded-lg p-1.5 text-muted hover:bg-red-50 hover:text-red-700"
+                      botaoClassName="rounded-lg p-2 text-muted hover:bg-red-50 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
                     </ConfirmarNaPagina>

@@ -108,7 +108,7 @@ const dataHora = (iso: string) => dataHoraBRT(iso, { tabela: true });
 /** Marca fixa: deixa claro que todo agente da Central é uma IA (a persona é só o jeito de falar). */
 function MarcaIA() {
   return (
-    <span className="inline-flex items-center rounded-full border border-white/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#C5CFEE]" data-testid="marca-ia">
+    <span className="inline-flex items-center rounded-full border border-white/20 px-2 py-1 text-[10px] font-semibold text-[#C5CFEE]" data-testid="marca-ia">
       agente de IA
     </span>
   );
@@ -116,7 +116,7 @@ function MarcaIA() {
 
 function Chip({ cor, children }: { cor: string; children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold" style={{ borderColor: `${cor}66`, color: cor, background: `${cor}14` }}>
+    <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-2 py-1 text-[11px] font-semibold" style={{ borderColor: `${cor}66`, color: cor, background: `${cor}14` }}>
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: cor }} />
       {children}
     </span>
@@ -146,7 +146,7 @@ function TextoSimples({ texto }: { texto: string }) {
 
 function Vazio({ titulo, texto }: { titulo: string; texto: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-white/15 p-8 text-center">
+    <div className="rounded-xl border border-dashed border-white/15 p-8 text-center">
       <p className="font-semibold text-white">{titulo}</p>
       <p className="mx-auto mt-1 max-w-md text-sm text-[#8C9AC4]">{texto}</p>
     </div>
@@ -155,7 +155,7 @@ function Vazio({ titulo, texto }: { titulo: string; texto: string }) {
 
 function Rotulo({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-2.5 mt-7 flex items-center gap-2.5 text-[11px] uppercase tracking-[.14em] text-[#8C9AC4] after:h-px after:flex-1 after:bg-gradient-to-r after:from-white/15 after:to-transparent">
+    <h2 className="mb-3 mt-7 flex items-center gap-3 text-[11px] text-[#8C9AC4] after:h-px after:flex-1 after:bg-white/15">
       {children}
     </h2>
   );
@@ -206,7 +206,7 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
       data-testid="central-agentes"
     >
       {vermelhos.length > 0 && (
-        <div className="border-b border-[#FF5470]/40 bg-[#FF5470]/15 px-4 py-2.5 text-sm text-[#FFD1D9] sm:px-8" role="alert" data-testid="chamados-vermelhos">
+        <div className="border-b border-[#FF5470]/40 bg-[#FF5470]/15 px-4 py-3 text-sm text-[#FFD1D9] sm:px-8" role="alert" data-testid="chamados-vermelhos">
           <b className="text-white">
             {vermelhos.length} chamado{vermelhos.length > 1 ? "s" : ""} sem resposta da equipe há 6 h ou mais:
           </b>{" "}
@@ -223,18 +223,18 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
       )}
       <header className="border-b border-white/10 bg-[#050A18]/85 px-4 backdrop-blur sm:px-8 lg:sticky lg:top-0 lg:z-20">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-gradient-to-br from-[#005DFC] to-[#38BDF8] text-[13px] font-bold text-white shadow-[0_0_24px_rgba(0,93,252,.5)]" style={display}>
+          <div className="flex items-center gap-3">
+            <span className="grid h-[34px] w-[34px] place-items-center rounded-lg bg-[#005DFC] text-[13px] font-semibold text-white" style={display}>
               VN
             </span>
             <div>
-              <h1 className="text-[15px] font-bold tracking-wide text-white" style={display}>
+              <h1 className="text-[15px] font-semibold tracking-wide text-white" style={display}>
                 Central de Agentes
               </h1>
-              <p className="text-[11px] uppercase tracking-[.12em] text-[#8C9AC4]">Viva Nomads · sala de comando</p>
+              <p className="text-[11px] text-[#8C9AC4]">Viva Nomads · sala de comando</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3.5 text-xs text-[#8C9AC4] sm:ml-auto" style={mono}>
+          <div className="flex flex-wrap gap-4 text-xs text-[#8C9AC4] sm:ml-auto" style={mono}>
             <span>
               Brasília <b className="font-medium text-white">{agora ? horaBRT(agora) : "--:--"}</b>
             </span>
@@ -242,7 +242,7 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
               Texas <b className="font-medium text-white">{horaTexas(agora)}</b>
             </span>
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-2.5 py-1 text-xs text-[#8C9AC4]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1 text-xs text-[#8C9AC4]">
             <span className={styles.ponto} />
             Ao vivo · dados de {horaTexas(lidoEm)} TX
           </span>
@@ -254,7 +254,7 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
               role="tab"
               aria-selected={aba === a}
               onClick={() => setAba(a)}
-              className={`whitespace-nowrap rounded-[10px] border px-3 py-1.5 text-[13px] font-semibold sm:text-sm ${aba === a ? "border-white/20 bg-[#111F47] text-white" : "border-transparent text-[#8C9AC4] hover:text-white"}`}
+              className={`whitespace-nowrap rounded-lg border px-3 py-2 text-[13px] font-semibold sm:text-sm ${aba === a ? "border-white/20 bg-[#111F47] text-white" : "border-transparent text-[#8C9AC4] hover:text-white"}`}
             >
               {a}
             </button>
@@ -276,16 +276,16 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
       </div>
 
       <section id="aprovacoes" aria-label="Aprovações" className="scroll-mt-24 px-4 pt-4 sm:px-8" data-testid="secao-aprovacoes">
-        <h2 className="mb-2 text-sm font-bold uppercase tracking-[.12em] text-[#8C9AC4]">Aprovações</h2>
+        <h2 className="mb-2 text-sm font-semibold text-[#8C9AC4]">Aprovações</h2>
         <CartoesAprovacao versao={0} mostrarVazio />
       </section>
 
       <div className="px-4 pb-16 sm:px-8">
         <section className={`grid items-end gap-4 lg:grid-cols-[1.3fr_1fr] lg:gap-6 ${aba === "Equipe" ? "py-7" : "py-4"}`}>
           <div className={aba === "Equipe" ? "" : "hidden lg:block"}>
-            <p className="text-[clamp(24px,3.6vw,36px)] font-bold leading-tight tracking-tight text-white" style={display}>
+            <p className="text-[clamp(24px,3.6vw,36px)] font-semibold leading-tight tracking-tight text-white" style={display}>
               A equipe trabalhando{" "}
-              <span className="bg-gradient-to-r from-[#38BDF8] to-[#7FD321] bg-clip-text text-transparent">24 horas</span>, cada agente com nome e função.
+              <span className="text-[#38BDF8]">24 horas</span>, cada agente com nome e função.
             </p>
             <p className="mt-2 max-w-[60ch] text-sm text-[#8C9AC4]">Status, rondas e achados vêm direto do banco. Converse com um agente, reúna vários de uma vez ou deixe uma ordem para a próxima ronda.</p>
           </div>
@@ -296,11 +296,11 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
               [kpi?.falhas, "falharam na última"],
               [kpi?.p1, "achados P1 (última ronda)"],
             ].map(([v, l]) => (
-              <div key={String(l)} className="min-w-0 rounded-xl border border-white/10 bg-[#0D1838]/60 px-2 py-2 sm:px-3 sm:py-2.5">
+              <div key={String(l)} className="min-w-0 rounded-xl border border-white/10 bg-[#0D1838]/60 px-2 py-2 sm:px-3 sm:py-3">
                 <b className="block text-lg font-medium text-white sm:text-[22px]" style={mono}>
                   {v ?? "–"}
                 </b>
-                <span className="block text-[9.5px] uppercase leading-tight tracking-wide text-[#8C9AC4] sm:text-[11px] sm:tracking-wider">{l}</span>
+                <span className="block text-[9.5px] leading-tight text-[#8C9AC4] sm:text-[11px]">{l}</span>
               </div>
             ))}
           </div>
@@ -351,13 +351,13 @@ function CardAgente({
   const p1 = achadosDaPrioridade(ultima, "P0", "P1");
   return (
     <article
-      className={`relative grid min-w-0 gap-3 rounded-xl border border-white/10 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 transition hover:border-[color:var(--c)] ${grande ? "grid-cols-[64px_1fr] p-3.5" : "grid-cols-[52px_1fr] p-3"} ${ativo ? "" : "opacity-60"}`}
+      className={`relative grid min-w-0 gap-3 rounded-xl border border-white/10 bg-[#0D1838] transition hover:border-[color:var(--c)] ${grande ? "grid-cols-[64px_1fr] p-4" : "grid-cols-[52px_1fr] p-3"} ${ativo ? "" : "opacity-60"}`}
       style={{ ["--c" as string]: `${cor}99` }}
       data-testid={`agente-${a.slug}`}
     >
       <AvatarAgente slug={a.slug} nome={a.nome} cor={cor} anel={anel} recente={!!agora && rondaRecente(ultima, agora)} tamanho={grande ? 64 : 52} />
       <div className="min-w-0">
-        <h3 className="flex flex-wrap items-center gap-2 text-base font-bold text-white">
+        <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold text-white">
           {a.nome} <MarcaIA /> <Chip cor={COR_STATUS[st]}>{ROTULO_STATUS[st]}</Chip>
         </h3>
         <p className="text-[13px] text-[#8C9AC4]">{a.cargo}</p>
@@ -367,14 +367,14 @@ function CardAgente({
               {SEM_RONDAS[a.slug] ?? "Não faz rondas."}
             </p>
             {a.rotina_texto && (
-              <p className="mt-1.5 text-xs text-[#8C9AC4]" style={mono}>
+              <p className="mt-2 text-xs text-[#8C9AC4]" style={mono}>
                 {a.rotina_texto}
               </p>
             )}
           </>
         ) : ativo ? (
           <>
-            <dl className="mt-2.5 grid grid-cols-[auto_1fr] gap-x-2.5 gap-y-0.5 text-xs text-[#8C9AC4]" style={mono}>
+            <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs text-[#8C9AC4]" style={mono}>
               <dt>Última</dt>
               <dd className="text-white" data-testid="ultima-ronda">
                 {ultima && agora ? `${tempoRelativo(ultima.iniciada_em, agora)}${dur ? ` · ${dur}` : ""}` : "—"}
@@ -403,8 +403,8 @@ function CardAgente({
                 ))}
               </ul>
             )}
-            <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              <button className="rounded-lg bg-[#005DFC] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#2C7BFF]" onClick={() => onConversar(a.slug)}>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button className="rounded-lg bg-[#005DFC] px-3 py-2 text-[13px] font-semibold text-white hover:bg-[#2C7BFF]" onClick={() => onConversar(a.slug)}>
                 Conversar
               </button>
               {ultima?.link_sessao && (
@@ -438,20 +438,20 @@ function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Dat
       <Rotulo>Donos</Rotulo>
       {/* Não são agentes (não estão em public.agentes): sem status, rondas nem botões. */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 p-4" data-testid="agente-daniel">
+        <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-[#0D1838] p-4" data-testid="agente-daniel">
           <AvatarAgente slug="daniel" nome="Daniel Rodovalho" cor="#7FD321" anel="#7FD321" tamanho={72} />
           <div className="min-w-0">
-            <h3 className="flex flex-wrap items-center gap-2 text-lg font-bold text-white">
+            <h3 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-white">
               Daniel Rodovalho <Chip cor="#7FD321">Dono</Chip>
             </h3>
             <p className="text-[13px] text-[#8C9AC4]">Fundador · aprova, decide e assina</p>
             <p className="mt-2 text-[13px] text-[#C3CDEB]">Tudo que muda o site, o banco, publica ou manda mensagem passa pelos donos. Os agentes preparam; os donos aprovam.</p>
           </div>
         </article>
-        <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 p-4" data-testid="agente-rogerio">
+        <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-[#0D1838] p-4" data-testid="agente-rogerio">
           <AvatarAgente slug="rogerio" nome="Rogério" cor="#7FD321" anel="#7FD321" tamanho={72} />
           <div className="min-w-0">
-            <h3 className="flex flex-wrap items-center gap-2 text-lg font-bold text-white">
+            <h3 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-white">
               Rogério <Chip cor="#7FD321">Dono</Chip>
             </h3>
             <p className="text-[13px] text-[#8C9AC4]">Sócio · aprova e decide junto</p>
@@ -469,9 +469,9 @@ function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Dat
         {esquadroes.map((e) => {
           const lista = dados.agentes.filter((a) => a.esquadrao === e);
           return (
-            <section key={e} className="flex min-w-0 flex-col gap-2.5 rounded-2xl border border-white/10 bg-[#0A1430]/55 p-3">
-              <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.12em] text-[#8C9AC4]">
-                <i className="h-2 w-2 rounded-sm" style={{ background: COR_ESQUADRAO[e] }} /> {NOME_ESQUADRAO[e]}
+            <section key={e} className="flex min-w-0 flex-col gap-3 rounded-xl border border-white/10 bg-[#0A1430]/55 p-3">
+              <h3 className="flex items-center gap-2 text-xs font-semibold text-[#8C9AC4]">
+                <i className="h-2 w-2 rounded-lg" style={{ background: COR_ESQUADRAO[e] }} /> {NOME_ESQUADRAO[e]}
               </h3>
               {lista.length ? lista.map((a) => card(a)) : <p className="text-xs text-[#8C9AC4]">Ninguém neste esquadrão ainda.</p>}
             </section>
@@ -515,7 +515,7 @@ function Diario({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Recor
                   </div>
                   {r.resumo && <p className="mt-1 text-[13px] text-[#C3CDEB]">{resumoCurto(r.resumo, 260)}</p>}
                   {achados.length > 0 && (
-                    <ul className="mt-1.5 space-y-0.5 text-[13px] text-[#C3CDEB]">
+                    <ul className="mt-2 space-y-1 text-[13px] text-[#C3CDEB]">
                       {achados.slice(0, 5).map((x, i) => (
                         <li key={i}>
                           <ChipPrioridade p={String(x.prioridade)} />
@@ -583,9 +583,9 @@ function Rondas({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Recor
                       {dur ? ` · ${dur}` : ""}
                     </span>
                   </div>
-                  {r.resumo && <p className="mt-1.5 whitespace-pre-line text-sm text-[#C9D2F0]">{r.resumo}</p>}
+                  {r.resumo && <p className="mt-2 whitespace-pre-line text-sm text-[#C9D2F0]">{r.resumo}</p>}
                   {Array.isArray(r.achados) && r.achados.length > 0 && (
-                    <ul className="mt-1.5 space-y-1">
+                    <ul className="mt-2 space-y-1">
                       {r.achados.map((x, i) => (
                         <li key={i} className="text-sm text-[#C9D2F0]">
                           <ChipPrioridade p={String(x?.prioridade ?? "—")} />
@@ -764,7 +764,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
           >
             <AvatarAgente slug={x.slug} nome={x.nome} cor={COR_ESQUADRAO[x.esquadrao]} tamanho={32} />
             <span className="min-w-0">
-              <span className="flex items-center gap-1.5 text-sm font-semibold text-white">{x.nome} <MarcaIA /></span>
+              <span className="flex items-center gap-2 text-sm font-semibold text-white">{x.nome} <MarcaIA /></span>
               <span className="hidden truncate text-[11px] text-[#8C9AC4] lg:block">{x.cargo}</span>
             </span>
           </button>
@@ -773,11 +773,11 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
 
       {a && (
         <section className="flex min-w-0 flex-col gap-4">
-          <div className="flex h-[calc(100dvh-14rem)] min-h-[420px] flex-col rounded-2xl border border-white/10 bg-[#0B1430]/80" data-testid="chat-agente">
+          <div className="flex h-[calc(100dvh-14rem)] min-h-[420px] flex-col rounded-xl border border-white/10 bg-[#0B1430]/80" data-testid="chat-agente">
             <div className="flex shrink-0 items-center gap-3 border-b border-white/10 p-3">
               <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={44} />
               <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 font-bold text-white">{a.nome} <MarcaIA /></p>
+                <p className="flex flex-wrap items-center gap-2 font-semibold text-white">{a.nome} <MarcaIA /></p>
                 <p className="truncate text-xs text-[#8C9AC4]">{a.cargo}</p>
               </div>
               <div className="relative">
@@ -787,13 +787,13 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   aria-haspopup="menu"
                   aria-expanded={menu}
                   onClick={() => setMenu((v) => !v)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-xl font-bold leading-none text-white hover:bg-white/10"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-xl font-semibold leading-none text-white hover:bg-white/10"
                   data-testid="menu-chat"
                 >
                   …
                 </button>
                 {menu && (
-                  <div role="menu" className="absolute right-0 top-12 z-20 w-64 rounded-xl border border-white/15 bg-[#0B1430] p-1 shadow-xl">
+                  <div role="menu" className="absolute right-0 top-12 z-20 w-64 rounded-xl border border-white/15 bg-[#0B1430] p-1 shadow-flutuante">
                     <button
                       role="menuitem"
                       className="w-full rounded-lg px-3 py-3 text-left text-sm font-semibold text-[#B5EC7A] hover:bg-white/5 disabled:opacity-50"
@@ -826,7 +826,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                         <summary className="cursor-pointer select-none py-1 text-[#8C9AC4]">ver como apurei ({g.itens.length})</summary>
                         <div className="space-y-1">
                           {g.itens.map((c) => (
-                            <div key={c.id} data-testid="passo-gerente" className="whitespace-pre-line border-l-2 border-[#38BDF8]/50 py-0.5 pl-3">
+                            <div key={c.id} data-testid="passo-gerente" className="whitespace-pre-line border-l-2 border-[#38BDF8]/50 py-1 pl-3">
                               {c.texto}
                             </div>
                           ))}
@@ -836,7 +836,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                       <div
                         key={g.itens[0].id}
                         data-testid={g.itens[0].papel === "daniel" ? "bolha-minha" : "bolha-agente"}
-                        className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm ${g.itens[0].papel === "daniel" ? "ml-auto rounded-br-sm bg-[#3D7BFF] text-white" : "rounded-bl-sm bg-white/5 text-[#DCE3FA]"}`}
+                        className={`max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2 text-sm ${g.itens[0].papel === "daniel" ? "ml-auto rounded-br-lg bg-[#3D7BFF] text-white" : "rounded-bl-lg bg-white/5 text-[#DCE3FA]"}`}
                       >
                         {(() => {
                           const { resumo, detalhes } = g.itens[0].papel === "daniel" ? { resumo: g.itens[0].texto, detalhes: "" } : dividirResposta(g.itens[0].texto);
@@ -862,7 +862,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   )
                 )}
                 {ocupado && (
-                  <div data-testid="digitando" className="inline-flex items-center gap-1 rounded-2xl rounded-bl-sm bg-white/5 px-3 py-2 text-sm text-[#8C9AC4]" role="status">
+                  <div data-testid="digitando" className="inline-flex items-center gap-1 rounded-xl rounded-bl-lg bg-white/5 px-3 py-2 text-sm text-[#8C9AC4]" role="status">
                     <span className="sr-only">{a.nome} está digitando</span>
                     <span aria-hidden>digitando…</span>
                   </div>
@@ -874,13 +874,13 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   onClick={() => irParaOFim(true)}
                   aria-label="Ir para a última mensagem"
                   data-testid="ir-para-o-fim"
-                  className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-[#0B1430] text-white shadow-lg hover:bg-[#16224a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D7BFF]"
+                  className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-[#0B1430] text-white shadow-flutuante hover:bg-[#16224a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D7BFF]"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M12 5v14M5 12l7 7 7-7" />
                   </svg>
                   {naoLidas > 0 && (
-                    <span data-testid="nao-lidas" className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF7A6B] px-1 text-[11px] font-bold text-white">
+                    <span data-testid="nao-lidas" className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF7A6B] px-1 text-[11px] font-semibold text-white">
                       {naoLidas > 9 ? "9+" : naoLidas}
                     </span>
                   )}
@@ -911,7 +911,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                 <textarea
                   aria-label={`Mensagem para ${a.nome}`}
                   rows={1}
-                  className="max-h-32 min-h-11 flex-1 resize-none rounded-3xl border border-white/15 bg-[#0B1430] px-4 py-[10px] text-base text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none"
+                  className="max-h-32 min-h-11 flex-1 resize-none rounded-xl border border-white/15 bg-[#0B1430] px-4 py-2 text-base text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none"
                   placeholder={`Escreva para ${a.nome}…`}
                   value={texto}
                   maxLength={4000}
@@ -942,8 +942,8 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
 
           <MemoriaAgente key={a.slug} slug={a.slug} nome={a.nome} />
 
-          <div className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
-            <h3 className="text-sm font-bold text-white">Ordens para {a.nome}</h3>
+          <div className="rounded-xl border border-white/10 bg-[#0B1430]/80 p-4">
+            <h3 className="text-sm font-semibold text-white">Ordens para {a.nome}</h3>
             {ordens.length === 0 ? (
               <p className="mt-2 text-sm text-[#8C9AC4]">Nenhuma ordem ainda.</p>
             ) : (
@@ -1037,12 +1037,12 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
 
   return (
     <div className="w-full space-y-4">
-      <div className="space-y-3 rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
-        <label className="block text-sm font-bold text-white" htmlFor="pauta">
+      <div className="space-y-3 rounded-xl border border-white/10 bg-[#0B1430]/80 p-4">
+        <label className="block text-sm font-semibold text-white" htmlFor="pauta">
           Pauta
         </label>
         <textarea id="pauta" className={`${campo} min-h-[80px]`} placeholder="O que a equipe precisa decidir?" value={pauta} maxLength={2000} onChange={(e) => setPauta(e.target.value)} />
-        <p className="text-sm font-bold text-white">Participantes</p>
+        <p className="text-sm font-semibold text-white">Participantes</p>
         <div className="flex flex-wrap gap-2">
           {ativos.map((a) => {
             const fixo = a.slug === "moacir";
@@ -1075,7 +1075,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
             const a = porSlug[f.slug];
             const chave = `f${i}`;
             return (
-              <div key={chave} className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
+              <div key={chave} className="rounded-xl border border-white/10 bg-[#0B1430]/80 p-4">
                 <div className="flex items-center gap-2">
                   {a && <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={32} />}
                   <b className="text-white">{a?.nome ?? f.slug}</b> <MarcaIA />
@@ -1094,8 +1094,8 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
               </div>
             );
           })}
-          <div className="rounded-2xl border border-[#3D7BFF]/40 bg-[#3D7BFF]/10 p-4">
-            <p className="text-sm font-bold text-white">{res.fallback ? "Reunião não concluída" : "Consolidado do Moacir"}</p>
+          <div className="rounded-xl border border-[#3D7BFF]/40 bg-[#3D7BFF]/10 p-4">
+            <p className="text-sm font-semibold text-white">{res.fallback ? "Reunião não concluída" : "Consolidado do Moacir"}</p>
             <p className="mt-1 whitespace-pre-line text-sm text-[#DCE3FA]">{res.consolidado.texto}</p>
             {res.consolidado.passos.length > 0 && (
               <ol className="mt-3 space-y-2">
@@ -1125,8 +1125,8 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
         </div>
       )}
 
-      <div className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
-        <h3 className="text-sm font-bold text-white">Atas anteriores</h3>
+      <div className="rounded-xl border border-white/10 bg-[#0B1430]/80 p-4">
+        <h3 className="text-sm font-semibold text-white">Atas anteriores</h3>
         {dados.atas.length === 0 ? (
           <p className="mt-2 text-sm text-[#8C9AC4]">Nenhuma reunião ainda. A ata de cada reunião fica guardada aqui.</p>
         ) : (
@@ -1184,7 +1184,7 @@ function MemoriaAgente({ slug, nome }: { slug: string; nome: string }) {
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
+    <div className="rounded-xl border border-white/10 bg-[#0B1430]/80 p-4">
       <button className={botaoLinha} onClick={abrir} aria-expanded={aberto} data-testid="memoria-abrir">
         O que {nome} sabe sobre você
       </button>

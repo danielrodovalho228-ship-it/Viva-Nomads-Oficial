@@ -120,7 +120,7 @@ export function EtapaOndeFica(p: {
             role="status"
             data-testid="cep-resultado"
             data-tipo={r.tipo}
-            className={cn("mt-1 flex items-start gap-1.5 text-xs", r.tipo === "rua" ? "text-forest" : "text-amber-900")}
+            className={cn("mt-1 flex items-start gap-2 text-xs", r.tipo === "rua" ? "text-forest" : "text-amber-900")}
           >
             {r.tipo === "rua" ? <CheckCircle2 className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden /> : <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />}
             <span>
@@ -197,7 +197,7 @@ export function EtapaOndeFica(p: {
       {p.enderecoMatricula && (
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status" data-testid="endereco-matricula-conflito">
           <p className="font-semibold">O endereço da matrícula é diferente do CEP — confira.</p>
-          <p className="mt-0.5 text-xs">
+          <p className="mt-1 text-xs">
             Na matrícula:{" "}
             {[p.enderecoMatricula.rua, p.enderecoMatricula.numero, p.enderecoMatricula.bairro, p.enderecoMatricula.cidade].filter(Boolean).join(", ")}
           </p>
@@ -239,7 +239,7 @@ export function EtapaOndeFica(p: {
           <LocationDatalist id="novo-bairros" />
           <Erro msg={p.erros.bairro} />
           {p.bairroDoCep && (
-            <span className="mt-1 block rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-900" role="status">
+            <span className="mt-1 block rounded-lg bg-amber-50 px-2 py-2 text-xs text-amber-900" role="status">
               O CEP indica <strong>{p.bairroDoCep}</strong> — confirmar?{" "}
               <button
                 type="button"
@@ -276,7 +276,7 @@ export function EtapaOndeFica(p: {
 
       {foraDaArea && (
         <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status" data-testid="aviso-cidade-fora">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
           <span>
             Por enquanto a Viva Nomads atende {CITIES.map((c) => c.name).join(", ")}. Você pode cadastrar e deixar o
             anúncio pronto: avisamos quando a sua cidade abrir.
@@ -284,8 +284,8 @@ export function EtapaOndeFica(p: {
         </p>
       )}
 
-      <p className="flex items-start gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
-        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
+      <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+        <MapPin className="mt-1 h-3.5 w-3.5 shrink-0 text-sage" />
         <span>
           <strong className="text-ink">Rua e número NUNCA aparecem no anúncio público</strong>: mostramos só a região
           aproximada (um círculo do bairro). O endereço completo é liberado apenas <strong className="text-ink">após o aceite</strong>.
@@ -303,7 +303,7 @@ export function EtapaOndeFica(p: {
           </select>
         </Labeled>
         <div className="min-w-0">
-          <span className="mb-1.5 block text-sm font-medium text-ink">Quem opera este imóvel?</span>
+          <span className="mb-2 block text-sm font-medium text-ink">Quem opera este imóvel?</span>
           <div className="grid grid-cols-1 gap-2" role="radiogroup" aria-label="Quem opera este imóvel?">
             {OPERACOES.map(({ valor, rotulo }) => (
               <button
@@ -334,7 +334,7 @@ export function EtapaOndeFica(p: {
             hint="Declaração obrigatória. A equipe confere o documento antes de publicar."
           />
           <div>
-            <span className="mb-1.5 block text-sm font-medium text-ink">
+            <span className="mb-2 block text-sm font-medium text-ink">
               {doc.titulo} <span className="font-normal text-muted">(obrigatório para publicar)</span>
             </span>
             {p.docOperacaoAnexado && p.subleaseDoc.length === 0 && (

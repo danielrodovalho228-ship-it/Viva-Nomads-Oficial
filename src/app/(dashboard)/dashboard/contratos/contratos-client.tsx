@@ -177,7 +177,7 @@ export function ContratosClient({
 
       {/* Regra de ouro — sempre visível no topo. */}
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-muted">
-        <Lock className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+        <Lock className="mt-1 h-4 w-4 shrink-0 text-sage" />
         <span>{REGRA_PAGAMENTO}</span>
       </div>
 
@@ -238,7 +238,7 @@ function ContratoCard({
     <Panel className="p-5" id={`contrato-${contrato.id}`} data-testid="contrato-cartao" data-contrato={contrato.id}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-title text-lg font-bold text-ink">{contrato.propertyTitle}</h2>
+          <h2 className="font-title text-lg font-semibold text-ink">{contrato.propertyTitle}</h2>
           {!demo && <ProblemaComIsto tipo="contrato" id={contrato.id} className="mt-1" />}
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted">
             <span className="inline-flex items-center gap-1">
@@ -259,7 +259,7 @@ function ContratoCard({
           </div>
         </div>
         <span
-          className={cn("rounded-full px-2.5 py-1 text-xs font-medium", tomDoSelo(contrato.estado))}
+          className={cn("rounded-full px-3 py-1 text-xs font-medium", tomDoSelo(contrato.estado))}
           data-testid="contrato-etapa"
           data-chave={contrato.estado.chave}
         >
@@ -306,7 +306,7 @@ function ContratoCard({
             Caução do contrato — {formatBRL(caucaoTotal)}
           </p>
           {caucaoRegistrada ? (
-            <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-forest" data-testid="caucao-contrato-status">
+            <p className="mt-1 inline-flex items-center gap-2 text-xs text-forest" data-testid="caucao-contrato-status">
               <Check className="h-3.5 w-3.5" />
               {caucaoRegistrada.confirmado
                 ? "Recebimento registrado e confirmado pelo inquilino."
@@ -408,7 +408,7 @@ function BlocoRow({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-xs font-bold text-white">
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-xs font-semibold text-white">
             {bloco.numeroBloco}
           </span>
           <div className="text-sm">
@@ -421,7 +421,7 @@ function BlocoRow({
             </p>
           </div>
         </div>
-        <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", meta.tone)}>
+        <span className={cn("rounded-full px-3 py-1 text-xs font-medium", meta.tone)}>
           {meta.label}
         </span>
       </div>
@@ -453,7 +453,7 @@ function BlocoRow({
       {/* Registro declaratório de recebimento (só em blocos já iniciados). */}
       {bloco.status !== "agendado" ? (
         quitado ? (
-          <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-forest">
+          <p className="mt-3 inline-flex items-center gap-2 text-xs text-forest">
             <Check className="h-3.5 w-3.5" /> Valor do bloco registrado como recebido.
           </p>
         ) : (
@@ -467,7 +467,7 @@ function BlocoRow({
           />
         )
       ) : (
-        <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted">
+        <p className="mt-3 inline-flex items-center gap-2 text-xs text-muted">
           <Clock className="h-3.5 w-3.5" /> Bloco agendado — o registro abre quando ele entra em
           vigência.
         </p>
@@ -550,7 +550,7 @@ function RegistrarRecebimento({
 
   if (done) {
     return (
-      <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-forest" role="status" data-testid="recebimento-registrado">
+      <p className="mt-3 inline-flex items-center gap-2 text-xs text-forest" role="status" data-testid="recebimento-registrado">
         <Check className="h-3.5 w-3.5" />
         {jaRegistrado
           ? jaRegistrado
@@ -568,7 +568,7 @@ function RegistrarRecebimento({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-sage-200 px-3 py-1.5 text-xs font-medium text-forest hover:bg-sage-100"
+        className="mt-3 inline-flex items-center gap-2 rounded-lg border border-sage-200 px-3 py-2 text-xs font-medium text-forest hover:bg-sage-100"
         data-testid={tipo === "caucao" ? "registrar-caucao" : "registrar-recebimento"}
       >
         <Plus className="h-3.5 w-3.5" /> {tipo === "caucao" ? "Registrar recebimento da Caução" : "Registrar recebimento"}
@@ -578,7 +578,7 @@ function RegistrarRecebimento({
 
   return (
     <div className="mt-3 rounded-xl border border-sage-200 bg-white p-3">
-      <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-ink">
+      <p className="mb-2 flex items-center gap-2 text-xs font-medium text-ink">
         <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Registrar recebimento (você declara; a plataforma só registra)
       </p>
       <div className="grid gap-2 sm:grid-cols-3">
@@ -589,7 +589,7 @@ function RegistrarRecebimento({
             centavos
             value={valor === "" ? null : Number(valor)}
             onChange={(v) => setValor(v == null ? "" : String(v))}
-            className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+            className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
           />
         </label>
         <label className="text-xs text-muted">
@@ -597,7 +597,7 @@ function RegistrarRecebimento({
           <select
             value={forma}
             onChange={(e) => setForma(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+            className="mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-2 text-sm text-ink outline-none focus:border-sage"
           >
             {Object.entries(FORMA_LABEL).map(([k, v]) => (
               <option key={k} value={k}>
@@ -611,7 +611,7 @@ function RegistrarRecebimento({
           <CampoData
             value={data}
             onChange={(e) => setData(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+            className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
           />
         </label>
       </div>
@@ -632,7 +632,7 @@ function RegistrarRecebimento({
                 value={v === "" ? null : Number(v)}
                 onChange={(n) => set(n == null ? "" : String(n))}
                 placeholder="0"
-                className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+                className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
               />
             </label>
           ))}
@@ -643,7 +643,7 @@ function RegistrarRecebimento({
         value={obs}
         onChange={(e) => setObs(e.target.value)}
         placeholder="Observação (opcional)"
-        className="mt-2 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+        className="mt-2 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
       />
       <p className="mt-2 text-[11px] text-muted">{REGRA_PAGAMENTO}</p>
       {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}

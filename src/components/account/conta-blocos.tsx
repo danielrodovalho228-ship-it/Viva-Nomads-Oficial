@@ -22,11 +22,11 @@ export function BlocoConta({ id, numero, titulo, subtitulo, children }: { id: st
   return (
     <section id={id} className="mt-10 scroll-mt-24 first:mt-6" data-testid={`bloco-${id}`} aria-labelledby={`${id}-titulo`}>
       <div className="flex items-baseline gap-2 border-b border-sage-200 pb-2">
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-forest text-xs font-bold text-white" aria-hidden>
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-forest text-xs font-semibold text-white" aria-hidden>
           {numero}
         </span>
         <div className="min-w-0">
-          <h2 id={`${id}-titulo`} className="font-title text-xl font-bold text-ink">
+          <h2 id={`${id}-titulo`} className="font-title text-xl font-semibold text-ink">
             {titulo}
           </h2>
           <p className="text-sm text-muted">{subtitulo}</p>
@@ -62,7 +62,7 @@ function LinkPerfilPublico({ id }: { id: string }) {
     <Link
       href={`/proprietario/${id}`}
       target="_blank"
-      className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-forest underline underline-offset-2"
+      className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-forest underline underline-offset-2"
       data-testid="ver-como-outros-veem"
     >
       <Eye className="h-4 w-4" aria-hidden /> Ver como os outros veem
@@ -83,7 +83,7 @@ export function VerComoOutrosVeem() {
         type="button"
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-forest underline underline-offset-2"
+        className="inline-flex items-center gap-2 text-sm font-medium text-forest underline underline-offset-2"
         data-testid="ver-como-outros-veem"
       >
         <Eye className="h-4 w-4" aria-hidden /> Ver como os outros veem

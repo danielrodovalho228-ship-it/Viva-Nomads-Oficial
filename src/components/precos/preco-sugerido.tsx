@@ -39,7 +39,7 @@ export function PrecoSugerido({ aluguel, onUsar, onAirbnbMensal }: { aluguel: nu
           </label>
           {sugerido !== null && (
             <>
-              <dl className="space-y-0.5 text-sm">
+              <dl className="space-y-1 text-sm">
                 <div className="flex justify-between"><dt>No Airbnb você recebe</dt><dd data-testid="recebe-airbnb">{brl(recebeAirbnb(total))}</dd></div>
                 <div className="flex justify-between"><dt>Na Viva, a {brl(sugerido)}/mês, você recebe</dt><dd data-testid="recebe-viva">{brl(recebeViva(sugerido, MESES, taxa))}</dd></div>
               </dl>

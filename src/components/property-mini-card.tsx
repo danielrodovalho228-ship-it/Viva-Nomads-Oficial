@@ -15,7 +15,7 @@ export function PropertyMiniCard({ property }: { property: Property }) {
     typeof cover === "string" && (/^https?:\/\//.test(cover) || cover.startsWith("/"));
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-sage-200 bg-white p-3 sm:flex-row sm:gap-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-sage-200 bg-white p-3 sm:flex-row sm:gap-4">
       {/* Mobile: foto largura total no topo. sm+: foto à esquerda. */}
       <div className="relative w-full shrink-0 sm:w-36">
         {hasPhoto ? (
@@ -40,11 +40,11 @@ export function PropertyMiniCard({ property }: { property: Property }) {
           </span>
         </div>
         {/* Título com espaço próprio — line-clamp-2, nada por cima. */}
-        <h3 className="mt-1 line-clamp-2 font-title text-base font-bold leading-snug text-ink">
+        <h3 className="mt-1 line-clamp-2 font-title text-base font-semibold leading-snug text-ink">
           {property.title}
         </h3>
         {/* Selos em fluxo normal, quebram naturalmente (sem position absolute). */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           {property.readyToLiveBadge && <ReadyToLiveBadge size="sm" />}
           <PropertyTags property={property} />
         </div>
@@ -60,7 +60,7 @@ export function PropertyMiniCard({ property }: { property: Property }) {
               <Ruler className="h-3.5 w-3.5" /> {property.areaM2} m²
             </span>
           </div>
-          <span className="font-title text-base font-bold text-ink">
+          <span className="font-title text-base font-semibold text-ink">
             {/* Preço 0 = anúncio ainda incompleto → "R$ —" (nunca "R$ 0", que
                 parece imóvel de graça). Anúncio publicado sempre tem preço > 0. */}
             {property.monthlyPrice > 0 ? formatBRL(property.monthlyPrice) : "R$ —"}

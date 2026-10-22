@@ -63,7 +63,7 @@ export function EtapaFotos({
             {bloqueado && <span className="ml-2 text-red-600">{faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`}</span>}
           </span>
           {photos.length >= MIN_PHOTOS && (
-            <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", TIER_META[tierFromPhotoCount(photos.length)].tone)}>
+            <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", TIER_META[tierFromPhotoCount(photos.length)].tone)}>
               {TIER_META[tierFromPhotoCount(photos.length)].label}
             </span>
           )}
@@ -86,14 +86,14 @@ export function EtapaFotos({
       {/* Prompt 31a: porta para os fotógrafos parceiros da cidade do imóvel (o CEP do cadastro vira a cidade). */}
       <div className="mt-3 rounded-xl border border-sage-200 bg-sage-50 p-3 text-sm" data-testid="porta-fotografo">
         <p className="font-semibold text-ink">Quer um fotógrafo profissional?</p>
-        <p className="mt-0.5 text-muted">Veja os fotógrafos parceiros que atendem a cidade deste imóvel. As fotos vão direto para o anúncio.</p>
+        <p className="mt-1 text-muted">Veja os fotógrafos parceiros que atendem a cidade deste imóvel. As fotos vão direto para o anúncio.</p>
         <a href={linkFotografos(cep, imovelId)} target="_blank" rel="noopener" className="mt-1 inline-block font-medium text-forest underline">
           Ver fotógrafos na cidade do imóvel
         </a>
       </div>
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-3 flex flex-wrap gap-2">
         {SUGGESTED_ROOMS.map((r) => (
-          <span key={r} className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">
+          <span key={r} className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
             {r}
           </span>
         ))}
@@ -159,7 +159,7 @@ export function EtapaFotos({
             onChange={(e) => setVideoUrl(e.target.value)}
           />
         </Labeled>
-        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+        <p className="mt-2 flex items-center gap-2 text-xs text-muted">
           <PlayCircle className="h-3.5 w-3.5" />
           Um tour em vídeo aumenta a confiança e gera um selo “Vídeo” no anúncio.
         </p>
@@ -175,15 +175,15 @@ export function EtapaFotos({
 export function FalhaIa({ falha, onTentarDeNovo }: { falha: FalhaIaFotos; onTentarDeNovo?: () => void }) {
   return (
     <div className="text-amber-900" role="status" data-testid="ia-fotos-falha" data-motivo={falha.motivo}>
-      <p className="flex items-start gap-1.5">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      <p className="flex items-start gap-2">
+        <AlertTriangle className="mt-1 h-4 w-4 shrink-0" aria-hidden />
         <span>{falha.texto}</span>
       </p>
       {falha.motivo !== "desligada" && falha.motivo !== "limite" && onTentarDeNovo && (
         <button
           type="button"
           onClick={onTentarDeNovo}
-          className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-forest px-3 py-1.5 text-sm font-semibold text-forest hover:bg-sage-50"
+          className="mt-2 inline-flex items-center gap-2 rounded-lg border border-forest px-3 py-2 text-sm font-semibold text-forest hover:bg-sage-50"
           data-testid="ia-fotos-tentar-de-novo"
         >
           <RotateCcw className="h-4 w-4" aria-hidden /> Tentar de novo

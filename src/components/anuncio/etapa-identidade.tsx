@@ -51,7 +51,7 @@ export function EtapaIdentidade({ onConfirmada }: { onConfirmada?: () => void })
       <p id="etapa-identidade-titulo" className="text-sm font-semibold text-ink">
         Confirme sua identidade
       </p>
-      <p className="mt-0.5 text-xs text-muted">
+      <p className="mt-1 text-xs text-muted">
         É o que permite conferir a matrícula na hora: comparamos o CPF do seu cadastro com o do proprietário. {TEXTO_VALIDADE_CAF}
       </p>
       {estado === "carregando" && (

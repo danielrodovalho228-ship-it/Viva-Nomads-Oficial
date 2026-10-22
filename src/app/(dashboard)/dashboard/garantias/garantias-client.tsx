@@ -66,21 +66,21 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
         <Panel title="Caução Viva (padrão)">
           <ul className="space-y-3 text-sm text-ink">
             <li className="flex items-start gap-2">
-              <PiggyBank className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+              <PiggyBank className="mt-1 h-4 w-4 shrink-0 text-forest" />
               <span>
                 <strong>50% do bloco</strong> (contrato por blocos de até 90 dias), <strong>devolvível</strong> ao
                 fim da estadia — em conta poupança, até 3 vezes o valor mensal.
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+              <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-forest" />
               <span>
                 <strong>Uma garantia por contrato</strong> — por lei, caução e seguro-fiança não se
                 somam.
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <RotateCcw className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+              <RotateCcw className="mt-1 h-4 w-4 shrink-0 text-forest" />
               <span>
                 <strong>Devolução:</strong> ao encerrar, descontam-se apenas débitos/danos comprovados
                 (conferência de saída); o restante volta ao inquilino. A plataforma calcula e documenta.
@@ -98,7 +98,7 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
             Para quem prefere não imobilizar caixa: uma mensalidade diluída cobre o valor mensal, sem
             depósito. Contratado com parceiro e sujeito a análise.
           </p>
-          <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+          <span className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
             Seguro-fiança via parceiro — em estruturação
           </span>
           <p className="mt-4 text-xs text-muted">
@@ -109,7 +109,7 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
 
       {/* Status das cauções dos contratos (espelha Contratos & blocos). */}
       <div className="mt-8">
-        <h2 className="font-title text-lg font-bold text-ink">Cauções dos seus contratos</h2>
+        <h2 className="font-title text-lg font-semibold text-ink">Cauções dos seus contratos</h2>
         <p className="text-sm text-muted">Resumo por contrato — o detalhe por bloco fica em Contratos & blocos.</p>
 
         {linhas.length === 0 ? (
@@ -132,12 +132,12 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
               return (
                 <Panel key={l.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                   <div className="min-w-0">
-                    <p className="font-title font-bold text-ink">{l.imovel}</p>
-                    <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted">
+                    <p className="font-title font-semibold text-ink">{l.imovel}</p>
+                    <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted">
                       <CircleDollarSign className="h-3.5 w-3.5" /> Caução {formatBRL(l.caucaoTotal)}
                     </p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${meta.cls}`}>
+                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${meta.cls}`}>
                     {meta.label}
                   </span>
                 </Panel>

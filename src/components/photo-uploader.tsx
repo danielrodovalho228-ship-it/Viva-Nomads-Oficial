@@ -171,12 +171,12 @@ export function PhotoUploader({
                 return (
                   <div
                     key="repetida"
-                    className="absolute inset-x-1.5 bottom-1.5 flex items-center gap-1.5 rounded-lg bg-amber-50/95 p-1.5 text-[11px] leading-tight text-amber-900 shadow"
+                    className="absolute inset-x-1.5 bottom-1.5 flex items-center gap-2 rounded-lg bg-amber-50/95 p-2 text-[11px] leading-tight text-amber-900 "
                     data-testid="aviso-foto-repetida"
                   >
                     {parecida && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={parecida.url} alt="Foto parecida" className="h-8 w-10 shrink-0 rounded object-cover" data-testid="aviso-foto-repetida-miniatura" />
+                      <img src={parecida.url} alt="Foto parecida" className="h-8 w-10 shrink-0 rounded-lg object-cover" data-testid="aviso-foto-repetida-miniatura" />
                     )}
                     <span>
                       <strong>{a.mensagem}</strong> {parecida ? "Quase igual a esta foto." : a.dica}
@@ -186,12 +186,12 @@ export function PhotoUploader({
               })}
 
             {i === 0 && (
-              <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-forest">
+              <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-champagne px-2 py-1 text-xs font-semibold text-forest">
                 <Star className="h-3 w-3" /> Capa
               </span>
             )}
             {p.demo && (
-              <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
+              <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-1 text-[10px] text-white">
                 preview local
               </span>
             )}
@@ -202,7 +202,7 @@ export function PhotoUploader({
                   type="button"
                   onClick={() => makeCover(p)}
                   title="Definir como capa"
-                  className="grid h-7 w-7 place-items-center rounded-full bg-white text-forest shadow"
+                  className="grid h-7 w-7 place-items-center rounded-full bg-white text-forest "
                 >
                   <Star className="h-3.5 w-3.5" />
                 </button>
@@ -211,7 +211,7 @@ export function PhotoUploader({
                 type="button"
                 onClick={() => remove(p)}
                 title="Remover"
-                className="grid h-7 w-7 place-items-center rounded-full bg-white text-red-600 shadow"
+                className="grid h-7 w-7 place-items-center rounded-full bg-white text-red-600 "
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -221,7 +221,7 @@ export function PhotoUploader({
             <div className="mt-1 space-y-1 text-xs">
               {p.avisos?.filter((a) => a.codigo !== "repetida").map((a) => (
                 <p key={a.codigo} className="flex items-start gap-1 text-amber-800" data-testid={`aviso-foto-${a.codigo}`}>
-                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <AlertTriangle className="mt-1 h-3 w-3 shrink-0" />
                   <span><strong>{a.mensagem}</strong> {a.dica}</span>
                 </p>
               ))}

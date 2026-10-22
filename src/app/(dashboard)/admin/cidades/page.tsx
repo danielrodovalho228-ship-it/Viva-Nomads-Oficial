@@ -95,7 +95,7 @@ export default async function AdminCidadesPage() {
         ) : (
           <ol className="divide-y divide-sage-100" data-testid="ranking-interesse">
             {ranking.map((c, i) => (
-              <li key={`${c.uf}-${c.chave}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+              <li key={`${c.uf}-${c.chave}`} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
                 <span className="font-semibold text-ink">{i + 1}. {c.cidade} – {c.uf}</span>
                 <span className="text-muted">{c.proprietarios} proprietário(s) · {c.inquilinos} inquilino(s) · <strong className="text-ink">{c.total}</strong> no total</span>
               </li>

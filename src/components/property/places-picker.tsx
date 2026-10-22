@@ -83,7 +83,7 @@ export function PlacesPicker({
           value={categoria}
           onChange={(e) => setCategoria(e.target.value)}
           aria-label="Categoria do lugar"
-          className="rounded-xl border border-sage-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-sage sm:w-56"
+          className="rounded-xl border border-sage-200 bg-white px-3 py-3 text-sm outline-none focus:border-sage sm:w-56"
         >
           {CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>{c.label}</option>
@@ -95,10 +95,10 @@ export function PlacesPicker({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar lugar real (ex.: ASA Coworking)…"
-            className="w-full rounded-xl border border-sage-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-sage"
+            className="w-full rounded-xl border border-sage-200 bg-white py-3 pl-9 pr-3 text-sm outline-none focus:border-sage"
           />
           {(suggestions.length > 0 || loading) && (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-sage-200 bg-white shadow-lg">
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-sage-200 bg-white shadow-flutuante">
               {loading && <p className="px-3 py-2 text-xs text-muted">buscando…</p>}
               {suggestions.map((s) => (
                 <button
@@ -121,7 +121,7 @@ export function PlacesPicker({
         <ul className="space-y-2">
           {value.map((v) => (
             <li key={v.placeId} className="flex items-center gap-2 rounded-xl border border-sage-200 px-3 py-2 text-sm">
-              <span className="rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-forest">
+              <span className="rounded-full bg-sage-100 px-2 py-1 text-xs font-medium text-forest">
                 {CATEGORIES.find((c) => c.value === v.categoria)?.label ?? v.categoria}
               </span>
               <span className="line-clamp-1 flex-1 text-ink">{v.rotulo}</span>

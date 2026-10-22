@@ -23,7 +23,7 @@ export function ChecklistPublicar({
   const feitos = itens.filter((i) => i.ok).length;
   const faltam = itens.filter((i) => !i.ok);
   const lista = (
-    <ul className="mt-3 space-y-1.5" data-testid="checklist-publicar-lista">
+    <ul className="mt-3 space-y-2" data-testid="checklist-publicar-lista">
       {itens.map((c) => (
         <li key={c.key} className="flex items-center justify-between gap-2 text-sm" data-testid={`checklist-item-${c.key}`} data-ok={c.ok ? "1" : "0"}>
           <span className="flex min-w-0 items-center gap-2">

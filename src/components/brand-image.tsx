@@ -13,7 +13,7 @@ export function BrandImage({
   priority = false,
   sizes = "100vw",
   treat = true,
-  rounded = "rounded-2xl",
+  rounded: raio = "rounded-xl",
   fit = "object-cover",
 }: {
   src: string;
@@ -27,7 +27,7 @@ export function BrandImage({
   fit?: string;
 }) {
   return (
-    <div className={cn("relative overflow-hidden bg-surface-2", rounded, className)}>
+    <div className={cn("relative overflow-hidden bg-surface-2", raio, className)}>
       <Image
         src={src}
         alt={alt}
@@ -39,7 +39,7 @@ export function BrandImage({
         className={fit}
       />
       {treat && (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-blue-900/45 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-night/20" />
       )}
     </div>
   );

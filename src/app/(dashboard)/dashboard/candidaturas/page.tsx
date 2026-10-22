@@ -15,10 +15,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const TOM: Record<RotuloCandidatura["tom"], string> = {
-  neutro: "bg-slate-100 text-slate-700",
+  neutro: "bg-slate-100 text-muted",
   andamento: "bg-blue-50 text-blue-700",
   sucesso: "bg-emerald-100 text-emerald-700",
-  encerrado: "bg-slate-100 text-slate-500",
+  encerrado: "bg-slate-100 text-muted",
 };
 
 function dataBR(iso: string | null): string {
@@ -55,7 +55,7 @@ export default async function CandidaturasPage() {
             <Panel key={c.id}>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="font-title text-base font-bold text-ink">{c.propertyTitle}</h3>
+                  <h3 className="font-title text-base font-semibold text-ink">{c.propertyTitle}</h3>
                   {c.createdAt && (
                     <p className="text-xs text-muted">Enviada em {dataBR(c.createdAt)}</p>
                   )}
@@ -69,7 +69,7 @@ export default async function CandidaturasPage() {
                   {c.situacao.chave === "aceita" && (
                     <Link
                       href="/dashboard/mensagens"
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:underline"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-forest hover:underline"
                     >
                       <MessageSquare className="h-4 w-4" /> Conversar
                     </Link>

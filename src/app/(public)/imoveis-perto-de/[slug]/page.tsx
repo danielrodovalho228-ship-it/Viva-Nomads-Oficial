@@ -66,7 +66,7 @@ export default async function PertoDePage({ params }: Params) {
           <nav className="text-sm text-white/60">
             <Link href="/" className="hover:text-champagne">Início</Link> / <span className="text-white/80">{d.nome}</span>
           </nav>
-          <h1 className="mt-4 max-w-3xl font-title text-3xl font-bold md:text-5xl">Imóveis mobiliados {perto}</h1>
+          <h1 className="mt-4 max-w-3xl font-title text-[28px] font-semibold">Imóveis mobiliados {perto}</h1>
           <p className="mt-5 max-w-2xl text-lg text-white/80">
             Em ordem de tempo de carro até {d.artigo ? `${d.artigo} ` : ""}{d.nome}, em {d.cidade}. Locação de 30 a 180 dias.
           </p>
@@ -76,10 +76,10 @@ export default async function PertoDePage({ params }: Params) {
       <section className="container-page section-y">
         {imoveis.length > 0 ? (
           <>
-            <h2 className="font-title text-2xl font-bold text-ink">
+            <h2 className="font-title text-2xl font-semibold text-ink">
               {imoveis.length} {imoveis.length === 1 ? "imóvel" : "imóveis"} {perto}
             </h2>
-            <div className="mt-6 overflow-hidden rounded-2xl" data-testid="perto-de-mapa">
+            <div className="mt-6 overflow-hidden rounded-xl" data-testid="perto-de-mapa">
               <PropertyMap
                 className="aspect-[16/9] w-full"
                 center={{ lat: imoveis[0].lat, lng: imoveis[0].lng }}
@@ -105,7 +105,7 @@ export default async function PertoDePage({ params }: Params) {
             </p>
           </>
         ) : (
-          <div className="rounded-2xl border border-dashed border-sage-200 p-8 text-center" data-testid="perto-de-vazio">
+          <div className="rounded-xl border border-dashed border-sage-200 p-8 text-center" data-testid="perto-de-vazio">
             <p className="font-title text-lg font-semibold text-ink">Ainda não há imóvel publicado {perto}.</p>
             <p className="mt-2 text-sm text-muted">
               Publique um pedido de moradia: os proprietários de {d.cidade} veem o que você precisa e falam com você pela plataforma.

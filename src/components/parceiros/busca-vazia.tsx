@@ -42,8 +42,8 @@ export function BuscaVazia({
       </div>
       {mostrarParceiroGeral(geral, 0) && (
         <div className="rounded-xl border border-sage-200 bg-sage-50 p-4" data-testid="parceiro-geral">
-          <p className="text-xs font-semibold uppercase tracking-wide text-forest">Parceiro geral da Viva</p>
-          <p className="mt-1 font-title text-lg font-bold text-ink">{geral.nome}</p>
+          <p className="text-xs font-semibold text-forest">Parceiro geral da Viva</p>
+          <p className="mt-1 font-title text-lg font-semibold text-ink">{geral.nome}</p>
           {geral.cidade && <p className="text-sm text-muted">{geral.cidade}</p>}
           {geral.descricao && <p className="mt-2 text-sm text-ink">{geral.descricao}</p>}
           <ButtonLink href="/ajuda" variant="secondary" size="sm" className="mt-3">

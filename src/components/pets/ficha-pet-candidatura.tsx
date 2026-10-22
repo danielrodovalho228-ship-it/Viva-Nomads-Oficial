@@ -62,7 +62,7 @@ export function FichaPetCandidatura({ alvo, resumo: resumoInicial, className }: 
         <div className="mt-3 rounded-xl border border-sage-200 bg-white p-3 text-sm" data-testid="ficha-pet-painel">
           <div className="mb-2 flex items-center justify-between gap-2">
             <p className="font-semibold text-ink">Ficha do pet</p>
-            <button type="button" onClick={() => setAberta(false)} aria-label="Fechar ficha do pet" className="rounded p-1 text-muted hover:bg-sage-50">
+            <button type="button" onClick={() => setAberta(false)} aria-label="Fechar ficha do pet" className="rounded-lg p-1 text-muted hover:bg-sage-50">
               <X className="h-4 w-4" />
             </button>
           </div>

@@ -36,7 +36,7 @@ import type { ModoRota } from "@/lib/rotas/tempo";
 
 /** Um só estilo para todos os campos do formulário: 48 px de altura (prompt 12). */
 const CAMPO =
-  "h-12 w-full rounded-xl border border-line bg-white px-3.5 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
+  "h-12 w-full rounded-xl border border-line bg-white px-4 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
 
 const PASSOS = [
   "Publique o que precisa",
@@ -60,22 +60,22 @@ export default function NovoPedidoPage() {
         <div aria-hidden className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url(/media/pedido-lateral.webp)" }} />
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-t from-forest via-forest/80 to-forest/20 lg:bg-gradient-to-br lg:from-forest lg:via-forest/85 lg:to-forest/30"
+          className="absolute inset-0 bg-forest/80"
         />
         <div className="relative z-10 p-5 sm:p-8 lg:max-w-md lg:p-10">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/20">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/20">
             <Megaphone className="h-3.5 w-3.5" aria-hidden /> Pedido de moradia
           </span>
-          <h1 className="mt-3 font-title text-2xl font-bold leading-tight lg:mt-4 lg:text-[2.4rem]">Deixe os imóveis virem até você</h1>
+          <h1 className="mt-3 font-title text-2xl font-semibold leading-tight lg:mt-4 lg:text-[28px]">Deixe os imóveis virem até você</h1>
           <div className="hidden lg:block">
             <p className="mt-3 text-lg text-white/85">
               Em vez de procurar um a um, diga o que você precisa. Os proprietários da cidade veem seu pedido e respondem
               com os imóveis que combinam — de graça, pela plataforma.
             </p>
-            <ol className="mt-8 space-y-2.5 border-t border-white/15 pt-6" data-testid="pedido-passos">
+            <ol className="mt-8 space-y-3 border-t border-white/15 pt-6" data-testid="pedido-passos">
               {PASSOS.map((p, i) => (
                 <li key={p} className="flex items-center gap-3 text-sm text-white/90">
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-champagne text-xs font-bold text-night">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-champagne text-xs font-semibold text-night">
                     {i + 1}
                   </span>
                   {p}
@@ -94,7 +94,7 @@ export default function NovoPedidoPage() {
 
           <footer className="mt-10 border-t border-line pt-5 text-xs text-muted" data-testid="pedido-rodape-legal">
             <p className="flex items-start gap-2">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden />
+              <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" aria-hidden />
               <span>
                 Toda a conversa acontece pela plataforma — é o que fica registrado. A Viva Nomads conecta e documenta; não
                 é locadora, fiadora nem intermediária de pagamento.{" "}
@@ -120,7 +120,7 @@ function slugDoDestinoEstado(slugOuId: string, destinos: { id: string; slug: str
 function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <fieldset className="min-w-0 space-y-4">
-      <legend className="mb-3 text-xs font-bold uppercase tracking-[0.08em] text-muted">{titulo}</legend>
+      <legend className="mb-3 text-xs font-semibold text-muted">{titulo}</legend>
       {children}
     </fieldset>
   );
@@ -128,7 +128,7 @@ function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode
 
 function Rotulo({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-ink">
+    <label htmlFor={htmlFor} className="mb-2 block text-sm font-medium text-ink">
       {children}
     </label>
   );
@@ -424,7 +424,7 @@ function PedidoForm() {
     const n = resultado.compativeis;
     return (
       <div role="status" aria-live="polite">
-        <h2 className="font-title text-2xl font-bold text-ink">Pedido publicado</h2>
+        <h2 className="font-title text-2xl font-semibold text-ink">Pedido publicado</h2>
         {!resultado.chegaAosDonos && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900" data-testid="pedido-falta-confirmar">
             <strong>{tituloFaltaConfirmar(resultado.falta.length ? resultado.falta : ["e-mail"])}</strong> {avisoConfirmacao(smsLigado)}{" "}
@@ -488,7 +488,7 @@ function PedidoForm() {
 
   return (
     <div data-testid="pedido-formulario">
-      <h2 className="font-title text-2xl font-bold text-ink md:text-[1.75rem]">{editarId ? "Editar seu pedido" : "Publique seu pedido"}</h2>
+      <h2 className="font-title text-2xl font-semibold text-ink md:text-[1.75rem]">{editarId ? "Editar seu pedido" : "Publique seu pedido"}</h2>
       <p className="mt-1 text-sm text-muted">
         {editarId ? "As mudanças valem na hora para os proprietários da cidade." : "Os proprietários da cidade veem seu pedido e respondem pela plataforma."}
       </p>
@@ -562,14 +562,14 @@ function PedidoForm() {
                 Adicionar
               </Button>
             </div>
-            <ul className="mt-2 flex flex-wrap gap-1.5" data-testid="pedido-bairros">
+            <ul className="mt-2 flex flex-wrap gap-2" data-testid="pedido-bairros">
               {bairros.length === 0 ? (
                 <li className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">{QUALQUER_BAIRRO}</li>
               ) : (
                 bairros.map((b) => (
                   <li key={b} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
                     {b}
-                    <button type="button" aria-label={`Tirar ${b}`} onClick={() => setBairros((a) => a.filter((x) => x !== b))} className="rounded-full p-0.5 hover:bg-white">
+                    <button type="button" aria-label={`Tirar ${b}`} onClick={() => setBairros((a) => a.filter((x) => x !== b))} className="rounded-full p-1 hover:bg-white">
                       <X className="h-3 w-3" aria-hidden />
                     </button>
                   </li>
@@ -648,7 +648,7 @@ function PedidoForm() {
 
         <Grupo titulo="O imóvel">
           <div>
-            <span className="mb-1.5 block text-sm font-medium text-ink" id="pedido-quartos-rotulo">Quartos (no mínimo)</span>
+            <span className="mb-2 block text-sm font-medium text-ink" id="pedido-quartos-rotulo">Quartos (no mínimo)</span>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-labelledby="pedido-quartos-rotulo" data-testid="pedido-quartos">
               {QUARTOS_OPCOES.map((q) => (
                 <BotaoMarca key={q.valor} ativo={quartosMin === q.valor} onClick={() => setQuartosMin((a) => (a === q.valor ? null : q.valor))} icone={Plus} testid={`pedido-quartos-${q.valor}`}>
@@ -658,7 +658,7 @@ function PedidoForm() {
             </div>
           </div>
           <div>
-            <span className="mb-1.5 block text-sm font-medium text-ink">Precisa de</span>
+            <span className="mb-2 block text-sm font-medium text-ink">Precisa de</span>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" data-testid="pedido-necessidades">
               {NECESSIDADES.map((n) => (
                 <BotaoMarca
@@ -744,15 +744,15 @@ function PedidoForm() {
               onChange={(e) => setApresentacao(e.target.value.slice(0, APRESENTACAO_MAX))}
               placeholder="Conte um pouco do seu perfil e do que procura. Não inclua telefone, e-mail ou apps de mensagem."
               className={cn(
-                "w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15",
+                "w-full rounded-xl border bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15",
                 contatoNoTexto ? "border-red-300" : "border-line",
               )}
             />
             <div className="mt-1 flex items-start justify-between gap-3 text-[13px]">
               <span className="min-w-0 text-red-600">
                 {contatoNoTexto && (
-                  <span className="flex items-start gap-1.5">
-                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden /> {CONTATO_AVISO}
+                  <span className="flex items-start gap-2">
+                    <Info className="mt-1 h-3.5 w-3.5 shrink-0" aria-hidden /> {CONTATO_AVISO}
                   </span>
                 )}
               </span>
@@ -921,7 +921,7 @@ function CampoCidade({
           id={listaId}
           role="listbox"
           aria-label="Cidades"
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-line bg-white py-1 shadow-xl"
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-line bg-white py-1 shadow-flutuante"
         >
           {sugestoes.map((c, i) => (
             <li
@@ -933,7 +933,7 @@ function CampoCidade({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => escolher(i)}
               onMouseEnter={() => setAtivo(i)}
-              className={cn("cursor-pointer px-3.5 py-2.5 text-sm text-ink", i === ativo && "bg-sage-100")}
+              className={cn("cursor-pointer px-4 py-3 text-sm text-ink", i === ativo && "bg-sage-100")}
             >
               {c.cidade} <span className="text-muted">– {c.uf}</span>
             </li>

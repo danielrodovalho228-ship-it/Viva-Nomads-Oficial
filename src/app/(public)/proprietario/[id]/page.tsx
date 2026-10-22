@@ -55,13 +55,13 @@ export default async function ProprietarioPage({ params }: Params) {
 
   return (
     <div className="container-page py-8 sm:py-12" data-testid="pagina-proprietario">
-      <section className="rounded-2xl border border-sage-200 bg-white p-5 sm:p-8">
+      <section className="rounded-xl border border-sage-200 bg-white p-5 sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           {p.fotoUrl ? (
             <Image src={p.fotoUrl} alt={`Foto de ${p.nome}`} width={112} height={112} className="h-24 w-24 rounded-full object-cover sm:h-28 sm:w-28" />
           ) : (
             <div
-              className="grid h-24 w-24 place-items-center rounded-full font-title text-3xl font-bold text-white sm:h-28 sm:w-28"
+              className="grid h-24 w-24 place-items-center rounded-full font-title text-2xl font-semibold text-white sm:h-28 sm:w-28"
               style={{ backgroundColor: corAvatar(p.nome) }}
               aria-hidden
             >
@@ -69,11 +69,11 @@ export default async function ProprietarioPage({ params }: Params) {
             </div>
           )}
           <div className="min-w-0">
-            <p className="text-sm font-medium uppercase tracking-wide text-sage">Proprietário</p>
-            <h1 className="font-title text-3xl font-bold text-ink">{p.nome}</h1>
+            <p className="text-sm font-medium text-sage">Proprietário</p>
+            <h1 className="font-title text-[28px] font-semibold text-ink">{p.nome}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {p.selos.map((s) => (
-                <span key={s} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-forest">
+                <span key={s} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
                   <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {s}
                 </span>
               ))}
@@ -90,7 +90,7 @@ export default async function ProprietarioPage({ params }: Params) {
         <ul className="mt-6 grid gap-2 text-sm text-ink sm:grid-cols-2">
           {fatos.map((f) => (
             <li key={f.texto} className="flex items-start gap-2">
-              <f.icone className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden /> {f.texto}
+              <f.icone className="mt-1 h-4 w-4 shrink-0 text-sage" aria-hidden /> {f.texto}
             </li>
           ))}
         </ul>
@@ -107,7 +107,7 @@ export default async function ProprietarioPage({ params }: Params) {
       </section>
 
       <section className="mt-10" aria-labelledby="imoveis-proprietario">
-        <h2 id="imoveis-proprietario" className="font-title text-2xl font-bold text-ink">
+        <h2 id="imoveis-proprietario" className="font-title text-2xl font-semibold text-ink">
           Imóveis de {p.nome}
         </h2>
         {imoveis.length === 0 ? (
@@ -122,7 +122,7 @@ export default async function ProprietarioPage({ params }: Params) {
       </section>
 
       <section id="avaliacoes" className="mt-10 scroll-mt-28" aria-labelledby="avaliacoes-proprietario">
-        <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-bold text-ink">
+        <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-semibold text-ink">
           Avaliações recebidas
         </h2>
         {avaliacoes.length === 0 ? (
@@ -130,7 +130,7 @@ export default async function ProprietarioPage({ params }: Params) {
         ) : (
           <ul className="mt-5 grid gap-4">
             {avaliacoes.map((a) => (
-              <li key={a.id} className="rounded-2xl border border-sage-200 bg-white p-5">
+              <li key={a.id} className="rounded-xl border border-sage-200 bg-white p-5">
                 <p className="flex items-center gap-1 text-sm font-semibold text-ink">
                   <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden /> {a.nota.toLocaleString("pt-BR")}
                   {a.data && <span className="ml-2 font-normal text-muted">{dataBR(a.data.slice(0, 10))}</span>}

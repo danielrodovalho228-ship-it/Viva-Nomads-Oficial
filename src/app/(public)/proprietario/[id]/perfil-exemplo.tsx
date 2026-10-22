@@ -31,25 +31,25 @@ export function PerfilExemplo({ p }: { p: ProprietarioExemplo }) {
 
   return (
     <div className="container-page py-8 sm:py-12" data-testid="pagina-proprietario">
-      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-night/90 px-4 py-3 text-white" data-testid="faixa-exemplo">
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-night/90 px-4 py-3 text-white" data-testid="faixa-exemplo">
         <SeloExemplo className="bg-white/20" />
         <p className="text-sm">{AVISO_EXEMPLO}</p>
       </div>
-      <section className="rounded-2xl border border-sage-200 bg-white p-5 sm:p-8">
+      <section className="rounded-xl border border-sage-200 bg-white p-5 sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           <div
-            className="grid h-24 w-24 place-items-center rounded-full font-title text-3xl font-bold text-white sm:h-28 sm:w-28"
+            className="grid h-24 w-24 place-items-center rounded-full font-title text-2xl font-semibold text-white sm:h-28 sm:w-28"
             style={{ backgroundColor: corAvatar(p.nome) }}
             aria-hidden
           >
             {iniciais(p.nome)}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium uppercase tracking-wide text-sage">Proprietário</p>
-            <h1 className="font-title text-3xl font-bold text-ink">{p.nome}</h1>
+            <p className="text-sm font-medium text-sage">Proprietário</p>
+            <h1 className="font-title text-[28px] font-semibold text-ink">{p.nome}</h1>
             <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink">
               {p.selos.map((s) => (
-                <li key={s} className="inline-flex items-center gap-1.5">
+                <li key={s} className="inline-flex items-center gap-2">
                   <Check className="h-4 w-4 text-forest" aria-hidden /> {s}
                 </li>
               ))}
@@ -67,7 +67,7 @@ export function PerfilExemplo({ p }: { p: ProprietarioExemplo }) {
         <ul className="mt-6 grid gap-2 text-sm text-ink sm:grid-cols-2">
           {fatos.map((f) => (
             <li key={f.texto} className="flex items-start gap-2">
-              <f.icone className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden /> {f.texto}
+              <f.icone className="mt-1 h-4 w-4 shrink-0 text-sage" aria-hidden /> {f.texto}
             </li>
           ))}
         </ul>
@@ -76,7 +76,7 @@ export function PerfilExemplo({ p }: { p: ProprietarioExemplo }) {
       </section>
 
       <section className="mt-10" aria-labelledby="imoveis-proprietario">
-        <h2 id="imoveis-proprietario" className="font-title text-2xl font-bold text-ink">
+        <h2 id="imoveis-proprietario" className="font-title text-2xl font-semibold text-ink">
           Imóveis de {p.nome}
         </h2>
         <div className="mt-5 grid gap-5 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
@@ -88,18 +88,18 @@ export function PerfilExemplo({ p }: { p: ProprietarioExemplo }) {
 
       <section id="avaliacoes" className="mt-10 scroll-mt-28" aria-labelledby="avaliacoes-proprietario">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-bold text-ink">
+          <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-semibold text-ink">
             Avaliações recebidas
           </h2>
           <SeloExemplo />
         </div>
         <ul className="mt-5 grid gap-4 lg:grid-cols-2">
           {avaliacoes.map((a) => (
-            <li key={`${a.imovelId}-${a.autor}`} className="rounded-2xl border border-sage-200 bg-white p-5" data-testid="avaliacao-exemplo">
+            <li key={`${a.imovelId}-${a.autor}`} className="rounded-xl border border-sage-200 bg-white p-5" data-testid="avaliacao-exemplo">
               <div className="flex items-center gap-3">
                 <span
                   aria-hidden
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-white"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
                   style={{ backgroundColor: corAvatar(a.autor) }}
                 >
                   {iniciais(a.autor)}

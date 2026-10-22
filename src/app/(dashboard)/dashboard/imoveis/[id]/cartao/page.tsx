@@ -14,7 +14,7 @@ export default async function CartaoDoAnuncioPage({ params }: { params: Promise<
       <Link href="/dashboard/imoveis" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" /> Meus imóveis
       </Link>
-      <h1 className="mt-3 font-title text-2xl font-bold text-ink">Cartão do seu anúncio</h1>
+      <h1 className="mt-3 font-title text-2xl font-semibold text-ink">Cartão do seu anúncio</h1>
       <p className="mt-1 max-w-2xl text-sm text-muted">
         Uma imagem pronta para o WhatsApp e as redes, com um QR que leva direto ao seu anúncio na Viva Nomads.
       </p>

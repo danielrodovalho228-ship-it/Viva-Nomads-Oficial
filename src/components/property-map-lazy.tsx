@@ -12,7 +12,7 @@ export const PropertyMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="aspect-[16/10] w-full animate-pulse rounded-2xl bg-surface-2" />
+      <div className="aspect-[16/10] w-full animate-pulse rounded-xl bg-surface-2" />
     ),
   }
 );

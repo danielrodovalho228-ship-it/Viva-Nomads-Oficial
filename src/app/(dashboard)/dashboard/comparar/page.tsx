@@ -67,7 +67,7 @@ export default function ComparePage() {
     {
       label: "Recursos de trabalho",
       render: (p) => (
-        <ul className="space-y-0.5 text-xs">
+        <ul className="space-y-1 text-xs">
           {p.workFeatures.slice(0, 3).map((f) => (
             <li key={f} className="flex items-center gap-1">
               <Check className="h-3 w-3 text-sage" /> {f}
@@ -85,14 +85,14 @@ export default function ComparePage() {
         subtitle={`${items.length} imóveis · compatibilidade com seu perfil de trabalho`}
       />
       <FavoritosTabs />
-      <div className="overflow-x-auto rounded-2xl border border-sage-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-sage-200 bg-white">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-sage-200">
               <th className="w-40 px-4 py-4" />
               {items.map((p) => (
                 <th key={p.id} className="px-4 py-4 text-left align-top">
-                  <Link href={`/imoveis/${p.id}`} className="font-title font-bold text-ink hover:text-forest">
+                  <Link href={`/imoveis/${p.id}`} className="font-title font-semibold text-ink hover:text-forest">
                     {p.title}
                   </Link>
                 </th>

@@ -155,8 +155,8 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
       ) : (
         <>
           <Perguntas perfil={perfil} />
-          <section className="mt-6 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
-            <h2 className="font-title text-lg font-bold text-ink">Não achou a resposta?</h2>
+          <section className="mt-6 rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
+            <h2 className="font-title text-lg font-semibold text-ink">Não achou a resposta?</h2>
             <p className="mt-1 text-sm text-muted">
               Abra um chamado: você recebe um número e acompanha tudo por aqui. {PROMESSA_ATENDIMENTO}.
             </p>
@@ -173,8 +173,8 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
             </ButtonLink>
           </section>
           {user && (
-            <section className="mt-6 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
-              <h2 className="font-title text-lg font-bold text-ink">Meus chamados</h2>
+            <section className="mt-6 rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
+              <h2 className="font-title text-lg font-semibold text-ink">Meus chamados</h2>
               {lista === null ? (
                 <p className="mt-2 text-sm text-muted">Carregando…</p>
               ) : lista.length === 0 ? (
@@ -192,7 +192,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
                         </span>
                         <span
                           className={cn(
-                            "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
+                            "shrink-0 rounded-full px-3 py-1 text-xs font-medium",
                             c.status === "aguardando_usuario" ? "bg-amber-100 text-amber-800" : c.status === "resolvido" || c.status === "encerrado" ? "bg-surface-2 text-muted" : "bg-sage-100 text-forest"
                           )}
                         >
@@ -216,8 +216,8 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
   const [aberta, setAberta] = useState<string | null>(null);
   const resultado = useMemo(() => buscarFaq(q), [q]);
   return (
-    <section className="rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
-      <h2 className="font-title text-lg font-bold text-ink">Perguntas frequentes</h2>
+    <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
+      <h2 className="font-title text-lg font-semibold text-ink">Perguntas frequentes</h2>
       <label className="relative mt-3 block">
         <span className="sr-only">Buscar nas perguntas frequentes</span>
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
@@ -227,7 +227,7 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Ex.: caução, senha, anúncio não publica"
-          className="w-full rounded-xl border border-line bg-white py-2.5 pl-9 pr-3 text-sm text-ink focus:border-forest focus:outline-none"
+          className="w-full rounded-xl border border-line bg-white py-3 pl-9 pr-3 text-sm text-ink focus:border-forest focus:outline-none"
         />
       </label>
       {resultado.length === 0 ? (
@@ -319,13 +319,13 @@ function NovoChamado({
     onAberto(r.numero);
   }
 
-  const campo = "w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-forest focus:outline-none";
+  const campo = "w-full rounded-xl border border-line bg-white px-3 py-3 text-sm text-ink focus:border-forest focus:outline-none";
   return (
-    <form onSubmit={enviar} className="rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
+    <form onSubmit={enviar} className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
       <button type="button" onClick={onCancelar} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-forest">
         <ArrowLeft className="h-4 w-4" /> Voltar
       </button>
-      <h2 className="font-title text-lg font-bold text-ink">Abrir chamado</h2>
+      <h2 className="font-title text-lg font-semibold text-ink">Abrir chamado</h2>
       {contexto && <p className="mt-1 text-sm text-muted">Sobre {CONTEXTO_ROTULO[contexto.tipo]} — a equipe já recebe o link.</p>}
 
       <AvisoEmergencia texto={mensagem} />
@@ -454,7 +454,7 @@ function AvisoEmergencia({ texto }: { texto: string }) {
   if (!emergencia) return null;
   return (
     <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {avisoEmergencia(emergencia)}
+      <AlertTriangle className="mt-1 h-4 w-4 shrink-0" /> {avisoEmergencia(emergencia)}
     </p>
   );
 }
@@ -464,8 +464,8 @@ function ConfirmarPessoa({ link, onFeito }: { link: { c: string; s: string }; on
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   return (
-    <section className="mb-4 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
-      <h2 className="font-title text-lg font-bold text-ink">Falar com uma pessoa da equipe?</h2>
+    <section className="mb-4 rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
+      <h2 className="font-title text-lg font-semibold text-ink">Falar com uma pessoa da equipe?</h2>
       <p className="mt-1 text-sm text-muted">Passamos seu chamado para a equipe agora. A resposta chega por e-mail.</p>
       {erro && <p className="mt-2 text-sm text-red-700">{erro}</p>}
       <Button
@@ -550,7 +550,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
   const idUltimaViva = dados?.mensagens.filter((m) => m.autor === "ia").at(-1)?.id;
 
   return (
-    <section className="rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
+    <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
       <button type="button" onClick={onVoltar} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-forest">
         <ArrowLeft className="h-4 w-4" /> Meus chamados
       </button>
@@ -571,7 +571,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
         <p className="text-sm text-muted">Chamado não encontrado. Entre com a conta que abriu o chamado.</p>
       ) : (
         <>
-          <h2 className="font-title text-lg font-bold text-ink">{dados.chamado.assunto}</h2>
+          <h2 className="font-title text-lg font-semibold text-ink">{dados.chamado.assunto}</h2>
           <p className="mt-1 text-sm text-muted">
             {dados.chamado.numero_publico} · {STATUS[dados.chamado.status] ?? dados.chamado.status}
             <span data-testid="chamado-aberto-em"> · {abertoEmBR(dados.chamado.criado_em)}</span>
@@ -586,7 +586,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                   m.autor === "usuario" ? "ml-6 bg-sage-100 text-ink" : m.autor === "sistema" ? "bg-surface-2 text-muted" : "mr-6 border border-line bg-white text-ink"
                 )}
               >
-                <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-muted">
+                <span className="mb-1 flex items-center gap-2 text-xs font-semibold text-muted">
                   <MessageSquare className="h-3.5 w-3.5" /> {AUTOR[m.autor]} · {new Date(m.criado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}
                 </span>
                 <span className="whitespace-pre-wrap">{m.corpo}</span>
@@ -597,7 +597,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                         type="button"
                         disabled={enviando}
                         onClick={() => acao(pedirPessoa)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-forest px-3 py-1.5 text-xs font-semibold text-forest hover:bg-sage-100 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-2 text-xs font-semibold text-forest hover:bg-sage-100 disabled:opacity-50"
                       >
                         <UserRound className="h-3.5 w-3.5" /> Falar com uma pessoa
                       </button>
@@ -609,7 +609,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                         type="button"
                         disabled={enviando}
                         onClick={() => acao(marcarResolvido)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-2 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-2 text-xs font-semibold text-ink hover:bg-surface-2 disabled:opacity-50"
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" /> Sim, resolveu
                       </button>
@@ -635,7 +635,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                   value={texto}
                   onChange={(e) => setTexto(e.target.value)}
                   placeholder={dados.chamado.status === "resolvido" ? "Algo ficou pendente? Responda para reabrir." : "Escreva sua mensagem"}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-forest focus:outline-none"
+                  className="w-full rounded-xl border border-line bg-white px-3 py-3 text-sm text-ink focus:border-forest focus:outline-none"
                 />
               </label>
               <AvisoEmergencia texto={texto} />

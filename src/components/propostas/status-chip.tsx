@@ -13,7 +13,7 @@ const TOM: Record<(typeof STATUS_PROPOSTA)[StatusProposta]["tom"], string> = {
 export function StatusChip({ status, className }: { status: StatusProposta; className?: string }) {
   const s = STATUS_PROPOSTA[status];
   return (
-    <span className={cn("inline-flex shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold", TOM[s.tom], className)} data-testid="proposta-status" data-status={status}>
+    <span className={cn("inline-flex shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold", TOM[s.tom], className)} data-testid="proposta-status" data-status={status}>
       {s.rotulo}
     </span>
   );

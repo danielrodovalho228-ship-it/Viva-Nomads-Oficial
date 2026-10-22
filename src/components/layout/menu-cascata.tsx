@@ -70,7 +70,7 @@ export function MenuCascata({
     });
   }
   return (
-    <ul className="space-y-0.5" data-testid="menu-cascata">
+    <ul className="space-y-1" data-testid="menu-cascata">
       {itens.map((item) => (
         <No key={item.id} item={item} nivel={0} pathname={pathname} badges={badges} abertos={abertos} alternar={alternar} aoNavegar={aoNavegar} />
       ))}
@@ -87,7 +87,7 @@ function somaBadges(item: ItemMenu, badges?: Record<string, number>): number {
 function Badge({ n }: { n: number }) {
   if (!n) return null;
   return (
-    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-champagne px-1.5 text-[11px] font-bold text-forest" aria-label={`${n} aguardando`}>
+    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-champagne px-2 text-[11px] font-semibold text-forest" aria-label={`${n} aguardando`}>
       {n > 99 ? "99+" : n}
     </span>
   );
@@ -156,7 +156,7 @@ function No({
         <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none", aberto && "rotate-180")} aria-hidden />
       </button>
       {aberto && (
-        <ul id={idLista} className={cn("mt-0.5 space-y-0.5", nivel === 0 && "border-l border-white/10 ml-5")}>
+        <ul id={idLista} className={cn("mt-1 space-y-1", nivel === 0 && "border-l border-white/10 ml-5")}>
           {item.filhos!.map((f) => (
             <No key={f.id} item={f} nivel={nivel + 1} pathname={pathname} badges={badges} abertos={abertos} alternar={alternar} aoNavegar={aoNavegar} />
           ))}

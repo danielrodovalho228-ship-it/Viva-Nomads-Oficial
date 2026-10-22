@@ -34,7 +34,7 @@ export function CodigosGerados({ codigos, onFechar }: { codigos: string[]; onFec
       <p className="text-sm font-medium text-amber-900">Guarde estes 10 códigos num lugar seguro. Eles aparecem só agora; cada um vale uma vez.</p>
       <ul data-testid="codigos-recuperacao" className="grid grid-cols-2 gap-2 font-mono text-sm text-ink">
         {codigos.map((c) => (
-          <li key={c} className="rounded bg-white px-2 py-1 text-center tracking-wider">{c}</li>
+          <li key={c} className="rounded-lg bg-white px-2 py-1 text-center tracking-wider">{c}</li>
         ))}
       </ul>
       <div className="flex flex-col gap-2 sm:flex-row">

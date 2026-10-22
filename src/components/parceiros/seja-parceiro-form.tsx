@@ -90,7 +90,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   if (enviado || (sol && sol.status !== "aguardando_email" && ["pendente", "aprovada"].includes(sol.status))) {
     return (
       <div className="flex gap-3" role="status" data-testid="seja-parceiro-recebido">
-        <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-forest" aria-hidden />
+        <CheckCircle2 className="mt-1 h-6 w-6 shrink-0 text-forest" aria-hidden />
         <div>
           <p className="font-semibold text-ink">{enviado ? STATUS_TEXTO.pendente : STATUS_TEXTO[sol!.status]}</p>
           <p className="mt-1 text-sm text-muted">Mandamos a confirmação para {estado.email}. Você acompanha pela sua conta.</p>
