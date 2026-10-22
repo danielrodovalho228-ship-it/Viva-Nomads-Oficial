@@ -20,7 +20,7 @@ import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
  */
 export function BlocoConta({ id, numero, titulo, subtitulo, children }: { id: string; numero: number; titulo: string; subtitulo: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="mt-10 scroll-mt-24 first:mt-6" data-testid={`bloco-${id}`} aria-labelledby={`${id}-titulo`}>
+    <section id={id} className="mt-12 scroll-mt-24 first:mt-6" data-testid={`bloco-${id}`} aria-labelledby={`${id}-titulo`}>
       <div className="flex items-baseline gap-2 border-b border-sage-200 pb-2">
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-forest text-xs font-semibold text-white" aria-hidden>
           {numero}

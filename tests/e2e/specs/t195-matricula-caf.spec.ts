@@ -21,7 +21,7 @@ import {
 /*
   T195 — Matrícula do imóvel cruzada com a CAF (prompt 19), com matrículas FICTÍCIAS de tests/fixtures/ (nenhum dado
   real) e a leitura e a CAF SIMULADAS no laboratório:
-  A. CAF feita + CPF do perfil = CPF da matrícula → "Documentação conferida ✓" na hora, sem fila; a matrícula
+  A. CAF feita + CPF do perfil = CPF da matrícula → "Documentação conferida" na hora, sem fila; a matrícula
      preenche unidade/área/vaga com "veio da matrícula"; o anúncio publica.
   C→A. sem CAF → "Documento recebido — falta confirmar sua identidade" + botão; confirmar → conferido.
   D. nome/CPF diferente → em revisão com as opções do caso; escolher "cônjuge" e anexar a certidão.
@@ -115,7 +115,7 @@ test.describe("T195 — matrícula + CAF", () => {
       );
       await enviarMatricula(page, matricula("dono"));
       await expect(page.getByTestId("documento-estado")).toHaveAttribute("data-estado", "aprovado", { timeout: 30_000 });
-      await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida ✓");
+      await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida");
       await expect(page.getByTestId("matricula-resultado")).toHaveAttribute("data-resultado", "conferido");
       // Preencheu a unidade (editável) com a etiqueta; área e vaga vão para o rascunho.
       await expect(page.getByTestId("cadastro-complemento")).toHaveValue("Apartamento 302");
@@ -195,7 +195,7 @@ test.describe("T195 — matrícula + CAF", () => {
 
     await page.getByTestId("matricula-caf").click();
     await expect(page.getByTestId("matricula-resultado")).toHaveAttribute("data-resultado", "conferido", { timeout: 30_000 });
-    await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida ✓");
+    await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida");
     expect((await ultimaConferencia(contas.c.id)).resultado).toBe("conferido");
     await page.context().close();
   });

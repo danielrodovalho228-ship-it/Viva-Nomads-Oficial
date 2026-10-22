@@ -36,7 +36,7 @@ export function TaxSimulator() {
         <h3 className="font-title text-lg font-semibold text-ink">Simulador tributário PF × PJ</h3>
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-ink">
             Receita mensal das locações (total)
@@ -88,7 +88,7 @@ export function TaxSimulator() {
       {aviso && <p className="mt-2 text-xs text-amber-700">{aviso}</p>}
 
       {/* Resultado */}
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Card
           active={r.recommendation === "pf"}
           icon={User}

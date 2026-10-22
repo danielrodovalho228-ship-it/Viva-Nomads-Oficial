@@ -26,7 +26,7 @@ export default async function CompararPage({
     <div className="container-page py-6" data-testid="comparar">
       <h1 className="font-title text-2xl font-semibold text-ink">Comparar imóveis</h1>
       {imoveis.length < MIN_COMPARAR ? (
-        <div className="mt-4 rounded-xl border border-line bg-white p-5" data-testid="comparar-vazio">
+        <div className="mt-4 rounded-xl border border-line bg-white p-4" data-testid="comparar-vazio">
           <p className="text-ink">Escolha de 2 a 3 imóveis na busca para ver os dados lado a lado.</p>
           <Link href="/buscar" className="mt-3 inline-block font-semibold text-forest underline underline-offset-2">
             Voltar à busca

@@ -59,7 +59,7 @@ export function EtapaPreco(p: {
   const consumoFixo = p.utilitiesMode === "fixed" ? p.utilitiesEstimate || 0 : 0;
   const garantiaOk = Object.values(p.garantias).some(Boolean);
   return (
-    <div className="space-y-5" data-testid="etapa-preco">
+    <div className="space-y-4" data-testid="etapa-preco">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0">
         <Labeled label="Valor mensal (R$)" sugerido={p.sugerido("preco")}>
           <CampoReais

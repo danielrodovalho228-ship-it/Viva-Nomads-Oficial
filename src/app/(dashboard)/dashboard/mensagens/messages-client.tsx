@@ -216,7 +216,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             mobileView === "list" && "hidden"
           )}
         >
-          <header className="flex items-center gap-2 border-b border-sage-200 px-4 py-3 md:px-5">
+          <header className="flex items-center gap-2 border-b border-sage-200 px-4 py-3 md:px-4">
             <button
               type="button"
               onClick={() => setMobileView("list")}
@@ -247,7 +247,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           </header>
           {/* Prompt 43, item 5: o contexto da conversa no topo — estadia, pedido ou imóvel, com foto e datas. */}
           {(active.property || active.pedidoParceiroId) && (
-            <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 md:px-5" data-testid="conversa-contexto">
+            <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 md:px-4" data-testid="conversa-contexto">
               {active.foto && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={active.foto} alt="" loading="lazy" className="h-12 w-16 shrink-0 rounded-lg object-cover" />
@@ -276,7 +276,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               className="border-b border-line bg-white px-4 py-3"
             />
           )}
-          <div className="flex-1 space-y-3 overflow-y-auto bg-surface-2 p-5">
+          <div className="flex-1 space-y-3 overflow-y-auto bg-surface-2 p-4">
             {active.messages.map((m) => (
               <div key={m.id} className={cn("flex flex-col gap-1", m.from === "me" ? "items-end" : "items-start")}>
                 <span

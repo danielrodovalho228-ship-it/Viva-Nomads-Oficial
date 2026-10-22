@@ -70,7 +70,7 @@ export async function ContratoDetalhe({
         </span>
       </p>
       {postal?.ok && (
-        <Panel className="mb-5 p-5" data-testid="cartao-postal-painel">
+        <Panel className="mb-4 p-4" data-testid="cartao-postal-painel">
           <h2 className="font-title text-base font-semibold text-ink">Seu cartão-postal da estadia</h2>
           <p className="mt-1 text-sm text-muted">Uma lembrança para compartilhar no WhatsApp, com um QR para o imóvel. Mostra a cidade e o mês/ano; seu nome só se você quiser.</p>
           <div className="mt-4">
@@ -78,7 +78,7 @@ export async function ContratoDetalhe({
           </div>
         </Panel>
       )}
-      <Panel id="contrato" className="scroll-mt-24 p-5">
+      <Panel id="contrato" className="scroll-mt-24 p-4">
         <h2 className="font-title text-base font-semibold text-ink">Contrato</h2>
         <ul className="mt-3 space-y-2 text-sm text-ink" data-testid="contrato-resumo">
           {c.resumo.map((linha) => (
@@ -97,13 +97,13 @@ export async function ContratoDetalhe({
         {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
       </Panel>
       {lembreteSenha && (
-        <Panel className="mt-5 p-5" data-testid="lembrete-senha-entrada">
+        <Panel className="mt-4 p-4" data-testid="lembrete-senha-entrada">
           <h2 className="font-title text-base font-semibold text-ink">Antes de entrar</h2>
           <p className="mt-1 text-sm text-ink">{LEMBRETE_SENHA_ENTRADA}</p>
         </Panel>
       )}
       {checkin && (
-        <Panel id="checkin-painel" className="mt-5 scroll-mt-24 p-5" data-testid="checkin-painel">
+        <Panel id="checkin-painel" className="mt-4 scroll-mt-24 p-4" data-testid="checkin-painel">
           <h2 className="font-title text-base font-semibold text-ink">Check-in: instruções de entrada</h2>
           <div className="mt-3">
             <CheckinContrato contratoId={c.id} info={checkin} podeEditar={podeEditarInstrucoes(dadosCheckin)} podeNaoConsegui={podeNaoConsegui(dadosCheckin)} />
@@ -112,7 +112,7 @@ export async function ContratoDetalhe({
       )}
       <LinhaDoTempoEstadia etapas={c.linhaDoTempo} />
       {(c.assinadoProprietarioEm || c.assinadoInquilinoEm) && (
-        <Panel className="mt-5 p-5">
+        <Panel className="mt-4 p-4">
           <h2 className="font-title text-base font-semibold text-ink">Pacote de provas</h2>
           <p className="mt-1 text-sm text-muted">
             Um PDF com o resumo do contrato, o código de cada assinatura, os pagamentos marcados e as respostas da conferência, em ordem de data.
@@ -127,13 +127,13 @@ export async function ContratoDetalhe({
         </Panel>
       )}
       {conferencia && (
-        <Panel className="mt-5 p-5">
+        <Panel className="mt-4 p-4">
           <h2 className="font-title text-base font-semibold text-ink">Conferência de entrada e saída</h2>
           <p className="mt-1 text-sm text-muted">Fotos e itens por cômodo, confirmados ou contestados pelas duas partes. É a base para conversar sobre a Caução.</p>
           {mostrarChecklistCameras({ papel: c.papel, status: c.status }) && (
             <div className="mt-4 rounded-lg bg-sage-50 p-3 text-sm text-ink" data-testid="checklist-cameras">
-              <p className="font-medium">☐ {ITEM_CONFERENCIA_CAMERAS}</p>
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-muted">
+              <p className="font-medium">{ITEM_CONFERENCIA_CAMERAS}</p>
+              <ul className="mt-1 list-disc space-y-1 pl-4 text-muted">
                 {DICAS_CONFERENCIA_CAMERAS.map((d) => (
                   <li key={d}>{d}</li>
                 ))}

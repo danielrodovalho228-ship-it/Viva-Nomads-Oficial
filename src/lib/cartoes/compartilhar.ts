@@ -317,7 +317,7 @@ export function camposCartaoParceiro(p: ParceiroPublicoDoCartao): CamposCartaoPa
   const nome = limparTextoDoCartao(p.nomePublico, 50);
   const real = p.avaliacoesQtd > 0 && p.notaMedia != null && p.notaMedia >= 1 && p.notaMedia <= 5;
   const nota = real
-    ? `★ ${p.notaMedia!.toFixed(1).replace(".", ",")} · ${p.avaliacoesQtd} ${p.avaliacoesQtd === 1 ? "avaliação" : "avaliações"}`
+    ? `Nota ${p.notaMedia!.toFixed(1).replace(".", ",")} · ${p.avaliacoesQtd} ${p.avaliacoesQtd === 1 ? "avaliação" : "avaliações"}`
     : TEXTOS_PARCEIRO.novo;
   const foto = p.fotoUrl && /^https?:\/\//.test(p.fotoUrl) ? p.fotoUrl : null;
   return { titulo: nome || categoria, categoria, cidades, nota, selo: TEXTOS_PARCEIRO.selo, fotoUrl: foto };

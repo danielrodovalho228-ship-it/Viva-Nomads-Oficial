@@ -1,8 +1,9 @@
+import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { coverPhoto } from "@/lib/media";
-import { formatBRL } from "@/lib/utils";
 import { isExemplo } from "@/lib/demo-listing";
 
 /**
@@ -17,6 +18,9 @@ export function PropertyRow({
   id,
   title,
   monthlyPrice,
+  totalMes,
+  minPeriodDays,
+  availableFrom,
   neighborhood,
   photos,
   demo = false,
@@ -24,6 +28,10 @@ export function PropertyRow({
   id: string;
   title: string;
   monthlyPrice: number;
+  /** Total do mês (calcularTudoIncluido); sem ele, o valor mensal. */
+  totalMes?: number;
+  minPeriodDays?: number;
+  availableFrom?: string;
   neighborhood?: string;
   photos?: string[];
   demo?: boolean;
@@ -45,11 +53,8 @@ export function PropertyRow({
             Exemplo ilustrativo
           </span>
         )}
-        <span className="block text-sm font-semibold text-forest">
-          {formatBRL(monthlyPrice)}
-          <span className="font-normal text-muted">/mês</span>
-          {neighborhood ? <span className="font-normal text-muted"> · {neighborhood}</span> : null}
-        </span>
+        <PrecoComContexto rotulo={rotuloPreco({ mensal: totalMes ?? monthlyPrice, meses: mesesDoCartao(undefined, minPeriodDays), disponivelEm: availableFrom })} destaque="sm" />
+        {neighborhood ? <span className="block text-xs text-muted">{neighborhood}</span> : null}
       </span>
       {!demo && <ChevronRight className="h-5 w-5 shrink-0 text-muted" />}
     </>

@@ -62,7 +62,7 @@ export default function NovoPedidoPage() {
           aria-hidden
           className="absolute inset-0 bg-forest/80"
         />
-        <div className="relative z-10 p-5 sm:p-8 lg:max-w-md lg:p-10">
+        <div className="relative z-10 p-4 sm:p-8 lg:max-w-md lg:p-8">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/20">
             <Megaphone className="h-3.5 w-3.5" aria-hidden /> Pedido de moradia
           </span>
@@ -86,13 +86,13 @@ export default function NovoPedidoPage() {
         </div>
       </aside>
 
-      <div className="min-w-0 px-4 pb-10 pt-6 sm:px-8 lg:pb-16 lg:pl-16 lg:pr-10 lg:pt-10">
+      <div className="min-w-0 px-4 pb-12 pt-6 sm:px-8 lg:pb-16 lg:pl-16 lg:pr-12 lg:pt-12">
         <div className="w-full max-w-[600px]">
           <Suspense fallback={<div className="min-h-[40rem]" aria-busy="true" />}>
             <PedidoForm />
           </Suspense>
 
-          <footer className="mt-10 border-t border-line pt-5 text-xs text-muted" data-testid="pedido-rodape-legal">
+          <footer className="mt-12 border-t border-line pt-4 text-xs text-muted" data-testid="pedido-rodape-legal">
             <p className="flex items-start gap-2">
               <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" aria-hidden />
               <span>
@@ -472,7 +472,7 @@ function PedidoForm() {
             ))}
           </ul>
         )}
-        <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
           <Link
             href={`/buscar?${new URLSearchParams({ local: cidade }).toString()}`}
             className="text-sm font-medium text-forest underline"
@@ -690,7 +690,7 @@ function PedidoForm() {
                   value={mascararMilhar(orcamentoMin)}
                   onChange={(e) => setOrcamentoMin(soDigitos(e.target.value))}
                   placeholder="2.000"
-                  className={cn(CAMPO, "pl-10")}
+                  className={cn(CAMPO, "pl-12")}
                   data-testid="pedido-orcamento-min"
                 />
               </div>
@@ -709,7 +709,7 @@ function PedidoForm() {
                   value={mascararMilhar(orcamento)}
                   onChange={(e) => setOrcamento(soDigitos(e.target.value))}
                   placeholder="3.500"
-                  className={cn(CAMPO, "pl-10")}
+                  className={cn(CAMPO, "pl-12")}
                   data-testid="pedido-orcamento"
                 />
               </div>
@@ -911,7 +911,7 @@ function CampoCidade({
             setAberto(false);
           }
         }}
-        className={cn(CAMPO, escolhida && "pr-10")}
+        className={cn(CAMPO, escolhida && "pr-12")}
         data-testid="pedido-cidade"
         data-cidade-escolhida={escolhida ? "1" : undefined}
       />

@@ -13,7 +13,7 @@ export function PrivacidadeAcesso({ privacidade }: { privacidade?: Privacidade }
   const linhas = linhasPrivacidadePublica(privacidade);
   if (linhas.length === 0) return null;
   return (
-    <section className="rounded-xl border border-line bg-white p-5" data-testid="bloco-privacidade">
+    <section className="rounded-xl border border-line bg-white p-4" data-testid="bloco-privacidade">
       <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
         <ShieldCheck className="h-5 w-5 text-forest" aria-hidden /> Privacidade
       </h2>

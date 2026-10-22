@@ -35,8 +35,8 @@ export function PerfilExemplo({ p }: { p: ProprietarioExemplo }) {
         <SeloExemplo className="bg-white/20" />
         <p className="text-sm">{AVISO_EXEMPLO}</p>
       </div>
-      <section className="rounded-xl border border-sage-200 bg-white p-5 sm:p-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+      <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div
             className="grid h-24 w-24 place-items-center rounded-full font-title text-2xl font-semibold text-white sm:h-28 sm:w-28"
             style={{ backgroundColor: corAvatar(p.nome) }}
@@ -71,31 +71,31 @@ export function PerfilExemplo({ p }: { p: ProprietarioExemplo }) {
             </li>
           ))}
         </ul>
-        <p className="mt-5 max-w-2xl leading-relaxed text-muted">{p.bio}</p>
+        <p className="mt-4 max-w-2xl leading-relaxed text-muted">{p.bio}</p>
         <p className="mt-3 text-xs text-muted">Nos anúncios reais, a conversa acontece pelo chat da Viva, a partir de um dos imóveis. Contato direto fica protegido.</p>
       </section>
 
-      <section className="mt-10" aria-labelledby="imoveis-proprietario">
+      <section className="mt-12" aria-labelledby="imoveis-proprietario">
         <h2 id="imoveis-proprietario" className="font-title text-2xl font-semibold text-ink">
           Imóveis de {p.nome}
         </h2>
-        <div className="mt-5 grid gap-5 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-4 grid gap-4 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
           {imoveis.map((im) => (
             <PropertyCard key={im.id} property={im} />
           ))}
         </div>
       </section>
 
-      <section id="avaliacoes" className="mt-10 scroll-mt-28" aria-labelledby="avaliacoes-proprietario">
+      <section id="avaliacoes" className="mt-12 scroll-mt-28" aria-labelledby="avaliacoes-proprietario">
         <div className="flex flex-wrap items-center gap-3">
           <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-semibold text-ink">
             Avaliações recebidas
           </h2>
           <SeloExemplo />
         </div>
-        <ul className="mt-5 grid gap-4 lg:grid-cols-2">
+        <ul className="mt-4 grid gap-4 lg:grid-cols-2">
           {avaliacoes.map((a) => (
-            <li key={`${a.imovelId}-${a.autor}`} className="rounded-xl border border-sage-200 bg-white p-5" data-testid="avaliacao-exemplo">
+            <li key={`${a.imovelId}-${a.autor}`} className="rounded-xl border border-sage-200 bg-white p-4" data-testid="avaliacao-exemplo">
               <div className="flex items-center gap-3">
                 <span
                   aria-hidden

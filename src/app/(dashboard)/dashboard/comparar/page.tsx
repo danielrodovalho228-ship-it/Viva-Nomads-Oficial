@@ -1,5 +1,8 @@
 "use client";
 
+import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { calcularTudoIncluido } from "@/lib/precos";
 import Link from "next/link";
 import { GitCompare, Check, Minus, Award } from "lucide-react";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
@@ -7,7 +10,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
 import { useFavoritesStore } from "@/lib/favorites-store";
 import { useProperties } from "@/lib/use-properties";
-import { formatBRL, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { Property } from "@/lib/types";
 
 export default function ComparePage() {
@@ -35,7 +38,12 @@ export default function ComparePage() {
   }
 
   const rows: { label: string; render: (p: Property) => React.ReactNode }[] = [
-    { label: "Preço/mês", render: (p) => <strong className="text-forest">{formatBRL(p.monthlyPrice)}</strong> },
+    {
+      label: "Preço",
+      render: (p) => (
+        <PrecoComContexto rotulo={rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })} />
+      ),
+    },
     { label: "Tipo", render: (p) => p.propertyType },
     { label: "Bairro", render: (p) => `${p.neighborhood}, ${p.city}` },
     { label: "Quartos", render: (p) => p.bedrooms },

@@ -155,7 +155,7 @@ function Vazio({ titulo, texto }: { titulo: string; texto: string }) {
 
 function Rotulo({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-3 mt-7 flex items-center gap-3 text-[11px] text-[#8C9AC4] after:h-px after:flex-1 after:bg-white/15">
+    <h2 className="mb-3 mt-8 flex items-center gap-3 text-[11px] text-[#8C9AC4] after:h-px after:flex-1 after:bg-white/15">
       {children}
     </h2>
   );
@@ -195,7 +195,7 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
 
   return (
     <div
-      className="-m-5 min-h-screen overflow-x-hidden text-[#E8EEFF] sm:-m-8"
+      className="-m-4 min-h-screen overflow-x-hidden text-[#E8EEFF] sm:-m-8"
       style={{
         fontFamily: "var(--font-jakarta), system-ui, sans-serif",
         backgroundColor: "#050A18",
@@ -281,7 +281,7 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
       </section>
 
       <div className="px-4 pb-16 sm:px-8">
-        <section className={`grid items-end gap-4 lg:grid-cols-[1.3fr_1fr] lg:gap-6 ${aba === "Equipe" ? "py-7" : "py-4"}`}>
+        <section className={`grid items-end gap-4 lg:grid-cols-[1.3fr_1fr] lg:gap-6 ${aba === "Equipe" ? "py-8" : "py-4"}`}>
           <div className={aba === "Equipe" ? "" : "hidden lg:block"}>
             <p className="text-[clamp(24px,3.6vw,36px)] font-semibold leading-tight tracking-tight text-white" style={display}>
               A equipe trabalhando{" "}
@@ -566,7 +566,7 @@ function Rondas({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Recor
       {dados.rondas.length === 0 ? null : lista.length === 0 ? (
         <Vazio titulo="Nada com esse filtro" texto="Troque o agente ou a prioridade." />
       ) : (
-        <ol className="relative space-y-3 border-l border-white/10 pl-5">
+        <ol className="relative space-y-3 border-l border-white/10 pl-4">
           {lista.map((r) => {
             const a = porSlug[r.agente_slug];
             const dur = duracao(r.iniciada_em, r.concluida_em);

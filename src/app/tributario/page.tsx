@@ -35,7 +35,7 @@ function PremissaRow({ p }: { p: Premissa }) {
             implicito ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
           }`}
         >
-          {implicito ? "🔶 premissa implícita — confirmar" : "declarada"}
+          {implicito ? "premissa implícita — confirmar" : "declarada"}
         </span>
       </div>
       <p className="mt-1 font-mono text-sm text-forest">{p.valor}</p>
@@ -53,7 +53,7 @@ export default async function TributarioPage() {
   return (
     <>
       <PaginasInternasNav atual="/tributario" />
-      <main className="mx-auto max-w-3xl px-5 py-10 font-[var(--font-inter)] text-ink">
+      <main className="mx-auto max-w-3xl px-4 py-12 font-[var(--font-inter)] text-ink">
         <p className="mb-6 rounded-xl border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900" data-testid="aviso-tributario">
           Simulação educativa do imposto do proprietário — premissas pendentes do parecer do contador.
         </p>
@@ -129,7 +129,7 @@ export default async function TributarioPage() {
             Com os mesmos números, o modelo diz que a PF paga{" "}
             <strong className="text-ink">{formatBRL(exemplo.pfAnnualTax)}</strong> e a PJ{" "}
             <strong className="text-ink">{formatBRL(exemplo.pjAnnualTax)}</strong> ao ano. Tudo o que
-            o modelo <strong>não captura</strong> está declarado acima como “🔶 premissa implícita —
+            o modelo <strong>não captura</strong> está declarado acima como “premissa implícita —
             confirmar”. A PF usa a tabela progressiva do carnê-leão com o redutor da{" "}
             <strong>Lei 15.270/2025</strong> (imposto zero até R$ 5.000/mês de aluguel tributável).
           </p>

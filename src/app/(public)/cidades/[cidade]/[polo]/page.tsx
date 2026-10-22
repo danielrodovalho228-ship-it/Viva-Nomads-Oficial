@@ -114,7 +114,7 @@ export default async function PoloPage({ params }: Params) {
           <h1 className="mt-4 max-w-3xl font-title text-[28px] font-semibold">
             Imóveis mobiliados {tituloDoPolo(p.nome)}
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-white/80">{p.intro}</p>
+          <p className="mt-4 max-w-2xl text-lg text-white/80">{p.intro}</p>
           <p className="mt-3 max-w-2xl text-sm text-white/70">{p.publico}</p>
         </div>
       </section>

@@ -92,7 +92,7 @@ export default async function CityLandingPage({ params }: Params) {
           <h1 className="mt-4 max-w-3xl font-title text-2xl font-semibold md:text-[28px]">
             Imóveis mobiliados mensais em {name}
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-white/80">
+          <p className="mt-4 max-w-2xl text-lg text-white/80">
             Imóveis mobiliados e prontos para morar em {name}, para estadias de 30 a 180 dias.
             Para executivos em transferência, profissionais de saúde, famílias em transição,
             estudantes e nômades digitais — instalados e em casa desde o primeiro dia.
@@ -220,7 +220,7 @@ export default async function CityLandingPage({ params }: Params) {
         </div>
 
 
-        <div className="mt-10 max-w-3xl" data-testid="faq-cidade">
+        <div className="mt-12 max-w-3xl" data-testid="faq-cidade">
           <h3 className="font-title text-xl font-semibold text-ink">Perguntas frequentes sobre {name}</h3>
           <dl className="mt-3 space-y-4">
             {perguntasCidade(name).map((q) => (

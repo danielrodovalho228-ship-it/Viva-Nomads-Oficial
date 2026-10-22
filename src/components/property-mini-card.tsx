@@ -1,6 +1,8 @@
+import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { calcularTudoIncluido } from "@/lib/precos";
 import { Bath, BedDouble, Ruler, MapPin } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge, PropertyTags } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -60,12 +62,14 @@ export function PropertyMiniCard({ property }: { property: Property }) {
               <Ruler className="h-3.5 w-3.5" /> {property.areaM2} m²
             </span>
           </div>
-          <span className="font-title text-base font-semibold text-ink">
-            {/* Preço 0 = anúncio ainda incompleto → "R$ —" (nunca "R$ 0", que
-                parece imóvel de graça). Anúncio publicado sempre tem preço > 0. */}
-            {property.monthlyPrice > 0 ? formatBRL(property.monthlyPrice) : "R$ —"}
-            <span className="text-xs font-normal text-muted">/mês</span>
-          </span>
+          {/* Preço 0 = anúncio ainda incompleto → "R$ —" (nunca "R$ 0", que parece imóvel de graça). */}
+          {property.monthlyPrice > 0 ? (
+            <PrecoComContexto
+              rotulo={rotuloPreco({ mensal: calcularTudoIncluido(property).total, meses: mesesDoCartao(undefined, property.minPeriodDays), disponivelEm: property.availableFrom })}
+            />
+          ) : (
+            <span className="font-title text-base font-semibold text-ink">R$ —</span>
+          )}
         </div>
       </div>
     </div>

@@ -1018,7 +1018,7 @@ export function SearchClient({
       </div>
 
       <div className="container-page mt-4 lg:order-4 lg:mt-0 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
-        <div data-testid="busca-lista" className="min-w-0 lg:w-[58%] lg:py-5">
+        <div data-testid="busca-lista" className="min-w-0 lg:w-[58%] lg:py-4">
           {(destinos.length > 0 || geocodingEnabled || estadoDestino.destino) && (
             <div className="mb-6">
               <CampoDestino destinos={destinos} modos={modos} valor={estadoDestino} onChange={escolherDestino} />
@@ -1045,7 +1045,7 @@ export function SearchClient({
                     Diga o que você precisa e deixe os proprietários da cidade encontrarem você — a
                     conversa acontece pela plataforma.
                   </p>
-                  <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row">
+                  <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row">
                     <Link href={pedidoHref} className={buttonClasses()}>
                       <Megaphone className="h-4 w-4" aria-hidden /> Publicar um Pedido de Moradia
                     </Link>
@@ -1059,7 +1059,7 @@ export function SearchClient({
                   <p className="mt-1 max-w-sm text-sm text-muted">
                     Ajuste os filtros ou volte em breve — novos imóveis entram toda semana.
                   </p>
-                  <button type="button" onClick={clearFilters} className={buttonClasses({ variant: "secondary", className: "mt-5" })}>
+                  <button type="button" onClick={clearFilters} className={buttonClasses({ variant: "secondary", className: "mt-4" })}>
                     Limpar filtros
                   </button>
                 </>
@@ -1123,7 +1123,7 @@ export function SearchClient({
 
           {/* Menos de 3 imóveis REAIS (Prompt 30, item 6): a porta do pedido, já com cidade, datas e valor. */}
           {PEDIDO_MORADIA_ON && results.length > 0 && mostrarCartaoPedido(results, (p) => isExemplo(p.id)) && (
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line px-5 py-4" data-testid="busca-cartao-pedido">
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line px-4 py-4" data-testid="busca-cartao-pedido">
               <p className="min-w-0 text-sm font-medium text-ink">{TEXTO_CARTAO_PEDIDO}</p>
               <Link href={pedidoHref} className={buttonClasses({ variant: "secondary", size: "sm" })}>
                 <Megaphone className="h-4 w-4" aria-hidden /> Publicar pedido
@@ -1349,7 +1349,7 @@ function BuscaCompacta({
       // fecha (axe label-content-name-mismatch, t251).
       data-testid="busca-compacta"
       className={cn(
-        "flex h-12 min-w-0 max-w-full items-center rounded-full border bg-white pl-5 pr-2 text-sm text-ink transition-colors hover:border-ink",
+        "flex h-12 min-w-0 max-w-full items-center rounded-full border bg-white pl-4 pr-2 text-sm text-ink transition-colors hover:border-ink",
         aberto ? "border-ink" : "border-line"
       )}
     >

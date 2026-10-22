@@ -140,7 +140,7 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
             )}
           </div>
           <aside className="min-w-0 space-y-4">
-            <div className="rounded-xl border border-line bg-white p-5">
+            <div className="rounded-xl border border-line bg-white p-4">
               <SolicitarOrcamento
                 parceiroId={p.id}
                 nomeParceiro={p.nomePublico}
@@ -156,7 +156,7 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
               <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Contato e endereço só depois do aceite.</p>
             </div>
             {redes.length > 0 && (
-              <div className="rounded-xl border border-line bg-white p-5" data-testid="parceiro-redes">
+              <div className="rounded-xl border border-line bg-white p-4" data-testid="parceiro-redes">
                 <h2 className="font-title text-base font-semibold text-ink">Redes</h2>
                 <ul className="mt-2 space-y-1 text-sm">
                   {redes.map((r) => (

@@ -93,7 +93,7 @@ export function DescricaoBusca({
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Descreva o lugar ideal: 2 quartos perto do HC, aceita gato, até 2.500"
-            className="h-12 w-full rounded-full border border-line bg-white pl-10 pr-4 text-sm text-ink outline-none placeholder:text-muted hover:border-ink focus:border-ink"
+            className="h-12 w-full rounded-full border border-line bg-white pl-12 pr-4 text-sm text-ink outline-none placeholder:text-muted hover:border-ink focus:border-ink"
           />
         </div>
         <Button type="submit" disabled={carregando || limparDescricao(texto).length < 3} data-testid="descricao-aplicar" className="h-12 shrink-0">
