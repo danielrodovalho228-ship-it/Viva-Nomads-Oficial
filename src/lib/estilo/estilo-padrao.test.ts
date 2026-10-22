@@ -477,3 +477,28 @@ test("Prompt 47: grade de 4 px — só 4/8/12/16/24/32/48/64", () => {
   for (const ok of ["1", "2", "3", "4", "6", "8", "12", "16", "[24px]", "[3rem]", "(--folga-flutuante)", "px", "auto"]) assert.equal(espacoPermitido(ok), true, ok);
   for (const nao of ["5", "7", "10", "14", "20", "28", "[20px]", "[40px]", "[6rem]"]) assert.equal(espacoPermitido(nao), false, nao);
 });
+
+test("ícones (Prompt 47): só lucide-react; listas e fatos do imóvel com 24 px e o mesmo traço", () => {
+  assert.match(ler("lib/anuncio/comodidades-icones.ts"), /CLASSE_ICONE_LISTA = "h-6 w-6 shrink-0 text-sage"/);
+  for (const arq of [
+    "components/property/amenities-grid.tsx",
+    "components/property/workspace-section.tsx",
+    "components/property/location-nearby.tsx",
+    "components/property/destaques-imovel.tsx",
+    "app/(public)/imoveis/[id]/property-detail.tsx",
+  ]) {
+    const t = ler(arq);
+    assert.match(t, /className=\{CLASSE_ICONE_LISTA\} strokeWidth=\{TRACO_ICONE_LISTA\}|className: CLASSE_ICONE_LISTA, strokeWidth: TRACO_ICONE_LISTA/, arq);
+  }
+  const outras = /from "(react-icons[^"]*|@heroicons[^"]*|@phosphor-icons[^"]*|@tabler\/icons[^"]*|@fortawesome[^"]*)"/;
+  const achados: string[] = [];
+  const andar = (dir: string): void => {
+    for (const n of readdirSync(join(SRC, dir))) {
+      const rel = join(dir, n);
+      if (statSync(join(SRC, rel)).isDirectory()) andar(rel);
+      else if (/\.tsx?$/.test(n) && outras.test(ler(rel))) achados.push(rel);
+    }
+  };
+  andar(".");
+  assert.deepEqual(achados, [], "biblioteca de ícones fora do lucide-react");
+});

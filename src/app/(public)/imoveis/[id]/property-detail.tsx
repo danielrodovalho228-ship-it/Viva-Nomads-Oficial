@@ -73,6 +73,7 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
 import { videoTourPermitido } from "@/lib/video-tour";
+import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
 
 export function PropertyDetail({
   property: anuncio,
@@ -818,5 +819,5 @@ function semSinaisInventados(p: Property): Property {
 /** Ícone de cada sinal de confiança do topo. */
 function IconeSinal({ tipo }: { tipo: SinalConfianca["tipo"] }) {
   const Icone = { disponibilidade: CalendarDays, resposta: Clock, desde: Handshake, codigo: Hash }[tipo];
-  return <Icone className={tipo === "codigo" ? "h-3.5 w-3.5" : "h-4 w-4 text-sage"} aria-hidden />;
+  return tipo === "codigo" ? <Icone className="h-4 w-4" aria-hidden /> : <Icone className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden />;
 }
