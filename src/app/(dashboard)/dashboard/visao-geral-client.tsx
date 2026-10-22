@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
 import { StatCard, Panel, EmptyState, PageTitle } from "@/components/dashboard/primitives";
+import { ConviteFotoPerfil } from "@/components/account/convite-foto-perfil";
 import { PropertyRow } from "@/components/dashboard/property-row";
 import { TenantOnboarding } from "@/components/dashboard/tenant-onboarding";
 import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
@@ -146,6 +147,7 @@ function OwnerDashboard({
         }
       />
       <ListaDecisoes decisoes={lista} />
+      {!demo && <ConviteFotoPerfil className="mb-6" />}
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
       {semImovel && <PrimeiroImovel />}
       <CartaoEstadias estadias={estadias} />

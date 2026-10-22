@@ -74,7 +74,8 @@ export async function varrerPagina(page: Page, respostasRuins: string[]): Promis
     imagens = await imagensRuins();
   }
 
-  const dom = await page.evaluate(() => {
+  const dom = await page.evaluate((ignorar: string) => {
+    const reIgnorar = new RegExp(ignorar, "i");
     const W = window.innerWidth;
     const desc = (el: Element) => {
       const r = el.getBoundingClientRect();
@@ -124,7 +125,8 @@ export async function varrerPagina(page: Page, respostasRuins: string[]): Promis
       if (r.width < 80 || r.height < 40) continue;
       if (/^(img|video|canvas|iframe|svg|picture)$/i.test(el.tagName)) continue;
       const temMidia =
-        Array.from(el.querySelectorAll("img")).some((i) => i.complete && i.naturalWidth > 0) ||
+        // Foto fictícia do laboratório (ou de terceiro) que não carrega já fica fora do critério de imagem: aqui também.
+        Array.from(el.querySelectorAll("img")).some((i) => (i.complete && i.naturalWidth > 0) || reIgnorar.test(i.currentSrc || i.src)) ||
         !!el.querySelector("video, canvas, iframe, svg") ||
         [el, ...Array.from(el.querySelectorAll("*"))].some((n) => getComputedStyle(n).backgroundImage !== "none");
       if (!temMidia) foto.push(`área de foto vazia (aspect-ratio ${cs.aspectRatio}): ${desc(el)}`);
@@ -190,7 +192,7 @@ export async function varrerPagina(page: Page, respostasRuins: string[]): Promis
       if (problemas.length) grade.push(`${[...new Set(problemas)].join("; ")}: ${desc(el)}`);
     }
     return { estouro, foto, texto, grade };
-  });
+  }, IGNORAR.source);
 
   const fixo = await controlesCobertos(page);
   return {
@@ -231,6 +233,15 @@ export async function caminhosDoSitemap(request: APIRequestContext): Promise<str
   });
 }
 
+/** Links internos (sem query nem âncora) do HTML de `rota` que casam com `padrao`, na ordem da página, sem repetir. */
+export async function linksDe(request: APIRequestContext, rota: string, padrao: RegExp): Promise<string[]> {
+  const r = await request.get(rota);
+  if (!r.ok()) return [];
+  const vistos: string[] = [];
+  for (const m of (await r.text()).matchAll(/href="([^"#?]+)"/g)) if (padrao.test(m[1]) && !vistos.includes(m[1])) vistos.push(m[1]);
+  return vistos;
+}
+
 /** Primeiro link interno do HTML de `rota` que casa com `padrao` (ex.: a página de um parceiro a partir da busca). */
 export async function primeiroLink(request: APIRequestContext, rota: string, padrao: RegExp): Promise<string | null> {
   const r = await request.get(rota);
@@ -238,3 +249,52 @@ export async function primeiroLink(request: APIRequestContext, rota: string, pad
   for (const m of (await r.text()).matchAll(/href="([^"#?]+)"/g)) if (padrao.test(m[1])) return m[1];
   return null;
 }
+
+export type Rota = { nome: string; rota: string | ((r: APIRequestContext) => Promise<string | null>) };
+// Sem a família no sitemap, procura nos links das páginas `alternativas` (produção de 22/10: nenhum imóvel real no
+// sitemap, só os de exemplo, que ficam fora dele; parceiro publicado nenhum na busca).
+const doSitemap = (padrao: RegExp, n = 0, alternativas: string[] = []) => async (r: APIRequestContext) => {
+  const achados = (await caminhosDoSitemap(r)).filter((c) => padrao.test(c));
+  for (const rota of alternativas) if (achados.length <= n) for (const l of await linksDe(r, rota, padrao)) if (!achados.includes(l)) achados.push(l);
+  return achados[n] ?? null;
+};
+
+/** Páginas públicas da varredura (t274) e da conferência de EXIF das imagens servidas (t278). */
+export const PAGINAS_PUBLICAS: Rota[] = [
+  { nome: "Início", rota: "/" },
+  { nome: "Buscar", rota: "/buscar" },
+  { nome: "Como funciona", rota: "/como-funciona" },
+  { nome: "Para proprietários", rota: "/para-proprietarios" },
+  { nome: "Empresas", rota: "/empresas" },
+  { nome: "Parceiros", rota: "/parceiros" },
+  { nome: "Parceiros — buscar", rota: "/parceiros/buscar" },
+  { nome: "Parceiros — limpeza", rota: "/parceiros/buscar?categoria=limpeza" },
+  { nome: "Parceiros — mudança", rota: "/parceiros/buscar?categoria=mudanca" },
+  { nome: "Parceiros — fotógrafos", rota: "/parceiros/fotografos" },
+  { nome: "Guia de fotos", rota: "/guia-fotos" },
+  { nome: "Preços", rota: "/precos" },
+  { nome: "Segurança", rota: "/seguranca" },
+  { nome: "Ajuda", rota: "/ajuda" },
+  { nome: "Guias", rota: "/guias" },
+  { nome: "Cidades", rota: "/cidades" },
+  { nome: "Favoritos (visitante)", rota: "/favoritos" },
+  { nome: "Comparar (visitante)", rota: "/comparar" },
+  { nome: "Novo pedido (visitante)", rota: "/pedidos/novo" },
+  { nome: "Termos", rota: "/termos" },
+  { nome: "Privacidade", rota: "/privacidade" },
+  { nome: "Guia (1º do sitemap)", rota: doSitemap(/^\/guias\/[^/]+$/) },
+  { nome: "Cidade (1ª do sitemap)", rota: doSitemap(/^\/cidades\/[^/]+$/) },
+  { nome: "Polo ou bairro (1º do sitemap)", rota: doSitemap(/^\/cidades\/[^/]+\/[^/]+$/) },
+  { nome: "Imóveis perto de (1º do sitemap)", rota: doSitemap(/^\/imoveis-perto-de\/[^/]+$/) },
+  { nome: "Imóvel (1º do sitemap)", rota: doSitemap(/^\/imoveis\/[^/]+$/, 0, ["/", "/buscar"]) },
+  { nome: "Imóvel (2º do sitemap)", rota: doSitemap(/^\/imoveis\/[^/]+$/, 1, ["/", "/buscar"]) },
+  { nome: "Imóvel (3º do sitemap)", rota: doSitemap(/^\/imoveis\/[^/]+$/, 2, ["/", "/buscar"]) },
+  { nome: "Página do parceiro (1ª da busca)", rota: doSitemap(/^\/parceiros\/(?!buscar$|fotografos$|ativar$)[^/]+$/, 0, ["/parceiros/buscar", "/parceiros/fotografos", "/parceiros"]) },
+  {
+    nome: "Perfil do proprietário (do 1º imóvel)",
+    rota: async (r) => {
+      const imovel = await doSitemap(/^\/imoveis\/[^/]+$/, 0, ["/", "/buscar"])(r);
+      return imovel ? primeiroLink(r, imovel, /^\/proprietario\/[^/]+$/) : null;
+    },
+  },
+];

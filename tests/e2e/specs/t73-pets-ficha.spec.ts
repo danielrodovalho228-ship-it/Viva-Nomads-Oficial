@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { jpegComGps } from "../fixtures/exif";
+import { metadadoNoDeposito } from "../fixtures/exif-deposito";
 
 /**
  * T73 — Ficha do pet do morador (ordem 022afabb, item 1, partes 1 e 2: com fotos): cadastra pela Conta,
@@ -11,6 +13,8 @@ const inquilino = { email: `inq.pet.${sufixo}@lab.vivanomads.test`, nome: "Paula
 const outro = { email: `outro.pet.${sufixo}@lab.vivanomads.test`, nome: "Otto Alheio", role: "tenant" as const };
 const ids: { inquilino?: string; outro?: string } = {};
 
+// Começo da spec (com folga para o relógio do Storage): o teste de EXIF só confere o que esta execução enviou.
+const INICIO = new Date(Date.now() - 60_000);
 test.describe("T73 — Ficha do pet na Conta", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
@@ -61,8 +65,7 @@ test.describe("T73 — Ficha do pet na Conta", () => {
 
   test("3. foto do pet e carteira de vacina: servidor regrava em WebP na pasta da pessoa; SVG é recusado", async ({ browser }) => {
     test.setTimeout(120_000);
-    const sharp = (await import("sharp")).default;
-    const jpeg = await sharp({ create: { width: 320, height: 240, channels: 3, background: "#996633" } }).jpeg().toBuffer();
+    const jpeg = await jpegComGps(4, 320, 240); // como sai do celular: o cenário 4 confere que o depósito guarda limpo
     const { data: antes } = await adm().from("pets_inquilino").select("id").eq("user_id", ids.inquilino!).eq("nome", "Nina").single();
     const petId = antes!.id as string;
 
@@ -85,5 +88,11 @@ test.describe("T73 — Ficha do pet na Conta", () => {
     await expect(page.getByText("Envie uma foto JPG, PNG ou WebP de verdade.")).toBeVisible();
     expect((await adm().from("pets_inquilino").select("fotos").eq("id", petId).single()).data!.fotos).toHaveLength(1);
     await page.context().close();
+  });
+
+  test("4. EXIF/GPS: foto do pet e carteira de vacina enviadas com GPS ficam sem metadado no depósito 'pets-fotos'", async () => {
+    const r = await metadadoNoDeposito("pets-fotos", ids.inquilino!, INICIO);
+    expect(r.conferidas, "a foto e a carteira do cenário 3 deveriam estar no depósito").toBeGreaterThan(0);
+    expect(r.problemas, "foto enviada com EXIF e GPS tem de ser guardada limpa").toEqual([]);
   });
 });
