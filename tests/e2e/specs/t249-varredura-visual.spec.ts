@@ -65,8 +65,7 @@ const TELAS: Tela[] = [
 const ESPERADAS: Record<string, string> = {
   // Rodada 1 (lab-crítico do #984, 21/10): D-V1, D-V2, D-V4 e D-V6 passaram nas duas tentativas e viraram teste normal.
   // D-V3 e D-V5 não têm combinação no varrer geral (são verificados só no bloco "defeitos conhecidos").
-  // D-V7 (lab-crítico do #1021, 22/10): o título do rascunho em Meus imóveis aponta para a página pública (404).
-  "Meus imóveis|1280|d-console": "D-V7",
+  // D-V7 corrigido no #1028 (título em texto quando o anúncio não está no ar): a combinação voltou a reprovar.
   // D-V8 (lab-crítico do #1023, 22/10): /auth não tem <main>; a abertura acusa "sem <main> em 20 s" no critério c.
   "Entrar|390|c-overflow": "D-V8",
   "Entrar|1280|c-overflow": "D-V8",
@@ -236,7 +235,6 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
 
   test("D-V7 — Meus imóveis não aponta rascunho para a página pública (404)", async ({ browser }) => {
     test.skip(!temContaVarredura("DONO17"), "sem a conta DONO17");
-    test.fail(true, "D-V7: o título do cartão de rascunho é link para /imoveis/:id, que dá 404 (o botão 'Ver' já esconde)");
     const { context, page } = await abrirComoConta(browser, "DONO17", "1280");
     const naoAchados: string[] = [];
     page.on("response", (r) => {
