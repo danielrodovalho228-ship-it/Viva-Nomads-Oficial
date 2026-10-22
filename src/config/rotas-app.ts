@@ -56,6 +56,7 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/locacoes"),
   ramo("/dashboard/solicitacoes"), // manutenção
   ramo("/dashboard/servicos"), // serviços de parceiros para o morador
+  ramo("/dashboard/parceiro"), // painel do parceiro: Pedidos, Agenda e Ganhos da barra do parceiro (Prompt 41)
   ramo("/dashboard/buscas"), // buscas salvas
   ramo("/dashboard/imoveis"), // meus imóveis, criar e editar anúncio (fotos pelo celular)
   ramo("/qualificar"), // qualificação, que vem antes do anúncio

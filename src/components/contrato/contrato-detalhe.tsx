@@ -65,22 +65,22 @@ export async function ContratoDetalhe({
         </Link>
       </p>
       <p className="mb-4">
-        <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${tomDoSelo(c.estado)}`} data-testid="contrato-selo" data-chave={c.estado.chave}>
+        <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${tomDoSelo(c.estado)}`} data-testid="contrato-selo" data-chave={c.estado.chave}>
           {c.estado.selo}
         </span>
       </p>
       {postal?.ok && (
         <Panel className="mb-5 p-5" data-testid="cartao-postal-painel">
-          <h2 className="font-title text-base font-bold text-ink">Seu cartão-postal da estadia</h2>
+          <h2 className="font-title text-base font-semibold text-ink">Seu cartão-postal da estadia</h2>
           <p className="mt-1 text-sm text-muted">Uma lembrança para compartilhar no WhatsApp, com um QR para o imóvel. Mostra a cidade e o mês/ano; seu nome só se você quiser.</p>
           <div className="mt-4">
             <CartaoCompartilhar inicial={postal.valor} />
           </div>
         </Panel>
       )}
-      <Panel className="p-5">
-        <h2 className="font-title text-base font-bold text-ink">Contrato</h2>
-        <ul className="mt-3 space-y-1.5 text-sm text-ink" data-testid="contrato-resumo">
+      <Panel id="contrato" className="scroll-mt-24 p-5">
+        <h2 className="font-title text-base font-semibold text-ink">Contrato</h2>
+        <ul className="mt-3 space-y-2 text-sm text-ink" data-testid="contrato-resumo">
           {c.resumo.map((linha) => (
             // O número do contrato (UUID) e a data não têm espaço: sem isto estouram a tela a 360 px.
             <li key={linha} className="[overflow-wrap:anywhere]">
@@ -98,13 +98,13 @@ export async function ContratoDetalhe({
       </Panel>
       {lembreteSenha && (
         <Panel className="mt-5 p-5" data-testid="lembrete-senha-entrada">
-          <h2 className="font-title text-base font-bold text-ink">Antes de entrar</h2>
+          <h2 className="font-title text-base font-semibold text-ink">Antes de entrar</h2>
           <p className="mt-1 text-sm text-ink">{LEMBRETE_SENHA_ENTRADA}</p>
         </Panel>
       )}
       {checkin && (
-        <Panel className="mt-5 p-5" data-testid="checkin-painel">
-          <h2 className="font-title text-base font-bold text-ink">Check-in: instruções de entrada</h2>
+        <Panel id="checkin-painel" className="mt-5 scroll-mt-24 p-5" data-testid="checkin-painel">
+          <h2 className="font-title text-base font-semibold text-ink">Check-in: instruções de entrada</h2>
           <div className="mt-3">
             <CheckinContrato contratoId={c.id} info={checkin} podeEditar={podeEditarInstrucoes(dadosCheckin)} podeNaoConsegui={podeNaoConsegui(dadosCheckin)} />
           </div>
@@ -113,7 +113,7 @@ export async function ContratoDetalhe({
       <LinhaDoTempoEstadia etapas={c.linhaDoTempo} />
       {(c.assinadoProprietarioEm || c.assinadoInquilinoEm) && (
         <Panel className="mt-5 p-5">
-          <h2 className="font-title text-base font-bold text-ink">Pacote de provas</h2>
+          <h2 className="font-title text-base font-semibold text-ink">Pacote de provas</h2>
           <p className="mt-1 text-sm text-muted">
             Um PDF com o resumo do contrato, o código de cada assinatura, os pagamentos marcados e as respostas da conferência, em ordem de data.
           </p>
@@ -128,12 +128,12 @@ export async function ContratoDetalhe({
       )}
       {conferencia && (
         <Panel className="mt-5 p-5">
-          <h2 className="font-title text-base font-bold text-ink">Conferência de entrada e saída</h2>
+          <h2 className="font-title text-base font-semibold text-ink">Conferência de entrada e saída</h2>
           <p className="mt-1 text-sm text-muted">Fotos e itens por cômodo, confirmados ou contestados pelas duas partes. É a base para conversar sobre a Caução.</p>
           {mostrarChecklistCameras({ papel: c.papel, status: c.status }) && (
             <div className="mt-4 rounded-lg bg-sage-50 p-3 text-sm text-ink" data-testid="checklist-cameras">
               <p className="font-medium">☐ {ITEM_CONFERENCIA_CAMERAS}</p>
-              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted">
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-muted">
                 {DICAS_CONFERENCIA_CAMERAS.map((d) => (
                   <li key={d}>{d}</li>
                 ))}

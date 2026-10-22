@@ -1367,7 +1367,8 @@
       ],
       "specs": [
         "t236-parceiros-ciclo",
-        "t241-contas-teste-36"
+        "t241-contas-teste-36",
+        "t262-detalhe-imovel-41"
       ]
     },
     "/admin/contratos/[id]": {
@@ -1418,7 +1419,9 @@
         "proprietario"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t262-detalhe-imovel-41",
+        "t263-visual-41"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -3981,6 +3984,16 @@
       ],
       "specs": [
         "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#ehParceiroAprovado": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t262-detalhe-imovel-41"
       ]
     },
     "src/lib/parceiros/painel-actions.ts#temPapelParceiro": {

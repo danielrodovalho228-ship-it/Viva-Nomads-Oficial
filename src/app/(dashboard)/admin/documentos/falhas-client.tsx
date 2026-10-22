@@ -25,7 +25,7 @@ export function FalhasDocumentos({ falhas, pendentes }: { falhas: FalhaDocumento
         </p>
         <Button
           size="sm"
-          variant="primary"
+          variant="secondary"
           disabled={pendentes === 0 || ocupado === "todos"}
           data-testid="documentos-emitir-pendentes"
           onClick={async () => {

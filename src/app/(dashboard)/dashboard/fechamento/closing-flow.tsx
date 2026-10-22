@@ -401,12 +401,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             <PropertyMiniCard property={PROPERTY_FULL} />
             {/* Identificação clara dos papéis (A6) */}
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm">
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700">
+              <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-700">
                 Inquilino: {tenant.name}
               </span>
               <span className="text-muted">{tenant.profile}</span>
               <ArrowRight className="h-4 w-4 text-muted" />
-              <span className="rounded-full bg-surface-2 px-2.5 py-1 font-medium text-ink">
+              <span className="rounded-full bg-surface-2 px-3 py-1 font-medium text-ink">
                 {PROPERTY.title}
               </span>
             </div>
@@ -427,7 +427,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               onClick={() => goToStep(i)}
               disabled={!reachable}
               className={cn(
-                "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm whitespace-nowrap transition-colors",
+                "flex items-center gap-2 rounded-full px-3 py-2 text-sm whitespace-nowrap transition-colors",
                 i === step
                   ? "bg-forest text-white"
                   : i < step
@@ -451,7 +451,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {/* Alinha expectativas desde o início: a decisão é do proprietário */}
             <OwnerDecisionNotice />
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Candidatura e verificação</h2>
+              <h2 className="font-title text-lg font-semibold text-ink">Candidatura e verificação</h2>
               <p className="mt-1 text-sm text-muted">
                 {tenant.name} · {tenant.profile}
               </p>
@@ -464,7 +464,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   Verificação de identidade: documento, foto (selfie) e análise antifraude, com
                   risco contextual. Cobre estrangeiros (CRNM/RNE).
                 </p>
-                <Button variant="gold" className="mt-4" onClick={runVerification} disabled={verifying}>
+                <Button variant="secondary" className="mt-4" onClick={runVerification} disabled={verifying}>
                   {verifying ? "Verificando..." : "Verificar identidade"}
                 </Button>
               </div>
@@ -473,7 +473,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             ) : (
               // Portão SUAVE (conta real): verificação indisponível → pendente.
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-                <p className="flex items-center gap-2 font-title font-bold text-amber-800">
+                <p className="flex items-center gap-2 font-title font-semibold text-amber-800">
                   <Clock className="h-5 w-5" /> Verificação pendente
                 </p>
                 <p className="mt-2 text-sm text-amber-800/90">
@@ -582,7 +582,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         {step === 1 && (
           <div className="space-y-4">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">
+              <h2 className="font-title text-lg font-semibold text-ink">
                 Escolha como garantir o aluguel
               </h2>
               <p className="mt-1 text-sm text-muted">
@@ -620,7 +620,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-title font-bold text-ink">
+                      <span className="font-title font-semibold text-ink">
                         {g.nome}
                         {g.parceiroNome && (
                           <span className="ml-2 text-xs font-normal text-muted">
@@ -637,10 +637,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                         {active && <Check className="h-3.5 w-3.5" />}
                       </span>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-semibold",
+                          "rounded-full px-2 py-1 text-xs font-semibold",
                           g.reembolsavel
                             ? "bg-green-50 text-green-900"
                             : "bg-blue-50 text-blue-700"
@@ -648,15 +648,15 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                       >
                         {g.reembolsavel ? "Reembolsável" : "Não reembolsável"}
                       </span>
-                      <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+                      <span className="rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold text-muted">
                         Pago pelo {g.quemPaga === "inquilino" ? "inquilino" : "proprietário"}
                       </span>
                       {selectable ? (
-                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-900">
+                        <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-900">
                           Disponível
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
                           <Clock className="h-3 w-3" /> Em breve
                         </span>
                       )}
@@ -677,7 +677,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
             {/* Regra de ouro — sempre visível na etapa de garantia. */}
             <p className="flex items-start gap-2 rounded-lg border border-sage-200 bg-surface-2 px-3 py-2 text-xs text-muted">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+              <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" />
               {REGRA_DE_OURO}
             </p>
 
@@ -696,21 +696,21 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <table className="w-full min-w-[380px] text-xs">
                     <thead>
                       <tr className="text-left text-muted">
-                        <th className="py-1.5 pr-2 font-medium">Bloco</th>
-                        <th className="py-1.5 pr-2 font-medium">Aluguel</th>
-                        <th className="py-1.5 pr-2 font-medium">Caução (50%)</th>
-                        <th className="py-1.5 font-medium">Desembolso</th>
+                        <th className="py-2 pr-2 font-medium">Bloco</th>
+                        <th className="py-2 pr-2 font-medium">Aluguel</th>
+                        <th className="py-2 pr-2 font-medium">Caução (50%)</th>
+                        <th className="py-2 font-medium">Desembolso</th>
                       </tr>
                     </thead>
                     <tbody>
                       {resumo.blocos.map((b) => (
                         <tr key={b.numero} className="border-t border-sage-200/60">
-                          <td className="py-1.5 pr-2 text-ink">
+                          <td className="py-2 pr-2 text-ink">
                             {b.numero} <span className="text-muted">({b.meses}m)</span>
                           </td>
-                          <td className="py-1.5 pr-2 text-ink">{formatBRL(b.valor)}</td>
-                          <td className="py-1.5 pr-2 text-ink">{formatBRL(b.caucao)}</td>
-                          <td className="py-1.5 font-medium text-forest">
+                          <td className="py-2 pr-2 text-ink">{formatBRL(b.valor)}</td>
+                          <td className="py-2 pr-2 text-ink">{formatBRL(b.caucao)}</td>
+                          <td className="py-2 font-medium text-forest">
                             {formatBRL(b.desembolso)}
                           </td>
                         </tr>
@@ -718,10 +718,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-sage-200 font-medium text-ink">
-                        <td className="py-1.5 pr-2">Total</td>
-                        <td className="py-1.5 pr-2">{formatBRL(VALOR_ESTADIA)}</td>
-                        <td className="py-1.5 pr-2">{formatBRL(CAUCAO_50)}</td>
-                        <td className="py-1.5">{formatBRL(VALOR_ESTADIA + CAUCAO_50)}</td>
+                        <td className="py-2 pr-2">Total</td>
+                        <td className="py-2 pr-2">{formatBRL(VALOR_ESTADIA)}</td>
+                        <td className="py-2 pr-2">{formatBRL(CAUCAO_50)}</td>
+                        <td className="py-2">{formatBRL(VALOR_ESTADIA + CAUCAO_50)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -734,8 +734,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
                 {/* Caução flexível: o inquilino escolhe como pagar. */}
                 <div>
-                  <p className="mb-1.5 font-medium text-ink">Como o inquilino vai pagar a caução?</p>
-                  <div className="flex rounded-full bg-surface-2 p-0.5 text-xs">
+                  <p className="mb-2 font-medium text-ink">Como o inquilino vai pagar a caução?</p>
+                  <div className="flex rounded-full bg-surface-2 p-1 text-xs">
                     {(
                       [
                         ["avista", "À vista (Pix/boleto)"],
@@ -748,7 +748,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                         aria-pressed={caucaoForma === forma}
                         onClick={() => setCaucaoForma(forma)}
                         className={cn(
-                          "flex-1 rounded-full px-3 py-1.5 font-medium transition-colors",
+                          "flex-1 rounded-full px-3 py-2 font-medium transition-colors",
                           caucaoForma === forma ? "bg-forest text-white" : "text-muted"
                         )}
                       >
@@ -798,8 +798,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 </p>
 
                 {/* Destino do dinheiro — nunca a plataforma. */}
-                <p className="flex items-start gap-1.5 text-muted">
-                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <p className="flex items-start gap-2 text-muted">
+                  <Lock className="mt-1 h-3.5 w-3.5 shrink-0" />
                   {caucaoForma === "avista" ? (
                     <>
                       O depósito vai para uma <strong>conta poupança</strong>, como manda o art. 38, §2º
@@ -846,7 +846,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         {step === 2 && (
           <div className="space-y-4">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Serviços adicionais</h2>
+              <h2 className="font-title text-lg font-semibold text-ink">Serviços adicionais</h2>
               <p className="mt-1 text-sm text-muted">
                 Opcionais e <strong>combináveis</strong> — <strong>não são garantia</strong>. A
                 Viva não recebe esse valor: você contrata e paga direto ao prestador parceiro;{" "}
@@ -877,26 +877,26 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-title font-bold text-ink">{s.nome}</span>
+                      <span className="font-title font-semibold text-ink">{s.nome}</span>
                       <span
                         className={cn(
-                          "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+                          "grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
                           active ? "border-forest bg-forest text-white" : "border-sage-200"
                         )}
                       >
                         {active && <Check className="h-3.5 w-3.5" />}
                       </span>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold text-muted">
                         Pago pelo {s.quemPaga === "inquilino" ? "inquilino" : "proprietário"}
                       </span>
                       {selectable ? (
-                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-900">
+                        <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-900">
                           Disponível
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
                           <Clock className="h-3 w-3" /> Em breve
                         </span>
                       )}
@@ -925,7 +925,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Seguro patrimonial</h2>
+              <h2 className="font-title text-lg font-semibold text-ink">Seguro patrimonial</h2>
               <p className="mt-1 text-sm text-muted">
                 Cobre incêndio e danos ao imóvel. <strong>Opcional</strong> — recomendado, não
                 obrigatório.
@@ -940,7 +940,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   patrimonial === true ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
                 )}
               >
-                <p className="font-title font-bold text-ink">Adicionar com parceiro</p>
+                <p className="font-title font-semibold text-ink">Adicionar com parceiro</p>
                 <p className="mt-1 text-sm text-muted">Contratar seguro patrimonial via seguradora parceira.</p>
               </button>
               <button
@@ -951,7 +951,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   patrimonial === false ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
                 )}
               >
-                <p className="font-title font-bold text-ink">Seguir sem seguro patrimonial</p>
+                <p className="font-title font-semibold text-ink">Seguir sem seguro patrimonial</p>
                 <p className="mt-1 text-sm text-muted">Pode contratar depois, a qualquer momento.</p>
               </button>
             </div>
@@ -962,7 +962,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         {step === 4 && (
           <div className="space-y-5">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Contrato de locação de 30 a 180 dias</h2>
+              <h2 className="font-title text-lg font-semibold text-ink">Contrato de locação de 30 a 180 dias</h2>
               <p className="mt-1 text-sm text-muted">
                 Gerado e assinado digitalmente (validade jurídica · Lei 14.063/2020).
               </p>
@@ -972,7 +972,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             <div className="rounded-xl border border-sage-200 p-4 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-medium text-ink">{MODELO_CONTRATO.titulo}</p>
-                <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+                <span className="rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
                   Faixa {FAIXA_LABEL} · {FAIXA_RESUMO}
                 </span>
               </div>
@@ -981,7 +981,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               </p>
               <div className="mt-3">
                 <p className="text-xs font-medium text-ink">Cláusulas previstas:</p>
-                <ul className="mt-1.5 grid gap-1">
+                <ul className="mt-2 grid gap-1">
                   {CLAUSULAS_PLACEHOLDER.map((c) => (
                     <li key={c.key} className="flex gap-2 text-xs text-muted">
                       <span className="text-sage">•</span>
@@ -1003,10 +1003,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 {COST_SPLIT_ITEMS.map((item) => (
                   <div
                     key={item.key}
-                    className="flex items-center justify-between rounded-xl border border-sage-200 px-4 py-2.5"
+                    className="flex items-center justify-between rounded-xl border border-sage-200 px-4 py-3"
                   >
                     <span className="text-sm text-ink">{item.label}</span>
-                    <div className="flex rounded-full bg-surface-2 p-0.5 text-xs">
+                    <div className="flex rounded-full bg-surface-2 p-1 text-xs">
                       {(["owner", "tenant"] as const).map((party) => (
                         <button
                           key={party}
@@ -1068,7 +1068,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
                 <Row label="Consumo estimado" value={`${formatBRL(280)}/mês`} />
                 <Row label="Preparação (única)" value={formatBRL(PREP_FEE)} />
-                <div className="flex items-center justify-between border-t border-blue-200 pt-1 font-bold text-blue-900">
+                <div className="flex items-center justify-between border-t border-blue-200 pt-1 font-semibold text-blue-900">
                   <span>1º pagamento</span>
                   <span data-testid="entrada-primeiro-pagamento">{formatBRL(quadroEntrada.primeiroPagamento)}</span>
                 </div>
@@ -1085,7 +1085,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   </div>
                 </div>
               )}
-              <div className="mt-2 flex items-start justify-between gap-3 font-bold text-blue-900" data-testid="entrada-total">
+              <div className="mt-2 flex items-start justify-between gap-3 font-semibold text-blue-900" data-testid="entrada-total">
                 <span className="min-w-0">
                   Total antes da entrada
                   {quadroEntrada.caucao !== null && (
@@ -1100,7 +1100,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
             {/* Taxa de serviço: cobrada do proprietário, à parte, mostrada ANTES de aceitar */}
             <div className="rounded-xl border border-champagne/40 bg-champagne/10 p-4 text-sm">
-              <p className="font-title font-bold text-forest" data-testid="taxa-servico-painel">
+              <p className="font-title font-semibold text-forest" data-testid="taxa-servico-painel">
                 {textoTaxaPainel(COMMISSION_RATE, PROPERTY.monthlyRent, prazoMeses)}
                 {aceiteBR ? ` (taxa travada em ${aceiteBR})` : ""}
               </p>
@@ -1122,7 +1122,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
             {/* Enquanto o parecer jurídico não chega, todo contrato gerado leva esta marca. */}
             <p
-              className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-amber-800"
+              className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-center text-sm font-semibold uppercase text-amber-800"
               data-testid="marca-minuta"
             >
               {MARCA_MINUTA}
@@ -1205,7 +1205,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <Sparkles className="h-7 w-7 text-forest" />
             </div>
             <div>
-              <h2 className="font-title text-xl font-bold text-ink">Fechamento concluído</h2>
+              <h2 className="font-title text-xl font-semibold text-ink">Fechamento concluído</h2>
               <p className="mx-auto mt-2 max-w-md text-muted">
                 Verificação, garantia e contrato organizados. O pagamento do aluguel segue
                 direto ao proprietário.
@@ -1302,7 +1302,7 @@ function CafLaudo({ result }: { result: CafResult }) {
     <div className={cn("rounded-xl p-5 ring-1", meta.tone, meta.ring)}>
       <div className="flex items-center gap-2">
         <span className="text-2xl">{meta.emoji}</span>
-        <span className="font-title text-lg font-bold">Verificação de identidade — {meta.label}</span>
+        <span className="font-title text-lg font-semibold">Verificação de identidade — {meta.label}</span>
       </div>
       <div className="mt-4 grid gap-2">
         <LaudoItem icon={Fingerprint} label="Identidade" ok={result.identity} />
@@ -1317,7 +1317,7 @@ function CafLaudo({ result }: { result: CafResult }) {
         ))}
       </ul>
       {result.coversForeigners && (
-        <p className="mt-3 inline-flex items-center gap-1.5 text-xs">
+        <p className="mt-3 inline-flex items-center gap-2 text-xs">
           <Globe2 className="h-3.5 w-3.5" /> Cobre estrangeiros (CRNM/RNE)
         </p>
       )}
@@ -1376,15 +1376,15 @@ export function SuaProtecao({
   ];
   return (
     <div className="rounded-xl border border-sage-200 p-4 text-sm" data-testid="sua-protecao">
-      <p className="font-title text-base font-bold text-ink">Sua proteção</p>
+      <p className="font-title text-base font-semibold text-ink">Sua proteção</p>
       <p className="mt-1 text-xs text-muted">A lei permite uma garantia só. Compare antes de escolher:</p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[320px] text-xs">
           <thead>
             <tr className="text-left text-muted">
-              <th className="py-1.5 pr-2 font-medium" />
-              <th className="py-1.5 pr-2 font-semibold text-ink">Caução</th>
-              <th className="py-1.5 font-semibold text-ink">Seguro-fiança</th>
+              <th className="py-2 pr-2 font-medium" />
+              <th className="py-2 pr-2 font-semibold text-ink">Caução</th>
+              <th className="py-2 font-semibold text-ink">Seguro-fiança</th>
             </tr>
           </thead>
           <tbody>
@@ -1398,12 +1398,12 @@ export function SuaProtecao({
           </tbody>
         </table>
       </div>
-      <ul className="mt-3 space-y-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs font-medium text-ink">
+      <ul className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-2 text-xs font-medium text-ink">
         <li>Em qualquer opção, o inquilino responde pelos danos que causar.</li>
         <li>Desgaste normal e defeitos são do proprietário.</li>
       </ul>
       <label className="mt-3 flex items-start gap-2 text-sm text-ink">
-        <input type="checkbox" className="mt-0.5" checked={ciente} onChange={(e) => onCiente(e.target.checked)} data-testid="ciente-protecao" />
+        <input type="checkbox" className="mt-1" checked={ciente} onChange={(e) => onCiente(e.target.checked)} data-testid="ciente-protecao" />
         <span>Li e entendi.</span>
       </label>
     </div>

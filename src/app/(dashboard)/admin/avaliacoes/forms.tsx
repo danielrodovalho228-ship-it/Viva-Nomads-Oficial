@@ -29,7 +29,7 @@ export function DecidirForm({ id }: { id: string }) {
         className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base"
       />
       <div className="flex flex-wrap gap-2">
-        <Button type="button" disabled={pendente} onClick={() => decidir("removida")}>Tirar do ar</Button>
+        <Button variant="secondary" type="button" disabled={pendente} onClick={() => decidir("removida")}>Tirar do ar</Button>
         <Button type="button" variant="outline" disabled={pendente} onClick={() => decidir("mantida")}>Manter no ar</Button>
       </div>
       {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}

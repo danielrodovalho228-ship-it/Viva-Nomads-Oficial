@@ -9,13 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  Bath,
-  BedDouble,
-  Ruler,
-  Users,
   MapPin,
-  Sofa,
-  Car,
   Star,
   Check,
   CheckCircle2,
@@ -30,7 +24,7 @@ import {
   Hash,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { Button, buttonClasses } from "@/components/ui/button";
+import { Button, buttonClasses, marcaCta } from "@/components/ui/button";
 import { ShareButton } from "@/components/share-button";
 import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
 import { useAuthStore } from "@/lib/store";
@@ -54,6 +48,8 @@ import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { calcularTotalMensal } from "@/lib/precos";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
+import { mesesDoCartao } from "@/lib/cartao-preco";
+import { FavoriteButton } from "@/components/favorite-button";
 import { AmenitiesGrid } from "@/components/property/amenities-grid";
 import { WorkspaceSection } from "@/components/property/workspace-section";
 import { LocationNearby } from "@/components/property/location-nearby";
@@ -113,6 +109,8 @@ export function PropertyDetail({
   const semLogin = authChecked && !usuario && !isExemplo(property);
   const [abrirVideo, setAbrirVideo] = useState(false);
   const [abrirPresencial, setAbrirPresencial] = useState(false);
+  // "Agendar visita" do rodapé fixo do celular: abre a mesma janela do cartão (cada toque soma 1).
+  const [sinalVisita, setSinalVisita] = useState(0);
   const irParaLogin = (alvo: AlvoAbrir) => router.push(urlLoginParaAbrir(property.id, alvo));
   useEffect(() => {
     const alvo = alvoAbrir(window.location.search);
@@ -163,11 +161,14 @@ export function PropertyDetail({
   }, [property, marcarVistoLocal]);
 
   // Pedido pré-preenchido: data de entrada da última busca (editável; vencida ou estranha é descartada).
+  // Prompt 41: a duração da busca também dá o total do rodapé e do cartão ("R$ Y em N meses").
+  const [mesesBusca, setMesesBusca] = useState(0);
   useEffect(() => {
     try {
-      const { inicio } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
+      const { inicio, meses } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
       // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o localStorage só no navegador (SSR não tem)
       if (inicio) setInicioDesejado((atual) => atual || inicio);
+      if (meses) setMesesBusca(meses);
     } catch {
       /* localStorage bloqueado: segue sem pré-preencher */
     }
@@ -257,10 +258,10 @@ export function PropertyDetail({
   // perfil; o acompanhamento segue em Mensagens. Nudge de verificação — nunca
   // bloqueio (candidatar sem selo é permitido; o dono vê "verificação pendente").
   const confirmacaoCandidatura = (
-    <div className="flex flex-col gap-3 rounded-2xl border border-sage-200 bg-sage-100 p-4 text-center">
+    <div className="flex flex-col gap-3 rounded-xl border border-sage-200 bg-sage-100 p-4 text-center">
       <CheckCircle2 className="mx-auto h-8 w-8 text-forest" />
       <div>
-        <p className="font-title font-bold text-ink">Candidatura enviada</p>
+        <p className="font-title font-semibold text-ink">Candidatura enviada</p>
         <p className="mt-1 text-sm text-muted">
           O proprietário recebeu seu perfil. O acompanhamento segue em Mensagens — se ele aceitar,
           vocês conversam e partem para o fechamento.
@@ -274,9 +275,9 @@ export function PropertyDetail({
       </Link>
       <Link
         href="/dashboard/verificacao?como=inquilino"
-        className="flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-left text-xs text-blue-800 transition-colors hover:bg-blue-100"
+        className="flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-3 text-left text-xs text-blue-800 transition-colors hover:bg-blue-100"
       >
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
+        <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-blue-600" />
         <span>
           <strong>Complete seu perfil</strong> — ajuda o proprietário a decidir. <ArrowRight className="inline h-3 w-3" />
         </span>
@@ -338,23 +339,34 @@ export function PropertyDetail({
           {EXEMPLO_AVISO_DEMO}
         </p>
       )}
+      {/* UM primário por tela (Prompt 41): "Solicitar" é a candidatura de sempre (só o rótulo mudou). No celular e
+          no tablet (< lg) ele mora no rodapé fixo; aqui aparece só no computador. */}
       <Button
         variant="primary"
         size="lg"
-        className="w-full"
-        data-cta
+        className="hidden w-full lg:inline-flex"
         onClick={abrirSolicitacao}
         disabled={pending !== null}
+        data-testid="cartao-solicitar"
       >
         <FileSignature className="h-4 w-4" />
-        {pending === "candidatura" ? "Enviando..." : "Enviar candidatura"}
+        {pending === "candidatura" ? "Enviando..." : "Solicitar"}
       </Button>
+      {/* A visita é opção, nunca trava a solicitação: texto terciário. */}
+      <VisitaPresencial
+        propertyId={property.id}
+        exemplo={exemplo}
+        semLogin={semLogin}
+        abrirInicial={abrirPresencial}
+        abrirSinal={sinalVisita}
+        variante="tertiary"
+        onEntrar={() => irParaLogin("visita")}
+      />
       <VisitaVideo propertyId={property.id} exemplo={exemplo} semLogin={semLogin} abrirInicial={abrirVideo} onEntrar={() => irParaLogin("video")} />
       <Button
         variant="secondary"
         size="md"
         className="w-full"
-        data-cta
         onClick={() => {
           setComposeText("");
           setComposeKind("duvida");
@@ -373,7 +385,7 @@ export function PropertyDetail({
         )}
       </Button>
       <a
-        data-cta
+        data-cta={marcaCta("secondary")}
         href={contatoViva.href}
         className={buttonClasses({ variant: "secondary", size: "md", className: "w-full" })}
       >
@@ -384,13 +396,6 @@ export function PropertyDetail({
       </p>
       <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} exemplo={exemplo} />
       <AvisoAntigolpe />
-      <VisitaPresencial
-        propertyId={property.id}
-        exemplo={exemplo}
-        semLogin={semLogin}
-        abrirInicial={abrirPresencial}
-        onEntrar={() => irParaLogin("visita")}
-      />
       {sent.duvida && <p className="text-center text-xs text-sage">Mensagem enviada. O proprietário responde aqui na plataforma.</p>}
       {leadErro && <p className="text-center text-xs text-red-600">{leadErro}</p>}
       {selfNote && (
@@ -414,10 +419,10 @@ export function PropertyDetail({
       onClick={() => setComposeKind(null)}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl"
+        className="w-full max-w-md rounded-t-xl bg-white p-5 sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="font-title text-lg font-bold text-ink">
+        <h3 className="font-title text-lg font-semibold text-ink">
           Tirar uma dúvida
         </h3>
         <p className="mt-1 text-sm text-muted">
@@ -429,7 +434,7 @@ export function PropertyDetail({
           value={composeText}
           onChange={(e) => setComposeText(e.target.value)}
           placeholder="Ex.: O condomínio tem academia? Aceita 2 pessoas?"
-          className="mt-3 w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+          className="mt-3 w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
         />
         <p className="mt-1 flex items-center gap-1 text-xs text-muted">
           <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Não compartilhe telefone ou e-mail —
@@ -467,11 +472,11 @@ export function PropertyDetail({
       data-testid="solicitacao-passo"
       onClick={() => !candidatouSe && setSolicitacaoAberta(false)}
     >
-      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-5 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
         {candidatouSe ? (
           <div data-testid="candidatura-confirmada" className="flex flex-col gap-3 text-center">
             <CheckCircle2 className="mx-auto h-8 w-8 text-forest" />
-            <h3 id="solicitacao-titulo" className="font-title text-lg font-bold text-ink">Candidatura enviada</h3>
+            <h3 id="solicitacao-titulo" className="font-title text-lg font-semibold text-ink">Candidatura enviada</h3>
             {fotoCapa && (
               // eslint-disable-next-line @next/next/no-img-element -- miniatura da capa; a foto já está carregada na galeria
               <img src={fotoCapa} alt={property.title} className="mx-auto h-28 w-full rounded-xl object-cover" />
@@ -499,7 +504,7 @@ export function PropertyDetail({
                 <div className="h-full bg-forest transition-all" style={{ width: `${progressoEtapa(etapa)}%` }} />
               </div>
             </div>
-            <h3 id="solicitacao-titulo" className="font-title text-lg font-bold text-ink">
+            <h3 id="solicitacao-titulo" className="font-title text-lg font-semibold text-ink">
               {etapa === "revisar" ? "Revisar solicitação" : etapa === "mensagem" ? "Mensagem ao proprietário" : "Confirmar candidatura"}
             </h3>
             <p className="mt-1 text-sm text-muted">{property.title}</p>
@@ -594,28 +599,46 @@ export function PropertyDetail({
     </div>
   );
 
+  // Total pela duração escolhida (Prompt 41): a duração da última busca ou, sem busca, a estadia mínima do imóvel.
+  const meses = mesesDoCartao(mesesBusca || undefined, property.minPeriodDays);
+  // Linha-síntese (Prompt 41): pessoas · quartos · banheiros (as camas entram quando o anúncio tiver o dado).
+  const sintese = [
+    property.maxGuests != null ? `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` : null,
+    quartosTexto(property.bedrooms),
+    banheirosTexto(property.bathrooms),
+    property.areaM2 ? `${property.areaM2} m²` : null,
+    property.furnished ? "Mobiliado" : null,
+    (property.parkingSpots ?? 0) > 0 ? `${property.parkingSpots} ${property.parkingSpots === 1 ? "vaga" : "vagas"}` : null,
+  ].filter(Boolean) as string[];
+  // Coração e compartilhar são ÍCONES (nunca botão com texto): sobre a foto no celular, ao lado do título no computador.
+  const icones = (
+    <>
+      <FavoriteButton propertyId={property.id} />
+      <ShareButton icone title={property.title} text={`${property.title} — Viva Nomads`} />
+    </>
+  );
+
   return (
     // Página PÚBLICA com fotos: "largura total" = a medida do container (1536 px, como o Furnished Finder), nunca a
-    // tela inteira (ordem 4252e0d6, Daniel 16/10). A regra "painel sem mx-auto max-w-*" vale
-    // só para dashboards, não para páginas públicas com galeria. Celular: ocupa a largura toda.
+    // tela inteira (ordem 4252e0d6, Daniel 16/10). Celular: a galeria vai de borda a borda (Prompt 41).
+    // Ordem do Prompt 41: galeria → título → síntese → anfitrião → ("Onde você vai dormir" só quando as fotos
+    // tiverem o cômodo marcado — o dado ainda não existe, então o bloco não aparece) → comodidades → regras →
+    // disponibilidade → mapa aproximado → avaliações → proprietário; o rodapé fixo (celular) / cartão lateral
+    // (computador) traz o valor e o "Solicitar".
     <div className="mx-auto w-full max-w-[1536px] px-5 py-8 pb-64 sm:px-8 lg:px-7 lg:pb-8" data-testid="imovel-largura-total">
       {composer}
       {solicitacao}
       <BarraFixaCelular
         key={property.id}
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, exemplo, candidatouSe, availableFrom: property.availableFrom })}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
         onSolicitar={abrirSolicitacao}
-        onMensagem={() => {
-          setComposeText("");
-          setComposeKind("duvida");
-        }}
-        contato={contatoViva}
+        onAgendarVisita={() => (semLogin ? irParaLogin("visita") : setSinalVisita((n) => n + 1))}
       />
-      {/* Breadcrumb (navegação + SEO) */}
+      {/* Breadcrumb (navegação + SEO); no celular a galeria abre a tela de borda a borda. */}
       <nav
         aria-label="Trilha de navegação"
-        className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-muted"
+        className="mb-4 hidden flex-wrap items-center gap-2 text-sm text-muted md:flex"
       >
         <Link href="/" className="hover:text-forest">Início</Link>
         <span aria-hidden>›</span>
@@ -626,12 +649,13 @@ export function PropertyDetail({
         <span className="line-clamp-1 text-ink">{property.title}</span>
       </nav>
 
-      {/* Galeria adaptável (foto principal + miniaturas + "ver todas") */}
+      {/* Galeria: tela cheia no celular ("1/12", coração e compartilhar); mosaico de 5 no computador. */}
       <PropertyGallery
         photos={property.photos}
         title={property.title}
         readyToLive={property.readyToLiveBadge}
         videoUrl={property.videoUrl}
+        acoes={icones}
       />
 
       {/* Abas âncora presas ao rolar (ordem d943f893). */}
@@ -640,29 +664,39 @@ export function PropertyDetail({
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12">
         {/* Conteúdo (seções roláveis) */}
         <div className="min-w-0 space-y-10">
-          {/* Visão geral: cabeçalho, sinais de confiança, destaques, medidas, vídeo e descrição. */}
+          {/* Visão geral: título, síntese, anfitrião, sinais de confiança, vídeo e descrição. */}
           <div id="visao-geral" className="scroll-mt-36 space-y-10">
           <header>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm text-muted">
                 <MapPin className="h-4 w-4" /> {property.neighborhood}, {property.city} - {property.state}
               </div>
-              <span className="flex items-center gap-3">
+              <span className="flex items-center gap-2">
                 {!exemplo && <ProblemaComIsto tipo="anuncio" id={property.id} />}
-                <ShareButton title={property.title} text={`${property.title} — Viva Nomads`} />
+                <span className="hidden items-center gap-2 md:flex" data-testid="titulo-icones">
+                  {icones}
+                </span>
               </span>
             </div>
-            <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
+            <h1 className="mt-2 text-2xl font-semibold text-ink lg:text-[28px]">{property.title}</h1>
 
-            {/* Faixa: tempo de resposta · calendário · proprietário (prompt 9). */}
+            {/* Linha-síntese: pessoas · quartos · banheiros (+ m², mobiliado e vagas). */}
+            <p className="mt-2 text-base tabular-nums text-ink" data-testid="imovel-sintese">
+              {sintese.join(" · ")}
+            </p>
+
+            {/* "Ideal para" (QA do Prompt 40): saiu do cartão e mora aqui, logo depois da linha-síntese; regra em src/lib/ideal-para.ts ("Com pet" em 1º). */}
+            <IdealPara property={property} className="mt-2 text-sm" />
+
+            {/* Anfitrião: foto, nome curto e selos (tempo de resposta e calendário em miúdo). */}
             <FaixaProprietario real={exemplo ? null : proprietario} exemplo={donoExemplo} hoje={hojeBR()} />
 
             {/* Sinais de confiança (só dado real): disponibilidade, resposta, tempo de casa, código. */}
-            <ul data-testid="sinais-confianca" className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+            <ul data-testid="sinais-confianca" className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
               {sinaisDeConfianca(property, new Date().toISOString().slice(0, 10))
                 .filter((s) => !(temFaixa || exemplo) || (s.tipo !== "resposta" && s.tipo !== "desde"))
                 .map((s) => (
-                <li key={s.tipo} className={s.tipo === "codigo" ? "inline-flex items-center gap-1.5 text-xs text-muted" : "inline-flex items-center gap-1.5 text-ink"}>
+                <li key={s.tipo} className={s.tipo === "codigo" ? "inline-flex items-center gap-2 text-xs text-muted" : "inline-flex items-center gap-2 text-ink"}>
                   <IconeSinal tipo={s.tipo} />
                   <span className={s.tipo === "disponibilidade" ? "font-semibold text-forest" : undefined}>{s.texto}</span>
                 </li>
@@ -672,25 +706,25 @@ export function PropertyDetail({
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {/* Anúncio de exemplo (ilustrativo): selo honesto e visível. */}
               {exemplo && (
-                <span className="inline-flex items-center rounded-full bg-night/85 px-2.5 py-0.5 text-xs font-semibold text-white">
+                <span className="inline-flex items-center rounded-full bg-night px-3 py-1 text-xs font-semibold text-white">
                   Exemplo ilustrativo
                 </span>
               )}
               {/* Fonte ÚNICA (A2): a contagem vem das avaliações REAIS (reviews),
                   igual à seção de avaliações. Sem review real → selo honesto. */}
               {resumoExemplo ? (
-                <a href="#avaliacoes" data-testid="estrelas-titulo" className="inline-flex items-center gap-1 text-sm font-medium text-forest hover:underline">
+                <a href="#avaliacoes" data-testid="estrelas-titulo" className="inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-forest hover:underline">
                   <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
                   {numBR(resumoExemplo.media, 1)} · {resumoExemplo.n} avaliações
                 </a>
               ) : reviewsReais > 0 ? (
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-forest">
+                <span className="inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" />
                   {numBR(mediaReal, 1)} · {reviewsReais}{" "}
                   {reviewsReais === 1 ? "avaliação" : "avaliações"}
                 </span>
               ) : (
-                <span className="inline-flex items-center rounded-full bg-sage px-2.5 py-0.5 text-xs font-semibold text-white">
+                <span className="inline-flex items-center rounded-full bg-sage px-3 py-1 text-xs font-semibold text-white">
                   Novo na plataforma
                 </span>
               )}
@@ -706,46 +740,13 @@ export function PropertyDetail({
             <div className="mt-4">
               <DestaquesImovel property={property} />
             </div>
-
-            {/* Specs com ícones (linha-síntese) */}
-            <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted" data-testid="imovel-sintese">
-              <span className="inline-flex items-center gap-1.5">
-                <BedDouble className="h-4 w-4" /> {quartosTexto(property.bedrooms)}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Bath className="h-4 w-4" /> {banheirosTexto(property.bathrooms)}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Ruler className="h-4 w-4" /> {property.areaM2} m²
-              </span>
-              {property.maxGuests != null && (
-                <span className="inline-flex items-center gap-1.5">
-                  <Users className="h-4 w-4" /> Até {property.maxGuests}{" "}
-                  {property.maxGuests === 1 ? "pessoa" : "pessoas"}
-                </span>
-              )}
-              {property.furnished && (
-                <span className="inline-flex items-center gap-1.5">
-                  <Sofa className="h-4 w-4" /> Mobiliado
-                </span>
-              )}
-              {(property.parkingSpots ?? 0) > 0 && (
-                <span className="inline-flex items-center gap-1.5">
-                  <Car className="h-4 w-4" /> {property.parkingSpots}{" "}
-                  {property.parkingSpots === 1 ? "vaga" : "vagas"}
-                </span>
-              )}
-            </div>
-
-            {/* "Ideal para" (QA do Prompt 40): saiu do cartão e mora aqui, logo depois da linha-síntese; regra em src/lib/ideal-para.ts ("Com pet" em 1º). */}
-            <IdealPara property={property} className="mt-3 text-sm" />
           </header>
 
           {/* Walk-through em vídeo */}
           {videoTourPermitido(property.videoUrl) && (
             <section>
               <VideoWalkthrough url={property.videoUrl!} title={property.title} />
-              <p className="mt-1.5 text-xs text-muted">
+              <p className="mt-2 text-xs text-muted">
                 {isExemplo(property) ? "Vídeo ilustrativo." : "Tour em vídeo gravado pelo proprietário."}
               </p>
             </section>
@@ -755,7 +756,7 @@ export function PropertyDetail({
           {property.description && <SobreImovel descricao={property.description} />}
           </div>
 
-          {/* Comodidades + regras da casa + o que é bom saber. */}
+          {/* Comodidades (grade par, ícone por item) + regras da casa + o que é bom saber. */}
           <div id="comodidades" className="scroll-mt-36 space-y-10">
             <AmenitiesGrid property={property} />
             <WorkspaceSection property={property} />
@@ -765,6 +766,11 @@ export function PropertyDetail({
           </div>
           <div id="disponibilidade" className="scroll-mt-36">
             <AvailabilityCalendar property={property} />
+          </div>
+          {/* Mapa aproximado (endereço exato só após o aceite). */}
+          <div id="localizacao" className="scroll-mt-36 space-y-10">
+            <LocationNearby property={property} />
+            <GoogleProximities property={property} />
           </div>
           <div id="avaliacoes" className="scroll-mt-36">
             {avaliacoesExemplo.length > 0 ? <AvaliacoesExemplo avaliacoes={avaliacoesExemplo} /> : <Reviews property={property} />}
@@ -783,15 +789,11 @@ export function PropertyDetail({
               }
             />
           </div>
-          <div id="localizacao" className="scroll-mt-36 space-y-10">
-            <LocationNearby property={property} />
-            <GoogleProximities property={property} />
-          </div>
         </div>
 
-        {/* Card de preço (sticky no desktop, empilhado no mobile) */}
+        {/* Cartão lateral: fixo no computador, empilhado no celular (o primário do celular é o do rodapé fixo). */}
         <aside>
-          <PriceCard property={property} actions={actions} />
+          <PriceCard property={property} actions={actions} meses={meses} />
         </aside>
       </div>
 

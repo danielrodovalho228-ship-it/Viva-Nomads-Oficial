@@ -11,8 +11,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } 
  * disso vaza para o site.
  */
 
-const ABAS_INQUILINO = ["Buscar", "Favoritos", "Candidaturas", "Mensagens", "Conta"];
-const ABAS_PROPRIETARIO = ["Painel", "Imóveis", "Interessados", "Mensagens", "Conta"];
+// Prompt 41: barra por papel (5 itens); admin não tem barra.
+const ABAS_INQUILINO = ["Início", "Buscar", "Mensagens", "Estadias", "Perfil"];
+const ABAS_PROPRIETARIO = ["Início", "Anúncios", "Mensagens", "Ganhos", "Perfil"];
 
 function barraDoApp(page: Page) {
   return page.locator("nav.vn-tabbar");
@@ -114,11 +115,12 @@ test.describe("T14 — Modo app", () => {
   test.describe("admin", () => {
     test.use({ storageState: hasAccount("admin") ? authFile("admin") : { cookies: [], origins: [] } });
 
-    test("Admin a 390 px: toca Admin → painel → Caixa dos Sócios → Voltar ao painel", async ({ page }) => {
+    test("Admin a 390 px: sem barra de abas (Prompt 41) → painel → Caixa dos Sócios → Voltar ao painel", async ({ page }) => {
       test.skip(!hasAccount("admin"), "sem conta de teste do admin");
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await esperarModoApp(page);
-      await barraDoApp(page).getByRole("link", { name: "Admin", exact: true }).click();
+      await expect(barraDoApp(page)).toHaveCount(0);
+      await page.goto("/admin", { waitUntil: "domcontentloaded" });
       await expect(page).toHaveURL(/\/admin\/?$/);
       // No lab o primeiro toque pode cair antes da hidratação do painel: repete o toque até a rota mudar.
       await expect(async () => {
@@ -169,7 +171,7 @@ test.describe("T14 — Modo app", () => {
         await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
       }
       await conferirAbas(page, ABAS_PROPRIETARIO);
-      await expect(page.getByRole("link", { name: /^Perfil/ })).toBeVisible();
+      await expect(page.locator("main").getByRole("link", { name: /^Perfil/ })).toBeVisible();
       await expect(page.getByRole("button", { name: /^Sair/ })).toBeVisible();
       // Casca do site (menu lateral) escondida.
       await expect(page.locator("aside nav").first()).toBeHidden();

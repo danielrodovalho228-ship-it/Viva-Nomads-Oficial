@@ -66,13 +66,13 @@ export function CartaoIa(p: {
   }
 
   return (
-    <section className="rounded-2xl border border-sage-200 bg-sage-50 p-4 sm:p-5" data-testid="cartao-ia" aria-labelledby="cartao-ia-titulo">
+    <section className="rounded-xl border border-sage-200 bg-sage-50 p-4 sm:p-5" data-testid="cartao-ia" aria-labelledby="cartao-ia-titulo">
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-forest" aria-hidden>
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <h3 id="cartao-ia-titulo" className="font-title text-lg font-bold text-ink">
+          <h3 id="cartao-ia-titulo" className="font-title text-lg font-semibold text-ink">
             Deixe a IA preencher o anúncio para você
           </h3>
           <p className="mt-1 text-sm text-muted">
@@ -86,7 +86,7 @@ export function CartaoIa(p: {
           type="button"
           onClick={() => input.current?.click()}
           disabled={!!p.enviando}
-          className={buttonClasses({ className: "w-full disabled:opacity-60" })}
+          className={buttonClasses({ variant: "secondary", className: "w-full disabled:opacity-60" })}
           data-testid="cartao-ia-fotos"
         >
           <Camera className="h-4 w-4" aria-hidden /> Enviar fotos

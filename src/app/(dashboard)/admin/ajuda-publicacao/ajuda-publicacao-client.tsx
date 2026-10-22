@@ -83,9 +83,9 @@ export function AjudaPublicacaoClient({ fila }: { fila: PedidoAjuda[] }) {
                   {erro[p.id] && <p className="mt-1 text-xs text-red-600" role="alert">{erro[p.id]}</p>}
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-                  <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", TOM[p.status])}>{ROTULO_STATUS[p.status]}</span>
+                  <span className={cn("rounded-full px-2 py-1 text-xs font-semibold", TOM[p.status])}>{ROTULO_STATUS[p.status]}</span>
                   {proximosStatus(p.status).map((s) => (
-                    <Button key={s} size="sm" variant={s === "cancelado" ? "outline" : "gold"} disabled={busy === p.id} onClick={() => mover(p.id, s)}>
+                    <Button key={s} size="sm" variant="secondary" disabled={busy === p.id} onClick={() => mover(p.id, s)}>
                       {s === "em_montagem" ? "Começar a montar" : ACAO[s]}
                     </Button>
                   ))}

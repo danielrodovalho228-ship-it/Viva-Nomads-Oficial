@@ -61,7 +61,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
       />
 
       <div className="mb-4 flex max-w-full overflow-x-auto" role="tablist" aria-label="Pedidos" data-testid="abas-pedidos-dono">
-        <div className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
+        <div className="inline-flex rounded-full bg-surface-2 p-1 text-sm">
           {ABAS_DONO.map((a) => (
             <button
               key={a.chave}
@@ -70,7 +70,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
               aria-selected={aba === a.chave}
               onClick={() => setAba(a.chave)}
               data-testid={`aba-${a.chave}`}
-              className={cn("whitespace-nowrap rounded-full px-3 py-1.5 font-medium transition-colors sm:px-4", aba === a.chave ? "bg-forest text-white" : "text-muted")}
+              className={cn("whitespace-nowrap rounded-full px-3 py-2 font-medium transition-colors sm:px-4", aba === a.chave ? "bg-forest text-white" : "text-muted")}
             >
               {a.rotulo} (<span data-testid={`aba-${a.chave}-total`}>{contagem(a.chave)}</span>)
             </button>
@@ -79,7 +79,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
       </div>
 
       {lista.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-line bg-white p-10 text-center" data-testid="pedidos-dono-vazio">
+        <div className="rounded-xl border border-dashed border-line bg-white p-10 text-center" data-testid="pedidos-dono-vazio">
           <Megaphone className="mx-auto h-10 w-10 text-forest" />
           <p className="mx-auto mt-3 max-w-md text-sm text-muted">{vazio[aba]}</p>
         </div>
@@ -90,16 +90,16 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
             const preferido = p.id === pedidoDoLink && imovelDoLink ? imovelDoLink : p.compat_imovel_id;
             const opcoes = [...naCidade.filter((m) => m.id === preferido), ...naCidade.filter((m) => m.id !== preferido)];
             return (
-              <article key={p.id} className="relative min-w-0 overflow-hidden rounded-2xl border border-line bg-white p-4 pl-5 sm:p-5 sm:pl-6" data-testid="pedido-dono-cartao" data-pedido={p.id}>
+              <article key={p.id} className="relative min-w-0 overflow-hidden rounded-xl border border-line bg-white p-4 pl-5 sm:p-5 sm:pl-6" data-testid="pedido-dono-cartao" data-pedido={p.id}>
                 <span className="absolute inset-y-0 left-0 w-1.5 bg-gold" aria-hidden />
                 <CabecalhoInquilino p={p} />
 
-                <ul className="mt-3 flex flex-wrap gap-1.5" data-testid="pedido-selos">
+                <ul className="mt-3 flex flex-wrap gap-2" data-testid="pedido-selos">
                   {p.selos.map((s) => (
                     <li
                       key={s.codigo}
                       data-testid={`selo-${s.codigo}`}
-                      className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium", s.ok ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900")}
+                      className={cn("inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium", s.ok ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900")}
                     >
                       {s.codigo === "email" ? <Mail className="h-3 w-3" aria-hidden /> : s.codigo === "identidade" ? <ShieldCheck className="h-3 w-3" aria-hidden /> : <Phone className="h-3 w-3" aria-hidden />}
                       {s.texto}
@@ -126,7 +126,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
 
                 {p.situacao !== "demais" && p.compat_imovel_titulo && (
                   <div className={cn("mt-3 rounded-lg px-3 py-2 text-sm", p.situacao === "compativel" ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900")}>
-                    <p className="flex flex-wrap items-center gap-1.5 font-semibold">
+                    <p className="flex flex-wrap items-center gap-2 font-semibold">
                       <Sparkles className="h-4 w-4" aria-hidden />
                       {p.situacao === "compativel" ? "Combina com" : "Quase combina com"} “{p.compat_imovel_titulo}”
                     </p>
@@ -146,14 +146,14 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
                   {p.aba === "respondidos" && p.minhaResposta ? (
                     <div className="space-y-2">
                       <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest" data-testid="pedido-status-conversa">
-                        <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                        <Check className="mt-1 h-4 w-4 shrink-0" aria-hidden />
                         <span>
                           Você ofereceu <strong>{p.minhaResposta.imovelTitulo}</strong> · {STATUS_CONVERSA[p.minhaResposta.status] ?? p.minhaResposta.status}
                           {p.encerrado ? " · o pedido foi encerrado" : ""}
                         </span>
                       </p>
                       {p.minhaResposta.status === "aceita_para_conversa" && (
-                        <Link href="/dashboard/mensagens" className="inline-flex items-center gap-1.5 text-sm font-medium text-forest underline">
+                        <Link href="/dashboard/mensagens" className="inline-flex items-center gap-2 text-sm font-medium text-forest underline">
                           <MessageCircle className="h-4 w-4" aria-hidden /> Abrir a conversa
                         </Link>
                       )}
@@ -183,7 +183,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
                     <IgnorarForm pedidoId={p.id} onCancel={() => setAberto(null)} onDone={() => { setAberto(null); router.refresh(); }} />
                   ) : (
                     <div className="grid gap-2 sm:grid-cols-2">
-                      <Button variant="gold" className="w-full" onClick={() => setAberto({ id: p.id, modo: "oferecer" })} data-testid="oferecer-imovel">
+                      <Button variant="secondary" className="w-full" onClick={() => setAberto({ id: p.id, modo: "oferecer" })} data-testid="oferecer-imovel">
                         <Home className="h-4 w-4" /> Oferecer um imóvel
                       </Button>
                       <Button variant="ghost" className="w-full" onClick={() => setAberto({ id: p.id, modo: "ignorar" })} data-testid="ignorar-pedido">
@@ -214,11 +214,11 @@ function CabecalhoInquilino({ p }: { p: PedidoParaDono }) {
         </span>
       )}
       <div className="min-w-0">
-        <h3 className="font-title text-lg font-bold text-forest" data-testid="pedido-nome">
+        <h3 className="font-title text-lg font-semibold text-forest" data-testid="pedido-nome">
           {p.inquilino?.nome ?? "Inquilino(a)"}
         </h3>
         <p className="text-xs text-muted">{motivoParaDono(p.motivo) || "Pedido de moradia"}</p>
-        {!p.inquilino && <p className="mt-0.5 text-[11px] text-muted">Nome e foto aparecem quando a pessoa aceitar a sua oferta.</p>}
+        {!p.inquilino && <p className="mt-1 text-[11px] text-muted">Nome e foto aparecem quando a pessoa aceitar a sua oferta.</p>}
       </div>
     </div>
   );
@@ -246,8 +246,8 @@ function OfertaForm({ pedidoId, opcoes, onCancel, onDone }: { pedidoId: string; 
         <span className="mb-1 block font-medium text-ink">Mensagem</span>
         <textarea rows={3} value={mensagem} onChange={(e) => setMensagem(e.target.value.slice(0, 600))} className={cn("w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-sage", contatoNoTexto ? "border-red-300" : "border-line")} />
         {contatoNoTexto && (
-          <span className="mt-1 flex items-start gap-1.5 text-xs text-red-600">
-            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {CONTATO_AVISO}
+          <span className="mt-1 flex items-start gap-2 text-xs text-red-600">
+            <Info className="mt-1 h-3.5 w-3.5 shrink-0" /> {CONTATO_AVISO}
           </span>
         )}
       </label>
@@ -324,7 +324,7 @@ function BotaoAcao({ onClick, testid, children }: { onClick: () => void | Promis
         await onClick();
         setOcupado(false);
       }}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm text-ink hover:border-forest disabled:opacity-60"
+      className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm text-ink hover:border-forest disabled:opacity-60"
     >
       {children}
     </button>

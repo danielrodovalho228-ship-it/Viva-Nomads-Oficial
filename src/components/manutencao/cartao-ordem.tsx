@@ -25,13 +25,13 @@ import { cn } from "@/lib/utils";
 export function PrazoOrdem({ o }: { o: ServiceOrder }) {
   const p = prazoDaOrdem(o, new Date());
   return (
-    <p data-testid="prazo-ordem" className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+    <p data-testid="prazo-ordem" className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
       <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
       <span>
         {p.texto} · prazo de {PRAZO_MANUTENCAO_H[o.priority]} h
       </span>
-      {p.estado === "respondida" && <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">Respondida</span>}
-      {p.estado === "vencido" && <span className="rounded-full bg-red-50 px-2 py-0.5 font-medium text-red-700">Prazo vencido</span>}
+      {p.estado === "respondida" && <span className="rounded-full bg-emerald-50 px-2 py-1 font-medium text-emerald-700">Respondida</span>}
+      {p.estado === "vencido" && <span className="rounded-full bg-red-50 px-2 py-1 font-medium text-red-700">Prazo vencido</span>}
     </p>
   );
 }
@@ -41,13 +41,13 @@ export function SeletorPrioridade({ valor, onChange }: { valor: SOPriority; onCh
   const ordem: SOPriority[] = ["urgente", "media", "baixa"];
   return (
     <fieldset data-testid="seletor-prioridade">
-      <legend className="mb-1.5 block text-sm font-medium text-ink">Prioridade</legend>
+      <legend className="mb-2 block text-sm font-medium text-ink">Prioridade</legend>
       <div className="grid gap-2 sm:grid-cols-3">
         {ordem.map((p) => (
           <label
             key={p}
             className={cn(
-              "flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-sm",
+              "flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-3 text-sm",
               valor === p ? "border-forest bg-forest/5" : "border-sage-200"
             )}
           >
@@ -172,7 +172,7 @@ export function CartaoOrdem({
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={cn("rounded-full border px-2.5 py-0.5 text-xs font-semibold", SO_PRIORITY_META[o.priority].tone)}>
+            <span className={cn("rounded-full border px-3 py-1 text-xs font-semibold", SO_PRIORITY_META[o.priority].tone)}>
               {SO_PRIORITY_META[o.priority].label}
             </span>
             <span className="text-sm font-medium text-ink">{categoryLabel(o.category)}</span>
@@ -184,7 +184,7 @@ export function CartaoOrdem({
           </p>
           <PrazoOrdem o={o} />
         </div>
-        <span data-testid="status-ordem" className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-medium", SO_STATUS_META[o.status].tone)}>
+        <span data-testid="status-ordem" className={cn("shrink-0 rounded-full px-3 py-1 text-xs font-medium", SO_STATUS_META[o.status].tone)}>
           {SO_STATUS_META[o.status].label}
         </span>
       </button>
@@ -196,7 +196,7 @@ export function CartaoOrdem({
             {historico === null ? (
               <p className="text-sm text-muted">{erro ?? "Carregando…"}</p>
             ) : (
-              <ol data-testid="historico-ordem" className="space-y-1.5 text-sm text-muted">
+              <ol data-testid="historico-ordem" className="space-y-2 text-sm text-muted">
                 {historico.map((ev, i) => (
                   <li key={i}>{textoEvento(ev)}</li>
                 ))}
@@ -205,7 +205,7 @@ export function CartaoOrdem({
             {acoes.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {acoes.map((a) => (
-                  <Button key={a} size="sm" variant={a === "resolvido" ? "outline" : "primary"} disabled={ocupado} onClick={() => void mudar(a)}>
+                  <Button key={a} size="sm" variant="secondary" disabled={ocupado} onClick={() => void mudar(a)}>
                     {ROTULO_ACAO[a]}
                   </Button>
                 ))}
@@ -234,7 +234,7 @@ export function CartaoOrdem({
                   maxLength={2000}
                   value={texto}
                   onChange={(e) => setTexto(e.target.value)}
-                  className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+                  className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
                 />
               </label>
               {erro && historico !== null && (

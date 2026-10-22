@@ -14,7 +14,7 @@ import type { EstadoIdentidade } from "@/lib/identidade/estado";
 function passoIdentidade(id: EstadoIdentidade | null): { titulo: string; texto: string; cta: Cta } {
   if (!id) return { titulo: "Verificação de identidade", texto: "Carregando…", cta: { label: "Saber mais", href: "/dashboard/verificacao", variant: "outline" } };
   if (id.estado === "confirmada") return { titulo: id.texto, texto: "Seu perfil mostra a identidade confirmada.", cta: { label: "Ver verificação", href: "/dashboard/verificacao", variant: "outline" } };
-  if (id.acao) return { titulo: id.texto, texto: "Leva um minuto e reforça seu perfil.", cta: { label: id.acao.texto, href: id.acao.href, variant: "primary" } };
+  if (id.acao) return { titulo: id.texto, texto: "Leva um minuto e reforça seu perfil.", cta: { label: id.acao.texto, href: id.acao.href, variant: "outline" } };
   return { titulo: id.texto, texto: "Você já pode se candidatar sem ela. Quando abrir, avisamos — e ela reforça seu perfil.", cta: { label: "Saber mais", href: "/dashboard/verificacao", variant: "outline" } };
 }
 
@@ -124,10 +124,10 @@ export function TenantOnboarding({ name }: { name: string }) {
   const doneCount = feitos.length;
 
   return (
-    <section className="mb-6 overflow-hidden rounded-2xl border border-sage-200 bg-white">
+    <section className="mb-6 overflow-hidden rounded-xl border border-sage-200 bg-white">
       <div className="flex items-start justify-between gap-4 border-b border-sage-200 bg-surface-2 px-5 py-4">
         <div>
-          <h2 className="font-title text-lg font-bold text-ink">
+          <h2 className="font-title text-lg font-semibold text-ink">
             Comece por aqui{name ? `, ${name}` : ""} 👋
           </h2>
           <p className="text-sm text-muted">
@@ -136,7 +136,7 @@ export function TenantOnboarding({ name }: { name: string }) {
         </div>
         <button
           onClick={() => persist({ ...saved, hidden: true })}
-          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-muted hover:bg-white hover:text-ink"
+          className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-muted hover:bg-white hover:text-ink"
         >
           <X className="h-3.5 w-3.5" /> Ocultar
         </button>
@@ -150,7 +150,7 @@ export function TenantOnboarding({ name }: { name: string }) {
             <li key={s.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start" data-testid={`onboarding-${s.id}`} data-estado={s.id === "verificar" ? cartao.estado : undefined}>
               <span
                 className={cn(
-                  "grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold",
+                  "grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-semibold",
                   done ? "bg-champagne text-forest" : "bg-forest text-white"
                 )}
               >
@@ -158,11 +158,11 @@ export function TenantOnboarding({ name }: { name: string }) {
               </span>
 
               <div className="min-w-0 flex-1">
-                <h3 className="flex items-center gap-2 font-title font-bold text-ink">
+                <h3 className="flex items-center gap-2 font-title font-semibold text-ink">
                   <Icon className="h-4 w-4 text-sage" />
                   {s.title}
                   {s.highlight && (
-                    <span className="rounded-full bg-champagne/20 px-2 py-0.5 text-[11px] font-semibold text-champagne-600">
+                    <span className="rounded-full bg-champagne/20 px-2 py-1 text-[11px] font-semibold text-champagne-600">
                       nosso diferencial
                     </span>
                   )}
@@ -184,7 +184,7 @@ export function TenantOnboarding({ name }: { name: string }) {
               <button
                 onClick={() => toggle(s.id)}
                 className={cn(
-                  "shrink-0 self-start rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  "shrink-0 self-start rounded-full border px-3 py-2 text-xs font-medium transition-colors",
                   done
                     ? "border-champagne bg-champagne/10 text-champagne-600"
                     : "border-sage-200 text-muted hover:border-sage hover:text-ink"

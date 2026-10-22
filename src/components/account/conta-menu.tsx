@@ -31,6 +31,7 @@ import { appHome } from "@/lib/app-mode";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 import { SeletorModo } from "./seletor-modo";
+import { gravarPreferenciaParceiro, useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
 import { mostraEquipe, ROTA_ADMIN, ROTA_EQUIPE } from "./conta-equipe";
 
 type Item = { href?: string; onClick?: () => void; label: string; descricao?: string; icon: React.ComponentType<{ className?: string }>; tom?: "perigo" };
@@ -59,7 +60,12 @@ export function ContaMenu() {
     };
   }, [user?.id]);
 
+  // Prompt 41: com a parceria aprovada, o Perfil também troca para "parceiro" (só a navegação deste aparelho).
+  const parceiroAprovado = useParceiroAprovado();
+  const comoParceiro = usePreferenciaParceiro() && parceiroAprovado;
+
   async function trocarModo(outro: ViewMode) {
+    gravarPreferenciaParceiro(false);
     setActiveMode(outro);
     // Espera gravar a preferência antes de navegar (ver dashboard-shell: 8.3).
     await salvarModo(outro);
@@ -120,18 +126,34 @@ export function ContaMenu() {
         href="/dashboard/conta/perfil"
         data-testid="conta-cartao-usuario"
         aria-label="Abrir Perfil para trocar a foto"
-        className="flex items-center gap-3 rounded-2xl border border-sage-200 bg-white p-4"
+        className="flex items-center gap-3 rounded-xl border border-sage-200 bg-white p-4"
       >
         <Avatar name={identidadeUsuario(user)} size={56} photoUrl={foto ?? undefined} />
-        <p className="min-w-0 flex-1 truncate font-title text-lg font-bold text-ink">{identidadeUsuario(user)}</p>
+        <p className="min-w-0 flex-1 truncate font-title text-lg font-semibold text-ink">{identidadeUsuario(user)}</p>
         <ChevronRight className="h-4 w-4 text-muted" aria-hidden />
       </Link>
       {/* Toda conta pode usar os dois papéis: seletor de dois lados. */}
       <SeletorModo mode={mode} onSwitch={trocarModo} />
+      {parceiroAprovado && (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={comoParceiro}
+          data-testid="usar-como-parceiro"
+          onClick={() => {
+            gravarPreferenciaParceiro(!comoParceiro);
+            if (!comoParceiro) router.push("/dashboard/parceiro");
+          }}
+          className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-line bg-white px-4 text-left text-sm font-semibold text-ink"
+        >
+          Usar a conta como parceiro
+          <span className={cn("text-sm font-normal", comoParceiro ? "text-forest" : "text-muted")}>{comoParceiro ? "Ligado" : "Desligado"}</span>
+        </button>
+      )}
       {grupos
         .filter((g) => g.length > 0)
         .map((g, i) => (
-          <ul key={i} className="divide-y divide-sage-100 overflow-hidden rounded-2xl border border-sage-200 bg-white">
+          <ul key={i} className="divide-y divide-sage-100 overflow-hidden rounded-xl border border-sage-200 bg-white">
             {g.map((it) => {
               const Icon = it.icon;
               const conteudo = (

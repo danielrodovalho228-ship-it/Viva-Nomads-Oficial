@@ -31,8 +31,8 @@ export function ContratosInquilino({ contratos }: { contratos: ContratoInquilino
         <Panel key={c.id} data-testid="contrato-inquilino" data-chave={c.chave} data-contrato={c.id}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">{c.numero}</p>
-              <h3 className="line-clamp-2 font-title text-base font-bold text-ink">{c.propertyTitle}</h3>
+              <p className="text-xs font-semibold uppercase text-muted">{c.numero}</p>
+              <h3 className="line-clamp-2 font-title text-base font-semibold text-ink">{c.propertyTitle}</h3>
               <p className="text-xs text-muted">{formatBRL(c.aluguelMensal)}/mês</p>
             </div>
             <span
@@ -44,7 +44,7 @@ export function ContratosInquilino({ contratos }: { contratos: ContratoInquilino
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
             {c.faltaVoce ? (
-              <ButtonLink href={`/dashboard/contratos/${c.id}`} variant="primary" size="sm" data-testid="contrato-inquilino-assinar">
+              <ButtonLink href={`/dashboard/contratos/${c.id}`} variant="secondary" size="sm" data-testid="contrato-inquilino-assinar">
                 Assinar agora
               </ButtonLink>
             ) : (

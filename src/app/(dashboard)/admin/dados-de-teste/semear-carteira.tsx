@@ -68,7 +68,7 @@ export function SemearCarteiraTeste({ proprietarios, inquilinos }: { proprietari
         </label>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={() => setConfirmando("semear")} disabled={ocupado || !ownerId || !tenantId} data-testid="carteira-semear">
+        <Button variant="secondary" onClick={() => setConfirmando("semear")} disabled={ocupado || !ownerId || !tenantId} data-testid="carteira-semear">
           {ocupado ? "Aguarde…" : "Semear carteira de teste"}
         </Button>
         <Button variant="outline" onClick={() => setConfirmando("limpar")} disabled={ocupado || !ownerId} data-testid="carteira-limpar">

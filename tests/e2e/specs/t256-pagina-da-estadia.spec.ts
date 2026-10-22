@@ -148,8 +148,14 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
       await expect(d.getByTestId("checklist-instrucoes")).toBeVisible();
       await expect(d.getByTestId("valor-taxa")).toContainText("10% sobre o valor mensal × meses");
       await expect(d.getByTestId("valor-mensal")).toContainText("pago direto ao proprietário");
-      await expect(d.locator('[data-testid^="estadia-acao-"]')).toHaveCount(5);
+      // Prompt 41 (adendo da estadia): sem a fileira; "Mensagem" é o único primário, "Encerrar contrato" fica no fim da
+      // página em texto vermelho e o resto mora no cogumelo "Ações desta estadia" (conferido no t262).
+      await expect(d.getByTestId("estadia-acoes")).toHaveCount(0);
+      await expect(d.locator('[data-testid^="estadia-acao-"]')).toHaveCount(2);
       await expect(d.getByTestId("estadia-acao-mensagem")).toHaveAttribute("href", /\/dashboard\/mensagens\?conversa=/);
+      await expect(d.getByTestId("estadia-acao-mensagem")).toHaveAttribute("data-cta", "primary");
+      await expect(d.getByTestId("estadia-acao-encerrar")).toHaveAttribute("href", `/dashboard/estadia/${ids.contrato}/encerrar`);
+      await expect(d.getByTestId("cogumelo")).toBeVisible();
       await semRolagemLateral(d);
       await print(d, `dono-${largura}`);
       await d.context().close();

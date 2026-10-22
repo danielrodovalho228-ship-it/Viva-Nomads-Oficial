@@ -160,7 +160,7 @@ function OwnerDashboard({
       <Panel className="mb-6 bg-forest text-white">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="font-title text-lg font-bold">
+            <h2 className="font-title text-lg font-semibold">
               {demo ? "Verificação do perfil: 60%" : "Verifique seu perfil"}
             </h2>
             <p className="text-sm text-white/70">
@@ -175,7 +175,7 @@ function OwnerDashboard({
             )}
             <Link
               href="/dashboard/verificacao"
-              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-champagne px-4 py-2 text-sm font-semibold text-night transition-colors hover:bg-champagne-600"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-champagne px-4 py-2 text-sm font-semibold text-night transition-colors hover:bg-champagne-600"
             >
               {demo ? "Continuar verificação" : "Iniciar verificação"} <ArrowRight className="h-4 w-4" />
             </Link>
@@ -189,7 +189,7 @@ function OwnerDashboard({
         </div>
       )}
       {/* Mobile: 4 KPIs em grade 2×2 compacta (ADENDO item 1/5). */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label="Visualizações"
           value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : "0"}
@@ -212,7 +212,7 @@ function OwnerDashboard({
 
       {/* Regra de ouro, dita com todas as letras onde o dono pensa em dinheiro. */}
       <p className="mt-4 flex items-start gap-2 rounded-xl border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-ink">
-        <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+        <Wallet className="mt-1 h-4 w-4 shrink-0 text-forest" />
         <span>
           O valor mensal vai <strong>direto para a sua conta</strong> — a plataforma nunca
           toca no dinheiro.
@@ -257,9 +257,9 @@ function OwnerDashboard({
                         {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
                       </p>
                       {/* Selos abaixo do título: em 390 px não espremem o texto. */}
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
                         {p.readyToLiveBadge && <ReadyToLiveBadge />}
-                        <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+                        <span className="rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
                           Ativo
                         </span>
                       </div>
@@ -344,7 +344,7 @@ function CartaoPropostas({ propostas }: { propostas: PropostaAguardando[] }) {
   return (
     <Link
       href={propostas.length === 1 ? `/dashboard/propostas/${primeira.id}` : "/dashboard/propostas"}
-      className="mb-5 flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 hover:border-amber-400"
+      className="mb-5 flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 hover:border-amber-400"
       data-testid="cartao-proposta-recebida"
     >
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-amber-800">
@@ -375,7 +375,7 @@ function TenantDashboard({ name, propostas, cidade, estadias }: { name: string; 
 
       {/* KPIs de acesso rápido: 2×2 no mobile, 4 em linha no desktop. Candidaturas
           é o lar do acompanhamento (envio → resposta) — sem novo item no menu. */}
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <StatCard label="Candidaturas" value={demo ? "2" : "0"} icon={FileSignature} href="/dashboard/candidaturas" />
         <StatCard label="Favoritos" value={demo ? "3" : "0"} icon={Heart} href="/dashboard/favoritos" />
         <StatCard label="Buscas salvas" value={demo ? "2" : "0"} icon={Search} href="/dashboard/buscas" />
@@ -402,7 +402,7 @@ function TenantDashboard({ name, propostas, cidade, estadias }: { name: string; 
           title="Salve seus favoritos"
           text="Conforme você navega, salve os imóveis que mais gostou para comparar depois."
           action={
-            <ButtonLink href="/buscar" variant="primary">
+            <ButtonLink href="/buscar" variant="secondary">
               Explorar imóveis
             </ButtonLink>
           }
@@ -433,14 +433,14 @@ function DraftPendingCard({
   const [expandido, setExpandido] = useState(false);
   const lista = check ? itensDoChecklist(check.itens, expandido) : null;
   return (
-    <div className={`rounded-2xl border border-champagne bg-champagne/10 p-4 ${className ?? ""}`} data-testid="anuncio-andamento">
+    <div className={`rounded-xl border border-champagne bg-champagne/10 p-4 ${className ?? ""}`} data-testid="anuncio-andamento">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
+          <span className="mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
             <PencilLine className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <p className="font-title text-sm font-bold text-ink">
+            <p className="font-title text-sm font-semibold text-ink">
               {draft.pronto ? "Anúncio 100% · pronto para publicar" : `Anúncio em andamento${draft.pct > 0 ? ` — ${draft.pct}% completo` : ""}`}
             </p>
             <p className="text-xs text-muted" data-testid="prontidao-visao-geral">
@@ -457,7 +457,7 @@ function DraftPendingCard({
         <div className="flex flex-col gap-1 sm:items-end">
           <Link
             href={check?.proximo?.href ?? `/dashboard/imoveis/novo?draft=${draft.id}`}
-            className={buttonClasses({ size: "sm" })}
+            className={buttonClasses({ variant: "secondary", size: "sm" })}
           >
             {draft.pronto ? "Revisar e publicar" : check?.proximo ? "Fazer o próximo passo" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
           </Link>
@@ -476,13 +476,13 @@ function DraftPendingCard({
         <div className="mt-3" data-testid="anuncio-score">
           <div className="flex items-baseline justify-between gap-2 text-sm">
             <span className="font-medium text-ink">Qualidade do anúncio</span>
-            <span className="font-title font-bold text-forest" data-testid="anuncio-score-valor">{draft.score.score}%</span>
+            <span className="font-title font-semibold text-forest" data-testid="anuncio-score-valor">{draft.score.score}%</span>
           </div>
           <div className="mt-1 h-2 overflow-hidden rounded-full bg-champagne/40" role="progressbar" aria-valuenow={draft.score.score} aria-valuemin={0} aria-valuemax={100} aria-label="Qualidade do anúncio">
             <div className="h-full rounded-full bg-forest" style={{ width: `${draft.score.score}%` }} />
           </div>
           {draft.score.dicas.length > 0 && (
-            <ul className="mt-2 grid gap-1.5 sm:grid-cols-2" data-testid="anuncio-score-dicas">
+            <ul className="mt-2 grid gap-2 sm:grid-cols-2" data-testid="anuncio-score-dicas">
               {draft.score.dicas.slice(0, 4).map((d) => (
                 <li key={d.key}>
                   <Link
@@ -501,7 +501,7 @@ function DraftPendingCard({
         </div>
       )}
       {check && (
-        <ul className="mt-3 grid gap-1.5 sm:grid-cols-2" data-testid="anuncio-checklist">
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2" data-testid="anuncio-checklist">
           {lista?.visiveis.map((i) => (
             <li key={i.key}>
               {i.ok ? (
@@ -512,7 +512,7 @@ function DraftPendingCard({
               ) : i.acoes ? (
                 <div className="rounded-xl border border-forest bg-champagne/30 p-2" data-testid="check-vaga">
                   <span className="flex items-start gap-2 text-sm font-medium text-forest">
-                    <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden />
+                    <Circle className="mt-1 h-4 w-4 shrink-0 text-muted" aria-hidden />
                     <span className="min-w-0">
                       {i.label}
                       {i.detalhe && <span className="block text-xs font-normal text-muted">{i.detalhe}</span>}
@@ -611,7 +611,7 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
         title={`Bem-vindo${name ? `, ${name}` : ""}! 👋`}
         subtitle="Do primeiro anúncio ao contrato fechado em 4 passos."
         action={
-          <ButtonLink href="/dashboard/imoveis/novo" variant="accent">
+          <ButtonLink href="/dashboard/imoveis/novo" variant="secondary">
             <ClipboardCheck className="h-4 w-4" /> Começar agora
           </ButtonLink>
         }
@@ -621,19 +621,19 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
         {passos.map((p) => (
           <li
             key={p.n}
-            className={`flex h-full flex-col rounded-2xl border p-5 ${
-              p.ativo ? "border-forest bg-white shadow-sm" : "border-line bg-surface-2"
+            className={`flex h-full flex-col rounded-xl border p-5 ${
+              p.ativo ? "border-forest bg-white" : "border-line bg-surface-2"
             }`}
           >
             <div className="flex items-center gap-2">
               <span
-                className={`grid h-7 w-7 place-items-center rounded-full text-sm font-bold ${
+                className={`grid h-7 w-7 place-items-center rounded-full text-sm font-semibold ${
                   p.ativo ? "bg-forest text-white" : "bg-white text-muted"
                 }`}
               >
                 {p.n}
               </span>
-              <h3 className="font-title font-bold text-ink">{p.titulo}</h3>
+              <h3 className="font-title font-semibold text-ink">{p.titulo}</h3>
             </div>
             <p className="mt-2 flex-1 text-sm text-muted">{p.texto}</p>
             {p.ativo ? (
@@ -662,7 +662,7 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
 function Activity({ text, time }: { text: string; time: string }) {
   return (
     <li className="flex items-start gap-3">
-      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sage" />
+      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-sage" />
       <div>
         <p className="text-ink">{text}</p>
         <p className="text-xs text-muted">{time}</p>

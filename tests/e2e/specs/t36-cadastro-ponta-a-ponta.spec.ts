@@ -111,7 +111,7 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     const inq = await entrar(browser, inquilina.email, senha);
     await inq.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
     // No celular o botão aparece no cartão E na barra fixa (t75): as duas fazem a mesma candidatura.
-    await inq.getByRole("button", { name: /Enviar candidatura/ }).first().click();
+    await inq.getByRole("button", { name: "Solicitar", exact: true }).locator("visible=true").first().click();
     // Passo de confirmação (resumo) antes de enviar (610a1d5).
     const passo = inq.getByTestId("solicitacao-passo");
     await expect(passo).toBeVisible();

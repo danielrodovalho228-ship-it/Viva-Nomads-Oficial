@@ -29,6 +29,7 @@ export function SolicitarOrcamento({
   logado,
   voltarPara,
   imovelInicial,
+  categoriaInicial,
   doCadastroDoImovel,
 }: {
   parceiroId: string;
@@ -38,6 +39,8 @@ export function SolicitarOrcamento({
   logado: boolean;
   voltarPara: string;
   imovelInicial?: string | null;
+  /** Categoria já escolhida (ex.: "Pedir limpeza" na página da estadia): o primeiro serviço dela vem selecionado. */
+  categoriaInicial?: string | null;
   doCadastroDoImovel?: boolean;
 }) {
   const router = useRouter();
@@ -45,8 +48,11 @@ export function SolicitarOrcamento({
   const [pendente, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
   const [imoveis, setImoveis] = useState<{ id: string; titulo: string }[] | null>(null);
-  const [servicoId, setServicoId] = useState<string>(servicos[0]?.id ?? "");
-  const [categoria, setCategoria] = useState<string>(servicos[0]?.categoria ?? categorias[0] ?? "outro");
+  const servicoInicial = (categoriaInicial ? servicos.find((s) => s.categoria === categoriaInicial) : null) ?? servicos[0];
+  const [servicoId, setServicoId] = useState<string>(servicoInicial?.id ?? "");
+  const [categoria, setCategoria] = useState<string>(
+    servicoInicial?.categoria ?? (categoriaInicial && categorias.includes(categoriaInicial) ? categoriaInicial : categorias[0]) ?? "outro",
+  );
   const [descricao, setDescricao] = useState("");
   const [imovel, setImovel] = useState<string>(imovelInicial ?? "");
   const [horarios, setHorarios] = useState<string[]>([""]);

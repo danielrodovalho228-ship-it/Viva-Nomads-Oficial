@@ -62,6 +62,77 @@ export const ALCANCE = [
   "components/property/fotos-cartao.tsx",
   // Rodapé global (QA do Prompt 40: títulos de coluna sem caixa alta)
   "components/layout/footer.tsx",
+  // Prompt 41: página do imóvel, barra inferior por papel, "um primário por tela", cogumelo — todo arquivo tocado.
+  "app/(dashboard)/admin/ajuda-publicacao/ajuda-publicacao-client.tsx",
+  "app/(dashboard)/admin/atendimento/[id]/chamado-client.tsx",
+  "app/(dashboard)/admin/atendimento/atendimento-client.tsx",
+  "app/(dashboard)/admin/avaliacoes/forms.tsx",
+  "app/(dashboard)/admin/dados-de-teste/nova-jornada.tsx",
+  "app/(dashboard)/admin/dados-de-teste/semear-carteira.tsx",
+  "app/(dashboard)/admin/documentos/admin-documentos-client.tsx",
+  "app/(dashboard)/admin/documentos/falhas-client.tsx",
+  "app/(dashboard)/admin/documentos/matriculas-admin-client.tsx",
+  "app/(dashboard)/admin/parceiros/page.tsx",
+  "app/(dashboard)/admin/pedidos/chave-sms.tsx",
+  "app/(dashboard)/admin/servicos/mudar-estado.tsx",
+  "app/(dashboard)/dashboard/avaliacoes/acoes.tsx",
+  "app/(dashboard)/dashboard/buscas/page.tsx",
+  "app/(dashboard)/dashboard/contratos/contratos-inquilino.tsx",
+  "app/(dashboard)/dashboard/estadia/[contratoId]/estadia-tela.tsx",
+  "app/(dashboard)/dashboard/estadia/[contratoId]/page.tsx",
+  "app/(dashboard)/dashboard/fechamento/closing-flow.tsx",
+  "app/(dashboard)/dashboard/imoveis/imoveis-client.tsx",
+  "app/(dashboard)/dashboard/imoveis/novo/barra-fotos.tsx",
+  "app/(dashboard)/dashboard/imoveis/novo/busca-endereco.tsx",
+  "app/(dashboard)/dashboard/imoveis/novo/cartao-ia.tsx",
+  "app/(dashboard)/dashboard/imoveis/novo/page.tsx",
+  "app/(dashboard)/dashboard/leads/leads-client.tsx",
+  "app/(dashboard)/dashboard/locacoes/locacoes-client.tsx",
+  "app/(dashboard)/dashboard/orcamentos/orcamentos-client.tsx",
+  "app/(dashboard)/dashboard/parceiro/painel-parceiro.tsx",
+  "app/(dashboard)/dashboard/pedidos-cidade/pedidos-dono-client.tsx",
+  "app/(dashboard)/dashboard/pedidos/pedidos-client.tsx",
+  "app/(dashboard)/dashboard/solicitacoes/page.tsx",
+  "app/(dashboard)/dashboard/verificacao/page.tsx",
+  "app/(dashboard)/dashboard/visao-geral-client.tsx",
+  "app/(public)/imoveis/[id]/property-detail.tsx",
+  "app/(public)/parceiros/[slug]/page.tsx",
+  "app/(public)/parceiros/buscar/page.tsx",
+  "components/account/avatar-uploader.tsx",
+  "components/account/categoria-profissional.tsx",
+  "components/account/conta-menu.tsx",
+  "components/account/conta-secoes.tsx",
+  "components/account/telefone-verificacao.tsx",
+  "components/contrato/conferencia-contrato.tsx",
+  "components/contrato/contrato-detalhe.tsx",
+  "components/dashboard/tenant-onboarding.tsx",
+  "components/documentos/documentos-contrato.tsx",
+  "components/estadia/acoes-estadia.tsx",
+  "components/layout/dashboard-shell.tsx",
+  "components/layout/mobile-tab-bar.tsx",
+  "components/layout/papel-ativo.tsx",
+  "components/manutencao/cartao-ordem.tsx",
+  "components/parceiros/pedidos-do-parceiro.tsx",
+  "components/parceiros/solicitar-orcamento.tsx",
+  "components/property-gallery.tsx",
+  "components/property/availability-calendar.tsx",
+  "components/property/barra-fixa-celular.tsx",
+  "components/property/faixa-proprietario.tsx",
+  "components/property/owner-card.tsx",
+  "components/property/price-card.tsx",
+  "components/property/visita-video.tsx",
+  "components/share-button.tsx",
+  "components/video-walkthrough.tsx",
+  "components/visitas/cartao-visita.tsx",
+  "config/dinheiro.ts",
+  "config/rotas-app.ts",
+  "lib/barra-fixa-imovel.ts",
+  "lib/estadia/acoes.ts",
+  "lib/data/estadia.ts",
+  "lib/imovel-pagina.ts",
+  "lib/nav-mobile.ts",
+  "lib/parceiros/painel-actions.ts",
+  "lib/use-papel-barra.ts",
 ];
 
 /** Hero com h1 de até 40 px (adendo): home; /para-proprietarios, /como-funciona, /precos e /parceiros entram quando forem trazidas. */
@@ -183,6 +254,8 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
     "components/busca/barra-comparar.tsx", // barra flutuante do Comparar
     "components/busca/card-pin-mapa.tsx", // cartão aberto sobre o mapa
     "components/city-autocomplete.tsx", // menu suspenso de sugestões
+    "components/estadia/acoes-estadia.tsx", // botão flutuante "cogumelo" (Prompt 41)
+    "components/layout/mobile-tab-bar.tsx", // barra inferior do celular/app (Prompt 41)
     "components/layout/navbar.tsx", // cabeçalho fixo (busca fixa) e menu suspenso
     "components/location-search.tsx", // menu suspenso de sugestões
     "components/property/barra-fixa-celular.tsx", // barra fixa do celular
@@ -190,7 +263,7 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
     "components/ui/button.tsx", // variante flutuante
   ]);
   // E nenhuma outra sombra nesses arquivos de flutuantes (a guarda geral cobre o resto do alcance).
-  for (const f of ["components/property/barra-fixa-celular.tsx", "components/search-map.tsx", "components/layout/navbar.tsx"]) {
+  for (const f of ["components/property/barra-fixa-celular.tsx", "components/search-map.tsx", "components/layout/navbar.tsx", "components/layout/mobile-tab-bar.tsx"]) {
     assert.deepEqual(violacoesEstilo(ler(f)).filter((v) => v.tipo === "sombra"), [], f);
   }
 });

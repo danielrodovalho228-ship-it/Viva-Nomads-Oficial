@@ -144,7 +144,7 @@ export function PedidosClient({
             text="Publique um pedido de moradia e deixe os proprietários da cidade encontrarem você."
             action={
               <Link href="/pedidos/novo">
-                <Button variant="gold">
+                <Button variant="secondary">
                   <Plus className="h-4 w-4" /> Publicar pedido
                 </Button>
               </Link>
@@ -165,7 +165,7 @@ export function PedidosClient({
                     <span>
                       <strong>{TEXTO_AVISO_RENOVAR}.</strong> Ele sai do ar em {dataPedidoBR(p.expira_em)}.
                     </span>
-                    <Button size="sm" onClick={() => run(`renew-${p.id}`, () => renovarPedido(p.id))} disabled={busy === `renew-${p.id}`} data-testid="pedido-renovar">
+                    <Button variant="secondary" size="sm" onClick={() => run(`renew-${p.id}`, () => renovarPedido(p.id))} disabled={busy === `renew-${p.id}`} data-testid="pedido-renovar">
                       <RefreshCw className="h-4 w-4" /> Renovar
                     </Button>
                   </div>
@@ -174,12 +174,12 @@ export function PedidosClient({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-title text-lg font-bold text-ink">
+                      <h3 className="font-title text-lg font-semibold text-ink">
                         {motivoLabel(p.motivo)}
                       </h3>
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-semibold",
+                          "rounded-full px-2 py-1 text-xs font-semibold",
                           STATUS_TONE[p.status] ?? "bg-surface-2 text-muted"
                         )}
                       >
@@ -203,7 +203,7 @@ export function PedidosClient({
                   {/* Ações do pedido */}
                   {p.status === "expirado" && (
                     // Renovar com um clique: mais 30 dias (nunca antes da entrada) e volta para os proprietários.
-                    <Button size="sm" onClick={() => run(`renew-${p.id}`, () => renovarPedido(p.id))} disabled={busy === `renew-${p.id}`} data-testid="pedido-renovar">
+                    <Button variant="secondary" size="sm" onClick={() => run(`renew-${p.id}`, () => renovarPedido(p.id))} disabled={busy === `renew-${p.id}`} data-testid="pedido-renovar">
                       <Play className="h-4 w-4" /> Renovar pedido
                     </Button>
                   )}
@@ -251,7 +251,7 @@ export function PedidosClient({
                       desfeito.
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <Button
+                      <Button variant="destructive"
                         size="sm"
                         className="bg-red-700 text-white hover:bg-red-800"
                         disabled={busy === `del-${p.id}`}
@@ -303,7 +303,7 @@ export function PedidosClient({
                                 <span className="font-medium text-ink">
                                   {r.properties?.title ?? "Imóvel"}
                                 </span>
-                                <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+                                <span className="rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold text-muted">
                                   {RESPOSTA_STATUS_LABEL[r.status] ?? r.status}
                                 </span>
                               </div>
@@ -326,7 +326,7 @@ export function PedidosClient({
                           {/* Ações da resposta */}
                           {r.status !== "aceita_para_conversa" && r.status !== "recusada" && (
                             <div className="mt-3 flex flex-wrap gap-2">
-                              <Button
+                              <Button variant="secondary"
                                 onClick={() =>
                                   run(`ok-${r.id}`, () => aceitarResposta(r.id))
                                 }
@@ -385,7 +385,7 @@ function NotifPrefs({ inicial }: { inicial: { email: boolean } }) {
   }
 
   return (
-    <div className="mt-6 rounded-2xl border border-line bg-white p-5 text-sm">
+    <div className="mt-6 rounded-xl border border-line bg-white p-5 text-sm">
       <p className="font-medium text-ink">Notificações</p>
       <p className="mt-1 text-xs text-muted">Avisos no app sempre aparecem. Você pode desligar o e-mail.</p>
       <div className="mt-3 flex items-center justify-between gap-3">

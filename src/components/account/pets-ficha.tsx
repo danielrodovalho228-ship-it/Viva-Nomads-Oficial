@@ -213,7 +213,7 @@ export function PetsFicha() {
             </label>
             {erro && <p role="alert" className="text-sm text-red-700 sm:col-span-2">{erro}</p>}
             <div className="sm:col-span-2">
-              <Button type="submit" disabled={salvando}>{salvando ? "Salvando…" : "Adicionar pet"}</Button>
+              <Button type="submit" variant="secondary" disabled={salvando}>{salvando ? "Salvando…" : "Adicionar pet"}</Button>
             </div>
           </form>
         )}

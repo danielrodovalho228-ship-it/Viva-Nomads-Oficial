@@ -85,16 +85,16 @@ export function AtendimentoClient({
           Sem acesso aos chamados agora (banco sem a migração 0073, sem chave de serviço ou sem permissão).
         </p>
       )}
-      <nav aria-label="Seções do atendimento" className="mb-6 flex flex-wrap gap-1.5">
+      <nav aria-label="Seções do atendimento" className="mb-6 flex flex-wrap gap-2">
         {ABAS.map((a) => (
           <Link
             key={a.id}
             href={`/admin/atendimento?aba=${a.id}`}
             aria-current={aba === a.id ? "page" : undefined}
-            className={cn("rounded-lg px-3 py-1.5 text-sm", aba === a.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest")}
+            className={cn("rounded-lg px-3 py-2 text-sm", aba === a.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest")}
           >
             {a.rotulo}
-            {a.id === "aprovacao" && aprovacao.length > 0 && <span className="ml-1.5 rounded-full bg-amber-200 px-1.5 text-xs text-amber-900">{aprovacao.length}</span>}
+            {a.id === "aprovacao" && aprovacao.length > 0 && <span className="ml-2 rounded-full bg-amber-200 px-2 text-xs text-amber-900">{aprovacao.length}</span>}
           </Link>
         ))}
       </nav>
@@ -123,17 +123,17 @@ export function AtendimentoClient({
 }
 
 function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean } }) {
-  const campo = "rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink";
+  const campo = "rounded-lg border border-line bg-white px-2 py-2 text-sm text-ink";
   return (
-    <form method="get" action="/admin/atendimento" className="mb-4 flex flex-wrap items-end gap-2 rounded-2xl border border-sage-200 bg-white p-3">
+    <form method="get" action="/admin/atendimento" className="mb-4 flex flex-wrap items-end gap-2 rounded-xl border border-sage-200 bg-white p-3">
       <input type="hidden" name="aba" value="fila" />
       <label className="text-xs text-muted">
         Busca
-        <input name="q" defaultValue={filtros.busca} placeholder="VN-000123 ou assunto" className={cn(campo, "mt-0.5 block w-52")} />
+        <input name="q" defaultValue={filtros.busca} placeholder="VN-000123 ou assunto" className={cn(campo, "mt-1 block w-52")} />
       </label>
       <label className="text-xs text-muted">
         Fila
-        <select name="fila" defaultValue={filtros.fila ?? ""} className={cn(campo, "mt-0.5 block")}>
+        <select name="fila" defaultValue={filtros.fila ?? ""} className={cn(campo, "mt-1 block")}>
           <option value="">Todas</option>
           {ORDEM_FILAS.map((f) => (
             <option key={f} value={f}>
@@ -144,7 +144,7 @@ function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; t
       </label>
       <label className="text-xs text-muted">
         Prioridade
-        <select name="prioridade" defaultValue={filtros.prioridade ?? ""} className={cn(campo, "mt-0.5 block")}>
+        <select name="prioridade" defaultValue={filtros.prioridade ?? ""} className={cn(campo, "mt-1 block")}>
           <option value="">Todas</option>
           {(["p1", "p2", "p3", "p4"] as Prioridade[]).map((p) => (
             <option key={p} value={p}>
@@ -155,7 +155,7 @@ function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; t
       </label>
       <label className="text-xs text-muted">
         Tipo
-        <select name="tipo" defaultValue={filtros.tipo ?? ""} className={cn(campo, "mt-0.5 block")}>
+        <select name="tipo" defaultValue={filtros.tipo ?? ""} className={cn(campo, "mt-1 block")}>
           <option value="">Todos</option>
           <option value="suporte">Suporte</option>
           <option value="manutencao">Manutenção</option>
@@ -164,13 +164,13 @@ function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; t
       </label>
       <label className="text-xs text-muted">
         Responsável
-        <select name="responsavel" defaultValue={filtros.responsavel ?? ""} className={cn(campo, "mt-0.5 block")}>
+        <select name="responsavel" defaultValue={filtros.responsavel ?? ""} className={cn(campo, "mt-1 block")}>
           <option value="">Todos</option>
           <option value="humano">Pessoa</option>
           <option value="ia">IA</option>
         </select>
       </label>
-      <label className="flex items-center gap-1.5 text-xs text-muted">
+      <label className="flex items-center gap-2 text-xs text-muted">
         <input type="checkbox" name="fechados" value="1" defaultChecked={filtros.fechados} /> Incluir resolvidos
       </label>
       <Button type="submit" variant="outline">
@@ -181,7 +181,7 @@ function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; t
 }
 
 function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; vazio: string }) {
-  if (itens.length === 0) return <p className="rounded-2xl border border-sage-200 bg-white p-4 text-sm text-muted">{vazio}</p>;
+  if (itens.length === 0) return <p className="rounded-xl border border-sage-200 bg-white p-4 text-sm text-muted">{vazio}</p>;
   return (
     <ul className="grid min-w-0 gap-2">
       {itens.map((c) => {
@@ -191,18 +191,18 @@ function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; v
             <Link href={`/admin/atendimento/${c.id}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-sage-200 bg-white px-4 py-3 hover:border-forest">
               <span className="min-w-0 flex-1 basis-56">
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className={cn("rounded px-1.5 py-0.5 text-xs font-bold", c.prioridade === "p1" ? "bg-red-600 text-white" : c.prioridade === "p2" ? "bg-amber-500 text-white" : "bg-surface-2 text-ink")}>
+                  <span className={cn("rounded-lg px-2 py-1 text-xs font-semibold", c.prioridade === "p1" ? "bg-red-600 text-white" : c.prioridade === "p2" ? "bg-amber-500 text-white" : "bg-surface-2 text-ink")}>
                     {c.prioridade.toUpperCase()}
                   </span>
                   <span className="truncate font-medium text-ink">{c.assunto}</span>
                 </span>
-                <span className="mt-0.5 block text-xs text-muted">
+                <span className="mt-1 block text-xs text-muted">
                   {c.numero_publico} · {FILAS[filaDaCategoria(c.categoria)].rotulo} · {c.canal} · {STATUS[c.status] ?? c.status}
                   {c.visitante_email ? " · visitante" : ""}
                   <span data-testid="chamado-aberto-em"> · Aberto em {dataHoraBRT(c.criado_em, { tabela: true })}</span>
                 </span>
               </span>
-              <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium", r.cor)}>
+              <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium", r.cor)}>
                 <Clock className="h-3.5 w-3.5" /> {r.texto}
               </span>
             </Link>
@@ -263,7 +263,7 @@ function Metricas({ m }: { m: Record<string, unknown> | null }) {
           const corpo = (
             <>
               <p className="text-sm text-muted">{t}</p>
-              <p className="mt-1 font-title text-2xl font-bold text-ink" data-valor>
+              <p className="mt-1 font-title text-2xl font-semibold text-ink" data-valor>
                 {v}
               </p>
               <p className="mt-1 text-xs text-muted">{f}</p>
@@ -339,7 +339,7 @@ function Macros({ macros }: { macros: Macro[] }) {
         ) : (
           <ul className="divide-y divide-line">
             {macros.map((m) => (
-              <li key={m.id} className="flex items-start justify-between gap-3 py-2.5">
+              <li key={m.id} className="flex items-start justify-between gap-3 py-3">
                 <button type="button" onClick={() => setEdit(m)} className="min-w-0 text-left">
                   <span className="block font-medium text-ink">{m.titulo}</span>
                   <span className="block truncate text-xs text-muted">{m.corpo}</span>
@@ -349,7 +349,7 @@ function Macros({ macros }: { macros: Macro[] }) {
                   confirmar="Apagar"
                   ariaLabel={`Apagar ${m.titulo}`}
                   className="shrink-0"
-                  botaoClassName="rounded-lg p-1.5 text-muted hover:bg-red-50 hover:text-red-700"
+                  botaoClassName="rounded-lg p-2 text-muted hover:bg-red-50 hover:text-red-700"
                   onConfirmar={async () => {
                     await apagarMacro(m.id);
                     router.refresh();
@@ -397,7 +397,7 @@ function TestarViva() {
           ))}
         </select>
       </label>
-      <Button
+      <Button variant="secondary"
         className="mt-3"
         size="sm"
         disabled={rodando}

@@ -1125,7 +1125,7 @@ export default function NewPropertyPage() {
           !editingId && saveStatus !== "idle" ? (
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium",
+                "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium",
                 saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
               )}
             >
@@ -1145,7 +1145,7 @@ export default function NewPropertyPage() {
         }
       />
 
-      <div className="relative mb-5 overflow-hidden rounded-2xl">
+      <div className="relative mb-5 overflow-hidden rounded-xl">
         <Image
           src={PHOTOS.cadastro.welcome}
           alt="Proprietário com as chaves de um imóvel mobiliado pronto para anunciar"
@@ -1154,9 +1154,9 @@ export default function NewPropertyPage() {
           priority
           className="h-28 w-full object-cover sm:h-36"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-night/70 to-night/10" />
+        <div className="absolute inset-0 bg-night/50" />
         <div className="absolute inset-0 flex flex-col justify-center p-5 text-white">
-          <p className="font-title text-lg font-bold sm:text-xl">Vamos publicar seu imóvel</p>
+          <p className="font-title text-lg font-semibold sm:text-xl">Vamos publicar seu imóvel</p>
           <p className="text-sm text-white/80" data-testid="cadastro-frase-topo">
             {iaLigada ? "Comece pelo CEP. A IA preenche o resto pelas fotos." : "Comece pelo CEP. Depois, fotos, detalhes, preço e revisão."}
           </p>
@@ -1164,13 +1164,13 @@ export default function NewPropertyPage() {
       </div>
 
       {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
-        <div data-testid="rascunho-aviso" className="mb-5 flex flex-col gap-3 rounded-2xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div data-testid="rascunho-aviso" className="mb-5 flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
+            <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
               <ClipboardCheck className="h-5 w-5" />
             </span>
             <div>
-              <p className="font-title text-sm font-bold text-ink">
+              <p className="font-title text-sm font-semibold text-ink">
                 Você tem um anúncio em andamento
                 {existingDraft.pct > 0 ? ` (${existingDraft.pct}% completo)` : ""}
               </p>
@@ -1182,7 +1182,7 @@ export default function NewPropertyPage() {
               Começar outro
             </Button>
             <Button
-              variant="gold"
+              variant="secondary"
               size="sm"
               data-testid="rascunho-continuar"
               onClick={() => {
@@ -1203,7 +1203,7 @@ export default function NewPropertyPage() {
           Passo {pos + 1} de {ORDEM_ETAPAS.length} — <span className="text-forest">{STEP_META[step].label}</span>
           {step !== 1 && photos.length > 0 && <span className="text-muted"> · {photos.length} {photos.length === 1 ? "foto" : "fotos"}</span>}
         </p>
-        <div className="hidden items-center gap-1.5 pb-2 sm:flex sm:flex-wrap" data-testid="etapas-cadastro">
+        <div className="hidden items-center gap-2 pb-2 sm:flex sm:flex-wrap" data-testid="etapas-cadastro">
           {ORDEM_ETAPAS.map((id, i) => (
             <button
               key={STEP_META[id].label}
@@ -1217,7 +1217,7 @@ export default function NewPropertyPage() {
               disabled={!etapaLiberada(i, pos, etapaMax)}
               aria-current={i === pos ? "step" : undefined}
               className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                "flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium transition-colors",
                 i === pos ? "bg-forest text-white" : etapaLiberada(i, pos, etapaMax) ? "bg-sage-100 text-forest hover:bg-blue-100" : "bg-surface-2 text-muted"
               )}
             >
@@ -1251,7 +1251,7 @@ export default function NewPropertyPage() {
                 <StepIcon className="h-5 w-5" />
               </span>
               <div>
-                <h2 className="font-title text-xl font-bold text-ink">{meta.title}</h2>
+                <h2 className="font-title text-xl font-semibold text-ink">{meta.title}</h2>
                 <p className="text-sm text-muted">{meta.subtitle}</p>
               </div>
             </div>
@@ -1470,11 +1470,11 @@ export default function NewPropertyPage() {
 
         <aside className="space-y-4 lg:sticky lg:top-4" data-testid="novo-resumo" aria-label="Resumo e dicas">
           <Panel>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Seu progresso</p>
-            <p className="mt-1 font-title text-2xl font-bold text-forest">
+            <p className="text-xs font-semibold uppercase text-muted">Seu progresso</p>
+            <p className="mt-1 font-title text-2xl font-semibold text-forest">
               Etapa {pos + 1} de {ORDEM_ETAPAS.length}
             </p>
-            <ol className="mt-3 space-y-1.5 text-sm">
+            <ol className="mt-3 space-y-2 text-sm">
               {ORDEM_ETAPAS.map((id, i) => (
                 <li key={STEP_META[id].label} className={cn("flex items-center gap-2", i === pos ? "font-semibold text-forest" : i < pos ? "text-ink" : "text-muted")}>
                   {i < pos ? <Check className="h-4 w-4 shrink-0 text-forest" /> : <span className="grid h-4 w-4 shrink-0 place-items-center text-xs">{i + 1}</span>}
@@ -1484,8 +1484,8 @@ export default function NewPropertyPage() {
             </ol>
           </Panel>
           <Panel>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dicas</p>
-            <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm text-ink">
+            <p className="text-xs font-semibold uppercase text-muted">Dicas</p>
+            <ul className="mt-2 list-disc space-y-2 pl-4 text-sm text-ink">
               <li>Suas respostas ficam salvas no rascunho: você pode sair e voltar.</li>
               <li>Fotos claras, de dia e na horizontal, atraem mais pedidos.</li>
               <li>O que a IA sugere aparece com “Sugerido · confira”: nada vai ao anúncio sem você confirmar.</li>

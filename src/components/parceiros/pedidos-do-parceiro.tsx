@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList } from "lucide-react";
+import { CalendarDays, ClipboardList } from "lucide-react";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
 import { pedidosDoMeuParceiro } from "@/lib/parceiros/pedido-actions";
 import { proximoPasso, ROTULO_REGISTRO_SEM_DINHEIRO, rotuloStatus } from "@/lib/parceiros/pedido";
@@ -8,6 +8,7 @@ import { dataHoraBRT } from "@/lib/datas-brasilia";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const FECHADOS = ["aceito", "agendado", "em_execucao", "entregue", "concluido"];
+const NA_AGENDA = ["aceito", "agendado", "em_execucao"];
 
 /**
  * "Pedidos" e "Ganhos" do painel do parceiro (Prompt 31b, item 7): novos primeiro, cada um com o estado e o próximo
@@ -20,9 +21,13 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
   const total = fechados.reduce((t, p) => t + Math.round((p.valor ?? 0) * 100), 0) / 100;
   const taxa = fechados.reduce((t, p) => t + Math.round((p.valorTaxa ?? 0) * 100), 0) / 100;
   const liquido = fechados.reduce((t, p) => t + Math.round((p.valorParceiro ?? 0) * 100), 0) / 100;
+  // "Agenda" da barra do parceiro (Prompt 41): os horários já combinados, do mais próximo ao mais distante.
+  const agenda = pedidos
+    .filter((p) => p.horario && NA_AGENDA.includes(p.status))
+    .sort((a, b) => String(a.horario).localeCompare(String(b.horario)));
   return (
     <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <Panel title="Pedidos" data-testid="parceiro-pedidos">
+      <Panel id="pedidos" title="Pedidos" className="scroll-mt-24" data-testid="parceiro-pedidos">
         {pedidos.length === 0 ? (
           <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text="Quando alguém pedir um orçamento pela sua página, o pedido aparece aqui." />
         ) : (
@@ -47,17 +52,35 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
           </ul>
         )}
       </Panel>
-      <Panel title="Ganhos" data-testid="parceiro-ganhos">
-        <dl className="grid grid-cols-[1fr_auto] gap-y-1 text-sm">
-          <dt className="text-muted">Serviços fechados</dt>
-          <dd className="text-right text-ink">{brl(total)}</dd>
-          <dt className="text-muted">Taxa de serviço da Viva (10%)</dt>
-          <dd className="text-right text-ink">{brl(taxa)}</dd>
-          <dt className="font-semibold text-ink">Você recebe (90%)</dt>
-          <dd className="text-right font-semibold text-ink">{brl(liquido)}</dd>
-        </dl>
-        {!pagamentoAtivo && <p className="mt-3 text-xs text-muted">Valores como {ROTULO_REGISTRO_SEM_DINHEIRO}: o pagamento pela plataforma ainda não está ativo.</p>}
-      </Panel>
+      <div className="grid content-start gap-6">
+        <Panel id="agenda" title="Agenda" className="scroll-mt-24" data-testid="parceiro-agenda">
+          {agenda.length === 0 ? (
+            <EmptyState icon={CalendarDays} title="Nenhum horário combinado" text="Quando um horário for confirmado num pedido, ele aparece aqui." />
+          ) : (
+            <ul className="divide-y divide-line">
+              {agenda.map((p) => (
+                <li key={p.id}>
+                  <Link href={`/dashboard/servicos/pedidos/${p.id}`} className="flex min-h-11 items-center justify-between gap-2 py-3 text-sm" data-testid="parceiro-agenda-item">
+                    <span className="font-semibold text-ink">{dataHoraBRT(p.horario)}</span>
+                    <span className="text-muted">{rotuloCategoria(p.categoria)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+        <Panel id="ganhos" title="Ganhos" className="scroll-mt-24" data-testid="parceiro-ganhos">
+          <dl className="grid grid-cols-[1fr_auto] gap-y-1 text-sm">
+            <dt className="text-muted">Serviços fechados</dt>
+            <dd className="text-right text-ink">{brl(total)}</dd>
+            <dt className="text-muted">Taxa de serviço da Viva (10%)</dt>
+            <dd className="text-right text-ink">{brl(taxa)}</dd>
+            <dt className="font-semibold text-ink">Você recebe (90%)</dt>
+            <dd className="text-right font-semibold text-ink">{brl(liquido)}</dd>
+          </dl>
+          {!pagamentoAtivo && <p className="mt-3 text-xs text-muted">Valores como {ROTULO_REGISTRO_SEM_DINHEIRO}: o pagamento pela plataforma ainda não está ativo.</p>}
+        </Panel>
+      </div>
     </div>
   );
 }

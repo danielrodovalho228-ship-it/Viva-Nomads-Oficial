@@ -76,7 +76,8 @@ export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; p
         )}
         {status === "proposto" && !a.propostoPorMim && (
           <div className="flex flex-wrap items-center gap-3">
-            <Button variant="primary" size="sm" disabled={pendente} onClick={() => rodar(() => responderAditivo(a.id, "aceitar"), "Proposta aceita. Agora as duas partes assinam o aditivo.", (v) => setConfirmado((c) => ({ ...c, status: "aceito", taxaBase: v.taxaBase })))} data-testid="aditivo-aceitar">
+            {/* Um primário por tela (Prompt 41): o da estadia é "Mensagem"; responder e assinar ficam secundários. */}
+            <Button variant="secondary" size="sm" disabled={pendente} onClick={() => rodar(() => responderAditivo(a.id, "aceitar"), "Proposta aceita. Agora as duas partes assinam o aditivo.", (v) => setConfirmado((c) => ({ ...c, status: "aceito", taxaBase: v.taxaBase })))} data-testid="aditivo-aceitar">
               Aceitar
             </Button>
             <ConfirmarNaPagina aviso="Recusar mantém o contrato como está." confirmar="Recusar" onConfirmar={() => rodar(() => responderAditivo(a.id, "recusar"), "Proposta recusada. O contrato continua como estava.", () => setConfirmado((c) => ({ ...c, status: "recusado" })))} size="sm" testid="aditivo-recusar">
@@ -101,7 +102,7 @@ export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; p
               Li o aditivo e concordo com o que muda. As demais condições do contrato continuam as mesmas.
             </label>
             <Button
-              variant="primary"
+              variant="secondary"
               size="sm"
               disabled={pendente || codigo.length !== 6 || !aceite}
               onClick={() => rodar(() => assinarAditivo(a.id, codigo, aceite), "Assinatura registrada.", (v) => setConfirmado((c) => ({ ...c, assinei: true, status: v.completo ? "assinado" : c.status })))}

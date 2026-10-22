@@ -37,11 +37,11 @@ export function VideoModal({ url, title, onClose }: { url: string; title: string
           type="button"
           onClick={onClose}
           aria-label="Fechar vídeo"
-          className="absolute -top-11 right-0 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20"
+          className="absolute -top-11 right-0 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-sm font-medium text-white hover:bg-white/20"
         >
           <X className="h-4 w-4" /> Fechar
         </button>
-        <div className="aspect-video overflow-hidden rounded-2xl bg-black shadow-2xl">
+        <div className="aspect-video overflow-hidden rounded-xl bg-black">
           <iframe
             src={src}
             title={`Vídeo do imóvel ${title}`}
@@ -60,7 +60,7 @@ export function VideoWalkthrough({ url, title }: { url: string; title: string })
   if (!resolverVideoTour(url)) return null;
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={buttonClasses({ size: "sm" })}>
+      <button type="button" onClick={() => setOpen(true)} className={buttonClasses({ variant: "secondary", size: "sm" })}>
         <PlayCircle className="h-4 w-4" /> Ver vídeo do imóvel
       </button>
       {open && <VideoModal url={url} title={title} onClose={() => setOpen(false)} />}

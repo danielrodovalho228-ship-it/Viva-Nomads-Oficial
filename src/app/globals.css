@@ -420,8 +420,9 @@ html[data-app] body {
     right: 1.5rem;
   }
 }
+/* Prompt 41: o rodapé fixo do imóvel ganhou o total da estadia e "A Viva não segura dinheiro" (mais alto). */
 body:has([data-testid="imovel-largura-total"]) {
-  --ajuda-bottom: 11rem;
+  --ajuda-bottom: 13rem;
 }
 @media (min-width: 1024px) {
   body:has([data-testid="imovel-largura-total"]) {
@@ -478,4 +479,32 @@ input[type="date"]::-webkit-date-and-time-value {
 }
 input[type="date"][data-vazio]:not(:focus)::-webkit-datetime-edit {
   color: transparent;
+}
+
+/* Prompt 41 — botão flutuante "cogumelo" (Ações desta estadia, src/components/estadia/acoes-estadia.tsx): no canto do
+   "Fale com a Viva", acima da barra de abas no celular; o "Fale com a Viva" sobe 4 rem para não ser coberto (também
+   quando foi arrastado: --viva-piso). No app a barra de abas existe em qualquer largura. */
+:root {
+  --cogumelo-bottom: 5.25rem;
+}
+@media (min-width: 768px) {
+  :root {
+    --cogumelo-bottom: 1.5rem;
+  }
+}
+html[data-app] {
+  --cogumelo-bottom: calc(var(--altura-abas) + 1.75rem);
+}
+.vn-cogumelo {
+  right: 1rem;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--cogumelo-bottom));
+}
+@media (min-width: 768px) {
+  .vn-cogumelo {
+    right: 1.5rem;
+  }
+}
+body:has([data-testid="cogumelo"]) {
+  --ajuda-bottom: calc(var(--cogumelo-bottom) + 4rem);
+  --viva-piso: calc(var(--cogumelo-bottom) + 4rem);
 }

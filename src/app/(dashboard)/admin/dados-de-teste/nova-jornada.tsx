@@ -57,7 +57,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
           ))}
         </select>
       </label>
-      <Button variant="primary" onClick={() => setConfirmando(true)} disabled={ocupado || !tenantId || !propertyId} data-testid="jornada-criar">
+      <Button variant="secondary" onClick={() => setConfirmando(true)} disabled={ocupado || !tenantId || !propertyId} data-testid="jornada-criar">
         {ocupado ? "Criando..." : "Nova jornada de teste"}
       </Button>
       {confirmando && (

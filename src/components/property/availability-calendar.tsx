@@ -127,7 +127,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
 
   return (
     <section aria-labelledby="disp-title">
-      <h2 id="disp-title" className="flex items-center gap-2 font-title text-2xl font-bold text-ink">
+      <h2 id="disp-title" className="flex items-center gap-2 font-title text-2xl font-semibold text-ink">
         <CalendarDays className="h-6 w-6 text-forest" /> Disponibilidade
       </h2>
       <p className="mt-2 text-ink/90">
@@ -165,16 +165,16 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
             ...Array.from({ length: diasNoMes }, (_, i) => i + 1),
           ];
           return (
-            <div key={`${y}-${m}`} className="rounded-2xl border border-sage-200 p-3">
+            <div key={`${y}-${m}`} className="rounded-xl border border-sage-200 p-3">
               <p className="mb-2 text-center text-sm font-semibold capitalize text-ink">
                 {MESES[m]} {y}
               </p>
-              <div className="grid grid-cols-7 gap-0.5 text-center text-[10px] text-muted">
+              <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-muted">
                 {DIAS.map((d, i) => (
                   <span key={i}>{d}</span>
                 ))}
               </div>
-              <div className="mt-1 grid grid-cols-7 gap-0.5">
+              <div className="mt-1 grid grid-cols-7 gap-1">
                 {celulas.map((dia, i) => {
                   if (dia === null) return <span key={i} />;
                   const iso = ymd(new Date(y, m, dia));
@@ -194,13 +194,13 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                       aria-label={`${dia} de ${MESES[m]}${estado === "indisponivel" ? " (indisponível)" : ""}`}
                       data-estado-dia={estado}
                       className={cn(
-                        "grid aspect-square place-items-center rounded-md text-xs transition-colors",
+                        "grid aspect-square place-items-center rounded-lg text-xs transition-colors",
                         estado === "passado" && "cursor-not-allowed text-muted/40",
                         estado === "indisponivel" && "cursor-not-allowed bg-sage-200/60 text-muted line-through",
                         podeSelecionar && "text-forest hover:bg-sage-200",
                         podeSelecionar && !isIn && !isOut && !noIntervalo && "bg-sage-100 font-medium",
                         noIntervalo && "bg-sage-200 font-medium",
-                        (isIn || isOut) && "bg-forest font-bold text-white",
+                        (isIn || isOut) && "bg-forest font-semibold text-white",
                         isHoje && !isIn && !isOut && "ring-2 ring-champagne"
                       )}
                     >
@@ -215,23 +215,23 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-sage-100" /> Disponível
+        <span className="inline-flex items-center gap-2">
+          <span className="h-3 w-3 rounded-lg bg-sage-100" /> Disponível
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-forest" /> Selecionado
+        <span className="inline-flex items-center gap-2">
+          <span className="h-3 w-3 rounded-lg bg-forest" /> Selecionado
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-sage-200/60" /> <span className="line-through">Indisponível</span>
+        <span className="inline-flex items-center gap-2">
+          <span className="h-3 w-3 rounded-lg bg-sage-200/60" /> <span className="line-through">Indisponível</span>
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded ring-2 ring-champagne" /> Hoje
+        <span className="inline-flex items-center gap-2">
+          <span className="h-3 w-3 rounded-lg ring-2 ring-champagne" /> Hoje
         </span>
       </div>
 
       {/* Resumo da seleção + solicitar reserva */}
       {checkIn && (
-        <div className="mt-4 rounded-2xl border border-sage-200 bg-surface-2 p-4">
+        <div className="mt-4 rounded-xl border border-sage-200 bg-surface-2 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm">
               <p className="font-medium text-ink">
@@ -249,7 +249,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                 )}
               </p>
               {reserva && !reserva.ok && (
-                <p className="mt-1 flex items-center gap-1.5 text-xs text-amber-700">
+                <p className="mt-1 flex items-center gap-2 text-xs text-amber-700">
                   <CircleAlert className="h-3.5 w-3.5" /> {reserva.motivo}
                 </p>
               )}
@@ -269,7 +269,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
           </div>
 
           {enviado ? (
-            <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
+            <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
               <Check className="h-4 w-4" /> Solicitação enviada! Continue a conversa em{" "}
               <Link href="/dashboard/mensagens" className="font-medium underline">
                 Mensagens
@@ -277,14 +277,14 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
               .
             </p>
           ) : isDemo ? (
-            <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
+            <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
               <CircleAlert className="h-4 w-4 shrink-0" /> Anúncio de exemplo: esta solicitação não é enviada.{" "}
               <a href="#cartao-preco" className="font-medium underline">
                 Ver o caminho de reserva
               </a>
             </p>
           ) : isOwner ? (
-            <p className="mt-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
+            <p className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
               <CircleAlert className="h-4 w-4 shrink-0" /> Este é o seu imóvel — você não pode
               solicitá-lo.
               <Link href="/dashboard/imoveis" className="font-medium underline">
@@ -296,7 +296,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
               {!user ? (
                 <Link
                   href={`/auth?redirect=/imoveis/${property.id}`}
-                  className={buttonClasses({ size: "sm" })}
+                  className={buttonClasses({ variant: "secondary", size: "sm" })}
                 >
                   Entrar para enviar as datas
                 </Link>
@@ -305,12 +305,8 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                   type="button"
                   onClick={reservar}
                   disabled={!reserva?.ok || enviando}
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors",
-                    reserva?.ok && !enviando
-                      ? "bg-forest text-white hover:bg-forest/90"
-                      : "cursor-not-allowed bg-sage-200 text-muted"
-                  )}
+                  // Prompt 41: o primário da página é o "Solicitar"; enviar as datas é ação de apoio (secundário).
+                  className={buttonClasses({ variant: "secondary", size: "sm" })}
                 >
                   {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Enviar as datas ao proprietário

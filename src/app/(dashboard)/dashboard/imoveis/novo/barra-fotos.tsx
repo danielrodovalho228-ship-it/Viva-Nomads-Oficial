@@ -28,7 +28,7 @@ export function BarraFotos(p: {
           <Camera className="h-5 w-5 shrink-0 text-forest" aria-hidden />
           <p className="min-w-0 flex-1 text-sm text-ink" data-testid="barra-fotos-contador">
             {p.enviando ? (
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Enviando {Math.min(p.enviando.feitas + 1, p.enviando.total)} de {p.enviando.total}…
               </span>
             ) : (
@@ -49,7 +49,7 @@ export function BarraFotos(p: {
             type="button"
             onClick={() => input.current?.click()}
             disabled={!!p.enviando}
-            className={buttonClasses({ size: "sm", className: "disabled:opacity-60" })}
+            className={buttonClasses({ variant: "secondary", size: "sm", className: "disabled:opacity-60" })}
             data-testid="barra-fotos-adicionar"
           >
             Adicionar

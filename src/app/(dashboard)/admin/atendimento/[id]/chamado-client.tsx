@@ -154,7 +154,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                     m.interno ? "border border-dashed border-amber-300 bg-amber-50" : m.autor === "usuario" ? "bg-sage-100" : m.autor === "sistema" ? "bg-surface-2 text-muted" : "border border-line bg-white"
                   )}
                 >
-                  <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-muted">
+                  <span className="mb-1 flex items-center gap-2 text-xs font-semibold text-muted">
                     {m.interno && <Lock className="h-3.5 w-3.5" />} {AUTOR[m.autor]}
                     {m.interno ? " · nota interna" : ""} · {fmt(m.criado_em)}
                   </span>
@@ -164,7 +164,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                       {m.autor === "ia" && respostaDaSugestao(m.corpo) && !aprovadas.has(m.id) && !respondidaDepois(m.id) && (
                         <Button
                           size="sm"
-                          variant="gold"
+                          variant="secondary"
                           disabled={ocupado}
                           data-testid="aprovar-sugestao"
                           onClick={() => agir(() => aprovarSugestao(c.id, m.id))}
@@ -203,7 +203,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                         placeholder="Como a Viva deveria ter respondido (vira base para respostas prontas e FAQ)"
                         className="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none"
                       />
-                      <Button
+                      <Button variant="secondary"
                         size="sm"
                         className="mt-2"
                         disabled={ocupado}
@@ -229,7 +229,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 <label className="mb-2 block text-xs text-muted">
                   Resposta pronta
                   <select
-                    className="mt-0.5 block w-full rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink"
+                    className="mt-1 block w-full rounded-lg border border-line bg-white px-2 py-2 text-sm text-ink"
                     value=""
                     onChange={(e) => {
                       const m = macros.find((x) => x.id === e.target.value);
@@ -251,7 +251,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                     {gerando ? "A Viva está escrevendo uma sugestão…" : base ? (editada ? "Sugestão da Viva editada por você." : "Sugestão da Viva já está na caixa abaixo — revise e envie.") : "Sem sugestão ainda."}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <Button size="sm" variant="gold" disabled={ocupado || gerando || !base || editada || interno} data-testid="enviar-sugestao" onClick={async () => {
+                    <Button size="sm" variant="secondary" disabled={ocupado || gerando || !base || editada || interno} data-testid="enviar-sugestao" onClick={async () => {
                       if (base && (await agir(() => aprovarSugestao(c.id, base.mensagemId)))) {
                         setTexto("");
                         setBase(null);
@@ -300,10 +300,10 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
 
         <aside className="grid content-start gap-4">
           <Panel>
-            <p className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium", r.cor)}>
+            <p className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium", r.cor)}>
               <Clock className="h-3.5 w-3.5" /> 1ª resposta: {r.texto}
             </p>
-            <dl className="mt-3 space-y-1.5 text-sm">
+            <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between gap-2"><dt className="text-muted">Prazo 1ª resposta</dt><dd className="text-ink">{fmt(c.prazo_primeira_resposta)}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-muted">Prazo resolução</dt><dd className="text-ink">{fmt(c.prazo_resolucao)}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-muted">Aberto em</dt><dd className="text-ink">{fmt(c.criado_em)}</dd></div>
@@ -345,7 +345,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 defaultValue={c.prioridade}
                 disabled={ocupado}
                 onChange={(e) => agir(() => alterarChamado(c.id, { prioridade: e.target.value }))}
-                className="mt-0.5 block w-full rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink"
+                className="mt-1 block w-full rounded-lg border border-line bg-white px-2 py-2 text-sm text-ink"
               >
                 {(["p1", "p2", "p3", "p4"] as Prioridade[]).map((p) => (
                   <option key={p} value={p}>
@@ -370,7 +370,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 </Button>
               )}
               {c.status !== "resolvido" && c.status !== "encerrado" && (
-                <Button disabled={ocupado} onClick={() => agir(() => alterarChamado(c.id, { status: "resolvido" }))}>
+                <Button variant="secondary" disabled={ocupado} onClick={() => agir(() => alterarChamado(c.id, { status: "resolvido" }))}>
                   Marcar resolvido (pede a nota)
                 </Button>
               )}

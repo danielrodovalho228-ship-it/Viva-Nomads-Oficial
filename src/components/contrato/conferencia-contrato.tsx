@@ -136,8 +136,8 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   return (
     <section className="rounded-xl border border-line p-4" data-testid={`conferencia-${tipo}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-title text-base font-bold text-ink">{ROTULO_TIPO[tipo]}</h3>
-        <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest" data-testid={`conferencia-${tipo}-estado`}>
+        <h3 className="font-title text-base font-semibold text-ink">{ROTULO_TIPO[tipo]}</h3>
+        <span className="rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest" data-testid={`conferencia-${tipo}-estado`}>
           {ROTULO_ESTADO[estado]}
         </span>
       </div>
@@ -234,7 +234,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
             <>
               <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={1000} rows={3} placeholder="Conte o motivo da contestação" aria-label="Motivo da contestação" className="w-full rounded-lg border border-line p-3 text-sm" />
               <div className="flex gap-2">
-                <Button disabled={ocupado || !motivo.trim()} onClick={() => rodar(() => responderConferencia({ contratoId, tipo, decisao: "contestou", motivo }))}>
+                <Button variant="secondary" disabled={ocupado || !motivo.trim()} onClick={() => rodar(() => responderConferencia({ contratoId, tipo, decisao: "contestou", motivo }))}>
                   Enviar contestação
                 </Button>
                 <Button variant="outline" onClick={() => setContestando(false)}>

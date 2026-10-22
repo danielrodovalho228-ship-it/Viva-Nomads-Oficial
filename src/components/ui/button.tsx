@@ -93,13 +93,23 @@ export function buttonClasses({ variant = "primary", size = "md", className }: C
   return cn(base, tamanho, variants[variant], className);
 }
 
+/**
+ * Marca para a varredura "um primário por tela" (Prompt 41): `data-cta="primary"` só no primário
+ * (primary e os nomes antigos accent/gold); os demais botões padrão levam `data-cta=""`; o ghost, nenhum.
+ * Um `<a>`/`<button>` com `buttonClasses()` de primário marca à mão: `data-cta={marcaCta("primary")}`.
+ */
+export function marcaCta(variant: Variant = "primary"): "primary" | "" | undefined {
+  if (variant === "ghost") return undefined;
+  return variant === "primary" || variant === "accent" || variant === "gold" ? "primary" : "";
+}
+
 export function Button({
   variant = "primary",
   size = "md",
   className,
   ...props
 }: CommonProps & React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button className={buttonClasses({ variant, size, className })} data-cta={variant === "ghost" ? undefined : ""} {...props} />;
+  return <button className={buttonClasses({ variant, size, className })} data-cta={marcaCta(variant)} {...props} />;
 }
 
 export function ButtonLink({
@@ -109,5 +119,5 @@ export function ButtonLink({
   href,
   ...props
 }: CommonProps & { href: string } & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
-  return <Link href={href} className={buttonClasses({ variant, size, className })} data-cta={variant === "ghost" ? undefined : ""} {...props} />;
+  return <Link href={href} className={buttonClasses({ variant, size, className })} data-cta={marcaCta(variant)} {...props} />;
 }

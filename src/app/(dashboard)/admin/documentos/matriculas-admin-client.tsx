@@ -28,7 +28,7 @@ export function MatriculasAdmin({ itens, contadores }: { itens: MatriculaNaFila[
   }
   return (
     <section className="mt-8" data-testid="matriculas-admin" aria-labelledby="matriculas-titulo">
-      <h2 id="matriculas-titulo" className="font-title text-xl font-bold text-ink">
+      <h2 id="matriculas-titulo" className="font-title text-xl font-semibold text-ink">
         Matrículas — conferência do dono
       </h2>
       <p className="mt-1 text-sm text-muted">Cruzamos a matrícula com o CPF do perfil e a confirmação de identidade. Não consultamos o cartório.</p>
@@ -42,7 +42,7 @@ export function MatriculasAdmin({ itens, contadores }: { itens: MatriculaNaFila[
           { rotulo: "Tempo médio da equipe", valor: contadores.tempoMedioHoras == null ? "—" : `${contadores.tempoMedioHoras} h` },
         ].map((c) => (
           <div key={c.rotulo} className="rounded-xl border border-sage-200 bg-white p-3">
-            <p className="font-title text-2xl font-bold text-forest">{c.valor}</p>
+            <p className="font-title text-2xl font-semibold text-forest">{c.valor}</p>
             <p className="text-xs text-muted">{c.rotulo}</p>
           </div>
         ))}
@@ -62,7 +62,7 @@ export function MatriculasAdmin({ itens, contadores }: { itens: MatriculaNaFila[
 
 function Sim({ ok, rotulo }: { ok: boolean; rotulo: string }) {
   return (
-    <li className={cn("flex items-center gap-1.5", ok ? "text-green-800" : "text-red-700")}>
+    <li className={cn("flex items-center gap-2", ok ? "text-green-800" : "text-red-700")}>
       {ok ? <Check className="h-3.5 w-3.5" aria-hidden /> : <X className="h-3.5 w-3.5" aria-hidden />} {rotulo}
     </li>
   );
@@ -119,26 +119,26 @@ function MatriculaCard({ m, onDecidido }: { m: MatriculaNaFila; onDecidido: () =
           <div className="min-w-0 space-y-3 text-sm">
             <div data-testid="matricula-resumo">
               <p className="font-semibold text-ink">O que foi lido</p>
-              <ul className="mt-1 space-y-0.5 text-ink">
+              <ul className="mt-1 space-y-1 text-ink">
                 {m.resumo.length ? m.resumo.map((r) => <li key={r}>{r}</li>) : <li className="text-muted">Nada legível.</li>}
               </ul>
             </div>
             <div>
               <p className="font-semibold text-ink">Proprietários</p>
-              <ul className="mt-1 space-y-0.5 text-ink" data-testid="matricula-proprietarios">
+              <ul className="mt-1 space-y-1 text-ink" data-testid="matricula-proprietarios">
                 {m.proprietarios.length ? m.proprietarios.map((p) => <li key={p}>{p}</li>) : <li className="text-muted">Nenhum lido.</li>}
               </ul>
             </div>
             <div>
               <p className="font-semibold text-ink">Ônus em aberto</p>
-              <ul className="mt-1 space-y-0.5 text-ink" data-testid="matricula-onus">
+              <ul className="mt-1 space-y-1 text-ink" data-testid="matricula-onus">
                 {m.onus.length ? m.onus.map((o) => <li key={o}>{o}</li>) : <li className="text-muted">Nenhum.</li>}
               </ul>
             </div>
             <div data-testid="matricula-caf-laudo">
               <p className="font-semibold text-ink">Confirmação de identidade (CAF){m.caf?.simulado ? " — simulada" : ""}</p>
               {m.caf ? (
-                <ul className="mt-1 grid grid-cols-1 gap-0.5 sm:grid-cols-2">
+                <ul className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
                   <Sim ok={m.caf.identidade} rotulo="Identidade" />
                   <Sim ok={m.caf.documento} rotulo="Documento" />
                   <Sim ok={m.caf.provaDeVida} rotulo="Prova de vida" />
@@ -189,7 +189,7 @@ function MatriculaCard({ m, onDecidido }: { m: MatriculaNaFila; onDecidido: () =
             </>
           ) : (
             <>
-              <Button size="sm" disabled={busy} onClick={() => void decidir("aprovar")} data-testid="matricula-aprovar">
+              <Button variant="secondary" size="sm" disabled={busy} onClick={() => void decidir("aprovar")} data-testid="matricula-aprovar">
                 Aprovar
               </Button>
               <Button size="sm" variant="secondary" disabled={busy} onClick={() => setModo("pedir")} data-testid="matricula-pedir">

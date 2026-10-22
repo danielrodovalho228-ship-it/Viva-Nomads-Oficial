@@ -40,3 +40,13 @@ test("barra fixa mostra o TOTAL do mês quando informado (ordem 1a555bfa), não 
   assert.equal(b.valor, formatBRL(3760));
   assert.equal(barraFixaImovel({ monthlyPrice: 3000, exemplo: false, candidatouSe: false }).valor, formatBRL(3000));
 });
+
+test("Prompt 41: valor mensal + total pela duração escolhida; N = 1 mostra só /mês", () => {
+  const b = barraFixaImovel({ monthlyPrice: 3000, totalMensal: 3130, meses: 3, exemplo: false, candidatouSe: false });
+  assert.equal(b.mes, `${formatBRL(3130)}/mês`);
+  assert.equal(b.estadia, `${formatBRL(9390)} em 3 meses`);
+  const um = barraFixaImovel({ monthlyPrice: 3000, totalMensal: 3130, meses: 1, exemplo: false, candidatouSe: false });
+  assert.equal(um.mes, `${formatBRL(3130)}/mês`);
+  assert.equal(um.estadia, null);
+  assert.equal(barraFixaImovel({ monthlyPrice: 3000, exemplo: false, candidatouSe: false }).estadia, null);
+});

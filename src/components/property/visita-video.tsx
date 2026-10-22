@@ -17,6 +17,10 @@ type PropsVisita = {
   /** Voltou do login com ?abrir=video|visita: a janela abre sozinha. */
   abrirInicial?: boolean;
   onEntrar?: () => void;
+  /** Prompt 41: a visita é opção — "Agendar visita" em texto terciário (padrão: secundário). */
+  variante?: "secondary" | "tertiary";
+  /** Prompt 41: cada aumento abre a janela (o "Agendar visita" do rodapé fixo do celular). */
+  abrirSinal?: number;
 };
 
 /** Botão "Visita por vídeo" ao lado de "Solicitar reserva": até 3 horários nos próximos 7 dias. */
@@ -61,14 +65,19 @@ function PedidoVisita({
   abrirInicial = false,
   onEntrar,
   modalidade,
+  variante = "secondary",
+  abrirSinal = 0,
 }: PropsVisita & { modalidade: ModalidadeVisita }) {
   const t = TEXTOS[modalidade];
   const [abertoManual, setAberto] = useState(false);
   const [fechadoManual, setFechado] = useState(false);
-  const aberto = abertoManual || (abrirInicial && !fechadoManual);
+  // O sinal do rodapé abre sem efeito: fica aberto enquanto o sinal for maior que o do último fechamento.
+  const [fechadoNoSinal, setFechadoNoSinal] = useState(0);
+  const aberto = abertoManual || (abrirInicial && !fechadoManual) || abrirSinal > fechadoNoSinal;
   const fechar = () => {
     setAberto(false);
     setFechado(true);
+    setFechadoNoSinal(abrirSinal);
   };
   // Horários com CHAVE ESTÁVEL (complemento do prompt 23): o campo nunca é recriado nem zerado quando outro campo
   // (ex.: "Motivo da estadia") muda e a tela redesenha. O campo não recebe `value` controlado: um datetime-local meio
@@ -109,10 +118,9 @@ function PedidoVisita({
   return (
     <>
       <Button
-        variant="secondary"
+        variant={variante}
         size="md"
-        className="w-full"
-        data-cta
+        className={variante === "tertiary" ? "self-center" : "w-full"}
         data-testid={modalidade === "video" ? "visita-video-abrir" : "agendar-visita"}
         onClick={() => (semLogin && onEntrar ? onEntrar() : setAberto(true))}
       >
@@ -135,8 +143,8 @@ function PedidoVisita({
           data-testid={`${t.prefixo}-passo`}
           onClick={() => fechar()}
         >
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 id={`${t.prefixo}-titulo`} className="font-title text-lg font-bold text-ink">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-5 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 id={`${t.prefixo}-titulo`} className="font-title text-lg font-semibold text-ink">
               {t.titulo}
             </h3>
             {enviado ? (

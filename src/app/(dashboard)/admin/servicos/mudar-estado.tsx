@@ -23,7 +23,7 @@ export function MudarEstado({ id, status }: { id: string; status: string }) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
       {proximos.map((n) => (
-        <Button key={n} size="sm" variant={n === "cancelado" ? "secondary" : "primary"} disabled={ocupado} onClick={() => ir(n)}>
+        <Button key={n} size="sm" variant="secondary" disabled={ocupado} onClick={() => ir(n)}>
           {n === "cancelado" ? "Cancelar" : `Marcar: ${rotuloEstado(n)}`}
         </Button>
       ))}
