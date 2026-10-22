@@ -165,9 +165,14 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     await expect(d.getByTestId("pedido-aviso")).toHaveText("Fotos acrescentadas ao anúncio.", { timeout: 30_000 });
     const { count: fotosDepois } = await adm().from("property_photos").select("id", { count: "exact", head: true }).eq("property_id", ids.imovel!);
     expect(fotosDepois).toBe((fotosAntes ?? 0) + 2);
-    await d.getByTestId("pedido-concluir").click();
-    await d.getByRole("button", { name: "Confirmar a conclusão" }).last().click();
-    await expect(d.getByTestId("pedido-status")).toHaveText("Concluído", { timeout: 20_000 });
+    // O router.refresh() do "usar fotos" pode remontar o botão e fechar o aviso entre os dois cliques: refaz o par
+    // (abrir → confirmar) até o pedido concluir, em vez de depender de ordem fixa de cliques.
+    await expect(async () => {
+      if (await d.getByTestId("pedido-status").innerText() === "Concluído") return;
+      if (!(await d.getByTestId("pedido-concluir-confirmacao").isVisible())) await d.getByTestId("pedido-concluir").click();
+      await d.getByTestId("pedido-concluir-confirmar").click({ timeout: 3_000 });
+      await expect(d.getByTestId("pedido-status")).toHaveText("Concluído", { timeout: 5_000 });
+    }).toPass({ timeout: 40_000 });
 
     // 8) As duas avaliações: cegas até a segunda; depois publicadas e a nota vai para a página do parceiro.
     await d.getByTestId("pedido-nota-5").click();
