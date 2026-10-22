@@ -137,6 +137,10 @@ um computador com internet; uns 30 a 60 minutos.
 4. Se o Supabase recusar porque o objeto "já existe", apague só os registros de arquivos e repita o passo 3:
    `psql "$NOVA_URL" -c "delete from storage.objects"`.
 5. Algo apagado ou trocado nos últimos 30 dias está em `cripto:VivaNomads-Backup/storage/removidos/AAAA-MM-DD/`.
+6. **Reaplique o livro de eliminações** (Prompt 58): o que foi eliminado depois da cópia não pode voltar.
+   `DRILL_DB_URL="$NOVA_URL" SUPABASE_DB_URL="<banco antigo, se ainda responder>" node scripts/drill/conferir.ts livro`
+   (sem o banco antigo, vale o livro que veio na cópia). Tem de terminar com "0 depois de reaplicar". O teste de
+   restauração de domingo faz o mesmo e fica vermelho se algo eliminado voltar.
 
 ### B6. Apontar um preview da Vercel para o projeto novo
 

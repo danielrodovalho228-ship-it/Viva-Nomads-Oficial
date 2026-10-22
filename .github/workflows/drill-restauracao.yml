@@ -57,6 +57,8 @@ jobs:
       - name: Restaurar e conferir
         env:
           DRILL_ADMIN_URL: postgresql://postgres:drill@localhost:5432/postgres
+          # Prompt 58: só leitura do livro de eliminações da produção, para reaplicar no restaurado.
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: bash scripts/drill/drill.sh
 
       - name: Registrar no admin e alarmar
