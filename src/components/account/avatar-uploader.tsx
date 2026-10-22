@@ -190,7 +190,7 @@ export function AvatarUploader() {
  * O re-encode via canvas DESCARTA o EXIF do original (privacidade). Geometria
  * calculada por `squareCrop`/`outputSize` (puras, testadas).
  */
-async function processarImagem(file: File): Promise<Blob> {
+export async function processarImagem(file: File): Promise<Blob> {
   const bitmap = await loadBitmap(file);
   const crop = squareCrop(bitmap.width, bitmap.height);
   const out = outputSize(crop.size);

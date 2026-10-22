@@ -99,7 +99,7 @@ export function PerfilPublicoForm() {
         </div>
 
         <fieldset>
-          <legend className="mb-2 text-sm font-medium text-ink">Idiomas</legend>
+          <legend className="mb-2 text-sm font-semibold text-ink">Idiomas que fala</legend>
           <div className="flex flex-wrap gap-2">
             {IDIOMAS.map((i) => {
               const on = idiomas.includes(i);

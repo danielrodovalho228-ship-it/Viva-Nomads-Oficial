@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, LogOut, Plus } from "lucide-react";
@@ -172,28 +172,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // abre — um link de proprietário nunca cai na visão de inquilino. Só quando a
   // conta não tem o papel é que volta para a Visão geral. Rotas compartilhadas
   // (mensagens, conta, indicações, solicitações, verificação) valem nos dois.
-  // Guarda de rota por papel. Distingue DUAS situações que caem no mesmo estado
-  // (modo X + rota exclusiva do outro modo), mas pedem respostas opostas:
-  //  • MUDOU O MODO (o usuário clicou no seletor estando numa rota do modo
-  //    antigo) → ele quer trocar de mundo: sai para a Visão geral (item 4 — sem
-  //    reverter a escolha, o que causava "2 cliques para pegar");
-  //  • MUDOU A ROTA (deep-link/URL para uma rota exclusiva no modo errado) → ele
-  //    quer aquela tela: TROCA o modo para o certo se a conta tem o papel (B1),
-  //    senão volta para a Visão geral.
-  const prevGuard = useRef({ mode, pathname });
+  // Guarda de rota por papel. Prompt 43 (conta única, sem seletor): o CONTEXTO da tela decide o papel. Rota
+  // exclusiva do outro modo → troca o modo para o da tela (e grava no perfil) quando a conta tem o papel; senão vai
+  // ao convite (destinoForaDoPapel). Nunca expulsa para o Início só porque o modo mudou (ex.: a leitura do perfil
+  // chegando depois da navegação).
   useEffect(() => {
-    const prev = prevGuard.current;
-    const modeChanged = prev.mode !== mode;
-    prevGuard.current = { mode, pathname };
-
     const exclusive = mode === "owner" ? TENANT_ONLY : OWNER_ONLY;
     const hits = exclusive.some((p) => pathname === p || pathname.startsWith(p + "/"));
     if (!hits) return;
-
-    if (modeChanged) {
-      router.replace("/dashboard");
-      return;
-    }
     const target: ViewMode = mode === "owner" ? "tenant" : "owner";
     const contaTemPapel = target === "owner" ? isOwner : isTenant;
     if (contaTemPapel) {

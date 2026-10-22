@@ -4,15 +4,16 @@ import { readFileSync } from "node:fs";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 
 /*
-  T186 — Cadastro em 5 etapas (prompt 10) + documento conferido na hora (prompt 11) + Negociação (prompt 17 §8),
-  a 390 e 1280 px, com a IA, o OSM e o ViaCEP SIMULADOS (nada sai para a rede):
-  1. Onde fica: o CEP vem com foco e preenche rua, bairro e cidade; o documento fictício é conferido → ✓.
-  2. Fotos: 8 fotos; a IA analisa sozinha ao terminar.
-  3. O que encontramos: quartos, banheiros, pessoas e título com "Sugerido · confira"; comodidades pré-marcadas;
-     "Pronto para trabalhar de casa" com o contador; proximidades do OSM marcadas.
-  4. Preço e disponibilidade: valor mensal com o preço sugerido da região (mediana de 3 anúncios reais); um seletor de
-     data só (type=date, sem máscara); campos dentro do cartão; Negociação com desconto e limite privado.
-  5. Revisar: documento conferido; publica. O anúncio mostra o que o dono confirmou, e o limite privado não aparece.
+  T186 — Anunciar em 6 passos (Prompt 43, sobre o cadastro do prompt 10) + documento conferido na hora (prompt 11) +
+  Negociação (prompt 17 §8), a 390 e 1280 px, com a IA, o OSM e o ViaCEP SIMULADOS (nada sai para a rede):
+  1. Endereço e dados: o CEP vem com foco e preenche rua, bairro e cidade; o documento fictício é conferido → ✓.
+  2. Tipo e quartos: tipo, banheiros, pessoas e área (quartos fica vazio: a IA sugere pelas fotos).
+  3. Fotos: 8 fotos; a IA analisa sozinha ao terminar.
+  4. Comodidades e segurança: título com "Sugerido · confira"; comodidades pré-marcadas; "Pronto para trabalhar de
+     casa" com o contador; grupo Segurança; declaração das câmeras; proximidades do OSM marcadas.
+  5. Regras, valores e disponibilidade: valor mensal com o preço sugerido da região (mediana de 3 anúncios reais);
+     datas; campos dentro do cartão; Negociação com desconto e limite privado.
+  6. Revisar: documento conferido; publica. O anúncio mostra o que o dono confirmou, e o limite privado não aparece.
   Laboratório: o Supabase local é http e a regra do editor só aceita fotos https na pasta do dono; por isso as fotos
   do rascunho são trocadas pelas de teste (como em criarImovelPronto) antes de publicar.
 */
@@ -67,7 +68,7 @@ async function camposDentroDoCartao(page: Page, etapa: string) {
   expect(fora, "campo fora do cartão").toEqual([]);
 }
 
-test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados", () => {
+test.describe("T186 — Anunciar em 6 passos com IA, OSM e documento simulados", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (integrações simuladas).");
   test.describe.configure({ mode: "serial" });
   test.setTimeout(300_000);
@@ -110,9 +111,9 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
         r.fulfill({ json: { cep: "38400-100", logradouro: "Rua do Laboratório", bairro, localidade: "Uberlândia", uf: "MG" } }),
       );
 
-      // ── Etapa 1: Onde fica ───────────────────────────────────────────────
+      // ── Passo 1: Endereço e dados ───────────────────────────────────────
       await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-      await expect(page.getByRole("heading", { name: "Onde fica" })).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible({ timeout: 20_000 });
       const cep = page.getByTestId("cadastro-cep");
       await expect(cep).toBeFocused();
       await cep.fill("38400100");
@@ -137,7 +138,20 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
       await page.screenshot({ path: `${SAIDA}/t186-1-onde-fica-${largura}.png`, fullPage: true });
       await page.getByTestId("cadastro-continuar").click();
 
-      // ── Etapa 2: Fotos (a IA analisa sozinha) ────────────────────────────
+      // ── Passo 2: Tipo e quartos ─────────────────────────────────────────
+      await expect(page.getByRole("heading", { name: "Tipo e quartos" })).toBeVisible();
+      await expect(page.getByTestId("cadastro-tipo")).toHaveValue("apartamento");
+      await page.getByTestId("cadastro-continuar").click(); // vazio não avança: diz o que falta
+      await expect(page.getByText("Informe ao menos 1 banheiro.")).toBeVisible();
+      await page.getByTestId("cadastro-banheiros").fill("1");
+      await page.getByTestId("cadastro-capacidade").fill("4");
+      await page.getByTestId("cadastro-area").fill("52");
+      await camposDentroDoCartao(page, "etapa-espaco");
+      await semRolagemLateral(page);
+      await page.screenshot({ path: `${SAIDA}/t186-2-tipo-quartos-${largura}.png`, fullPage: true });
+      await page.getByTestId("cadastro-continuar").click();
+
+      // ── Passo 3: Fotos (a IA analisa sozinha) ───────────────────────────
       await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible();
       await page.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles(FOTOS);
       await expect(page.getByText(/^8\/40 fotos/)).toBeVisible({ timeout: 60_000 });
@@ -146,19 +160,16 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
       // Q7: a frase dos metadados é uma linha de texto só (não vira colunas).
       expect(await page.getByTestId("aviso-metadados").evaluate((el) => getComputedStyle(el).display)).toBe("block");
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t186-2-fotos-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t186-3-fotos-${largura}.png`, fullPage: true });
       await page.getByTestId("cadastro-continuar").click();
 
-      // ── Etapa 3: O que encontramos ──────────────────────────────────────
-      await expect(page.getByRole("heading", { name: "O que encontramos" })).toBeVisible();
+      // ── Passo 4: Comodidades e segurança ────────────────────────────────
+      await expect(page.getByRole("heading", { name: "Comodidades e segurança" })).toBeVisible();
       await expect(page.getByTestId("ia-resumo")).toBeVisible();
-      await expect(page.getByTestId("cadastro-quartos")).toHaveValue("2");
-      await expect(page.getByTestId("cadastro-banheiros")).toHaveValue("1");
-      await expect(page.getByTestId("cadastro-capacidade")).toHaveValue("4"); // 2 por quarto
       const titulo = await page.getByTestId("cadastro-titulo").inputValue();
       expect(titulo.length).toBeGreaterThan(10);
       expect(titulo.length).toBeLessThanOrEqual(60);
-      expect(await page.getByTestId("etapa-encontramos").getByTestId("marca-sugerido").count()).toBeGreaterThanOrEqual(4);
+      expect(await page.getByTestId("etapa-encontramos").getByTestId("marca-sugerido").count()).toBeGreaterThanOrEqual(2); // título e descrição
       // Comodidades pré-marcadas + bloco "Pronto para trabalhar de casa" com o contador.
       await expect(page.getByTestId("trabalho-contador")).toHaveText("3 de 4 itens essenciais");
       await expect(page.getByTestId("trabalho-mesa_trabalho")).toHaveAttribute("aria-pressed", "true");
@@ -171,16 +182,20 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
       await prox.filter({ hasText: "Academia" }).click(); // desmarca uma
       // Nenhuma imagem decorativa no meio do formulário.
       await expect(page.getByTestId("etapa-encontramos").locator("img")).toHaveCount(0);
-      await page.getByTestId("cadastro-area").fill("52");
-      await page.getByTestId("declaracao-sem-cameras").click(); // declaração obrigatória para publicar
+      // Segurança e imóvel: o grupo Segurança e a declaração das câmeras no mesmo bloco.
+      const seguranca = page.getByTestId("seguranca-imovel");
+      await seguranca.locator('[data-comodidade="detector_fumaca"]').click();
+      await expect(seguranca.locator('[data-comodidade="detector_fumaca"]')).toHaveAttribute("aria-pressed", "true");
+      await seguranca.getByTestId("declaracao-sem-cameras").click(); // declaração obrigatória para publicar
       await expect(page.getByTestId("declaracao-sem-cameras")).toHaveAttribute("aria-checked", "true");
       await camposDentroDoCartao(page, "etapa-encontramos");
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t186-3-o-que-encontramos-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t186-4-comodidades-${largura}.png`, fullPage: true });
       await page.getByTestId("cadastro-continuar").click();
 
-      // ── Etapa 4: Preço e disponibilidade ────────────────────────────────
-      await expect(page.getByRole("heading", { name: "Preço e disponibilidade" })).toBeVisible();
+      // ── Passo 5: Regras, valores e disponibilidade ──────────────────────
+      await expect(page.getByRole("heading", { name: "Regras, valores e disponibilidade" })).toBeVisible();
+      await expect(page.getByTestId("etapa-regras-casa")).toContainText("Aceita pets");
       await expect(page.getByTestId("cadastro-preco")).toHaveValue("3.200", { timeout: 15_000 });
       await expect(page.getByTestId("preco-regiao")).toContainText("Sugestão para imóveis parecidos na região");
       await expect(page.getByTestId("cadastro-consumo")).toHaveValue("220"); // 2 quartos
@@ -218,15 +233,15 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
       await page.getByTestId("limite-valor-minimo").fill("2950");
       await camposDentroDoCartao(page, "etapa-preco");
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t186-4-preco-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t186-5-regras-valores-${largura}.png`, fullPage: true });
       await page.getByTestId("cadastro-continuar").click();
 
-      // ── Etapa 5: Revisar e publicar ─────────────────────────────────────
+      // ── Passo 6: Revisar e publicar ─────────────────────────────────────
       await expect(page.getByRole("heading", { name: "Revisar e publicar" })).toBeVisible();
       await expect(page.getByTestId("revisar-documento")).toHaveAttribute("data-estado", "aprovado");
       await expect(page.getByTestId("previa-anuncio")).toContainText("6% de desconto a partir de 6 meses");
       await expect(page.getByTestId("qualidade-anuncio")).toBeVisible();
-      await page.screenshot({ path: `${SAIDA}/t186-5-revisar-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t186-6-revisar-${largura}.png`, fullPage: true });
       await esperarSalvo(page);
       await page.getByRole("button", { name: "Salvar como rascunho" }).click();
       await page.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
@@ -254,7 +269,7 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
         .eq("id", qual!.id);
       expect(eQual).toBeNull();
 
-      await page.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=4`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=5`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { name: "Revisar e publicar" })).toBeVisible({ timeout: 20_000 });
       await page.getByTestId("aceite-ia").getByRole("checkbox").check();
       await expect(page.getByTestId("publicar-anuncio")).toBeEnabled({ timeout: 20_000 });
@@ -278,7 +293,7 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
       const html = await p2.content();
       expect(html).not.toContain("2.950");
       expect(html).not.toMatch(/valor_?[mM]inimo|limpezas_?[mM]ax/);
-      await p2.screenshot({ path: `${SAIDA}/t186-6-anuncio-publicado-${largura}.png`, fullPage: false });
+      await p2.screenshot({ path: `${SAIDA}/t186-7-anuncio-publicado-${largura}.png`, fullPage: false });
       await publico.close();
       await page.context().close();
     });

@@ -245,6 +245,26 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               )}
             </div>
           </header>
+          {/* Prompt 43, item 5: o contexto da conversa no topo — estadia, pedido ou imóvel, com foto e datas. */}
+          {(active.property || active.pedidoParceiroId) && (
+            <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 md:px-4" data-testid="conversa-contexto">
+              {active.foto && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={active.foto} alt="" loading="lazy" className="h-12 w-16 shrink-0 rounded-lg object-cover" />
+              )}
+              <div className="min-w-0">
+                <p className="text-xs text-muted" data-testid="conversa-contexto-tipo">
+                  {active.contratoId ? "Estadia" : active.pedidoParceiroId ? "Pedido de serviço" : "Imóvel"}
+                </p>
+                {active.property && <p className="truncate text-sm font-semibold text-ink">{active.property}</p>}
+                {active.periodo && (
+                  <p className="text-xs text-muted" data-testid="conversa-contexto-datas">
+                    {active.periodo}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
           {!demo && active.propertyId && active.otherId && (
             <VisitaNaConversa propertyId={active.propertyId} outroId={active.otherId} />
           )}

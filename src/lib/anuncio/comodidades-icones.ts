@@ -1,7 +1,7 @@
 import {
   AirVent, Armchair, Bike, Building, Car, CookingPot, Dumbbell, Fan, Flame, Laptop, MonitorSmartphone,
   Refrigerator, Shirt, ShieldCheck, Sofa, Soup, Tv, UtensilsCrossed, VolumeX, Waves, WashingMachine,
-  Wifi, Camera, Microwave, Users, DoorOpen, Sun, Check, Lamp, Plug, type LucideIcon,
+  Wifi, Camera, Microwave, Users, DoorOpen, Sun, Check, Lamp, Plug, AlarmSmoke, FireExtinguisher, type LucideIcon,
 } from "lucide-react";
 import { AMENITY_KEY_BY_LABEL } from "../amenities.ts";
 
@@ -33,6 +33,8 @@ export const ICONE_POR_CHAVE: Record<string, LucideIcon> = {
   lavanderia: WashingMachine,
   bicicletario: Bike,
   vaga_garagem: Car,
+  detector_fumaca: AlarmSmoke,
+  extintor: FireExtinguisher,
 };
 
 /** Ícone de texto livre (comodidades antigas, sem chave): palavra-chave → ícone. */
@@ -53,6 +55,8 @@ const POR_PALAVRA: [RegExp, LucideIcon][] = [
   [/arm[aá]rio|guarda-?roupa|sof[aá]|mobili/, Sofa],
   [/roupa de cama|enxoval|toalha/, Shirt],
   [/garagem|estacionamento|vaga/, Car],
+  [/detector de fuma|fuma[cç]a/, AlarmSmoke],
+  [/extintor/, FireExtinguisher],
   [/portaria|seguran|alarme|fechadura|cofre/, ShieldCheck],
   [/c[aâ]mera/, Camera],
   [/piscina/, Waves],

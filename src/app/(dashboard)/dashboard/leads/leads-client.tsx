@@ -1,9 +1,12 @@
 "use client";
 
+import { VazioOnboardingBloco } from "@/components/onboarding/vazio-onboarding";
+import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
+
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Lock, Users, X, Check, Send, ArrowDownWideNarrow, MessageSquare, UserRound, BadgeCheck, Star, Dot } from "lucide-react";
-import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { Lock, X, Check, Send, ArrowDownWideNarrow, MessageSquare, UserRound, BadgeCheck, Star, Dot } from "lucide-react";
+import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { OwnerDecisionNotice } from "@/components/legal-notice";
 import { leadScore, leadSummary, type Lead, type Light } from "@/lib/data/lead-types";
@@ -97,11 +100,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
       )}
 
       {leads.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="Nenhum interessado ainda"
-          text="Quando um inquilino enviar uma consulta sobre seus imóveis, ele aparece aqui."
-        />
+        <VazioOnboardingBloco vazio={VAZIOS_ONBOARDING.interessados} />
       ) : (
         <>
           <p className="mb-3 flex items-center gap-2 text-xs text-muted">

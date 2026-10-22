@@ -50,6 +50,8 @@ export function EtapaRevisar(p: {
     !p.qualBaseBadge && { t: "Conquistar o selo Pronto para Morar na qualificação", v: "+20%" },
   ].filter(Boolean) as { t: string; v: string }[];
   const desconto = fraseDescontoCard(p.negociacao.descontos);
+  // Prompt 43: com os mínimos completos e ainda algo a melhorar, o botão diz que publica com o que tem.
+  const comOQueTem = !p.editingId && p.podePublicar && dicas.length > 0;
 
   return (
     <div className="space-y-4" data-testid="etapa-revisar">
@@ -172,9 +174,14 @@ export function EtapaRevisar(p: {
           className={p.podePublicar ? undefined : "cursor-not-allowed opacity-60"}
           data-testid="publicar-anuncio"
         >
-          {p.publishing ? "Salvando..." : p.editingId ? "Salvar alterações" : "Publicar anúncio"}
+          {p.publishing ? "Salvando..." : p.editingId ? "Salvar alterações" : comOQueTem ? "Publicar com o que tem" : "Publicar anúncio"}
         </Button>
       </div>
+      {comOQueTem && (
+        <p className="text-right text-xs text-muted" data-testid="publicar-com-o-que-tem">
+          Os mínimos estão completos. O que está em “Qualidade do anúncio” melhora a posição na busca e pode ser feito depois.
+        </p>
+      )}
     </div>
   );
 }

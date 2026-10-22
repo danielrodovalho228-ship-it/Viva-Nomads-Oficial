@@ -158,18 +158,13 @@ test.describe("T14 — Modo app", () => {
 
     test("Conta em lista e as 5 abas do proprietário", async ({ page }) => {
       test.skip(!hasAccount("proprietario"), "sem conta de teste do proprietário");
-      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+      // Prompt 43 (conta única): sem seletor de modo — abrir uma tela de dono põe a conta no contexto de proprietário,
+      // e a Conta (tela neutra) mantém o último contexto.
+      await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
       await esperarModoApp(page);
-      // Outro spec (T2) alterna o modo desta conta em paralelo: garante o modo.
-      // O seletor de dois lados da Conta (radio) substituiu o item "Usar como …".
-      const usarComoDono = page.getByRole("radio", { name: /Propriet/i, checked: false });
-      // Conta única (ordem a8c05cd0): não existe mais o seletor de modo no cabeçalho.
+      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("modo-chip")).toHaveCount(0);
-      if (await usarComoDono.isVisible()) {
-        await usarComoDono.click();
-        await expect(page).toHaveURL(/\/dashboard\/?$/);
-        await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-      }
+      await expect(page.getByRole("radio", { name: /Propriet|Inquilino/ })).toHaveCount(0);
       await conferirAbas(page, ABAS_PROPRIETARIO);
       await expect(page.locator("main").getByRole("link", { name: /^Perfil/ })).toBeVisible();
       await expect(page.getByRole("button", { name: /^Sair/ })).toBeVisible();

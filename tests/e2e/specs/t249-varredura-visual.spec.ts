@@ -65,8 +65,7 @@ const TELAS: Tela[] = [
 const ESPERADAS: Record<string, string> = {
   // Rodada 1 (lab-crítico do #984, 21/10): D-V1, D-V2, D-V4 e D-V6 passaram nas duas tentativas e viraram teste normal.
   // D-V3 e D-V5 não têm combinação no varrer geral (são verificados só no bloco "defeitos conhecidos").
-  // D-V7 (lab-crítico do #1021, 22/10): o título do rascunho em Meus imóveis aponta para a página pública (404).
-  "Meus imóveis|1280|d-console": "D-V7",
+  // D-V7 corrigido no #1028 (título em texto quando o anúncio não está no ar): a combinação voltou a reprovar.
   // D-V8 (lab-crítico do #1023, 22/10): /auth não tem <main>; a abertura acusa "sem <main> em 20 s" no critério c.
   "Entrar|390|c-overflow": "D-V8",
   "Entrar|1280|c-overflow": "D-V8",
@@ -194,7 +193,9 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
     test.skip(!temContaVarredura("DONO17"), "sem a conta DONO17");
     const { context, page } = await abrirComoConta(browser, "DONO17", "1280");
     await abrirRota(page, "/dashboard/imoveis");
-    const semFoto = await page.evaluate(async () => {
+    // As miniaturas carregam depois da tela: espera até 5 s, como imagensAcimaDaDobra (lab de 22/10: "imagem quebrada"
+    // na 1ª leitura às 02h42, 05h07 e no lab-crítico do #1040, sempre resolvida no retry).
+    const medir = () => page.evaluate(async () => {
       const titulos = Array.from(document.querySelectorAll("main *")).filter((e) => e.children.length === 0 && /\[Varredura\]/.test(e.textContent || ""));
       const ruins: string[] = [];
       for (const t of titulos) {
@@ -206,7 +207,7 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
       }
       return ruins;
     });
-    expect(semFoto).toEqual([]);
+    await expect.poll(medir, { timeout: 5_000, intervals: [250] }).toEqual([]);
     await context.close();
   });
 
@@ -236,7 +237,6 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
 
   test("D-V7 — Meus imóveis não aponta rascunho para a página pública (404)", async ({ browser }) => {
     test.skip(!temContaVarredura("DONO17"), "sem a conta DONO17");
-    test.fail(true, "D-V7: o título do cartão de rascunho é link para /imoveis/:id, que dá 404 (o botão 'Ver' já esconde)");
     const { context, page } = await abrirComoConta(browser, "DONO17", "1280");
     const naoAchados: string[] = [];
     page.on("response", (r) => {

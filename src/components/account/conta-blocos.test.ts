@@ -9,8 +9,8 @@ import { readFileSync } from "node:fs";
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 const CONTA = ler("src/app/(dashboard)/dashboard/conta/page.tsx");
 
-test("Conta: 4 blocos na ordem Perfil público → Dados da conta → Confiança e segurança → Preferências", () => {
-  const ordem = ["Perfil público", "Dados da conta", "Confiança e segurança", "Preferências"].map((t) => CONTA.indexOf(`titulo="${t}"`));
+test("Conta (Prompt 43): 4 grupos na ordem Conta → Notificações → Privacidade e segurança → Pagamentos", () => {
+  const ordem = ["Conta", "Notificações", "Privacidade e segurança", "Pagamentos"].map((t) => CONTA.indexOf(`titulo="${t}"`));
   assert.ok(ordem.every((i) => i > 0), `faltou bloco: ${ordem}`);
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
 });

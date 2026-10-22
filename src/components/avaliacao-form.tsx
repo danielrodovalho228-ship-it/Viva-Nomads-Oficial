@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Star, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { avaliar } from "@/lib/data/avaliacoes-actions";
-import { LIMITE_COMENTARIO, validarAvaliacao } from "@/lib/avaliacoes";
+import { LIMITE_COMENTARIO, partesDaAvaliacao, prazoAvaliacao, validarAvaliacao } from "@/lib/avaliacoes";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,6 +20,7 @@ export function AvaliacaoForm({
   titulo,
   placeholder,
   demo,
+  encerradoEm,
 }: {
   contratoId: string;
   alvoId: string;
@@ -28,6 +29,8 @@ export function AvaliacaoForm({
   titulo: string;
   placeholder: string;
   demo?: boolean;
+  /** Fim do contrato: dá o prazo (14 dias) mostrado nas duas partes. */
+  encerradoEm?: string | null;
 }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -37,6 +40,9 @@ export function AvaliacaoForm({
   const [enviado, setEnviado] = useState(false);
   const [moderacao, setModeracao] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Sem leitura no servidor ao abrir a tela (Prompt 42: nenhuma server action na navegação do painel); o estado
+  // "Aguardando a outra parte" vem do envio desta visita, e o banco recusa uma segunda avaliação do mesmo contrato.
+  const partes = <PartesAvaliacao euEnviei={enviado} prazo={prazoAvaliacao(encerradoEm)} />;
 
   async function enviar() {
     setErro(null);
@@ -57,7 +63,9 @@ export function AvaliacaoForm({
 
   if (enviado) {
     return (
-      <p className="mt-4 inline-flex items-center gap-2 border-t border-sage-200 pt-3 text-sm text-forest">
+      <>
+      {partes}
+      <p className="mt-3 inline-flex items-center gap-2 text-sm text-forest">
         <Check className="h-4 w-4" />
         {demo
           ? "Avaliação de exemplo registrada."
@@ -65,24 +73,29 @@ export function AvaliacaoForm({
             ? "Avaliação recebida. Ela passa por uma revisão da equipe antes de aparecer (o comentário tinha contato ou palavra que não publicamos)."
             : "Avaliação enviada. Ela aparece quando a outra parte também avaliar, ou em até 14 dias depois do fim do contrato."}
       </p>
+      </>
     );
   }
 
   if (!aberto) {
     return (
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        className="mt-4 inline-flex items-center gap-2 border-t border-sage-200 pt-3 text-sm font-medium text-forest hover:underline"
-      >
-        <Star className="h-4 w-4" /> {abrirLabel}
-      </button>
+      <>
+        {partes}
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-forest hover:underline"
+        >
+          <Star className="h-4 w-4" /> {abrirLabel}
+        </button>
+      </>
     );
   }
 
   return (
-    <div className="mt-4 border-t border-sage-200 pt-4">
-      <p className="text-sm font-medium text-ink">{titulo}</p>
+    <div>
+      {partes}
+      <p className="mt-3 text-sm font-semibold text-ink">{titulo}</p>
       <div className="mt-2 flex items-center gap-1" role="radiogroup" aria-label="Nota de 1 a 5">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
@@ -120,11 +133,29 @@ export function AvaliacaoForm({
         <button
           type="button"
           onClick={() => setAberto(false)}
-          className="text-xs font-medium text-muted underline hover:text-ink"
+          className="text-xs font-semibold text-muted underline hover:text-ink"
         >
           Cancelar
         </button>
       </div>
+    </div>
+  );
+}
+
+/** As duas partes da avaliação, com o prazo (Prompt 43, item 8). Às cegas: nunca diz se a outra parte já enviou. */
+function PartesAvaliacao({ euEnviei, prazo }: { euEnviei: boolean; prazo: string | null }) {
+  const p = partesDaAvaliacao(euEnviei, prazo);
+  return (
+    <div className="mt-4 border-t border-line pt-3" data-testid="avaliacao-partes" data-estado={euEnviei ? "aguardando" : "pendente"}>
+      <p className="text-sm font-semibold text-ink">Avaliação · {p.estado}</p>
+      <dl className="mt-1 divide-y divide-line text-sm">
+        {p.linhas.map((l) => (
+          <div key={l.quem} className="flex flex-wrap justify-between gap-x-3 py-2">
+            <dt className="text-ink">{l.quem}</dt>
+            <dd className="text-muted">{l.estado}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }

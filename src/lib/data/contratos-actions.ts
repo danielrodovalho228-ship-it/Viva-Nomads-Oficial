@@ -209,6 +209,8 @@ export interface LocacaoView {
   criadoEm: string;
   /** Janela de avaliação aberta (contrato encerrado há até 14 dias). Nunca em contrato aguardando assinatura. */
   podeAvaliar: boolean;
+  /** Fim do contrato (dá o prazo da avaliação, Prompt 43). */
+  encerradoEm: string | null;
   /** Pagamentos registrados pelo proprietário (o inquilino confirma → recibo). */
   pagamentos: PagamentoView[];
 }
@@ -246,6 +248,7 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
       estado,
       criadoEm: String(c.created_at),
       podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
+      encerradoEm: (c.encerrado_em as string | null) ?? null,
       pagamentos,
     };
   });

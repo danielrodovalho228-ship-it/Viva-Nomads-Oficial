@@ -28,6 +28,7 @@ import { Button, buttonClasses, marcaCta } from "@/components/ui/button";
 import { ShareButton } from "@/components/share-button";
 import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
 import { useAuthStore } from "@/lib/store";
+import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candidatura";
 import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
 import { IdealPara } from "@/components/property/ideal-para";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
@@ -559,6 +560,7 @@ export function PropertyDetail({
                     <span className="font-medium text-ink">Sua mensagem: </span>{apresentacao.trim().slice(0, 200)}
                   </p>
                 )}
+                {etapa === "confirmar" && !exemplo && <ConviteFotoCandidatura />}
                 {etapa === "confirmar" && <p className="mt-3 text-xs text-muted">{TERMOS_CANDIDATURA} <Link href="/termos" className="underline">Ler os termos</Link></p>}
               </>
             )}
