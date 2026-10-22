@@ -4501,7 +4501,17 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t287-admin-destinos-salvar"
+      ]
+    },
+    "src/lib/destinos/actions.ts#buscarPontoDestino": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t287-admin-destinos-salvar"
+      ]
     },
     "src/lib/automacao/acoes.ts#atualizarVinculo": {
       "personas": [
