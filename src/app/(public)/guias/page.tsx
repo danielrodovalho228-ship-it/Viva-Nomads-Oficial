@@ -18,7 +18,7 @@ const PUBLICO = { proprietarios: "Para proprietários", inquilinos: "Para inquil
 
 export default function GuiasPage() {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:py-14">
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:py-12">
       <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/guias", nome: "Guias", descricao: DESCRICAO })} />
       <h1 className="font-title text-[28px] font-semibold text-ink">Guias</h1>
       <p className="mt-2 text-muted">
@@ -29,7 +29,7 @@ export default function GuiasPage() {
           <li key={g.slug}>
             <Link
               href={`/guias/${g.slug}`}
-              className="block h-full rounded-xl border border-line bg-white p-5 transition hover:border-forest "
+              className="block h-full rounded-xl border border-line bg-white p-4 transition hover:border-forest "
             >
               <span className="flex items-center gap-2 text-xs font-semibold text-forest">
                 <BookOpen className="h-4 w-4" aria-hidden /> {PUBLICO[g.publico]}

@@ -19,6 +19,16 @@ import { CLASSES, PAGINAS_PUBLICAS as PAGINAS, escutarImagens, varrerPagina, typ
   Telas logadas: produção não tem as contas de teste (scripts/ci/e2e-alvo.sh); elas ficam com a t249 no laboratório.
 */
 const SAIDA = "tests/laboratorio/saida/varredura-paginas";
+/**
+  Defeitos conhecidos (página|classe), com o código do registro (tests/laboratorio/registro-defeitos.md): o achado que
+  casa vira anotação e linha "conhecido" no log, sem reprovar. Se nenhum achado casar nos dois tamanhos, o defeito saiu:
+  o teste reprova pedindo para tirar a entrada daqui (mesma catraca do test.fail da t249).
+*/
+const CONHECIDOS: Record<string, { codigo: string; casa: RegExp }> = {
+  // L-7 (lab de 82b4d9b, 22/10): cartões com fotoPronta false em src/lib/cartoes-secao.ts mostram só o fundo neutro.
+  "Empresas|foto": { codigo: "L-7", casa: /\[cartao-foto-pendente\]/ },
+  "Para proprietários|foto": { codigo: "L-7", casa: /\[cartao-foto-pendente\]/ },
+};
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
 test.describe("T274 — varredura da página inteira (visitante, 390 e 1280 px)", () => {
@@ -30,6 +40,7 @@ test.describe("T274 — varredura da página inteira (visitante, 390 e 1280 px)"
       const rota = typeof p.rota === "string" ? p.rota : await p.rota(request);
       test.skip(!rota, `${p.nome}: não existe neste alvo (sitemap/links sem essa família)`);
       const relatorio: Record<string, Record<string, string[]>> = {};
+      const conhecidosVistos = new Set<string>();
       for (const tam of TAMANHOS) {
         const ctx = await browser.newContext({ viewport: { width: tam.width, height: tam.height } });
         const page = await ctx.newPage();
@@ -42,13 +53,28 @@ test.describe("T274 — varredura da página inteira (visitante, 390 e 1280 px)"
           relatorio[tam.nome] = achados;
           for (const classe of Object.keys(CLASSES) as Classe[]) {
             await test.step(`${classe} @${tam.nome}`, async () => {
-              for (const a of achados[classe]) console.log(`VARREDURA|${classe}|${tam.nome}|${rota}|${a}`);
-              expect.soft(achados[classe], `${p.nome} @${tam.nome} — ${classe}: ${CLASSES[classe]} (${rota})`).toEqual([]);
+              const conhecido = CONHECIDOS[`${p.nome}|${classe}`];
+              const novos: string[] = [];
+              for (const a of achados[classe]) {
+                if (conhecido?.casa.test(a)) {
+                  conhecidosVistos.add(classe);
+                  console.log(`VARREDURA|${classe}|${tam.nome}|${rota}|conhecido ${conhecido.codigo}: ${a}`);
+                  test.info().annotations.push({ type: conhecido.codigo, description: `${p.nome} @${tam.nome} — ${a}` });
+                } else {
+                  console.log(`VARREDURA|${classe}|${tam.nome}|${rota}|${a}`);
+                  novos.push(a);
+                }
+              }
+              expect.soft(novos, `${p.nome} @${tam.nome} — ${classe}: ${CLASSES[classe]} (${rota})`).toEqual([]);
             });
           }
         } finally {
           await ctx.close();
         }
+      }
+      for (const classe of Object.keys(CLASSES) as Classe[]) {
+        const conhecido = CONHECIDOS[`${p.nome}|${classe}`];
+        if (conhecido) expect.soft(conhecidosVistos.has(classe), `${conhecido.codigo} não apareceu em ${p.nome} (${classe}): corrigido? Tire a entrada de CONHECIDOS`).toBe(true);
       }
       mkdirSync(SAIDA, { recursive: true });
       writeFileSync(`${SAIDA}/${slug(p.nome)}.json`, JSON.stringify({ pagina: p.nome, rota, achados: relatorio }, null, 2));

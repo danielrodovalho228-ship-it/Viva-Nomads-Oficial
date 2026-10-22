@@ -6,9 +6,10 @@
 */
 
 import type { Workspace, WorkspaceType } from "@/lib/types";
+import { chaveGoogle } from "./chave-google";
 
 export function isPlacesConfigured() {
-  return !!process.env.GOOGLE_PLACES_API_KEY;
+  return !!chaveGoogle();
 }
 
 const TYPE_QUERY: Record<WorkspaceType, string> = {
@@ -39,7 +40,7 @@ export async function findNearbyWorkspaces(params: {
     url.searchParams.set("location", `${params.lat},${params.lng}`);
     url.searchParams.set("radius", String(radius));
     url.searchParams.set("keyword", TYPE_QUERY[type]);
-    url.searchParams.set("key", process.env.GOOGLE_PLACES_API_KEY!);
+    url.searchParams.set("key", chaveGoogle());
 
     try {
       const res = await fetch(url.toString());

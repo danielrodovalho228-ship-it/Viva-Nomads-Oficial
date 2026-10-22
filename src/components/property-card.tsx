@@ -3,10 +3,9 @@ import { BadgeCheck, BadgePercent, PawPrint, Star } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
-import { mesesDoCartao, rotuloPrecoCartao } from "@/lib/cartao-preco";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { itensSintese } from "@/lib/cartao-sintese";
 import { isExemplo } from "@/lib/demo-listing";
-import { disponivelAPartirDe } from "@/lib/busca/disponibilidade";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ROTULO_SELO_UNICO, seloDoCartao, type SeloUnico } from "@/lib/card-selos";
@@ -28,9 +27,9 @@ export function PropertyCard({
   // "Tudo incluído" pela FONTE ÚNICA (valor mensal + condomínio + consumo fixo) — o mesmo número da página
   // do imóvel e do pino do mapa. O total da estadia = total do mês × meses (da busca ou a estadia mínima).
   const inc = calcularTudoIncluido(property);
-  const preco = rotuloPrecoCartao(inc.total, mesesDoCartao(periodMonths, property.minPeriodDays));
+  // Prompt 47: preço com contexto pela função única (mensal · total do período · disponível a partir de).
+  const preco = rotuloPreco({ mensal: inc.total, meses: mesesDoCartao(periodMonths, property.minPeriodDays), disponivelEm: property.availableFrom });
   const sintese = itensSintese(property);
-  const disponivel = disponivelAPartirDe(property.availableFrom);
   const selo = seloDoCartao({
     // Verificação do dono só quando o dado chega com o anúncio; exemplo nunca.
     verificado: !exemplo && property.owner?.verified === true,
@@ -126,9 +125,9 @@ export function PropertyCard({
         )}
 
         {/* Data de available_from (a agenda de bloqueios não vem na lista: ver "funcional pendente" do PR). */}
-        {disponivel && (
+        {preco.disponivel && (
           <p className="text-sm tabular-nums text-muted" data-testid="cartao-disponivel">
-            Disponível a partir de {disponivel}
+            {preco.disponivel}
           </p>
         )}
       </div>

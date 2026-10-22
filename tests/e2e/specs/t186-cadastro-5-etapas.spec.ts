@@ -132,7 +132,7 @@ test.describe("T186 — Anunciar em 6 passos com IA, OSM e documento simulados",
       const docEnviar = page.getByTestId("documento-vinculo").locator('input[type="file"]').first();
       await docEnviar.setInputFiles({ name: "matricula-ficticia.pdf", mimeType: "application/pdf", buffer: matriculaLab() });
       await expect(page.getByTestId("documento-estado")).toHaveAttribute("data-estado", "aprovado", { timeout: 30_000 });
-      await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida ✓");
+      await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida");
       await camposDentroDoCartao(page, "etapa-onde-fica");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t186-1-onde-fica-${largura}.png`, fullPage: true });

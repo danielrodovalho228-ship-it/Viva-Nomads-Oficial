@@ -19,25 +19,25 @@ export default function BoasVindasPage() {
   return (
     <main className="flex min-h-[100dvh] flex-col bg-white">
       {/* Foto no topo, colada na borda e por trás da barra de status (sem
-          padding-top). Em telas baixas (iPhone SE) encolhe para os botões
-          caberem sem rolar. */}
-      <div className="relative h-[50vh] min-h-[280px] w-full flex-none overflow-hidden [@media(max-height:700px)]:h-[42vh] [@media(max-height:700px)]:min-h-0">
+          padding-top), inteira e sem véu: nada de faixa branca nem gradiente por
+          cima. Em telas baixas (iPhone SE) encolhe para os botões caberem sem rolar. */}
+      <div className="relative h-[44vh] min-h-[280px] w-full flex-none overflow-hidden [@media(max-height:700px)]:h-[30vh] [@media(max-height:700px)]:min-h-0" data-testid="boas-vindas-foto">
         <Image
           src="/images/app/app-boas-vindas.webp"
           alt="Pessoa chegando com a mala a um imóvel mobiliado, abrindo a porta"
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[50%_40%]"
+          className="object-cover object-[50%_40%] sm:object-[50%_20%]"
         />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-white/80" />
       </div>
 
       <div
-        className="-mt-8 flex flex-1 flex-col justify-between px-6"
+        className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-between px-6 pt-6 [@media(max-height:700px)]:pt-4"
         style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom, 0px))" }}
       >
-        <div className="relative">
+        {/* A logo fica na área branca, acima do título, alinhada à margem do texto (24 px), fora da foto. */}
+        <div data-testid="boas-vindas-texto">
           <Logo href="/app/boas-vindas" />
           <h1 className="mt-3 font-title text-2xl font-semibold leading-tight text-ink [@media(max-height:700px)]:mt-3 [@media(max-height:700px)]:text-2xl">
             Imóveis mobiliados de 30 a 180 dias, com contrato de verdade.
@@ -56,7 +56,7 @@ export default function BoasVindasPage() {
           </Link>
           <Link
             href="/auth?papel=owner&cadastro=1"
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-forest px-5 py-4 text-base font-semibold text-forest [@media(max-height:700px)]:py-3"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-forest px-4 py-4 text-base font-semibold text-forest [@media(max-height:700px)]:py-3"
           >
             <Home className="h-5 w-5" /> Quero anunciar
           </Link>

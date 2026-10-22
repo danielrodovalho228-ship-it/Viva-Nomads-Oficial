@@ -1,11 +1,12 @@
 import { Wifi, Building2, Users, Coffee } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Property, WorkspaceType } from "@/lib/types";
 import { fraseInternetAnuncio } from "@/lib/internet";
 import { textoInternet } from "@/lib/internet-medida";
 import { INTERNET } from "@/config/internet";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA, iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 
-const WORKSPACE_ICONS: Record<WorkspaceType, React.ComponentType<{ className?: string }>> = {
+const WORKSPACE_ICONS: Record<WorkspaceType, LucideIcon> = {
   coworking: Building2,
   meeting_room: Users,
   cafe: Coffee,
@@ -36,7 +37,7 @@ export function WorkspaceSection({ property }: { property: Property }) {
       </h2>
 
       {hasInternet && (
-        <div className="mt-5 flex items-start gap-2 rounded-xl border border-champagne/40 bg-champagne/5 px-4 py-3 text-sm" data-testid="internet-imovel" data-tipo={internet?.tipo ?? "categoria"}>
+        <div className="mt-4 flex items-start gap-2 rounded-xl border border-champagne/40 bg-champagne/5 px-4 py-3 text-sm" data-testid="internet-imovel" data-tipo={internet?.tipo ?? "categoria"}>
           <Wifi className="mt-1 h-4 w-4 shrink-0 text-champagne-600" />
           <span className="text-ink">
             {internet?.tipo === "medida" ? (
@@ -82,7 +83,7 @@ export function WorkspaceSection({ property }: { property: Property }) {
                   key={w.name}
                   className="flex items-center gap-3 rounded-xl border border-sage-200 px-4 py-3"
                 >
-                  <Icon className="h-5 w-5 shrink-0 text-sage" />
+                  <Icon className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden />
                   <span>
                     <span className="block text-sm font-medium text-ink">{w.name}</span>
                     <span className="block text-xs text-muted">{WORKSPACE_LABEL[w.type]}</span>

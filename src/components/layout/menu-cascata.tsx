@@ -105,7 +105,7 @@ function No({
   aoNavegar: (href: string, e: React.MouseEvent) => void;
 }) {
   const Icone = ICONES[item.icone];
-  const recuo = nivel === 0 ? "pl-3" : nivel === 1 ? "pl-3" : "pl-7";
+  const recuo = nivel === 0 ? "pl-3" : nivel === 1 ? "pl-3" : "pl-8";
 
   if (item.href) {
     const ativo = rotaAtiva(item.href, pathname) && !item.href.includes("#");
@@ -156,7 +156,7 @@ function No({
         <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none", aberto && "rotate-180")} aria-hidden />
       </button>
       {aberto && (
-        <ul id={idLista} className={cn("mt-1 space-y-1", nivel === 0 && "border-l border-white/10 ml-5")}>
+        <ul id={idLista} className={cn("mt-1 space-y-1", nivel === 0 && "border-l border-white/10 ml-4")}>
           {item.filhos!.map((f) => (
             <No key={f.id} item={f} nivel={nivel + 1} pathname={pathname} badges={badges} abertos={abertos} alternar={alternar} aoNavegar={aoNavegar} />
           ))}

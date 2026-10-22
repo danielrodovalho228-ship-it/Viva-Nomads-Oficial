@@ -98,7 +98,7 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
         {!suspenso && p.status !== "publicado" && p.falta.length > 0 && (
           <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-ink" data-testid="parceiro-falta">
             <p className="font-semibold">Falta para publicar:</p>
-            <ul className="mt-1 list-disc pl-5">
+            <ul className="mt-1 list-disc pl-4">
               {p.falta.map((f) => (
                 <li key={f}>{f}</li>
               ))}

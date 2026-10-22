@@ -25,7 +25,7 @@ test("D4: aviso final da Verificação é um bloco de texto único, não colunas
 test("D6: conteúdo dos painéis reserva espaço inferior para o botão da Viva (celular)", () => {
   const f = ler("src/components/layout/dashboard-shell.tsx");
   const main = f.slice(f.indexOf("<main"), f.indexOf(">", f.indexOf("<main")));
-  assert.match(main, /pb-\[calc\(6rem\+env\(safe-area-inset-bottom\)\)\]/);
+  assert.match(main, /pb-\[calc\(var\(--folga-flutuante-celular\)\+env\(safe-area-inset-bottom\)\)\]/);
   assert.match(main, /sm:p-8/, "no computador o padding volta ao normal");
 });
 

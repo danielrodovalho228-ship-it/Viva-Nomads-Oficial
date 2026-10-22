@@ -74,7 +74,7 @@ export async function listMatriculasFila(limite = 40): Promise<MatriculaNaFila[]
     const [{ data: perfil }, prop, arq, casoArq, laudo] = await Promise.all([
       admin.from("profiles").select("full_name").eq("id", r.user_id as string).maybeSingle(),
       r.property_id ? admin.from("properties").select("title").eq("id", r.property_id as string).maybeSingle() : Promise.resolve({ data: null }),
-      admin.storage.from(BUCKET).createSignedUrl(r.arquivo_path as string, SIGNED_TTL),
+      r.arquivo_path ? admin.storage.from(BUCKET).createSignedUrl(r.arquivo_path as string, SIGNED_TTL) : Promise.resolve({ data: null }),
       r.caso_documento_path ? admin.storage.from(BUCKET).createSignedUrl(r.caso_documento_path as string, SIGNED_TTL) : Promise.resolve({ data: null }),
       admin
         .from("tenant_verifications")
@@ -107,7 +107,7 @@ export async function listMatriculasFila(limite = 40): Promise<MatriculaNaFila[]
       resultadoRotulo: ROTULO_RESULTADO[r.resultado as string] ?? (r.resultado as string),
       motivoRotulo: r.motivo ? (ROTULO_MOTIVO[r.motivo as string] ?? (r.motivo as string)) : null,
       arquivoUrl: (arq as { data: { signedUrl?: string } | null }).data?.signedUrl ?? null,
-      arquivoTipo: tipoVisualizacaoDoc(r.arquivo_path as string),
+      arquivoTipo: tipoVisualizacaoDoc((r.arquivo_path as string | null) ?? null),
       resumo,
       proprietarios: proprietariosParaAdmin(c),
       onus,
@@ -168,12 +168,15 @@ export async function decidirMatriculaAdmin(id: string, acao: "aprovar" | "pedir
   if (error) return { ok: false, error: "Não foi possível salvar a decisão." };
 
   const decisao = montarDecisaoDocumento(acao === "aprovar", motivoLimpo, user.id, agora);
-  await admin
-    .from("qualification_checklists")
-    .update({ ...decisao, conferido_por: acao === "aprovar" ? "equipe" : null, revisao_ate: null })
-    .eq("owner_id", alvo.user_id as string)
-    .eq("document_path", alvo.arquivo_path as string)
-    .neq("owner_id", user.id);
+  // Prompt 58: com o arquivo já eliminado (só o veredito ficou), não há qualificação ligada pelo caminho.
+  if (alvo.arquivo_path) {
+    await admin
+      .from("qualification_checklists")
+      .update({ ...decisao, conferido_por: acao === "aprovar" ? "equipe" : null, revisao_ate: null })
+      .eq("owner_id", alvo.user_id as string)
+      .eq("document_path", alvo.arquivo_path as string)
+      .neq("owner_id", user.id);
+  }
   revalidarAnuncio(alvo.property_id as string | null, revalidatePath);
   revalidatePath("/admin/documentos");
   revalidatePath("/admin", "layout"); // Prompt 36, item 3b: selo da barra lateral e "na fila agora"

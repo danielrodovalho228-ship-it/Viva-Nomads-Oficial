@@ -158,7 +158,7 @@ export default async function HomePage() {
 
       {/* ───────── PRONTO PARA TRABALHO (spotlight) ───────── */}
       <section className="bg-surface-2 section-y">
-        <div className="container-page grid items-center gap-10 lg:grid-cols-2">
+        <div className="container-page grid items-center gap-8 lg:grid-cols-2">
           <div className="relative order-2 lg:order-1">
             <BrandImage
               src={PHOTOS.homeOffice}
@@ -168,7 +168,6 @@ export default async function HomePage() {
             />
             <div className="absolute -right-4 -top-4 rounded-xl border border-line bg-white px-4 py-3">
               <p className="font-title text-lg font-semibold text-ink">Internet para home office</p>
-              <p className="text-xs text-muted">aguenta videochamadas pesadas</p>
             </div>
           </div>
 
@@ -177,7 +176,7 @@ export default async function HomePage() {
             <h2 className="mt-4 font-title font-semibold text-ink display-lg">
               Pronto para morar — e para trabalhar, se for o caso
             </h2>
-            <p className="mt-5 text-lg text-muted">
+            <p className="mt-4 text-lg text-muted">
               Mais que uma cama: além do selo{" "}
               <strong className="text-ink">{SELOS.prontoParaMorar.nome}</strong> ({SELOS.prontoParaMorar.resumo}),
               etiquetas mostram a aptidão de cada imóvel para o trabalho remoto.
@@ -186,8 +185,8 @@ export default async function HomePage() {
               <SpecTag kind="home_office" />
               <SpecTag kind="work_located" />
             </div>
-            <ul className="mt-8 space-y-5">
-              <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa, cadeira e internet boa para o trabalho — declarados pelo proprietário. É o que sustenta a etiqueta Para trabalhar de casa." />
+            <ul className="mt-8 space-y-4">
+              <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa e cadeira. Internet informada pelo proprietário; quando medida no imóvel, o anúncio mostra o número. É o que sustenta a etiqueta Para trabalhar de casa." />
               <WorkFeature icon={Building2} title="Coworkings e cafés na região" text="A vizinhança costuma ter espaços de trabalho — você confere a posição no mapa do imóvel." />
             </ul>
           </div>
@@ -202,7 +201,7 @@ export default async function HomePage() {
             <h2 className="mt-4 font-title font-semibold text-white display-lg">
               Uma categoria à parte: estadia de meses, com contrato de verdade.
             </h2>
-            <p className="mt-5 text-lg text-white/65">
+            <p className="mt-4 text-lg text-white/65">
               Contrato digital, custos organizados, conversa registrada na plataforma e o
               pagamento mensal direto na conta do proprietário. Tempo para morar no seu ritmo.
             </p>
@@ -212,22 +211,22 @@ export default async function HomePage() {
           <p className="mx-auto mt-12 max-w-4xl px-1 text-xs text-white/70 sm:hidden">
             Deslize para comparar →
           </p>
-          <div className="mx-auto mt-2 max-w-4xl rounded-xl border border-white/10 sm:mt-14">
+          <div className="mx-auto mt-2 max-w-4xl rounded-xl border border-white/10 sm:mt-12">
             {/* Rola na horizontal no celular: entra no Tab (tabIndex 0) e tem nome, para o teclado alcançar (axe scrollable-region-focusable). */}
             <div className="overflow-x-auto rounded-xl [scrollbar-width:thin] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" tabIndex={0} role="region" aria-label="Comparativo entre a Viva Nomads e outras plataformas">
               <table className="w-full min-w-[34rem] text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/[0.03]">
-                    <th className="sticky left-0 z-10 bg-night p-5 font-medium text-white/50">
+                    <th className="sticky left-0 z-10 bg-night p-4 font-medium text-white/50">
                       Comparativo
                     </th>
-                    <th className="p-5">
+                    <th className="p-4">
                       <span className="font-title text-base font-semibold text-white">
                         Viva Nomads
                       </span>
                     </th>
-                    <th className="p-5 font-title text-base font-semibold text-white/70">Airbnb</th>
-                    <th className="p-5 font-title text-base font-semibold text-white/70">QuintoAndar</th>
+                    <th className="p-4 font-title text-base font-semibold text-white/70">Airbnb</th>
+                    <th className="p-4 font-title text-base font-semibold text-white/70">QuintoAndar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06]">
@@ -240,7 +239,7 @@ export default async function HomePage() {
                 </tbody>
               </table>
             </div>
-            <p className="px-5 pb-4 pt-3 text-xs text-white/70">
+            <p className="px-4 pb-4 pt-3 text-xs text-white/70">
               Comparativo referente à locação mobiliada de média duração, conforme políticas
               públicas das plataformas. Informações conferidas em outubro de 2026.
             </p>
@@ -258,7 +257,7 @@ export default async function HomePage() {
             </h2>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 md:mt-12" data-testid="passos-home">
+          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 md:mt-12" data-testid="passos-home">
             <Step n="1" img={HOME_PASSOS_IMAGENS[0]} icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
             <Step n="2" img={HOME_PASSOS_IMAGENS[1]} icon={MessageSquare} title="Converse" text={PASSO_CONVERSE_TEXTO} />
             <Step n="3" img={HOME_PASSOS_IMAGENS[2]} icon={FileSignature} title="Assine com segurança" text="Caução combinada entre proprietário e inquilino e contrato assinado digitalmente, com validade jurídica." />
@@ -270,21 +269,21 @@ export default async function HomePage() {
       {/* ───────── FAIXA PROPRIETÁRIOS (preto de impacto) ───────── */}
       <section className="bg-surface section-y">
         <div className="container-page">
-          <div className="relative overflow-hidden rounded-xl bg-night px-8 py-14 text-white md:px-16 md:py-20" data-testid="bloco-proprietarios">
+          <div className="relative overflow-hidden rounded-xl bg-night px-8 py-12 text-white md:px-16 md:py-16" data-testid="bloco-proprietarios">
             {HOME_PROPRIETARIOS_FUNDO.pronta && (
               <>
                 <BrandImage src={HOME_PROPRIETARIOS_FUNDO.src} alt="" sizes="100vw" rounded="rounded-none" treat={false} className="absolute inset-0 h-full w-full" />
                 <div className="absolute inset-0 bg-night/75" />
               </>
             )}
-            <div className="relative grid items-center gap-10 md:grid-cols-2">
+            <div className="relative grid items-center gap-8 md:grid-cols-2">
               <div>
                 <Eyebrow light>Para proprietários</Eyebrow>
                 <h2 className="mt-4 font-title font-semibold display-lg">
                   Mais estabilidade e{" "}
                   <span className="text-white">menos tempo com o imóvel parado</span>.
                 </h2>
-                <p className="mt-5 max-w-md text-white/65">
+                <p className="mt-4 max-w-md text-white/65">
                   Um inquilino por uma estadia inteira traz previsibilidade: agenda estável,
                   custos de consumo organizados no contrato e tudo registrado na plataforma. Você
                   anuncia de graça. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.
@@ -327,7 +326,7 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="mt-6 md:mt-8 rounded-xl border border-dashed border-line bg-surface px-6 py-14 text-center">
+            <div className="mt-6 md:mt-8 rounded-xl border border-dashed border-line bg-surface px-6 py-12 text-center">
               <p className="font-title text-xl font-semibold text-ink">
                 Os primeiros imóveis estão chegando.
               </p>
@@ -382,7 +381,7 @@ function Step({
 }) {
   return (
     <div className="relative">
-      <BrandImage src={img.src} alt={img.alt} sizes="(max-width: 640px) 100vw, 50vw" className="mb-5 aspect-[16/9] w-full" />
+      <BrandImage src={img.src} alt={img.alt} sizes="(max-width: 640px) 100vw, 50vw" className="mb-4 aspect-[16/9] w-full" />
       <div className="flex items-center gap-4">
         <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-night font-title text-xl font-semibold text-white ring-8 ring-surface">
           {n}
@@ -423,10 +422,10 @@ function CompareRow({
 }) {
   return (
     <tr className="text-white/80">
-      <td className="sticky left-0 z-10 bg-night p-5 font-medium">{label}</td>
-      <td className="p-5"><Mark v={a} brand /></td>
-      <td className="p-5"><Mark v={b} /></td>
-      <td className="p-5"><Mark v={c} /></td>
+      <td className="sticky left-0 z-10 bg-night p-4 font-medium">{label}</td>
+      <td className="p-4"><Mark v={a} brand /></td>
+      <td className="p-4"><Mark v={b} /></td>
+      <td className="p-4"><Mark v={c} /></td>
     </tr>
   );
 }

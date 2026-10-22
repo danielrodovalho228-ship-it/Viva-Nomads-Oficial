@@ -304,7 +304,7 @@ test("cartão de anúncio: sem caixa (sem border nem shadow), foto 4:3 com raio 
   assert.match(c, /text-lg font-semibold text-forest" data-testid="cartao-preco-mes">\s*\{preco\.valor\}/);
   assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/); // sem "total" solto (QA)
   assert.doesNotMatch(c, /\/mês total/);
-  assert.match(c, /const preco = rotuloPrecoCartao\(inc\.total, mesesDoCartao\(periodMonths, property\.minPeriodDays\)\);/);
+  assert.match(c, /const preco = rotuloPreco\(\{ mensal: inc\.total, meses: mesesDoCartao\(periodMonths, property\.minPeriodDays\), disponivelEm: property\.availableFrom \}\);/);
   assert.match(c, /\{preco\.estadia && \(/); // N = 1: só "R$ X/mês"
   assert.match(c, /const sintese = itensSintese\(property\);/);
   assert.doesNotMatch(c, /IdealPara/); // ordem congelada: "Ideal para" fica na página do imóvel
@@ -451,6 +451,57 @@ test("rodapé: títulos de coluna 14/600, sem caixa alta nem tracking", () => {
   assert.doesNotMatch(r, /className="h-1 w-full/);
   // Textos de apoio: só /60–/80; /50 só no miúdo.
   for (const m of r.matchAll(/text-white\/(\d+)/g)) assert.ok(Number(m[1]) >= 50, m[0]);
+});
+
+/** Emoji e símbolos pictográficos (Prompt 47): fora da interface. Texto de usuário (mensagem, descrição) é dado do banco. */
+export const RE_EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}\u{2B55}]/u;
+
+test("Prompt 47: nenhum emoji na interface (src inteiro; comentários do código não contam)", () => {
+  const semComentario = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+  const achados: string[] = [];
+  for (const alvo of ["app", "components", "lib", "config"]) {
+    for (const f of arquivos(alvo)) {
+      if (f.startsWith("lib/estilo/") || f.endsWith(".css")) continue;
+      semComentario(ler(f))
+        .split("\n")
+        .forEach((l, i) => {
+          if (RE_EMOJI.test(l)) achados.push(`${f}:${i + 1} ${l.trim().slice(0, 80)}`);
+        });
+    }
+  }
+  assert.deepEqual(achados, []);
+  assert.match("Aceita 🎉", RE_EMOJI);
+  assert.doesNotMatch("Documentação conferida", RE_EMOJI);
+});
+
+test("Prompt 47: grade de 4 px — só 4/8/12/16/24/32/48/64", () => {
+  for (const ok of ["1", "2", "3", "4", "6", "8", "12", "16", "[24px]", "[3rem]", "(--folga-flutuante)", "px", "auto"]) assert.equal(espacoPermitido(ok), true, ok);
+  for (const nao of ["5", "7", "10", "14", "20", "28", "[20px]", "[40px]", "[6rem]"]) assert.equal(espacoPermitido(nao), false, nao);
+});
+
+test("ícones (Prompt 47): só lucide-react; listas e fatos do imóvel com 24 px e o mesmo traço", () => {
+  assert.match(ler("lib/anuncio/comodidades-icones.ts"), /CLASSE_ICONE_LISTA = "h-6 w-6 shrink-0 text-sage"/);
+  for (const arq of [
+    "components/property/amenities-grid.tsx",
+    "components/property/workspace-section.tsx",
+    "components/property/location-nearby.tsx",
+    "components/property/destaques-imovel.tsx",
+    "app/(public)/imoveis/[id]/property-detail.tsx",
+  ]) {
+    const t = ler(arq);
+    assert.match(t, /className=\{CLASSE_ICONE_LISTA\} strokeWidth=\{TRACO_ICONE_LISTA\}|className: CLASSE_ICONE_LISTA, strokeWidth: TRACO_ICONE_LISTA/, arq);
+  }
+  const outras = /from "(react-icons[^"]*|@heroicons[^"]*|@phosphor-icons[^"]*|@tabler\/icons[^"]*|@fortawesome[^"]*)"/;
+  const achados: string[] = [];
+  const andar = (dir: string): void => {
+    for (const n of readdirSync(join(SRC, dir))) {
+      const rel = join(dir, n);
+      if (statSync(join(SRC, rel)).isDirectory()) andar(rel);
+      else if (/\.tsx?$/.test(n) && outras.test(ler(rel))) achados.push(rel);
+    }
+  };
+  andar(".");
+  assert.deepEqual(achados, [], "biblioteca de ícones fora do lucide-react");
 });
 
 /** Regra "sem cara de IA" (Daniel, 21/10; Prompt 43): texto sem enchimento. Comentários do código não contam. */

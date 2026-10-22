@@ -314,7 +314,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
       )}
       {estado.tipo === "configurando" && (
         <form onSubmit={ativar} className="space-y-4">
-          <ol className="list-decimal space-y-1 pl-5 text-sm text-muted">
+          <ol className="list-decimal space-y-1 pl-4 text-sm text-muted">
             <li>Abra o app autenticador e escolha “adicionar conta”.</li>
             <li>No computador, leia o QR code. No próprio celular, copie a chave ou toque em “Abrir no app autenticador”.</li>
             <li>Digite o código de 6 números que o app mostrar.</li>

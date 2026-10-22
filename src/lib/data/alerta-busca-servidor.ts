@@ -9,6 +9,7 @@
  *  • Respeita `profiles.notif_email` e `buscas_salvas.alerta_ativo`.
  *  • Sem dado do proprietário no e-mail; só cidade/bairro (região aproximada).
  */
+import { totalMesDaLinha } from "@/lib/precos";
 import { chaveDoDestino, destinoDaUrl, type DestinoBusca } from "@/lib/busca/destino-busca";
 import { resolverDestino, temposAte } from "@/lib/data/tempos";
 import type { ModoRota } from "@/lib/rotas/tempo";
@@ -81,7 +82,7 @@ async function pendentes(admin: Admin, buscaId: string): Promise<ImovelNoAlerta[
   if (ids.length === 0) return [];
   const { data } = await admin
     .from("properties")
-    .select("id, title, city, neighborhood, monthly_price, bedrooms")
+    .select("id, title, city, neighborhood, monthly_price, bedrooms, condo_fee, utilities_mode, utilities_estimate, min_period_days, available_from")
     .in("id", ids)
     .eq("status", "active");
   return (data ?? []).map((r) => ({
@@ -91,6 +92,9 @@ async function pendentes(admin: Admin, buscaId: string): Promise<ImovelNoAlerta[
     neighborhood: (r.neighborhood as string) ?? "",
     monthlyPrice: Number(r.monthly_price) || 0,
     bedrooms: Number(r.bedrooms) || 0,
+    totalMes: totalMesDaLinha(r),
+    minPeriodDays: Number(r.min_period_days) || undefined,
+    availableFrom: (r.available_from as string | null) ?? null,
   }));
 }
 

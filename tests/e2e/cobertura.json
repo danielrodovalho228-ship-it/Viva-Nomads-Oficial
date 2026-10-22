@@ -13,7 +13,8 @@
         "t177-video-institucional",
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
-        "t201-qa-muse"
+        "t201-qa-muse",
+        "t283-home-internet-57"
       ]
     },
     "/acesso-socios": {
@@ -55,7 +56,7 @@
         "t255-admin-f15-f16-f18-f20",
         "t273-admin-decisoes",
         "t271-admin-visual",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/admin/2fa/refazer": {
@@ -102,7 +103,7 @@
         "t183-telas-logadas-390",
         "t255-admin-f15-f16-f18-f20",
         "t271-admin-visual",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -124,7 +125,7 @@
         "t93-avaliacao-tela",
         "t48-varredura",
         "t183-telas-logadas-390",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/admin/cidades": {
@@ -151,7 +152,7 @@
         "t237-correcoes-35a",
         "t241-contas-teste-36",
         "t271-admin-visual",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/admin/emails-teste": {
@@ -202,7 +203,7 @@
         "t239-cartao-parceiro",
         "t241-contas-teste-36",
         "t271-admin-visual",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/admin/pedidos": {
@@ -237,7 +238,7 @@
         "t183-telas-logadas-390",
         "t241-contas-teste-36",
         "t271-admin-visual",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/ajuda": {
@@ -269,7 +270,8 @@
       ],
       "specs": [
         "t14-app-mode",
-        "t16-app-boas-vindas"
+        "t16-app-boas-vindas",
+        "t282-boas-vindas-foto"
       ]
     },
     "/auth": {
@@ -335,6 +337,7 @@
         "publico"
       ],
       "specs": [
+        "t277-preco-grade-47",
         "t234-ideal-para",
         "t10-buscar-url",
         "t14-app-mode",
@@ -354,7 +357,7 @@
         "t232-pedido-moradia-completo",
         "t237-correcoes-35a",
         "t267-buscar-fotos-cartao",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/cidades": {
@@ -634,7 +637,7 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/dashboard/fechamento": {
@@ -697,7 +700,7 @@
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
         "t268-meus-imoveis-link",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -798,7 +801,7 @@
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
         "t209-jornada-dois-lados",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1045,6 +1048,7 @@
         "publico"
       ],
       "specs": [
+        "t277-preco-grade-47",
         "t234-ideal-para",
         "t11-travessias",
         "t133-candidatura-motivo",
@@ -1083,7 +1087,7 @@
         "t211-complemento-23",
         "t221-contrato-estado-periodo",
         "t237-correcoes-35a",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/modelodenegocio": {
@@ -1440,7 +1444,7 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t273-admin-decisoes",
-        "t281-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/dashboard/estadia/[contratoId]": {
@@ -1500,6 +1504,14 @@
       ],
       "specs": [
         "t264-viva-automatico"
+      ]
+    },
+    "/admin/retencao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t281-minimizacao"
       ]
     }
   },
@@ -3643,6 +3655,14 @@
       ],
       "specs": [
         "t51-admin-padrao-caixa-socios"
+      ]
+    },
+    "src/lib/socios/caixa-actions.ts#responderAceite": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t290-aceite-socio"
       ]
     },
     "src/lib/socios/caixa-actions.ts#relerArquivo": {

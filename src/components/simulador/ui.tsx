@@ -22,7 +22,7 @@ export function SimHero({
   stats: { label: string; valor: string }[];
 }) {
   return (
-    <section className="rounded-xl border border-sage-200 bg-white p-5 sm:p-6">
+    <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
@@ -191,12 +191,12 @@ export function CobrancaToggle({
 /** "Como calculamos" (prompt 15): as fórmulas em texto simples, abertas sob demanda. */
 export function ComoCalculamos({ itens, testid }: { itens: string[]; testid: string }) {
   return (
-    <details className="group mt-6 rounded-xl border border-sage-200 bg-white p-5" data-testid={testid}>
+    <details className="group mt-6 rounded-xl border border-sage-200 bg-white p-4" data-testid={testid}>
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-title text-base font-semibold text-ink">
         Como calculamos
         <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
       </summary>
-      <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-muted">
+      <ul className="mt-3 list-disc space-y-2 pl-4 text-sm text-muted">
         {itens.map((t) => (
           <li key={t}>{t}</li>
         ))}

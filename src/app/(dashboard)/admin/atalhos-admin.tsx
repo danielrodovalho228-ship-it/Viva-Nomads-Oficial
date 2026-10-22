@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Home, Users, FlaskConical, MapPinned, HandHelping, FileSignature, LifeBuoy, Mail, Megaphone, Star, TrendingUp, Wallet, Wrench } from "lucide-react";
+import { Bot, Home, Users, FlaskConical, MapPinned, HandHelping, FileSignature, LifeBuoy, Mail, Megaphone, ShieldCheck, Star, TrendingUp, Wallet, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Panel } from "@/components/dashboard/primitives";
 import { ListaNumeros } from "@/components/admin/numeros";
@@ -30,6 +30,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/avaliacoes", label: "Avaliações", icon: Star },
   { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
   { href: "/admin/agentes", label: "Agentes", icon: Bot },
+  { href: "/admin/retencao", label: "Dados e retenção", icon: ShieldCheck },
 ];
 
 export async function AtalhosAdmin() {
@@ -44,8 +45,11 @@ export async function AtalhosAdmin() {
     }
   };
   const admin = createAdminClient();
-  const [caixa, interessados, fotografos, agentes, visitas] = await Promise.all([
+  const meuUid = (await supabase.auth.getUser()).data.user?.id ?? null;
+  const [caixa, aceite, interessados, fotografos, agentes, visitas] = await Promise.all([
     contar(supabase.from("caixa_socios").select("id", { count: "exact", head: true }).in("status", ["novo", "precisa_daniel"])),
+    // Ordem 3c3d8a9e: pedidos que o MEU pedido espera aceitar (a RLS é só de admin; filtra pelo autor logado).
+    meuUid ? contar(supabase.from("caixa_socios").select("id", { count: "exact", head: true }).eq("status", "aguardando_aceite").eq("autor", meuUid)) : Promise.resolve("—"),
     contar(supabase.from("parceiros_interesse").select("id", { count: "exact", head: true }).eq("status", "novo")),
     contar(supabase.from("fotografos").select("id", { count: "exact", head: true }).eq("aprovado", false)),
     // Prompt 29, item 10: os números com nome, da mesma função da página de Agentes (o 263 somava pendentes + lidas).
@@ -57,6 +61,7 @@ export async function AtalhosAdmin() {
       <ListaNumeros
         itens={[
           { rotulo: "Caixa dos Sócios — a tratar", valor: caixa, href: "/admin/socios" },
+          { rotulo: "Caixa dos Sócios — aguardando seu aceite", valor: aceite, href: "/admin/socios" },
           { rotulo: "Parceiros — novos interessados", valor: interessados, href: "/admin/parceiros" },
           { rotulo: "Fotógrafos em análise", valor: fotografos, href: "/admin/fotografos" },
           { rotulo: `Equipe — ${AGENTES_DEFINICOES.aguardandoOk.rotulo.toLowerCase()}`, valor: agentes?.aguardandoOk ?? "—", href: "/admin/agentes" },

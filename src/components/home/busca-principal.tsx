@@ -25,7 +25,7 @@ export function BuscaPrincipal() {
         Para onde você vai?
       </label>
       {/* Barra de busca em pill com ícone (Prompt 40): campo + botão redondo de buscar. */}
-      <div className="flex items-center gap-2 rounded-full border border-line bg-white py-2 pl-5 pr-2" data-testid="barra-busca-home">
+      <div className="flex items-center gap-2 rounded-full border border-line bg-white py-2 pl-4 pr-2" data-testid="barra-busca-home">
         <Search className="h-5 w-5 shrink-0 text-ink" aria-hidden />
         <div className="min-w-0 flex-1">
           <CityAutocomplete

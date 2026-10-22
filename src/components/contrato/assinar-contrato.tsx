@@ -79,7 +79,7 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
   if (assinado) return null;
 
   return (
-    <form onSubmit={assinar} className="mt-5 space-y-3 border-t border-line pt-4" data-testid="form-assinar">
+    <form onSubmit={assinar} className="mt-4 space-y-3 border-t border-line pt-4" data-testid="form-assinar">
       <label className="flex items-start gap-2 text-sm text-ink">
         <input
           type="checkbox"

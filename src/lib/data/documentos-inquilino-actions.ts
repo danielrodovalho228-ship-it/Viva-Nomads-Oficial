@@ -44,7 +44,9 @@ export async function linkDocInquilino(leadId: string, tipo: string): Promise<{ 
   if (!tipoDocValido(tipo)) return { ok: false, error: "Documento inválido." };
   const ctx = await parteDaCandidatura(leadId);
   if (!ctx) return { ok: false, error: "Sem permissão." };
-  const { data: doc } = await ctx.admin.from("documentos_inquilino").select("caminho").eq("lead_id", leadId).eq("tipo", tipo).maybeSingle();
+  const { data: doc } = await ctx.admin.from("documentos_inquilino").select("caminho, arquivo_eliminado_em").eq("lead_id", leadId).eq("tipo", tipo).maybeSingle();
+  // Prompt 58: candidatura recusada — o arquivo sai depois do prazo e fica só o registro do envio.
+  if (doc?.arquivo_eliminado_em) return { ok: false, error: "Arquivo apagado pelo prazo de guarda. Fica só o registro do envio." };
   if (!doc?.caminho) return { ok: false, error: "Documento não enviado." };
   const { data: s } = await ctx.admin.storage.from(BUCKET_DOCS_INQUILINO).createSignedUrl(doc.caminho as string, LINK_TTL);
   return s?.signedUrl ? { ok: true, url: s.signedUrl } : { ok: false, error: "Não foi possível abrir agora." };

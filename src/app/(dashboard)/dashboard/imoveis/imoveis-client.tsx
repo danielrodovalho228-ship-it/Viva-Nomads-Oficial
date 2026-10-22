@@ -15,7 +15,10 @@ import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
 import { faixaDocumentoAprovado, type Prontidao } from "@/lib/anuncio/prontidao";
-import { formatBRL, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { calcularTudoIncluido } from "@/lib/precos";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
 const STATUS_META: Record<PropertyStatus, { label: string; tone: string }> = {
@@ -174,10 +177,10 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                     </div>
                   )}
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
-                    <span className="font-title text-xl font-semibold text-forest">
-                      {formatBRL(p.monthlyPrice)}
-                      <span className="text-sm font-normal text-muted">/mês</span>
-                    </span>
+                    <PrecoComContexto
+                      rotulo={rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
+                      destaque="lg"
+                    />
                     {/* Itens fictícios não têm página/edição real — sem links. */}
                     {!demoItem && (
                       <div className="flex flex-wrap gap-2">

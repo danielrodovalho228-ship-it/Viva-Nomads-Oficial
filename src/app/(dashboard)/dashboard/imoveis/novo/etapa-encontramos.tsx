@@ -113,7 +113,7 @@ export function EtapaEncontramos(p: {
 
   if (p.parte === "espaco") {
     return (
-      <div className="space-y-5" data-testid="etapa-espaco">
+      <div className="space-y-4" data-testid="etapa-espaco">
         <Labeled label="Tipo de imóvel" sugerido={p.tipoSugerido}>
           <select value={p.propertyType} onChange={(e) => p.setPropertyType(e.target.value)} className="input" data-testid="cadastro-tipo">
             {PROPERTY_TYPES.map((t) => (
@@ -148,7 +148,7 @@ export function EtapaEncontramos(p: {
   }
 
   return (
-    <div className="space-y-5" data-testid="etapa-encontramos">
+    <div className="space-y-4" data-testid="etapa-encontramos">
       {aviso}
       <ProntoParaTrabalhar
         marcadas={p.amenityKeys}
@@ -170,7 +170,7 @@ export function EtapaEncontramos(p: {
         </p>
       )}
 
-      <section className="space-y-3 border-t border-line pt-5" data-testid="seguranca-imovel">
+      <section className="space-y-3 border-t border-line pt-4" data-testid="seguranca-imovel">
         <h3 className="text-base font-semibold text-ink">Segurança e imóvel</h3>
         {AMENITY_GROUPS.filter((g) => g.category === "seguranca").map((g) => (
           <GrupoComodidades key={g.category} grupo={g} titulo={g.label} marcadas={p.amenityKeys} sugeridas={p.comodidadesSugeridas} onAlternar={alternar} />

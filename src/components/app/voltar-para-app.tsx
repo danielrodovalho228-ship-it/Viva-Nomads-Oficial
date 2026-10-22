@@ -24,7 +24,7 @@ export function VoltarParaApp({ className = "" }: { className?: string }) {
   return (
     <a
       href="vivanomads://perfil"
-      className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-forest px-5 text-sm font-semibold text-white ${className}`}
+      className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-forest px-4 text-sm font-semibold text-white ${className}`}
     >
       <Smartphone className="h-4 w-4" /> Voltar para o app
     </a>

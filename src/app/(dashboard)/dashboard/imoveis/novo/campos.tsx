@@ -209,7 +209,7 @@ export function CampoDataUnico({
           aria-label={ariaLabel}
           aria-invalid={antesDoMinimo || undefined}
           data-testid={testid}
-          className="input box-border block h-11 w-full min-w-0 max-w-full pr-11"
+          className="input box-border block h-11 w-full min-w-0 max-w-full pr-12"
         />
         <button
           type="button"

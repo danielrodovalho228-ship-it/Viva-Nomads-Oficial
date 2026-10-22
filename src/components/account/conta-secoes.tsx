@@ -295,7 +295,7 @@ export function DocumentoPessoa() {
               </p>
             )}
             {ok && <p className="mt-3 text-sm text-forest">Documento salvo.</p>}
-            <div className="mt-5">
+            <div className="mt-4">
               <Button variant="secondary" type="submit" disabled={salvando}>
                 {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Salvar documento
@@ -685,7 +685,7 @@ export function DangerZone() {
           <p className="text-sm font-medium text-red-700">
             Ao excluir, você perde permanentemente:
           </p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-700">
+          <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-red-700">
             <li>Dados pessoais e perfil de verificação</li>
             <li>Anúncios e imóveis cadastrados</li>
             <li>Favoritos, candidaturas e mensagens</li>

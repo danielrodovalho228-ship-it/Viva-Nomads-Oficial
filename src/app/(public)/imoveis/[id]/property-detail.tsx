@@ -74,6 +74,7 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
 import { videoTourPermitido } from "@/lib/video-tour";
+import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
 
 export function PropertyDetail({
   property: anuncio,
@@ -420,7 +421,7 @@ export function PropertyDetail({
       onClick={() => setComposeKind(null)}
     >
       <div
-        className="w-full max-w-md rounded-t-xl bg-white p-5 sm:rounded-xl"
+        className="w-full max-w-md rounded-t-xl bg-white p-4 sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-title text-lg font-semibold text-ink">
@@ -473,7 +474,7 @@ export function PropertyDetail({
       data-testid="solicitacao-passo"
       onClick={() => !candidatouSe && setSolicitacaoAberta(false)}
     >
-      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-5 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-4 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
         {candidatouSe ? (
           <div data-testid="candidatura-confirmada" className="flex flex-col gap-3 text-center">
             <CheckCircle2 className="mx-auto h-8 w-8 text-forest" />
@@ -627,7 +628,7 @@ export function PropertyDetail({
     // tiverem o cômodo marcado — o dado ainda não existe, então o bloco não aparece) → comodidades → regras →
     // disponibilidade → mapa aproximado → avaliações → proprietário; o rodapé fixo (celular) / cartão lateral
     // (computador) traz o valor e o "Solicitar".
-    <div className="mx-auto w-full max-w-[1536px] px-5 py-8 pb-64 sm:px-8 lg:px-7 lg:pb-8" data-testid="imovel-largura-total">
+    <div className="mx-auto w-full max-w-[1536px] px-4 py-8 pb-(--folga-rodape-imovel) sm:px-8 lg:pb-8" data-testid="imovel-largura-total">
       {composer}
       {solicitacao}
       <BarraFixaCelular
@@ -665,9 +666,9 @@ export function PropertyDetail({
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12">
         {/* Conteúdo (seções roláveis) */}
-        <div className="min-w-0 space-y-10">
+        <div className="min-w-0 space-y-12">
           {/* Visão geral: título, síntese, anfitrião, sinais de confiança, vídeo e descrição. */}
-          <div id="visao-geral" className="scroll-mt-36 space-y-10">
+          <div id="visao-geral" className="scroll-mt-36 space-y-12">
           <header>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm text-muted">
@@ -759,7 +760,7 @@ export function PropertyDetail({
           </div>
 
           {/* Comodidades (grade par, ícone por item) + regras da casa + o que é bom saber. */}
-          <div id="comodidades" className="scroll-mt-36 space-y-10">
+          <div id="comodidades" className="scroll-mt-36 space-y-12">
             <AmenitiesGrid property={property} />
             <WorkspaceSection property={property} />
             <StayRules property={property} />
@@ -770,7 +771,7 @@ export function PropertyDetail({
             <AvailabilityCalendar property={property} />
           </div>
           {/* Mapa aproximado (endereço exato só após o aceite). */}
-          <div id="localizacao" className="scroll-mt-36 space-y-10">
+          <div id="localizacao" className="scroll-mt-36 space-y-12">
             <LocationNearby property={property} />
             <GoogleProximities property={property} />
           </div>
@@ -820,5 +821,5 @@ function semSinaisInventados(p: Property): Property {
 /** Ícone de cada sinal de confiança do topo. */
 function IconeSinal({ tipo }: { tipo: SinalConfianca["tipo"] }) {
   const Icone = { disponibilidade: CalendarDays, resposta: Clock, desde: Handshake, codigo: Hash }[tipo];
-  return <Icone className={tipo === "codigo" ? "h-3.5 w-3.5" : "h-4 w-4 text-sage"} aria-hidden />;
+  return tipo === "codigo" ? <Icone className="h-4 w-4" aria-hidden /> : <Icone className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden />;
 }

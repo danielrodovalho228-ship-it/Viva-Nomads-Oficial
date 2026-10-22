@@ -101,8 +101,8 @@ export const VALORES_CASO: readonly string[] = CASOS_DONO.map((c) => c.valor);
 export const MATRICULA_ATUALIZADA_DIAS = 30;
 
 export const MSG_MATRICULA = {
-  conferido: "Documentação conferida ✓",
-  provavel: "Documentação conferida ✓",
+  conferido: "Documentação conferida",
+  provavel: "Documentação conferida",
   falta_identidade: "Documento recebido — falta confirmar sua identidade",
   identidade_nao_confirmada: "Documento recebido — não conseguimos confirmar sua identidade. A equipe confere em até 48 horas.",
   dono_diferente: "O nome ou o CPF da matrícula é diferente do seu cadastro. Escolha o seu caso e anexe o documento.",

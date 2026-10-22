@@ -23,7 +23,7 @@ alguém além do Code sabe fazer isso. Passo a passo de restauração: [RESTAURA
    apagado ou trocado vai para `storage/removidos/AAAA-MM-DD/` (30 dias);
 3. manifesto `manifestos/AAAA-MM-DD.json`: tamanho e SHA-256 do dump, linhas por tabela (lidas do próprio dump),
    objetos por bucket, migrações e o resultado das 5 consultas-chave. **Nenhum dado pessoal** (o teste confere);
-4. retenção: 14 diárias, 8 semanais (domingo) e 12 mensais (dia 1), regra pura `quaisFicam` em
+4. retenção: 14 diárias, 8 semanais (domingo) e 3 mensais (dia 1), regra pura `quaisFicam` em
    `src/lib/backup/retencao.ts`;
 5. resultado em `public.backups_execucoes` (migração 0191), que alimenta o cartão do `/admin`.
 

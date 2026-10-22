@@ -227,7 +227,7 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Ex.: caução, senha, anúncio não publica"
-          className="w-full rounded-xl border border-line bg-white py-3 pl-9 pr-3 text-sm text-ink focus:border-forest focus:outline-none"
+          className="w-full rounded-xl border border-line bg-white py-3 pl-12 pr-3 text-sm text-ink focus:border-forest focus:outline-none"
         />
       </label>
       {resultado.length === 0 ? (
@@ -438,7 +438,7 @@ function NovoChamado({
           {erro}
         </p>
       )}
-      <Button type="submit" className="mt-5" disabled={enviando}>
+      <Button type="submit" className="mt-4" disabled={enviando}>
         <Send className="h-4 w-4" /> {enviando ? "Enviando…" : "Enviar chamado"}
       </Button>
       <p className="mt-3 text-xs text-muted">

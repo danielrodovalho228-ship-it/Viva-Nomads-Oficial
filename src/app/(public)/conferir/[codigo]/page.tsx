@@ -94,7 +94,7 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
                 : "Nenhum documento com este código. Confira se o código está completo: são 32 letras e números."}
           </p>
         )}
-        <p className="mt-5 text-sm">
+        <p className="mt-4 text-sm">
           <Link href="/conferir" className="font-semibold text-forest underline">
             Conferir outro documento
           </Link>

@@ -97,6 +97,8 @@ export interface PedidoInput {
   orcamentoMin?: number | null;
   necessidades?: string[];
   portePet?: string | null;
+  /** Prompt 57 fase 2: download medido mínimo (50, 100 ou 300 Mbps). */
+  internetMinMbps?: number | null;
   /** Prompt 37: onde vai trabalhar ou estudar, meio e "até N min" (padrão: o local de trabalho salvo na conta). */
   destino?: { destinoSlug?: string; lat?: number; lng?: number; rotulo?: string; modo?: string; ate?: number } | null;
 }
@@ -145,6 +147,7 @@ function colunasDoPedido(input: PedidoInput, v: CamposValidados) {
     bairros: v.campos.bairros,
     quartos_min: v.campos.quartosMin,
     necessidades: v.campos.necessidades,
+    internet_min_mbps: v.campos.internetMinMbps,
   };
 }
 
@@ -441,7 +444,7 @@ export async function getRespostasRecebidas() {
   if (!user) return [];
   const { data } = await supabase
     .from("respostas_pedido")
-    .select("*, properties(id, title, city, monthly_price)")
+    .select("*, properties(id, title, city, monthly_price, condo_fee, utilities_mode, utilities_estimate, available_from)")
     .order("criado_em", { ascending: false });
   // A RLS já limita às respostas dos pedidos do inquilino (e às suas, se for dono).
   return data ?? [];
@@ -644,6 +647,7 @@ export interface PedidoParaDono {
   criancas: boolean;
   bairros: string[];
   quartos_min: number | null;
+  internet_min_mbps: number | null;
   necessidades: string[];
   selos: SeloPedido[];
   situacao: "compativel" | "quase" | "demais";
@@ -722,7 +726,7 @@ export async function getPedidosParaProprietario(): Promise<{
   if (admin && foraDoMural.length) {
     const { data } = await admin
       .from("pedidos_moradia")
-      .select("id, cidade, uf, data_inicio, prazo_meses, orcamento_min, orcamento_mensal, qtd_ocupantes, motivo, criado_em, expira_em, pets, porte_pet, criancas, bairros, quartos_min, necessidades")
+      .select("id, cidade, uf, data_inicio, prazo_meses, orcamento_min, orcamento_mensal, qtd_ocupantes, motivo, criado_em, expira_em, pets, porte_pet, criancas, bairros, quartos_min, necessidades, internet_min_mbps")
       .in("id", foraDoMural);
     for (const p of (data ?? []) as Record<string, unknown>[]) extras.push({ ...p, apresentacao: null, email_confirmado: true, telefone_confirmado: false, encerrado: true });
   }
@@ -772,6 +776,7 @@ export async function getPedidosParaProprietario(): Promise<{
       criancas: p.criancas === true,
       bairros: (p.bairros as string[] | null) ?? [],
       quartos_min: p.quartos_min == null ? null : Number(p.quartos_min),
+      internet_min_mbps: p.internet_min_mbps == null ? null : Number(p.internet_min_mbps),
       necessidades: (p.necessidades as string[] | null) ?? [],
       selos: selosDoPedido({
         emailConfirmado: p.email_confirmado === true,
@@ -877,7 +882,7 @@ export async function getMinhasRespostas(): Promise<Record<string, unknown>[]> {
   if (!user) return [];
   const { data } = await supabase
     .from("respostas_pedido")
-    .select("*, properties(id, title, city, monthly_price)")
+    .select("*, properties(id, title, city, monthly_price, condo_fee, utilities_mode, utilities_estimate, available_from)")
     .eq("proprietario_id", user.id)
     .order("criado_em", { ascending: false });
   return data ?? [];

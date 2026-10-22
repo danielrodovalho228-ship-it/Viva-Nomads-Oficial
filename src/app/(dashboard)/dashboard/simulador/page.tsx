@@ -94,7 +94,7 @@ export default function SimuladorPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Entradas */}
-        <div className="rounded-xl border border-sage-200 bg-white p-5">
+        <div className="rounded-xl border border-sage-200 bg-white p-4">
           <div className="flex items-center justify-between">
             <h2 className="font-title text-lg font-semibold text-ink">Seus números</h2>
             {properties.length > 0 && (
@@ -187,7 +187,7 @@ export default function SimuladorPage() {
           <p className="rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted" data-testid="sim-taxa-rotulo">
             {rotuloTaxaServico(faixa.taxa, aluguelMensal, mesesOcupados, res.comissaoAnual)} no ano.
           </p>
-          <div className="rounded-xl border border-forest bg-forest p-5 text-white" data-testid="sim-liquida">
+          <div className="rounded-xl border border-forest bg-forest p-4 text-white" data-testid="sim-liquida">
             <p className="text-sm text-white/80">Receita líquida estimada / ano</p>
             <p className="font-title text-2xl font-semibold">{formatBRL(res.receitaLiquidaAnual)}</p>
             <p className="mt-1 text-sm text-white/85">
@@ -206,7 +206,7 @@ export default function SimuladorPage() {
           </div>
 
           {/* Gráfico: para onde vai a receita do ano. */}
-          <div className="rounded-xl border border-sage-200 bg-white p-5" data-testid="sim-grafico">
+          <div className="rounded-xl border border-sage-200 bg-white p-4" data-testid="sim-grafico">
             <p className="text-sm font-medium text-ink">Para onde vai a receita do ano</p>
             <div className="mt-3 space-y-2">
               <BarraValor label="Receita bruta" valor={res.receitaBrutaAnual} max={maxBarra} tone="sage" formatar={formatBRL} />
@@ -249,7 +249,7 @@ export default function SimuladorPage() {
         </div>
       </div>
 
-      <section aria-labelledby="sim-cenarios" className="mt-6 rounded-xl border border-sage-200 bg-white p-5" data-testid="sim-cenarios">
+      <section aria-labelledby="sim-cenarios" className="mt-6 rounded-xl border border-sage-200 bg-white p-4" data-testid="sim-cenarios">
         <h2 id="sim-cenarios" className="font-title text-lg font-semibold text-ink">
           Cenários de ocupação
         </h2>

@@ -98,7 +98,7 @@ export default function EmpresasPage() {
           <h2 className="mt-4 font-title text-2xl font-semibold text-ink">Um lugar para morar, não um quarto de hotel</h2>
           <p className="mt-3 text-muted">Para times em projeto, realocação ou período de experiência em outra cidade.</p>
         </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+        <div className="mt-12 grid gap-4 md:grid-cols-3">
           {PILARES.map((p) => (
             <div key={p.titulo} className="flex flex-col overflow-hidden rounded-xl border border-line bg-white ">
               <FotoCartao cartao={cartaoSecao("empresas", p.id)} />
@@ -115,7 +115,7 @@ export default function EmpresasPage() {
       <section className="bg-surface-2 section-y" data-testid="empresas-como-funciona">
         <div className="container-page">
           <h2 className="text-center font-title text-2xl font-semibold text-ink">Como funciona para a empresa</h2>
-          <ol className="mt-10 grid gap-6 md:grid-cols-3">
+          <ol className="mt-12 grid gap-6 md:grid-cols-3">
             {PASSOS.map((p, i) => (
               <li key={p.titulo} className="overflow-hidden rounded-xl border border-line bg-white ">
                 <BrandImage src={p.foto} alt={p.alt} rounded="rounded-none" sizes="(max-width: 768px) 100vw, 33vw" className="aspect-[16/10] w-full" />
@@ -132,7 +132,7 @@ export default function EmpresasPage() {
 
       {/* Benefícios + foto. */}
       <section className="container-page section-y">
-        <div className="grid items-center gap-10 md:grid-cols-2">
+        <div className="grid items-center gap-8 md:grid-cols-2">
           <BrandImage src="/images/unicas/empresas-homeoffice.webp" alt="Espaço de trabalho em casa num imóvel mobiliado" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-xl" />
           <div>
             <h2 className="font-title text-2xl font-semibold text-ink">O que a empresa ganha</h2>
@@ -165,7 +165,7 @@ export default function EmpresasPage() {
           <h2 className="font-title text-2xl font-semibold text-ink">Perguntas rápidas</h2>
           <div className="mt-6 space-y-3">
             {FAQ_EMPRESAS.map((f) => (
-              <details key={f.p} className="rounded-xl border border-line bg-white p-5">
+              <details key={f.p} className="rounded-xl border border-line bg-white p-4">
                 <summary className="cursor-pointer font-semibold text-ink">{f.p}</summary>
                 <p className="mt-2 text-sm text-muted">{f.r}</p>
               </details>
@@ -175,7 +175,7 @@ export default function EmpresasPage() {
       </section>
 
       <section id="fale-com-a-gente" className="container-page section-y scroll-mt-24">
-        <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-5">
+        <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-5">
           <div className="md:col-span-2">
             <h2 className="font-title text-2xl font-semibold text-ink">Fale com a gente</h2>
             <p className="mt-3 text-muted">

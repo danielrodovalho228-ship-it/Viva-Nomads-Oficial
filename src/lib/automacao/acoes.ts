@@ -11,6 +11,7 @@ import { buscarParceiros } from "@/lib/data/parceiros-publico";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { evento, rota } from "@/lib/parceiros/pedido-servidor";
 import { automacaoDaEstadia, criarPedidoAutomatico, enviarAoParceiro } from "./servidor";
+import { textoConvite, textoResposta } from "./textos-vinculo";
 import { CATEGORIAS_VINCULO, emSilencio, ROTULO_GATILHO, type CategoriaVinculo, type Gatilho, type ModoVinculo } from "./pedidos-do-evento";
 
 /*
@@ -36,11 +37,11 @@ async function sessao(): Promise<{ admin: Admin; userId: string } | { erro: stri
   return { admin, userId: user.id };
 }
 
-async function avisoSimples(admin: Admin, destino: string, ev: NotificationEvent, url: string) {
+async function avisoSimples(admin: Admin, destino: string, ev: NotificationEvent, url: string, texto?: { subject: string; body: (n?: string) => string }) {
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url, semPush: emSilencio(new Date()) });
+    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url, semPush: emSilencio(new Date()), ...texto });
   } catch {
     /* aviso é complemento */
   }
@@ -160,8 +161,8 @@ export async function convidarParceiroFixo(e: EntradaVinculo): Promise<Res<{ id:
   const v = validarModoInstrucoes(e.modo, e.instrucoes);
   if ("erro" in v) return { ok: false, erro: v.erro };
   if (!UUID.test(e.parceiroId)) return { ok: false, erro: "Escolha o parceiro." };
-  const { data: parc } = await s.admin.from("parceiros").select("id, user_id, status, categorias").eq("id", e.parceiroId).maybeSingle();
-  const p = parc as { id: string; user_id: string; status: string; categorias: string[] | null } | null;
+  const { data: parc } = await s.admin.from("parceiros").select("id, user_id, status, categorias, nome_publico").eq("id", e.parceiroId).maybeSingle();
+  const p = parc as { id: string; user_id: string; status: string; categorias: string[] | null; nome_publico: string | null } | null;
   if (!p || p.status !== "publicado" || !(p.categorias ?? []).includes(e.categoria)) return { ok: false, erro: "Este parceiro não atende essa categoria agora." };
   if (p.user_id === s.userId) return { ok: false, erro: "Você não pode se convidar." };
   if (e.servicoId) {
@@ -176,16 +177,31 @@ export async function convidarParceiroFixo(e: EntradaVinculo): Promise<Res<{ id:
     .single();
   if (error?.code === "23505") return { ok: false, erro: `Este imóvel já tem ${rotuloCategoria(e.categoria).toLowerCase()} fixa. Encerre a atual para trocar.` };
   if (error || !data) return { ok: false, erro: "Não foi possível enviar o convite. Tente de novo." };
-  await avisoSimples(s.admin, p.user_id, "vinculo_parceiro_convite", "/dashboard/parceiro#imoveis-fixos");
+  const { data: dono } = await s.admin.from("profiles").select("full_name").eq("id", s.userId).maybeSingle();
+  await avisoSimples(
+    s.admin,
+    p.user_id,
+    "vinculo_parceiro_convite",
+    "/dashboard/parceiro#imoveis-fixos",
+    textoConvite({ categoria: e.categoria, tituloImovel: im.title, cidade: im.city, nomeDono: (dono as { full_name: string | null } | null)?.full_name ?? null, nomeParceiro: p.nome_publico }),
+  );
   revalidatePath(rotaParceiros(im.id));
   return { ok: true, valor: { id: (data as { id: string }).id } };
 }
 
-type LinhaVinculo = { id: string; property_id: string; categoria: string; status: string; parceiro_id: string; properties: { owner_id: string } | null; parceiros: { user_id: string } | null };
+type LinhaVinculo = {
+  id: string;
+  property_id: string;
+  categoria: string;
+  status: string;
+  parceiro_id: string;
+  properties: { owner_id: string; title: string | null; city: string | null } | null;
+  parceiros: { user_id: string; nome_publico: string | null } | null;
+};
 
 async function carregarVinculo(admin: Admin, vinculoId: string): Promise<LinhaVinculo | null> {
   if (!UUID.test(vinculoId)) return null;
-  const { data } = await admin.from("imovel_parceiros").select("id, property_id, categoria, status, parceiro_id, properties(owner_id), parceiros(user_id)").eq("id", vinculoId).maybeSingle();
+  const { data } = await admin.from("imovel_parceiros").select("id, property_id, categoria, status, parceiro_id, properties(owner_id, title, city), parceiros(user_id, nome_publico)").eq("id", vinculoId).maybeSingle();
   return (data as unknown as LinhaVinculo | null) ?? null;
 }
 
@@ -260,7 +276,10 @@ export async function responderConviteFixo(vinculoId: string, aceitar: boolean):
     .eq("status", "pendente")
     .select("id");
   if (!data?.length) return { ok: false, erro: "O convite mudou. Atualize a página." };
-  if (v.properties?.owner_id) await avisoSimples(s.admin, v.properties.owner_id, "vinculo_parceiro_resposta", rotaParceiros(v.property_id));
+  if (v.properties?.owner_id) {
+    const dados = { categoria: v.categoria, tituloImovel: v.properties.title, cidade: v.properties.city, nomeDono: null, nomeParceiro: v.parceiros?.nome_publico ?? null };
+    await avisoSimples(s.admin, v.properties.owner_id, "vinculo_parceiro_resposta", rotaParceiros(v.property_id), textoResposta(dados, aceitar));
+  }
   revalidatePath("/dashboard/parceiro");
   return { ok: true, valor: null };
 }

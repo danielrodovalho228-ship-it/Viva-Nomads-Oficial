@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { guardContactInfo } from "./contact-guard.ts";
 
-const MASK = "🔒 [contato protegido]";
+const MASK = "[contato protegido]";
 
 test("mascara celular com DDD (formatado)", () => {
   const r = guardContactInfo("me chama no (34) 99999-0001 por favor");

@@ -95,7 +95,7 @@ export function PlacesPicker({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar lugar real (ex.: ASA Coworking)…"
-            className="w-full rounded-xl border border-sage-200 bg-white py-3 pl-9 pr-3 text-sm outline-none focus:border-sage"
+            className="w-full rounded-xl border border-sage-200 bg-white py-3 pl-12 pr-3 text-sm outline-none focus:border-sage"
           />
           {(suggestions.length > 0 || loading) && (
             <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-sage-200 bg-white shadow-flutuante">
