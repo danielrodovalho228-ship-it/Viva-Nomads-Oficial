@@ -52,7 +52,9 @@
         "t207-cep-matricula-identidade",
         "t231-admin-numeros-com-lista",
         "t254-admin-aviso-atendimento",
-        "t255-admin-f15-f16-f18-f20"
+        "t255-admin-f15-f16-f18-f20",
+        "t273-admin-decisoes",
+        "t271-admin-visual"
       ]
     },
     "/admin/2fa/refazer": {
@@ -97,7 +99,8 @@
         "t24-atendimento-acolhimento",
         "t25-chamado-resumo",
         "t183-telas-logadas-390",
-        "t255-admin-f15-f16-f18-f20"
+        "t255-admin-f15-f16-f18-f20",
+        "t271-admin-visual"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -143,7 +146,8 @@
         "t195-matricula-caf",
         "t220-recibo-assinatura",
         "t237-correcoes-35a",
-        "t241-contas-teste-36"
+        "t241-contas-teste-36",
+        "t271-admin-visual"
       ]
     },
     "/admin/emails-teste": {
@@ -163,7 +167,8 @@
       "specs": [
         "t15-admin-real",
         "t183-telas-logadas-390",
-        "t231-admin-numeros-com-lista"
+        "t231-admin-numeros-com-lista",
+        "t271-admin-visual"
       ]
     },
     "/admin/fotografos": {
@@ -191,7 +196,8 @@
         "t201-qa-muse",
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
-        "t241-contas-teste-36"
+        "t241-contas-teste-36",
+        "t271-admin-visual"
       ]
     },
     "/admin/pedidos": {
@@ -224,7 +230,8 @@
         "t178-telefone-sms",
         "t48-varredura",
         "t183-telas-logadas-390",
-        "t241-contas-teste-36"
+        "t241-contas-teste-36",
+        "t271-admin-visual"
       ]
     },
     "/ajuda": {
@@ -1301,7 +1308,8 @@
       "specs": [
         "t229-admin-conversa-com-tudo",
         "t48-varredura",
-        "t240-conferencia-provas-admin"
+        "t240-conferencia-provas-admin",
+        "t271-admin-visual"
       ]
     },
     "/admin/solicitacoes": {
@@ -1384,7 +1392,8 @@
         "admin"
       ],
       "specs": [
-        "t240-conferencia-provas-admin"
+        "t240-conferencia-provas-admin",
+        "t271-admin-visual"
       ]
     },
     "/dashboard/servicos/pedidos/[id]": {
@@ -1418,7 +1427,8 @@
         "admin"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t273-admin-decisoes"
       ]
     },
     "/dashboard/estadia/[contratoId]": {

@@ -1,7 +1,8 @@
 import { dataBRT } from "@/lib/datas-brasilia";
-import { CheckCircle2, MapPinned, PauseCircle, Users } from "lucide-react";
+import { MapPinned, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { rankingInteresse, type LinhaInteresse } from "@/lib/cidades-liberadas/regras";
 import { listarCidades } from "@/lib/cidades-liberadas/servidor";
 import { CadastroCidadeForm, CidadeBotao } from "./forms";
@@ -10,7 +11,7 @@ export const metadata = { title: "Cidades liberadas — Admin" };
 
 /**
  * Admin → Cidades liberadas (ordem 335b4064): libera/pausa cidade e ranking de interesse (proprietários × inquilinos),
- * que serve para direcionar tráfego pago. Padrão das telas do admin: PageTitle + StatCard + Panel, cartões no celular e
+ * que serve para direcionar tráfego pago. Padrão das telas do admin: PageTitle + número-herói + lista + Panel, cartões no celular e
  * tabela no computador. O layout de /admin já barra quem não é admin; a RLS barra de novo no banco.
  */
 export default async function AdminCidadesPage() {
@@ -36,18 +37,22 @@ export default async function AdminCidadesPage() {
     <>
       <PageTitle title="Cidades liberadas" subtitle="Só dá para publicar imóvel em cidade liberada. Quem busca ou pede moradia em outra cidade pode deixar o interesse." />
       {(cidades === null || error) && (
-        <p role="alert" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p role="alert" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Não foi possível ler todos os dados agora. Tente de novo em instantes.
         </p>
       )}
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Cidades liberadas" value={liberadas} icon={CheckCircle2} />
-        <StatCard label="Cidades pausadas" value={lista.length - liberadas} icon={PauseCircle} />
-        <StatCard label="Cidades com interesse" value={ranking.length} icon={MapPinned} href="#interesse" />
-        <StatCard label="Pessoas interessadas" value={ranking.reduce((n, c) => n + c.total, 0)} icon={Users} href="#interesse" />
+      <div className="mb-6">
+        <NumeroHeroi rotulo="Cidades liberadas" valor={liberadas} href="#lista" />
+        <ListaNumeros
+          itens={[
+            { rotulo: "Cidades pausadas", valor: lista.length - liberadas, href: "#lista" },
+            { rotulo: "Cidades com interesse", valor: ranking.length, href: "#interesse" },
+            { rotulo: "Pessoas interessadas", valor: ranking.reduce((n, c) => n + c.total, 0), href: "#interesse" },
+          ]}
+        />
       </div>
 
-      <Panel title="Cidades" className="mb-6">
+      <Panel title="Cidades" className="mb-6 scroll-mt-24" id="lista">
         {lista.length === 0 ? (
           <EmptyState icon={MapPinned} title="Nenhuma cidade cadastrada" text="Cadastre abaixo a primeira cidade liberada." />
         ) : (
@@ -71,7 +76,7 @@ export default async function AdminCidadesPage() {
                 <tbody>
                   {lista.map((c) => (
                     <tr key={`${c.uf}-${c.chave}`} className="border-t border-sage-100">
-                      <td className="py-2 font-medium text-ink">{c.cidade} – {c.uf}</td>
+                      <td className="py-2 font-semibold text-ink">{c.cidade} – {c.uf}</td>
                       <td>{c.liberada ? "Liberada" : "Pausada"}</td>
                       <td>{dataBR(c.liberada_em)}</td>
                       <td className="max-w-xs truncate text-muted">{c.observacao ?? "—"}</td>

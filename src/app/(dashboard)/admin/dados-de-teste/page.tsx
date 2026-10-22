@@ -61,7 +61,7 @@ export default async function AdminDadosDeTestePage() {
       <Panel title="Caixa de e-mails de teste" className="mb-6">
         <p className="text-sm text-muted">
           Os e-mails enviados às contas de teste (recibos, códigos, avisos) ficam guardados para conferência.{" "}
-          <Link href="/admin/emails-teste" className="font-medium text-forest underline" data-testid="link-emails-teste">
+          <Link href="/admin/emails-teste" className="font-semibold text-forest underline" data-testid="link-emails-teste">
             Abrir a caixa de e-mails de teste
           </Link>
         </p>
@@ -83,7 +83,7 @@ export default async function AdminDadosDeTestePage() {
           <ul className="divide-y divide-sage-100">
             {linhasLog.map((l) => (
               <li key={l.id} className="break-words py-2 text-sm" data-testid="log-jornada" data-resultado={RESULTADO[l.acao]}>
-                <span className="font-medium text-ink">{dataHoraBRT(l.criado_em)}</span> ·{" "}
+                <span className="font-semibold text-ink">{dataHoraBRT(l.criado_em)}</span> ·{" "}
                 {quem.get(l.admin_id) ?? "admin"} ·{" "}
                 <strong className={RESULTADO[l.acao] === "erro" ? "text-red-700" : "text-forest"}>{RESULTADO[l.acao]}</strong>
                 {l.alvo_tipo === ALVOS_JORNADA.candidatura && <> · candidatura {l.alvo_id.slice(0, 8)}</>}
@@ -113,7 +113,7 @@ export default async function AdminDadosDeTestePage() {
           <ul className="divide-y divide-sage-100">
             {linhasOutros.map((l) => (
               <li key={l.id} className="break-words py-2 text-sm" data-testid="log-dados-teste-linha" data-acao={l.acao}>
-                <span className="font-medium text-ink">{dataHoraBRT(l.criado_em)}</span> · {quem.get(l.admin_id) ?? "admin"} ·{" "}
+                <span className="font-semibold text-ink">{dataHoraBRT(l.criado_em)}</span> · {quem.get(l.admin_id) ?? "admin"} ·{" "}
                 <strong className="text-forest">{ROTULO_ACAO_DADOS_TESTE[l.acao] ?? l.acao}</strong>
                 {l.motivo && <span className="block text-xs text-muted">{l.motivo}</span>}
               </li>
@@ -128,22 +128,22 @@ export default async function AdminDadosDeTestePage() {
           <ul className="grid gap-2 sm:grid-cols-2">
             {contas.map((c) => (
               <li key={c.id} className="rounded-xl border border-line p-3 text-sm" data-testid="conta-teste">
-                <span className="font-medium text-ink">
+                <span className="font-semibold text-ink">
                   {c.full_name?.trim() || c.email || "Sem nome"}
                   <SeloTeste />
                 </span>
                 <span className="block text-xs text-muted">{c.role === "owner" ? "Proprietário" : c.role === "tenant" ? "Inquilino" : c.role === "admin" ? "Admin" : c.role}</span>
                 <span className="mt-1 flex flex-wrap gap-3 text-xs">
-                  <Link href={`/admin/usuarios?teste=sim&q=${encodeURIComponent(c.full_name?.trim() ?? "")}`} className="font-medium text-forest underline">
+                  <Link href={`/admin/usuarios?teste=sim&q=${encodeURIComponent(c.full_name?.trim() ?? "")}`} className="font-semibold text-forest underline">
                     Ver em Usuários
                   </Link>
-                  <Link href={`/admin/imoveis?tipo=teste&dono=${encodeURIComponent(c.full_name?.trim() ?? "")}`} className="font-medium text-forest underline">
+                  <Link href={`/admin/imoveis?tipo=teste&dono=${encodeURIComponent(c.full_name?.trim() ?? "")}`} className="font-semibold text-forest underline">
                     Anúncios
                   </Link>
-                  <Link href="/admin/contratos?tipo=teste" className="font-medium text-forest underline">
+                  <Link href="/admin/contratos?tipo=teste" className="font-semibold text-forest underline">
                     Contratos de teste
                   </Link>
-                  <Link href="/admin/emails-teste" className="font-medium text-forest underline">
+                  <Link href="/admin/emails-teste" className="font-semibold text-forest underline">
                     E-mails
                   </Link>
                 </span>

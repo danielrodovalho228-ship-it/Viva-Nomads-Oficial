@@ -61,7 +61,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
         {ocupado ? "Criando..." : "Nova jornada de teste"}
       </Button>
       {confirmando && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alertdialog" data-testid="jornada-confirmacao">
+        <div className="rounded-lg border border-line bg-white p-3 text-sm text-amber-900" role="alertdialog" data-testid="jornada-confirmacao">
           <p>
             Cria uma candidatura nova do inquilino de teste, já aceita e pronta para o Fechamento, no anúncio [TESTE QA] escolhido. A candidatura e
             o contrato antigos ficam como histórico.
@@ -82,7 +82,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
         </p>
       )}
       {r && !r.ok && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" data-testid="jornada-erro">
+        <p role="alert" className="border border-line rounded-lg bg-white px-3 py-2 text-sm text-red-700" data-testid="jornada-erro">
           Erro: {r.error}
         </p>
       )}
@@ -107,19 +107,19 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
           </p>
           <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
             <li>
-              <Link href={r.links.fechamento} className="font-medium text-forest underline" data-testid="jornada-link">
+              <Link href={r.links.fechamento} className="font-semibold text-forest underline" data-testid="jornada-link">
                 Abrir o Fechamento
               </Link>{" "}
               <span className="text-xs text-muted">(entre como o proprietário)</span>
             </li>
             <li>
-              <Link href={r.links.candidaturas} className="font-medium text-forest underline" data-testid="jornada-link-candidaturas">
+              <Link href={r.links.candidaturas} className="font-semibold text-forest underline" data-testid="jornada-link-candidaturas">
                 Ver em Candidaturas
               </Link>{" "}
               <span className="text-xs text-muted">(inquilino)</span>
             </li>
             <li>
-              <Link href={r.links.leads} className="font-medium text-forest underline" data-testid="jornada-link-leads">
+              <Link href={r.links.leads} className="font-semibold text-forest underline" data-testid="jornada-link-leads">
                 Ver em Leads
               </Link>{" "}
               <span className="text-xs text-muted">(proprietário)</span>

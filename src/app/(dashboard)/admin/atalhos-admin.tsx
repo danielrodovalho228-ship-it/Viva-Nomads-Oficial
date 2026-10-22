@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Bot, Home, Users, Camera, FlaskConical, MapPinned, HandHelping, Video, FileSignature, Handshake, Inbox, LifeBuoy, Mail, Megaphone, Star, TrendingUp, Wallet, Wrench } from "lucide-react";
+import { Bot, Home, Users, FlaskConical, MapPinned, HandHelping, FileSignature, LifeBuoy, Mail, Megaphone, Star, TrendingUp, Wallet, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Panel, StatCard } from "@/components/dashboard/primitives";
+import { Panel } from "@/components/dashboard/primitives";
+import { ListaNumeros } from "@/components/admin/numeros";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contadoresAgentes } from "@/lib/data/admin-indicadores";
 import { AGENTES_DEFINICOES } from "@/lib/admin/indicadores";
@@ -53,19 +54,21 @@ export async function AtalhosAdmin() {
   ]);
   return (
     <Panel title="Áreas do admin" className="mt-6">
-      <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3">
-        <StatCard label="Caixa dos Sócios — a tratar" value={caixa} icon={Inbox} href="/admin/socios" />
-        <StatCard label="Parceiros — novos interessados" value={interessados} icon={Handshake} href="/admin/parceiros" />
-        <StatCard label="Fotógrafos em análise" value={fotografos} icon={Camera} href="/admin/fotografos" />
-        <StatCard label={`Equipe — ${AGENTES_DEFINICOES.aguardandoOk.rotulo.toLowerCase()}`} value={agentes?.aguardandoOk ?? "—"} icon={Bot} href="/admin/agentes" />
-        <StatCard label={`Equipe — ${AGENTES_DEFINICOES.ordensPendentes.rotulo.toLowerCase()}`} value={agentes?.ordensPendentes ?? "—"} icon={Bot} href="/admin/agentes" />
-        <StatCard label="Visitas por vídeo — pedidos abertos" value={visitas} icon={Video} href="/dashboard/visitas" />
-      </div>
+      <ListaNumeros
+        itens={[
+          { rotulo: "Caixa dos Sócios — a tratar", valor: caixa, href: "/admin/socios" },
+          { rotulo: "Parceiros — novos interessados", valor: interessados, href: "/admin/parceiros" },
+          { rotulo: "Fotógrafos em análise", valor: fotografos, href: "/admin/fotografos" },
+          { rotulo: `Equipe — ${AGENTES_DEFINICOES.aguardandoOk.rotulo.toLowerCase()}`, valor: agentes?.aguardandoOk ?? "—", href: "/admin/agentes" },
+          { rotulo: `Equipe — ${AGENTES_DEFINICOES.ordensPendentes.rotulo.toLowerCase()}`, valor: agentes?.ordensPendentes ?? "—", href: "/admin/agentes" },
+          { rotulo: "Visitas por vídeo — pedidos abertos", valor: visitas, href: "/dashboard/visitas" },
+        ]}
+      />
       <ul data-testid="admin-outras-areas" className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {OUTRAS_AREAS.map(({ href, label, icon: Icon }) => (
           <li key={href}>
-            <Link href={href} className="flex min-h-11 items-center gap-2 rounded-xl border border-sage-200 bg-white px-3 text-sm font-medium text-forest hover:border-sage">
-              <Icon className="h-4 w-4 shrink-0 text-sage" />
+            <Link href={href} className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-white px-3 text-sm font-semibold text-ink hover:border-ink">
+              <Icon className="h-4 w-4 shrink-0 text-muted" aria-hidden />
               {label}
             </Link>
           </li>

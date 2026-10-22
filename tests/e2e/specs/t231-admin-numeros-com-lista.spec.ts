@@ -128,9 +128,12 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
         const l = page.locator(`[data-funil="${rotulo}"]`);
         return { valor: (await l.locator("[data-valor]").innerText()).trim(), href: (await l.getAttribute("data-href"))! };
       };
+      // Prompt 46: as filas viraram "Hoje você tem N decisões"; fila zerada não aparece (o número dela é 0).
       const fila = async (chave: string) => {
         const li = page.locator(`[data-precisa="${chave}"]`);
-        return { valor: n(await li.locator("span.font-title").innerText()), href: (await li.locator("[data-href]").first().getAttribute("data-href"))! };
+        if (!(await li.count())) return { valor: 0, href: "" };
+        const link = li.locator("[data-href]").first();
+        return { valor: Number(await link.getAttribute("data-valor")), href: (await link.getAttribute("data-href"))! };
       };
 
       const alvos: { nome: string; valor: number; href: string; esperado?: number }[] = [];
@@ -148,10 +151,11 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
       }
       expect(alvos.find((a) => a.nome === "fila comissoes_vencidas")!.href).toBe("/admin/financeiro?situacao=vencida");
       expect(alvos.find((a) => a.nome === "fila candidaturas_sem_resposta_48h")!.href).toBe("/admin/candidaturas?status=sem_resposta");
-      await expect(page.locator('[data-precisa="comissoes_vencidas"]')).toContainText("Taxas vencidas");
+      await expect(page.locator('[data-precisa="comissoes_vencidas"]')).toContainText(/taxas? vencidas?/);
 
       for (const a of alvos) {
         if (a.esperado !== undefined) expect(a.valor, a.nome).toBe(a.esperado);
+        if (!a.href) continue; // fila zerada: sem linha na home
         await page.goto(a.href, { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("lista-total"), `${a.nome} → ${a.href}`).toHaveText(String(a.valor));
       }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { Button } from "@/components/ui/button";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { createClient } from "@/lib/supabase/server";
@@ -114,12 +115,15 @@ export default async function AdminUsuariosPage({
           </Link>
         }
       />
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Nesta lista" value={total} icon={Users} />
-        <StatCard label="Proprietários" value="ver" icon={Users} href={hrefUsuarios({ papel: "proprietario" })} />
-        <StatCard label="Inquilinos" value="ver" icon={Users} href={hrefUsuarios({ papel: "inquilino" })} />
-        <StatCard label="Admins" value="ver" icon={Users} href={hrefUsuarios({ papel: "admin" })} />
-      </div>
+      <NumeroHeroi rotulo="Usuários nesta lista" valor={total} href="#lista" />
+      <ListaNumeros
+        className="mb-6"
+        itens={[
+          { rotulo: "Proprietários", valor: "Ver lista", href: hrefUsuarios({ papel: "proprietario" }) },
+          { rotulo: "Inquilinos", valor: "Ver lista", href: hrefUsuarios({ papel: "inquilino" }) },
+          { rotulo: "Admins", valor: "Ver lista", href: hrefUsuarios({ papel: "admin" }) },
+        ]}
+      />
       <form action="/admin/usuarios" method="get" className="mb-4 flex flex-wrap items-end gap-2" role="search">
         {f.fundador && <input type="hidden" name="fundador" value="1" />}
         {f.comAnuncio && <input type="hidden" name="com_anuncio" value="1" />}
@@ -167,7 +171,7 @@ export default async function AdminUsuariosPage({
         enquanto a verificação por SMS não estiver ligada; a identidade confirmada é a coluna Identidade. Uma conta marcada como teste
         some desta lista enquanto &quot;Mostrar contas de teste&quot; estiver em &quot;Não&quot;.
       </p>
-      <Panel title={`Usuários (${total})`} data-testid="admin-usuarios-lista">
+      <Panel title={`Usuários (${total})`} data-testid="admin-usuarios-lista" id="lista" className="scroll-mt-24">
         {linhas.length === 0 ? (
           <EmptyState icon={Users} title="Nenhum usuário nesta lista" text="Tire o filtro para ver todos." />
         ) : (
@@ -175,7 +179,7 @@ export default async function AdminUsuariosPage({
             <ul className="grid gap-3 sm:hidden">
               {linhas.map((u) => (
                 <li key={u.id} className="rounded-xl border border-line p-3" data-usuario data-papel={u.role}>
-                  <p className="font-medium text-ink">
+                  <p className="font-semibold text-ink">
                     {u.full_name?.trim() || "Sem nome"}
                     {u.is_teste && <SeloTeste />}
                   </p>
@@ -196,14 +200,14 @@ export default async function AdminUsuariosPage({
               <table className="w-full text-left text-sm">
                 <thead className="text-muted">
                   <tr>
-                    <th className="py-2 pr-4 font-medium">Nome</th>
-                    <th className="py-2 pr-4 font-medium">Papel</th>
-                    <th className="py-2 pr-4 font-medium">Fundador</th>
-                    <th className="py-2 pr-4 font-medium">Cadastro completo</th>
-                    <th className="py-2 pr-4 font-medium">Identidade</th>
-                    <th className="py-2 pr-4 font-medium">Telefone verificado</th>
-                    <th className="py-2 pr-4 font-medium">Cadastro</th>
-                    <th className="py-2 font-medium">Conta de teste</th>
+                    <th className="py-2 pr-4 font-semibold">Nome</th>
+                    <th className="py-2 pr-4 font-semibold">Papel</th>
+                    <th className="py-2 pr-4 font-semibold">Fundador</th>
+                    <th className="py-2 pr-4 font-semibold">Cadastro completo</th>
+                    <th className="py-2 pr-4 font-semibold">Identidade</th>
+                    <th className="py-2 pr-4 font-semibold">Telefone verificado</th>
+                    <th className="py-2 pr-4 font-semibold">Cadastro</th>
+                    <th className="py-2 font-semibold">Conta de teste</th>
                   </tr>
                 </thead>
                 <tbody>

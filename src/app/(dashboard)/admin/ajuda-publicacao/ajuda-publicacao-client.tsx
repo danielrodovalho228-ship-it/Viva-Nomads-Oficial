@@ -3,19 +3,19 @@
 import { dataBRT } from "@/lib/datas-brasilia";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { HandHelping, Hammer, Send } from "lucide-react";
-import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
+import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { mudarStatusAjudaPublicacao, type PedidoAjuda } from "@/lib/data/ajuda-publicacao-actions";
 import { proximosStatus, ROTULO_STATUS, type StatusAjuda } from "@/lib/ajuda-publicacao/ajuda";
 
 const TOM: Record<StatusAjuda, string> = {
-  recebido: "bg-amber-50 text-amber-800",
-  em_montagem: "bg-blue-50 text-blue-700",
-  enviado_dono: "bg-green-50 text-green-800",
-  aprovado_dono: "bg-green-100 text-green-900",
-  ajustes_pedidos: "bg-amber-50 text-amber-800",
+  recebido: "border border-line bg-white text-amber-800",
+  em_montagem: "border border-line bg-white text-forest",
+  enviado_dono: "border border-line bg-white text-forest",
+  aprovado_dono: "border border-line bg-white text-forest",
+  ajustes_pedidos: "border border-line bg-white text-amber-800",
   cancelado: "bg-surface-2 text-muted",
 };
 const ACAO: Partial<Record<StatusAjuda, string>> = {
@@ -49,12 +49,15 @@ export function AjudaPublicacaoClient({ fila }: { fila: PedidoAjuda[] }) {
         title="Publicamos para você"
         subtitle="Pedidos de donos que querem ajuda para montar o anúncio. O dono aprova o rascunho antes de publicar."
       />
-      <div className="mb-6 grid grid-cols-3 gap-2 sm:gap-4">
-        <StatCard label="Recebidos" value={contar("recebido")} icon={HandHelping} />
-        <StatCard label="Em montagem" value={contar("em_montagem")} icon={Hammer} />
-        <StatCard label="Com o dono" value={contar("enviado_dono")} icon={Send} />
-      </div>
-      <Panel data-testid="ajuda-fila">
+      <NumeroHeroi rotulo="Pedidos recebidos" valor={contar("recebido")} href="#lista" />
+      <ListaNumeros
+        className="mb-6"
+        itens={[
+          { rotulo: "Em montagem", valor: contar("em_montagem"), href: "#lista" },
+          { rotulo: "Com o dono", valor: contar("enviado_dono"), href: "#lista" },
+        ]}
+      />
+      <Panel data-testid="ajuda-fila" id="lista" className="scroll-mt-24">
         {fila.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted">Nenhum pedido ainda.</p>
         ) : (
@@ -62,7 +65,7 @@ export function AjudaPublicacaoClient({ fila }: { fila: PedidoAjuda[] }) {
             {fila.map((p) => (
               <li key={p.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between" data-testid="ajuda-item">
                 <div className="min-w-0">
-                  <p className="font-medium text-ink">
+                  <p className="font-semibold text-ink">
                     {p.owner_nome || "Proprietário"} <span className="text-xs font-normal text-muted">· {data(p.criado_em)}</span>
                   </p>
                   {p.link_anuncio && <p className="mt-1 break-all text-sm text-muted">{p.link_anuncio}</p>}

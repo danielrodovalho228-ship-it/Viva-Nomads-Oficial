@@ -19,7 +19,7 @@ export function DecidirForm({ id }: { id: string }) {
     });
   return (
     <div className="mt-3 space-y-2">
-      <label htmlFor={`just-${id}`} className="block text-sm font-medium text-ink">Justificativa da decisão</label>
+      <label htmlFor={`just-${id}`} className="block text-sm font-semibold text-ink">Justificativa da decisão</label>
       <textarea
         id={`just-${id}`}
         value={just}

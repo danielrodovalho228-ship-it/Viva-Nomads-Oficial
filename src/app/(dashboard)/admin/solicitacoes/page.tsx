@@ -55,7 +55,7 @@ export default async function AdminSolicitacoesPage({ searchParams }: { searchPa
             {lista.map((s) => (
               <li key={s.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2 text-sm" data-testid="solicitacao-linha">
                 <span className="min-w-0">
-                  <span className="font-medium text-ink">{s.properties.title ?? "Imóvel"}</span>
+                  <span className="font-semibold text-ink">{s.properties.title ?? "Imóvel"}</span>
                   <span className="text-muted">
                     {" "}
                     · {s.category ?? "—"} · prioridade {s.priority ?? "—"} · {STATUS[s.status] ?? s.status}
