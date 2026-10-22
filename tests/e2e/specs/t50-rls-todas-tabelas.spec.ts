@@ -22,6 +22,9 @@ const LEITURA_PUBLICA = new Set([
   // cidades liberadas (migração 0159): a busca e o pedido precisam saber se a cidade está liberada.
   // Só nome da cidade e a marca liberada/pausada; escrita só do admin, interesse_cidade NÃO é público.
   "cidades_liberadas",
+  // páginas de parceiros (migração 0190): a policy *_le_publico só devolve linha de parceiro PUBLICADO
+  // (parceiro_publicado(parceiro_id)); documento e dados de recebimento ficam em `parceiros`, fora desta lista.
+  "parceiro_servicos", "parceiro_galeria", "parceiro_agenda",
 ]);
 
 function tabelasDasMigracoes(): string[] {
