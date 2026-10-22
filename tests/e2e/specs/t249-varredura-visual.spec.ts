@@ -48,6 +48,17 @@ const TELAS: Tela[] = [
   { conta: "INQUILINA", rota: () => "/dashboard/conta", nome: "Conta" },
   { conta: "PARCEIRO", rota: () => "/dashboard/parceiro", nome: "Painel do parceiro" },
   { conta: "TRES", rota: () => "/dashboard", nome: "Painel (3 papéis)" },
+  // Telas tocadas pelos PRs de 21–22/10 (#997, #998, #1006, #1010–#1014): entram na varredura permanente.
+  { conta: null, rota: () => "/cidades/uberlandia", nome: "Cidade" },
+  { conta: null, rota: () => "/como-funciona", nome: "Como funciona" },
+  { conta: null, rota: () => "/parceiros", nome: "Parceiros" },
+  { conta: null, rota: () => "/auth", nome: "Entrar" },
+  { conta: null, rota: () => "/pedidos/novo", nome: "Pedido de moradia" },
+  { conta: "DONO17", rota: () => "/dashboard/ferramentas", nome: "Ferramentas do dono" },
+  { conta: "DONO17", rota: () => "/dashboard/carteira", nome: "Carteira do dono" },
+  { conta: "INQUILINA", rota: () => "/dashboard/favoritos", nome: "Favoritos" },
+  { conta: "INQUILINA", rota: () => "/dashboard/buscas", nome: "Buscas salvas" },
+  { conta: "INQUILINA", rota: (m) => `/dashboard/estadia/${m.contrato}`, nome: "Estadia (contrato completo)" },
 ];
 
 /** Combinações (tela × tamanho × critério) cobertas por um defeito conhecido: o varrer geral só anota. */
