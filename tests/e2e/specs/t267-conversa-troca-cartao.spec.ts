@@ -49,6 +49,16 @@ test.describe("T267 — troca de conversa não deixa o cartão da anterior", () 
       page.on("dialog", (d) => {
         throw new Error(`diálogo do navegador não permitido: ${d.message()}`);
       });
+      const registro: string[] = [];
+      const t0 = Date.now();
+      const marca = (x: string) => registro.push(`+${((Date.now() - t0) / 1000).toFixed(1)}s ${x}`);
+      page.on("framenavigated", (f) => {
+        if (f === page.mainFrame()) marca(`navegou ${f.url()}`);
+      });
+      page.on("requestfinished", (r) => {
+        if (r.method() === "POST" && r.headers()["next-action"]) marca(`ação ${r.headers()["next-action"]?.slice(0, 8)}`);
+        else if (r.headers()["rsc"]) marca(`rsc ${r.url()}`);
+      });
       await page.goto("/dashboard/mensagens", { waitUntil: "networkidle" });
       const convA = conversationId(ids.morador!, ids.dono!, ids.a!);
       const convB = conversationId(ids.morador!, ids.dono!, ids.b!);
@@ -63,12 +73,11 @@ test.describe("T267 — troca de conversa não deixa o cartão da anterior", () 
       // A conversa aberta fica na URL: se o painel remontar (modo acertado pelo perfil), volta na mesma conversa.
       await expect(page).toHaveURL(new RegExp(`conversa=${convB}`));
       const sobra = page.getByTestId("conversa-visita");
-      await expect
-        .poll(async () => ((await sobra.count()) ? `${await sobra.getAttribute("data-imovel")} ${await sobra.getAttribute("data-visita")} ${await sobra.innerText()}` : ""), {
-          message: `o cartão da conversa A não fica na B (B = ${ids.b}, A = ${ids.a})`,
-          timeout: 10_000,
-        })
-        .toBe("");
+      const estado = async () =>
+        (await sobra.count())
+          ? `${await sobra.getAttribute("data-imovel")} ${await sobra.getAttribute("data-visita")} · url=${page.url()} · aberta="${await page.getByTestId("conversa-nome").innerText()}" · mensagens="${(await page.locator("section").last().innerText()).slice(0, 200).replace(/\s+/g, " ")}" · ${registro.join(" | ")}`
+          : "";
+      await expect.poll(estado, { message: `o cartão da conversa A não fica na B (B = ${ids.b}, A = ${ids.a})`, timeout: 10_000 }).toBe("");
       // E continua sem cartão depois que a resposta do servidor chega.
       await page.waitForTimeout(1500);
       await expect(page.getByTestId("conversa-visita")).toHaveCount(0);
