@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * T270 — QA do Muse (22/10) sobre o #1025, a 390 px, NA ETAPA DE FOTOS do Anunciar, com rascunhos de 0, 1 e 8 fotos
@@ -93,16 +93,16 @@ test.describe("T270 — barra de fotos na etapa de Fotos a 390 px (QA do Muse, #
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     for (const n of [0, 1, 8]) {
-      const id = await criarImovelPronto(ids.dono, `Studio Fotos ${n} de 8 ${sufixo}`);
-      await fotosReais(id, ids.dono);
-      if (n < 8) {
-        const { data } = await adm().from("property_photos").select("id, sort_order").eq("property_id", id).order("sort_order");
-        const sobra = (data ?? []).slice(n).map((f) => f.id as string);
-        if (sobra.length) {
-          const { error } = await adm().from("property_photos").delete().in("id", sobra);
-          if (error) throw error;
-        }
-      }
+      // O cadastro abre o rascunho pelo draft_data (loadDraftData), não por property_photos: as fotos vão no JSON,
+      // no mesmo formato que a tela grava (t186). As 8 imagens já estão no Storage local (criarImovelPronto).
+      const titulo = `Studio Fotos ${n} de 8 ${sufixo}`;
+      const id = await criarImovelPronto(ids.dono, titulo);
+      const fotos = Array.from({ length: n }, (_, i) => {
+        const caminho = `${ids.dono}/${id}-${i}.png`;
+        return { id: `lab-${i}`, url: adm().storage.from("property-photos").getPublicUrl(caminho).data.publicUrl, name: "", path: caminho, demo: false };
+      });
+      const { error } = await adm().from("properties").update({ draft_data: { title: titulo, photos: fotos } }).eq("id", id);
+      if (error) throw error;
       rascunhos[n] = id;
     }
   });
