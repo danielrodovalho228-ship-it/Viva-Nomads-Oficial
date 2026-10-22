@@ -715,7 +715,8 @@
         "t195-matricula-caf",
         "t204-cadastro-ia-real",
         "t207-cep-matricula-identidade",
-        "t269-anunciar-barra-fotos"
+        "t269-anunciar-barra-fotos",
+        "t270-barra-fotos-etapa-fotos"
       ]
     },
     "/dashboard/indicacoes": {
@@ -2015,6 +2016,15 @@
       ],
       "specs": [
         "t264-viva-automatico"
+      ]
+    },
+    "/api/parceiros/pedidos/[id]": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
       ]
     }
   },

@@ -31,10 +31,34 @@ function semDialogo(page: Page) {
 async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
+/** Diagnóstico: navegações, ações do servidor (status e início da resposta) e erros, impressos só quando o teste falha. */
+const registro: string[] = [];
+function registrar(page: Page, quem: string) {
+  const t0 = Date.now();
+  const marca = (x: string) => registro.push(`[${quem} +${((Date.now() - t0) / 1000).toFixed(1)}s] ${x}`);
+  page.on("console", (m) => {
+    if (m.type() === "error" || m.type() === "warning") marca(`console.${m.type()}: ${m.text()}`);
+  });
+  page.on("pageerror", (e) => marca(`pageerror: ${e.message}`));
+  page.on("response", (r) => {
+    if (r.status() >= 400) marca(`resposta ${r.status()} ${r.request().method()} ${r.url()} rsc=${r.request().headers()["rsc"] ?? "-"} prefetch=${r.request().headers()["next-router-prefetch"] ?? "-"}`);
+  });
+  page.on("requestfailed", (r) => marca(`falhou ${r.method()} ${r.url()} ${r.failure()?.errorText ?? ""}`));
+  page.on("framenavigated", (f) => {
+    if (f === page.mainFrame()) marca(`navegou: ${f.url()}`);
+  });
+  page.on("requestfinished", async (r) => {
+    if (r.method() !== "POST" || !r.headers()["next-action"]) return;
+    const resp = await r.response();
+    const corpo = await resp?.text().catch(() => "");
+    marca(`ação ${r.headers()["next-action"]?.slice(0, 8)} ← ${resp?.status()} ${r.url()} redirect=${resp?.headers()["x-action-redirect"] ?? "-"} revalidated=${resp?.headers()["x-action-revalidated"] ?? "-"} corpo=${(corpo ?? "").slice(-300).replace(/\s+/g, " ")}`);
+  });
+}
 async function abrir(browser: Browser, email: string, largura = 1280): Promise<Page> {
   const page = await entrar(browser, email, senha);
   await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
   semDialogo(page);
+  registrar(page, email.split(".")[0]);
   return page;
 }
 /** Amanhã às HH:00 de Brasília, no formato do campo datetime-local. */
@@ -78,6 +102,13 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
       .single();
     if (error) throw error;
     ids.contrato = data.id as string;
+  });
+
+  test.beforeEach(() => {
+    registro.length = 0;
+  });
+  test.afterEach(async ({}, info) => {
+    if (info.status !== info.expectedStatus) console.log(`── diagnóstico de "${info.title}" ──\n${registro.join("\n")}`);
   });
 
   test.afterAll(async () => {
@@ -223,18 +254,18 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     await expect(m).toHaveURL(/\/parceiros\/buscar\?.*categoria=limpeza/);
     await m.locator(`[data-testid="cartao-parceiro"][data-slug="${slugLimpa}"]`).click();
     await expect(m).toHaveURL(new RegExp(`/parceiros/${slugLimpa}`));
-    // Vindo da busca por navegação do cliente, a página do parceiro ainda termina de carregar depois que a folha
-    // abre e pode fechá-la ("Enviar pedido" sumia, lab-crítico do #989). Abre e preenche até a folha ficar de pé;
-    // o envio (que cria o pedido) é feito uma vez só, fora da repetição.
+    // Defeito do QA (21/10): vindo da busca por navegação do cliente, a folha fechava sozinha logo depois de abrir.
+    // Agora abre uma vez só e tem de ficar de pé (a lista de imóveis vem com a página; abrir não chama ação).
     const folha = m.getByTestId("solicitar-orcamento-folha");
     const enviar = m.getByTestId("solicitar-orcamento-enviar");
-    await expect(async () => {
-      if (!(await folha.isVisible())) await m.getByTestId("solicitar-orcamento").click();
-      await expect(folha).toBeVisible({ timeout: 3_000 });
-      await m.getByTestId("solicitar-orcamento-descricao").fill("Limpeza semanal do studio, 1 quarto.");
-      await m.getByTestId("solicitar-orcamento-horario-0").fill(amanha(9));
-      await expect(enviar).toBeEnabled({ timeout: 3_000 });
-    }).toPass({ timeout: 30_000 });
+    await m.getByTestId("solicitar-orcamento").click();
+    await expect(folha).toBeVisible();
+    await m.getByTestId("solicitar-orcamento-descricao").fill("Limpeza semanal do studio, 1 quarto.");
+    await m.getByTestId("solicitar-orcamento-horario-0").fill(amanha(9));
+    await m.waitForTimeout(2000);
+    await expect(folha, "a folha continua aberta depois que a página termina de carregar").toBeVisible();
+    await expect(m.getByTestId("solicitar-orcamento-descricao")).toHaveValue("Limpeza semanal do studio, 1 quarto.");
+    await expect(enviar).toBeEnabled();
     await enviar.click();
     await expect(m).toHaveURL(/\/dashboard\/servicos\/pedidos\//, { timeout: 30_000 });
     const pedido = m.url().split("/").pop()!;

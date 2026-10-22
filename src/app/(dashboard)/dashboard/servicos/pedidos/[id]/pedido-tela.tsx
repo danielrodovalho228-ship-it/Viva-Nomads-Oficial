@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
@@ -18,28 +18,15 @@ import {
   textoDivisaoParceiro,
 } from "@/lib/parceiros/pedido";
 import {
-  aceitarOrcamento,
-  avaliarPedido,
-  cancelarPedido,
-  concluirPedido,
-  confirmarHorario,
   enviarDocumentoParceiro,
   enviarEntrega,
   enviarMensagemDoPedido,
-  enviarOrcamento,
-  iniciarExecucao,
   linkArquivoDoPedido,
-  marcarEntregue,
-  proporOutroHorario,
-  recusarOrcamento,
-  recusarPedido,
-  simularPagamento,
-  usarFotosNoAnuncio,
   type DetalhePedido,
 } from "@/lib/parceiros/pedido-actions";
-import { confirmarPedidoAutomatico, trocarParceiro } from "@/lib/automacao/acoes";
 
 type Res = { ok: true } | { ok: false; erro: string };
+type Rodar = (acao: string, campos?: Record<string, unknown>, ok?: string) => void;
 const brl = (n: number | null) => (n == null ? "—" : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
 
@@ -51,15 +38,51 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
   const cliente = d.papel === "cliente";
   const parceiro = d.papel === "parceiro";
 
-  const rodar = (f: () => Promise<Res | { ok: true; valor: unknown } | { ok: false; erro: string }>, ok?: string) =>
+  // O aviso de sucesso atravessa o recarregamento da página (fica na sessão do navegador só até ser mostrado).
+  const chaveAviso = `pedido-aviso:${d.id}`;
+  useEffect(() => {
+    try {
+      const guardado = sessionStorage.getItem(chaveAviso);
+      if (guardado) {
+        sessionStorage.removeItem(chaveAviso);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- restaura o aviso depois da hidratação
+        setAviso(guardado);
+      }
+    } catch {
+      /* sem armazenamento (aba privada): segue sem o aviso */
+    }
+  }, [chaveAviso]);
+
+  // Os botões vão pela rota /api/parceiros/pedidos/<id>, com prazo, e recarregam a página: pela ação do servidor, o
+  // laboratório mostrou "Enviar orçamento" sem nenhum POST quando a fila do roteador da página ficava presa (t250, 22/10).
+  const rodar: Rodar = (acao, campos = {}, ok) =>
     iniciar(async () => {
       setErro(null);
       setAviso(null);
-      const r = await f();
-      if (!r.ok) setErro(r.erro);
-      else {
-        if (ok) setAviso(ok);
-        router.refresh();
+      const ctl = new AbortController();
+      const prazo = setTimeout(() => ctl.abort(), 20_000);
+      try {
+        const resp = await fetch(`/api/parceiros/pedidos/${d.id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ acao, ...campos }),
+          signal: ctl.signal,
+        });
+        const r = (await resp.json().catch(() => null)) as Res | null;
+        if (!r?.ok) {
+          setErro(r && !r.ok ? r.erro : "Não deu certo agora. Tente de novo.");
+          return;
+        }
+        try {
+          if (ok) sessionStorage.setItem(chaveAviso, ok);
+        } catch {
+          /* sem armazenamento: recarrega sem o aviso */
+        }
+        window.location.reload();
+      } catch {
+        setErro("Sem resposta agora. Confira a conexão e tente de novo.");
+      } finally {
+        clearTimeout(prazo);
       }
     });
 
@@ -87,7 +110,7 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
           {cliente && d.aguardandoDono && d.status === "solicitado" && (
             <div className="mt-3 space-y-2" data-testid="pedido-aguardando-dono">
               <p className="text-sm text-ink">Confira o pedido. Ele só vai ao parceiro depois da sua confirmação.</p>
-              <Button variant="primary" size="sm" disabled={pendente} onClick={() => rodar(() => confirmarPedidoAutomatico(d.id), "Pedido enviado ao parceiro.")} data-testid="pedido-confirmar-automatico">
+              <Button variant="primary" size="sm" disabled={pendente} onClick={() => rodar("confirmar-automatico", {}, "Pedido enviado ao parceiro.")} data-testid="pedido-confirmar-automatico">
                 Confirmar e enviar
               </Button>
             </div>
@@ -95,7 +118,7 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
           {cliente && d.semResposta && (
             <div className="mt-3 space-y-2" data-testid="pedido-sem-resposta">
               <p className="text-sm text-ink">O parceiro não respondeu em 24 horas.</p>
-              <Button variant="secondary" size="sm" disabled={pendente} onClick={() => rodar(() => trocarParceiro(d.id), "Pedido enviado a outro parceiro.")} data-testid="pedido-trocar-parceiro">
+              <Button variant="secondary" size="sm" disabled={pendente} onClick={() => rodar("trocar-parceiro", {}, "Pedido enviado a outro parceiro.")} data-testid="pedido-trocar-parceiro">
                 Trocar parceiro
               </Button>
             </div>
@@ -126,12 +149,12 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
                 <li key={h} className="flex flex-wrap items-center justify-between gap-2 text-sm text-ink">
                   <span>{dataHoraBRT(h)}</span>
                   {parceiro && d.status === "aceito" && (
-                    <Button size="sm" variant="secondary" disabled={pendente} onClick={() => rodar(() => confirmarHorario(d.id, h))} data-testid="pedido-confirmar-horario">
+                    <Button size="sm" variant="secondary" disabled={pendente} onClick={() => rodar("confirmar-horario", { horario: h })} data-testid="pedido-confirmar-horario">
                       Confirmar este horário
                     </Button>
                   )}
                   {cliente && d.status === "aceito" && d.ultimoHorarioDoParceiro === h && (
-                    <Button size="sm" variant="primary" disabled={pendente} onClick={() => rodar(() => confirmarHorario(d.id, h))} data-testid="pedido-confirmar-horario-proposto">
+                    <Button size="sm" variant="primary" disabled={pendente} onClick={() => rodar("confirmar-horario", { horario: h })} data-testid="pedido-confirmar-horario-proposto">
                       Confirmar o horário proposto
                     </Button>
                   )}
@@ -139,7 +162,7 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
               ))}
             </ul>
           )}
-          {parceiro && d.status === "aceito" && <ProporHorario pendente={pendente} onPropor={(h) => rodar(() => proporOutroHorario(d.id, h), "Horário proposto ao cliente.")} />}
+          {parceiro && d.status === "aceito" && <ProporHorario pendente={pendente} onPropor={(h) => rodar("propor-horario", { horario: h }, "Horário proposto ao cliente.")} />}
         </Panel>
 
         <Panel title="Valores e pagamento" data-testid="pedido-valores">
@@ -174,7 +197,7 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
             </p>
           )}
           {d.podeSimularPagamento && (
-            <Button className="mt-3" variant="secondary" disabled={pendente} onClick={() => rodar(() => simularPagamento(d.id))} data-testid="pedido-simular-pagamento">
+            <Button className="mt-3" variant="secondary" disabled={pendente} onClick={() => rodar("simular-pagamento")} data-testid="pedido-simular-pagamento">
               Simular pagamento
             </Button>
           )}
@@ -201,7 +224,7 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
               </div>
             )}
             {cliente && d.categoria === "fotografia" && d.ehDonoDoImovel && ["entregue", "concluido"].includes(d.status) && d.entregas.length > 0 && (
-              <Button className="mt-3" variant="secondary" disabled={pendente} onClick={() => rodar(() => usarFotosNoAnuncio(d.id), "Fotos acrescentadas ao anúncio.")} data-testid="pedido-usar-fotos">
+              <Button className="mt-3" variant="secondary" disabled={pendente} onClick={() => rodar("usar-fotos", {}, "Fotos acrescentadas ao anúncio.")} data-testid="pedido-usar-fotos">
                 Usar estas fotos no anúncio
               </Button>
             )}
@@ -234,7 +257,7 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
   );
 }
 
-function Acoes({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; rodar: (f: () => Promise<Res | { ok: true; valor: unknown } | { ok: false; erro: string }>, ok?: string) => void }) {
+function Acoes({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; rodar: Rodar }) {
   const [valor, setValor] = useState<number | null>(d.valores.combinado);
   const [motivo, setMotivo] = useState("");
   const cliente = d.papel === "cliente";
@@ -249,14 +272,14 @@ function Acoes({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; ro
         </label>
         <CampoReais id="pedido-valor-campo" value={valor} onChange={setValor} centavos />
         {valor ? <p className="text-sm text-muted">{textoDivisaoParceiro(valor)}</p> : null}
-        <Button variant="primary" disabled={pendente || !valor} onClick={() => rodar(() => enviarOrcamento(d.id, valor), "Orçamento enviado.")} data-testid="pedido-enviar-orcamento">
+        <Button variant="primary" disabled={pendente || !valor} onClick={() => rodar("enviar-orcamento", { valor }, "Orçamento enviado.")} data-testid="pedido-enviar-orcamento">
           {d.status === "orcado" ? "Atualizar orçamento" : "Enviar orçamento"}
         </Button>
         <label className="mt-3 text-sm font-semibold text-ink" htmlFor="pedido-motivo">
           Não vai atender?
         </label>
         <input id="pedido-motivo" className={campo} maxLength={MOTIVO_RECUSA_MAX} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo em poucas palavras" />
-        <ConfirmarNaPagina aviso="Recusar este pedido? O cliente vê o motivo." confirmar="Recusar o pedido" disabled={pendente || motivo.trim().length < 3} onConfirmar={() => rodar(() => recusarPedido(d.id, motivo))} testid="pedido-recusar">
+        <ConfirmarNaPagina aviso="Recusar este pedido? O cliente vê o motivo." confirmar="Recusar o pedido" disabled={pendente || motivo.trim().length < 3} onConfirmar={() => rodar("recusar-pedido", { motivo })} testid="pedido-recusar">
           Recusar o pedido
         </ConfirmarNaPagina>
       </div>,
@@ -265,10 +288,10 @@ function Acoes({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; ro
   if (cliente && d.status === "orcado") {
     blocos.push(
       <div key="decidir" className="flex flex-wrap gap-2">
-        <Button variant="primary" disabled={pendente} onClick={() => rodar(() => aceitarOrcamento(d.id), "Orçamento aceito.")} data-testid="pedido-aceitar">
+        <Button variant="primary" disabled={pendente} onClick={() => rodar("aceitar-orcamento", {}, "Orçamento aceito.")} data-testid="pedido-aceitar">
           Aceitar o orçamento
         </Button>
-        <ConfirmarNaPagina aviso="Recusar o orçamento encerra este pedido." confirmar="Recusar o orçamento" disabled={pendente} onConfirmar={() => rodar(() => recusarOrcamento(d.id))} testid="pedido-recusar-orcamento">
+        <ConfirmarNaPagina aviso="Recusar o orçamento encerra este pedido." confirmar="Recusar o orçamento" disabled={pendente} onConfirmar={() => rodar("recusar-orcamento")} testid="pedido-recusar-orcamento">
           Recusar o orçamento
         </ConfirmarNaPagina>
       </div>,
@@ -276,28 +299,28 @@ function Acoes({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; ro
   }
   if (cliente && d.status === "solicitado") {
     blocos.push(
-      <ConfirmarNaPagina key="cancelar" aviso="Cancelar este pedido?" confirmar="Cancelar o pedido" disabled={pendente} onConfirmar={() => rodar(() => cancelarPedido(d.id))} testid="pedido-cancelar">
+      <ConfirmarNaPagina key="cancelar" aviso="Cancelar este pedido?" confirmar="Cancelar o pedido" disabled={pendente} onConfirmar={() => rodar("cancelar")} testid="pedido-cancelar">
         Cancelar o pedido
       </ConfirmarNaPagina>,
     );
   }
   if (parceiro && d.status === "agendado") {
     blocos.push(
-      <Button key="iniciar" variant="primary" disabled={pendente} onClick={() => rodar(() => iniciarExecucao(d.id))} data-testid="pedido-iniciar">
+      <Button key="iniciar" variant="primary" disabled={pendente} onClick={() => rodar("iniciar")} data-testid="pedido-iniciar">
         Iniciar o serviço
       </Button>,
     );
   }
   if (parceiro && d.status === "em_execucao") {
     blocos.push(
-      <Button key="entregar" variant="primary" disabled={pendente} onClick={() => rodar(() => marcarEntregue(d.id), "Entrega marcada.")} data-testid="pedido-marcar-entregue">
+      <Button key="entregar" variant="primary" disabled={pendente} onClick={() => rodar("marcar-entregue", {}, "Entrega marcada.")} data-testid="pedido-marcar-entregue">
         Marcar como entregue
       </Button>,
     );
   }
   if (cliente && d.status === "entregue") {
     blocos.push(
-      <ConfirmarNaPagina key="concluir" aviso="Confirmar que o serviço foi concluído?" confirmar="Confirmar a conclusão" variant="primary" disabled={pendente} onConfirmar={() => rodar(() => concluirPedido(d.id), "Serviço concluído.")} testid="pedido-concluir">
+      <ConfirmarNaPagina key="concluir" aviso="Confirmar que o serviço foi concluído?" confirmar="Confirmar a conclusão" variant="primary" disabled={pendente} onConfirmar={() => rodar("concluir", {}, "Serviço concluído.")} testid="pedido-concluir">
         Confirmar a conclusão
       </ConfirmarNaPagina>,
     );
@@ -398,7 +421,7 @@ function EnviarArquivos({
   );
 }
 
-function Avaliacao({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; rodar: (f: () => Promise<Res | { ok: true; valor: unknown } | { ok: false; erro: string }>, ok?: string) => void }) {
+function Avaliacao({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; rodar: Rodar }) {
   const [nota, setNota] = useState(0);
   const [texto, setTexto] = useState("");
   return (
@@ -417,7 +440,7 @@ function Avaliacao({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean
             ))}
           </div>
           <textarea className={campo} rows={3} maxLength={500} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Conte como foi (opcional)" data-testid="pedido-avaliacao-texto" />
-          <Button variant="primary" disabled={pendente || nota === 0} onClick={() => rodar(() => avaliarPedido(d.id, nota, texto), "Avaliação enviada.")} data-testid="pedido-avaliar">
+          <Button variant="primary" disabled={pendente || nota === 0} onClick={() => rodar("avaliar", { nota, texto }, "Avaliação enviada.")} data-testid="pedido-avaliar">
             Enviar avaliação
           </Button>
         </div>
