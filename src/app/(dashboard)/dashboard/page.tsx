@@ -93,12 +93,14 @@ export default async function DashboardPage() {
       manutencoes: dados.manutencoes,
       estadias: estadiasDe("proprietario"),
       candidaturas: dados.candidaturas,
+      confortoPrazos: dados.confortoPrazos,
+      pendenciasDono: dados.pendenciasDono,
       rascunho: draft ? { id: draft.id, titulo: draft.title, prontidao: draft.prontidao } : null,
     },
     agora,
   );
   const decisoesMorador = decisoesDoMorador(
-    { propostas, contratos: dados.contratosMorador, visitas: dados.visitasMorador, estadias: estadiasDe("inquilino") },
+    { propostas, contratos: dados.contratosMorador, visitas: dados.visitasMorador, estadias: estadiasDe("inquilino"), pendenciasMorador: dados.pendenciasMorador },
     agora,
   );
 

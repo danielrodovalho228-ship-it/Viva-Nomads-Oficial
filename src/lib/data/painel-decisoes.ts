@@ -6,10 +6,13 @@ import { ehStatusVisita } from "@/lib/visitas-video";
 import { linhaParaOrdem, type LinhaOrdem } from "@/lib/manutencao-solicitacoes";
 import type {
   CandidaturaParaDecisao,
+  ConfortoPrazoParaDecisao,
   ContratoParaDecisao,
   ManutencaoParaDecisao,
+  PendenciaParaDecisao,
   VisitaParaDecisao,
 } from "@/lib/painel/decisoes";
+import { itensFaltantes } from "@/lib/conforto/regras";
 
 /**
  * Dados das decisões da Visão geral (Prompt 42, item 1) que a página ainda não lia — numa sessão só, em paralelo, só
@@ -25,9 +28,29 @@ export interface DadosDecisoesDoServidor {
   visitasMorador: VisitaParaDecisao[];
   manutencoes: ManutencaoParaDecisao[];
   candidaturas: CandidaturaParaDecisao[];
+  // Prompt 59
+  confortoPrazos: ConfortoPrazoParaDecisao[];
+  pendenciasDono: PendenciaParaDecisao[];
+  pendenciasMorador: PendenciaParaDecisao[];
 }
 
-const VAZIO: DadosDecisoesDoServidor = { contratosDono: [], contratosMorador: [], visitasDono: [], visitasMorador: [], manutencoes: [], candidaturas: [] };
+const VAZIO: DadosDecisoesDoServidor = {
+  contratosDono: [], contratosMorador: [], visitasDono: [], visitasMorador: [], manutencoes: [], candidaturas: [],
+  confortoPrazos: [], pendenciasDono: [], pendenciasMorador: [],
+};
+
+type LinhaPendencia = { id: string; contrato_id: string; chave: string; status: string; prazo_ate: string; corrigida_em: string | null; confirmada_em: string | null; properties: Titulo };
+const pendencia = (l: LinhaPendencia): PendenciaParaDecisao => ({
+  id: l.id,
+  contratoId: l.contrato_id,
+  imovel: titulo(l.properties),
+  chave: l.chave,
+  status: l.status,
+  prazoAte: l.prazo_ate,
+  corrigidaEm: l.corrigida_em,
+  confirmadaEm: l.confirmada_em,
+});
+const COLUNAS_PENDENCIA = "id, contrato_id, chave, status, prazo_ate, corrigida_em, confirmada_em, properties(title)";
 
 type Titulo = { title?: string | null } | null;
 const titulo = (t: unknown) => ((t as Titulo)?.title ?? "").trim();
@@ -70,7 +93,7 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
     const admin = createAdminClient();
     const nada = Promise.resolve({ data: [] as unknown[] });
 
-    const [cDono, cMorador, vDono, vMorador, ordens, leads] = await Promise.all([
+    const [cDono, cMorador, vDono, vMorador, ordens, leads, adequacao, pDono, pMorador] = await Promise.all([
       // Contratos dos imóveis do dono (a RLS deixa as partes lerem) — só os vigentes podem esperar assinatura.
       supabase
         .from("contratos")
@@ -84,10 +107,9 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
       admin ? admin.from("visitas_video").select(COLUNAS_VISITA).eq("tenant_id", user.id).eq("status", "remarcar").limit(50) : nada,
       supabase
         .from("service_orders")
-        .select("id, category, priority, description, status, opened_at, first_response_at, resolved_at, properties(title)")
+        .select("id, category, priority, description, status, opened_at, first_response_at, resolved_at, provisoria_em, solucao_marcada_em, properties(title)")
         .eq("owner_id", user.id)
         .neq("status", "resolvido")
-        .is("first_response_at", null)
         .limit(50),
       supabase
         .from("leads")
@@ -95,7 +117,20 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
         .eq("owner_id", user.id)
         .eq("status", "new")
         .limit(200),
+      // Prompt 59 (a RLS mostra ao dono o próprio prazo e as pendências; ao morador, as do contrato dele).
+      supabase.from("conforto_adequacao").select("property_id, prazo_ate, pausado_em, properties!inner(title, owner_id)").eq("properties.owner_id", user.id).limit(50),
+      supabase.from("conforto_pendencias").select(`${COLUNAS_PENDENCIA}, dono:properties!inner(owner_id)`).eq("dono.owner_id", user.id).eq("status", "aberta").limit(50),
+      supabase.from("conforto_pendencias").select(`${COLUNAS_PENDENCIA}, contratos!inner(tenant_id)`).eq("contratos.tenant_id", user.id).eq("status", "corrigida").is("confirmada_em", null).limit(50),
     ]);
+    // Declarações dos imóveis com prazo de adequação (consulta à parte: as duas tabelas só se ligam pelo imóvel).
+    const idsAdequacao = ((adequacao.data ?? []) as { property_id: string }[]).map((a) => a.property_id);
+    const { data: decl } = idsAdequacao.length
+      ? await supabase.from("conforto_declaracoes").select("property_id, chave, confirmado").in("property_id", idsAdequacao)
+      : { data: [] };
+    const declPor = new Map<string, { chave: string; confirmado: boolean }[]>();
+    for (const d of (decl ?? []) as { property_id: string; chave: string; confirmado: boolean }[]) declPor.set(d.property_id, [...(declPor.get(d.property_id) ?? []), d]);
+    const crus = (ordens.data ?? []) as unknown as (LinhaOrdem & { provisoria_em?: string | null; solucao_marcada_em?: string | null })[];
+    const extrasOrdem = new Map(crus.map((l) => [l.id, l]));
 
     return {
       contratosDono: ((cDono.data ?? []) as LinhaContrato[]).map(contrato),
@@ -110,7 +145,16 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
         status: o.status,
         openedAt: o.openedAt,
         firstResponseAt: o.firstResponseAt ?? null,
+        provisoriaEm: extrasOrdem.get(o.id)?.provisoria_em ?? null,
+        solucaoMarcadaEm: extrasOrdem.get(o.id)?.solucao_marcada_em ?? null,
+        resolvedAt: o.resolvedAt ?? null,
       })),
+      // Só os que ainda não confirmaram tudo (completo = sem decisão).
+      confortoPrazos: ((adequacao.data ?? []) as unknown as { property_id: string; prazo_ate: string; pausado_em: string | null; properties: Titulo }[])
+        .filter((a) => itensFaltantes(declPor.get(a.property_id) ?? []).length > 0)
+        .map((a) => ({ propertyId: a.property_id, imovel: titulo(a.properties), prazoAte: a.prazo_ate, pausado: !!a.pausado_em })),
+      pendenciasDono: ((pDono.data ?? []) as unknown as LinhaPendencia[]).map(pendencia),
+      pendenciasMorador: ((pMorador.data ?? []) as unknown as LinhaPendencia[]).map(pendencia),
       candidaturas: ((leads.data ?? []) as unknown as { id: string; property_id: string; status: string; property: Titulo }[]).map((l) => ({
         id: l.id,
         propertyId: l.property_id,

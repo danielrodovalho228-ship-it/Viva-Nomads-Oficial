@@ -11,6 +11,7 @@ import { TERMO_IA_TEXTO } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO, type Negociacao } from "@/lib/anuncio/negociacao";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import { cn } from "@/lib/utils";
+import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 
 /**
  * Etapa 5 — Revisar e publicar (prompt 10): prévia como o morador vê (cartão da busca + o que o anúncio vai
@@ -40,6 +41,8 @@ export function EtapaRevisar(p: {
   irPara: (i: number) => void;
   aceitouIa: boolean;
   setAceitouIa: (v: boolean) => void;
+  conforto: string[];
+  setConforto: (v: string[]) => void;
   publishError: string | null;
   podePublicar: boolean;
 }) {
@@ -155,6 +158,8 @@ export function EtapaRevisar(p: {
           </ul>
         )}
       </div>
+
+      <ChecklistConforto marcados={p.conforto} onChange={p.setConforto} desabilitado={p.publishing} />
 
       <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
         <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-forest" />

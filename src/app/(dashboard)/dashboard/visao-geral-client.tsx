@@ -25,8 +25,7 @@ import {
   Video,
   Wrench,
   ChevronRight,
-  Wallet,
-} from "lucide-react";
+  Wallet, BedDouble } from "lucide-react";
 import { primeiroNomeExibicao } from "@/lib/roles";
 import { StatCard, Panel, EmptyState, PageTitle } from "@/components/dashboard/primitives";
 import { ConviteFotoPerfil } from "@/components/account/convite-foto-perfil";
@@ -340,6 +339,7 @@ const ICONE_DECISAO: Record<TipoDecisao, React.ComponentType<{ className?: strin
   contrato: FileSignature,
   proposta: FileText,
   manutencao: Wrench,
+  conforto: BedDouble,
   estadia: KeyRound,
   visita: Video,
   documento: FileX,

@@ -34,6 +34,8 @@ import {
 } from "@/lib/data/actions";
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { itensFaltantes } from "@/lib/conforto/regras";
+import { confortoDoImovel } from "@/lib/data/conforto-actions";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
@@ -154,6 +156,8 @@ export default function NewPropertyPage() {
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
   const [aceitouIa, setAceitouIa] = useState(false);
+  // Prompt 59: itens do padrão mínimo de conforto marcados pelo dono (gravados no servidor ao salvar/publicar).
+  const [conforto, setConforto] = useState<string[]>([]);
   const [textoIaOriginal, setTextoIaOriginal] = useState<{ titulo: string; descricao: string } | null>(null);
   const [title, setTitle] = useState("");
   const [propertyType, setPropertyType] = useState("apartamento");
@@ -261,11 +265,14 @@ export default function NewPropertyPage() {
     video: !!videoUrl.trim(),
     // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
     qualificacaoOk: editingId ? undefined : qualificado,
+    // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
+    confortoFaltam: editingId ? undefined : itensFaltantes(conforto.map((chave) => ({ chave, confirmado: true }))).length,
   });
   /** "Resolver" de um item do portão: vai à etapa; a qualificação abre ali mesmo. */
   function resolverItem(item: ItemProntidao) {
     if (item.key === "qualificacao") setPainelQualificacao(true);
     else irPara(item.etapa);
+    if (item.key === "conforto") setTimeout(() => document.querySelector('[data-testid="conforto-checklist"]')?.scrollIntoView({ block: "center" }), 50);
   }
   // "Importar anúncio" (t115): preenche o que veio do texto colado e leva direto à etapa 3, com tudo preenchido.
   function aplicarImportado(a: AnuncioOrganizado) {
@@ -329,6 +336,19 @@ export default function NewPropertyPage() {
   }, [editId]);
 
   const imovelId = editId ?? draftParam ?? draftServerId;
+  // O que o dono já confirmou do padrão mínimo (rascunho salvo ou anúncio publicado).
+  useEffect(() => {
+    if (!imovelId) return;
+    let vivo = true;
+    confortoDoImovel(imovelId)
+      .then((e) => {
+        if (vivo && e) setConforto((atual) => [...new Set([...atual, ...e.itens.filter((i) => i.confirmado).map((i) => i.chave)])]);
+      })
+      .catch(() => null);
+    return () => {
+      vivo = false;
+    };
+  }, [imovelId]);
   useEffect(() => {
     let alive = true;
     getMyDocumentStatus(imovelId)
@@ -498,6 +518,7 @@ export default function NewPropertyPage() {
       photoUrls: photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:")),
       videoUrl: videoUrl.trim() || undefined,
       asDraft,
+      confortoConfirmados: conforto,
       aceiteIa: asDraft
         ? undefined
         : {
@@ -1459,6 +1480,8 @@ export default function NewPropertyPage() {
                 irPara={irPara}
                 aceitouIa={aceitouIa}
                 setAceitouIa={setAceitouIa}
+                conforto={conforto}
+                setConforto={setConforto}
                 publishError={publishError}
                 podePublicar={podePublicar}
               />
