@@ -74,14 +74,15 @@ export async function varrerPagina(page: Page, respostasRuins: string[]): Promis
     imagens = await imagensRuins();
   }
 
-  const dom = await page.evaluate((ignorar: string) => {
+  const medirDom = () => page.evaluate((ignorar: string) => {
     const reIgnorar = new RegExp(ignorar, "i");
     const W = window.innerWidth;
     const desc = (el: Element) => {
       const r = el.getBoundingClientRect();
       const cls = typeof el.className === "string" ? el.className.trim().split(/\s+/).slice(0, 3).join(".") : "";
       const txt = (el.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 50);
-      return `<${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ""}${cls ? `.${cls}` : ""}>${txt ? ` "${txt}"` : ""} [x=${Math.round(r.left)}, y=${Math.round(r.top + scrollY)}, ${Math.round(r.width)}×${Math.round(r.height)}]`;
+      const id = el.getAttribute("data-testid");
+      return `<${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ""}${cls ? `.${cls}` : ""}${id ? `[${id}]` : ""}>${txt ? ` "${txt}"` : ""} [x=${Math.round(r.left)}, y=${Math.round(r.top + scrollY)}, ${Math.round(r.width)}×${Math.round(r.height)}]`;
     };
     const visivel = (el: Element) => {
       const r = el.getBoundingClientRect();
@@ -193,6 +194,13 @@ export async function varrerPagina(page: Page, respostasRuins: string[]): Promis
     }
     return { estouro, foto, texto, grade };
   }, IGNORAR.source);
+  // Cartão montado pelo cliente (resultado de /buscar) chega antes da <img>: a área de foto fica vazia por um
+  // instante. Lab de 82b4d9b (22/10): Buscar @1280 instável assim. Mesma folga de 8 s das imagens.
+  let dom = await medirDom();
+  for (const limite = Date.now() + 8_000; dom.foto.length && Date.now() < limite; ) {
+    await page.waitForTimeout(400);
+    dom = await medirDom();
+  }
 
   const fixo = await controlesCobertos(page);
   return {

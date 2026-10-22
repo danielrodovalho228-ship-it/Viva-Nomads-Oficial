@@ -10,6 +10,7 @@ Um registro por defeito novo achado na triagem contínua (Pista C). Defeito conh
 | L-4 | 22/10 | t263 · visual-41 (01, 02, 03 e 06) | Página do imóvel inteira; barras inferiores de inquilino e dono; cogumelo da estadia | Diferença de pixels contra a linha de base em toda execução desde 02h42 (página do imóvel com 97 a 144 px a mais de altura) | Alarme de baseline (spec nova) | A + Muse | Aberto |
 | L-5 | 22/10 | Suíte inteira | — | Execuções de 05h07 (622 pulados) e 06h17 (782) bateram no teto de 65 min com poucas falhas; a suíte passou de ~1.600 testes | Laboratório (capacidade) | C, com OK do Muse para mexer no workflow | Aberto |
 | L-6 | 22/10 | t248 · "Qualificação do rascunho abre o checklist" (390 px) | /qualificar · dono | "Enviado para conferência" não aparece depois de enviar a matrícula; falhou em 21/10 02h02 e 12h19, 22/10 11h14; instável às 06h17 e 08h41 | A investigar (pode ser a trava do D-V3) | C | Aberto |
+| L-7 | 22/10 | t274 · Empresas e Para proprietários, classe foto (1280 px no erro registrado) | `/empresas` e `/para-proprietarios` · visitante | 7 cartões com `fotoPronta: false` (`src/lib/cartoes-secao.ts`) mostram só o fundo neutro (`[cartao-foto-pendente]`); laboratório de `82b4d9b` (14h43). Igual em produção: é o estado previsto até a foto chegar | Conteúdo pendente (produto) | Muse/coordenação: arquivos em `public/images/unicas/` e `fotoPronta: true` | Aberto; anotado na t274 (`CONHECIDOS`), catraca reprova quando sumir |
 
 ## Lista priorizada para as pistas A e B
 
