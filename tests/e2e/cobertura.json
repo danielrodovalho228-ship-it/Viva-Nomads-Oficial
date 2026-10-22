@@ -1489,6 +1489,12 @@
       "specs": [
         "t264-viva-automatico"
       ]
+    },
+    "/admin/retencao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
     }
   },
   "rotas": {
