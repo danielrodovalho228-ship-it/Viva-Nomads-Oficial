@@ -101,5 +101,7 @@ test("etapaDaUrl: só aceita 0..5; qualquer outra coisa vira null", () => {
   assert.equal(etapaDaUrl("3"), 3);
   assert.equal(etapaDaUrl("5"), 5);
   assert.equal(etapaDaUrl("0"), 0);
-  for (const v of ["6", "7", "-1", "3.5", "abc", "", null, undefined, "03"]) assert.equal(etapaDaUrl(v), null);
+  assert.equal(etapaDaUrl("fotos"), ETAPA.fotos, "o nome do passo vale mais que o número");
+  assert.equal(etapaDaUrl("revisar"), ETAPA.revisar);
+  for (const v of ["Fotos", "encontramos", "6", "7", "-1", "3.5", "abc", "", null, undefined, "03"]) assert.equal(etapaDaUrl(v), null);
 });

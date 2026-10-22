@@ -93,8 +93,13 @@ export function posMaxDoRascunho(d: CamposRascunho & { step?: unknown; etapaMax?
   return Math.max(atual, max);
 }
 
-/** Etapa (ID) pedida em `?etapa=` (link do checklist da Visão geral); inválida = null. */
+/**
+ * Etapa (ID) pedida em `?etapa=` (link do checklist da Visão geral); inválida = null. Aceita o número ou o NOME do
+ * passo (`?etapa=fotos`), que não muda quando a ordem dos passos muda.
+ */
 export function etapaDaUrl(v: string | null | undefined): number | null {
-  if (typeof v !== "string" || !/^[0-5]$/.test(v)) return null;
-  return Number(v);
+  if (typeof v !== "string") return null;
+  if (/^[0-5]$/.test(v)) return Number(v);
+  const i = (ETAPAS as readonly string[]).indexOf(v);
+  return i >= 0 ? i : null;
 }

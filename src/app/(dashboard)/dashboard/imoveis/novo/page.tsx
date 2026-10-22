@@ -1215,7 +1215,7 @@ export default function NewPropertyPage() {
         />
         <div className="absolute inset-0 bg-night/50" />
         <div className="absolute inset-0 flex flex-col justify-center p-5 text-white">
-          <p className="font-title text-lg font-semibold sm:text-xl">Vamos publicar seu imóvel</p>
+          <p className="font-title text-lg font-semibold sm:text-xl">Anunciar seu imóvel em 6 passos</p>
           <p className="text-sm text-white/80" data-testid="cadastro-frase-topo">
             {iaLigada ? "Comece pelo CEP. A IA preenche o resto pelas fotos." : "Comece pelo CEP. Depois, fotos, detalhes, preço e revisão."}
           </p>
