@@ -110,3 +110,11 @@ export function textoPrazo(item: Pick<ItemInventario, "prazoDias" | "base" | "ga
 export function aReaplicar(livro: readonly { origem: string; ref_id: string }[], existentes: ReadonlyMap<string, ReadonlySet<string>>): { origem: string; ref: string }[] {
   return livro.filter((l) => existentes.get(l.origem)?.has(l.ref_id)).map((l) => ({ origem: l.origem, ref: l.ref_id }));
 }
+
+/**
+ * A rodada de hoje só conta (simulada) ou apaga de verdade os itens de fase 1? Fora do laboratório, só apaga com a
+ * chave ELIMINACAO_ATIVA=1 ligada pelo Daniel; um pedido de simulação (cron com ?simular) nunca apaga.
+ */
+export function rodadaSimulada(o: { pedidoSimular: boolean; laboratorio: boolean; chaveAtiva: string | undefined }): boolean {
+  return o.pedidoSimular || !(o.laboratorio || o.chaveAtiva === "1");
+}

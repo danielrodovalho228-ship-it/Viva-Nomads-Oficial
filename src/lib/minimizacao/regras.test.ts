@@ -4,7 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { aReaplicar, eliminaDeVerdade, planoDoItem, textoPrazo, venceu, type ItemInventario } from "./regras.ts";
+import { aReaplicar, eliminaDeVerdade, planoDoItem, rodadaSimulada, textoPrazo, venceu, type ItemInventario } from "./regras.ts";
 
 const docCandidatura: ItemInventario = {
   id: "inquilino-docs/arquivo",
@@ -61,4 +61,12 @@ test("restauração: o livro reaplicado acha o que voltou; depois de reaplicar, 
   const voltou = new Map([["bucket:inquilino-docs", new Set(["u1/rg.png", "u2/outro.png"])]]);
   assert.deepEqual(aReaplicar(livro, voltou), [{ origem: "bucket:inquilino-docs", ref: "u1/rg.png" }]);
   assert.deepEqual(aReaplicar(livro, new Map()), []);
+});
+
+test("a rodada só apaga de verdade com a chave ligada (ou no laboratório); pedido de simulação nunca apaga", () => {
+  assert.equal(rodadaSimulada({ pedidoSimular: false, laboratorio: false, chaveAtiva: undefined }), true, "produção sem chave: simulado");
+  assert.equal(rodadaSimulada({ pedidoSimular: false, laboratorio: false, chaveAtiva: "0" }), true);
+  assert.equal(rodadaSimulada({ pedidoSimular: false, laboratorio: false, chaveAtiva: "1" }), false, "chave ligada: real");
+  assert.equal(rodadaSimulada({ pedidoSimular: false, laboratorio: true, chaveAtiva: undefined }), false, "laboratório: real");
+  assert.equal(rodadaSimulada({ pedidoSimular: true, laboratorio: true, chaveAtiva: "1" }), true, "pedido de simulação: nunca apaga");
 });

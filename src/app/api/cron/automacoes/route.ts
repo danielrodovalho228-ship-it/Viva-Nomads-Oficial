@@ -31,6 +31,7 @@ import { conferenciasParaFechar, type ConferenciaAberta } from "@/lib/fiscal/fec
 import { precalcularTempos } from "@/lib/data/tempos";
 import { automacaoDaEstadia } from "@/lib/automacao/servidor";
 import { rodarEliminacao } from "@/lib/minimizacao/servidor";
+import { rodadaSimulada } from "@/lib/minimizacao/regras";
 import { integracoesSimuladas } from "@/lib/integracoes";
 
 /**
@@ -261,8 +262,8 @@ export async function GET(request: Request) {
   const automatico = await automacaoDaEstadia(admin, agora, simular).catch(() => ({ automaticos: 0, sugestoesMorador: 0, semResposta: 0 }));
   // Minimização (Prompt 58): a rotina única de eliminação. Fase 1 apaga de verdade só com ELIMINACAO_ATIVA=1 (ou no
   // laboratório); fora disso, o relatório "o que seria apagado hoje" sai sem apagar nada.
-  const eliminacao = await rodarEliminacao(admin, agora, simular || !(integracoesSimuladas() || process.env.ELIMINACAO_ATIVA === "1")).catch(() => ({ eliminados: 0, simulados: 0, falhas: 1 }));
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos, ...automatico , eliminacao });
+  const eliminacao = await rodarEliminacao(admin, agora, rodadaSimulada({ pedidoSimular: simular, laboratorio: integracoesSimuladas(), chaveAtiva: process.env.ELIMINACAO_ATIVA })).catch(() => ({ eliminados: 0, simulados: 0, falhas: 1 }));
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos, ...automatico, eliminacao });
 }
 
 /** Retenção dos ocupantes (90 dias depois do fim) e aditivos vencidos. `simular`: só conta, não apaga nem muda nada. */
