@@ -54,6 +54,16 @@ export async function varrerPagina(page: Page, respostasRuins: string[]): Promis
         const r = img.getBoundingClientRect();
         if (r.width < 2 || r.height < 2 || !img.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
         if (r.right <= 0 || r.left >= window.innerWidth) continue; // slide fora da tela num carrossel
+        // Slide escondido pelo corte do carrossel (overflow do cartão): o usuário não vê; carregar a próxima foto antes
+        // do toque é a promessa da t267, não critério desta varredura (lab de 7c5cb85, 22/10: /cidades a 1280 px).
+        let vis = { l: r.left, t: r.top, rt: r.right, b: r.bottom };
+        for (let a = img.parentElement; a && a !== document.body; a = a.parentElement) {
+          const cs = getComputedStyle(a);
+          if (cs.overflowX === "visible" && cs.overflowY === "visible") continue;
+          const ra = a.getBoundingClientRect();
+          vis = { l: Math.max(vis.l, ra.left), t: Math.max(vis.t, ra.top), rt: Math.min(vis.rt, ra.right), b: Math.min(vis.b, ra.bottom) };
+        }
+        if (vis.rt - vis.l < 2 || vis.b - vis.t < 2) continue;
         const src = img.currentSrc || img.getAttribute("src") || "";
         if (re.test(src)) continue;
         if (!src) ruins.push(`<img> sem src (alt="${img.alt.slice(0, 40)}") em y=${Math.round(r.top + scrollY)}`);
