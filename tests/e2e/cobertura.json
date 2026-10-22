@@ -346,7 +346,8 @@
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
         "t232-pedido-moradia-completo",
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t267-buscar-fotos-cartao"
       ]
     },
     "/cidades": {
@@ -686,7 +687,8 @@
         "t40-novo-anuncio-fotos",
         "t8-rascunho",
         "t183-telas-logadas-390",
-        "t198-rodape-painel-390"
+        "t198-rodape-painel-390",
+        "t268-meus-imoveis-link"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
