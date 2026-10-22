@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { comNovaTentativa } from "@/lib/nova-tentativa";
 import { isExemplo } from "@/lib/demo-listing";
@@ -388,7 +389,7 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
   }
 }
 
-export async function getProperty(id: string): Promise<Property | undefined> {
+async function getPropertySemCache(id: string): Promise<Property | undefined> {
   const supabase = createPublicClient();
   // Modo demonstração (sem Supabase): dados de exemplo.
   if (!supabase) return SAMPLE_PROPERTIES.find((p) => p.id === id);
@@ -417,6 +418,9 @@ export async function getProperty(id: string): Promise<Property | undefined> {
     return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
   }
 }
+
+/** Um anúncio público; a mesma consulta vale para layout, metadados e página na mesma requisição. */
+export const getProperty = cache(getPropertySemCache);
 
 /**
  * Carrega um imóvel do PRÓPRIO dono para edição — qualquer status (inclusive
