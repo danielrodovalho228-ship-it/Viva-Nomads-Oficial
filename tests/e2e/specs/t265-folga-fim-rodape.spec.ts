@@ -105,10 +105,18 @@ for (const { largura, altura } of LARGURAS) {
         // A altura medida da barra chegou ao CSS.
         expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--altura-barra-fixa"))).toMatch(/^\d+px$/);
       }
-      await rolarAteOFim(page);
-      const f = (await flut.boundingBox())!;
-      const copy = (await page.locator("footer.vn-rodape p").last().boundingBox())!;
-      expect(copy.y + copy.height, "a última linha do rodapé termina acima do botão").toBeLessThanOrEqual(f.y);
+      // Mede de novo até a página assentar (blocos tardios mudam a altura; a 1ª medida pode vir antes).
+      await expect
+        .poll(
+          async () => {
+            await rolarAteOFim(page);
+            const f = (await flut.boundingBox())!;
+            const copy = (await page.locator("footer.vn-rodape p").last().boundingBox())!;
+            return f.y - (copy.y + copy.height);
+          },
+          { timeout: 15_000, message: "a última linha do rodapé termina acima do botão" },
+        )
+        .toBeGreaterThanOrEqual(0);
     });
   });
 }
