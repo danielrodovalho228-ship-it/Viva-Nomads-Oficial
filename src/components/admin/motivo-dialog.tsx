@@ -81,7 +81,7 @@ export function MotivoDialog({
           </button>
         </div>
         {descricao && <p className="mt-1 text-sm text-muted">{descricao}</p>}
-        <label className="mt-4 block text-sm font-medium text-ink" htmlFor="motivo-texto">
+        <label className="mt-4 block text-sm font-semibold text-ink" htmlFor="motivo-texto">
           Motivo
         </label>
         <textarea

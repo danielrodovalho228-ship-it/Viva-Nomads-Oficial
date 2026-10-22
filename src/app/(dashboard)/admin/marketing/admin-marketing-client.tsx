@@ -74,17 +74,17 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
       <PageTitle title="Gastos de marketing" subtitle="Quanto foi investido por mês e canal. É a base do CAC e do ROI." />
 
       {aviso && (
-        <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{aviso}</p>
+        <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">{aviso}</p>
       )}
 
       <Panel title="Novo lançamento" className="mb-6">
         <form onSubmit={lancar} className="grid gap-3 sm:grid-cols-[10rem_10rem_10rem_1fr_auto] sm:items-end">
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-ink">Mês</span>
+            <span className="mb-1 block font-semibold text-ink">Mês</span>
             <input type="month" required value={mes} onChange={(e) => setMes(e.target.value)} className={campo} />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-ink">Canal</span>
+            <span className="mb-1 block font-semibold text-ink">Canal</span>
             <select required value={canal} onChange={(e) => setCanal(e.target.value)} className={campo}>
               <option value="">Escolha</option>
               {CANAIS_MARKETING.map((c) => (
@@ -95,7 +95,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
             </select>
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-ink">Valor (R$)</span>
+            <span className="mb-1 block font-semibold text-ink">Valor (R$)</span>
             <input
               inputMode="decimal"
               required
@@ -106,7 +106,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
             />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-ink">Observação (opcional)</span>
+            <span className="mb-1 block font-semibold text-ink">Observação (opcional)</span>
             <input
               maxLength={500}
               value={observacao}
@@ -133,7 +133,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
             {totais.map((t) => (
               <li key={t.mes} className="flex items-center justify-between py-2 text-sm">
                 <span className="capitalize text-ink">{mesLabel(t.mes)}</span>
-                <span className="font-medium text-ink">{formatBRL(t.total)}</span>
+                <span className="font-semibold text-ink">{formatBRL(t.total)}</span>
               </li>
             ))}
           </ul>
@@ -164,14 +164,14 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
                     {g.observacao && <span className="block truncate text-muted">{g.observacao}</span>}
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
-                    <span className="font-medium text-ink">{formatBRL(g.valor)}</span>
+                    <span className="font-semibold text-ink">{formatBRL(g.valor)}</span>
                     <ConfirmarNaPagina
                       aviso="Apagar este lançamento?"
                       confirmar="Apagar"
                       onConfirmar={() => apagar(g.id)}
                       disabled={apagando === g.id}
                       ariaLabel={`Apagar lançamento de ${canalLabel(g.canal)} em ${mesLabel(g.mes)}`}
-                      botaoClassName="rounded-lg p-2 text-muted hover:bg-red-50 hover:text-red-700"
+                      botaoClassName="rounded-lg p-2 text-muted hover:bg-surface-2 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
                     </ConfirmarNaPagina>

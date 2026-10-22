@@ -108,7 +108,7 @@ test.describe("T229 — admin conversa com tudo", () => {
       expect((await cartao(page, "valor_mensal_contratado")).valor).toMatch(/R\$\s?3\.200/);
       const pedidos = await cartao(page, "pedidos");
       const fila = page.locator('[data-precisa="documentos_pendentes"]');
-      const filaHome = n(await fila.locator("span.font-title").innerText());
+      const filaHome = Number(await fila.locator("[data-href]").first().getAttribute("data-valor"));
       await expect(fila).toContainText(/na fila \(\d+ documentos? \+ \d+ matrículas?\)/);
       await page.screenshot({ path: `${SAIDA}/t229-home-${largura}.png`, fullPage: true });
 
@@ -157,11 +157,13 @@ test.describe("T229 — admin conversa com tudo", () => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await page.goto(HOME, { waitUntil: "domcontentloaded" });
       const agora = page.getByTestId("home-agora");
-      const valorDe = async (rotulo: RegExp) => {
-        const link = agora.getByRole("link", { name: rotulo });
-        return { valor: n((await link.locator("p").first().innerText()).trim()), href: await link.getAttribute("href") };
+      // Prompt 46: "Imóveis reais publicados" é o número-herói; o resto de "Agora" é lista com divisor fino.
+      const valorDe = async (rotulo: string) => {
+        const link = agora.locator(`[data-agora^="${rotulo}"] [data-href]`);
+        return { valor: n((await link.innerText()).trim()), href: await link.getAttribute("href") };
       };
-      const reais = await valorDe(/Imóveis reais publicados/);
+      const heroi = page.getByTestId("admin-heroi").locator("[data-href]");
+      const reais = { valor: n((await heroi.innerText()).trim()), href: await heroi.getAttribute("href") };
       expect(reais.valor).toBe(1);
       await page.goto(reais.href!, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText("1");
@@ -169,7 +171,7 @@ test.describe("T229 — admin conversa com tudo", () => {
       await expect(page.getByTestId("imovel-publico").first()).toHaveText("sim");
 
       await page.goto(HOME, { waitUntil: "domcontentloaded" });
-      const testes = await valorDe(/Anúncios de teste/);
+      const testes = await valorDe("Anúncios de teste");
       expect(testes.valor).toBe(1);
       await page.goto(testes.href!, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText("1");
@@ -186,7 +188,7 @@ test.describe("T229 — admin conversa com tudo", () => {
 
       // Agentes: "Aguardando o seu OK" igual na home e na página.
       await page.goto(HOME, { waitUntil: "domcontentloaded" });
-      const ok = await page.getByRole("link", { name: /Equipe — aguardando o seu ok/i }).locator("p").first().innerText();
+      const ok = await page.locator("dl div", { hasText: /Equipe — aguardando o seu ok/i }).locator("[data-valor]").first().innerText();
       await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("agentes-aguardandoOk").locator("[data-valor]")).toHaveText(ok.trim());
       await expect(page.getByTestId("agentes-contadores")).toContainText("Ordens lidas não concluídas");

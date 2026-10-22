@@ -16,7 +16,7 @@ export function FalhasDocumentos({ falhas, pendentes }: { falhas: FalhaDocumento
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   return (
-    <Panel title="Documentos com falha" className="mt-6" data-testid="documentos-falhas">
+    <Panel title="Documentos com falha" className="mt-6 scroll-mt-24" id="falhas" data-testid="documentos-falhas">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">
           {pendentes === 0
@@ -52,7 +52,7 @@ export function FalhasDocumentos({ falhas, pendentes }: { falhas: FalhaDocumento
           {falhas.map((f) => (
             <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm" data-testid="documento-falha">
               <span className="min-w-0">
-                <span className="block font-medium text-ink">
+                <span className="block font-semibold text-ink">
                   <span data-testid="falha-numero">{f.numero ?? "Sem número (não emitido)"}</span> · <span data-testid="falha-tipo">{f.tipo}</span>
                   {f.etapa === "envio" ? " · emitido, e-mail não saiu" : ""}
                 </span>

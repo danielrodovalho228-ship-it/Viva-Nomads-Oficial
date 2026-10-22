@@ -134,7 +134,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
             {lista.map((i) => (
               <li key={i.id} className="rounded-xl border border-line p-3 text-sm" data-testid="imovel-linha" data-tipo={i.tipo} data-publico={i.publico ? "sim" : "nao"}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-medium text-ink">
+                  <span className="font-semibold text-ink">
                     {i.titulo}
                     {i.tipo === "teste" && <SeloTeste />}
                   </span>
@@ -151,16 +151,16 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
                   {i.criadoEm ? ` · criado em ${dataBRT(i.criadoEm)}` : ""}
                 </p>
                 <p className="mt-2 flex flex-wrap items-center gap-3 text-xs">
-                  <Link href={`/imoveis/${i.id}`} className="font-medium text-forest underline">
+                  <Link href={`/imoveis/${i.id}`} className="font-semibold text-forest underline">
                     Ver como o público vê
                   </Link>
                   {i.tipo !== "demonstracao" && (
-                    <Link href="/admin/documentos" className="font-medium text-forest underline">
+                    <Link href="/admin/documentos" className="font-semibold text-forest underline">
                       Documento
                     </Link>
                   )}
                   {i.cidade && (
-                    <Link href={`/admin/pedidos?cidade=${encodeURIComponent(i.cidade)}`} className="font-medium text-forest underline">
+                    <Link href={`/admin/pedidos?cidade=${encodeURIComponent(i.cidade)}`} className="font-semibold text-forest underline">
                       Pedidos compatíveis
                     </Link>
                   )}

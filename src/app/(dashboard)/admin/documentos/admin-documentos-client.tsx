@@ -77,10 +77,10 @@ export function AdminDocumentosClient({
 
       {/* Prompt 29, item 9: "Na fila agora" é a soma explicada (documentos + matrículas); os 7 dias são outra métrica. */}
       {filaAgora && (
-        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/60 p-3" data-testid="fila-agora">
+        <div className="mb-4 rounded-xl border border-line bg-white p-3" data-testid="fila-agora">
           <p className="font-title text-lg font-semibold text-ink">
             <span data-testid="fila-agora-total">{filaAgora.total}</span> na fila agora{" "}
-            <span className="text-base font-medium text-muted">({textoFilaDocumentos(filaAgora).replace(/^\d+ na fila \(|\)$/g, "")})</span>
+            <span className="text-base font-semibold text-muted">({textoFilaDocumentos(filaAgora).replace(/^\d+ na fila \(|\)$/g, "")})</span>
           </p>
           <p className="text-xs text-muted">
             {FORMULA_FILA_DOCUMENTOS}
@@ -117,7 +117,7 @@ export function AdminDocumentosClient({
             aria-selected={aba === k}
             onClick={() => setAba(k)}
             className={cn(
-              "rounded-full px-3 py-2 text-sm font-medium",
+              "rounded-full px-3 py-2 text-sm font-semibold",
               aba === k ? "bg-forest text-white" : "bg-sage-100 text-forest hover:bg-sage-200",
             )}
           >
@@ -164,7 +164,7 @@ function ConferenciaIaBox({ c, revisaoAte }: { c: ConferenciaResumo; revisaoAte?
   const [agora] = useState(() => Date.now());
   const vencido = !!revisaoAte && Date.parse(revisaoAte) < agora;
   return (
-    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="conferencia-ia">
+    <div className="mt-3 rounded-lg border border-line bg-white px-3 py-2 text-sm text-amber-900" data-testid="conferencia-ia">
       <p className="font-semibold">Conferência automática</p>
       {c.motivos.length > 0 && (
         <ul className="mt-1 list-disc space-y-1 pl-5" data-testid="conferencia-ia-motivos">
@@ -194,7 +194,7 @@ function AutoCard({ doc, onReaberto }: { doc: ConferidoAutomatico; onReaberto: (
   return (
     <div data-testid="auto-card">
       <Panel>
-        <p className="font-medium text-ink">
+        <p className="font-semibold text-ink">
           {doc.ownerNome}
           <span className="font-normal text-muted"> · {doc.tituloImovel ?? "sem imóvel ligado ainda"}</span>
         </p>
@@ -210,12 +210,12 @@ function AutoCard({ doc, onReaberto }: { doc: ConferidoAutomatico; onReaberto: (
           </ul>
         )}
         <details className="mt-2 text-xs">
-          <summary className="cursor-pointer font-medium text-forest">Ver o que a conferência leu</summary>
+          <summary className="cursor-pointer font-semibold text-forest">Ver o que a conferência leu</summary>
           <pre className="mt-1 overflow-x-auto rounded-lg bg-surface-2 p-2" data-testid="auto-card-json">{JSON.stringify(doc.conferencia, null, 2)}</pre>
         </details>
         <div className="mt-3 flex flex-wrap gap-2">
           {doc.docUrl && (
-            <a href={doc.docUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium text-forest hover:underline">
+            <a href={doc.docUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-forest hover:underline">
               <ExternalLink className="h-4 w-4" /> Abrir documento
             </a>
           )}
@@ -281,7 +281,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
           <FileText className="h-5 w-5 text-forest" />
         </span>
         <div className="min-w-0">
-          <p className="font-medium text-ink">
+          <p className="font-semibold text-ink">
             {doc.ownerNome}
             <span className="font-normal text-muted">
               {" · "}
@@ -299,7 +299,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
 
       {/* Alerta de arquivo reutilizado (anti-fraude) */}
       {doc.duplicado > 0 && (
-        <p className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-3 flex items-start gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-red-700">
           <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
           <span>
             <strong>Arquivo idêntico já enviado por {doc.duplicado} outra(s) conta(s).</strong>{" "}
@@ -336,7 +336,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
               href={doc.docUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-2 text-xs font-medium text-forest hover:underline"
+              className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-forest hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" /> Abrir em nova aba (tamanho real)
             </a>
@@ -353,7 +353,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
               <User className="mt-1 h-4 w-4 shrink-0 text-sage" />
               <div className="min-w-0">
                 <dt className="text-xs text-muted">Titular da conta</dt>
-                <dd className="font-medium text-ink">{doc.ownerNomeCompleto ?? doc.ownerNome}</dd>
+                <dd className="font-semibold text-ink">{doc.ownerNomeCompleto ?? doc.ownerNome}</dd>
               </div>
             </div>
             {doc.titularInformado && (
@@ -361,7 +361,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
                 <FileText className="mt-1 h-4 w-4 shrink-0 text-sage" />
                 <div className="min-w-0">
                   <dt className="text-xs text-muted">Titular informado pelo dono</dt>
-                  <dd className="font-medium text-ink">{doc.titularInformado}</dd>
+                  <dd className="font-semibold text-ink">{doc.titularInformado}</dd>
                 </div>
               </div>
             )}
@@ -369,7 +369,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
               <Home className="mt-1 h-4 w-4 shrink-0 text-sage" />
               <div className="min-w-0">
                 <dt className="text-xs text-muted">{doc.semImovel ? "Imóvel mais recente do dono" : "Imóvel do cadastro"}</dt>
-                <dd className="font-medium text-ink">
+                <dd className="font-semibold text-ink">
                   {doc.refImovel ?? "— (sem imóvel cadastrado ainda)"}
                 </dd>
               </div>
@@ -381,7 +381,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
               data-testid="pre-conferencia"
               className={cn(
                 "mt-4 rounded-lg border px-3 py-2 text-sm",
-                doc.preConferencia.pareceOk ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"
+                doc.preConferencia.pareceOk ? "border-line bg-white text-forest" : "border-line bg-white text-amber-900"
               )}
             >
               <p className="text-xs font-semibold uppercase">Pré-conferência automática</p>
@@ -402,7 +402,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
               target="_blank"
               rel="noopener noreferrer"
               data-testid="abrir-autorizacao"
-              className="mt-2 inline-flex items-center gap-2 text-xs font-medium text-forest hover:underline"
+              className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-forest hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               {doc.operacao === "managed" ? "Abrir contrato de administração / procuração" : "Abrir autorização de sublocação"}
@@ -432,7 +432,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
 
       {rejeitando ? (
         <div className="mt-4 border-t border-sage-200 pt-4">
-          <label className="text-sm font-medium text-ink">Motivo da recusa</label>
+          <label className="text-sm font-semibold text-ink">Motivo da recusa</label>
           <select value={motivo} onChange={(e) => setMotivo(e.target.value)} className="input mt-2">
             <option value="">Selecione um motivo…</option>
             {MOTIVOS_RECUSA.map((m) => (
@@ -458,7 +458,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
             </Button>
             <Button
               size="sm"
-              className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+              variant="destructive"
               disabled={busy || !motivoFinal}
               onClick={recusar}
             >
@@ -469,7 +469,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
       ) : (
         <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-sage-200 pt-4">
           {doc.bloqueioAprovacao && (
-            <span className="mr-auto text-xs font-medium text-amber-700" data-testid="aprovar-bloqueado">
+            <span className="mr-auto text-xs font-semibold text-amber-700" data-testid="aprovar-bloqueado">
               {doc.bloqueioAprovacao}
             </span>
           )}
@@ -479,9 +479,8 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
             </span>
           )}
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
-            className={cn("border-red-200 text-red-600 hover:bg-red-50")}
             disabled={busy}
             onClick={() => setRejeitando(true)}
           >

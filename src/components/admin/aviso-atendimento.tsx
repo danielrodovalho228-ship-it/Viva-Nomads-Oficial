@@ -20,7 +20,7 @@ export async function AvisoAtendimentoAdmin() {
   const aviso = avisoTopoAdmin({ estourados, semRespostaDaEquipe: esperando });
   if (!aviso) return null;
   return (
-    <div role="alert" data-testid="aviso-atendimento-admin" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
+    <div role="alert" data-testid="aviso-atendimento-admin" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-red-700">
       <span>{aviso.texto}</span>
       <Link href={aviso.href} className="inline-flex min-h-11 items-center underline">
         Abrir a fila

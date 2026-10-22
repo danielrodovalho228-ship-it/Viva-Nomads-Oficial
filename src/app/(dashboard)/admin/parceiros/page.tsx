@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { SeloTeste } from "@/components/admin/selo-teste";
-import { BadgeCheck, Camera, Clock, Handshake, XCircle } from "lucide-react";
+import { Camera, Handshake } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { nomeCurto } from "@/lib/perfil/perfil-publico";
 import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
-import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { buttonClasses } from "@/components/ui/button";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
@@ -133,12 +134,15 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Pendentes" value={conta(["pendente", "aguardando_email"])} icon={Clock} href="/admin/parceiros?aba=pendentes" />
-        <StatCard label="Aprovadas (sem ativar)" value={conta(["aprovada"])} icon={BadgeCheck} href="/admin/parceiros?aba=aprovadas" />
-        <StatCard label="Parceiros ativos" value={ativos ?? 0} icon={Handshake} href="/admin/parceiros?aba=ativas" />
-        <StatCard label="Recusadas" value={conta(["recusada"])} icon={XCircle} href="/admin/parceiros?aba=recusadas" />
-      </div>
+      <NumeroHeroi rotulo="Pedidos de parceria pendentes" valor={conta(["pendente", "aguardando_email"])} href="/admin/parceiros?aba=pendentes" />
+      <ListaNumeros
+        className="mb-6"
+        itens={[
+          { rotulo: "Aprovadas (sem ativar)", valor: conta(["aprovada"]), href: "/admin/parceiros?aba=aprovadas" },
+          { rotulo: "Parceiros ativos", valor: ativos ?? 0, href: "/admin/parceiros?aba=ativas" },
+          { rotulo: "Recusadas", valor: conta(["recusada"]), href: "/admin/parceiros?aba=recusadas" },
+        ]}
+      />
 
       <Panel title="Cartão do parceiro" className="mb-6">
         <dl className="grid grid-cols-2 gap-3 text-sm" data-testid="admin-cartao-parceiro">
@@ -168,7 +172,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
             key={a.valor}
             href={`/admin/parceiros?aba=${a.valor}`}
             aria-current={aba === a.valor ? "page" : undefined}
-            className={`flex h-11 items-center justify-center rounded-lg border text-sm font-semibold ${aba === a.valor ? "border-blue-500 bg-blue-50 text-blue-700" : "border-line bg-white text-ink"}`}
+            className={`flex h-11 items-center justify-center rounded-lg border text-sm font-semibold ${aba === a.valor ? "border-ink bg-white text-forest" : "border-line bg-white text-ink"}`}
             data-testid={`admin-parceiros-aba-${a.valor}`}
           >
             {a.rotulo}
@@ -254,7 +258,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
                 return (
                   <li key={`${a.user_id}-${a.uf}-${a.chave}-${a.categoria}`} className="flex flex-wrap items-center justify-between gap-2 py-2" data-testid="aviso-fotografo-linha">
                     <span className="min-w-0">
-                      <span className="font-medium text-ink">
+                      <span className="font-semibold text-ink">
                         {a.cidade}/{a.uf}
                       </span>
                       <span className="text-muted">

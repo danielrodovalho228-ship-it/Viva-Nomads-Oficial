@@ -151,7 +151,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                   key={m.id}
                   className={cn(
                     "rounded-xl px-4 py-3 text-sm",
-                    m.interno ? "border border-dashed border-amber-300 bg-amber-50" : m.autor === "usuario" ? "bg-sage-100" : m.autor === "sistema" ? "bg-surface-2 text-muted" : "border border-line bg-white"
+                    m.interno ? "border border-dashed border-line bg-white" : m.autor === "usuario" ? "bg-sage-100" : m.autor === "sistema" ? "bg-surface-2 text-muted" : "border border-line bg-white"
                   )}
                 >
                   <span className="mb-1 flex items-center gap-2 text-xs font-semibold text-muted">
@@ -172,8 +172,8 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                           <Send className="h-3.5 w-3.5" /> Aprovar e enviar
                         </Button>
                       )}
-                      {aprovadas.has(m.id) && <span className="text-xs font-medium text-forest">Aprovada e enviada</span>}
-                      <button type="button" onClick={() => setTexto(respostaDaNota(m.corpo))} className="text-xs font-medium text-forest underline">
+                      {aprovadas.has(m.id) && <span className="text-xs font-semibold text-forest">Aprovada e enviada</span>}
+                      <button type="button" onClick={() => setTexto(respostaDaNota(m.corpo))} className="text-xs font-semibold text-forest underline">
                         {m.autor === "ia" && respostaDaSugestao(m.corpo) ? "Editar antes de enviar" : "Usar como resposta"}
                       </button>
                     </span>
@@ -184,10 +184,10 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                         <span className="text-muted">{avaliadas.get(m.id) === "ia_boa_resposta" ? "Marcada como boa resposta" : "Correção registrada"}</span>
                       ) : (
                         <>
-                          <button type="button" disabled={ocupado} onClick={() => agir(() => avaliarRespostaIA(c.id, m.id, "boa"))} className="inline-flex items-center gap-1 font-medium text-forest underline">
+                          <button type="button" disabled={ocupado} onClick={() => agir(() => avaliarRespostaIA(c.id, m.id, "boa"))} className="inline-flex items-center gap-1 font-semibold text-forest underline">
                             <ThumbsUp className="h-3.5 w-3.5" /> Boa resposta
                           </button>
-                          <button type="button" onClick={() => setCorrigindo(m.id)} className="inline-flex items-center gap-1 font-medium text-amber-800 underline">
+                          <button type="button" onClick={() => setCorrigindo(m.id)} className="inline-flex items-center gap-1 font-semibold text-amber-800 underline">
                             <Pencil className="h-3.5 w-3.5" /> Corrigir
                           </button>
                         </>
@@ -300,7 +300,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
 
         <aside className="grid content-start gap-4">
           <Panel>
-            <p className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium", r.cor)}>
+            <p className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold", r.cor)}>
               <Clock className="h-3.5 w-3.5" /> 1ª resposta: {r.texto}
             </p>
             <dl className="mt-3 space-y-2 text-sm">
@@ -329,7 +329,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 {contextoLink ? (
                   <>
                     {" "}·{" "}
-                    <Link href={contextoLink} className="font-medium text-forest underline">abrir</Link>
+                    <Link href={contextoLink} className="font-semibold text-forest underline">abrir</Link>
                   </>
                 ) : null}
               </p>

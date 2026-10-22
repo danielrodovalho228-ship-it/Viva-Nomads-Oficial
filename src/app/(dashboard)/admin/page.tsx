@@ -7,14 +7,16 @@ import { CartaoBackup } from "@/components/admin/cartao-backup";
 import { VisaoGeralClient } from "./visao-geral-client";
 import { AtalhosAdmin } from "./atalhos-admin";
 import { AvisoAtendimentoAdmin } from "@/components/admin/aviso-atendimento";
+import { DecisoesHoje } from "@/components/admin/numeros";
+import { decisoesDoAdmin } from "@/lib/data/admin-decisoes";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { showDemoProperties } from "@/lib/data/properties";
 
 /**
- * Visão geral do /admin (PR B): período (7/30/90 dias, ano, personalizado)
- * com variação contra o período anterior, filtro de cidade, blocos de
- * indicadores com a fórmula no "i", funil, "Precisa de você agora" e CSV.
- * O layout já exige admin; a leitura confere de novo (getVisaoGeral).
+ * Início do /admin na anatomia "decisões primeiro" (Prompt 46, D5): "Hoje você tem N decisões" (cada fila com o botão
+ * da decisão), depois UM número-herói e os números em listas com divisor fino — período (7/30/90 dias, ano,
+ * personalizado) com variação contra o anterior, filtro de cidade, fórmula no "i", funil e CSV. Todo número abre a
+ * lista que conta. O layout já exige admin; a leitura confere de novo (getVisaoGeral).
  */
 export default async function AdminPage({
   searchParams,
@@ -29,9 +31,10 @@ export default async function AdminPage({
   const periodo = resolverPeriodo({ periodo: um("periodo"), de: um("de"), ate: um("ate") }, hojeBR());
   const cidade = (um("cidade") ?? "").trim().slice(0, 80) || null;
 
-  const [resultado, cidades] = await Promise.all([
+  const [resultado, cidades, decisoes] = await Promise.all([
     getVisaoGeral(periodo.inicio, periodo.fim, cidade),
     cidadesComAnuncio(),
+    decisoesDoAdmin().catch(() => null),
   ]);
 
   const aviso = resultado.ok
@@ -47,6 +50,7 @@ export default async function AdminPage({
   return (
     <>
       <AvisoAtendimentoAdmin />
+      <DecisoesHoje decisoes={decisoes} />
       <VisaoGeralClient
         dados={resultado.ok ? resultado.dados : null}
         aviso={aviso}
@@ -59,7 +63,7 @@ export default async function AdminPage({
       <div className="mt-6">
         <PainelIaCadastro />
       </div>
-      <div className="mt-6">
+      <div id="backup" className="mt-6 scroll-mt-24">
         <CartaoBackup />
       </div>
       <div className="mt-6">

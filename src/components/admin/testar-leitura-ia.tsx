@@ -37,7 +37,7 @@ export function TestarLeituraIa() {
 
   return (
     <div className="mt-4 border-t border-sage-200 pt-4" data-testid="testar-leitura-ia">
-      <p className="text-sm font-medium text-ink">Testar leitura (arquivo fictício)</p>
+      <p className="text-sm font-semibold text-ink">Testar leitura (arquivo fictício)</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <select
           value={tipo}

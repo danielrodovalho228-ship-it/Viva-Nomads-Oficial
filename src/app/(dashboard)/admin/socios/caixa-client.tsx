@@ -11,10 +11,10 @@ import { BUCKET_CAIXA, LIMITE_BYTES, LIMITE_TEXTO, ROTULO_EXTRACAO, ROTULO_STATU
 import { enviarParaCaixa, relerArquivo, type ItemCaixa } from "@/lib/socios/caixa-actions";
 
 const COR_STATUS: Record<ItemCaixa["status"], string> = {
-  novo: "bg-sky-100 text-sky-800",
-  em_andamento: "bg-amber-100 text-amber-800",
-  feito: "bg-lime-100 text-forest",
-  precisa_daniel: "bg-red-100 text-red-800",
+  novo: "border border-line bg-white text-forest",
+  em_andamento: "border border-line bg-white text-amber-800",
+  feito: "border border-line bg-white text-forest",
+  precisa_daniel: "border border-line bg-white text-red-800",
 };
 const ACEITA = "audio/*,image/*,.pdf,.docx,.xlsx,.txt,.m4a,.opus,.ogg";
 
@@ -149,7 +149,7 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
     <>
       <PageTitle title="Caixa dos Sócios" subtitle="Mande texto, áudio, documento ou print. A equipe lê, distribui e responde aqui." />
 
-      {aviso && <p role="alert" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{aviso}</p>}
+      {aviso && <p role="alert" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">{aviso}</p>}
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         <Panel title="Novo envio" className="lg:col-span-1 lg:self-start">
@@ -176,16 +176,16 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
 
             <div className="flex flex-wrap gap-2">
               <input ref={inputArquivo} id="caixa-arquivo" type="file" accept={ACEITA} className="sr-only" onChange={(e) => escolher(e.target.files?.[0] ?? null)} />
-              <label htmlFor="caixa-arquivo" className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-sage-200 bg-white px-4 text-sm font-medium text-ink hover:border-sage">
+              <label htmlFor="caixa-arquivo" className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-sage-200 bg-white px-4 text-sm font-semibold text-ink hover:border-sage">
                 <Paperclip className="h-4 w-4" /> Anexar
               </label>
               {podeGravar &&
                 (gravando ? (
-                  <button type="button" onClick={parar} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white">
+                  <button type="button" onClick={parar} className="border border-line inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-red-700">
                     <Square className="h-4 w-4" /> Parar gravação
                   </button>
                 ) : (
-                  <button type="button" onClick={gravar} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-sage-200 bg-white px-4 text-sm font-medium text-ink hover:border-sage">
+                  <button type="button" onClick={gravar} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-sage-200 bg-white px-4 text-sm font-semibold text-ink hover:border-sage">
                     <Mic className="h-4 w-4" /> Gravar áudio
                   </button>
                 ))}
@@ -238,7 +238,7 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
                       )}
                       {i.extracao_status === "ok" && i.texto_extraido && (
                         <details className="rounded-lg bg-surface-2 p-2 text-sm">
-                          <summary className="cursor-pointer font-medium text-ink">{i.tipo === "audio" ? "Transcrição" : "Leitura do arquivo"}</summary>
+                          <summary className="cursor-pointer font-semibold text-ink">{i.tipo === "audio" ? "Transcrição" : "Leitura do arquivo"}</summary>
                           <p className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap break-words text-ink">{i.texto_extraido}</p>
                         </details>
                       )}
@@ -246,7 +246,7 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                           <span>{ROTULO_EXTRACAO[i.extracao_status]}</span>
                           {(i.extracao_status === "falhou" || i.extracao_status === "desligada") && (
-                            <button type="button" onClick={() => reler(i.id)} disabled={relendo === i.id} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-sage-200 px-2 font-medium text-ink">
+                            <button type="button" onClick={() => reler(i.id)} disabled={relendo === i.id} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-sage-200 px-2 font-semibold text-ink">
                               <RotateCw className={`h-3.5 w-3.5 ${relendo === i.id ? "animate-spin" : ""}`} /> Tentar ler de novo
                             </button>
                           )}

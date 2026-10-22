@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 const COLUNAS = "tipo, inicio, fim, ok, motivo, bytes_banco, objetos_storage, bytes_storage, duracao_restauracao_s, bytes_pasta";
 
 /** Últimas cópias e testes de restauração (0191). null = sem cliente de serviço; "sem_tabela" = migração pendente. */
-async function lerExecucoes(): Promise<LinhaBackup[] | "sem_tabela" | null> {
+export async function lerExecucoesBackup(): Promise<LinhaBackup[] | "sem_tabela" | null> {
   const admin = createAdminClient();
   if (!admin) return null;
   const [copias, testes] = await Promise.all([
@@ -23,7 +23,7 @@ async function lerExecucoes(): Promise<LinhaBackup[] | "sem_tabela" | null> {
 
 function Estado({ ok, testId }: { ok: boolean; testId: string }) {
   return (
-    <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", ok ? "bg-green-50 text-green-900" : "bg-red-50 text-red-800")} data-testid={testId}>
+    <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", ok ? "border border-line bg-white text-forest" : "border border-line bg-white text-red-800")} data-testid={testId}>
       {ok ? "Em dia" : "Atenção"}
     </span>
   );
@@ -33,7 +33,7 @@ function Bloco({ titulo, parte, testId, children }: { titulo: string; parte: Est
   const u = parte.ultima;
   return (
     <div
-      className={cn("rounded-xl border p-4", parte.vermelho ? "border-red-200 bg-red-50/60" : "border-sage-200 bg-white")}
+      className={cn("rounded-xl border p-4", parte.vermelho ? "border-line bg-white" : "border-sage-200 bg-white")}
       data-testid={testId}
       data-estado={parte.vermelho ? "vermelho" : "verde"}
     >
@@ -67,7 +67,7 @@ function Bloco({ titulo, parte, testId, children }: { titulo: string; parte: Est
  * de 8 dias (ou se o último falhou). Sem dado de usuário: só datas, tamanhos, contagens e o motivo curto.
  */
 export async function CartaoBackup({ agora = new Date() }: { agora?: Date }) {
-  const linhas = await lerExecucoes().catch(() => "sem_tabela" as const);
+  const linhas = await lerExecucoesBackup().catch(() => "sem_tabela" as const);
   if (linhas === null) return null;
   const pendente = linhas === "sem_tabela";
   const e = estadoBackup(pendente ? [] : linhas, agora);

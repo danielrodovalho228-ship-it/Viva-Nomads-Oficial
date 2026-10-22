@@ -30,13 +30,16 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
     test(`F16 — "Atendimento: chamados abertos" da home bate com a fila de /admin/atendimento (${largura} px)`, async ({ page }, info) => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/admin", { waitUntil: "domcontentloaded" });
-      const cartao = page.getByTestId("home-agora").getByRole("link", { name: /Atendimento: chamados abertos/ });
+      const cartao = page.getByTestId("home-agora").locator('[data-agora="Atendimento: chamados abertos"] [data-href]');
       await expect(cartao).toBeVisible({ timeout: 20_000 });
       await expect(cartao).toHaveAttribute("href", /\/admin\/atendimento\?aba=fila/);
       const n = Number((await cartao.innerText()).match(/\d[\d.]*/g)?.pop()?.replace(/\./g, "") ?? NaN);
       expect(Number.isNaN(n)).toBe(false);
+      // A home termina de carregar os números no cliente; clica só com a página parada (a 390 px a lista ainda cresce).
+      await page.waitForLoadState("networkidle");
+      await cartao.scrollIntoViewIfNeeded();
       await cartao.click();
-      await expect(page).toHaveURL(/\/admin\/atendimento/);
+      await expect(page).toHaveURL(/\/admin\/atendimento/, { timeout: 30_000 });
       const linhas = await page.getByTestId("chamado-linha").count();
       if (n === 0) expect(linhas).toBe(0);
       else expect(linhas).toBeGreaterThan(0); // 0 na home com chamado aberto na fila era o F16

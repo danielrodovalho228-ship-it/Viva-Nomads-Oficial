@@ -1,8 +1,9 @@
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
-import { Camera, CheckCircle2, Clock, Handshake } from "lucide-react";
+import { Camera, Handshake } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { ButtonLink } from "@/components/ui/button";
 
 export const metadata = { title: "Fotógrafos — Admin" };
@@ -42,17 +43,20 @@ export default async function AdminFotografosPage() {
           </ButtonLink>
         }
       />
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Páginas publicadas" value={publicados} icon={CheckCircle2} />
-        <StatCard label="Em rascunho ou pausa" value={fotos.length - publicados} icon={Clock} />
-        <StatCard label="Pedidos pendentes" value={pendentes ?? 0} icon={Handshake} href="/admin/parceiros" />
-        <StatCard label="Total de fotógrafos" value={fotos.length} icon={Camera} />
-      </div>
+      <NumeroHeroi rotulo="Pedidos de fotógrafo pendentes" valor={pendentes ?? 0} href="/admin/parceiros?aba=pendentes" />
+      <ListaNumeros
+        className="mb-6"
+        itens={[
+          { rotulo: "Páginas publicadas", valor: publicados, href: "#lista" },
+          { rotulo: "Em rascunho ou pausa", valor: fotos.length - publicados, href: "#lista" },
+          { rotulo: "Total de fotógrafos", valor: fotos.length, href: "#lista" },
+        ]}
+      />
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         <Panel title="Taxa de serviço dos parceiros" className="lg:col-span-1">
           <p className="text-sm text-muted" data-testid="texto-taxa-parceria">{textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
         </Panel>
-        <Panel title={`Fotógrafos (${fotos.length})`} className="lg:col-span-2">
+        <Panel title={`Fotógrafos (${fotos.length})`} className="scroll-mt-24 lg:col-span-2" id="lista">
           {fotos.length === 0 ? (
             <EmptyState icon={Camera} title="Nenhum fotógrafo ainda" text="Aprove pedidos de parceria em Parceiros; a página aparece aqui depois da ativação." />
           ) : (
@@ -63,7 +67,7 @@ export default async function AdminFotografosPage() {
                     {f.nome_publico as string}
                   </a>
                   <span className="text-muted">{((f.cidades as string[]) ?? []).join(", ")}</span>
-                  <span className="rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold text-ink">{STATUS[f.status as string] ?? f.status}</span>
+                  <span className="rounded-full border border-line bg-white px-2 py-1 text-xs font-semibold text-ink">{STATUS[f.status as string] ?? f.status}</span>
                 </li>
               ))}
             </ul>
