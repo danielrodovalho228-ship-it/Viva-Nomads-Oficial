@@ -40,7 +40,7 @@ test.describe("T19 — Visitante @criticos", () => {
     await chat.getByLabel("Sua mensagem para a Viva").fill("Como funciona a Caução?");
     await chat.getByRole("button", { name: "Enviar" }).click();
     // Com ou sem IA, sempre há resposta e o caminho para uma pessoa.
-    await expect(chat.locator("div.bg-white.shadow-sm").nth(1)).toBeVisible({ timeout: 30_000 });
+    await expect(chat.getByTestId("viva-chat-msg-viva").nth(1)).toBeVisible({ timeout: 30_000 });
     const numero = await abrirChamadoPeloChat(page, { nome: "Visitante Teste", email: "visitante.chat@lab.vivanomads.com.br" });
     await expect(page.getByTestId("chamado-aberto-chat")).toContainText(/confirmação para o seu e-mail/);
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
