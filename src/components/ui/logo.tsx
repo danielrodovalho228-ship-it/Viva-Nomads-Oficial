@@ -44,11 +44,14 @@ export function BrandMark({ size = 32, onDark = false }: { size?: number; onDark
   );
 }
 
+/** Verde da marca (#5DBB1E) tem só 2,4:1 sobre branco; o texto sobre fundo claro usa um tom mais escuro (≥ 4,5:1, axe color-contrast). */
+export const VERDE_WORDMARK_SOBRE_CLARO = "#357A0E";
+
 function Wordmark({ light }: { light?: boolean }) {
   return (
     <span className="font-title text-[1.2rem] font-semibold tracking-tight leading-none">
       <span style={{ color: light ? "#FFFFFF" : "#0A4FD6" }}>Viva</span>
-      <span style={{ color: light ? "#8FD63A" : "#5DBB1E" }}>Nomads</span>
+      <span style={{ color: light ? "#8FD63A" : VERDE_WORDMARK_SOBRE_CLARO }}>Nomads</span>
     </span>
   );
 }

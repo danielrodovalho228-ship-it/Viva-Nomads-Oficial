@@ -36,7 +36,7 @@ export function FavoriteButton({
       aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
       data-testid="coracao"
       className={cn(
-        "grid h-10 w-10 place-items-center rounded-full bg-white/90 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest",
+        "grid h-11 w-11 place-items-center rounded-full bg-white/90 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest",
         className
       )}
     >

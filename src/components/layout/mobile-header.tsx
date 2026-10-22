@@ -40,7 +40,7 @@ export function MobileHeader({
         type="button"
         onClick={voltar}
         aria-label="Voltar"
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-ink hover:bg-surface-2"
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-ink hover:bg-surface-2"
       >
         <ArrowLeft className="h-5 w-5" />
       </button>
