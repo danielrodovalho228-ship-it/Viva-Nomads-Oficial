@@ -58,6 +58,8 @@ test("GUARDA: a posição do aparelho nunca é gravada (só a distância) e a es
   assert.doesNotMatch(insert, /\blat\b|\blng\b|aparelho/);
   assert.match(insert, /distancia_m: local\.distanciaM/);
   assert.match(srv, /createAdminClient\(\)/);
+  // A página do imóvel é ISR: a medição validada do dono revalida a página na hora.
+  assert.match(srv, /if \(papel === "dono" && local\.validada\) revalidatePath\(`\/imoveis\/\$\{imovelId\}`\)/);
   const mig = readdirSync(new URL("../../supabase/migrations", import.meta.url)).find((n) => /_internet_medida\.sql$/.test(n))!;
   const sql = ler(`supabase/migrations/${mig}`);
   assert.doesNotMatch(sql, /lat(itude)?\s+double|lng\s+double|longitude/i, "a tabela não tem coluna de coordenada");

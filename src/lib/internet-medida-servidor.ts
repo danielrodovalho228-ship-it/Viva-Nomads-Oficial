@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { integracoesSimuladas } from "@/lib/integracoes";
@@ -195,6 +196,8 @@ export async function registrarMedicao(entrada: {
     valido_ate: ate.toISOString(),
   });
   if (error) return { ok: false, erro: "Não deu para salvar a medição agora." };
+  // A página do imóvel é ISR (revalidate 60 s): a medição validada do dono aparece já, sem esperar o ciclo.
+  if (papel === "dono" && local.validada) revalidatePath(`/imoveis/${imovelId}`);
 
   // Morador abaixo de 50% da medição do dono: sinal no painel de qualidade e aviso ao dono (sem acusar ninguém).
   if (papel === "morador" && local.validada) {
