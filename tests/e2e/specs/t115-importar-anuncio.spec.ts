@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { NO_LABORATORIO, adm } from "../fixtures/laboratorio";
 
 /**
  * T115 — Importar meu anúncio (ordem 4c178768, Pacote FF 3/3): o dono cola o texto do próprio anúncio,
@@ -15,7 +16,8 @@ test.describe("T115 — Importar meu anúncio", () => {
     const continuar = page.getByTestId("rascunho-continuar");
     // Com rascunho no servidor a tela oferece "Continuar": reabre o rascunho já na etapa 0.
     await expect(abrir.or(continuar)).toBeVisible({ timeout: 30_000 });
-    if (await continuar.isVisible()) {
+    const tinhaRascunho = await continuar.isVisible();
+    if (tinhaRascunho) {
       await continuar.click();
       await page.waitForURL(/draft=/, { timeout: 15_000 });
       await page.goto(`${page.url()}&etapa=0`, { waitUntil: "domcontentloaded" });
@@ -51,6 +53,8 @@ test.describe("T115 — Importar meu anúncio", () => {
       await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Apartamento mobiliado no Santa Mônica", { timeout: 5_000 });
     }).toPass({ timeout: 45_000, intervals: [2_000, 3_000] });
     await expect(page.getByTestId("cadastro-descricao")).not.toHaveValue(/99999/);
+    // O rascunho criado aqui não fica na conta compartilhada (o t40 conta com "sem imóvel" para /qualificar).
+    if (NO_LABORATORIO && draft && !tinhaRascunho) await adm().from("properties").delete().eq("id", draft).eq("status", "draft");
 
     // Sem rolagem lateral a 390 px.
     const largura = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

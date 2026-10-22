@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Star, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { avaliar, meusContratosAvaliados } from "@/lib/data/avaliacoes-actions";
+import { avaliar } from "@/lib/data/avaliacoes-actions";
 import { LIMITE_COMENTARIO, partesDaAvaliacao, prazoAvaliacao, validarAvaliacao } from "@/lib/avaliacoes";
 import { cn } from "@/lib/utils";
 
@@ -40,19 +40,9 @@ export function AvaliacaoForm({
   const [enviado, setEnviado] = useState(false);
   const [moderacao, setModeracao] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  // Já enviada antes (outra visita à tela): mostra o estado e esconde o formulário.
-  const [jaEnviada, setJaEnviada] = useState(false);
-  useEffect(() => {
-    if (demo) return;
-    let vivo = true;
-    meusContratosAvaliados()
-      .then((ids) => vivo && setJaEnviada(ids.includes(contratoId)))
-      .catch(() => {});
-    return () => {
-      vivo = false;
-    };
-  }, [contratoId, demo]);
-  const partes = <PartesAvaliacao euEnviei={enviado || jaEnviada} prazo={prazoAvaliacao(encerradoEm)} />;
+  // Sem leitura no servidor ao abrir a tela (Prompt 42: nenhuma server action na navegação do painel); o estado
+  // "Aguardando a outra parte" vem do envio desta visita, e o banco recusa uma segunda avaliação do mesmo contrato.
+  const partes = <PartesAvaliacao euEnviei={enviado} prazo={prazoAvaliacao(encerradoEm)} />;
 
   async function enviar() {
     setErro(null);
@@ -71,7 +61,7 @@ export function AvaliacaoForm({
     else setErro(r.error ?? "Não foi possível avaliar.");
   }
 
-  if (enviado || jaEnviada) {
+  if (enviado) {
     return (
       <>
       {partes}

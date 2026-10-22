@@ -99,6 +99,7 @@ export default function VerificationPage() {
     <div className="w-full">
       <PageTitle title={C.title} subtitle={C.subtitle} />
       {demo ? <DemoFlow copy={C} mode={mode} /> : <VerificacaoDaConta copy={C} perfil={perfilCopy} />}
+      <FalarComAViva />
     </div>
   );
 }
@@ -462,7 +463,6 @@ function DemoFlow({
           <OwnerDecisionNotice />
         </>
       )}
-      <FalarComAViva />
     </div>
   );
 }
