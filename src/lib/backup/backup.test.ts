@@ -25,7 +25,7 @@ function diarias(de: string, ate: string, hora = "0315"): string[] {
 const dom = (s: string) => new Date(t0(s.slice(0, 10))).getUTCDay() === 0;
 
 // ---------- quaisFicam ----------
-test("quaisFicam: um ano e meio de cópias diárias → 14 diárias, 8 semanais (domingo) e 12 mensais (dia 1)", () => {
+test("quaisFicam: um ano e meio de cópias diárias → 14 diárias, 8 semanais (domingo) e 3 mensais (dia 1)", () => {
   const todas = diarias("2025-04-01", "2026-10-19");
   const r = quaisFicam(todas, "2026-10-19");
   assert.equal(r.diarias.length, 14);
@@ -35,23 +35,24 @@ test("quaisFicam: um ano e meio de cópias diárias → 14 diárias, 8 semanais 
   assert.ok(r.semanais.every(dom), "toda semanal é de domingo");
   assert.deepEqual(r.semanais.slice(-2), ["2026-10-11_0315.dump", "2026-10-18_0315.dump"]);
   assert.equal(r.semanais[0], "2026-08-30_0315.dump");
-  assert.equal(r.mensais.length, 12);
+  assert.equal(r.mensais.length, 3);
   assert.ok(r.mensais.every((d) => d.slice(8, 10) === "01"), "toda mensal é do dia 1");
-  assert.equal(r.mensais[0], "2025-11-01_0315.dump");
-  assert.equal(r.mensais[11], "2026-10-01_0315.dump");
+  assert.deepEqual(r.mensais, ["2026-08-01_0315.dump", "2026-09-01_0315.dump", "2026-10-01_0315.dump"]);
+  // Prompt 58: nada mais velho que ~90 dias fica (a mais antiga é a mensal de 3 meses atrás).
+  assert.ok(r.apagar.includes("2026-07-01_0315.dump"));
   // O resto pode ser apagado; nada é apagado e mantido ao mesmo tempo.
   const fica = new Set([...r.diarias, ...r.semanais, ...r.mensais]);
   assert.equal(r.apagar.length + fica.size, todas.length);
   assert.ok(r.apagar.every((d) => !fica.has(d)));
-  assert.ok(fica.size <= 14 + 8 + 12);
+  assert.ok(fica.size <= 14 + 8 + 3);
 });
 
-test("quaisFicam: virada de mês — no dia 1 a mensal nova entra e a de 12 meses atrás sai", () => {
+test("quaisFicam: virada de mês — no dia 1 a mensal nova entra e a de 3 meses atrás sai", () => {
   const r = quaisFicam(diarias("2025-09-01", "2026-11-01"), "2026-11-01");
-  assert.equal(r.mensais.length, 12);
-  assert.equal(r.mensais[11], "2026-11-01_0315.dump");
-  assert.equal(r.mensais[0], "2025-12-01_0315.dump");
-  assert.ok(r.apagar.includes("2025-11-01_0315.dump"));
+  assert.equal(r.mensais.length, 3);
+  assert.equal(r.mensais[2], "2026-11-01_0315.dump");
+  assert.equal(r.mensais[0], "2026-09-01_0315.dump");
+  assert.ok(r.apagar.includes("2026-08-01_0315.dump"));
   // 01/11/2026 é domingo: é diária, semanal e mensal ao mesmo tempo.
   assert.ok(r.diarias.includes("2026-11-01_0315.dump") && r.semanais.includes("2026-11-01_0315.dump"));
   // As diárias atravessam a virada: 19/10 a 01/11.
@@ -60,9 +61,7 @@ test("quaisFicam: virada de mês — no dia 1 a mensal nova entra e a de 12 mese
 
 test("quaisFicam: virada de ano — semana de 27/12 a 02/01 e mensais de jan/2027 e dez/2026", () => {
   const r = quaisFicam(diarias("2025-12-15", "2027-01-10"), "2027-01-10");
-  assert.equal(r.mensais[11], "2027-01-01_0315.dump");
-  assert.equal(r.mensais[10], "2026-12-01_0315.dump");
-  assert.equal(r.mensais[0], "2026-02-01_0315.dump");
+  assert.deepEqual(r.mensais, ["2026-11-01_0315.dump", "2026-12-01_0315.dump", "2027-01-01_0315.dump"]);
   assert.ok(r.semanais.includes("2026-12-27_0315.dump"), "domingo antes da virada");
   assert.ok(r.semanais.includes("2027-01-03_0315.dump") && r.semanais.includes("2027-01-10_0315.dump"));
   assert.equal(r.semanais.length, 8);

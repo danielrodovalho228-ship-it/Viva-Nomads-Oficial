@@ -127,6 +127,7 @@ node --input-type=module -e '
 ' "$RAIZ/src/lib/backup/retencao.ts" "$E/todas.txt" "$HOJE" "$E/semanal-esperado.txt" "$E/mensal-esperado.txt"
 confere "semanais = regra (8 semanas; $(wc -l <"$E/semanal.txt") com o histórico do ensaio)" 'diff -q <(sort "$E/semanal.txt") <(sort "$E/semanal-esperado.txt") >/dev/null'
 confere "todo domingo do histórico virou semanal" '! while read -r n; do [ "$(date -u -d "${n:0:10}" +%u)" = 7 ] && ! grep -qx "$n" "$E/semanal.txt" && echo x; done <"$E/todas.txt" | grep -q x'
+confere "no máximo 3 mensais (Prompt 58: cópia de segurança expira em até ~90 dias)" '[ "$(wc -l <"$E/mensal.txt")" -le 3 ]'
 confere "mensais = regra ($(wc -l <"$E/mensal.txt"), com a do dia 1)" 'diff -q <(sort "$E/mensal.txt") <(sort "$E/mensal-esperado.txt") >/dev/null && grep -qE "^[0-9]{4}-[0-9]{2}-01_" "$E/mensal.txt"'
 confere "pasta de removidos com mais de 30 dias podada" '! rcl lsf --dirs-only "cripto:VivaNomads-Backup/storage/removidos/" | grep -q "$VELHA"'
 rcl deletefile "s3supabase:avatars/00000000-0000-4000-8000-000000000002/maria-silva-rg-1.jpg"

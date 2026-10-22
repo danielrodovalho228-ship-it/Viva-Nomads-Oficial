@@ -173,7 +173,7 @@ Data da restauração: ____/____/______ · Quem fez: ______________ · Cópia us
 VivaNomads-Backup/
   banco/diario/AAAA-MM-DD_HHMM.dump     14 últimos dias
   banco/semanal/…                        8 últimos domingos
-  banco/mensal/…                         12 últimos dias 1
+  banco/mensal/…                         3 últimos dias 1
   manifestos/AAAA-MM-DD.json             tamanho, hash, linhas por tabela, objetos por bucket, migrações (sem dado pessoal)
   storage/atual/<bucket>/…               espelho de todos os buckets
   storage/removidos/AAAA-MM-DD/…         o que foi apagado ou trocado naquela noite (30 dias)
