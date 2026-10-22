@@ -14,10 +14,17 @@ test("ação do servidor cancelada pela navegação não conta (decisão do Muse
   assert.equal(canceladaPeloNavegador(ABORT, "POST", URL_TELA, { "next-action": "7f3a" }), "acao");
 });
 
+test("arquivo do próprio site cancelado pela navegação não conta (L-3, 22/10)", () => {
+  assert.equal(canceladaPeloNavegador(ABORT, "GET", "http://localhost:3123/_next/static/chunks/3ns72bvya0a2t.js", {}), "arquivo");
+});
+
 test("o resto continua acusando", () => {
   // Ação do servidor que falhou por outro motivo.
   assert.equal(canceladaPeloNavegador("net::ERR_CONNECTION_REFUSED", "POST", URL_TELA, { "next-action": "7f3a" }), null);
   // Documento ou POST comum abortados.
   assert.equal(canceladaPeloNavegador(ABORT, "GET", URL_TELA, {}), null);
   assert.equal(canceladaPeloNavegador(ABORT, "POST", URL_TELA, {}), null);
+  // Arquivo do site que falhou por outro motivo, e GET abortado fora de /_next/static.
+  assert.equal(canceladaPeloNavegador("net::ERR_CONNECTION_REFUSED", "GET", "http://localhost:3123/_next/static/chunks/a.js", {}), null);
+  assert.equal(canceladaPeloNavegador(ABORT, "GET", "http://localhost:3123/api/dados", {}), null);
 });
