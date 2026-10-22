@@ -36,7 +36,7 @@ test("publicar sem a declaração de câmeras = bloqueado, com o item na lista d
   const p = prontidaoAnuncio(fatos({ sem_cameras_interior: false }));
   assert.equal(p.podePublicar, false);
   assert.deepEqual(p.faltam, [ROTULO_FALTA_PRIVACIDADE]);
-  assert.equal(p.obrigatorios.find((i) => i.key === "privacidade")?.etapa, 2);
+  assert.equal(p.obrigatorios.find((i) => i.key === "privacidade")?.etapa, 3, "passo 4, Comodidades e segurança (Prompt 43)");
 });
 
 test("com a declaração feita publica; banco sem a coluna (undefined) não barra", () => {

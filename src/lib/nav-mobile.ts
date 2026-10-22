@@ -86,9 +86,10 @@ export const ABAS_POR_PAPEL: Record<PapelBarra, MobileTab[]> = {
 };
 
 /**
- * Papel da barra: admin nas telas /admin → nenhum (sem barra); parceiro só com a parceria APROVADA e quando a pessoa
- * escolheu usar a conta como parceiro (no Perfil) ou está no painel do parceiro; senão o modo ativo
- * (proprietário/morador). D-V (print do Daniel, 22/10): o admin que usa o painel como proprietário ou morador tem a
+ * Papel da barra: admin nas telas /admin → nenhum (sem barra); parceiro só com a parceria APROVADA e no contexto de
+ * parceiro (o painel e os pedidos do parceiro); senão o papel do contexto (proprietário/morador, que a casca acerta ao
+ * abrir uma tela de dono ou de morador). Prompt 43 (conta única): não há botão de troca — a antiga "preferência de
+ * parceiro" do Perfil não vale mais (o parâmetro fica só por compatibilidade e é ignorado). D-V (print do Daniel, 22/10): o admin que usa o painel como proprietário ou morador tem a
  * barra do modo ativo, como qualquer conta; só as telas de admin ficam sem barra.
  */
 export function papelDaBarra(p: {
@@ -100,7 +101,7 @@ export function papelDaBarra(p: {
 }): PapelBarra | null {
   if (p.admin && (!p.pathname || p.pathname === "/admin" || p.pathname.startsWith("/admin/"))) return null;
   const noPainelDoParceiro = !!p.pathname && (p.pathname === "/dashboard/parceiro" || p.pathname.startsWith("/dashboard/parceiro/"));
-  if (p.parceiroAprovado && (p.preferenciaParceiro || noPainelDoParceiro)) return "parceiro";
+  if (p.parceiroAprovado && noPainelDoParceiro) return "parceiro";
   return p.modo === "owner" ? "proprietario" : "morador";
 }
 

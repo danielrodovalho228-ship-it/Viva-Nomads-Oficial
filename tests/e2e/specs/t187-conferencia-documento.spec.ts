@@ -39,7 +39,7 @@ async function donoNaEtapa1(browser: Browser, largura: number, nome: string): Pr
     r.fulfill({ json: { cep: "38400-100", logradouro: "Rua do Laboratório", bairro: "Centro", localidade: "Uberlândia", uf: "MG" } }),
   );
   await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Onde fica" })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible({ timeout: 20_000 });
   await page.getByTestId("cadastro-cep").fill("38400100");
   await expect(page.getByTestId("cadastro-rua")).toHaveValue("Rua do Laboratório", { timeout: 10_000 });
   await page.getByTestId("cadastro-numero").fill("102");
