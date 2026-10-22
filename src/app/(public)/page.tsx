@@ -168,7 +168,6 @@ export default async function HomePage() {
             />
             <div className="absolute -right-4 -top-4 rounded-xl border border-line bg-white px-4 py-3">
               <p className="font-title text-lg font-semibold text-ink">Internet para home office</p>
-              <p className="text-xs text-muted">aguenta videochamadas pesadas</p>
             </div>
           </div>
 
@@ -187,7 +186,7 @@ export default async function HomePage() {
               <SpecTag kind="work_located" />
             </div>
             <ul className="mt-8 space-y-4">
-              <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa, cadeira e internet boa para o trabalho — declarados pelo proprietário. É o que sustenta a etiqueta Para trabalhar de casa." />
+              <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa e cadeira. Internet informada pelo proprietário; quando medida no imóvel, o anúncio mostra o número. É o que sustenta a etiqueta Para trabalhar de casa." />
               <WorkFeature icon={Building2} title="Coworkings e cafés na região" text="A vizinhança costuma ter espaços de trabalho — você confere a posição no mapa do imóvel." />
             </ul>
           </div>
