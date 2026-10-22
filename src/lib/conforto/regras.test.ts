@@ -168,3 +168,9 @@ test("nada financeiro (D7): as regras do padrão mínimo e da manutenção não 
     assert.doesNotMatch(fonte, /R\$|multa|abatimento|desconto|reembolso|rescis|valor_|preco|cobran/i, f);
   }
 });
+
+test("GUARDA: a lista do banco (conforto_chaves, migração 0210) é a mesma de src/config/conforto-minimo.ts", () => {
+  const sql = readFileSync(new URL("../../../supabase/migrations/0210_conforto_manutencao.sql", import.meta.url), "utf8");
+  const bloco = sql.match(/select array\[([\s\S]*?)\]::text\[\]/)![1];
+  assert.deepEqual([...bloco.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]), [...CHAVES_CONFORTO]);
+});
