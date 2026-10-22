@@ -32,6 +32,7 @@ import { SELO_NF_UI } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
 import { ROTULO_PORTE_CURTO, contarFiltrosPainel, naoMedidosDoPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
 import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, rotuloFiltroInternet, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
 import { Chip } from "@/components/ui/chip";
 import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
@@ -110,6 +111,8 @@ export function SearchClient({
   // Prompt 57, fase 2: internet MEDIDA (download mínimo) e "só com internet medida".
   const [internetMin, setInternetMin] = useState(0);
   const [soInternetMedida, setSoInternetMedida] = useState(false);
+  // Prompt 55 B2: datas flexíveis (só vale com data de entrada).
+  const [datasFlexiveis, setDatasFlexiveis] = useState(false);
   const [verNaoMedidos, setVerNaoMedidos] = useState(false);
   const [comodidades, setComodidades] = useState<ComodidadeFiltro[]>([]); // Wi-Fi, cozinha, garagem, lavar (ordem 583d2e71)
   const [workLocatedOnly, setWorkLocatedOnly] = useState(false);
@@ -226,6 +229,7 @@ export function SearchClient({
     if (fx && FAIXAS.some((f) => f.key === fx)) setFaixa(fx);
     const ent = sp.get("entrada");
     if (ent && /^\d{4}-\d{2}-\d{2}$/.test(ent)) setDataEntrada(ent);
+    if (datasFlexiveisDaUrl(sp)) setDatasFlexiveis(true);
     const gar = sp.get("garantia");
     if (gar && GARANTIAS_FILTRO.some((g) => g.key === gar)) setGarantia(gar);
     const on = (k: string) => sp.get(k) === "1";
@@ -295,6 +299,7 @@ export function SearchClient({
     put("tipo", !!typeFilter, typeFilter);
     put("faixa", !!faixa, faixa);
     put("entrada", !!dataEntrada, dataEntrada);
+    put("flex", !!dataEntrada && datasFlexiveis, "1");
     put("garantia", !!garantia, garantia);
     put("ordem", sort !== "relevance", sort);
     put("pet", petsOnly, "1");
@@ -320,7 +325,7 @@ export function SearchClient({
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades, estadoDestino,
-    internetMin, soInternetMedida,
+    internetMin, soInternetMedida, datasFlexiveis,
   ]);
 
   // Prompt 37: sem destino na URL, o "Meu local de trabalho" salvo na conta vira o padrão (só para quem está logado;
@@ -401,6 +406,7 @@ export function SearchClient({
     setComodidades([]);
     setInternetMin(0);
     setSoInternetMedida(false);
+    setDatasFlexiveis(false);
     setEstadoDestino({ destino: null, modo: "carro", ate: 0 });
     setSort("relevance");
   }
@@ -412,8 +418,9 @@ export function SearchClient({
       maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades,
       periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: SELO_NF_UI && invoiceOnly, seguroOnly: insuranceOnly, gestorOnly: operatedOnly,
       internetMin, soInternetMedida,
+      entrada: dataEntrada, datasFlexiveis,
     }),
-    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, insuranceOnly, operatedOnly, internetMin, soInternetMedida]
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, insuranceOnly, operatedOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis]
   );
 
   const { base, dist } = useMemo(() => {
@@ -438,13 +445,12 @@ export function SearchClient({
       if (p.maxGuests != null && p.maxGuests < adults + children) return false;
       // Estadia, tipo, garantia, nota, seguro e gestor: na folha (passaNoPainel), para a contagem ao vivo bater.
       if (faixa && !(p.faixasAceitas ?? []).includes(faixa)) return false;
-      if (dataEntrada && p.availableFrom && p.availableFrom > dataEntrada) return false;
       if (furnishedOnly && !p.furnished) return false;
       if (workLocatedOnly && !p.tagWorkLocated) return false;
       return true;
     });
     return { base: list, dist };
-  }, [properties, locationQuery, geoCenter, radiusKm, adults, children, faixa, dataEntrada, furnishedOnly, workLocatedOnly]);
+  }, [properties, locationQuery, geoCenter, radiusKm, adults, children, faixa, furnishedOnly, workLocatedOnly]);
 
   const contarComPainel = useCallback(
     (f: FiltrosPainel) => semExemplosQuandoHaReal(base.filter((p) => passaNoPainel(p, f)), (p) => isExemplo(p.id), exemplosForcados).length,
@@ -510,6 +516,7 @@ export function SearchClient({
     (typeFilter ? 1 : 0) +
     (faixa ? 1 : 0) +
     (dataEntrada ? 1 : 0) +
+    (dataEntrada && datasFlexiveis ? 1 : 0) +
     (garantia ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(
@@ -608,7 +615,7 @@ export function SearchClient({
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
     faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades.join(","),
-    internetMin, soInternetMedida,
+    internetMin, soInternetMedida, datasFlexiveis,
   ].join("|");
   function aplicarPainel(f: FiltrosPainel) {
     setMaxPrice(f.maxPrice);
@@ -622,6 +629,9 @@ export function SearchClient({
     setSoInternetMedida(f.homeOfficeOnly && f.soInternetMedida);
     // Só sobraram os de internet não medida: o botão da folha já abre essa lista.
     setVerNaoMedidos(contarComPainel(f) === 0 && contarNaoMedidos(f) > 0);
+    // A folha não edita a data; "Limpar tudo" a apaga junto com os outros filtros (a contagem já contava sem ela).
+    setDataEntrada(f.entrada);
+    setDatasFlexiveis(!!f.entrada && f.datasFlexiveis);
     setMaxPeriod(f.periodo);
     setTypeFilter(f.tipo);
     setGarantia(f.garantia);
@@ -971,9 +981,10 @@ export function SearchClient({
             {dataEntrada && (
               <ActiveChip
                 label={`Entrada ${formatDatePtBR(dataEntrada)}`}
-                onClear={() => setDataEntrada("")}
+                onClear={() => { setDataEntrada(""); setDatasFlexiveis(false); }}
               />
             )}
+            {dataEntrada && datasFlexiveis && <ActiveChip label="Datas flexíveis" onClear={() => setDatasFlexiveis(false)} />}
             {garantia && (
               <ActiveChip
                 label={GARANTIAS_FILTRO.find((g) => g.key === garantia)?.label ?? "Garantia"}

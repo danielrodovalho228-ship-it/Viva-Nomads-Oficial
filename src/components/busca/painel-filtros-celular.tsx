@@ -13,6 +13,7 @@ import {
 } from "@/lib/busca/painel-filtros";
 import { COMODIDADES_FILTRO } from "@/lib/busca/filtro-comodidades";
 import { CHIPS_INTERNET, rotuloVerNaoMedidos } from "@/lib/busca/filtro-internet";
+import { ROTULO_DATAS_FLEXIVEIS } from "@/lib/busca/datas-flexiveis";
 import { buttonClasses } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Chip } from "@/components/ui/chip";
@@ -113,6 +114,14 @@ export function FolhaFiltros({
             </Chip>
           ))}
         </Grupo>
+        {/* Prompt 55 B2: a data vem da busca; aqui só a flexibilidade (a contagem acima já a considera). */}
+        {rascunho.entrada && (
+          <Grupo titulo={`Entrada em ${rascunho.entrada.split("-").reverse().join("/")}`} testId="painel-datas">
+            <Chip ativo={rascunho.datasFlexiveis} onClick={() => muda("datasFlexiveis", !rascunho.datasFlexiveis)}>
+              {ROTULO_DATAS_FLEXIVEIS}
+            </Chip>
+          </Grupo>
+        )}
         <Grupo titulo="Tipo de imóvel" testId="painel-tipo">
           {OPCOES_TIPO.map((o) => (
             <Chip key={o.valor} ativo={rascunho.tipo === o.valor} onClick={() => alterna("tipo", o.valor)}>

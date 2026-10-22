@@ -9,6 +9,7 @@
 import { ROTULO_COMODIDADE, passaComodidades, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
+import { passaEntrada } from "./datas-flexiveis.ts";
 import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, type ImovelComInternet } from "./filtro-internet.ts";
 
 export interface FiltrosPainel {
@@ -37,6 +38,10 @@ export interface FiltrosPainel {
   internetMin: number;
   /** "Só com internet medida" (dentro de "Para trabalhar de casa"). */
   soInternetMedida: boolean;
+  /** Prompt 55 B2: data de entrada da busca (yyyy-mm-dd; "" = sem data). A folha não edita a data, só a flexibilidade. */
+  entrada: string;
+  /** "Datas flexíveis": aceita disponibilidade até FOLGA_DATAS_FLEXIVEIS_DIAS depois da entrada. */
+  datasFlexiveis: boolean;
 }
 
 export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
@@ -55,6 +60,8 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   gestorOnly: false,
   internetMin: 0,
   soInternetMedida: false,
+  entrada: "",
+  datasFlexiveis: false,
 };
 
 export const ROTULO_PORTE_CURTO: Record<PortePet, string> = { P: "pequeno", M: "médio", G: "grande" };
@@ -103,6 +110,8 @@ export function cabeNaEstadia(p: { minPeriodDays?: number; maxPeriodDays?: numbe
 }
 
 type ImovelFiltravel = ImovelComInternet & {
+  /** Disponível a partir de (yyyy-mm-dd); sem ela, a data de entrada não tira o imóvel. */
+  availableFrom?: string | null;
   monthlyPrice: number;
   /** Total do mês anunciado no cartão; sem ele vale o valor mensal. */
   totalMes?: number;
@@ -157,6 +166,7 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (f.readyToLiveOnly && !p.readyToLiveBadge) return false;
   if (!passaComodidades(p, f.comodidades)) return false;
   if (f.periodo && !cabeNaEstadia(p, f.periodo)) return false;
+  if (!passaEntrada(p.availableFrom, f.entrada, f.datasFlexiveis)) return false;
   if (f.tipo && tipoCanonico(p.propertyType ?? "") !== f.tipo) return false;
   if (f.garantia && !aceitaGarantia(p, f.garantia)) return false;
   if (f.notaOnly && !p.issuesInvoice) return false;
@@ -185,6 +195,8 @@ export function contarFiltrosPainel(f: FiltrosPainel): number {
     (f.tipo ? 1 : 0) +
     (f.garantia ? 1 : 0) +
     (filtroInternetLigado(f) ? 1 : 0) +
+    // A data de entrada conta fora da folha (chip "Entrada …"); aqui só a flexibilidade, e só com data.
+    (f.entrada && f.datasFlexiveis ? 1 : 0) +
     [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.seguroOnly, f.gestorOnly].filter(Boolean).length +
     f.comodidades.length
   );
@@ -202,6 +214,7 @@ export function resumoFiltros(f: FiltrosPainel): string {
   if (f.maxPrice) partes.push(OPCOES_PRECO.find((o) => o.valor === f.maxPrice)?.rotulo ?? `Até R$ ${f.maxPrice}`);
   if (f.minBedrooms) partes.push(`${f.minBedrooms}+ ${f.minBedrooms === 1 ? "quarto" : "quartos"}`);
   if (f.periodo) partes.push(OPCOES_ESTADIA.find((o) => o.valor === f.periodo)?.rotulo ?? "Estadia");
+  if (f.entrada && f.datasFlexiveis) partes.push("Datas flexíveis");
   if (f.tipo) partes.push(OPCOES_TIPO.find((o) => o.valor === f.tipo)?.rotulo ?? f.tipo);
   if (f.petsOnly) partes.push("Aceita pets");
   if (f.petsOnly && f.petPorte) partes.push(`pet ${ROTULO_PORTE_CURTO[f.petPorte]}`);
