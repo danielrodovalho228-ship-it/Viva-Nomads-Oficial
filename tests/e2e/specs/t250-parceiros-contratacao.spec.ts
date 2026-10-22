@@ -40,6 +40,10 @@ function registrar(page: Page, quem: string) {
     if (m.type() === "error" || m.type() === "warning") marca(`console.${m.type()}: ${m.text()}`);
   });
   page.on("pageerror", (e) => marca(`pageerror: ${e.message}`));
+  page.on("response", (r) => {
+    if (r.status() >= 400) marca(`resposta ${r.status()} ${r.request().method()} ${r.url()} rsc=${r.request().headers()["rsc"] ?? "-"} prefetch=${r.request().headers()["next-router-prefetch"] ?? "-"}`);
+  });
+  page.on("requestfailed", (r) => marca(`falhou ${r.method()} ${r.url()} ${r.failure()?.errorText ?? ""}`));
   page.on("framenavigated", (f) => {
     if (f === page.mainFrame()) marca(`navegou: ${f.url()}`);
   });
