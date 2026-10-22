@@ -38,6 +38,10 @@ export interface SinaisAnuncio {
   cancelamentosDono12m: number;
   // Preço
   precoJusto: boolean;
+  // Internet (Prompt 57): "Para trabalhar de casa" com internet MEDIDA vale mais que a versão informada.
+  homeOffice?: "medido" | "informado" | null;
+  /** A última medição do morador ficou abaixo de 50% da do dono (sinal no painel; não tira ponto). */
+  internetAbaixoMorador?: boolean;
 }
 
 export interface Motivo {
@@ -65,6 +69,9 @@ export const PESOS = {
   avaliacoes: 10,
   semCancelamento: 5,
   precoJusto: 10,
+  // Prompt 57: a nota continua limitada a 100.
+  homeOfficeMedido: 4,
+  homeOfficeInformado: 2,
 } as const;
 
 export const MIN_COMODOS_CHEIO = 6;
@@ -120,6 +127,11 @@ export function notaQualidade(s: SinaisAnuncio, agora: Date): NotaQualidade {
 
   // Preço (até 10)
   add("preco_justo", s.precoJusto ? "Preço justo" : "Sem selo de preço justo", s.precoJusto ? PESOS.precoJusto : 0);
+
+  // Internet (Prompt 57)
+  if (s.homeOffice === "medido") add("home_office", "Para trabalhar de casa, com internet medida no imóvel", PESOS.homeOfficeMedido);
+  else if (s.homeOffice === "informado") add("home_office", "Para trabalhar de casa, com internet informada (não medida)", PESOS.homeOfficeInformado);
+  if (s.internetAbaixoMorador) add("internet_morador", "O morador mediu a internet abaixo da metade da sua medição: confira o roteador ou a operadora e meça de novo", 0);
 
   const soma = m.reduce((t, x) => t + x.pontos, 0);
   const nota = Math.max(0, Math.min(100, Math.round(soma)));

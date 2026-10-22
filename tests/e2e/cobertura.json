@@ -2019,6 +2019,15 @@
         "t264-viva-automatico"
       ]
     },
+    "/api/internet/medicoes": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": [
+        "t275-internet-medida"
+      ]
+    },
     "/api/parceiros/pedidos/[id]": {
       "personas": [
         "proprietario",

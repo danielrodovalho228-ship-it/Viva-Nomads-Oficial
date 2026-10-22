@@ -4,6 +4,7 @@ import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { CHAVE_ORDEM_NOVA, gravarSombra, ordemNovaLigada } from "@/lib/ranking/chave";
 import { sinaisDaLinha, type LinhaRankingSinais } from "@/lib/ranking/sinais";
 import type { SinaisAnuncio } from "@/lib/ranking/ordem";
+import { boaParaVideochamada, sinalMorador, type Rodada } from "@/lib/internet-medida";
 
 /*
   Servidor da ordem dos imóveis (Prompt 33, itens 4 e 5). Nunca importe em componente client:
@@ -28,8 +29,46 @@ export async function sinaisDosAnuncios(ids: string[], admin: Admin | null = cre
     return [];
   }
   const linhas = data as LinhaRankingSinais[];
-  const identidades = await estadosIdentidade(admin, [...new Set(linhas.map((l) => l.dono_id))]);
-  return linhas.map((l) => sinaisDaLinha(l, { identidadeConfirmada: identidades.get(l.dono_id)?.estado === "confirmada" }));
+  const [identidades, internet] = await Promise.all([estadosIdentidade(admin, [...new Set(linhas.map((l) => l.dono_id))]), internetDosAnuncios(admin, reais)]);
+  return linhas.map((l) =>
+    sinaisDaLinha(l, { identidadeConfirmada: identidades.get(l.dono_id)?.estado === "confirmada", ...(internet.get(l.id) ?? {}) }),
+  );
+}
+
+/**
+ * Prompt 57: etiqueta "Para trabalhar de casa" com internet MEDIDA (última medição validada do dono, vigente, que passa
+ * a regra de videochamada) ou só informada; e o sinal do morador (última medição validada dele abaixo de 50% da do dono).
+ * Sem a migração 0205, nada muda.
+ */
+async function internetDosAnuncios(admin: Admin, ids: string[]): Promise<Map<string, { homeOffice: "medido" | "informado" | null; internetAbaixoMorador: boolean }>> {
+  const r = new Map<string, { homeOffice: "medido" | "informado" | null; internetAbaixoMorador: boolean }>();
+  try {
+    const agora = new Date().toISOString();
+    const [{ data: tags }, { data: meds }] = await Promise.all([
+      admin.from("properties").select("id, tag_home_office").in("id", ids),
+      admin
+        .from("internet_medicoes")
+        .select("property_id, papel, download_mbps, upload_mbps, latencia_ms, medido_em")
+        .in("property_id", ids)
+        .eq("validada", true)
+        .gt("valido_ate", agora)
+        .order("medido_em", { ascending: false }),
+    ]);
+    type L = { property_id: string; papel: string; download_mbps: number | string; upload_mbps: number | string; latencia_ms: number; medido_em: string };
+    const rodada = (l: L): Rodada => ({ downloadMbps: Number(l.download_mbps), uploadMbps: Number(l.upload_mbps), latenciaMs: Number(l.latencia_ms) });
+    const linhas = (meds ?? []) as L[];
+    for (const t of (tags ?? []) as { id: string; tag_home_office: boolean | null }[]) {
+      const dono = linhas.find((l) => l.property_id === t.id && l.papel === "dono");
+      const morador = dono ? linhas.find((l) => l.property_id === t.id && l.papel === "morador" && l.medido_em > dono.medido_em) : undefined;
+      r.set(t.id, {
+        homeOffice: t.tag_home_office ? (dono && boaParaVideochamada(rodada(dono)) ? "medido" : "informado") : null,
+        internetAbaixoMorador: !!dono && !!morador && sinalMorador(rodada(dono), rodada(morador)),
+      });
+    }
+  } catch {
+    /* sem 0205: a nota segue sem a internet */
+  }
+  return r;
 }
 
 /** Interruptor do admin (null = ninguém mexeu; vale a variável de ambiente). */

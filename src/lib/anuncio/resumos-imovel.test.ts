@@ -144,7 +144,7 @@ test("ube-005: a internet aparece só como 'Internet fibra' (sem 'Internet boa')
   assert.match(frase, /^Internet fibra/);
   assert.doesNotMatch(frase, /Internet boa/);
   // Sem fibra declarada, a frase da categoria não muda (nada inventado).
-  assert.match(fraseInternetAnuncio("trabalho_remoto", ["Wi-Fi"]), /^Internet boa/);
+  assert.match(fraseInternetAnuncio("trabalho_remoto", ["Wi-Fi"]), /^Internet para trabalho remoto, informada pelo proprietário \(não medida\)/);
 });
 
 test("texto não promete cancelamento nem chama de temporada/art. 48", () => {
