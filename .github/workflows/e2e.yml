@@ -121,7 +121,14 @@ jobs:
 
       - name: Instalar Chromium do Playwright
         if: steps.alvo.outputs.rodar == 'true'
-        run: npx playwright install --with-deps chromium webkit
+        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas.
+        timeout-minutes: 15
+        run: |
+          for i in 1 2 3; do
+            timeout 270 npx playwright install --with-deps chromium webkit && exit 0
+            echo "tentativa $i travou ou falhou"
+          done
+          exit 1
 
       - name: Semear dados de teste (se houver service role)
         if: ${{ steps.alvo.outputs.rodar == 'true' && env.SUPABASE_SERVICE_ROLE_KEY != '' }}
