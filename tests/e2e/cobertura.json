@@ -55,7 +55,7 @@
         "t255-admin-f15-f16-f18-f20",
         "t273-admin-decisoes",
         "t271-admin-visual",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/admin/2fa/refazer": {
@@ -102,7 +102,7 @@
         "t183-telas-logadas-390",
         "t255-admin-f15-f16-f18-f20",
         "t271-admin-visual",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -124,7 +124,7 @@
         "t93-avaliacao-tela",
         "t48-varredura",
         "t183-telas-logadas-390",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/admin/cidades": {
@@ -151,7 +151,7 @@
         "t237-correcoes-35a",
         "t241-contas-teste-36",
         "t271-admin-visual",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/admin/emails-teste": {
@@ -202,7 +202,7 @@
         "t239-cartao-parceiro",
         "t241-contas-teste-36",
         "t271-admin-visual",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/admin/pedidos": {
@@ -237,7 +237,7 @@
         "t183-telas-logadas-390",
         "t241-contas-teste-36",
         "t271-admin-visual",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/ajuda": {
@@ -354,7 +354,7 @@
         "t232-pedido-moradia-completo",
         "t237-correcoes-35a",
         "t267-buscar-fotos-cartao",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/cidades": {
@@ -634,7 +634,7 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/dashboard/fechamento": {
@@ -697,7 +697,7 @@
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
         "t268-meus-imoveis-link",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -798,7 +798,7 @@
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
         "t209-jornada-dois-lados",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1083,7 +1083,7 @@
         "t211-complemento-23",
         "t221-contrato-estado-periodo",
         "t237-correcoes-35a",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/modelodenegocio": {
@@ -1440,7 +1440,7 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t273-admin-decisoes",
-        "t279-esqueletos-vazios-48"
+        "t281-esqueletos-vazios-48"
       ]
     },
     "/dashboard/estadia/[contratoId]": {
