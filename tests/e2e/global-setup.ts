@@ -4,6 +4,7 @@ import { chromium, type FullConfig } from "@playwright/test";
 import { ALL_ROLES, OPTIONAL_ROLES, hasAccount } from "./fixtures/accounts";
 import { authFile, loginAs } from "./fixtures/auth";
 import { comTentativas } from "./fixtures/tentativas";
+import { semCookieDeAtividade } from "./fixtures/sessao-gravada";
 
 /**
  * Loga UMA vez cada papel (inquilino, proprietário, admin) e salva o
@@ -43,7 +44,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
           try {
             const page = await context.newPage();
             await loginAs(page, role);
-            await context.storageState({ path: authFile(role) });
+            fs.writeFileSync(authFile(role), JSON.stringify(semCookieDeAtividade(await context.storageState())));
           } finally {
             await context.close();
           }
