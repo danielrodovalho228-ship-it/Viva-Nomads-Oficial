@@ -11,6 +11,7 @@ export function BrandImage({
   alt,
   className,
   priority = false,
+  carregarJa = false,
   sizes = "100vw",
   treat = true,
   rounded: raio = "rounded-xl",
@@ -20,6 +21,8 @@ export function BrandImage({
   alt: string;
   className?: string;
   priority?: boolean;
+  /** Acima da dobra sem ser a imagem principal (ex.: 1ª foto dos primeiros cartões da busca): baixa já, sem preload. */
+  carregarJa?: boolean;
   sizes?: string;
   treat?: boolean;
   rounded?: string;
@@ -34,6 +37,7 @@ export function BrandImage({
         fill
         sizes={sizes}
         priority={priority}
+        {...(carregarJa && !priority ? { loading: "eager" as const } : {})}
         placeholder="blur"
         blurDataURL={BRAND_BLUR}
         className={fit}

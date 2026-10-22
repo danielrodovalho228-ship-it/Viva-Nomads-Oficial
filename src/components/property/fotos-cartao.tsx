@@ -12,7 +12,7 @@ export const MAX_FOTOS_CARTAO = 5;
  * Fica DENTRO do link do cartão: nada clicável aqui (botão dentro de <a> é HTML inválido — D12).
  * Os pontos só mostram a posição; as setas do computador ficam fora do link (SetasFotos).
  */
-export function FotosCartao({ fotos, alt }: { fotos: string[]; alt: string }) {
+export function FotosCartao({ fotos, alt, carregarJa = false }: { fotos: string[]; alt: string; carregarJa?: boolean }) {
   const [ativo, setAtivo] = useState(0);
   const lista = fotos.slice(0, MAX_FOTOS_CARTAO);
   return (
@@ -34,6 +34,7 @@ export function FotosCartao({ fotos, alt }: { fotos: string[]; alt: string }) {
             rounded="rounded-none"
             treat={false}
             sizes="(max-width: 768px) 100vw, 33vw"
+            carregarJa={carregarJa && i === 0}
             className="h-full w-full shrink-0 snap-start"
           />
         ))}

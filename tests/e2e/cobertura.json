@@ -339,7 +339,8 @@
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
         "t232-pedido-moradia-completo",
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t267-buscar-primeira-dobra"
       ]
     },
     "/cidades": {
