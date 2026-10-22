@@ -91,3 +91,27 @@ export function assuntoDecisaoDocumento(o: { titulo: string | null | undefined; 
   const cabe = Math.min(TITULO_IMOVEL_MAX, ASSUNTO_MAX - SUFIXO_ASSUNTO.length - prefixo.length);
   return `${prefixo}${tituloNoAssunto(o.titulo, cabe)}`;
 }
+
+/** Nome (dono ou parceiro) no assunto: sem controle nem número longo, sem palavra em caixa alta, até 24 caracteres. */
+export function nomeNoAssunto(nome: string | null | undefined, max = 24): string {
+  const t = String(nome ?? "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/(?:https?:\/\/|www\.)\S+/gi, "")
+    .replace(/\d{4,}/g, "")
+    .replace(/\b([A-ZÀ-Ý])([A-ZÀ-Ý]{2,})\b/gu, (_, a: string, b: string) => a + b.toLocaleLowerCase("pt-BR"))
+    .replace(/\s+/g, " ")
+    .trim();
+  return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t;
+}
+
+/** Vínculo de parceiro fixo (Prompt 38): convite ao parceiro e resposta ao dono. `servico` = "limpeza fixa" etc. */
+export function assuntoVinculoConvite(nomeDono: string | null | undefined, servico: string): string {
+  const quem = nomeNoAssunto(nomeDono) || "Um proprietário";
+  return `${quem.charAt(0).toLocaleUpperCase("pt-BR")}${quem.slice(1)} quer você como ${servico}`;
+}
+
+export function assuntoVinculoResposta(nomeParceiro: string | null | undefined, servico: string, aceitou: boolean): string {
+  const quem = nomeNoAssunto(nomeParceiro) || "O parceiro";
+  const q = `${quem.charAt(0).toLocaleUpperCase("pt-BR")}${quem.slice(1)}`;
+  return aceitou ? `${q} aceitou ser sua ${servico}` : `${q} recusou ser sua ${servico}`;
+}
