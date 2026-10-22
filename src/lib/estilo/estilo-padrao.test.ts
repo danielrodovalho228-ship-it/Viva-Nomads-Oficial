@@ -105,7 +105,6 @@ export const ALCANCE = [
   "components/account/telefone-verificacao.tsx",
   "components/contrato/conferencia-contrato.tsx",
   "components/contrato/contrato-detalhe.tsx",
-  "components/dashboard/tenant-onboarding.tsx",
   "components/documentos/documentos-contrato.tsx",
   "components/estadia/acoes-estadia.tsx",
   "components/layout/dashboard-shell.tsx",
@@ -272,7 +271,6 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
     "components/busca/barra-comparar.tsx", // barra flutuante do Comparar
     "components/busca/card-pin-mapa.tsx", // cartão aberto sobre o mapa
     "components/city-autocomplete.tsx", // menu suspenso de sugestões
-    "components/dashboard/role-welcome-modal.tsx", // diálogo sobre a página (Prompt 45)
     "components/estadia/acoes-estadia.tsx", // botão flutuante "cogumelo" (Prompt 41)
     "components/layout/mobile-tab-bar.tsx", // barra inferior do celular/app (Prompt 41)
     "components/layout/navbar.tsx", // cabeçalho fixo (busca fixa) e menu suspenso
