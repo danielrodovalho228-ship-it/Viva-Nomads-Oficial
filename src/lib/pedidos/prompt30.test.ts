@@ -148,7 +148,7 @@ test("item 6: exemplos somem com imóvel real; menos de 3 reais → cartão do p
   assert.match(busca, /data-testid="busca-publicar-pedido"/);
   assert.match(busca, /data-testid="busca-cartao-pedido"/);
   assert.match(ler("src/app/(public)/page.tsx"), /Publicar pedido de moradia/);
-  assert.match(ler("src/config/menu-painel.ts"), /rotulo: "Publicar pedido de moradia", icone: "pedidos", href: "\/pedidos\/novo"/);
+  assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Publicar pedido de moradia", icone: "pedidos", href: "\/pedidos\/novo"/);
 });
 
 test("item 7: admin com nome curto, entrada, faixa, bairros, selos e nº de respostas; fórmulas escritas", () => {

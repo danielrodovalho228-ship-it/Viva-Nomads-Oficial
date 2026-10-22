@@ -49,7 +49,7 @@ test("Nova jornada: confirmação em dois passos na página e resultado sempre v
 
 test("Locações do dono: sem estadia própria, cai em Contratos & blocos e o menu não mostra 'Locações'", () => {
   assert.match(ler("../app/(dashboard)/dashboard/locacoes/page.tsx"), /locacoes\.length === 0 && \(await temImovelAnunciado\(\)\)\) redirect\("\/dashboard\/contratos"\)/);
-  assert.match(ler("../config/menu-painel.ts"), /ctx\.temImovel && !ctx\.estadiaAtiva \? \[\]/);
+  assert.match(ler("../config/menu-por-papel.ts"), /href: "\/dashboard\/locacoes", quando: \(ctx\) => !\(ctx\.temImovel && !ctx\.estadiaAtiva\)/);
   // O guarda do painel no navegador segue a mesma regra (no celular ele corria antes do servidor).
   assert.equal(destinoForaDoPapel("/dashboard/locacoes"), "/dashboard/contratos");
   assert.equal(destinoForaDoPapel("/dashboard/favoritos"), "/dashboard");

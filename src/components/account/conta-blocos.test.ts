@@ -32,7 +32,7 @@ test("simulador tributário: fora da Conta e do cadastro; fica em Ferramentas (/
 });
 
 test("menu: 'Verificação' aponta para a lista de Confiança e segurança", () => {
-  assert.match(ler("src/config/menu-painel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/conta#confianca"/);
+  assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/conta#confianca"/);
 });
 
 test("simulador: PJ sem '+ IBS/CBS', sem aviso de ago/2026 e com o custo de manter a empresa", () => {

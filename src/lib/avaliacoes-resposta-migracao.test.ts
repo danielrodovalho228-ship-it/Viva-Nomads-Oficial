@@ -49,7 +49,7 @@ test("tela do avaliado e anúncio: botões Responder/Pedir revisão chamam as a�
   assert.match(acoesUi, /pedirRevisaoAvaliacao\(avaliacaoId, motivo, texto\)/);
   assert.match(ler("src/components/property/reviews.tsx"), /Resposta do proprietário/);
   assert.match(ler("src/lib/data/properties.ts"), /from\("avaliacao_respostas"\)/);
-  assert.match(ler("src/config/menu-painel.ts"), /\/dashboard\/avaliacoes/);
+  assert.match(ler("src/config/menu-por-papel.ts"), /\/dashboard\/avaliacoes/);
 });
 
 test("responder e pedir revisão revalidam a tela do avaliado na própria ação (a resposta aparece sem depender só do router.refresh)", () => {

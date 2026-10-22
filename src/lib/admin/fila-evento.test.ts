@@ -22,11 +22,14 @@ test("o aviso dispara o evento no navegador e não quebra no servidor", () => {
   assert.deepEqual(vistos, [EVENTO_FILA_DOCUMENTOS]);
 });
 
-test("a barra lateral lê o número de novo quando a fila avisa (além da troca de rota)", () => {
+test("a barra lateral lê o número de novo quando a fila avisa (Prompt 42: pelo GET dos contadores, não a cada rota)", () => {
   const s = ler("src/components/layout/dashboard-shell.tsx");
-  assert.match(s, /window\.addEventListener\(EVENTO_FILA_DOCUMENTOS, aoMudar\)/);
-  assert.match(s, /window\.removeEventListener\(EVENTO_FILA_DOCUMENTOS, aoMudar\)/);
-  assert.match(s, /\}, \[display\.role, pathname, filaMudou\]\);/);
+  const c = ler("src/lib/painel/contadores.ts");
+  assert.match(c, /EVENTOS_CONTADORES: readonly string\[\] = \[EVENTO_CONTADORES, EVENTO_FILA_DOCUMENTOS\]/);
+  assert.match(s, /const eventos = \[\.\.\.EVENTOS_CONTADORES, EVENTO_AVISO_ASSINATURA\];/);
+  assert.match(s, /for \(const e of eventos\) window\.addEventListener\(e, aoMudar\);/);
+  assert.match(s, /for \(const e of eventos\) window\.removeEventListener\(e, aoMudar\);/);
+  assert.match(s, /\}, \[displayUser\?\.id, naAreaDeImoveis, releitura\]\);/);
 });
 
 test("documentos e matrículas: decidir avisa o selo e chama router.refresh dentro de startTransition", () => {

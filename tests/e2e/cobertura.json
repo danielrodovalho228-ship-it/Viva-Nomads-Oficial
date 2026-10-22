@@ -1972,6 +1972,15 @@
       "specs": [
         "t261-tempo-ate-o-trabalho"
       ]
+    },
+    "/api/painel/contadores": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro",
+        "admin"
+      ],
+      "specs": []
     }
   },
   "actions": {

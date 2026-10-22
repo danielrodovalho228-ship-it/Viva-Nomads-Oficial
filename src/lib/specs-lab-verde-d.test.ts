@@ -43,7 +43,7 @@ test("t17 e t43 usam o único aviso que a Conta tem (e-mail); WhatsApp saiu na o
 });
 
 test("t3: /pedidos/novo é página pública (fora da casca), como /buscar", () => {
-  const menu = ler("src/config/menu-painel.ts");
+  const menu = ler("src/config/menu-por-papel.ts");
   assert.match(menu, /href: "\/pedidos\/novo"/);
   const spec = ler("tests/e2e/specs/t3-isolamento-papeis.spec.ts");
   assert.match(spec, /filter\(\(h\) => !PUBLICAS_FORA_DA_CASCA\.includes\(h\)\)/);
