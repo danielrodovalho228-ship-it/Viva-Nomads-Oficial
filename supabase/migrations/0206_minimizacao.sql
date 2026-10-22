@@ -3,9 +3,13 @@
 --  1. eliminacoes_registro: o LIVRO DE ELIMINAÇÕES. Cada eliminação real (apagar ou anonimizar) grava origem, id, tipo,
 --     motivo e data — NUNCA o conteúdo eliminado. Escrita só pelo servidor (service role); leitura só pelo admin.
 --     É a base para reaplicar as eliminações depois de restaurar um backup.
---  2. eliminacoes_simulado: o relatório "o que seria apagado hoje" da fase 2 (tipo, quantidade, prazo, base), um por dia
---     e item do inventário. Só contagem, nunca ids nem conteúdo.
+--  2. eliminacoes_simulado: o relatório "o que seria apagado hoje" (item, guardados, vencidos, prazo, base), um por dia
+--     e item do inventário. Só contagem, nunca ids nem conteúdo. Prazo pendente (item 13) → vencidos = 0.
 --  3. eliminacoes_alertas: falha numa eliminação não para as outras; vira alerta no admin.
+--  4. "Só o veredito": o arquivo do documento sai e a linha fica com a decisão — os caminhos passam a aceitar nulo e
+--     ganham a data da eliminação (documentos_inquilino, qualification_checklists, property_ownership_checks).
+--  5. fotos_anuncio_hash: o hash perceptual de cada foto do anúncio, calculado no servidor. SEM chave estrangeira:
+--     sobrevive à remoção do anúncio (exceção aprovada, antifraude). Só o hash e os ids, nenhuma imagem.
 
 -- ── 1. Livro ─────────────────────────────────────────────────────────────────────────────────────────────────────
 create table if not exists public.eliminacoes_registro (
@@ -25,8 +29,10 @@ create index if not exists eliminacoes_registro_origem_ref_idx on public.elimina
 create table if not exists public.eliminacoes_simulado (
   dia date not null,
   item text not null check (char_length(item) between 1 and 80),
-  quantidade integer not null check (quantidade >= 0),
-  quantidade_teste integer not null default 0 check (quantidade_teste >= 0),
+  guardados integer check (guardados is null or guardados >= 0),             -- quanto existe hoje (null: não contado)
+  vencidos integer not null default 0 check (vencidos >= 0),                -- quanto sairia hoje pelo prazo
+  vencidos_teste integer not null default 0 check (vencidos_teste >= 0),     -- contas de teste, à parte
+  real boolean not null default false,                                      -- true: saiu de verdade (fase 1)
   prazo text not null,
   base text not null,
   gerado_em timestamptz not null default now(),
@@ -54,3 +60,25 @@ create policy "eliminacoes_simulado: admin lê" on public.eliminacoes_simulado f
 drop policy if exists "eliminacoes_alertas: admin lê" on public.eliminacoes_alertas;
 create policy "eliminacoes_alertas: admin lê" on public.eliminacoes_alertas for select to authenticated using (public.is_admin());
 revoke insert, update, delete, truncate on public.eliminacoes_registro, public.eliminacoes_simulado, public.eliminacoes_alertas from anon, authenticated;
+
+-- ── 4. Só o veredito ─────────────────────────────────────────────────────────────────────────────────────────────
+alter table public.documentos_inquilino alter column caminho drop not null;
+alter table public.documentos_inquilino add column if not exists arquivo_eliminado_em timestamptz;
+alter table public.qualification_checklists add column if not exists document_eliminado_em timestamptz;
+alter table public.property_ownership_checks alter column arquivo_path drop not null;
+alter table public.property_ownership_checks add column if not exists arquivo_eliminado_em timestamptz;
+
+-- ── 5. Hash das fotos do anúncio (antifraude) ────────────────────────────────────────────────────────────────────
+create table if not exists public.fotos_anuncio_hash (
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid not null,        -- sem FK de propósito: o hash fica depois da remoção do anúncio
+  owner_id uuid not null,           -- idem
+  hash text not null check (hash ~ '^[0-9a-f]{16}$'),
+  criado_em timestamptz not null default now()
+);
+create index if not exists fotos_anuncio_hash_hash_idx on public.fotos_anuncio_hash (hash);
+create index if not exists fotos_anuncio_hash_imovel_idx on public.fotos_anuncio_hash (property_id);
+alter table public.fotos_anuncio_hash enable row level security;
+drop policy if exists "fotos_anuncio_hash: admin lê" on public.fotos_anuncio_hash;
+create policy "fotos_anuncio_hash: admin lê" on public.fotos_anuncio_hash for select to authenticated using (public.is_admin());
+revoke insert, update, delete, truncate on public.fotos_anuncio_hash from anon, authenticated;
