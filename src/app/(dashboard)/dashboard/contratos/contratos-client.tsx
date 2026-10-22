@@ -169,7 +169,7 @@ export function ContratosClient({
 
   return (
     <>
-      <PageTitle capa="contratos"
+      <PageTitle
         title="Contratos & blocos"
         subtitle="Acompanhe cada contrato, seus blocos e registre os recebimentos."
         action={demoOn ? <DemoBadge /> : undefined}

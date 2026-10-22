@@ -14,7 +14,7 @@ export default function FavoritesPage() {
 
   return (
     <>
-      <PageTitle capa="favoritos"
+      <PageTitle
         title="Favoritos"
         subtitle="Imóveis que você salvou para comparar depois."
         action={

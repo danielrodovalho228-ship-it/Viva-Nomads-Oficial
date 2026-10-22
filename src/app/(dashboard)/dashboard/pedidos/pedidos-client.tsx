@@ -113,7 +113,7 @@ export function PedidosClient({
 
   return (
     <div>
-      <PageTitle capa="pedidos"
+      <PageTitle
         title="Meus pedidos de moradia"
         subtitle="Publique o que precisa e receba respostas dos proprietários — tudo pela plataforma."
         action={

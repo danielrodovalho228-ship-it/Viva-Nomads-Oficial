@@ -145,7 +145,6 @@ function OwnerDashboard({
     <>
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
       <PageTitle
-        capa="imoveis"
         title={`Olá${name ? `, ${name}` : "!"} 👋`}
         subtitle="Prepare seu imóvel, publique e fale com inquilinos qualificados."
         action={
@@ -607,7 +606,6 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
     <>
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
       <PageTitle
-        capa="imoveis"
         title={`Bem-vindo${name ? `, ${name}` : ""}! 👋`}
         subtitle="Do primeiro anúncio ao contrato fechado em 4 passos."
         action={

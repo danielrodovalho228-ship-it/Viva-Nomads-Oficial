@@ -2,17 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { CAPAS } from "../components/dashboard/capas.ts";
 
 // Ordem 75553f0a (laboratório verde): specs não fixam mais o que o produto mudou.
 const raiz = process.cwd();
 const spec = (nome: string) => readFileSync(join(raiz, "tests/e2e/specs", nome), "utf8");
 
-test("t86 confere o alt da capa do painel, que existe em CAPAS.imoveis", () => {
-  assert.match(CAPAS.imoveis.alt, /sala mobiliada/i);
-  assert.doesNotMatch(CAPAS.imoveis.alt, /apartamento mobiliado/i);
+test("t86: sem capa na Visão geral do dono (Prompt 42) e nenhum alt de 'apartamento mobiliado'", () => {
   const t86 = spec("t86-decisao-avatar-alt.spec.ts");
-  assert.match(t86, /painel-capa/);
+  assert.match(t86, /painel-capa"\]'\)\)\.toHaveCount\(0/);
+  assert.match(t86, /getByAltText\(\/apartamento mobiliado\/i\)\)\.toHaveCount\(0\)/);
   assert.doesNotMatch(t86, /getByAltText\("Sala de imóvel mobiliado preparada/);
 });
 

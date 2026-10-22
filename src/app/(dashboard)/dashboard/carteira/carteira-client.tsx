@@ -21,7 +21,7 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
   if (fonte.length === 0) {
     return (
       <>
-        <PageTitle capa="carteira" title="Análise da carteira" subtitle="Ocupação, valor mensal e vencimentos de todos os seus imóveis ativos." />
+        <PageTitle title="Análise da carteira" subtitle="Ocupação, valor mensal e vencimentos de todos os seus imóveis ativos." />
         <EmptyState
           icon={Building2}
           title="Sua carteira está vazia"
@@ -37,7 +37,6 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
   return (
     <div data-testid="carteira-analise">
       <PageTitle
-        capa="carteira"
         title="Análise da carteira"
         subtitle="Ocupação, valor mensal e vencimentos de todos os seus imóveis ativos."
         action={adminDemo ? <DemoBadge /> : undefined}

@@ -29,20 +29,22 @@ test("D6: conteúdo dos painéis reserva espaço inferior para o botão da Viva 
   assert.match(main, /sm:p-8/, "no computador o padding volta ao normal");
 });
 
-test("D2: a visão geral tem h1 (o banner de boas-vindas)", () => {
-  const f = ler("src/components/dashboard/banner.tsx");
-  assert.match(f, /<h1 /);
-  assert.doesNotMatch(f, /<h2 /);
+test("D2: a visão geral tem h1 (Prompt 42: o título em texto do PageTitle, sem a faixa de boas-vindas)", () => {
+  const f = ler("src/components/dashboard/primitives.tsx");
+  const titulo = f.slice(f.indexOf("export function PageTitle"), f.indexOf("export function StatCard"));
+  assert.match(titulo, /<h1 /);
+  assert.doesNotMatch(titulo, /<h2 /);
+  assert.match(ler("src/app/(dashboard)/dashboard/visao-geral-client.tsx"), /<PageTitle/);
 });
 
-test("D5: Favoritos, Comparações e Buscas salvas mostram a capa antes das abas", () => {
+test("D5: Favoritos, Comparações e Buscas salvas mostram o título antes das abas", () => {
   for (const r of ["favoritos", "comparar", "buscas"]) {
     const f = ler(`src/app/(dashboard)/dashboard/${r}/page.tsx`);
     for (const m of f.matchAll(/<PageTitle/g)) {
       const antes = f.slice(0, m.index);
       const ultimaAba = antes.lastIndexOf("<FavoritosTabs />");
       const ultimoRetorno = Math.max(antes.lastIndexOf("return ("), antes.lastIndexOf("<>"));
-      assert.ok(ultimaAba < ultimoRetorno, `${r}: aba antes da capa`);
+      assert.ok(ultimaAba < ultimoRetorno, `${r}: aba antes do título`);
     }
   }
 });

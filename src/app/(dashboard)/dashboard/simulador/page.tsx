@@ -80,7 +80,7 @@ export default function SimuladorPage() {
 
   return (
     <>
-      <PageTitle capa="simulador" title="Simulador de rentabilidade" subtitle="Quanto o seu imóvel rende por mês na Viva Nomads." />
+      <PageTitle title="Simulador de rentabilidade" subtitle="Quanto o seu imóvel rende por mês na Viva Nomads." />
 
       <SimHero
         icon={TrendingUp}

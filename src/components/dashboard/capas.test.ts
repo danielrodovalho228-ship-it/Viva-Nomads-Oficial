@@ -1,27 +1,28 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
-import { CAPAS, CAPA_MORADOR, capaDoMorador } from "./capas.ts";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { FOTOS_FERRAMENTAS } from "./capas.ts";
 
-// Ordem b36ca0ee (D1): a capa do morador aponta para painel-morador-capa.webp; enquanto o arquivo não chega, a tela usa a
-// capa de buscas e o pedido da imagem fica registrado ("falta imagem").
-test("D1: capa do morador aponta para o arquivo combinado e registra 'falta imagem'", () => {
-  assert.equal(CAPA_MORADOR.src, "/images/unicas/painel-morador-capa.webp");
-  assert.equal(CAPA_MORADOR.pronta, existsSync(`public${CAPA_MORADOR.src}`), "marcar pronta só junto com o arquivo");
-  assert.ok(CAPA_MORADOR.pronta || CAPA_MORADOR.pendencia === "falta imagem");
+// Prompt 42, item 2: as telas logadas abrem com título em texto — sem a faixa de foto (capa) que ocupava um quarto da
+// tela sem informação. As páginas públicas seguem com as fotos delas.
+test("Prompt 42: PageTitle não desenha capa fotográfica e nenhuma tela logada passa capa", () => {
+  const prim = readFileSync(new URL("./primitives.tsx", import.meta.url), "utf8");
+  const titulo = prim.slice(prim.indexOf("export function PageTitle"), prim.indexOf("export function StatCard"));
+  assert.doesNotMatch(titulo, /capa|<Image|painel-capa/);
+  assert.doesNotMatch(prim, /from "next\/image"/);
+  const andar = (dir: string): string[] =>
+    readdirSync(dir).flatMap((n) => {
+      const p = join(dir, n);
+      return statSync(p).isDirectory() ? andar(p) : p.endsWith(".tsx") ? [p] : [];
+    });
+  const logadas = [...andar("src/app/(dashboard)"), ...andar("src/components/dashboard"), ...andar("src/components/account")];
+  for (const f of logadas) assert.doesNotMatch(readFileSync(f, "utf8"), /<PageTitle[^>]*\bcapa=|DashboardBanner|data-testid="painel-capa"/, f);
+  assert.equal(existsSync(new URL("./banner.tsx", import.meta.url)), false, "a faixa de boas-vindas com foto saiu");
 });
 
-test("D1: sem a imagem, o morador usa a capa existente (nunca imagem quebrada)", () => {
-  const capa = capaDoMorador();
-  if (CAPA_MORADOR.pronta) assert.equal(capa, "morador");
-  else assert.equal(capa, "buscas");
-  assert.ok(capa in CAPAS);
-});
-
-test("D1: o painel do morador (onboarding do inquilino) usa capaDoMorador()", () => {
-  const src = readFileSync(new URL("./tenant-onboarding.tsx", import.meta.url), "utf8");
-  assert.match(src, /capa=\{capaDoMorador\(\)\}/);
-  assert.doesNotMatch(src, /capa="buscas"/);
+test("as fotos dos grupos de Ferramentas continuam apontando para arquivos que existem", () => {
+  for (const f of Object.values(FOTOS_FERRAMENTAS)) assert.ok(existsSync(`public${f.src}`), f.src);
 });
 
 test("D6: spec t59 confere que o botão flutuante não cobre o último card no painel a 390 px", () => {

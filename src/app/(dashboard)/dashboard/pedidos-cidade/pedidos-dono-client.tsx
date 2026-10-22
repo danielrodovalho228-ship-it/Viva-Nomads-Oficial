@@ -55,7 +55,6 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
   return (
     <div>
       <PageTitle
-        capa="pedidos-cidade"
         title="Pedidos de moradia"
         subtitle="Quem procura casa conta o que precisa. Ofereça um imóvel seu — a conversa acontece pela plataforma."
       />

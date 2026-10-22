@@ -40,7 +40,7 @@ export default async function AvaliacoesRecebidasPage() {
 
   return (
     <div className="w-full" data-testid="avaliacoes-recebidas">
-      <PageTitle capa="avaliacoes"
+      <PageTitle
         title="Avaliações recebidas"
         subtitle="Responda em público ou peça revisão quando houver ofensa, dado pessoal ou fato falso."
       />

@@ -362,7 +362,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
   return (
     <div>
-      <PageTitle capa="fechamento"
+      <PageTitle
         title="Fechamento"
         subtitle={
           demo

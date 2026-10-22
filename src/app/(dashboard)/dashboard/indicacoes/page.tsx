@@ -59,7 +59,7 @@ export default function ReferralsPage() {
 
   return (
     <>
-      <PageTitle capa="indicacoes"
+      <PageTitle
         title="Programa de indicação"
         subtitle="Indique e ganhe créditos quando seus indicados fecharem a primeira reserva."
       />

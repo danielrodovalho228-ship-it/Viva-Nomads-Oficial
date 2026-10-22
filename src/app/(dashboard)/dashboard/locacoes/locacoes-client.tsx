@@ -55,7 +55,7 @@ export function LocacoesClient({
 
   return (
     <>
-      <PageTitle capa="locacoes"
+      <PageTitle
         title="Minhas locações"
         subtitle="Suas estadias e a avaliação do proprietário."
         action={demoOn ? <DemoBadge /> : undefined}

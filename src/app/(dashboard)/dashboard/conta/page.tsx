@@ -26,7 +26,7 @@ export default function AccountPage() {
         <ContaMenu />
       </div>
       <div className="web-only">
-        <PageTitle capa="conta" title="Conta" subtitle="Seu perfil, seus dados e suas preferências." />
+        <PageTitle title="Conta" subtitle="Seu perfil, seus dados e suas preferências." />
 
         <BlocoConta id="perfil-publico" numero={1} titulo="Perfil público" subtitulo="O que os outros veem de você.">
           <AvatarUploader />

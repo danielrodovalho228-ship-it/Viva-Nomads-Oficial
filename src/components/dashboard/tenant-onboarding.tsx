@@ -5,7 +5,6 @@ import { Check, ShieldCheck, Megaphone, MessageSquare, X } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { capaDoMorador } from "@/components/dashboard/capas";
 import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
 import type { EstadoIdentidade } from "@/lib/identidade/estado";
@@ -94,7 +93,6 @@ export function TenantOnboarding({ name }: { name: string }) {
 
   const banner = (
     <PageTitle
-      capa={capaDoMorador()}
       title={`Olá${name ? `, ${name}` : "!"} 👋`}
       subtitle="Encontre o imóvel certo para a sua próxima fase."
       action={

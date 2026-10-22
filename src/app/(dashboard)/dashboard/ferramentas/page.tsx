@@ -193,7 +193,6 @@ export default function FerramentasPage() {
   return (
     <div>
       <PageTitle
-        capa="ferramentas"
         title="Ferramentas"
         subtitle="Tudo o que ajuda você a analisar, fechar e proteger a locação — em um só lugar."
       />

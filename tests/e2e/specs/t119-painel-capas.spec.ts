@@ -2,28 +2,18 @@ import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /*
-  Ordem 9f3085d8 — painel logado no padrão do rebuild: cada tela principal abre com
-  uma capa fotográfica full-width (foto carregada, título visível), nenhuma foto se
-  repete entre telas, sem rolagem horizontal, e as grades de cards têm colunas pares
-  com cards da mesma altura. Desktop (1440) e mobile (390).
+  Ordem 9f3085d8 → Prompt 42, item 2: as telas logadas abrem com o título em texto (h1 + subtítulo), SEM a capa
+  fotográfica que ocupava um quarto da tela sem informação. Continua: sem rolagem horizontal e grades de cards com
+  número par de colunas. Desktop (1440) e mobile (390).
 */
 const DONO = ["/dashboard/imoveis", "/dashboard/leads", "/dashboard/pedidos-cidade", "/dashboard/fechamento", "/dashboard/contratos", "/dashboard/garantias", "/dashboard/conta", "/dashboard/verificacao", "/dashboard/notificacoes", "/dashboard/solicitacoes", "/dashboard/ferramentas", "/dashboard/simulador", "/dashboard/roi-imovel", "/dashboard/orcamentos"];
 const MORADOR = ["/dashboard/favoritos", "/dashboard/buscas", "/dashboard/pedidos", "/dashboard/candidaturas", "/dashboard/locacoes", "/dashboard/avaliacoes", "/dashboard/indicacoes", "/dashboard/comparar"];
 
-async function conferirCapa(page: Page, rota: string, largura: number) {
+async function conferirTitulo(page: Page, rota: string) {
   await page.goto(rota, { waitUntil: "domcontentloaded" });
-  const capa = page.locator('[data-testid="painel-capa"]:visible').first();
-  // Servidor do laboratório começa frio: a 1ª tela (e o 1º redimensionamento de imagem) leva mais que as seguintes.
-  await expect(capa, `${rota}: capa`).toBeVisible({ timeout: 45_000 });
-  await expect(capa.locator("h1"), `${rota}: título na capa`).toBeVisible();
-  const foto = capa.locator("img").first();
-  await expect
-    .poll(() => foto.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), { message: `${rota}: foto carregou`, timeout: 45_000 })
-    .toBe(true);
-  // Capa ocupa toda a largura do conteúdo e tem altura de faixa (não é um título solto).
-  const caixa = await capa.boundingBox();
-  expect(caixa!.height, `${rota}: altura da capa`).toBeGreaterThanOrEqual(170);
-  expect(caixa!.width, `${rota}: largura da capa`).toBeGreaterThan(largura > 500 ? 600 : 330);
+  // Servidor do laboratório começa frio: a 1ª tela leva mais que as seguintes.
+  await expect(page.locator("main h1:visible").first(), `${rota}: título`).toBeVisible({ timeout: 45_000 });
+  await expect(page.locator('[data-testid="painel-capa"]')).toHaveCount(0); // sem capa de foto
   const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(sobra, `${rota}: rolagem horizontal`).toBeLessThanOrEqual(1);
   // Grades do conteúdo: 1 coluna (empilhado) ou número par de colunas — nunca 3, 5…
@@ -37,22 +27,16 @@ async function conferirCapa(page: Page, rota: string, largura: number) {
       .filter((g) => g.cols > 1 && g.cols % 2 === 1)
   );
   expect(impares, `${rota}: grade com colunas ímpares`).toEqual([]);
-  return foto.evaluate((i: HTMLImageElement) => new URL(i.currentSrc || i.src).searchParams.get("url") ?? i.src);
 }
 
 for (const [persona, rotas] of [["proprietario", DONO], ["inquilino", MORADOR]] as const) {
   test.describe(`painel ${persona}`, () => {
     test.use({ storageState: authFile(persona) });
     for (const largura of [1440, 390]) {
-      test(`capas com foto única em todas as telas — ${largura}px`, async ({ page }) => {
+      test(`título em texto, sem capa de foto, em todas as telas — ${largura}px`, async ({ page }) => {
         test.setTimeout(240_000);
         await page.setViewportSize({ width: largura, height: largura > 500 ? 900 : 844 });
-        const fotos = new Map<string, string>();
-        for (const rota of rotas) {
-          const src = await conferirCapa(page, rota, largura);
-          expect(fotos.get(src), `${rota} repete a foto de ${fotos.get(src)}`).toBeUndefined();
-          fotos.set(src, rota);
-        }
+        for (const rota of rotas) await conferirTitulo(page, rota);
       });
     }
   });

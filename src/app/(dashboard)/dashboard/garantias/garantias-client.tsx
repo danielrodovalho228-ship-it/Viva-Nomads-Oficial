@@ -55,7 +55,7 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
 
   return (
     <>
-      <PageTitle capa="garantias"
+      <PageTitle
         title="Garantias"
         subtitle="Como funciona a garantia da locação e o status das cauções dos seus contratos."
         action={demoOn ? <DemoBadge /> : undefined}
