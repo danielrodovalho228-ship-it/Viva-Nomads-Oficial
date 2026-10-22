@@ -15,7 +15,7 @@ import {
 } from "../fixtures/laboratorio";
 
 /*
-  T278 — Prompt 43 (perfil, calendários, fluxos, conta única, onboarding e Anunciar em 6 passos), a 390 e 1280 px:
+  T280 — Prompt 43 (perfil, calendários, fluxos, conta única, onboarding e Anunciar em 6 passos), a 390 e 1280 px:
   1. Conta com os 3 papéis: "Seus papéis" com os 3 ativos, Conta em 4 grupos, nenhum seletor de modo; a barra do
      celular segue o contexto da tela (parceiro, proprietário, morador) sem segundo login.
   2. Conta só morador: convites "Anunciar um imóvel" e "Quero ser parceiro"; checklist de morador no Início; nada de
@@ -39,7 +39,7 @@ async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
 
-test.describe("T278 — conta única e fluxos do Prompt 43", () => {
+test.describe("T280 — conta única e fluxos do Prompt 43", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.setTimeout(180_000);
@@ -49,11 +49,11 @@ test.describe("T278 — conta única e fluxos do Prompt 43", () => {
   const tres = { email: `tres.t278.${sufixo}@lab.vivanomads.test`, nome: "Tereza Tres Papeis", role: "owner" as const };
   const morador = { email: `morador.t278.${sufixo}@lab.vivanomads.test`, nome: "Mauro Morador Prado", role: "tenant" as const };
   const ids: Record<string, string | undefined> = {};
-  const TITULO = `Studio T278 ${sufixo}`;
+  const TITULO = `Studio T280 ${sufixo}`;
   /** Rascunho da ordem ANTIGA (5 etapas, parado em "O que encontramos"); cada largura começa dele. */
   const RASCUNHO_5_ETAPAS = {
     ordemEtapas: 3, step: 2, etapaMax: 3, street: "Rua do Laboratório", numero: "72", neighborhood: "Centro", city: "Uberlândia",
-    bedrooms: "2", bathrooms: "1", maxGuests: "3", areaM2: "41", title: "Rascunho T278 seis passos",
+    bedrooms: "2", bathrooms: "1", maxGuests: "3", areaM2: "41", title: "Rascunho T280 seis passos",
     description: "Rascunho do laboratório para conferir os 6 passos do Anunciar.", monthlyPrice: "3100",
     garantias: { caucao_avista: true }, amenityKeys: { ar_condicionado: true },
   };
@@ -64,14 +64,14 @@ test.describe("T278 — conta única e fluxos do Prompt 43", () => {
     ids.imovel = await criarImovelPronto(ids.tres, TITULO, { ativo: true });
     const { error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.tres, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Tereza Servicos", slug: `tereza-t278-${sufixo}`.toLowerCase() });
+      .insert({ user_id: ids.tres, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Tereza Servicos", slug: `tereza-t280-${sufixo}`.toLowerCase() });
     if (error) throw error;
     await gravarMensagem(ids.morador, ids.tres, ids.imovel, "Olá! O studio está livre em dezembro?", conversationId(ids.morador, ids.tres, ids.imovel));
     // Rascunho da ordem ANTIGA (5 etapas, parado em "O que encontramos"), sem a declaração das câmeras.
     const { data, error: e2 } = await adm()
       .from("properties")
       .insert({
-        owner_id: ids.tres, title: "Rascunho T278 seis passos", description: "Rascunho do laboratório para conferir os 6 passos do Anunciar.",
+        owner_id: ids.tres, title: "Rascunho T280 seis passos", description: "Rascunho do laboratório para conferir os 6 passos do Anunciar.",
         property_type: "Apartamento", address: "Centro", city: "Uberlândia", state: "MG", bedrooms: 2, bathrooms: 1, area_m2: 41,
         min_period_days: 30, max_period_days: 180, monthly_price: 3100, status: "draft",
         draft_data: RASCUNHO_5_ETAPAS,
@@ -118,7 +118,7 @@ test.describe("T278 — conta única e fluxos do Prompt 43", () => {
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 25_000 });
       await expect(page.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]')).toHaveCount(0);
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t278-tres-papeis-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t280-tres-papeis-${largura}.png`, fullPage: false });
       await page.context().close();
     });
 
@@ -131,7 +131,7 @@ test.describe("T278 — conta única e fluxos do Prompt 43", () => {
       await expect(lista.locator('[data-item="pedido"]')).toContainText("Pedido não é contrato");
       await expect(page.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"], [data-testid="checklist-ativacao"][data-papel="parceiro"]')).toHaveCount(0);
       await expect(page.getByTestId("inicio-proprietario")).toHaveCount(0);
-      await page.screenshot({ path: `${SAIDA}/t278-morador-inicio-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t280-morador-inicio-${largura}.png`, fullPage: false });
 
       await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
       const papeis = page.getByTestId("seus-papeis").locator("visible=true").first();
@@ -148,7 +148,7 @@ test.describe("T278 — conta única e fluxos do Prompt 43", () => {
       await expect(ctx).toContainText(TITULO);
       await expect(ctx.getByTestId("conversa-contexto-tipo")).toBeVisible();
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t278-mensagens-contexto-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t280-mensagens-contexto-${largura}.png`, fullPage: false });
 
       // "Falar com a Viva" nas telas de decisão do morador (sempre no mesmo lugar, com a promessa de atendimento).
       for (const rota of ["/dashboard/pedidos", "/dashboard/verificacao", "/dashboard/fechamento"]) {
@@ -171,16 +171,16 @@ test.describe("T278 — conta única e fluxos do Prompt 43", () => {
       await expect(page.getByTestId("cadastro-banheiros")).toHaveValue("1");
       await expect(page.getByTestId("cadastro-capacidade")).toHaveValue("3");
       await expect(page.getByTestId("cadastro-area")).toHaveValue("41");
-      await page.screenshot({ path: `${SAIDA}/t278-anunciar-passo2-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t280-anunciar-passo2-${largura}.png`, fullPage: false });
 
       await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { name: "Comodidades e segurança" })).toBeVisible({ timeout: 30_000 });
-      await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Rascunho T278 seis passos");
+      await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Rascunho T280 seis passos");
       const seguranca = page.getByTestId("seguranca-imovel");
       await expect(seguranca.locator('[data-grupo="seguranca"] [data-comodidade]')).toHaveCount(2);
       await expect(seguranca.getByTestId("declaracao-sem-cameras")).toHaveAttribute("aria-checked", "false");
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t278-anunciar-passo4-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t280-anunciar-passo4-${largura}.png`, fullPage: true });
 
       // Revisar: sem a declaração das câmeras, a privacidade fica pendente e o anúncio não publica.
       await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=revisar`, { waitUntil: "domcontentloaded" });
@@ -225,7 +225,7 @@ test.describe("T278 — conta única e fluxos do Prompt 43", () => {
     await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
     await expect(page.locator('[data-testid="calendario-mes"][data-tipo="agenda"]').first()).toBeVisible({ timeout: 25_000 });
     await expect(page.getByTestId("calendario-legenda").first()).toBeVisible();
-    await page.screenshot({ path: `${SAIDA}/t278-agenda-parceiro-1280.png`, fullPage: false });
+    await page.screenshot({ path: `${SAIDA}/t280-agenda-parceiro-1280.png`, fullPage: false });
     await page.context().close();
   });
 });
