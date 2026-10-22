@@ -115,3 +115,12 @@ export function categoriaLabel(value?: string | null): string {
   if (mapped && LABEL_POR_KEY[mapped]) return LABEL_POR_KEY[mapped];
   return value;
 }
+
+/**
+ * Rótulo para o PROPRIETÁRIO antes do aceite. "Tratamento de saúde" aparece só
+ * como "Saúde": a plataforma nunca pede nem mostra diagnóstico (LGPD art. 11).
+ */
+export function categoriaLabelParaDono(value?: string | null): string {
+  if (value === "vida_tratamento") return "Saúde";
+  return categoriaLabel(value);
+}

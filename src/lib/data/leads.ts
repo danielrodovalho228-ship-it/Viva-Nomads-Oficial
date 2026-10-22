@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { categoriaLabel } from "@/config/categorias-profissionais";
+import { categoriaLabelParaDono } from "@/config/categorias-profissionais";
 import { motivoParaDono } from "@/lib/pedidos/pedidos";
 import { dataBR } from "@/lib/utils";
 import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
@@ -181,7 +181,7 @@ export async function listLeads(): Promise<Lead[]> {
       selos: cartao.selos,
       reputacao: cartao.reputacao,
       property: r.property?.title ?? "Imóvel",
-      category: categoriaLabel(t?.professional_category) || "—",
+      category: categoriaLabelParaDono(t?.professional_category) || "—",
       riskCategories: v?.risk_categories ?? ["Verificação pendente"],
       light: v?.traffic_light ?? "yellow",
       verified: !!v?.traffic_light,
