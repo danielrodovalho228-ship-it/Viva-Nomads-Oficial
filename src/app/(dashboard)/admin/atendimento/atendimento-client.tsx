@@ -42,19 +42,19 @@ export function relogio(c: ChamadoAdmin, agora: Date): { cor: string; texto: str
   const primeira = new Date(c.prazo_primeira_resposta);
   if (c.primeira_resposta_em) {
     // Respondido: atrasado fica marcado; no prazo, passa a contar o prazo de resolução.
-    if (new Date(c.primeira_resposta_em).getTime() > primeira.getTime()) return { cor: "bg-red-100 text-red-800", texto: "1ª resposta fora do prazo" };
+    if (new Date(c.primeira_resposta_em).getTime() > primeira.getTime()) return { cor: "border border-line bg-white text-red-800", texto: "1ª resposta fora do prazo" };
     if (c.status === "resolvido" || c.status === "encerrado") return { cor: "bg-surface-2 text-muted", texto: "respondido" };
     const estado = estadoPrazo(new Date(c.criado_em), new Date(c.prazo_resolucao), agora, false);
     const rest = Math.round((new Date(c.prazo_resolucao).getTime() - agora.getTime()) / 60000);
-    if (estado === "estourado") return { cor: "bg-red-100 text-red-800", texto: `resolução estourou há ${fmt(rest)}` };
-    if (estado === "em_risco") return { cor: "bg-amber-100 text-amber-800", texto: `resolução: ${fmt(rest)} restantes` };
+    if (estado === "estourado") return { cor: "border border-line bg-white text-red-800", texto: `resolução estourou há ${fmt(rest)}` };
+    if (estado === "em_risco") return { cor: "border border-line bg-white text-amber-800", texto: `resolução: ${fmt(rest)} restantes` };
     return { cor: "bg-surface-2 text-muted", texto: `respondido · resolver em ${fmt(rest)}` };
   }
   const estado = estadoPrazo(new Date(c.criado_em), primeira, agora, false);
   const restMin = Math.round((primeira.getTime() - agora.getTime()) / 60000);
-  if (estado === "estourado") return { cor: "bg-red-100 text-red-800", texto: `estourou há ${fmt(restMin)}` };
-  if (estado === "em_risco") return { cor: "bg-amber-100 text-amber-800", texto: `${fmt(restMin)} restantes` };
-  return { cor: "bg-green-100 text-green-800", texto: `${fmt(restMin)} restantes` };
+  if (estado === "estourado") return { cor: "border border-line bg-white text-red-800", texto: `estourou há ${fmt(restMin)}` };
+  if (estado === "em_risco") return { cor: "border border-line bg-white text-amber-800", texto: `${fmt(restMin)} restantes` };
+  return { cor: "border border-line bg-white text-forest", texto: `${fmt(restMin)} restantes` };
 }
 
 export function AtendimentoClient({
@@ -81,7 +81,7 @@ export function AtendimentoClient({
     <>
       <PageTitle title="Atendimento" subtitle="Chamados por prioridade e prazo. Simulações ficam fora." />
       {semAcesso && (
-        <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Sem acesso aos chamados agora (banco sem a migração 0073, sem chave de serviço ou sem permissão).
         </p>
       )}
@@ -94,7 +94,7 @@ export function AtendimentoClient({
             className={cn("rounded-lg px-3 py-2 text-sm", aba === a.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest")}
           >
             {a.rotulo}
-            {a.id === "aprovacao" && aprovacao.length > 0 && <span className="ml-2 rounded-full bg-amber-200 px-2 text-xs text-amber-900">{aprovacao.length}</span>}
+            {a.id === "aprovacao" && aprovacao.length > 0 && <span className="border border-line ml-2 rounded-full bg-white px-2 text-xs text-amber-900">{aprovacao.length}</span>}
           </Link>
         ))}
       </nav>
@@ -191,10 +191,10 @@ function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; v
             <Link href={`/admin/atendimento/${c.id}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-sage-200 bg-white px-4 py-3 hover:border-forest">
               <span className="min-w-0 flex-1 basis-56">
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className={cn("rounded-lg px-2 py-1 text-xs font-semibold", c.prioridade === "p1" ? "bg-red-600 text-white" : c.prioridade === "p2" ? "bg-amber-500 text-white" : "bg-surface-2 text-ink")}>
+                  <span className={cn("rounded-full border border-line bg-white px-2 py-1 text-xs font-semibold", c.prioridade === "p1" ? "text-red-700" : c.prioridade === "p2" ? "text-amber-800" : "text-ink")}>
                     {c.prioridade.toUpperCase()}
                   </span>
-                  <span className="truncate font-medium text-ink">{c.assunto}</span>
+                  <span className="truncate font-semibold text-ink">{c.assunto}</span>
                 </span>
                 <span className="mt-1 block text-xs text-muted">
                   {c.numero_publico} · {FILAS[filaDaCategoria(c.categoria)].rotulo} · {c.canal} · {STATUS[c.status] ?? c.status}
@@ -202,7 +202,7 @@ function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; v
                   <span data-testid="chamado-aberto-em"> · Aberto em {dataHoraBRT(c.criado_em, { tabela: true })}</span>
                 </span>
               </span>
-              <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium", r.cor)}>
+              <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold", r.cor)}>
                 <Clock className="h-3.5 w-3.5" /> {r.texto}
               </span>
             </Link>
@@ -341,7 +341,7 @@ function Macros({ macros }: { macros: Macro[] }) {
             {macros.map((m) => (
               <li key={m.id} className="flex items-start justify-between gap-3 py-3">
                 <button type="button" onClick={() => setEdit(m)} className="min-w-0 text-left">
-                  <span className="block font-medium text-ink">{m.titulo}</span>
+                  <span className="block font-semibold text-ink">{m.titulo}</span>
                   <span className="block truncate text-xs text-muted">{m.corpo}</span>
                 </button>
                 <ConfirmarNaPagina
@@ -349,7 +349,7 @@ function Macros({ macros }: { macros: Macro[] }) {
                   confirmar="Apagar"
                   ariaLabel={`Apagar ${m.titulo}`}
                   className="shrink-0"
-                  botaoClassName="rounded-lg p-2 text-muted hover:bg-red-50 hover:text-red-700"
+                  botaoClassName="rounded-lg p-2 text-muted hover:bg-surface-2 hover:text-red-700"
                   onConfirmar={async () => {
                     await apagarMacro(m.id);
                     router.refresh();
@@ -387,7 +387,7 @@ function TestarViva() {
         certos e nenhum erro nos cenários 6, 7, 13 e 14. Até 3 rodadas por dia.
       </p>
       <label className="mt-3 block text-sm">
-        <span className="mb-1 block font-medium text-ink">Modelo</span>
+        <span className="mb-1 block font-semibold text-ink">Modelo</span>
         <select value={modelo} onChange={(e) => setModelo(e.target.value)} className="w-full max-w-xs rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink">
           <option value="">O configurado (ATENDIMENTO_IA_MODELO)</option>
           {Object.entries(PRECOS_USD).map(([id, p]) => (
@@ -443,7 +443,7 @@ function TestarViva() {
           <ul className="mt-3 divide-y divide-line text-sm">
             {res.map((r) => (
               <li key={r.n} className="py-2">
-                <p className="font-medium text-ink">
+                <p className="font-semibold text-ink">
                   {r.falhas.length === 0 ? "✓" : "✗"} {r.n}. “{r.mensagem}”{r.critico ? " · crítico" : ""}
                 </p>
                 <p className="text-xs text-muted">

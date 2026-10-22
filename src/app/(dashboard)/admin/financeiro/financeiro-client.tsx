@@ -95,7 +95,7 @@ export function FinanceiroClient({
       </form>
 
       {aviso && (
-        <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{aviso}</p>
+        <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">{aviso}</p>
       )}
       {f.historicoDesde && (
         <p className="mb-6 rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-ink">
@@ -177,7 +177,7 @@ export function FinanceiroClient({
             <Cartao rotulo="ROI" valor={fmtPct(f.roi)} formula="(Total recebido − gasto) ÷ gasto. Sem gasto lançado: —." />
           </Grade>
           <p className="mt-3 text-sm">
-            <Link href="/admin/marketing" className="font-medium text-forest underline">
+            <Link href="/admin/marketing" className="font-semibold text-forest underline">
               Lançar gastos de marketing
             </Link>
           </p>
@@ -186,11 +186,11 @@ export function FinanceiroClient({
         <Panel title="Mês a mês (12 meses)">
           <div className="grid gap-6 lg:grid-cols-2">
             <div>
-              <h3 className="mb-2 text-sm font-medium text-ink">Total recebido</h3>
+              <h3 className="mb-2 text-sm font-semibold text-ink">Total recebido</h3>
               <BarrasMensais dados={serie((m) => m.receitaTotal)} rotulo="Total recebido" formatar={reais} />
             </div>
             <div>
-              <h3 className="mb-2 text-sm font-medium text-ink">MRR no fim do mês</h3>
+              <h3 className="mb-2 text-sm font-semibold text-ink">MRR no fim do mês</h3>
               <LinhaMensal dados={serie((m) => m.mrrFimMes)} rotulo="MRR" formatar={reais} />
             </div>
           </div>
@@ -200,12 +200,12 @@ export function FinanceiroClient({
               <table className="w-full min-w-[560px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-line text-muted">
-                    <th className="py-2 font-medium">Mês</th>
-                    <th className="py-2 text-right font-medium">Assinaturas</th>
-                    <th className="py-2 text-right font-medium">Taxas de serviço</th>
-                    <th className="py-2 text-right font-medium">Marketing</th>
-                    <th className="py-2 text-right font-medium">Proprietários novos</th>
-                    <th className="py-2 text-right font-medium">MRR fim do mês</th>
+                    <th className="py-2 font-semibold">Mês</th>
+                    <th className="py-2 text-right font-semibold">Assinaturas</th>
+                    <th className="py-2 text-right font-semibold">Taxas de serviço</th>
+                    <th className="py-2 text-right font-semibold">Marketing</th>
+                    <th className="py-2 text-right font-semibold">Proprietários novos</th>
+                    <th className="py-2 text-right font-semibold">MRR fim do mês</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -252,7 +252,7 @@ function TaxasVencidas({ linhas }: { linhas: { leadId: string; criadoEm: string;
         <ul className="grid gap-2 text-sm">
           {linhas.map((v) => (
             <li key={v.leadId} className="min-w-0 break-words rounded-xl border border-line px-3 py-2" data-testid="vencida-linha">
-              <span className="font-medium text-ink">{v.imovel}</span>
+              <span className="font-semibold text-ink">{v.imovel}</span>
               <span className="block text-xs text-muted">Cobrança criada em {dataHoraBRT(v.criadoEm)}</span>
             </li>
           ))}
@@ -309,12 +309,12 @@ function TabelaComissoes({ linhas }: { linhas: ReturnType<typeof calcularFinance
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead>
           <tr className="border-b border-line text-muted">
-            <th className="py-2 pr-3 font-medium">Data</th>
-            <th className="py-2 font-medium">Imóvel</th>
-            <th className="py-2 font-medium">Plano</th>
-            <th className="py-2 pl-3 text-right font-medium">Valor mensal*</th>
-            <th className="py-2 pl-3 text-right font-medium">Taxa de serviço</th>
-            <th className="py-2 pl-4 font-medium">Situação</th>
+            <th className="py-2 pr-3 font-semibold">Data</th>
+            <th className="py-2 font-semibold">Imóvel</th>
+            <th className="py-2 font-semibold">Plano</th>
+            <th className="py-2 pl-3 text-right font-semibold">Valor mensal*</th>
+            <th className="py-2 pl-3 text-right font-semibold">Taxa de serviço</th>
+            <th className="py-2 pl-4 font-semibold">Situação</th>
           </tr>
         </thead>
         <tbody>
@@ -331,7 +331,7 @@ function TabelaComissoes({ linhas }: { linhas: ReturnType<typeof calcularFinance
               </td>
               <td className="py-2 pl-3 text-right text-ink">{fmtReais(c.aluguel)}</td>
               <td className="py-2 pl-3 text-right text-ink">{fmtReais(c.comissao)}</td>
-              <td className={cn("py-2 pl-4", c.status === "vencido" ? "text-red-700" : c.status === "pago" ? "text-green-700" : "text-ink")}>
+              <td className={cn("py-2 pl-4", c.status === "vencido" ? "text-red-700" : c.status === "pago" ? "text-forest" : "text-ink")}>
                 {STATUS_COMISSAO[c.status] ?? c.status}
                 {c.pago_em ? <span className="text-muted"> · {dataBR(c.pago_em)}</span> : null}
               </td>
@@ -339,7 +339,7 @@ function TabelaComissoes({ linhas }: { linhas: ReturnType<typeof calcularFinance
           ))}
         </tbody>
         <tfoot>
-          <tr className="font-medium">
+          <tr className="font-semibold">
             <td className="py-2 pr-3 text-ink" colSpan={4}>
               Total da tabela
             </td>
@@ -364,10 +364,10 @@ function TabelaContratos({ linhas }: { linhas: ContratoLinhaAdmin[] }) {
         const meses = mesesDoContrato(c.prazoDias);
         return (
           <li key={c.id} className="rounded-xl border border-line px-3 py-2" data-testid="fin-contrato">
-            <Link href={`/admin/contratos?q=${c.id.slice(0, 8)}`} className="font-medium text-ink hover:text-forest">
+            <Link href={`/admin/contratos?q=${c.id.slice(0, 8)}`} className="font-semibold text-ink hover:text-forest">
               {c.imovel}
             </Link>
-            {ehRegraAnterior(c) && <span className="ml-2 rounded-full bg-surface-2 px-2 py-1 text-xs text-muted">regra anterior</span>}
+            {ehRegraAnterior(c) && <span className="ml-2 rounded-full border border-line bg-white px-2 py-1 text-xs text-muted">regra anterior</span>}
             <span className="block text-xs text-muted" data-testid="fin-rotulo-taxa">
               Taxa de serviço:{" "}
               {rotuloBaseTaxa({ valor: c.taxaValor ?? 0, percent: c.taxaPercent ?? 0, aluguelMensal: c.aluguelMensal ?? 0, meses, aceiteEm: c.aceiteEm })}

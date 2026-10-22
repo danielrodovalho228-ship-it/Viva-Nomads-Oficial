@@ -51,7 +51,7 @@ export default async function AdminContratoPage({ params }: { params: Promise<{ 
           <p className="min-w-0 break-words text-sm text-ink">
             Proprietário: <strong>{c.nomes.proprietario || "—"}</strong> · Inquilino: <strong>{c.nomes.inquilino || "—"}</strong>
           </p>
-          <span className="rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest" data-testid="admin-contrato-selo">
+          <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-forest" data-testid="admin-contrato-selo">
             {c.selo}
           </span>
         </div>
@@ -146,7 +146,7 @@ function ConferenciaBloco({ conf }: { conf: ConferenciaAdmin }) {
     <section className="min-w-0 rounded-xl border border-line p-3" data-testid={`admin-conferencia-${conf.tipo}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-title text-base font-semibold text-ink">{TIPO[conf.tipo]}</h3>
-        <span className="rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest" data-testid={`admin-conferencia-${conf.tipo}-estado`}>
+        <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-forest" data-testid={`admin-conferencia-${conf.tipo}-estado`}>
           {ROTULO_ESTADO_CONFERENCIA[conf.estado]}
         </span>
       </div>
@@ -154,7 +154,7 @@ function ConferenciaBloco({ conf }: { conf: ConferenciaAdmin }) {
         const itens = conf.itens.filter((i) => i.parte === parte);
         return (
           <div key={parte} className="mt-3">
-            <p className="text-sm font-medium text-ink">
+            <p className="text-sm font-semibold text-ink">
               Itens do {parte === "proprietario" ? "proprietário" : "inquilino"} ({itens.length})
             </p>
             {itens.length === 0 ? (
@@ -170,7 +170,7 @@ function ConferenciaBloco({ conf }: { conf: ConferenciaAdmin }) {
                       </a>
                     )}
                     <div className="min-w-0">
-                      <p className="font-medium text-ink">{i.comodo}</p>
+                      <p className="font-semibold text-ink">{i.comodo}</p>
                       <p className="break-words text-muted">{i.descricao}</p>
                       <p className="text-xs text-muted">{dataHoraBRT(i.criadoEm, { semEtiqueta: true })}</p>
                     </div>
@@ -196,7 +196,7 @@ function ConferenciaBloco({ conf }: { conf: ConferenciaAdmin }) {
           <span className="min-w-0 break-all">
             Laudo independente ({PARTE[l.parte].toLowerCase()}, {dataHoraBRT(l.em, { semEtiqueta: true })}):{" "}
             {l.url ? (
-              <a href={l.url} target="_blank" rel="noopener noreferrer" className="font-medium text-forest underline">
+              <a href={l.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-forest underline">
                 {l.nome}
               </a>
             ) : (

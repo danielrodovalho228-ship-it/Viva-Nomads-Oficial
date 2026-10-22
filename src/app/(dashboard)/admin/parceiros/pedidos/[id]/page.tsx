@@ -33,7 +33,7 @@ export default async function AdminPedidoParceiroPage({ params }: { params: Prom
     <>
       <PageTitle title={`Pedido ${x.codigo}`} subtitle={`${rotuloCategoria(String(x.categoria))} · ${x.parceiros?.nome_publico ?? "Parceiro"}`} />
       <p className="mb-4 text-sm">
-        <Link href="/admin/parceiros/pedidos" className="text-blue-700 underline underline-offset-2">
+        <Link href="/admin/parceiros/pedidos" className="text-forest underline underline-offset-2">
           Voltar para os pedidos
         </Link>
       </p>

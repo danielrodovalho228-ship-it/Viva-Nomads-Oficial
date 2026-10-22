@@ -30,7 +30,7 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
     test(`F16 — "Atendimento: chamados abertos" da home bate com a fila de /admin/atendimento (${largura} px)`, async ({ page }, info) => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/admin", { waitUntil: "domcontentloaded" });
-      const cartao = page.getByTestId("home-agora").getByRole("link", { name: /Atendimento: chamados abertos/ });
+      const cartao = page.getByTestId("home-agora").locator('[data-agora="Atendimento: chamados abertos"] [data-href]');
       await expect(cartao).toBeVisible({ timeout: 20_000 });
       await expect(cartao).toHaveAttribute("href", /\/admin\/atendimento\?aba=fila/);
       const n = Number((await cartao.innerText()).match(/\d[\d.]*/g)?.pop()?.replace(/\./g, "") ?? NaN);

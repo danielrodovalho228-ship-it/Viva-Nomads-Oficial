@@ -120,7 +120,7 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
             {f.email ?? "sem e-mail"} · origem {ORIGEM[f.origem] ?? f.origem} · {dataHora(f.criadoEm)}
           </p>
         </div>
-        {aguardando && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">Aguardando a pessoa confirmar</span>}
+        {aguardando && <span className="border border-line rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-800">Aguardando a pessoa confirmar</span>}
       </div>
 
       <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
@@ -146,7 +146,7 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
           <div>
             <dt className="text-muted">Portfólio</dt>
             <dd>
-              <a href={f.portfolioUrl} target="_blank" rel="noopener nofollow noreferrer" className="inline-flex items-center gap-1 break-all text-blue-700 underline">
+              <a href={f.portfolioUrl} target="_blank" rel="noopener nofollow noreferrer" className="inline-flex items-center gap-1 break-all text-forest underline">
                 {f.portfolioUrl} <ExternalLink className="h-3.5 w-3.5" aria-hidden />
               </a>
             </dd>
@@ -185,7 +185,7 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
                     {i.chave === "documento" && (
                       <>
                         {" "}
-                        <a href={CONSULTA[f.tipoPessoa === "pj" ? "pj" : "pf"]} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 underline">
+                        <a href={CONSULTA[f.tipoPessoa === "pj" ? "pj" : "pf"]} target="_blank" rel="noopener noreferrer" className="font-semibold text-forest underline">
                           Abrir consulta
                         </a>
                         {typeof check.documento_conferido_em === "string" && <span className="text-muted"> · conferido em {dataHora(check.documento_conferido_em)}</span>}
@@ -223,7 +223,7 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
           </ConfirmarNaPagina>
         )}
         <div className="min-w-0 flex-1 space-y-2">
-          <label htmlFor={`motivo-${f.id}`} className="block text-sm font-medium text-ink">Motivo da recusa (obrigatório)</label>
+          <label htmlFor={`motivo-${f.id}`} className="block text-sm font-semibold text-ink">Motivo da recusa (obrigatório)</label>
           <select aria-label="Modelos de motivo" className="w-full rounded-lg border border-sage-200 bg-white px-3 py-2 text-sm" value="" onChange={(e) => e.target.value && setMotivo(e.target.value)} data-testid="ficha-modelo-recusa">
             <option value="">Escolher um modelo…</option>
             {MOTIVOS_RECUSA_PARCERIA.map((m) => (
@@ -365,7 +365,7 @@ function EstadoDoItem({ chave, estado, aoTentar }: { chave: string; estado: Esta
     );
   if (estado.fase === "salvo")
     return (
-      <span className="ml-6 text-xs font-medium text-forest" role="status" data-testid={`check-estado-${chave}`} data-fase="salvo">
+      <span className="ml-6 text-xs font-semibold text-forest" role="status" data-testid={`check-estado-${chave}`} data-fase="salvo">
         {TEXTO_SALVO}
       </span>
     );

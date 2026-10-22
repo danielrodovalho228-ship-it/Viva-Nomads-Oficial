@@ -138,10 +138,10 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
               return (
                 <li key={c.id} className="rounded-xl border border-line p-3 text-sm" data-testid="contrato-linha">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <span className="font-medium text-ink">
+                    <span className="font-semibold text-ink">
                       {refContratoVN(c.id)} · {c.imovel}
                       {c.teste && <SeloTeste />}
-                      {ehRegraAnterior(c) && <span className="ml-2 rounded-full bg-surface-2 px-2 py-1 text-xs text-muted">regra anterior</span>}
+                      {ehRegraAnterior(c) && <span className="ml-2 rounded-full border border-line bg-white px-2 py-1 text-xs text-muted">regra anterior</span>}
                     </span>
                     <span className="text-xs text-muted">criado em {dataBRT(c.criadoEm)}</span>
                   </div>
@@ -155,7 +155,7 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
                   </p>
                   <p className="mt-1 text-xs text-muted">
                     Conferência de entrada:{" "}
-                    <span className="font-medium text-ink" data-testid="contrato-conferencia-entrada">
+                    <span className="font-semibold text-ink" data-testid="contrato-conferencia-entrada">
                       {ROTULO_ESTADO_CONFERENCIA[conferencias.get(c.id) ?? "nao_aberta"]}
                     </span>
                   </p>
@@ -164,10 +164,10 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
                     {rotuloBaseTaxa({ valor: c.taxaValor ?? 0, percent: c.taxaPercent ?? 0, aluguelMensal: c.aluguelMensal ?? 0, meses, aceiteEm: c.aceiteEm })}
                   </p>
                   <p className="mt-2 flex flex-wrap gap-3 text-xs">
-                    <Link href={`/admin/contratos/${c.id}`} className="font-medium text-forest underline" data-testid="abrir-contrato-admin">
+                    <Link href={`/admin/contratos/${c.id}`} className="font-semibold text-forest underline" data-testid="abrir-contrato-admin">
                       Abrir o contrato
                     </Link>
-                    <Link href="/admin/financeiro" className="font-medium text-forest underline">
+                    <Link href="/admin/financeiro" className="font-semibold text-forest underline">
                       Financeiro
                     </Link>
                   </p>
