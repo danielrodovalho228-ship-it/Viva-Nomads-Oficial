@@ -24,6 +24,21 @@ Este commit ainda não tem o #995: a rodada mediu b pela régua antiga (qualquer
 
 Os dois somem com o #995, que rola o controle até o meio da tela antes de acusar. O texto do erro em `lab_execucoes` mostra só o primeiro achado de cada tamanho; se houver outros na mesma combinação, aparecem no artefato.
 
+## Defeitos da rodada 2, um por linha
+
+| Código | Página | Tamanho | Evidência | Novo ou conhecido | Situação |
+|---|---|---|---|---|---|
+| D-V3 | Editar anúncio ativo (`/dashboard/imoveis/:id/editar`) | 390 | "Enviar documento" não responde e não diz qual campo falta (`test.fail` falhou como esperado) | Conhecido | Aberto, Pista A |
+| D-V5 | Editar anúncio ativo (`/dashboard/imoveis/:id/editar`) | 1280 | "Anúncio publicado" e "Falta para publicar" na mesma tela (`test.fail` falhou como esperado) | Conhecido | Aberto, Pista A |
+| D-V1 | Anúncio com 17 fotos (`/imoveis/:id`) | 390 e 1280 | Imagens acima da dobra carregaram sem rolar | Conhecido | Passou: corrigido |
+| D-V2 | Cadastro com 0 fotos (`/dashboard/imoveis/novo`) | 390 | A barra "Fotos: 0 de 8" não ficou fixa sobre o conteúdo | Conhecido | Passou: corrigido |
+| D-V4 | Meus imóveis (`/dashboard/imoveis`) | 1280 | Todos os cartões com miniatura carregada | Conhecido | Passou: corrigido |
+| D-V6 | Minhas locações (`/dashboard/locacoes`) | 390 e 1280 | Capa carregou acima da dobra | Conhecido | Passou: corrigido |
+| — | Buscar (`/buscar`) | 1280 | Critério b: campos sob a barra fixa do topo, no fim da página | Achado novo | Não é defeito pela régua do Muse (a rolagem revela) |
+| — | Início (`/`) | 390 | Critério b: "Ver todos os imóveis" sob a barra fixa do topo, no fim da página | Achado novo | Não é defeito pela régua do Muse (a rolagem revela) |
+
+Defeito novo de produto na rodada 2: nenhum entre os achados registrados. Limite: `lab_execucoes` guarda só o primeiro achado de cada tamanho e o artefato não abre daqui, então outros achados na mesma rodada, se houver, não aparecem nesta tabela.
+
 ## Conta para as 3 rodadas estáveis?
 
 Vale como rodada de varredura: rodou de verdade, sem pulos. Verde, não: as 2 falhas são da régua antiga. A rodada 3 já roda com #995 e #996 (régua do b e atribuição do d) e é a primeira que pode sair verde.
