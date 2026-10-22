@@ -35,6 +35,9 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
       await expect(cartao).toHaveAttribute("href", /\/admin\/atendimento\?aba=fila/);
       const n = Number((await cartao.innerText()).match(/\d[\d.]*/g)?.pop()?.replace(/\./g, "") ?? NaN);
       expect(Number.isNaN(n)).toBe(false);
+      // A home termina de carregar os números no cliente; clica só com a página parada (a 390 px a lista ainda cresce).
+      await page.waitForLoadState("networkidle");
+      await cartao.scrollIntoViewIfNeeded();
       await cartao.click();
       await expect(page).toHaveURL(/\/admin\/atendimento/);
       const linhas = await page.getByTestId("chamado-linha").count();
