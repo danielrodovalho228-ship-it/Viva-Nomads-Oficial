@@ -32,19 +32,14 @@ const medicaoDaLinha = (l: Linha): Medicao => ({
   validoAte: l.valido_ate,
 });
 
-/** Papel de quem mede: o dono (cadastro/edição) ou o morador com conferência de entrada no imóvel. */
+/** Papel de quem mede: o dono (cadastro/edição) ou o morador do contrato ativo (conferência de entrada). */
 async function papelNoImovel(admin: Admin, userId: string, imovelId: string, origem: Origem): Promise<"dono" | "morador" | null> {
   const { data: p } = await admin.from("properties").select("owner_id").eq("id", imovelId).maybeSingle();
   if (!p) return null;
   if (origem !== "conferencia_entrada") return (p as { owner_id: string }).owner_id === userId ? "dono" : null;
-  const { data: conf } = await admin
-    .from("conferencias")
-    .select("id, contratos!inner(property_id, tenant_id)")
-    .eq("tipo", "entrada")
-    .eq("contratos.property_id", imovelId)
-    .eq("contratos.tenant_id", userId)
-    .limit(1);
-  return (conf ?? []).length ? "morador" : null;
+  // Morador: inquilino de contrato ATIVO do imóvel (é quando a conferência de entrada aparece).
+  const { data: c } = await admin.from("contratos").select("id").eq("property_id", imovelId).eq("tenant_id", userId).eq("status", "ativo").limit(1);
+  return (c ?? []).length ? "morador" : null;
 }
 
 async function coordenadasDoImovel(admin: Admin, imovelId: string): Promise<{ lat: number; lng: number } | null> {

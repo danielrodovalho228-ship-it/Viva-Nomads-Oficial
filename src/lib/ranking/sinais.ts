@@ -33,6 +33,9 @@ export interface ExtrasDoServidor {
   identidadeConfirmada: boolean;
   /** Fotos entregues por fotógrafo parceiro e aceitas pelo dono (Prompt 31b). Até lá, false para todos. */
   fotosDeParceiro?: boolean;
+  /** Prompt 57: etiqueta "Para trabalhar de casa" com internet medida (vigente, regra de videochamada) ou só informada. */
+  homeOffice?: "medido" | "informado" | null;
+  internetAbaixoMorador?: boolean;
 }
 
 const n = (v: number | string | null | undefined) => (v == null || v === "" ? 0 : Number(v) || 0);
@@ -61,5 +64,7 @@ export function sinaisDaLinha(l: LinhaRankingSinais, extras: ExtrasDoServidor): 
     avaliacoesMedia: media != null && Number.isFinite(media) ? media : null,
     cancelamentosDono12m: n(l.cancelamentos_dono_12m),
     precoJusto: l.preco_justo === true,
+    homeOffice: extras.homeOffice ?? null,
+    internetAbaixoMorador: extras.internetAbaixoMorador === true,
   };
 }

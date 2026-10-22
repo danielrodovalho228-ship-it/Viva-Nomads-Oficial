@@ -154,3 +154,16 @@ test("37: com destino, faixas de MINUTOS (≤10, ≤20, ≤30, >30) no lugar das
   const empate = ordenarBusca([item("b", 12, 1), item("a", 19, 1, "exata", { fotosDeParceiro: true })], AGORA, { porMinutos: true });
   assert.equal(empate[0].id, "a");
 });
+
+test("Prompt 57: 'Para trabalhar de casa' com internet medida vale mais que a informada; o sinal do morador aparece sem tirar ponto", () => {
+  const agora = new Date("2026-10-22T12:00:00Z");
+  const sem = notaQualidade({ ...base(), homeOffice: null }, agora);
+  const inf = notaQualidade({ ...base(), homeOffice: "informado" }, agora);
+  const med = notaQualidade({ ...base(), homeOffice: "medido" }, agora);
+  const ptsDe = (q: typeof sem) => q.motivos.find((m) => m.codigo === "home_office")?.pontos ?? 0;
+  assert.ok(ptsDe(med) > ptsDe(inf) && ptsDe(inf) > ptsDe(sem));
+  const sinal = notaQualidade({ ...base(), homeOffice: "medido", internetAbaixoMorador: true }, agora);
+  const m = sinal.motivos.find((x) => x.codigo === "internet_morador")!;
+  assert.equal(m.pontos, 0);
+  assert.doesNotMatch(m.texto, /morador (mentiu|errou)|culpa/i);
+});

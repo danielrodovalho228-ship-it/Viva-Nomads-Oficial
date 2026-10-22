@@ -15,6 +15,13 @@ import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { normalizarNegociacao } from "@/lib/anuncio/negociacao";
 
 /** Negociação pública e Mbps (0152); linha ausente ou sem configuração = nada. */
+type LinhaMedida = { download_mbps: number | string; upload_mbps: number | string; latencia_ms: number; medido_em: string; valido_ate: string };
+/** Linha da view internet_medida_publica → medição (Prompt 57). */
+function medidaDaLinha(l: LinhaMedida | null): Medicao | undefined {
+  if (!l) return undefined;
+  return { downloadMbps: Number(l.download_mbps), uploadMbps: Number(l.upload_mbps), latenciaMs: Number(l.latencia_ms), medidoEm: l.medido_em, validoAte: l.valido_ate };
+}
+
 function negociacaoDaLinha(l: { negociacao?: unknown; internet_mbps?: unknown } | null) {
   return {
     negociacao: l?.negociacao ? normalizarNegociacao(l.negociacao) : undefined,
@@ -22,6 +29,7 @@ function negociacaoDaLinha(l: { negociacao?: unknown; internet_mbps?: unknown } 
   };
 }
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
+import type { Medicao } from "@/lib/internet-medida";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
 
 /**
@@ -223,7 +231,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
@@ -238,6 +246,8 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("properties").select("limpeza_estadia").eq("id", base.id).maybeSingle()),
     // Negociação pública e Mbps (0152): leitura à parte — sem a migração o anúncio abre igual.
     safe(supabase.from("properties").select("negociacao, internet_mbps").eq("id", base.id).maybeSingle()),
+    // Internet medida no imóvel (Prompt 57): só a última validada do dono, vigente — sem a migração, nada.
+    safe(supabase.from("internet_medida_publica").select("download_mbps, upload_mbps, latencia_ms, medido_em, valido_ate").eq("property_id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
 
@@ -303,6 +313,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
     limpezaEstadia: normalizarLimpezaEstadia((limpezaLinha as { limpeza_estadia?: unknown } | null)?.limpeza_estadia) ?? undefined,
     ...negociacaoDaLinha(negLinha as { negociacao?: unknown; internet_mbps?: unknown } | null),
+    internetMedida: medidaDaLinha(medidaLinha as LinhaMedida | null),
     privacidade,
     ownerName: ownerRow?.full_name ?? base.ownerName,
     ownerId: ownerId ?? base.ownerId,
