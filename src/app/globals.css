@@ -357,6 +357,27 @@ html[data-app] .vn-barra-comparar {
     padding-bottom: calc(var(--altura-abas) + 6rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+/* Barra de fotos do Anunciar (celular, src/app/(dashboard)/dashboard/imoveis/novo/barra-fotos.tsx). A tela é de fluxo,
+   sem barra de abas: a barra encosta no fim da tela (antes ficava 3,5 rem acima, com o formulário passando por baixo).
+   --altura-barra-fotos é medida pela própria barra. O "Fale com a Viva" fica 0,75 rem acima dela; o fim da página ganha
+   respiro para a barra + o botão; a rolagem até um campo (foco, âncora) para acima dos dois. */
+.vn-barra-fotos {
+  bottom: 0;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+}
+.vn-respiro-barra-fotos {
+  height: calc(var(--altura-barra-fotos, 4rem) + 5rem);
+}
+@media (max-width: 767px) {
+  body:has([data-testid="barra-fotos"]) {
+    --ajuda-bottom: calc(var(--altura-barra-fotos, 4rem) + 0.75rem);
+    --viva-piso: calc(var(--altura-barra-fotos, 4rem) + 0.75rem);
+  }
+  /* :root (e não html): vence a regra geral do "Fale com a Viva" mais abaixo. */
+  :root:has([data-testid="barra-fotos"]) {
+    scroll-padding-bottom: calc(var(--altura-barra-fotos, 4rem) + 5rem);
+  }
+}
 /* Barra fixa do imóvel (celular): fica logo acima da barra de abas. */
 .vn-barra-fixa {
   bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
