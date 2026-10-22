@@ -41,15 +41,19 @@ test("sitemap: toda URL responde 200 e as rotas principais estão nele", async (
 });
 
 test("links internos das páginas públicas principais não quebram", async ({ request }) => {
-  const alvos = new Set<string>();
+  const origem = new Map<string, string>(); // link → página onde apareceu primeiro
   for (const rota of ROTAS_AXE_PUBLICAS) {
     const res = await request.get(rota);
-    for (const l of linksInternos(await res.text())) alvos.add(l);
+    for (const l of linksInternos(await res.text())) if (!origem.has(l)) origem.set(l, rota);
   }
   const quebrados: string[] = [];
-  for (const a of [...alvos].slice(0, 120)) {
+  for (const a of [...origem.keys()].slice(0, 120)) {
     const res = await request.get(a, { maxRedirects: 5 });
-    if (res.status() >= 400 && res.status() !== 401 && res.status() !== 403) quebrados.push(`${a}: ${res.status()}`);
+    if (res.status() < 400 || res.status() === 401 || res.status() === 403) continue;
+    // No laboratório outras specs apagam os imóveis que criaram enquanto esta roda (lab de b1385f6, 22/10: /imoveis/… 404).
+    // Só é link quebrado se a página de origem ainda aponta para ele.
+    const ainda = linksInternos(await (await request.get(origem.get(a)!)).text()).includes(a);
+    if (ainda) quebrados.push(`${a}: ${res.status()} (em ${origem.get(a)})`);
   }
   expect(quebrados.join("\n")).toBe("");
 });
