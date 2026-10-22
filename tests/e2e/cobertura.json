@@ -705,7 +705,8 @@
         "t194-passo1-ia-cep",
         "t195-matricula-caf",
         "t204-cadastro-ia-real",
-        "t207-cep-matricula-identidade"
+        "t207-cep-matricula-identidade",
+        "t269-anunciar-barra-fotos"
       ]
     },
     "/dashboard/indicacoes": {
