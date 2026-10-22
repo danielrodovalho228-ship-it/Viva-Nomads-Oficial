@@ -18,7 +18,7 @@ async function medirHeader(page: Page) {
   return page.evaluate(() => {
     const r = (el: Element | null) => (el ? el.getBoundingClientRect() : null);
     const header = document.querySelector("header")!;
-    const logo = header.querySelector('a[aria-label="Viva Nomads"]');
+    const logo = header.querySelector('a[data-logo]');
     const links = header.querySelector('[data-testid="nav-links"]');
     const acoes = header.querySelector('[data-testid="nav-acoes"]');
     const linksVisiveis = links && getComputedStyle(links).display !== "none";
