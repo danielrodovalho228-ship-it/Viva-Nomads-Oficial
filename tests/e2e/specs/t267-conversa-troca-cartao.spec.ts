@@ -60,6 +60,8 @@ test.describe("T267 — troca de conversa não deixa o cartão da anterior", () 
 
       await abrirConversa(page, convB, largura);
       await expect(page.locator("section").getByText("Oi! Sobre o Studio B.")).toBeVisible();
+      // A conversa aberta fica na URL: se o painel remontar (modo acertado pelo perfil), volta na mesma conversa.
+      await expect(page).toHaveURL(new RegExp(`conversa=${convB}`));
       const sobra = page.getByTestId("conversa-visita");
       await expect
         .poll(async () => ((await sobra.count()) ? `${await sobra.getAttribute("data-imovel")} ${await sobra.getAttribute("data-visita")} ${await sobra.innerText()}` : ""), {
