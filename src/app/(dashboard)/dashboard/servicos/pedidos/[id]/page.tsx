@@ -5,6 +5,7 @@ import { detalheDoPedido } from "@/lib/parceiros/pedido-actions";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { PedidoParceiroTela } from "./pedido-tela";
+import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
 
 export const metadata: Metadata = {
   title: "Pedido de serviço",
@@ -26,6 +27,7 @@ export default async function PedidoParceiroPage({ params }: { params: Promise<{
     <>
       <PageTitle title={titulo} subtitle={`Pedido ${d.orcamentoRotulo ?? d.codigo}`} />
       <PedidoParceiroTela d={d} pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
+      <FalarComAViva />
     </>
   );
 }

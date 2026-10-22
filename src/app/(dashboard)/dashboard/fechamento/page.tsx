@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getFechamentoContext } from "@/lib/data/leads-actions";
 import { ClosingClient } from "./closing-client";
+import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
+import { RespostaRapida } from "@/components/ajuda/resposta-rapida";
 
 export const metadata: Metadata = {
   title: "Fechamento",
@@ -23,5 +25,11 @@ export default async function FechamentoPage({
 }) {
   const { c } = await searchParams;
   const realCtx = await getFechamentoContext(c);
-  return <ClosingClient realCtx={realCtx} />;
+  return (
+    <>
+      <ClosingClient realCtx={realCtx} />
+      <RespostaRapida faqId="caucao" />
+      <FalarComAViva />
+    </>
+  );
 }

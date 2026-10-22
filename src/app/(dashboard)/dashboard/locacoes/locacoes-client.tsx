@@ -35,6 +35,7 @@ function buildDemoLocacoes(): LocacaoView[] {
     estado,
     criadoEm: c.inicio,
     podeAvaliar: false,
+    encerradoEm: null,
     pagamentos: [],
   }));
 }
@@ -143,6 +144,7 @@ export function LocacoesClient({
                 titulo="Como foi sua experiência com este proprietário?"
                 placeholder="Comentário (opcional) — comunicação, o imóvel como anunciado, suporte…"
                 demo={demoOn}
+                encerradoEm={l.encerradoEm}
               />
               )}
             </Panel>

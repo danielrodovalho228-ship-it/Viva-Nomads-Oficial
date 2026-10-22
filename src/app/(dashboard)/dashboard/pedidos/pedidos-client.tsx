@@ -1,12 +1,15 @@
 "use client";
 
+import { VazioOnboardingBloco } from "@/components/onboarding/vazio-onboarding";
+import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
+
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Check, X, Pause, Play, MessageSquare, Home, Pencil, Trash2, RefreshCw } from "lucide-react";
-import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { formatBRL, cn, dataBR } from "@/lib/utils";
@@ -136,19 +139,7 @@ export function PedidosClient({
       )}
 
       {visiveis.length === 0 ? (
-        <Panel>
-          <EmptyState
-            title="Você ainda não tem pedidos"
-            text="Publique um pedido de moradia e deixe os proprietários da cidade encontrarem você."
-            action={
-              <Link href="/pedidos/novo">
-                <Button variant="secondary">
-                  <Plus className="h-4 w-4" /> Publicar pedido
-                </Button>
-              </Link>
-            }
-          />
-        </Panel>
+        <VazioOnboardingBloco vazio={VAZIOS_ONBOARDING.pedidosMorador} />
       ) : (
         <div className="space-y-4">
           {visiveis.map((p) => {

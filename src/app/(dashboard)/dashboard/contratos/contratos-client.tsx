@@ -19,6 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ValorDiretoAoProprietario } from "@/components/contexto/cabecalho-contexto";
 import { Button } from "@/components/ui/button";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONTRACTS } from "@/lib/demo/seed";
@@ -173,6 +174,7 @@ export function ContratosClient({
         subtitle="Acompanhe cada contrato, seus blocos e registre os recebimentos."
         action={demoOn ? <DemoBadge /> : undefined}
       />
+      <ValorDiretoAoProprietario className="-mt-2 mb-4 text-sm text-muted" />
 
       {/* Regra de ouro — sempre visível no topo. */}
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-muted">

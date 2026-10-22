@@ -4538,6 +4538,33 @@
       "specs": [
         "t264-viva-automatico"
       ]
+    },
+    "src/lib/data/papeis-actions.ts#meusPapeis": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t280-conta-unica-43"
+      ]
+    },
+    "src/lib/data/papeis-actions.ts#meuPerfilPublico": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t280-conta-unica-43"
+      ]
+    },
+    "src/lib/data/papeis-actions.ts#meusDegraus": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t280-conta-unica-43"
+      ]
     }
   }
 }

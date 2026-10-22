@@ -34,7 +34,7 @@ async function abrirPasso1(browser: Browser, email: string, largura: number, bra
     return r.fulfill({ json: FANTASMA });
   });
   await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Onde fica" })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible({ timeout: 20_000 });
   return page;
 }
 

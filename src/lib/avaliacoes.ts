@@ -52,3 +52,30 @@ export function contemOfensa(texto: string | null | undefined): boolean {
 export function papelOposto(papelAutor: "proprietario" | "inquilino"): "inquilino" | "proprietario" {
   return papelAutor === "proprietario" ? "inquilino" : "proprietario";
 }
+
+/** Prazo da avaliação: até 14 dias depois do fim do contrato (as duas aparecem juntas, ou no fim do prazo). */
+export const DIAS_PRAZO_AVALIACAO = 14;
+
+/** "dd/mm/aaaa" do último dia para avaliar; sem data de fim = null. */
+export function prazoAvaliacao(encerradoEm: string | null | undefined): string | null {
+  if (!encerradoEm) return null;
+  const d = new Date(encerradoEm);
+  if (Number.isNaN(d.getTime())) return null;
+  d.setUTCDate(d.getUTCDate() + DIAS_PRAZO_AVALIACAO);
+  const iso = d.toISOString().slice(0, 10);
+  return `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+}
+
+/**
+ * As duas partes da avaliação (Prompt 43, item 8) — só o visual sobre a regra às cegas que já existe: o estado de
+ * cada lado, o prazo e "Aguardando a outra parte" depois de enviar. Nunca diz se a outra parte já enviou.
+ */
+export function partesDaAvaliacao(euEnviei: boolean, prazo: string | null): { estado: string; linhas: { quem: string; estado: string }[] } {
+  return {
+    estado: euEnviei ? "Aguardando a outra parte" : "Falta a sua avaliação",
+    linhas: [
+      { quem: "Sua avaliação", estado: euEnviei ? "Enviada" : prazo ? `Pendente, até ${prazo}` : `Pendente, até ${DIAS_PRAZO_AVALIACAO} dias depois do fim` },
+      { quem: "Avaliação da outra parte", estado: `Fica fechada até as duas enviarem${prazo ? ` ou até ${prazo}` : " ou até o fim do prazo"}` },
+    ],
+  };
+}

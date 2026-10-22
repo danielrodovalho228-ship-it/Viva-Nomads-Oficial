@@ -24,3 +24,6 @@ export function deveMostrarConviteFoto(opts: {
   if (quando > agora) return true;
   return agora - quando >= CONVITE_FOTO_DIAS * DIA_MS;
 }
+
+/** Peça 2: convite discreto no passo "Confirmar candidatura". A foto só chega ao anfitrião depois do aceite. */
+export const CONVITE_FOTO_CANDIDATURA_TEXTO = "Adicione uma foto, ela aparece para o anfitrião depois do aceite";

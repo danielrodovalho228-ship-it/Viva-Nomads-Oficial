@@ -15,18 +15,9 @@ import {
 import { getBlocks, addBlock, removeBlock, type BlocoDatas } from "@/lib/data/blocks-actions";
 import { cn } from "@/lib/utils";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
+import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
+import { diasDoIntervalo, type MarcaDia } from "@/lib/calendario/grade";
 
-const MESES = [
-  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
-];
-const DIAS = ["D", "S", "T", "Q", "Q", "S", "S"];
-
-function ymd(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate()
-  ).padStart(2, "0")}`;
-}
 function brDate(iso: string): string {
   const [y, m, d] = iso.split("-");
   return d && m && y ? `${d}/${m}/${y}` : iso;
@@ -87,6 +78,12 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
     () => new Set(expandirBloqueios(blocks as Bloqueio[])),
     [blocks]
   );
+
+  // Marcas da grade única (Prompt 43): bloqueio, período selecionado (início e fim em destaque).
+  const marcasDoMes: Record<string, MarcaDia[]> = {};
+  for (const d of diasBloqueados) marcasDoMes[d] = ["bloqueado"];
+  if (sel.ini && sel.fim) for (const d of diasDoIntervalo(sel.ini, sel.fim)) marcasDoMes[d] = [...(marcasDoMes[d] ?? []), "periodo"];
+  for (const d of [sel.ini, sel.fim]) if (d) marcasDoMes[d] = ["selecionado", ...(marcasDoMes[d] ?? [])];
 
   if (!anchor) return null;
 
@@ -157,88 +154,45 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
           <span className="inline-flex items-center gap-2">
             <span className="h-2.5 w-4 rounded-full bg-forest/90" aria-hidden /> Estadia com contrato (toque para abrir)
           </span>
-          <span className="inline-flex items-center gap-2">
-            <span className="h-2.5 w-4 rounded-lg bg-red-100" aria-hidden /> Bloqueio seu
-          </span>
         </p>
       )}
 
+      <LegendaCalendario marcas={["bloqueado", "selecionado", "hoje"]} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {meses.map((mes) => {
-          const y = mes.year;
-          const m = mes.month;
-          const primeiro = new Date(y, m, 1).getDay();
-          const diasNoMes = new Date(y, m + 1, 0).getDate();
-          const celulas: (number | null)[] = [
-            ...Array(primeiro).fill(null),
-            ...Array.from({ length: diasNoMes }, (_, i) => i + 1),
-          ];
-          return (
-            <div key={`${y}-${m}`} className="rounded-xl border border-sage-200 p-3">
-              <p className="mb-2 text-center text-sm font-semibold capitalize text-ink">
-                {MESES[m]} {y}
-              </p>
-              <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-muted">
-                {DIAS.map((d, i) => (
-                  <span key={i}>{d}</span>
-                ))}
-              </div>
-              <div className="mt-1 grid grid-cols-7 gap-1">
-                {estadias.flatMap((e) =>
-                  segmentosDaPilula(e.inicio, e.fim, y, m).map((seg) => (
-                    <Link
-                      key={`${e.contratoId}-${seg.semana}`}
-                      href="/dashboard/contratos"
-                      data-testid="pilula-estadia"
-                      aria-label={rotuloPilula(e.nome, e.inicio, e.fim)}
-                      style={{
-                        gridRow: seg.semana + 1,
-                        gridColumn: `${seg.colIni + 1} / ${seg.colFim + 2}`,
-                      }}
-                      className={cn(
-                        "z-10 flex min-w-0 items-center gap-1 self-end overflow-hidden bg-forest/90 px-1 py-1 text-[10px] font-medium text-white",
-                        seg.continuaAntes ? "rounded-l-none" : "rounded-l-full",
-                        seg.continuaDepois ? "rounded-r-none" : "rounded-r-full"
-                      )}
-                    >
-                      {seg.abreAqui && <Avatar name={e.nome} size={16} photoUrl={e.fotoUrl ?? undefined} />}
-                      {seg.abreAqui && <span className="min-w-0 truncate">{e.nome}</span>}
-                    </Link>
-                  ))
-                )}
-                {celulas.map((dia, i) => {
-                  const pos = { gridRow: Math.floor(i / 7) + 1, gridColumn: (i % 7) + 1 };
-                  if (dia === null) return <span key={i} style={pos} />;
-                  const iso = ymd(new Date(y, m, dia));
-                  const passado = today ? iso < today : false;
-                  const bloqueado = diasBloqueados.has(iso);
-                  const isIni = sel.ini === iso;
-                  const isFim = sel.fim === iso;
-                  const entre = sel.ini && sel.fim && iso > sel.ini && iso < sel.fim;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      style={pos}
-                      disabled={passado}
-                      onClick={() => clicar(iso)}
-                      className={cn(
-                        "grid aspect-square place-items-center rounded-lg text-xs transition-colors",
-                        passado && "cursor-not-allowed text-muted/30",
-                        !passado && "text-ink hover:bg-sage-100",
-                        bloqueado && "bg-red-100 text-red-700 line-through",
-                        entre && "bg-amber-100",
-                        (isIni || isFim) && "bg-amber-500 font-semibold text-white"
-                      )}
-                    >
-                      {dia}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+        {meses.map(({ year: y, month: m }) => (
+          <CalendarioMes
+            key={`${y}-${m}`}
+            tipo="disponibilidade"
+            ano={y}
+            mes={m}
+            hoje={today}
+            marcas={marcasDoMes}
+            desabilitado={(iso) => (today ? iso < today : false)}
+            onDia={clicar}
+            sobreposicao={estadias.flatMap((e) =>
+              segmentosDaPilula(e.inicio, e.fim, y, m).map((seg) => (
+                <Link
+                  key={`${e.contratoId}-${seg.semana}`}
+                  href="/dashboard/contratos"
+                  data-testid="pilula-estadia"
+                  aria-label={rotuloPilula(e.nome, e.inicio, e.fim)}
+                  style={{
+                    gridRow: seg.semana + 1,
+                    gridColumn: `${seg.colIni + 1} / ${seg.colFim + 2}`,
+                  }}
+                  className={cn(
+                    "z-10 flex min-w-0 items-center gap-1 self-end overflow-hidden bg-forest/90 px-1 py-1 text-xs font-semibold text-white",
+                    seg.continuaAntes ? "rounded-l-none" : "rounded-l-full",
+                    seg.continuaDepois ? "rounded-r-none" : "rounded-r-full"
+                  )}
+                >
+                  {seg.abreAqui && <Avatar name={e.nome} size={16} photoUrl={e.fotoUrl ?? undefined} />}
+                  {seg.abreAqui && <span className="min-w-0 truncate">{e.nome}</span>}
+                </Link>
+              ))
+            )}
+          />
+        ))}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -259,7 +213,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
           className={cn(
             "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
             sel.ini && !busy
-              ? "bg-amber-500 text-white hover:bg-amber-600"
+              ? "bg-ink text-white hover:bg-ink/90"
               : "cursor-not-allowed bg-surface-2 text-muted"
           )}
         >

@@ -1,7 +1,10 @@
 "use client";
 
+import { VazioOnboardingBloco } from "@/components/onboarding/vazio-onboarding";
+import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
+
 import { GitCompare } from "lucide-react";
-import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle } from "@/components/dashboard/primitives";
 import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
@@ -33,15 +36,7 @@ export default function FavoritesPage() {
           ))}
         </div>
       ) : favorites.length === 0 ? (
-        <EmptyState
-          title="Nenhum favorito ainda"
-          text="Toque no coração dos imóveis que gostar para salvá-los aqui e comparar depois."
-          action={
-            <ButtonLink href="/buscar" variant="primary">
-              Explorar imóveis
-            </ButtonLink>
-          }
-        />
+        <VazioOnboardingBloco vazio={VAZIOS_ONBOARDING.favoritos} />
       ) : (
         <div className="grid auto-rows-fr gap-x-6 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
           {favorites.map((p) => (

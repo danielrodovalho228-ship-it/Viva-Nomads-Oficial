@@ -83,9 +83,10 @@ test.describe("T281 — esqueletos e estados vazios (Prompt 48)", () => {
       await page.screenshot({ path: `${SAIDA}/t281-mensagens-vazio-${largura}.png` });
 
       await page.goto("/dashboard/favoritos", { waitUntil: "domcontentloaded" });
-      const fav = page.getByTestId("estado-vazio").first();
+      // Favoritos vazio usa o bloco do onboarding (Prompt 43): o próximo passo é buscar.
+      const fav = page.locator('[data-testid="estado-vazio"], [data-testid^="vazio-onboarding"]').first();
       await expect(fav).toBeVisible({ timeout: 25_000 });
-      await expect(fav.getByTestId("estado-vazio-acao").getByRole("link")).toHaveAttribute("href", "/buscar");
+      await expect(fav.getByRole("link", { name: /Buscar imóveis/ })).toHaveAttribute("href", "/buscar");
       await expect(fav.locator("img")).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t281-favoritos-vazio-${largura}.png` });
 

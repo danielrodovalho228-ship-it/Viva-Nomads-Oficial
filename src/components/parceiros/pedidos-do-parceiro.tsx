@@ -1,11 +1,15 @@
 import Link from "next/link";
+import { CalendarDays } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
-import { CalendarDays, ClipboardList } from "lucide-react";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
+import { VazioOnboardingBloco } from "@/components/onboarding/vazio-onboarding";
+import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
 import { pedidosDoMeuParceiro } from "@/lib/parceiros/pedido-actions";
 import { proximoPasso, ROTULO_REGISTRO_SEM_DINHEIRO, rotuloStatus } from "@/lib/parceiros/pedido";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
-import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { dataHoraBRT, diaBRT } from "@/lib/datas-brasilia";
+import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
+import { mesesAPartirDe, type MarcaDia } from "@/lib/calendario/grade";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const FECHADOS = ["aceito", "agendado", "em_execucao", "entregue", "concluido"];
@@ -26,11 +30,18 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
   const agenda = pedidos
     .filter((p) => p.horario && NA_AGENDA.includes(p.status))
     .sort((a, b) => String(a.horario).localeCompare(String(b.horario)));
+  // Prompt 43, item 4: a agenda usa a mesma grade dos calendários do imóvel e da estadia (dias com horário marcados).
+  const hoje = diaBRT(new Date());
+  const marcasAgenda: Record<string, MarcaDia[]> = {};
+  for (const p of agenda) {
+    const dia = diaBRT(p.horario);
+    if (dia) marcasAgenda[dia] = ["evento"];
+  }
   return (
     <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <Panel id="pedidos" title="Pedidos" className="scroll-mt-24" data-testid="parceiro-pedidos">
         {pedidos.length === 0 ? (
-          <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text="Quando alguém pedir um orçamento pela sua página, o pedido aparece aqui." action={<ButtonLink href="/dashboard/parceiro" variant="secondary" size="sm">Abrir minha página</ButtonLink>} />
+          <VazioOnboardingBloco vazio={VAZIOS_ONBOARDING.pedidosParceiro} />
         ) : (
           <ul className="divide-y divide-line">
             {pedidos.map((p) => (
@@ -57,6 +68,14 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
       </Panel>
       <div className="grid content-start gap-6">
         <Panel id="agenda" title="Agenda" className="scroll-mt-24" data-testid="parceiro-agenda">
+          {hoje && (
+            <div className="mb-3">
+              <LegendaCalendario marcas={["evento", "hoje"]} />
+              {mesesAPartirDe(hoje, 1).map(({ ano, mes }) => (
+                <CalendarioMes key={`${ano}-${mes}`} tipo="agenda" ano={ano} mes={mes} hoje={hoje} marcas={marcasAgenda} />
+              ))}
+            </div>
+          )}
           {agenda.length === 0 ? (
             <EmptyState icon={CalendarDays} title="Nenhum horário combinado" text="Quando um horário for confirmado num pedido, ele aparece aqui." action={<ButtonLink href="/dashboard/parceiro#pedidos" variant="secondary" size="sm">Ver pedidos</ButtonLink>} />
           ) : (

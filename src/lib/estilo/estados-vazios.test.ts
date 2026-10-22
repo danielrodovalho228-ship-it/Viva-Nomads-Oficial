@@ -82,8 +82,9 @@ test("estados vazios pedidos no Prompt 48 têm o próximo passo certo", () => {
   assert.match(busca, /busca-vazia-pedido/, "pedido de moradia");
   assert.match(busca, /Limpar filtros/);
   assert.match(busca, /Criar alerta desta busca/);
-  const fav = ler("app/(dashboard)/dashboard/favoritos/page.tsx");
-  assert.match(fav, /href="\/buscar"/);
+  // Favoritos vazio → buscar (o bloco de onboarding do 43, com o próximo passo de lib/onboarding/vazios.ts).
+  assert.match(ler("app/(dashboard)/dashboard/favoritos/page.tsx"), /VAZIOS_ONBOARDING\.favoritos/);
+  assert.match(readFileSync(join(SRC, "lib/onboarding/vazios.ts"), "utf8"), /favoritos:[\s\S]*?href: "\/buscar"/);
   const msg = ler("app/(dashboard)/dashboard/mensagens/messages-client.tsx");
   assert.match(msg, /mensagens-vazio/);
   assert.match(msg, /Como funciona a conversa/);

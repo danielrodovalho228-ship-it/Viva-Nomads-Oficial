@@ -105,7 +105,6 @@ export const ALCANCE = [
   "components/account/telefone-verificacao.tsx",
   "components/contrato/conferencia-contrato.tsx",
   "components/contrato/contrato-detalhe.tsx",
-  "components/dashboard/tenant-onboarding.tsx",
   "components/documentos/documentos-contrato.tsx",
   "components/estadia/acoes-estadia.tsx",
   "components/layout/dashboard-shell.tsx",
@@ -275,7 +274,6 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
     "components/busca/barra-comparar.tsx", // barra flutuante do Comparar
     "components/busca/card-pin-mapa.tsx", // cartão aberto sobre o mapa
     "components/city-autocomplete.tsx", // menu suspenso de sugestões
-    "components/dashboard/role-welcome-modal.tsx", // diálogo sobre a página (Prompt 45)
     "components/estadia/acoes-estadia.tsx", // botão flutuante "cogumelo" (Prompt 41)
     "components/layout/mobile-tab-bar.tsx", // barra inferior do celular/app (Prompt 41)
     "components/layout/navbar.tsx", // cabeçalho fixo (busca fixa) e menu suspenso
@@ -453,4 +451,24 @@ test("rodapé: títulos de coluna 14/600, sem caixa alta nem tracking", () => {
   assert.doesNotMatch(r, /className="h-1 w-full/);
   // Textos de apoio: só /60–/80; /50 só no miúdo.
   for (const m of r.matchAll(/text-white\/(\d+)/g)) assert.ok(Number(m[1]) >= 50, m[0]);
+});
+
+/** Regra "sem cara de IA" (Daniel, 21/10; Prompt 43): texto sem enchimento. Comentários do código não contam. */
+export const TEXTO_PROIBIDO = /bem-vindo à sua jornada|vamos começar|vamos publicar|aventura|incr[ií]vel|perfeito para você|desbloqueie|oops!?|algo deu errado|✨|🚀/i;
+
+test("Prompt 43: nenhum texto da lista proibida (\"Vamos começar\", \"Oops!\", ✨, 🚀…) em src inteiro", () => {
+  const semComentario = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+  const achados: string[] = [];
+  for (const alvo of ["app", "components", "lib", "config"]) {
+    for (const f of arquivos(alvo)) {
+      if (f.startsWith("lib/estilo/") || f.endsWith(".css")) continue;
+      const linhas = semComentario(ler(f)).split("\n");
+      linhas.forEach((l, i) => {
+        if (TEXTO_PROIBIDO.test(l)) achados.push(`${f}:${i + 1} ${l.trim().slice(0, 80)}`);
+      });
+    }
+  }
+  assert.deepEqual(achados, []);
+  assert.match("Vamos começar!", TEXTO_PROIBIDO);
+  assert.doesNotMatch("Comece pelo CEP.", TEXTO_PROIBIDO);
 });

@@ -1,7 +1,7 @@
 /* Roda: node --test src/lib/perfil/convite-foto.test.ts */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deveMostrarConviteFoto, CONVITE_FOTO_TEXTO } from "./convite-foto.ts";
+import { deveMostrarConviteFoto, CONVITE_FOTO_TEXTO, CONVITE_FOTO_CANDIDATURA_TEXTO } from "./convite-foto.ts";
 
 const AGORA = Date.parse("2026-10-22T12:00:00Z");
 const diasAtras = (n: number) => String(AGORA - n * 24 * 60 * 60 * 1000);
@@ -24,4 +24,8 @@ test("aceita data ISO; valor inválido ou no futuro não esconde para sempre", (
 test("texto do convite não promete verificação", () => {
   assert.match(CONVITE_FOTO_TEXTO, /passam mais confiança/);
   assert.doesNotMatch(CONVITE_FOTO_TEXTO, /verific/i);
+});
+test("convite da candidatura: diz que a foto só aparece depois do aceite e não promete verificação", () => {
+  assert.match(CONVITE_FOTO_CANDIDATURA_TEXTO, /depois do aceite/);
+  assert.doesNotMatch(CONVITE_FOTO_CANDIDATURA_TEXTO, /verific|obrigat/i);
 });
