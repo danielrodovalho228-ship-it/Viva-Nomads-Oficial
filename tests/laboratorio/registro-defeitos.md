@@ -9,6 +9,7 @@ Um registro por defeito novo achado na triagem contínua (Pista C). Defeito conh
 | L-3 | 22/10 | t249 · varrer a 1280 e a 390 px, critério d | Painel (3 papéis) e Painel do parceiro (`/dashboard`, `/dashboard/parceiro`) | `script GET net::ERR_ABORTED` em `/_next/static/chunks/…` às 07h23 (passou no retry) e às 09h58 | Laboratório (régua do d) | C | Ajuste no #1021: arquivo de `/_next/static` cancelado não conta (opção recomendada) |
 | L-4 | 22/10 | t263 · visual-41 (01, 02, 03 e 06) | Página do imóvel inteira; barras inferiores de inquilino e dono; cogumelo da estadia | Diferença de pixels contra a linha de base em toda execução desde 02h42 (página do imóvel com 97 a 144 px a mais de altura) | Alarme de baseline (spec nova) | A + Muse | Aberto |
 | L-5 | 22/10 | Suíte inteira | — | Execuções de 05h07 (622 pulados) e 06h17 (782) bateram no teto de 65 min com poucas falhas; a suíte passou de ~1.600 testes | Laboratório (capacidade) | C, com OK do Muse para mexer no workflow | Aberto |
+| L-6 | 22/10 | t248 · "Qualificação do rascunho abre o checklist" (390 px) | /qualificar · dono | "Enviado para conferência" não aparece depois de enviar a matrícula; falhou em 21/10 02h02 e 12h19, 22/10 11h14; instável às 06h17 e 08h41 | A investigar (pode ser a trava do D-V3) | C | Aberto |
 
 ## Lista priorizada para as pistas A e B
 
@@ -18,11 +19,12 @@ Só defeito de produto confirmado, cada um com o teste do laboratório que o rep
 |---|---|---|---|---|---|
 | 1 | D-V3 | "Enviar documento" (trava da matrícula) não responde e não diz qual campo falta | Editar anúncio (`/dashboard/imoveis/:id/editar`), 390 px | t249 · "D-V3" (`test.fail`) | A |
 | 2 | D-V7 | Título do cartão de rascunho é link para a página pública, que dá 404 (o botão "Ver" já esconde) | Meus imóveis (`/dashboard/imoveis`), 1280 px | t249 · "D-V7" (`test.fail`, #1023) | A |
-| 3 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
-| 4 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
-| 5 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
+| 3 | D-V8 | Tela de entrar sem `<main>` (falta o marco principal para leitor de tela) | Entrar (`/auth`), 390 e 1280 px | t249 · "D-V8" (`test.fail`, #1023) | A |
+| 4 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
+| 5 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
+| 6 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
 
-Critério da ordem: 1 trava o dono de publicar; 2 leva o dono a uma página que não existe; 3 mostra número errado ao admin; 4 confunde, mas não trava; 5 pode ser só baseline desatualizada.
+Critério da ordem: 1 trava o dono de publicar; 2 leva o dono a uma página que não existe; 3 atrapalha quem usa leitor de tela; 4 mostra número errado ao admin; 5 confunde, mas não trava; 6 pode ser só baseline desatualizada.
 
 ## Fechados sem registro
 
