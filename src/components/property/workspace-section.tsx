@@ -42,7 +42,7 @@ export function WorkspaceSection({ property }: { property: Property }) {
             {internet?.tipo === "medida" ? (
               <>
                 <span className="block" data-testid="internet-medida">{internet.texto}</span>
-                {internet.videochamada && <span className="mt-1 block font-semibold text-forest" data-testid="internet-videochamada">{internet.videochamada}</span>}
+                {internet.videochamada && <span className="mt-1 block font-semibold text-forest" data-testid="internet-capacidade">{internet.videochamada}</span>}
                 <details className="mt-1 text-xs text-muted">
                   <summary className="cursor-pointer font-medium text-forest">Como medimos</summary>
                   O proprietário mede no Wi-Fi do imóvel, com o aparelho a até {INTERNET.raioValidacaoM} m do endereço: duas rodadas no navegador, e vale a média das duas. A medição vale {INTERNET.validadeMeses} meses.

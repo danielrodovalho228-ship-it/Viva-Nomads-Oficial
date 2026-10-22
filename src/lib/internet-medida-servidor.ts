@@ -226,7 +226,7 @@ export async function sinalInternetMorador(admin: Admin, imovelId: string, agora
 }
 
 /** Cron diário: "Meça de novo a internet de [imóvel]" aos ~5,5 meses, uma vez por medição. */
-export async function avisosDeRemedicao(admin: Admin, agora: Date): Promise<{ avisos: number }> {
+export async function avisosDeRemedicao(admin: Admin, agora: Date, simular = false): Promise<{ avisosInternet: number }> {
   const desde = new Date(agora.getTime() - INTERNET.avisoAposDias * DIA).toISOString();
   const { data } = await admin
     .from("internet_medicoes")
@@ -241,6 +241,11 @@ export async function avisosDeRemedicao(admin: Admin, agora: Date): Promise<{ av
   const vistos = new Set<string>();
   for (const l of (data ?? []) as unknown as { id: string; property_id: string; medido_em: string; valido_ate: string; properties: { owner_id: string } }[]) {
     if (!horaDeAvisarRemedicao({ medidoEm: l.medido_em, validoAte: l.valido_ate }, agora)) continue;
+    if (simular) {
+      if (!vistos.has(l.property_id)) avisos += 1;
+      vistos.add(l.property_id);
+      continue;
+    }
     // Marca primeiro (uma vez por medição), depois avisa uma vez por imóvel.
     const { data: marcada } = await admin.from("internet_medicoes").update({ avisado_remedir_em: agora.toISOString() }).eq("id", l.id).is("avisado_remedir_em", null).select("id");
     if (!(marcada ?? []).length || vistos.has(l.property_id)) continue;
@@ -248,5 +253,5 @@ export async function avisosDeRemedicao(admin: Admin, agora: Date): Promise<{ av
     await avisarUsuario(admin, l.properties.owner_id, "internet_remedir", `/dashboard/imoveis/${l.property_id}/editar#internet`);
     avisos += 1;
   }
-  return { avisos };
+  return { avisosInternet: avisos };
 }
