@@ -69,3 +69,34 @@ test("inventário: cada item tem finalidade e gatilho; real só na fase 1 com ba
 test("SEM_DADO_PESSOAL não esconde tabela que está no inventário", () => {
   for (const t of Object.keys(SEM_DADO_PESSOAL)) assert.ok(!origens.has(`public.${t}`), t);
 });
+
+/*
+  Prompt 58 — nenhuma coordenada de PESSOA sem decisão escrita. Toda tabela com lat/lng (ou ponto em jsonb) está aqui
+  com o motivo; tabela nova com coordenada derruba o teste. A medição de internet guarda só a distância em metros.
+*/
+const COORDENADAS_PERMITIDAS: Record<string, string> = {
+  properties: "lugar: o imóvel",
+  property_workspaces: "lugar: o espaço de trabalho do imóvel",
+  proximidades_cep: "lugar: cache de proximidades por CEP",
+  parceiros: "lugar: a base de atendimento do parceiro",
+  destinos: "lugar: hospital, universidade ou empresa",
+  "profiles.local_trabalho": "PESSOA: endereço de trabalho digitado (Prompt 37); prazo no item 13",
+  "pedidos_moradia.destino": "PESSOA: destino do pedido de moradia (Prompt 37); prazo no item 13",
+};
+
+test("coordenadas: só nas tabelas permitidas, com motivo; a medição de internet não guarda ponto", () => {
+  const achadas = new Set<string>();
+  for (const f of readdirSync(DIR).filter((x) => x.endsWith(".sql")).sort()) {
+    const sql = readFileSync(new URL(f, DIR), "utf8").replace(/--.*$/gm, "");
+    for (const m of sql.matchAll(/create table (?:if not exists )?(?:public\.)?(\w+)\s*\(([\s\S]*?)\n\);/gi)) {
+      if (/^\s*(lat|lng|latitude|longitude)\s/im.test(m[2])) achadas.add(m[1]);
+    }
+    for (const m of sql.matchAll(/alter table (?:only )?(?:public\.)?(\w+)\s+add column (?:if not exists )?(\w+)\s+(\w+)/gi)) {
+      if (/^(lat|lng|latitude|longitude)$/i.test(m[2])) achadas.add(m[1]);
+      if (/^(local_trabalho|destino)$/i.test(m[2]) && /^jsonb$/i.test(m[3])) achadas.add(`${m[1]}.${m[2]}`);
+    }
+  }
+  const sobrando = [...achadas].filter((t) => !(t in COORDENADAS_PERMITIDAS)).sort();
+  assert.deepEqual(sobrando, [], `coordenada sem decisão escrita: ${sobrando.join(", ")}`);
+  assert.ok(!achadas.has("internet_medicoes"), "a medição guarda só a distância");
+});
