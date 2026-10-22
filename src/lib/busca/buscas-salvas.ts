@@ -10,6 +10,8 @@ const CHAVES = [
   "nota", "seguro", "gestor", "ordem",
   // Prompt 37: destino (cadastrado ou endereço com 2 casas e rótulo sem número), meio e "até N min".
   "destino", "dlat", "dlng", "drot", "modo", "ate",
+  // Prompt 57 fase 2: internet medida (download mínimo) e "só com internet medida".
+  "internet", "medida",
 ] as const;
 
 export const LIMITE_BUSCAS_SALVAS = 20;
@@ -46,6 +48,9 @@ export function resumoDaBusca(qs: string, nomeDoDestino?: (slug: string) => stri
   if (sp.get("pronto") === "1") partes.push("Pronto para Morar");
   if (sp.get("pet") === "1") partes.push("aceita pet");
   if (sp.get("homeoffice") === "1") partes.push("trabalhar de casa");
+  const internet = Number(sp.get("internet"));
+  if (internet > 0) partes.push(`internet medida ${internet}+ Mbps`);
+  else if (sp.get("medida") === "1") partes.push("internet medida");
   const destino = nomeDoDestino?.(sp.get("destino") ?? "") ?? sp.get("drot") ?? sp.get("destino")?.toUpperCase();
   if (destino) {
     const modo = { carro: "de carro", a_pe: "a pé", bicicleta: "de bicicleta", onibus: "de ônibus" }[sp.get("modo") ?? "carro"] ?? "de carro";

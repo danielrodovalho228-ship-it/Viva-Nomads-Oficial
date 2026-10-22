@@ -12,6 +12,7 @@ import {
   type FiltrosPainel,
 } from "@/lib/busca/painel-filtros";
 import { COMODIDADES_FILTRO } from "@/lib/busca/filtro-comodidades";
+import { CHIPS_INTERNET, rotuloVerNaoMedidos } from "@/lib/busca/filtro-internet";
 import { buttonClasses } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Chip } from "@/components/ui/chip";
@@ -34,6 +35,7 @@ import { Chip } from "@/components/ui/chip";
 export function FolhaFiltros({
   inicial,
   contar,
+  contarNaoMedidos,
   onAplicar,
   onFechar,
   garantias,
@@ -41,6 +43,8 @@ export function FolhaFiltros({
 }: {
   inicial: FiltrosPainel;
   contar: (f: FiltrosPainel) => number;
+  /** Prompt 57 fase 2: imóveis com internet informada, mas não medida (linha "Mais N…" no fim da lista). */
+  contarNaoMedidos?: (f: FiltrosPainel) => number;
   onAplicar: (f: FiltrosPainel) => void;
   onFechar: () => void;
   /** Garantias do filtro público (caução unificada + seguro-fiança). */
@@ -50,9 +54,10 @@ export function FolhaFiltros({
 }) {
   const [rascunho, setRascunho] = useState<FiltrosPainel>(inicial);
   const n = contar(rascunho);
+  const extras = contarNaoMedidos ? contarNaoMedidos(rascunho) : 0;
   const muda = <K extends keyof FiltrosPainel>(k: K, v: FiltrosPainel[K]) => setRascunho((r) => ({ ...r, [k]: v }));
   /** Escolha única: tocar na escolhida desliga o filtro (volta ao valor vazio). */
-  const alterna = <K extends "maxPrice" | "minBedrooms" | "periodo" | "tipo" | "petPorte" | "garantia">(k: K, v: FiltrosPainel[K]) =>
+  const alterna = <K extends "maxPrice" | "minBedrooms" | "periodo" | "tipo" | "petPorte" | "garantia" | "internetMin">(k: K, v: FiltrosPainel[K]) =>
     setRascunho((r) => ({ ...r, [k]: r[k] === v ? FILTROS_PAINEL_VAZIOS[k] : v }));
 
   return (
@@ -75,12 +80,13 @@ export function FolhaFiltros({
           <button
             type="button"
             onClick={() => onAplicar(rascunho)}
-            disabled={n === 0}
+            disabled={n === 0 && extras === 0}
             data-testid="aplicar-filtros"
             data-total={n}
+            data-nao-medidos={extras}
             className={buttonClasses({ className: "min-w-0 flex-1 px-4 tabular-nums sm:flex-none sm:px-6" })}
           >
-            {rotuloMostrar(n)}
+            {n === 0 && extras > 0 ? rotuloVerNaoMedidos(extras) : <>{rotuloMostrar(n)}</>}
           </button>
         </div>
       }
@@ -118,7 +124,10 @@ export function FolhaFiltros({
           <Chip ativo={rascunho.petsOnly} onClick={() => setRascunho((r) => ({ ...r, petsOnly: !r.petsOnly, petPorte: "" }))}>
             Aceita pets
           </Chip>
-          <Chip ativo={rascunho.homeOfficeOnly} onClick={() => muda("homeOfficeOnly", !rascunho.homeOfficeOnly)}>
+          <Chip
+            ativo={rascunho.homeOfficeOnly}
+            onClick={() => setRascunho((r) => ({ ...r, homeOfficeOnly: !r.homeOfficeOnly, soInternetMedida: r.homeOfficeOnly ? false : r.soInternetMedida }))}
+          >
             Para trabalhar de casa
           </Chip>
           <Chip ativo={rascunho.readyToLiveOnly} onClick={() => muda("readyToLiveOnly", !rascunho.readyToLiveOnly)}>
@@ -136,6 +145,20 @@ export function FolhaFiltros({
             </Grupo>
           </div>
         )}
+        {rascunho.homeOfficeOnly && (
+          <Grupo titulo="Para trabalhar de casa" testId="painel-home-office">
+            <Chip ativo={rascunho.soInternetMedida} onClick={() => muda("soInternetMedida", !rascunho.soInternetMedida)}>
+              Só com internet medida
+            </Chip>
+          </Grupo>
+        )}
+        <Grupo titulo="Internet medida a partir de" testId="painel-internet">
+          {CHIPS_INTERNET.map((v) => (
+            <Chip key={v} ativo={rascunho.internetMin === v} onClick={() => alterna("internetMin", v)}>
+              {v} Mbps
+            </Chip>
+          ))}
+        </Grupo>
         <Grupo titulo="Contrato" testId="painel-garantia">
           {garantias.map((g) => (
             <Chip key={g.key} ativo={rascunho.garantia === g.key} onClick={() => alterna("garantia", g.key)}>

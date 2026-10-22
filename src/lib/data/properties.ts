@@ -358,6 +358,7 @@ export async function listProperties(): Promise<Property[]> {
     await attachComodidadesFiltro(supabase, mapped); // Wi-Fi/cozinha/garagem/lavar, para os filtros da busca (best-effort)
     await attachPrecoJusto(supabase, mapped); // selo Preço justo (0130; best-effort)
     await attachPetsRegras(supabase, mapped); // porte máximo de pet, para o filtro da busca (0119; best-effort)
+    await attachInternet(supabase, mapped); // internet informada e medida, para o filtro da busca (Prompt 57 fase 2; best-effort)
     return withDemos(mapped);
   } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
@@ -520,6 +521,26 @@ async function attachPrecoJusto(supabase: SupabaseLike, list: Property[]): Promi
     }
   } catch {
     /* sem a coluna, sem selo */
+  }
+}
+
+/** Prompt 57, fase 2: Mbps informado pelo dono e a medição válida (view pública) de cada imóvel da lista. */
+async function attachInternet(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  const ids = list.map((p) => p.id);
+  try {
+    const [{ data: inf }, { data: med }] = await Promise.all([
+      supabase.from("properties").select("id, internet_mbps").in("id", ids),
+      supabase.from("internet_medida_publica").select("property_id, download_mbps, upload_mbps, latencia_ms, medido_em, valido_ate").in("property_id", ids),
+    ]);
+    const informada = new Map(((inf as { id: string; internet_mbps: unknown }[] | null) ?? []).map((r) => [r.id, mbpsValido(r.internet_mbps) ?? undefined]));
+    const medida = new Map(((med as (LinhaMedida & { property_id: string })[] | null) ?? []).map((r) => [r.property_id, medidaDaLinha(r)]));
+    for (const p of list) {
+      p.internetMbps = informada.get(p.id) ?? p.internetMbps;
+      p.internetMedida = medida.get(p.id) ?? p.internetMedida;
+    }
+  } catch {
+    /* sem a view ou a coluna, o filtro de internet não acha medição: ninguém passa como medido */
   }
 }
 

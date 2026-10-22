@@ -31,7 +31,8 @@ import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from
 import { SELO_NF_UI } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { ROTULO_PORTE_CURTO, contarFiltrosPainel, naoMedidosDoPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, rotuloFiltroInternet, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
 import { Chip } from "@/components/ui/chip";
 import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
 import { buttonClasses } from "@/components/ui/button";
@@ -106,6 +107,10 @@ export function SearchClient({
   const [furnishedOnly, setFurnishedOnly] = useState(false);
   const [readyToLiveOnly, setReadyToLiveOnly] = useState(false);
   const [homeOfficeOnly, setHomeOfficeOnly] = useState(false);
+  // Prompt 57, fase 2: internet MEDIDA (download mínimo) e "só com internet medida".
+  const [internetMin, setInternetMin] = useState(0);
+  const [soInternetMedida, setSoInternetMedida] = useState(false);
+  const [verNaoMedidos, setVerNaoMedidos] = useState(false);
   const [comodidades, setComodidades] = useState<ComodidadeFiltro[]>([]); // Wi-Fi, cozinha, garagem, lavar (ordem 583d2e71)
   const [workLocatedOnly, setWorkLocatedOnly] = useState(false);
   const [invoiceOnly, setInvoiceOnly] = useState(false);
@@ -236,6 +241,9 @@ export function SearchClient({
     if (on("seguro")) setInsuranceOnly(true);
     if (on("gestor")) setOperatedOnly(true);
     setComodidades(comodidadesDaUrl(sp.get("comod")));
+    const fi = filtroInternetDaUrl(sp);
+    setInternetMin(fi.internetMin);
+    setSoInternetMedida(fi.soInternetMedida);
   }, []);
 
   // Restaura no mount (link compartilhado / reload) e re-aplica a cada
@@ -299,6 +307,7 @@ export function SearchClient({
     put("seguro", insuranceOnly, "1");
     put("gestor", operatedOnly, "1");
     put("comod", comodidades.length > 0, comodidades.join(","));
+    filtroInternetNaUrl(params, { internetMin, soInternetMedida });
     destinoNaUrl(params, estadoDestino);
     if (sort === "trabalho") params.delete("ordem");
     const qs = params.toString();
@@ -311,6 +320,7 @@ export function SearchClient({
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades, estadoDestino,
+    internetMin, soInternetMedida,
   ]);
 
   // Prompt 37: sem destino na URL, o "Meu local de trabalho" salvo na conta vira o padrão (só para quem está logado;
@@ -389,6 +399,8 @@ export function SearchClient({
     setInsuranceOnly(false);
     setOperatedOnly(false);
     setComodidades([]);
+    setInternetMin(0);
+    setSoInternetMedida(false);
     setEstadoDestino({ destino: null, modo: "carro", ate: 0 });
     setSort("relevance");
   }
@@ -399,8 +411,9 @@ export function SearchClient({
     () => ({
       maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades,
       periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: SELO_NF_UI && invoiceOnly, seguroOnly: insuranceOnly, gestorOnly: operatedOnly,
+      internetMin, soInternetMedida,
     }),
-    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, insuranceOnly, operatedOnly]
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, insuranceOnly, operatedOnly, internetMin, soInternetMedida]
   );
 
   const { base, dist } = useMemo(() => {
@@ -437,6 +450,9 @@ export function SearchClient({
     (f: FiltrosPainel) => semExemplosQuandoHaReal(base.filter((p) => passaNoPainel(p, f)), (p) => isExemplo(p.id), exemplosForcados).length,
     [base, exemplosForcados]
   );
+  // Prompt 57, fase 2: os de internet informada, mas não medida (só com o filtro de internet ligado). Exemplo não entra.
+  const contarNaoMedidos = useCallback((f: FiltrosPainel) => naoMedidosDoPainel(base, f).filter((p) => !isExemplo(p.id)).length, [base]);
+  const naoMedidos = useMemo(() => naoMedidosDoPainel(base, filtrosPainel).filter((p) => !isExemplo(p.id)), [base, filtrosPainel]);
 
   const semTempo = useMemo(() => {
     let list = base.filter((p) => passaNoPainel(p, filtrosPainel));
@@ -495,6 +511,7 @@ export function SearchClient({
     (faixa ? 1 : 0) +
     (dataEntrada ? 1 : 0) +
     (garantia ? 1 : 0) +
+    (internetMin || soInternetMedida ? 1 : 0) +
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(
       Boolean
     ).length +
@@ -505,6 +522,7 @@ export function SearchClient({
     (typeFilter ? 1 : 0) +
     (garantia ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
+    (internetMin || soInternetMedida ? 1 : 0) +
     [homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, insuranceOnly, operatedOnly].filter(Boolean).length +
     comodidades.length;
 
@@ -517,9 +535,10 @@ export function SearchClient({
     if (adults > 1) q.set("adultos", String(adults));
     if (children > 0) q.set("criancas", String(children));
     if (maxPrice > 0) q.set("orcamento", String(maxPrice));
+    if (internetMin > 0) q.set("internet", String(internetMin));
     const s = q.toString();
     return `/pedidos/novo${s ? `?${s}` : ""}`;
-  }, [locationQuery, dataEntrada, maxPeriod, adults, children, maxPrice]);
+  }, [locationQuery, dataEntrada, maxPeriod, adults, children, maxPrice, internetMin]);
 
   // "Ampliar a busca": afrouxa os filtros secundários, mantém a cidade e a data.
   function ampliarBusca() {
@@ -539,6 +558,8 @@ export function SearchClient({
     setInsuranceOnly(false);
     setOperatedOnly(false);
     setComodidades([]);
+    setInternetMin(0);
+    setSoInternetMedida(false);
     setFurnishedOnly(false);
   }
 
@@ -573,7 +594,10 @@ export function SearchClient({
     else if (chave === "petsOnly") {
       setPetsOnly(false);
       setPetPorte("");
-    } else if (chave === "homeOfficeOnly") setHomeOfficeOnly(false);
+    } else if (chave === "homeOfficeOnly") {
+      setHomeOfficeOnly(false);
+      setSoInternetMedida(false);
+    }
     else if (chave === "readyToLiveOnly") setReadyToLiveOnly(false);
     else if (chave === "furnishedOnly") setFurnishedOnly(false);
     else setComodidades((l) => l.filter((c) => c !== chave));
@@ -584,6 +608,7 @@ export function SearchClient({
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
     faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades.join(","),
+    internetMin, soInternetMedida,
   ].join("|");
   function aplicarPainel(f: FiltrosPainel) {
     setMaxPrice(f.maxPrice);
@@ -593,6 +618,10 @@ export function SearchClient({
     setHomeOfficeOnly(f.homeOfficeOnly);
     setReadyToLiveOnly(f.readyToLiveOnly);
     setComodidades(f.comodidades);
+    setInternetMin(f.internetMin);
+    setSoInternetMedida(f.homeOfficeOnly && f.soInternetMedida);
+    // Só sobraram os de internet não medida: o botão da folha já abre essa lista.
+    setVerNaoMedidos(contarComPainel(f) === 0 && contarNaoMedidos(f) > 0);
     setMaxPeriod(f.periodo);
     setTypeFilter(f.tipo);
     setGarantia(f.garantia);
@@ -713,6 +742,7 @@ export function SearchClient({
         <FolhaFiltros
           inicial={filtrosPainel}
           contar={contarComPainel}
+          contarNaoMedidos={contarNaoMedidos}
           onAplicar={aplicarPainel}
           onFechar={() => setPainelAberto(false)}
           garantias={GARANTIAS_FILTRO}
@@ -954,7 +984,10 @@ export function SearchClient({
               <ActiveChip label="Pronto para Morar" onClear={() => setReadyToLiveOnly(false)} />
             )}
             {homeOfficeOnly && (
-              <ActiveChip label="Trabalhar de casa" onClear={() => setHomeOfficeOnly(false)} />
+              <ActiveChip label="Trabalhar de casa" onClear={() => { setHomeOfficeOnly(false); setSoInternetMedida(false); }} />
+            )}
+            {rotuloFiltroInternet({ internetMin, soInternetMedida }) && (
+              <ActiveChip label={rotuloFiltroInternet({ internetMin, soInternetMedida })!} onClear={() => { setInternetMin(0); setSoInternetMedida(false); }} />
             )}
             {petsOnly && <ActiveChip label={petPorte ? `Aceita pets ${ROTULO_PORTE_CURTO[petPorte]}` : "Aceita pets"} onClear={() => { setPetsOnly(false); setPetPorte(""); }} />}
             {SELO_NF_UI && invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
@@ -1119,6 +1152,37 @@ export function SearchClient({
                 </div>
               ))}
             </div>
+          )}
+
+          {/* Prompt 57, fase 2: nenhum imóvel some por não ter testado a internet — os de internet informada, mas não
+              medida, ficam no fim da lista, com o rótulo "não medida". */}
+          {naoMedidos.length > 0 && (
+            <section className="mt-8" data-testid="nao-medidos">
+              <button
+                type="button"
+                onClick={() => setVerNaoMedidos((v) => !v)}
+                aria-expanded={verNaoMedidos}
+                data-testid="mais-nao-medidos"
+                className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 text-left text-sm font-medium text-ink hover:border-ink"
+              >
+                {textoMaisNaoMedidos(naoMedidos.length)}
+                <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", verNaoMedidos && "rotate-180")} aria-hidden />
+              </button>
+              {verNaoMedidos && (
+                <div className="mt-6 grid auto-rows-fr gap-x-4 gap-y-8 sm:grid-cols-2 sm:gap-x-6 lg:gap-x-4 xl:grid-cols-3" data-testid="grade-nao-medidos">
+                  {naoMedidos.map((p) => (
+                    <div key={p.id} data-testid="card-nao-medido" data-id={p.id} className="flex h-full flex-col">
+                      <div className="min-h-0 flex-1">
+                        <PropertyCard property={p} periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined} />
+                      </div>
+                      <p className="mt-2 text-sm text-muted" data-testid="rotulo-nao-medida">
+                        {ROTULO_NAO_MEDIDA}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           )}
 
           {/* Menos de 3 imóveis REAIS (Prompt 30, item 6): a porta do pedido, já com cidade, datas e valor. */}

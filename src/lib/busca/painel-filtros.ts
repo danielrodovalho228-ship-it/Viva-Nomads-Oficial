@@ -9,6 +9,7 @@
 import { ROTULO_COMODIDADE, passaComodidades, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
+import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, type ImovelComInternet } from "./filtro-internet.ts";
 
 export interface FiltrosPainel {
   maxPrice: number; // 0 = qualquer
@@ -32,6 +33,10 @@ export interface FiltrosPainel {
   seguroOnly: boolean;
   /** Só imóveis com gestor profissional (sublocação autorizada). */
   gestorOnly: boolean;
+  /** Prompt 57, fase 2: download MEDIDO mínimo (50 | 100 | 300); 0 = desligado. */
+  internetMin: number;
+  /** "Só com internet medida" (dentro de "Para trabalhar de casa"). */
+  soInternetMedida: boolean;
 }
 
 export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
@@ -48,6 +53,8 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   notaOnly: false,
   seguroOnly: false,
   gestorOnly: false,
+  internetMin: 0,
+  soInternetMedida: false,
 };
 
 export const ROTULO_PORTE_CURTO: Record<PortePet, string> = { P: "pequeno", M: "médio", G: "grande" };
@@ -95,7 +102,7 @@ export function cabeNaEstadia(p: { minPeriodDays?: number; maxPeriodDays?: numbe
   return true;
 }
 
-type ImovelFiltravel = {
+type ImovelFiltravel = ImovelComInternet & {
   monthlyPrice: number;
   /** Total do mês anunciado no cartão; sem ele vale o valor mensal. */
   totalMes?: number;
@@ -140,8 +147,8 @@ export function precoDeBusca(p: { monthlyPrice: number; totalMes?: number }): nu
   return p.totalMes && p.totalMes > 0 ? p.totalMes : p.monthlyPrice;
 }
 
-/** O imóvel passa nos filtros do painel? */
-export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel): boolean {
+/** O imóvel passa nos filtros do painel? `agora` só pesa na validade da medição de internet. */
+export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date = new Date()): boolean {
   if (f.maxPrice && precoDeBusca(p) > f.maxPrice) return false;
   if (f.minBedrooms && p.bedrooms < f.minBedrooms) return false;
   if (f.petsOnly && !p.petsAllowed) return false;
@@ -155,7 +162,18 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel): boolean {
   if (f.notaOnly && !p.issuesInvoice) return false;
   if (f.seguroOnly && !p.acceptsInsurance) return false;
   if (f.gestorOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
+  if (!passaInternet(p, f, agora)) return false;
   return true;
+}
+
+/**
+ * Prompt 57, fase 2: os que ficam de fora SÓ por não ter medição válida e têm internet informada no valor escolhido —
+ * a linha "Mais N imóveis com internet informada, mas não medida". Filtro de internet desligado → nenhum.
+ */
+export function naoMedidosDoPainel<T extends ImovelFiltravel>(lista: readonly T[], f: FiltrosPainel, agora: Date = new Date()): T[] {
+  if (!filtroInternetLigado(f)) return [];
+  const semInternet: FiltrosPainel = { ...f, internetMin: 0, soInternetMedida: false };
+  return lista.filter((p) => passaNoPainel(p, semInternet, agora) && informadaNaoMedida(p, f, agora));
 }
 
 /** Quantos filtros do painel estão ligados (o número no botão "Filtros"). */
@@ -166,6 +184,7 @@ export function contarFiltrosPainel(f: FiltrosPainel): number {
     (f.periodo ? 1 : 0) +
     (f.tipo ? 1 : 0) +
     (f.garantia ? 1 : 0) +
+    (filtroInternetLigado(f) ? 1 : 0) +
     [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.seguroOnly, f.gestorOnly].filter(Boolean).length +
     f.comodidades.length
   );
@@ -187,6 +206,8 @@ export function resumoFiltros(f: FiltrosPainel): string {
   if (f.petsOnly) partes.push("Aceita pets");
   if (f.petsOnly && f.petPorte) partes.push(`pet ${ROTULO_PORTE_CURTO[f.petPorte]}`);
   if (f.homeOfficeOnly) partes.push("Trabalhar de casa");
+  const internet = rotuloFiltroInternet(f);
+  if (internet) partes.push(internet);
   if (f.readyToLiveOnly) partes.push("Pronto para Morar");
   for (const c of f.comodidades) partes.push(ROTULO_COMODIDADE[c]);
   if (f.garantia) partes.push(ROTULO_GARANTIA[f.garantia] ?? "Garantia");

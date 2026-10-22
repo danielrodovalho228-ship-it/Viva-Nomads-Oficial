@@ -11,6 +11,7 @@ import { mesesDoCartao, rotuloPreco, textoPreco } from "../cartao-preco.ts";
 import { normalizarBusca, resumoDaBusca } from "./buscas-salvas.ts";
 import { FILTROS_PAINEL_VAZIOS, passaNoPainel } from "./painel-filtros.ts";
 import { comodidadesDaUrl } from "./filtro-comodidades.ts";
+import { filtroInternetDaUrl } from "./filtro-internet.ts";
 import type { PortePet, RegrasPets } from "../anuncio/pets-regras.ts";
 import { destinoDaUrl, type DestinoBusca } from "./destino-busca.ts";
 import { dentroDoTempo, type ModoRota } from "../rotas/tempo.ts";
@@ -43,6 +44,9 @@ export interface ImovelParaAlerta {
   amenities?: string[];
   comodidadesFiltro?: string[];
   parkingSpots?: number;
+  /** Prompt 57 fase 2: internet informada pelo dono e a medição válida (o filtro "internet medida" usa só a medição). */
+  internetMbps?: number;
+  internetMedida?: { downloadMbps: number; validoAte: string };
 }
 
 /** Máximo de e-mails de alerta por busca por dia (o resto vai no resumo). */
@@ -63,7 +67,7 @@ function aceitaGarantia(p: ImovelParaAlerta, g: string): boolean {
 export type MinutosAte = (destino: DestinoBusca, modo: ModoRota) => number | null | undefined;
 
 /** O imóvel combina com a busca salva (query string normalizada)? */
-export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minutosAte?: MinutosAte): boolean {
+export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minutosAte?: MinutosAte, agora: Date = new Date()): boolean {
   const sp = new URLSearchParams(normalizarBusca(parametros));
   // Prompt 37: "até N min" de um DESTINO CADASTRADO — só com tempo de rota conferido (sem tempo, não alertamos por
   // palpite). Endereço digitado fica como hoje: sem alerta por tempo (decisão do Muse, 21/10).
@@ -104,8 +108,10 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minu
     // Estadia e tipo pela MESMA regra da folha de filtros da /buscar (Prompt 40).
     periodo: perMap[num("periodo")] ?? 0,
     tipo: sp.get("tipo") ?? "",
+    // Prompt 57 fase 2: "internet medida a partir de" / "só com internet medida" — sem medição válida, não alerta.
+    ...filtroInternetDaUrl(sp),
   };
-  if (!passaNoPainel(p, painel)) return false;
+  if (!passaNoPainel(p, painel, agora)) return false;
 
   const hospedes = (num("adultos") || 1) + num("criancas");
   if (p.maxGuests != null && p.maxGuests < hospedes) return false;
