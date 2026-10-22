@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { HeartPulse, GraduationCap, Briefcase, ShoppingCart, Bus, MapPin, Maximize2, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { ProximityCategory, Property } from "@/lib/types";
 import type { MapMarker } from "@/components/property-map";
 import { PropertyMap } from "@/components/property-map-lazy";
 import { distanciaAprox, proximidadesDoImovel } from "@/lib/anuncio/proximidades";
 import { ServicosPorPerto } from "@/components/property/servicos-por-perto";
 import { TempoAte } from "@/components/property/tempo-ate";
+import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
 
-const PROXIMITY_META: Record<ProximityCategory, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
+const PROXIMITY_META: Record<ProximityCategory, { label: string; icon: LucideIcon }> = {
   saude: { label: "Saúde", icon: HeartPulse },
   educacao: { label: "Educação", icon: GraduationCap },
   trabalho: { label: "Trabalho", icon: Briefcase },
@@ -57,7 +59,7 @@ export function LocationNearby({ property }: { property: Property }) {
         Localização
       </h2>
 
-      <div className="relative mt-5">
+      <div className="relative mt-4">
         <PropertyMap
           className="aspect-[16/9] w-full"
           center={{ lat: property.lat, lng: property.lng }}
@@ -124,7 +126,7 @@ export function LocationNearby({ property }: { property: Property }) {
                   key={`${p.category}-${p.name}`}
                   className="flex items-center gap-3 rounded-xl border border-sage-200 px-4 py-3"
                 >
-                  <Icon className="h-5 w-5 shrink-0 text-sage" />
+                  <Icon className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden />
                   <span className="min-w-0">
                     <span className="block text-sm font-medium text-ink">{p.name}</span>
                     <span className="block text-xs text-muted">

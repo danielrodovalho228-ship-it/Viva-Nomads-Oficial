@@ -173,7 +173,7 @@ function CardFerramenta({ f }: { f: Ferramenta }) {
       )}
     </>
   );
-  const base = "flex h-full flex-col rounded-xl border border-sage-200 bg-white p-5";
+  const base = "flex h-full flex-col rounded-xl border border-sage-200 bg-white p-4";
   return f.href ? (
     <Link
       href={f.href}
@@ -197,7 +197,7 @@ export default function FerramentasPage() {
         subtitle="Tudo o que ajuda você a analisar, fechar e proteger a locação — em um só lugar."
       />
 
-      <div className="space-y-10">
+      <div className="space-y-12">
         {GRUPOS.map((g) => {
           const foto = FOTOS_FERRAMENTAS[g.id];
           return (

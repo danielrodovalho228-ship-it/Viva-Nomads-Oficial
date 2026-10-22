@@ -164,21 +164,14 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
     }
   });
 
-  test("D-V2 — a barra 'Fotos: 0 de 8' não flutua sobre o conteúdo do cadastro a 390 px", async ({ browser }) => {
+  test("D-V2 — a barra 'Fotos: 0 de 8' não cobre controle que a rolagem não revela (cadastro, 390 px)", async ({ browser }) => {
     test.skip(!temContaVarredura("DONO0"), "sem a conta DONO0");
     const { context, page } = await abrirComoConta(browser, "DONO0", "390");
-    await abrirRota(page, `/dashboard/imoveis/novo?draft=${MASSA!.rascunho0}`);
-    const barraSolta = await page.evaluate(() => {
-      const achou = Array.from(document.querySelectorAll<HTMLElement>("main *")).filter((e) => e.children.length < 6 && /Fotos:\s*\d+\s*de\s*\d+/i.test(e.innerText || ""));
-      return achou.some((e) => {
-        for (let n: HTMLElement | null = e; n; n = n.parentElement) {
-          const p = getComputedStyle(n).position;
-          if (p === "fixed" || p === "sticky") return true;
-        }
-        return false;
-      });
-    });
-    expect(barraSolta, "a barra de fotos está fixa/sticky sobre o conteúdo").toBe(false);
+    // A barra é fixa de propósito na etapa de Fotos (290742ca: encosta no fim da tela). Vale a régua do Muse (21/10):
+    // só é defeito o controle que ela cobre e a rolagem não revela. A etapa vai pelo nome: sem ela, o rascunho abria
+    // onde outra spec o deixou e o teste passava ou não conforme a ordem da suíte (lab de b1385f6, 22/10).
+    await abrirRota(page, `/dashboard/imoveis/novo?draft=${MASSA!.rascunho0}&etapa=fotos`);
+    await expect(page.getByTestId("barra-fotos")).toBeVisible();
     expect(await controlesCobertos(page)).toEqual([]);
     await context.close();
   });

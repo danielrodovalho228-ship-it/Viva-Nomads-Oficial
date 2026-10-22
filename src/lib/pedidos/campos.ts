@@ -4,6 +4,7 @@
   validação do servidor e os textos que o inquilino e o dono leem.
 */
 import { chaveCidade } from "../cidades.ts";
+import { INTERNET } from "../../config/internet.ts";
 
 // ── Campos ────────────────────────────────────────────────────────────────────────────────────────────────────
 export const BAIRROS_MAX = 3;
@@ -39,6 +40,8 @@ export interface CamposNovos {
   orcamentoMin?: number | null;
   necessidades?: string[];
   portePet?: string | null;
+  /** Prompt 57 fase 2: download medido mínimo (50, 100 ou 300 Mbps); nulo = sem exigência. */
+  internetMinMbps?: number | null;
 }
 
 export interface CamposNovosValidos {
@@ -47,6 +50,7 @@ export interface CamposNovosValidos {
   orcamentoMin: number | null;
   necessidades: Necessidade[];
   portePet: PortePetPedido | null;
+  internetMinMbps: number | null;
 }
 
 /** Limpa um bairro digitado: sem controle, espaços simples, até 60 caracteres. */
@@ -102,7 +106,13 @@ export function validarCamposNovos(
     if (!p) return { ok: false, erro: "Escolha o porte do pet." };
     portePet = p.valor;
   }
-  return { ok: true, valor: { bairros, quartosMin, orcamentoMin, necessidades, portePet } };
+  let internetMinMbps: number | null = null;
+  if (c.internetMinMbps != null && Number(c.internetMinMbps) > 0) {
+    const v = Number(c.internetMinMbps);
+    if (!(INTERNET.chipsBusca as readonly number[]).includes(v)) return { ok: false, erro: "Escolha a internet medida mínima." };
+    internetMinMbps = v;
+  }
+  return { ok: true, valor: { bairros, quartosMin, orcamentoMin, necessidades, portePet, internetMinMbps } };
 }
 
 // ── Textos do cartão ──────────────────────────────────────────────────────────────────────────────────────────
@@ -164,4 +174,9 @@ export const TEXTO_AVISO_RENOVAR = "Ainda procurando? Renove com um clique";
 export function dataPedidoBR(iso: string | null | undefined): string {
   const d = new Date(String(iso ?? ""));
   return Number.isFinite(d.getTime()) ? d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "";
+}
+
+/** Prompt 57 fase 2: o que o dono lê no cartão do pedido ("Internet medida 100+ Mbps"); sem exigência → null. */
+export function textoInternetPedido(mbps: number | null | undefined): string | null {
+  return mbps && mbps > 0 ? `Internet medida ${mbps}+ Mbps` : null;
 }

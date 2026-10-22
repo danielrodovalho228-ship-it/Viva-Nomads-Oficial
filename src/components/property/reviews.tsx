@@ -23,7 +23,7 @@ export function Reviews({ property }: { property: Property }) {
         <h2 id="avaliacoes-title" className="font-title text-2xl font-semibold text-ink">
           Avaliações
         </h2>
-        <div data-testid="avaliacoes-vazio" className="mt-5 flex flex-col items-center rounded-xl border border-dashed border-sage-200 px-6 py-8 text-center">
+        <div data-testid="avaliacoes-vazio" className="mt-4 flex flex-col items-center rounded-xl border border-dashed border-sage-200 px-6 py-8 text-center">
           <MessageSquareQuote className="h-8 w-8 text-sage" aria-hidden />
           <p className="mt-3 font-title text-lg font-semibold text-ink">Este imóvel ainda não tem avaliações</p>
           <p className="mt-1 max-w-sm text-sm text-muted">
@@ -51,7 +51,7 @@ export function Reviews({ property }: { property: Property }) {
         </span>
       </h2>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {reviews.map((r, i) => {
           const date = reviewDate(r.date);
           return (

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  */
 export default function ImovelNotFound() {
   return (
-    <div className="container-page flex flex-col items-center py-20 text-center">
+    <div className="container-page flex flex-col items-center py-16 text-center">
       <NotFoundIllustration />
       <h1 className="mt-8 font-title text-2xl font-semibold text-ink sm:text-[28px]">
         Página não encontrada

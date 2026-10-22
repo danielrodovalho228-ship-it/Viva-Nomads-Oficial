@@ -13,7 +13,8 @@
         "t177-video-institucional",
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
-        "t201-qa-muse"
+        "t201-qa-muse",
+        "t283-home-internet-57"
       ]
     },
     "/acesso-socios": {
@@ -330,6 +331,7 @@
         "publico"
       ],
       "specs": [
+        "t277-preco-grade-47",
         "t234-ideal-para",
         "t10-buscar-url",
         "t14-app-mode",
@@ -1036,6 +1038,7 @@
         "publico"
       ],
       "specs": [
+        "t277-preco-grade-47",
         "t234-ideal-para",
         "t11-travessias",
         "t133-candidatura-motivo",
@@ -3640,6 +3643,14 @@
       ],
       "specs": [
         "t51-admin-padrao-caixa-socios"
+      ]
+    },
+    "src/lib/socios/caixa-actions.ts#responderAceite": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t290-aceite-socio"
       ]
     },
     "src/lib/socios/caixa-actions.ts#relerArquivo": {

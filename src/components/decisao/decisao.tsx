@@ -63,7 +63,7 @@ export function Decisao({ meses }: { meses: number }) {
             </div>
 
             <div className={`${styles.pathcard} ${styles.hi}`}>
-              <span className={`${styles.badge} ${styles.badgeHi}`}>★ Híbrido</span>
+              <span className={`${styles.badge} ${styles.badgeHi}`}>Híbrido</span>
               <h3>Assinatura + comissão decrescente</h3>
               <p className={styles.pathdesc}>Plataforma de serviços (Furnished Finder adaptado).</p>
               <ul className={`${styles.plist} ${styles.pros}`}>

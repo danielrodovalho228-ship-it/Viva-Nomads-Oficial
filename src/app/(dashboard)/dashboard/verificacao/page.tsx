@@ -293,7 +293,7 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
           </span>
         </div>
 
-        <div className="mt-5 rounded-xl border border-sage-200 bg-surface-2 p-4">
+        <div className="mt-4 rounded-xl border border-sage-200 bg-surface-2 p-4">
           <p className="text-sm font-medium text-ink">O que a verificação destrava:</p>
           <ul className="mt-2 space-y-2">
             {copy.unlocks.map((u) => (
@@ -304,7 +304,7 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
           </ul>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           {avisar ? (
             <span className="inline-flex items-center gap-2 rounded-full bg-sage-100 px-4 py-2 text-sm font-medium text-forest">
               <Check className="h-4 w-4" /> Avisaremos você assim que abrir.
@@ -394,7 +394,7 @@ function DemoFlow({
             Confirmamos sua <strong>identidade</strong> (documento + foto) para dar segurança à
             negociação.
           </p>
-          <div className="mx-auto mt-5 max-w-md space-y-2 text-left text-sm">
+          <div className="mx-auto mt-4 max-w-md space-y-2 text-left text-sm">
             <Bullet>Identidade confirmada por documento oficial e foto (selfie).</Bullet>
             <Bullet>Análise antifraude, com um resumo do resultado para o proprietário (sem os documentos).</Bullet>
             <Bullet>Cobre brasileiros e estrangeiros (documento de estrangeiro CRNM/RNE).</Bullet>
@@ -414,7 +414,7 @@ function DemoFlow({
                 </span>
                 <div>
                   <h2 className="font-title text-lg font-semibold text-ink">
-                    {copy.badge} {TRAFFIC_LIGHT_META[result.light].emoji}
+                    {copy.badge} · {TRAFFIC_LIGHT_META[result.light].label}
                   </h2>
                   <p className="text-sm text-muted">Verificação de demonstração</p>
                 </div>

@@ -4,8 +4,8 @@ import { hasAccount } from "../fixtures/accounts";
 
 /*
   T192 — Conta em 4 blocos (prompt 18), a 390 e 1280 px:
-  - blocos Conta → Notificações → Privacidade e segurança → Pagamentos, nessa ordem (Prompt 43; perfil público e dados da conta
-    são seções dentro do bloco Conta);
+  - blocos Conta → Notificações → Privacidade e segurança → Pagamentos, nessa ordem (Prompt 43, #1038; o perfil
+    público e os dados ficam dentro de Conta);
   - cada assunto uma vez: nada de "Alterar senha" duplicado, de painel "Verificação" solto nem de simulador tributário;
   - a lista de confiança tem e-mail, celular, identidade (em breve), duas etapas e senha, cada um uma vez
     (LinkedIn só no modo inquilino);
@@ -46,7 +46,8 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
         await expect(lista.getByTestId("confianca-linkedin")).toHaveCount(persona === "inquilino" ? 1 : 0);
         await expect(lista.getByTestId("confianca-senha").getByRole("link")).toHaveAttribute("href", "/dashboard/conta/seguranca");
 
-        await expect(page.getByTestId("ver-como-outros-veem")).toBeVisible();
+        // Prompt 43: o link "Ver como os outros veem" deu lugar ao próprio cartão do perfil público dentro de Conta.
+        await expect(page.getByTestId("seu-perfil-publico")).toBeVisible();
         await semRolagemLateral(page);
         await page.screenshot({ path: `${SAIDA}/t192-conta-${rotulo}-${largura}.png`, fullPage: true });
 

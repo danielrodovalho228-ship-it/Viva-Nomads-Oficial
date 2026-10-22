@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 /*
   T187 — Conferência automática do documento do imóvel na etapa 1 do cadastro (prompt 11), com documentos de teste
   FICTÍCIOS gerados aqui (sem dado real de ninguém) e a leitura da IA SIMULADA no laboratório:
-  1. endereço errado → "Corrija" com o motivo detalhado; reenviar o certo → "Documentação conferida ✓" (390 e 1280);
+  1. endereço errado → "Corrija" com o motivo detalhado; reenviar o certo → "Documentação conferida" (390 e 1280);
   2. documento editado (print de tela) → "Em revisão" e entra na fila do admin com o motivo, o checklist pré-marcado
      e o prazo de 48 h; só esses casos entram na fila;
   3. o mesmo arquivo em outra conta → recusado como duplicado;
@@ -76,7 +76,7 @@ test.describe("T187 — conferência automática do documento", () => {
       expect((await page.request.post("/api/caf/verify")).ok()).toBe(true);
       await enviar(page, matriculaLab(), "matricula-ficticia.pdf");
       await expect(estado).toHaveAttribute("data-estado", "aprovado", { timeout: 30_000 });
-      await expect(estado).toContainText("Documentação conferida ✓");
+      await expect(estado).toContainText("Documentação conferida");
       await page.screenshot({ path: `${SAIDA}/t187-conferida-${largura}.png`, fullPage: false });
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await page.context().close();

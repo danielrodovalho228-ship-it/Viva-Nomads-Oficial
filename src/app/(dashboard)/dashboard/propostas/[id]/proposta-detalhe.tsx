@@ -131,7 +131,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
       </p>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Ficha do pet da candidatura: só para o dono (o servidor confere a candidatura). */}
           {p.papel === "owner" && <FichaPetCandidatura alvo={{ leadId: p.leadId }} className="rounded-xl border border-sage-200 bg-white p-3" />}
           <Panel data-testid="proposta-atual">

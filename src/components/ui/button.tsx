@@ -71,7 +71,7 @@ const sizes: Record<Size, string> = {
   // Compacto (cabeçalho, linhas de lista): 40 px.
   sm: "h-10 px-4 text-sm",
   // Padrão: 52 px no celular, 56 px no computador.
-  md: "h-13 px-5 text-sm sm:px-6 sm:text-[15px] lg:h-14",
+  md: "h-13 px-4 text-sm sm:px-6 sm:text-[15px] lg:h-14",
   lg: "h-13 px-6 text-[15px] sm:px-8 sm:text-base lg:h-14",
 };
 

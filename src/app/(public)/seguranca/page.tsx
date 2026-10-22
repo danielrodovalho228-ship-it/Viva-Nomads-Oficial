@@ -62,7 +62,7 @@ export default function SegurancaPage() {
         golpes mais comuns e como a plataforma foi desenhada para proteger os dois lados.
       </p>
 
-      <section className="mt-10 grid gap-4">
+      <section className="mt-12 grid gap-4">
         {GOLPES.map((g) => {
           const Icon = g.icon;
           return (
@@ -80,7 +80,7 @@ export default function SegurancaPage() {
 
       <section className="mt-12">
         <h2 className="font-title text-2xl font-semibold text-ink">Perguntas frequentes</h2>
-        <div className="mt-5 grid gap-4">
+        <div className="mt-4 grid gap-4">
           <Faq q="Como o Viva Nomads protege meu dinheiro?">
             <p>
               A plataforma <strong className="text-ink">nunca movimenta o valor mensal</strong>: ele vai

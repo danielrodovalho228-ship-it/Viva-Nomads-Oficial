@@ -93,14 +93,14 @@ export function StatCard({
     return (
       <Link
         href={href}
-        className="group relative block rounded-xl border border-sage-200 bg-white p-3 transition-colors hover:border-sage sm:p-5"
+        className="group relative block rounded-xl border border-sage-200 bg-white p-3 transition-colors hover:border-sage sm:p-4"
       >
         {body}
         <ArrowUpRight className="absolute bottom-3 right-3 hidden h-4 w-4 text-sage-200 transition-colors group-hover:text-sage sm:bottom-4 sm:right-4 sm:block" />
       </Link>
     );
   }
-  return <div className="rounded-xl border border-sage-200 bg-white p-3 sm:p-5">{body}</div>;
+  return <div className="rounded-xl border border-sage-200 bg-white p-3 sm:p-4">{body}</div>;
 }
 
 export function Panel({
@@ -157,7 +157,7 @@ export function EmptyState({
       )}
       <h3 className="mt-3 font-title text-base font-semibold text-ink sm:mt-4 sm:text-lg">{title}</h3>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted">{text}</p>
-      {action && <div className="mt-5 sm:mt-6">{action}</div>}
+      {action && <div className="mt-4 sm:mt-6">{action}</div>}
     </div>
   );
 }

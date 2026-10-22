@@ -90,8 +90,13 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await expect(card).toBeVisible({ timeout: 10_000 });
     await retomar(page).click();
     await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=/);
+    // "Retomar" abre na 1ª etapa incompleta; desde os 6 passos (Prompt 43) ela pode não ser "Onde fica". Vai ao
+    // endereço pelo nome da etapa, com o mesmo ?draft= (lab-crítico do #1061, 22/10: instável sem isto).
+    const url = new URL(page.url());
+    url.searchParams.set("etapa", "onde");
+    await page.goto(url.pathname + url.search, { waitUntil: "domcontentloaded" });
     // Restaurou do SERVIDOR (não do localStorage desta aba): bairro de volta.
-    await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
+    await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca, { timeout: 15_000 });
   });
 
   test("T-RASC-6 — 'Anúncio em andamento' é um checklist: ✓ feito / ○ falta, cada item abre o campo certo (ordem de8761b0, item 1)", async ({ page }) => {

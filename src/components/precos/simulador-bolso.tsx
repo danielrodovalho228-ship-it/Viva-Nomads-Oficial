@@ -27,7 +27,7 @@ export function SimuladorBolso(p: {
   return (
     <section
       id={p.compacto ? undefined : "simulador"}
-      className={cn("rounded-xl border border-line bg-white p-5 sm:p-8", p.className)}
+      className={cn("rounded-xl border border-line bg-white p-4 sm:p-8", p.className)}
       data-testid="simulador-bolso"
       aria-labelledby="bolso-titulo"
     >
@@ -69,7 +69,7 @@ export function SimuladorBolso(p: {
         </label>
       </div>
 
-      <div className="mt-5" aria-live="polite" data-testid="bolso-resultado" data-estado={b.estado}>
+      <div className="mt-4" aria-live="polite" data-testid="bolso-resultado" data-estado={b.estado}>
         {b.estado === "invalido" ? (
           <p className="text-sm text-muted">Informe valor mensal, meses e quantos imóveis você tem para ver a conta.</p>
         ) : (

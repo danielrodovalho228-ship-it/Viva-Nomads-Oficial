@@ -23,7 +23,7 @@ export default async function GuiaPage({ params }: { params: Promise<{ slug: str
   if (!g) notFound();
   const outros = GUIAS.filter((x) => x.slug !== g.slug).slice(0, 3);
   return (
-    <article className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
+    <article className="mx-auto max-w-3xl px-4 py-12 sm:py-12">
       <JsonLd dados={artigoGuia(SITE_URL, g)} />
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Guias", caminho: "/guias" }, { nome: g.titulo, caminho: `/guias/${g.slug}` }])} />
       <p className="text-sm">
@@ -39,12 +39,12 @@ export default async function GuiaPage({ params }: { params: Promise<{ slug: str
           ))}
         </section>
       ))}
-      <div className="mt-10 flex flex-col gap-3 rounded-xl border border-line bg-white p-5 sm:flex-row">
+      <div className="mt-12 flex flex-col gap-3 rounded-xl border border-line bg-white p-4 sm:flex-row">
         <Link href="/buscar" className="font-semibold text-forest underline">Buscar imóveis mobiliados</Link>
         <Link href="/para-proprietarios" className="font-semibold text-forest underline">Anunciar o meu imóvel</Link>
       </div>
-      <h2 className="mt-10 font-title text-lg font-semibold text-ink">Outros guias</h2>
-      <ul className="mt-2 list-disc pl-5">
+      <h2 className="mt-12 font-title text-lg font-semibold text-ink">Outros guias</h2>
+      <ul className="mt-2 list-disc pl-4">
         {outros.map((o) => (
           <li key={o.slug}>
             <Link href={`/guias/${o.slug}`} className="text-forest underline">{o.titulo}</Link>

@@ -111,7 +111,7 @@ export function DocumentoVinculo({
         Conferimos o documento na hora (o documento, não a propriedade). Ele fica em armazenamento privado e nunca
         aparece no anúncio.
       </p>
-      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink" data-testid="documentos-aceitos">
+      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-ink" data-testid="documentos-aceitos">
         {DOCUMENTOS_ACEITOS_TEXTO.map((t) => (
           <li key={t}>{t}</li>
         ))}
@@ -123,7 +123,7 @@ export function DocumentoVinculo({
 
       {estado === "aprovado" && (
         <p className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-900" data-testid="documento-estado" data-estado="aprovado">
-          <CheckCircle2 className="h-4 w-4 shrink-0" /> Documentação conferida ✓
+          <CheckCircle2 className="h-4 w-4 shrink-0" /> Documentação conferida
         </p>
       )}
       {estado === "corrija" && (

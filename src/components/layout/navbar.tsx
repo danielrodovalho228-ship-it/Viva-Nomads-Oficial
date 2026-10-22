@@ -155,7 +155,7 @@ export function Navbar() {
           : "border-transparent bg-white"
       )}
     >
-      <nav className="flex h-18 w-full items-center gap-10 px-5 py-3 sm:px-8 xl:px-10 2xl:gap-14 2xl:px-12">
+      <nav className="flex h-18 w-full items-center gap-8 px-4 py-3 sm:px-8 2xl:gap-12 2xl:px-12">
         <Logo className="shrink-0" />
 
         {/* Ordem eac7e3a1: na /buscar, a busca compacta (estilo Airbnb) entra AQUI, na mesma
@@ -199,7 +199,7 @@ export function Navbar() {
 
       {open && (
         <div className="border-t border-line bg-white xl:hidden">
-          <div className="flex flex-col gap-1 px-5 py-4 sm:px-8">
+          <div className="flex flex-col gap-1 px-4 py-4 sm:px-8">
             {PUBLIC_NAV.map((item) => (
               <Link
                 key={item.href}

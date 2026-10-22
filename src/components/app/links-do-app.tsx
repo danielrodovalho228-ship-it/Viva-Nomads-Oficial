@@ -75,7 +75,7 @@ export function LinksDoApp() {
             Esta parte fica no site
           </h2>
           <p className="mt-1 text-sm text-muted">Ela abre no navegador do celular, com mais espaço. Se pedir, entre com a mesma conta: depois você volta direto para esta tela.</p>
-          <Button className="mt-5 w-full" onClick={() => abrirNoNavegador(url)}>
+          <Button className="mt-4 w-full" onClick={() => abrirNoNavegador(url)}>
             <ExternalLink className="h-4 w-4" /> Abrir no navegador
           </Button>
           <button

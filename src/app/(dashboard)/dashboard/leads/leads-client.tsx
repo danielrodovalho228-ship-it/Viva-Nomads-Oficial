@@ -26,9 +26,9 @@ const REJECT_REASONS = [
 ];
 
 const LIGHT: Record<Light, { tone: string; label: string }> = {
-  green: { tone: "bg-emerald-100 text-emerald-700", label: "🟢 Perfil limpo" },
-  yellow: { tone: "bg-amber-100 text-amber-700", label: "🟡 Atenção" },
-  red: { tone: "bg-red-100 text-red-700", label: "🔴 Alto risco" },
+  green: { tone: "bg-emerald-100 text-emerald-700", label: "Perfil limpo" },
+  yellow: { tone: "bg-amber-100 text-amber-700", label: "Atenção" },
+  red: { tone: "bg-red-100 text-red-700", label: "Alto risco" },
 };
 
 type LeadStatus = "open" | "approved" | "rejecting" | "rejected";

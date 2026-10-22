@@ -55,8 +55,8 @@ export default async function ProprietarioPage({ params }: Params) {
 
   return (
     <div className="container-page py-8 sm:py-12" data-testid="pagina-proprietario">
-      <section className="rounded-xl border border-sage-200 bg-white p-5 sm:p-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+      <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           {p.fotoUrl ? (
             <Image src={p.fotoUrl} alt={`Foto de ${p.nome}`} width={112} height={112} className="h-24 w-24 rounded-full object-cover sm:h-28 sm:w-28" />
           ) : (
@@ -94,7 +94,7 @@ export default async function ProprietarioPage({ params }: Params) {
             </li>
           ))}
         </ul>
-        {p.bio && <p className="mt-5 max-w-2xl leading-relaxed text-muted">{p.bio}</p>}
+        {p.bio && <p className="mt-4 max-w-2xl leading-relaxed text-muted">{p.bio}</p>}
         {imoveis[0] && (
           <Link
             href={`/imoveis/${imoveis[0].id}#proprietario`}
@@ -106,14 +106,14 @@ export default async function ProprietarioPage({ params }: Params) {
         <p className="mt-3 text-xs text-muted">A conversa acontece pelo chat da Viva, a partir de um dos imóveis. Contato direto fica protegido.</p>
       </section>
 
-      <section className="mt-10" aria-labelledby="imoveis-proprietario">
+      <section className="mt-12" aria-labelledby="imoveis-proprietario">
         <h2 id="imoveis-proprietario" className="font-title text-2xl font-semibold text-ink">
           Imóveis de {p.nome}
         </h2>
         {imoveis.length === 0 ? (
           <p className="mt-3 text-muted">Nenhum imóvel ativo no momento.</p>
         ) : (
-          <div className="mt-5 grid gap-5 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid gap-4 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
             {imoveis.map((im) => (
               <PropertyCard key={im.id} property={im} />
             ))}
@@ -121,16 +121,16 @@ export default async function ProprietarioPage({ params }: Params) {
         )}
       </section>
 
-      <section id="avaliacoes" className="mt-10 scroll-mt-28" aria-labelledby="avaliacoes-proprietario">
+      <section id="avaliacoes" className="mt-12 scroll-mt-28" aria-labelledby="avaliacoes-proprietario">
         <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-semibold text-ink">
           Avaliações recebidas
         </h2>
         {avaliacoes.length === 0 ? (
           <p className="mt-3 text-muted">Ainda sem avaliações publicadas.</p>
         ) : (
-          <ul className="mt-5 grid gap-4">
+          <ul className="mt-4 grid gap-4">
             {avaliacoes.map((a) => (
-              <li key={a.id} className="rounded-xl border border-sage-200 bg-white p-5">
+              <li key={a.id} className="rounded-xl border border-sage-200 bg-white p-4">
                 <p className="flex items-center gap-1 text-sm font-semibold text-ink">
                   <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden /> {a.nota.toLocaleString("pt-BR")}
                   {a.data && <span className="ml-2 font-normal text-muted">{dataBR(a.data.slice(0, 10))}</span>}

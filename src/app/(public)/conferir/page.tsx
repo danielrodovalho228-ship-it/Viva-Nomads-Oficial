@@ -30,7 +30,7 @@ export default async function ConferirInicio({ searchParams }: { searchParams: P
           Todo documento gerado pela Viva Nomads tem um código de conferência no rodapé, depois de &ldquo;com o código&rdquo;. Digite o código
           para ver se o documento é verdadeiro. O número do documento sozinho não confere nada.
         </p>
-        <form method="get" action="/conferir" className="mt-5 space-y-3">
+        <form method="get" action="/conferir" className="mt-4 space-y-3">
           <label className="block text-sm font-medium text-ink" htmlFor="codigo">
             Código de conferência
           </label>

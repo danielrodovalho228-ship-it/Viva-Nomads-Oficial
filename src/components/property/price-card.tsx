@@ -5,7 +5,7 @@ import { calcularTotalMensal } from "@/lib/precos";
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
-import { rotuloPrecoCartao } from "@/lib/cartao-preco";
+import { rotuloPreco } from "@/lib/cartao-preco";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 
 /** Formata uma data ISO (YYYY-MM-DD) para DD/MM/AAAA. */
@@ -37,11 +37,11 @@ function disponivelFuturo(iso?: string): string | null {
 export function PriceCard({ property, actions, meses = 1 }: { property: Property; actions: React.ReactNode; meses?: number }) {
   // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
   const mes = calcularTotalMensal(property);
-  const preco = rotuloPrecoCartao(mes.total, meses);
+  const preco = rotuloPreco({ mensal: mes.total, meses, disponivelEm: property.availableFrom });
   const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
-    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-xl border border-line bg-white p-5 lg:max-h-[calc(100dvh-14rem)] lg:overflow-y-auto xl:p-6">
+    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-xl border border-line bg-white p-4 lg:max-h-[calc(100dvh-14rem)] lg:overflow-y-auto xl:p-6">
       <p className="tabular-nums" data-testid="cartao-lateral-preco">
         <span className="text-xl font-semibold text-ink" data-testid="cartao-lateral-mes">
           {preco.valor}

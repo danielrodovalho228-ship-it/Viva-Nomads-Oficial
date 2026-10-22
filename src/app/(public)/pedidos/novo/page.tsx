@@ -31,6 +31,7 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { useAuthStore } from "@/lib/store";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
+import { CHIPS_INTERNET } from "@/lib/busca/filtro-internet";
 import type { EstadoDestino } from "@/lib/busca/destino-busca";
 import type { ModoRota } from "@/lib/rotas/tempo";
 
@@ -62,7 +63,7 @@ export default function NovoPedidoPage() {
           aria-hidden
           className="absolute inset-0 bg-forest/80"
         />
-        <div className="relative z-10 p-5 sm:p-8 lg:max-w-md lg:p-10">
+        <div className="relative z-10 p-4 sm:p-8 lg:max-w-md lg:p-8">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/20">
             <Megaphone className="h-3.5 w-3.5" aria-hidden /> Pedido de moradia
           </span>
@@ -86,13 +87,13 @@ export default function NovoPedidoPage() {
         </div>
       </aside>
 
-      <div className="min-w-0 px-4 pb-10 pt-6 sm:px-8 lg:pb-16 lg:pl-16 lg:pr-10 lg:pt-10">
+      <div className="min-w-0 px-4 pb-12 pt-6 sm:px-8 lg:pb-16 lg:pl-16 lg:pr-12 lg:pt-12">
         <div className="w-full max-w-[600px]">
           <Suspense fallback={<div className="min-h-[40rem]" aria-busy="true" />}>
             <PedidoForm />
           </Suspense>
 
-          <footer className="mt-10 border-t border-line pt-5 text-xs text-muted" data-testid="pedido-rodape-legal">
+          <footer className="mt-12 border-t border-line pt-4 text-xs text-muted" data-testid="pedido-rodape-legal">
             <p className="flex items-start gap-2">
               <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" aria-hidden />
               <span>
@@ -180,6 +181,11 @@ function PedidoForm() {
   const [bairros, setBairros] = useState<string[]>([]);
   const [textoBairro, setTextoBairro] = useState("");
   const [quartosMin, setQuartosMin] = useState<number | null>(null);
+  // Prompt 57 fase 2: "internet medida a partir de" (padrão: ?internet= da busca).
+  const [internetMin, setInternetMin] = useState<number | null>(() => {
+    const v = Number(sp.get("internet"));
+    return (CHIPS_INTERNET as readonly number[]).includes(v) ? v : null;
+  });
   const [orcamentoMin, setOrcamentoMin] = useState("");
   const [necessidades, setNecessidades] = useState<string[]>([]);
   const [portePet, setPortePet] = useState<string>("");
@@ -256,6 +262,7 @@ function PedidoForm() {
         setPortePet(String(p.porte_pet ?? ""));
         setBairros(((p.bairros as string[] | null) ?? []).slice(0, BAIRROS_MAX));
         setQuartosMin(p.quartos_min == null ? null : Number(p.quartos_min));
+        setInternetMin(p.internet_min_mbps == null ? null : Number(p.internet_min_mbps));
         setNecessidades((p.necessidades as string[] | null) ?? []);
         const d = p.destino as { destino_id?: string; rotulo: string; lat: number; lng: number; modo_preferido?: ModoRota; ate?: number } | null;
         if (d) setDestinoEstado({ destino: d.destino_id ? { slug: `id:${d.destino_id}` } : { lat: d.lat, lng: d.lng, rot: d.rotulo }, modo: d.modo_preferido ?? "carro", ate: d.ate ?? 0 });
@@ -384,6 +391,7 @@ function PedidoForm() {
       bairros: [...bairros, ...(limparBairro(textoBairro) && bairros.length < BAIRROS_MAX ? [limparBairro(textoBairro)] : [])],
       quartosMin,
       necessidades,
+      internetMinMbps: internetMin,
       destino: !destinoEstado.destino
         ? null
         : "slug" in destinoEstado.destino
@@ -472,7 +480,7 @@ function PedidoForm() {
             ))}
           </ul>
         )}
-        <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
           <Link
             href={`/buscar?${new URLSearchParams({ local: cidade }).toString()}`}
             className="text-sm font-medium text-forest underline"
@@ -673,6 +681,17 @@ function PedidoForm() {
               ))}
             </div>
           </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium text-ink" id="pedido-internet-rotulo">Internet medida a partir de (opcional)</span>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="pedido-internet-rotulo" data-testid="pedido-internet">
+              {CHIPS_INTERNET.map((v) => (
+                <BotaoMarca key={v} ativo={internetMin === v} onClick={() => setInternetMin((a) => (a === v ? null : v))} icone={Plus} testid={`pedido-internet-${v}`}>
+                  {v} Mbps
+                </BotaoMarca>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-muted">Só entram imóveis com a velocidade medida no local pelo proprietário.</p>
+          </div>
         </Grupo>
 
         <Grupo titulo="Valor e motivo">
@@ -690,7 +709,7 @@ function PedidoForm() {
                   value={mascararMilhar(orcamentoMin)}
                   onChange={(e) => setOrcamentoMin(soDigitos(e.target.value))}
                   placeholder="2.000"
-                  className={cn(CAMPO, "pl-10")}
+                  className={cn(CAMPO, "pl-12")}
                   data-testid="pedido-orcamento-min"
                 />
               </div>
@@ -709,7 +728,7 @@ function PedidoForm() {
                   value={mascararMilhar(orcamento)}
                   onChange={(e) => setOrcamento(soDigitos(e.target.value))}
                   placeholder="3.500"
-                  className={cn(CAMPO, "pl-10")}
+                  className={cn(CAMPO, "pl-12")}
                   data-testid="pedido-orcamento"
                 />
               </div>
@@ -911,7 +930,7 @@ function CampoCidade({
             setAberto(false);
           }
         }}
-        className={cn(CAMPO, escolhida && "pr-10")}
+        className={cn(CAMPO, escolhida && "pr-12")}
         data-testid="pedido-cidade"
         data-cidade-escolhida={escolhida ? "1" : undefined}
       />

@@ -25,8 +25,11 @@ export interface TudoIncluido {
   temExtras: boolean; // total > aluguel (há condomínio e/ou consumo fixo)
 }
 
+/** Campos que entram no total do mês (o resto do imóvel não importa para a conta). */
+export type CamposTotalMes = Pick<Property, "monthlyPrice" | "condoFee" | "utilitiesMode" | "utilitiesEstimate" | "limpezaEstadia">;
+
 /** Calcula o "tudo incluído" mensal de um imóvel (fonte única). */
-export function calcularTudoIncluido(property: Property): TudoIncluido {
+export function calcularTudoIncluido(property: CamposTotalMes): TudoIncluido {
   const aluguel = property.monthlyPrice ?? 0;
   const condominio = property.condoFee ?? 0;
   const consumoFixo =
@@ -100,6 +103,26 @@ export function calcularTotalMensal(property: Property): TotalMensal {
     contasMedidas: property.utilitiesMode !== "fixed",
     iptuNaoIncluso: true,
   };
+}
+
+/** Total do mês de uma linha do banco (snake_case) — para respostas, alertas e e-mails que leem a tabela direto. */
+export function totalMesDaLinha(r: { monthly_price?: number | null; condo_fee?: number | null; utilities_mode?: string | null; utilities_estimate?: number | null }): number {
+  return calcularTudoIncluido({
+    monthlyPrice: Number(r.monthly_price ?? 0),
+    condoFee: r.condo_fee == null ? undefined : Number(r.condo_fee),
+    utilitiesMode: r.utilities_mode === "fixed" ? "fixed" : undefined,
+    utilitiesEstimate: r.utilities_estimate == null ? undefined : Number(r.utilities_estimate),
+    limpezaEstadia: undefined,
+  } as CamposTotalMes).total;
+}
+
+/**
+ * Total do mês no FECHAMENTO (Prompt 47, adendo): a mesma conta do cartão, com o valor mensal acordado na proposta
+ * quando houver. O total do período do fechamento = rotuloPreco({ mensal: isto, meses }).total — igual ao do cartão.
+ */
+export function mensalDoFechamento(property: CamposTotalMes, valorMensalAcordado?: number | null): number {
+  const mensal = valorMensalAcordado && valorMensalAcordado > 0 ? valorMensalAcordado : property.monthlyPrice;
+  return calcularTudoIncluido({ ...property, monthlyPrice: mensal }).total;
 }
 
 /** Anota o total do mês (mesma conta do cartão) para filtro, ordem e pino da busca. */

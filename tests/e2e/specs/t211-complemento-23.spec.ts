@@ -10,7 +10,8 @@ import { campoBrasiliaParaIso, instanteParaCampoBrasilia } from "../../../src/li
    3. Endereço exato: oculto antes da confirmação; depois, no cartão (com "Abrir no mapa") e no e-mail "Visita
       confirmada" da caixa de teste, só para aquele morador; outro usuário e o visitante nunca recebem o endereço
       (nem no HTML nem na API); visita que já passou volta à região.
-   4. Identidade com UMA fonte (estadoIdentidadeDe): linha de estado em /dashboard/verificacao (confirmada / simulável);
+   4. Identidade com UMA fonte (estadoIdentidadeDe): Conta do inquilino, em Privacidade e segurança, e a linha de estado em
+      /dashboard/verificacao (confirmada / simulável; o Início deixou de ter o passo no Prompt 43);
    5. o proprietário vê o mesmo texto na Conta, no assistente do anúncio e em /dashboard/verificacao (confirmada e
       vencida). "Em breve, por meio de um parceiro" (conta real em produção) fica no unitário: no laboratório a CAF é
       simulada.
@@ -176,7 +177,7 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
   });
 
   for (const largura of [390, 1280]) {
-    test(`4. ${largura} — Verificação do inquilino: a linha de identidade usa o estado único`, async ({ browser }) => {
+    test(`4. ${largura} — Conta do inquilino: a identidade usa o estado único`, async ({ browser }) => {
       test.setTimeout(120_000);
       const ate = new Date();
       ate.setFullYear(ate.getFullYear() + 1);
@@ -185,20 +186,26 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
         .from("tenant_verifications")
         .insert({ tenant_id: ids.inqA, caf_result: { identity: true, document: true, liveness: true, light: "green", simulado: true }, traffic_light: "green", valid_until: ate.toISOString() });
       const dataBR = ate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
-      const casos: [typeof inqA, string, RegExp][] = [
-        [inqA, "confirmada", new RegExp(`Identidade confirmada · válida até ${dataBR.replace(/\//g, "\\/")}`)],
-        [inqB, "simulavel", /Verificar identidade \(simulado — conta de teste\)/],
+      // Prompt 43 (#1038): o passo de identidade saiu do Início; o estado único aparece na Conta, em Privacidade e segurança.
+      // A mesma fonte vale em /dashboard/verificacao (linha de estado; #1052, Faixa D).
+      const casos: [typeof inqA, string, string, RegExp][] = [
+        [inqA, "ok", "confirmada", new RegExp(`Identidade confirmada · válida até ${dataBR.replace(/\//g, "\\/")}`)],
+        [inqB, "falta", "simulavel", /Verificar identidade \(simulado — conta de teste\)/],
       ];
-      for (const [conta, estado, texto] of casos) {
+      for (const [conta, situacao, estado, texto] of casos) {
         const p = await entrar(browser, conta.email, senha);
         await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-        // O passo "Verificar identidade" saiu da Visão geral no Prompt 43 (checklist de ativação); o estado único vive em /dashboard/verificacao.
-        await abrir(p, "/dashboard/verificacao");
-        const passo = p.getByTestId("identidade-estado");
-        await expect(passo).toHaveAttribute("data-estado", estado, { timeout: 25_000 });
+        await abrir(p, "/dashboard/conta");
+        const passo = p.getByTestId("confianca-identidade");
+        await expect(passo).toHaveAttribute("data-situacao", situacao, { timeout: 25_000 });
         await expect(passo).toContainText(texto);
         await semRolagemLateral(p);
         if (conta === inqA) await p.screenshot({ path: `${SAIDA}/t211-identidade-confirmada-${largura}.png` });
+        await abrir(p, "/dashboard/verificacao");
+        const linha = p.getByTestId("identidade-estado");
+        await expect(linha).toHaveAttribute("data-estado", estado, { timeout: 25_000 });
+        await expect(linha).toContainText(texto);
+        await semRolagemLateral(p);
         await p.context().close();
       }
     });

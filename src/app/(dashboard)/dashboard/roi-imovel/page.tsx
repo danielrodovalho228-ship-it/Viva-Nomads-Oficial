@@ -106,7 +106,7 @@ export default function RoiImovelPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Entradas */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-sage-200 bg-white p-5">
+          <div className="rounded-xl border border-sage-200 bg-white p-4">
             <h2 className="font-title text-lg font-semibold text-ink">Mobiliado na Viva</h2>
             <div className="mt-4 space-y-4">
               <div>
@@ -157,7 +157,7 @@ export default function RoiImovelPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-sage-200 bg-white p-5" data-testid="roi-tradicional">
+          <div className="rounded-xl border border-sage-200 bg-white p-4" data-testid="roi-tradicional">
             <h2 className="font-title text-lg font-semibold text-ink">Contrato tradicional (sem mobília)</h2>
             <p className="mt-1 text-xs text-muted">Padrões de referência de mercado — confira com a sua imobiliária e ajuste.</p>
             <div className="mt-4 space-y-4">
@@ -201,7 +201,7 @@ export default function RoiImovelPage() {
           </p>
 
           {/* Ponto de equilíbrio. */}
-          <div className="rounded-xl border border-forest/30 bg-sage-100/50 p-5" data-testid="roi-equilibrio">
+          <div className="rounded-xl border border-forest/30 bg-sage-100/50 p-4" data-testid="roi-equilibrio">
             <p className="flex items-center gap-2 text-sm font-semibold text-forest">
               <Scale className="h-4 w-4" aria-hidden /> Ponto de equilíbrio com o tradicional
             </p>
@@ -239,7 +239,7 @@ export default function RoiImovelPage() {
           </div>
 
           {/* Gráfico: acumulado ano 1-2-3 mobiliado × tradicional */}
-          <div className="rounded-xl border border-sage-200 bg-white p-5" data-testid="roi-grafico">
+          <div className="rounded-xl border border-sage-200 bg-white p-4" data-testid="roi-grafico">
             <p className="text-sm font-medium text-ink">Acumulado — mobiliado × tradicional</p>
             <div className="mt-4">
               <GraficoColunas
@@ -290,7 +290,7 @@ export default function RoiImovelPage() {
         </div>
       </div>
 
-      <section aria-labelledby="roi-cenarios-titulo" className="mt-6 rounded-xl border border-sage-200 bg-white p-5" data-testid="roi-cenarios">
+      <section aria-labelledby="roi-cenarios-titulo" className="mt-6 rounded-xl border border-sage-200 bg-white p-4" data-testid="roi-cenarios">
         <h2 id="roi-cenarios-titulo" className="font-title text-lg font-semibold text-ink">
           Cenários de ocupação
         </h2>
@@ -321,7 +321,7 @@ export default function RoiImovelPage() {
         </div>
       </section>
 
-      <section aria-labelledby="comparar-canais" className="mt-6 rounded-xl border border-sage-200 bg-white p-5">
+      <section aria-labelledby="comparar-canais" className="mt-6 rounded-xl border border-sage-200 bg-white p-4">
         <h2 id="comparar-canais" className="font-title text-lg font-semibold text-ink">
           Quanto fica de cada mês em cada canal
         </h2>

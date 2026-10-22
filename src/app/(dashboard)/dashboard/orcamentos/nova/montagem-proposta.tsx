@@ -82,7 +82,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
     <>
       <PageTitle title="Nova proposta" subtitle={`Para ${dados.interessado} · ${dados.imovel.titulo}`} />
       <form onSubmit={enviar} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]" data-testid="montagem-proposta">
-        <div className="space-y-5">
+        <div className="space-y-4">
           <Panel title="Valores">
             <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
               <Campo rotulo="Valor mensal (R$)">

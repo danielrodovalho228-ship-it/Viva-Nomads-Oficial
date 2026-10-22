@@ -74,7 +74,7 @@ export async function CartaoBackup({ agora = new Date() }: { agora?: Date }) {
   const ultimaCopia = e.copia.ultima;
   const ultimoTeste = e.drill.ultima;
   return (
-    <section className="rounded-xl border border-sage-200 bg-white p-5" data-testid="cartao-backup" data-estado={e.vermelho ? "vermelho" : "verde"}>
+    <section className="rounded-xl border border-sage-200 bg-white p-4" data-testid="cartao-backup" data-estado={e.vermelho ? "vermelho" : "verde"}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
           <DatabaseBackup className="h-5 w-5 text-forest" aria-hidden /> Backup e recuperação

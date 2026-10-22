@@ -87,7 +87,7 @@ export function GoogleProximities({ property }: { property: Property }) {
       {items === null ? (
         <p className="mt-4 text-sm text-muted">Calculando distâncias…</p>
       ) : (
-        <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {items.map((p) => {
             const meta = CAT_META[p.categoria] ?? { label: p.categoria, icon: MapPin };
             const Icon = meta.icon;
