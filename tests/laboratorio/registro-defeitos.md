@@ -17,11 +17,12 @@ Só defeito de produto confirmado, cada um com o teste do laboratório que o rep
 | Prioridade | Código | Defeito | Página | Teste que reproduz | Pista |
 |---|---|---|---|---|---|
 | 1 | D-V3 | "Enviar documento" (trava da matrícula) não responde e não diz qual campo falta | Editar anúncio (`/dashboard/imoveis/:id/editar`), 390 px | t249 · "D-V3" (`test.fail`) | A |
-| 2 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
-| 3 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
-| 4 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
+| 2 | D-V7 | Título do cartão de rascunho é link para a página pública, que dá 404 (o botão "Ver" já esconde) | Meus imóveis (`/dashboard/imoveis`), 1280 px | t249 · "D-V7" (`test.fail`, #1023) | A |
+| 3 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
+| 4 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
+| 5 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
 
-Critério da ordem: 1 trava o dono de publicar; 2 mostra número errado ao admin; 3 confunde, mas não trava; 4 pode ser só baseline desatualizada.
+Critério da ordem: 1 trava o dono de publicar; 2 leva o dono a uma página que não existe; 3 mostra número errado ao admin; 4 confunde, mas não trava; 5 pode ser só baseline desatualizada.
 
 ## Fechados sem registro
 
