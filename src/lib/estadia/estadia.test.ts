@@ -223,8 +223,11 @@ test("card 'Decisões' da home: só o que a própria pessoa decide; estadia ence
   assert.equal(decisoesDaEstadia({ ...base, papel: "inquilino", ocupantes: { preenchidos: 2, previstos: 2 }, aditivo: { status: "aceito", propostoPorMim: true, euAssinei: false } })[0].id, "assinar_aditivo");
   assert.deepEqual(decisoesDaEstadia({ ...base, papel: "inquilino", fase: "encerrada" }), []);
   const home = readFileSync("src/app/(dashboard)/dashboard/visao-geral-client.tsx", "utf8");
-  assert.match(home, /<CartaoDecisoesEstadias estadias=\{estadias\} \/>/);
-  assert.match(readFileSync("src/app/(dashboard)/dashboard/page.tsx", "utf8"), /estadiasDaHome\(\)/);
+  // Prompt 42: as decisões da estadia entram na lista "Hoje você tem N decisões"; o card fica com o topo e as ações.
+  assert.match(home, /<CartaoEstadias estadias=\{estadias\} \/>/);
+  const pagina = readFileSync("src/app/(dashboard)/dashboard/page.tsx", "utf8");
+  assert.match(pagina, /estadiasDaHome\(agora\)/);
+  assert.match(pagina, /decisoes: e\.decisoes/);
 });
 
 test("editor do dono (achado do QA, 21/10): abre com o PUBLICADO e devolve \"Como entrar\" ao texto do contrato", () => {

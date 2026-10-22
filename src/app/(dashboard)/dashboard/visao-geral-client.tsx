@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -16,17 +16,22 @@ import {
   Check,
   Circle,
   FileSignature,
+  FileText,
+  FileX,
+  KeyRound,
+  Video,
+  Wrench,
+  ChevronRight,
   Wallet,
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
-import { getLatestDraft } from "@/lib/data/actions";
 import { StatCard, Panel, EmptyState, PageTitle } from "@/components/dashboard/primitives";
 import { PropertyRow } from "@/components/dashboard/property-row";
 import { TenantOnboarding } from "@/components/dashboard/tenant-onboarding";
 import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
-import { checklistAnuncio, type ChecklistAnuncio } from "@/lib/anuncio/prontidao";
+import type { ChecklistAnuncio } from "@/lib/anuncio/prontidao";
 import { itensDoChecklist } from "@/lib/anuncio/checklist-compacto";
 import type { ScoreAnuncio } from "@/lib/anuncio/score";
 import { imoveisPublicados } from "@/lib/anuncio/publicados";
@@ -35,30 +40,31 @@ import type { Property } from "@/lib/types";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
 import { coverPhoto } from "@/lib/media";
-import { formatBRL } from "@/lib/utils";
-import { textoVencimento } from "@/lib/propostas/regras";
+import { cn, formatBRL } from "@/lib/utils";
+import { tituloDecisoes, type Decisao, type TipoDecisao } from "@/lib/painel/decisoes";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { ServicosPainel } from "@/components/parceiros/servicos-painel";
 import type { EstadiaNaHome } from "@/lib/data/estadia";
 
-export interface PropostaAguardando {
-  id: string;
-  numero: string;
-  imovel: string;
-  validaAte: string;
-}
+/** Card de pendência "Anúncio em andamento" — o rascunho mais recente, lido no servidor (page.tsx). */
+export type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist: ChecklistAnuncio | null; score?: ScoreAnuncio | null };
 
 export function VisaoGeral({
   imoveisDono,
   interessados = { atual: 0, anterior: 0 },
-  propostasAguardando = [],
+  decisoesDono = [],
+  decisoesMorador = [],
+  rascunho = null,
   cidadePerfil = null,
   estadias = [],
 }: {
   imoveisDono: Property[];
   interessados?: { atual: number; anterior: number };
-  propostasAguardando?: PropostaAguardando[];
-  /** Prompt 32: estadias em vigor da pessoa, com o que ela decide e a lista "Ações desta estadia". */
+  /** Prompt 42: "Hoje você tem N decisões" — montadas no servidor por lib/painel/decisoes.ts. */
+  decisoesDono?: Decisao[];
+  decisoesMorador?: Decisao[];
+  rascunho?: RascunhoPendente | null;
+  /** Prompt 32: estadias em vigor da pessoa, com o topo e a lista "Ações desta estadia". */
   estadias?: EstadiaNaHome[];
   /** Prompt 31a: cidade do perfil, para a busca de serviços de parceiros já preenchida. */
   cidadePerfil?: string | null;
@@ -67,8 +73,7 @@ export function VisaoGeral({
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
   const user = useDisplayUser();
   const { mode } = useViewMode();
-  // Saudação com o primeiro nome do perfil; sem nome, saudação neutra — NUNCA o
-  // e-mail cru (reteste QA item 4).
+  // Primeiro nome do perfil (o checklist do morador usa); sem nome, neutro — NUNCA o e-mail cru (reteste QA item 4).
   const firstName = primeiroNomeExibicao(user);
 
   return (
@@ -76,24 +81,33 @@ export function VisaoGeral({
       {/* Pergunta de papel no primeiro login (uma vez só). */}
       <RoleWelcomeModal />
       {mode === "tenant" ? (
-        <TenantDashboard name={firstName} propostas={propostasAguardando} cidade={cidadePerfil} estadias={estadias.filter((e) => e.papel === "inquilino")} />
+        <TenantDashboard name={firstName} decisoes={decisoesMorador} cidade={cidadePerfil} estadias={estadias.filter((e) => e.papel === "inquilino")} />
       ) : (
-        <OwnerDashboard name={firstName} imoveisDono={imoveisDono} interessados={interessados} cidade={cidadePerfil} estadias={estadias.filter((e) => e.papel === "proprietario")} />
+        <OwnerDashboard
+          imoveisDono={imoveisDono}
+          interessados={interessados}
+          decisoes={decisoesDono}
+          rascunho={rascunho}
+          cidade={cidadePerfil}
+          estadias={estadias.filter((e) => e.papel === "proprietario")}
+        />
       )}
     </>
   );
 }
 
 function OwnerDashboard({
-  name,
   imoveisDono,
   interessados,
+  decisoes,
+  rascunho,
   cidade,
   estadias,
 }: {
-  name: string;
   imoveisDono: Property[];
   interessados: { atual: number; anterior: number };
+  decisoes: Decisao[];
+  rascunho: RascunhoPendente | null;
   cidade: string | null;
   estadias: EstadiaNaHome[];
 }) {
@@ -109,52 +123,68 @@ function OwnerDashboard({
   const kpiLeads = kpiInteressados(interessados.atual, interessados.anterior, {
     temImovelPublicado: allProperties.length > 0,
   });
-
-  // Rascunho em andamento (P0): card de pendência "continue de onde parou".
-  const [draft, setDraft] = useState<RascunhoPendente | null>(null);
-  useEffect(() => {
-    if (demo) return;
-    let alive = true;
-    getLatestDraft()
-      .then((d) => {
-        // Prontidão da fonte única (a mesma de Meus imóveis e do Publicar).
-        if (alive && d) setDraft({
-          id: d.id,
-          pct: d.prontidao?.pct ?? 0,
-          pronto: !!d.prontidao?.podePublicar,
-          faltam: d.prontidao?.faltam ?? [],
-          checklist: d.prontidao ? checklistAnuncio(d.prontidao, d.id) : null,
-          score: d.score,
-        });
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [demo]);
-
-  // Estado vazio como FUNIL (Dashboard Fase 1): proprietário sem imóvel publicado
-  // vê a visão geral inteira como um convite passo a passo, um CTA por vez —
-  // nada de menus mortos ou cards zerados. Só depois do carregamento (sem piscar
-  // o funil enquanto os imóveis reais chegam). No modo demo há exemplos.
-  if (!demo && allProperties.length === 0) {
-    return <OwnerFunnel name={name} draft={draft} />;
-  }
+  // Rascunho em andamento (P0): card de pendência "continue de onde parou" (lido no servidor; nada no modo demo).
+  const draft = demo ? null : rascunho;
+  const lista = demo ? [] : decisoes;
+  // Conta sem nenhum imóvel (nem rascunho): um único primário, "Cadastrar meu imóvel" — sem funil de boas-vindas.
+  const semImovel = !demo && imoveisDono.length === 0;
 
   return (
     <>
-      {draft && <DraftPendingCard draft={draft} className="mb-6" />}
       <PageTitle
-        title={`Olá${name ? `, ${name}` : "!"} 👋`}
-        subtitle="Prepare seu imóvel, publique e fale com inquilinos qualificados."
+        title={tituloDecisoes(lista.length)}
+        subtitle={lista.length ? "Toque para decidir na tela certa." : semImovel ? "Comece cadastrando o seu imóvel mobiliado." : "Quando algo pedir sua resposta, aparece aqui."}
         action={
-          <ButtonLink href="/dashboard/imoveis/novo" variant="accent">
-            <ClipboardCheck className="h-4 w-4" /> Novo anúncio
-          </ButtonLink>
+          semImovel ? undefined : (
+            <ButtonLink href="/dashboard/imoveis/novo" variant="secondary">
+              <ClipboardCheck className="h-4 w-4" /> Novo anúncio
+            </ButtonLink>
+          )
         }
       />
-      <CartaoDecisoesEstadias estadias={estadias} />
+      <ListaDecisoes decisoes={lista} />
+      {draft && <DraftPendingCard draft={draft} className="mb-6" />}
+      {semImovel && <PrimeiroImovel />}
+      <CartaoEstadias estadias={estadias} />
 
+      {allProperties.length > 0 && <PainelDoDono demo={demo} allProperties={allProperties} myProperties={myProperties} kpiLeads={kpiLeads} cidade={cidade} />}
+    </>
+  );
+}
+
+/** Conta nova (sem imóvel): o único botão primário da tela. */
+function PrimeiroImovel() {
+  return (
+    <Panel className="mb-6" data-testid="primeiro-imovel">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="font-title text-lg font-semibold text-ink">Seu primeiro anúncio</h2>
+          <p className="mt-1 text-sm text-muted">Comece pelo endereço e pelas fotos. O rascunho fica salvo e você continua quando quiser.</p>
+        </div>
+        <ButtonLink href="/dashboard/imoveis/novo" variant="primary" className="w-full sm:w-auto">
+          Cadastrar meu imóvel <ArrowRight className="h-4 w-4" />
+        </ButtonLink>
+      </div>
+    </Panel>
+  );
+}
+
+/** Métricas, verificação, "Meus imóveis" e atividade — para quem já tem imóvel publicado. */
+function PainelDoDono({
+  demo,
+  allProperties,
+  myProperties,
+  kpiLeads,
+  cidade,
+}: {
+  demo: boolean;
+  allProperties: Property[];
+  myProperties: Property[];
+  kpiLeads: ReturnType<typeof kpiInteressados>;
+  cidade: string | null;
+}) {
+  return (
+    <>
       {/* Convite à verificação (sem progresso fabricado no modo real) */}
       <Panel className="mb-6 bg-forest text-white">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -293,14 +323,63 @@ function OwnerDashboard({
   );
 }
 
+const ICONE_DECISAO: Record<TipoDecisao, React.ComponentType<{ className?: string }>> = {
+  contrato: FileSignature,
+  proposta: FileText,
+  manutencao: Wrench,
+  estadia: KeyRound,
+  visita: Video,
+  documento: FileX,
+  candidatura: Users,
+};
+
 /**
- * "Decisões" das estadias em vigor (Prompt 32; cadeado do painel liberado pelo Muse para o #975): cada estadia com o
- * topo, o que a pessoa decide agora e a lista "Ações desta estadia" (a mesma que a folha do Prompt 41 vai listar).
+ * "Hoje você tem N decisões" (Prompt 42, item 1): uma linha por decisão — ícone, a coisa concreta, o prazo quando há —
+ * e a linha inteira é o link para a tela onde se decide. Nada é decidido aqui.
  */
-function CartaoDecisoesEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
+function ListaDecisoes({ decisoes }: { decisoes: Decisao[] }) {
+  if (!decisoes.length) return null;
+  return (
+    <ul className="mb-6 space-y-2" data-testid="lista-decisoes">
+      {decisoes.map((d) => {
+        const Icone = ICONE_DECISAO[d.tipo];
+        return (
+          <li key={d.id}>
+            <Link
+              href={d.href}
+              data-testid="decisao"
+              data-tipo={d.tipo}
+              data-decisao={d.id}
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-sage-200 bg-white p-4 transition-colors hover:border-sage"
+            >
+              <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-full", d.atrasada ? "bg-red-50 text-red-700" : "bg-sage-100 text-forest")}>
+                <Icone className="h-5 w-5" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold text-ink [overflow-wrap:anywhere]">{d.texto}</span>
+                {d.prazoTexto && (
+                  <span className={cn("block text-sm", d.atrasada ? "text-red-700" : "text-muted")} data-testid="decisao-prazo">
+                    {d.atrasada ? `Atrasada · ${d.prazoTexto}` : d.prazoTexto}
+                  </span>
+                )}
+              </span>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * As estadias em vigor (Prompt 32): o topo de cada uma e a lista "Ações desta estadia" (a mesma da folha do 41). O que
+ * a pessoa decide nelas entra na lista de decisões acima (Prompt 42) — aqui não se repete.
+ */
+function CartaoEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
   if (!estadias.length) return null;
   return (
-    <Panel title="Decisões das suas estadias" className="mb-5" data-testid="home-decisoes-estadias">
+    <Panel title="Suas estadias" className="mb-5" data-testid="home-decisoes-estadias">
       <ul className="divide-y divide-sage-200">
         {estadias.map((e) => (
           <li key={e.contratoId} className="py-3 first:pt-0 last:pb-0" data-testid="home-estadia" data-contrato={e.contratoId}>
@@ -308,17 +387,6 @@ function CartaoDecisoesEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
               <span className="block truncate font-semibold text-ink">{e.imovel}</span>
               <span className="block text-sm text-muted">{e.topo}</span>
             </Link>
-            {e.decisoes.length > 0 && (
-              <ul className="mt-2 space-y-1" data-testid="home-estadia-decisoes">
-                {e.decisoes.map((d) => (
-                  <li key={d.id}>
-                    <Link href={d.href} className="text-sm font-semibold text-forest underline" data-testid={`home-decisao-${d.id}`}>
-                      {d.rotulo}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1" data-testid="home-estadia-acoes">
               {e.acoes.map((a) => (
                 <Link key={a.id} href={a.href} className="text-xs text-muted underline hover:text-ink">
@@ -333,43 +401,20 @@ function CartaoDecisoesEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
   );
 }
 
-/** "Você recebeu uma proposta — vence em 5 dias" (prompt 27, item 7). */
-function CartaoPropostas({ propostas }: { propostas: PropostaAguardando[] }) {
-  if (!propostas.length) return null;
-  const primeira = propostas[0];
-  const vence = textoVencimento(primeira.validaAte, new Date());
-  const titulo =
-    propostas.length === 1 ? `Você recebeu uma proposta — ${vence}` : `Você tem ${propostas.length} propostas para responder — a primeira ${vence}`;
-  return (
-    <Link
-      href={propostas.length === 1 ? `/dashboard/propostas/${primeira.id}` : "/dashboard/propostas"}
-      className="mb-5 flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 hover:border-amber-400"
-      data-testid="cartao-proposta-recebida"
-    >
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-amber-800">
-        <FileSignature className="h-5 w-5" aria-hidden />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-semibold text-ink">{titulo}</span>
-        <span className="block truncate text-sm text-muted">
-          {primeira.numero} · {primeira.imovel}
-        </span>
-      </span>
-      <span className="shrink-0 text-sm font-medium text-forest underline">Responder</span>
-    </Link>
-  );
-}
-
-function TenantDashboard({ name, propostas, cidade, estadias }: { name: string; propostas: PropostaAguardando[]; cidade: string | null; estadias: EstadiaNaHome[] }) {
+function TenantDashboard({ name, decisoes, cidade, estadias }: { name: string; decisoes: Decisao[]; cidade: string | null; estadias: EstadiaNaHome[] }) {
   const demo = useDashDemo();
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
+  const lista = demo ? [] : decisoes;
   return (
     <>
-      {/* Título da tela (h1): sem ele a Visão geral do inquilino não tinha cabeçalho principal (varredura t48). */}
-      <PageTitle title="Visão geral" subtitle="Candidaturas, favoritos, buscas salvas e mensagens num lugar só." />
-      <CartaoPropostas propostas={propostas} />
-      <CartaoDecisoesEstadias estadias={estadias} />
-      {/* Primeiro acesso: checklist de 3 passos (ou o banner, quando concluído/oculto). */}
+      {/* Título da tela (h1) = as decisões de hoje (Prompt 42), como no painel do proprietário. */}
+      <PageTitle
+        title={tituloDecisoes(lista.length)}
+        subtitle={lista.length ? "Toque para decidir na tela certa." : "Candidaturas, favoritos, buscas salvas e mensagens num lugar só."}
+      />
+      <ListaDecisoes decisoes={lista} />
+      <CartaoEstadias estadias={estadias} />
+      {/* Primeiro acesso: checklist de 3 passos (some quando concluído ou oculto). */}
       <TenantOnboarding name={name} />
 
       {/* KPIs de acesso rápido: 2×2 no mobile, 4 em linha no desktop. Candidaturas
@@ -412,15 +457,8 @@ function TenantDashboard({ name, propostas, cidade, estadias }: { name: string; 
   );
 }
 
-/**
- * Estado vazio como FUNIL (Dashboard Fase 1). Proprietário sem imóvel publicado
- * vê um caminho único: Qualificar → Anunciar → Receber candidaturas, com UM CTA
- * ativo por vez. Sem menus mortos nem cards zerados.
- */
 /** Card de pendência "Anúncio em andamento" (P0) — atalho para retomar o
  * rascunho de onde parou, com o % completo honesto. */
-type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist: ChecklistAnuncio | null; score?: ScoreAnuncio | null };
-
 function DraftPendingCard({
   draft,
   className,
@@ -563,99 +601,6 @@ function DraftPendingCard({
         </button>
       )}
     </div>
-  );
-}
-
-function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente | null }) {
-  const passos = [
-    {
-      n: 1,
-      titulo: "Comece pelas fotos",
-      texto: "Envie as fotos do imóvel; o restante do cadastro vem em seguida.",
-      cta: "Cadastrar meu imóvel",
-      href: "/dashboard/imoveis/novo",
-      ativo: true,
-    },
-    {
-      n: 2,
-      titulo: "Publique o anúncio",
-      texto: "Fotos, preço e disponibilidade — quanto mais completo, mais candidaturas.",
-      cta: "Publicar anúncio",
-      href: "/dashboard/imoveis/novo",
-      ativo: false,
-    },
-    {
-      n: 3,
-      titulo: "Receba candidaturas e pedidos",
-      texto: "Interessados chegam por candidatura ou pelos Pedidos de Moradia da sua cidade.",
-      cta: "Ver pedidos de moradia",
-      href: "/pedidos",
-      ativo: false,
-    },
-    {
-      n: 4,
-      titulo: "Feche com segurança",
-      texto: "Aceite o candidato e conclua contrato, caução e conferência de entrada pelo painel.",
-      cta: "Ver fechamento",
-      href: "/dashboard/fechamento",
-      ativo: false,
-    },
-  ];
-
-  return (
-    <>
-      {draft && <DraftPendingCard draft={draft} className="mb-6" />}
-      <PageTitle
-        title={`Bem-vindo${name ? `, ${name}` : ""}! 👋`}
-        subtitle="Do primeiro anúncio ao contrato fechado em 4 passos."
-        action={
-          <ButtonLink href="/dashboard/imoveis/novo" variant="secondary">
-            <ClipboardCheck className="h-4 w-4" /> Começar agora
-          </ButtonLink>
-        }
-      />
-
-      {/* D-V (print do Daniel, 22/10): sem auto-rows-fr. No celular (1 coluna) ele esticava todos os passos à altura do
-          1º (o que tem botão) e abria um vão vazio nos passos 2 a 4; lado a lado, a própria grade iguala a altura. */}
-      <ol className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="passos-proprietario">
-        {passos.map((p) => (
-          <li
-            key={p.n}
-            className={`flex h-full flex-col rounded-xl border p-5 ${
-              p.ativo ? "border-forest bg-white" : "border-line bg-surface-2"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={`grid h-7 w-7 place-items-center rounded-full text-sm font-semibold ${
-                  p.ativo ? "bg-forest text-white" : "bg-white text-muted"
-                }`}
-              >
-                {p.n}
-              </span>
-              <h3 className="font-title font-semibold text-ink">{p.titulo}</h3>
-            </div>
-            <p className="mt-2 flex-1 text-sm text-muted">{p.texto}</p>
-            {p.ativo ? (
-              <ButtonLink href={p.href} variant="primary" className="mt-4 w-full justify-center">
-                {p.cta} <ArrowRight className="h-4 w-4" />
-              </ButtonLink>
-            ) : (
-              <p className="mt-4 text-xs font-medium text-muted">Depois do passo {p.n - 1}</p>
-            )}
-          </li>
-        ))}
-      </ol>
-
-      <p className="mt-6 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-muted">
-        A plataforma <strong className="text-ink">conecta, verifica, documenta e registra</strong> —
-        você fecha direto com o inquilino. Precisa de ajuda para começar?{" "}
-        <Link href="/como-funciona" className="web-only font-medium text-forest hover:underline">
-          Veja como funciona
-        </Link>
-        .
-      </p>
-    </>
   );
 }
 

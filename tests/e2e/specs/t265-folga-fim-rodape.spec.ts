@@ -213,8 +213,8 @@ test.describe("T265 — menu superior e barra inferior a 390 px", () => {
   });
 });
 
-// ─────────────────────────── passos do proprietário novo ───────────────────────────
-test.describe("T265 — passos do proprietário novo (laboratório)", () => {
+// ─────────────────────────── proprietário novo (Prompt 42: sem o funil de passos) ───────────────────────────
+test.describe("T265 — proprietário novo (laboratório)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (cria um proprietário sem imóvel).");
   const senha = novaSenha();
   const dono = { email: `dono.t265.${novoSufixo()}@lab.vivanomads.test`, nome: "Dora Passos", role: "owner" as const };
@@ -225,23 +225,17 @@ test.describe("T265 — passos do proprietário novo (laboratório)", () => {
   test.afterAll(async () => {
     await apagarContas([id]);
   });
-  test("390 px: cada cartão tem a altura do próprio conteúdo (sem vão vazio) e a barra do proprietário aparece", async ({ browser }) => {
+  test("390 px: nada a decidir, um único primário 'Cadastrar meu imóvel' e a barra do proprietário aparece", async ({ browser }) => {
     test.setTimeout(120_000);
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    const passos = page.getByTestId("passos-proprietario").locator("> li");
-    await expect(passos).toHaveCount(4, { timeout: 20_000 });
-    for (let i = 1; i < 4; i++) {
-      // Do fim do texto ao rodapé do cartão: só o espaçamento normal (mt-4 = 16 px), nunca um vão.
-      const vao = await passos.nth(i).evaluate((li) => {
-        const texto = li.querySelector("p")!.getBoundingClientRect();
-        const rodape = li.lastElementChild!.getBoundingClientRect();
-        return rodape.top - texto.bottom;
-      });
-      expect(vao, `passo ${i + 1}`).toBeLessThanOrEqual(24);
-    }
+    await expect(page.getByRole("heading", { level: 1, name: "Nada pede sua decisão hoje" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("passos-proprietario")).toHaveCount(0);
+    const primarios = page.locator('main [data-cta="primary"]:visible');
+    await expect(primarios).toHaveCount(1);
+    await expect(primarios.first()).toHaveText(/Cadastrar meu imóvel/);
     await expect(page.locator('nav[aria-label="Navegação principal"]')).toBeVisible();
-    await page.screenshot({ path: "tests/laboratorio/saida/t265-passos-390.png", fullPage: true });
+    await page.screenshot({ path: "tests/laboratorio/saida/t265-dono-novo-390.png", fullPage: true });
     await page.context().close();
   });
 });

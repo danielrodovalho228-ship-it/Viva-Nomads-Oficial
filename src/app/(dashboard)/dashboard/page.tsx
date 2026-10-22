@@ -3,7 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { contarInteressados } from "@/lib/painel/kpi-interessados";
 import { listarPropostas } from "@/lib/data/propostas-actions";
 import { estadiasDaHome } from "@/lib/data/estadia";
-import { VisaoGeral, type PropostaAguardando } from "./visao-geral-client";
+import { getLatestDraft } from "@/lib/data/actions";
+import { dadosDasDecisoes } from "@/lib/data/painel-decisoes";
+import { decisoesDoMorador, decisoesDoProprietario, type EstadiaParaDecisao } from "@/lib/painel/decisoes";
+import { checklistAnuncio } from "@/lib/anuncio/prontidao";
+import { VisaoGeral, type RascunhoPendente } from "./visao-geral-client";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -37,24 +41,71 @@ async function cidadeDoPerfil(): Promise<string | null> {
   return ((data?.cidade as string | null) ?? "").trim() || null;
 }
 
+/** Rascunho mais recente → card "Anúncio em andamento" (antes lido no navegador por server action). */
+function rascunhoDoDraft(d: Awaited<ReturnType<typeof getLatestDraft>>): RascunhoPendente | null {
+  if (!d) return null;
+  // Prontidão da fonte única (a mesma de Meus imóveis e do Publicar).
+  return {
+    id: d.id,
+    pct: d.prontidao?.pct ?? 0,
+    pronto: !!d.prontidao?.podePublicar,
+    faltam: d.prontidao?.faltam ?? [],
+    checklist: d.prontidao ? checklistAnuncio(d.prontidao, d.id) : null,
+    score: d.score,
+  };
+}
+
 /**
  * Visão geral. Os imóveis do proprietário vêm do SERVIDOR pela MESMA consulta
  * de "Meus imóveis" (listMyProperties) — sem o vazio enquanto o navegador
  * buscava a lista, que fazia a tela dizer "ainda não publicou" com imóvel
  * ativo (F31).
+ *
+ * Prompt 42, item 1: a tela abre com "Hoje você tem N decisões". Os dados vêm de uma leitura só, em paralelo; as
+ * regras são as de lib/painel/decisoes.ts (puras, testadas).
  */
 export default async function DashboardPage() {
-  const interessadosPromessa = interessadosDoDono();
-  // Propostas esperando a resposta do inquilino (prompt 27): cartão "vence em N dias" na Visão geral.
-  const propostasPromessa = listarPropostas().catch(() => []);
-  // Prompt 32: card "Decisões das suas estadias" (página da estadia + ações da folha do 41).
-  const estadiasPromessa = estadiasDaHome().catch(() => []);
-  const imoveisDono = await listMyProperties();
-  const cidadePerfil = await cidadeDoPerfil();
-  const interessados = await interessadosPromessa;
-  const propostas: PropostaAguardando[] = (await propostasPromessa)
-    .filter((p) => p.papel === "tenant" && p.aguardandoVoce)
-    .sort((a, b) => a.validaAte.localeCompare(b.validaAte))
-    .map((p) => ({ id: p.id, numero: p.numero, imovel: p.imovel, validaAte: p.validaAte }));
-  return <VisaoGeral imoveisDono={imoveisDono} interessados={interessados} propostasAguardando={propostas} cidadePerfil={cidadePerfil} estadias={await estadiasPromessa} />;
+  const agora = new Date();
+  const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados] = await Promise.all([
+    listMyProperties(),
+    cidadeDoPerfil(),
+    interessadosDoDono(),
+    listarPropostas().catch(() => []),
+    // Prompt 32: estadias em vigor (topo, decisões e ações da folha do 41).
+    estadiasDaHome(agora).catch(() => []),
+    getLatestDraft().catch(() => null),
+    dadosDasDecisoes(),
+  ]);
+  const rascunho = rascunhoDoDraft(draft);
+  const estadiasDe = (papel: "proprietario" | "inquilino"): EstadiaParaDecisao[] =>
+    estadias.filter((e) => e.papel === papel).map((e) => ({ contratoId: e.contratoId, imovel: e.imovel, decisoes: e.decisoes }));
+
+  const decisoesDono = decisoesDoProprietario(
+    {
+      propostas,
+      contratos: dados.contratosDono,
+      visitas: dados.visitasDono,
+      manutencoes: dados.manutencoes,
+      estadias: estadiasDe("proprietario"),
+      candidaturas: dados.candidaturas,
+      rascunho: draft ? { id: draft.id, titulo: draft.title, prontidao: draft.prontidao } : null,
+    },
+    agora,
+  );
+  const decisoesMorador = decisoesDoMorador(
+    { propostas, contratos: dados.contratosMorador, visitas: dados.visitasMorador, estadias: estadiasDe("inquilino") },
+    agora,
+  );
+
+  return (
+    <VisaoGeral
+      imoveisDono={imoveisDono}
+      interessados={interessados}
+      decisoesDono={decisoesDono}
+      decisoesMorador={decisoesMorador}
+      rascunho={rascunho}
+      cidadePerfil={cidadePerfil}
+      estadias={estadias}
+    />
+  );
 }

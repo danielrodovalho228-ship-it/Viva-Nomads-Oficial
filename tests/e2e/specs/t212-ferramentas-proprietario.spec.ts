@@ -184,7 +184,11 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
       const t = await entrar(browser, inq.email, senha);
       await t.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await abrir(t, "/dashboard");
-      await expect(t.getByTestId("cartao-proposta-recebida")).toContainText(/Você recebeu uma proposta — vence em \d+ dias/, { timeout: 25_000 });
+      // Prompt 42: a proposta é uma linha de "Hoje você tem N decisões" (valor, imóvel e prazo), com link para responder.
+      const decisao = t.locator('[data-testid="decisao"][data-tipo="proposta"]').first();
+      await expect(decisao).toContainText(/Proposta de R\$\s?3\.200 por mês para/, { timeout: 25_000 });
+      await expect(decisao.getByTestId("decisao-prazo")).toContainText(/vence em \d+ dias/);
+      await expect(decisao).toHaveAttribute("href", /\/dashboard\/propostas\/[0-9a-f-]{36}$/);
       await semRolagemLateral(t);
       await t.screenshot({ path: `${SAIDA}/t212-visao-geral-proposta-${largura}.png` });
       await abrir(t, "/dashboard/propostas");
