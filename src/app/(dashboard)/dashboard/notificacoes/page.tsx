@@ -25,7 +25,7 @@ export default async function NotificacoesPage() {
   const agora = new Date();
   return (
     <>
-      <PageTitle capa="notificacoes"
+      <PageTitle
         title="Notificações"
         subtitle="Avisos de manutenção, interessados, mensagens e pedidos. Tudo ligado por padrão."
       />

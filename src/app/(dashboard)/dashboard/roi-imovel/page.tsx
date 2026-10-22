@@ -91,7 +91,7 @@ export default function RoiImovelPage() {
 
   return (
     <>
-      <PageTitle capa="roi" title="Calculadora de ROI" subtitle="Vale a pena mobiliar o seu imóvel para média duração?" />
+      <PageTitle title="Calculadora de ROI" subtitle="Vale a pena mobiliar o seu imóvel para média duração?" />
 
       <SimHero
         icon={Percent}

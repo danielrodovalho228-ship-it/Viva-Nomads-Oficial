@@ -120,7 +120,7 @@ export function ContaMenu() {
   return (
     <div className="w-full space-y-4">
       {/* Mesma capa 3S do site; no app só a navegação muda (cabeçalho curto + abas). */}
-      <PageTitle capa="conta" title="Conta" subtitle="Seus dados, segurança e preferências." />
+      <PageTitle title="Conta" subtitle="Seus dados, segurança e preferências." />
       {/* Toque na foto leva ao Perfil (trocar/enviar foto). O modo atual aparece no chip do topo e no seletor abaixo. */}
       <Link
         href="/dashboard/conta/perfil"

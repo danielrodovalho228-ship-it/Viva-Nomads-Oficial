@@ -123,5 +123,6 @@ test("robots: o layout raiz não declara 'index, follow' (vazava nas 404 com not
 test("h1: a Visão geral do inquilino tem título principal, como a do proprietário (varredura t48)", () => {
   const src = ler("src/app/(dashboard)/dashboard/visao-geral-client.tsx");
   const inquilino = src.slice(src.indexOf("function TenantDashboard"), src.indexOf("function DraftPendingCard"));
-  assert.match(inquilino, /<PageTitle title="Visão geral"/);
+  // Prompt 42: o h1 são as decisões de hoje ("Hoje você tem N decisões" / "Nada pede sua decisão hoje").
+  assert.match(inquilino, /<PageTitle\s+title=\{tituloDecisoes\(lista\.length\)\}/);
 });

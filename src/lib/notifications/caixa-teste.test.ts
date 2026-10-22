@@ -53,6 +53,6 @@ test("a tela /admin/emails-teste existe, está no menu e nos atalhos do admin", 
   assert.match(p, /PageTitle/);
   assert.match(p, /md:hidden/);
   assert.match(p, /hidden md:block/);
-  assert.match(ler("src/config/menu-painel.ts"), /href: "\/admin\/emails-teste"/);
+  assert.match(ler("src/config/menu-por-papel.ts"), /href: "\/admin\/emails-teste"/);
   assert.match(ler("src/app/(dashboard)/admin/atalhos-admin.tsx"), /\/admin\/emails-teste/);
 });

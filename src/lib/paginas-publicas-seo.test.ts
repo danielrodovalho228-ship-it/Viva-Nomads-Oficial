@@ -47,7 +47,8 @@ test("botões de Novo anúncio (logado) abrem direto o cadastro pelas Fotos, nã
   assert.match(lista, new RegExp(`href="${novo}"[^>]*>\\s*<Plus[^]*?Novo anúncio`));
   const painel = ler("app/(dashboard)/dashboard/visao-geral-client.tsx");
   assert.match(painel, new RegExp(`href="${novo}"[^>]*>\\s*<ClipboardCheck[^]*?Novo anúncio`));
-  assert.match(painel, new RegExp(`href="${novo}"[^>]*>\\s*<ClipboardCheck[^]*?Começar agora`));
+  // Prompt 42: a conta sem imóvel tem um único primário, "Cadastrar meu imóvel" (no lugar do "Começar agora").
+  assert.match(painel, new RegExp(`href="${novo}" variant="primary"[^>]*>\\s*Cadastrar meu imóvel`));
   assert.match(ler("components/dashboard/role-welcome-modal.tsx"), new RegExp(`router\\.push\\("${novo}"\\)`));
   const nav = ler("components/layout/navbar.tsx");
   assert.ok(!/href="\/qualificar" variant="accent"/.test(nav));

@@ -23,7 +23,7 @@ export default async function PortfolioPage() {
     const faltam = MIN_IMOVEIS_ANALISE_CARTEIRA - ativos;
     return (
       <>
-        <PageTitle capa="carteira" title="Análise da carteira" />
+        <PageTitle title="Análise da carteira" />
         <div data-testid="carteira-fechada">
           <EmptyState
             icon={Building2}

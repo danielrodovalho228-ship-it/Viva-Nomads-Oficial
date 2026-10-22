@@ -41,7 +41,7 @@ export function ClosingClient({ realCtx }: { realCtx: FechamentoContexto | null 
 
   return (
     <>
-      <PageTitle capa="fechamento"
+      <PageTitle
         title="Fechamento"
         subtitle="O fechamento começa quando você aceita um candidato — ele herda o imóvel, as partes e os valores da candidatura."
       />

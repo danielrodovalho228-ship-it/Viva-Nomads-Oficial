@@ -105,7 +105,7 @@ function OwnerView({
 
   return (
     <>
-      <PageTitle capa="solicitacoes"
+      <PageTitle
         title="Solicitações de manutenção"
         subtitle="Ordens dos seus imóveis, por prioridade, com o prazo para responder."
         action={metrics.responsive ? <ResponsiveOwnerBadge /> : undefined}
@@ -215,7 +215,7 @@ function TenantView({
 
   return (
     <>
-      <PageTitle capa="solicitacoes"
+      <PageTitle
         title="Minhas solicitações"
         subtitle="Abra e acompanhe chamados de manutenção do seu imóvel."
         action={

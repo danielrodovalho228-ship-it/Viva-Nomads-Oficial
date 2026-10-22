@@ -456,7 +456,8 @@
         "t151-modo-app-iphone",
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
-        "t211-complemento-23"
+        "t211-complemento-23",
+        "t266-painel-42"
       ]
     },
     "/dashboard/assinatura": {
@@ -548,7 +549,8 @@
         "t192-conta-4-blocos",
         "t179-isolamento-perfil",
         "t183-telas-logadas-390",
-        "t198-rodape-painel-390"
+        "t198-rodape-painel-390",
+        "t266-painel-42"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -651,7 +653,8 @@
       "specs": [
         "t2-persistencia-modo",
         "t39-app-ida-e-volta",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t266-painel-42"
       ]
     },
     "/dashboard/garantias": {
@@ -906,7 +909,8 @@
       "specs": [
         "t192-conta-4-blocos",
         "t48-varredura",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t266-painel-42"
       ]
     },
     "/dashboard/verificacao": {
@@ -1971,6 +1975,17 @@
       ],
       "specs": [
         "t261-tempo-ate-o-trabalho"
+      ]
+    },
+    "/api/painel/contadores": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro",
+        "admin"
+      ],
+      "specs": [
+        "t266-painel-42"
       ]
     }
   },

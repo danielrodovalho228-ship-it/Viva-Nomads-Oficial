@@ -24,7 +24,6 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
   return (
     <>
       <PageTitle
-        capa="orcamentos"
         title="Orçamentos"
         subtitle={ehDono ? "Propostas para os seus interessados, com contraproposta e aceite pela plataforma." : "Propostas que você recebeu dos proprietários."}
         action={

@@ -168,7 +168,8 @@ test("p27 item 7 — contagem regressiva, lembrete de 24 h e 'aguardando a sua r
   const cron = ler("../app/api/cron/automacoes/route.ts");
   assert.match(cron, /tipo: "proposta_vencendo"/);
   assert.match(ler("./notifications/eventos-email.ts"), /proposta_vencendo: \{/);
-  assert.match(ler("../app/(dashboard)/dashboard/visao-geral-client.tsx"), /Você recebeu uma proposta — \$\{vence\}/);
+  // Prompt 42: a proposta que espera o inquilino vira linha de "Hoje você tem N decisões", com o "vence em N dias".
+  assert.match(ler("./painel/decisoes.ts"), /prazoTexto: pz\.prazo \? textoVencimento\(pz\.prazo, agora\) : null/);
   assert.match(ler("../app/(dashboard)/dashboard/propostas/page.tsx"), /data-testid="propostas-inquilino"/);
 });
 

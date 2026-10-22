@@ -35,11 +35,12 @@ test("vídeo institucional: 720p leve no computador e 540p no celular, sem baixa
   }
 });
 
-test("passos do proprietário: sem auto-rows-fr (no celular abria vão vazio nos passos 2 a 4)", () => {
+test("Prompt 42: o funil de 4 passos do proprietário saiu (no lugar, as decisões de hoje e um único 'Cadastrar meu imóvel')", () => {
   const vg = ler("app/(dashboard)/dashboard/visao-geral-client.tsx");
-  const ol = vg.match(/<ol className="([^"]+)" data-testid="passos-proprietario">/);
-  assert.ok(ol, "lista dos passos com data-testid");
-  assert.doesNotMatch(ol![1], /auto-rows-fr/);
+  assert.doesNotMatch(vg, /passos-proprietario|OwnerFunnel|Bem-vindo/);
+  assert.match(vg, /data-testid="lista-decisoes"/);
+  const primeiro = vg.slice(vg.indexOf("function PrimeiroImovel"), vg.indexOf("function PainelDoDono"));
+  assert.match(primeiro, /variant="primary"[^>]*>\s*Cadastrar meu imóvel/);
 });
 
 test("grades de 1 coluna no celular não esticam todas as linhas (auto-rows-fr só a partir de sm quando a grade é de 1 coluna)", () => {

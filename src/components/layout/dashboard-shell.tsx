@@ -11,20 +11,22 @@ import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
 import { removerPushToken } from "@/lib/data/push-actions";
-import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
-import { EVENTO_FILA_DOCUMENTOS } from "@/lib/admin/fila-evento";
-import { contarContratosParaAssinar } from "@/lib/data/contratos-actions";
-import { contarPropostasAguardando } from "@/lib/data/propostas-actions";
-import { contarAprovacoesPendentes } from "@/lib/data/agentes-actions";
-import { useHasActiveLocacao } from "@/lib/use-active-locacao";
+import { EVENTO_AVISO_ASSINATURA } from "@/components/contrato/aviso-assinatura";
+import {
+  CONTADORES_VAZIOS,
+  EVENTOS_CONTADORES,
+  INTERVALO_CONTADORES_MS,
+  ROTA_CONTADORES,
+  badgeDaEquipe,
+  normalizarContadores,
+  type ContadoresPainel,
+} from "@/lib/painel/contadores";
 import { useViewMode, identidadeUsuario } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
 import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
-import { imoveisAtivosDoDono, temImovelAnunciado } from "@/lib/data/menu-actions";
-import { temPapelParceiro } from "@/lib/parceiros/painel-actions";
 import { PapelAtivo } from "@/components/layout/papel-ativo";
 import { papelDaBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
@@ -39,7 +41,8 @@ import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-bar
  *     layout — nunca 404, página em branco ou rota pública.
  *  O e2e `qa-full.mjs` verifica que nenhum item de menu renderiza fora da casca.
  *
- * O menu em si (cascata, conta única — ordem 9f3085d8) mora em config/menu-painel.ts.
+ * O menu em si (cascata, conta única — ordem 9f3085d8): os itens por papel em config/menu-por-papel.ts e a
+ * montagem em config/menu-painel.ts (Prompt 42, item 3).
  */
 
 /** Para onde o convite leva ao ativar o segundo papel. */
@@ -108,103 +111,58 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     };
   }, [displayUser?.id]);
 
-  // Prompt 28: contratos esperando a assinatura do inquilino — número no item "Contratos".
-  const [contratosParaAssinar, setContratosParaAssinar] = useState(0);
-  useEffect(() => {
-    if (!displayUser?.id) return;
-    let alive = true;
-    contarContratosParaAssinar()
-      .then((n) => {
-        if (alive) setContratosParaAssinar(n);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [displayUser?.id, pathname]);
-
-  // Prompt 27: propostas esperando a resposta do inquilino — número no item "Propostas".
-  const [propostasAguardando, setPropostasAguardando] = useState(0);
-  useEffect(() => {
-    if (!displayUser?.id) return;
-    let alive = true;
-    contarPropostasAguardando()
-      .then((n) => {
-        if (alive) setPropostasAguardando(n);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [displayUser?.id, pathname]);
-
-  // Documentos aguardando conferência — badge no item "Documentos" do nav admin.
-  // Prompt 36, item 3b: lê de novo também quando a fila avisa uma decisão (aprovar/recusar não muda a rota).
-  const [docsPendentes, setDocsPendentes] = useState(0);
-  const [filaMudou, setFilaMudou] = useState(0);
-  useEffect(() => {
-    if (display.role !== "admin") return;
-    const aoMudar = () => setFilaMudou((n) => n + 1);
-    window.addEventListener(EVENTO_FILA_DOCUMENTOS, aoMudar);
-    return () => window.removeEventListener(EVENTO_FILA_DOCUMENTOS, aoMudar);
-  }, [display.role]);
-  useEffect(() => {
-    if (display.role !== "admin") return;
-    let alive = true;
-    countDocumentosPendentes()
-      .then((n) => {
-        if (alive) setDocsPendentes(n);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [display.role, pathname, filaMudou]);
-
-  // Aprovações esperando o OK do Daniel — badge do item "Agentes" (F15: antes contava achados P1).
-  const [aprovacoesPendentes, setAprovacoesPendentes] = useState(0);
-  useEffect(() => {
-    if (display.role !== "admin") return;
-    let alive = true;
-    contarAprovacoesPendentes()
-      .then((n) => {
-        if (alive) setAprovacoesPendentes(n);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [display.role, pathname]);
-
-  // Menu em cascata, conta única (ordem 9f3085d8): as seções de dono aparecem para
-  // quem já anunciou; "Solicitações" só com estadia ativa; Administração só para admin.
-  const estadiaAtiva = useHasActiveLocacao(true);
-  const [temImovel, setTemImovel] = useState(false);
-  const [imoveisAtivos, setImoveisAtivos] = useState(0);
-  const [parceiro, setParceiro] = useState(false);
+  // Prompt 42, item 5: os números e o contexto do menu vêm de UM GET (/api/painel/contadores) — não mais de ~8 server
+  // actions a cada troca de rota (POSTs que a navegação abortava e que disputavam a fila com as ações da tela). Lê ao
+  // montar, ao voltar o foco, a cada minuto com a aba visível, ao entrar/sair da área de imóveis (o 1º anúncio revela as
+  // seções de dono) e quando uma tela avisa (fila de documentos, assinatura do contrato, EVENTO_CONTADORES).
+  const [contadores, setContadores] = useState<ContadoresPainel>(CONTADORES_VAZIOS);
+  const [releitura, setReleitura] = useState(0);
   const naAreaDeImoveis = pathname.startsWith("/dashboard/imoveis");
   useEffect(() => {
-    let alive = true;
-    temImovelAnunciado()
-      .then((t) => {
-        if (alive) setTemImovel(t);
+    if (!displayUser?.id) return;
+    const controle = new AbortController();
+    fetch(ROTA_CONTADORES, { cache: "no-store", credentials: "same-origin", signal: controle.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (json) setContadores(normalizarContadores(json));
       })
       .catch(() => {});
-    imoveisAtivosDoDono()
-      .then((n) => {
-        if (alive) setImoveisAtivos(n);
-      })
-      .catch(() => {});
-    temPapelParceiro()
-      .then((t) => {
-        if (alive) setParceiro(t);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
+    return () => controle.abort();
+  }, [displayUser?.id, naAreaDeImoveis, releitura]);
+  useEffect(() => {
+    // Foco e "aba visível" chegam juntos ao voltar para a aba: uma leitura só a cada 2 s por esse caminho.
+    let ultima = 0;
+    const ler = () => {
+      ultima = Date.now();
+      setReleitura((n) => n + 1);
     };
-    // Reavalia ao sair do cadastro de imóvel (o primeiro anúncio revela as seções de dono).
-  }, [displayUser?.id, naAreaDeImoveis]);
+    const aoMudar = ler;
+    const aoVoltar = () => {
+      if (document.visibilityState === "visible" && Date.now() - ultima > 2000) ler();
+    };
+    const eventos = [...EVENTOS_CONTADORES, EVENTO_AVISO_ASSINATURA];
+    for (const e of eventos) window.addEventListener(e, aoMudar);
+    window.addEventListener("focus", aoVoltar);
+    document.addEventListener("visibilitychange", aoVoltar);
+    const relogio = window.setInterval(aoVoltar, INTERVALO_CONTADORES_MS);
+    return () => {
+      for (const e of eventos) window.removeEventListener(e, aoMudar);
+      window.removeEventListener("focus", aoVoltar);
+      document.removeEventListener("visibilitychange", aoVoltar);
+      window.clearInterval(relogio);
+    };
+  }, []);
+  const {
+    contratosParaAssinar,
+    propostasAguardando,
+    documentosPendentes: docsPendentes,
+    aprovacoesPendentes,
+    temImovel,
+    imoveisAtivos,
+    parceiro,
+    estadiaAtiva,
+  } = contadores;
+
   const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan, imoveisAtivos, parceiro });
   const badges = { "admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando };
 
@@ -394,7 +352,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Barra inferior do app (ciente do modo); esconde-se no desktop e nas
           telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
-      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: docsPendentes + aprovacoesPendentes }} />
+      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: badgeDaEquipe(contadores) }} />
     </div>
   );
 }

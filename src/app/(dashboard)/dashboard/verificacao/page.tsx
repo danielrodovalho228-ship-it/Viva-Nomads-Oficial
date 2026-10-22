@@ -96,7 +96,7 @@ export default function VerificationPage() {
 
   return (
     <div className="w-full">
-      <PageTitle capa="verificacao" title={C.title} subtitle={C.subtitle} />
+      <PageTitle title={C.title} subtitle={C.subtitle} />
       {demo ? <DemoFlow copy={C} mode={mode} /> : <VerificacaoDaConta copy={C} perfil={perfilCopy} />}
     </div>
   );

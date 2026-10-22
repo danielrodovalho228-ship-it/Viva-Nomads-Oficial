@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { Check, ShieldCheck, Megaphone, MessageSquare, X } from "lucide-react";
-import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { capaDoMorador } from "@/components/dashboard/capas";
 import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
 import type { EstadoIdentidade } from "@/lib/identidade/estado";
@@ -64,10 +62,10 @@ const STEPS: Step[] = [
 type Saved = { done: string[]; hidden: boolean };
 
 /**
- * Primeiro acesso do inquilino: substitui o banner "Olá" por um checklist de 3
- * passos com estado (feito/pendente). O usuário marca cada passo como feito; o
- * card pode ser ocultado. Quando os 3 estão concluídos (ou ao ocultar), volta
- * o banner normal. Estado persistido por navegador (localStorage).
+ * Primeiro acesso do inquilino: checklist de 3 passos com estado (feito/pendente).
+ * O usuário marca cada passo como feito; o card pode ser ocultado. Concluído ou
+ * oculto, some (Prompt 42: sem a faixa "Olá" com foto). Estado persistido por
+ * navegador (localStorage).
  */
 export function TenantOnboarding({ name }: { name: string }) {
   const raw = useLocalStorageBruto(KEY); // undefined = ainda hidratando
@@ -92,26 +90,14 @@ export function TenantOnboarding({ name }: { name: string }) {
     gravarLocalStorageBruto(KEY, JSON.stringify(next));
   }
 
-  const banner = (
-    <PageTitle
-      capa={capaDoMorador()}
-      title={`Olá${name ? `, ${name}` : "!"} 👋`}
-      subtitle="Encontre o imóvel certo para a sua próxima fase."
-      action={
-        <ButtonLink href="/buscar" variant="accent">
-          Buscar imóveis
-        </ButtonLink>
-      }
-    />
-  );
-
-  // Antes de hidratar, mostra o banner (evita "pulo" e SSR consistente).
-  if (saved === null) return banner;
+  // Prompt 42: sem a faixa "Olá" — o título da Visão geral são as decisões de hoje. Antes de hidratar, oculto ou
+  // concluído, o checklist simplesmente não aparece.
+  if (saved === null) return null;
 
   const feitos = cartao.estado === "confirmada" && !saved.done.includes("verificar") ? [...saved.done, "verificar"] : saved.done;
   // O "concluído" automático da identidade só muda a exibição: o cartão não some sozinho por causa dele.
   const allDone = STEPS.every((s) => saved.done.includes(s.id));
-  if (saved.hidden || allDone) return banner;
+  if (saved.hidden || allDone) return null;
 
   function toggle(id: string) {
     const cur = saved as Saved;

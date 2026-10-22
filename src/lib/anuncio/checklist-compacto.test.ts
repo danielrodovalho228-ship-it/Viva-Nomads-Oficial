@@ -31,10 +31,11 @@ test("expandido: mostra tudo, na ordem original", () => {
   assert.equal(r.ocultos, 0);
 });
 
-test("o painel usa o checklist compacto e a capa 3S (PageTitle), não o banner antigo", () => {
+test("o painel usa o checklist compacto e o título em texto (PageTitle, sem capa — Prompt 42), não o banner antigo", () => {
   const src = readFileSync(new URL("../../app/(dashboard)/dashboard/visao-geral-client.tsx", import.meta.url), "utf8");
   assert.match(src, /itensDoChecklist\(/);
   assert.match(src, /checklist-ver-todos/);
-  assert.match(src, /<PageTitle[\s\S]{0,200}capa=/);
+  assert.match(src, /<PageTitle/);
+  assert.doesNotMatch(src, /<PageTitle[^>]*\bcapa=/);
   assert.doesNotMatch(src, /<DashboardBanner/);
 });

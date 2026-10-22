@@ -9,8 +9,9 @@ import { readFileSync } from "node:fs";
 const menu = readFileSync(new URL("../components/account/conta-menu.tsx", import.meta.url), "utf8");
 const secao = readFileSync(new URL("../app/(dashboard)/dashboard/conta/[secao]/page.tsx", import.meta.url), "utf8");
 
-test("menu da Conta no app abre com a capa 'conta' do PageTitle", () => {
-  assert.match(menu, /<PageTitle[^>]*capa="conta"/);
+test("menu da Conta no app abre com o título em texto do PageTitle (sem capa de foto — Prompt 42)", () => {
+  assert.match(menu, /<PageTitle title="Conta"/);
+  assert.doesNotMatch(menu, /capa=/);
 });
 
 test("cada item do menu tem ícone, título e descrição curta", () => {

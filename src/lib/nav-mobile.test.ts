@@ -101,8 +101,8 @@ test("Voltar do app tem alvo de toque de 44 px e a spec t14 repete o toque até 
 });
 
 test("painel /admin lista todos os itens do menu do admin como atalhos", () => {
-  // Menu em cascata (ordem 9f3085d8): o grupo Administração mora em config/menu-painel.ts.
-  const config = readFileSync(new URL("../config/menu-painel.ts", import.meta.url), "utf8");
+  // Menu em cascata (ordem 9f3085d8): o grupo Administração mora em config/menu-por-papel.ts (Prompt 42).
+  const config = readFileSync(new URL("../config/menu-por-papel.ts", import.meta.url), "utf8");
   const atalhos = readFileSync(new URL("../app/(dashboard)/admin/atalhos-admin.tsx", import.meta.url), "utf8");
   const menu = [...config.matchAll(/href: "(\/admin[^"]*)"/g)].map((m) => m[1]);
   assert.ok(menu.length >= 10);
