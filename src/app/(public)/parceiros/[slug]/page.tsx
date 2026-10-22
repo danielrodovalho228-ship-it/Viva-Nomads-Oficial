@@ -17,7 +17,7 @@ import { REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
   publicada; conta de teste fica fora do Google (noindex) e da busca pública.
 */
 
-type Params = { params: Promise<{ slug: string }>; searchParams?: Promise<{ imovel?: string; cadastro?: string; categoria?: string }> };
+type Params = { params: Promise<{ slug: string }>; searchParams?: Promise<{ imovel?: string; cadastro?: string; categoria?: string; descricao?: string }> };
 
 // Sempre do banco: publicar, pausar ou editar no painel aparece na hora (sem cache da página).
 export const dynamic = "force-dynamic";
@@ -51,7 +51,10 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
   // Vindo da página da estadia pela busca (Prompt 41): a categoria pedida já vem escolhida na folha.
   const categoriaInicial = sp.categoria && p.categorias.includes(sp.categoria) ? sp.categoria : null;
   const doCadastro = !!imovelDoCadastro && sp.cadastro === "1";
+  // Prompt 59: a descrição da ordem de manutenção fora do prazo já vem escrita na folha.
+  const descricaoInicial = typeof sp.descricao === "string" ? sp.descricao.trim().slice(0, 500) : "";
   const consulta = new URLSearchParams({
+    ...(descricaoInicial ? { descricao: descricaoInicial } : {}),
     ...(imovelDoCadastro ? { imovel: imovelDoCadastro } : {}),
     ...(doCadastro ? { cadastro: "1" } : {}),
     ...(categoriaInicial ? { categoria: categoriaInicial } : {}),
@@ -152,6 +155,7 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
                 categoriaInicial={categoriaInicial}
                 imoveis={imoveis}
                 doCadastroDoImovel={doCadastro}
+                descricaoInicial={descricaoInicial}
               />
               <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Contato e endereço só depois do aceite.</p>
             </div>

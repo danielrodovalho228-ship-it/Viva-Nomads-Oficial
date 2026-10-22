@@ -31,6 +31,7 @@ export function SolicitarOrcamento({
   imovelInicial,
   categoriaInicial,
   doCadastroDoImovel,
+  descricaoInicial = "",
   imoveis = [],
 }: {
   parceiroId: string;
@@ -43,6 +44,8 @@ export function SolicitarOrcamento({
   /** Categoria já escolhida (ex.: "Pedir limpeza" na página da estadia): o primeiro serviço dela vem selecionado. */
   categoriaInicial?: string | null;
   doCadastroDoImovel?: boolean;
+  /** Prompt 59: descrição já escrita (manutenção fora do prazo → chamar um parceiro). */
+  descricaoInicial?: string;
   /** Imóveis da pessoa (dona ou da estadia), lidos pelo servidor com a página: abrir a folha não chama ação nenhuma. */
   imoveis?: { id: string; titulo: string }[];
 }) {
@@ -55,7 +58,7 @@ export function SolicitarOrcamento({
   const [categoria, setCategoria] = useState<string>(
     servicoInicial?.categoria ?? (categoriaInicial && categorias.includes(categoriaInicial) ? categoriaInicial : categorias[0]) ?? "outro",
   );
-  const [descricao, setDescricao] = useState("");
+  const [descricao, setDescricao] = useState(descricaoInicial);
   const [imovel, setImovel] = useState<string>(imovelInicial ?? "");
   const [horarios, setHorarios] = useState<string[]>([""]);
 

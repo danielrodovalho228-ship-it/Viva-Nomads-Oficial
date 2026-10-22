@@ -21,6 +21,9 @@ import { consumirLimite } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { notify } from "@/lib/notifications";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
+import { camposReabertura, moradorPodeResponder, reclassificar, type OrdemSolucao } from "@/lib/manutencao-solucao";
+import { ehAdmin } from "@/lib/data/admin-guard";
+import { avisarPrazoManutencao } from "@/lib/manutencao-avisos";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -49,13 +52,11 @@ export async function minhasSolicitacoes(): Promise<MinhasSolicitacoes | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const colunas = "id, category, priority, description, status, opened_at, first_response_at, resolved_at, tenant_id, owner_id, properties(title)";
-  const { data: linhas } = await supabase
-    .from("service_orders")
-    .select(colunas)
-    .or(`tenant_id.eq.${user.id},owner_id.eq.${user.id}`)
-    .order("opened_at", { ascending: false })
-    .limit(200);
+  const consulta = (colunas: string) =>
+    supabase.from("service_orders").select(colunas).or(`tenant_id.eq.${user.id},owner_id.eq.${user.id}`).order("opened_at", { ascending: false }).limit(200);
+  // Prompt 59: colunas do prazo de solução (sem a 0210 ainda, cai nas antigas).
+  let { data: linhas, error: eLinhas } = await consulta(COLUNAS_ORDEM);
+  if (eLinhas) ({ data: linhas } = await consulta(COLUNAS_ORDEM_ANTIGAS));
   const todas = (linhas ?? []) as unknown as (LinhaOrdem & { tenant_id: string; owner_id: string })[];
 
   // Nome do inquilino só para o dono daquele imóvel (o contrato ativo já foi aceito).
@@ -67,7 +68,14 @@ export async function minhasSolicitacoes(): Promise<MinhasSolicitacoes | null> {
     for (const p of perfis ?? []) if (p.full_name) nomes.set(p.id as string, p.full_name as string);
   }
 
-  const comoInquilino = todas.filter((l) => l.tenant_id === user.id).map((l) => linhaParaOrdem(l));
+  // Prompt 59: quando o dono foi avisado de que a solução venceu (o morador vê "o proprietário foi avisado em …").
+  const avisado = new Map<string, string>();
+  const idsMorador = todas.filter((l) => l.tenant_id === user.id && l.status !== "resolvido").map((l) => l.id);
+  if (idsMorador.length) {
+    const { data: avs } = await supabase.from("service_order_eventos").select("service_order_id, criado_em").eq("tipo", "aviso").eq("status_para", "vencido").in("service_order_id", idsMorador);
+    for (const a of (avs ?? []) as { service_order_id: string; criado_em: string }[]) avisado.set(a.service_order_id, a.criado_em);
+  }
+  const comoInquilino = todas.filter((l) => l.tenant_id === user.id).map((l) => ({ ...linhaParaOrdem(l), avisadoVencidoEm: avisado.get(l.id) }));
   const comoDono = todas
     .filter((l) => l.owner_id === user.id)
     .map((l) => linhaParaOrdem({ ...l, tenant_name: nomes.get(l.tenant_id) ?? null }));
@@ -85,7 +93,10 @@ export async function minhasSolicitacoes(): Promise<MinhasSolicitacoes | null> {
   return { comoInquilino, comoDono, contratos };
 }
 
-const COLUNAS_ORDEM = "id, category, priority, description, status, opened_at, first_response_at, resolved_at, tenant_id, owner_id, properties(title)";
+const COLUNAS_ORDEM_ANTIGAS = "id, category, priority, description, status, opened_at, first_response_at, resolved_at, tenant_id, owner_id, properties(title)";
+/** Prompt 59: + imóvel/cidade (botão do parceiro) e o prazo de solução (0210). */
+const COLUNAS_ORDEM =
+  "id, category, priority, description, status, opened_at, first_response_at, resolved_at, tenant_id, owner_id, property_id, provisoria_em, solucao_marcada_em, solucao_confirmada_em, reaberta_em, prioridade_original, reclassificacao_pedida_em, properties(title, city)";
 
 type Sessao = { supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>; uid: string };
 
@@ -102,7 +113,8 @@ type OrdemDaParte = LinhaOrdem & { tenant_id: string; owner_id: string };
 
 /** A ordem, lida PELO RLS (só as partes enxergam) + o lado de quem pede. */
 async function ordemDaParte(s: Sessao, id: string): Promise<{ ordem: OrdemDaParte; papel: PapelOrdem } | null> {
-  const { data } = await s.supabase.from("service_orders").select(COLUNAS_ORDEM).eq("id", id).maybeSingle();
+  let { data, error } = await s.supabase.from("service_orders").select(COLUNAS_ORDEM).eq("id", id).maybeSingle();
+  if (error) ({ data } = await s.supabase.from("service_orders").select(COLUNAS_ORDEM_ANTIGAS).eq("id", id).maybeSingle());
   const ordem = data as unknown as OrdemDaParte | null;
   if (!ordem) return null;
   if (ordem.owner_id === s.uid) return { ordem, papel: "proprietario" };
@@ -289,4 +301,109 @@ export async function avisosRecentes(): Promise<{ abertas: number; avisos: Aviso
     .sort((a, b) => +new Date(b.criadoEm) - +new Date(a.criadoEm))
     .slice(0, 20);
   return { abertas: lista.filter((o) => o.status !== "resolvido").length, avisos };
+}
+
+// ── Prompt 59: prazo de solução ────────────────────────────────────────────────────────────────────────────────────
+type ResultadoOrdem = { ok: true; ordem: ServiceOrder; mensagem?: string } | { ok: false; error: string };
+
+const paraSolucao = (o: OrdemDaParte): OrdemSolucao => ({
+  priority: o.priority as OrdemSolucao["priority"],
+  openedAt: o.opened_at,
+  provisoriaEm: o.provisoria_em,
+  solucaoMarcadaEm: o.solucao_marcada_em,
+  resolvedAt: o.resolved_at,
+  solucaoConfirmadaEm: o.solucao_confirmada_em,
+  reabertaEm: o.reaberta_em,
+  status: o.status,
+});
+
+async function historico(id: string, ator: string, papel: PapelOrdem | "admin" | "sistema", tipo: string, statusPara: string | null = null) {
+  const admin = createAdminClient();
+  if (!admin) return;
+  const { error } = await admin.from("service_order_eventos").insert({ service_order_id: id, ator_id: ator, papel, tipo, status_para: statusPara });
+  if (error) console.error("[manutencao] histórico", tipo, error.code);
+}
+
+/** Urgente: o dono marca "solução provisória aplicada" (conta o prazo de 24 h). Hora de agora (o banco recusa outra). */
+export async function marcarSolucaoProvisoria(id: string): Promise<ResultadoOrdem> {
+  if (!UUID_RE.test(id ?? "")) return { ok: false, error: "Solicitação inválida." };
+  const s = await sessao();
+  if (!s) return { ok: false, error: "Sessão expirada. Entre de novo." };
+  const alvo = await ordemDaParte(s, id);
+  if (!alvo || alvo.papel !== "proprietario") return { ok: false, error: "Só o proprietário marca a solução provisória." };
+  const o = alvo.ordem;
+  if (o.priority !== "urgente") return { ok: false, error: "Solução provisória é só para urgências." };
+  if (o.status === "resolvido") return { ok: false, error: "Esta solicitação já foi resolvida." };
+  if (o.provisoria_em) return { ok: false, error: "A solução provisória já foi marcada." };
+  const agora = new Date().toISOString();
+  const campos: Record<string, string> = { provisoria_em: agora, ...(o.first_response_at ? {} : { first_response_at: agora }), ...(o.status === "aberto" ? { status: "em_andamento" } : {}) };
+  const { data: nova, error } = await s.supabase.from("service_orders").update(campos).eq("id", id).eq("owner_id", s.uid).is("provisoria_em", null).select(COLUNAS_ORDEM).maybeSingle();
+  if (error || !nova) return { ok: false, error: "Não foi possível atualizar agora. Recarregue e tente de novo." };
+  await historico(id, s.uid, "proprietario", "provisoria");
+  await avisarOutraParte(o, "proprietario", "manutencao_atualizada");
+  revalidatePath("/dashboard/solicitacoes");
+  return { ok: true, ordem: linhaParaOrdem(nova as unknown as LinhaOrdem), mensagem: "Solução provisória registrada." };
+}
+
+/** O morador confirma ou reabre em até 48 h depois do "resolvido" do dono. Reaberta, o prazo original continua. */
+export async function responderSolucaoMorador(id: string, acao: "confirmar" | "reabrir"): Promise<ResultadoOrdem> {
+  if (!UUID_RE.test(id ?? "")) return { ok: false, error: "Solicitação inválida." };
+  if (acao !== "confirmar" && acao !== "reabrir") return { ok: false, error: "Ação inválida." };
+  const s = await sessao();
+  const admin = createAdminClient();
+  if (!s || !admin) return { ok: false, error: "Sessão expirada. Entre de novo." };
+  const alvo = await ordemDaParte(s, id);
+  if (!alvo || alvo.papel !== "inquilino") return { ok: false, error: "Só o morador confirma ou reabre." };
+  const agora = new Date();
+  if (!moradorPodeResponder(paraSolucao(alvo.ordem), agora)) return { ok: false, error: "O prazo de 48 horas para confirmar ou reabrir já passou." };
+  const campos = acao === "confirmar" ? { solucao_confirmada_em: agora.toISOString() } : camposReabertura(agora);
+  const { data: nova, error } = await admin.from("service_orders").update(campos).eq("id", id).eq("tenant_id", s.uid).eq("status", "resolvido").select(COLUNAS_ORDEM).maybeSingle();
+  if (error || !nova) return { ok: false, error: "Não foi possível atualizar agora. Recarregue e tente de novo." };
+  await historico(id, s.uid, "inquilino", acao === "confirmar" ? "confirmada" : "reaberta", acao === "reabrir" ? "em_andamento" : null);
+  if (acao === "reabrir") await avisarPrazoManutencao(admin, id, "reaberta").catch(() => null);
+  else await avisarOutraParte(alvo.ordem, "inquilino", "manutencao_atualizada");
+  revalidatePath("/dashboard/solicitacoes");
+  return { ok: true, ordem: linhaParaOrdem(nova as unknown as LinhaOrdem), mensagem: acao === "confirmar" ? "Solução confirmada." : "Ordem reaberta. O prazo original continua valendo." };
+}
+
+/** O dono PEDE a reclassificação (com motivo); quem aplica é o atendimento da Viva. */
+export async function pedirReclassificacao(id: string, motivo: string): Promise<ResultadoOrdem> {
+  if (!UUID_RE.test(id ?? "")) return { ok: false, error: "Solicitação inválida." };
+  const m = validarMensagem(motivo);
+  if (!m.ok) return { ok: false, error: "Conte por que a prioridade deve mudar." };
+  const s = await sessao();
+  const admin = createAdminClient();
+  if (!s || !admin) return { ok: false, error: "Sessão expirada. Entre de novo." };
+  const alvo = await ordemDaParte(s, id);
+  if (!alvo || alvo.papel !== "proprietario") return { ok: false, error: "Só o proprietário pede a reclassificação." };
+  if (alvo.ordem.reclassificacao_pedida_em) return { ok: false, error: "O pedido de reclassificação já foi enviado." };
+  const agora = new Date().toISOString();
+  const { data: nova, error } = await admin.from("service_orders").update({ reclassificacao_pedida_em: agora }).eq("id", id).eq("owner_id", s.uid).select(COLUNAS_ORDEM).maybeSingle();
+  if (error || !nova) return { ok: false, error: "Não foi possível enviar agora. Tente de novo." };
+  // O motivo fica nas mensagens da ordem (as duas partes e a equipe leem).
+  await admin.from("service_order_messages").insert({ service_order_id: id, sender_id: s.uid, body: guardContactInfo(`Pedido de reclassificação da prioridade: ${m.texto}`).text });
+  await historico(id, s.uid, "proprietario", "pedido_reclassificacao");
+  revalidatePath("/dashboard/solicitacoes");
+  revalidatePath("/admin/solicitacoes");
+  return { ok: true, ordem: linhaParaOrdem(nova as unknown as LinhaOrdem), mensagem: "Pedido enviado. O atendimento da Viva decide." };
+}
+
+/** Atendimento da Viva (admin com 2 etapas) reclassifica, com motivo. Prazos recalculados da abertura. */
+export async function reclassificarOrdem(id: string, nova: string, motivo: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!UUID_RE.test(id ?? "")) return { ok: false, error: "Solicitação inválida." };
+  const s = await sessao();
+  const admin = createAdminClient();
+  if (!s || !admin) return { ok: false, error: "Sessão expirada. Entre de novo." };
+  const souAdmin = await ehAdmin(s.supabase, s.uid);
+  const { data: o } = await admin.from("service_orders").select("priority, prioridade_original, owner_id").eq("id", id).maybeSingle();
+  if (!o) return { ok: false, error: "Solicitação não encontrada." };
+  const papel = souAdmin ? "admin_aal2" : o.owner_id === s.uid ? "proprietario" : "inquilino";
+  const r = reclassificar({ priority: o.priority as OrdemSolucao["priority"], prioridadeOriginal: (o.prioridade_original as OrdemSolucao["priority"] | null) ?? null }, nova, motivo, papel, s.uid, new Date());
+  if (!r.ok) return { ok: false, error: r.erro };
+  const { error } = await admin.from("service_orders").update(r.campos).eq("id", id).eq("priority", o.priority);
+  if (error) return { ok: false, error: "Não foi possível reclassificar agora." };
+  await historico(id, s.uid, "admin", "reclassificada", nova);
+  revalidatePath("/admin/solicitacoes");
+  revalidatePath("/dashboard/solicitacoes");
+  return { ok: true };
 }

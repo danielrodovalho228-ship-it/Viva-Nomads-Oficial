@@ -37,8 +37,16 @@ export interface LinhaOrdem {
   opened_at: string;
   first_response_at: string | null;
   resolved_at: string | null;
-  properties?: { title?: string | null } | null;
+  properties?: { title?: string | null; city?: string | null } | null;
   tenant_name?: string | null;
+  // Prompt 59 (colunas da 0210; ausentes = telas antigas).
+  property_id?: string | null;
+  provisoria_em?: string | null;
+  solucao_marcada_em?: string | null;
+  solucao_confirmada_em?: string | null;
+  reaberta_em?: string | null;
+  prioridade_original?: string | null;
+  reclassificacao_pedida_em?: string | null;
 }
 
 const CATEGORIAS: SOCategory[] = ["hidraulica", "eletrica", "eletrodomesticos", "estrutura", "internet", "outros"];
@@ -57,6 +65,14 @@ export function linhaParaOrdem(l: LinhaOrdem): ServiceOrder {
     openedAt: l.opened_at,
     firstResponseAt: l.first_response_at ?? undefined,
     resolvedAt: l.resolved_at ?? undefined,
+    propertyId: l.property_id ?? undefined,
+    cidade: l.properties?.city?.trim() || undefined,
+    provisoriaEm: l.provisoria_em ?? undefined,
+    solucaoMarcadaEm: l.solucao_marcada_em ?? undefined,
+    solucaoConfirmadaEm: l.solucao_confirmada_em ?? undefined,
+    reabertaEm: l.reaberta_em ?? undefined,
+    prioridadeOriginal: PRIORIDADES.includes(l.prioridade_original as SOPriority) ? (l.prioridade_original as SOPriority) : undefined,
+    reclassificacaoPedidaEm: l.reclassificacao_pedida_em ?? undefined,
   };
 }
 
@@ -78,6 +94,7 @@ export function proximosStatus(atual: SOStatus, papel: PapelOrdem): SOStatus[] {
 /**
  * Colunas a gravar na transição; null = transição proibida. A primeira ação do
  * PROPRIETÁRIO carimba a primeira resposta (uma vez); a resolução carimba o fim.
+ * Prompt 59: o "resolvido" do dono marca a solução (o morador confirma ou reabre em 48 h); o do morador já confirma.
  */
 export function camposTransicao(
   atual: SOStatus,
@@ -90,7 +107,11 @@ export function camposTransicao(
   const iso = agora.toISOString();
   const campos: Record<string, string> = { status: novo };
   if (papel === "proprietario" && !firstResponseAt) campos.first_response_at = iso;
-  if (novo === "resolvido") campos.resolved_at = iso;
+  if (novo === "resolvido") {
+    campos.resolved_at = iso;
+    if (papel === "proprietario") campos.solucao_marcada_em = iso;
+    else campos.solucao_confirmada_em = iso;
+  }
   return campos;
 }
 
