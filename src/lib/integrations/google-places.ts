@@ -1,13 +1,15 @@
 /*
   Integração Google Places + Distance Matrix — SOMENTE servidor.
-  A chave (GOOGLE_MAPS_API_KEY, sem NEXT_PUBLIC) nunca vai ao browser: as telas
+  A chave (GOOGLE_PLACES_API_KEY, ou o apelido GOOGLE_MAPS_API_KEY; sem NEXT_PUBLIC) nunca vai ao browser: as telas
   chamam as rotas /api/places/* que usam estas funções.
 
   Regra do Google respeitada: persistimos só o place_id no banco; nome/endereço/
   distância são buscados em tempo real aqui e nunca gravados.
 */
 
-const KEY = process.env.GOOGLE_MAPS_API_KEY;
+import { chaveGoogle } from "./chave-google";
+
+const KEY = chaveGoogle();
 const BASE = "https://maps.googleapis.com/maps/api";
 
 export function isGooglePlacesConfigured(): boolean {
