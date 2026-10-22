@@ -1345,7 +1345,8 @@ function BuscaCompacta({
       type="button"
       onClick={onAlternar}
       aria-expanded={aberto}
-      aria-label={aberto ? "Fechar filtros da busca" : "Abrir filtros da busca"}
+      // Sem aria-label: o nome é o texto visível (local, período, moradores, "Filtros"); aria-expanded diz se abre ou
+      // fecha (axe label-content-name-mismatch, t251).
       data-testid="busca-compacta"
       className={cn(
         "flex h-12 min-w-0 max-w-full items-center rounded-full border bg-white pl-5 pr-2 text-sm text-ink transition-colors hover:border-ink",

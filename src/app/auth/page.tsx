@@ -988,7 +988,8 @@ function Input({
           onBlur={() => setShow(false)}
           aria-label="Segure para ver a senha"
           title="Segure para ver a senha"
-          className="shrink-0 text-muted transition-colors hover:text-ink"
+          // Ícone de 16 px, área de toque de 44 px (t259); a margem negativa mantém o ícone no mesmo lugar do campo.
+          className="-mr-3 grid h-11 w-11 shrink-0 place-items-center text-muted transition-colors hover:text-ink"
         >
           {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>

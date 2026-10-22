@@ -287,7 +287,7 @@ function PainelChat({ onFechar, altura }: { onFechar?: () => void; altura: strin
               placeholder="Escreva sua dúvida…"
               className="max-h-28 min-h-[40px] flex-1 resize-none rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-sage"
             />
-            <button type="submit" disabled={enviando || !texto.trim()} aria-label="Enviar" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-forest text-white disabled:opacity-40">
+            <button type="submit" disabled={enviando || !texto.trim()} aria-label="Enviar" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-forest text-white disabled:opacity-40">
               <Send className="h-4 w-4" />
             </button>
           </form>

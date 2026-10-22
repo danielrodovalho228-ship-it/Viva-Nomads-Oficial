@@ -209,11 +209,12 @@ export default async function HomePage() {
           </div>
 
           {/* Indicador de rolagem (mobile) */}
-          <p className="mx-auto mt-12 max-w-4xl px-1 text-xs text-white/45 sm:hidden">
+          <p className="mx-auto mt-12 max-w-4xl px-1 text-xs text-white/70 sm:hidden">
             Deslize para comparar →
           </p>
           <div className="mx-auto mt-2 max-w-4xl rounded-xl border border-white/10 sm:mt-14">
-            <div className="overflow-x-auto rounded-xl [scrollbar-width:thin]">
+            {/* Rola na horizontal no celular: entra no Tab (tabIndex 0) e tem nome, para o teclado alcançar (axe scrollable-region-focusable). */}
+            <div className="overflow-x-auto rounded-xl [scrollbar-width:thin] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white" tabIndex={0} role="region" aria-label="Comparativo entre a Viva Nomads e outras plataformas">
               <table className="w-full min-w-[34rem] text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/[0.03]">
@@ -239,7 +240,7 @@ export default async function HomePage() {
                 </tbody>
               </table>
             </div>
-            <p className="px-5 pb-4 pt-3 text-xs text-white/40">
+            <p className="px-5 pb-4 pt-3 text-xs text-white/70">
               Comparativo referente à locação mobiliada de média duração, conforme políticas
               públicas das plataformas. Informações conferidas em outubro de 2026.
             </p>

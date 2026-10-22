@@ -48,7 +48,7 @@ async function primarios(page: Page): Promise<string[]> {
         const b = el.getBoundingClientRect();
         const cs = getComputedStyle(el);
         // O cabeçalho do SITE (o que tem o logo) é navegação global, não ação da tela; o título da página (PageTitle) conta.
-        const cabecalhoDoSite = el.closest("header")?.querySelector('a[aria-label="Viva Nomads"]');
+        const cabecalhoDoSite = el.closest("header")?.querySelector('a[data-logo]');
         return b.width > 0 && b.height > 0 && cs.visibility !== "hidden" && !cabecalhoDoSite && !el.closest("nav, [role=dialog], [data-folha]");
       })
       .map((el) => (el.textContent ?? "").trim().slice(0, 40)),
@@ -60,7 +60,7 @@ async function primariosSemMarca(page: Page): Promise<string[]> {
   return page.evaluate(() =>
     Array.from(document.querySelectorAll<HTMLElement>("a, button"))
       .filter((el) => {
-        if (el.matches('[data-cta="primary"]') || el.closest("header")?.querySelector('a[aria-label="Viva Nomads"]')) return false;
+        if (el.matches('[data-cta="primary"]') || el.closest("header")?.querySelector('a[data-logo]')) return false;
         if (el.closest("nav, aside, [role=dialog], [data-folha], [data-testid='fale-com-a-viva-raiz']")) return false;
         const b = el.getBoundingClientRect();
         if (b.width < 60 || b.height < 32) return false;
