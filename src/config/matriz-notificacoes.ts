@@ -42,6 +42,10 @@ export const MATRIZ_NOTIFICACOES = {
   visita_remarcada: { categoria: "decisao", papeis: ["morador"], canais: TODOS_OS_CANAIS, prazo: true },
   manutencao_nova: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
   manutencao_atrasada: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
+  // Prompt 59: prazo de solução (o morador vê "o proprietário foi avisado em …") e padrão mínimo de conforto.
+  manutencao_prazo: { categoria: "decisao", papeis: DUAS_PARTES, canais: TODOS_OS_CANAIS, prazo: true },
+  conforto_prazo: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
+  conforto_pendencia: { categoria: "decisao", papeis: DUAS_PARTES, canais: TODOS_OS_CANAIS, prazo: true },
   estadia_aditivo_proposto: { categoria: "decisao", papeis: DUAS_PARTES, canais: TODOS_OS_CANAIS, prazo: true },
   estadia_instrucoes_pendentes: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
   pedido_confirmar_telefone: { categoria: "decisao", papeis: ["morador"], canais: TODOS_OS_CANAIS, prazo: true },

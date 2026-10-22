@@ -31,7 +31,7 @@ import { notaQualidade, selosDoAnuncio, type SinaisAnuncio } from "../ranking/or
 const AGORA = new Date("2026-10-22T15:00:00Z");
 const H = 3_600_000;
 const D = 86_400_000;
-const todas = CHAVES_CONFORTO.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }));
+const todas: { chave: string; confirmado: boolean; versao_lista: number }[] = CHAVES_CONFORTO.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }));
 
 test("lista única: 10 itens com chave, rótulo e critério; ar-condicionado não é exigido (D5)", () => {
   assert.deepEqual([...CHAVES_CONFORTO], [
