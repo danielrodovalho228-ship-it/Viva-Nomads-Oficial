@@ -322,6 +322,7 @@
         "publico"
       ],
       "specs": [
+        "t274-preco-grade-47",
         "t234-ideal-para",
         "t10-buscar-url",
         "t14-app-mode",
@@ -1028,6 +1029,7 @@
         "publico"
       ],
       "specs": [
+        "t274-preco-grade-47",
         "t234-ideal-para",
         "t11-travessias",
         "t133-candidatura-motivo",
