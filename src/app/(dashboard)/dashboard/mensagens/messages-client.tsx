@@ -345,7 +345,7 @@ function VisitaNaConversa({ propertyId, outroId }: { propertyId: string; outroId
   if (!visita) return null;
   const { papel, ...v } = visita;
   return (
-    <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita" data-imovel={propertyId}>
+    <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita" data-imovel={propertyId} data-visita={v.id}>
       <CartaoVisita key={`${v.id}-${v.status}`} v={v} papel={papel} compacto onMudou={() => setVersao((n) => n + 1)} />
     </div>
   );

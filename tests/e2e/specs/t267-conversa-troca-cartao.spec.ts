@@ -60,7 +60,13 @@ test.describe("T267 — troca de conversa não deixa o cartão da anterior", () 
 
       await abrirConversa(page, convB, largura);
       await expect(page.locator("section").getByText("Oi! Sobre o Studio B.")).toBeVisible();
-      await expect(page.getByTestId("conversa-visita"), "o cartão da conversa A não fica na B").toHaveCount(0);
+      const sobra = page.getByTestId("conversa-visita");
+      await expect
+        .poll(async () => ((await sobra.count()) ? `${await sobra.getAttribute("data-imovel")} ${await sobra.getAttribute("data-visita")} ${await sobra.innerText()}` : ""), {
+          message: `o cartão da conversa A não fica na B (B = ${ids.b}, A = ${ids.a})`,
+          timeout: 10_000,
+        })
+        .toBe("");
       // E continua sem cartão depois que a resposta do servidor chega.
       await page.waitForTimeout(1500);
       await expect(page.getByTestId("conversa-visita")).toHaveCount(0);
