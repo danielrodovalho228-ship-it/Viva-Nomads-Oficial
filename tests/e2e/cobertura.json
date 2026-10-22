@@ -53,7 +53,7 @@
         "t231-admin-numeros-com-lista",
         "t254-admin-aviso-atendimento",
         "t255-admin-f15-f16-f18-f20",
-        "t270-admin-decisoes",
+        "t273-admin-decisoes",
         "t271-admin-visual"
       ]
     },
@@ -1428,7 +1428,7 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t270-admin-decisoes"
+        "t273-admin-decisoes"
       ]
     },
     "/dashboard/estadia/[contratoId]": {

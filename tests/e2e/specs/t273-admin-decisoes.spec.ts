@@ -4,7 +4,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T270 — Prompt 46 (D5), o admin na anatomia "decisões primeiro", a 390 e 1280 px:
+  T273 — Prompt 46 (D5), o admin na anatomia "decisões primeiro", a 390 e 1280 px:
    1. /admin abre com "Hoje você tem N decisões" (h1); N = a soma das linhas; cada linha tem o número (link) e o botão
       da decisão (secundário — nenhum primário nas decisões) que levam à mesma tela do admin;
    2. o spec cria um pedido de encerramento aberto e uma candidatura parada há 3 dias: as duas linhas aparecem e a
@@ -15,15 +15,15 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t270.${sufixo}@lab.vivanomads.test`, nome: "Dalva Decide Prado", role: "owner" as const };
-const inq = { email: `inq.t270.${sufixo}@lab.vivanomads.test`, nome: "Ivo Decide Prado", role: "tenant" as const };
+const dono = { email: `dono.t273.${sufixo}@lab.vivanomads.test`, nome: "Dalva Decide Prado", role: "owner" as const };
+const inq = { email: `inq.t273.${sufixo}@lab.vivanomads.test`, nome: "Ivo Decide Prado", role: "tenant" as const };
 const ids: Record<string, string | undefined> = {};
 
 async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
 
-test.describe("T270 — admin: decisões primeiro", () => {
+test.describe("T273 — admin: decisões primeiro", () => {
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.skip(!hasAccount("admin"), "conta de admin do laboratório não configurada");
@@ -88,7 +88,7 @@ test.describe("T270 — admin: decisões primeiro", () => {
       }
       expect(Number((await h1.innerText()).match(/\d+/)![0])).toBe(soma);
       await expect(secao.locator('[data-cta="primary"]')).toHaveCount(0);
-      await page.screenshot({ path: `${SAIDA}/t270-decisoes-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t273-decisoes-${largura}.png`, fullPage: false });
 
       // Encerramento aberto: a linha conta o mesmo que a lista de encerramentos (não concluídos).
       const enc = secao.locator('[data-decisao="encerramentos"] [data-href]').first();
