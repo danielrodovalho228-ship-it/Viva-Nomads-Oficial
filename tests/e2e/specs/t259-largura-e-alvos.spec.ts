@@ -28,21 +28,22 @@ for (const largura of [390, 1280]) {
               const e = getComputedStyle(el);
               return r.width > 0 && r.height > 0 && e.visibility !== "hidden" && e.display !== "none" && !el.closest("[aria-hidden=true]");
             })
+            // Só medidas cruas aqui: esta função roda no navegador, onde o alvoDoControle importado não existe.
             .map((el) => {
               const caixa = el.getBoundingClientRect();
               const rotulo = el.closest("label")?.getBoundingClientRect();
-              const r = alvoDoControle(
-                el.getAttribute("type"),
-                { largura: caixa.width, altura: caixa.height },
-                rotulo ? { largura: rotulo.width, altura: rotulo.height } : null,
-              );
               const id = el.id ? `#${el.id}` : el.getAttribute("data-testid") ? `[data-testid=${el.getAttribute("data-testid")}]` : "";
-              return { seletor: `${el.tagName.toLowerCase()}${id}`, largura: r.largura, altura: r.altura };
+              return {
+                seletor: `${el.tagName.toLowerCase()}${id}`,
+                tipo: el.getAttribute("type"),
+                caixa: { largura: caixa.width, altura: caixa.height },
+                rotulo: rotulo ? { largura: rotulo.width, altura: rotulo.height } : null,
+              };
             }),
         }));
         expect(temRolagemLateral(medidas.scrollWidth, medidas.janela), `${rota} @${largura}: rolagem lateral`).toBe(false);
         if (largura === 390) {
-          const alvos: AlvoMedido[] = medidas.alvos;
+          const alvos: AlvoMedido[] = medidas.alvos.map((a) => ({ seletor: a.seletor, ...alvoDoControle(a.tipo, a.caixa, a.rotulo) }));
           expect(descreverAlvos(alvos), `${rota} @390: alvos menores que 44 px`).toBe("");
         }
       });
