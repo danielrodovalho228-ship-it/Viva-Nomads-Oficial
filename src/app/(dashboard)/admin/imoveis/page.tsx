@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Home } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { adminDaPagina, imoveisDoBanco, type ImovelLinhaAdmin } from "@/lib/data/admin-indicadores";
 import { apareceParaPublico, periodoDaLista, ROTULO_TIPO_IMOVEL, tipoImovel, type TipoImovel } from "@/lib/admin/indicadores";
@@ -128,7 +128,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
       </p>
       <Panel title={`Imóveis (${lista.length})`}>
         {lista.length === 0 ? (
-          <EmptyState icon={Home} title="Nenhum imóvel nesta lista" text="Tire um filtro para ver outros." />
+          <EmptyState icon={Home} title="Nenhum imóvel nesta lista" text="Tire um filtro para ver outros." action={<ButtonLink href="/admin/imoveis" variant="secondary" size="sm">Ver todos os imóveis</ButtonLink>} />
         ) : (
           <ul className="grid gap-3">
             {lista.map((i) => (

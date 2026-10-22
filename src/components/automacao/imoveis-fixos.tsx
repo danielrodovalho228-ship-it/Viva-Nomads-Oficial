@@ -1,4 +1,5 @@
 import { Building2 } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, Panel } from "@/components/dashboard/primitives";
 import { meusImoveisFixos } from "@/lib/automacao/acoes";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
@@ -13,7 +14,7 @@ export async function ImoveisFixos() {
   return (
     <Panel id="imoveis-fixos" title="Imóveis fixos" className="mb-6 scroll-mt-24" data-testid="imoveis-fixos">
       {lista.length === 0 ? (
-        <EmptyState icon={Building2} title="Nenhum imóvel fixo" text="Quando um proprietário convidar você como parceiro fixo de um imóvel, o convite aparece aqui." />
+        <EmptyState icon={Building2} title="Nenhum imóvel fixo" text="Quando um proprietário convidar você como parceiro fixo de um imóvel, o convite aparece aqui." action={<ButtonLink href="/dashboard/parceiro" variant="secondary" size="sm">Abrir minha página</ButtonLink>} />
       ) : (
         <ul className="divide-y divide-line">
           {lista.map((v) => (

@@ -6,9 +6,19 @@ import { listarFalhasDocumentos } from "@/lib/data/documentos-falhas-actions";
 import { FalhasDocumentos } from "./falhas-client";
 import { adminDaPagina, filaDocumentos } from "@/lib/data/admin-indicadores";
 
+type ClienteAdmin = NonNullable<Awaited<ReturnType<typeof adminDaPagina>>>;
+
+/** Data da decisão mais recente de uma fila — o "nada pendente" mostra quando a equipe decidiu por último (Prompt 48). */
+async function ultimaDecisao(admin: ClienteAdmin | null, tabela: "properties" | "property_ownership_checks", coluna: string): Promise<string | null> {
+  if (!admin) return null;
+  const { data } = await admin.from(tabela).select(coluna).not(coluna, "is", null).order(coluna, { ascending: false }).limit(1);
+  const linha = (data?.[0] ?? null) as Record<string, string | null> | null;
+  return linha?.[coluna] ?? null;
+}
+
 export default async function AdminDocumentosPage() {
   const admin = await adminDaPagina();
-  const [docs, auto, contadores, matriculas, contMatriculas, falhas, filaAgora] = await Promise.all([
+  const [docs, auto, contadores, matriculas, contMatriculas, falhas, filaAgora, ultimaDoc, ultimaMatricula] = await Promise.all([
     listDocumentosPendentes(),
     listConferidosAutomaticamente(),
     contadoresConferencia(),
@@ -16,11 +26,13 @@ export default async function AdminDocumentosPage() {
     contadoresMatriculas(),
     listarFalhasDocumentos(),
     admin ? filaDocumentos(admin).catch(() => null) : Promise.resolve(null),
+    ultimaDecisao(admin, "properties", "document_reviewed_at").catch(() => null),
+    ultimaDecisao(admin, "property_ownership_checks", "revisado_em").catch(() => null),
   ]);
   return (
     <>
-      <AdminDocumentosClient docs={docs} auto={auto} contadores={contadores} filaAgora={filaAgora} />
-      <MatriculasAdmin itens={matriculas} contadores={contMatriculas} />
+      <AdminDocumentosClient docs={docs} auto={auto} contadores={contadores} filaAgora={filaAgora} ultimaDecisao={ultimaDoc} />
+      <MatriculasAdmin itens={matriculas} contadores={contMatriculas} ultimaDecisao={ultimaMatricula} />
       <FalhasDocumentos falhas={falhas.falhas} pendentes={falhas.pendentes} />
     </>
   );

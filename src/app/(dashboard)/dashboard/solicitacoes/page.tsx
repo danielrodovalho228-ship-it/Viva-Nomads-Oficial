@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, Clock, CheckCircle2, Wrench, AlertTriangle } from "lucide-react";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { ServiceOrderNotice } from "@/components/legal-notice";
 import { useViewMode } from "@/lib/roles";
@@ -130,8 +130,7 @@ function OwnerView({
         <EmptyState
           icon={Wrench}
           title="Nenhuma solicitação ainda"
-          text="Quando um inquilino abrir uma ordem de manutenção em um dos seus imóveis, ela aparece aqui — por prioridade e com o prazo para responder."
-        />
+          text="Quando um inquilino abrir uma ordem de manutenção em um dos seus imóveis, ela aparece aqui — por prioridade e com o prazo para responder." action={<ButtonLink href="/dashboard/imoveis" variant="secondary" size="sm">Ver meus imóveis</ButtonLink>} />
       ) : (
         <div className="grid gap-3">
           {sorted.map((o) => (

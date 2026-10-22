@@ -1,4 +1,5 @@
 import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { ButtonLink } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -35,7 +36,7 @@ export default async function AdminEmailsTestePage() {
       <ListaNumeros className="mb-6" itens={[{ rotulo: "Último recebido", valor: linhas[0] ? quando(linhas[0].criado_em) : "—", href: "#lista" }]} />
       <Panel title="Mais recentes primeiro" id="lista" className="scroll-mt-24">
         {linhas.length === 0 ? (
-          <EmptyState icon={Mail} title="Nenhum e-mail de teste ainda" text="Quando uma conta de teste receber um e-mail do sistema, ele aparece aqui." />
+          <EmptyState icon={Mail} title="Nenhum e-mail de teste ainda" text="Quando uma conta de teste receber um e-mail do sistema, ele aparece aqui." action={<ButtonLink href="/admin/dados-de-teste" variant="secondary" size="sm">Abrir os dados de teste</ButtonLink>} />
         ) : (
           <>
             {/* Celular: cartões */}

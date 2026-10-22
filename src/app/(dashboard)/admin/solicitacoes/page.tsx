@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ButtonLink } from "@/components/ui/button";
 import { Wrench } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { adminDaPagina, intervaloBRT, solicitacoesManutencao, urgentesSemResposta4h } from "@/lib/data/admin-indicadores";
@@ -49,7 +50,7 @@ export default async function AdminSolicitacoesPage({ searchParams }: { searchPa
       </p>
       <Panel title="Solicitações">
         {lista.length === 0 ? (
-          <EmptyState icon={Wrench} title="Nenhuma solicitação no período" text="Mude o período na visão geral para ver outras." />
+          <EmptyState icon={Wrench} title="Nenhuma solicitação no período" text="Mude o período na visão geral para ver outras." action={<ButtonLink href="/admin" variant="secondary" size="sm">Mudar o período na visão geral</ButtonLink>} />
         ) : (
           <ul className="divide-y divide-sage-100">
             {lista.map((s) => (

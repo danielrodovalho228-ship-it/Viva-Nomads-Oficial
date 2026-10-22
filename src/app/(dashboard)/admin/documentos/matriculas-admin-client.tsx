@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { avisarFilaDocumentosMudou } from "@/lib/admin/fila-evento";
 import { Check, ExternalLink, FileText, X } from "lucide-react";
-import { Panel, EmptyState } from "@/components/dashboard/primitives";
+import { Panel, EmptyState, FilaVazia } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { decidirMatriculaAdmin, type MatriculaNaFila } from "@/lib/data/matriculas-admin";
 import type { ContadoresMatricula } from "@/lib/documento/fila-matricula";
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
  * Matrículas (prompt 19): a matrícula ao lado do resumo lido e do laudo CAF (só os booleanos). Em revisão e as
  * "prováveis" (amostra) ficam aqui até a equipe decidir: Aprovar / Pedir documento (motivo da tabela) / Recusar.
  */
-export function MatriculasAdmin({ itens, contadores }: { itens: MatriculaNaFila[]; contadores: ContadoresMatricula }) {
+export function MatriculasAdmin({ itens, contadores, ultimaDecisao = null }: { itens: MatriculaNaFila[]; contadores: ContadoresMatricula; ultimaDecisao?: string | null }) {
   const [fila, setFila] = useState(itens);
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -51,7 +51,7 @@ export function MatriculasAdmin({ itens, contadores }: { itens: MatriculaNaFila[
 
       <div className="mt-4 space-y-3">
         {fila.length === 0 ? (
-          <EmptyState icon={FileText} title="Nenhuma matrícula na fila" text="As conferidas automaticamente não precisam de você." />
+          <FilaVazia ultimaDecisao={ultimaDecisao} />
         ) : (
           fila.map((m) => <MatriculaCard key={m.id} m={m} onDecidido={() => decidida(m.id)} />)
         )}

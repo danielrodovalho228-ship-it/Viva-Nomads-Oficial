@@ -6,7 +6,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Clock, Trash2 } from "lucide-react";
-import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import { FilaVazia, PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PRAZOS, estadoPrazo, type Prioridade } from "@/config/atendimento";
@@ -66,6 +66,7 @@ export function AtendimentoClient({
   filtros,
   semAcesso,
   agoraISO,
+  ultimaDecisao = null,
 }: {
   aba: (typeof ABAS)[number]["id"];
   fila: ChamadoAdmin[];
@@ -73,6 +74,8 @@ export function AtendimentoClient({
   metricas: Record<string, unknown> | null;
   macros: Macro[];
   filtros: { fila?: string; prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean };
+  /** Quando a equipe resolveu o último chamado — aparece na fila vazia (Prompt 48). */
+  ultimaDecisao?: string | null;
   semAcesso: boolean;
   agoraISO: string;
 }) {
@@ -102,13 +105,17 @@ export function AtendimentoClient({
       {aba === "fila" && (
         <>
           <Filtros filtros={filtros} />
-          <Tabela itens={fila} agora={agora} vazio="Nenhum chamado na fila com esses filtros." />
+          {fila.length === 0 && !Object.values(filtros).some(Boolean) ? (
+            <FilaVazia ultimaDecisao={ultimaDecisao} />
+          ) : (
+            <Tabela itens={fila} agora={agora} vazio="Nenhum chamado na fila com esses filtros." />
+          )}
         </>
       )}
       {aba === "aprovacao" && (
         <Panel title="Aguardando aprovação interna">
           <p className="mb-3 text-sm text-muted">Aprovação da equipe, não do cliente (o cliente vê &ldquo;Em análise pela equipe&rdquo;). Casos preparados para decisão: estorno, exceção, documento contestado, conflito. A Viva prepara o resumo e a resposta sugerida.</p>
-          <Tabela itens={aprovacao} agora={agora} vazio="Nada aguardando aprovação." />
+          {aprovacao.length === 0 ? <FilaVazia ultimaDecisao={ultimaDecisao} /> : <Tabela itens={aprovacao} agora={agora} vazio="Nada aguardando aprovação." />}
         </Panel>
       )}
       {aba === "metricas" && (

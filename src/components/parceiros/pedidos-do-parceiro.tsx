@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ButtonLink } from "@/components/ui/button";
 import { CalendarDays, ClipboardList } from "lucide-react";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
 import { pedidosDoMeuParceiro } from "@/lib/parceiros/pedido-actions";
@@ -29,7 +30,7 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
     <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <Panel id="pedidos" title="Pedidos" className="scroll-mt-24" data-testid="parceiro-pedidos">
         {pedidos.length === 0 ? (
-          <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text="Quando alguém pedir um orçamento pela sua página, o pedido aparece aqui." />
+          <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text="Quando alguém pedir um orçamento pela sua página, o pedido aparece aqui." action={<ButtonLink href="/dashboard/parceiro" variant="secondary" size="sm">Abrir minha página</ButtonLink>} />
         ) : (
           <ul className="divide-y divide-line">
             {pedidos.map((p) => (
@@ -57,7 +58,7 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
       <div className="grid content-start gap-6">
         <Panel id="agenda" title="Agenda" className="scroll-mt-24" data-testid="parceiro-agenda">
           {agenda.length === 0 ? (
-            <EmptyState icon={CalendarDays} title="Nenhum horário combinado" text="Quando um horário for confirmado num pedido, ele aparece aqui." />
+            <EmptyState icon={CalendarDays} title="Nenhum horário combinado" text="Quando um horário for confirmado num pedido, ele aparece aqui." action={<ButtonLink href="/dashboard/parceiro#pedidos" variant="secondary" size="sm">Ver pedidos</ButtonLink>} />
           ) : (
             <ul className="divide-y divide-line">
               {agenda.map((p) => (

@@ -100,8 +100,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
         <EmptyState
           icon={Users}
           title="Nenhum interessado ainda"
-          text="Quando um inquilino enviar uma consulta sobre seus imóveis, ele aparece aqui."
-        />
+          text="Quando um inquilino enviar uma consulta sobre seus imóveis, ele aparece aqui." action={<ButtonLink href="/dashboard/imoveis" variant="secondary" size="sm">Ver meus anúncios</ButtonLink>} />
       ) : (
         <>
           <p className="mb-3 flex items-center gap-2 text-xs text-muted">

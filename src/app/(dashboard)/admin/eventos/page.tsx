@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ButtonLink } from "@/components/ui/button";
 import { Activity } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { adminDaPagina, eventosDoPeriodo, intervaloBRT } from "@/lib/data/admin-indicadores";
@@ -60,7 +61,7 @@ export default async function AdminEventosPage({ searchParams }: { searchParams:
       </p>
       <Panel title="Por dia (horário de Brasília)">
         {dias.length === 0 ? (
-          <EmptyState icon={Activity} title="Nenhum registro no período" text="Mude o período na visão geral para ver outros dias." />
+          <EmptyState icon={Activity} title="Nenhum registro no período" text="Mude o período na visão geral para ver outros dias." action={<ButtonLink href="/admin" variant="secondary" size="sm">Mudar o período na visão geral</ButtonLink>} />
         ) : (
           <ul className="divide-y divide-sage-100">
             {dias.map(([d, n]) => (

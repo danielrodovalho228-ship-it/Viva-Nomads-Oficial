@@ -12,6 +12,7 @@ import { safeInternalPath } from "@/lib/safe-redirect";
 import { agruparChave, urlOtpauth } from "@/lib/seguranca/chave-totp";
 import { contarCodigosRecuperacao, gerarCodigosRecuperacao, usarCodigoRecuperacao } from "@/lib/seguranca/recuperacao-actions";
 import { CodigosGerados, CodigosRecuperacaoBloco } from "@/components/seguranca/codigos-recuperacao";
+import { SkeletonLinhas } from "@/components/ui/skeleton";
 
 const CHAVE_FALHAS = "vn:2fa-falhas";
 
@@ -152,7 +153,7 @@ export function VerificarCodigoForm({ destino }: { destino: string }) {
   return (
     <form onSubmit={enviar} className="mt-6 space-y-4 text-left">
       {carregando ? (
-        <p className="flex items-center gap-2 text-sm text-muted"><Loader2 className="h-4 w-4 animate-spin" /> Carregando…</p>
+        <SkeletonLinhas linhas={3} />
       ) : (
         <>
           <CampoCodigo id="codigo-2fa" valor={codigo} onChange={setCodigo} />
@@ -299,7 +300,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
         </p>
       )}
       {estado.tipo === "carregando" && (
-        <p className="flex items-center gap-2 text-sm text-muted"><Loader2 className="h-4 w-4 animate-spin" /> Carregando…</p>
+        <SkeletonLinhas linhas={3} />
       )}
       {estado.tipo === "sem-fator" && (
         <div className="space-y-4">

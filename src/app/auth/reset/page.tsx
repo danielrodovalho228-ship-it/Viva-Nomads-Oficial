@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { useCelularNoNavegador, VoltarParaApp } from "@/components/app/voltar-para-app";
+import { SkeletonLinhas } from "@/components/ui/skeleton";
 
 type Phase = "checking" | "ready" | "invalid" | "done";
 
@@ -139,8 +140,8 @@ export default function ResetPasswordPage() {
         <Logo href="/" />
 
         {phase === "checking" && (
-          <div className="mt-12 flex items-center justify-center gap-2 text-muted">
-            <Loader2 className="h-5 w-5 animate-spin" /> Validando o link…
+          <div className="mt-12">
+            <SkeletonLinhas linhas={3} testid="reset-validando" />
           </div>
         )}
 

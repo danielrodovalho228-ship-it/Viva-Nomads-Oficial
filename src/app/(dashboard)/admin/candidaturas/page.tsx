@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ButtonLink } from "@/components/ui/button";
 import { Inbox } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { adminDaPagina, candidaturasDoPeriodo, candidaturasSemResposta48h, intervaloBRT, type CandidaturaAdmin } from "@/lib/data/admin-indicadores";
@@ -61,7 +62,7 @@ export default async function AdminCandidaturasPage({ searchParams }: { searchPa
       </p>
       <Panel title="Candidaturas">
         {lista.length === 0 ? (
-          <EmptyState icon={Inbox} title="Nenhuma candidatura nesta lista" text="Mude o período na visão geral para ver outras." />
+          <EmptyState icon={Inbox} title="Nenhuma candidatura nesta lista" text="Mude o período na visão geral para ver outras." action={<ButtonLink href="/admin" variant="secondary" size="sm">Mudar o período na visão geral</ButtonLink>} />
         ) : (
           <ul className="divide-y divide-sage-100">
             {lista.map((c) => (

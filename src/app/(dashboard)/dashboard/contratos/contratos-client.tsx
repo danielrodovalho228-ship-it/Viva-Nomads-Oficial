@@ -8,7 +8,6 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
-import Image from "next/image";
 import {
   ShieldCheck,
   Check,
@@ -190,7 +189,6 @@ export function ContratosClient({
 
       {contratos.length === 0 ? (
         <EmptyState
-          illustration={<Image src="/media/empty-contratos.webp" alt="" width={176} height={176} className="h-44 w-44" />}
           title="Nenhum contrato ainda"
           text="Seu primeiro fechamento aparece aqui — o contrato, os blocos e o registro dos recebimentos."
           action={

@@ -30,16 +30,18 @@ test.describe("T138 — painéis 390 px", () => {
     });
   }
 
-  test("estados vazios usam o ícone em círculo de destaque", async ({ page }) => {
+  test("estados vazios: ícone pequeno, sem ilustração e com um próximo passo (revisto no Prompt 48)", async ({ page }) => {
     for (const rota of ["/dashboard/buscas", "/dashboard/candidaturas", "/dashboard/comparar"]) {
       await page.goto(rota, { waitUntil: "domcontentloaded" });
       const vazio = page.getByTestId("estado-vazio").first();
       if (!(await vazio.isVisible().catch(() => false))) continue; // conta com dados: nada a provar aqui
+      await expect(vazio.locator("img")).toHaveCount(0);
+      await expect(vazio.getByTestId("estado-vazio-acao").locator("a, button").first()).toBeVisible();
       const icone = vazio.getByTestId("estado-vazio-icone");
-      if ((await icone.count()) === 0) continue; // usa ilustração própria
+      if ((await icone.count()) === 0) continue;
       const c = await icone.boundingBox();
-      expect(c!.width, `${rota}: círculo`).toBeGreaterThanOrEqual(80);
-      expect(Math.abs(c!.width - c!.height)).toBeLessThanOrEqual(1);
+      expect(c!.width, `${rota}: ícone pequeno`).toBeLessThanOrEqual(24);
     }
   });
+
 });

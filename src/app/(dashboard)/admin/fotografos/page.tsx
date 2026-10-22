@@ -21,7 +21,7 @@ export default async function AdminFotografosPage() {
     return (
       <>
         <PageTitle title="Fotógrafos parceiros" />
-        <EmptyState icon={Camera} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." />
+        <EmptyState icon={Camera} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
   }
@@ -58,7 +58,7 @@ export default async function AdminFotografosPage() {
         </Panel>
         <Panel title={`Fotógrafos (${fotos.length})`} className="scroll-mt-24 lg:col-span-2" id="lista">
           {fotos.length === 0 ? (
-            <EmptyState icon={Camera} title="Nenhum fotógrafo ainda" text="Aprove pedidos de parceria em Parceiros; a página aparece aqui depois da ativação." />
+            <EmptyState icon={Camera} title="Nenhum fotógrafo ainda" text="Aprove pedidos de parceria em Parceiros; a página aparece aqui depois da ativação." action={<ButtonLink href="/admin/parceiros" variant="secondary" size="sm">Ver pedidos de parceria</ButtonLink>} />
           ) : (
             <ul className="divide-y divide-line text-sm">
               {fotos.map((f) => (

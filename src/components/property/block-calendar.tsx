@@ -14,6 +14,7 @@ import {
 } from "@/lib/availability";
 import { getBlocks, addBlock, removeBlock, type BlocoDatas } from "@/lib/data/blocks-actions";
 import { cn } from "@/lib/utils";
+import { SkeletonLinhas } from "@/components/ui/skeleton";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -138,9 +139,9 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       </p>
 
       {carregando && (
-        <p role="status" data-testid="bloqueios-carregando" className="mb-3 flex items-center gap-2 text-sm text-muted">
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Carregando datas bloqueadas…
-        </p>
+        <div className="mb-3">
+          <SkeletonLinhas linhas={2} testid="bloqueios-carregando" />
+        </div>
       )}
       {falhou && !carregando && (
         <p role="alert" data-testid="bloqueios-erro" className="mb-3 text-sm text-red-600">

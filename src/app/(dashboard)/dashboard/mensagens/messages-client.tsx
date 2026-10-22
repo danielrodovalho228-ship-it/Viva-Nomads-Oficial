@@ -2,9 +2,9 @@
 
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
+import { ButtonLink } from "@/components/ui/button";
 import Link from "next/link";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { AVISO_ANTIGOLPE_ALERTA, pareceDadoBancario } from "@/lib/seguranca/antigolpe";
@@ -131,12 +131,21 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     return (
       <>
         <PageTitle title="Mensagens" />
-        <div className="rounded-xl border border-dashed border-line bg-white p-12 text-center">
-          <Image src="/media/empty-mensagens.webp" alt="" width={176} height={176} className="mx-auto h-44 w-44" />
-          <h3 className="mt-4 font-title text-lg font-semibold text-ink">Nenhuma conversa ainda</h3>
-          <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-            Quando um interessado enviar uma mensagem sobre um imóvel, a conversa aparece aqui.
+        {/* Prompt 48: sem ilustração; diz como a conversa funciona e o próximo passo. */}
+        <div className="rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="mensagens-vazio">
+          <h2 className="font-title text-lg font-semibold text-ink">Nenhuma conversa ainda</h2>
+          <p className="mt-2 max-w-md text-sm text-muted">
+            A conversa começa quando você pede um imóvel ou quando alguém pede o seu. Tudo fica aqui, com o imóvel e as
+            datas no topo; telefone e e-mail só aparecem depois do aceite.
           </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <ButtonLink href="/buscar" variant="secondary" size="sm">
+              Buscar imóveis
+            </ButtonLink>
+            <Link href="/como-funciona#para-inquilinos" className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest">
+              Como funciona a conversa
+            </Link>
+          </div>
         </div>
       </>
     );

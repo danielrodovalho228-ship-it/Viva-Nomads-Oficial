@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Plus, Check, X, Pause, Play, MessageSquare, Home, Pencil, Trash2, RefreshCw } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button, buttonClasses } from "@/components/ui/button";
@@ -139,7 +138,6 @@ export function PedidosClient({
       {visiveis.length === 0 ? (
         <Panel>
           <EmptyState
-            illustration={<Image src="/media/empty-pedidos.webp" alt="" width={176} height={176} className="h-44 w-44" />}
             title="Você ainda não tem pedidos"
             text="Publique um pedido de moradia e deixe os proprietários da cidade encontrarem você."
             action={
