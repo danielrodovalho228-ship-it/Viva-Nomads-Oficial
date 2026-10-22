@@ -312,7 +312,10 @@ function PainelChat({ onFechar, altura }: { onFechar?: () => void; altura: strin
 
 function Balao({ autor, children }: { autor: "user" | "assistant"; children: React.ReactNode }) {
   return (
-    <div className={cn("max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2", autor === "user" ? "ml-auto bg-forest text-white" : "bg-white text-ink ")}>
+    <div
+      data-testid={autor === "user" ? "viva-chat-msg-usuario" : "viva-chat-msg-viva"}
+      className={cn("max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2", autor === "user" ? "ml-auto bg-forest text-white" : "bg-white text-ink ")}
+    >
       {children}
     </div>
   );

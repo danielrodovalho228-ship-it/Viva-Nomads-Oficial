@@ -71,7 +71,7 @@ test.describe("T42 — Contato e telefone", () => {
     await bloco.getByLabel("Sua mensagem para a Viva").fill("Como falo com o dono do imóvel?");
     await bloco.getByRole("button", { name: "Enviar" }).click();
     // Com ou sem IA há sempre uma resposta (a Viva ou o aviso com o caminho para uma pessoa).
-    await expect(bloco.locator("div.bg-white.shadow-sm").nth(1)).toBeVisible({ timeout: 30_000 });
+    await expect(bloco.getByTestId("viva-chat-msg-viva").nth(1)).toBeVisible({ timeout: 30_000 });
     await expect(bloco).not.toContainText(TELEFONE);
   });
 });
