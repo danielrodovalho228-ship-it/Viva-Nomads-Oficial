@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { test, expect, type APIRequestContext } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { TAMANHOS } from "../fixtures/varredura";
-import { CLASSES, caminhosDoSitemap, escutarImagens, primeiroLink, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
+import { CLASSES, PAGINAS_PUBLICAS as PAGINAS, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
   T274 — VARREDURA DA PÁGINA INTEIRA, visitante (ordem do Muse, 22/10). O protocolo do Daniel: em cada página pública,
@@ -18,48 +18,6 @@ import { CLASSES, caminhosDoSitemap, escutarImagens, primeiroLink, varrerPagina,
   sitemap do próprio alvo; se a família não existir lá, o teste se pula dizendo isso.
   Telas logadas: produção não tem as contas de teste (scripts/ci/e2e-alvo.sh); elas ficam com a t249 no laboratório.
 */
-type Rota = { nome: string; rota: string | ((r: APIRequestContext) => Promise<string | null>) };
-const doSitemap = (padrao: RegExp, n = 0) => async (r: APIRequestContext) => (await caminhosDoSitemap(r)).filter((c) => padrao.test(c))[n] ?? null;
-
-const PAGINAS: Rota[] = [
-  { nome: "Início", rota: "/" },
-  { nome: "Buscar", rota: "/buscar" },
-  { nome: "Como funciona", rota: "/como-funciona" },
-  { nome: "Para proprietários", rota: "/para-proprietarios" },
-  { nome: "Empresas", rota: "/empresas" },
-  { nome: "Parceiros", rota: "/parceiros" },
-  { nome: "Parceiros — buscar", rota: "/parceiros/buscar" },
-  { nome: "Parceiros — limpeza", rota: "/parceiros/buscar?categoria=limpeza" },
-  { nome: "Parceiros — mudança", rota: "/parceiros/buscar?categoria=mudanca" },
-  { nome: "Parceiros — fotógrafos", rota: "/parceiros/fotografos" },
-  { nome: "Guia de fotos", rota: "/guia-fotos" },
-  { nome: "Preços", rota: "/precos" },
-  { nome: "Segurança", rota: "/seguranca" },
-  { nome: "Ajuda", rota: "/ajuda" },
-  { nome: "Guias", rota: "/guias" },
-  { nome: "Cidades", rota: "/cidades" },
-  { nome: "Favoritos (visitante)", rota: "/favoritos" },
-  { nome: "Comparar (visitante)", rota: "/comparar" },
-  { nome: "Novo pedido (visitante)", rota: "/pedidos/novo" },
-  { nome: "Termos", rota: "/termos" },
-  { nome: "Privacidade", rota: "/privacidade" },
-  { nome: "Guia (1º do sitemap)", rota: doSitemap(/^\/guias\/[^/]+$/) },
-  { nome: "Cidade (1ª do sitemap)", rota: doSitemap(/^\/cidades\/[^/]+$/) },
-  { nome: "Polo ou bairro (1º do sitemap)", rota: doSitemap(/^\/cidades\/[^/]+\/[^/]+$/) },
-  { nome: "Imóveis perto de (1º do sitemap)", rota: doSitemap(/^\/imoveis-perto-de\/[^/]+$/) },
-  { nome: "Imóvel (1º do sitemap)", rota: doSitemap(/^\/imoveis\/[^/]+$/, 0) },
-  { nome: "Imóvel (2º do sitemap)", rota: doSitemap(/^\/imoveis\/[^/]+$/, 1) },
-  { nome: "Imóvel (3º do sitemap)", rota: doSitemap(/^\/imoveis\/[^/]+$/, 2) },
-  { nome: "Página do parceiro (1ª da busca)", rota: (r) => primeiroLink(r, "/parceiros/buscar", /^\/parceiros\/(?!buscar$|fotografos$|ativar$)[^/]+$/) },
-  {
-    nome: "Perfil do proprietário (do 1º imóvel)",
-    rota: async (r) => {
-      const imovel = await doSitemap(/^\/imoveis\/[^/]+$/)(r);
-      return imovel ? primeiroLink(r, imovel, /^\/proprietario\/[^/]+$/) : null;
-    },
-  },
-];
-
 const SAIDA = "tests/laboratorio/saida/varredura-paginas";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
