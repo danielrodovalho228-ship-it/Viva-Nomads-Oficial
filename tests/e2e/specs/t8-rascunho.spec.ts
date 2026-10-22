@@ -178,7 +178,12 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     const encontramos = passos.getByRole("button", { name: /Comodidades/i });
     await expect(encontramos).toBeEnabled();
     await expect(passos.getByRole("button", { name: /Regras e valores/i })).toBeDisabled(); // nunca visitado
-    await encontramos.click();
+    // Logo depois de retomar, o autosave redesenha a barra de etapas e o botão sai do DOM entre a checagem e o clique
+    // (lab-crítico do #1052, 22/10: 45 s de "element was detached"). Tenta em janelas curtas até a etapa abrir.
+    await expect(async () => {
+      await encontramos.click({ timeout: 3_000 });
+      await expect(page.getByRole("heading", { name: "Comodidades e segurança" })).toBeVisible({ timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
     // A etiqueta da qualificação veio do rascunho (não da sessionStorage).
     await expect(page.getByText(/trabalhar de casa”? ativa/i)).toBeVisible();
   });
