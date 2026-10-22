@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from "@playwright/test";
 import { controlesCobertos } from "./varredura";
 
 /**
- * VARREDURA DA PÁGINA INTEIRA (t271): o protocolo do Daniel, tela por tela, rolando a página toda em 390 e 1280 px.
+ * VARREDURA DA PÁGINA INTEIRA (t274): o protocolo do Daniel, tela por tela, rolando a página toda em 390 e 1280 px.
  * Cada classe de defeito tem a sua conferência e devolve a lista de achados (vazia = passou), já com a evidência
  * (elemento, posição na página e medida). Roda contra qualquer TESTES_BASE_URL: produção (só páginas públicas, sem
  * login: as contas de teste não existem lá) ou o laboratório.

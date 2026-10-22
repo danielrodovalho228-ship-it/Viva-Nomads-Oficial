@@ -4,7 +4,7 @@ import { TAMANHOS } from "../fixtures/varredura";
 import { CLASSES, caminhosDoSitemap, escutarImagens, primeiroLink, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T271 — VARREDURA DA PÁGINA INTEIRA, visitante (ordem do Muse, 22/10). O protocolo do Daniel: em cada página pública,
+  T274 — VARREDURA DA PÁGINA INTEIRA, visitante (ordem do Muse, 22/10). O protocolo do Daniel: em cada página pública,
   em 390 e em 1280 px, rolar a página TODA e caçar seis classes de defeito (fixtures/varredura-pagina.ts):
     imagem  vazia, quebrada ou 404, pelo carregamento real (naturalWidth) e pelo HTTP da resposta
     fixo    elemento fixo/flutuante sobre conteúdo que a rolagem não revela (régua do Muse, 21/10)
@@ -63,7 +63,7 @@ const PAGINAS: Rota[] = [
 const SAIDA = "tests/laboratorio/saida/varredura-paginas";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
-test.describe("T271 — varredura da página inteira (visitante, 390 e 1280 px)", () => {
+test.describe("T274 — varredura da página inteira (visitante, 390 e 1280 px)", () => {
   test.beforeEach(({}, info) => test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)"));
 
   for (const p of PAGINAS) {
