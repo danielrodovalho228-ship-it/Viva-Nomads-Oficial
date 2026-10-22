@@ -25,12 +25,19 @@ for (const largura of [390, 1280] as const) {
       await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
       const cartao = page.getByTestId("cartao-imovel").filter({ has: page.getByTestId("cartao-total-mes") }).first();
       await expect(cartao.getByTestId("cartao-total-mes")).toBeVisible({ timeout: 30_000 });
-      const precoCartao = limpo(await cartao.getByTestId("cartao-total-mes").innerText());
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      // Preço e link lidos do MESMO nó de uma vez: a lista se reordena depois de hidratar e um locator preguiçoso
+      // podia ler o preço de um cartão e o link de outro.
+      const lido = await cartao.evaluate((el) => ({
+        preco: el.querySelector('[data-testid="cartao-total-mes"]')?.textContent ?? "",
+        href: el.querySelector('a[href^="/imoveis/"]')?.getAttribute("href") ?? null,
+      }));
+      const precoCartao = limpo(lido.preco);
       expect(precoCartao).toMatch(/^R\$ [\d.]+\/mês( · R\$ [\d.]+ em \d+ meses)?$/);
       await expect(cartao.getByTestId("cartao-disponivel")).toHaveText(/^Disponível (agora|a partir de \d{2}\/\d{2}(\/\d{4})?)$/);
       await page.screenshot({ path: `${SAIDA}/t277-busca-${largura}.png`, fullPage: false });
 
-      const href = await cartao.locator('a[href^="/imoveis/"]').first().getAttribute("href");
+      const href = lido.href;
       expect(href).toBeTruthy();
       await page.goto(href!, { waitUntil: "domcontentloaded" });
       if (largura === 1280) {
