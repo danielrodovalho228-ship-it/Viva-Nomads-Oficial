@@ -4,7 +4,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, fotosReais, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T280 — Minimização e eliminação, fase 1 (Prompt 58). Roteiro do reteste do Muse:
+ * T281 — Minimização e eliminação, fase 1 (Prompt 58). Roteiro do reteste do Muse:
  *  1. O dono exclui o rascunho: as fotos saem do bucket, cada uma vai ao livro de eliminações (só origem, caminho,
  *     tipo, motivo e data) e o hash perceptual fica (antifraude).
  *  2. Admin › Dados e retenção: o inventário, o relatório do dia e a eliminação da semana aparecem só em números;
@@ -18,7 +18,7 @@ const inq = { email: `inq.min.${sufixo}@lab.vivanomads.test`, nome: "Ivo Inquili
 const ids: { dono?: string; inq?: string; rascunho?: string; ativo?: string } = {};
 const caminhos: string[] = [];
 
-test.describe("T280 — minimização e eliminação (fase 1)", () => {
+test.describe("T281 — minimização e eliminação (fase 1)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
 
