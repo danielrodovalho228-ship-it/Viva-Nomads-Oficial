@@ -189,7 +189,7 @@ export function Navbar() {
         </div>
 
         <button
-          className={cn("ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-lg text-ink xl:hidden", naBusca && "lg:hidden")}
+          className={cn("ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-lg text-ink xl:hidden", naBusca && "lg:hidden")}
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Fechar menu" : "Abrir menu"}
         >
