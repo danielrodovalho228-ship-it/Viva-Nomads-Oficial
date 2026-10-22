@@ -10,9 +10,13 @@ for (const largura of [390, 1280]) {
 
     test("barra de progresso, mensagem opcional e confirmação com termos", async ({ page }) => {
       await page.goto("/imoveis/ube-002", { waitUntil: "domcontentloaded" });
-      await page.getByRole("button", { name: "Solicitar", exact: true }).locator("visible=true").first().click();
       const passo = page.getByTestId("solicitacao-passo");
-      await expect(passo).toBeVisible();
+      // Página fria (1º teste do lab-crítico, 22/10): o clique pode cair antes da hidratação e não abrir nada. Clica de
+      // novo até o passo aparecer; se nunca aparecer em 30 s, reprova do mesmo jeito.
+      await expect(async () => {
+        await page.getByRole("button", { name: "Solicitar", exact: true }).locator("visible=true").first().click();
+        await expect(passo).toBeVisible({ timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
       await expect(passo.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "33");
       await expect(passo.getByTestId("candidatura-detalhes")).toContainText("Caução");
 

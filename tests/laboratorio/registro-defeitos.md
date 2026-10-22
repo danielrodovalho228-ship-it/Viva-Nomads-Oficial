@@ -12,6 +12,9 @@ Um registro por defeito novo achado na triagem contínua (Pista C). Defeito conh
 | L-6 | 22/10 | t248 · "Qualificação do rascunho abre o checklist" (390 px) | /qualificar · dono | "Enviado para conferência" não aparece depois de enviar a matrícula; falhou em 21/10 02h02 e 12h19, 22/10 11h14; instável às 06h17 e 08h41 | A investigar (pode ser a trava do D-V3) | C | Aberto |
 | L-7 | 22/10 | t274 · Empresas e Para proprietários, classe foto (1280 px no erro registrado) | `/empresas` e `/para-proprietarios` · visitante | 7 cartões com `fotoPronta: false` (`src/lib/cartoes-secao.ts`) mostram só o fundo neutro (`[cartao-foto-pendente]`); laboratório de `82b4d9b` (14h43). Igual em produção: é o estado previsto até a foto chegar | Conteúdo pendente (produto) | Muse/coordenação: arquivos em `public/images/unicas/` e `fotoPronta: true` | Aberto; anotado na t274 (`CONHECIDOS`), catraca reprova quando sumir |
 | L-8 | 22/10 | t267 · "/buscar: só a foto visível e a próxima de cada cartão; todas carregadas" (1280 px) | `/buscar` (e cartões de `/cidades`) · visitante | 2 imagens dentro da tela sem carregar em 8 s, laboratórios de `b1385f6` e `7c5cb85` (passou em `82b4d9b`). A t274 viu o mesmo em `/cidades` e `/cidades/uberlandia` a 1280 px (`/_next/image → ube-014-quarto.webp`, arquivo válido). Causa no código: `FotosCartao` põe a próxima foto na página com o `loading="lazy"` padrão do `next/image`; escondida pelo corte do carrossel, o Chromium nem sempre a baixa | Produto | A | Aberto. Proposta: `loading="eager"` (sem `priority`) na foto `ativo + 1`. A t274 deixa de contar foto cortada pelo carrossel (não está à vista); a t267 segue cobrando |
+| L-9 | 22/10 | t48 · "proprietário: todas as telas logadas" (390 px) | `/dashboard/locacoes` · proprietário sem locação (o servidor manda para `/dashboard/contratos`) | "Minified React error #310" (mais hooks que no render anterior) no navegador, laboratório de `24eafc9`. A t213, que abre a mesma rota com o mesmo tipo de conta a 390 px, falha nos laboratórios de `b1385f6` e `7c5cb85`: o dono fica parado em `/dashboard/locacoes`. A pilha não cabe no registro e o artefato não abre daqui | Produto (tela quebra) | A | Aberto: reproduzir com build de desenvolvimento para ver o componente |
+| L-10 | 22/10 | t192 · "Conta (inquilino)" (390 e 1280 px) | `/dashboard/conta` · inquilino | O item LinkedIn da lista de confiança só aparece com `mode === "tenant"` (`conta-blocos.tsx`). Desde o Prompt 43 o modo vem da tela de contexto, e a Conta é neutra: o item aparece ou some conforme a tela anterior. Passou no lab-crítico do #1053 (sessão limpa) e falhou na suíte inteira de `24eafc9` | Produto (decisão) | A | Aberto: definir se LinkedIn vale para toda conta ("toda conta é morador") |
+| L-11 | 22/10 | t257 · "links internos … não quebram" | `/cidades/uberlandia` · visitante | Depois do ajuste do #1058 (relê a origem), a página da cidade AINDA aponta para `/imoveis/…` que dá 404, laboratório de `24eafc9`. Hipótese: a lista da cidade fica em cache e segue mostrando imóvel apagado ou despublicado | Produto (a confirmar) | A | Aberto |
 
 ## Lista priorizada para as pistas A e B
 
@@ -20,14 +23,15 @@ Só defeito de produto confirmado, cada um com o teste do laboratório que o rep
 | Prioridade | Código | Defeito | Página | Teste que reproduz | Pista |
 |---|---|---|---|---|---|
 | 1 | D-V3 | "Enviar documento" (trava da matrícula) não responde e não diz qual campo falta | Editar anúncio (`/dashboard/imoveis/:id/editar`), 390 px | t249 · "D-V3" (`test.fail`) | A |
+| 2 | L-9 | Tela do dono quebra no navegador (React #310) ao abrir Locações | `/dashboard/locacoes` → Contratos, 390 px | t48 · proprietário; t213 · 4 (390) | A |
 | — | D-V7 | Título do cartão de rascunho era link para a página pública (404) | Meus imóveis (`/dashboard/imoveis`), 1280 px | t249 · "D-V7" (teste normal) | **Corrigido no #1028** |
-| 2 | D-V8 | Tela de entrar sem `<main>` (falta o marco principal para leitor de tela) | Entrar (`/auth`), 390 e 1280 px | t249 · "D-V8" (`test.fail`, #1023) | A |
-| 3 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
-| 4 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
-| 5 | L-8 | A próxima foto do cartão não carrega antes do toque (lazy escondida pelo corte do carrossel) | `/buscar` e `/cidades`, 1280 px | t267 · 1280 px | A |
-| 6 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
+| 3 | D-V8 | Tela de entrar sem `<main>` (falta o marco principal para leitor de tela) | Entrar (`/auth`), 390 e 1280 px | t249 · "D-V8" (`test.fail`, #1023) | A |
+| 4 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
+| 5 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
+| 6 | L-8 | A próxima foto do cartão não carrega antes do toque (lazy escondida pelo corte do carrossel) | `/buscar` e `/cidades`, 1280 px | t267 · 1280 px | A |
+| 7 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
 
-Critério da ordem: 1 trava o dono de publicar; 2 atrapalha quem usa leitor de tela; 3 mostra número errado ao admin; 4 confunde, mas não trava; 5 deixa a foto em branco por um instante ao deslizar; 6 pode ser só baseline desatualizada. O D-V7 (levava o dono a uma página que não existe) saiu da ordem ao ser corrigido.
+Critério da ordem: 1 trava o dono de publicar; 2 quebra a tela; 3 atrapalha quem usa leitor de tela; 4 mostra número errado ao admin; 5 confunde, mas não trava; 6 deixa a foto em branco por um instante ao deslizar; 7 pode ser só baseline desatualizada. O D-V7 (levava o dono a uma página que não existe) saiu da ordem ao ser corrigido.
 
 ## Fechados sem registro
 
