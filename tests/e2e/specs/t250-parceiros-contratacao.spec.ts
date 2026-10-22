@@ -31,10 +31,30 @@ function semDialogo(page: Page) {
 async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
+/** Diagnóstico: navegações, ações do servidor (status e início da resposta) e erros, impressos só quando o teste falha. */
+const registro: string[] = [];
+function registrar(page: Page, quem: string) {
+  const t0 = Date.now();
+  const marca = (x: string) => registro.push(`[${quem} +${((Date.now() - t0) / 1000).toFixed(1)}s] ${x}`);
+  page.on("console", (m) => {
+    if (m.type() === "error" || m.type() === "warning") marca(`console.${m.type()}: ${m.text()}`);
+  });
+  page.on("pageerror", (e) => marca(`pageerror: ${e.message}`));
+  page.on("framenavigated", (f) => {
+    if (f === page.mainFrame()) marca(`navegou: ${f.url()}`);
+  });
+  page.on("requestfinished", async (r) => {
+    if (r.method() !== "POST" || !r.headers()["next-action"]) return;
+    const resp = await r.response();
+    const corpo = await resp?.text().catch(() => "");
+    marca(`ação ${r.headers()["next-action"]?.slice(0, 8)} ← ${resp?.status()} ${r.url()} redirect=${resp?.headers()["x-action-redirect"] ?? "-"} revalidated=${resp?.headers()["x-action-revalidated"] ?? "-"} corpo=${(corpo ?? "").slice(-300).replace(/\s+/g, " ")}`);
+  });
+}
 async function abrir(browser: Browser, email: string, largura = 1280): Promise<Page> {
   const page = await entrar(browser, email, senha);
   await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
   semDialogo(page);
+  registrar(page, email.split(".")[0]);
   return page;
 }
 /** Amanhã às HH:00 de Brasília, no formato do campo datetime-local. */
@@ -78,6 +98,13 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
       .single();
     if (error) throw error;
     ids.contrato = data.id as string;
+  });
+
+  test.beforeEach(() => {
+    registro.length = 0;
+  });
+  test.afterEach(async ({}, info) => {
+    if (info.status !== info.expectedStatus) console.log(`── diagnóstico de "${info.title}" ──\n${registro.join("\n")}`);
   });
 
   test.afterAll(async () => {
