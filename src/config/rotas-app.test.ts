@@ -6,11 +6,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { aasa, assetlinks, caminhoDoLink, caminhoInterno, destinoDaRota, intentFiltersExpo, ROTAS_APP } from "./rotas-app.ts";
 import { safeInternalPath } from "../lib/safe-redirect.ts";
 import { GET as getApple } from "../app/api/well-known/apple/route.ts";
 import { GET as getAndroid } from "../app/api/well-known/android/route.ts";
 import nextConfig from "../../next.config.ts";
+
+const { getPathMatch } = createRequire(import.meta.url)("next/dist/shared/lib/router/utils/path-match");
 
 test("telas do app", () => {
   for (const p of [
@@ -153,8 +156,12 @@ test(".well-known: servido por rewrite (sem redirecionamento)", async () => {
   const rewrites = (await nextConfig.rewrites!()) as { source: string; destination: string }[];
   assert.ok(rewrites.some((r) => r.source === "/.well-known/apple-app-site-association" && r.destination === "/api/well-known/apple"));
   assert.ok(rewrites.some((r) => r.source === "/.well-known/assetlinks.json" && r.destination === "/api/well-known/android"));
+  // Nenhum redirect casa com /.well-known/* (o www → ápice tem a exceção; ver www-well-known.test.ts).
   const redirects = await nextConfig.redirects!();
-  assert.ok(!redirects.some((r) => r.source.includes(".well-known")));
+  for (const caminho of ["/.well-known/assetlinks.json", "/.well-known/apple-app-site-association"]) {
+    const casa = redirects.filter((r) => getPathMatch(r.source, { strict: true, removeUnnamedParams: true, regexModifier: (x: string) => x })(caminho));
+    assert.deepEqual(casa.map((r) => r.source), [], `redirect pega ${caminho}`);
+  }
   const proxy = readFileSync(new URL("../proxy.ts", import.meta.url), "utf8");
   assert.ok(!proxy.includes(".well-known"), "o proxy não intercepta .well-known");
 });
