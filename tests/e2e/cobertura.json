@@ -4523,7 +4523,7 @@
         "proprietario"
       ],
       "specs": [
-        "t272-conta-unica-43"
+        "t278-conta-unica-43"
       ]
     },
     "src/lib/data/papeis-actions.ts#meuPerfilPublico": {
@@ -4532,7 +4532,7 @@
         "proprietario"
       ],
       "specs": [
-        "t272-conta-unica-43"
+        "t278-conta-unica-43"
       ]
     },
     "src/lib/data/papeis-actions.ts#meusDegraus": {
@@ -4541,7 +4541,7 @@
         "proprietario"
       ],
       "specs": [
-        "t272-conta-unica-43"
+        "t278-conta-unica-43"
       ]
     }
   }
