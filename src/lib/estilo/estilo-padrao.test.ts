@@ -195,7 +195,10 @@ test("telas do alcance: sem sombra, raio, espaço ou peso fora do padrão (nem c
 
 test("Prompt 45: src inteiro sem sombra, raio, espaço, peso, caixa alta espaçada, gradiente ou tamanho fora do padrão", () => {
   const achados: string[] = [];
-  for (const alvo of ["app", "components", "lib", "config"]) {
+  // Prompt 48 (fim da ampliação gradual): tudo o que existe em src/ — pasta ou arquivo novo entra sozinho.
+  const alvos = readdirSync(SRC);
+  assert.ok(["app", "components", "lib", "config"].every((d) => alvos.includes(d)));
+  for (const alvo of alvos) {
     for (const f of arquivos(alvo)) {
       if (f.startsWith("lib/estilo/")) continue; // as próprias regras e seus exemplos
       const t = ler(f);
