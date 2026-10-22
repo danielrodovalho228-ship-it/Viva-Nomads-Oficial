@@ -9,6 +9,8 @@
   Destaque é MERECIDO: nenhum campo de pagamento, plano ou assinatura entra aqui (teste de guarda).
 */
 import { faixaMinutos } from "../rotas/tempo.ts";
+import { seloPeloConforto } from "../conforto/regras.ts";
+import { seloPelaManutencao } from "../manutencao-solucao.ts";
 
 export const DIA_MS = 86_400_000;
 
@@ -42,6 +44,13 @@ export interface SinaisAnuncio {
   homeOffice?: "medido" | "informado" | null;
   /** A última medição do morador ficou abaixo de 50% da do dono (sinal no painel; não tira ponto). */
   internetAbaixoMorador?: boolean;
+  // Prompt 59 (D6/D7): padrão mínimo e prazo de solução da manutenção. Nada financeiro.
+  /** Pendências do padrão mínimo PROCEDENTES (decisão do atendimento) em 12 meses móveis. */
+  confortoProcedentes12m?: number;
+  /** Soluções de manutenção fora do prazo em 90 dias móveis. */
+  manutencaoFora90d?: number;
+  /** Pendências do padrão mínimo abertas/contestadas/vencidas: sinal "imóvel diferente do anúncio" (não tira ponto). */
+  confortoPendenciasAbertas?: number;
 }
 
 export interface Motivo {
@@ -72,6 +81,9 @@ export const PESOS = {
   // Prompt 57: a nota continua limitada a 100.
   homeOfficeMedido: 4,
   homeOfficeInformado: 2,
+  // Prompt 59: o que tira o selo também tira pontos (quando o selo cai; volta junto com ele).
+  perdaConforto: -10, // 2 pendências procedentes em 12 meses
+  perdaManutencao: -10, // 3 soluções fora do prazo em 90 dias
 } as const;
 
 export const MIN_COMODOS_CHEIO = 6;
@@ -133,6 +145,15 @@ export function notaQualidade(s: SinaisAnuncio, agora: Date): NotaQualidade {
   else if (s.homeOffice === "informado") add("home_office", "Para trabalhar de casa, com internet informada (não medida)", PESOS.homeOfficeInformado);
   if (s.internetAbaixoMorador) add("internet_morador", "O morador mediu a internet abaixo da metade da sua medição: confira o roteador ou a operadora e meça de novo", 0);
 
+  // Padrão mínimo e manutenção (Prompt 59)
+  if (seloPeloConforto(s.confortoProcedentes12m ?? 0) === "perde")
+    add("conforto_procedentes", `${s.confortoProcedentes12m} pendências do padrão mínimo procedentes em 12 meses`, PESOS.perdaConforto);
+  // Sinal do painel de qualidade (quebrador 4): aparece nos motivos, sem pontos — quem pesa é a decisão "procedente".
+  if ((s.confortoPendenciasAbertas ?? 0) > 0)
+    add("imovel_diferente_do_anuncio", `Imóvel diferente do anúncio: ${s.confortoPendenciasAbertas} pendência(s) do padrão mínimo em aberto`, 0);
+  if (seloPelaManutencao(s.manutencaoFora90d ?? 0) === "perde")
+    add("manutencao_fora_prazo", `${s.manutencaoFora90d} soluções de manutenção fora do prazo em 90 dias`, PESOS.perdaManutencao);
+
   const soma = m.reduce((t, x) => t + x.pontos, 0);
   const nota = Math.max(0, Math.min(100, Math.round(soma)));
   m.sort((a, b) => Math.abs(b.pontos) - Math.abs(a.pontos) || a.codigo.localeCompare(b.codigo));
@@ -148,7 +169,9 @@ export interface Selo {
 
 export function selosDoAnuncio(s: SinaisAnuncio): Selo[] {
   const out: Selo[] = [];
-  if (s.identidadeConfirmada && s.matriculaConferida)
+  // Prompt 59: perde o selo com 2 pendências procedentes em 12 meses ou 3 soluções fora do prazo em 90 dias; volta sozinho.
+  const seloMantido = seloPeloConforto(s.confortoProcedentes12m ?? 0) !== "perde" && seloPelaManutencao(s.manutencaoFora90d ?? 0) !== "perde";
+  if (s.identidadeConfirmada && s.matriculaConferida && seloMantido)
     out.push({ codigo: "proprietario_verificado", rotulo: "Proprietário verificado", motivo: "Identidade confirmada e matrícula do imóvel conferida pela Viva." });
   if (respondeRapido(s))
     out.push({ codigo: "responde_rapido", rotulo: "Responde rápido", motivo: `Respondeu ${Math.round((s.conversasRespondidas / s.conversas) * 100)}% das conversas, em média em ${s.respostaMediaMin} min.` });

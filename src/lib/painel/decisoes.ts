@@ -17,6 +17,9 @@
 import { estadoDoContratoUnico, type LinhaEstadoContrato } from "../contrato-estado.ts";
 import { podeTransicionar, formatarHorario, type StatusVisita } from "../visitas-video.ts";
 import { prazoDaOrdem } from "../manutencao-solicitacoes.ts";
+import { estadoSolucao } from "../manutencao-solucao.ts";
+import { ehChaveConforto, itemConforto } from "../../config/conforto-minimo.ts";
+import { dataHoraBrasilia } from "../../config/atendimento.ts";
 import type { SOPriority, SOStatus } from "../service-orders.ts";
 import { textoVencimento } from "../propostas/regras.ts";
 import type { DecisaoEstadia } from "../estadia/estadia.ts";
@@ -29,7 +32,8 @@ export type TipoDecisao =
   | "estadia"
   | "visita"
   | "documento"
-  | "candidatura";
+  | "candidatura"
+  | "conforto";
 
 /** Prioridade do tipo no empate (menor = antes). */
 export const PRIORIDADE_TIPO: Record<TipoDecisao, number> = {
@@ -40,6 +44,7 @@ export const PRIORIDADE_TIPO: Record<TipoDecisao, number> = {
   visita: 4,
   documento: 5,
   candidatura: 6,
+  conforto: 3,
 };
 
 export interface Decisao {
@@ -87,6 +92,30 @@ export interface ManutencaoParaDecisao {
   status: SOStatus;
   openedAt: string;
   firstResponseAt?: string | null;
+  // Prompt 59: prazo de solução (entra no painel só quando vence).
+  provisoriaEm?: string | null;
+  solucaoMarcadaEm?: string | null;
+  resolvedAt?: string | null;
+}
+
+/** Prompt 59: anúncio publicado sem o padrão mínimo confirmado (prazo de adequação, D4). */
+export interface ConfortoPrazoParaDecisao {
+  propertyId: string;
+  imovel: string;
+  prazoAte: string;
+  pausado: boolean;
+}
+
+/** Prompt 59: pendência do padrão mínimo (dono corrige; morador confirma a correção). */
+export interface PendenciaParaDecisao {
+  id: string;
+  contratoId: string;
+  imovel: string;
+  chave: string;
+  status: string;
+  prazoAte: string;
+  corrigidaEm?: string | null;
+  confirmadaEm?: string | null;
 }
 
 export interface EstadiaParaDecisao {
@@ -116,7 +145,13 @@ export interface DadosDecisoes {
   estadias?: EstadiaParaDecisao[];
   candidaturas?: CandidaturaParaDecisao[];
   rascunho?: RascunhoParaDecisao | null;
+  confortoPrazos?: ConfortoPrazoParaDecisao[];
+  pendenciasDono?: PendenciaParaDecisao[];
+  pendenciasMorador?: PendenciaParaDecisao[];
 }
+
+const rotuloConforto = (chave: string) => (ehChaveConforto(chave) ? itemConforto(chave).rotulo : chave);
+const H48 = 48 * 3_600_000;
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 const reais = (v: number) => BRL.format(v);
@@ -180,7 +215,22 @@ export function decisoesDoProprietario(d: DadosDecisoes, agora: Date = new Date(
 
   for (const o of d.manutencoes ?? []) {
     const p = prazoDaOrdem({ priority: o.priority, openedAt: o.openedAt, firstResponseAt: o.firstResponseAt ?? undefined, status: o.status }, agora);
-    if (p.estado === "respondida") continue;
+    if (p.estado === "respondida") {
+      // Prompt 59: respondida e ainda sem solução depois do prazo — entra como "fora do prazo de solução".
+      const s = estadoSolucao({ priority: o.priority, openedAt: o.openedAt, status: o.status, provisoriaEm: o.provisoriaEm, solucaoMarcadaEm: o.solucaoMarcadaEm, resolvedAt: o.resolvedAt }, agora);
+      if (s.estado === "vencido") {
+        out.push({
+          id: `manutencao-${o.id}`,
+          tipo: "manutencao",
+          texto: `Manutenção fora do prazo de solução em ${nomeImovel(o.imovel)}`,
+          href: "/dashboard/solicitacoes",
+          prazo: s.ate.toISOString(),
+          prazoTexto: `Era para ${s.texto}`,
+          atrasada: true,
+        });
+      }
+      continue;
+    }
     const atrasada = p.estado === "vencido";
     out.push({
       id: `manutencao-${o.id}`,
@@ -190,6 +240,31 @@ export function decisoesDoProprietario(d: DadosDecisoes, agora: Date = new Date(
       prazo: p.ate.toISOString(),
       prazoTexto: p.texto,
       atrasada,
+    });
+  }
+
+  // Prompt 59: padrão mínimo de conforto (prazo de adequação e pendências da entrada).
+  for (const c of d.confortoPrazos ?? []) {
+    const pz = comPrazo(c.prazoAte, agora);
+    out.push({
+      id: `conforto-${c.propertyId}`,
+      tipo: "conforto",
+      texto: c.pausado ? `${nomeImovel(c.imovel)} saiu da busca: confirme o padrão mínimo` : `Confirme o padrão mínimo de ${nomeImovel(c.imovel)}`,
+      href: `/dashboard/imoveis/${c.propertyId}/conforto`,
+      prazoTexto: c.pausado ? null : `Até ${new Date(c.prazoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`,
+      ...pz,
+    });
+  }
+  for (const p of d.pendenciasDono ?? []) {
+    if (p.status !== "aberta") continue;
+    const pz = comPrazo(p.prazoAte, agora);
+    out.push({
+      id: `pendencia-${p.id}`,
+      tipo: "conforto",
+      texto: `Corrigir "${rotuloConforto(p.chave)}" em ${nomeImovel(p.imovel)}`,
+      href: `/dashboard/contratos/${p.contratoId}#pendencias-conforto`,
+      prazoTexto: `Até ${dataHoraBrasilia(new Date(p.prazoAte))}`,
+      ...pz,
     });
   }
 
@@ -247,6 +322,21 @@ export function decisoesDoProprietario(d: DadosDecisoes, agora: Date = new Date(
 /** Decisões do MORADOR (a Visão geral no modo inquilino). */
 export function decisoesDoMorador(d: DadosDecisoes, agora: Date = new Date()): Decisao[] {
   const out: Decisao[] = [...contratos(d, "inquilino"), ...propostas(d, "tenant", agora), ...estadias(d)];
+  // Prompt 59: o dono marcou um item do padrão mínimo como corrigido — confirme ou reabra em 48 h.
+  for (const p of d.pendenciasMorador ?? []) {
+    if (p.status !== "corrigida" || p.confirmadaEm || !p.corrigidaEm) continue;
+    const ate = new Date(new Date(p.corrigidaEm).getTime() + H48);
+    if (ate.getTime() <= agora.getTime()) continue;
+    out.push({
+      id: `pendencia-${p.id}`,
+      tipo: "conforto",
+      texto: `Confirme a correção de "${rotuloConforto(p.chave)}" em ${nomeImovel(p.imovel)}`,
+      href: `/dashboard/locacoes/${p.contratoId}#pendencias-conforto`,
+      prazo: ate.toISOString(),
+      prazoTexto: `Até ${dataHoraBrasilia(ate)}`,
+      atrasada: false,
+    });
+  }
   for (const v of d.visitas ?? []) {
     if (!podeTransicionar(v.status, "confirmado", "morador")) continue;
     const pz = comPrazo(v.horarioProposto, agora);

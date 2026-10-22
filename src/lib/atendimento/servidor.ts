@@ -13,6 +13,14 @@ import { equipeAvisadaDaMensagem, JANELA_AVISO_EQUIPE_S } from "@/lib/atendiment
 import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { COLUNAS_VIGENCIA, contratoPermiteManutencao, type ContratoParaManutencao } from "@/lib/manutencao-solicitacoes";
+import { estadoSolucao } from "@/lib/manutencao-solucao";
+
+/** Prompt 59: "Resolver até [hora]" na abertura (urgente: a provisória e a definitiva). */
+function fraseSolucao(urgencia: UrgenciaManutencao, abertaEm: Date): string {
+  const s = estadoSolucao({ priority: urgencia, openedAt: abertaEm.toISOString(), status: "aberto" }, abertaEm);
+  const r = s.texto.charAt(0).toUpperCase() + s.texto.slice(1);
+  return s.provisoria ? `Solução provisória até ${s.provisoria.ate.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}. ${r}` : r;
+}
 
 /**
  * Atendimento — utilidades SÓ DO SERVIDOR: token da nota de 1 a 5 (um clique,
@@ -254,7 +262,7 @@ export async function avisarProprietarioManutencao(ordem: OrdemCriada, agora: Da
     pushUrl: "/dashboard/solicitacoes",
     subject: assuntoManutencao({ urgente: ordem.urgencia === "urgente", lembrete }),
     // A urgência e o prazo vão no corpo (o assunto não grita).
-    detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Imóvel: <strong>${textoEmail(ordem.propertyTitle, 120)}</strong><br/>Urgência: ${ordem.urgencia === "urgente" ? "urgente" : "normal"} · responda em até ${PRAZO_MANUTENCAO_H[ordem.urgencia]} h<br/>Prazo para responder: até ${prazoManutencao(ordem.urgencia, agora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.</p>`,
+    detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Imóvel: <strong>${textoEmail(ordem.propertyTitle, 120)}</strong><br/>Urgência: ${ordem.urgencia === "urgente" ? "urgente" : "normal"} · responda em até ${PRAZO_MANUTENCAO_H[ordem.urgencia]} h<br/>Prazo para responder: até ${prazoManutencao(ordem.urgencia, agora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.<br/>${textoEmail(fraseSolucao(ordem.urgencia, agora), 200)}.</p>`,
   }).catch(() => null);
 }
 

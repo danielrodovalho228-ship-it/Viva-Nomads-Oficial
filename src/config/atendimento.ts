@@ -42,6 +42,12 @@ export const PRAZOS: Record<Prioridade, { primeiraResposta: number; resolucao: n
 /** Manutenção: prazo do PROPRIETÁRIO, em horas corridas (falta de água não espera o horário). */
 export const PRAZO_MANUTENCAO_H: Record<UrgenciaManutencao, number> = { urgente: 4, media: 24, baixa: 72 };
 
+/**
+ * Prompt 59, Parte B: prazo de SOLUÇÃO do proprietário, em horas corridas desde a abertura (o de primeira resposta,
+ * acima, continua igual). Urgente tem dois: solução provisória (ex.: fechar o registro) e definitiva.
+ */
+export const PRAZO_SOLUCAO_H = { urgente: { provisoria: 24, definitiva: 72 }, media: 72, baixa: 168 } as const;
+
 /** Prazos de um chamado aberto em `agora` com a prioridade dada. */
 export function calcularPrazos(prioridade: Prioridade, agora: Date): { primeiraResposta: Date; resolucao: Date } {
   const p = PRAZOS[prioridade];

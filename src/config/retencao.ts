@@ -71,6 +71,8 @@ export const INVENTARIO: ItemInventario[] = [
   i("service_order_messages", "public.service_order_messages", "mensagens de ordem de serviço", "conversa do serviço", DISPUTA),
   i("conferencia", "bucket:conferencia", "fotos e laudo da conferência de entrada e saída", "prova da conferência", DISPUTA),
   i("conferencia_itens", "public.conferencia_itens", "descrição e caminho da foto da conferência", "prova da conferência", DISPUTA),
+  i("conferencia_conforto", "public.conferencia_conforto", "resposta do morador ao padrão mínimo (texto e foto)", "prova da conferência de entrada (59)", DISPUTA),
+  i("conforto_pendencias", "public.conforto_pendencias", "texto do morador e motivo da contestação", "pendência do padrão mínimo (59)", DISPUTA),
   i("conferencia_laudos", "public.conferencia_laudos", "caminho do laudo", "prova da conferência", DISPUTA),
   i("conferencia_respostas", "public.conferencia_respostas", "motivo da contestação", "prova da conferência", DISPUTA),
   i("conferencia_correcoes", "public.conferencia_correcoes", "texto da correção", "prova da conferência", DISPUTA),
@@ -143,6 +145,7 @@ export const INVENTARIO: ItemInventario[] = [
 /** Tabelas que a varredura acha por nome de coluna mas não guardam dado pessoal (com o porquê). */
 export const SEM_DADO_PESSOAL: Record<string, string> = {
   agentes: "nome do agente de IA, não de pessoa",
+  conforto_declaracoes: "itens do padrão mínimo marcados pelo dono para o imóvel (chave do item, sem dado pessoal)",
   asaas_eventos: "chave de idempotência do webhook",
   automacoes_envios: "chave de idempotência do envio",
   avisos_daniel: "texto dos avisos internos ao fundador (sem dado de usuário)",

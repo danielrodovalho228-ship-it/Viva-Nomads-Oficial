@@ -178,7 +178,7 @@ test("migração 0110: tabelas, RLS só leitura para as partes e imutabilidade n
 test("ações do servidor: só as partes do contrato agem, foto só da própria pasta, sem 'vistoria'", () => {
   const src = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
   assert.match(src, /^"use server";/);
-  assert.equal((src.match(/await parteDoContrato\(/g) ?? []).length, 5);
+  assert.equal((src.match(/await parteDoContrato\(/g) ?? []).length, 6);
   assert.match(src, /tenant_id === user\.id \? "inquilino" : donoId === user\.id \? "proprietario" : null/);
   assert.match(src, /startsWith\(`\$\{ctx\.uid\}\/`\)/);
   assert.match(src, /consumirLimite\(/);

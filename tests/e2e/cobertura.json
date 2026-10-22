@@ -1513,6 +1513,22 @@
       "specs": [
         "t281-minimizacao"
       ]
+    },
+    "/admin/conforto": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
+      ]
+    },
+    "/dashboard/imoveis/[id]/conforto": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
+      ]
     }
   },
   "rotas": {
@@ -2058,6 +2074,14 @@
       ],
       "specs": [
         "t250-parceiros-contratacao"
+      ]
+    },
+    "/api/cron/prazos-conforto": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": [
+        "t49-seguranca-publica"
       ]
     }
   },
@@ -4611,6 +4635,94 @@
       ],
       "specs": [
         "t280-conta-unica-43"
+      ]
+    },
+    "src/lib/data/conferencia-actions.ts#responderConfortoEntrada": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
+      ]
+    },
+    "src/lib/data/conforto-actions.ts#agirNaPendencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
+      ]
+    },
+    "src/lib/data/conforto-actions.ts#confirmarConforto": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
+      ]
+    },
+    "src/lib/data/conforto-actions.ts#confortoDoImovel": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
+      ]
+    },
+    "src/lib/data/conforto-actions.ts#pendenciasDoContrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
+      ]
+    },
+    "src/lib/data/conforto-actions.ts#rodarPrazosAgora": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
+      ]
+    },
+    "src/lib/data/manutencao-actions.ts#marcarSolucaoProvisoria": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/manutencao-actions.ts#pedirReclassificacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
+      ]
+    },
+    "src/lib/data/manutencao-actions.ts#reclassificarOrdem": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
+      ]
+    },
+    "src/lib/data/manutencao-actions.ts#responderSolucaoMorador": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t292-conforto-manutencao-59"
       ]
     }
   }

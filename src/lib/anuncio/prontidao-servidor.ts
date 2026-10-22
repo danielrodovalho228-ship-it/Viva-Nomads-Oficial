@@ -1,6 +1,7 @@
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { listingLimit } from "@/lib/plan";
 import type { SubscriptionPlan } from "@/lib/store";
+import { itensFaltantes } from "@/lib/conforto/regras";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
 
 /**
@@ -33,12 +34,19 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
   if (lista.length === 0) return mapa;
   const idsLista = lista.map((p) => p.id);
 
-  const [{ data: fotos }, { data: docs }, plano, { count: ativos }] = await Promise.all([
+  const [{ data: fotos }, { data: docs }, plano, { count: ativos }, conforto] = await Promise.all([
     cliente.from("property_photos").select("property_id").in("property_id", idsLista),
     cliente.from("qualification_checklists").select("property_id, document_status, created_at").eq("owner_id", ownerId).in("property_id", idsLista).order("created_at", { ascending: false }),
     planoDoProprietario(cliente, ownerId),
     cliente.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active"),
+    // Prompt 59: declarações do padrão mínimo (sem a 0210, erro → não barra aqui; o banco é a trava).
+    cliente.from("conforto_declaracoes").select("property_id, chave, confirmado").in("property_id", idsLista),
   ]);
+  const declPor = new Map<string, { chave: string; confirmado: boolean }[]>();
+  const confortoLido = !conforto.error;
+  for (const d of (conforto.data ?? []) as { property_id: string; chave: string; confirmado: boolean }[]) {
+    declPor.set(d.property_id, [...(declPor.get(d.property_id) ?? []), d]);
+  }
   const fotosPor = new Map<string, number>();
   for (const f of (fotos ?? []) as { property_id: string }[]) fotosPor.set(f.property_id, (fotosPor.get(f.property_id) ?? 0) + 1);
   const docPor = new Map<string, StatusDocumento>();
@@ -49,7 +57,10 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
   for (const p of lista) {
     // Um anúncio já publicado não ocupa vaga nova; os demais precisam de uma.
     const limiteOk = p.status === "active" ? true : (ativos ?? 0) < limite;
-    mapa.set(p.id, fatosDaLinha(p, fotosPor.get(p.id) ?? 0, docPor.get(p.id) ?? "none", limiteOk, limite));
+    const f = fatosDaLinha(p, fotosPor.get(p.id) ?? 0, docPor.get(p.id) ?? "none", limiteOk, limite);
+    // O padrão mínimo é condição para PASSAR a publicado; o publicado sem ele segue o prazo de adequação (D4).
+    if (confortoLido && p.status !== "active") f.confortoFaltam = itensFaltantes(declPor.get(p.id) ?? []).length;
+    mapa.set(p.id, f);
   }
   return mapa;
 }

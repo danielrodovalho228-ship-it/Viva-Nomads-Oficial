@@ -36,6 +36,11 @@ export interface ExtrasDoServidor {
   /** Prompt 57: etiqueta "Para trabalhar de casa" com internet medida (vigente, regra de videochamada) ou só informada. */
   homeOffice?: "medido" | "informado" | null;
   internetAbaixoMorador?: boolean;
+  /** Prompt 59: pendências procedentes em 12 meses e soluções fora do prazo em 90 dias (contadas no servidor). */
+  confortoProcedentes12m?: number;
+  manutencaoFora90d?: number;
+  /** Pendências do padrão mínimo abertas, contestadas ou vencidas (sinal "imóvel diferente do anúncio"). */
+  confortoPendenciasAbertas?: number;
 }
 
 const n = (v: number | string | null | undefined) => (v == null || v === "" ? 0 : Number(v) || 0);
@@ -66,5 +71,8 @@ export function sinaisDaLinha(l: LinhaRankingSinais, extras: ExtrasDoServidor): 
     precoJusto: l.preco_justo === true,
     homeOffice: extras.homeOffice ?? null,
     internetAbaixoMorador: extras.internetAbaixoMorador === true,
+    confortoProcedentes12m: extras.confortoProcedentes12m ?? 0,
+    manutencaoFora90d: extras.manutencaoFora90d ?? 0,
+    confortoPendenciasAbertas: extras.confortoPendenciasAbertas ?? 0,
   };
 }

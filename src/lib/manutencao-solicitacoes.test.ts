@@ -104,8 +104,9 @@ test("critério 4: status Aberta → Em atendimento → Resolvida, por lado", ()
 test("critério 4: carimbos — 1ª ação do proprietário = primeira resposta; inquilino não volta status", () => {
   const iso = AGORA.toISOString();
   assert.deepEqual(camposTransicao("aberto", "em_andamento", "proprietario", null, AGORA), { status: "em_andamento", first_response_at: iso });
-  assert.deepEqual(camposTransicao("em_andamento", "resolvido", "proprietario", "x", AGORA), { status: "resolvido", resolved_at: iso });
-  assert.deepEqual(camposTransicao("aberto", "resolvido", "inquilino", null, AGORA), { status: "resolvido", resolved_at: iso });
+  assert.deepEqual(camposTransicao("em_andamento", "resolvido", "proprietario", "x", AGORA), { status: "resolvido", resolved_at: iso, solucao_marcada_em: iso });
+  // Prompt 59: o "resolvido" do morador já confirma a solução.
+  assert.deepEqual(camposTransicao("aberto", "resolvido", "inquilino", null, AGORA), { status: "resolvido", resolved_at: iso, solucao_confirmada_em: iso });
   assert.equal(camposTransicao("aberto", "em_andamento", "inquilino", null, AGORA), null);
   assert.equal(camposTransicao("resolvido", "em_andamento", "proprietario", "x", AGORA), null);
   assert.equal(camposTransicao("em_andamento", "aberto", "proprietario", "x", AGORA), null);

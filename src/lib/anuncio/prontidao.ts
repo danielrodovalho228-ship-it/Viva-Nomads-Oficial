@@ -46,6 +46,11 @@ export interface FatosAnuncio {
    * antes era um segundo portão que só aparecia no fim. Ausente = não se aplica aqui (editor, lista de imóveis).
    */
   qualificacaoOk?: boolean;
+  /**
+   * Prompt 59: padrão mínimo de conforto — quantos itens da lista atual o dono ainda não confirmou. Ausente = não se
+   * aplica aqui (editor de anúncio já publicado, que não muda de status). Com falta, publicar é bloqueado.
+   */
+  confortoFaltam?: number;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -107,6 +112,9 @@ export const OBRIGATORIOS_ROTULOS = [
   "Documento do imóvel aprovado",
 ] as const;
 
+/** Item condicional do padrão mínimo de conforto (Prompt 59). */
+export const ROTULO_FALTA_CONFORTO = "Padrão mínimo de conforto confirmado";
+
 /** Item da qualificação no portão único (prompt 22). */
 export const ROTULO_QUALIFICACAO = "Antes de anunciar (qualificação do imóvel)";
 
@@ -143,6 +151,10 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   if (!f.privacidadeOk) {
     obrigatorios.push({ key: "privacidade", label: ROTULO_FALTA_PRIVACIDADE, ok: false, etapa: ETAPA.comodidades });
+  }
+  if (f.confortoFaltam !== undefined && f.confortoFaltam > 0) {
+    const n = f.confortoFaltam;
+    obrigatorios.push({ key: "conforto", label: ROTULO_FALTA_CONFORTO, ok: false, etapa: ETAPA.revisar, detalhe: n === 1 ? "falta 1 item" : `faltam ${n} itens` });
   }
   // A vaga só aparece quando é o único bloqueio que resta (ordem de8761b0, item 2).
   if (f.limitePlanoOk === false && obrigatorios.every((i) => i.ok)) {

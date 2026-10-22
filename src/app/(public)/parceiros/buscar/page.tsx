@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 const UFS = Object.keys(MUNICIPIOS).sort();
 const campo = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-3 py-2 text-base text-ink";
 
-export default async function BuscarParceirosPage({ searchParams }: { searchParams: Promise<{ categoria?: string; cidade?: string; uf?: string; cep?: string; avisar?: string; imovel?: string }> }) {
+export default async function BuscarParceirosPage({ searchParams }: { searchParams: Promise<{ categoria?: string; cidade?: string; uf?: string; cep?: string; avisar?: string; imovel?: string; descricao?: string }> }) {
   const sp = await searchParams;
   const categoria = sp.categoria && categoriaValida(sp.categoria) ? sp.categoria : "";
   const r = await buscarParceiros({ categoria, cidade: sp.cidade, uf: sp.uf, cep: sp.cep });
@@ -31,7 +31,11 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
   // Vindo da página da estadia (Prompt 41, "Pedir limpeza"/"Pedir manutenção"): o imóvel e a categoria seguem até o
   // "Solicitar orçamento" do parceiro (o mesmo caminho do /parceiros/fotografos).
   const imovel = sp.imovel && /^[0-9a-f-]{36}$/i.test(sp.imovel) ? sp.imovel : "";
-  const consultaDoImovel = imovel ? new URLSearchParams({ imovel, ...(categoria ? { categoria } : {}) }).toString() : undefined;
+  // Prompt 59: manutenção fora do prazo leva também a descrição da ordem para a folha do pedido.
+  const descricao = (sp.descricao ?? "").trim().slice(0, 500);
+  const qImovel = imovel ? new URLSearchParams({ imovel, ...(categoria ? { categoria } : {}) }) : null;
+  if (qImovel && descricao) qImovel.set("descricao", descricao);
+  const consultaDoImovel = qImovel?.toString();
   const qs = new URLSearchParams({ ...(categoria ? { categoria } : {}), ...(r.cidade ? { cidade: r.cidade } : {}), ...(r.uf ? { uf: r.uf } : {}) }).toString();
 
   return (

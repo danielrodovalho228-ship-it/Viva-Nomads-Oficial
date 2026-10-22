@@ -21,10 +21,12 @@ export async function fecharConferencia(admin: SupabaseClient, conferenciaId: st
       .eq("id", conferenciaId)
       .maybeSingle();
     if (!c || c.fechada_em) return { fechou: false };
-    const [{ data: itens }, { data: respostas }, { data: laudo }] = await Promise.all([
+    const [{ data: itens }, { data: respostas }, { data: laudo }, { data: conforto }] = await Promise.all([
       admin.from("conferencia_itens").select("parte, comodo, descricao, foto_path, criado_em, precisa_reparo").eq("conferencia_id", conferenciaId),
       admin.from("conferencia_respostas").select("parte, decisao, motivo, decidido_em").eq("conferencia_id", conferenciaId),
       admin.from("conferencia_laudos").select("path, parte, criado_em").eq("conferencia_id", conferenciaId).maybeSingle(),
+      // Prompt 59: seção "Padrão mínimo" do morador (sem a 0210, erro → seção vazia).
+      admin.from("conferencia_conforto").select("chave, confere, texto, foto_path").eq("conferencia_id", conferenciaId),
     ]);
     const estado: EstadoParaFechar = {
       conferenciaId,
@@ -45,10 +47,16 @@ export async function fecharConferencia(admin: SupabaseClient, conferenciaId: st
         decididoEm: r.decidido_em,
       })),
       laudo: laudo ? { path: laudo.path as string, parte: laudo.parte as "proprietario" | "inquilino", criadoEm: laudo.criado_em as string } : null,
+      conforto: ((conforto ?? []) as { chave: string; confere: boolean; texto: string | null; foto_path: string | null }[]).map((r) => ({
+        chave: r.chave,
+        confere: r.confere,
+        texto: r.texto,
+        fotoPath: r.foto_path,
+      })),
       hashes: {},
     };
     // O hash de cada ARQUIVO (foto e laudo): trocar a foto depois muda o hash de fechamento.
-    const caminhos = [...estado.itens.map((i) => i.fotoPath), estado.laudo?.path].filter((p): p is string => !!p);
+    const caminhos = [...estado.itens.map((i) => i.fotoPath), ...(estado.conforto ?? []).map((c) => c.fotoPath), estado.laudo?.path].filter((p): p is string => !!p);
     for (const p of caminhos) {
       const { data: arq } = await admin.storage.from(BUCKET_CONFERENCIA).download(p);
       if (arq) estado.hashes[p] = sha256(new Uint8Array(await arq.arrayBuffer()));

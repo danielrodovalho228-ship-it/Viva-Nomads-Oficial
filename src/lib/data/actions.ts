@@ -37,6 +37,7 @@ import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { validarAceiteIa } from "@/lib/anuncio/termo-ia";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { salvarDeclaracoesConforto } from "@/lib/conforto/servidor";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { avisarBuscasDoImovel } from "@/lib/data/alerta-busca-servidor";
@@ -446,6 +447,8 @@ export interface PropertyInput {
   asDraft?: boolean;
   /** Aceite do termo de IA (obrigatório ao publicar; validado e gravado no servidor). */
   aceiteIa?: unknown;
+  /** Prompt 59: chaves do padrão mínimo de conforto que o dono marcou (gravadas no servidor antes do portão). */
+  confortoConfirmados?: string[];
   // ── Enriquecimento (FASE 1/2) — gravados best-effort (requer migrações 0018/0019) ──
   parkingSpots?: number;
   condoFee?: number;
@@ -841,6 +844,11 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       .eq("owner_id", user.id)
       .is("property_id", null);
   }
+  if (Array.isArray(input.confortoConfirmados)) {
+    // O imóvel acabou de ser criado por este dono (a RLS conferiu): o servidor grava a confirmação.
+    const adm = createAdminClient();
+    if (adm) await salvarDeclaracoesConforto(adm, data.id as string, user.id, input.confortoConfirmados);
+  }
   if (!input.asDraft) {
     const falta = await faltaParaPublicar(supabase, user.id, data.id as string);
     if (falta) return { ok: false, id: data.id, error: `${falta} O anúncio ficou salvo como rascunho.` };
@@ -932,7 +940,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
 
   // Status ANTES da edição: só a PUBLICAÇÃO (rascunho/pausado → ativo) avisa
   // os pedidos compatíveis — editar um anúncio já ativo não reenvia avisos.
-  const { data: antes } = await supabase.from("properties").select("status").eq("id", id).maybeSingle();
+  const { data: antes } = await supabase.from("properties").select("status, owner_id").eq("id", id).maybeSingle();
 
   // Fotos ANTES do status: o banco só deixa publicar com 8 fotos gravadas em
   // property_photos (0009). Antes elas eram regravadas DEPOIS da mudança para
@@ -1064,6 +1072,11 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   // despublica um anúncio já ativo. Publica DEPOIS de salvar tudo e de passar
   // pela prontidão (fonte única). Ao publicar, ZERA o draft_data (ele guarda a
   // rua exata e a linha fica pública — C4/T1).
+  if (Array.isArray(input.confortoConfirmados) && antes?.owner_id === user.id) {
+    // Só o dono do imóvel: o servidor grava a confirmação do padrão mínimo (Prompt 59).
+    const adm = createAdminClient();
+    if (adm) await salvarDeclaracoesConforto(adm, id, user.id, input.confortoConfirmados);
+  }
   if (input.asDraft === false) {
     if (antes?.status !== "active") {
       const fechada = await cidadeFechada(supabase, user.id, input.city);

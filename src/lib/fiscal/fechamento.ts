@@ -7,6 +7,7 @@
 */
 
 import { janelaEncerrada, type EntradaDoContrato } from "../conferencia.ts";
+import { CHAVES_CONFORTO } from "../../config/conforto-minimo.ts";
 
 export type MotivoFechamento = "duas_respostas" | "janela_encerrada" | "encerramento_concluido";
 export type ParteFechamento = "proprietario" | "inquilino";
@@ -19,6 +20,11 @@ export interface EstadoParaFechar {
   itens: { parte: ParteFechamento; comodo: string; descricao: string; fotoPath: string | null; criadoEm: string; precisaReparo?: boolean }[];
   respostas: { parte: ParteFechamento; decisao: string; motivo: string | null; decididoEm: string }[];
   laudo: { path: string; parte: ParteFechamento; criadoEm: string } | null;
+  /**
+   * Prompt 59: seção "Padrão mínimo" do morador (só na entrada). Ausente/vazia = não entra no texto (o conteúdo das
+   * conferências sem a seção não muda).
+   */
+  conforto?: { chave: string; confere: boolean; texto: string | null; fotoPath: string | null }[];
   /** Hash (sha256) de cada arquivo: fotos e laudo, pelo caminho. */
   hashes: Record<string, string>;
 }
@@ -51,6 +57,9 @@ export function conteudoFechamento(e: EstadoParaFechar, motivo: MotivoFechamento
     `Conferência de ${e.tipo} · contrato ${e.contrato} · ${e.conferenciaId}`,
     `Fechada porque ${ROTULO_FECHAMENTO[motivo]}.`,
     ...itens.map((i) => `Item (${i.parte}) ${i.comodo}: ${i.descricao}${i.precisaReparo ? " · precisa de reparo" : ""}${i.fotoPath ? ` · foto sha256 ${e.hashes[i.fotoPath] ?? "indisponível"}` : ""}`),
+    ...[...(e.conforto ?? [])]
+      .sort((a, b) => (CHAVES_CONFORTO as readonly string[]).indexOf(a.chave) - (CHAVES_CONFORTO as readonly string[]).indexOf(b.chave))
+      .map((c) => `Padrão mínimo (inquilino) ${c.chave}: ${c.confere ? "confere" : `não confere · ${c.texto ?? ""}`}${c.fotoPath ? ` · foto sha256 ${e.hashes[c.fotoPath] ?? "indisponível"}` : ""}`),
     ...respostas.map((r) => `Resposta (${r.parte}) ${r.decisao} em ${r.decididoEm}${r.motivo ? ` · motivo: ${r.motivo}` : ""}`),
     ...semResposta(e).map((p) => `Sem resposta: ${p}`),
     e.laudo ? `Laudo (${e.laudo.parte}) sha256 ${e.hashes[e.laudo.path] ?? "indisponível"}` : "Sem laudo",

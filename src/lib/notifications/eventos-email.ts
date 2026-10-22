@@ -39,6 +39,10 @@ export type NotificationEvent =
   | "manutencao_atrasada" // prazo da manutenção vencido → proprietário
   | "manutencao_atualizada" // status da ordem mudou → a outra parte
   | "manutencao_mensagem" // nova mensagem dentro da ordem → a outra parte
+  // Prompt 59: prazo de solução da manutenção e padrão mínimo de conforto
+  | "manutencao_prazo" // resolver até / prazo perto / vencido / reaberta → proprietário (e o morador sabe do aviso)
+  | "conforto_prazo" // confirme o padrão mínimo até [data] / anúncio saiu da busca → proprietário
+  | "conforto_pendencia" // item do padrão mínimo que não confere (e o que aconteceu com ele) → as partes
   | "checkin_lembrete" // entrada em 2 dias / amanhã → proprietário e inquilino
   // Automações por data (cron /api/cron/automacoes, ordem d250ea2f item 5)
   | "anuncio_incompleto" // rascunho parado há 1 e 3 dias → proprietário
@@ -123,6 +127,9 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   manutencao_nova: { subject: "Pedido de manutenção no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, o inquilino abriu um pedido de manutenção no seu imóvel. Responda pela plataforma dentro do prazo.`, cta: "Responder pedido", path: "/dashboard/solicitacoes" },
   manutencao_atrasada: { subject: "Manutenção sem resposta: prazo vencido", body: (n) => `Olá${n ? " " + n : ""}, o pedido de manutenção do seu inquilino passou do prazo sem resposta. Responda pela plataforma.`, cta: "Responder agora", path: "/dashboard/solicitacoes" },
   manutencao_atualizada: { subject: "Atualização na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, a ordem de manutenção do imóvel mudou de status. Veja o histórico pela plataforma.`, cta: "Ver histórico", path: "/dashboard/solicitacoes" },
+  manutencao_prazo: { subject: "Prazo de solução da manutenção", body: (n) => `Olá${n ? " " + n : ""}, um pedido de manutenção do seu imóvel tem prazo de solução. Veja o prazo e atualize a ordem pela plataforma.`, cta: "Ver a ordem", path: "/dashboard/solicitacoes" },
+  conforto_prazo: { subject: "Confirme o padrão mínimo do seu anúncio", body: (n) => `Olá${n ? " " + n : ""}, o seu anúncio precisa do padrão mínimo de conforto confirmado para continuar na busca.`, cta: "Confirmar o padrão mínimo", path: "/dashboard/imoveis" },
+  conforto_pendencia: { subject: "Pendência do padrão mínimo no imóvel", body: (n) => `Olá${n ? " " + n : ""}, há uma pendência do padrão mínimo de conforto no imóvel do seu contrato. Veja pela plataforma.`, cta: "Ver a pendência", path: "/dashboard/contratos" },
   manutencao_mensagem: { subject: "Nova mensagem na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, há uma nova mensagem na ordem de manutenção do imóvel. Responda pela plataforma.`, cta: "Ver mensagem", path: "/dashboard/solicitacoes" },
   checkin_lembrete: { subject: "Lembrete: a entrada no imóvel está chegando", body: (n) => `Olá${n ? " " + n : ""}, a entrada no imóvel do seu contrato está chegando. Confira o horário e as instruções de entrada pela plataforma.`, cta: "Ver instruções de entrada", path: "/dashboard/contratos" },
   anuncio_incompleto: { subject: "Falta pouco para publicar seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, seu cadastro de imóvel ficou pela metade. Termine, envie a documentação e publique.`, cta: "Continuar o cadastro", path: "/dashboard/imoveis" },
