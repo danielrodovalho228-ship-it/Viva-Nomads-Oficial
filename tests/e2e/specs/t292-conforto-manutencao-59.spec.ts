@@ -137,7 +137,7 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     await page.getByTestId("conforto-marcar-todos").click();
     await page.getByTestId(`conforto-item-${CHAVES_CONFORTO[0]}`).getByRole("checkbox").uncheck();
     await expect(page.getByTestId("conforto-faltam")).toHaveText("Falta confirmar 1 item.");
-    await expect(page.getByTestId("checklist-item-conforto")).toHaveAttribute("data-ok", "0");
+    await expect(page.getByTestId("etapa-revisar").getByTestId("checklist-item-conforto")).toHaveAttribute("data-ok", "0");
     await expect(page.getByTestId("publicar-anuncio")).toBeDisabled();
     await semRolagemLateral(page);
     await page.screenshot({ path: "tests/laboratorio/saida/t292-1-falta-1-item-390.png", fullPage: true });
