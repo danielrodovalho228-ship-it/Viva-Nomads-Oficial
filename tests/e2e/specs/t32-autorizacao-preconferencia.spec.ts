@@ -106,8 +106,8 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     const outro = page.getByRole("button", { name: "Começar outro" });
     if (await outro.isVisible().catch(() => false)) await outro.click();
 
-    // Cadastro em 5 etapas (prompt 10): tipo, quem opera e endereço ficam na 1ª etapa, "Onde fica".
-    await expect(page.getByRole("heading", { name: "Onde fica" })).toBeVisible();
+    // Anunciar em 6 passos (Prompt 43): quem opera e endereço ficam no 1º passo, "Endereço e dados".
+    await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible();
     await page.getByTestId("cadastro-rua").fill("Rua da Procuração");
     await page.getByTestId("cadastro-numero").fill("7");
     await page.getByTestId("cadastro-bairro").fill("Centro");
@@ -130,7 +130,7 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     await page.screenshot({ path: "tests/laboratorio/saida/t32-1-administro-com-procuracao.png", fullPage: true });
 
     await continuar.click();
-    await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Tipo e quartos" })).toBeVisible({ timeout: 10_000 });
     // O arquivo foi para a pasta do próprio dono no bucket privado.
     const { data: lista } = await adm().storage.from("property-docs").list(ids.dono!);
     expect((lista ?? []).some((f) => f.name.endsWith(".pdf"))).toBe(true);

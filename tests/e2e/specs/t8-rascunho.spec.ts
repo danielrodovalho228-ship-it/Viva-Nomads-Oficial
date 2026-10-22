@@ -54,8 +54,8 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
     // Se um rascunho anterior for detectado, começa outro para partir do zero.
     await comecarOutroSeHouver(page);
-    // Cadastro em 5 etapas (prompt 10): Onde fica → Fotos → O que encontramos → Preço → Revisar.
-    await expect(page.getByRole("heading", { name: "Onde fica" })).toBeVisible();
+    // Anunciar em 6 passos (Prompt 43): Endereço e dados → Tipo e quartos → Fotos → Comodidades → Regras e valores → Revisar.
+    await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible();
     await page.getByTestId("cadastro-rua").fill(`Rua ${marca}`);
     await page.getByTestId("cadastro-numero").fill("100");
     await page.locator('input[list="novo-bairros"]').fill(marca);
@@ -116,7 +116,7 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await expect(page.getByTestId("prontidao-visao-geral")).toContainText(/Próximo passo:/);
     // Clicar no item que falta abre o editor JÁ na etapa certa (Fotos).
     await lista.getByTestId("check-falta").filter({ hasText: "Pelo menos 8 fotos" }).click();
-    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=1/);
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=2/);
     await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible({ timeout: 15_000 });
   });
 
@@ -139,10 +139,10 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
   });
 
-  test("T-RASC-5 — o cadastro abre pela etapa Onde fica, com o CEP em foco (prompt 10), não pela qualificação", async ({ page }) => {
+  test("T-RASC-5 — o cadastro abre pelo passo Endereço e dados, com o CEP em foco (prompt 10), não pela qualificação", async ({ page }) => {
     await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
     await comecarOutroSeHouver(page);
-    await expect(page.getByRole("heading", { name: "Onde fica" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible();
     await expect(page.getByTestId("cadastro-cep")).toBeFocused();
     await expect(page.getByText("Conclua a qualificação primeiro")).toHaveCount(0);
   });
@@ -150,24 +150,29 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
   test("T-RASC-4 — retomar não trava etapas já visitadas nem zera a qualificação (bug 13)", async ({ page }) => {
     await novoComEndereco(page);
     const continuar = page.getByRole("button", { name: "Continuar", exact: true });
+    const passos = page.getByTestId("etapas-cadastro");
+    await continuar.click(); // → Tipo e quartos
+    await page.getByTestId("cadastro-banheiros").fill("1");
+    await page.getByTestId("cadastro-capacidade").fill("2");
+    await page.getByTestId("cadastro-area").fill("30");
     await continuar.click(); // → Fotos
     await page.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles("public/images/imoveis/ube/ube-001-sala.webp");
     await expect(page.getByText(/^1\/40 fotos/)).toBeVisible({ timeout: 20_000 });
-    await continuar.click(); // → O que encontramos
-    await expect(page.getByRole("heading", { name: "O que encontramos" })).toBeVisible();
-    // Volta a "Onde fica" pelo topo e deixa salvar: o rascunho fica na etapa 1.
-    await page.getByRole("button", { name: /Onde fica/ }).click();
+    await continuar.click(); // → Comodidades e segurança
+    await expect(page.getByRole("heading", { name: "Comodidades e segurança" })).toBeVisible();
+    // Volta ao passo 1 pelo topo e deixa salvar: o rascunho fica no passo 1.
+    await passos.getByRole("button", { name: /Endereço e dados/ }).click();
     await esperarSalvo(page);
     await page.waitForTimeout(2_500);
     await esperarSalvo(page);
-    // Retoma pela Visão geral: abre em "Onde fica", e "O que encontramos" segue clicável.
+    // Retoma pela Visão geral: abre no passo 1, e "Comodidades" segue clicável.
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await retomar(page).click();
     await expect(page).toHaveURL(/\?draft=/);
     await expect(page.getByTestId("cadastro-rua")).toBeVisible();
-    const encontramos = page.getByRole("button", { name: /O que encontramos/i });
+    const encontramos = passos.getByRole("button", { name: /Comodidades/i });
     await expect(encontramos).toBeEnabled();
-    await expect(page.getByRole("button", { name: /Preço e disponibilidade/i })).toBeDisabled(); // nunca visitada
+    await expect(passos.getByRole("button", { name: /Regras e valores/i })).toBeDisabled(); // nunca visitado
     await encontramos.click();
     // A etiqueta da qualificação veio do rascunho (não da sessionStorage).
     await expect(page.getByText(/trabalhar de casa”? ativa/i)).toBeVisible();

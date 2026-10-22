@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import type { EstadoIdentidade } from "@/lib/identidade/estado";
 import { NOTA_VERIFICACAO_TESTE, ramoVerificacao } from "@/lib/contas-de-teste";
 import { validadeDoLaudo } from "@/lib/caf/validade";
+import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
 
 /**
  * Estados futuros da verificação (preparados; a integração real entra depois):
@@ -461,6 +462,7 @@ function DemoFlow({
           <OwnerDecisionNotice />
         </>
       )}
+      <FalarComAViva />
     </div>
   );
 }

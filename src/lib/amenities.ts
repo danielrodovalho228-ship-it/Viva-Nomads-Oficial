@@ -37,7 +37,7 @@ export interface AmenityCatalogGroup {
   items: AmenityDef[];
 }
 
-/** Comodidades agrupadas (Trabalho, Conforto, Prédio). */
+/** Comodidades agrupadas (Trabalho, Conforto, Prédio, Segurança). */
 export const AMENITY_GROUPS: AmenityCatalogGroup[] = [
   {
     category: "trabalho",
@@ -81,6 +81,15 @@ export const AMENITY_GROUPS: AmenityCatalogGroup[] = [
       { key: "lavanderia", label: "Lavanderia compartilhada" },
       { key: "bicicletario", label: "Bicicletário" },
       { key: "vaga_garagem", label: "Vaga de garagem" },
+    ],
+  },
+  {
+    // Prompt 43 (Anunciar em 6 passos, passo 4): as câmeras ficam na declaração de privacidade, ao lado deste grupo.
+    category: "seguranca",
+    label: "Segurança",
+    items: [
+      { key: "detector_fumaca", label: "Detector de fumaça" },
+      { key: "extintor", label: "Extintor de incêndio" },
     ],
   },
 ];

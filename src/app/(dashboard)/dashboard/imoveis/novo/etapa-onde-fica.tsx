@@ -10,7 +10,6 @@ import { DocumentoVinculo, type EstadoDocumentoTela } from "@/components/anuncio
 import { EtapaIdentidade } from "@/components/anuncio/etapa-identidade";
 import type { PhotoItem } from "@/components/photo-uploader";
 import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, type Operacao } from "@/lib/anuncio/operacao";
-import { PROPERTY_TYPES } from "@/lib/amenities";
 import { LocationDatalist } from "@/lib/locations";
 import { CITIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -37,9 +36,6 @@ export function EtapaOndeFica(p: {
   /** Cartão "Preencher com IA" (prompt 20), no topo do passo. */
   topo?: React.ReactNode;
   aplicarImportado: (a: AnuncioOrganizado) => void;
-  propertyType: string;
-  setPropertyType: (v: string) => void;
-  tipoSugerido: boolean;
   ownershipType: Operacao;
   setOwnershipType: (v: Operacao) => void;
   subleaseAuthorized: boolean;
@@ -293,15 +289,6 @@ export function EtapaOndeFica(p: {
       </p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Labeled label="Tipo de imóvel" sugerido={p.tipoSugerido}>
-          <select value={p.propertyType} onChange={(e) => p.setPropertyType(e.target.value)} className="input">
-            {PROPERTY_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </Labeled>
         <div className="min-w-0">
           <span className="mb-2 block text-sm font-medium text-ink">Quem opera este imóvel?</span>
           <div className="grid grid-cols-1 gap-2" role="radiogroup" aria-label="Quem opera este imóvel?">

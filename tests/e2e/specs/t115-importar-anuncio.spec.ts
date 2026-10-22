@@ -36,12 +36,20 @@ test.describe("T115 — Importar meu anúncio", () => {
     await expect(revisao).toContainText("65 m²");
     await expect(revisao).toContainText("Removemos telefone");
     await revisao.getByTestId("importar-aplicar").click();
-    // Prompt 10: o atalho leva direto à etapa 3, "O que encontramos", com tudo preenchido.
-    await expect(page.getByRole("heading", { name: "O que encontramos" })).toBeVisible();
+    // Prompt 43: o atalho leva ao passo 2, "Tipo e quartos", já preenchido; título e descrição ficam no passo 4.
+    await expect(page.getByRole("heading", { name: "Tipo e quartos" })).toBeVisible();
     await expect(page.getByTestId("cadastro-quartos")).toHaveValue("2");
     await expect(page.getByTestId("cadastro-banheiros")).toHaveValue("1");
     await expect(page.getByTestId("cadastro-area")).toHaveValue("65");
-    await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Apartamento mobiliado no Santa Mônica");
+    // O rascunho salvo guarda o resto: reabre no passo 4 e confere título e descrição.
+    await expect(page).toHaveURL(/draft=/, { timeout: 20_000 });
+    const draft = new URL(page.url()).searchParams.get("draft");
+    await page.waitForTimeout(3_000); // passa o debounce do autosave
+    await expect(async () => {
+      await page.goto(`/dashboard/imoveis/novo?draft=${draft}&etapa=3`, { waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("heading", { name: "Comodidades e segurança" })).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Apartamento mobiliado no Santa Mônica", { timeout: 5_000 });
+    }).toPass({ timeout: 45_000, intervals: [2_000, 3_000] });
     await expect(page.getByTestId("cadastro-descricao")).not.toHaveValue(/99999/);
 
     // Sem rolagem lateral a 390 px.

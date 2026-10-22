@@ -20,6 +20,7 @@ import { ConfiancaLista, PerfilProfissional } from "@/components/account/conta-b
 import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
 import { DegrausPerfil } from "@/components/account/degraus-perfil";
+import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
 
 const TITULOS: Record<string, { titulo: string; subtitulo: string }> = {
   perfil: { titulo: "Perfil", subtitulo: "Seus dados, documento e foto." },
@@ -94,6 +95,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
         <div className="w-full">
           <PageTitle title={TITULOS.excluir.titulo} subtitle={TITULOS.excluir.subtitulo} />
           <DangerZone />
+          <FalarComAViva />
         </div>
       );
     default:

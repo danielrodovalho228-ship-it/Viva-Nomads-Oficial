@@ -14,6 +14,7 @@ import { PagamentosConta } from "@/components/account/pagamentos-conta";
 import { DegrausPerfil } from "@/components/account/degraus-perfil";
 import { AjudaContato, DadosPessoais, DangerZone, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
 import { BlocoConta, ConfiancaLista, PerfilProfissional } from "@/components/account/conta-blocos";
+import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
 
 /**
  * Configurações (Prompt 43, item 3). No SITE: 4 grupos, cada assunto uma vez —
@@ -60,6 +61,7 @@ export default function AccountPage() {
           <div id="sair-da-viva" className="scroll-mt-24">
             <h3 className="mt-6 font-title text-lg font-semibold text-ink">Sair da Viva</h3>
             <DangerZone />
+            <FalarComAViva className="mt-4" />
           </div>
           {/* Por último: carrega depois da tela e não pode empurrar "Sair da Viva" para fora do alcance (t183). */}
           <CaixaEmailsTeste />

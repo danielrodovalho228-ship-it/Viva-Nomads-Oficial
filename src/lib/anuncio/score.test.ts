@@ -45,13 +45,13 @@ test("contarPalavras ignora espaços sobrando", () => {
   assert.equal(contarPalavras(""), 0);
 });
 
-test("dicas levam à etapa certa do cadastro em 5 etapas (t98)", () => {
+test("dicas levam ao passo certo do Anunciar em 6 passos (t98, Prompt 43)", () => {
   const r = calc({ ...completo, fotos: 8, descricao: palavras(10), selo: false, video: false });
   const etapa = (key: string) => r.dicas.find((d) => d.key === key)?.etapa;
-  assert.equal(etapa("fotos12"), 1);
-  assert.equal(etapa("video"), 1);
-  assert.equal(etapa("palavras"), 2);
-  assert.equal(etapa("comodidades"), 2);
-  assert.equal(etapa("pets"), 2);
+  assert.equal(etapa("fotos12"), 2);
+  assert.equal(etapa("video"), 2);
+  assert.equal(etapa("palavras"), 3);
+  assert.equal(etapa("comodidades"), 3);
+  assert.equal(etapa("pets"), 4);
   assert.equal(etapa("selo"), 0);
 });
