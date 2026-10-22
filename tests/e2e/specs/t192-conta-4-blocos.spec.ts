@@ -65,7 +65,8 @@ test.describe("T192 — simulador tributário só em Ferramentas", () => {
     test(`${largura}px — Ferramentas › Tributação PF × PJ com outros rendimentos e custo da empresa; cadastro sem simulador`, async ({ page, browser }) => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/dashboard/ferramentas", { waitUntil: "networkidle" });
-      const cartao = page.locator('a[href="/dashboard/tributacao"]');
+      // O cartão da página (o menu lateral também aponta para cá desde o Prompt 42 e fica escondido a 390 px).
+      const cartao = page.locator('main a[href="/dashboard/tributacao"]');
       await expect(cartao.first()).toBeVisible();
       await expect(page.locator('a[href="/tributario"]')).toHaveCount(0);
       await cartao.first().click();
