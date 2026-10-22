@@ -129,6 +129,8 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   pedido_auto_cancelado: "transacional",
   saida_sem_parceiro: "transacional",
   sugestao_parceiros_morador: "transacional",
+  internet_remedir: "transacional",
+  internet_abaixo_medida: "transacional",
 };
 
 /** Arquivo (sem .jpg) e texto alternativo da imagem do evento — sempre um arquivo que existe. */
