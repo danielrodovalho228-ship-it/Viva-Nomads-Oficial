@@ -17,6 +17,8 @@
 */
 
 export type ChaveDecisaoAdmin =
+  | "manutencao_fora_prazo"
+  | "conforto_contestacoes"
   | "chamados_p1"
   | "chamados_p2"
   | "backup"
@@ -44,6 +46,9 @@ export interface DefinicaoDecisaoAdmin {
 
 /** Em ordem de urgência. */
 export const DECISOES_ADMIN: readonly DefinicaoDecisaoAdmin[] = [
+  // Prompt 59: a manutenção fora do prazo de solução abre a lista (estudo da Fase 0, item 12).
+  { chave: "manutencao_fora_prazo", fila: "manutenção fora do prazo", um: "manutenção fora do prazo de solução", varios: "manutenções fora do prazo de solução", acao: "Acompanhar", href: "/admin/solicitacoes?fora_prazo=1" },
+  { chave: "conforto_contestacoes", fila: "contestações do padrão mínimo", um: "contestação do padrão mínimo para decidir", varios: "contestações do padrão mínimo para decidir", acao: "Decidir", href: "/admin/conforto" },
   { chave: "chamados_p1", fila: "chamados P1", um: "chamado P1 aberto", varios: "chamados P1 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p1" },
   { chave: "chamados_p2", fila: "chamados P2", um: "chamado P2 aberto", varios: "chamados P2 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p2" },
   { chave: "backup", fila: "backup", um: "alerta de backup", varios: "alertas de backup", acao: "Ver o backup", href: "/admin#backup" },

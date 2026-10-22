@@ -30,6 +30,8 @@ test("só entram linhas com n > 0; N é a soma; ordem de urgência (P1 antes de 
     candidaturas_sem_resposta_48h: { n: 0 },
     comissoes_vencidas: { n: 0 },
     pedidos_sem_resposta_expirando: { n: 0 },
+    manutencao_fora_prazo: { n: 0 },
+    conforto_contestacoes: { n: 0 },
   });
   assert.equal(r.total, 7);
   assert.deepEqual(r.linhas.map((l) => l.chave), ["chamados_p1", "backup", "documentos_pendentes", "encerramentos"]);
@@ -64,4 +66,12 @@ test("aviso de fila não lida diz o nome das filas", () => {
   assert.equal(avisoSemLeitura([]), null);
   assert.equal(avisoSemLeitura(["backup"]), "Não deu para ler agora: backup. Essa fila fica fora da conta.");
   assert.equal(avisoSemLeitura(["falhas_documento", "backup", "chamados_p1"]), "Não deu para ler agora: chamados P1, backup e recibos. Essas filas ficam fora da conta.");
+});
+
+test("Prompt 59: 'Manutenção fora do prazo' abre a lista; a contestação do padrão mínimo vem logo depois", () => {
+  assert.deepEqual(DECISOES_ADMIN.slice(0, 2).map((d) => d.chave), ["manutencao_fora_prazo", "conforto_contestacoes"]);
+  const r = montarDecisoesAdmin(Object.fromEntries(DECISOES_ADMIN.map((d) => [d.chave, { n: d.chave === "manutencao_fora_prazo" || d.chave === "chamados_p1" ? 1 : 0 }])));
+  assert.deepEqual(r.linhas.map((l) => l.chave), ["manutencao_fora_prazo", "chamados_p1"]);
+  assert.equal(r.linhas[0].texto, "1 manutenção fora do prazo de solução");
+  assert.equal(r.linhas[0].href, "/admin/solicitacoes?fora_prazo=1");
 });
