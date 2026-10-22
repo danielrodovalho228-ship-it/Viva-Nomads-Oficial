@@ -16,6 +16,7 @@ test("ação do servidor cancelada pela navegação não conta (decisão do Muse
 
 test("arquivo do próprio site cancelado pela navegação não conta (L-3, 22/10)", () => {
   assert.equal(canceladaPeloNavegador(ABORT, "GET", "http://localhost:3123/_next/static/chunks/3ns72bvya0a2t.js", {}), "arquivo");
+  assert.equal(canceladaPeloNavegador(ABORT, "GET", "http://localhost:3123/_next/image?url=%2Ffoto.png&w=640&q=75", {}), "arquivo");
 });
 
 test("leitura do próprio site em /api cancelada pela tela não conta (rodada de 22/10)", () => {
@@ -30,6 +31,7 @@ test("o resto continua acusando", () => {
   assert.equal(canceladaPeloNavegador(ABORT, "POST", URL_TELA, {}), null);
   // Arquivo do site que falhou por outro motivo, e GET abortado fora de /_next/static.
   assert.equal(canceladaPeloNavegador("net::ERR_CONNECTION_REFUSED", "GET", "http://localhost:3123/_next/static/chunks/a.js", {}), null);
+  assert.equal(canceladaPeloNavegador("net::ERR_FAILED", "GET", "http://localhost:3123/_next/image?url=%2Ffoto.png", {}), null);
   assert.equal(canceladaPeloNavegador("net::ERR_CONNECTION_REFUSED", "GET", "http://localhost:3123/api/dados", {}), null);
   assert.equal(canceladaPeloNavegador(ABORT, "POST", "http://localhost:3123/api/dados", {}), null);
 });
