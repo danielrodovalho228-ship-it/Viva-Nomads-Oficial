@@ -84,7 +84,23 @@ test.describe("T267 — troca de conversa não deixa o cartão da anterior", () 
           const c = document.querySelector('[data-testid="conversa-visita"]');
           const chaves = (el: Element | null) => (el ? Object.keys(el).filter((k) => k.startsWith("__react")).map((k) => k.split("$")[0]) : []);
           const sec = c?.closest("section");
+          // O que o React tem montado: a chave/props do cartão e os filhos da <section> segundo a árvore de fibras.
+          type Fibra = { key: string | null; type: unknown; return: Fibra | null; child: Fibra | null; sibling: Fibra | null; memoizedProps: Record<string, unknown> | null; alternate: Fibra | null };
+          const fibra = (el: Element | null | undefined): Fibra | null => {
+            if (!el) return null;
+            const k = Object.keys(el).find((x) => x.startsWith("__reactFiber"));
+            return k ? ((el as unknown as Record<string, Fibra>)[k] ?? null) : null;
+          };
+          const nome = (f: Fibra) => (typeof f.type === "string" ? f.type : typeof f.type === "function" ? (f.type as { name?: string }).name || "fn" : String(f.type));
+          let fc = fibra(c);
+          const subida: string[] = [];
+          for (let i = 0; fc && i < 4; i++, fc = fc.return) subida.push(`${nome(fc)}${fc.key ? "#" + fc.key.slice(0, 8) : ""}${fc.memoizedProps && "propertyId" in fc.memoizedProps ? "(p=" + String(fc.memoizedProps.propertyId).slice(0, 8) + ")" : ""}`);
+          const fs = fibra(sec);
+          const filhos: string[] = [];
+          for (let f = fs?.child ?? null; f; f = f.sibling) filhos.push(`${nome(f)}${f.key ? "#" + f.key.slice(0, 8) : ""}`);
           return JSON.stringify({
+            subida,
+            filhosReact: filhos,
             mains: document.querySelectorAll("main").length,
             sections: document.querySelectorAll("section").length,
             cartoes: document.querySelectorAll('[data-testid="conversa-visita"]').length,
