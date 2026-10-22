@@ -56,7 +56,7 @@ export default function BoasVindasPage() {
           </Link>
           <Link
             href="/auth?papel=owner&cadastro=1"
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-forest px-5 py-4 text-base font-semibold text-forest [@media(max-height:700px)]:py-3"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-forest px-4 py-4 text-base font-semibold text-forest [@media(max-height:700px)]:py-3"
           >
             <Home className="h-5 w-5" /> Quero anunciar
           </Link>

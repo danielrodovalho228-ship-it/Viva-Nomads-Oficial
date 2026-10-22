@@ -32,7 +32,7 @@ export function WorkspaceSection({ property }: { property: Property }) {
       </h2>
 
       {hasInternet && (
-        <div className="mt-5 flex items-start gap-2 rounded-xl border border-champagne/40 bg-champagne/5 px-4 py-3 text-sm">
+        <div className="mt-4 flex items-start gap-2 rounded-xl border border-champagne/40 bg-champagne/5 px-4 py-3 text-sm">
           <Wifi className="mt-1 h-4 w-4 shrink-0 text-champagne-600" />
           <span className="text-ink">{fraseInternetAnuncio(property.internetTier!, [...(property.workFeatures ?? []), ...(property.amenities ?? [])])}</span>
         </div>

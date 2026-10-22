@@ -42,9 +42,16 @@ const RE_ESPACO = new RegExp(`${INICIO}${VARIANTES}(-?${PREFIXOS_ESPACO}-(${REST
 
 const RE_PESO = new RegExp(`${INICIO}${VARIANTES}(font-(?:bold|extrabold|black))${FIM}`, "g");
 
-/** Valor de espaço permitido? Passo inteiro da escala, `auto`/`px`/`0`, ou arbitrário em múltiplos de 4 px. */
+/**
+ * Grade de 4 px (Prompt 47): os únicos espaços são 4/8/12/16/24/32/48/64 px — passos 1, 2, 3, 4, 6, 8, 12 e 16 do
+ * Tailwind. Folga de elemento fixo (barra, botão flutuante) usa variável CSS (`pb-(--folga-flutuante)`).
+ */
+export const PASSOS_GRADE = new Set([0, 1, 2, 3, 4, 6, 8, 12, 16]);
+export const PX_GRADE = new Set([0, 4, 8, 12, 16, 24, 32, 48, 64]);
+
+/** Valor de espaço permitido? Passo da grade, `auto`/`px`/`0`, variável CSS ou arbitrário com px da grade. */
 export function espacoPermitido(valor: string): boolean {
-  if (/^\d+$/.test(valor)) return true; // 1 = 4 px, 2 = 8 px, …
+  if (/^\d+$/.test(valor)) return PASSOS_GRADE.has(Number(valor)); // 1 = 4 px, 2 = 8 px, …
   if (valor === "auto" || valor === "px" || valor === "0") return true;
   if (/^\d+\.\d+$/.test(valor)) return false; // meio passo: 0.5 = 2 px, 1.5 = 6 px, 2.5 = 10 px
   if (/^\(--[\w-]+\)$/.test(valor)) return true; // variável CSS: p-(--folga)
@@ -54,7 +61,7 @@ export function espacoPermitido(valor: string): boolean {
   if (!medidas.length) return true; // env(), var() sem número
   return medidas.every(([, n, u]) => {
     const px = Math.abs(Number(n)) * (u === "rem" ? 16 : 1);
-    return px === 0 || px % 4 === 0;
+    return PX_GRADE.has(px);
   });
 }
 

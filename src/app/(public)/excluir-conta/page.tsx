@@ -44,9 +44,9 @@ export default function ExcluirContaPage() {
         </div>
       </section>
 
-      <section className="mt-10 rounded-xl border border-sage-200 bg-surface-2 p-5">
+      <section className="mt-12 rounded-xl border border-sage-200 bg-surface-2 p-4">
         <h2 className="font-title text-lg font-semibold text-ink">O que é apagado</h2>
-        <ul className="mt-2 list-disc pl-5 text-sm text-muted">
+        <ul className="mt-2 list-disc pl-4 text-sm text-muted">
           <li>Seu perfil (nome, e-mail, telefone) e suas preferências.</li>
           <li>Seus anúncios, candidaturas, favoritos e buscas salvas.</li>
           <li>Suas conversas e mensagens.</li>

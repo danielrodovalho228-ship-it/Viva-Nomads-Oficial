@@ -40,7 +40,7 @@ test("alvoDoControle: caixa e opção valem pelo rótulo; texto e botão, pelo c
 
 test("/parceiros: o título 'Dúvidas' fica fora da <dl> (axe definition-list)", () => {
   const s = readFileSync("src/app/(public)/parceiros/page.tsx", "utf8");
-  const dl = /<dl className="mt-5 space-y-5"[^>]*>([\s\S]*?)<\/dl>/.exec(s)?.[1] ?? "";
+  const dl = /<dl className="mt-4 space-y-4"[^>]*>([\s\S]*?)<\/dl>/.exec(s)?.[1] ?? "";
   assert.ok(dl.length > 0 && !/<h3/.test(dl));
 });
 

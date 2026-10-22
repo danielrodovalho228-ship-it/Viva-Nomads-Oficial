@@ -47,9 +47,9 @@ export function NavSecoes({ secoes }: { secoes: SecaoImovel[] }) {
     <nav
       aria-label="Seções do anúncio"
       data-testid="nav-secoes"
-      className="sticky top-18 z-20 -mx-5 mt-6 border-b border-line bg-white/95 backdrop-blur sm:-mx-8 lg:mx-0 print:hidden"
+      className="sticky top-18 z-20 -mx-4 mt-6 border-b border-line bg-white/95 backdrop-blur sm:-mx-8 lg:mx-0 print:hidden"
     >
-      <div ref={lista} className="flex gap-1 overflow-x-auto px-5 [scrollbar-width:none] sm:px-8 lg:px-0 [&::-webkit-scrollbar]:hidden">
+      <div ref={lista} className="flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] sm:px-8 lg:px-0 [&::-webkit-scrollbar]:hidden">
         {secoes.map((s) => (
           <a
             key={s.id}

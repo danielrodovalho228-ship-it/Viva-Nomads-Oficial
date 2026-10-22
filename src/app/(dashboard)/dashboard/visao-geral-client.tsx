@@ -379,7 +379,7 @@ function ListaDecisoes({ decisoes }: { decisoes: Decisao[] }) {
 function CartaoEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
   if (!estadias.length) return null;
   return (
-    <Panel title="Suas estadias" className="mb-5" data-testid="home-decisoes-estadias">
+    <Panel title="Suas estadias" className="mb-4" data-testid="home-decisoes-estadias">
       <ul className="divide-y divide-sage-200">
         {estadias.map((e) => (
           <li key={e.contratoId} className="py-3 first:pt-0 last:pb-0" data-testid="home-estadia" data-contrato={e.contratoId}>

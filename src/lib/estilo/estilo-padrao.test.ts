@@ -451,3 +451,29 @@ test("rodapé: títulos de coluna 14/600, sem caixa alta nem tracking", () => {
   // Textos de apoio: só /60–/80; /50 só no miúdo.
   for (const m of r.matchAll(/text-white\/(\d+)/g)) assert.ok(Number(m[1]) >= 50, m[0]);
 });
+
+/** Emoji e símbolos pictográficos (Prompt 47): fora da interface. Texto de usuário (mensagem, descrição) é dado do banco. */
+export const RE_EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}\u{2B55}]/u;
+
+test("Prompt 47: nenhum emoji na interface (src inteiro; comentários do código não contam)", () => {
+  const semComentario = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+  const achados: string[] = [];
+  for (const alvo of ["app", "components", "lib", "config"]) {
+    for (const f of arquivos(alvo)) {
+      if (f.startsWith("lib/estilo/") || f.endsWith(".css")) continue;
+      semComentario(ler(f))
+        .split("\n")
+        .forEach((l, i) => {
+          if (RE_EMOJI.test(l)) achados.push(`${f}:${i + 1} ${l.trim().slice(0, 80)}`);
+        });
+    }
+  }
+  assert.deepEqual(achados, []);
+  assert.match("Aceita 🎉", RE_EMOJI);
+  assert.doesNotMatch("Documentação conferida", RE_EMOJI);
+});
+
+test("Prompt 47: grade de 4 px — só 4/8/12/16/24/32/48/64", () => {
+  for (const ok of ["1", "2", "3", "4", "6", "8", "12", "16", "[24px]", "[3rem]", "(--folga-flutuante)", "px", "auto"]) assert.equal(espacoPermitido(ok), true, ok);
+  for (const nao of ["5", "7", "10", "14", "20", "28", "[20px]", "[40px]", "[6rem]"]) assert.equal(espacoPermitido(nao), false, nao);
+});

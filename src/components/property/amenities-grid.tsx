@@ -40,7 +40,7 @@ export function AmenitiesGrid({ property }: { property: Property }) {
       <h2 id="comodidades-title" className="font-title text-2xl font-semibold text-ink">
         Comodidades
       </h2>
-      <div className={naoTem.length > 0 ? "mt-5 grid gap-6 md:grid-cols-2" : "mt-5"}>
+      <div className={naoTem.length > 0 ? "mt-4 grid gap-6 md:grid-cols-2" : "mt-4"}>
         <div data-testid="comodidades-tem">
           {naoTem.length > 0 && <h3 className="text-sm font-semibold text-forest">Tem</h3>}
           <ul className={`${naoTem.length > 0 ? "mt-3 " : ""}grid grid-cols-2 gap-x-4 gap-y-3`} data-testid="comodidades-principais">

@@ -385,7 +385,7 @@ function NotifPrefs({ inicial }: { inicial: { email: boolean } }) {
   }
 
   return (
-    <div className="mt-6 rounded-xl border border-line bg-white p-5 text-sm">
+    <div className="mt-6 rounded-xl border border-line bg-white p-4 text-sm">
       <p className="font-medium text-ink">Notificações</p>
       <p className="mt-1 text-xs text-muted">Avisos no app sempre aparecem. Você pode desligar o e-mail.</p>
       <div className="mt-3 flex items-center justify-between gap-3">

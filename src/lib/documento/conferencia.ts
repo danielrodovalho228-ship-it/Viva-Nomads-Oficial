@@ -254,7 +254,7 @@ export function statusDoEstado(e: EstadoConferencia): "approved" | "rejected" | 
 
 /** Texto curto ao dono na etapa 1 e na revisão. */
 export function rotuloEstado(e: EstadoConferencia): string {
-  return e === "aprovado" ? "Documentação conferida ✓" : e === "corrija" ? "Corrija o documento" : "Em revisão";
+  return e === "aprovado" ? "Documentação conferida" : e === "corrija" ? "Corrija o documento" : "Em revisão";
 }
 
 /** CPF mascarado na tela: ***.123.456-** (só os dígitos do meio). */

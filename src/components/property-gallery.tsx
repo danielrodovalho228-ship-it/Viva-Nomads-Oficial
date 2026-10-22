@@ -170,7 +170,7 @@ function MobileCarousel({
   const [active, setActive] = useState(0);
   return (
     // Tela cheia: sai do recuo da página (px-5 / sm:px-8) e encosta no topo; sem raio.
-    <div className="relative -mx-5 -mt-8 sm:-mx-8 md:hidden" data-testid="galeria-celular">
+    <div className="relative -mx-4 -mt-8 sm:-mx-8 md:hidden" data-testid="galeria-celular">
       <div
         className="flex snap-x snap-mandatory overflow-x-auto"
         onScroll={(e) => {

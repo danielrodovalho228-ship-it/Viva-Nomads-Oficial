@@ -73,9 +73,9 @@ export function LocacoesClient({
           }
         />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {locacoes.map((l) => (
-            <Panel key={l.id} className="p-5" id={`contrato-${l.id}`} data-testid="locacao-cartao" data-contrato={l.id}>
+            <Panel key={l.id} className="p-4" id={`contrato-${l.id}`} data-testid="locacao-cartao" data-contrato={l.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="font-title text-lg font-semibold text-ink">

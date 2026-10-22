@@ -10,10 +10,11 @@ const galeria = readFileSync("src/components/property-gallery.tsx", "utf8");
 const detalhe = readFileSync("src/app/(public)/imoveis/[id]/property-detail.tsx", "utf8");
 const marca = readFileSync("src/components/brand-image.tsx", "utf8");
 
-test("página do imóvel: contêiner max-w-[1536px] com lg:px-7", () => {
+test("página do imóvel: contêiner max-w-[1536px] com a margem da grade (16 px no celular, 32 no computador)", () => {
   const caixa = detalhe.match(/<div className="[^"]*"\s+data-testid="imovel-largura-total">/)?.[0] ?? "";
   assert.match(caixa, /max-w-\[1536px\]/);
-  assert.match(caixa, /lg:px-7/);
+  assert.match(caixa, / px-4 /);
+  assert.match(caixa, /sm:px-8/);
   assert.doesNotMatch(caixa, /max-w-\[1280px\]/);
 });
 

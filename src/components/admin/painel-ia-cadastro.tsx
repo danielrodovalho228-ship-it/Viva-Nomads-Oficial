@@ -19,7 +19,7 @@ export async function PainelIaCadastro() {
   if (!r) return null;
   const ligadaFotos = r.ligada.fotos;
   return (
-    <section className="rounded-xl border border-sage-200 bg-white p-5" data-testid="painel-ia-cadastro" data-ligada={ligadaFotos ? "1" : "0"}>
+    <section className="rounded-xl border border-sage-200 bg-white p-4" data-testid="painel-ia-cadastro" data-ligada={ligadaFotos ? "1" : "0"}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
           <Sparkles className="h-5 w-5 text-forest" aria-hidden /> IA do cadastro

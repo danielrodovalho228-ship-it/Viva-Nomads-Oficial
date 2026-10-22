@@ -57,7 +57,7 @@ export function LocationNearby({ property }: { property: Property }) {
         Localização
       </h2>
 
-      <div className="relative mt-5">
+      <div className="relative mt-4">
         <PropertyMap
           className="aspect-[16/9] w-full"
           center={{ lat: property.lat, lng: property.lng }}

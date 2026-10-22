@@ -21,7 +21,7 @@ export default async function AcessoSociosPage({
   const erro = sp.erro === "1";
 
   return (
-    <main className="grid min-h-screen place-items-center bg-surface-2 px-4 py-10">
+    <main className="grid min-h-screen place-items-center bg-surface-2 px-4 py-12">
       <div className="w-full max-w-sm rounded-xl border border-sage-200 bg-white p-8">
         <div className="flex justify-center">
           <Logo />

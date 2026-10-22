@@ -111,10 +111,10 @@ export function TenantOnboarding({ name }: { name: string }) {
 
   return (
     <section className="mb-6 overflow-hidden rounded-xl border border-sage-200 bg-white">
-      <div className="flex items-start justify-between gap-4 border-b border-sage-200 bg-surface-2 px-5 py-4">
+      <div className="flex items-start justify-between gap-4 border-b border-sage-200 bg-surface-2 px-4 py-4">
         <div>
           <h2 className="font-title text-lg font-semibold text-ink">
-            Comece por aqui{name ? `, ${name}` : ""} 👋
+            Comece por aqui{name ? `, ${name}` : ""}
           </h2>
           <p className="text-sm text-muted">
             {doneCount}/3 concluídos · alguns passos para aproveitar o Viva Nomads.
@@ -133,7 +133,7 @@ export function TenantOnboarding({ name }: { name: string }) {
           const done = feitos.includes(s.id);
           const Icon = s.icon;
           return (
-            <li key={s.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start" data-testid={`onboarding-${s.id}`} data-estado={s.id === "verificar" ? cartao.estado : undefined}>
+            <li key={s.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start" data-testid={`onboarding-${s.id}`} data-estado={s.id === "verificar" ? cartao.estado : undefined}>
               <span
                 className={cn(
                   "grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-semibold",
@@ -176,7 +176,7 @@ export function TenantOnboarding({ name }: { name: string }) {
                     : "border-sage-200 text-muted hover:border-sage hover:text-ink"
                 )}
               >
-                {done ? "Concluído ✓" : "Marcar como feito"}
+                {done ? "Concluído" : "Marcar como feito"}
               </button>
             </li>
           );

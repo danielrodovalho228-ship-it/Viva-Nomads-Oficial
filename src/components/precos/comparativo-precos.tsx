@@ -43,7 +43,7 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
 
   if (variante === "curto") {
     return (
-      <div className="rounded-xl border border-sage-200 bg-white p-5 text-ink">
+      <div className="rounded-xl border border-sage-200 bg-white p-4 text-ink">
         <p className="flex items-center gap-2 font-title text-lg font-semibold">
           <Scale className="h-5 w-5 text-forest" aria-hidden /> Quanto você paga
         </p>
@@ -85,14 +85,14 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
   // Percentual só com fonte e data; sem fonte, nada de número.
   const cartoes = cartoesCompare();
   return (
-    <section id="compare" className="rounded-xl border border-line bg-white p-5 sm:p-8" aria-labelledby="compare-titulo">
+    <section id="compare" className="rounded-xl border border-line bg-white p-4 sm:p-8" aria-labelledby="compare-titulo">
       <h2 id="compare-titulo" className="font-title text-2xl font-semibold text-ink">
         Compare
       </h2>
       <p className="mt-1 text-sm text-muted">
         {`Contrato de ${COMPARE_MESES} meses a ${reaisInteiros(COMPARE_ALUGUEL)} por mês (${reaisInteiros(COMPARE_CONTRATO)} no total).`} Os percentuais são sobre o total pago pelo morador, no formato típico de cada empresa.
       </p>
-      <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="comparativo-linhas">
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="comparativo-linhas">
         {cartoes.map((l) => (
           <li
             key={l.id}

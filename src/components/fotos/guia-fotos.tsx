@@ -52,7 +52,7 @@ export function GuiaFotos({ comCta = true }: { comCta?: boolean }) {
       ))}
       <section aria-labelledby="guia-dicas">
         <h3 id="guia-dicas" className="mb-2 font-display text-lg font-semibold text-ink">Dicas rápidas</h3>
-        <ol className="list-decimal space-y-2 pl-5 text-sm text-ink/80">
+        <ol className="list-decimal space-y-2 pl-4 text-sm text-ink/80">
           {DICAS_FOTO.map((d) => <li key={d}>{d}</li>)}
         </ol>
       </section>

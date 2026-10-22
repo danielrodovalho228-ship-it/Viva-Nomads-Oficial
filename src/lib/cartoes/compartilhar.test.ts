@@ -269,7 +269,7 @@ test("guarda de conteúdo: os campos da imagem do partnercard nunca levam telefo
   assert.equal(camposCartaoParceiro(sujo).titulo, "Ana Fotos");
   assert.equal(camposCartaoParceiro({ ...sujo, nomePublico: "Zap 34 9 9999-1234" }).titulo, "Fotografia");
   assert.equal(camposCartaoParceiro({ ...sujo, nomePublico: "A".repeat(80) }).titulo.length, 50);
-  assert.equal(camposCartaoParceiro({ ...sujo, notaMedia: 4.8, avaliacoesQtd: 12 }).nota, "★ 4,8 · 12 avaliações");
+  assert.equal(camposCartaoParceiro({ ...sujo, notaMedia: 4.8, avaliacoesQtd: 12 }).nota, "Nota 4,8 · 12 avaliações");
   assert.equal(camposCartaoParceiro({ ...sujo, notaMedia: 5, avaliacoesQtd: 0 }).nota, "Novo na Viva", "nota sem avaliação não aparece");
   assert.equal(camposCartaoParceiro({ ...sujo, fotoUrl: "javascript:alert(1)" }).fotoUrl, null);
   assert.equal(limparTextoDoCartao("Zap 34 9 9999-1234"), "");

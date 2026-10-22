@@ -17,7 +17,7 @@ export default async function ProntoPage({ searchParams }: { searchParams: Promi
     <div className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-md text-center">
         <Logo href="/" />
-        <div className="mx-auto mt-10 grid h-14 w-14 place-items-center rounded-full bg-sage-100">
+        <div className="mx-auto mt-12 grid h-14 w-14 place-items-center rounded-full bg-sage-100">
           <CheckCircle2 className="h-7 w-7 text-forest" />
         </div>
         <h1 className="mt-4 font-title text-2xl font-semibold text-ink">Pronto! E-mail confirmado</h1>

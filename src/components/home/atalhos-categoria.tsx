@@ -22,12 +22,12 @@ export function AtalhosCategoria({ imoveis }: { imoveis: Property[] }) {
   const atalhos = atalhosComContagem(ATALHOS_CATEGORIA, imoveis.map((p) => comTotalMes(p)), (p) => isExemplo(p.id));
   if (atalhos.length === 0) return null;
   return (
-    <section className="bg-surface py-10 sm:py-14" aria-labelledby="atalhos-titulo">
+    <section className="bg-surface py-12 sm:py-12" aria-labelledby="atalhos-titulo">
       <div className="container-page">
         <h2 id="atalhos-titulo" className="text-center font-title text-xl font-semibold text-ink">
           Encontre o imóvel do seu jeito
         </h2>
-        <ul className="mx-auto mt-6 grid max-w-6xl auto-rows-fr grid-cols-2 gap-x-4 gap-y-6 sm:mt-10 sm:gap-x-6 lg:grid-cols-6" data-testid="atalhos-categoria">
+        <ul className="mx-auto mt-6 grid max-w-6xl auto-rows-fr grid-cols-2 gap-x-4 gap-y-6 sm:mt-12 sm:gap-x-6 lg:grid-cols-6" data-testid="atalhos-categoria">
           {atalhos.map((a) => {
             const Icone = ICONES[a.icone] ?? MapPin;
             return (

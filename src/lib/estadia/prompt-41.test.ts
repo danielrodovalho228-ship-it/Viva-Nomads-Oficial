@@ -29,7 +29,7 @@ test("página do imóvel: ordem do Prompt 41 (galeria → título → síntese �
   assert.match(d, /<ShareButton icone /);
   const g = ler("components/property-gallery.tsx");
   assert.match(g, /data-testid="galeria-indicador"/);
-  assert.match(g, /-mx-5 -mt-8 sm:-mx-8 md:hidden/);
+  assert.match(g, /-mx-4 -mt-8 sm:-mx-8 md:hidden/);
   assert.match(g, /<Images className="h-4 w-4" \/> Ver todas as fotos/);
 });
 

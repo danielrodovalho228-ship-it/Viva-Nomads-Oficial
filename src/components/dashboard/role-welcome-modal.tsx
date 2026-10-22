@@ -79,7 +79,7 @@ export function RoleWelcomeModal() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <button
             onClick={() => pick("tenant")}
-            className="group rounded-xl border border-sage-200 p-5 text-left transition-colors hover:border-forest hover:bg-blue-50"
+            className="group rounded-xl border border-sage-200 p-4 text-left transition-colors hover:border-forest hover:bg-blue-50"
           >
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
               <Search className="h-5 w-5" />
@@ -94,7 +94,7 @@ export function RoleWelcomeModal() {
 
           <button
             onClick={() => pick("owner")}
-            className="group rounded-xl border border-sage-200 p-5 text-left transition-colors hover:border-forest hover:bg-blue-50"
+            className="group rounded-xl border border-sage-200 p-4 text-left transition-colors hover:border-forest hover:bg-blue-50"
           >
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-champagne text-forest">
               <Home className="h-5 w-5" />
@@ -108,7 +108,7 @@ export function RoleWelcomeModal() {
           </button>
         </div>
 
-        <p className="mt-5 text-center text-xs text-muted">
+        <p className="mt-4 text-center text-xs text-muted">
           Você pode trocar de papel quando quiser pelo seletor no topo.
         </p>
       </div>

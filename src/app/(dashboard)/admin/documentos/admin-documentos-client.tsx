@@ -167,7 +167,7 @@ function ConferenciaIaBox({ c, revisaoAte }: { c: ConferenciaResumo; revisaoAte?
     <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="conferencia-ia">
       <p className="font-semibold">Conferência automática</p>
       {c.motivos.length > 0 && (
-        <ul className="mt-1 list-disc space-y-1 pl-5" data-testid="conferencia-ia-motivos">
+        <ul className="mt-1 list-disc space-y-1 pl-4" data-testid="conferencia-ia-motivos">
           {c.motivos.map((m) => (
             <li key={m}>{m}</li>
           ))}
@@ -389,7 +389,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
               <ul className="mt-2 space-y-1 text-xs">
                 {doc.preConferencia.itens.map((i) => (
                   <li key={i.chave}>
-                    {i.estado === "ok" ? "✓" : i.estado === "atencao" ? "!" : "–"} {i.rotulo}: {i.detalhe}
+                    {i.estado === "ok" ? <Check className="mr-1 inline h-4 w-4 text-forest" aria-label="ok" /> : i.estado === "atencao" ? "!" : "–"} {i.rotulo}: {i.detalhe}
                   </li>
                 ))}
               </ul>

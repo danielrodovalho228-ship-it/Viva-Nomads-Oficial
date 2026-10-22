@@ -65,7 +65,7 @@ export function ResumoEAcoes({ chamadoId, quemEh, sla }: { chamadoId: string; qu
   }
 
   return (
-    <section className="mb-6 rounded-xl border border-forest/20 bg-sage-100/60 p-5" data-testid="resumo-acoes">
+    <section className="mb-6 rounded-xl border border-forest/20 bg-sage-100/60 p-4" data-testid="resumo-acoes">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
           <Sparkles className="h-5 w-5 text-forest" /> Resumo e ações

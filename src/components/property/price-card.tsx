@@ -41,7 +41,7 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
   const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
-    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-xl border border-line bg-white p-5 lg:max-h-[calc(100dvh-14rem)] lg:overflow-y-auto xl:p-6">
+    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-xl border border-line bg-white p-4 lg:max-h-[calc(100dvh-14rem)] lg:overflow-y-auto xl:p-6">
       <p className="tabular-nums" data-testid="cartao-lateral-preco">
         <span className="text-xl font-semibold text-ink" data-testid="cartao-lateral-mes">
           {preco.valor}

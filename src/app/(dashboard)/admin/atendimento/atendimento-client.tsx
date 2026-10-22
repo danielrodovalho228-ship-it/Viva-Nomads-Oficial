@@ -5,7 +5,7 @@ import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Clock, Trash2 } from "lucide-react";
+import { Check, Clock, Trash2, X } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -444,7 +444,7 @@ function TestarViva() {
             {res.map((r) => (
               <li key={r.n} className="py-2">
                 <p className="font-medium text-ink">
-                  {r.falhas.length === 0 ? "✓" : "✗"} {r.n}. “{r.mensagem}”{r.critico ? " · crítico" : ""}
+                  {r.falhas.length === 0 ? <Check className="mr-1 inline h-4 w-4 text-forest" aria-label="passou" /> : <X className="mr-1 inline h-4 w-4 text-red-700" aria-label="falhou" />} {r.n}. “{r.mensagem}”{r.critico ? " · crítico" : ""}
                 </p>
                 <p className="text-xs text-muted">
                   Esperado: {r.quemResolve}, {r.prazo} · Obtido: {r.rota} → {r.destino}, {r.prioridade.toUpperCase()} · {r.chamadas} chamada(s) à IA

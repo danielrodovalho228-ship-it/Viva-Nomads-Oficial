@@ -447,7 +447,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       <Panel>
         {/* ── 8.1 CANDIDATURA + VERIFICAÇÃO CAF ── */}
         {step === 0 && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Alinha expectativas desde o início: a decisão é do proprietário */}
             <OwnerDecisionNotice />
             <div>
@@ -458,7 +458,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             </div>
 
             {verifStatus === "none" ? (
-              <div className="rounded-xl border border-sage-200 p-5 text-center">
+              <div className="rounded-xl border border-sage-200 p-4 text-center">
                 <ShieldCheck className="mx-auto h-10 w-10 text-sage" />
                 <p className="mt-3 text-sm text-muted">
                   Verificação de identidade: documento, foto (selfie) e análise antifraude, com
@@ -472,7 +472,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <CafLaudo result={cafResult} />
             ) : (
               // Portão SUAVE (conta real): verificação indisponível → pendente.
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                 <p className="flex items-center gap-2 font-title font-semibold text-amber-800">
                   <Clock className="h-5 w-5" /> Verificação pendente
                 </p>
@@ -960,7 +960,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
         {/* ── 8.4 CONTRATO + RATEIO ── */}
         {step === 4 && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div>
               <h2 className="font-title text-lg font-semibold text-ink">Contrato de locação de 30 a 180 dias</h2>
               <p className="mt-1 text-sm text-muted">
@@ -1200,7 +1200,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
         {/* ── RESUMO FINAL ── */}
         {step === 5 && (
-          <div className="space-y-5 text-center">
+          <div className="space-y-4 text-center">
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sage-100">
               <Sparkles className="h-7 w-7 text-forest" />
             </div>
@@ -1216,7 +1216,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 label="Verificação do inquilino"
                 value={
                   verifStatus === "ok" && cafResult
-                    ? `${TRAFFIC_LIGHT_META[cafResult.light].emoji} ${TRAFFIC_LIGHT_META[cafResult.light].label}`
+                    ? TRAFFIC_LIGHT_META[cafResult.light].label
                     : verifStatus === "pendente"
                       ? "⏳ Verificação pendente"
                       : "—"
@@ -1262,7 +1262,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               />
             </div>
             <p className="rounded-lg bg-sage-100 px-3 py-2 text-left text-sm text-forest">
-              ⭐ Ao fim da locação, você e o inquilino poderão se avaliar — construindo
+              Ao fim da locação, você e o inquilino poderão se avaliar — construindo
               reputação na plataforma.
             </p>
             <PlatformLegalNotice className="text-left" />
@@ -1299,9 +1299,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 function CafLaudo({ result }: { result: CafResult }) {
   const meta = TRAFFIC_LIGHT_META[result.light];
   return (
-    <div className={cn("rounded-xl p-5 ring-1", meta.tone, meta.ring)}>
+    <div className={cn("rounded-xl p-4 ring-1", meta.tone, meta.ring)}>
       <div className="flex items-center gap-2">
-        <span className="text-2xl">{meta.emoji}</span>
         <span className="font-title text-lg font-semibold">Verificação de identidade — {meta.label}</span>
       </div>
       <div className="mt-4 grid gap-2">

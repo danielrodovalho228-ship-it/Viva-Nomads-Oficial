@@ -71,7 +71,7 @@ export function EtapaEncontramos(p: {
   };
   const alternar = (k: string) => p.setAmenityKeys((s) => ({ ...s, [k]: !s[k] }));
   return (
-    <div className="space-y-5" data-testid="etapa-encontramos">
+    <div className="space-y-4" data-testid="etapa-encontramos">
       {p.iaEstado === "feita" && (
         <p className="flex items-start gap-2 rounded-lg bg-champagne/15 px-3 py-2 text-sm text-forest" data-testid="ia-resumo">
           <Sparkles className="mt-1 h-4 w-4 shrink-0" aria-hidden />

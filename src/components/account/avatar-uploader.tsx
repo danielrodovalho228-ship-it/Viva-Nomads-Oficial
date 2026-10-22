@@ -132,7 +132,7 @@ export function AvatarUploader() {
 
   return (
     <Panel title="Foto de perfil" className="mt-6">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="shrink-0">
           {/* Iniciais pela fonte única — NUNCA o e-mail (item 1 do fechamento). */}
           <Avatar name={displayName(user) ?? ""} size={88} photoUrl={photoUrl ?? undefined} />

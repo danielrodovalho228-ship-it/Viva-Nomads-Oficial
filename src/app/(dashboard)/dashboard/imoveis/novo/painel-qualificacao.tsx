@@ -40,7 +40,7 @@ export function PainelQualificacao({
             <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-24 sm:p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-(--folga-flutuante-celular) sm:p-6">
           <QualificarClient imovelIdInicial={imovelId} emPainel onSalva={onSalva} onFechar={onFechar} />
         </div>
       </div>

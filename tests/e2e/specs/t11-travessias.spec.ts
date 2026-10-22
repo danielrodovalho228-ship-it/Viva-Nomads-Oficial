@@ -236,7 +236,7 @@ test.describe("T-TRAV-D — Fechamento herda a candidatura aceita real @criticos
 // ─────────────────────── F — Chat: contato mascarado ─────────────────────────
 test.describe("T-TRAV-F — Chat mascara telefone, e-mail e @rede social @criticos", () => {
   test.use({ storageState: authFile("inquilino") });
-  const MASK = "🔒 [contato protegido]";
+  const MASK = "[contato protegido]";
 
   test("os 3 padrões viram '[contato protegido]' no envio", async ({ page }) => {
     await page.goto("/dashboard/mensagens", { waitUntil: "networkidle" });

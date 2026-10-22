@@ -11,8 +11,8 @@
  * insert) e no cliente (eco otimista igual ao que o servidor grava).
  */
 
-const MASK = "🔒 [contato protegido]";
-const MASK_DOC = "🔒 [documento protegido]";
+const MASK = "[contato protegido]";
+const MASK_DOC = "[documento protegido]";
 
 /**
  * Documentos (Prompt 32, item 3): CPF com ou sem máscara — só com dígito verificador válido, para não pegar números

@@ -66,7 +66,7 @@ export function CartaoIa(p: {
   }
 
   return (
-    <section className="rounded-xl border border-sage-200 bg-sage-50 p-4 sm:p-5" data-testid="cartao-ia" aria-labelledby="cartao-ia-titulo">
+    <section className="rounded-xl border border-sage-200 bg-sage-50 p-4 sm:p-4" data-testid="cartao-ia" aria-labelledby="cartao-ia-titulo">
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-forest" aria-hidden>
           <Sparkles className="h-5 w-5" />

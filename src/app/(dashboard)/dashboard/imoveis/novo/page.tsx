@@ -1145,7 +1145,7 @@ export default function NewPropertyPage() {
         }
       />
 
-      <div className="relative mb-5 overflow-hidden rounded-xl">
+      <div className="relative mb-4 overflow-hidden rounded-xl">
         <Image
           src={PHOTOS.cadastro.welcome}
           alt="Proprietário com as chaves de um imóvel mobiliado pronto para anunciar"
@@ -1155,7 +1155,7 @@ export default function NewPropertyPage() {
           className="h-28 w-full object-cover sm:h-36"
         />
         <div className="absolute inset-0 bg-night/50" />
-        <div className="absolute inset-0 flex flex-col justify-center p-5 text-white">
+        <div className="absolute inset-0 flex flex-col justify-center p-4 text-white">
           <p className="font-title text-lg font-semibold sm:text-xl">Vamos publicar seu imóvel</p>
           <p className="text-sm text-white/80" data-testid="cadastro-frase-topo">
             {iaLigada ? "Comece pelo CEP. A IA preenche o resto pelas fotos." : "Comece pelo CEP. Depois, fotos, detalhes, preço e revisão."}
@@ -1164,7 +1164,7 @@ export default function NewPropertyPage() {
       </div>
 
       {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
-        <div data-testid="rascunho-aviso" className="mb-5 flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
               <ClipboardCheck className="h-5 w-5" />
@@ -1198,7 +1198,7 @@ export default function NewPropertyPage() {
 
       {/* Stepper + barra de progresso. Celular (prompt 20): "Passo 1 de 5 — Onde fica" numa linha (nada cortado);
           do tablet para cima, as etapas em pílulas, com o contador de fotos. */}
-      <div className="mb-5">
+      <div className="mb-4">
         <p className="pb-2 text-sm font-medium text-ink sm:hidden" data-testid="etapas-celular" aria-live="polite">
           Passo {pos + 1} de {ORDEM_ETAPAS.length} — <span className="text-forest">{STEP_META[step].label}</span>
           {step !== 1 && photos.length > 0 && <span className="text-muted"> · {photos.length} {photos.length === 1 ? "foto" : "fotos"}</span>}
@@ -1246,7 +1246,7 @@ export default function NewPropertyPage() {
             />
           )}
           <Panel>
-            <div className="mb-5 flex items-start gap-3">
+            <div className="mb-4 flex items-start gap-3">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
                 <StepIcon className="h-5 w-5" />
               </span>

@@ -302,7 +302,7 @@ export function EditarImovelClient({
       )}
 
       {/* ── Barra de completude + publicar/compartilhar ─────────────────────── */}
-      <div className="mb-6 rounded-xl border border-sage-200 bg-white p-5">
+      <div className="mb-6 rounded-xl border border-sage-200 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="font-title text-lg font-semibold text-ink" data-testid="prontidao">
@@ -447,7 +447,7 @@ export function EditarImovelClient({
           </div>
 
           {/* Datas bloqueadas (o dono fecha períodos) — salva sozinho. */}
-          <div className="mt-6 border-t border-sage-200 pt-5">
+          <div className="mt-6 border-t border-sage-200 pt-4">
             <p className="mb-1 font-medium text-ink">Fechar datas</p>
             <BlockCalendar propertyId={property.id} />
           </div>
@@ -516,7 +516,7 @@ export function EditarImovelClient({
           saved={savedSection === "amen"}
           onSave={() => saveSection("amen")}
         >
-          <div className="space-y-5">
+          <div className="space-y-4">
             {AMENITY_GROUPS.map((g) => (
               <div key={g.category}>
                 <p className="font-medium text-ink">{g.label}</p>
@@ -582,11 +582,11 @@ export function EditarImovelClient({
             />
           </div>
           {petsAllowed && <PetsRegrasCampos value={petsRegras} onChange={setPetsRegras} />}
-          <div className="mt-5">
+          <div className="mt-4">
             <LimpezaEstadiaCampos value={limpeza} onChange={setLimpeza} />
           </div>
           {property.privacidade && (
-            <div className="mt-5">
+            <div className="mt-4">
               <PrivacidadeCampos valor={privacidade} onChange={setPrivacidade} />
             </div>
           )}
@@ -669,7 +669,7 @@ function Section({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-3 px-5 py-4 text-left hover:bg-surface-2"
+        className="flex w-full items-center gap-3 px-4 py-4 text-left hover:bg-surface-2"
       >
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
           <Icon className="h-5 w-5" />
@@ -678,15 +678,15 @@ function Section({
           <span className="block font-title font-semibold text-ink">{title}</span>
           <span className="block truncate text-sm text-muted">{summary}</span>
         </span>
-        {saved && <span className="text-sm font-medium text-forest">Salvo ✓</span>}
+        {saved && <span className="text-sm font-medium text-forest">Salvo</span>}
         <ChevronDown
           className={cn("h-5 w-5 shrink-0 text-muted transition-transform", open && "rotate-180")}
         />
       </button>
       {open && (
-        <div className="border-t border-sage-200 px-5 py-5">
+        <div className="border-t border-sage-200 px-4 py-4">
           {children}
-          <div className="mt-5 flex items-center justify-end gap-3">
+          <div className="mt-4 flex items-center justify-end gap-3">
             {saved && <span className="text-sm text-forest">Alterações salvas.</span>}
             <Button variant="gold" size="sm" onClick={onSave} disabled={saving}>
               {saving ? (

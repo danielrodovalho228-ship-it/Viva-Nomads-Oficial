@@ -41,10 +41,10 @@ export function BannerTopo({
           centro ? "bg-night/60" : "bg-night/65"
         )}
       />
-      <div className={cn("container-page flex min-h-[22rem] flex-col justify-center py-16 md:min-h-[26rem] md:py-20", centro && "items-center text-center")}>
+      <div className={cn("container-page flex min-h-[22rem] flex-col justify-center py-16 md:min-h-[26rem] md:py-16", centro && "items-center text-center")}>
         {eyebrow && <p className="text-sm font-semibold text-green-300">{eyebrow}</p>}
         <h1 className={cn("mt-3 max-w-3xl font-title text-[28px] font-semibold leading-tight md:text-[40px]", centro && "mx-auto")}>{titulo}</h1>
-        {subtitulo && <div className={cn("mt-5 max-w-2xl text-lg text-white/85", centro && "mx-auto")}>{subtitulo}</div>}
+        {subtitulo && <div className={cn("mt-4 max-w-2xl text-lg text-white/85", centro && "mx-auto")}>{subtitulo}</div>}
         {children && <div className={cn("mt-8 flex flex-wrap gap-3", centro && "justify-center")}>{children}</div>}
       </div>
     </section>
