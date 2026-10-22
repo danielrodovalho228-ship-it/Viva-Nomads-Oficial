@@ -3653,6 +3653,14 @@
         "t290-aceite-socio"
       ]
     },
+    "src/lib/data/agentes-actions.ts#responderAceiteOrdem": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t291-aceite-ordem-agente"
+      ]
+    },
     "src/lib/socios/caixa-actions.ts#relerArquivo": {
       "personas": [
         "admin"
