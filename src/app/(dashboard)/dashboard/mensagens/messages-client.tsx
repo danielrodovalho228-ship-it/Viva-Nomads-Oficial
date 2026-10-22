@@ -246,7 +246,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             </div>
           </header>
           {!demo && active.propertyId && active.otherId && (
-            <VisitaNaConversa key={active.id} propertyId={active.propertyId} outroId={active.otherId} />
+            <VisitaNaConversa propertyId={active.propertyId} outroId={active.otherId} />
           )}
           {/* Ficha do pet da candidatura: só aparece para o DONO daquela candidatura (o servidor confere). */}
           {!demo && active.propertyId && active.otherId && (
@@ -352,11 +352,16 @@ function VisitaNaConversa({ propertyId, outroId }: { propertyId: string; outroId
     };
   }, [propertyId, outroId, versao]);
   const visita = carregada?.chave === chave ? carregada.visita : null;
-  if (!visita) return null;
-  const { papel, ...v } = visita;
+  const { papel, ...v } = visita ?? { papel: "morador" as const };
+  // A caixa fica SEMPRE montada (sem chave por conversa): trocar de conversa só troca o conteúdo dela. O lab mostrou
+  // que, remontando o cartão por conversa, o React apagava o componente da anterior mas o nó dele ficava na seção (t270).
   return (
-    <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita" data-imovel={propertyId} data-visita={v.id}>
-      <CartaoVisita key={`${v.id}-${v.status}`} v={v} papel={papel} compacto onMudou={() => setVersao((n) => n + 1)} />
+    <div data-conversa-visita-caixa={chave} hidden={!visita}>
+      {visita && (
+        <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita" data-imovel={propertyId} data-visita={visita.id}>
+          <CartaoVisita key={`${chave}-${visita.id}-${visita.status}`} v={v as Omit<NonNullable<typeof visita>, "papel">} papel={papel} compacto onMudou={() => setVersao((n) => n + 1)} />
+        </div>
+      )}
     </div>
   );
 }
