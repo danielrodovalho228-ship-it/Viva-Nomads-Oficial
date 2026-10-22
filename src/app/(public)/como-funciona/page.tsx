@@ -358,7 +358,7 @@ function Steps({
   id?: string;
 }) {
   const badgeClass =
-    tone === "owner" ? "bg-blue-50 text-blue-500" : "bg-champagne/15 text-champagne-600";
+    tone === "owner" ? "bg-blue-50 text-blue-500" : "bg-sage-100 text-forest";
   return (
     <section id={id} className="container-page section-y scroll-mt-24">
       {badge && (

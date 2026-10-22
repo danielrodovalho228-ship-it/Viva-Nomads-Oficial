@@ -1102,7 +1102,7 @@ export function SearchClient({
                       {tempos.get(p.id)?.texto ?? "calculando…"}
                     </p>
                   )}
-                  <label className="mt-2 flex cursor-pointer items-center gap-2 py-1 text-sm text-ink">
+                  <label className="mt-2 flex min-h-11 cursor-pointer items-center gap-2 text-sm text-ink">
                     <input
                       type="checkbox"
                       className="h-5 w-5 accent-forest"

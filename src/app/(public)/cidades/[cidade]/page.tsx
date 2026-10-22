@@ -83,11 +83,11 @@ export default async function CityLandingPage({ params }: Params) {
       {infoCidade && <JsonLd dados={faqPageCidade(name)} />}
       <section className="bg-forest section-y text-white">
         <div className="container-page">
-          <nav className="text-sm text-white/60">
+          <nav className="text-sm text-white/80">
             <Link href="/" className="underline-offset-4 hover:underline">
               Início
             </Link>{" "}
-            / <span className="text-white/80">{name}</span>
+            / <span className="text-white">{name}</span>
           </nav>
           <h1 className="mt-4 max-w-3xl font-title text-2xl font-semibold md:text-[28px]">
             Imóveis mobiliados mensais em {name}
