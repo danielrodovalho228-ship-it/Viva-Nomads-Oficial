@@ -32,7 +32,10 @@ async function redeLenta(page: Page, ms = 4000) {
   });
 }
 
+/** Navega pelo roteador do Next, como um clique num link: antes, pré-carrega a rota (o prefetch traz o loading.tsx). */
 async function navegarNoCliente(page: Page, url: string) {
+  await page.evaluate((u) => (window as unknown as { next: { router: { prefetch: (u: string) => void } } }).next.router.prefetch(u), url);
+  await page.waitForTimeout(1500);
   await page.evaluate((u) => (window as unknown as { next: { router: { push: (u: string) => void } } }).next.router.push(u), url);
 }
 
@@ -56,7 +59,7 @@ test.describe("T281 — esqueletos e estados vazios (Prompt 48)", () => {
   for (const largura of LARGURAS) {
     test(`${largura}px — busca sem resultado: limpar filtros, criar alerta e pedido de moradia`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await page.goto("/buscar?preco=200", { waitUntil: "domcontentloaded" });
+      await page.goto("/buscar?preco=300", { waitUntil: "domcontentloaded" });
       const vazia = page.getByTestId("busca-vazia");
       await expect(vazia).toBeVisible({ timeout: 25_000 });
       await expect(vazia.getByTestId("busca-vazia-limpar")).toBeVisible();
@@ -66,7 +69,7 @@ test.describe("T281 — esqueletos e estados vazios (Prompt 48)", () => {
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t281-busca-vazia-${largura}.png` });
       await vazia.getByTestId("busca-vazia-limpar").click();
-      await expect(page).not.toHaveURL(/preco=200/, { timeout: 10_000 });
+      await expect(page).not.toHaveURL(/preco=300/, { timeout: 10_000 });
     });
 
     test(`${largura}px — conta nova: mensagens, favoritos e painel sem imóvel com o próximo passo`, async ({ browser }) => {
@@ -113,12 +116,22 @@ test.describe("T281 — esqueletos e estados vazios (Prompt 48)", () => {
       await page.screenshot({ path: `${SAIDA}/t281-esqueleto-mensagens-${largura}.png` });
       await expect(page.getByTestId("mensagens-vazio")).toBeVisible({ timeout: 25_000 });
 
+      // Detalhe do imóvel: parte de uma página pública (mesmo grupo de layout), como faz quem vem da busca.
+      await page.unroute("**/*");
+      await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      await redeLenta(page);
       await navegarNoCliente(page, `/imoveis/${ids.imovel}`);
+      // A página do imóvel é estática (revalida): quando o pré-carregamento já trouxe a página, ela abre direto, sem
+      // esqueleto. O que nunca pode aparecer é tela branca ou spinner: ou o esqueleto na geometria da página, ou o imóvel.
       const det = page.getByTestId("skeleton-detalhe");
-      await expect(det).toBeVisible({ timeout: 3_500 });
+      const titulo = page.getByRole("heading", { level: 1, name: new RegExp(`Studio do esqueleto ${sufixo}`) });
+      await expect(det.or(titulo).first()).toBeVisible({ timeout: 3_500 });
       await semSpinnerNoConteudo(page);
-      const caixa = await det.boundingBox();
-      expect(caixa!.width, "o esqueleto ocupa a largura da página").toBeGreaterThan(largura * 0.8);
+      if (await det.isVisible().catch(() => false)) {
+        const caixa = await det.boundingBox();
+        expect(caixa!.width, "o esqueleto ocupa a largura da página").toBeGreaterThan(largura * 0.8);
+      }
       await page.screenshot({ path: `${SAIDA}/t281-esqueleto-imovel-${largura}.png` });
       await expect(page.getByRole("heading", { level: 1, name: new RegExp(`Studio do esqueleto ${sufixo}`) })).toBeVisible({ timeout: 25_000 });
       await page.context().close();

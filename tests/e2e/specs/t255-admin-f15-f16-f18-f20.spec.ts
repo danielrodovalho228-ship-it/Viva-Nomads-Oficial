@@ -40,6 +40,8 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
       await cartao.scrollIntoViewIfNeeded();
       await cartao.click();
       await expect(page).toHaveURL(/\/admin\/atendimento/, { timeout: 30_000 });
+      // Prompt 48: a navegação mostra o esqueleto do admin antes dos dados; conta as linhas só depois que ele sai.
+      await expect(page.getByTestId("skeleton-admin")).toHaveCount(0, { timeout: 30_000 });
       const linhas = await page.getByTestId("chamado-linha").count();
       if (n === 0) expect(linhas).toBe(0);
       else expect(linhas).toBeGreaterThan(0); // 0 na home com chamado aberto na fila era o F16
