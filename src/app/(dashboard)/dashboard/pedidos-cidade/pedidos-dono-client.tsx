@@ -9,7 +9,7 @@ import { PageTitle } from "@/components/dashboard/primitives";
 import { cn } from "@/lib/utils";
 import { rotuloPreco } from "@/lib/cartao-preco";
 import { contemContato, CONTATO_AVISO, motivoParaDono } from "@/lib/pedidos/pedidos";
-import { dataPedidoBR, textoBairros, textoFaixaValor, textoNecessidades, textoPortePet, textoQuartos } from "@/lib/pedidos/campos";
+import { dataPedidoBR, textoBairros, textoFaixaValor, textoNecessidades, textoInternetPedido, textoPortePet, textoQuartos } from "@/lib/pedidos/campos";
 import { ABAS_DONO, MENSAGEM_OFERTA_PADRAO, STATUS_CONVERSA, type AbaDono } from "@/lib/pedidos/mural-dono";
 import { chaveCidade } from "@/lib/cidades";
 import { ignorarPedido, oferecerImovel, voltarParaNovos } from "@/lib/data/pedidos-actions";
@@ -117,9 +117,9 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
                   <Meta rotulo="Pessoas" valor={String(p.qtd_ocupantes)} />
                   <Meta rotulo="Expira em" valor={dataPedidoBR(p.expira_em)} />
                 </dl>
-                {(p.necessidades.length > 0 || p.pets || p.criancas) && (
+                {(p.necessidades.length > 0 || p.pets || p.criancas || !!p.internet_min_mbps) && (
                   <p className="mt-2 text-xs text-muted" data-testid="pedido-necessidades">
-                    {[...textoNecessidades(p.necessidades), p.pets && textoPortePet(p.porte_pet), p.criancas && "Com crianças"].filter(Boolean).join(" · ")}
+                    {[...textoNecessidades(p.necessidades), textoInternetPedido(p.internet_min_mbps), p.pets && textoPortePet(p.porte_pet), p.criancas && "Com crianças"].filter(Boolean).join(" · ")}
                   </p>
                 )}
                 {p.destino && (

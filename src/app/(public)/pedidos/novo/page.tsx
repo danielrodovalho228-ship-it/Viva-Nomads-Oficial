@@ -31,6 +31,7 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { useAuthStore } from "@/lib/store";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
+import { CHIPS_INTERNET } from "@/lib/busca/filtro-internet";
 import type { EstadoDestino } from "@/lib/busca/destino-busca";
 import type { ModoRota } from "@/lib/rotas/tempo";
 
@@ -180,6 +181,11 @@ function PedidoForm() {
   const [bairros, setBairros] = useState<string[]>([]);
   const [textoBairro, setTextoBairro] = useState("");
   const [quartosMin, setQuartosMin] = useState<number | null>(null);
+  // Prompt 57 fase 2: "internet medida a partir de" (padrão: ?internet= da busca).
+  const [internetMin, setInternetMin] = useState<number | null>(() => {
+    const v = Number(sp.get("internet"));
+    return (CHIPS_INTERNET as readonly number[]).includes(v) ? v : null;
+  });
   const [orcamentoMin, setOrcamentoMin] = useState("");
   const [necessidades, setNecessidades] = useState<string[]>([]);
   const [portePet, setPortePet] = useState<string>("");
@@ -256,6 +262,7 @@ function PedidoForm() {
         setPortePet(String(p.porte_pet ?? ""));
         setBairros(((p.bairros as string[] | null) ?? []).slice(0, BAIRROS_MAX));
         setQuartosMin(p.quartos_min == null ? null : Number(p.quartos_min));
+        setInternetMin(p.internet_min_mbps == null ? null : Number(p.internet_min_mbps));
         setNecessidades((p.necessidades as string[] | null) ?? []);
         const d = p.destino as { destino_id?: string; rotulo: string; lat: number; lng: number; modo_preferido?: ModoRota; ate?: number } | null;
         if (d) setDestinoEstado({ destino: d.destino_id ? { slug: `id:${d.destino_id}` } : { lat: d.lat, lng: d.lng, rot: d.rotulo }, modo: d.modo_preferido ?? "carro", ate: d.ate ?? 0 });
@@ -384,6 +391,7 @@ function PedidoForm() {
       bairros: [...bairros, ...(limparBairro(textoBairro) && bairros.length < BAIRROS_MAX ? [limparBairro(textoBairro)] : [])],
       quartosMin,
       necessidades,
+      internetMinMbps: internetMin,
       destino: !destinoEstado.destino
         ? null
         : "slug" in destinoEstado.destino
@@ -672,6 +680,17 @@ function PedidoForm() {
                 </BotaoMarca>
               ))}
             </div>
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium text-ink" id="pedido-internet-rotulo">Internet medida a partir de (opcional)</span>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="pedido-internet-rotulo" data-testid="pedido-internet">
+              {CHIPS_INTERNET.map((v) => (
+                <BotaoMarca key={v} ativo={internetMin === v} onClick={() => setInternetMin((a) => (a === v ? null : v))} icone={Plus} testid={`pedido-internet-${v}`}>
+                  {v} Mbps
+                </BotaoMarca>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-muted">Só entram imóveis com a velocidade medida no local pelo proprietário.</p>
           </div>
         </Grupo>
 
