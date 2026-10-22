@@ -160,7 +160,8 @@ test.describe("T69 — header e botões padronizados", () => {
         await expect(painel.locator("img, span[aria-hidden]").first(), "avatar (foto ou iniciais)").toBeVisible();
         const m = await medirHeader(page);
         expect(m.logoDir - 0, "logo perto da borda esquerda").toBeLessThanOrEqual(260);
-        expect(m.primeiroEsq! - m.logoDir, "folga logo → links").toBeGreaterThanOrEqual(36);
+        // Prompt 47 (grade de 4 px): o respiro do cabeçalho é gap-8 (32 px) até 1440 px e gap-12 (48 px) a partir de 1536 px.
+        expect(m.primeiroEsq! - m.logoDir, "folga logo → links").toBeGreaterThanOrEqual(32);
         expect(m.acoesEsq! - m.ultimoDir!, "folga links → ações").toBeGreaterThanOrEqual(24);
         expect(m.acoesDir!).toBeLessThanOrEqual(largura - 30);
         expect(m.rolagem).toBeLessThanOrEqual(1);
