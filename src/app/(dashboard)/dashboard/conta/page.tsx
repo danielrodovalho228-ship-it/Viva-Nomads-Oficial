@@ -4,6 +4,7 @@ import { PetsFicha } from "@/components/account/pets-ficha";
 import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
 import { PageTitle } from "@/components/dashboard/primitives";
+import { ConviteFotoPerfil } from "@/components/account/convite-foto-perfil";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { CaixaEmailsTeste } from "@/components/account/caixa-emails-teste";
@@ -40,6 +41,7 @@ export default function AccountPage() {
           </div>
           <div id="perfil-publico" className="scroll-mt-24">
             <h3 className="mt-6 font-title text-lg font-semibold text-ink">Perfil público</h3>
+            <ConviteFotoPerfil href="#perfil-publico" className="mb-4" />
             <AvatarUploader />
             <PerfilPublicoForm />
             <PerfilProfissional />

@@ -110,7 +110,14 @@ jobs:
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
 
       - name: Instalar Chromium do Playwright
-        run: npx playwright install --with-deps chromium webkit
+        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas.
+        timeout-minutes: 15
+        run: |
+          for i in 1 2 3; do
+            timeout 270 npx playwright install --with-deps chromium webkit && exit 0
+            echo "tentativa $i travou ou falhou"
+          done
+          exit 1
 
       - name: Rodar os fluxos críticos
         id: e2e

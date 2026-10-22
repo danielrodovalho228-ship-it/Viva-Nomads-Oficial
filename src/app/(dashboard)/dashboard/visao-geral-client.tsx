@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { primeiroNomeExibicao } from "@/lib/roles";
 import { StatCard, Panel, EmptyState, PageTitle } from "@/components/dashboard/primitives";
+import { ConviteFotoPerfil } from "@/components/account/convite-foto-perfil";
 import { PropertyRow } from "@/components/dashboard/property-row";
 import { ChecklistAtivacaoBloco } from "@/components/onboarding/checklist-ativacao";
 import type { ChecklistAtivacao } from "@/lib/onboarding/ativacao";
@@ -102,6 +103,7 @@ export function VisaoGeral({
       {decisoes.length === 0 && blocos.map((c) => <ChecklistAtivacaoBloco key={c.papel} checklist={c} />)}
       <ListaDecisoes decisoes={decisoes} />
       {decisoes.length > 0 && blocos.map((c) => <ChecklistAtivacaoBloco key={c.papel} checklist={c} />)}
+      {!demo && <ConviteFotoPerfil className="mb-6" />}
       <CartaoEstadias estadias={estadias} />
 
       {ehDono && (
