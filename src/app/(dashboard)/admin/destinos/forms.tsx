@@ -1,12 +1,11 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { alternarDestino, salvarDestino, type ResultadoDestino } from "@/lib/destinos/actions";
+import { alternarDestino, buscarPontoDestino, salvarDestino, type ResultadoDestino } from "@/lib/destinos/actions";
 import { TIPOS_DESTINO } from "@/lib/destinos/regras";
+import { pontoColado, type PontoSugerido } from "@/lib/destinos/ponto";
 import { Button } from "@/components/ui/button";
-import { LocationSearch } from "@/components/location-search";
 import { PropertyMap } from "@/components/property-map-lazy";
-import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
 
@@ -25,6 +24,10 @@ export interface DestinoEditavel {
 export function DestinoForm({ inicial }: { inicial?: DestinoEditavel }) {
   const [res, acao, pendente] = useActionState<ResultadoDestino | null, FormData>(salvarDestino, null);
   const [busca, setBusca] = useState("");
+  const [buscando, iniciarBusca] = useTransition();
+  const [sugestoes, setSugestoes] = useState<PontoSugerido[] | null>(null);
+  const [fonte, setFonte] = useState<string>("");
+  const [erroBusca, setErroBusca] = useState<string | null>(null);
   const [ponto, setPonto] = useState<{ lat: string; lng: string }>({
     lat: inicial?.lat != null ? String(inicial.lat) : "",
     lng: inicial?.lng != null ? String(inicial.lng) : "",
@@ -32,6 +35,23 @@ export function DestinoForm({ inicial }: { inicial?: DestinoEditavel }) {
   const lat = Number(ponto.lat.replace(",", "."));
   const lng = Number(ponto.lng.replace(",", "."));
   const temPonto = ponto.lat !== "" && ponto.lng !== "" && Number.isFinite(lat) && Number.isFinite(lng);
+  // "-18.9186, -48.2772" colado (como o Google Maps copia) em qualquer um dos campos preenche os dois.
+  const mudaCoordenada = (campo: "lat" | "lng", valor: string) => setPonto(pontoColado(valor) ?? { ...ponto, [campo]: valor });
+  const buscar = (form: HTMLFormElement | null) => {
+    const cidade = (form?.elements.namedItem("cidade") as HTMLInputElement | null)?.value ?? "";
+    const uf = (form?.elements.namedItem("uf") as HTMLInputElement | null)?.value ?? "";
+    iniciarBusca(async () => {
+      const r = await buscarPontoDestino(busca, cidade, uf);
+      if (!r.ok) {
+        setErroBusca(r.erro);
+        setSugestoes(null);
+        return;
+      }
+      setErroBusca(null);
+      setFonte(r.fonte);
+      setSugestoes(r.itens);
+    });
+  };
 
   return (
     <form action={acao} className="grid gap-3 sm:grid-cols-2" data-testid="destino-form" key={inicial?.slug ?? "novo"}>
@@ -58,27 +78,62 @@ export function DestinoForm({ inicial }: { inicial?: DestinoEditavel }) {
       <div><label htmlFor="uf" className="block text-sm font-semibold">UF</label><input id="uf" name="uf" required maxLength={2} defaultValue={inicial?.uf ?? "MG"} className={`${campo} uppercase`} /></div>
       <div className="sm:col-span-2">
         <span className="block text-sm font-semibold">Ponto no mapa</span>
-        <div className="mt-1">
-          <LocationSearch
-            placeholder="Busque pelo nome ou endereço"
+        <div className="mt-1 flex gap-2">
+          <input
             value={busca}
-            onChange={setBusca}
-            onSelect={(s: GeoSuggestion) => {
-              setBusca(s.label);
-              setPonto({ lat: s.lat.toFixed(6), lng: s.lng.toFixed(6) });
+            onChange={(e) => setBusca(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                buscar(e.currentTarget.form);
+              }
             }}
+            placeholder="Busque pelo nome ou endereço (ex.: Hospital de Clínicas UFU)"
+            aria-label="Buscar o ponto no mapa"
+            className={campo.replace("mt-1 ", "")}
+            data-testid="destino-busca"
           />
+          <Button type="button" variant="outline" disabled={buscando} onClick={(e) => buscar(e.currentTarget.form)} data-testid="destino-buscar">
+            {buscando ? "Buscando…" : "Buscar"}
+          </Button>
         </div>
+        {erroBusca && <p role="alert" className="mt-2 text-sm text-red-600">{erroBusca}</p>}
+        {sugestoes && (
+          <div className="mt-2" data-testid="destino-sugestoes">
+            {sugestoes.length === 0 ? (
+              <p className="text-sm text-muted">Nada encontrado. Tente outro nome ou cole a latitude e a longitude abaixo.</p>
+            ) : (
+              <ul className="divide-y divide-sage-200 rounded-lg border border-sage-200">
+                {sugestoes.map((s) => (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-sage-100"
+                      data-testid="destino-sugestao"
+                      onClick={() => {
+                        setPonto({ lat: s.lat.toFixed(6), lng: s.lng.toFixed(6) });
+                        setSugestoes(null);
+                      }}
+                    >
+                      {s.rotulo}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {fonte === "osm" && sugestoes.length > 0 && <p className="mt-1 text-xs text-muted">Dados do mapa © OpenStreetMap</p>}
+          </div>
+        )}
         <div className="mt-2 grid grid-cols-2 gap-3">
-          <label className="text-xs text-muted">Latitude<input name="lat" value={ponto.lat} onChange={(e) => setPonto({ ...ponto, lat: e.target.value })} inputMode="decimal" className={campo} data-testid="destino-lat" /></label>
-          <label className="text-xs text-muted">Longitude<input name="lng" value={ponto.lng} onChange={(e) => setPonto({ ...ponto, lng: e.target.value })} inputMode="decimal" className={campo} data-testid="destino-lng" /></label>
+          <label className="text-xs text-muted">Latitude<input name="lat" value={ponto.lat} onChange={(e) => mudaCoordenada("lat", e.target.value)} inputMode="decimal" className={campo} data-testid="destino-lat" /></label>
+          <label className="text-xs text-muted">Longitude<input name="lng" value={ponto.lng} onChange={(e) => mudaCoordenada("lng", e.target.value)} inputMode="decimal" className={campo} data-testid="destino-lng" /></label>
         </div>
         {temPonto && (
           <div className="mt-3 overflow-hidden rounded-xl" data-testid="destino-mapa">
             <PropertyMap className="aspect-[16/9] w-full" center={{ lat, lng }} markers={[{ id: "destino", lat, lng, label: "Destino", kind: "workspace" }]} />
           </div>
         )}
-        <p className="mt-2 text-xs text-muted">Confira se o pino está na entrada certa antes de ativar. Sem ponto conferido, o destino não pode ser ativado.</p>
+        <p className="mt-2 text-xs text-muted">Confira se o pino está na entrada certa antes de ativar. Também dá para colar “latitude, longitude” copiado do Google Maps. Sem ponto conferido, o destino não pode ser ativado.</p>
       </div>
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
         <Button type="submit" disabled={pendente} data-testid="salvar-destino">Salvar destino</Button>

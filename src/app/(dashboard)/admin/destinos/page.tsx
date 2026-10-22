@@ -40,7 +40,10 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
       </>
     );
   }
-  const { data, error } = await supabase.from("destinos").select("id, slug, nome, artigo, tipo, cidade, uf, lat, lng, ativo").order("nome");
+  // Lista com o cliente de serviço (o layout do /admin já barrou quem não é admin): com o cliente da sessão, a RLS
+  // escondia os destinos do admin sem a 2ª etapa na sessão, e "Editar" virava cadastro novo (22/10).
+  const leitor = createAdminClient() ?? supabase;
+  const { data, error } = await leitor.from("destinos").select("id, slug, nome, artigo, tipo, cidade, uf, lat, lng, ativo").order("nome");
   const lista = (data ?? []) as Linha[];
   const ranking = maisBuscados(await buscasDe30Dias(), new Map(lista.map((d) => [d.id, d.nome])));
   const emEdicao = lista.find((d) => d.slug === editar);
