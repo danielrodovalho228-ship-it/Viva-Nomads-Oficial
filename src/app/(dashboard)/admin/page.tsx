@@ -4,6 +4,7 @@ import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
 import { PushTeste } from "@/components/admin/push-teste";
 import { PainelIaCadastro } from "@/components/admin/painel-ia-cadastro";
 import { CartaoBackup } from "@/components/admin/cartao-backup";
+import { CartaoMapas } from "@/components/admin/cartao-mapas";
 import { VisaoGeralClient } from "./visao-geral-client";
 import { AtalhosAdmin } from "./atalhos-admin";
 import { AvisoAtendimentoAdmin } from "@/components/admin/aviso-atendimento";
@@ -65,6 +66,9 @@ export default async function AdminPage({
       </div>
       <div id="backup" className="mt-6 scroll-mt-24">
         <CartaoBackup />
+      </div>
+      <div className="mt-6">
+        <CartaoMapas />
       </div>
       <div className="mt-6">
         <PushTeste />
