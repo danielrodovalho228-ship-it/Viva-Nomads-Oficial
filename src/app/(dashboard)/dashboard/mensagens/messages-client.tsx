@@ -174,6 +174,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             <button
               key={c.id}
               data-testid="mensagens-conversa"
+              data-conversa={c.id}
               onClick={() => openConversation(c.id)}
               className={cn(
                 "flex w-full items-center gap-3 border-b border-sage-200 px-4 py-3 text-left transition-colors",
@@ -324,23 +325,27 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
  * ações do painel Visitas (confirmar, propor outro horário, recusar com motivo; o morador aceita o novo horário).
  */
 function VisitaNaConversa({ propertyId, outroId }: { propertyId: string; outroId: string }) {
-  const [visita, setVisita] = useState<Awaited<ReturnType<typeof visitaDaConversa>>>(null);
+  // O cartão guarda de qual conversa (imóvel + pessoa) ele é: trocar de conversa nunca mostra o da anterior,
+  // nem enquanto a resposta nova não chega (QA 21/10, "cartão residual nas Conversas").
+  const chave = `${propertyId}:${outroId}`;
+  const [carregada, setCarregada] = useState<{ chave: string; visita: Awaited<ReturnType<typeof visitaDaConversa>> } | null>(null);
   const [versao, setVersao] = useState(0);
   useEffect(() => {
     let alive = true;
     visitaDaConversa(propertyId, outroId)
       .then((v) => {
-        if (alive) setVisita(v);
+        if (alive) setCarregada({ chave: `${propertyId}:${outroId}`, visita: v });
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
   }, [propertyId, outroId, versao]);
+  const visita = carregada?.chave === chave ? carregada.visita : null;
   if (!visita) return null;
   const { papel, ...v } = visita;
   return (
-    <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita">
+    <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita" data-imovel={propertyId}>
       <CartaoVisita key={`${v.id}-${v.status}`} v={v} papel={papel} compacto onMudou={() => setVersao((n) => n + 1)} />
     </div>
   );
