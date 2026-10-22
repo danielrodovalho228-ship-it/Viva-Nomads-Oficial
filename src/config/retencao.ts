@@ -39,3 +39,132 @@ export function podeApagarDocumento(prefixo: Prefixo, diasDesdeOFim: number): bo
   const r = RETENCAO_DOCUMENTOS[prefixo];
   return r.situacao === "definido" && r.dias !== null && diasDesdeOFim > r.dias;
 }
+
+/* ── Inventário de dados pessoais (Prompt 58) ──────────────────────────────────────────────────────────────────────
+  Fonte ÚNICA: toda tabela com coluna de dado pessoal e todo bucket privado aparecem aqui, com finalidade, prazo,
+  gatilho e modo. A guarda (src/lib/minimizacao/inventario.test.ts) lê as migrações e falha se faltar algum.
+  † = prazo proposto pela Viva (fase 1, aprovado pelo Daniel em 22/10). "pendente" = depende do item 13 da
+  Dra. Beatriz: só entra no relatório simulado, nunca é apagado de verdade nesta fase.
+*/
+import type { ItemInventario } from "../lib/minimizacao/regras.ts";
+
+type Base = Omit<ItemInventario, "id" | "origem" | "dado" | "finalidade">;
+const CONTA: Base = { prazoDias: null, gatilho: "exclusao_conta", modo: "anonimizar", base: "pendente", fase: 2 };
+const ESTADIA: Base = { prazoDias: null, gatilho: "fim_estadia", modo: "apagar", base: "pendente", fase: 2 };
+const DISPUTA: Base = { prazoDias: null, gatilho: "fim_janela_disputa", modo: "apagar", base: "pendente", fase: 2 };
+const FISCAL: Base = { prazoDias: null, gatilho: "fim_estadia", modo: "apagar", base: "pendente", fase: 2 };
+const VERED_30: Base = { prazoDias: 30, gatilho: "decisao_admin", modo: "apagar", base: "proposta", fase: 1 };
+const i = (id: string, origem: string, dado: string, finalidade: string, b: Base, fica?: string): ItemInventario => ({ id, origem, dado, finalidade, ...b, ...(fica ? { fica } : {}) });
+
+export const INVENTARIO: ItemInventario[] = [
+  // ── Fase 1, modo REAL (não depende de prazo jurídico) ──
+  i("inquilino-docs/recusado", "bucket:inquilino-docs", "documento de identidade, renda e vínculo da candidatura recusada", "o dono decidir a candidatura", { ...VERED_30, gatilho: "recusa_dono" }, "veredito do lead (recusado, data, quem decidiu) + tipo e data de envio"),
+  i("qualificacao/documento", "bucket:property-docs", "documento do imóvel enviado em /qualificar", "a equipe conferir o vínculo nome↔imóvel", VERED_30, "veredito (status, motivo, data, quem decidiu) + referência"),
+  i("matricula/arquivo", "bucket:property-docs", "matrícula e documento do caso especial (conferência de titularidade)", "a equipe conferir a titularidade", VERED_30, "veredito (resultado, motivo, data, quem decidiu) + campos conferidos"),
+  // ── Fase 2 / pendente (só relatório simulado) ──
+  i("inquilino-docs/aceito", "bucket:inquilino-docs", "documento da candidatura aceita", "base do contrato", ESTADIA),
+  i("documentos_inquilino", "public.documentos_inquilino", "caminho e hash do documento da candidatura", "ligar o arquivo à candidatura", ESTADIA, "tipo, data de envio e o veredito"),
+  i("profiles", "public.profiles", "nome, e-mail, telefone, CPF/CNPJ, bio, cidade, foto, local de trabalho", "a conta", CONTA),
+  i("avatars", "bucket:avatars", "foto de perfil", "mostrar quem é a pessoa", CONTA),
+  i("tenant_verifications", "public.tenant_verifications", "veredito da identidade (CAF: semáforo, confere nome/CPF)", "confiança", CONTA, "só o veredito; a Viva não grava imagem de documento nem selfie"),
+  i("messages", "public.messages", "mensagens do chat", "conversa entre as partes", DISPUTA),
+  i("service_order_messages", "public.service_order_messages", "mensagens de ordem de serviço", "conversa do serviço", DISPUTA),
+  i("conferencia", "bucket:conferencia", "fotos e laudo da conferência de entrada e saída", "prova da conferência", DISPUTA),
+  i("conferencia_itens", "public.conferencia_itens", "descrição e caminho da foto da conferência", "prova da conferência", DISPUTA),
+  i("conferencia_laudos", "public.conferencia_laudos", "caminho do laudo", "prova da conferência", DISPUTA),
+  i("conferencia_respostas", "public.conferencia_respostas", "motivo da contestação", "prova da conferência", DISPUTA),
+  i("conferencia_correcoes", "public.conferencia_correcoes", "texto da correção", "prova da conferência", DISPUTA),
+  i("vistoria_fotos", "public.vistoria_fotos", "fotos da vistoria (antiga)", "prova da vistoria", DISPUTA),
+  i("vistoria-fotos", "bucket:vistoria-fotos", "fotos da vistoria (antiga)", "prova da vistoria", DISPUTA),
+  i("vistoria_itens", "public.vistoria_itens", "observação da vistoria", "prova da vistoria", DISPUTA),
+  i("contrato_ocupantes", "public.contrato_ocupantes", "nome e documento dos ocupantes", "lista da portaria", { prazoDias: 90, gatilho: "fim_estadia", modo: "apagar", base: "legal", fase: 2 }, "nada (já apagado pelo cron do Prompt 32)"),
+  i("contrato_assinaturas", "public.contrato_assinaturas", "IP e hash da assinatura", "prova da assinatura", FISCAL),
+  i("contrato_aditivo_assinaturas", "public.contrato_aditivo_assinaturas", "IP e hash da assinatura do aditivo", "prova da assinatura", FISCAL),
+  i("contrato_notas", "public.contrato_notas", "notas do contrato", "registro da estadia", ESTADIA),
+  i("contrato_encerramento_pedidos", "public.contrato_encerramento_pedidos", "motivo e texto do encerramento", "registro da estadia", ESTADIA),
+  i("documentos_fiscais", "public.documentos_fiscais", "nome, documento e endereço das partes; PDF", "obrigação fiscal", FISCAL),
+  i("documentos", "bucket:documentos", "PDFs de recibos e documentos fiscais", "obrigação fiscal", FISCAL),
+  i("documentos_registro", "public.documentos_registro", "caminho do arquivo do documento registrado", "conferência pública do documento (56)", FISCAL),
+  i("documents", "public.documents", "nome e contato do inquilino (legado)", "documentos antigos", FISCAL),
+  i("leads", "public.leads", "motivo da recusa e dados da candidatura", "decidir a candidatura", ESTADIA, "veredito (aceito/recusado, data, quem decidiu)"),
+  i("pedidos_moradia", "public.pedidos_moradia", "apresentação, motivo e destino (lat/lng arredondados)", "pedido de moradia", CONTA),
+  i("respostas_pedido", "public.respostas_pedido", "mensagem da resposta", "pedido de moradia", CONTA),
+  i("propostas", "public.propostas", "texto da recusa", "proposta", CONTA),
+  i("proposta_versoes", "public.proposta_versoes", "mensagem da proposta", "proposta", CONTA),
+  i("avaliacoes", "public.avaliacoes", "comentários", "avaliação pública", CONTA),
+  i("avaliacao_respostas", "public.avaliacao_respostas", "resposta do dono", "avaliação pública", CONTA),
+  i("avaliacao_contestacoes", "public.avaliacao_contestacoes", "motivo da contestação", "moderação", CONTA),
+  i("reviews", "public.reviews", "comentário (legado)", "avaliação", CONTA),
+  i("property_reviews", "public.property_reviews", "nome do autor e comentário", "avaliação", CONTA),
+  i("parceiro_avaliacoes", "public.parceiro_avaliacoes", "texto da avaliação", "avaliação do parceiro", CONTA),
+  i("parceiros", "public.parceiros", "documento, razão social, telefone, dados de recebimento, base (lat/lng)", "o parceiro atender e receber", CONTA),
+  i("parceiros-midia", "bucket:parceiros", "foto, capa e galeria do parceiro (públicas)", "página do parceiro", CONTA),
+  i("parceiro_galeria", "public.parceiro_galeria", "caminho da foto da galeria", "página do parceiro", CONTA),
+  i("parceiro_solicitacoes", "public.parceiro_solicitacoes", "nome, e-mail, documento, telefone", "análise do pedido de parceria", { prazoDias: null, gatilho: "decisao_admin", modo: "apagar", base: "pendente", fase: 2 }),
+  i("parceiro_pedidos", "public.parceiro_pedidos", "descrição do pedido", "o serviço", ESTADIA),
+  i("parceiro-entregas", "bucket:parceiro-entregas", "entregas e nota do parceiro", "prova da entrega", DISPUTA),
+  i("parceiro_entregas", "public.parceiro_entregas", "caminho do arquivo entregue", "prova da entrega", DISPUTA),
+  i("parceiro_servicos", "public.parceiro_servicos", "descrição do serviço", "catálogo do parceiro", CONTA),
+  i("servicos_adicionais", "public.servicos_adicionais", "nome e descrição", "serviço", ESTADIA),
+  i("servicos_pedidos", "public.servicos_pedidos", "observação", "serviço", ESTADIA),
+  i("fotografo_pedidos", "public.fotografo_pedidos", "observação", "pedido de fotógrafo", ESTADIA),
+  i("pets_inquilino", "public.pets_inquilino", "nome e observações do pet", "candidatura com pet", CONTA),
+  i("pets-fotos", "bucket:pets-fotos", "foto do pet e carteira de vacina", "candidatura com pet", CONTA),
+  i("property-photos", "bucket:property-photos", "fotos do anúncio (públicas)", "anúncio", { prazoDias: 0, gatilho: "remocao_anuncio", modo: "apagar", base: "proposta", fase: 1 }, "o hash da foto (antifraude, exceção aprovada)"),
+  i("imovel_instrucoes_chegada", "public.imovel_instrucoes_chegada", "observações de chegada", "a estadia", CONTA),
+  i("chamados", "public.chamados", "nome e e-mail do visitante", "atendimento", CONTA),
+  i("chamado_mensagens", "public.chamado_mensagens", "mensagens e anexos do atendimento", "atendimento", CONTA),
+  i("chamados-bucket", "bucket:chamados", "anexos do atendimento (sem uso no código)", "atendimento", CONTA),
+  i("central-anexos", "bucket:central-anexos", "anexos do chat do admin", "operação", CONTA),
+  i("caixa_socios", "public.caixa_socios", "texto, arquivo e texto extraído", "caixa dos sócios", CONTA),
+  i("caixa-socios", "bucket:caixa-socios", "áudio, PDF e DOCX dos sócios", "caixa dos sócios", CONTA),
+  i("agentes_conversas", "public.agentes_conversas", "texto do chat de IA do admin", "operação", CONTA),
+  i("agentes_memoria", "public.agentes_memoria", "fatos guardados pela IA do admin", "operação", CONTA),
+  i("agentes_ordens", "public.agentes_ordens", "texto das ordens", "operação", CONTA),
+  i("leads_empresas", "public.leads_empresas", "nome, e-mail, mensagem", "contato comercial", CONTA),
+  i("parceiros_interesse", "public.parceiros_interesse", "nome, WhatsApp, e-mail", "interesse em ser parceiro", CONTA),
+  i("fotografos_contato", "public.fotografos_contato", "e-mail e WhatsApp", "contato de fotógrafo", CONTA),
+  i("garantias", "public.garantias", "nome e observação", "garantia do contrato", ESTADIA),
+  i("pagamentos_bloco", "public.pagamentos_bloco", "observação do pagamento", "financeiro", FISCAL),
+  i("visitas_video", "public.visitas_video", "motivo da visita", "visita", ESTADIA),
+  i("exclusao_conta_pedidos", "public.exclusao_conta_pedidos", "hash do e-mail e do IP", "prova do pedido de exclusão", { prazoDias: null, gatilho: "exclusao_conta", modo: "apagar", base: "pendente", fase: 2 }),
+  i("eventos", "public.eventos", "sessão e utm (analytics)", "métricas", { prazoDias: 548, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "proposta", fase: 2 }, "nada (já apagado aos 18 meses pelo pg_cron da 0067)"),
+  i("push_tokens", "public.push_tokens", "token do aparelho", "aviso no app", CONTA),
+  i("limites_uso", "public.limites_uso", "chave com uid ou hash do IP", "limite de uso", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
+  i("emails_teste", "public.emails_teste", "e-mails das contas de teste", "o QA ler os e-mails enviados", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
+  i("pedidos_ajuda_publicacao", "public.pedidos_ajuda_publicacao", "observação do dono", "ajuda para publicar", CONTA),
+  i("property_ownership_checks", "public.property_ownership_checks", "matrícula, motivo e campos conferidos", "titularidade", CONTA, "veredito"),
+  i("qualification_checklists", "public.qualification_checklists", "caminho do documento do imóvel", "qualificação", CONTA, "veredito"),
+  i("tempos_deslocamento", "public.tempos_deslocamento", "chave com lat/lng do local de trabalho digitado", "tempo até o trabalho (37)", CONTA),
+];
+
+/** Tabelas que a varredura acha por nome de coluna mas não guardam dado pessoal (com o porquê). */
+export const SEM_DADO_PESSOAL: Record<string, string> = {
+  agentes: "nome do agente de IA, não de pessoa",
+  asaas_eventos: "chave de idempotência do webhook",
+  automacoes_envios: "chave de idempotência do envio",
+  avisos_daniel: "texto dos avisos internos ao fundador (sem dado de usuário)",
+  backups_execucoes: "motivo da falha do backup",
+  chamado_macros: "texto-modelo das respostas",
+  chaves_plataforma: "chave de configuração",
+  cidades_liberadas: "cidade liberada",
+  comissao_fixada_admin: "motivo da decisão do admin",
+  config_cobranca: "configuração",
+  config_parceria: "configuração",
+  destinos: "polos públicos (universidade, hospital…), não pessoa",
+  documentos_falhas: "motivo técnico da falha",
+  eliminacoes_registro: "o livro de eliminações (nunca guarda o conteúdo)",
+  gastos_marketing: "observação do gasto",
+  ia_chamadas: "motivo técnico da chamada de IA",
+  interesse_cidade: "chave anônima de contagem",
+  interesse_fotografo_cidade: "chave anônima de contagem",
+  moderacao_log: "motivo da decisão de moderação",
+  pedidos_ignorados: "motivo do dono ignorar o pedido",
+  plataforma_chaves: "chave de configuração",
+  properties: "coordenadas do IMÓVEL (não de pessoa)",
+  property_workspaces: "coordenadas de coworking/café públicos",
+  proximidades_cep: "coordenadas de CEP (cache público)",
+};
+
+/** Buckets: os que existem nas migrações (a guarda compara). */
+export const BUCKETS_INVENTARIADOS = [...new Set(INVENTARIO.filter((x) => x.origem.startsWith("bucket:")).map((x) => x.origem.slice(7)))];

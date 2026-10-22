@@ -12,7 +12,8 @@
 export type Modo = "apagar" | "anonimizar";
 export type Base = "legal" | "proposta" | "pendente";
 export type Gatilho =
-  | "decisao_admin" // aprovado/recusado pelo admin (documento de candidatura, /qualificar, vínculo)
+  | "decisao_admin" // aprovado/recusado pelo admin (documento de /qualificar, matrícula/vínculo)
+  | "recusa_dono" // candidatura recusada pelo dono (o documento da candidatura sai; fica o veredito)
   | "fim_estadia" // fim do contrato
   | "fim_janela_disputa" // fim da janela de disputa da estadia (prazo do item 13)
   | "exclusao_conta" // pedido de exclusão da conta / do titular
@@ -90,6 +91,7 @@ export function textoPrazo(item: Pick<ItemInventario, "prazoDias" | "base" | "ga
   if (item.prazoDias === null) return "enquanto a conta existir";
   const quando: Record<Gatilho, string> = {
     decisao_admin: "depois da decisão do admin",
+    recusa_dono: "depois da recusa da candidatura",
     fim_estadia: "depois do fim da estadia",
     fim_janela_disputa: "depois do fim da janela de disputa",
     exclusao_conta: "depois do pedido de exclusão",
