@@ -49,6 +49,7 @@ Todas as rotas de `src/app/(dashboard)/admin`. Em cada uma: 390 px e 1280 px, se
 | `/admin/candidaturas` | Abrir uma candidatura | Dados do inquilino conforme a regra de ocultação até o aceite |
 | `/admin/cidades` | Ver cidades ativas | Contagem de anúncios bate com a semente |
 | `/admin/destinos` | Conferir o ponto de um destino no mapa e ativar | Sem ponto não ativa; ativo aparece nos chips da busca; "Destinos mais buscados" só com contagem |
+| `/admin/retencao` | Ver o inventário, o relatório "o que seria apagado hoje" e as eliminações da semana | Só contagens, nenhum caminho de arquivo; teste contado à parte; simulado não apaga |
 | `/admin/contratos` | Abrir contrato de teste | Marca "MINUTA DE TESTE — sem validade"; linha do tempo do contrato |
 | `/admin/contratos/[id]` | Abrir o contrato pela lista (só leitura) e baixar o pacote de provas | Selo de estado, assinaturas com hash igual/diferente, pagamentos (anulados marcados), conferências com fotos e o prazo; PDF com "Gerado pela equipe Viva Nomads"; não admin recebe 404 |
 | `/admin/contratos/encerramentos` | Na página da estadia de um contrato de teste, "Encerrar contrato" → motivo → confirmar | O pedido aparece na fila sem valor de multa ou devolução (chave ENCERRAMENTO_REGRAS_ATIVO desligada); "Concluir" encerra o contrato em acerto de saída; não admin recebe 404 |

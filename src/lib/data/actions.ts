@@ -78,6 +78,7 @@ import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
+import { apagarFotosDoAnuncio, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
@@ -809,6 +810,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
         }))
       );
       if (error) console.error("[createProperty] falha ao gravar fotos:", error.message);
+      else await ligarHashesAoImovel(createAdminClient(), data.id, persistableUrls);
     } catch (e) {
       console.error("[createProperty] erro ao gravar fotos:", e);
     }
@@ -1860,6 +1862,9 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
 
+  // Prompt 58: as fotos saem do bucket com o anúncio (o hash fica, antifraude). Só as do próprio dono.
+  const { data: dono } = await supabase.from("properties").select("id").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const { data: fotos } = dono ? await supabase.from("property_photos").select("url").eq("property_id", id) : { data: null };
   for (const table of ["property_photos", "property_amenities", "property_proximities"]) {
     try {
       await supabase.from(table).delete().eq("property_id", id);
@@ -1869,6 +1874,7 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   }
   const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
   if (error) return { ok: false, error: erroBancoPT(error) };
+  if (fotos?.length) await apagarFotosDoAnuncio(createAdminClient(), (fotos as { url: string }[]).map((f) => f.url));
   revalidarAnuncio(id, revalidatePath);
   return { ok: true };
 }
@@ -1999,7 +2005,11 @@ async function sincronizarFotos(
         .from("property_photos")
         .insert(novas.map((url, i) => ({ property_id: propertyId, url, sort_order: i })));
       if (error) console.error("[sincronizarFotos] falha ao gravar fotos:", error.message);
+      else await ligarHashesAoImovel(createAdminClient(), propertyId, novas);
     }
+    // Prompt 58: a foto que o dono tirou do anúncio sai do bucket (o hash fica).
+    const sairam = ((atuais ?? []) as { url: string }[]).map((r) => r.url).filter((u) => !novas.includes(u));
+    if (sairam.length) await apagarFotosDoAnuncio(createAdminClient(), sairam);
   } catch (e) {
     console.error("[sincronizarFotos] erro:", e);
   }

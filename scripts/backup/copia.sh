@@ -7,7 +7,7 @@
 #  4. rclone sync de TODOS os buckets do Storage (S3) para storage/atual/, com o que sumiu ou mudou indo para
 #     storage/removidos/AAAA-MM-DD/;
 #  5. manifesto (sem dado pessoal) em manifestos/AAAA-MM-DD.json;
-#  6. retenção (14 diárias, 8 semanais, 12 mensais; removidos com mais de 30 dias);
+#  6. retenção (14 diárias, 8 semanais, 3 mensais; removidos com mais de 30 dias);
 #  7. total usado na pasta do Drive.
 # Nada aqui imprime dado, nome de arquivo de usuário, URL ou segredo: só etapas e números.
 source "$(dirname "${BASH_SOURCE[0]}")/comum.sh"

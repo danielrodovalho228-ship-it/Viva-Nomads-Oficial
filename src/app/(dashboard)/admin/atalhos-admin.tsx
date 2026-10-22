@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Home, Users, FlaskConical, MapPinned, HandHelping, FileSignature, LifeBuoy, Mail, Megaphone, Star, TrendingUp, Wallet, Wrench } from "lucide-react";
+import { Bot, Home, Users, FlaskConical, MapPinned, HandHelping, FileSignature, LifeBuoy, Mail, Megaphone, ShieldCheck, Star, TrendingUp, Wallet, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Panel } from "@/components/dashboard/primitives";
 import { ListaNumeros } from "@/components/admin/numeros";
@@ -30,6 +30,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/avaliacoes", label: "Avaliações", icon: Star },
   { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
   { href: "/admin/agentes", label: "Agentes", icon: Bot },
+  { href: "/admin/retencao", label: "Dados e retenção", icon: ShieldCheck },
 ];
 
 export async function AtalhosAdmin() {

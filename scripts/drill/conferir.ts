@@ -2,6 +2,7 @@
 //   node scripts/drill/conferir.ts dump <manifesto.json>                 → imprime o nome do dump (AAAA-MM-DD_HHMM.dump)
 //   node scripts/drill/conferir.ts hash <manifesto.json> <arquivo>       → confere tamanho e SHA-256 do dump baixado
 //   node scripts/drill/conferir.ts conferir <pasta> <erros-do-pg_restore>
+//   node scripts/drill/conferir.ts livro                                 → reaplica o livro de eliminações (Prompt 58)
 // O "conferir" lê o banco restaurado (DRILL_DB_URL) e o backup do storage (DESTINO, rclone): migrações registradas =
 // repositório e = manifesto; linhas por tabela = manifesto; as 5 consultas-chave; e 20 objetos sorteados do storage
 // baixados, decifrados e comparados com o Supabase (rclone check --download). Imprime só nomes de conferência,
@@ -13,8 +14,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { lerManifesto } from "../../src/lib/backup/manifesto.ts";
 import {
+  SQL_LIVRO_REAPLICAR,
+  SQL_LIVRO_VOLTOU,
   TAMANHO_AMOSTRA,
   compararContagens,
+  conferirLivro,
+  lerLivro,
   compararMigracoes,
   conferirAmostra,
   conferirChaves,
@@ -50,7 +55,37 @@ if (acao === "hash") {
   process.exit(0);
 }
 
-if (acao !== "conferir" || !a1) sair("uso: conferir.ts <dump|hash|conferir> …");
+// Prompt 58: o livro de eliminações reaplicado. O livro vem da produção (SUPABASE_DB_URL, só leitura), que tem as
+// eliminações feitas depois do backup; sem ela, o do próprio restaurado. Nada eliminado pode voltar.
+function reaplicarLivro(url: string): Conferencia {
+  const bin = process.env.PSQL || "psql";
+  const sessao = (sql: string) =>
+    execFileSync(bin, [url, "-X", "-q", "-At", "-v", "ON_ERROR_STOP=1", "-f", "-"], { input: sql, encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] });
+  try {
+    if (psql(url, "select to_regclass('public.eliminacoes_registro') is null").trim() === "t") return conferirLivro(0, 0, 0, true);
+    const fonte = process.env.SUPABASE_DB_URL?.trim() || url;
+    const livro = lerLivro(psql(fonte, "select origem || '|' || ref_id from public.eliminacoes_registro where modo = 'apagado' and origem like 'bucket:%'"));
+    const valores = livro.map((l) => `('${l.origem}','${l.ref}')`).join(",");
+    const contagens = sessao(
+      ["create temp table _livro (origem text, ref text)", ...(valores ? [`insert into _livro values ${valores}`] : []), SQL_LIVRO_VOLTOU, SQL_LIVRO_REAPLICAR, SQL_LIVRO_VOLTOU].join(";\n") + ";\n",
+    )
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => /^\d+$/.test(l));
+    return conferirLivro(livro.length, Number(contagens[0]), Number(contagens[1]), false);
+  } catch {
+    return conferirLivro(0, null, null, false);
+  }
+}
+
+// Restauração de verdade (docs/RESTAURACAO.md, B5): DRILL_DB_URL = o banco novo.
+if (acao === "livro") {
+  const c = reaplicarLivro(urlDoAmbiente("DRILL_DB_URL"));
+  console.log(`  ${c.ok ? "✔" : "✘"} ${c.nome} — ${c.detalhe}`);
+  process.exit(c.ok ? 0 : 1);
+}
+
+if (acao !== "conferir" || !a1) sair("uso: conferir.ts <dump|hash|conferir|livro> …");
 
 const trab = a1;
 const errosRestore = Number(a2 ?? "0") || 0;
@@ -129,6 +164,8 @@ conferencias.push(...conferirChaves(manifesto.chaves, rodarConsultasChave(url)))
   }
   conferencias.push(conferirAmostra(sorteados, r, falhou));
 }
+
+conferencias.push(reaplicarLivro(url));
 
 for (const c of conferencias) console.log(`  ${c.ok ? "✔" : "✘"} ${c.nome} — ${c.detalhe}`);
 const motivo = motivoDoDrill(conferencias);

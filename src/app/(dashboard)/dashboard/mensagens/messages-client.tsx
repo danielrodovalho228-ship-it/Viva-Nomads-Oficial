@@ -14,7 +14,7 @@ import { sendMessage } from "@/lib/data/actions";
 import { enviarMensagemDoPedido } from "@/lib/parceiros/pedido-actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
-import { guardContactInfo, GUARD_NOTICE, DOCUMENTO_BLOQUEADO } from "@/lib/messages/contact-guard";
+import { guardContactInfo, GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
 import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/mensagens-filtros";
@@ -329,6 +329,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           )}
           {/* Conversa com imóvel = entre pessoas; "Suporte" é a equipe, não há o que denunciar. */}
           {active.papel !== "suporte" && <DenunciarConversa key={active.id} conversationId={active.id} demo={demo} />}
+          {/* Prompt 58: aviso fixo — documento não circula pelo chat. */}
+          <p className="border-t border-sage-200 px-4 pt-2 text-xs text-ink/60" data-testid="mensagens-aviso-documentos">
+            {AVISO_DOCUMENTOS}
+          </p>
           <form onSubmit={submit} className="flex items-center gap-2 border-t border-sage-200 p-3">
             <input
               value={draft}
