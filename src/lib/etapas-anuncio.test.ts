@@ -105,3 +105,11 @@ test("etapaDaUrl: só aceita 0..5; qualquer outra coisa vira null", () => {
   assert.equal(etapaDaUrl("revisar"), ETAPA.revisar);
   for (const v of ["Fotos", "encontramos", "6", "7", "-1", "3.5", "abc", "", null, undefined, "03"]) assert.equal(etapaDaUrl(v), null);
 });
+
+test("a tela do cadastro fala em 6 passos (nenhum texto visível com '5 etapas')", async () => {
+  const { readFileSync } = await import("node:fs");
+  const pagina = readFileSync(new URL("../app/(dashboard)/dashboard/imoveis/novo/page.tsx", import.meta.url), "utf8");
+  const semComentario = pagina.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+  assert.doesNotMatch(semComentario, /5 etapas/);
+  assert.match(semComentario, /Em 6 passos\./);
+});
