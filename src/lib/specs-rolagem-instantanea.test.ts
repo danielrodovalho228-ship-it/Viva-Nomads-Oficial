@@ -26,3 +26,12 @@ test("t58 amplia o prazo do teste antes de qualquer navegação", () => {
   }
   assert.doesNotMatch(src, /test\.setTimeout\(90000\)/);
 });
+
+// Lab baccf210: t185 "flutuante tampa precos-botoes" — o scrollIntoView animado (scroll-smooth) deixava o alvo
+// ainda a caminho quando o boundingBox era medido, e ele parecia cruzar o botão fixo do canto.
+test("t185 mede o flutuante só depois de rolar de forma instantânea", () => {
+  const src = readFileSync(join(process.cwd(), "tests", "e2e", "specs", "t185-precos-3s.spec.ts"), "utf8");
+  const chamadas = src.match(/scrollIntoView\(\{[^}]*\}\)/g) ?? [];
+  assert.ok(chamadas.length >= 2);
+  for (const c of chamadas) assert.match(c, /behavior:\s*"instant"/, c);
+});

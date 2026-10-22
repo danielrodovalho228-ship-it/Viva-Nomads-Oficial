@@ -126,8 +126,10 @@ test("/conferir: só pelo código; sem valor nem nomes; status, versão vigente 
   assert.equal(situacaoDoDocumento({ ...base, status: "anulado", is_teste: true }).estado, "anulado", "anulado vale também para o de teste");
   assert.equal(situacaoDoDocumento({ ...base, status: "valido" }).estado, "valido");
   const campos = camposExibidos({ ...base, versao: 2 }, () => "06/10/2026");
-  assert.deepEqual(campos.map(([k]) => k), ["Documento", "Número", "Emitido em"]);
-  assert.equal(campos[1][1], "ORC-2026-0002 v2");
+  assert.deepEqual(campos.map(([k]) => k), ["Documento", "Número", "Versão", "Emitido em"]);
+  assert.equal(campos[1][1], "ORC-2026-0002");
+  assert.equal(campos[2][1], "2");
+  assert.equal(camposExibidos(base, () => "x").find(([k]) => k === "Versão")?.[1], "1", "a versão aparece também na primeira");
   assert.deepEqual(camposExibidos({ ...base, prefixo: "VN-CT", tipo: "contrato", numero: "VN-CT-11281A61" }, () => "x").find(([k]) => k === "Registro")?.[1], "nº 000007");
   assert.ok(aceitaArquivo("REC") && aceitaArquivo("PRV") && !aceitaArquivo("ORC") && !aceitaArquivo("PRT"));
 });

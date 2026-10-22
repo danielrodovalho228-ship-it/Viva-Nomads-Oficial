@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { hasAccount } from "./accounts";
 import { entrar } from "./laboratorio";
+import { MOTIVO_ACAO_CANCELADA, canceladaPeloNavegador } from "./requisicao-cancelada";
 
 /**
  * Apoio da VARREDURA VISUAL (t249): os critérios por tela e tamanho, rodáveis em qualquer rota.
@@ -81,11 +82,15 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
     if (m.type() === "error") brutos.push(`console: ${m.text()} ${m.location().url ?? ""}`);
   });
   page.on("pageerror", (e) => brutos.push(`página: ${e.message}`));
+  let acaoCancelada = false;
   page.on("requestfailed", (r) => {
-    // Pré-carregamento de link do Next (RSC, `?_rsc=`) cancelado pelo próprio navegador ao trocar de tela: não é erro da
-    // página. Rodada 1 da t249 (21/10): era a única coisa no critério d, em todas as 16 telas, nos dois tamanhos.
     const motivo = r.failure()?.errorText ?? "?";
-    if (motivo === "net::ERR_ABORTED" && (/[?&]_rsc=/.test(r.url()) || r.headers()["rsc"] === "1")) return;
+    const cancelada = canceladaPeloNavegador(motivo, r.method(), r.url(), r.headers());
+    if (cancelada === "prefetch") return;
+    if (cancelada === "acao") {
+      acaoCancelada = true;
+      return;
+    }
     // Tipo, método e erro do navegador vão junto: a rodada 2 (21/10) acusou a URL da própria tela (sem `_rsc`) e só a URL
     // não diz se é documento, ação do servidor (POST com next-action) ou outra coisa.
     const acao = r.headers()["next-action"] ? ", ação do servidor" : "";
@@ -95,7 +100,12 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
   const limpa = (t: string) => t.replace(/\?.*$/, "").slice(0, 200); // sem query string (pode ter token/dado pessoal)
   return {
     lista: () => [...new Set(brutos.filter((t) => !ehExcecao(t)).map(limpa))],
-    ignorados: () => [...new Set(brutos.filter(ehExcecao).map((t) => EXCECOES_TERCEIROS.find((x) => x.padrao.test(t))!.motivo))],
+    ignorados: () => [
+      ...new Set([
+        ...brutos.filter(ehExcecao).map((t) => EXCECOES_TERCEIROS.find((x) => x.padrao.test(t))!.motivo),
+        ...(acaoCancelada ? [MOTIVO_ACAO_CANCELADA] : []),
+      ]),
+    ],
   };
 }
 
