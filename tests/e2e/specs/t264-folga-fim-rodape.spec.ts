@@ -187,10 +187,13 @@ test.describe("T264 — menu superior e barra inferior a 390 px", () => {
   test.describe("admin no painel (a conta do Daniel)", () => {
     test.skip(!hasAccount("admin"), "sem a conta do admin");
     test.use({ storageState: authFile("admin") });
-    test("/dashboard: a barra do modo ativo aparece; /admin continua sem barra", async ({ page }) => {
-      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      await expect(barraInferior(page)).toBeVisible({ timeout: 20_000 });
-      await expect(barraInferior(page).getByRole("link")).toHaveCount(5);
+    test("/dashboard e /dashboard/conta: a barra do modo ativo aparece; /admin continua sem barra", async ({ page }) => {
+      // Os dois prints do Daniel (22/10, 19:59 e 20:00): Painel e Conta.
+      for (const rota of ["/dashboard", "/dashboard/conta"]) {
+        await page.goto(rota, { waitUntil: "domcontentloaded" });
+        await expect(barraInferior(page), rota).toBeVisible({ timeout: 20_000 });
+        await expect(barraInferior(page).getByRole("link"), rota).toHaveCount(5);
+      }
       await page.goto("/admin", { waitUntil: "domcontentloaded" });
       await expect(page.locator("main").first()).toBeVisible({ timeout: 20_000 });
       await expect(barraInferior(page)).toHaveCount(0);
