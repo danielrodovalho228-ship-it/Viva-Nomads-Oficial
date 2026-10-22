@@ -4,7 +4,7 @@
   sequência). Resposta: existe, status, tipo, número, versão e data — nunca valor nem nome das partes. O "hash
   confere" é calculado NO NAVEGADOR: o arquivo não sai do aparelho da pessoa.
 */
-import { PREFIXOS, numeroExibido, rotuloRegistro, type Prefixo } from "./prefixos.ts";
+import { PREFIXOS, rotuloRegistro, type Prefixo } from "./prefixos.ts";
 
 export interface LinhaConferida {
   prefixo: string;
@@ -47,7 +47,9 @@ export function camposExibidos(d: LinhaConferida, dataHora: (iso: string) => str
   const legado = (PREFIXOS as Record<string, { legado?: true }>)[d.prefixo]?.legado;
   return [
     ["Documento", rotuloDoTipo(d.prefixo, d.tipo)],
-    ["Número", numeroExibido(d.numero, d.versao)],
+    ["Número", d.numero],
+    // A página promete "o tipo, o número, a versão e a data": a versão tem linha própria (QA do Muse, 22/10).
+    ["Versão", String(d.versao)],
     ...(legado ? ([["Registro", rotuloRegistro(d.registro_seq).replace("Registro ", "")]] as [string, string][]) : []),
     ["Emitido em", dataHora(d.emitido_em)],
   ];

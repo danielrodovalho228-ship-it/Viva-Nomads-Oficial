@@ -101,6 +101,7 @@ test.describe("T260 — Documentos: registro único e /conferir (Prompt 56)", ()
       await p.goto(`/conferir/${doc.codigo}`, { waitUntil: "networkidle" });
       await expect(p.getByTestId("conferir-ok")).toBeVisible();
       await expect(p.getByTestId("conferir-numero")).toHaveText(doc.numero);
+      await expect(p.getByTestId("conferir-versao")).toHaveText("1");
       await expect(p.getByTestId("conferir-documento")).toHaveText("Pacote de provas");
       await expect(p.getByTestId("conferir-emitido-em")).toContainText("horário de Brasília");
       const corpo = await p.locator("#conteudo").innerText();
