@@ -59,6 +59,10 @@ const TELAS: Tela[] = [
   { conta: "INQUILINA", rota: () => "/dashboard/favoritos", nome: "Favoritos" },
   { conta: "INQUILINA", rota: () => "/dashboard/buscas", nome: "Buscas salvas" },
   { conta: "INQUILINA", rota: (m) => `/dashboard/estadia/${m.contrato}`, nome: "Estadia (contrato completo)" },
+  // Telas tocadas pelo #1038 (Prompt 43, conta única e fluxos de perfil), 22/10: entram na varredura permanente.
+  { conta: "INQUILINA", rota: () => "/dashboard/conta/perfil", nome: "Conta · perfil" },
+  { conta: "INQUILINA", rota: () => "/dashboard/pedidos", nome: "Meus pedidos" },
+  { conta: "INQUILINA", rota: () => "/dashboard/mensagens", nome: "Mensagens" },
 ];
 
 /** Combinações (tela × tamanho × critério) cobertas por um defeito conhecido: o varrer geral só anota. */

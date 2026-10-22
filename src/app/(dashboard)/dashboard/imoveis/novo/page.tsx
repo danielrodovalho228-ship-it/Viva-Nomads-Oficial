@@ -1146,6 +1146,7 @@ export default function NewPropertyPage() {
     comodidadesSugeridas,
     internetMbps,
     setInternetMbps,
+    imovelId: draftServerId ?? editingId,
     proxOsm,
     proxCarregando,
     proxDesmarcados,

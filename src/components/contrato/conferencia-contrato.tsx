@@ -30,6 +30,7 @@ import {
   type TipoConferencia,
 } from "@/lib/conferencia";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { MedirInternet } from "@/components/anuncio/medir-internet";
 
 const ROTULO_TIPO: Record<TipoConferencia, string> = { entrada: "Conferência de entrada", saida: "Conferência de saída" };
 const ROTULO_PARTE = { proprietario: "Proprietário", inquilino: "Inquilino" } as const;
@@ -149,6 +150,10 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         <p className="mt-1 text-xs text-muted" data-testid="conferencia-prazo" data-prazo={dados.prazoEntradaEm}>
           Registre fotos e itens por cômodo {textoPrazoConferencia(dados.prazoEntradaEm)} (48 h depois da entrada).
         </p>
+      )}
+      {/* Prompt 57: o morador pode medir a internet na entrada (nunca público; abaixo de 50% vira aviso ao dono). */}
+      {tipo === "entrada" && parte === "inquilino" && !travada && dados.propertyId && (
+        <MedirInternet imovelId={dados.propertyId} origem="conferencia_entrada" />
       )}
       {tipo === "saida" && dados.prazoSaidaEm && (
         <p className="mt-1 text-xs text-muted" data-testid="conferencia-prazo-saida" data-prazo={dados.prazoSaidaEm}>

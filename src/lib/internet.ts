@@ -15,7 +15,10 @@ export interface InternetTierMeta {
   label: string;
   /** Descrição clara para o proprietário escolher sem saber o número. */
   description: string;
-  /** Frase de benefício exibida no anúncio (linguagem do inquilino). */
+  /**
+   * Frase do anúncio quando NÃO há medição válida (Prompt 57): só o que o proprietário informou, sem dizer o que a
+   * internet aguenta. Capacidade ("Boa para videochamadas") só sai da medição (src/config/internet.ts).
+   */
   anuncio: string;
   /** Mesma frase quando o anúncio declara internet fibra (não mistura "boa" com "fibra"). */
   anuncioFibra: string;
@@ -26,25 +29,23 @@ export const INTERNET_TIERS: InternetTierMeta[] = [
     value: "basica",
     label: "Básica",
     description: "Boa para navegar, e-mails e streaming.",
-    anuncio: "Internet básica — boa para navegar e streaming.",
-    anuncioFibra: "Internet fibra — boa para navegar e streaming.",
+    anuncio: "Internet básica, informada pelo proprietário (não medida).",
+    anuncioFibra: "Internet fibra, informada pelo proprietário (não medida).",
   },
   {
     value: "trabalho_remoto",
     label: "Boa para trabalho remoto",
     description: "Aguenta videochamadas e o trabalho do dia a dia.",
-    anuncio: "Internet boa para trabalho remoto — aguenta videochamadas.",
-    anuncioFibra: "Internet fibra para trabalho remoto — aguenta videochamadas.",
+    anuncio: "Internet para trabalho remoto, informada pelo proprietário (não medida).",
+    anuncioFibra: "Internet fibra para trabalho remoto, informada pelo proprietário (não medida).",
   },
   {
     value: "home_office",
     label: "Excelente para home office",
     description:
       "Ideal para videochamadas pesadas, uploads e vários dispositivos ao mesmo tempo.",
-    anuncio:
-      "Internet excelente para home office — videochamadas pesadas e vários dispositivos.",
-    anuncioFibra:
-      "Internet fibra para home office — videochamadas pesadas e vários dispositivos.",
+    anuncio: "Internet para home office, informada pelo proprietário (não medida).",
+    anuncioFibra: "Internet fibra para home office, informada pelo proprietário (não medida).",
   },
 ];
 
