@@ -18,6 +18,7 @@ import { categoriaValida, rotuloCategoria } from "./regras";
 import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "./pedido-servidor";
 import { imoveisParaServico } from "./imoveis-servico";
 import { numeroOrcamentoParceiro } from "@/lib/fiscal/prefixos";
+import { hashPerceptual, reconverterFotoParaWebp, semMetadados } from "@/lib/foto-reconversao";
 import {
   CHAVE_CONVERSA_PEDIDO,
   congelarValores,
@@ -391,7 +392,10 @@ export async function enviarEntrega(form: FormData): Promise<Res> {
   }
   for (const f of arquivos) {
     const path = `${c.p.id}/${Date.now()}-${randomBytes(3).toString("hex")}-${nomeSeguro(f.name)}`;
-    const up = await c.admin.storage.from(BUCKET_ENTREGAS).upload(path, Buffer.from(await f.arrayBuffer()), { contentType: f.type, upsert: false });
+    // Prompt 58: imagem sem EXIF/GPS (mesmo formato); PDF, ZIP e MP4 vão como vieram.
+    const limpo = await semMetadados(new Uint8Array(await f.arrayBuffer()), f.type);
+    if (!limpo) return { ok: false, erro: "Não foi possível ler uma das imagens. Envie de novo." };
+    const up = await c.admin.storage.from(BUCKET_ENTREGAS).upload(path, Buffer.from(limpo), { contentType: f.type, upsert: false });
     if (up.error) return { ok: false, erro: "Não foi possível enviar um dos arquivos. Tente de novo." };
     await c.admin.from("parceiro_entregas").insert({ pedido_id: c.p.id, path, legenda: f.name.slice(0, 120) });
   }
@@ -410,7 +414,9 @@ export async function enviarDocumentoParceiro(form: FormData): Promise<Res> {
   if (!(f instanceof File) || f.size === 0) return { ok: false, erro: "Escolha o arquivo." };
   if (!TIPOS_DOCUMENTO.has(f.type) || f.size > 10 * 1024 * 1024) return { ok: false, erro: "Use PDF ou imagem de até 10 MB." };
   const path = `${c.p.id}/documento-${Date.now()}-${nomeSeguro(f.name)}`;
-  const up = await c.admin.storage.from(BUCKET_ENTREGAS).upload(path, Buffer.from(await f.arrayBuffer()), { contentType: f.type, upsert: false });
+  const limpo = await semMetadados(new Uint8Array(await f.arrayBuffer()), f.type);
+  if (!limpo) return { ok: false, erro: "Não foi possível ler a imagem do documento." };
+  const up = await c.admin.storage.from(BUCKET_ENTREGAS).upload(path, Buffer.from(limpo), { contentType: f.type, upsert: false });
   if (up.error) return { ok: false, erro: "Não foi possível enviar o documento." };
   await c.admin.from("parceiro_pedidos").update({ documento_parceiro_path: path, atualizado_em: new Date().toISOString() }).eq("id", c.p.id);
   await evento(c.admin, c.p.id, c.userId, "documento_parceiro", {});
@@ -478,11 +484,16 @@ export async function usarFotosNoAnuncio(pedidoId: string): Promise<Res<{ copiad
   let ordem = Math.max(-1, ...((atuais ?? []) as { sort_order: number | null }[]).map((f) => f.sort_order ?? 0)) + 1;
   let copiadas = 0;
   for (const img of imagens) {
-    const destino = `${c.userId}/${c.p.property_id}/parceiro-${c.p.codigo}-${img.path.split("/").pop()}`;
+    const destino = `${c.userId}/${c.p.property_id}/parceiro-${c.p.codigo}-${(img.path.split("/").pop() ?? "foto").replace(/\.[a-z]+$/i, "")}.webp`;
     const dl = await c.admin.storage.from(BUCKET_ENTREGAS).download(img.path);
     if (dl.error || !dl.data) continue;
-    const up = await c.admin.storage.from("property-photos").upload(destino, dl.data, { upsert: true, contentType: dl.data.type || "image/jpeg" });
+    // Prompt 58: a foto vai para o bucket PÚBLICO re-codificada (sem EXIF/GPS), como as do anúncio; o hash fica.
+    const webp = await reconverterFotoParaWebp(new Uint8Array(await dl.data.arrayBuffer()));
+    if (!webp) continue;
+    const up = await c.admin.storage.from("property-photos").upload(destino, webp, { upsert: true, contentType: "image/webp" });
     if (up.error) continue;
+    const hash = await hashPerceptual(webp);
+    if (hash) await c.admin.from("fotos_anuncio_hash").upsert({ owner_id: c.userId, property_id: c.p.property_id, caminho: destino, hash }, { onConflict: "caminho" });
     const url = c.admin.storage.from("property-photos").getPublicUrl(destino).data.publicUrl;
     if (ja.has(url)) continue;
     const { error } = await c.admin.from("property_photos").insert({ property_id: c.p.property_id, url, sort_order: ordem++ });

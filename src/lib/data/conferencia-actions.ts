@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, HORA } from "@/lib/limites";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { prontaParaFechar } from "@/lib/fiscal/fechamento";
+import { semMetadados } from "@/lib/foto-reconversao";
 import {
   decidirResposta,
   estadoConferencia,
@@ -235,7 +236,10 @@ async function subirArquivo(
   if (!v.ok) return { ok: false, error: v.erro };
   const admin = createAdminClient()!;
   const path = `${uid}/${crypto.randomUUID()}.${v.ext}`;
-  const { error } = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: v.tipo, upsert: false });
+  // Prompt 58: foto sem EXIF/GPS (re-codificada no servidor, mesmo formato); o laudo em PDF vai como veio.
+  const limpo = await semMetadados(bytes, v.tipo);
+  if (!limpo) return { ok: false, error: "Não foi possível ler a imagem. Envie outra foto." };
+  const { error } = await admin.storage.from(BUCKET).upload(path, limpo, { contentType: v.tipo, upsert: false });
   if (error) return { ok: false, error: "Não foi possível salvar o arquivo. Tente de novo." };
   return { ok: true, path };
 }

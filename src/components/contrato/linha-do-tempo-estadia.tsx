@@ -10,7 +10,7 @@ import { formatarDiaCurto, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 export function LinhaDoTempoEstadia({ etapas }: { etapas: EtapaEstadia[] }) {
   if (etapas.length === 0) return null;
   return (
-    <Panel className="mt-4 p-5" data-testid="estadia-linha-tempo">
+    <Panel className="mt-4 p-4" data-testid="estadia-linha-tempo">
       <h2 className="font-title text-base font-semibold text-ink">Sua estadia</h2>
       <ol className="mt-3 space-y-3">
         {etapas.map((e) => (

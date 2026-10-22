@@ -71,7 +71,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
       </BannerTopo>
 
       {/* Números rápidos. */}
-      <section className="container-page relative z-10 -mt-10">
+      <section className="container-page relative z-10 -mt-12">
         <dl className="grid gap-4 rounded-xl border border-line bg-white p-6 sm:grid-cols-2 lg:grid-cols-4" data-testid="parceiros-numeros">
           <div><dt className="font-title text-2xl font-semibold text-ink">Uberlândia (MG)</dt><dd className="text-sm text-muted">Começamos por aqui; cadastre-se de qualquer cidade</dd></div>
           <div><dt className="font-title text-2xl font-semibold text-ink">30–180 dias</dt><dd className="text-sm text-muted">de estadia em imóveis mobiliados</dd></div>
@@ -82,7 +82,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
 
       <section id="tipos" aria-labelledby="h-tipos" className="container-page section-y scroll-mt-24">
         <h2 id="h-tipos" className="text-center font-title text-2xl font-semibold text-ink">Tipos de parceria</h2>
-        <ul className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6" data-testid="parceiros-tipos">
+        <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6" data-testid="parceiros-tipos">
           {CARDS.map((c) => {
             const f = FOTOS_PARCERIA.find((x) => x.id === c.id)!;
             return (
@@ -112,11 +112,11 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
       <section aria-labelledby="h-como" className="bg-surface-2 section-y" data-testid="parceiros-fluxo">
         <div className="container-page">
           <h2 id="h-como" className="text-center font-title text-2xl font-semibold text-ink">Como funciona</h2>
-          <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <ol className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {PASSOS.map((p, i) => (
               <li key={p.t} className="overflow-hidden rounded-xl border border-line bg-white ">
                 <BrandImage src={p.foto} alt={p.alt} rounded="rounded-none" sizes="(max-width: 640px) 100vw, 25vw" className="aspect-[16/10] w-full" />
-                <div className="p-5">
+                <div className="p-4">
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-forest text-sm font-semibold text-white" aria-hidden>{i + 1}</span>
                   <h3 className="mt-3 font-title text-base font-semibold text-ink">{p.t}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">{p.d}</p>
@@ -128,7 +128,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
       </section>
 
       <section aria-labelledby="h-regras" className="container-page section-y">
-        <div className="grid items-center gap-10 md:grid-cols-2">
+        <div className="grid items-center gap-8 md:grid-cols-2">
           <BrandImage src="/images/como-funciona/05-qualifique.webp" alt="Sala mobiliada pronta para receber moradores" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-xl" />
           <div>
             <h2 id="h-regras" className="font-title text-2xl font-semibold text-ink">Regras claras</h2>
@@ -140,12 +140,12 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
       </section>
 
       <section id="quero-ser-parceiro" aria-labelledby="h-form" className="bg-surface-2 section-y scroll-mt-24">
-        <div className="container-page grid gap-10 md:grid-cols-5">
+        <div className="container-page grid gap-8 md:grid-cols-5">
           <div className="md:col-span-2">
             <h2 id="h-form" className="font-title text-2xl font-semibold text-ink">Seja parceiro</h2>
             <p className="mt-3 text-muted">Peça a parceria com a sua conta. A Viva analisa e responde por e-mail; aprovada, você ativa a sua página.</p>
             <h3 id="h-duvidas" className="mt-8 font-title text-lg font-semibold text-ink">Dúvidas</h3>
-            <dl className="mt-5 space-y-5" aria-labelledby="h-duvidas">
+            <dl className="mt-4 space-y-4" aria-labelledby="h-duvidas">
               {DUVIDAS.map((d) => (<div key={d.p}><dt className="font-semibold text-ink">{d.p}</dt><dd className="mt-1 text-sm text-muted">{d.r}</dd></div>))}
             </dl>
           </div>

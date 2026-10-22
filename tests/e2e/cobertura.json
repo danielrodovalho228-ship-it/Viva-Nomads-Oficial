@@ -264,7 +264,8 @@
       ],
       "specs": [
         "t14-app-mode",
-        "t16-app-boas-vindas"
+        "t16-app-boas-vindas",
+        "t282-boas-vindas-foto"
       ]
     },
     "/auth": {
@@ -330,6 +331,7 @@
         "publico"
       ],
       "specs": [
+        "t277-preco-grade-47",
         "t234-ideal-para",
         "t10-buscar-url",
         "t14-app-mode",
@@ -1036,6 +1038,7 @@
         "publico"
       ],
       "specs": [
+        "t277-preco-grade-47",
         "t234-ideal-para",
         "t11-travessias",
         "t133-candidatura-motivo",
@@ -1489,6 +1492,14 @@
       ],
       "specs": [
         "t264-viva-automatico"
+      ]
+    },
+    "/admin/retencao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t281-minimizacao"
       ]
     }
   },

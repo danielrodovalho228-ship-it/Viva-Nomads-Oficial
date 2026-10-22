@@ -11,7 +11,7 @@ export function Footer() {
       <div className="container-page grid gap-12 py-16 md:grid-cols-4">
         <div className="md:col-span-1">
           <Logo href="/" light />
-          <p className="mt-5 max-w-xs text-sm leading-relaxed text-white/60">
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
             Imóveis mobiliados para estadias de 30 a 180 dias, para profissionais em transição.
             Contrato de verdade, conversa registrada e custos organizados.
           </p>

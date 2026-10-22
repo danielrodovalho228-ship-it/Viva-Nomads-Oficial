@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Megaphone, Home, Plus, Info, Check, Sparkles, EyeOff, Undo2, MessageCircle, UserRound, ShieldCheck, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageTitle } from "@/components/dashboard/primitives";
-import { formatBRL, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { rotuloPreco } from "@/lib/cartao-preco";
 import { contemContato, CONTATO_AVISO, motivoParaDono } from "@/lib/pedidos/pedidos";
 import { dataPedidoBR, textoBairros, textoFaixaValor, textoNecessidades, textoPortePet, textoQuartos } from "@/lib/pedidos/campos";
 import { ABAS_DONO, MENSAGEM_OFERTA_PADRAO, STATUS_CONVERSA, type AbaDono } from "@/lib/pedidos/mural-dono";
@@ -78,7 +79,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
       </div>
 
       {lista.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-line bg-white p-10 text-center" data-testid="pedidos-dono-vazio">
+        <div className="rounded-xl border border-dashed border-line bg-white p-8 text-center" data-testid="pedidos-dono-vazio">
           <Megaphone className="mx-auto h-10 w-10 text-forest" />
           <p className="mx-auto mt-3 max-w-md text-sm text-muted">{vazio[aba]}</p>
         </div>
@@ -89,7 +90,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
             const preferido = p.id === pedidoDoLink && imovelDoLink ? imovelDoLink : p.compat_imovel_id;
             const opcoes = [...naCidade.filter((m) => m.id === preferido), ...naCidade.filter((m) => m.id !== preferido)];
             return (
-              <article key={p.id} className="relative min-w-0 overflow-hidden rounded-xl border border-line bg-white p-4 pl-5 sm:p-5 sm:pl-6" data-testid="pedido-dono-cartao" data-pedido={p.id}>
+              <article key={p.id} className="relative min-w-0 overflow-hidden rounded-xl border border-line bg-white p-4 pl-4 sm:p-4 sm:pl-6" data-testid="pedido-dono-cartao" data-pedido={p.id}>
                 <span className="absolute inset-y-0 left-0 w-1.5 bg-gold" aria-hidden />
                 <CabecalhoInquilino p={p} />
 
@@ -135,7 +136,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
                       {p.situacao === "compativel" ? "Combina com" : "Quase combina com"} “{p.compat_imovel_titulo}”
                     </p>
                     {p.situacao === "compativel" ? (
-                      <ul className="mt-1 list-disc pl-5 text-xs">
+                      <ul className="mt-1 list-disc pl-4 text-xs">
                         {p.compat_porque.map((m) => (
                           <li key={m}>{m}</li>
                         ))}
@@ -241,7 +242,7 @@ function OfertaForm({ pedidoId, opcoes, onCancel, onDone }: { pedidoId: string; 
         <select value={imovelId} onChange={(e) => setImovelId(e.target.value)} className="w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-sage" data-testid="oferta-imovel">
           {opcoes.map((m) => (
             <option key={m.id} value={m.id}>
-              {m.title} · {formatBRL(m.monthlyPrice)}/mês
+              {m.title} · {rotuloPreco({ mensal: m.monthlyPrice }).mes}
             </option>
           ))}
         </select>

@@ -7,8 +7,9 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Property } from "@/lib/types";
-import { formatBRL, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { precoDeBusca } from "@/lib/busca/painel-filtros";
+import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
 
@@ -165,7 +166,7 @@ function SearchMapbox({
       el.className = pinClass(p.id === activeId || p.id === selectedId);
       el.dataset.testid = "pin-mapa";
       el.dataset.id = p.id;
-      el.textContent = formatBRL(precoDeBusca(p));
+      el.textContent = rotuloPreco({ mensal: precoDeBusca(p) }).valor;
       el.addEventListener("mouseenter", () => onHoverRef.current(p.id));
       el.addEventListener("mouseleave", () => onHoverRef.current(null));
       el.addEventListener("click", (e) => {
@@ -408,7 +409,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
       const icon = L.divIcon({
         className: "",
         iconSize: [0, 0],
-        html: `<div data-testid="pin-mapa" data-id="${esc(p.id)}" class="${pinClass(p.id === activeRef.current || p.id === selRef.current)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">${esc(formatBRL(precoDeBusca(p)))}</div>`,
+        html: `<div data-testid="pin-mapa" data-id="${esc(p.id)}" class="${pinClass(p.id === activeRef.current || p.id === selRef.current)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">${esc(rotuloPreco({ mensal: precoDeBusca(p) }).valor)}</div>`,
       });
       const marker = L.marker([p.lat, p.lng], { icon, title: p.title, riseOnHover: true }).addTo(map);
       const el = marker.getElement()!.firstElementChild as HTMLElement;

@@ -67,7 +67,7 @@ export default async function PertoDePage({ params }: Params) {
             <Link href="/" className="hover:text-champagne">Início</Link> / <span className="text-white/80">{d.nome}</span>
           </nav>
           <h1 className="mt-4 max-w-3xl font-title text-[28px] font-semibold">Imóveis mobiliados {perto}</h1>
-          <p className="mt-5 max-w-2xl text-lg text-white/80">
+          <p className="mt-4 max-w-2xl text-lg text-white/80">
             Em ordem de tempo de carro até {d.artigo ? `${d.artigo} ` : ""}{d.nome}, em {d.cidade}. Locação de 30 a 180 dias.
           </p>
         </div>
@@ -98,7 +98,7 @@ export default async function PertoDePage({ params }: Params) {
                 </div>
               ))}
             </div>
-            <p className="mt-10 text-sm">
+            <p className="mt-12 text-sm">
               <Link href={`/buscar?destino=${slug}&modo=carro`} className="font-semibold text-forest underline">
                 Filtrar por tempo, valor e datas na busca
               </Link>

@@ -85,7 +85,7 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
             <span className="text-white/80">{bairro.nome}</span>
           </nav>
           <h1 className="mt-4 max-w-3xl font-title text-[28px] font-semibold">Imóveis mobiliados em {bairro.nome}</h1>
-          <p className="mt-5 max-w-2xl text-lg text-white/80" data-testid="bairro-resumo">{resumoDoBairro(bairro.nome, cidade.name, total)}</p>
+          <p className="mt-4 max-w-2xl text-lg text-white/80" data-testid="bairro-resumo">{resumoDoBairro(bairro.nome, cidade.name, total)}</p>
         </div>
       </section>
 

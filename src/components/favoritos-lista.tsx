@@ -20,7 +20,7 @@ export function FavoritosLista() {
         )}
       </div>
       {ids.length === 0 ? (
-        <div className="mt-4 rounded-xl border border-line bg-white p-5" data-testid="favoritos-vazio">
+        <div className="mt-4 rounded-xl border border-line bg-white p-4" data-testid="favoritos-vazio">
           <p className="text-ink">Nenhum favorito ainda. Toque no coração dos imóveis que gostar para guardá-los aqui.</p>
           <ButtonLink href="/buscar" variant="primary" className="mt-3">
             Explorar imóveis

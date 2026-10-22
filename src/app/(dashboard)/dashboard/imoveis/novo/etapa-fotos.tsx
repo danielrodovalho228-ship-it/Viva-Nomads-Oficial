@@ -100,7 +100,7 @@ export function EtapaFotos({
       </div>
 
       {photos.length === 0 && (
-        <div className="mt-4 flex flex-col items-center rounded-xl border border-dashed border-sage-200 bg-surface-2 p-5 text-center">
+        <div className="mt-4 flex flex-col items-center rounded-xl border border-dashed border-sage-200 bg-surface-2 p-4 text-center">
           <Image src={PHOTOS.cadastro.uploadEmpty} alt="Fotografe os ambientes do imóvel" width={400} height={300} className="h-32 w-auto" />
           <p className="mt-2 text-sm font-medium text-ink">Adicione as fotos dos ambientes</p>
           <p className="text-xs text-muted">Arraste e solte no computador, ou toque para escolher no celular.</p>
@@ -148,7 +148,7 @@ export function EtapaFotos({
         endereço exato nunca sair na imagem.
       </p>
 
-      <div className="mt-5 rounded-xl border border-sage-200 p-4">
+      <div className="mt-4 rounded-xl border border-sage-200 p-4">
         <Labeled label="Link do vídeo do imóvel" ajuda="(opcional)">
           <input
             className="input"

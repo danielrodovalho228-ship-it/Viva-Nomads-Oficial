@@ -19,7 +19,7 @@ export function VideoInstitucional({ titulo = "A Viva em 30 segundos", id = "vid
       <h2 id={tituloId} className="font-title text-2xl font-semibold text-ink">
         {titulo}
       </h2>
-      <div className="mt-5 overflow-hidden rounded-xl bg-night ">
+      <div className="mt-4 overflow-hidden rounded-xl bg-night ">
         <video
           data-testid="video-institucional"
           className="aspect-video h-auto w-full"

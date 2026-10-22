@@ -678,7 +678,7 @@ export default function AuthPage() {
 
               {/* PF/PJ — só para proprietário (Atualização 2) */}
               {mode === "signup" && role === "owner" && (
-                <div className="mt-5">
+                <div className="mt-4">
                   <p className="mb-2 text-sm font-medium text-ink">
                     Como você vai receber os aluguéis?
                   </p>

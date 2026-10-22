@@ -204,7 +204,7 @@ export default function QualificationChecklistPage({
     // Requisitos completos + convenção respondida (sim / não sei) → reflete a moderação.
     let base: { tone: VeredictoTone; titulo: string; msg: string };
     if (docStatus === "approved")
-      base = { tone: "green", titulo: "APROVADO PARA PUBLICAR ✓", msg: "Documentação conferida. Seu anúncio pode ser publicado." };
+      base = { tone: "green", titulo: "APROVADO PARA PUBLICAR", msg: "Documentação conferida. Seu anúncio pode ser publicado." };
     else if (docStatus === "rejected")
       base = { tone: "red", titulo: "DOCUMENTAÇÃO RECUSADA", msg: `${docReason ? docReason + ". " : ""}Envie o documento novamente.` };
     else
@@ -292,7 +292,7 @@ export default function QualificationChecklistPage({
       {/* Banner de topo (item 4): foto de interior SOB o gradiente da marca (lado
           esquerdo mais escuro), texto branco. Altura contida (~180px). */}
       <header
-        className={cn("relative flex flex-col justify-center overflow-hidden rounded-xl text-white", emPainel ? "mb-5 p-5" : "mb-8 p-6 sm:p-8")}
+        className={cn("relative flex flex-col justify-center overflow-hidden rounded-xl text-white", emPainel ? "mb-4 p-4" : "mb-8 p-6 sm:p-8")}
         style={{ minHeight: emPainel ? 120 : 180 }}
       >
         <Image
@@ -378,7 +378,7 @@ export default function QualificationChecklistPage({
               )}
               <span>
                 <span className="font-medium text-ink">
-                  Documentação do imóvel{docName ? " — enviada ✓" : ""}
+                  Documentação do imóvel{docName ? " — enviada" : ""}
                 </span>
                 <span className="block text-xs text-muted">
                   {docName ?? "Matrícula ou contrato de gestão (PDF, JPG ou PNG)"}
@@ -513,7 +513,7 @@ export default function QualificationChecklistPage({
           </p>
         </div>
 
-        <fieldset className="mt-5">
+        <fieldset className="mt-4">
           <legend className="text-sm font-medium text-ink">
             A convenção do condomínio permite locação mobiliada de média duração (30–180 dias)?
           </legend>
@@ -645,7 +645,7 @@ export default function QualificationChecklistPage({
           </div>
           <p className="mt-3 text-sm text-muted">
             {baseBadge
-              ? "Parabéns! Seu imóvel ganhou o selo Pronto para Morar e será bem ranqueado. 🏅"
+              ? "Parabéns! Seu imóvel ganhou o selo Pronto para Morar e será bem ranqueado."
               : `Some ${READY_TO_LIVE_THRESHOLD - score} ponto(s) para conquistar o selo Pronto para Morar.`}
           </p>
         </div>
@@ -717,7 +717,7 @@ export default function QualificationChecklistPage({
       {saved && (
         <div className="mt-6 flex items-center gap-2 rounded-xl border border-sage bg-sage-100 px-4 py-3 text-sm font-medium text-forest">
           <CheckCircle2 className="h-5 w-5" />
-          Qualificação salva ✓ — selo e etiquetas registrados e prontos para o anúncio.
+          Qualificação salva — selo e etiquetas registrados e prontos para o anúncio.
         </div>
       )}
 
@@ -935,7 +935,7 @@ function TagBlock({
             </span>
             {earned ? (
               <span className="tag-earned-pop w-fit rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
-                Etiqueta conquistada ✓
+                Etiqueta conquistada
               </span>
             ) : (
               <span className="text-xs text-muted">Marque todos os itens para ganhar esta etiqueta</span>

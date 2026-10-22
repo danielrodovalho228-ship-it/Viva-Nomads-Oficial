@@ -1,4 +1,4 @@
-import { Scale, Wrench } from "lucide-react";
+import { AlertTriangle, Scale, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Moldura jurídica das ordens de serviço (Bloco C — rodada 5). */
@@ -51,7 +51,7 @@ export function OwnerDecisionNotice({ className }: { className?: string }) {
         className
       )}
     >
-      <span aria-hidden>⚠️</span>
+      <AlertTriangle className="mt-1 h-4 w-4 shrink-0" aria-hidden />
       <span>
         Esta é uma análise <strong>informativa</strong>. A decisão de aceitar o inquilino é exclusivamente
         do proprietário — a plataforma nunca aprova ou reprova o inquilino.

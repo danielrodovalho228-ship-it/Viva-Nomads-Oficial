@@ -91,11 +91,13 @@ async function taxaGravada(id: string) {
 /** O morador aceita pela tela; nada de taxa na tela nem no que o servidor devolveu a ele. */
 async function moradorAceita(browser: Browser, c: Cenario, id: string, largura: number) {
   const t = await abrir(browser, c.inq.email, largura);
-  const respostas: string[] = [];
+  // Só o que traz dado (documento, RSC, API). Script, estilo e fonte de /_next/static são iguais para toda conta e não
+  // carregam dado: o rótulo "Taxa de serviço" da tela do dono no bundle não é vazamento (lab de b1385f6, 22/10).
+  const respostas: { url: string; corpo: string }[] = [];
   t.on("response", async (r) => {
-    if (!r.url().includes("localhost")) return;
+    if (!r.url().includes("localhost") || new URL(r.url()).pathname.startsWith("/_next/static/")) return;
     try {
-      respostas.push(await r.text());
+      respostas.push({ url: r.url(), corpo: await r.text() });
     } catch {
       /* sem corpo */
     }
@@ -108,7 +110,7 @@ async function moradorAceita(browser: Browser, c: Cenario, id: string, largura: 
   await t.reload({ waitUntil: "domcontentloaded" });
   await t.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   expect(await t.content()).not.toMatch(PROIBIDO_MORADOR);
-  expect(respostas.join("\n")).not.toMatch(PROIBIDO_MORADOR);
+  expect(respostas.filter((r) => PROIBIDO_MORADOR.test(r.corpo)).map((r) => `${r.url}: ${r.corpo.match(PROIBIDO_MORADOR)![0]}`)).toEqual([]);
   await t.screenshot({ path: `${SAIDA}/t216-morador-${largura}.png`, fullPage: true });
   await t.context().close();
 }

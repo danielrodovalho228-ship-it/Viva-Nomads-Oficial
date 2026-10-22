@@ -11,8 +11,8 @@
  * insert) e no cliente (eco otimista igual ao que o servidor grava).
  */
 
-const MASK = "🔒 [contato protegido]";
-const MASK_DOC = "🔒 [documento protegido]";
+const MASK = "[contato protegido]";
+const MASK_DOC = "[documento protegido]";
 
 /**
  * Documentos (Prompt 32, item 3): CPF com ou sem máscara — só com dígito verificador válido, para não pegar números
@@ -129,3 +129,5 @@ export const GUARD_NOTICE =
 
 /** Envio bloqueado quando a mensagem traz CPF ou RG (Prompt 32): o link leva ao campo Ocupantes da estadia. */
 export const DOCUMENTO_BLOQUEADO = "Para dados de documento, use o campo Ocupantes da estadia";
+/** Prompt 58: aviso fixo no rodapé de toda conversa. */
+export const AVISO_DOCUMENTOS = "Não envie documentos por aqui. Para dados de ocupantes, use a página da estadia.";

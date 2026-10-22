@@ -17,7 +17,8 @@ test.describe("T56 — Admin em AAL2", () => {
     await page.goto("/admin", { waitUntil: "networkidle" });
     await expect(page).toHaveURL(/\/admin(\?|$|\/)/);
     await expect(page).not.toHaveURL(/verificar-codigo|conta\/seguranca/);
-    await expect(page.getByRole("heading", { name: "Administração" })).toBeVisible();
+    // Título do /admin desde o Prompt 46 (37f56a4b, "decisões primeiro"); a t273 confere o resto da tela.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Hoje você tem \d+ decis(ão|ões)$/, { timeout: 25_000 });
   });
 
   test("visitante anônimo nunca vê o /admin", async ({ browser, baseURL }) => {

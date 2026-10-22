@@ -38,8 +38,8 @@ test("D1: o total anotado na busca é o mesmo do cartão (calcularTotalMensal)",
 });
 
 test("D1: o pino e o cartão do mapa mostram o total", () => {
-  assert.match(ler("components/search-map.tsx"), /formatBRL\(precoDeBusca\(p\)\)/);
-  assert.match(ler("components/busca/card-pin-mapa.tsx"), /formatBRL\(precoDeBusca\(p\)\)/);
+  assert.match(ler("components/search-map.tsx"), /rotuloPreco\(\{ mensal: precoDeBusca\(p\)/);
+  assert.match(ler("components/busca/card-pin-mapa.tsx"), /rotuloPreco\(\{ mensal: precoDeBusca\(p\)/);
 });
 
 test("D5: Limpar filtros remonta a busca por descrição (campo e chips)", () => {
@@ -58,7 +58,7 @@ test("D12: o coração fica fora do <a> do cartão", () => {
 test("D1 (achado do Moacir no #702): os dois pinos do mapa (Mapbox e Leaflet) mostram o total do mês", () => {
   const mapa = ler("components/search-map.tsx");
   assert.doesNotMatch(mapa, /formatBRL\(p\.monthlyPrice\)/);
-  assert.equal((mapa.match(/formatBRL\(precoDeBusca\(p\)\)/g) ?? []).length, 2);
+  assert.equal((mapa.match(/rotuloPreco\(\{ mensal: precoDeBusca\(p\)/g) ?? []).length, 2);
 });
 
 test("#544b148a: a home conta os atalhos pelo total do mês", () => {

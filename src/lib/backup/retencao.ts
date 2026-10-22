@@ -2,7 +2,8 @@
   Resiliência 2 — retenção das cópias do banco (puro, sem I/O). Regra aprovada:
    • 14 diárias: tudo dos últimos 14 dias de calendário (hoje e os 13 anteriores) fica em banco/diario/;
    • 8 semanais: a cópia de domingo de cada uma das 8 últimas semanas (domingo a sábado) fica em banco/semanal/;
-   • 12 mensais: a cópia do dia 1 de cada um dos 12 últimos meses fica em banco/mensal/.
+   • 3 mensais: a cópia do dia 1 de cada um dos 3 últimos meses fica em banco/mensal/ (Prompt 58: eram 12; com isso
+    uma cópia de segurança expira em até ~90 dias, o prazo que vai ao RIPD).
   Se a cópia de domingo (ou do dia 1) falhou, vale a primeira cópia que deu certo depois dela na mesma semana (ou mês):
   a semana nunca fica sem cópia por causa de uma noite ruim. A cópia mais nova nunca é apagada.
   As datas são as do nome do arquivo, no calendário de Brasília ("AAAA-MM-DD_HHMM"). Nome fora do padrão nunca é
@@ -12,7 +13,7 @@
 
 export const DIARIAS = 14;
 export const SEMANAIS = 8;
-export const MENSAIS = 12;
+export const MENSAIS = 3;
 export const DIAS_REMOVIDOS = 30;
 
 const RE_ID = /^(\d{4})-(\d{2})-(\d{2})(?:_(\d{4}))?(?:\.dump)?$/;
@@ -68,7 +69,7 @@ export function quaisFicam(datas: readonly string[], hoje: string): Retencao {
   }
   for (const d of porSemana.values()) semanais.add(d);
 
-  // Mensais: os 12 últimos meses, contando o atual.
+  // Mensais: os 3 últimos meses, contando o atual.
   const hd = new Date(h);
   const mesAtual = hd.getUTCFullYear() * 12 + hd.getUTCMonth();
   const porMes = new Map<number, string>();

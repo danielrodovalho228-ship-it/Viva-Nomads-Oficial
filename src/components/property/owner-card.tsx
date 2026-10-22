@@ -142,9 +142,9 @@ export function OwnerCard({
         </p>
       )}
 
-      <div className="mt-5 grid gap-5 rounded-xl border border-sage-200 p-5 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="mt-4 grid gap-4 rounded-xl border border-sage-200 p-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         {/* Esquerda: o cartão. */}
-        <div className="flex flex-col items-center rounded-xl bg-surface-2 p-5 text-center">
+        <div className="flex flex-col items-center rounded-xl bg-surface-2 p-4 text-center">
           <AvatarDono nome={d.nome} foto={d.foto} />
           <p className="mt-3 font-title text-lg font-semibold text-ink" data-testid="proprietario-nome">
             {d.nome}
@@ -202,7 +202,7 @@ export function OwnerCard({
           {d.bio && <p className="mt-4 text-sm leading-relaxed text-muted">{d.bio}</p>}
 
           {(d.perfilHref || podeMensagem) && (
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {d.perfilHref && (
                 <Link href={d.perfilHref} className={buttonClasses({ variant: "secondary", size: "md", className: "w-full" })}>
                   Ver perfil completo

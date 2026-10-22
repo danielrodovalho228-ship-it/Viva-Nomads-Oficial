@@ -7,6 +7,7 @@ import { BUCKET_PARCEIROS, urlMidiaParceiro } from "@/lib/data/parceiros-publico
 import { cidadeDoCep, ehUuid, normalizarCep } from "@/lib/fotografos/regras";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { chaveCidade } from "@/lib/cidades";
+import { semMetadados } from "@/lib/foto-reconversao";
 import {
   CIDADES_MAX,
   categoriaValida,
@@ -206,7 +207,10 @@ export async function enviarImagemParceiro(form: FormData): Promise<Res<{ url: s
     if ((count ?? 0) >= GALERIA_MAX) return { ok: false, erro: `A galeria aceita até ${GALERIA_MAX} fotos.` };
   }
   const path = `${id}/${tipo}-${randomBytes(8).toString("hex")}.webp`;
-  const { error } = await m.admin.storage.from(BUCKET_PARCEIROS).upload(path, bytes, { contentType: "image/webp", upsert: false });
+  // Prompt 58: re-codifica também no servidor (bucket público): o EXIF não depende só do navegador.
+  const limpo = await semMetadados(bytes, "image/webp");
+  if (!limpo) return { ok: false, erro: "Formato não aceito. Use JPG, PNG ou WebP." };
+  const { error } = await m.admin.storage.from(BUCKET_PARCEIROS).upload(path, limpo, { contentType: "image/webp", upsert: false });
   if (error) return { ok: false, erro: "Não foi possível enviar a imagem. Tente de novo." };
   let fotoId: string | null = null;
   let legendaFoto: string | null = null;

@@ -195,7 +195,7 @@ function DoisCaminhos() {
               Explore os imóveis mobiliados por cidade, período e orçamento — é o passo a passo
               acima, do primeiro contato até a assinatura.
             </p>
-            <ButtonLink href="/buscar" variant="outline" className="mt-5 self-start">
+            <ButtonLink href="/buscar" variant="outline" className="mt-4 self-start">
               Buscar imóveis
             </ButtonLink>
           </div>
@@ -208,7 +208,7 @@ function DoisCaminhos() {
               Diga o que você precisa e os proprietários da cidade respondem com os imóveis deles.
               Sua identidade só aparece para quem você aceitar.
             </p>
-            <ButtonLink href="/pedidos/novo" variant="primary" className="mt-5 self-start">
+            <ButtonLink href="/pedidos/novo" variant="primary" className="mt-4 self-start">
               Publicar pedido
             </ButtonLink>
           </div>
@@ -251,7 +251,7 @@ function DuranteDepois() {
         {itens.map((it) => (
           <div key={it.title} className="flex flex-col overflow-hidden rounded-xl border border-sage-200 bg-white">
             <StepImage src={it.img} alt={it.alt} />
-            <div className="flex flex-1 flex-col p-5">
+            <div className="flex flex-1 flex-col p-4">
               <h3 className="font-title text-lg font-semibold text-ink">{it.title}</h3>
               <p className="mt-2 text-sm text-muted">{it.text}</p>
             </div>
@@ -287,13 +287,13 @@ function ProtegidoPor() {
     },
   ];
   return (
-    <section className="container-page pb-14">
+    <section className="container-page pb-12">
       <h2 className="font-title text-2xl font-semibold text-ink">Você fica protegido por</h2>
       <div className="mt-6 grid gap-6 sm:grid-cols-3">
         {itens.map((it) => (
           <div key={it.title} className="flex flex-col overflow-hidden rounded-xl border border-sage-200 bg-white">
             <StepImage src={it.img} alt={it.alt} />
-            <div className="flex flex-1 flex-col p-5">
+            <div className="flex flex-1 flex-col p-4">
               <h3 className="font-title text-lg font-semibold text-ink">{it.title}</h3>
               <p className="mt-2 text-sm text-muted">{it.text}</p>
             </div>

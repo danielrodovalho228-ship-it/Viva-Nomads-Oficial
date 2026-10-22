@@ -7,6 +7,7 @@
   por palpite). Endereço/coordenada nunca entram no e-mail: só cidade e bairro
   (região aproximada), como na página pública.
 */
+import { mesesDoCartao, rotuloPreco, textoPreco } from "../cartao-preco.ts";
 import { normalizarBusca, resumoDaBusca } from "./buscas-salvas.ts";
 import { FILTROS_PAINEL_VAZIOS, passaNoPainel } from "./painel-filtros.ts";
 import { comodidadesDaUrl } from "./filtro-comodidades.ts";
@@ -148,9 +149,18 @@ export interface ImovelNoAlerta {
   neighborhood: string;
   monthlyPrice: number;
   bedrooms: number;
+  /** Total do mês (condomínio e contas fixas incluídos); sem ele, o valor mensal. */
+  totalMes?: number;
+  minPeriodDays?: number;
+  availableFrom?: string | null;
 }
 
-const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
+/** Preço com contexto do imóvel no e-mail (Prompt 47): a mesma função do cartão da busca. */
+function precoNoAlerta(i: ImovelNoAlerta): string {
+  const r = rotuloPreco({ mensal: i.totalMes ?? i.monthlyPrice, meses: mesesDoCartao(undefined, i.minPeriodDays), disponivelEm: i.availableFrom });
+  return [textoPreco(r), r.disponivel].filter(Boolean).join(" · ").replace(/\u00a0/g, " ");
+}
+
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /** Assunto: 1 imóvel → "Novo imóvel para sua busca"; vários → resumo com a contagem. */
@@ -162,7 +172,7 @@ export function assuntoDoAlerta(n: number): string {
 export function linhaDoImovel(i: ImovelNoAlerta): string {
   const regiao = [i.neighborhood, i.city].filter(Boolean).join(", ");
   const q = i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : "";
-  return `${i.title}${regiao ? ` — ${regiao}` : ""} · ${brl(i.monthlyPrice)}/mês${q}`;
+  return `${i.title}${regiao ? ` — ${regiao}` : ""} · ${precoNoAlerta(i)}${q}`;
 }
 
 export function montarAlerta(o: {
@@ -184,7 +194,7 @@ export function montarAlerta(o: {
         .map(
           (i) => `<li style="margin:0 0 12px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:12px;">
         <div style="font-weight:700;color:#0f3d2e;">${esc(i.title)}</div>
-        <div style="color:#475569;font-size:14px;margin-top:2px;">${esc([i.neighborhood, i.city].filter(Boolean).join(", "))} · ${brl(i.monthlyPrice)}/mês${i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : ""}</div>
+        <div style="color:#475569;font-size:14px;margin-top:2px;">${esc([i.neighborhood, i.city].filter(Boolean).join(", "))} · ${esc(precoNoAlerta(i))}${i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : ""}</div>
         <a href="${link(i)}" style="display:inline-block;margin-top:10px;background:#1c6b3a;color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;text-decoration:none;">Ver imóvel</a>
       </li>`
         )

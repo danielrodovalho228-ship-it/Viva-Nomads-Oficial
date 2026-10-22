@@ -119,3 +119,50 @@ export function motivoDoDrill(c: readonly Conferencia[]): string | null {
   const falhas = c.filter((x) => !x.ok).map((x) => x.nome);
   return falhas.length ? `Não bateu: ${falhas.join("; ")}`.slice(0, 300) : null;
 }
+
+/*
+  Prompt 58 — o livro de eliminações reaplicado depois da restauração. O backup é de antes de algumas eliminações:
+  o que o livro diz que saiu não pode voltar com a restauração. O livro (origem, ref) entra numa tabela temporária
+  _livro do banco restaurado; SQL_LIVRO_VOLTOU conta o que voltou, SQL_LIVRO_REAPLICAR elimina de novo e a segunda
+  contagem tem de dar zero. Toda eliminação real da fase 1 é de arquivo (origem "bucket:<bucket>", ref = caminho).
+*/
+const VOLTOU = [
+  "select o.name from storage.objects o join _livro l on l.origem = 'bucket:' || o.bucket_id and l.ref = o.name",
+  "select d.caminho from public.documentos_inquilino d join _livro l on l.origem = 'bucket:inquilino-docs' and l.ref = d.caminho",
+  "select q.document_path from public.qualification_checklists q join _livro l on l.origem = 'bucket:property-docs' and l.ref = q.document_path",
+  "select p.arquivo_path from public.property_ownership_checks p join _livro l on l.origem = 'bucket:property-docs' and l.ref in (p.arquivo_path, p.caso_documento_path)",
+  "select f.url from public.property_photos f join _livro l on l.origem = 'bucket:property-photos' and f.url like '%/property-photos/' || l.ref",
+];
+export const SQL_LIVRO_VOLTOU = `select count(*) from (${VOLTOU.join(" union all ")}) x`;
+
+export const SQL_LIVRO_REAPLICAR = [
+  "delete from storage.objects o using _livro l where l.origem = 'bucket:' || o.bucket_id and l.ref = o.name",
+  "update public.documentos_inquilino d set caminho = null, arquivo_eliminado_em = coalesce(d.arquivo_eliminado_em, now()) from _livro l where l.origem = 'bucket:inquilino-docs' and l.ref = d.caminho",
+  "update public.qualification_checklists q set document_path = null, document_eliminado_em = coalesce(q.document_eliminado_em, now()) from _livro l where l.origem = 'bucket:property-docs' and l.ref = q.document_path",
+  "update public.property_ownership_checks p set arquivo_path = null, caso_documento_path = null, arquivo_eliminado_em = coalesce(p.arquivo_eliminado_em, now()) from _livro l where l.origem = 'bucket:property-docs' and l.ref in (p.arquivo_path, p.caso_documento_path)",
+  "delete from public.property_photos f using _livro l where l.origem = 'bucket:property-photos' and f.url like '%/property-photos/' || l.ref",
+].join(";\n");
+
+/** Linhas "origem|ref" do livro (saída -At do psql), sem linha vazia nem ref fora do formato de caminho. */
+export function lerLivro(saida: string): { origem: string; ref: string }[] {
+  return saida
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const i = l.indexOf("|");
+      return { origem: l.slice(0, i), ref: l.slice(i + 1) };
+    })
+    .filter((x) => /^bucket:[a-z0-9-]+$/.test(x.origem) && /^[A-Za-z0-9._/-]{1,300}$/.test(x.ref) && !x.ref.includes(".."));
+}
+
+export function conferirLivro(entradas: number, voltaram: number | null, depois: number | null, preLivro: boolean): Conferencia {
+  const nome = "Livro de eliminações reaplicado (nada eliminado volta)";
+  if (preLivro) return { nome, ok: true, detalhe: "dump anterior ao livro (0206): nada a reaplicar" };
+  if (voltaram === null || depois === null) return { nome, ok: false, detalhe: "não foi possível reaplicar o livro no restaurado" };
+  return {
+    nome,
+    ok: depois === 0,
+    detalhe: `${entradas} no livro; ${voltaram} voltaram com o backup e saíram de novo; ${depois} depois de reaplicar`,
+  };
+}

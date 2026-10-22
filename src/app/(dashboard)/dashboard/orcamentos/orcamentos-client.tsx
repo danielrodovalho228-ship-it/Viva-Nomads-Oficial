@@ -36,7 +36,7 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
       />
 
       {escolhendo && (
-        <Panel title="Para qual interessado?" className="mb-5" data-testid="escolher-interessado">
+        <Panel title="Para qual interessado?" className="mb-4" data-testid="escolher-interessado">
           {livres.length === 0 ? (
             <p className="text-sm text-muted">
               Nenhum interessado sem proposta em andamento. Os interessados chegam em{" "}

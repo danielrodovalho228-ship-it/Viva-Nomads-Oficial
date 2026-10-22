@@ -60,7 +60,7 @@ export function StayRules({ property }: { property: Property }) {
         Regras da estadia
       </h2>
 
-      <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
         {rows.map((r) => (
           <li key={r.label} className="flex items-start gap-3 rounded-xl border border-sage-200 px-4 py-3">
             <r.icon className="mt-1 h-5 w-5 shrink-0 text-sage" />

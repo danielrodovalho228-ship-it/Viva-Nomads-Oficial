@@ -76,7 +76,7 @@ export function PerfilPublicoForm() {
         ))}
       </ul>
 
-      <div className="mt-5 grid gap-4">
+      <div className="mt-4 grid gap-4">
         <div>
           <label htmlFor="perfil-bio" className="mb-2 block text-sm font-medium text-ink">
             Uma frase sobre você
@@ -139,7 +139,7 @@ export function PerfilPublicoForm() {
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <Button type="button" variant="primary" onClick={salvar} disabled={salvando || !bioCheck.ok}>
           {salvando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Salvar perfil
         </Button>

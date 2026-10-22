@@ -119,7 +119,7 @@ test.describe("T270 — barra de fotos na etapa de Fotos a 390 px (QA do Muse, #
       await login.context().close();
       const ctx = await browser.newContext({ storageState: sessao, viewport: { width: LARGURA, height: ALTURA }, hasTouch: true, isMobile: true });
       const page = await ctx.newPage();
-      await page.goto(`/dashboard/imoveis/novo?draft=${rascunhos[n]}&etapa=1`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/dashboard/imoveis/novo?draft=${rascunhos[n]}&etapa=fotos`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible({ timeout: 25_000 });
 
       const barra = page.getByTestId("barra-fotos");

@@ -2,11 +2,10 @@ import Link from "next/link";
 import { Bath, BedDouble, PawPrint, X, type LucideIcon } from "lucide-react";
 import { ICONE_POR_CHAVE } from "@/lib/anuncio/comodidades-icones";
 import type { Property } from "@/lib/types";
-import { formatBRL } from "@/lib/utils";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { precoDeBusca } from "@/lib/busca/painel-filtros";
 import { AMENITY_KEY_BY_LABEL, AMENITY_LABEL } from "@/lib/amenities";
-import { disponivelAPartirDe } from "@/lib/busca/disponibilidade";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
@@ -31,7 +30,8 @@ export function iconesComodidades(p: Pick<Property, "amenities" | "petsAllowed">
  * comodidades. Clicar no card abre o imóvel; o × fecha sem sair da busca.
  */
 export function CardPinMapa({ property: p, onFechar }: { property: Property; onFechar: () => void }) {
-  const disponivel = disponivelAPartirDe(p.availableFrom);
+  // Prompt 47: o mesmo rótulo de preço do cartão (função única).
+  const preco = rotuloPreco({ mensal: precoDeBusca(p), meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom });
   const icones = iconesComodidades(p);
   return (
     <div data-testid="card-pin-mapa" data-id={p.id} className="relative w-64 overflow-hidden rounded-xl bg-white font-sans shadow-flutuante">
@@ -64,10 +64,11 @@ export function CardPinMapa({ property: p, onFechar }: { property: Property; onF
           <p className="truncate text-xs text-muted">
             {p.neighborhood}, {p.city}
           </p>
-          {disponivel && <p className="text-xs text-muted">Disponível a partir de {disponivel}</p>}
-          <p>
-            <span className="font-title text-lg font-semibold text-forest">{formatBRL(precoDeBusca(p))}</span>
+          {preco.disponivel && <p className="text-xs text-muted">{preco.disponivel}</p>}
+          <p className="tabular-nums">
+            <span className="font-title text-lg font-semibold text-forest">{preco.valor}</span>
             <span className="text-xs text-muted">/mês</span>
+            {preco.estadia && <span className="block text-xs text-muted">{preco.estadia}</span>}
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-1 text-xs text-ink">

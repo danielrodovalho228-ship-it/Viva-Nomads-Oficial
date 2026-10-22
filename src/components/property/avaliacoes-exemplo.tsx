@@ -78,17 +78,17 @@ export function AvaliacoesExemplo({ avaliacoes }: { avaliacoes: AvaliacaoExemplo
         <SeloExemplo />
       </div>
       <p className="mt-2 text-sm text-muted">{AVISO_EXEMPLO}</p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {avaliacoes.map((a) => (
           <CartaoAvaliacao key={`${a.autor}-${a.mes}`} a={a} />
         ))}
       </div>
-      <div className="mt-5">
+      <div className="mt-4">
         <button
           type="button"
           disabled
           aria-describedby="escrever-avaliacao-dica"
-          className="inline-flex min-h-11 cursor-not-allowed items-center rounded-full border border-sage-200 px-5 text-sm font-semibold text-muted"
+          className="inline-flex min-h-11 cursor-not-allowed items-center rounded-full border border-sage-200 px-4 text-sm font-semibold text-muted"
         >
           Escrever avaliação
         </button>

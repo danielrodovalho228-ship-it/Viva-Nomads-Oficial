@@ -56,7 +56,7 @@ test("A — CAF ok e CPF do perfil igual ao da matrícula → conferido, sem fil
   const d = decidirMatricula(matricula(), entrada());
   assert.equal(d.resultado, "conferido");
   assert.equal(d.motivo, null);
-  assert.equal(d.mensagem, "Documentação conferida ✓");
+  assert.equal(d.mensagem, "Documentação conferida");
   assert.equal(statusDaMatricula(d.resultado), "approved");
   assert.equal(estadoTelaDaMatricula(d.resultado), "aprovado");
   assert.deepEqual(d.opcoes, []);

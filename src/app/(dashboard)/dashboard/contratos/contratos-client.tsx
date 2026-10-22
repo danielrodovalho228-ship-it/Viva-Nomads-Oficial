@@ -202,7 +202,7 @@ export function ContratosClient({
           }
         />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {contratos.map((c) => (
             <ContratoCard key={c.id} contrato={c} hojeISO={hojeISO} demo={demoOn} extra={demoOn ? undefined : extras[c.id]} />
           ))}
@@ -237,7 +237,7 @@ function ContratoCard({
   const caucaoRegistrada = contrato.pagamentos.find((p) => p.tipo === "caucao") ?? null;
 
   return (
-    <Panel className="p-5" id={`contrato-${contrato.id}`} data-testid="contrato-cartao" data-contrato={contrato.id}>
+    <Panel className="p-4" id={`contrato-${contrato.id}`} data-testid="contrato-cartao" data-contrato={contrato.id}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-title text-lg font-semibold text-ink">{contrato.propertyTitle}</h2>

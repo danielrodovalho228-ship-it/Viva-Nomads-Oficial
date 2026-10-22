@@ -106,7 +106,7 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
       </div>
 
       {m.vence30.length > 0 && (
-        <div className="mt-6 rounded-xl border border-champagne bg-champagne/10 p-5">
+        <div className="mt-6 rounded-xl border border-champagne bg-champagne/10 p-4">
           <h2 className="flex items-center gap-2 font-title text-sm font-semibold text-ink">
             <AlertTriangle className="h-4 w-4 text-champagne" /> Atenção
           </h2>

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { PHOTO_MAX_BYTES, tipoRealFotoPorMagicBytes } from "@/lib/upload-limits";
-import { reconverterFotoParaWebp } from "@/lib/foto-reconversao";
+import { hashPerceptual, reconverterFotoParaWebp } from "@/lib/foto-reconversao";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const BUCKET = "property-photos";
 
@@ -53,6 +54,11 @@ export async function POST(request: Request) {
   const path = `${user.id}/${crypto.randomUUID()}.webp`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, webp, { contentType: "image/webp", upsert: false });
   if (error) return NextResponse.json({ error: "Não foi possível salvar a foto. Tente de novo." }, { status: 500 });
+
+  // Prompt 58: o hash perceptual fica no servidor (antifraude) e sobrevive à remoção do anúncio; a foto não.
+  const hash = await hashPerceptual(webp);
+  const admin = createAdminClient();
+  if (hash && admin) await admin.from("fotos_anuncio_hash").insert({ owner_id: user.id, caminho: path, hash }).then(() => undefined, () => undefined);
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return NextResponse.json({ path, url: data.publicUrl });

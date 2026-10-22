@@ -143,7 +143,7 @@ function PedidoVisita({
           data-testid={`${t.prefixo}-passo`}
           onClick={() => fechar()}
         >
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-5 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-4 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
             <h3 id={`${t.prefixo}-titulo`} className="font-title text-lg font-semibold text-ink">
               {t.titulo}
             </h3>

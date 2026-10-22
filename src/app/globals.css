@@ -72,6 +72,10 @@
 }
 
 :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
   --background: #ffffff;
   --foreground: #222222;
   /* Gradiente assinatura azul→verde (só em elementos de marca) */
@@ -335,6 +339,10 @@ html[data-app] .vn-tabbar-spacer {
 }
 /* Altura da barra de abas do celular (mobile-tab-bar.tsx), usada pelos fixos de rodapé. */
 :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
   --altura-abas: 3.5rem;
 }
 /* Barra "Comparar" da busca (ordem 7ffea8c7): no celular fica ACIMA das abas (altura + safe-area + 12 px);
@@ -422,10 +430,18 @@ html[data-app] body {
 
 /* Botão "Ajuda" fixo: acima da barra inferior do celular; no desktop, no canto. */
 :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
   --ajuda-bottom: 5.25rem;
 }
 @media (min-width: 768px) {
   :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
     --ajuda-bottom: 1.5rem;
   }
 }
@@ -528,10 +544,18 @@ input[type="date"][data-vazio]:not(:focus)::-webkit-datetime-edit {
    "Fale com a Viva", acima da barra de abas no celular; o "Fale com a Viva" sobe 4 rem para não ser coberto (também
    quando foi arrastado: --viva-piso). No app a barra de abas existe em qualquer largura. */
 :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
   --cogumelo-bottom: 5.25rem;
 }
 @media (min-width: 768px) {
   :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
     --cogumelo-bottom: 1.5rem;
   }
 }

@@ -99,7 +99,7 @@ export function EtapaRevisar(p: {
         >
           {p.docEstado === "aprovado" ? <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" /> : p.docEstado === "revisao" ? <Clock className="mt-1 h-4 w-4 shrink-0" /> : <XCircle className="mt-1 h-4 w-4 shrink-0" />}
           <span>
-            {p.docEstado === "aprovado" && <strong>Documentação conferida ✓</strong>}
+            {p.docEstado === "aprovado" && <strong>Documentação conferida</strong>}
             {p.docEstado === "revisao" && (
               <>
                 <strong>Em revisão.</strong> A equipe confere em até 48 horas. Você pode salvar como rascunho; a publicação

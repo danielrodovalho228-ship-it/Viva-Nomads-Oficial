@@ -14,7 +14,7 @@ import { sendMessage } from "@/lib/data/actions";
 import { enviarMensagemDoPedido } from "@/lib/parceiros/pedido-actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
-import { guardContactInfo, GUARD_NOTICE, DOCUMENTO_BLOQUEADO } from "@/lib/messages/contact-guard";
+import { guardContactInfo, GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
 import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/mensagens-filtros";
@@ -216,7 +216,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             mobileView === "list" && "hidden"
           )}
         >
-          <header className="flex items-center gap-2 border-b border-sage-200 px-4 py-3 md:px-5">
+          <header className="flex items-center gap-2 border-b border-sage-200 px-4 py-3 md:px-4">
             <button
               type="button"
               onClick={() => setMobileView("list")}
@@ -247,7 +247,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           </header>
           {/* Prompt 43, item 5: o contexto da conversa no topo — estadia, pedido ou imóvel, com foto e datas. */}
           {(active.property || active.pedidoParceiroId) && (
-            <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 md:px-5" data-testid="conversa-contexto">
+            <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 md:px-4" data-testid="conversa-contexto">
               {active.foto && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={active.foto} alt="" loading="lazy" className="h-12 w-16 shrink-0 rounded-lg object-cover" />
@@ -276,7 +276,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               className="border-b border-line bg-white px-4 py-3"
             />
           )}
-          <div className="flex-1 space-y-3 overflow-y-auto bg-surface-2 p-5">
+          <div className="flex-1 space-y-3 overflow-y-auto bg-surface-2 p-4">
             {active.messages.map((m) => (
               <div key={m.id} className={cn("flex flex-col gap-1", m.from === "me" ? "items-end" : "items-start")}>
                 <span
@@ -329,6 +329,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           )}
           {/* Conversa com imóvel = entre pessoas; "Suporte" é a equipe, não há o que denunciar. */}
           {active.papel !== "suporte" && <DenunciarConversa key={active.id} conversationId={active.id} demo={demo} />}
+          {/* Prompt 58: aviso fixo — documento não circula pelo chat. */}
+          <p className="border-t border-sage-200 px-4 pt-2 text-xs text-ink/60" data-testid="mensagens-aviso-documentos">
+            {AVISO_DOCUMENTOS}
+          </p>
           <form onSubmit={submit} className="flex items-center gap-2 border-t border-sage-200 p-3">
             <input
               value={draft}

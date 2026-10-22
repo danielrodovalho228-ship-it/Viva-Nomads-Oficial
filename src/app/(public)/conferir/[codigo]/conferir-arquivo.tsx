@@ -23,7 +23,7 @@ export function ConferirArquivo({ hash }: { hash: string }) {
   };
 
   return (
-    <div className="mt-5 rounded-xl border border-line p-4">
+    <div className="mt-4 rounded-xl border border-line p-4">
       <label className="grid gap-2 text-sm font-semibold text-ink">
         Conferir o arquivo (PDF)
         <input type="file" accept="application/pdf" onChange={(e) => conferir(e.target.files?.[0])} className="block w-full min-w-0 max-w-full text-sm font-normal text-ink" data-testid="conferir-arquivo" />

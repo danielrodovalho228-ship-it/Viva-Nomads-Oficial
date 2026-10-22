@@ -46,10 +46,10 @@ export default function PricingPage() {
       </BannerTopo>
 
       {/* Os quatro números que importam (todos de regra.ts), logo abaixo do banner. Grade PAR. */}
-      <section className="container-page relative z-10 -mt-10">
+      <section className="container-page relative z-10 -mt-12">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid="precos-destaques">
           {DESTAQUES_PRECOS.map(({ n, t }) => (
-            <div key={t} className="rounded-xl border border-line bg-white p-5">
+            <div key={t} className="rounded-xl border border-line bg-white p-4">
               <p className="font-title text-2xl font-semibold text-ink">{n}</p>
               <p className="text-sm text-muted">{t}</p>
             </div>
@@ -58,7 +58,7 @@ export default function PricingPage() {
       </section>
 
       <section className="container-page section-y">
-        <div className="mb-10 w-full rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="regra-unica">
+        <div className="mb-12 w-full rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="regra-unica">
           <h2 className="font-title text-2xl font-semibold text-ink">Quanto mais imóveis, menor a taxa</h2>
           <p className="mt-3 text-ink">{TEXTO_REGRA_UNICA}</p>
           <ul className="mt-4 grid gap-2 text-sm text-ink sm:grid-cols-3">
@@ -118,7 +118,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        <SimuladorBolso className="mb-10" />
+        <SimuladorBolso className="mb-12" />
 
         <ComparativoPrecos />
       </section>
@@ -127,11 +127,11 @@ export default function PricingPage() {
       <section className="bg-surface-2 section-y" data-testid="precos-incluido">
         <div className="container-page">
           <h2 className="text-center font-title text-2xl font-semibold text-ink">Incluído em todo contrato</h2>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {INCLUIDO_CONTRATO.map((b) => (
               <div key={b.titulo} className="flex flex-col overflow-hidden rounded-xl border border-line bg-white">
                 {b.foto && <BrandImage src={b.foto} alt={b.alt ?? ""} rounded="rounded-none" sizes="(max-width: 640px) 100vw, 25vw" className="aspect-[16/9] w-full" />}
-                <div className="p-5">
+                <div className="p-4">
                   <h3 className="font-title text-base font-semibold text-ink">{b.titulo}</h3>
                   <p className="mt-1 text-sm text-muted">{b.texto}</p>
                 </div>
@@ -150,7 +150,7 @@ export default function PricingPage() {
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {OPCIONAIS_PRECOS(CAUCAO_FRASE).map((o) => (
             <li key={o.titulo}>
-              <a href={o.href} className="flex h-full flex-col rounded-xl border border-line bg-white p-5 transition hover:border-forest ">
+              <a href={o.href} className="flex h-full flex-col rounded-xl border border-line bg-white p-4 transition hover:border-forest ">
                 <span className={cn("self-start rounded-full px-3 py-1 text-xs font-semibold", o.ok ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-700")}>{o.status}</span>
                 <h3 className="mt-3 font-title text-base font-semibold text-ink">{o.titulo}</h3>
                 <p className="mt-1 text-sm text-muted">{o.texto}</p>
