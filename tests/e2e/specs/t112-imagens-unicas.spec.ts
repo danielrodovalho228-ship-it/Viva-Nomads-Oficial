@@ -8,7 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
  */
 const PAGINAS = ["/", "/como-funciona", "/para-proprietarios", "/parceiros", "/empresas", "/precos", "/buscar"];
 /** Mesmo elemento/estado (não é repetição na tela). */
-const PERMITIDAS = new Set(["/media/hero-home-poster.webp"]);
+const PERMITIDAS = new Set(["/media/hero-home-poster.webp", "/media/hero-home-poster-768.webp"]);
 
 async function decorativas(page: Page): Promise<{ src: string; ok: boolean }[]> {
   // Leva cada imagem à tela (carregamento preguiçoso) e espera decodificar antes de conferir.

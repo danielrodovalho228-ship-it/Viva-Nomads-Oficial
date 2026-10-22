@@ -231,11 +231,17 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
   test.describe("admin", () => {
     test.skip(!hasAccount("admin"), "sem a conta do admin");
     test.use({ storageState: authFile("admin") });
-    test("admin não tem barra inferior", async ({ page }) => {
-      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      await expect(page.locator('[data-testid="papel-ativo"]').locator("visible=true").first()).toHaveAttribute("data-papel", "admin");
+    test("admin: sem barra nas telas /admin; no painel, a barra do modo ativo (D-V)", async ({ page }) => {
+      await page.goto("/admin", { waitUntil: "domcontentloaded" });
+      await expect(page.locator("main").first()).toBeVisible({ timeout: 20_000 });
       await expect(page.locator('nav[aria-label="Navegação principal"]')).toHaveCount(0);
       await expect(page.locator('nav[aria-label="Abas do app"]')).toHaveCount(0);
+      // No painel o Daniel (admin) usa a conta como proprietário: a barra de 5 itens aparece (print de 22/10).
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      const barra = page.locator('nav[aria-label="Navegação principal"]');
+      await expect(barra).toBeVisible({ timeout: 20_000 });
+      await expect(barra.getByRole("link")).toHaveCount(5);
+      await expect(page.locator('[data-testid="papel-ativo"]').locator("visible=true").first()).toHaveAttribute("data-papel", /^(proprietario|morador)$/);
     });
   });
 

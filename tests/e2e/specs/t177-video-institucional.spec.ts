@@ -14,7 +14,7 @@ for (const rota of ["/", "/como-funciona"]) {
     test(`T177 ${rota} @${largura}px — player parado, com capa e legenda, mp4 só no play`, async ({ page }) => {
       const mp4: string[] = [];
       page.on("request", (r) => {
-        if (/\/media\/institucional\.mp4/.test(r.url())) mp4.push(r.url());
+        if (/\/media\/institucional(-540)?\.mp4/.test(r.url())) mp4.push(r.url());
       });
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto(rota, { waitUntil: "networkidle" });

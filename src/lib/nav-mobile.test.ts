@@ -55,8 +55,13 @@ test("Ganhos do proprietário leva o rótulo 'pago direto na sua conta'", () => 
   assert.equal(ganhos?.href, "/dashboard/contratos");
 });
 
-test("papel da barra: admin sem barra; parceiro só aprovado; senão o modo", () => {
+test("papel da barra: admin sem barra só nas telas /admin; parceiro só aprovado; senão o modo", () => {
   assert.equal(papelDaBarra({ admin: true, modo: "owner", parceiroAprovado: true, preferenciaParceiro: true }), null);
+  assert.equal(papelDaBarra({ admin: true, modo: "owner", parceiroAprovado: false, pathname: "/admin" }), null);
+  assert.equal(papelDaBarra({ admin: true, modo: "owner", parceiroAprovado: false, pathname: "/admin/documentos" }), null);
+  // D-V: o admin no painel (como proprietário ou morador) tem a barra do modo ativo.
+  assert.equal(papelDaBarra({ admin: true, modo: "owner", parceiroAprovado: false, pathname: "/dashboard" }), "proprietario");
+  assert.equal(papelDaBarra({ admin: true, modo: "tenant", parceiroAprovado: false, pathname: "/dashboard/locacoes" }), "morador");
   assert.deepEqual(abasDoPapel(null), []);
   assert.equal(papelDaBarra({ admin: false, modo: "tenant", parceiroAprovado: false }), "morador");
   assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: false }), "proprietario");

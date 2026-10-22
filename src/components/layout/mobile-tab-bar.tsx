@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Barra inferior por PAPEL (Prompt 41, item 2): 5 itens para o morador, o proprietário e o parceiro aprovado; o
- * admin não tem barra. A mesma lista no site (celular, < md) e no app (qualquer largura, CSS .vn-tabbar). Esconde-se
+ * admin só não tem barra nas telas /admin (no painel, a do modo ativo — D-V). A mesma lista no site (celular, < md) e no app (qualquer largura, CSS .vn-tabbar). Esconde-se
  * nas telas de fluxo (isFlowRoute). Flutua sobre a página: sombra única --shadow-flutuante (adendo ao 40).
  * Abas que exigem login, sem sessão, levam a /auth?redirect= (o Início do visitante é a home).
  *
