@@ -50,7 +50,7 @@ test("1280px — imagem à esquerda, formulário no topo à direita, sem cartão
 
   // Os grupos, nessa ordem (Prompt 30: "O imóvel" com quartos e necessidades; "Valor e motivo" com a faixa de valor).
   const grupos = await page.locator("form legend").allInnerTexts();
-  expect(grupos.map((g) => g.trim().toUpperCase())).toEqual(["ONDE E QUANDO", "QUEM VAI MORAR", "O IMÓVEL", "VALOR E MOTIVO"]);
+  expect(grupos.map((g) => g.trim().toUpperCase())).toEqual(["ONDE E QUANDO", "TRABALHO OU ESTUDO", "QUEM VAI MORAR", "O IMÓVEL", "VALOR E MOTIVO"]);
 
   const alturas = await alturasDosCampos(page);
   expect(alturas.length).toBeGreaterThanOrEqual(7);

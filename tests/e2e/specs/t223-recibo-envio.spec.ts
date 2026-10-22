@@ -192,8 +192,9 @@ test.describe("T223 — recibo: envio confirmado, recusa do Resend, Reenviar e-m
       const t = await abrir(browser, inq.email, largura);
       await t.goto(`/dashboard/locacoes/${ids.contrato}`, { waitUntil: "domcontentloaded" });
       const resumo = t.getByTestId("contrato-resumo");
-      const iso = ids.criadoEm!.slice(0, 10);
-      await expect(resumo).toContainText(`Registrado em: ${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`, { timeout: 20_000 });
+      // O resumo mostra o dia de Brasília (35B ii), não o de UTC: perto da meia-noite os dois diferem.
+      const brt = new Date(ids.criadoEm!).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+      await expect(resumo).toContainText(`Registrado em: ${brt}`, { timeout: 20_000 });
       expect(await resumo.innerText()).not.toMatch(/\d{4}-\d{2}-\d{2}/);
       await semRolagemLateral(t);
       await t.screenshot({ path: `${SAIDA}/t223-registrado-em-${largura}.png`, fullPage: true });
