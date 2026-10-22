@@ -1,7 +1,7 @@
 /* Roda: node --test src/lib/admin/decisoes-admin.test.ts — Prompt 46: "Hoje você tem N decisões" no /admin. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DECISOES_ADMIN, haQuantoTempo, montarDecisoesAdmin, tituloDecisoesAdmin } from "./decisoes-admin.ts";
+import { DECISOES_ADMIN, avisoSemLeitura, haQuantoTempo, montarDecisoesAdmin, tituloDecisoesAdmin } from "./decisoes-admin.ts";
 
 test("as 6 decisões do Prompt 46 existem, cada uma com botão e lista do admin", () => {
   const chaves = DECISOES_ADMIN.map((d) => d.chave);
@@ -58,4 +58,10 @@ test("há quanto tempo", () => {
   assert.equal(haQuantoTempo(0.2), "há menos de 1 h");
   assert.equal(haQuantoTempo(5), "há 5 h");
   assert.equal(haQuantoTempo(72), "há 3 dias");
+});
+
+test("aviso de fila não lida diz o nome das filas", () => {
+  assert.equal(avisoSemLeitura([]), null);
+  assert.equal(avisoSemLeitura(["backup"]), "Não deu para ler agora: backup. Essa fila fica fora da conta.");
+  assert.equal(avisoSemLeitura(["falhas_documento", "backup", "chamados_p1"]), "Não deu para ler agora: chamados P1, backup e recibos. Essas filas ficam fora da conta.");
 });

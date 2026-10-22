@@ -110,7 +110,9 @@ test.describe("T270 — admin: decisões primeiro", () => {
 
     test(`${largura}px — um número-herói, listas com divisor fino, nada de gradiente nem bloco colorido`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await page.goto("/admin", { waitUntil: "domcontentloaded" });
+      // Período novo: os números da home ficam guardados 5 minutos por período; um período nunca usado lê na hora.
+      const de = new Date(Date.now() - (40 + Math.floor(Math.random() * 300)) * 86_400_000).toISOString().slice(0, 10);
+      await page.goto(`/admin?periodo=custom&de=${de}&ate=${new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10)}`, { waitUntil: "domcontentloaded" });
       const heroi = page.locator('[data-testid="admin-heroi"]');
       await expect(heroi).toHaveCount(1, { timeout: 25_000 });
       await expect(page.locator('main [data-testid="numero-heroi"]')).toHaveCount(0);

@@ -32,6 +32,8 @@ export type ChaveDecisaoAdmin =
 
 export interface DefinicaoDecisaoAdmin {
   chave: ChaveDecisaoAdmin;
+  /** Nome curto da fila, para o aviso de "não deu para ler". */
+  fila: string;
   /** Rótulo no singular e no plural ("1 chamado P1 aberto" / "3 chamados P1 abertos"). */
   um: string;
   varios: string;
@@ -42,18 +44,18 @@ export interface DefinicaoDecisaoAdmin {
 
 /** Em ordem de urgência. */
 export const DECISOES_ADMIN: readonly DefinicaoDecisaoAdmin[] = [
-  { chave: "chamados_p1", um: "chamado P1 aberto", varios: "chamados P1 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p1" },
-  { chave: "chamados_p2", um: "chamado P2 aberto", varios: "chamados P2 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p2" },
-  { chave: "backup", um: "alerta de backup", varios: "alertas de backup", acao: "Ver o backup", href: "/admin#backup" },
-  { chave: "falhas_documento", um: "recibo ou documento que não saiu", varios: "recibos ou documentos que não saíram", acao: "Emitir de novo", href: "/admin/documentos#falhas" },
-  { chave: "documentos_pendentes", um: "documento na fila para conferir", varios: "documentos na fila para conferir", acao: "Conferir", href: "/admin/documentos" },
-  { chave: "encerramentos", um: "pedido de encerramento de contrato", varios: "pedidos de encerramento de contrato", acao: "Conduzir", href: "/admin/contratos/encerramentos" },
-  { chave: "parceiros_para_aprovar", um: "pedido de parceria para aprovar", varios: "pedidos de parceria para aprovar", acao: "Analisar", href: "/admin/parceiros?aba=pendentes" },
-  { chave: "pedidos_parceiro_sem_resposta", um: "pedido a parceiro sem orçamento", varios: "pedidos a parceiros sem orçamento", acao: "Acompanhar", href: "/admin/parceiros/pedidos?filtro=solicitado#lista" },
-  { chave: "chamados_urgentes_sem_resposta", um: "manutenção urgente sem resposta há mais de 4 h", varios: "manutenções urgentes sem resposta há mais de 4 h", acao: "Cobrar", href: "/admin/solicitacoes?prioridade=urgente&sem_resposta=1" },
-  { chave: "candidaturas_sem_resposta_48h", um: "candidatura sem resposta há mais de 48 h", varios: "candidaturas sem resposta há mais de 48 h", acao: "Cobrar", href: "/admin/candidaturas?status=sem_resposta" },
-  { chave: "comissoes_vencidas", um: "taxa vencida", varios: "taxas vencidas", acao: "Cobrar", href: "/admin/financeiro?situacao=vencida" },
-  { chave: "pedidos_sem_resposta_expirando", um: "pedido de moradia vencendo sem resposta", varios: "pedidos de moradia vencendo sem resposta", acao: "Ver", href: "/admin/pedidos?expirando=1" },
+  { chave: "chamados_p1", fila: "chamados P1", um: "chamado P1 aberto", varios: "chamados P1 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p1" },
+  { chave: "chamados_p2", fila: "chamados P2", um: "chamado P2 aberto", varios: "chamados P2 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p2" },
+  { chave: "backup", fila: "backup", um: "alerta de backup", varios: "alertas de backup", acao: "Ver o backup", href: "/admin#backup" },
+  { chave: "falhas_documento", fila: "recibos", um: "recibo ou documento que não saiu", varios: "recibos ou documentos que não saíram", acao: "Emitir de novo", href: "/admin/documentos#falhas" },
+  { chave: "documentos_pendentes", fila: "documentos", um: "documento na fila para conferir", varios: "documentos na fila para conferir", acao: "Conferir", href: "/admin/documentos" },
+  { chave: "encerramentos", fila: "encerramentos", um: "pedido de encerramento de contrato", varios: "pedidos de encerramento de contrato", acao: "Conduzir", href: "/admin/contratos/encerramentos" },
+  { chave: "parceiros_para_aprovar", fila: "parcerias", um: "pedido de parceria para aprovar", varios: "pedidos de parceria para aprovar", acao: "Analisar", href: "/admin/parceiros?aba=pendentes" },
+  { chave: "pedidos_parceiro_sem_resposta", fila: "pedidos a parceiros", um: "pedido a parceiro sem orçamento", varios: "pedidos a parceiros sem orçamento", acao: "Acompanhar", href: "/admin/parceiros/pedidos?filtro=solicitado#lista" },
+  { chave: "chamados_urgentes_sem_resposta", fila: "manutenção urgente", um: "manutenção urgente sem resposta há mais de 4 h", varios: "manutenções urgentes sem resposta há mais de 4 h", acao: "Cobrar", href: "/admin/solicitacoes?prioridade=urgente&sem_resposta=1" },
+  { chave: "candidaturas_sem_resposta_48h", fila: "candidaturas", um: "candidatura sem resposta há mais de 48 h", varios: "candidaturas sem resposta há mais de 48 h", acao: "Cobrar", href: "/admin/candidaturas?status=sem_resposta" },
+  { chave: "comissoes_vencidas", fila: "taxas vencidas", um: "taxa vencida", varios: "taxas vencidas", acao: "Cobrar", href: "/admin/financeiro?situacao=vencida" },
+  { chave: "pedidos_sem_resposta_expirando", fila: "pedidos de moradia", um: "pedido de moradia vencendo sem resposta", varios: "pedidos de moradia vencendo sem resposta", acao: "Ver", href: "/admin/pedidos?expirando=1" },
 ];
 
 export interface ContagemDecisao {
@@ -93,6 +95,14 @@ export function montarDecisoesAdmin(contagens: Partial<Record<ChaveDecisaoAdmin,
     linhas.push({ chave: d.chave, n, texto: `${n} ${n === 1 ? d.um : d.varios}`, detalhe: c.detalhe?.trim() || null, acao: d.acao, href: d.href });
   }
   return { total: linhas.reduce((s, l) => s + l.n, 0), linhas, semLeitura };
+}
+
+/** "Não deu para ler agora: backup e recibos." — nomes das filas fora da conta. */
+export function avisoSemLeitura(chaves: readonly ChaveDecisaoAdmin[]): string | null {
+  const nomes = DECISOES_ADMIN.filter((d) => chaves.includes(d.chave)).map((d) => d.fila);
+  if (!nomes.length) return null;
+  const lista = nomes.length === 1 ? nomes[0] : `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;
+  return `Não deu para ler agora: ${lista}. ${nomes.length === 1 ? "Essa fila fica" : "Essas filas ficam"} fora da conta.`;
 }
 
 /** "Hoje você tem 1 decisão" / "Hoje você tem 7 decisões" / sem nenhuma, "Nada pede sua decisão hoje". */

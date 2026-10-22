@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { tituloDecisoesAdmin, type DecisoesAdmin } from "@/lib/admin/decisoes-admin";
+import { avisoSemLeitura, tituloDecisoesAdmin, type DecisoesAdmin } from "@/lib/admin/decisoes-admin";
 
 /*
   Anatomia "decisões primeiro" do admin (Prompt 46, D5): no topo o que espera decisão, depois UM número-herói por tela
@@ -39,10 +39,9 @@ export function DecisoesHoje({ decisoes }: { decisoes: DecisoesAdmin | null }) {
           ))}
         </ul>
       )}
-      {decisoes && decisoes.semLeitura.length > 0 && (
+      {decisoes && avisoSemLeitura(decisoes.semLeitura) && (
         <p className="mt-2 text-xs text-muted" data-testid="admin-decisoes-sem-leitura">
-          {decisoes.semLeitura.length === 1 ? "1 fila não pôde ser lida agora" : `${decisoes.semLeitura.length} filas não puderam ser lidas agora`}; ela
-          {decisoes.semLeitura.length === 1 ? " fica" : "s ficam"} fora da conta.
+          {avisoSemLeitura(decisoes.semLeitura)}
         </p>
       )}
     </section>

@@ -1,7 +1,7 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { NO_LABORATORIO } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T271 — regressão visual do admin no Prompt 46 (D5): mesma escala, cores e raios do sistema, decisões primeiro e
@@ -29,6 +29,31 @@ test.describe("T271 — admin: regressão visual (Prompt 46)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.skip(!hasAccount("admin"), "conta de admin do laboratório não configurada");
   test.use({ storageState: authFile("admin") });
+  const ids: Record<string, string | undefined> = {};
+
+  // Um contrato só do spec, para /admin/contratos/[id] ter o que mostrar em qualquer base.
+  test.beforeAll(async () => {
+    const senha = novaSenha();
+    const sufixo = novoSufixo();
+    ids.dono = await criarConta({ email: `dono.t271.${sufixo}@lab.vivanomads.test`, nome: "Vera Visual Lima", role: "owner" }, senha);
+    ids.inq = await criarConta({ email: `inq.t271.${sufixo}@lab.vivanomads.test`, nome: "Otto Visual Lima", role: "tenant" }, senha);
+    ids.imovel = await criarImovelPronto(ids.dono, `Studio visual do admin ${sufixo}`, { ativo: true, preco: 2600 });
+    ids.lead = await criarLead(ids.dono, ids.inq, ids.imovel, true);
+    const { data } = await adm()
+      .from("contratos")
+      .insert({
+        owner_plan: "free", faixa: "media_estadia", tamanho_bloco_meses: 2, comissao_percent: 0.1, qtd_ocupantes: 1, status: "ativo",
+        lead_id: ids.lead, property_id: ids.imovel, tenant_id: ids.inq, prazo_total_dias: 90, aluguel_mensal: 2600, comissao_valor: 780,
+      })
+      .select("id")
+      .single();
+    ids.contrato = data?.id as string | undefined;
+  });
+  test.afterAll(async () => {
+    if (ids.contrato) await adm().from("contratos").delete().eq("id", ids.contrato);
+    if (ids.lead) await adm().from("leads").delete().eq("id", ids.lead);
+    await apagarContas([ids.dono, ids.inq]);
+  });
 
   for (const [largura, rotas] of [[1280, DESKTOP], [390, CELULAR]] as const) {
     for (const rota of rotas) {
@@ -37,10 +62,8 @@ test.describe("T271 — admin: regressão visual (Prompt 46)", () => {
         await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
         let alvo = rota;
         if (rota === "CONTRATO") {
-          await page.goto("/admin/contratos", { waitUntil: "domcontentloaded" });
-          const primeiro = page.locator('main a[href^="/admin/contratos/"]:not([href*="encerramentos"])').first();
-          test.skip((await primeiro.count()) === 0, "nenhum contrato no laboratório");
-          alvo = (await primeiro.getAttribute("href"))!;
+          test.skip(!ids.contrato, "contrato do spec não foi criado");
+          alvo = `/admin/contratos/${ids.contrato}`;
         }
         await page.goto(alvo, { waitUntil: "networkidle" });
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 25_000 });

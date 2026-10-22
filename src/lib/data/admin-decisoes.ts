@@ -26,15 +26,15 @@ const maisAntigo = (iso: string | null | undefined) => {
 async function chamadosAbertos(admin: Admin, prioridade: "p1" | "p2"): Promise<ContagemDecisao> {
   const { data, error } = await admin
     .from("chamados")
-    .select("opened_at")
+    .select("criado_em")
     .eq("simulacao", false)
     .eq("prioridade", prioridade)
     .not("status", "in", "(resolvido,encerrado)")
-    .order("opened_at", { ascending: true })
+    .order("criado_em", { ascending: true })
     .limit(200);
   if (error) return { n: null };
-  const linhas = (data ?? []) as { opened_at: string | null }[];
-  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.opened_at) };
+  const linhas = (data ?? []) as { criado_em: string | null }[];
+  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
 }
 
 /** Encerramentos abertos ou em condução: os mesmos que /admin/contratos/encerramentos mostra para conduzir. */
