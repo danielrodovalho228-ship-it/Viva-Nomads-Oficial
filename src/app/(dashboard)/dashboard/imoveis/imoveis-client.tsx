@@ -131,8 +131,9 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                   {demoItem ? (
                     <span className="mt-2 font-title text-lg font-semibold text-ink">{p.title}</span>
                   ) : (
+                    // Só anúncio ativo tem página pública; o resto abre a edição (rascunho ou pausado davam 404 — t249).
                     <Link
-                      href={`/imoveis/${p.id}`}
+                      href={p.status === "active" ? `/imoveis/${p.id}` : `/dashboard/imoveis/${p.id}/editar`}
                       className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest"
                     >
                       {p.title}
@@ -186,7 +187,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                       <div className="flex flex-wrap gap-2">
                         {/* Rascunho não tem página pública ainda — só "Continuar
                             editando" (item 2 do QA: rascunho recuperável). */}
-                        {p.status !== "draft" && (
+                        {p.status === "active" && (
                           <ButtonLink href={`/imoveis/${p.id}`} variant="outline" size="sm">
                             Ver
                           </ButtonLink>
