@@ -18,7 +18,7 @@ Só defeito de produto confirmado, cada um com o teste do laboratório que o rep
 | Prioridade | Código | Defeito | Página | Teste que reproduz | Pista |
 |---|---|---|---|---|---|
 | 1 | D-V3 | "Enviar documento" (trava da matrícula) não responde e não diz qual campo falta | Editar anúncio (`/dashboard/imoveis/:id/editar`), 390 px | t249 · "D-V3" (`test.fail`) | A |
-| 2 | D-V7 | Título do cartão de rascunho é link para a página pública, que dá 404 (o botão "Ver" já esconde) | Meus imóveis (`/dashboard/imoveis`), 1280 px | t249 · "D-V7" (`test.fail`, #1023) | A |
+| — | D-V7 | Título do cartão de rascunho era link para a página pública (404) | Meus imóveis (`/dashboard/imoveis`), 1280 px | t249 · "D-V7" (teste normal) | **Corrigido no #1028** |
 | 3 | D-V8 | Tela de entrar sem `<main>` (falta o marco principal para leitor de tela) | Entrar (`/auth`), 390 e 1280 px | t249 · "D-V8" (`test.fail`, #1023) | A |
 | 4 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
 | 5 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
