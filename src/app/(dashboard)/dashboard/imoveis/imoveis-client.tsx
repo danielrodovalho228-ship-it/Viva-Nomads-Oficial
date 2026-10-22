@@ -128,14 +128,12 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                     {p.readyToLiveBadge && <ReadyToLiveBadge />}
                     {demoItem && <DemoBadge />}
                   </div>
-                  {demoItem ? (
+                  {/* Só anúncio no ar tem página pública: nos outros o título é texto (rascunho e pausado davam 404 —
+                      t249 D-V7) e a ação é "Continuar editando" ou "Editar". */}
+                  {demoItem || p.status !== "active" ? (
                     <span className="mt-2 font-title text-lg font-semibold text-ink">{p.title}</span>
                   ) : (
-                    // Só anúncio ativo tem página pública; o resto abre a edição (rascunho ou pausado davam 404 — t249).
-                    <Link
-                      href={p.status === "active" ? `/imoveis/${p.id}` : `/dashboard/imoveis/${p.id}/editar`}
-                      className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest"
-                    >
+                    <Link href={`/imoveis/${p.id}`} className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest">
                       {p.title}
                     </Link>
                   )}
