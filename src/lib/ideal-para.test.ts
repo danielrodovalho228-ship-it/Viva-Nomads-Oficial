@@ -58,3 +58,20 @@ test("sem pet, a ordem de antes não muda (no máximo 3)", () => {
   assert.deepEqual(idealPara(semPet), ["homeOffice", "familia", "executivo"]);
   assert.deepEqual(idealParaRotulos(semPet), ["Home office", "Família", "Executivo"]);
 });
+
+test("Prompt 57: home office com internet medida vem primeiro e substitui o informado; vencida ou fraca volta ao informado", () => {
+  const agora = new Date("2026-10-23T12:00:00Z");
+  const medida = { downloadMbps: 328, uploadMbps: 42, latenciaMs: 12, medidoEm: "2026-10-22T15:00:00Z", validoAte: "2027-04-22T15:00:00Z" };
+  const p = { ...base, workFeatures: ["Mesa de trabalho"], internetTier: "home_office" as const, petsAllowed: true, internetMedida: medida, agora };
+  assert.deepEqual(idealPara(p), ["homeOfficeMedido", "comPet"]);
+  assert.deepEqual(idealParaRotulos(p)[0], "Home office · internet medida");
+  assert.deepEqual(idealPara({ ...p, agora: new Date("2027-05-01T00:00:00Z") }), ["comPet", "homeOffice"]);
+  assert.deepEqual(idealPara({ ...p, internetMedida: { ...medida, uploadMbps: 2 } }), ["comPet", "homeOffice"]);
+});
+
+test("Prompt 57: anúncio do banco usa a etiqueta dos 4 essenciais (tagHomeOffice) para a versão medida", () => {
+  const agora = new Date("2026-10-23T12:00:00Z");
+  const medida = { downloadMbps: 100, uploadMbps: 20, latenciaMs: 20, medidoEm: "2026-10-22T15:00:00Z", validoAte: "2027-04-22T15:00:00Z" };
+  assert.deepEqual(idealPara({ ...base, tagHomeOffice: true, internetMedida: medida, agora }), ["homeOfficeMedido"]);
+  assert.deepEqual(idealPara({ ...base, tagHomeOffice: false, internetMedida: medida, agora }), []);
+});

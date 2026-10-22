@@ -15,6 +15,7 @@ import {
 import { itensDisponiveis, MAX_FAIXAS, PCT_MAX, type Negociacao, type LimitesPrivados } from "@/lib/anuncio/negociacao";
 import { TEXTO_TETO_RODADAS } from "@/lib/propostas/regras";
 import { cn, formatBRL } from "@/lib/utils";
+import { MedirInternet } from "./medir-internet";
 
 /* ── Proximidades automáticas (OSM) ───────────────────────────────────────── */
 
@@ -109,12 +110,15 @@ export function ProntoParaTrabalhar({
   sugeridas,
   mbps,
   onMbps,
+  imovelId,
 }: {
   marcadas: Record<string, boolean>;
   onAlternar: (chave: string) => void;
   sugeridas: string[];
   mbps: string;
   onMbps: (v: string) => void;
+  /** Com o rascunho salvo, o dono mede a internet aqui mesmo (Prompt 57). */
+  imovelId?: string | null;
 }) {
   const n = essenciaisMarcados(marcadas);
   const item = (it: { chave: string; rotulo: string }, essencial: boolean) => {
@@ -155,13 +159,14 @@ export function ProntoParaTrabalhar({
       </div>
       {marcadas.internet_fibra && (
         <label className="mt-3 block max-w-xs text-sm text-ink">
-          Velocidade da internet (opcional)
+          Velocidade da internet informada (opcional)
           <span className="mt-1 flex items-center gap-2">
             <input inputMode="numeric" value={mbps} onChange={(e) => onMbps(e.target.value.replace(/\D/g, "").slice(0, 5))} className="input" placeholder="500" aria-label="Velocidade da internet em Mbps" />
             <span className="text-xs text-muted">Mbps</span>
           </span>
         </label>
       )}
+      {marcadas.internet_fibra && imovelId && <MedirInternet imovelId={imovelId} origem="cadastro" />}
       <p className="mt-3 text-xs text-muted">
         Com os 4 essenciais, o anúncio pode ganhar a etiqueta “Para trabalhar de casa” na qualificação.
       </p>
