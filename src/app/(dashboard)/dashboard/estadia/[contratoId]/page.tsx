@@ -10,6 +10,8 @@ import { acoesDaEstadia, encerrarDaEstadia, mensagemDaEstadia, type ContratoDaEs
 import { CAMPOS_INSTRUCOES } from "@/lib/estadia/instrucoes";
 import { ROTULO_STATUS_ENCERRAMENTO, rotuloMotivo } from "@/lib/estadia/encerramento";
 import { AcoesEstadia } from "@/components/estadia/acoes-estadia";
+import { CartaoAjudaMudanca, CartaoDepoisDaSaida } from "@/components/automacao/cartoes-estadia";
+import { depoisDaSaida, sugestaoMorador } from "@/lib/automacao/estadia";
 import { AditivoPendente, EditorInstrucoes, ListaPortaria, NotasPrivadas } from "./estadia-tela";
 
 export const metadata: Metadata = {
@@ -47,6 +49,10 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
   const encerrar = encerrarDaEstadia(e.papel, contrato);
   const aberto = e.aditivos.find((a) => a.status === "proposto" || a.status === "aceito");
   const assinados = e.aditivos.filter((a) => a.status === "assinado");
+  const [depois, sugestao] = await Promise.all([
+    dono ? depoisDaSaida(e.id, e.imovel.id) : Promise.resolve(null),
+    !dono && e.topo.fase !== "encerrada" ? sugestaoMorador(e.periodo, e.imovel.cidade) : Promise.resolve(null),
+  ]);
 
   return (
     <div data-testid="pagina-estadia" data-papel={e.papel} className="space-y-4">
@@ -99,6 +105,10 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
           </ul>
         </Panel>
       )}
+
+      {/* Prompt 38: o dono vê o que a Viva pediu para depois da saída; o morador, a sugestão de parceiros (D-7). */}
+      {depois && <CartaoDepoisDaSaida dados={depois} propertyId={e.imovel.id} />}
+      {sugestao && <CartaoAjudaMudanca dados={sugestao} />}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title="Quem vai morar" data-testid="estadia-moradores">

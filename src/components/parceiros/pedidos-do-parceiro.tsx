@@ -42,6 +42,8 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
                     <span className="block text-xs text-muted">
                       {p.codigo}
                       {p.horario ? ` · ${dataHoraBRT(p.horario)}` : ""}
+                      {/* Prompt 38: pedido que a Viva gerou pela regra do dono (imóvel fixo). */}
+                      {p.automatico && <span data-testid="pedido-automatico"> · Automático</span>}
                     </span>
                     {proximoPasso(p.status, "parceiro") && <span className="block text-xs text-muted">{proximoPasso(p.status, "parceiro")}</span>}
                   </span>

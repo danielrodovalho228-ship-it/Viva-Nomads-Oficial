@@ -30,7 +30,7 @@ export interface ConferenciaProva {
   abertaEm: string;
   itensPorParte: Record<Parte, number>;
   /** Cômodo + descrição de cada item; a foto fica na plataforma (só se conta). */
-  itens?: { parte: Parte; comodo: string; descricao: string; temFoto: boolean }[];
+  itens?: { parte: Parte; comodo: string; descricao: string; temFoto: boolean; precisaReparo?: boolean }[];
   respostas: { parte: Parte; decisao: "confirmou" | "contestou"; em: string; motivo?: string | null }[];
   /** Laudos independentes: só o nome do arquivo. */
   laudos?: { nome: string; parte: Parte; em: string }[];
@@ -174,7 +174,7 @@ export function linhasConferencias(d: Pick<DadosProvas, "conferencias" | "prazoE
         continue;
       }
       out.push(`Itens ${DA_PARTE[parte]} (${n} ${n === 1 ? "item" : "itens"}; ${fotos(meus.filter((i) => i.temFoto).length)}):`);
-      for (const i of meus) out.push(`- ${i.comodo}: ${i.descricao}`);
+      for (const i of meus) out.push(`- ${i.comodo}: ${i.descricao}${i.precisaReparo ? " (precisa de reparo)" : ""}`);
     }
     for (const r of [...c.respostas].sort((a, b) => (a.em < b.em ? -1 : 1))) {
       const motivo = r.decisao === "contestou" && r.motivo?.trim() ? ` Motivo: ${r.motivo.trim()}` : "";
@@ -269,7 +269,7 @@ export interface LinhasProvas {
     anulado_motivo?: unknown;
   }[];
   conferencias: { id: unknown; tipo: unknown; criada_em: unknown }[];
-  itens: { conferencia_id: unknown; parte: unknown; comodo?: unknown; descricao?: unknown; foto_path?: unknown }[];
+  itens: { conferencia_id: unknown; parte: unknown; comodo?: unknown; descricao?: unknown; foto_path?: unknown; precisa_reparo?: unknown }[];
   respostas: { conferencia_id: unknown; parte: unknown; decisao: unknown; motivo?: unknown; decidido_em: unknown }[];
   laudos: { conferencia_id: unknown; path: unknown; parte: unknown; criado_em: unknown }[];
   aditivos?: {
@@ -325,7 +325,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
           proprietario: daConf.filter((i) => i.parte === "proprietario").length,
           inquilino: daConf.filter((i) => i.parte === "inquilino").length,
         },
-        itens: daConf.map((i) => ({ parte: parteDe(i.parte), comodo: String(i.comodo ?? ""), descricao: String(i.descricao ?? ""), temFoto: !!i.foto_path })),
+        itens: daConf.map((i) => ({ parte: parteDe(i.parte), comodo: String(i.comodo ?? ""), descricao: String(i.descricao ?? ""), temFoto: !!i.foto_path, precisaReparo: i.precisa_reparo === true })),
         respostas: l.respostas
           .filter((r) => r.conferencia_id === c.id)
           .map((r) => ({ parte: parteDe(r.parte), decisao: r.decisao === "contestou" ? "contestou" : "confirmou", em: String(r.decidido_em), motivo: textoOuNulo(r.motivo) })),
@@ -340,7 +340,7 @@ export const COLUNAS_PROVAS = {
   assinaturas: "papel, assinado_em, hash_documento",
   pagamentos: "tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo",
   conferencias: "id, tipo, criada_em",
-  itens: "conferencia_id, parte, comodo, descricao, foto_path",
+  itens: "conferencia_id, parte, comodo, descricao, foto_path, precisa_reparo",
   respostas: "conferencia_id, parte, decisao, motivo, decidido_em",
   laudos: "conferencia_id, path, parte, criado_em",
   aditivos: "numero, resumo, status, criado_em, assinado_em, hash_documento, contrato_aditivo_assinaturas(papel, assinado_em, hash_documento)",

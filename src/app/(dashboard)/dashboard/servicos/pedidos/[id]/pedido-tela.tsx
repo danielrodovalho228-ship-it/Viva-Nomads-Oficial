@@ -37,6 +37,7 @@ import {
   usarFotosNoAnuncio,
   type DetalhePedido,
 } from "@/lib/parceiros/pedido-actions";
+import { confirmarPedidoAutomatico, trocarParceiro } from "@/lib/automacao/acoes";
 
 type Res = { ok: true } | { ok: false; erro: string };
 const brl = (n: number | null) => (n == null ? "—" : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
@@ -77,6 +78,28 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
             </p>
           )}
           {d.status === "recusado" && d.motivoRecusa && <p className="mt-2 text-sm text-ink">Motivo: {d.motivoRecusa}</p>}
+          {/* Prompt 38: pedido gerado pela regra do imóvel. */}
+          {d.automatico && (
+            <p className="mt-2 text-sm text-muted" data-testid="pedido-automatico-info">
+              {parceiro ? "Pedido automático do imóvel fixo." : "Gerado pela regra do imóvel (Parceiros do imóvel)."}
+            </p>
+          )}
+          {cliente && d.aguardandoDono && d.status === "solicitado" && (
+            <div className="mt-3 space-y-2" data-testid="pedido-aguardando-dono">
+              <p className="text-sm text-ink">Confira o pedido. Ele só vai ao parceiro depois da sua confirmação.</p>
+              <Button variant="primary" size="sm" disabled={pendente} onClick={() => rodar(() => confirmarPedidoAutomatico(d.id), "Pedido enviado ao parceiro.")} data-testid="pedido-confirmar-automatico">
+                Confirmar e enviar
+              </Button>
+            </div>
+          )}
+          {cliente && d.semResposta && (
+            <div className="mt-3 space-y-2" data-testid="pedido-sem-resposta">
+              <p className="text-sm text-ink">O parceiro não respondeu em 24 horas.</p>
+              <Button variant="secondary" size="sm" disabled={pendente} onClick={() => rodar(() => trocarParceiro(d.id), "Pedido enviado a outro parceiro.")} data-testid="pedido-trocar-parceiro">
+                Trocar parceiro
+              </Button>
+            </div>
+          )}
           {d.descricao && <p className="mt-3 whitespace-pre-wrap break-words text-sm text-ink">{d.descricao}</p>}
           {d.imovel && (
             <p className="mt-3 text-sm text-muted" data-testid="pedido-imovel">

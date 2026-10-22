@@ -34,7 +34,8 @@ test("filtro de contato na conversa do pedido: telefone, e-mail e apps de mensag
   }
   // Toda mensagem do pedido passa pelo filtro antes de gravar (e o gatilho mask_contact do banco vale igual).
   const corpo = funcoes(ACOES);
-  assert.match(ACOES, /async function mensagem\([\s\S]*?body: guardContactInfo\(texto\)\.text/);
+  // A função mensagem mora em pedido-servidor.ts (usada também pelo pedido automático do Prompt 38).
+  assert.match(ler("src/lib/parceiros/pedido-servidor.ts"), /async function mensagem\([\s\S]*?body: guardContactInfo\(texto\)\.text/);
   assert.match(corpo.get("enviarMensagemDoPedido")!, /await mensagem\(c\.admin, c\.p, c\.userId, t\)/);
   assert.match(ler("supabase/migrations/0057_p1_contratos_candidaturas_contato.sql"), /mask_contact/);
 });

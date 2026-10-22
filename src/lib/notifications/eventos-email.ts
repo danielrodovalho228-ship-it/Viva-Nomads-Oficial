@@ -78,7 +78,16 @@ export type NotificationEvent =
   | "estadia_aditivo_respondido" // aceita (assinar) ou recusada → quem propôs
   | "estadia_remarcada" // aditivo assinado pelas duas partes: blocos e datas mudaram → as duas partes
   | "estadia_encerramento_pedido" // pedido de encerramento → a outra parte (a Viva conduz)
-  | "estadia_encerramento_equipe"; // pedido de encerramento novo → admins
+  | "estadia_encerramento_equipe" // pedido de encerramento novo → admins
+  // Viva rodando automático (Prompt 38)
+  | "vinculo_parceiro_convite" // o dono convidou o parceiro como fixo do imóvel → parceiro
+  | "vinculo_parceiro_resposta" // o parceiro aceitou ou recusou o convite → dono
+  | "pedido_auto_confirmar" // pedido automático no modo "confirmar" → dono (1 toque)
+  | "pedido_auto_sem_resposta" // parceiro sem resposta em 24 h → dono (pode trocar)
+  | "pedido_auto_atualizado" // estadia remarcada: janela nova → parceiro
+  | "pedido_auto_cancelado" // contrato encerrado: pedido cancelado → parceiro
+  | "saida_sem_parceiro" // saída em 5 dias sem limpeza vinculada → dono
+  | "sugestao_parceiros_morador"; // D-7 da entrada ou da saída: parceiros sugeridos → morador
 
 // Assunto SEM a marca (o envio põe "· Viva Nomads"; regras em assuntos.ts). A imagem de cada evento mora em
 // imagens-email.ts (IMAGEM por tema, fonte única).
@@ -146,5 +155,13 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   estadia_remarcada: { subject: "O aditivo foi assinado", body: (n) => `Olá${n ? " " + n : ""}, o aditivo foi assinado pelas duas partes. As datas e os blocos do contrato já estão atualizados na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/contratos" },
   estadia_encerramento_pedido: { subject: "Pedido de encerramento do contrato", body: (n) => `Olá${n ? " " + n : ""}, a outra parte pediu o encerramento do contrato. A Viva recebeu o pedido e vai conduzir o encerramento com vocês.`, cta: "Ver a estadia", path: "/dashboard/contratos" },
   estadia_encerramento_equipe: { subject: "Novo pedido de encerramento", body: () => "Uma das partes pediu o encerramento de um contrato. O pedido está na fila de encerramentos.", cta: "Abrir a fila", path: "/admin/contratos/encerramentos" },
+  vinculo_parceiro_convite: { subject: "Convite para parceiro fixo de um imóvel", body: (n) => `Olá${n ? " " + n : ""}, um proprietário quer você como parceiro fixo do imóvel dele. Os pedidos chegam a cada saída de morador, e você aceita ou recusa cada um.`, cta: "Ver o convite", path: "/dashboard/parceiro" },
+  vinculo_parceiro_resposta: { subject: "O parceiro respondeu ao seu convite", body: (n) => `Olá${n ? " " + n : ""}, o parceiro respondeu ao convite para o seu imóvel. Veja a resposta em Parceiros do imóvel.`, cta: "Ver a resposta", path: "/dashboard/imoveis" },
+  pedido_auto_confirmar: { subject: "Confirme o pedido de serviço do imóvel", body: (n) => `Olá${n ? " " + n : ""}, a Viva preparou um pedido para o parceiro fixo do seu imóvel. Confira o valor-base e confirme com 1 toque.`, cta: "Confirmar o pedido", path: "/dashboard/servicos" },
+  pedido_auto_sem_resposta: { subject: "O parceiro ainda não respondeu", body: (n) => `Olá${n ? " " + n : ""}, o parceiro não respondeu ao pedido em 24 horas. Você pode esperar ou trocar de parceiro com 1 toque.`, cta: "Ver o pedido", path: "/dashboard/servicos" },
+  pedido_auto_atualizado: { subject: "O pedido mudou de data", body: (n) => `Olá${n ? " " + n : ""}, a estadia foi remarcada e a janela do serviço mudou. Confira as novas datas no pedido.`, cta: "Ver o pedido", path: "/dashboard/parceiro" },
+  pedido_auto_cancelado: { subject: "Pedido cancelado", body: (n) => `Olá${n ? " " + n : ""}, o contrato do imóvel foi encerrado e o pedido foi cancelado. Nada a fazer.`, cta: "Ver os pedidos", path: "/dashboard/parceiro" },
+  saida_sem_parceiro: { subject: "Saída em 5 dias: quer agendar a limpeza?", body: (n) => `Olá${n ? " " + n : ""}, o morador sai em 5 dias e o imóvel não tem limpeza fixa. Peça um orçamento a um parceiro da cidade.`, cta: "Buscar limpeza", path: "/parceiros/buscar?categoria=limpeza" },
+  sugestao_parceiros_morador: { subject: "Precisa de ajuda com a mudança?", body: (n) => `Olá${n ? " " + n : ""}, separamos parceiros da cidade para a sua mudança. Peça um orçamento se quiser: nada é contratado sem você.`, cta: "Ver os parceiros", path: "/dashboard/locacoes" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", cta: "Conferir documento", path: "/admin/documentos" },
 };

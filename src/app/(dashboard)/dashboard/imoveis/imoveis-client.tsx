@@ -208,6 +208,12 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                             Cartão para compartilhar
                           </ButtonLink>
                         )}
+                        {/* Parceiros do imóvel (Prompt 38): limpeza, manutenção, lavanderia e fotografia fixas. */}
+                        {p.status !== "draft" && (
+                          <ButtonLink href={`/dashboard/imoveis/${p.id}/parceiros`} variant="outline" size="sm" data-testid="parceiros-imovel-link">
+                            Parceiros
+                          </ButtonLink>
+                        )}
                         {/* Qualificação é POR IMÓVEL: cada rascunho qualifica o seu. */}
                         {p.status === "draft" && (
                           <ButtonLink href={`/qualificar?imovel=${p.id}`} variant="outline" size="sm">

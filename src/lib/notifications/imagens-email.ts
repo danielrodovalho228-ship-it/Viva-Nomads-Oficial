@@ -121,6 +121,14 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   estadia_remarcada: "contrato",
   estadia_encerramento_pedido: "contrato",
   estadia_encerramento_equipe: "atendimento",
+  vinculo_parceiro_convite: "novo-interessado",
+  vinculo_parceiro_resposta: "transacional",
+  pedido_auto_confirmar: "transacional",
+  pedido_auto_sem_resposta: "transacional",
+  pedido_auto_atualizado: "visita",
+  pedido_auto_cancelado: "transacional",
+  saida_sem_parceiro: "transacional",
+  sugestao_parceiros_morador: "transacional",
 };
 
 /** Arquivo (sem .jpg) e texto alternativo da imagem do evento — sempre um arquivo que existe. */

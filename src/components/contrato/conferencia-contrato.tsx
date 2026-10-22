@@ -57,6 +57,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const router = useRouter();
   const [comodo, setComodo] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [reparo, setReparo] = useState(false);
   const [foto, setFoto] = useState<File | null>(null);
   // F3: o campo de arquivo não é controlado; trocar a chave depois de adicionar recria o campo vazio.
   const [chaveFoto, setChaveFoto] = useState(0);
@@ -79,6 +80,8 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const itensPorParte = { proprietario: itens.filter((i) => i.parte === "proprietario").length, inquilino: itens.filter((i) => i.parte === "inquilino").length };
   // F1 (Opção B): responde ao registro da OUTRA parte; os próprios itens são opcionais. Com o prazo (entrada ou saída) encerrado, libera.
   const encerrada = tipo === "entrada" ? dados.janelaEntradaEncerrada : dados.janelaSaidaEncerrada;
+  // Prompt 38: na saída, o dono marca o que precisa de reparo (vira o pedido de manutenção quando a conferência fecha).
+  const podeReparo = tipo === "saida" && parte === "proprietario";
   const liberado = parte ? podeResponder({ parte, itensPorParte, respostas, janelaEncerrada: encerrada }) : false;
 
   async function rodar(fn: () => Promise<{ ok: boolean; error?: string; item?: ItemTela; resposta?: RespostaTela; laudo?: LaudoTela }>) {
@@ -92,6 +95,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       if (r.laudo) setLaudoLocal(r.laudo);
       setComodo("");
       setDescricao("");
+      setReparo(false);
       setFoto(null);
       setChaveFoto((k) => k + 1);
       setMotivo("");
@@ -116,7 +120,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         if (!up.ok) return up;
         fotoPath = up.path ?? null;
       }
-      return registrarItemConferencia({ contratoId, tipo, comodo, descricao, fotoPath });
+      return registrarItemConferencia({ contratoId, tipo, comodo, descricao, fotoPath, precisaReparo: podeReparo && reparo });
     });
   };
 
@@ -179,6 +183,12 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
                 <p className="break-words text-muted">{i.descricao}</p>
                 <p className="text-xs text-muted">
                   {ROTULO_PARTE[i.parte]} · {fmt(i.criadoEm)}
+                  {i.precisaReparo && (
+                    <span className="font-medium text-ink" data-testid="item-precisa-reparo">
+                      {" "}
+                      · Precisa de reparo
+                    </span>
+                  )}
                 </p>
               </div>
             </li>
@@ -208,6 +218,12 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
             <p className="break-all text-xs text-muted" data-testid={`conferencia-${tipo}-foto-escolhida`}>
               Foto escolhida: {foto.name}
             </p>
+          )}
+          {podeReparo && (
+            <label className="flex items-start gap-2 text-sm text-ink">
+              <input type="checkbox" checked={reparo} onChange={(e) => setReparo(e.target.checked)} className="mt-1" data-testid="conferencia-saida-reparo" />
+              <span>Precisa de reparo. Com manutenção fixa no imóvel, o pedido sai quando a conferência fechar.</span>
+            </label>
           )}
           <Button type="submit" variant="outline" disabled={ocupado || !comodo.trim() || !descricao.trim()}>
             {ocupado && <Loader2 className="h-4 w-4 animate-spin" />} Adicionar item

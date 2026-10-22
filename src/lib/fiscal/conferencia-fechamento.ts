@@ -4,6 +4,7 @@ import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { sha256 } from "@/lib/fiscal/pdf";
 import { conteudoCorrecao, conteudoFechamento, semResposta, type EstadoParaFechar, type MotivoFechamento } from "@/lib/fiscal/fechamento";
 import { registrarDocumento } from "@/lib/fiscal/registro";
+import { aoFecharConferencia } from "@/lib/automacao/servidor";
 
 const BUCKET_CONFERENCIA = "conferencia";
 
@@ -21,7 +22,7 @@ export async function fecharConferencia(admin: SupabaseClient, conferenciaId: st
       .maybeSingle();
     if (!c || c.fechada_em) return { fechou: false };
     const [{ data: itens }, { data: respostas }, { data: laudo }] = await Promise.all([
-      admin.from("conferencia_itens").select("parte, comodo, descricao, foto_path, criado_em").eq("conferencia_id", conferenciaId),
+      admin.from("conferencia_itens").select("parte, comodo, descricao, foto_path, criado_em, precisa_reparo").eq("conferencia_id", conferenciaId),
       admin.from("conferencia_respostas").select("parte, decisao, motivo, decidido_em").eq("conferencia_id", conferenciaId),
       admin.from("conferencia_laudos").select("path, parte, criado_em").eq("conferencia_id", conferenciaId).maybeSingle(),
     ]);
@@ -29,12 +30,13 @@ export async function fecharConferencia(admin: SupabaseClient, conferenciaId: st
       conferenciaId,
       contrato: numeroPublicoContrato(c.contrato_id as string),
       tipo: c.tipo as "entrada" | "saida",
-      itens: ((itens ?? []) as { parte: "proprietario" | "inquilino"; comodo: string; descricao: string; foto_path: string | null; criado_em: string }[]).map((i) => ({
+      itens: ((itens ?? []) as { parte: "proprietario" | "inquilino"; comodo: string; descricao: string; foto_path: string | null; criado_em: string; precisa_reparo: boolean | null }[]).map((i) => ({
         parte: i.parte,
         comodo: i.comodo,
         descricao: i.descricao,
         fotoPath: i.foto_path,
         criadoEm: i.criado_em,
+        precisaReparo: i.precisa_reparo === true,
       })),
       respostas: ((respostas ?? []) as { parte: "proprietario" | "inquilino"; decisao: string; motivo: string | null; decidido_em: string }[]).map((r) => ({
         parte: r.parte,
@@ -64,6 +66,8 @@ export async function fecharConferencia(admin: SupabaseClient, conferenciaId: st
       partes: [k?.properties?.owner_id, k?.tenant_id],
       conteudo: () => texto,
     });
+    // Prompt 38: na SAÍDA, os itens do dono marcados "precisa de reparo" viram o pedido de manutenção (modo confirmar).
+    await aoFecharConferencia(admin, conferenciaId);
     return { fechou: true, numero: reg.numero };
   } catch (e) {
     console.error("[conferência] fechamento:", e instanceof Error ? e.message : e);

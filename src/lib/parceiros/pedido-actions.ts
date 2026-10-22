@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { conversationId } from "@/lib/messages/conversation-id";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
-import { notify, type NotificationEvent } from "@/lib/notifications";
 import { atribuicaoDoPedidoParceiro } from "@/lib/data/cartoes-servidor";
 import { REF_COOKIE_PARCEIRO } from "@/lib/cartoes/compartilhar";
 import { integracoesSimuladas } from "@/lib/integracoes";
@@ -16,6 +15,7 @@ import { logModeracao } from "@/lib/data/moderacao-log";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { categoriaValida, rotuloCategoria } from "./regras";
+import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "./pedido-servidor";
 import { numeroOrcamentoParceiro } from "@/lib/fiscal/prefixos";
 import {
   CHAVE_CONVERSA_PEDIDO,
@@ -34,8 +34,6 @@ import {
   visaoDoParceiro,
   horarioNaAgenda,
   type AcaoPedido,
-  type BloqueioAgenda,
-  type JanelaAgenda,
   type PapelNoPedido,
 } from "./pedido";
 
@@ -49,19 +47,11 @@ type Res<T = null> = { ok: true; valor: T } | { ok: false; erro: string };
 type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ALFABETO = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const BUCKET_ENTREGAS = "parceiro-entregas";
 const URL_ASSINADA_SEG = 10 * 60;
 const ARQUIVO_MAX = 25 * 1024 * 1024;
 const TIPOS_ENTREGA = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf", "application/zip", "video/mp4"]);
 const TIPOS_DOCUMENTO = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
-
-const rota = (id: string) => `/dashboard/servicos/pedidos/${id}`;
-
-function novoCodigo(): string {
-  const b = randomBytes(8);
-  return `VN-SV-${Array.from(b, (x) => ALFABETO[x % ALFABETO.length]).join("")}`;
-}
 
 async function sessao(): Promise<{ admin: Admin; userId: string } | { erro: string }> {
   const supabase = await createClient();
@@ -99,6 +89,9 @@ export interface LinhaPedido {
   motivo_recusa: string | null;
   ref_codigo: string | null;
   origem: string;
+  gatilho: string | null;
+  aguardando_dono: boolean;
+  sem_resposta_avisado_em: string | null;
   criado_em: string;
   atualizado_em: string;
   parceiros: { user_id: string; nome_publico: string; slug: string } | null;
@@ -107,7 +100,7 @@ export interface LinhaPedido {
 const COLUNAS =
   "id, codigo, parceiro_id, cliente_id, servico_id, property_id, categoria, descricao, status, horarios_propostos, horario_confirmado, " +
   "valor_combinado, taxa_percent, valor_taxa, valor_parceiro, pagamento_status, pagamento_ref, documento_parceiro_path, entregue_em, " +
-  "concluido_em, motivo_recusa, ref_codigo, origem, criado_em, atualizado_em, parceiros(user_id, nome_publico, slug)";
+  "concluido_em, motivo_recusa, ref_codigo, origem, gatilho, aguardando_dono, sem_resposta_avisado_em, criado_em, atualizado_em, parceiros(user_id, nome_publico, slug)";
 
 /** Pedido + papel de quem está logado. Quem não é parte recebe "não encontrado" (nunca vê que o pedido existe). */
 async function carregar(pedidoId: string): Promise<{ admin: Admin; userId: string; p: LinhaPedido; papel: PapelNoPedido } | { erro: string }> {
@@ -119,57 +112,15 @@ async function carregar(pedidoId: string): Promise<{ admin: Admin; userId: strin
   if (!p || !p.parceiros) return { erro: "Pedido não encontrado." };
   const papel: PapelNoPedido | null = p.cliente_id === s.userId ? "cliente" : p.parceiros.user_id === s.userId ? "parceiro" : null;
   if (!papel) return { erro: "Pedido não encontrado." };
+  // Pedido automático no modo "confirmar" só chega ao parceiro depois do toque do dono (Prompt 38).
+  if (papel === "parceiro" && p.aguardando_dono) return { erro: "Pedido não encontrado." };
   return { admin: s.admin, userId: s.userId, p, papel };
-}
-
-async function evento(admin: Admin, pedidoId: string, autorId: string | null, tipo: string, dados: Record<string, unknown> = {}) {
-  await admin.from("parceiro_pedido_eventos").insert({ pedido_id: pedidoId, autor_id: autorId, tipo, dados });
-}
-
-/** Mensagem na conversa do pedido (separada das conversas de imóvel). O filtro de contato vale aqui também. */
-async function mensagem(admin: Admin, p: Pick<LinhaPedido, "id" | "cliente_id" | "parceiros">, de: string, texto: string): Promise<boolean> {
-  const parceiroUser = p.parceiros!.user_id;
-  const para = de === p.cliente_id ? parceiroUser : p.cliente_id;
-  const { error } = await admin.from("messages").insert({
-    conversation_id: conversationId(p.cliente_id, parceiroUser, CHAVE_CONVERSA_PEDIDO(p.id)),
-    sender_id: de,
-    receiver_id: para,
-    property_id: null,
-    parceiro_pedido_id: p.id,
-    body: guardContactInfo(texto).text,
-  });
-  return !error;
-}
-
-/** Aviso por e-mail e push (best-effort: nunca derruba a ação). */
-async function avisar(admin: Admin, destino: string, ev: NotificationEvent, pedidoId: string) {
-  try {
-    const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
-    const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: rota(pedidoId) });
-  } catch {
-    /* aviso é complemento */
-  }
 }
 
 async function contaTeste(admin: Admin, userId: string): Promise<boolean> {
   if (integracoesSimuladas()) return true;
   const { data } = await admin.from("profiles").select("is_teste").eq("id", userId).maybeSingle();
   return (data as { is_teste?: boolean } | null)?.is_teste === true;
-}
-
-async function agendaDoParceiro(admin: Admin, parceiroId: string): Promise<{ janelas: JanelaAgenda[]; bloqueios: BloqueioAgenda[] }> {
-  const { data } = await admin.from("parceiro_agenda").select("tipo, dia_semana, inicio, fim, data_inicio, data_fim").eq("parceiro_id", parceiroId);
-  const linhas = (data ?? []) as { tipo: string; dia_semana: number | null; inicio: string | null; fim: string | null; data_inicio: string | null; data_fim: string | null }[];
-  return {
-    janelas: linhas
-      .filter((l) => l.tipo === "janela" && l.dia_semana != null && l.inicio && l.fim)
-      .map((l) => ({ dia: l.dia_semana!, inicio: l.inicio!.slice(0, 5), fim: l.fim!.slice(0, 5) })),
-    // Bloqueio de dias inteiros, no calendário de Brasília (UTC−3): do início do 1º dia ao fim do último.
-    bloqueios: linhas
-      .filter((l) => l.tipo === "bloqueio" && l.data_inicio && l.data_fim)
-      .map((l) => ({ inicio: `${l.data_inicio}T03:00:00Z`, fim: new Date(Date.parse(`${l.data_fim}T03:00:00Z`) + 86_400_000).toISOString() })),
-  };
 }
 
 /** O imóvel do pedido é da pessoa (dona) ou da estadia dela (contrato como morador). */
@@ -214,12 +165,14 @@ export async function solicitarOrcamento(e: EntradaPedido): Promise<Res<{ id: st
   const v = validarPedido(e, agenda, new Date());
   if (!v.ok) return { ok: false, erro: v.erro };
 
-  // Teto: até 3 orçamentos abertos por categoria (compara sem disparar para todos).
+  // Teto: até 3 orçamentos abertos por categoria (compara sem disparar para todos). Só pedido manual conta: o
+  // automático do dono (Prompt 38) não trava a limpeza de quem tem vários imóveis.
   const { count } = await admin
     .from("parceiro_pedidos")
     .select("id", { count: "exact", head: true })
     .eq("cliente_id", userId)
     .eq("categoria", e.categoria)
+    .eq("origem", "manual")
     .in("status", STATUS_ABERTOS as string[]);
   if (tetoAtingido(count ?? 0)) return { ok: false, erro: textoTeto(rotuloCategoria(e.categoria).toLowerCase()) };
 
@@ -607,6 +560,10 @@ export interface DetalhePedido {
   minhaAvaliacao: { nota: number; status: string } | null;
   avaliacaoDoOutro: { nota: number; texto: string | null } | null;
   ehDonoDoImovel: boolean;
+  /** Prompt 38: pedido gerado pela regra do imóvel; o dono confirma (modo "confirmar") ou troca de parceiro. */
+  automatico: boolean;
+  aguardandoDono: boolean;
+  semResposta: boolean;
 }
 
 export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido | null> {
@@ -671,6 +628,9 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
     minhaAvaliacao: minha ? { nota: minha.nota, status: minha.status } : null,
     avaliacaoDoOutro: outra ? { nota: outra.nota, texto: outra.texto } : null,
     ehDonoDoImovel: !!im && im.owner_id === userId,
+    automatico: p.origem === "automatico",
+    aguardandoDono: p.aguardando_dono,
+    semResposta: !!p.sem_resposta_avisado_em && p.status === "solicitado",
   };
 }
 
@@ -685,6 +645,8 @@ export interface ResumoPedido {
   valorParceiro: number | null;
   horario: string | null;
   criadoEm: string;
+  automatico: boolean;
+  aguardandoDono: boolean;
 }
 
 function resumo(rows: LinhaPedido[], papel: PapelNoPedido, nomes: Map<string, string>): ResumoPedido[] {
@@ -699,6 +661,8 @@ function resumo(rows: LinhaPedido[], papel: PapelNoPedido, nomes: Map<string, st
     valorParceiro: p.valor_parceiro == null ? null : Number(p.valor_parceiro),
     horario: p.horario_confirmado,
     criadoEm: p.criado_em,
+    automatico: p.origem === "automatico",
+    aguardandoDono: p.aguardando_dono,
   }));
 }
 
@@ -716,7 +680,7 @@ export async function pedidosDoMeuParceiro(): Promise<ResumoPedido[]> {
   if ("erro" in s) return [];
   const { data: parc } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
   if (!parc) return [];
-  const { data } = await s.admin.from("parceiro_pedidos").select(COLUNAS).eq("parceiro_id", (parc as { id: string }).id).order("criado_em", { ascending: false }).limit(200);
+  const { data } = await s.admin.from("parceiro_pedidos").select(COLUNAS).eq("parceiro_id", (parc as { id: string }).id).eq("aguardando_dono", false).order("criado_em", { ascending: false }).limit(200);
   const rows = (data ?? []) as unknown as LinhaPedido[];
   const { data: perfis } = await s.admin.from("profiles").select("id, full_name").in("id", [...new Set(rows.map((r) => r.cliente_id))]);
   const completo = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((x) => [x.id, x.full_name]));

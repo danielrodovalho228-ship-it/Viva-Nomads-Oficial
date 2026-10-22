@@ -45,6 +45,9 @@ export const MATRIZ_NOTIFICACOES = {
   estadia_aditivo_proposto: { categoria: "decisao", papeis: DUAS_PARTES, canais: TODOS_OS_CANAIS, prazo: true },
   estadia_instrucoes_pendentes: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
   pedido_confirmar_telefone: { categoria: "decisao", papeis: ["morador"], canais: TODOS_OS_CANAIS, prazo: true },
+  // Prompt 38: o pedido automático espera o dono (janela da limpeza/reparo) e o parceiro que não respondeu em 24 h.
+  pedido_auto_confirmar: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
+  pedido_auto_sem_resposta: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
 
   // ── Decisões sem prazo (central + e-mail) ─────────────────────────────────
   new_lead: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
@@ -56,6 +59,7 @@ export const MATRIZ_NOTIFICACOES = {
   checklist_recusado: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   termo_devolucao: { categoria: "decisao", papeis: ["morador"], canais: SEM_PUSH },
   parceiro_pedido_novo: { categoria: "decisao", papeis: ["parceiro"], canais: SEM_PUSH },
+  vinculo_parceiro_convite: { categoria: "decisao", papeis: ["parceiro"], canais: SEM_PUSH },
   parceiro_orcamento_recebido: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
   parceiro_entrega_feita: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
 
@@ -110,6 +114,11 @@ export const MATRIZ_NOTIFICACOES = {
   parceiro_horario_confirmado: { categoria: "outros", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   estadia_instrucoes_liberadas: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   estadia_remarcada: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  vinculo_parceiro_resposta: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
+  pedido_auto_atualizado: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
+  pedido_auto_cancelado: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
+  saida_sem_parceiro: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
+  sugestao_parceiros_morador: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   estadia_encerramento_pedido: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
   recibo_emitido: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
   comprovante_caucao: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
