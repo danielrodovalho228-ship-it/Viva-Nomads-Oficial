@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { hasAccount } from "./accounts";
 import { entrar } from "./laboratorio";
-import { MOTIVO_ACAO_CANCELADA, MOTIVO_ARQUIVO_CANCELADO, canceladaPeloNavegador } from "./requisicao-cancelada";
+import { MOTIVO_ACAO_CANCELADA, MOTIVO_ARQUIVO_CANCELADO, MOTIVO_LEITURA_CANCELADA, canceladaPeloNavegador } from "./requisicao-cancelada";
 import { recursoFicticioDoLab } from "../../../src/lib/varredura-texto";
 
 /**
@@ -98,6 +98,7 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
   page.on("pageerror", (e) => brutos.push(`página: ${e.message}`));
   let acaoCancelada = false;
   let arquivoCancelado = false;
+  let leituraCancelada = false;
   page.on("requestfailed", (r) => {
     if (recursoFicticioDoLab(r.url())) {
       fotoFicticia = true;
@@ -114,6 +115,10 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
       arquivoCancelado = true;
       return;
     }
+    if (cancelada === "leitura") {
+      leituraCancelada = true;
+      return;
+    }
     // Tipo, método e erro do navegador vão junto: a rodada 2 (21/10) acusou a URL da própria tela (sem `_rsc`) e só a URL
     // não diz se é documento, ação do servidor (POST com next-action) ou outra coisa.
     const acao = r.headers()["next-action"] ? ", ação do servidor" : "";
@@ -128,6 +133,7 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
         ...brutos.filter(ehExcecao).map((t) => EXCECOES_TERCEIROS.find((x) => x.padrao.test(t))!.motivo),
         ...(acaoCancelada ? [MOTIVO_ACAO_CANCELADA] : []),
         ...(arquivoCancelado ? [MOTIVO_ARQUIVO_CANCELADO] : []),
+        ...(leituraCancelada ? [MOTIVO_LEITURA_CANCELADA] : []),
         ...(fotoFicticia ? [MOTIVO_FOTO_FICTICIA] : []),
       ]),
     ],
