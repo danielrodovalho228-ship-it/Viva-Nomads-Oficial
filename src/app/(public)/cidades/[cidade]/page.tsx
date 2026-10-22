@@ -15,6 +15,7 @@ import { SITE_URL } from "@/lib/site";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { polosDaCidade } from "@/lib/polos";
 import { bairrosDaGrade } from "@/lib/bairros";
+import { tituloContagemCidade } from "@/lib/cidades";
 import { MapPin } from "lucide-react";
 import { faqPageCidade, perguntasCidade } from "@/lib/seo/anuncio-cidade";
 
@@ -102,11 +103,11 @@ export default async function CityLandingPage({ params }: Params) {
       <section className="container-page section-y">
         <div className="flex items-center justify-between">
           <h2 className="font-title text-2xl font-semibold tabular-nums text-ink">
-            {properties.length === 0
-              ? `Ainda não há imóveis em ${name}`
-              : properties.every((p) => isExemplo(p.id))
-                ? `${properties.length} ${properties.length === 1 ? "anúncio" : "anúncios"} de exemplo em ${name}`
-                : `${properties.length} imóveis em ${name}`}
+            {tituloContagemCidade(
+              properties.filter((p) => !isExemplo(p.id)).length,
+              properties.filter((p) => isExemplo(p.id)).length,
+              name,
+            )}
           </h2>
           <ButtonLink href="/buscar" variant="outline" size="sm">
             Ver toda a busca
