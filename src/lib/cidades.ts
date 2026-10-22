@@ -26,3 +26,15 @@ export function mesmaCidade(a: string | null | undefined, b: string | null | und
   const ka = chaveCidade(a);
   return !!ka && ka === chaveCidade(b);
 }
+
+/**
+ * Título da contagem na página da cidade. Reais e exemplos nunca somam num número só:
+ * "1 imóvel + 15 de exemplo" em vez de "16 imóveis".
+ */
+export function tituloContagemCidade(reais: number, exemplos: number, cidade: string): string {
+  if (reais + exemplos === 0) return `Ainda não há imóveis em ${cidade}`;
+  if (reais === 0) return `${exemplos} ${exemplos === 1 ? "anúncio" : "anúncios"} de exemplo em ${cidade}`;
+  const reaisTxt = `${reais} ${reais === 1 ? "imóvel" : "imóveis"}`;
+  if (exemplos === 0) return `${reaisTxt} em ${cidade}`;
+  return `${reaisTxt} + ${exemplos} de exemplo em ${cidade}`;
+}
