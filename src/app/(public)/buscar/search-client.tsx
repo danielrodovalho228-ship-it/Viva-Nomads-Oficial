@@ -1096,9 +1096,10 @@ export function SearchClient({
                       periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined}
                     />
                   </div>
-                  {estadoDestino.destino && (
+                  {/* Imóvel sem ponto (ou sem tempo depois do cálculo): sem dado, sem linha. */}
+                  {estadoDestino.destino && (tempos.get(p.id) || calculandoTempos) && (
                     <p className="mt-2 text-sm font-medium text-ink" data-testid="tempo-cartao">
-                      {tempos.get(p.id)?.texto ?? (calculandoTempos ? "calculando…" : null)}
+                      {tempos.get(p.id)?.texto ?? "calculando…"}
                     </p>
                   )}
                   <label className="mt-2 flex cursor-pointer items-center gap-2 py-1 text-sm text-ink">

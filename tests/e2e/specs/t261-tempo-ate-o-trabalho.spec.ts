@@ -35,8 +35,11 @@ const limparRotas = () => fetch(`${ROTAS}/__limpar`, { method: "POST" });
 async function temposNaTela(page: Page): Promise<[string, string][]> {
   await expect(page.getByTestId("tempo-cartao").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByTestId("tempo-cartao").filter({ hasText: "calculando…" })).toHaveCount(0, { timeout: 20_000 });
+  // Cartão de imóvel sem ponto não tem linha de tempo (sem dado, sem linha): fica fora da lista.
   return page.getByTestId("card-resultado").evaluateAll((els) =>
-    els.map((el) => [el.getAttribute("data-id") ?? "", el.querySelector('[data-testid="tempo-cartao"]')?.textContent?.trim() ?? ""] as [string, string]),
+    els
+      .map((el) => [el.getAttribute("data-id") ?? "", el.querySelector('[data-testid="tempo-cartao"]')?.textContent?.trim() ?? ""] as [string, string])
+      .filter(([, texto]) => texto !== ""),
   );
 }
 const minutos = (t: string) => (/menos de 5 min/.test(t) ? 0 : Number(t.match(/~(\d+) min/)?.[1] ?? NaN));
@@ -186,7 +189,7 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
       await page.goto(`/buscar?dlat=${HC.lat + 0.03}&dlng=${HC.lng + 0.03}&drot=Rua+Sem+Rota&modo=carro&ate=20`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("tempo-indisponivel")).toBeVisible({ timeout: 20_000 });
       const lista = await temposNaTela(page);
-      expect(lista.length).toBeGreaterThan(0);
+      expect(lista.map(([id]) => id)).toEqual(expect.arrayContaining([ids.perto, ids.medio, ids.longe]));
       for (const [, texto] of lista) {
         expect(texto).toMatch(/^≈ [\d,]+ (km|m) em linha reta até Rua Sem Rota$/);
         expect(texto).not.toMatch(/min/);
