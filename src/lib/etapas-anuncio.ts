@@ -1,20 +1,24 @@
 /*
-  Editor de anúncio — etapas (prompt 10: cadastro em 5 etapas, aprovado pelo Daniel em 17/10).
-  0 Onde fica · 1 Fotos · 2 O que encontramos · 3 Preço e disponibilidade · 4 Revisar e publicar.
+  Editor de anúncio — etapas. Prompt 43 (Anunciar em 6 passos, sobre o cadastro de 5 etapas do prompt 10):
+  0 Endereço e dados · 1 Tipo e quartos · 2 Fotos · 3 Comodidades e segurança · 4 Regras, valores e disponibilidade ·
+  5 Revisar e publicar.
   Voltar e pular para etapas JÁ VISITADAS é livre; avançar para uma etapa nova só pelo "Continuar" (que valida).
   A etapa mais avançada fica no rascunho, para a retomada não travar o que a pessoa já tinha percorrido.
   Rascunhos das ordens antigas (7 etapas) abrem na PRIMEIRA etapa ainda incompleta. PURO.
 */
 import { MIN_FOTOS } from "./anuncio/prontidao.ts";
+import { ETAPA } from "./anuncio/etapas-ids.ts";
 
-export const ETAPAS = ["onde", "fotos", "encontramos", "preco", "revisar"] as const;
+export const ETAPAS = ["onde", "espaco", "fotos", "comodidades", "regras", "revisar"] as const;
 export type Etapa = (typeof ETAPAS)[number];
 
 /** Ordem das etapas (os IDs já seguem a ordem). */
-export const ORDEM_ETAPAS = [0, 1, 2, 3, 4] as const;
+export const ORDEM_ETAPAS = [0, 1, 2, 3, 4, 5] as const;
 export const ULTIMA_ETAPA = ORDEM_ETAPAS.length - 1;
-/** Versão da ordem gravada no rascunho: 3 = 5 etapas (1 = 7 em sequência; 2 = 7 com "fotos primeiro"). */
-export const VERSAO_ORDEM_ETAPAS = 3;
+/** Versão da ordem gravada no rascunho: 4 = 6 passos (3 = 5 etapas; 1 e 2 = 7 etapas). */
+export const VERSAO_ORDEM_ETAPAS = 4;
+/** Rascunho da ordem de 5 etapas (versão 3): Onde fica, Fotos, O que encontramos (→ Tipo e quartos), Preço, Revisar. */
+export const DE_5_PARA_6: Record<number, number> = { 0: ETAPA.onde, 1: ETAPA.fotos, 2: ETAPA.espaco, 3: ETAPA.regras, 4: ETAPA.revisar };
 
 export function etapaMaisAvancada(anterior: number, ...atuais: number[]): number {
   return Math.max(anterior, ...atuais.filter((n) => Number.isFinite(n)));
@@ -59,20 +63,25 @@ const num = (v: unknown) => Number(typeof v === "string" || typeof v === "number
 
 /** Primeira etapa ainda incompleta de um rascunho (Revisar quando está tudo preenchido). */
 export function primeiraEtapaIncompleta(d: CamposRascunho): number {
-  if (!txt(d.street) || !txt(d.neighborhood) || !txt(d.city)) return 0;
-  if (!Array.isArray(d.photos) || d.photos.length < MIN_FOTOS) return 1;
-  if (num(d.bathrooms) < 1 || num(d.areaM2) <= 0 || num(d.maxGuests) < 1 || txt(d.title).length < 3) return 2;
+  if (!txt(d.street) || !txt(d.neighborhood) || !txt(d.city)) return ETAPA.onde;
+  if (num(d.bathrooms) < 1 || num(d.areaM2) <= 0 || num(d.maxGuests) < 1) return ETAPA.espaco;
+  if (!Array.isArray(d.photos) || d.photos.length < MIN_FOTOS) return ETAPA.fotos;
+  if (txt(d.title).length < 3) return ETAPA.comodidades;
   const garantia = !!d.garantias && typeof d.garantias === "object" && Object.values(d.garantias as Record<string, unknown>).some(Boolean);
-  if (num(d.monthlyPrice) <= 0 || !garantia) return 3;
-  return 4;
+  if (num(d.monthlyPrice) <= 0 || !garantia) return ETAPA.regras;
+  return ETAPA.revisar;
 }
 
-/** Etapa (ID) de um rascunho: na ordem atual vale a gravada; nas antigas, a primeira etapa incompleta. */
+/**
+ * Etapa (ID) de um rascunho: na ordem atual vale a gravada; na de 5 etapas, a mesma etapa nos 6 passos; nas mais
+ * antigas, a primeira etapa incompleta. Os CAMPOS do rascunho não dependem da ordem: nenhum se perde na troca.
+ */
 export function etapaDoRascunho(d: CamposRascunho & { step?: unknown; ordemEtapas?: unknown }): number {
-  if (d.ordemEtapas !== VERSAO_ORDEM_ETAPAS) return primeiraEtapaIncompleta(d);
   const s = d.step;
-  if (typeof s !== "number" || !Number.isFinite(s)) return 0;
-  const id = Math.round(s);
+  const id = typeof s === "number" && Number.isFinite(s) ? Math.round(s) : null;
+  if (d.ordemEtapas === 3) return id !== null && id in DE_5_PARA_6 ? DE_5_PARA_6[id] : primeiraEtapaIncompleta(d);
+  if (d.ordemEtapas !== VERSAO_ORDEM_ETAPAS) return primeiraEtapaIncompleta(d);
+  if (id === null) return 0;
   return (ORDEM_ETAPAS as readonly number[]).includes(id) ? id : 0;
 }
 
@@ -84,8 +93,13 @@ export function posMaxDoRascunho(d: CamposRascunho & { step?: unknown; etapaMax?
   return Math.max(atual, max);
 }
 
-/** Etapa (ID) pedida em `?etapa=` (link do checklist da Visão geral); inválida = null. */
+/**
+ * Etapa (ID) pedida em `?etapa=` (link do checklist da Visão geral); inválida = null. Aceita o número ou o NOME do
+ * passo (`?etapa=fotos`), que não muda quando a ordem dos passos muda.
+ */
 export function etapaDaUrl(v: string | null | undefined): number | null {
-  if (typeof v !== "string" || !/^[0-4]$/.test(v)) return null;
-  return Number(v);
+  if (typeof v !== "string") return null;
+  if (/^[0-5]$/.test(v)) return Number(v);
+  const i = (ETAPAS as readonly string[]).indexOf(v);
+  return i >= 0 ? i : null;
 }

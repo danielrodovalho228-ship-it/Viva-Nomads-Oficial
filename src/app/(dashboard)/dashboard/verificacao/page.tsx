@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import type { EstadoIdentidade } from "@/lib/identidade/estado";
 import { NOTA_VERIFICACAO_TESTE, ramoVerificacao } from "@/lib/contas-de-teste";
 import { validadeDoLaudo } from "@/lib/caf/validade";
+import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
 
 /**
  * Estados futuros da verificação (preparados; a integração real entra depois):
@@ -98,6 +99,7 @@ export default function VerificationPage() {
     <div className="w-full">
       <PageTitle title={C.title} subtitle={C.subtitle} />
       {demo ? <DemoFlow copy={C} mode={mode} /> : <VerificacaoDaConta copy={C} perfil={perfilCopy} />}
+      <FalarComAViva />
     </div>
   );
 }

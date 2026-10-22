@@ -12,6 +12,7 @@
 
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
+import { ETAPA } from "./etapas-ids.ts";
 
 export const MIN_FOTOS = 8;
 export const MIN_DESCRICAO = 60;
@@ -117,39 +118,39 @@ export function textoVagaNoPlano(limite?: number | null): string {
 
 export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   const obrigatorios: ItemProntidao[] = [
-    { key: "endereco", label: OBRIGATORIOS_ROTULOS[0], ok: f.enderecoOk, etapa: 0 },
-    { key: "detalhes", label: OBRIGATORIOS_ROTULOS[1], ok: f.detalhesOk, etapa: 2 },
-    { key: "periodo", label: OBRIGATORIOS_ROTULOS[2], ok: f.periodoOk, etapa: 3 },
-    { key: "fotos", label: OBRIGATORIOS_ROTULOS[3], ok: f.fotos >= MIN_FOTOS, etapa: 1, detalhe: f.fotos < MIN_FOTOS ? `tem ${f.fotos}` : undefined },
-    { key: "titulo", label: OBRIGATORIOS_ROTULOS[4], ok: f.titulo.trim().length >= 3, etapa: 2 },
+    { key: "endereco", label: OBRIGATORIOS_ROTULOS[0], ok: f.enderecoOk, etapa: ETAPA.onde },
+    { key: "detalhes", label: OBRIGATORIOS_ROTULOS[1], ok: f.detalhesOk, etapa: ETAPA.espaco },
+    { key: "periodo", label: OBRIGATORIOS_ROTULOS[2], ok: f.periodoOk, etapa: ETAPA.regras },
+    { key: "fotos", label: OBRIGATORIOS_ROTULOS[3], ok: f.fotos >= MIN_FOTOS, etapa: ETAPA.fotos, detalhe: f.fotos < MIN_FOTOS ? `tem ${f.fotos}` : undefined },
+    { key: "titulo", label: OBRIGATORIOS_ROTULOS[4], ok: f.titulo.trim().length >= 3, etapa: ETAPA.comodidades },
     {
       key: "descricao",
       label: OBRIGATORIOS_ROTULOS[5],
       ok: f.descricao.trim().length >= MIN_DESCRICAO,
-      etapa: 2,
+      etapa: ETAPA.comodidades,
       detalhe: f.descricao.trim().length < MIN_DESCRICAO ? `tem ${f.descricao.trim().length}` : undefined,
     },
-    { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: 3 },
-    { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: 3 },
-    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: 0, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
+    { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: ETAPA.regras },
+    { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: ETAPA.regras },
+    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: ETAPA.onde, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
   ];
   if (f.qualificacaoOk !== undefined) {
-    obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: 0, detalhe: f.qualificacaoOk ? undefined : "leva poucos minutos" });
+    obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: ETAPA.onde, detalhe: f.qualificacaoOk ? undefined : "leva poucos minutos" });
   }
   if (!f.sublocacaoOk) {
     const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;
-    obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: 0 });
+    obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: ETAPA.onde });
   }
   if (!f.privacidadeOk) {
-    obrigatorios.push({ key: "privacidade", label: ROTULO_FALTA_PRIVACIDADE, ok: false, etapa: 2 });
+    obrigatorios.push({ key: "privacidade", label: ROTULO_FALTA_PRIVACIDADE, ok: false, etapa: ETAPA.comodidades });
   }
   // A vaga só aparece quando é o único bloqueio que resta (ordem de8761b0, item 2).
   if (f.limitePlanoOk === false && obrigatorios.every((i) => i.ok)) {
-    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: 4, detalhe: textoVagaNoPlano(f.limiteAnuncios) });
+    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: ETAPA.revisar, detalhe: textoVagaNoPlano(f.limiteAnuncios) });
   }
   const opcionais: ItemProntidao[] = [
-    { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: 0 },
-    { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: 1 },
+    { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: ETAPA.onde },
+    { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: ETAPA.fotos },
   ];
   const cumpridos = obrigatorios.filter((i) => i.ok).length;
   return {

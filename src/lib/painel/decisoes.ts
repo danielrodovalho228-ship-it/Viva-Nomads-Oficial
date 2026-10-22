@@ -268,6 +268,26 @@ export function ordenarDecisoes(itens: Decisao[]): Decisao[] {
   return [...itens].sort((a, b) => t(a) - t(b) || PRIORIDADE_TIPO[a.tipo] - PRIORIDADE_TIPO[b.tipo] || a.texto.localeCompare(b.texto, "pt-BR"));
 }
 
+/** Decisão com o rótulo do papel em que ela é tomada (Prompt 43: o Início junta os papéis ativos). */
+export type DecisaoDoPapel = Decisao & { papel: "proprietario" | "morador" };
+
+/**
+ * Prompt 43 (conta única): o Início junta as decisões de todos os papéis ativos, cada uma com o rótulo do papel, na
+ * mesma ordem de sempre (prazo mais próximo primeiro). Uma decisão que apareça nos dois papéis (mesmo id) entra uma vez.
+ */
+export function juntarDecisoes(doDono: Decisao[], doMorador: Decisao[]): DecisaoDoPapel[] {
+  const vistos = new Set<string>();
+  const todas: DecisaoDoPapel[] = [];
+  for (const [lista, papel] of [[doDono, "proprietario"], [doMorador, "morador"]] as const) {
+    for (const d of lista) {
+      if (vistos.has(d.id)) continue;
+      vistos.add(d.id);
+      todas.push({ ...d, papel });
+    }
+  }
+  return ordenarDecisoes(todas) as DecisaoDoPapel[];
+}
+
 /** O título da Visão geral: "Hoje você tem 1 decisão" / "… N decisões" / "Nada pede sua decisão hoje". */
 export function tituloDecisoes(n: number): string {
   if (n <= 0) return "Nada pede sua decisão hoje";
