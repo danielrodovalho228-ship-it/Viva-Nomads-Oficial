@@ -24,11 +24,12 @@ import {
   ChevronRight,
   Wallet,
 } from "lucide-react";
-import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
+import { primeiroNomeExibicao } from "@/lib/roles";
 import { StatCard, Panel, EmptyState, PageTitle } from "@/components/dashboard/primitives";
+import { ConviteFotoPerfil } from "@/components/account/convite-foto-perfil";
 import { PropertyRow } from "@/components/dashboard/property-row";
-import { TenantOnboarding } from "@/components/dashboard/tenant-onboarding";
-import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
+import { ChecklistAtivacaoBloco } from "@/components/onboarding/checklist-ativacao";
+import type { ChecklistAtivacao } from "@/lib/onboarding/ativacao";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
 import type { ChecklistAnuncio } from "@/lib/anuncio/prontidao";
@@ -41,7 +42,7 @@ import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
 import { coverPhoto } from "@/lib/media";
 import { cn, formatBRL } from "@/lib/utils";
-import { tituloDecisoes, type Decisao, type TipoDecisao } from "@/lib/painel/decisoes";
+import { juntarDecisoes, tituloDecisoes, type Decisao, type DecisaoDoPapel, type TipoDecisao } from "@/lib/painel/decisoes";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { ServicosPainel } from "@/components/parceiros/servicos-painel";
 import type { EstadiaNaHome } from "@/lib/data/estadia";
@@ -57,6 +58,7 @@ export function VisaoGeral({
   rascunho = null,
   cidadePerfil = null,
   estadias = [],
+  checklists = [],
 }: {
   imoveisDono: Property[];
   interessados?: { atual: number; anterior: number };
@@ -68,30 +70,56 @@ export function VisaoGeral({
   estadias?: EstadiaNaHome[];
   /** Prompt 31a: cidade do perfil, para a busca de serviços de parceiros já preenchida. */
   cidadePerfil?: string | null;
+  /** Prompt 43: checklist de ativação de cada papel que ainda não ativou (some sozinho). */
+  checklists?: ChecklistAtivacao[];
 }) {
   // Identidade de EXIBIÇÃO: nunca cai na persona demo ("Marcos") para conta real
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
   const user = useDisplayUser();
-  const { mode } = useViewMode();
-  // Primeiro nome do perfil (o checklist do morador usa); sem nome, neutro — NUNCA o e-mail cru (reteste QA item 4).
+  const demo = useDashDemo();
+  // Primeiro nome do perfil; sem nome, neutro — NUNCA o e-mail cru (reteste QA item 4).
   const firstName = primeiroNomeExibicao(user);
+  // Prompt 43 (conta única): o Início junta as decisões de todos os papéis, cada uma com o rótulo do papel. Sem "modo":
+  // a parte de proprietário aparece para quem tem imóvel ou rascunho (ou entrou como dono); a de morador, sempre.
+  const decisoes = demo ? [] : juntarDecisoes(decisoesDono, decisoesMorador);
+  const ehDono = imoveisDono.length > 0 || !!rascunho || checklists.some((c) => c.papel === "proprietario") || demo;
+  const semImovel = !demo && imoveisDono.length === 0 && !rascunho && checklists.some((c) => c.papel === "proprietario");
+  const blocos = demo ? [] : checklists;
 
   return (
     <>
-      {/* Pergunta de papel no primeiro login (uma vez só). */}
-      <RoleWelcomeModal />
-      {mode === "tenant" ? (
-        <TenantDashboard name={firstName} decisoes={decisoesMorador} cidade={cidadePerfil} estadias={estadias.filter((e) => e.papel === "inquilino")} />
-      ) : (
-        <OwnerDashboard
-          imoveisDono={imoveisDono}
-          interessados={interessados}
-          decisoes={decisoesDono}
-          rascunho={rascunho}
-          cidade={cidadePerfil}
-          estadias={estadias.filter((e) => e.papel === "proprietario")}
-        />
+      <PageTitle
+        title={tituloDecisoes(decisoes.length)}
+        subtitle={decisoes.length ? "Toque para decidir na tela certa." : "Quando algo pedir sua resposta, aparece aqui."}
+        action={
+          ehDono && !semImovel ? (
+            <ButtonLink href="/dashboard/imoveis/novo" variant="secondary">
+              <ClipboardCheck className="h-4 w-4" /> Novo anúncio
+            </ButtonLink>
+          ) : undefined
+        }
+      />
+      {/* Sem decisão, o checklist de ativação vem primeiro; havendo decisão, ela vem antes (adendo de onboarding). */}
+      {decisoes.length === 0 && blocos.map((c) => <ChecklistAtivacaoBloco key={c.papel} checklist={c} />)}
+      <ListaDecisoes decisoes={decisoes} />
+      {decisoes.length > 0 && blocos.map((c) => <ChecklistAtivacaoBloco key={c.papel} checklist={c} />)}
+      {!demo && <ConviteFotoPerfil className="mb-6" />}
+      <CartaoEstadias estadias={estadias} />
+
+      {ehDono && (
+        <section aria-labelledby="papel-proprietario" className="mb-8" data-testid="inicio-proprietario">
+          <h2 id="papel-proprietario" className="mb-3 font-title text-lg font-semibold text-ink">
+            Como proprietário
+          </h2>
+          <OwnerDashboard imoveisDono={imoveisDono} interessados={interessados} rascunho={rascunho} cidade={cidadePerfil} semImovel={semImovel} />
+        </section>
       )}
+      <section aria-labelledby="papel-morador" data-testid="inicio-morador">
+        <h2 id="papel-morador" className="mb-3 font-title text-lg font-semibold text-ink">
+          Como morador
+        </h2>
+        <TenantDashboard name={firstName} cidade={ehDono ? null : cidadePerfil} />
+      </section>
     </>
   );
 }
@@ -99,25 +127,22 @@ export function VisaoGeral({
 function OwnerDashboard({
   imoveisDono,
   interessados,
-  decisoes,
   rascunho,
   cidade,
-  estadias,
+  semImovel,
 }: {
   imoveisDono: Property[];
   interessados: { atual: number; anterior: number };
-  decisoes: Decisao[];
   rascunho: RascunhoPendente | null;
   cidade: string | null;
-  estadias: EstadiaNaHome[];
+  semImovel: boolean;
 }) {
   // Fonte demo: build de demonstração OU modo demonstração do admin. Os dados
   // reais e o seed NUNCA se misturam — a fonte é uma ou outra.
   const demo = useDashDemo();
   // Só imóveis ATIVOS contam como "imóvel publicado" (regra única, a mesma de
   // "Meus imóveis"). Rascunhos não entram nos KPIs nem na lista da visão geral —
-  // eles têm o próprio card de "anúncio em andamento" abaixo. A lista real já
-  // chega do servidor: não há estado "carregando" que pareça "nenhum imóvel".
+  // eles têm o próprio card de "anúncio em andamento" abaixo.
   const allProperties = imoveisPublicados(demo ? DEMO_PROPERTIES : imoveisDono);
   const myProperties = allProperties.slice(0, 2);
   const kpiLeads = kpiInteressados(interessados.atual, interessados.anterior, {
@@ -125,28 +150,11 @@ function OwnerDashboard({
   });
   // Rascunho em andamento (P0): card de pendência "continue de onde parou" (lido no servidor; nada no modo demo).
   const draft = demo ? null : rascunho;
-  const lista = demo ? [] : decisoes;
-  // Conta sem nenhum imóvel (nem rascunho): um único primário, "Cadastrar meu imóvel" — sem funil de boas-vindas.
-  const semImovel = !demo && imoveisDono.length === 0;
 
   return (
     <>
-      <PageTitle
-        title={tituloDecisoes(lista.length)}
-        subtitle={lista.length ? "Toque para decidir na tela certa." : semImovel ? "Comece cadastrando o seu imóvel mobiliado." : "Quando algo pedir sua resposta, aparece aqui."}
-        action={
-          semImovel ? undefined : (
-            <ButtonLink href="/dashboard/imoveis/novo" variant="secondary">
-              <ClipboardCheck className="h-4 w-4" /> Novo anúncio
-            </ButtonLink>
-          )
-        }
-      />
-      <ListaDecisoes decisoes={lista} />
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
       {semImovel && <PrimeiroImovel />}
-      <CartaoEstadias estadias={estadias} />
-
       {allProperties.length > 0 && <PainelDoDono demo={demo} allProperties={allProperties} myProperties={myProperties} kpiLeads={kpiLeads} cidade={cidade} />}
     </>
   );
@@ -337,7 +345,7 @@ const ICONE_DECISAO: Record<TipoDecisao, React.ComponentType<{ className?: strin
  * "Hoje você tem N decisões" (Prompt 42, item 1): uma linha por decisão — ícone, a coisa concreta, o prazo quando há —
  * e a linha inteira é o link para a tela onde se decide. Nada é decidido aqui.
  */
-function ListaDecisoes({ decisoes }: { decisoes: Decisao[] }) {
+function ListaDecisoes({ decisoes }: { decisoes: (Decisao | DecisaoDoPapel)[] }) {
   if (!decisoes.length) return null;
   return (
     <ul className="mb-6 space-y-2" data-testid="lista-decisoes">
@@ -350,6 +358,7 @@ function ListaDecisoes({ decisoes }: { decisoes: Decisao[] }) {
               data-testid="decisao"
               data-tipo={d.tipo}
               data-decisao={d.id}
+              data-papel={"papel" in d ? d.papel : undefined}
               className="flex min-h-14 items-center gap-3 rounded-xl border border-sage-200 bg-white p-4 transition-colors hover:border-sage"
             >
               <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-full", d.atrasada ? "bg-red-50 text-red-700" : "bg-sage-100 text-forest")}>
@@ -357,6 +366,11 @@ function ListaDecisoes({ decisoes }: { decisoes: Decisao[] }) {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold text-ink [overflow-wrap:anywhere]">{d.texto}</span>
+                {"papel" in d && (
+                  <span className="text-xs text-muted" data-testid="decisao-papel">
+                    {d.papel === "proprietario" ? "Proprietário" : "Morador"}
+                  </span>
+                )}
                 {d.prazoTexto && (
                   <span className={cn("block text-sm", d.atrasada ? "text-red-700" : "text-muted")} data-testid="decisao-prazo">
                     {d.atrasada ? `Atrasada · ${d.prazoTexto}` : d.prazoTexto}
@@ -401,22 +415,12 @@ function CartaoEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
   );
 }
 
-function TenantDashboard({ name, decisoes, cidade, estadias }: { name: string; decisoes: Decisao[]; cidade: string | null; estadias: EstadiaNaHome[] }) {
+function TenantDashboard({ name, cidade }: { name: string; cidade: string | null }) {
   const demo = useDashDemo();
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
-  const lista = demo ? [] : decisoes;
+  void name;
   return (
     <>
-      {/* Título da tela (h1) = as decisões de hoje (Prompt 42), como no painel do proprietário. */}
-      <PageTitle
-        title={tituloDecisoes(lista.length)}
-        subtitle={lista.length ? "Toque para decidir na tela certa." : "Candidaturas, favoritos, buscas salvas e mensagens num lugar só."}
-      />
-      <ListaDecisoes decisoes={lista} />
-      <CartaoEstadias estadias={estadias} />
-      {/* Primeiro acesso: checklist de 3 passos (some quando concluído ou oculto). */}
-      <TenantOnboarding name={name} />
-
       {/* KPIs de acesso rápido: 2×2 no mobile, 4 em linha no desktop. Candidaturas
           é o lar do acompanhamento (envio → resposta) — sem novo item no menu. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
@@ -452,7 +456,7 @@ function TenantDashboard({ name, decisoes, cidade, estadias }: { name: string; d
           }
         />
       </div>
-      <ServicosPainel cidade={cidade} />
+      {cidade !== null && <ServicosPainel cidade={cidade} />}
     </>
   );
 }

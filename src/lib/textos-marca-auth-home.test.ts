@@ -23,7 +23,8 @@ test("textos alternativos das páginas públicas e do onboarding: 'imóvel mobil
     "app/(public)/empresas/page.tsx",
     "app/(public)/precos/page.tsx",
     "app/(public)/para-proprietarios/page.tsx",
-    "components/dashboard/tenant-onboarding.tsx",
+    "components/onboarding/checklist-ativacao.tsx",
+    "lib/onboarding/ativacao.ts",
   ]) {
     assert.doesNotMatch(ler(arq), /apartamentos? mobiliados?/i, arq);
   }

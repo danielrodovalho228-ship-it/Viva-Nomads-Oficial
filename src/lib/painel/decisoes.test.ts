@@ -178,9 +178,23 @@ test("a Visão geral monta as decisões no servidor e o navegador não chama ser
   assert.match(pagina, /getLatestDraft\(\)/);
   const cliente = ler("src/app/(dashboard)/dashboard/visao-geral-client.tsx");
   assert.doesNotMatch(cliente, /getLatestDraft|from "@\/lib\/data\/actions"/);
-  assert.match(cliente, /title=\{tituloDecisoes\(lista\.length\)\}/);
+  // Prompt 43: um título só, com as decisões de todos os papéis juntas.
+  assert.match(cliente, /title=\{tituloDecisoes\(decisoes\.length\)\}/);
+  assert.match(cliente, /juntarDecisoes\(decisoesDono, decisoesMorador\)/);
   // Linha = link para a tela da decisão (nunca botão de decidir na Visão geral).
   const linha = cliente.slice(cliente.indexOf("function ListaDecisoes"), cliente.indexOf("function CartaoEstadias"));
   assert.match(linha, /<Link\s+href=\{d\.href\}/);
   assert.doesNotMatch(linha, /<button|onClick/);
+});
+
+test("Prompt 43: o Início junta as decisões dos papéis, com o rótulo do papel, sem repetir e na ordem do prazo", async () => {
+  const { juntarDecisoes } = await import("./decisoes.ts");
+  const base = { prazoTexto: null, atrasada: false, href: "/x" } as const;
+  const dono = [{ ...base, id: "a", tipo: "proposta" as const, texto: "Proposta", prazo: "2026-10-30T00:00:00Z" }];
+  const morador = [
+    { ...base, id: "b", tipo: "contrato" as const, texto: "Contrato", prazo: "2026-10-25T00:00:00Z" },
+    { ...base, id: "a", tipo: "proposta" as const, texto: "Proposta", prazo: "2026-10-30T00:00:00Z" },
+  ];
+  const j = juntarDecisoes(dono, morador);
+  assert.deepEqual(j.map((d) => [d.id, d.papel]), [["b", "morador"], ["a", "proprietario"]]);
 });

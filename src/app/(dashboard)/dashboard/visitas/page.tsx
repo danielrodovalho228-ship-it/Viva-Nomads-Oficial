@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CalendarCheck } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ValorDiretoAoProprietario } from "@/components/contexto/cabecalho-contexto";
 import { ButtonLink } from "@/components/ui/button";
 import { CartaoVisita } from "@/components/visitas/cartao-visita";
 import { listMinhasVisitas, listVisitasDono } from "@/lib/data/visitas-video-actions";
@@ -26,6 +27,7 @@ export default async function VisitasPage() {
         title="Visitas"
         subtitle={`Por vídeo ou presenciais, combinadas aqui na plataforma (${ROTULO_FUSO}). Nome e contato do interessado só aparecem depois do aceite.`}
       />
+      <ValorDiretoAoProprietario className="-mt-2 mb-4 text-sm text-muted" />
       {vazio ? (
         <EmptyState
           icon={CalendarCheck}

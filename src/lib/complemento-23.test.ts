@@ -101,7 +101,6 @@ test("identidade — guarda: o texto 'Em breve, por meio de um parceiro' só exi
   for (const tela of [
     "../components/account/conta-blocos.tsx",
     "../components/anuncio/etapa-identidade.tsx",
-    "../components/dashboard/tenant-onboarding.tsx",
   ])
     assert.match(ler(tela), /useEstadoIdentidade\(/, tela);
   assert.match(ler("../app/(dashboard)/dashboard/verificacao/page.tsx"), /<LinhaIdentidade id=\{status\.identidade\} \/>/);
