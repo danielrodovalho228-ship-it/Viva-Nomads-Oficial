@@ -14,6 +14,7 @@ import {
   destinoDaOrdem,
   duracao,
   estadoDaOrdem,
+  podeAceitarOrdem,
   rotuloAcionado,
   linkDaOrdem,
   prioridadesDe,
@@ -28,7 +29,7 @@ import {
 } from "@/lib/agentes/central";
 import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, lerTextoSimples, moverTrocaParaAgente, textoFeito } from "@/lib/agentes/conversa";
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
-import { deixarOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
+import { deixarOrdem, responderAceiteOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
 import { CartoesAprovacao } from "@/components/admin/agentes/cartoes-aprovacao";
 import { RedeAoVivo } from "@/components/admin/agentes/rede";
@@ -64,6 +65,7 @@ const COR_ESTADO: Record<EstadoOrdem, string> = {
   enviada: "#38BDF8",
   falhou: "#FF5470",
   em_execucao: "#3D7BFF",
+  aguardando_aceite: "#FFB547",
   concluida: "#7FD321",
   cancelada: "#8C9AC4",
 };
@@ -978,6 +980,10 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                     {estado === "falhou" && o.disparo_erro && <p className="mt-1 text-xs text-[#FFB0A6]">Disparo: {o.disparo_erro}. O Moacir aciona em até 1 hora.</p>}
                     <p className="mt-1 whitespace-pre-line text-sm text-[#DCE3FA]">{o.texto}</p>
                     {o.resposta && <p className="mt-1 whitespace-pre-line border-l-2 border-[#7FD321]/50 pl-2 text-sm text-[#AEB9DD]">{o.resposta}</p>}
+                    {estado === "aguardando_aceite" && <AceiteOrdem ordemId={o.id} podeDecidir={podeAceitarOrdem(o, dados.uid)} />}
+                    {o.reaberto_motivo && estado !== "aguardando_aceite" && o.status !== "concluida" && (
+                      <p className="mt-1 text-xs text-[#FFB547]" data-testid="ordem-reaberta">Reaberta: {o.reaberto_motivo}</p>
+                    )}
                   </li>
                   );
                 })}
@@ -986,6 +992,48 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+/** Aceite de quem pediu (ordem 3c3d8a9e, parte 2): "Aceito" ou "Reabrir" dizendo o que falta. Os outros só veem que aguarda. */
+function AceiteOrdem({ ordemId, podeDecidir }: { ordemId: string; podeDecidir: boolean }) {
+  const router = useRouter();
+  const [reabrindo, setReabrindo] = useState(false);
+  const [falta, setFalta] = useState("");
+  const [erro, setErro] = useState<string | null>(null);
+  const [pendente, iniciar] = useTransition();
+  const decidir = (decisao: "aceitar" | "reabrir") =>
+    iniciar(async () => {
+      setErro(null);
+      const r = await responderAceiteOrdem(ordemId, decisao, falta);
+      if (!r.ok) return setErro(r.erro ?? "Não foi possível registrar agora.");
+      router.refresh();
+    });
+  if (!podeDecidir) return <p className="mt-2 text-xs text-[#8C9AC4]" data-testid="aceite-ordem">Aguardando o aceite de quem criou a ordem.</p>;
+  return (
+    <div className="mt-2 rounded-lg border border-white/10 p-3 text-sm" data-testid="aceite-ordem">
+      <p className="font-semibold text-white">Aguardando seu aceite</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button type="button" onClick={() => decidir("aceitar")} disabled={pendente} className="min-h-[44px] rounded-lg bg-[#7FD321] px-4 text-sm font-semibold text-[#0B1430] disabled:opacity-50">
+          Aceito
+        </button>
+        <button type="button" onClick={() => setReabrindo((v) => !v)} disabled={pendente} className="min-h-[44px] rounded-lg border border-white/20 px-4 text-sm font-semibold text-white disabled:opacity-50">
+          Reabrir
+        </button>
+      </div>
+      {reabrindo && (
+        <div className="mt-2 space-y-2">
+          <label className="block text-xs text-[#8C9AC4]" htmlFor={`falta-${ordemId}`}>
+            O que falta?
+          </label>
+          <textarea id={`falta-${ordemId}`} value={falta} onChange={(e) => setFalta(e.target.value)} maxLength={1000} rows={3} className="w-full rounded-lg border border-white/10 bg-[#0B1430] p-2 text-sm text-white" />
+          <button type="button" onClick={() => decidir("reabrir")} disabled={pendente || !falta.trim()} className="min-h-[44px] rounded-lg bg-[#3D7BFF] px-4 text-sm font-semibold text-white disabled:opacity-50">
+            Reabrir com este texto
+          </button>
+        </div>
+      )}
+      {erro && <p role="alert" className="mt-2 text-xs text-[#FFB0A6]">{erro}</p>}
     </div>
   );
 }

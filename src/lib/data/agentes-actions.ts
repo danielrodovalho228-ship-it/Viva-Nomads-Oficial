@@ -7,9 +7,11 @@ import { categoria } from "@/lib/atendimento/classificar";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { contarAguardandoOk } from "@/lib/data/admin-indicadores";
 import { PREFIXO_MOACIR } from "@/lib/agentes/gerente";
+import { revalidatePath } from "next/cache";
 import { avisoOrdem, contarP1, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
 import { JANELA_EVENTOS_H, montarEventos, type ChamadoEvento, type EventoRede, type FontesRede } from "@/lib/agentes/eventos";
 import { eventosGithub } from "@/lib/agentes/github";
+import { textoReaberto, validarReabertura } from "@/lib/agentes/aceite-ordem";
 import { dispararEncaminhamentosDaSessao } from "@/lib/agentes/servidor";
 
 /**
@@ -23,13 +25,16 @@ export interface DadosCentral {
   ordens: Ordem[];
   conversas: Conversa[];
   atas: Conversa[];
+  /** Quem está logado: só o criador da ordem vê Aceito/Reabrir (a ação e o gatilho do banco conferem de novo). */
+  uid: string | null;
 }
 
-const VAZIO: DadosCentral = { agentes: [], rondas: [], ordens: [], conversas: [], atas: [] };
+const VAZIO: DadosCentral = { agentes: [], rondas: [], ordens: [], conversas: [], atas: [], uid: null };
 
 export async function carregarCentral(): Promise<DadosCentral> {
   const supabase = await createClient();
   if (!supabase) return VAZIO;
+  const uid = (await supabase.auth.getUser()).data.user?.id ?? null;
   const [a, r, o, c, at] = await Promise.all([
     supabase.from("agentes").select("slug, nome, cargo, esquadrao, rotina_texto, trigger_id, status, briefing, ordem").order("ordem"),
     supabase.from("agentes_rondas").select("id, agente_slug, iniciada_em, concluida_em, status, resumo, achados, link_sessao, ordens_atendidas").order("iniciada_em", { ascending: false }).limit(200),
@@ -43,7 +48,57 @@ export async function carregarCentral(): Promise<DadosCentral> {
     ordens: (o.data ?? []) as Ordem[],
     conversas: ((c.data ?? []) as Conversa[]).reverse(),
     atas: (at.data ?? []) as Conversa[],
+    uid,
   };
+}
+
+/**
+ * Aceite do sócio nas ordens (ordem 3c3d8a9e, parte 2): só QUEM CRIOU a ordem a aceita ("Aceito") ou reabre dizendo o que falta.
+ * A condição vai no próprio UPDATE (criado_por = quem está logado, concluída, sem aceite) e o gatilho da 0209 repete a regra.
+ * Reabrir devolve a ordem a "pendente" com o que falta no fim do texto, que é o que o agente lê.
+ */
+export async function responderAceiteOrdem(id: string, decisao: "aceitar" | "reabrir", falta?: string): Promise<{ ok: boolean; erro?: string }> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, erro: "Ordem inválida." };
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, erro: "Indisponível." };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, erro: "Só admin." };
+  const agora = new Date().toISOString();
+  let mudanca: Record<string, unknown>;
+  if (decisao === "aceitar") {
+    mudanca = { aceito_por: user.id, aceito_em: agora };
+  } else {
+    const v = validarReabertura(falta);
+    if (!v.ok) return { ok: false, erro: v.erro };
+    const { data: atual } = await supabase.from("agentes_ordens").select("texto").eq("id", id).eq("criado_por", user.id).maybeSingle();
+    if (!atual) return { ok: false, erro: "Só quem criou a ordem aceita ou reabre." };
+    mudanca = {
+      status: "pendente",
+      texto: textoReaberto(String(atual.texto), v.falta),
+      reaberto_em: agora,
+      reaberto_motivo: v.falta,
+      aceito_por: null,
+      aceito_em: null,
+      disparada_em: null,
+      sessao_url: null,
+      disparo_erro: null,
+    };
+  }
+  const { data, error } = await supabase
+    .from("agentes_ordens")
+    .update(mudanca)
+    .eq("id", id)
+    .eq("criado_por", user.id)
+    .eq("status", "concluida")
+    .is("aceito_em", null)
+    .select("id");
+  if (error) return { ok: false, erro: "Não foi possível registrar agora." };
+  if (!data?.length) return { ok: false, erro: "Só quem criou a ordem aceita ou reabre, e só enquanto ela aguarda o aceite." };
+  revalidatePath("/admin/agentes");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
 export async function deixarOrdem(slug: string, texto: string): Promise<{ ok: boolean; aviso?: string; erro?: string }> {
