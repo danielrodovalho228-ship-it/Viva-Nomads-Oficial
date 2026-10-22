@@ -3644,6 +3644,14 @@
         "t51-admin-padrao-caixa-socios"
       ]
     },
+    "src/lib/socios/caixa-actions.ts#responderAceite": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t290-aceite-socio"
+      ]
+    },
     "src/lib/socios/caixa-actions.ts#relerArquivo": {
       "personas": [
         "admin"

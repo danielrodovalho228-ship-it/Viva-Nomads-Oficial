@@ -4,7 +4,7 @@
  */
 
 export type TipoCaixa = "texto" | "audio" | "documento" | "imagem";
-export type StatusCaixa = "novo" | "em_andamento" | "feito" | "precisa_daniel";
+export type StatusCaixa = "novo" | "em_andamento" | "feito" | "precisa_daniel" | "aguardando_aceite";
 export type ExtracaoStatus = "nao_se_aplica" | "pendente" | "ok" | "falhou" | "desligada";
 
 export const BUCKET_CAIXA = "caixa-socios";
@@ -97,6 +97,7 @@ export function validarEnvio(e: EnvioEntrada, uid: string): { ok: true; dados: E
 export const ROTULO_STATUS: Record<StatusCaixa, string> = {
   novo: "Recebido",
   em_andamento: "Em andamento",
+  aguardando_aceite: "Aguardando aceite",
   feito: "Feito",
   precisa_daniel: "Aguardando o Daniel",
 };
@@ -111,3 +112,18 @@ export const ROTULO_EXTRACAO: Record<ExtracaoStatus, string> = {
 
 /** Imagens que o leitor de IA aceita (HEIC não). */
 export const IMAGEM_LEGIVEL = ["image/png", "image/jpeg", "image/webp"];
+
+export const LIMITE_FALTA = 1000;
+
+/** Só o AUTOR do pedido aceita ou reabre, e só enquanto o item está aguardando o aceite. */
+export function podeAceitar(item: { status: StatusCaixa; autor_id: string | null }, uid: string): boolean {
+  return item.status === "aguardando_aceite" && !!item.autor_id && item.autor_id === uid;
+}
+
+/** "Reabrir" exige dizer o que falta (vira o texto que o Moacir lê). */
+export function validarReabertura(falta: unknown): { ok: true; falta: string } | { ok: false; erro: string } {
+  const t = typeof falta === "string" ? falta.trim() : "";
+  if (!t) return { ok: false, erro: "Diga o que falta para reabrir o pedido." };
+  if (t.length > LIMITE_FALTA) return { ok: false, erro: `Texto muito longo (máximo ${LIMITE_FALTA} caracteres).` };
+  return { ok: true, falta: t };
+}

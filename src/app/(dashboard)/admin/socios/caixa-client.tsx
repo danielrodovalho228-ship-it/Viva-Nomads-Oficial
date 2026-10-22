@@ -7,12 +7,13 @@ import { FileText, Image as ImageIcon, Inbox, Loader2, Mic, Paperclip, RotateCw,
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { BUCKET_CAIXA, LIMITE_BYTES, LIMITE_TEXTO, ROTULO_EXTRACAO, ROTULO_STATUS, mimeAceito, nomeSeguro } from "@/lib/socios/caixa";
-import { enviarParaCaixa, relerArquivo, type ItemCaixa } from "@/lib/socios/caixa-actions";
+import { BUCKET_CAIXA, LIMITE_BYTES, LIMITE_FALTA, LIMITE_TEXTO, ROTULO_EXTRACAO, ROTULO_STATUS, mimeAceito, nomeSeguro, podeAceitar } from "@/lib/socios/caixa";
+import { enviarParaCaixa, relerArquivo, responderAceite, type ItemCaixa } from "@/lib/socios/caixa-actions";
 
 const COR_STATUS: Record<ItemCaixa["status"], string> = {
   novo: "border border-line bg-white text-forest",
   em_andamento: "border border-line bg-white text-amber-800",
+  aguardando_aceite: "border border-line bg-white text-amber-800",
   feito: "border border-line bg-white text-forest",
   precisa_daniel: "border border-line bg-white text-red-800",
 };
@@ -34,7 +35,7 @@ function IconeTipo({ tipo }: { tipo: ItemCaixa["tipo"] }) {
  * O arquivo sobe direto do navegador para o bucket privado (pasta do próprio usuário) e a ação do servidor registra,
  * transcreve/lê e devolve. O Moacir lê de hora em hora e responde no próprio item.
  */
-export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: ItemCaixa[]; aviso: string | null; transcricaoLigada: boolean }) {
+export function CaixaSociosClient({ itens, aviso, uid, transcricaoLigada }: { itens: ItemCaixa[]; aviso: string | null; uid: string | null; transcricaoLigada: boolean }) {
   const router = useRouter();
   const [texto, setTexto] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -43,6 +44,9 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
   const [ok, setOk] = useState<string | null>(null);
   const [gravando, setGravando] = useState(false);
   const [relendo, setRelendo] = useState<string | null>(null);
+  const [reabrindo, setReabrindo] = useState<string | null>(null);
+  const [falta, setFalta] = useState("");
+  const [decidindo, setDecidindo] = useState<string | null>(null);
   const gravador = useRef<MediaRecorder | null>(null);
   const pedacos = useRef<Blob[]>([]);
   const inputArquivo = useRef<HTMLInputElement>(null);
@@ -145,6 +149,17 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
     router.refresh();
   }
 
+  async function decidir(id: string, decisao: "aceitar" | "reabrir") {
+    setDecidindo(id);
+    setErro(null);
+    const r = await responderAceite(id, decisao, falta);
+    setDecidindo(null);
+    if (!r.ok) return setErro(r.erro ?? "Não foi possível registrar.");
+    setReabrindo(null);
+    setFalta("");
+    router.refresh();
+  }
+
   return (
     <>
       <PageTitle title="Caixa dos Sócios" subtitle="Mande texto, áudio, documento ou print. A equipe lê, distribui e responde aqui." />
@@ -217,7 +232,7 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
                       <IconeTipo tipo={i.tipo} />
                       <strong className="text-ink">{i.autor_nome}</strong> · {quando(i.criado_em)}
                     </span>
-                    <span className={`rounded-full px-2 py-1 font-semibold ${COR_STATUS[i.status]}`}>{ROTULO_STATUS[i.status]}</span>
+                    <span className={`rounded-full px-2 py-1 font-semibold ${COR_STATUS[i.status]}`}>{i.status === "aguardando_aceite" && podeAceitar(i, uid ?? "") ? "Aguardando seu aceite" : ROTULO_STATUS[i.status]}</span>
                   </div>
 
                   {i.texto && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-ink">{i.texto}</p>}
@@ -261,6 +276,33 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
                       <p className="mt-1 whitespace-pre-wrap break-words text-ink">{i.resposta}</p>
                     </div>
                   )}
+
+                  {i.status === "aguardando_aceite" && (
+                    <div className="mt-3 rounded-lg border border-line p-3 text-sm" data-testid="aceite-socio">
+                      {podeAceitar(i, uid ?? "") ? (
+                        <>
+                          <p className="font-semibold text-ink">A equipe entregou. Está como você pediu?</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Button type="button" onClick={() => decidir(i.id, "aceitar")} disabled={decidindo === i.id}>Aceito</Button>
+                            <button type="button" onClick={() => { setReabrindo(i.id); setFalta(""); }} className="inline-flex min-h-11 items-center rounded-xl border border-sage-200 bg-white px-4 font-semibold text-ink hover:border-sage">
+                              Reabrir
+                            </button>
+                          </div>
+                          {reabrindo === i.id && (
+                            <div className="mt-3 space-y-2">
+                              <label htmlFor={`falta-${i.id}`} className="block text-xs font-semibold text-ink">O que falta?</label>
+                              <textarea id={`falta-${i.id}`} value={falta} onChange={(e) => setFalta(e.target.value)} maxLength={LIMITE_FALTA} rows={3} className="w-full rounded-xl border border-sage-200 p-3 text-base" />
+                              <Button type="button" onClick={() => decidir(i.id, "reabrir")} disabled={decidindo === i.id || !falta.trim()}>Reabrir com este texto</Button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-muted">Aguardando o aceite de {i.autor_nome}, que fez o pedido.</p>
+                      )}
+                    </div>
+                  )}
+                  {i.status === "feito" && i.aceito_em && <p className="mt-2 text-xs text-muted">Aceito em {quando(i.aceito_em)}.</p>}
+                  {i.reaberto_motivo && i.status === "em_andamento" && <p className="mt-2 text-xs text-amber-800">Reaberto: {i.reaberto_motivo}</p>}
                 </li>
               ))}
             </ul>
