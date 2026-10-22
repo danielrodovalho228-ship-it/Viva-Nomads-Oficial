@@ -10,7 +10,7 @@ import {
   T249 — VARREDURA VISUAL AUTOMÁTICA: portão permanente antes da entrega (ordem do Muse, 21/10; seção 8 do plano).
   Em cada tela e em cada tamanho (1280 e 390 px), cinco critérios (fixtures/varredura.ts):
     (a) imagens acima da dobra carregadas sem rolar · (b) nada fixo/flutuante cobre controle que a rolagem não revela (topo e fim; régua do Muse, 21/10)
-    (c) sem overflow horizontal · (d) sem erro de console/página (exceto terceiros, com motivo; requisição falhada sai com tipo, método e erro do navegador) · (f) clique em botão primário responde em 3 s.
+    (c) sem overflow horizontal · (d) sem erro de console/página (exceto terceiros, com motivo; prefetch e ação do servidor cancelados pelo navegador não contam; requisição falhada sai com tipo, método e erro do navegador) · (f) clique em botão primário responde em 3 s.
   Massa: scripts/lab/massa-varredura.mjs (contas is_teste @varredura.lab.vivanomads.test). Sem a massa, no laboratório o spec reprova (fora dele, pula).
   Defeitos já conhecidos entram como test.fail com o código D-V no comentário: ao corrigir, o test.fail vira falha e quem
   corrige o produto troca por test normal no mesmo PR. O varrer geral NÃO reprova a combinação coberta por um D-V (ela fica anotada).
@@ -74,7 +74,7 @@ test.describe("T249 — varredura visual (tela × tamanho × critério)", () => 
     const corpo = relatorio.map((l) => `| ${l.tela} | ${l.tamanho} | ${l.criterio} | ${l.resultado} |`).join("\n");
     const ex = [...excecoes].map((e) => `- ${e}`).join("\n") || "- nenhuma";
     mkdirSync("tests/laboratorio/saida", { recursive: true });
-    writeFileSync("tests/laboratorio/saida/varredura-relatorio.md", `# Varredura visual (t249)\n\n${cab}${corpo}\n\n## Exceções de console ignoradas (terceiros)\n${ex}\n\nTempo da spec: ${seg} s (alvo < 360 s)\n`);
+    writeFileSync("tests/laboratorio/saida/varredura-relatorio.md", `# Varredura visual (t249)\n\n${cab}${corpo}\n\n## Exceções ignoradas no critério d (terceiros e cancelamentos do navegador)\n${ex}\n\nTempo da spec: ${seg} s (alvo < 360 s)\n`);
   });
 
   for (const tam of TAMANHOS) {
