@@ -19,12 +19,12 @@ Só defeito de produto confirmado, cada um com o teste do laboratório que o rep
 |---|---|---|---|---|---|
 | 1 | D-V3 | "Enviar documento" (trava da matrícula) não responde e não diz qual campo falta | Editar anúncio (`/dashboard/imoveis/:id/editar`), 390 px | t249 · "D-V3" (`test.fail`) | A |
 | — | D-V7 | Título do cartão de rascunho era link para a página pública (404) | Meus imóveis (`/dashboard/imoveis`), 1280 px | t249 · "D-V7" (teste normal) | **Corrigido no #1028** |
-| 3 | D-V8 | Tela de entrar sem `<main>` (falta o marco principal para leitor de tela) | Entrar (`/auth`), 390 e 1280 px | t249 · "D-V8" (`test.fail`, #1023) | A |
-| 4 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
-| 5 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
-| 6 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
+| 2 | D-V8 | Tela de entrar sem `<main>` (falta o marco principal para leitor de tela) | Entrar (`/auth`), 390 e 1280 px | t249 · "D-V8" (`test.fail`, #1023) | A |
+| 3 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
+| 4 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
+| 5 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
 
-Critério da ordem: 1 trava o dono de publicar; 2 leva o dono a uma página que não existe; 3 atrapalha quem usa leitor de tela; 4 mostra número errado ao admin; 5 confunde, mas não trava; 6 pode ser só baseline desatualizada.
+Critério da ordem: 1 trava o dono de publicar; 2 atrapalha quem usa leitor de tela; 3 mostra número errado ao admin; 4 confunde, mas não trava; 5 pode ser só baseline desatualizada. O D-V7 (levava o dono a uma página que não existe) saiu da ordem ao ser corrigido.
 
 ## Fechados sem registro
 

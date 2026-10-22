@@ -24,7 +24,12 @@ export const SELOS = {
   },
   homeOffice: {
     nome: "Para trabalhar de casa",
-    resumo: "cômodo de trabalho, mesa e internet boa para o home office",
+    resumo: "cômodo de trabalho, mesa, cadeira e internet informada pelo proprietário",
+  },
+  /** Prompt 57: os 4 essenciais + internet medida no imóvel que passa a regra de videochamada (config/internet.ts). */
+  homeOfficeMedido: {
+    nome: "Para trabalhar de casa · internet medida",
+    resumo: "cômodo de trabalho, mesa, cadeira e internet medida no imóvel, boa para videochamadas",
   },
   bemLocalizado: {
     nome: "Bem localizado p/ trabalho",
@@ -56,6 +61,7 @@ export const PRONTO_PARA_MORAR_CRITERIOS = [
  * src/lib/ideal-para.ts. Não é selo novo nem renomeia nenhum selo acima.
  */
 export const IDEAL_PARA = {
+  homeOfficeMedido: { nome: "Home office · internet medida", resumo: "mesa de trabalho e internet medida no imóvel, boa para videochamadas" },
   homeOffice: { nome: "Home office", resumo: "mesa de trabalho e internet informada" },
   familia: { nome: "Família", resumo: "2 ou mais quartos" },
   executivo: { nome: "Executivo", resumo: "mobiliado completo, com recibo para reembolso" },
