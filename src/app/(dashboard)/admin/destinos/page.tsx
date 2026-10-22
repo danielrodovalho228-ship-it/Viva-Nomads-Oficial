@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Briefcase, CheckCircle2, MapPinned, Search } from "lucide-react";
+import { Briefcase, MapPinned } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { maisBuscados, TIPOS_DESTINO } from "@/lib/destinos/regras";
 import { DestinoBotao, DestinoForm, type DestinoEditavel } from "./forms";
 
@@ -48,17 +49,20 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
     <>
       <PageTitle title="Destinos" subtitle="Hospitais, universidades e empresas para a busca pelo tempo até o trabalho." />
       {error && (
-        <p role="alert" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p role="alert" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Não foi possível ler os destinos agora. Tente de novo em instantes.
         </p>
       )}
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3">
-        <StatCard label="Destinos ativos" value={lista.filter((d) => d.ativo).length} icon={CheckCircle2} />
-        <StatCard label="Sem ponto conferido" value={lista.filter((d) => d.lat == null).length} icon={MapPinned} />
-        <StatCard label="Buscas em 30 dias" value={ranking.reduce((n, r) => n + r.total, 0)} icon={Search} href="#mais-buscados" />
-      </div>
+      <NumeroHeroi rotulo="Destinos ativos" valor={lista.filter((d) => d.ativo).length} href="#destinos" />
+      <ListaNumeros
+        className="mb-6"
+        itens={[
+          { rotulo: "Sem ponto conferido", valor: lista.filter((d) => d.lat == null).length, href: "#destinos" },
+          { rotulo: "Buscas em 30 dias", valor: ranking.reduce((n, r) => n + r.total, 0), href: "#mais-buscados" },
+        ]}
+      />
 
-      <Panel title="Destinos" className="mb-6">
+      <Panel title="Destinos" className="mb-6 scroll-mt-24" id="destinos">
         {lista.length === 0 ? (
           <EmptyState icon={Briefcase} title="Nenhum destino" text="Cadastre abaixo o primeiro destino." />
         ) : (

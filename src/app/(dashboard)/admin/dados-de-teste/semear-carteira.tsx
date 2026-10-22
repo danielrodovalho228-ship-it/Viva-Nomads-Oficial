@@ -76,7 +76,7 @@ export function SemearCarteiraTeste({ proprietarios, inquilinos }: { proprietari
         </Button>
       </div>
       {confirmando && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alertdialog" data-testid="carteira-confirmacao">
+        <div className="rounded-lg border border-line bg-white p-3 text-sm text-amber-900" role="alertdialog" data-testid="carteira-confirmacao">
           <p>
             {confirmando === "semear"
               ? "Semear a carteira de teste: 3 imóveis [TESTE QA] Carteira publicados, 2 contratos encerrados e 1 ativo. O que já existe não é recriado."
@@ -98,7 +98,7 @@ export function SemearCarteiraTeste({ proprietarios, inquilinos }: { proprietari
           {msg.ok && (
             <>
               {" "}
-              <Link href="/dashboard/carteira" className="font-medium underline">
+              <Link href="/dashboard/carteira" className="font-semibold underline">
                 Abrir a Análise da carteira
               </Link>{" "}
               (entre como o proprietário de teste).

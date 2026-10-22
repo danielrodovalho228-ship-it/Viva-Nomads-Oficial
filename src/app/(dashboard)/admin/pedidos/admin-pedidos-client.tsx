@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { EyeOff, RotateCcw, Megaphone, Sparkles, Mail, MessageSquare, Clock } from "lucide-react";
-import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
+import { EyeOff, RotateCcw } from "lucide-react";
+import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import type { MetricasPedidos } from "@/lib/data/pedidos-compat";
 import type { Recorte } from "@/lib/admin/indicadores";
 import { Button } from "@/components/ui/button";
@@ -35,11 +36,11 @@ type Pedido = {
 };
 
 const TONE: Record<string, string> = {
-  ativo: "bg-green-50 text-green-800",
-  pausado: "bg-amber-50 text-amber-800",
-  atendido: "bg-blue-50 text-blue-700",
+  ativo: "border border-line bg-white text-forest",
+  pausado: "border border-line bg-white text-amber-800",
+  atendido: "border border-line bg-white text-forest",
   expirado: "bg-surface-2 text-muted",
-  removido_admin: "bg-red-50 text-red-700",
+  removido_admin: "border border-line bg-white text-red-700",
   excluido: "bg-surface-2 text-muted",
 };
 
@@ -144,7 +145,7 @@ export function AdminPedidosClient({
           ))}
         </div>
       </div>
-      <Panel className="p-0 pt-6">
+      <Panel className="scroll-mt-24 p-0 pt-6" id="lista">
         <div className="overflow-x-auto px-6 pb-6">
           {lista.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">{todos.length === 0 ? "Nenhum pedido no sistema." : "Nenhum pedido com esse filtro."}</p>
@@ -152,21 +153,21 @@ export function AdminPedidosClient({
             <table className="w-full min-w-[960px] text-sm">
               <thead className="text-left text-muted">
                 <tr>
-                  <th className="py-2 font-medium">Inquilino · motivo · cidade</th>
-                  <th className="py-2 font-medium">Entrada</th>
-                  <th className="py-2 font-medium">Faixa · bairros</th>
-                  <th className="py-2 font-medium">Selos</th>
-                  <th className="py-2 font-medium">Respostas</th>
-                  <th className="py-2 font-medium">Detalhes</th>
-                  <th className="py-2 font-medium">Status</th>
-                  <th className="py-2 font-medium text-right">Ação</th>
+                  <th className="py-2 font-semibold">Inquilino · motivo · cidade</th>
+                  <th className="py-2 font-semibold">Entrada</th>
+                  <th className="py-2 font-semibold">Faixa · bairros</th>
+                  <th className="py-2 font-semibold">Selos</th>
+                  <th className="py-2 font-semibold">Respostas</th>
+                  <th className="py-2 font-semibold">Detalhes</th>
+                  <th className="py-2 font-semibold">Status</th>
+                  <th className="py-2 font-semibold text-right">Ação</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-sage-200">
                 {lista.map((p) => (
                   <tr key={p.id} className={cn(p.status === "removido_admin" && "opacity-70")}>
                     <td className="py-3" data-testid="admin-pedido-linha" data-pedido={p.id}>
-                      <p className="font-medium text-ink" data-testid="admin-pedido-nome">{p.colunas?.nome ?? "—"}</p>
+                      <p className="font-semibold text-ink" data-testid="admin-pedido-nome">{p.colunas?.nome ?? "—"}</p>
                       <p className="text-xs text-muted">
                         {motivoLabel(p.motivo)} · {p.cidade}
                         {p.uf ? `/${p.uf}` : ""}
@@ -180,7 +181,7 @@ export function AdminPedidosClient({
                     <td className="py-3">
                       <ul className="flex flex-wrap gap-1">
                         {(p.colunas?.selos ?? []).map((s) => (
-                          <li key={s.codigo} className={cn("rounded-full px-2 py-1 text-[11px]", s.ok ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900")}>
+                          <li key={s.codigo} className={cn("rounded-full px-2 py-1 text-[11px]", s.ok ? "bg-sage-100 text-forest" : "border border-line bg-white text-amber-900")}>
                             {s.texto}
                           </li>
                         ))}
@@ -270,14 +271,16 @@ function MetricasPedidosPainel({ m, r }: { m: MetricasPedidos | null; r: Respost
   return (
     <div className="mb-6">
       <p className="mb-2 text-sm text-muted" data-testid="pedidos-janela">{r.janela}</p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-        <StatCard label="Pedidos do período" value={r.total} icon={Megaphone} />
-        <StatCard label="Pedidos com resposta" value={taxa} icon={MessageSquare} />
-        <StatCard label="Tempo até a 1ª resposta (mediana)" value={horas} icon={Clock} />
-        <StatCard label="Pedidos respondidos" value={r.comResposta} icon={MessageSquare} />
-        <StatCard label="Com compatível ao publicar" value={r.compativel.match(/\d+%$/)?.[0] ?? "—"} hint={r.compativel} icon={Sparkles} />
-        <StatCard label="Avisos enviados (30 dias)" value={m ? m.avisos_email + m.avisos_resumo : "—"} icon={Mail} />
-      </div>
+      <NumeroHeroi rotulo="Pedidos do período" valor={r.total} href="#lista" />
+      <ListaNumeros
+        itens={[
+          { rotulo: "Pedidos com resposta", valor: taxa, href: "#lista" },
+          { rotulo: "Tempo até a 1ª resposta (mediana)", valor: horas, href: "#lista" },
+          { rotulo: "Pedidos respondidos", valor: r.comResposta, href: "#lista" },
+          { rotulo: "Com compatível ao publicar", valor: r.compativel.match(/\d+%$/)?.[0] ?? "—", nota: r.compativel, href: "#lista" },
+          { rotulo: "Avisos enviados (30 dias)", valor: m ? m.avisos_email + m.avisos_resumo : "—", href: "#lista" },
+        ]}
+      />
       <ul className="mt-2 space-y-1 text-xs text-muted" data-testid="formulas-pedidos">
         <li>Pedidos com resposta = pedidos do período que receberam pelo menos 1 contato ou proposta ÷ pedidos do período. A mesma conta da visão geral.</li>
         <li>Tempo até a 1ª resposta = mediana do tempo entre a publicação e o 1º contato ou proposta.</li>

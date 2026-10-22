@@ -1,7 +1,8 @@
 import { dataBRT } from "@/lib/datas-brasilia";
 import { Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { MOTIVOS_REVISAO, ehMotivoRevisao } from "@/lib/avaliacoes-resposta";
 import { DecidirForm } from "./forms";
 
@@ -36,15 +37,13 @@ export default async function AdminAvaliacoesPage() {
     <>
       <PageTitle title="Avaliações" subtitle="Pedidos de revisão feitos por quem foi avaliado." />
       {error && (
-        <p role="alert" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p role="alert" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Não foi possível ler os pedidos agora. Tente de novo em instantes.
         </p>
       )}
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Pedidos abertos" value={abertas.length} icon={Star} />
-        <StatCard label="Decididos" value={lista.length - abertas.length} icon={Star} />
-      </div>
-      <Panel title={`Pedidos de revisão (${lista.length})`}>
+      <NumeroHeroi rotulo="Pedidos de revisão abertos" valor={abertas.length} href="#lista" />
+      <ListaNumeros className="mb-6" itens={[{ rotulo: "Decididos", valor: lista.length - abertas.length, href: "#lista" }]} />
+      <Panel title={`Pedidos de revisão (${lista.length})`} id="lista" className="scroll-mt-24">
         {lista.length === 0 ? (
           <EmptyState icon={Star} title="Nenhum pedido ainda" text="Quando alguém pedir revisão de uma avaliação, aparece aqui." />
         ) : (
@@ -55,7 +54,7 @@ export default async function AdminAvaliacoesPage() {
                 <li key={c.id} className="rounded-xl border border-sage-200 p-3 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-semibold text-ink">{ehMotivoRevisao(c.motivo) ? MOTIVOS_REVISAO[c.motivo] : c.motivo}</p>
-                    <span className="rounded-full bg-sage-100 px-2 py-1 text-xs font-semibold text-forest">
+                    <span className="rounded-full border border-line bg-white px-2 py-1 text-xs font-semibold text-forest">
                       {c.status === "aberta" ? "Aberto" : c.status === "removida" ? "Saiu do ar" : "Mantida"} · {dataBR(c.criada_em as string)}
                     </span>
                   </div>

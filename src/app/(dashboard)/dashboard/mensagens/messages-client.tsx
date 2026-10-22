@@ -40,7 +40,12 @@ export function MessagesClient({ initial, abrir }: { initial: Conversation[]; /*
 
 function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo: boolean; abrir?: string }) {
   const [conversations, setConversations] = useState<Conversation[]>(initial);
-  const [activeId, setActiveId] = useState<string>((abrir && initial.some((c) => c.id === abrir) ? abrir : initial[0]?.id) ?? "");
+  // A conversa aberta mora também na URL (?conversa=): se a tela remontar (o painel remonta o conteúdo quando o modo
+  // é acertado pelo perfil logo depois de carregar), ela volta na mesma conversa — nunca cai na primeira da lista com o
+  // cartão de outra (QA 21/10, "cartão residual nas Conversas").
+  const pedida = (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("conversa") : null) ?? abrir;
+  const existe = !!pedida && initial.some((c) => c.id === pedida);
+  const [activeId, setActiveId] = useState<string>((existe ? pedida : initial[0]?.id) ?? "");
   const [draft, setDraft] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todas");
   // Fotos das conversas (map conversationId → URL). O SERVIDOR decide: foto do
@@ -72,7 +77,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // Prompt 32: CPF/RG não vai pelo chat; a mensagem fica no campo e o aviso leva aos Ocupantes da estadia.
   const [docBloqueado, setDocBloqueado] = useState(false);
   // No mobile, alterna entre lista e conversa (master-detail). No desktop, ambos.
-  const [mobileView, setMobileView] = useState<"list" | "chat">(abrir && initial.some((c) => c.id === abrir) ? "chat" : "list");
+  const [mobileView, setMobileView] = useState<"list" | "chat">(existe ? "chat" : "list");
 
   const contagem = contarPorFiltro(conversations);
   const visiveis = filtrarConversas(conversations, filtro);
@@ -82,6 +87,11 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   function openConversation(id: string) {
     setActiveId(id);
     setMobileView("chat");
+    if (!demo) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("conversa", id);
+      window.history.replaceState(window.history.state, "", url);
+    }
   }
 
   async function submit(e: React.FormEvent) {
@@ -174,6 +184,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             <button
               key={c.id}
               data-testid="mensagens-conversa"
+              data-conversa={c.id}
               onClick={() => openConversation(c.id)}
               className={cn(
                 "flex w-full items-center gap-3 border-b border-sage-200 px-4 py-3 text-left transition-colors",
@@ -255,7 +266,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             </div>
           )}
           {!demo && active.propertyId && active.otherId && (
-            <VisitaNaConversa key={active.id} propertyId={active.propertyId} outroId={active.otherId} />
+            <VisitaNaConversa propertyId={active.propertyId} outroId={active.otherId} />
           )}
           {/* Ficha do pet da candidatura: só aparece para o DONO daquela candidatura (o servidor confere). */}
           {!demo && active.propertyId && active.otherId && (
@@ -344,24 +355,33 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
  * ações do painel Visitas (confirmar, propor outro horário, recusar com motivo; o morador aceita o novo horário).
  */
 function VisitaNaConversa({ propertyId, outroId }: { propertyId: string; outroId: string }) {
-  const [visita, setVisita] = useState<Awaited<ReturnType<typeof visitaDaConversa>>>(null);
+  // O cartão guarda de qual conversa (imóvel + pessoa) ele é: trocar de conversa nunca mostra o da anterior,
+  // nem enquanto a resposta nova não chega (QA 21/10, "cartão residual nas Conversas").
+  const chave = `${propertyId}:${outroId}`;
+  const [carregada, setCarregada] = useState<{ chave: string; visita: Awaited<ReturnType<typeof visitaDaConversa>> } | null>(null);
   const [versao, setVersao] = useState(0);
   useEffect(() => {
     let alive = true;
     visitaDaConversa(propertyId, outroId)
       .then((v) => {
-        if (alive) setVisita(v);
+        if (alive) setCarregada({ chave: `${propertyId}:${outroId}`, visita: v });
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
   }, [propertyId, outroId, versao]);
-  if (!visita) return null;
-  const { papel, ...v } = visita;
+  const visita = carregada?.chave === chave ? carregada.visita : null;
+  const { papel, ...v } = visita ?? { papel: "morador" as const };
+  // A caixa fica SEMPRE montada (sem chave por conversa): trocar de conversa só troca o conteúdo dela. O lab mostrou
+  // que, remontando o cartão por conversa, o React apagava o componente da anterior mas o nó dele ficava na seção (t270).
   return (
-    <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita">
-      <CartaoVisita key={`${v.id}-${v.status}`} v={v} papel={papel} compacto onMudou={() => setVersao((n) => n + 1)} />
+    <div data-conversa-visita-caixa={chave} hidden={!visita}>
+      {visita && (
+        <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita" data-imovel={propertyId} data-visita={visita.id}>
+          <CartaoVisita key={`${chave}-${visita.id}-${visita.status}`} v={v as Omit<NonNullable<typeof visita>, "papel">} papel={papel} compacto onMudou={() => setVersao((n) => n + 1)} />
+        </div>
+      )}
     </div>
   );
 }

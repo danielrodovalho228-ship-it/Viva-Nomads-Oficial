@@ -26,9 +26,9 @@ export function BuscaVazia({
 }) {
   return (
     <div className="mt-4 space-y-4" data-testid="busca-parceiros-vazia">
-      <p className="text-ink">
-        Ainda não temos parceiro{categoria ? ` de ${rotuloCategoria(categoria).toLowerCase()}` : ""}
-        {cidade ? ` em ${cidade}` : " nesta busca"}.
+      {/* Uma frase = um texto só: em pedaços, leitores que aparam cada pedaço colavam as palavras (QA 22/10). */}
+      <p className="text-ink" data-testid="busca-parceiros-vazia-texto">
+        {`Ainda não temos parceiro${categoria ? ` de ${rotuloCategoria(categoria).toLowerCase()}` : ""}${cidade ? ` em ${cidade}` : " nesta busca"}.`}
       </p>
       {cidade && <AvisoFotografo cidade={cidade} uf={uf} logado={logado} voltarPara={voltarPara} autoAvisar={autoAvisar} categoria={categoria || "outro"} />}
       <div className="rounded-xl border border-line bg-white p-4" data-testid="indique-profissional">

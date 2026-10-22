@@ -236,10 +236,10 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
           </div>
           <div className="flex flex-wrap gap-4 text-xs text-[#8C9AC4] sm:ml-auto" style={mono}>
             <span>
-              Brasília <b className="font-medium text-white">{agora ? horaBRT(agora) : "--:--"}</b>
+              Brasília <b className="font-semibold text-white">{agora ? horaBRT(agora) : "--:--"}</b>
             </span>
             <span>
-              Texas <b className="font-medium text-white">{horaTexas(agora)}</b>
+              Texas <b className="font-semibold text-white">{horaTexas(agora)}</b>
             </span>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1 text-xs text-[#8C9AC4]">
@@ -297,7 +297,7 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
               [kpi?.p1, "achados P1 (última ronda)"],
             ].map(([v, l]) => (
               <div key={String(l)} className="min-w-0 rounded-xl border border-white/10 bg-[#0D1838]/60 px-2 py-2 sm:px-3 sm:py-3">
-                <b className="block text-lg font-medium text-white sm:text-[22px]" style={mono}>
+                <b className="block text-lg font-semibold text-white sm:text-[22px]" style={mono}>
                   {v ?? "–"}
                 </b>
                 <span className="block text-[9.5px] leading-tight text-[#8C9AC4] sm:text-[11px]">{l}</span>

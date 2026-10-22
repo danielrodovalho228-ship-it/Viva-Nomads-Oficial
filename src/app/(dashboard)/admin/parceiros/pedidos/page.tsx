@@ -1,17 +1,29 @@
 import Link from "next/link";
-import { CheckCircle2, ClipboardList, CreditCard, Handshake, Inbox, Receipt } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { idsContasTeste } from "@/lib/data/admin-indicadores";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { contarPorGatilho, ROTULO_GATILHO, type Gatilho } from "@/lib/automacao/pedidos-do-evento";
 import { RodarAutomacao } from "@/components/automacao/rodar-automacao";
-import { FORMULAS_PEDIDOS_PARCEIRO, numerosPedidosParceiro, rotuloStatus, type PedidoParaNumeros } from "@/lib/parceiros/pedido";
+import { FORMULAS_PEDIDOS_PARCEIRO, STATUS_ABERTOS, numerosPedidosParceiro, rotuloStatus, type PedidoParaNumeros } from "@/lib/parceiros/pedido";
 
 export const metadata = { title: "Pedidos de parceiros — Admin" };
 export const dynamic = "force-dynamic";
+
+/** Filtros da lista (Prompt 46: todo número abre a lista que conta). Os mesmos grupos de numerosPedidosParceiro. */
+const FILTROS = {
+  reais: { titulo: "Pedidos (sem contas de teste)", passa: () => true },
+  solicitado: { titulo: "Aguardando orçamento", passa: (s: string) => s === "solicitado" },
+  abertos: { titulo: "Pedidos abertos", passa: (s: string) => (STATUS_ABERTOS as readonly string[]).includes(s) },
+  fechados: { titulo: "Pedidos fechados", passa: (s: string) => ["aceito", "agendado", "em_execucao", "entregue", "concluido"].includes(s) },
+  concluido: { titulo: "Pedidos concluídos", passa: (s: string) => s === "concluido" },
+  cartao: { titulo: "Pedidos vindos de cartão", passa: () => true },
+} as const;
+type Filtro = keyof typeof FILTROS;
 
 const brl = (n: number | string | null) => (n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
 
@@ -19,9 +31,10 @@ const brl = (n: number | string | null) => (n == null ? "—" : Number(n).toLoca
  * Admin → Parceiros → Pedidos (Prompt 31b, item 9): lista com estado, valores, taxa, origem e ref do cartão, e os
  * números com a fórmula escrita (contas de teste fora). O layout de /admin exige admin.
  */
-export default async function AdminPedidosParceirosPage({ searchParams }: { searchParams: Promise<{ origem?: string }> }) {
+export default async function AdminPedidosParceirosPage({ searchParams }: { searchParams: Promise<{ origem?: string; filtro?: string }> }) {
   const sp = await searchParams;
   const soAutomaticos = sp.origem === "automatico";
+  const filtro = (sp.filtro && sp.filtro in FILTROS ? sp.filtro : null) as Filtro | null;
   const admin = createAdminClient();
   if (!admin) return <EmptyState icon={ClipboardList} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." />;
   const [{ data }, testes, { data: parcs }] = await Promise.all([
@@ -41,26 +54,39 @@ export default async function AdminPedidosParceirosPage({ searchParams }: { sear
   const ehTeste = (p: { cliente_id: string; parceiro_id: string }) => testes.has(p.cliente_id) || testes.has(dono.get(p.parceiro_id) ?? "");
   // Prompt 38: pedidos gerados pela regra do imóvel, por gatilho (contas de teste fora).
   const porGatilho = contarPorGatilho(pedidos.map((p) => ({ origem: p.origem, gatilho: p.gatilho, teste: ehTeste(p) })));
-  const lista = soAutomaticos ? pedidos.filter((p) => p.origem === "automatico") : pedidos;
+  // Com filtro, a lista é a mesma conta do número (contas de teste fora); sem filtro, todos (teste com selo).
+  const lista = filtro
+    ? pedidos.filter((p) => !ehTeste(p) && FILTROS[filtro].passa(p.status) && (filtro !== "cartao" || p.ref_tipo === "partnercard"))
+    : soAutomaticos
+      ? pedidos.filter((p) => p.origem === "automatico")
+      : pedidos;
+  const aqui = (f: Filtro) => `/admin/parceiros/pedidos?filtro=${f}#lista`;
 
   return (
     <>
       <PageTitle title="Pedidos de parceiros" subtitle="Orçamentos, aceites e entregas. A Viva só conecta: nenhum dinheiro passa por aqui." />
       <p className="mb-4 text-sm">
-        <Link href="/admin/parceiros" className="text-blue-700 underline underline-offset-2">
+        <Link href="/admin/parceiros" className="text-forest underline underline-offset-2">
           Voltar para Parceiros
         </Link>
       </p>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="admin-pedidos-numeros">
-        <StatCard label="Pedidos" icon={ClipboardList} value={String(n.total)} hint={FORMULAS_PEDIDOS_PARCEIRO.total} />
-        <StatCard label="Abertos" icon={Inbox} value={String(n.abertos)} hint={FORMULAS_PEDIDOS_PARCEIRO.abertos} />
-        <StatCard label="Fechados" icon={Handshake} value={`${n.fechados} (${n.conversao}%)`} hint={`${FORMULAS_PEDIDOS_PARCEIRO.fechados} ${FORMULAS_PEDIDOS_PARCEIRO.conversao}`} />
-        <StatCard label="Concluídos" icon={CheckCircle2} value={String(n.concluidos)} hint={FORMULAS_PEDIDOS_PARCEIRO.concluidos} />
-        <StatCard label="Taxa registrada" icon={Receipt} value={brl(n.taxaRegistrada)} hint={FORMULAS_PEDIDOS_PARCEIRO.taxaRegistrada} />
-        <div data-testid="admin-pedidos-de-cartao" data-valor={n.vindosDeCartao}>
-          <StatCard label="Pedidos vindos de cartão" icon={CreditCard} value={String(n.vindosDeCartao)} hint={FORMULAS_PEDIDOS_PARCEIRO.vindosDeCartao} />
-        </div>
-      </div>
+      <NumeroHeroi rotulo="Pedidos abertos" valor={n.abertos} href={aqui("abertos")} nota={FORMULAS_PEDIDOS_PARCEIRO.abertos} />
+      <ListaNumeros
+        testId="admin-pedidos-numeros"
+        itens={[
+          { rotulo: "Pedidos", valor: n.total, href: aqui("reais"), nota: FORMULAS_PEDIDOS_PARCEIRO.total },
+          { rotulo: "Fechados", valor: `${n.fechados} (${n.conversao}%)`, href: aqui("fechados"), nota: `${FORMULAS_PEDIDOS_PARCEIRO.fechados} ${FORMULAS_PEDIDOS_PARCEIRO.conversao}` },
+          { rotulo: "Concluídos", valor: n.concluidos, href: aqui("concluido"), nota: FORMULAS_PEDIDOS_PARCEIRO.concluidos },
+          { rotulo: "Taxa registrada", valor: brl(n.taxaRegistrada), href: aqui("fechados"), nota: FORMULAS_PEDIDOS_PARCEIRO.taxaRegistrada },
+          {
+            rotulo: "Pedidos vindos de cartão",
+            valor: n.vindosDeCartao,
+            href: aqui("cartao"),
+            nota: FORMULAS_PEDIDOS_PARCEIRO.vindosDeCartao,
+            atributos: { "data-testid": "admin-pedidos-de-cartao", "data-valor": n.vindosDeCartao },
+          },
+        ]}
+      />
       <Panel title="Gerados automaticamente" className="mt-6" data-testid="admin-pedidos-automaticos">
         <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
           {(Object.keys(ROTULO_GATILHO) as Gatilho[]).map((g) => (
@@ -75,14 +101,14 @@ export default async function AdminPedidosParceirosPage({ searchParams }: { sear
           <RodarAutomacao />
         </div>
       </Panel>
-      <Panel title={soAutomaticos ? "Pedidos gerados automaticamente" : "Todos os pedidos"} className="mt-6">
+      <Panel title={filtro ? FILTROS[filtro].titulo : soAutomaticos ? "Pedidos gerados automaticamente" : "Todos os pedidos"} className="mt-6 scroll-mt-24" id="lista">
         <p className="mb-2 text-sm">
-          {soAutomaticos ? (
-            <Link href="/admin/parceiros/pedidos" className="text-blue-700 underline underline-offset-2" data-testid="admin-filtro-todos">
+          {filtro || soAutomaticos ? (
+            <Link href="/admin/parceiros/pedidos" className="text-forest underline underline-offset-2" data-testid="admin-filtro-todos">
               Ver todos
             </Link>
           ) : (
-            <Link href="/admin/parceiros/pedidos?origem=automatico" className="text-blue-700 underline underline-offset-2" data-testid="admin-filtro-automaticos">
+            <Link href="/admin/parceiros/pedidos?origem=automatico" className="text-forest underline underline-offset-2" data-testid="admin-filtro-automaticos">
               Só os gerados automaticamente
             </Link>
           )}

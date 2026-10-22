@@ -37,27 +37,27 @@ export function DestinoForm({ inicial }: { inicial?: DestinoEditavel }) {
     <form action={acao} className="grid gap-3 sm:grid-cols-2" data-testid="destino-form" key={inicial?.slug ?? "novo"}>
       {inicial && <input type="hidden" name="slug" value={inicial.slug} />}
       <div className="sm:col-span-2">
-        <label htmlFor="nome" className="block text-sm font-medium">Nome</label>
+        <label htmlFor="nome" className="block text-sm font-semibold">Nome</label>
         <input id="nome" name="nome" required maxLength={80} defaultValue={inicial?.nome} className={campo} placeholder="Ex.: HC-UFU" />
       </div>
       <div>
-        <label htmlFor="tipo" className="block text-sm font-medium">Tipo</label>
+        <label htmlFor="tipo" className="block text-sm font-semibold">Tipo</label>
         <select id="tipo" name="tipo" defaultValue={inicial?.tipo ?? "hospital"} className={campo}>
           {TIPOS_DESTINO.map((t) => <option key={t.valor} value={t.valor}>{t.rotulo}</option>)}
         </select>
       </div>
       <div>
-        <label htmlFor="artigo" className="block text-sm font-medium">Como se fala</label>
+        <label htmlFor="artigo" className="block text-sm font-semibold">Como se fala</label>
         <select id="artigo" name="artigo" defaultValue={inicial?.artigo ?? "o"} className={campo}>
           <option value="o">“perto do …” (o)</option>
           <option value="a">“perto da …” (a)</option>
           <option value="">“perto de …” (sem artigo)</option>
         </select>
       </div>
-      <div><label htmlFor="cidade" className="block text-sm font-medium">Cidade</label><input id="cidade" name="cidade" required maxLength={80} defaultValue={inicial?.cidade ?? "Uberlândia"} className={campo} /></div>
-      <div><label htmlFor="uf" className="block text-sm font-medium">UF</label><input id="uf" name="uf" required maxLength={2} defaultValue={inicial?.uf ?? "MG"} className={`${campo} uppercase`} /></div>
+      <div><label htmlFor="cidade" className="block text-sm font-semibold">Cidade</label><input id="cidade" name="cidade" required maxLength={80} defaultValue={inicial?.cidade ?? "Uberlândia"} className={campo} /></div>
+      <div><label htmlFor="uf" className="block text-sm font-semibold">UF</label><input id="uf" name="uf" required maxLength={2} defaultValue={inicial?.uf ?? "MG"} className={`${campo} uppercase`} /></div>
       <div className="sm:col-span-2">
-        <span className="block text-sm font-medium">Ponto no mapa</span>
+        <span className="block text-sm font-semibold">Ponto no mapa</span>
         <div className="mt-1">
           <LocationSearch
             placeholder="Busque pelo nome ou endereço"

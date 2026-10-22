@@ -11,22 +11,24 @@ test.describe("T15 — Admin real", () => {
 
   test("/admin não tem dados de exemplo e mostra os números do banco", async ({ page }) => {
     await page.goto("/admin", { waitUntil: "networkidle" });
-    await expect(page.getByRole("heading", { name: "Administração" })).toBeVisible();
+    // Prompt 46: o /admin abre com as decisões ("Hoje você tem N decisões" / "Nada pede sua decisão hoje").
+    await expect(page.getByRole("heading", { level: 1, name: /decis/ })).toBeVisible();
     const corpo = page.locator("main");
     for (const falso of ["Marcos A.", "Patrícia L.", "Família Souza", "Apto Santa Mônica", "Casa Tibery"]) {
       await expect(corpo).not.toContainText(falso);
     }
     // Cartões de contagem presentes (o valor vem do banco; "—" só sem conexão).
-    for (const rotulo of ["Usuários", "Imóveis reais publicados"]) {
-      await expect(corpo.getByText(rotulo, { exact: true }).first()).toBeVisible();
-    }
+    await expect(corpo.getByText("Usuários", { exact: true }).first()).toBeVisible();
+    await expect(page.getByTestId("admin-heroi")).toContainText("Imóveis reais publicados");
     // A fila de checklists (sempre vazia: a qualificação nunca fica pendente)
     // saiu; o portão humano é o documento, com link para a fila dele.
     await expect(corpo).not.toContainText("Checklists pendentes");
-    await expect(corpo.getByRole("link", { name: /Documentos de imóvel para conferir/ })).toHaveAttribute(
-      "href",
-      "/admin/documentos"
-    );
+    // Cada decisão leva à tela do admin onde ela é tomada (a de documentos só aparece com fila).
+    for (const link of await page.getByTestId("admin-decisoes").locator("[data-href]").all()) {
+      expect(await link.getAttribute("data-href")).toMatch(/^\/admin/);
+    }
+    const docs = page.locator('[data-decisao="documentos_pendentes"] [data-href]');
+    if (await docs.count()) await expect(docs).toHaveAttribute("href", "/admin/documentos");
     await expect(corpo).not.toContainText("modo demonstração");
   });
 
@@ -34,7 +36,7 @@ test.describe("T15 — Admin real", () => {
     for (const periodo of ["7", "30", "90", "ano"]) {
       await page.goto(`/admin?periodo=${periodo}`, { waitUntil: "networkidle" });
       const corpo = page.locator("main");
-      await expect(corpo.getByRole("heading", { name: "Precisa de você agora" })).toBeVisible();
+      await expect(page.getByTestId("admin-decisoes")).toBeVisible();
       const texto = await corpo.innerText();
       expect(texto, `periodo=${periodo}`).not.toMatch(/NaN|Infinity/);
       // Nunca "0%" com denominador zero: cartão de % sem base mostra "—".
