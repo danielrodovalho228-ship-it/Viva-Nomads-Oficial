@@ -193,7 +193,9 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
     test.skip(!temContaVarredura("DONO17"), "sem a conta DONO17");
     const { context, page } = await abrirComoConta(browser, "DONO17", "1280");
     await abrirRota(page, "/dashboard/imoveis");
-    const semFoto = await page.evaluate(async () => {
+    // As miniaturas carregam depois da tela: espera até 5 s, como imagensAcimaDaDobra (lab de 22/10: "imagem quebrada"
+    // na 1ª leitura às 02h42, 05h07 e no lab-crítico do #1040, sempre resolvida no retry).
+    const medir = () => page.evaluate(async () => {
       const titulos = Array.from(document.querySelectorAll("main *")).filter((e) => e.children.length === 0 && /\[Varredura\]/.test(e.textContent || ""));
       const ruins: string[] = [];
       for (const t of titulos) {
@@ -205,7 +207,7 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
       }
       return ruins;
     });
-    expect(semFoto).toEqual([]);
+    await expect.poll(medir, { timeout: 5_000, intervals: [250] }).toEqual([]);
     await context.close();
   });
 
