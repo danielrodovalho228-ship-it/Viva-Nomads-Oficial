@@ -68,11 +68,19 @@ for (const { largura, altura } of LARGURAS) {
     for (const { rota, nome } of ROTAS) {
       test(`${nome}: as últimas linhas do rodapé ficam acima dos fixos`, async ({ page }) => {
         await page.goto(rota, { waitUntil: "networkidle" });
-        await rolarAteOFim(page);
         const ultima = page.locator("footer.vn-rodape p").last();
         await expect(ultima).toContainText("não é parte do contrato");
+        // Blocos que carregam depois mudam a altura e o botão compacto cresce: mede de novo até a página assentar.
+        await expect
+          .poll(
+            async () => {
+              await rolarAteOFim(page);
+              return rodapeCoberto(page);
+            },
+            { timeout: 15_000 },
+          )
+          .toEqual([]);
         await expect(ultima).toBeInViewport({ ratio: 1 });
-        expect(await rodapeCoberto(page)).toEqual([]);
         await page.screenshot({ path: `tests/laboratorio/saida/t264-${nome.replace(/\W+/g, "-")}-${largura}.png` });
       });
     }
