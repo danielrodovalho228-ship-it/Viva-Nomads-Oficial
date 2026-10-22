@@ -15,6 +15,8 @@ Um registro por defeito novo achado na triagem contínua (Pista C). Defeito conh
 | L-9 | 22/10 | t48 · "proprietário: todas as telas logadas" (390 px) | `/dashboard/locacoes` · proprietário sem locação (o servidor manda para `/dashboard/contratos`) | "Minified React error #310" (mais hooks que no render anterior) no navegador, laboratório de `24eafc9`. A t213, que abre a mesma rota com o mesmo tipo de conta a 390 px, falha nos laboratórios de `b1385f6` e `7c5cb85`: o dono fica parado em `/dashboard/locacoes`. A pilha não cabe no registro e o artefato não abre daqui | Produto (tela quebra) | A | Aberto: reproduzir com build de desenvolvimento para ver o componente |
 | L-10 | 22/10 | t192 · "Conta (inquilino)" (390 e 1280 px) | `/dashboard/conta` · inquilino | O item LinkedIn da lista de confiança só aparece com `mode === "tenant"` (`conta-blocos.tsx`). Desde o Prompt 43 o modo vem da tela de contexto, e a Conta é neutra: o item aparece ou some conforme a tela anterior. Passou no lab-crítico do #1053 (sessão limpa) e falhou na suíte inteira de `24eafc9` | Produto (decisão) | A | Aberto: definir se LinkedIn vale para toda conta ("toda conta é morador") |
 | L-11 | 22/10 | t257 · "links internos … não quebram" | `/cidades/uberlandia` · visitante | Depois do ajuste do #1058 (relê a origem), a página da cidade AINDA aponta para `/imoveis/…` que dá 404, laboratório de `24eafc9`. Hipótese: a lista da cidade fica em cache e segue mostrando imóvel apagado ou despublicado | Produto (a confirmar) | A | Aberto |
+| L-12 | 22/10 | t176 · "404 de verdade: imóvel inexistente" | `/imoveis/<id que não existe>` · visitante | Responde **200** com a tela "Página não encontrada", em vez de 404. Laboratório de `ad334a8` (22h06); passava antes. Causa no código: o Prompt 48 (`affe510b`) criou `src/app/(public)/imoveis/[id]/loading.tsx`. Com ela, o Next manda o cabeçalho 200 antes de a página chamar `notFound()`, e o 404 fica mole: o Google pode indexar URLs de imóvel que não existem | Produto (SEO) | A | Aberto. Proposta: tirar o `loading.tsx` dessa rota ou buscar o imóvel antes da fronteira de carregamento, como a rota fazia antes do Prompt 48 |
+| L-13 | 22/10 | t57 · "Minhas locações: … assinar exige 'Li e concordo' e o código de e-mail" | `/dashboard/contratos/:id` · inquilino | No lab-crítico do #1066, depois de enviar um código errado, a tela voltou para `/dashboard/contratos` sem o alerta de "código" (150 s). Na segunda tentativa, o alerta veio em 6,7 s. Passa de primeira nos outros lab-críticos de 22/10 | A investigar (caminho de erro da ação de assinar ou lentidão do laboratório) | A | Em observação |
 
 ## Lista priorizada para as pistas A e B
 
@@ -26,12 +28,13 @@ Só defeito de produto confirmado, cada um com o teste do laboratório que o rep
 | 2 | L-9 | Tela do dono quebra no navegador (React #310) ao abrir Locações | `/dashboard/locacoes` → Contratos, 390 px | t48 · proprietário; t213 · 4 (390) | A |
 | — | D-V7 | Título do cartão de rascunho era link para a página pública (404) | Meus imóveis (`/dashboard/imoveis`), 1280 px | t249 · "D-V7" (teste normal) | **Corrigido no #1028** |
 | 3 | D-V8 | Tela de entrar sem `<main>` (falta o marco principal para leitor de tela) | Entrar (`/auth`), 390 e 1280 px | t249 · "D-V8" (`test.fail`, #1023) | A |
-| 4 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
-| 5 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
-| 6 | L-8 | A próxima foto do cartão não carrega antes do toque (lazy escondida pelo corte do carrossel) | `/buscar` e `/cidades`, 1280 px | t267 · 1280 px | A |
-| 7 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
+| 4 | L-12 | Imóvel inexistente responde 200 (404 mole) depois do `loading.tsx` do Prompt 48 | `/imoveis/:id` | t176 · "404 de verdade" | A |
+| 5 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
+| 6 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
+| 7 | L-8 | A próxima foto do cartão não carrega antes do toque (lazy escondida pelo corte do carrossel) | `/buscar` e `/cidades`, 1280 px | t267 · 1280 px | A |
+| 8 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
 
-Critério da ordem: 1 trava o dono de publicar; 2 quebra a tela; 3 atrapalha quem usa leitor de tela; 4 mostra número errado ao admin; 5 confunde, mas não trava; 6 deixa a foto em branco por um instante ao deslizar; 7 pode ser só baseline desatualizada. O D-V7 (levava o dono a uma página que não existe) saiu da ordem ao ser corrigido.
+Critério da ordem: 1 trava o dono de publicar; 2 quebra a tela; 3 atrapalha quem usa leitor de tela; 4 põe página que não existe no índice do Google; 5 mostra número errado ao admin; 6 confunde, mas não trava; 7 deixa a foto em branco por um instante ao deslizar; 8 pode ser só baseline desatualizada. O D-V7 (levava o dono a uma página que não existe) saiu da ordem ao ser corrigido.
 
 ## Fechados sem registro
 
