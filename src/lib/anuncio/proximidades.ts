@@ -39,3 +39,40 @@ export function proximidadesDoImovel(p: Property): Proximity[] {
       note: `${Math.max(1, Math.round(w.distanceM / METROS_POR_MINUTO))} min a pé`,
     }));
 }
+
+/** Serviços do dia a dia que a pessoa procura no anúncio (adendo do prompt 37). */
+export type TipoServico = "onibus" | "mercado" | "farmacia";
+export const SERVICOS: readonly { tipo: TipoServico; rotulo: string; frase: string }[] = [
+  { tipo: "onibus", rotulo: "Ônibus", frase: "Ponto de ônibus mais perto" },
+  { tipo: "mercado", rotulo: "Mercado", frase: "Mercado mais perto" },
+  { tipo: "farmacia", rotulo: "Farmácia", frase: "Farmácia mais perto" },
+];
+
+const FARMACIA = /farm[aá]cia|drogaria|drogasil|droga raia|pague menos|panvel|ultrafarma/i;
+
+export function tipoServico(p: Proximity): TipoServico | null {
+  if (p.category === "transporte") return "onibus";
+  if (p.category === "mercado") return "mercado";
+  if (p.category === "saude" && FARMACIA.test(p.name)) return "farmacia";
+  return null;
+}
+
+const minutosDaNota = (note?: string) => {
+  const m = note?.match(/(\d+)\s*min/i);
+  return m ? parseInt(m[1], 10) : Number.POSITIVE_INFINITY;
+};
+
+/**
+ * Por serviço, o tempo APROXIMADO até o mais perto — sem o nome do lugar (o nome ajudaria a achar o endereço antes
+ * do aceite; a lista com nomes continua limitada). Serviço sem dado não aparece.
+ */
+export function servicosPorPerto(lista: Proximity[]): { tipo: TipoServico; rotulo: string; texto: string }[] {
+  const out: { tipo: TipoServico; rotulo: string; texto: string }[] = [];
+  for (const s of SERVICOS) {
+    const doTipo = lista.filter((p) => tipoServico(p) === s.tipo && distanciaAprox(p.note));
+    if (!doTipo.length) continue;
+    const perto = doTipo.reduce((a, b) => (minutosDaNota(b.note) < minutosDaNota(a.note) ? b : a));
+    out.push({ tipo: s.tipo, rotulo: s.rotulo, texto: `${s.frase}: ${distanciaAprox(perto.note)}` });
+  }
+  return out;
+}

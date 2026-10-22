@@ -14,12 +14,15 @@ export interface Polo {
   bairros: readonly string[];
   intro: string;
   publico: string;
+  /** Prompt 37: destinos cadastrados do polo (slug) — a página do polo liga para a lista por tempo de cada um. */
+  destinos?: readonly string[];
 }
 
 export const POLOS: readonly Polo[] = [
   {
     slug: "hc-ufu-umuarama",
     cidade: "uberlandia",
+    destinos: ["hc-ufu", "ufu-umuarama"],
     nome: "Perto do HC-UFU e Umuarama",
     referencia: "HC-UFU e Umuarama",
     bairros: ["Umuarama", "Jardim Umuarama"],
@@ -29,6 +32,7 @@ export const POLOS: readonly Polo[] = [
   },
   {
     slug: "ufu-santa-monica",
+    destinos: ["ufu-santa-monica"],
     cidade: "uberlandia",
     nome: "Perto da UFU Santa Mônica",
     referencia: "UFU Santa Mônica",
@@ -81,4 +85,9 @@ export function perguntasDoPolo(polo: Polo, cidadeNome: string, mediaGeral: numb
       a: "Não. O valor combinado vai direto ao proprietário; a plataforma não toca em dinheiro. A conversa e o contrato ficam registrados.",
     },
   ];
+}
+
+/** Prompt 37: o polo (guia do bairro) de um destino cadastrado, para o link de volta da lista por tempo. */
+export function poloDoDestino(slugDestino: string): Polo | null {
+  return POLOS.find((p) => p.destinos?.includes(slugDestino)) ?? null;
 }

@@ -8,6 +8,8 @@ import { listaImoveis } from "@/lib/seo/estruturados";
 import { isExemplo } from "@/lib/demo-listing";
 import { SITE_URL } from "@/lib/site";
 import { TituloBusca } from "@/components/busca/titulo-busca";
+import { destinosAtivos } from "@/lib/data/tempos";
+import { modosDisponiveis } from "@/lib/integrations/rotas";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -24,7 +26,7 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const properties = await listProperties();
+  const [properties, destinos] = await Promise.all([listProperties(), destinosAtivos()]);
   // Lê a URL para a página seguir dinâmica por busca (como antes).
   await searchParams;
   // Ordem 6a98c68e: o h1 acompanha a busca ("38 imóveis mobiliados em Uberlândia")
@@ -34,6 +36,8 @@ export default async function SearchPage({
     <>
       <SearchClient
         properties={properties}
+        destinos={destinos.map((d) => ({ slug: d.slug, nome: d.nome, cidade: d.cidade }))}
+        modos={modosDisponiveis()}
         topo={
           <>
             {/* Topo da busca. Celular (ordem 314f764e): só o título, curto — a busca e os

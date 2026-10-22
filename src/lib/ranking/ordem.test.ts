@@ -130,3 +130,27 @@ test("GUARDA: pagamento, plano ou assinatura nunca mudam a ordem", () => {
     .replace(/(^|[^:])\/\/.*$/gm, "$1"); // tira comentários de linha (preserva "https://")
   assert.doesNotMatch(fonte, /plano|pago|pagou|pagamento|assinatura|cobranca|cobrança|taxa|comiss|gestor|stripe|patrocin/i);
 });
+
+test("37: com destino, faixas de MINUTOS (≤10, ≤20, ≤30, >30) no lugar das de km; compatibilidade continua antes", () => {
+  const item = (id: string, minutos: number | null, km: number, compat: "exata" | "parcial" = "exata", o: Partial<SinaisAnuncio> = {}) => ({
+    sinais: base({ id, ...o }),
+    compat,
+    distanciaKm: km,
+    minutos,
+  });
+  const itens = [
+    item("longe-km-perto-min", 8, 9),
+    item("perto-km-longe-min", 35, 1),
+    item("vinte", 18, 3),
+    item("sem-tempo", null, 0.5),
+    item("parcial-perto", 5, 1, "parcial"),
+  ];
+  const porMin = ordenarBusca(itens, AGORA, { porMinutos: true }).map((x) => x.id);
+  assert.deepEqual(porMin, ["longe-km-perto-min", "vinte", "perto-km-longe-min", "sem-tempo", "parcial-perto"]);
+  // Sem destino, a regra do 33 (km) continua igual.
+  const porKm = ordenarBusca(itens, AGORA).map((x) => x.id);
+  assert.ok(porKm.indexOf("vinte") < porKm.indexOf("longe-km-perto-min"), "por km, 3 km vem antes de 9 km");
+  // Na mesma faixa de minutos, decide a nota; depois o id.
+  const empate = ordenarBusca([item("b", 12, 1), item("a", 19, 1, "exata", { fotosDeParceiro: true })], AGORA, { porMinutos: true });
+  assert.equal(empate[0].id, "a");
+});

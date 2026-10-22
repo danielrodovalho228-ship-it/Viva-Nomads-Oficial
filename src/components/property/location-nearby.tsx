@@ -6,6 +6,8 @@ import type { ProximityCategory, Property } from "@/lib/types";
 import type { MapMarker } from "@/components/property-map";
 import { PropertyMap } from "@/components/property-map-lazy";
 import { distanciaAprox, proximidadesDoImovel } from "@/lib/anuncio/proximidades";
+import { ServicosPorPerto } from "@/components/property/servicos-por-perto";
+import { TempoAte } from "@/components/property/tempo-ate";
 
 const PROXIMITY_META: Record<ProximityCategory, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   saude: { label: "Saúde", icon: HeartPulse },
@@ -141,6 +143,8 @@ export function LocationNearby({ property }: { property: Property }) {
           )}
         </>
       )}
+      <ServicosPorPerto proximidades={todosProximities} />
+      <TempoAte imovelId={property.id} />
     </section>
   );
 }

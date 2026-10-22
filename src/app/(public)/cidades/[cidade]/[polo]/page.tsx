@@ -13,6 +13,7 @@ import { SITE_URL } from "@/lib/site";
 import { acharBairroCurado, bairrosDaGrade, imoveisDoBairro } from "@/lib/bairros";
 import { BairroPagina, metadadosDoBairro, type BairroDados } from "@/components/cidades/bairro-pagina";
 import { descricaoPolo } from "@/lib/seo/meta-descricao";
+import { destinosAtivos } from "@/lib/data/tempos";
 
 export const revalidate = 60;
 
@@ -77,6 +78,8 @@ export default async function PoloPage({ params }: Params) {
       ? Math.round(comMedia.reduce((s, g) => s + (g.media as number) * g.anuncios, 0) / comMedia.reduce((s, g) => s + g.anuncios, 0))
       : null;
   const faq = perguntasDoPolo(p, c.name, mediaGeral);
+  // Prompt 37: lista por TEMPO até cada destino ativo do polo (a página do polo continua sendo o guia do bairro).
+  const destinosDoPolo = p.destinos?.length ? (await destinosAtivos()).filter((d) => p.destinos!.includes(d.slug)) : [];
   const url = `${SITE_URL}/cidades/${cidade}/${polo}`;
 
   const dados = {
@@ -133,6 +136,18 @@ export default async function PoloPage({ params }: Params) {
               Ver todos os imóveis em {c.name}
             </ButtonLink>
           </div>
+        )}
+
+        {destinosDoPolo.length > 0 && (
+          <ul className="mt-6 space-y-1 text-sm" data-testid="polo-perto-de">
+            {destinosDoPolo.map((d) => (
+              <li key={d.slug}>
+                <Link href={`/imoveis-perto-de/${d.slug}`} className="font-semibold text-forest underline">
+                  Em ordem de tempo até {d.artigo ? `${d.artigo} ` : ""}{d.nome}
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
 
         <div className="mt-12 max-w-3xl" data-testid="polo-precos">

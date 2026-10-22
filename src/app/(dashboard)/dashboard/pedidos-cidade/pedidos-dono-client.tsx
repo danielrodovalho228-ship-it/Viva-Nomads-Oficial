@@ -122,6 +122,11 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
                     {[...textoNecessidades(p.necessidades), p.pets && textoPortePet(p.porte_pet), p.criancas && "Com crianças"].filter(Boolean).join(" · ")}
                   </p>
                 )}
+                {p.destino && (
+                  <p className="mt-2 text-sm text-ink" data-testid="pedido-destino">
+                    Trabalho ou estudo: {p.destino}
+                  </p>
+                )}
                 {p.apresentacao && <p className="mt-3 break-words rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink">{p.apresentacao}</p>}
 
                 {p.situacao !== "demais" && p.compat_imovel_titulo && (
