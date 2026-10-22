@@ -128,13 +128,12 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                     {p.readyToLiveBadge && <ReadyToLiveBadge />}
                     {demoItem && <DemoBadge />}
                   </div>
-                  {demoItem ? (
+                  {/* Só anúncio no ar tem página pública: nos outros o título é texto (rascunho e pausado davam 404 —
+                      t249 D-V7) e a ação é "Continuar editando" ou "Editar". */}
+                  {demoItem || p.status !== "active" ? (
                     <span className="mt-2 font-title text-lg font-semibold text-ink">{p.title}</span>
                   ) : (
-                    <Link
-                      href={`/imoveis/${p.id}`}
-                      className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest"
-                    >
+                    <Link href={`/imoveis/${p.id}`} className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest">
                       {p.title}
                     </Link>
                   )}
@@ -186,7 +185,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                       <div className="flex flex-wrap gap-2">
                         {/* Rascunho não tem página pública ainda — só "Continuar
                             editando" (item 2 do QA: rascunho recuperável). */}
-                        {p.status !== "draft" && (
+                        {p.status === "active" && (
                           <ButtonLink href={`/imoveis/${p.id}`} variant="outline" size="sm">
                             Ver
                           </ButtonLink>
