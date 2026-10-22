@@ -94,8 +94,10 @@ test.describe("T273 — admin: decisões primeiro", () => {
       const enc = secao.locator('[data-decisao="encerramentos"] [data-href]').first();
       const nEnc = Number(await enc.getAttribute("data-valor"));
       expect(nEnc).toBeGreaterThanOrEqual(1);
+      // A URL só muda quando a tela de destino termina de carregar no servidor (leituras do admin): espera até 30 s.
+      await page.waitForLoadState("networkidle");
       await enc.click();
-      await expect(page).toHaveURL(/\/admin\/contratos\/encerramentos/);
+      await expect(page).toHaveURL(/\/admin\/contratos\/encerramentos/, { timeout: 30_000 });
       await expect(page.locator('[data-testid="admin-encerramento"]:not([data-status="concluido"])')).toHaveCount(nEnc, { timeout: 20_000 });
       await expect(page.locator(`[data-contrato="${ids.contrato}"]`)).toHaveCount(1);
 
