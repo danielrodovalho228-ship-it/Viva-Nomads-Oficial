@@ -67,10 +67,16 @@ test.describe("T269 — Anunciar: a barra de fotos não cobre o formulário", ()
       expect(total).toBeGreaterThan(3);
       const cobertos: string[] = [];
       for (let i = 0; i < total; i++) {
-        const c = await page.evaluate((n) => {
+        const c = await page.evaluate(async (n) => {
           const el = document.querySelector<HTMLElement>(`[data-t269="${n}"]`)!;
           el.focus({ preventScroll: false });
           if (document.activeElement !== el) el.scrollIntoView({ block: "nearest" });
+          // O html tem scroll-smooth: a rolagem até o campo é animada; mede quando ela para.
+          for (let y = -1, parado = 0; parado < 3; ) {
+            await new Promise((r) => requestAnimationFrame(r));
+            parado = scrollY === y ? parado + 1 : 0;
+            y = scrollY;
+          }
           const r = el.getBoundingClientRect();
           return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, nome: `${el.tagName.toLowerCase()} "${(el.getAttribute("aria-label") ?? el.textContent ?? "").trim().slice(0, 30)}"` };
         }, i);
@@ -81,7 +87,7 @@ test.describe("T269 — Anunciar: a barra de fotos não cobre o formulário", ()
       expect(cobertos, "controles embaixo da barra ou do 'Fale com a Viva' ao receber o foco").toEqual([]);
 
       // Fim da rolagem: o último controle fica acima dos fixos, com pelo menos 16 px de respiro.
-      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
       await page.waitForTimeout(300);
       const ultimo = await page.locator("main").evaluate((m) => {
         const els = Array.from(m.querySelectorAll<HTMLElement>("button, input:not([type=hidden]), select, textarea, a[href]"))
