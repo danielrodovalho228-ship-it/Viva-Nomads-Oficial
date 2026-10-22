@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   categoriaLabel,
+  categoriaLabelParaDono,
   isCategoriaKey,
   DE_PARA_CATEGORIAS,
   CATEGORIA_NAO_INFORMAR,
@@ -36,4 +37,12 @@ test("isCategoriaKey reconhece keys válidas e rejeita desconhecidas", () => {
   assert.equal(isCategoriaKey("trabalho_remoto"), true);
   assert.equal(isCategoriaKey("categoria_que_nao_existe"), false);
   assert.equal(isCategoriaKey(CATEGORIA_OUTRO_PREFIX), false);
+});
+
+test("categoriaLabelParaDono: tratamento de saúde aparece só como 'Saúde' (LGPD art. 11)", () => {
+  assert.equal(categoriaLabelParaDono("vida_tratamento"), "Saúde");
+  assert.doesNotMatch(categoriaLabelParaDono("vida_tratamento"), /tratamento|paciente|acompanhante/i);
+  // as demais seguem o rótulo normal
+  assert.equal(categoriaLabelParaDono("saude_medico_residente"), "Médico(a) residente");
+  assert.equal(categoriaLabelParaDono(null), "");
 });
