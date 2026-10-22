@@ -110,12 +110,17 @@ jobs:
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
 
       - name: Instalar Chromium do Playwright
-        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas.
-        timeout-minutes: 15
+        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas. O timeout
+        # mata o npx, mas o apt-get filho fica segurando a trava do dpkg: antes de repetir, encerra o apt que sobrou,
+        # espera a trava soltar e conserta o dpkg (senão as tentativas seguintes morrem na hora).
+        timeout-minutes: 25
         run: |
           for i in 1 2 3; do
-            timeout 270 npx playwright install --with-deps chromium webkit && exit 0
+            timeout 420 npx playwright install --with-deps chromium webkit && exit 0
             echo "tentativa $i travou ou falhou"
+            sudo pkill -f '[a]pt-get|[d]pkg' || true
+            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
+            sudo dpkg --configure -a || true
           done
           exit 1
 
