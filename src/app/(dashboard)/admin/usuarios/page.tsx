@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -173,7 +173,7 @@ export default async function AdminUsuariosPage({
       </p>
       <Panel title={`Usuários (${total})`} data-testid="admin-usuarios-lista" id="lista" className="scroll-mt-24">
         {linhas.length === 0 ? (
-          <EmptyState icon={Users} title="Nenhum usuário nesta lista" text="Tire o filtro para ver todos." />
+          <EmptyState icon={Users} title="Nenhum usuário nesta lista" text="Tire o filtro para ver todos." action={<ButtonLink href="/admin/usuarios" variant="secondary" size="sm">Ver todos os usuários</ButtonLink>} />
         ) : (
           <>
             <ul className="grid gap-3 sm:hidden">

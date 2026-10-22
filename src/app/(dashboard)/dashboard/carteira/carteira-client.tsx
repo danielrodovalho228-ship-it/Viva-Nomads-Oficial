@@ -1,5 +1,6 @@
 "use client";
 
+import { ButtonLink } from "@/components/ui/button";
 import Link from "next/link";
 import { Building2, KeyRound, Wallet, AlertTriangle, CircleDot, CalendarClock, Hourglass } from "lucide-react";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
@@ -25,8 +26,7 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
         <EmptyState
           icon={Building2}
           title="Sua carteira está vazia"
-          text="Quando você tiver imóveis ativos, a visão consolidada — ocupação, valor mensal e vencimentos — aparece aqui."
-        />
+          text="Quando você tiver imóveis ativos, a visão consolidada — ocupação, valor mensal e vencimentos — aparece aqui." action={<ButtonLink href="/dashboard/imoveis/novo" variant="secondary" size="sm">Anunciar um imóvel</ButtonLink>} />
       </>
     );
   }

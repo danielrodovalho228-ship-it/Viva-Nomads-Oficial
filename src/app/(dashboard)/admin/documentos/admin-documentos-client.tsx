@@ -15,8 +15,8 @@ import {
   User,
   Home,
 } from "lucide-react";
-import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { PageTitle, Panel, EmptyState, FilaVazia } from "@/components/dashboard/primitives";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   moderarDocumento,
   reabrirConferencia,
@@ -46,12 +46,15 @@ export function AdminDocumentosClient({
   auto = [],
   contadores = { automaticos: 0, corrija: 0, revisao: 0 },
   filaAgora = null,
+  ultimaDecisao = null,
 }: {
   docs: DocumentoPendente[];
   auto?: ConferidoAutomatico[];
   contadores?: { automaticos: number; corrija: number; revisao: number };
   /** "Na fila agora" (Prompt 29, item 9): documentos + matrículas — a mesma função da home e do selo da barra lateral. */
   filaAgora?: { documentos: number; matriculas: number; total: number; maisAntigoEm: string | null } | null;
+  /** Quando a equipe decidiu o último documento — aparece na fila vazia. */
+  ultimaDecisao?: string | null;
 }) {
   const [fila, setFila] = useState(docs);
   const [aba, setAba] = useState<"revisao" | "automaticos">("revisao");
@@ -128,7 +131,7 @@ export function AdminDocumentosClient({
 
       {aba === "automaticos" ? (
         autos.length === 0 ? (
-          <EmptyState icon={ShieldCheck} title="Nenhum ainda" text="Os documentos aprovados pela conferência automática aparecem aqui para amostragem." />
+          <EmptyState icon={ShieldCheck} title="Nenhum ainda" text="Os documentos aprovados pela conferência automática aparecem aqui para amostragem." action={<Button variant="secondary" size="sm" onClick={() => setAba("revisao")}>Ver a fila de revisão</Button>} />
         ) : (
           <div className="space-y-4" data-testid="conferidos-automaticamente">
             {autos.map((a) => (
@@ -140,11 +143,7 @@ export function AdminDocumentosClient({
           </div>
         )
       ) : fila.length === 0 ? (
-        <EmptyState
-          icon={ShieldCheck}
-          title="Nada na fila"
-          text="Não há documentos aguardando conferência no momento."
-        />
+        <FilaVazia ultimaDecisao={ultimaDecisao} />
       ) : (
         <div className="space-y-4">
           {fila.map((d) => (

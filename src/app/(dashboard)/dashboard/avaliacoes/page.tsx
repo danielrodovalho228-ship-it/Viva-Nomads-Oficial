@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
 import { redirect } from "next/navigation";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { createClient } from "@/lib/supabase/server";
@@ -48,8 +49,7 @@ export default async function AvaliacoesRecebidasPage() {
         <EmptyState
           icon={Star}
           title="Nenhuma avaliação publicada ainda"
-          text="Quando uma estadia termina, as duas partes avaliam. A avaliação aparece aqui depois de publicada."
-        />
+          text="Quando uma estadia termina, as duas partes avaliam. A avaliação aparece aqui depois de publicada." action={<ButtonLink href="/dashboard/locacoes" variant="secondary" size="sm">Ver minhas estadias</ButtonLink>} />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {avaliacoes.map((a) => {

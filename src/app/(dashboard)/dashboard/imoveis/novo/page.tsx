@@ -1180,7 +1180,7 @@ export default function NewPropertyPage() {
     <div className="w-full">
       <PageTitle
         title={editingId ? "Editar anúncio" : "Anuncie seu imóvel"}
-        subtitle={editingId ? "Ajuste os dados do imóvel e salve as alterações." : "Em 5 etapas. Salvamos seu progresso automaticamente."}
+        subtitle={editingId ? "Ajuste os dados do imóvel e salve as alterações." : "Em 6 passos. Salvamos seu progresso automaticamente."}
         action={
           !editingId && saveStatus !== "idle" ? (
             <span

@@ -16,7 +16,6 @@ const SearchMap = dynamic(
   () => import("@/components/search-map").then((m) => m.SearchMap),
   { ssr: false }
 );
-import { EmptySearchIllustration } from "@/components/illustrations";
 import { cn, distanceKm, formatBRL } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { comTotalMes } from "@/lib/precos";
@@ -1074,43 +1073,40 @@ export function SearchClient({
             </div>
           )}
           {results.length === 0 ? (
-            <div className="flex flex-col items-center rounded-xl border border-dashed border-line p-12 text-center">
-              <EmptySearchIllustration />
-              <p className="mt-4 font-title text-lg font-semibold text-ink">
+            // Prompt 48: busca sem resultado diz o que aconteceu e dá os três próximos passos — pedido de moradia,
+            // limpar filtros (ou ampliar a busca) e criar alerta. Sem ilustração genérica.
+            <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia">
+              <p className="font-title text-lg font-semibold text-ink">
                 {locationQuery.trim()
                   ? `Ainda não temos imóvel para essa busca em ${locationQuery.trim()}.`
                   : "Ainda não há imóveis para esta busca"}
               </p>
               <ConviteCidade texto={locationQuery} />
-              {/* Zero resultado vira PORTA do Pedido de Moradia (Fase 4). */}
-              {PEDIDO_MORADIA_ON ? (
-                <>
-                  <p className="mt-1 max-w-md text-sm text-muted">
-                    Diga o que você precisa e deixe os proprietários da cidade encontrarem você — a
-                    conversa acontece pela plataforma.
-                  </p>
-                  <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row">
-                    <Link href={pedidoHref} className={buttonClasses()}>
-                      <Megaphone className="h-4 w-4" aria-hidden /> Publicar um Pedido de Moradia
-                    </Link>
-                    <button type="button" onClick={ampliarBusca} className={buttonClasses({ variant: "secondary" })}>
-                      Ampliar a busca
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="mt-1 max-w-sm text-sm text-muted">
-                    Ajuste os filtros ou volte em breve — novos imóveis entram toda semana.
-                  </p>
-                  <button type="button" onClick={clearFilters} className={buttonClasses({ variant: "secondary", className: "mt-4" })}>
+              <p className="mt-1 max-w-md text-sm text-muted">
+                {PEDIDO_MORADIA_ON
+                  ? "Publique um pedido de moradia e os proprietários da cidade encontram você, ou crie um alerta para saber quando entrar um imóvel assim."
+                  : "Crie um alerta para saber quando entrar um imóvel assim. Novos imóveis entram toda semana."}
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {PEDIDO_MORADIA_ON && (
+                  <Link href={pedidoHref} className={buttonClasses()} data-testid="busca-vazia-pedido">
+                    <Megaphone className="h-4 w-4" aria-hidden /> Publicar um pedido de moradia
+                  </Link>
+                )}
+                {activeCount > 0 ? (
+                  <button type="button" onClick={clearFilters} className={buttonClasses({ variant: "secondary" })} data-testid="busca-vazia-limpar">
                     Limpar filtros
                   </button>
-                </>
-              )}
+                ) : (
+                  <button type="button" onClick={ampliarBusca} className={buttonClasses({ variant: "secondary" })} data-testid="busca-vazia-ampliar">
+                    Ampliar a busca
+                  </button>
+                )}
+                <SalvarBusca versao={versaoBusca} rotulo="Criar alerta desta busca" rotuloSalva="Alerta criado" />
+              </div>
               <Link
                 href="/dashboard/imoveis/novo"
-                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-ink underline underline-offset-4 hover:text-forest"
+                className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest"
               >
                 É proprietário? Anuncie seu imóvel <ArrowRight className="h-4 w-4" />
               </Link>

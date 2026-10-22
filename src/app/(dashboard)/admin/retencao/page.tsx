@@ -1,6 +1,7 @@
 import { ShieldCheck } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ButtonLink } from "@/components/ui/button";
 import { AvisoAdmin, ListaNumeros, NumeroHeroi, SeloEstado } from "@/components/admin/numeros";
 import { INVENTARIO } from "@/config/retencao";
 import { eliminaDeVerdade, textoPrazo } from "@/lib/minimizacao/regras";
@@ -33,7 +34,7 @@ export default async function AdminRetencaoPage() {
     return (
       <>
         <PageTitle title="Dados e retenção" />
-        <EmptyState icon={ShieldCheck} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." />
+        <EmptyState icon={ShieldCheck} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
   }

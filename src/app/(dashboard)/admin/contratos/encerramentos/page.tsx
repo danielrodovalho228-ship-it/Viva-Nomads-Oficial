@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FileX2 } from "lucide-react";
-import { EmptyState, PageTitle, Panel } from "@/components/dashboard/primitives";
+import { EmptyState, PageTitle, Panel, FilaVazia } from "@/components/dashboard/primitives";
 import { createClient } from "@/lib/supabase/server";
 import { adminDaPagina, nomesCurtos } from "@/lib/data/admin-indicadores";
 import { logModeracao } from "@/lib/data/moderacao-log";
@@ -52,7 +52,7 @@ export default async function EncerramentosPage() {
     <>
       <PageTitle title="Pedidos de encerramento" subtitle={`${abertos.length} em aberto. As regras de encerramento estão desligadas: a equipe conduz com as partes, sem cálculo de multa ou devolução.`} />
       {linhas.length === 0 ? (
-        <EmptyState icon={FileX2} title="Nenhum pedido de encerramento" text="Quando uma das partes pedir para encerrar um contrato, o pedido aparece aqui." />
+        <FilaVazia />
       ) : (
         <div className="space-y-3" data-testid="admin-encerramentos">
           {linhas.map((l) => (

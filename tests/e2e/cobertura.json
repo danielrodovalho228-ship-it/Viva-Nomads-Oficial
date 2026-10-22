@@ -55,7 +55,8 @@
         "t254-admin-aviso-atendimento",
         "t255-admin-f15-f16-f18-f20",
         "t273-admin-decisoes",
-        "t271-admin-visual"
+        "t271-admin-visual",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/admin/2fa/refazer": {
@@ -101,7 +102,8 @@
         "t25-chamado-resumo",
         "t183-telas-logadas-390",
         "t255-admin-f15-f16-f18-f20",
-        "t271-admin-visual"
+        "t271-admin-visual",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -122,7 +124,8 @@
         "t91-avaliacao-resposta",
         "t93-avaliacao-tela",
         "t48-varredura",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/admin/cidades": {
@@ -148,7 +151,8 @@
         "t220-recibo-assinatura",
         "t237-correcoes-35a",
         "t241-contas-teste-36",
-        "t271-admin-visual"
+        "t271-admin-visual",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/admin/emails-teste": {
@@ -198,7 +202,8 @@
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
         "t241-contas-teste-36",
-        "t271-admin-visual"
+        "t271-admin-visual",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/admin/pedidos": {
@@ -232,7 +237,8 @@
         "t48-varredura",
         "t183-telas-logadas-390",
         "t241-contas-teste-36",
-        "t271-admin-visual"
+        "t271-admin-visual",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/ajuda": {
@@ -350,7 +356,8 @@
         "t197-anuncio-teste-oculto",
         "t232-pedido-moradia-completo",
         "t237-correcoes-35a",
-        "t267-buscar-fotos-cartao"
+        "t267-buscar-fotos-cartao",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/cidades": {
@@ -629,7 +636,8 @@
         "inquilino"
       ],
       "specs": [
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/dashboard/fechamento": {
@@ -691,7 +699,8 @@
         "t8-rascunho",
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
-        "t268-meus-imoveis-link"
+        "t268-meus-imoveis-link",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -791,7 +800,8 @@
         "t182-jornada-completa",
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
-        "t209-jornada-dois-lados"
+        "t209-jornada-dois-lados",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1076,7 +1086,8 @@
         "t209-jornada-dois-lados",
         "t211-complemento-23",
         "t221-contrato-estado-periodo",
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/modelodenegocio": {
@@ -1432,7 +1443,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t273-admin-decisoes"
+        "t273-admin-decisoes",
+        "t286-esqueletos-vazios-48"
       ]
     },
     "/dashboard/estadia/[contratoId]": {

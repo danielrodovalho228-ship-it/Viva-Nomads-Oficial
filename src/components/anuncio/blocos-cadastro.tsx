@@ -1,7 +1,7 @@
 "use client";
 
 import { CampoReais } from "@/components/ui/campo-reais";
-import { Briefcase, Check, Loader2, MapPin, Percent, Plus, Trash2 } from "lucide-react";
+import { Briefcase, Check, MapPin, Percent, Plus, Trash2 } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
 import { ManualProximities } from "@/components/property/manual-proximities";
@@ -15,6 +15,7 @@ import {
 import { itensDisponiveis, MAX_FAIXAS, PCT_MAX, type Negociacao, type LimitesPrivados } from "@/lib/anuncio/negociacao";
 import { TEXTO_TETO_RODADAS } from "@/lib/propostas/regras";
 import { cn, formatBRL } from "@/lib/utils";
+import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { MedirInternet } from "./medir-internet";
 
 /* ── Proximidades automáticas (OSM) ───────────────────────────────────────── */
@@ -47,9 +48,7 @@ export function ProximidadesAutomaticas({
       </p>
       <p className="mb-3 text-xs text-muted">Achamos pelo endereço, num raio de 2 km. Desmarque o que não quiser mostrar.</p>
       {carregando && (
-        <p className="flex items-center gap-2 text-sm text-muted" data-testid="proximidades-carregando">
-          <Loader2 className="h-4 w-4 animate-spin" /> Procurando lugares perto do imóvel…
-        </p>
+        <SkeletonLinhas linhas={4} testid="proximidades-carregando" />
       )}
       {!carregando && itens && itens.length > 0 && (
         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">

@@ -7,7 +7,6 @@ import Link from "next/link";
 import { Plus, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
 import { deleteProperty } from "@/lib/data/actions";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
-import { EmptyBuildingIllustration } from "@/components/illustrations";
 import { ButtonLink } from "@/components/ui/button";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
@@ -74,7 +73,6 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
 
       {properties.length === 0 ? (
         <EmptyState
-          illustration={<EmptyBuildingIllustration />}
           title="Você ainda não tem imóveis"
           text="Comece pelas fotos do seu imóvel: o resto do cadastro vem depois."
           action={

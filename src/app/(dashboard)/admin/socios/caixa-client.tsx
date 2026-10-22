@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Image as ImageIcon, Inbox, Loader2, Mic, Paperclip, RotateCw, Send, Square, X } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { BUCKET_CAIXA, LIMITE_BYTES, LIMITE_FALTA, LIMITE_TEXTO, ROTULO_EXTRACAO, ROTULO_STATUS, mimeAceito, nomeSeguro, podeAceitar } from "@/lib/socios/caixa";
 import { enviarParaCaixa, relerArquivo, responderAceite, type ItemCaixa } from "@/lib/socios/caixa-actions";
@@ -167,7 +167,7 @@ export function CaixaSociosClient({ itens, aviso, uid, transcricaoLigada }: { it
       {aviso && <p role="alert" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">{aviso}</p>}
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        <Panel title="Novo envio" className="lg:col-span-1 lg:self-start">
+        <Panel title="Novo envio" className="scroll-mt-24 lg:col-span-1 lg:self-start" id="enviar">
           <form onSubmit={enviar} className="space-y-3">
             <label htmlFor="caixa-texto" className="sr-only">Mensagem</label>
             <textarea
@@ -222,7 +222,7 @@ export function CaixaSociosClient({ itens, aviso, uid, transcricaoLigada }: { it
 
         <Panel title={`Conversa (${itens.length})`} className="lg:col-span-2">
           {itens.length === 0 ? (
-            <EmptyState icon={Inbox} title="Nada enviado ainda" text="O primeiro envio aparece aqui, com a leitura do arquivo e a resposta da equipe." />
+            <EmptyState icon={Inbox} title="Nada enviado ainda" text="O primeiro envio aparece aqui, com a leitura do arquivo e a resposta da equipe." action={<ButtonLink href="#enviar" variant="secondary" size="sm">Enviar o primeiro arquivo</ButtonLink>} />
           ) : (
             <ul className="space-y-4">
               {itens.map((i) => (

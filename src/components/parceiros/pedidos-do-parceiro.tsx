@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
 import { VazioOnboardingBloco } from "@/components/onboarding/vazio-onboarding";
 import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
@@ -76,7 +77,7 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
             </div>
           )}
           {agenda.length === 0 ? (
-            <EmptyState icon={CalendarDays} title="Nenhum horário combinado" text="Quando um horário for confirmado num pedido, ele aparece aqui." />
+            <EmptyState icon={CalendarDays} title="Nenhum horário combinado" text="Quando um horário for confirmado num pedido, ele aparece aqui." action={<ButtonLink href="/dashboard/parceiro#pedidos" variant="secondary" size="sm">Ver pedidos</ButtonLink>} />
           ) : (
             <ul className="divide-y divide-line">
               {agenda.map((p) => (

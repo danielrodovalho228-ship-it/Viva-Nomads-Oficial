@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ButtonLink } from "@/components/ui/button";
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -32,7 +33,7 @@ export default async function ServicosPage() {
       <ServicosPainel cidade={cidade} />
       <Panel title="Meus pedidos" className="mt-6" data-testid="servicos-pedidos">
         {pedidos.length === 0 ? (
-          <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text={MEUS_PEDIDOS_VAZIO} />
+          <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text={MEUS_PEDIDOS_VAZIO} action={<ButtonLink href="/servicos" variant="secondary" size="sm">Ver serviços</ButtonLink>} />
         ) : (
           <ul className="divide-y divide-line" data-testid="servicos-pedidos-lista">
             {pedidos.map((p) => (

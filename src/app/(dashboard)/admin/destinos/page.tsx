@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ButtonLink } from "@/components/ui/button";
 import { Briefcase, MapPinned } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -35,7 +36,7 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
     return (
       <>
         <PageTitle title="Destinos" />
-        <EmptyState icon={MapPinned} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." />
+        <EmptyState icon={MapPinned} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
   }
@@ -64,7 +65,7 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
 
       <Panel title="Destinos" className="mb-6 scroll-mt-24" id="destinos">
         {lista.length === 0 ? (
-          <EmptyState icon={Briefcase} title="Nenhum destino" text="Cadastre abaixo o primeiro destino." />
+          <EmptyState icon={Briefcase} title="Nenhum destino" text="Cadastre abaixo o primeiro destino." action={<ButtonLink href="#form-destino" variant="secondary" size="sm">Cadastrar o primeiro destino</ButtonLink>} />
         ) : (
           <ul className="space-y-3" data-testid="destinos-lista">
             {lista.map((d) => (

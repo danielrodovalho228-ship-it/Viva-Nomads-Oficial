@@ -1,7 +1,8 @@
 import { dataBRT } from "@/lib/datas-brasilia";
+import { ButtonLink } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState, FilaVazia } from "@/components/dashboard/primitives";
 import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { MOTIVOS_REVISAO, ehMotivoRevisao } from "@/lib/avaliacoes-resposta";
 import { DecidirForm } from "./forms";
@@ -21,7 +22,7 @@ export default async function AdminAvaliacoesPage() {
     return (
       <>
         <PageTitle title="Avaliações" />
-        <EmptyState icon={Star} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." />
+        <EmptyState icon={Star} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
   }
@@ -45,7 +46,7 @@ export default async function AdminAvaliacoesPage() {
       <ListaNumeros className="mb-6" itens={[{ rotulo: "Decididos", valor: lista.length - abertas.length, href: "#lista" }]} />
       <Panel title={`Pedidos de revisão (${lista.length})`} id="lista" className="scroll-mt-24">
         {lista.length === 0 ? (
-          <EmptyState icon={Star} title="Nenhum pedido ainda" text="Quando alguém pedir revisão de uma avaliação, aparece aqui." />
+          <FilaVazia />
         ) : (
           <ul className="space-y-3">
             {lista.map((c) => {

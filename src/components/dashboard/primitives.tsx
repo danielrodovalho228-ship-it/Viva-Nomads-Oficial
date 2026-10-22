@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight, HardHat } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
 
 /**
  * Placeholder padrão "Em construção" — SEMPRE dentro da casca do dashboard.
@@ -25,8 +26,7 @@ export function EmConstrucao({
       <EmptyState
         icon={HardHat}
         title="Em construção"
-        text={text}
-      />
+        text={text} action={<ButtonLink href="/dashboard" variant="secondary" size="sm">Voltar ao Início</ButtonLink>} />
     </>
   );
 }
@@ -126,38 +126,57 @@ export function Panel({
   );
 }
 
+/**
+ * Estado vazio (Prompt 48): uma frase do que acontece aqui e o PRÓXIMO PASSO (obrigatório). Sem ilustração genérica
+ * de "nada aqui" — no máximo o ícone pequeno da área, em cinza. Fila do admin vazia usa <FilaVazia> (com a data da
+ * última decisão).
+ */
 export function EmptyState({
   icon: Icon,
-  illustration,
   title,
   text,
   action,
 }: {
   icon?: React.ComponentType<{ className?: string }>;
-  illustration?: React.ReactNode;
   title: string;
   text: string;
-  action?: React.ReactNode;
+  action: React.ReactNode;
 }) {
-  // Compacto no mobile (ADENDO item 4): padding ~24px e ilustração/ícone menores;
-  // a partir de sm volta ao card espaçoso (p-12, ícone maior).
   return (
-    <div data-testid="estado-vazio" className="rounded-xl border border-dashed border-line bg-white p-6 text-center sm:p-12">
-      {illustration ? (
-        <div className="flex justify-center">{illustration}</div>
-      ) : (
-        Icon && (
-          <div
-            data-testid="estado-vazio-icone"
-            className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 sm:h-28 sm:w-28"
-          >
-            <Icon className="h-9 w-9 text-blue-500 sm:h-12 sm:w-12" />
+    <div data-testid="estado-vazio" className="rounded-xl border border-line bg-white p-6 sm:p-8">
+      <div className="flex items-start gap-3">
+        {Icon && (
+          <span data-testid="estado-vazio-icone" className="mt-1 shrink-0 text-muted" aria-hidden>
+            <Icon className="h-5 w-5" />
+          </span>
+        )}
+        <div className="min-w-0">
+          <h3 className="font-title text-base font-semibold text-ink">{title}</h3>
+          <p className="mt-1 max-w-md text-sm text-muted">{text}</p>
+          <div className="mt-4" data-testid="estado-vazio-acao">
+            {action}
           </div>
-        )
-      )}
-      <h3 className="mt-3 font-title text-base font-semibold text-ink sm:mt-4 sm:text-lg">{title}</h3>
-      <p className="mx-auto mt-2 max-w-md text-sm text-muted">{text}</p>
-      {action && <div className="mt-4 sm:mt-6">{action}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Fila do admin vazia (Prompt 48): "Nada pendente." com a data da última decisão tomada nessa fila (quando houver).
+ */
+export function FilaVazia({ ultimaDecisao, texto }: { ultimaDecisao?: string | null; texto?: string }) {
+  const quando = ultimaDecisao ? new Date(ultimaDecisao) : null;
+  const data =
+    quando && !Number.isNaN(quando.getTime())
+      ? quando.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+      : null;
+  return (
+    <div data-testid="fila-vazia" className="rounded-xl border border-line bg-white p-6">
+      <p className="font-title text-base font-semibold text-ink">Nada pendente.</p>
+      <p className="mt-1 text-sm text-muted" data-testid="fila-vazia-ultima">
+        {texto ?? (data ? `Última decisão em ${data} (horário de Brasília).` : "Nenhuma decisão registrada nesta fila ainda.")}
+      </p>
     </div>
   );
 }

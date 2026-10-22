@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FileSignature } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { adminDaPagina, contratosReais, intervaloBRT, nomesCurtos } from "@/lib/data/admin-indicadores";
 import {
@@ -130,7 +130,7 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
 
       <Panel title={`Contratos (${lista.length})`}>
         {lista.length === 0 ? (
-          <EmptyState icon={FileSignature} title="Nenhum contrato nesta lista" text="Tire um filtro para ver outros." />
+          <EmptyState icon={FileSignature} title="Nenhum contrato nesta lista" text="Tire um filtro para ver outros." action={<ButtonLink href="/admin/contratos" variant="secondary" size="sm">Ver todos os contratos</ButtonLink>} />
         ) : (
           <ul className="grid gap-3">
             {lista.map((c) => {

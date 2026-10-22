@@ -1,5 +1,6 @@
 "use client";
 
+import { ButtonLink } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Mail } from "lucide-react";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -38,7 +39,7 @@ export function CaixaEmailsTeste() {
       <div data-testid="caixa-emails-teste">
         <p className="mb-3 text-sm text-muted">Os e-mails que o sistema enviou a esta conta de teste. Só você os vê.</p>
         {emails.length === 0 ? (
-          <EmptyState icon={Mail} title="Nenhum e-mail ainda" text="Quando o sistema enviar um e-mail a esta conta, ele aparece aqui." />
+          <EmptyState icon={Mail} title="Nenhum e-mail ainda" text="Quando o sistema enviar um e-mail a esta conta, ele aparece aqui." action={<ButtonLink href="/dashboard/conta/notificacoes" variant="secondary" size="sm">Ver as notificações</ButtonLink>} />
         ) : (
           <ul className="space-y-3">
             {emails.map((e) => (

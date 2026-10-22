@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { buttonClasses } from "@/components/ui/button";
 import { TEXTO_VALIDADE_CAF } from "@/lib/caf/validade";
+import { SkeletonLinhas } from "@/components/ui/skeleton";
 
 /**
  * Etapa "Confirme sua identidade" do cadastro do anúncio (decisão do Daniel, 18/10): vem DEPOIS do endereço e ANTES
@@ -55,9 +56,9 @@ export function EtapaIdentidade({ onConfirmada }: { onConfirmada?: () => void })
         É o que permite conferir a matrícula na hora: comparamos o CPF do seu cadastro com o do proprietário. {TEXTO_VALIDADE_CAF}
       </p>
       {estado === "carregando" && (
-        <p className="mt-3 flex items-center gap-2 text-sm text-muted">
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Verificando…
-        </p>
+        <div className="mt-3">
+          <SkeletonLinhas linhas={2} />
+        </div>
       )}
       {estado === "ok" && (
         <p className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-900" data-testid="identidade-confirmada">

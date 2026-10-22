@@ -4,9 +4,9 @@ import { Camera, Handshake } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { nomeCurto } from "@/lib/perfil/perfil-publico";
 import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
-import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState, FilaVazia } from "@/components/dashboard/primitives";
 import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
-import { buttonClasses } from "@/components/ui/button";
+import { buttonClasses, ButtonLink } from "@/components/ui/button";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { lerParceiroGeral, rotuloCategoria } from "@/lib/parceiros/regras";
@@ -38,7 +38,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
     return (
       <>
         <PageTitle title="Parceiros" subtitle="Rede de parceiros da Viva." />
-        <EmptyState icon={Handshake} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." />
+        <EmptyState icon={Handshake} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
   }
@@ -52,6 +52,11 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
     admin.from("chaves_plataforma").select("ligada, valor").eq("chave", "PARCEIRO_GERAL_FALLBACK").maybeSingle(),
     admin.from("interesse_fotografo_cidade").select("user_id, uf, chave, cidade, categoria, criado_em").is("avisado_em", null).order("criado_em", { ascending: false }).limit(2000),
   ]);
+  // Fila vazia (Prompt 48): "Nada pendente" com a data da última decisão sobre um pedido de parceria.
+  const ultimaDecisaoParceria =
+    aba === "pendentes"
+      ? (((await admin.from("parceiro_solicitacoes").select("decidido_em").not("decidido_em", "is", null).order("decidido_em", { ascending: false }).limit(1)).data?.[0]?.decidido_em as string | null | undefined) ?? null)
+      : null;
   const conta = (s: string[]) => (contagem.data ?? []).filter((r) => s.includes(r.status as string)).length;
 
   // Cartão do parceiro (31c): cartões gerados e pedidos vindos de cartão; contas de teste fora dos totais.
@@ -183,7 +188,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
       <div className="space-y-4" data-testid={`admin-parceiros-lista-${aba}`}>
         {aba === "ativas" ? (
           ((parceiros.data ?? []) as Record<string, unknown>[]).length === 0 ? (
-            <EmptyState icon={Handshake} title="Nenhum parceiro ativo ainda" text="Quem tem a parceria aprovada e ativa a página aparece aqui." />
+            <EmptyState icon={Handshake} title="Nenhum parceiro ativo ainda" text="Quem tem a parceria aprovada e ativa a página aparece aqui." action={<ButtonLink href="/admin/parceiros?aba=pendentes" variant="secondary" size="sm">Ver pedidos de parceria</ButtonLink>} />
           ) : (
             <Panel>
               <ul className="divide-y divide-line">
@@ -206,8 +211,10 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
               </ul>
             </Panel>
           )
+        ) : fichas.length === 0 && aba === "pendentes" ? (
+          <FilaVazia ultimaDecisao={ultimaDecisaoParceria} />
         ) : fichas.length === 0 ? (
-          <EmptyState icon={Handshake} title="Nada por aqui" text="Nenhum pedido nesta situação." />
+          <EmptyState icon={Handshake} title="Nada por aqui" text="Nenhum pedido nesta situação." action={<ButtonLink href="/admin/parceiros?aba=pendentes" variant="secondary" size="sm">Ver os pendentes</ButtonLink>} />
         ) : aba === "aprovadas" ? (
           <Panel>
             <ul className="divide-y divide-line">

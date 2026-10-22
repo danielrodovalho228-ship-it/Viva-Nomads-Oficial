@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ButtonLink } from "@/components/ui/button";
 import { ClipboardList } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -36,7 +37,7 @@ export default async function AdminPedidosParceirosPage({ searchParams }: { sear
   const soAutomaticos = sp.origem === "automatico";
   const filtro = (sp.filtro && sp.filtro in FILTROS ? sp.filtro : null) as Filtro | null;
   const admin = createAdminClient();
-  if (!admin) return <EmptyState icon={ClipboardList} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." />;
+  if (!admin) return <EmptyState icon={ClipboardList} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />;
   const [{ data }, testes, { data: parcs }] = await Promise.all([
     admin
       .from("parceiro_pedidos")
@@ -114,7 +115,7 @@ export default async function AdminPedidosParceirosPage({ searchParams }: { sear
           )}
         </p>
         {lista.length === 0 ? (
-          <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text="Os pedidos de orçamento aparecem aqui assim que alguém pedir." />
+          <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text="Os pedidos de orçamento aparecem aqui assim que alguém pedir." action={<ButtonLink href="/admin/parceiros" variant="secondary" size="sm">Ver os parceiros</ButtonLink>} />
         ) : (
           <ul className="divide-y divide-line" data-testid="admin-pedidos-lista">
             {lista.map((p) => (

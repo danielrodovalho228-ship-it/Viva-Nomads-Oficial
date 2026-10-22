@@ -1,4 +1,5 @@
 import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { ButtonLink } from "@/components/ui/button";
 import Link from "next/link";
 import { FlaskConical } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -68,7 +69,7 @@ export default async function AdminDadosDeTestePage() {
       </Panel>
       <Panel title="Nova jornada de teste" className="min-w-0">
         {contas.length === 0 || anuncios.length === 0 ? (
-          <EmptyState icon={FlaskConical} title="Faltam dados de teste" text="É preciso ao menos uma conta de inquilino de teste e um anúncio [TESTE QA] de um proprietário de teste." />
+          <EmptyState icon={FlaskConical} title="Faltam dados de teste" text="É preciso ao menos uma conta de inquilino de teste e um anúncio [TESTE QA] de um proprietário de teste." action={<ButtonLink href="/admin/usuarios?teste=1" variant="secondary" size="sm">Ver contas de teste</ButtonLink>} />
         ) : (
           <NovaJornadaTeste
             inquilinos={contas.filter((c) => c.role !== "admin").map((c) => ({ id: c.id, rotulo: c.email ?? c.full_name ?? c.id }))}
@@ -98,7 +99,7 @@ export default async function AdminDadosDeTestePage() {
       </Panel>
       <Panel title="Carteira de teste (Análise da carteira)" className="mt-6">
         {contas.length < 2 ? (
-          <EmptyState icon={FlaskConical} title="Faltam contas de teste" text="É preciso um proprietário e um inquilino de teste (is_teste)." />
+          <EmptyState icon={FlaskConical} title="Faltam contas de teste" text="É preciso um proprietário e um inquilino de teste (is_teste)." action={<ButtonLink href="/admin/usuarios?teste=1" variant="secondary" size="sm">Ver contas de teste</ButtonLink>} />
         ) : (
           <SemearCarteiraTeste
             proprietarios={contas.filter((c) => c.role !== "admin").map((c) => ({ id: c.id, rotulo: c.email ?? c.full_name ?? c.id }))}

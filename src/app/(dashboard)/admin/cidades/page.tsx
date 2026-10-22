@@ -1,4 +1,5 @@
 import { dataBRT } from "@/lib/datas-brasilia";
+import { ButtonLink } from "@/components/ui/button";
 import { MapPinned, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -20,7 +21,7 @@ export default async function AdminCidadesPage() {
     return (
       <>
         <PageTitle title="Cidades liberadas" />
-        <EmptyState icon={MapPinned} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." />
+        <EmptyState icon={MapPinned} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
   }
@@ -54,7 +55,7 @@ export default async function AdminCidadesPage() {
 
       <Panel title="Cidades" className="mb-6 scroll-mt-24" id="lista">
         {lista.length === 0 ? (
-          <EmptyState icon={MapPinned} title="Nenhuma cidade cadastrada" text="Cadastre abaixo a primeira cidade liberada." />
+          <EmptyState icon={MapPinned} title="Nenhuma cidade cadastrada" text="Cadastre abaixo a primeira cidade liberada." action={<ButtonLink href="#cadastrar-cidade" variant="secondary" size="sm">Cadastrar a primeira cidade</ButtonLink>} />
         ) : (
           <>
             <ul className="space-y-3 md:hidden" data-testid="cidades-cartoes">
@@ -90,13 +91,13 @@ export default async function AdminCidadesPage() {
         )}
       </Panel>
 
-      <Panel title="Cadastrar cidade" className="mb-6">
+      <Panel title="Cadastrar cidade" className="mb-6 scroll-mt-24" id="cadastrar-cidade">
         <CadastroCidadeForm />
       </Panel>
 
       <Panel title="Interesse por cidade" id="interesse">
         {ranking.length === 0 ? (
-          <EmptyState icon={Users} title="Ainda sem interesse registrado" text="Quando alguém buscar ou tentar publicar numa cidade fechada e pedir aviso, aparece aqui." />
+          <EmptyState icon={Users} title="Ainda sem interesse registrado" text="Quando alguém buscar ou tentar publicar numa cidade fechada e pedir aviso, aparece aqui." action={<ButtonLink href="/admin/cidades#lista" variant="secondary" size="sm">Ver as cidades liberadas</ButtonLink>} />
         ) : (
           <ol className="divide-y divide-sage-100" data-testid="ranking-interesse">
             {ranking.map((c, i) => (
