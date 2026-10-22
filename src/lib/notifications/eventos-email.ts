@@ -87,7 +87,9 @@ export type NotificationEvent =
   | "pedido_auto_atualizado" // estadia remarcada: janela nova → parceiro
   | "pedido_auto_cancelado" // contrato encerrado: pedido cancelado → parceiro
   | "saida_sem_parceiro" // saída em 5 dias sem limpeza vinculada → dono
-  | "sugestao_parceiros_morador"; // D-7 da entrada ou da saída: parceiros sugeridos → morador
+  | "sugestao_parceiros_morador" // D-7 da entrada ou da saída: parceiros sugeridos → morador
+  | "internet_remedir" // 57: a medição da internet vence em ~2 semanas → dono
+  | "internet_abaixo_medida"; // 57: a medição do morador ficou abaixo de 50% da do dono → dono
 
 // Assunto SEM a marca (o envio põe "· Viva Nomads"; regras em assuntos.ts). A imagem de cada evento mora em
 // imagens-email.ts (IMAGEM por tema, fonte única).
@@ -162,6 +164,8 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   pedido_auto_atualizado: { subject: "O pedido mudou de data", body: (n) => `Olá${n ? " " + n : ""}, a estadia foi remarcada e a janela do serviço mudou. Confira as novas datas no pedido.`, cta: "Ver o pedido", path: "/dashboard/parceiro" },
   pedido_auto_cancelado: { subject: "Pedido cancelado", body: (n) => `Olá${n ? " " + n : ""}, o contrato do imóvel foi encerrado e o pedido foi cancelado. Nada a fazer.`, cta: "Ver os pedidos", path: "/dashboard/parceiro" },
   saida_sem_parceiro: { subject: "Saída em 5 dias: quer agendar a limpeza?", body: (n) => `Olá${n ? " " + n : ""}, o morador sai em 5 dias e o imóvel não tem limpeza fixa. Peça um orçamento a um parceiro da cidade.`, cta: "Buscar limpeza", path: "/parceiros/buscar?categoria=limpeza" },
+  internet_remedir: { subject: "Meça de novo a internet do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, a medição da internet do seu imóvel vence em cerca de 2 semanas. Meça de novo, conectado ao Wi-Fi do imóvel, para o anúncio continuar mostrando o número.`, cta: "Medir a internet", path: "/dashboard/imoveis" },
+  internet_abaixo_medida: { subject: "A internet medida pelo morador ficou abaixo", body: (n) => `Olá${n ? " " + n : ""}, o morador mediu a internet na entrada e o resultado ficou abaixo da metade da sua última medição. Vale conferir o roteador ou o plano e medir de novo.`, cta: "Ver o imóvel", path: "/dashboard/imoveis" },
   sugestao_parceiros_morador: { subject: "Precisa de ajuda com a mudança?", body: (n) => `Olá${n ? " " + n : ""}, separamos parceiros da cidade para a sua mudança. Peça um orçamento se quiser: nada é contratado sem você.`, cta: "Ver os parceiros", path: "/dashboard/locacoes" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", cta: "Conferir documento", path: "/admin/documentos" },
 };

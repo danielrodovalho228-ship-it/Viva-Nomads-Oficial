@@ -1354,6 +1354,7 @@ export default function NewPropertyPage() {
                 comodidadesSugeridas={comodidadesSugeridas}
                 internetMbps={internetMbps}
                 setInternetMbps={setInternetMbps}
+                imovelId={draftServerId ?? editingId}
                 proxOsm={proxOsm}
                 proxCarregando={proxCarregando}
                 proxDesmarcados={proxDesmarcados}

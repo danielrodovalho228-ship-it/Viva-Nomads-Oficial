@@ -41,6 +41,8 @@ export function EtapaEncontramos(p: {
   comodidadesSugeridas: string[];
   internetMbps: string;
   setInternetMbps: (v: string) => void;
+  /** Id do rascunho já salvo (a medição da internet precisa do imóvel gravado). */
+  imovelId?: string | null;
   proxOsm: LugarProximo[] | null;
   proxCarregando: boolean;
   proxDesmarcados: string[];
@@ -106,6 +108,7 @@ export function EtapaEncontramos(p: {
         sugeridas={p.comodidadesSugeridas}
         mbps={p.internetMbps}
         onMbps={p.setInternetMbps}
+        imovelId={p.imovelId}
       />
       {p.qualTHome && <p className="text-xs text-forest">Da qualificação: etiqueta “Para trabalhar de casa” ativa.</p>}
 
