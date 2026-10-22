@@ -68,6 +68,9 @@ test.describe("T271 — admin: regressão visual (Prompt 46)", () => {
         await page.goto(alvo, { waitUntil: "networkidle" });
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 25_000 });
         await page.evaluate(() => document.fonts.ready);
+        // Geometria estável em qualquer base: no máximo 1 linha por tabela e 2 itens por lista (o resto do dado não muda
+        // a anatomia que a imagem guarda).
+        await page.addStyleTag({ content: "main tbody tr:nth-child(n+2), main ul > li:nth-child(n+3), main ol > li:nth-child(n+3) { display: none !important; }" });
         expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
         await expect(page).toHaveScreenshot(`t271-${nome(rota)}-${largura}.png`, { mask: mascaras(page), maxDiffPixelRatio: 0.03, animations: "disabled" });
       });
