@@ -1,5 +1,8 @@
 "use client";
 
+import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { calcularTudoIncluido } from "@/lib/precos";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -40,7 +43,7 @@ import type { Property } from "@/lib/types";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
 import { coverPhoto } from "@/lib/media";
-import { cn, formatBRL } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { tituloDecisoes, type Decisao, type TipoDecisao } from "@/lib/painel/decisoes";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { ServicosPainel } from "@/components/parceiros/servicos-painel";
@@ -282,9 +285,11 @@ function PainelDoDono({
                           {p.title}
                         </Link>
                       )}
-                      <p className="text-sm text-muted">
-                        {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
-                      </p>
+                      <PrecoComContexto
+                        rotulo={rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
+                        destaque="sm"
+                      />
+                      <p className="text-sm text-muted">{p.neighborhood}</p>
                       {/* Selos abaixo do título: em 390 px não espremem o texto. */}
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {p.readyToLiveBadge && <ReadyToLiveBadge />}
@@ -435,6 +440,9 @@ function TenantDashboard({ name, decisoes, cidade, estadias }: { name: string; d
                 id={p.id}
                 title={p.title}
                 monthlyPrice={p.monthlyPrice}
+                totalMes={calcularTudoIncluido(p).total}
+                minPeriodDays={p.minPeriodDays}
+                availableFrom={p.availableFrom}
                 neighborhood={p.neighborhood}
                 photos={p.photos}
               />

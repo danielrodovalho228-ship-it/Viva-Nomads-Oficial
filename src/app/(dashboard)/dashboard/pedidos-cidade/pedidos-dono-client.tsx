@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Megaphone, Home, Plus, Info, Check, Sparkles, EyeOff, Undo2, MessageCircle, UserRound, ShieldCheck, Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageTitle } from "@/components/dashboard/primitives";
-import { formatBRL, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { rotuloPreco } from "@/lib/cartao-preco";
 import { contemContato, CONTATO_AVISO, motivoParaDono } from "@/lib/pedidos/pedidos";
 import { dataPedidoBR, textoBairros, textoFaixaValor, textoNecessidades, textoPortePet, textoQuartos } from "@/lib/pedidos/campos";
 import { ABAS_DONO, MENSAGEM_OFERTA_PADRAO, STATUS_CONVERSA, type AbaDono } from "@/lib/pedidos/mural-dono";
@@ -241,7 +242,7 @@ function OfertaForm({ pedidoId, opcoes, onCancel, onDone }: { pedidoId: string; 
         <select value={imovelId} onChange={(e) => setImovelId(e.target.value)} className="w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-sage" data-testid="oferta-imovel">
           {opcoes.map((m) => (
             <option key={m.id} value={m.id}>
-              {m.title} · {formatBRL(m.monthlyPrice)}/mês
+              {m.title} · {rotuloPreco({ mensal: m.monthlyPrice }).mes}
             </option>
           ))}
         </select>

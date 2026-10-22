@@ -1,6 +1,6 @@
 import { formatBRL } from "./utils.ts";
 import { statusDisponibilidade } from "./imovel-pagina.ts";
-import { rotuloPrecoCartao } from "./cartao-preco.ts";
+import { rotuloPreco } from "./cartao-preco.ts";
 
 /**
  * Barra fixa do celular na página do imóvel (ordem aa421902, UX1; Prompt 41): valor por mês + total pela duração
@@ -37,7 +37,7 @@ export function barraFixaImovel(p: {
 }): BarraFixaImovel {
   const precoValido = Number.isFinite(p.monthlyPrice) && p.monthlyPrice > 0;
   const total = p.totalMensal && p.totalMensal > 0 ? p.totalMensal : p.monthlyPrice;
-  const preco = precoValido ? rotuloPrecoCartao(total, p.meses ?? 1) : null;
+  const preco = precoValido ? rotuloPreco({ mensal: total, meses: p.meses ?? 1 }) : null;
   return {
     // Exemplo também mostra a barra (estado de demonstração, nada é enviado).
     visivel: precoValido,

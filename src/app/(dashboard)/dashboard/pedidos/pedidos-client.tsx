@@ -10,7 +10,9 @@ import { Plus, Check, X, Pause, Play, MessageSquare, Home, Pencil, Trash2, Refre
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { formatBRL, cn, dataBR } from "@/lib/utils";
+import { cn, dataBR } from "@/lib/utils";
+import { rotuloPreco, textoPreco } from "@/lib/cartao-preco";
+import { totalMesDaLinha } from "@/lib/precos";
 import {
   motivoLabel,
   PEDIDO_STATUS_LABEL,
@@ -64,7 +66,7 @@ type Resposta = {
   mensagem: string | null;
   status: string;
   recusa_motivo: string | null;
-  properties: { id: string; title: string; city: string; monthly_price: number } | null;
+  properties: { id: string; title: string; city: string; monthly_price: number; condo_fee?: number | null; utilities_mode?: string | null; utilities_estimate?: number | null; available_from?: string | null } | null;
 };
 
 const STATUS_TONE: Record<string, string> = {
@@ -309,8 +311,13 @@ export function PedidosClient({
                               </div>
                               <p className="mt-1 text-muted">
                                 {r.properties?.city}
-                                {r.properties ? ` · ${formatBRL(r.properties.monthly_price)}/mês` : ""}
+                                {r.properties ? ` · ${textoPreco(rotuloPreco({ mensal: totalMesDaLinha(r.properties), meses: p.prazo_meses }))}` : ""}
                               </p>
+                              {r.properties?.available_from && (
+                                <p className="text-xs text-muted" data-testid="resposta-disponivel">
+                                  {rotuloPreco({ mensal: 0, disponivelEm: r.properties.available_from }).disponivel}
+                                </p>
+                              )}
                               {r.mensagem && <p className="mt-2 text-ink">{r.mensagem}</p>}
                             </div>
                             {r.properties && (

@@ -441,7 +441,7 @@ export async function getRespostasRecebidas() {
   if (!user) return [];
   const { data } = await supabase
     .from("respostas_pedido")
-    .select("*, properties(id, title, city, monthly_price)")
+    .select("*, properties(id, title, city, monthly_price, condo_fee, utilities_mode, utilities_estimate, available_from)")
     .order("criado_em", { ascending: false });
   // A RLS já limita às respostas dos pedidos do inquilino (e às suas, se for dono).
   return data ?? [];
@@ -877,7 +877,7 @@ export async function getMinhasRespostas(): Promise<Record<string, unknown>[]> {
   if (!user) return [];
   const { data } = await supabase
     .from("respostas_pedido")
-    .select("*, properties(id, title, city, monthly_price)")
+    .select("*, properties(id, title, city, monthly_price, condo_fee, utilities_mode, utilities_estimate, available_from)")
     .eq("proprietario_id", user.id)
     .order("criado_em", { ascending: false });
   return data ?? [];

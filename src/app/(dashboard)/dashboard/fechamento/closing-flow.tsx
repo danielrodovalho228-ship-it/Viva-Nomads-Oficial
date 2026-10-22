@@ -1,5 +1,7 @@
 "use client";
 
+import { rotuloPreco } from "@/lib/cartao-preco";
+import { mensalDoFechamento } from "@/lib/precos";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { CampoData } from "@/components/ui/campo-data";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
@@ -128,6 +130,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     [prazoMeses]
   );
   const VALOR_ESTADIA = resumo.valorTotalPeriodo;
+  // Prompt 47 (adendo): o total do período mostrado é o MESMO do cartão para a mesma duração (função única).
+  const PRECO_PERIODO = rotuloPreco({ mensal: mensalDoFechamento(PROPERTY_FULL, ACORDO?.valorMensal), meses: prazoMeses });
   const PLATFORM_COMMISSION = resumo.comissaoValor;
   const CAUCAO_50 = resumo.caucaoTotal; // total do período (soma dos blocos)
   const [verified, setVerified] = useState(false);
@@ -569,8 +573,13 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               )}
               <p className="mt-3 text-xs text-muted">
                 {resumo.blocos.length} {resumo.blocos.length === 1 ? "bloco" : "blocos"} ·{" "}
-                {formatBRL(PROPERTY.monthlyRent)}/mês · total do período{" "}
-                <strong className="text-ink">{formatBRL(resumo.valorTotalPeriodo)}</strong>.
+                <span data-testid="fechamento-preco">
+                  {PRECO_PERIODO.mes} · total do período{" "}
+                  <strong className="text-ink" data-testid="fechamento-total-periodo" data-total={PRECO_PERIODO.total}>
+                    {formatBRL(PRECO_PERIODO.total)}
+                  </strong>
+                </span>
+                .
               </p>
             </div>
 

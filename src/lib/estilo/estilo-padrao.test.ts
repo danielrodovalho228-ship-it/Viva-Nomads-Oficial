@@ -303,7 +303,7 @@ test("cartão de anúncio: sem caixa (sem border nem shadow), foto 4:3 com raio 
   assert.match(c, /text-lg font-semibold text-forest" data-testid="cartao-preco-mes">\s*\{preco\.valor\}/);
   assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/); // sem "total" solto (QA)
   assert.doesNotMatch(c, /\/mês total/);
-  assert.match(c, /const preco = rotuloPrecoCartao\(inc\.total, mesesDoCartao\(periodMonths, property\.minPeriodDays\)\);/);
+  assert.match(c, /const preco = rotuloPreco\(\{ mensal: inc\.total, meses: mesesDoCartao\(periodMonths, property\.minPeriodDays\), disponivelEm: property\.availableFrom \}\);/);
   assert.match(c, /\{preco\.estadia && \(/); // N = 1: só "R$ X/mês"
   assert.match(c, /const sintese = itensSintese\(property\);/);
   assert.doesNotMatch(c, /IdealPara/); // ordem congelada: "Ideal para" fica na página do imóvel
