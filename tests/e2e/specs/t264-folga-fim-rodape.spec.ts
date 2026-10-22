@@ -148,7 +148,11 @@ for (const { largura, altura } of LARGURAS) {
       expect(pedidos).toEqual([]);
       const video = page.getByTestId("video-institucional");
       await video.scrollIntoViewIfNeeded();
-      await video.evaluate((v: HTMLVideoElement) => v.play().catch(() => undefined));
+      // Sem esperar a promessa do play: o Chromium de teste não traz H.264 e ela pode nunca resolver (como no t177);
+      // o que importa é QUAL arquivo é pedido e que só depois do play.
+      await video.evaluate((v: HTMLVideoElement) => {
+        void v.play().catch(() => undefined);
+      });
       await expect.poll(() => pedidos.length, { timeout: 15_000 }).toBeGreaterThan(0);
       expect(pedidos[0]).toBe(largura < 768 ? "/media/institucional-540.mp4" : "/media/institucional.mp4");
     });
@@ -165,7 +169,7 @@ test.describe("T264 — menu superior e barra inferior a 390 px", () => {
     for (const rota of ["/", "/buscar", "/imoveis/ube-001", "/cidades/uberlandia"]) {
       test(`${rota}: cabeçalho e barra de 5 itens visíveis`, async ({ page }) => {
         await page.goto(rota, { waitUntil: "domcontentloaded" });
-        await expect(page.locator("header").first()).toBeVisible();
+        await expect(page.locator("header").filter({ visible: true }).first()).toBeVisible();
         await expect(barraInferior(page)).toBeVisible({ timeout: 15_000 });
         await expect(barraInferior(page).getByRole("link")).toHaveCount(5);
       });
@@ -177,7 +181,7 @@ test.describe("T264 — menu superior e barra inferior a 390 px", () => {
     test.use({ storageState: authFile("proprietario") });
     test("/dashboard: cabeçalho e a barra do proprietário", async ({ page }) => {
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      await expect(page.locator("header").first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.locator("header").filter({ visible: true }).first()).toBeVisible({ timeout: 20_000 });
       await expect(barraInferior(page)).toBeVisible({ timeout: 20_000 });
       await expect(barraInferior(page)).toHaveAttribute("data-papel", "proprietario");
       await expect(barraInferior(page).getByRole("link")).toHaveCount(5);
