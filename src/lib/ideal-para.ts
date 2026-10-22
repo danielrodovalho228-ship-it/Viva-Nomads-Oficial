@@ -12,11 +12,14 @@ import { boaParaVideochamada, vigente } from "./internet-medida.ts";
 export const IDEAL_PARA_MAX = 3;
 
 type Dados = Pick<Property, "workFeatures" | "internetTier" | "bedrooms" | "furnished" | "amenities" | "petsAllowed"> &
-  Partial<Pick<Property, "internetMedida">> & { agora?: Date };
+  Partial<Pick<Property, "internetMedida" | "tagHomeOffice">> & { agora?: Date };
 
 const temMesa = (p: Dados) => (p.workFeatures ?? []).some((f) => /mesa/i.test(f));
-/** Prompt 57: mesa + internet MEDIDA no imóvel (vigente) que passa a regra de videochamada. */
-const homeOfficeMedido = (p: Dados) => temMesa(p) && !!p.internetMedida && vigente(p.internetMedida, p.agora ?? new Date()) && boaParaVideochamada(p.internetMedida);
+/**
+ * Prompt 57: os 4 essenciais (a etiqueta "Para trabalhar de casa" da qualificação; nos exemplos, a mesa) + internet
+ * MEDIDA no imóvel (vigente) que passa a regra de videochamada.
+ */
+const homeOfficeMedido = (p: Dados) => (p.tagHomeOffice === true || temMesa(p)) && !!p.internetMedida && vigente(p.internetMedida, p.agora ?? new Date()) && boaParaVideochamada(p.internetMedida);
 
 const REGRAS: { id: IdealParaId; vale: (p: Dados) => boolean }[] = [
   // Prompt 57: a versão MEDIDA é a primeira da lista (decisão do Daniel, 22/10) e substitui a informada.

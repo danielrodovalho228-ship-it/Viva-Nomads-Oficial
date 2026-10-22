@@ -68,3 +68,10 @@ test("Prompt 57: home office com internet medida vem primeiro e substitui o info
   assert.deepEqual(idealPara({ ...p, agora: new Date("2027-05-01T00:00:00Z") }), ["comPet", "homeOffice"]);
   assert.deepEqual(idealPara({ ...p, internetMedida: { ...medida, uploadMbps: 2 } }), ["comPet", "homeOffice"]);
 });
+
+test("Prompt 57: anúncio do banco usa a etiqueta dos 4 essenciais (tagHomeOffice) para a versão medida", () => {
+  const agora = new Date("2026-10-23T12:00:00Z");
+  const medida = { downloadMbps: 100, uploadMbps: 20, latenciaMs: 20, medidoEm: "2026-10-22T15:00:00Z", validoAte: "2027-04-22T15:00:00Z" };
+  assert.deepEqual(idealPara({ ...base, tagHomeOffice: true, internetMedida: medida, agora }), ["homeOfficeMedido"]);
+  assert.deepEqual(idealPara({ ...base, tagHomeOffice: false, internetMedida: medida, agora }), []);
+});
