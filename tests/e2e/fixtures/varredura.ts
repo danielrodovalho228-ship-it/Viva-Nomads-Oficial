@@ -3,6 +3,14 @@ import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { hasAccount } from "./accounts";
 import { entrar } from "./laboratorio";
 import { MOTIVO_ACAO_CANCELADA, canceladaPeloNavegador } from "./requisicao-cancelada";
+import { recursoFicticioDoLab } from "../../../src/lib/varredura-texto";
+
+/**
+ * Foto fictícia que outras specs semeiam em paralelo (`criarImovelPronto`: host lab.vivanomads.test). O imóvel aparece
+ * nos destaques do painel e da busca, o Next devolve 400 em /_next/image e a imagem não carrega. Não é defeito do site:
+ * a t48 já ignora pela mesma regra. Lab de 22/10: a, d e o D-V4 da t249 caíam com isso em execuções diferentes.
+ */
+export const MOTIVO_FOTO_FICTICIA = "foto fictícia semeada por outra spec (lab.vivanomads.test; 400 em /_next/image)";
 
 /**
  * Apoio da VARREDURA VISUAL (t249): os critérios por tela e tamanho, rodáveis em qualquer rota.
@@ -78,12 +86,22 @@ export async function abrirRota(page: Page, rota: string): Promise<string[]> {
 /** (d) Liga a escuta ANTES de abrir a rota; `lista()` devolve só o que não é exceção de terceiro. */
 export function escutarErros(page: Page): { lista: () => string[]; ignorados: () => string[] } {
   const brutos: string[] = [];
+  let fotoFicticia = false;
   page.on("console", (m) => {
-    if (m.type() === "error") brutos.push(`console: ${m.text()} ${m.location().url ?? ""}`);
+    if (m.type() !== "error") return;
+    if (/Failed to load resource/i.test(m.text()) && recursoFicticioDoLab(m.location().url)) {
+      fotoFicticia = true;
+      return;
+    }
+    brutos.push(`console: ${m.text()} ${m.location().url ?? ""}`);
   });
   page.on("pageerror", (e) => brutos.push(`página: ${e.message}`));
   let acaoCancelada = false;
   page.on("requestfailed", (r) => {
+    if (recursoFicticioDoLab(r.url())) {
+      fotoFicticia = true;
+      return;
+    }
     const motivo = r.failure()?.errorText ?? "?";
     const cancelada = canceladaPeloNavegador(motivo, r.method(), r.url(), r.headers());
     if (cancelada === "prefetch") return;
@@ -104,6 +122,7 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
       ...new Set([
         ...brutos.filter(ehExcecao).map((t) => EXCECOES_TERCEIROS.find((x) => x.padrao.test(t))!.motivo),
         ...(acaoCancelada ? [MOTIVO_ACAO_CANCELADA] : []),
+        ...(fotoFicticia ? [MOTIVO_FOTO_FICTICIA] : []),
       ]),
     ],
   };
@@ -121,6 +140,16 @@ export async function imagensAcimaDaDobra(page: Page): Promise<string[]> {
   const medir = () =>
     page.evaluate((tile: string) => {
       const reTile = new RegExp(tile, "i");
+      // Mesma regra de recursoFicticioDoLab (src/lib/varredura-texto.ts), que não entra no navegador.
+      const fotoDoLab = (s: string) => {
+        try {
+          const u = new URL(s);
+          const alvo = u.pathname === "/_next/image" ? new URL(u.searchParams.get("url") ?? "") : u;
+          return alvo.hostname === "lab.vivanomads.test";
+        } catch {
+          return false;
+        }
+      };
       const ruins: string[] = [];
       for (const img of Array.from(document.images)) {
         const r = img.getBoundingClientRect();
@@ -129,6 +158,7 @@ export async function imagensAcimaDaDobra(page: Page): Promise<string[]> {
         if (r.bottom <= 0 || r.top >= window.innerHeight || r.right <= 0 || r.left >= window.innerWidth) continue; // fora da dobra
         const src = img.currentSrc || img.src;
         if (reTile.test(src)) continue;
+        if (fotoDoLab(src)) continue; // foto fictícia de outra spec (ver MOTIVO_FOTO_FICTICIA)
         if (!(img.complete && img.naturalWidth > 0)) ruins.push(`${(src || "(sem src)").replace(/\?.*$/, "").slice(-70)} (${img.loading || "eager"})`);
       }
       return ruins;
