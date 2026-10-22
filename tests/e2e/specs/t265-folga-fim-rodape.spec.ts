@@ -5,7 +5,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T264 — pacote D-V (QA do Muse em produção, 22/10, depois do #998): no fim da rolagem, nada fixo embaixo cobre o fim da
+  T265 — pacote D-V (QA do Muse em produção, 22/10, depois do #998): no fim da rolagem, nada fixo embaixo cobre o fim da
   página. Na página do imóvel a barra de preço (celular) e o "Fale com a Viva" cobriam as duas últimas linhas do rodapé
   ("© … Estadias de 30 a 180 dias" e "A plataforma conecta proprietários e inquilinos — não é parte do contrato"),
   sem respiro que as liberasse. Régua vigente: conteúdo que a rolagem não revela por completo = defeito.
@@ -72,7 +72,7 @@ async function rodapeCoberto(page: Page): Promise<string[]> {
 }
 
 for (const { largura, altura } of LARGURAS) {
-  test.describe(`T264 — fim da página sem nada fixo por cima (${largura} px)`, () => {
+  test.describe(`T265 — fim da página sem nada fixo por cima (${largura} px)`, () => {
     test.use({ viewport: { width: largura, height: altura }, storageState: { cookies: [], origins: [] } });
     for (const { rota, nome } of ROTAS) {
       test(`${nome}: as últimas linhas do rodapé ficam acima dos fixos`, async ({ page }) => {
@@ -90,7 +90,7 @@ for (const { largura, altura } of LARGURAS) {
           )
           .toEqual([]);
         await expect(ultima).toBeInViewport({ ratio: 1 });
-        await page.screenshot({ path: `tests/laboratorio/saida/t264-${nome.replace(/\W+/g, "-")}-${largura}.png` });
+        await page.screenshot({ path: `tests/laboratorio/saida/t265-${nome.replace(/\W+/g, "-")}-${largura}.png` });
       });
     }
     test("página do imóvel: o 'Fale com a Viva' fica acima da barra de preço (celular) e fora do rodapé no fim", async ({ page }) => {
@@ -115,7 +115,7 @@ for (const { largura, altura } of LARGURAS) {
 
 // ─────────────────────────── hero da home ───────────────────────────
 for (const { largura, altura } of LARGURAS) {
-  test.describe(`T264 — hero da home (${largura} px)`, () => {
+  test.describe(`T265 — hero da home (${largura} px)`, () => {
     test.use({ viewport: { width: largura, height: altura }, storageState: { cookies: [], origins: [] } });
     test("nunca abre preto: prévia no HTML, preload do poster e poster em < 3 s num 4G simulado", async ({ page }) => {
       // 4G comum: ~4 Mb/s de descida e 60 ms de latência.
@@ -137,7 +137,7 @@ for (const { largura, altura } of LARGURAS) {
       const escolhido = await poster.evaluate((el: HTMLImageElement) => new URL(el.currentSrc).pathname);
       expect(escolhido).toBe(largura < 768 ? "/media/hero-home-poster-768.webp" : "/media/hero-home-poster.webp");
       test.info().annotations.push({ type: "hero", description: `${largura}px: poster ${escolhido} em ${ms} ms (4G simulado)` });
-      await page.screenshot({ path: `tests/laboratorio/saida/t264-hero-${largura}.png` });
+      await page.screenshot({ path: `tests/laboratorio/saida/t265-hero-${largura}.png` });
     });
     test("vídeo institucional: arquivo do tamanho da tela, pedido só no play", async ({ page }) => {
       const pedidos: string[] = [];
@@ -160,7 +160,7 @@ for (const { largura, altura } of LARGURAS) {
 }
 
 // ─────────────────────────── barras a 390 px ───────────────────────────
-test.describe("T264 — menu superior e barra inferior a 390 px", () => {
+test.describe("T265 — menu superior e barra inferior a 390 px", () => {
   test.use({ viewport: { width: 390, height: 844 } });
   const barraInferior = (page: Page) => page.locator('nav[aria-label="Navegação principal"]');
 
@@ -206,10 +206,10 @@ test.describe("T264 — menu superior e barra inferior a 390 px", () => {
 });
 
 // ─────────────────────────── passos do proprietário novo ───────────────────────────
-test.describe("T264 — passos do proprietário novo (laboratório)", () => {
+test.describe("T265 — passos do proprietário novo (laboratório)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (cria um proprietário sem imóvel).");
   const senha = novaSenha();
-  const dono = { email: `dono.t264.${novoSufixo()}@lab.vivanomads.test`, nome: "Dora Passos", role: "owner" as const };
+  const dono = { email: `dono.t265.${novoSufixo()}@lab.vivanomads.test`, nome: "Dora Passos", role: "owner" as const };
   let id: string | undefined;
   test.beforeAll(async () => {
     id = await criarConta(dono, senha);
@@ -233,7 +233,7 @@ test.describe("T264 — passos do proprietário novo (laboratório)", () => {
       expect(vao, `passo ${i + 1}`).toBeLessThanOrEqual(24);
     }
     await expect(page.locator('nav[aria-label="Navegação principal"]')).toBeVisible();
-    await page.screenshot({ path: "tests/laboratorio/saida/t264-passos-390.png", fullPage: true });
+    await page.screenshot({ path: "tests/laboratorio/saida/t265-passos-390.png", fullPage: true });
     await page.context().close();
   });
 });
