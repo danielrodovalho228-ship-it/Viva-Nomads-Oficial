@@ -9,6 +9,9 @@
  *  • Respeita `profiles.notif_email` e `buscas_salvas.alerta_ativo`.
  *  • Sem dado do proprietário no e-mail; só cidade/bairro (região aproximada).
  */
+import { chaveDoDestino, destinoDaUrl, type DestinoBusca } from "@/lib/busca/destino-busca";
+import { resolverDestino, temposAte } from "@/lib/data/tempos";
+import type { ModoRota } from "@/lib/rotas/tempo";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProperty } from "@/lib/data/properties";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
@@ -19,6 +22,7 @@ import {
   ALERTAS_POR_BUSCA_POR_DIA,
   assinarDesligarAlerta,
   imovelBateComBusca,
+  type MinutosAte,
   montarAlerta,
   type ImovelNoAlerta,
 } from "@/lib/busca/alerta-busca";
@@ -90,6 +94,24 @@ async function pendentes(admin: Admin, buscaId: string): Promise<ImovelNoAlerta[
   }));
 }
 
+/**
+ * Prompt 37: tempos do imóvel até os DESTINOS CADASTRADOS das buscas salvas com "até N min" (calculados agora se
+ * faltarem, com o ponto exato, no servidor). Devolve a consulta usada por imovelBateComBusca.
+ */
+async function minutosDoImovel(admin: NonNullable<ReturnType<typeof createAdminClient>>, imovelId: string, buscas: BuscaLinha[]): Promise<MinutosAte> {
+  const tempos = new Map<string, number | null>();
+  const chave = (d: DestinoBusca, modo: ModoRota) => `${chaveDoDestino(d)}|${modo}`;
+  for (const b of buscas) {
+    const e = destinoDaUrl(new URLSearchParams(b.parametros));
+    // Só destino cadastrado: endereço digitado não tem alerta por tempo (nem cálculo por causa do alerta).
+    if (!e.destino || !("slug" in e.destino) || !e.ate || tempos.has(chave(e.destino, e.modo))) continue;
+    const destino = await resolverDestino({ destino: e.destino.slug }, admin);
+    const r = destino ? await temposAte(destino, e.modo, { ids: [imovelId] }, admin) : null;
+    tempos.set(chave(e.destino, e.modo), r?.itens[0]?.min ?? null);
+  }
+  return (d, modo) => tempos.get(chave(d, modo));
+}
+
 /** Imóvel acabou de ser PUBLICADO: registra e avisa as buscas salvas que ele atende. Best-effort. */
 export async function avisarBuscasDoImovel(imovelId: string): Promise<{ combinam: number; enviados: number }> {
   const admin = createAdminClient();
@@ -97,8 +119,10 @@ export async function avisarBuscasDoImovel(imovelId: string): Promise<{ combinam
   const imovel = await getProperty(imovelId);
   if (!imovel || imovel.status !== "active") return { combinam: 0, enviados: 0 };
   const { data } = await admin.from("buscas_salvas").select("id, usuario_id, parametros").eq("alerta_ativo", true).limit(5000);
-  const combinam = ((data ?? []) as BuscaLinha[]).filter(
-    (b) => b.usuario_id !== imovel.ownerId && imovelBateComBusca(b.parametros, imovel)
+  const buscas = (data ?? []) as BuscaLinha[];
+  const minutos = await minutosDoImovel(admin, imovelId, buscas);
+  const combinam = buscas.filter(
+    (b) => b.usuario_id !== imovel.ownerId && imovelBateComBusca(b.parametros, imovel, minutos)
   );
   let enviados = 0;
   for (const busca of combinam) {

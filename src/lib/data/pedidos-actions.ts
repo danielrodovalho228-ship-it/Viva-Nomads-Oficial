@@ -10,6 +10,9 @@ import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { listMyProperties } from "@/lib/data/properties";
 import { notify } from "@/lib/notifications";
 import { avisarCompativeisDoPedido, paresCompat } from "@/lib/data/pedidos-compat";
+import { destinoParaDono, localDaEntrada } from "@/lib/data/local-trabalho";
+import { temposAte } from "@/lib/data/tempos";
+import { chaveDestino, ehModo, minutosArredondados } from "@/lib/rotas/tempo";
 import { melhorPor, porQueCombina, type ImovelCompativel } from "@/lib/pedidos/compatibilidade";
 import {
   detalheResposta,
@@ -94,6 +97,8 @@ export interface PedidoInput {
   orcamentoMin?: number | null;
   necessidades?: string[];
   portePet?: string | null;
+  /** Prompt 37: onde vai trabalhar ou estudar, meio e "até N min" (padrão: o local de trabalho salvo na conta). */
+  destino?: { destinoSlug?: string; lat?: number; lng?: number; rotulo?: string; modo?: string; ate?: number } | null;
 }
 
 type CamposValidados = {
@@ -143,6 +148,33 @@ function colunasDoPedido(input: PedidoInput, v: CamposValidados) {
   };
 }
 
+/** Prompt 37: destino do pedido validado no servidor (slug ativo ou endereço escolhido); sem admin, sem destino. */
+async function destinoDoPedido(input: PedidoInput) {
+  const admin = createAdminClient();
+  return admin ? localDaEntrada(admin, input.destino ?? null) : null;
+}
+
+/**
+ * Prompt 37: com "até N min", a compatibilidade lê o tempo do cache. Calcula agora os que faltam para os imóveis
+ * mais próximos da cidade (o cron completa o resto). Best-effort.
+ */
+async function prepararTemposDoPedido(pedidoId: string): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin) return;
+  const { data: ped } = await admin.from("pedidos_moradia").select("cidade, destino").eq("id", pedidoId).maybeSingle();
+  const d = ped?.destino as { destino_id?: string; lat: number; lng: number; rotulo: string; modo_preferido?: string; ate?: number } | null;
+  if (!d?.ate) return;
+  const destino = {
+    chave: chaveDestino(d.destino_id ? { destinoId: d.destino_id } : { lat: Number(d.lat), lng: Number(d.lng) }),
+    ponto: { lat: Number(d.lat), lng: Number(d.lng) },
+    rotulo: d.rotulo,
+    destinoId: d.destino_id,
+  };
+  const { data: daCidade } = await admin.from("properties").select("id").eq("status", "active").ilike("city", String(ped?.cidade ?? ""));
+  const modo = ehModo(d.modo_preferido) ? d.modo_preferido : "carro";
+  await temposAte(destino, modo, { ids: ((daCidade ?? []) as { id: string }[]).map((p) => p.id) }, admin);
+}
+
 /**
  * Cria um Pedido de Moradia (fluxo do inquilino). Valida no SERVIDOR: campos
  * obrigatórios, filtro anti-contato na apresentação (bloqueia telefone/e-mail/
@@ -185,11 +217,15 @@ export async function criarPedido(
       error: `Você já tem ${MAX_PEDIDOS_ATIVOS} pedidos ativos. Pause ou marque um como atendido para publicar outro.`,
     };
 
+  const destino = await destinoDoPedido(input);
+  if (destino === "invalido") return { ok: false, error: "Escolha o local de trabalho na lista de sugestões." };
+
   const { data, error } = await supabase
     .from("pedidos_moradia")
     .insert({
       inquilino_id: user.id,
       ...colunasDoPedido(input, val.v),
+      destino,
       // expira_em é preenchido pelo trigger set_pedido_expira_em (30 dias, nunca antes da entrada — 0184).
     })
     .select("id, cidade")
@@ -207,6 +243,7 @@ export async function criarPedido(
     smsLigado: false,
   };
   try {
+    await prepararTemposDoPedido(data.id as string);
     compat = await avisarCompativeisDoPedido(data.id as string);
   } catch {
     /* best-effort: o pedido já foi publicado */
@@ -241,9 +278,11 @@ export async function editarPedido(pedidoId: string, input: PedidoInput): Promis
   if (!user) return { ok: false, error: "Entre para editar o pedido." };
   const val = validarPedido(input);
   if (!val.ok) return { ok: false, error: val.error };
+  const destino = await destinoDoPedido(input);
+  if (destino === "invalido") return { ok: false, error: "Escolha o local de trabalho na lista de sugestões." };
   const { data, error } = await supabase
     .from("pedidos_moradia")
-    .update(colunasDoPedido(input, val.v))
+    .update({ ...colunasDoPedido(input, val.v), destino })
     .eq("id", pedidoId)
     .eq("inquilino_id", user.id)
     .in("status", ["ativo", "pausado"])
@@ -253,6 +292,7 @@ export async function editarPedido(pedidoId: string, input: PedidoInput): Promis
   if (!data) return { ok: false, error: "Este pedido não pode mais ser editado." };
   let compativeis = 0;
   try {
+    await prepararTemposDoPedido(pedidoId);
     compativeis = (await avisarCompativeisDoPedido(pedidoId)).compativeis;
   } catch {
     /* best-effort */
@@ -619,6 +659,8 @@ export interface PedidoParaDono {
   inquilino: { nome: string; fotoUrl: string | null } | null;
   /** O pedido saiu do ar (encerrado, excluído ou expirado) depois que você respondeu. */
   encerrado: boolean;
+  /** Prompt 37: "perto do HC-UFU · ~15 min do seu imóvel" — só o rótulo e os minutos, nunca o endereço digitado. */
+  destino: string | null;
 }
 
 /**
@@ -705,6 +747,7 @@ export async function getPedidosParaProprietario(): Promise<{
 
   const pares = admin ? await paresCompat(admin, { dono: user.id }) : [];
   const melhor = melhorPor(pares, "pedido_id");
+  const destinos = admin ? await destinosParaDono(admin, linhas.map((p) => String(p.id)), melhor) : new Map<string, string>();
   const pedidos: PedidoParaDono[] = linhas.map((p) => {
     const id = String(p.id);
     const par = melhor.get(id);
@@ -746,9 +789,43 @@ export async function getPedidosParaProprietario(): Promise<{
       ignoradoMotivo: ignorados.get(id) ?? null,
       inquilino: minha?.status === "aceita_para_conversa" && inqId ? perfis.get(inqId) ?? null : null,
       encerrado: p.encerrado === true,
+      destino: destinos.get(id) ?? null,
     };
   });
   return { pedidos, myProperties };
+}
+
+/** Prompt 37: texto do destino de cada pedido para o dono (rótulo + minutos até o imóvel dele que combina). */
+async function destinosParaDono(
+  admin: NonNullable<ReturnType<typeof createAdminClient>>,
+  ids: string[],
+  melhor: Map<string, { imovel_id: string; situacao: string }>,
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (!ids.length) return out;
+  const { data } = await admin.from("pedidos_moradia").select("id, destino").in("id", ids).not("destino", "is", null);
+  const linhas = (data ?? []) as { id: string; destino: { destino_id?: string; rotulo: string; lat: number; lng: number; modo_preferido?: string } }[];
+  const idsDestino = [...new Set(linhas.map((l) => l.destino.destino_id).filter((x): x is string => !!x))];
+  const { data: ds } = idsDestino.length ? await admin.from("destinos").select("id, artigo").in("id", idsDestino) : { data: [] };
+  const artigo = new Map(((ds ?? []) as { id: string; artigo: "o" | "a" | "" }[]).map((d) => [d.id, d.artigo]));
+  for (const l of linhas) {
+    const d = l.destino;
+    const par = melhor.get(l.id);
+    let min: number | null = null;
+    if (par && par.situacao !== "demais") {
+      const chave = chaveDestino(d.destino_id ? { destinoId: d.destino_id } : { lat: Number(d.lat), lng: Number(d.lng) });
+      const { data: t } = await admin
+        .from("tempos_deslocamento")
+        .select("minutos")
+        .eq("property_id", par.imovel_id)
+        .eq("destino_chave", chave)
+        .eq("modo", ehModo(d.modo_preferido) ? d.modo_preferido : "carro")
+        .maybeSingle();
+      if (t?.minutos != null) min = minutosArredondados(Number(t.minutos)) ?? 0;
+    }
+    out.set(l.id, destinoParaDono(d.rotulo, d.destino_id ? (artigo.get(d.destino_id) ?? "o") : null, min));
+  }
+  return out;
 }
 
 /** Ignorar um pedido (motivo opcional): sai de "Novos para você" e vai para "Ignorados". */

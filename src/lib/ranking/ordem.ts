@@ -8,6 +8,7 @@
     4) desempate estável pelo id.
   Destaque é MERECIDO: nenhum campo de pagamento, plano ou assinatura entra aqui (teste de guarda).
 */
+import { faixaMinutos } from "../rotas/tempo.ts";
 
 export const DIA_MS = 86_400_000;
 
@@ -153,6 +154,8 @@ export interface ItemBusca {
   sinais: SinaisAnuncio;
   compat: FaixaCompat;
   distanciaKm: number | null;
+  /** Com destino escolhido (37): minutos até o destino; as faixas de minutos substituem as de km. */
+  minutos?: number | null;
 }
 
 export interface Posicao {
@@ -163,15 +166,16 @@ export interface Posicao {
 }
 
 /** Ordem da busca pública: teste e exemplo-quando-há-real ficam fora; "fora" nunca aparece na frente. */
-export function ordenarBusca(itens: ItemBusca[], agora: Date): Posicao[] {
+export function ordenarBusca(itens: ItemBusca[], agora: Date, opcoes: { porMinutos?: boolean } = {}): Posicao[] {
   const temReal = itens.some((i) => !i.sinais.ehExemplo && !i.sinais.ehTeste);
   const visiveis = itens.filter((i) => !i.sinais.ehTeste && !(temReal && i.sinais.ehExemplo));
   const comNota = visiveis.map((i) => ({ i, q: notaQualidade(i.sinais, agora) }));
+  const faixa = (i: ItemBusca) => (opcoes.porMinutos ? faixaMinutos(i.minutos) : faixaDistancia(i.distanciaKm));
   comNota.sort(
     (a, b) =>
       ORDEM_COMPAT[a.i.compat] - ORDEM_COMPAT[b.i.compat] ||
       Number(a.i.sinais.ehExemplo) - Number(b.i.sinais.ehExemplo) ||
-      faixaDistancia(a.i.distanciaKm) - faixaDistancia(b.i.distanciaKm) ||
+      faixa(a.i) - faixa(b.i) ||
       b.q.nota - a.q.nota ||
       a.i.sinais.id.localeCompare(b.i.sinais.id),
   );

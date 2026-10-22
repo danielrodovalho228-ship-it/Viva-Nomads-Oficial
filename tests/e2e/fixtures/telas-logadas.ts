@@ -64,6 +64,7 @@ export const TELAS_ADMIN = [
   "/admin/servicos",
   "/admin/ajuda-publicacao",
   "/admin/cidades",
+  "/admin/destinos",
   "/admin/dados-de-teste",
   "/admin/pedidos",
   "/admin/socios",
