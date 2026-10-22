@@ -5,6 +5,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { CATEGORIAS_PARCEIRO, CIDADES_MAX, DESCRICAO_MAX, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
+import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 
 /**
  * "Seja parceiro" (Prompt 31a, item 2). Exige conta com e-mail confirmado: quem não entrou preenche, vai criar a
@@ -16,7 +17,7 @@ const VOLTA = "/parceiros?seja=1#quero-ser-parceiro";
 
 const STATUS_TEXTO: Record<string, string> = {
   aguardando_email: "A equipe começou um pedido em seu nome. Confira os dados abaixo e confirme o envio.",
-  pendente: "Recebemos — a Viva analisa e responde por e-mail.",
+  pendente: "Aguardando aprovação da Viva. Resposta em até 1 dia útil, por e-mail.",
   aprovada: "Sua parceria foi aprovada. Veja o e-mail com o link para ativar a sua página.",
 };
 
@@ -94,6 +95,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         <div>
           <p className="font-semibold text-ink">{enviado ? STATUS_TEXTO.pendente : STATUS_TEXTO[sol!.status]}</p>
           <p className="mt-1 text-sm text-muted">Mandamos a confirmação para {estado.email}. Você acompanha pela sua conta.</p>
+          <p className="mt-2 text-sm text-ink" data-testid="seja-parceiro-regra">{TEXTO_REGRA_90_10}</p>
         </div>
       </div>
     );
@@ -238,6 +240,9 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         </label>
       )}
 
+      <p className="text-sm text-ink" data-testid="seja-parceiro-regra-90-10">
+        {TEXTO_REGRA_90_10}
+      </p>
       {erro && (
         <p className="text-sm text-red-700" role="alert" data-testid="seja-parceiro-erro">
           {erro}

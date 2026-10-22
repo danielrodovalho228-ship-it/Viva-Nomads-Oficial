@@ -16,6 +16,8 @@ import {
   Tag,
   CheckCircle2,
   XCircle,
+  BedDouble,
+  ShieldCheck,
 } from "lucide-react";
 import {
   createProperty,
@@ -69,6 +71,7 @@ import {
   ULTIMA_ETAPA,
   VERSAO_ORDEM_ETAPAS,
 } from "@/lib/etapas-anuncio";
+import { ETAPA } from "@/lib/anuncio/etapas-ids";
 import { capacidadeSugerida, consumoSugerido, mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { NEGOCIACAO_PADRAO, normalizarNegociacao, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { cepValido, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
@@ -96,19 +99,21 @@ import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
 
 /**
- * Cadastro do anúncio em 5 etapas (prompt 10, aprovado pelo Daniel em 17/10):
- *   1 Onde fica (tipo, CEP primeiro, documento do imóvel) · 2 Fotos (a IA analisa ao terminar) ·
- *   3 O que encontramos (tudo pré-preenchido com "Sugerido · confira") · 4 Preço e disponibilidade ·
- *   5 Revisar e publicar.
+ * Anunciar em 6 passos (Prompt 43, sobre o cadastro de 5 etapas do prompt 10):
+ *   1 Endereço e dados (CEP primeiro, quem opera, documento do imóvel) · 2 Tipo e quartos · 3 Fotos (a IA analisa ao
+ *   terminar) · 4 Comodidades e segurança (com câmeras, título e descrição) · 5 Regras, valores e disponibilidade ·
+ *   6 Revisar e publicar.
  * A IA só SUGERE: nada sugerido vai ao anúncio sem o proprietário confirmar (termo de aceite na revisão). Mantém
- * as regras que já funcionavam: rascunho salvo a cada etapa, mínimo de 8 fotos, preço sugerido, importar anúncio,
- * faixas de prazo e o portão de publicação (documento aprovado — 0120).
+ * as regras que já funcionavam: rascunho salvo a cada passo, mínimo de 8 fotos, preço sugerido, importar anúncio,
+ * faixas de prazo e o portão de publicação (documento aprovado — 0120). "Publicar com o que tem" quando os mínimos
+ * existem, com a nota do que melhora.
  */
 const STEP_META = [
-  { label: "Onde fica", icon: MapPin, title: "Onde fica", subtitle: "Tipo do imóvel, endereço e o documento do imóvel." },
+  { label: "Endereço e dados", icon: MapPin, title: "Endereço e dados", subtitle: "Endereço, quem opera e o documento do imóvel." },
+  { label: "Tipo e quartos", icon: BedDouble, title: "Tipo e quartos", subtitle: "Tipo do imóvel, quartos, banheiros, área e vagas." },
   { label: "Fotos", icon: Camera, title: "Fotos do imóvel", subtitle: "Mínimo de 8. Ao terminar, a IA sugere o resto do cadastro." },
-  { label: "O que encontramos", icon: Sparkles, title: "O que encontramos", subtitle: "Já preenchemos pelo que aparece nas fotos. Confira e ajuste." },
-  { label: "Preço e disponibilidade", icon: Tag, title: "Preço e disponibilidade", subtitle: "Valor mensal, datas, prazos e negociação." },
+  { label: "Comodidades", icon: ShieldCheck, title: "Comodidades e segurança", subtitle: "O que o imóvel tem, câmeras, título e descrição." },
+  { label: "Regras e valores", icon: Tag, title: "Regras, valores e disponibilidade", subtitle: "Regras da casa, valor mensal, datas e prazos." },
   { label: "Revisar", icon: CheckCircle2, title: "Revisar e publicar", subtitle: "Confira tudo como o morador vai ver." },
 ] as const;
 
@@ -274,7 +279,7 @@ export default function NewPropertyPage() {
     if (a.comodidades.length) setAmenityKeys((s) => ({ ...s, ...Object.fromEntries(a.comodidades.map((k) => [k, true])) }));
     if (a.aceitaPet != null) setPetsOk(a.aceitaPet);
     if (a.permiteFumar != null) setSmokingAllowed(a.permiteFumar);
-    irPara(2);
+    irPara(ETAPA.espaco);
   }
 
   const completude = prontidao.obrigatorios;
@@ -283,7 +288,7 @@ export default function NewPropertyPage() {
   /** Campos obrigatórios da etapa atual (chave → mensagem). Só barra o AVANÇO; a Revisão é o portão final. */
   function validarEtapa(s: number): Record<string, string> {
     const e: Record<string, string> = {};
-    if (s === 0) {
+    if (s === ETAPA.onde) {
       if (exigeAutorizacao(ownershipType)) {
         if (!subleaseAuthorized) e.sublocacao = "Marque a declaração para continuar.";
         else if (!docOperacaoOk) e.sublocacao = `Anexe: ${DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].titulo.toLowerCase()}.`;
@@ -293,15 +298,15 @@ export default function NewPropertyPage() {
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
       if (!city.trim()) e.cidade = "Informe a cidade.";
     }
-    if (s === 1 && photos.length === 0)
+    if (s === ETAPA.fotos && photos.length === 0)
       e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
-    if (s === 2) {
+    if (s === ETAPA.espaco) {
       if ((Number(bathrooms) || 0) < 1) e.banheiros = "Informe ao menos 1 banheiro.";
       if ((Number(areaM2) || 0) <= 0) e.area = "Informe a área do imóvel (m²).";
       if ((Number(maxGuests) || 0) < 1) e.capacidade = "Informe quantas pessoas podem morar no imóvel.";
-      if (title.trim().length < 3) e.titulo = "Dê um título ao anúncio (mín. 3 caracteres).";
     }
-    if (s === 3) {
+    if (s === ETAPA.comodidades && title.trim().length < 3) e.titulo = "Dê um título ao anúncio (mín. 3 caracteres).";
+    if (s === ETAPA.regras) {
       if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o valor mensal.";
       if (!garantiaOk) e.garantia = "Escolha ao menos uma garantia.";
     }
@@ -1113,6 +1118,60 @@ export default function NewPropertyPage() {
 
   if (approved === null) return null;
 
+  // Campos do imóvel, repartidos pelos passos 2, 4 e 5 (Prompt 43).
+  const camposImovel = {
+    propertyType,
+    setPropertyType: (v: string) => {
+      setPropertyType(v);
+      tirarSugestao("tipo");
+    },
+    tipoSugerido: sugerido("tipo"),
+    neighborhood,
+    iaEstado,
+    sugerido,
+    tirarSugestao,
+    bedrooms,
+    setBedrooms,
+    bathrooms,
+    setBathrooms,
+    maxGuests,
+    setMaxGuests,
+    areaM2,
+    daMatricula,
+    setAreaM2,
+    parkingSpots,
+    setParkingSpots,
+    amenityKeys,
+    setAmenityKeys,
+    comodidadesSugeridas,
+    internetMbps,
+    setInternetMbps,
+    proxOsm,
+    proxCarregando,
+    proxDesmarcados,
+    setProxDesmarcados,
+    manualProximities,
+    setManualProximities,
+    title,
+    setTitle,
+    description,
+    setDescription: (v: string) => {
+      setDescription(v);
+      setDescricaoGeradaPorIa(false);
+    },
+    furnished,
+    setFurnished,
+    petsOk,
+    setPetsOk,
+    childrenAllowed,
+    setChildrenAllowed,
+    smokingAllowed,
+    setSmokingAllowed,
+    privacidade,
+    setPrivacidade,
+    qualTHome: qual.tHome,
+    erros,
+  };
   const meta = STEP_META[step];
   const StepIcon = meta.icon;
 
@@ -1156,7 +1215,7 @@ export default function NewPropertyPage() {
         />
         <div className="absolute inset-0 bg-night/50" />
         <div className="absolute inset-0 flex flex-col justify-center p-5 text-white">
-          <p className="font-title text-lg font-semibold sm:text-xl">Vamos publicar seu imóvel</p>
+          <p className="font-title text-lg font-semibold sm:text-xl">Anunciar seu imóvel em 6 passos</p>
           <p className="text-sm text-white/80" data-testid="cadastro-frase-topo">
             {iaLigada ? "Comece pelo CEP. A IA preenche o resto pelas fotos." : "Comece pelo CEP. Depois, fotos, detalhes, preço e revisão."}
           </p>
@@ -1201,7 +1260,7 @@ export default function NewPropertyPage() {
       <div className="mb-5">
         <p className="pb-2 text-sm font-medium text-ink sm:hidden" data-testid="etapas-celular" aria-live="polite">
           Passo {pos + 1} de {ORDEM_ETAPAS.length} — <span className="text-forest">{STEP_META[step].label}</span>
-          {step !== 1 && photos.length > 0 && <span className="text-muted"> · {photos.length} {photos.length === 1 ? "foto" : "fotos"}</span>}
+          {step !== ETAPA.fotos && photos.length > 0 && <span className="text-muted"> · {photos.length} {photos.length === 1 ? "foto" : "fotos"}</span>}
         </p>
         <div className="hidden items-center gap-2 pb-2 sm:flex sm:flex-wrap" data-testid="etapas-cadastro">
           {ORDEM_ETAPAS.map((id, i) => (
@@ -1223,7 +1282,7 @@ export default function NewPropertyPage() {
             >
               {i < pos ? <Check className="h-3.5 w-3.5" /> : <span>{i + 1}</span>}
               {STEP_META[id].label}
-              {id === 1 && photos.length > 0 && <span data-testid="etapa-fotos-contador">({photos.length})</span>}
+              {id === ETAPA.fotos && photos.length > 0 && <span data-testid="etapa-fotos-contador">({photos.length})</span>}
             </button>
           ))}
         </div>
@@ -1256,7 +1315,7 @@ export default function NewPropertyPage() {
               </div>
             </div>
 
-            {step === 0 && (
+            {step === ETAPA.onde && (
               <EtapaOndeFica
                 topo={
                   <CartaoIa
@@ -1269,18 +1328,12 @@ export default function NewPropertyPage() {
                     resumoIa={resumoIa}
                     onFotos={(f) => void adicionarFotos(f)}
                     onMatricula={enviarMatricula}
-                    onVerPasso3={() => irPara(2)}
+                    onVerPasso3={() => irPara(ETAPA.comodidades)}
                   />
                 }
                 cepResultado={cepResultado}
                 onEscolherEndereco={escolherEndereco}
                 aplicarImportado={aplicarImportado}
-                propertyType={propertyType}
-                setPropertyType={(v) => {
-                  setPropertyType(v);
-                  tirarSugestao("tipo");
-                }}
-                tipoSugerido={sugerido("tipo")}
                 ownershipType={ownershipType}
                 setOwnershipType={setOwnershipType}
                 subleaseAuthorized={subleaseAuthorized}
@@ -1328,61 +1381,21 @@ export default function NewPropertyPage() {
               />
             )}
 
-            {step === 1 && (
+            {step === ETAPA.fotos && (
               <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
             )}
 
-            {step === 2 && (
-              <EtapaEncontramos
-                neighborhood={neighborhood}
-                iaEstado={iaEstado}
-                sugerido={sugerido}
-                tirarSugestao={tirarSugestao}
-                bedrooms={bedrooms}
-                setBedrooms={setBedrooms}
-                bathrooms={bathrooms}
-                setBathrooms={setBathrooms}
-                maxGuests={maxGuests}
-                setMaxGuests={setMaxGuests}
-                areaM2={areaM2}
-                daMatricula={daMatricula}
-                setAreaM2={setAreaM2}
-                parkingSpots={parkingSpots}
-                setParkingSpots={setParkingSpots}
-                amenityKeys={amenityKeys}
-                setAmenityKeys={setAmenityKeys}
-                comodidadesSugeridas={comodidadesSugeridas}
-                internetMbps={internetMbps}
-                setInternetMbps={setInternetMbps}
-                proxOsm={proxOsm}
-                proxCarregando={proxCarregando}
-                proxDesmarcados={proxDesmarcados}
-                setProxDesmarcados={setProxDesmarcados}
-                manualProximities={manualProximities}
-                setManualProximities={setManualProximities}
-                title={title}
-                setTitle={setTitle}
-                description={description}
-                setDescription={(v) => {
-                  setDescription(v);
-                  setDescricaoGeradaPorIa(false);
-                }}
-                furnished={furnished}
-                setFurnished={setFurnished}
-                petsOk={petsOk}
-                setPetsOk={setPetsOk}
-                childrenAllowed={childrenAllowed}
-                setChildrenAllowed={setChildrenAllowed}
-                smokingAllowed={smokingAllowed}
-                setSmokingAllowed={setSmokingAllowed}
-                privacidade={privacidade}
-                setPrivacidade={setPrivacidade}
-                qualTHome={qual.tHome}
-                erros={erros}
-              />
+            {step === ETAPA.espaco && (
+              <EtapaEncontramos parte="espaco" {...camposImovel} />
             )}
 
-            {step === 3 && (
+            {step === ETAPA.comodidades && (
+              <EtapaEncontramos parte="comodidades" {...camposImovel} />
+            )}
+
+            {step === ETAPA.regras && (
+              <div className="space-y-6">
+              <EtapaEncontramos parte="regras" {...camposImovel} />
               <EtapaPreco
                 sugerido={sugerido}
                 tirarSugestao={tirarSugestao}
@@ -1418,9 +1431,10 @@ export default function NewPropertyPage() {
                 setLimites={setLimites}
                 erros={erros}
               />
+              </div>
             )}
 
-            {step === 4 && (
+            {step === ETAPA.revisar && (
               <EtapaRevisar
                 previewProperty={previewProperty}
                 titulo={title}
@@ -1501,8 +1515,8 @@ export default function NewPropertyPage() {
           minimo={MIN_PHOTOS}
           enviando={enviandoFotos}
           onFotos={(f) => void adicionarFotos(f)}
-          onOrganizar={() => irPara(1)}
-          noPassoFotos={step === 1}
+          onOrganizar={() => irPara(ETAPA.fotos)}
+          noPassoFotos={step === ETAPA.fotos}
         />
       )}
       <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid var(--color-sage-200);background:#fff;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-sage)}`}</style>

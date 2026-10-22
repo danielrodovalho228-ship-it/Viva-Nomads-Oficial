@@ -141,9 +141,9 @@ test("checklist do anúncio em andamento: ✓/○, cada pendência leva à etapa
   assert.equal(c.itens.length, p.obrigatorios.length);
   assert.equal(c.itens.filter((i) => !i.ok).length, p.faltam.length);
   assert.equal(c.proximo?.key, "fotos");
-  // Cadastro em 5 etapas (prompt 10): 0 Onde fica · 1 Fotos · 2 O que encontramos · 3 Preço · 4 Revisar.
-  assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=1");
-  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=2");
+  // Anunciar em 6 passos (Prompt 43): 0 Endereço · 1 Tipo e quartos · 2 Fotos · 3 Comodidades · 4 Regras e valores · 5 Revisar.
+  assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=2");
+  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=3");
   // o documento agora é enviado e conferido na etapa Onde fica (prompt 11).
   assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=0");
   assert.equal(c.itens.find((i) => i.key === "endereco")?.ok, true);

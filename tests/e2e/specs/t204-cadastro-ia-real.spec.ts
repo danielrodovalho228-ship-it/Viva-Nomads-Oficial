@@ -164,7 +164,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
 
       // Revisão: uma lista só (a qualificação é item dela) — nada de segundo aviso no fim.
       const id = await rascunho(d.id, { title: "Rascunho do T204", street: "Avenida João Naves de Ávila", numero: "100", cep: "38408-000", neighborhood: "Santa Mônica", city: "Uberlândia" });
-      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=4`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=5`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("etapa-revisar")).toBeVisible({ timeout: 30_000 });
       const lista = page.getByTestId("etapa-revisar").getByTestId("checklist-publicar");
       await expect(lista.getByTestId("checklist-item-qualificacao")).toHaveAttribute("data-ok", "0");
@@ -185,7 +185,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       const id = await rascunho(d.id, { title: "Rascunho do T204" });
 
       // Datas (computador, sem toque): campo de texto com máscara, colar e o calendário num botão.
-      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=3`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=4`, { waitUntil: "domcontentloaded" });
       const de = page.getByTestId("disponivel-de");
       await expect(de).toHaveAttribute("type", "text", { timeout: 30_000 });
       await expect(page.getByTestId("disponivel-de-calendario")).toBeVisible();
@@ -201,7 +201,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       await page.screenshot({ path: `${SAIDA}/t204-datas-${largura}.png`, fullPage: false });
 
       // Fotos: a IA falha (simulado) → motivo + "Tentar de novo"; de novo → sugestões.
-      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=1`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=2`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("etapa-fotos")).toBeVisible({ timeout: 30_000 });
       let falhar = true;
       await page.route("**/api/ai/fotos", (r) =>
@@ -240,7 +240,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     const d = await novoDono(browser, 390, { hasTouch: true, isMobile: true });
     ids.push(d.id);
     const id = await rascunho(d.id, { title: "Rascunho do T204" });
-    await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=3`, { waitUntil: "domcontentloaded" });
+    await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=4`, { waitUntil: "domcontentloaded" });
     await expect(d.page.getByTestId("disponivel-de")).toHaveAttribute("type", "date", { timeout: 30_000 });
     await expect(d.page.getByTestId("disponivel-de-calendario")).toHaveCount(0);
     await d.fechar();

@@ -47,10 +47,16 @@ test.describe("T54 — Upload de foto seguro", () => {
       await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
       const outro = page.getByRole("button", { name: "Começar outro" });
       if (await outro.isVisible().catch(() => false)) await outro.click();
-      // Cadastro em 5 etapas (prompt 10): as fotos são a 2ª etapa, depois de "Onde fica".
+      // Anunciar em 6 passos (Prompt 43): as fotos são o 3º passo, depois de endereço e de tipo e quartos.
       await page.getByTestId("cadastro-rua").fill("Rua do Upload");
       await page.getByTestId("cadastro-numero").fill("1");
       await page.getByTestId("cadastro-bairro").fill("Centro");
+      await page.getByRole("button", { name: "Continuar", exact: true }).click();
+      // Passo 2 (Prompt 43): tipo e quartos.
+      await expect(page.getByRole("heading", { name: "Tipo e quartos" })).toBeVisible();
+      await page.getByTestId("cadastro-banheiros").fill("1");
+      await page.getByTestId("cadastro-capacidade").fill("2");
+      await page.getByTestId("cadastro-area").fill("30");
       await page.getByRole("button", { name: "Continuar", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible();
       await page.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles({

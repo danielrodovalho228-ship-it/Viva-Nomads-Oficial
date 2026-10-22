@@ -13,6 +13,9 @@ import { AcoesEstadia } from "@/components/estadia/acoes-estadia";
 import { CartaoAjudaMudanca, CartaoDepoisDaSaida } from "@/components/automacao/cartoes-estadia";
 import { depoisDaSaida, sugestaoMorador } from "@/lib/automacao/estadia";
 import { AditivoPendente, EditorInstrucoes, ListaPortaria, NotasPrivadas } from "./estadia-tela";
+import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
+import { ValorDiretoAoProprietario } from "@/components/contexto/cabecalho-contexto";
+import { marcasDaEstadia } from "@/lib/calendario/grade";
 
 export const metadata: Metadata = {
   title: "Estadia",
@@ -78,6 +81,24 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
           </div>
         </div>
       </Panel>
+
+      {(e.periodo.inicio || e.periodo.fim) && (
+        // Prompt 43, item 4: o calendário da estadia usa a mesma grade do calendário do imóvel e da agenda do parceiro.
+        <Panel title="Calendário da estadia" data-testid="estadia-calendario">
+          <LegendaCalendario marcas={["entrada", "periodo", "saida"]} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[...new Set([e.periodo.inicio, e.periodo.fim].filter((d): d is string => !!d).map((d) => d.slice(0, 7)))].map((am) => (
+              <CalendarioMes
+                key={am}
+                tipo="estadia"
+                ano={Number(am.slice(0, 4))}
+                mes={Number(am.slice(5, 7)) - 1}
+                marcas={marcasDaEstadia(e.periodo.inicio, e.periodo.fim)}
+              />
+            ))}
+          </div>
+        </Panel>
+      )}
 
       {e.encerramento && (
         <Panel title="Pedido de encerramento" data-testid="estadia-encerramento">
@@ -151,6 +172,7 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
               </div>
             ))}
           </dl>
+          <ValorDiretoAoProprietario className="mt-3 text-sm text-muted" />
         </Panel>
       </div>
 

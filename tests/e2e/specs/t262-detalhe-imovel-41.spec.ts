@@ -297,21 +297,21 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       await page.context().close();
     });
 
-    test("app: a troca de papel fica no Perfil (parceiro ⇄ proprietário ⇄ morador)", async ({ browser }) => {
+    test("app: sem troca de papel — o contexto da tela decide a barra (parceiro, proprietário, morador)", async ({ browser }) => {
       test.setTimeout(150_000);
       const page = await entrarNoApp(browser, conta.email, senha);
       const barra = page.locator('nav[aria-label="Abas do app"]');
       const nomes = () => barra.getByRole("link").evaluateAll((els) => els.map((e) => (e.textContent ?? "").trim()));
+      // Prompt 43 (conta única): o Perfil não tem mais seletor nem "usar como parceiro"; mostra "Seus papéis".
       await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-      await page.getByTestId("usar-como-parceiro").click();
-      await expect(page).toHaveURL(/\/dashboard\/parceiro/);
+      await expect(page.getByTestId("seus-papeis")).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByTestId("usar-como-parceiro")).toHaveCount(0);
+      await expect(page.getByRole("radio", { name: /Propriet|Inquilino/ })).toHaveCount(0);
+      await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
       await expect.poll(nomes, { timeout: 20_000 }).toEqual(["Início", "Pedidos", "Agenda", "Ganhos", "Perfil"]);
-      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-      await page.getByRole("radio", { name: /Propriet/ }).click();
-      await expect(page).toHaveURL(/\/dashboard\/?$/);
+      await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
       await expect.poll(nomes, { timeout: 20_000 }).toEqual(["Início", "Anúncios", "Mensagens", "Ganhos", "Perfil"]);
-      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-      await page.getByRole("radio", { name: /Inquilino/ }).click();
+      await page.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
       await expect.poll(nomes, { timeout: 20_000 }).toEqual(["Início", "Buscar", "Mensagens", "Estadias", "Perfil"]);
       await page.context().close();
     });
