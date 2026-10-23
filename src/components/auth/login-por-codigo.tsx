@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmail } from "@/lib/auth-errors";
+import { ATRIBUTOS_EMAIL } from "@/lib/login-celular";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
 import {
@@ -196,6 +197,7 @@ export function LoginPorCodigo({
               required
               placeholder="E-mail"
               aria-label="E-mail"
+              {...ATRIBUTOS_EMAIL}
               value={email}
               onChange={(e) => onEmail(e.target.value)}
               className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none"
