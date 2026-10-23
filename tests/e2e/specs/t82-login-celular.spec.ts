@@ -83,6 +83,10 @@ test.describe("T82 — Login no celular", () => {
     expect(Date.now() - t0).toBeLessThan(5_000);
     expect(logins).toBe(1);
     expect(tokensNoNavegador).toBe(0);
+    // O waitForURL solta na troca de URL, com o painel ainda carregando; recarregar no meio da carga derruba o WebKit
+    // ("WebKit encountered an internal error", lab-crítico do #1165, passou no retry). Recarrega com o painel assentado.
+    await page.waitForLoadState("load");
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await page.reload();
     await expect(page).toHaveURL(/\/dashboard/);
     await page.waitForTimeout(1_500);
