@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { enviarResumosDiarios } from "@/lib/data/pedidos-compat";
+import { enviarResumosDiarios, recalcularPedidosSemCalculo } from "@/lib/data/pedidos-compat";
 import { enviarResumosAlertaBusca } from "@/lib/data/alerta-busca-servidor";
 
 /**
@@ -14,8 +14,10 @@ export async function GET(request: Request) {
   if (request.headers.get("authorization") !== `Bearer ${segredo}`) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
+  // Pedidos anteriores ao cálculo de compatibilidade: recalcula uma vez e avisa (ordem cfeb4105).
+  const recalculo = await recalcularPedidosSemCalculo().catch(() => ({ pedidos: 0 }));
   const r = await enviarResumosDiarios();
   // Mesmo disparo diário: resumo dos alertas de busca salva que passaram do limite de 1/dia (ordem cb9a09e9).
   const alertas = await enviarResumosAlertaBusca().catch(() => ({ buscas: 0, enviados: 0 }));
-  return NextResponse.json({ ok: true, ...r, alertasBusca: alertas });
+  return NextResponse.json({ ok: true, ...r, alertasBusca: alertas, recalculo });
 }
