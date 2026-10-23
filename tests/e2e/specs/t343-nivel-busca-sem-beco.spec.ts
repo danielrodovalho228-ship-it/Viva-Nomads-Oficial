@@ -20,10 +20,17 @@ const busca = (bairro: string, q = "") => `/buscar?local=${encodeURIComponent(ba
 const cards = (page: Page) => page.getByTestId("grade-resultados").getByTestId("card-resultado");
 const SAIDA = "tests/laboratorio/saida";
 
+/** Abre a folha de filtros: no celular pelo botão redondo; no computador pela busca compacta → "Mais filtros" (como no t244). */
 async function abrirFolha(page: Page) {
-  // Celular: o botão redondo da barra de busca; computador: "Mais filtros" na barra de filtros.
-  await page.locator('[data-testid="abrir-filtros"]:visible, [data-testid="mais-filtros"]:visible').first().click();
-  return page.getByRole("dialog", { name: "Filtros" });
+  if ((page.viewportSize()?.width ?? 0) < 1024) {
+    await page.getByTestId("abrir-filtros").click();
+  } else {
+    if ((await page.getByTestId("filtros-barra").getAttribute("data-aberto")) !== "1") await page.getByTestId("busca-compacta").click();
+    await page.getByTestId("mais-filtros").click();
+  }
+  const folha = page.getByRole("dialog", { name: "Filtros" });
+  await expect(folha).toBeVisible();
+  return folha;
 }
 
 test.describe("T343 — nível na busca sem beco sem saída", () => {
