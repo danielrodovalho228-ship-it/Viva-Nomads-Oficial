@@ -114,6 +114,7 @@ export const INVENTARIO: ItemInventario[] = [
   i("pets-fotos", "bucket:pets-fotos", "foto do pet e carteira de vacina", "candidatura com pet", CONTA),
   i("internet_medicoes/morador", "public.internet_medicoes", "medição de internet do morador (velocidades, distância em metros, data)", "sinal de qualidade para o dono (Prompt 57)", { prazoDias: 0, gatilho: "sinal_processado", modo: "apagar", base: "proposta", fase: 2 }, "o sinal (abaixo de 50% ou não) no aviso ao dono"),
   i("internet_medicoes/dono", "public.internet_medicoes", "medição de internet do dono (velocidades, distância em metros, data)", "mostrar a internet medida no anúncio", { prazoDias: 0, gatilho: "remocao_anuncio", modo: "apagar", base: "proposta", fase: 2 }, "nada: sai com o anúncio (on delete cascade)"),
+  i("anuncio-videos", "bucket:anuncio-videos", "vídeo curto do anúncio (privado; público só se o anúncio está publicado)", "anúncio (ordem 8681ae95)", { prazoDias: 0, gatilho: "remocao_anuncio", modo: "apagar", base: "proposta", fase: 2 }, "nada: sai com o anúncio"),
   i("property-photos", "bucket:property-photos", "fotos do anúncio (públicas)", "anúncio", { prazoDias: 0, gatilho: "remocao_anuncio", modo: "apagar", base: "proposta", fase: 1 }, "o hash da foto (antifraude, exceção aprovada)"),
   i("imovel_instrucoes_chegada", "public.imovel_instrucoes_chegada", "observações de chegada", "a estadia", CONTA),
   i("chamados", "public.chamados", "nome e e-mail do visitante", "atendimento", CONTA),
