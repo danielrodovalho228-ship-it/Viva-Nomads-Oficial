@@ -52,7 +52,7 @@ test.describe("T247 — 2FA e troca de senha (390px)", () => {
     await liberarLimiteLogin(dono.email);
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
-    await page.goto("/auth", { waitUntil: "domcontentloaded" });
+    await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
     // Um clique antes da hidratação vira envio nativo e recarrega /auth vazio (lab de 318bc26): preenche o que estiver
     // vazio e clica de novo até sair de /auth, como o entrar() do laboratório.
     const campoEmail = page.locator('input[name="email"], input[type="email"]').first();

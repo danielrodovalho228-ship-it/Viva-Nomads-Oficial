@@ -23,6 +23,8 @@ test.describe("T52 — Login devolve a /qualificar?imovel=<id>", () => {
 
       // Entra NA PRÓPRIA página /auth?redirect=… (o loginAs() abre /auth sem a query e perderia o destino).
       const acc = account("proprietario");
+      // Prompt 49: a entrada padrão é por código; a conta de teste usa o link terciário "Entrar com senha".
+      await page.getByTestId("entrar-com-senha").click();
       await page.locator('input[name="email"], input[type="email"]').first().fill(acc.email);
       await page.locator('input[name="password"], input[type="password"]').first().fill(acc.senha);
       await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

@@ -9,6 +9,11 @@ test("o erro do formulário de /auth é um alerta com data-testid estável", () 
   assert.match(fonte, /\{error && \(\s*<p role="alert" data-testid="auth-erro"/);
 });
 
-test("o cadastro mostra o erro da validação de e-mail do servidor", () => {
-  assert.match(fonte, /setError\(ver\.error \|\| MSG_EMAIL_INUTILIZAVEL\)/);
+test("a entrada única mostra o erro da validação de e-mail do servidor (Prompt 49: a conta nasce no código)", () => {
+  const rota = readFileSync(new URL("../api/auth/codigo/route.ts", import.meta.url), "utf8");
+  assert.match(rota, /dominioReservado\(dominio\) \|\| !\(await dominioExiste\(dominio\)\)/);
+  assert.match(rota, /error: MSG_EMAIL_INUTILIZAVEL/);
+  const tela = readFileSync(new URL("../../components/auth/login-por-codigo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /setErro\(r\.error \|\|/);
+  assert.match(tela, /\{erro && \(\s*<p role="alert" data-testid="auth-erro"/);
 });

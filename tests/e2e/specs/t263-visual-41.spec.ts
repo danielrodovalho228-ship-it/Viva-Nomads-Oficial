@@ -71,7 +71,7 @@ async function entrarComo(browser: Browser, email: string, senha: string, largur
   const page = await ctx.newPage();
   // Conta recém-criada às vezes não sai do /auth na 1ª tentativa no laboratório (sessão ainda propagando): tenta 2 vezes.
   for (let tentativa = 1; ; tentativa++) {
-    await page.goto("/auth", { waitUntil: "domcontentloaded" });
+    await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
     await page.locator('input[name="email"], input[type="email"]').first().fill(email);
     await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
     await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

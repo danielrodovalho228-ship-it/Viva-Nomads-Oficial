@@ -1,13 +1,14 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, liberarLimiteCodigo, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * T203 — ordem d250ea2f, item 4 (achado do Moacir sobre o #734): "Entrar com código" de ponta a ponta.
  * O t170 só confere que a opção abre. Aqui: pedir o código, digitar o código REAL e entrar; código errado;
  * 5 erros travam a tela; reenvio só depois de 60 s.
  *
- * O laboratório não tem caixa de e-mail (mailpit desligado), então o pedido de envio é interceptado (200 vazio)
- * e o código vem do próprio Supabase local (admin.generateLink → email_otp), que é o mesmo que o e-mail traria.
+ * O laboratório não tem caixa de e-mail (mailpit desligado): com INTEGRACOES_SIMULADAS a rota /api/auth/codigo não
+ * envia nada, e o código vem do próprio Supabase local (admin.generateLink → email_otp), o mesmo que o e-mail traria.
+ * Prompt 49: /auth já abre na entrada única (e-mail + "Continuar").
  */
 test.describe("T203 — Entrar com código por e-mail: de ponta a ponta", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -27,20 +28,19 @@ test.describe("T203 — Entrar com código por e-mail: de ponta a ponta", () => 
     await apagarContas([contaId]);
   });
 
-  /** Abre /auth → "Entrar com código" → pede o código (envio interceptado) e deixa o campo do código à vista. */
+  /** Abre /auth (entrada única) → e-mail → "Continuar" e deixa o campo do código à vista. */
   async function pedirCodigo(page: Page) {
-    await page.route("**/auth/v1/otp**", (rota) => rota.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await liberarLimiteCodigo();
     await page.goto("/auth", { waitUntil: "domcontentloaded" });
-    const opcao = page.getByTestId("entrar-com-codigo");
-    // Na 1ª carga fria o clique pode chegar antes da hidratação: reclica até a tela do código abrir.
-    await expect(async () => {
-      if (!(await page.getByTestId("login-por-codigo").isVisible())) await opcao.click({ timeout: 4_000 });
-      await expect(page.getByTestId("login-por-codigo")).toBeVisible({ timeout: 3_000 });
-    }).toPass({ timeout: 30_000 });
     const tela = page.getByTestId("login-por-codigo");
-    await tela.getByPlaceholder("E-mail").fill(conta.email);
-    await tela.getByRole("button", { name: "Enviar código" }).click();
-    await expect(page.getByTestId("campo-codigo")).toBeVisible({ timeout: 15_000 });
+    // Na 1ª carga fria o clique pode chegar antes da hidratação (envio nativo recarrega /auth): repete até o código abrir.
+    await expect(async () => {
+      if (await page.getByTestId("campo-codigo").isVisible()) return;
+      const campo = tela.getByPlaceholder("E-mail");
+      if ((await campo.inputValue({ timeout: 4_000 })) !== conta.email) await campo.fill(conta.email, { timeout: 4_000 });
+      await tela.getByRole("button", { name: "Continuar" }).click({ timeout: 4_000 });
+      await expect(page.getByTestId("campo-codigo")).toBeVisible({ timeout: 8_000 });
+    }).toPass({ timeout: 45_000 });
   }
 
   async function codigoReal(): Promise<string> {
@@ -87,7 +87,8 @@ test.describe("T203 — Entrar com código por e-mail: de ponta a ponta", () => 
     await pedirCodigo(page);
     await page.getByTestId("campo-codigo").fill(await codigoReal());
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
-    await page.waitForURL((u) => !u.pathname.startsWith("/auth"), { timeout: 45_000 });
+    // Conta criada agora no laboratório conta como "nova": pode passar pela tela de intenção (Prompt 49).
+    await page.waitForURL((u) => !u.pathname.startsWith("/auth") || u.pathname === "/auth/intencao", { timeout: 45_000 });
     // Sessão de verdade: uma área logada abre sem voltar ao login.
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page).not.toHaveURL(/\/auth/);

@@ -1,6 +1,6 @@
 /*
   Corpo do PATCH na API de gestão do Supabase (/v1/projects/{ref}/config/auth) com os 6 e-mails de conta e o
-  remetente — PURO, para o teste conferir os campos sem rede. Usado por scripts/aplicar-templates-supabase.ts.
+  remetente e a validade do código (mailer_otp_exp) — PURO, para o teste conferir os campos sem rede. Usado por scripts/aplicar-templates-supabase.ts.
 */
 import { REMETENTE_EMAIL, REMETENTE_NOME } from "./remetente.ts";
 import { templatesSupabase } from "./templates-supabase.ts";
@@ -15,8 +15,11 @@ export const CAMPO_DO_MODELO: Record<string, string> = {
   Reauthentication: "reauthentication",
 };
 
-export function corpoConfigAuth(): Record<string, string> {
-  const corpo: Record<string, string> = { smtp_admin_email: REMETENTE_EMAIL, smtp_sender_name: REMETENTE_NOME };
+/** Validade do código por e-mail (s) — Prompt 49: 10 minutos (espelha VALIDADE_CODIGO_S da tela). */
+export const VALIDADE_OTP_S = 600;
+
+export function corpoConfigAuth(): Record<string, string | number> {
+  const corpo: Record<string, string | number> = { smtp_admin_email: REMETENTE_EMAIL, smtp_sender_name: REMETENTE_NOME, mailer_otp_exp: VALIDADE_OTP_S };
   for (const t of templatesSupabase()) {
     const campo = CAMPO_DO_MODELO[t.modelo];
     if (!campo) throw new Error(`Modelo sem campo na API: ${t.modelo}`);
@@ -27,6 +30,6 @@ export function corpoConfigAuth(): Record<string, string> {
 }
 
 /** Campos que voltaram diferentes do que foi enviado (vazio = tudo conferido). */
-export function camposDiferentes(enviado: Record<string, string>, lido: Record<string, unknown>): string[] {
-  return Object.keys(enviado).filter((k) => String(lido[k] ?? "").trim() !== enviado[k].trim());
+export function camposDiferentes(enviado: Record<string, string | number>, lido: Record<string, unknown>): string[] {
+  return Object.keys(enviado).filter((k) => String(lido[k] ?? "").trim() !== String(enviado[k]).trim());
 }
