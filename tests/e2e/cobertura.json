@@ -1190,7 +1190,8 @@
         "t310-vao-fim-de-pagina",
         "t320-pausar-anuncio-64b",
         "t342-galeria-video-segundo",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t349-imovel-sem-500-l31"
       ]
     },
     "/modelodenegocio": {
@@ -1320,7 +1321,8 @@
         "t180-anuncio-real-sem-exemplo",
         "t182-jornada-completa",
         "t307-varredura-bloco8",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t349-imovel-sem-500-l31"
       ]
     },
     "/qualificar": {

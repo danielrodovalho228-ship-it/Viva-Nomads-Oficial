@@ -8,7 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { SITE_URL } from "@/lib/site";
-import { linkedinAtivo } from "./chave";
+import { linkedinAtivo, linkedinAtivoPublico } from "./chave";
 import { avisoDeVencimentoDevido, estadoSelo, type EstadoSelo, type LinhaConfianca } from "./regras";
 
 export interface ConfigLinkedin {
@@ -65,10 +65,16 @@ export async function seloLinkedinDe(userId: string, admin: Admin | null = creat
 }
 
 /** Quem destas contas tem o selo valendo agora (para candidatura, conversa, avaliação, perfil). Só o "sim", nada mais. */
-export async function linkedinConectados(userIds: (string | null | undefined)[], admin: Admin | null = createAdminClient()): Promise<Set<string>> {
+export async function linkedinConectados(
+  userIds: (string | null | undefined)[],
+  admin: Admin | null = createAdminClient(),
+  /** L-31: página pública com cache — a chave sem cookie (ver linkedinAtivoPublico). */
+  opcoes: { publico?: boolean } = {},
+): Promise<Set<string>> {
   const ids = [...new Set(userIds.filter((x): x is string => !!x))];
   // Chave desligada: nenhum selo aparece em lugar nenhum.
-  if (!admin || ids.length === 0 || !(await linkedinAtivo())) return new Set();
+  if (!admin || ids.length === 0) return new Set();
+  if (!(opcoes.publico ? linkedinAtivoPublico() : await linkedinAtivo())) return new Set();
   const { data } = await admin.from("confianca_linkedin").select("user_id").in("user_id", ids).gt("valido_ate", new Date().toISOString());
   return new Set(((data ?? []) as { user_id: string }[]).map((r) => r.user_id));
 }
