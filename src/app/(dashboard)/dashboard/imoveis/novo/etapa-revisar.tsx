@@ -11,6 +11,8 @@ import { TERMO_IA_TEXTO } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO, type Negociacao } from "@/lib/anuncio/negociacao";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import { cn } from "@/lib/utils";
+import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candidatura";
+import { CONVITE_FOTO_ANUNCIO_TEXTO } from "@/lib/perfil/convite-foto";
 import { textoFaltaConfirmar } from "@/lib/conforto/exibicao";
 
 /**
@@ -183,6 +185,9 @@ export function EtapaRevisar(p: {
         <span>{TERMO_IA_TEXTO}</span>
       </label>
       {p.publishError && <p className="text-sm text-red-600">{p.publishError}</p>}
+
+      {/* Ordem 504d9679, peça 3: convite opcional; nunca entra na conta de podePublicar. */}
+      {!p.editingId && <ConviteFotoCandidatura texto={CONVITE_FOTO_ANUNCIO_TEXTO} testId="convite-foto-anuncio" />}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
         <Button variant="outline" onClick={() => p.publish(true)} disabled={p.publishing}>
