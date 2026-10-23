@@ -11,6 +11,7 @@ import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { getPerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { quantosDestaques } from "@/lib/home-imagens";
 import { exibicao59DoImovel } from "@/lib/data/exibicao-59";
+import { autoresDasAvaliacoes } from "@/lib/data/avaliacoes-autores";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -60,13 +61,16 @@ export default async function PropertyDetailPage({ params }: Params) {
   const property = await getProperty(id);
   if (!property) notFound();
 
-  const [similares, proprietario, exibicao59] = await Promise.all([
+  const [similares, proprietario, exibicao59, autores] = await Promise.all([
     listProperties(),
     // Exemplo nunca busca perfil (continua "Proprietário (exemplo)", sem números).
     isExemplo(property) ? Promise.resolve(null) : getPerfilProprietario(property.ownerId),
     // Prompt 59-A: padrão mínimo e taxa de manutenção — exemplo nunca mostra (nada disso existe para ele).
     isExemplo(property) ? Promise.resolve(null) : exibicao59DoImovel(property.id, property.ownerId),
+    // Prompt 61-A: cidade e "na Viva desde" de quem avaliou (só avaliações reais publicadas).
+    isExemplo(property) || !property.reviews?.length ? Promise.resolve(new Map()) : autoresDasAvaliacoes(property.id),
   ]);
+  if (autores.size && property.reviews) property.reviews = property.reviews.map((r) => (r.id && autores.has(r.id) ? { ...r, ...autores.get(r.id) } : r));
   // Imóveis parecidos em grade par (Prompt 40): 4, ou 2 (a mesma conta dos destaques da home).
   const outros = similares.filter((p) => p.id !== property.id);
   const similar = outros.slice(0, quantosDestaques(outros.length));

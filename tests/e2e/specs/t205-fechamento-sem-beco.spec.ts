@@ -221,6 +221,10 @@ test.describe("T205 — fechamento: 'Gerar contrato' sem beco, dos dois lados at
     await pi.context().close();
 
     const pd = await assinarPelaTela(browser, { email: dono.email, id: ids.dono! }, `/dashboard/contratos/${ids.contrato}`, 1280);
+    // Prompt 61-A: a segunda assinatura leva à tela "Estadia confirmada"; o aviso das duas assinaturas segue no contrato.
+    await expect(pd).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}/confirmada$`), { timeout: 30_000 });
+    await expect(pd.getByTestId("estadia-confirmada")).toBeVisible();
+    await abrir(pd, `/dashboard/contratos/${ids.contrato}`);
     await expect(pd.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(proprietário\) assinou em [\s\S]+\(inquilino\) assinou em /, { timeout: 30_000 }); // jornada de assinatura: nome + data e hora de cada um
     await pd.screenshot({ path: `${SAIDA}/t205-dono-assinou-1280.png`, fullPage: true });
     // Locação ativa no painel do dono: sai de "Aguardando assinatura" e segue para o 1º pagamento.

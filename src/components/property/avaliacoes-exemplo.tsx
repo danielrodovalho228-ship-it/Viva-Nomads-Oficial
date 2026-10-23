@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ComoFuncionamAvaliacoes } from "@/components/avaliacoes/como-funcionam-avaliacoes";
 import { Star } from "lucide-react";
 import { numBR } from "@/lib/utils";
 import { iniciais, corAvatar } from "@/lib/avatar";
@@ -76,6 +77,7 @@ export function AvaliacoesExemplo({ avaliacoes }: { avaliacoes: AvaliacaoExemplo
           </span>
         </h2>
         <SeloExemplo />
+        <ComoFuncionamAvaliacoes />
       </div>
       <p className="mt-2 text-sm text-muted">{AVISO_EXEMPLO}</p>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
