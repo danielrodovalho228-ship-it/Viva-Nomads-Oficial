@@ -188,6 +188,9 @@ test.describe("T186 — Anunciar em 6 passos com IA, OSM e documento simulados",
       await expect(seguranca.locator('[data-comodidade="detector_fumaca"]')).toHaveAttribute("aria-pressed", "true");
       await seguranca.getByTestId("declaracao-sem-cameras").click(); // declaração obrigatória para publicar
       await expect(page.getByTestId("declaracao-sem-cameras")).toHaveAttribute("aria-checked", "true");
+      // Prompt 59-A (#1081): o padrão mínimo da Viva é confirmado aqui, junto das comodidades (antes ficava na revisão).
+      await page.getByTestId("conforto-marcar-todos").click();
+      await expect(page.getByTestId("conforto-faltam")).toHaveText("Todos os itens confirmados.");
       await camposDentroDoCartao(page, "etapa-encontramos");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t186-4-comodidades-${largura}.png`, fullPage: true });
@@ -271,10 +274,22 @@ test.describe("T186 — Anunciar em 6 passos com IA, OSM e documento simulados",
 
       await page.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=5`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { name: "Revisar e publicar" })).toBeVisible({ timeout: 20_000 });
-      // Prompt 59: o padrão mínimo de conforto é confirmado na revisão (sem ele, Publicar fica travado).
-      await page.getByTestId("conforto-marcar-todos").click();
       await page.getByTestId("aceite-ia").getByRole("checkbox").check();
-      await expect(page.getByTestId("publicar-anuncio")).toBeEnabled({ timeout: 20_000 });
+      // Sem o padrão mínimo confirmado, a revisão diz "Falta confirmar" e leva às Comodidades (Prompt 59-A): se o
+      // rascunho reabrir sem ele, confirma por esse caminho e volta à revisão.
+      const resolver = page.getByTestId("publicar-falta-conforto-resolver");
+      const publicar = page.getByTestId("publicar-anuncio");
+      await expect(publicar.and(page.locator(":enabled")).or(resolver)).toBeVisible({ timeout: 20_000 });
+      if (await resolver.isVisible()) {
+        await resolver.click();
+        await page.getByTestId("conforto-marcar-todos").click();
+        await expect(page.getByTestId("conforto-faltam")).toHaveText("Todos os itens confirmados.");
+        await page.getByTestId("cadastro-continuar").click();
+        await expect(page.getByRole("heading", { name: "Regras, valores e disponibilidade" })).toBeVisible();
+        await page.getByTestId("cadastro-continuar").click();
+        await expect(page.getByRole("heading", { name: "Revisar e publicar" })).toBeVisible();
+      }
+      await expect(publicar).toBeEnabled({ timeout: 20_000 });
       await page.getByTestId("publicar-anuncio").click();
       await page.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
       const { data: pub } = await adm().from("properties").select("status, title, bedrooms, bathrooms, max_guests, monthly_price, negociacao").eq("id", imovelId).single();
