@@ -7,6 +7,9 @@ import {
   tipoRealVideoPorMagicBytes,
   duracaoDoVideoSegundos,
   validarVideoNoServidor,
+  caminhoVideoDoDono,
+  caminhoNovoVideo,
+  colunaVideoArquivo,
 } from "./video-anuncio.ts";
 
 const u32 = (n: number) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
@@ -77,4 +80,26 @@ test("servidor: 60 s exatos passam; 61 s, arquivo falso e arquivo grande são re
   const grande = validarVideoNoServidor(video(), VIDEO_MAX_BYTES + 1);
   assert.equal(grande.ok, false);
   assert.match(grande.ok ? "" : grande.erro, /50 MB/);
+});
+
+test("caminho do vídeo do anúncio: só arquivo direto na pasta do próprio dono", () => {
+  const dono = "11111111-1111-4111-8111-111111111111";
+  assert.equal(caminhoVideoDoDono(`${dono}/abc.mp4`, dono), true);
+  assert.equal(caminhoVideoDoDono(`${dono}/abc.mp4`, "22222222-2222-4222-8222-222222222222"), false); // terceiro
+  assert.equal(caminhoVideoDoDono(`${dono}/sub/abc.mp4`, dono), false);
+  assert.equal(caminhoVideoDoDono(`${dono}/../x.mp4`, dono), false);
+  assert.equal(caminhoVideoDoDono(`${dono}/`, dono), false);
+  assert.equal(caminhoVideoDoDono(undefined, dono), false);
+  assert.equal(caminhoVideoDoDono(`${dono}/${"a".repeat(200)}`, dono), false);
+  assert.match(caminhoNovoVideo(dono, "video/quicktime"), new RegExp(`^${dono}/[0-9a-f-]{36}\\.mov$`));
+  assert.equal(caminhoNovoVideo(dono, "video/mp4", "x"), `${dono}/x.mp4`);
+});
+
+test("coluna video_arquivo: grava só do dono, '' remove, ausente/alheio não mexe", () => {
+  const dono = "11111111-1111-4111-8111-111111111111";
+  assert.deepEqual(colunaVideoArquivo(`${dono}/a.mp4`, dono), { video_arquivo: `${dono}/a.mp4` });
+  assert.deepEqual(colunaVideoArquivo("", dono), { video_arquivo: null });
+  assert.deepEqual(colunaVideoArquivo(undefined, dono), {});
+  assert.deepEqual(colunaVideoArquivo("22222222-2222-4222-8222-222222222222/a.mp4", dono), {}); // pasta de outro
+  assert.deepEqual(colunaVideoArquivo("https://x.com/v.mp4", dono), {});
 });

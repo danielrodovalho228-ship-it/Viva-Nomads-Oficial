@@ -68,7 +68,7 @@ export const PROPERTY_PUBLIC_COLUMNS =
   "garantias_aceitas, google_places, parking_spots, condo_fee, " +
   "descricao_gerada_por_ia, available_from, furnished, pets_allowed, " +
   "smoking_allowed, children_allowed, max_guests, available_until, " +
-  "max_period_days, checkin_after, checkout_before";
+  "max_period_days, checkin_after, checkout_before, video_arquivo";
 
 /*
   Camada de acesso a imóveis. Usa o Supabase quando configurado; caso
@@ -114,6 +114,7 @@ interface PropertyRow {
   ownership_type: string | null;
   sublease_authorized: boolean | null;
   video_url: string | null;
+  video_arquivo?: string | null;
   created_at: string | null;
   faixas_aceitas: string[] | null;
   garantias_aceitas: string[] | null;
@@ -186,6 +187,7 @@ function rowToProperty(row: PropertyRow): Property {
     ownershipType: (row.ownership_type as Property["ownershipType"]) ?? "own",
     subleaseAuthorized: row.sublease_authorized ?? undefined,
     videoUrl: row.video_url ?? undefined,
+    videoArquivo: row.video_arquivo ?? undefined,
     createdAt: row.created_at ?? undefined,
     photos: [],
     amenities: [],

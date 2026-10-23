@@ -4,6 +4,7 @@ import Image from "next/image";
 import { AlertTriangle, Loader2, PlayCircle, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { GuiaFotos } from "@/components/fotos/guia-fotos";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
+import { VideoUploader } from "@/components/video-uploader";
 import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
 import { mensagemFaltamFotosIa, iaFotosLiberada } from "@/lib/ai/fotos-prompt";
@@ -34,6 +35,8 @@ export function EtapaFotos({
   cep,
   videoUrl,
   setVideoUrl,
+  videoArquivo,
+  setVideoArquivo,
   iaEstado,
   iaFalha,
   onTentarDeNovo,
@@ -47,6 +50,9 @@ export function EtapaFotos({
   cep: string;
   videoUrl: string;
   setVideoUrl: (v: string) => void;
+  /** Vídeo enviado como arquivo (ordem 8681ae95): caminho no bucket anuncio-videos, "" = sem vídeo. */
+  videoArquivo: string;
+  setVideoArquivo: (v: string) => void;
   iaEstado: EstadoIaFotos;
   iaFalha?: FalhaIaFotos | null;
   onTentarDeNovo?: () => void;
@@ -147,6 +153,10 @@ export function EtapaFotos({
         Removemos os metadados das fotos ao enviar, <strong className="text-ink">inclusive a localização (GPS)</strong>, para o
         endereço exato nunca sair na imagem.
       </p>
+
+      <div className="mt-4">
+        <VideoUploader path={videoArquivo} onChange={setVideoArquivo} />
+      </div>
 
       <div className="mt-4 rounded-xl border border-sage-200 p-4">
         <Labeled label="Link do vídeo do imóvel" ajuda="(opcional)">

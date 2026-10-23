@@ -1888,7 +1888,17 @@
       "personas": [
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t293-video-anuncio"
+      ]
+    },
+    "/api/imoveis/[id]/video": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t293-video-anuncio"
+      ]
     },
     "/api/upload/inquilino-doc": {
       "personas": [

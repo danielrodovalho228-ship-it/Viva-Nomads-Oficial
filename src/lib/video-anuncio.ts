@@ -82,3 +82,21 @@ export function validarVideoNoServidor(bytes: Uint8Array, tamanho: number = byte
   if (segundos > VIDEO_MAX_SEGUNDOS) return { ok: false, erro: MSG_DURACAO };
   return { ok: true, tipo, segundos };
 }
+
+/** Caminho aceito para gravar no anúncio: "<uid>/<arquivo>" na pasta do próprio dono (espelha a CHECK da migração 0211). */
+export function caminhoVideoDoDono(path: unknown, ownerId: string): path is string {
+  if (typeof path !== "string" || path.length > 200 || path.includes("..")) return false;
+  const pasta = `${ownerId}/`;
+  return path.startsWith(pasta) && path.length > pasta.length && !path.slice(pasta.length).includes("/");
+}
+
+/** Nome do arquivo no bucket: sorteado, com a extensão do tipo real (nunca o nome que a pessoa deu). */
+export function caminhoNovoVideo(ownerId: string, tipo: VideoMime, id: string = crypto.randomUUID()): string {
+  return `${ownerId}/${id}.${tipo === "video/quicktime" ? "mov" : "mp4"}`;
+}
+
+/** Coluna a gravar: só caminho da pasta do próprio dono; "" limpa; ausente ou inválido não mexe (nunca apaga por engano). */
+export function colunaVideoArquivo(v: string | undefined, ownerId: string): { video_arquivo?: string | null } {
+  if (v === "") return { video_arquivo: null };
+  return caminhoVideoDoDono(v, ownerId) ? { video_arquivo: v } : {};
+}
