@@ -47,3 +47,18 @@ test("mensagem nova: sem push com a conversa aberta há menos de 10 min; agrupad
   assert.equal(textoMensagensAgrupadas(1, "ana@x.com").title, "Nova mensagem");
   assert.equal(grupoDaConversa("c1"), "conversa:c1");
 });
+
+test("texto da decisão: valor só para quem é parte, prazo relativo, sem contato nem documento", async () => {
+  const { textoDaDecisao, prazoRelativo } = await import("./regra-push.ts");
+  const amanha = new Date(DIA.getTime() + 86_400_000).toISOString();
+  assert.equal(
+    textoDaDecisao("proposta_recebida", { imovel: "Apto Santa Mônica", valor: 3200, prazo: amanha, destinatarioEhParte: true }, DIA),
+    "Nova proposta de R$ 3.200 para o Apto Santa Mônica: responda até amanhã",
+  );
+  assert.equal(textoDaDecisao("proposta_recebida", { imovel: "Apto Santa Mônica", valor: 3200, destinatarioEhParte: false }, DIA), "Nova proposta para o Apto Santa Mônica");
+  assert.equal(textoDaDecisao("proposta_recebida", { imovel: "Apto ana@x.com 12345678901", destinatarioEhParte: true }, DIA), "Nova proposta para o Apto");
+  assert.equal(textoDaDecisao("documento_aprovado", { destinatarioEhParte: true }, DIA), null);
+  assert.equal(prazoRelativo(DIA.toISOString(), DIA), "hoje");
+  assert.equal(prazoRelativo("2026-10-30T15:00:00Z", DIA), "30/10");
+  assert.equal(prazoRelativo(null, DIA), null);
+});

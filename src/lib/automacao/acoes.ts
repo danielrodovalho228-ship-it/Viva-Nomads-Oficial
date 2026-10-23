@@ -12,7 +12,7 @@ import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { evento, rota } from "@/lib/parceiros/pedido-servidor";
 import { automacaoDaEstadia, criarPedidoAutomatico, enviarAoParceiro } from "./servidor";
 import { textoConvite, textoResposta } from "./textos-vinculo";
-import { CATEGORIAS_VINCULO, emSilencio, ROTULO_GATILHO, type CategoriaVinculo, type Gatilho, type ModoVinculo } from "./pedidos-do-evento";
+import { CATEGORIAS_VINCULO, ROTULO_GATILHO, type CategoriaVinculo, type Gatilho, type ModoVinculo } from "./pedidos-do-evento";
 
 /*
   Ações do Prompt 38 ("Viva rodando automático"): o dono convida o parceiro fixo do imóvel, troca o modo e as
@@ -41,7 +41,7 @@ async function avisoSimples(admin: Admin, destino: string, ev: NotificationEvent
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url, semPush: emSilencio(new Date()), ...texto });
+    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url, ...texto });
   } catch {
     /* aviso é complemento */
   }

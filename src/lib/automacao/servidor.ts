@@ -7,7 +7,6 @@ import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "@/
 import {
   DIAS_ANTES_LIMPEZA,
   DIAS_ANTES_SUGESTAO,
-  emSilencio,
   horariosNaJanela,
   pedidosDoEvento,
   quandoBrasilia,
@@ -98,7 +97,7 @@ async function aviso(admin: Admin, destino: string, ev: NotificationEvent, url: 
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url, semPush: emSilencio(agora) });
+    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url });
   } catch {
     /* aviso é complemento */
   }
@@ -119,7 +118,7 @@ export async function enviarAoParceiro(admin: Admin, p: PedidoAuto, agora: Date)
   if (!p.parceiros) return;
   await mensagem(admin, p, p.cliente_id, MENSAGENS_AUTOMATICAS.boas_vindas);
   if (p.descricao) await mensagem(admin, p, p.cliente_id, p.descricao);
-  await avisar(admin, p.parceiros.user_id, "parceiro_pedido_novo", p.id, { semPush: emSilencio(agora) });
+  await avisar(admin, p.parceiros.user_id, "parceiro_pedido_novo", p.id);
 }
 
 async function textoComServico(admin: Admin, servicoId: string | null, descricao: string): Promise<string> {
@@ -211,7 +210,7 @@ async function atualizarPedido(admin: Admin, acao: Extract<Acao, { tipo: "atuali
   await evento(admin, p.id, null, "remarcado", { janela_inicio: acao.janela.inicio, janela_fim: acao.janela.fim });
   if (!p.aguardando_dono && p.parceiros) {
     await mensagem(admin, p, p.cliente_id, nova);
-    await avisar(admin, p.parceiros.user_id, "pedido_auto_atualizado", p.id, { semPush: emSilencio(agora) });
+    await avisar(admin, p.parceiros.user_id, "pedido_auto_atualizado", p.id);
   }
   return true;
 }
@@ -236,7 +235,7 @@ async function cancelarAutomaticos(admin: Admin, contratoId: string, agora: Date
     await evento(admin, p.id, null, "cancelar", { motivo: "contrato_encerrado" });
     if (!p.aguardando_dono && p.parceiros) {
       await mensagem(admin, p, p.cliente_id, "O contrato do imóvel foi encerrado e este pedido foi cancelado.");
-      await avisar(admin, p.parceiros.user_id, "pedido_auto_cancelado", p.id, { semPush: emSilencio(agora) });
+      await avisar(admin, p.parceiros.user_id, "pedido_auto_cancelado", p.id);
     }
   }
   return n;

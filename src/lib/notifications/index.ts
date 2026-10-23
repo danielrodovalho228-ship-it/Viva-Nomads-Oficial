@@ -1,6 +1,7 @@
 import { sendEmail, isEmailConfigured } from "./email";
 import { sendWhatsapp, isWhatsappConfigured } from "./whatsapp";
-import { sendPush } from "./push";
+import { processarPush } from "./push-servidor";
+import { textoDaDecisao, type DadosDaDecisao } from "./regra-push";
 import { SITE_URL } from "@/lib/site";
 import { montarNotificacao, urlInterna } from "./montar-email";
 import { primeiroNome } from "@/lib/display-name";
@@ -56,8 +57,18 @@ export async function notify(params: {
   ctaLabel?: string;
   /** Aviso só para a equipe (alerta de chamado, documento na fila): remetente de sistema, assunto como veio. */
   interno?: boolean;
-  /** Sem push (horário de silêncio, Prompt 38): o e-mail sai normalmente. */
+  /**
+   * Sem push nenhum, por decisão de quem chama (o e-mail sai normalmente). O silêncio 22h–7h NÃO é mais passado
+   * aqui: o notify() decide pela matriz e pela regra única (Prompt 44, push-servidor.ts).
+   */
   semPush?: boolean;
+  /** Prazo que vence no próprio dia (ex.: manutenção urgente): o push fura o silêncio das 22h–7h. */
+  prazoHoje?: boolean;
+  /** Mensagem nova: a conversa (sem push se aberta há 10 min; agrupado) e o primeiro nome de quem escreveu. */
+  conversationId?: string;
+  remetenteNome?: string | null;
+  /** Texto da decisão no push ("Nova proposta de R$ 3.200 para o Apto Santa Mônica: responda até amanhã"). */
+  decisao?: DadosDaDecisao;
 }): Promise<NotifyResult> {
   const base = TEMPLATES[params.event];
   const tpl = {
@@ -75,15 +86,21 @@ export async function notify(params: {
   const nomeHtml = textoEmail(nome, 40);
   const nomeTexto = textoPlano(nome, 40);
 
-  // PUSH em PARALELO ao e-mail: dispara já, sem await aqui (não atrasa nada).
+  // PUSH em PARALELO ao e-mail: dispara já, sem await aqui (não atrasa nada). A MATRIZ decide (Prompt 44): evento sem
+  // canal push nunca vai; no silêncio, só segurança e prazo do dia; o resto espera as 7h (push_adiados).
   // Conteúdo GENÉRICO (só o evento + link) — nunca contato, sobrenome ou valores.
   const pushPromise = params.userId && !params.semPush
     ? comLimite(
-        sendPush({
+        processarPush({
           userId: params.userId,
+          event: params.event,
           title: tpl.subject,
-          body: tpl.body(), // sem nome/detalhe — privacidade
+          // Sem nome nem contato; com a decisão, o texto dela (valor só para quem é parte).
+          body: (params.decisao && textoDaDecisao(params.event, params.decisao, new Date())) || tpl.body(),
           url: urlInterna(params.pushUrl),
+          prazoHoje: params.prazoHoje,
+          conversationId: params.conversationId,
+          remetenteNome: params.remetenteNome,
         })
       )
     : null;
@@ -137,8 +154,7 @@ export async function notify(params: {
 
   if (pushPromise) {
     const pr = await pushPromise; // já estava rodando em paralelo
-    if (pr && "demo" in pr) result.push = "demo";
-    else if (pr && "sent" in pr) result.push = pr.sent > 0;
+    if (pr && "sent" in pr) result.push = pr.sent > 0;
     else result.push = false;
   }
 

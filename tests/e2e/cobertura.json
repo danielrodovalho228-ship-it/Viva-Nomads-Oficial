@@ -2688,6 +2688,15 @@
         "t182-jornada-completa"
       ]
     },
+    "src/lib/data/conversa-aberta-actions.ts#marcarConversaAberta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t182-jornada-completa"
+      ]
+    },
     "src/lib/data/actions.ts#toggleFavorite": {
       "personas": [
         "inquilino",

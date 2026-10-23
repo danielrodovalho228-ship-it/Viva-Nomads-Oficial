@@ -183,6 +183,8 @@ async function avisarOutraParte(
   evento: NotificationEvent,
   /** Só vai no e-mail quando o destino é o DONO (a taxa nunca chega ao morador — especificação da taxa, R8). */
   detalhesSoDono?: string,
+  /** Prompt 44: valor mensal e validade para o texto do push ("Nova proposta de R$ 3.200 … responda até amanhã"). */
+  decisao?: { valorMensal: number; validaAte: string | null },
 ) {
   const remetente = de === "owner" ? p.owner_id : p.tenant_id;
   const destino = de === "owner" ? p.tenant_id : p.owner_id;
@@ -199,9 +201,16 @@ async function avisarOutraParte(
     /* o cartão é complemento; a proposta já está gravada */
   }
   try {
-    const { data: d } = await admin.from("profiles").select("email, full_name").eq("id", destino).maybeSingle();
+    const [{ data: d }, { data: im }] = await Promise.all([
+      admin.from("profiles").select("email, full_name").eq("id", destino).maybeSingle(),
+      decisao ? admin.from("properties").select("title").eq("id", p.property_id).maybeSingle() : Promise.resolve({ data: null }),
+    ]);
     await notify({
       event: evento,
+      // Quem recebe é parte da proposta (dono ou morador do lead): o valor pode ir no push.
+      decisao: decisao
+        ? { imovel: (im as { title?: string | null } | null)?.title ?? null, valor: decisao.valorMensal, prazo: decisao.validaAte, destinatarioEhParte: true }
+        : undefined,
       email: (d?.email as string | undefined) ?? undefined,
       name: (d?.full_name as string | undefined) ?? undefined,
       userId: destino,
@@ -396,6 +405,8 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
     "owner",
     `Proposta ${numero} enviada: ${brl(tot.valorMensal)}/mês × ${termos.meses} ${termos.meses === 1 ? "mês" : "meses"}, total do contrato ${brl(tot.totalContrato)}.`,
     "proposta_recebida",
+    undefined,
+    { valorMensal: tot.valorMensal, validaAte: (p as LinhaProposta).valida_ate ?? null },
   );
   return { ok: true, id: p.id as string, numero: numero as string };
 }
@@ -742,6 +753,8 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
     papel,
     `Contraproposta ${p.numero} (versão ${versao}): ${brl(tot.valorMensal)}/mês × ${nova.meses} ${nova.meses === 1 ? "mês" : "meses"}, total ${brl(tot.totalContrato)}.${mensagem ? ` ${mensagem}` : ""}`,
     "proposta_recebida",
+    undefined,
+    { valorMensal: tot.valorMensal, validaAte: validaAteDe(p.validade_dias, agora) },
   );
   return { ok: true, versao };
 }

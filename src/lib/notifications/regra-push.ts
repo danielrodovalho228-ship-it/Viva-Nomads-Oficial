@@ -62,3 +62,57 @@ export function textoMensagensAgrupadas(qtd: number, nome: string | null | undef
 export function grupoDaConversa(conversationId: string): string {
   return `conversa:${conversationId}`;
 }
+
+// ── Texto da decisão (item 2) ───────────────────────────────────────────────────────────────────────────────────────
+export interface DadosDaDecisao {
+  /** Título do anúncio (sem endereço). */
+  imovel?: string | null;
+  /** Valor do que está sendo decidido. Só aparece se quem recebe é parte. */
+  valor?: number | null;
+  /** Até quando responder (ISO). */
+  prazo?: string | null;
+  /** Quem recebe é parte (proprietário/morador do negócio)? Sem isso, o valor nunca vai. */
+  destinatarioEhParte: boolean;
+}
+
+const BRT_MS = -3 * 3_600_000;
+const diaBR = (d: Date) => new Date(d.getTime() + BRT_MS).toISOString().slice(0, 10);
+
+/** "hoje", "amanhã" ou "25/10" (Brasília). */
+export function prazoRelativo(prazo: string | null | undefined, agora: Date): string | null {
+  if (!prazo) return null;
+  const t = Date.parse(prazo);
+  if (!Number.isFinite(t)) return null;
+  const alvo = diaBR(new Date(t));
+  if (alvo === diaBR(agora)) return "hoje";
+  if (alvo === diaBR(new Date(agora.getTime() + 86_400_000))) return "amanhã";
+  return `${alvo.slice(8, 10)}/${alvo.slice(5, 7)}`;
+}
+
+const reais = (v: number) => `R$ ${Math.round(v).toLocaleString("pt-BR")}`;
+/** Nada de contato, sobrenome ou documento no push: só o título do anúncio, curto e sem dígitos longos nem e-mail. */
+const tituloLimpo = (t: string | null | undefined) =>
+  (t ?? "").replace(/\S+@\S+/g, "").replace(/\d{6,}/g, "").replace(/\s+/g, " ").trim().slice(0, 40) || null;
+
+const FRASE: Partial<Record<string, string>> = {
+  proposta_recebida: "Nova proposta",
+  proposta_vencendo: "Proposta vencendo",
+  visita_pedida: "Pedido de visita",
+  visita_remarcada: "Visita com novo horário",
+  manutencao_nova: "Nova manutenção",
+  manutencao_atrasada: "Manutenção atrasada",
+};
+
+/**
+ * O corpo do push de uma decisão: "Nova proposta de R$ 3.200 para o Apto Santa Mônica: responda até amanhã".
+ * Valor só para quem é parte; título do anúncio limpo; nunca contato, sobrenome ou documento.
+ */
+export function textoDaDecisao(evento: string, d: DadosDaDecisao, agora: Date): string | null {
+  const frase = FRASE[evento];
+  if (!frase) return null;
+  const valor = d.destinatarioEhParte && typeof d.valor === "number" && d.valor > 0 ? ` de ${reais(d.valor)}` : "";
+  const imovel = tituloLimpo(d.imovel);
+  const para = imovel ? ` para o ${imovel}` : "";
+  const ate = prazoRelativo(d.prazo, agora);
+  return `${frase}${valor}${para}${ate ? `: responda até ${ate}` : ""}`;
+}

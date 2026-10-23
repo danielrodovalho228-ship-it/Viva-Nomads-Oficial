@@ -13,7 +13,6 @@ import { somarHorasUteis } from "../vistoria/laudo.ts";
 import { PROMESSA_HUMANA_H } from "../../config/atendimento.ts";
 
 const H = 3_600_000;
-const BRT = -3 * H;
 
 export { SILENCIO } from "../notifications/silencio.ts";
 export const DIAS_RASCUNHO = 3;
@@ -21,7 +20,6 @@ export const HORAS_VERIFICACAO = 24;
 /** A promessa pública a uma pessoa (PROMESSA_ATENDIMENTO, src/config/atendimento.ts). */
 export const HORAS_PROMESSA_ATENDIMENTO = PROMESSA_HUMANA_H;
 
-const horaBRT = (d: Date) => new Date(d.getTime() + BRT).getUTCHours();
 
 // Prompt 44: o silêncio (22h–7h) é a regra única de src/lib/notifications/silencio.ts.
 export { emSilencio, proximoEnvioPermitido } from "../notifications/silencio.ts";
