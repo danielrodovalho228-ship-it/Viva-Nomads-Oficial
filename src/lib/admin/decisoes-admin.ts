@@ -22,6 +22,7 @@ export type ChaveDecisaoAdmin =
   | "manutencao_fora_prazo"
   | "conforto_contestacoes"
   | "fotos_nivel"
+  | "chamados_fora_promessa"
   | "chamados_p1"
   | "chamados_p2"
   | "backup"
@@ -29,6 +30,8 @@ export type ChaveDecisaoAdmin =
   | "documentos_pendentes"
   | "encerramentos"
   | "parceiros_para_aprovar"
+  | "parceiros_sem_resposta_1_dia"
+  | "verificacao_analise_humana"
   | "pedidos_parceiro_sem_resposta"
   | "chamados_urgentes_sem_resposta"
   | "candidaturas_sem_resposta_48h"
@@ -54,12 +57,16 @@ export const DECISOES_ADMIN: readonly DefinicaoDecisaoAdmin[] = [
   { chave: "manutencao_fora_prazo", fila: "manutenção fora do prazo", um: "manutenção fora do prazo", varios: "manutenções fora do prazo", acao: "Acompanhar", href: hrefCentral("manutencao_fora_prazo") },
   { chave: "conforto_contestacoes", fila: "pendências de conforto contestadas", um: "pendência de conforto contestada", varios: "pendências de conforto contestadas", acao: "Decidir", href: hrefCentral("conforto_contestacoes") },
   { chave: "fotos_nivel", fila: "fotos de nível", um: "foto de nível para analisar", varios: "fotos de nível para analisar", acao: "Analisar", href: hrefCentral("fotos_nivel") },
+  // Prompt 50: chamado sem a 1ª resposta de uma pessoa dentro da promessa pública (24 h) vem antes de tudo.
+  { chave: "chamados_fora_promessa", fila: "chamados fora da promessa", um: "chamado sem resposta de uma pessoa há mais de 24 h", varios: "chamados sem resposta de uma pessoa há mais de 24 h", acao: "Responder", href: "/admin/atendimento?aba=fila&sem_resposta=1" },
   { chave: "chamados_p1", fila: "chamados P1", um: "chamado P1 aberto", varios: "chamados P1 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p1" },
   { chave: "chamados_p2", fila: "chamados P2", um: "chamado P2 aberto", varios: "chamados P2 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p2" },
   { chave: "backup", fila: "backup", um: "alerta de backup", varios: "alertas de backup", acao: "Ver o backup", href: "/admin#backup" },
   { chave: "falhas_documento", fila: "recibos", um: "recibo ou documento que não saiu", varios: "recibos ou documentos que não saíram", acao: "Emitir de novo", href: "/admin/documentos#falhas" },
   { chave: "documentos_pendentes", fila: "documentos", um: "documento na fila para conferir", varios: "documentos na fila para conferir", acao: "Conferir", href: "/admin/documentos" },
   { chave: "encerramentos", fila: "encerramentos", um: "pedido de encerramento de contrato", varios: "pedidos de encerramento de contrato", acao: "Conduzir", href: "/admin/contratos/encerramentos" },
+  { chave: "parceiros_sem_resposta_1_dia", fila: "parcerias sem resposta", um: "pedido de parceria sem resposta há mais de 1 dia útil", varios: "pedidos de parceria sem resposta há mais de 1 dia útil", acao: "Responder", href: "/admin/parceiros?aba=pendentes" },
+  { chave: "verificacao_analise_humana", fila: "verificação de identidade", um: "verificação de identidade para analisar", varios: "verificações de identidade para analisar", acao: "Analisar", href: "/admin/documentos#verificacao" },
   { chave: "parceiros_para_aprovar", fila: "parcerias", um: "pedido de parceria para aprovar", varios: "pedidos de parceria para aprovar", acao: "Analisar", href: "/admin/parceiros?aba=pendentes" },
   { chave: "pedidos_parceiro_sem_resposta", fila: "pedidos a parceiros", um: "pedido a parceiro sem orçamento", varios: "pedidos a parceiros sem orçamento", acao: "Acompanhar", href: "/admin/parceiros/pedidos?filtro=solicitado#lista" },
   { chave: "chamados_urgentes_sem_resposta", fila: "manutenção urgente", um: "manutenção urgente sem resposta há mais de 4 h", varios: "manutenções urgentes sem resposta há mais de 4 h", acao: "Cobrar", href: "/admin/solicitacoes?prioridade=urgente&sem_resposta=1" },

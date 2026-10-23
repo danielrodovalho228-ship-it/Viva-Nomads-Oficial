@@ -12,13 +12,13 @@ import {
   modoSimulado,
 } from "./regras.ts";
 
-test("rascunho parado: avisa com 1 e 3 dias, nos outros dias não", () => {
+test("rascunho parado (Prompt 50): um aviso a partir do 3º dia; antes, nada", () => {
   const hoje = "2026-10-20";
-  assert.equal(avisoAnuncioIncompleto("2026-10-19T15:00:00Z", hoje), 1);
-  assert.equal(avisoAnuncioIncompleto("2026-10-17T15:00:00Z", hoje), 3);
-  assert.equal(avisoAnuncioIncompleto("2026-10-20T15:00:00Z", hoje), null);
+  assert.equal(avisoAnuncioIncompleto("2026-10-19T15:00:00Z", hoje), null);
   assert.equal(avisoAnuncioIncompleto("2026-10-18T15:00:00Z", hoje), null);
-  assert.equal(avisoAnuncioIncompleto("2026-10-10T15:00:00Z", hoje), null);
+  assert.equal(avisoAnuncioIncompleto("2026-10-17T15:00:00Z", hoje), 3);
+  assert.equal(avisoAnuncioIncompleto("2026-10-10T15:00:00Z", hoje), 3); // a chave de envio garante 1×
+  assert.equal(avisoAnuncioIncompleto("2026-10-20T15:00:00Z", hoje), null);
 });
 
 test("a data do rascunho conta em Brasília (02h UTC ainda é o dia anterior)", () => {

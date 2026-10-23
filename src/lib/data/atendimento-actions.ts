@@ -18,6 +18,7 @@ import {
   PRAZO_MANUTENCAO_H,
   type Prioridade,
   type UrgenciaManutencao,
+  PROMESSA_HUMANA_H,
 } from "@/config/atendimento";
 import { avisoEmergencia, categoria, ORIENTACAO_CAMERA, classificar, ehNumeroPublico, numeroEmergencia } from "@/lib/atendimento/classificar";
 import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pausarAnuncioPorCamera, pessoaValida, registrarMensagemDaPessoa, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
@@ -280,6 +281,8 @@ export interface ChamadoLista {
   tipo: string;
   criado_em: string;
   atualizado_em: string;
+  /** Prompt 50: o estado que quem abriu vê (aberto · respondido · resolvido) sai daqui. */
+  primeira_resposta_em?: string | null;
 }
 
 /** Meus chamados (RLS: só os da pessoa). */
@@ -292,7 +295,7 @@ export async function meusChamados(): Promise<ChamadoLista[]> {
   if (!user) return [];
   const { data } = await supabase
     .from("chamados")
-    .select("id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em")
+    .select("id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, primeira_resposta_em")
     .eq("usuario_id", user.id)
     .order("atualizado_em", { ascending: false })
     .limit(50);
@@ -510,6 +513,8 @@ export interface FiltrosFila {
   busca?: string;
   aprovacao?: boolean;
   fechados?: boolean;
+  /** Prompt 50: só os chamados sem a 1ª resposta de uma pessoa além da promessa pública (24 h). */
+  semResposta?: boolean;
 }
 
 /** Fila do admin (simulação fora). Ordem: prioridade, depois prazo. */
@@ -524,6 +529,7 @@ export async function filaAtendimento(f: FiltrosFila = {}): Promise<ChamadoAdmin
   if (f.tipo && ["suporte", "manutencao", "seguranca"].includes(f.tipo)) q = q.eq("tipo", f.tipo);
   if (f.responsavel === "ia" || f.responsavel === "humano") q = q.eq("responsavel_tipo", f.responsavel);
   if (ehFila(f.fila)) q = q.in("categoria", FILAS[f.fila].categorias);
+  if (f.semResposta) q = q.is("primeira_resposta_em", null).lt("criado_em", new Date(Date.now() - PROMESSA_HUMANA_H * 3_600_000).toISOString());
   const busca = (f.busca ?? "").trim().slice(0, 60);
   if (busca) {
     q = ehNumeroPublico(busca) ? q.eq("numero_publico", busca.toUpperCase()) : q.ilike("assunto", `%${busca.replace(/[%_]/g, "")}%`);
