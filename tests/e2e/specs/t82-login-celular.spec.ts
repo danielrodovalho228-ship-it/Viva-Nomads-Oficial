@@ -65,7 +65,7 @@ test.describe("T82 — Login no celular", () => {
       if (/\/api\/auth\/entrar/.test(r.url())) logins += 1;
       if (/\/auth\/v1\/token/.test(r.url())) tokensNoNavegador += 1;
     });
-    await page.goto("/auth");
+    await page.goto("/auth?senha=1");
     await page.locator('input[name="email"]').first().fill(conta.email);
     await page.locator('input[name="password"]').first().fill(conta.senha);
     const botao = page.locator("form").getByRole("button", { name: /^entrar$/i });

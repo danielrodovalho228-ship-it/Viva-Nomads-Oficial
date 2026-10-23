@@ -312,7 +312,8 @@
         "t8-rascunho",
         "t9-documentos",
         "t203-entrar-com-codigo-completo",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t300-entrada-sem-senha-49"
       ]
     },
     "/auth/pronto": {
@@ -1594,6 +1595,22 @@
         "t296-niveis-exibicao-59-1",
         "t297-varredura-logada-bloco3"
       ]
+    },
+    "/dashboard/recibos": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t299-recibos-notas-39b1"
+      ]
+    },
+    "/auth/intencao": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t300-entrada-sem-senha-49"
+      ]
     }
   },
   "rotas": {
@@ -2163,6 +2180,24 @@
       ],
       "specs": [
         "t49-seguranca-publica"
+      ]
+    },
+    "/api/recibos/[relatorio]": {
+      "personas": [
+        "proprietario",
+        "inquilino",
+        "parceiro"
+      ],
+      "specs": [
+        "t299-recibos-notas-39b1"
+      ]
+    },
+    "/api/auth/codigo": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t300-entrada-sem-senha-49"
       ]
     }
   },
@@ -4858,6 +4893,38 @@
       ],
       "specs": [
         "t296-niveis-exibicao-59-1"
+      ]
+    },
+    "src/lib/data/intencao-actions.ts#getMinhaIntencao": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t300-entrada-sem-senha-49"
+      ]
+    },
+    "src/lib/data/intencao-actions.ts#salvarMinhaIntencao": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t300-entrada-sem-senha-49"
+      ]
+    },
+    "src/lib/data/convidado-actions.ts#mesclarFavoritosConvidado": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t300-entrada-sem-senha-49"
+      ]
+    },
+    "src/lib/data/convidado-actions.ts#mesclarBuscasConvidado": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t300-entrada-sem-senha-49"
       ]
     }
   }

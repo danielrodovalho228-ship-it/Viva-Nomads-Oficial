@@ -104,7 +104,8 @@ test("página pública do parceiro: 'Solicitar orçamento' ativo, sem o 'Em brev
   assert.doesNotMatch(pagina, /Em breve|disabled/);
   const botao = ler("src/components/parceiros/solicitar-orcamento.tsx");
   // O botão que abre a folha nunca é desabilitado; sem login ele vira link para a entrada.
-  assert.match(botao, /<ButtonLink href=\{`\/auth\?redirect=\$\{encodeURIComponent\(voltarPara\)\}`\}[^>]*data-testid="solicitar-orcamento"/);
+  // Prompt 49: a entrada diz o porquê ("Para pedir o orçamento…") e volta para cá.
+  assert.match(botao, /<ButtonLink href=\{urlEntrada\("orcamento", voltarPara\)\}[^>]*data-testid="solicitar-orcamento"/);
   assert.match(botao, /<Button variant="primary" className="w-full" onClick=\{abrir\} data-testid="solicitar-orcamento">/);
   // E o deploy de produção roda o T253 (subconjunto público), que falha com o botão morto ou o texto antigo.
   const pkg = JSON.parse(ler("package.json")) as { scripts: Record<string, string> };

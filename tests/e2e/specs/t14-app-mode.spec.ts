@@ -38,9 +38,10 @@ test.describe("T14 — Modo app", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
     test("entrar no app: sem Google e com a dica para quem entrou com Google no site", async ({ page }) => {
-      await page.goto("/auth");
+      // Prompt 49: a dica fica em "Entrar com senha" e aponta a entrada por código (sem senha, mesmo e-mail).
+      await page.goto("/auth?senha=1");
       await esperarModoApp(page);
-      await expect(page.getByTestId("dica-google-app")).toContainText("Esqueci minha senha");
+      await expect(page.getByTestId("dica-google-app")).toContainText("Entrar com código por e-mail");
       await expect(page.getByRole("button", { name: /Continuar com Google/ })).toHaveCount(0);
     });
 
@@ -91,7 +92,7 @@ test.describe("T14 — Modo app", () => {
       test.skip(!hasAccount("inquilino") && !ids.id, "sem conta de teste do inquilino");
       if (ids.id) {
         await context.clearCookies();
-        await page.goto("/auth", { waitUntil: "networkidle" });
+        await page.goto("/auth?senha=1", { waitUntil: "networkidle" });
         await page.locator('input[name="email"], input[type="email"]').first().fill(conta.email);
         await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
         await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

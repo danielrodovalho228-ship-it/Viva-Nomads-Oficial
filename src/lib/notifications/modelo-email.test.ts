@@ -68,11 +68,23 @@ test("e-mails de conta do Supabase: 6 modelos, assunto do código, código grand
   assert.match(cod.html, /\{\{ \.Token \}\}/);
   assert.match(cod.html, /font-size:38px/);
   assert.match(cod.html, /ignore este e-mail/i);
-  assert.match(cod.html, /1 hora/);
+  // Prompt 49: vale 10 minutos; o 1º código da conta nova sai pelo "Confirm signup", com o mesmo assunto e o
+  // código em destaque; e-mail de código não tem link de login (nem no topo).
+  assert.match(cod.html, /10 minutos/);
+  const comCodigo = ["codigo-de-acesso.html", "confirmar-cadastro.html", "reautenticacao.html"];
+  const conf = ts.find((t) => t.arquivo === "confirmar-cadastro.html")!;
+  assert.equal(conf.assunto, "Seu código de acesso · Viva Nomads");
+  assert.match(conf.html, /\{\{ \.Token \}\}/);
   for (const t of ts) {
     assert.doesNotMatch(t.html, PROIBIDAS, t.arquivo);
-    assert.ok(t.html.includes("Central de Ajuda") && t.html.includes(">Entrar<"), t.arquivo);
-    if (t.arquivo !== "codigo-de-acesso.html" && t.arquivo !== "reautenticacao.html") assert.match(t.html, /\{\{ \.SiteURL \}\}\/auth\/confirm\?token_hash=\{\{ \.TokenHash \}\}&type=(signup|recovery|email_change|invite)&next=\//, t.arquivo);
+    assert.doesNotMatch(t.html, /1 hora/, t.arquivo);
+    assert.ok(t.html.includes("Central de Ajuda"), t.arquivo);
+    if (comCodigo.includes(t.arquivo)) {
+      assert.ok(!t.html.includes(">Entrar<") && !/\/auth["?]/.test(t.html) && !/TokenHash/.test(t.html), `${t.arquivo}: código sem link de login`);
+    } else {
+      assert.ok(t.html.includes(">Entrar<"), t.arquivo);
+    }
+    if (!comCodigo.includes(t.arquivo)) assert.match(t.html, /\{\{ \.SiteURL \}\}\/auth\/confirm\?token_hash=\{\{ \.TokenHash \}\}&type=(signup|recovery|email_change|invite)&next=\//, t.arquivo);
     assert.doesNotMatch(t.html, /ConfirmationURL/, `${t.arquivo}: use token_hash (correção #182)`);
     const emDisco = readFileSync(new URL(`../../../supabase/templates/${t.arquivo}`, import.meta.url), "utf8");
     assert.equal(emDisco, t.html + "\n", `${t.arquivo} desatualizado: rode npm run templates:supabase`);

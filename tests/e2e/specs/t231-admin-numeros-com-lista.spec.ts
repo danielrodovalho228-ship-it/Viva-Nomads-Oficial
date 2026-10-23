@@ -239,6 +239,7 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
         await liberarLimiteLogin(inq2.email);
         await liberarLimiteLoginIp();
         await page.getByTestId("aviso-fotografo-entrar").click();
+        await page.getByTestId("entrar-com-senha").click();
         await page.locator('input[name="email"], input[type="email"]').first().fill(inq2.email);
         await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
         await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

@@ -1,5 +1,6 @@
 "use client";
 
+import { urlEntrada } from "@/lib/auth/entrada";
 import { Suspense, useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -372,7 +373,7 @@ function PedidoForm() {
         ...(orcamento ? { orcamento } : {}),
         adultos: String(ocupantes),
       }).toString()}`;
-      router.push(`/auth?codigo=1&redirect=${encodeURIComponent(volta)}`);
+      router.push(urlEntrada("pedido", volta));
       return;
     }
     const dados = {

@@ -30,6 +30,7 @@ import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-vide
 import { useAuthStore } from "@/lib/store";
 import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candidatura";
 import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
+import { urlEntrada } from "@/lib/auth/entrada";
 import { IdealPara } from "@/components/property/ideal-para";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
@@ -210,7 +211,7 @@ export function PropertyDetail({
     setPending(null);
     if (r?.needsAuth) {
       // Sem sessão: leva ao login e volta para este anúncio depois de entrar (a visita volta com a janela aberta).
-      router.push(kind === "visita" ? urlLoginParaAbrir(property.id, "visita") : `/auth?redirect=/imoveis/${property.id}`);
+      router.push(kind === "visita" ? urlLoginParaAbrir(property.id, "visita") : urlEntrada(kind === "candidatura" ? "candidatura" : "mensagem", `/imoveis/${property.id}`));
       return false;
     }
     if (r?.selfOwned) {

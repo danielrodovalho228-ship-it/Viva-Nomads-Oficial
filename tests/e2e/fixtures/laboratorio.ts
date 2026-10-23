@@ -267,6 +267,14 @@ export async function liberarLimiteLogin(email: string): Promise<void> {
   await adm().from("limites_uso").delete().like("chave", "login:ip:%");
 }
 
+/**
+ * Prompt 49: o envio do código tem teto de 5 por hora por e-mail e por IP. No laboratório todos os specs saem do mesmo
+ * IP; antes de pedir código, os specs limpam as contagens de envio (só as do código).
+ */
+export async function liberarLimiteCodigo(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "codigo:%");
+}
+
 /** Login pela tela, em contexto próprio de 390 px (celular). */
 export async function entrar(browser: Browser, email: string, senha: string): Promise<Page> {
   await liberarLimiteLogin(email);
@@ -274,7 +282,7 @@ export async function entrar(browser: Browser, email: string, senha: string): Pr
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
   // networkidle sem teto pendurava até o fim do teste na 1ª carga fria (t168 a 390 px, lab 17/10): espera até 10 s e segue.
-  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+  await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   // Um clique antes da hidratação vira envio nativo e recarrega /auth vazio (t262, t82, t204 no lab de 23/10):
   // enquanto não sair de /auth, preenche o que estiver vazio e clica de novo.

@@ -38,7 +38,7 @@ async function criarConta(p: { email: string; nome: string; role: string }): Pro
 async function entrar(browser: Browser, email: string): Promise<Page> {
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
-  await page.goto("/auth", { waitUntil: "networkidle" });
+  await page.goto("/auth?senha=1", { waitUntil: "networkidle" });
   await page.locator('input[name="email"], input[type="email"]').first().fill(email);
   await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
   await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

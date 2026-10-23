@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { UserRole } from "./types";
 import { limparChavesLocais } from "./local-keys";
 import { useFavoritesStore } from "./favorites-store";
+import { mesclarGuardadosDoConvidado } from "./convidado/mesclar";
 
 /** Planos de assinatura do proprietário (constants.PLANS). */
 export type SubscriptionPlan = "free" | "essential" | "pro" | "gestor";
@@ -90,6 +91,8 @@ export const useAuthStore = create<AuthState>()(
         // começa do zero (a fonte de verdade é o banco).
         useFavoritesStore.getState().bindUser(user?.id ?? null);
         set({ user, authChecked: true });
+        // Prompt 49: o que o convidado guardou no aparelho vai para a conta (sem duplicar).
+        mesclarGuardadosDoConvidado(user?.id);
       },
       setActiveMode: (activeMode) => set({ activeMode }),
       activateRole: (mode) =>

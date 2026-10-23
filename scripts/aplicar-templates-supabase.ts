@@ -29,4 +29,4 @@ if (diferentes.length) {
   console.error(`Gravado, mas a leitura não confere em: ${diferentes.join(", ")}`);
   process.exit(1);
 }
-console.log(`Conferido: ${Object.keys(corpo).length} campos (6 assuntos, 6 corpos, remetente) iguais aos do repositório.`);
+console.log(`Conferido: ${Object.keys(corpo).length} campos (6 assuntos, 6 corpos, remetente e validade do código) iguais aos do repositório.`);

@@ -4,9 +4,12 @@
 */
 export type AlvoAbrir = "visita" | "video";
 
-/** /auth?redirect=/imoveis/<id>?abrir=<alvo> — o /auth só aceita caminho interno (safeInternalPath). */
+/**
+ * /auth?motivo=visita&redirect=/imoveis/<id>?abrir=<alvo> — o /auth só aceita caminho interno (safeInternalPath) e diz
+ * o porquê da conta (Prompt 49: conta só no momento de valor).
+ */
 export function urlLoginParaAbrir(propertyId: string, alvo: AlvoAbrir): string {
-  return `/auth?redirect=${encodeURIComponent(`/imoveis/${encodeURIComponent(propertyId)}?abrir=${alvo}`)}`;
+  return `/auth?motivo=visita&redirect=${encodeURIComponent(`/imoveis/${encodeURIComponent(propertyId)}?abrir=${alvo}`)}`;
 }
 
 /** O que abrir ao carregar o anúncio (só os dois valores conhecidos). */

@@ -116,9 +116,11 @@ test.describe("T201 — QA do Muse", () => {
           // A sessão é conferida no carregamento: reclica até a navegação para o login acontecer.
           await expect(async () => {
             if (!/\/auth/.test(page.url())) await b.click({ timeout: 3_000 });
-            await expect(page).toHaveURL(/\/auth\?redirect=/, { timeout: 3_000 });
+            await expect(page).toHaveURL(/\/auth\?motivo=visita&redirect=/, { timeout: 3_000 });
           }).toPass({ timeout: 30_000 });
           expect(decodeURIComponent(page.url())).toContain(`/imoveis/${imovel}?abrir=${alvo}`);
+          // Prompt 49: a entrada padrão é por código; a conta de teste usa o link terciário "Entrar com senha".
+          await page.getByTestId("entrar-com-senha").click();
           await page.locator('input[name="email"], input[type="email"]').first().fill(email);
           await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
           await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

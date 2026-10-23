@@ -1,5 +1,6 @@
 "use client";
 
+import { urlEntrada } from "@/lib/auth/entrada";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
@@ -64,7 +65,7 @@ export function SolicitarOrcamento({
 
   if (!logado) {
     return (
-      <ButtonLink href={`/auth?redirect=${encodeURIComponent(voltarPara)}`} variant="primary" className="w-full" data-testid="solicitar-orcamento">
+      <ButtonLink href={urlEntrada("orcamento", voltarPara)} variant="primary" className="w-full" data-testid="solicitar-orcamento">
         Solicitar orçamento
       </ButtonLink>
     );

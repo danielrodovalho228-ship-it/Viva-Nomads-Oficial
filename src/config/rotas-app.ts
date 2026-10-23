@@ -36,6 +36,7 @@ const ramo = (caminho: string): Regra => ({ caminho, abaixo: true });
  */
 export const ROTAS_APP: Regra[] = [
   exato("/auth"), // entrar / criar conta
+  exato("/auth/intencao"), // Prompt 49: 1 toque depois do 1º código da conta nova (sem trocar de navegador)
   ramo("/app"), // boas-vindas do app
   ramo("/buscar"),
   ramo("/imoveis"), // anúncio público
@@ -53,6 +54,7 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/pedidos"),
   ramo("/dashboard/pedidos-cidade"),
   ramo("/dashboard/contratos"),
+  ramo("/dashboard/recibos"), // Prompt 39-B1: Recibos e notas do proprietário (resumo do Carnê-Leão e informe)
   ramo("/dashboard/locacoes"),
   ramo("/dashboard/solicitacoes"), // manutenção
   ramo("/dashboard/servicos"), // serviços de parceiros para o morador
