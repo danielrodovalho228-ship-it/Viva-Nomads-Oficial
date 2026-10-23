@@ -83,6 +83,11 @@ test("chave desligada = nenhuma tela nova: cada entrada confere triagemVinculoAt
     assert.match(acoes, new RegExp(`export async function ${f}[\\s\\S]*?if \\(!\\(await triagemVinculoAtiva\\(\\)\\)\\)`), f);
   }
   assert.match(ler("../data/leads.ts"), /await triagemVinculoAtiva\(\)/);
+  // Proposta: só o dono e só com a chave (o helper confere as duas coisas).
+  assert.match(ler("../../app/(dashboard)/dashboard/propostas/[id]/page.tsx"), /p\.papel === "owner" && p\.leadId \? await seloDoCandidato/);
+  const srv = ler("./servidor.ts");
+  assert.match(srv, /if \(!\(await triagemVinculoAtiva\(\)\)/);
+  assert.match(srv, /lead\.owner_id !== user\.id\) return null/);
 });
 
 test("o dono nunca abre o arquivo: o link assinado é só do próprio morador e do admin com 2FA", () => {
