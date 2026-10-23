@@ -851,7 +851,8 @@
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
         "t209-jornada-dois-lados",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1685,7 +1686,8 @@
         "t295-niveis-59-1",
         "t296-niveis-exibicao-59-1",
         "t297-varredura-logada-bloco3",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "/dashboard/recibos": {
@@ -1721,7 +1723,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -1729,7 +1732,8 @@
         "inquilino"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "/avaliadores": {
@@ -5152,7 +5156,8 @@
         "proprietario"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "src/lib/vistoria/actions.ts#responderDesignacao": {
@@ -5160,7 +5165,8 @@
         "parceiro"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "src/lib/vistoria/actions.ts#agendarVisita": {
@@ -5168,7 +5174,8 @@
         "proprietario"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "src/lib/vistoria/actions.ts#concordarVisita": {
@@ -5176,7 +5183,8 @@
         "inquilino"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "src/lib/vistoria/actions.ts#registrarAusencia": {
@@ -5311,6 +5319,14 @@
       ],
       "specs": [
         "t313-ativacao-funil-50"
+      ]
+    },
+    "src/lib/vistoria/conversa-actions.ts#avaliacaoNaConversa": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t315-telas-avaliacao-dono-62a"
       ]
     }
   }
