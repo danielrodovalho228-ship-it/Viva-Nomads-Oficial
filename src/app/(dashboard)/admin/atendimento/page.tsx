@@ -24,6 +24,7 @@ export default async function AdminAtendimentoPage({
     responsavel: um("responsavel"),
     busca: um("q"),
     fechados: um("fechados") === "1",
+    semResposta: um("sem_resposta") === "1",
   };
   const admin = await adminDaPagina();
   const [fila, aprovacao, metricas, macros, ultimo] = await Promise.all([

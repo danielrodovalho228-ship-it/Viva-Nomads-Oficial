@@ -1,6 +1,7 @@
 "use client";
 
 import { ROTULO_QUEM_RESPONDEU } from "@/lib/atendimento/quem-respondeu";
+import { ROTULO_ESTADO_CHAMADO, estadoDoChamado } from "@/lib/atendimento/estado-chamado";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, LifeBuoy, MessageSquare, Search, Send, UserRound } from "lucide-react";
@@ -196,7 +197,11 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
                             c.status === "aguardando_usuario" ? "bg-amber-100 text-amber-800" : c.status === "resolvido" || c.status === "encerrado" ? "bg-surface-2 text-muted" : "bg-sage-100 text-forest"
                           )}
                         >
-                          {STATUS[c.status] ?? c.status}
+                          {/* Prompt 50: aberto · respondido · resolvido (e "aguardando você" quando a vez é da pessoa). */}
+                          <span data-testid="chamado-estado" data-estado={estadoDoChamado({ status: c.status, primeiraRespostaEm: c.primeira_resposta_em ?? null })}>
+                            {ROTULO_ESTADO_CHAMADO[estadoDoChamado({ status: c.status, primeiraRespostaEm: c.primeira_resposta_em ?? null })]}
+                            {c.status === "aguardando_usuario" ? " · aguardando você" : ""}
+                          </span>
                         </span>
                       </button>
                     </li>

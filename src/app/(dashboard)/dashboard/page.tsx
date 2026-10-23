@@ -9,6 +9,7 @@ import { decisoesDoMorador, decisoesDoProprietario, type EstadiaParaDecisao } fr
 import { checklistAnuncio } from "@/lib/anuncio/prontidao";
 import { fatosDaConta } from "@/lib/data/ativacao";
 import { checklistsDoInicio } from "@/lib/onboarding/ativacao";
+import { ativacoesDaSessao } from "@/lib/data/ativacao";
 import { VisaoGeral, type RascunhoPendente } from "./visao-geral-client";
 
 /**
@@ -81,7 +82,10 @@ export default async function DashboardPage() {
   const rascunho = rascunhoDoDraft(draft);
   // Prompt 43: checklist de ativação de cada papel até a ativação (some sozinho).
   const fatos = await fatosDaConta(draft).catch(() => null);
-  const checklists = fatos ? checklistsDoInicio(fatos) : [];
+  // Prompt 50: o checklist some na ativação do papel (data gravada em ativacoes; o que já aconteceu e falta gravar,
+  // grava agora — rede de segurança dos pontos de gravação).
+  const ativados = fatos ? await ativacoesDaSessao(fatos).catch(() => ({})) : {};
+  const checklists = fatos ? checklistsDoInicio(fatos, ativados) : [];
   const estadiasDe = (papel: "proprietario" | "inquilino"): EstadiaParaDecisao[] =>
     estadias.filter((e) => e.papel === papel).map((e) => ({ contratoId: e.contratoId, imovel: e.imovel, decisoes: e.decisoes }));
 

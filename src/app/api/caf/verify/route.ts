@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyTenant, isCafConfigured } from "@/lib/integrations/caf";
-import { IntegracaoNaoConfigurada, emProducao } from "@/lib/integracoes";
+import { IntegracaoNaoConfigurada, emProducao, integracoesSimuladas } from "@/lib/integracoes";
 import { contaEhDeTeste, laudoSimuladoTeste, MSG_VERIFICACAO_EM_BREVE } from "@/lib/contas-de-teste";
 import { consumirLimite } from "@/lib/limites";
 import { CAF_JANELA_CONSULTA_S, validadeDoLaudo } from "@/lib/caf/validade";
 import type { CafResult } from "@/lib/closing";
+import { cookies } from "next/headers";
+import { COOKIE_LAB_CAF, depoisDaTentativa, laudoReprovadoDeLaboratorio } from "@/lib/identidade/reprovacao-servidor";
 
 async function gravarSimulado(admin: NonNullable<ReturnType<typeof createAdminClient>>, userId: string, laudo: CafResult) {
   await admin.from("tenant_verifications").insert({
@@ -39,9 +41,12 @@ export async function POST() {
 
   // Conta de teste (is_teste): laudo SIMULADO, sem CPF, sem Certta/CAF e sem gastar a cota (ordem ee7d27b8).
   if (await contaEhDeTeste(admin, user.id)) {
-    const laudo = laudoSimuladoTeste();
+    // Só no laboratório: o cookie de teste força uma reprovação (exercita o motivo, a nova tentativa e a fila humana).
+    const reprovado = integracoesSimuladas() ? laudoReprovadoDeLaboratorio((await cookies()).get(COOKIE_LAB_CAF)?.value) : null;
+    const laudo: CafResult = reprovado ? { ...laudoSimuladoTeste(), ...reprovado, light: "red" } : laudoSimuladoTeste();
     await gravarSimulado(admin, user.id, laudo);
-    return NextResponse.json(laudo);
+    const reprovacao = await depoisDaTentativa(admin, user.id, laudo, { devolverCota: false }).catch(() => null);
+    return NextResponse.json({ ...laudo, reprovacao });
   }
 
   const { data: perfil } = await supabase
@@ -77,7 +82,10 @@ export async function POST() {
         valid_until: validadeDoLaudo(new Date()).toISOString(),
       });
     }
-    return NextResponse.json(result);
+    // Prompt 50: reprovou → motivo legível com o próximo passo; a 1ª reprovação devolve a cota (nova tentativa na
+    // hora); a 2ª vai para a análise de uma pessoa.
+    const reprovacao = await depoisDaTentativa(admin, user.id, result, { devolverCota: !result.demo }).catch(() => null);
+    return NextResponse.json({ ...result, reprovacao });
   } catch (err) {
     if (err instanceof IntegracaoNaoConfigurada) {
       return NextResponse.json({ error: MSG_VERIFICACAO_EM_BREVE }, { status: 503 });
