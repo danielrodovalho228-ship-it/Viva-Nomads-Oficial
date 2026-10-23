@@ -60,7 +60,7 @@ create table if not exists public.denuncias_anuncio (
   motivo text not null check (motivo in ('fotos_falsas', 'imovel_nao_existe', 'pagamento_fora', 'conteudo_improprio', 'outro')),
   texto text check (texto is null or char_length(texto) <= 1000),
   status text not null default 'recebida' check (status in ('recebida', 'em_analise', 'resolvida')),
-  chamado_id uuid,
+  chamado_numero text check (chamado_numero is null or char_length(chamado_numero) <= 40),
   teste boolean not null default false,
   criado_em timestamptz not null default now(),
   atualizado_em timestamptz not null default now(),
