@@ -105,7 +105,8 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
       </Panel>
 
       <Panel title={emEdicao ? `Editar: ${emEdicao.nome}` : "Cadastrar destino"} className="mb-6" id="form-destino">
-        <DestinoForm inicial={emEdicao} />
+        {/* E32: a key remonta o formulário (e o ponto em estado) ao trocar de destino: sem ela, "Editar" abria com latitude e longitude vazias. */}
+        <DestinoForm key={emEdicao?.slug ?? "novo"} inicial={emEdicao} />
       </Panel>
 
       <Panel title="Destinos mais buscados (30 dias)" id="mais-buscados">
