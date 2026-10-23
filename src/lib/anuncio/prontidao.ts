@@ -19,6 +19,8 @@ import { ROTULO_FALTA_TIPO_ENTRADA } from "./chegada-e-pedido.ts";
 
 export const MIN_FOTOS = 8;
 export const MIN_DESCRICAO = 60;
+/** FILTROS-1 (E39): item do portão de publicar quando falta a velocidade da internet. */
+export const ROTULO_FALTA_INTERNET = "Velocidade da internet";
 
 export type StatusDocumento = "none" | "pending" | "approved" | "rejected";
 
@@ -61,6 +63,11 @@ export interface FatosAnuncio {
    * ele segue no ar e ganha o aviso no painel).
    */
   tipoEntradaOk?: boolean;
+  /**
+   * FILTROS-1 (E39): velocidade da internet informada (Mbps), o dado que o chip "Wi-Fi" da busca lê. Só se aplica a
+   * anúncio que ainda vai publicar; ausente = não se aplica (o publicado sem ela segue no ar).
+   */
+  internetOk?: boolean;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -159,6 +166,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   if (f.tipoEntradaOk === false) {
     obrigatorios.push({ key: "tipo_entrada", label: ROTULO_FALTA_TIPO_ENTRADA, ok: false, etapa: ETAPA.regras, detalhe: "porteiro, chave, cofre ou fechadura com código" });
+  }
+  if (f.internetOk === false) {
+    obrigatorios.push({ key: "internet", label: ROTULO_FALTA_INTERNET, ok: false, etapa: ETAPA.comodidades, detalhe: "em Mbps, no bloco Pronto para trabalhar de casa" });
   }
   if (!f.sublocacaoOk) {
     const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;

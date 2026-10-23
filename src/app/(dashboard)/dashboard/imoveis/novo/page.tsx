@@ -300,6 +300,8 @@ export default function NewPropertyPage() {
     qualificacaoOk: editingId ? undefined : qualificado,
     // 61-B: o tipo de entrada só é exigido do anúncio NOVO (o publicado sem ele ganha só o aviso no painel).
     tipoEntradaOk: editingId ? undefined : tipoEntradaValido(chegada.tipoEntrada),
+    // FILTROS-1 (E39): a velocidade da internet é o dado que o chip "Wi-Fi" da busca lê — anúncio novo só publica com ela.
+    internetOk: editingId ? undefined : (mbpsValido(internetMbps) ?? 0) > 0,
     // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
     confortoFaltam: editingId ? undefined : itensFaltantes(conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }))).length,
   });

@@ -18,12 +18,25 @@ export const ROTULO_COMODIDADE: Record<ComodidadeFiltro, string> = Object.fromEn
   COMODIDADES_FILTRO.map((c) => [c.chave, c.rotulo])
 ) as Record<ComodidadeFiltro, string>;
 
-/** Rótulos gravados em property_amenities que a busca consulta (uma consulta só, sem N+1). */
-export const ROTULOS_FILTRAVEIS: string[] = COMODIDADES_FILTRO.map((c) => AMENITY_LABEL[c.amenityKey]);
+/**
+ * FILTROS-1 (E39): outros rótulos que o anúncio usa para a MESMA comodidade. O chip "Wi-Fi" lia só "Internet fibra de
+ * alta velocidade", e os anúncios declaram "Wi-Fi" — o chip zerava a busca (0 de 15).
+ */
+export const SINONIMOS_COMODIDADE: Record<string, ComodidadeFiltro> = {
+  "Wi-Fi": "wifi",
+  WiFi: "wifi",
+  Wifi: "wifi",
+  Internet: "wifi",
+  "Internet fibra": "wifi",
+};
 
-const CHAVE_POR_ROTULO: Record<string, ComodidadeFiltro> = Object.fromEntries(
-  COMODIDADES_FILTRO.map((c) => [AMENITY_LABEL[c.amenityKey], c.chave])
-);
+const CHAVE_POR_ROTULO: Record<string, ComodidadeFiltro> = {
+  ...Object.fromEntries(COMODIDADES_FILTRO.map((c) => [AMENITY_LABEL[c.amenityKey], c.chave])),
+  ...SINONIMOS_COMODIDADE,
+};
+
+/** Rótulos gravados em property_amenities que a busca consulta (uma consulta só, sem N+1). */
+export const ROTULOS_FILTRAVEIS: string[] = Object.keys(CHAVE_POR_ROTULO);
 
 /** Converte rótulos cadastrados nas chaves de filtro que eles atendem. */
 export function chavesFiltroDe(rotulos: string[]): ComodidadeFiltro[] {
@@ -34,10 +47,15 @@ type ImovelComodidades = {
   amenities?: string[];
   comodidadesFiltro?: string[];
   parkingSpots?: number;
+  /** Velocidade informada pelo dono (campo estruturado do anúncio). */
+  internetMbps?: number;
+  internetMedida?: { downloadMbps: number } | null;
 };
 
 export function temComodidade(p: ImovelComodidades, chave: ComodidadeFiltro): boolean {
   if (chave === "garagem" && (p.parkingSpots ?? 0) > 0) return true;
+  // E39: internet informada (Mbps) ou medida também é "Wi-Fi" — o mesmo dado estruturado que o cadastro coleta.
+  if (chave === "wifi" && ((p.internetMbps ?? 0) > 0 || (p.internetMedida?.downloadMbps ?? 0) > 0)) return true;
   const chaves = p.comodidadesFiltro ?? chavesFiltroDe(p.amenities ?? []);
   return chaves.includes(chave);
 }
