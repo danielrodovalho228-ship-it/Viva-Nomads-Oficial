@@ -13,7 +13,7 @@ import {
 } from "../fixtures/laboratorio";
 
 /*
-  T299 — Prompt 61-A (adendos Airbnb ao 32, item 6, e ao 45, item 9). Só no laboratório; tudo a 390 e 1280 px.
+  T303 — Prompt 61-A (adendos Airbnb ao 32, item 6, e ao 45, item 9). Só no laboratório; tudo a 390 e 1280 px.
    1. "Estadia confirmada": com as duas assinaturas, a tela mostra foto, título, datas, o texto direto e o próximo
       passo (Caução e conferência de entrada, com prazo); "Ver a página da estadia" leva à estadia. Com uma assinatura
       só, a tela não existe (volta para a estadia). A página da estadia não abre a confirmação sozinha (só o link).
@@ -50,7 +50,7 @@ async function contrato(propertyId: string, extra: Record<string, unknown> = {})
   return data.id as string;
 }
 
-test.describe("T299 — Prompt 61-A: Estadia confirmada, horários e mapa, Como funcionam as avaliações", () => {
+test.describe("T303 — Prompt 61-A: Estadia confirmada, horários e mapa, Como funcionam as avaliações", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
@@ -108,7 +108,7 @@ test.describe("T299 — Prompt 61-A: Estadia confirmada, horários e mapa, Como 
       await expect(tela.getByTestId("confirmada-passo-conferencia")).toContainText(/Conferência de entrada\s*até \d{2}\/\d{2} às 15:00, horário de Brasília/);
       expect(await tela.innerText()).not.toContain("!");
       await semRolagemLateral(page);
-      await page.screenshot({ path: `tests/laboratorio/saida/t299-1-confirmada-${w}.png`, fullPage: true });
+      await page.screenshot({ path: `tests/laboratorio/saida/t303-1-confirmada-${w}.png`, fullPage: true });
     }
     await page.getByTestId("confirmada-ver-estadia").click();
     await expect(page).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}$`), { timeout: 30_000 });
@@ -131,7 +131,7 @@ test.describe("T299 — Prompt 61-A: Estadia confirmada, horários e mapa, Como 
       await expect(local.getByTestId("estadia-abrir-mapa")).toHaveAttribute("href", /google\.com\/maps\/search/);
       await expect(local.getByTestId("estadia-proximidades")).toContainText(`Mercado do bairro ${sufixo}`);
       await semRolagemLateral(page);
-      await page.screenshot({ path: `tests/laboratorio/saida/t299-2-estadia-${w}.png`, fullPage: true });
+      await page.screenshot({ path: `tests/laboratorio/saida/t303-2-estadia-${w}.png`, fullPage: true });
 
       // Antes das duas assinaturas: região aproximada, sem o endereço.
       await page.goto(`/dashboard/estadia/${ids.meio}`, { waitUntil: "domcontentloaded" });
@@ -162,13 +162,13 @@ test.describe("T299 — Prompt 61-A: Estadia confirmada, horários e mapa, Como 
       }).toPass({ timeout: 30_000 });
       await expect(folha).toContainText("Só avalia quem morou no imóvel, com contrato assinado pela Viva.");
       await expect(folha).toContainText("A avaliação é publicada depois que os dois avaliam, ou 14 dias depois do fim da estadia.");
-      await page.screenshot({ path: `tests/laboratorio/saida/t299-3-avaliacoes-folha-${w}.png` });
+      await page.screenshot({ path: `tests/laboratorio/saida/t303-3-avaliacoes-folha-${w}.png` });
       await page.keyboard.press("Escape");
       await expect(folha).toHaveCount(0);
       await expect(link).toBeFocused();
       await av.scrollIntoViewIfNeeded();
       await semRolagemLateral(page);
-      await page.screenshot({ path: `tests/laboratorio/saida/t299-3-avaliacoes-${w}.png` });
+      await page.screenshot({ path: `tests/laboratorio/saida/t303-3-avaliacoes-${w}.png` });
       await ctx.close();
     }
   });
