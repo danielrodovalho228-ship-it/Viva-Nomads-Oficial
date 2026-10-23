@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, defin
 import { aceiteParaRascunho } from "../../../src/lib/anuncio/aceite-ia-rascunho";
 
 /**
- * T319 — 64-B: pausar e reativar anúncio pelo dono, limite do plano coerente e aceite de IA que não some.
+ * T320 — 64-B: pausar e reativar anúncio pelo dono, limite do plano coerente e aceite de IA que não some.
  * Conta de teste no Gratuito (limite 1) com 4 anúncios publicados (como o proprietario1) e 1 rascunho pronto.
  *   1. publicar o rascunho → "pause 4"; o painel mostra "4 publicados — seu plano permite 1";
  *   2. pausar os 4 pelo selo do cartão (a confirmação lista o que continua) → publicar o rascunho → publicado;
@@ -13,14 +13,14 @@ import { aceiteParaRascunho } from "../../../src/lib/anuncio/aceite-ia-rascunho"
  */
 const SAIDA = "tests/laboratorio/saida";
 
-test.describe("T319 — pausar anúncio, limite do plano e aceite de IA (64-B)", () => {
+test.describe("T320 — pausar anúncio, limite do plano e aceite de IA (64-B)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const dono = { email: `dono.t319.${sufixo}@lab.vivanomads.test`, nome: "Paulo Pausa", role: "owner" as const };
+  const dono = { email: `dono.t320.${sufixo}@lab.vivanomads.test`, nome: "Paulo Pausa", role: "owner" as const };
   const ids: Record<string, string> = {};
   const ativos: string[] = [];
 
@@ -30,8 +30,8 @@ test.describe("T319 — pausar anúncio, limite do plano e aceite de IA (64-B)",
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await definirPlano(ids.dono, null); // Gratuito: 1 publicado
-    for (let i = 1; i <= 4; i++) ativos.push(await criarImovelPronto(ids.dono, `Publicado ${i} t319 ${sufixo}`, { ativo: true }));
-    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t319 ${sufixo}`);
+    for (let i = 1; i <= 4; i++) ativos.push(await criarImovelPronto(ids.dono, `Publicado ${i} t320 ${sufixo}`, { ativo: true }));
+    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t320 ${sufixo}`);
   });
 
   test.afterAll(async () => {
@@ -46,7 +46,7 @@ test.describe("T319 — pausar anúncio, limite do plano e aceite de IA (64-B)",
     await expect(bloco).toHaveAttribute("data-ativos", "4");
     await expect(bloco).toContainText("4 publicados — seu plano permite 1");
     await expect(bloco).toContainText("pause 4 anúncios");
-    await p.screenshot({ path: `${SAIDA}/t319-limite-390.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t320-limite-390.png`, fullPage: true });
     await p.goto(`/dashboard/imoveis/${ids.rascunho}/editar`, { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("prontidao").locator("..")).toContainText("pause 4 anúncios", { timeout: 20_000 });
     expect(await statusDoImovel(ids.rascunho)).toBe("draft");
@@ -62,7 +62,7 @@ test.describe("T319 — pausar anúncio, limite do plano e aceite de IA (64-B)",
       await cartaoDe(p, "active").first().click();
       await p.getByTestId("pausar-anuncio").click();
       await expect(p.getByTestId("confirmar-pausa-painel")).toContainText("sai da busca");
-      if (n === 4) await p.screenshot({ path: `${SAIDA}/t319-confirmar-pausa-1280.png`, fullPage: true });
+      if (n === 4) await p.screenshot({ path: `${SAIDA}/t320-confirmar-pausa-1280.png`, fullPage: true });
       await p.getByTestId("confirmar-pausa").click();
       await expect(cartaoDe(p, "active")).toHaveCount(n - 1, { timeout: 20_000 });
     }
@@ -95,7 +95,7 @@ test.describe("T319 — pausar anúncio, limite do plano e aceite de IA (64-B)",
     await expect(daViva).toHaveCount(1);
     expect(await daViva.evaluate((el) => el.tagName)).toBe("SPAN");
     await expect(p.getByTestId("pausa-viva")).toContainText("Confirme o padrão mínimo");
-    await p.screenshot({ path: `${SAIDA}/t319-reativar-recusado-390.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t320-reativar-recusado-390.png`, fullPage: true });
     await p.context().close();
   });
 
@@ -106,16 +106,16 @@ test.describe("T319 — pausar anúncio, limite do plano e aceite de IA (64-B)",
     expect(r?.status()).toBe(200);
     await expect(p.getByTestId("anuncio-pausado")).toContainText("Este anúncio está pausado");
     await expect(p.getByTestId("anuncio-pausado")).not.toContainText("R$");
-    await p.screenshot({ path: `${SAIDA}/t319-publico-pausado-390.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t320-publico-pausado-390.png`, fullPage: true });
     // Rascunho continua 404.
-    const { data } = await adm().from("properties").insert({ owner_id: ids.dono, title: "Rascunho invisível t319", city: "Uberlândia", status: "draft" }).select("id").single();
+    const { data } = await adm().from("properties").insert({ owner_id: ids.dono, title: "Rascunho invisível t320", city: "Uberlândia", status: "draft" }).select("id").single();
     const r2 = await p.goto(`/imoveis/${data!.id}`, { waitUntil: "domcontentloaded" });
     expect(r2?.status()).toBe(404);
     await ctx.close();
   });
 
   test("5. o aceite de IA volta com o rascunho e cai ao editar a descrição", async ({ browser }) => {
-    const titulo = `Aceite t319 ${sufixo}`;
+    const titulo = `Aceite t320 ${sufixo}`;
     const descricao = "Studio mobiliado no Centro, com home office, internet rápida e cozinha completa. Pronto para morar.";
     const { data, error } = await adm()
       .from("properties")

@@ -517,7 +517,7 @@
         "t296-niveis-exibicao-59-1",
         "t310-vao-fim-de-pagina",
         "t318-papel-ativo-fonte-unica",
-        "t319-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b"
       ]
     },
     "/dashboard/assinatura": {
@@ -752,7 +752,7 @@
         "t268-meus-imoveis-link",
         "t286-esqueletos-vazios-48",
         "t318-papel-ativo-fonte-unica",
-        "t319-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -764,7 +764,7 @@
         "t153-limpeza-estadia",
         "t212-ferramentas-proprietario",
         "t211-complemento-23",
-        "t319-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -784,7 +784,7 @@
         "t270-barra-fotos-etapa-fotos",
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
-        "t319-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1176,7 +1176,7 @@
         "t304-airbnb-exibicao-61a",
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
-        "t319-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b"
       ]
     },
     "/modelodenegocio": {
@@ -2498,7 +2498,7 @@
         "proprietario"
       ],
       "specs": [
-        "t319-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b"
       ]
     },
     "src/lib/data/actions.ts#enviarDocumentoParaConferencia": {
@@ -2543,7 +2543,7 @@
         "proprietario"
       ],
       "specs": [
-        "t319-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b"
       ]
     },
     "src/lib/data/actions.ts#pausarAnuncio": {
@@ -2551,7 +2551,7 @@
         "proprietario"
       ],
       "specs": [
-        "t319-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b"
       ]
     },
     "src/lib/data/actions.ts#reativarAnuncio": {
@@ -2559,7 +2559,7 @@
         "proprietario"
       ],
       "specs": [
-        "t319-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b"
       ]
     },
     "src/lib/data/actions.ts#registrarContrato": {
