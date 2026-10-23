@@ -1543,7 +1543,7 @@
         "admin"
       ],
       "specs": [
-        "t293-niveis-59-1"
+        "t295-niveis-59-1"
       ]
     },
     "/dashboard/imoveis/[id]/nivel": {
@@ -1551,7 +1551,7 @@
         "proprietario"
       ],
       "specs": [
-        "t293-niveis-59-1"
+        "t295-niveis-59-1"
       ]
     }
   },
@@ -4771,7 +4771,7 @@
         "proprietario"
       ],
       "specs": [
-        "t293-niveis-59-1"
+        "t295-niveis-59-1"
       ]
     },
     "src/lib/data/nivel-actions.ts#nivelDoMeuImovel": {
@@ -4780,7 +4780,7 @@
         "proprietario"
       ],
       "specs": [
-        "t293-niveis-59-1"
+        "t295-niveis-59-1"
       ]
     },
     "src/lib/data/nivel-actions.ts#salvarExtras": {
@@ -4789,7 +4789,7 @@
         "proprietario"
       ],
       "specs": [
-        "t293-niveis-59-1"
+        "t295-niveis-59-1"
       ]
     },
     "src/lib/data/nivel-actions.ts#salvarItemNivel": {
@@ -4798,7 +4798,7 @@
         "proprietario"
       ],
       "specs": [
-        "t293-niveis-59-1"
+        "t295-niveis-59-1"
       ]
     },
     "src/lib/data/nivel-actions.ts#salvarRuido": {
@@ -4807,7 +4807,7 @@
         "proprietario"
       ],
       "specs": [
-        "t293-niveis-59-1"
+        "t295-niveis-59-1"
       ]
     }
   }

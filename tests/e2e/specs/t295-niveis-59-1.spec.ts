@@ -19,7 +19,7 @@ import {
 import { AREAS, CHAVES_NIVEL_FOTO, MATRIZ, type ChaveNivel } from "../../../src/config/niveis";
 
 /*
-  T293 — Adendo 59.1 (parte funcional): níveis Essencial / Conforto / Premium. Só no laboratório.
+  T295 — Adendo 59.1 (parte funcional): níveis Essencial / Conforto / Premium. Só no laboratório.
   Três anúncios do mesmo dono — Essencial, Conforto e Premium — com as fotos de cada item, as medidas por ponto e o ruído.
    1. Cada um no nível certo (calculado pelo servidor); declarar item sem foto é recusado; a foto pelo upload entra "em análise".
    2. Elo mais fraco: o Premium com uma área em Conforto (tira o ar da sala) vira Conforto; volta ao repor.
@@ -67,7 +67,7 @@ async function admin(browser: Browser): Promise<Page> {
   return ctx.newPage();
 }
 
-test.describe("T293 — Adendo 59.1: níveis Essencial / Conforto / Premium", () => {
+test.describe("T295 — Adendo 59.1: níveis Essencial / Conforto / Premium", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.skip(!hasAccount("admin"), "conta de admin do laboratório não configurada");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
@@ -112,7 +112,7 @@ test.describe("T293 — Adendo 59.1: níveis Essencial / Conforto / Premium", ()
     await expect(page.getByTestId("nivel-area-trabalho")).toHaveAttribute("data-nivel", "conforto");
     await paginaNivel(page, ids.p!, "premium");
     await semRolagemLateral(page);
-    await page.screenshot({ path: "tests/laboratorio/saida/t293-1-premium-390.png", fullPage: true });
+    await page.screenshot({ path: "tests/laboratorio/saida/t295-1-premium-390.png", fullPage: true });
 
     // No Essencial: declarar sem foto é recusado; com a foto enviada pelo upload, o item fica "em análise".
     await paginaNivel(page, ids.e!, "essencial");
