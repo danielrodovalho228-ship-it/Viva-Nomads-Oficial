@@ -145,6 +145,8 @@ create table if not exists public.vistoria_laudos (
   versao int not null default 1 check (versao >= 1),
   documento_id uuid references public.documentos_registro (id) on delete set null,
   numero text,
+  -- O PDF registrado (hash no registro VIS), guardado no bucket privado: o download não regera o documento.
+  pdf_path text,
   resultado text not null check (resultado in ('aprovado', 'com_ressalvas', 'reprovado')),
   nivel_sustentado text not null check (nivel_sustentado in ('em_adequacao', 'essencial', 'conforto', 'premium')),
   versao_checklist smallint not null default 1,

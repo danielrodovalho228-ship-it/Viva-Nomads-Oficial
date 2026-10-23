@@ -9,6 +9,9 @@ import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { adminCriarAvaliacaoTeste, adminDecidirCredenciamento, adminResolverFila, adminRevisarAuditoria, adminSalvarPreco } from "@/lib/vistoria/actions";
 import { PORTES, ROTULO_PORTE, condicoesParaLigar, tabelaCompleta, type LinhaPreco, type Porte, type StatusCredenciamento } from "@/lib/vistoria/regras";
+import { adminAbrirVerificacao, adminResolverBloqueio } from "@/lib/vistoria/laudo-actions";
+import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistoria/strikes";
+import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
 
 export const metadata = { title: "Avaliadores — Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -16,7 +19,8 @@ export const dynamic = "force-dynamic";
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
 const ROTULO_STATUS: Record<StatusCredenciamento, string> = { solicitado: "Solicitado", em_teste: "Em teste", ativo: "Ativo", suspenso: "Suspenso", descredenciado: "Descredenciado" };
 const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicitado: ["em_teste", "descredenciado"], em_teste: ["ativo", "descredenciado"], ativo: ["suspenso", "descredenciado"], suspenso: ["ativo", "descredenciado"], descredenciado: [] };
-const ROTULO_FILA: Record<string, string> = { sem_avaliador: "Pedido sem avaliador elegível", avaliacao_teste: "Avaliação de teste a marcar e revisar", suspensao_automatica: "Suspensão automática a rever", proposta_descredenciamento: "Proposta de descredenciamento" };
+const ROTULO_FILA: Record<string, string> = { sem_avaliador: "Pedido sem avaliador elegível", avaliacao_teste: "Avaliação de teste a marcar e revisar", suspensao_automatica: "Suspensão automática a rever", proposta_descredenciamento: "Proposta de descredenciamento", laudo_atrasado: "Laudo não enviado em 48 horas úteis", ressalva_vencida: "Ressalva vencida: avaliar abrir verificação", devolucao_vencida: "Devolução da contestação não confirmada em 15 dias", seguranca_grave: "Segurança grave a acompanhar" };
+const ROTULO_BLOQUEIO: Record<string, string> = { seguranca_grave: "Segurança grave (fora da busca)", strike_2: "2º strike (republicar só com laudo)", strike_3: "3º strike (todos fora da busca)" };
 
 type Cred = { id: string; cidade: string; numero_credenciado: string; status: StatusCredenciamento; motivo: string | null; experiencia_link: string | null; experiencia_path: string | null; relacoes_descricao: string | null; criado_em: string; parceiros: { nome_publico: string } | null };
 
@@ -29,12 +33,16 @@ export default async function AdminAvaliadoresPage() {
   const admin = createAdminClient();
   if (!admin) return <EmptyState icon={ShieldCheck} title="Modo demonstração" text="Sem conexão com o banco." action={null} />;
   const agora = new Date();
-  const [{ data: creds }, { data: precos }, { data: fila }, { data: auditoria }, { data: pedidos }] = await Promise.all([
+  const [{ data: creds }, { data: precos }, { data: fila }, { data: auditoria }, { data: pedidos }, { data: bloqueios }, { data: strikes }, { data: laudos }] = await Promise.all([
     admin.from("avaliadores_credenciamento").select("id, cidade, numero_credenciado, status, motivo, experiencia_link, experiencia_path, relacoes_descricao, criado_em, parceiros(nome_publico)").order("criado_em", { ascending: false }),
     admin.from("vistoria_precos").select("id, cidade, porte, valor, inclui_texto, vigente_desde").order("vigente_desde", { ascending: false }).limit(200),
     admin.from("vistoria_fila_admin").select("id, tipo, motivo, criado_em, pedido_id, avaliador_id").is("resolvido_em", null).order("criado_em"),
     admin.from("vistoria_auditoria").select("id, pedido_id, sorteado_em, avaliadores_credenciamento(numero_credenciado)").is("resultado", null),
     admin.from("vistoria_pedidos").select("id, cidade, tipo, status, aguardando_avaliador, criado_em, avaliadores_credenciamento(numero_credenciado)").order("criado_em", { ascending: false }).limit(50),
+    // Prompt 62-B2: bloqueios abertos, strikes vigentes e laudos recentes.
+    admin.from("vistoria_bloqueios").select("id, property_id, motivo, criado_em").is("resolvido_em", null).order("criado_em", { ascending: false }).limit(100),
+    admin.from("proprietario_strikes").select("id, owner_id, property_id, ordem, origem, criado_em, suspenso_ate, expira_em").order("criado_em", { ascending: false }).limit(100),
+    admin.from("vistoria_laudos").select("id, numero, versao, resultado, property_id, emitido_em").order("emitido_em", { ascending: false }).limit(30),
   ]);
   const lista = (creds ?? []) as unknown as Cred[];
   const tabela: LinhaPreco[] = ((precos ?? []) as { cidade: string; porte: Porte; valor: number | string; inclui_texto: string | null; vigente_desde: string }[]).map((l) => ({ cidade: l.cidade, porte: l.porte, valor: Number(l.valor), incluiTexto: l.inclui_texto, vigenteDesde: l.vigente_desde }));
@@ -81,6 +89,63 @@ export default async function AdminAvaliadoresPage() {
             ))}
           </ul>
         )}
+      </Panel>
+
+      <Panel title="Abrir verificação" className="mb-6" data-testid="avaliadores-verificacao">
+        <p className="text-sm text-muted">Só a Viva abre, com motivo: denúncia procedente sobre o estado, pendência do padrão mínimo procedente ou ressalva vencida. O proprietário paga pela tabela; o rodízio designa.</p>
+        <FormAcao acao={adminAbrirVerificacao} className="mt-3 grid gap-3 sm:grid-cols-2" testid="verificacao-form">
+          <label className="text-sm">Imóvel (id)<input name="propertyId" required className={campo} /></label>
+          <label className="text-sm">
+            Motivo
+            <select name="motivo" className={campo} defaultValue="denuncia_procedente">
+              {(Object.keys(ROTULO_MOTIVO_VERIFICACAO) as MotivoVerificacao[]).map((m) => (
+                <option key={m} value={m}>{ROTULO_MOTIVO_VERIFICACAO[m]}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm sm:col-span-2">Descrição do motivo<input name="detalhe" required minLength={10} maxLength={500} className={campo} /></label>
+          <div className="sm:col-span-2"><Button type="submit" size="sm">Abrir verificação</Button></div>
+        </FormAcao>
+      </Panel>
+
+      <Panel title="Fora da busca e republicação" className="mb-6" data-testid="avaliadores-bloqueios">
+        {(bloqueios ?? []).length === 0 ? (
+          <p className="text-sm text-muted">Nenhum anúncio bloqueado pela avaliação.</p>
+        ) : (
+          <ul className="grid gap-2">
+            {((bloqueios ?? []) as { id: string; property_id: string; motivo: string; criado_em: string }[]).map((b) => (
+              <li key={b.id} className="rounded-lg border border-sage-200 p-3 text-sm" data-testid="bloqueio-item" data-motivo={b.motivo}>
+                {ROTULO_BLOQUEIO[b.motivo] ?? b.motivo} · imóvel {b.property_id.slice(0, 8)} · desde {dataBRT(b.criado_em)}
+                <FormAcao acao={adminResolverBloqueio} className="mt-2">
+                  <input type="hidden" name="id" value={b.id} />
+                  <Button type="submit" variant="secondary" size="sm">Resolver (correção comprovada)</Button>
+                </FormAcao>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+
+      <Panel title="Strikes" className="mb-6" data-testid="avaliadores-strikes">
+        <p className="text-sm text-muted">Só de verificação reprovada ou ressalva vencida de verificação. Contestado fica suspenso; sai aos 12 meses.</p>
+        <ul className="mt-2 grid gap-1 text-sm">
+          {((strikes ?? []) as { id: string; owner_id: string; property_id: string; ordem: number; origem: string; criado_em: string; suspenso_ate: string | null; expira_em: string }[]).map((x) => (
+            <li key={x.id} data-testid="strike-item" data-ordem={x.ordem} data-suspenso={x.suspenso_ate ? "sim" : "nao"}>
+              {x.ordem}º · proprietário {x.owner_id.slice(0, 8)} · imóvel {x.property_id.slice(0, 8)} · {x.origem === "ressalva_vencida" ? "ressalva vencida" : "verificação reprovada"} · {dataBRT(x.criado_em)}
+              {x.suspenso_ate ? " · suspenso (contestação)" : ` · expira ${dataBRT(x.expira_em)}`}
+            </li>
+          ))}
+        </ul>
+      </Panel>
+
+      <Panel title="Laudos recentes" className="mb-6" data-testid="avaliadores-laudos">
+        <ul className="grid gap-1 text-sm">
+          {((laudos ?? []) as { id: string; numero: string; versao: number; resultado: Resultado; property_id: string; emitido_em: string }[]).map((l) => (
+            <li key={l.id} data-testid="laudo-admin" data-resultado={l.resultado}>
+              <a href={`/api/vistoria/laudo/${l.id}`} className="underline">{l.numero}{l.versao > 1 ? ` v${l.versao}` : ""}</a> · {ROTULO_RESULTADO[l.resultado]} · imóvel {l.property_id.slice(0, 8)} · {dataBRT(l.emitido_em)}
+            </li>
+          ))}
+        </ul>
       </Panel>
 
       <Panel title="Credenciamento" className="mb-6" data-testid="avaliadores-credenciamento">

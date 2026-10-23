@@ -66,6 +66,7 @@ export type LinhaLaudo = {
   avaliador_id: string | null;
   versao: number;
   numero: string | null;
+  pdf_path: string | null;
   documento_id: string | null;
   resultado: Resultado;
   nivel_sustentado: NivelOuAdequacao;
@@ -269,6 +270,11 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
     return { ok: false, erro: "Não foi possível registrar o laudo agora. Tente de novo." };
   }
 
+  // O PDF registrado fica guardado (o download entrega os mesmos bytes do hash).
+  const pdfPath = `laudos/${original}/${reg.numero}-v${reg.versao}.pdf`;
+  const up = await admin.storage.from("avaliacao-imovel").upload(pdfPath, Buffer.from(reg.bytes as Uint8Array), { contentType: "application/pdf", upsert: true });
+  if (up.error) console.error("[emitirLaudo] pdf", up.error.message);
+
   const vistoriado = r.resultado === "aprovado" ? agora.toISOString() : null;
   const { data: novo, error } = await admin
     .from("vistoria_laudos")
@@ -281,6 +287,7 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
       versao,
       documento_id: reg.id,
       numero: reg.numero,
+      pdf_path: up.error ? null : pdfPath,
       resultado: r.resultado,
       nivel_sustentado: nivel,
       versao_checklist: VERSAO_CHECKLIST,

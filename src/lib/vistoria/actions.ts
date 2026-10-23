@@ -246,7 +246,9 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   const linhas: LinhaPreco[] = ((tabela ?? []) as { cidade: string; porte: Porte; valor: number | string; inclui_texto: string | null; vigente_desde: string }[]).map((l) => ({ cidade: l.cidade, porte: l.porte, valor: Number(l.valor), incluiTexto: l.inclui_texto, vigenteDesde: l.vigente_desde }));
   const porte = porteDoImovel(im.bedrooms as number);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
-  const pode = pedidoPodeAbrir({ chaveAtiva: await vistoriaAtiva(), anuncioPublicado: im.status === "active", preco });
+  // Prompt 62-B2: o anúncio que a Viva tirou da busca (segurança grave ou 3º strike) volta justamente por nova avaliação.
+  const { data: bloq } = await s.admin.from("vistoria_bloqueios").select("id").eq("property_id", im.id).is("resolvido_em", null).limit(1);
+  const pode = pedidoPodeAbrir({ chaveAtiva: await vistoriaAtiva(), anuncioPublicado: im.status === "active" || !!bloq?.length, preco });
   if (!pode.ok) return { ok: false, erro: pode.motivo };
   // Imóvel ocupado agora: a visita só acontece com a concordância do morador.
   const hoje = agora.toISOString().slice(0, 10);

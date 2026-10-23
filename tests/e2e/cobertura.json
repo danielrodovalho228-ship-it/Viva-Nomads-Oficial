@@ -1652,6 +1652,14 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1"
       ]
+    },
+    "/dashboard/parceiro/avaliacao/[pedido]": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
     }
   },
   "rotas": {
@@ -2247,6 +2255,16 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "/api/vistoria/laudo/[id]": {
+      "personas": [
+        "proprietario",
+        "parceiro",
+        "admin"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
       ]
     }
   },
@@ -5087,6 +5105,100 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1"
       ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#salvarItens": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#enviarFotoAvaliacao": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#registrarMedicao": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#salvarRuidoVisita": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#concluirVisita": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#enviarLaudo": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#confirmarCorrecao": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#enviarFotoCorrecao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#contestarLaudo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#confirmarDevolucao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#adminAbrirVerificacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t304-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#adminResolverBloqueio": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
     }
   }
 }
