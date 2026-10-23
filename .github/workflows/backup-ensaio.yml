@@ -60,6 +60,6 @@ jobs:
           export ENSAIO_S3_CHAVE ENSAIO_S3_SEGREDO
           docker run -d --name ensaio-backup-minio -p 127.0.0.1:9000:9000 \
             -e MINIO_ROOT_USER="$ENSAIO_S3_CHAVE" -e MINIO_ROOT_PASSWORD="$ENSAIO_S3_SEGREDO" \
-            minio/minio:RELEASE.2025-04-22T22-12-26Z server /data >/dev/null
+            quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data >/dev/null
           for _ in $(seq 1 30); do curl -sf http://127.0.0.1:9000/minio/health/live >/dev/null && break; sleep 1; done
           bash scripts/backup/ensaio.sh
