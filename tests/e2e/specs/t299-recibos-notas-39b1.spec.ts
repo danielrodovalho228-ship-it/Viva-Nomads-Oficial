@@ -56,7 +56,7 @@ async function contrato(imovel: string, inquilino: string): Promise<{ contrato: 
     .from("contrato_blocos")
     .insert([
       { contrato_id: data.id, numero_bloco: 1, inicio: diaDoMes(-1), fim: diaDoMes(0), meses: 1, valor: 3200, caucao: 3200, status: "ativo" },
-      { contrato_id: data.id, numero_bloco: 2, inicio: diaDoMes(0), fim: diaDoMes(1), meses: 1, valor: 3200, caucao: 0, status: "ativo" },
+      { contrato_id: data.id, numero_bloco: 2, inicio: diaDoMes(0), fim: diaDoMes(1), meses: 1, valor: 3200, caucao: 0, status: "ativo", aceite_proprietario_em: agora, aceite_inquilino_em: agora },
     ])
     .select("id, numero_bloco");
   if (eB) throw eB;
