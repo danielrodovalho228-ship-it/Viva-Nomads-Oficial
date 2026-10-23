@@ -1623,7 +1623,7 @@
         "inquilino"
       ],
       "specs": [
-        "t324-convidar-ocupante-61b"
+        "t327-convidar-ocupante-61b"
       ]
     },
     "/dashboard/estadia/[contratoId]/ocupantes": {
@@ -2544,7 +2544,7 @@
         "proprietario"
       ],
       "specs": [
-        "t326-documento-sem-trava-l11"
+        "t328-documento-sem-trava-l11"
       ]
     },
     "src/lib/data/actions.ts#enviarDocumentoParaConferencia": {
@@ -4972,7 +4972,7 @@
         "inquilino"
       ],
       "specs": [
-        "t324-convidar-ocupante-61b"
+        "t327-convidar-ocupante-61b"
       ]
     },
     "src/lib/data/estadia-convidados-actions.ts#removerConvidado": {
@@ -4980,7 +4980,7 @@
         "inquilino"
       ],
       "specs": [
-        "t324-convidar-ocupante-61b"
+        "t327-convidar-ocupante-61b"
       ]
     },
     "src/lib/data/estadia-actions.ts#adicionarOcupante": {

@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, lerSaida, liberarLimiteCodigo, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T324 — 61-B: dados que faltavam da análise do Airbnb.
+ * T327 — 61-B: dados que faltavam da análise do Airbnb.
  *   1. o anúncio publicado sem tipo de entrada segue no ar com o aviso no painel; o dono informa o tipo, o recado para
  *      quem pede (com contato, que é escondido) e "o que considerar" no editor → o morador lê o recado no pedido (1280 / 390);
  *   2. o morador convida quem vai morar junto → 1 e-mail sem valor → o convidado entra por código e vê SÓ LEITURA:
@@ -12,11 +12,11 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t324.${sufixo}@lab.vivanomads.test`, nome: "Dora Chegada", role: "owner" as const };
-const morador = { email: `mor.t324.${sufixo}@lab.vivanomads.test`, nome: "Mauro Chegada", role: "tenant" as const };
+const dono = { email: `dono.t327.${sufixo}@lab.vivanomads.test`, nome: "Dora Chegada", role: "owner" as const };
+const morador = { email: `mor.t327.${sufixo}@lab.vivanomads.test`, nome: "Mauro Chegada", role: "tenant" as const };
 // Quem ainda vai pedir (sem pedido nem contrato neste imóvel): é quem vê o botão "Solicitar".
-const interessada = { email: `int.t324.${sufixo}@lab.vivanomads.test`, nome: "Iara Pedido", role: "tenant" as const };
-const convidado = `conv.t324.${sufixo}@lab.vivanomads.test`;
+const interessada = { email: `int.t327.${sufixo}@lab.vivanomads.test`, nome: "Iara Pedido", role: "tenant" as const };
+const convidado = `conv.t327.${sufixo}@lab.vivanomads.test`;
 const titulo = `Studio da chegada ${sufixo}`;
 const ids: { dono?: string; morador?: string; interessada?: string; convidado?: string; imovel?: string; lead?: string; contrato?: string; bloco1?: string } = {};
 
@@ -41,7 +41,7 @@ async function emailsPara(email: string) {
   return (await lerSaida()).filter((l) => l.servico === "email" && l.para === email) as { assunto?: string; corpo?: string }[];
 }
 
-test.describe("T324 — 61-B: tipo de entrada, recado para quem pede e convidar quem mora junto", () => {
+test.describe("T327 — 61-B: tipo de entrada, recado para quem pede e convidar quem mora junto", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -102,7 +102,7 @@ test.describe("T324 — 61-B: tipo de entrada, recado para quem pede e convidar 
     await secao.getByTestId("considerar-barulho").check();
     await secao.getByTestId("considerar-texto").fill("Rua com bares às sextas.");
     await semRolagemLateral(d);
-    await d.screenshot({ path: `${SAIDA}/t324-editor-chegada-1280.png`, fullPage: true });
+    await d.screenshot({ path: `${SAIDA}/t327-editor-chegada-1280.png`, fullPage: true });
     await secao.getByRole("button", { name: "Salvar seção" }).click();
     await expect
       .poll(async () => (await adm().from("properties").select("tipo_entrada").eq("id", ids.imovel!).single()).data?.tipo_entrada, { timeout: 20_000 })
@@ -130,7 +130,7 @@ test.describe("T324 — 61-B: tipo de entrada, recado para quem pede e convidar 
     await expect(recado).not.toContainText("99876");
     await expect(passo.getByTestId("candidatura-apresentacao")).toBeVisible();
     await semRolagemLateral(m);
-    await m.screenshot({ path: `${SAIDA}/t324-recado-no-pedido-390.png`, fullPage: true });
+    await m.screenshot({ path: `${SAIDA}/t327-recado-no-pedido-390.png`, fullPage: true });
     await m.context().close();
   });
 
@@ -150,7 +150,7 @@ test.describe("T324 — 61-B: tipo de entrada, recado para quem pede e convidar 
     await expect(bloco.getByTestId("convidado-item")).toContainText(`${convidado} · ainda não entrou`);
     // Contrato para 2: o morador + 1 convidado. Sem vaga, o campo some.
     await expect(bloco.getByTestId("convidados-sem-vaga")).toBeVisible();
-    await m.screenshot({ path: `${SAIDA}/t324-convidar-1280.png`, fullPage: true });
+    await m.screenshot({ path: `${SAIDA}/t327-convidar-1280.png`, fullPage: true });
 
     // Um e-mail só, sem valor nem endereço, com o caminho da entrada por código.
     await expect.poll(async () => (await emailsPara(convidado)).length, { timeout: 20_000 }).toBe(1);
@@ -195,7 +195,7 @@ test.describe("T324 — 61-B: tipo de entrada, recado para quem pede e convidar 
     await expect(c.getByTestId("estadia-notas")).toHaveCount(0);
     await expect(c.getByTestId("estadia-documentos")).toHaveCount(0);
     await semRolagemLateral(c);
-    await c.screenshot({ path: `${SAIDA}/t324-visao-convidado-390.png`, fullPage: true });
+    await c.screenshot({ path: `${SAIDA}/t327-visao-convidado-390.png`, fullPage: true });
     // O convite ficou ligado à conta.
     expect((await adm().from("estadia_convidados").select("convidado_user_id").eq("contrato_id", ids.contrato!).single()).data?.convidado_user_id).toBe(ids.convidado);
     // A página da estadia (das partes) leva à visão de leitura; a conversa do contrato não abre.
@@ -225,7 +225,7 @@ test.describe("T324 — 61-B: tipo de entrada, recado para quem pede e convidar 
     await expect(bloco.getByTestId("convidado-item")).toHaveCount(0);
     await expect(bloco.getByTestId("convidado-email")).toBeVisible();
     await semRolagemLateral(m);
-    await m.screenshot({ path: `${SAIDA}/t324-removido-390.png`, fullPage: true });
+    await m.screenshot({ path: `${SAIDA}/t327-removido-390.png`, fullPage: true });
     await m.context().close();
     expect((await adm().from("estadia_convidados").select("removido_em").eq("contrato_id", ids.contrato!).single()).data?.removido_em).toBeTruthy();
 
