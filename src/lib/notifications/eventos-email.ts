@@ -93,7 +93,15 @@ export type NotificationEvent =
   | "saida_sem_parceiro" // saída em 5 dias sem limpeza vinculada → dono
   | "sugestao_parceiros_morador" // D-7 da entrada ou da saída: parceiros sugeridos → morador
   | "internet_remedir" // 57: a medição da internet vence em ~2 semanas → dono
-  | "internet_abaixo_medida"; // 57: a medição do morador ficou abaixo de 50% da do dono → dono
+  | "internet_abaixo_medida" // 57: a medição do morador ficou abaixo de 50% da do dono → dono
+  // Avaliação do imóvel por avaliador credenciado (Prompt 62-B1), atrás de VISTORIA_ATIVA
+  | "vistoria_designada" // a Viva designou o avaliador → avaliador (aceitar ou recusar em 24 h)
+  | "vistoria_designado_dono" // avaliador designado pela Viva → dono (combinar a agenda pelas mensagens)
+  | "vistoria_agendada" // visita agendada → dono e avaliador
+  | "vistoria_concordancia" // imóvel ocupado: a visita espera a concordância → morador
+  | "vistoria_lembrete" // D-1 da visita → dono, avaliador e morador
+  | "vistoria_ausencia" // ausência registrada → dono e avaliador
+  | "vistoria_sem_avaliador"; // nenhum avaliador elegível → admins
 
 // Assunto SEM a marca (o envio põe "· Viva Nomads"; regras em assuntos.ts). A imagem de cada evento mora em
 // imagens-email.ts (IMAGEM por tema, fonte única).
@@ -172,6 +180,13 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   pedido_auto_cancelado: { subject: "Pedido cancelado", body: (n) => `Olá${n ? " " + n : ""}, o contrato do imóvel foi encerrado e o pedido foi cancelado. Nada a fazer.`, cta: "Ver os pedidos", path: "/dashboard/parceiro" },
   saida_sem_parceiro: { subject: "Saída em 5 dias: quer agendar a limpeza?", body: (n) => `Olá${n ? " " + n : ""}, o morador sai em 5 dias e o imóvel não tem limpeza fixa. Peça um orçamento a um parceiro da cidade.`, cta: "Buscar limpeza", path: "/parceiros/buscar?categoria=limpeza" },
   internet_remedir: { subject: "Meça de novo a internet do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, a medição da internet do seu imóvel vence em cerca de 2 semanas. Meça de novo, conectado ao Wi-Fi do imóvel, para o anúncio continuar mostrando o número.`, cta: "Medir a internet", path: "/dashboard/imoveis" },
+  vistoria_designada: { subject: "Nova avaliação de imóvel designada a você", body: (n) => `Olá${n ? " " + n : ""}, a Viva designou você para avaliar um imóvel. Aceite ou recuse em até 24 horas; sem resposta, a avaliação passa ao próximo avaliador.`, cta: "Responder", path: "/dashboard/parceiro/avaliacao" },
+  vistoria_designado_dono: { subject: "O avaliador do seu imóvel foi designado", body: (n) => `Olá${n ? " " + n : ""}, a Viva designou o avaliador credenciado do seu imóvel. Combine a data da visita pelas mensagens da Viva.`, cta: "Ver a avaliação", path: "/dashboard/imoveis" },
+  vistoria_agendada: { subject: "Visita de avaliação agendada", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação do imóvel está agendada. Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso.`, cta: "Ver a visita", path: "/dashboard/imoveis" },
+  vistoria_concordancia: { subject: "Concorda com a visita de avaliação?", body: (n) => `Olá${n ? " " + n : ""}, o proprietário pediu a avaliação do imóvel onde você mora. A visita só acontece se você concordar com a data. O avaliador não fotografa os seus pertences.`, cta: "Responder", path: "/dashboard/locacoes" },
+  vistoria_lembrete: { subject: "A visita de avaliação é amanhã", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação do imóvel é amanhã. Se precisar mudar, avise pelas mensagens da Viva.`, cta: "Ver a visita", path: "/dashboard" },
+  vistoria_ausencia: { subject: "Ausência na visita de avaliação", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação não aconteceu por ausência. Veja o que acontece agora na página da avaliação.`, cta: "Ver a avaliação", path: "/dashboard" },
+  vistoria_sem_avaliador: { subject: "Avaliação sem avaliador elegível", body: () => "Um pedido de avaliação de imóvel está aguardando avaliador: ninguém da fila da cidade está elegível agora.", cta: "Abrir a fila", path: "/admin/avaliadores" },
   internet_abaixo_medida: { subject: "A internet medida pelo morador ficou abaixo", body: (n) => `Olá${n ? " " + n : ""}, o morador mediu a internet na entrada e o resultado ficou abaixo da metade da sua última medição. Vale conferir o roteador ou a operadora e medir de novo.`, cta: "Ver o imóvel", path: "/dashboard/imoveis" },
   sugestao_parceiros_morador: { subject: "Precisa de ajuda com a mudança?", body: (n) => `Olá${n ? " " + n : ""}, separamos parceiros da cidade para a sua mudança. Peça um orçamento se quiser: nada é contratado sem você.`, cta: "Ver os parceiros", path: "/dashboard/locacoes" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", cta: "Conferir documento", path: "/admin/documentos" },

@@ -1,0 +1,147 @@
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { Panel } from "@/components/dashboard/primitives";
+import { Button } from "@/components/ui/button";
+import { FormAcao } from "@/components/vistoria/form-acao";
+import { brl } from "@/lib/fiscal/documento";
+import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
+import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
+import { vistoriaAtiva } from "@/lib/vistoria/chave";
+import { agendarVisita, avaliarConduta, confirmarRecebido, pedirAvaliacao, registrarAusencia } from "@/lib/vistoria/actions";
+import { CONDUTA_DONO, FRASE_PAGA_AVALIACAO, INCLUI_SEMPRE, ROTULO_CONDUTA, ROTULO_PORTE, pedidoPodeAbrir, porteDoImovel, precoVigente, type LinhaPreco, type Porte } from "@/lib/vistoria/regras";
+
+const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
+const SITUACAO: Record<string, string> = {
+  pedido: "Pedido registrado: a Viva está designando o avaliador.",
+  designado: "Avaliador designado pela Viva.",
+  agendado: "Visita agendada.",
+  realizada: "Visita feita: o laudo sai em até 48 horas úteis.",
+  laudo_emitido: "Laudo emitido.",
+  ausencia: "A visita não aconteceu por ausência. Uma nova visita é um novo pedido pela tabela.",
+  cancelada: "Pedido cancelado.",
+};
+
+/**
+ * "Pedir avaliação do imóvel" em Meus imóveis › imóvel › Nível, ruído e extras (Prompt 62-B1, ESQUELETO; o desenho é
+ * do 62-A). Com VISTORIA_ATIVA desligada, não aparece nada. O dono não escolhe o avaliador: o formulário só leva o
+ * imóvel; a Viva designa por rodízio e mostra o número de credenciado.
+ */
+export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string }) {
+  if (!(await vistoriaAtiva())) return null;
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!supabase || !admin) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: im } = await admin.from("properties").select("id, owner_id, status, city, bedrooms").eq("id", propertyId).maybeSingle();
+  if (!im || im.owner_id !== user.id) return null;
+  const agora = new Date();
+  const porte = porteDoImovel(im.bedrooms as number);
+  const [{ data: tabela }, { data: pedidos }] = await Promise.all([
+    admin.from("vistoria_precos").select("cidade, porte, valor, inclui_texto, vigente_desde").eq("cidade", im.city ?? ""),
+    admin
+      .from("vistoria_pedidos")
+      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, avaliadores_credenciamento(numero_credenciado)")
+      .eq("property_id", propertyId)
+      .order("criado_em", { ascending: false })
+      .limit(1),
+  ]);
+  const linhas: LinhaPreco[] = ((tabela ?? []) as { cidade: string; porte: Porte; valor: number | string; inclui_texto: string | null; vigente_desde: string }[]).map((l) => ({ cidade: l.cidade, porte: l.porte, valor: Number(l.valor), incluiTexto: l.inclui_texto, vigenteDesde: l.vigente_desde }));
+  const preco = precoVigente(linhas, im.city ?? "", porte, agora);
+  const pode = pedidoPodeAbrir({ chaveAtiva: true, anuncioPublicado: im.status === "active", preco });
+  const atual = ((pedidos ?? [])[0] ?? null) as unknown as {
+    id: string;
+    status: string;
+    aguardando_avaliador: boolean;
+    agendado_para: string | null;
+    ocupado: boolean;
+    concordancia_em: string | null;
+    recebido_marcado_em: string | null;
+    recebido_confirmado_em: string | null;
+    avaliadores_credenciamento: { numero_credenciado: string } | null;
+  } | null;
+  const aberto = atual && ["pedido", "designado", "agendado", "realizada", "laudo_emitido"].includes(atual.status);
+
+  return (
+    <section id="avaliacao" className="mt-8 scroll-mt-24">
+      <Panel title="Avaliação do imóvel por avaliador credenciado" data-testid="avaliacao-dono">
+        {aberto && atual ? (
+          <div className="text-sm" data-testid="avaliacao-dono-pedido" data-status={atual.status}>
+            <p className="text-ink">{atual.aguardando_avaliador ? "Aguardando avaliador: a Viva avisa quando designar." : SITUACAO[atual.status]}</p>
+            {atual.avaliadores_credenciamento && (
+              <p className="mt-1 text-ink" data-testid="avaliador-designado">
+                Avaliador designado pela Viva: nº {atual.avaliadores_credenciamento.numero_credenciado}
+              </p>
+            )}
+            {atual.agendado_para && (
+              <p className="mt-1 text-muted">
+                Visita: {new Date(atual.agendado_para).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+                {atual.ocupado && !atual.concordancia_em ? " · aguardando a concordância do morador" : ""}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-muted">Combine a agenda pelas mensagens da Viva.</p>
+            {["designado", "agendado"].includes(atual.status) && atual.avaliadores_credenciamento && (
+              <FormAcao acao={agendarVisita} className="mt-3 flex flex-wrap items-end gap-2" testid="dono-agendar">
+                <input type="hidden" name="pedidoId" value={atual.id} />
+                <label className="text-sm">Data e hora da visita<input type="datetime-local" name="quando" required className={campo} /></label>
+                <Button type="submit" variant="secondary" size="sm">{atual.agendado_para ? "Reagendar" : "Propor data"}</Button>
+              </FormAcao>
+            )}
+            {atual.status === "agendado" && (
+              <FormAcao acao={registrarAusencia} className="mt-2" testid="ausencia-avaliador">
+                <input type="hidden" name="pedidoId" value={atual.id} />
+                <input type="hidden" name="quem" value="avaliador" />
+                <Button type="submit" variant="secondary" size="sm">O avaliador não veio</Button>
+              </FormAcao>
+            )}
+            {atual.recebido_marcado_em && !atual.recebido_confirmado_em && (
+              <FormAcao acao={confirmarRecebido} className="mt-2">
+                <input type="hidden" name="pedidoId" value={atual.id} />
+                <Button type="submit" variant="secondary" size="sm">Confirmar que paguei o avaliador</Button>
+              </FormAcao>
+            )}
+            {atual.status === "laudo_emitido" && (
+              <FormAcao acao={avaliarConduta} className="mt-3 flex flex-wrap items-end gap-2" testid="conduta-dono">
+                <input type="hidden" name="pedidoId" value={atual.id} />
+                {CONDUTA_DONO.map((c) => (
+                  <label key={c} className="text-sm">{ROTULO_CONDUTA[c]}<select name={`nota_${c}`} className={campo} defaultValue="5">{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+                ))}
+                <input name="comentario" placeholder="Comentário sobre a conduta na visita (opcional)" aria-label="Comentário" className={campo} />
+                <Button type="submit" variant="secondary" size="sm">Avaliar a conduta</Button>
+              </FormAcao>
+            )}
+          </div>
+        ) : (
+          <div className="text-sm" data-testid="avaliacao-dono-pedir">
+            <p className="text-muted">
+              Um avaliador credenciado, designado pela Viva, visita o imóvel e confere tudo pelo checklist da Viva. Porte do anúncio: {ROTULO_PORTE[porte]}.
+            </p>
+            {preco ? (
+              <>
+                <p className="mt-2 text-ink" data-testid="avaliacao-valor">Valor da avaliação: {brl(preco.valor)}</p>
+                <ul className="mt-1 list-disc pl-4 text-muted">
+                  {INCLUI_SEMPRE.map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                  {preco.incluiTexto && <li>{preco.incluiTexto}</li>}
+                </ul>
+                <p className="mt-2 font-semibold text-ink" data-testid="frase-paga">{FRASE_PAGA_AVALIACAO}</p>
+                <p className="mt-1 text-xs text-muted">Você paga direto ao avaliador; a Viva registra. {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
+              </>
+            ) : null}
+            {pode.ok ? (
+              <FormAcao acao={pedirAvaliacao} className="mt-3" testid="pedir-avaliacao">
+                <input type="hidden" name="propertyId" value={propertyId} />
+                <Button type="submit" size="sm">Pedir avaliação do imóvel</Button>
+              </FormAcao>
+            ) : (
+              <p className="mt-3 text-muted" data-testid="avaliacao-indisponivel">{pode.motivo}</p>
+            )}
+          </div>
+        )}
+      </Panel>
+    </section>
+  );
+}

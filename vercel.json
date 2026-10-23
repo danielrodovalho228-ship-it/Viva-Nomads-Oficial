@@ -8,6 +8,7 @@
     { "path": "/api/cron/avisos-daniel", "schedule": "0 22 * * *" },
     { "path": "/api/cron/checkin-lembretes", "schedule": "0 12 * * *" },
     { "path": "/api/cron/automacoes", "schedule": "0 13 * * *" },
-    { "path": "/api/cron/prazos-conforto", "schedule": "0 14 * * *" }
+    { "path": "/api/cron/prazos-conforto", "schedule": "0 14 * * *" },
+    { "path": "/api/cron/vistoria", "schedule": "0 15 * * *" }
   ]
 }

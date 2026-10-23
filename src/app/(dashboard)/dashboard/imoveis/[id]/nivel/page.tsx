@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { nivelDoMeuImovel } from "@/lib/data/nivel-actions";
 import { AREAS, ROTULO_AREA, ROTULO_NIVEL, ROTULO_PONTO, rotuloItem, type NivelOuAdequacao } from "@/config/niveis";
 import { FormNivel } from "./form-nivel";
+import { BlocoAvaliacaoDono } from "@/components/vistoria/bloco-avaliacao-dono";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,8 @@ export default async function NivelDoImovelPage({ params }: { params: Promise<{ 
             </p>
           </section>
           <FormNivel propertyId={id} dados={dados} />
+          {/* Prompt 62-B1: avaliação por avaliador credenciado (só com VISTORIA_ATIVA; a rota por foto acima continua grátis). */}
+          <BlocoAvaliacaoDono propertyId={id} />
         </div>
       ) : (
         <p className="mt-6 rounded-xl border border-line bg-white p-4 text-sm text-ink" data-testid="nivel-indisponivel">

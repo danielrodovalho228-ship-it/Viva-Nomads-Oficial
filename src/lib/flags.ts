@@ -92,3 +92,12 @@ export const PAGAMENTO_PARCEIROS_ATIVO = process.env.NEXT_PUBLIC_PAGAMENTO_PARCE
  * src/lib/estadia/encerramento.ts (consequenciasDoEncerramento).
  */
 export const ENCERRAMENTO_REGRAS_ATIVO = process.env.NEXT_PUBLIC_ENCERRAMENTO_REGRAS_ATIVO === "on";
+
+/**
+ * Avaliação do imóvel por avaliador credenciado (Prompt 62-B1). OFF por padrão: desligada, nada aparece para o dono nem
+ * para o morador; o credenciamento dos avaliadores e o /admin/avaliadores funcionam (para montar a rede antes do
+ * lançamento). Só liga com as 3 condições que o admin mostra: tabela de preço na cidade, 2+ avaliadores ativos e o parecer
+ * do item 14 da Dra. Beatriz (NEXT_PUBLIC_VISTORIA_PARECER_14="on" quando recebido).
+ */
+export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
+export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
