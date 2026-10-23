@@ -26,3 +26,15 @@ export function dominioReservado(dominio: string): boolean {
     d === "localhost"
   );
 }
+
+/** Domínio das contas semeadas pelo laboratório (`@lab.vivanomads.test`): sufixo .test, mas com MX simulado. */
+export const DOMINIO_LAB = "lab.vivanomads.test";
+
+/**
+ * Domínio que o envio de código recusa. Os reservados caem, exceto o do laboratório quando as integrações
+ * estão simuladas (nada sai para a rede; em produção `simuladas` é sempre false).
+ */
+export function dominioBarrado(dominio: string, simuladas: boolean): boolean {
+  if (simuladas && dominio.toLowerCase() === DOMINIO_LAB) return false;
+  return dominioReservado(dominio);
+}
