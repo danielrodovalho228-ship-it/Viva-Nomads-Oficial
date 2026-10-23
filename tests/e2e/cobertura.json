@@ -2449,6 +2449,20 @@
       "specs": [
         "t305-laudo-avaliacao-62b2"
       ]
+    },
+    "/api/cron/calendario": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/lab/ical/[nome]": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": [
+        "t344-importar-calendario-53"
+      ]
     }
   },
   "actions": {
@@ -5636,6 +5650,38 @@
       ],
       "specs": [
         "t331-preferencias-push-44b2"
+      ]
+    },
+    "src/lib/data/calendario-importacao-actions.ts#listarImportacoes": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t344-importar-calendario-53"
+      ]
+    },
+    "src/lib/data/calendario-importacao-actions.ts#adicionarImportacao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t344-importar-calendario-53"
+      ]
+    },
+    "src/lib/data/calendario-importacao-actions.ts#atualizarImportacao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t344-importar-calendario-53"
+      ]
+    },
+    "src/lib/data/calendario-importacao-actions.ts#removerImportacao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t344-importar-calendario-53"
       ]
     }
   }

@@ -76,3 +76,19 @@ test("alerta de busca e busca salva aceitam a flexibilidade", () => {
   assert.match(resumoDaBusca(`local=Uberlândia&entrada=${ENTRADA}&flex=1`), /entrada 10\/11 · datas flexíveis/);
   assert.doesNotMatch(resumoDaBusca("local=Uberlândia&flex=1"), /flexíveis/);
 });
+
+import { passaBloqueios } from "./datas-flexiveis.ts";
+
+test("53: datas bloqueadas (manuais ou importadas) tiram o imóvel da busca nessa entrada", () => {
+  const bloqueios = [{ inicio: "2026-12-01", fim: "2026-12-04" }];
+  assert.equal(passaBloqueios(bloqueios, "2026-11-20", false), false, "estadia de 30 dias a partir de 20/11 cruza 01–04/12");
+  assert.equal(passaBloqueios(bloqueios, "2026-12-05", false), true);
+  assert.equal(passaBloqueios(bloqueios, "", false), true, "sem data de entrada não tira ninguém");
+  assert.equal(passaBloqueios([], "2026-11-20", false), true);
+  // Datas flexíveis (55-B2): passa se alguma entrada até 15 dias depois couber.
+  assert.equal(passaBloqueios(bloqueios, "2026-11-25", true), true, "entrando em 05/12 cabe");
+  assert.equal(passaBloqueios([{ inicio: "2026-11-01", fim: "2027-03-01" }], "2026-11-25", true), false);
+  // A faixa de estadia maior pesa: 5–6 meses (150 dias) a partir de 01/09 cruza dezembro.
+  assert.equal(passaBloqueios(bloqueios, "2026-09-01", false, 150), false);
+  assert.equal(passaBloqueios(bloqueios, "2026-09-01", false, 60), true);
+});
