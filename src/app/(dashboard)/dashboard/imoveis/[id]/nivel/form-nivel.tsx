@@ -38,7 +38,7 @@ function ItensNivel({ propertyId, dados }: { propertyId: string; dados: NivelDoI
     ),
   })).filter((g) => g.linhas.length > 0);
   return (
-    <section className="rounded-xl border border-line bg-white p-4" data-testid="nivel-itens">
+    <section id="nivel-itens" className="scroll-mt-24 rounded-xl border border-line bg-white p-4" data-testid="nivel-itens">
       <h2 className="text-base font-semibold text-ink">Itens de Conforto e Premium</h2>
       <p className="mt-1 text-xs text-muted">Uma foto por item, sem pessoas. Item sem foto não conta. O atendimento da Viva pode recusar uma foto que não mostra o item.</p>
       {grupos.map((g) => (
@@ -152,6 +152,7 @@ function Ruido({ propertyId, inicial }: { propertyId: string; inicial: NivelDoIm
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <Button
           type="button"
+          variant="secondary"
           size="sm"
           disabled={pendente || !completo}
           onClick={() =>

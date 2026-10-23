@@ -21,6 +21,7 @@ import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/m
 import { cn } from "@/lib/utils";
 import { CartaoVisita } from "@/components/visitas/cartao-visita";
 import { visitaDaConversa } from "@/lib/data/visitas-video-actions";
+import { AvaliacaoNaConversaCartao } from "@/components/vistoria/avaliacao-na-conversa";
 
 /**
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
@@ -276,6 +277,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           )}
           {!demo && active.propertyId && active.otherId && (
             <VisitaNaConversa propertyId={active.propertyId} outroId={active.otherId} />
+          )}
+          {/* Prompt 62-A: a visita de avaliação do imóvel ocupado, para o morador concordar ou pedir outro horário. */}
+          {!demo && active.contratoId && active.propertyId && (
+            <AvaliacaoNaConversaCartao propertyId={active.propertyId} onPreferirOutro={() => setDraft("Prefiro outro horário para a visita de avaliação do imóvel. Posso em: ")} />
           )}
           {/* Ficha do pet da candidatura: só aparece para o DONO daquela candidatura (o servidor confere). */}
           {!demo && active.propertyId && active.otherId && (
