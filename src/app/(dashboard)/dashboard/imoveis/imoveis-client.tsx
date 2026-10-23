@@ -15,7 +15,7 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
-import { faixaDocumentoAprovado, type Prontidao } from "@/lib/anuncio/prontidao";
+import { faixaDocumentoAprovado, hrefParaMelhorar, type Prontidao } from "@/lib/anuncio/prontidao";
 import { cn } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
@@ -180,7 +180,29 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                         <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${comp.pct}%` }} />
                       </div>
                       {comp.faltam.length > 0 && <p className="mt-1 text-[11px] text-amber-800">Falta para publicar: {comp.faltam.join(" · ")}</p>}
-                      {comp.melhorar.length > 0 && <p className="mt-1 text-[11px] text-muted">Para melhorar (opcional): {comp.melhorar.join(" · ")}</p>}
+                      {comp.melhorar.length > 0 && (
+                        <p className="mt-1 text-[11px] text-muted">
+                          Para melhorar (opcional):{" "}
+                          {comp.opcionais
+                            .filter((o) => !o.ok)
+                            .map((o, i) => {
+                              // 65-B: o vídeo leva ao campo (rascunho: bloco do assistente; existente: seção Vídeo).
+                              const href = hrefParaMelhorar(o.key, p.id, p.status === "draft");
+                              return (
+                                <span key={o.key}>
+                                  {i > 0 && " · "}
+                                  {href ? (
+                                    <Link href={href} className="font-medium text-forest underline" data-testid={`melhorar-${o.key}`}>
+                                      {o.label}
+                                    </Link>
+                                  ) : (
+                                    o.label
+                                  )}
+                                </span>
+                              );
+                            })}
+                        </p>
+                      )}
                     </div>
                   )}
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">

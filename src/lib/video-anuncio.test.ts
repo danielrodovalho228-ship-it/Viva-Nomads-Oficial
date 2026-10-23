@@ -103,3 +103,62 @@ test("coluna video_arquivo: grava só do dono, '' remove, ausente/alheio não me
   assert.deepEqual(colunaVideoArquivo("22222222-2222-4222-8222-222222222222/a.mp4", dono), {}); // pasta de outro
   assert.deepEqual(colunaVideoArquivo("https://x.com/v.mp4", dono), {});
 });
+
+// ── 65-B: vídeo alcançável pelo dono ───────────────────────────────────────────────────────────────────────────────
+import { videoDoAnuncio, resumoDoVideo, payloadDoVideo, segundosDoCaminho, formatarDuracao, erroDoLinkDeVideo, TEXTO_LIMITES_VIDEO } from "./video-anuncio.ts";
+
+const DONO = "11111111-1111-4111-8111-111111111111";
+
+test("65-B videoDoAnuncio: arquivo, depois link, depois nada (uma fonte só)", () => {
+  const yt = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+  assert.deepEqual(videoDoAnuncio({ videoArquivo: `${DONO}/a.mp4`, videoUrl: yt }), { tipo: "arquivo", caminho: `${DONO}/a.mp4` });
+  assert.deepEqual(videoDoAnuncio({ videoArquivo: "", videoUrl: yt }), { tipo: "link", url: yt, provedor: "YouTube" });
+  assert.equal(videoDoAnuncio({ videoUrl: "https://vimeo.com/123456" }).tipo, "link");
+  assert.deepEqual(videoDoAnuncio({ videoUrl: "https://evil.com/x.mp4" }), { tipo: null });
+  assert.deepEqual(videoDoAnuncio({}), { tipo: null });
+  assert.deepEqual(videoDoAnuncio({ videoArquivo: null, videoUrl: null }), { tipo: null });
+});
+
+test("65-B a duração vai no nome do arquivo e volta no resumo da seção", () => {
+  const p = caminhoNovoVideo(DONO, "video/mp4", "abc", 42);
+  assert.equal(p, `${DONO}/abc-42s.mp4`);
+  assert.equal(caminhoNovoVideo(DONO, "video/quicktime", "abc", 10), `${DONO}/abc-10s.mov`);
+  assert.equal(caminhoNovoVideo(DONO, "video/mp4", "abc"), `${DONO}/abc.mp4`, "sem duração: nome antigo");
+  assert.equal(caminhoNovoVideo(DONO, "video/mp4", "abc", 90), `${DONO}/abc.mp4`, "duração fora do limite não vai no nome");
+  assert.ok(caminhoVideoDoDono(p, DONO), "continua na pasta do dono");
+  assert.equal(segundosDoCaminho(p), 42);
+  assert.equal(segundosDoCaminho(`${DONO}/abc.mp4`), null);
+  assert.equal(formatarDuracao(42), "00:42");
+  assert.equal(formatarDuracao(60), "01:00");
+  assert.equal(resumoDoVideo({ videoArquivo: p }), "Vídeo enviado (00:42)");
+  assert.equal(resumoDoVideo({ videoArquivo: `${DONO}/antigo.mp4` }), "Vídeo enviado");
+  assert.equal(resumoDoVideo({ videoUrl: "https://youtu.be/dQw4w9WgXcQ" }), "Link do YouTube");
+  assert.equal(resumoDoVideo({ videoUrl: "https://vimeo.com/123456" }), "Link do Vimeo");
+  assert.equal(resumoDoVideo({}), "Sem vídeo (opcional)");
+});
+
+test("65-B payload do editor grava o videoArquivo e o videoUrl NOVOS (não repete o antigo)", () => {
+  assert.deepEqual(payloadDoVideo({ videoArquivo: `${DONO}/novo-12s.mp4`, videoUrl: " https://youtu.be/dQw4w9WgXcQ " }), {
+    videoArquivo: `${DONO}/novo-12s.mp4`,
+    videoUrl: "https://youtu.be/dQw4w9WgXcQ",
+  });
+  // Remover: "" vai ao servidor e a coluna vira null; link vazio também grava null.
+  const vazio = payloadDoVideo({ videoArquivo: "", videoUrl: "" });
+  assert.deepEqual(vazio, { videoArquivo: "", videoUrl: undefined });
+  assert.deepEqual(colunaVideoArquivo(vazio.videoArquivo, DONO), { video_arquivo: null });
+});
+
+test("65-B mensagens: texto fixo dos limites, link que não é YouTube/Vimeo e os negativos chegam com o texto certo", () => {
+  assert.equal(TEXTO_LIMITES_VIDEO, "Até 60 segundos e 50 MB, em MP4 ou MOV. Grave pelo celular mostrando o imóvel por dentro. Sem pessoas no vídeo.");
+  assert.equal(erroDoLinkDeVideo(""), null);
+  assert.equal(erroDoLinkDeVideo("https://youtu.be/dQw4w9WgXcQ"), null);
+  assert.equal(erroDoLinkDeVideo("https://evil.com/v"), "Use um link do YouTube ou do Vimeo.");
+  // .avi renomeado para .mp4: o navegador acredita na extensão, a leitura dos bytes não.
+  const avi = new Uint8Array([...txt("RIFF"), 0, 0, 0, 0, ...txt("AVI LIST"), ...Array(32).fill(0)]);
+  assert.equal(validarVideoNoNavegador({ type: "video/mp4", size: avi.length }), null);
+  assert.deepEqual(validarVideoNoServidor(avi), { ok: false, erro: "Envie o vídeo em MP4 ou MOV." });
+  assert.deepEqual(validarVideoNoServidor(video({ segundos: 70 })), { ok: false, erro: "O vídeo deve ter no máximo 60 segundos." });
+  assert.deepEqual(validarVideoNoServidor(video(), 55 * 1024 * 1024), { ok: false, erro: "O vídeo deve ter no máximo 50 MB." });
+  const semMoov = new Uint8Array(box("ftyp", [...txt("isom"), ...u32(0), ...txt("isom")]));
+  assert.match((validarVideoNoServidor(semMoov) as { erro: string }).erro, /duração/);
+});

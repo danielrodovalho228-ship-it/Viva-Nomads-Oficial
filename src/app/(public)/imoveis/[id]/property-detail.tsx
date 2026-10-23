@@ -79,7 +79,7 @@ import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
-import { videoTourPermitido } from "@/lib/video-tour";
+import { videoDoAnuncio } from "@/lib/video-anuncio";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
 
 export function PropertyDetail({
@@ -99,6 +99,8 @@ export function PropertyDetail({
   // existe de verdade para um anúncio ilustrativo.
   const property = isExemplo(anuncio) ? semSinaisInventados(anuncio) : anuncio;
   const router = useRouter();
+  // 65-B: uma fonte só — o arquivo enviado vence; o link do YouTube/Vimeo só sem arquivo.
+  const video = videoDoAnuncio(property);
   const [pending, setPending] = useState<LeadKind | null>(null);
   const [sent, setSent] = useState<{ duvida?: boolean; visita?: boolean }>({});
   const [selfNote, setSelfNote] = useState(false);
@@ -666,8 +668,8 @@ export function PropertyDetail({
         photos={property.photos}
         title={property.title}
         readyToLive={property.readyToLiveBadge}
-        videoUrl={property.videoUrl}
-        videoArquivoId={property.videoArquivo ? property.id : undefined}
+        videoUrl={video.tipo === "link" ? video.url : undefined}
+        videoArquivoId={video.tipo === "arquivo" ? property.id : undefined}
         acoes={icones}
       />
 
@@ -756,17 +758,17 @@ export function PropertyDetail({
           </header>
 
           {/* Vídeo enviado pelo dono: miniatura com play, só baixa no clique (ordem 8681ae95) */}
-          {property.videoArquivo && (
+          {video.tipo === "arquivo" && (
             <section>
               <VideoArquivoPlayer imovelId={property.id} capa={property.photos[0]} title={property.title} />
               <p className="mt-2 text-xs text-muted">Vídeo gravado pelo proprietário.</p>
             </section>
           )}
 
-          {/* Walk-through em vídeo */}
-          {videoTourPermitido(property.videoUrl) && (
+          {/* Walk-through em vídeo: o link do YouTube/Vimeo só aparece sem arquivo enviado (65-B: uma fonte só). */}
+          {video.tipo === "link" && (
             <section>
-              <VideoWalkthrough url={property.videoUrl!} title={property.title} />
+              <VideoWalkthrough url={video.url} title={property.title} />
               <p className="mt-2 text-xs text-muted">
                 {isExemplo(property) ? "Vídeo ilustrativo." : "Tour em vídeo gravado pelo proprietário."}
               </p>
