@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sessaoAal2 } from "@/lib/data/admin-guard";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { registrarAtivacao } from "@/lib/ativacao/servidor";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
@@ -234,6 +235,8 @@ export async function criarPedido(
     .select("id, cidade")
     .single();
   if (error || !data) return { ok: false, error: erroBancoPT(error, "Falha ao publicar o pedido.") };
+  // Prompt 50: o 1º pedido enviado ativa o morador (1× por papel).
+  await registrarAtivacao(user.id, "morador");
 
   // (a) Avisa SÓ os donos com imóvel COMPATÍVEL (regra do banco, 0064) — antes
   // ia para todos os donos da cidade. Devolve quantos imóveis combinam agora.

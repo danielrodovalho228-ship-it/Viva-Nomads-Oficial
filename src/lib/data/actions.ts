@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { registrarAtivacao } from "@/lib/ativacao/servidor";
 import type { EligibilityState, QualityState } from "@/lib/qualification";
 import {
   isEligible,
@@ -1099,6 +1100,8 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       .eq("id", id)
       .eq("owner_id", user.id);
     if (pubErr) return { ok: false, id, error: erroBancoPT(pubErr) };
+    // Prompt 50: o 1º anúncio publicado ativa o proprietário (1× por papel).
+    await registrarAtivacao(user.id, "proprietario");
   }
 
   // Página pública do anúncio não pode ficar presa em cache (F9).
@@ -1720,6 +1723,8 @@ export async function requestLead(
       if (!leadErr) {
         const adm = createAdminClient();
         if (adm) await atribuirLead(adm, { propertyId, tenantId: user.id, cookieValor: (await cookies()).get(REF_COOKIE)?.value }).catch(() => false);
+        // Prompt 50: o 1º pedido enviado ativa o morador (1× por papel).
+        await registrarAtivacao(user.id, "morador", new Date(), adm);
       }
       const conversationId = idConversa(user.id, ownerId, propertyId);
       // Mensagem do inquilino: usa o texto que ele escreveu (dúvida/horários),

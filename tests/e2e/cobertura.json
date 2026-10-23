@@ -1721,6 +1721,14 @@
       "specs": [
         "t305-laudo-avaliacao-62b2"
       ]
+    },
+    "/admin/funil": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t308-ativacao-funil-50"
+      ]
     }
   },
   "rotas": {
@@ -5260,6 +5268,14 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/identidade/revisao-actions.ts#adminDecidirVerificacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t308-ativacao-funil-50"
+      ]
     }
   }
 }
