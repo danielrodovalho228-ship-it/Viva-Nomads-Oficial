@@ -646,7 +646,8 @@
         "t220-recibo-assinatura",
         "t221-contrato-estado-periodo",
         "t240-conferencia-provas-admin",
-        "t304-airbnb-exibicao-61a"
+        "t304-airbnb-exibicao-61a",
+        "t307-varredura-bloco8"
       ]
     },
     "/dashboard/favoritos": {
@@ -1012,7 +1013,8 @@
         "socio"
       ],
       "specs": [
-        "t3-isolamento-papeis"
+        "t3-isolamento-papeis",
+        "t307-varredura-bloco8"
       ]
     },
     "/dev/emails": {
@@ -1133,7 +1135,8 @@
         "socio"
       ],
       "specs": [
-        "t3-isolamento-papeis"
+        "t3-isolamento-papeis",
+        "t307-varredura-bloco8"
       ]
     },
     "/para-proprietarios": {
@@ -1234,7 +1237,8 @@
         "t176-exemplo-proprietario-avaliacoes",
         "t179-isolamento-perfil",
         "t180-anuncio-real-sem-exemplo",
-        "t182-jornada-completa"
+        "t182-jornada-completa",
+        "t307-varredura-bloco8"
       ]
     },
     "/qualificar": {
@@ -1258,7 +1262,8 @@
       "specs": [
         "t3-isolamento-papeis",
         "t200-roi-socios",
-        "t208-sem-nomade-drive"
+        "t208-sem-nomade-drive",
+        "t307-varredura-bloco8"
       ]
     },
     "/seguranca": {
@@ -1277,7 +1282,8 @@
         "t3-isolamento-papeis",
         "t7-fluxo-publico",
         "t200-roi-socios",
-        "t208-sem-nomade-drive"
+        "t208-sem-nomade-drive",
+        "t307-varredura-bloco8"
       ]
     },
     "/socios": {
@@ -1285,7 +1291,8 @@
         "socio"
       ],
       "specs": [
-        "t3-isolamento-papeis"
+        "t3-isolamento-papeis",
+        "t307-varredura-bloco8"
       ]
     },
     "/termos": {
@@ -1302,7 +1309,8 @@
         "socio"
       ],
       "specs": [
-        "t192-conta-4-blocos"
+        "t192-conta-4-blocos",
+        "t307-varredura-bloco8"
       ]
     },
     "/admin/dados-de-teste": {
@@ -1522,7 +1530,8 @@
         "proprietario"
       ],
       "specs": [
-        "t304-airbnb-exibicao-61a"
+        "t304-airbnb-exibicao-61a",
+        "t307-varredura-bloco8"
       ]
     },
     "/dashboard/estadia/[contratoId]/encerrar": {
