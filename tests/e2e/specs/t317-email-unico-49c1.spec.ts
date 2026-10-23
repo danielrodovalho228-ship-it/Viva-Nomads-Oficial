@@ -109,7 +109,8 @@ test.describe("T317 — e-mail único com código (49-C1)", () => {
     expect(error, error?.message).toBeNull();
     const hash = data!.properties!.hashed_token;
     const aba2 = await ctx.newPage();
-    await aba2.goto(`/auth/confirm?token_hash=${hash}&type=signup&next=/dashboard`, { waitUntil: "domcontentloaded" });
+    // O type do link tem de ser o do token gerado (magiclink); verifyOtp com outro type recusa → /auth?erro=confirmacao.
+    await aba2.goto(`/auth/confirm?token_hash=${hash}&type=magiclink&next=/dashboard`, { waitUntil: "domcontentloaded" });
     // O link antigo continua valendo e cai no destino da entrada por código: a intenção da conta nova.
     await aba2.waitForURL(/\/auth\/(intencao|pronto)/, { timeout: 30_000 });
 
