@@ -73,7 +73,7 @@ export function SairDaViva() {
       {estado?.pausadaEm && etapa === "escolha" && <ContaPausada aoReativar={(e) => setEstado(e)} />}
 
       {etapa === "escolha" && (
-        <ul className="grid gap-4 md:grid-cols-3" data-testid="saida-cartoes">
+        <ul className="grid gap-4" data-testid="saida-cartoes">
           {CARTOES.map((c) => (
             <li key={c.nivel} className="flex flex-col rounded-xl border border-line p-4" data-testid={`saida-cartao-${c.nivel}`}>
               <h3 className="font-title text-lg font-semibold text-ink">{ROTULO_NIVEL_SAIDA[c.nivel]}</h3>
