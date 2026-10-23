@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { aasa, assetlinks, caminhoDoLink, caminhoInterno, destinoDaRota, intentFiltersExpo, ROTAS_APP } from "./rotas-app.ts";
+import { aasa, assetlinks, caminhoDoLink, IMPRESSAO_PLAY_APP_SIGNING, impressoesAndroid, caminhoInterno, destinoDaRota, intentFiltersExpo, ROTAS_APP } from "./rotas-app.ts";
 import { safeInternalPath } from "../lib/safe-redirect.ts";
 import { GET as getApple } from "../app/api/well-known/apple/route.ts";
 import { GET as getAndroid } from "../app/api/well-known/android/route.ts";
@@ -118,6 +118,19 @@ test("assetlinks.json no formato do Google", () => {
   ]);
 });
 
+test("assetlinks: a chave de upload (variável) continua e a do Play App Signing entra como segunda, na mesma relação", () => {
+  const upload = "AB:".repeat(31) + "AB";
+  assert.equal(IMPRESSAO_PLAY_APP_SIGNING, "9C:54:64:53:98:96:35:68:86:59:04:4A:7D:6E:FC:AD:8A:A1:DD:7A:54:56:65:04:5D:07:0F:AE:56:40:FB:3C");
+  const lista = impressoesAndroid(` ${upload.toLowerCase()} , lixo`);
+  assert.deepEqual(lista, [upload, IMPRESSAO_PLAY_APP_SIGNING]);
+  const json = assetlinks("br.com.vivanomads.app", lista) as { relation: string[]; target: { sha256_cert_fingerprints: string[] } }[];
+  assert.equal(json.length, 1, "uma relação só (delegate_permission/common.handle_all_urls)");
+  assert.deepEqual(json[0].target.sha256_cert_fingerprints, [upload, IMPRESSAO_PLAY_APP_SIGNING]);
+  // Sem repetir, e a do Play sai mesmo sem a variável.
+  assert.deepEqual(impressoesAndroid(`${IMPRESSAO_PLAY_APP_SIGNING},${upload}`), [IMPRESSAO_PLAY_APP_SIGNING, upload]);
+  assert.deepEqual(impressoesAndroid(undefined), [IMPRESSAO_PLAY_APP_SIGNING]);
+});
+
 test("Expo (app.json): intentFilters com autoVerify, https, host e só as telas do app", () => {
   const [links, esquema] = intentFiltersExpo() as { action: string; autoVerify?: boolean; data: Record<string, string>[]; category: string[] }[];
   assert.equal(links.autoVerify, true);
@@ -133,11 +146,13 @@ test("Expo (app.json): intentFilters com autoVerify, https, host e só as telas 
   assert.deepEqual(esquema.data, [{ scheme: "vivanomads" }]);
 });
 
-test(".well-known: JSON com content-type certo; 404 sem configuração", async () => {
+test(".well-known: JSON com content-type certo; Apple 404 sem configuração; Android sempre com a do Play", async () => {
   delete process.env.APP_IOS_IDS;
   delete process.env.APP_ANDROID_SHA256;
   assert.equal(getApple().status, 404);
-  assert.equal(getAndroid().status, 404);
+  const soPlay = getAndroid();
+  assert.equal(soPlay.status, 200);
+  assert.deepEqual(((await soPlay.json()) as { target: { sha256_cert_fingerprints: string[] } }[])[0].target.sha256_cert_fingerprints, [IMPRESSAO_PLAY_APP_SIGNING]);
   process.env.APP_IOS_IDS = "ABCDE12345.br.com.vivanomads.app";
   process.env.APP_ANDROID_SHA256 = "ab:".repeat(31) + "ab";
   const apple = getApple();
@@ -147,7 +162,7 @@ test(".well-known: JSON com content-type certo; 404 sem configuração", async (
   assert.equal(((await apple.json()) as { applinks: { details: { appIDs: string[] }[] } }).applinks.details[0].appIDs[0], "ABCDE12345.br.com.vivanomads.app");
   assert.equal(android.status, 200);
   assert.match(android.headers.get("content-type") ?? "", /^application\/json/);
-  assert.equal(((await android.json()) as { target: { sha256_cert_fingerprints: string[] } }[])[0].target.sha256_cert_fingerprints[0], "AB:".repeat(31) + "AB");
+  assert.deepEqual(((await android.json()) as { target: { sha256_cert_fingerprints: string[] } }[])[0].target.sha256_cert_fingerprints, ["AB:".repeat(31) + "AB", IMPRESSAO_PLAY_APP_SIGNING]);
   process.env.APP_IOS_IDS = "nao-e-um-id";
   assert.equal(getApple().status, 404);
 });

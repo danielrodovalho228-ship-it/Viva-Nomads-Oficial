@@ -171,6 +171,21 @@ export function aasa(appIds: string[]): unknown {
 }
 
 /** assetlinks.json (Android App Links). */
+/**
+ * Impressão SHA-256 da chave de assinatura do Play (Play App Signing): é com ela que o Play assina o app que o
+ * usuário instala. Fica fixa aqui (é pública); APP_ANDROID_SHA256 traz a de upload do EAS e outras, se houver.
+ */
+export const IMPRESSAO_PLAY_APP_SIGNING = "9C:54:64:53:98:96:35:68:86:59:04:4A:7D:6E:FC:AD:8A:A1:DD:7A:54:56:65:04:5D:07:0F:AE:56:40:FB:3C";
+
+/** Impressões do assetlinks: as de APP_ANDROID_SHA256 (vírgula para várias) primeiro, depois a do Play; sem repetir. */
+export function impressoesAndroid(variavel: string | undefined): string[] {
+  const validas = (variavel ?? "")
+    .split(",")
+    .map((s) => s.trim().toUpperCase())
+    .filter((s) => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(s));
+  return [...new Set([...validas, IMPRESSAO_PLAY_APP_SIGNING])];
+}
+
 export function assetlinks(pacote: string, fingerprints: string[]): unknown {
   return [
     {

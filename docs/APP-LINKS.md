@@ -77,7 +77,7 @@ O rodapé "Se você tem o app Viva Nomads, ele abre direto no app." aparece com 
 1. **Chave de assinatura do Google (Play App Signing).** Vale para quem instala pela Play, ou seja, a que importa. Play Console → o app → Testar e lançar → Configuração → **Integridade do app** → "Certificado da chave de assinatura do app" → SHA-256. Só aparece depois do primeiro `.aab` enviado.
 2. **Chave de upload do EAS.** Vale para testar um build instalado direto, fora da Play. No PowerShell, `eas credentials -p android` → escolha o perfil (production) → "Keystore" mostra o SHA-256. O mesmo valor aparece no Play Console como "Certificado da chave de upload".
 
-Cadastre as duas, separadas por vírgula. Sem `APP_IOS_IDS` ou sem `APP_ANDROID_SHA256`, o arquivo correspondente responde 404, de propósito.
+A do Play App Signing já está no código (`IMPRESSAO_PLAY_APP_SIGNING` em `src/config/rotas-app.ts`) e sai sempre, como segunda impressão da mesma relação. Em `APP_ANDROID_SHA256` fica a de upload do EAS (e outras, separadas por vírgula). Sem `APP_IOS_IDS`, o arquivo da Apple responde 404, de propósito.
 
 Para conferir depois do deploy:
 - `https://vivanomads.com.br/.well-known/apple-app-site-association`
