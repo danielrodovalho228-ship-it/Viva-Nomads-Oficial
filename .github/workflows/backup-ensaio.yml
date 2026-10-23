@@ -1,5 +1,5 @@
 # Resiliência 2 — ENSAIO do pipeline de backup no PR, sem tocar no Drive real nem no banco real e SEM segredos:
-# Postgres 17 de teste + MinIO no lugar do Storage do Supabase + remoto LOCAL do rclone no lugar do Google Drive,
+# Postgres 17 de teste + S3 de teste (rclone serve s3) no lugar do Storage do Supabase + remoto LOCAL do rclone no lugar do Google Drive,
 # com o crypt de verdade e senhas de teste geradas na hora. Roda a cópia, o teste de restauração e dois casos de
 # falha de propósito (dump corrompido, cifra adulterada). Script: scripts/backup/ensaio.sh.
 name: Ensaio do backup
@@ -49,7 +49,9 @@ jobs:
       - name: Ferramentas (rclone fixo e postgresql-client-17)
         run: bash scripts/backup/instalar-ferramentas.sh
 
-      - name: MinIO de teste e ensaio completo
+      # S3 de teste: o próprio rclone (versão fixa e conferida pelo SHA-256 no passo anterior) com "serve s3".
+      # A imagem do MinIO saiu do Docker Hub (pull access denied) e o quay.io pede login (unauthorized).
+      - name: S3 de teste (rclone serve s3) e ensaio completo
         env:
           ENSAIO_PG_URL: postgresql://postgres:ensaio@localhost:5432/postgres
           S3_ENDPOINT: http://127.0.0.1:9000
@@ -58,8 +60,9 @@ jobs:
           ENSAIO_S3_CHAVE="ensaio$(openssl rand -hex 8)"
           ENSAIO_S3_SEGREDO="$(openssl rand -hex 24)"
           export ENSAIO_S3_CHAVE ENSAIO_S3_SEGREDO
-          docker run -d --name ensaio-backup-minio -p 127.0.0.1:9000:9000 \
-            -e MINIO_ROOT_USER="$ENSAIO_S3_CHAVE" -e MINIO_ROOT_PASSWORD="$ENSAIO_S3_SEGREDO" \
-            quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data >/dev/null
-          for _ in $(seq 1 30); do curl -sf http://127.0.0.1:9000/minio/health/live >/dev/null && break; sleep 1; done
+          S3_DADOS="${{ runner.temp }}/ensaio-s3"
+          mkdir -p "$S3_DADOS"
+          rclone serve s3 --auth-key "$ENSAIO_S3_CHAVE,$ENSAIO_S3_SEGREDO" --addr 127.0.0.1:9000 "$S3_DADOS" >"${{ runner.temp }}/ensaio-s3.log" 2>&1 &
+          # Sem credencial o servidor responde 4xx: basta ele responder.
+          for _ in $(seq 1 30); do curl -s -o /dev/null http://127.0.0.1:9000/ && break; sleep 1; done
           bash scripts/backup/ensaio.sh

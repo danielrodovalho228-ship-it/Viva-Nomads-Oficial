@@ -63,7 +63,7 @@ teste mais de 8 dias. O motivo nunca leva dado.
   e-mail/CPF/telefone/nome de arquivo, formato dos alarmes, cartão, conferência) e `src/lib/backup/workflows.test.ts`
   (quando as Actions rodam e que nenhum segredo vai para o log).
 - **Ensaio do pipeline** no PR (`.github/workflows/backup-ensaio.yml` → `scripts/backup/ensaio.sh`): Postgres 17 de
-  teste + MinIO + remoto **local** do rclone no lugar do Drive, com o crypt de verdade e senhas geradas na hora. Roda
+  teste + S3 de teste (`rclone serve s3`) + remoto **local** do rclone no lugar do Drive, com o crypt de verdade e senhas geradas na hora. Roda
   a cópia (2×), prova que o "Drive" só tem nomes e conteúdo cifrados e que a retenção podou, roda o teste de
   restauração e dois casos de falha de propósito (dump corrompido; cifra adulterada) → vermelho e alarme montado,
   sem enviar e-mail.
