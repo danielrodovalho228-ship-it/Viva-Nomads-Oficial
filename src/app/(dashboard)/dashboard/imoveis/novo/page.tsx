@@ -88,6 +88,8 @@ import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricu
 import { chaveLugar } from "@/components/anuncio/blocos-cadastro";
 import type { CampoSugerido, EstadoIaFotos, FalhaIaFotos } from "./tipos";
 import { ChecklistPublicar } from "./checklist-publicar";
+import { ChegadaEPedidoCampos, formDeChegada, formDeRascunho, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
+import { tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
 import { PainelQualificacao } from "./painel-qualificacao";
 import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
@@ -186,6 +188,8 @@ export default function NewPropertyPage() {
   const [privacidade, setPrivacidade] = useState<Privacidade>(PRIVACIDADE_VAZIA);
   const [smokingAllowed, setSmokingAllowed] = useState(false);
   const [childrenAllowed, setChildrenAllowed] = useState(true);
+  // 61-B: tipo de entrada (obrigatório para publicar anúncio novo), mensagem a quem pede e o que considerar.
+  const [chegada, setChegada] = useState<ChegadaEPedidoForm>(() => formDeChegada());
   const [amenityKeys, setAmenityKeys] = useState<Record<string, boolean>>({});
   const [internetMbps, setInternetMbps] = useState("");
   // Proximidades: as do OSM (todas marcadas; o dono desmarca) + as manuais ("Adicionar outro").
@@ -282,6 +286,8 @@ export default function NewPropertyPage() {
     video: videoDoAnuncio({ videoArquivo, videoUrl }).tipo !== null,
     // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
     qualificacaoOk: editingId ? undefined : qualificado,
+    // 61-B: o tipo de entrada só é exigido do anúncio NOVO (o publicado sem ele ganha só o aviso no painel).
+    tipoEntradaOk: editingId ? undefined : tipoEntradaValido(chegada.tipoEntrada),
     // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
     confortoFaltam: editingId ? undefined : itensFaltantes(conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }))).length,
   });
@@ -513,6 +519,7 @@ export default function NewPropertyPage() {
       senhaTrocadaEstadia: privacidade.senhaTrocadaEstadia,
       smokingAllowed,
       childrenAllowed,
+      ...payloadDaChegada(chegada),
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
       googlePlaces,
       proximities: proximidadesFinais,
@@ -593,6 +600,7 @@ export default function NewPropertyPage() {
     if (d.privacidade && typeof d.privacidade === "object") setPrivacidade({ ...PRIVACIDADE_VAZIA, ...(d.privacidade as Partial<Privacidade>) });
     if (typeof d.smokingAllowed === "boolean") setSmokingAllowed(d.smokingAllowed);
     if (typeof d.childrenAllowed === "boolean") setChildrenAllowed(d.childrenAllowed);
+    setChegada(formDeRascunho(d));
     if (typeof d.issuesInvoice === "boolean") setIssuesInvoice(d.issuesInvoice);
     if (d.amenityKeys && typeof d.amenityKeys === "object") setAmenityKeys(d.amenityKeys as Record<string, boolean>);
     if (Array.isArray(d.googlePlaces)) setGooglePlaces(d.googlePlaces as CuratedPlace[]);
@@ -726,6 +734,7 @@ export default function NewPropertyPage() {
       setPetsOk(p.petsAllowed ?? false);
       setSmokingAllowed(p.smokingAllowed ?? false);
       setChildrenAllowed(p.childrenAllowed ?? true);
+      setChegada(formDeChegada(p.chegadaEPedido));
       if (p.privacidade) setPrivacidade(p.privacidade);
       setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
       setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
@@ -767,7 +776,7 @@ export default function NewPropertyPage() {
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, internetMbps,
-    privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
+    privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
@@ -1465,7 +1474,10 @@ export default function NewPropertyPage() {
 
             {step === ETAPA.regras && (
               <div className="space-y-6">
-              <EtapaEncontramos parte="regras" {...camposImovel} />
+              <div>
+                <EtapaEncontramos parte="regras" {...camposImovel} />
+                <ChegadaEPedidoCampos value={chegada} onChange={setChegada} />
+              </div>
               <EtapaPreco
                 sugerido={sugerido}
                 tirarSugestao={tirarSugestao}

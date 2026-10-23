@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { createClient } from "@/lib/supabase/server";
 import { comNovaTentativa } from "@/lib/nova-tentativa";
 import { isExemplo } from "@/lib/demo-listing";
@@ -234,7 +235,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
@@ -251,6 +252,8 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("properties").select("negociacao, internet_mbps").eq("id", base.id).maybeSingle()),
     // Internet medida no imóvel (Prompt 57): só a última validada do dono, vigente — sem a migração, nada.
     safe(supabase.from("internet_medida_publica").select("download_mbps, upload_mbps, latencia_ms, medido_em, valido_ate").eq("property_id", base.id).maybeSingle()),
+    // 61-B (0225): leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("tipo_entrada, mensagem_para_pedido, considerar_antes, considerar_antes_texto").eq("id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
 
@@ -318,6 +321,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     limpezaEstadia: normalizarLimpezaEstadia((limpezaLinha as { limpeza_estadia?: unknown } | null)?.limpeza_estadia) ?? undefined,
     ...negociacaoDaLinha(negLinha as { negociacao?: unknown; internet_mbps?: unknown } | null),
     internetMedida: medidaDaLinha(medidaLinha as LinhaMedida | null),
+    chegadaEPedido: chegadaEPedidoDaLinha(chegadaLinha as LinhaChegadaEPedido | null),
     privacidade,
     ownerName: ownerRow?.full_name ?? base.ownerName,
     ownerId: ownerId ?? base.ownerId,

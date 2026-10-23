@@ -87,3 +87,60 @@ test("convidado: só leitura do que precisa; valores, contrato e conversa nunca"
   assert.equal(convidadoVence(null), null);
   assert.equal(convidadoVence("lixo"), null);
 });
+
+test("colunas: ausente não mexe, vazio limpa, inválido recusa, contato mascarado", async () => {
+  const { colunasChegadaEPedido, chegadaDoRascunho } = await import("./chegada-e-pedido.ts");
+  assert.deepEqual(colunasChegadaEPedido({}), { ok: true, colunas: {} });
+  assert.deepEqual(colunasChegadaEPedido({ tipoEntrada: "" }), { ok: true, colunas: { tipo_entrada: null } });
+  assert.equal(colunasChegadaEPedido({ tipoEntrada: "senha 1234" }).ok, false);
+  const r = colunasChegadaEPedido({ tipoEntrada: "porteiro", mensagemParaPedido: "liga 11 99876-5432", considerarAntes: ["obra", "x"] });
+  assert.equal(r.ok, true);
+  if (r.ok) {
+    assert.equal(r.colunas.tipo_entrada, "porteiro");
+    assert.doesNotMatch(String(r.colunas.mensagem_para_pedido), /99876/);
+    assert.deepEqual(r.colunas.considerar_antes, ["obra"]);
+    assert.equal("considerar_antes_texto" in r.colunas, false);
+  }
+  assert.deepEqual(chegadaDoRascunho({ tipoEntrada: "outro", lixo: 1 }), { tipoEntrada: "outro", mensagemParaPedido: undefined, considerarAntes: undefined, considerarAntesTexto: undefined });
+  assert.deepEqual(chegadaDoRascunho(null).tipoEntrada, undefined);
+});
+
+test("leitura: sem a 0225 some; lixo do banco não aparece; mensagem antiga com contato sai mascarada", async () => {
+  const { chegadaEPedidoDaLinha } = await import("./chegada-e-pedido.ts");
+  assert.equal(chegadaEPedidoDaLinha(null), undefined);
+  const c = chegadaEPedidoDaLinha({ tipo_entrada: "xyz", mensagem_para_pedido: "zap 11 99876-5432", considerar_antes: ["obra", "piscina"], considerar_antes_texto: " " });
+  assert.equal(c?.tipoEntrada, null);
+  assert.doesNotMatch(c?.mensagemParaPedido ?? "", /99876/);
+  assert.deepEqual(c?.considerarAntes, ["obra"]);
+  assert.equal(c?.considerarAntesTexto, null);
+});
+
+test("GUARDA: tipo_entrada é público; como_entrar só nos leitores da estadia (nunca na API pública nem no anúncio)", async () => {
+  const { readFileSync, readdirSync, statSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const raiz = new URL("../../../", import.meta.url).pathname;
+  const arquivos: string[] = [];
+  const andar = (d: string) => {
+    for (const n of readdirSync(d)) {
+      const c = join(d, n);
+      if (statSync(c).isDirectory()) andar(c);
+      else if (/\.(ts|tsx)$/.test(n) && !/\.test\.ts$/.test(n)) arquivos.push(c.slice(raiz.length));
+    }
+  };
+  andar(join(raiz, "src"));
+  const LEITORES = new Set([
+    "src/lib/estadia/instrucoes.ts",
+    "src/lib/data/estadia.ts",
+    "src/lib/data/estadia-actions.ts",
+    "src/app/api/cron/automacoes/route.ts",
+    "src/config/retencao.ts",
+    "src/lib/anuncio/chegada-e-pedido.ts",
+  ]);
+  const fora = arquivos.filter((a) => !LEITORES.has(a) && /como_entrar|imovel_instrucoes_chegada/.test(readFileSync(join(raiz, a), "utf8")));
+  assert.deepEqual(fora, [], "como_entrar lido fora da página da estadia");
+  const props = readFileSync(join(raiz, "src/lib/data/properties.ts"), "utf8");
+  assert.match(props, /tipo_entrada/, "o anúncio lê o tipo de entrada");
+  const mig = readFileSync(join(raiz, "supabase/migrations/0225_chegada_e_pedido.sql"), "utf8");
+  assert.match(mig, /grant select \(tipo_entrada, mensagem_para_pedido, considerar_antes, considerar_antes_texto\) on public\.properties to anon, authenticated/);
+  assert.doesNotMatch(mig, /como_entrar[^\n]*to anon/);
+});

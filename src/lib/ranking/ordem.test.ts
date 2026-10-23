@@ -200,3 +200,11 @@ test("62-B2: \"· vistoriado\" pesa só na nota (+3); com notas iguais, não mud
   const fonte = readFileSync(new URL("./ordem.ts", import.meta.url), "utf8");
   assert.doesNotMatch(fonte.slice(fonte.indexOf("export function ordenarBusca")), /\.vistoriado\b/);
 });
+
+test("61-B: \"o que considerar antes de pedir\" preenchido soma na nota (+2); vazio não tira nem bloqueia", () => {
+  const sem = notaQualidade(base({ precoJusto: false }), AGORA);
+  const com = notaQualidade(base({ considerarAntes: true }), AGORA);
+  assert.equal(com.nota - sem.nota, 2);
+  assert.equal(sem.motivos.find((m) => m.codigo === "considerar_antes")?.pontos, 0);
+  assert.equal(com.motivos.find((m) => m.codigo === "considerar_antes")?.texto, "Diz o que considerar antes de pedir");
+});

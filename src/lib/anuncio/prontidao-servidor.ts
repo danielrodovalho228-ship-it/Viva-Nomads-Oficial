@@ -1,6 +1,7 @@
 import { situacaoLimite } from "@/lib/anuncio/pausa";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { itensFaltantes } from "@/lib/conforto/regras";
+import { tipoEntradaBloqueia } from "@/lib/anuncio/chegada-e-pedido";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
 
 /**
@@ -33,14 +34,17 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
   if (lista.length === 0) return mapa;
   const idsLista = lista.map((p) => p.id);
 
-  const [{ data: fotos }, { data: docs }, plano, { count: ativos }, conforto] = await Promise.all([
+  const [{ data: fotos }, { data: docs }, plano, { count: ativos }, conforto, entrada] = await Promise.all([
     cliente.from("property_photos").select("property_id").in("property_id", idsLista),
     cliente.from("qualification_checklists").select("property_id, document_status, created_at").eq("owner_id", ownerId).in("property_id", idsLista).order("created_at", { ascending: false }),
     planoDoProprietario(cliente, ownerId),
     cliente.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active"),
     // Prompt 59: declarações do padrão mínimo (sem a 0210, erro → não barra aqui; o banco é a trava).
     cliente.from("conforto_declaracoes").select("property_id, chave, confirmado, versao_lista").in("property_id", idsLista),
+    // 61-B: tipo de entrada (sem a 0225, erro → não barra).
+    cliente.from("properties").select("id, tipo_entrada").in("id", idsLista),
   ]);
+  const tipoEntradaPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; tipo_entrada: string | null }[]).map((e) => [e.id, e.tipo_entrada]));
   const declPor = new Map<string, { chave: string; confirmado: boolean; versao_lista?: number | null }[]>();
   const confortoLido = !conforto.error;
   for (const d of (conforto.data ?? []) as { property_id: string; chave: string; confirmado: boolean; versao_lista?: number | null }[]) {
@@ -60,6 +64,8 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     const f = fatosDaLinha(p, fotosPor.get(p.id) ?? 0, docPor.get(p.id) ?? "none", limiteOk, sit.limite, sit.ativos);
     // O padrão mínimo é condição para PASSAR a publicado; o publicado sem ele segue o prazo de adequação (D4).
     if (confortoLido && p.status !== "active") f.confortoFaltam = itensFaltantes(declPor.get(p.id) ?? []).length;
+    // 61-B: o tipo de entrada só barra o anúncio NOVO (rascunho); o que já foi publicado segue sem bloqueio retroativo.
+    if (tipoEntradaPor && p.status === "draft") f.tipoEntradaOk = !tipoEntradaBloqueia({ tipoEntrada: tipoEntradaPor.get(p.id), jaPublicado: false });
     mapa.set(p.id, f);
   }
   return mapa;

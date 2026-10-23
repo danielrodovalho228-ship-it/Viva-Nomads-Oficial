@@ -121,3 +121,69 @@ export function convidadoVence(fimDaEstadia: string | null | undefined): Date | 
   if (Number.isNaN(d.getTime())) return null;
   return new Date(d.getTime() + DIAS_APAGAR_CONVIDADO * 86_400_000);
 }
+
+// ── Gravação (servidor) ──────────────────────────────────────────────────────────────────────────────────────────────
+export interface EntradaChegadaEPedido {
+  tipoEntrada?: unknown;
+  mensagemParaPedido?: unknown;
+  considerarAntes?: unknown;
+  considerarAntesTexto?: unknown;
+}
+
+/** Entrada do formulário → colunas de properties. Campo ausente (undefined) não mexe; vazio limpa. */
+export function colunasChegadaEPedido(e: EntradaChegadaEPedido): { ok: true; colunas: Record<string, unknown> } | { ok: false; erro: string } {
+  const colunas: Record<string, unknown> = {};
+  if (e.tipoEntrada !== undefined) {
+    if (e.tipoEntrada === null || e.tipoEntrada === "") colunas.tipo_entrada = null;
+    else if (tipoEntradaValido(e.tipoEntrada)) colunas.tipo_entrada = e.tipoEntrada;
+    else return { ok: false, erro: "Escolha o tipo de entrada na lista." };
+  }
+  if (e.mensagemParaPedido !== undefined) {
+    const m = validarMensagemParaPedido(typeof e.mensagemParaPedido === "string" ? e.mensagemParaPedido : null);
+    if (!m.ok) return m;
+    colunas.mensagem_para_pedido = m.valor;
+  }
+  if (e.considerarAntes !== undefined || e.considerarAntesTexto !== undefined) {
+    const c = validarConsiderar(e.considerarAntes, typeof e.considerarAntesTexto === "string" ? e.considerarAntesTexto : null);
+    if (!c.ok) return c;
+    if (e.considerarAntes !== undefined) colunas.considerar_antes = c.itens;
+    if (e.considerarAntesTexto !== undefined) colunas.considerar_antes_texto = c.texto;
+  }
+  return { ok: true, colunas };
+}
+
+/** Os campos do 61-B guardados no JSON do rascunho do assistente. */
+export function chegadaDoRascunho(data: unknown): EntradaChegadaEPedido {
+  const d = (data && typeof data === "object" ? data : {}) as Record<string, unknown>;
+  return { tipoEntrada: d.tipoEntrada, mensagemParaPedido: d.mensagemParaPedido, considerarAntes: d.considerarAntes, considerarAntesTexto: d.considerarAntesTexto };
+}
+
+// ── Leitura (anúncio) ────────────────────────────────────────────────────────────────────────────────────────────────
+export interface ChegadaEPedido {
+  tipoEntrada: TipoEntrada | null;
+  mensagemParaPedido: string | null;
+  considerarAntes: ConsiderarAntes[];
+  considerarAntesTexto: string | null;
+}
+export interface LinhaChegadaEPedido {
+  tipo_entrada?: string | null;
+  mensagem_para_pedido?: string | null;
+  considerar_antes?: string[] | null;
+  considerar_antes_texto?: string | null;
+}
+
+/** Linha do banco → anúncio. Sem a 0225 (linha nula): undefined, e as telas escondem o bloco. A mensagem sai mascarada. */
+export function chegadaEPedidoDaLinha(l: LinhaChegadaEPedido | null): ChegadaEPedido | undefined {
+  if (!l) return undefined;
+  const c = validarConsiderar(l.considerar_antes ?? [], null);
+  return {
+    tipoEntrada: tipoEntradaValido(l.tipo_entrada) ? l.tipo_entrada : null,
+    mensagemParaPedido: mensagemParaExibir(l.mensagem_para_pedido),
+    considerarAntes: c.ok ? c.itens : [],
+    considerarAntesTexto: l.considerar_antes_texto?.trim() ? guardContactInfo(l.considerar_antes_texto.trim()).text : null,
+  };
+}
+
+export function rotuloConsiderar(chave: string): string {
+  return CONSIDERAR_OPCOES.find((o) => o.chave === chave)?.rotulo ?? chave;
+}

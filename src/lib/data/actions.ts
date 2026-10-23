@@ -51,6 +51,7 @@ import { colunaAirbnb } from "@/lib/preco-justo";
 import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
 import { prontidaoDoImovel, fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { chegadaDoRascunho, colunasChegadaEPedido, type EntradaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { atribuirLead, garantirCartao } from "@/lib/data/cartoes-servidor";
 import { REF_COOKIE } from "@/lib/cartoes/compartilhar";
 import { scoreAnuncio, type ScoreAnuncio } from "@/lib/anuncio/score";
@@ -485,6 +486,11 @@ export interface PropertyInput {
   internetMbps?: unknown;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
+  /** 61-B (0225): tipo de entrada (público), mensagem a quem vai pedir e "o que considerar antes de pedir". */
+  tipoEntrada?: string | null;
+  mensagemParaPedido?: string | null;
+  considerarAntes?: string[];
+  considerarAntesTexto?: string | null;
   maxGuests?: number;
   /** Chaves de comodidade selecionadas (catálogo único). */
   amenityKeys?: string[];
@@ -522,6 +528,26 @@ async function gravarPrivacidade(
     if (error) console.error("[gravarPrivacidade]", error.code, error.message);
   } catch (e) {
     console.error("[gravarPrivacidade] erro:", e);
+  }
+}
+
+/**
+ * 61-B: tipo de entrada, mensagem a quem vai pedir e "o que considerar" em UPDATE à parte (como a privacidade): sem a
+ * 0225 o erro é só logado. A forma já foi validada por colunasChegadaEPedido antes de gravar o resto.
+ */
+async function gravarChegadaEPedido(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  id: string,
+  entrada: EntradaChegadaEPedido
+): Promise<void> {
+  const r = colunasChegadaEPedido(entrada);
+  if (!r.ok || Object.keys(r.colunas).length === 0) return;
+  try {
+    const { error } = await supabase.from("properties").update(r.colunas).eq("id", id).eq("owner_id", ownerId);
+    if (error) console.error("[gravarChegadaEPedido]", error.code, error.message);
+  } catch (e) {
+    console.error("[gravarChegadaEPedido] erro:", e);
   }
 }
 
@@ -659,6 +685,8 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
   }
+  const chegada = colunasChegadaEPedido(input);
+  if (!chegada.ok) return { ok: false, error: chegada.erro };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -772,6 +800,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     /* migração 0018/0019/0020 ausente — segue sem os campos extras */
   }
   await gravarPrivacidade(supabase, user.id, data.id as string, input);
+  await gravarChegadaEPedido(supabase, user.id, data.id as string, input);
 
   // Comodidades por categoria (catálogo único). Best-effort.
   if (input.amenityKeys && input.amenityKeys.length > 0) {
@@ -912,6 +941,8 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
   }
+  const chegada = colunasChegadaEPedido(input);
+  if (!chegada.ok) return { ok: false, error: chegada.erro };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -1029,6 +1060,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     /* migração ausente — segue sem os campos extras */
   }
   await gravarPrivacidade(supabase, user.id, id, input);
+  await gravarChegadaEPedido(supabase, user.id, id, input);
 
   // Regras de pets (0119): validadas aqui; só vale com "aceita pets" marcado.
   try {
@@ -1982,6 +2014,7 @@ export async function saveDraftData(snap: {
     }
     // 0 linhas = rascunho de outro dono (ou já publicado): não liga foto nem qualificação.
     if (!atualizou) return { ok: true, id: rascunhoId };
+    await gravarChegadaEPedido(supabase, user.id, rascunhoId, chegadaDoRascunho(snap.data));
     await sincronizarFotos(supabase, rascunhoId, user.id, urlsDoRascunho(snap.data));
     await ligarQualificacaoAoImovel(supabase, user.id, rascunhoId);
     await ligarMatriculaAoImovel(createAdminClient(), user.id, rascunhoId);
@@ -1992,6 +2025,7 @@ export async function saveDraftData(snap: {
     console.error("[saveDraftData] novo", error.code, error.message);
     return { ok: false, error: erroBancoPT(error) };
   }
+  await gravarChegadaEPedido(supabase, user.id, data.id as string, chegadaDoRascunho(snap.data));
   await sincronizarFotos(supabase, data.id as string, user.id, urlsDoRascunho(snap.data));
   // A qualificação enviada antes do rascunho passa a pertencer a ele (prontidão "Em análise", não "Não enviado").
   await ligarQualificacaoAoImovel(supabase, user.id, data.id as string);

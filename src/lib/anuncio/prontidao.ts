@@ -15,6 +15,7 @@ import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
 import { videoDoAnuncio } from "../video-anuncio.ts";
+import { ROTULO_FALTA_TIPO_ENTRADA } from "./chegada-e-pedido.ts";
 
 export const MIN_FOTOS = 8;
 export const MIN_DESCRICAO = 60;
@@ -55,6 +56,11 @@ export interface FatosAnuncio {
    * aplica aqui (editor de anúncio já publicado, que não muda de status). Com falta, publicar é bloqueado.
    */
   confortoFaltam?: number;
+  /**
+   * 61-B: tipo de entrada informado. Só se aplica a anúncio NOVO (rascunho); ausente = não se aplica (o publicado sem
+   * ele segue no ar e ganha o aviso no painel).
+   */
+  tipoEntradaOk?: boolean;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -150,6 +156,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   ];
   if (f.qualificacaoOk !== undefined) {
     obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: ETAPA.onde, detalhe: f.qualificacaoOk ? undefined : "leva poucos minutos" });
+  }
+  if (f.tipoEntradaOk === false) {
+    obrigatorios.push({ key: "tipo_entrada", label: ROTULO_FALTA_TIPO_ENTRADA, ok: false, etapa: ETAPA.regras, detalhe: "porteiro, chave, cofre ou fechadura com código" });
   }
   if (!f.sublocacaoOk) {
     const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;
