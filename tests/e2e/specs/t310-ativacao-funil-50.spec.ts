@@ -3,7 +3,7 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T308 — Prompt 50: ativação por papel, funil e lembretes honestos (laboratório).
+ * T310 — Prompt 50: ativação por papel, funil e lembretes honestos (laboratório).
  *   1. proprietário: o checklist do Início some na ATIVAÇÃO (1º anúncio publicado) e a data fica gravada 1× por papel;
  *   2. verificação: 1ª reprovação automática → motivo legível + nova tentativa na hora; 2ª → análise de uma pessoa
  *      (topo de decisões e /admin/documentos) → a equipe aprova → identidade confirmada;
@@ -12,15 +12,15 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  * O lembrete do rascunho parado (3 dias, "Faltam N passos…") sai pelo cron diário, que no laboratório não tem
  * CRON_SECRET: a regra fica nos testes de unidade (lembretes/regras, automacoes/regras) e no reteste do Muse.
  */
-test.describe("T308 — ativação e funil (50)", () => {
+test.describe("T310 — ativação e funil (50)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const dono = { email: `dono.t308.${sufixo}@lab.vivanomads.test`, nome: "Odete Dona", role: "owner" as const };
-  const pessoa = { email: `pessoa.t308.${sufixo}@lab.vivanomads.test`, nome: "Paulo Verifica", role: "tenant" as const };
+  const dono = { email: `dono.t310.${sufixo}@lab.vivanomads.test`, nome: "Odete Dona", role: "owner" as const };
+  const pessoa = { email: `pessoa.t310.${sufixo}@lab.vivanomads.test`, nome: "Paulo Verifica", role: "tenant" as const };
   const ids: Record<string, string> = {};
   const chamados: string[] = [];
 
@@ -36,7 +36,7 @@ test.describe("T308 — ativação e funil (50)", () => {
     ids.pessoa = await criarConta(pessoa, senha);
     // A verificação simulada é de conta de teste (is_teste); o cookie de laboratório força a reprovação.
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.pessoa);
-    ids.imovel = await criarImovelPronto(ids.dono, `Ativação t308 ${sufixo}`, { ativo: false });
+    ids.imovel = await criarImovelPronto(ids.dono, `Ativação t310 ${sufixo}`, { ativo: false });
   });
 
   test.afterAll(async () => {
@@ -84,7 +84,7 @@ test.describe("T308 — ativação e funil (50)", () => {
     await expect(p.getByTestId("verificacao-teste-verificar")).toHaveCount(0);
     await expect.poll(async () => (await adm().from("verificacao_revisoes").select("motivo").eq("user_id", ids.pessoa).is("decidido_em", null).maybeSingle()).data?.motivo ?? null, { timeout: 15_000 }).toBe("foto_escura");
     expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-    await p.screenshot({ path: "tests/laboratorio/saida/t308-verificacao-390.png", fullPage: true });
+    await p.screenshot({ path: "tests/laboratorio/saida/t310-verificacao-390.png", fullPage: true });
 
     // A equipe vê no topo de decisões e decide em /admin/documentos.
     const a = await admin(browser, "/admin");
@@ -110,7 +110,7 @@ test.describe("T308 — ativação e funil (50)", () => {
     await a.locator('[data-testid="funil-etapa"][data-chave="conta_intencao"]').getByRole("link").click();
     await expect(a.getByTestId("funil-lista")).toBeVisible({ timeout: 20_000 });
     await expect(a.getByTestId("funil-verificacao")).toContainText("Iniciaram");
-    await a.screenshot({ path: "tests/laboratorio/saida/t308-funil-1280.png", fullPage: true });
+    await a.screenshot({ path: "tests/laboratorio/saida/t310-funil-1280.png", fullPage: true });
     await a.context().close();
   });
 
@@ -126,7 +126,7 @@ test.describe("T308 — ativação e funil (50)", () => {
         prioridade: "p3",
         status: "aberto",
         canal: "site",
-        assunto: `Lab T308 ${sufixo}`,
+        assunto: `Lab T310 ${sufixo}`,
         responsavel_tipo: "humano",
         prazo_primeira_resposta: new Date(agora - 3_600_000).toISOString(),
         prazo_resolucao: new Date(agora + 86_400_000).toISOString(),

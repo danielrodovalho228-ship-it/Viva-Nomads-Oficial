@@ -3,6 +3,7 @@
 import { ITENS_CONFORTO } from "@/config/conforto-minimo";
 import { TITULO_PADRAO_MINIMO } from "@/lib/conforto/exibicao";
 import { Button } from "@/components/ui/button";
+import type { SalvamentoConforto } from "./use-conforto-salvo";
 
 /**
  * Prompt 59 — checklist do padrão mínimo de conforto (o dono confirma item a item). Usado no passo Comodidades do cadastro (59-A) e na
@@ -12,10 +13,15 @@ export function ChecklistConforto({
   marcados,
   onChange,
   desabilitado = false,
+  salvamento = null,
+  onTentarDeNovo,
 }: {
   marcados: readonly string[];
   onChange: (marcados: string[]) => void;
   desabilitado?: boolean;
+  /** 59-C1: o checklist grava sozinho; este é o estado da gravação (ou da carga do que já estava salvo). */
+  salvamento?: SalvamentoConforto;
+  onTentarDeNovo?: () => void;
 }) {
   const sel = new Set(marcados);
   const faltam = ITENS_CONFORTO.filter((i) => !sel.has(i.chave)).length;
@@ -62,6 +68,23 @@ export function ChecklistConforto({
       <p className="mt-2 text-xs text-muted" data-testid="conforto-faltam">
         {faltam === 0 ? "Todos os itens confirmados." : faltam === 1 ? "Falta confirmar 1 item." : `Faltam confirmar ${faltam} itens.`}
       </p>
+      {salvamento && (
+        <div
+          className="mt-2 flex flex-wrap items-center gap-3"
+          data-testid="conforto-salvamento"
+          data-estado={salvamento.estado}
+          role={salvamento.estado === "erro" ? "alert" : "status"}
+        >
+          <p className={salvamento.estado === "erro" ? "text-sm text-red-700" : "text-sm text-ink"}>
+            {salvamento.estado === "salvando" ? "Salvando…" : salvamento.estado === "salvo" ? "Confirmação salva" : salvamento.erro}
+          </p>
+          {salvamento.estado === "erro" && onTentarDeNovo && (
+            <Button type="button" variant="outline" size="sm" onClick={onTentarDeNovo} data-testid="conforto-tentar-de-novo">
+              Tentar de novo
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

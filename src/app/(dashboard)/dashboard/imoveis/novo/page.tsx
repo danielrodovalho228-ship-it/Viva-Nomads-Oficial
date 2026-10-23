@@ -38,7 +38,7 @@ import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
-import { confortoDoImovel } from "@/lib/data/conforto-actions";
+import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
@@ -159,8 +159,6 @@ export default function NewPropertyPage() {
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
   const [aceitouIa, setAceitouIa] = useState(false);
-  // Prompt 59: itens do padrão mínimo de conforto marcados pelo dono (gravados no servidor ao salvar/publicar).
-  const [conforto, setConforto] = useState<string[]>([]);
   const [textoIaOriginal, setTextoIaOriginal] = useState<{ titulo: string; descricao: string } | null>(null);
   const [title, setTitle] = useState("");
   const [propertyType, setPropertyType] = useState("apartamento");
@@ -227,6 +225,8 @@ export default function NewPropertyPage() {
   const [docOperacaoAnexado, setDocOperacaoAnexado] = useState(false);
   const [qual, setQual] = useState({ baseBadge: false, tHome: false, tWork: false });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  // 59-C1: a causa da recusa do servidor no autosave (null = falha de rede).
+  const [saveErro, setSaveErro] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string>("");
   const [draftServerId, setDraftServerId] = useState<string | null>(null);
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
@@ -237,6 +237,10 @@ export default function NewPropertyPage() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
   const draftParam = searchParams.get("draft");
+  // Prompt 59 / 59-C1: o padrão mínimo de conforto. Com id, cada item marcado grava na hora; sem id, grava assim que o
+  // primeiro autosave criar o rascunho. Só depois de carregar o que já estava salvo (nunca desmarca por omissão).
+  const conf = useConfortoSalvo(editId ?? draftParam ?? draftServerId);
+  const conforto = conf.marcados;
   const etapaParam = etapaDaUrl(searchParams.get("etapa"));
   const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
@@ -340,19 +344,6 @@ export default function NewPropertyPage() {
   }, [editId]);
 
   const imovelId = editId ?? draftParam ?? draftServerId;
-  // O que o dono já confirmou do padrão mínimo (rascunho salvo ou anúncio publicado).
-  useEffect(() => {
-    if (!imovelId) return;
-    let vivo = true;
-    confortoDoImovel(imovelId)
-      .then((e) => {
-        if (vivo && e) setConforto((atual) => [...new Set([...atual, ...e.itens.filter((i) => i.confirmado).map((i) => i.chave)])]);
-      })
-      .catch(() => null);
-    return () => {
-      vivo = false;
-    };
-  }, [imovelId]);
   useEffect(() => {
     let alive = true;
     getMyDocumentStatus(imovelId)
@@ -523,7 +514,8 @@ export default function NewPropertyPage() {
       videoUrl: videoUrl.trim() || undefined,
       videoArquivo,
       asDraft,
-      confortoConfirmados: conforto,
+      // 59-C1: a lista só vai quando o dono mexeu no checklist nesta sessão (já salva item a item); ausente = não mexe.
+      ...(conf.mexido ? { confortoConfirmados: conforto, confortoMexido: true } : {}),
       aceiteIa: asDraft
         ? undefined
         : {
@@ -778,17 +770,27 @@ export default function NewPropertyPage() {
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       if (!on) return;
-      const res = await saveDraftData({
-        id: draftIdRef.current,
-        title,
-        city,
-        monthlyPrice: Number(monthlyPrice) || 0,
-        neighborhood,
-        bathrooms: Number(bathrooms) || 0,
-        areaM2: Number(areaM2) || 0,
-        description,
-        data: JSON.parse(draftJson),
-      });
+      // 59-C1: rede (o fetch nem chegou) ≠ recusa do servidor (chegou e o banco disse não, com a causa).
+      let res: Awaited<ReturnType<typeof saveDraftData>>;
+      try {
+        res = await saveDraftData({
+          id: draftIdRef.current,
+          title,
+          city,
+          monthlyPrice: Number(monthlyPrice) || 0,
+          neighborhood,
+          bathrooms: Number(bathrooms) || 0,
+          areaM2: Number(areaM2) || 0,
+          description,
+          data: JSON.parse(draftJson),
+        });
+      } catch {
+        if (on) {
+          setSaveErro(null);
+          setSaveStatus("error");
+        }
+        return;
+      }
       if (!on) return;
       if (res.ok) {
         if (res.id) {
@@ -800,6 +802,7 @@ export default function NewPropertyPage() {
         setSaveStatus("saved");
         setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
       } else {
+        setSaveErro(res.error ?? "o servidor recusou a gravação.");
         setSaveStatus(res.demo ? "saved" : "error");
       }
     }, 2000);
@@ -1223,7 +1226,7 @@ export default function NewPropertyPage() {
                 </>
               ) : saveStatus === "error" ? (
                 <>
-                  <XCircle className="h-3.5 w-3.5" /> Sem conexão — não salvo
+                  <XCircle className="h-3.5 w-3.5" /> {saveErro ? `Não foi possível salvar: ${saveErro}` : "Sem conexão — não salvo"}
                 </>
               ) : (
                 "Salvando…"
@@ -1422,7 +1425,13 @@ export default function NewPropertyPage() {
               <div className="space-y-6">
                 <EtapaEncontramos parte="comodidades" {...camposImovel} />
                 {/* Prompt 59-A: o padrão mínimo da Viva é confirmado junto das comodidades. */}
-                <ChecklistConforto marcados={conforto} onChange={setConforto} desabilitado={publishing} />
+                <ChecklistConforto
+                  marcados={conforto}
+                  onChange={conf.alterar}
+                  desabilitado={publishing || !conf.carregado}
+                  salvamento={conf.salvamento}
+                  onTentarDeNovo={conf.tentarDeNovo}
+                />
                 {/* Adendo 59.1: o nível que o imóvel atinge agora e o que falta para o próximo, item a item, com foto. */}
                 <NivelNoCadastro propertyId={imovelId} conforto={conforto} />
               </div>
