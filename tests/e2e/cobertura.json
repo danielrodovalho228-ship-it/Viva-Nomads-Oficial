@@ -15,7 +15,7 @@
         "t197-anuncio-teste-oculto",
         "t201-qa-muse",
         "t283-home-internet-57",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/acesso-socios": {
@@ -265,7 +265,7 @@
         "t25-chamado-resumo",
         "t30-atendimento-autonomo",
         "t237-correcoes-35a",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/alerta-busca/desligar": {
@@ -275,7 +275,7 @@
       "specs": [
         "t125-alerta-busca-salva",
         "t306-varredura-bloco7",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/app/boas-vindas": {
@@ -378,7 +378,7 @@
         "t267-buscar-fotos-cartao",
         "t286-esqueletos-vazios-48",
         "t296-niveis-exibicao-59-1",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/cidades": {
@@ -388,7 +388,7 @@
       "specs": [
         "t18-seo-a11y",
         "t20-p1-agentes",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/cidades/[cidade]": {
@@ -401,7 +401,7 @@
         "t20-p1-agentes",
         "t176-exemplo-proprietario-avaliacoes",
         "t197-anuncio-teste-oculto",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -412,7 +412,7 @@
         "t117-polos-cidade",
         "t18-seo-a11y",
         "t20-p1-agentes",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/como-funciona": {
@@ -426,7 +426,7 @@
         "t72-paginas-institucionais",
         "t177-video-institucional",
         "t201-qa-muse",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/comparar": {
@@ -437,7 +437,7 @@
         "t100-comparar-imoveis",
         "t156-comparar-exemplos",
         "t48-varredura",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/conferir": {
@@ -451,7 +451,7 @@
         "t23-pacote-seguranca",
         "t260-documentos-registro",
         "t306-varredura-bloco7",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/conferir/[codigo]": {
@@ -464,7 +464,7 @@
         "t22-pacote-otavio",
         "t23-pacote-seguranca",
         "t260-documentos-registro",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/dashboard": {
@@ -1051,7 +1051,7 @@
         "t18-seo-a11y",
         "t69-botoes-header",
         "t72-paginas-institucionais",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/excluir-conta": {
@@ -1077,7 +1077,7 @@
         "t138-paineis-viva-vazio",
         "t160-favoritos-pagina",
         "t48-varredura",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/guia-fotos": {
@@ -1085,7 +1085,7 @@
         "publico"
       ],
       "specs": [
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/guias": {
@@ -1094,7 +1094,7 @@
       ],
       "specs": [
         "t105-guias",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/guias/[slug]": {
@@ -1103,7 +1103,7 @@
       ],
       "specs": [
         "t105-guias",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/imoveis/[id]": {
@@ -1154,7 +1154,7 @@
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
         "t304-airbnb-exibicao-61a",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/modelodenegocio": {
@@ -1176,7 +1176,7 @@
         "t68-comissao-valor-total",
         "t69-botoes-header",
         "t72-paginas-institucionais",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/parceiros": {
@@ -1189,7 +1189,7 @@
         "t171-faixas-taxa-cors",
         "t231-admin-numeros-com-lista",
         "t236-parceiros-ciclo",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/parceiros/fotografos": {
@@ -1201,7 +1201,7 @@
         "t201-qa-muse",
         "t231-admin-numeros-com-lista",
         "t236-parceiros-ciclo",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/pedidos": {
@@ -1231,7 +1231,7 @@
         "t165-pedido-contador",
         "t188-pedido-novo-layout",
         "t232-pedido-moradia-completo",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/precos": {
@@ -1249,7 +1249,7 @@
         "t72-paginas-institucionais",
         "t90-orcamento-velocidade",
         "t185-precos-3s",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/privacidade": {
@@ -1258,7 +1258,7 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/proprietario/[id]": {
@@ -1305,7 +1305,7 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/simulacao": {
@@ -1336,7 +1336,7 @@
       "specs": [
         "t18-seo-a11y",
         "t68-comissao-valor-total",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/tributario": {
@@ -1472,7 +1472,7 @@
         "t239-cartao-parceiro",
         "t250-parceiros-contratacao",
         "t253-orcamento-na-pagina-do-parceiro",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/parceiros/ativar": {
@@ -1491,7 +1491,7 @@
         "t236-parceiros-ciclo",
         "t241-contas-teste-36",
         "t262-detalhe-imovel-41",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/admin/contratos/[id]": {
@@ -1602,7 +1602,7 @@
       ],
       "specs": [
         "t261-tempo-ate-o-trabalho",
-        "t308-marco-principal-unico"
+        "t311-marco-principal-unico"
       ]
     },
     "/dashboard/imoveis/[id]/parceiros": {
