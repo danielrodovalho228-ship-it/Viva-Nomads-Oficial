@@ -1,6 +1,6 @@
--- 0220 — Prompt 51, fase 1: Sair da Viva. Pausar a conta (profiles.pausada_em), o motivo da saída (opcional; texto livre
--- só a equipe lê), as Correções do painel de qualidade e a denúncia de anúncio. Só o servidor grava (depois de conferir
--- quem age); a RLS abre a leitura à equipe (duas etapas) e, na denúncia, também a quem denunciou. Idempotente.
+-- Viva Nomads — aplicar 0221 (Sair da Viva — Prompt 51, fase 1). Idempotente. Rollback: supabase/producao/rollback/0221_rollback.sql.
+begin;
+set local lock_timeout = '5s';
 -- ── 1. Pausa da conta ───────────────────────────────────────────────────────────────────────────────────────────
 alter table public.profiles add column if not exists pausada_em timestamptz;
 -- O que a pausa tirou do ar (para a reativação devolver só isso, nunca o que o dono pausou por conta própria).
@@ -74,3 +74,8 @@ grant all on public.denuncias_anuncio to service_role;
 drop policy if exists denuncias_anuncio_le on public.denuncias_anuncio;
 create policy denuncias_anuncio_le on public.denuncias_anuncio for select to authenticated
   using (user_id = (select auth.uid()) or public.is_admin());
+insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
+select '20261023000221', '0221_sair_da_viva',
+       array['-- conteúdo em supabase/migrations/0221_sair_da_viva.sql'], 'danielrodovalho228@gmail.com'
+ where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261023000221');
+commit;

@@ -1203,6 +1203,14 @@
         "t311-marco-principal-unico"
       ]
     },
+    "/parceiros/avaliadores": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t314-entrada-avaliador-62b3"
+      ]
+    },
     "/parceiros/fotografos": {
       "personas": [
         "publico"
@@ -1722,6 +1730,14 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "/avaliadores": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t314-entrada-avaliador-62b3"
       ]
     },
     "/avaliadores/[numero]": {
@@ -5179,7 +5195,8 @@
         "parceiro"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t314-entrada-avaliador-62b3"
       ]
     },
     "src/lib/vistoria/actions.ts#adminDecidirCredenciamento": {
@@ -5187,7 +5204,8 @@
         "admin"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t314-entrada-avaliador-62b3"
       ]
     },
     "src/lib/vistoria/actions.ts#adminCriarAvaliacaoTeste": {

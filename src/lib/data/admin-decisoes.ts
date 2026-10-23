@@ -58,7 +58,7 @@ async function chamadosForaDaPromessa(admin: Admin, agora: Date): Promise<Contag
 
 /** Prompt 50: parcerias pendentes há mais de 1 dia útil (seg a sex, Brasília). */
 async function parceriasSemResposta1Dia(admin: Admin, agora: Date): Promise<ContagemDecisao> {
-  const { data, error } = await admin.from("parceiro_solicitacoes").select("criado_em, decidido_em").eq("status", "pendente").order("criado_em", { ascending: true }).limit(500);
+  const { data, error } = await admin.from("parceiro_solicitacoes").select("criado_em, decidido_em").eq("status", "pendente").not("categorias", "cs", "{vistoria}").order("criado_em", { ascending: true }).limit(500);
   if (error) return { n: null };
   const linhas = ((data ?? []) as { criado_em: string; decidido_em: string | null }[]).filter((s) => parceiroSemResposta(s.criado_em, s.decidido_em, agora));
   return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
@@ -99,6 +99,7 @@ async function parceriasPendentes(admin: Admin): Promise<ContagemDecisao> {
     .from("parceiro_solicitacoes")
     .select("criado_em")
     .in("status", ["pendente", "aguardando_email"])
+    .not("categorias", "cs", "{vistoria}")
     .order("criado_em", { ascending: true })
     .limit(500);
   if (error) return { n: null };

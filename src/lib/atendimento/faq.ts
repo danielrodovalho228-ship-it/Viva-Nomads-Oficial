@@ -56,6 +56,14 @@ export const FAQ: Pergunta[] = [
     termos: ["parceiro", "parceria", "virar parceiro", "modo parceiro", "cadastro", "cnpj", "mei", "empresa", "gestor", "fotografo", "servico", "limpeza", "seguro", "mobilia"],
   },
   {
+    // Correção 62-B3: a entrada do avaliador credenciado.
+    id: "como-ser-avaliador",
+    pergunta: "Como ser avaliador credenciado",
+    resposta:
+      "O avaliador credenciado faz a avaliação do imóvel pelo checklist da Viva. É independente: a Viva designa cada avaliação por rodízio e o dono nunca escolhe quem vai. Para pedir o credenciamento, abra a página Seja avaliador credenciado (em Parceiros) e toque em Pedir credenciamento: é um só pedido, mesmo para quem ainda não é parceiro. A Viva pede a identidade verificada, CPF ou CNPJ válido, experiência comprovada, o aceite do código de conduta e uma avaliação de teste revisada antes da primeira real.",
+    termos: ["avaliador", "avaliador credenciado", "credenciamento", "avaliacao de imovel", "avaliar imoveis", "laudo"],
+  },
+  {
     id: "taxa-parceria",
     pergunta: "Taxa de serviço dos parceiros",
     resposta: `${TAXA_PARCERIA_TEXTO} ${CONTATO_NO_ACEITE} ${REGRAS_ENTREGA}`,
