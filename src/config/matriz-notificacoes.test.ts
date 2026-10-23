@@ -26,10 +26,10 @@ test("cobre exatamente os eventos que existem (os de notify() e os e-mails avuls
   assert.deepEqual(new Set(Object.keys(MATRIZ_NOTIFICACOES)), existentes);
 });
 
-test("push só para decisão com prazo e para segurança", () => {
+test("push só para decisão com prazo, segurança e mensagem nova (Prompt 44)", () => {
   for (const [ev, l] of linhas) {
     if (!l.canais.includes("push")) continue;
-    assert.ok(l.categoria === "seguranca" || (l.categoria === "decisao" && l.prazo === true), ev);
+    assert.ok(l.categoria === "seguranca" || (l.categoria === "decisao" && l.prazo === true) || ev === "new_message", ev);
   }
   // E toda decisão com prazo chega por push.
   for (const [ev, l] of linhas) if (l.categoria === "decisao" && l.prazo) assert.ok(l.canais.includes("push"), ev);
@@ -46,13 +46,13 @@ test("decisão e segurança não têm interruptor; mensagens, lembretes e outros
 
 test("canaisDoEvento: canais do papel que recebe; papel que não recebe fica sem nada", () => {
   assert.deepEqual(canaisDoEvento("proposta_recebida", "morador"), ["push", "central", "email"]);
-  assert.deepEqual(canaisDoEvento("new_message", "proprietario"), ["central", "email"]);
+  assert.deepEqual(canaisDoEvento("new_message", "proprietario"), ["push", "central", "email"]);
   assert.deepEqual(canaisDoEvento("visita_pedida", "morador"), []);
   assert.deepEqual(canaisDoEvento("chamado_equipe", "proprietario"), []);
   assert.deepEqual(canaisDoEvento("chamado_equipe", "admin"), ["central", "email"]);
   // Devolve cópia: quem chama não altera a matriz.
-  canaisDoEvento("new_message", "morador").push("push");
-  assert.deepEqual(canaisDoEvento("new_message", "morador"), ["central", "email"]);
+  canaisDoEvento("pedido_resposta", "morador").push("push");
+  assert.deepEqual(canaisDoEvento("pedido_resposta", "morador"), ["central", "email"]);
   assert.equal(categoriaDoEvento("manutencao_atrasada"), "decisao");
 });
 

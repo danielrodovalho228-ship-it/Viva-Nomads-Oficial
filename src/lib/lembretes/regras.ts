@@ -13,29 +13,16 @@ import { somarHorasUteis } from "../vistoria/laudo.ts";
 import { PROMESSA_HUMANA_H } from "../../config/atendimento.ts";
 
 const H = 3_600_000;
-const BRT = -3 * H;
 
-export const SILENCIO = { inicio: 22, fim: 7 } as const;
+export { SILENCIO } from "../notifications/silencio.ts";
 export const DIAS_RASCUNHO = 3;
 export const HORAS_VERIFICACAO = 24;
 /** A promessa pública a uma pessoa (PROMESSA_ATENDIMENTO, src/config/atendimento.ts). */
 export const HORAS_PROMESSA_ATENDIMENTO = PROMESSA_HUMANA_H;
 
-const horaBRT = (d: Date) => new Date(d.getTime() + BRT).getUTCHours();
 
-/** Está no silêncio (22h–7h em Brasília)? */
-export function emSilencio(agora: Date): boolean {
-  const h = horaBRT(agora);
-  return h >= SILENCIO.inicio || h < SILENCIO.fim;
-}
-
-/** Quando pode sair: agora, ou as 7h (Brasília) seguintes. */
-export function proximoEnvioPermitido(agora: Date): Date {
-  if (!emSilencio(agora)) return agora;
-  const l = new Date(agora.getTime() + BRT);
-  const dia = horaBRT(agora) >= SILENCIO.inicio ? l.getUTCDate() + 1 : l.getUTCDate();
-  return new Date(Date.UTC(l.getUTCFullYear(), l.getUTCMonth(), dia, SILENCIO.fim) - BRT);
-}
+// Prompt 44: o silêncio (22h–7h) é a regra única de src/lib/notifications/silencio.ts.
+export { emSilencio, proximoEnvioPermitido } from "../notifications/silencio.ts";
 
 /** Rascunho parado há 3 dias (desde a última alteração)? O "1×" é a chave de envio (automacoes_envios). */
 export function rascunhoParado(ultimaAlteracaoEm: string, agora: Date): boolean {

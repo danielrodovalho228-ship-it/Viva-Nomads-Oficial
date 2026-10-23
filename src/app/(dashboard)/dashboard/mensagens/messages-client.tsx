@@ -1,5 +1,6 @@
 "use client";
 
+import { marcarConversaAberta } from "@/lib/data/conversa-aberta-actions";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { useEffect, useState } from "react";
@@ -85,6 +86,23 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const visiveis = filtrarConversas(conversations, filtro);
   // A conversa aberta acompanha o chip: se ela saiu do filtro, abre a primeira que sobrou.
   const active = visiveis.find((c) => c.id === activeId) ?? visiveis[0] ?? conversations[0];
+
+  // Prompt 44: com a conversa aberta (e a aba visível), a próxima mensagem dela não vira push no celular. Renova a cada
+  // 5 min enquanto ela fica na tela (a regra do push olha os últimos 10 min).
+  const conversaAbertaId = active?.id;
+  useEffect(() => {
+    if (demo || !conversaAbertaId) return;
+    const marcar = () => {
+      if (document.visibilityState === "visible") marcarConversaAberta(conversaAbertaId).catch(() => {});
+    };
+    marcar();
+    const t = setInterval(marcar, 5 * 60_000);
+    document.addEventListener("visibilitychange", marcar);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", marcar);
+    };
+  }, [demo, conversaAbertaId]);
 
   function openConversation(id: string) {
     setActiveId(id);

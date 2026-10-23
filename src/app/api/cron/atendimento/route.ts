@@ -5,6 +5,7 @@ import { dispararEncaminhamentos } from "@/lib/agentes/motor";
 import { rodarAvisosDaniel } from "@/lib/agentes/avisos-daniel-servidor";
 import { avisarEquipe, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { notify } from "@/lib/notifications";
+import { enviarPushAdiados } from "@/lib/notifications/push-servidor";
 import { prioridadeSubida } from "@/lib/atendimento/acolhimento";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { PRAZO_MANUTENCAO_H, type UrgenciaManutencao } from "@/config/atendimento";
@@ -102,5 +103,7 @@ export async function GET(request: Request) {
       await notify({ event: "manutencao_atrasada", email: dono.email as string, name: (dono.full_name as string) ?? undefined, userId: so.owner_id, pushUrl: "/dashboard/solicitacoes" }).catch(() => null);
     }
   }
-  return NextResponse.json({ ok: true, alertas: alertas?.length ?? 0, escalados, manutencaoAtrasada: atrasadas });
+  // Prompt 44: este cron roda às 7h de Brasília — sai o push que esperou o silêncio (22h–7h).
+  const pushAdiados = await enviarPushAdiados(admin).catch(() => ({ enviados: 0, pendentes: 0 }));
+  return NextResponse.json({ ok: true, alertas: alertas?.length ?? 0, escalados, manutencaoAtrasada: atrasadas, pushAdiados });
 }
