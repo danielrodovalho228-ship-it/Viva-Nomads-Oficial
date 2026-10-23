@@ -6,7 +6,7 @@ import { TAMANHOS, abrirComoConta, lerMassa, temContaVarredura, type ChaveConta,
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T309 — VARREDURA DA PÁGINA INTEIRA, BLOCO 9 (Pista C, 23/10). O mesmo protocolo da t306 (seis classes, página toda
+  T312 — VARREDURA DA PÁGINA INTEIRA, BLOCO 9 (Pista C, 23/10). O mesmo protocolo da t306 (seis classes, página toda
   rolada, 390 e 1280 px, carregamento real de cada imagem) nas telas de passo único que nenhuma varredura cobria:
   - de visitante: conferir contrato pelo código (o do laboratório, TESTES_CONFERIR_CODIGO; sem ele, um código
     inexistente, que mostra a mesma página com "não encontrado"), ativar parceiro sem o link, confirmar exclusão de
@@ -35,7 +35,7 @@ const MASSA = lerMassa();
 const SAIDA = "tests/laboratorio/saida/varredura-bloco9";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
-test.describe("T309 — varredura da página inteira, bloco 9 (telas de passo único) (390 e 1280 px)", () => {
+test.describe("T312 — varredura da página inteira, bloco 9 (telas de passo único) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (contas da massa da varredura)");
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");

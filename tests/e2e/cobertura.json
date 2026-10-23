@@ -333,7 +333,7 @@
         "publico"
       ],
       "specs": [
-        "t309-varredura-bloco9"
+        "t312-varredura-bloco9"
       ]
     },
     "/auth/reset": {
@@ -456,7 +456,7 @@
         "t22-pacote-otavio",
         "t23-pacote-seguranca",
         "t260-documentos-registro",
-        "t309-varredura-bloco9"
+        "t312-varredura-bloco9"
       ]
     },
     "/dashboard": {
@@ -876,7 +876,7 @@
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t309-varredura-bloco9"
+        "t312-varredura-bloco9"
       ]
     },
     "/dashboard/pedidos": {
@@ -1059,7 +1059,7 @@
         "publico"
       ],
       "specs": [
-        "t309-varredura-bloco9"
+        "t312-varredura-bloco9"
       ]
     },
     "/favoritos": {
@@ -1268,7 +1268,7 @@
         "t183-telas-logadas-390",
         "t237-correcoes-35a",
         "t241-contas-teste-36",
-        "t309-varredura-bloco9"
+        "t312-varredura-bloco9"
       ]
     },
     "/roi": {
@@ -1461,7 +1461,7 @@
       ],
       "specs": [
         "t236-parceiros-ciclo",
-        "t309-varredura-bloco9"
+        "t312-varredura-bloco9"
       ]
     },
     "/parceiros/buscar": {
