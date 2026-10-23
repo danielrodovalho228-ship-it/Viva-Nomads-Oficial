@@ -28,6 +28,7 @@ import {
   carregarQualificacao,
   saveDraftData,
   loadDraftData,
+  enderecoGravadoDoImovel,
   getLatestDraft,
   carregarLimitesNegociacao,
   salvarLimitesNegociacao,
@@ -35,6 +36,7 @@ import {
 } from "@/lib/data/actions";
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { ERRO_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
@@ -124,6 +126,14 @@ const STEP_META = [
 ] as const;
 
 
+/** Tira o erro de um campo (o mesmo objeto quando ele não tem erro: não redesenha à toa). */
+function semErro(e: Record<string, string>, campo: string): Record<string, string> {
+  if (!(campo in e)) return e;
+  const resto = { ...e };
+  delete resto[campo];
+  return resto;
+}
+
 export default function NewPropertyPage() {
   // T1: o rascunho local é POR USUÁRIO — nunca abre o de outra conta.
   const userId = useAuthStore((s) => s.user?.id ?? null);
@@ -205,6 +215,8 @@ export default function NewPropertyPage() {
   const [neighborhood, setNeighborhood] = useState("");
   const [city, setCity] = useState("Uberlândia");
   const [cep, setCep] = useState("");
+  // L1-1: endereço já gravado do imóvel (rascunho retomado), para o "Enviar documento" não travar.
+  const [enderecoSalvo, setEnderecoSalvo] = useState<EnderecoDoc | null>(null);
   const [cepLoading, setCepLoading] = useState(false);
   // Prompt 20: toda busca de CEP vira uma mensagem (achou, só a cidade, não achou, sem rede).
   const [cepResultado, setCepResultado] = useState<ResultadoCep | null>(null);
@@ -631,6 +643,7 @@ export default function NewPropertyPage() {
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+      enderecoGravadoDoImovel(draftParam).then((e) => alive && setEnderecoSalvo(e)).catch(() => {});
       carregarLimitesNegociacao(draftParam).then((l) => alive && setLimites(l)).catch(() => {});
       if (etapaParam !== null) {
         setStep(etapaParam);
@@ -702,6 +715,7 @@ export default function NewPropertyPage() {
       }
       setEditingId(editId);
       setApproved(true);
+      enderecoGravadoDoImovel(editId).then((e) => alive && setEnderecoSalvo(e)).catch(() => {});
       setTitle(p.title || "");
       setPropertyType(p.propertyType || "apartamento");
       setDescription(p.description || "");
@@ -1399,15 +1413,22 @@ export default function NewPropertyPage() {
                 cep={cep}
                 setCep={(v) => {
                   setCep(v);
+                  setErros((e) => semErro(e, "cep"));
                   if (v.replace(/\D/g, "").length === 8) void lookupCep(v);
                   else setCepResultado(null);
                 }}
                 cepLoading={cepLoading}
                 street={street}
-                setStreet={setStreet}
+                setStreet={(v) => {
+                  setStreet(v);
+                  setErros((e) => semErro(e, "rua"));
+                }}
                 marcarDigitado={(c) => digitadosRef.current.add(c)}
                 numero={numero}
-                setNumero={setNumero}
+                setNumero={(v) => {
+                  setNumero(v);
+                  setErros((e) => semErro(e, "numero"));
+                }}
                 complemento={complemento}
                 setComplemento={setComplemento}
                 neighborhood={neighborhood}
@@ -1430,6 +1451,8 @@ export default function NewPropertyPage() {
                 enderecoMatricula={enderecoMatricula}
                 onEnderecoMatricula={usarEnderecoMatricula}
                 erros={erros}
+                enderecoSalvo={enderecoSalvo}
+                onFaltaDocumento={(campos) => setErros((e) => ({ ...e, ...Object.fromEntries(campos.map((c) => [c, ERRO_CAMPO_ENDERECO[c]])) }))}
               />
             )}
 

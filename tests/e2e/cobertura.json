@@ -2501,6 +2501,14 @@
         "t320-pausar-anuncio-64b"
       ]
     },
+    "src/lib/data/actions.ts#enderecoGravadoDoImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t322-documento-sem-trava-l11"
+      ]
+    },
     "src/lib/data/actions.ts#enviarDocumentoParaConferencia": {
       "personas": [
         "proprietario"

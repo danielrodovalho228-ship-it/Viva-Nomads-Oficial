@@ -38,7 +38,7 @@ Só defeito de produto confirmado, cada um com o teste do laboratório que o rep
 
 | Prioridade | Código | Defeito | Página | Teste que reproduz | Pista |
 |---|---|---|---|---|---|
-| 1 | D-V3 | "Enviar documento" (trava da matrícula) não responde e não diz qual campo falta | Editar anúncio (`/dashboard/imoveis/:id/editar`), 390 px | t249 · "D-V3" (`test.fail`) | A |
+| ~~1~~ | D-V3 | ~~"Enviar documento" (trava da matrícula) não responde e não diz qual campo falta~~ **Corrigido no L1-1 (Pista B)**: o botão diz "Falta: …" e leva ao campo; o endereço gravado do rascunho não trava | Passo Onde fica do assistente (`/dashboard/imoveis/novo?draft=…&etapa=onde`), 390 px | t249 · "D-V3" (caso verde, sem `test.fail`) | B |
 | 2 | L-9 | Tela do dono quebra no navegador (React #310) ao abrir Locações | `/dashboard/locacoes` → Contratos, 390 px | t48 · proprietário; t213 · 4 (390) | A |
 | — | D-V7 | Título do cartão de rascunho era link para a página pública (404) | Meus imóveis (`/dashboard/imoveis`), 1280 px | t249 · "D-V7" (teste normal) | **Corrigido no #1028** |
 | 3 | D-V8 | Tela de entrar sem `<main>` (falta o marco principal para leitor de tela) | Entrar (`/auth`), 390 e 1280 px | t249 · "D-V8" (`test.fail`, #1023) | A |
