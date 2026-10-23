@@ -362,7 +362,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     const ad = await admin(browser);
     const f = ad.getByTestId("verificacao-form");
     await f.getByLabel("Imóvel (id)").fill(ids.im6a);
-    await f.getByLabel("Motivo").selectOption("denuncia_procedente");
+    await f.locator('select[name="motivo"]').selectOption("denuncia_procedente");
     await f.getByLabel("Descrição do motivo").fill("Denúncia procedente: imóvel diferente das fotos (laboratório).");
     await f.getByRole("button", { name: "Abrir verificação" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.im6a).eq("tipo", "verificacao").maybeSingle()).data?.id ?? null, { timeout: 20_000 }).not.toBeNull();
