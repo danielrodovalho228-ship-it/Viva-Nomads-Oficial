@@ -162,6 +162,14 @@ test.describe("T303 — Prompt 61-A: Estadia confirmada, horários e mapa, Como 
       }).toPass({ timeout: 30_000 });
       await expect(folha).toContainText("Só avalia quem morou no imóvel, com contrato assinado pela Viva.");
       await expect(folha).toContainText("A avaliação é publicada depois que os dois avaliam, ou 14 dias depois do fim da estadia.");
+      // O print espera a folha e a rolagem pararem (sem isso, sai no meio da animação).
+      let antes = "";
+      await expect(async () => {
+        const agora = JSON.stringify([await folha.boundingBox(), await page.evaluate(() => scrollY)]);
+        const parado = agora === antes;
+        antes = agora;
+        expect(parado).toBe(true);
+      }).toPass({ intervals: [250], timeout: 10_000 });
       await page.screenshot({ path: `tests/laboratorio/saida/t303-3-avaliacoes-folha-${w}.png` });
       await page.keyboard.press("Escape");
       await expect(folha).toHaveCount(0);
