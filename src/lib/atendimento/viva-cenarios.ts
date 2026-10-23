@@ -66,8 +66,8 @@ export const CENARIOS: Cenario[] = [
   {
     n: 3, quem: "inquilino2", onde: "Ajuda no app", mensagem: "Não recebi o e-mail de confirmação", categoria: "conta", canal: "app",
     temContratoAtivo: true, contexto: { tipo: null, id: null }, critico: false,
-    esperado: { rota: "ia", destino: "ia", quemResolve: "IA", prazo: "Imediato", acoes: ["reenviar_email_confirmacao"], resposta: [/reenvi/i] },
-    roteiro: [ferramenta("reenviar_email_confirmacao"), texto("Pronto, reenviei o e-mail de confirmação. Confira também o spam e a aba Promoções.")],
+    esperado: { rota: "ia", destino: "ia", quemResolve: "IA", prazo: "Imediato", acoes: ["enviar_codigo_acesso"], resposta: [/c[óo]digo/i] },
+    roteiro: [ferramenta("enviar_codigo_acesso"), texto("Pronto, mandei um código de acesso para o e-mail da sua conta. É só digitar os 6 dígitos na tela Entrar; confira também o spam e a aba Promoções.")],
   },
   {
     n: 4, quem: "inquilino2", onde: "Contrato → \"Problema com isto?\"", mensagem: "O chuveiro queimou", categoria: "contrato", canal: "site",
@@ -191,7 +191,7 @@ export function ferramentasDeTeste(): Ferramentas {
     ver_status_caucao: async () => ({ conteudo: JSON.stringify([{ bloco: 1, valor: 1250, forma: "poupanca", status: "depositada" }]) }),
     ver_status_documento: async () => ({ conteudo: JSON.stringify([{ imovel: "Studio Centro", documento: "reprovado", motivo: "matrícula ilegível", em: "2026-10-03" }]) }),
     ver_status_anuncio: async () => ({ conteudo: JSON.stringify([{ id: IMOVEL, imovel: "Studio Centro", status: "rascunho", falta: ["Documento do imóvel em análise pela equipe"] }]) }),
-    reenviar_email_confirmacao: async () => ({ conteudo: "E-mail de confirmação reenviado para o endereço da conta." }),
+    enviar_codigo_acesso: async () => ({ conteudo: "Código de acesso enviado para o e-mail cadastrado na conta." }),
     enviar_link_redefinir_senha: async () => ({ conteudo: "Link para criar uma nova senha enviado para o e-mail da conta." }),
     abrir_ordem_manutencao: async (input) => {
       const urgencia = urgenciaManutencao(String(input.descricao ?? ""), input.urgencia as UrgenciaManutencao | undefined);

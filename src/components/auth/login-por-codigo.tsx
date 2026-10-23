@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmail } from "@/lib/auth-errors";
 import { ATRIBUTOS_EMAIL } from "@/lib/login-celular";
@@ -10,6 +11,7 @@ import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
 import {
   MSG_CODIGO_VENCIDO,
+  TEXTO_VALIDADE_CODIGO,
   codigoCompleto,
   codigoVencido,
   contaNova,
@@ -18,12 +20,18 @@ import {
   segundosParaReenviar,
   tentativasRestantes,
 } from "@/lib/seguranca/codigo-acesso";
+import { CHAVE_ENTROU, INTERVALO_CONFERE_SESSAO_MS, mesmaConta } from "@/lib/auth/sessao-entre-abas";
 
 /**
  * Entrada única do Viva Nomads (Prompt 49): um campo de e-mail e "Continuar". O código de 6 dígitos sai por
  * /api/auth/codigo (limite de envios no servidor; entra E cria conta, sem senha) e é conferido aqui com verifyOtp.
- * Vale 10 minutos; vencido, pedimos outro sozinhos. Reenvio com espera de 60 s; 5 códigos errados travam a tela
+ * Vale TEXTO_VALIDADE_CODIGO (a constante única da tela, dos e-mails e do Supabase). Vencido, ao tocar em Entrar
+ * pedimos outro e dizemos a causa. "Reenviar código" só por toque, depois de 60 s; 5 códigos errados travam a tela
  * até pedir um novo. A mesma tela aparece com ou sem conta: nunca revela se o e-mail existe.
+ *
+ * 49-C1 — sem tela órfã: enquanto pede o código, a tela escuta a sessão (onAuthStateChange, o evento de
+ * armazenamento entre abas, a volta à aba e uma conferência local a cada poucos segundos). Se a pessoa já entrou por
+ * outra aba ou por um link antigo, a tela diz "Você já entrou. Continuando…" e segue sozinha para o destino.
  */
 export function LoginPorCodigo({
   email,
@@ -53,6 +61,67 @@ export function LoginPorCodigo({
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const ocupado = useRef(false);
+  const [jaEntrou, setJaEntrou] = useState(false);
+  /** Já seguiu para o destino (pelo código desta aba ou pela sessão vinda de outra): nunca segue duas vezes. */
+  const seguiu = useRef(false);
+
+  function seguirCom(u: User) {
+    if (seguiu.current) return;
+    seguiu.current = true;
+    try {
+      localStorage.setItem(CHAVE_ENTROU, String(Date.now()));
+    } catch {
+      /* armazenamento bloqueado: as outras abas ainda conferem a sessão sozinhas */
+    }
+    onEntrou({
+      id: u.id,
+      email: u.email ?? "",
+      nome: u.user_metadata?.full_name as string | undefined,
+      papel: u.user_metadata?.role as string | undefined,
+      novo: contaNova(u.created_at, Date.now()),
+    });
+  }
+
+  // 49-C1: sem tela órfã. Enquanto espera o código, confere se a sessão já existe (entrou por outra aba ou por um
+  // link antigo). Nunca pede código novo sozinho: só sai da tela.
+  useEffect(() => {
+    if (enviadoEm == null) return;
+    const supabase = createClient();
+    if (!supabase) return;
+    let vivo = true;
+    const conferir = async () => {
+      // O próprio "Entrar" desta aba está conferindo o código: ele mesmo segue.
+      if (!vivo || seguiu.current || ocupado.current) return;
+      const { data } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+      const u = data.session?.user;
+      if (!vivo || !u || !mesmaConta(u.email, email) || seguiu.current || ocupado.current) return;
+      setJaEntrou(true);
+      seguirCom(u);
+    };
+    const { data: escuta } = supabase.auth.onAuthStateChange((evento) => {
+      if (evento === "SIGNED_IN" || evento === "TOKEN_REFRESHED" || evento === "INITIAL_SESSION") void conferir();
+    });
+    const aoArmazenar = (e: StorageEvent) => {
+      if (e.key === CHAVE_ENTROU) void conferir();
+    };
+    const aoVoltar = () => {
+      if (document.visibilityState === "visible") void conferir();
+    };
+    window.addEventListener("storage", aoArmazenar);
+    window.addEventListener("focus", aoVoltar);
+    document.addEventListener("visibilitychange", aoVoltar);
+    const t = setInterval(() => void conferir(), INTERVALO_CONFERE_SESSAO_MS);
+    void conferir();
+    return () => {
+      vivo = false;
+      escuta.subscription.unsubscribe();
+      window.removeEventListener("storage", aoArmazenar);
+      window.removeEventListener("focus", aoVoltar);
+      document.removeEventListener("visibilitychange", aoVoltar);
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- escuta por envio; o e-mail não muda com o código aberto
+  }, [enviadoEm]);
 
   useEffect(() => {
     if (enviadoEm == null) return;
@@ -119,7 +188,7 @@ export function LoginPorCodigo({
       setErro("Muitas tentativas erradas. Peça um novo código.");
       return;
     }
-    // Passou dos 10 minutos: o código não vale mais. Pede outro sozinho (se o CAPTCHA deixar) e diz a causa.
+    // Passou da validade: o código não vale mais. Pede outro sozinho (se o CAPTCHA deixar) e diz a causa.
     if (enviadoEm != null && codigoVencido(enviadoEm, Date.now())) {
       if (podeEnviar(captcha.ligado, captcha.token)) {
         ocupado.current = true;
@@ -150,14 +219,7 @@ export function LoginPorCodigo({
         setErro(mensagemVerificarCodigo(error?.message || "invalid"));
         return;
       }
-      const u = data.user;
-      onEntrou({
-        id: u.id,
-        email: u.email ?? "",
-        nome: u.user_metadata?.full_name as string | undefined,
-        papel: u.user_metadata?.role as string | undefined,
-        novo: contaNova(u.created_at, Date.now()),
-      });
+      seguirCom(data.user);
     } catch {
       setErro("Não foi possível entrar com o código agora. Tente novamente em instantes.");
     } finally {
@@ -167,6 +229,14 @@ export function LoginPorCodigo({
   }
 
   const enviado = enviadoEm != null;
+  if (jaEntrou)
+    return (
+      <div data-testid="login-por-codigo" data-estado="ja-entrou">
+        <p role="status" className="mt-6 flex items-center gap-2 text-sm text-ink" data-testid="ja-entrou">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-forest" aria-hidden /> Você já entrou. Continuando…
+        </p>
+      </div>
+    );
   return (
     <div data-testid="login-por-codigo">
       {onVoltar && (
@@ -182,7 +252,7 @@ export function LoginPorCodigo({
       )}
       <p className="mt-2 text-sm text-muted">
         {enviado
-          ? `Enviamos um código de 6 dígitos para ${email.trim()}. Ele vale por 10 minutos.`
+          ? `Enviamos um código de 6 dígitos para ${email.trim()}. Ele vale por ${TEXTO_VALIDADE_CODIGO}.`
           : "Sem senha: enviamos um código de 6 dígitos para o seu e-mail. Se ainda não tem conta, ela é criada aqui."}
       </p>
 

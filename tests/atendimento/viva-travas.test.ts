@@ -18,7 +18,7 @@ const trecho = (nome: string) => {
 };
 
 test("envio para outro e-mail é impossível: as ferramentas não recebem endereço", () => {
-  for (const nome of ["reenviar_email_confirmacao", "enviar_link_redefinir_senha"]) {
+  for (const nome of ["enviar_codigo_acesso", "enviar_link_redefinir_senha"]) {
     const f = FERRAMENTAS.find((x) => x.name === nome)!;
     assert.deepEqual(Object.keys((f.input_schema as { properties?: object }).properties ?? {}), [], `${nome} sem parâmetros`);
     assert.match(f.description, /JÁ CADASTRADO da conta conectada/);
@@ -28,7 +28,7 @@ test("envio para outro e-mail é impossível: as ferramentas não recebem endere
 test("só conta conectada: visitante sem login recebe orientação, e o e-mail vem do cadastro (profiles)", () => {
   assert.match(servidor, /async function emailDaConta[\s\S]*?if \(!c\.usuario_id\) return \{ email: null, userId: null \}/);
   assert.doesNotMatch(servidor, /visitante_email[^\n]*resetPasswordForEmail|emailDoChamado/);
-  for (const nome of ["reenviar_email_confirmacao", "enviar_link_redefinir_senha"]) {
+  for (const nome of ["enviar_codigo_acesso", "enviar_link_redefinir_senha"]) {
     assert.match(trecho(nome), /emailDaConta\(admin, c\)/);
     assert.match(trecho(nome), /SEM_LOGIN_EMAIL/);
   }
@@ -36,14 +36,14 @@ test("só conta conectada: visitante sem login recebe orientação, e o e-mail v
 
 test("limite diário por conta: 3 de cada tipo; lembrete ao dono 1×/24h por ordem de serviço", () => {
   assert.match(servidor, /LIMITE_ACOES_VIVA = \{ reenvio: 3, senha: 3, lembrete: 1 \}/);
-  assert.match(trecho("reenviar_email_confirmacao"), /consumirLimite\(`viva:reenvio:\$\{userId\}`, LIMITE_ACOES_VIVA\.reenvio, DIA\)/);
+  assert.match(trecho("enviar_codigo_acesso"), /consumirLimite\(`viva:reenvio:\$\{userId\}`, LIMITE_ACOES_VIVA\.reenvio, DIA\)/);
   assert.match(trecho("enviar_link_redefinir_senha"), /consumirLimite\(`viva:senha:\$\{userId\}`, LIMITE_ACOES_VIVA\.senha, DIA\)/);
   assert.match(trecho("lembrar_proprietario"), /consumirLimite\(`viva:lembrete:os:\$\{so\.id\}`, LIMITE_ACOES_VIVA\.lembrete, DIA\)/);
 });
 
 test("toda ação fica registrada no chamado", () => {
   for (const [nome, acao] of [
-    ["reenviar_email_confirmacao", "viva_reenvio_confirmacao"],
+    ["enviar_codigo_acesso", "viva_codigo_acesso"],
     ["enviar_link_redefinir_senha", "viva_link_senha"],
     ["abrir_ordem_manutencao", "viva_ordem_manutencao"],
     ["lembrar_proprietario", "viva_lembrete_dono"],
@@ -58,4 +58,14 @@ test("selo 'Resposta automática da Viva Nomads' e 'Falar com uma pessoa' em tod
   const ajuda = ler("components/ajuda/central-ajuda.tsx");
   assert.match(ajuda, /ia: "Viva \(assistente virtual\) · Resposta automática da Viva Nomads"/);
   assert.match(ajuda, /m\.autor === "ia" && aberto[\s\S]{0,900}Falar com uma pessoa/);
+});
+
+test("49-C1: o atendimento manda CÓDIGO de acesso, nunca link de confirmação, com o limite de envios por hora", () => {
+  const t = trecho("enviar_codigo_acesso");
+  assert.match(t, /enviarCodigoPorEmail\(admin, email, false, userId\)/);
+  assert.match(t, /avaliarEnvioCodigo\(emailHash, `viva:\$\{userId\}`, situacaoLimite\)/);
+  assert.doesNotMatch(servidor, /auth\.resend\(|type: "signup"|emailRedirectTo/);
+  const f = FERRAMENTAS.find((x) => x.name === "enviar_codigo_acesso")!;
+  assert.match(f.description, /sem link/);
+  assert.equal(FERRAMENTAS.some((x) => x.name === "reenviar_email_confirmacao"), false);
 });
