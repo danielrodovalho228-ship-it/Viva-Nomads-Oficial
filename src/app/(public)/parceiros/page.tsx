@@ -30,9 +30,6 @@ const CARDS = [
     links: [{ href: "/parceiros?categoria=limpeza#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=limpeza", rotulo: "Procurar" }] },
   { id: "mobilia", titulo: "Montagem e mudança", selo: "Aberto", texto: "Montagem de móveis e mudança para quem anuncia ou vem morar. Página própria com serviços e cidades.",
     links: [{ href: "/parceiros?categoria=mudanca#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=mudanca", rotulo: "Procurar" }] },
-  // Correção 62-B3: a entrada do avaliador credenciado (a categoria fica fora do formulário comum e do catálogo).
-  { id: "avaliadores", titulo: "É avaliador de imóveis?", selo: "Aberto", texto: "Avaliação do imóvel pelo checklist da Viva, designada por rodízio. Peça o credenciamento numa página própria.",
-    links: [{ href: "/parceiros/avaliadores", rotulo: "Ser avaliador credenciado" }] },
   { id: "seguros", titulo: "Seguros", selo: "Em breve", texto: "Seguros para imóveis mobiliados. Em breve: peça a parceria como \"Outro serviço\" e avisamos quando abrir.",
     links: [{ href: "/parceiros?categoria=outro#quero-ser-parceiro", rotulo: "Pedir parceria" }] },
 ];
@@ -109,6 +106,15 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
             );
           })}
         </ul>
+        {/* Correção 62-B3: a entrada do avaliador credenciado, fora da grade de cartões (a categoria fica fora do formulário
+            comum e do catálogo). */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white p-6" data-testid="parceiros-avaliador">
+          <div className="min-w-0">
+            <h3 className="font-title text-lg font-semibold text-ink">É avaliador de imóveis?</h3>
+            <p className="mt-1 text-sm text-muted">Avaliação do imóvel pelo checklist da Viva, designada por rodízio. Peça o credenciamento numa página própria.</p>
+          </div>
+          <Link href="/parceiros/avaliadores" className="text-sm font-semibold text-forest underline underline-offset-2 hover:text-blue-700">Ser avaliador credenciado</Link>
+        </div>
       </section>
 
       {/* Fluxo do processo com imagens (como as páginas de processo do Furnished Finder). */}
