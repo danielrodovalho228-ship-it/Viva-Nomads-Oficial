@@ -128,6 +128,8 @@ export interface Property {
   condoFee?: number; // condomínio (R$/mês), separado das contas de consumo
   descricaoGeradaPorIa?: boolean; // auditoria: descrição gerada por IA
   availableFrom?: string; // ISO — "disponível a partir de"
+  /** Prompt 53: datas bloqueadas de hoje em diante (do dono ou importadas do Airbnb/Booking) — só datas, para a busca. */
+  bloqueios?: { inicio: string; fim: string }[];
   furnished?: boolean; // mobiliado
   petsAllowed?: boolean;
   /** Regras detalhadas de pets (espécies, porte, quantidade, reforço de Caução). */

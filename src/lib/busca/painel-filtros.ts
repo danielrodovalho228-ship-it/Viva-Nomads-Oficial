@@ -12,7 +12,7 @@ import { rotuloFiltroNivel } from "./filtro-nivel.ts";
 import { ROTULO_COMODIDADE, passaComodidades, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
-import { passaEntrada } from "./datas-flexiveis.ts";
+import { passaBloqueios, passaEntrada } from "./datas-flexiveis.ts";
 import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, type ImovelComInternet } from "./filtro-internet.ts";
 
 export interface FiltrosPainel {
@@ -118,6 +118,8 @@ export function cabeNaEstadia(p: { minPeriodDays?: number; maxPeriodDays?: numbe
 type ImovelFiltravel = ImovelComInternet & {
   /** Disponível a partir de (yyyy-mm-dd); sem ela, a data de entrada não tira o imóvel. */
   availableFrom?: string | null;
+  /** Prompt 53: datas bloqueadas de hoje em diante (do dono ou importadas). */
+  bloqueios?: { inicio: string; fim: string }[];
   monthlyPrice: number;
   /** Total do mês anunciado no cartão; sem ele vale o valor mensal. */
   totalMes?: number;
@@ -175,6 +177,8 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (!passaComodidades(p, f.comodidades)) return false;
   if (f.periodo && !cabeNaEstadia(p, f.periodo)) return false;
   if (!passaEntrada(p.availableFrom, f.entrada, f.datasFlexiveis)) return false;
+  // A faixa "1–2 meses" (60) começa em 30 dias: o bloqueio tira o imóvel só se nem a estadia mais curta da faixa cabe.
+  if (!passaBloqueios(p.bloqueios, f.entrada, f.datasFlexiveis, f.periodo ? f.periodo - 30 : 30)) return false;
   if (f.tipo && tipoCanonico(p.propertyType ?? "") !== f.tipo) return false;
   if (f.garantia && !aceitaGarantia(p, f.garantia)) return false;
   if (f.notaOnly && !p.issuesInvoice) return false;
