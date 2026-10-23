@@ -3,7 +3,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { CHAVES_CONFORTO, ITENS_CONFORTO, PRAZO_ADEQUACAO_DIAS, VERSAO_CONFORTO } from "../../config/conforto-minimo.ts";
 import {
   CONFIRMACAO_PENDENCIA_H,
@@ -185,10 +185,15 @@ test("nada financeiro (D7): as regras do padrão mínimo e da manutenção não 
   }
 });
 
-test("GUARDA: a lista do banco (conforto_chaves, migração 0210) é a mesma de src/config/conforto-minimo.ts", () => {
-  const sql = readFileSync(new URL("../../../supabase/migrations/0210_conforto_manutencao.sql", import.meta.url), "utf8");
-  const bloco = sql.match(/select array\[([\s\S]*?)\]::text\[\]/)![1];
+test("GUARDA: a lista do banco (conforto_chaves e conforto_versoes, última migração que as define) é a de src/config/conforto-minimo.ts", () => {
+  const pasta = new URL("../../../supabase/migrations/", import.meta.url);
+  const ultima = readdirSync(pasta).filter((f) => f.endsWith(".sql")).sort().reverse()
+    .map((f) => readFileSync(new URL(f, pasta), "utf8"))
+    .find((sql) => sql.includes("function public.conforto_chaves()"))!;
+  const bloco = ultima.match(/function public\.conforto_chaves\(\)[\s\S]*?select array\[([\s\S]*?)\]::text\[\]/)![1];
   assert.deepEqual([...bloco.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]), [...CHAVES_CONFORTO]);
+  const versoes = JSON.parse(ultima.match(/function public\.conforto_versoes\(\)[\s\S]*?select '(\{[^']*\})'::jsonb/)![1]) as Record<string, number>;
+  assert.deepEqual(versoes, Object.fromEntries(ITENS_CONFORTO.filter((i) => i.desdeVersao > 1).map((i) => [i.chave, i.desdeVersao])));
 });
 
 test("GUARDA: os seeds do laboratório confirmam a mesma lista (anúncios do seed publicam e a varredura não muda)", () => {
@@ -196,5 +201,6 @@ test("GUARDA: os seeds do laboratório confirmam a mesma lista (anúncios do see
     const js = readFileSync(new URL(f, import.meta.url), "utf8");
     const bloco = js.match(/const CHAVES_CONFORTO = \[([^\]]*)\]/)![1];
     assert.deepEqual([...bloco.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]), [...CHAVES_CONFORTO], f);
+    assert.match(js, new RegExp(`versao_lista: ${VERSAO_CONFORTO} \\}`), `${f}: confirma na versão atual da lista`);
   }
 });
