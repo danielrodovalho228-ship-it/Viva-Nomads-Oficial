@@ -206,7 +206,10 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     }
     await semRolagemLateral(morador);
     await morador.getByTestId("conforto-entrada-enviar").click();
+    // O que acabou de ser enviado aparece na hora, sem erro; as 2 respostas "não confere" ficam marcadas.
     await expect(morador.getByTestId("conforto-entrada-respondida")).toBeVisible({ timeout: 20_000 });
+    await expect(morador.getByTestId("conforto-entrada-erro")).toHaveCount(0);
+    await expect(morador.locator('[data-testid^="conforto-entrada-"][data-confere="0"]')).toHaveCount(2);
     const { data: pend } = await adm().from("conforto_pendencias").select("chave, status").eq("contrato_id", ids.contrato!);
     expect((pend ?? []).map((p) => p.chave).sort()).toEqual([itemA, itemB].sort());
     expect((pend ?? []).every((p) => p.status === "aberta")).toBe(true);

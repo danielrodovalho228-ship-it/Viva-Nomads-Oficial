@@ -34,7 +34,19 @@ export function PendenciasConforto({ papel, pendencias }: { papel: PapelPendenci
   );
 }
 
-function Linha({ papel, p }: { papel: PapelPendencia; p: PendenciaParaTela }) {
+/** O que a ação muda na linha, para aparecer na hora (o servidor confirma ao reler a página). */
+const EFEITO: Record<"corrigir" | "contestar" | "confirmar" | "reabrir", (agora: string) => Partial<PendenciaParaTela>> = {
+  corrigir: (agora) => ({ status: "corrigida", corrigida_em: agora, fechada: false }),
+  contestar: () => ({ status: "contestada", fechada: false }),
+  confirmar: () => ({ status: "corrigida", fechada: true }),
+  reabrir: () => ({ status: "aberta", fechada: false }),
+};
+
+function Linha({ papel, p: doServidor }: { papel: PapelPendencia; p: PendenciaParaTela }) {
+  // Vale só enquanto o servidor ainda mostra o estado de antes da ação; depois, vale o que ele traz.
+  const [local, setLocal] = useState<{ de: string; campos: Partial<PendenciaParaTela> } | null>(null);
+  const estadoServidor = `${doServidor.status}|${doServidor.fechada ? 1 : 0}`;
+  const p: PendenciaParaTela = local && local.de === estadoServidor ? { ...doServidor, ...local.campos } : doServidor;
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [contestando, setContestando] = useState(false);
@@ -46,6 +58,7 @@ function Linha({ papel, p }: { papel: PapelPendencia; p: PendenciaParaTela }) {
       const r = await agirNaPendencia(p.id, acao, acao === "contestar" ? { motivo } : {});
       setMsg(r.ok ? { ok: true, t: r.mensagem ?? "Feito." } : { ok: false, t: r.erro });
       if (r.ok) {
+        setLocal({ de: estadoServidor, campos: { ...EFEITO[acao](new Date().toISOString()), ...(acao === "contestar" ? { motivo_contestacao: motivo.trim() } : {}) } });
         setContestando(false);
         router.refresh();
       }
