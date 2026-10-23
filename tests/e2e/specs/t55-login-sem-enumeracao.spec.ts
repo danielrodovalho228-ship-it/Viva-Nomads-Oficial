@@ -17,14 +17,14 @@ test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
     await page.route("**/api/auth/entrar", (r) =>
       r.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ ok: false, codigo: "credenciais" }) })
     );
-    await page.goto("/auth");
+    await page.goto("/auth?senha=1");
     await page.locator('input[type="email"]').first().fill("ninguem@exemplo.com.br");
     await page.locator('input[type="password"]').first().fill("senha-errada-123");
     await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
     await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible();
     await expect(page.getByText(/Ainda não há conta/i)).toHaveCount(0);
     const links = page.getByTestId("login-links-fixos");
-    await expect(links.getByRole("button", { name: "Criar conta" })).toBeVisible();
+    await expect(links.getByRole("button", { name: "Entrar com código" })).toBeVisible();
     await expect(links.getByRole("button", { name: "Esqueci minha senha" })).toBeVisible();
     expect(consultas).toEqual([]);
   });
@@ -33,7 +33,7 @@ test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
     await page.route("**/api/auth/entrar", (r) =>
       r.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ ok: false, codigo: "credenciais" }) })
     );
-    await page.goto("/auth");
+    await page.goto("/auth?senha=1");
     await page.locator('input[type="email"]').first().fill("outro@exemplo.com.br");
     await page.locator('input[type="password"]').first().fill("senha-errada-123");
     const entrar = page.locator("form").getByRole("button", { name: /^entrar$/i });

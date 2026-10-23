@@ -36,6 +36,7 @@ const ramo = (caminho: string): Regra => ({ caminho, abaixo: true });
  */
 export const ROTAS_APP: Regra[] = [
   exato("/auth"), // entrar / criar conta
+  exato("/auth/intencao"), // Prompt 49: 1 toque depois do 1º código da conta nova (sem trocar de navegador)
   ramo("/app"), // boas-vindas do app
   ramo("/buscar"),
   ramo("/imoveis"), // anúncio público

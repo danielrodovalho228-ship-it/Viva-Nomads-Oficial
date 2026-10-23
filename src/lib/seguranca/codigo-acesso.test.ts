@@ -38,7 +38,7 @@ test("teto de tentativas erradas", () => {
 test("pedir código não revela se o e-mail tem conta", () => {
   assert.equal(mensagemEnvioCodigo("Signups not allowed for otp"), null);
   assert.equal(mensagemEnvioCodigo("User not found"), null);
-  assert.match(mensagemEnvioCodigo("email rate limit exceeded")!, /Aguarde um minuto/);
+  assert.match(mensagemEnvioCodigo("email rate limit exceeded")!, /Aguarde um pouco/);
   assert.match(mensagemEnvioCodigo("boom")!, /Não foi possível enviar/);
 });
 

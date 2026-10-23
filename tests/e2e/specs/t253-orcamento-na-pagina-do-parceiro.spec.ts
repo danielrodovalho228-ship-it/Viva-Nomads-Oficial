@@ -55,7 +55,7 @@ test.describe("T253 — Solicitar orçamento na página pública do parceiro", (
       await expect(page.locator("body")).not.toContainText(TEXTO_ANTIGO);
 
       await botao.click();
-      await expect(page).toHaveURL(new RegExp(`/auth\\?redirect=${encodeURIComponent(`/parceiros/${slug}`).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+      await expect(page).toHaveURL(new RegExp(`/auth\\?motivo=orcamento&redirect=${encodeURIComponent(`/parceiros/${slug}`).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
     });
   }
 });

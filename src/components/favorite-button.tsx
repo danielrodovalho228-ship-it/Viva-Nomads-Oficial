@@ -5,8 +5,15 @@ import { useFavoritesStore } from "@/lib/favorites-store";
 import { toggleFavorite } from "@/lib/data/actions";
 import { cn } from "@/lib/utils";
 import { registrarEvento } from "@/lib/eventos/registrar";
+import { useAuthStore } from "@/lib/store";
+import { armazenamentoDisponivel, armazenamentoDoNavegador } from "@/lib/convidado/guardados";
+import { urlEntrada } from "@/lib/auth/entrada";
 
-/** Botão de favoritar (coração). Persiste no store e sincroniza best-effort (mesma regra de sempre: quem pode favoritar não muda). */
+/**
+ * Botão de favoritar (coração). Persiste no store e sincroniza best-effort (mesma regra de sempre: quem pode favoritar não muda).
+ * Prompt 49: o convidado favorita sem conta (fica no aparelho e vai para a conta quando ele entrar); sem armazenamento no
+ * navegador, o coração pede a conta e volta para a mesma página.
+ */
 export function FavoriteButton({
   propertyId,
   className,
@@ -16,10 +23,15 @@ export function FavoriteButton({
 }) {
   const isFavorite = useFavoritesStore((s) => s.ids.includes(propertyId));
   const toggle = useFavoritesStore((s) => s.toggle);
+  const logado = useAuthStore((s) => !!s.user);
 
   function handleClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    if (!logado && !armazenamentoDisponivel(armazenamentoDoNavegador())) {
+      window.location.assign(urlEntrada("favorito", window.location.pathname + window.location.search));
+      return;
+    }
     const next = !isFavorite;
     toggle(propertyId);
     void toggleFavorite(propertyId, next);

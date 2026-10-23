@@ -138,9 +138,10 @@ test("390px — faixa de 200 px, autocomplete de cidade, pessoas, R$, contador e
   await page.getByRole("button", { name: "Publicar pedido" }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: `${SAIDA}/t188-rodape-390.png`, fullPage: false });
 
-  // Publicar sem login → login por código, voltando para o pedido com o que foi preenchido.
+  // Publicar sem login → entrada única com o porquê (Prompt 49), voltando para o pedido com o que foi preenchido.
   await page.getByRole("button", { name: "Publicar pedido" }).click();
-  await page.waitForURL(/\/auth\?codigo=1&redirect=/, { timeout: 15_000 });
+  await page.waitForURL(/\/auth\?motivo=pedido&redirect=/, { timeout: 15_000 });
+  await expect(page.getByTestId("entrada-motivo")).toHaveText("Para enviar seu pedido, entre com seu e-mail.");
   const destino = new URL(page.url()).searchParams.get("redirect")!;
   expect(destino).toMatch(/^\/pedidos\/novo\?/);
   const volta = new URLSearchParams(destino.split("?")[1]);

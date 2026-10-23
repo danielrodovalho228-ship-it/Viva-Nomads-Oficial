@@ -329,7 +329,7 @@ async function entrarNoApp(browser: Browser, email: string, senha: string): Prom
   await liberarLimiteLoginIp();
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 7) VivaNomadsApp/1.0 (expo)" });
   const page = await ctx.newPage();
-  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+  await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
   // Clique antes da hidratação vira envio nativo do formulário e recarrega /auth vazio: preenche e clica de novo.
   const logado = /\/(dashboard|buscar|app)/;
   await expect(async () => {

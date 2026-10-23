@@ -16,6 +16,7 @@ import { DegrausPerfil } from "@/components/account/degraus-perfil";
 import { AjudaContato, DadosPessoais, DangerZone, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
 import { BlocoConta, ConfiancaLista, PerfilProfissional } from "@/components/account/conta-blocos";
 import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
+import { MinhaIntencao } from "@/components/auth/escolha-intencao";
 
 /**
  * Configurações (Prompt 43, item 3). No SITE: 4 grupos, cada assunto uma vez —
@@ -37,6 +38,7 @@ export default function AccountPage() {
         <BlocoConta id="conta" numero={1} titulo="Conta" subtitulo="Seus papéis, seu perfil e seus dados.">
           <div className="mt-4 grid gap-4">
             <SeusPapeis />
+            <MinhaIntencao />
             <DegrausPerfil />
           </div>
           <div id="perfil-publico" className="scroll-mt-24">

@@ -160,6 +160,8 @@ export async function proxy(request: NextRequest) {
     redirectUrl.pathname = "/auth";
     redirectUrl.search = "";
     redirectUrl.searchParams.set("redirect", destinoAposLogin(pathname, request.nextUrl.search));
+    // Prompt 49: anunciar é momento de valor — a entrada diz por que pede a conta.
+    if (pathname.startsWith("/dashboard/imoveis/novo") || pathname.startsWith("/qualificar")) redirectUrl.searchParams.set("motivo", "anunciar");
     return NextResponse.redirect(redirectUrl);
   }
 

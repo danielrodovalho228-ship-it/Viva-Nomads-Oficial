@@ -23,7 +23,7 @@ async function abas(page: Page, nomes: string[]) {
 }
 
 async function entrarNoApp(page: Page) {
-  await page.goto("/auth", { waitUntil: "networkidle" });
+  await page.goto("/auth?senha=1", { waitUntil: "networkidle" });
   await page.locator('input[name="email"], input[type="email"]').first().fill(conta.email);
   await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
   await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
