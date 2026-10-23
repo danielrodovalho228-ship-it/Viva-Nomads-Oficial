@@ -19,7 +19,6 @@ Cidade em diante, ferramentas, carteira, favoritos, buscas e estadia entraram no
 
 | Código | Tela | Tamanho | O que acontece | Dono |
 |---|---|---|---|---|
-| D-V3 | Editar anúncio ativo | 390 | "Enviar documento" (trava da matrícula) não responde nem aponta o campo | A |
 | D-V5 | Editar anúncio ativo | 1280 | "Anúncio publicado" e "Falta para publicar" juntos | A |
 | D-V8 | Entrar | 390 e 1280 | Sem `<main>` (marco principal) | A |
 

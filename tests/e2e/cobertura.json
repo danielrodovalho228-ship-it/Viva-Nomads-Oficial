@@ -1069,7 +1069,8 @@
         "t18-seo-a11y",
         "t69-botoes-header",
         "t72-paginas-institucionais",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t325-fotos-ilustrativas-empresas"
       ]
     },
     "/excluir-conta": {
@@ -1198,7 +1199,8 @@
         "t68-comissao-valor-total",
         "t69-botoes-header",
         "t72-paginas-institucionais",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t325-fotos-ilustrativas-empresas"
       ]
     },
     "/parceiros": {
@@ -2534,6 +2536,14 @@
       ],
       "specs": [
         "t320-pausar-anuncio-64b"
+      ]
+    },
+    "src/lib/data/actions.ts#enderecoGravadoDoImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t322-documento-sem-trava-l11"
       ]
     },
     "src/lib/data/actions.ts#enviarDocumentoParaConferencia": {

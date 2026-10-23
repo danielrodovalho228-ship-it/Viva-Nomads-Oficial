@@ -147,7 +147,7 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
       .poll(async () => (await adm().from("properties").select("ownership_type, sublease_authorized").eq("id", outro).single()).data, { timeout: 30_000 })
       .toMatchObject({ ownership_type: "own", sublease_authorized: false });
     // Pelo selo do salvamento: se falhar, o relatório mostra o texto real ("Salvando…", "Não foi possível salvar: …").
-    await expect(page.getByTestId("estado-salvamento")).toHaveText(/^Salvo/, { timeout: 20_000 });
+    await expect(page.getByTestId("estado-salvamento")).toHaveText(/^\s*Salvo/, { timeout: 20_000 });
     await expect(page.getByText(/Sem conexão|Não foi possível salvar/)).toHaveCount(0);
     await page.context().close();
   });

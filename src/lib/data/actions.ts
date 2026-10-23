@@ -2115,6 +2115,28 @@ export async function loadDraftData(id: string): Promise<unknown | null> {
   return (row as { draft_data?: unknown } | null)?.draft_data ?? null;
 }
 
+/**
+ * L1-1 (D-V3): o endereço já GRAVADO do imóvel do dono, para o "Enviar documento" do passo Onde fica não travar quando
+ * a tela chega vazia ou em outro formato (rascunho retomado). Vem do rascunho (draft_data: CEP, rua, número) e, sem ele,
+ * da linha exata gravada (exact_address: "Rua, número, complemento"). Só o dono lê (RPC confere). null sem nada.
+ */
+export async function enderecoGravadoDoImovel(id: string): Promise<{ cep: string; rua: string; numero: string } | null> {
+  const supabase = await createClient();
+  if (!supabase || !UUID_RE.test(id)) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.rpc("property_private_details", { prop_id: id });
+  const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: Record<string, unknown> | null; exact_address?: string | null } | null;
+  if (!row) return null;
+  const d = row.draft_data && typeof row.draft_data === "object" ? row.draft_data : {};
+  const txt = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const rua = txt(d.street) || txt(row.exact_address);
+  const r = { cep: txt(d.cep), rua, numero: txt(d.street) ? txt(d.numero) : "" };
+  return r.cep || r.rua || r.numero ? r : null;
+}
+
 /** Rascunho mais recente do dono (para "Novo anúncio detecta rascunho" e o card
  * de pendência da Visão geral). Devolve o snapshot completo (`data`) para o
  * cálculo honesto de "% completo". null se não houver. */
