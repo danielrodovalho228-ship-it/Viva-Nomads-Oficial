@@ -3,7 +3,7 @@
 import { CampoReais } from "@/components/ui/campo-reais";
 import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/components/anuncio/limpeza-estadia-campos";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { DateFieldBR } from "@/components/ui/date-field-br";
 import {
@@ -24,19 +24,22 @@ import {
   Baby,
   Handshake,
   MapPin,
+  Video,
 } from "lucide-react";
 import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import { NEGOCIACAO_PADRAO, ITENS_NEGOCIAVEIS, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
+import { VideoUploader } from "@/components/video-uploader";
+import { payloadDoVideo, resumoDoVideo, videoDoAnuncio } from "@/lib/video-anuncio";
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { AMENITY_GROUPS, amenityKeysFromLabels } from "@/lib/amenities";
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
-import { MIN_FOTOS, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
+import { ANCORA_VIDEO_EDITOR, MIN_FOTOS, hrefParaMelhorar, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
 import { TERMO_IA_TEXTO, aceiteDoEditor } from "@/lib/anuncio/termo-ia";
-import { carregarLimitesNegociacao, salvarLimitesNegociacao, updateProperty, type PropertyInput } from "@/lib/data/actions";
+import { carregarLimitesNegociacao, gravarVideoArquivo, salvarLimitesNegociacao, updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
 import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { avisoTituloBairro } from "@/lib/anuncio/titulo-bairro";
@@ -122,6 +125,9 @@ export function EditarImovelClient({
     };
   }, [demo, property.id]);
   const [enderecoExato, setEnderecoExato] = useState(enderecoExatoInicial);
+  // 65-B: a seção Vídeo (arquivo enviado OU link do YouTube/Vimeo; o arquivo vence).
+  const [videoArquivo, setVideoArquivo] = useState(property.videoArquivo ?? "");
+  const [videoUrl, setVideoUrl] = useState(property.videoUrl ?? "");
 
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [savedSection, setSavedSection] = useState<string | null>(null);
@@ -151,9 +157,10 @@ export function EditarImovelClient({
         ativosAnuncios: fatos?.ativosAnuncios,
         descricao: description,
         selo: fatos?.selo ?? !!property.readyToLiveBadge,
-        video: fatos?.video ?? !!property.videoUrl,
+        // 65-B: o que está na seção Vídeo agora (arquivo ou link permitido), não o que estava no banco.
+        video: videoDoAnuncio({ videoArquivo, videoUrl }).tipo !== null,
       }),
-    [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description]
+    [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, videoArquivo, videoUrl]
   );
   const [aceitouIa, setAceitouIa] = useState(false);
   const [publicadoAgora, setPublicadoAgora] = useState(false);
@@ -188,8 +195,8 @@ export function EditarImovelClient({
       lat: property.lat,
       lng: property.lng,
       photoUrls: photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:")),
-      videoUrl: property.videoUrl,
-      videoArquivo: property.videoArquivo,
+      // 65-B: o estado da seção Vídeo (antes só repetia o valor antigo).
+      ...payloadDoVideo({ videoArquivo, videoUrl }),
       asDraft,
       descricaoGeradaPorIa: property.descricaoGeradaPorIa,
       aceiteIa:
@@ -262,6 +269,20 @@ export function EditarImovelClient({
     return res.ok;
   }
 
+  // 65-B: enviar, trocar ou remover o arquivo grava NA HORA (o enviador já apagou o anterior do bucket).
+  async function mudarVideoArquivo(novo: string) {
+    setVideoArquivo(novo);
+    if (demo) return;
+    setSavingSection("video");
+    setErro(null);
+    const r = await gravarVideoArquivo(property.id, novo);
+    setSavingSection(null);
+    if (r.ok) {
+      setSavedSection("video");
+      setTimeout(() => setSavedSection((s) => (s === "video" ? null : s)), 2500);
+    } else setErro(r.error ?? "Não foi possível gravar o vídeo.");
+  }
+
   async function publish() {
     if (!comp.podePublicar || !aceitouIa) return;
     setPublishing(true);
@@ -316,7 +337,26 @@ export function EditarImovelClient({
               <p className="mt-1 text-sm text-muted">Falta para publicar: {comp.faltam.join(" · ")}</p>
             )}
             {comp.melhorar.length > 0 && (
-              <p className="mt-1 text-xs text-muted">Para melhorar (opcional): {comp.melhorar.join(" · ")}</p>
+              <p className="mt-1 text-xs text-muted" data-testid="para-melhorar">
+                Para melhorar (opcional):{" "}
+                {comp.opcionais
+                  .filter((o) => !o.ok)
+                  .map((o, i) => {
+                    const href = hrefParaMelhorar(o.key, property.id, false);
+                    return (
+                      <span key={o.key}>
+                        {i > 0 && " · "}
+                        {href ? (
+                          <a href={`#${ANCORA_VIDEO_EDITOR}`} className="font-medium text-forest underline" data-testid={`melhorar-${o.key}`}>
+                            {o.label}
+                          </a>
+                        ) : (
+                          o.label
+                        )}
+                      </span>
+                    );
+                  })}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -377,6 +417,20 @@ export function EditarImovelClient({
             definir a capa. Mínimo de {MIN_FOTOS} para publicar.
           </p>
           <PhotoUploader photos={photos} onChange={setPhotos} max={20} />
+        </Section>
+
+        {/* 65-B: Vídeo, logo depois das Fotos. O arquivo grava na hora; o link grava no "Salvar seção". */}
+        <Section
+          icon={Video}
+          title="Vídeo"
+          ancora={ANCORA_VIDEO_EDITOR}
+          testid="secao-video"
+          summary={resumoDoVideo({ videoArquivo, videoUrl })}
+          saving={savingSection === "video"}
+          saved={savedSection === "video"}
+          onSave={() => saveSection("video")}
+        >
+          <VideoUploader path={videoArquivo} onChange={(p) => void mudarVideoArquivo(p)} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} />
         </Section>
 
         {/* Endereço exato (complemento do prompt 23): sem ele, a visita presencial confirmada não mostra rua e número. */}
@@ -658,22 +712,27 @@ function Section({
   saved,
   onSave,
   testid,
+  ancora,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   testid?: string;
+  /** Id da seção: abre sozinha quando o endereço chega com #ancora (ex.: "Para melhorar: Vídeo do imóvel"). */
+  ancora?: string;
   summary: string;
   children: React.ReactNode;
   saving: boolean;
   saved: boolean;
   onSave: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [aberta, setAberta] = useState<boolean | null>(null);
+  const hash = useSyncExternalStore(assinarHash, () => window.location.hash, () => "");
+  const open = aberta ?? (!!ancora && hash === `#${ancora}`);
   return (
-    <section className="overflow-hidden rounded-xl border border-sage-200 bg-white" data-testid={testid}>
+    <section id={ancora} className="scroll-mt-24 overflow-hidden rounded-xl border border-sage-200 bg-white" data-testid={testid} data-aberta={open}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setAberta(!open)}
         aria-expanded={open}
         className="flex w-full items-center gap-3 px-4 py-4 text-left hover:bg-surface-2"
       >
@@ -708,6 +767,11 @@ function Section({
       )}
     </section>
   );
+}
+
+function assinarHash(avisar: () => void) {
+  window.addEventListener("hashchange", avisar);
+  return () => window.removeEventListener("hashchange", avisar);
 }
 
 function RuleCard({

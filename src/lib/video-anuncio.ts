@@ -6,6 +6,8 @@
  * REAL pelos primeiros bytes, o tamanho e a duração lida do próprio arquivo
  * (caixa mvhd do MP4/MOV) — nunca a extensão nem o Content-Type declarados.
  */
+import { resolverVideoTour } from "./video-tour.ts";
+
 export const VIDEO_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 export const VIDEO_MAX_SEGUNDOS = 60;
 export const VIDEO_MIME = ["video/mp4", "video/quicktime"] as const;
@@ -90,10 +92,72 @@ export function caminhoVideoDoDono(path: unknown, ownerId: string): path is stri
   return path.startsWith(pasta) && path.length > pasta.length && !path.slice(pasta.length).includes("/");
 }
 
-/** Nome do arquivo no bucket: sorteado, com a extensão do tipo real (nunca o nome que a pessoa deu). */
-export function caminhoNovoVideo(ownerId: string, tipo: VideoMime, id: string = crypto.randomUUID()): string {
-  return `${ownerId}/${id}.${tipo === "video/quicktime" ? "mov" : "mp4"}`;
+/**
+ * Nome do arquivo no bucket: sorteado, com a extensão do tipo real (nunca o nome que a pessoa deu).
+ * 65-B: com a duração lida do próprio arquivo, ela vai no nome ("<id>-42s.mp4") para o resumo "Vídeo enviado (00:42)"
+ * sobreviver ao recarregar sem coluna nova. O servidor confere a duração de verdade do mesmo jeito.
+ */
+export function caminhoNovoVideo(ownerId: string, tipo: VideoMime, id: string = crypto.randomUUID(), segundos?: number): string {
+  const dur = segundos != null && Number.isInteger(segundos) && segundos >= 0 && segundos <= VIDEO_MAX_SEGUNDOS ? `-${segundos}s` : "";
+  return `${ownerId}/${id}${dur}.${tipo === "video/quicktime" ? "mov" : "mp4"}`;
 }
+
+/** Duração gravada no nome do arquivo (caminhoNovoVideo); null nos vídeos enviados antes do 65-B. */
+export function segundosDoCaminho(path: string | null | undefined): number | null {
+  const m = /-(\d{1,2})s\.(mp4|mov)$/.exec(path ?? "");
+  if (!m) return null;
+  const s = Number(m[1]);
+  return s <= VIDEO_MAX_SEGUNDOS ? s : null;
+}
+
+/** 42 → "00:42". */
+export function formatarDuracao(segundos: number): string {
+  const s = Math.max(0, Math.round(segundos));
+  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/**
+ * 65-B: uma fonte só. Com arquivo enviado, vale o arquivo; o link do YouTube/Vimeo só conta sem arquivo (e só se for
+ * de provedor permitido). Usada pela prontidão, pela página pública e pelo editor.
+ */
+export type VideoDoAnuncio = { tipo: "arquivo"; caminho: string } | { tipo: "link"; url: string; provedor: "YouTube" | "Vimeo" } | { tipo: null };
+
+export function videoDoAnuncio(p: { videoArquivo?: string | null; videoUrl?: string | null }): VideoDoAnuncio {
+  const caminho = p.videoArquivo?.trim();
+  if (caminho) return { tipo: "arquivo", caminho };
+  const embed = resolverVideoTour(p.videoUrl);
+  if (embed) return { tipo: "link", url: p.videoUrl!.trim(), provedor: embed.includes("vimeo") ? "Vimeo" : "YouTube" };
+  return { tipo: null };
+}
+
+/** Resumo da seção Vídeo do editor: "Vídeo enviado (00:42)" / "Link do YouTube" / "Sem vídeo (opcional)". */
+export function resumoDoVideo(p: { videoArquivo?: string | null; videoUrl?: string | null }): string {
+  const v = videoDoAnuncio(p);
+  if (v.tipo === "arquivo") {
+    const s = segundosDoCaminho(v.caminho);
+    return s == null ? "Vídeo enviado" : `Vídeo enviado (${formatarDuracao(s)})`;
+  }
+  if (v.tipo === "link") return `Link do ${v.provedor}`;
+  return "Sem vídeo (opcional)";
+}
+
+/**
+ * O que o "Salvar seção" do editor manda do vídeo (65-B): o estado ATUAL, não o valor antigo. "" no arquivo remove
+ * (colunaVideoArquivo grava null); link vazio grava null.
+ */
+export function payloadDoVideo(estado: { videoArquivo: string; videoUrl: string }): { videoArquivo: string; videoUrl: string | undefined } {
+  return { videoArquivo: estado.videoArquivo.trim(), videoUrl: estado.videoUrl.trim() || undefined };
+}
+
+/** Link colado que não é de YouTube nem Vimeo: a mensagem do campo (vazio não é erro: o vídeo é opcional). */
+export function erroDoLinkDeVideo(url: string): string | null {
+  if (!url.trim()) return null;
+  return resolverVideoTour(url) ? null : "Use um link do YouTube ou do Vimeo.";
+}
+
+/** Guia da Ajuda sobre o vídeo (linkado da seção Vídeo e do bloco do assistente). */
+export const GUIA_VIDEO_HREF = "/guias/como-por-um-video-no-anuncio";
+export const TEXTO_LIMITES_VIDEO = `Até ${VIDEO_MAX_SEGUNDOS} segundos e 50 MB, em MP4 ou MOV. Grave pelo celular mostrando o imóvel por dentro. Sem pessoas no vídeo.`;
 
 /** Coluna a gravar: só caminho da pasta do próprio dono; "" limpa; ausente ou inválido não mexe (nunca apaga por engano). */
 export function colunaVideoArquivo(v: string | undefined, ownerId: string): { video_arquivo?: string | null } {
