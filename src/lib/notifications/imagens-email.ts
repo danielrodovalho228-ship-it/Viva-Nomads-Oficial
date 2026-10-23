@@ -148,6 +148,7 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   vistoria_strike: "transacional",
   vistoria_verificacao: "visita",
   vistoria_devolucao: "transacional",
+  vistoria_correcao_enviada: "transacional",
   vistoria_fila_admin: "atendimento",
 };
 

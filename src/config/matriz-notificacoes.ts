@@ -58,6 +58,7 @@ export const MATRIZ_NOTIFICACOES = {
   vistoria_laudo_emitido: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
   vistoria_fora_da_busca: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
   vistoria_devolucao: { categoria: "decisao", papeis: ["parceiro"], canais: TODOS_OS_CANAIS, prazo: true },
+  vistoria_correcao_enviada: { categoria: "decisao", papeis: ["parceiro"], canais: TODOS_OS_CANAIS, prazo: true },
 
   // ── Decisões sem prazo (central + e-mail) ─────────────────────────────────
   new_lead: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },

@@ -110,6 +110,7 @@ export type NotificationEvent =
   | "vistoria_strike" // novo passo na escada de strikes → dono
   | "vistoria_verificacao" // verificação aberta pela Viva → dono
   | "vistoria_devolucao" // contestação deu razão ao dono → 1º avaliador devolve o valor
+  | "vistoria_correcao_enviada" // o dono enviou a foto da correção → avaliador confere
   | "vistoria_fila_admin"; // laudo atrasado, ressalva vencida, devolução vencida → admins
 
 // Assunto SEM a marca (o envio põe "· Viva Nomads"; regras em assuntos.ts). A imagem de cada evento mora em
@@ -203,6 +204,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   vistoria_strike: { subject: "Registro da verificação do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, a verificação do seu imóvel gerou um registro. Veja o passo em que você está, o que muda no anúncio e como voltar com uma nova avaliação aprovada.`, cta: "Ver o próximo passo", path: "/dashboard/imoveis" },
   vistoria_verificacao: { subject: "A Viva abriu uma verificação do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, a Viva abriu uma verificação do estado do seu imóvel, com o motivo descrito na página da avaliação. Um avaliador credenciado vai combinar a visita.`, cta: "Ver a verificação", path: "/dashboard/imoveis" },
   vistoria_devolucao: { subject: "Devolução ao proprietário: contestação procedente", body: (n) => `Olá${n ? " " + n : ""}, a 2ª avaliação deu razão ao proprietário. Pela regra da contestação, devolva a ele o valor pago pela 2ª avaliação em até 15 dias; ele confirma o recebimento na plataforma.`, cta: "Ver a devolução", path: "/dashboard/parceiro/avaliacao" },
+  vistoria_correcao_enviada: { subject: "O proprietário enviou a correção da ressalva", body: (n) => `Olá${n ? " " + n : ""}, o proprietário enviou a foto da correção de uma ressalva do laudo. Confira para a plataforma emitir a nova versão.`, cta: "Conferir a correção", path: "/dashboard/parceiro/avaliacao" },
   vistoria_fila_admin: { subject: "Novo item na fila da avaliação de imóveis", body: () => "Há um item novo na fila da avaliação de imóveis (laudo atrasado, ressalva vencida ou devolução vencida).", cta: "Abrir a fila", path: "/admin/avaliadores" },
   internet_abaixo_medida: { subject: "A internet medida pelo morador ficou abaixo", body: (n) => `Olá${n ? " " + n : ""}, o morador mediu a internet na entrada e o resultado ficou abaixo da metade da sua última medição. Vale conferir o roteador ou a operadora e medir de novo.`, cta: "Ver o imóvel", path: "/dashboard/imoveis" },
   sugestao_parceiros_morador: { subject: "Precisa de ajuda com a mudança?", body: (n) => `Olá${n ? " " + n : ""}, separamos parceiros da cidade para a sua mudança. Peça um orçamento se quiser: nada é contratado sem você.`, cta: "Ver os parceiros", path: "/dashboard/locacoes" },

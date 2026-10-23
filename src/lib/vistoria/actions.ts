@@ -24,6 +24,7 @@ import {
   siglaCidade,
   transicaoCredenciamento,
   validarConduta,
+  valorNovaAvaliacao,
   type LinhaPreco,
   type Porte,
   type StatusCredenciamento,
@@ -254,9 +255,12 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
     (c.contrato_blocos ?? []).some((b) => b.status !== "nao_aceito" && b.inicio <= hoje && b.fim >= hoje),
   );
   const { data: dono } = await s.admin.from("profiles").select("is_teste").eq("id", s.userId).maybeSingle();
+  // Prompt 62-B2: reprovado há até 90 dias → nova avaliação pela metade (tipo nova_90d).
+  const { data: reprov } = await s.admin.from("vistoria_laudos").select("emitido_em").eq("property_id", im.id).eq("resultado", "reprovado").order("emitido_em", { ascending: false }).limit(1).maybeSingle();
+  const nova = valorNovaAvaliacao(preco!.valor, (reprov?.emitido_em as string | undefined) ?? null, agora);
   const { data: p, error } = await s.admin
     .from("vistoria_pedidos")
-    .insert({ property_id: im.id, owner_id: s.userId, cidade: im.city ?? "", porte, valor_tabela: preco!.valor, ocupado: !!ocupante, morador_id: ocupante?.tenant_id ?? null, teste: dono?.is_teste === true })
+    .insert({ property_id: im.id, owner_id: s.userId, cidade: im.city ?? "", tipo: nova.comDesconto ? "nova_90d" : "inicial", porte, valor_tabela: nova.valor, ocupado: !!ocupante, morador_id: ocupante?.tenant_id ?? null, teste: dono?.is_teste === true })
     .select("id")
     .single();
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };

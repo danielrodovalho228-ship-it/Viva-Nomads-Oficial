@@ -1,5 +1,5 @@
 import "server-only";
-import { niveisDosImoveis } from "@/lib/niveis/servidor";
+import { niveisDosImoveis, vistoriadosDosImoveis } from "@/lib/niveis/servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { CHAVE_ORDEM_NOVA, gravarSombra, ordemNovaLigada } from "@/lib/ranking/chave";
@@ -33,11 +33,12 @@ export async function sinaisDosAnuncios(ids: string[], admin: Admin | null = cre
   }
   const linhas = data as LinhaRankingSinais[];
   const donos = [...new Set(linhas.map((l) => l.dono_id))];
-  const [identidades, internet, prazos, niveis] = await Promise.all([
+  const [identidades, internet, prazos, niveis, vistoriados] = await Promise.all([
     estadosIdentidade(admin, donos),
     internetDosAnuncios(admin, reais),
     prazos59(admin, reais, donos),
     niveisDosImoveis(admin, reais).catch(() => new Map()), // sem a 0211, a nota segue sem o nível
+    vistoriadosDosImoveis(admin, reais).catch(() => new Set<string>()),
   ]);
   return linhas.map((l) =>
     sinaisDaLinha(l, {
@@ -47,6 +48,7 @@ export async function sinaisDosAnuncios(ids: string[], admin: Admin | null = cre
       manutencaoFora90d: prazos.fora90d.get(l.dono_id) ?? 0,
       confortoPendenciasAbertas: prazos.abertas.get(l.id) ?? 0,
       nivel: niveis.get(l.id) ?? null,
+      vistoriado: vistoriados.has(l.id),
     }),
   );
 }
