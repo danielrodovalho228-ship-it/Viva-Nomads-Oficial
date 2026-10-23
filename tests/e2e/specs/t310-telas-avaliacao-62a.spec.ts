@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
 import { conversationId } from "../../../src/lib/messages/conversation-id";
 
 /*
-  T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel (laboratório; a chave VISTORIA_ATIVA liga só no navegador do
+  T310 — Prompt 62-A, Parte 1: telas da avaliação do imóvel (laboratório; a chave VISTORIA_ATIVA liga só no navegador do
   teste, pelo cookie de laboratório). Tudo a 390 e 1280 px, sem rolagem lateral, com print.
    1. "Seja parceiro" convida para o credenciamento; a página do credenciamento mostra os 5 passos.
    2. Dono: as duas rotas lado a lado, frase fixa, um primário só (QA #1111 item 7); pedir → linha do tempo com o nº,
@@ -19,7 +19,7 @@ const LARGURAS = [390, 1280] as const;
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t308.${sufixo}@lab.vivanomads.test`, nome, role });
+const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t310.${sufixo}@lab.vivanomads.test`, nome, role });
 const dono = conta("dono", "Dina Dona", "owner");
 const morador = conta("morador", "Mário Morador");
 const avA = conta("ava", "Ana Avaliadora");
@@ -47,7 +47,7 @@ async function admin(browser: Browser, w: number): Promise<Page> {
   return ctx.newPage();
 }
 
-test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", () => {
+test.describe("T310 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
@@ -59,7 +59,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     for (const [l, uid, nome] of [["A", ids.A, avA.nome], ["N", ids.N, novo.nome]] as const) {
       const { data, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t308-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t310-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -71,7 +71,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     const { error: eC } = await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids.parcA, cidade: "Uberlândia", numero_credenciado: numeroA, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/a", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" });
     if (eC) throw eC;
     // Imóvel publicado, ocupado pelo morador (contrato vigente) e a conversa entre os dois.
-    ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t308 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t310 ${sufixo}`, { ativo: true });
     const hoje = new Date();
     const dia = (d: number) => new Date(hoje.getTime() + d * 86_400_000).toISOString().slice(0, 10);
     const { data: c, error: eK } = await adm()
@@ -117,7 +117,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(convite.getByRole("link", { name: "Ver os passos do credenciamento" })).toHaveAttribute("href", "/dashboard/parceiro/avaliacao");
       await convite.scrollIntoViewIfNeeded();
       await semRolagemLateral(pub);
-      await pub.screenshot({ path: `${SAIDA}/t308-1-seja-parceiro-${w}.png` });
+      await pub.screenshot({ path: `${SAIDA}/t310-1-seja-parceiro-${w}.png` });
 
       await largura(p, w);
       await p.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
@@ -125,7 +125,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(passos.locator("li")).toHaveText([/1\. Identidade verificada/, /2\. Experiência comprovada/, /3\. Código de conduta aceito/, /4\. Relações declaradas/, /5\. Avaliação de teste revisada pela Viva/], { timeout: 30_000 });
       await expect(p.getByTestId("credenciamento-form")).toBeVisible();
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t308-1-credenciamento-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t310-1-credenciamento-${w}.png`, fullPage: true });
     }
     await pub.context().close();
     await p.context().close();
@@ -153,7 +153,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(d.getByText(/escolh(er|a) o avaliador/i)).toHaveCount(0);
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t308-2-dono-pedir-${w}.png` });
+      await d.screenshot({ path: `${SAIDA}/t310-2-dono-pedir-${w}.png` });
     }
     await d.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir avaliação do imóvel" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("id, status").eq("property_id", ids.imovel).maybeSingle()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("designado");
@@ -170,7 +170,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(bloco.getByTestId("avaliacao-mensagens")).toHaveAttribute("href", "/dashboard/mensagens");
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t308-2-dono-designado-${w}.png` });
+      await d.screenshot({ path: `${SAIDA}/t310-2-dono-designado-${w}.png` });
     }
     await d.context().close();
   });
@@ -184,7 +184,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       const item = p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`);
       await expect(item.getByTestId("prazo-resposta")).toHaveText(/^Responda em 2[0-3] h \d{2} min$/);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t308-3-avaliador-responder-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t310-3-avaliador-responder-${w}.png`, fullPage: true });
     }
     const item = p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`);
     await item.getByTestId("designacao-aceitar").click();
@@ -205,7 +205,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(visita.getByTestId("avaliador-visita")).not.toContainText(/\d\d:\d\d:\d\d/);
       expect(await primariosNoMain(p)).toBeLessThanOrEqual(1);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t308-3-avaliador-agenda-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t310-3-avaliador-agenda-${w}.png`, fullPage: true });
     }
     await p.context().close();
   });
@@ -237,14 +237,14 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(cartao.getByTestId("conversa-concordar")).toHaveText(`Concordo com a visita em ${quando}`, { timeout: 30_000 });
       await expect(cartao).toContainText("Horário de Brasília.");
       await semRolagemLateral(m);
-      await m.screenshot({ path: `${SAIDA}/t308-4-morador-conversa-${w}.png` });
+      await m.screenshot({ path: `${SAIDA}/t310-4-morador-conversa-${w}.png` });
     }
     await m.getByTestId("conversa-outro-horario").click();
     await expect(m.getByPlaceholder("Escreva uma mensagem...")).toHaveValue(/^Prefiro outro horário para a visita de avaliação do imóvel\./);
     await m.getByTestId("conversa-concordar").click();
     await expect(m.getByTestId("conversa-avaliacao-confirmada")).toHaveText(`Você concordou com a visita em ${quando} (horário de Brasília).`, { timeout: 20_000 });
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status as string) ?? "").toBe("agendado");
-    await m.screenshot({ path: `${SAIDA}/t308-4-morador-concordou-1280.png` });
+    await m.screenshot({ path: `${SAIDA}/t310-4-morador-concordou-1280.png` });
     await m.context().close();
 
     const d = await entrar(browser, dono.email, senha);
@@ -259,7 +259,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(bloco.getByTestId("avaliacao-pagamento")).toContainText("Você paga direto ao avaliador, depois da visita. A Viva só registra.");
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t308-4-dono-agendado-${w}.png` });
+      await d.screenshot({ path: `${SAIDA}/t310-4-dono-agendado-${w}.png` });
     }
     await d.context().close();
     // Dono sem a chave: o bloco não aparece.
@@ -281,7 +281,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(pg.getByTestId("avaliador-cidade")).toHaveText("Uberlândia");
       await expect(pg.locator("a")).toHaveCount(0);
       await semRolagemLateral(pub);
-      await pub.screenshot({ path: `${SAIDA}/t308-5-publica-${w}.png` });
+      await pub.screenshot({ path: `${SAIDA}/t310-5-publica-${w}.png` });
     }
     await pub.context().close();
   });
@@ -306,7 +306,7 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await topo.getByTestId("decidir-numero-credenciamentos").click();
       await expect(p).toHaveURL(/#credenciamento$/);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t308-6-admin-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t310-6-admin-${w}.png` });
       await p.context().close();
     }
   });

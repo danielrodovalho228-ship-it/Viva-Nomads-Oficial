@@ -204,10 +204,10 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await v.goto(`/imoveis/${ids.im1}`, { waitUntil: "domcontentloaded" });
     await expect(v.getByText("Nível Premium · vistoriado").first()).toBeVisible({ timeout: 20_000 });
     // O dB(A) é só interno: nada dele na página pública.
-    await expect(v.locator("main")).not.toContainText("dB(A)");
+    await expect(v.locator("#conteudo")).not.toContainText("dB(A)");
     await v.goto(`/conferir?codigo=${doc!.codigo_verificacao}`, { waitUntil: "domcontentloaded" });
     await expect(v.getByText(doc!.numero as string).first()).toBeVisible({ timeout: 20_000 });
-    await expect(v.locator("main")).not.toContainText("R$");
+    await expect(v.locator("#conteudo")).not.toContainText("R$");
     await v.context().close();
 
     // O dono vê o laudo e baixa o PDF registrado.
