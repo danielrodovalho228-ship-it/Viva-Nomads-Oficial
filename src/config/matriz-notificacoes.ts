@@ -152,7 +152,10 @@ export const MATRIZ_NOTIFICACOES = {
   comprovante_caucao: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
 
   // ── Equipe (o admin desliga em "Receber alertas da equipe") ───────────────
-  chamado_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  // Prompt 44 (item 3): alertas operacionais com push — só admins com "receber alertas operacionais".
+  chamado_equipe: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },
+  alerta_backup_falhou: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },
+  alerta_email_falhou: { categoria: "outros", papeis: ["admin"], canais: ["push", "central"] },
   vistoria_sem_avaliador: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   // 63-B: tentativa de conectar um LinkedIn que já está em outra conta (sinal ao atendimento, sem expor quem).
   linkedin_ja_conectado: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
@@ -160,10 +163,13 @@ export const MATRIZ_NOTIFICACOES = {
   parceiro_sem_resposta: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   chamado_fora_promessa: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   verificacao_analise_humana: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
-  documento_recebido: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  documento_recebido: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },
   parceria_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   estadia_encerramento_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
 } as const satisfies Record<EventoNotificacao, LinhaMatriz>;
+
+/** Prompt 44 (item 3): alertas da equipe que vão por push (documento na fila, chamado P1/P2, cópia noturna, e-mail). */
+export const ALERTAS_OPERACIONAIS_COM_PUSH = ["documento_recebido", "chamado_equipe", "alerta_backup_falhou", "alerta_email_falhou"] as const;
 
 /** Os canais deste evento para este papel ([] quando o papel não recebe o evento). */
 export function canaisDoEvento(evento: EventoNotificacao, papel: PapelNotificacao): CanalNotificacao[] {

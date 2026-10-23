@@ -65,7 +65,7 @@ export async function processarPush(p: PedidoPush, admin: Admin | null = createA
     if (error) console.error("[push] adiar", error.code);
     return error ? { skipped: true } : { adiado: true };
   }
-  return sendPush({ userId: p.userId, title, body, url });
+  return sendPush({ userId: p.userId, title, body, url, evento: p.event });
 }
 
 /** Cron das 7h (Brasília): envia os pushes que esperaram o silêncio e apaga cada um depois de tentar. */
@@ -74,7 +74,7 @@ export async function enviarPushAdiados(admin: Admin, agora: Date = new Date()):
   if (error || !data) return { enviados: 0, pendentes: 0 };
   let enviados = 0;
   for (const l of data as { id: string; user_id: string; titulo: string; corpo: string; url: string | null }[]) {
-    const r = await sendPush({ userId: l.user_id, title: l.titulo, body: l.corpo, url: l.url ?? undefined }).catch(() => null);
+    const r = await sendPush({ userId: l.user_id, title: l.titulo, body: l.corpo, url: l.url ?? undefined, evento: "adiado" }).catch(() => null);
     if (r && "sent" in r && r.sent > 0) enviados++;
     await admin.from("push_adiados").delete().eq("id", l.id);
   }

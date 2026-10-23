@@ -20,7 +20,7 @@ function comLimite<T>(p: Promise<T>, ms = 6000): Promise<T | null> {
 }
 
 /** Eventos que só vão para a equipe: remetente de sistema e assunto sem a marca. */
-const EVENTOS_INTERNOS = new Set<NotificationEvent>(["chamado_equipe", "documento_recebido", "parceria_equipe"]);
+const EVENTOS_INTERNOS = new Set<NotificationEvent>(["chamado_equipe", "documento_recebido", "parceria_equipe", "alerta_backup_falhou", "alerta_email_falhou"]);
 
 /** E-mails de documento, verificação e segurança: sem List-Unsubscribe (a pessoa precisa receber). */
 const SEM_GERENCIAR_AVISOS = new Set<NotificationEvent>(["documento_aprovado", "documento_recusado", "checklist_aprovado", "checklist_recusado", "verification_ready"]);
@@ -137,6 +137,10 @@ export async function notify(params: {
         usuarioId: params.userId,
       });
       result.email = r.demo ? "demo" : !r.error;
+      // Prompt 44 (item 3): e-mail que não saiu vira alerta operacional (1 por hora, só push e central).
+      if (r.error && params.event !== "alerta_email_falhou") {
+        void import("./alertas-operacionais").then((m) => m.alertarFalhaDeEmail()).catch(() => null);
+      }
     } catch {
       result.email = false;
     }

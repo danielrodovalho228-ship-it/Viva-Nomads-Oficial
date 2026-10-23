@@ -6,6 +6,7 @@ import { rodarAvisosDaniel } from "@/lib/agentes/avisos-daniel-servidor";
 import { avisarEquipe, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { notify } from "@/lib/notifications";
 import { enviarPushAdiados } from "@/lib/notifications/push-servidor";
+import { verificarCopiaNoturna } from "@/lib/notifications/alertas-operacionais";
 import { prioridadeSubida } from "@/lib/atendimento/acolhimento";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { PRAZO_MANUTENCAO_H, type UrgenciaManutencao } from "@/config/atendimento";
@@ -105,5 +106,7 @@ export async function GET(request: Request) {
   }
   // Prompt 44: este cron roda às 7h de Brasília — sai o push que esperou o silêncio (22h–7h).
   const pushAdiados = await enviarPushAdiados(admin).catch(() => ({ enviados: 0, pendentes: 0 }));
-  return NextResponse.json({ ok: true, alertas: alertas?.length ?? 0, escalados, manutencaoAtrasada: atrasadas, pushAdiados });
+  // Prompt 44 (item 3): a cópia noturna da madrugada falhou? Alerta a equipe uma vez por execução.
+  const alertaCopia = await verificarCopiaNoturna(admin).catch(() => 0);
+  return NextResponse.json({ ok: true, alertas: alertas?.length ?? 0, escalados, manutencaoAtrasada: atrasadas, pushAdiados, alertaCopia });
 }

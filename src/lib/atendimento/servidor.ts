@@ -147,6 +147,9 @@ export async function avisarEquipe(c: ChamadoResumo, motivo: string, detalhesHtm
       userId: a.id as string,
       pushUrl: `/admin/atendimento/${c.id}`,
       interno: true,
+      // Prompt 44 (item 3): push só para P1/P2 (o P1 fura o silêncio das 22h–7h); o resto, só e-mail e central.
+      semPush: c.prioridade !== "p1" && c.prioridade !== "p2",
+      prazoHoje: c.prioridade === "p1",
       subject: `${c.prioridade.toUpperCase()} ${rotulo} — ${c.numero_publico}: ${motivo}`,
       detailsHtml:
         detalhesHtml ??
