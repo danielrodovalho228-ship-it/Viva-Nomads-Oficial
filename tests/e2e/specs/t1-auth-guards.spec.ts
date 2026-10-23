@@ -29,8 +29,12 @@ test.describe("T1 — Autenticação e guards", () => {
   });
 
   test("/auth mostra o formulário de login", async ({ page }) => {
+    // Prompt 49: /auth abre na entrada única (e-mail + "Continuar"); a senha fica em /auth?senha=1 ("Entrar com senha").
     await page.goto("/auth");
     await expect(page.locator('input[name="email"], input[type="email"]').first()).toBeVisible();
+    await expect(page.getByTestId("entrada-continuar")).toBeVisible();
+    await page.goto("/auth?senha=1");
+    await expect(page.locator('input[name="password"], input[type="password"]').first()).toBeVisible();
     // "Entrar" do form (há outro no alternador login/cadastro fora do form).
     await expect(page.locator("form").getByRole("button", { name: /^entrar$/i })).toBeVisible();
   });
