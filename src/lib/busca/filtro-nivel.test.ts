@@ -25,3 +25,24 @@ test("59.1: o filtro vai e volta pela URL; valor estranho é ignorado", () => {
   filtroNivelNaUrl(p, "");
   assert.equal(p.toString(), "q=centro");
 });
+
+test("NIVEL-BUSCA-A: opção em 0 desabilitada (o '· 0' fica); as três em 0 tiram o grupo; a escolhida nunca trava", async () => {
+  const { TEXTO_SEM_NIVEIS, avisoNivelSemResultado, grupoNivel } = await import("./filtro-nivel.ts");
+  assert.deepEqual(grupoNivel({ essencial: 2, conforto: 1, premium: 0 }, ""), { visivel: true, desabilitado: { essencial: false, conforto: false, premium: true } });
+  assert.deepEqual(grupoNivel({ essencial: 0, conforto: 0, premium: 0 }, ""), { visivel: false, desabilitado: { essencial: true, conforto: true, premium: true } });
+  // ?nivel=premium que zerou tudo: o grupo continua (para desligar) e o Premium escolhido não fica desabilitado.
+  assert.deepEqual(grupoNivel({ essencial: 0, conforto: 0, premium: 0 }, "premium"), { visivel: true, desabilitado: { essencial: true, conforto: true, premium: false } });
+  assert.equal(TEXTO_SEM_NIVEIS, "Os níveis aparecem quando os anúncios desta busca tiverem o padrão mínimo confirmado.");
+  assert.equal(avisoNivelSemResultado("premium"), "Nenhum imóvel com nível Premium nesta busca");
+  assert.equal(avisoNivelSemResultado("conforto"), "Nenhum imóvel com nível Conforto nesta busca");
+});
+
+test("NIVEL-BUSCA-A: a folha e a busca usam as regras (sem link na linha; 'Ver todos' tira só o nível)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const folha = readFileSync("src/components/busca/painel-filtros-celular.tsx", "utf8");
+  const busca = readFileSync("src/app/(public)/buscar/search-client.tsx", "utf8");
+  assert.match(folha, /disabled=\{nivel\.desabilitado\[v\]\}/);
+  assert.match(folha, /· \{porNivel\[v\]\}/);
+  assert.match(folha, /nivel\.visivel \?[\s\S]*data-testid="painel-nivel-vazio"[^>]*>\s*\{TEXTO_SEM_NIVEIS\}\s*<\/p>/);
+  assert.match(busca, /data-testid="busca-vazia-nivel"[\s\S]*\{avisoNivelSemResultado\(nivelMin\)\}[\s\S]*onClick=\{\(\) => setNivelMin\(""\)\}[\s\S]*Ver todos/);
+});
