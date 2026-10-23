@@ -307,7 +307,9 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       const nomes = () => barra.getByRole("link").evaluateAll((els) => els.map((e) => (e.textContent ?? "").trim()));
       // Prompt 43 (conta única): o Perfil não tem mais seletor nem "usar como parceiro"; mostra "Seus papéis".
       await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("seus-papeis")).toBeVisible({ timeout: 20_000 });
+      // A Conta monta o bloco do app e o do site (app-only / web-only, escolhidos pelo CSS): "Seus papéis" existe nos
+      // dois e só um aparece. Confere o visível (o strict mode acusava 2 elementos no laboratório de 3db2cd8).
+      await expect(page.getByTestId("seus-papeis").filter({ visible: true })).toHaveCount(1, { timeout: 20_000 });
       await expect(page.getByTestId("usar-como-parceiro")).toHaveCount(0);
       await expect(page.getByRole("radio", { name: /Propriet|Inquilino/ })).toHaveCount(0);
       await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
