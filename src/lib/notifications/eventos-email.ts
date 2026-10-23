@@ -122,7 +122,10 @@ export type NotificationEvent =
   | "vistoria_verificacao" // verificação aberta pela Viva → dono
   | "vistoria_devolucao" // contestação deu razão ao dono → 1º avaliador devolve o valor
   | "vistoria_correcao_enviada" // o dono enviou a foto da correção → avaliador confere
-  | "vistoria_fila_admin"; // laudo atrasado, ressalva vencida, devolução vencida → admins
+  | "vistoria_fila_admin" // laudo atrasado, ressalva vencida, devolução vencida → admins
+  // Prompt 53: calendário importado do Airbnb/Booking.
+  | "calendario_conflito" // data importada cai num compromisso da Viva → dono (decide; nada é cancelado)
+  | "calendario_falha"; // o link .ics falhou 3 vezes seguidas → dono (com a causa)
 
 // Assunto SEM a marca (o envio põe "· Viva Nomads"; regras em assuntos.ts). A imagem de cada evento mora em
 // imagens-email.ts (IMAGEM por tema, fonte única).
@@ -214,6 +217,8 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   vistoria_concordancia: { subject: "Concorda com a visita de avaliação?", body: (n) => `Olá${n ? " " + n : ""}, o proprietário pediu a avaliação do imóvel onde você mora. A visita só acontece se você concordar com a data. O avaliador não fotografa os seus pertences.`, cta: "Responder", path: "/dashboard/locacoes" },
   vistoria_lembrete: { subject: "A visita de avaliação é amanhã", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação do imóvel é amanhã. Se precisar mudar, avise pelas mensagens da Viva.`, cta: "Ver a visita", path: "/dashboard" },
   vistoria_ausencia: { subject: "Ausência na visita de avaliação", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação não aconteceu por ausência. Veja o que acontece agora na página da avaliação.`, cta: "Ver a avaliação", path: "/dashboard" },
+  calendario_conflito: { subject: "Datas do outro site cruzam um compromisso na Viva", body: (n) => `Olá${n ? " " + n : ""}, o calendário importado marcou como ocupadas datas em que o seu imóvel tem um compromisso na Viva. Nada foi cancelado: confira as datas e decida qual vale.`, cta: "Ver o calendário", path: "/dashboard/imoveis" },
+  calendario_falha: { subject: "Não conseguimos ler o calendário importado", body: (n) => `Olá${n ? " " + n : ""}, tentamos ler o link do calendário do outro site 3 vezes seguidas, sem sucesso. Enquanto isso, as datas de lá não chegam aqui.`, cta: "Ver o calendário", path: "/dashboard/imoveis" },
   linkedin_vencendo: { subject: "Reconecte seu LinkedIn para manter o selo", body: (n) => `Olá${n ? " " + n : ""}, o selo "LinkedIn conectado" da sua conta vence em 30 dias. Para manter o selo, reconecte o LinkedIn em Conta.`, cta: "Reconectar", path: "/dashboard/conta" },
   linkedin_ja_conectado: { subject: "LinkedIn já conectado a outra conta", body: () => "Uma conta tentou conectar um LinkedIn que já está ligado a outra conta da Viva. A tentativa foi recusada; vale conferir se é a mesma pessoa com duas contas.", cta: "Abrir o atendimento", path: "/admin/atendimento" },
   vistoria_sem_avaliador: { subject: "Avaliação sem avaliador elegível", body: () => "Um pedido de avaliação de imóvel está aguardando avaliador: ninguém da fila da cidade está elegível agora.", cta: "Abrir a fila", path: "/admin/avaliadores" },

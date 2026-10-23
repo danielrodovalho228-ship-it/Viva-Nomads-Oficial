@@ -9,6 +9,8 @@ export interface BlocoDatas {
   id: string;
   inicio: string; // ISO
   fim: string; // ISO
+  /** Prompt 53: "importado" veio do calendário de outro site (só a sincronia mexe); "manual" o dono bloqueou. */
+  origem?: "manual" | "importado";
 }
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string; id?: string };
@@ -21,13 +23,14 @@ export async function getBlocks(propertyId: string): Promise<BlocoDatas[]> {
   if (!supabase || !UUID_RE.test(propertyId)) return [];
   const { data } = await supabase
     .from("property_blocks")
-    .select("id, inicio, fim")
+    .select("id, inicio, fim, origem")
     .eq("property_id", propertyId)
     .order("inicio", { ascending: true });
-  return (data ?? []).map((b) => ({
+  return ((data ?? []) as { id: string; inicio: string; fim: string; origem?: string | null }[]).map((b) => ({
     id: String(b.id),
     inicio: String(b.inicio),
     fim: String(b.fim),
+    origem: b.origem === "importado" ? "importado" : "manual",
   }));
 }
 

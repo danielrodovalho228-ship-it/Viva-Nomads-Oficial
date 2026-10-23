@@ -14,6 +14,7 @@ import { checklistsDoInicio } from "@/lib/onboarding/ativacao";
 import { ativacoesDaSessao } from "@/lib/data/ativacao";
 import { VisaoGeral, type RascunhoPendente } from "./visao-geral-client";
 import { ContaPausada } from "@/components/account/sair-da-viva";
+import { AvisoStrikePainel } from "@/components/vistoria/aviso-strike-painel";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -136,6 +137,8 @@ export default async function DashboardPage() {
           <ContaPausada />
         </div>
       )}
+      {/* Prompt 62-A, Parte 2: 3º passo da escada → os anúncios fora da busca, no topo do painel. */}
+      {imoveisDono.length > 0 && <AvisoStrikePainel />}
       {limite && limite.ativos > 0 && (
         <div className="mb-4">
           <BlocoLimite situacao={limite} link />
