@@ -86,10 +86,10 @@ test.describe("T226 — ficha do pet para o dono da candidatura", () => {
     // 3 fotos e a carteira.
     for (const [i, cor] of ["#996633", "#336699", "#669933"].entries()) {
       await toto.getByLabel(`Enviar foto de ${PET}`).setInputFiles({ name: `toto${i}.jpg`, mimeType: "image/jpeg", buffer: await jpeg(cor) });
-      await expect(toto.getByAltText(`Foto ${i + 1} de ${PET}`)).toBeVisible({ timeout: 20_000 });
+      await esperarEnvio(page, toto.getByAltText(`Foto ${i + 1} de ${PET}`), `foto ${i + 1}`);
     }
     await toto.getByLabel(`Enviar carteira de vacina de ${PET}`).setInputFiles({ name: "carteira.jpg", mimeType: "image/jpeg", buffer: await jpeg("#eeeeee") });
-    await expect(toto.getByText("Carteira de vacina enviada")).toBeVisible({ timeout: 20_000 });
+    await esperarEnvio(page, toto.getByText("Carteira de vacina enviada"), "carteira");
     // (a) 3 de 3: no lugar do botão de envio, o aviso.
     await expect(toto.getByTestId(`pet-max-fotos-${PET}`)).toHaveText("Máximo de 3 fotos. Remova uma para trocar.");
     await expect(toto.getByLabel(`Enviar foto de ${PET}`)).toHaveCount(0);
@@ -170,3 +170,15 @@ test.describe("T226 — ficha do pet para o dono da candidatura", () => {
     await page.context().close();
   });
 });
+
+/**
+ * O envio passa por uma server action que reconverte a imagem (sharp) e grava no storage: com a suíte inteira
+ * rodando, 20 s não bastaram em 2 de 8 laboratórios (70ac8a4, 30964dd). Espera o resultado até 45 s e, se a
+ * tela mostrar o erro da ação (role="alert"), falha com o texto dele em vez de só "não encontrado".
+ */
+async function esperarEnvio(page: Page, pronto: Locator, oQue: string): Promise<void> {
+  // Só o alerta do formulário de pets: o anunciador de rota do Next também usa role="alert".
+  const alerta = page.getByTestId("pets-form").getByRole("alert");
+  await expect(pronto.or(alerta)).toBeVisible({ timeout: 45_000 });
+  if (!(await pronto.isVisible())) throw new Error(`envio da ${oQue} recusado pela tela: "${(await alerta.innerText()).trim()}"`);
+}
