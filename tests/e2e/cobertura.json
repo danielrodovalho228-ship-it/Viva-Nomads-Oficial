@@ -639,7 +639,8 @@
         "t174-conta-complete-perfil",
         "t192-conta-4-blocos",
         "t183-telas-logadas-390",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t332-merges-1170-1172"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1654,7 +1655,8 @@
       ],
       "specs": [
         "t261-tempo-ate-o-trabalho",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t332-merges-1170-1172"
       ]
     },
     "/imoveis-perto-de/[slug]": {
@@ -5340,6 +5342,12 @@
         "t295-niveis-59-1",
         "t296-niveis-exibicao-59-1"
       ]
+    },
+    "src/lib/data/estrutura-actions.ts#salvarChecklistEstrutura": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
     },
     "src/lib/data/nivel-actions.ts#salvarRuido": {
       "personas": [

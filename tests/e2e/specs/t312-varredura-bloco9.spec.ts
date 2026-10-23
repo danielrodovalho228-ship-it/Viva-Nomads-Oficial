@@ -13,7 +13,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
     conta e a tela "pronto" depois de entrar;
   - do proprietário: novo orçamento e a qualificação do rascunho (/qualificar?imovel=<rascunho da massa>).
   Só no laboratório.
-  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; última, 23/10 com o bloco 11 (t329).
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; últimas, 23/10 com o bloco 11 (t329) e 23/10 à tarde, depois dos #1170 a #1173.
 */
 type Conta = ChaveConta | "ADMIN" | "VISITANTE";
 interface Tela {

@@ -12,6 +12,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   pedidos do morador, as sete seções da conta, as três telas da estadia (alteração, encerrar, ocupantes) e o contrato
   no admin. Ficam fora: /auth/intencao (com sessão e intenção já escolhida redireciona; fica com a t300 e a t317) e a
   visão do convidado (precisa de convite ativo; fica com a t327). Só no laboratório.
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; 23/10 (#1165) e 23/10 à tarde (#1170 a #1173).
 */
 type Conta = ChaveConta | "ADMIN" | "VISITANTE";
 interface Tela {
