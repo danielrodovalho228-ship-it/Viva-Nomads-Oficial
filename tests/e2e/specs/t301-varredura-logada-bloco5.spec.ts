@@ -11,6 +11,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   nenhuma varredura cobria: agentes, ajuda na publicação, avaliações, cidades, fotógrafos, marketing, pedidos, Caixa dos
   Sócios, serviços, eventos, pedidos de parceiros, encerramentos, destinos e retenção (só abre e rola; nenhum clique).
   Fica à parte das outras pelo teto de tempo do laboratório. Só no laboratório.
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; última, 23/10 com o bloco 11 (t329).
 */
 type Conta = ChaveConta | "ADMIN";
 interface Tela {
