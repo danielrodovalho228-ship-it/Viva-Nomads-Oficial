@@ -102,11 +102,20 @@ interface Conteudo {
   title: string;
   body: string;
   url?: string;
+  /** Prompt 44 (item 6): só para o registro do diagnóstico (push_envios); não vai ao aparelho. */
+  evento?: string;
+}
+
+/** Quantos receberam e quantos tokens mortos foram apagados (diagnóstico do admin, Prompt 44). */
+interface Contagem {
+  enviados: number;
+  mortos: number;
 }
 
 /** Lotes de até 100 para o exp.host; ticket DeviceNotRegistered apaga o token. */
-async function enviarExpo(admin: Admin, tokens: string[], c: Conteudo): Promise<number> {
+async function enviarExpo(admin: Admin, tokens: string[], c: Conteudo): Promise<Contagem> {
   let sent = 0;
+  let mortos = 0;
   const msgs = montarMensagens(tokens, c);
   for (const lote of emLotes(msgs, EXPO_LOTE)) {
     try {
@@ -123,23 +132,27 @@ async function enviarExpo(admin: Admin, tokens: string[], c: Conteudo): Promise<
       }
       const r = lerTickets(lote.map((m) => m.to), await res.json().catch(() => null));
       sent += r.enviados;
-      if (r.mortos.length) await admin.from("push_tokens").delete().in("token", r.mortos);
+      if (r.mortos.length) {
+        mortos += r.mortos.length;
+        await admin.from("push_tokens").delete().in("token", r.mortos);
+      }
     } catch (e) {
       console.error("[push] expo erro:", (e as Error).message);
     }
   }
-  return sent;
+  return { enviados: sent, mortos };
 }
 
-async function enviarFcm(admin: Admin, sa: ServiceAccount, tokens: string[], c: Conteudo): Promise<number> {
+async function enviarFcm(admin: Admin, sa: ServiceAccount, tokens: string[], c: Conteudo): Promise<Contagem> {
   const accessToken = await getAccessToken(sa);
-  if (!accessToken) return 0;
+  if (!accessToken) return { enviados: 0, mortos: 0 };
 
   const endpoint = `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`;
   const data: Record<string, string> = {};
   if (c.url) data.url = c.url;
 
   let sent = 0;
+  let mortos = 0;
   await Promise.allSettled(
     tokens.map(async (token) => {
       try {
@@ -161,6 +174,7 @@ async function enviarFcm(admin: Admin, sa: ServiceAccount, tokens: string[], c: 
         // Token morto → apaga da tabela.
         const txt = await res.text().catch(() => "");
         if (res.status === 404 || /UNREGISTERED|NOT_FOUND/i.test(txt)) {
+          mortos++;
           await admin.from("push_tokens").delete().eq("token", token);
         } else {
           console.error("[push] envio falhou:", res.status, txt.slice(0, 200));
@@ -170,7 +184,7 @@ async function enviarFcm(admin: Admin, sa: ServiceAccount, tokens: string[], c: 
       }
     })
   );
-  return sent;
+  return { enviados: sent, mortos };
 }
 
 /**
@@ -192,11 +206,18 @@ export async function sendPushParaUsuarios(
 
   const { expo, fcm } = separarTokens(rows.map((r: { token: string }) => r.token));
   const sa = serviceAccount();
+  const vazio: Contagem = { enviados: 0, mortos: 0 };
   const [a, b] = await Promise.all([
-    expo.length ? enviarExpo(admin, expo, params) : 0,
-    fcm.length && sa ? enviarFcm(admin, sa, fcm, params) : 0,
+    expo.length ? enviarExpo(admin, expo, params) : vazio,
+    fcm.length && sa ? enviarFcm(admin, sa, fcm, params) : vazio,
   ]);
-  return { sent: a + b };
+  const enviados = a.enviados + b.enviados;
+  // Prompt 44 (item 6): o registro do diagnóstico (sem conteúdo). Best-effort: sem a 0227, segue sem registrar.
+  await admin
+    .from("push_envios")
+    .insert({ user_id: userIds.length === 1 ? userIds[0] : null, evento: params.evento ?? null, enviados, falhas: Math.max(0, rows.length - enviados), tokens_mortos: a.mortos + b.mortos })
+    .then(undefined, () => {});
+  return { sent: enviados };
 }
 
 export async function sendPush(params: { userId?: string } & Conteudo): Promise<{ sent: number } | { skipped: true }> {

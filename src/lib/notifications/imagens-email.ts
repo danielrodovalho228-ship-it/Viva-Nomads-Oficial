@@ -79,6 +79,8 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   chamado_respondido: "atendimento",
   chamado_resolvido: "atendimento",
   chamado_equipe: "atendimento",
+  alerta_backup_falhou: "atendimento",
+  alerta_email_falhou: "atendimento",
   manutencao_nova: "manutencao",
   manutencao_atrasada: "manutencao",
   manutencao_atualizada: "manutencao",

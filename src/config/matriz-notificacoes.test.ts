@@ -6,6 +6,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  CATEGORIAS_COM_INTERRUPTOR,
+  categoriasDesligadasValidas,
+  eventoDesligadoPelaPessoa,
   MATRIZ_NOTIFICACOES,
   ROTULO_CATEGORIA,
   canaisDoEvento,
@@ -13,6 +16,7 @@ import {
   categoriaTemInterruptor,
   type EventoNotificacao,
   type LinhaMatriz,
+  ALERTAS_OPERACIONAIS_COM_PUSH,
 } from "./matriz-notificacoes.ts";
 import { TEMPLATES } from "../lib/notifications/eventos-email.ts";
 import { TEMA_POR_EVENTO } from "../lib/notifications/imagens-email.ts";
@@ -29,7 +33,10 @@ test("cobre exatamente os eventos que existem (os de notify() e os e-mails avuls
 test("push só para decisão com prazo, segurança e mensagem nova (Prompt 44)", () => {
   for (const [ev, l] of linhas) {
     if (!l.canais.includes("push")) continue;
-    assert.ok(l.categoria === "seguranca" || (l.categoria === "decisao" && l.prazo === true) || ev === "new_message", ev);
+    assert.ok(
+      l.categoria === "seguranca" || (l.categoria === "decisao" && l.prazo === true) || ev === "new_message" || (ALERTAS_OPERACIONAIS_COM_PUSH as readonly string[]).includes(ev),
+      ev,
+    );
   }
   // E toda decisão com prazo chega por push.
   for (const [ev, l] of linhas) if (l.categoria === "decisao" && l.prazo) assert.ok(l.canais.includes("push"), ev);
@@ -49,7 +56,7 @@ test("canaisDoEvento: canais do papel que recebe; papel que não recebe fica sem
   assert.deepEqual(canaisDoEvento("new_message", "proprietario"), ["push", "central", "email"]);
   assert.deepEqual(canaisDoEvento("visita_pedida", "morador"), []);
   assert.deepEqual(canaisDoEvento("chamado_equipe", "proprietario"), []);
-  assert.deepEqual(canaisDoEvento("chamado_equipe", "admin"), ["central", "email"]);
+  assert.deepEqual(canaisDoEvento("chamado_equipe", "admin"), ["push", "central", "email"]);
   // Devolve cópia: quem chama não altera a matriz.
   canaisDoEvento("pedido_resposta", "morador").push("push");
   assert.deepEqual(canaisDoEvento("pedido_resposta", "morador"), ["central", "email"]);
@@ -73,7 +80,26 @@ test("toda linha tem papel e canal, sem repetição", () => {
   }
 });
 
-test("a matriz ainda não muda o envio: notify() não a lê (o Prompt 44 liga)", () => {
+test("44-B2: o notify() respeita a categoria desligada pela pessoa", () => {
   const notify = readFileSync(new URL("../lib/notifications/index.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(notify, /matriz-notificacoes/);
+  assert.match(notify, /eventoDesligadoPelaPessoa/);
+});
+
+test("44-B2: decisão e segurança sempre chegam, mesmo com tudo desligado", () => {
+  const tudo = ["mensagens", "lembretes", "outros", "decisao", "seguranca"];
+  assert.equal(eventoDesligadoPelaPessoa("proposta_recebida", tudo), false);
+  assert.equal(eventoDesligadoPelaPessoa("verification_ready", tudo), false);
+  assert.equal(eventoDesligadoPelaPessoa("new_message", ["mensagens"]), true);
+  assert.equal(eventoDesligadoPelaPessoa("new_message", ["lembretes"]), false);
+  assert.equal(eventoDesligadoPelaPessoa("checkin_lembrete", ["lembretes"]), true);
+  assert.equal(eventoDesligadoPelaPessoa("saved_search_match", ["outros"]), true);
+  assert.equal(eventoDesligadoPelaPessoa("saved_search_match", null), false);
+  assert.equal(eventoDesligadoPelaPessoa("evento_que_nao_existe", ["outros"]), false);
+});
+
+test("44-B2: só categorias com interruptor são gravadas, sem repetição", () => {
+  assert.deepEqual(categoriasDesligadasValidas(["outros", "decisao", "mensagens", "outros", 3]), ["mensagens", "outros"]);
+  assert.deepEqual(categoriasDesligadasValidas("mensagens"), []);
+  assert.deepEqual(categoriasDesligadasValidas(null), []);
+  for (const c of CATEGORIAS_COM_INTERRUPTOR) assert.ok(categoriaTemInterruptor(c), c);
 });

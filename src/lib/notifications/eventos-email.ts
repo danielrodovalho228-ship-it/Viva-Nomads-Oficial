@@ -35,6 +35,9 @@ export type NotificationEvent =
   | "chamado_respondido" // → quem abriu
   | "chamado_resolvido" // → quem abriu (com a nota de 1 a 5)
   | "chamado_equipe" // P1/P2, aprovação, prazo em risco → admins
+  // Prompt 44 (item 3): alertas operacionais por push, só para admins com "receber alertas operacionais".
+  | "alerta_backup_falhou" // a cópia noturna (Resiliência 2) falhou → admins
+  | "alerta_email_falhou" // o envio de e-mail falhou (Resend) → admins
   | "manutencao_nova" // inquilino abriu manutenção → proprietário
   | "manutencao_atrasada" // prazo da manutenção vencido → proprietário
   | "manutencao_atualizada" // status da ordem mudou → a outra parte
@@ -149,6 +152,8 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   chamado_aberto: { subject: "Recebemos seu chamado", body: (n) => `Olá${n ? " " + n : ""}, recebemos seu chamado na Central de Ajuda do Viva Nomads. Você acompanha e responde por lá.`, cta: "Acompanhar chamado", path: "/ajuda" },
   chamado_respondido: { subject: "Seu chamado foi respondido", body: (n) => `Olá${n ? " " + n : ""}, há uma resposta da equipe Viva Nomads no seu chamado.`, cta: "Ver resposta", path: "/ajuda" },
   chamado_resolvido: { subject: "Seu chamado foi resolvido", body: (n) => `Olá${n ? " " + n : ""}, marcamos seu chamado como resolvido. Se algo ficou pendente, é só responder por lá.`, cta: "Ver chamado", path: "/ajuda" },
+  alerta_backup_falhou: { subject: "A cópia noturna falhou", body: () => "A cópia noturna do banco e dos arquivos não terminou. Veja a causa no admin e rode de novo.", cta: "Abrir as cópias", path: "/admin" },
+  alerta_email_falhou: { subject: "O envio de e-mail falhou", body: () => "Um e-mail da Viva não saiu (o provedor recusou ou não respondeu). Veja a causa no admin.", cta: "Abrir o diagnóstico", path: "/admin" },
   chamado_equipe: { subject: "Atendimento: chamado precisa da equipe", body: () => "Um chamado na Central de Ajuda precisa da equipe.", cta: "Abrir no atendimento", path: "/admin/atendimento" },
   manutencao_nova: { subject: "Pedido de manutenção no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, o inquilino abriu um pedido de manutenção no seu imóvel. Responda pela plataforma dentro do prazo.`, cta: "Responder pedido", path: "/dashboard/solicitacoes" },
   manutencao_atrasada: { subject: "Manutenção sem resposta: prazo vencido", body: (n) => `Olá${n ? " " + n : ""}, o pedido de manutenção do seu inquilino passou do prazo sem resposta. Responda pela plataforma.`, cta: "Responder agora", path: "/dashboard/solicitacoes" },

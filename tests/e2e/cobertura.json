@@ -5609,6 +5609,24 @@
       "specs": [
         "t315-telas-avaliacao-dono-62a"
       ]
+    },
+    "src/lib/data/notif-categorias-actions.ts#getCategoriasDesligadas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t331-preferencias-push-44b2"
+      ]
+    },
+    "src/lib/data/notif-categorias-actions.ts#setCategoriasDesligadas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t331-preferencias-push-44b2"
+      ]
     }
   }
 }

@@ -152,7 +152,10 @@ export const MATRIZ_NOTIFICACOES = {
   comprovante_caucao: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
 
   // ── Equipe (o admin desliga em "Receber alertas da equipe") ───────────────
-  chamado_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  // Prompt 44 (item 3): alertas operacionais com push — só admins com "receber alertas operacionais".
+  chamado_equipe: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },
+  alerta_backup_falhou: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },
+  alerta_email_falhou: { categoria: "outros", papeis: ["admin"], canais: ["push", "central"] },
   vistoria_sem_avaliador: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   // 63-B: tentativa de conectar um LinkedIn que já está em outra conta (sinal ao atendimento, sem expor quem).
   linkedin_ja_conectado: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
@@ -160,10 +163,13 @@ export const MATRIZ_NOTIFICACOES = {
   parceiro_sem_resposta: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   chamado_fora_promessa: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   verificacao_analise_humana: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
-  documento_recebido: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  documento_recebido: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },
   parceria_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   estadia_encerramento_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
 } as const satisfies Record<EventoNotificacao, LinhaMatriz>;
+
+/** Prompt 44 (item 3): alertas da equipe que vão por push (documento na fila, chamado P1/P2, cópia noturna, e-mail). */
+export const ALERTAS_OPERACIONAIS_COM_PUSH = ["documento_recebido", "chamado_equipe", "alerta_backup_falhou", "alerta_email_falhou"] as const;
 
 /** Os canais deste evento para este papel ([] quando o papel não recebe o evento). */
 export function canaisDoEvento(evento: EventoNotificacao, papel: PapelNotificacao): CanalNotificacao[] {
@@ -175,6 +181,23 @@ export function canaisDoEvento(evento: EventoNotificacao, papel: PapelNotificaca
 /** A pessoa pode desligar esta categoria? Decisão e segurança, não (sempre chegam). */
 export function categoriaTemInterruptor(categoria: CategoriaNotificacao): boolean {
   return categoria !== "decisao" && categoria !== "seguranca";
+}
+
+/** Prompt 44 (item 4): as categorias que a pessoa pode desligar em /dashboard/notificacoes. */
+export const CATEGORIAS_COM_INTERRUPTOR = ["mensagens", "lembretes", "outros"] as const;
+export type CategoriaComInterruptor = (typeof CATEGORIAS_COM_INTERRUPTOR)[number];
+
+/** O que vem do banco ou do formulário, só com categorias que têm interruptor, sem repetição e na ordem da tela. */
+export function categoriasDesligadasValidas(valor: unknown): CategoriaComInterruptor[] {
+  if (!Array.isArray(valor)) return [];
+  return CATEGORIAS_COM_INTERRUPTOR.filter((c) => valor.includes(c));
+}
+
+/** A pessoa desligou a categoria deste evento? Decisão e segurança nunca: sempre chegam. */
+export function eventoDesligadoPelaPessoa(evento: string, desligadas: readonly string[] | null | undefined): boolean {
+  const l = (MATRIZ_NOTIFICACOES as Record<string, LinhaMatriz | undefined>)[evento];
+  if (!l || !categoriaTemInterruptor(l.categoria) || !desligadas?.length) return false;
+  return desligadas.includes(l.categoria);
 }
 
 /** A categoria do evento. */
