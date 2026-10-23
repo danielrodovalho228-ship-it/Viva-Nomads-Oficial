@@ -276,10 +276,17 @@ export async function entrar(browser: Browser, email: string, senha: string): Pr
   // networkidle sem teto pendurava até o fim do teste na 1ª carga fria (t168 a 390 px, lab 17/10): espera até 10 s e segue.
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-  await page.locator('input[name="email"], input[type="email"]').first().fill(email);
-  await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
-  await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-  await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+  // Um clique antes da hidratação vira envio nativo e recarrega /auth vazio (t262, t82, t204 no lab de 23/10):
+  // enquanto não sair de /auth, preenche o que estiver vazio e clica de novo.
+  const campoEmail = page.locator('input[name="email"], input[type="email"]').first();
+  const campoSenha = page.locator('input[name="password"], input[type="password"]').first();
+  await expect(async () => {
+    if (/\/dashboard/.test(new URL(page.url()).pathname)) return;
+    if ((await campoEmail.inputValue({ timeout: 5_000 })) !== email) await campoEmail.fill(email, { timeout: 5_000 });
+    if ((await campoSenha.inputValue({ timeout: 5_000 })) !== senha) await campoSenha.fill(senha, { timeout: 5_000 });
+    await page.locator("form").getByRole("button", { name: /^entrar$/i }).click({ timeout: 5_000 });
+    await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
+  }).toPass({ timeout: 50_000 });
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
   return page;
 }
