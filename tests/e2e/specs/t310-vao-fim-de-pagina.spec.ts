@@ -11,8 +11,8 @@ import { VAO_MAXIMO, medirVao, type MedidaVao } from "../fixtures/vao-rodape";
   que fica atrás dos fixos do pé da tela). Reprova acima de 64 px. Elemento fixo (barra do imóvel, botões flutuantes,
   abas) não conta como conteúdo, mas também não pode cobrir o último clicável quando a página está rolada até o fim.
   Medida em fixtures/vao-rodape.ts. Relatório por página e tamanho em tests/laboratorio/saida/vao-rodape/ e nas linhas
-  "VAO|…" do log. Catraca: o que já passa de 64 px está em CONHECIDOS (registro L-23, Pista A) e só é medido; quem
-  corrigir tira a página de CONHECIDOS no mesmo PR e ela vira portão. Só no laboratório (imóvel e contas da massa).
+  "VAO|…" do log. Catraca: o que já passa de 64 px está em CONHECIDOS (L-23, L-24, L-25, Pista A), por página e
+  tamanho, e só é medido; quem corrigir tira a entrada de CONHECIDOS no mesmo PR e ela vira portão. Só no laboratório (imóvel e contas da massa).
 */
 const TAMANHOS = [
   { nome: "celular", width: 390, height: 844 },
@@ -44,10 +44,22 @@ const PAGINAS: Pagina[] = [
   { conta: "DONO17", nome: "Nível, ruído e extras", rota: (m) => `/dashboard/imoveis/${m.imovel17}/nivel` },
   { conta: "INQUILINA", nome: "Painel do morador", rota: () => "/dashboard" },
 ];
-// Catraca (L-23): página → código. Medidas sem asserção até a Pista A corrigir.
-const CONHECIDOS: Record<string, string> = {
-  // Suspeita do coordenador (23/10): pb-(--folga-rodape-imovel) = 16rem fixos abaixo de lg, maior que a barra do celular.
-  ...Object.fromEntries(ABAS_IMOVEL.map(([, nome]) => [`Imóvel · ${nome}`, "L-23"])),
+// Catraca: página → código e tamanhos já acima de 64 px (lab-crítico do #1124, 23/10). Nesses tamanhos a spec mede e
+// anota sem reprovar; nos outros, e em qualquer página fora daqui, é portão. Quem corrigir tira a entrada no mesmo PR.
+const CONHECIDOS: Record<string, { codigo: string; tamanhos: string[] }> = {
+  // L-23: pb-(--folga-rodape-imovel) = 16rem fixos abaixo de lg (property-detail.tsx:639): 320 px no celular, 256 no tablet.
+  ...Object.fromEntries(ABAS_IMOVEL.map(([, nome]) => [`Imóvel · ${nome}`, { codigo: "L-23", tamanhos: ["celular", "tablet"] }])),
+  // L-24: o layout público põe pb-16 (64 px) no <main id="conteudo"> abaixo de md, somado à folga da página: 80 a 112 px.
+  Ajuda: { codigo: "L-24", tamanhos: ["celular"] },
+  Buscar: { codigo: "L-24", tamanhos: ["celular"] },
+  "Novo pedido de moradia": { codigo: "L-24", tamanhos: ["celular"] },
+  "Perfil do proprietário": { codigo: "L-24", tamanhos: ["celular"] },
+  // L-25: o painel no celular deixa 116 px abaixo do último bloco (folga --folga-flutuante-celular + p-4 do <main>).
+  "Painel do dono": { codigo: "L-25", tamanhos: ["celular"] },
+  "Painel do morador": { codigo: "L-25", tamanhos: ["celular"] },
+  Recibos: { codigo: "L-25", tamanhos: ["celular"] },
+  "Nível, ruído e extras": { codigo: "L-25", tamanhos: ["celular"] },
+  "Pedidos (dono)": { codigo: "L-25", tamanhos: ["celular"] },
 };
 
 const MASSA = lerMassa();
@@ -79,7 +91,7 @@ test.describe("T310 — vão de fim de página (celular 390 e tablet 820, com to
       test.setTimeout(150_000);
       test.skip(p.conta !== "VISITANTE" && !temContaVarredura(p.conta), `sem a conta ${p.conta} na massa`);
       const rota = p.rota(MASSA!);
-      const conhecido = CONHECIDOS[p.nome];
+      const catraca = CONHECIDOS[p.nome];
       const relatorio: Record<string, MedidaVao> = {};
       for (const tam of TAMANHOS) {
         const ctx = await contexto(browser, p.conta, tam);
@@ -91,6 +103,7 @@ test.describe("T310 — vão de fim de página (celular 390 e tablet 820, com to
           await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
           const m = await medirVao(page);
           relatorio[tam.nome] = m;
+          const conhecido = catraca?.tamanhos.includes(tam.nome) ? catraca.codigo : undefined;
           const rotulo = rota.replace(/[0-9a-f-]{36}/g, ":id");
           console.log(`VAO|${tam.nome}|${rotulo}|${m.vao} px|${m.ultimo} → ${m.fim}${m.coberto ? `|COBERTO: ${m.coberto}` : ""}${conhecido ? `|conhecido ${conhecido}` : ""}`);
           if (m.vao > VAO_MAXIMO || m.coberto) {
@@ -112,7 +125,7 @@ test.describe("T310 — vão de fim de página (celular 390 e tablet 820, com to
         }
       }
       mkdirSync(SAIDA, { recursive: true });
-      writeFileSync(`${SAIDA}/${slug(p.nome)}.json`, JSON.stringify({ pagina: p.nome, rota, conhecido: conhecido ?? null, medidas: relatorio }, null, 2));
+      writeFileSync(`${SAIDA}/${slug(p.nome)}.json`, JSON.stringify({ pagina: p.nome, rota, conhecido: catraca ?? null, medidas: relatorio }, null, 2));
     });
   }
 });
