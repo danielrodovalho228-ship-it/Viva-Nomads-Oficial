@@ -330,7 +330,10 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     await linha.getByLabel("Prioridade nova").selectOption("media");
     await linha.getByTestId("admin-reclassificar-motivo").fill("Porta solta pode cair: média.");
     await linha.getByTestId("admin-reclassificar-salvar").click();
-    await expect(a.getByText("Reclassificada. Os prazos foram recalculados a partir da abertura.")).toBeVisible({ timeout: 20_000 });
+    // Decidido, o pedido sai da fila de reclassificação (a linha some com a mensagem): espera o banco e a fila, não o aviso.
+    await expect.poll(async () => (await adm().from("service_orders").select("priority").eq("id", ids.baixa!).single()).data?.priority, { timeout: 20_000 }).toBe("media");
+    await a.reload({ waitUntil: "domcontentloaded" });
+    await expect(a.getByTestId("solicitacao-linha").filter({ hasText: T.contrato })).toHaveCount(0, { timeout: 20_000 });
     const { data: so } = await adm().from("service_orders").select("priority, prioridade_original, reclassificada_em, reclassificacao_motivo").eq("id", ids.baixa).single();
     expect(so).toMatchObject({ priority: "media", prioridade_original: "baixa", reclassificacao_motivo: "Porta solta pode cair: média." });
     expect(so?.reclassificada_em).toBeTruthy();
