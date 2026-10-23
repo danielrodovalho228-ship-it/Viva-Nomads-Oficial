@@ -1615,6 +1615,14 @@
         "t256-pagina-da-estadia"
       ]
     },
+    "/dashboard/estadia/[contratoId]/convidado": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t324-convidar-ocupante-61b"
+      ]
+    },
     "/dashboard/estadia/[contratoId]/ocupantes": {
       "personas": [
         "inquilino"
@@ -4937,6 +4945,22 @@
       ],
       "specs": [
         "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/data/estadia-convidados-actions.ts#convidarOcupante": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t324-convidar-ocupante-61b"
+      ]
+    },
+    "src/lib/data/estadia-convidados-actions.ts#removerConvidado": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t324-convidar-ocupante-61b"
       ]
     },
     "src/lib/data/estadia-actions.ts#adicionarOcupante": {

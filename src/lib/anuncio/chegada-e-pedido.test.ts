@@ -144,3 +144,29 @@ test("GUARDA: tipo_entrada é público; como_entrar só nos leitores da estadia 
   assert.match(mig, /grant select \(tipo_entrada, mensagem_para_pedido, considerar_antes, considerar_antes_texto\) on public\.properties to anon, authenticated/);
   assert.doesNotMatch(mig, /como_entrar[^\n]*to anon/);
 });
+
+test("GUARDA do convidado: a visão só lê datas, endereço, instruções e linha do tempo; nenhuma ação da estadia o aceita", async () => {
+  const { readFileSync } = await import("node:fs");
+  const raiz = new URL("../../../", import.meta.url).pathname;
+  const ler = (a: string) => readFileSync(raiz + a, "utf8");
+  // Sem comentários (/* … */ e //): só o código que lê dados.
+  const semComentario = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/.*$/gm, "");
+  const visao = semComentario(ler("src/lib/data/estadia-convidados.ts") + ler("src/app/(dashboard)/dashboard/estadia/[contratoId]/convidado/page.tsx"));
+  // pagamentos_bloco entra só na condição da liberação (D-7, igual à do morador); nada dele sai na visão.
+  for (const proibido of ["contrato_aditivos", "documentos_fiscais", "messages", "conversa", "aluguel_mensal", "caucao", "comissao", "contrato_notas", "contrato_ocupantes", "recibo"]) {
+    const usos = visao.split("\n").filter((l) => l.includes(proibido) && !/^\s*(\*|\/\/|\/\*)/.test(l) && !l.includes("<p ") && !l.includes("COLUNAS_ESTADIA"));
+    assert.deepEqual(usos, [], `a visão do convidado não pode ler ${proibido}`);
+  }
+  // A visão não devolve linha do contrato: só os campos escolhidos.
+  const fonte = ler("src/lib/data/estadia-convidados.ts");
+  const ini = fonte.indexOf("export interface VisaoConvidado {");
+  const tipo = fonte.slice(ini, fonte.indexOf("\n}\n", ini));
+  assert.match(tipo, /endereco: string;/);
+  assert.doesNotMatch(tipo, /valor|caucao|pagamento|documento|conversa/i);
+  // contextoDaEstadia (porta de TODAS as ações da estadia) só aceita morador e dono: o convidado cai em "não encontrado".
+  assert.match(ler("src/lib/data/estadia.ts"), /c\.tenant_id === user\.id \? "inquilino" : c\.properties\?\.owner_id === user\.id \? "proprietario" : null/);
+  // Convidar e remover: só o morador, sempre por contextoDaEstadia.
+  const acoes = ler("src/lib/data/estadia-convidados-actions.ts");
+  assert.equal((acoes.match(/contextoDaEstadia\(/g) ?? []).length, 2);
+  assert.equal((acoes.match(/ctx\.papel !== "inquilino"/g) ?? []).length, 2);
+});

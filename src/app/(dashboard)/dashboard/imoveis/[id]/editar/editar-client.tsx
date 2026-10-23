@@ -617,6 +617,7 @@ export function EditarImovelClient({
         <Section
           icon={ScrollText}
           title="Regras da casa"
+          testid="secao-regras"
           summary={[
             petsAllowed ? "aceita pets" : "sem pets",
             smokingAllowed ? "fumar ok" : "não fumantes",

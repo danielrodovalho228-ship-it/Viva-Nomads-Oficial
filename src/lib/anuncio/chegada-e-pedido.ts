@@ -122,6 +122,10 @@ export function convidadoVence(fimDaEstadia: string | null | undefined): Date | 
   return new Date(d.getTime() + DIAS_APAGAR_CONVIDADO * 86_400_000);
 }
 
+/** A visão de leitura do convidado e a entrada por código (49) que leva até ela (link do e-mail do convite). */
+export const hrefVisaoConvidado = (contratoId: string) => `/dashboard/estadia/${contratoId}/convidado`;
+export const entradaDoConvidado = (contratoId: string) => `/auth?redirect=${encodeURIComponent(hrefVisaoConvidado(contratoId))}`;
+
 // ── Gravação (servidor) ──────────────────────────────────────────────────────────────────────────────────────────────
 export interface EntradaChegadaEPedido {
   tipoEntrada?: unknown;
