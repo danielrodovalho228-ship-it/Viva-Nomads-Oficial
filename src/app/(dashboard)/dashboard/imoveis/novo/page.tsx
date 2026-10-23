@@ -612,7 +612,7 @@ export default function NewPropertyPage() {
     if (d.privacidade && typeof d.privacidade === "object") setPrivacidade({ ...PRIVACIDADE_VAZIA, ...(d.privacidade as Partial<Privacidade>) });
     if (typeof d.smokingAllowed === "boolean") setSmokingAllowed(d.smokingAllowed);
     if (typeof d.childrenAllowed === "boolean") setChildrenAllowed(d.childrenAllowed);
-    setChegada(formDeRascunho(d));
+    setChegada((atual) => formDeRascunho(d, atual));
     if (typeof d.issuesInvoice === "boolean") setIssuesInvoice(d.issuesInvoice);
     if (d.amenityKeys && typeof d.amenityKeys === "object") setAmenityKeys(d.amenityKeys as Record<string, boolean>);
     if (Array.isArray(d.googlePlaces)) setGooglePlaces(d.googlePlaces as CuratedPlace[]);

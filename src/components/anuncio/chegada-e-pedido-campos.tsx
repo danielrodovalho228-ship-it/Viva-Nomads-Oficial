@@ -27,10 +27,13 @@ export function formDeChegada(c?: ChegadaEPedido): ChegadaEPedidoForm {
   };
 }
 
-/** O que vai ao servidor (PropertyInput e rascunho). */
+/**
+ * O que vai ao servidor (PropertyInput e rascunho). Tipo de entrada vazio não vai (undefined = não mexe): um rascunho
+ * antigo sem o campo no JSON nunca apaga o tipo já gravado no imóvel. O campo é obrigatório, então não há "limpar".
+ */
 export function payloadDaChegada(f: ChegadaEPedidoForm) {
   return {
-    tipoEntrada: f.tipoEntrada || null,
+    tipoEntrada: f.tipoEntrada || undefined,
     mensagemParaPedido: f.mensagemParaPedido,
     considerarAntes: f.considerarAntes,
     considerarAntesTexto: f.considerarAntesTexto,
@@ -126,13 +129,13 @@ export function ChegadaEPedidoCampos({
   );
 }
 
-/** O que o rascunho do assistente guardou (JSON): só o que tem a forma certa. */
-export function formDeRascunho(d: Record<string, unknown>): ChegadaEPedidoForm {
-  const txt = (v: unknown) => (typeof v === "string" ? v : "");
+/** O que o rascunho do assistente guardou (JSON): só o que tem a forma certa. Campo ausente mantém o valor atual. */
+export function formDeRascunho(d: Record<string, unknown>, atual: ChegadaEPedidoForm = formDeChegada()): ChegadaEPedidoForm {
+  const txt = (v: unknown, padrao: string) => (typeof v === "string" ? v : padrao);
   return {
-    tipoEntrada: txt(d.tipoEntrada),
-    mensagemParaPedido: txt(d.mensagemParaPedido),
-    considerarAntes: Array.isArray(d.considerarAntes) ? d.considerarAntes.filter((x): x is string => typeof x === "string") : [],
-    considerarAntesTexto: txt(d.considerarAntesTexto),
+    tipoEntrada: txt(d.tipoEntrada, atual.tipoEntrada),
+    mensagemParaPedido: txt(d.mensagemParaPedido, atual.mensagemParaPedido),
+    considerarAntes: Array.isArray(d.considerarAntes) ? d.considerarAntes.filter((x): x is string => typeof x === "string") : atual.considerarAntes,
+    considerarAntesTexto: txt(d.considerarAntesTexto, atual.considerarAntesTexto),
   };
 }

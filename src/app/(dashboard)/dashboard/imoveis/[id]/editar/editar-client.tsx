@@ -4,7 +4,7 @@ import { CampoReais } from "@/components/ui/campo-reais";
 import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/components/anuncio/limpeza-estadia-campos";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { ChegadaEPedidoCampos, formDeChegada, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
-import { avisoTipoEntradaNoPainel } from "@/lib/anuncio/chegada-e-pedido";
+import { avisoTipoEntradaNoPainel, tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { DateFieldBR } from "@/components/ui/date-field-br";
@@ -163,8 +163,10 @@ export function EditarImovelClient({
         selo: fatos?.selo ?? !!property.readyToLiveBadge,
         // 65-B: o que está na seção Vídeo agora (arquivo ou link permitido), não o que estava no banco.
         video: videoDoAnuncio({ videoArquivo, videoUrl }).tipo !== null,
+        // 61-B: rascunho aberto no editor só publica com o tipo de entrada (a mesma regra do servidor).
+        tipoEntradaOk: property.status === "draft" && property.chegadaEPedido ? tipoEntradaValido(chegada.tipoEntrada) : undefined,
       }),
-    [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, videoArquivo, videoUrl]
+    [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, videoArquivo, videoUrl, chegada.tipoEntrada]
   );
   const [aceitouIa, setAceitouIa] = useState(false);
   const [publicadoAgora, setPublicadoAgora] = useState(false);
