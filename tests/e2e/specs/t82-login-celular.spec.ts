@@ -17,17 +17,20 @@ test.describe("T82 — Login no celular", () => {
     if (NO_LABORATORIO) await liberarLimiteLoginIp();
   });
 
-  test("campo de e-mail sem autocorreção do iPhone", async ({ page }) => {
-    await page.goto("/auth");
-    const campo = page.locator('input[name="email"]').first();
-    await expect(campo).toHaveAttribute("autocapitalize", "none");
-    await expect(campo).toHaveAttribute("autocorrect", "off");
-    await expect(campo).toHaveAttribute("spellcheck", "false");
-    await expect(campo).toHaveAttribute("inputmode", "email");
+  test("campo de e-mail sem autocorreção do iPhone (entrada por código e 'Entrar com senha')", async ({ page }) => {
+    for (const url of ["/auth", "/auth?senha=1"]) {
+      await page.goto(url);
+      const campo = page.locator('input[name="email"]').first();
+      await expect(campo).toHaveAttribute("autocapitalize", "none");
+      await expect(campo).toHaveAttribute("autocorrect", "off");
+      await expect(campo).toHaveAttribute("spellcheck", "false");
+      await expect(campo).toHaveAttribute("inputmode", "email");
+    }
   });
 
   test("senha errada: mensagem padrão, botão volta a funcionar", async ({ page }) => {
-    await page.goto("/auth");
+    // Prompt 49: a senha fica em "Entrar com senha" (/auth?senha=1); a entrada padrão é por código.
+    await page.goto("/auth?senha=1");
     const email = `naoexiste-t80-${Date.now()}@example.com`;
     const entrar = page.locator("form").getByRole("button", { name: /^entrar$/i });
     // E-mail novo a cada execução: o limite do Supabase por e-mail não acumula entre labs.

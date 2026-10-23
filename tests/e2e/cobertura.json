@@ -82,7 +82,8 @@
         "t30-chat-ir-para-o-fim",
         "t39-app-ida-e-volta",
         "t183-telas-logadas-390",
-        "t255-admin-f15-f16-f18-f20"
+        "t255-admin-f15-f16-f18-f20",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/admin/ajuda-publicacao": {
@@ -90,7 +91,8 @@
         "admin"
       ],
       "specs": [
-        "t191-ajuda-publicacao"
+        "t191-ajuda-publicacao",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/admin/atendimento": {
@@ -126,7 +128,8 @@
         "t93-avaliacao-tela",
         "t48-varredura",
         "t183-telas-logadas-390",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/admin/cidades": {
@@ -135,7 +138,8 @@
       ],
       "specs": [
         "t196-cidades-liberadas",
-        "t202-cidades-liberadas-logado"
+        "t202-cidades-liberadas-logado",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/admin/documentos": {
@@ -182,7 +186,8 @@
         "admin"
       ],
       "specs": [
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/admin/marketing": {
@@ -190,7 +195,8 @@
         "admin"
       ],
       "specs": [
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/admin/parceiros": {
@@ -216,7 +222,8 @@
         "t183-telas-logadas-390",
         "t231-admin-numeros-com-lista",
         "t232-pedido-moradia-completo",
-        "t255-admin-f15-f16-f18-f20"
+        "t255-admin-f15-f16-f18-f20",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/admin/socios": {
@@ -225,7 +232,8 @@
       ],
       "specs": [
         "t51-admin-padrao-caixa-socios",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/admin/usuarios": {
@@ -506,7 +514,8 @@
         "t93-avaliacao-tela",
         "t48-varredura",
         "t182-jornada-completa",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t302-varredura-logada-bloco6"
       ]
     },
     "/dashboard/buscas": {
@@ -551,7 +560,8 @@
         "inquilino"
       ],
       "specs": [
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t302-varredura-logada-bloco6"
       ]
     },
     "/dashboard/conta": {
@@ -688,7 +698,8 @@
         "inquilino"
       ],
       "specs": [
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t302-varredura-logada-bloco6"
       ]
     },
     "/dashboard/imoveis": {
@@ -899,7 +910,8 @@
         "admin"
       ],
       "specs": [
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t302-varredura-logada-bloco6"
       ]
     },
     "/dashboard/roi-imovel": {
@@ -926,7 +938,8 @@
         "t68-comissao-valor-total",
         "t189-simulador-roi",
         "t183-telas-logadas-390",
-        "t212-ferramentas-proprietario"
+        "t212-ferramentas-proprietario",
+        "t302-varredura-logada-bloco6"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -1331,7 +1344,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t301-varredura-logada-bloco5"
+      ]
     },
     "/admin/imoveis": {
       "personas": [
@@ -1380,7 +1395,8 @@
       ],
       "specs": [
         "t231-admin-numeros-com-lista",
-        "t48-varredura"
+        "t48-varredura",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/dashboard/imoveis/[id]/cartao": {
@@ -1455,7 +1471,8 @@
         "admin"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/admin/parceiros/pedidos/[id]": {
@@ -1473,7 +1490,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t273-admin-decisoes",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/dashboard/estadia/[contratoId]": {
@@ -1516,7 +1534,8 @@
         "admin"
       ],
       "specs": [
-        "t261-tempo-ate-o-trabalho"
+        "t261-tempo-ate-o-trabalho",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/imoveis-perto-de/[slug]": {
@@ -1541,7 +1560,8 @@
         "admin"
       ],
       "specs": [
-        "t281-minimizacao"
+        "t281-minimizacao",
+        "t301-varredura-logada-bloco5"
       ]
     },
     "/admin/conforto": {
@@ -1589,7 +1609,8 @@
         "proprietario"
       ],
       "specs": [
-        "t299-recibos-notas-39b1"
+        "t299-recibos-notas-39b1",
+        "t302-varredura-logada-bloco6"
       ]
     },
     "/auth/intencao": {
