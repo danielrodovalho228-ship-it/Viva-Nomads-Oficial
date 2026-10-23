@@ -35,6 +35,7 @@ import {
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { itensFaltantes } from "@/lib/conforto/regras";
+import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { confortoDoImovel } from "@/lib/data/conforto-actions";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
@@ -1412,7 +1413,11 @@ export default function NewPropertyPage() {
             )}
 
             {step === ETAPA.comodidades && (
-              <EtapaEncontramos parte="comodidades" {...camposImovel} />
+              <div className="space-y-6">
+                <EtapaEncontramos parte="comodidades" {...camposImovel} />
+                {/* Prompt 59-A: o padrão mínimo da Viva é confirmado junto das comodidades. */}
+                <ChecklistConforto marcados={conforto} onChange={setConforto} desabilitado={publishing} />
+              </div>
             )}
 
             {step === ETAPA.regras && (
@@ -1481,7 +1486,6 @@ export default function NewPropertyPage() {
                 aceitouIa={aceitouIa}
                 setAceitouIa={setAceitouIa}
                 conforto={conforto}
-                setConforto={setConforto}
                 publishError={publishError}
                 podePublicar={podePublicar}
               />

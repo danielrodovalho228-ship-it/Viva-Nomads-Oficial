@@ -19,7 +19,7 @@ import {
   statusDoImovel,
   tornarContratoVigente,
 } from "../fixtures/laboratorio";
-import { CHAVES_CONFORTO } from "../../../src/config/conforto-minimo";
+import { CHAVES_CONFORTO, ITENS_CONFORTO } from "../../../src/config/conforto-minimo";
 
 /*
   T292 — Prompt 59 (Fase 1): padrão mínimo de conforto + prazo de solução da manutenção. Só no laboratório.
@@ -30,7 +30,7 @@ import { CHAVES_CONFORTO } from "../../../src/config/conforto-minimo";
       confirmou → volta.
    3. Conferência de entrada: morador marca "não confere" em 2 itens → 2 pendências; dono corrige uma e contesta a outra;
       morador confirma a correção; o atendimento decide a contestação (procedente).
-   4. Urgente: provisória às 20 h e definitiva às 80 h → "Resolvida fora do prazo"; o morador confirma.
+   4. Urgente: provisória às 20 h e definitiva às 80 h → "Fora do prazo" (59-A); o morador confirma.
    5. Reclassificação: o dono só pede (o banco recusa mudar a prioridade); o admin reclassifica com motivo → prazos
       recalculados da abertura (baixa 168 h → média 72 h: vencida), fila "Manutenção fora do prazo" e "o proprietário
       foi avisado em [hora]" para o morador.
@@ -47,7 +47,7 @@ const T = {
 const URGENTE = `Sem água quente no banheiro (${sufixo}).`;
 const BAIXA = `Puxador do armário solto (${sufixo}).`;
 const H = 3_600_000;
-const ids: { dono?: string; inquilino?: string; novo?: string; antigo?: string; casa?: string; lead?: string; contrato?: string; urgente?: string; baixa?: string } = {};
+const ids: { assistente?: string; dono?: string; inquilino?: string; novo?: string; antigo?: string; casa?: string; lead?: string; contrato?: string; urgente?: string; baixa?: string } = {};
 
 async function semRolagemLateral(page: Page) {
   const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -99,6 +99,10 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     // Plano com folga de anúncios: o dono tem 2 ativos (antigo e casa) e publica o 3º no caso 1 (Gratuito = 1).
     await definirPlano(ids.dono, "pro");
     ids.novo = await criarImovelPronto(ids.dono, T.novo, { semConforto: true });
+    // 59-A: o assistente (passo Comodidades → Revisão) roda num rascunho só dele — o salvamento automático regrava as
+    // colunas e as fotos a partir do estado do assistente, e o rascunho "novo" precisa delas intactas para publicar.
+    ids.assistente = await criarImovelPronto(ids.dono, `${T.novo} (assistente)`, { semConforto: true });
+    await adm().from("properties").update({ draft_data: { title: T.novo, monthlyPrice: "3200", garantias: { caucao: true }, step: 3, ordemEtapas: 4, etapaMax: 5 } }).eq("id", ids.assistente);
     ids.antigo = await criarImovelPronto(ids.dono, T.antigo, { ativo: true, semConforto: true });
     ids.casa = await criarImovelPronto(ids.dono, T.contrato, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.inquilino, ids.casa, true);
@@ -133,14 +137,18 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
 
   test("1. publicar sem 1 item é recusado com a lista do que falta; com os 10, publica", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
-    await page.goto(`/dashboard/imoveis/novo?draft=${ids.novo}&etapa=revisar`, { waitUntil: "domcontentloaded" });
+    // Prompt 59-A: o checklist fica no passo Comodidades; a Revisão diz o que falta junto do Publicar.
+    await page.goto(`/dashboard/imoveis/novo?draft=${ids.assistente}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
     const checklist = page.getByTestId("conforto-checklist");
     await expect(checklist).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("conforto-faltam")).toHaveText("Faltam confirmar 10 itens.");
     await page.getByTestId("conforto-marcar-todos").click();
     await page.getByTestId(`conforto-item-${CHAVES_CONFORTO[0]}`).getByRole("checkbox").uncheck();
     await expect(page.getByTestId("conforto-faltam")).toHaveText("Falta confirmar 1 item.");
-    await expect(page.getByTestId("etapa-revisar").getByTestId("checklist-item-conforto")).toHaveAttribute("data-ok", "0");
+    await page.getByTestId("cadastro-continuar").click();
+    await page.getByTestId("cadastro-continuar").click();
+    await expect(page.getByTestId("etapa-revisar").getByTestId("checklist-item-conforto")).toHaveAttribute("data-ok", "0", { timeout: 20_000 });
+    await expect(page.getByTestId("publicar-falta-conforto")).toContainText(`Falta confirmar: ${ITENS_CONFORTO[0].rotulo}.`);
     await expect(page.getByTestId("publicar-anuncio")).toBeDisabled();
     await semRolagemLateral(page);
     await page.screenshot({ path: "tests/laboratorio/saida/t292-1-falta-1-item-390.png", fullPage: true });
@@ -246,7 +254,7 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     expect(Object.fromEntries((fim ?? []).map((p) => [p.chave, p.status]))).toEqual({ [itemA]: "corrigida", [itemB]: "procedente" });
   });
 
-  test("4. urgente: provisória às 20 h e definitiva às 80 h → 'Resolvida fora do prazo'", async ({ browser }) => {
+  test("4. urgente: provisória às 20 h e definitiva às 80 h → 'Fora do prazo'", async ({ browser }) => {
     const abertura = Date.now() - 80 * H;
     const { data, error } = await adm()
       .from("service_orders")
@@ -275,7 +283,7 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     await ordem.getByTestId("solicitacao-cartao").click();
     await ordem.getByRole("button", { name: "Marcar como resolvida" }).click();
     await expect(ordem.getByTestId("status-ordem")).toHaveText("Resolvida", { timeout: 20_000 });
-    await expect(ordem.getByTestId("solucao-estado")).toHaveText("Resolvida fora do prazo");
+    await expect(ordem.getByTestId("solucao-estado")).toHaveText("Fora do prazo");
     await donoPg.context().close();
 
     const morador = await entrar(browser, inquilino.email, senha);

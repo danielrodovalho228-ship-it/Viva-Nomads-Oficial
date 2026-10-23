@@ -11,7 +11,7 @@ import { TERMO_IA_TEXTO } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO, type Negociacao } from "@/lib/anuncio/negociacao";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import { cn } from "@/lib/utils";
-import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
+import { textoFaltaConfirmar } from "@/lib/conforto/exibicao";
 
 /**
  * Etapa 5 — Revisar e publicar (prompt 10): prévia como o morador vê (cartão da busca + o que o anúncio vai
@@ -42,7 +42,6 @@ export function EtapaRevisar(p: {
   aceitouIa: boolean;
   setAceitouIa: (v: boolean) => void;
   conforto: string[];
-  setConforto: (v: string[]) => void;
   publishError: string | null;
   podePublicar: boolean;
 }) {
@@ -159,8 +158,6 @@ export function EtapaRevisar(p: {
         )}
       </div>
 
-      <ChecklistConforto marcados={p.conforto} onChange={p.setConforto} desabilitado={p.publishing} />
-
       <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
         <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-forest" />
         <span>{TERMO_IA_TEXTO}</span>
@@ -182,11 +179,37 @@ export function EtapaRevisar(p: {
           {p.publishing ? "Salvando..." : p.editingId ? "Salvar alterações" : comOQueTem ? "Publicar com o que tem" : "Publicar anúncio"}
         </Button>
       </div>
+      {/* Prompt 59-A (critério f da varredura): o botão nunca fica desabilitado em silêncio — diz o que falta. */}
+      {!p.podePublicar && !p.publishing && <FaltaParaPublicar {...p} />}
       {comOQueTem && (
         <p className="text-right text-xs text-muted" data-testid="publicar-com-o-que-tem">
           Os mínimos estão completos. O que está em “Qualidade do anúncio” melhora a posição na busca e pode ser feito depois.
         </p>
       )}
+    </div>
+  );
+}
+
+/** "Falta confirmar: Água quente, Iluminação." e o resto do que trava a publicação, visível embaixo do botão. */
+function FaltaParaPublicar(p: { editingId?: string | null; conforto: string[]; completude: ItemProntidao[]; aceitouIa: boolean; onResolver: (i: ItemProntidao) => void }) {
+  const conforto = p.editingId ? null : textoFaltaConfirmar(p.conforto);
+  const itemConforto = p.completude.find((i) => i.key === "conforto" && !i.ok);
+  const outros = p.completude.filter((i) => !i.ok && i.key !== "conforto").map((i) => i.label);
+  if (!p.aceitouIa) outros.push("aceite do termo da IA");
+  if (!conforto && outros.length === 0) return null;
+  return (
+    <div className="space-y-1 text-right text-sm text-ink" data-testid="publicar-falta">
+      {conforto && (
+        <p data-testid="publicar-falta-conforto">
+          {conforto}{" "}
+          {itemConforto && (
+            <button type="button" data-testid="publicar-falta-conforto-resolver" onClick={() => p.onResolver(itemConforto)} className="font-semibold text-forest underline underline-offset-2">
+              Confirmar agora
+            </button>
+          )}
+        </p>
+      )}
+      {outros.length > 0 && <p data-testid="publicar-falta-outros">Falta resolver: {outros.join(", ")}.</p>}
     </div>
   );
 }

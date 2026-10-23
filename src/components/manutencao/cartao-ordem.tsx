@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   EXEMPLOS_MANUTENCAO,
   PRAZO_MANUTENCAO_H,
@@ -22,7 +22,7 @@ import {
   responderSolucaoMorador,
   type MensagemOrdem,
 } from "@/lib/data/manutencao-actions";
-import { estadoSolucao, moradorPodeResponder, type OrdemSolucao } from "@/lib/manutencao-solucao";
+import { CONFIRMACAO_MORADOR_H, estadoSolucao, moradorPodeResponder, type OrdemSolucao } from "@/lib/manutencao-solucao";
 import { hrefPedirServico } from "@/lib/estadia/acoes";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +51,9 @@ const paraSolucao = (o: ServiceOrder): OrdemSolucao => ({
   status: o.status,
 });
 
-const ROTULO_SOLUCAO = { no_prazo: null, vencido: "Fora do prazo", resolvido_no_prazo: "Resolvida no prazo", resolvido_fora: "Resolvida fora do prazo" } as const;
+/** Prompt 59-A: os 4 estados do prazo de solução, sempre visíveis no chamado (morador e dono). */
+export const ROTULO_SOLUCAO = { no_prazo: "No prazo", vencido: "Vencido", resolvido_no_prazo: "Resolvido no prazo", resolvido_fora: "Fora do prazo" } as const;
+const TOM_SOLUCAO = { no_prazo: "bg-sage-50 text-ink", vencido: "bg-red-50 text-red-700", resolvido_no_prazo: "bg-emerald-50 text-emerald-700", resolvido_fora: "bg-red-50 text-red-700" } as const;
 
 /** Prompt 59: prazo de SOLUÇÃO (horário de Brasília); no urgente, também a provisória. */
 export function SolucaoOrdem({ o }: { o: ServiceOrder }) {
@@ -65,11 +67,9 @@ export function SolucaoOrdem({ o }: { o: ServiceOrder }) {
         {s.provisoria && <>Provisória até {dataHoraBrasilia(s.provisoria.ate)} · </>}
         {texto}
       </span>
-      {chip && (
-        <span className={cn("rounded-full px-2 py-1 font-medium", s.estado === "resolvido_no_prazo" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")} data-testid="solucao-estado">
-          {chip}
-        </span>
-      )}
+      <span className={cn("rounded-full px-2 py-1 font-medium", TOM_SOLUCAO[s.estado])} data-testid="solucao-estado">
+        {chip}
+      </span>
     </p>
   );
 }
@@ -239,6 +239,20 @@ export function CartaoOrdem({
         </span>
       </button>
 
+      {/* Prompt 59-A: prazo de solução vencido → o dono vê, sem abrir o cartão, o caminho para chamar um parceiro. */}
+      {papel === "proprietario" && !demo && o.propertyId && o.status !== "resolvido" && estadoSolucao(paraSolucao(o), new Date()).estado === "vencido" && (
+        <div className="mt-3">
+          <ButtonLink
+            href={`${hrefPedirServico("manutencao", { imovelId: o.propertyId, cidade: o.cidade ?? "" })}&descricao=${encodeURIComponent(o.description.slice(0, 500))}`}
+            variant="secondary"
+            size="sm"
+            data-testid="ordem-chamar-parceiro"
+          >
+            Chamar um parceiro de manutenção
+          </ButtonLink>
+        </div>
+      )}
+
       {aberto && (
         <div className="mt-3 grid gap-4 border-t border-sage-100 pt-3 lg:grid-cols-2" data-testid="solicitacao-detalhe">
           <section>
@@ -293,7 +307,7 @@ export function CartaoOrdem({
                   {erro}
                 </p>
               )}
-              <Button type="submit" size="sm" disabled={ocupado}>
+              <Button type="submit" size="sm" variant="secondary" disabled={ocupado}>
                 Enviar mensagem
               </Button>
             </form>
@@ -330,15 +344,7 @@ function AcoesSolucao({
           </Button>
         )}
         {o.provisoriaEm && <p className="text-xs text-muted">Solução provisória marcada em {dataHoraBrasilia(new Date(o.provisoriaEm))}.</p>}
-        {sol.estado === "vencido" && !resolvida && o.propertyId && (
-          <a
-            href={`${hrefPedirServico("manutencao", { imovelId: o.propertyId, cidade: o.cidade ?? "" })}&descricao=${encodeURIComponent(o.description.slice(0, 500))}`}
-            className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline"
-            data-testid="ordem-chamar-parceiro"
-          >
-            Chamar um parceiro de manutenção
-          </a>
-        )}
+
         {!resolvida && !o.reclassificacaoPedidaEm && !pedindo && (
           <button type="button" className="block text-xs font-medium text-muted underline" onClick={() => setPedindo(true)} data-testid="ordem-pedir-reclassificacao">
             Pedir reclassificação da prioridade
@@ -367,13 +373,16 @@ function AcoesSolucao({
     <div className="mt-3 space-y-2">
       {moradorPodeResponder(paraSolucao(o), agora) && (
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" disabled={ocupado} onClick={() => rodar(() => responderSolucaoMorador(o.id, "confirmar"))} data-testid="ordem-confirmar-solucao">
+          <Button size="sm" variant="secondary" disabled={ocupado} onClick={() => rodar(() => responderSolucaoMorador(o.id, "confirmar"))} data-testid="ordem-confirmar-solucao">
             Confirmar solução
           </Button>
           <Button size="sm" variant="outline" disabled={ocupado} onClick={() => rodar(() => responderSolucaoMorador(o.id, "reabrir"))} data-testid="ordem-reabrir">
-            Reabrir
+            Ainda não resolveu
           </Button>
-          <p className="w-full text-xs text-muted">Sem resposta em 48 horas, vale a solução marcada pelo proprietário.</p>
+          <p className="w-full text-xs text-muted" data-testid="ordem-responder-ate">
+            Responda até {dataHoraBrasilia(new Date(Date.parse(o.solucaoMarcadaEm!) + CONFIRMACAO_MORADOR_H * 3_600_000))} (horário de Brasília). Sem
+            resposta, vale a solução marcada pelo proprietário.
+          </p>
         </div>
       )}
       {sol.estado === "vencido" && !resolvida && o.avisadoVencidoEm && (

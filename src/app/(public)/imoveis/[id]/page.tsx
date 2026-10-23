@@ -10,6 +10,7 @@ import { PropertyDetail } from "./property-detail";
 import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { getPerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { quantosDestaques } from "@/lib/home-imagens";
+import { exibicao59DoImovel } from "@/lib/data/exibicao-59";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -59,10 +60,12 @@ export default async function PropertyDetailPage({ params }: Params) {
   const property = await getProperty(id);
   if (!property) notFound();
 
-  const [similares, proprietario] = await Promise.all([
+  const [similares, proprietario, exibicao59] = await Promise.all([
     listProperties(),
     // Exemplo nunca busca perfil (continua "Proprietário (exemplo)", sem números).
     isExemplo(property) ? Promise.resolve(null) : getPerfilProprietario(property.ownerId),
+    // Prompt 59-A: padrão mínimo e taxa de manutenção — exemplo nunca mostra (nada disso existe para ele).
+    isExemplo(property) ? Promise.resolve(null) : exibicao59DoImovel(property.id, property.ownerId),
   ]);
   // Imóveis parecidos em grade par (Prompt 40): 4, ou 2 (a mesma conta dos destaques da home).
   const outros = similares.filter((p) => p.id !== property.id);
@@ -70,7 +73,7 @@ export default async function PropertyDetailPage({ params }: Params) {
   return (
     <>
       <PropertyJsonLd property={property} />
-      <PropertyDetail property={property} similar={similar} proprietario={proprietario} />
+      <PropertyDetail property={property} similar={similar} proprietario={proprietario} exibicao59={exibicao59} />
       {/* Cartões compartilháveis: visita por QR/link assinado (ref + UTM) é conferida no servidor. */}
       <RefDaVisita imovelId={property.id} />
     </>
