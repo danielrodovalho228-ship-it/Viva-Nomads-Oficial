@@ -108,7 +108,7 @@ const ADMIN: ItemDoPapel[] = [
           { id: "admin-parceiros", rotulo: "Parceiros", icone: "parceiros", href: "/admin/parceiros" },
           { id: "admin-fotografos", rotulo: "Fotógrafos", icone: "fotografos", href: "/admin/fotografos" },
           // Prompt 62-B1: credenciamento, tabela de preço, fila e auditoria da avaliação do imóvel (funciona com a chave desligada).
-          { id: "admin-avaliadores", rotulo: "Avaliadores", icone: "parceiros", href: "/admin/avaliadores" },
+          { id: "admin-avaliadores", rotulo: "Avaliações do imóvel", icone: "parceiros", href: "/admin/avaliadores" },
         ],
       },
       {

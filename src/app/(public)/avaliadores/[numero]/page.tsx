@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
 import { VISTORIA_ATIVA } from "@/lib/flags";
+import { LINHA_PUBLICA_DESIGNACAO } from "@/lib/vistoria/telas-exibicao";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ numero: s
 }
 
 /**
- * Página pública do avaliador credenciado (Prompt 62-B1, ESQUELETO; o desenho é do 62-A): nome curto, número de
- * credenciado, cidade, avaliações feitas e a nota de CONDUTA. Sem botão de contratar: o avaliador é designado pela Viva.
+ * Página pública do avaliador credenciado (62-B1; desenho do 62-A, Parte 1, item 2): nome curto, número de credenciado,
+ * cidade, avaliações feitas e a nota de CONDUTA. Sem botão de contratar: "A Viva designa o avaliador. O proprietário não escolhe."
  */
 export default async function AvaliadorPage({ params }: { params: Promise<{ numero: string }> }) {
   const { numero } = await params;
@@ -34,13 +35,14 @@ export default async function AvaliadorPage({ params }: { params: Promise<{ nume
     <main className="mx-auto max-w-2xl px-4 py-12" data-testid="avaliador-publico">
       <p className="text-sm text-muted">Avaliador credenciado da Viva</p>
       <h1 className="mt-1 font-title text-2xl font-semibold text-ink">{a.nome_curto}</h1>
-      <dl className="mt-6 grid gap-3 text-sm">
-        <div><dt className="text-muted">Número de credenciado</dt><dd className="font-semibold text-ink" data-testid="avaliador-numero">{a.numero_credenciado}</dd></div>
-        <div><dt className="text-muted">Cidade</dt><dd className="text-ink">{a.cidade}</dd></div>
-        <div><dt className="text-muted">Avaliações feitas</dt><dd className="text-ink">{a.avaliacoes_feitas}</dd></div>
-        <div><dt className="text-muted">Nota de conduta (pontualidade, cordialidade e cuidado com o imóvel)</dt><dd className="text-ink">{nota == null ? "Ainda sem avaliações de conduta" : `${nota.toLocaleString("pt-BR")} de 5`}</dd></div>
+      <p className="mt-2 text-sm text-ink" data-testid="avaliador-linha-designacao">{LINHA_PUBLICA_DESIGNACAO}</p>
+      <dl className="mt-6 grid gap-4 rounded-xl border border-line bg-white p-6 text-sm sm:grid-cols-2">
+        <div><dt className="text-muted">Número de credenciado</dt><dd className="mt-1 font-semibold text-ink" data-testid="avaliador-numero">{a.numero_credenciado}</dd></div>
+        <div><dt className="text-muted">Cidade</dt><dd className="mt-1 text-ink" data-testid="avaliador-cidade">{a.cidade}</dd></div>
+        <div><dt className="text-muted">Avaliações feitas</dt><dd className="mt-1 text-ink" data-testid="avaliador-feitas">{a.avaliacoes_feitas}</dd></div>
+        <div><dt className="text-muted">Nota de conduta</dt><dd className="mt-1 text-ink" data-testid="avaliador-nota">{nota == null ? "Ainda sem avaliações de conduta" : `${nota.toLocaleString("pt-BR")} de 5`}</dd></div>
       </dl>
-      <p className="mt-6 text-xs text-muted">O avaliador é designado pela Viva por rodízio, sem vínculo com o proprietário. A nota mede só a conduta na visita, nunca o resultado da avaliação.</p>
+      <p className="mt-4 text-xs text-muted">A nota mede só a conduta na visita (pontualidade, cordialidade e cuidado com o imóvel), nunca o resultado da avaliação.</p>
     </main>
   );
 }
