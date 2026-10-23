@@ -646,7 +646,7 @@
         "t220-recibo-assinatura",
         "t221-contrato-estado-periodo",
         "t240-conferencia-provas-admin",
-        "t303-airbnb-exibicao-61a"
+        "t304-airbnb-exibicao-61a"
       ]
     },
     "/dashboard/favoritos": {
@@ -1125,7 +1125,7 @@
         "t286-esqueletos-vazios-48",
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
-        "t303-airbnb-exibicao-61a"
+        "t304-airbnb-exibicao-61a"
       ]
     },
     "/modelodenegocio": {
@@ -1505,7 +1505,7 @@
         "t256-pagina-da-estadia",
         "t262-detalhe-imovel-41",
         "t263-visual-41",
-        "t303-airbnb-exibicao-61a"
+        "t304-airbnb-exibicao-61a"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -1522,7 +1522,7 @@
         "proprietario"
       ],
       "specs": [
-        "t303-airbnb-exibicao-61a"
+        "t304-airbnb-exibicao-61a"
       ]
     },
     "/dashboard/estadia/[contratoId]/encerrar": {
