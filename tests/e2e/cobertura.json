@@ -1876,6 +1876,12 @@
         "t54-upload-foto-seguro"
       ]
     },
+    "/api/upload/video/confirmar": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
     "/api/upload/inquilino-doc": {
       "personas": [
         "inquilino",
