@@ -202,7 +202,10 @@ test.describe("T347 — Prompt 55-E2: respostas rápidas e mensagens programadas
     await d.getByTestId("aditivo-aceitar").click();
     await expect(d.getByTestId("estadia-aditivo")).toHaveAttribute("data-status", "aceito", { timeout: 30_000 });
     for (const [pagina, quem] of [[d, ids.dono!], [m, ids.morador!]] as const) {
-      await pagina.reload({ waitUntil: "networkidle" });
+      // Depois do aceite a página da estadia segue com requisições abertas: "networkidle" não chega em 30 s (lab-crítico
+      // do #1186). Recarrega pelo DOM e espera o botão do código.
+      await pagina.reload({ waitUntil: "domcontentloaded" });
+      await expect(pagina.getByTestId("aditivo-pedir-codigo")).toBeVisible({ timeout: 30_000 });
       const desde = new Date().toISOString();
       await pagina.getByTestId("aditivo-pedir-codigo").click();
       await expect(pagina.getByTestId("estadia-ok").or(pagina.getByTestId("estadia-erro"))).toHaveText("Código enviado para o seu e-mail.", { timeout: 30_000 });
