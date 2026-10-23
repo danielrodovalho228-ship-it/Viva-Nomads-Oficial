@@ -3,7 +3,7 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T322 — Prompt 62-A, Parte 1, sobre o 62-B3: credenciamento (pedido único com os 5 passos e o estado), agenda do
+  T320 — Prompt 62-A, Parte 1, sobre o 62-B3: credenciamento (pedido único com os 5 passos e o estado), agenda do
   avaliador, página pública e admin "Avaliações do imóvel" (laboratório; a chave VISTORIA_ATIVA liga só no navegador do
   teste, pelo cookie de laboratório). Tudo a 390 e 1280 px, sem rolagem lateral, com print.
    1. Candidato que ainda não é parceiro: os 5 passos e o pedido único; enviado → "Em análise", identidade pendente.
@@ -16,7 +16,7 @@ const LARGURAS = [390, 1280] as const;
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t322.${sufixo}@lab.vivanomads.test`, nome, role });
+const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t320.${sufixo}@lab.vivanomads.test`, nome, role });
 const dono = conta("dono", "Dina Dona", "owner");
 const avA = conta("ava", "Ana Avaliadora");
 const novo = conta("avn", "Nuno Novo");
@@ -44,9 +44,71 @@ async function admin(browser: Browser, w: number): Promise<Page> {
   return ctx.newPage();
 }
 
-test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", () => {
+test.describe("QA62C — Prompt 62-A, Parte 1: telas da avaliação do imóvel", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
-  test.describe.configure({ mode: "serial", timeout: 240_000 });
+  test.describe.configure({ mode: "serial", timeout: 900_000 });
+
+  // ── QA visual do 62-A (não versionado) ──
+  async function qa(page: Page, nome: string) {
+    const { mkdirSync, appendFileSync } = await import("node:fs");
+    const dir = "tests/laboratorio/saida/qa62c";
+    mkdirSync(dir, { recursive: true });
+    const original = page.viewportSize();
+    for (const w of [390, 1280]) {
+      await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => undefined);
+      // Rola com a roda do mouse sobre o conteúdo (move o que rola de verdade, janela ou contêiner do painel).
+      await page.mouse.move(w === 390 ? 195 : 760, w === 390 ? 420 : 450);
+      let i = 0;
+      let anterior: Buffer | null = null;
+      for (; i < 25; i++) {
+        await page.waitForTimeout(350);
+        const shot = await page.screenshot({ path: `${dir}/${nome}-${w}-${String(i).padStart(2, "0")}.png` });
+        if (anterior && shot.equals(anterior)) break;
+        anterior = shot;
+        await page.mouse.wheel(0, (w === 390 ? 844 : 900) * 0.8);
+      }
+      await page.evaluate(() => { window.scrollTo(0, 0); document.querySelectorAll("*").forEach((el) => { if ((el as HTMLElement).scrollTop) (el as HTMLElement).scrollTop = 0; }); });
+      // Carregamento real de cada imagem: rola até ela e espera.
+      const imgs = await page.evaluate(async () => {
+        const out: { src: string; ok: boolean; w: number; h: number; vazia: boolean }[] = [];
+        for (const im of Array.from(document.images)) {
+          im.scrollIntoView({ block: "center" });
+          const t0 = Date.now();
+          while (!im.complete && Date.now() - t0 < 5000) await new Promise((r) => setTimeout(r, 100));
+          const r = im.getBoundingClientRect();
+          out.push({ src: (im.currentSrc || im.src).slice(0, 140), ok: im.complete && im.naturalWidth > 0, w: Math.round(r.width), h: Math.round(r.height), vazia: !(im.currentSrc || im.src) });
+        }
+        window.scrollTo(0, 0);
+        return out;
+      });
+      const medidas = await page.evaluate(() => {
+        const estouro = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+        const largos: string[] = [];
+        const cortados: string[] = [];
+        const vw = document.documentElement.clientWidth;
+        for (const el of Array.from(document.querySelectorAll<HTMLElement>("main *, [role=dialog] *"))) {
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) continue;
+          const cs = getComputedStyle(el);
+          if (cs.position !== "fixed" && (r.right > vw + 1 || r.left < -1)) largos.push(`${el.tagName.toLowerCase()}.${(el.className || "").toString().slice(0, 60)} [${Math.round(r.left)}..${Math.round(r.right)}] "${(el.innerText || "").slice(0, 40)}"`);
+          const temTexto = Array.from(el.childNodes).some((n) => n.nodeType === 3 && (n.textContent || "").trim());
+          if (temTexto && (el.scrollWidth > el.clientWidth + 1) && cs.overflowX !== "visible") cortados.push(`${el.tagName.toLowerCase()} "${(el.innerText || "").slice(0, 60)}" (${el.scrollWidth}>${el.clientWidth})`);
+          if (temTexto && (el.scrollHeight > el.clientHeight + 2) && cs.overflowY === "hidden" && el.clientHeight > 0) cortados.push(`${el.tagName.toLowerCase()} vertical "${(el.innerText || "").slice(0, 60)}" (${el.scrollHeight}>${el.clientHeight})`);
+        }
+        const fixos = Array.from(document.querySelectorAll<HTMLElement>("body *")).filter((el) => ["fixed", "sticky"].includes(getComputedStyle(el).position) && el.getBoundingClientRect().height > 0).map((el) => `${el.tagName.toLowerCase()}[${el.getAttribute("data-testid") || el.getAttribute("aria-label") || ""}] ${getComputedStyle(el).position} h=${Math.round(el.getBoundingClientRect().height)}`);
+        return { estouro, largos: largos.slice(0, 15), cortados: cortados.slice(0, 15), fixos };
+      });
+      appendFileSync(`${dir}/relatorio.jsonl`, JSON.stringify({ nome, w, url: page.url().replace(/[0-9a-f-]{36}/g, ":id"), telas: i, imgs, ...medidas }) + "\n");
+      await page.screenshot({ path: `${dir}/${nome}-${w}-inteira.png`, fullPage: true });
+    }
+    if (original) await page.setViewportSize(original);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => undefined);
+    await page.waitForTimeout(1500);
+  }
+
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
@@ -55,7 +117,7 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     for (const [l, uid, nome] of [["A", ids.A, avA.nome]] as const) {
       const { data, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t322-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t320-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -67,7 +129,7 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     const { error: eC } = await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids.parcA, cidade: "Uberlândia", numero_credenciado: numeroA, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/a", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" });
     if (eC) throw eC;
     // Imóvel publicado (desocupado: o pedido segue direto para a designação).
-    ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t322 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t320 ${sufixo}`, { ativo: true });
     // Tabela da cidade com os 3 portes (o laboratório pode ter linhas de outros specs: esta é a mais recente).
     const { data: precos } = await adm()
       .from("vistoria_precos")
@@ -109,9 +171,11 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(form.getByTestId("credenciamento-pendencia")).toContainText("verificar a sua identidade");
       expect(await primariosNoMain(p), "um primário: o envio do pedido").toBe(1);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t322-1-credenciamento-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/qa62c-x-1-credenciamento-${w}.png`, fullPage: true });
     }
-    await pub.context().close();
+    await pub.goto("/parceiros", { waitUntil: "domcontentloaded" });
+    await qa(pub, "parceiros");
+    await qa(p, "cred-form");
     const form = p.getByTestId("credenciamento-form");
     await form.getByLabel(/Nome público/).fill(novo.nome);
     await form.getByLabel("Tipo de pessoa").selectOption("pf");
@@ -132,8 +196,9 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(p.getByTestId("passo-teste")).toHaveAttribute("data-feito", "0");
       await expect(p.getByTestId("credenciamento-pendencia").getByRole("link", { name: "Verificar a identidade" })).toHaveAttribute("href", "/dashboard/verificacao");
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t322-1-em-analise-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/qa62c-x-1-em-analise-${w}.png`, fullPage: true });
     }
+    await qa(p, "cred-em-analise");
     await p.context().close();
   });
 
@@ -169,8 +234,9 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       const item = p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`);
       await expect(item.getByTestId("prazo-resposta")).toHaveText(/^Responda em 2[0-3] h \d{2} min$/);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t322-3-avaliador-responder-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/qa62c-x-3-avaliador-responder-${w}.png`, fullPage: true });
     }
+    await qa(p, "agenda-responder");
     const item = p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`);
     await item.getByTestId("designacao-aceitar").click();
     await expect(p.getByTestId("avaliacoes-visitas").locator(`[data-pedido="${pedidoId}"]`).getByTestId("agendar-visita")).toBeVisible({ timeout: 20_000 });
@@ -190,8 +256,9 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(visita.getByTestId("avaliador-visita")).not.toContainText(/\d\d:\d\d:\d\d/);
       expect(await primariosNoMain(p)).toBeLessThanOrEqual(1);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t322-3-avaliador-agenda-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/qa62c-x-3-avaliador-agenda-${w}.png`, fullPage: true });
     }
+    await qa(p, "agenda-visitas");
     await p.context().close();
   });
 
@@ -206,8 +273,9 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(pg.getByTestId("avaliador-cidade")).toHaveText("Uberlândia");
       await expect(pg.locator("a")).toHaveCount(0);
       await semRolagemLateral(pub);
-      await pub.screenshot({ path: `${SAIDA}/t322-4-publica-${w}.png` });
+      await pub.screenshot({ path: `${SAIDA}/qa62c-x-4-publica-${w}.png` });
     }
+    await qa(pub, "publica");
     await pub.context().close();
   });
 
@@ -237,7 +305,11 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await topo.getByTestId("decidir-numero-credenciamentos").click();
       await expect(p).toHaveURL(/#credenciamento$/);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t322-5-admin-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/qa62c-x-5-admin-${w}.png` });
+      if (w === 1280) {
+        await p.goto("/admin/avaliadores", { waitUntil: "domcontentloaded" });
+        await qa(p, "admin");
+      }
       await p.context().close();
     }
   });
