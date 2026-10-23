@@ -130,12 +130,23 @@ export function checklistParceiro(f: FatosConta): ChecklistAtivacao {
 }
 
 /**
- * Os checklists a mostrar no Início: um por papel ativo (o de parceiro desde a solicitação), só os que ainda não
- * ativaram. Morador sempre entra enquanto não ativar.
+ * Prompt 50: o fato que ATIVA cada papel (gravado uma vez em ativacoes): morador = 1º pedido enviado; proprietário =
+ * 1º anúncio publicado; parceiro = 1º pedido aceito.
  */
-export function checklistsDoInicio(f: FatosConta): ChecklistAtivacao[] {
+export function fatoDeAtivacao(papel: Papel, f: FatosConta): boolean {
+  if (papel === "morador") return f.pedidosEnviados > 0;
+  if (papel === "proprietario") return f.imoveisAtivos > 0;
+  return f.pedidosParceiroAceitos > 0;
+}
+
+/**
+ * Os checklists a mostrar no Início: um por papel ativo (o de parceiro desde a solicitação), só os que ainda não
+ * ativaram. Morador sempre entra enquanto não ativar. Prompt 50: some na ATIVAÇÃO do papel (o fato, ou a data já
+ * gravada em ativacoes), mesmo com outro item em aberto.
+ */
+export function checklistsDoInicio(f: FatosConta, ativados: Partial<Record<Papel, string | null>> = {}): ChecklistAtivacao[] {
   const lista = [checklistMorador(f)];
   if (f.imoveis > 0 || f.entrouComoDono) lista.push(checklistProprietario(f));
   if (f.parceria !== "nenhuma") lista.push(checklistParceiro(f));
-  return lista.filter((c) => !c.ativado);
+  return lista.filter((c) => !c.ativado && !ativados[c.papel] && !fatoDeAtivacao(c.papel, f));
 }

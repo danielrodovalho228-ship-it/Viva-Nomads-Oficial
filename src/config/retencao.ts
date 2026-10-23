@@ -80,6 +80,9 @@ export const INVENTARIO: ItemInventario[] = [
   i("vistoria_conduta", "public.vistoria_conduta", "notas e comentário de conduta (dono → avaliador; avaliador → acesso)", "nota de conduta pública do avaliador", CONTA, "a média de conduta do avaliador"),
   i("vistoria_auditoria", "public.vistoria_auditoria", "revisão interna do laudo e o motivo", "auditar os avaliadores (fração interna)", DISPUTA),
   i("vistoria_fila_admin", "public.vistoria_fila_admin", "pendências da equipe (sem avaliador, suspensão, proposta de descredenciamento) com motivo", "operação da rede de avaliadores", DISPUTA),
+  // Prompt 50: a data em que cada papel ativou (some com a conta) e a análise humana da verificação (motivo e decisão).
+  i("ativacoes", "public.ativacoes", "data em que cada papel da pessoa ativou (morador, proprietário, parceiro)", "checklist de ativação e funil (Prompt 50)", CONTA),
+  i("verificacao_revisoes", "public.verificacao_revisoes", "motivo da reprovação automática, decisão e observação da equipe", "análise humana da verificação de identidade (Prompt 50)", CONTA, "o laudo da revisão em tenant_verifications"),
   // Prompt 62-B2: execução da avaliação. Fotos e laudo ficam enquanto o laudo vale + a janela de disputa (prazo pendente,
   // item 13: até lá nada é apagado). dB(A) e prova de local da internet são só internos. Strikes saem aos 12 meses.
   i("vistoria_checklist", "public.vistoria_checklist", "respostas do checklist e observação do avaliador", "laudo de avaliação do imóvel (62-B2)", DISPUTA),

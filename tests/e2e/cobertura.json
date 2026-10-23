@@ -14,7 +14,8 @@
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
         "t201-qa-muse",
-        "t283-home-internet-57"
+        "t283-home-internet-57",
+        "t311-marco-principal-unico"
       ]
     },
     "/acesso-socios": {
@@ -263,7 +264,8 @@
         "t24-atendimento-acolhimento",
         "t25-chamado-resumo",
         "t30-atendimento-autonomo",
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t311-marco-principal-unico"
       ]
     },
     "/alerta-busca/desligar": {
@@ -272,7 +274,8 @@
       ],
       "specs": [
         "t125-alerta-busca-salva",
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t311-marco-principal-unico"
       ]
     },
     "/app/boas-vindas": {
@@ -376,7 +379,8 @@
         "t237-correcoes-35a",
         "t267-buscar-fotos-cartao",
         "t286-esqueletos-vazios-48",
-        "t296-niveis-exibicao-59-1"
+        "t296-niveis-exibicao-59-1",
+        "t311-marco-principal-unico"
       ]
     },
     "/cidades": {
@@ -385,7 +389,8 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t20-p1-agentes"
+        "t20-p1-agentes",
+        "t311-marco-principal-unico"
       ]
     },
     "/cidades/[cidade]": {
@@ -397,7 +402,8 @@
         "t18-seo-a11y",
         "t20-p1-agentes",
         "t176-exemplo-proprietario-avaliacoes",
-        "t197-anuncio-teste-oculto"
+        "t197-anuncio-teste-oculto",
+        "t311-marco-principal-unico"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -407,7 +413,8 @@
       "specs": [
         "t117-polos-cidade",
         "t18-seo-a11y",
-        "t20-p1-agentes"
+        "t20-p1-agentes",
+        "t311-marco-principal-unico"
       ]
     },
     "/como-funciona": {
@@ -420,7 +427,8 @@
         "t69-botoes-header",
         "t72-paginas-institucionais",
         "t177-video-institucional",
-        "t201-qa-muse"
+        "t201-qa-muse",
+        "t311-marco-principal-unico"
       ]
     },
     "/comparar": {
@@ -430,7 +438,8 @@
       "specs": [
         "t100-comparar-imoveis",
         "t156-comparar-exemplos",
-        "t48-varredura"
+        "t48-varredura",
+        "t311-marco-principal-unico"
       ]
     },
     "/conferir": {
@@ -443,7 +452,8 @@
         "t22-pacote-otavio",
         "t23-pacote-seguranca",
         "t260-documentos-registro",
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t311-marco-principal-unico"
       ]
     },
     "/conferir/[codigo]": {
@@ -456,6 +466,7 @@
         "t22-pacote-otavio",
         "t23-pacote-seguranca",
         "t260-documentos-registro",
+        "t311-marco-principal-unico",
         "t312-varredura-bloco9"
       ]
     },
@@ -1043,7 +1054,8 @@
       "specs": [
         "t18-seo-a11y",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t311-marco-principal-unico"
       ]
     },
     "/excluir-conta": {
@@ -1070,21 +1082,25 @@
         "t119-painel-capas",
         "t138-paineis-viva-vazio",
         "t160-favoritos-pagina",
-        "t48-varredura"
+        "t48-varredura",
+        "t311-marco-principal-unico"
       ]
     },
     "/guia-fotos": {
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t311-marco-principal-unico"
+      ]
     },
     "/guias": {
       "personas": [
         "publico"
       ],
       "specs": [
-        "t105-guias"
+        "t105-guias",
+        "t311-marco-principal-unico"
       ]
     },
     "/guias/[slug]": {
@@ -1092,7 +1108,8 @@
         "publico"
       ],
       "specs": [
-        "t105-guias"
+        "t105-guias",
+        "t311-marco-principal-unico"
       ]
     },
     "/imoveis/[id]": {
@@ -1142,7 +1159,8 @@
         "t286-esqueletos-vazios-48",
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
-        "t304-airbnb-exibicao-61a"
+        "t304-airbnb-exibicao-61a",
+        "t311-marco-principal-unico"
       ]
     },
     "/modelodenegocio": {
@@ -1163,7 +1181,8 @@
         "t20-p1-agentes",
         "t68-comissao-valor-total",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t311-marco-principal-unico"
       ]
     },
     "/parceiros": {
@@ -1175,7 +1194,8 @@
         "t72-paginas-institucionais",
         "t171-faixas-taxa-cors",
         "t231-admin-numeros-com-lista",
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t311-marco-principal-unico"
       ]
     },
     "/parceiros/fotografos": {
@@ -1186,7 +1206,8 @@
         "t171-faixas-taxa-cors",
         "t201-qa-muse",
         "t231-admin-numeros-com-lista",
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t311-marco-principal-unico"
       ]
     },
     "/pedidos": {
@@ -1215,7 +1236,8 @@
         "t96-antigolpe-atalhos",
         "t165-pedido-contador",
         "t188-pedido-novo-layout",
-        "t232-pedido-moradia-completo"
+        "t232-pedido-moradia-completo",
+        "t311-marco-principal-unico"
       ]
     },
     "/precos": {
@@ -1232,7 +1254,8 @@
         "t69-botoes-header",
         "t72-paginas-institucionais",
         "t90-orcamento-velocidade",
-        "t185-precos-3s"
+        "t185-precos-3s",
+        "t311-marco-principal-unico"
       ]
     },
     "/privacidade": {
@@ -1240,7 +1263,8 @@
         "publico"
       ],
       "specs": [
-        "t18-seo-a11y"
+        "t18-seo-a11y",
+        "t311-marco-principal-unico"
       ]
     },
     "/proprietario/[id]": {
@@ -1287,7 +1311,8 @@
         "publico"
       ],
       "specs": [
-        "t18-seo-a11y"
+        "t18-seo-a11y",
+        "t311-marco-principal-unico"
       ]
     },
     "/simulacao": {
@@ -1317,7 +1342,8 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t68-comissao-valor-total"
+        "t68-comissao-valor-total",
+        "t311-marco-principal-unico"
       ]
     },
     "/tributario": {
@@ -1452,7 +1478,8 @@
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
         "t250-parceiros-contratacao",
-        "t253-orcamento-na-pagina-do-parceiro"
+        "t253-orcamento-na-pagina-do-parceiro",
+        "t311-marco-principal-unico"
       ]
     },
     "/parceiros/ativar": {
@@ -1471,7 +1498,8 @@
       "specs": [
         "t236-parceiros-ciclo",
         "t241-contas-teste-36",
-        "t262-detalhe-imovel-41"
+        "t262-detalhe-imovel-41",
+        "t311-marco-principal-unico"
       ]
     },
     "/admin/contratos/[id]": {
@@ -1581,7 +1609,8 @@
         "publico"
       ],
       "specs": [
-        "t261-tempo-ate-o-trabalho"
+        "t261-tempo-ate-o-trabalho",
+        "t311-marco-principal-unico"
       ]
     },
     "/dashboard/imoveis/[id]/parceiros": {
@@ -1699,6 +1728,14 @@
       ],
       "specs": [
         "t305-laudo-avaliacao-62b2"
+      ]
+    },
+    "/admin/funil": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t308-ativacao-funil-50"
       ]
     }
   },
@@ -5239,6 +5276,14 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/identidade/revisao-actions.ts#adminDecidirVerificacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t308-ativacao-funil-50"
+      ]
     }
   }
 }

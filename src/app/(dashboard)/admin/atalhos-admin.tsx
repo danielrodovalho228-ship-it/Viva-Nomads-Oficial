@@ -31,6 +31,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/admin/avaliacoes", label: "Avaliações", icon: Star },
   { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
+  { href: "/admin/funil", label: "Funil de ativação", icon: TrendingUp },
   { href: "/admin/agentes", label: "Agentes", icon: Bot },
   { href: "/admin/retencao", label: "Dados e retenção", icon: ShieldCheck },
 ];
