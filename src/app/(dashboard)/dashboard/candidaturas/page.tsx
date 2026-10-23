@@ -6,6 +6,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { listMinhasCandidaturas } from "@/lib/data/leads-actions";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import type { RotuloCandidatura } from "@/lib/candidaturas/status";
+import { VinculoMorador } from "@/components/triagem/vinculo-morador";
+import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 
 export const metadata: Metadata = {
   title: "Minhas candidaturas",
@@ -29,7 +31,7 @@ function dataBR(iso: string | null): string {
 }
 
 export default async function CandidaturasPage() {
-  const candidaturas = await listMinhasCandidaturas();
+  const [candidaturas, triagemLigada] = await Promise.all([listMinhasCandidaturas(), triagemVinculoAtiva()]);
 
   return (
     <>
@@ -37,6 +39,8 @@ export default async function CandidaturasPage() {
         title="Minhas candidaturas"
         subtitle="Acompanhe suas candidaturas do envio até a resposta. A conversa segue sempre pela plataforma."
       />
+      {/* Prompt 52 (chave TRIAGEM_VINCULO_ATIVA): o comprovante de vínculo, no degrau da candidatura aceita. */}
+      {triagemLigada && <VinculoMorador />}
 
       {candidaturas.length === 0 ? (
         <EmptyState

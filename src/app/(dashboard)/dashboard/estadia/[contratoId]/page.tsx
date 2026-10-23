@@ -165,6 +165,20 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
       {depois && <CartaoDepoisDaSaida dados={depois} propertyId={e.imovel.id} />}
       {sugestao && <CartaoAjudaMudanca dados={sugestao} />}
 
+      {/* Prompt 55-E2: o dono programa mensagens a partir de modelos (7 dias antes, entrada, saída). */}
+      {dono && e.topo.fase !== "encerrada" && (
+        <Panel title="Mensagens programadas" data-testid="estadia-programadas">
+          <p className="text-sm text-muted">
+            Escreva agora e a mensagem sai sozinha na conversa da estadia: 7 dias antes da entrada, no dia da entrada e no dia da saída. Nada sai entre 22h e 7h.
+          </p>
+          <div className="mt-3">
+            <ButtonLink href={`${HREF_ESTADIA(e.id)}/mensagens`} variant="secondary" size="sm" data-testid="estadia-abrir-programadas">
+              Programar mensagens
+            </ButtonLink>
+          </div>
+        </Panel>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title="Quem vai morar" data-testid="estadia-moradores">
           <div className="flex items-center gap-3">

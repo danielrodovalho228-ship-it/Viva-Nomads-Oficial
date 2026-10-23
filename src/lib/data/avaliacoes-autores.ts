@@ -22,7 +22,7 @@ export async function autoresDasAvaliacoes(propertyId: string): Promise<Map<stri
     const linhas = (av ?? []) as { id: string; autor_id: string }[];
     if (!linhas.length) return m;
     const { data: perfis } = await admin.from("profiles").select("id, cidade, created_at").in("id", [...new Set(linhas.map((l) => l.autor_id))]);
-    const linkedin = await linkedinConectados(linhas.map((l) => l.autor_id), admin);
+    const linkedin = await linkedinConectados(linhas.map((l) => l.autor_id), admin, { publico: true });
     const porId = new Map(((perfis ?? []) as { id: string; cidade: string | null; created_at: string | null }[]).map((p) => [p.id, p]));
     for (const l of linhas) {
       const p = porId.get(l.autor_id);

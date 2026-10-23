@@ -16,6 +16,8 @@ export interface Lead {
   sinais?: string[];
   /** Selos REAIS (hoje: e-mail confirmado). */
   selos?: string[];
+  /** Prompt 52: "Morador verificado · vínculo confirmado (tipo)" — só com a chave da triagem; nunca arquivo ou valores. */
+  moradorVerificado?: string | null;
   /** Avaliações de outros proprietários (só com pelo menos 1 publicada). */
   reputacao?: { media: number; n: number } | null;
   property: string;

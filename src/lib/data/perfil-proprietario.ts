@@ -75,7 +75,7 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
       estadiasConcluidas: l.estadias_concluidas ?? 0,
       resposta: metricaResposta(l.conversas ?? 0, l.conversas_respondidas ?? 0, l.resposta_media_min),
       reputacao,
-      selos: selosReais({ emailConfirmado: l.email_confirmado, telefoneVerificado, linkedinConectado: (await linkedinConectados([donoId])).has(donoId) }),
+      selos: selosReais({ emailConfirmado: l.email_confirmado, telefoneVerificado, linkedinConectado: (await linkedinConectados([donoId], undefined, { publico: true })).has(donoId) }),
     };
   } catch {
     return null;

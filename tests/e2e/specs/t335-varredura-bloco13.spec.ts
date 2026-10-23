@@ -1,0 +1,76 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { test, expect, type Page } from "@playwright/test";
+import { authFile } from "../fixtures/auth";
+import { NO_LABORATORIO } from "../fixtures/laboratorio";
+import { TAMANHOS, abrirComoConta, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
+import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
+
+/*
+  T335 — VARREDURA DA PÁGINA INTEIRA, BLOCO 13 (Pista C, 23/10 à noite). O mesmo protocolo da t306 (seis classes,
+  página toda rolada, 390 e 1280 px, carregamento real de cada imagem) nas telas novas do 55-E2 (#1186): respostas
+  rápidas (dono e morador) e as mensagens programadas da estadia (só o dono do contrato). As telas do 52 (#1188) e do
+  63-A (#1189) entram no bloco seguinte, depois do merge. Só no laboratório.
+*/
+type Conta = ChaveConta | "ADMIN" | "VISITANTE";
+interface Tela {
+  conta: Conta;
+  papel: string;
+  rota: (m: Massa) => string;
+  nome: string;
+}
+const TELAS: Tela[] = [
+  { conta: "DONO17", papel: "proprietário", rota: () => "/dashboard/respostas-rapidas", nome: "Respostas rápidas" },
+  { conta: "INQUILINA", papel: "inquilina", rota: () => "/dashboard/respostas-rapidas", nome: "Respostas rápidas" },
+  { conta: "DONO17", papel: "proprietário", rota: (m) => `/dashboard/estadia/${m.contrato}/mensagens`, nome: "Mensagens programadas da estadia" },
+];
+
+const MASSA = lerMassa();
+const SAIDA = "tests/laboratorio/saida/varredura-bloco13";
+const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
+
+test.describe("T335 — varredura da página inteira, bloco 13 (55-E2) (390 e 1280 px)", () => {
+  test.skip(!NO_LABORATORIO, "precisa do laboratório (contas da massa da varredura)");
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
+    expect(MASSA, "laboratório sem a massa da varredura (scripts/lab/massa-varredura.mjs)").not.toBeNull();
+  });
+
+  for (const t of TELAS) {
+    test(`${t.papel} — ${t.nome}: as seis classes, rolando a página inteira`, async ({ browser }) => {
+      test.setTimeout(180_000);
+      test.skip(t.conta !== "ADMIN" && t.conta !== "VISITANTE" && !temContaVarredura(t.conta), `sem a conta ${t.conta} na massa`);
+      const rota = t.rota(MASSA!);
+      const relatorio: Record<string, Record<string, string[]>> = {};
+      for (const tam of TAMANHOS) {
+        let page: Page;
+        if (t.conta === "VISITANTE") {
+          const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: tam.width, height: tam.height } });
+          page = await ctx.newPage();
+        } else if (t.conta === "ADMIN") {
+          const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: tam.width, height: tam.height } });
+          page = await ctx.newPage();
+        } else {
+          page = (await abrirComoConta(browser, t.conta, tam.nome)).page;
+        }
+        try {
+          const respostas = escutarImagens(page);
+          await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 40_000 });
+          expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split(/[?#]/)[0]);
+          await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
+          const achados = await varrerPagina(page, respostas);
+          relatorio[tam.nome] = achados;
+          for (const classe of Object.keys(CLASSES) as Classe[]) {
+            await test.step(`${classe} @${tam.nome}`, async () => {
+              for (const a of achados[classe]) console.log(`VARREDURA|${classe}|${tam.nome}|${t.papel}|${rota.replace(/[0-9a-f-]{36}/g, ":id")}|${a}`);
+              expect.soft(achados[classe], `${t.papel} — ${t.nome} @${tam.nome} — ${classe}: ${CLASSES[classe]}`).toEqual([]);
+            });
+          }
+        } finally {
+          await page.context().close();
+        }
+      }
+      mkdirSync(SAIDA, { recursive: true });
+      writeFileSync(`${SAIDA}/${slug(`${t.papel}-${t.nome}`)}.json`, JSON.stringify({ papel: t.papel, tela: t.nome, achados: relatorio }, null, 2));
+    });
+  }
+});

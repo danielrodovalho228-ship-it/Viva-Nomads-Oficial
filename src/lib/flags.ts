@@ -114,3 +114,11 @@ export const LINKEDIN_CONECTAR_ATIVO = process.env.NEXT_PUBLIC_LINKEDIN_CONECTAR
  * ligada, as redes de pessoas NUNCA aparecem para outro usuário (só a própria pessoa e a equipe).
  */
 export const REDES_USUARIO_ATIVO = process.env.NEXT_PUBLIC_REDES_USUARIO_ATIVO === "on";
+
+/**
+ * Prompt 52 — triagem do morador (comprovante de vínculo + selo "Morador verificado" para o dono). OFF até o parecer do
+ * item 13 da Dra. Beatriz (texto de coleta, finalidade e prazo de guarda dos dados de vínculo/renda). Desligada, nenhuma
+ * tela nova aparece: nem o envio do morador, nem a fila do admin, nem o selo. Reteste: ligar SÓ no Preview da Vercel
+ * (NEXT_PUBLIC_TRIAGEM_VINCULO_ATIVA="on"). No laboratório o teste liga no próprio navegador (src/lib/triagem/chave.ts).
+ */
+export const TRIAGEM_VINCULO_ATIVA = process.env.NEXT_PUBLIC_TRIAGEM_VINCULO_ATIVA === "on";
