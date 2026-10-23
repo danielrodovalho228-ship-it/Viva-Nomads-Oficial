@@ -24,11 +24,8 @@ const SAIDA = "tests/laboratorio/saida/varredura-paginas";
   casa vira anotação e linha "conhecido" no log, sem reprovar. Se nenhum achado casar nos dois tamanhos, o defeito saiu:
   o teste reprova pedindo para tirar a entrada daqui (mesma catraca do test.fail da t249).
 */
-const CONHECIDOS: Record<string, { codigo: string; casa: RegExp }> = {
-  // L-7 (lab de 82b4d9b, 22/10): cartões com fotoPronta false em src/lib/cartoes-secao.ts mostram só o fundo neutro.
-  "Empresas|foto": { codigo: "L-7", casa: /\[cartao-foto-pendente\]/ },
-  "Para proprietários|foto": { codigo: "L-7", casa: /\[cartao-foto-pendente\]/ },
-};
+// L-7 saiu em 23/10: as 7 fotos dos cartões de /empresas e /para-proprietarios entraram com fotoPronta (#1152).
+const CONHECIDOS: Record<string, { codigo: string; casa: RegExp }> = {};
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
 test.describe("T274 — varredura da página inteira (visitante, 390 e 1280 px)", () => {
