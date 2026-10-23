@@ -70,8 +70,9 @@ test.describe("T346 — Prompt 53: importar calendário do Airbnb/Booking", () =
     ids.morador = await criarConta(morador, senha);
     ids.imovel = await criarImovelPronto(ids.dono, titulo, { ativo: true, preco: 2800 });
     await adm().from("properties").update({ available_from: dia(0) }).eq("id", ids.imovel);
-    // Bloqueio MANUAL do dono (dias 90–92): a importação nunca mexe nele.
-    await adm().from("property_blocks").insert({ property_id: ids.imovel, inicio: dia(90), fim: dia(92) });
+    // Bloqueio MANUAL do dono (dias 110–112): a importação nunca mexe nele. Fica depois do dia 99 para não cruzar a
+    // estadia mínima de 30 dias que o caso 3 busca a partir do dia 70 (passaBloqueios: entrada + 29 dias).
+    await adm().from("property_blocks").insert({ property_id: ids.imovel, inicio: dia(110), fim: dia(112) });
     await escreverIcs([A, B]);
   });
   test.afterAll(async () => {
@@ -92,7 +93,7 @@ test.describe("T346 — Prompt 53: importar calendário do Airbnb/Booking", () =
     await expect.poll(bloqueios).toEqual([
       { ...A, origem: "importado" },
       { ...B, origem: "importado" },
-      { inicio: dia(90), fim: dia(92), origem: "manual" },
+      { inicio: dia(110), fim: dia(112), origem: "manual" },
     ]);
     await expect(page.locator(`[data-testid="bloqueio-item"][data-origem="importado"]`)).toHaveCount(2);
     await expect(page.locator(`[data-testid="bloqueio-item"][data-origem="importado"]`).first().getByRole("button", { name: "Remover" })).toHaveCount(0);
@@ -104,7 +105,7 @@ test.describe("T346 — Prompt 53: importar calendário do Airbnb/Booking", () =
     await expect(painel.getByTestId("importacao-msg")).toContainText("1 liberado");
     await expect.poll(bloqueios).toEqual([
       { ...A, origem: "importado" },
-      { inicio: dia(90), fim: dia(92), origem: "manual" },
+      { inicio: dia(110), fim: dia(112), origem: "manual" },
     ]);
     await page.setViewportSize({ width: 1280, height: 900 });
     await painel.screenshot({ path: "tests/laboratorio/saida/t346-importar-1280.png" });

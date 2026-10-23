@@ -772,7 +772,8 @@
         "t153-limpeza-estadia",
         "t212-ferramentas-proprietario",
         "t211-complemento-23",
-        "t320-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b",
+        "t334-varredura-bloco12"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1828,7 +1829,8 @@
         "proprietario"
       ],
       "specs": [
-        "t345-desempenho-anuncio-54"
+        "t345-desempenho-anuncio-54",
+        "t334-varredura-bloco12"
       ]
     }
   },
