@@ -35,12 +35,17 @@ export interface Proximity {
 }
 
 export interface Review {
+  /** id da avaliação (avaliações reais). */
+  id?: string;
   author: string; // primeiro nome
   rating: number; // 0–5
   comment: string;
   date?: string; // ISO
   /** Resposta pública do proprietário (0128), se houver. */
   reply?: string;
+  /** Prompt 61-A: cidade do perfil de quem avaliou e a data da conta ("na Viva desde [ano]"). */
+  cidade?: string | null;
+  desde?: string | null;
 }
 
 /** Perfil público do proprietário (bloco de confiança). */

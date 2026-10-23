@@ -141,6 +141,10 @@ export interface EstadiaView {
   periodo: PeriodoEstadia;
   topo: TopoEstadia;
   checklist: ItemChecklist[];
+  /** Prompt 61-A: as duas partes assinaram (a tela "Estadia confirmada" só existe depois disso). */
+  assinadoPorAmbos: boolean;
+  /** Prompt 61-A: a Caução do 1º bloco — o mesmo estado do item "Caução" do checklist. */
+  caucao: "pendente" | "recebida" | "dispensada";
   valores: LinhaValor[];
   morador: { nome: string; foto: string | null };
   outraParteId: string;
@@ -207,12 +211,14 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
     relacao: o.parentesco_ou_relacao,
   }));
   const previstos = Math.max(1, Number(c.qtd_ocupantes) || 1);
+  const estadoCaucao: "pendente" | "recebida" | "dispensada" =
+    c.garantia === "seguro_fianca" || !b1 || Number(b1.caucao) <= 0 ? "dispensada" : caucaoRecebida ? "recebida" : "pendente";
   const checklist = checklistAntesDaEntrada(
     {
       assinadoProprietario: !!c.assinado_proprietario_em,
       assinadoInquilino: !!c.assinado_inquilino_em,
       primeiroPagamento: primeiro,
-      caucao: c.garantia === "seguro_fianca" || !b1 || Number(b1.caucao) <= 0 ? "dispensada" : caucaoRecebida ? "recebida" : "pendente",
+      caucao: estadoCaucao,
       conferencia: { estado: conf ? estadoConferencia(respostas) : null, prazo: prazoDaConferencia(periodo) },
       ocupantes: { preenchidos: ocupantes.length, previstos },
       instrucoesPublicadas: instrucoesPreenchidas(instr.efetivas),
@@ -277,6 +283,8 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
     periodo,
     topo: topoDaEstadia(periodo, c, agora),
     checklist,
+    assinadoPorAmbos: !!c.assinado_proprietario_em && !!c.assinado_inquilino_em,
+    caucao: estadoCaucao,
     valores,
     morador: { nome: nomeMorador, foto: fotoMorador },
     outraParteId: papel === "inquilino" ? ownerId : c.tenant_id,

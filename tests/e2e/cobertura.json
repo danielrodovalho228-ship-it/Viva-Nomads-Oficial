@@ -634,7 +634,8 @@
         "t205-fechamento-sem-beco",
         "t220-recibo-assinatura",
         "t221-contrato-estado-periodo",
-        "t240-conferencia-provas-admin"
+        "t240-conferencia-provas-admin",
+        "t299-airbnb-exibicao-61a"
       ]
     },
     "/dashboard/favoritos": {
@@ -1109,7 +1110,8 @@
         "t237-correcoes-35a",
         "t286-esqueletos-vazios-48",
         "t288-padrao-minimo-59a",
-        "t296-niveis-exibicao-59-1"
+        "t296-niveis-exibicao-59-1",
+        "t299-airbnb-exibicao-61a"
       ]
     },
     "/modelodenegocio": {
@@ -1483,7 +1485,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t262-detalhe-imovel-41",
-        "t263-visual-41"
+        "t263-visual-41",
+        "t299-airbnb-exibicao-61a"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -1492,6 +1495,15 @@
       ],
       "specs": [
         "t256-pagina-da-estadia"
+      ]
+    },
+    "/dashboard/estadia/[contratoId]/confirmada": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t299-airbnb-exibicao-61a"
       ]
     },
     "/dashboard/estadia/[contratoId]/encerrar": {

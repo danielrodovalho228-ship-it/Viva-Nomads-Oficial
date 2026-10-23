@@ -311,7 +311,11 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
     await page.getByTestId("assinar-aceite").check();
     await page.getByTestId("assinar-codigo").fill(await codigoDaCaixa(ids.dono!));
     await page.getByTestId("assinar-enviar").click();
-    await expect(page.getByTestId("form-assinar")).toHaveCount(0, { timeout: 45_000 });
+    // Prompt 61-A: a segunda assinatura leva à tela "Estadia confirmada"; o aviso das duas assinaturas segue no contrato.
+    await expect(page).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}/confirmada$`), { timeout: 45_000 });
+    await expect(page.getByTestId("confirmada-texto")).toContainText("Contrato assinado pelos dois lados.");
+    await page.goto(`/dashboard/contratos/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("form-assinar")).toHaveCount(0);
     await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(proprietário\) assinou em [\s\S]+\(inquilino\) assinou em /); // jornada de assinatura: nome + data e hora de cada um
     const { data } = await adm().from("contratos").select("assinado_inquilino_em, assinado_proprietario_em").eq("id", ids.contrato!).single();
     expect(data?.assinado_proprietario_em, "assinatura do dono gravada pelo servidor").not.toBeNull();
