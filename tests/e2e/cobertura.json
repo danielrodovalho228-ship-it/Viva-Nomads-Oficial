@@ -355,7 +355,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t329-varredura-bloco11"
+      ]
     },
     "/buscar": {
       "personas": [
@@ -632,7 +634,8 @@
         "t178-telefone-sms",
         "t174-conta-complete-perfil",
         "t192-conta-4-blocos",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t329-varredura-bloco11"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -861,7 +864,8 @@
         "t198-rodape-painel-390",
         "t209-jornada-dois-lados",
         "t286-esqueletos-vazios-48",
-        "t315-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a",
+        "t329-varredura-bloco11"
       ]
     },
     "/dashboard/notificacoes": {
@@ -913,7 +917,8 @@
       "specs": [
         "t11-travessias",
         "t183-telas-logadas-390",
-        "t232-pedido-moradia-completo"
+        "t232-pedido-moradia-completo",
+        "t329-varredura-bloco11"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1539,7 +1544,8 @@
       ],
       "specs": [
         "t240-conferencia-provas-admin",
-        "t271-admin-visual"
+        "t271-admin-visual",
+        "t329-varredura-bloco11"
       ]
     },
     "/dashboard/servicos/pedidos/[id]": {
@@ -1597,7 +1603,8 @@
         "inquilino"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t329-varredura-bloco11"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -1615,7 +1622,8 @@
         "inquilino"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t329-varredura-bloco11"
       ]
     },
     "/dashboard/estadia/[contratoId]/convidado": {
@@ -1631,7 +1639,8 @@
         "inquilino"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t329-varredura-bloco11"
       ]
     },
     "/admin/destinos": {

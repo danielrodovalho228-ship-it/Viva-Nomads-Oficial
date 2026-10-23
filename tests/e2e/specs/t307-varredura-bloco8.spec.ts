@@ -13,6 +13,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   - as telas de detalhe com os ids da massa: o contrato visto pelos dois lados, a "Estadia confirmada" do 61-A (#1113,
     o contrato da massa é assinado pelos dois) e o perfil público do dono.
   Só no laboratório.
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; última, 23/10 com o bloco 11 (t329).
 */
 type Conta = ChaveConta | "ADMIN" | "VISITANTE" | "SOCIO";
 interface Tela {
