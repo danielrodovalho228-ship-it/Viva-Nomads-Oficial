@@ -38,7 +38,7 @@ export default async function NivelDoImovelPage({ params }: { params: Promise<{ 
                 {rotulo(dados.resultado.nivel)}
               </strong>
             </p>
-            <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
+            <ul className="mt-3 grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
               {AREAS.map((a) => (
                 <li key={a} className="flex justify-between gap-2" data-testid={`nivel-area-${a}`} data-nivel={dados.resultado.porArea[a]}>
                   <span className="text-muted">{ROTULO_AREA[a]}</span>
@@ -66,7 +66,7 @@ export default async function NivelDoImovelPage({ params }: { params: Promise<{ 
             </p>
           </section>
           <FormNivel propertyId={id} dados={dados} />
-          {/* Prompt 62-B1: avaliação por avaliador credenciado (só com VISTORIA_ATIVA; a rota por foto acima continua grátis). */}
+          {/* Prompt 62-B1/62-A: avaliação por avaliador credenciado (só com VISTORIA_ATIVA; a rota por foto acima continua grátis). */}
           <BlocoAvaliacaoDono propertyId={id} />
         </div>
       ) : (

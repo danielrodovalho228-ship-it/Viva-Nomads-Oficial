@@ -78,7 +78,8 @@ test("catálogo: 'vistoria' é categoria de credenciamento, nunca contratável d
 });
 
 test("vocabulário: 'avaliação do imóvel' e 'avaliador credenciado'; nunca inspeção, perícia ou engenharia na tela", () => {
-  for (const f of TELAS) assert.doesNotMatch(semComentarios(f), /inspe[çc][ãa]o|per[íi]cia|engenharia|vistoria(?!\.|_|\/|-|"|Ativa)/i);
+  // "· vistoriado" é o fato que o anúncio ganha (Prompt 62-A); "vistoria" sozinha nunca aparece.
+  for (const f of TELAS) assert.doesNotMatch(semComentarios(f), /inspe[çc][ãa]o|per[íi]cia|engenharia|vistoria(?!do|\.|_|\/|-|"|Ativa)/i);
   assert.match(BLOCO_DONO, /Pedir avaliação do imóvel/);
   assert.match(BLOCO_DONO, /Avaliador designado pela Viva: nº/);
 });
