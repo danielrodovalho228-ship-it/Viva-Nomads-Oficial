@@ -81,7 +81,7 @@ export async function lembretesDoFunil(admin: Admin, agora: Date, simular: boole
   }
 
   // 2) Solicitação de parceiro sem resposta em 1 dia útil → equipe.
-  const { data: sols } = await admin.from("parceiro_solicitacoes").select("id, user_id, criado_em, decidido_em, status").eq("status", "pendente").limit(1000);
+  const { data: sols } = await admin.from("parceiro_solicitacoes").select("id, user_id, criado_em, decidido_em, status").eq("status", "pendente").not("categorias", "cs", "{vistoria}").limit(1000);
   for (const s of (sols ?? []) as { id: string; user_id: string | null; criado_em: string; decidido_em: string | null }[]) {
     if ((s.user_id && contasTeste.has(s.user_id)) || !parceiroSemResposta(s.criado_em, s.decidido_em, agora)) continue;
     if (simular) {

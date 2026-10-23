@@ -46,8 +46,9 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
   const COLS = "id, user_id, email, nome, tipo_pessoa, documento, telefone, categorias, cidades, portfolio_url, descricao, dados_categoria, status, motivo_recusa, checklist, origem, token_expira_em, novo_link_pedido_em, decidido_em, criado_em";
   const statusDaAba: Record<Aba, string[]> = { pendentes: ["pendente", "aguardando_email"], aprovadas: ["aprovada"], ativas: ["ativada"], recusadas: ["recusada"] };
   const [sols, contagem, parceiros, geralLinha, avisos] = await Promise.all([
-    aba === "ativas" ? Promise.resolve({ data: [] as Record<string, unknown>[] }) : admin.from("parceiro_solicitacoes").select(COLS).in("status", statusDaAba[aba]).order("criado_em", { ascending: aba === "pendentes" }).limit(200),
-    admin.from("parceiro_solicitacoes").select("status"),
+    aba === "ativas" ? Promise.resolve({ data: [] as Record<string, unknown>[] }) : admin.from("parceiro_solicitacoes").select(COLS).in("status", statusDaAba[aba]).not("categorias", "cs", "{vistoria}").order("criado_em", { ascending: aba === "pendentes" }).limit(200),
+    // Correção 62-B3: o pedido do avaliador credenciado é decidido em /admin/avaliadores (sem duplicidade aqui).
+    admin.from("parceiro_solicitacoes").select("status").not("categorias", "cs", "{vistoria}"),
     aba === "ativas" ? admin.from("parceiros").select("id, user_id, slug, nome_publico, categorias, cidades, status, publicado_em").order("criado_em", { ascending: false }).limit(300) : Promise.resolve({ data: [] as Record<string, unknown>[] }),
     admin.from("chaves_plataforma").select("ligada, valor").eq("chave", "PARCEIRO_GERAL_FALLBACK").maybeSingle(),
     admin.from("interesse_fotografo_cidade").select("user_id, uf, chave, cidade, categoria, criado_em").is("avisado_em", null).order("criado_em", { ascending: false }).limit(2000),

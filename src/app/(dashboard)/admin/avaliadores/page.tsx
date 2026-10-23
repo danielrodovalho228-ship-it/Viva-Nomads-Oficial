@@ -10,19 +10,21 @@ import { dataBRT } from "@/lib/datas-brasilia";
 import { adminCriarAvaliacaoTeste, adminDecidirCredenciamento, adminResolverFila, adminRevisarAuditoria, adminSalvarPreco } from "@/lib/vistoria/actions";
 import { COLUNAS_PRECO, PORTES, ROTULO_PORTE, condicaoRetorno, condicoesParaLigar, linhaDaTabela, tabelaCompleta, textoCondicaoRetorno, type LinhaPreco, type StatusCredenciamento } from "@/lib/vistoria/regras";
 import { adminAbrirVerificacao, adminResolverBloqueio } from "@/lib/vistoria/laudo-actions";
+import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistoria/strikes";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
 
 export const metadata = { title: "Avaliadores — Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
+const mascararDocumento = (d: string | null) => (d ? `${"•".repeat(Math.max(0, d.length - 4))}${d.slice(-4)}` : "—");
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
 const ROTULO_STATUS: Record<StatusCredenciamento, string> = { solicitado: "Solicitado", em_teste: "Em teste", ativo: "Ativo", suspenso: "Suspenso", descredenciado: "Descredenciado" };
 const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicitado: ["em_teste", "descredenciado"], em_teste: ["ativo", "descredenciado"], ativo: ["suspenso", "descredenciado"], suspenso: ["ativo", "descredenciado"], descredenciado: [] };
 const ROTULO_FILA: Record<string, string> = { sem_avaliador: "Pedido sem avaliador elegível", avaliacao_teste: "Avaliação de teste a marcar e revisar", suspensao_automatica: "Suspensão automática a rever", proposta_descredenciamento: "Proposta de descredenciamento", laudo_atrasado: "Laudo não enviado em 48 horas úteis", ressalva_vencida: "Ressalva vencida: avaliar abrir verificação", devolucao_vencida: "Devolução da contestação não confirmada em 15 dias", seguranca_grave: "Segurança grave a acompanhar" };
 const ROTULO_BLOQUEIO: Record<string, string> = { seguranca_grave: "Segurança grave (fora da busca)", strike_2: "2º strike (republicar só com laudo)", strike_3: "3º strike (todos fora da busca)" };
 
-type Cred = { id: string; cidade: string; numero_credenciado: string; status: StatusCredenciamento; motivo: string | null; experiencia_link: string | null; experiencia_path: string | null; relacoes_descricao: string | null; criado_em: string; parceiros: { nome_publico: string } | null };
+type Cred = { id: string; cidade: string; numero_credenciado: string; status: StatusCredenciamento; motivo: string | null; experiencia_link: string | null; experiencia_path: string | null; relacoes_descricao: string | null; criado_em: string; user_id: string | null; parceiros: { nome_publico: string } | null; parceiro_solicitacoes: { nome: string; tipo_pessoa: string | null; documento: string | null; email: string | null } | null };
 
 /**
  * Admin → Avaliadores (Prompt 62-B1, ESQUELETO funcional para o E2E; o desenho é do 62-A). Funciona com a chave
@@ -34,7 +36,7 @@ export default async function AdminAvaliadoresPage() {
   if (!admin) return <EmptyState icon={ShieldCheck} title="Modo demonstração" text="Sem conexão com o banco." action={null} />;
   const agora = new Date();
   const [{ data: creds }, { data: precos }, { data: fila }, { data: auditoria }, { data: pedidos }, { data: bloqueios }, { data: strikes }, { data: laudos }] = await Promise.all([
-    admin.from("avaliadores_credenciamento").select("id, cidade, numero_credenciado, status, motivo, experiencia_link, experiencia_path, relacoes_descricao, criado_em, parceiros(nome_publico)").order("criado_em", { ascending: false }),
+    admin.from("avaliadores_credenciamento").select("id, cidade, numero_credenciado, status, motivo, experiencia_link, experiencia_path, relacoes_descricao, criado_em, user_id, parceiros(nome_publico), parceiro_solicitacoes(nome, tipo_pessoa, documento, email)").order("criado_em", { ascending: false }),
     admin.from("vistoria_precos").select(COLUNAS_PRECO).order("vigente_desde", { ascending: false }).limit(200),
     admin.from("vistoria_fila_admin").select("id, tipo, motivo, criado_em, pedido_id, avaliador_id").is("resolvido_em", null).order("criado_em"),
     admin.from("vistoria_auditoria").select("id, pedido_id, sorteado_em, avaliadores_credenciamento(numero_credenciado)").is("resultado", null),
@@ -45,6 +47,12 @@ export default async function AdminAvaliadoresPage() {
     admin.from("vistoria_laudos").select("id, numero, versao, resultado, property_id, emitido_em").order("emitido_em", { ascending: false }).limit(30),
   ]);
   const lista = (creds ?? []) as unknown as Cred[];
+  // Correção 62-B3: a pendência de identidade de cada pedido ainda não decidido (a aprovação para teste exige).
+  const identidade = new Map(
+    await Promise.all(
+      lista.filter((c) => c.status === "solicitado" && c.user_id).map(async (c) => [c.id, (await estadoIdentidade(admin, c.user_id!)).estado === "confirmada"] as const),
+    ),
+  );
   const tabela: LinhaPreco[] = ((precos ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const cidades = [...new Map([...lista.map((c) => c.cidade), ...tabela.map((t) => t.cidade)].map((c) => [chaveCidade(c), c])).values()];
 
@@ -156,9 +164,18 @@ export default async function AdminAvaliadoresPage() {
             {lista.map((c) => (
               <li key={c.id} className="rounded-lg border border-sage-200 p-3 text-sm" data-testid="credenciamento-item" data-numero={c.numero_credenciado} data-status={c.status}>
                 <strong className="text-ink">
-                  {c.numero_credenciado} · {c.parceiros?.nome_publico ?? "Parceiro"}
+                  {c.numero_credenciado} · {c.parceiros?.nome_publico ?? c.parceiro_solicitacoes?.nome ?? "Parceiro"}
                 </strong>{" "}
                 · {c.cidade} · {ROTULO_STATUS[c.status]}
+                {!c.parceiros && c.parceiro_solicitacoes && (
+                  <span className="block text-muted" data-testid="credenciamento-dados-parceiro">
+                    Ainda não é parceiro: {c.parceiro_solicitacoes.tipo_pessoa === "pj" ? "CNPJ" : "CPF"} {mascararDocumento(c.parceiro_solicitacoes.documento)}
+                    {c.parceiro_solicitacoes.email ? ` · ${c.parceiro_solicitacoes.email}` : ""}. A aprovação para teste ativa a conta de parceiro.
+                  </span>
+                )}
+                {c.status === "solicitado" && identidade.get(c.id) === false && (
+                  <span className="block font-semibold text-red-700" data-testid="credenciamento-pendencia">Pendência: verificar a identidade (a aprovação para teste espera).</span>
+                )}
                 {c.experiencia_link && <span className="block text-muted">Experiência: {c.experiencia_link}</span>}
                 {c.experiencia_path && <span className="block text-muted">Experiência: arquivo enviado (bucket privado)</span>}
                 {c.relacoes_descricao && <span className="block text-muted">Relações declaradas: {c.relacoes_descricao}</span>}
@@ -169,7 +186,7 @@ export default async function AdminAvaliadoresPage() {
                       <input type="hidden" name="id" value={c.id} />
                       <input type="hidden" name="para" value={para} />
                       {(para === "suspenso" || para === "descredenciado") && <input name="motivo" placeholder="Motivo" aria-label="Motivo" className={campo} />}
-                      <Button type="submit" variant="secondary" size="sm">{para === "ativo" && c.status === "em_teste" ? "Aprovar o teste (ativar)" : ROTULO_STATUS[para]}</Button>
+                      <Button type="submit" variant="secondary" size="sm">{para === "ativo" && c.status === "em_teste" ? "Aprovar o teste (ativar)" : para === "em_teste" ? "Aprovar para teste" : ROTULO_STATUS[para]}</Button>
                     </FormAcao>
                   ))}
                 </div>

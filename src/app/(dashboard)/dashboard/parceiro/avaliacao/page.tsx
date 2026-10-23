@@ -8,6 +8,8 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, registrarAusencia, responderDesignacao } from "@/lib/vistoria/actions";
+import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
+import { pendenciasDoCredenciamento } from "@/lib/vistoria/entrada";
 import { CODIGO_CONDUTA, CONDUTA_AVALIADOR, HORAS_PARA_RESPONDER, ROTULO_CONDUTA, ROTULO_PORTE, type Porte, type StatusCredenciamento } from "@/lib/vistoria/regras";
 
 export const metadata = { title: "Avaliação de imóveis", robots: { index: false, follow: false } };
@@ -38,26 +40,46 @@ export default async function AvaliacaoParceiroPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth?redirect=%2Fdashboard%2Fparceiro%2Favaliacao");
   const { data: parc } = await admin.from("parceiros").select("id").eq("user_id", user.id).maybeSingle();
-  if (!parc) {
-    return (
-      <>
-        <PageTitle title="Avaliação de imóveis" />
-        <Panel>
-          <p className="text-sm text-muted">Para ser avaliador credenciado, primeiro ative a sua conta de parceiro.</p>
-          <ButtonLink href="/parceiros#h-form" size="sm" className="mt-3">Seja parceiro</ButtonLink>
-        </Panel>
-      </>
-    );
-  }
-  const { data: cred } = await admin.from("avaliadores_credenciamento").select("id, numero_credenciado, cidade, status").eq("parceiro_id", parc.id).maybeSingle();
+  // Correção 62-B3: o pedido de quem ainda não é parceiro fica ligado à pessoa (o parceiro nasce na aprovação).
+  const { data: credLinhas } = await admin
+    .from("avaliadores_credenciamento")
+    .select("id, numero_credenciado, cidade, status")
+    .or(parc ? `parceiro_id.eq.${parc.id},user_id.eq.${user.id}` : `user_id.eq.${user.id}`)
+    .limit(1);
+  const cred = (credLinhas ?? [])[0] as { id: string; numero_credenciado: string; cidade: string; status: string } | undefined;
+  const identidadeOk = (await estadoIdentidade(admin, user.id)).estado === "confirmada";
+  const pendencias = cred?.status === "solicitado" || !cred ? pendenciasDoCredenciamento({ identidadeVerificada: identidadeOk }) : [];
 
   if (!cred) {
     return (
       <>
         <PageTitle title="Avaliação de imóveis" subtitle="Credenciamento de avaliador: a Viva designa as avaliações por rodízio." />
         <Panel title="Pedir credenciamento" data-testid="credenciamento-form">
-          <p className="text-sm text-muted">Precisa da identidade verificada, CPF ou CNPJ válido no cadastro de parceiro, experiência comprovada e uma avaliação de teste revisada pela Viva antes da primeira real.</p>
+          <p className="text-sm text-muted">
+            Precisa da identidade verificada, CPF ou CNPJ válido, experiência comprovada e uma avaliação de teste revisada pela Viva antes da primeira real.
+            {parc ? " Você já é parceiro: mande só os dados do credenciamento." : " Um só pedido: os dados de parceiro e os do credenciamento vão juntos, e a Viva aprova os dois de uma vez."}
+          </p>
+          {pendencias.length > 0 && (
+            <p className="mt-2 text-sm text-ink" data-testid="credenciamento-pendencia">
+              Pendência: verificar a sua identidade. Você pode mandar o pedido agora; a aprovação para teste espera a verificação.{" "}
+              <a href="/dashboard/verificacao" className="underline underline-offset-4">Verificar a identidade</a>
+            </p>
+          )}
           <FormAcao acao={pedirCredenciamento} className="mt-4 grid gap-3">
+            {!parc && (
+              <fieldset className="grid gap-3 rounded-lg border border-sage-200 p-3" data-testid="credenciamento-dados-parceiro">
+                <legend className="px-1 text-sm font-semibold text-ink">Seus dados de parceiro</legend>
+                <label className="text-sm">Nome público (o seu ou o da empresa)<input name="nome" required className={campo} /></label>
+                <label className="text-sm">
+                  Tipo de pessoa
+                  <select name="tipoPessoa" className={campo} defaultValue="pf">
+                    <option value="pf">Pessoa física (CPF)</option>
+                    <option value="pj">Pessoa jurídica (CNPJ)</option>
+                  </select>
+                </label>
+                <label className="text-sm">CPF ou CNPJ<input name="documento" inputMode="numeric" required className={campo} /></label>
+              </fieldset>
+            )}
             <label className="text-sm">Cidade onde vai avaliar<input name="cidade" required className={campo} /></label>
             <label className="text-sm">Portfólio ou referência (link https)<input name="experienciaLink" type="url" className={campo} /></label>
             <label className="text-sm">Ou envie um arquivo (PDF ou imagem)<input name="experienciaArquivo" type="file" accept="application/pdf,image/*" className={campo} /></label>
@@ -96,6 +118,12 @@ export default async function AvaliacaoParceiroPage() {
       <PageTitle title="Avaliação de imóveis" subtitle={`Avaliador credenciado nº ${cred.numero_credenciado} · ${cred.cidade}`} />
       <Panel className="mb-6" data-testid="credenciamento-situacao" data-status={cred.status}>
         <p className="text-sm text-ink">{SITUACAO[cred.status as StatusCredenciamento]}</p>
+        {pendencias.length > 0 && (
+          <p className="mt-2 text-sm text-ink" data-testid="credenciamento-pendencia">
+            Pendência: verificar a sua identidade (a aprovação para teste espera).{" "}
+            <a href="/dashboard/verificacao" className="underline underline-offset-4">Verificar a identidade</a>
+          </p>
+        )}
         <p className="mt-2 text-xs text-muted">O proprietário paga a avaliação direto a você, pelo valor da tabela da Viva. {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
       </Panel>
       <Panel title="Avaliações designadas" data-testid="avaliacoes-designadas">

@@ -116,6 +116,10 @@ export async function medirVao(page: Page): Promise<MedidaVao> {
     // Sem rodapé (painel), o fim do documento fica atrás dos fixos do pé da tela quando a página está rolada até o
     // fim: só conta o vão que aparece acima deles. Com rodapé, o vão fica no meio da página, à vista, e conta inteiro.
     const escondido = rodape ? 0 : Math.max(0, window.innerHeight - topoFixo);
-    return { vao: Math.round(fimY - ultimoBottom - escondido), ultimo, fim, coberto, fixos: fixos.map(desc) };
+    // Página curta sem rodapé (cabe na tela, não rola): o branco abaixo é tela vazia, não vão de fim de página
+    // (lab-crítico do #1124: /pedidos do dono sem pedidos mediu 364 e 670 px).
+    const naoRola = !rodape && document.documentElement.scrollHeight <= window.innerHeight + 1;
+    const vao = naoRola ? 0 : Math.round(fimY - ultimoBottom - escondido);
+    return { vao, ultimo, fim: naoRola ? "fim da tela (página não rola)" : fim, coberto, fixos: fixos.map(desc) };
   });
 }
