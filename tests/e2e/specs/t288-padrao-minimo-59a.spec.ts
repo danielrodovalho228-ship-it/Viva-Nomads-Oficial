@@ -17,7 +17,7 @@ import { CHAVES_CONFORTO, ITENS_CONFORTO } from "../../../src/config/conforto-mi
 
 /*
   T288 — Prompt 59-A: a exibição do padrão mínimo e do compromisso de manutenção, a 390 e 1280 px. Só no laboratório.
-   1. Cadastro: o bloco "Padrão mínimo da Viva" no passo Comodidades (10 itens, critério em uma linha); faltando item, a
+   1. Cadastro: o bloco "Padrão mínimo da Viva" no passo Comodidades (os itens da lista, critério em uma linha); faltando item, a
       Revisão diz "Falta confirmar: …" ao lado do Publicar e o "Confirmar agora" volta ao bloco; completo, some.
    2. Painel do dono: "Confirme o padrão mínimo de [imóvel] até [data]" (a linha é o link para confirmar) e a pendência
       de conforto da entrada com o prazo, em "Hoje você tem N decisões".
@@ -297,6 +297,7 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
       await page.screenshot({ path: `tests/laboratorio/saida/t288-4-imovel-${w}.png` });
       await page.getByTestId("padrao-minimo-o-que-e").click();
       await expect(page.getByTestId("padrao-minimo-folha")).toBeVisible();
+      await expect(page.getByTestId("padrao-minimo-folha")).toContainText(`Os ${ITENS_CONFORTO.length} itens que todo imóvel da Viva tem.`);
       for (const i of ITENS_CONFORTO) await expect(page.getByTestId(`padrao-minimo-folha-${i.chave}`)).toContainText(i.criterio);
       await page.screenshot({ path: `tests/laboratorio/saida/t288-4-o-que-e-${w}.png` });
       await ctx.close();

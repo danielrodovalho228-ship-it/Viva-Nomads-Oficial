@@ -59,6 +59,7 @@ test("compromisso de manutenção: o texto exato, dos prazos do 59", () => {
   const bloco = ler("components/conforto/padrao-minimo-imovel.tsx");
   assert.match(bloco, /\{confirmado && \(/, "a linha do padrão mínimo só aparece confirmada");
   assert.match(bloco, /O que é o padrão mínimo/);
+  assert.match(bloco, /Os \{ITENS_CONFORTO\.length\} itens/, "a folha conta os itens pela lista, não por número fixo");
 });
 
 test("taxa de manutenção no prazo: oculta abaixo de 3 chamados resolvidos", () => {
