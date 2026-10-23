@@ -53,10 +53,17 @@ test.describe("T247 — 2FA e troca de senha (390px)", () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     await page.goto("/auth", { waitUntil: "domcontentloaded" });
-    await page.locator('input[name="email"], input[type="email"]').first().fill(dono.email);
-    await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
-    await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-    await page.waitForURL(/verificar-codigo|\/dashboard/, { timeout: 20000 });
+    // Um clique antes da hidratação vira envio nativo e recarrega /auth vazio (lab de 318bc26): preenche o que estiver
+    // vazio e clica de novo até sair de /auth, como o entrar() do laboratório.
+    const campoEmail = page.locator('input[name="email"], input[type="email"]').first();
+    const campoSenha = page.locator('input[name="password"], input[type="password"]').first();
+    await expect(async () => {
+      if (/verificar-codigo|\/dashboard/.test(page.url())) return;
+      if ((await campoEmail.inputValue({ timeout: 5_000 })) !== dono.email) await campoEmail.fill(dono.email, { timeout: 5_000 });
+      if ((await campoSenha.inputValue({ timeout: 5_000 })) !== senha) await campoSenha.fill(senha, { timeout: 5_000 });
+      await page.locator("form").getByRole("button", { name: /^entrar$/i }).click({ timeout: 5_000 });
+      await page.waitForURL(/verificar-codigo|\/dashboard/, { timeout: 15_000 });
+    }).toPass({ timeout: 50_000 });
     await page.goto("/dashboard/conta/seguranca");
 
     const preencher = async () => {
