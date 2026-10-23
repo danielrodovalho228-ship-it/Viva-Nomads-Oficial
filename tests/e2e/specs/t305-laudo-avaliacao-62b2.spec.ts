@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
 import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 
 /**
- * T304 — Prompt 62-B2: execução da avaliação (laboratório; a chave VISTORIA_ATIVA liga só no navegador do teste,
+ * T305 — Prompt 62-B2: execução da avaliação (laboratório; a chave VISTORIA_ATIVA liga só no navegador do teste,
  * pelo cookie de laboratório). A designação e a agenda são do 62-B1 (t303): aqui os pedidos nascem "agendados" no
  * banco e o avaliador conclui pela tela; o laudo VIS sai sempre pela ação (registrarDocumento). Datas simuladas no banco.
  *   1. aprovado → "Nível Premium · vistoriado" na ficha e o laudo no /conferir (sem valor); fila local do checklist;
@@ -14,14 +14,14 @@ import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
  *   5. contestação → 2º avaliador diferente → o dono vence → devolução registrada e confirmada;
  *   6. 3 verificações reprovadas (admin abre) → todos os anúncios fora da busca → nova avaliação aprovada → voltam.
  */
-test.describe("T304 — laudo da avaliação (62-B2)", () => {
+test.describe("T305 — laudo da avaliação (62-B2)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t304.${sufixo}@lab.vivanomads.test`, nome, role });
+  const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t305.${sufixo}@lab.vivanomads.test`, nome, role });
   const dono = conta("dono", "Dalva Dona", "owner");
   const dono2 = conta("dono2", "Davi Dono", "owner");
   const avA = conta("ava", "Ana Avaliadora");
@@ -103,7 +103,7 @@ test.describe("T304 — laudo da avaliação (62-B2)", () => {
     for (const [l, ativado] of [["A", "2026-01-01T00:00:00Z"], ["B", "2026-01-15T00:00:00Z"]] as const) {
       const { data: parc, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids[l], tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: l === "A" ? avA.nome : avB.nome, slug: `aval-${l.toLowerCase()}-t304-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: ids[l], tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: l === "A" ? avA.nome : avB.nome, slug: `aval-${l.toLowerCase()}-t305-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -123,9 +123,9 @@ test.describe("T304 — laudo da avaliação (62-B2)", () => {
       { cidade: "Uberlândia", porte: "q3_mais", valor: 420 },
     ]);
     for (const k of ["im1", "im2", "im3", "im4", "im5"]) {
-      ids[k] = await criarImovelPronto(ids.dono, `Avaliação t304 ${k} ${sufixo}`, { ativo: true });
+      ids[k] = await criarImovelPronto(ids.dono, `Avaliação t305 ${k} ${sufixo}`, { ativo: true });
     }
-    for (const k of ["im6a", "im6b"]) ids[k] = await criarImovelPronto(ids.dono2, `Verificação t304 ${k} ${sufixo}`, { ativo: true });
+    for (const k of ["im6a", "im6b"]) ids[k] = await criarImovelPronto(ids.dono2, `Verificação t305 ${k} ${sufixo}`, { ativo: true });
     const todos = ["im1", "im2", "im3", "im4", "im5", "im6a", "im6b"].map((k) => ids[k]);
     await adm().from("properties").update({ lat: IMOVEL.lat, lng: IMOVEL.lng, lat_exata: IMOVEL.lat, lng_exata: IMOVEL.lng }).in("id", todos);
   });
@@ -184,7 +184,7 @@ test.describe("T304 — laudo da avaliação (62-B2)", () => {
     await foto.getByRole("button", { name: "Enviar foto" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_checklist_fotos").select("id").eq("pedido_id", pedido).eq("comodo", "Quarto principal")).data ?? []).length, { timeout: 15_000 }).toBe(1);
     expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-    await p.screenshot({ path: "tests/laboratorio/saida/t304-checklist-390.png", fullPage: true });
+    await p.screenshot({ path: "tests/laboratorio/saida/t305-checklist-390.png", fullPage: true });
     await concluirEEnviar(p, pedido);
     await p.context().close();
 
@@ -218,7 +218,7 @@ test.describe("T304 — laudo da avaliação (62-B2)", () => {
     const pdf = await d.request.get(`/api/vistoria/laudo/${l.id}`);
     expect(pdf.status()).toBe(200);
     expect(pdf.headers()["content-type"]).toContain("application/pdf");
-    await d.screenshot({ path: "tests/laboratorio/saida/t304-dono-laudo-390.png", fullPage: true });
+    await d.screenshot({ path: "tests/laboratorio/saida/t305-dono-laudo-390.png", fullPage: true });
     await d.context().close();
   });
 

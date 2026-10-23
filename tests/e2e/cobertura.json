@@ -1670,7 +1670,7 @@
         "parceiro"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     }
   },
@@ -2276,7 +2276,7 @@
         "admin"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     }
   },
@@ -5123,7 +5123,7 @@
         "parceiro"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#enviarFotoAvaliacao": {
@@ -5131,7 +5131,7 @@
         "parceiro"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#registrarMedicao": {
@@ -5139,7 +5139,7 @@
         "parceiro"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#salvarRuidoVisita": {
@@ -5147,7 +5147,7 @@
         "parceiro"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#concluirVisita": {
@@ -5155,7 +5155,7 @@
         "parceiro"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#enviarLaudo": {
@@ -5163,7 +5163,7 @@
         "parceiro"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#confirmarCorrecao": {
@@ -5171,7 +5171,7 @@
         "parceiro"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#enviarFotoCorrecao": {
@@ -5179,7 +5179,7 @@
         "proprietario"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#contestarLaudo": {
@@ -5187,7 +5187,7 @@
         "proprietario"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#confirmarDevolucao": {
@@ -5195,7 +5195,7 @@
         "proprietario"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#adminAbrirVerificacao": {
@@ -5203,7 +5203,7 @@
         "admin"
       ],
       "specs": [
-        "t304-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#adminResolverBloqueio": {
