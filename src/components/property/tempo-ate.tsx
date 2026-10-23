@@ -11,8 +11,8 @@ interface Linha {
 }
 
 /**
- * "Tempo até" (prompt 37): o destino da busca (quando a pessoa veio de uma busca com destino) e os 3 destinos
- * cadastrados mais próximos — de carro e a pé (de ônibus com a chave). Calculado no servidor com o ponto exato; aqui
+ * "Tempo até" (prompt 37): o destino da busca (quando a pessoa veio de uma busca com destino) e os destinos
+ * ativos da mesma cidade do anúncio (E31, destinosDoBloco) — de carro e a pé (de ônibus com a chave). Calculado no servidor com o ponto exato; aqui
  * chegam só os textos arredondados. Sem dado, o bloco não aparece.
  */
 export function TempoAte({ imovelId }: { imovelId: string }) {

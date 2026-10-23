@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  destinosDoBloco,
+  faltaParaRotas,
   chaveDestino,
   comArtigo,
   dentroDoTempo,
@@ -106,4 +108,33 @@ test("PRIVACIDADE: as rotas de tempo nunca devolvem coordenada nem metros", () =
   assert.doesNotMatch(tela, /\b(lat|lng|metros)\b/, "TempoNaTela não carrega coordenada nem metros");
   // A linha reta da tela é medida sobre o ponto público (aproximado), nunca o exato.
   assert.match(dados, /rotuloReta\(metrosEntre\(\{ lat: Number\(p\.lat\), lng: Number\(p\.lng\) \}/);
+});
+
+test("E31: sem token do Mapbox, o admin vê o nome da variável que falta (nunca o valor)", () => {
+  assert.deepEqual(faltaParaRotas({}, false), ["MAPBOX_SERVER_TOKEN"]);
+  assert.deepEqual(faltaParaRotas({ MAPBOX_SERVER_TOKEN: "x" }, false), []);
+  assert.deepEqual(faltaParaRotas({ NEXT_PUBLIC_MAPBOX_TOKEN: "x" }, false), []);
+  assert.deepEqual(faltaParaRotas({}, true), ["LAB_ROTAS_URL"]);
+});
+
+test("E31: 'Tempo até' do anúncio = todos os destinos ativos da cidade do anúncio, do mais perto ao mais longe", () => {
+  const udi = { lat: -18.918, lng: -48.259 };
+  const d = (slug: string, cidade: string, lat: number, lng: number, uf = "MG") => ({ id: slug, slug, cidade, uf, lat, lng });
+  const destinos = [
+    d("ufu-campus-pontal", "Ituiutaba", -18.97, -49.46),
+    d("ufu-umuarama", "Uberlândia", -18.885, -48.26),
+    d("hc-ufu", "Uberlândia", -18.886, -48.256),
+    d("ufu-santa-monica", "Uberlandia", -18.918, -48.258),
+  ];
+  const r = destinosDoBloco({ cidade: "Uberlândia", uf: "MG", ponto: udi }, destinos).map((x) => x.slug);
+  assert.deepEqual(r, ["ufu-santa-monica", "hc-ufu", "ufu-umuarama"], "os 3 de Uberlândia (com e sem acento); o Pontal (Ituiutaba) fica fora");
+  // Mesma cidade, outra UF, não entra; o destino da busca vem à parte e sai daqui.
+  assert.deepEqual(destinosDoBloco({ cidade: "Uberlândia", uf: "MG", ponto: udi }, [...destinos, d("x", "Uberlândia", -18.9, -48.2, "SP")], "hc-ufu").map((x) => x.slug), ["ufu-santa-monica", "ufu-umuarama"]);
+  assert.deepEqual(destinosDoBloco({ cidade: null, uf: "MG", ponto: udi }, destinos), []);
+  // Todos os ativos da cidade entram até o teto (antes eram só os 3 mais próximos, de qualquer cidade).
+  const muitos = Array.from({ length: 9 }, (_, i) => d(`u${i}`, "Uberlândia", -18.9 - i / 100, -48.26));
+  assert.equal(destinosDoBloco({ cidade: "Uberlândia", uf: "MG", ponto: udi }, muitos).length, 6);
+  const rota = readFileSync("src/app/api/tempos/imovel/[id]/route.ts", "utf8");
+  assert.match(rota, /destinosDoBloco\(/);
+  assert.doesNotMatch(rota, /\.slice\(0, 3\)/);
 });
