@@ -16,6 +16,8 @@ import {
   ArrowRight,
   Lock,
   Sparkles,
+  MessageSquareText,
+  CalendarClock,
 } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { FOTOS_FERRAMENTAS } from "@/components/dashboard/capas";
@@ -142,6 +144,24 @@ const GRUPOS: Grupo[] = [
   },
 ];
 
+/** Prompt 55-E2: ferramentas do dia a dia (fora da grade 3 × 4 com foto). */
+const OPERAR: { href: string; titulo: string; texto: string; acao: string; icone: React.ComponentType<{ className?: string }> }[] = [
+  {
+    href: "/dashboard/respostas-rapidas",
+    titulo: "Respostas rápidas",
+    texto: "Até 20 respostas salvas para usar na conversa com 1 toque. A mensagem do seu anúncio vem primeiro.",
+    acao: "Abrir respostas",
+    icone: MessageSquareText,
+  },
+  {
+    href: "/dashboard/contratos",
+    titulo: "Mensagens programadas",
+    texto: "Abra a estadia em Contratos. Em cada uma: 7 dias antes da entrada, no dia da entrada e no dia da saída. Nada sai entre 22h e 7h.",
+    acao: "Ver contratos",
+    icone: CalendarClock,
+  },
+];
+
 function CardFerramenta({ f }: { f: Ferramenta }) {
   const corpo = (
     <>
@@ -250,6 +270,36 @@ export default function FerramentasPage() {
             </section>
           );
         })}
+
+        {/* Prompt 55-E2: "Para operar" — o dia a dia das conversas e das estadias. */}
+        <section aria-labelledby="grupo-operar" data-testid="ferramentas-operar">
+          <div className="mb-4">
+            <h2 id="grupo-operar" className="font-title text-xl font-semibold text-ink">
+              Para operar
+            </h2>
+            <p className="text-sm text-muted">O dia a dia das conversas e das estadias, sem repetir a mesma resposta.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {OPERAR.map((f) => (
+              <Link
+                key={f.titulo}
+                href={f.href}
+                data-testid="ferramenta-operar"
+                className="group flex h-full flex-col rounded-xl border border-sage-200 bg-white p-4 transition-colors hover:border-sage hover:bg-surface-2"
+              >
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-sage-100 text-forest">
+                  <f.icone className="h-5 w-5" />
+                </span>
+                <h3 className="mt-3 font-title font-semibold text-ink">{f.titulo}</h3>
+                <p className="mt-1 flex-1 text-sm text-muted">{f.texto}</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
+                  {f.acao}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         <p className="flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-muted">
           <Sparkles className="mt-1 h-4 w-4 shrink-0 text-sage" />

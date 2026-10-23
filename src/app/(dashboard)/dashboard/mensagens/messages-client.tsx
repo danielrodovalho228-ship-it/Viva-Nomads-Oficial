@@ -24,6 +24,8 @@ import { cn } from "@/lib/utils";
 import { CartaoVisita } from "@/components/visitas/cartao-visita";
 import { visitaDaConversa } from "@/lib/data/visitas-video-actions";
 import { AvaliacaoNaConversaCartao } from "@/components/vistoria/avaliacao-na-conversa";
+import { RespostasRapidasConversa } from "@/components/mensagens/respostas-rapidas-conversa";
+import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
 
 /**
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
@@ -50,6 +52,9 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const existe = !!pedida && initial.some((c) => c.id === pedida);
   const [activeId, setActiveId] = useState<string>((existe ? pedida : initial[0]?.id) ?? "");
   const [draft, setDraft] = useState("");
+  // Prompt 55-E2: o texto do campo veio de uma resposta rápida? Então contato direto BLOQUEIA (não mascara).
+  const [deRapida, setDeRapida] = useState(false);
+  const [rapidaBloqueada, setRapidaBloqueada] = useState(false);
   const [filtro, setFiltro] = useState<Filtro>("todas");
   // Fotos das conversas (map conversationId → URL). O SERVIDOR decide: foto do
   // proprietário é pública; foto do inquilino só vem se a relação foi aceita.
@@ -117,6 +122,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!draft.trim() || !active) return;
+    setRapidaBloqueada(false);
+    if (deRapida && temContato(draft)) return setRapidaBloqueada(true);
     // Mesma máscara do servidor: o eco otimista mostra exatamente o que será
     // gravado (telefones/e-mails sempre protegidos — a conversa fica na plataforma).
     const { text, masked, documento } = guardContactInfo(draft);
@@ -124,6 +131,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     if (documento) return;
     setGuardNotice(masked);
     setDraft("");
+    const usouRapida = deRapida;
+    setDeRapida(false);
     // Atualização otimista
     setConversations((prev) =>
       prev.map((c) =>
@@ -143,6 +152,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           receiverId: active.otherId,
           propertyId: active.propertyId,
           body: text,
+          respostaRapida: usouRapida,
         });
     }
   }
@@ -367,10 +377,30 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           <p className="border-t border-sage-200 px-4 pt-2 text-xs text-ink/60" data-testid="mensagens-aviso-documentos">
             {AVISO_DOCUMENTOS}
           </p>
+          {rapidaBloqueada && (
+            <p role="alert" className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800" data-testid="resposta-rapida-bloqueada">
+              {MSG_CONTATO_BLOQUEADO}
+            </p>
+          )}
+          {!demo && active.papel === "proprietario" && active.propertyId && (
+            <RespostasRapidasConversa
+              key={active.id}
+              propertyId={active.propertyId}
+              onEscolher={(r) => {
+                setDraft(r.texto);
+                setDeRapida(true);
+                setRapidaBloqueada(false);
+              }}
+            />
+          )}
           <form onSubmit={submit} className="flex items-center gap-2 border-t border-sage-200 p-3">
             <input
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                if (!e.target.value) setDeRapida(false);
+              }}
+              data-testid="mensagem-campo"
               placeholder="Escreva uma mensagem..."
               className="flex-1 rounded-full border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
             />

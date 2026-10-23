@@ -1,4 +1,5 @@
 import { test, expect, devices, type Page } from "@playwright/test";
+import { CAMINHO_ATIVAR_2FA, CAMINHO_VERIFICAR_2FA } from "../../../src/lib/admin/mfa";
 import { NO_LABORATORIO, adm, apagarContas, criarAdmin, criarConta, liberarLimiteCodigo, liberarLimiteLogin, liberarLimiteLoginIp, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
@@ -126,7 +127,10 @@ test.describe("T300 — entrada sem senha, intenção e convidado (Prompt 49)", 
     await entrarPorCodigo(page, email);
     await page.waitForURL((u) => !u.pathname.startsWith("/auth") || u.pathname === "/auth/intencao", { timeout: 45_000 });
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/auth\/verificar-codigo|2fa/);
+    // Admin novo não tem fator TOTP: o portão manda ATIVAR o 2FA (/dashboard/conta/seguranca?obrigatorio=admin), não
+    // pedir o código; quem já tem o fator vai ao verificar-codigo (src/lib/admin/mfa.ts, decidirPortaoMfa).
+    await expect.poll(() => new URL(page.url()).pathname, { timeout: 15_000 }).toMatch(new RegExp(`^(${CAMINHO_ATIVAR_2FA}|${CAMINHO_VERIFICAR_2FA})$`));
+    if (new URL(page.url()).pathname === CAMINHO_ATIVAR_2FA) expect(new URL(page.url()).searchParams.get("obrigatorio")).toBe("admin");
     expect(new URL(page.url()).pathname).not.toBe("/admin");
   });
 
