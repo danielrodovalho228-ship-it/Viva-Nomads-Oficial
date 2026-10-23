@@ -280,6 +280,8 @@ export interface ChamadoLista {
   tipo: string;
   criado_em: string;
   atualizado_em: string;
+  /** Prompt 50: o estado que quem abriu vê (aberto · respondido · resolvido) sai daqui. */
+  primeira_resposta_em?: string | null;
 }
 
 /** Meus chamados (RLS: só os da pessoa). */
@@ -292,7 +294,7 @@ export async function meusChamados(): Promise<ChamadoLista[]> {
   if (!user) return [];
   const { data } = await supabase
     .from("chamados")
-    .select("id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em")
+    .select("id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, primeira_resposta_em")
     .eq("usuario_id", user.id)
     .order("atualizado_em", { ascending: false })
     .limit(50);

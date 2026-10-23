@@ -34,9 +34,13 @@ import { rodarEliminacao } from "@/lib/minimizacao/servidor";
 import { rodadaSimulada } from "@/lib/minimizacao/regras";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { avisosDeRemedicao } from "@/lib/internet-medida-servidor";
+import { lembretesDoFunil } from "@/lib/lembretes/servidor";
+import { emSilencio, textoRascunho } from "@/lib/lembretes/regras";
+import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
+import { checklistAnuncio, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 
 /**
- * Automações por data (ordem d250ea2f, item 5): rascunho de imóvel parado (1 e 3 dias), lembrete de saída (3 dias),
+ * Automações por data (ordem d250ea2f, item 5): rascunho de imóvel parado (3 dias, um aviso — Prompt 50), lembrete de saída (3 dias),
  * pedido de avaliação (1 dia após a saída) e aviso de renovação (15 dias antes do fim do bloco). Página da estadia
  * (Prompt 32): instruções de chegada liberadas no D-7 (morador), lembrete das instruções no D-10 (dono), ocupantes
  * apagados 90 dias depois do fim e aditivos vencidos.
@@ -46,7 +50,7 @@ import { avisosDeRemedicao } from "@/lib/internet-medida-servidor";
  * Trava: sem `AUTOMACOES_ATIVO=1` no ambiente o cron SEMPRE simula, mesmo agendado no vercel.json.
  * Candidatura iniciada e não enviada fica de fora: a candidatura não guarda rascunho no banco.
  */
-type Alvo = { tipo: TipoAutomacao; usuarioId: string; refId: string; variante?: string; url: string; detalhe: string; depois?: () => Promise<unknown> };
+type Alvo = { tipo: TipoAutomacao; usuarioId: string; refId: string; variante?: string; url: string; detalhe: string; subject?: string; ctaLabel?: string; depois?: () => Promise<unknown> };
 
 export async function GET(request: Request) {
   const segredo = process.env.CRON_SECRET;
@@ -61,23 +65,29 @@ export async function GET(request: Request) {
   const dia = (n: number) => new Date(Date.parse(hoje) + n * 86_400_000).toISOString().slice(0, 10);
   const alvos: Alvo[] = [];
 
-  // 1) Rascunho de imóvel parado há 1 e 3 dias → proprietário.
+  // 1) Rascunho de imóvel parado há 3 dias → proprietário (Prompt 50): UM e-mail "Faltam N passos para publicar
+  // [título]", com o botão para o passo exato; a chave de envio garante 1× por rascunho. Nunca no silêncio 22h–7h.
   const { data: rascunhos } = await admin
     .from("properties")
     .select("id, owner_id, title, created_at")
     .eq("status", "draft")
-    .gte("created_at", `${dia(-5)}T00:00:00Z`)
+    .gte("created_at", `${dia(-30)}T00:00:00Z`)
     .limit(500);
-  for (const p of rascunhos ?? []) {
+  for (const p of emSilencio(new Date()) ? [] : (rascunhos ?? [])) {
     const dias = avisoAnuncioIncompleto(p.created_at as string, hoje);
     if (!dias || !p.owner_id) continue;
+    const fatos = (await fatosDosImoveis(admin, p.owner_id as string, [p.id as string]).catch(() => new Map())).get(p.id as string);
+    const lista = fatos ? checklistAnuncio(prontidaoAnuncio(fatos), p.id as string) : null;
+    const faltam = (lista?.itens ?? []).filter((i) => !i.ok);
     alvos.push({
       tipo: "anuncio_incompleto",
       usuarioId: p.owner_id as string,
       refId: p.id as string,
       variante: String(dias),
-      url: `/dashboard/imoveis/${p.id}`,
-      detalhe: detalheAutomacao("anuncio_incompleto", { imovel: (p.title as string) || undefined, dias }),
+      url: lista?.proximo?.href ?? `/dashboard/imoveis/novo?draft=${encodeURIComponent(p.id as string)}`,
+      subject: faltam.length ? textoRascunho(faltam.length, (p.title as string) || "") : undefined,
+      ctaLabel: lista?.proximo ? `Continuar: ${lista.proximo.label}` : undefined,
+      detalhe: detalheAutomacao("anuncio_incompleto", { imovel: (p.title as string) || undefined, dias, faltam: faltam.map((i) => i.label) }),
     });
   }
 
@@ -229,6 +239,8 @@ export async function GET(request: Request) {
       userId: a.usuarioId,
       pushUrl: a.url,
       detailsText: a.detalhe,
+      ...(a.subject ? { subject: a.subject } : {}),
+      ...(a.ctaLabel ? { ctaLabel: a.ctaLabel } : {}),
     }).catch(() => null);
     if (a.depois) await a.depois().catch(() => null);
     contagem[a.tipo] = (contagem[a.tipo] ?? 0) + 1;
@@ -263,10 +275,13 @@ export async function GET(request: Request) {
   const automatico = await automacaoDaEstadia(admin, agora, simular).catch(() => ({ automaticos: 0, sugestoesMorador: 0, semResposta: 0 }));
   // Internet medida (Prompt 57): "Meça de novo a internet" ao dono aos ~5,5 meses, uma vez por medição.
   const internet = await avisosDeRemedicao(admin, agora, simular).catch(() => ({ avisosInternet: 0 }));
+  // Prompt 50: verificação parada 24 h (aviso com a causa), parceiro sem resposta em 1 dia útil e chamado fora da
+  // promessa (alertas à equipe). Uma vez cada; nunca no silêncio 22h–7h. Na simulação, só conta.
+  const lembretes50 = await lembretesDoFunil(admin, agora, simular).catch(() => null);
   // Minimização (Prompt 58): a rotina única de eliminação. Fase 1 apaga de verdade só com ELIMINACAO_ATIVA=1 (ou no
   // laboratório); fora disso, o relatório "o que seria apagado hoje" sai sem apagar nada.
   const eliminacao = await rodarEliminacao(admin, agora, rodadaSimulada({ pedidoSimular: simular, laboratorio: integracoesSimuladas(), chaveAtiva: process.env.ELIMINACAO_ATIVA })).catch(() => ({ eliminados: 0, simulados: 0, falhas: 1 }));
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos, ...automatico, ...internet, eliminacao });
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos, ...automatico, ...internet, lembretes50, eliminacao });
 }
 
 /** Retenção dos ocupantes (90 dias depois do fim) e aditivos vencidos. `simular`: só conta, não apaga nem muda nada. */

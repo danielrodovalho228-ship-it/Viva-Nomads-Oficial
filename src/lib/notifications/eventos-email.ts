@@ -45,7 +45,11 @@ export type NotificationEvent =
   | "conforto_pendencia" // item do padrão mínimo que não confere (e o que aconteceu com ele) → as partes
   | "checkin_lembrete" // entrada em 2 dias / amanhã → proprietário e inquilino
   // Automações por data (cron /api/cron/automacoes, ordem d250ea2f item 5)
-  | "anuncio_incompleto" // rascunho parado há 1 e 3 dias → proprietário
+  | "anuncio_incompleto" // rascunho parado há 3 dias → proprietário (Prompt 50: 1 e-mail, "Faltam N passos", passo exato)
+  | "verificacao_parada" // Prompt 50: verificação iniciada e não concluída em 24 h → a pessoa (causa da última tentativa)
+  | "parceiro_sem_resposta" // Prompt 50: solicitação de parceiro sem resposta em 1 dia útil → equipe
+  | "chamado_fora_promessa" // Prompt 50: chamado sem 1ª resposta de uma pessoa em 24 h → equipe
+  | "verificacao_analise_humana" // Prompt 50: 2ª reprovação automática da verificação → equipe (fila de documentos)
   | "saida_lembrete" // saída em 3 dias → proprietário e inquilino
   | "avaliacao_pedido" // 1 dia após a saída → proprietário e inquilino
   | "renovacao_aviso" // 15 dias antes do fim do bloco → proprietário e inquilino
@@ -150,7 +154,11 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   conforto_pendencia: { subject: "Pendência do padrão mínimo no imóvel", body: (n) => `Olá${n ? " " + n : ""}, há uma pendência do padrão mínimo de conforto no imóvel do seu contrato. Veja pela plataforma.`, cta: "Ver a pendência", path: "/dashboard/contratos" },
   manutencao_mensagem: { subject: "Nova mensagem na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, há uma nova mensagem na ordem de manutenção do imóvel. Responda pela plataforma.`, cta: "Ver mensagem", path: "/dashboard/solicitacoes" },
   checkin_lembrete: { subject: "Lembrete: a entrada no imóvel está chegando", body: (n) => `Olá${n ? " " + n : ""}, a entrada no imóvel do seu contrato está chegando. Confira o horário e as instruções de entrada pela plataforma.`, cta: "Ver instruções de entrada", path: "/dashboard/contratos" },
-  anuncio_incompleto: { subject: "Falta pouco para publicar seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, seu cadastro de imóvel ficou pela metade. Termine, envie a documentação e publique.`, cta: "Continuar o cadastro", path: "/dashboard/imoveis" },
+  anuncio_incompleto: { subject: "Faltam poucos passos para publicar seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, seu anúncio está parado há 3 dias. Abaixo, o que falta; o botão leva direto ao próximo passo.`, cta: "Continuar o anúncio", path: "/dashboard/imoveis" },
+  verificacao_parada: { subject: "Sua verificação de identidade ficou pela metade", body: (n) => `Olá${n ? " " + n : ""}, a última tentativa de verificar sua identidade não passou. Veja abaixo o que aconteceu e o que fazer para concluir agora.`, cta: "Verificar de novo", path: "/dashboard/verificacao" },
+  parceiro_sem_resposta: { subject: "Solicitação de parceria sem resposta há 1 dia útil", body: () => "Uma solicitação de parceria espera a decisão da equipe há mais de 1 dia útil. O parceiro vê o estado e pode falar com a Viva.", cta: "Abrir as solicitações", path: "/admin/parceiros" },
+  chamado_fora_promessa: { subject: "Chamado sem resposta de uma pessoa em 24 horas", body: () => "Um chamado passou das 24 horas prometidas sem a 1ª resposta de uma pessoa da equipe.", cta: "Abrir o chamado", path: "/admin/atendimento" },
+  verificacao_analise_humana: { subject: "Verificação de identidade para análise de uma pessoa", body: () => "Uma verificação de identidade foi reprovada duas vezes pela checagem automática e espera a análise da equipe, com o motivo.", cta: "Abrir a fila de documentos", path: "/admin/documentos" },
   saida_lembrete: { subject: "Lembrete: a saída está chegando", body: (n) => `Olá${n ? " " + n : ""}, a saída do imóvel do seu contrato é em 3 dias. Combine a conferência de saída pela plataforma.`, cta: "Ver conferência de saída", path: "/dashboard/contratos" },
   avaliacao_pedido: { subject: "Como foi a estadia? Deixe sua avaliação", body: (n) => `Olá${n ? " " + n : ""}, a estadia terminou. Sua avaliação leva 2 minutos e ajuda os próximos moradores e proprietários.`, cta: "Avaliar a estadia", path: "/dashboard/contratos" },
   renovacao_aviso: { subject: "Seu período termina em 15 dias: quer renovar?", body: (n) => `Olá${n ? " " + n : ""}, o bloco do seu contrato termina em 15 dias. Se quiserem seguir, combinem a renovação pela plataforma.`, cta: "Ver o contrato", path: "/dashboard/contratos" },

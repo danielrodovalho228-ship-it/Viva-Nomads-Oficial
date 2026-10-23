@@ -10,6 +10,7 @@
   Roda: node --test src/lib/lembretes/regras.test.ts
 */
 import { somarHorasUteis } from "../vistoria/laudo.ts";
+import { PROMESSA_HUMANA_H } from "../../config/atendimento.ts";
 
 const H = 3_600_000;
 const BRT = -3 * H;
@@ -17,7 +18,8 @@ const BRT = -3 * H;
 export const SILENCIO = { inicio: 22, fim: 7 } as const;
 export const DIAS_RASCUNHO = 3;
 export const HORAS_VERIFICACAO = 24;
-export const HORAS_PROMESSA_ATENDIMENTO = 24;
+/** A promessa pública a uma pessoa (PROMESSA_ATENDIMENTO, src/config/atendimento.ts). */
+export const HORAS_PROMESSA_ATENDIMENTO = PROMESSA_HUMANA_H;
 
 const horaBRT = (d: Date) => new Date(d.getTime() + BRT).getUTCHours();
 
@@ -63,10 +65,4 @@ export function chamadoForaDaPromessa(c: { criadoEm: string; primeiraRespostaEm:
   return agora.getTime() - Date.parse(c.criadoEm) > HORAS_PROMESSA_ATENDIMENTO * H;
 }
 
-/** Estado do chamado que QUEM ABRIU vê: aberto · respondido · resolvido. */
-export type EstadoChamado = "aberto" | "respondido" | "resolvido";
-export function estadoDoChamado(c: { status: string; primeiraRespostaEm: string | null }): EstadoChamado {
-  if (c.status === "resolvido" || c.status === "encerrado") return "resolvido";
-  return c.primeiraRespostaEm ? "respondido" : "aberto";
-}
-export const ROTULO_ESTADO_CHAMADO: Record<EstadoChamado, string> = { aberto: "Aberto", respondido: "Respondido", resolvido: "Resolvido" };
+export { ROTULO_ESTADO_CHAMADO, estadoDoChamado, type EstadoChamado } from "../atendimento/estado-chamado.ts";
