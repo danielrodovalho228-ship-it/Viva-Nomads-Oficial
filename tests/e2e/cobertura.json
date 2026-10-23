@@ -513,7 +513,8 @@
         "t266-painel-42",
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t318-papel-ativo-fonte-unica"
       ]
     },
     "/dashboard/assinatura": {
@@ -609,7 +610,8 @@
         "t179-isolamento-perfil",
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
-        "t266-painel-42"
+        "t266-painel-42",
+        "t318-papel-ativo-fonte-unica"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -745,7 +747,8 @@
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
         "t268-meus-imoveis-link",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t318-papel-ativo-fonte-unica"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -3463,6 +3466,24 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/papel-actions.ts#estadoDosPapeis": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t318-papel-ativo-fonte-unica"
+      ]
+    },
+    "src/lib/data/papel-actions.ts#usarPapel": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t318-papel-ativo-fonte-unica"
+      ]
     },
     "src/lib/data/pedido-contador-actions.ts#contarImoveisQueCombinam": {
       "personas": [

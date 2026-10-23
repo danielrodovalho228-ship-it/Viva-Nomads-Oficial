@@ -48,6 +48,13 @@ interface AuthState {
   /** Papel ativo escolhido pelo usuário; null = derivar do `role` de cadastro. */
   activeMode: ViewMode | null;
   /**
+   * PAPEL-B: o papel ativo é Parceiro (escolhido no selo do topo ou na Conta, gravado em profiles.papel_ativo). Por
+   * baixo, `activeMode` segue o último modo morador/proprietário. Trocar de modo desliga.
+   */
+  parceiroAtivo: boolean;
+  /** PAPEL-B: aplica o papel ativo (morador/proprietário trocam o modo; parceiro liga `parceiroAtivo`). */
+  setPapel: (papel: "morador" | "proprietario" | "parceiro") => void;
+  /**
    * A sessão já foi CONFERIDA (getSession do Supabase resolveu, ou o modo demo
    * assumiu). NÃO é persistida: começa `false` a cada carga e evita que o
    * AuthGuard mande para /auth antes de a sessão real ter chance de hidratar
@@ -81,6 +88,7 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       activeMode: null,
+      parceiroAtivo: false,
       authChecked: false,
       sessionStartedAt: null,
       setAuthChecked: (authChecked) => set({ authChecked }),
@@ -94,7 +102,9 @@ export const useAuthStore = create<AuthState>()(
         // Prompt 49: o que o convidado guardou no aparelho vai para a conta (sem duplicar).
         mesclarGuardadosDoConvidado(user?.id);
       },
-      setActiveMode: (activeMode) => set({ activeMode }),
+      setActiveMode: (activeMode) => set({ activeMode, parceiroAtivo: false }),
+      setPapel: (papel) =>
+        set(papel === "parceiro" ? { parceiroAtivo: true } : { activeMode: papel === "proprietario" ? "owner" : "tenant", parceiroAtivo: false }),
       activateRole: (mode) =>
         set((s) => ({
           activeMode: mode,
@@ -107,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
         // (o persist regrava a sessão vazia logo abaixo).
         limparChavesLocais();
         useFavoritesStore.getState().reset();
-        set({ user: null, activeMode: null, authChecked: true, sessionStartedAt: null });
+        set({ user: null, activeMode: null, parceiroAtivo: false, authChecked: true, sessionStartedAt: null });
       },
     }),
     {
@@ -117,6 +127,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (s) => ({
         user: s.user,
         activeMode: s.activeMode,
+        parceiroAtivo: s.parceiroAtivo,
         sessionStartedAt: s.sessionStartedAt,
       }),
     }

@@ -135,9 +135,9 @@ test("intenção não muda permissão: grava só intencao (e a preferência de m
   // A ação que pediu a conta vence o painel da intenção.
   assert.deepEqual(painelInicial(["servicos"], "/pedidos/novo?cidade=x"), { destino: "/pedidos/novo?cidade=x", modo: null });
   const acoes = ler("src/lib/data/intencao-actions.ts");
-  // Os únicos updates: intencao e preferred_mode (a preferência do seletor do topo).
+  // Os únicos updates: intencao e, no 1º acesso (PAPEL-B), o papel inicial — modo e papel ativo; nunca role.
   const updates = [...acoes.matchAll(/\.update\(\{([^}]*)\}\)/g)].map((m) => m[1].trim());
-  assert.deepEqual(updates, ["intencao", "preferred_mode: modo"]);
+  assert.deepEqual(updates, ["intencao", 'preferred_mode: modo, papel_ativo: modo === "owner" ? "proprietario" : "morador"']);
   assert.match(acoes, /\.update\(\{ intencao \}\)/);
   const sql = ler("supabase/migrations/0214_intencao_perfil.sql");
   assert.match(sql, /grant update \(intencao\) on public\.profiles to authenticated/);
