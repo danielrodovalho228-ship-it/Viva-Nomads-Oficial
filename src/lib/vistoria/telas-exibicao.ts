@@ -93,11 +93,12 @@ export const ESTADO_CREDENCIAMENTO: Record<StatusCredenciamento, string> = {
 
 /**
  * O que já está cumprido. Experiência, conduta e relações vão no pedido; a identidade é a verificação de verdade (a
- * aprovação para teste espera por ela); o teste só conta revisado (ativo).
+ * aprovação para teste espera por ela, então quem já passou da análise a tem); o teste só conta revisado (ativo).
  */
 export function passosCumpridos(e: { status: StatusCredenciamento | null; identidadeVerificada: boolean }): Record<ChavePasso, boolean> {
   const enviado = e.status !== null;
-  return { identidade: e.identidadeVerificada, experiencia: enviado, conduta: enviado, relacoes: enviado, teste: e.status === "ativo" || e.status === "suspenso" };
+  const aprovado = e.status === "em_teste" || e.status === "ativo" || e.status === "suspenso";
+  return { identidade: e.identidadeVerificada || aprovado, experiencia: enviado, conduta: enviado, relacoes: enviado, teste: e.status === "ativo" || e.status === "suspenso" };
 }
 
 // ── Item 2: página pública ───────────────────────────────────────────────────────────────────────────────────
@@ -161,6 +162,6 @@ export function contagemDecisoes(e: { credenciamentos: { status: StatusCredencia
     { chave: "credenciamentos", rotulo: "credenciamentos para decidir", valor: e.credenciamentos.filter((c) => c.status === "solicitado" || c.status === "em_teste").length, ancora: "#credenciamento" },
     { chave: "sem-avaliador", rotulo: "pedidos sem avaliador elegível", valor: e.semAvaliador, ancora: "#sem-avaliador" },
     { chave: "recusas", rotulo: "recusas e ausências (30 dias)", valor: e.recusasAusencias, ancora: "#recusas" },
-    { chave: "chave", rotulo: `de ${e.cidades} cidades prontas para ligar`, valor: e.cidadesProntas, ancora: "#chave" },
+    { chave: "chave", rotulo: `de ${e.cidades} ${e.cidades === 1 ? "cidade pronta" : "cidades prontas"} para ligar`, valor: e.cidadesProntas, ancora: "#chave" },
   ];
 }

@@ -117,6 +117,7 @@ test("credenciamento: a identidade só conta verificada; o teste só conta revis
   assert.deepEqual(Object.values(passosCumpridos({ status: null, identidadeVerificada: false })), [false, false, false, false, false]);
   assert.deepEqual(passosCumpridos({ status: "solicitado", identidadeVerificada: false }), { identidade: false, experiencia: true, conduta: true, relacoes: true, teste: false });
   assert.equal(passosCumpridos({ status: "em_teste", identidadeVerificada: true }).teste, false);
+  assert.equal(passosCumpridos({ status: "ativo", identidadeVerificada: false }).identidade, true, "a aprovação para teste já exigiu a identidade");
   assert.equal(passosCumpridos({ status: "ativo", identidadeVerificada: true }).teste, true);
   // Pedido único do 62-B3 preservado: dados de parceiro só para quem ainda não é, pendência com o link, um só envio.
   assert.match(AVALIADOR, /\{!parc && \(\s*<fieldset[^>]*data-testid="credenciamento-dados-parceiro"/);
