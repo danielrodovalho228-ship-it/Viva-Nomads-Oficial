@@ -2237,3 +2237,14 @@ export async function reativarAnuncio(id: string): Promise<ResultadoPausa> {
   revalidarPausa(id);
   return { ok: true, mensagem: "Anúncio reativado: ele voltou para a busca." };
 }
+
+/** 64-B: o limite do plano do dono logado (painel e Meus imóveis) — a mesma conta da publicação. */
+export async function minhaSituacaoLimite(): Promise<SituacaoLimite | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  return situacaoDoLimite(supabase, user.id, null);
+}
