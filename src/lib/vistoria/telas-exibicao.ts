@@ -85,7 +85,7 @@ export type ChavePasso = (typeof PASSOS_CREDENCIAMENTO)[number]["chave"];
 
 export const ESTADO_CREDENCIAMENTO: Record<StatusCredenciamento, string> = {
   solicitado: "Em análise",
-  em_teste: "Avaliação de teste marcada",
+  em_teste: "Em teste",
   ativo: "Ativo",
   suspenso: "Suspenso",
   descredenciado: "Descredenciado",
@@ -95,10 +95,12 @@ export const ESTADO_CREDENCIAMENTO: Record<StatusCredenciamento, string> = {
  * O que já está cumprido. Experiência, conduta e relações vão no pedido; a identidade é a verificação de verdade (a
  * aprovação para teste espera por ela, então quem já passou da análise a tem); o teste só conta revisado (ativo).
  */
-export function passosCumpridos(e: { status: StatusCredenciamento | null; identidadeVerificada: boolean }): Record<ChavePasso, boolean> {
+export function passosCumpridos(e: { status: StatusCredenciamento | null; identidadeVerificada: boolean; testeConcluido: boolean }): Record<ChavePasso, boolean> {
   const enviado = e.status !== null;
   const aprovado = e.status === "em_teste" || e.status === "ativo" || e.status === "suspenso";
-  return { identidade: e.identidadeVerificada || aprovado, experiencia: enviado, conduta: enviado, relacoes: enviado, teste: e.status === "ativo" || e.status === "suspenso" };
+  // E30: o passo 5 só conta com a avaliação de teste REGISTRADA (laudo emitido) e revisada (ativação) — nunca pelo
+  // status sozinho (a massa de teste chegou a "Ativo" sem avaliação nenhuma).
+  return { identidade: e.identidadeVerificada || aprovado, experiencia: enviado, conduta: enviado, relacoes: enviado, teste: e.testeConcluido && (e.status === "ativo" || e.status === "suspenso") };
 }
 
 // ── Item 2: página pública ───────────────────────────────────────────────────────────────────────────────────
