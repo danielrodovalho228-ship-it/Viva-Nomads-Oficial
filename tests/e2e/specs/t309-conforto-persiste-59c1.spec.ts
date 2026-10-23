@@ -15,7 +15,7 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.59c1.${sufixo}@lab.vivanomads.test`, nome: "Sara Persiste", role: "owner" as const };
 const TITULO = `Studio que persiste 59-C1 ${sufixo}`;
-const ids: { dono?: string; imovel?: string } = {};
+const ids: { dono?: string; imovel?: string; outro?: string } = {};
 
 async function confirmadosNoBanco(id: string): Promise<number> {
   const { data } = await adm().from("conforto_declaracoes").select("chave, confirmado, versao_lista").eq("property_id", id);
@@ -127,19 +127,27 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
   });
 
   test("2. autosave grava a operação junto e não mostra 'Sem conexão'", async ({ browser }) => {
-    // Volta para rascunho (o caso 1 publicou) e muda a operação no banco para "sublocação autorizada": o editor diz
-    // "É meu" (draft_data), então o autosave grava own + sem sublocação pela regra do updateProperty.
-    await adm().from("properties").update({ status: "draft", ownership_type: "subleased", sublease_authorized: true }).eq("id", ids.imovel!);
+    // Um 2º rascunho, com a operação "sublocação autorizada" no banco e "É meu" no estado do editor (draft_data): ao abrir,
+    // o autosave grava own + sem sublocação pela regra do updateProperty (a linha antiga "própria com sublocação" a 0200
+    // recusa até na fixture, então o caminho dela fica no teste de unidade).
+    const outro = await criarImovelPronto(ids.dono!, `${TITULO} (2)`);
+    ids.outro = outro;
+    const { error } = await adm()
+      .from("properties")
+      .update({
+        ownership_type: "subleased",
+        sublease_authorized: true,
+        draft_data: { title: `${TITULO} (2)`, description: "Rascunho para conferir o autosave da operação no laboratório.", monthlyPrice: "3200", ownershipType: "own", subleaseAuthorized: false, step: 3, ordemEtapas: 4, etapaMax: 5 },
+      })
+      .eq("id", outro);
+    if (error) throw error;
     const page = await entrar(browser, dono.email, senha);
-    await abrir(page, "comodidades");
-    await expect(page.getByTestId("conforto-checklist")).toHaveAttribute("data-faltam", "0", { timeout: 30_000 });
-    const titulo = page.getByLabel(/título/i).first();
-    await titulo.fill(`${TITULO} (editado)`);
+    await page.goto(`/dashboard/imoveis/novo?draft=${outro}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
+    await expect
+      .poll(async () => (await adm().from("properties").select("ownership_type, sublease_authorized").eq("id", outro).single()).data, { timeout: 30_000 })
+      .toMatchObject({ ownership_type: "own", sublease_authorized: false });
     await expect(page.getByText(/^Salvo/)).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText(/Sem conexão|Não foi possível salvar/)).toHaveCount(0);
-    const { data } = await adm().from("properties").select("title, ownership_type, sublease_authorized").eq("id", ids.imovel!).single();
-    expect(data).toMatchObject({ title: `${TITULO} (editado)`, ownership_type: "own", sublease_authorized: false });
-    expect(await confirmadosNoBanco(ids.imovel!)).toBe(12);
     await page.context().close();
   });
 });
