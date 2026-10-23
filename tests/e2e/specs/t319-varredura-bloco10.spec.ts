@@ -11,6 +11,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   cobria: a entrada de avaliador para parceiros (62-B3, #1130; /avaliadores sem número redireciona para ela de propósito), o funil de ativação (50,
   #1121) e a qualidade (51, #1134) no admin. A tela da avaliação do dono (62-A, #1133) depende de um pedido criado no
   próprio teste e fica com a t315. Só no laboratório.
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; última, 23/10 com o bloco 11 (t329).
 */
 type Conta = ChaveConta | "ADMIN" | "VISITANTE";
 interface Tela {

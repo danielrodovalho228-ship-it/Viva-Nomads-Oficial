@@ -10,6 +10,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   painel que nenhuma varredura cobria: simulador e recibos do proprietário; garantias, reembolsos, avaliações e
   comparar da inquilina. A /dashboard/assinatura fica de fora: o servidor sempre manda para /precos (já varrida na t274).
   Só no laboratório.
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; última, 23/10 com o bloco 11 (t329).
 */
 type Conta = ChaveConta | "ADMIN";
 interface Tela {
