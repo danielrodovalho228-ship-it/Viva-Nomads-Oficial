@@ -14,7 +14,8 @@
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
         "t201-qa-muse",
-        "t283-home-internet-57"
+        "t283-home-internet-57",
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/acesso-socios": {
@@ -263,7 +264,8 @@
         "t24-atendimento-acolhimento",
         "t25-chamado-resumo",
         "t30-atendimento-autonomo",
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/alerta-busca/desligar": {
@@ -374,7 +376,8 @@
         "t237-correcoes-35a",
         "t267-buscar-fotos-cartao",
         "t286-esqueletos-vazios-48",
-        "t296-niveis-exibicao-59-1"
+        "t296-niveis-exibicao-59-1",
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/cidades": {
@@ -495,7 +498,8 @@
         "t211-complemento-23",
         "t266-painel-42",
         "t288-padrao-minimo-59a",
-        "t296-niveis-exibicao-59-1"
+        "t296-niveis-exibicao-59-1",
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/dashboard/assinatura": {
@@ -1136,7 +1140,8 @@
         "t286-esqueletos-vazios-48",
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
-        "t304-airbnb-exibicao-61a"
+        "t304-airbnb-exibicao-61a",
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/modelodenegocio": {
@@ -1194,7 +1199,8 @@
         "t11-travessias",
         "t15-admin-real",
         "t18-seo-a11y",
-        "t5-pedido-moradia"
+        "t5-pedido-moradia",
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/pedidos/novo": {
@@ -1209,7 +1215,8 @@
         "t96-antigolpe-atalhos",
         "t165-pedido-contador",
         "t188-pedido-novo-layout",
-        "t232-pedido-moradia-completo"
+        "t232-pedido-moradia-completo",
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/precos": {
@@ -1247,7 +1254,8 @@
         "t179-isolamento-perfil",
         "t180-anuncio-real-sem-exemplo",
         "t182-jornada-completa",
-        "t307-varredura-bloco8"
+        "t307-varredura-bloco8",
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/qualificar": {
@@ -1631,7 +1639,8 @@
       "specs": [
         "t295-niveis-59-1",
         "t296-niveis-exibicao-59-1",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/dashboard/recibos": {
@@ -1640,7 +1649,8 @@
       ],
       "specs": [
         "t299-recibos-notas-39b1",
-        "t302-varredura-logada-bloco6"
+        "t302-varredura-logada-bloco6",
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/auth/intencao": {
