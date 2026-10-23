@@ -1,6 +1,8 @@
 import { Star, MessageSquareQuote } from "lucide-react";
 import { numBR } from "@/lib/utils";
 import type { Property, Review } from "@/lib/types";
+import { ComoFuncionamAvaliacoes } from "@/components/avaliacoes/como-funcionam-avaliacoes";
+import { linhaAutorAvaliacao } from "@/lib/avaliacoes-exibicao";
 
 /** "abr. 2026" a partir de uma data ISO. */
 const MONTHS = ["jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez."];
@@ -20,9 +22,12 @@ export function Reviews({ property }: { property: Property }) {
   if (reviews.length === 0)
     return (
       <section aria-labelledby="avaliacoes-title">
-        <h2 id="avaliacoes-title" className="font-title text-2xl font-semibold text-ink">
-          Avaliações
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <h2 id="avaliacoes-title" className="font-title text-2xl font-semibold text-ink">
+            Avaliações
+          </h2>
+          <ComoFuncionamAvaliacoes />
+        </div>
         <div data-testid="avaliacoes-vazio" className="mt-4 flex flex-col items-center rounded-xl border border-dashed border-sage-200 px-6 py-8 text-center">
           <MessageSquareQuote className="h-8 w-8 text-sage" aria-hidden />
           <p className="mt-3 font-title text-lg font-semibold text-ink">Este imóvel ainda não tem avaliações</p>
@@ -43,25 +48,34 @@ export function Reviews({ property }: { property: Property }) {
 
   return (
     <section aria-labelledby="avaliacoes-title">
-      <h2 id="avaliacoes-title" className="flex items-center gap-2 font-title text-2xl font-semibold text-ink">
-        Avaliações
-        <span className="inline-flex items-center gap-1 text-base font-semibold text-forest">
-          <Star className="h-4 w-4 fill-champagne text-champagne" />
-          {numBR(avg, 1)} · {reviews.length}
-        </span>
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 id="avaliacoes-title" className="flex items-center gap-2 font-title text-2xl font-semibold text-ink">
+          Avaliações
+          <span className="inline-flex items-center gap-1 text-base font-semibold text-forest">
+            <Star className="h-4 w-4 fill-champagne text-champagne" />
+            {numBR(avg, 1)} · {reviews.length}
+          </span>
+        </h2>
+        <ComoFuncionamAvaliacoes />
+      </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {reviews.map((r, i) => {
           const date = reviewDate(r.date);
+          const autor = linhaAutorAvaliacao(r);
           return (
-            <div key={`${r.author}-${i}`} className="rounded-xl border border-sage-200 p-4">
+            <div key={`${r.author}-${i}`} className="rounded-xl border border-sage-200 p-4" data-testid="avaliacao-real">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-ink">{r.author}</span>
                 <span className="inline-flex items-center gap-1 text-sm text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" /> {numBR(r.rating, 1)}
                 </span>
               </div>
+              {autor && (
+                <p className="text-xs text-muted" data-testid="avaliacao-autor">
+                  {autor}
+                </p>
+              )}
               {date && <p className="text-xs text-muted">{date}</p>}
               <p className="mt-2 text-sm text-muted">{r.comment}</p>
               {r.reply && (

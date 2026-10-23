@@ -2,6 +2,7 @@
 
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { imovelPublicado } from "@/lib/anuncio/publicados";
+import { idsRascunhosDuplicados } from "@/lib/anuncio/rascunhos-duplicados";
 import { useState } from "react";
 import Link from "next/link";
 import { Plus, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
@@ -41,6 +42,8 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
   const [excluindo, setExcluindo] = useState<string | null>(null);
   const [erroExcluir, setErroExcluir] = useState<string | null>(null);
   const properties = (demoOn ? DEMO_PROPERTIES : real).filter((p) => !removidos.has(p.id));
+
+  const duplicados = idsRascunhosDuplicados(properties);
 
   async function excluirRascunho(id: string) {
     setErroExcluir(null);
@@ -128,6 +131,11 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                     </span>
                     {p.readyToLiveBadge && <ReadyToLiveBadge />}
                     {demoItem && <DemoBadge />}
+                    {duplicados.has(p.id) && (
+                      <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700" data-testid="rascunho-duplicado">
+                        Rascunho duplicado — excluir?
+                      </span>
+                    )}
                   </div>
                   {/* Só anúncio no ar tem página pública: nos outros o título é texto (rascunho e pausado davam 404 —
                       t249 D-V7) e a ação é "Continuar editando" ou "Editar". */}

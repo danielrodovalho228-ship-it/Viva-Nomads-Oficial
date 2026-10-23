@@ -4,7 +4,7 @@
   horário. O horário vem do cadastro do imóvel; sem ele, diz "a combinar" em vez de inventar.
 */
 import { prazoConferenciaEntrada, prazoConferenciaSaida, textoPrazoConferencia } from "./conferencia.ts";
-import { diaBRT } from "./datas-brasilia.ts";
+import { ETIQUETA_BRASILIA, diaBRT } from "./datas-brasilia.ts";
 
 export interface EtapaEstadia {
   chave: "entrada" | "conferencia" | "saida" | "conferencia_saida";
@@ -29,7 +29,8 @@ export function formatarDiaCurto(iso: string): string {
 
 function horario(valor: string | null | undefined, prefixo: string): string {
   const v = (valor ?? "").trim();
-  return HORA_RE.test(v) ? `${prefixo} ${v}` : A_COMBINAR;
+  // Prompt 61-A: o horário do imóvel diz o fuso, como o prazo da conferência ("…, horário de Brasília").
+  return HORA_RE.test(v) ? `${prefixo} ${v}, ${ETIQUETA_BRASILIA}` : A_COMBINAR;
 }
 
 export function montarLinhaDoTempo(p: {

@@ -67,7 +67,7 @@ export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; p
   };
 
   return (
-    <Panel title={`Aditivo ${a.numero}: proposta de alteração`} data-testid="estadia-aditivo" data-status={status}>
+    <Panel title={`Aditivo ${a.numero}: ${status === "assinado" ? "assinado" : "proposta de alteração"}`} data-testid="estadia-aditivo" data-status={status}>
       <p className="text-sm text-ink" data-testid="aditivo-resumo">{a.resumo}</p>
       {taxaBase && <p className="mt-1 text-xs text-muted" data-testid="aditivo-taxa">{taxaBase}</p>}
       <div className="mt-3 space-y-3">
@@ -86,7 +86,8 @@ export function AditivoPendente({ aditivo: a, papel }: { aditivo: AditivoView; p
             <span className="text-xs text-muted">Responda até {dataBR(a.expiraEm)}.</span>
           </div>
         )}
-        {status === "aceito" && euAssinei && <p className="text-sm text-muted">Você já assinou. Falta a assinatura da outra parte; os blocos e as datas mudam depois dela.</p>}
+        {status === "assinado" && <p className="text-sm text-muted" data-testid="aditivo-assinado">Assinado pelas duas partes. Os blocos e as datas já mudaram.</p>}
+        {status === "aceito" && euAssinei &&<p className="text-sm text-muted">Você já assinou. Falta a assinatura da outra parte; os blocos e as datas mudam depois dela.</p>}
         {status === "aceito" && !euAssinei && (
           <div className="space-y-3">
             <p className="text-sm text-ink">Assine o aditivo com o código de 6 dígitos enviado ao seu e-mail (o mesmo fluxo da assinatura do contrato).</p>
