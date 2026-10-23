@@ -332,7 +332,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t309-varredura-bloco9"
+      ]
     },
     "/auth/reset": {
       "personas": [
@@ -453,7 +455,8 @@
         "t21-central-agentes",
         "t22-pacote-otavio",
         "t23-pacote-seguranca",
-        "t260-documentos-registro"
+        "t260-documentos-registro",
+        "t309-varredura-bloco9"
       ]
     },
     "/dashboard": {
@@ -872,7 +875,8 @@
         "t193-propostas",
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
-        "t216-taxa-matriz"
+        "t216-taxa-matriz",
+        "t309-varredura-bloco9"
       ]
     },
     "/dashboard/pedidos": {
@@ -1054,7 +1058,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t309-varredura-bloco9"
+      ]
     },
     "/favoritos": {
       "personas": [
@@ -1261,7 +1267,8 @@
         "t40-novo-anuncio-fotos",
         "t183-telas-logadas-390",
         "t237-correcoes-35a",
-        "t241-contas-teste-36"
+        "t241-contas-teste-36",
+        "t309-varredura-bloco9"
       ]
     },
     "/roi": {
@@ -1453,7 +1460,8 @@
         "publico"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t309-varredura-bloco9"
       ]
     },
     "/parceiros/buscar": {
