@@ -2479,6 +2479,14 @@
       "specs": [
         "t346-importar-calendario-53"
       ]
+    },
+    "/api/upload/triagem-vinculo": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
+      ]
     }
   },
   "actions": {
@@ -5698,6 +5706,46 @@
       ],
       "specs": [
         "t346-importar-calendario-53"
+      ]
+    },
+    "src/lib/data/triagem-actions.ts#meuVinculo": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
+      ]
+    },
+    "src/lib/data/triagem-actions.ts#linkMeuVinculo": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
+      ]
+    },
+    "src/lib/data/triagem-actions.ts#listarVinculosPendentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
+      ]
+    },
+    "src/lib/data/triagem-actions.ts#linkVinculoAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
+      ]
+    },
+    "src/lib/data/triagem-actions.ts#decidirVinculo": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
       ]
     }
   }
