@@ -172,8 +172,6 @@ export async function criarImovelPronto(
       max_period_days: 180,
       monthly_price: opts.preco ?? 3200,
       garantias_aceitas: ["caucao"],
-      // 61-B: anúncio novo só publica com o tipo de entrada (o "pronto" do laboratório já vem com ele).
-      tipo_entrada: "porteiro",
       status: "draft",
       sem_cameras_interior: !opts.semDeclaracaoCameras,
       tipo_entrada: opts.semTipoEntrada ? null : "porteiro",
