@@ -7,7 +7,8 @@
 
 export const LIMITE_BYTES_ICS = 1_000_000;
 export const LIMITE_EVENTOS_ICS = 2000;
-export const LIMITE_LINKS_POR_IMOVEL = 10;
+/** Prompt 53: até 3 links por imóvel (Airbnb, Booking e mais um). */
+export const LIMITE_LINKS_POR_IMOVEL = 3;
 
 export interface BloqueioExterno {
   inicio: string; // AAAA-MM-DD, primeiro dia ocupado
@@ -92,4 +93,92 @@ export function lerIcs(texto: unknown): ResultadoIcs {
     }
   }
   return { ok: true, bloqueios };
+}
+
+// ── Prompt 53: o resto das regras da importação (puras) ─────────────────────────────────────────────────────────
+
+export type OrigemLink = "airbnb" | "booking" | "vrbo" | "outro";
+
+/** De onde vem o link (pelo domínio). Só para o rótulo da tela. */
+export function origemDoLink(url: string): OrigemLink {
+  let host = "";
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return "outro";
+  }
+  if (/(^|\.)airbnb\.[a-z.]+$/.test(host)) return "airbnb";
+  if (/(^|\.)booking\.com$/.test(host)) return "booking";
+  if (/(^|\.)(vrbo|homeaway)\.[a-z.]+$/.test(host)) return "vrbo";
+  return "outro";
+}
+
+/** O que a tela mostra do link: só o domínio (o link inteiro dá acesso ao calendário e não volta à tela). */
+export function dominioDoLink(url: string): string {
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+export const ROTULO_ORIGEM: Record<OrigemLink, string> = { airbnb: "Airbnb", booking: "Booking", vrbo: "Vrbo", outro: "Outro site" };
+
+/** A resposta é um calendário? text/calendar (com ou sem charset). */
+export function tipoDeCalendario(contentType: string | null | undefined): boolean {
+  return /^\s*text\/calendar\b/i.test(contentType ?? "");
+}
+
+const chave = (b: { inicio: string; fim: string }) => `${b.inicio}|${b.fim}`;
+
+/**
+ * Sincronia de UMA importação: o que entra e o que sai dos bloqueios dela. Só datas de hoje em diante entram; o que
+ * sumiu do outro site sai daqui. Bloqueio manual do dono nunca está em `atuais` (só os desta importação), então nunca
+ * é apagado.
+ */
+export function planoDeSincronia(
+  atuais: { id: string; inicio: string; fim: string }[],
+  lidos: BloqueioExterno[],
+  hoje: string,
+): { inserir: BloqueioExterno[]; apagar: string[] } {
+  const futuros = new Map<string, BloqueioExterno>();
+  for (const b of lidos) if (b.fim >= hoje) futuros.set(chave(b), b);
+  const atuaisPorChave = new Map(atuais.map((a) => [chave(a), a]));
+  return {
+    inserir: [...futuros.values()].filter((b) => !atuaisPorChave.has(chave(b))).sort((a, b) => a.inicio.localeCompare(b.inicio)),
+    apagar: atuais.filter((a) => !futuros.has(chave(a))).map((a) => a.id),
+  };
+}
+
+/** Intervalos (dias inclusivos) se cruzam? */
+export const cruzam = (a: { inicio: string; fim: string }, b: { inicio: string; fim: string }) => a.inicio <= b.fim && b.inicio <= a.fim;
+
+/**
+ * Conflito: data importada ocupada que cai num compromisso da Viva (candidatura, proposta ou contrato). Só AVISA o dono
+ * (a decisão é dele); nada é cancelado.
+ */
+export function conflitosComViva<T extends { inicio: string; fim: string; tipo: string }>(importados: BloqueioExterno[], viva: T[]): { importado: BloqueioExterno; compromisso: T }[] {
+  const out: { importado: BloqueioExterno; compromisso: T }[] = [];
+  for (const i of importados) for (const v of viva) if (cruzam(i, v)) out.push({ importado: i, compromisso: v });
+  return out;
+}
+
+/** Falhas seguidas que geram o aviso ao dono (uma vez por sequência). */
+export const FALHAS_PARA_AVISAR = 3;
+export const avisarFalha = (falhasSeguidas: number) => falhasSeguidas === FALHAS_PARA_AVISAR;
+
+/** A causa em palavras do dono, a partir do erro técnico da leitura. */
+export function causaDaFalha(erro: string, origem: OrigemLink): string {
+  const site = origem === "outro" ? "no outro site" : `no ${ROTULO_ORIGEM[origem]}`;
+  if (/404|410|403|401/.test(erro)) return `O link deixou de responder: gere um novo ${site} e cole aqui.`;
+  if (/calend|ics|VCALENDAR/i.test(erro)) return `O link não devolve um calendário: confira se copiou o link de exportação (.ics) ${site}.`;
+  if (/grande|eventos demais/i.test(erro)) return "O calendário é grande demais para importar.";
+  return `Não conseguimos ler o link: gere um novo ${site} e cole aqui.`;
+}
+
+/** Leitura a cada 3 h (o cron roda de hora em hora e lê só o que passou disso). */
+export const HORAS_ENTRE_LEITURAS = 3;
+export function precisaLer(ultimaLeitura: string | null, agora: Date): boolean {
+  if (!ultimaLeitura) return true;
+  return agora.getTime() - Date.parse(ultimaLeitura) >= HORAS_ENTRE_LEITURAS * 3_600_000 - 10 * 60_000;
 }

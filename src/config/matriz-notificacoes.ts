@@ -80,6 +80,10 @@ export const MATRIZ_NOTIFICACOES = {
   parceiro_orcamento_recebido: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
   parceiro_entrega_feita: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
 
+  // Prompt 53: data importada do Airbnb/Booking cruza compromisso da Viva (o dono decide); link .ics parou de responder.
+  calendario_conflito: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+  calendario_falha: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+
   // ── Segurança (push permitido, sem interruptor) ───────────────────────────
   verification_ready: { categoria: "seguranca", papeis: ["morador"], canais: TODOS_OS_CANAIS },
   contract_signature_code: { categoria: "seguranca", papeis: DUAS_PARTES, canais: SO_EMAIL },

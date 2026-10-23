@@ -368,6 +368,7 @@ export async function listProperties(): Promise<Property[]> {
     await attachPetsRegras(supabase, mapped); // porte máximo de pet, para o filtro da busca (0119; best-effort)
     await attachInternet(supabase, mapped); // internet informada e medida, para o filtro da busca (Prompt 57 fase 2; best-effort)
     await attachNivel(supabase, mapped); // nível Essencial/Conforto/Premium, para o filtro "a partir de" (59.1; best-effort)
+    await attachBloqueios(supabase, mapped); // datas bloqueadas (do dono e importadas), para a data de entrada da busca (Prompt 53)
     return withDemos(mapped);
   } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
@@ -572,11 +573,34 @@ async function attachInternet(supabase: SupabaseLike, list: Property[]): Promise
 async function attachNivel(supabase: SupabaseLike, list: Property[]): Promise<void> {
   if (list.length === 0) return;
   try {
-    const { data } = await supabase.from("imovel_nivel").select("property_id, nivel").in("property_id", list.map((p) => p.id));
-    const porId = new Map(((data as { property_id: string; nivel: Property["nivel"] }[] | null) ?? []).map((r) => [r.property_id, r.nivel]));
-    for (const p of list) p.nivel = porId.get(p.id) ?? p.nivel ?? null;
+    const { data } = await supabase.from("imovel_nivel").select("property_id, nivel, nivel_vistoriado_em").in("property_id", list.map((p) => p.id));
+    const porId = new Map(((data as { property_id: string; nivel: Property["nivel"]; nivel_vistoriado_em: string | null }[] | null) ?? []).map((r) => [r.property_id, r]));
+    for (const p of list) {
+      const r = porId.get(p.id);
+      p.nivel = r?.nivel ?? p.nivel ?? null;
+      if (r?.nivel_vistoriado_em) p.nivelVistoriado = true;
+    }
   } catch {
     /* sem a 0211: ninguém tem nível e o filtro "a partir de" não acha ninguém */
+  }
+}
+
+/** Prompt 53: datas bloqueadas de hoje em diante (manuais e importadas), para a busca tirar o imóvel nessas datas. */
+async function attachBloqueios(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  try {
+    const hoje = new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10);
+    const { data } = await supabase.from("property_blocks").select("property_id, inicio, fim").in("property_id", list.map((p) => p.id)).gte("fim", hoje);
+    const porId = new Map<string, { inicio: string; fim: string }[]>();
+    for (const r of (data as { property_id: string; inicio: string; fim: string }[] | null) ?? []) {
+      porId.set(r.property_id, [...(porId.get(r.property_id) ?? []), { inicio: String(r.inicio), fim: String(r.fim) }]);
+    }
+    for (const p of list) {
+      const b = porId.get(p.id);
+      if (b) p.bloqueios = b;
+    }
+  } catch {
+    /* sem bloqueios lidos: a busca segue só pela data de disponibilidade */
   }
 }
 

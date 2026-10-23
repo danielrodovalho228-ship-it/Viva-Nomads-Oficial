@@ -8,7 +8,7 @@ import { chaveGoogle } from "@/lib/integrations/chave-google";
 import { UBERLANDIA_CENTER } from "@/lib/integrations/geocoding";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
-import { validarDestino } from "./regras";
+import { pontoAoSalvar, validarDestino } from "./regras";
 import { consultaDoPonto, pontosDoGoogle, pontosDoOsm, type PontoSugerido } from "./ponto";
 
 export type ResultadoDestino = { ok: boolean; erro?: string; mensagem?: string };
@@ -39,11 +39,17 @@ export async function salvarDestino(_: ResultadoDestino | null, form: FormData):
   const v = validarDestino(Object.fromEntries(form.entries()));
   if (!v.ok) return { ok: false, erro: v.erro };
   const d = v.destino;
-  const { data: existente } = await adm.db.from("destinos").select("id, ativo").eq("slug", d.slug).maybeSingle();
-  const semPonto = d.lat == null || d.lng == null;
-  const linha = { nome: d.nome, artigo: d.artigo, tipo: d.tipo, cidade: d.cidade, uf: d.uf, lat: d.lat, lng: d.lng };
+  const { data: existente } = await adm.db.from("destinos").select("id, ativo, lat, lng").eq("slug", d.slug).maybeSingle();
+  // E32: editar sem tocar nas coordenadas preserva o ponto e o "ativo"; só "Remover o ponto" (confirmado) apaga.
+  const ponto = pontoAoSalvar({
+    existente: existente ? { lat: existente.lat == null ? null : Number(existente.lat), lng: existente.lng == null ? null : Number(existente.lng) } : null,
+    enviado: { lat: d.lat, lng: d.lng },
+    limparPonto: form.get("limpar_ponto") === "1",
+  });
+  const semPonto = ponto.lat == null || ponto.lng == null;
+  const linha = { nome: d.nome, artigo: d.artigo, tipo: d.tipo, cidade: d.cidade, uf: d.uf, lat: ponto.lat, lng: ponto.lng };
   const { error } = existente
-    ? await adm.db.from("destinos").update({ ...linha, ...(semPonto ? { ativo: false } : {}) }).eq("id", existente.id)
+    ? await adm.db.from("destinos").update({ ...linha, ...(ponto.desativar ? { ativo: false } : {}) }).eq("id", existente.id)
     : await adm.db.from("destinos").insert({ ...linha, slug: d.slug, ativo: false, criado_por: adm.userId });
   if (error) {
     console.error("[salvarDestino]", error.code, error.message);

@@ -13,6 +13,8 @@ import { COLUNAS_PRECO, PORTES, ROTULO_PORTE, condicaoRetorno, condicoesParaLiga
 import { adminAbrirVerificacao, adminResolverBloqueio } from "@/lib/vistoria/laudo-actions";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistoria/strikes";
+import { laudoAtrasado } from "@/lib/vistoria/laudo";
+import { contagemContestacoes } from "@/lib/vistoria/telas-laudo";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
 import { comTesteConcluido, filaDaCidade } from "@/lib/vistoria/servidor";
 import { PENDENCIA_TESTE, contaComoAvaliadorAtivo } from "@/lib/vistoria/entrada";
@@ -61,6 +63,16 @@ export default async function AdminAvaliadoresPage() {
     ),
   );
   const trintaDias = new Date(agora.getTime() - 30 * 86_400_000).toISOString();
+  // Prompt 62-A, Parte 2: contestações em aberto (com o 2º avaliador), devoluções a devolver e laudos fora das 48 h úteis.
+  const [{ data: contestacoesAbertas }, { data: devolucoesAbertas }, { data: semLaudo }] = await Promise.all([
+    admin.from("vistoria_pedidos").select("id, cidade, status, criado_em, origem_pedido_id, avaliadores_credenciamento(numero_credenciado)").eq("tipo", "contestacao").in("status", ["pedido", "designado", "agendado", "realizada"]).order("criado_em").limit(50),
+    admin.from("vistoria_devolucoes").select("id, valor, prazo_ate, avaliadores_credenciamento(numero_credenciado)").is("recebido_confirmado_em", null).order("prazo_ate").limit(50),
+    admin.from("vistoria_pedidos").select("id, cidade, visita_concluida_em, avaliadores_credenciamento(numero_credenciado)").eq("status", "realizada").not("visita_concluida_em", "is", null).limit(100),
+  ]);
+  type ComNumero = { avaliadores_credenciamento: { numero_credenciado: string } | null };
+  const contestacoesLista = (contestacoesAbertas ?? []) as unknown as ({ id: string; cidade: string; status: string; criado_em: string; origem_pedido_id: string | null } & ComNumero)[];
+  const devolucoesLista = (devolucoesAbertas ?? []) as unknown as ({ id: string; valor: number; prazo_ate: string } & ComNumero)[];
+  const atrasadosLista = ((semLaudo ?? []) as unknown as ({ id: string; cidade: string; visita_concluida_em: string } & ComNumero)[]).filter((x) => laudoAtrasado(x.visita_concluida_em, null, agora));
   const [fila_rodizio, { data: recusas }, { data: perfisTeste }] = await Promise.all([
     filaDaCidade(admin),
     admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade)").in("resposta", ["recusada", "expirada", "ausencia"]).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
@@ -86,7 +98,11 @@ export default async function AdminAvaliadoresPage() {
     const ativos = lista.filter((c) => chaveCidade(c.cidade) === chaveCidade(cidade) && contaComoAvaliadorAtivo({ status: c.status, contaTeste: !!c.user_id && contasTeste.has(c.user_id) })).length;
     return { cidade, cond: condicoesParaLigar({ tabelaCompleta: tabelaCompleta(tabela, cidade, agora), avaliadoresAtivos: ativos, parecerItem14: VISTORIA_PARECER_14 }) };
   });
-  const numeros = contagemDecisoes({ credenciamentos: lista, semAvaliador: semAvaliador.length, recusasAusencias: recusasLista.length, cidadesProntas: condicoesPorCidade.filter((c) => c.cond.every((x) => x.ok)).length, cidades: cidades.length });
+  const numerosBase = contagemDecisoes({ credenciamentos: lista, semAvaliador: semAvaliador.length, recusasAusencias: recusasLista.length, cidadesProntas: condicoesPorCidade.filter((c) => c.cond.every((x) => x.ok)).length, cidades: cidades.length });
+  const numeros = [
+    ...numerosBase,
+    ...contagemContestacoes({ contestacoes: contestacoesLista.length, devolucoes: devolucoesLista.length, laudosAtrasados: atrasadosLista.length, auditoria: (auditoria ?? []).length }),
+  ];
   // Tabela: a linha vigente de cada cidade + porte (a mais recente) e o histórico.
   const vigentes = new Set<number>();
   {
@@ -104,7 +120,7 @@ export default async function AdminAvaliadoresPage() {
     <>
       <PageTitle title={TITULO_ADMIN} subtitle="Avaliação do imóvel por avaliador credenciado: o que decidir, a rede, o rodízio e a tabela de preço." />
       <Panel title="Para decidir" className="mb-6" data-testid="avaliacoes-decidir">
-        <ul className="grid gap-3 sm:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {numeros.map((n) => (
             <li key={n.chave}>
               <Link href={n.ancora} className="block rounded-xl border border-line p-4 hover:border-forest" data-testid={`decidir-numero-${n.chave}`} data-valor={n.valor}>
@@ -253,6 +269,54 @@ export default async function AdminAvaliadoresPage() {
         )}
       </Panel>
 
+      <Panel id="contestacoes" title="Contestações, devoluções e prazos do laudo" className="mb-6 scroll-mt-24" data-testid="avaliacoes-contestacoes">
+        <div className="grid gap-4 text-sm lg:grid-cols-3">
+          <div data-testid="contestacoes-abertas">
+            <h3 className="font-semibold text-ink">Contestações abertas</h3>
+            {contestacoesLista.length === 0 ? (
+              <p className="mt-1 text-muted">Nenhuma contestação aberta.</p>
+            ) : (
+              <ul className="mt-1 grid gap-1">
+                {contestacoesLista.map((x) => (
+                  <li key={x.id} data-testid="contestacao-item" data-status={x.status}>
+                    {x.cidade} · desde {dataBRT(x.criado_em)} · 2º avaliador: {x.avaliadores_credenciamento?.numero_credenciado ?? "a designar"}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div data-testid="devolucoes-abertas">
+            <h3 className="font-semibold text-ink">Devoluções a devolver</h3>
+            {devolucoesLista.length === 0 ? (
+              <p className="mt-1 text-muted">Nenhuma devolução pendente.</p>
+            ) : (
+              <ul className="mt-1 grid gap-1">
+                {devolucoesLista.map((d) => (
+                  <li key={d.id} data-testid="devolucao-item" data-vencida={new Date(d.prazo_ate) < agora ? "sim" : "nao"}>
+                    {d.avaliadores_credenciamento?.numero_credenciado ?? "Avaliador"} · {brl(Number(d.valor))} até {dataBRT(d.prazo_ate)}
+                    {new Date(d.prazo_ate) < agora ? <span className="font-semibold text-red-700"> · vencida</span> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div data-testid="laudos-atrasados">
+            <h3 className="font-semibold text-ink">Laudos fora das 48 horas úteis</h3>
+            {atrasadosLista.length === 0 ? (
+              <p className="mt-1 text-muted">Nenhum laudo atrasado.</p>
+            ) : (
+              <ul className="mt-1 grid gap-1">
+                {atrasadosLista.map((x) => (
+                  <li key={x.id} data-testid="laudo-atrasado-item">
+                    {x.avaliadores_credenciamento?.numero_credenciado ?? "Avaliador"} · {x.cidade} · visita em {dataBRT(x.visita_concluida_em)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </Panel>
+
       <Panel title="Fila da equipe" className="mb-6" data-testid="avaliadores-fila">
         {filaRestante.length === 0 ? (
           <p className="text-sm text-muted">Nada pendente.</p>
@@ -388,7 +452,7 @@ export default async function AdminAvaliadoresPage() {
         </ul>
       </Panel>
 
-      <Panel title="Auditoria (revisão humana dos laudos sorteados)" className="mb-6" data-testid="avaliadores-auditoria">
+      <Panel id="auditoria" title="Auditoria (revisão humana dos laudos sorteados)" className="mb-6 scroll-mt-24" data-testid="avaliadores-auditoria">
         {(auditoria ?? []).length === 0 ? (
           <p className="text-sm text-muted">Nenhum laudo sorteado esperando revisão.</p>
         ) : (

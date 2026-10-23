@@ -169,7 +169,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               <p className="mt-1 text-muted">{ROTAS_NIVEL[0].texto}</p>
               <a href="#nivel-itens" className="mt-2 inline-block font-semibold text-forest underline underline-offset-2">Ver os itens</a>
             </div>
-            <div className="rounded-xl border border-line p-4" data-testid="rota-avaliacao">
+            <div id="rota-avaliacao" className="rounded-xl border border-line p-4" data-testid="rota-avaliacao">
               <h3 className="font-semibold text-ink">{ROTAS_NIVEL[1].titulo}</h3>
               <p className="mt-1 text-muted">{ROTAS_NIVEL[1].texto}</p>
               <p className="mt-2 text-ink">Porte do anúncio: {ROTULO_PORTE[porte]}</p>

@@ -226,6 +226,13 @@ export default function FerramentasPage() {
                   ))}
                 </div>
               </div>
+              {/* Prompt 53: importar o calendário do Airbnb/Booking fica no calendário de cada imóvel (editor). */}
+              {g.id === "fechamento" && (
+                <Link href="/dashboard/imoveis" className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-forest underline underline-offset-4" data-testid="atalho-importar-calendario">
+                  Importar calendário do Airbnb ou Booking
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
               {/* Prompt 39-B1: o informe anual dos recibos, ao lado do simulador. */}
               {g.id === "analise" && (
                 <Link href="/dashboard/recibos#informe" className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-forest underline underline-offset-4" data-testid="atalho-informe-ir">

@@ -220,4 +220,25 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
       await ctx.close();
     }
   });
+
+  test("admin (E32): editar só o nome mantém o ponto e o ativo", async ({ browser }) => {
+    test.skip(!hasAccount("admin"), "sem conta admin de teste");
+    const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
+    const page = await ctx.newPage();
+    // Abre a lista primeiro e clica em "Editar" (o caminho do defeito: o formulário de cadastro já montado).
+    await page.goto("/admin/destinos", { waitUntil: "domcontentloaded" });
+    await page.locator(`[data-testid="destino-linha"][data-slug="lab-t261-${sufixo}"]`).getByRole("link", { name: "Editar" }).click();
+    const form = page.getByTestId("destino-form");
+    await expect(form.locator('input[name="slug"]')).toHaveValue(`lab-t261-${sufixo}`);
+    await expect(page.getByTestId("destino-lat")).toHaveValue(/^-18\.64/);
+    await expect(page.getByTestId("destino-lng")).toHaveValue(/^-48\.19/);
+    await form.getByLabel("Nome").fill(`Clínica Lab — Centro ${sufixo}`);
+    await page.getByTestId("salvar-destino").click();
+    await expect(form.getByRole("status")).toContainText("salvo.");
+    const { data } = await adm().from("destinos").select("nome, lat, lng, ativo").eq("id", ids.vazio!).single();
+    expect(data).toMatchObject({ nome: `Clínica Lab — Centro ${sufixo}`, ativo: true });
+    expect(Number(data!.lat)).toBeCloseTo(-18.64, 4);
+    expect(Number(data!.lng)).toBeCloseTo(-48.19, 4);
+    await ctx.close();
+  });
 });

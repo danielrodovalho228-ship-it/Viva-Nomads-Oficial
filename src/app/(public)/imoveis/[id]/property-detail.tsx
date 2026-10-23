@@ -63,6 +63,7 @@ import { SobreImovel } from "@/components/property/sobre-imovel";
 import { BomSaber } from "@/components/property/bom-saber";
 import { PadraoMinimoImovel } from "@/components/conforto/padrao-minimo-imovel";
 import { NivelImovel } from "@/components/niveis/nivel-imovel";
+import { AvaliacaoFicha } from "@/components/niveis/avaliacao-ficha";
 import type { Exibicao59 } from "@/lib/data/exibicao-59";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
@@ -795,6 +796,7 @@ export function PropertyDetail({
             <StayRules property={property} />
             <BomSaber property={property} />
             <NivelImovel dados={exibicao59?.nivel} />
+            <AvaliacaoFicha dados={exibicao59?.avaliacao} />
             <PadraoMinimoImovel confirmado={!!exibicao59?.confortoConfirmado} />
             <PrivacidadeAcesso privacidade={property.privacidade} />
           </div>
