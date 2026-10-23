@@ -1219,7 +1219,8 @@
         "publico"
       ],
       "specs": [
-        "t314-entrada-avaliador-62b3"
+        "t314-entrada-avaliador-62b3",
+        "t319-varredura-bloco10"
       ]
     },
     "/parceiros/fotografos": {
@@ -1776,7 +1777,8 @@
         "admin"
       ],
       "specs": [
-        "t313-ativacao-funil-50"
+        "t313-ativacao-funil-50",
+        "t319-varredura-bloco10"
       ]
     },
     "/admin/qualidade": {
@@ -1784,7 +1786,8 @@
         "admin"
       ],
       "specs": [
-        "t316-sair-da-viva-51"
+        "t316-sair-da-viva-51",
+        "t319-varredura-bloco10"
       ]
     }
   },
