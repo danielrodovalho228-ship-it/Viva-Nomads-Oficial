@@ -109,7 +109,8 @@ test("servidor: respeita notif_email e alerta_ativo, limite diário, idempotênc
 
 test("publicar dispara o alerta (criar e editar) e o cron diário manda o resumo", () => {
   const acoes = ler("src/lib/data/actions.ts");
-  assert.equal((acoes.match(/avisarBuscasDoImovel\(/g) ?? []).length, 2);
+  // Criar, editar e (64-B) reativar o anúncio pausado pelo dono.
+  assert.equal((acoes.match(/avisarBuscasDoImovel\(/g) ?? []).length, 3);
   assert.match(ler("src/app/api/cron/resumo-pedidos/route.ts"), /enviarResumosAlertaBusca\(\)/);
 });
 

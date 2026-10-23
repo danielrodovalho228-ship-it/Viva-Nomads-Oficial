@@ -41,6 +41,8 @@ export function EtapaRevisar(p: {
   irPara: (i: number) => void;
   aceitouIa: boolean;
   setAceitouIa: (v: boolean) => void;
+  /** 64-B: o texto mudou depois do aceite — aviso logo acima da caixa. */
+  avisoAceite?: string | null;
   conforto: string[];
   publishError: string | null;
   podePublicar: boolean;
@@ -158,6 +160,11 @@ export function EtapaRevisar(p: {
         )}
       </div>
 
+      {p.avisoAceite && (
+        <p role="status" className="text-sm font-medium text-ink" data-testid="aceite-ia-aviso">
+          {p.avisoAceite}
+        </p>
+      )}
       <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
         <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-forest" />
         <span>{TERMO_IA_TEXTO}</span>

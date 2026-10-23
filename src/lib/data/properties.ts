@@ -427,6 +427,19 @@ async function getPropertySemCache(id: string): Promise<Property | undefined> {
 export const getProperty = cache(getPropertySemCache);
 
 /**
+ * 64-B: anúncio PAUSADO por URL direta (link já compartilhado, favorito, push): não é 404 — a página diz "Este anúncio
+ * está pausado", só com o título e a cidade (sem preço, sem foto, sem botão de pedido). Rascunho continua 404.
+ */
+export const anuncioPausadoPublico = cache(async (id: string): Promise<{ id: string; titulo: string; cidade: string | null } | null> => {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("properties").select("id, title, city").eq("id", id).eq("status", "paused").maybeSingle();
+  const p = data as { id: string; title: string | null; city: string | null } | null;
+  return p ? { id: p.id, titulo: p.title ?? "Anúncio", cidade: p.city } : null;
+});
+
+/**
  * Carrega um imóvel do PRÓPRIO dono para edição — qualquer status (inclusive
  * rascunho/pausado), com o cliente autenticado (a RLS garante que só o dono lê o
  * dele). Em modo demonstração, cai no imóvel de exemplo de mesmo id.

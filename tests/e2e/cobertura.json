@@ -516,7 +516,8 @@
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
         "t310-vao-fim-de-pagina",
-        "t318-papel-ativo-fonte-unica"
+        "t318-papel-ativo-fonte-unica",
+        "t320-pausar-anuncio-64b"
       ]
     },
     "/dashboard/assinatura": {
@@ -750,7 +751,8 @@
         "t198-rodape-painel-390",
         "t268-meus-imoveis-link",
         "t286-esqueletos-vazios-48",
-        "t318-papel-ativo-fonte-unica"
+        "t318-papel-ativo-fonte-unica",
+        "t320-pausar-anuncio-64b"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -761,7 +763,8 @@
         "t151-modo-app-iphone",
         "t153-limpeza-estadia",
         "t212-ferramentas-proprietario",
-        "t211-complemento-23"
+        "t211-complemento-23",
+        "t320-pausar-anuncio-64b"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -780,7 +783,8 @@
         "t269-anunciar-barra-fotos",
         "t270-barra-fotos-etapa-fotos",
         "t288-padrao-minimo-59a",
-        "t296-niveis-exibicao-59-1"
+        "t296-niveis-exibicao-59-1",
+        "t320-pausar-anuncio-64b"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1171,7 +1175,8 @@
         "t296-niveis-exibicao-59-1",
         "t304-airbnb-exibicao-61a",
         "t311-marco-principal-unico",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t320-pausar-anuncio-64b"
       ]
     },
     "/modelodenegocio": {
@@ -1214,7 +1219,8 @@
         "publico"
       ],
       "specs": [
-        "t314-entrada-avaliador-62b3"
+        "t314-entrada-avaliador-62b3",
+        "t319-varredura-bloco10"
       ]
     },
     "/parceiros/fotografos": {
@@ -1774,7 +1780,8 @@
         "admin"
       ],
       "specs": [
-        "t313-ativacao-funil-50"
+        "t313-ativacao-funil-50",
+        "t319-varredura-bloco10"
       ]
     },
     "/admin/qualidade": {
@@ -1782,7 +1789,8 @@
         "admin"
       ],
       "specs": [
-        "t316-sair-da-viva-51"
+        "t316-sair-da-viva-51",
+        "t319-varredura-bloco10"
       ]
     }
   },
@@ -2488,6 +2496,14 @@
       ],
       "specs": []
     },
+    "src/lib/data/actions.ts#emAndamentoDoAnuncio": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t320-pausar-anuncio-64b"
+      ]
+    },
     "src/lib/data/actions.ts#enviarDocumentoParaConferencia": {
       "personas": [
         "proprietario"
@@ -2524,6 +2540,30 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/actions.ts#minhaSituacaoLimite": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t320-pausar-anuncio-64b"
+      ]
+    },
+    "src/lib/data/actions.ts#pausarAnuncio": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t320-pausar-anuncio-64b"
+      ]
+    },
+    "src/lib/data/actions.ts#reativarAnuncio": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t320-pausar-anuncio-64b"
+      ]
     },
     "src/lib/data/actions.ts#registrarContrato": {
       "personas": [

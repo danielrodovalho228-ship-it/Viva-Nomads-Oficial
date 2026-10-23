@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
-import { getProperty, listProperties } from "@/lib/data/properties";
+import { anuncioPausadoPublico, getProperty, listProperties } from "@/lib/data/properties";
+import { AnuncioPausado } from "@/components/anuncio/anuncio-pausado";
 import { isDemoMode } from "@/lib/env";
 import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
 import { tituloAbaImovel, descricaoAbaImovel } from "@/lib/anuncio/metadados-imovel";
@@ -23,7 +24,10 @@ interface Params {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const property = await getProperty(id);
-  if (!property) return { title: "Página não encontrada", robots: { index: false, follow: false } };
+  if (!property) {
+    const pausado = await anuncioPausadoPublico(id);
+    return pausado ? { title: `${pausado.titulo} (pausado)`, robots: { index: false, follow: true } } : { title: "Página não encontrada", robots: { index: false, follow: false } };
+  }
 
   const title = tituloAbaImovel(property);
   const description = descricaoAbaImovel(property);
@@ -59,7 +63,11 @@ export function generateStaticParams() {
 export default async function PropertyDetailPage({ params }: Params) {
   const { id } = await params;
   const property = await getProperty(id);
-  if (!property) notFound();
+  if (!property) {
+    const pausado = await anuncioPausadoPublico(id);
+    if (pausado) return <AnuncioPausado titulo={pausado.titulo} cidade={pausado.cidade} />;
+    notFound();
+  }
 
   const [similares, proprietario, exibicao59, autores] = await Promise.all([
     listProperties(),

@@ -91,6 +91,7 @@ async function sessao() {
 interface ImovelProposta {
   id: string;
   owner_id: string;
+  status?: string | null;
   title: string;
   monthly_price: number;
   min_period_days: number | null;
@@ -110,7 +111,7 @@ async function lerImovel(admin: Admin, propertyId: string): Promise<ImovelPropos
   const { data } = await admin
     .from("properties")
     .select(
-      "id, owner_id, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao",
+      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao",
     )
     .eq("id", propertyId)
     .maybeSingle();
@@ -332,6 +333,8 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
 
   const im = await lerImovel(s.admin, lead.property_id as string);
   if (!im || im.owner_id !== s.user.id) return { ok: false, error: "Imóvel não encontrado." };
+  // 64-B: anúncio pausado não recebe proposta nova (as candidaturas abertas continuam e seguem nas mensagens).
+  if (im.status === "paused") return { ok: false, error: "Este anúncio está pausado: reative para enviar uma proposta nova. As candidaturas abertas continuam nas mensagens." };
   const neg = normalizarNegociacao(im.negociacao);
   const meses = Math.round(num(e.meses));
   const termos: TermosProposta = {

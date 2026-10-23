@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { calcularTudoIncluido } from "@/lib/precos";
+import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
 const STATUS_META: Record<PropertyStatus, { label: string; tone: string }> = {
@@ -35,7 +36,7 @@ const hasPhoto = (s?: string) =>
  * Lista "Meus imóveis". Em modo demonstração (admin) a fonte vira o seed em
  * memória (8 imóveis fictícios); desligado, volta à lista real do servidor.
  */
-export function MyPropertiesClient({ properties: real, prontidao = {} }: { properties: Property[]; prontidao?: Record<string, Prontidao> }) {
+export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = {} }: { properties: Property[]; prontidao?: Record<string, Prontidao>; pausas?: Record<string, string | null> }) {
   const { on: demoOn } = useDemoMode();
   // Ids excluídos nesta sessão (rascunhos descartados) — some da lista na hora.
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
@@ -110,14 +111,12 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                 )}
                 <div className="flex flex-1 flex-col">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        "rounded-full px-3 py-1 text-xs font-medium",
-                        STATUS_META[p.status].tone
-                      )}
-                    >
-                      {STATUS_META[p.status].label}
-                    </span>
+                    {/* 64-B: o selo vira o menu de pausa (demonstração: só o selo). */}
+                    {demoItem ? (
+                      <span className={cn("rounded-full px-3 py-1 text-xs font-medium", STATUS_META[p.status].tone)}>{STATUS_META[p.status].label}</span>
+                    ) : (
+                      <EstadoDoAnuncio id={p.id} status={p.status} motivo={pausas[p.id] ?? null} />
+                    )}
                     <span className="inline-flex items-center gap-1 rounded-full border border-sage-200 px-3 py-1 text-xs font-medium text-ink">
                       {p.ownershipType !== "own" ? (
                         <>

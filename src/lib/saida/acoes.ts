@@ -87,7 +87,7 @@ export async function pausarConta(): Promise<Res> {
     console.error("[pausarConta]", error.code, error.message);
     return { ok: false, erro: "Não foi possível pausar agora. Tente de novo." };
   }
-  await s.admin.from("properties").update({ status: "paused", pausado_pela_conta: true }).eq("owner_id", s.uid).eq("status", "active");
+  await s.admin.from("properties").update({ status: "paused", pausado_pela_conta: true, pausa_motivo: "conta" }).eq("owner_id", s.uid).eq("status", "active");
   await s.admin.from("parceiros").update({ status: "pausado", pausado_pela_conta: true }).eq("user_id", s.uid).eq("status", "publicado");
   revalidarConta();
   return { ok: true, mensagem: "Conta pausada. Para voltar, toque em \"Reativar minha conta\" no topo do painel." };
