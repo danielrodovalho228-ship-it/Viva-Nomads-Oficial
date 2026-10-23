@@ -8,6 +8,7 @@
 */
 import type { Nivel, NivelOuAdequacao } from "../../config/niveis.ts";
 import { nivelAoMenos } from "../niveis/regras.ts";
+import { rotuloFiltroNivel } from "./filtro-nivel.ts";
 import { ROTULO_COMODIDADE, passaComodidades, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
@@ -231,6 +232,8 @@ export function resumoFiltros(f: FiltrosPainel): string {
   const internet = rotuloFiltroInternet(f);
   if (internet) partes.push(internet);
   if (f.readyToLiveOnly) partes.push("Pronto para Morar");
+  const nivel = rotuloFiltroNivel(f.nivelMin);
+  if (nivel) partes.push(nivel);
   for (const c of f.comodidades) partes.push(ROTULO_COMODIDADE[c]);
   if (f.garantia) partes.push(ROTULO_GARANTIA[f.garantia] ?? "Garantia");
   if (f.notaOnly) partes.push("Nota Fiscal");

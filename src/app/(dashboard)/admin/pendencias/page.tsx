@@ -4,7 +4,7 @@ import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives"
 import { ButtonLink } from "@/components/ui/button";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { centralDePendencias } from "@/lib/data/central-pendencias";
-import { FILTROS_CENTRAL, ehFiltroCentral, idadeHoras, textoPrazo, type LinhaCentral } from "@/lib/admin/central-pendencias";
+import { FILTROS_CENTRAL, ehFiltroCentral, hrefCentral, idadeHoras, textoPrazo, type FiltroCentral, type LinhaCentral } from "@/lib/admin/central-pendencias";
 import { haQuantoTempo } from "@/lib/admin/decisoes-admin";
 import { DecidirContestacao } from "@/components/admin/decidir-contestacao";
 import { AnalisarFotoNivel } from "@/components/admin/analisar-foto-nivel";
@@ -17,7 +17,12 @@ export const dynamic = "force-dynamic";
 const ROTULO_GRAVIDADE = { alta: "Alta", media: "Média", baixa: "Baixa" } as const;
 // Selo do admin: pill branca com texto (vermelho/âmbar só para o estado).
 const COR_GRAVIDADE = { alta: "text-red-700", media: "text-amber-800", baixa: "text-muted" } as const;
-const CHIP = "rounded-full border bg-white px-3 py-2 text-sm";
+
+const LADOS = [
+  { lado: "equipe", titulo: "Decide a equipe da Viva" },
+  { lado: "proprietario", titulo: "Esperando o proprietário" },
+  { lado: "morador", titulo: "Esperando o morador" },
+] as const;
 
 /**
  * Admin → Central de Pendências (Adendo 59.1, item 6): uma fila com filtros. Amplia o topo de decisões (mesma contagem):
@@ -48,22 +53,7 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
       )}
       {central && (
         <>
-          <nav className="mb-4 flex flex-wrap gap-2" aria-label="Filtros da central">
-            <Link href="/admin/pendencias" className={`${CHIP} ${!filtro ? "border-forest font-semibold text-forest" : "border-line text-ink"}`} data-testid="central-filtro-todos" data-n={central.total}>
-              Todas · {central.total}
-            </Link>
-            {FILTROS_CENTRAL.map((f) => (
-              <Link
-                key={f.chave}
-                href={`/admin/pendencias?filtro=${f.chave}`}
-                className={`${CHIP} ${filtro === f.chave ? "border-forest font-semibold text-forest" : "border-line text-ink"}`}
-                data-testid={`central-filtro-${f.chave}`}
-                data-n={central.contagens[f.chave]}
-              >
-                {f.rotulo} · {central.contagens[f.chave]}
-              </Link>
-            ))}
-          </nav>
+          <DecisoesDaCentral contagens={central.contagens} total={central.total} filtro={filtro} />
           <Panel title={filtro ? FILTROS_CENTRAL.find((f) => f.chave === filtro)!.rotulo : "Todas as pendências"}>
             {central.linhas.length === 0 ? (
               <EmptyState
@@ -96,6 +86,47 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
         <RodarPrazos laboratorio={integracoesSimuladas()} />
       </Panel>
     </div>
+  );
+}
+
+/**
+ * Adendo 59.1, Parte A — "decisões primeiro" (padrão do Prompt 46): no topo, o que espera decisão, uma linha por fila com
+ * a contagem e o botão que abre a fila. A equipe decide primeiro; depois o que espera o proprietário e o morador.
+ * As filas do 59-A (manutenção fora do prazo e contestações) são filtros daqui.
+ */
+function DecisoesDaCentral({ contagens, total, filtro }: { contagens: Record<FiltroCentral, number>; total: number; filtro: FiltroCentral | null }) {
+  return (
+    <section aria-labelledby="central-decisoes-titulo" className="mb-8" data-testid="central-decisoes" data-total={total}>
+      <h2 id="central-decisoes-titulo" className="font-title text-2xl font-semibold text-ink sm:text-[28px]">
+        {total === 0 ? "Nada pendente agora" : total === 1 ? "1 pendência esperando ação" : `${total} pendências esperando ação`}
+      </h2>
+      {LADOS.map(({ lado, titulo }) => {
+        const filas = FILTROS_CENTRAL.filter((f) => f.lado === lado && contagens[f.chave] > 0);
+        if (!filas.length) return null;
+        return (
+          <div key={lado} className="mt-4" data-testid={`central-lado-${lado}`}>
+            <p className="text-xs font-semibold text-muted">{titulo}</p>
+            <ul className="mt-1 divide-y divide-line border-y border-line">
+              {filas.map((f) => (
+                <li key={f.chave} className="flex flex-wrap items-center justify-between gap-3 py-3" data-decisao={f.chave} data-ativo={filtro === f.chave ? "1" : "0"}>
+                  <span className={`min-w-0 ${filtro === f.chave ? "font-semibold text-forest" : "font-semibold text-ink"}`}>
+                    <span className="tabular-nums">{contagens[f.chave]}</span> · {f.rotulo}
+                  </span>
+                  <ButtonLink href={hrefCentral(f.chave)} variant="secondary" size="sm" data-testid={`central-filtro-${f.chave}`} data-n={contagens[f.chave]}>
+                    Abrir
+                  </ButtonLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+      {filtro && (
+        <Link href="/admin/pendencias" className="mt-3 inline-block text-sm text-forest underline" data-testid="central-filtro-todos" data-n={total}>
+          Ver todas as pendências
+        </Link>
+      )}
+    </section>
   );
 }
 

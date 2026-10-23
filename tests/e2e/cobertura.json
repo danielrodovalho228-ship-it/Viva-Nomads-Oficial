@@ -358,7 +358,8 @@
         "t232-pedido-moradia-completo",
         "t237-correcoes-35a",
         "t267-buscar-fotos-cartao",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t296-niveis-exibicao-59-1"
       ]
     },
     "/cidades": {
@@ -477,7 +478,8 @@
         "t212-ferramentas-proprietario",
         "t211-complemento-23",
         "t266-painel-42",
-        "t288-padrao-minimo-59a"
+        "t288-padrao-minimo-59a",
+        "t296-niveis-exibicao-59-1"
       ]
     },
     "/dashboard/assinatura": {
@@ -731,7 +733,8 @@
         "t207-cep-matricula-identidade",
         "t269-anunciar-barra-fotos",
         "t270-barra-fotos-etapa-fotos",
-        "t288-padrao-minimo-59a"
+        "t288-padrao-minimo-59a",
+        "t296-niveis-exibicao-59-1"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1093,7 +1096,8 @@
         "t221-contrato-estado-periodo",
         "t237-correcoes-35a",
         "t286-esqueletos-vazios-48",
-        "t288-padrao-minimo-59a"
+        "t288-padrao-minimo-59a",
+        "t296-niveis-exibicao-59-1"
       ]
     },
     "/modelodenegocio": {
@@ -1543,7 +1547,8 @@
         "admin"
       ],
       "specs": [
-        "t295-niveis-59-1"
+        "t295-niveis-59-1",
+        "t296-niveis-exibicao-59-1"
       ]
     },
     "/dashboard/imoveis/[id]/nivel": {
@@ -1551,7 +1556,8 @@
         "proprietario"
       ],
       "specs": [
-        "t295-niveis-59-1"
+        "t295-niveis-59-1",
+        "t296-niveis-exibicao-59-1"
       ]
     }
   },
@@ -4798,7 +4804,8 @@
         "proprietario"
       ],
       "specs": [
-        "t295-niveis-59-1"
+        "t295-niveis-59-1",
+        "t296-niveis-exibicao-59-1"
       ]
     },
     "src/lib/data/nivel-actions.ts#salvarRuido": {
@@ -4808,6 +4815,14 @@
       ],
       "specs": [
         "t295-niveis-59-1"
+      ]
+    },
+    "src/lib/data/nivel-cadastro-actions.ts#entradaNivelDoCadastro": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t296-niveis-exibicao-59-1"
       ]
     }
   }

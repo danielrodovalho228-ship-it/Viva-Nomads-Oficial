@@ -86,6 +86,7 @@ const ADMIN: ItemDoPapel[] = [
         rotulo: "Operação",
         icone: "operacao",
         filhos: [
+          { id: "admin-pendencias", rotulo: "Central de pendências", icone: "solicitacoes", href: "/admin/pendencias" },
           { id: "admin-pedidos", rotulo: "Moderar pedidos", icone: "pedidos", href: "/admin/pedidos" },
           { id: "admin-ajuda-publicacao", rotulo: "Publicamos para você", icone: "documentos", href: "/admin/ajuda-publicacao" },
           { id: "admin-documentos", rotulo: "Documentos", icone: "documentos", href: "/admin/documentos" },

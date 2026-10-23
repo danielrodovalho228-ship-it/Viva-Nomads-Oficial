@@ -14,6 +14,7 @@ import {
 import { COMODIDADES_FILTRO } from "@/lib/busca/filtro-comodidades";
 import { CHIPS_INTERNET, rotuloVerNaoMedidos } from "@/lib/busca/filtro-internet";
 import { ROTULO_DATAS_FLEXIVEIS } from "@/lib/busca/datas-flexiveis";
+import { NIVEIS, ROTULO_NIVEL } from "@/config/niveis";
 import { buttonClasses } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Chip } from "@/components/ui/chip";
@@ -161,6 +162,15 @@ export function FolhaFiltros({
             </Chip>
           </Grupo>
         )}
+        {/* Adendo 59.1: "a partir de" — Conforto mostra Conforto e Premium. A contagem de cada chip é ao vivo, com os
+            outros filtros do rascunho. Nível não muda a ordem da lista. */}
+        <Grupo titulo="Nível a partir de" testId="painel-nivel">
+          {NIVEIS.map((v) => (
+            <Chip key={v} ativo={rascunho.nivelMin === v} onClick={() => muda("nivelMin", rascunho.nivelMin === v ? "" : v)} data-testid={`filtro-nivel-${v}`}>
+              {ROTULO_NIVEL[v]} <span className="tabular-nums text-muted" data-testid={`filtro-nivel-${v}-n`}>· {contar({ ...rascunho, nivelMin: v })}</span>
+            </Chip>
+          ))}
+        </Grupo>
         <Grupo titulo="Internet medida a partir de" testId="painel-internet">
           {CHIPS_INTERNET.map((v) => (
             <Chip key={v} ativo={rascunho.internetMin === v} onClick={() => alterna("internetMin", v)}>
