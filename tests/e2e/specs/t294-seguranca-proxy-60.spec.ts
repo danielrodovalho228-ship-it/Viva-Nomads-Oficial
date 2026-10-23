@@ -88,8 +88,9 @@ test.describe("T294 — proxy e uploads depois da subida do Next (Prompt 60)", (
     test.use({ storageState: authFile("inquilino") });
 
     test("não entra no /admin e a API do admin recusa (403)", async ({ page, request }) => {
-      await page.goto("/admin");
-      expect(new URL(page.url()).pathname).not.toMatch(/^\/admin/);
+      // Não-admin: o proxy reescreve para a página 404 (src/proxy.ts) e a URL continua /admin; vale o status.
+      const resp = await page.goto("/admin");
+      expect(resp?.status()).toBe(404);
       for (const { metodo, rota } of API_ADMIN) {
         const r = await request[metodo](rota, { data: metodo === "post" ? {} : undefined, failOnStatusCode: false });
         expect([401, 403], `${metodo.toUpperCase()} ${rota}`).toContain(r.status());
