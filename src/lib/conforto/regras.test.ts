@@ -3,7 +3,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { CHAVES_CONFORTO, ITENS_CONFORTO, PRAZO_ADEQUACAO_DIAS, VERSAO_CONFORTO } from "../../config/conforto-minimo.ts";
 import {
   CONFIRMACAO_PENDENCIA_H,
@@ -33,15 +33,31 @@ const H = 3_600_000;
 const D = 86_400_000;
 const todas: { chave: string; confirmado: boolean; versao_lista: number }[] = CHAVES_CONFORTO.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }));
 
-test("lista única: 10 itens com chave, rótulo e critério; ar-condicionado não é exigido (D5)", () => {
+test("lista única: 12 itens (versão 2, Adendo 59.1) com chave, rótulo e critério; ar-condicionado não é exigido (D5)", () => {
   assert.deepEqual([...CHAVES_CONFORTO], [
     "cama_colchao", "roupa_cama_banho", "agua_quente", "cozinha_basica", "ventilacao_quartos",
     "iluminacao", "fechadura_entrada", "entrega_limpa", "internet_informada", "mobilia_das_fotos",
+    "lavanderia_acesso", "apoio_cama",
   ]);
   for (const i of ITENS_CONFORTO) assert.ok(i.rotulo && i.criterio && i.desdeVersao >= 1, i.chave);
   const vent = ITENS_CONFORTO.find((i) => i.chave === "ventilacao_quartos")!;
   assert.match(vent.criterio, /Ar-condicionado não é exigido/);
-  assert.equal(VERSAO_CONFORTO, 1);
+  assert.equal(VERSAO_CONFORTO, 2);
+  // Revisão 1: 2 toalhas de banho por pessoa; apoio junto à cama com mesa/apoio, luz de leitura e tomada.
+  assert.match(ITENS_CONFORTO.find((i) => i.chave === "roupa_cama_banho")!.criterio, /2 toalhas de banho por pessoa/);
+  assert.match(ITENS_CONFORTO.find((i) => i.chave === "apoio_cama")!.criterio, /mesa de cabeceira ou apoio, luz de leitura e tomada/);
+});
+
+test("versão 2: quem confirmou na versão 1 reconfirma só o que entrou ou mudou (2 novos + roupa de cama e banho)", () => {
+  const v1 = CHAVES_CONFORTO.filter((k) => !["lavanderia_acesso", "apoio_cama"].includes(k)).map((chave) => ({ chave, confirmado: true, versao_lista: 1 }));
+  assert.deepEqual(itensFaltantes(v1), ["roupa_cama_banho", "lavanderia_acesso", "apoio_cama"]);
+  // Sem versão gravada conta como versão 1.
+  assert.deepEqual(itensFaltantes(v1.map(({ chave, confirmado }) => ({ chave, confirmado }))), ["roupa_cama_banho", "lavanderia_acesso", "apoio_cama"]);
+  const reconfirmado = v1.map((d) => (d.chave === "roupa_cama_banho" ? { ...d, versao_lista: 2 } : d)).concat([
+    { chave: "lavanderia_acesso", confirmado: true, versao_lista: 2 },
+    { chave: "apoio_cama", confirmado: true, versao_lista: 2 },
+  ]);
+  assert.deepEqual(itensFaltantes(reconfirmado), []);
 });
 
 test("versão da lista: item novo pede reconfirmação só dele; os confirmados antes continuam valendo", () => {
@@ -52,7 +68,7 @@ test("versão da lista: item novo pede reconfirmação só dele; os confirmados 
   // Desconfirmado conta como faltando.
   assert.deepEqual(itensFaltantes(todas.map((d) => (d.chave === "iluminacao" ? { ...d, confirmado: false } : d))), ["iluminacao"]);
   const linhas = linhasConfirmacao("p1", ["agua_quente", "agua_quente", "invasor"], "dono", AGORA);
-  assert.deepEqual(linhas, [{ property_id: "p1", chave: "agua_quente", confirmado: true, confirmado_por: "dono", confirmado_em: AGORA.toISOString(), versao_lista: 1 }]);
+  assert.deepEqual(linhas, [{ property_id: "p1", chave: "agua_quente", confirmado: true, confirmado_por: "dono", confirmado_em: AGORA.toISOString(), versao_lista: 2 }]);
 });
 
 test("bloqueio de publicação: 1 item faltando recusa com a lista do que falta", () => {
@@ -62,7 +78,7 @@ test("bloqueio de publicação: 1 item faltando recusa com a lista do que falta"
   assert.ok(!r.ok && r.faltantes.length === 1 && r.faltantes[0] === "fechadura_entrada");
   assert.ok(!r.ok && r.erro === "Para publicar, confirme o padrão mínimo de conforto: Fechadura na entrada.");
   const nada = podePublicarConforto([]);
-  assert.ok(!nada.ok && nada.faltantes.length === 10);
+  assert.ok(!nada.ok && nada.faltantes.length === 12);
 });
 
 test("anúncio já publicado: 30 dias, lembretes aos 15 e aos 3 dias, sai da busca no dia 31 e volta ao confirmar", () => {
@@ -83,7 +99,7 @@ test("anúncio já publicado: 30 dias, lembretes aos 15 e aos 3 dias, sai da bus
   assert.equal(e.aviso, `Confirme o padrão mínimo até ${new Date(prazo).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`);
   assert.equal(estadoConfortoMinimo(todas.slice(0, 9), prazo, dia31).situacao, "vencido");
   assert.equal(estadoConfortoMinimo(todas, prazo, dia31).situacao, "completo");
-  assert.deepEqual(estadoConfortoMinimo([], null, AGORA).faltantes.length, 10);
+  assert.deepEqual(estadoConfortoMinimo([], null, AGORA).faltantes.length, 12);
 });
 
 test("conferência de entrada: todos os itens respondidos; 'não confere' pede texto curto, foto opcional; ordem fixa", () => {
@@ -169,10 +185,15 @@ test("nada financeiro (D7): as regras do padrão mínimo e da manutenção não 
   }
 });
 
-test("GUARDA: a lista do banco (conforto_chaves, migração 0210) é a mesma de src/config/conforto-minimo.ts", () => {
-  const sql = readFileSync(new URL("../../../supabase/migrations/0210_conforto_manutencao.sql", import.meta.url), "utf8");
-  const bloco = sql.match(/select array\[([\s\S]*?)\]::text\[\]/)![1];
+test("GUARDA: a lista do banco (conforto_chaves e conforto_versoes, última migração que as define) é a de src/config/conforto-minimo.ts", () => {
+  const pasta = new URL("../../../supabase/migrations/", import.meta.url);
+  const ultima = readdirSync(pasta).filter((f) => f.endsWith(".sql")).sort().reverse()
+    .map((f) => readFileSync(new URL(f, pasta), "utf8"))
+    .find((sql) => sql.includes("function public.conforto_chaves()"))!;
+  const bloco = ultima.match(/function public\.conforto_chaves\(\)[\s\S]*?select array\[([\s\S]*?)\]::text\[\]/)![1];
   assert.deepEqual([...bloco.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]), [...CHAVES_CONFORTO]);
+  const versoes = JSON.parse(ultima.match(/function public\.conforto_versoes\(\)[\s\S]*?select '(\{[^']*\})'::jsonb/)![1]) as Record<string, number>;
+  assert.deepEqual(versoes, Object.fromEntries(ITENS_CONFORTO.filter((i) => i.desdeVersao > 1).map((i) => [i.chave, i.desdeVersao])));
 });
 
 test("GUARDA: os seeds do laboratório confirmam a mesma lista (anúncios do seed publicam e a varredura não muda)", () => {
@@ -180,5 +201,25 @@ test("GUARDA: os seeds do laboratório confirmam a mesma lista (anúncios do see
     const js = readFileSync(new URL(f, import.meta.url), "utf8");
     const bloco = js.match(/const CHAVES_CONFORTO = \[([^\]]*)\]/)![1];
     assert.deepEqual([...bloco.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]), [...CHAVES_CONFORTO], f);
+    assert.match(js, new RegExp(`versao_lista: ${VERSAO_CONFORTO} \\}`), `${f}: confirma na versão atual da lista`);
   }
+});
+
+test("GUARDA (lista v2): toda leitura de conforto_declaracoes traz versao_lista — sem ela, a confirmação da v2 contaria como v1", () => {
+  const raiz = new URL("../../", import.meta.url);
+  const arquivos: string[] = [];
+  const varrer = (dir: URL) => {
+    for (const nome of readdirSync(dir, { withFileTypes: true })) {
+      const u = new URL(nome.name + (nome.isDirectory() ? "/" : ""), dir);
+      if (nome.isDirectory()) varrer(u);
+      else if (/\.tsx?$/.test(nome.name) && !/\.test\./.test(nome.name)) arquivos.push(u.pathname);
+    }
+  };
+  varrer(raiz);
+  const sem: string[] = [];
+  for (const f of arquivos) {
+    const src = readFileSync(f, "utf8");
+    for (const m of src.matchAll(/from\("conforto_declaracoes"\)\s*\.select\("([^"]*)"\)/g)) if (!m[1].includes("versao_lista")) sem.push(`${f.replace(/.*\/src\//, "src/")}: ${m[1]}`);
+  }
+  assert.deepEqual(sem, []);
 });

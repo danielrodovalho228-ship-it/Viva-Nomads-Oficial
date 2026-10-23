@@ -3,6 +3,7 @@
   Os campos restritos (resultado da matrícula, CAF) só existem aqui no servidor: ao cliente vão a nota,
   os selos e os motivos, nunca a linha.
 */
+import type { NivelOuAdequacao } from "../../config/niveis.ts";
 import { ehAnuncioDeTeste } from "../data/anuncio-teste.ts";
 import type { SinaisAnuncio } from "./ordem.ts";
 
@@ -41,6 +42,8 @@ export interface ExtrasDoServidor {
   manutencaoFora90d?: number;
   /** Pendências do padrão mínimo abertas, contestadas ou vencidas (sinal "imóvel diferente do anúncio"). */
   confortoPendenciasAbertas?: number;
+  /** Adendo 59.1: nível gravado (imovel_nivel). */
+  nivel?: NivelOuAdequacao | null;
 }
 
 const n = (v: number | string | null | undefined) => (v == null || v === "" ? 0 : Number(v) || 0);
@@ -74,5 +77,6 @@ export function sinaisDaLinha(l: LinhaRankingSinais, extras: ExtrasDoServidor): 
     confortoProcedentes12m: extras.confortoProcedentes12m ?? 0,
     manutencaoFora90d: extras.manutencaoFora90d ?? 0,
     confortoPendenciasAbertas: extras.confortoPendenciasAbertas ?? 0,
+    nivel: extras.nivel ?? null,
   };
 }

@@ -240,12 +240,12 @@ async function criarImovel(ownerId, i, fotos, extra = {}) {
 }
 
 // Prompt 59: os 10 itens do padrão mínimo (src/config/conforto-minimo.ts; a lista é conferida em src/lib/conforto/regras.test.ts).
-const CHAVES_CONFORTO = ["cama_colchao", "roupa_cama_banho", "agua_quente", "cozinha_basica", "ventilacao_quartos", "iluminacao", "fechadura_entrada", "entrega_limpa", "internet_informada", "mobilia_das_fotos"];
+const CHAVES_CONFORTO = ["cama_colchao", "roupa_cama_banho", "agua_quente", "cozinha_basica", "ventilacao_quartos", "iluminacao", "fechadura_entrada", "entrega_limpa", "internet_informada", "mobilia_das_fotos", "lavanderia_acesso", "apoio_cama"];
 async function confirmarConforto(ownerId, propertyId) {
   const agora = new Date().toISOString();
   const { error } = await admin
     .from("conforto_declaracoes")
-    .upsert(CHAVES_CONFORTO.map((chave) => ({ property_id: propertyId, chave, confirmado: true, confirmado_por: ownerId, confirmado_em: agora, versao_lista: 1 })), { onConflict: "property_id,chave" });
+    .upsert(CHAVES_CONFORTO.map((chave) => ({ property_id: propertyId, chave, confirmado: true, confirmado_por: ownerId, confirmado_em: agora, versao_lista: 2 })), { onConflict: "property_id,chave" });
   if (error) throw new Error(`padrão mínimo ${propertyId}: ${error.message}`);
 }
 

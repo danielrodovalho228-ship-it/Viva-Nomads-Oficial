@@ -10,6 +10,7 @@ import type {
   ContratoParaDecisao,
   ManutencaoParaDecisao,
   PendenciaParaDecisao,
+  DadosDecisoes,
   VisitaParaDecisao,
 } from "@/lib/painel/decisoes";
 import { itensFaltantes } from "@/lib/conforto/regras";
@@ -32,11 +33,12 @@ export interface DadosDecisoesDoServidor {
   confortoPrazos: ConfortoPrazoParaDecisao[];
   pendenciasDono: PendenciaParaDecisao[];
   pendenciasMorador: PendenciaParaDecisao[];
+  fotosNivelRecusadas: NonNullable<DadosDecisoes["fotosNivelRecusadas"]>;
 }
 
 const VAZIO: DadosDecisoesDoServidor = {
   contratosDono: [], contratosMorador: [], visitasDono: [], visitasMorador: [], manutencoes: [], candidaturas: [],
-  confortoPrazos: [], pendenciasDono: [], pendenciasMorador: [],
+  confortoPrazos: [], pendenciasDono: [], pendenciasMorador: [], fotosNivelRecusadas: [],
 };
 
 type LinhaPendencia = { id: string; contrato_id: string; chave: string; status: string; prazo_ate: string; corrigida_em: string | null; confirmada_em: string | null; properties: Titulo };
@@ -93,7 +95,7 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
     const admin = createAdminClient();
     const nada = Promise.resolve({ data: [] as unknown[] });
 
-    const [cDono, cMorador, vDono, vMorador, ordens, leads, adequacao, pDono, pMorador] = await Promise.all([
+    const [cDono, cMorador, vDono, vMorador, ordens, leads, adequacao, pDono, pMorador, fotosRec] = await Promise.all([
       // Contratos dos imóveis do dono (a RLS deixa as partes lerem) — só os vigentes podem esperar assinatura.
       supabase
         .from("contratos")
@@ -121,14 +123,16 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
       supabase.from("conforto_adequacao").select("property_id, prazo_ate, pausado_em, properties!inner(title, owner_id)").eq("properties.owner_id", user.id).limit(50),
       supabase.from("conforto_pendencias").select(`${COLUNAS_PENDENCIA}, dono:properties!inner(owner_id)`).eq("dono.owner_id", user.id).eq("status", "aberta").limit(50),
       supabase.from("conforto_pendencias").select(`${COLUNAS_PENDENCIA}, contratos!inner(tenant_id)`).eq("contratos.tenant_id", user.id).eq("status", "corrigida").is("confirmada_em", null).limit(50),
+      // Adendo 59.1: fotos de nível recusadas (a RLS mostra ao dono os itens dos próprios imóveis).
+      supabase.from("nivel_itens").select("property_id, chave, motivo_recusa, properties!inner(title, owner_id)").eq("properties.owner_id", user.id).eq("foto_status", "recusada").eq("declarado", true).limit(50),
     ]);
     // Declarações dos imóveis com prazo de adequação (consulta à parte: as duas tabelas só se ligam pelo imóvel).
     const idsAdequacao = ((adequacao.data ?? []) as { property_id: string }[]).map((a) => a.property_id);
     const { data: decl } = idsAdequacao.length
-      ? await supabase.from("conforto_declaracoes").select("property_id, chave, confirmado").in("property_id", idsAdequacao)
+      ? await supabase.from("conforto_declaracoes").select("property_id, chave, confirmado, versao_lista").in("property_id", idsAdequacao)
       : { data: [] };
-    const declPor = new Map<string, { chave: string; confirmado: boolean }[]>();
-    for (const d of (decl ?? []) as { property_id: string; chave: string; confirmado: boolean }[]) declPor.set(d.property_id, [...(declPor.get(d.property_id) ?? []), d]);
+    const declPor = new Map<string, { chave: string; confirmado: boolean; versao_lista?: number | null }[]>();
+    for (const d of (decl ?? []) as { property_id: string; chave: string; confirmado: boolean; versao_lista?: number | null }[]) declPor.set(d.property_id, [...(declPor.get(d.property_id) ?? []), d]);
     const crus = (ordens.data ?? []) as unknown as (LinhaOrdem & { provisoria_em?: string | null; solucao_marcada_em?: string | null })[];
     const extrasOrdem = new Map(crus.map((l) => [l.id, l]));
 
@@ -155,6 +159,12 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
         .map((a) => ({ propertyId: a.property_id, imovel: titulo(a.properties), prazoAte: a.prazo_ate, pausado: !!a.pausado_em })),
       pendenciasDono: ((pDono.data ?? []) as unknown as LinhaPendencia[]).map(pendencia),
       pendenciasMorador: ((pMorador.data ?? []) as unknown as LinhaPendencia[]).map(pendencia),
+      fotosNivelRecusadas: ((fotosRec.data ?? []) as unknown as { property_id: string; chave: string; motivo_recusa: string | null; properties: Titulo }[]).map((f) => ({
+        propertyId: f.property_id,
+        imovel: titulo(f.properties),
+        chave: f.chave,
+        motivo: f.motivo_recusa,
+      })),
       candidaturas: ((leads.data ?? []) as unknown as { id: string; property_id: string; status: string; property: Titulo }[]).map((l) => ({
         id: l.id,
         propertyId: l.property_id,

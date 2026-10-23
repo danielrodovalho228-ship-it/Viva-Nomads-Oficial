@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ehChaveConforto, itemConforto } from "@/config/conforto-minimo";
+import { ehChaveNivel, rotuloItem } from "@/config/niveis";
 import { CONFIRMACAO_PENDENCIA_H, type PapelPendencia } from "@/lib/conforto/regras";
 import { agirNaPendencia } from "@/lib/data/conforto-actions";
 import type { PendenciaParaTela } from "@/lib/conforto/servidor";
@@ -52,10 +52,21 @@ function Linha({ papel, p: doServidor }: { papel: PapelPendencia; p: PendenciaPa
   const [contestando, setContestando] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
-  const rotulo = ehChaveConforto(p.chave) ? itemConforto(p.chave).rotulo : p.chave;
-  const agir = (acao: "corrigir" | "contestar" | "confirmar" | "reabrir") =>
+  const rotulo = rotuloItem(p.chave);
+  // Adendo 59.1: item que define o nível se corrige com foto nova do item (vale como a foto do nível).
+  const itemDeNivel = ehChaveNivel(p.chave);
+  const agir = (acao: "corrigir" | "contestar" | "confirmar" | "reabrir", arquivo?: File) =>
     iniciar(async () => {
-      const r = await agirNaPendencia(p.id, acao, acao === "contestar" ? { motivo } : {});
+      let foto: string | undefined;
+      if (arquivo) {
+        const fd = new FormData();
+        fd.set("file", arquivo);
+        const up = await fetch("/api/upload/foto", { method: "POST", body: fd });
+        const j = (await up.json().catch(() => ({}))) as { path?: string; error?: string };
+        if (!up.ok || !j.path) return setMsg({ ok: false, t: j.error ?? "Não foi possível enviar a foto." });
+        foto = j.path;
+      }
+      const r = await agirNaPendencia(p.id, acao, acao === "contestar" ? { motivo } : foto ? { foto } : {});
       setMsg(r.ok ? { ok: true, t: r.mensagem ?? "Feito." } : { ok: false, t: r.erro });
       if (r.ok) {
         setLocal({ de: estadoServidor, campos: { ...EFEITO[acao](new Date().toISOString()), ...(acao === "contestar" ? { motivo_contestacao: motivo.trim() } : {}) } });
@@ -101,9 +112,27 @@ function Linha({ papel, p: doServidor }: { papel: PapelPendencia; p: PendenciaPa
             </>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" disabled={pendente} onClick={() => agir("corrigir")} data-testid="pendencia-corrigido">
-                Marcar como corrigido
-              </Button>
+              {itemDeNivel ? (
+                <label className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-forest px-3 text-sm font-semibold text-forest">
+                  Enviar foto do item corrigido
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    disabled={pendente}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) agir("corrigir", f);
+                      e.target.value = "";
+                    }}
+                    data-testid="pendencia-foto-corrigido"
+                  />
+                </label>
+              ) : (
+                <Button size="sm" disabled={pendente} onClick={() => agir("corrigir")} data-testid="pendencia-corrigido">
+                  Marcar como corrigido
+                </Button>
+              )}
               <Button size="sm" variant="outline" disabled={pendente} onClick={() => setContestando(true)} data-testid="pendencia-contestar">
                 Contestar
               </Button>

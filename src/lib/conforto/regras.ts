@@ -26,8 +26,9 @@ export interface DeclaracaoConforto {
 
 /** Itens da lista ATUAL que o dono ainda não confirmou (itens novos de outra versão entram aqui; os antigos valem). */
 export function itensFaltantes(declaracoes: readonly DeclaracaoConforto[]): ChaveConforto[] {
-  const ok = new Set(declaracoes.filter((d) => d.confirmado && ehChaveConforto(d.chave)).map((d) => d.chave));
-  return ITENS_CONFORTO.filter((i) => !ok.has(i.chave)).map((i) => i.chave);
+  // Confirmação de versão anterior à do critério atual do item não vale (item novo ou critério mudado: reconfirma).
+  const versao = new Map(declaracoes.filter((d) => d.confirmado && ehChaveConforto(d.chave)).map((d) => [d.chave, d.versao_lista ?? 1]));
+  return ITENS_CONFORTO.filter((i) => (versao.get(i.chave) ?? 0) < i.desdeVersao).map((i) => i.chave);
 }
 
 /** Bloqueio de publicação: só com todos confirmados. A mensagem lista o que falta. */
@@ -119,21 +120,30 @@ export interface RespostaConforto {
 export const TEXTO_NAO_CONFERE_MAX = 280;
 
 /** Valida a seção do morador: todos os itens respondidos; "não confere" pede um texto curto (a foto é opcional). */
-export function validarSecaoConforto(bruto: unknown): { ok: true; respostas: RespostaConforto[] } | { ok: false; erro: string } {
+/**
+ * Valida a seção "Padrão mínimo" da entrada. `adicionais` (Adendo 59.1): itens do nível do imóvel e a pergunta do
+ * ruído, conferidos na mesma seção, depois dos 12 do mínimo (ordem fixa, entra no hash igual).
+ */
+export function validarSecaoConforto(
+  bruto: unknown,
+  adicionais: readonly { chave: string; rotulo: string }[] = [],
+): { ok: true; respostas: RespostaConforto[] } | { ok: false; erro: string } {
   const lista = Array.isArray(bruto) ? bruto : [];
   const porChave = new Map<string, RespostaConforto>();
+  const extra = new Set(adicionais.map((a) => a.chave));
+  const todos: { chave: string; rotulo: string }[] = [...ITENS_CONFORTO, ...adicionais];
   for (const r of lista as Partial<RespostaConforto>[]) {
-    if (!r || !ehChaveConforto(r.chave) || typeof r.confere !== "boolean") continue;
+    if (!r || typeof r.chave !== "string" || !(ehChaveConforto(r.chave) || extra.has(r.chave)) || typeof r.confere !== "boolean") continue;
     const texto = typeof r.texto === "string" ? r.texto.trim().slice(0, TEXTO_NAO_CONFERE_MAX) : "";
     const foto = typeof r.foto === "string" && r.foto ? r.foto : undefined;
     porChave.set(r.chave, { chave: r.chave, confere: r.confere, ...(r.confere ? {} : { texto, ...(foto ? { foto } : {}) }) });
   }
-  const faltam = ITENS_CONFORTO.filter((i) => !porChave.has(i.chave));
+  const faltam = todos.filter((i) => !porChave.has(i.chave));
   if (faltam.length) return { ok: false, erro: `Responda o padrão mínimo: ${faltam.map((i) => i.rotulo).join(", ")}.` };
   const semTexto = [...porChave.values()].find((r) => !r.confere && !r.texto);
-  if (semTexto) return { ok: false, erro: `Conte em poucas palavras o que não confere em "${ITENS_CONFORTO.find((i) => i.chave === semTexto.chave)!.rotulo}".` };
+  if (semTexto) return { ok: false, erro: `Conte em poucas palavras o que não confere em "${todos.find((i) => i.chave === semTexto.chave)!.rotulo}".` };
   // Ordem fixa da lista (entra no hash de fechamento sempre igual).
-  return { ok: true, respostas: ITENS_CONFORTO.map((i) => porChave.get(i.chave)!) };
+  return { ok: true, respostas: todos.map((i) => porChave.get(i.chave)!) };
 }
 
 // ── Pendências do dono ───────────────────────────────────────────────────────────────────────────────────────────

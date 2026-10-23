@@ -36,20 +36,28 @@ const solucao = (o: OrdemAdmin): OrdemSolucao => ({
   status: o.status,
 });
 
-async function contasTeste(admin: Admin): Promise<Set<string>> {
+export async function contasTeste(admin: Admin): Promise<Set<string>> {
   const { data } = await admin.from("profiles").select("id").eq("is_teste", true).limit(5000);
   return new Set(((data ?? []) as { id: string }[]).map((p) => p.id));
 }
 
 /** "Manutenção fora do prazo": abertas cujo prazo de solução (ou a provisória, no urgente) venceu. Mais antiga primeiro. */
 export async function manutencaoForaDoPrazo(admin: Admin, agora = new Date()): Promise<OrdemAdmin[]> {
-  const [{ data }, teste] = await Promise.all([
-    admin.from("service_orders").select(COLUNAS).neq("status", "resolvido").order("opened_at", { ascending: true }).limit(2000),
-    contasTeste(admin),
-  ]);
-  return ((data ?? []) as unknown as OrdemAdmin[]).filter(
-    (o) => !o.simulacao && !teste.has(o.properties.owner_id) && estadoSolucao(solucao(o), agora).estado === "vencido",
-  );
+  const [todas, teste] = await Promise.all([ordensForaDoPrazo(admin, agora), contasTeste(admin)]);
+  return todas.filter((o) => !teste.has(o.properties.owner_id));
+}
+
+/** Todas as ordens fora do prazo de solução, inclusive de contas de teste (a Central as mostra à parte). */
+export async function ordensForaDoPrazo(admin: Admin, agora = new Date()): Promise<OrdemAdmin[]> {
+  const { data } = await admin.from("service_orders").select(COLUNAS).neq("status", "resolvido").order("opened_at", { ascending: true }).limit(2000);
+  return ((data ?? []) as unknown as OrdemAdmin[]).filter((o) => !o.simulacao && estadoSolucao(solucao(o), agora).estado === "vencido");
+}
+
+/** Quando venceu o prazo de solução (provisória do urgente, se ela venceu antes). */
+export function prazoVencidoEm(o: OrdemAdmin, agora = new Date()): string {
+  const s = estadoSolucao(solucao(o), agora);
+  const prov = s.provisoria && s.provisoria.estado === "vencido" ? s.provisoria.ate : s.ate;
+  return prov.toISOString();
 }
 
 /** Pedidos de reclassificação ainda sem decisão (a ordem continua aberta e com a prioridade original do pedido). */

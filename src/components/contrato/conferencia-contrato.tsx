@@ -163,7 +163,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       )}
 
       {/* Prompt 59: seção "Padrão mínimo" (o morador confere cada item na entrada; entra no hash de fechamento). */}
-      {tipo === "entrada" && <SecaoConfortoEntrada contratoId={contratoId} parte={parte} travada={travada} respondidas={conf?.conforto ?? []} />}
+      {tipo === "entrada" && <SecaoConfortoEntrada contratoId={contratoId} parte={parte} travada={travada} respondidas={conf?.conforto ?? []} adicionais={dados.confortoAdicionais ?? []} />}
 
       {laudo && (
         <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-50 p-3 text-sm text-ink" data-testid="conferencia-laudo">

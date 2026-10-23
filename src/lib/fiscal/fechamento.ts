@@ -8,6 +8,11 @@
 
 import { janelaEncerrada, type EntradaDoContrato } from "../conferencia.ts";
 import { CHAVES_CONFORTO } from "../../config/conforto-minimo.ts";
+import { CHAVE_RUIDO_CONFERENCIA, CHAVES_NIVEL } from "../../config/niveis.ts";
+
+/** Ordem fixa da seção no texto do hash: mínimo, itens de nível (59.1), ruído; o resto em ordem alfabética. */
+const ORDEM_CONFORTO: readonly string[] = [...CHAVES_CONFORTO, ...CHAVES_NIVEL, CHAVE_RUIDO_CONFERENCIA];
+const posConforto = (k: string) => (ORDEM_CONFORTO.includes(k) ? ORDEM_CONFORTO.indexOf(k) : ORDEM_CONFORTO.length);
 
 export type MotivoFechamento = "duas_respostas" | "janela_encerrada" | "encerramento_concluido";
 export type ParteFechamento = "proprietario" | "inquilino";
@@ -58,7 +63,7 @@ export function conteudoFechamento(e: EstadoParaFechar, motivo: MotivoFechamento
     `Fechada porque ${ROTULO_FECHAMENTO[motivo]}.`,
     ...itens.map((i) => `Item (${i.parte}) ${i.comodo}: ${i.descricao}${i.precisaReparo ? " · precisa de reparo" : ""}${i.fotoPath ? ` · foto sha256 ${e.hashes[i.fotoPath] ?? "indisponível"}` : ""}`),
     ...[...(e.conforto ?? [])]
-      .sort((a, b) => (CHAVES_CONFORTO as readonly string[]).indexOf(a.chave) - (CHAVES_CONFORTO as readonly string[]).indexOf(b.chave))
+      .sort((a, b) => posConforto(a.chave) - posConforto(b.chave) || a.chave.localeCompare(b.chave))
       .map((c) => `Padrão mínimo (inquilino) ${c.chave}: ${c.confere ? "confere" : `não confere · ${c.texto ?? ""}`}${c.fotoPath ? ` · foto sha256 ${e.hashes[c.fotoPath] ?? "indisponível"}` : ""}`),
     ...respostas.map((r) => `Resposta (${r.parte}) ${r.decisao} em ${r.decididoEm}${r.motivo ? ` · motivo: ${r.motivo}` : ""}`),
     ...semResposta(e).map((p) => `Sem resposta: ${p}`),

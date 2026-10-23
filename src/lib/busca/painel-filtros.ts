@@ -6,6 +6,8 @@
   Só campos que existem no banco; sem escolha = filtro desligado (nunca
   "Qualquer", "Ambos", "Indiferente" ou "Tanto faz" como opção).
 */
+import type { Nivel, NivelOuAdequacao } from "../../config/niveis.ts";
+import { nivelAoMenos } from "../niveis/regras.ts";
 import { ROTULO_COMODIDADE, passaComodidades, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
@@ -42,6 +44,8 @@ export interface FiltrosPainel {
   entrada: string;
   /** "Datas flexíveis": aceita disponibilidade até FOLGA_DATAS_FLEXIVEIS_DIAS depois da entrada. */
   datasFlexiveis: boolean;
+  /** Adendo 59.1: "a partir de" Conforto/Premium (`?nivel=`); "" = desligado. */
+  nivelMin?: Nivel | "";
 }
 
 export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
@@ -62,6 +66,7 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   soInternetMedida: false,
   entrada: "",
   datasFlexiveis: false,
+  nivelMin: "",
 };
 
 export const ROTULO_PORTE_CURTO: Record<PortePet, string> = { P: "pequeno", M: "médio", G: "grande" };
@@ -131,6 +136,8 @@ type ImovelFiltravel = ImovelComInternet & {
   issuesInvoice?: boolean;
   ownershipType?: string;
   subleaseAuthorized?: boolean;
+  /** Adendo 59.1: nível gravado pelo servidor (elo mais fraco). */
+  nivel?: NivelOuAdequacao | null;
 };
 
 /** Rótulo curto das garantias do filtro (resumo do topo). */
@@ -173,6 +180,7 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (f.seguroOnly && !p.acceptsInsurance) return false;
   if (f.gestorOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   if (!passaInternet(p, f, agora)) return false;
+  if (f.nivelMin && !nivelAoMenos(p.nivel, f.nivelMin)) return false;
   return true;
 }
 
@@ -197,6 +205,7 @@ export function contarFiltrosPainel(f: FiltrosPainel): number {
     (filtroInternetLigado(f) ? 1 : 0) +
     // A data de entrada conta fora da folha (chip "Entrada …"); aqui só a flexibilidade, e só com data.
     (f.entrada && f.datasFlexiveis ? 1 : 0) +
+    (f.nivelMin ? 1 : 0) +
     [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.seguroOnly, f.gestorOnly].filter(Boolean).length +
     f.comodidades.length
   );

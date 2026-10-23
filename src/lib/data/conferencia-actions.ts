@@ -29,6 +29,7 @@ import {
   type TipoConferencia,
 } from "@/lib/conferencia";
 import { pendenciasDaConferencia, validarSecaoConforto } from "@/lib/conforto/regras";
+import { adicionaisDaConferencia, recalcularNivel } from "@/lib/niveis/servidor";
 import { avisarPendenciaConforto } from "@/lib/conforto/avisos";
 
 /*
@@ -152,12 +153,13 @@ export async function responderConfortoEntrada(input: { contratoId: string; resp
   if (ctx.parte !== "inquilino") return erro("O padrão mínimo é conferido pelo morador.");
   if (!STATUS_ENTRADA.includes(ctx.status)) return erro("Este contrato não está em um momento de conferência.");
   if (janelaEncerrada("entrada", ctx.entrada)) return erro("O prazo de 48 horas para a conferência de entrada já passou.");
-  const v = validarSecaoConforto(input.respostas);
+  const admin = createAdminClient()!;
+  // Adendo 59.1: a seção confere também os itens do nível atual e o ruído (mesma lista da tela).
+  const v = validarSecaoConforto(input.respostas, await adicionaisDaConferencia(admin, ctx.propertyId));
   if (!v.ok) return erro(v.erro);
   if (v.respostas.some((r) => r.foto && !r.foto.startsWith(`${ctx.uid}/`))) return erro("Foto inválida.");
   if (!(await consumirLimite(`conferencia-conforto:${ctx.uid}`, 20, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
 
-  const admin = createAdminClient()!;
   if (await estaFechada(admin, input.contratoId, "entrada")) return erro(ERRO_FECHADA);
   await admin
     .from("conferencias")
@@ -181,6 +183,8 @@ export async function responderConfortoEntrada(input: { contratoId: string; resp
     const { data: criadas, error: ePend } = await admin.from("conforto_pendencias").insert(novas).select("id");
     if (ePend && ePend.code !== "23505") console.error("[responderConfortoEntrada] pendências", ePend.code, ePend.message);
     for (const p of (criadas ?? []) as { id: string }[]) await avisarPendenciaConforto(admin, p.id, "aberta").catch(() => null);
+    // "Não confere" num item que define o nível: o imóvel passa a ser exibido no nível que os itens restantes sustentam.
+    await recalcularNivel(admin, ctx.propertyId);
   }
   revalidatePath("/dashboard/locacoes");
   revalidatePath("/dashboard/contratos");
@@ -255,6 +259,8 @@ export interface ConferenciaView {
 }
 
 export interface ConferenciasContrato {
+  /** Adendo 59.1: itens do nível do imóvel e a pergunta do ruído, conferidos na seção "Padrão mínimo" da entrada. */
+  confortoAdicionais?: { chave: string; rotulo: string }[];
   /** Quem está olhando: "inquilino", "proprietario" ou null (equipe/leitura). */
   minhaParte: ParteConferencia | null;
   /** Instante do prazo da entrada (ISO), pela fonte única `prazoConferenciaEntrada`. */
@@ -349,8 +355,10 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
   const janelaEntradaEncerrada = ctx ? janelaEncerrada("entrada", ctx.entrada) : false;
   const prazoSaidaEm = ctx ? (prazoConferenciaSaida(ctx.entrada)?.toISOString() ?? null) : null;
   const janelaSaidaEncerrada = ctx ? janelaEncerrada("saida", ctx.entrada) : false;
+  const adminNivel = createAdminClient();
+  const confortoAdicionais = adminNivel ? await adicionaisDaConferencia(adminNivel, ctx?.propertyId ?? null) : [];
   const { data: confs } = await supabase.from("conferencias").select("id, tipo").eq("contrato_id", contratoId);
-  if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias: [] };
+  if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias: [], confortoAdicionais };
   const ids = confs.map((c) => c.id as string);
   const [{ data: itens }, { data: respostas }, { data: laudos }, { data: conforto }] = await Promise.all([
     supabase.from("conferencia_itens").select("id, conferencia_id, parte, comodo, descricao, foto_path, criado_em, precisa_reparo").in("conferencia_id", ids).order("criado_em"),
@@ -386,5 +394,5 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
       } satisfies ConferenciaView;
     }),
   );
-  return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias };
+  return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias, confortoAdicionais };
 }

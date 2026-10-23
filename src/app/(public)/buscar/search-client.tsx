@@ -32,6 +32,8 @@ import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
 import { ROTULO_PORTE_CURTO, contarFiltrosPainel, naoMedidosDoPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
+import { filtroNivelDaUrl, filtroNivelNaUrl } from "@/lib/busca/filtro-nivel";
+import type { Nivel } from "@/config/niveis";
 import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, rotuloFiltroInternet, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
 import { Chip } from "@/components/ui/chip";
 import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
@@ -109,6 +111,8 @@ export function SearchClient({
   const [homeOfficeOnly, setHomeOfficeOnly] = useState(false);
   // Prompt 57, fase 2: internet MEDIDA (download mínimo) e "só com internet medida".
   const [internetMin, setInternetMin] = useState(0);
+  // Adendo 59.1: "a partir de" Conforto/Premium (`?nivel=`). O chip na tela é da exibição (Pista A).
+  const [nivelMin, setNivelMin] = useState<Nivel | "">("");
   const [soInternetMedida, setSoInternetMedida] = useState(false);
   // Prompt 55 B2: datas flexíveis (só vale com data de entrada).
   const [datasFlexiveis, setDatasFlexiveis] = useState(false);
@@ -247,6 +251,7 @@ export function SearchClient({
     const fi = filtroInternetDaUrl(sp);
     setInternetMin(fi.internetMin);
     setSoInternetMedida(fi.soInternetMedida);
+    setNivelMin(filtroNivelDaUrl(sp));
   }, []);
 
   // Restaura no mount (link compartilhado / reload) e re-aplica a cada
@@ -312,6 +317,7 @@ export function SearchClient({
     put("gestor", operatedOnly, "1");
     put("comod", comodidades.length > 0, comodidades.join(","));
     filtroInternetNaUrl(params, { internetMin, soInternetMedida });
+    filtroNivelNaUrl(params, nivelMin);
     destinoNaUrl(params, estadoDestino);
     if (sort === "trabalho") params.delete("ordem");
     const qs = params.toString();
@@ -324,7 +330,7 @@ export function SearchClient({
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades, estadoDestino,
-    internetMin, soInternetMedida, datasFlexiveis,
+    internetMin, soInternetMedida, datasFlexiveis, nivelMin,
   ]);
 
   // Prompt 37: sem destino na URL, o "Meu local de trabalho" salvo na conta vira o padrão (só para quem está logado;
@@ -405,6 +411,7 @@ export function SearchClient({
     setComodidades([]);
     setInternetMin(0);
     setSoInternetMedida(false);
+    setNivelMin("");
     setDatasFlexiveis(false);
     setEstadoDestino({ destino: null, modo: "carro", ate: 0 });
     setSort("relevance");
@@ -417,9 +424,9 @@ export function SearchClient({
       maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades,
       periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: SELO_NF_UI && invoiceOnly, seguroOnly: insuranceOnly, gestorOnly: operatedOnly,
       internetMin, soInternetMedida,
-      entrada: dataEntrada, datasFlexiveis,
+      entrada: dataEntrada, datasFlexiveis, nivelMin,
     }),
-    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, insuranceOnly, operatedOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis]
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, insuranceOnly, operatedOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin]
   );
 
   const { base, dist } = useMemo(() => {
