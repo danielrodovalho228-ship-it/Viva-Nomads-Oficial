@@ -88,7 +88,7 @@ export default async function AdminQualidadePage({ searchParams }: { searchParam
           )}
         </Panel>
         <Panel title="Saídas revertidas pela ajuda" data-testid="qualidade-metrica-ouro" data-valor={p.pctRevertidas ?? ""}>
-          <p className="font-title text-3xl text-ink">{p.pctRevertidas == null ? "sem base" : `${String(p.pctRevertidas).replace(".", ",")}%`}</p>
+          <p className="font-title text-lg text-ink">{p.pctRevertidas == null ? "sem base" : `${String(p.pctRevertidas).replace(".", ",")}%`}</p>
           <p className="mt-1 text-xs text-muted">Fórmula: saídas em que a pessoa aceitou a ajuda ÷ saídas com ajuda oferecida, últimos 30 dias. Base: {p.baseRevertidas}.</p>
         </Panel>
       </div>

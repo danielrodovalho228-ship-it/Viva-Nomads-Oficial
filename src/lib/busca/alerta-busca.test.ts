@@ -98,6 +98,8 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 test("servidor: respeita notif_email e alerta_ativo, limite diário, idempotência por (busca, imóvel) e não envia ao próprio dono", () => {
   const src = ler("src/lib/data/alerta-busca-servidor.ts");
   assert.match(src, /notificacaoLigada\(perfil\.notif_email/);
+  // Prompt 51 F1: conta pausada não recebe alerta de busca.
+  assert.match(src, /\|\| perfil\.pausada_em\)/);
   assert.match(src, /\.eq\("alerta_ativo", true\)/);
   assert.match(src, /consumirLimite\(`alerta-busca:\$\{busca\.id\}`, ALERTAS_POR_BUSCA_POR_DIA, DIA\)/);
   assert.match(src, /alertas_busca_envios"\)\.insert\(\{ busca_id: busca\.id, imovel_id: imovelId \}/);
