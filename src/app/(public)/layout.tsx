@@ -19,8 +19,9 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         <Navbar />
       </div>
       <AppHeader />
-      {/* Espaço inferior no mobile para a barra de abas não cobrir o conteúdo. */}
-      <main id="conteudo" className="vn-main flex-1 pb-16 md:pb-0">
+      {/* Sem folga embaixo do conteúdo (t310, L-24): no site o espaço das abas mora no rodapé (.vn-rodape, globals.css);
+          no app, sem rodapé, o .vn-main ganha a altura das abas (html[data-app] .vn-main). */}
+      <main id="conteudo" className="vn-main flex-1">
         {children}
       </main>
       <div className="web-only contents">

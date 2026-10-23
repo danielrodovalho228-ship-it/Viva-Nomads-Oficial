@@ -75,7 +75,7 @@
   /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
   --folga-flutuante: 7rem;
   --folga-flutuante-celular: 6rem;
-  --folga-rodape-imovel: 16rem;
+  --folga-rodape-imovel: calc(var(--altura-barra-fixa, 9.5rem) + 1rem);
   --background: #ffffff;
   --foreground: #222222;
   /* Gradiente assinatura azul→verde (só em elementos de marca) */
@@ -342,7 +342,7 @@ html[data-app] .vn-tabbar-spacer {
   /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
   --folga-flutuante: 7rem;
   --folga-flutuante-celular: 6rem;
-  --folga-rodape-imovel: 16rem;
+  --folga-rodape-imovel: calc(var(--altura-barra-fixa, 9.5rem) + 1rem);
   --altura-abas: 3.5rem;
 }
 /* Barra "Comparar" da busca (ordem 7ffea8c7): no celular fica ACIMA das abas (altura + safe-area + 12 px);
@@ -398,6 +398,14 @@ html[data-app] .vn-barra-comparar {
 html[data-app] .vn-barra-fixa {
   bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
 }
+/* Vão de fim de página (t310, L-23): no site, o espaço da barra de preço mora no rodapé (padding do .vn-rodape, pelo
+   --ajuda-bottom que já soma a altura real da barra), não abaixo do conteúdo. No app não há rodapé: o fim do conteúdo
+   ganha a altura medida da barra + 16 px (as abas e a safe-area já estão no padding do .vn-main). */
+@media (max-width: 1023px) {
+  html[data-app] .vn-folga-imovel {
+    padding-bottom: var(--folga-rodape-imovel);
+  }
+}
 /* No app a barra inferior existe em qualquer largura: o conteúdo não fica por baixo dela. */
 html[data-app] .vn-main {
   padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px)) !important;
@@ -433,7 +441,7 @@ html[data-app] body {
   /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
   --folga-flutuante: 7rem;
   --folga-flutuante-celular: 6rem;
-  --folga-rodape-imovel: 16rem;
+  --folga-rodape-imovel: calc(var(--altura-barra-fixa, 9.5rem) + 1rem);
   --ajuda-bottom: 5.25rem;
 }
 @media (min-width: 768px) {
@@ -441,7 +449,7 @@ html[data-app] body {
   /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
   --folga-flutuante: 7rem;
   --folga-flutuante-celular: 6rem;
-  --folga-rodape-imovel: 16rem;
+  --folga-rodape-imovel: calc(var(--altura-barra-fixa, 9.5rem) + 1rem);
     --ajuda-bottom: 1.5rem;
   }
 }
@@ -492,8 +500,10 @@ html:has([data-testid="fale-com-a-viva-raiz"]) {
   html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]) {
     padding-bottom: 4.5rem;
   }
-  /* Com o rodapé do site, a folga mora dentro dele (fundo escuro até o fim), não numa faixa branca abaixo. */
-  html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]):has(.vn-rodape) {
+  /* Com o rodapé do site, a folga mora dentro dele (fundo escuro até o fim), não numa faixa branca abaixo. No painel, a
+     folga mora no <main> (dashboard-shell.tsx): somada à do <body>, a página vazia rolava e abria vão (t310, L-25). */
+  html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]):has(.vn-rodape),
+  html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]):has(.vn-painel) {
     padding-bottom: 0;
   }
 }
@@ -547,7 +557,7 @@ input[type="date"][data-vazio]:not(:focus)::-webkit-datetime-edit {
   /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
   --folga-flutuante: 7rem;
   --folga-flutuante-celular: 6rem;
-  --folga-rodape-imovel: 16rem;
+  --folga-rodape-imovel: calc(var(--altura-barra-fixa, 9.5rem) + 1rem);
   --cogumelo-bottom: 5.25rem;
 }
 @media (min-width: 768px) {
@@ -555,7 +565,7 @@ input[type="date"][data-vazio]:not(:focus)::-webkit-datetime-edit {
   /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
   --folga-flutuante: 7rem;
   --folga-flutuante-celular: 6rem;
-  --folga-rodape-imovel: 16rem;
+  --folga-rodape-imovel: calc(var(--altura-barra-fixa, 9.5rem) + 1rem);
     --cogumelo-bottom: 1.5rem;
   }
 }

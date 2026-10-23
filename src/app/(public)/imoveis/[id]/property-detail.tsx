@@ -639,7 +639,7 @@ export function PropertyDetail({
     // tiverem o cômodo marcado — o dado ainda não existe, então o bloco não aparece) → comodidades → regras →
     // disponibilidade → mapa aproximado → avaliações → proprietário; o rodapé fixo (celular) / cartão lateral
     // (computador) traz o valor e o "Solicitar".
-    <div className="mx-auto w-full max-w-[1536px] px-4 py-8 pb-(--folga-rodape-imovel) sm:px-8 lg:pb-8" data-testid="imovel-largura-total">
+    <div className="vn-folga-imovel mx-auto w-full max-w-[1536px] px-4 py-8 sm:px-8" data-testid="imovel-largura-total">
       {composer}
       {solicitacao}
       <BarraFixaCelular

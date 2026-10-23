@@ -46,21 +46,8 @@ const PAGINAS: Pagina[] = [
 ];
 // Catraca: página → código e tamanhos já acima de 64 px (lab-crítico do #1124, 23/10). Nesses tamanhos a spec mede e
 // anota sem reprovar; nos outros, e em qualquer página fora daqui, é portão. Quem corrigir tira a entrada no mesmo PR.
-const CONHECIDOS: Record<string, { codigo: string; tamanhos: string[] }> = {
-  // L-23: pb-(--folga-rodape-imovel) = 16rem fixos abaixo de lg (property-detail.tsx:639): 320 px no celular, 256 no tablet.
-  ...Object.fromEntries(ABAS_IMOVEL.map(([, nome]) => [`Imóvel · ${nome}`, { codigo: "L-23", tamanhos: ["celular", "tablet"] }])),
-  // L-24: o layout público põe pb-16 (64 px) no <main id="conteudo"> abaixo de md, somado à folga da página: 80 a 112 px.
-  Ajuda: { codigo: "L-24", tamanhos: ["celular"] },
-  Buscar: { codigo: "L-24", tamanhos: ["celular"] },
-  "Novo pedido de moradia": { codigo: "L-24", tamanhos: ["celular"] },
-  "Perfil do proprietário": { codigo: "L-24", tamanhos: ["celular"] },
-  // L-25: o painel no celular deixa 116 px abaixo do último bloco (folga --folga-flutuante-celular + p-4 do <main>).
-  "Painel do dono": { codigo: "L-25", tamanhos: ["celular"] },
-  "Painel do morador": { codigo: "L-25", tamanhos: ["celular"] },
-  Recibos: { codigo: "L-25", tamanhos: ["celular"] },
-  "Nível, ruído e extras": { codigo: "L-25", tamanhos: ["celular"] },
-  "Pedidos (dono)": { codigo: "L-25", tamanhos: ["celular"] },
-};
+// L-23, L-24 e L-25 corrigidos pela Pista A (claude-a/vao-fim-pagina): sem entradas, todas as páginas são portão.
+const CONHECIDOS: Record<string, { codigo: string; tamanhos: string[] }> = {};
 
 const MASSA = lerMassa();
 const SAIDA = "tests/laboratorio/saida/vao-rodape";
