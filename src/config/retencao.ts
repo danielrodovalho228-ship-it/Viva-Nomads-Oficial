@@ -72,6 +72,13 @@ export const INVENTARIO: ItemInventario[] = [
   i("conferencia", "bucket:conferencia", "fotos e laudo da conferência de entrada e saída", "prova da conferência", DISPUTA),
   i("conferencia_itens", "public.conferencia_itens", "descrição e caminho da foto da conferência", "prova da conferência", DISPUTA),
   i("conferencia_conforto", "public.conferencia_conforto", "resposta do morador ao padrão mínimo (texto e foto)", "prova da conferência de entrada (59)", DISPUTA),
+  // Prompt 62-B1: avaliação do imóvel por avaliador credenciado. Contas is_teste ficam fora das métricas e do rodízio real.
+  i("avaliadores_credenciamento", "public.avaliadores_credenciamento", "número de credenciado, cidade, motivo das decisões, relações declaradas (donos e imóveis) e link do portfólio", "credenciar o avaliador e impedir avaliação com vínculo", CONTA, "o número de credenciado e as avaliações feitas (contagem)"),
+  i("avaliadores", "bucket:avaliadores", "portfólio ou referência enviada no credenciamento", "a Viva conferir a experiência do avaliador", CONTA),
+  i("vistoria_pedidos", "public.vistoria_pedidos", "pedido de avaliação (imóvel, dono, morador do imóvel ocupado, agenda, concordância, registro de pagamento direto)", "designar, agendar e registrar a avaliação", DISPUTA),
+  i("vistoria_conduta", "public.vistoria_conduta", "notas e comentário de conduta (dono → avaliador; avaliador → acesso)", "nota de conduta pública do avaliador", CONTA, "a média de conduta do avaliador"),
+  i("vistoria_auditoria", "public.vistoria_auditoria", "revisão interna do laudo e o motivo", "auditar os avaliadores (fração interna)", DISPUTA),
+  i("vistoria_fila_admin", "public.vistoria_fila_admin", "pendências da equipe (sem avaliador, suspensão, proposta de descredenciamento) com motivo", "operação da rede de avaliadores", DISPUTA),
   i("conforto_pendencias", "public.conforto_pendencias", "texto do morador e motivo da contestação", "pendência do padrão mínimo (59)", DISPUTA),
   i("conferencia_laudos", "public.conferencia_laudos", "caminho do laudo", "prova da conferência", DISPUTA),
   i("conferencia_respostas", "public.conferencia_respostas", "motivo da contestação", "prova da conferência", DISPUTA),

@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { CATEGORIAS_PARCEIRO, CIDADES_MAX, DESCRICAO_MAX, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 
@@ -177,7 +177,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       <fieldset>
         <legend className="text-sm font-medium text-ink">Categorias</legend>
         <div className="mt-1 grid grid-cols-2 gap-2">
-          {CATEGORIAS_PARCEIRO.map((k) => (
+          {CATEGORIAS_CATALOGO.map((k) => (
             <label key={k.valor} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 bg-white px-3 text-sm text-ink">
               <input
                 type="checkbox"

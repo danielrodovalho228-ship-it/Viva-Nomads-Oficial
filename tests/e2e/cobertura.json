@@ -1620,6 +1620,38 @@
       "specs": [
         "t300-entrada-sem-senha-49"
       ]
+    },
+    "/admin/avaliadores": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "/dashboard/parceiro/avaliacao": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "/dashboard/avaliacao-imovel/[id]": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "/avaliadores/[numero]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
     }
   },
   "rotas": {
@@ -2207,6 +2239,14 @@
       ],
       "specs": [
         "t300-entrada-sem-senha-49"
+      ]
+    },
+    "/api/cron/vistoria": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
       ]
     }
   },
@@ -4934,6 +4974,118 @@
       ],
       "specs": [
         "t300-entrada-sem-senha-49"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#pedirCredenciamento": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#adminDecidirCredenciamento": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#adminCriarAvaliacaoTeste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#adminSalvarPreco": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#adminRevisarAuditoria": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#adminResolverFila": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#pedirAvaliacao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#responderDesignacao": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#agendarVisita": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#concordarVisita": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#registrarAusencia": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#marcarRecebido": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#confirmarRecebido": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#avaliarConduta": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
       ]
     }
   }

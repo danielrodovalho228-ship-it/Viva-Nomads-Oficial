@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Clock, XCircle } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import { ButtonLink } from "@/components/ui/button";
 import { SejaParceiroForm } from "@/components/parceiros/seja-parceiro-form";
 import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { meuPainelParceiro } from "@/lib/parceiros/painel-actions";
@@ -33,6 +34,11 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
         <PedidosDoParceiro pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
         {/* Prompt 39-B1: "Recibos e notas" na seção Ganhos (não é página própria). */}
         <BlocoRecibosParceiro pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
+        {/* Prompt 62-B1: credenciamento de avaliador (a Viva designa por rodízio; não é serviço do catálogo). */}
+        <Panel title="Avaliação de imóveis" className="mb-6" data-testid="parceiro-avaliacao-link">
+          <p className="text-sm text-muted">Avaliador credenciado: a Viva designa as avaliações de imóveis por rodízio, pela tabela de preço da cidade.</p>
+          <ButtonLink href="/dashboard/parceiro/avaliacao" variant="secondary" size="sm" className="mt-3">Credenciamento e avaliações</ButtonLink>
+        </Panel>
         {/* Prompt 38: convites e vínculos de parceiro fixo de imóvel. */}
         <ImoveisFixos />
         <PainelParceiroCliente inicial={painel} pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />

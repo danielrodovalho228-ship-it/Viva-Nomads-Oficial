@@ -1,4 +1,5 @@
 import "server-only";
+import { CATEGORIAS_SO_CREDENCIAMENTO } from "@/lib/parceiros/regras";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -39,7 +40,8 @@ function deLinha(l: Linha): ParceiroPublico {
     id: String(l.id),
     slug: String(l.slug),
     nomePublico: String(l.nome_publico),
-    categorias: (l.categorias as string[]) ?? [],
+    // "vistoria" é credenciamento (Prompt 62-B1): não aparece como serviço contratável na página nem na busca.
+    categorias: ((l.categorias as string[]) ?? []).filter((c) => !CATEGORIAS_SO_CREDENCIAMENTO.includes(c)),
     cidades: (l.cidades as string[]) ?? [],
     descricao: (l.descricao as string | null) ?? null,
     descricaoCurta: (l.descricao_curta as string | null) ?? null,
@@ -114,7 +116,7 @@ export async function buscarParceiros(f: { categoria?: string | null; cidade?: s
   const sb = createPublicClient();
   if (!sb) return { lista: [], cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep };
   const { data } = await sb.from("parceiros_publicos").select("*").limit(500);
-  const lista = filtrarParceiros(((data ?? []) as Linha[]).map(deLinha), { categoria: f.categoria, cidade, ponto, verTeste: await veParceirosDeTeste() });
+  const lista = filtrarParceiros(((data ?? []) as Linha[]).map(deLinha).filter((p) => p.categorias.length > 0), { categoria: f.categoria, cidade, ponto, verTeste: await veParceirosDeTeste() });
   return { lista, cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep };
 }
 

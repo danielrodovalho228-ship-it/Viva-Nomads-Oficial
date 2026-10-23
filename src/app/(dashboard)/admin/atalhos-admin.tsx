@@ -21,6 +21,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
   { href: "/admin/cidades", label: "Cidades liberadas", icon: MapPinned },
   { href: "/admin/destinos", label: "Destinos (tempo até o trabalho)", icon: MapPinned },
+  { href: "/admin/avaliadores", label: "Avaliadores credenciados", icon: ShieldCheck },
   { href: "/admin/ajuda-publicacao", label: "Publicamos para você", icon: HandHelping },
   { href: "/admin/documentos", label: "Documentos", icon: FileSignature },
   { href: "/admin/atendimento", label: "Atendimento", icon: LifeBuoy },
