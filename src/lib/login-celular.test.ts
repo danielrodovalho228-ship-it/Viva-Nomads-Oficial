@@ -5,6 +5,7 @@
 */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 
 import { ATRIBUTOS_EMAIL, limparEmail, precisaVerificarUsuario, requisicaoPrefetch, temCookieSessao } from "./login-celular.ts";
 
@@ -40,4 +41,9 @@ test("precisaVerificarUsuario: visitante sem sessão não consulta o servidor de
   assert.equal(precisaVerificarUsuario([]), false);
   assert.equal(precisaVerificarUsuario([{ name: "vn_app" }]), false);
   assert.equal(precisaVerificarUsuario([{ name: "sb-abc-auth-token.0" }]), true);
+});
+
+test("Prompt 49: o campo de e-mail da entrada por código também vem sem autocorreção do iPhone", () => {
+  const tela = readFileSync(new URL("../components/auth/login-por-codigo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /name="email"[\s\S]{0,200}\{\.\.\.ATRIBUTOS_EMAIL\}/);
 });
