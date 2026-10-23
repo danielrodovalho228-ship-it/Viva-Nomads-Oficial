@@ -44,8 +44,15 @@ async function entrarNoFuso(browser: Browser, email: string, fuso: string, largu
     await campoSenha.fill(senha);
     await expect(campoEmail).toHaveValue(email, { timeout: 1_000 });
   }).toPass({ timeout: 15_000 });
-  await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-  await page.waitForURL(/\/dashboard/, { timeout: 30_000, waitUntil: "commit" });
+  // Um clique antes da hidratação vira envio nativo e recarrega /auth vazio (lab de 6c307d1: voltou a /auth em 30 s):
+  // preenche o que estiver vazio e clica de novo até sair de /auth, como o entrar() do laboratório.
+  await expect(async () => {
+    if (/\/dashboard/.test(page.url())) return;
+    if ((await campoEmail.inputValue({ timeout: 5_000 })) !== email) await campoEmail.fill(email, { timeout: 5_000 });
+    if ((await campoSenha.inputValue({ timeout: 5_000 })) !== senha) await campoSenha.fill(senha, { timeout: 5_000 });
+    await page.locator("form").getByRole("button", { name: /^entrar$/i }).click({ timeout: 5_000 });
+    await page.waitForURL(/\/dashboard/, { timeout: 15_000, waitUntil: "commit" });
+  }).toPass({ timeout: 50_000 });
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
   return page;
 }
