@@ -106,6 +106,9 @@ export type NotificationEvent =
   | "vistoria_lembrete" // D-1 da visita → dono, avaliador e morador
   | "vistoria_ausencia" // ausência registrada → dono e avaliador
   | "vistoria_sem_avaliador" // nenhum avaliador elegível → admins
+  // 63-B: selo "LinkedIn conectado" (atrás de LINKEDIN_CONECTAR_ATIVO)
+  | "linkedin_vencendo" // o selo vence em 30 dias → a própria pessoa (reconectar)
+  | "linkedin_ja_conectado" // alguém tentou conectar um LinkedIn que já está em outra conta → admins (sem expor quem)
   // Prompt 62-B2: laudo, resultado, ressalvas, "· vistoriado", strikes e contestação.
   | "vistoria_laudo_emitido" // laudo VIS emitido → dono (resultado, o que corrigir, prazo e próximo passo)
   | "vistoria_fora_da_busca" // segurança grave não conforme → dono (anúncio fora da busca até a correção)
@@ -204,6 +207,8 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   vistoria_concordancia: { subject: "Concorda com a visita de avaliação?", body: (n) => `Olá${n ? " " + n : ""}, o proprietário pediu a avaliação do imóvel onde você mora. A visita só acontece se você concordar com a data. O avaliador não fotografa os seus pertences.`, cta: "Responder", path: "/dashboard/locacoes" },
   vistoria_lembrete: { subject: "A visita de avaliação é amanhã", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação do imóvel é amanhã. Se precisar mudar, avise pelas mensagens da Viva.`, cta: "Ver a visita", path: "/dashboard" },
   vistoria_ausencia: { subject: "Ausência na visita de avaliação", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação não aconteceu por ausência. Veja o que acontece agora na página da avaliação.`, cta: "Ver a avaliação", path: "/dashboard" },
+  linkedin_vencendo: { subject: "Reconecte seu LinkedIn para manter o selo", body: (n) => `Olá${n ? " " + n : ""}, o selo "LinkedIn conectado" da sua conta vence em 30 dias. Para manter o selo, reconecte o LinkedIn em Conta.`, cta: "Reconectar", path: "/dashboard/conta" },
+  linkedin_ja_conectado: { subject: "LinkedIn já conectado a outra conta", body: () => "Uma conta tentou conectar um LinkedIn que já está ligado a outra conta da Viva. A tentativa foi recusada; vale conferir se é a mesma pessoa com duas contas.", cta: "Abrir o atendimento", path: "/admin/atendimento" },
   vistoria_sem_avaliador: { subject: "Avaliação sem avaliador elegível", body: () => "Um pedido de avaliação de imóvel está aguardando avaliador: ninguém da fila da cidade está elegível agora.", cta: "Abrir a fila", path: "/admin/avaliadores" },
   vistoria_laudo_emitido: { subject: "O laudo de avaliação do seu imóvel saiu", body: (n) => `Olá${n ? " " + n : ""}, o laudo de avaliação do seu imóvel foi emitido pela Viva. Veja o resultado, o que corrigir (se houver), o prazo e o próximo passo.`, cta: "Ver o laudo", path: "/dashboard/imoveis" },
   vistoria_fora_da_busca: { subject: "Seu anúncio saiu da busca por um item de segurança", body: (n) => `Olá${n ? " " + n : ""}, a avaliação encontrou um item de segurança não conforme. O anúncio fica fora da busca até a correção ser comprovada; veja no laudo o que corrigir.`, cta: "Ver o que corrigir", path: "/dashboard/imoveis" },

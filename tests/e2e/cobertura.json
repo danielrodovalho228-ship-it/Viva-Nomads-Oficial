@@ -1069,7 +1069,8 @@
         "t18-seo-a11y",
         "t69-botoes-header",
         "t72-paginas-institucionais",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t325-fotos-ilustrativas-empresas"
       ]
     },
     "/excluir-conta": {
@@ -1199,7 +1200,8 @@
         "t68-comissao-valor-total",
         "t69-botoes-header",
         "t72-paginas-institucionais",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t325-fotos-ilustrativas-empresas"
       ]
     },
     "/parceiros": {
@@ -1962,6 +1964,24 @@
         "t169-conta-teste-sem-efeito"
       ]
     },
+    "/api/conta/linkedin/conectar": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
+    "/api/conta/linkedin/retorno": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
     "/api/contrato": {
       "personas": [
         "inquilino",
@@ -2007,6 +2027,12 @@
       "specs": []
     },
     "/api/cron/checkin-lembretes": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/cron/linkedin": {
       "personas": [
         "sistema"
       ],
@@ -2503,6 +2529,14 @@
       ],
       "specs": [
         "t320-pausar-anuncio-64b"
+      ]
+    },
+    "src/lib/data/actions.ts#enderecoGravadoDoImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t322-documento-sem-trava-l11"
       ]
     },
     "src/lib/data/actions.ts#enviarDocumentoParaConferencia": {
@@ -3968,6 +4002,38 @@
       "specs": [
         "t168-visita-video"
       ]
+    },
+    "src/lib/linkedin/actions.ts#desconectarLinkedin": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
+    "src/lib/linkedin/actions.ts#meuLinkedin": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
+    "src/lib/linkedin/actions.ts#minhasRedes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/linkedin/actions.ts#salvarMinhasRedes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     },
     "src/lib/marcas/actions.ts#listarMarcas": {
       "personas": [

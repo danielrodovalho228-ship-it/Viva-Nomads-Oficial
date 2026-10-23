@@ -1,4 +1,5 @@
 import { Star, MessageSquareQuote } from "lucide-react";
+import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { numBR } from "@/lib/utils";
 import type { Property, Review } from "@/lib/types";
 import { ComoFuncionamAvaliacoes } from "@/components/avaliacoes/como-funcionam-avaliacoes";
@@ -76,6 +77,7 @@ export function Reviews({ property }: { property: Property }) {
                   {autor}
                 </p>
               )}
+              {r.linkedinConectado && <SeloLinkedin className="mt-1" />}
               {date && <p className="text-xs text-muted">{date}</p>}
               <p className="mt-2 text-sm text-muted">{r.comment}</p>
               {r.reply && (

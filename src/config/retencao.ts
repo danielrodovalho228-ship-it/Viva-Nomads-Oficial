@@ -81,6 +81,11 @@ export const INVENTARIO: ItemInventario[] = [
   i("vistoria_auditoria", "public.vistoria_auditoria", "revisão interna do laudo e o motivo", "auditar os avaliadores (fração interna)", DISPUTA),
   i("vistoria_fila_admin", "public.vistoria_fila_admin", "pendências da equipe (sem avaliador, suspensão, proposta de descredenciamento) com motivo", "operação da rede de avaliadores", DISPUTA),
   // Prompt 50: a data em que cada papel ativou (some com a conta) e a análise humana da verificação (motivo e decisão).
+  // 63-B: selo "LinkedIn conectado" — só o hash do identificador do LinkedIn, a data e a validade (12 meses); nada do
+  // perfil. Vale enquanto conectado; desconectar apaga a linha, e excluir a conta apaga junto.
+  i("confianca_linkedin", "public.confianca_linkedin", "hash do identificador do LinkedIn, data da conexão e validade (sem nome, link nem foto)", "selo de confiança \"LinkedIn conectado\" (63-B)", CONTA, "nada: desconectar apaga a linha"),
+  // 63-B (decisão do Daniel, 23/10): redes da própria pessoa, PRIVADAS (só ela e a equipe), atrás de REDES_USUARIO_ATIVO.
+  i("perfil_redes", "public.perfil_redes", "endereços do Instagram, Facebook e TikTok da própria pessoa (privados)", "a pessoa guardar as próprias redes; nunca aparecem para outro usuário", CONTA),
   i("ativacoes", "public.ativacoes", "data em que cada papel da pessoa ativou (morador, proprietário, parceiro)", "checklist de ativação e funil (Prompt 50)", CONTA),
   i("verificacao_revisoes", "public.verificacao_revisoes", "motivo da reprovação automática, decisão e observação da equipe", "análise humana da verificação de identidade (Prompt 50)", CONTA, "o laudo da revisão em tenant_verifications"),
   // Prompt 62-B2: execução da avaliação. Fotos e laudo ficam enquanto o laudo vale + a janela de disputa (prazo pendente,
