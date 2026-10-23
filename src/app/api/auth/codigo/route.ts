@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ipHash, situacaoLimite } from "@/lib/limites";
-import { dominioDoEmail, dominioReservado, MSG_EMAIL_INUTILIZAVEL } from "@/lib/email-dominio";
+import { dominioBarrado, dominioDoEmail, MSG_EMAIL_INUTILIZAVEL } from "@/lib/email-dominio";
 import { dominioExiste } from "@/lib/email-dominio-dns";
 import { isValidEmail } from "@/lib/auth-errors";
 import { integracoesSimuladas } from "@/lib/integracoes";
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   if (!isValidEmail(email)) return NextResponse.json({ ok: false, error: "Digite um e-mail válido para receber o código." }, { status: 400 });
 
   const dominio = dominioDoEmail(email);
-  if (!dominio || dominioReservado(dominio) || !(await dominioExiste(dominio))) {
+  if (!dominio || dominioBarrado(dominio, integracoesSimuladas()) || !(await dominioExiste(dominio))) {
     return NextResponse.json({ ok: false, error: MSG_EMAIL_INUTILIZAVEL }, { status: 400 });
   }
 
