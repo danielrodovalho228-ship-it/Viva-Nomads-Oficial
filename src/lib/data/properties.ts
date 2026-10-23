@@ -573,9 +573,13 @@ async function attachInternet(supabase: SupabaseLike, list: Property[]): Promise
 async function attachNivel(supabase: SupabaseLike, list: Property[]): Promise<void> {
   if (list.length === 0) return;
   try {
-    const { data } = await supabase.from("imovel_nivel").select("property_id, nivel").in("property_id", list.map((p) => p.id));
-    const porId = new Map(((data as { property_id: string; nivel: Property["nivel"] }[] | null) ?? []).map((r) => [r.property_id, r.nivel]));
-    for (const p of list) p.nivel = porId.get(p.id) ?? p.nivel ?? null;
+    const { data } = await supabase.from("imovel_nivel").select("property_id, nivel, nivel_vistoriado_em").in("property_id", list.map((p) => p.id));
+    const porId = new Map(((data as { property_id: string; nivel: Property["nivel"]; nivel_vistoriado_em: string | null }[] | null) ?? []).map((r) => [r.property_id, r]));
+    for (const p of list) {
+      const r = porId.get(p.id);
+      p.nivel = r?.nivel ?? p.nivel ?? null;
+      if (r?.nivel_vistoriado_em) p.nivelVistoriado = true;
+    }
   } catch {
     /* sem a 0211: ninguém tem nível e o filtro "a partir de" não acha ninguém */
   }

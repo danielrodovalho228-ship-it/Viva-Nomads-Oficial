@@ -146,6 +146,8 @@ export interface Property {
   internetMedida?: import("@/lib/internet-medida").Medicao;
   /** Adendo 59.1: nível Essencial/Conforto/Premium (imovel_nivel; não é selo nem posição). */
   nivel?: import("@/config/niveis").NivelOuAdequacao | null;
+  /** Prompt 62-A, Parte 2: o nível tem laudo de avaliação vigente (imovel_nivel.nivel_vistoriado_em). */
+  nivelVistoriado?: boolean;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;
