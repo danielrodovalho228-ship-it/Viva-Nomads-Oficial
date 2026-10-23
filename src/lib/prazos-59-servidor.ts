@@ -47,7 +47,7 @@ export async function rodarPrazos59(admin: Admin, agora = new Date(), soImoveis?
       }
       if (deveSairDaBusca(l.prazo_ate, false, agora)) {
         if (!l.pausado_em && l.properties.status === "active") {
-          const { data: pausou } = await admin.from("properties").update({ status: "paused" }).eq("id", l.property_id).eq("status", "active").select("id");
+          const { data: pausou } = await admin.from("properties").update({ status: "paused", pausa_motivo: "conforto" }).eq("id", l.property_id).eq("status", "active").select("id");
           if (pausou?.length) {
             await admin.from("conforto_adequacao").update({ pausado_em: agora.toISOString() }).eq("property_id", l.property_id);
             await avisarConfortoPrazo(admin, l.property_id, "pausado", l.prazo_ate).catch(() => null);

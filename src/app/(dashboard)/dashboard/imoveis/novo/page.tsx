@@ -1,5 +1,6 @@
 "use client";
 
+import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -159,10 +160,16 @@ export default function NewPropertyPage() {
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
   const [aceitouIa, setAceitouIa] = useState(false);
+  // 64-B: o aceite vale para o texto do momento em que foi dado (impressão do título + descrição); mudou → cai.
+  const [aceiteTexto, setAceiteTexto] = useState<string | null>(null);
+  const [avisoAceite, setAvisoAceite] = useState<string | null>(null);
   const [textoIaOriginal, setTextoIaOriginal] = useState<{ titulo: string; descricao: string } | null>(null);
   const [title, setTitle] = useState("");
   const [propertyType, setPropertyType] = useState("apartamento");
   const [description, setDescription] = useState("");
+  // Mudou o título ou a descrição depois do aceite: o aceite deixa de valer (caixa desmarcada) e o aviso aparece.
+  const textoMudouDepoisDoAceite = aceitouIa && aceiteTexto !== null && impressaoDoTexto(title, description) !== aceiteTexto;
+  const aceiteValido = aceitouIa && !textoMudouDepoisDoAceite;
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   const [areaM2, setAreaM2] = useState("");
@@ -298,7 +305,7 @@ export default function NewPropertyPage() {
   }
 
   const completude = prontidao.obrigatorios;
-  const podePublicar = prontidao.podePublicar && qualificado && aceitouIa;
+  const podePublicar = prontidao.podePublicar && qualificado && aceiteValido;
 
   /** Campos obrigatórios da etapa atual (chave → mensagem). Só barra o AVANÇO; a Revisão é o portão final. */
   function validarEtapa(s: number): Record<string, string> {
@@ -444,7 +451,7 @@ export default function NewPropertyPage() {
       setPublishError("A duração máxima não pode ser menor que a mínima. Ajuste os prazos.");
       return;
     }
-    if (!asDraft && !aceitouIa) {
+    if (!asDraft && !aceiteValido) {
       setPublishError("Marque a confirmação de que você revisou o anúncio para publicar.");
       return;
     }
@@ -549,6 +556,11 @@ export default function NewPropertyPage() {
     if (s(d.title)) setTitle(d.title as string);
     if (s(d.propertyType)) setPropertyType(d.propertyType as string);
     if (s(d.description)) setDescription(d.description as string);
+    // 64-B: o aceite do termo de IA volta com o rascunho (só com a versão atual e o mesmo texto).
+    const aceite = aceiteRestaurado(d.aceiteIa, s(d.title) ?? "", s(d.description) ?? "");
+    setAceitouIa(aceite.marcado);
+    setAceiteTexto(aceite.marcado ? impressaoDoTexto(s(d.title) ?? "", s(d.description) ?? "") : null);
+    setAvisoAceite(aceite.aviso);
     if (s(d.bedrooms)) setBedrooms(d.bedrooms as string);
     if (s(d.bathrooms)) setBathrooms(d.bathrooms as string);
     if (s(d.areaM2)) setAreaM2(d.areaM2 as string);
@@ -739,6 +751,13 @@ export default function NewPropertyPage() {
     };
   }, [editId]);
 
+  // 64-B: marcar/desmarcar o aceite guarda a impressão do texto daquele momento.
+  function marcarAceite(v: boolean) {
+    setAceitouIa(v);
+    setAceiteTexto(v ? impressaoDoTexto(title, description) : null);
+    setAvisoAceite(null);
+  }
+
   // Auto-save do rascunho + "Salvo ✓". Os limites PRIVADOS da negociação NÃO vão no JSON (salvos à parte).
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
@@ -750,6 +769,7 @@ export default function NewPropertyPage() {
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
     iaAnalisadas, sugeridos, comodidadesSugeridas,
     qual,
+    aceiteIa: aceiteParaRascunho(aceiteValido, title, description),
     photos: photos.filter((p) => p.url && !p.url.startsWith("blob:")),
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
   });
@@ -1500,8 +1520,9 @@ export default function NewPropertyPage() {
                 publishing={publishing}
                 publish={publish}
                 irPara={irPara}
-                aceitouIa={aceitouIa}
-                setAceitouIa={setAceitouIa}
+                aceitouIa={aceiteValido}
+                setAceitouIa={marcarAceite}
+                avisoAceite={textoMudouDepoisDoAceite ? AVISO_TEXTO_MUDOU : avisoAceite}
                 conforto={conforto}
                 publishError={publishError}
                 podePublicar={podePublicar}

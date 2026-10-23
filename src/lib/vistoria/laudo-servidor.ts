@@ -154,7 +154,7 @@ export async function bloquear(admin: Admin, propertyId: string, ownerId: string
   if (ja) return false;
   let pausou = false;
   if (tirarDaBusca) {
-    const { data } = await admin.from("properties").update({ status: "paused" }).eq("id", propertyId).eq("status", "active").select("id");
+    const { data } = await admin.from("properties").update({ status: "paused", pausa_motivo: "avaliacao" }).eq("id", propertyId).eq("status", "active").select("id");
     pausou = !!data?.length;
   }
   await admin.from("vistoria_bloqueios").insert({ property_id: propertyId, owner_id: ownerId, motivo, pedido_id: pedidoId, pausou });
@@ -166,7 +166,7 @@ export async function liberar(admin: Admin, propertyId: string, motivos: MotivoB
   const { data } = await admin.from("vistoria_bloqueios").update({ resolvido_em: agora.toISOString() }).eq("property_id", propertyId).in("motivo", motivos).is("resolvido_em", null).select("pausou");
   const pausou = ((data ?? []) as { pausou: boolean }[]).some((b) => b.pausou);
   const { data: resta } = await admin.from("vistoria_bloqueios").select("id").eq("property_id", propertyId).is("resolvido_em", null).limit(1);
-  if (pausou && !resta?.length) await admin.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused");
+  if (pausou && !resta?.length) await admin.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused").eq("pausa_motivo", "avaliacao");
 }
 
 /** Reaplica a escada do proprietário: 2º = republicar só com laudo; 3º = todos os anúncios fora da busca. */

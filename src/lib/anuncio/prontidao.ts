@@ -10,6 +10,7 @@
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
+import { mensagemLimitePublicar, situacaoComLimite } from "./pausa.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
@@ -39,6 +40,8 @@ export interface FatosAnuncio {
   limitePlanoOk: boolean | null;
   /** Quantos anúncios o plano permite no ar (para o texto da vaga); ausente = texto genérico. */
   limiteAnuncios?: number | null;
+  /** 64-B: quantos o dono tem publicados (para dizer quantos pausar); ausente = texto sem o número. */
+  ativosAnuncios?: number | null;
   /** Obrigatória: mínimo de MIN_DESCRICAO caracteres. */
   descricao: string;
   /**
@@ -118,8 +121,10 @@ export const ROTULO_FALTA_CONFORTO = "Padrão mínimo da Viva confirmado";
 /** Item da qualificação no portão único (prompt 22). */
 export const ROTULO_QUALIFICACAO = "Antes de anunciar (qualificação do imóvel)";
 
-export function textoVagaNoPlano(limite?: number | null): string {
+export function textoVagaNoPlano(limite?: number | null, ativos?: number | null): string {
   const n = typeof limite === "number" && limite > 0 && Number.isFinite(limite) ? limite : null;
+  // 64-B: com os publicados conhecidos, a mesma conta do servidor (situacaoLimite) diz quantos pausar.
+  if (n !== null && typeof ativos === "number" && Number.isFinite(ativos)) return mensagemLimitePublicar(situacaoComLimite(n, ativos));
   const quanto = n === null ? "O seu plano já tem o máximo de anúncios no ar" : `Seu plano permite ${n} ${n === 1 ? "anúncio" : "anúncios"} no ar`;
   return `${quanto}. Para publicar este, pause outro ou mude de plano`;
 }
@@ -158,7 +163,7 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   // A vaga só aparece quando é o único bloqueio que resta (ordem de8761b0, item 2).
   if (f.limitePlanoOk === false && obrigatorios.every((i) => i.ok)) {
-    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: ETAPA.revisar, detalhe: textoVagaNoPlano(f.limiteAnuncios) });
+    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: ETAPA.revisar, detalhe: textoVagaNoPlano(f.limiteAnuncios, f.ativosAnuncios) });
   }
   const opcionais: ItemProntidao[] = [
     { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: ETAPA.onde },
@@ -236,7 +241,7 @@ export interface LinhaAnuncio {
   video_url: string | null;
 }
 
-export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento, limitePlanoOk: boolean | null, limiteAnuncios?: number | null): FatosAnuncio {
+export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento, limitePlanoOk: boolean | null, limiteAnuncios?: number | null, ativosAnuncios?: number | null): FatosAnuncio {
   return {
     enderecoOk: !!(p.address?.trim() && p.city?.trim()),
     detalhesOk: (Number(p.bathrooms) || 0) >= 1 && (Number(p.area_m2) || 0) > 0,
@@ -252,6 +257,7 @@ export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDo
     documento,
     limitePlanoOk,
     limiteAnuncios,
+    ativosAnuncios,
     descricao: p.description ?? "",
     selo: !!p.ready_to_live_badge,
     video: !!p.video_url,

@@ -147,6 +147,8 @@ export function EditarImovelClient({
         documento: fatos?.documento ?? "approved",
         limitePlanoOk: fatos?.limitePlanoOk ?? null,
         limiteAnuncios: fatos?.limiteAnuncios,
+        // 64-B: com os publicados, o texto diz quantos pausar (a mesma conta do servidor).
+        ativosAnuncios: fatos?.ativosAnuncios,
         descricao: description,
         selo: fatos?.selo ?? !!property.readyToLiveBadge,
         video: fatos?.video ?? !!property.videoUrl,
