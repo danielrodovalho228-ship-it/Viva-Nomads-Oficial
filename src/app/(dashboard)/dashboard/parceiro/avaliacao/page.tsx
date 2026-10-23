@@ -12,6 +12,7 @@ import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, passosCumpridos, prazoResposta, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, registrarAusencia, responderDesignacao } from "@/lib/vistoria/actions";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
+import { STATUS_TESTE_CONCLUIDO } from "@/lib/vistoria/entrada";
 import { pendenciasDoCredenciamento } from "@/lib/vistoria/entrada";
 import { CODIGO_CONDUTA, CONDUTA_AVALIADOR, ROTULO_CONDUTA, ROTULO_PORTE, type Porte, type StatusCredenciamento } from "@/lib/vistoria/regras";
 
@@ -52,13 +53,18 @@ export default async function AvaliacaoParceiroPage() {
     .limit(1);
   const cred = (credLinhas ?? [])[0] as { id: string; numero_credenciado: string; cidade: string; status: string } | undefined;
   const identidadeOk = (await estadoIdentidade(admin, user.id)).estado === "confirmada";
+  // E30: o passo 5 vem do REGISTRO da avaliação de teste (pedido de teste deste avaliador), nunca só do status.
+  const { data: testes } = cred
+    ? await admin.from("vistoria_pedidos").select("status").eq("teste", true).eq("avaliador_id", cred.id).neq("status", "cancelada")
+    : { data: [] };
+  const teste = { marcado: (testes ?? []).length > 0, concluido: ((testes ?? []) as { status: string }[]).some((t) => t.status === STATUS_TESTE_CONCLUIDO) };
   const pendencias = cred?.status === "solicitado" || !cred ? pendenciasDoCredenciamento({ identidadeVerificada: identidadeOk }) : [];
 
   if (!cred) {
     return (
       <>
         <PageTitle title="Avaliação de imóveis" subtitle="Credenciamento de avaliador: a Viva designa as avaliações por rodízio." />
-        <PassosCredenciamento status={null} identidadeOk={identidadeOk} />
+        <PassosCredenciamento status={null} identidadeOk={identidadeOk} teste={teste} />
         <Panel title="Pedir credenciamento" data-testid="credenciamento-form">
           <p className="text-sm text-muted">
             Precisa da identidade verificada, CPF ou CNPJ válido, experiência comprovada e uma avaliação de teste revisada pela Viva antes da primeira real.
@@ -136,7 +142,7 @@ export default async function AvaliacaoParceiroPage() {
         <p className="text-sm text-ink">
           <span className="font-semibold" data-testid="credenciamento-estado">{ESTADO_CREDENCIAMENTO[cred.status as StatusCredenciamento]}</span> · {SITUACAO[cred.status as StatusCredenciamento]}
         </p>
-        <ListaPassos status={cred.status as StatusCredenciamento} identidadeOk={identidadeOk} />
+        <ListaPassos status={cred.status as StatusCredenciamento} identidadeOk={identidadeOk} teste={teste} />
         {pendencias.length > 0 && (
           <p className="mt-3 text-sm text-ink" data-testid="credenciamento-pendencia">
             Pendência: verificar a sua identidade (a aprovação para teste espera).{" "}
@@ -191,13 +197,15 @@ export default async function AvaliacaoParceiroPage() {
 const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Você recusou", expirada: "Sem resposta em 24 horas", ausencia: "Ausência registrada" };
 
 /** Os 5 passos do credenciamento, com o que já foi feito (Prompt 62-A, item 1). */
-function ListaPassos({ status, identidadeOk }: { status: StatusCredenciamento | null; identidadeOk: boolean }) {
-  const feitos = passosCumpridos({ status, identidadeVerificada: identidadeOk });
+type EstadoTeste = { marcado: boolean; concluido: boolean };
+
+function ListaPassos({ status, identidadeOk, teste }: { status: StatusCredenciamento | null; identidadeOk: boolean; teste: EstadoTeste }) {
+  const feitos = passosCumpridos({ status, identidadeVerificada: identidadeOk, testeConcluido: teste.concluido });
   return (
     <ol className="mt-3 grid gap-2 text-sm sm:grid-cols-5" data-testid="credenciamento-passos">
       {PASSOS_CREDENCIAMENTO.map((p, i) => {
         const ok = feitos[p.chave];
-        const marcado = p.chave === "teste" && status === "em_teste";
+        const marcado = p.chave === "teste" && status === "em_teste" && teste.marcado;
         return (
           <li key={p.chave} className="flex items-start gap-2 sm:flex-col sm:gap-1" data-testid={`passo-${p.chave}`} data-feito={ok ? "1" : "0"}>
             {ok ? <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden /> : <Circle className={`mt-1 h-4 w-4 shrink-0 ${marcado ? "fill-forest text-forest" : "text-line"}`} aria-hidden />}
@@ -212,10 +220,10 @@ function ListaPassos({ status, identidadeOk }: { status: StatusCredenciamento | 
   );
 }
 
-function PassosCredenciamento({ status, identidadeOk }: { status: StatusCredenciamento | null; identidadeOk: boolean }) {
+function PassosCredenciamento({ status, identidadeOk, teste }: { status: StatusCredenciamento | null; identidadeOk: boolean; teste: EstadoTeste }) {
   return (
     <Panel title="Os passos do credenciamento" className="mb-6">
-      <ListaPassos status={status} identidadeOk={identidadeOk} />
+      <ListaPassos status={status} identidadeOk={identidadeOk} teste={teste} />
     </Panel>
   );
 }

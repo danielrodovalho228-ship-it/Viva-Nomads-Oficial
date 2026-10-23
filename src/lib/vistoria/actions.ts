@@ -11,7 +11,7 @@ import { contemContato } from "@/lib/pedidos/pedidos";
 import { semMetadados } from "@/lib/foto-reconversao";
 import { chaveCidade } from "@/lib/cidades";
 import { vistoriaAtiva } from "./chave";
-import { CATEGORIA_AVALIADOR, pendenciasDoCredenciamento, podeAprovarParaTeste, solicitacaoDoAvaliador, validarPedidoAvaliador } from "./entrada";
+import { CATEGORIA_AVALIADOR, pendenciasDoCredenciamento, podeAprovarParaTeste, podeAtivar, solicitacaoDoAvaliador, validarPedidoAvaliador } from "./entrada";
 import { slugBase } from "@/lib/parceiros/regras";
 import {
   CODIGO_CONDUTA,
@@ -33,7 +33,7 @@ import {
   type Porte,
   type StatusCredenciamento,
 } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, avisar, designar, naFilaDoAdmin, passarAoProximo, rotaDono, rotaMorador } from "./servidor";
+import { ROTA_ADMIN, ROTA_AVALIADOR, avisar, comTesteConcluido, designar, naFilaDoAdmin, passarAoProximo, rotaDono, rotaMorador } from "./servidor";
 
 /*
   Prompt 62-B1 — ações da avaliação do imóvel. Cada ação confere QUEM é (dono do imóvel, avaliador designado, morador
@@ -201,6 +201,12 @@ export async function adminDecidirCredenciamento(form: FormData): Promise<Res> {
       if (!r.ok) return r;
       parceiroId = r.parceiroId;
     }
+  }
+  // E30: ativar é a SEGUNDA aprovação, só com a avaliação de teste registrada (laudo emitido num pedido de teste).
+  if (para === "ativo") {
+    const feito = (await comTesteConcluido(a.admin, [id])).has(id);
+    const pode = podeAtivar({ status: c.status as string, testeConcluido: feito });
+    if (!pode.ok) return { ok: false, erro: pode.motivo };
   }
   await a.admin
     .from("avaliadores_credenciamento")

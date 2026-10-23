@@ -68,6 +68,28 @@ export function podeAprovarParaTeste(e: { status: string; identidadeVerificada: 
   return { ok: true };
 }
 
+/**
+ * E30: a ATIVAÇÃO é a segunda aprovação, separada da "Aprovar para teste", e só existe com uma avaliação de teste
+ * REAL: um pedido de teste (vistoria_pedidos.teste) designado a este avaliador e com o laudo emitido. Vale também para
+ * reativar quem nunca fez o teste. "Aprovar para teste" nunca ativa.
+ */
+export const STATUS_TESTE_CONCLUIDO = "laudo_emitido";
+export const PENDENCIA_TESTE = "A avaliação de teste ainda não foi feita: marque um imóvel de teste e espere o laudo.";
+
+export function podeAtivar(e: { status: string; testeConcluido: boolean }): { ok: true } | { ok: false; motivo: string } {
+  if (e.status !== "em_teste" && e.status !== "suspenso") return { ok: false, motivo: "Só quem está em teste (ou suspenso) pode ser ativado." };
+  if (!e.testeConcluido) return { ok: false, motivo: PENDENCIA_TESTE };
+  return { ok: true };
+}
+
+/**
+ * E30: quem conta como "avaliador ativo" rumo aos 2 da chave VISTORIA_ATIVA — o mesmo critério do rodízio: ativo e
+ * de conta real (conta de teste fica fora da rede real).
+ */
+export function contaComoAvaliadorAtivo(c: { status: string; contaTeste: boolean }): boolean {
+  return c.status === "ativo" && !c.contaTeste;
+}
+
 /** A solicitação de parceiro que nasce do pedido de credenciamento (categoria só "vistoria"; uma só cidade). */
 export function solicitacaoDoAvaliador(p: NonNullable<PedidoAvaliadorValido["parceiro"]>, cidade: string, link: string | null, uid: string, email: string | null) {
   return {

@@ -14,7 +14,8 @@ import { adminAbrirVerificacao, adminResolverBloqueio } from "@/lib/vistoria/lau
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistoria/strikes";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
-import { filaDaCidade } from "@/lib/vistoria/servidor";
+import { comTesteConcluido, filaDaCidade } from "@/lib/vistoria/servidor";
+import { PENDENCIA_TESTE, contaComoAvaliadorAtivo } from "@/lib/vistoria/entrada";
 import { TITULO_ADMIN, contagemDecisoes, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
 
 export const metadata = { title: "Avaliações do imóvel — Admin", robots: { index: false, follow: false } };
@@ -66,6 +67,9 @@ export default async function AdminAvaliadoresPage() {
     admin.from("profiles").select("id").eq("is_teste", true).limit(200),
   ]);
   const idsTeste = ((perfisTeste ?? []) as { id: string }[]).map((x) => x.id);
+  const contasTeste = new Set(idsTeste);
+  // E30: quem já tem a avaliação de teste feita (laudo emitido num pedido de teste) — só esses podem ser ativados.
+  const testeFeito = await comTesteConcluido(admin, lista.filter((c) => c.status === "em_teste" || c.status === "suspenso").map((c) => c.id));
   const { data: imoveisTeste } = idsTeste.length ? await admin.from("properties").select("id, title, city").in("owner_id", idsTeste).order("created_at", { ascending: false }).limit(50) : { data: [] };
   const numeroDe = new Map(lista.map((c) => [c.id, c.numero_credenciado]));
   type Ped = { id: string; cidade: string; tipo: string; status: string; aguardando_avaliador: boolean; criado_em: string; avaliadores_credenciamento: { numero_credenciado: string } | null };
@@ -78,7 +82,8 @@ export default async function AdminAvaliadoresPage() {
   const tabela: LinhaPreco[] = ((precos ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const cidades = [...new Map([...lista.map((c) => c.cidade), ...tabela.map((t) => t.cidade)].map((c) => [chaveCidade(c), c])).values()];
   const condicoesPorCidade = cidades.map((cidade) => {
-    const ativos = lista.filter((c) => chaveCidade(c.cidade) === chaveCidade(cidade) && c.status === "ativo").length;
+    // E30: conta de teste não conta rumo aos 2 avaliadores ativos (o mesmo critério do rodízio real).
+    const ativos = lista.filter((c) => chaveCidade(c.cidade) === chaveCidade(cidade) && contaComoAvaliadorAtivo({ status: c.status, contaTeste: !!c.user_id && contasTeste.has(c.user_id) })).length;
     return { cidade, cond: condicoesParaLigar({ tabelaCompleta: tabelaCompleta(tabela, cidade, agora), avaliadoresAtivos: ativos, parecerItem14: VISTORIA_PARECER_14 }) };
   });
   const numeros = contagemDecisoes({ credenciamentos: lista, semAvaliador: semAvaliador.length, recusasAusencias: recusasLista.length, cidadesProntas: condicoesPorCidade.filter((c) => c.cond.every((x) => x.ok)).length, cidades: cidades.length });
@@ -151,6 +156,9 @@ export default async function AdminAvaliadoresPage() {
                           {c.numero_credenciado} · {c.parceiros?.nome_publico ?? c.parceiro_solicitacoes?.nome ?? "Parceiro"}
                         </strong>{" "}
                         · {c.cidade} · {ROTULO_STATUS[c.status]}
+                        {c.user_id && contasTeste.has(c.user_id) && (
+                          <span className="text-muted" data-testid="credenciamento-conta-teste"> · Conta de teste: fora do rodízio real e da contagem da chave</span>
+                        )}
                         {!c.parceiros && c.parceiro_solicitacoes && (
                           <span className="block text-muted" data-testid="credenciamento-dados-parceiro">
                             Ainda não é parceiro: {c.parceiro_solicitacoes.tipo_pessoa === "pj" ? "CNPJ" : "CPF"} {mascararDocumento(c.parceiro_solicitacoes.documento)}
@@ -172,14 +180,21 @@ export default async function AdminAvaliadoresPage() {
                         {c.relacoes_descricao && <span className="block text-muted">Relações declaradas: {c.relacoes_descricao}</span>}
                         {c.motivo && <span className="block text-muted">Motivo: {c.motivo}</span>}
                         <div className="mt-3 grid gap-2">
-                          {PROXIMOS[c.status].map((para) => (
+                          {PROXIMOS[c.status].map((para) =>
+                            para === "ativo" && !testeFeito.has(c.id) ? (
+                              // E30: sem a avaliação de teste registrada, ativar não existe na interface.
+                              <p key={para} className="text-sm font-semibold text-red-700" data-testid="decidir-ativo-bloqueado">
+                                {rotuloDecisao(c.status, para)}: {PENDENCIA_TESTE}
+                              </p>
+                            ) : (
                             <FormAcao key={para} acao={adminDecidirCredenciamento} className="flex flex-wrap items-center gap-2" testid={`decidir-${para}`}>
                               <input type="hidden" name="id" value={c.id} />
                               <input type="hidden" name="para" value={para} />
                               {(para === "suspenso" || para === "descredenciado") && <input name="motivo" placeholder="Motivo" aria-label="Motivo" className="min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-base" />}
                               <Button type="submit" variant="secondary" size="sm">{rotuloDecisao(c.status, para)}</Button>
                             </FormAcao>
-                          ))}
+                            ),
+                          )}
                         </div>
                         {c.status === "em_teste" && (
                           <FormAcao acao={adminCriarAvaliacaoTeste} className="mt-3 flex flex-wrap items-end gap-2" testid="avaliacao-teste">

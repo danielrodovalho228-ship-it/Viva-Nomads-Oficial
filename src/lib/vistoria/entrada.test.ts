@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { PENDENCIA_IDENTIDADE, ehPedidoDeAvaliador, pendenciasDoCredenciamento, podeAprovarParaTeste, solicitacaoDoAvaliador, validarPedidoAvaliador } from "./entrada.ts";
+import { PENDENCIA_IDENTIDADE, contaComoAvaliadorAtivo, ehPedidoDeAvaliador, podeAtivar, pendenciasDoCredenciamento, podeAprovarParaTeste, solicitacaoDoAvaliador, validarPedidoAvaliador } from "./entrada.ts";
 import { CATEGORIAS_CATALOGO, categoriaValida, validarSolicitacao } from "../parceiros/regras.ts";
 
 const CPF = "52998224725";
@@ -54,4 +54,30 @@ test("textos da entrada: 'avaliação do imóvel' e 'avaliador credenciado'; nun
     const t = readFileSync(new URL(`../../../${f}`, import.meta.url), "utf8");
     assert.doesNotMatch(t, /inspe[cç][aã]o|per[ií]cia|engenharia/i, f);
   }
+});
+
+test("E30: aprovar para teste nunca ativa; ativar só com a avaliação de teste registrada", () => {
+  // Aprovar para teste leva a "em_teste" e nada além (a transição é a única coisa que a ação grava).
+  const acoes = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
+  const decidir = acoes.slice(acoes.indexOf("export async function adminDecidirCredenciamento"), acoes.indexOf("async function ativarParceiroDoAvaliador"));
+  assert.match(decidir, /ativado_em: agora[^\n]*para === "ativo"|para === "ativo" && c\.status === "em_teste" \? \{ ativado_em/);
+  assert.match(decidir, /if \(para === "ativo"\) \{[\s\S]*?comTesteConcluido\(a\.admin, \[id\]\)[\s\S]*?podeAtivar\(/, "ativar confere o registro do teste no servidor");
+  assert.doesNotMatch(decidir.slice(decidir.indexOf('if (para === "em_teste") {'), decidir.indexOf("// E30")), /status: "ativo"/);
+  // Regra pura.
+  assert.equal(podeAtivar({ status: "em_teste", testeConcluido: false }).ok, false);
+  assert.equal(podeAtivar({ status: "suspenso", testeConcluido: false }).ok, false, "reativar quem nunca fez o teste também não");
+  assert.equal(podeAtivar({ status: "em_teste", testeConcluido: true }).ok, true);
+  assert.equal(podeAtivar({ status: "solicitado", testeConcluido: true }).ok, false, "do pedido recebido não se pula para ativo");
+  // Na interface, sem o teste registrado, o botão de ativar não existe (só o aviso).
+  const tela = readFileSync(new URL("../../app/(dashboard)/admin/avaliadores/page.tsx", import.meta.url), "utf8");
+  assert.match(tela, /para === "ativo" && !testeFeito\.has\(c\.id\) \?[\s\S]*?data-testid="decidir-ativo-bloqueado"/);
+});
+
+test("E30: conta de teste não conta como avaliador ativo rumo aos 2 da chave", () => {
+  assert.equal(contaComoAvaliadorAtivo({ status: "ativo", contaTeste: true }), false);
+  assert.equal(contaComoAvaliadorAtivo({ status: "ativo", contaTeste: false }), true);
+  assert.equal(contaComoAvaliadorAtivo({ status: "em_teste", contaTeste: false }), false);
+  const tela = readFileSync(new URL("../../app/(dashboard)/admin/avaliadores/page.tsx", import.meta.url), "utf8");
+  assert.match(tela, /avaliadoresAtivos: ativos/);
+  assert.match(tela, /contaComoAvaliadorAtivo\(\{ status: c\.status, contaTeste:/);
 });
