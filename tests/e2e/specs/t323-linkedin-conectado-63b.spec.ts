@@ -155,6 +155,8 @@ test.describe("T323 — selo LinkedIn conectado (63-B)", () => {
     const linha = p.getByTestId("confianca-linkedin");
     await expect(linha).toHaveAttribute("data-situacao", "ok", { timeout: 20_000 });
     await linha.getByTestId("confianca-linkedin-botao").click();
+    // 63-A: confirmação de 1 passo antes de desconectar.
+    await linha.getByTestId("linkedin-desconectar-confirma").click();
     await expect(linha).toHaveAttribute("data-situacao", "falta", { timeout: 20_000 });
     await expect.poll(() => linhaDe(ids.ana)).toBeNull();
     await p.context().close();

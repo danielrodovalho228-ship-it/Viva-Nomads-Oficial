@@ -620,7 +620,8 @@
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
         "t266-painel-42",
-        "t318-papel-ativo-fonte-unica"
+        "t318-papel-ativo-fonte-unica",
+        "t351-telas-linkedin-63a"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -821,7 +822,8 @@
         "t182-jornada-completa",
         "t183-telas-logadas-390",
         "t213-jornada-teste-confirmacao",
-        "t298-varredura-logada-bloco4"
+        "t298-varredura-logada-bloco4",
+        "t351-telas-linkedin-63a"
       ]
     },
     "/dashboard/locacoes": {
@@ -870,7 +872,8 @@
         "t209-jornada-dois-lados",
         "t286-esqueletos-vazios-48",
         "t315-telas-avaliacao-dono-62a",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t351-telas-linkedin-63a"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1189,7 +1192,8 @@
         "t310-vao-fim-de-pagina",
         "t320-pausar-anuncio-64b",
         "t342-galeria-video-segundo",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t351-telas-linkedin-63a"
       ]
     },
     "/modelodenegocio": {
@@ -1319,7 +1323,8 @@
         "t180-anuncio-real-sem-exemplo",
         "t182-jornada-completa",
         "t307-varredura-bloco8",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t351-telas-linkedin-63a"
       ]
     },
     "/qualificar": {
