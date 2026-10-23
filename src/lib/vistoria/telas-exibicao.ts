@@ -5,6 +5,8 @@
   Na tela: "avaliação do imóvel" e "avaliador credenciado". Nenhum número de ganho por nível; o dono não escolhe.
 */
 import { ETIQUETA_BRASILIA, dataBRT, horaBRT } from "../datas-brasilia.ts";
+import { chaveCidade } from "../cidades.ts";
+import { HORAS_PARA_RESPONDER, ROTULO_IMPEDIMENTO, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
 
 // ── Data e hora da visita (QA do #1111, item 6: sem segundos e com o fuso) ─────────────────────────────────────
 /** "25/10/2026 às 10:00" no horário de Brasília. */
@@ -69,4 +71,96 @@ export function situacaoPagamento(p: { recebidoMarcadoEm: string | null; recebid
   if (p.recebidoConfirmadoEm) return "Pagamento registrado pelos dois lados.";
   if (p.recebidoMarcadoEm) return "O avaliador marcou o valor como recebido. Confirme se você já pagou.";
   return "Você paga direto ao avaliador, depois da visita. A Viva só registra.";
+}
+
+// ── Item 1: credenciamento (pedido único do 62-B3) — passos e estado ────────────────────────────────────────────
+export const PASSOS_CREDENCIAMENTO = [
+  { chave: "identidade", rotulo: "Identidade verificada" },
+  { chave: "experiencia", rotulo: "Experiência comprovada" },
+  { chave: "conduta", rotulo: "Código de conduta aceito" },
+  { chave: "relacoes", rotulo: "Relações declaradas" },
+  { chave: "teste", rotulo: "Avaliação de teste revisada pela Viva" },
+] as const;
+export type ChavePasso = (typeof PASSOS_CREDENCIAMENTO)[number]["chave"];
+
+export const ESTADO_CREDENCIAMENTO: Record<StatusCredenciamento, string> = {
+  solicitado: "Em análise",
+  em_teste: "Avaliação de teste marcada",
+  ativo: "Ativo",
+  suspenso: "Suspenso",
+  descredenciado: "Descredenciado",
+};
+
+/**
+ * O que já está cumprido. Experiência, conduta e relações vão no pedido; a identidade é a verificação de verdade (a
+ * aprovação para teste espera por ela); o teste só conta revisado (ativo).
+ */
+export function passosCumpridos(e: { status: StatusCredenciamento | null; identidadeVerificada: boolean }): Record<ChavePasso, boolean> {
+  const enviado = e.status !== null;
+  return { identidade: e.identidadeVerificada, experiencia: enviado, conduta: enviado, relacoes: enviado, teste: e.status === "ativo" || e.status === "suspenso" };
+}
+
+// ── Item 2: página pública ───────────────────────────────────────────────────────────────────────────────────
+export const LINHA_PUBLICA_DESIGNACAO = "A Viva designa o avaliador. O proprietário não escolhe.";
+
+// ── Item 6: agenda do avaliador ───────────────────────────────────────────────────────────────────────────────
+/** O contador das 24 h para aceitar: "Responda em 23 h 10 min". Vencido: passa ao próximo (a rotina faz). */
+export function prazoResposta(designadoEm: string, agora: Date): { vencido: boolean; texto: string } {
+  const resta = Date.parse(designadoEm) + HORAS_PARA_RESPONDER * 3_600_000 - agora.getTime();
+  if (resta <= 0) return { vencido: true, texto: "Prazo de resposta vencido: o pedido passa ao próximo avaliador." };
+  const h = Math.floor(resta / 3_600_000);
+  const m = Math.floor((resta % 3_600_000) / 60_000);
+  return { vencido: false, texto: `Responda em ${h} h ${String(m).padStart(2, "0")} min` };
+}
+
+/** A visita cai nos próximos 7 dias (a "semana" da agenda)? */
+export function visitaNaSemana(agendadoPara: string | null, agora: Date): boolean {
+  if (!agendadoPara) return false;
+  const t = Date.parse(agendadoPara) - agora.getTime();
+  return t >= -12 * 3_600_000 && t <= 7 * 86_400_000;
+}
+
+// ── Item 7: admin "Avaliações do imóvel" (o "Avaliações" do admin é o das estadias) ───────────────────────────
+export const TITULO_ADMIN = "Avaliações do imóvel";
+
+/** O botão diz a ação (QA do #1111, item 2), não o estado de destino. A aprovação única do 62-B3 é "Aprovar para teste". */
+export function rotuloDecisao(de: StatusCredenciamento, para: StatusCredenciamento): string {
+  if (para === "ativo") return de === "em_teste" ? "Aprovar o teste (ativar)" : "Reativar";
+  if (para === "em_teste") return "Aprovar para teste";
+  if (para === "suspenso") return "Suspender";
+  return "Descredenciar";
+}
+
+export interface PosicaoRodizio {
+  id: string;
+  posicao: number | null;
+  impedimento: string | null;
+}
+
+/**
+ * A fila de rodízio de uma cidade como o admin vê: quem está elegível, na ordem em que será designado (há mais tempo
+ * sem designação primeiro), e quem está fora com o motivo. Impedimentos que dependem do pedido (serviço ao dono,
+ * relação declarada) aparecem na hora da designação; aqui só os da própria pessoa.
+ */
+export function filaDeRodizio(fila: AvaliadorFila[], cidade: string, agora: Date): PosicaoRodizio[] {
+  const daCidade = fila.filter((a) => chaveCidade(a.cidade) === chaveCidade(cidade));
+  const neutro = { id: "", propertyId: "", ownerId: "", cidade, tipo: "inicial" as const, teste: false, primeiroAvaliadorId: null, jaDesignados: [] };
+  const historico = { servicosAoDono: [], avaliacoesDoImovel: [] };
+  const t = (s: string | null) => (s ? Date.parse(s) : -Infinity);
+  const ordem = [...daCidade].sort((x, y) => t(x.ultimaDesignacaoEm) - t(y.ultimaDesignacaoEm) || Date.parse(x.credenciadoEm) - Date.parse(y.credenciadoEm) || x.id.localeCompare(y.id));
+  let n = 0;
+  return ordem.map((a) => {
+    const m: MotivoImpedimento | null = impedimento(a, neutro, historico, agora);
+    return { id: a.id, posicao: m ? null : ++n, impedimento: m ? ROTULO_IMPEDIMENTO[m] : null };
+  });
+}
+
+/** Os números do topo do admin ("decisões primeiro"): cada um leva à sua seção. */
+export function contagemDecisoes(e: { credenciamentos: { status: StatusCredenciamento }[]; semAvaliador: number; recusasAusencias: number; cidadesProntas: number; cidades: number }) {
+  return [
+    { chave: "credenciamentos", rotulo: "credenciamentos para decidir", valor: e.credenciamentos.filter((c) => c.status === "solicitado" || c.status === "em_teste").length, ancora: "#credenciamento" },
+    { chave: "sem-avaliador", rotulo: "pedidos sem avaliador elegível", valor: e.semAvaliador, ancora: "#sem-avaliador" },
+    { chave: "recusas", rotulo: "recusas e ausências (30 dias)", valor: e.recusasAusencias, ancora: "#recusas" },
+    { chave: "chave", rotulo: `de ${e.cidades} cidades prontas para ligar`, valor: e.cidadesProntas, ancora: "#chave" },
+  ];
 }

@@ -1720,7 +1720,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t320-credenciamento-avaliador-62a"
       ]
     },
     "/dashboard/parceiro/avaliacao": {
@@ -1730,7 +1731,8 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t306-varredura-bloco7",
-        "t315-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a",
+        "t320-credenciamento-avaliador-62a"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -1755,7 +1757,8 @@
         "publico"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t320-credenciamento-avaliador-62a"
       ]
     },
     "/dashboard/parceiro/avaliacao/[pedido]": {
