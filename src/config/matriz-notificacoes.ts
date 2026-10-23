@@ -1,10 +1,10 @@
 /**
  * Matriz de notificações (Prompt 42, item 6 — base para o Prompt 44). Evento × papel × canal × categoria, a partir dos
  * eventos que já existem em src/lib/notifications/ (NotificationEvent, os de notify(), e os e-mails avulsos de
- * imagens-email.ts). AINDA NÃO muda o notify(): o Prompt 44 liga esta matriz ao envio.
+ * imagens-email.ts). Prompt 44: o notify() consulta esta matriz para decidir o push (regra-push.ts).
  *
  * Regras (Estudo 2, aprovado):
- *  • push SÓ para decisão com prazo e para segurança;
+ *  • push SÓ para decisão com prazo, segurança e mensagem nova (Prompt 44: só sem a conversa aberta há 10 min, agrupada);
  *  • mensagens, lembretes e outros têm interruptor (a pessoa desliga);
  *  • decisão e segurança NÃO têm interruptor (sempre chegam).
  * Códigos (assinatura, recuperação de duas etapas) e o aviso de exclusão da conta vão só por e-mail: código não aparece
@@ -87,7 +87,9 @@ export const MATRIZ_NOTIFICACOES = {
   exclusao_conta: { categoria: "seguranca", papeis: ["morador", "proprietario", "parceiro"], canais: SO_EMAIL },
 
   // ── Mensagens (com interruptor) ───────────────────────────────────────────
-  new_message: { categoria: "mensagens", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  // Prompt 44: mensagem nova tem push, mas só se a pessoa não abriu a conversa nos últimos 10 min, agrupado
+  // ("3 mensagens novas de Ana", sem o texto) — regra em src/lib/notifications/regra-push.ts.
+  new_message: { categoria: "mensagens", papeis: DUAS_PARTES, canais: TODOS_OS_CANAIS },
   manutencao_mensagem: { categoria: "mensagens", papeis: DUAS_PARTES, canais: SEM_PUSH },
   chamado_respondido: { categoria: "mensagens", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   pedido_resposta: { categoria: "mensagens", papeis: ["morador"], canais: SEM_PUSH },

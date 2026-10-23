@@ -9,7 +9,8 @@ import { EXPO_LOTE, EXPO_PUSH_URL, emLotes, lerTickets, montarMensagens, separar
  *  • Tokens "ExponentPushToken[...]" (app Expo) vão ao exp.host e NÃO dependem do FCM;
  *    `EXPO_ACCESS_TOKEN` é opcional. Tokens antigos seguem pelo FCM (`FCM_SERVICE_ACCOUNT_JSON`);
  *    sem a credencial do FCM, só eles são ignorados — nunca quebra.
- *  • O conteúdo NUNCA leva contato, sobrenome nem valores — só o evento + o link.
+ *  • O conteúdo NUNCA leva contato, sobrenome nem documento; valores só para quem é parte (texto da decisão da matriz,
+ *    regra-push.ts) — o resto é o evento + o link.
  *  • Nunca atrasa o `notify()`: timeout curto e falha só vira log.
  *  • Token OAuth do Google em cache (~50 min).
  *  • Resposta UNREGISTERED/404 → apaga o token da tabela (limpa aparelho morto).

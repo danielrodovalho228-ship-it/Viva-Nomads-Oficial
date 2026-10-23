@@ -107,6 +107,7 @@ export const INVENTARIO: ItemInventario[] = [
   i("vistoria_itens", "public.vistoria_itens", "observação da vistoria", "prova da vistoria", DISPUTA),
   i("contrato_ocupantes", "public.contrato_ocupantes", "nome e documento dos ocupantes", "lista da portaria", { prazoDias: 90, gatilho: "fim_estadia", modo: "apagar", base: "legal", fase: 2 }, "nada (já apagado pelo cron do Prompt 32)"),
   i("estadia_convidados", "public.estadia_convidados", "e-mail de quem vai morar junto", "acesso só leitura à estadia (61-B)", { prazoDias: 30, gatilho: "fim_estadia", modo: "apagar", base: "proposta", fase: 2 }, "nada (apagado pelo cron da estadia)"),
+  i("push_adiados", "public.push_adiados", "título e texto genérico do push adiado pelo silêncio", "entregar às 7h o aviso que caiu entre 22h e 7h (44)", { prazoDias: 1, gatilho: "sinal_processado", modo: "apagar", base: "proposta", fase: 2 }, "nada (apagado ao enviar)"),
   i("contrato_assinaturas", "public.contrato_assinaturas", "IP e hash da assinatura", "prova da assinatura", FISCAL),
   i("contrato_aditivo_assinaturas", "public.contrato_aditivo_assinaturas", "IP e hash da assinatura do aditivo", "prova da assinatura", FISCAL),
   i("contrato_notas", "public.contrato_notas", "notas do contrato", "registro da estadia", ESTADIA),
