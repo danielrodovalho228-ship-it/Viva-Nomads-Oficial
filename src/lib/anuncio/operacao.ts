@@ -33,6 +33,15 @@ export function subleaseParaGravar(op: unknown, declarado: boolean | undefined):
   return operacaoValida(op) && op !== "own" ? declarado ?? false : false;
 }
 
+/**
+ * As duas colunas da operação, pela regra de subleaseParaGravar. O updateProperty e o autosave do rascunho (59-C1)
+ * gravam as duas juntas: uma linha antiga própria com sublocação marcada (a restrição da 0200 recusa QUALQUER
+ * update dela) volta ao permitido na primeira gravação, em vez de o autosave falhar sempre.
+ */
+export function colunasDeOperacao(op: unknown, declarado: unknown): { ownership_type: Operacao; sublease_authorized: boolean } {
+  return { ownership_type: operacaoValida(op) ? op : "own", sublease_authorized: subleaseParaGravar(op, declarado === true) };
+}
+
 /** O que anexar, por tipo de operação. */
 export const DOC_AUTORIZACAO: Record<Exclude<Operacao, "own">, { titulo: string; declaracao: string; aviso: string }> = {
   subleased: {
