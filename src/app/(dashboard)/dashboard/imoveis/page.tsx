@@ -8,6 +8,8 @@ import { DecisaoRascunho } from "@/components/property/decisao-rascunho";
 import { MyPropertiesClient } from "./imoveis-client";
 import { minhaSituacaoLimite } from "@/lib/data/actions";
 import { BlocoLimite } from "@/components/anuncio/bloco-limite";
+import { avisoTipoEntradaNoPainel } from "@/lib/anuncio/chegada-e-pedido";
+import Link from "next/link";
 
 /**
  * "Meus imóveis": o servidor busca a lista REAL do proprietário e a prontidão de
@@ -20,16 +22,23 @@ export default async function MyPropertiesPage() {
   const prontidao: Record<string, Prontidao> = {};
   // 64-B: o motivo de cada pausa (decide se o dono vê "Reativar" ou o caminho da Viva) e o limite do plano.
   const pausas: Record<string, string | null> = {};
+  // 61-B: anúncio já publicado sem o tipo de entrada segue no ar, com o aviso aqui (sem bloqueio retroativo).
+  const semTipoEntrada: { id: string; title: string }[] = [];
   const limite = properties.length ? await minhaSituacaoLimite().catch(() => null) : null;
   if (supabase && properties.length) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
-      const [mapa, { data: motivos }] = await Promise.all([
+      const [mapa, { data: motivos }, entrada] = await Promise.all([
         prontidaoDosImoveis(supabase, user.id, properties.map((p) => p.id)),
         supabase.from("properties").select("id, pausa_motivo").eq("owner_id", user.id).eq("status", "paused"),
+        // Sem a 0225, erro → nenhum aviso.
+        supabase.from("properties").select("id, title, status, tipo_entrada").eq("owner_id", user.id).neq("status", "draft"),
       ]);
+      for (const l of (entrada.error ? [] : (entrada.data ?? [])) as { id: string; title: string; status: string; tipo_entrada: string | null }[]) {
+        if (avisoTipoEntradaNoPainel({ tipoEntrada: l.tipo_entrada, status: l.status })) semTipoEntrada.push({ id: l.id, title: l.title });
+      }
       for (const [id, pr] of mapa) prontidao[id] = pr;
       for (const m of (motivos ?? []) as { id: string; pausa_motivo: string | null }[]) pausas[m.id] = m.pausa_motivo;
     }
@@ -54,6 +63,20 @@ export default async function MyPropertiesPage() {
         <div className="mb-4">
           <BlocoLimite situacao={limite} />
         </div>
+      )}
+      {semTipoEntrada.length > 0 && (
+        <section className="mb-4 rounded-xl border border-line bg-white p-4 text-sm text-ink" data-testid="aviso-tipo-entrada">
+          <p>{avisoTipoEntradaNoPainel({ tipoEntrada: null, status: "active" })}</p>
+          <ul className="mt-2 space-y-1">
+            {semTipoEntrada.map((i) => (
+              <li key={i.id}>
+                <Link href={`/dashboard/imoveis/${i.id}/editar`} className="inline-flex min-h-[44px] items-center font-medium text-forest underline">
+                  {i.title}: informar o tipo de entrada
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       <MyPropertiesClient properties={properties} prontidao={prontidao} pausas={pausas} />
     </>

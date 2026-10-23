@@ -3,6 +3,8 @@
 import { CampoReais } from "@/components/ui/campo-reais";
 import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/components/anuncio/limpeza-estadia-campos";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
+import { ChegadaEPedidoCampos, formDeChegada, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
+import { avisoTipoEntradaNoPainel } from "@/lib/anuncio/chegada-e-pedido";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { DateFieldBR } from "@/components/ui/date-field-br";
@@ -105,6 +107,8 @@ export function EditarImovelClient({
   const [limpeza, setLimpeza] = useState<LimpezaEstadiaForm>(formDeLimpeza(property.limpezaEstadia));
   const [smokingAllowed, setSmokingAllowed] = useState(property.smokingAllowed ?? false);
   const [childrenAllowed, setChildrenAllowed] = useState(property.childrenAllowed ?? true);
+  // 61-B: indefinido = banco sem a 0225 (o bloco some e nada é gravado).
+  const [chegada, setChegada] = useState<ChegadaEPedidoForm>(formDeChegada(property.chegadaEPedido));
   const [bedrooms, setBedrooms] = useState(String(property.bedrooms || ""));
   const [bathrooms, setBathrooms] = useState(String(property.bathrooms || ""));
   const [areaM2, setAreaM2] = useState(String(property.areaM2 || ""));
@@ -218,6 +222,7 @@ export function EditarImovelClient({
       limpezaEstadia: limpeza,
       smokingAllowed,
       childrenAllowed,
+      ...(property.chegadaEPedido ? payloadDaChegada(chegada) : {}),
       // Só manda quando a coluna existe (property.privacidade definida): senão não grava nada.
       ...(property.privacidade
         ? {
@@ -612,6 +617,7 @@ export function EditarImovelClient({
         <Section
           icon={ScrollText}
           title="Regras da casa"
+          testid="secao-regras"
           summary={[
             petsAllowed ? "aceita pets" : "sem pets",
             smokingAllowed ? "fumar ok" : "não fumantes",
@@ -642,6 +648,13 @@ export function EditarImovelClient({
             />
           </div>
           {petsAllowed && <PetsRegrasCampos value={petsRegras} onChange={setPetsRegras} />}
+          {property.chegadaEPedido && (
+            <ChegadaEPedidoCampos
+              value={chegada}
+              onChange={setChegada}
+              erroTipoEntrada={avisoTipoEntradaNoPainel({ tipoEntrada: chegada.tipoEntrada, status: property.status }) ?? undefined}
+            />
+          )}
           <div className="mt-4">
             <LimpezaEstadiaCampos value={limpeza} onChange={setLimpeza} />
           </div>

@@ -135,6 +135,8 @@ export const MATRIZ_NOTIFICACOES = {
   parceiro_orcamento_aceito: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
   parceiro_horario_confirmado: { categoria: "outros", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   estadia_instrucoes_liberadas: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
+  // 61-B: o convidado pode não ter conta ainda — só e-mail (a central e o push dependem da conta).
+  estadia_convite_ocupante: { categoria: "outros", papeis: ["morador"], canais: SO_EMAIL },
   estadia_remarcada: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
   vinculo_parceiro_resposta: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   pedido_auto_atualizado: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },

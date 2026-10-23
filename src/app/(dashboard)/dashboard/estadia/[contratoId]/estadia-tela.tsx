@@ -9,6 +9,8 @@ import type { AditivoView } from "@/lib/data/estadia";
 import { assinarAditivo, listaParaPortaria, pedirCodigoAditivo, responderAditivo, salvarInstrucoes, salvarNota, type Res } from "@/lib/data/estadia-actions";
 import { CAMPOS_INSTRUCOES, type Instrucoes } from "@/lib/estadia/instrucoes";
 import type { PapelEstadia } from "@/lib/estadia/estadia";
+import { convidarOcupante, removerConvidado } from "@/lib/data/estadia-convidados-actions";
+import type { ConvidadoView } from "@/lib/data/estadia-convidados";
 
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
 
@@ -248,6 +250,91 @@ export function NotasPrivadas({ contratoId, inicial }: { contratoId: string; ini
           Salvar nota
         </Button>
       </div>
+      <Mensagem erro={erro} ok={ok} />
+    </div>
+  );
+}
+
+/** 61-B: "Convidar quem vai morar comigo" (só leitura para o convidado). O morador remove a qualquer momento. */
+export function ConvidarOcupante({ contratoId, inicial, limite }: { contratoId: string; inicial: ConvidadoView[]; limite: number }) {
+  const router = useRouter();
+  const [lista, setLista] = useState(inicial);
+  const [email, setEmail] = useState("");
+  const [pendente, setPendente] = useState(false);
+  const [, iniciarRefresh] = useTransition();
+  const [erro, setErro] = useState<string | null>(null);
+  const [ok, setOk] = useState<string | null>(null);
+  const vagas = Math.max(0, limite - lista.length);
+
+  async function convidar(ev: React.FormEvent) {
+    ev.preventDefault();
+    setPendente(true);
+    setErro(null);
+    setOk(null);
+    const r = await convidarOcupante(contratoId, email);
+    setPendente(false);
+    if (!r.ok) return setErro(r.erro);
+    setLista((l) => [...l, r.valor]);
+    setEmail("");
+    setOk("Convite enviado por e-mail.");
+    iniciarRefresh(() => router.refresh());
+  }
+
+  async function remover(id: string) {
+    setPendente(true);
+    setErro(null);
+    setOk(null);
+    const r = await removerConvidado(contratoId, id);
+    setPendente(false);
+    if (!r.ok) return setErro(r.erro);
+    setLista((l) => l.filter((c) => c.id !== id));
+    setOk("Convite removido. O acesso dessa pessoa acabou agora.");
+    iniciarRefresh(() => router.refresh());
+  }
+
+  return (
+    <div className="mt-4 space-y-3 border-t border-divisor pt-4" data-testid="convidar-ocupante">
+      <p className="text-sm font-semibold text-ink">Convidar quem vai morar comigo</p>
+      <p className="text-xs text-muted">
+        A pessoa vê as datas, o endereço, as instruções de chegada (7 dias antes da entrada) e a linha do tempo. Valores, contrato, Caução, documentos, recibos e conversa ficam só com você.
+      </p>
+      {lista.length > 0 && (
+        <ul className="space-y-2" data-testid="convidados-lista">
+          {lista.map((c) => (
+            <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 text-sm text-ink" data-testid="convidado-item">
+              <span className="min-w-0 break-all">
+                {c.email}
+                <span className="text-muted"> · {c.entrou ? "já entrou" : "ainda não entrou"}</span>
+              </span>
+              <Button type="button" variant="tertiary" size="sm" disabled={pendente} onClick={() => remover(c.id)} data-testid="convidado-remover">
+                Remover
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {vagas > 0 ? (
+        <form onSubmit={convidar} className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="email"
+            required
+            autoComplete="off"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={campo}
+            placeholder="E-mail de quem vai morar com você"
+            aria-label="E-mail de quem vai morar com você"
+            data-testid="convidado-email"
+          />
+          <Button type="submit" variant="secondary" size="sm" disabled={pendente || !email.trim()} data-testid="convidado-enviar">
+            Convidar
+          </Button>
+        </form>
+      ) : (
+        <p className="text-xs text-muted" data-testid="convidados-sem-vaga">
+          {limite === 0 ? "O contrato é para 1 pessoa: não há vaga para convidar." : `Você já convidou ${limite} ${limite === 1 ? "pessoa" : "pessoas"}, o máximo deste contrato.`}
+        </p>
+      )}
       <Mensagem erro={erro} ok={ok} />
     </div>
   );

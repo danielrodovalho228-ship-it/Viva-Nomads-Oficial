@@ -522,6 +522,14 @@ export function PropertyDetail({
             </h3>
             <p className="mt-1 text-sm text-muted">{property.title}</p>
             {etapa === "mensagem" ? (
+              <>
+              {/* 61-B: a mensagem do dono para quem vai pedir, lida antes da apresentação (mascarada ao salvar e ao ler). */}
+              {property.chegadaEPedido?.mensagemParaPedido && (
+                <blockquote className="mt-3 rounded-lg bg-surface-2 px-3 py-3 text-sm text-ink" data-testid="mensagem-do-dono">
+                  <span className="block text-xs font-medium text-muted">Recado do proprietário</span>
+                  <span className="mt-1 block whitespace-pre-line">{property.chegadaEPedido.mensagemParaPedido}</span>
+                </blockquote>
+              )}
               <label className="mt-3 flex flex-col gap-1 text-sm font-medium text-ink">
                 Apresente-se (opcional): conte o motivo da estadia e quem vai morar.
                 <textarea
@@ -534,6 +542,7 @@ export function PropertyDetail({
                 />
                 <span className="text-xs font-normal text-muted">Telefone e e-mail não podem ser enviados: a conversa segue pela plataforma e eles são ocultados.</span>
               </label>
+              </>
             ) : (
               <>
                 <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
