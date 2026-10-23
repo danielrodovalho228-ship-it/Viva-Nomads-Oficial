@@ -61,3 +61,20 @@ end $$;
 drop trigger if exists trg_properties_reativar_so_dono on public.properties;
 create trigger trg_properties_reativar_so_dono before update of status on public.properties
   for each row execute function public.properties_reativar_so_dono();
+
+-- ── 5. O motivo é do servidor ──────────────────────────────────────────────────────────────────────────────────────
+-- A permissão de update da tabela inteira vem do padrão do Supabase (o revoke da coluna não basta): este gatilho recusa
+-- quem tenta gravar o motivo direto pela sessão. Só dispara quando o próprio comando cita as colunas — a limpeza feita
+-- pelo gatilho de coerência (ao reativar) segue valendo.
+create or replace function public.properties_pausa_so_servidor() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if current_user in ('authenticated', 'anon') and pg_trigger_depth() <= 1
+     and (new.pausa_motivo is distinct from old.pausa_motivo or new.pausado_em is distinct from old.pausado_em) then
+    raise exception 'O motivo da pausa é gravado pela Viva.' using errcode = '42501';
+  end if;
+  return new;
+end $$;
+drop trigger if exists trg_properties_pausa_so_servidor on public.properties;
+create trigger trg_properties_pausa_so_servidor before update of pausa_motivo, pausado_em on public.properties
+  for each row execute function public.properties_pausa_so_servidor();

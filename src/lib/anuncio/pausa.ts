@@ -74,9 +74,9 @@ export function mensagemLimitePublicar(s: SituacaoLimite): string {
   return `Seu plano permite ${plural(s.limite, "anúncio publicado", "anúncios publicados")} e você tem ${s.ativos}. Para publicar este, pause ${plural(s.precisaPausar, "anúncio", "anúncios")} ou mude de plano`;
 }
 
-/** Bloqueio ao reativar (a conta de ativos já vem SEM o anúncio que se quer reativar). */
+/** Bloqueio ao reativar (a conta de ativos já vem SEM o anúncio que se quer reativar); sem ponto final, como a de publicar. */
 export function mensagemLimiteReativar(s: SituacaoLimite): string {
-  return `Seu plano permite ${plural(s.limite, "publicado", "publicados")} e você tem ${s.ativos}. Para reativar, pause ${plural(s.precisaPausar, "anúncio", "anúncios")} ou mude de plano.`;
+  return `Seu plano permite ${plural(s.limite, "publicado", "publicados")} e você tem ${s.ativos}. Para reativar, pause ${plural(s.precisaPausar, "anúncio", "anúncios")} ou mude de plano`;
 }
 
 /** A linha do painel: "M publicados — seu plano permite N" e, acima do limite, o que fazer. */
