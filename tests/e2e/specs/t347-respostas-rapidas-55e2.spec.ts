@@ -238,8 +238,10 @@ test.describe("T347 — Prompt 55-E2: respostas rápidas e mensagens programadas
     const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
     const a = await ctx.newPage();
     semDialogo(a);
-    await a.goto("/admin/contratos/encerramentos", { waitUntil: "networkidle" });
+    // Mesma causa do caso 4: o painel do admin não chega a "networkidle" em 30 s (lab-crítico do #1191). Vai pelo DOM.
+    await a.goto("/admin/contratos/encerramentos", { waitUntil: "domcontentloaded" });
     const card = a.locator(`[data-testid="admin-encerramento"][data-contrato="${ids.contrato}"]`);
+    await expect(card.getByTestId("encerramento-concluir")).toBeVisible({ timeout: 30_000 });
     await card.getByTestId("encerramento-concluir").click();
     await card.getByTestId("encerramento-concluir-confirmar").click();
     await expect
