@@ -43,6 +43,23 @@ export const SELOS = {
     nome: "Documentação conferida",
     resumo: "a equipe conferiu o documento enviado do imóvel (não a titularidade)",
   },
+  /** Ordem 512f3ed0: selos de estrutura. Só aparecem com TODOS os itens do checklist marcados (src/lib/selos-estrutura.ts). */
+  acessivel: {
+    nome: "Acessível",
+    resumo: "entrada sem degrau ou rampa, elevador ou térreo, portas de 80 cm ou mais e banheiro adaptado",
+  },
+  mobilidadeReduzida: {
+    nome: "Mobilidade reduzida / idosos",
+    resumo: "barras de apoio no banheiro, piso antiderrapante, box sem degrau e cama em altura confortável",
+  },
+  pertoHospital: {
+    nome: "Perto de hospital",
+    resumo: "a até 2 km de um hospital da lista da cidade (calculado pela localização)",
+  },
+  pertoUniversidade: {
+    nome: "Perto de universidade",
+    resumo: "a até 2 km de uma universidade da lista da cidade (calculado pela localização)",
+  },
 } as const satisfies Record<string, SeloDef>;
 
 /** Critérios objetivos do selo "Pronto para Morar" (espelham qualification.ts). */
