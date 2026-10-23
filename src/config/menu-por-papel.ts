@@ -41,6 +41,11 @@ export interface ContextoMenu {
   imoveisAtivos?: number;
   /** Prompt 31a: a conta tem o papel de parceiro (ou um pedido de parceria) — revela o item "Parceiro". */
   parceiro?: boolean;
+  /**
+   * PAPEL-B: o papel ativo. A seção dele vem logo depois da Visão geral (o resto segue na ordem de sempre). Só muda a
+   * ordem: nenhuma seção some ou aparece por causa dele.
+   */
+  papelAtivo?: "morador" | "proprietario" | "parceiro" | null;
 }
 
 export type PapelMenu = "todos" | "morador" | "proprietario" | "parceiro" | "admin";
