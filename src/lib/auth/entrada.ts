@@ -36,6 +36,15 @@ export function destinoDepoisDaEntrada(destino: string, novo: boolean): string {
   return novo ? `/auth/intencao?redirect=${encodeURIComponent(destino)}` : destino;
 }
 
+/**
+ * 49-C1 — link antigo de "confirmar cadastro" (ou de entrada) que ainda está na caixa de alguém: continua valendo,
+ * mas cai no MESMO destino da entrada por código — passa pela tela de intenção (que segue direto para quem já
+ * respondeu). Redefinir senha e trocar e-mail não mudam.
+ */
+export function destinoDoLink(tipo: string | null, destino: string): string {
+  return tipo === "signup" || tipo === "magiclink" || tipo === "email" ? destinoDepoisDaEntrada(destino, true) : destino;
+}
+
 export const INTENCOES = ["morar", "anunciar", "servicos"] as const;
 export type Intencao = (typeof INTENCOES)[number];
 

@@ -60,7 +60,8 @@
         "t273-admin-decisoes",
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
-        "t288-padrao-minimo-59a"
+        "t288-padrao-minimo-59a",
+        "t317-email-unico-49c1"
       ]
     },
     "/admin/2fa/refazer": {
@@ -330,7 +331,8 @@
         "t203-entrar-com-codigo-completo",
         "t69-botoes-header",
         "t300-entrada-sem-senha-49",
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t317-email-unico-49c1"
       ]
     },
     "/auth/pronto": {
@@ -1705,7 +1707,8 @@
         "publico"
       ],
       "specs": [
-        "t300-entrada-sem-senha-49"
+        "t300-entrada-sem-senha-49",
+        "t317-email-unico-49c1"
       ]
     },
     "/admin/avaliadores": {
@@ -2189,7 +2192,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t317-email-unico-49c1"
+      ]
     },
     "/llms-full.txt": {
       "personas": [
@@ -2361,7 +2366,8 @@
         "publico"
       ],
       "specs": [
-        "t300-entrada-sem-senha-49"
+        "t300-entrada-sem-senha-49",
+        "t317-email-unico-49c1"
       ]
     },
     "/api/cron/vistoria": {

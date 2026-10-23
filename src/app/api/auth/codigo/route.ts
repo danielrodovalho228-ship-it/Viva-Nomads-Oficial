@@ -6,7 +6,8 @@ import { ipHash, situacaoLimite } from "@/lib/limites";
 import { dominioDoEmail, dominioReservado, MSG_EMAIL_INUTILIZAVEL } from "@/lib/email-dominio";
 import { dominioExiste } from "@/lib/email-dominio-dns";
 import { isValidEmail } from "@/lib/auth-errors";
-import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
+import { integracoesSimuladas } from "@/lib/integracoes";
+import { enviarCodigoPorEmail } from "@/lib/auth/codigo-por-email";
 import { avaliarEnvioCodigo, mensagemEnvioCodigo, MSG_MUITOS_ENVIOS } from "@/lib/seguranca/codigo-acesso";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,8 @@ export const dynamic = "force-dynamic";
  * O limite vale AQUI, no servidor: 5 envios por hora por e-mail e por IP. Resposta neutra: o mesmo
  * { ok: true } com ou sem conta; só limite, CAPTCHA, e-mail que não recebe mensagem e falha aparecem.
  * Nenhuma conta nova cria senha. No laboratório (INTEGRACOES_SIMULADAS) nada sai para a rede: a conta
- * nasce pelo cliente de serviço e o envio vira linha no LAB_OUTBOX (o teste lê o código do Supabase local).
+ * nasce pelo cliente de serviço e o e-mail que o Supabase mandaria (o mesmo modelo, com o código e sem link) vira
+ * linha no LAB_OUTBOX — 49-C1: o teste confere que sai UM e-mail só, com código.
  */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { email?: unknown; captchaToken?: unknown; indicacao?: unknown };
@@ -43,7 +45,10 @@ export async function POST(request: Request) {
     if (error && !/already|registered|exists/i.test(error.message)) {
       return NextResponse.json({ ok: false, error: "Não foi possível enviar o código agora." }, { status: 503 });
     }
-    await registrarSimulado("codigo-acesso", { para: email });
+    // Conta nova → modelo "Confirm signup"; já existia → "Magic link" (o que o Supabase escolheria).
+    if (!(await enviarCodigoPorEmail(admin, email, !error))) {
+      return NextResponse.json({ ok: false, error: "Não foi possível enviar o código agora." }, { status: 503 });
+    }
     return NextResponse.json({ ok: true });
   }
 
