@@ -315,6 +315,7 @@ export default async function AdminAvaliadoresPage() {
       </Panel>
 
       <Panel title="Laudos recentes" className="mb-6" data-testid="avaliadores-laudos">
+        {(laudos ?? []).length === 0 && <p className="text-sm text-muted">Nenhum laudo emitido ainda.</p>}
         <ul className="grid gap-1 text-sm">
           {((laudos ?? []) as { id: string; numero: string; versao: number; resultado: Resultado; property_id: string; emitido_em: string }[]).map((l) => (
             <li key={l.id} data-testid="laudo-admin" data-resultado={l.resultado}>

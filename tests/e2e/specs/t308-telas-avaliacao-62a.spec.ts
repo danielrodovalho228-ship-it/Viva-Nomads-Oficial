@@ -142,7 +142,11 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(bloco.getByTestId("rota-avaliacao")).toContainText("Avaliação: “· vistoriado” por 12 meses");
       await expect(bloco.getByTestId("frase-paga")).toHaveText("Você paga a avaliação, não o resultado.");
       await expect(bloco.getByTestId("avaliacao-valor")).toContainText("350");
-      const [f, a] = [await bloco.getByTestId("rota-foto").boundingBox(), await bloco.getByTestId("rota-avaliacao").boundingBox()];
+      // As duas caixas medidas no mesmo quadro (a página ainda pode estar rolando até #avaliacao).
+      const [f, a] = await bloco.evaluate((el) => ["rota-foto", "rota-avaliacao"].map((t) => {
+        const r = el.querySelector(`[data-testid="${t}"]`)!.getBoundingClientRect();
+        return { y: r.top, height: r.height };
+      }));
       if (w === 1280) expect(Math.abs(f!.y - a!.y), "lado a lado a 1280").toBeLessThan(2);
       else expect(a!.y, "uma embaixo da outra a 390").toBeGreaterThan(f!.y + f!.height - 1);
       expect(await primariosNoMain(d), "um primário só na tela (QA #1111 item 7)").toBe(1);
@@ -218,8 +222,10 @@ test.describe("T308 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     await semChave.goto(`/dashboard/mensagens?conversa=${ids.conversa}`, { waitUntil: "domcontentloaded" });
     await expect(semChave.getByTestId("conversa-nome")).toBeVisible({ timeout: 30_000 });
     await expect(semChave.getByTestId("conversa-avaliacao")).toHaveCount(0);
-    const r = await semChave.goto(`/dashboard/avaliacao-imovel/${pedidoId}`, { waitUntil: "domcontentloaded" });
-    expect(r?.status()).toBe(404);
+    // A página não existe sem a chave (notFound; o status vem 200 porque a página é transmitida em partes).
+    await semChave.goto(`/dashboard/avaliacao-imovel/${pedidoId}`, { waitUntil: "domcontentloaded" });
+    await expect(semChave.getByTestId("concordancia")).toHaveCount(0);
+    await expect(semChave.getByText(/não encontrad/i).first()).toBeVisible({ timeout: 20_000 });
     await semChave.context().close();
 
     const m = await entrar(browser, morador.email, senha);

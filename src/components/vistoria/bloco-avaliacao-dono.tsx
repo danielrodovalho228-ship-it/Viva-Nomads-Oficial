@@ -95,9 +95,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 Avaliador designado pela Viva: nº {atual.avaliadores_credenciamento.numero_credenciado}
               </p>
             )}
-            <ol className="grid gap-2 sm:grid-cols-5" data-testid="avaliacao-linha-tempo">
+            <ol className="grid gap-2" data-testid="avaliacao-linha-tempo">
               {linhaDoTempoPedido({ status: atual.status, numero: atual.avaliadores_credenciamento?.numero_credenciado, agendadoPara: atual.agendado_para, aguardandoAvaliador: atual.aguardando_avaliador }).map((e) => (
-                <li key={e.chave} className="flex items-start gap-2 sm:flex-col sm:gap-1" data-testid={`etapa-${e.chave}`} data-estado={e.estado}>
+                <li key={e.chave} className="flex items-start gap-2" data-testid={`etapa-${e.chave}`} data-estado={e.estado}>
                   {e.estado === "feito" ? <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden /> : <Circle className={`mt-1 h-4 w-4 shrink-0 ${e.estado === "atual" ? "fill-forest text-forest" : "text-line"}`} aria-hidden />}
                   <span className={e.estado === "futuro" ? "text-muted" : "font-semibold text-ink"}>{e.rotulo}</span>
                 </li>

@@ -46,6 +46,7 @@ export function AvaliacaoNaConversaCartao({ propertyId, onPreferirOutro }: { pro
                   variant="secondary"
                   size="sm"
                   disabled={pendente}
+                  className="h-auto min-h-11 whitespace-normal text-left"
                   data-testid="conversa-concordar"
                   onClick={() =>
                     iniciar(async () => {
