@@ -746,7 +746,8 @@
         "admin"
       ],
       "specs": [
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t298-varredura-logada-bloco4"
       ]
     },
     "/dashboard/leads": {
@@ -763,7 +764,8 @@
         "t181-quantas-pessoas",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t213-jornada-teste-confirmacao"
+        "t213-jornada-teste-confirmacao",
+        "t298-varredura-logada-bloco4"
       ]
     },
     "/dashboard/locacoes": {
@@ -835,7 +837,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t193-propostas"
+        "t193-propostas",
+        "t298-varredura-logada-bloco4"
       ]
     },
     "/dashboard/orcamentos/nova": {
@@ -872,7 +875,8 @@
       "specs": [
         "t11-travessias",
         "t183-telas-logadas-390",
-        "t232-pedido-moradia-completo"
+        "t232-pedido-moradia-completo",
+        "t298-varredura-logada-bloco4"
       ]
     },
     "/dashboard/propostas/[id]": {
@@ -905,7 +909,8 @@
         "t68-comissao-valor-total",
         "t189-simulador-roi",
         "t183-telas-logadas-390",
-        "t212-ferramentas-proprietario"
+        "t212-ferramentas-proprietario",
+        "t298-varredura-logada-bloco4"
       ]
     },
     "/dashboard/simulador": {
@@ -945,7 +950,8 @@
         "t192-conta-4-blocos",
         "t48-varredura",
         "t183-telas-logadas-390",
-        "t266-painel-42"
+        "t266-painel-42",
+        "t298-varredura-logada-bloco4"
       ]
     },
     "/dashboard/verificacao": {
@@ -967,7 +973,8 @@
       ],
       "specs": [
         "t97-plangate-precos",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t298-varredura-logada-bloco4"
       ]
     },
     "/dashboard/visitas": {
@@ -1297,7 +1304,8 @@
         "proprietario"
       ],
       "specs": [
-        "t209-jornada-dois-lados"
+        "t209-jornada-dois-lados",
+        "t298-varredura-logada-bloco4"
       ]
     },
     "/dashboard/propostas": {
@@ -1305,7 +1313,8 @@
         "inquilino"
       ],
       "specs": [
-        "t212-ferramentas-proprietario"
+        "t212-ferramentas-proprietario",
+        "t298-varredura-logada-bloco4"
       ]
     },
     "/dashboard/servicos": {
@@ -1313,7 +1322,8 @@
         "inquilino"
       ],
       "specs": [
-        "t219-servicos-morador"
+        "t219-servicos-morador",
+        "t298-varredura-logada-bloco4"
       ]
     },
     "/admin/servicos": {
