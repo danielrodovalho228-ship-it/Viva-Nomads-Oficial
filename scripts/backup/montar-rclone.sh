@@ -5,7 +5,7 @@
 #                 (BACKUP_SENHA_1 e BACKUP_SENHA_2) passadas pelo "rclone obscure" via entrada padrão;
 #   [s3supabase]  o Storage do Supabase pelo protocolo S3, com as chaves só do Storage.
 # O arquivo é apagado no fim por limpar.sh (if: always() no workflow). Nenhum valor é impresso.
-# No ensaio do CI, RCLONE_DRIVE_CONF é um remoto "local" e S3_ENDPOINT aponta para o MinIO.
+# No ensaio do CI, RCLONE_DRIVE_CONF é um remoto "local" e S3_ENDPOINT aponta para o S3 de teste (rclone serve s3).
 source "$(dirname "${BASH_SOURCE[0]}")/comum.sh"
 
 S3_ENDPOINT="${S3_ENDPOINT:-https://esezeutgtycekfosxplk.supabase.co/storage/v1/s3}"

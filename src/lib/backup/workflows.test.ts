@@ -48,13 +48,16 @@ test("Teste de restauração: domingo 09:00 UTC + à mão, postgres:17 no job, m
   assert.match(wf, /run: bash scripts\/backup\/finalizar\.sh drill/);
 });
 
-test("Ensaio: roda em PR, sem nenhum segredo, com Postgres 17 e MinIO de teste", () => {
+test("Ensaio: roda em PR, sem nenhum segredo, com Postgres 17 e S3 de teste do próprio rclone (sem imagem de registro)", () => {
   const wf = raiz(".github/workflows/backup-ensaio.yml");
   assert.match(wf, /on:\n\s+pull_request:\n\s+paths:/);
   assert.doesNotMatch(wf, /secrets\./);
   assert.doesNotMatch(wf, /environment:/);
   assert.match(wf, /image: postgres:17\n/);
-  assert.match(wf, /minio\/minio:RELEASE\.[0-9TZ-]+ server/);
+  // A imagem do MinIO saiu do Docker Hub e o quay.io pede login: o S3 de teste é o rclone fixo (instalar-ferramentas.sh).
+  assert.match(wf, /run: bash scripts\/backup\/instalar-ferramentas\.sh/);
+  assert.match(wf, /rclone serve s3 --auth-key "\$ENSAIO_S3_CHAVE,\$ENSAIO_S3_SEGREDO" --addr 127\.0\.0\.1:9000 /);
+  assert.doesNotMatch(wf, /docker run|minio\/minio/);
   assert.match(wf, /bash scripts\/backup\/ensaio\.sh/);
 });
 

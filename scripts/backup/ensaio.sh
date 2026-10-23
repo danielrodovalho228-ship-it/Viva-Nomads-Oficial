@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Resiliência 2 — ENSAIO do pipeline (CI do PR; também roda local). Sem Drive real, sem banco real:
 #  • Postgres 17 de teste no lugar do Supabase (banco "fonte" com scripts/backup/ensaio/fonte.sql + a migração 0191);
-#  • um S3 de teste (MinIO no CI) no lugar do Storage do Supabase;
+#  • um S3 de teste (rclone serve s3 no CI) no lugar do Storage do Supabase;
 #  • um remoto LOCAL do rclone no lugar do Google Drive, com o crypt REAL e senhas de teste geradas agora.
 # Roda a cópia (2×, para provar o --backup-dir), prova que o "Drive" só tem nomes e conteúdo cifrados e que a
 # retenção podou, roda o teste de restauração (verde) e dois casos de falha de propósito (dump corrompido; cifra
