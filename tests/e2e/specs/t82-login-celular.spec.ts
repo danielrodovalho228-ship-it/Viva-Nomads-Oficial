@@ -28,16 +28,25 @@ test.describe("T82 — Login no celular", () => {
 
   test("senha errada: mensagem padrão, botão volta a funcionar", async ({ page }) => {
     await page.goto("/auth");
-    await page.locator('input[name="email"]').first().fill(`naoexiste-t80-${Date.now()}@example.com`);
-    await page.locator('input[name="password"]').first().fill("senha-errada-123");
+    const email = `naoexiste-t80-${Date.now()}@example.com`;
     const entrar = page.locator("form").getByRole("button", { name: /^entrar$/i });
-    await entrar.click();
     // E-mail novo a cada execução: o limite do Supabase por e-mail não acumula entre labs.
     // Se o limite por IP do lab disparar ("Muitas tentativas"), a mensagem amigável também prova o fluxo.
     // O alerta do formulário (data-testid) é o que prova o fluxo; o texto exato muda com o limite do IP do lab
     // (lab 2f1fb872: nenhum dos dois textos apareceu em 20 s). Texto vazio ou técnico continua reprovando.
     const alerta = page.getByTestId("auth-erro").first();
-    await expect(alerta).toBeVisible({ timeout: 30_000 });
+    // No WebKit, um clique antes da hidratação vira envio nativo e recarrega /auth vazio, sem alerta (lab-crítico do
+    // #1092: 30 s sem o alerta e passou no retry). Se o formulário voltou vazio, preenche e clica de novo.
+    await expect(async () => {
+      if (!(await alerta.isVisible())) {
+        if ((await page.locator('input[name="email"]').first().inputValue()) !== email || !(await entrar.isEnabled())) {
+          await page.locator('input[name="email"]').first().fill(email, { timeout: 5_000 });
+          await page.locator('input[name="password"]').first().fill("senha-errada-123", { timeout: 5_000 });
+        }
+        if (await entrar.isEnabled()) await entrar.click({ timeout: 5_000 });
+      }
+      await expect(alerta).toBeVisible({ timeout: 10_000 });
+    }).toPass({ timeout: 45_000 });
     const texto = ((await alerta.textContent()) ?? "").trim();
     expect(texto.length).toBeGreaterThan(10);
     expect(texto).not.toMatch(/undefined|\[object|invalid login credentials|supabase/i);
