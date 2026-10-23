@@ -57,6 +57,23 @@ export function validarDestino(e: Record<string, unknown>): { ok: true; destino:
   return { ok: true, destino: { slug, nome, artigo: artigo as "o" | "a" | "", tipo, cidade, uf, lat, lng } };
 }
 
+/**
+ * E32: o ponto que vale ao salvar. Na EDIÇÃO, coordenadas em branco NÃO apagam o ponto gravado (antes, editar só o
+ * nome limpava o ponto e desativava o destino em silêncio). Apagar o ponto é ação explícita ("Remover o ponto",
+ * confirmada), e só então o destino sai dos ativos.
+ */
+export function pontoAoSalvar(e: {
+  existente: { lat: number | null; lng: number | null } | null;
+  enviado: { lat: number | null; lng: number | null };
+  limparPonto: boolean;
+}): { lat: number | null; lng: number | null; desativar: boolean } {
+  if (e.enviado.lat != null && e.enviado.lng != null) return { lat: e.enviado.lat, lng: e.enviado.lng, desativar: false };
+  if (e.existente && !e.limparPonto && e.existente.lat != null && e.existente.lng != null) {
+    return { lat: e.existente.lat, lng: e.existente.lng, desativar: false };
+  }
+  return { lat: null, lng: null, desativar: true };
+}
+
 /** "Destinos mais buscados": soma dos últimos 30 dias por destino, do maior para o menor. Só contagem. */
 export function maisBuscados(linhas: { destino_id: string; n: number }[], nomes: Map<string, string>): { nome: string; total: number }[] {
   const soma = new Map<string, number>();

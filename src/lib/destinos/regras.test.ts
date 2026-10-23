@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { maisBuscados, slugDoDestino, validarDestino } from "./regras.ts";
+import { readFileSync } from "node:fs";
+import { maisBuscados, pontoAoSalvar, slugDoDestino, validarDestino } from "./regras.ts";
 
 test("slug do destino a partir do nome", () => {
   assert.equal(slugDoDestino("HC-UFU"), "hc-ufu");
@@ -24,4 +25,20 @@ test("destinos mais buscados: só a soma por destino", () => {
     { nome: "HC-UFU", total: 7 },
     { nome: "UFU — Campus Umuarama", total: 5 },
   ]);
+});
+
+test("E32: editar só o nome mantém o ponto e o ativo; só 'Remover o ponto' apaga", () => {
+  const gravado = { lat: -18.97, lng: -49.46 };
+  const vazio = { lat: null, lng: null };
+  assert.deepEqual(pontoAoSalvar({ existente: gravado, enviado: vazio, limparPonto: false }), { ...gravado, desativar: false });
+  assert.deepEqual(pontoAoSalvar({ existente: gravado, enviado: { lat: -18.9, lng: -48.2 }, limparPonto: false }), { lat: -18.9, lng: -48.2, desativar: false });
+  assert.deepEqual(pontoAoSalvar({ existente: gravado, enviado: vazio, limparPonto: true }), { ...vazio, desativar: true });
+  assert.deepEqual(pontoAoSalvar({ existente: null, enviado: vazio, limparPonto: false }), { ...vazio, desativar: true }, "novo sem ponto: inativo");
+  assert.deepEqual(pontoAoSalvar({ existente: vazio, enviado: vazio, limparPonto: false }), { ...vazio, desativar: true });
+  // A ação usa a regra e a tela remonta o formulário por destino (o ponto chega preenchido na edição).
+  const acao = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
+  assert.match(acao, /pontoAoSalvar\(\{[\s\S]*?limparPonto: form\.get\("limpar_ponto"\) === "1"/);
+  assert.match(acao, /ponto\.desativar \? \{ ativo: false \} : \{\}/);
+  const pagina = readFileSync(new URL("../../app/(dashboard)/admin/destinos/page.tsx", import.meta.url), "utf8");
+  assert.match(pagina, /<DestinoForm key=\{emEdicao\?\.slug \?\? "novo"\} inicial=\{emEdicao\} \/>/);
 });
