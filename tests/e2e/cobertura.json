@@ -1961,6 +1961,24 @@
         "t169-conta-teste-sem-efeito"
       ]
     },
+    "/api/conta/linkedin/conectar": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
+    "/api/conta/linkedin/retorno": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
     "/api/contrato": {
       "personas": [
         "inquilino",
@@ -2006,6 +2024,12 @@
       "specs": []
     },
     "/api/cron/checkin-lembretes": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/cron/linkedin": {
       "personas": [
         "sistema"
       ],
@@ -3967,6 +3991,38 @@
       "specs": [
         "t168-visita-video"
       ]
+    },
+    "src/lib/linkedin/actions.ts#desconectarLinkedin": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
+    "src/lib/linkedin/actions.ts#meuLinkedin": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
+    "src/lib/linkedin/actions.ts#minhasRedes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/linkedin/actions.ts#salvarMinhasRedes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     },
     "src/lib/marcas/actions.ts#listarMarcas": {
       "personas": [

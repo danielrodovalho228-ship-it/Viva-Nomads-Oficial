@@ -101,3 +101,16 @@ export const ENCERRAMENTO_REGRAS_ATIVO = process.env.NEXT_PUBLIC_ENCERRAMENTO_RE
  */
 export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
 export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
+
+/**
+ * 63-B — "Conectar LinkedIn" (selo de confiança). OFF até o Daniel colar LINKEDIN_CLIENT_ID e LINKEDIN_CLIENT_SECRET na
+ * Vercel. Desligada, a Conta não mostra o Conectar e nenhum selo aparece. No laboratório o teste liga só no próprio
+ * navegador (cookie, ver src/lib/linkedin/chave.ts).
+ */
+export const LINKEDIN_CONECTAR_ATIVO = process.env.NEXT_PUBLIC_LINKEDIN_CONECTAR_ATIVO === "on";
+
+/**
+ * 63-B (decisão do Daniel, 23/10) — Instagram/Facebook/TikTok da própria pessoa. OFF: os campos não aparecem. Mesmo
+ * ligada, as redes de pessoas NUNCA aparecem para outro usuário (só a própria pessoa e a equipe).
+ */
+export const REDES_USUARIO_ATIVO = process.env.NEXT_PUBLIC_REDES_USUARIO_ATIVO === "on";

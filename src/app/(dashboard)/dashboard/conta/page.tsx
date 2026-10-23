@@ -15,6 +15,7 @@ import { PagamentosConta } from "@/components/account/pagamentos-conta";
 import { DegrausPerfil } from "@/components/account/degraus-perfil";
 import { AjudaContato, DadosPessoais, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
 import { SairDaViva } from "@/components/account/sair-da-viva";
+import { RedesPrivadas } from "@/components/account/redes-privadas";
 import { BlocoConta, ConfiancaLista, PerfilProfissional } from "@/components/account/conta-blocos";
 import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
 import { MinhaIntencao } from "@/components/auth/escolha-intencao";
@@ -57,6 +58,7 @@ export default function AccountPage() {
             <h3 className="mt-6 font-title text-lg font-semibold text-ink">Dados da conta</h3>
             <p className="text-sm text-muted">Só a Viva vê. Vão no contrato e nos avisos.</p>
             <DadosPessoais />
+            <RedesPrivadas />
             <TelefoneVerificacao />
             <DocumentoPessoa />
             <PetsFicha />

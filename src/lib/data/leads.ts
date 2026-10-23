@@ -5,6 +5,7 @@ import { motivoParaDono } from "@/lib/pedidos/pedidos";
 import { dataBR } from "@/lib/utils";
 import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
 import { cartaoCandidato } from "@/lib/perfil/perfil-publico";
+import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { getReputacao } from "@/lib/data/avaliacoes-actions";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
@@ -86,7 +87,10 @@ export async function listLeads(): Promise<Lead[]> {
   const emailOk = new Map<string, boolean>();
   const reputacoes = new Map<string, { media: number; n: number }>();
   const foneOk = new Map<string, boolean>();
+  // 63-B: selo "LinkedIn conectado" (só o sim/não; nunca link, nome ou foto do LinkedIn).
+  let linkedin = new Set<string>();
   if (admin && tenantIds.length > 0) {
+    linkedin = await linkedinConectados(tenantIds, admin);
     // Selo "Telefone verificado" (0150): só o sim/não, nunca o número.
     const { data: fs, error: eFs } = await admin.rpc("telefones_verificados", { p_ids: tenantIds });
     if (!eFs) for (const f of (fs ?? []) as { id: string; verificado: boolean }[]) foneOk.set(f.id, f.verificado);
@@ -169,6 +173,7 @@ export async function listLeads(): Promise<Lead[]> {
         reputacao: reputacoes.get(r.tenant_id) ?? null,
         emailConfirmado: emailOk.get(r.tenant_id) ?? false,
         telefoneVerificado: foneOk.get(r.tenant_id) ?? false,
+        linkedinConectado: linkedin.has(r.tenant_id),
       },
       r.status === "accepted",
     );
