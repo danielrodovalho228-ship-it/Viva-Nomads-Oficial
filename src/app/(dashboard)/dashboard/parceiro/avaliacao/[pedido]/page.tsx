@@ -8,9 +8,10 @@ import { ChecklistAvaliador } from "@/components/vistoria/checklist-avaliador";
 import { MedirInternetAvaliacao } from "@/components/vistoria/medir-internet-avaliacao";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { PERGUNTAS_RUIDO } from "@/config/niveis";
-import { ITENS_CHECKLIST, ROTULO_VALOR, itemChecklist, valoresDoItem, type ValorItem } from "@/config/checklist-avaliacao";
+import { DELIMITACAO_LAUDO, ROTULO_VALOR, itemChecklist, valoresDoItem, type ValorItem } from "@/config/checklist-avaliacao";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
-import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
+import { ROTULO_RESULTADO, resultadoAvaliacao, resumoPorGrupo, type Resultado } from "@/lib/vistoria/laudo";
+import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { concluirVisita, confirmarCorrecao, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
 
 export const metadata = { title: "Checklist da avaliação", robots: { index: false, follow: false } };
@@ -36,7 +37,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/parceiro/avaliacao/${pedido}`)}`);
   const { data: p } = await admin
     .from("vistoria_pedidos")
-    .select("id, property_id, status, tipo, ocupado, agendado_para, ruido_respostas, avaliadores_credenciamento(parceiros(user_id))")
+    .select("id, property_id, status, tipo, ocupado, agendado_para, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(parceiros(user_id))")
     .eq("id", pedido)
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
@@ -63,75 +64,121 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   const emVisita = ["agendado", "realizada"].includes(p.status as string);
   const ruido = (p.ruido_respostas ?? null) as Record<string, boolean> | null;
   const fotosLista = (fotos ?? []) as { item_chave: string | null; comodo: string | null }[];
+  // Revisão antes de emitir (item 9): o mesmo cálculo do laudo, sobre as respostas salvas.
+  const respostasSalvas = Object.fromEntries(Object.entries(iniciais).map(([k, v]) => [k, v.valor]));
+  const observacoes = new Map(Object.entries(iniciais).map(([k, v]) => [k, v.observacao]));
+  const previsto = resultadoAvaliacao(respostasSalvas);
+  const resumo = resumoPorGrupo(respostasSalvas);
+  const visitaEm = (p.visita_concluida_em as string | null) ?? (p.agendado_para as string | null);
+  const prazo = p.status === "realizada" && visitaEm ? prazoDoLaudo(visitaEm, new Date()) : null;
 
   return (
     <>
       <PageTitle title="Checklist da avaliação" subtitle={p.tipo === "verificacao" ? "Verificação aberta pela Viva" : p.tipo === "contestacao" ? "2ª avaliação (contestação)" : undefined} />
       <ButtonLink href="/dashboard/parceiro/avaliacao" variant="ghost" size="sm" className="mb-4">Voltar às avaliações</ButtonLink>
-      {p.ocupado && <p className="mb-4 text-sm text-muted">Imóvel ocupado: não fotografe pertences nem pessoas.</p>}
+      {p.ocupado && <p className="mb-4 text-sm text-ink">Imóvel ocupado: a visita só acontece com o morador de acordo. Não fotografe pertences nem pessoas.</p>}
 
       {emVisita && (
         <>
+          {/* Item 8: os 9 grupos em passos; a internet e o ruído são medidos no próprio passo. */}
           <Panel title="Itens" className="mb-6">
-            <ChecklistAvaliador pedidoId={p.id} iniciais={iniciais} />
+            <ChecklistAvaliador
+              pedidoId={p.id}
+              iniciais={iniciais}
+              extras={{
+                internet: (
+                  <div data-testid="passo-internet-medir">
+                    <p className="mb-2 text-sm font-semibold text-ink">Internet medida agora, no lugar</p>
+                    <MedirInternetAvaliacao pedidoId={p.id} simulado={integracoesSimuladas()} />
+                  </div>
+                ),
+                ruido: (
+                  <div data-testid="avaliacao-ruido">
+                    <FormAcao acao={salvarRuidoVisita} className="grid gap-3" testid="avaliacao-ruido-form">
+                      <input type="hidden" name="pedidoId" value={p.id} />
+                      {PERGUNTAS_RUIDO.map((q) => (
+                        <fieldset key={q.chave} className="text-sm">
+                          <legend className="text-ink">{q.texto}</legend>
+                          <div className="mt-1 flex gap-4">
+                            <label className="inline-flex min-h-11 items-center gap-2"><input type="radio" name={q.chave} value="sim" defaultChecked={ruido?.[q.chave] === true} required className="h-4 w-4 accent-forest" /> Sim</label>
+                            <label className="inline-flex min-h-11 items-center gap-2"><input type="radio" name={q.chave} value="nao" defaultChecked={ruido ? ruido[q.chave] === false : false} className="h-4 w-4 accent-forest" /> Não</label>
+                          </div>
+                        </fieldset>
+                      ))}
+                      <Button type="submit" size="sm" variant="secondary" className="justify-self-start">Salvar ruído</Button>
+                    </FormAcao>
+                    <FormAcao acao={registrarMedicao} className="mt-4 flex flex-wrap items-end gap-2" testid="avaliacao-dba-form">
+                      <input type="hidden" name="pedidoId" value={p.id} />
+                      <input type="hidden" name="tipo" value="ruido_dba" />
+                      <label className="min-w-0 flex-1 text-sm">dB(A) medido (apoio interno, nunca publicado)<input name="dba" inputMode="decimal" className={campo} /></label>
+                      <Button type="submit" size="sm" variant="secondary">Guardar dB(A)</Button>
+                    </FormAcao>
+                  </div>
+                ),
+              }}
+            />
           </Panel>
 
-          <Panel title="Fotos" className="mb-6" data-testid="avaliacao-fotos">
-            <p className="text-sm text-muted">Uma foto por cômodo e uma por item não conforme. Sem pessoas e sem pertences do morador; a localização da foto é apagada no envio.</p>
+          <Panel title="Fotos dos cômodos" className="mb-6" data-testid="avaliacao-fotos">
+            <p className="text-sm text-muted">Uma foto por cômodo. A foto de item não conforme sai no próprio item, acima. Sem pessoas e sem pertences; a localização da foto é apagada no envio.</p>
             <p className="mt-1 text-xs text-muted" data-testid="avaliacao-fotos-contagem">{fotosLista.length} foto(s) enviada(s).</p>
             <FormAcao acao={enviarFotoAvaliacao} className="mt-3 grid gap-2" testid="avaliacao-foto-form">
               <input type="hidden" name="pedidoId" value={p.id} />
-              <label className="text-sm">Cômodo<input name="comodo" placeholder="Ex.: quarto principal" className={campo} /></label>
-              <label className="text-sm">
-                Ou item não conforme
-                <select name="item" className={campo} defaultValue="">
-                  <option value="">Nenhum (foto do cômodo)</option>
-                  {ITENS_CHECKLIST.map((i) => (
-                    <option key={i.chave} value={i.chave}>{i.rotulo}</option>
-                  ))}
-                </select>
-              </label>
+              <label className="text-sm">Cômodo<input name="comodo" placeholder="Ex.: quarto principal" required className={campo} /></label>
               <label className="text-sm">Foto<input type="file" name="foto" accept="image/jpeg,image/png,image/webp" capture="environment" required className={campo} /></label>
-              <Button type="submit" size="sm" variant="secondary">Enviar foto</Button>
+              <Button type="submit" size="sm" variant="secondary" className="justify-self-start">Enviar foto</Button>
             </FormAcao>
           </Panel>
 
-          <Panel title="Ruído" className="mb-6" data-testid="avaliacao-ruido">
-            <FormAcao acao={salvarRuidoVisita} className="grid gap-2" testid="avaliacao-ruido-form">
-              <input type="hidden" name="pedidoId" value={p.id} />
-              {PERGUNTAS_RUIDO.map((q) => (
-                <fieldset key={q.chave} className="text-sm">
-                  <legend className="text-ink">{q.texto}</legend>
-                  <label className="mr-4"><input type="radio" name={q.chave} value="sim" defaultChecked={ruido?.[q.chave] === true} required /> Sim</label>
-                  <label><input type="radio" name={q.chave} value="nao" defaultChecked={ruido ? ruido[q.chave] === false : false} /> Não</label>
-                </fieldset>
-              ))}
-              <Button type="submit" size="sm" variant="secondary">Salvar ruído</Button>
-            </FormAcao>
-            <FormAcao acao={registrarMedicao} className="mt-4 flex flex-wrap items-end gap-2" testid="avaliacao-dba-form">
-              <input type="hidden" name="pedidoId" value={p.id} />
-              <input type="hidden" name="tipo" value="ruido_dba" />
-              <label className="text-sm">dB(A) medido (apoio interno, nunca publicado)<input name="dba" inputMode="decimal" className={campo} /></label>
-              <Button type="submit" size="sm" variant="secondary">Guardar dB(A)</Button>
-            </FormAcao>
-          </Panel>
-
-          <Panel title="Internet medida agora" className="mb-6">
-            <MedirInternetAvaliacao pedidoId={p.id} simulado={integracoesSimuladas()} />
-          </Panel>
-
-          <Panel title="Concluir" className="mb-6" data-testid="avaliacao-concluir" data-status={p.status}>
+          <Panel title={p.status === "agendado" ? "Concluir a visita" : "Revisar e enviar o laudo"} className="mb-6" data-testid="avaliacao-concluir" data-status={p.status}>
             {p.status === "agendado" ? (
               <FormAcao acao={concluirVisita} testid="concluir-visita">
                 <input type="hidden" name="pedidoId" value={p.id} />
-                <Button type="submit" size="sm">Concluir a visita</Button>
+                <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo em até 48 horas úteis.</p>
+                <Button type="submit" size="sm" className="mt-2">Concluir a visita</Button>
               </FormAcao>
             ) : (
-              <FormAcao acao={enviarLaudo} testid="enviar-laudo">
-                <input type="hidden" name="pedidoId" value={p.id} />
-                <p className="text-sm text-muted">A plataforma emite o laudo VIS com o resultado calculado pelo checklist. Prazo: 48 horas úteis da visita.</p>
-                <Button type="submit" size="sm" className="mt-2">Enviar o laudo</Button>
-              </FormAcao>
+              <>
+                {/* Item 9: revisão antes de emitir — o resumo por grupo, os não conformes, o resultado e o prazo. */}
+                <div data-testid="laudo-revisao" data-resultado={previsto.resultado}>
+                  <p className="text-sm text-ink">
+                    Resultado pelo checklist: <span className="font-semibold" data-testid="laudo-revisao-resultado">{ROTULO_RESULTADO[previsto.resultado]}</span>
+                  </p>
+                  {prazo && (
+                    <p className={`mt-1 text-sm ${prazo.vencido ? "font-semibold text-red-700" : "text-muted"}`} data-testid="laudo-prazo">
+                      {prazo.texto}
+                    </p>
+                  )}
+                  <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2" data-testid="laudo-revisao-grupos">
+                    {resumo.map((g) => (
+                      <li key={g.grupo} className="flex justify-between gap-3 border-b border-line py-1" data-testid="laudo-revisao-grupo" data-nc={g.naoConformes.length}>
+                        <span className="text-ink">{g.rotulo}</span>
+                        <span className={g.naoConformes.length ? "text-amber-700" : "text-muted"}>{linhaResumoGrupo(g)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {previsto.naoConformes.length > 0 && (
+                    <div className="mt-3 text-sm" data-testid="laudo-revisao-nc">
+                      <p className="font-semibold text-ink">Não conformes</p>
+                      <ul className="mt-1 list-disc pl-4 text-ink">
+                        {previsto.naoConformes.map((chave) => (
+                          <li key={chave}>
+                            {itemChecklist(chave)?.rotulo ?? chave}
+                            {observacoes.get(chave) ? <span className="text-muted"> · {observacoes.get(chave)}</span> : null}
+                            <span className="text-muted"> · {fotosLista.filter((f) => f.item_chave === chave).length} foto(s)</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <p className="mt-3 text-xs text-muted" data-testid="laudo-delimitacao">{DELIMITACAO_LAUDO}</p>
+                </div>
+                <FormAcao acao={enviarLaudo} className="mt-4" testid="enviar-laudo">
+                  <input type="hidden" name="pedidoId" value={p.id} />
+                  <p className="text-sm text-muted">Ao enviar, a plataforma emite o laudo VIS com este resultado. Confira antes: depois de emitido, só a reverificação ou a contestação mudam o laudo.</p>
+                  <Button type="submit" size="sm" className="mt-2">Enviar o laudo</Button>
+                </FormAcao>
+              </>
             )}
           </Panel>
         </>

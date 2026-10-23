@@ -389,7 +389,8 @@
         "t296-niveis-exibicao-59-1",
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
-        "t343-nivel-busca-sem-beco"
+        "t343-nivel-busca-sem-beco",
+        "t344-avaliacao-telas-62a-parte2"
       ]
     },
     "/cidades": {
@@ -521,7 +522,8 @@
         "t296-niveis-exibicao-59-1",
         "t310-vao-fim-de-pagina",
         "t318-papel-ativo-fonte-unica",
-        "t320-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b",
+        "t344-avaliacao-telas-62a-parte2"
       ]
     },
     "/dashboard/assinatura": {
@@ -1185,7 +1187,8 @@
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
         "t320-pausar-anuncio-64b",
-        "t342-galeria-video-segundo"
+        "t342-galeria-video-segundo",
+        "t344-avaliacao-telas-62a-parte2"
       ]
     },
     "/modelodenegocio": {
@@ -1720,7 +1723,8 @@
         "t296-niveis-exibicao-59-1",
         "t297-varredura-logada-bloco3",
         "t310-vao-fim-de-pagina",
-        "t315-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a",
+        "t344-avaliacao-telas-62a-parte2"
       ]
     },
     "/dashboard/recibos": {
@@ -1749,7 +1753,8 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t306-varredura-bloco7",
-        "t341-credenciamento-avaliador-62a"
+        "t341-credenciamento-avaliador-62a",
+        "t344-avaliacao-telas-62a-parte2"
       ]
     },
     "/dashboard/parceiro/avaliacao": {
@@ -1794,7 +1799,8 @@
         "parceiro"
       ],
       "specs": [
-        "t305-laudo-avaliacao-62b2"
+        "t305-laudo-avaliacao-62b2",
+        "t344-avaliacao-telas-62a-parte2"
       ]
     },
     "/admin/funil": {
