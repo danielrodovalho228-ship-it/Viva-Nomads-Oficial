@@ -12,7 +12,6 @@ import { CentralAjuda } from "@/components/ajuda/central-ajuda";
 import {
   ChangePassword,
   DadosPessoais,
-  DangerZone,
   DocumentoPessoa,
   NotificationsPanel,
 } from "@/components/account/conta-secoes";
@@ -21,12 +20,13 @@ import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
 import { DegrausPerfil } from "@/components/account/degraus-perfil";
 import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
+import { SairDaViva } from "@/components/account/sair-da-viva";
 
 const TITULOS: Record<string, { titulo: string; subtitulo: string }> = {
   perfil: { titulo: "Perfil", subtitulo: "Seus dados, documento e foto." },
   seguranca: { titulo: "Confiança e segurança", subtitulo: "O que está verificado, duas etapas e senha." },
   notificacoes: { titulo: "Notificações", subtitulo: "Escolha como quer ser avisado." },
-  excluir: { titulo: "Sair da Viva", subtitulo: "Apaga seus dados, com confirmação." },
+  excluir: { titulo: "Sair da Viva", subtitulo: "Pausar a conta, apagar seus dados ou ver as pendências." },
   "perfil-publico": { titulo: "Seu perfil público", subtitulo: "O que os outros veem de você." },
   pagamentos: { titulo: "Pagamentos", subtitulo: "Para onde vai o valor mensal." },
 };
@@ -94,7 +94,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       return (
         <div className="w-full">
           <PageTitle title={TITULOS.excluir.titulo} subtitle={TITULOS.excluir.subtitulo} />
-          <DangerZone />
+          <SairDaViva />
           <FalarComAViva />
         </div>
       );

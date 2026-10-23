@@ -1,6 +1,7 @@
 "use client";
 
 import { AtivarNotificacoes } from "@/components/app/push-app";
+import { TEXTO_EXCLUSAO } from "@/lib/saida/regras";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Bell, Trash2, Check } from "lucide-react";
@@ -668,10 +669,7 @@ export function DangerZone() {
   return (
     <Panel title="Excluir conta" className="mt-6 border-red-200">
       <p className="text-sm font-medium text-red-600">
-        Esta ação remove seus dados pessoais (LGPD — direito ao esquecimento). Com locação
-        ativa, a exclusão é bloqueada até o encerramento. Se você tiver histórico de contratos,
-        sua identidade é removida e os contratos/pagamentos são mantidos sem identificação pelo
-        prazo exigido por lei.
+        {TEXTO_EXCLUSAO} Com locação ativa, a exclusão é bloqueada até o encerramento.
       </p>
 
       {step === 0 && (
@@ -683,7 +681,7 @@ export function DangerZone() {
       {step === 1 && (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="text-sm font-medium text-red-700">
-            Ao excluir, você perde permanentemente:
+            Ao excluir, apagamos sua conta e seus dados pessoais:
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-red-700">
             <li>Dados pessoais e perfil de verificação</li>
@@ -691,7 +689,7 @@ export function DangerZone() {
             <li>Favoritos, candidaturas e mensagens</li>
           </ul>
           <p className="mt-2 text-xs text-red-700">
-            Contratos e pagamentos, se existirem, são mantidos sem identificação pelo prazo legal.
+            Contratos assinados e registros financeiros são guardados pelo prazo legal, com acesso restrito.
           </p>
           <div className="mt-3 flex gap-2">
             <Button variant="ghost" size="sm" onClick={reset}>
@@ -735,7 +733,7 @@ export function DangerZone() {
               onClick={confirmDelete}
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Sim, excluir permanentemente
+              Sim, excluir minha conta
             </Button>
           </div>
         </div>

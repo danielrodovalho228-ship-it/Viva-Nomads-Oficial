@@ -94,3 +94,14 @@ test("denúncia: motivos fechados; pagamento ou contato fora = P1, o resto P2", 
   assert.equal(prioridadeDenuncia("pagamento_fora"), "p1");
   for (const m of ["fotos_falsas", "imovel_nao_existe", "conteudo_improprio", "outro"] as const) assert.equal(prioridadeDenuncia(m), "p2");
 });
+
+test("textos da exclusão (página pública, confirmação e Conta) sem 'todos os dados' nem 'imediata'; /privacidade não muda", async () => {
+  const { readFileSync } = await import("node:fs");
+  const raiz = new URL("../../", import.meta.url);
+  for (const f of ["app/(public)/excluir-conta/page.tsx", "app/(public)/excluir-conta/confirmar/page.tsx", "components/account/conta-secoes.tsx", "components/account/sair-da-viva.tsx"]) {
+    const t = readFileSync(new URL(f, raiz), "utf8");
+    assert.doesNotMatch(t, /todos os (seus )?dados|exclus[aã]o [eé] imediata/i, f);
+  }
+  // /privacidade fica como está (a sugestão de texto vai no PR para a Dra. Beatriz).
+  assert.match(readFileSync(new URL("app/(public)/privacidade/page.tsx", raiz), "utf8"), /Para excluir sua conta e todos os dados/);
+});
