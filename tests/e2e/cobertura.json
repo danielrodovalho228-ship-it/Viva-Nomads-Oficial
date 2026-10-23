@@ -852,7 +852,7 @@
         "t198-rodape-painel-390",
         "t209-jornada-dois-lados",
         "t286-esqueletos-vazios-48",
-        "t314-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1687,7 +1687,7 @@
         "t296-niveis-exibicao-59-1",
         "t297-varredura-logada-bloco3",
         "t310-vao-fim-de-pagina",
-        "t314-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "/dashboard/recibos": {
@@ -1724,7 +1724,7 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t306-varredura-bloco7",
-        "t314-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -1733,7 +1733,7 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t314-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "/avaliadores": {
@@ -5157,7 +5157,7 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t314-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "src/lib/vistoria/actions.ts#responderDesignacao": {
@@ -5166,7 +5166,7 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t314-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "src/lib/vistoria/actions.ts#agendarVisita": {
@@ -5175,7 +5175,7 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t314-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "src/lib/vistoria/actions.ts#concordarVisita": {
@@ -5184,7 +5184,7 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t314-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a"
       ]
     },
     "src/lib/vistoria/actions.ts#registrarAusencia": {
@@ -5326,7 +5326,7 @@
         "inquilino"
       ],
       "specs": [
-        "t314-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a"
       ]
     }
   }

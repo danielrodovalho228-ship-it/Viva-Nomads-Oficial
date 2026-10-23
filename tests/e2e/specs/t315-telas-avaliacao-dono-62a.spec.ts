@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
 import { conversationId } from "../../../src/lib/messages/conversation-id";
 
 /*
-  T314 — Prompt 62-A, Parte 1 (dono e morador; o credenciamento, a página do avaliador, a agenda e o admin voltam depois
+  T315 — Prompt 62-A, Parte 1 (dono e morador; o credenciamento, a página do avaliador, a agenda e o admin voltam depois
   do 62-B3). Laboratório; a chave VISTORIA_ATIVA liga só no navegador do teste, pelo cookie de laboratório. 390 e 1280 px,
   sem rolagem lateral, com print.
    1. Dono: as duas rotas lado a lado, frase fixa, um primário só (QA #1111 item 7); pedir → linha do tempo com o nº,
@@ -15,7 +15,7 @@ const LARGURAS = [390, 1280] as const;
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t314.${sufixo}@lab.vivanomads.test`, nome, role });
+const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t315.${sufixo}@lab.vivanomads.test`, nome, role });
 const dono = conta("dono", "Dina Dona", "owner");
 const morador = conta("morador", "Mário Morador");
 const avA = conta("ava", "Ana Avaliadora");
@@ -38,7 +38,7 @@ async function primariosNoMain(page: Page): Promise<number> {
   return page.locator("main").locator("button.bg-forest:visible, a.bg-forest:visible").count();
 }
 
-test.describe("T314 — Prompt 62-A, Parte 1: dono e morador", () => {
+test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
@@ -49,7 +49,7 @@ test.describe("T314 — Prompt 62-A, Parte 1: dono e morador", () => {
     for (const [l, uid, nome] of [["A", ids.A, avA.nome]] as const) {
       const { data, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t314-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t315-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -61,7 +61,7 @@ test.describe("T314 — Prompt 62-A, Parte 1: dono e morador", () => {
     const { error: eC } = await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids.parcA, cidade: "Uberlândia", numero_credenciado: numeroA, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/a", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" });
     if (eC) throw eC;
     // Imóvel publicado, ocupado pelo morador (contrato vigente) e a conversa entre os dois.
-    ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t314 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t315 ${sufixo}`, { ativo: true });
     const hoje = new Date();
     const dia = (d: number) => new Date(hoje.getTime() + d * 86_400_000).toISOString().slice(0, 10);
     const { data: c, error: eK } = await adm()
@@ -118,7 +118,7 @@ test.describe("T314 — Prompt 62-A, Parte 1: dono e morador", () => {
       await expect(d.getByText(/escolh(er|a) o avaliador/i)).toHaveCount(0);
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t314-2-dono-pedir-${w}.png` });
+      await d.screenshot({ path: `${SAIDA}/t315-2-dono-pedir-${w}.png` });
     }
     await d.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir avaliação do imóvel" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("id, status").eq("property_id", ids.imovel).maybeSingle()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("designado");
@@ -136,7 +136,7 @@ test.describe("T314 — Prompt 62-A, Parte 1: dono e morador", () => {
       await expect(bloco.getByTestId("avaliacao-mensagens")).toHaveAttribute("href", "/dashboard/mensagens");
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t314-2-dono-designado-${w}.png` });
+      await d.screenshot({ path: `${SAIDA}/t315-2-dono-designado-${w}.png` });
     }
     await d.context().close();
   });
@@ -182,14 +182,14 @@ test.describe("T314 — Prompt 62-A, Parte 1: dono e morador", () => {
       await expect(cartao.getByTestId("conversa-concordar")).toHaveText(`Concordo com a visita em ${quando}`, { timeout: 30_000 });
       await expect(cartao).toContainText("Horário de Brasília.");
       await semRolagemLateral(m);
-      await m.screenshot({ path: `${SAIDA}/t314-4-morador-conversa-${w}.png` });
+      await m.screenshot({ path: `${SAIDA}/t315-4-morador-conversa-${w}.png` });
     }
     await m.getByTestId("conversa-outro-horario").click();
     await expect(m.getByPlaceholder("Escreva uma mensagem...")).toHaveValue(/^Prefiro outro horário para a visita de avaliação do imóvel\./);
     await m.getByTestId("conversa-concordar").click();
     await expect(m.getByTestId("conversa-avaliacao-confirmada")).toHaveText(`Você concordou com a visita em ${quando} (horário de Brasília).`, { timeout: 20_000 });
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status as string) ?? "").toBe("agendado");
-    await m.screenshot({ path: `${SAIDA}/t314-4-morador-concordou-1280.png` });
+    await m.screenshot({ path: `${SAIDA}/t315-4-morador-concordou-1280.png` });
     await m.context().close();
 
     const d = await entrar(browser, dono.email, senha);
@@ -204,7 +204,7 @@ test.describe("T314 — Prompt 62-A, Parte 1: dono e morador", () => {
       await expect(bloco.getByTestId("avaliacao-pagamento")).toContainText("Você paga direto ao avaliador, depois da visita. A Viva só registra.");
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t314-4-dono-agendado-${w}.png` });
+      await d.screenshot({ path: `${SAIDA}/t315-4-dono-agendado-${w}.png` });
     }
     await d.context().close();
     // Dono sem a chave: o bloco não aparece.
