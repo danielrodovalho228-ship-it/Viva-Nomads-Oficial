@@ -202,7 +202,10 @@ test.describe("T347 — Prompt 55-E2: respostas rápidas e mensagens programadas
     await d.getByTestId("aditivo-aceitar").click();
     await expect(d.getByTestId("estadia-aditivo")).toHaveAttribute("data-status", "aceito", { timeout: 30_000 });
     for (const [pagina, quem] of [[d, ids.dono!], [m, ids.morador!]] as const) {
-      await pagina.reload({ waitUntil: "networkidle" });
+      // Depois do aceite a página da estadia segue com requisições abertas: "networkidle" não chega em 30 s (lab-crítico
+      // do #1186). Recarrega pelo DOM e espera o botão do código.
+      await pagina.reload({ waitUntil: "domcontentloaded" });
+      await expect(pagina.getByTestId("aditivo-pedir-codigo")).toBeVisible({ timeout: 30_000 });
       const desde = new Date().toISOString();
       await pagina.getByTestId("aditivo-pedir-codigo").click();
       await expect(pagina.getByTestId("estadia-ok").or(pagina.getByTestId("estadia-erro"))).toHaveText("Código enviado para o seu e-mail.", { timeout: 30_000 });
@@ -235,8 +238,10 @@ test.describe("T347 — Prompt 55-E2: respostas rápidas e mensagens programadas
     const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
     const a = await ctx.newPage();
     semDialogo(a);
-    await a.goto("/admin/contratos/encerramentos", { waitUntil: "networkidle" });
+    // Mesma causa do caso 4: o painel do admin não chega a "networkidle" em 30 s (lab-crítico do #1191). Vai pelo DOM.
+    await a.goto("/admin/contratos/encerramentos", { waitUntil: "domcontentloaded" });
     const card = a.locator(`[data-testid="admin-encerramento"][data-contrato="${ids.contrato}"]`);
+    await expect(card.getByTestId("encerramento-concluir")).toBeVisible({ timeout: 30_000 });
     await card.getByTestId("encerramento-concluir").click();
     await card.getByTestId("encerramento-concluir-confirmar").click();
     await expect

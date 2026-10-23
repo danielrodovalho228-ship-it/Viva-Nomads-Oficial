@@ -1840,7 +1840,8 @@
         "proprietario"
       ],
       "specs": [
-        "t347-respostas-rapidas-55e2"
+        "t347-respostas-rapidas-55e2",
+        "t335-varredura-bloco13"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
@@ -1848,7 +1849,8 @@
         "proprietario"
       ],
       "specs": [
-        "t347-respostas-rapidas-55e2"
+        "t347-respostas-rapidas-55e2",
+        "t335-varredura-bloco13"
       ]
     }
   },
