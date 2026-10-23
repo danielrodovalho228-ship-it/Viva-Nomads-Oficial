@@ -30,6 +30,9 @@ const CARDS = [
     links: [{ href: "/parceiros?categoria=limpeza#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=limpeza", rotulo: "Procurar" }] },
   { id: "mobilia", titulo: "Montagem e mudança", selo: "Aberto", texto: "Montagem de móveis e mudança para quem anuncia ou vem morar. Página própria com serviços e cidades.",
     links: [{ href: "/parceiros?categoria=mudanca#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=mudanca", rotulo: "Procurar" }] },
+  // Correção 62-B3: a entrada do avaliador credenciado (a categoria fica fora do formulário comum e do catálogo).
+  { id: "avaliadores", titulo: "É avaliador de imóveis?", selo: "Aberto", texto: "Avaliação do imóvel pelo checklist da Viva, designada por rodízio. Peça o credenciamento numa página própria.",
+    links: [{ href: "/parceiros/avaliadores", rotulo: "Ser avaliador credenciado" }] },
   { id: "seguros", titulo: "Seguros", selo: "Em breve", texto: "Seguros para imóveis mobiliados. Em breve: peça a parceria como \"Outro serviço\" e avisamos quando abrir.",
     links: [{ href: "/parceiros?categoria=outro#quero-ser-parceiro", rotulo: "Pedir parceria" }] },
 ];

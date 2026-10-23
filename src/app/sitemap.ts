@@ -25,6 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/empresas",
     "/parceiros",
     "/parceiros/fotografos",
+    "/parceiros/avaliadores",
     "/guia-fotos",
     "/precos",
     "/seguranca",
