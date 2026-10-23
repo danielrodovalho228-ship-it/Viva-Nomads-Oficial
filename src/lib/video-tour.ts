@@ -42,6 +42,6 @@ export function videoTourPermitido(url: string | null | undefined): boolean {
 }
 
 /** Lista da galeria: o vídeo (se válido) vem primeiro; o resto são as fotos. */
-export function itensDaGaleria(photos: string[], videoUrl?: string | null): string[] {
-  return videoTourPermitido(videoUrl) ? [ITEM_VIDEO, ...photos] : photos;
+export function itensDaGaleria(photos: string[], videoUrl?: string | null, temVideoArquivo = false): string[] {
+  return temVideoArquivo || videoTourPermitido(videoUrl) ? [ITEM_VIDEO, ...photos] : photos;
 }

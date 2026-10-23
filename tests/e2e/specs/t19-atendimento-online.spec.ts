@@ -49,6 +49,26 @@ test.describe("T19 — Visitante @criticos", () => {
     }
   });
 
+  test("resposta real da Viva: Caução até 3 vezes o valor mensal e 30 a 180 dias, sem blocos (ordem f581c899)", async ({ page }) => {
+    await page.goto("/ajuda", { waitUntil: "networkidle" });
+    const bloco = page.getByTestId("viva-chat-bloco");
+    const perguntar = async (texto: string, n: number) => {
+      await bloco.getByLabel("Sua mensagem para a Viva").fill(texto);
+      await bloco.getByRole("button", { name: "Enviar" }).click();
+      const msg = bloco.getByTestId("viva-chat-msg-viva").nth(n);
+      await expect(msg).toBeVisible({ timeout: 45_000 });
+      return msg.innerText();
+    };
+    const caucao = await perguntar("Quanto é a Caução?", 1);
+    // Sem a chave da IA (laboratório/preview) a Viva avisa que está fora do ar: não há resposta real para provar.
+    test.skip(/fora do ar/i.test(caucao), "IA desligada neste ambiente: a prova roda onde a Viva responde de verdade.");
+    expect(caucao).toMatch(/3 vezes o valor mensal/i);
+    expect(caucao).not.toMatch(/50\s?%|conta vinculada|cada bloco/i);
+    const prazo = await perguntar("Por quanto tempo posso ficar?", 2);
+    expect(prazo).toMatch(/30 a 180 dias/);
+    expect(prazo).not.toMatch(/temporada|art\. ?48/i);
+  });
+
   test("'pediram Pix por fora' = resposta fixa e chamado P1 na fila Antifraude", async ({ page, browser }) => {
     await page.goto("/ajuda", { waitUntil: "networkidle" });
     const bloco = page.getByTestId("viva-chat-bloco");

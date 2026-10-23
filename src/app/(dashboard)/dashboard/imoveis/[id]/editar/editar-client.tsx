@@ -187,6 +187,7 @@ export function EditarImovelClient({
       lng: property.lng,
       photoUrls: photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:")),
       videoUrl: property.videoUrl,
+      videoArquivo: property.videoArquivo,
       asDraft,
       descricaoGeradaPorIa: property.descricaoGeradaPorIa,
       aceiteIa:

@@ -6,6 +6,7 @@ import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/pe
 import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascunho-dono";
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
+import { colunaVideoArquivo } from "@/lib/video-anuncio";
 import { caminhoDoDono, operacaoValida, subleaseParaGravar } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
@@ -438,6 +439,8 @@ export interface PropertyInput {
   lng?: number;
   photoUrls?: string[];
   videoUrl?: string;
+  /** Vídeo enviado (ordem 8681ae95): caminho "<uid>/<arquivo>" no bucket anuncio-videos. Ausente = não mexe; "" = remove. */
+  videoArquivo?: string;
   /**
    * Salvar como rascunho (não publicar). Padrão: false = publica direto.
    * Publicar grava status "active" — é o que torna o imóvel visível na busca
@@ -727,6 +730,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
       video_url: input.videoUrl?.trim() || null,
+      ...colunaVideoArquivo(input.videoArquivo, user.id),
     })
     .select("id")
     .single();
@@ -982,6 +986,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
       video_url: input.videoUrl?.trim() || null,
+      ...colunaVideoArquivo(input.videoArquivo, user.id),
     })
     .eq("id", id)
     .eq("owner_id", user.id);

@@ -107,8 +107,10 @@ test.describe("T229 — admin conversa com tudo", () => {
       expect((await cartao(page, "take_rate")).valor).toBe("12%");
       expect((await cartao(page, "valor_mensal_contratado")).valor).toMatch(/R\$\s?3\.200/);
       const pedidos = await cartao(page, "pedidos");
+      // Desde o Prompt 46 a home só lista decisão com n > 0 (decisoes-admin.ts): com a fila vazia (banco limpo do
+      // lab-crítico) a linha de documentos não aparece, e a conta abaixo vale 0.
       const fila = page.locator('[data-precisa="documentos_pendentes"]');
-      await expect(fila).toContainText(/na fila \(\d+ documentos? \+ \d+ matrículas?\)/);
+      if (await fila.count()) await expect(fila).toContainText(/na fila \(\d+ documentos? \+ \d+ matrículas?\)/);
       await page.screenshot({ path: `${SAIDA}/t229-home-${largura}.png`, fullPage: true });
 
       // Destinos: a lista conta o mesmo.
@@ -143,7 +145,9 @@ test.describe("T229 — admin conversa com tudo", () => {
       // minutos antes pode divergir com razão. Compara a home relida com a página logo em seguida, com nova tentativa.
       await expect(async () => {
         await page.goto(HOME, { waitUntil: "domcontentloaded" });
-        const naHome = Number(await page.locator('[data-precisa="documentos_pendentes"] [data-href]').first().getAttribute("data-valor", { timeout: 10_000 }));
+        await expect(page.getByTestId("admin-decisoes")).toBeVisible({ timeout: 10_000 });
+        const linha = page.locator('[data-precisa="documentos_pendentes"] [data-href]').first();
+        const naHome = (await linha.count()) ? Number(await linha.getAttribute("data-valor")) : 0;
         await page.goto("/admin/documentos", { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("fila-agora-total")).toHaveText(String(naHome), { timeout: 10_000 });
         if (largura === 1280) {

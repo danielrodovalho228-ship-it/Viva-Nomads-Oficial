@@ -104,6 +104,8 @@ export interface Property {
   // Qualidade do anúncio (rodada 11) — derivado da quantidade de fotos
   qualityTier?: "padrao" | "completo" | "premium";
   videoUrl?: string; // walk-through em vídeo — reduz o atrito de alugar sem visita
+  videoArquivo?: string; // vídeo enviado pelo dono (bucket anuncio-videos, caminho "<uid>/<arquivo>")
+  videoArquivoUrl?: string; // endereço assinado para tocar o vídeo enviado (montado no servidor, só da página pública)
   photos: string[]; // placeholders por enquanto
   amenities: string[];
   /** Chaves de filtro da busca (wifi/cozinha/garagem/lavar) — lista pública carrega só estas (ordem 583d2e71). */

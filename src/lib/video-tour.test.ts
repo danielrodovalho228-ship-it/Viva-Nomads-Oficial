@@ -53,3 +53,8 @@ test("nenhum anúncio de exemplo traz vídeo inventado (regra: nenhuma imagem qu
   }
   assert.equal(exemplos.find((e) => e.id === "ube-001")?.videoUrl, undefined);
 });
+
+test("galeria: vídeo enviado como arquivo também vira a 1ª peça", () => {
+  assert.deepEqual(itensDaGaleria(["a"], undefined, true), [ITEM_VIDEO, "a"]);
+  assert.deepEqual(itensDaGaleria(["a"], undefined, false), ["a"]);
+});

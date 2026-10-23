@@ -211,6 +211,7 @@ export default function NewPropertyPage() {
   const digitadosRef = useRef(new Set<CampoEndereco>());
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
+  const [videoArquivo, setVideoArquivo] = useState("");
   const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
   const [utilitiesEstimate, setUtilitiesEstimate] = useState(0);
   const [issuesInvoice, setIssuesInvoice] = useState(false);
@@ -264,7 +265,7 @@ export default function NewPropertyPage() {
     limitePlanoOk: null,
     descricao: description,
     selo: qual.baseBadge,
-    video: !!videoUrl.trim(),
+    video: !!videoUrl.trim() || !!videoArquivo,
     // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
     qualificacaoOk: editingId ? undefined : qualificado,
     // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
@@ -519,6 +520,7 @@ export default function NewPropertyPage() {
       lng: coords.lng,
       photoUrls: photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:")),
       videoUrl: videoUrl.trim() || undefined,
+      videoArquivo,
       asDraft,
       confortoConfirmados: conforto,
       aceiteIa: asDraft
@@ -575,6 +577,7 @@ export default function NewPropertyPage() {
     if (s(d.city)) setCity(d.city as string);
     if (s(d.cep)) setCep(d.cep as string);
     if (s(d.videoUrl)) setVideoUrl(d.videoUrl as string);
+    if (s(d.videoArquivo)) setVideoArquivo(d.videoArquivo as string);
     if (s(d.internetMbps)) setInternetMbps(d.internetMbps as string);
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
     if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
@@ -725,6 +728,7 @@ export default function NewPropertyPage() {
       setSubleaseAuthorized(!!p.subleaseAuthorized);
       setDocOperacaoAnexado(!!p.autorizacaoAnexada);
       setVideoUrl(p.videoUrl || "");
+      setVideoArquivo(p.videoArquivo || "");
       setInternetMbps(p.internetMbps ? String(p.internetMbps) : "");
       if (p.negociacao) setNegociacao(p.negociacao);
       setAmenityKeys(Object.fromEntries(amenityKeysFromLabels(p.amenities || []).map((k) => [k, true])));
@@ -746,7 +750,7 @@ export default function NewPropertyPage() {
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
-    street, numero, complemento, uf, neighborhood, city, cep, videoUrl, internetMbps,
+    street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, internetMbps,
     privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
@@ -1406,7 +1410,7 @@ export default function NewPropertyPage() {
             )}
 
             {step === ETAPA.fotos && (
-              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
+              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
             )}
 
             {step === ETAPA.espaco && (
