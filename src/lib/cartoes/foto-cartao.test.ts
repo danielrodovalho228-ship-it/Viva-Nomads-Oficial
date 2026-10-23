@@ -54,7 +54,7 @@ test("a rota usa fotoParaCartao, desenha com rede de segurança (sem foto, depoi
   assert.doesNotMatch(rota, /image\\\/\(jpeg\|png\|webp\)/);
 });
 
-test("satori (ImageResponse do Next): WebP cru falha; a foto convertida desenha o cartão nos dois formatos", async () => {
+test("satori (ImageResponse do Next): a foto convertida desenha o cartão nos dois formatos", async () => {
   const { ImageResponse } = await import("next/og.js");
   const { createElement } = await import("react");
   const webp = await foto("webp");
@@ -63,7 +63,8 @@ test("satori (ImageResponse do Next): WebP cru falha; a foto convertida desenha 
     const png = Buffer.from(await r.arrayBuffer());
     return { tipo: r.headers.get("content-type"), w: png.readUInt32BE(16), h: png.readUInt32BE(20) };
   };
-  await assert.rejects(desenhar(`data:image/webp;base64,${Buffer.from(webp).toString("base64")}`, 1080, 1350));
+  // Até o Next 16.2 o satori recusava WebP cru; desde o 16.4 (Prompt 60) desenha. A conversão continua: reduz a
+  // 1080 px e limita o peso, e o cartão não depende do formato que a versão do satori aceita.
   const convertida = (await fotoParaCartao(webp, "image/webp"))!;
   assert.deepEqual(await desenhar(convertida, 1080, 1350), { tipo: "image/png", w: 1080, h: 1350 });
   assert.deepEqual(await desenhar(convertida, 1080, 1080), { tipo: "image/png", w: 1080, h: 1080 });
