@@ -110,7 +110,10 @@ export function PropertyCard({
             {sintese.map((item, i) => (
               <span key={item.chave} className="inline-flex items-center gap-x-1">
                 {i > 0 && <span aria-hidden>·</span>}
-                <span className={item.chave === "area" ? "tabular-nums" : undefined} data-testid={item.chave === "quartos" ? "card-quartos" : undefined}>
+                <span
+                  className={item.chave === "area" ? "tabular-nums" : item.chave === "nivel" ? "font-medium text-ink" : undefined}
+                  data-testid={item.chave === "quartos" ? "card-quartos" : item.chave === "nivel" ? "card-nivel" : undefined}
+                >
                   {item.texto}
                 </span>
               </span>

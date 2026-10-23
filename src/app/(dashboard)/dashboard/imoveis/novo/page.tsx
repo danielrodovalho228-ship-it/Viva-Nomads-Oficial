@@ -36,6 +36,7 @@ import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
+import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { confortoDoImovel } from "@/lib/data/conforto-actions";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
@@ -1422,6 +1423,8 @@ export default function NewPropertyPage() {
                 <EtapaEncontramos parte="comodidades" {...camposImovel} />
                 {/* Prompt 59-A: o padrão mínimo da Viva é confirmado junto das comodidades. */}
                 <ChecklistConforto marcados={conforto} onChange={setConforto} desabilitado={publishing} />
+                {/* Adendo 59.1: o nível que o imóvel atinge agora e o que falta para o próximo, item a item, com foto. */}
+                <NivelNoCadastro propertyId={imovelId} conforto={conforto} />
               </div>
             )}
 

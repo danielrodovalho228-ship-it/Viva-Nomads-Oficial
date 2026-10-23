@@ -16,6 +16,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/imoveis", label: "Imóveis", icon: Home },
   { href: "/admin/contratos", label: "Contratos", icon: FileSignature },
   { href: "/admin/usuarios", label: "Usuários", icon: Users },
+  { href: "/admin/pendencias", label: "Central de pendências", icon: Wrench },
   { href: "/admin/solicitacoes", label: "Solicitações de manutenção", icon: Wrench },
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
   { href: "/admin/cidades", label: "Cidades liberadas", icon: MapPinned },

@@ -111,7 +111,7 @@ export function SearchClient({
   const [homeOfficeOnly, setHomeOfficeOnly] = useState(false);
   // Prompt 57, fase 2: internet MEDIDA (download mínimo) e "só com internet medida".
   const [internetMin, setInternetMin] = useState(0);
-  // Adendo 59.1: "a partir de" Conforto/Premium (`?nivel=`). O chip na tela é da exibição (Pista A).
+  // Adendo 59.1: nível "a partir de" (`?nivel=`), escolhido na folha de filtros.
   const [nivelMin, setNivelMin] = useState<Nivel | "">("");
   const [soInternetMedida, setSoInternetMedida] = useState(false);
   // Prompt 55 B2: datas flexíveis (só vale com data de entrada).
@@ -621,7 +621,7 @@ export function SearchClient({
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
     faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades.join(","),
-    internetMin, soInternetMedida, datasFlexiveis,
+    internetMin, soInternetMedida, datasFlexiveis, nivelMin,
   ].join("|");
   function aplicarPainel(f: FiltrosPainel) {
     setMaxPrice(f.maxPrice);
@@ -632,6 +632,7 @@ export function SearchClient({
     setReadyToLiveOnly(f.readyToLiveOnly);
     setComodidades(f.comodidades);
     setInternetMin(f.internetMin);
+    setNivelMin(f.nivelMin ?? "");
     setSoInternetMedida(f.homeOfficeOnly && f.soInternetMedida);
     // Só sobraram os de internet não medida: o botão da folha já abre essa lista.
     setVerNaoMedidos(contarComPainel(f) === 0 && contarNaoMedidos(f) > 0);

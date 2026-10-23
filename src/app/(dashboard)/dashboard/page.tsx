@@ -96,6 +96,7 @@ export default async function DashboardPage() {
       confortoPrazos: dados.confortoPrazos,
       pendenciasDono: dados.pendenciasDono,
       fotosNivelRecusadas: dados.fotosNivelRecusadas,
+      quedasNivel: dados.quedasNivel,
       rascunho: draft ? { id: draft.id, titulo: draft.title, prontidao: draft.prontidao } : null,
     },
     agora,

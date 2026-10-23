@@ -14,7 +14,8 @@
   Ordem: prazo mais próximo primeiro (vencidos no topo); sem prazo depois; empate pela prioridade do tipo.
   Roda: node --test src/lib/painel/decisoes.test.ts
 */
-import { rotuloItem } from "../../config/niveis.ts";
+import { rotuloItem, type Nivel } from "../../config/niveis.ts";
+import { textoQueda } from "../niveis/exibicao.ts";
 import { estadoDoContratoUnico, type LinhaEstadoContrato } from "../contrato-estado.ts";
 import { podeTransicionar, formatarHorario, type StatusVisita } from "../visitas-video.ts";
 import { prazoDaOrdem } from "../manutencao-solicitacoes.ts";
@@ -150,6 +151,8 @@ export interface DadosDecisoes {
   pendenciasMorador?: PendenciaParaDecisao[];
   /** Adendo 59.1: fotos de item de nível recusadas pelo atendimento (o item não conta até uma foto nova). */
   fotosNivelRecusadas?: { propertyId: string; imovel: string | null; chave: string; motivo: string | null }[];
+  /** Adendo 59.1, Parte A: o nível caiu por pendência aberta ("não confere" na entrada) — o que corrigir para voltar. */
+  quedasNivel?: { propertyId: string; imovel: string | null; de: Nivel; para: Nivel; itens: string[]; contratoId: string | null; prazoAte: string | null }[];
 }
 
 const rotuloConforto = (chave: string) => rotuloItem(chave);
@@ -271,8 +274,23 @@ export function decisoesDoProprietario(d: DadosDecisoes, agora: Date = new Date(
       atrasada: false,
     });
   }
+  // A queda de nível vem antes da pendência que a causou, e a substitui na lista (uma decisão, não duas).
+  const causasDeQueda = new Set<string>();
+  for (const q of d.quedasNivel ?? []) {
+    for (const k of q.itens) causasDeQueda.add(`${q.contratoId}|${k}`);
+    const pz = comPrazo(q.prazoAte, agora);
+    out.push({
+      id: `nivel-queda-${q.propertyId}`,
+      tipo: "conforto",
+      texto: textoQueda(nomeImovel(q.imovel), q, q.itens.map(rotuloItem)),
+      href: q.contratoId ? `/dashboard/contratos/${q.contratoId}#pendencias-conforto` : `/dashboard/imoveis/${q.propertyId}/nivel`,
+      prazoTexto: q.prazoAte ? `Corrija até ${dataHoraBrasilia(new Date(q.prazoAte))}` : null,
+      ...pz,
+    });
+  }
   for (const p of d.pendenciasDono ?? []) {
     if (p.status !== "aberta") continue;
+    if (causasDeQueda.has(`${p.contratoId}|${p.chave}`)) continue;
     const pz = comPrazo(p.prazoAte, agora);
     out.push({
       id: `pendencia-${p.id}`,

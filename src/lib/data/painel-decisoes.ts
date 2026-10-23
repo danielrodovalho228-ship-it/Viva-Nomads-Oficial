@@ -14,6 +14,9 @@ import type {
   VisitaParaDecisao,
 } from "@/lib/painel/decisoes";
 import { itensFaltantes } from "@/lib/conforto/regras";
+import { CHAVE_RUIDO_CONFERENCIA, ehChaveNivel } from "@/config/niveis";
+import { entradaDoNivel } from "@/lib/niveis/servidor";
+import { quedaPorPendencia } from "@/lib/niveis/exibicao";
 
 /**
  * Dados das decisões da Visão geral (Prompt 42, item 1) que a página ainda não lia — numa sessão só, em paralelo, só
@@ -34,11 +37,12 @@ export interface DadosDecisoesDoServidor {
   pendenciasDono: PendenciaParaDecisao[];
   pendenciasMorador: PendenciaParaDecisao[];
   fotosNivelRecusadas: NonNullable<DadosDecisoes["fotosNivelRecusadas"]>;
+  quedasNivel: NonNullable<DadosDecisoes["quedasNivel"]>;
 }
 
 const VAZIO: DadosDecisoesDoServidor = {
   contratosDono: [], contratosMorador: [], visitasDono: [], visitasMorador: [], manutencoes: [], candidaturas: [],
-  confortoPrazos: [], pendenciasDono: [], pendenciasMorador: [], fotosNivelRecusadas: [],
+  confortoPrazos: [], pendenciasDono: [], pendenciasMorador: [], fotosNivelRecusadas: [], quedasNivel: [],
 };
 
 type LinhaPendencia = { id: string; contrato_id: string; chave: string; status: string; prazo_ate: string; corrigida_em: string | null; confirmada_em: string | null; properties: Titulo };
@@ -52,7 +56,7 @@ const pendencia = (l: LinhaPendencia): PendenciaParaDecisao => ({
   corrigidaEm: l.corrigida_em,
   confirmadaEm: l.confirmada_em,
 });
-const COLUNAS_PENDENCIA = "id, contrato_id, chave, status, prazo_ate, corrigida_em, confirmada_em, properties(title)";
+const COLUNAS_PENDENCIA = "id, property_id, contrato_id, chave, status, prazo_ate, corrigida_em, confirmada_em, properties(title)";
 
 type Titulo = { title?: string | null } | null;
 const titulo = (t: unknown) => ((t as Titulo)?.title ?? "").trim();
@@ -135,8 +139,10 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
     for (const d of (decl ?? []) as { property_id: string; chave: string; confirmado: boolean; versao_lista?: number | null }[]) declPor.set(d.property_id, [...(declPor.get(d.property_id) ?? []), d]);
     const crus = (ordens.data ?? []) as unknown as (LinhaOrdem & { provisoria_em?: string | null; solucao_marcada_em?: string | null })[];
     const extrasOrdem = new Map(crus.map((l) => [l.id, l]));
+    const quedasNivel = admin ? await quedasDeNivel(admin, (pDono.data ?? []) as unknown as (LinhaPendencia & { property_id: string })[]) : [];
 
     return {
+      quedasNivel,
       contratosDono: ((cDono.data ?? []) as LinhaContrato[]).map(contrato),
       contratosMorador: ((cMorador.data ?? []) as LinhaContrato[]).map(contrato),
       visitasDono: ((vDono.data ?? []) as unknown as LinhaVisita[]).map(visita).filter((v): v is VisitaParaDecisao => !!v),
@@ -175,4 +181,39 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
   } catch {
     return VAZIO;
   }
+}
+
+/**
+ * Adendo 59.1, Parte A — imóveis do dono cujo nível caiu por pendência aberta de item de nível ("não confere" na
+ * entrada). Compara o nível com e sem as pendências (regras puras); no máximo 10 imóveis por leitura.
+ */
+async function quedasDeNivel(
+  admin: NonNullable<ReturnType<typeof createAdminClient>>,
+  abertas: (LinhaPendencia & { property_id: string })[],
+): Promise<NonNullable<DadosDecisoes["quedasNivel"]>> {
+  const porImovel = new Map<string, (LinhaPendencia & { property_id: string })[]>();
+  for (const p of abertas) {
+    if (!p.property_id || !(ehChaveNivel(p.chave) || p.chave === CHAVE_RUIDO_CONFERENCIA)) continue;
+    porImovel.set(p.property_id, [...(porImovel.get(p.property_id) ?? []), p]);
+  }
+  const out: NonNullable<DadosDecisoes["quedasNivel"]> = [];
+  for (const [propertyId, pend] of [...porImovel].slice(0, 10)) {
+    try {
+      const q = quedaPorPendencia(await entradaDoNivel(admin, propertyId));
+      if (!q) continue;
+      const causas = pend.filter((p) => q.itens.includes(p.chave)).sort((a, b) => a.prazo_ate.localeCompare(b.prazo_ate));
+      out.push({
+        propertyId,
+        imovel: titulo(pend[0].properties),
+        de: q.de,
+        para: q.para,
+        itens: q.itens,
+        contratoId: (causas[0] ?? pend[0]).contrato_id,
+        prazoAte: (causas[0] ?? pend[0]).prazo_ate,
+      });
+    } catch {
+      /* sem a 0213: sem queda para mostrar */
+    }
+  }
+  return out;
 }
