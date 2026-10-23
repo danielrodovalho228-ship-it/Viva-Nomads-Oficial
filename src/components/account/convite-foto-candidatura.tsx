@@ -11,11 +11,17 @@ import { CONVITE_FOTO_CANDIDATURA_TEXTO } from "@/lib/perfil/convite-foto";
 import { processarImagem } from "@/components/account/avatar-uploader";
 
 /**
- * Convite opcional no passo "Confirmar candidatura" (ordem 504d9679, peça 2). Nunca bloqueia o
+ * Convite opcional no passo "Confirmar candidatura" (ordem 504d9679, peça 2) e na revisão do novo anúncio (peça 3, via `texto`). Nunca bloqueia o
  * envio: some quando já há foto, e qualquer erro só mostra uma frase. Reaproveita o mesmo
  * processamento da Conta (recorte, WebP, sem EXIF) e o bucket privado.
  */
-export function ConviteFotoCandidatura() {
+export function ConviteFotoCandidatura({
+  texto = CONVITE_FOTO_CANDIDATURA_TEXTO,
+  testId = "convite-foto-candidatura",
+}: {
+  texto?: string;
+  testId?: string;
+} = {}) {
   const usuario = useAuthStore((s) => s.user);
   const inputRef = useRef<HTMLInputElement>(null);
   const [temFoto, setTemFoto] = useState<boolean | null>(null);
@@ -70,9 +76,9 @@ export function ConviteFotoCandidatura() {
   if (temFoto) return null;
 
   return (
-    <div className="mt-3 rounded-lg border border-line px-3 py-3 text-sm" data-testid="convite-foto-candidatura">
-      <p className="text-muted">{CONVITE_FOTO_CANDIDATURA_TEXTO}. <span className="text-xs">(opcional)</span></p>
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onPick} data-testid="convite-foto-candidatura-input" />
+    <div className="mt-3 rounded-lg border border-line px-3 py-3 text-sm" data-testid={testId}>
+      <p className="text-muted">{texto}. <span className="text-xs">(opcional)</span></p>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onPick} data-testid={`${testId}-input`} />
       <Button type="button" variant="secondary" size="sm" className="mt-2" onClick={() => inputRef.current?.click()} disabled={busy}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} Adicionar foto
       </Button>
