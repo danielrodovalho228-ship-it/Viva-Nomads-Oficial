@@ -26,8 +26,9 @@ export interface DeclaracaoConforto {
 
 /** Itens da lista ATUAL que o dono ainda não confirmou (itens novos de outra versão entram aqui; os antigos valem). */
 export function itensFaltantes(declaracoes: readonly DeclaracaoConforto[]): ChaveConforto[] {
-  const ok = new Set(declaracoes.filter((d) => d.confirmado && ehChaveConforto(d.chave)).map((d) => d.chave));
-  return ITENS_CONFORTO.filter((i) => !ok.has(i.chave)).map((i) => i.chave);
+  // Confirmação de versão anterior à do critério atual do item não vale (item novo ou critério mudado: reconfirma).
+  const versao = new Map(declaracoes.filter((d) => d.confirmado && ehChaveConforto(d.chave)).map((d) => [d.chave, d.versao_lista ?? 1]));
+  return ITENS_CONFORTO.filter((i) => (versao.get(i.chave) ?? 0) < i.desdeVersao).map((i) => i.chave);
 }
 
 /** Bloqueio de publicação: só com todos confirmados. A mensagem lista o que falta. */

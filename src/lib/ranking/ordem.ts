@@ -11,6 +11,7 @@
 import { faixaMinutos } from "../rotas/tempo.ts";
 import { seloPeloConforto } from "../conforto/regras.ts";
 import { seloPelaManutencao } from "../manutencao-solucao.ts";
+import { PESO_NIVEL, ROTULO_NIVEL, type NivelOuAdequacao } from "../../config/niveis.ts";
 
 export const DIA_MS = 86_400_000;
 
@@ -51,6 +52,8 @@ export interface SinaisAnuncio {
   manutencaoFora90d?: number;
   /** Pendências do padrão mínimo abertas/contestadas/vencidas: sinal "imóvel diferente do anúncio" (não tira ponto). */
   confortoPendenciasAbertas?: number;
+  /** Adendo 59.1: nível Essencial/Conforto/Premium. Pesa só na nota (como os outros fatos); não é selo nem ordem própria. */
+  nivel?: NivelOuAdequacao | null;
 }
 
 export interface Motivo {
@@ -153,6 +156,9 @@ export function notaQualidade(s: SinaisAnuncio, agora: Date): NotaQualidade {
     add("imovel_diferente_do_anuncio", `Imóvel diferente do anúncio: ${s.confortoPendenciasAbertas} pendência(s) do padrão mínimo em aberto`, 0);
   if (seloPelaManutencao(s.manutencaoFora90d ?? 0) === "perde")
     add("manutencao_fora_prazo", `${s.manutencaoFora90d} soluções de manutenção fora do prazo em 90 dias`, PESOS.perdaManutencao);
+
+  // Nível (Adendo 59.1): só um fato a mais na nota; o Essencial não soma nem tira.
+  if (s.nivel === "conforto" || s.nivel === "premium") add("nivel", `Nível ${ROTULO_NIVEL[s.nivel]} provado por fotos`, PESO_NIVEL[s.nivel]);
 
   const soma = m.reduce((t, x) => t + x.pontos, 0);
   const nota = Math.max(0, Math.min(100, Math.round(soma)));

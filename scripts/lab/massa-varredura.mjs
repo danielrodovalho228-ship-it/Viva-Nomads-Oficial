@@ -156,13 +156,13 @@ async function criarImovel(owner, titulo, status, qtdFotos, extra = {}) {
   // Prompt 59: padrão mínimo confirmado (a varredura visual não muda; a lista é conferida em src/lib/conforto/regras.test.ts).
   const agora = new Date().toISOString();
   ok(
-    (await admin.from("conforto_declaracoes").upsert(CHAVES_CONFORTO.map((chave) => ({ property_id: data.id, chave, confirmado: true, confirmado_por: owner, confirmado_em: agora, versao_lista: 1 })), { onConflict: "property_id,chave" })).error,
+    (await admin.from("conforto_declaracoes").upsert(CHAVES_CONFORTO.map((chave) => ({ property_id: data.id, chave, confirmado: true, confirmado_por: owner, confirmado_em: agora, versao_lista: 2 })), { onConflict: "property_id,chave" })).error,
     `padrão mínimo ${titulo}`,
   );
   return data.id;
 }
 
-const CHAVES_CONFORTO = ["cama_colchao", "roupa_cama_banho", "agua_quente", "cozinha_basica", "ventilacao_quartos", "iluminacao", "fechadura_entrada", "entrega_limpa", "internet_informada", "mobilia_das_fotos"];
+const CHAVES_CONFORTO = ["cama_colchao", "roupa_cama_banho", "agua_quente", "cozinha_basica", "ventilacao_quartos", "iluminacao", "fechadura_entrada", "entrega_limpa", "internet_informada", "mobilia_das_fotos", "lavanderia_acesso", "apoio_cama"];
 
 /** Contrato completo: assinado pelos dois, caução, bloco ativo e conferência de ENTRADA confirmada com fotos. */
 async function criarContratoCompleto(propertyId, ownerId, tenantId) {
