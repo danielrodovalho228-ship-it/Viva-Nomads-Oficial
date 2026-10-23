@@ -8,6 +8,7 @@ import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/icon-button";
 import { cn } from "@/lib/utils";
 import { ITEM_VIDEO, itensDaGaleria } from "@/lib/video-tour";
+import { VideoArquivoModal } from "@/components/video-arquivo";
 import { ROTULO_SELO_VIDEO } from "@/lib/card-selos";
 import { VideoModal } from "@/components/video-walkthrough";
 
@@ -29,6 +30,7 @@ export function PropertyGallery({
   title,
   readyToLive,
   videoUrl,
+  videoArquivoId,
   acoes,
 }: {
   photos: string[];
@@ -36,6 +38,8 @@ export function PropertyGallery({
   readyToLive?: boolean;
   /** Tour em vídeo: vira a 1ª peça (ordem 6f964617, tela 7). */
   videoUrl?: string;
+  /** Id do anúncio quando o dono enviou um vídeo como arquivo (ordem 8681ae95): o player pede o endereço no clique. */
+  videoArquivoId?: string;
   /** Ícones sobre a foto no celular (coração e compartilhar). */
   acoes?: React.ReactNode;
 }) {
@@ -43,7 +47,7 @@ export function PropertyGallery({
   const [videoAberto, setVideoAberto] = useState(false);
   const [index, setIndex] = useState(0);
   const fotos = photos.length ? photos : [""];
-  const list = itensDaGaleria(fotos, videoUrl);
+  const list = itensDaGaleria(fotos, videoUrl, !!videoArquivoId);
   const temVideo = list[0] === ITEM_VIDEO;
 
   // O vídeo abre na janela própria; o lightbox só tem fotos (índice sem o vídeo).
@@ -70,7 +74,8 @@ export function PropertyGallery({
         capa={fotos[0]}
       />
 
-      {videoAberto && videoUrl && (
+      {videoAberto && videoArquivoId && <VideoArquivoModal imovelId={videoArquivoId} title={title} onClose={() => setVideoAberto(false)} />}
+      {videoAberto && !videoArquivoId && videoUrl && (
         <VideoModal url={videoUrl} title={title} onClose={() => setVideoAberto(false)} />
       )}
 

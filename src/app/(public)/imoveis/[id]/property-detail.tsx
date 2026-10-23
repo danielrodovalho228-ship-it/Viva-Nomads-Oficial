@@ -36,6 +36,7 @@ import { SELO_NF_UI } from "@/lib/flags";
 import { ImoveisParecidos } from "@/components/property/imoveis-parecidos";
 import { PropertyGallery } from "@/components/property-gallery";
 import { VideoWalkthrough } from "@/components/video-walkthrough";
+import { VideoArquivoPlayer } from "@/components/video-arquivo";
 import { requestLead } from "@/lib/data/actions";
 import { getMeusDados } from "@/lib/data/perfil-actions";
 import { MOTIVOS, isMotivo } from "@/lib/pedidos/pedidos";
@@ -663,6 +664,7 @@ export function PropertyDetail({
         title={property.title}
         readyToLive={property.readyToLiveBadge}
         videoUrl={property.videoUrl}
+        videoArquivoId={property.videoArquivo ? property.id : undefined}
         acoes={icones}
       />
 
@@ -749,6 +751,14 @@ export function PropertyDetail({
               <DestaquesImovel property={property} />
             </div>
           </header>
+
+          {/* Vídeo enviado pelo dono: miniatura com play, só baixa no clique (ordem 8681ae95) */}
+          {property.videoArquivo && (
+            <section>
+              <VideoArquivoPlayer imovelId={property.id} capa={property.photos[0]} title={property.title} />
+              <p className="mt-2 text-xs text-muted">Vídeo gravado pelo proprietário.</p>
+            </section>
+          )}
 
           {/* Walk-through em vídeo */}
           {videoTourPermitido(property.videoUrl) && (
