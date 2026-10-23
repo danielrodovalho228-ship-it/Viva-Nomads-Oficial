@@ -26,16 +26,18 @@ test.describe("T349 — L-31: página do imóvel sem HTTP 500", () => {
     if (NO_LABORATORIO) await apagarContas([ids.dono]);
   });
 
+  // A página tem um coração por tamanho de tela (galeria do celular e cabeçalho do computador); o primeiro do DOM pode
+  // ser o escondido (lab-crítico do #1195). Vale o primeiro visível.
   test("visitante: 390 e 1280 px, várias cargas — sempre 200 e com o coração de favoritar", async ({ page }) => {
     for (const largura of [390, 1280, 390, 1280]) {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       const r = await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
       expect(r?.status(), `HTTP a ${largura} px`).toBe(200);
-      await expect(page.getByTestId("coracao").first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByTestId("coracao").locator("visible=true").first()).toBeVisible({ timeout: 20_000 });
     }
     const r = await page.reload({ waitUntil: "domcontentloaded" });
     expect(r?.status()).toBe(200);
-    await expect(page.getByTestId("coracao").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("coracao").locator("visible=true").first()).toBeVisible({ timeout: 20_000 });
   });
 
   test("perfil público do proprietário (mesmo selo do LinkedIn) também abre", async ({ page }) => {

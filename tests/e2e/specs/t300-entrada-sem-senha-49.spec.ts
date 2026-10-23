@@ -141,7 +141,8 @@ test.describe("T300 — entrada sem senha, intenção e convidado (Prompt 49)", 
     expect(imoveis?.length).toBe(2);
     for (const im of imoveis!) {
       await page.goto(`/imoveis/${im.id}`, { waitUntil: "domcontentloaded" });
-      const coracao = page.getByTestId("coracao").first();
+      // Um coração por tamanho de tela: vale o primeiro visível (lab-crítico do #1195, depois do #1190).
+      const coracao = page.getByTestId("coracao").locator("visible=true").first();
       await expect(async () => {
         if ((await coracao.getAttribute("aria-pressed")) !== "true") await coracao.click({ timeout: 4_000 });
         await expect(coracao).toHaveAttribute("aria-pressed", "true", { timeout: 3_000 });
