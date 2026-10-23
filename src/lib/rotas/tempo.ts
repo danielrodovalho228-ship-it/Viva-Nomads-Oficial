@@ -135,3 +135,52 @@ export function provedorNoAmbiente(env: Record<string, string | undefined>, modo
   if (modo === "onibus") return onibus && Boolean(env.GOOGLE_ROUTES_API_KEY);
   return Boolean(env.MAPBOX_SERVER_TOKEN || env.NEXT_PUBLIC_MAPBOX_TOKEN);
 }
+
+/**
+ * E31: o que falta no ambiente para o tempo por rota (carro, a pé, bicicleta). [] = provedor configurado. Só nomes de
+ * variável — nunca valor. Mostrado ao admin em /admin/destinos.
+ */
+export function faltaParaRotas(env: Record<string, string | undefined>, simulado: boolean): string[] {
+  if (simulado) return env.LAB_ROTAS_URL ? [] : ["LAB_ROTAS_URL"];
+  return env.MAPBOX_SERVER_TOKEN || env.NEXT_PUBLIC_MAPBOX_TOKEN ? [] : ["MAPBOX_SERVER_TOKEN"];
+}
+
+/** Máximo de destinos no bloco "Tempo até" da página do anúncio (além do destino da busca). */
+export const DESTINOS_NO_BLOCO = 6;
+
+const semAcento = (s: string | null | undefined) =>
+  (s ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toLowerCase();
+
+export interface DestinoComPonto extends Ponto {
+  id: string;
+  slug: string;
+  cidade: string | null;
+  uf: string | null;
+}
+
+/**
+ * E31 — regra do bloco "Tempo até" da página do anúncio: TODOS os destinos ativos da MESMA cidade do anúncio (e da
+ * mesma UF, quando as duas existem), do mais perto ao mais longe, até DESTINOS_NO_BLOCO. Destino de outra cidade
+ * (ex.: UFU — Campus Pontal, em Ituiutaba, para um anúncio de Uberlândia) não entra: só aparece quando a pessoa chega
+ * da busca por ele (entra à parte, como "destino da busca", e por isso é excluído aqui pelo slug).
+ */
+export function destinosDoBloco<T extends DestinoComPonto>(
+  imovel: { cidade: string | null; uf: string | null; ponto: Ponto },
+  destinos: T[],
+  excluirSlug?: string | null,
+  max = DESTINOS_NO_BLOCO,
+): T[] {
+  const cidade = semAcento(imovel.cidade);
+  if (!cidade) return [];
+  const uf = semAcento(imovel.uf);
+  return destinos
+    .filter((d) => d.slug !== excluirSlug && semAcento(d.cidade) === cidade && (!uf || !d.uf || semAcento(d.uf) === uf))
+    .map((d) => ({ d, m: metrosEntre(d, imovel.ponto) }))
+    .sort((a, b) => a.m - b.m)
+    .slice(0, max)
+    .map(({ d }) => d);
+}

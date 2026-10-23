@@ -7,6 +7,8 @@ import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives"
 import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { maisBuscados, TIPOS_DESTINO } from "@/lib/destinos/regras";
 import { DestinoBotao, DestinoForm, type DestinoEditavel } from "./forms";
+import { faltaParaRotas } from "@/lib/rotas/tempo";
+import { integracoesSimuladas } from "@/lib/integracoes";
 
 export const metadata = { title: "Destinos — Admin", robots: { index: false, follow: false } };
 
@@ -58,6 +60,17 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
         </p>
       )}
       <NumeroHeroi rotulo="Destinos ativos" valor={lista.filter((d) => d.ativo).length} href="#destinos" />
+      {/* E31: sem o token, a busca e o anúncio só mostram a linha reta — o admin vê aqui o que falta (só o nome). */}
+      {(() => {
+        const falta = faltaParaRotas(process.env, integracoesSimuladas());
+        return (
+          <p className="mb-4 text-sm text-ink" data-testid="destinos-provedor" data-ok={falta.length ? "0" : "1"}>
+            {falta.length
+              ? `Tempo por rota desligado: falta a variável ${falta.join(", ")} na Vercel (produção). Até lá, a busca e o anúncio mostram só a distância em linha reta.`
+              : "Tempo por rota ligado (carro, a pé e bicicleta)."}
+          </p>
+        );
+      })()}
       <ListaNumeros
         className="mb-6"
         itens={[
