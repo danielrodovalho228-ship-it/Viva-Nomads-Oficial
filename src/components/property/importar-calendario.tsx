@@ -46,7 +46,7 @@ export function ImportarCalendario({ propertyId, onMudou }: { propertyId: string
 
   const cheio = (lista?.length ?? 0) >= LIMITE_LINKS_POR_IMOVEL;
   return (
-    <section className="mt-6 rounded-xl border border-sage-200 p-4" id="calendario" data-testid="importar-calendario">
+    <section className="mt-6 rounded-xl border border-sage-200 p-4" data-testid="importar-calendario">
       <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
         <CalendarSync className="h-4 w-4 text-sage" aria-hidden /> Importar datas de outro site
       </h3>
