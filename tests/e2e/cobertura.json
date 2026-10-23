@@ -5337,6 +5337,12 @@
         "t296-niveis-exibicao-59-1"
       ]
     },
+    "src/lib/data/estrutura-actions.ts#salvarChecklistEstrutura": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/nivel-actions.ts#salvarRuido": {
       "personas": [
         "inquilino",
