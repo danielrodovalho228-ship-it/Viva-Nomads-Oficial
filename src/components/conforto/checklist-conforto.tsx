@@ -1,10 +1,11 @@
 "use client";
 
 import { ITENS_CONFORTO } from "@/config/conforto-minimo";
+import { TITULO_PADRAO_MINIMO } from "@/lib/conforto/exibicao";
 import { Button } from "@/components/ui/button";
 
 /**
- * Prompt 59 — checklist do padrão mínimo de conforto (o dono confirma item a item). Usado na Revisão do cadastro e na
+ * Prompt 59 — checklist do padrão mínimo de conforto (o dono confirma item a item). Usado no passo Comodidades do cadastro (59-A) e na
  * página "Padrão mínimo" do imóvel. A lista vem de src/config/conforto-minimo.ts (uma só).
  */
 export function ChecklistConforto({
@@ -23,7 +24,7 @@ export function ChecklistConforto({
     <div className="rounded-xl border border-sage-200 p-4" data-testid="conforto-checklist" data-faltam={faltam}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-ink">Padrão mínimo de conforto</p>
+          <p className="text-sm font-semibold text-ink">{TITULO_PADRAO_MINIMO}</p>
           <p className="mt-1 text-xs text-muted">
             Confirme cada item. Sem todos confirmados, o anúncio não é publicado. O morador confere na entrada.
           </p>

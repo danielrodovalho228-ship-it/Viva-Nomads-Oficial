@@ -59,6 +59,8 @@ import { StayRules } from "@/components/property/stay-rules";
 import { DestaquesImovel } from "@/components/property/destaques-imovel";
 import { SobreImovel } from "@/components/property/sobre-imovel";
 import { BomSaber } from "@/components/property/bom-saber";
+import { PadraoMinimoImovel } from "@/components/conforto/padrao-minimo-imovel";
+import type { Exibicao59 } from "@/lib/data/exibicao-59";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
@@ -80,10 +82,13 @@ export function PropertyDetail({
   property: anuncio,
   similar,
   proprietario = null,
+  exibicao59 = null,
 }: {
   property: Property;
   similar: Property[];
   proprietario?: PerfilProprietario | null;
+  /** Prompt 59-A: padrão mínimo confirmado e taxa de manutenção no prazo (anúncio de exemplo: null). */
+  exibicao59?: Exibicao59 | null;
 }) {
   // Anúncio de EXEMPLO: sem nota, avaliações, selos do dono, taxa de resposta,
   // "Aceita Seguro-Fiança" (em estruturação) nem dados do Google — nada disso
@@ -765,6 +770,7 @@ export function PropertyDetail({
             <WorkspaceSection property={property} />
             <StayRules property={property} />
             <BomSaber property={property} />
+            <PadraoMinimoImovel confirmado={!!exibicao59?.confortoConfirmado} />
             <PrivacidadeAcesso privacidade={property.privacidade} />
           </div>
           <div id="disponibilidade" className="scroll-mt-36">
@@ -782,6 +788,7 @@ export function PropertyDetail({
             <OwnerCard
               property={property}
               proprietario={proprietario}
+              taxaManutencao={exibicao59?.taxaManutencao ?? null}
               onMensagem={
                 exemplo
                   ? undefined

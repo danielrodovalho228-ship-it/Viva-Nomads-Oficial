@@ -249,9 +249,12 @@ export function decisoesDoProprietario(d: DadosDecisoes, agora: Date = new Date(
     out.push({
       id: `conforto-${c.propertyId}`,
       tipo: "conforto",
-      texto: c.pausado ? `${nomeImovel(c.imovel)} saiu da busca: confirme o padrão mínimo` : `Confirme o padrão mínimo de ${nomeImovel(c.imovel)}`,
+      // Prompt 59-A: o aviso de adequação numa frase só, com a data ("Confirme o padrão mínimo de X até 21/11/2026").
+      texto: c.pausado
+        ? `${nomeImovel(c.imovel)} saiu da busca: confirme o padrão mínimo`
+        : `Confirme o padrão mínimo de ${nomeImovel(c.imovel)} até ${new Date(c.prazoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`,
       href: `/dashboard/imoveis/${c.propertyId}/conforto`,
-      prazoTexto: c.pausado ? null : `Até ${new Date(c.prazoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`,
+      prazoTexto: null,
       ...pz,
     });
   }

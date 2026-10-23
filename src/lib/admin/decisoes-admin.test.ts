@@ -72,6 +72,6 @@ test("Prompt 59: 'Manutenção fora do prazo' abre a lista; a contestação do p
   assert.deepEqual(DECISOES_ADMIN.slice(0, 2).map((d) => d.chave), ["manutencao_fora_prazo", "conforto_contestacoes"]);
   const r = montarDecisoesAdmin(Object.fromEntries(DECISOES_ADMIN.map((d) => [d.chave, { n: d.chave === "manutencao_fora_prazo" || d.chave === "chamados_p1" ? 1 : 0 }])));
   assert.deepEqual(r.linhas.map((l) => l.chave), ["manutencao_fora_prazo", "chamados_p1"]);
-  assert.equal(r.linhas[0].texto, "1 manutenção fora do prazo de solução");
+  assert.equal(r.linhas[0].texto, "1 manutenção fora do prazo");
   assert.equal(r.linhas[0].href, "/admin/solicitacoes?fora_prazo=1");
 });

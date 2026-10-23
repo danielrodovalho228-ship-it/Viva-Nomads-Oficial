@@ -113,7 +113,7 @@ export const OBRIGATORIOS_ROTULOS = [
 ] as const;
 
 /** Item condicional do padrão mínimo de conforto (Prompt 59). */
-export const ROTULO_FALTA_CONFORTO = "Padrão mínimo de conforto confirmado";
+export const ROTULO_FALTA_CONFORTO = "Padrão mínimo da Viva confirmado";
 
 /** Item da qualificação no portão único (prompt 22). */
 export const ROTULO_QUALIFICACAO = "Antes de anunciar (qualificação do imóvel)";
@@ -154,7 +154,7 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   if (f.confortoFaltam !== undefined && f.confortoFaltam > 0) {
     const n = f.confortoFaltam;
-    obrigatorios.push({ key: "conforto", label: ROTULO_FALTA_CONFORTO, ok: false, etapa: ETAPA.revisar, detalhe: n === 1 ? "falta 1 item" : `faltam ${n} itens` });
+    obrigatorios.push({ key: "conforto", label: ROTULO_FALTA_CONFORTO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "falta 1 item" : `faltam ${n} itens` });
   }
   // A vaga só aparece quando é o único bloqueio que resta (ordem de8761b0, item 2).
   if (f.limitePlanoOk === false && obrigatorios.every((i) => i.ok)) {

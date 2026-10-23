@@ -123,6 +123,7 @@ export function SecaoConfortoEntrada({
                     accept="image/jpeg,image/png,image/webp"
                     onChange={(e) => muda(i.chave, { foto: e.target.files?.[0] ?? null })}
                     aria-label={`Foto de ${i.rotulo} (opcional)`}
+                    data-testid={`conforto-foto-${i.chave}`}
                     className="block w-full min-w-0 max-w-full text-sm"
                   />
                 </div>

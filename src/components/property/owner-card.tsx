@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Building2, Check, Clock, Handshake, Languages, MapPin, MessageSquare, Star, UserRound } from "lucide-react";
+import { Building2, Check, Clock, Handshake, Languages, MapPin, MessageSquare, Star, UserRound, Wrench } from "lucide-react";
+import { rotuloTaxaManutencao } from "@/lib/conforto/exibicao";
 import type { Property } from "@/lib/types";
 import type { PerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { iniciais, corAvatar } from "@/lib/avatar";
@@ -58,10 +59,13 @@ export function OwnerCard({
   property,
   proprietario,
   onMensagem,
+  taxaManutencao = null,
 }: {
   property: Property;
   proprietario?: PerfilProprietario | null;
   onMensagem?: () => void;
+  /** Prompt 59-A: taxa de solução de manutenção no prazo (12 meses); só existe com 3 ou mais chamados resolvidos. */
+  taxaManutencao?: { taxa: number; resolvidos: number } | null;
 }) {
   const exemplo = isExemplo(property);
   const [avisoDemo, setAvisoDemo] = useState(false);
@@ -107,6 +111,8 @@ export function OwnerCard({
             : { icone: Clock, texto: "Novo na Viva", testid: "proprietario-resposta" },
         );
         if (proprietario.idiomas.length > 0) fatos.push({ icone: Languages, texto: `Fala ${proprietario.idiomas.join(", ")}` });
+        const taxa = rotuloTaxaManutencao(taxaManutencao);
+        if (taxa) fatos.push({ icone: Wrench, texto: taxa, testid: "proprietario-manutencao-prazo" });
       }
       d = {
         nome,
