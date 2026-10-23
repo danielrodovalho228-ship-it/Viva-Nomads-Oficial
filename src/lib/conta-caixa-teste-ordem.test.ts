@@ -6,8 +6,9 @@ import { readFileSync } from "node:fs";
 // "Excluir conta", empurra o botão para fora da tela depois da rolagem. Por isso vem por último.
 test("Conta: a caixa de e-mails de teste vem depois da zona de exclusão", () => {
   const src = readFileSync(new URL("../app/(dashboard)/dashboard/conta/page.tsx", import.meta.url), "utf8");
-  const exclusao = src.indexOf("<DangerZone />");
+  // Prompt 51 F1: a zona de exclusão fica dentro de "Sair da Viva".
+  const exclusao = src.indexOf("<SairDaViva />");
   const caixa = src.indexOf("<CaixaEmailsTeste />");
   assert.ok(exclusao > 0 && caixa > 0);
-  assert.ok(caixa > exclusao, "CaixaEmailsTeste deve vir depois de DangerZone");
+  assert.ok(caixa > exclusao, "CaixaEmailsTeste deve vir depois de Sair da Viva");
 });

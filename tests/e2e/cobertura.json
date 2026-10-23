@@ -1767,6 +1767,14 @@
       "specs": [
         "t313-ativacao-funil-50"
       ]
+    },
+    "/admin/qualidade": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
+      ]
     }
   },
   "rotas": {
@@ -3912,6 +3920,91 @@
       "specs": [
         "t102-preco-sugerido",
         "t103-selo-preco-justo"
+      ]
+    },
+    "src/lib/saida/acoes.ts#aceitarAjudaSaida": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
+      ]
+    },
+    "src/lib/saida/acoes.ts#adminDefinirCorrecao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
+      ]
+    },
+    "src/lib/saida/acoes.ts#adminEstadoDenuncia": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
+      ]
+    },
+    "src/lib/saida/acoes.ts#adminFecharCorrecao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
+      ]
+    },
+    "src/lib/saida/acoes.ts#denunciarAnuncio": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
+      ]
+    },
+    "src/lib/saida/acoes.ts#estadoSaida": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
+      ]
+    },
+    "src/lib/saida/acoes.ts#minhaDenuncia": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
+      ]
+    },
+    "src/lib/saida/acoes.ts#pausarConta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
+      ]
+    },
+    "src/lib/saida/acoes.ts#reativarConta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
+      ]
+    },
+    "src/lib/saida/acoes.ts#registrarMotivoSaida": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t315-sair-da-viva-51"
       ]
     },
     "src/lib/seguranca/recuperacao-actions.ts#confirmarRefazer": {

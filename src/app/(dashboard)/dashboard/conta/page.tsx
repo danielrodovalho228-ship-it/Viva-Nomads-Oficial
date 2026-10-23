@@ -13,7 +13,8 @@ import { SeusPapeis } from "@/components/account/seus-papeis";
 import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
 import { DegrausPerfil } from "@/components/account/degraus-perfil";
-import { AjudaContato, DadosPessoais, DangerZone, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
+import { AjudaContato, DadosPessoais, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
+import { SairDaViva } from "@/components/account/sair-da-viva";
 import { BlocoConta, ConfiancaLista, PerfilProfissional } from "@/components/account/conta-blocos";
 import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
 import { MinhaIntencao } from "@/components/auth/escolha-intencao";
@@ -64,7 +65,7 @@ export default function AccountPage() {
           <AjudaContato />
           <div id="sair-da-viva" className="scroll-mt-24">
             <h3 className="mt-6 font-title text-lg font-semibold text-ink">Sair da Viva</h3>
-            <DangerZone />
+            <SairDaViva />
             <FalarComAViva className="mt-4" />
           </div>
           {/* Por último: carrega depois da tela e não pode empurrar "Sair da Viva" para fora do alcance (t183). */}

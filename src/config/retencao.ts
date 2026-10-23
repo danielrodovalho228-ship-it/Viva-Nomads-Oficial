@@ -162,10 +162,14 @@ export const INVENTARIO: ItemInventario[] = [
   i("property_ownership_checks", "public.property_ownership_checks", "matrícula, motivo e campos conferidos", "titularidade", CONTA, "veredito"),
   i("qualification_checklists", "public.qualification_checklists", "caminho do documento do imóvel", "qualificação", CONTA, "veredito"),
   i("tempos_deslocamento", "public.tempos_deslocamento", "chave com lat/lng do local de trabalho digitado", "tempo até o trabalho (37)", CONTA),
+  // Prompt 51 F1: o motivo da saída (opcional) e o texto livre (só a equipe lê). Na exclusão da conta o user_id vira nulo.
+  i("saidas_motivos", "public.saidas_motivos", "motivo da saída e texto livre opcional", "entender por que as pessoas saem (painel de qualidade)", { prazoDias: 365, gatilho: "sem_gatilho_automatico", modo: "anonimizar", base: "proposta", fase: 2 }, "papel, motivo e data, sem identificação (estatística)"),
+  i("denuncias_anuncio", "public.denuncias_anuncio", "motivo e texto da denúncia de anúncio", "o atendimento analisar a denúncia", { prazoDias: 365, gatilho: "decisao_admin", modo: "apagar", base: "proposta", fase: 2 }, "o estado da denúncia no chamado"),
 ];
 
 /** Tabelas que a varredura acha por nome de coluna mas não guardam dado pessoal (com o porquê). */
 export const SEM_DADO_PESSOAL: Record<string, string> = {
+  qualidade_correcoes: "item de correção do painel de qualidade: papel, motivo da taxonomia (chave fechada), contagem, responsável da equipe e prazo (Prompt 51)",
   agentes: "nome do agente de IA, não de pessoa",
   imovel_extras: "lista fechada de extras do anúncio (Adendo 59.1), sem dado de pessoa",
   nivel_itens: "itens de nível do anúncio e a foto de cada um (sem pessoas); ficam enquanto o anúncio existir e saem em cascata com ele (Adendo 59.1)",

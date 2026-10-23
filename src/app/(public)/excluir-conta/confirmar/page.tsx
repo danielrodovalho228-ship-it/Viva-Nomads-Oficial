@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TEXTO_EXCLUSAO } from "@/lib/saida/regras";
 import Link from "next/link";
 import { Loader2, CheckCircle2, AlertTriangle, Trash2 } from "lucide-react";
 import { confirmarExclusaoConta } from "@/lib/data/account-delete";
@@ -67,7 +68,7 @@ export default function ConfirmarExclusaoPage() {
           <p className="mt-2 text-sm text-muted">
             {anonimizado
               ? "Seus dados pessoais (nome, e-mail, telefone e foto) foram removidos e o acesso foi encerrado. Registros de contratos são mantidos sem identificação pelo prazo exigido por lei."
-              : "Sua conta e seus dados foram apagados. Sentiremos sua falta — você é bem-vindo de volta quando quiser."}
+              : "Sua conta e seus dados pessoais foram apagados. Contratos assinados e registros financeiros ficam guardados pelo prazo legal, com acesso restrito. Sentiremos sua falta — você é bem-vindo de volta quando quiser."}
           </p>
           <Link href="/" className={buttonClasses({ size: "md", className: "mt-6" })}>
             Voltar ao início
@@ -104,9 +105,7 @@ export default function ConfirmarExclusaoPage() {
         <>
           <h1 className="font-title text-2xl font-semibold text-ink">Confirmar exclusão da conta</h1>
           <p className="mt-2 text-sm text-muted">
-            Esta ação é <strong className="text-ink">definitiva</strong>. Ao confirmar, sua conta e
-            todos os dados (perfil, anúncios, candidaturas, mensagens, contratos, favoritos) serão
-            apagados e não poderão ser recuperados.
+            Esta ação é <strong className="text-ink">definitiva</strong>: a conta não pode ser recuperada. {TEXTO_EXCLUSAO}
           </p>
           {erro && <p className="mt-4 text-sm text-red-600">{erro}</p>}
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">

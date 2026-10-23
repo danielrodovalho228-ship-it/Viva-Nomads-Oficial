@@ -67,6 +67,7 @@ import type { Exibicao59 } from "@/lib/data/exibicao-59";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
+import { DenunciarAnuncio } from "@/components/anuncio/denunciar-anuncio";
 import type { PerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { Reviews } from "@/components/property/reviews";
 import { CampoData } from "@/components/ui/campo-data";
@@ -812,6 +813,11 @@ export function PropertyDetail({
               }
             />
           </div>
+          {!exemplo && (
+            <div className="mt-6">
+              <DenunciarAnuncio propertyId={property.id} />
+            </div>
+          )}
         </div>
 
         {/* Cartão lateral: fixo no computador, empilhado no celular (o primário do celular é o do rodapé fixo). */}
