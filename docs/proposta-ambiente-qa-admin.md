@@ -59,6 +59,7 @@ Todas as rotas de `src/app/(dashboard)/admin`. Em cada uma: 390 px e 1280 px, se
 | `/admin/documentos` | Aprovar e recusar um documento | Aprovado libera a publicação; recusado avisa o dono; decisão agrupada por imóvel |
 | `/admin/emails-teste` | Ler os e-mails gerados nos outros passos | Um e-mail por evento, com o modelo único |
 | `/admin/eventos` | Ver o funil de eventos | Eventos da semente; sem dado pessoal em URL |
+| `/admin/funil` | Ver o funil de ativação e abrir a lista de uma etapa | Maior queda da semana no topo; fórmula escrita sob cada número; contas de teste fora; a lista abre pelo número |
 | `/admin/financeiro` | Ver comissão e MRR | Comissão de contrato `is_teste` aparece como simulada (TESTE) e não entra no MRR |
 | `/admin/avaliadores` | Credenciar um avaliador de teste (em teste → ativo), salvar a tabela de preço da cidade e ver a fila | As 3 condições da chave VISTORIA_ATIVA com o estado de cada uma; "tabela sem valor" sem preço; histórico de preço; ativar exige duas etapas |
 | `/admin/fotografos` | Ver parceiros fotógrafos | Lista e contagens carregam |

@@ -4,6 +4,7 @@ import { AdminDocumentosClient } from "./admin-documentos-client";
 import { MatriculasAdmin } from "./matriculas-admin-client";
 import { listarFalhasDocumentos } from "@/lib/data/documentos-falhas-actions";
 import { FalhasDocumentos } from "./falhas-client";
+import { VerificacoesRevisao } from "@/components/admin/verificacoes-revisao";
 import { adminDaPagina, filaDocumentos } from "@/lib/data/admin-indicadores";
 
 type ClienteAdmin = NonNullable<Awaited<ReturnType<typeof adminDaPagina>>>;
@@ -34,6 +35,7 @@ export default async function AdminDocumentosPage() {
       <AdminDocumentosClient docs={docs} auto={auto} contadores={contadores} filaAgora={filaAgora} ultimaDecisao={ultimaDoc} />
       <MatriculasAdmin itens={matriculas} contadores={contMatriculas} ultimaDecisao={ultimaMatricula} />
       <FalhasDocumentos falhas={falhas.falhas} pendentes={falhas.pendentes} />
+      <VerificacoesRevisao />
     </>
   );
 }

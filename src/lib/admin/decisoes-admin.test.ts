@@ -33,6 +33,9 @@ test("só entram linhas com n > 0; N é a soma; ordem de urgência (P1 antes de 
     manutencao_fora_prazo: { n: 0 },
     conforto_contestacoes: { n: 0 },
     fotos_nivel: { n: 0 },
+    chamados_fora_promessa: { n: 0 },
+    parceiros_sem_resposta_1_dia: { n: 0 },
+    verificacao_analise_humana: { n: 0 },
   });
   assert.equal(r.total, 7);
   assert.deepEqual(r.linhas.map((l) => l.chave), ["chamados_p1", "backup", "documentos_pendentes", "encerramentos"]);
@@ -76,4 +79,12 @@ test("Prompt 59: 'Manutenção fora do prazo' abre a lista; a contestação do p
   assert.equal(r.linhas[0].texto, "1 manutenção fora do prazo");
   // Adendo 59.1: a fila virou filtro da Central de Pendências.
   assert.equal(r.linhas[0].href, "/admin/pendencias?filtro=manutencao_fora_prazo");
+});
+
+test("Prompt 50: chamado fora da promessa vem antes de P1; parceria sem resposta em 1 dia útil e verificação na fila humana", () => {
+  const r = montarDecisoesAdmin({ chamados_p1: { n: 1 }, chamados_fora_promessa: { n: 2 }, parceiros_sem_resposta_1_dia: { n: 1 }, verificacao_analise_humana: { n: 1 } });
+  assert.deepEqual(r.linhas.map((l) => l.chave).slice(0, 2), ["chamados_fora_promessa", "chamados_p1"]);
+  assert.equal(r.linhas[0].texto, "2 chamados sem resposta de uma pessoa há mais de 24 h");
+  assert.ok(r.linhas.some((l) => l.chave === "parceiros_sem_resposta_1_dia" && l.href === "/admin/parceiros?aba=pendentes"));
+  assert.ok(r.linhas.some((l) => l.chave === "verificacao_analise_humana" && l.href === "/admin/documentos#verificacao"));
 });
