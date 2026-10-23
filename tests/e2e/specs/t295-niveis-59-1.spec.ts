@@ -117,7 +117,9 @@ test.describe("T295 — Adendo 59.1: níveis Essencial / Conforto / Premium", ()
     // No Essencial: declarar sem foto é recusado; com a foto enviada pelo upload, o item fica "em análise".
     await paginaNivel(page, ids.e!, "essencial");
     const item: ChaveNivel = "ar_quarto_principal";
-    await page.getByTestId(`nivel-tenho-${item}`).check();
+    // A caixa é controlada pelo servidor: sem foto, a declaração é recusada e ela continua desmarcada (por isso click, não check).
+    await page.getByTestId(`nivel-tenho-${item}`).click();
+    await expect(page.getByTestId(`nivel-tenho-${item}`)).not.toBeChecked();
     await expect(page.getByTestId(`nivel-msg-${item}`)).toContainText("Envie a foto", { timeout: 20_000 });
     await page.getByTestId(`nivel-foto-${item}`).setInputFiles({ name: "ar.png", mimeType: "image/png", buffer: pngDeTeste(3) });
     await expect(page.getByTestId(`nivel-status-${item}`)).toHaveText("Foto em análise", { timeout: 30_000 });
@@ -132,12 +134,15 @@ test.describe("T295 — Adendo 59.1: níveis Essencial / Conforto / Premium", ()
   test("2. elo mais fraco: o Premium sem o ar da sala vira Conforto; ao repor, volta a Premium", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await paginaNivel(page, ids.p!, "premium");
-    await page.getByTestId("nivel-tenho-ar_sala").uncheck();
+    // A caixa só muda quando o servidor responde (controlada): click e espera o estado novo.
+    await page.getByTestId("nivel-tenho-ar_sala").click();
+    await expect(page.getByTestId("nivel-tenho-ar_sala")).not.toBeChecked({ timeout: 20_000 });
     await expect(page.getByTestId("nivel-atual")).toHaveAttribute("data-nivel", "conforto", { timeout: 20_000 });
     await expect(page.getByTestId("nivel-area-clima")).toHaveAttribute("data-nivel", "conforto");
     await expect(page.getByTestId("nivel-area-sono")).toHaveAttribute("data-nivel", "premium");
     expect(await nivelGravado(ids.p!)).toBe("conforto");
-    await page.getByTestId("nivel-tenho-ar_sala").check();
+    await page.getByTestId("nivel-tenho-ar_sala").click();
+    await expect(page.getByTestId("nivel-tenho-ar_sala")).toBeChecked({ timeout: 20_000 });
     await expect(page.getByTestId("nivel-atual")).toHaveAttribute("data-nivel", "premium", { timeout: 20_000 });
     expect(await nivelGravado(ids.p!)).toBe("premium");
     await page.context().close();
