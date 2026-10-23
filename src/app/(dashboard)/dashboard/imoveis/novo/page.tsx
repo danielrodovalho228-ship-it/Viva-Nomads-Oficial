@@ -1239,6 +1239,8 @@ export default function NewPropertyPage() {
         action={
           !editingId && saveStatus !== "idle" ? (
             <span
+              data-testid="estado-salvamento"
+              data-estado={saveStatus}
               className={cn(
                 "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium",
                 saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
