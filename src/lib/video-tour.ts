@@ -45,3 +45,19 @@ export function videoTourPermitido(url: string | null | undefined): boolean {
 export function itensDaGaleria(photos: string[], videoUrl?: string | null, temVideoArquivo = false): string[] {
   return temVideoArquivo || videoTourPermitido(videoUrl) ? [ITEM_VIDEO, ...photos] : photos;
 }
+
+/**
+ * 65-B: o vídeo como 2º item da galeria, logo depois da capa (a capa continua sendo a foto grande do mosaico).
+ * Sem foto, o vídeo fica sozinho. A galeria (Pista A) troca `itensDaGaleria` por esta e usa `fotoDoItem` no índice.
+ */
+export function itensDaGaleriaVideoDepoisDaCapa(photos: string[], videoUrl?: string | null, temVideoArquivo = false): string[] {
+  if (!temVideoArquivo && !videoTourPermitido(videoUrl)) return photos;
+  return photos.length ? [photos[0], ITEM_VIDEO, ...photos.slice(1)] : [ITEM_VIDEO];
+}
+
+/** Índice da FOTO (no lightbox, só fotos) do item `i` da galeria, onde quer que o vídeo esteja; null se for o vídeo. */
+export function fotoDoItem(itens: string[], i: number): number | null {
+  if (itens[i] === ITEM_VIDEO) return null;
+  const v = itens.indexOf(ITEM_VIDEO);
+  return v >= 0 && v < i ? i - 1 : i;
+}

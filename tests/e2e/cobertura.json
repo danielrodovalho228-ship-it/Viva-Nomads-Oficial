@@ -2524,6 +2524,14 @@
       ],
       "specs": []
     },
+    "src/lib/data/actions.ts#gravarVideoArquivo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t321-video-alcancavel-65b"
+      ]
+    },
     "src/lib/data/actions.ts#loadDraftData": {
       "personas": [
         "inquilino",
@@ -2648,7 +2656,8 @@
       ],
       "specs": [
         "t94-valor-pet",
-        "t211-complemento-23"
+        "t211-complemento-23",
+        "t321-video-alcancavel-65b"
       ]
     },
     "src/lib/data/actions.ts#varrerCicloBlocos": {

@@ -28,11 +28,14 @@ function useUrlDoVideo(imovelId: string, ativo: boolean) {
 }
 
 function Tocador({ imovelId, title }: { imovelId: string; title: string }) {
-  const { url, erro } = useUrlDoVideo(imovelId, true);
-  if (erro) return <p className="p-6 text-center text-sm text-white" role="alert">Não foi possível carregar o vídeo agora.</p>;
+  const { url, erro: erroUrl } = useUrlDoVideo(imovelId, true);
+  // 65-B: o arquivo que não carrega (rede, link vencido, formato que o aparelho não toca) também mostra a mensagem.
+  const [erroCarga, setErroCarga] = useState(false);
+  const erro = erroUrl || erroCarga;
+  if (erro) return <p className="p-6 text-center text-sm text-white" role="alert" data-testid="video-arquivo-erro">Não foi possível carregar o vídeo agora.</p>;
   if (!url) return <Skeleton className="h-full w-full rounded-none" />;
   // Sem som por padrão, com controles; só baixa depois do clique em play (ordem 8681ae95).
-  return <video src={url} controls muted autoPlay playsInline preload="metadata" aria-label={`Vídeo do imóvel ${title}`} className="h-full w-full" data-testid="video-arquivo-player" />;
+  return <video src={url} controls muted autoPlay playsInline preload="metadata" aria-label={`Vídeo do imóvel ${title}`} className="h-full w-full" data-testid="video-arquivo-player" onError={() => setErroCarga(true)} />;
 }
 
 /** Na página: miniatura com play; o vídeo só é pedido e baixado depois do clique. */
