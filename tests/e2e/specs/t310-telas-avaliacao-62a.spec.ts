@@ -160,7 +160,8 @@ test.describe("T310 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     pedidoId = ((await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.imovel).single()).data!.id as string);
     for (const w of LARGURAS) {
       await largura(d, w);
-      await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
+      // Sem a âncora: a página já está em …/nivel#avaliacao e o mesmo endereço seria só um salto de âncora, sem recarregar.
+      await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
       const bloco = d.getByTestId("avaliacao-dono");
       await expect(bloco.getByTestId("avaliador-designado")).toHaveText(`Avaliador designado pela Viva: nº ${numeroA}`, { timeout: 30_000 });
       await expect(bloco.getByText("Avaliador designado pela Viva")).toHaveCount(1);
