@@ -43,7 +43,10 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
         for (const chave of ["email", "celular", "identidade", "duas-etapas", "senha"]) await expect(lista.getByTestId(`confianca-${chave}`)).toHaveCount(1);
         // Conta de teste (laboratório) → "Verificar identidade (simulado — conta de teste)"; conta real → "Em breve" (src/lib/identidade/estado.ts).
         await expect(lista.getByTestId("confianca-identidade")).toContainText(/Em breve|simulado — conta de teste/);
-        await expect(lista.getByTestId("confianca-linkedin")).toHaveCount(persona === "inquilino" ? 1 : 0);
+        // O modo vem do perfil (profiles.preferred_mode) e outros specs trocam o modo da conta compartilhada ao abrir telas de dono.
+        // A linha do LinkedIn acompanha o modo "morador" — o mesmo que mostra "Perfil profissional" — e não o nome da conta.
+        const modoMorador = (await page.getByText("Perfil profissional", { exact: true }).count()) > 0;
+        await expect(lista.getByTestId("confianca-linkedin")).toHaveCount(modoMorador ? 1 : 0);
         await expect(lista.getByTestId("confianca-senha").getByRole("link")).toHaveAttribute("href", "/dashboard/conta/seguranca");
 
         // Prompt 43: o link "Ver como os outros veem" deu lugar ao próprio cartão do perfil público dentro de Conta.
