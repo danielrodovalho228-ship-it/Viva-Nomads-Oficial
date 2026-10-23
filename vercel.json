@@ -11,6 +11,7 @@
     { "path": "/api/cron/prazos-conforto", "schedule": "0 14 * * *" },
     { "path": "/api/cron/vistoria", "schedule": "0 15 * * *" },
     { "path": "/api/cron/linkedin", "schedule": "0 16 * * *" },
-    { "path": "/api/cron/calendario", "schedule": "0 17 * * *" }
+    { "path": "/api/cron/calendario", "schedule": "0 17 * * *" },
+    { "path": "/api/cron/mensagens-programadas", "schedule": "0 18 * * *" }
   ]
 }

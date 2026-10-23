@@ -59,6 +59,7 @@ import type { Prontidao } from "@/lib/anuncio/prontidao";
 import { guardContactInfo, DOCUMENTO_BLOQUEADO } from "@/lib/messages/contact-guard";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
+import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
 import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";
 import { hojeBR, dataBR } from "@/lib/utils";
@@ -1816,9 +1817,12 @@ export async function sendMessage(input: {
   receiverId?: string;
   propertyId?: string;
   body: string;
+  /** Prompt 55-E2: texto vindo de uma resposta rápida — com contato direto, BLOQUEIA (não mascara). */
+  respostaRapida?: boolean;
 }): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true, id: input.conversationId };
+  if (input.respostaRapida && temContato(input.body)) return { ok: false, error: MSG_CONTATO_BLOQUEADO };
 
   const {
     data: { user },
