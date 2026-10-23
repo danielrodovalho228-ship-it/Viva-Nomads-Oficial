@@ -2224,8 +2224,8 @@ async function anuncioDoDono(id: string) {
 function revalidarPausa(id: string) {
   revalidatePath("/dashboard/imoveis");
   revalidatePath("/dashboard");
-  revalidatePath(`/imoveis/${id}`);
-  revalidatePath("/buscar");
+  // E33: todas as listagens públicas (home incluída), não só /buscar e a página do anúncio.
+  revalidarAnuncio(id, revalidatePath);
 }
 
 /**
