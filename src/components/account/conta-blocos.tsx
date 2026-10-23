@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { CheckCircle2, Circle, Clock, Eye, KeyRound, Briefcase, Mail, ShieldCheck, Smartphone, UserCheck } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
@@ -8,7 +8,8 @@ import { useViewMode } from "@/lib/roles";
 import { useProperties } from "@/lib/use-properties";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
 import { createClient } from "@/lib/supabase/client";
-import { getMeusDados } from "@/lib/data/perfil-actions";
+import { desconectarLinkedin, meuLinkedin, type MeuLinkedin } from "@/lib/linkedin/actions";
+import { MSG_FALHA, MSG_JA_CONECTADO, MSG_LIMITE, MSG_NOME_DIVERGENTE } from "@/lib/linkedin/regras";
 import { getTelefoneEstado } from "@/lib/data/telefone-actions";
 import { CategoriaProfissional } from "./categoria-profissional";
 import { cn } from "@/lib/utils";
@@ -110,18 +111,38 @@ interface ItemConfianca {
   rotulo: string;
   situacao: Situacao;
   detalhe: string;
-  acao?: { texto: string; href: string };
+  acao?: { texto: string; href: string; externo?: boolean };
+  /** Ação que roda aqui mesmo (ex.: Desconectar o LinkedIn). */
+  botao?: { texto: string; onClick: () => void; ocupado?: boolean };
 }
+
+/** 63-B: a volta do LinkedIn chega com ?linkedin=<resultado>; a frase certa aparece na lista. */
+const AVISO_LINKEDIN: Record<string, { texto: string; ok: boolean }> = {
+  conectado: { texto: "LinkedIn conectado. O selo já aparece para quem você conversa.", ok: true },
+  nome: { texto: MSG_NOME_DIVERGENTE, ok: false },
+  outra: { texto: MSG_JA_CONECTADO, ok: false },
+  limite: { texto: MSG_LIMITE, ok: false },
+  falha: { texto: MSG_FALHA, ok: false },
+  cancelado: { texto: "Você cancelou a conexão com o LinkedIn. Nada foi gravado.", ok: false },
+  indisponivel: { texto: "Conectar o LinkedIn não está disponível agora.", ok: false },
+};
+const assinarBusca = (avisar: () => void) => {
+  window.addEventListener("popstate", avisar);
+  return () => window.removeEventListener("popstate", avisar);
+};
 
 /**
  * Lista ÚNICA de confiança e segurança (prompt 18): e-mail, celular, identidade, LinkedIn, duas etapas e senha —
  * cada item uma vez. O item "Verificação" do menu aponta para cá (#confianca).
  */
 export function ConfiancaLista() {
-  const { mode } = useViewMode();
   const [emailOk, setEmailOk] = useState<boolean | null>(null);
   const [celular, setCelular] = useState<{ disponivel: boolean; verificado: boolean } | null>(null);
-  const [linkedin, setLinkedin] = useState<boolean | null>(null);
+  // 63-B: o selo "LinkedIn conectado" (a URL do perfil saiu daqui: fica em Dados pessoais, só a Viva vê).
+  const [linkedin, setLinkedin] = useState<MeuLinkedin | null>(null);
+  const [desconectando, setDesconectando] = useState(false);
+  const busca = useSyncExternalStore(assinarBusca, () => window.location.search, () => "");
+  const avisoLinkedin = AVISO_LINKEDIN[new URLSearchParams(busca).get("linkedin") ?? ""] ?? null;
   const [duasEtapas, setDuasEtapas] = useState<boolean | null>(null);
   // Identidade: o estado ÚNICO (complemento do prompt 23) — nenhum texto próprio aqui.
   const identidade = useEstadoIdentidade().situacao?.identidade ?? null;
@@ -139,8 +160,8 @@ export function ConfiancaLista() {
     getTelefoneEstado()
       .then((e) => vivo && e && setCelular({ disponivel: e.disponivel, verificado: e.verificado }))
       .catch(() => {});
-    getMeusDados()
-      .then((d) => vivo && d && setLinkedin(Boolean(d.linkedin)))
+    meuLinkedin()
+      .then((l) => vivo && setLinkedin(l))
       .catch(() => {});
     return () => {
       vivo = false;
@@ -179,15 +200,28 @@ export function ConfiancaLista() {
               ? { texto: "Verificar", href: "/dashboard/verificacao" }
               : { texto: "Saber mais", href: "/dashboard/verificacao" },
     },
-    ...(mode === "tenant"
+    // 63-B: só com a chave LINKEDIN_CONECTAR_ATIVO (e a configuração); nos três papéis.
+    ...(linkedin?.ativo
       ? [
           {
             chave: "linkedin",
             icone: Briefcase,
             rotulo: "LinkedIn",
-            situacao: (linkedin ? "ok" : "falta") as Situacao,
-            detalhe: linkedin ? "Informado" : "Opcional",
-            acao: linkedin ? undefined : { texto: "Adicionar", href: "#dados" },
+            situacao: (linkedin.conectado ? "ok" : "falta") as Situacao,
+            detalhe: linkedin.conectado ? (linkedin.texto ?? "Conectado") : "Opcional",
+            acao: linkedin.conectado ? undefined : { texto: "Conectar", href: "/api/conta/linkedin/conectar", externo: true },
+            botao: linkedin.conectado
+              ? {
+                  texto: "Desconectar",
+                  ocupado: desconectando,
+                  onClick: () => {
+                    setDesconectando(true);
+                    void desconectarLinkedin()
+                      .then((r) => r.ok && setLinkedin({ ...linkedin, conectado: false, texto: null }))
+                      .finally(() => setDesconectando(false));
+                  },
+                }
+              : undefined,
           },
         ]
       : []),
@@ -211,6 +245,11 @@ export function ConfiancaLista() {
 
   return (
     <Panel className="mt-6" data-testid="confianca-lista">
+      {avisoLinkedin && linkedin?.ativo && (
+        <p role="status" className={cn("mb-2 text-sm", avisoLinkedin.ok ? "text-forest" : "text-red-700")} data-testid="linkedin-aviso">
+          {avisoLinkedin.texto}
+        </p>
+      )}
       <ul className="divide-y divide-sage-200">
         {itens.map((i) => (
           <li key={i.chave} className="flex items-center gap-3 py-3" data-testid={`confianca-${i.chave}`} data-situacao={i.situacao}>
@@ -228,10 +267,27 @@ export function ConfiancaLista() {
                 {i.detalhe}
               </p>
             </div>
-            {i.acao && (
-              <Link href={i.acao.href} className="shrink-0 text-sm font-medium text-forest underline underline-offset-2">
-                {i.acao.texto}
-              </Link>
+            {i.acao &&
+              (i.acao.externo ? (
+                // Rota do servidor que redireciona para o LinkedIn: navegação de verdade, sem prefetch.
+                <a href={i.acao.href} className="inline-flex min-h-11 shrink-0 items-center text-sm font-medium text-forest underline underline-offset-2" data-testid={`confianca-${i.chave}-acao`}>
+                  {i.acao.texto}
+                </a>
+              ) : (
+                <Link href={i.acao.href} className="shrink-0 text-sm font-medium text-forest underline underline-offset-2">
+                  {i.acao.texto}
+                </Link>
+              ))}
+            {i.botao && (
+              <button
+                type="button"
+                onClick={i.botao.onClick}
+                disabled={i.botao.ocupado}
+                className="inline-flex min-h-11 shrink-0 items-center text-sm font-medium text-forest underline underline-offset-2 disabled:opacity-60"
+                data-testid={`confianca-${i.chave}-botao`}
+              >
+                {i.botao.texto}
+              </button>
             )}
           </li>
         ))}

@@ -1,6 +1,7 @@
 "use client";
 
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
+import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import Link from "next/link";
@@ -128,6 +129,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
       <p className="-mt-2 mb-4 text-sm text-muted" data-testid="proposta-partes">
         Proprietário: <span className="font-medium text-ink">{p.partes.proprietario}</span> · Interessado:{" "}
         <span className="font-medium text-ink">{p.partes.interessado}</span>
+        {p.outraParteLinkedin && <SeloLinkedin className="ml-2" />}
       </p>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">

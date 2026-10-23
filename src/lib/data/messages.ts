@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { relacaoAceitaEntreServidor } from "@/lib/data/avatar-url";
 import { nomeNaConversa } from "@/lib/perfil/perfil-publico";
@@ -33,6 +34,8 @@ export interface Conversation {
   contratoFechado?: boolean;
   /** Conversa de pedido de serviço de parceiro (Prompt 31b): a resposta vai pela rota do pedido. */
   pedidoParceiroId?: string;
+  /** 63-B: a outra parte tem o selo "LinkedIn conectado" (só o sim). */
+  linkedinConectado?: boolean;
   messages: ChatMessage[];
 }
 
@@ -140,6 +143,8 @@ export async function listConversations(): Promise<Conversation[]> {
     if (admin) {
       const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", outros);
       for (const p of (perfis ?? []) as { id: string; full_name: string | null }[]) completo.set(p.id, p.full_name);
+      const comLinkedin = await linkedinConectados(outros, admin);
+      for (const c of conversas) if (c.otherId && comLinkedin.has(c.otherId)) c.linkedinConectado = true;
       const candidatos = [...new Set(conversas.filter((c) => c.papel === "proprietario" && c.otherId).map((c) => c.otherId!))];
       await Promise.all(candidatos.map(async (id) => aceito.set(id, await relacaoAceitaEntreServidor(user.id, id))));
     }

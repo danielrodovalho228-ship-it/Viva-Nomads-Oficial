@@ -112,7 +112,8 @@ export function DadosPessoais() {
           <Field label="Perfil" defaultValue={roleLabel(user?.role)} readOnly />
           {mode === "tenant" && (
             <Field
-              label="LinkedIn (opcional)"
+              // 63-B: o endereço do perfil é PRIVADO (só a Viva vê); o selo de confiança é o "Conectar LinkedIn".
+              label="Endereço do perfil no LinkedIn (opcional, só a Viva vê)"
               value={linkedin}
               onChange={(e) => setLinkedin(e.target.value)}
               placeholder="https://linkedin.com/in/seu-perfil"
