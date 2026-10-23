@@ -58,6 +58,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+// E33: a home lista os anúncios publicados. Sem isto ela era gerada só no build (estática): publicar ou pausar não
+// mudava a home até o próximo deploy. Agora: invalidada nas ações (revalidarAnuncio) + rede de segurança de 60 s.
+export const revalidate = 60;
+
 export default async function HomePage() {
   const todos = await listProperties();
   const featured = todos.slice(0, quantosDestaques(todos.length));

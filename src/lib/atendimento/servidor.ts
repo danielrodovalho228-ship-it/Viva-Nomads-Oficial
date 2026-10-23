@@ -1,4 +1,6 @@
 import crypto from "node:crypto";
+import { revalidatePath } from "next/cache";
+import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { assuntoChamado, assuntoManutencao } from "@/lib/notifications/assuntos";
@@ -282,6 +284,8 @@ export async function pausarAnuncioPorCamera(chamadoId: string, usuarioId: strin
   if (!propId) return false;
   const { data: pausado } = await admin.from("properties").update({ status: "paused", pausa_motivo: "camera" }).eq("id", propId).eq("status", "active").select("id");
   if (!pausado?.length) return false;
+  // E33: o anúncio pausado sai das listagens públicas na hora (home, busca, cidades…).
+  revalidarAnuncio(propId, revalidatePath);
   await admin.from("chamado_eventos").insert({ chamado_id: chamadoId, ator_tipo: "sistema", acao: "anuncio_pausado", detalhe: "câmera/dispositivo de gravação: anúncio fora da busca até a equipe decidir" });
   return true;
 }

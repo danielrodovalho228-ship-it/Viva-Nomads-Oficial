@@ -1,7 +1,7 @@
 /*
   CACHE DAS PÁGINAS PÚBLICAS DO ANÚNCIO (F9 do QA do Daniel, 12/10/2026).
 
-  /imoveis/[id], /buscar, /cidades/[cidade] e o sitemap leem com o cliente anônimo
+  /imoveis/[id], a home, /buscar, /cidades, /imoveis-perto-de, /proprietario/[id] e o sitemap leem com o cliente anônimo
   (sem cookies), então o Next as guarda em cache. Sem invalidar, o 404 de quando o
   anúncio ainda era rascunho ficava preso depois de publicado — e, ao contrário, um
   anúncio pausado/editado continuava aparecendo com dados velhos.
@@ -16,9 +16,15 @@ type Revalidador = (caminho: string, tipo?: "page" | "layout") => void;
 
 /** Caminhos públicos que mostram (ou listam) o anúncio. Só aceita id no formato de uuid. */
 export function caminhosDoAnuncio(id?: string | null): { caminho: string; tipo?: "page" }[] {
+  // E33: a home ("/") também lista anúncios. Sem ela aqui (e sem revalidate), a home era gerada no build e um anúncio
+  // pausado continuava nela até o próximo deploy.
   const lista: { caminho: string; tipo?: "page" }[] = [
+    { caminho: "/" },
     { caminho: "/buscar" },
     { caminho: "/cidades/[cidade]", tipo: "page" },
+    { caminho: "/cidades/[cidade]/[polo]", tipo: "page" },
+    { caminho: "/imoveis-perto-de/[slug]", tipo: "page" },
+    { caminho: "/proprietario/[id]", tipo: "page" },
     { caminho: "/sitemap.xml" },
   ];
   if (id && /^[0-9a-f-]{8,64}$/i.test(id)) lista.unshift({ caminho: `/imoveis/${id}` });
