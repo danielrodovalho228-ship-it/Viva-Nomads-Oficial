@@ -11,6 +11,7 @@ import {
   criarConta,
   criarImovelPronto,
   criarLead,
+  definirPlano,
   entrar,
   novaSenha,
   novoSufixo,
@@ -95,6 +96,8 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.inquilino = await criarConta(inquilino, senha);
+    // Plano com folga de anúncios: o dono tem 2 ativos (antigo e casa) e publica o 3º no caso 1 (Gratuito = 1).
+    await definirPlano(ids.dono, "pro");
     ids.novo = await criarImovelPronto(ids.dono, T.novo, { semConforto: true });
     ids.antigo = await criarImovelPronto(ids.dono, T.antigo, { ativo: true, semConforto: true });
     ids.casa = await criarImovelPronto(ids.dono, T.contrato, { ativo: true });
