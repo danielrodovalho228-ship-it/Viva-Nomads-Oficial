@@ -50,7 +50,7 @@ test.describe("T327 — 61-B: tipo de entrada, recado para quem pede e convidar 
     ids.dono = await criarConta(dono, senha);
     ids.morador = await criarConta(morador, senha);
     ids.interessada = await criarConta(interessada, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, titulo, { ativo: true, preco: 3000 });
+    ids.imovel = await criarImovelPronto(ids.dono, titulo, { ativo: true, preco: 3000, semTipoEntrada: true });
     await adm().from("properties").update({ exact_address: "Rua das Acácias, 120, Apto 31" }).eq("id", ids.imovel); // consistency-ignore: massa do laboratório
     await adm().from("imovel_instrucoes_chegada").upsert({ property_id: ids.imovel, como_entrar: "Cofre na caixa de luz, senha 4821" });
     ids.lead = await criarLead(ids.dono, ids.morador, ids.imovel, true);
