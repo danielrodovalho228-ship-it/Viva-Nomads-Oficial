@@ -165,6 +165,8 @@ export function EditarImovelClient({
         video: videoDoAnuncio({ videoArquivo, videoUrl }).tipo !== null,
         // 61-B: rascunho aberto no editor só publica com o tipo de entrada (a mesma regra do servidor).
         tipoEntradaOk: property.status === "draft" && property.chegadaEPedido ? tipoEntradaValido(chegada.tipoEntrada) : undefined,
+        // FILTROS-1 (E39): a mesma regra do servidor (rascunho só publica com a velocidade da internet).
+        internetOk: property.status === "draft" ? fatos?.internetOk : undefined,
       }),
     [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, videoArquivo, videoUrl, chegada.tipoEntrada]
   );

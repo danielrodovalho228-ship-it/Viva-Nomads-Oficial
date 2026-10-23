@@ -46,6 +46,7 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
           description: "Studio mobiliado no Centro, com home office, internet rápida e cozinha completa. Pronto para morar.",
           propertyType: "Studio",
           tipoEntrada: "porteiro",
+          internetMbps: "300",
           bedrooms: "1",
           bathrooms: "1",
           areaM2: "40",

@@ -175,6 +175,8 @@ test.describe("T186 — Anunciar em 6 passos com IA, OSM e documento simulados",
       await expect(page.getByTestId("trabalho-mesa_trabalho")).toHaveAttribute("aria-pressed", "true");
       await page.getByTestId("trabalho-home_office").click();
       await expect(page.getByTestId("trabalho-contador")).toHaveText("4 de 4 itens essenciais");
+      // FILTROS-1 (E39): publicar exige a velocidade da internet.
+      await page.getByLabel("Velocidade da internet em Mbps").fill("300");
       // Proximidades do OSM (simuladas): todas marcadas.
       const prox = page.getByTestId("proximidade-item");
       await expect(prox).toHaveCount(7, { timeout: 20_000 });
