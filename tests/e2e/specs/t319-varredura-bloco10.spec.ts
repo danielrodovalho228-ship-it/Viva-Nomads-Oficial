@@ -8,7 +8,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
 /*
   T319 — VARREDURA DA PÁGINA INTEIRA, BLOCO 10 (Pista C, 23/10). O mesmo protocolo da t306 (seis classes, página toda
   rolada, 390 e 1280 px, carregamento real de cada imagem) nas telas novas dos merges do dia que nenhuma varredura
-  cobria: a vitrine dos avaliadores e a entrada de avaliador para parceiros (62-B3, #1130), o funil de ativação (50,
+  cobria: a entrada de avaliador para parceiros (62-B3, #1130; /avaliadores sem número redireciona para ela de propósito), o funil de ativação (50,
   #1121) e a qualidade (51, #1134) no admin. A tela da avaliação do dono (62-A, #1133) depende de um pedido criado no
   próprio teste e fica com a t315. Só no laboratório.
 */
@@ -20,7 +20,6 @@ interface Tela {
   nome: string;
 }
 const TELAS: Tela[] = [
-  { conta: "VISITANTE", papel: "visitante", rota: () => "/avaliadores", nome: "Avaliadores credenciados" },
   { conta: "VISITANTE", papel: "visitante", rota: () => "/parceiros/avaliadores", nome: "Seja avaliador" },
   { conta: "ADMIN", papel: "admin (leitura)", rota: () => "/admin/funil", nome: "Funil de ativação" },
   { conta: "ADMIN", papel: "admin (leitura)", rota: () => "/admin/qualidade", nome: "Qualidade" },

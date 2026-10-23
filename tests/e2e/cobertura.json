@@ -1748,8 +1748,7 @@
         "publico"
       ],
       "specs": [
-        "t314-entrada-avaliador-62b3",
-        "t319-varredura-bloco10"
+        "t314-entrada-avaliador-62b3"
       ]
     },
     "/avaliadores/[numero]": {
