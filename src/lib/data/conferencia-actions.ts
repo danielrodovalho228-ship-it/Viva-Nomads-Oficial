@@ -176,7 +176,10 @@ export async function responderConfortoEntrada(input: { contratoId: string; resp
   if (error) return erro("Não foi possível salvar o padrão mínimo. Tente de novo.");
   const novas = pendenciasDaConferencia(v.respostas, agora).map((p) => ({ ...p, property_id: ctx.propertyId, contrato_id: input.contratoId, conferencia_id: conf.id }));
   if (novas.length && ctx.propertyId) {
-    const { data: criadas } = await admin.from("conforto_pendencias").upsert(novas, { onConflict: "conferencia_id,chave", ignoreDuplicates: true }).select("id");
+    // insert, não upsert: o índice único (conferencia_id, chave) é parcial e o ON CONFLICT não o reconhece (42P10). Um
+    // envio por conferência já é garantido acima; um clique duplo esbarra no índice (23505) e as pendências já existem.
+    const { data: criadas, error: ePend } = await admin.from("conforto_pendencias").insert(novas).select("id");
+    if (ePend && ePend.code !== "23505") console.error("[responderConfortoEntrada] pendências", ePend.code, ePend.message);
     for (const p of (criadas ?? []) as { id: string }[]) await avisarPendenciaConforto(admin, p.id, "aberta").catch(() => null);
   }
   revalidatePath("/dashboard/locacoes");

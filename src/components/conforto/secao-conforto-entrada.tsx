@@ -29,14 +29,17 @@ export function SecaoConfortoEntrada({
   const [r, setR] = useState<Record<string, Resposta>>(() => Object.fromEntries(ITENS_CONFORTO.map((i) => [i.chave, { confere: null, texto: "", foto: null }])));
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // O que o morador acabou de enviar aparece na hora (como os itens da conferência), sem esperar o servidor reler a tela.
+  const [enviadas, setEnviadas] = useState<ConferenciaView["conforto"] | null>(null);
   const muda = (chave: string, v: Partial<Resposta>) => setR((a) => ({ ...a, [chave]: { ...a[chave], ...v } }));
 
-  if (respondidas.length > 0) {
+  const lista = respondidas.length > 0 ? respondidas : (enviadas ?? []);
+  if (lista.length > 0) {
     return (
       <div className="mt-3 rounded-lg border border-line p-3" data-testid="conforto-entrada-respondida">
         <p className="text-sm font-semibold text-ink">Padrão mínimo (morador)</p>
         <ul className="mt-2 space-y-1 text-sm">
-          {respondidas.map((x) => (
+          {lista.map((x) => (
             <li key={x.chave} data-testid={`conforto-entrada-${x.chave}`} data-confere={x.confere ? "1" : "0"} className="flex items-start gap-2">
               <span className={x.confere ? "text-forest" : "text-red-700"}>{x.confere ? "Confere" : "Não confere"}</span>
               <span className="min-w-0 text-ink">
@@ -77,6 +80,8 @@ export function SecaoConfortoEntrada({
       }
       const res = await responderConfortoEntrada({ contratoId, respostas });
       if (!res.ok) return setErro(res.error);
+      const agora = new Date().toISOString();
+      setEnviadas(respostas.map((x) => ({ chave: x.chave, confere: x.confere, texto: x.confere ? null : (x.texto ?? null), fotoUrl: null, respondidoEm: agora })));
       router.refresh();
     } catch {
       setErro("Não foi possível enviar agora. Confira as fotos e tente de novo.");
