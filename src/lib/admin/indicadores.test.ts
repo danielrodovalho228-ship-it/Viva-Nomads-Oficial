@@ -89,6 +89,24 @@ test("item 10: agentes com nome; o selo da barra lateral mostra só 'Aguardando 
   assert.match(docs, /\(await filaDocumentos\(admin\)\)\.total/, "selo de Documentos = a fila da home");
 });
 
+test("E28: a lista da fila de documentos lê pela mesma fonte do contador (serviço, depois de confirmar admin)", () => {
+  const docs = readFileSync("src/lib/data/documentos-admin.ts", "utf8");
+  const corpo = (nome: string) => {
+    const i = docs.indexOf(`export async function ${nome}`);
+    const fim = docs.indexOf("\nexport ", i + 10);
+    return docs.slice(i, fim < 0 ? undefined : fim);
+  };
+  // Pela sessão, a RLS (is_admin() exige aal2 de quem tem 2FA) devolvia [] com o contador em 4.
+  for (const f of ["listDocumentosPendentes", "moderarDocumento", "listConferidosAutomaticamente", "contadoresConferencia", "reabrirConferencia"]) {
+    const c = corpo(f);
+    assert.doesNotMatch(c, /supabase\s*\.(from|storage)\b/, `${f}: nada de leitura pela sessão (RLS) na fila`);
+    assert.match(c, /adminComServico\(\)|ehAdmin\(supabase, user\.id\)/, `${f}: confirma admin antes`);
+  }
+  const lista = corpo("listDocumentosPendentes");
+  assert.match(lista, /\.from\("qualification_checklists"\)[\s\S]*?\.eq\("document_status", "pending"\)/, "mesmo filtro do contador");
+  assert.doesNotMatch(lista, /is_teste/, "a lista não esconde conta de teste (o contador também não)");
+});
+
 test("item 13: real × demonstração × teste e 'aparece para o público'", () => {
   assert.equal(tipoImovel({ id: "ube-001", titulo: "Studio" }), "demonstracao");
   assert.equal(tipoImovel({ id: UUID, titulo: "[TESTE QA] Casa" }), "teste");
