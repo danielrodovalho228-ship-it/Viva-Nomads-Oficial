@@ -6,6 +6,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, novaSenha,
  * aparecia. Causa: o selo do LinkedIn (63-B) lia cookies() durante a renderização em cache. Regressão: visitante abre a
  * página várias vezes, a 390 e a 1280 px (a 2ª renderização era a que quebrava) — sempre 200, com o coração; o perfil
  * público do proprietário (mesmo selo) também abre.
+ * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();

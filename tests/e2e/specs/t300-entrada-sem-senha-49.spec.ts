@@ -12,6 +12,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarAdmin, criarConta, liberarLimit
  *   4. admin entrando só com código não abre /admin (AAL2);
  *   5. convidado favorita 2 imóveis, cria conta no momento de valor e encontra os 2 na conta;
  *   6. app simulado entra por código sem sair do WebView.
+ * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
  */
 const SAIDA = "tests/laboratorio/saida";
 const UA_APP = `${devices["iPhone 14"].userAgent} VivaNomadsApp/1.0.4 (expo)`;

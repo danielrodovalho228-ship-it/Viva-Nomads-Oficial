@@ -12,6 +12,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  *   3. o passo do cron com data simulada: antes da hora espera, entre 22h e 7h espera, na hora envia na conversa;
  *   4. aditivo +1 mês reagenda a mensagem da saída (a já enviada não muda);
  *   5. contrato encerrado cancela o que não saiu.
+ * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
  */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
