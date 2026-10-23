@@ -44,6 +44,8 @@ export interface ExtrasDoServidor {
   confortoPendenciasAbertas?: number;
   /** Adendo 59.1: nível gravado (imovel_nivel). */
   nivel?: NivelOuAdequacao | null;
+  /** Prompt 62-B2: exibicaoAvaliacao(...) != null (laudo válido, sem strike). */
+  vistoriado?: boolean;
 }
 
 const n = (v: number | string | null | undefined) => (v == null || v === "" ? 0 : Number(v) || 0);
@@ -78,5 +80,6 @@ export function sinaisDaLinha(l: LinhaRankingSinais, extras: ExtrasDoServidor): 
     manutencaoFora90d: extras.manutencaoFora90d ?? 0,
     confortoPendenciasAbertas: extras.confortoPendenciasAbertas ?? 0,
     nivel: extras.nivel ?? null,
+    vistoriado: extras.vistoriado === true,
   };
 }
