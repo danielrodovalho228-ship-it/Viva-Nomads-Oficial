@@ -1,7 +1,8 @@
 /* Roda: node --test src/lib/perfil/convite-foto.test.ts */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deveMostrarConviteFoto, CONVITE_FOTO_TEXTO, CONVITE_FOTO_CANDIDATURA_TEXTO } from "./convite-foto.ts";
+import { readFileSync } from "node:fs";
+import { deveMostrarConviteFoto, CONVITE_FOTO_TEXTO, CONVITE_FOTO_CANDIDATURA_TEXTO, CONVITE_FOTO_ANUNCIO_TEXTO } from "./convite-foto.ts";
 
 const AGORA = Date.parse("2026-10-22T12:00:00Z");
 const diasAtras = (n: number) => String(AGORA - n * 24 * 60 * 60 * 1000);
@@ -28,4 +29,13 @@ test("texto do convite não promete verificação", () => {
 test("convite da candidatura: diz que a foto só aparece depois do aceite e não promete verificação", () => {
   assert.match(CONVITE_FOTO_CANDIDATURA_TEXTO, /depois do aceite/);
   assert.doesNotMatch(CONVITE_FOTO_CANDIDATURA_TEXTO, /verific|obrigat/i);
+});
+test("convite do anúncio: opcional, fala do cartão do anfitrião e não promete verificação", () => {
+  assert.match(CONVITE_FOTO_ANUNCIO_TEXTO, /Anúncios com foto do anfitrião passam mais confiança/);
+  assert.doesNotMatch(CONVITE_FOTO_ANUNCIO_TEXTO, /verific|obrigat/i);
+});
+test("convite do anúncio nunca bloqueia: a revisão não condiciona publicar à foto", () => {
+  const fonte = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx", "utf8");
+  assert.match(fonte, /<ConviteFotoCandidatura[^>]*CONVITE_FOTO_ANUNCIO_TEXTO/);
+  assert.doesNotMatch(fonte, /podePublicar[^\n]*temFoto|temFoto[^\n]*podePublicar/);
 });

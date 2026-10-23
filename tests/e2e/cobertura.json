@@ -1726,7 +1726,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t322-credenciamento-avaliador-62a"
       ]
     },
     "/dashboard/parceiro/avaliacao": {
@@ -1736,7 +1737,8 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t306-varredura-bloco7",
-        "t315-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a",
+        "t322-credenciamento-avaliador-62a"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -1761,7 +1763,8 @@
         "publico"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t322-credenciamento-avaliador-62a"
       ]
     },
     "/dashboard/parceiro/avaliacao/[pedido]": {
@@ -1958,6 +1961,24 @@
         "t169-conta-teste-sem-efeito"
       ]
     },
+    "/api/conta/linkedin/conectar": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
+    "/api/conta/linkedin/retorno": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
     "/api/contrato": {
       "personas": [
         "inquilino",
@@ -2003,6 +2024,12 @@
       "specs": []
     },
     "/api/cron/checkin-lembretes": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/cron/linkedin": {
       "personas": [
         "sistema"
       ],
@@ -2532,6 +2559,14 @@
       ],
       "specs": []
     },
+    "src/lib/data/actions.ts#gravarVideoArquivo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t321-video-alcancavel-65b"
+      ]
+    },
     "src/lib/data/actions.ts#loadDraftData": {
       "personas": [
         "inquilino",
@@ -2656,7 +2691,8 @@
       ],
       "specs": [
         "t94-valor-pet",
-        "t211-complemento-23"
+        "t211-complemento-23",
+        "t321-video-alcancavel-65b"
       ]
     },
     "src/lib/data/actions.ts#varrerCicloBlocos": {
@@ -3963,6 +3999,38 @@
       "specs": [
         "t168-visita-video"
       ]
+    },
+    "src/lib/linkedin/actions.ts#desconectarLinkedin": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
+    "src/lib/linkedin/actions.ts#meuLinkedin": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t323-linkedin-conectado-63b"
+      ]
+    },
+    "src/lib/linkedin/actions.ts#minhasRedes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/linkedin/actions.ts#salvarMinhasRedes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     },
     "src/lib/marcas/actions.ts#listarMarcas": {
       "personas": [

@@ -46,6 +46,8 @@ export interface Review {
   /** Prompt 61-A: cidade do perfil de quem avaliou e a data da conta ("na Viva desde [ano]"). */
   cidade?: string | null;
   desde?: string | null;
+  /** 63-B: quem avaliou tem o selo "LinkedIn conectado" (só o sim; nada do LinkedIn em si). */
+  linkedinConectado?: boolean;
 }
 
 /** Perfil público do proprietário (bloco de confiança). */

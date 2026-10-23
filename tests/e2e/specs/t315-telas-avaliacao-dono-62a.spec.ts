@@ -144,6 +144,8 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
   test("avaliador (tela do 62-B1): aceita e agenda para daqui a 2 dias às 10:00", async ({ browser }) => {
     const p = await entrar(browser, avA.email, senha);
     await p.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
+    // Espera a hidratação: o clique antes dela não chega à ação (o pedido sai de "Para responder" para "Visitas").
+    await p.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
     const item = p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`);
     await item.getByTestId("designacao-aceitar").click();
     await expect(item.getByTestId("agendar-visita")).toBeVisible({ timeout: 20_000 });

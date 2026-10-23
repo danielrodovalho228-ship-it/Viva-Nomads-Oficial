@@ -2187,6 +2187,23 @@ function revalidarPausa(id: string) {
   revalidatePath("/buscar");
 }
 
+/**
+ * 65-B: grava SÓ o arquivo do vídeo, na hora em que o dono envia, troca ou remove na seção Vídeo do editor. O
+ * enviador já apaga o arquivo anterior do bucket; gravar na hora evita o anúncio apontar para um arquivo que não
+ * existe mais se a pessoa sair sem "Salvar seção". Caminho só da pasta do próprio dono; "" remove.
+ */
+export async function gravarVideoArquivo(id: string, videoArquivo: string): Promise<ActionResult> {
+  const a = await anuncioDoDono(id);
+  if (!a) return { ok: false, error: "Anúncio não encontrado." };
+  const coluna = colunaVideoArquivo(videoArquivo, a.userId);
+  if (!("video_arquivo" in coluna)) return { ok: false, error: "Vídeo não encontrado." };
+  const { error } = await a.supabase.from("properties").update(coluna).eq("id", id).eq("owner_id", a.userId);
+  if (error) return { ok: false, error: "Não foi possível gravar o vídeo agora. Tente de novo." };
+  revalidatePath(`/imoveis/${id}`);
+  revalidatePath(`/dashboard/imoveis/${id}/editar`);
+  return { ok: true };
+}
+
 /** O que está em andamento no anúncio e CONTINUA depois da pausa (a tela lista antes de confirmar). */
 export async function emAndamentoDoAnuncio(id: string): Promise<EmAndamento | null> {
   const a = await anuncioDoDono(id);

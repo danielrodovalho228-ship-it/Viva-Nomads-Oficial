@@ -11,6 +11,8 @@ import { TERMO_IA_TEXTO } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO, type Negociacao } from "@/lib/anuncio/negociacao";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import { cn } from "@/lib/utils";
+import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candidatura";
+import { CONVITE_FOTO_ANUNCIO_TEXTO } from "@/lib/perfil/convite-foto";
 import { textoFaltaConfirmar } from "@/lib/conforto/exibicao";
 
 /**
@@ -29,7 +31,8 @@ export function EtapaRevisar(p: {
   completude: ItemProntidao[];
   /** Prompt 22: "Resolver" de cada item (a qualificação abre no painel lateral). */
   onResolver: (item: ItemProntidao) => void;
-  melhorar: string[];
+  /** Opcionais que faltam (65-B: o vídeo leva ao bloco de vídeo do passo Fotos pelo onResolver). */
+  melhorar: ItemProntidao[];
   quality: number;
   photosCount: number;
   qualBaseBadge: boolean;
@@ -134,7 +137,19 @@ export function EtapaRevisar(p: {
       <ChecklistPublicar itens={p.completude} onResolver={p.onResolver} />
       {p.melhorar.length > 0 && (
         <p className="-mt-2 px-1 text-xs text-muted" data-testid="prontidao-opcionais">
-          Para melhorar (opcional, não impede publicar): {p.melhorar.join(" · ")}
+          Para melhorar (opcional, não impede publicar):{" "}
+          {p.melhorar.map((o, i) => (
+            <span key={o.key}>
+              {i > 0 && " · "}
+              {o.key === "video" ? (
+                <button type="button" onClick={() => p.onResolver(o)} className="font-medium text-forest underline" data-testid="melhorar-video">
+                  {o.label}
+                </button>
+              ) : (
+                o.label
+              )}
+            </span>
+          ))}
         </p>
       )}
 
@@ -170,6 +185,9 @@ export function EtapaRevisar(p: {
         <span>{TERMO_IA_TEXTO}</span>
       </label>
       {p.publishError && <p className="text-sm text-red-600">{p.publishError}</p>}
+
+      {/* Ordem 504d9679, peça 3: convite opcional; nunca entra na conta de podePublicar. */}
+      {!p.editingId && <ConviteFotoCandidatura texto={CONVITE_FOTO_ANUNCIO_TEXTO} testId="convite-foto-anuncio" />}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
         <Button variant="outline" onClick={() => p.publish(true)} disabled={p.publishing}>

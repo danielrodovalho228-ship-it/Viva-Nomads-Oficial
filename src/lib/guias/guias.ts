@@ -199,6 +199,43 @@ export const GUIAS: Guia[] = [
       },
     ],
   },
+  {
+    // 65-B: linkado da seção Vídeo do editor e do bloco de vídeo do passo Fotos (GUIA_VIDEO_HREF).
+    slug: "como-por-um-video-no-anuncio",
+    titulo: "Como pôr um vídeo no anúncio",
+    descricao: "Onde enviar o vídeo do imóvel, os limites de tamanho e duração, como gravar pelo celular e como trocar ou remover.",
+    publico: "proprietarios",
+    secoes: [
+      {
+        titulo: "Onde fica",
+        paragrafos: [
+          "No anúncio já criado: em Meus imóveis, toque em Editar e abra a seção Vídeo, logo depois das Fotos.",
+          "No cadastro de um anúncio novo: no passo Fotos, no bloco Vídeo do imóvel, logo depois do envio das fotos. O vídeo é opcional e nunca impede publicar.",
+        ],
+      },
+      {
+        titulo: "Limites e formatos",
+        paragrafos: [
+          "Um vídeo por anúncio, de até 60 segundos e até 50 MB, em MP4 ou MOV (os formatos que o celular grava). Se passar disso, a tela avisa na hora e nada é gravado.",
+          "Se preferir, cole um link do YouTube ou do Vimeo. Com um vídeo enviado, o anúncio mostra o vídeo enviado; o link só aparece quando não há vídeo enviado.",
+        ],
+      },
+      {
+        titulo: "Como gravar",
+        paragrafos: [
+          "Grave pelo celular, na horizontal ou na vertical, andando devagar pelos ambientes: entrada, sala, cozinha, quartos, banheiro e o espaço de trabalho.",
+          "Mostre o imóvel por dentro, com luz natural. Não grave pessoas, documentos, a fachada com o número nem a vista que identifique o endereço exato.",
+        ],
+      },
+      {
+        titulo: "Trocar ou remover",
+        paragrafos: [
+          "Para trocar, toque em Trocar vídeo e escolha o novo: o anterior é apagado. Para tirar, toque em Remover; o vídeo sai do anúncio na hora.",
+          "Se a conexão cair no meio do envio, nada é gravado. Toque em Tentar de novo quando a internet voltar.",
+        ],
+      },
+    ],
+  },
 ];
 
 export function guiaPorSlug(slug: string): Guia | undefined {

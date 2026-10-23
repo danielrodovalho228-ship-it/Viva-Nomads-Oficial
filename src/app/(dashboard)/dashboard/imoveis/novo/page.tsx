@@ -35,7 +35,8 @@ import {
   type DocumentStatus,
 } from "@/lib/data/actions";
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
-import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { ANCORA_VIDEO_ASSISTENTE, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { videoDoAnuncio } from "@/lib/video-anuncio";
 import { ERRO_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
@@ -289,7 +290,8 @@ export default function NewPropertyPage() {
     limitePlanoOk: null,
     descricao: description,
     selo: qual.baseBadge,
-    video: !!videoUrl.trim() || !!videoArquivo,
+    // 65-B: uma fonte só (arquivo, ou link permitido do YouTube/Vimeo).
+    video: videoDoAnuncio({ videoArquivo, videoUrl }).tipo !== null,
     // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
     qualificacaoOk: editingId ? undefined : qualificado,
     // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
@@ -300,6 +302,8 @@ export default function NewPropertyPage() {
     if (item.key === "qualificacao") setPainelQualificacao(true);
     else irPara(item.etapa);
     if (item.key === "conforto") setTimeout(() => document.querySelector('[data-testid="conforto-checklist"]')?.scrollIntoView({ block: "center" }), 50);
+    // 65-B: "Para melhorar: Vídeo do imóvel" leva ao bloco de vídeo do passo Fotos.
+    if (item.key === "video") setTimeout(() => document.getElementById(ANCORA_VIDEO_ASSISTENTE)?.scrollIntoView({ block: "start" }), 400);
   }
   // "Importar anúncio" (t115): preenche o que veio do texto colado e leva direto à etapa 3, com tudo preenchido.
   function aplicarImportado(a: AnuncioOrganizado) {
@@ -1249,6 +1253,8 @@ export default function NewPropertyPage() {
         action={
           !editingId && saveStatus !== "idle" ? (
             <span
+              data-testid="estado-salvamento"
+              data-estado={saveStatus}
               className={cn(
                 "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium",
                 saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
@@ -1533,7 +1539,7 @@ export default function NewPropertyPage() {
                 negociacao={negociacao}
                 completude={completude}
                 onResolver={resolverItem}
-                melhorar={prontidao.melhorar}
+                melhorar={prontidao.opcionais.filter((o) => !o.ok)}
                 quality={quality}
                 photosCount={photos.length}
                 qualBaseBadge={qual.baseBadge}

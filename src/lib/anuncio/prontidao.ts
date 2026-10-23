@@ -14,6 +14,7 @@ import { mensagemLimitePublicar, situacaoComLimite } from "./pausa.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
+import { videoDoAnuncio } from "../video-anuncio.ts";
 
 export const MIN_FOTOS = 8;
 export const MIN_DESCRICAO = 60;
@@ -220,6 +221,22 @@ export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnunci
   return { itens, proximo: itens.find((i) => !i.ok) ?? null };
 }
 
+/** Âncoras do vídeo: a seção Vídeo do editor por seções e o bloco de vídeo do passo Fotos do assistente (65-B). */
+export const ANCORA_VIDEO_EDITOR = "secao-video";
+export const ANCORA_VIDEO_ASSISTENTE = "bloco-video";
+
+/**
+ * Para onde leva um item de "Para melhorar" (65-B). Hoje só o vídeo tem destino próprio: anúncio existente vai à seção
+ * Vídeo do editor por seções; rascunho no assistente vai ao bloco de vídeo do passo Fotos. null = sem link.
+ */
+export function hrefParaMelhorar(key: string, imovelId: string, noAssistente: boolean): string | null {
+  if (key !== "video") return null;
+  const id = encodeURIComponent(imovelId);
+  return noAssistente
+    ? `/dashboard/imoveis/novo?draft=${id}&etapa=${ETAPA.fotos}#${ANCORA_VIDEO_ASSISTENTE}`
+    : `/dashboard/imoveis/${id}/editar#${ANCORA_VIDEO_EDITOR}`;
+}
+
 /** Linha do banco (properties + fotos + documento) → fatos. */
 export interface LinhaAnuncio {
   title: string | null;
@@ -239,6 +256,8 @@ export interface LinhaAnuncio {
   description: string | null;
   ready_to_live_badge: boolean | null;
   video_url: string | null;
+  /** 0211: vídeo enviado como arquivo (65-B: conta para o fato "Vídeo" tanto quanto o link). */
+  video_arquivo?: string | null;
 }
 
 export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento, limitePlanoOk: boolean | null, limiteAnuncios?: number | null, ativosAnuncios?: number | null): FatosAnuncio {
@@ -260,7 +279,7 @@ export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDo
     ativosAnuncios,
     descricao: p.description ?? "",
     selo: !!p.ready_to_live_badge,
-    video: !!p.video_url,
+    video: videoDoAnuncio({ videoArquivo: p.video_arquivo, videoUrl: p.video_url }).tipo !== null,
   };
 }
 
