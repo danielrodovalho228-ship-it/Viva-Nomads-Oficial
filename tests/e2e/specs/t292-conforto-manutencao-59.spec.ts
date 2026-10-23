@@ -141,7 +141,8 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     await page.goto(`/dashboard/imoveis/novo?draft=${ids.assistente}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
     const checklist = page.getByTestId("conforto-checklist");
     await expect(checklist).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("conforto-faltam")).toHaveText("Faltam confirmar 10 itens.");
+    // A lista do padrão mínimo vem da constante (12 itens na versão 2, #1086): o teste acompanha se ela mudar.
+    await expect(page.getByTestId("conforto-faltam")).toHaveText(`Faltam confirmar ${ITENS_CONFORTO.length} itens.`);
     await page.getByTestId("conforto-marcar-todos").click();
     await page.getByTestId(`conforto-item-${CHAVES_CONFORTO[0]}`).getByRole("checkbox").uncheck();
     await expect(page.getByTestId("conforto-faltam")).toHaveText("Falta confirmar 1 item.");

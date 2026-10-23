@@ -42,7 +42,7 @@ export function PadraoMinimoImovel({ confirmado }: { confirmado: boolean }) {
       </ul>
       <BottomSheet open={aberto} onClose={() => setAberto(false)} title="O que é o padrão mínimo" testId="padrao-minimo-folha">
         <p className="text-sm text-muted">
-          Os 10 itens que todo imóvel da Viva tem. O proprietário confirma cada um ao anunciar, e você confere na entrada.
+          Os {ITENS_CONFORTO.length} itens que todo imóvel da Viva tem. O proprietário confirma cada um ao anunciar, e você confere na entrada.
           O que não conferir vira pendência com prazo para o proprietário corrigir.
         </p>
         <ul className="mt-4 space-y-3">
