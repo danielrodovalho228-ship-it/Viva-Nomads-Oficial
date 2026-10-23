@@ -167,7 +167,8 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       const l = await laudoDe(pedido);
       expect(l.resultado).toBe("com_ressalvas");
       const d = await donoEm(browser, w);
-      const abrir = () => d.goto(`/dashboard/imoveis/${ids[`im${w}`]}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
+      // Sempre carga nova (sem âncora): ir para a mesma URL com "#" só rolaria a página, sem ler o laudo de novo.
+      const abrir = () => d.goto(`/dashboard/imoveis/${ids[`im${w}`]}/nivel?t=${Date.now()}`, { waitUntil: "domcontentloaded" });
       await abrir();
       await expect(d.getByTestId("laudo-dono-resultado")).toHaveAttribute("data-resultado", "com_ressalvas");
       await expect(d.getByTestId("laudo-resumo-grupo")).toHaveCount(9);
