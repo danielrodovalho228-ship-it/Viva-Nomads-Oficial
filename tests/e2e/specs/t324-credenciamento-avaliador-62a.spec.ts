@@ -3,7 +3,7 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T322 — Prompt 62-A, Parte 1, sobre o 62-B3: credenciamento (pedido único com os 5 passos e o estado), agenda do
+  T324 — Prompt 62-A, Parte 1, sobre o 62-B3: credenciamento (pedido único com os 5 passos e o estado), agenda do
   avaliador, página pública e admin "Avaliações do imóvel" (laboratório; a chave VISTORIA_ATIVA liga só no navegador do
   teste, pelo cookie de laboratório). Tudo a 390 e 1280 px, sem rolagem lateral, com print.
    1. Candidato que ainda não é parceiro: os 5 passos e o pedido único; enviado → "Em análise", identidade pendente.
@@ -16,7 +16,7 @@ const LARGURAS = [390, 1280] as const;
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t322.${sufixo}@lab.vivanomads.test`, nome, role });
+const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t324.${sufixo}@lab.vivanomads.test`, nome, role });
 const dono = conta("dono", "Dina Dona", "owner");
 const avA = conta("ava", "Ana Avaliadora");
 const novo = conta("avn", "Nuno Novo");
@@ -44,7 +44,7 @@ async function admin(browser: Browser, w: number): Promise<Page> {
   return ctx.newPage();
 }
 
-test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", () => {
+test.describe("T324 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
@@ -55,7 +55,7 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     for (const [l, uid, nome] of [["A", ids.A, avA.nome]] as const) {
       const { data, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t322-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t324-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -67,7 +67,7 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     const { error: eC } = await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids.parcA, cidade: "Uberlândia", numero_credenciado: numeroA, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/a", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" });
     if (eC) throw eC;
     // Imóvel publicado (desocupado: o pedido segue direto para a designação).
-    ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t322 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t324 ${sufixo}`, { ativo: true });
     // Tabela da cidade com os 3 portes (o laboratório pode ter linhas de outros specs: esta é a mais recente).
     const { data: precos } = await adm()
       .from("vistoria_precos")
@@ -109,7 +109,7 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(form.getByTestId("credenciamento-pendencia")).toContainText("verificar a sua identidade");
       expect(await primariosNoMain(p), "um primário: o envio do pedido").toBe(1);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t322-1-credenciamento-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t324-1-credenciamento-${w}.png`, fullPage: true });
     }
     await pub.context().close();
     const form = p.getByTestId("credenciamento-form");
@@ -132,7 +132,7 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(p.getByTestId("passo-teste")).toHaveAttribute("data-feito", "0");
       await expect(p.getByTestId("credenciamento-pendencia").getByRole("link", { name: "Verificar a identidade" })).toHaveAttribute("href", "/dashboard/verificacao");
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t322-1-em-analise-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t324-1-em-analise-${w}.png`, fullPage: true });
     }
     await p.context().close();
   });
@@ -169,7 +169,7 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       const item = p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`);
       await expect(item.getByTestId("prazo-resposta")).toHaveText(/^Responda em 2[0-3] h \d{2} min$/);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t322-3-avaliador-responder-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t324-3-avaliador-responder-${w}.png`, fullPage: true });
     }
     const item = p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`);
     await item.getByTestId("designacao-aceitar").click();
@@ -190,7 +190,7 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(visita.getByTestId("avaliador-visita")).not.toContainText(/\d\d:\d\d:\d\d/);
       expect(await primariosNoMain(p)).toBeLessThanOrEqual(1);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t322-3-avaliador-agenda-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t324-3-avaliador-agenda-${w}.png`, fullPage: true });
     }
     await p.context().close();
   });
@@ -206,7 +206,7 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(pg.getByTestId("avaliador-cidade")).toHaveText("Uberlândia");
       await expect(pg.locator("a")).toHaveCount(0);
       await semRolagemLateral(pub);
-      await pub.screenshot({ path: `${SAIDA}/t322-4-publica-${w}.png` });
+      await pub.screenshot({ path: `${SAIDA}/t324-4-publica-${w}.png` });
     }
     await pub.context().close();
   });
@@ -237,7 +237,7 @@ test.describe("T322 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await topo.getByTestId("decidir-numero-credenciamentos").click();
       await expect(p).toHaveURL(/#credenciamento$/);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t322-5-admin-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t324-5-admin-${w}.png` });
       await p.context().close();
     }
   });
