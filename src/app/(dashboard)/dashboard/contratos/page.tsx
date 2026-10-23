@@ -5,6 +5,7 @@ import { PageTitle } from "@/components/dashboard/primitives";
 import { ContratosClient } from "./contratos-client";
 import { ContratosInquilino } from "./contratos-inquilino";
 import { hojeBR } from "@/lib/utils";
+import { BlocoRecibosDono } from "@/components/recibos/blocos-recibos";
 
 /**
  * "Contratos & blocos" (Dashboard Fase 4): o servidor busca os contratos REAIS
@@ -32,6 +33,8 @@ export default async function ContratosPage() {
           <ContratosInquilino contratos={doInquilino} />
         </section>
       )}
+      {/* Prompt 39-B1: "Recibos e notas" no celular é um bloco da aba Ganhos (no computador, item do menu). */}
+      {temImovel && <BlocoRecibosDono />}
       {temImovel && <ContratosClient contratos={contratos} hojeISO={hojeISO} extras={extras} />}
     </>
   );

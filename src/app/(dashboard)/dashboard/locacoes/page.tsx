@@ -4,6 +4,7 @@ import { getSelosDasLocacoes } from "@/lib/data/locacoes-selo";
 import { redirect } from "next/navigation";
 import { temImovelAnunciado } from "@/lib/data/menu-actions";
 import { LocacoesClient } from "./locacoes-client";
+import { BlocoRecibosMorador } from "@/components/recibos/blocos-recibos";
 
 export const metadata = { title: "Minhas locações" };
 
@@ -15,5 +16,11 @@ export default async function LocacoesPage() {
   // Recibos, comprovantes e a devolução da caução de cada locação (o RLS filtra).
   const extras = await documentosDosContratos(locacoes.map((l) => l.id));
   const selos = await getSelosDasLocacoes(locacoes.map((l) => l.id));
-  return <LocacoesClient locacoes={locacoes} extras={extras} selos={selos} />;
+  return (
+    <>
+      <LocacoesClient locacoes={locacoes} extras={extras} selos={selos} />
+      {/* Prompt 39-B1: recibos, Caução, resumo para reembolso e resumo anual de cada estadia. */}
+      <BlocoRecibosMorador />
+    </>
+  );
 }

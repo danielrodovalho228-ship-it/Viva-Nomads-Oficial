@@ -53,6 +53,7 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/pedidos"),
   ramo("/dashboard/pedidos-cidade"),
   ramo("/dashboard/contratos"),
+  ramo("/dashboard/recibos"), // Prompt 39-B1: Recibos e notas do proprietário (resumo do Carnê-Leão e informe)
   ramo("/dashboard/locacoes"),
   ramo("/dashboard/solicitacoes"), // manutenção
   ramo("/dashboard/servicos"), // serviços de parceiros para o morador
