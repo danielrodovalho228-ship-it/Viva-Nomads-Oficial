@@ -111,10 +111,10 @@ export const FAQ: Pergunta[] = [
   },
   {
     id: "email-confirmacao",
-    pergunta: "Não recebi o e-mail de confirmação",
+    pergunta: "Não recebi o código de acesso",
     resposta:
-      "Confira a caixa de spam e as abas Promoções/Atualizações. Se não estiver lá, vá em Entrar e digite o seu e-mail e a senha: como a conta ainda não foi confirmada, aparece o botão \"Reenviar e-mail de confirmação\". Persistindo, abra um chamado.",
-    termos: ["email", "confirmacao", "confirmar", "nao recebi", "spam"],
+      "A Viva Nomads não manda link de confirmação: a conta é criada e confirmada pelo código de 6 dígitos que chega no seu e-mail. Confira a caixa de spam e as abas Promoções/Atualizações. Se não estiver lá, espere 60 segundos e toque em \"Reenviar código\" na tela Entrar. Persistindo, abra um chamado.",
+    termos: ["email", "codigo", "confirmacao", "confirmar", "nao recebi", "spam"],
   },
   {
     id: "senha",

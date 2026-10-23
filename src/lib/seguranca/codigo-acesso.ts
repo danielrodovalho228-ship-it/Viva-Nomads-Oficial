@@ -9,8 +9,15 @@
 export const TAMANHO_CODIGO = 6;
 export const ESPERA_REENVIO_S = 60;
 export const MAX_TENTATIVAS_CODIGO = 5;
-/** Validade do código (s): espelha mailer_otp_exp do Supabase, aplicado pela Action dos e-mails de conta. */
-export const VALIDADE_CODIGO_S = 600;
+/**
+ * Validade do código em MINUTOS — a constante única (49-C1): a tela "Digite o código", os modelos com código
+ * ("Confirm signup", "Magic link") e o mailer_otp_exp enviado ao Supabase (corpoConfigAuth) leem daqui.
+ */
+export const VALIDADE_CODIGO_MIN = 10;
+/** A mesma validade em segundos (mailer_otp_exp do Supabase, aplicado pela Action dos e-mails de conta). */
+export const VALIDADE_CODIGO_S = VALIDADE_CODIGO_MIN * 60;
+/** "10 minutos": o texto que a tela e os e-mails mostram. */
+export const TEXTO_VALIDADE_CODIGO = `${VALIDADE_CODIGO_MIN} minutos`;
 /** Teto de envios de código por hora, por e-mail e por IP (contados no servidor). */
 export const MAX_ENVIOS_HORA = 5;
 export const JANELA_ENVIOS_S = 3600;

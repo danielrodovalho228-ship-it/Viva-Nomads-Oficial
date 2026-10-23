@@ -7,6 +7,7 @@
 */
 import { blocoDados, botaoEmail, layoutEmail } from "./modelo-email.ts";
 import { REMETENTE_EMAIL, REMETENTE_NOME } from "./remetente.ts";
+import { TEXTO_VALIDADE_CODIGO } from "../seguranca/codigo-acesso.ts";
 
 const SITE = "https://vivanomads.com.br";
 const IMG = (k: string) => `${SITE}/media/email/${k}.jpg`;
@@ -63,23 +64,23 @@ export function templatesSupabase(): TemplateSupabase[] {
     // Prompt 49: a conta nova nasce no 1º código (shouldCreateUser) e o Supabase manda este modelo nesse 1º envio.
     // Mesmo assunto e mesmo código em destaque do "Magic link": para a pessoa, é sempre "o código de acesso".
     comCodigo("confirmar-cadastro.html", "Confirm signup", "Seu código de acesso · Viva Nomads", "confirmar-cadastro", "Boas-vindas ao Viva Nomads", "Seu código de acesso",
-      "Use o código abaixo para entrar no Viva Nomads. Ele vale por 10 minutos e só funciona uma vez.",
+      `Use o código abaixo para entrar no Viva Nomads. Ele vale por ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez.`,
       "Se não foi você, ignore este e-mail: nenhuma conta será ativada. Nunca passe este código a ninguém — a Viva Nomads não pede código por WhatsApp ou SMS."),
     comBotao("redefinir-senha.html", "Reset password", urlConfirma("recovery", "/auth/reset"), "Redefinir sua senha · Viva Nomads", "redefinir-senha", "Sua conta segura no Viva Nomads", "Redefinir sua senha",
       "Recebemos um pedido para criar uma nova senha na sua conta. Toque no botão para escolher a nova senha.", "Criar nova senha",
-      "O link vale por 10 minutos. Se não foi você, ignore este e-mail: sua senha continua a mesma."),
+      `O link vale por ${TEXTO_VALIDADE_CODIGO}. Se não foi você, ignore este e-mail: sua senha continua a mesma.`),
     comBotao("trocar-email.html", "Change email address", urlConfirma("email_change", "/dashboard"), "Confirme seu novo e-mail · Viva Nomads", "trocar-email", "Atualização da sua conta", "Confirme seu novo e-mail",
       "Para concluir a troca do e-mail da sua conta, confirme o novo endereço.", "Confirmar novo e-mail",
-      "O link vale por 10 minutos. Se não foi você, ignore este e-mail: o endereço atual continua valendo.",
+      `O link vale por ${TEXTO_VALIDADE_CODIGO}. Se não foi você, ignore este e-mail: o endereço atual continua valendo.`,
       blocoDados([{ rotulo: "Novo e-mail", valor: "{{ .NewEmail }}" }])),
     comBotao("convite.html", "Invite user", urlConfirma("invite", "/dashboard"), "Você foi convidado · Viva Nomads", "convite", "Bem-vindo ao Viva Nomads", "Você foi convidado para o Viva Nomads",
       "Você recebeu um convite para entrar no Viva Nomads. Toque no botão para criar sua conta.", "Aceitar convite",
       "Se você não esperava este convite, ignore este e-mail."),
     comCodigo("codigo-de-acesso.html", "Magic link", "Seu código de acesso · Viva Nomads", "link-de-acesso", "Entrada no Viva Nomads", "Seu código de acesso",
-      "Use o código abaixo para entrar no Viva Nomads. Ele vale por 10 minutos e só funciona uma vez.",
+      `Use o código abaixo para entrar no Viva Nomads. Ele vale por ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez.`,
       "Se não foi você, ignore este e-mail. Nunca passe este código a ninguém — a Viva Nomads não pede código por WhatsApp ou SMS."),
     comCodigo("reautenticacao.html", "Reauthentication", "Seu código de verificação · Viva Nomads", "reautenticacao", "Verificação de segurança", "Confirme sua identidade",
-      "Para concluir uma ação sensível na sua conta, use o código de verificação abaixo. Ele vale por 10 minutos.",
+      `Para concluir uma ação sensível na sua conta, use o código de verificação abaixo. Ele vale por ${TEXTO_VALIDADE_CODIGO}.`,
       "Se não foi você, ignore este e-mail e considere trocar sua senha. Nunca compartilhe este código."),
   ];
 }
@@ -92,7 +93,7 @@ mude \`src/lib/notifications/templates-supabase.ts\` e gere de novo.
 ## Caminho automático (recomendado)
 
 No GitHub, aba **Actions** → **"Aplicar e-mails de conta no Supabase"** → **Run workflow**. Ela envia o assunto e o
-corpo dos 6 modelos, o remetente (**${REMETENTE_NOME}** · ${REMETENTE_EMAIL}) e a validade do código (10 minutos) pela API de gestão do
+corpo dos 6 modelos, o remetente (**${REMETENTE_NOME}** · ${REMETENTE_EMAIL}) e a validade do código (${TEXTO_VALIDADE_CODIGO}) pela API de gestão do
 Supabase e lê de volta para conferir. Precisa do segredo **\`SUPABASE_ACCESS_TOKEN\`** no repositório (criado pelo
 Daniel em Settings → Secrets and variables → Actions; o token vem de supabase.com → Account → Access Tokens).
 Sem o segredo, a Action para com "Cole os 6 modelos pelo LEIA-ME" — aí vale o passo a passo abaixo.
@@ -122,4 +123,15 @@ Sem o segredo, a Action para com "Cole os 6 modelos pelo LEIA-ME" — aí vale o
 export function instrucoesSupabase(): string {
   const tabela = templatesSupabase().map((t) => `| ${t.modelo} | ${t.assunto} | \`${t.arquivo}\` |`).join("\n");
   return INSTRUCOES_SUPABASE.replace("{{TABELA}}", tabela);
+}
+
+/**
+ * 49-C1 — o MESMO e-mail com código que o Supabase manda, já com o código no lugar de {{ .Token }}: usado quando o
+ * envio sai daqui (o atendimento da Viva mandando o código; o laboratório, que não fala com o Supabase de verdade).
+ * Conta nova → "Confirm signup"; conta que já existe → "Magic link". Nunca leva link de entrada.
+ */
+export function emailComCodigo(novo: boolean, codigo: string): { assunto: string; html: string } {
+  if (!/^\d{6}$/.test(codigo)) throw new Error("Código de acesso inválido");
+  const t = templatesSupabase().find((x) => x.modelo === (novo ? "Confirm signup" : "Magic link"))!;
+  return { assunto: t.assunto, html: t.html.replaceAll("{{ .Token }}", codigo) };
 }

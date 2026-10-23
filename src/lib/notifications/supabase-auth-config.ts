@@ -4,6 +4,7 @@
 */
 import { REMETENTE_EMAIL, REMETENTE_NOME } from "./remetente.ts";
 import { templatesSupabase } from "./templates-supabase.ts";
+import { VALIDADE_CODIGO_S } from "../seguranca/codigo-acesso.ts";
 
 /** Nome do modelo no painel → sufixo dos campos da API (mailer_subjects_<x> / mailer_templates_<x>_content). */
 export const CAMPO_DO_MODELO: Record<string, string> = {
@@ -15,8 +16,8 @@ export const CAMPO_DO_MODELO: Record<string, string> = {
   Reauthentication: "reauthentication",
 };
 
-/** Validade do código por e-mail (s) — Prompt 49: 10 minutos (espelha VALIDADE_CODIGO_S da tela). */
-export const VALIDADE_OTP_S = 600;
+/** Validade do código por e-mail (s): a MESMA constante da tela e dos modelos (49-C1). */
+export const VALIDADE_OTP_S = VALIDADE_CODIGO_S;
 
 export function corpoConfigAuth(): Record<string, string | number> {
   const corpo: Record<string, string | number> = { smtp_admin_email: REMETENTE_EMAIL, smtp_sender_name: REMETENTE_NOME, mailer_otp_exp: VALIDADE_OTP_S };
