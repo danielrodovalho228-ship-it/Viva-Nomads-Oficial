@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { DangerZone } from "@/components/account/conta-secoes";
 import { aceitarAjudaSaida, estadoSaida, pausarConta, reativarConta, registrarMotivoSaida } from "@/lib/saida/acoes";
@@ -215,6 +216,7 @@ export function SairDaViva() {
 export function ContaPausada({ aoReativar }: { aoReativar?: (e: Estado | null) => void }) {
   const [pendente, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
+  const router = useRouter();
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 p-4" data-testid="conta-pausada">
       <p className="text-sm text-ink">Sua conta está pausada: seus anúncios e sua página não aparecem na busca e os avisos estão parados.</p>
@@ -226,7 +228,8 @@ export function ContaPausada({ aoReativar }: { aoReativar?: (e: Estado | null) =
           iniciar(async () => {
             const r = await reativarConta();
             if (!r.ok) setErro(r.erro);
-            else aoReativar?.(await estadoSaida());
+            else if (aoReativar) aoReativar(await estadoSaida());
+            else router.refresh();
           })
         }
       >

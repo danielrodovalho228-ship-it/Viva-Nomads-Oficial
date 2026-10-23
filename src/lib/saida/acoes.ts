@@ -218,3 +218,12 @@ export async function adminEstadoDenuncia(form: FormData): Promise<Res> {
   revalidatePath("/admin/qualidade");
   return { ok: true, mensagem: "Estado atualizado." };
 }
+
+/** A denúncia que a própria pessoa fez deste anúncio (para mostrar o estado: recebida · em análise · resolvida). */
+export async function minhaDenuncia(propertyId: string): Promise<{ logado: boolean; denuncia: { status: string; motivo: string } | null }> {
+  const s = await sessao();
+  if (!s) return { logado: false, denuncia: null };
+  if (!/^[0-9a-f-]{36}$/i.test(propertyId)) return { logado: true, denuncia: null };
+  const { data } = await s.admin.from("denuncias_anuncio").select("status, motivo").eq("property_id", propertyId).eq("user_id", s.uid).maybeSingle();
+  return { logado: true, denuncia: (data as { status: string; motivo: string } | null) ?? null };
+}
