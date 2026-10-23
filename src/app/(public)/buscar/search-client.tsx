@@ -32,7 +32,7 @@ import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
 import { ROTULO_PORTE_CURTO, contarFiltrosPainel, naoMedidosDoPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
-import { filtroNivelDaUrl, filtroNivelNaUrl } from "@/lib/busca/filtro-nivel";
+import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
 import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, rotuloFiltroInternet, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
 import { Chip } from "@/components/ui/chip";
@@ -1080,7 +1080,15 @@ export function SearchClient({
               )}
             </div>
           )}
-          {results.length === 0 ? (
+          {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
+            // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.
+            <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia-nivel">
+              <p className="font-title text-lg font-semibold text-ink">{avisoNivelSemResultado(nivelMin)}</p>
+              <button type="button" onClick={() => setNivelMin("")} className={buttonClasses({ className: "mt-4" })} data-testid="busca-vazia-nivel-ver-todos">
+                Ver todos
+              </button>
+            </div>
+          ) : results.length === 0 ? (
             // Prompt 48: busca sem resultado diz o que aconteceu e dá os três próximos passos — pedido de moradia,
             // limpar filtros (ou ampliar a busca) e criar alerta. Sem ilustração genérica.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia">
