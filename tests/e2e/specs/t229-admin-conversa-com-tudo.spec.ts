@@ -108,7 +108,6 @@ test.describe("T229 — admin conversa com tudo", () => {
       expect((await cartao(page, "valor_mensal_contratado")).valor).toMatch(/R\$\s?3\.200/);
       const pedidos = await cartao(page, "pedidos");
       const fila = page.locator('[data-precisa="documentos_pendentes"]');
-      const filaHome = Number(await fila.locator("[data-href]").first().getAttribute("data-valor"));
       await expect(fila).toContainText(/na fila \(\d+ documentos? \+ \d+ matrículas?\)/);
       await page.screenshot({ path: `${SAIDA}/t229-home-${largura}.png`, fullPage: true });
 
@@ -140,17 +139,23 @@ test.describe("T229 — admin conversa com tudo", () => {
       await expect(page.getByTestId("chamado-linha")).toHaveCount(n(atd.valor));
 
       // Documentos: home = página = selo da barra lateral.
-      await page.goto("/admin/documentos", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("fila-agora-total")).toHaveText(String(filaHome));
-      if (largura === 1280) {
-        const selo = page.locator('[data-menu-id="admin-documentos"]');
-        if (await selo.isVisible()) {
-          // O selo carrega depois da tela (as server actions do menu rodam em fila): espera o número chegar.
-          await expect
-            .poll(async () => Number((await selo.innerText()).match(/(\d+)\s*$/)?.[1] ?? 0), { timeout: 15_000 })
-            .toBe(filaHome);
+      // A fila de documentos é global e as outras specs do laboratório mexem nela em paralelo: a home lida
+      // minutos antes pode divergir com razão. Compara a home relida com a página logo em seguida, com nova tentativa.
+      await expect(async () => {
+        await page.goto(HOME, { waitUntil: "domcontentloaded" });
+        const naHome = Number(await page.locator('[data-precisa="documentos_pendentes"] [data-href]').first().getAttribute("data-valor", { timeout: 10_000 }));
+        await page.goto("/admin/documentos", { waitUntil: "domcontentloaded" });
+        await expect(page.getByTestId("fila-agora-total")).toHaveText(String(naHome), { timeout: 10_000 });
+        if (largura === 1280) {
+          const selo = page.locator('[data-menu-id="admin-documentos"]');
+          if (await selo.isVisible()) {
+            // O selo carrega depois da tela (as server actions do menu rodam em fila): espera o número chegar.
+            await expect
+              .poll(async () => Number((await selo.innerText()).match(/(\d+)\s*$/)?.[1] ?? 0), { timeout: 15_000 })
+              .toBe(naHome);
+          }
         }
-      }
+      }).toPass({ timeout: 90_000 });
     });
 
     test(`${largura}px — agora: imóveis reais, demonstração e teste; agentes com nome`, async ({ page }) => {

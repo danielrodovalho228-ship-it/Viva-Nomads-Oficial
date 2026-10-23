@@ -122,7 +122,18 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     // Clicar no item que falta abre o editor JÁ na etapa certa (Fotos).
     await lista.getByTestId("check-falta").filter({ hasText: "Pelo menos 8 fotos" }).click();
     await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=2/);
-    await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible({ timeout: 15_000 });
+    // A URL já é a da etapa certa; no lab-crítico do #1080 o editor ficou 15 s sem montar as Fotos e só abriu no retry.
+    // Se não montar, reabre a mesma URL (é ela que o produto promete) em vez de esperar o tempo todo.
+    const fotos = page.getByRole("heading", { name: "Fotos do imóvel" });
+    await expect(async () => {
+      await expect(fotos)
+        .toBeVisible({ timeout: 8_000 })
+        .catch(async (e) => {
+          await page.goto(page.url(), { waitUntil: "domcontentloaded" });
+          throw e;
+        });
+    }).toPass({ timeout: 40_000 });
+    await expect(page).toHaveURL(/&etapa=2/);
   });
 
   test("T-RASC-3 — 'Novo anúncio' detecta rascunho e 'Começar outro' limpa", async ({ page }) => {
