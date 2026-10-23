@@ -109,6 +109,9 @@ for (const largura of LARGURAS) {
 
     test("ordem: título → síntese → anfitrião → comodidades → mapa → avaliações; sem 'Onde você vai dormir'", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
+      // Desde o Prompt 48 a página abre no esqueleto (loading.tsx): mede só depois que o conteúdo real chegou.
+      await expect(page.getByTestId("imovel-sintese")).toBeVisible({ timeout: 20_000 });
+      await expect(page.locator("#avaliacoes")).toBeAttached({ timeout: 20_000 });
       const ys: number[] = [];
       for (const l of [
         page.locator("h1").first(),
@@ -325,10 +328,16 @@ async function entrarNoApp(browser: Browser, email: string, senha: string): Prom
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 7) VivaNomadsApp/1.0 (expo)" });
   const page = await ctx.newPage();
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
-  await page.locator('input[name="email"], input[type="email"]').first().fill(email);
-  await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
-  await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-  await page.waitForURL(/\/(dashboard|buscar|app)/, { timeout: 20_000 });
+  // Clique antes da hidratação vira envio nativo do formulário e recarrega /auth vazio: preenche e clica de novo.
+  const logado = /\/(dashboard|buscar|app)/;
+  await expect(async () => {
+    if (!logado.test(new URL(page.url()).pathname)) {
+      await page.locator('input[name="email"], input[type="email"]').first().fill(email, { timeout: 5_000 });
+      await page.locator('input[name="password"], input[type="password"]').first().fill(senha, { timeout: 5_000 });
+      await page.locator("form").getByRole("button", { name: /^entrar$/i }).click({ timeout: 5_000 });
+    }
+    await page.waitForURL(logado, { timeout: 12_000 });
+  }).toPass({ timeout: 50_000 });
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
   return page;
 }
