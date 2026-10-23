@@ -10,7 +10,8 @@ import { adm } from "../fixtures/laboratorio";
  */
 test.describe("T125 — alerta de busca salva", () => {
   test("1. link de desligar sem assinatura válida não desliga nada", async ({ page }) => {
-    await page.goto("/alerta-busca/desligar?b=00000000-0000-4000-8000-000000000000&t=invalido", { waitUntil: "networkidle" });
+    await page.goto("/alerta-busca/desligar?b=00000000-0000-4000-8000-000000000000&t=invalido", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     // O Next injeta o próprio role="alert" (anunciador de rota): filtra pelo aviso da página.
     await expect(page.getByRole("alert").filter({ hasText: "não é válido" })).toHaveCount(1);
     await expect(page.getByRole("button", { name: "Desligar este alerta" })).toHaveCount(0);
@@ -22,7 +23,8 @@ test.describe("T125 — alerta de busca salva", () => {
     test("2. Buscas salvas: alerta ligado por padrão, desliga e religa", async ({ page }) => {
       test.setTimeout(120_000);
       await page.setViewportSize({ width: 390, height: 800 });
-      await page.goto("/buscar?local=Uberl%C3%A2ndia&homeoffice=1&quartos=2", { waitUntil: "networkidle" });
+      await page.goto("/buscar?local=Uberl%C3%A2ndia&homeoffice=1&quartos=2", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const salvar = page.getByTestId("salvar-busca").filter({ visible: true });
       // Uma execução anterior interrompida pode ter deixado a busca salva: parte sempre do estado "não salva".
       await expect(salvar).toHaveText(/Salvar busca|Busca salva/, { timeout: 10_000 });
@@ -31,7 +33,8 @@ test.describe("T125 — alerta de busca salva", () => {
       await salvar.click();
       await expect(salvar).toHaveText("Busca salva", { timeout: 10_000 });
 
-      await page.goto("/dashboard/buscas", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/buscas", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const botao = page.getByTestId("alerta-busca-botao").first();
       await expect(botao).toHaveText(/Alerta ligado/);
       await botao.click();
@@ -43,7 +46,8 @@ test.describe("T125 — alerta de busca salva", () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
       // Limpa: remove a busca de teste pelo coração.
-      await page.goto("/buscar?local=Uberl%C3%A2ndia&homeoffice=1&quartos=2", { waitUntil: "networkidle" });
+      await page.goto("/buscar?local=Uberl%C3%A2ndia&homeoffice=1&quartos=2", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       await expect(salvar).toHaveText("Busca salva", { timeout: 10_000 });
       await salvar.click();
       await expect(salvar).toHaveText("Salvar busca", { timeout: 10_000 });

@@ -151,7 +151,8 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
 
       test("1. home: cartões sem caixa, foto 4:3 com raio 12; busca em pill; primário 52/56", async ({ page }) => {
         semDialogo(page);
-        await page.goto("/", { waitUntil: "networkidle" });
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const barra = await estilo(page.getByTestId("barra-busca-home"));
         expect(Number.parseFloat(barra.raio), "busca da home em pill").toBeGreaterThanOrEqual(28);
         const destaques = page.getByTestId("destaques-home");
@@ -167,7 +168,8 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
 
       test("2. /buscar: barra em pill, chips com contorno (selecionado = tinta), folha com a contagem ao vivo", async ({ page }) => {
         semDialogo(page);
-        await page.goto("/buscar?exemplos=1", { waitUntil: "networkidle" });
+        await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const barra = page.getByTestId(largura < 1024 ? "barra-busca" : "busca-compacta");
         await expect(barra).toBeVisible();
         expect(Number.parseFloat((await estilo(barra)).raio), "barra de busca em pill").toBeGreaterThanOrEqual(20);
@@ -215,7 +217,8 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
 
       test("2b. folha: a contagem do botão = itens da lista; Limpar tudo zera", async ({ page }) => {
         semDialogo(page);
-        await page.goto("/buscar", { waitUntil: "networkidle" });
+        await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const total = await totalDoTitulo(page);
         test.skip(total === 0, "Busca vazia nesta base.");
 
@@ -279,7 +282,8 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
 
       test("4. /cidades/uberlandia: o mesmo cartão, grade par", async ({ page }) => {
         semDialogo(page);
-        await page.goto("/cidades/uberlandia", { waitUntil: "networkidle" });
+        await page.goto("/cidades/uberlandia", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const grade = page.getByTestId("cidade-imoveis");
         test.skip((await grade.count()) === 0, "Uberlândia sem anúncios nesta base.");
         const cartoes = grade.getByTestId("cartao-imovel");
@@ -297,7 +301,8 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
 
       test("5. imóveis parecidos na página do imóvel: o mesmo cartão", async ({ page }) => {
         semDialogo(page);
-        await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
+        await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const bloco = page.getByTestId("imoveis-parecidos");
         test.skip((await bloco.count()) === 0, "Sem outros anúncios para sugerir nesta base.");
         await bloco.scrollIntoViewIfNeeded();
@@ -310,7 +315,8 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
 
       test("6. /buscar com rede lenta: esqueleto no formato do cartão", async ({ page }) => {
         semDialogo(page);
-        await page.goto("/", { waitUntil: "networkidle" });
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         // Navegação do próprio app até a /buscar com a resposta do servidor atrasada em 3 s (RSC).
         await page.route(
           (url) => url.pathname === "/buscar",
@@ -342,7 +348,8 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
 
       test("7. coração: 1 toque salva, outro desfaz (aria-pressed)", async ({ page }) => {
         semDialogo(page);
-        await page.goto("/buscar?exemplos=1", { waitUntil: "networkidle" });
+        await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const cartao = page.getByTestId("cartao-imovel").first();
         const coracao = cartao.getByTestId("coracao");
         const id = (await cartao.locator("a").first().getAttribute("href"))!.replace("/imoveis/", "");
@@ -367,7 +374,8 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
       test("8. botões das telas da matriz: altura, raio e cor; uma sombra só (a do flutuante)", async ({ page }) => {
         semDialogo(page);
         // Favoritos vazio: "Explorar imóveis" é o primário.
-        await page.goto("/favoritos", { waitUntil: "networkidle" });
+        await page.goto("/favoritos", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         await conferirPrimario(page.getByRole("link", { name: "Explorar imóveis" }), largura, "favoritos: Explorar imóveis");
         // Todos os botões padrão ([data-cta]) da home, da busca e de cidades: raio 8, peso 600, cor do padrão, sem sombra.
         for (const rota of ["/", "/buscar", "/cidades/uberlandia", "/favoritos"]) {
@@ -391,14 +399,16 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
         // O flutuante "Fale com a Viva" é o único com sombra.
         const flut = page.getByTestId("fale-com-a-viva");
         if (await flut.isVisible()) expect((await estilo(flut)).sombra).not.toBe("none");
-        await page.goto("/", { waitUntil: "networkidle" });
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         await page.getByRole("link", { name: /Quero anunciar meu imóvel/ }).scrollIntoViewIfNeeded();
         await page.screenshot({ path: `${SAIDA}/t244-botoes-${largura}.png` });
       });
 
       test("9. adendo: carrossel com pontos, cinzas do texto corrido e sombra só no que flutua", async ({ page }) => {
         semDialogo(page);
-        await page.goto("/buscar?exemplos=1", { waitUntil: "networkidle" });
+        await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const cartoes = page.getByTestId("cartao-imovel");
         await expect(cartoes.first()).toBeVisible();
         // Carrossel: o cartão com mais de 1 foto mostra os pontos (o 1º aceso) e desliza.
