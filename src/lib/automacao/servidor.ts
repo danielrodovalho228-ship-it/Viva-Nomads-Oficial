@@ -92,8 +92,8 @@ export async function vinculosDoImovelAdmin(admin: Admin, propertyId: string): P
   );
 }
 
-/** Aviso com o horário de silêncio (22h–7h de Brasília): nesse intervalo só o e-mail, sem push. */
-async function aviso(admin: Admin, destino: string, ev: NotificationEvent, url: string, agora: Date) {
+/** Aviso ao dono ou ao parceiro. O silêncio (22h–7h) é decidido no notify() pela regra única do Prompt 44. */
+async function aviso(admin: Admin, destino: string, ev: NotificationEvent, url: string) {
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
@@ -104,17 +104,17 @@ async function aviso(admin: Admin, destino: string, ev: NotificationEvent, url: 
 }
 
 /** Um aviso por chave (automacoes_envios): o cron pode rodar de novo sem repetir. */
-async function avisoUmaVez(admin: Admin, chave: string, tipo: string, destino: string, ev: NotificationEvent, url: string, agora: Date): Promise<boolean> {
+async function avisoUmaVez(admin: Admin, chave: string, tipo: string, destino: string, ev: NotificationEvent, url: string): Promise<boolean> {
   const { error } = await admin.from("automacoes_envios").insert({ chave, tipo, usuario_id: destino });
   if (error) return false;
-  await aviso(admin, destino, ev, url, agora);
+  await aviso(admin, destino, ev, url);
   return true;
 }
 
 type PedidoAuto = { id: string; cliente_id: string; parceiro_id: string; status: string; aguardando_dono: boolean; descricao: string | null; parceiros: { user_id: string } | null };
 
-/** O pedido vai ao parceiro: as mensagens do 31b e o aviso de pedido novo (sem push no silêncio). */
-export async function enviarAoParceiro(admin: Admin, p: PedidoAuto, agora: Date): Promise<void> {
+/** O pedido vai ao parceiro: as mensagens do 31b e o aviso de pedido novo (o silêncio é decidido no notify()). */
+export async function enviarAoParceiro(admin: Admin, p: PedidoAuto): Promise<void> {
   if (!p.parceiros) return;
   await mensagem(admin, p, p.cliente_id, MENSAGENS_AUTOMATICAS.boas_vindas);
   if (p.descricao) await mensagem(admin, p, p.cliente_id, p.descricao);
@@ -183,8 +183,8 @@ export async function criarPedidoAutomatico(admin: Admin, { ctx, acao, agora }: 
   }
   if (!criado) return null;
   await evento(admin, criado.id, null, "solicitado", { automatico: true, gatilho: acao.gatilho, aguardando_dono: acao.aguardandoDono });
-  if (acao.aguardandoDono) await aviso(admin, ctx.ownerId, "pedido_auto_confirmar", rota(criado.id), agora);
-  else await enviarAoParceiro(admin, { id: criado.id, cliente_id: ctx.ownerId, parceiro_id: parceiro.id, status: "solicitado", aguardando_dono: false, descricao, parceiros: { user_id: parceiro.user_id } }, agora);
+  if (acao.aguardandoDono) await aviso(admin, ctx.ownerId, "pedido_auto_confirmar", rota(criado.id));
+  else await enviarAoParceiro(admin, { id: criado.id, cliente_id: ctx.ownerId, parceiro_id: parceiro.id, status: "solicitado", aguardando_dono: false, descricao, parceiros: { user_id: parceiro.user_id } });
   return criado;
 }
 
@@ -264,10 +264,10 @@ export async function executarAcoes(admin: Admin, ctx: ContextoAutomacao, acoes:
           r.cancelados += await cancelarAutomaticos(admin, a.contratoId, agora);
           break;
         case "avisar_dono_sem_vinculo":
-          if (await avisoUmaVez(admin, `saida_sem_parceiro:${ctx.id}:${ctx.ownerId}`, "saida_sem_parceiro", ctx.ownerId, "saida_sem_parceiro", "/parceiros/buscar?categoria=limpeza", agora)) r.avisos += 1;
+          if (await avisoUmaVez(admin, `saida_sem_parceiro:${ctx.id}:${ctx.ownerId}`, "saida_sem_parceiro", ctx.ownerId, "saida_sem_parceiro", "/parceiros/buscar?categoria=limpeza")) r.avisos += 1;
           break;
         case "sugerir_morador":
-          if (await avisoUmaVez(admin, `sugestao_parceiros_morador:${ctx.id}:${ctx.tenantId}:${a.momento}`, "sugestao_parceiros_morador", ctx.tenantId, "sugestao_parceiros_morador", `${HREF_ESTADIA(ctx.id)}#ajuda-mudanca`, agora))
+          if (await avisoUmaVez(admin, `sugestao_parceiros_morador:${ctx.id}:${ctx.tenantId}:${a.momento}`, "sugestao_parceiros_morador", ctx.tenantId, "sugestao_parceiros_morador", `${HREF_ESTADIA(ctx.id)}#ajuda-mudanca`))
             r.avisos += 1;
           break;
       }
@@ -373,7 +373,7 @@ export async function automacaoDaEstadia(admin: Admin, agora: Date, simular: boo
     const { data: marcou } = await admin.from("parceiro_pedidos").update({ sem_resposta_avisado_em: agora.toISOString() }).eq("id", p.id).is("sem_resposta_avisado_em", null).select("id");
     if (!marcou?.length) continue;
     await evento(admin, p.id, null, "sem_resposta", {});
-    await aviso(admin, p.cliente_id, "pedido_auto_sem_resposta", rota(p.id), agora);
+    await aviso(admin, p.cliente_id, "pedido_auto_sem_resposta", rota(p.id));
     out.semResposta += 1;
   }
   return out;

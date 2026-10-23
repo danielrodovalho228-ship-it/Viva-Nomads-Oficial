@@ -329,7 +329,7 @@ export async function confirmarPedidoAutomatico(pedidoId: string): Promise<Res> 
     .select("id");
   if (!data?.length) return { ok: false, erro: "O pedido mudou. Atualize a página." };
   await evento(s.admin, p.id, s.userId, "confirmado_pelo_dono", {});
-  await enviarAoParceiro(s.admin, p, agora);
+  await enviarAoParceiro(s.admin, p);
   revalidatePath(rota(p.id));
   revalidatePath("/dashboard/servicos");
   if (p.contrato_id) revalidatePath(`/dashboard/estadia/${p.contrato_id}`);
