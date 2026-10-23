@@ -179,7 +179,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await dba.getByRole("button", { name: "Guardar dB(A)" }).click();
     await expect.poll(async () => (await adm().from("vistoria_medicoes").select("dba").eq("pedido_id", pedido).eq("tipo", "ruido_dba").maybeSingle()).data?.dba ?? null, { timeout: 15_000 }).not.toBeNull();
     const foto = p.getByTestId("avaliacao-foto-form");
-    await foto.getByLabel("Cômodo").fill("Quarto principal");
+    await foto.getByLabel("Cômodo", { exact: true }).fill("Quarto principal");
     await foto.locator('input[type="file"]').setInputFiles({ name: "quarto.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64") });
     await foto.getByRole("button", { name: "Enviar foto" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_checklist_fotos").select("id").eq("pedido_id", pedido).eq("comodo", "Quarto principal")).data ?? []).length, { timeout: 15_000 }).toBe(1);
