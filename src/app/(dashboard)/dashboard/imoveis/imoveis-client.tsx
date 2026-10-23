@@ -237,6 +237,12 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                             Cartão para compartilhar
                           </ButtonLink>
                         )}
+                        {/* Prompt 54: desempenho do anúncio (visualizações, favoritos, candidaturas, com fórmula). */}
+                        {p.status !== "draft" && (
+                          <ButtonLink href={`/dashboard/imoveis/${p.id}/desempenho`} variant="outline" size="sm" data-testid="desempenho-link">
+                            Desempenho
+                          </ButtonLink>
+                        )}
                         {/* Parceiros do imóvel (Prompt 38): limpeza, manutenção, lavanderia e fotografia fixas. */}
                         {p.status !== "draft" && (
                           <ButtonLink href={`/dashboard/imoveis/${p.id}/parceiros`} variant="outline" size="sm" data-testid="parceiros-imovel-link">

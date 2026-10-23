@@ -1816,6 +1816,14 @@
         "t316-sair-da-viva-51",
         "t319-varredura-bloco10"
       ]
+    },
+    "/dashboard/imoveis/[id]/desempenho": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t345-desempenho-anuncio-54"
+      ]
     }
   },
   "rotas": {
