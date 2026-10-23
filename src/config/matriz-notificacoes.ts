@@ -55,6 +55,9 @@ export const MATRIZ_NOTIFICACOES = {
   // Prompt 62-B1: o avaliador aceita em 24 h; o morador concorda (ou não) com a data da visita no imóvel ocupado.
   vistoria_designada: { categoria: "decisao", papeis: ["parceiro"], canais: TODOS_OS_CANAIS, prazo: true },
   vistoria_concordancia: { categoria: "decisao", papeis: ["morador"], canais: TODOS_OS_CANAIS, prazo: true },
+  vistoria_laudo_emitido: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
+  vistoria_fora_da_busca: { categoria: "decisao", papeis: ["proprietario"], canais: TODOS_OS_CANAIS, prazo: true },
+  vistoria_devolucao: { categoria: "decisao", papeis: ["parceiro"], canais: TODOS_OS_CANAIS, prazo: true },
 
   // ── Decisões sem prazo (central + e-mail) ─────────────────────────────────
   new_lead: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
@@ -69,6 +72,9 @@ export const MATRIZ_NOTIFICACOES = {
   vistoria_designado_dono: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   vistoria_agendada: { categoria: "decisao", papeis: ["proprietario", "parceiro"], canais: SEM_PUSH },
   vistoria_ausencia: { categoria: "decisao", papeis: ["proprietario", "parceiro"], canais: SEM_PUSH },
+  vistoria_ressalva_vencida: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+  vistoria_strike: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+  vistoria_verificacao: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   vinculo_parceiro_convite: { categoria: "decisao", papeis: ["parceiro"], canais: SEM_PUSH },
   parceiro_orcamento_recebido: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
   parceiro_entrega_feita: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
@@ -90,6 +96,7 @@ export const MATRIZ_NOTIFICACOES = {
   checkin_lembrete: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   saida_lembrete: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   vistoria_lembrete: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
+  vistoria_vistoriado_expira: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
   renovacao_aviso: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   avaliacao_pedido: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   anuncio_incompleto: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
@@ -139,6 +146,7 @@ export const MATRIZ_NOTIFICACOES = {
   // ── Equipe (o admin desliga em "Receber alertas da equipe") ───────────────
   chamado_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   vistoria_sem_avaliador: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  vistoria_fila_admin: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   documento_recebido: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   parceria_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   estadia_encerramento_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },

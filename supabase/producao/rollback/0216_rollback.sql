@@ -28,7 +28,7 @@ alter table public.vistoria_pedidos drop column if exists laudo_atrasado_em;
 alter table public.vistoria_pedidos drop column if exists verificacao_motivo;
 alter table public.vistoria_pedidos drop column if exists verificacao_detalhe;
 alter table public.vistoria_pedidos drop column if exists verificacao_aberta_por;
-alter table public.vistoria_pedidos drop column if exists primeira_do_dono;
+alter table public.vistoria_pedidos drop column if exists ruido_respostas;
 delete from public.vistoria_fila_admin where tipo in ('laudo_atrasado', 'ressalva_vencida', 'devolucao_vencida', 'seguranca_grave');
 alter table public.vistoria_fila_admin drop constraint if exists vistoria_fila_admin_tipo_check;
 alter table public.vistoria_fila_admin add constraint vistoria_fila_admin_tipo_check check (

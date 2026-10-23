@@ -6,7 +6,7 @@
 --   1. Laudo VIS no registro único (Prompt 56): prefixo 'VIS' e contador próprio.
 --   2. vistoria_checklist (resposta por item, salva a cada item) e vistoria_checklist_fotos (1 por cômodo + 1 por item
 --      não conforme), no bucket privado "avaliacao-imovel" (sem EXIF; sem pessoas nem pertences).
---   3. vistoria_medicoes: dB(A) e a medição de internet com prova de local, SÓ internas (nenhuma leitura pública).
+--   3. vistoria_medicoes: dB(A) e a medição de internet com prova de local (distância, sem coordenadas), SÓ internas (nenhuma leitura pública).
 --   4. vistoria_laudos: uma linha por versão (resultado, nível sustentado, resumo, ressalvas, graves, prazos).
 --   5. vistoria_pedidos: visita concluída, laudo atrasado, verificação (aberta pelo admin, com motivo).
 --   6. proprietario_strikes (escada 1/2/3; suspenso na contestação; expira e é apagado em 12 meses).
@@ -116,8 +116,8 @@ create table if not exists public.vistoria_medicoes (
   download_mbps numeric(8, 2),
   upload_mbps numeric(8, 2),
   latencia_ms numeric(8, 2),
-  lat numeric(9, 6),
-  lng numeric(9, 6),
+  -- Prova de local como no 57: só a distância até o imóvel, sem coordenadas.
+  distancia_m integer check (distancia_m is null or distancia_m >= 0),
   medido_em timestamptz not null default now(),
   constraint vistoria_medicoes_campos check (
     (tipo = 'ruido_dba' and dba is not null)
@@ -181,7 +181,8 @@ alter table public.vistoria_pedidos add column if not exists laudo_atrasado_em t
 alter table public.vistoria_pedidos add column if not exists verificacao_motivo text;
 alter table public.vistoria_pedidos add column if not exists verificacao_detalhe text;
 alter table public.vistoria_pedidos add column if not exists verificacao_aberta_por uuid references auth.users (id) on delete set null;
-alter table public.vistoria_pedidos add column if not exists primeira_do_dono boolean not null default false;
+-- As 4 perguntas de ruído respondidas na visita (vão para imovel_ruido com origem 'vistoria' quando o laudo sai).
+alter table public.vistoria_pedidos add column if not exists ruido_respostas jsonb;
 alter table public.vistoria_pedidos drop constraint if exists vistoria_pedidos_verificacao;
 alter table public.vistoria_pedidos add constraint vistoria_pedidos_verificacao check (
   (tipo <> 'verificacao' or verificacao_motivo in ('denuncia_procedente', 'pendencia_conforto', 'ressalva_vencida', 'outro'))
