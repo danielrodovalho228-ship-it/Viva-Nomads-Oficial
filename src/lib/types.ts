@@ -133,6 +133,8 @@ export interface Property {
   internetMbps?: number;
   /** Internet MEDIDA no imóvel (Prompt 57): a última medição validada do dono, vigente. Nunca a do morador. */
   internetMedida?: import("@/lib/internet-medida").Medicao;
+  /** Adendo 59.1: nível Essencial/Conforto/Premium (imovel_nivel; não é selo nem posição). */
+  nivel?: import("@/config/niveis").NivelOuAdequacao | null;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;

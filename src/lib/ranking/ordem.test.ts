@@ -167,3 +167,22 @@ test("Prompt 57: 'Para trabalhar de casa' com internet medida vale mais que a in
   assert.equal(m.pontos, 0);
   assert.doesNotMatch(m.texto, /morador (mentiu|errou)|culpa/i);
 });
+
+test("59.1: nível pesa só na nota (Conforto +3, Premium +6, Essencial 0); com notas iguais, o nível não muda a ordem", () => {
+  const n = (o: Partial<SinaisAnuncio>) => notaQualidade(base({ descricaoPalavras: 10, ...o }), AGORA).nota;
+  assert.equal(n({ nivel: "conforto" }) - n({}), 3);
+  assert.equal(n({ nivel: "premium" }) - n({}), 6);
+  assert.equal(n({ nivel: "essencial" }), n({}));
+  assert.equal(n({ nivel: "em_adequacao" }), n({}));
+  // Premium com descrição curta (−6) empata com Essencial de descrição completa: a ordem é a da nota (desempate pelo id).
+  const premium = base({ id: "b", donoId: "d2", nivel: "premium", descricaoPalavras: 10 });
+  const essencial = base({ id: "a", donoId: "d1", nivel: "essencial", descricaoPalavras: 80 });
+  assert.equal(notaQualidade(premium, AGORA).nota, notaQualidade(essencial, AGORA).nota);
+  const ordem = (lista: SinaisAnuncio[]) => ordenarBusca(lista.map((sinais) => ({ sinais, compat: "exata" as const, distanciaKm: null })), AGORA).map((x) => x.id);
+  assert.deepEqual(ordem([premium, essencial]), ["a", "b"]);
+  assert.deepEqual(ordem([essencial, premium]), ["a", "b"]);
+  // O nível nunca é campo de ordem: a regra só o lê dentro da nota.
+  const fonte = readFileSync(new URL("./ordem.ts", import.meta.url), "utf8");
+  const fora = fonte.slice(fonte.indexOf("export function ordenarBusca"));
+  assert.doesNotMatch(fora, /\.nivel\b/);
+});

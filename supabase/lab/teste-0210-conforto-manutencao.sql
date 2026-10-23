@@ -15,7 +15,7 @@ insert into qualification_checklists (property_id, owner_id, document_status)
 values ('59000000-0000-4000-8000-0000000000b1', '59000000-0000-4000-8000-0000000000d1', 'approved');
 
 -- 1) A lista do banco é a da versão 1 (o teste unitário compara com src/config/conforto-minimo.ts).
-select 'lista com 10 itens' as caso, cardinality(public.conforto_chaves()) = 10 as ok;
+select 'lista com 10 itens ou mais (a 0213 leva a 12)' as caso, cardinality(public.conforto_chaves()) >= 10 as ok;
 
 -- 2) Publicar numa sessão de usuário sem o padrão mínimo é recusado, mesmo contornando a tela.
 select set_config('request.jwt.claim.sub', '59000000-0000-4000-8000-0000000000d1', true);
@@ -47,12 +47,16 @@ end $$;
 reset role;
 insert into conforto_declaracoes (property_id, chave, confirmado, confirmado_por, confirmado_em)
 values ('59000000-0000-4000-8000-0000000000b1', 'mobilia_das_fotos', true, '59000000-0000-4000-8000-0000000000d1', now());
+-- Com a 0213 (lista versão 2), a lista atual inteira confirmada na versão atual (sem a 0213, nada muda: os 10 já estão).
+insert into conforto_declaracoes (property_id, chave, confirmado, confirmado_por, confirmado_em, versao_lista)
+select '59000000-0000-4000-8000-0000000000b1', k, true, '59000000-0000-4000-8000-0000000000d1', now(), 2 from unnest(public.conforto_chaves()) k
+on conflict (property_id, chave) do update set confirmado = true, versao_lista = 2;
 select set_config('request.jwt.claim.sub', '59000000-0000-4000-8000-0000000000d1', true);
 set local role authenticated;
 update properties set status = 'active' where id = '59000000-0000-4000-8000-0000000000b1';
 select 'com os 10 confirmados, publica' as caso, (select status::text from properties where id = '59000000-0000-4000-8000-0000000000b1') = 'active' as ok;
 -- O dono lê as próprias declarações; o terceiro não.
-select 'dono lê as declarações' as caso, count(*) = 10 as ok from conforto_declaracoes where property_id = '59000000-0000-4000-8000-0000000000b1';
+select 'dono lê as declarações' as caso, count(*) = cardinality(public.conforto_chaves()) as ok from conforto_declaracoes where property_id = '59000000-0000-4000-8000-0000000000b1';
 reset role;
 select set_config('request.jwt.claim.sub', '59000000-0000-4000-8000-0000000000f1', true);
 set local role authenticated;

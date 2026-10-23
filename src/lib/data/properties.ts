@@ -362,6 +362,7 @@ export async function listProperties(): Promise<Property[]> {
     await attachPrecoJusto(supabase, mapped); // selo Preço justo (0130; best-effort)
     await attachPetsRegras(supabase, mapped); // porte máximo de pet, para o filtro da busca (0119; best-effort)
     await attachInternet(supabase, mapped); // internet informada e medida, para o filtro da busca (Prompt 57 fase 2; best-effort)
+    await attachNivel(supabase, mapped); // nível Essencial/Conforto/Premium, para o filtro "a partir de" (59.1; best-effort)
     return withDemos(mapped);
   } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
@@ -547,6 +548,17 @@ async function attachInternet(supabase: SupabaseLike, list: Property[]): Promise
     }
   } catch {
     /* sem a view ou a coluna, o filtro de internet não acha medição: ninguém passa como medido */
+  }
+}
+
+async function attachNivel(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  try {
+    const { data } = await supabase.from("imovel_nivel").select("property_id, nivel").in("property_id", list.map((p) => p.id));
+    const porId = new Map(((data as { property_id: string; nivel: Property["nivel"] }[] | null) ?? []).map((r) => [r.property_id, r.nivel]));
+    for (const p of list) p.nivel = porId.get(p.id) ?? p.nivel ?? null;
+  } catch {
+    /* sem a 0211: ninguém tem nível e o filtro "a partir de" não acha ninguém */
   }
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PONTOS_MEDICAO, ROTULO_PONTO, type PontoMedicao } from "@/config/niveis";
 import { Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAppUserAgent } from "@/lib/app-mode";
@@ -35,6 +36,8 @@ function posicao(): Promise<{ lat: number; lng: number } | null> {
 export function MedirInternet({ imovelId, origem }: { imovelId: string; origem: Origem }) {
   const [estado, setEstado] = useState<EstadoMedir | null>(null);
   const [wifi, setWifi] = useState(false);
+  // Adendo 59.1: onde está medindo (o nível pede o quarto principal e o ponto de trabalho).
+  const [ponto, setPonto] = useState<PontoMedicao>("quarto_principal");
   const [fase, setFase] = useState<"parado" | "local" | "medindo" | "salvando">("parado");
   const [progresso, setProgresso] = useState(0);
   const [resultado, setResultado] = useState<ResultadoMedicao | null>(null);
@@ -88,7 +91,7 @@ export function MedirInternet({ imovelId, origem }: { imovelId: string; origem: 
       const resp = await fetch("/api/internet/medicoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imovel: imovelId, origem, rodadas, local, confirmouWifi: wifi }),
+        body: JSON.stringify({ imovel: imovelId, origem, rodadas, local, confirmouWifi: wifi, ponto }),
       });
       const r = (await resp.json()) as ResultadoMedicao;
       setResultado(r);
@@ -123,6 +126,16 @@ export function MedirInternet({ imovelId, origem }: { imovelId: string; origem: 
           {atualTexto.texto}
         </p>
       )}
+      <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-ink">
+        Onde você está medindo
+        <select value={ponto} onChange={(e) => setPonto(e.target.value as PontoMedicao)} disabled={ocupado} className="h-10 rounded-lg border border-sage-200 px-2 text-sm" data-testid="medir-internet-ponto">
+          {PONTOS_MEDICAO.map((p) => (
+            <option key={p} value={p}>
+              {ROTULO_PONTO[p]}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="mt-3 flex items-center gap-2 text-sm text-ink">
         <input type="checkbox" checked={wifi} onChange={(e) => setWifi(e.target.checked)} disabled={ocupado} data-testid="medir-internet-wifi" />
         Estou conectado ao Wi-Fi do imóvel

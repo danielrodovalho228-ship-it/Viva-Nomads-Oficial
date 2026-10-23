@@ -146,6 +146,8 @@ export const INVENTARIO: ItemInventario[] = [
 /** Tabelas que a varredura acha por nome de coluna mas não guardam dado pessoal (com o porquê). */
 export const SEM_DADO_PESSOAL: Record<string, string> = {
   agentes: "nome do agente de IA, não de pessoa",
+  imovel_extras: "lista fechada de extras do anúncio (Adendo 59.1), sem dado de pessoa",
+  nivel_itens: "itens de nível do anúncio e a foto de cada um (sem pessoas); ficam enquanto o anúncio existir e saem em cascata com ele (Adendo 59.1)",
   conforto_declaracoes: "itens do padrão mínimo marcados pelo dono para o imóvel (chave do item, sem dado pessoal)",
   asaas_eventos: "chave de idempotência do webhook",
   automacoes_envios: "chave de idempotência do envio",

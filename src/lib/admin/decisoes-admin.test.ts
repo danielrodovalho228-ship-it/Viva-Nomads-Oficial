@@ -32,6 +32,7 @@ test("só entram linhas com n > 0; N é a soma; ordem de urgência (P1 antes de 
     pedidos_sem_resposta_expirando: { n: 0 },
     manutencao_fora_prazo: { n: 0 },
     conforto_contestacoes: { n: 0 },
+    fotos_nivel: { n: 0 },
   });
   assert.equal(r.total, 7);
   assert.deepEqual(r.linhas.map((l) => l.chave), ["chamados_p1", "backup", "documentos_pendentes", "encerramentos"]);
@@ -73,5 +74,6 @@ test("Prompt 59: 'Manutenção fora do prazo' abre a lista; a contestação do p
   const r = montarDecisoesAdmin(Object.fromEntries(DECISOES_ADMIN.map((d) => [d.chave, { n: d.chave === "manutencao_fora_prazo" || d.chave === "chamados_p1" ? 1 : 0 }])));
   assert.deepEqual(r.linhas.map((l) => l.chave), ["manutencao_fora_prazo", "chamados_p1"]);
   assert.equal(r.linhas[0].texto, "1 manutenção fora do prazo");
-  assert.equal(r.linhas[0].href, "/admin/solicitacoes?fora_prazo=1");
+  // Adendo 59.1: a fila virou filtro da Central de Pendências.
+  assert.equal(r.linhas[0].href, "/admin/pendencias?filtro=manutencao_fora_prazo");
 });

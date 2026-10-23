@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
-import { ehChaveConforto, itemConforto } from "@/config/conforto-minimo";
+import { rotuloItem } from "@/config/niveis";
 import { dataHoraBrasilia } from "@/config/atendimento";
 import { AVISO_SELO_CONFORTO, procedentes12m, seloPeloConforto, type AcaoPendencia, type PendenciaConforto } from "./regras";
 
@@ -27,7 +27,7 @@ async function avisar(db: Db, userId: string | null | undefined, p: { event: "co
   }).catch(() => null);
 }
 
-const rotulo = (chave: string) => (ehChaveConforto(chave) ? itemConforto(chave).rotulo : chave);
+const rotulo = rotuloItem;
 
 /** Lembrete do prazo de adequação (15 e 3 dias) ou "saiu da busca" (D4). */
 export async function avisarConfortoPrazo(db: Db, propertyId: string, tipo: 15 | 3 | "pausado", prazoAte: string): Promise<void> {

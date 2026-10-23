@@ -16,9 +16,12 @@
   Roda: node --test src/lib/admin/decisoes-admin.test.ts
 */
 
+import { hrefCentral } from "./central-pendencias.ts";
+
 export type ChaveDecisaoAdmin =
   | "manutencao_fora_prazo"
   | "conforto_contestacoes"
+  | "fotos_nivel"
   | "chamados_p1"
   | "chamados_p2"
   | "backup"
@@ -47,8 +50,10 @@ export interface DefinicaoDecisaoAdmin {
 /** Em ordem de urgência. */
 export const DECISOES_ADMIN: readonly DefinicaoDecisaoAdmin[] = [
   // Prompt 59: a manutenção fora do prazo de solução abre a lista (estudo da Fase 0, item 12).
-  { chave: "manutencao_fora_prazo", fila: "manutenção fora do prazo", um: "manutenção fora do prazo", varios: "manutenções fora do prazo", acao: "Acompanhar", href: "/admin/solicitacoes?fora_prazo=1" },
-  { chave: "conforto_contestacoes", fila: "pendências de conforto contestadas", um: "pendência de conforto contestada", varios: "pendências de conforto contestadas", acao: "Decidir", href: "/admin/conforto" },
+  // Adendo 59.1: as filas do 59-A são filtros da Central de Pendências (mesma contagem).
+  { chave: "manutencao_fora_prazo", fila: "manutenção fora do prazo", um: "manutenção fora do prazo", varios: "manutenções fora do prazo", acao: "Acompanhar", href: hrefCentral("manutencao_fora_prazo") },
+  { chave: "conforto_contestacoes", fila: "pendências de conforto contestadas", um: "pendência de conforto contestada", varios: "pendências de conforto contestadas", acao: "Decidir", href: hrefCentral("conforto_contestacoes") },
+  { chave: "fotos_nivel", fila: "fotos de nível", um: "foto de nível para analisar", varios: "fotos de nível para analisar", acao: "Analisar", href: hrefCentral("fotos_nivel") },
   { chave: "chamados_p1", fila: "chamados P1", um: "chamado P1 aberto", varios: "chamados P1 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p1" },
   { chave: "chamados_p2", fila: "chamados P2", um: "chamado P2 aberto", varios: "chamados P2 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p2" },
   { chave: "backup", fila: "backup", um: "alerta de backup", varios: "alertas de backup", acao: "Ver o backup", href: "/admin#backup" },

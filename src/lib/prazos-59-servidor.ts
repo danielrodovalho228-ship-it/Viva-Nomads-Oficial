@@ -36,9 +36,9 @@ export async function rodarPrazos59(admin: Admin, agora = new Date(), soImoveis?
   const { data: adq } = await qAdq;
   const linhas = (adq ?? []) as unknown as { property_id: string; prazo_ate: string; lembretes: number[] | null; pausado_em: string | null; properties: { status: string } }[];
   if (linhas.length) {
-    const { data: decl } = await admin.from("conforto_declaracoes").select("property_id, chave, confirmado").in("property_id", linhas.map((l) => l.property_id));
-    const porImovel = new Map<string, { chave: string; confirmado: boolean }[]>();
-    for (const d of (decl ?? []) as { property_id: string; chave: string; confirmado: boolean }[]) porImovel.set(d.property_id, [...(porImovel.get(d.property_id) ?? []), d]);
+    const { data: decl } = await admin.from("conforto_declaracoes").select("property_id, chave, confirmado, versao_lista").in("property_id", linhas.map((l) => l.property_id));
+    const porImovel = new Map<string, { chave: string; confirmado: boolean; versao_lista?: number | null }[]>();
+    for (const d of (decl ?? []) as { property_id: string; chave: string; confirmado: boolean; versao_lista?: number | null }[]) porImovel.set(d.property_id, [...(porImovel.get(d.property_id) ?? []), d]);
     for (const l of linhas) {
       const completo = itensFaltantes(porImovel.get(l.property_id) ?? []).length === 0;
       if (completo) {

@@ -2,6 +2,7 @@
   Prompt 59, Parte A — servidor do padrão mínimo de conforto. Só do servidor (cliente de serviço DEPOIS de conferir quem
   age). As regras são as de ./regras.ts; aqui só leitura e gravação.
 */
+import { recalcularNivel } from "@/lib/niveis/servidor";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { CHAVES_CONFORTO } from "@/config/conforto-minimo";
 import { estadoConfortoMinimo, itensFaltantes, linhasConfirmacao, pendenciaFechada, pendenciaVencida, type EstadoConforto, type PendenciaConforto } from "./regras";
@@ -26,6 +27,8 @@ export async function salvarDeclaracoesConforto(db: Db, propertyId: string, dono
     await db.from("conforto_declaracoes").update({ confirmado: false }).eq("property_id", propertyId).in("chave", desmarcados);
   }
   await voltarSeCompleto(db, propertyId);
+  // Adendo 59.1: o Essencial é o padrão mínimo — confirmar/desmarcar muda o nível.
+  await recalcularNivel(db, propertyId, agora);
   return { ok: true };
 }
 
@@ -33,8 +36,8 @@ export async function salvarDeclaracoesConforto(db: Db, propertyId: string, dono
 export async function voltarSeCompleto(db: Db, propertyId: string): Promise<boolean> {
   const { data: adq } = await db.from("conforto_adequacao").select("pausado_em").eq("property_id", propertyId).maybeSingle();
   if (!adq?.pausado_em) return false;
-  const { data: decl } = await db.from("conforto_declaracoes").select("chave, confirmado").eq("property_id", propertyId);
-  if (itensFaltantes((decl ?? []) as { chave: string; confirmado: boolean }[]).length) return false;
+  const { data: decl } = await db.from("conforto_declaracoes").select("chave, confirmado, versao_lista").eq("property_id", propertyId);
+  if (itensFaltantes((decl ?? []) as { chave: string; confirmado: boolean; versao_lista?: number | null }[]).length) return false;
   const { error } = await db.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused");
   if (error) {
     console.error("[voltarSeCompleto]", error.code, error.message);
@@ -50,7 +53,7 @@ export async function estadoConfortoDoImovel(db: Db, propertyId: string, agora =
     db.from("conforto_declaracoes").select("chave, confirmado, versao_lista").eq("property_id", propertyId),
     db.from("conforto_adequacao").select("prazo_ate, pausado_em").eq("property_id", propertyId).maybeSingle(),
   ]);
-  const e = estadoConfortoMinimo((decl ?? []) as { chave: string; confirmado: boolean }[], (adq?.prazo_ate as string | null) ?? null, agora);
+  const e = estadoConfortoMinimo((decl ?? []) as { chave: string; confirmado: boolean; versao_lista?: number | null }[], (adq?.prazo_ate as string | null) ?? null, agora);
   return { ...e, pausado: !!adq?.pausado_em };
 }
 

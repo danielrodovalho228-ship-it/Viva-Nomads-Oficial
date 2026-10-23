@@ -16,8 +16,8 @@ import { decisoesDoProprietario } from "../painel/decisoes.ts";
 const SRC = new URL("../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(SRC + p, "utf8");
 
-test("os 10 itens, cada um com o critério em uma linha", () => {
-  assert.equal(ITENS_CONFORTO.length, 10);
+test("os 12 itens da lista v2 (Adendo 59.1), cada um com o critério em uma linha", () => {
+  assert.equal(ITENS_CONFORTO.length, 12);
   for (const i of ITENS_CONFORTO) {
     assert.ok(i.criterio.length > 0 && i.criterio.length <= 90, i.chave);
     assert.doesNotMatch(i.criterio, /\n/);
@@ -29,7 +29,7 @@ test("o que falta para publicar: 'Falta confirmar: [itens]' na ordem da lista; t
   assert.equal(textoFaltaConfirmar(CHAVES_CONFORTO), null);
   const semDois = CHAVES_CONFORTO.filter((k) => k !== "agua_quente" && k !== "iluminacao");
   assert.equal(textoFaltaConfirmar(semDois), "Falta confirmar: Água quente, Iluminação.");
-  assert.equal(itensNaoConfirmados([]).length, 10);
+  assert.equal(itensNaoConfirmados([]).length, 12);
   // O botão Publicar nunca fica desabilitado em silêncio: a Revisão mostra a lista ao lado dele.
   const rv = ler("app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
   assert.match(rv, /data-testid="publicar-falta"/);
