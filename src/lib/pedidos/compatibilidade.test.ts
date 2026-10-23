@@ -4,7 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { melhorPor, porQueCombina, sugestaoAjuste, ordenarPares, imoveisParaTela, type ParCompat } from "./compatibilidade.ts";
+import { melhorPor, porQueCombina, explicarNota, sugestaoAjuste, ordenarPares, imoveisParaTela, type ParCompat } from "./compatibilidade.ts";
 
 const base: ParCompat = {
   pedido_id: "p1",
@@ -75,4 +75,29 @@ test("lista pós-publicação: só compatíveis, melhor nota primeiro, até 6, s
   ]);
   assert.ok(lista.every((i) => i.id !== "q"));
   assert.deepEqual(Object.keys(lista[0]).sort(), ["id", "titulo", "total"]);
+});
+
+test("nota explicada: pontos de orçamento, vagas e data batem com a regra do banco; o resto vai em 'perfil e selo'", () => {
+  // total 3100 para orçamento 3000: 40 - round(40*100/600) = 33; vagas 3 p/ 2 pessoas: 15; livre antes da entrada: 10.
+  const e = explicarNota({ ...base, nota: 88 });
+  assert.equal(e.nota, 88);
+  assert.deepEqual(e.itens.map((i) => [i.chave, i.pontos, i.max]), [
+    ["orcamento", 33, 40],
+    ["vagas", 15, 20],
+    ["data", 10, 10],
+    ["perfil", 30, 30],
+  ]);
+  assert.equal(e.itens.reduce((s, i) => s + i.pontos, 0), 88);
+});
+
+test("nota explicada: dentro do orçamento = 40; sobra de 2+ vagas = 20; data depois da entrada = 0 (casos negativos)", () => {
+  const cheio = explicarNota({ ...base, total_mensal: 2900, vagas: 4, nota: 70 });
+  assert.equal(cheio.itens[0].pontos, 40);
+  assert.equal(cheio.itens[1].pontos, 20);
+  const tarde = explicarNota({ ...base, disponivel_desde: "2026-11-10", nota: 50 });
+  assert.equal(tarde.itens.find((i) => i.chave === "data")!.pontos, 0);
+  const semVagas = explicarNota({ ...base, vagas: null, orcamento: 0, nota: 10 });
+  assert.equal(semVagas.itens[0].pontos, 0);
+  assert.equal(semVagas.itens[1].pontos, 0);
+  assert.ok(semVagas.itens.every((i) => i.pontos >= 0 && i.pontos <= i.max));
 });

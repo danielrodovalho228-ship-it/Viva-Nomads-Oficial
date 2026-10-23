@@ -13,7 +13,7 @@ import { avisarCompativeisDoPedido, paresCompat } from "@/lib/data/pedidos-compa
 import { destinoParaDono, localDaEntrada } from "@/lib/data/local-trabalho";
 import { temposAte } from "@/lib/data/tempos";
 import { chaveDestino, ehModo, minutosArredondados } from "@/lib/rotas/tempo";
-import { melhorPor, porQueCombina, type ImovelCompativel } from "@/lib/pedidos/compatibilidade";
+import { explicarNota, melhorPor, porQueCombina, type ImovelCompativel, type ItemNota } from "@/lib/pedidos/compatibilidade";
 import {
   detalheResposta,
   detalheAceito,
@@ -654,6 +654,8 @@ export interface PedidoParaDono {
   compat_imovel_id: string | null;
   compat_imovel_titulo: string | null;
   compat_nota: number | null;
+  /** A nota em pontos (valor, vagas, data, perfil): alimenta o "i" do cartão. */
+  compat_nota_itens: ItemNota[];
   compat_motivo: string | null;
   compat_porque: string[];
   aba: AbaDono;
@@ -787,6 +789,7 @@ export async function getPedidosParaProprietario(): Promise<{
       compat_imovel_id: par && par.situacao !== "demais" ? par.imovel_id : null,
       compat_imovel_titulo: par && par.situacao !== "demais" ? par.titulo : null,
       compat_nota: par && par.situacao !== "demais" ? par.nota : null,
+      compat_nota_itens: par && par.situacao !== "demais" ? explicarNota(par).itens : [],
       compat_motivo: par?.situacao === "quase" ? par.motivo : null,
       compat_porque: par?.situacao === "compativel" ? porQueCombina(par) : [],
       aba: abaDoPedido({ respondido: !!minha, ignorado }),
