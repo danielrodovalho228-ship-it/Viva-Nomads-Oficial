@@ -52,7 +52,9 @@ export async function confirmarContatoDaConta(email: string): Promise<void> {
 }
 
 export const novaSenha = (): string => randomBytes(12).toString("hex");
-export const novoSufixo = (): string => randomBytes(3).toString("hex");
+// Só letras (a–p, o hex com os dígitos trocados): sufixo só de dígitos somava com o número do título ("Studio Fila
+// 1280 482913" = 10 dígitos) e a regra de contato do banco (0057, 23514) recusava a massa como telefone (L-32, t237).
+export const novoSufixo = (): string => randomBytes(3).toString("hex").replace(/\d/g, (d) => "ghijklmnop"[Number(d)]);
 
 /** CPF válido aleatório (dígitos verificadores certos). */
 export function cpfAleatorio(): string {
