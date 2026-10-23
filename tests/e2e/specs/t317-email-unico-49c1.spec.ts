@@ -115,8 +115,11 @@ test.describe("T317 — e-mail único com código (49-C1)", () => {
     await aba2.waitForURL(/\/auth\/(intencao|pronto)/, { timeout: 30_000 });
 
     // A 1ª aba percebe a sessão e segue sozinha, sem pedir código nem mandar outro e-mail.
-    await expect(aba1.getByTestId("ja-entrou")).toContainText("Você já entrou. Continuando…", { timeout: 20_000 });
+    // O aviso "Você já entrou. Continuando…" aparece só no instante da troca: a aba pode já ter seguido quando o teste
+    // olha (lab de 23/10). O que vale é a 1ª aba sair sozinha da tela do código, sem pedir código nem mandar e-mail.
+    await expect(aba1.getByTestId("ja-entrou").or(aba1.getByTestId("tela-intencao"))).toBeVisible({ timeout: 30_000 });
     await aba1.waitForURL(/\/auth\/intencao|\/dashboard/, { timeout: 30_000 });
+    await expect(aba1.getByTestId("campo-codigo")).toHaveCount(0);
     expect((await emailsPara(outra)).length).toBe(1);
     await ctx.close();
   });
