@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ITENS_CONFORTO, itemConforto, ehChaveConforto } from "@/config/conforto-minimo";
+import { ITENS_CONFORTO } from "@/config/conforto-minimo";
+import { rotuloItem } from "@/config/niveis";
 import { TEXTO_NAO_CONFERE_MAX } from "@/lib/conforto/regras";
 import { enviarFotoConferencia, responderConfortoEntrada, type ConferenciaView } from "@/lib/data/conferencia-actions";
 
@@ -19,14 +20,18 @@ export function SecaoConfortoEntrada({
   parte,
   travada,
   respondidas,
+  adicionais = [],
 }: {
   contratoId: string;
   parte: "inquilino" | "proprietario" | null;
   travada: boolean;
   respondidas: ConferenciaView["conforto"];
+  /** Adendo 59.1: itens do nível do imóvel e a pergunta do ruído (depois dos 12 do mínimo). */
+  adicionais?: { chave: string; rotulo: string }[];
 }) {
   const router = useRouter();
-  const [r, setR] = useState<Record<string, Resposta>>(() => Object.fromEntries(ITENS_CONFORTO.map((i) => [i.chave, { confere: null, texto: "", foto: null }])));
+  const itens: { chave: string; rotulo: string; criterio?: string }[] = [...ITENS_CONFORTO, ...adicionais];
+  const [r, setR] = useState<Record<string, Resposta>>(() => Object.fromEntries(itens.map((i) => [i.chave, { confere: null, texto: "", foto: null }])));
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   // O que o morador acabou de enviar aparece na hora (como os itens da conferência), sem esperar o servidor reler a tela.
@@ -43,7 +48,7 @@ export function SecaoConfortoEntrada({
             <li key={x.chave} data-testid={`conforto-entrada-${x.chave}`} data-confere={x.confere ? "1" : "0"} className="flex items-start gap-2">
               <span className={x.confere ? "text-forest" : "text-red-700"}>{x.confere ? "Confere" : "Não confere"}</span>
               <span className="min-w-0 text-ink">
-                {ehChaveConforto(x.chave) ? itemConforto(x.chave).rotulo : x.chave}
+                {rotuloItem(x.chave)}
                 {!x.confere && x.texto ? <span className="block break-words text-xs text-muted">{x.texto}</span> : null}
                 {x.fotoUrl && (
                   <a href={x.fotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-forest underline">
@@ -59,13 +64,13 @@ export function SecaoConfortoEntrada({
   }
   if (parte !== "inquilino" || travada) return null;
 
-  const respondidosTodos = ITENS_CONFORTO.every((i) => r[i.chave].confere !== null);
+  const respondidosTodos = itens.every((i) => (r[i.chave]?.confere ?? null) !== null);
   const enviar = async () => {
     setErro(null);
     setOcupado(true);
     try {
       const respostas = [];
-      for (const i of ITENS_CONFORTO) {
+      for (const i of itens) {
         const x = r[i.chave];
         let foto: string | undefined;
         if (x.confere === false && x.foto) {
@@ -95,12 +100,12 @@ export function SecaoConfortoEntrada({
       <p className="text-sm font-semibold text-ink">Padrão mínimo</p>
       <p className="mt-1 text-xs text-muted">Confira cada item. O que não confere vira pendência do proprietário, com prazo de 72 horas.</p>
       <ul className="mt-3 space-y-3">
-        {ITENS_CONFORTO.map((i) => {
-          const x = r[i.chave];
+        {itens.map((i) => {
+          const x = r[i.chave] ?? { confere: null, texto: "", foto: null };
           return (
             <li key={i.chave} data-testid={`conforto-entrada-item-${i.chave}`}>
               <p className="text-sm font-semibold text-ink">{i.rotulo}</p>
-              <p className="text-xs text-muted">{i.criterio}</p>
+              {i.criterio && <p className="text-xs text-muted">{i.criterio}</p>}
               <div className="mt-1 flex flex-wrap gap-4 text-sm text-ink" role="radiogroup" aria-label={i.rotulo}>
                 <label className="flex min-h-11 items-center gap-2">
                   <input type="radio" name={`conforto-${i.chave}`} checked={x.confere === true} onChange={() => muda(i.chave, { confere: true })} data-testid={`conforto-confere-${i.chave}`} />

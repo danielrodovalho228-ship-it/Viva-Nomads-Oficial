@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { contestacoesConforto, manutencaoForaDoPrazo } from "@/lib/data/admin-prazos-59";
+import { centralDePendencias } from "@/lib/data/central-pendencias";
 import { estadoBackup } from "@/lib/backup/cartao";
 import { lerExecucoesBackup } from "@/components/admin/cartao-backup";
 import { listarFalhasDocumentos } from "@/lib/data/documentos-falhas-actions";
@@ -86,7 +86,7 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
   const admin = createAdminClient();
   if (!admin) return null;
   const ler = <T,>(p: Promise<T>) => p.catch(() => null);
-  const [p1, p2, backup, falhas, docs, encerr, parcerias, pedidosParc, urgentes, cand48, vencidas, expirando, foraPrazo, contestacoes] = await Promise.all([
+  const [p1, p2, backup, falhas, docs, encerr, parcerias, pedidosParc, urgentes, cand48, vencidas, expirando, central] = await Promise.all([
     ler(chamadosAbertos(admin, "p1")),
     ler(chamadosAbertos(admin, "p2")),
     ler(lerExecucoesBackup()),
@@ -99,8 +99,7 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
     ler(candidaturasSemResposta48h(admin)),
     ler(taxasVencidas(admin, "real")),
     ler(pedidosExpirandoSemResposta(admin)),
-    ler(manutencaoForaDoPrazo(admin, agora)),
-    ler(contestacoesConforto(admin)),
+    ler(centralDePendencias(admin, agora)),
   ]);
 
   const contagens: Partial<Record<ChaveDecisaoAdmin, ContagemDecisao | null>> = {
@@ -119,8 +118,14 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
   if (urgentes) contagens.chamados_urgentes_sem_resposta = { n: urgentes.length, detalhe: maisAntigo(urgentes[0]?.opened_at) };
   if (cand48) contagens.candidaturas_sem_resposta_48h = { n: cand48.length, detalhe: maisAntigo(cand48[0]?.criadoEm) };
   if (vencidas) contagens.comissoes_vencidas = { n: vencidas.length };
-  if (foraPrazo) contagens.manutencao_fora_prazo = { n: foraPrazo.length, detalhe: maisAntigo(foraPrazo[0]?.opened_at) };
-  if (contestacoes) contagens.conforto_contestacoes = { n: contestacoes.length, detalhe: maisAntigo(contestacoes[0]?.contestada_em ?? undefined) };
+  // Adendo 59.1: uma fonte de números — as filas do 59-A e as fotos de nível contam pelas linhas da Central.
+  if (central) {
+    const maisVelha = (f: "manutencao_fora_prazo" | "conforto_contestacoes" | "fotos_nivel") =>
+      maisAntigo(central.linhas.filter((l) => l.filtro === f).map((l) => l.desde).sort()[0]);
+    contagens.manutencao_fora_prazo = { n: central.contagens.manutencao_fora_prazo, detalhe: maisVelha("manutencao_fora_prazo") };
+    contagens.conforto_contestacoes = { n: central.contagens.conforto_contestacoes, detalhe: maisVelha("conforto_contestacoes") };
+    contagens.fotos_nivel = { n: central.contagens.fotos_nivel, detalhe: maisVelha("fotos_nivel") };
+  }
   if (expirando) contagens.pedidos_sem_resposta_expirando = { n: expirando.length, detalhe: "vencem em até 3 dias" };
   return montarDecisoesAdmin(contagens);
 }

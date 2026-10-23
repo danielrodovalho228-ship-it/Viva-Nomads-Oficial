@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ehChaveConforto, itemConforto } from "@/config/conforto-minimo";
+import { rotuloItem } from "@/config/niveis";
 import { CONFIRMACAO_PENDENCIA_H, type PapelPendencia } from "@/lib/conforto/regras";
 import { agirNaPendencia } from "@/lib/data/conforto-actions";
 import type { PendenciaParaTela } from "@/lib/conforto/servidor";
@@ -52,7 +52,7 @@ function Linha({ papel, p: doServidor }: { papel: PapelPendencia; p: PendenciaPa
   const [contestando, setContestando] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
-  const rotulo = ehChaveConforto(p.chave) ? itemConforto(p.chave).rotulo : p.chave;
+  const rotulo = rotuloItem(p.chave);
   const agir = (acao: "corrigir" | "contestar" | "confirmar" | "reabrir") =>
     iniciar(async () => {
       const r = await agirNaPendencia(p.id, acao, acao === "contestar" ? { motivo } : {});

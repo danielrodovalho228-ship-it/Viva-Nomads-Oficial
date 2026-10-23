@@ -2,6 +2,7 @@
   Prompt 59, Parte A — servidor do padrão mínimo de conforto. Só do servidor (cliente de serviço DEPOIS de conferir quem
   age). As regras são as de ./regras.ts; aqui só leitura e gravação.
 */
+import { recalcularNivel } from "@/lib/niveis/servidor";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { CHAVES_CONFORTO } from "@/config/conforto-minimo";
 import { estadoConfortoMinimo, itensFaltantes, linhasConfirmacao, pendenciaFechada, pendenciaVencida, type EstadoConforto, type PendenciaConforto } from "./regras";
@@ -26,6 +27,8 @@ export async function salvarDeclaracoesConforto(db: Db, propertyId: string, dono
     await db.from("conforto_declaracoes").update({ confirmado: false }).eq("property_id", propertyId).in("chave", desmarcados);
   }
   await voltarSeCompleto(db, propertyId);
+  // Adendo 59.1: o Essencial é o padrão mínimo — confirmar/desmarcar muda o nível.
+  await recalcularNivel(db, propertyId, agora);
   return { ok: true };
 }
 

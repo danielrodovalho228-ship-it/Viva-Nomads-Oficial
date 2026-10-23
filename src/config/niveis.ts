@@ -13,6 +13,8 @@
   - Nada financeiro (D7).
 */
 
+import { ehChaveConforto, itemConforto } from "./conforto-minimo.ts";
+
 export const NIVEIS = ["essencial", "conforto", "premium"] as const;
 export type Nivel = (typeof NIVEIS)[number];
 /** Abaixo do Essencial: interno, sem nome público; o anúncio não publica (bloqueio do 59). */
@@ -144,3 +146,15 @@ export const ehPontoMedicao = (v: unknown): v is PontoMedicao => typeof v === "s
 
 /** Peso do nível na NOTA de qualidade (Prompt 33). Não é ordem própria nem selo. */
 export const PESO_NIVEL: Record<NivelOuAdequacao, number> = { em_adequacao: 0, essencial: 0, conforto: 3, premium: 6 };
+
+/** Item da seção da entrada que confere o ruído anunciado (vira pendência como os outros). */
+export const CHAVE_RUIDO_CONFERENCIA = "ruido_controlado";
+export const ROTULO_RUIDO_CONFERENCIA = "O ruído confere com o anunciado";
+
+/** Rótulo de qualquer item conferido/pendente: do padrão mínimo, do nível ou o ruído. */
+export function rotuloItem(chave: string): string {
+  if (chave === CHAVE_RUIDO_CONFERENCIA) return ROTULO_RUIDO_CONFERENCIA;
+  if (ehChaveConforto(chave)) return itemConforto(chave).rotulo;
+  if (ehChaveNivel(chave)) return itemNivel(chave).rotulo;
+  return chave;
+}

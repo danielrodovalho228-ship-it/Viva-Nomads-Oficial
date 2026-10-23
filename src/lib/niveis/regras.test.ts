@@ -216,7 +216,7 @@ test("extras: lista fechada, nunca entram no cálculo; um extra quebrado não de
   assert.deepEqual(validarExtras(["tv", "tv", "piscina", 3]), ["tv"]);
   const fatos = fatosAtendidos(premium());
   for (const e of EXTRAS) assert.equal(fatos.has(e.chave), false);
-  for (const a of AREAS) for (const k of [...MATRIZ[a].conforto, ...MATRIZ[a].premium]) assert.ok(!EXTRAS.some((e) => e.chave === k), k);
+  for (const a of AREAS) for (const k of [...MATRIZ[a].conforto, ...MATRIZ[a].premium]) assert.ok(!EXTRAS.some((e) => (e.chave as string) === k), k);
 });
 
 test("nada financeiro (D7) e nível não é selo nem compra posição: sem valor, taxa ou plano nas regras do nível", () => {

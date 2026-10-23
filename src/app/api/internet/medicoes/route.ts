@@ -25,6 +25,6 @@ export async function POST(request: Request) {
   if (!origin || origin !== new URL(request.url).origin) return NextResponse.json({ ok: false, erro: "Não autorizado." }, { status: 403 });
   const corpo = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   if (!corpo) return NextResponse.json({ ok: false, erro: "Pedido inválido." }, { status: 400, headers: SEM_CACHE });
-  const r = await registrarMedicao({ imovelId: corpo.imovel, origem: corpo.origem, rodadas: corpo.rodadas, local: corpo.local, confirmouWifi: corpo.confirmouWifi });
+  const r = await registrarMedicao({ imovelId: corpo.imovel, origem: corpo.origem, rodadas: corpo.rodadas, local: corpo.local, confirmouWifi: corpo.confirmouWifi, ponto: corpo.ponto });
   return NextResponse.json(r, { status: r.ok ? 200 : 400, headers: SEM_CACHE });
 }

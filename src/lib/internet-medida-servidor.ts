@@ -1,4 +1,6 @@
 import "server-only";
+import { ehPontoMedicao } from "@/config/niveis";
+import { recalcularNivel } from "@/lib/niveis/servidor";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -157,6 +159,8 @@ export async function registrarMedicao(entrada: {
   rodadas: unknown;
   local: unknown;
   confirmouWifi: unknown;
+  /** Adendo 59.1: onde foi medido (quarto principal, ponto de trabalho, sala, outro). Declarado; o morador confere. */
+  ponto?: unknown;
 }): Promise<ResultadoMedicao> {
   const imovelId = String(entrada.imovelId ?? "");
   const origem = entrada.origem as Origem;
@@ -194,10 +198,13 @@ export async function registrarMedicao(entrada: {
     origem,
     medido_em: agora.toISOString(),
     valido_ate: ate.toISOString(),
+    ...(ehPontoMedicao(entrada.ponto) ? { ponto: entrada.ponto } : {}),
   });
   if (error) return { ok: false, erro: "Não deu para salvar a medição agora." };
   // A página do imóvel é ISR (revalidate 60 s): a medição validada do dono aparece já, sem esperar o ciclo.
   if (papel === "dono" && local.validada) revalidatePath(`/imoveis/${imovelId}`);
+  // A medida por ponto do dono entra no nível (internet de Conforto/Premium).
+  if (papel === "dono" && ehPontoMedicao(entrada.ponto)) await recalcularNivel(admin, imovelId, agora);
 
   // Morador abaixo de 50% da medição do dono: sinal no painel de qualidade e aviso ao dono (sem acusar ninguém).
   if (papel === "morador" && local.validada) {
