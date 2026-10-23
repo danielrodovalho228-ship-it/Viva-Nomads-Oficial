@@ -63,7 +63,8 @@ test.describe("T38 — Vários imóveis por dono", () => {
     expect(await statusDoImovel(ids.imoveis[0])).toBe("active");
 
     // Editor do 2º: a prontidão já sabe que não há vaga e trava o botão.
-    await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "networkidle" });
+    await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(page.getByTestId("prontidao")).toContainText("Anúncio", { timeout: 15_000 });
     await expect(page.getByText(/Vaga no seu plano/).first()).toBeVisible();
     await expect(page.getByText(/Seu plano permite 1 anúncio no ar\. Para publicar este, pause outro ou mude de plano/).first()).toBeVisible();
@@ -73,7 +74,8 @@ test.describe("T38 — Vários imóveis por dono", () => {
     expect(await contarAtivos(ids.dono!)).toBe(1);
 
     // Painel (390 px): o aviso "Vaga no seu plano" vem com os 2 botões.
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const vaga = page.getByTestId("check-vaga").first();
     await expect(vaga).toContainText("Seu plano permite 1 anúncio no ar", { timeout: 20_000 });
     await expect(vaga.getByRole("link", { name: "Pausar outro anúncio" })).toHaveAttribute("href", "/dashboard/imoveis");
@@ -88,7 +90,8 @@ test.describe("T38 — Vários imóveis por dono", () => {
     // publica o 1º por baixo dos panos (como outra aba faria) e tenta publicar o 2º.
     await adm().from("properties").update({ status: "draft" }).eq("id", ids.imoveis[0]);
     const page = await entrar(browser, dono.email, senha);
-    await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "networkidle" });
+    await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     // O Publicar só habilita depois do aceite do termo de IA (como em publicarPeloEditor).
     await page.getByTestId("aceite-ia").getByRole("checkbox").check({ timeout: 20_000 });
     const publicar = page.getByRole("button", { name: "Publicar", exact: true });
@@ -115,7 +118,8 @@ test.describe("T38 — Vários imóveis por dono", () => {
     }
     expect(await contarAtivos(ids.dono!)).toBe(4);
 
-    await page.goto("/dashboard/imoveis", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     for (let i = 1; i <= 4; i++) await expect(page.getByText(`Studio ${i} do teste de vários imóveis ${sufixo}`).first()).toBeVisible();
     await page.screenshot({ path: "tests/laboratorio/saida/t38-4-quatro-ativos.png", fullPage: true });
     await page.context().close();
