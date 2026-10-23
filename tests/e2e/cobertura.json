@@ -5616,7 +5616,7 @@
         "proprietario"
       ],
       "specs": [
-        "t329-preferencias-push-44b2"
+        "t331-preferencias-push-44b2"
       ]
     },
     "src/lib/data/notif-categorias-actions.ts#setCategoriasDesligadas": {
@@ -5625,7 +5625,7 @@
         "proprietario"
       ],
       "specs": [
-        "t329-preferencias-push-44b2"
+        "t331-preferencias-push-44b2"
       ]
     }
   }

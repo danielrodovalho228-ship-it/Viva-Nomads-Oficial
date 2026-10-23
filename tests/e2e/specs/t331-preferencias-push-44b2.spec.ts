@@ -3,7 +3,7 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T329 — 44-B2: preferências por categoria e o cartão "Push" do admin.
+ * T331 — 44-B2: preferências por categoria e o cartão "Push" do admin.
  *   1. /dashboard/notificacoes (390 / 1280): Decisões e Segurança aparecem sem interruptor ("Sempre chegam");
  *      Mensagens, Lembretes e Outros avisos têm interruptor; desligar Mensagens grava no perfil e continua desligado
  *      depois de recarregar; religar volta ao padrão (nada desligado).
@@ -13,8 +13,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const pessoa = { email: `mor.t329.${sufixo}@lab.vivanomads.test`, nome: "Paula Preferência", role: "tenant" as const };
-const qa = { email: `qa.t329.${sufixo}@lab.vivanomads.test`, nome: "Quina Teste", role: "tenant" as const };
+const pessoa = { email: `mor.t331.${sufixo}@lab.vivanomads.test`, nome: "Paula Preferência", role: "tenant" as const };
+const qa = { email: `qa.t331.${sufixo}@lab.vivanomads.test`, nome: "Quina Teste", role: "tenant" as const };
 const ids: { pessoa?: string; qa?: string } = {};
 
 async function semRolagemLateral(page: Page) {
@@ -25,7 +25,7 @@ async function desligadasNoBanco(): Promise<string[]> {
   return (data?.notif_categorias_desligadas as string[]) ?? [];
 }
 
-test.describe("T329 — 44-B2: preferências por categoria e diagnóstico do push", () => {
+test.describe("T331 — 44-B2: preferências por categoria e diagnóstico do push", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -57,7 +57,7 @@ test.describe("T329 — 44-B2: preferências por categoria e diagnóstico do pus
         await expect(page.getByTestId(`notif-categoria-${c}`).getByRole("switch")).toHaveCount(1);
       }
       await semRolagemLateral(page);
-      await bloco.screenshot({ path: `tests/laboratorio/saida/t329-categorias-${largura}.png` });
+      await bloco.screenshot({ path: `tests/laboratorio/saida/t331-categorias-${largura}.png` });
     }
 
     const mensagens = page.getByTestId("notif-categoria-mensagens").getByRole("switch");
@@ -97,8 +97,8 @@ test.describe("T329 — 44-B2: preferências por categoria e diagnóstico do pus
       const { error: e1 } = await adm()
         .from("push_tokens")
         .insert([
-          { user_id: ids.pessoa, token: `ExponentPushToken[t329-${sufixo}-a]`, platform: "android" },
-          { user_id: ids.qa, token: `ExponentPushToken[t329-${sufixo}-q]`, platform: "ios" },
+          { user_id: ids.pessoa, token: `ExponentPushToken[t331-${sufixo}-a]`, platform: "android" },
+          { user_id: ids.qa, token: `ExponentPushToken[t331-${sufixo}-q]`, platform: "ios" },
         ]);
       expect(e1).toBeNull();
       const { error: e2 } = await adm()
@@ -128,7 +128,7 @@ test.describe("T329 — 44-B2: preferências por categoria e diagnóstico do pus
         await page.goto("/admin", { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("cartao-push")).toBeVisible({ timeout: 30_000 });
         await semRolagemLateral(page);
-        await page.getByTestId("cartao-push").screenshot({ path: `tests/laboratorio/saida/t329-cartao-push-${largura}.png` });
+        await page.getByTestId("cartao-push").screenshot({ path: `tests/laboratorio/saida/t331-cartao-push-${largura}.png` });
       }
     });
   });
