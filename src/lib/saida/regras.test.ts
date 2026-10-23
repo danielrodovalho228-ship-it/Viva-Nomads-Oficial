@@ -5,7 +5,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   MOTIVOS_SAIDA,
+  QUEBRADORES,
   TEXTO_EXCLUSAO,
+  contextoDoMotivo,
   ajudaDoMotivo,
   motivoDenunciaValido,
   motivoValido,
@@ -104,4 +106,15 @@ test("textos da exclusão (página pública, confirmação e Conta) sem 'todos o
   }
   // /privacidade fica como está (a sugestão de texto vai no PR para a Dra. Beatriz).
   assert.match(readFileSync(new URL("app/(public)/privacidade/page.tsx", raiz), "utf8"), /Para excluir sua conta e todos os dados/);
+});
+
+test("os 8 quebradores, cada um com o sinal escrito; o motivo abre o contexto certo", () => {
+  assert.equal(QUEBRADORES.length, 8);
+  assert.equal(new Set(QUEBRADORES.map((q) => q.chave)).size, 8);
+  for (const q of QUEBRADORES) assert.ok(q.sinal.length > 10, q.chave);
+  assert.equal(contextoDoMotivo("atendimento"), "chamados");
+  for (const m of ["pagamento", "morador_pagamento", "pagamento_repasse"]) assert.equal(contextoDoMotivo(m), "pagamentos");
+  assert.equal(contextoDoMotivo("imovel_diferente"), "anuncio");
+  assert.equal(contextoDoMotivo("poucos_pedidos"), null);
+  assert.equal(contextoDoMotivo(null), null);
 });

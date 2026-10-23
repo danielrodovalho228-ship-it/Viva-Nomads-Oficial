@@ -195,3 +195,32 @@ export function prioridadeDenuncia(m: MotivoDenuncia): "p1" | "p2" {
 export const ESTADOS_DENUNCIA = ["recebida", "em_analise", "resolvida"] as const;
 export type EstadoDenuncia = (typeof ESTADOS_DENUNCIA)[number];
 export const ROTULO_ESTADO_DENUNCIA: Record<EstadoDenuncia, string> = { recebida: "Recebida", em_analise: "Em análise", resolvida: "Resolvida" };
+
+// ── Os 8 quebradores e o sinal precoce de cada um (painel de qualidade) ───────────────────────────────────────────
+export interface Quebrador {
+  chave: string;
+  rotulo: string;
+  /** O que é contado (escrito no painel, ao lado do número). Sem fonte gravada ainda: `semMedicao`. */
+  sinal: string;
+  href: string | null;
+  semMedicao?: true;
+}
+export const QUEBRADORES: Quebrador[] = [
+  { chave: "chamado_fora_prazo", rotulo: "Chamado fora do prazo", sinal: "chamados em aberto com o prazo estourado", href: "/admin/atendimento" },
+  { chave: "abandono_valores", rotulo: "Abandono na tela de valores", sinal: "a tela de valores ainda não grava abertura nem saída", href: null, semMedicao: true },
+  { chave: "comprovante_suporte", rotulo: "Pedido de comprovante no suporte", sinal: "chamados dos últimos 7 dias com \"comprovante\" ou \"recibo\" no assunto", href: "/admin/atendimento?q=comprovante" },
+  { chave: "verificacao_parada", rotulo: "Verificação parada 24 h", sinal: "verificações na análise humana sem decisão há mais de 24 h", href: "/admin/documentos" },
+  { chave: "contrato_sem_assinatura", rotulo: "Contrato aberto várias vezes sem assinatura", sinal: "a abertura do contrato ainda não é gravada", href: null, semMedicao: true },
+  { chave: "avaliacao_baixa", rotulo: "Avaliação baixa pós-entrada", sinal: "avaliações de morador com nota 1 ou 2 nos últimos 7 dias", href: "/admin/avaliacoes" },
+  { chave: "exclusao_email", rotulo: "Pedido de exclusão por e-mail", sinal: "pedidos pela página pública de exclusão nos últimos 7 dias", href: null },
+  { chave: "denuncia_anuncio", rotulo: "Denúncia de anúncio", sinal: "denúncias ainda não resolvidas", href: "/admin/qualidade#denuncias" },
+];
+
+/** O que o motivo abre para a equipe: o histórico de chamados, os pagamentos/pedidos de parceiro ou o anúncio. */
+export type ContextoMotivo = "chamados" | "pagamentos" | "anuncio";
+export function contextoDoMotivo(motivo: string | null): ContextoMotivo | null {
+  if (motivo === "atendimento") return "chamados";
+  if (motivo === "pagamento" || motivo === "morador_pagamento" || motivo === "pagamento_repasse") return "pagamentos";
+  if (motivo === "imovel_diferente") return "anuncio";
+  return null;
+}

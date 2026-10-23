@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sessaoAal2 } from "@/lib/data/admin-guard";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
+import { abrirCorrecoesDevidas } from "@/lib/data/qualidade";
 import { ajudaDoMotivo, motivoDenunciaValido, motivoValido, pendenciasParaSair, podeFecharCorrecao, prioridadeDenuncia, MOTIVOS_DENUNCIA, NIVEIS_SAIDA, VALORES_SURPRESA, type NivelSaida, type PapelSaida, type PendenciaSaida } from "./regras";
 
 export type Res = { ok: true; mensagem?: string } | { ok: false; erro: string };
@@ -128,6 +129,8 @@ export async function registrarMotivoSaida(form: FormData): Promise<{ ok: true; 
     .single();
   // Falhar ao gravar o motivo nunca impede a saída.
   if (error) console.error("[registrarMotivoSaida]", error.code, error.message);
+  // Loop fechado: com mais de 3 saídas pelo mesmo motivo em 30 dias, a Correção aparece no painel de qualidade.
+  else if (motivo && perfil?.is_teste !== true) await abrirCorrecoesDevidas(s.admin).catch(() => null);
   return { ok: true, id: (data?.id as string | undefined) ?? null, ajuda };
 }
 

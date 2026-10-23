@@ -32,6 +32,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/avaliacoes", label: "Avaliações", icon: Star },
   { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
   { href: "/admin/funil", label: "Funil de ativação", icon: TrendingUp },
+  { href: "/admin/qualidade", label: "Qualidade (saídas e denúncias)", icon: LifeBuoy },
   { href: "/admin/agentes", label: "Agentes", icon: Bot },
   { href: "/admin/retencao", label: "Dados e retenção", icon: ShieldCheck },
 ];
