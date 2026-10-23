@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ipHash, situacaoLimite } from "@/lib/limites";
 import { dominioBarrado, dominioDoEmail, MSG_EMAIL_INUTILIZAVEL } from "@/lib/email-dominio";
-import { dominioExiste } from "@/lib/email-dominio-dns";
+import { dominioExiste, resolvedorLab } from "@/lib/email-dominio-dns";
 import { isValidEmail } from "@/lib/auth-errors";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { enviarCodigoPorEmail } from "@/lib/auth/codigo-por-email";
@@ -28,7 +28,10 @@ export async function POST(request: Request) {
   if (!isValidEmail(email)) return NextResponse.json({ ok: false, error: "Digite um e-mail válido para receber o código." }, { status: 400 });
 
   const dominio = dominioDoEmail(email);
-  if (!dominio || dominioBarrado(dominio, integracoesSimuladas()) || !(await dominioExiste(dominio))) {
+  // No laboratório (integrações simuladas; nunca em produção) não há DNS de verdade para lab.vivanomads.test: vale o
+  // resolvedor simulado, com a MESMA regra de recusa (domínio fora da lista continua "não existe").
+  const simuladas = integracoesSimuladas();
+  if (!dominio || dominioBarrado(dominio, simuladas) || !(await dominioExiste(dominio, simuladas ? resolvedorLab : undefined))) {
     return NextResponse.json({ ok: false, error: MSG_EMAIL_INUTILIZAVEL }, { status: 400 });
   }
 
