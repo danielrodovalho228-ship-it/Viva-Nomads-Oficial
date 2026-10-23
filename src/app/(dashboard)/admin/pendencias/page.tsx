@@ -15,7 +15,9 @@ export const metadata = { title: "Central de pendências — Admin", robots: { i
 export const dynamic = "force-dynamic";
 
 const ROTULO_GRAVIDADE = { alta: "Alta", media: "Média", baixa: "Baixa" } as const;
-const COR_GRAVIDADE = { alta: "bg-red-50 text-red-700", media: "bg-amber-50 text-amber-800", baixa: "bg-sage-100 text-forest" } as const;
+// Selo do admin: pill branca com texto (vermelho/âmbar só para o estado).
+const COR_GRAVIDADE = { alta: "text-red-700", media: "text-amber-800", baixa: "text-muted" } as const;
+const CHIP = "rounded-full border bg-white px-3 py-2 text-sm";
 
 /**
  * Admin → Central de Pendências (Adendo 59.1, item 6): uma fila com filtros. Amplia o topo de decisões (mesma contagem):
@@ -47,14 +49,14 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
       {central && (
         <>
           <nav className="mb-4 flex flex-wrap gap-2" aria-label="Filtros da central">
-            <Link href="/admin/pendencias" className={!filtro ? "rounded-full bg-forest px-3 py-2 text-sm text-white" : "rounded-full border border-line px-3 py-2 text-sm text-ink"} data-testid="central-filtro-todos" data-n={central.total}>
+            <Link href="/admin/pendencias" className={`${CHIP} ${!filtro ? "border-forest font-semibold text-forest" : "border-line text-ink"}`} data-testid="central-filtro-todos" data-n={central.total}>
               Todas · {central.total}
             </Link>
             {FILTROS_CENTRAL.map((f) => (
               <Link
                 key={f.chave}
                 href={`/admin/pendencias?filtro=${f.chave}`}
-                className={filtro === f.chave ? "rounded-full bg-forest px-3 py-2 text-sm text-white" : "rounded-full border border-line px-3 py-2 text-sm text-ink"}
+                className={`${CHIP} ${filtro === f.chave ? "border-forest font-semibold text-forest" : "border-line text-ink"}`}
                 data-testid={`central-filtro-${f.chave}`}
                 data-n={central.contagens[f.chave]}
               >
@@ -103,7 +105,7 @@ function Linha({ l, agora }: { l: LinhaCentral; agora: Date }) {
     <li className="space-y-1 py-3 text-sm" data-testid={l.filtro === "conforto_contestacoes" ? "contestacao-linha" : "central-linha"} data-filtro={l.filtro} data-gravidade={l.gravidade}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="min-w-0 font-semibold text-ink">{l.titulo}</p>
-        <span className={`rounded-full px-2 py-1 text-xs ${COR_GRAVIDADE[l.gravidade]}`}>{ROTULO_GRAVIDADE[l.gravidade]}</span>
+        <span className={`rounded-full border border-line bg-white px-2 py-1 text-xs ${COR_GRAVIDADE[l.gravidade]}`}>{ROTULO_GRAVIDADE[l.gravidade]}</span>
       </div>
       {l.detalhe && <p className="break-words text-muted">{l.detalhe}</p>}
       <p className="text-xs text-muted">

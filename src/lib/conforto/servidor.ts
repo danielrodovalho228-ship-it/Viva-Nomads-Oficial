@@ -36,8 +36,8 @@ export async function salvarDeclaracoesConforto(db: Db, propertyId: string, dono
 export async function voltarSeCompleto(db: Db, propertyId: string): Promise<boolean> {
   const { data: adq } = await db.from("conforto_adequacao").select("pausado_em").eq("property_id", propertyId).maybeSingle();
   if (!adq?.pausado_em) return false;
-  const { data: decl } = await db.from("conforto_declaracoes").select("chave, confirmado").eq("property_id", propertyId);
-  if (itensFaltantes((decl ?? []) as { chave: string; confirmado: boolean }[]).length) return false;
+  const { data: decl } = await db.from("conforto_declaracoes").select("chave, confirmado, versao_lista").eq("property_id", propertyId);
+  if (itensFaltantes((decl ?? []) as { chave: string; confirmado: boolean; versao_lista?: number | null }[]).length) return false;
   const { error } = await db.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused");
   if (error) {
     console.error("[voltarSeCompleto]", error.code, error.message);
@@ -53,7 +53,7 @@ export async function estadoConfortoDoImovel(db: Db, propertyId: string, agora =
     db.from("conforto_declaracoes").select("chave, confirmado, versao_lista").eq("property_id", propertyId),
     db.from("conforto_adequacao").select("prazo_ate, pausado_em").eq("property_id", propertyId).maybeSingle(),
   ]);
-  const e = estadoConfortoMinimo((decl ?? []) as { chave: string; confirmado: boolean }[], (adq?.prazo_ate as string | null) ?? null, agora);
+  const e = estadoConfortoMinimo((decl ?? []) as { chave: string; confirmado: boolean; versao_lista?: number | null }[], (adq?.prazo_ate as string | null) ?? null, agora);
   return { ...e, pausado: !!adq?.pausado_em };
 }
 

@@ -1537,6 +1537,22 @@
         "t292-conforto-manutencao-59",
         "t288-padrao-minimo-59a"
       ]
+    },
+    "/admin/pendencias": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t293-niveis-59-1"
+      ]
+    },
+    "/dashboard/imoveis/[id]/nivel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t293-niveis-59-1"
+      ]
     }
   },
   "rotas": {
@@ -4737,6 +4753,51 @@
       ],
       "specs": [
         "t292-conforto-manutencao-59"
+      ]
+    },
+    "src/lib/data/nivel-actions.ts#analisarFotoNivel": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t293-niveis-59-1"
+      ]
+    },
+    "src/lib/data/nivel-actions.ts#nivelDoMeuImovel": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t293-niveis-59-1"
+      ]
+    },
+    "src/lib/data/nivel-actions.ts#salvarExtras": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t293-niveis-59-1"
+      ]
+    },
+    "src/lib/data/nivel-actions.ts#salvarItemNivel": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t293-niveis-59-1"
+      ]
+    },
+    "src/lib/data/nivel-actions.ts#salvarRuido": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t293-niveis-59-1"
       ]
     }
   }

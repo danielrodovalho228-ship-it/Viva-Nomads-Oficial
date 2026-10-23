@@ -14,11 +14,11 @@
   Ordem: prazo mais próximo primeiro (vencidos no topo); sem prazo depois; empate pela prioridade do tipo.
   Roda: node --test src/lib/painel/decisoes.test.ts
 */
+import { rotuloItem } from "../../config/niveis.ts";
 import { estadoDoContratoUnico, type LinhaEstadoContrato } from "../contrato-estado.ts";
 import { podeTransicionar, formatarHorario, type StatusVisita } from "../visitas-video.ts";
 import { prazoDaOrdem } from "../manutencao-solicitacoes.ts";
 import { estadoSolucao } from "../manutencao-solucao.ts";
-import { ehChaveConforto, itemConforto } from "../../config/conforto-minimo.ts";
 import { dataHoraBrasilia } from "../../config/atendimento.ts";
 import type { SOPriority, SOStatus } from "../service-orders.ts";
 import { textoVencimento } from "../propostas/regras.ts";
@@ -148,9 +148,11 @@ export interface DadosDecisoes {
   confortoPrazos?: ConfortoPrazoParaDecisao[];
   pendenciasDono?: PendenciaParaDecisao[];
   pendenciasMorador?: PendenciaParaDecisao[];
+  /** Adendo 59.1: fotos de item de nível recusadas pelo atendimento (o item não conta até uma foto nova). */
+  fotosNivelRecusadas?: { propertyId: string; imovel: string | null; chave: string; motivo: string | null }[];
 }
 
-const rotuloConforto = (chave: string) => (ehChaveConforto(chave) ? itemConforto(chave).rotulo : chave);
+const rotuloConforto = (chave: string) => rotuloItem(chave);
 const H48 = 48 * 3_600_000;
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -256,6 +258,17 @@ export function decisoesDoProprietario(d: DadosDecisoes, agora: Date = new Date(
       href: `/dashboard/imoveis/${c.propertyId}/conforto`,
       prazoTexto: null,
       ...pz,
+    });
+  }
+  for (const f of d.fotosNivelRecusadas ?? []) {
+    out.push({
+      id: `foto-nivel-${f.propertyId}-${f.chave}`,
+      tipo: "conforto",
+      texto: `Envie outra foto de "${rotuloItem(f.chave)}" em ${nomeImovel(f.imovel)}`,
+      href: `/dashboard/imoveis/${f.propertyId}/nivel`,
+      prazoTexto: f.motivo ? `Recusada: ${f.motivo}` : null,
+      prazo: null,
+      atrasada: false,
     });
   }
   for (const p of d.pendenciasDono ?? []) {

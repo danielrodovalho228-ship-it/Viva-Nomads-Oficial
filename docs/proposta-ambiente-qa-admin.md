@@ -48,7 +48,8 @@ Todas as rotas de `src/app/(dashboard)/admin`. Em cada uma: 390 px e 1280 px, se
 | `/admin/avaliacoes` | Moderar uma avaliação (aprovar e recusar) | Status muda; avaliação recusada some do anúncio |
 | `/admin/candidaturas` | Abrir uma candidatura | Dados do inquilino conforme a regra de ocultação até o aceite |
 | `/admin/cidades` | Ver cidades ativas | Contagem de anúncios bate com a semente |
-| `/admin/conforto` | Decidir uma contestação do padrão mínimo (procedente / improcedente) | Só o atendimento decide; procedente conta para o selo do proprietário; some da fila depois da decisão |
+| `/admin/conforto` | Abrir o link antigo das contestações | Leva à Central de pendências já filtrada em "Contestações para decidir" |
+| `/admin/pendencias` | Central de pendências: filtrar, decidir uma contestação, aceitar/recusar foto de nível, rodar os prazos | Contagem de cada filtro igual ao topo de decisões; contas de teste à parte; foto recusada some do nível do imóvel |
 | `/admin/destinos` | Conferir o ponto de um destino no mapa e ativar | Sem ponto não ativa; ativo aparece nos chips da busca; "Destinos mais buscados" só com contagem |
 | `/admin/retencao` | Ver o inventário, o relatório "o que seria apagado hoje" e as eliminações da semana | Só contagens, nenhum caminho de arquivo; teste contado à parte; simulado não apaga |
 | `/admin/contratos` | Abrir contrato de teste | Marca "MINUTA DE TESTE — sem validade"; linha do tempo do contrato |

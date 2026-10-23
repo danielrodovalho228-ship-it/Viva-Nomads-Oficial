@@ -11,7 +11,6 @@ import {
   itensDoNivel,
   medidaPorPonto,
   nivelAoMenos,
-  nivelDaArea,
   nivelDoImovel,
   pendenciaBloqueia,
   ruidoControlado,

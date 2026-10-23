@@ -204,3 +204,22 @@ test("GUARDA: os seeds do laboratório confirmam a mesma lista (anúncios do see
     assert.match(js, new RegExp(`versao_lista: ${VERSAO_CONFORTO} \\}`), `${f}: confirma na versão atual da lista`);
   }
 });
+
+test("GUARDA (lista v2): toda leitura de conforto_declaracoes traz versao_lista — sem ela, a confirmação da v2 contaria como v1", () => {
+  const raiz = new URL("../../", import.meta.url);
+  const arquivos: string[] = [];
+  const varrer = (dir: URL) => {
+    for (const nome of readdirSync(dir, { withFileTypes: true })) {
+      const u = new URL(nome.name + (nome.isDirectory() ? "/" : ""), dir);
+      if (nome.isDirectory()) varrer(u);
+      else if (/\.tsx?$/.test(nome.name) && !/\.test\./.test(nome.name)) arquivos.push(u.pathname);
+    }
+  };
+  varrer(raiz);
+  const sem: string[] = [];
+  for (const f of arquivos) {
+    const src = readFileSync(f, "utf8");
+    for (const m of src.matchAll(/from\("conforto_declaracoes"\)\s*\.select\("([^"]*)"\)/g)) if (!m[1].includes("versao_lista")) sem.push(`${f.replace(/.*\/src\//, "src/")}: ${m[1]}`);
+  }
+  assert.deepEqual(sem, []);
+});

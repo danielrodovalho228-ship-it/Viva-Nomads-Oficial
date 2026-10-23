@@ -40,11 +40,11 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     planoDoProprietario(cliente, ownerId),
     cliente.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active"),
     // Prompt 59: declarações do padrão mínimo (sem a 0210, erro → não barra aqui; o banco é a trava).
-    cliente.from("conforto_declaracoes").select("property_id, chave, confirmado").in("property_id", idsLista),
+    cliente.from("conforto_declaracoes").select("property_id, chave, confirmado, versao_lista").in("property_id", idsLista),
   ]);
-  const declPor = new Map<string, { chave: string; confirmado: boolean }[]>();
+  const declPor = new Map<string, { chave: string; confirmado: boolean; versao_lista?: number | null }[]>();
   const confortoLido = !conforto.error;
-  for (const d of (conforto.data ?? []) as { property_id: string; chave: string; confirmado: boolean }[]) {
+  for (const d of (conforto.data ?? []) as { property_id: string; chave: string; confirmado: boolean; versao_lista?: number | null }[]) {
     declPor.set(d.property_id, [...(declPor.get(d.property_id) ?? []), d]);
   }
   const fotosPor = new Map<string, number>();

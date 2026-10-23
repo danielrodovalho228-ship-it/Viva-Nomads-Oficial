@@ -198,3 +198,11 @@ test("Prompt 43: o Início junta as decisões dos papéis, com o rótulo do pape
   const j = juntarDecisoes(dono, morador);
   assert.deepEqual(j.map((d) => [d.id, d.papel]), [["b", "morador"], ["a", "proprietario"]]);
 });
+
+test("59.1: foto de nível recusada vira decisão do dono, com o motivo e o link da página do nível", () => {
+  const d = decisoesDoProprietario({ fotosNivelRecusadas: [{ propertyId: "p1", imovel: "Studio Centro", chave: "ar_sala", motivo: "Não mostra o item." }] }, new Date("2026-10-23T12:00:00Z"));
+  const f = d.find((x) => x.id === "foto-nivel-p1-ar_sala")!;
+  assert.equal(f.texto, 'Envie outra foto de "Ar-condicionado na sala" em Studio Centro');
+  assert.equal(f.href, "/dashboard/imoveis/p1/nivel");
+  assert.equal(f.prazoTexto, "Recusada: Não mostra o item.");
+});
