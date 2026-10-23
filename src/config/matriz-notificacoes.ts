@@ -97,6 +97,8 @@ export const MATRIZ_NOTIFICACOES = {
   checkin_lembrete: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   saida_lembrete: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   vistoria_lembrete: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
+  // 63-B: "Reconecte seu LinkedIn para manter o selo" (30 dias antes de vencer).
+  linkedin_vencendo: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   vistoria_vistoriado_expira: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
   renovacao_aviso: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   avaliacao_pedido: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
@@ -148,6 +150,8 @@ export const MATRIZ_NOTIFICACOES = {
   // ── Equipe (o admin desliga em "Receber alertas da equipe") ───────────────
   chamado_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   vistoria_sem_avaliador: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  // 63-B: tentativa de conectar um LinkedIn que já está em outra conta (sinal ao atendimento, sem expor quem).
+  linkedin_ja_conectado: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   vistoria_fila_admin: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   parceiro_sem_resposta: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   chamado_fora_promessa: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
