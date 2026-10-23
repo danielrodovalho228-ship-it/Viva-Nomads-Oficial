@@ -13,7 +13,19 @@ import { chaveCidade } from "../cidades.ts";
 export const ROTULO_CATEGORIA_VISTORIA = "Avaliação de imóveis";
 export const FRASE_PAGA_AVALIACAO = "Você paga a avaliação, não o resultado.";
 /** O que todo valor da tabela inclui (exibido no pedido, junto do texto da tabela). */
-export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo em até 48 horas úteis.", "Uma reverificação, se o resultado vier com ressalvas."] as const;
+export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo em até 48 horas úteis.", "Se o resultado vier com ressalvas: a reverificação dos itens da ressalva em até 15 dias, pelo mesmo avaliador."] as const;
+
+/*
+  Adendo 62-B1 (coordenador, 23/10) — a FRONTEIRA entre o que está incluído e o que é outra avaliação:
+  - REVERIFICAÇÃO INCLUÍDA: só no resultado "com ressalvas", dentro dos 15 dias, só dos itens da ressalva, pelo MESMO
+    avaliador (por foto ou visita, conforme o item). Faz parte do valor já pago: nunca gera cobrança. Fora disso não existe.
+  - NOVA AVALIAÇÃO: depois de "reprovado" ou de ressalva vencida. Avaliação completa, novo pedido, designada por rodízio
+    (por regra, outro avaliador), pelo valor da tabela — menos a condição de retorno da cidade, se ela existir.
+  A condição de retorno (retorno_dias + retorno_percentual) é preenchida pelo admin depois da cotação; nula = não existe e
+  nenhum texto fala em desconto.
+*/
+export const TEXTO_REVERIFICACAO_INCLUIDA = "A reverificação dos itens da ressalva, pelo mesmo avaliador, está incluída no valor já pago.";
+export const TEXTO_NOVA_AVALIACAO = "Para voltar a ter \"· vistoriado\", peça uma nova avaliação: avaliação completa, novo pedido, outro avaliador pelo rodízio, pelo valor da tabela.";
 
 // ── Porte (do anúncio: quartos) ────────────────────────────────────────────────────────────────────────────────
 export const PORTES = ["estudio", "q1_2", "q3_mais"] as const;
@@ -32,6 +44,25 @@ export interface LinhaPreco {
   valor: number;
   incluiTexto: string | null;
   vigenteDesde: string;
+  /** Condição de retorno da cidade (adendo 62-B1): os dois nulos = não existe. */
+  retornoDias?: number | null;
+  retornoPercentual?: number | null;
+}
+
+/** Colunas lidas de vistoria_precos (uma lista só para todo select). */
+export const COLUNAS_PRECO = "cidade, porte, valor, inclui_texto, vigente_desde, retorno_dias, retorno_percentual";
+
+/** Linha do banco → LinhaPreco. */
+export function linhaDaTabela(l: { cidade: string; porte: Porte; valor: number | string; inclui_texto: string | null; vigente_desde: string; retorno_dias?: number | null; retorno_percentual?: number | string | null }): LinhaPreco {
+  return {
+    cidade: l.cidade,
+    porte: l.porte,
+    valor: Number(l.valor),
+    incluiTexto: l.inclui_texto,
+    vigenteDesde: l.vigente_desde,
+    retornoDias: l.retorno_dias ?? null,
+    retornoPercentual: l.retorno_percentual == null ? null : Number(l.retorno_percentual),
+  };
 }
 
 /** O valor vigente para a cidade e o porte na data (a linha mais recente já em vigor). Sem linha válida → null. */
@@ -49,15 +80,44 @@ export function tabelaCompleta(tabela: LinhaPreco[], cidade: string, agora: Date
   return PORTES.every((p) => precoVigente(tabela, cidade, p, agora) != null);
 }
 
-export const DIAS_NOVA_AVALIACAO_COM_DESCONTO = 90;
-export const FATOR_NOVA_AVALIACAO = 0.5;
+export interface CondicaoRetorno {
+  dias: number;
+  percentual: number;
+}
 
-/** Nova avaliação até 90 dias depois de "reprovado": 50% da tabela vigente (centavos arredondados). Depois: valor cheio. */
-export function valorNovaAvaliacao(valorTabela: number, reprovadoEm: string | null, agora: Date): { valor: number; comDesconto: boolean } {
-  const cheio = Math.round(Number(valorTabela) * 100) / 100;
-  const t = reprovadoEm ? Date.parse(reprovadoEm) : NaN;
-  const dentro = Number.isFinite(t) && agora.getTime() - t >= 0 && agora.getTime() - t <= DIAS_NOVA_AVALIACAO_COM_DESCONTO * 86_400_000;
-  return dentro ? { valor: Math.round(cheio * FATOR_NOVA_AVALIACAO * 100) / 100, comDesconto: true } : { valor: cheio, comDesconto: false };
+/** A condição de retorno da linha da tabela, só quando os dois campos são válidos (dias > 0; 0 < percentual ≤ 100). */
+export function condicaoRetorno(l: Pick<LinhaPreco, "retornoDias" | "retornoPercentual"> | null | undefined): CondicaoRetorno | null {
+  const dias = Number(l?.retornoDias);
+  const percentual = Number(l?.retornoPercentual);
+  if (l?.retornoDias == null || l?.retornoPercentual == null) return null;
+  if (!Number.isInteger(dias) || dias <= 0 || !(percentual > 0) || percentual > 100) return null;
+  return { dias, percentual };
+}
+
+/**
+ * Valor da NOVA AVALIAÇÃO (depois de "reprovado" ou de ressalva vencida em `desde`): a tabela vigente, menos a condição
+ * de retorno da cidade só se ela existir e só dentro de retorno_dias. Sem condição: valor cheio, sempre.
+ */
+export function valorNovaAvaliacao(preco: Pick<LinhaPreco, "valor" | "retornoDias" | "retornoPercentual">, desde: string | null, agora: Date): { valor: number; retorno: CondicaoRetorno | null } {
+  const cheio = Math.round(Number(preco.valor) * 100) / 100;
+  const c = condicaoRetorno(preco);
+  const t = desde ? Date.parse(desde) : NaN;
+  const dentro = !!c && Number.isFinite(t) && agora.getTime() - t >= 0 && agora.getTime() - t <= c.dias * 86_400_000;
+  return dentro ? { valor: Math.round(cheio * (100 - c!.percentual)) / 100, retorno: c } : { valor: cheio, retorno: null };
+}
+
+/** O que cada pedido cobra. A reverificação está no valor já pago (nunca cobra); a nova avaliação segue a regra acima. */
+export function valorDoPedido(tipo: TipoPedido, preco: Pick<LinhaPreco, "valor" | "retornoDias" | "retornoPercentual">, desde: string | null, agora: Date): { valor: number; retorno: CondicaoRetorno | null } {
+  if (tipo === "reverificacao") return { valor: 0, retorno: null };
+  if (tipo === "nova_avaliacao") return valorNovaAvaliacao(preco, desde, agora);
+  return { valor: Math.round(Number(preco.valor) * 100) / 100, retorno: null };
+}
+
+/** Texto ao dono da condição de retorno — só existe quando a condição existe. */
+export function textoCondicaoRetorno(c: CondicaoRetorno | null): string | null {
+  if (!c) return null;
+  const pct = String(c.percentual).replace(".", ",");
+  return `Nova avaliação em até ${c.dias} ${c.dias === 1 ? "dia" : "dias"} depois do resultado: ${pct}% de desconto sobre a tabela.`;
 }
 
 // ── Chave VISTORIA_ATIVA: as 3 condições para ligar (o admin mostra o estado de cada uma) ────────────────────────
@@ -178,7 +238,8 @@ export interface AvaliadorFila {
   relacoesImoveis: string[]; // property_id declarados
 }
 
-export type TipoPedido = "inicial" | "reverificacao" | "contestacao" | "verificacao" | "nova_90d";
+/** "nova_90d" ficou só nos pedidos antigos (antes do adendo 62-B1); os novos usam "nova_avaliacao". */
+export type TipoPedido = "inicial" | "reverificacao" | "contestacao" | "verificacao" | "nova_avaliacao" | "nova_90d";
 
 export interface PedidoParaDesignar {
   id: string;

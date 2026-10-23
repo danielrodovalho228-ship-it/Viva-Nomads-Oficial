@@ -24,7 +24,10 @@ import {
   siglaCidade,
   transicaoCredenciamento,
   validarConduta,
-  valorNovaAvaliacao,
+  valorDoPedido,
+  condicaoRetorno,
+  linhaDaTabela,
+  COLUNAS_PRECO,
   type LinhaPreco,
   type Porte,
   type StatusCredenciamento,
@@ -196,7 +199,23 @@ export async function adminSalvarPreco(form: FormData): Promise<Res> {
   if (!chaveCidade(cidade)) return { ok: false, erro: "Informe a cidade." };
   if (!PORTES.includes(porte)) return { ok: false, erro: "Escolha o porte." };
   if (!(valor > 0) || valor > 100_000) return { ok: false, erro: "Informe um valor válido." };
-  const { error } = await a.admin.from("vistoria_precos").insert({ cidade, porte, valor: Math.round(valor * 100) / 100, inclui_texto: inclui, alterado_por: a.userId });
+  // Adendo 62-B1: condição de retorno (opcional, depois da cotação). Os dois vazios = não existe; um só = erro.
+  const diasTxt = String(form.get("retornoDias") ?? "").trim();
+  const pctTxt = String(form.get("retornoPercentual") ?? "").trim().replace(",", ".");
+  let retorno: { dias: number; percentual: number } | null = null;
+  if (diasTxt || pctTxt) {
+    retorno = condicaoRetorno({ retornoDias: diasTxt ? Number(diasTxt) : null, retornoPercentual: pctTxt ? Number(pctTxt) : null });
+    if (!retorno) return { ok: false, erro: "Condição de retorno: preencha os dois campos (dias inteiros e desconto de 1 a 100%) ou deixe os dois vazios." };
+  }
+  const { error } = await a.admin.from("vistoria_precos").insert({
+    cidade,
+    porte,
+    valor: Math.round(valor * 100) / 100,
+    inclui_texto: inclui,
+    retorno_dias: retorno?.dias ?? null,
+    retorno_percentual: retorno?.percentual ?? null,
+    alterado_por: a.userId,
+  });
   if (error) return { ok: false, erro: "Não foi possível salvar." };
   revalidatePath(ROTA_ADMIN);
   return { ok: true };
@@ -242,8 +261,8 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   const { data: im } = await s.admin.from("properties").select("id, owner_id, status, city, bedrooms").eq("id", propertyId).maybeSingle();
   if (!im || im.owner_id !== s.userId) return SEM_ACESSO;
   const agora = new Date();
-  const { data: tabela } = await s.admin.from("vistoria_precos").select("cidade, porte, valor, inclui_texto, vigente_desde").eq("cidade", im.city ?? "");
-  const linhas: LinhaPreco[] = ((tabela ?? []) as { cidade: string; porte: Porte; valor: number | string; inclui_texto: string | null; vigente_desde: string }[]).map((l) => ({ cidade: l.cidade, porte: l.porte, valor: Number(l.valor), incluiTexto: l.inclui_texto, vigenteDesde: l.vigente_desde }));
+  const { data: tabela } = await s.admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? "");
+  const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const porte = porteDoImovel(im.bedrooms as number);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
   // Prompt 62-B2: o anúncio que a Viva tirou da busca (segurança grave ou 3º strike) volta justamente por nova avaliação.
@@ -257,12 +276,26 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
     (c.contrato_blocos ?? []).some((b) => b.status !== "nao_aceito" && b.inicio <= hoje && b.fim >= hoje),
   );
   const { data: dono } = await s.admin.from("profiles").select("is_teste").eq("id", s.userId).maybeSingle();
-  // Prompt 62-B2: reprovado há até 90 dias → nova avaliação pela metade (tipo nova_90d).
-  const { data: reprov } = await s.admin.from("vistoria_laudos").select("emitido_em").eq("property_id", im.id).eq("resultado", "reprovado").order("emitido_em", { ascending: false }).limit(1).maybeSingle();
-  const nova = valorNovaAvaliacao(preco!.valor, (reprov?.emitido_em as string | undefined) ?? null, agora);
+  // Adendo 62-B1: depois de "reprovado" ou de ressalva vencida, é NOVA AVALIAÇÃO (novo pedido completo, outro avaliador
+  // pelo rodízio): valor da tabela, menos a condição de retorno da cidade só se ela existir e estiver no prazo.
+  const { data: ultimo } = await s.admin.from("vistoria_laudos").select("resultado, emitido_em, ressalva_vencida_em").eq("property_id", im.id).order("emitido_em", { ascending: false }).limit(1).maybeSingle();
+  const desde = ultimo?.resultado === "reprovado" ? (ultimo.emitido_em as string) : ((ultimo?.ressalva_vencida_em as string | null | undefined) ?? null);
+  const tipo = desde ? "nova_avaliacao" : "inicial";
+  const cobranca = valorDoPedido(tipo, preco!, desde, agora);
   const { data: p, error } = await s.admin
     .from("vistoria_pedidos")
-    .insert({ property_id: im.id, owner_id: s.userId, cidade: im.city ?? "", tipo: nova.comDesconto ? "nova_90d" : "inicial", porte, valor_tabela: nova.valor, ocupado: !!ocupante, morador_id: ocupante?.tenant_id ?? null, teste: dono?.is_teste === true })
+    .insert({
+      property_id: im.id,
+      owner_id: s.userId,
+      cidade: im.city ?? "",
+      tipo,
+      porte,
+      valor_tabela: cobranca.valor,
+      retorno_percentual_aplicado: cobranca.retorno?.percentual ?? null,
+      ocupado: !!ocupante,
+      morador_id: ocupante?.tenant_id ?? null,
+      teste: dono?.is_teste === true,
+    })
     .select("id")
     .single();
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };

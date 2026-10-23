@@ -74,7 +74,8 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
     // "Antes de anunciar" respondido (a qualificação do rascunho vem do servidor).
     const { error: eQual } = await adm()
       .from("qualification_checklists")
-      .update({ formulario: { versao: 1, elig: { furnished: true, accepts30days: true, iptuOk: true, habitable: true, isOwnerOrAgent: true, condoAllows: "yes" } } })
+      // O "documento enviado" da qualificação sai do document_path (criarImovelPronto grava só o "aprovado").
+      .update({ document_path: `${ids.dono}/${ids.imovel}-documento.png`, formulario: { versao: 1, elig: { furnished: true, accepts30days: true, iptuOk: true, habitable: true, isOwnerOrAgent: true, condoAllows: "yes" } } })
       .eq("property_id", ids.imovel!);
     if (eQual) throw eQual;
   });

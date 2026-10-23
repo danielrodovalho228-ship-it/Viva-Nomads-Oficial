@@ -8,7 +8,7 @@ import { chaveCidade } from "@/lib/cidades";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { adminCriarAvaliacaoTeste, adminDecidirCredenciamento, adminResolverFila, adminRevisarAuditoria, adminSalvarPreco } from "@/lib/vistoria/actions";
-import { PORTES, ROTULO_PORTE, condicoesParaLigar, tabelaCompleta, type LinhaPreco, type Porte, type StatusCredenciamento } from "@/lib/vistoria/regras";
+import { COLUNAS_PRECO, PORTES, ROTULO_PORTE, condicaoRetorno, condicoesParaLigar, linhaDaTabela, tabelaCompleta, textoCondicaoRetorno, type LinhaPreco, type StatusCredenciamento } from "@/lib/vistoria/regras";
 import { adminAbrirVerificacao, adminResolverBloqueio } from "@/lib/vistoria/laudo-actions";
 import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistoria/strikes";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
@@ -35,7 +35,7 @@ export default async function AdminAvaliadoresPage() {
   const agora = new Date();
   const [{ data: creds }, { data: precos }, { data: fila }, { data: auditoria }, { data: pedidos }, { data: bloqueios }, { data: strikes }, { data: laudos }] = await Promise.all([
     admin.from("avaliadores_credenciamento").select("id, cidade, numero_credenciado, status, motivo, experiencia_link, experiencia_path, relacoes_descricao, criado_em, parceiros(nome_publico)").order("criado_em", { ascending: false }),
-    admin.from("vistoria_precos").select("id, cidade, porte, valor, inclui_texto, vigente_desde").order("vigente_desde", { ascending: false }).limit(200),
+    admin.from("vistoria_precos").select(COLUNAS_PRECO).order("vigente_desde", { ascending: false }).limit(200),
     admin.from("vistoria_fila_admin").select("id, tipo, motivo, criado_em, pedido_id, avaliador_id").is("resolvido_em", null).order("criado_em"),
     admin.from("vistoria_auditoria").select("id, pedido_id, sorteado_em, avaliadores_credenciamento(numero_credenciado)").is("resultado", null),
     admin.from("vistoria_pedidos").select("id, cidade, tipo, status, aguardando_avaliador, criado_em, avaliadores_credenciamento(numero_credenciado)").order("criado_em", { ascending: false }).limit(50),
@@ -45,7 +45,7 @@ export default async function AdminAvaliadoresPage() {
     admin.from("vistoria_laudos").select("id, numero, versao, resultado, property_id, emitido_em").order("emitido_em", { ascending: false }).limit(30),
   ]);
   const lista = (creds ?? []) as unknown as Cred[];
-  const tabela: LinhaPreco[] = ((precos ?? []) as { cidade: string; porte: Porte; valor: number | string; inclui_texto: string | null; vigente_desde: string }[]).map((l) => ({ cidade: l.cidade, porte: l.porte, valor: Number(l.valor), incluiTexto: l.inclui_texto, vigenteDesde: l.vigente_desde }));
+  const tabela: LinhaPreco[] = ((precos ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const cidades = [...new Map([...lista.map((c) => c.cidade), ...tabela.map((t) => t.cidade)].map((c) => [chaveCidade(c), c])).values()];
 
   return (
@@ -203,6 +203,9 @@ export default async function AdminAvaliadoresPage() {
           </label>
           <label className="text-sm">Valor (R$)<input name="valor" inputMode="decimal" required className={campo} /></label>
           <label className="text-sm">O que inclui (opcional)<input name="inclui" className={campo} /></label>
+          {/* Adendo 62-B1: só depois da cotação. Os dois vazios = não existe condição de retorno (nenhum texto fala em desconto). */}
+          <label className="text-sm">Condição de retorno: prazo em dias (opcional)<input name="retornoDias" inputMode="numeric" className={campo} /></label>
+          <label className="text-sm">Condição de retorno: desconto em % (opcional)<input name="retornoPercentual" inputMode="decimal" className={campo} /></label>
           <div className="sm:col-span-2"><Button type="submit" size="sm">Salvar valor</Button></div>
         </FormAcao>
         <ul className="mt-4 grid gap-1 text-sm" data-testid="precos-historico">
@@ -210,6 +213,7 @@ export default async function AdminAvaliadoresPage() {
             <li key={i}>
               {l.cidade} · {ROTULO_PORTE[l.porte]} · {brl(l.valor)} · desde {dataBRT(l.vigenteDesde)}
               {l.incluiTexto ? ` · ${l.incluiTexto}` : ""}
+              {` · ${textoCondicaoRetorno(condicaoRetorno(l)) ?? "sem condição de retorno"}`}
             </li>
           ))}
         </ul>
