@@ -45,7 +45,7 @@ async function papelNoImovel(admin: Admin, userId: string, imovelId: string, ori
   return (c ?? []).length ? "morador" : null;
 }
 
-async function coordenadasDoImovel(admin: Admin, imovelId: string): Promise<{ lat: number; lng: number } | null> {
+export async function coordenadasDoImovel(admin: Admin, imovelId: string): Promise<{ lat: number; lng: number } | null> {
   const { data } = await admin.from("properties").select("lat, lng, lat_exata, lng_exata").eq("id", imovelId).maybeSingle();
   const r = data as { lat: number | null; lng: number | null; lat_exata: number | null; lng_exata: number | null } | null;
   if (!r) return null;

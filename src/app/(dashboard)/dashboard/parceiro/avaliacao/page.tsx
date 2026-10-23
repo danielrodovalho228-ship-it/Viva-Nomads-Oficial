@@ -131,6 +131,11 @@ export default async function AvaliacaoParceiroPage() {
                       <Button type="submit" variant="secondary" size="sm">Proprietário ou morador ausente</Button>
                     </FormAcao>
                   )}
+                  {["agendado", "realizada", "laudo_emitido"].includes(p.status) && (
+                    <ButtonLink href={`/dashboard/parceiro/avaliacao/${p.id}`} size="sm" variant="secondary" className="mt-2" data-testid="abrir-checklist">
+                      {p.status === "laudo_emitido" ? "Ver o laudo" : "Abrir o checklist"}
+                    </ButtonLink>
+                  )}
                   {["realizada", "laudo_emitido"].includes(p.status) && !p.recebido_marcado_em && (
                     <FormAcao acao={marcarRecebido} className="mt-2"><input type="hidden" name="pedidoId" value={p.id} /><Button type="submit" variant="secondary" size="sm">Marcar valor recebido</Button></FormAcao>
                   )}

@@ -141,6 +141,15 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   vistoria_lembrete: "visita",
   vistoria_ausencia: "transacional",
   vistoria_sem_avaliador: "atendimento",
+  vistoria_laudo_emitido: "transacional",
+  vistoria_fora_da_busca: "transacional",
+  vistoria_ressalva_vencida: "transacional",
+  vistoria_vistoriado_expira: "transacional",
+  vistoria_strike: "transacional",
+  vistoria_verificacao: "visita",
+  vistoria_devolucao: "transacional",
+  vistoria_correcao_enviada: "transacional",
+  vistoria_fila_admin: "atendimento",
 };
 
 /** Arquivo (sem .jpg) e texto alternativo da imagem do evento — sempre um arquivo que existe. */

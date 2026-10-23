@@ -54,6 +54,8 @@ export interface SinaisAnuncio {
   confortoPendenciasAbertas?: number;
   /** Adendo 59.1: nível Essencial/Conforto/Premium. Pesa só na nota (como os outros fatos); não é selo nem ordem própria. */
   nivel?: NivelOuAdequacao | null;
+  /** Prompt 62-B2: laudo de avaliação válido ("· vistoriado"). Só um fato a mais na nota; não é selo nem ordem própria. */
+  vistoriado?: boolean;
 }
 
 export interface Motivo {
@@ -87,6 +89,8 @@ export const PESOS = {
   // Prompt 59: o que tira o selo também tira pontos (quando o selo cai; volta junto com ele).
   perdaConforto: -10, // 2 pendências procedentes em 12 meses
   perdaManutencao: -10, // 3 soluções fora do prazo em 90 dias
+  // Prompt 62-B2: nível confirmado por avaliador credenciado (laudo VIS válido). Não muda taxa.
+  vistoriado: 3,
 } as const;
 
 export const MIN_COMODOS_CHEIO = 6;
@@ -159,6 +163,7 @@ export function notaQualidade(s: SinaisAnuncio, agora: Date): NotaQualidade {
 
   // Nível (Adendo 59.1): só um fato a mais na nota; o Essencial não soma nem tira.
   if (s.nivel === "conforto" || s.nivel === "premium") add("nivel", `Nível ${ROTULO_NIVEL[s.nivel]} provado por fotos`, PESO_NIVEL[s.nivel]);
+  if (s.vistoriado) add("vistoriado", "Nível confirmado por avaliador credenciado", PESOS.vistoriado);
 
   const soma = m.reduce((t, x) => t + x.pontos, 0);
   const nota = Math.max(0, Math.min(100, Math.round(soma)));

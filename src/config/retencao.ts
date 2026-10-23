@@ -32,6 +32,7 @@ export const RETENCAO_DOCUMENTOS: Record<Prefixo, PrazoRetencao> = {
   RSV: pendente,
   REG: pendente,
   NFSE: pendente,
+  VIS: pendente,
 };
 
 /** Só um prazo definido permite apagar — e só depois de vencido. Prazo pendente: nunca. */
@@ -79,6 +80,16 @@ export const INVENTARIO: ItemInventario[] = [
   i("vistoria_conduta", "public.vistoria_conduta", "notas e comentário de conduta (dono → avaliador; avaliador → acesso)", "nota de conduta pública do avaliador", CONTA, "a média de conduta do avaliador"),
   i("vistoria_auditoria", "public.vistoria_auditoria", "revisão interna do laudo e o motivo", "auditar os avaliadores (fração interna)", DISPUTA),
   i("vistoria_fila_admin", "public.vistoria_fila_admin", "pendências da equipe (sem avaliador, suspensão, proposta de descredenciamento) com motivo", "operação da rede de avaliadores", DISPUTA),
+  // Prompt 62-B2: execução da avaliação. Fotos e laudo ficam enquanto o laudo vale + a janela de disputa (prazo pendente,
+  // item 13: até lá nada é apagado). dB(A) e prova de local da internet são só internos. Strikes saem aos 12 meses.
+  i("vistoria_checklist", "public.vistoria_checklist", "respostas do checklist e observação do avaliador", "laudo de avaliação do imóvel (62-B2)", DISPUTA),
+  i("vistoria_checklist_fotos", "public.vistoria_checklist_fotos", "caminho das fotos da avaliação (1 por cômodo + 1 por item não conforme)", "laudo de avaliação do imóvel (62-B2)", DISPUTA),
+  i("avaliacao-imovel", "bucket:avaliacao-imovel", "fotos da avaliação do imóvel (sem pessoas, sem pertences, sem EXIF)", "laudo de avaliação do imóvel (62-B2)", DISPUTA),
+  i("vistoria_medicoes", "public.vistoria_medicoes", "dB(A) com data e hora e medição de internet com prova de local (distância em metros, sem coordenadas) — só internos", "apoio interno do laudo (nunca publicado)", DISPUTA),
+  i("vistoria_laudos", "public.vistoria_laudos", "resultado, nível sustentado, resumo e motivo da contestação", "laudo de avaliação do imóvel e \"· vistoriado\" (62-B2)", DISPUTA, "o registro VIS (número, versão, hash) em documentos_registro"),
+  i("proprietario_strikes", "public.proprietario_strikes", "registro de verificação reprovada ou ressalva vencida do proprietário", "escada de strikes (59.1 item 7)", { prazoDias: 365, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "proposta", fase: 2 }, "nada (apagado aos 12 meses pelo cron da avaliação)"),
+  i("vistoria_devolucoes", "public.vistoria_devolucoes", "valor a devolver ao dono e a confirmação do recebimento", "\"quem perde paga\" na contestação", DISPUTA),
+  i("vistoria_bloqueios", "public.vistoria_bloqueios", "anúncio fora da busca ou republicação só com laudo, com o motivo", "segurança grave e escada de strikes", DISPUTA),
   i("conforto_pendencias", "public.conforto_pendencias", "texto do morador e motivo da contestação", "pendência do padrão mínimo (59)", DISPUTA),
   i("conferencia_laudos", "public.conferencia_laudos", "caminho do laudo", "prova da conferência", DISPUTA),
   i("conferencia_respostas", "public.conferencia_respostas", "motivo da contestação", "prova da conferência", DISPUTA),

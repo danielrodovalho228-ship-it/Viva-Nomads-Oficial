@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { rotinaVistoria } from "@/lib/vistoria/servidor";
+import { rotinaLaudos } from "@/lib/vistoria/laudo-servidor";
 
 /**
  * Prompt 62-B1 — avaliação do imóvel: designação sem resposta em 24 h passa ao próximo da fila, pedidos parados tentam
  * de novo, lembrete D-1 da visita e sorteio da auditoria. Chamado de hora em hora pelo PRÓPRIO banco (pg_cron + pg_net,
- * 0215) e 1×/dia pela Vercel (reserva). Exige `Authorization: Bearer <CRON_SECRET>`.
+ * 0215) e 1×/dia pela Vercel (reserva). Prompt 62-B2: laudo em 48 h úteis (sinal no admin), ressalva vencida, "· vistoriado"
+ * expira no dia (aviso 30 dias antes), strikes apagados em 12 meses e devolução sem confirmação em 15 dias. Exige `Authorization: Bearer <CRON_SECRET>`.
  * Só no laboratório (INTEGRACOES_SIMULADAS=on, nunca em produção): `?agora=<ISO>` roda com a data simulada.
  */
 export async function GET(request: Request) {
@@ -18,5 +20,6 @@ export async function GET(request: Request) {
   const simulada = integracoesSimuladas() ? new URL(request.url).searchParams.get("agora") : null;
   const agora = simulada && Number.isFinite(Date.parse(simulada)) ? new Date(simulada) : new Date();
   const resumo = await rotinaVistoria(admin, agora);
-  return NextResponse.json({ ok: true, agora: agora.toISOString(), ...resumo });
+  const laudos = await rotinaLaudos(admin, agora);
+  return NextResponse.json({ ok: true, agora: agora.toISOString(), ...resumo, laudos });
 }

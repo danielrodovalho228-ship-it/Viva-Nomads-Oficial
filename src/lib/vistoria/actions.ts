@@ -24,6 +24,7 @@ import {
   siglaCidade,
   transicaoCredenciamento,
   validarConduta,
+  valorNovaAvaliacao,
   type LinhaPreco,
   type Porte,
   type StatusCredenciamento,
@@ -245,7 +246,9 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   const linhas: LinhaPreco[] = ((tabela ?? []) as { cidade: string; porte: Porte; valor: number | string; inclui_texto: string | null; vigente_desde: string }[]).map((l) => ({ cidade: l.cidade, porte: l.porte, valor: Number(l.valor), incluiTexto: l.inclui_texto, vigenteDesde: l.vigente_desde }));
   const porte = porteDoImovel(im.bedrooms as number);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
-  const pode = pedidoPodeAbrir({ chaveAtiva: await vistoriaAtiva(), anuncioPublicado: im.status === "active", preco });
+  // Prompt 62-B2: o anúncio que a Viva tirou da busca (segurança grave ou 3º strike) volta justamente por nova avaliação.
+  const { data: bloq } = await s.admin.from("vistoria_bloqueios").select("id").eq("property_id", im.id).is("resolvido_em", null).limit(1);
+  const pode = pedidoPodeAbrir({ chaveAtiva: await vistoriaAtiva(), anuncioPublicado: im.status === "active" || !!bloq?.length, preco });
   if (!pode.ok) return { ok: false, erro: pode.motivo };
   // Imóvel ocupado agora: a visita só acontece com a concordância do morador.
   const hoje = agora.toISOString().slice(0, 10);
@@ -254,9 +257,12 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
     (c.contrato_blocos ?? []).some((b) => b.status !== "nao_aceito" && b.inicio <= hoje && b.fim >= hoje),
   );
   const { data: dono } = await s.admin.from("profiles").select("is_teste").eq("id", s.userId).maybeSingle();
+  // Prompt 62-B2: reprovado há até 90 dias → nova avaliação pela metade (tipo nova_90d).
+  const { data: reprov } = await s.admin.from("vistoria_laudos").select("emitido_em").eq("property_id", im.id).eq("resultado", "reprovado").order("emitido_em", { ascending: false }).limit(1).maybeSingle();
+  const nova = valorNovaAvaliacao(preco!.valor, (reprov?.emitido_em as string | undefined) ?? null, agora);
   const { data: p, error } = await s.admin
     .from("vistoria_pedidos")
-    .insert({ property_id: im.id, owner_id: s.userId, cidade: im.city ?? "", porte, valor_tabela: preco!.valor, ocupado: !!ocupante, morador_id: ocupante?.tenant_id ?? null, teste: dono?.is_teste === true })
+    .insert({ property_id: im.id, owner_id: s.userId, cidade: im.city ?? "", tipo: nova.comDesconto ? "nova_90d" : "inicial", porte, valor_tabela: nova.valor, ocupado: !!ocupante, morador_id: ocupante?.tenant_id ?? null, teste: dono?.is_teste === true })
     .select("id")
     .single();
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };
