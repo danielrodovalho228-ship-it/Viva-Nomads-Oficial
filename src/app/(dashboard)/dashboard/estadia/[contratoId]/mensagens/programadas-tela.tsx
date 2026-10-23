@@ -25,8 +25,9 @@ function SlotProgramada({ contratoId, slot, ativo }: { contratoId: string; slot:
   const [editando, setEditando] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [pendente, iniciar] = useTransition();
+  const [agora] = useState(() => Date.now());
   const quando = l?.enviar_em ?? slot.enviarEm;
-  const passou = !l && !!slot.enviarEm && Date.parse(slot.enviarEm) < Date.now();
+  const passou = !l && !!slot.enviarEm && Date.parse(slot.enviarEm) < agora;
   const estado = l?.enviada_em ? "enviada" : l ? "programada" : passou ? "passou" : "livre";
   const podeEditar = ativo && (estado === "livre" || (estado === "programada" && editando));
 
