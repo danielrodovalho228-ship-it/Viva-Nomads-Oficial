@@ -22,7 +22,8 @@
         "socio"
       ],
       "specs": [
-        "t3-isolamento-papeis"
+        "t3-isolamento-papeis",
+        "t306-varredura-bloco7"
       ]
     },
     "/admin": {
@@ -270,7 +271,8 @@
         "publico"
       ],
       "specs": [
-        "t125-alerta-busca-salva"
+        "t125-alerta-busca-salva",
+        "t306-varredura-bloco7"
       ]
     },
     "/app/boas-vindas": {
@@ -280,7 +282,8 @@
       "specs": [
         "t14-app-mode",
         "t16-app-boas-vindas",
-        "t282-boas-vindas-foto"
+        "t282-boas-vindas-foto",
+        "t306-varredura-bloco7"
       ]
     },
     "/auth": {
@@ -321,7 +324,8 @@
         "t9-documentos",
         "t203-entrar-com-codigo-completo",
         "t69-botoes-header",
-        "t300-entrada-sem-senha-49"
+        "t300-entrada-sem-senha-49",
+        "t306-varredura-bloco7"
       ]
     },
     "/auth/pronto": {
@@ -334,7 +338,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t306-varredura-bloco7"
+      ]
     },
     "/auth/verificar-codigo": {
       "personas": [
@@ -434,7 +440,8 @@
         "t21-central-agentes",
         "t22-pacote-otavio",
         "t23-pacote-seguranca",
-        "t260-documentos-registro"
+        "t260-documentos-registro",
+        "t306-varredura-bloco7"
       ]
     },
     "/conferir/[codigo]": {
@@ -1037,7 +1044,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t306-varredura-bloco7"
+      ]
     },
     "/excluir-conta/confirmar": {
       "personas": [
@@ -1638,7 +1647,8 @@
         "admin"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t306-varredura-bloco7"
       ]
     },
     "/dashboard/parceiro/avaliacao": {
@@ -1646,7 +1656,8 @@
         "parceiro"
       ],
       "specs": [
-        "t303-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1",
+        "t306-varredura-bloco7"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
