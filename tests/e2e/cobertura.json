@@ -2467,7 +2467,7 @@
         "sistema"
       ],
       "specs": [
-        "t344-importar-calendario-53"
+        "t333-importar-calendario-53"
       ]
     }
   },
@@ -5663,7 +5663,7 @@
         "proprietario"
       ],
       "specs": [
-        "t344-importar-calendario-53"
+        "t333-importar-calendario-53"
       ]
     },
     "src/lib/data/calendario-importacao-actions.ts#adicionarImportacao": {
@@ -5671,7 +5671,7 @@
         "proprietario"
       ],
       "specs": [
-        "t344-importar-calendario-53"
+        "t333-importar-calendario-53"
       ]
     },
     "src/lib/data/calendario-importacao-actions.ts#atualizarImportacao": {
@@ -5679,7 +5679,7 @@
         "proprietario"
       ],
       "specs": [
-        "t344-importar-calendario-53"
+        "t333-importar-calendario-53"
       ]
     },
     "src/lib/data/calendario-importacao-actions.ts#removerImportacao": {
@@ -5687,7 +5687,7 @@
         "proprietario"
       ],
       "specs": [
-        "t344-importar-calendario-53"
+        "t333-importar-calendario-53"
       ]
     }
   }

@@ -4,7 +4,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T344 — Prompt 53: importar o calendário do Airbnb/Booking (só datas).
+ * T333 — Prompt 53: importar o calendário do Airbnb/Booking (só datas).
  *   1. o dono cola o link .ics → as datas ocupadas viram bloqueios "Importado"; o link nunca aparece inteiro (só o domínio);
  *   2. o evento sai do outro site → "Atualizar agora" libera a data aqui; o bloqueio MANUAL do dono fica;
  *   3. a busca com entrada nas datas importadas não mostra o imóvel (e mostra fora delas, inclusive com datas flexíveis);
@@ -14,10 +14,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t344.${sufixo}@lab.vivanomads.test`, nome: "Dalva Calendário", role: "owner" as const };
-const morador = { email: `mor.t344.${sufixo}@lab.vivanomads.test`, nome: "Miro Calendário", role: "tenant" as const };
+const dono = { email: `dono.t333.${sufixo}@lab.vivanomads.test`, nome: "Dalva Calendário", role: "owner" as const };
+const morador = { email: `mor.t333.${sufixo}@lab.vivanomads.test`, nome: "Miro Calendário", role: "tenant" as const };
 const titulo = `Studio calendário ${sufixo}`;
-const arquivo = `t344-${sufixo}.ics`;
+const arquivo = `t333-${sufixo}.ics`;
 const link = `https://ical.lab.vivanomads.test/calendar/ical/${arquivo}?s=segredo${sufixo}`;
 const ids: { dono?: string; morador?: string; imovel?: string } = {};
 
@@ -60,7 +60,7 @@ async function naBusca(page: Page, entrada: string, flex = false): Promise<boole
   return (await page.locator(`[data-testid="card-resultado"][data-id="${ids.imovel}"]`).count()) > 0;
 }
 
-test.describe("T344 — Prompt 53: importar calendário do Airbnb/Booking", () => {
+test.describe("T333 — Prompt 53: importar calendário do Airbnb/Booking", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -96,7 +96,7 @@ test.describe("T344 — Prompt 53: importar calendário do Airbnb/Booking", () =
     ]);
     await expect(page.locator(`[data-testid="bloqueio-item"][data-origem="importado"]`)).toHaveCount(2);
     await expect(page.locator(`[data-testid="bloqueio-item"][data-origem="importado"]`).first().getByRole("button", { name: "Remover" })).toHaveCount(0);
-    await painel.screenshot({ path: "tests/laboratorio/saida/t344-importar-390.png" });
+    await painel.screenshot({ path: "tests/laboratorio/saida/t333-importar-390.png" });
 
     // A reserva B some do outro site → "Atualizar agora" libera as datas dela; o manual fica.
     await escreverIcs([A]);
@@ -107,7 +107,7 @@ test.describe("T344 — Prompt 53: importar calendário do Airbnb/Booking", () =
       { inicio: dia(90), fim: dia(92), origem: "manual" },
     ]);
     await page.setViewportSize({ width: 1280, height: 900 });
-    await painel.screenshot({ path: "tests/laboratorio/saida/t344-importar-1280.png" });
+    await painel.screenshot({ path: "tests/laboratorio/saida/t333-importar-1280.png" });
     await page.context().close();
   });
 
