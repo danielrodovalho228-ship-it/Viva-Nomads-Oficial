@@ -1822,6 +1822,14 @@
         "t316-sair-da-viva-51",
         "t319-varredura-bloco10"
       ]
+    },
+    "/dashboard/imoveis/[id]/desempenho": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t345-desempenho-anuncio-54"
+      ]
     }
   },
   "rotas": {
@@ -2467,7 +2475,7 @@
         "sistema"
       ],
       "specs": [
-        "t333-importar-calendario-53"
+        "t346-importar-calendario-53"
       ]
     }
   },
@@ -5663,7 +5671,7 @@
         "proprietario"
       ],
       "specs": [
-        "t333-importar-calendario-53"
+        "t346-importar-calendario-53"
       ]
     },
     "src/lib/data/calendario-importacao-actions.ts#adicionarImportacao": {
@@ -5671,7 +5679,7 @@
         "proprietario"
       ],
       "specs": [
-        "t333-importar-calendario-53"
+        "t346-importar-calendario-53"
       ]
     },
     "src/lib/data/calendario-importacao-actions.ts#atualizarImportacao": {
@@ -5679,7 +5687,7 @@
         "proprietario"
       ],
       "specs": [
-        "t333-importar-calendario-53"
+        "t346-importar-calendario-53"
       ]
     },
     "src/lib/data/calendario-importacao-actions.ts#removerImportacao": {
@@ -5687,7 +5695,7 @@
         "proprietario"
       ],
       "specs": [
-        "t333-importar-calendario-53"
+        "t346-importar-calendario-53"
       ]
     }
   }
