@@ -2543,7 +2543,7 @@
         "proprietario"
       ],
       "specs": [
-        "t322-documento-sem-trava-l11"
+        "t326-documento-sem-trava-l11"
       ]
     },
     "src/lib/data/actions.ts#enviarDocumentoParaConferencia": {
