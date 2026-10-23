@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 import { cliqueResponde } from "../fixtures/varredura";
 
 /**
- * T315 — Prompt 51, fase 1: Sair da Viva (laboratório).
+ * T316 — Prompt 51, fase 1: Sair da Viva (laboratório).
  *   1. dono: os 3 cartões com o mesmo peso (390 e 1280) → "Continuar sem responder" (mesma classe de "Continuar") →
  *      pausar → os anúncios saem da busca, o contrato não muda → "Reativar minha conta" no topo do painel em 1 toque;
  *   2. morador: sair com motivo "atendimento" → a ajuda aparece e não bloqueia ("Seguir com a saída", mesma classe) →
@@ -13,7 +13,7 @@ import { cliqueResponde } from "../fixtures/varredura";
  *      fechar só com PR ou ação;
  *   4. denúncia: uma por conta, P1 para pagamento por fora, o anúncio continua publicado; o estado volta a quem denunciou.
  */
-test.describe("T315 — Sair da Viva (51 F1)", () => {
+test.describe("T316 — Sair da Viva (51 F1)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -71,7 +71,7 @@ test.describe("T315 — Sair da Viva (51 F1)", () => {
       expect(b).toBe(c);
       await expect(p.getByTestId("sair-da-viva")).not.toContainText(/todos os (seus )?dados/i);
       await semRolagemLateral(p);
-      await p.screenshot({ path: `tests/laboratorio/saida/t315-cartoes-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `tests/laboratorio/saida/t316-cartoes-${w}.png`, fullPage: true });
     }
 
     await p.getByTestId("saida-escolher-pausar").click();
@@ -79,7 +79,7 @@ test.describe("T315 — Sair da Viva (51 F1)", () => {
     expect(await classe(p, "saida-continuar")).toBe(await classe(p, "saida-sem-responder"));
     await p.getByTestId("saida-sem-responder").click();
     await expect(p.getByTestId("saida-pausar")).toBeVisible({ timeout: 15_000 });
-    await p.screenshot({ path: "tests/laboratorio/saida/t315-pausar-390.png", fullPage: true });
+    await p.screenshot({ path: "tests/laboratorio/saida/t316-pausar-390.png", fullPage: true });
     expect(await cliqueResponde(p, p.getByTestId("saida-confirmar-pausa"), "Pausar minha conta")).toEqual([]);
     await expect.poll(async () => (await adm().from("profiles").select("pausada_em").eq("id", ids.dono).single()).data?.pausada_em ?? null, { timeout: 20_000 }).not.toBeNull();
 
@@ -96,7 +96,7 @@ test.describe("T315 — Sair da Viva (51 F1)", () => {
     // Topo do painel: reativar em 1 toque.
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("conta-pausada")).toBeVisible();
-    await p.screenshot({ path: "tests/laboratorio/saida/t315-conta-pausada-390.png" });
+    await p.screenshot({ path: "tests/laboratorio/saida/t316-conta-pausada-390.png" });
     await p.getByTestId("reativar-conta").click();
     await expect(p.getByTestId("conta-pausada")).toHaveCount(0, { timeout: 20_000 });
     expect(await statusDoImovel(ids.livre)).toBe("active");
@@ -115,7 +115,7 @@ test.describe("T315 — Sair da Viva (51 F1)", () => {
     await expect(p.getByTestId("saida-ajuda")).toBeVisible({ timeout: 15_000 });
     await expect(p.getByTestId("saida-aceitar-ajuda")).toHaveText("Falar com uma pessoa agora");
     expect(await classe(p, "saida-aceitar-ajuda")).toBe(await classe(p, "saida-seguir"));
-    await p.screenshot({ path: "tests/laboratorio/saida/t315-ajuda-390.png", fullPage: true });
+    await p.screenshot({ path: "tests/laboratorio/saida/t316-ajuda-390.png", fullPage: true });
     await p.getByTestId("saida-seguir").click();
     await expect(p.getByText("apagamos sua conta e seus dados pessoais").first()).toBeVisible();
     await expect(p.locator("main")).not.toContainText(/todos os (seus )?dados|exclus[aã]o [eé] imediata/i);
@@ -148,7 +148,7 @@ test.describe("T315 — Sair da Viva (51 F1)", () => {
     await a.goto("/admin/qualidade", { waitUntil: "domcontentloaded" });
     await expect(item()).toContainText("4 saídas");
     await expect(a.getByTestId("qualidade-decisoes")).toContainText("sem dono ou prazo");
-    await a.screenshot({ path: "tests/laboratorio/saida/t315-painel-1280.png", fullPage: true });
+    await a.screenshot({ path: "tests/laboratorio/saida/t316-painel-1280.png", fullPage: true });
 
     // Fechar antes do dono e do prazo: recusado.
     await item().getByTestId("correcao-fechar").getByLabel("PR ou ação feita").fill("#1234");
@@ -170,7 +170,7 @@ test.describe("T315 — Sair da Viva (51 F1)", () => {
     await a.setViewportSize({ width: 390, height: 844 });
     await a.reload();
     await semRolagemLateral(a);
-    await a.screenshot({ path: "tests/laboratorio/saida/t315-painel-390.png", fullPage: true });
+    await a.screenshot({ path: "tests/laboratorio/saida/t316-painel-390.png", fullPage: true });
     await a.context().close();
   });
 
@@ -182,7 +182,7 @@ test.describe("T315 — Sair da Viva (51 F1)", () => {
     const caixa = p.getByTestId("denuncia-anuncio");
     await caixa.getByLabel("Pediu pagamento ou contato fora da Viva").check();
     await caixa.getByLabel(/Quer contar mais/).fill("Pediu Pix direto antes da visita.");
-    await p.screenshot({ path: "tests/laboratorio/saida/t315-denuncia-390.png", fullPage: true });
+    await p.screenshot({ path: "tests/laboratorio/saida/t316-denuncia-390.png", fullPage: true });
     await caixa.getByTestId("denuncia-enviar").click();
     await expect(caixa.getByTestId("denuncia-resultado")).toContainText("Denúncia recebida", { timeout: 20_000 });
     await expect(caixa.getByTestId("denuncia-estado")).toHaveAttribute("data-estado", "recebida");
