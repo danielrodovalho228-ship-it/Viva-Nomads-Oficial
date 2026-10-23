@@ -200,6 +200,33 @@ export async function avisarCompativeisDoPedido(pedidoId: string): Promise<{
 }
 
 /**
+ * Pedido ativo criado antes de existir o cálculo (compativeis_ao_publicar nulo) nunca avisou ninguém. Roda no
+ * disparo diário: recalcula uma vez cada um (a mesma função da publicação) e, havendo compatível, grava o aviso em
+ * pedido_avisos. Depois do primeiro cálculo a coluna deixa de ser nula, então não repete. Ordem cfeb4105.
+ */
+export async function recalcularPedidosSemCalculo(limite = 50): Promise<{ pedidos: number }> {
+  const admin = createAdminClient();
+  if (!admin) return { pedidos: 0 };
+  const { data } = await admin
+    .from("pedidos_moradia")
+    .select("id")
+    .eq("status", "ativo")
+    .is("compativeis_ao_publicar", null)
+    .order("criado_em", { ascending: true })
+    .limit(limite);
+  let pedidos = 0;
+  for (const p of (data ?? []) as { id: string }[]) {
+    try {
+      await avisarCompativeisDoPedido(p.id);
+      pedidos += 1;
+    } catch (e) {
+      console.error("[recalcularPedidosSemCalculo] falha:", e);
+    }
+  }
+  return { pedidos };
+}
+
+/**
  * Imóvel acabou de ser PUBLICADO: avisa o dono (pelos pedidos ativos que ele
  * agora atende) e cada inquilino com pedido compatível (1 aviso por pedido
  * por dia). Best-effort.

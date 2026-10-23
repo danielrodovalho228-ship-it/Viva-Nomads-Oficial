@@ -319,3 +319,11 @@ test("ação: a parte que respondeu não registra mais itens; a resposta pede it
   assert.doesNotMatch(src, /prazoEntrada\(/);
   assert.match(src, /prazoConferenciaEntrada\(ctx\.entrada\)/);
 });
+
+test("Prompt 59: as pendências do padrão mínimo entram por insert (o índice único é parcial; ON CONFLICT não o reconhece)", () => {
+  const src = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
+  assert.doesNotMatch(src, /from\("conforto_pendencias"\)\.upsert\(/);
+  assert.match(src, /from\("conforto_pendencias"\)\.insert\(novas\)/);
+  const sql = readFileSync("supabase/migrations/0210_conforto_manutencao.sql", "utf8");
+  assert.match(sql, /conforto_pendencias_uma_por_item on public\.conforto_pendencias \(conferencia_id, chave\) where conferencia_id is not null/);
+});
