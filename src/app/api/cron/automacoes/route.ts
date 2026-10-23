@@ -223,8 +223,8 @@ export async function GET(request: Request) {
 
   const contagem: Record<string, number> = {};
   for (const a of alvos) {
-    const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", a.usuarioId).maybeSingle();
-    if (!podeReceber(perfil as { email?: string; notif_email?: boolean } | null)) continue;
+    const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email, pausada_em").eq("id", a.usuarioId).maybeSingle();
+    if (!podeReceber(perfil as { email?: string; notif_email?: boolean; pausada_em?: string | null } | null)) continue;
     if (simular) {
       contagem[a.tipo] = (contagem[a.tipo] ?? 0) + 1;
       continue;

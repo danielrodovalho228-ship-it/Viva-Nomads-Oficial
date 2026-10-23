@@ -10,7 +10,7 @@
  *  • tudo registrado em pedido_avisos (números do admin).
  */
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notificacaoLigada } from "@/lib/notifications/preferencias";
+import { recebeAvisoComum } from "@/lib/notifications/preferencias";
 import { notify } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
@@ -119,7 +119,7 @@ async function pedidoChegaAosDonos(admin: Admin, pedido: PedidoResumo, sms: Chav
 async function avisarDono(admin: Admin, pedido: PedidoResumo, par: ParCompat): Promise<"resumo" | "nenhum" | "ja_avisado"> {
   const { data: perfil } = await admin
     .from("profiles")
-    .select("email, full_name, notif_email")
+    .select("email, full_name, notif_email, pausada_em")
     .eq("id", par.dono_id)
     .maybeSingle();
 
@@ -128,7 +128,7 @@ async function avisarDono(admin: Admin, pedido: PedidoResumo, par: ParCompat): P
   if (!perfil?.email) {
     canal = "nenhum";
     motivoNaoEnvio = "sem_email";
-  } else if (!notificacaoLigada(perfil.notif_email as boolean | null)) {
+  } else if (!recebeAvisoComum(perfil as { notif_email: boolean | null; pausada_em: string | null })) {
     canal = "nenhum";
     motivoNaoEnvio = "notificacoes_desligadas";
   } else {
@@ -245,10 +245,10 @@ export async function avisarPedidosDoImovel(imovelId: string): Promise<void> {
       if (!(await consumirLimite(`pedido-imovel-novo:${pedido.id}`, 1, DIA))) continue;
       const { data: inq } = await admin
         .from("profiles")
-        .select("email, full_name, notif_email")
+        .select("email, full_name, notif_email, pausada_em")
         .eq("id", pedido.inquilino_id)
         .maybeSingle();
-      if (!inq?.email || inq.notif_email === false) continue;
+      if (!inq?.email || !recebeAvisoComum(inq as { notif_email: boolean | null; pausada_em: string | null })) continue;
       await notify({
         event: "pedido_imovel_novo",
         email: inq.email as string,
@@ -314,10 +314,10 @@ export async function enviarResumosDiarios(): Promise<{ donos: number; pedidos: 
     if (usados.length === 0) continue;
     const { data: perfil } = await admin
       .from("profiles")
-      .select("email, full_name, notif_email")
+      .select("email, full_name, notif_email, pausada_em")
       .eq("id", donoId)
       .maybeSingle();
-    if (!perfil?.email || perfil.notif_email === false) {
+    if (!perfil?.email || !recebeAvisoComum(perfil as { notif_email: boolean | null; pausada_em: string | null })) {
       await admin.from("pedido_avisos").update({ canal: "nenhum", motivo_nao_envio: "notificacoes_desligadas" }).in("id", usados);
       continue;
     }
