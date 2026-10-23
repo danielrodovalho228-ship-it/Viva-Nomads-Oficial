@@ -45,6 +45,7 @@
   --color-sage: #2e7d5b; /* secundária (verde médio) */
   --color-sage-100: #eef6ef;
   --color-sage-200: #dce9e0;
+  --color-areia: #f7f2ea; /* CONTA-A: painel quente do espelho do perfil (neutro, não é cor de marca) */
   --color-champagne: #6cbe2a; /* só selo (Pronto para Morar) — nunca texto nem botão */
   --color-champagne-600: #4fa01e;
 
@@ -344,6 +345,15 @@ html[data-app] .vn-tabbar-spacer {
   --folga-flutuante-celular: 6rem;
   --folga-rodape-imovel: 16rem;
   --altura-abas: 3.5rem;
+}
+/* CONTA-A: "Salvar e ver imóveis" preso no fim da tela do celular, acima da barra de abas; o "Fale com a Viva" sobe. */
+.vn-salvar-perfil {
+  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 1023px) {
+  body:has([data-testid="perfil-salvar-celular"]) {
+    --ajuda-bottom: 9rem;
+  }
 }
 /* Barra "Comparar" da busca (ordem 7ffea8c7): no celular fica ACIMA das abas (altura + safe-area + 12 px);
    no computador, 12 px do rodapé. O "Fale com a Viva" sobe acima dela e o fim da página ganha folga. */

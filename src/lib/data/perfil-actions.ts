@@ -234,6 +234,9 @@ export interface MeuPerfilPublico {
   telefone?: boolean;
   /** "Cadastro completo" (Prompt 29): a mesma função que o admin vê na lista de usuários. */
   cadastro: { completo: boolean; falta: string };
+  /** CONTA-A: o nome da conta (topo e espelho) e o e-mail confirmado (pílula do espelho). */
+  nome: string;
+  emailConfirmado: boolean;
 }
 
 export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
@@ -260,6 +263,8 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     motivo: (data?.motivo_estadia as string | null) ?? null,
     anuncia: (count ?? 0) > 0,
     telefone: fone?.disponivel ? fone.verificado : undefined,
+    nome: ((data?.full_name as string | null) ?? "").trim(),
+    emailConfirmado: !!user.email_confirmed_at,
     cadastro: (() => {
       const d = {
         nome: (data?.full_name as string | null) ?? null,

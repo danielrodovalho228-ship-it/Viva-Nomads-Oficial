@@ -1,11 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { PetsFicha } from "@/components/account/pets-ficha";
 import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
-import { PageTitle } from "@/components/dashboard/primitives";
-import { ConviteFotoPerfil } from "@/components/account/convite-foto-perfil";
-import { AvatarUploader } from "@/components/account/avatar-uploader";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { CaixaEmailsTeste } from "@/components/account/caixa-emails-teste";
 import { ContaMenu } from "@/components/account/conta-menu";
@@ -17,75 +15,83 @@ import { AjudaContato, DadosPessoais, DocumentoPessoa, NotificationsPanel } from
 import { SairDaViva } from "@/components/account/sair-da-viva";
 import { RedesPrivadas } from "@/components/account/redes-privadas";
 import { BlocoConta, ConfiancaLista, PerfilProfissional } from "@/components/account/conta-blocos";
+import { TopoConta } from "@/components/account/topo-conta";
 import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
 import { MinhaIntencao } from "@/components/auth/escolha-intencao";
 
 /**
- * Configurações (Prompt 43, item 3). No SITE: 4 grupos, cada assunto uma vez —
- * 1. Conta: seus papéis, o perfil em 4 degraus, o perfil público (e o que os outros veem), dados e "Sair da Viva";
- * 2. Notificações;
- * 3. Privacidade e segurança (uma lista: e-mail, celular, identidade, LinkedIn, duas etapas e senha);
- * 4. Pagamentos (como o morador paga o dono; a Viva não recebe esse valor).
- * O simulador tributário fica só em Ferramentas (/dashboard/tributacao). No APP: o menu de subtelas.
+ * Conta (CONTA-A, entrega 1 — Perfil). Um TOPO ÚNICO (site e app, mesmo conteúdo: foto, nome no H1, cidade e papéis)
+ * e, no site, os blocos nesta ordem, cada assunto uma vez e sem números:
+ * 1. Topo · 2. Perfil (formulário + profissional + pets + degraus + O ESPELHO) · 3. Avaliações · 4. Papéis e intenção ·
+ * 5. Dados da conta · 6. Privacidade e segurança · 7. Notificações · 8. Pagamentos · 9. Ajuda e Sair da Viva.
+ * Âncoras mantidas: #perfil-publico, #dados, #confianca, #notificacoes, #pagamentos, #sair-da-viva.
+ * O simulador tributário fica só em Ferramentas (/dashboard/tributacao). No APP: o topo e o menu de subtelas.
  */
 export default function AccountPage() {
   return (
     <>
+      <TopoConta />
       <div className="app-only">
         <ContaMenu />
       </div>
       <div className="web-only">
-        <PageTitle title="Conta" subtitle="Seu perfil, seus dados e suas preferências." />
+        <BlocoConta id="perfil-publico" titulo="Perfil" subtitulo="O que o proprietário vê de você. Opcional, e cada dado é pedido só quando é usado.">
+          <PerfilPublicoForm />
+          <PerfilProfissional />
+          <div className="mt-6">
+            <PetsFicha />
+          </div>
+          <div className="mt-6">
+            <DegrausPerfil />
+          </div>
+          <div className="mt-6">
+            <SeuPerfilPublico />
+          </div>
+        </BlocoConta>
 
-        <BlocoConta id="conta" numero={1} titulo="Conta" subtitulo="Seus papéis, seu perfil e seus dados.">
+        <BlocoConta id="avaliacoes" titulo="Avaliações" subtitulo="O que disseram de você depois de cada estadia.">
+          <Link href="/dashboard/avaliacoes" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-2" data-testid="conta-ver-avaliacoes">
+            Ver as avaliações que você recebeu
+          </Link>
+        </BlocoConta>
+
+        <BlocoConta id="papeis" titulo="Papéis e intenção" subtitulo="Só muda o menu e o painel que aparecem primeiro." semTitulo>
           <div className="mt-4 grid gap-4">
             <SeusPapeis />
             <MinhaIntencao />
-            <DegrausPerfil />
           </div>
-          <div id="perfil-publico" className="scroll-mt-24">
-            <h3 className="mt-6 font-title text-lg font-semibold text-ink">Perfil público</h3>
-            <ConviteFotoPerfil href="#perfil-publico" className="mb-4" />
-            <AvatarUploader />
-            <PerfilPublicoForm />
-            <PerfilProfissional />
-            <div className="mt-4">
-              <h3 className="mb-2 font-title text-lg font-semibold text-ink">Seu perfil público</h3>
-              <SeuPerfilPublico />
-            </div>
+        </BlocoConta>
+
+        <BlocoConta id="dados" titulo="Dados da conta" subtitulo="Só a Viva vê. Vão no contrato e nos avisos.">
+          <DadosPessoais />
+          <RedesPrivadas />
+          <TelefoneVerificacao />
+          <DocumentoPessoa />
+          <MeuLocalTrabalho />
+        </BlocoConta>
+
+        <BlocoConta id="confianca" titulo="Privacidade e segurança" subtitulo="O que já está verificado e como proteger a conta.">
+          <ConfiancaLista />
+        </BlocoConta>
+
+        <BlocoConta id="notificacoes" titulo="Notificações" subtitulo="Como e quando a Viva avisa você.">
+          <NotificationsPanel />
+        </BlocoConta>
+
+        <BlocoConta id="pagamentos" titulo="Pagamentos" subtitulo="Para onde vai o valor mensal.">
+          <div className="mt-4">
+            <PagamentosConta />
           </div>
-          <div id="dados" className="scroll-mt-24">
-            <h3 className="mt-6 font-title text-lg font-semibold text-ink">Dados da conta</h3>
-            <p className="text-sm text-muted">Só a Viva vê. Vão no contrato e nos avisos.</p>
-            <DadosPessoais />
-            <RedesPrivadas />
-            <TelefoneVerificacao />
-            <DocumentoPessoa />
-            <PetsFicha />
-            <MeuLocalTrabalho />
-          </div>
+        </BlocoConta>
+
+        <BlocoConta id="sair-da-viva" titulo="Ajuda e Sair da Viva" subtitulo="Fale com a Viva ou pause a conta.">
           <AjudaContato />
-          <div id="sair-da-viva" className="scroll-mt-24">
-            <h3 className="mt-6 font-title text-lg font-semibold text-ink">Sair da Viva</h3>
+          <div className="mt-6">
             <SairDaViva />
             <FalarComAViva className="mt-4" />
           </div>
           {/* Por último: carrega depois da tela e não pode empurrar "Sair da Viva" para fora do alcance (t183). */}
           <CaixaEmailsTeste />
-        </BlocoConta>
-
-        <BlocoConta id="notificacoes" numero={2} titulo="Notificações" subtitulo="Como e quando a Viva avisa você.">
-          <NotificationsPanel />
-        </BlocoConta>
-
-        <BlocoConta id="confianca" numero={3} titulo="Privacidade e segurança" subtitulo="O que já está verificado e como proteger a conta.">
-          <ConfiancaLista />
-        </BlocoConta>
-
-        <BlocoConta id="pagamentos" numero={4} titulo="Pagamentos" subtitulo="Para onde vai o valor mensal.">
-          <div className="mt-4">
-            <PagamentosConta />
-          </div>
         </BlocoConta>
       </div>
     </>

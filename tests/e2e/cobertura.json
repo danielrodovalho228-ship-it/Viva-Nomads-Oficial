@@ -523,7 +523,8 @@
         "t310-vao-fim-de-pagina",
         "t318-papel-ativo-fonte-unica",
         "t320-pausar-anuncio-64b",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t355-conta-a-perfil-espelho"
       ]
     },
     "/dashboard/assinatura": {
@@ -620,7 +621,8 @@
         "t183-telas-logadas-390",
         "t198-rodape-painel-390",
         "t266-painel-42",
-        "t318-papel-ativo-fonte-unica"
+        "t318-papel-ativo-fonte-unica",
+        "t355-conta-a-perfil-espelho"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -1322,7 +1324,8 @@
         "t182-jornada-completa",
         "t307-varredura-bloco8",
         "t310-vao-fim-de-pagina",
-        "t349-imovel-sem-500-l31"
+        "t349-imovel-sem-500-l31",
+        "t355-conta-a-perfil-espelho"
       ]
     },
     "/qualificar": {

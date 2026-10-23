@@ -25,6 +25,7 @@ import { CATEGORIAS_COM_INTERRUPTOR, ROTULO_CATEGORIA, type CategoriaComInterrup
 import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
+import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
 
 
 /*
@@ -87,6 +88,8 @@ export function DadosPessoais() {
     // O nome novo aparece já no menu e no topo.
     const atual = useAuthStore.getState().user;
     if (atual) setUser({ ...atual, name: r.dados.fullName, fullName: r.dados.fullName });
+    // CONTA-A, item 5: o topo, o espelho e o progresso do perfil releem na hora.
+    window.dispatchEvent(new Event(PERFIL_ATUALIZADO));
     setOk(true);
   }
 
