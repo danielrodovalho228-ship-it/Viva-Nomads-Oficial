@@ -95,7 +95,8 @@ test("pré-conferência: sublocado/administrado com autorização — titular di
 
 test("ligações: admin vê veredito e a autorização; service role só depois de confirmar admin; integrações em demo", () => {
   const adm = ler("lib/data/documentos-admin.ts");
-  assert.match(adm, /const adm = user && \(await ehAdmin\(supabase, user\.id\)\) \? createAdminClient\(\) : null;/);
+  // E28: o service role só sai do adminComServico(), depois do ehAdmin (papel + 2FA).
+  assert.match(adm, /if \(!user \|\| !\(await ehAdmin\(supabase, user\.id\)\)\) return null;\n  const adm = createAdminClient\(\);/);
   assert.match(adm, /\.neq\("owner_id", ownerId\); \/\/ o próprio dono re-salvando/);
   assert.match(adm, /preConferencia = preConferir\(\{/);
   const tela = ler("app/(dashboard)/admin/documentos/admin-documentos-client.tsx");

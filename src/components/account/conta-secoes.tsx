@@ -20,6 +20,8 @@ import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { Switch } from "@/components/ui/switch";
 import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
 import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
+import { getCategoriasDesligadas, setCategoriasDesligadas } from "@/lib/data/notif-categorias-actions";
+import { CATEGORIAS_COM_INTERRUPTOR, ROTULO_CATEGORIA, type CategoriaComInterruptor } from "@/config/matriz-notificacoes";
 import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
@@ -492,15 +494,25 @@ function PwdField({
   );
 }
 
+const DICA_CATEGORIA: Record<"decisao" | "seguranca" | CategoriaComInterruptor, string> = {
+  decisao: "Propostas, visitas, manutenção e prazos que dependem de você.",
+  seguranca: "Verificação, códigos e acesso à conta.",
+  mensagens: "Mensagens novas nas conversas.",
+  lembretes: "Entrada, saída, renovação e avaliações.",
+  outros: "Novidades de buscas, pedidos e parceiros.",
+};
+
 export function NotificationsPanel() {
   // Preferência GRAVADA no perfil (notif_email). Prompt 30, item 8: sem aviso por WhatsApp (ficam e-mail e o aviso
   // no app; o canal da Viva é "Falar com a Viva").
   const [prefs, setPrefs] = useState<{ email: boolean } | null>(null);
-  const [salvando, setSalvando] = useState<"email" | "equipe" | null>(null);
+  const [salvando, setSalvando] = useState<"email" | "equipe" | CategoriaComInterruptor | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   // null = não é admin (o interruptor nem aparece). Alertas da equipe: ordem 27cfd36a.
   const [alertasEquipe, setAlertasEquipeUi] = useState<boolean | null>(null);
+  // Prompt 44 (item 4): categorias desligadas (null = carregando). Decisões e segurança não desligam.
+  const [desligadas, setDesligadas] = useState<CategoriaComInterruptor[] | null>(null);
 
   useEffect(() => {
     let vivo = true;
@@ -510,6 +522,9 @@ export function NotificationsPanel() {
     getAlertasEquipe()
       .then((v) => vivo && setAlertasEquipeUi(v))
       .catch(() => vivo && setAlertasEquipeUi(null));
+    getCategoriasDesligadas()
+      .then((v) => vivo && setDesligadas(v))
+      .catch(() => vivo && setDesligadas([]));
     return () => {
       vivo = false;
     };
@@ -550,6 +565,24 @@ export function NotificationsPanel() {
     setOk(true);
   }
 
+  async function alternarCategoria(c: CategoriaComInterruptor) {
+    if (!desligadas) return;
+    const anterior = desligadas;
+    const novo = anterior.includes(c) ? anterior.filter((x) => x !== c) : [...anterior, c];
+    setDesligadas(novo);
+    setErro(null);
+    setOk(false);
+    setSalvando(c);
+    const r = await setCategoriasDesligadas(novo).catch(() => ({ ok: false as const, error: "Sem conexão." }));
+    setSalvando(null);
+    if (!r.ok) {
+      setDesligadas(anterior);
+      setErro("Não foi possível salvar a preferência. Tente de novo.");
+      return;
+    }
+    setOk(true);
+  }
+
   const items: { key: "email"; label: string; hint: string }[] = [
     {
       key: "email",
@@ -580,6 +613,38 @@ export function NotificationsPanel() {
             />
           </div>
         ))}
+        <div className="rounded-xl border border-sage-200 px-4 py-3" data-testid="notif-categorias">
+          <p className="text-sm font-medium text-ink">Por tipo de aviso</p>
+          <p className="mt-1 text-xs text-muted">Desligado, o tipo não chega por push nem por e-mail.</p>
+          <ul className="mt-2 divide-y divide-sage-100">
+            {(["decisao", "seguranca"] as const).map((c) => (
+              <li key={c} className="flex items-center justify-between gap-3 py-2" data-testid={`notif-categoria-${c}`}>
+                <span>
+                  <span className="block text-sm text-ink">{ROTULO_CATEGORIA[c]}</span>
+                  <span className="block text-xs text-muted">{DICA_CATEGORIA[c]}</span>
+                </span>
+                <span className="shrink-0 text-xs text-muted">Sempre chegam</span>
+              </li>
+            ))}
+            {CATEGORIAS_COM_INTERRUPTOR.map((c) => (
+              <li key={c} className="flex items-center justify-between gap-3 py-2" data-testid={`notif-categoria-${c}`}>
+                <span>
+                  <span className="flex items-center gap-2 text-sm text-ink">
+                    {ROTULO_CATEGORIA[c]}
+                    {salvando === c && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" />}
+                  </span>
+                  <span className="block text-xs text-muted">{DICA_CATEGORIA[c]}</span>
+                </span>
+                <Switch
+                  checked={desligadas ? !desligadas.includes(c) : true}
+                  onChange={() => alternarCategoria(c)}
+                  label={ROTULO_CATEGORIA[c]}
+                  disabled={!desligadas || salvando !== null}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
         {alertasEquipe !== null && (
           <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-sage-200 px-4 py-3 text-left">
             <span>

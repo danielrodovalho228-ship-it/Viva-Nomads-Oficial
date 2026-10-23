@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T326 — L1-1 (D-V3): "Enviar documento" do passo Onde fica não trava em silêncio (390 px).
+ * T328 — L1-1 (D-V3): "Enviar documento" do passo Onde fica não trava em silêncio (390 px).
  *   1. rascunho retomado com o endereço já GRAVADO (CEP com máscara no rascunho, rua e número só na linha exata) →
  *      o toque abre o arquivo e o documento vai para conferência, sem redigitar nada;
  *   2. rascunho sem número → o toque diz "Falta: número", leva o foco ao campo e o marca; com o número, envia e o
@@ -15,14 +15,14 @@ function docLab(): Buffer {
   return Buffer.concat([Buffer.from(`%PDF-1.4\n% documento ficticio do laboratorio VIVA-LAB-DOC:ok ${randomBytes(8).toString("hex")}\n`), Buffer.alloc(12 * 1024, 0x20), Buffer.from("\n%%EOF\n")]);
 }
 
-test.describe("T326 — enviar documento sem trava silenciosa (L1-1)", () => {
+test.describe("T328 — enviar documento sem trava silenciosa (L1-1)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const dono = { email: `dono.t326.${sufixo}@lab.vivanomads.test`, nome: "Rita Rascunho", role: "owner" as const };
+  const dono = { email: `dono.t328.${sufixo}@lab.vivanomads.test`, nome: "Rita Rascunho", role: "owner" as const };
   const ids: Record<string, string> = {};
 
   async function rascunho(titulo: string, draft: Record<string, unknown>, exato?: string): Promise<string> {
@@ -41,9 +41,9 @@ test.describe("T326 — enviar documento sem trava silenciosa (L1-1)", () => {
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     // 1: o rascunho guardou só o CEP (com máscara); rua e número estão na linha exata gravada do imóvel.
-    ids.salvo = await rascunho(`Endereço salvo t326 ${sufixo}`, { cep: "38400-100" }, "Rua do Laboratório, 102, apto 3");
+    ids.salvo = await rascunho(`Endereço salvo t328 ${sufixo}`, { cep: "38400-100" }, "Rua do Laboratório, 102, apto 3");
     // 2: rua sem número.
-    ids.semNumero = await rascunho(`Sem número t326 ${sufixo}`, { cep: "38400-100", street: "Rua do Laboratório", numero: "" });
+    ids.semNumero = await rascunho(`Sem número t328 ${sufixo}`, { cep: "38400-100", street: "Rua do Laboratório", numero: "" });
   });
 
   test.afterAll(async () => {
@@ -66,7 +66,7 @@ test.describe("T326 — enviar documento sem trava silenciosa (L1-1)", () => {
     await seletor.setFiles({ name: "conta-de-luz.pdf", mimeType: "application/pdf", buffer: docLab() });
     await expect(p.getByTestId("documento-estado")).toHaveAttribute("data-estado", "revisao", { timeout: 30_000 });
     await expect.poll(() => statusDoDocumento(ids.salvo), { timeout: 20_000 }).toBe("pending");
-    await p.screenshot({ path: `${SAIDA}/t326-endereco-salvo-390.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t328-endereco-salvo-390.png`, fullPage: true });
     await p.context().close();
   });
 
@@ -90,7 +90,7 @@ test.describe("T326 — enviar documento sem trava silenciosa (L1-1)", () => {
     expect(caixa.y).toBeGreaterThanOrEqual(0);
     expect(caixa.y + caixa.height).toBeLessThanOrEqual(844 * 0.6);
     expect(abriu).toBe(false);
-    await p.screenshot({ path: `${SAIDA}/t326-falta-numero-390.png`, fullPage: false });
+    await p.screenshot({ path: `${SAIDA}/t328-falta-numero-390.png`, fullPage: false });
 
     await numero.fill("102");
     await expect(p.getByTestId("documento-falta")).toHaveCount(0);

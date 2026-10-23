@@ -52,7 +52,9 @@ export async function confirmarContatoDaConta(email: string): Promise<void> {
 }
 
 export const novaSenha = (): string => randomBytes(12).toString("hex");
-export const novoSufixo = (): string => randomBytes(3).toString("hex");
+// Só letras (a–p, o hex com os dígitos trocados): sufixo só de dígitos somava com o número do título ("Studio Fila
+// 1280 482913" = 10 dígitos) e a regra de contato do banco (0057, 23514) recusava a massa como telefone (L-32, t237).
+export const novoSufixo = (): string => randomBytes(3).toString("hex").replace(/\d/g, (d) => "ghijklmnop"[Number(d)]);
 
 /** CPF válido aleatório (dígitos verificadores certos). */
 export function cpfAleatorio(): string {
@@ -152,7 +154,7 @@ const BASE_PUBLICA = "/storage/v1/object/public/property-photos";
 export async function criarImovelPronto(
   ownerId: string,
   titulo: string,
-  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string; /** Prompt 59: sem o padrão mínimo de conforto confirmado (padrão do laboratório: os 10 itens confirmados) */ semConforto?: boolean } = {}
+  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string; /** Prompt 59: sem o padrão mínimo de conforto confirmado (padrão do laboratório: os 10 itens confirmados) */ semConforto?: boolean; /** 61-B (#1155): sem o tipo de entrada, que passou a ser obrigatório para publicar anúncio novo (padrão do laboratório: "porteiro") */ semTipoEntrada?: boolean } = {}
 ): Promise<string> {
   const { data, error } = await adm()
     .from("properties")
@@ -174,6 +176,7 @@ export async function criarImovelPronto(
       garantias_aceitas: ["caucao"],
       status: "draft",
       sem_cameras_interior: !opts.semDeclaracaoCameras,
+      tipo_entrada: opts.semTipoEntrada ? null : "porteiro",
     })
     .select("id")
     .single();

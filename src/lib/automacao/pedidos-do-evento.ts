@@ -213,11 +213,8 @@ export function horariosNaJanela(
   return out.length ? { horarios: out, foraDaAgenda: false } : { horarios: [new Date(Date.parse(j.inicio)).toISOString()], foraDaAgenda: true };
 }
 
-/** Horário de silêncio (22h–7h de Brasília): avisos do 38 não vão por push nesse intervalo. */
-export function emSilencio(agora: Date): boolean {
-  const h = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }).format(agora)) % 24;
-  return h >= 22 || h < 7;
-}
+/** Horário de silêncio (22h–7h de Brasília): avisos do 38 não vão por push nesse intervalo (regra única do 44). */
+export { emSilencio } from "../notifications/silencio.ts";
 
 /** Pedido automático parado em "solicitado" há 24 h ou mais (o dono é avisado uma vez). */
 export function semResposta(criadoEm: string, status: string, agora: Date): boolean {

@@ -1878,23 +1878,30 @@ export async function sendMessage(input: {
       !!contact?.email &&
       (await dentroDoLimite(`msg-email:${conversationId}:${destinatarioId}`, 1, 30 * 60)) &&
       (await dentroDoLimite(`msg-email-remetente:${user.id}`, 30, HORA));
-    if (contact?.email && podeAvisar) {
-      const { data: me } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .maybeSingle();
-      // Identidade pós-aceite: só o PRIMEIRO nome no e-mail (nunca o sobrenome).
-      const senderName = (me?.full_name ?? "").trim().split(/\s+/)[0] || "Um usuário";
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    // Identidade pós-aceite: só o PRIMEIRO nome no e-mail (nunca o sobrenome).
+    const senderName = (me?.full_name ?? "").trim().split(/\s+/)[0] || "Um usuário";
+    // Prompt 44: o push da mensagem nova não depende do limite do e-mail. O notify() decide pela matriz: sem push com a
+    // conversa aberta há menos de 10 min, agrupado por conversa ("3 mensagens novas de Ana") e sem o texto.
+    const comEmail = !!contact?.email && podeAvisar;
+    const link = `${SITE_URL}/dashboard/mensagens`;
+    if (comEmail || contact) {
       // Nome e prévia são texto do USUÁRIO: sem HTML ativo e sem links no e-mail.
       const nomeHtml = textoEmail(senderName, 40);
       const previewHtml = textoEmail(safeBody, 140);
       const previewTexto = textoPlano(safeBody, 140);
-      const link = `${SITE_URL}/dashboard/mensagens`;
       await notify({
         event: "new_message",
-        email: contact.email,
-        name: contact.full_name ?? undefined,
+        email: comEmail ? (contact!.email as string) : undefined,
+        name: contact?.full_name ?? undefined,
+        userId: destinatarioId,
+        pushUrl: "/dashboard/mensagens",
+        conversationId,
+        remetenteNome: senderName,
         detailsHtml:
           `<p><strong>${nomeHtml}</strong> escreveu:</p>` +
           `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">${previewHtml}</blockquote>` +
