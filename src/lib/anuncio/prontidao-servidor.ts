@@ -1,6 +1,5 @@
+import { situacaoLimite } from "@/lib/anuncio/pausa";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
-import { listingLimit } from "@/lib/plan";
-import type { SubscriptionPlan } from "@/lib/store";
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
 
@@ -53,11 +52,12 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
   for (const d of (docs ?? []) as { property_id: string; document_status: string | null }[]) {
     if (!docPor.has(d.property_id)) docPor.set(d.property_id, ((d.document_status as StatusDocumento) ?? "none") || "none");
   }
-  const limite = listingLimit(plano as SubscriptionPlan);
+  // 64-B: a MESMA conta do servidor (situacaoLimite). Os publicados não saem do ar acima do limite; quem não está
+  // publicado (rascunho ou pausado) precisa de uma vaga, contando os publicados sem ele.
+  const sit = situacaoLimite(plano as string, ativos ?? 0);
   for (const p of lista) {
-    // Um anúncio já publicado não ocupa vaga nova; os demais precisam de uma.
-    const limiteOk = p.status === "active" ? true : (ativos ?? 0) < limite;
-    const f = fatosDaLinha(p, fotosPor.get(p.id) ?? 0, docPor.get(p.id) ?? "none", limiteOk, limite);
+    const limiteOk = p.status === "active" ? true : sit.podePublicarNovo;
+    const f = fatosDaLinha(p, fotosPor.get(p.id) ?? 0, docPor.get(p.id) ?? "none", limiteOk, sit.limite, sit.ativos);
     // O padrão mínimo é condição para PASSAR a publicado; o publicado sem ele segue o prazo de adequação (D4).
     if (confortoLido && p.status !== "active") f.confortoFaltam = itensFaltantes(declPor.get(p.id) ?? []).length;
     mapa.set(p.id, f);

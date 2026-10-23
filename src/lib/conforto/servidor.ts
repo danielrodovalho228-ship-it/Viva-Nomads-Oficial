@@ -37,7 +37,8 @@ export async function voltarSeCompleto(db: Db, propertyId: string): Promise<bool
   if (!adq?.pausado_em) return false;
   const { data: decl } = await db.from("conforto_declaracoes").select("chave, confirmado, versao_lista").eq("property_id", propertyId);
   if (itensFaltantes((decl ?? []) as { chave: string; confirmado: boolean; versao_lista?: number | null }[]).length) return false;
-  const { error } = await db.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused");
+  // 64-B: só devolve o que o padrão mínimo tirou do ar (nunca um anúncio que o dono pausou).
+  const { error } = await db.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused").eq("pausa_motivo", "conforto");
   if (error) {
     console.error("[voltarSeCompleto]", error.code, error.message);
     return false;

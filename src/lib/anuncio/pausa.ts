@@ -51,7 +51,12 @@ export interface SituacaoLimite {
 
 /** A conta única do limite: o painel, a prontidão e o servidor leem daqui. */
 export function situacaoLimite(plano: string | null | undefined, ativos: number): SituacaoLimite {
-  const limite = limiteDoPlano(plano);
+  return situacaoComLimite(limiteDoPlano(plano), ativos);
+}
+
+/** A mesma conta, quando o limite já vem lido (prontidão). */
+export function situacaoComLimite(limiteBruto: number, ativos: number): SituacaoLimite {
+  const limite = Math.max(0, Math.floor(limiteBruto));
   const n = Math.max(0, Math.floor(ativos));
   return {
     limite,
@@ -64,9 +69,9 @@ export function situacaoLimite(plano: string | null | undefined, ativos: number)
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
-/** Bloqueio ao publicar um anúncio novo. */
+/** Bloqueio ao publicar um anúncio novo (sem ponto final: a prontidão junta os itens com "; "). */
 export function mensagemLimitePublicar(s: SituacaoLimite): string {
-  return `Seu plano permite ${plural(s.limite, "anúncio publicado", "anúncios publicados")} e você tem ${s.ativos}. Para publicar este, pause ${plural(s.precisaPausar, "anúncio", "anúncios")} ou mude de plano.`;
+  return `Seu plano permite ${plural(s.limite, "anúncio publicado", "anúncios publicados")} e você tem ${s.ativos}. Para publicar este, pause ${plural(s.precisaPausar, "anúncio", "anúncios")} ou mude de plano`;
 }
 
 /** Bloqueio ao reativar (a conta de ativos já vem SEM o anúncio que se quer reativar). */

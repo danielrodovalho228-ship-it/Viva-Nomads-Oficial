@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProperty } from "@/lib/data/properties";
+import { anuncioPausadoPublico, getProperty } from "@/lib/data/properties";
 
 /**
  * Imóvel inexistente (ou fora do ar) responde 404 de verdade: o loading.tsx abre o stream com 200,
@@ -14,6 +14,7 @@ export default async function ImovelLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  if (!(await getProperty(id))) notFound();
+  // 64-B: pausado não é 404 (a página mostra "Este anúncio está pausado"); rascunho e inexistente continuam 404.
+  if (!(await getProperty(id)) && !(await anuncioPausadoPublico(id))) notFound();
   return children;
 }
