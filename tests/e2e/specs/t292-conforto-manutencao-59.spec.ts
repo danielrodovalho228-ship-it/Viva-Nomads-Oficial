@@ -11,6 +11,7 @@ import {
   criarConta,
   criarImovelPronto,
   criarLead,
+  definirPlano,
   entrar,
   novaSenha,
   novoSufixo,
@@ -46,7 +47,7 @@ const T = {
 const URGENTE = `Sem água quente no banheiro (${sufixo}).`;
 const BAIXA = `Puxador do armário solto (${sufixo}).`;
 const H = 3_600_000;
-const ids: { dono?: string; inquilino?: string; novo?: string; antigo?: string; casa?: string; lead?: string; contrato?: string; urgente?: string; baixa?: string } = {};
+const ids: { assistente?: string; dono?: string; inquilino?: string; novo?: string; antigo?: string; casa?: string; lead?: string; contrato?: string; urgente?: string; baixa?: string } = {};
 
 async function semRolagemLateral(page: Page) {
   const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -95,7 +96,13 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.inquilino = await criarConta(inquilino, senha);
+    // O dono já tem 2 anúncios no ar (antigo e casa): o plano Gratuito (1 no ar) travaria o Publicar do teste 1.
+    await definirPlano(ids.dono, "pro");
     ids.novo = await criarImovelPronto(ids.dono, T.novo, { semConforto: true });
+    // 59-A: o assistente (passo Comodidades → Revisão) roda num rascunho só dele — o salvamento automático regrava as
+    // colunas e as fotos a partir do estado do assistente, e o rascunho "novo" precisa delas intactas para publicar.
+    ids.assistente = await criarImovelPronto(ids.dono, `${T.novo} (assistente)`, { semConforto: true });
+    await adm().from("properties").update({ draft_data: { title: T.novo, monthlyPrice: "3200", garantias: { caucao: true }, step: 3, ordemEtapas: 4, etapaMax: 5 } }).eq("id", ids.assistente);
     ids.antigo = await criarImovelPronto(ids.dono, T.antigo, { ativo: true, semConforto: true });
     ids.casa = await criarImovelPronto(ids.dono, T.contrato, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.inquilino, ids.casa, true);
@@ -131,7 +138,7 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
   test("1. publicar sem 1 item é recusado com a lista do que falta; com os 10, publica", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     // Prompt 59-A: o checklist fica no passo Comodidades; a Revisão diz o que falta junto do Publicar.
-    await page.goto(`/dashboard/imoveis/novo?draft=${ids.novo}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
+    await page.goto(`/dashboard/imoveis/novo?draft=${ids.assistente}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
     const checklist = page.getByTestId("conforto-checklist");
     await expect(checklist).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("conforto-faltam")).toHaveText("Faltam confirmar 10 itens.");

@@ -1,4 +1,4 @@
-import { test, expect, type Browser, type Page } from "@playwright/test";
+import { test, expect, type Browser, type Locator, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import {
@@ -64,11 +64,11 @@ async function admin(browser: Browser, w: number): Promise<Page> {
 }
 
 /** Um primário por tela: dentro do trecho, no máximo um botão com o estilo primário (bg-forest cheio). */
-async function noMaximoUmPrimario(page: Page, testId: string) {
-  const n = await page.getByTestId(testId).evaluate((el) =>
+async function noMaximoUmPrimario(trecho: Locator, nome: string) {
+  const n = await trecho.evaluate((el) =>
     [...el.querySelectorAll("button, a")].filter((b) => /(^|\s)bg-(forest|gold)(\s|$)/.test(b.className) && (b as HTMLElement).offsetParent).length,
   );
-  expect(n, `${testId}: no máximo um primário`).toBeLessThanOrEqual(1);
+  expect(n, `${nome}: no máximo um primário`).toBeLessThanOrEqual(1);
 }
 
 test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenção na tela", () => {
@@ -80,6 +80,8 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
     ids.dono = await criarConta(dono, senha);
     ids.inquilino = await criarConta(inquilino, senha);
     ids.rascunho = await criarImovelPronto(ids.dono, T.rascunho, { semConforto: true });
+    // O assistente lê o rascunho de draft_data: título, valor mensal e garantia preenchidos, para o Continuar chegar à Revisão.
+    await adm().from("properties").update({ draft_data: { title: T.rascunho, monthlyPrice: "3200", garantias: { caucao: true }, step: 3, ordemEtapas: 4, etapaMax: 5 } }).eq("id", ids.rascunho!);
     ids.antigo = await criarImovelPronto(ids.dono, T.antigo, { ativo: true, semConforto: true });
     ids.casa = await criarImovelPronto(ids.dono, T.casa, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.inquilino, ids.casa, true);
@@ -125,7 +127,7 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
     ]);
     if (ePend) throw ePend;
 
-    // Os 4 estados do chamado. Os 3 resolvidos dão a taxa do dono: 2 no prazo de 3 → 67%.
+    // Os 4 estados do chamado (2 resolvidos; o 3º entra no teste 4, para a taxa).
     const base = { property_id: ids.casa, tenant_id: ids.inquilino, owner_id: ids.dono, category: "outros" };
     const iso = (ms: number) => new Date(ms).toISOString();
     const { error: eOrd } = await adm()
@@ -153,17 +155,6 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
           solucao_marcada_em: iso(agora - 100 * H),
           resolved_at: iso(agora - 100 * H),
           solucao_confirmada_em: iso(agora - 90 * H),
-        },
-        {
-          ...base,
-          priority: "baixa",
-          description: `Prateleira solta (${sufixo}).`,
-          status: "resolvido",
-          opened_at: iso(agora - 300 * H),
-          first_response_at: iso(agora - 299 * H),
-          solucao_marcada_em: iso(agora - 290 * H),
-          resolved_at: iso(agora - 290 * H),
-          solucao_confirmada_em: iso(agora - 280 * H),
         },
       ]);
     if (eOrd) throw eOrd;
@@ -211,7 +202,8 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
       await expect(page.getByTestId("conforto-checklist")).toHaveAttribute("data-faltam", "0");
       await page.getByTestId("cadastro-continuar").click();
       await page.getByTestId("cadastro-continuar").click();
-      await expect(page.getByTestId("etapa-revisar").getByTestId("checklist-item-conforto")).toHaveAttribute("data-ok", "1", { timeout: 20_000 });
+      // Completo: a linha do padrão mínimo some; o que ainda falta no rascunho de teste continua listado ao lado.
+      await expect(page.getByTestId("publicar-falta-outros")).toBeVisible({ timeout: 20_000 });
       await expect(page.getByTestId("publicar-falta-conforto")).toHaveCount(0);
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t288-1-revisao-completa-${w}.png`, fullPage: true });
@@ -261,6 +253,36 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
   });
 
   test("4. página do imóvel: padrão mínimo confirmado, compromisso de manutenção e taxa do proprietário", async ({ browser }) => {
+    // A página pública guarda o resultado por até 60 s: cada caso visita um imóvel que ainda não foi aberto.
+    // Com 2 chamados resolvidos, a taxa fica oculta; o imóvel sem o padrão confirmado mostra só o compromisso.
+    for (const w of LARGURAS) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 } });
+      const page = await ctx.newPage();
+      await page.goto(`/imoveis/${ids.antigo}`, { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("compromisso-manutencao")).toHaveText(COMPROMISSO, { timeout: 30_000 });
+      await expect(page.getByTestId("padrao-minimo-confirmado")).toHaveCount(0);
+      await expect(page.getByTestId("proprietario-manutencao-prazo")).toHaveCount(0);
+      await ctx.close();
+    }
+
+    // O 3º chamado resolvido (2 no prazo de 3 → 67%).
+    const agora = Date.now();
+    const { error } = await adm().from("service_orders").insert({
+      property_id: ids.casa,
+      tenant_id: ids.inquilino,
+      owner_id: ids.dono,
+      category: "outros",
+      priority: "baixa",
+      description: `Prateleira solta (${sufixo}).`,
+      status: "resolvido",
+      opened_at: new Date(agora - 300 * H).toISOString(),
+      first_response_at: new Date(agora - 299 * H).toISOString(),
+      solucao_marcada_em: new Date(agora - 290 * H).toISOString(),
+      resolved_at: new Date(agora - 290 * H).toISOString(),
+      solucao_confirmada_em: new Date(agora - 280 * H).toISOString(),
+    });
+    if (error) throw error;
+
     for (const w of LARGURAS) {
       const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 } });
       const page = await ctx.newPage();
@@ -274,25 +296,11 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
       await bloco.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `tests/laboratorio/saida/t288-4-imovel-${w}.png` });
       await page.getByTestId("padrao-minimo-o-que-e").click();
-      const folha = page.getByTestId("padrao-minimo-folha");
-      await expect(folha).toBeVisible();
+      await expect(page.getByTestId("padrao-minimo-folha")).toBeVisible();
       for (const i of ITENS_CONFORTO) await expect(page.getByTestId(`padrao-minimo-folha-${i.chave}`)).toContainText(i.criterio);
       await page.screenshot({ path: `tests/laboratorio/saida/t288-4-o-que-e-${w}.png` });
-
-      // Imóvel sem o padrão confirmado: o compromisso aparece, a linha do padrão não.
-      await page.goto(`/imoveis/${ids.antigo}`, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("compromisso-manutencao")).toHaveText(COMPROMISSO, { timeout: 30_000 });
-      await expect(page.getByTestId("padrao-minimo-confirmado")).toHaveCount(0);
       await ctx.close();
     }
-    // Abaixo de 3 resolvidos a taxa some (o dono passa a ter 2 resolvidos).
-    await adm().from("service_orders").delete().eq("property_id", ids.casa!).like("description", "Prateleira solta%");
-    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    const page = await ctx.newPage();
-    await page.goto(`/imoveis/${ids.casa}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("compromisso-manutencao")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("proprietario-manutencao-prazo")).toHaveCount(0);
-    await ctx.close();
   });
 
   test("5. chamado: os 4 estados, o parceiro só no vencido e a resposta do morador em 48 h", async ({ browser }) => {
@@ -327,7 +335,7 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
       await expect(o.getByTestId("ordem-confirmar-solucao")).toHaveText("Confirmar solução");
       await expect(o.getByTestId("ordem-reabrir")).toHaveText("Ainda não resolveu");
       await expect(o.getByTestId("ordem-responder-ate")).toContainText("Responda até");
-      await noMaximoUmPrimario(morador, "ordem-manutencao");
+      await noMaximoUmPrimario(o, "chamado aberto do morador");
       // Fora da janela de 48 h (já confirmado), não há botões.
       const fora = morador.getByTestId("ordem-manutencao").filter({ hasText: ORDENS.resolvido_fora });
       await fora.getByTestId("solicitacao-cartao").click();
