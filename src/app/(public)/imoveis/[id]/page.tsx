@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
-import { getProperty, listProperties } from "@/lib/data/properties";
+import { anuncioPausadoPublico, getProperty, listProperties } from "@/lib/data/properties";
+import { AnuncioPausado } from "@/components/anuncio/anuncio-pausado";
 import { isDemoMode } from "@/lib/env";
 import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
 import { tituloAbaImovel, descricaoAbaImovel } from "@/lib/anuncio/metadados-imovel";
@@ -11,6 +12,7 @@ import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { getPerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { quantosDestaques } from "@/lib/home-imagens";
 import { exibicao59DoImovel } from "@/lib/data/exibicao-59";
+import { autoresDasAvaliacoes } from "@/lib/data/avaliacoes-autores";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -22,7 +24,10 @@ interface Params {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const property = await getProperty(id);
-  if (!property) return { title: "Página não encontrada", robots: { index: false, follow: false } };
+  if (!property) {
+    const pausado = await anuncioPausadoPublico(id);
+    return pausado ? { title: `${pausado.titulo} (pausado)`, robots: { index: false, follow: true } } : { title: "Página não encontrada", robots: { index: false, follow: false } };
+  }
 
   const title = tituloAbaImovel(property);
   const description = descricaoAbaImovel(property);
@@ -58,15 +63,22 @@ export function generateStaticParams() {
 export default async function PropertyDetailPage({ params }: Params) {
   const { id } = await params;
   const property = await getProperty(id);
-  if (!property) notFound();
+  if (!property) {
+    const pausado = await anuncioPausadoPublico(id);
+    if (pausado) return <AnuncioPausado titulo={pausado.titulo} cidade={pausado.cidade} />;
+    notFound();
+  }
 
-  const [similares, proprietario, exibicao59] = await Promise.all([
+  const [similares, proprietario, exibicao59, autores] = await Promise.all([
     listProperties(),
     // Exemplo nunca busca perfil (continua "Proprietário (exemplo)", sem números).
     isExemplo(property) ? Promise.resolve(null) : getPerfilProprietario(property.ownerId),
     // Prompt 59-A: padrão mínimo e taxa de manutenção — exemplo nunca mostra (nada disso existe para ele).
     isExemplo(property) ? Promise.resolve(null) : exibicao59DoImovel(property.id, property.ownerId),
+    // Prompt 61-A: cidade e "na Viva desde" de quem avaliou (só avaliações reais publicadas).
+    isExemplo(property) || !property.reviews?.length ? Promise.resolve(new Map()) : autoresDasAvaliacoes(property.id),
   ]);
+  if (autores.size && property.reviews) property.reviews = property.reviews.map((r) => (r.id && autores.has(r.id) ? { ...r, ...autores.get(r.id) } : r));
   // Imóveis parecidos em grade par (Prompt 40): 4, ou 2 (a mesma conta dos destaques da home).
   const outros = similares.filter((p) => p.id !== property.id);
   const similar = outros.slice(0, quantosDestaques(outros.length));

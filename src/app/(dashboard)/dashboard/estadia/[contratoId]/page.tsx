@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CheckCircle2, Circle } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Avatar } from "@/components/ui/avatar";
@@ -12,10 +12,19 @@ import { ROTULO_STATUS_ENCERRAMENTO, rotuloMotivo } from "@/lib/estadia/encerram
 import { AcoesEstadia } from "@/components/estadia/acoes-estadia";
 import { CartaoAjudaMudanca, CartaoDepoisDaSaida } from "@/components/automacao/cartoes-estadia";
 import { depoisDaSaida, sugestaoMorador } from "@/lib/automacao/estadia";
-import { AditivoPendente, EditorInstrucoes, ListaPortaria, NotasPrivadas } from "./estadia-tela";
+import { AditivoPendente, ConvidarOcupante, EditorInstrucoes, ListaPortaria, NotasPrivadas } from "./estadia-tela";
+import { carregarVisaoConvidado, convidadosParaOMorador } from "@/lib/data/estadia-convidados";
+import { hrefVisaoConvidado, limiteConvidados } from "@/lib/anuncio/chegada-e-pedido";
 import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
 import { ValorDiretoAoProprietario } from "@/components/contexto/cabecalho-contexto";
 import { marcasDaEstadia } from "@/lib/calendario/grade";
+import Link from "next/link";
+import { LinhaDoTempoEstadia } from "@/components/contrato/linha-do-tempo-estadia";
+import { LocalEstadia } from "@/components/estadia/local-estadia";
+import { montarLinhaDoTempo } from "@/lib/estadia-linha-tempo";
+import { HREF_CONFIRMADA } from "@/lib/estadia/confirmacao";
+import { aditivoEmTela } from "@/lib/estadia/aditivo-em-tela";
+import { localDaEstadia } from "@/lib/data/estadia-local";
 
 export const metadata: Metadata = {
   title: "Estadia",
@@ -38,7 +47,11 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
   const { contratoId } = await params;
   if (!UUID_RE.test(contratoId)) notFound();
   const e = await carregarEstadia(contratoId);
-  if (!e) notFound();
+  if (!e) {
+    // 61-B: o convidado do morador não é parte do contrato; abre a visão de leitura dele.
+    if (await carregarVisaoConvidado(contratoId)) redirect(hrefVisaoConvidado(contratoId));
+    notFound();
+  }
   const dono = e.papel === "proprietario";
   const contrato: ContratoDaEstadia = {
     id: e.id,
@@ -50,12 +63,24 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
   };
   const mensagem = mensagemDaEstadia(contrato);
   const encerrar = encerrarDaEstadia(e.papel, contrato);
-  const aberto = e.aditivos.find((a) => a.status === "proposto" || a.status === "aceito");
+  const aberto = aditivoEmTela(e.aditivos);
   const assinados = e.aditivos.filter((a) => a.status === "assinado");
-  const [depois, sugestao] = await Promise.all([
+  const [depois, sugestao, local, convidados] = await Promise.all([
     dono ? depoisDaSaida(e.id, e.imovel.id) : Promise.resolve(null),
     !dono && e.topo.fase !== "encerrada" ? sugestaoMorador(e.periodo, e.imovel.cidade) : Promise.resolve(null),
+    // Prompt 61-A: o endereço exato só com o contrato assinado pelas duas partes; antes, a região aproximada.
+    localDaEstadia(e.imovel.id, e.assinadoPorAmbos),
+    // 61-B: só o morador vê e mexe nos convidados (sem a 0225, null e o bloco some).
+    e.podeEditarOcupantes ? convidadosParaOMorador(e.id) : Promise.resolve(null),
   ]);
+  // Prompt 61-A: a linha do tempo com os horários do imóvel (checkin_after / checkout_before), a mesma fonte do prazo
+  // da conferência; nada recalculado aqui.
+  const etapas = montarLinhaDoTempo({
+    inicio: e.periodo.inicio,
+    fim: e.periodo.fim,
+    checkinAfter: e.periodo.checkinAfter ?? null,
+    checkoutBefore: e.periodo.checkoutBefore ?? null,
+  });
 
   return (
     <div data-testid="pagina-estadia" data-papel={e.papel} className="space-y-4">
@@ -73,6 +98,11 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
           <p className="text-sm text-ink" data-testid="estadia-entrada">{textoEntrada(e.periodo)}</p>
           <p className="text-sm text-ink" data-testid="estadia-saida">{textoSaida(e.periodo)}</p>
           <p className="text-xs text-muted">Horário de Brasília.</p>
+          {e.assinadoPorAmbos && (
+            <Link href={HREF_CONFIRMADA(e.id)} className="text-sm text-forest underline underline-offset-2" data-testid="estadia-ver-confirmacao">
+              Ver a confirmação da estadia
+            </Link>
+          )}
           <div className="pt-2">
             {/* O único primário da tela (Prompt 41). */}
             <ButtonLink href={mensagem.href} variant="primary" size="sm" data-testid="estadia-acao-mensagem">
@@ -81,6 +111,8 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
           </div>
         </div>
       </Panel>
+
+      <LinhaDoTempoEstadia etapas={etapas} semMensagens />
 
       {(e.periodo.inicio || e.periodo.fim) && (
         // Prompt 43, item 4: o calendário da estadia usa a mesma grade do calendário do imóvel e da agenda do parceiro.
@@ -99,6 +131,8 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
           </div>
         </Panel>
       )}
+
+      {local && <LocalEstadia local={local} imovelId={e.imovel.id} />}
 
       {e.encerramento && (
         <Panel title="Pedido de encerramento" data-testid="estadia-encerramento">
@@ -159,6 +193,7 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
             )}
             {e.ocupantes.length > 0 && <ListaPortaria contratoId={e.id} />}
           </div>
+          {convidados && <ConvidarOcupante contratoId={e.id} inicial={convidados} limite={limiteConvidados(e.ocupantesPrevistos)} />}
         </Panel>
 
         <Panel title="Valores" data-testid="estadia-valores">

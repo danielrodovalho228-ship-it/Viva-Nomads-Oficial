@@ -35,12 +35,19 @@ export interface Proximity {
 }
 
 export interface Review {
+  /** id da avaliação (avaliações reais). */
+  id?: string;
   author: string; // primeiro nome
   rating: number; // 0–5
   comment: string;
   date?: string; // ISO
   /** Resposta pública do proprietário (0128), se houver. */
   reply?: string;
+  /** Prompt 61-A: cidade do perfil de quem avaliou e a data da conta ("na Viva desde [ano]"). */
+  cidade?: string | null;
+  desde?: string | null;
+  /** 63-B: quem avaliou tem o selo "LinkedIn conectado" (só o sim; nada do LinkedIn em si). */
+  linkedinConectado?: boolean;
 }
 
 /** Perfil público do proprietário (bloco de confiança). */
@@ -125,6 +132,8 @@ export interface Property {
   petsAllowed?: boolean;
   /** Regras detalhadas de pets (espécies, porte, quantidade, reforço de Caução). */
   petsRegras?: import("@/lib/anuncio/pets-regras").RegrasPets;
+  /** 61-B (0225): tipo de entrada (público), mensagem a quem vai pedir e "o que considerar antes de pedir". */
+  chegadaEPedido?: import("@/lib/anuncio/chegada-e-pedido").ChegadaEPedido;
   /** Pacote de limpeza durante a estadia (ordem 4c74ac38; requer migração 0144). */
   limpezaEstadia?: import("@/lib/anuncio/limpeza-estadia").LimpezaEstadia;
   /** Negociação pública (aceita? itens; desconto por estadia longa) — prompt 17 §8, requer 0152. */

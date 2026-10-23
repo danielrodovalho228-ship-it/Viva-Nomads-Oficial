@@ -77,7 +77,7 @@ export function blocoDados(linhas: { rotulo: string; valor: string }[]): string 
 
 export function layoutEmail(
   inner: string,
-  o: { siteUrl: string; image?: ImagemEmail; preheader?: string; rodape?: RodapeOpcional },
+  o: { siteUrl: string; image?: ImagemEmail; preheader?: string; rodape?: RodapeOpcional; semLinkEntrar?: boolean },
 ): string {
   const site = o.siteUrl;
   const hero = o.image
@@ -95,7 +95,7 @@ export function layoutEmail(
             <td style="vertical-align:middle;"><img src="${site}/email-mark.png" width="34" height="34" alt="Viva Nomads" style="display:block;border:0;"></td>
             <td style="vertical-align:middle;padding-left:10px;font-size:20px;font-weight:800;letter-spacing:-0.5px;"><span style="color:#0A4FD6;">Viva</span><span style="color:#5DBB1E;">Nomads</span></td>
           </tr></table></td>
-          <td align="right" style="vertical-align:middle;font-size:14px;"><a href="${site}/auth" style="color:#1c6b3a;font-weight:700;text-decoration:none;">Entrar</a></td>
+          ${o.semLinkEntrar ? "" : `<td align="right" style="vertical-align:middle;font-size:14px;"><a href="${site}/auth" style="color:#1c6b3a;font-weight:700;text-decoration:none;">Entrar</a></td>`}
         </tr></table>
       </td></tr>
       ${hero}

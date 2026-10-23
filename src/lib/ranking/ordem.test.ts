@@ -186,3 +186,25 @@ test("59.1: nível pesa só na nota (Conforto +3, Premium +6, Essencial 0); com 
   const fora = fonte.slice(fonte.indexOf("export function ordenarBusca"));
   assert.doesNotMatch(fora, /\.nivel\b/);
 });
+
+test("62-B2: \"· vistoriado\" pesa só na nota (+3); com notas iguais, não muda a ordem nem é campo de ordem", () => {
+  const n = (o: Partial<SinaisAnuncio>) => notaQualidade(base({ descricaoPalavras: 10, ...o }), AGORA).nota;
+  assert.equal(n({ vistoriado: true }) - n({}), 3);
+  // Essencial vistoriado empata com Conforto sem laudo: a ordem é a da nota (desempate pelo id).
+  const vist = base({ id: "b", donoId: "d2", nivel: "essencial", vistoriado: true });
+  const conf = base({ id: "a", donoId: "d1", nivel: "conforto" });
+  assert.equal(notaQualidade(vist, AGORA).nota, notaQualidade(conf, AGORA).nota);
+  const ordem = (lista: SinaisAnuncio[]) => ordenarBusca(lista.map((sinais) => ({ sinais, compat: "exata" as const, distanciaKm: null })), AGORA).map((x) => x.id);
+  assert.deepEqual(ordem([vist, conf]), ["a", "b"]);
+  assert.deepEqual(ordem([conf, vist]), ["a", "b"]);
+  const fonte = readFileSync(new URL("./ordem.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(fonte.slice(fonte.indexOf("export function ordenarBusca")), /\.vistoriado\b/);
+});
+
+test("61-B: \"o que considerar antes de pedir\" preenchido soma na nota (+2); vazio não tira nem bloqueia", () => {
+  const sem = notaQualidade(base({ precoJusto: false }), AGORA);
+  const com = notaQualidade(base({ considerarAntes: true }), AGORA);
+  assert.equal(com.nota - sem.nota, 2);
+  assert.equal(sem.motivos.find((m) => m.codigo === "considerar_antes")?.pontos, 0);
+  assert.equal(com.motivos.find((m) => m.codigo === "considerar_antes")?.texto, "Diz o que considerar antes de pedir");
+});

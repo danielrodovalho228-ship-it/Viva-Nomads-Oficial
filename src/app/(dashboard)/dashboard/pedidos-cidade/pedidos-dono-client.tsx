@@ -135,6 +135,20 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
                       <Sparkles className="h-4 w-4" aria-hidden />
                       {p.situacao === "compativel" ? "Combina com" : "Quase combina com"} “{p.compat_imovel_titulo}”
                     </p>
+                    {p.compat_nota != null && (
+                      <details className="mt-1 text-xs" data-testid="pedido-nota">
+                        <summary className="inline-flex cursor-pointer list-none items-center gap-1 font-medium" aria-label="Como a nota é calculada">
+                          Nota {p.compat_nota}/100 <Info className="h-3.5 w-3.5" aria-hidden />
+                        </summary>
+                        <ul className="mt-1 space-y-1" data-testid="pedido-nota-itens">
+                          {p.compat_nota_itens.map((i) => (
+                            <li key={i.chave}>
+                              {i.rotulo}: {i.pontos} de {i.max}{i.pontos >= i.max ? " (bateu)" : i.pontos === 0 ? " (não bateu)" : ""}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                     {p.situacao === "compativel" ? (
                       <ul className="mt-1 list-disc pl-4 text-xs">
                         {p.compat_porque.map((m) => (

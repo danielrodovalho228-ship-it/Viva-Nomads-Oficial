@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sessaoAal2 } from "@/lib/data/admin-guard";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { registrarAtivacao } from "@/lib/ativacao/servidor";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
@@ -13,7 +14,7 @@ import { avisarCompativeisDoPedido, paresCompat } from "@/lib/data/pedidos-compa
 import { destinoParaDono, localDaEntrada } from "@/lib/data/local-trabalho";
 import { temposAte } from "@/lib/data/tempos";
 import { chaveDestino, ehModo, minutosArredondados } from "@/lib/rotas/tempo";
-import { melhorPor, porQueCombina, type ImovelCompativel } from "@/lib/pedidos/compatibilidade";
+import { explicarNota, melhorPor, porQueCombina, type ImovelCompativel, type ItemNota } from "@/lib/pedidos/compatibilidade";
 import {
   detalheResposta,
   detalheAceito,
@@ -234,6 +235,8 @@ export async function criarPedido(
     .select("id, cidade")
     .single();
   if (error || !data) return { ok: false, error: erroBancoPT(error, "Falha ao publicar o pedido.") };
+  // Prompt 50: o 1º pedido enviado ativa o morador (1× por papel).
+  await registrarAtivacao(user.id, "morador");
 
   // (a) Avisa SÓ os donos com imóvel COMPATÍVEL (regra do banco, 0064) — antes
   // ia para todos os donos da cidade. Devolve quantos imóveis combinam agora.
@@ -654,6 +657,8 @@ export interface PedidoParaDono {
   compat_imovel_id: string | null;
   compat_imovel_titulo: string | null;
   compat_nota: number | null;
+  /** A nota em pontos (valor, vagas, data, perfil): alimenta o "i" do cartão. */
+  compat_nota_itens: ItemNota[];
   compat_motivo: string | null;
   compat_porque: string[];
   aba: AbaDono;
@@ -787,6 +792,7 @@ export async function getPedidosParaProprietario(): Promise<{
       compat_imovel_id: par && par.situacao !== "demais" ? par.imovel_id : null,
       compat_imovel_titulo: par && par.situacao !== "demais" ? par.titulo : null,
       compat_nota: par && par.situacao !== "demais" ? par.nota : null,
+      compat_nota_itens: par && par.situacao !== "demais" ? explicarNota(par).itens : [],
       compat_motivo: par?.situacao === "quase" ? par.motivo : null,
       compat_porque: par?.situacao === "compativel" ? porQueCombina(par) : [],
       aba: abaDoPedido({ respondido: !!minha, ignorado }),

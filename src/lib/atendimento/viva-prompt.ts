@@ -64,7 +64,7 @@ export const SYSTEM_VIVA = [
   "# O que você pode fazer",
   "- Responder SÓ com base nas fontes oficiais abaixo e nos dados que as ferramentas devolvem. Se não souber, diga que não sabe e chame escalar_humano.",
   "- Consultar os dados da própria pessoa (pedidos, contratos, caução, documento, anúncio) com as ferramentas.",
-  "- Reenviar o e-mail de confirmação ou o link para criar uma nova senha, SÓ para o e-mail já cadastrado da conta conectada (no máximo 3 de cada por dia). Nunca envie para um e-mail ou telefone dito na conversa; se a pessoa quer trocar o e-mail da conta, explique o caminho e chame escalar_humano. Nunca peça nem veja senha.",
+  "- Mandar o código de acesso (6 dígitos, para entrar na tela Entrar; a Viva Nomads não usa link de confirmação) ou o link para criar uma nova senha, SÓ para o e-mail já cadastrado da conta conectada (no máximo 3 de cada por dia). Nunca envie para um e-mail ou telefone dito na conversa; se a pessoa quer trocar o e-mail da conta, explique o caminho e chame escalar_humano. Nunca peça nem veja senha.",
   "- Abrir uma ordem de manutenção para o proprietário quando a pessoa (inquilina com contrato ativo) relata defeito no imóvel.",
   "- Lembrar o proprietário de responder uma candidatura ou uma manutenção.",
   "",
@@ -95,7 +95,7 @@ const comId = (campo: string, desc: string): Esquema => ({
 });
 
 export const FERRAMENTAS_LEITURA = ["ver_meus_pedidos", "ver_meus_contratos", "ver_status_caucao", "ver_status_documento", "ver_status_anuncio"] as const;
-export const FERRAMENTAS_ACAO = ["reenviar_email_confirmacao", "enviar_link_redefinir_senha", "abrir_ordem_manutencao", "lembrar_proprietario"] as const;
+export const FERRAMENTAS_ACAO = ["enviar_codigo_acesso", "enviar_link_redefinir_senha", "abrir_ordem_manutencao", "lembrar_proprietario"] as const;
 export const FERRAMENTAS_DESTINO = ["preparar_para_aprovacao", "escalar_humano"] as const;
 
 export const FERRAMENTAS_VIVA: FerramentaDef[] = [
@@ -104,7 +104,7 @@ export const FERRAMENTAS_VIVA: FerramentaDef[] = [
   { name: "ver_status_caucao", description: "Mostra a caução de cada bloco de um contrato da pessoa (valor, forma, status). Sem contrato_id, usa o contrato mais recente.", input_schema: comId("contrato_id", "id do contrato, ou null") },
   { name: "ver_status_documento", description: "Mostra o status do documento de cada imóvel do proprietário (sem documento, em análise, aprovado, reprovado com motivo).", input_schema: vazio },
   { name: "ver_status_anuncio", description: "Diz se cada anúncio da pessoa pode ser publicado, o que falta (só itens obrigatórios) e o que é opcional para melhorar (nunca bloqueia). Sem imovel_id, olha todos os anúncios dela.", input_schema: comId("imovel_id", "id do imóvel, ou null") },
-  { name: "reenviar_email_confirmacao", description: "Reenvia o e-mail de confirmação de cadastro para o e-mail JÁ CADASTRADO da conta conectada (não aceita outro endereço; visitante sem login recebe a orientação de usar a tela Entrar).", input_schema: vazio },
+  { name: "enviar_codigo_acesso", description: "Manda o código de acesso de 6 dígitos (o mesmo da tela Entrar; sem link) para o e-mail JÁ CADASTRADO da conta conectada — para quem não recebeu o código ou o antigo e-mail de confirmação (não aceita outro endereço; visitante sem login recebe a orientação de usar a tela Entrar).", input_schema: vazio },
   { name: "enviar_link_redefinir_senha", description: "Envia o link para criar uma nova senha para o e-mail JÁ CADASTRADO da conta conectada (não aceita outro endereço; visitante sem login recebe a orientação de usar \"Esqueci minha senha\").", input_schema: vazio },
   {
     name: "abrir_ordem_manutencao",

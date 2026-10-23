@@ -17,17 +17,20 @@ test.describe("T82 — Login no celular", () => {
     if (NO_LABORATORIO) await liberarLimiteLoginIp();
   });
 
-  test("campo de e-mail sem autocorreção do iPhone", async ({ page }) => {
-    await page.goto("/auth");
-    const campo = page.locator('input[name="email"]').first();
-    await expect(campo).toHaveAttribute("autocapitalize", "none");
-    await expect(campo).toHaveAttribute("autocorrect", "off");
-    await expect(campo).toHaveAttribute("spellcheck", "false");
-    await expect(campo).toHaveAttribute("inputmode", "email");
+  test("campo de e-mail sem autocorreção do iPhone (entrada por código e 'Entrar com senha')", async ({ page }) => {
+    for (const url of ["/auth", "/auth?senha=1"]) {
+      await page.goto(url);
+      const campo = page.locator('input[name="email"]').first();
+      await expect(campo).toHaveAttribute("autocapitalize", "none");
+      await expect(campo).toHaveAttribute("autocorrect", "off");
+      await expect(campo).toHaveAttribute("spellcheck", "false");
+      await expect(campo).toHaveAttribute("inputmode", "email");
+    }
   });
 
   test("senha errada: mensagem padrão, botão volta a funcionar", async ({ page }) => {
-    await page.goto("/auth");
+    // Prompt 49: a senha fica em "Entrar com senha" (/auth?senha=1); a entrada padrão é por código.
+    await page.goto("/auth?senha=1");
     const email = `naoexiste-t80-${Date.now()}@example.com`;
     const entrar = page.locator("form").getByRole("button", { name: /^entrar$/i });
     // E-mail novo a cada execução: o limite do Supabase por e-mail não acumula entre labs.
@@ -65,7 +68,10 @@ test.describe("T82 — Login no celular", () => {
       if (/\/api\/auth\/entrar/.test(r.url())) logins += 1;
       if (/\/auth\/v1\/token/.test(r.url())) tokensNoNavegador += 1;
     });
-    await page.goto("/auth");
+    await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
+    // O cronômetro só vale com a tela hidratada: um clique antes da hidratação vira envio nativo, recarrega /auth e o
+    // "Entrando" nunca aparece (WebKit no lab-crítico do #1131, passou no retry). Espera a rede assentar (até 10 s).
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await page.locator('input[name="email"]').first().fill(conta.email);
     await page.locator('input[name="password"]').first().fill(conta.senha);
     const botao = page.locator("form").getByRole("button", { name: /^entrar$/i });
@@ -77,6 +83,10 @@ test.describe("T82 — Login no celular", () => {
     expect(Date.now() - t0).toBeLessThan(5_000);
     expect(logins).toBe(1);
     expect(tokensNoNavegador).toBe(0);
+    // O waitForURL solta na troca de URL, com o painel ainda carregando; recarregar no meio da carga derruba o WebKit
+    // ("WebKit encountered an internal error", lab-crítico do #1165, passou no retry). Recarrega com o painel assentado.
+    await page.waitForLoadState("load");
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await page.reload();
     await expect(page).toHaveURL(/\/dashboard/);
     await page.waitForTimeout(1_500);

@@ -82,10 +82,12 @@ export function validarCidade(texto: string): Validacao<string | null> {
 }
 
 /** Selos que só aparecem com verificação REAL registrada. Telefone: código por SMS (prompt 7). Identidade: Certta (depois). */
-export function selosReais(p: { emailConfirmado?: boolean | null; telefoneVerificado?: boolean | null }): string[] {
+export function selosReais(p: { emailConfirmado?: boolean | null; telefoneVerificado?: boolean | null; linkedinConectado?: boolean | null }): string[] {
   const s: string[] = [];
   if (p.emailConfirmado === true) s.push("E-mail confirmado");
   if (p.telefoneVerificado === true) s.push("Telefone verificado");
+  // 63-B: só o selo (texto), nunca link, nome ou foto do LinkedIn. Não soma em ranking nem taxa.
+  if (p.linkedinConectado === true) s.push("LinkedIn conectado");
   return s;
 }
 
@@ -102,6 +104,8 @@ export interface CandidatoBase {
   reputacao: { media: number; n: number } | null;
   emailConfirmado: boolean;
   telefoneVerificado?: boolean;
+  /** 63-B: LinkedIn conectado e dentro da validade. */
+  linkedinConectado?: boolean;
 }
 
 export interface CartaoCandidato {
@@ -126,7 +130,7 @@ export function cartaoCandidato(c: CandidatoBase, aceito: boolean): CartaoCandid
     titulo: aceito ? (nomeCurto(c.nome) ?? "Candidato(a)") : "Candidato(a)",
     fotoUrl: aceito ? c.fotoUrl : null,
     sinais,
-    selos: selosReais({ emailConfirmado: c.emailConfirmado, telefoneVerificado: c.telefoneVerificado }),
+    selos: selosReais({ emailConfirmado: c.emailConfirmado, telefoneVerificado: c.telefoneVerificado, linkedinConectado: c.linkedinConectado }),
     reputacao: c.reputacao && c.reputacao.n > 0 ? c.reputacao : null,
   };
 }

@@ -27,3 +27,6 @@ export function deveMostrarConviteFoto(opts: {
 
 /** Peça 2: convite discreto no passo "Confirmar candidatura". A foto só chega ao anfitrião depois do aceite. */
 export const CONVITE_FOTO_CANDIDATURA_TEXTO = "Adicione uma foto, ela aparece para o anfitrião depois do aceite";
+
+/** Peça 3: convite opcional na revisão do novo anúncio; a foto aparece no cartão "Seu anfitrião" da página do imóvel. */
+export const CONVITE_FOTO_ANUNCIO_TEXTO = "Anúncios com foto do anfitrião passam mais confiança";

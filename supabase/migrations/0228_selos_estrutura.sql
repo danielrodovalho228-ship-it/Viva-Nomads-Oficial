@@ -1,4 +1,4 @@
--- 0214 — Selos de estrutura (ordem 512f3ed0, parte 2): onde o dono grava o checklist de Acessível e de Mobilidade
+-- 0228 — Selos de estrutura (ordem 512f3ed0, parte 2): onde o dono grava o checklist de Acessível e de Mobilidade
 -- reduzida / idosos. O selo só aparece com TODOS os itens marcados (src/lib/selos-estrutura.ts). Sem dado pessoal.
 -- Só o servidor grava (depois de conferir o dono); leitura pública só do anúncio ativo; dono e equipe leem o próprio.
 -- Reaplicar é seguro.

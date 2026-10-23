@@ -8,6 +8,7 @@
   - Reclassificação só pelo atendimento da Viva: os prazos são recalculados da abertura com a prioridade nova.
   - Nada financeiro (D7): nenhuma regra daqui gera valor, multa, abatimento ou rescisão.
 */
+import { emSilencio as emSilencioUnico, furaOSilencio } from "./notifications/silencio.ts";
 import { PRAZO_MANUTENCAO_H, PRAZO_SOLUCAO_H, dataHoraBrasilia, type UrgenciaManutencao } from "../config/atendimento.ts";
 
 const HORA_MS = 3_600_000;
@@ -155,9 +156,8 @@ export function avisoDevido(o: OrdemSolucao, agora: Date, enviados: readonly Avi
 
 /** Silêncio das 22h às 7h (horário de Brasília) — exceto urgente (segurança). */
 export function emSilencio(agora: Date, prioridade: UrgenciaManutencao): boolean {
-  if (prioridade === "urgente") return false;
-  const h = Number(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo", hour: "2-digit", hourCycle: "h23" }));
-  return h >= 22 || h < 7;
+  // Prompt 44: a mesma regra única; o urgente é segurança e fura o silêncio.
+  return !furaOSilencio({ seguranca: prioridade === "urgente" }) && emSilencioUnico(agora);
 }
 
 // ── Métrica do dono e selo ───────────────────────────────────────────────────────────────────────────────────────

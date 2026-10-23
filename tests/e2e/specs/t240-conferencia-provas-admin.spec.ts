@@ -59,7 +59,7 @@ async function entrarNoFuso(browser: Browser, email: string, largura: number, ti
   const ctx = await browser.newContext({ viewport: { width: largura, height: largura === 390 ? 844 : 900 }, timezoneId });
   const page = await ctx.newPage();
   semDialogo(page);
-  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+  await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   await page.locator('input[name="email"], input[type="email"]').first().fill(email);
   await page.locator('input[name="password"], input[type="password"]').first().fill(senha);

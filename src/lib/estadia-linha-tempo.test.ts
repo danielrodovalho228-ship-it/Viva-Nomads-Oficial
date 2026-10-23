@@ -12,14 +12,14 @@ test("entrada e saída trazem dia e horário do imóvel", () => {
   const [entrada, conf, saida] = l;
   assert.equal(entrada.chave, "entrada");
   assert.equal(entrada.dia, "2026-11-01");
-  assert.equal(entrada.horario, "a partir das 14:00");
+  assert.equal(entrada.horario, "a partir das 14:00, horário de Brasília");
   assert.equal(conf.chave, "conferencia");
   assert.equal(conf.dia, "2026-11-03", "conferência de entrada vale até 48 h depois do início");
   assert.equal(conf.horario, "até 03/11 às 14:00, horário de Brasília");
   assert.equal(conf.prazo, "2026-11-03T17:00:00.000Z");
   assert.equal(saida.chave, "saida");
   assert.equal(saida.dia, "2027-01-30");
-  assert.equal(saida.horario, "até as 11:00");
+  assert.equal(saida.horario, "até as 11:00, horário de Brasília");
 });
 
 test("sem horário cadastrado, avisa que será combinado (nunca inventa hora)", () => {

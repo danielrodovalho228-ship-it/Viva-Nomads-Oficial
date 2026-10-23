@@ -13,6 +13,7 @@ import {
   urgentesSemResposta4h,
 } from "@/lib/data/admin-indicadores";
 import { textoFilaDocumentos } from "@/lib/admin/indicadores";
+import { chamadoForaDaPromessa, parceiroSemResposta } from "@/lib/lembretes/regras";
 import { haQuantoTempo, montarDecisoesAdmin, type ChaveDecisaoAdmin, type ContagemDecisao, type DecisoesAdmin } from "@/lib/admin/decisoes-admin";
 
 type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
@@ -38,6 +39,47 @@ async function chamadosAbertos(admin: Admin, prioridade: "p1" | "p2"): Promise<C
   return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
 }
 
+/** Prompt 50: chamados sem a 1ª resposta de uma pessoa além da promessa pública (24 h), sem simulação. */
+async function chamadosForaDaPromessa(admin: Admin, agora: Date): Promise<ContagemDecisao> {
+  const { data, error } = await admin
+    .from("chamados")
+    .select("criado_em, primeira_resposta_em, status")
+    .eq("simulacao", false)
+    .is("primeira_resposta_em", null)
+    .not("status", "in", "(resolvido,encerrado)")
+    .order("criado_em", { ascending: true })
+    .limit(500);
+  if (error) return { n: null };
+  const linhas = ((data ?? []) as { criado_em: string; primeira_resposta_em: string | null }[]).filter((c) =>
+    chamadoForaDaPromessa({ criadoEm: c.criado_em, primeiraRespostaEm: c.primeira_resposta_em, resolvido: false }, agora),
+  );
+  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
+}
+
+/** Prompt 50: parcerias pendentes há mais de 1 dia útil (seg a sex, Brasília). */
+async function parceriasSemResposta1Dia(admin: Admin, agora: Date): Promise<ContagemDecisao> {
+  const { data, error } = await admin.from("parceiro_solicitacoes").select("criado_em, decidido_em").eq("status", "pendente").not("categorias", "cs", "{vistoria}").order("criado_em", { ascending: true }).limit(500);
+  if (error) return { n: null };
+  const linhas = ((data ?? []) as { criado_em: string; decidido_em: string | null }[]).filter((s) => parceiroSemResposta(s.criado_em, s.decidido_em, agora));
+  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
+}
+
+/** Prompt 50: verificações na análise humana (2ª reprovação automática), a mesma fila de /admin/documentos. */
+async function verificacoesParaAnalisar(admin: Admin): Promise<ContagemDecisao> {
+  const { data, error } = await admin.from("verificacao_revisoes").select("criado_em").is("decidido_em", null).order("criado_em", { ascending: true }).limit(500);
+  if (error) return { n: null };
+  const linhas = (data ?? []) as { criado_em: string }[];
+  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
+}
+
+/** Prompt 51: Correções abertas do painel de qualidade ainda sem dono ou prazo. */
+async function correcoesSemDono(admin: Admin): Promise<ContagemDecisao> {
+  const { data, error } = await admin.from("qualidade_correcoes").select("criada_em").is("fechada_em", null).or("dono.is.null,prazo.is.null").order("criada_em", { ascending: true }).limit(200);
+  if (error) return { n: null };
+  const linhas = (data ?? []) as { criada_em: string }[];
+  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criada_em) };
+}
+
 /** Encerramentos abertos ou em condução: os mesmos que /admin/contratos/encerramentos mostra para conduzir. */
 async function encerramentosAbertos(admin: Admin): Promise<ContagemDecisao> {
   const { data, error } = await admin
@@ -57,6 +99,7 @@ async function parceriasPendentes(admin: Admin): Promise<ContagemDecisao> {
     .from("parceiro_solicitacoes")
     .select("criado_em")
     .in("status", ["pendente", "aguardando_email"])
+    .not("categorias", "cs", "{vistoria}")
     .order("criado_em", { ascending: true })
     .limit(500);
   if (error) return { n: null };
@@ -86,7 +129,7 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
   const admin = createAdminClient();
   if (!admin) return null;
   const ler = <T,>(p: Promise<T>) => p.catch(() => null);
-  const [p1, p2, backup, falhas, docs, encerr, parcerias, pedidosParc, urgentes, cand48, vencidas, expirando, central] = await Promise.all([
+  const [p1, p2, backup, falhas, docs, encerr, parcerias, pedidosParc, urgentes, cand48, vencidas, expirando, central, foraPromessa, parc1Dia, verificacoes, correcoes] = await Promise.all([
     ler(chamadosAbertos(admin, "p1")),
     ler(chamadosAbertos(admin, "p2")),
     ler(lerExecucoesBackup()),
@@ -100,6 +143,10 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
     ler(taxasVencidas(admin, "real")),
     ler(pedidosExpirandoSemResposta(admin)),
     ler(centralDePendencias(admin, agora)),
+    ler(chamadosForaDaPromessa(admin, agora)),
+    ler(parceriasSemResposta1Dia(admin, agora)),
+    ler(verificacoesParaAnalisar(admin)),
+    ler(correcoesSemDono(admin)),
   ]);
 
   const contagens: Partial<Record<ChaveDecisaoAdmin, ContagemDecisao | null>> = {
@@ -107,6 +154,10 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
     chamados_p2: p2,
     encerramentos: encerr,
     parceiros_para_aprovar: parcerias,
+    chamados_fora_promessa: foraPromessa,
+    parceiros_sem_resposta_1_dia: parc1Dia,
+    verificacao_analise_humana: verificacoes,
+    correcoes_sem_dono: correcoes,
   };
   if (backup && backup !== "sem_tabela") {
     const e = estadoBackup(backup, agora);

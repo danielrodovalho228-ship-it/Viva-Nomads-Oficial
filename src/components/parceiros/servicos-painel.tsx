@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Wrench } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
-import { CATEGORIAS_PARCEIRO } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO } from "@/lib/parceiros/regras";
 
 /** Prompt 31a: seção "Serviços" dos painéis do inquilino e do dono — a busca de parceiros com a cidade preenchida. */
 export function ServicosPainel({ cidade }: { cidade?: string | null }) {
   const q = (categoria: string) => `/parceiros/buscar?${new URLSearchParams({ categoria, ...(cidade ? { cidade } : {}) }).toString()}`;
-  const lista = CATEGORIAS_PARCEIRO.filter((c) => c.valor !== "outro");
+  const lista = CATEGORIAS_CATALOGO.filter((c) => c.valor !== "outro");
   return (
     <Panel title="Serviços" className="mt-6" data-testid="painel-servicos-parceiros">
       <p className="flex items-center gap-2 text-sm text-muted">

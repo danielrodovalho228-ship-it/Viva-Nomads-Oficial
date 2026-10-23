@@ -17,10 +17,17 @@ export const CATEGORIAS_PARCEIRO = [
   { valor: "montagem", rotulo: "Montagem de móveis" },
   { valor: "manutencao", rotulo: "Manutenção" },
   { valor: "outro", rotulo: "Outro serviço" },
+  // Prompt 62-B1: avaliador credenciado. Só por credenciamento; nunca no catálogo "pedir serviço" (a Viva designa).
+  { valor: "vistoria", rotulo: "Avaliação de imóveis" },
 ] as const;
 export type CategoriaParceiro = (typeof CATEGORIAS_PARCEIRO)[number]["valor"];
+/** Só pelo credenciamento de avaliadores (Prompt 62-B1): fora do catálogo, da busca e do "Seja parceiro". */
+export const CATEGORIAS_SO_CREDENCIAMENTO: readonly string[] = ["vistoria"];
+/** O catálogo "pedir serviço": as categorias que se contratam direto. */
+export const CATEGORIAS_CATALOGO = CATEGORIAS_PARCEIRO.filter((x) => !CATEGORIAS_SO_CREDENCIAMENTO.includes(x.valor));
 export const rotuloCategoria = (c: string) => CATEGORIAS_PARCEIRO.find((x) => x.valor === c)?.rotulo ?? "Serviço";
-export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS_PARCEIRO.some((x) => x.valor === c);
+/** Categoria do catálogo (contratável). "vistoria" não entra: o avaliador nunca é escolhido nem contratado direto. */
+export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS_CATALOGO.some((x) => x.valor === c);
 
 // ── Taxa de serviço (10%, todas as categorias; fotógrafos inclusive) ────────────────────────────────────────────
 export const TAXA_SERVICO_PARCEIRO = 0.1;

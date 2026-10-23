@@ -189,3 +189,27 @@ test("p22 — portão único: no cadastro, 'Antes de anunciar' é item da mesma 
   assert.equal(prontidaoAnuncio({ ...fatos, qualificacaoOk: true }).podePublicar, true);
   assert.equal(prontidaoAnuncio(fatos).obrigatorios.some((i) => i.key === "qualificacao"), false, "editor/lista: não se aplica");
 });
+
+test("65-B: o fato Vídeo vale para arquivo enviado OU link; 'Para melhorar: Vídeo do imóvel' aponta para o campo", async () => {
+  const { hrefParaMelhorar, ANCORA_VIDEO_EDITOR, ANCORA_VIDEO_ASSISTENTE } = await import("./prontidao.ts");
+  const dono = "11111111-1111-4111-8111-111111111111";
+  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_arquivo: `${dono}/v-10s.mp4` }, 8, "approved", true).video, true);
+  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_url: "https://youtu.be/dQw4w9WgXcQ" }, 8, "approved", true).video, true);
+  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_url: "https://evil.com/v" }, 8, "approved", true).video, false);
+  assert.equal(completo().video, false);
+
+  // Anúncio existente → seção Vídeo do editor por seções; rascunho no assistente → bloco de vídeo do passo Fotos.
+  assert.equal(hrefParaMelhorar("video", "abc", false), `/dashboard/imoveis/abc/editar#${ANCORA_VIDEO_EDITOR}`);
+  assert.equal(hrefParaMelhorar("video", "abc", true), `/dashboard/imoveis/novo?draft=abc&etapa=2#${ANCORA_VIDEO_ASSISTENTE}`);
+  assert.equal(hrefParaMelhorar("selo", "abc", false), null);
+
+  // O destino tem o campo: a âncora existe no editor (seção com o enviador) e no passo Fotos (bloco com o enviador).
+  const editor = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx", import.meta.url), "utf8");
+  assert.match(editor, /ancora=\{ANCORA_VIDEO_EDITOR\}[\s\S]{0,400}<VideoUploader path=\{videoArquivo\}[^\n]*onVideoUrlChange=\{setVideoUrl\}/);
+  const fotos = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/etapa-fotos.tsx", import.meta.url), "utf8");
+  assert.match(fotos, /id=\{ANCORA_VIDEO_ASSISTENTE\}[\s\S]{0,300}<VideoUploader [^\n]*onVideoUrlChange=\{setVideoUrl\}/);
+  // No assistente o bloco vem depois do envio de fotos e ANTES da caixa da IA.
+  assert.ok(fotos.indexOf("<PhotoUploader") < fotos.indexOf('data-testid="bloco-video"'));
+  assert.ok(fotos.indexOf('data-testid="bloco-video"') < fotos.indexOf('data-testid="ia-fotos"'));
+  assert.doesNotMatch(fotos, /Link do vídeo do imóvel/, "o campo antigo misturado saiu");
+});

@@ -118,7 +118,7 @@ test.describe("T151 — Disponibilidade no app com imóvel próprio (laboratóri
     test.setTimeout(120_000);
     const ctx = await browser.newContext({ ...devices["iPhone 13"], userAgent: UA_APP });
     const page = await ctx.newPage();
-    await page.goto("/auth", { waitUntil: "networkidle" });
+    await page.goto("/auth?senha=1", { waitUntil: "networkidle" });
     await page.locator('input[name="email"], input[type="email"]').first().fill(dono.email);
     await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
     await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

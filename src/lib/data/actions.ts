@@ -7,7 +7,7 @@ import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascun
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { colunaVideoArquivo } from "@/lib/video-anuncio";
-import { caminhoDoDono, operacaoValida, subleaseParaGravar } from "@/lib/anuncio/operacao";
+import { caminhoDoDono, colunasDeOperacao } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { cookies } from "next/headers";
@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { registrarAtivacao } from "@/lib/ativacao/servidor";
 import type { EligibilityState, QualityState } from "@/lib/qualification";
 import {
   isEligible,
@@ -27,7 +28,7 @@ import {
 import { findNearbyWorkspaces } from "@/lib/integrations/places";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
-import { listingLimit, PLAN_LABEL } from "@/lib/plan";
+import { donoPodeReativar, mensagemLimitePublicar, mensagemLimiteReativar, situacaoLimite, textoDaPausa, type EmAndamento, type SituacaoLimite } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
 import { amenityRows } from "@/lib/amenities";
@@ -36,9 +37,10 @@ import { taxaDoContrato } from "@/config/planos";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
-import { validarAceiteIa } from "@/lib/anuncio/termo-ia";
+import { TERMO_IA_VERSAO, validarAceiteIa } from "@/lib/anuncio/termo-ia";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { salvarDeclaracoesConforto } from "@/lib/conforto/servidor";
+import { confortoParaGravar } from "@/lib/conforto/gravacao";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { avisarBuscasDoImovel } from "@/lib/data/alerta-busca-servidor";
@@ -49,6 +51,7 @@ import { colunaAirbnb } from "@/lib/preco-justo";
 import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
 import { prontidaoDoImovel, fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { chegadaDoRascunho, colunasChegadaEPedido, type EntradaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { atribuirLead, garantirCartao } from "@/lib/data/cartoes-servidor";
 import { REF_COOKIE } from "@/lib/cartoes/compartilhar";
 import { scoreAnuncio, type ScoreAnuncio } from "@/lib/anuncio/score";
@@ -450,8 +453,13 @@ export interface PropertyInput {
   asDraft?: boolean;
   /** Aceite do termo de IA (obrigatório ao publicar; validado e gravado no servidor). */
   aceiteIa?: unknown;
-  /** Prompt 59: chaves do padrão mínimo de conforto que o dono marcou (gravadas no servidor antes do portão). */
+  /**
+   * Prompt 59: chaves do padrão mínimo de conforto que o dono marcou (gravadas no servidor antes do portão).
+   * 59-C1: só vale com `confortoMexido: true` (o dono mexeu no checklist nesta sessão, depois de carregar o que já
+   * estava salvo). Ausente = não mexe; nunca desmarca por omissão.
+   */
   confortoConfirmados?: string[];
+  confortoMexido?: boolean;
   // ── Enriquecimento (FASE 1/2) — gravados best-effort (requer migrações 0018/0019) ──
   parkingSpots?: number;
   condoFee?: number;
@@ -478,6 +486,11 @@ export interface PropertyInput {
   internetMbps?: unknown;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
+  /** 61-B (0225): tipo de entrada (público), mensagem a quem vai pedir e "o que considerar antes de pedir". */
+  tipoEntrada?: string | null;
+  mensagemParaPedido?: string | null;
+  considerarAntes?: string[];
+  considerarAntesTexto?: string | null;
   maxGuests?: number;
   /** Chaves de comodidade selecionadas (catálogo único). */
   amenityKeys?: string[];
@@ -515,6 +528,26 @@ async function gravarPrivacidade(
     if (error) console.error("[gravarPrivacidade]", error.code, error.message);
   } catch (e) {
     console.error("[gravarPrivacidade] erro:", e);
+  }
+}
+
+/**
+ * 61-B: tipo de entrada, mensagem a quem vai pedir e "o que considerar" em UPDATE à parte (como a privacidade): sem a
+ * 0225 o erro é só logado. A forma já foi validada por colunasChegadaEPedido antes de gravar o resto.
+ */
+async function gravarChegadaEPedido(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  id: string,
+  entrada: EntradaChegadaEPedido
+): Promise<void> {
+  const r = colunasChegadaEPedido(entrada);
+  if (!r.ok || Object.keys(r.colunas).length === 0) return;
+  try {
+    const { error } = await supabase.from("properties").update(r.colunas).eq("id", id).eq("owner_id", ownerId);
+    if (error) console.error("[gravarChegadaEPedido]", error.code, error.message);
+  } catch (e) {
+    console.error("[gravarChegadaEPedido] erro:", e);
   }
 }
 
@@ -652,6 +685,8 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
   }
+  const chegada = colunasChegadaEPedido(input);
+  if (!chegada.ok) return { ok: false, error: chegada.erro };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -719,8 +754,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       tag_home_office: input.tagHomeOffice ?? false,
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
-      ownership_type: operacaoValida(input.ownershipType) ? input.ownershipType : "own",
-      sublease_authorized: subleaseParaGravar(input.ownershipType, input.subleaseAuthorized),
+      ...colunasDeOperacao(input.ownershipType, input.subleaseAuthorized),
       // Só um arquivo da PASTA DO DONO no bucket privado (nunca link externo/preview local).
       sublease_doc_url: caminhoDoDono(input.subleaseDocUrl, user.id) ? input.subleaseDocUrl! : null,
       utilities_mode: input.utilitiesMode ?? "fixed",
@@ -766,6 +800,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     /* migração 0018/0019/0020 ausente — segue sem os campos extras */
   }
   await gravarPrivacidade(supabase, user.id, data.id as string, input);
+  await gravarChegadaEPedido(supabase, user.id, data.id as string, input);
 
   // Comodidades por categoria (catálogo único). Best-effort.
   if (input.amenityKeys && input.amenityKeys.length > 0) {
@@ -848,10 +883,11 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       .eq("owner_id", user.id)
       .is("property_id", null);
   }
-  if (Array.isArray(input.confortoConfirmados)) {
+  const confortoNovo = confortoParaGravar(input.confortoConfirmados, input.confortoMexido);
+  if (confortoNovo) {
     // O imóvel acabou de ser criado por este dono (a RLS conferiu): o servidor grava a confirmação.
     const adm = createAdminClient();
-    if (adm) await salvarDeclaracoesConforto(adm, data.id as string, user.id, input.confortoConfirmados);
+    if (adm) await salvarDeclaracoesConforto(adm, data.id as string, user.id, confortoNovo);
   }
   if (!input.asDraft) {
     const falta = await faltaParaPublicar(supabase, user.id, data.id as string);
@@ -905,6 +941,8 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
   }
+  const chegada = colunasChegadaEPedido(input);
+  if (!chegada.ok) return { ok: false, error: chegada.erro };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -973,8 +1011,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       tag_home_office: input.tagHomeOffice ?? false,
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
-      ownership_type: operacaoValida(input.ownershipType) ? input.ownershipType : "own",
-      sublease_authorized: subleaseParaGravar(input.ownershipType, input.subleaseAuthorized),
+      ...colunasDeOperacao(input.ownershipType, input.subleaseAuthorized),
       // Só grava o documento da operação quando o dono enviou um nesta edição.
       // A edição não recarrega esse campo — mandar null por ausência APAGAVA o
       // documento a cada edição (mesmo padrão do risco do endereço).
@@ -1023,6 +1060,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     /* migração ausente — segue sem os campos extras */
   }
   await gravarPrivacidade(supabase, user.id, id, input);
+  await gravarChegadaEPedido(supabase, user.id, id, input);
 
   // Regras de pets (0119): validadas aqui; só vale com "aceita pets" marcado.
   try {
@@ -1077,10 +1115,11 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   // despublica um anúncio já ativo. Publica DEPOIS de salvar tudo e de passar
   // pela prontidão (fonte única). Ao publicar, ZERA o draft_data (ele guarda a
   // rua exata e a linha fica pública — C4/T1).
-  if (Array.isArray(input.confortoConfirmados) && antes?.owner_id === user.id) {
+  const confortoEditado = confortoParaGravar(input.confortoConfirmados, input.confortoMexido);
+  if (confortoEditado && antes?.owner_id === user.id) {
     // Só o dono do imóvel: o servidor grava a confirmação do padrão mínimo (Prompt 59).
     const adm = createAdminClient();
-    if (adm) await salvarDeclaracoesConforto(adm, id, user.id, input.confortoConfirmados);
+    if (adm) await salvarDeclaracoesConforto(adm, id, user.id, confortoEditado);
   }
   if (input.asDraft === false) {
     if (antes?.status !== "active") {
@@ -1099,6 +1138,8 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       .eq("id", id)
       .eq("owner_id", user.id);
     if (pubErr) return { ok: false, id, error: erroBancoPT(pubErr) };
+    // Prompt 50: o 1º anúncio publicado ativa o proprietário (1× por papel).
+    await registrarAtivacao(user.id, "proprietario");
   }
 
   // Página pública do anúncio não pode ficar presa em cache (F9).
@@ -1720,6 +1761,8 @@ export async function requestLead(
       if (!leadErr) {
         const adm = createAdminClient();
         if (adm) await atribuirLead(adm, { propertyId, tenantId: user.id, cookieValor: (await cookies()).get(REF_COOKIE)?.value }).catch(() => false);
+        // Prompt 50: o 1º pedido enviado ativa o morador (1× por papel).
+        await registrarAtivacao(user.id, "morador", new Date(), adm);
       }
       const conversationId = idConversa(user.id, ownerId, propertyId);
       // Mensagem do inquilino: usa o texto que ele escreveu (dúvida/horários),
@@ -1835,23 +1878,30 @@ export async function sendMessage(input: {
       !!contact?.email &&
       (await dentroDoLimite(`msg-email:${conversationId}:${destinatarioId}`, 1, 30 * 60)) &&
       (await dentroDoLimite(`msg-email-remetente:${user.id}`, 30, HORA));
-    if (contact?.email && podeAvisar) {
-      const { data: me } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .maybeSingle();
-      // Identidade pós-aceite: só o PRIMEIRO nome no e-mail (nunca o sobrenome).
-      const senderName = (me?.full_name ?? "").trim().split(/\s+/)[0] || "Um usuário";
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    // Identidade pós-aceite: só o PRIMEIRO nome no e-mail (nunca o sobrenome).
+    const senderName = (me?.full_name ?? "").trim().split(/\s+/)[0] || "Um usuário";
+    // Prompt 44: o push da mensagem nova não depende do limite do e-mail. O notify() decide pela matriz: sem push com a
+    // conversa aberta há menos de 10 min, agrupado por conversa ("3 mensagens novas de Ana") e sem o texto.
+    const comEmail = !!contact?.email && podeAvisar;
+    const link = `${SITE_URL}/dashboard/mensagens`;
+    if (comEmail || contact) {
       // Nome e prévia são texto do USUÁRIO: sem HTML ativo e sem links no e-mail.
       const nomeHtml = textoEmail(senderName, 40);
       const previewHtml = textoEmail(safeBody, 140);
       const previewTexto = textoPlano(safeBody, 140);
-      const link = `${SITE_URL}/dashboard/mensagens`;
       await notify({
         event: "new_message",
-        email: contact.email,
-        name: contact.full_name ?? undefined,
+        email: comEmail ? (contact!.email as string) : undefined,
+        name: contact?.full_name ?? undefined,
+        userId: destinatarioId,
+        pushUrl: "/dashboard/mensagens",
+        conversationId,
+        remetenteNome: senderName,
         detailsHtml:
           `<p><strong>${nomeHtml}</strong> escreveu:</p>` +
           `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">${previewHtml}</blockquote>` +
@@ -1913,6 +1963,11 @@ export async function countMyDrafts(): Promise<number> {
   return count ?? 0;
 }
 
+/** Operação guardada no estado do editor (draft_data). */
+function rascunhoOperacao(d: unknown): { ownershipType?: unknown; subleaseAuthorized?: unknown } {
+  return d && typeof d === "object" ? (d as { ownershipType?: unknown; subleaseAuthorized?: unknown }) : {};
+}
+
 /**
  * Autosave do RASCUNHO no servidor (P0 — perda de dados). Faz upsert de uma
  * linha `properties` status='draft' guardando o estado COMPLETO do editor em
@@ -1939,6 +1994,7 @@ export async function saveDraftData(snap: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
 
+  const op = rascunhoOperacao(snap.data);
   const fields = {
     owner_id: user.id,
     status: "draft" as const,
@@ -1947,6 +2003,9 @@ export async function saveDraftData(snap: {
     monthly_price: Number.isFinite(snap.monthlyPrice) ? (snap.monthlyPrice as number) : 0,
     // Colunas que a prontidão lê (Visão geral, Meus imóveis): endereço e detalhes não ficam só no draft_data.
     ...camposDeConteudoDoRascunho(snap),
+    // 59-C1: a operação vai junto, pela regra do updateProperty — uma linha antiga "própria com sublocação" (que a
+    // restrição da 0200 recusa em qualquer update) fica no permitido já no primeiro autosave.
+    ...colunasDeOperacao(op.ownershipType, op.subleaseAuthorized),
     draft_data: snap.data as object,
   };
 
@@ -1954,21 +2013,47 @@ export async function saveDraftData(snap: {
   const rascunhoId = snap.id || (await rascunhoVazioRecente(supabase, user.id));
   if (rascunhoId) {
     const { atualizou, error } = await atualizarRascunhoDoDono(supabase, rascunhoId, user.id, fields);
-    if (error) return { ok: false, error: erroBancoPT(error as Parameters<typeof erroBancoPT>[0]) };
+    if (error) {
+      // O erro do banco não some mais: o código fica no log do servidor e a causa em português vai para a tela.
+      const e = error as Parameters<typeof erroBancoPT>[0];
+      console.error("[saveDraftData]", rascunhoId, e?.code, e?.message);
+      return { ok: false, error: erroBancoPT(e) };
+    }
     // 0 linhas = rascunho de outro dono (ou já publicado): não liga foto nem qualificação.
     if (!atualizou) return { ok: true, id: rascunhoId };
+    await gravarChegadaEPedido(supabase, user.id, rascunhoId, chegadaDoRascunho(snap.data));
     await sincronizarFotos(supabase, rascunhoId, user.id, urlsDoRascunho(snap.data));
     await ligarQualificacaoAoImovel(supabase, user.id, rascunhoId);
     await ligarMatriculaAoImovel(createAdminClient(), user.id, rascunhoId);
     return { ok: true, id: rascunhoId };
   }
   const { data, error } = await supabase.from("properties").insert(fields).select("id").single();
-  if (error) return { ok: false, error: erroBancoPT(error) };
+  if (error) {
+    console.error("[saveDraftData] novo", error.code, error.message);
+    return { ok: false, error: erroBancoPT(error) };
+  }
+  await gravarChegadaEPedido(supabase, user.id, data.id as string, chegadaDoRascunho(snap.data));
   await sincronizarFotos(supabase, data.id as string, user.id, urlsDoRascunho(snap.data));
   // A qualificação enviada antes do rascunho passa a pertencer a ele (prontidão "Em análise", não "Não enviado").
   await ligarQualificacaoAoImovel(supabase, user.id, data.id as string);
   await ligarMatriculaAoImovel(createAdminClient(), user.id, data.id as string);
   return { ok: true, id: data.id };
+}
+
+/**
+ * 64-B: a situação do limite do plano (a MESMA conta da prontidão e do painel — situacaoLimite). `exceto` = o anúncio
+ * que se quer (re)publicar: os publicados contam sem ele.
+ */
+async function situacaoDoLimite(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  exceto: string | null,
+): Promise<SituacaoLimite> {
+  const plan = await planoDoProprietario(supabase, ownerId);
+  let q = supabase.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active");
+  if (exceto) q = q.neq("id", exceto);
+  const { count } = await q;
+  return situacaoLimite(plan as string, count ?? 0);
 }
 
 /**
@@ -1981,18 +2066,8 @@ async function limiteDePublicacao(
   ownerId: string,
   exceto: string | null
 ): Promise<string | null> {
-  const plan = (await planoDoProprietario(supabase, ownerId)) as SubscriptionPlan;
-  let q = supabase
-    .from("properties")
-    .select("id", { count: "exact", head: true })
-    .eq("owner_id", ownerId)
-    .eq("status", "active");
-  if (exceto) q = q.neq("id", exceto);
-  const { count } = await q;
-  if ((count ?? 0) >= listingLimit(plan)) {
-    return `Seu plano (${PLAN_LABEL[plan]}) permite até ${listingLimit(plan)} anúncio(s) publicado(s). Pause um anúncio ou faça upgrade para publicar mais.`;
-  }
-  return null;
+  const s = await situacaoDoLimite(supabase, ownerId, exceto);
+  return s.podePublicarNovo ? null : `${mensagemLimitePublicar(s)}.`;
 }
 
 /**
@@ -2045,6 +2120,28 @@ export async function loadDraftData(id: string): Promise<unknown | null> {
   const { data } = await supabase.rpc("property_private_details", { prop_id: id });
   const row = Array.isArray(data) ? data[0] : data;
   return (row as { draft_data?: unknown } | null)?.draft_data ?? null;
+}
+
+/**
+ * L1-1 (D-V3): o endereço já GRAVADO do imóvel do dono, para o "Enviar documento" do passo Onde fica não travar quando
+ * a tela chega vazia ou em outro formato (rascunho retomado). Vem do rascunho (draft_data: CEP, rua, número) e, sem ele,
+ * da linha exata gravada (exact_address: "Rua, número, complemento"). Só o dono lê (RPC confere). null sem nada.
+ */
+export async function enderecoGravadoDoImovel(id: string): Promise<{ cep: string; rua: string; numero: string } | null> {
+  const supabase = await createClient();
+  if (!supabase || !UUID_RE.test(id)) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.rpc("property_private_details", { prop_id: id });
+  const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: Record<string, unknown> | null; exact_address?: string | null } | null;
+  if (!row) return null;
+  const d = row.draft_data && typeof row.draft_data === "object" ? row.draft_data : {};
+  const txt = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const rua = txt(d.street) || txt(row.exact_address);
+  const r = { cep: txt(d.cep), rua, numero: txt(d.street) ? txt(d.numero) : "" };
+  return r.cep || r.rua || r.numero ? r : null;
 }
 
 /** Rascunho mais recente do dono (para "Novo anúncio detecta rascunho" e o card
@@ -2100,4 +2197,134 @@ export async function getLatestDraft(): Promise<{
     prontidao,
     score,
   };
+}
+
+// ── 64-B: pausar e reativar anúncio pelo dono ──────────────────────────────────────────────────────────────────────
+
+export type ResultadoPausa = { ok: true; mensagem?: string } | { ok: false; erro: string; faltas?: { rotulo: string; href: string }[] };
+
+/** O dono do anúncio (pela sessão) — ou null. */
+async function anuncioDoDono(id: string) {
+  const supabase = await createClient();
+  if (!supabase || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("properties")
+    .select("id, owner_id, status, pausa_motivo, city, descricao_gerada_por_ia")
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!data) return null;
+  return { supabase, userId: user.id, p: data as { id: string; owner_id: string; status: string; pausa_motivo: string | null; city: string | null; descricao_gerada_por_ia: boolean | null } };
+}
+
+function revalidarPausa(id: string) {
+  revalidatePath("/dashboard/imoveis");
+  revalidatePath("/dashboard");
+  revalidatePath(`/imoveis/${id}`);
+  revalidatePath("/buscar");
+}
+
+/**
+ * 65-B: grava SÓ o arquivo do vídeo, na hora em que o dono envia, troca ou remove na seção Vídeo do editor. O
+ * enviador já apaga o arquivo anterior do bucket; gravar na hora evita o anúncio apontar para um arquivo que não
+ * existe mais se a pessoa sair sem "Salvar seção". Caminho só da pasta do próprio dono; "" remove.
+ */
+export async function gravarVideoArquivo(id: string, videoArquivo: string): Promise<ActionResult> {
+  const a = await anuncioDoDono(id);
+  if (!a) return { ok: false, error: "Anúncio não encontrado." };
+  const coluna = colunaVideoArquivo(videoArquivo, a.userId);
+  if (!("video_arquivo" in coluna)) return { ok: false, error: "Vídeo não encontrado." };
+  const { error } = await a.supabase.from("properties").update(coluna).eq("id", id).eq("owner_id", a.userId);
+  if (error) return { ok: false, error: "Não foi possível gravar o vídeo agora. Tente de novo." };
+  revalidatePath(`/imoveis/${id}`);
+  revalidatePath(`/dashboard/imoveis/${id}/editar`);
+  return { ok: true };
+}
+
+/** O que está em andamento no anúncio e CONTINUA depois da pausa (a tela lista antes de confirmar). */
+export async function emAndamentoDoAnuncio(id: string): Promise<EmAndamento | null> {
+  const a = await anuncioDoDono(id);
+  const adm = createAdminClient();
+  if (!a || !adm) return null;
+  const contar = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0;
+  const [candidaturasAbertas, propostasAceitas, visitasMarcadas, contratosVigentes] = await Promise.all([
+    contar(adm.from("leads").select("id", { count: "exact", head: true }).eq("property_id", id).in("status", ["new", "accepted"])),
+    contar(adm.from("propostas").select("id", { count: "exact", head: true }).eq("property_id", id).in("status", ["aceita", "em_contrato"])),
+    contar(adm.from("visitas_video").select("id", { count: "exact", head: true }).eq("property_id", id).eq("status", "confirmado")),
+    contar(adm.from("contratos").select("id", { count: "exact", head: true }).eq("property_id", id).eq("status", "ativo")),
+  ]);
+  return { candidaturasAbertas, propostasAceitas, visitasMarcadas, contratosVigentes };
+}
+
+/**
+ * Pausar (dono): publicado → pausado com motivo "dono". Sai da busca, do mapa e dos alertas; a página pública diz que
+ * está pausado; não aceita candidatura, proposta nem visita novas. O que está em andamento continua. Nunca bloqueado.
+ */
+export async function pausarAnuncio(id: string): Promise<ResultadoPausa> {
+  const a = await anuncioDoDono(id);
+  if (!a) return { ok: false, erro: "Anúncio não encontrado." };
+  if (a.p.status !== "active") return { ok: false, erro: "Só um anúncio publicado pode ser pausado." };
+  // O motivo só o servidor grava (a coluna não é do dono, 0223): cliente de serviço, depois de conferir o dono acima.
+  const adm = createAdminClient();
+  if (!adm) return { ok: false, erro: "Não foi possível pausar agora. Tente de novo." };
+  const { data, error } = await adm
+    .from("properties")
+    .update({ status: "paused", pausa_motivo: "dono" })
+    .eq("id", id)
+    .eq("owner_id", a.userId)
+    .eq("status", "active")
+    .select("id");
+  if (error || !data?.length) return { ok: false, erro: "Não foi possível pausar agora. Tente de novo." };
+  revalidarPausa(id);
+  return { ok: true, mensagem: "Anúncio pausado. Ele saiu da busca; o que já estava em andamento continua." };
+}
+
+/**
+ * Reativar (dono): só o que ELE pausou, e pela MESMA porta da publicação — cidade aberta, prontidão (documento, fotos,
+ * padrão mínimo…), aceite do termo de IA quando a descrição veio da IA, e a vaga no plano contando os publicados SEM
+ * este. Faltando algo: a lista do que falta, cada item com o link para resolver. Os gatilhos do banco conferem de novo.
+ */
+export async function reativarAnuncio(id: string): Promise<ResultadoPausa> {
+  const a = await anuncioDoDono(id);
+  if (!a) return { ok: false, erro: "Anúncio não encontrado." };
+  const { supabase, userId, p } = a;
+  if (p.status !== "paused") return { ok: false, erro: "Este anúncio não está pausado." };
+  if (!donoPodeReativar(p.pausa_motivo)) {
+    const t = textoDaPausa(p.pausa_motivo);
+    return { ok: false, erro: t.motivo, faltas: t.caminho ? [t.caminho] : [] };
+  }
+  const editar = `/dashboard/imoveis/${id}/editar`;
+  const faltas: { rotulo: string; href: string }[] = [];
+  const cidade = p.city ? await cidadeFechada(supabase, userId, p.city) : null;
+  if (cidade) faltas.push({ rotulo: cidade, href: editar });
+  const pr = await prontidaoDoImovel(supabase, userId, id);
+  for (const i of pr?.obrigatorios ?? []) if (!i.ok && i.key !== "limite") faltas.push({ rotulo: i.detalhe ? `${i.label}: ${i.detalhe}` : i.label, href: editar });
+  if (p.descricao_gerada_por_ia) {
+    const { count } = await supabase.from("anuncio_aceites_ia").select("id", { count: "exact", head: true }).eq("property_id", id).eq("versao_termo", TERMO_IA_VERSAO);
+    if (!count) faltas.push({ rotulo: "Aceite do termo da IA (confira o texto e aceite na etapa Revisar)", href: editar });
+  }
+  const lim = await situacaoDoLimite(supabase, userId, id);
+  if (!lim.podePublicarNovo) faltas.push({ rotulo: `${mensagemLimiteReativar(lim)}.`, href: "/dashboard/imoveis" });
+  if (faltas.length) return { ok: false, erro: "Para reativar, falta:", faltas };
+  // Pela sessão do dono: os gatilhos de publicação do banco (documento, fotos, padrão mínimo, laudo, IA) valem aqui.
+  const { data, error } = await supabase.from("properties").update({ status: "active" }).eq("id", id).eq("owner_id", userId).eq("status", "paused").select("id");
+  if (error || !data?.length) return { ok: false, erro: error?.message ?? "Não foi possível reativar agora. Tente de novo." };
+  await avisarBuscasDoImovel(id).catch(() => null);
+  revalidarPausa(id);
+  return { ok: true, mensagem: "Anúncio reativado: ele voltou para a busca." };
+}
+
+/** 64-B: o limite do plano do dono logado (painel e Meus imóveis) — a mesma conta da publicação. */
+export async function minhaSituacaoLimite(): Promise<SituacaoLimite | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  return situacaoDoLimite(supabase, user.id, null);
 }

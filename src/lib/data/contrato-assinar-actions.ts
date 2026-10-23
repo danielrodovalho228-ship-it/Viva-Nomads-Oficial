@@ -2,6 +2,7 @@
 
 import { after } from "next/server";
 import { headers } from "next/headers";
+import { HREF_CONFIRMADA } from "@/lib/estadia/confirmacao";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -344,7 +345,13 @@ export async function assinarContrato(input: {
   aceite: boolean;
   /** 6 dígitos recebidos por e-mail (pedirCodigoAssinatura). */
   codigo?: string;
-}): Promise<{ ok: boolean; error?: string; /** Cartão de assinaturas já com a assinatura nova: a tela mostra na hora, sem esperar o recarregamento. */ aviso?: string }> {
+}): Promise<{
+  ok: boolean;
+  error?: string;
+  /** Cartão de assinaturas já com a assinatura nova: a tela mostra na hora, sem esperar o recarregamento. */ aviso?: string;
+  /** Prompt 61-A: esta foi a segunda assinatura — a tela leva a "Estadia confirmada". */
+  ambos?: boolean;
+}> {
   if (!UUID_RE.test(String(input.contratoId))) return { ok: false, error: "Contrato inválido." };
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -503,7 +510,8 @@ export async function assinarContrato(input: {
         email: pessoa?.user?.email ?? undefined,
         userId: outroId,
         // Quem recebe é a outra parte: o dono abre em Contratos, o inquilino em Minhas locações.
-        pushUrl: visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
+        // Prompt 61-A: com as duas assinaturas, o aviso de quem assinou antes abre a tela "Estadia confirmada".
+        pushUrl: outraJaAssinou ? HREF_CONFIRMADA(c.id) : visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
         subject: assuntoAvisoOutraParte(outraJaAssinou),
         detailsHtml: detalhes,
       });
@@ -513,7 +521,7 @@ export async function assinarContrato(input: {
           event: "contract_status",
           email: user.email ?? undefined,
           userId: user.id,
-          pushUrl: visao.papel === "inquilino" ? `/dashboard/locacoes/${c.id}` : `/dashboard/contratos/${c.id}`,
+          pushUrl: HREF_CONFIRMADA(c.id),
           subject: assuntoAvisoOutraParte(true),
           detailsHtml: detalhes,
         });
@@ -534,5 +542,5 @@ export async function assinarContrato(input: {
     proprietario: { nome: nomesAviso.proprietario, em: visao.papel === "proprietario" ? agora : c.assinado_proprietario_em },
     inquilino: { nome: nomesAviso.inquilino, em: visao.papel === "inquilino" ? agora : c.assinado_inquilino_em },
   });
-  return { ok: true, aviso };
+  return { ok: true, aviso, ambos: outraJaAssinou };
 }

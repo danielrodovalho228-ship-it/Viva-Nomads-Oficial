@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { createClient } from "@/lib/supabase/server";
 import { comNovaTentativa } from "@/lib/nova-tentativa";
 import { isExemplo } from "@/lib/demo-listing";
@@ -234,7 +235,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
@@ -251,6 +252,8 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("properties").select("negociacao, internet_mbps").eq("id", base.id).maybeSingle()),
     // Internet medida no imóvel (Prompt 57): só a última validada do dono, vigente — sem a migração, nada.
     safe(supabase.from("internet_medida_publica").select("download_mbps, upload_mbps, latencia_ms, medido_em, valido_ate").eq("property_id", base.id).maybeSingle()),
+    // 61-B (0225): leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("tipo_entrada, mensagem_para_pedido, considerar_antes, considerar_antes_texto").eq("id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
 
@@ -307,6 +310,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     })),
     // Avaliação real de quem morou (0089): sem nome digitado — "Inquilino verificado".
     reviews: ((reviews as { id: string; nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[] | null) ?? []).map((r) => ({
+      id: r.id,
       author: "Inquilino verificado",
       rating: Number(r.nota_geral),
       comment: r.comentario_publico ?? "",
@@ -317,6 +321,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     limpezaEstadia: normalizarLimpezaEstadia((limpezaLinha as { limpeza_estadia?: unknown } | null)?.limpeza_estadia) ?? undefined,
     ...negociacaoDaLinha(negLinha as { negociacao?: unknown; internet_mbps?: unknown } | null),
     internetMedida: medidaDaLinha(medidaLinha as LinhaMedida | null),
+    chegadaEPedido: chegadaEPedidoDaLinha(chegadaLinha as LinhaChegadaEPedido | null),
     privacidade,
     ownerName: ownerRow?.full_name ?? base.ownerName,
     ownerId: ownerId ?? base.ownerId,
@@ -424,6 +429,19 @@ async function getPropertySemCache(id: string): Promise<Property | undefined> {
 
 /** Um anúncio público; a mesma consulta vale para layout, metadados e página na mesma requisição. */
 export const getProperty = cache(getPropertySemCache);
+
+/**
+ * 64-B: anúncio PAUSADO por URL direta (link já compartilhado, favorito, push): não é 404 — a página diz "Este anúncio
+ * está pausado", só com o título e a cidade (sem preço, sem foto, sem botão de pedido). Rascunho continua 404.
+ */
+export const anuncioPausadoPublico = cache(async (id: string): Promise<{ id: string; titulo: string; cidade: string | null } | null> => {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("properties").select("id, title, city").eq("id", id).eq("status", "paused").maybeSingle();
+  const p = data as { id: string; title: string | null; city: string | null } | null;
+  return p ? { id: p.id, titulo: p.title ?? "Anúncio", cidade: p.city } : null;
+});
 
 /**
  * Carrega um imóvel do PRÓPRIO dono para edição — qualquer status (inclusive

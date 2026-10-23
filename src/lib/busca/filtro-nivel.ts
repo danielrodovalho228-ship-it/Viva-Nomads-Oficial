@@ -21,3 +21,22 @@ export function filtroNivelNaUrl(params: URLSearchParams, nivel: Nivel | ""): vo
   if (nivel && (VALIDOS as readonly string[]).includes(nivel)) params.set("nivel", nivel);
   else params.delete("nivel");
 }
+
+// ── NIVEL-BUSCA-A: filtro de nível sem beco sem saída ───────────────────────────────────────────────────────────
+/** No lugar do grupo "Nível a partir de" quando nenhum nível tem anúncio na busca atual (sem link). */
+export const TEXTO_SEM_NIVEIS = "Os níveis aparecem quando os anúncios desta busca tiverem o padrão mínimo confirmado.";
+
+/** Aviso da busca que o `?nivel=` zerou (o botão "Ver todos" tira só o filtro de nível). */
+export function avisoNivelSemResultado(nivel: Nivel): string {
+  return `Nenhum imóvel com nível ${ROTULO_NIVEL[nivel]} nesta busca`;
+}
+
+/**
+ * Como a folha mostra o grupo de nível: cada opção com contagem 0 fica desabilitada (o "· 0" fica); com as três em 0 o
+ * grupo some e entra a linha TEXTO_SEM_NIVEIS. A opção já escolhida nunca é desabilitada nem escondida (senão não dá
+ * para desligar o filtro).
+ */
+export function grupoNivel(contagens: Record<Nivel, number>, escolhido: Nivel | ""): { visivel: boolean; desabilitado: Record<Nivel, boolean> } {
+  const desabilitado = Object.fromEntries(VALIDOS.map((v) => [v, contagens[v] === 0 && escolhido !== v])) as Record<Nivel, boolean>;
+  return { visivel: !!escolhido || VALIDOS.some((v) => contagens[v] > 0), desabilitado };
+}

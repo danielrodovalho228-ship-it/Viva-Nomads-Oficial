@@ -52,7 +52,9 @@ export async function confirmarContatoDaConta(email: string): Promise<void> {
 }
 
 export const novaSenha = (): string => randomBytes(12).toString("hex");
-export const novoSufixo = (): string => randomBytes(3).toString("hex");
+// Só letras (a–p, o hex com os dígitos trocados): sufixo só de dígitos somava com o número do título ("Studio Fila
+// 1280 482913" = 10 dígitos) e a regra de contato do banco (0057, 23514) recusava a massa como telefone (L-32, t237).
+export const novoSufixo = (): string => randomBytes(3).toString("hex").replace(/\d/g, (d) => "ghijklmnop"[Number(d)]);
 
 /** CPF válido aleatório (dígitos verificadores certos). */
 export function cpfAleatorio(): string {
@@ -152,7 +154,7 @@ const BASE_PUBLICA = "/storage/v1/object/public/property-photos";
 export async function criarImovelPronto(
   ownerId: string,
   titulo: string,
-  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string; /** Prompt 59: sem o padrão mínimo de conforto confirmado (padrão do laboratório: os 10 itens confirmados) */ semConforto?: boolean } = {}
+  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string; /** Prompt 59: sem o padrão mínimo de conforto confirmado (padrão do laboratório: os 10 itens confirmados) */ semConforto?: boolean; /** 61-B (#1155): sem o tipo de entrada, que passou a ser obrigatório para publicar anúncio novo (padrão do laboratório: "porteiro") */ semTipoEntrada?: boolean } = {}
 ): Promise<string> {
   const { data, error } = await adm()
     .from("properties")
@@ -174,6 +176,7 @@ export async function criarImovelPronto(
       garantias_aceitas: ["caucao"],
       status: "draft",
       sem_cameras_interior: !opts.semDeclaracaoCameras,
+      tipo_entrada: opts.semTipoEntrada ? null : "porteiro",
     })
     .select("id")
     .single();
@@ -267,6 +270,14 @@ export async function liberarLimiteLogin(email: string): Promise<void> {
   await adm().from("limites_uso").delete().like("chave", "login:ip:%");
 }
 
+/**
+ * Prompt 49: o envio do código tem teto de 5 por hora por e-mail e por IP. No laboratório todos os specs saem do mesmo
+ * IP; antes de pedir código, os specs limpam as contagens de envio (só as do código).
+ */
+export async function liberarLimiteCodigo(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "codigo:%");
+}
+
 /** Login pela tela, em contexto próprio de 390 px (celular). */
 export async function entrar(browser: Browser, email: string, senha: string): Promise<Page> {
   await liberarLimiteLogin(email);
@@ -274,7 +285,7 @@ export async function entrar(browser: Browser, email: string, senha: string): Pr
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
   // networkidle sem teto pendurava até o fim do teste na 1ª carga fria (t168 a 390 px, lab 17/10): espera até 10 s e segue.
-  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+  await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   // Um clique antes da hidratação vira envio nativo e recarrega /auth vazio (t262, t82, t204 no lab de 23/10):
   // enquanto não sair de /auth, preenche o que estiver vazio e clica de novo.

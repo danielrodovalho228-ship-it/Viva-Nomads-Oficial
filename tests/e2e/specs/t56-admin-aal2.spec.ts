@@ -36,7 +36,7 @@ test.describe("T56 — Admin em AAL2", () => {
     const ctx = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
     const page = await ctx.newPage();
     const acc = account("admin");
-    await page.goto("/auth", { waitUntil: "networkidle" });
+    await page.goto("/auth?senha=1", { waitUntil: "networkidle" });
     await page.locator('input[name="email"], input[type="email"]').first().fill(acc.email);
     await page.locator('input[name="password"], input[type="password"]').first().fill(acc.senha);
     await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

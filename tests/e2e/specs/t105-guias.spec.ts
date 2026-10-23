@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T105 — Central de Guias (ordem 1438f18d, Próximo do FF 6/6): /guias lista 6 guias,
+ * T105 — Central de Guias (ordem 1438f18d, Próximo do FF 6/6): /guias lista 7 guias (65-B: + o do vídeo),
  * cada um tem JSON-LD Article no HTML sem JavaScript, links para /buscar e
  * /para-proprietarios, e todos estão no sitemap. Sem rolagem lateral a 390 px.
  */
@@ -11,11 +11,11 @@ test.beforeEach(({}, info) => {
   test.skip(info.project.name !== "chromium", "só no projeto do site (chromium)");
 });
 
-test("/guias lista os 6 guias, sem rolagem lateral a 390 px", async ({ page }) => {
+test("/guias lista os 7 guias, sem rolagem lateral a 390 px", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/guias");
   await expect(page.getByRole("heading", { level: 1, name: "Guias" })).toBeVisible();
-  await expect(page.locator('a[href^="/guias/"]')).toHaveCount(6);
+  await expect(page.locator('a[href^="/guias/"]')).toHaveCount(7);
   const largura = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(largura).toBeLessThanOrEqual(1);
 });
@@ -32,9 +32,9 @@ test("guia: título, links internos e JSON-LD Article sem JavaScript", async ({ 
   await expect(page.getByRole("link", { name: /Anunciar o meu imóvel/ })).toHaveAttribute("href", "/para-proprietarios");
 });
 
-test("guia inexistente dá 404 e o sitemap traz os 6 guias", async ({ request }) => {
+test("guia inexistente dá 404 e o sitemap traz os 7 guias", async ({ request }) => {
   expect((await request.get("/guias/nao-existe")).status()).toBe(404);
   const xml = await (await request.get("/sitemap.xml")).text();
-  expect((xml.match(/\/guias\/[a-z-]+</g) ?? []).length).toBe(6);
+  expect((xml.match(/\/guias\/[a-z-]+</g) ?? []).length).toBe(7);
   expect(xml).toMatch(/\/guias</);
 });

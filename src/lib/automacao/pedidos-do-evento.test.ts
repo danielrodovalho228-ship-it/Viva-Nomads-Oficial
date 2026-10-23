@@ -143,7 +143,8 @@ test("GUARDAS do servidor: parceiro não vê o pedido que espera o dono; teto s�
   assert.match(readFileSync(new URL("../fiscal/conferencia-fechamento.ts", import.meta.url), "utf8"), /aoFecharConferencia\(admin, conferenciaId\)/);
   const srv = readFileSync(new URL("./servidor.ts", import.meta.url), "utf8");
   assert.doesNotMatch(srv, /pagamento_status|valor_combinado/, "o automático não mexe em valores nem pagamento");
-  assert.match(srv, /semPush: emSilencio\(agora\)/);
+  // Prompt 44: o silêncio (22h–7h) é decidido no notify() pela regra única; o 38 não decide mais por fora.
+  assert.doesNotMatch(srv, /semPush: emSilencio/);
 });
 
 test("cartão do morador: só nos 7 dias antes da entrada e da saída", () => {

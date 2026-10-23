@@ -46,7 +46,8 @@ test("a publicação exige o aceite no servidor e a tela exige a caixa marcada",
   assert.match(actions, /exigirAceiteIa/);
   const pagina = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
   assert.match(ler("app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx"), /data-testid="aceite-ia"/);
-  assert.match(pagina, /podePublicar = prontidao\.podePublicar && qualificado && aceitouIa/);
+  // 64-B: o aceite só vale para o texto do momento em que foi dado (aceiteValido = marcado e o texto não mudou).
+  assert.match(pagina, /podePublicar = prontidao\.podePublicar && qualificado && aceiteValido/);
 });
 
 test("a migração do aceite é idempotente, só com RLS do dono e sem update/delete", () => {

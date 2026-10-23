@@ -72,6 +72,36 @@ export function porQueCombina(p: ParCompat): string[] {
   return motivos;
 }
 
+export interface ItemNota {
+  chave: "orcamento" | "vagas" | "data" | "perfil";
+  rotulo: string;
+  pontos: number;
+  max: number;
+}
+
+/**
+ * A nota "82/100" aberta em pontos, na mesma conta do banco (compatibilidade_pedidos): orçamento (40), vagas para as
+ * pessoas (20), imóvel livre na entrada (10). O que sobra (motivo da mudança + selo Pronto para Morar, até 30) vem
+ * da nota, pois o par não traz esses dados. Sem dado pessoal.
+ */
+export function explicarNota(p: ParCompat): { nota: number; itens: ItemNota[] } {
+  const orcamento =
+    p.orcamento <= 0 ? 0 : p.total_mensal <= p.orcamento ? 40 : Math.max(0, 40 - Math.round((40 * (p.total_mensal - p.orcamento)) / (p.orcamento * 0.2)));
+  const folga = p.vagas == null ? null : p.vagas - p.ocupantes;
+  const vagas = folga == null ? 0 : folga >= 2 ? 20 : folga === 1 ? 15 : folga === 0 ? 10 : 0;
+  const data = p.disponivel_desde == null || p.disponivel_desde <= p.entrada ? 10 : 0;
+  const perfil = Math.min(30, Math.max(0, p.nota - orcamento - vagas - data));
+  return {
+    nota: p.nota,
+    itens: [
+      { chave: "orcamento", rotulo: "Valor dentro do orçamento", pontos: orcamento, max: 40 },
+      { chave: "vagas", rotulo: "Vagas para as pessoas", pontos: vagas, max: 20 },
+      { chave: "data", rotulo: "Livre na data de entrada", pontos: data, max: 10 },
+      { chave: "perfil", rotulo: "Motivo da mudança e selo Pronto para Morar", pontos: perfil, max: 30 },
+    ],
+  };
+}
+
 /**
  * Sugestão ao inquilino quando nenhum imóvel combina: usa o "quase" mais
  * frequente (preço, prazo ou data). null se não há nada perto.

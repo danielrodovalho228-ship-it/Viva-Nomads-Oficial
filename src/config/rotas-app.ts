@@ -36,6 +36,7 @@ const ramo = (caminho: string): Regra => ({ caminho, abaixo: true });
  */
 export const ROTAS_APP: Regra[] = [
   exato("/auth"), // entrar / criar conta
+  exato("/auth/intencao"), // Prompt 49: 1 toque depois do 1º código da conta nova (sem trocar de navegador)
   ramo("/app"), // boas-vindas do app
   ramo("/buscar"),
   ramo("/imoveis"), // anúncio público
@@ -58,6 +59,7 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/solicitacoes"), // manutenção
   ramo("/dashboard/servicos"), // serviços de parceiros para o morador
   ramo("/dashboard/parceiro"), // painel do parceiro: Pedidos, Agenda e Ganhos da barra do parceiro (Prompt 41)
+  ramo("/dashboard/avaliacao-imovel"), // Prompt 62-B1: o morador concorda com a visita de avaliação (imóvel ocupado)
   ramo("/dashboard/buscas"), // buscas salvas
   ramo("/dashboard/imoveis"), // meus imóveis, criar e editar anúncio (fotos pelo celular)
   ramo("/qualificar"), // qualificação, que vem antes do anúncio

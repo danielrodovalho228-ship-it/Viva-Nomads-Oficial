@@ -14,7 +14,7 @@ const aviso = ler("../components/contrato/aviso-assinatura.tsx");
 const detalhe = ler("../components/contrato/contrato-detalhe.tsx");
 
 test("a ação devolve o cartão já com a assinatura nova (nome, papel, data e o que falta)", () => {
-  assert.match(acao, /return \{ ok: true, aviso \}/);
+  assert.match(acao, /return \{ ok: true, aviso(, ambos: outraJaAssinou)? \}/);
   assert.match(acao, /em: visao\.papel === "inquilino" \? agora : c\.assinado_inquilino_em/);
 });
 

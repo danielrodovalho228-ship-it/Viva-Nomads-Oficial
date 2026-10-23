@@ -1,5 +1,5 @@
 import "server-only";
-import { niveisDosImoveis } from "@/lib/niveis/servidor";
+import { niveisDosImoveis, vistoriadosDosImoveis } from "@/lib/niveis/servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { CHAVE_ORDEM_NOVA, gravarSombra, ordemNovaLigada } from "@/lib/ranking/chave";
@@ -8,6 +8,7 @@ import type { SinaisAnuncio } from "@/lib/ranking/ordem";
 import { boaParaVideochamada, sinalMorador, type Rodada } from "@/lib/internet-medida";
 import { procedentes12m, pendenciaVencida, type PendenciaConforto } from "@/lib/conforto/regras";
 import { foraDoPrazo90d, type OrdemSolucao } from "@/lib/manutencao-solucao";
+import { considerarPreenchido } from "@/lib/anuncio/chegada-e-pedido";
 
 /*
   Servidor da ordem dos imóveis (Prompt 33, itens 4 e 5). Nunca importe em componente client:
@@ -33,11 +34,13 @@ export async function sinaisDosAnuncios(ids: string[], admin: Admin | null = cre
   }
   const linhas = data as LinhaRankingSinais[];
   const donos = [...new Set(linhas.map((l) => l.dono_id))];
-  const [identidades, internet, prazos, niveis] = await Promise.all([
+  const [identidades, internet, prazos, niveis, vistoriados, considerar] = await Promise.all([
     estadosIdentidade(admin, donos),
     internetDosAnuncios(admin, reais),
     prazos59(admin, reais, donos),
     niveisDosImoveis(admin, reais).catch(() => new Map()), // sem a 0211, a nota segue sem o nível
+    vistoriadosDosImoveis(admin, reais).catch(() => new Set<string>()),
+    considerarDosAnuncios(admin, reais),
   ]);
   return linhas.map((l) =>
     sinaisDaLinha(l, {
@@ -47,8 +50,18 @@ export async function sinaisDosAnuncios(ids: string[], admin: Admin | null = cre
       manutencaoFora90d: prazos.fora90d.get(l.dono_id) ?? 0,
       confortoPendenciasAbertas: prazos.abertas.get(l.id) ?? 0,
       nivel: niveis.get(l.id) ?? null,
+      vistoriado: vistoriados.has(l.id),
+      considerarAntes: considerar.has(l.id),
     }),
   );
+}
+
+/** 61-B: anúncios com "o que considerar antes de pedir" preenchido. Sem a 0225, nenhum (a nota segue sem o fato). */
+async function considerarDosAnuncios(admin: Admin, ids: string[]): Promise<Set<string>> {
+  const { data, error } = await admin.from("properties").select("id, considerar_antes, considerar_antes_texto").in("id", ids);
+  if (error || !data) return new Set();
+  const linhas = data as { id: string; considerar_antes: string[] | null; considerar_antes_texto: string | null }[];
+  return new Set(linhas.filter((l) => considerarPreenchido({ itens: l.considerar_antes, texto: l.considerar_antes_texto })).map((l) => l.id));
 }
 
 /**

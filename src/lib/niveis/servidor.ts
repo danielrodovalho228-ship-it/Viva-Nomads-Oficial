@@ -9,6 +9,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { CHAVE_RUIDO_CONFERENCIA, ROTULO_AREA, ROTULO_NIVEL, ROTULO_RUIDO, ROTULO_RUIDO_CONFERENCIA, rotuloItem, type ClasseRuido, type NivelOuAdequacao } from "@/config/niveis";
 import { classeRuido, itensDaConferencia, nivelDoImovel, pendenciaBloqueia, type EntradaNivel, type ItemDeclarado, type MedidaPonto, type ResultadoNivel, type RespostasRuido, type StatusFoto } from "./regras";
 import { avisarNivel } from "./avisos";
+import { validadeLaudo } from "@/lib/vistoria/laudo";
+import { imovelComStrike } from "@/lib/vistoria/strikes";
 
 type Admin = SupabaseClient;
 
@@ -52,10 +54,42 @@ export async function nivelGravado(admin: Admin, propertyId: string): Promise<Ni
  * Recalcula e grava. Se o nível caiu, avisa o dono com as áreas que caíram e o que falta (o "o que corrigir").
  * Nunca lança: um erro aqui não pode quebrar a ação que o chamou.
  */
+/**
+ * Prompt 62-B2: o laudo de avaliação VÁLIDO (12 meses da emissão) prevalece sobre a autodeclaração e as fotos.
+ * "· vistoriado" só com laudo aprovado (ou ressalva corrigida), dentro de 12 meses e sem strike no imóvel.
+ */
+export async function laudoQuePrevalece(admin: Admin, propertyId: string, agora = new Date()): Promise<{ nivel: NivelOuAdequacao; vistoriadoEm: string | null } | null> {
+  const { data } = await admin
+    .from("vistoria_laudos")
+    .select("owner_id, nivel_sustentado, emitido_em, vistoriado_em")
+    .eq("property_id", propertyId)
+    .order("emitido_em", { ascending: false })
+    .order("versao", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const l = data as { owner_id: string; nivel_sustentado: NivelOuAdequacao; emitido_em: string; vistoriado_em: string | null } | null;
+  if (!l || agora >= validadeLaudo(l.emitido_em)) return null;
+  let vistoriadoEm = l.vistoriado_em && agora < validadeLaudo(l.vistoriado_em) ? l.vistoriado_em : null;
+  if (vistoriadoEm) {
+    const { data: st } = await admin.from("proprietario_strikes").select("property_id, ordem, criado_em, suspenso_ate, expira_em").eq("property_id", propertyId);
+    const strikes = ((st ?? []) as { property_id: string; ordem: 1 | 2 | 3; criado_em: string; suspenso_ate: string | null; expira_em: string }[]).map((x) => ({
+      propertyId: x.property_id,
+      ordem: x.ordem,
+      criadoEm: x.criado_em,
+      suspenso: x.suspenso_ate != null,
+      expiraEm: x.expira_em,
+    }));
+    if (imovelComStrike(strikes, propertyId, agora)) vistoriadoEm = null;
+  }
+  return { nivel: l.nivel_sustentado, vistoriadoEm };
+}
+
 export async function recalcularNivel(admin: Admin, propertyId: string, agora = new Date()): Promise<{ antes: NivelOuAdequacao | null; resultado: ResultadoNivel } | null> {
   try {
     const entrada = await entradaDoNivel(admin, propertyId, agora);
-    const resultado = nivelDoImovel(entrada);
+    const calculado = nivelDoImovel(entrada);
+    const laudo = await laudoQuePrevalece(admin, propertyId, agora);
+    const resultado: ResultadoNivel = laudo ? { ...calculado, nivel: laudo.nivel } : calculado;
     const antes = await nivelGravado(admin, propertyId);
     const { error } = await admin.from("imovel_nivel").upsert(
       {
@@ -65,6 +99,7 @@ export async function recalcularNivel(admin: Admin, propertyId: string, agora = 
         diferenciais: resultado.diferenciais,
         ruido_classe: entrada.ruido ? classeRuido(entrada.ruido) : null,
         calculado_em: agora.toISOString(),
+        nivel_vistoriado_em: laudo?.vistoriadoEm ?? null,
       },
       { onConflict: "property_id" },
     );
@@ -88,6 +123,13 @@ export async function recalcularNivel(admin: Admin, propertyId: string, agora = 
     console.error("[recalcularNivel]", e);
     return null;
   }
+}
+
+/** Prompt 62-B2: imóveis com "· vistoriado" vigente (laudo válido, sem strike) — um fato a mais na nota. */
+export async function vistoriadosDosImoveis(db: SupabaseClient, ids: string[]): Promise<Set<string>> {
+  if (!ids.length) return new Set();
+  const { data } = await db.from("imovel_nivel").select("property_id").in("property_id", ids).not("nivel_vistoriado_em", "is", null);
+  return new Set(((data ?? []) as { property_id: string }[]).map((r) => r.property_id));
 }
 
 /** Níveis gravados de vários imóveis (busca e nota). */

@@ -1,30 +1,23 @@
--- Viva Nomads — aplicar 0214 (selos de estrutura: checklist de Acessível e Mobilidade reduzida). Idempotente. Rollback: supabase/producao/rollback/0214_rollback.sql.
+-- Viva Nomads — aplicar 0214 (intenção no perfil — Prompt 49). Idempotente. Rollback: supabase/producao/rollback/0214_rollback.sql.
 begin;
 set local lock_timeout = '5s';
--- 0214 — Selos de estrutura (ordem 512f3ed0, parte 2): onde o dono grava o checklist de Acessível e de Mobilidade
--- reduzida / idosos. O selo só aparece com TODOS os itens marcados (src/lib/selos-estrutura.ts). Sem dado pessoal.
--- Só o servidor grava (depois de conferir o dono); leitura pública só do anúncio ativo; dono e equipe leem o próprio.
--- Reaplicar é seguro.
-create table if not exists public.imovel_estrutura (
-  property_id uuid primary key references public.properties (id) on delete cascade,
-  checklist jsonb not null default '{}'::jsonb check (jsonb_typeof(checklist) = 'object'),
-  atualizado_em timestamptz not null default now()
-);
-alter table public.imovel_estrutura enable row level security;
-revoke all on public.imovel_estrutura from anon, authenticated;
-grant select on public.imovel_estrutura to anon, authenticated;
-grant all on public.imovel_estrutura to service_role;
-drop policy if exists "estrutura: anuncio ativo" on public.imovel_estrutura;
-create policy "estrutura: anuncio ativo" on public.imovel_estrutura for select to anon using (
-  exists (select 1 from public.properties p where p.id = imovel_estrutura.property_id and p.status::text = 'active')
-);
-drop policy if exists "estrutura: anuncio ativo, dono e equipe (logado)" on public.imovel_estrutura;
-create policy "estrutura: anuncio ativo, dono e equipe (logado)" on public.imovel_estrutura for select to authenticated using (
-  public.is_admin() or exists (select 1 from public.properties p where p.id = imovel_estrutura.property_id and (p.status::text = 'active' or p.owner_id = auth.uid()))
-);
+-- 0214 — profiles.intencao text[] (morar | anunciar | servicos), multi-escolha. Camada, não papel: define o painel
+-- inicial e o checklist; nunca mexe em role nem em permissão. null = não respondeu; '{}' = "Agora não".
+-- A pessoa só altera a própria linha (update da coluna + RLS de profiles). Reaplicar é seguro.
+alter table public.profiles add column if not exists intencao text[];
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_intencao_chk') then
+    alter table public.profiles add constraint profiles_intencao_chk
+      check (intencao is null or intencao <@ array['morar', 'anunciar', 'servicos']::text[]);
+  end if;
+end $$;
+
+grant update (intencao) on public.profiles to authenticated;
 
 insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
-select '20261023000214', '0214_selos_estrutura',
-       array['-- conteúdo em supabase/migrations/0214_selos_estrutura.sql'], 'danielrodovalho228@gmail.com'
+select '20261023000214', '0214_intencao_perfil',
+       array['-- conteúdo em supabase/migrations/0214_intencao_perfil.sql'], 'danielrodovalho228@gmail.com'
  where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261023000214');
 commit;

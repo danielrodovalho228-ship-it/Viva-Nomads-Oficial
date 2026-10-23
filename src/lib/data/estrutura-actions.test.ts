@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const acao = readFileSync("src/lib/data/estrutura-actions.ts", "utf8");
-const migracao = readFileSync("supabase/migrations/0214_selos_estrutura.sql", "utf8");
+const migracao = readFileSync("supabase/migrations/0228_selos_estrutura.sql", "utf8");
 
 test("ação do checklist: valida a entrada e confere o dono no servidor antes de gravar", () => {
   const iValida = acao.indexOf("validarChecklistEstrutura(checklist)");
@@ -12,7 +12,7 @@ test("ação do checklist: valida a entrada e confere o dono no servidor antes d
   assert.ok(iValida > 0 && iDono > iValida && iGrava > iDono);
 });
 
-test("migração 0214: RLS ligada, escrita só do servidor, leitura pública só do anúncio ativo", () => {
+test("migração 0228: RLS ligada, escrita só do servidor, leitura pública só do anúncio ativo", () => {
   assert.match(migracao, /enable row level security/);
   assert.match(migracao, /revoke all on public\.imovel_estrutura from anon, authenticated/);
   assert.doesNotMatch(migracao, /grant (insert|update|delete|all)[^;]*to (anon|authenticated)/);

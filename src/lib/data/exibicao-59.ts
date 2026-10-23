@@ -8,6 +8,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { estadoConfortoDoImovel } from "@/lib/conforto/servidor";
 import { taxaSolucaoNoPrazo, type OrdemSolucao } from "@/lib/manutencao-solucao";
 import type { Area, ClasseRuido, Nivel, NivelOuAdequacao } from "@/config/niveis";
+import { exibicaoDoImovel } from "@/lib/vistoria/laudo-servidor";
+import type { ExibicaoAvaliacao } from "@/lib/vistoria/laudo";
 
 /** Adendo 59.1 — o nível gravado (elo mais fraco), as áreas acima dele, o ruído e os extras. */
 export interface NivelNaFicha {
@@ -23,16 +25,18 @@ export interface Exibicao59 {
   confortoConfirmado: boolean;
   taxaManutencao: { taxa: number; resolvidos: number } | null;
   nivel?: NivelNaFicha | null;
+  /** Prompt 62-B2: dados do "· vistoriado" (nível, data, nº do avaliador, resumo por grupo, link do /conferir). A Pista A desenha. */
+  avaliacao?: ExibicaoAvaliacao | null;
 }
 
-const NADA: Exibicao59 = { confortoConfirmado: false, taxaManutencao: null, nivel: null };
+const NADA: Exibicao59 = { confortoConfirmado: false, taxaManutencao: null, nivel: null, avaliacao: null };
 
 export async function exibicao59DoImovel(propertyId: string, donoId: string | undefined, agora = new Date()): Promise<Exibicao59> {
   const admin = createAdminClient();
   if (!admin || !/^[0-9a-f-]{36}$/i.test(propertyId)) return NADA;
   try {
     const desde = new Date(agora.getTime() - 400 * 86_400_000).toISOString();
-    const [conforto, ordens, nivel] = await Promise.all([
+    const [conforto, ordens, nivel, avaliacao] = await Promise.all([
       estadoConfortoDoImovel(admin, propertyId, agora),
       donoId
         ? admin
@@ -44,13 +48,14 @@ export async function exibicao59DoImovel(propertyId: string, donoId: string | un
             .limit(2000)
         : Promise.resolve({ data: [] }),
       nivelDoImovelNaFicha(admin, propertyId),
+      exibicaoDoImovel(admin, propertyId, agora).catch(() => null), // sem a 0216: sem laudo
     ]);
     type Linha = { priority: OrdemSolucao["priority"]; status: string; opened_at: string; provisoria_em: string | null; solucao_marcada_em: string | null; resolved_at: string | null; simulacao: boolean | null };
     const lista: OrdemSolucao[] = ((ordens.data ?? []) as unknown as Linha[])
       .filter((o) => !o.simulacao)
       .map((o) => ({ priority: o.priority, status: o.status, openedAt: o.opened_at, provisoriaEm: o.provisoria_em, solucaoMarcadaEm: o.solucao_marcada_em, resolvedAt: o.resolved_at }));
     const t = taxaSolucaoNoPrazo(lista, agora);
-    return { confortoConfirmado: conforto.completo, taxaManutencao: t ? { taxa: t.taxa, resolvidos: t.resolvidos } : null, nivel };
+    return { confortoConfirmado: conforto.completo, taxaManutencao: t ? { taxa: t.taxa, resolvidos: t.resolvidos } : null, nivel, avaliacao };
   } catch {
     return NADA;
   }

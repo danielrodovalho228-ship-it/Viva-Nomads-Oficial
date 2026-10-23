@@ -30,6 +30,7 @@ import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-vide
 import { useAuthStore } from "@/lib/store";
 import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candidatura";
 import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
+import { urlEntrada } from "@/lib/auth/entrada";
 import { IdealPara } from "@/components/property/ideal-para";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
@@ -66,6 +67,7 @@ import type { Exibicao59 } from "@/lib/data/exibicao-59";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
+import { DenunciarAnuncio } from "@/components/anuncio/denunciar-anuncio";
 import type { PerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { Reviews } from "@/components/property/reviews";
 import { CampoData } from "@/components/ui/campo-data";
@@ -77,7 +79,7 @@ import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
-import { videoTourPermitido } from "@/lib/video-tour";
+import { videoDoAnuncio } from "@/lib/video-anuncio";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
 
 export function PropertyDetail({
@@ -97,6 +99,8 @@ export function PropertyDetail({
   // existe de verdade para um anúncio ilustrativo.
   const property = isExemplo(anuncio) ? semSinaisInventados(anuncio) : anuncio;
   const router = useRouter();
+  // 65-B: uma fonte só — o arquivo enviado vence; o link do YouTube/Vimeo só sem arquivo.
+  const video = videoDoAnuncio(property);
   const [pending, setPending] = useState<LeadKind | null>(null);
   const [sent, setSent] = useState<{ duvida?: boolean; visita?: boolean }>({});
   const [selfNote, setSelfNote] = useState(false);
@@ -210,7 +214,7 @@ export function PropertyDetail({
     setPending(null);
     if (r?.needsAuth) {
       // Sem sessão: leva ao login e volta para este anúncio depois de entrar (a visita volta com a janela aberta).
-      router.push(kind === "visita" ? urlLoginParaAbrir(property.id, "visita") : `/auth?redirect=/imoveis/${property.id}`);
+      router.push(kind === "visita" ? urlLoginParaAbrir(property.id, "visita") : urlEntrada(kind === "candidatura" ? "candidatura" : "mensagem", `/imoveis/${property.id}`));
       return false;
     }
     if (r?.selfOwned) {
@@ -518,6 +522,14 @@ export function PropertyDetail({
             </h3>
             <p className="mt-1 text-sm text-muted">{property.title}</p>
             {etapa === "mensagem" ? (
+              <>
+              {/* 61-B: a mensagem do dono para quem vai pedir, lida antes da apresentação (mascarada ao salvar e ao ler). */}
+              {property.chegadaEPedido?.mensagemParaPedido && (
+                <blockquote className="mt-3 rounded-lg bg-surface-2 px-3 py-3 text-sm text-ink" data-testid="mensagem-do-dono">
+                  <span className="block text-xs font-medium text-muted">Recado do proprietário</span>
+                  <span className="mt-1 block whitespace-pre-line">{property.chegadaEPedido.mensagemParaPedido}</span>
+                </blockquote>
+              )}
               <label className="mt-3 flex flex-col gap-1 text-sm font-medium text-ink">
                 Apresente-se (opcional): conte o motivo da estadia e quem vai morar.
                 <textarea
@@ -530,6 +542,7 @@ export function PropertyDetail({
                 />
                 <span className="text-xs font-normal text-muted">Telefone e e-mail não podem ser enviados: a conversa segue pela plataforma e eles são ocultados.</span>
               </label>
+              </>
             ) : (
               <>
                 <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
@@ -664,8 +677,8 @@ export function PropertyDetail({
         photos={property.photos}
         title={property.title}
         readyToLive={property.readyToLiveBadge}
-        videoUrl={property.videoUrl}
-        videoArquivoId={property.videoArquivo ? property.id : undefined}
+        videoUrl={video.tipo === "link" ? video.url : undefined}
+        videoArquivoId={video.tipo === "arquivo" ? property.id : undefined}
         acoes={icones}
       />
 
@@ -754,17 +767,17 @@ export function PropertyDetail({
           </header>
 
           {/* Vídeo enviado pelo dono: miniatura com play, só baixa no clique (ordem 8681ae95) */}
-          {property.videoArquivo && (
+          {video.tipo === "arquivo" && (
             <section>
               <VideoArquivoPlayer imovelId={property.id} capa={property.photos[0]} title={property.title} />
               <p className="mt-2 text-xs text-muted">Vídeo gravado pelo proprietário.</p>
             </section>
           )}
 
-          {/* Walk-through em vídeo */}
-          {videoTourPermitido(property.videoUrl) && (
+          {/* Walk-through em vídeo: o link do YouTube/Vimeo só aparece sem arquivo enviado (65-B: uma fonte só). */}
+          {video.tipo === "link" && (
             <section>
-              <VideoWalkthrough url={property.videoUrl!} title={property.title} />
+              <VideoWalkthrough url={video.url} title={property.title} />
               <p className="mt-2 text-xs text-muted">
                 {isExemplo(property) ? "Vídeo ilustrativo." : "Tour em vídeo gravado pelo proprietário."}
               </p>
@@ -811,6 +824,11 @@ export function PropertyDetail({
               }
             />
           </div>
+          {!exemplo && (
+            <div className="mt-6">
+              <DenunciarAnuncio propertyId={property.id} />
+            </div>
+          )}
         </div>
 
         {/* Cartão lateral: fixo no computador, empilhado no celular (o primário do celular é o do rodapé fixo). */}

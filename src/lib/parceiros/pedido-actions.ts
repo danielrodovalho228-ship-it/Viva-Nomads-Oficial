@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { registrarAtivacao } from "@/lib/ativacao/servidor";
 import { conversationId } from "@/lib/messages/conversation-id";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { atribuicaoDoPedidoParceiro } from "@/lib/data/cartoes-servidor";
@@ -282,6 +283,8 @@ export async function aceitarOrcamento(pedidoId: string): Promise<Res> {
     async ({ admin, userId, p }) => {
       await mensagem(admin, p, userId, "Orçamento aceito. Agora é só confirmar o horário.");
       await avisar(admin, p.parceiros!.user_id, "parceiro_orcamento_aceito", p.id);
+      // Prompt 50: o 1º pedido aceito ativa o parceiro (1× por papel).
+      await registrarAtivacao(p.parceiros!.user_id, "parceiro", new Date(), admin);
     },
   );
 }

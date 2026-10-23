@@ -1,3 +1,5 @@
+import { BlocoLimite } from "@/components/anuncio/bloco-limite";
+import { minhaSituacaoLimite } from "@/lib/data/actions";
 import { listMyProperties } from "@/lib/data/properties";
 import { createClient } from "@/lib/supabase/server";
 import { contarInteressados } from "@/lib/painel/kpi-interessados";
@@ -9,7 +11,9 @@ import { decisoesDoMorador, decisoesDoProprietario, type EstadiaParaDecisao } fr
 import { checklistAnuncio } from "@/lib/anuncio/prontidao";
 import { fatosDaConta } from "@/lib/data/ativacao";
 import { checklistsDoInicio } from "@/lib/onboarding/ativacao";
+import { ativacoesDaSessao } from "@/lib/data/ativacao";
 import { VisaoGeral, type RascunhoPendente } from "./visao-geral-client";
+import { ContaPausada } from "@/components/account/sair-da-viva";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -41,6 +45,18 @@ async function cidadeDoPerfil(): Promise<string | null> {
   if (!user) return null;
   const { data } = await supabase.from("profiles").select("cidade").eq("id", user.id).maybeSingle();
   return ((data?.cidade as string | null) ?? "").trim() || null;
+}
+
+/** Prompt 51 F1: a conta está pausada? (a pessoa lê o próprio perfil). */
+async function contaPausadaEm(): Promise<string | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from("profiles").select("pausada_em").eq("id", user.id).maybeSingle();
+  return (data?.pausada_em as string | null) ?? null;
 }
 
 /** Rascunho mais recente → card "Anúncio em andamento" (antes lido no navegador por server action). */
@@ -78,10 +94,16 @@ export default async function DashboardPage() {
     getLatestDraft().catch(() => null),
     dadosDasDecisoes(),
   ]);
+  const pausadaEm = await contaPausadaEm();
+  // 64-B: o limite do plano (mesma conta da publicação), para quem já tem anúncio publicado.
+  const limite = imoveisDono.length ? await minhaSituacaoLimite().catch(() => null) : null;
   const rascunho = rascunhoDoDraft(draft);
   // Prompt 43: checklist de ativação de cada papel até a ativação (some sozinho).
   const fatos = await fatosDaConta(draft).catch(() => null);
-  const checklists = fatos ? checklistsDoInicio(fatos) : [];
+  // Prompt 50: o checklist some na ativação do papel (data gravada em ativacoes; o que já aconteceu e falta gravar,
+  // grava agora — rede de segurança dos pontos de gravação).
+  const ativados = fatos ? await ativacoesDaSessao(fatos).catch(() => ({})) : {};
+  const checklists = fatos ? checklistsDoInicio(fatos, ativados) : [];
   const estadiasDe = (papel: "proprietario" | "inquilino"): EstadiaParaDecisao[] =>
     estadias.filter((e) => e.papel === papel).map((e) => ({ contratoId: e.contratoId, imovel: e.imovel, decisoes: e.decisoes }));
 
@@ -107,7 +129,19 @@ export default async function DashboardPage() {
   );
 
   return (
-    <VisaoGeral
+    <>
+      {/* Prompt 51 F1: conta pausada → "Reativar minha conta" em um toque, no topo do painel. */}
+      {pausadaEm && (
+        <div className="mb-4">
+          <ContaPausada />
+        </div>
+      )}
+      {limite && limite.ativos > 0 && (
+        <div className="mb-4">
+          <BlocoLimite situacao={limite} link />
+        </div>
+      )}
+      <VisaoGeral
       imoveisDono={imoveisDono}
       interessados={interessados}
       decisoesDono={decisoesDono}
@@ -116,6 +150,7 @@ export default async function DashboardPage() {
       cidadePerfil={cidadePerfil}
       estadias={estadias}
       checklists={checklists}
-    />
+      />
+    </>
   );
 }

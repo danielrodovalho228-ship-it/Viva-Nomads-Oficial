@@ -34,7 +34,7 @@ async function novoDono(browser: Browser, largura: number, opcoes: BrowserContex
   const id = await criarConta({ email, nome: "Dora Cadastro Sobrenome", role: "owner" }, senha);
   const ctx = await browser.newContext({ viewport: { width: largura, height: 900 }, ...opcoes });
   const page = await ctx.newPage();
-  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+  await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
   // A tela pode hidratar depois do preenchimento e zerar o e-mail: preenche até os dois valores ficarem.
   const campoEmail = page.locator('input[name="email"], input[type="email"]').first();
   const campoSenha = page.locator('input[name="password"], input[type="password"]').first();

@@ -45,6 +45,8 @@ export const PREFIXOS = {
   RSV: { rotulo: "Recibo de serviço", marca: "emissor", numeracao: { contador: "RSV" }, reservado: true },
   REG: { rotulo: "Comprovante ao titular (LGPD)", marca: "plataforma", numeracao: { contador: "REG" }, reservado: true },
   NFSE: { rotulo: "NFS-e", marca: "fiscal", numeracao: "proprio", reservado: true },
+  // Prompt 62-B2: laudo de avaliação do imóvel, emitido pela plataforma (nunca arquivo do avaliador).
+  VIS: { rotulo: "Laudo de avaliação", marca: "plataforma", numeracao: { contador: "VIS" } },
 } as const satisfies Record<string, RegraPrefixo>;
 
 export type Prefixo = keyof typeof PREFIXOS;

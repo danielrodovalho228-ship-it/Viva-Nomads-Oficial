@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { estadoDoPapelGravado } from "@/lib/papel/papel-ativo";
 import { useAuthStore } from "@/lib/store";
 import type { UserRole } from "@/lib/types";
 import { lerPendente } from "@/lib/modo-pendente";
@@ -72,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data: profile } = await supabase!
           .from("profiles")
-          .select("full_name, role, preferred_mode")
+          .select("full_name, role, preferred_mode, papel_ativo")
           .eq("id", u.id)
           .maybeSingle();
         if (profile && (profile.full_name || profile.role)) {
@@ -92,8 +93,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // (bug 6 da L2) — o ModeInitializer já a aplicou e está regravando.
         const pm = (profile as { preferred_mode?: string } | null)?.preferred_mode;
         const pendente = lerPendente(typeof window === "undefined" ? null : window.localStorage);
-        if ((pm === "owner" || pm === "tenant") && !pendente && useAuthStore.getState().activeMode === modoAntes) {
+        const semTrocaNoMeio = !pendente && useAuthStore.getState().activeMode === modoAntes;
+        if ((pm === "owner" || pm === "tenant") && semTrocaNoMeio) {
           setActiveMode(pm);
+        }
+        // PAPEL-B: o papel ativo gravado (fonte única) vence o modo derivado — inclusive "Parceiro", que não tem modo.
+        const gravado = (profile as { papel_ativo?: string | null } | null)?.papel_ativo;
+        if (gravado && semTrocaNoMeio) {
+          const atualModo = useAuthStore.getState().activeMode;
+          const e = estadoDoPapelGravado(gravado, atualModo === "owner" ? "owner" : "tenant");
+          // Parceiro mantém o modo de baixo como estava (o painel morador/proprietário volta igual ao trocar).
+          useAuthStore.setState(e.parceiro ? { parceiroAtivo: true } : { activeMode: e.modo, parceiroAtivo: false });
         }
       } catch {
         perfilLido.delete(u.id); // tenta de novo no próximo evento

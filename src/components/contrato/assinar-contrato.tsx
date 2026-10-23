@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { assinarContrato, pedirCodigoAssinatura } from "@/lib/data/contrato-assinar-actions";
+import { HREF_CONFIRMADA } from "@/lib/estadia/confirmacao";
 import { EVENTO_AVISO_ASSINATURA } from "./aviso-assinatura";
 
 /** “Li e concordo” + código de 6 dígitos enviado ao e-mail da conta (conferido no servidor) → assina. */
@@ -69,6 +70,11 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         window.sessionStorage.removeItem(chave);
       } catch {
         /* sem armazenamento */
+      }
+      // Prompt 61-A: a segunda assinatura leva à tela "Estadia confirmada" (uma vez; depois, pela página da estadia).
+      if (r.ambos) {
+        router.push(HREF_CONFIRMADA(contratoId));
+        return;
       }
       router.refresh();
     } finally {

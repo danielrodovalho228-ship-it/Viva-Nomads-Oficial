@@ -36,7 +36,7 @@ function quinzeHorasDeBrasilia(): { campo: string; iso: string } {
 async function entrarNoFuso(browser: Browser, email: string, fuso: string, largura: number): Promise<Page> {
   const ctx = await browser.newContext({ viewport: { width: largura, height: largura === 390 ? 844 : 900 }, timezoneId: fuso });
   const page = await ctx.newPage();
-  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+  await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
   const campoEmail = page.locator('input[name="email"], input[type="email"]').first();
   const campoSenha = page.locator('input[name="password"], input[type="password"]').first();
   await expect(async () => {

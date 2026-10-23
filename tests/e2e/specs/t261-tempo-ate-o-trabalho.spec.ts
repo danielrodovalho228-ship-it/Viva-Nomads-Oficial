@@ -124,7 +124,7 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
   });
 
   for (const largura of [390, 1280]) {
-    test(`3) página do imóvel: "Tempo até" com o destino da busca e os cadastrados mais próximos (${largura})`, async ({ browser }) => {
+    test(`3) página do imóvel: "Tempo até" com o destino da busca e os cadastrados da cidade (${largura})`, async ({ browser }) => {
       const ctx = await browser.newContext({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
       const page = await ctx.newPage();
       await page.goto(`/imoveis/${ids.perto}?destino=hc-ufu&modo=carro`, { waitUntil: "domcontentloaded" });
@@ -133,6 +133,8 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
       await expect(bloco.locator('[data-busca="1"]')).toContainText(/min de carro até o HC-UFU/);
       await expect(bloco).toContainText(/min a pé até o HC-UFU/);
       await expect(bloco).not.toContainText(/-18\.|-48\./);
+      // E31: destino de outra cidade (a clínica do lab, em Araguari) não entra no bloco do anúncio.
+      await expect(bloco).not.toContainText(`Clínica Lab ${sufixo}`);
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(page);
       await bloco.screenshot({ path: `${SAIDA}/t261-imovel-tempo-ate-${largura}.png` });
@@ -211,6 +213,8 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
       await expect(hc).toContainText("Ativo");
       await expect(page.locator('[data-testid="destino-linha"][data-slug="ufu-umuarama"]').getByTestId("alternar-destino")).toBeDisabled();
       await expect(page.getByTestId("destinos-mais-buscados")).toContainText("HC-UFU");
+      // E31: com o provedor de rotas (no lab, o falso), o admin vê "ligado" e nenhuma variável faltando.
+      await expect(page.getByTestId("destinos-provedor")).toHaveAttribute("data-ok", "1");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t261-admin-destinos-${largura}.png` });
       await ctx.close();

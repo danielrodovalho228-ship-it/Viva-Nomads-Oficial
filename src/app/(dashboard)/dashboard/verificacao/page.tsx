@@ -171,17 +171,24 @@ function TesteFlow({ copy, perfil, inicial, onStatus }: { copy: VerifyCopy; perf
   );
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Prompt 50: reprovou → o motivo com o próximo passo e a nova tentativa na hora (na 2ª, uma pessoa analisa).
+  const [reprov, setReprov] = useState<{ titulo: string; proximoPasso: string; acao: "tentar_de_novo" | "analise_humana" } | null>(null);
 
   async function verificar() {
     setCarregando(true);
     setErro(null);
     try {
       const res = await fetch("/api/caf/verify", { method: "POST" });
-      const r = (await res.json().catch(() => ({}))) as Partial<CafResult> & { error?: string };
+      const r = (await res.json().catch(() => ({}))) as Partial<CafResult> & { error?: string; reprovacao?: { titulo: string; proximoPasso: string; acao: "tentar_de_novo" | "analise_humana" } | null };
       if (!res.ok || !r.light) {
         setErro(r.error ?? "Não foi possível fazer a verificação simulada agora. Tente de novo.");
         return;
       }
+      if (r.reprovacao) {
+        setReprov(r.reprovacao);
+        return;
+      }
+      setReprov(null);
       const st = (await fetch("/api/caf/status").then((x) => x.json()).catch(() => ({}))) as Partial<StatusCaf>;
       setLaudo({ ok: r.identity === true && r.liveness === true && r.document === true, validoAte: st.validoAte ?? null });
       // A linha do estado (topo) passa a "Identidade confirmada · válida até …", pela fonte única.
@@ -206,10 +213,19 @@ function TesteFlow({ copy, perfil, inicial, onStatus }: { copy: VerifyCopy; perf
             Esta é uma conta de teste: a verificação é <strong>simulada</strong>, sem documento, sem CPF e sem consulta ao
             parceiro. Serve para seguir a jornada até a assinatura.
           </p>
-          <Button variant="gold" className="mt-6" onClick={verificar} disabled={carregando} data-testid="verificacao-teste-verificar">
-            {carregando && <Loader2 className="h-4 w-4 animate-spin" />}
-            {carregando ? "Verificando..." : "Fazer a verificação simulada"}
-          </Button>
+          {reprov && (
+            <div className="mx-auto mt-4 max-w-md rounded-lg border border-line p-3 text-left text-sm" role="status" data-testid="verificacao-reprovada" data-acao={reprov.acao}>
+              <p className="font-semibold text-ink">{reprov.titulo}</p>
+              <p className="mt-1 text-muted">{reprov.proximoPasso}</p>
+              {reprov.acao === "analise_humana" && <p className="mt-2 text-ink">Uma pessoa da equipe vai analisar e responde por aqui e por e-mail.</p>}
+            </div>
+          )}
+          {reprov?.acao !== "analise_humana" && (
+            <Button variant="gold" className="mt-6" onClick={verificar} disabled={carregando} data-testid="verificacao-teste-verificar">
+              {carregando && <Loader2 className="h-4 w-4 animate-spin" />}
+              {carregando ? "Verificando..." : reprov ? "Tentar de novo agora" : "Fazer a verificação simulada"}
+            </Button>
+          )}
           {erro && (
             <p role="alert" className="mt-3 text-sm text-red-600">
               {erro}

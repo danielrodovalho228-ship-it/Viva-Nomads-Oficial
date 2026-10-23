@@ -13,9 +13,12 @@ import { SeusPapeis } from "@/components/account/seus-papeis";
 import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
 import { DegrausPerfil } from "@/components/account/degraus-perfil";
-import { AjudaContato, DadosPessoais, DangerZone, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
+import { AjudaContato, DadosPessoais, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
+import { SairDaViva } from "@/components/account/sair-da-viva";
+import { RedesPrivadas } from "@/components/account/redes-privadas";
 import { BlocoConta, ConfiancaLista, PerfilProfissional } from "@/components/account/conta-blocos";
 import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
+import { MinhaIntencao } from "@/components/auth/escolha-intencao";
 
 /**
  * Configurações (Prompt 43, item 3). No SITE: 4 grupos, cada assunto uma vez —
@@ -37,6 +40,7 @@ export default function AccountPage() {
         <BlocoConta id="conta" numero={1} titulo="Conta" subtitulo="Seus papéis, seu perfil e seus dados.">
           <div className="mt-4 grid gap-4">
             <SeusPapeis />
+            <MinhaIntencao />
             <DegrausPerfil />
           </div>
           <div id="perfil-publico" className="scroll-mt-24">
@@ -54,6 +58,7 @@ export default function AccountPage() {
             <h3 className="mt-6 font-title text-lg font-semibold text-ink">Dados da conta</h3>
             <p className="text-sm text-muted">Só a Viva vê. Vão no contrato e nos avisos.</p>
             <DadosPessoais />
+            <RedesPrivadas />
             <TelefoneVerificacao />
             <DocumentoPessoa />
             <PetsFicha />
@@ -62,7 +67,7 @@ export default function AccountPage() {
           <AjudaContato />
           <div id="sair-da-viva" className="scroll-mt-24">
             <h3 className="mt-6 font-title text-lg font-semibold text-ink">Sair da Viva</h3>
-            <DangerZone />
+            <SairDaViva />
             <FalarComAViva className="mt-4" />
           </div>
           {/* Por último: carrega depois da tela e não pode empurrar "Sair da Viva" para fora do alcance (t183). */}

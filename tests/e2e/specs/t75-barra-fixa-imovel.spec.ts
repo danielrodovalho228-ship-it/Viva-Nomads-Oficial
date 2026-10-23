@@ -53,7 +53,8 @@ test.describe("T75 — Barra fixa do imóvel", () => {
       await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Continuar" }).click();
       await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Continuar" }).click();
       await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Enviar candidatura" }).click();
-      await page.waitForURL(/\/auth\?redirect=\/imoveis\//, { timeout: 15_000 });
+      // Prompt 49: a entrada diz o porquê (candidatura) e volta para o anúncio.
+      await page.waitForURL(/\/auth\?motivo=candidatura&redirect=%2Fimoveis%2F/, { timeout: 15_000 });
     });
 
     test("1280 px: a barra não aparece (o cartão sticky continua)", async ({ page }) => {

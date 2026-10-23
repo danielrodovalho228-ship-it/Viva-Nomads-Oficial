@@ -1,11 +1,14 @@
 import { sendEmail, isEmailConfigured } from "./email";
 import { sendWhatsapp, isWhatsappConfigured } from "./whatsapp";
-import { sendPush } from "./push";
+import { processarPush } from "./push-servidor";
+import { textoDaDecisao, type DadosDaDecisao } from "./regra-push";
 import { SITE_URL } from "@/lib/site";
 import { montarNotificacao, urlInterna } from "./montar-email";
 import { primeiroNome } from "@/lib/display-name";
 import { textoEmail, textoPlano } from "./texto-seguro";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email";
+import { eventoDesligadoPelaPessoa } from "@/config/matriz-notificacoes";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export { isEmailConfigured, isWhatsappConfigured };
 export type { NotificationEvent };
@@ -19,7 +22,21 @@ function comLimite<T>(p: Promise<T>, ms = 6000): Promise<T | null> {
 }
 
 /** Eventos que só vão para a equipe: remetente de sistema e assunto sem a marca. */
-const EVENTOS_INTERNOS = new Set<NotificationEvent>(["chamado_equipe", "documento_recebido", "parceria_equipe"]);
+const EVENTOS_INTERNOS = new Set<NotificationEvent>(["chamado_equipe", "documento_recebido", "parceria_equipe", "alerta_backup_falhou", "alerta_email_falhou"]);
+
+/**
+ * Prompt 44 (item 4): a pessoa desligou a categoria deste evento em /dashboard/notificacoes (mensagens, lembretes,
+ * outros avisos)? Decisão e segurança nunca desligam; alerta da equipe segue a chave do admin, não esta.
+ * Sem banco ou sem a 0227, nada é desligado.
+ */
+async function desligadoPelaPessoa(userId: string, event: NotificationEvent): Promise<boolean> {
+  if (!eventoDesligadoPelaPessoa(event, ["mensagens", "lembretes", "outros"])) return false;
+  const admin = createAdminClient();
+  if (!admin) return false;
+  const { data, error } = await admin.from("profiles").select("notif_categorias_desligadas").eq("id", userId).maybeSingle();
+  if (error) return false;
+  return eventoDesligadoPelaPessoa(event, (data as { notif_categorias_desligadas?: string[] | null } | null)?.notif_categorias_desligadas);
+}
 
 /** E-mails de documento, verificação e segurança: sem List-Unsubscribe (a pessoa precisa receber). */
 const SEM_GERENCIAR_AVISOS = new Set<NotificationEvent>(["documento_aprovado", "documento_recusado", "checklist_aprovado", "checklist_recusado", "verification_ready"]);
@@ -56,8 +73,18 @@ export async function notify(params: {
   ctaLabel?: string;
   /** Aviso só para a equipe (alerta de chamado, documento na fila): remetente de sistema, assunto como veio. */
   interno?: boolean;
-  /** Sem push (horário de silêncio, Prompt 38): o e-mail sai normalmente. */
+  /**
+   * Sem push nenhum, por decisão de quem chama (o e-mail sai normalmente). O silêncio 22h–7h NÃO é mais passado
+   * aqui: o notify() decide pela matriz e pela regra única (Prompt 44, push-servidor.ts).
+   */
   semPush?: boolean;
+  /** Prazo que vence no próprio dia (ex.: manutenção urgente): o push fura o silêncio das 22h–7h. */
+  prazoHoje?: boolean;
+  /** Mensagem nova: a conversa (sem push se aberta há 10 min; agrupado) e o primeiro nome de quem escreveu. */
+  conversationId?: string;
+  remetenteNome?: string | null;
+  /** Texto da decisão no push ("Nova proposta de R$ 3.200 para o Apto Santa Mônica: responda até amanhã"). */
+  decisao?: DadosDaDecisao;
 }): Promise<NotifyResult> {
   const base = TEMPLATES[params.event];
   const tpl = {
@@ -67,6 +94,9 @@ export async function notify(params: {
     ...(params.ctaLabel ? { cta: params.ctaLabel } : {}),
   };
   const result: NotifyResult = { email: false, whatsapp: false };
+  if (params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event)) {
+    if (await desligadoPelaPessoa(params.userId, params.event).catch(() => false)) return result;
+  }
   // Saudação SEMPRE pela fonte única (item 3): primeiro nome, e nunca o e-mail
   // cru — se `name` vier como e-mail (fallback comum), vira saudação neutra.
   const nome = primeiroNome(params.name);
@@ -75,15 +105,21 @@ export async function notify(params: {
   const nomeHtml = textoEmail(nome, 40);
   const nomeTexto = textoPlano(nome, 40);
 
-  // PUSH em PARALELO ao e-mail: dispara já, sem await aqui (não atrasa nada).
+  // PUSH em PARALELO ao e-mail: dispara já, sem await aqui (não atrasa nada). A MATRIZ decide (Prompt 44): evento sem
+  // canal push nunca vai; no silêncio, só segurança e prazo do dia; o resto espera as 7h (push_adiados).
   // Conteúdo GENÉRICO (só o evento + link) — nunca contato, sobrenome ou valores.
   const pushPromise = params.userId && !params.semPush
     ? comLimite(
-        sendPush({
+        processarPush({
           userId: params.userId,
+          event: params.event,
           title: tpl.subject,
-          body: tpl.body(), // sem nome/detalhe — privacidade
+          // Sem nome nem contato; com a decisão, o texto dela (valor só para quem é parte).
+          body: (params.decisao && textoDaDecisao(params.event, params.decisao, new Date())) || tpl.body(),
           url: urlInterna(params.pushUrl),
+          prazoHoje: params.prazoHoje,
+          conversationId: params.conversationId,
+          remetenteNome: params.remetenteNome,
         })
       )
     : null;
@@ -120,6 +156,10 @@ export async function notify(params: {
         usuarioId: params.userId,
       });
       result.email = r.demo ? "demo" : !r.error;
+      // Prompt 44 (item 3): e-mail que não saiu vira alerta operacional (1 por hora, só push e central).
+      if (r.error && params.event !== "alerta_email_falhou") {
+        void import("./alertas-operacionais").then((m) => m.alertarFalhaDeEmail()).catch(() => null);
+      }
     } catch {
       result.email = false;
     }
@@ -137,8 +177,7 @@ export async function notify(params: {
 
   if (pushPromise) {
     const pr = await pushPromise; // já estava rodando em paralelo
-    if (pr && "demo" in pr) result.push = "demo";
-    else if (pr && "sent" in pr) result.push = pr.sent > 0;
+    if (pr && "sent" in pr) result.push = pr.sent > 0;
     else result.push = false;
   }
 

@@ -8,7 +8,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { CartaoParceiro } from "@/components/parceiros/cartao-parceiro";
 import { BuscaVazia } from "@/components/parceiros/busca-vazia";
 import { buscarParceiros, lerParceiroGeralServidor } from "@/lib/data/parceiros-publico";
-import { CATEGORIAS_PARCEIRO, categoriaValida, rotuloCategoria } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, categoriaValida, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarCep } from "@/lib/fotografos/regras";
 import { MUNICIPIOS } from "@/lib/municipios";
 
@@ -50,7 +50,7 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
           <label htmlFor="bp-categoria" className="block text-sm font-medium text-ink">Categoria</label>
           <select id="bp-categoria" name="categoria" defaultValue={categoria} className={campo}>
             <option value="">Todas</option>
-            {CATEGORIAS_PARCEIRO.map((c) => (
+            {CATEGORIAS_CATALOGO.map((c) => (
               <option key={c.valor} value={c.valor}>
                 {c.rotulo}
               </option>

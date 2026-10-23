@@ -75,11 +75,14 @@ test.describe("T71 — topo da /buscar", () => {
     await expect(page.locator("header").first().getByTestId("nav-links")).toBeVisible();
   });
 
-  test("4. visitante: Salvar busca leva ao login e volta para a mesma busca", async ({ page }) => {
+  test("4. visitante: Salvar busca guarda no aparelho (Prompt 49), sem pedir conta", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/buscar?local=Uberl%C3%A2ndia&pronto=1", { waitUntil: "networkidle" });
-    await page.getByTestId("salvar-busca").filter({ visible: true }).click();
-    await expect(page).toHaveURL(/\/auth\?redirect=%2Fbuscar%3F.*local%3DUberl/);
+    const salvar = page.getByTestId("salvar-busca").filter({ visible: true });
+    await salvar.click();
+    await expect(salvar).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL(/\/buscar\?/);
+    expect(await page.evaluate(() => localStorage.getItem("vivanomads-buscas-convidado"))).toContain("Uberl");
   });
 
   test.describe("logado", () => {

@@ -1,6 +1,8 @@
 "use client";
 
+import { marcarConversaAberta } from "@/lib/data/conversa-aberta-actions";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
+import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { useEffect, useState } from "react";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
@@ -21,6 +23,7 @@ import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/m
 import { cn } from "@/lib/utils";
 import { CartaoVisita } from "@/components/visitas/cartao-visita";
 import { visitaDaConversa } from "@/lib/data/visitas-video-actions";
+import { AvaliacaoNaConversaCartao } from "@/components/vistoria/avaliacao-na-conversa";
 
 /**
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
@@ -83,6 +86,23 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const visiveis = filtrarConversas(conversations, filtro);
   // A conversa aberta acompanha o chip: se ela saiu do filtro, abre a primeira que sobrou.
   const active = visiveis.find((c) => c.id === activeId) ?? visiveis[0] ?? conversations[0];
+
+  // Prompt 44: com a conversa aberta (e a aba visível), a próxima mensagem dela não vira push no celular. Renova a cada
+  // 5 min enquanto ela fica na tela (a regra do push olha os últimos 10 min).
+  const conversaAbertaId = active?.id;
+  useEffect(() => {
+    if (demo || !conversaAbertaId) return;
+    const marcar = () => {
+      if (document.visibilityState === "visible") marcarConversaAberta(conversaAbertaId).catch(() => {});
+    };
+    marcar();
+    const t = setInterval(marcar, 5 * 60_000);
+    document.addEventListener("visibilitychange", marcar);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", marcar);
+    };
+  }, [demo, conversaAbertaId]);
 
   function openConversation(id: string) {
     setActiveId(id);
@@ -239,6 +259,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             </span>
             <div className="min-w-0">
               <p className="truncate font-medium text-ink" data-testid="conversa-nome">{active.name}</p>
+              {active.linkedinConectado && <SeloLinkedin />}
               {active.property && (
                 <p className="truncate text-xs text-muted">Sobre: {active.property}</p>
               )}
@@ -276,6 +297,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           )}
           {!demo && active.propertyId && active.otherId && (
             <VisitaNaConversa propertyId={active.propertyId} outroId={active.otherId} />
+          )}
+          {/* Prompt 62-A: a visita de avaliação do imóvel ocupado, para o morador concordar ou pedir outro horário. */}
+          {!demo && active.contratoId && active.propertyId && (
+            <AvaliacaoNaConversaCartao propertyId={active.propertyId} onPreferirOutro={() => setDraft("Prefiro outro horário para a visita de avaliação do imóvel. Posso em: ")} />
           )}
           {/* Ficha do pet da candidatura: só aparece para o DONO daquela candidatura (o servidor confere). */}
           {!demo && active.propertyId && active.otherId && (
