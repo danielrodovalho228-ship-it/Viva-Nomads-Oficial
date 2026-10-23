@@ -145,6 +145,8 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   vistoria_lembrete: "visita",
   vistoria_ausencia: "transacional",
   vistoria_sem_avaliador: "atendimento",
+  linkedin_vencendo: "transacional",
+  linkedin_ja_conectado: "atendimento",
   vistoria_laudo_emitido: "transacional",
   vistoria_fora_da_busca: "transacional",
   vistoria_ressalva_vencida: "transacional",
