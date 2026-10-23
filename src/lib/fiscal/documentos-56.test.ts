@@ -66,10 +66,22 @@ test("prefixos: RSV (nunca RPS), legado VN-CT/VN-SV, reservados sem gerador, RPG
   assert.ok(temRps("RPS nº 12") && !temRps("CORPS e RPSX"));
 });
 
-test("guarda: todo gerador de PDF passa por registrarDocumento", () => {
+/**
+ * Relatórios SEM registro (Prompt 39-B1): o resumo do mês, o informe anual e o resumo para reembolso são relatórios
+ * feitos dos recibos, não documentos — por decisão do prompt não ganham número. São só estes arquivos, e o conteúdo
+ * deles nunca leva o cabeçalho de documento (número/código de conferência).
+ */
+const RELATORIOS_SEM_REGISTRO = ["src/app/api/recibos/[relatorio]/route.ts"];
+
+test("guarda: todo gerador de PDF passa por registrarDocumento (menos os relatórios de Recibos e notas, sem número)", () => {
   const geradores = arquivos("src").filter((p) => !p.endsWith("fiscal/pdf.ts") && /\bgerarPdf\(/.test(ler(p)));
   assert.ok(geradores.length >= 2, "esperava ao menos emitir.ts e pacote-provas.ts");
-  for (const p of geradores) assert.match(ler(p), /registrarDocumento\(/, `${p} gera PDF sem registrarDocumento`);
+  for (const p of geradores) {
+    if (RELATORIOS_SEM_REGISTRO.some((r) => p.endsWith(r))) continue;
+    assert.match(ler(p), /registrarDocumento\(/, `${p} gera PDF sem registrarDocumento`);
+  }
+  for (const r of RELATORIOS_SEM_REGISTRO) assert.doesNotMatch(ler(r), /registrarDocumento\(|documentos_fiscais/, r);
+  assert.doesNotMatch(ler("src/lib/recibos/relatorios.ts"), /cabecalho|linhaConferir|codigo_verificacao/, "relatório não leva cabeçalho de documento");
 });
 
 test("guarda: RPS nunca como prefixo nem em texto de documento da Viva", () => {

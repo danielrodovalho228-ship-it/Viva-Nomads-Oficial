@@ -189,6 +189,8 @@ const PROPRIETARIO: ItemDoPapel[] = [
       { id: "contratos-lista", rotulo: "Contratos & blocos", icone: "contratos", href: "/dashboard/contratos" },
       { id: "garantias", rotulo: "Caução e garantias", icone: "garantias", href: "/dashboard/garantias" },
       { id: "conferencia", rotulo: "Conferência de entrada", icone: "conferencia", href: "/dashboard/contratos#conferencia" },
+      // Prompt 39-B1: "Recibos e notas" — subitem da área de Ganhos do dono (no celular, bloco da aba Ganhos).
+      { id: "recibos", rotulo: "Recibos e notas", icone: "documentos", href: "/dashboard/recibos" },
     ],
   },
 ];

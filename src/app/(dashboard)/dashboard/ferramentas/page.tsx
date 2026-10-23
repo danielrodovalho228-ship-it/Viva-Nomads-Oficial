@@ -226,6 +226,13 @@ export default function FerramentasPage() {
                   ))}
                 </div>
               </div>
+              {/* Prompt 39-B1: o informe anual dos recibos, ao lado do simulador. */}
+              {g.id === "analise" && (
+                <Link href="/dashboard/recibos#informe" className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-forest underline underline-offset-4" data-testid="atalho-informe-ir">
+                  Informe para o IR
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
             </section>
           );
         })}

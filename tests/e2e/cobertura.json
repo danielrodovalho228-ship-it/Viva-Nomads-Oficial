@@ -1582,6 +1582,14 @@
         "t296-niveis-exibicao-59-1",
         "t297-varredura-logada-bloco3"
       ]
+    },
+    "/dashboard/recibos": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t299-recibos-notas-39b1"
+      ]
     }
   },
   "rotas": {
@@ -2151,6 +2159,16 @@
       ],
       "specs": [
         "t49-seguranca-publica"
+      ]
+    },
+    "/api/recibos/[relatorio]": {
+      "personas": [
+        "proprietario",
+        "inquilino",
+        "parceiro"
+      ],
+      "specs": [
+        "t299-recibos-notas-39b1"
       ]
     }
   },
