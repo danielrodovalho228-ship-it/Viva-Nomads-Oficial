@@ -45,7 +45,7 @@ type LinhaPedido = {
   id: string;
   property_id: string;
   owner_id: string;
-  tipo: "inicial" | "reverificacao" | "contestacao" | "verificacao" | "nova_90d";
+  tipo: "inicial" | "reverificacao" | "contestacao" | "verificacao" | "nova_avaliacao" | "nova_90d";
   status: string;
   avaliador_id: string | null;
   agendado_para: string | null;

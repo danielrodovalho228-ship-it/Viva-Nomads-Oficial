@@ -9,7 +9,8 @@ import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
  * banco e o avaliador conclui pela tela; o laudo VIS sai sempre pela ação (registrarDocumento). Datas simuladas no banco.
  *   1. aprovado → "Nível Premium · vistoriado" na ficha e o laudo no /conferir (sem valor); fila local do checklist;
  *   2. com ressalvas → foto da correção no 10º dia → o avaliador reverifica → v2 aprovado, "· vistoriado";
- *   3. reprovado → vale o nível do laudo, sem "· vistoriado"; nova avaliação em 90 dias pela metade;
+ *   3. reprovado → vale o nível do laudo, sem "· vistoriado"; nova avaliação = novo pedido pelo valor da tabela (a tabela do
+ *      laboratório não tem condição de retorno: nenhum texto fala em desconto — adendo 62-B1);
  *   4. fechadura não conforme → sai da busca na hora → correção comprovada → volta;
  *   5. contestação → 2º avaliador diferente → o dono vence → devolução registrada e confirmada;
  *   6. 3 verificações reprovadas (admin abre) → todos os anúncios fora da busca → nova avaliação aprovada → voltam.
@@ -262,7 +263,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await expect.poll(async () => (await nivelGravado(ids.im2))?.nivel_vistoriado_em ?? null, { timeout: 15_000 }).not.toBeNull();
   });
 
-  test("3. reprovado: vale o nível do laudo, sem \"· vistoriado\"; nova avaliação em 90 dias pela metade", async ({ browser }) => {
+  test("3. reprovado: vale o nível do laudo, sem \"· vistoriado\"; nova avaliação pelo valor da tabela, sem desconto", async ({ browser }) => {
     test.setTimeout(200_000);
     const pedido = await pedidoAgendado(ids.im3, ids.dono, "B");
     // 4 falhas corrigíveis (acima do limite de 3) sem tocar no padrão mínimo; sem internet medida: Essencial.
@@ -281,12 +282,17 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await comChave(d);
     await d.goto(`/dashboard/imoveis/${ids.im3}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("laudo-dono-resultado")).toHaveAttribute("data-resultado", "reprovado");
+    // Adendo 62-B1: sem condição de retorno na tabela, a nova avaliação é pelo valor cheio e nada fala em desconto.
+    await expect(d.getByTestId("avaliacao-nova")).toContainText("novo pedido, outro avaliador pelo rodízio, pelo valor da tabela");
+    await expect(d.getByTestId("avaliacao-retorno")).toHaveCount(0);
+    await expect(d.getByTestId("avaliacao-dono")).not.toContainText(/desconto|metade|90 dias/);
     await d.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir nova avaliação" }).click();
     await expect
-      .poll(async () => (await adm().from("vistoria_pedidos").select("tipo, valor_tabela").eq("property_id", ids.im3).eq("tipo", "nova_90d").maybeSingle()).data?.valor_tabela ?? null, { timeout: 20_000 })
+      .poll(async () => (await adm().from("vistoria_pedidos").select("tipo, valor_tabela").eq("property_id", ids.im3).eq("tipo", "nova_avaliacao").maybeSingle()).data?.valor_tabela ?? null, { timeout: 20_000 })
       .not.toBeNull();
-    const { data: nova } = await adm().from("vistoria_pedidos").select("valor_tabela").eq("property_id", ids.im3).eq("tipo", "nova_90d").single();
-    expect(Number(nova!.valor_tabela)).toBe(175);
+    const { data: nova } = await adm().from("vistoria_pedidos").select("valor_tabela, retorno_percentual_aplicado").eq("property_id", ids.im3).eq("tipo", "nova_avaliacao").single();
+    expect(Number(nova!.valor_tabela)).toBe(350);
+    expect(nova!.retorno_percentual_aplicado).toBeNull();
     await d.context().close();
   });
 

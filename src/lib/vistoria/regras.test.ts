@@ -4,6 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   CODIGO_CONDUTA,
   FRACAO_AUDITORIA,
@@ -26,6 +27,12 @@ import {
   transicaoCredenciamento,
   validarConduta,
   valorNovaAvaliacao,
+  INCLUI_SEMPRE,
+  valorDoPedido,
+  condicaoRetorno,
+  textoCondicaoRetorno,
+  TEXTO_REVERIFICACAO_INCLUIDA,
+  TEXTO_NOVA_AVALIACAO,
   visitaAmanha,
   type AvaliadorFila,
   type HistoricoDesignacao,
@@ -69,11 +76,40 @@ test("preço por porte: a linha mais recente em vigor da cidade; tabela vazia bl
   assert.equal(pedidoPodeAbrir({ chaveAtiva: true, anuncioPublicado: false, preco: tabela[1] }).ok, false);
 });
 
-test("nova avaliação até 90 dias depois do reprovado: 50% da tabela vigente; depois, valor cheio", () => {
-  assert.deepEqual(valorNovaAvaliacao(350, dias(10), AGORA), { valor: 175, comDesconto: true });
-  assert.deepEqual(valorNovaAvaliacao(333.33, dias(90), AGORA), { valor: 166.67, comDesconto: true });
-  assert.deepEqual(valorNovaAvaliacao(350, dias(91), AGORA), { valor: 350, comDesconto: false });
-  assert.deepEqual(valorNovaAvaliacao(350, null, AGORA), { valor: 350, comDesconto: false });
+test("adendo 62-B1: tabela sem condição de retorno → nenhum desconto, em lugar nenhum", () => {
+  const sem = { valor: 350, retornoDias: null, retornoPercentual: null };
+  assert.equal(condicaoRetorno(sem), null);
+  assert.deepEqual(valorNovaAvaliacao(sem, dias(1), AGORA), { valor: 350, retorno: null });
+  assert.deepEqual(valorDoPedido("nova_avaliacao", sem, dias(1), AGORA), { valor: 350, retorno: null });
+  assert.equal(textoCondicaoRetorno(condicaoRetorno(sem)), null);
+  // Só um dos dois, ou valores fora do permitido: não existe condição.
+  for (const l of [{ retornoDias: 60, retornoPercentual: null }, { retornoDias: null, retornoPercentual: 30 }, { retornoDias: 0, retornoPercentual: 30 }, { retornoDias: 60, retornoPercentual: 0 }, { retornoDias: 60, retornoPercentual: 101 }, { retornoDias: 1.5, retornoPercentual: 30 }])
+    assert.equal(condicaoRetorno(l), null);
+  // O código não tem mais "50% em 90 dias" fixo.
+  const fonte = readFileSync(new URL("./regras.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(fonte, /FATOR_NOVA_AVALIACAO|DIAS_NOVA_AVALIACAO_COM_DESCONTO|\b0\.5\b/);
+});
+
+test("adendo 62-B1: com condição de retorno → desconto só dentro de retorno_dias e só na nova avaliação", () => {
+  const com = { valor: 350, retornoDias: 60, retornoPercentual: 30 };
+  assert.deepEqual(condicaoRetorno(com), { dias: 60, percentual: 30 });
+  assert.deepEqual(valorNovaAvaliacao(com, dias(10), AGORA), { valor: 245, retorno: { dias: 60, percentual: 30 } });
+  assert.deepEqual(valorNovaAvaliacao({ ...com, valor: 333.33 }, dias(60), AGORA), { valor: 233.33, retorno: { dias: 60, percentual: 30 } });
+  assert.deepEqual(valorNovaAvaliacao(com, dias(61), AGORA), { valor: 350, retorno: null });
+  assert.deepEqual(valorNovaAvaliacao(com, null, AGORA), { valor: 350, retorno: null });
+  // Só a nova avaliação: inicial, verificação e contestação pagam a tabela, mesmo dentro da janela.
+  for (const t of ["inicial", "verificacao", "contestacao"] as const) assert.deepEqual(valorDoPedido(t, com, dias(10), AGORA), { valor: 350, retorno: null });
+  assert.equal(textoCondicaoRetorno(condicaoRetorno(com)), "Nova avaliação em até 60 dias depois do resultado: 30% de desconto sobre a tabela.");
+  assert.equal(textoCondicaoRetorno({ dias: 30, percentual: 12.5 }), "Nova avaliação em até 30 dias depois do resultado: 12,5% de desconto sobre a tabela.");
+});
+
+test("adendo 62-B1: a reverificação nunca gera cobrança; a fronteira está escrita", () => {
+  for (const preco of [{ valor: 350, retornoDias: null, retornoPercentual: null }, { valor: 350, retornoDias: 60, retornoPercentual: 30 }])
+    assert.deepEqual(valorDoPedido("reverificacao", preco, dias(5), AGORA), { valor: 0, retorno: null });
+  assert.match(TEXTO_REVERIFICACAO_INCLUIDA, /mesmo avaliador.*incluída no valor já pago/);
+  assert.match(TEXTO_NOVA_AVALIACAO, /novo pedido, outro avaliador pelo rodízio, pelo valor da tabela/);
+  assert.doesNotMatch(TEXTO_NOVA_AVALIACAO, /desconto|metade/);
+  assert.match(INCLUI_SEMPRE[2], /com ressalvas.*15 dias, pelo mesmo avaliador/);
 });
 
 test("chave: as 3 condições com o estado de cada uma", () => {
