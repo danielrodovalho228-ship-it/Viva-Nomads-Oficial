@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { PAGINAS_PUBLICAS } from "../fixtures/varredura-pagina";
 
 /*
-  T308 — UM SÓ MARCO PRINCIPAL (<main>) POR PÁGINA PÚBLICA (Pista C, 23/10). O layout das páginas públicas
+  T311 — UM SÓ MARCO PRINCIPAL (<main>) POR PÁGINA PÚBLICA (Pista C, 23/10). O layout das páginas públicas
   (`src/app/(public)/layout.tsx`) já abre `<main id="conteudo">`; página que põe outro `<main>` dentro dele deixa dois
   marcos principais (HTML inválido: o leitor de tela anuncia dois "principal" e o atalho "pular para o conteúdo" fica
   ambíguo). Achado pela Pista B no 62-B2 (`04f97529`: "/conferir tem dois <main>"), registrado como L-22.
@@ -21,7 +21,7 @@ const CONHECIDOS: Record<string, string> = {
   "/alerta-busca/desligar": "L-22",
 };
 
-test.describe("T308 — um só <main> por página pública (390 px)", () => {
+test.describe("T311 — um só <main> por página pública (390 px)", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "a contagem não depende do navegador: roda só no chromium");
