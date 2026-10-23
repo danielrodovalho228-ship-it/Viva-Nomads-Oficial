@@ -469,6 +469,7 @@ export function EditarImovelClient({
         <Section
           icon={CalendarRange}
           title="Disponibilidade"
+          ancora="calendario"
           summary={
             availableFrom
               ? `A partir de ${br(availableFrom)}${availableUntil ? ` até ${br(availableUntil)}` : ""}`
