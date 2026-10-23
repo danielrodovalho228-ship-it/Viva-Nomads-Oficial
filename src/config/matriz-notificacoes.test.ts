@@ -6,6 +6,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  CATEGORIAS_COM_INTERRUPTOR,
+  categoriasDesligadasValidas,
+  eventoDesligadoPelaPessoa,
   MATRIZ_NOTIFICACOES,
   ROTULO_CATEGORIA,
   canaisDoEvento,
@@ -77,7 +80,26 @@ test("toda linha tem papel e canal, sem repetição", () => {
   }
 });
 
-test("a matriz ainda não muda o envio: notify() não a lê (o Prompt 44 liga)", () => {
+test("44-B2: o notify() respeita a categoria desligada pela pessoa", () => {
   const notify = readFileSync(new URL("../lib/notifications/index.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(notify, /matriz-notificacoes/);
+  assert.match(notify, /eventoDesligadoPelaPessoa/);
+});
+
+test("44-B2: decisão e segurança sempre chegam, mesmo com tudo desligado", () => {
+  const tudo = ["mensagens", "lembretes", "outros", "decisao", "seguranca"];
+  assert.equal(eventoDesligadoPelaPessoa("proposta_recebida", tudo), false);
+  assert.equal(eventoDesligadoPelaPessoa("verification_ready", tudo), false);
+  assert.equal(eventoDesligadoPelaPessoa("new_message", ["mensagens"]), true);
+  assert.equal(eventoDesligadoPelaPessoa("new_message", ["lembretes"]), false);
+  assert.equal(eventoDesligadoPelaPessoa("checkin_lembrete", ["lembretes"]), true);
+  assert.equal(eventoDesligadoPelaPessoa("saved_search_match", ["outros"]), true);
+  assert.equal(eventoDesligadoPelaPessoa("saved_search_match", null), false);
+  assert.equal(eventoDesligadoPelaPessoa("evento_que_nao_existe", ["outros"]), false);
+});
+
+test("44-B2: só categorias com interruptor são gravadas, sem repetição", () => {
+  assert.deepEqual(categoriasDesligadasValidas(["outros", "decisao", "mensagens", "outros", 3]), ["mensagens", "outros"]);
+  assert.deepEqual(categoriasDesligadasValidas("mensagens"), []);
+  assert.deepEqual(categoriasDesligadasValidas(null), []);
+  for (const c of CATEGORIAS_COM_INTERRUPTOR) assert.ok(categoriaTemInterruptor(c), c);
 });

@@ -1,7 +1,7 @@
 import { hojeBR } from "@/lib/utils";
 import { resolverPeriodo } from "@/lib/admin/visao-geral";
 import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
-import { PushTeste } from "@/components/admin/push-teste";
+import { CartaoPush } from "@/components/admin/cartao-push";
 import { PainelIaCadastro } from "@/components/admin/painel-ia-cadastro";
 import { CartaoBackup } from "@/components/admin/cartao-backup";
 import { CartaoMapas } from "@/components/admin/cartao-mapas";
@@ -74,8 +74,8 @@ export default async function AdminPage({
       <div className="mt-6">
         <CartaoMapas />
       </div>
-      <div className="mt-6">
-        <PushTeste />
+      <div id="push" className="mt-6 scroll-mt-24">
+        <CartaoPush />
       </div>
     </>
   );

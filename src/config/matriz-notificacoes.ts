@@ -183,6 +183,23 @@ export function categoriaTemInterruptor(categoria: CategoriaNotificacao): boolea
   return categoria !== "decisao" && categoria !== "seguranca";
 }
 
+/** Prompt 44 (item 4): as categorias que a pessoa pode desligar em /dashboard/notificacoes. */
+export const CATEGORIAS_COM_INTERRUPTOR = ["mensagens", "lembretes", "outros"] as const;
+export type CategoriaComInterruptor = (typeof CATEGORIAS_COM_INTERRUPTOR)[number];
+
+/** O que vem do banco ou do formulário, só com categorias que têm interruptor, sem repetição e na ordem da tela. */
+export function categoriasDesligadasValidas(valor: unknown): CategoriaComInterruptor[] {
+  if (!Array.isArray(valor)) return [];
+  return CATEGORIAS_COM_INTERRUPTOR.filter((c) => valor.includes(c));
+}
+
+/** A pessoa desligou a categoria deste evento? Decisão e segurança nunca: sempre chegam. */
+export function eventoDesligadoPelaPessoa(evento: string, desligadas: readonly string[] | null | undefined): boolean {
+  const l = (MATRIZ_NOTIFICACOES as Record<string, LinhaMatriz | undefined>)[evento];
+  if (!l || !categoriaTemInterruptor(l.categoria) || !desligadas?.length) return false;
+  return desligadas.includes(l.categoria);
+}
+
 /** A categoria do evento. */
 export function categoriaDoEvento(evento: EventoNotificacao): CategoriaNotificacao {
   return MATRIZ_NOTIFICACOES[evento].categoria;

@@ -7,6 +7,8 @@ import { montarNotificacao, urlInterna } from "./montar-email";
 import { primeiroNome } from "@/lib/display-name";
 import { textoEmail, textoPlano } from "./texto-seguro";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email";
+import { eventoDesligadoPelaPessoa } from "@/config/matriz-notificacoes";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export { isEmailConfigured, isWhatsappConfigured };
 export type { NotificationEvent };
@@ -21,6 +23,20 @@ function comLimite<T>(p: Promise<T>, ms = 6000): Promise<T | null> {
 
 /** Eventos que só vão para a equipe: remetente de sistema e assunto sem a marca. */
 const EVENTOS_INTERNOS = new Set<NotificationEvent>(["chamado_equipe", "documento_recebido", "parceria_equipe", "alerta_backup_falhou", "alerta_email_falhou"]);
+
+/**
+ * Prompt 44 (item 4): a pessoa desligou a categoria deste evento em /dashboard/notificacoes (mensagens, lembretes,
+ * outros avisos)? Decisão e segurança nunca desligam; alerta da equipe segue a chave do admin, não esta.
+ * Sem banco ou sem a 0227, nada é desligado.
+ */
+async function desligadoPelaPessoa(userId: string, event: NotificationEvent): Promise<boolean> {
+  if (!eventoDesligadoPelaPessoa(event, ["mensagens", "lembretes", "outros"])) return false;
+  const admin = createAdminClient();
+  if (!admin) return false;
+  const { data, error } = await admin.from("profiles").select("notif_categorias_desligadas").eq("id", userId).maybeSingle();
+  if (error) return false;
+  return eventoDesligadoPelaPessoa(event, (data as { notif_categorias_desligadas?: string[] | null } | null)?.notif_categorias_desligadas);
+}
 
 /** E-mails de documento, verificação e segurança: sem List-Unsubscribe (a pessoa precisa receber). */
 const SEM_GERENCIAR_AVISOS = new Set<NotificationEvent>(["documento_aprovado", "documento_recusado", "checklist_aprovado", "checklist_recusado", "verification_ready"]);
@@ -78,6 +94,9 @@ export async function notify(params: {
     ...(params.ctaLabel ? { cta: params.ctaLabel } : {}),
   };
   const result: NotifyResult = { email: false, whatsapp: false };
+  if (params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event)) {
+    if (await desligadoPelaPessoa(params.userId, params.event).catch(() => false)) return result;
+  }
   // Saudação SEMPRE pela fonte única (item 3): primeiro nome, e nunca o e-mail
   // cru — se `name` vier como e-mail (fallback comum), vira saudação neutra.
   const nome = primeiroNome(params.name);
