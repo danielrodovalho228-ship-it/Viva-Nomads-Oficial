@@ -1,0 +1,17 @@
+# Prompt 60 — rotina permanente de segurança das dependências do site.
+# Toda semana o Dependabot confere os alertas do npm. "open-pull-requests-limit: 0" desliga as PRs de
+# atualização comum de versão: o Dependabot só abre PR sozinho para CORREÇÃO DE SEGURANÇA (security updates,
+# que não respeitam esse limite). Precisa de "Dependabot alerts" e "Dependabot security updates" ligados em
+# Settings → Code security do repositório.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 0
+    commit-message:
+      prefix: "seguranca(deps)"
