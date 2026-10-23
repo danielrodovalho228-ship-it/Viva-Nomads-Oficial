@@ -1,4 +1,4 @@
--- Viva Nomads — rollback da 0212 (Adendo 59.1: níveis, ruído, extras, medição por ponto, lista v2). Idempotente.
+-- Viva Nomads — rollback da 0213 (Adendo 59.1: níveis, ruído, extras, medição por ponto, lista v2). Idempotente.
 -- Apaga as declarações de nível, o ruído, os extras e o nível calculado; tira o ponto das medições; volta a lista do
 -- padrão mínimo à versão 1 (10 itens). As confirmações da versão 2 continuam gravadas e valem na versão 1.
 begin;
@@ -33,5 +33,5 @@ as $$
    where d.property_id = p_property and d.confirmado and d.chave = any (public.conforto_chaves());
 $$;
 drop function if exists public.conforto_versoes();
-delete from supabase_migrations.schema_migrations where version = '20261023000212';
+delete from supabase_migrations.schema_migrations where version = '20261023000213';
 commit;

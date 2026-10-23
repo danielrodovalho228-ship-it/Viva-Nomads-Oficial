@@ -1,4 +1,7 @@
--- 0212 — Adendo 59.1 (parte funcional): níveis Essencial / Conforto / Premium, ruído, extras, medição por ponto e a
+-- Viva Nomads — aplicar 0213 (níveis Essencial/Conforto/Premium, ruído, extras, medição por ponto e lista v2 do padrão mínimo — Adendo 59.1). Idempotente. Rollback: supabase/producao/rollback/0213_rollback.sql.
+begin;
+set local lock_timeout = '5s';
+-- 0213 — Adendo 59.1 (parte funcional): níveis Essencial / Conforto / Premium, ruído, extras, medição por ponto e a
 -- correção do padrão mínimo (lista versão 2). Reaplicar é seguro.
 --
 --   1. conforto_chaves(): a lista passa a 12 itens (entram lavanderia_acesso e apoio_cama); conforto_versoes(): versão
@@ -197,3 +200,9 @@ drop policy if exists "nivel: anuncio ativo, dono e equipe (logado)" on public.i
 create policy "nivel: anuncio ativo, dono e equipe (logado)" on public.imovel_nivel for select to authenticated using (
   public.is_admin() or exists (select 1 from public.properties p where p.id = imovel_nivel.property_id and (p.status::text = 'active' or p.owner_id = auth.uid()))
 );
+
+insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
+select '20261023000213', '0213_niveis_conforto',
+       array['-- conteúdo em supabase/migrations/0213_niveis_conforto.sql'], 'danielrodovalho228@gmail.com'
+ where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261023000213');
+commit;

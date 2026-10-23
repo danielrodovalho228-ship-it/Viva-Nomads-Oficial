@@ -1,6 +1,6 @@
--- Laboratório (nunca em produção): prova da 0212 — níveis, ruído, extras, medição por ponto e lista v2 (Adendo 59.1).
+-- Laboratório (nunca em produção): prova da 0213 — níveis, ruído, extras, medição por ponto e lista v2 (Adendo 59.1).
 -- Roda tudo dentro de begin/rollback; não deixa nada gravado. Esperado: todas as linhas "ok" = t e os NOTICE "ok: …".
--- Uso: psql "$LAB_DB" -v ON_ERROR_STOP=1 -f supabase/lab/teste-0212-niveis.sql
+-- Uso: psql "$LAB_DB" -v ON_ERROR_STOP=1 -f supabase/lab/teste-0213-niveis.sql
 begin;
 insert into auth.users (id, email) values
   ('59100000-0000-4000-8000-0000000000d1', 'lab-591-dono@teste.vivanomads.com.br'),
