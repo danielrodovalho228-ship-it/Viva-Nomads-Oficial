@@ -110,3 +110,13 @@ test("chat → chamado: a conversa vai anexada e cabe no chamado", () => {
   // E a triagem do chamado vê o golpe dentro da conversa anexada.
   assert.equal(triar("duvida", transcricaoChat([{ role: "user", content: "pediram pix por fora" }])).fila, "antifraude");
 });
+
+test("chat (ordem f581c899): o que o modelo recebe traz Caução até 3 vezes o valor mensal e 30 a 180 dias, sem 'por bloco'", async () => {
+  const { d, enviados } = deps();
+  await responderChatViva(d, conversa("Como funciona a Caução?"));
+  const sys = enviados[0].system;
+  assert.match(sys, /3 vezes o valor mensal/);
+  assert.match(sys, /30 a 180 dias/);
+  // só as fontes: as regras do prompt citam "conta vinculada" justamente para proibir
+  assert.doesNotMatch(sys.slice(sys.indexOf("# Fontes oficiais")), /50\s?%|conta vinculada|cada bloco/i);
+});
