@@ -1626,7 +1626,7 @@
         "admin"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "/dashboard/parceiro/avaliacao": {
@@ -1634,7 +1634,7 @@
         "parceiro"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -1642,7 +1642,7 @@
         "inquilino"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "/avaliadores/[numero]": {
@@ -1650,7 +1650,7 @@
         "publico"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     }
   },
@@ -2246,7 +2246,7 @@
         "sistema"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     }
   },
@@ -4981,7 +4981,7 @@
         "parceiro"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#adminDecidirCredenciamento": {
@@ -4989,7 +4989,7 @@
         "admin"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#adminCriarAvaliacaoTeste": {
@@ -4997,7 +4997,7 @@
         "admin"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#adminSalvarPreco": {
@@ -5005,7 +5005,7 @@
         "admin"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#adminRevisarAuditoria": {
@@ -5013,7 +5013,7 @@
         "admin"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#adminResolverFila": {
@@ -5021,7 +5021,7 @@
         "admin"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#pedirAvaliacao": {
@@ -5029,7 +5029,7 @@
         "proprietario"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#responderDesignacao": {
@@ -5037,7 +5037,7 @@
         "parceiro"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#agendarVisita": {
@@ -5045,7 +5045,7 @@
         "proprietario"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#concordarVisita": {
@@ -5053,7 +5053,7 @@
         "inquilino"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#registrarAusencia": {
@@ -5061,7 +5061,7 @@
         "proprietario"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#marcarRecebido": {
@@ -5069,7 +5069,7 @@
         "parceiro"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#confirmarRecebido": {
@@ -5077,7 +5077,7 @@
         "proprietario"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     },
     "src/lib/vistoria/actions.ts#avaliarConduta": {
@@ -5085,7 +5085,7 @@
         "proprietario"
       ],
       "specs": [
-        "t301-avaliadores-credenciados-62b1"
+        "t303-avaliadores-credenciados-62b1"
       ]
     }
   }

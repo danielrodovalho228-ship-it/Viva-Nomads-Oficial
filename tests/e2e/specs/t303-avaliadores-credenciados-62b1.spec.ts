@@ -3,7 +3,7 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T301 — Prompt 62-B1: avaliação do imóvel por avaliador credenciado (laboratório; a chave VISTORIA_ATIVA liga só no
+ * T303 — Prompt 62-B1: avaliação do imóvel por avaliador credenciado (laboratório; a chave VISTORIA_ATIVA liga só no
  * navegador do teste, pelo cookie de laboratório). Sequência:
  *   1. credenciar 3 avaliadores (A e B pela tela; A passa por "em teste" → aprovado pelo admin) + a tabela de preço;
  *   2. o dono pede a avaliação → a designação pula o impedido (X prestou serviço ao dono há 2 meses);
@@ -11,14 +11,14 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
  *   4. B aceita e agenda → imóvel ocupado pede a concordância do morador → o morador concorda;
  *   5. B não aparece → o dono registra a ausência → nova designação (C), sem custo.
  */
-test.describe("T301 — avaliadores credenciados (62-B1)", () => {
+test.describe("T303 — avaliadores credenciados (62-B1)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t301.${sufixo}@lab.vivanomads.test`, nome, role });
+  const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t303.${sufixo}@lab.vivanomads.test`, nome, role });
   const dono = conta("dono", "Dora Dona", "owner");
   const morador = conta("morador", "Mauro Morador");
   const av = { A: conta("ava", "Alice Avaliadora"), B: conta("avb", "Bruno Avaliador"), C: conta("avc", "Clara Avaliadora"), X: conta("avx", "Xavier Avaliador") };
@@ -50,7 +50,7 @@ test.describe("T301 — avaliadores credenciados (62-B1)", () => {
       ids[l] = await criarConta(av[l], senha);
       const { data, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids[l], tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: av[l].nome, slug: `aval-${l.toLowerCase()}-t301-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: ids[l], tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: av[l].nome, slug: `aval-${l.toLowerCase()}-t303-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -66,9 +66,9 @@ test.describe("T301 — avaliadores credenciados (62-B1)", () => {
       const { data: n } = await adm().rpc("proximo_numero_avaliador", { p_sigla: "UDI" });
       await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids[`parc${l}`], cidade: "Uberlândia", numero_credenciado: n, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test", conduta_versao: "2026-10-23", ativado_em: ativado, ultima_designacao_em: ultima });
     }
-    await adm().from("parceiro_pedidos").insert({ codigo: `VN-SV-T301${sufixo.slice(0, 4).toUpperCase()}`, parceiro_id: ids.parcX, cliente_id: ids.dono, categoria: "fotografia", descricao: "Fotos do anúncio (laboratório)", status: "concluido", criado_em: new Date(Date.now() - 60 * 86_400_000).toISOString() });
+    await adm().from("parceiro_pedidos").insert({ codigo: `VN-SV-T303${sufixo.slice(0, 4).toUpperCase()}`, parceiro_id: ids.parcX, cliente_id: ids.dono, categoria: "fotografia", descricao: "Fotos do anúncio (laboratório)", status: "concluido", criado_em: new Date(Date.now() - 60 * 86_400_000).toISOString() });
     // Imóvel publicado (1 quarto → porte "1 ou 2 quartos"), ocupado agora pelo morador.
-    ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t301 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t303 ${sufixo}`, { ativo: true });
     const hoje = new Date();
     const dia = (n: number) => new Date(hoje.getTime() + n * 86_400_000).toISOString().slice(0, 10);
     const { data: c, error: eC } = await adm()
@@ -110,7 +110,7 @@ test.describe("T301 — avaliadores credenciados (62-B1)", () => {
       await p.reload();
       await expect(p.getByTestId("credenciamento-situacao")).toHaveAttribute("data-status", "solicitado");
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-      if (l === "A") await p.screenshot({ path: "tests/laboratorio/saida/t301-credenciamento-390.png", fullPage: true });
+      if (l === "A") await p.screenshot({ path: "tests/laboratorio/saida/t303-credenciamento-390.png", fullPage: true });
       await p.context().close();
     }
     const a = (await credenciamento("A"))!;
@@ -141,7 +141,7 @@ test.describe("T301 — avaliadores credenciados (62-B1)", () => {
     await expect(cond.getByTestId("condicao-tabela")).toHaveAttribute("data-ok", "sim");
     await expect(cond.getByTestId("condicao-avaliadores")).toHaveAttribute("data-ok", "sim");
     await expect(cond.getByTestId("condicao-parecer")).toHaveAttribute("data-ok", "nao");
-    await adm1.screenshot({ path: "tests/laboratorio/saida/t301-admin-1280.png", fullPage: true });
+    await adm1.screenshot({ path: "tests/laboratorio/saida/t303-admin-1280.png", fullPage: true });
     await adm1.context().close();
   });
 
@@ -168,7 +168,7 @@ test.describe("T301 — avaliadores credenciados (62-B1)", () => {
     await expect(d.getByTestId("avaliador-designado")).toHaveText(`Avaliador designado pela Viva: nº ${a.numero_credenciado}`);
     await d.setViewportSize({ width: 390, height: 844 });
     expect(await d.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-    await d.screenshot({ path: "tests/laboratorio/saida/t301-dono-390.png", fullPage: true });
+    await d.screenshot({ path: "tests/laboratorio/saida/t303-dono-390.png", fullPage: true });
     await d.context().close();
   });
 
@@ -209,7 +209,7 @@ test.describe("T301 — avaliadores credenciados (62-B1)", () => {
     await m.getByTestId("concordar-visita").click();
     await expect.poll(async () => (await pedido()).status, { timeout: 20_000 }).toBe("agendado");
     expect((await pedido()).concordancia_em).not.toBeNull();
-    await m.screenshot({ path: "tests/laboratorio/saida/t301-morador-390.png", fullPage: true });
+    await m.screenshot({ path: "tests/laboratorio/saida/t303-morador-390.png", fullPage: true });
     await m.context().close();
   });
 
