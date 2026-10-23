@@ -7,7 +7,7 @@ import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascun
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { colunaVideoArquivo } from "@/lib/video-anuncio";
-import { caminhoDoDono, operacaoValida, subleaseParaGravar } from "@/lib/anuncio/operacao";
+import { caminhoDoDono, colunasDeOperacao } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { cookies } from "next/headers";
@@ -39,6 +39,7 @@ import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor
 import { validarAceiteIa } from "@/lib/anuncio/termo-ia";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { salvarDeclaracoesConforto } from "@/lib/conforto/servidor";
+import { confortoParaGravar } from "@/lib/conforto/gravacao";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { avisarBuscasDoImovel } from "@/lib/data/alerta-busca-servidor";
@@ -450,8 +451,13 @@ export interface PropertyInput {
   asDraft?: boolean;
   /** Aceite do termo de IA (obrigatório ao publicar; validado e gravado no servidor). */
   aceiteIa?: unknown;
-  /** Prompt 59: chaves do padrão mínimo de conforto que o dono marcou (gravadas no servidor antes do portão). */
+  /**
+   * Prompt 59: chaves do padrão mínimo de conforto que o dono marcou (gravadas no servidor antes do portão).
+   * 59-C1: só vale com `confortoMexido: true` (o dono mexeu no checklist nesta sessão, depois de carregar o que já
+   * estava salvo). Ausente = não mexe; nunca desmarca por omissão.
+   */
   confortoConfirmados?: string[];
+  confortoMexido?: boolean;
   // ── Enriquecimento (FASE 1/2) — gravados best-effort (requer migrações 0018/0019) ──
   parkingSpots?: number;
   condoFee?: number;
@@ -719,8 +725,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       tag_home_office: input.tagHomeOffice ?? false,
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
-      ownership_type: operacaoValida(input.ownershipType) ? input.ownershipType : "own",
-      sublease_authorized: subleaseParaGravar(input.ownershipType, input.subleaseAuthorized),
+      ...colunasDeOperacao(input.ownershipType, input.subleaseAuthorized),
       // Só um arquivo da PASTA DO DONO no bucket privado (nunca link externo/preview local).
       sublease_doc_url: caminhoDoDono(input.subleaseDocUrl, user.id) ? input.subleaseDocUrl! : null,
       utilities_mode: input.utilitiesMode ?? "fixed",
@@ -848,10 +853,11 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       .eq("owner_id", user.id)
       .is("property_id", null);
   }
-  if (Array.isArray(input.confortoConfirmados)) {
+  const confortoNovo = confortoParaGravar(input.confortoConfirmados, input.confortoMexido);
+  if (confortoNovo) {
     // O imóvel acabou de ser criado por este dono (a RLS conferiu): o servidor grava a confirmação.
     const adm = createAdminClient();
-    if (adm) await salvarDeclaracoesConforto(adm, data.id as string, user.id, input.confortoConfirmados);
+    if (adm) await salvarDeclaracoesConforto(adm, data.id as string, user.id, confortoNovo);
   }
   if (!input.asDraft) {
     const falta = await faltaParaPublicar(supabase, user.id, data.id as string);
@@ -973,8 +979,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       tag_home_office: input.tagHomeOffice ?? false,
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
-      ownership_type: operacaoValida(input.ownershipType) ? input.ownershipType : "own",
-      sublease_authorized: subleaseParaGravar(input.ownershipType, input.subleaseAuthorized),
+      ...colunasDeOperacao(input.ownershipType, input.subleaseAuthorized),
       // Só grava o documento da operação quando o dono enviou um nesta edição.
       // A edição não recarrega esse campo — mandar null por ausência APAGAVA o
       // documento a cada edição (mesmo padrão do risco do endereço).
@@ -1077,10 +1082,11 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   // despublica um anúncio já ativo. Publica DEPOIS de salvar tudo e de passar
   // pela prontidão (fonte única). Ao publicar, ZERA o draft_data (ele guarda a
   // rua exata e a linha fica pública — C4/T1).
-  if (Array.isArray(input.confortoConfirmados) && antes?.owner_id === user.id) {
+  const confortoEditado = confortoParaGravar(input.confortoConfirmados, input.confortoMexido);
+  if (confortoEditado && antes?.owner_id === user.id) {
     // Só o dono do imóvel: o servidor grava a confirmação do padrão mínimo (Prompt 59).
     const adm = createAdminClient();
-    if (adm) await salvarDeclaracoesConforto(adm, id, user.id, input.confortoConfirmados);
+    if (adm) await salvarDeclaracoesConforto(adm, id, user.id, confortoEditado);
   }
   if (input.asDraft === false) {
     if (antes?.status !== "active") {
@@ -1913,6 +1919,11 @@ export async function countMyDrafts(): Promise<number> {
   return count ?? 0;
 }
 
+/** Operação guardada no estado do editor (draft_data). */
+function rascunhoOperacao(d: unknown): { ownershipType?: unknown; subleaseAuthorized?: unknown } {
+  return d && typeof d === "object" ? (d as { ownershipType?: unknown; subleaseAuthorized?: unknown }) : {};
+}
+
 /**
  * Autosave do RASCUNHO no servidor (P0 — perda de dados). Faz upsert de uma
  * linha `properties` status='draft' guardando o estado COMPLETO do editor em
@@ -1939,6 +1950,7 @@ export async function saveDraftData(snap: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
 
+  const op = rascunhoOperacao(snap.data);
   const fields = {
     owner_id: user.id,
     status: "draft" as const,
@@ -1947,6 +1959,9 @@ export async function saveDraftData(snap: {
     monthly_price: Number.isFinite(snap.monthlyPrice) ? (snap.monthlyPrice as number) : 0,
     // Colunas que a prontidão lê (Visão geral, Meus imóveis): endereço e detalhes não ficam só no draft_data.
     ...camposDeConteudoDoRascunho(snap),
+    // 59-C1: a operação vai junto, pela regra do updateProperty — uma linha antiga "própria com sublocação" (que a
+    // restrição da 0200 recusa em qualquer update) fica no permitido já no primeiro autosave.
+    ...colunasDeOperacao(op.ownershipType, op.subleaseAuthorized),
     draft_data: snap.data as object,
   };
 
@@ -1954,7 +1969,12 @@ export async function saveDraftData(snap: {
   const rascunhoId = snap.id || (await rascunhoVazioRecente(supabase, user.id));
   if (rascunhoId) {
     const { atualizou, error } = await atualizarRascunhoDoDono(supabase, rascunhoId, user.id, fields);
-    if (error) return { ok: false, error: erroBancoPT(error as Parameters<typeof erroBancoPT>[0]) };
+    if (error) {
+      // O erro do banco não some mais: o código fica no log do servidor e a causa em português vai para a tela.
+      const e = error as Parameters<typeof erroBancoPT>[0];
+      console.error("[saveDraftData]", rascunhoId, e?.code, e?.message);
+      return { ok: false, error: erroBancoPT(e) };
+    }
     // 0 linhas = rascunho de outro dono (ou já publicado): não liga foto nem qualificação.
     if (!atualizou) return { ok: true, id: rascunhoId };
     await sincronizarFotos(supabase, rascunhoId, user.id, urlsDoRascunho(snap.data));
@@ -1963,7 +1983,10 @@ export async function saveDraftData(snap: {
     return { ok: true, id: rascunhoId };
   }
   const { data, error } = await supabase.from("properties").insert(fields).select("id").single();
-  if (error) return { ok: false, error: erroBancoPT(error) };
+  if (error) {
+    console.error("[saveDraftData] novo", error.code, error.message);
+    return { ok: false, error: erroBancoPT(error) };
+  }
   await sincronizarFotos(supabase, data.id as string, user.id, urlsDoRascunho(snap.data));
   // A qualificação enviada antes do rascunho passa a pertencer a ele (prontidão "Em análise", não "Não enviado").
   await ligarQualificacaoAoImovel(supabase, user.id, data.id as string);

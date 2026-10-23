@@ -21,6 +21,8 @@ export function erroBancoPT(erro: ErroBanco | null | undefined, padrao = GENERIC
   if (!erro) return padrao;
   const msg = String(erro.message ?? "").trim();
   if (msg && ehNossa(msg)) return msg;
+  // 0200: a linha antiga "imóvel próprio com sublocação autorizada" (59-C1).
+  if (/properties_proprio_sem_sublocacao/.test(msg)) return "Imóvel próprio não pode ter sublocação autorizada. Confira quem opera o imóvel.";
   switch (erro.code) {
     case "42501":
       return "Você não tem permissão para esta ação.";

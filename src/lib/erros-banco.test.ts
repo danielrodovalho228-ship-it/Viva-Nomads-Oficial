@@ -32,3 +32,9 @@ test("desconhecido em inglês → genérico; nulo → padrão", () => {
   assert.match(erroBancoPT({ code: "XX000", message: "internal error" }), /Não foi possível/);
   assert.equal(erroBancoPT(null, "padrão"), "padrão");
 });
+
+test("59-C1: a restrição 0200 (próprio com sublocação) vira a causa em português", () => {
+  const e = erroBancoPT({ code: "23514", message: 'new row for relation "properties" violates check constraint "properties_proprio_sem_sublocacao"' });
+  assert.match(e, /Imóvel próprio não pode ter sublocação autorizada/);
+  assert.doesNotMatch(e, /violates|constraint/);
+});

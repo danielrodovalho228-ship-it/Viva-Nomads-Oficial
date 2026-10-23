@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
+import { erroBancoPT } from "@/lib/erros-banco";
 import { estadoConfortoDoImovel, pendenciasConforto, salvarDeclaracoesConforto, type PendenciaParaTela } from "@/lib/conforto/servidor";
 import { transicaoPendencia, type AcaoPendencia, type EstadoConforto, type PapelPendencia, type PendenciaConforto } from "@/lib/conforto/regras";
 import { ehChaveNivel } from "@/config/niveis";
@@ -43,14 +44,20 @@ export async function confortoDoImovel(propertyId: string): Promise<(EstadoConfo
   return estadoConfortoDoImovel(createAdminClient() ?? s.supabase, propertyId);
 }
 
-/** O dono confirma os itens do padrão mínimo. Completo e pausado por conforto: o anúncio volta para a busca. */
+/**
+ * O dono confirma os itens do padrão mínimo. Completo e pausado por conforto: o anúncio volta para a busca.
+ * 59-C1: o editor do anúncio e a página "Padrão mínimo" chamam esta ação a cada item marcado ou desmarcado (a lista
+ * é sempre a decisão explícita do dono, já carregada do servidor). O erro traz a causa, nunca um "tente de novo" mudo.
+ */
 export async function confirmarConforto(propertyId: string, marcados: string[]): Promise<ResultadoConforto> {
+  if (!Array.isArray(marcados)) return { ok: false, erro: "Não foi possível salvar: a lista de itens chegou vazia." };
   const s = await sessao();
-  if (!s || !(await ehDonoDoImovel(s, propertyId))) return { ok: false, erro: "Sem permissão." };
+  if (!s) return { ok: false, erro: "Não foi possível salvar: sua sessão expirou. Entre de novo." };
+  if (!(await ehDonoDoImovel(s, propertyId))) return { ok: false, erro: "Não foi possível salvar: este anúncio não é seu." };
   const admin = createAdminClient();
-  if (!admin) return { ok: false, erro: "Não foi possível salvar agora." };
-  const r = await salvarDeclaracoesConforto(admin, propertyId, s.uid, Array.isArray(marcados) ? marcados : []);
-  if (!r.ok) return { ok: false, erro: "Não foi possível salvar agora." };
+  if (!admin) return { ok: false, erro: "Não foi possível salvar: o servidor está indisponível agora." };
+  const r = await salvarDeclaracoesConforto(admin, propertyId, s.uid, marcados);
+  if (!r.ok) return { ok: false, erro: `Não foi possível salvar: ${erroBancoPT(r.erro)}` };
   const e = await estadoConfortoDoImovel(admin, propertyId);
   revalidatePath("/dashboard");
   revalidatePath(`/dashboard/imoveis/${propertyId}/conforto`);
