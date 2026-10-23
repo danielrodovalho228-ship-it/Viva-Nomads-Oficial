@@ -1830,6 +1830,22 @@
       "specs": [
         "t345-desempenho-anuncio-54"
       ]
+    },
+    "/dashboard/respostas-rapidas": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
+      ]
+    },
+    "/dashboard/estadia/[contratoId]/mensagens": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
+      ]
     }
   },
   "rotas": {
@@ -2476,6 +2492,22 @@
       ],
       "specs": [
         "t346-importar-calendario-53"
+      ]
+    },
+    "/api/cron/mensagens-programadas": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
+      ]
+    },
+    "/api/lab/mensagens-programadas": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
       ]
     }
   },
@@ -5696,6 +5728,62 @@
       ],
       "specs": [
         "t346-importar-calendario-53"
+      ]
+    },
+    "src/lib/data/respostas-actions.ts#minhasRespostas": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
+      ]
+    },
+    "src/lib/data/respostas-actions.ts#salvarResposta": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
+      ]
+    },
+    "src/lib/data/respostas-actions.ts#apagarResposta": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
+      ]
+    },
+    "src/lib/data/respostas-actions.ts#respostasDaConversaDoImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
+      ]
+    },
+    "src/lib/data/respostas-actions.ts#programadasDaEstadia": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
+      ]
+    },
+    "src/lib/data/respostas-actions.ts#programarMensagem": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
+      ]
+    },
+    "src/lib/data/respostas-actions.ts#cancelarMensagemProgramada": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t347-respostas-rapidas-55e2"
       ]
     }
   }
