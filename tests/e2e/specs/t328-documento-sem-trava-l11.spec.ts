@@ -29,7 +29,7 @@ test.describe("T328 — enviar documento sem trava silenciosa (L1-1)", () => {
   async function rascunho(titulo: string, draft: Record<string, unknown>, exato?: string): Promise<string> {
     const { data, error } = await adm()
       .from("properties")
-      .insert({ owner_id: ids.dono, title: titulo, city: "Uberlândia", state: "MG", address: "Centro", status: "draft", exact_address: exato ?? null, draft_data: { title: titulo, city: "Uberlândia", uf: "MG", neighborhood: "Centro", step: 0, ...draft } })
+      .insert({ owner_id: ids.dono, title: titulo, city: "Uberlândia", state: "MG", address: "Centro", status: "draft", monthly_price: 0, exact_address: exato ?? null, draft_data: { title: titulo, city: "Uberlândia", uf: "MG", neighborhood: "Centro", step: 0, ...draft } })
       .select("id")
       .single();
     if (error) throw error;

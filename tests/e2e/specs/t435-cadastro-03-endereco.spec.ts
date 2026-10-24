@@ -136,6 +136,8 @@ test.describe("T435 — Cadastro 03: Endereço (cadastro-imovel-03)", () => {
       expect(await coluna.evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThan(0);
       expect(await p.getByTestId("moldura-assistente").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(247, 242, 234)");
       // A etiqueta do bairro não cobre o zoom do mapa (o "+" fica à vista).
+      await p.getByTestId("mapa-bairro").scrollIntoViewIfNeeded();
+      await p.waitForTimeout(500);
       const zoom = p.getByTestId("mapa-bairro").locator(".leaflet-control-zoom");
       await expect(zoom).toBeVisible({ timeout: 20_000 });
       const z = (await zoom.boundingBox())!;

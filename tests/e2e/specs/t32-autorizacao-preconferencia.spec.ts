@@ -122,6 +122,8 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     // O que falta aparece na hora, e a publicação fica barrada até resolver.
     await expect(secao).toContainText("Marque a declaração para publicar.");
     await secao.getByText("Administro este imóvel em nome do proprietário (gestor ou procurador)").click();
+    await expect(secao).toContainText("Escolha o que você está anexando: contrato de administração ou procuração.");
+    await secao.getByTestId("documento-operacao-tipo").getByLabel("Procuração").check();
     await expect(secao).toContainText("Anexe: contrato de administração ou procuração.");
 
     await secao.locator('input[type="file"]').setInputFiles({ name: "procuracao.pdf", mimeType: "application/pdf", buffer: pdf() });
