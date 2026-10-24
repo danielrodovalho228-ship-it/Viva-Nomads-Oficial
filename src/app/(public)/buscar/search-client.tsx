@@ -21,7 +21,7 @@ import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { comTotalMes } from "@/lib/precos";
 import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
-import { geocodingEnabled, type GeoSuggestion } from "@/lib/integrations/geocoding";
+import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
@@ -1075,16 +1075,21 @@ export function SearchClient({
 
       <div className="container-page mt-4 lg:order-4 lg:mt-0 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
         <div data-testid="busca-lista" className="min-w-0 lg:w-[58%] lg:py-4">
-          {(destinos.length > 0 || geocodingEnabled || estadoDestino.destino) && (
-            <div className="mb-6">
-              <CampoDestino destinos={destinos} modos={modos} valor={estadoDestino} onChange={escolherDestino} />
+          {/* DESTINO-PESSOAL-B: o "Outro local" é achado pelo servidor, então o campo aparece sempre (sem depender do token do navegador). */}
+          <div className="mb-6">
+              <CampoDestino
+                destinos={destinos}
+                modos={modos}
+                valor={estadoDestino}
+                onChange={escolherDestino}
+                cidade={chaveCidade(locationQuery) ? (properties.find((p) => p.city && chaveCidade(locationQuery).includes(chaveCidade(p.city)))?.city ?? null) : null}
+              />
               {estadoDestino.destino && tempoEmLinhaReta && (
                 <p className="mt-2 text-sm text-muted" data-testid="tempo-indisponivel">
                   Tempo de deslocamento indisponível agora: mostramos a distância em linha reta.
                 </p>
               )}
-            </div>
-          )}
+          </div>
           {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
             // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia-nivel">
