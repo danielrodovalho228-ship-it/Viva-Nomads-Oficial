@@ -13,6 +13,9 @@ import { AvisoAtendimentoAdmin } from "@/components/admin/aviso-atendimento";
 import { DecisoesHoje } from "@/components/admin/numeros";
 import { decisoesDoAdmin } from "@/lib/data/admin-decisoes";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { FaixaNumerosCelular } from "@/components/admin/faixa-numeros-celular";
+import { AlertaBackupCelular } from "@/components/admin/cartao-backup";
+import { faixaNumerosCelular } from "@/lib/admin/faixa-celular";
 import { showDemoProperties } from "@/lib/data/properties";
 
 /**
@@ -52,6 +55,9 @@ export default async function AdminPage({
 
   return (
     <>
+      {/* E73: no celular, o alerta do backup (quando falha) e os números-chave vêm primeiro. */}
+      <AlertaBackupCelular />
+      {resultado.ok && <FaixaNumerosCelular itens={faixaNumerosCelular(resultado.dados.agora, resultado.dados.atual, cidade)} />}
       <AvisoAtendimentoAdmin />
       <DecisoesHoje decisoes={decisoes} />
       <VisaoGeralClient
