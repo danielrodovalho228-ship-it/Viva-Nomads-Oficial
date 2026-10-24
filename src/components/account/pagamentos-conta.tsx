@@ -195,7 +195,8 @@ export function PagamentosConta() {
           <Button
             type="button"
             variant="secondary"
-            className="mt-2"
+            // No celular o texto quebra em duas linhas em vez de passar da tela (t402: 42 px de rolagem lateral a 390).
+            className="mt-2 h-auto min-h-11 max-w-full whitespace-normal py-2 text-left"
             onClick={() => {
               gravarLocalStorageBruto("vivanomads-cartao-interesse", "1");
               setAviseLocal(true);
