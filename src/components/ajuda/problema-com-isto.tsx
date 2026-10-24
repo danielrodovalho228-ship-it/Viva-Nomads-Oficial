@@ -12,7 +12,7 @@ export function ProblemaComIsto({
   id,
   className,
 }: {
-  tipo: "pedido" | "contrato" | "anuncio" | "parceiro";
+  tipo: "pedido" | "contrato" | "anuncio" | "parceiro" | "perfil";
   id: string;
   className?: string;
 }) {

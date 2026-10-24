@@ -116,7 +116,7 @@ test("denúncia: motivo próprio só pela página do parceiro; procedente tira o
   assert.equal(filaDaCategoria("nota_parceiro"), "suporte");
   assert.match(ler("components/ajuda/central-ajuda.tsx"), /\(!c\.soContexto \|\| c\.soContexto === contexto\?\.tipo\)/);
   const at = ler("lib/data/atendimento-actions.ts");
-  assert.match(at, /const CONTEXTOS = \["pedido", "contrato", "anuncio", "parceiro"\] as const;/);
+  assert.match(at, /const CONTEXTOS = \["pedido", "contrato", "anuncio", "parceiro"(, "[a-z]+")*\] as const;/);
   assert.match(at, /from\("parceiros"\)\.select\("id"\)\.eq\("id", id\)\.eq\("status", "publicado"\)/);
   const adm = ler("lib/parceiros/admin-actions.ts");
   const corpo = adm.slice(adm.indexOf("export async function denunciaNotaProcedente"), adm.indexOf("/** Suporte: a equipe abre o pedido"));

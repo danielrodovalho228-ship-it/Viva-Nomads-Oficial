@@ -67,6 +67,8 @@ export const INVENTARIO: ItemInventario[] = [
   i("documentos_inquilino", "public.documentos_inquilino", "caminho e hash do documento da candidatura", "ligar o arquivo à candidatura", ESTADIA, "tipo, data de envio e o veredito"),
   i("profiles", "public.profiles", "nome, e-mail, telefone, CPF/CNPJ, data de nascimento, bio, cidade, foto, local de trabalho", "a conta", CONTA),
   i("avatars", "bucket:avatars", "foto de perfil", "mostrar quem é a pessoa", CONTA),
+  // FOTO-PERFIL-B (E13): a fila de revisão guarda o caminho da foto e o motivo da remoção (lista fechada).
+  i("fotos_perfil_revisao", "public.fotos_perfil_revisao", "caminho da foto de perfil enviada, situação da revisão e motivo da remoção", "conferir que a foto é o rosto do titular adulto", CONTA),
   i("tenant_verifications", "public.tenant_verifications", "veredito da identidade (CAF: semáforo, confere nome/CPF)", "confiança", CONTA, "só o veredito; a Viva não grava imagem de documento nem selfie"),
   i("messages", "public.messages", "mensagens do chat", "conversa entre as partes", DISPUTA),
   i("service_order_messages", "public.service_order_messages", "mensagens de ordem de serviço", "conversa do serviço", DISPUTA),
