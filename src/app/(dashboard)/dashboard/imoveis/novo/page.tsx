@@ -49,7 +49,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
-import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao } from "@/lib/anuncio/operacao";
+import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoDocValido } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS } from "@/lib/listing";
 import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
@@ -247,6 +247,7 @@ export default function NewPropertyPage() {
   const [subleaseAuthorized, setSubleaseAuthorized] = useState(false);
   const [subleaseDoc, setSubleaseDoc] = useState<PhotoItem[]>([]);
   const [docOperacaoAnexado, setDocOperacaoAnexado] = useState(false);
+  const [subleaseDocTipo, setSubleaseDocTipo] = useState("");
   const [qual, setQual] = useState({ baseBadge: false, tHome: false, tWork: false });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   // 59-C1: a causa da recusa do servidor no autosave (null = falha de rede).
@@ -273,7 +274,7 @@ export default function NewPropertyPage() {
   const sugerido = (c: CampoSugerido) => sugeridos.includes(c);
 
   const docOperacaoOk = docOperacaoAnexado || subleaseDoc.some((d) => !!d.path && !d.demo);
-  const subleaseBlocked = exigeAutorizacao(ownershipType) && (!subleaseAuthorized || !docOperacaoOk);
+  const subleaseBlocked = exigeAutorizacao(ownershipType) && (!subleaseAuthorized || !docOperacaoOk || !tipoDocValido(ownershipType, subleaseDocTipo));
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
   const enderecoCompleto = [street.trim(), numero.trim()].filter(Boolean).join(", ");
@@ -337,6 +338,7 @@ export default function NewPropertyPage() {
     if (s === ETAPA.onde) {
       if (exigeAutorizacao(ownershipType)) {
         if (!subleaseAuthorized) e.sublocacao = "Marque a declaração para continuar.";
+        else if (!tipoDocValido(ownershipType, subleaseDocTipo)) e.sublocacao = "Escolha o que você está anexando: contrato de administração ou procuração.";
         else if (!docOperacaoOk) e.sublocacao = `Anexe: ${DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].titulo.toLowerCase()}.`;
       }
       if (!street.trim()) e.rua = "Informe a rua.";
@@ -511,6 +513,7 @@ export default function NewPropertyPage() {
       ownershipType,
       subleaseAuthorized,
       subleaseDocUrl: subleaseDoc[0]?.path ?? subleaseDoc[0]?.url,
+      subleaseDocTipo: subleaseDocTipo || undefined,
       condoFee: Number(condoFee) || 0,
       descricaoGeradaPorIa,
       utilitiesMode,
@@ -637,6 +640,7 @@ export default function NewPropertyPage() {
     if (typeof d.subleaseAuthorized === "boolean") setSubleaseAuthorized(d.subleaseAuthorized);
     if (Array.isArray(d.photos)) setPhotos(d.photos as PhotoItem[]);
     if (Array.isArray(d.subleaseDoc)) setSubleaseDoc(d.subleaseDoc as PhotoItem[]);
+    if (typeof d.subleaseDocTipo === "string") setSubleaseDocTipo(d.subleaseDocTipo);
     if (d.qual && typeof d.qual === "object") {
       const q = d.qual as Record<string, unknown>;
       setQual({ baseBadge: !!q.baseBadge, tHome: !!q.tHome, tWork: !!q.tWork });
@@ -761,6 +765,7 @@ export default function NewPropertyPage() {
       setOwnershipType(operacaoValida(p.ownershipType) ? p.ownershipType : "own");
       setSubleaseAuthorized(!!p.subleaseAuthorized);
       setDocOperacaoAnexado(!!p.autorizacaoAnexada);
+      setSubleaseDocTipo(p.subleaseDocTipo ?? "");
       setVideoUrl(p.videoUrl || "");
       setVideoArquivo(p.videoArquivo || "");
       setInternetMbps(p.internetMbps ? String(p.internetMbps) : "");
@@ -801,6 +806,7 @@ export default function NewPropertyPage() {
     aceiteIa: aceiteParaRascunho(aceiteValido, title, description),
     photos: photos.filter((p) => p.url && !p.url.startsWith("blob:")),
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
+    subleaseDocTipo,
   });
   useEffect(() => {
     if (approved !== true || editId) return;
@@ -1427,6 +1433,11 @@ export default function NewPropertyPage() {
                   if (d.length) setErros(({ sublocacao: _resolvido, ...resto }) => resto);
                 }}
                 docOperacaoAnexado={docOperacaoAnexado}
+                subleaseDocTipo={subleaseDocTipo}
+                setSubleaseDocTipo={(t) => {
+                  setSubleaseDocTipo(t);
+                  setErros(({ sublocacao: _resolvido, ...resto }) => resto);
+                }}
                 cep={cep}
                 setCep={(v) => {
                   setCep(v);
