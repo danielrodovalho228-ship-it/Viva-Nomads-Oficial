@@ -4,6 +4,7 @@
   A Viva só conecta: nunca guarda dinheiro. Taxa de serviço de 10% sobre o valor do serviço, todas as categorias.
 */
 import { dividirValor, TAXA_SERVICO_PARCEIRO } from "./regras.ts";
+import { lerReais } from "../reais.ts";
 
 // ── Estados ───────────────────────────────────────────────────────────────────────────────────────────────────
 export const STATUS_PEDIDO = [
@@ -136,7 +137,8 @@ export function congelarValores(valorCombinado: number): ValoresCongelados {
 }
 
 export function validarOrcamento(valor: unknown): { ok: true; valor: number } | { ok: false; erro: string } {
-  const v = typeof valor === "string" ? Number(valor.replace(/\./g, "").replace(",", ".")) : Number(valor);
+  const lido = typeof valor === "string" || typeof valor === "number" ? lerReais(valor) : null;
+  const v = lido?.ok && lido.valor != null ? lido.valor : NaN;
   if (!Number.isFinite(v) || v < VALOR_MIN) return { ok: false, erro: "Informe o valor do serviço." };
   if (v > VALOR_MAX) return { ok: false, erro: "Valor acima do limite. Fale com a equipe pelas mensagens." };
   return { ok: true, valor: Math.round(v * 100) / 100 };
