@@ -65,7 +65,7 @@ export const INVENTARIO: ItemInventario[] = [
   // ── Fase 2 / pendente (só relatório simulado) ──
   i("inquilino-docs/aceito", "bucket:inquilino-docs", "documento da candidatura aceita", "base do contrato", ESTADIA),
   i("documentos_inquilino", "public.documentos_inquilino", "caminho e hash do documento da candidatura", "ligar o arquivo à candidatura", ESTADIA, "tipo, data de envio e o veredito"),
-  i("profiles", "public.profiles", "nome, e-mail, telefone, CPF/CNPJ, bio, cidade, foto, local de trabalho", "a conta", CONTA),
+  i("profiles", "public.profiles", "nome, e-mail, telefone, CPF/CNPJ, data de nascimento, bio, cidade, foto, local de trabalho", "a conta", CONTA),
   i("avatars", "bucket:avatars", "foto de perfil", "mostrar quem é a pessoa", CONTA),
   i("tenant_verifications", "public.tenant_verifications", "veredito da identidade (CAF: semáforo, confere nome/CPF)", "confiança", CONTA, "só o veredito; a Viva não grava imagem de documento nem selfie"),
   i("messages", "public.messages", "mensagens do chat", "conversa entre as partes", DISPUTA),
