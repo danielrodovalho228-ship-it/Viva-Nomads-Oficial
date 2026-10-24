@@ -72,3 +72,9 @@ test("E95: a bolha 'Fale com a Viva' não cobre a busca; a ajuda fica como link 
 test("E82-A: a folha de filtros recomeça com os filtros da URL, mesmo aberta antes de a URL ser lida", () => {
   assert.match(busca, /<FolhaFiltros\s+key=\{JSON\.stringify\(filtrosPainel\)\}\s+inicial=\{filtrosPainel\}/);
 });
+
+test("E82-A: 'Mais filtros' conta os filtros que só existem na folha (Estadia e Pronto para Morar inclusive)", () => {
+  const conta = busca.slice(busca.indexOf("const secundariosAtivos"), busca.indexOf("comodidades.length;", busca.indexOf("const secundariosAtivos")));
+  assert.match(conta, /\(maxPeriod \? 1 : 0\)/);
+  assert.match(conta, /readyToLiveOnly/);
+});

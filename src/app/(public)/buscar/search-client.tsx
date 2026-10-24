@@ -495,13 +495,15 @@ export function SearchClient({
     ).length +
     comodidades.length;
 
-  // Filtros que vivem só na folha (fora da faixa do computador), para o contador do botão "Mais filtros".
+  // Filtros que vivem só na folha (fora da faixa do computador), para o contador do botão "Mais filtros". E82-A: sem a
+  // fileira de chips ativos, Estadia e Pronto para Morar (só na folha) também acendem a pílula.
   const secundariosAtivos =
     (typeFilter ? 1 : 0) +
     (garantia ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
+    (maxPeriod ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
-    [homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, operatedOnly].filter(Boolean).length +
+    [readyToLiveOnly, homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, operatedOnly].filter(Boolean).length +
     comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
