@@ -33,6 +33,8 @@ const TIPOS: [RegExp, string][] = [
   [/\bflat\b|\bapart-?hotel\b/i, "flat"],
   [/\bquarto (privativo|individual)\b/i, "quarto"],
   [/\bapartamento\b|\bapto?\b\.?/i, "apartamento"],
+  // TIPO-CHACARA-B: chácara/sítio antes de "casa" (anúncio de chácara costuma dizer "casa"). Fazenda e rancho não entram.
+  [/\bch[aá]cara\b|\bs[ií]tio\b/i, "chacara"],
   [/\bcasa\b/i, "casa"],
 ];
 

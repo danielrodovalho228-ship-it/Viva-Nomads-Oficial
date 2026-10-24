@@ -34,10 +34,12 @@ import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
 import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
+import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
+import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
-import { geocodeForSave } from "@/lib/integrations/geocoding";
+import { UBERLANDIA_CENTER, geocodeForSave } from "@/lib/integrations/geocoding";
 import { Button } from "@/components/ui/button";
 import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
@@ -169,6 +171,9 @@ export default function NewPropertyPage() {
   const [textoIaOriginal, setTextoIaOriginal] = useState<{ titulo: string; descricao: string } | null>(null);
   const [title, setTitle] = useState("");
   const [propertyType, setPropertyType] = useState("apartamento");
+  // TIPO-CHACARA-B: acesso, tipo de internet e o ponto marcado pelo dono (só do tipo chácara/sítio).
+  const [chacara, setChacara] = useState<ValorChacara>({});
+  const [chacaraPontoGravado, setChacaraPontoGravado] = useState(false);
   const [description, setDescription] = useState("");
   // Mudou o título ou a descrição depois do aceite: o aceite deixa de valer (caixa desmarcada) e o aviso aparece.
   const textoMudouDepoisDoAceite = aceitouIa && aceiteTexto !== null && impressaoDoTexto(title, description) !== aceiteTexto;
@@ -302,6 +307,8 @@ export default function NewPropertyPage() {
     confortoFaltam: editingId ? undefined : itensFaltantes(conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }))).length,
     // PERTO-B: lugar manual antigo, sem o endereço do lugar, fica fora da página até o dono informar onde fica.
     proximidadesSemEndereco: manualProximities.filter(manualSemEndereco).length,
+    // TIPO-CHACARA-B: chácara/sítio só publica com acesso, tipo de internet e o ponto no mapa.
+    chacaraFaltam: ehChacara(propertyType) ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado }) : undefined,
   });
   /** "Resolver" de um item do portão: vai à etapa; a qualificação abre ali mesmo. */
   function resolverItem(item: ItemProntidao) {
@@ -543,6 +550,8 @@ export default function NewPropertyPage() {
       negociacao,
       limitesNegociacao: limites,
       internetMbps: mbpsValido(internetMbps),
+      // TIPO-CHACARA-B: o servidor usa o ponto marcado no lugar da geocodificação e calcula a distância até a cidade.
+      chacara: ehChacara(propertyType) ? { acesso: chacara.acesso, internet: chacara.internet, ponto: chacara.ponto ?? null } : undefined,
       lat: coords.lat,
       lng: coords.lng,
       photoUrls: photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:")),
@@ -612,6 +621,7 @@ export default function NewPropertyPage() {
     if (s(d.videoUrl)) setVideoUrl(d.videoUrl as string);
     if (s(d.videoArquivo)) setVideoArquivo(d.videoArquivo as string);
     if (s(d.internetMbps)) setInternetMbps(d.internetMbps as string);
+    if (d.chacara && typeof d.chacara === "object") setChacara(d.chacara as ValorChacara);
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
     if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
     if (d.privacidade && typeof d.privacidade === "object") setPrivacidade({ ...PRIVACIDADE_VAZIA, ...(d.privacidade as Partial<Privacidade>) });
@@ -756,6 +766,11 @@ export default function NewPropertyPage() {
       setSmokingAllowed(p.smokingAllowed ?? false);
       setChildrenAllowed(p.childrenAllowed ?? true);
       setChegada(formDeChegada(p.chegadaEPedido));
+      {
+        const ch = normalizarChacara((p.detalhesAnuncio as { chacara?: unknown } | null | undefined)?.chacara);
+        if (ch) setChacara({ acesso: ch.acesso, internet: ch.internet });
+        setChacaraPontoGravado(!!ch?.pontoMarcado);
+      }
       if (p.privacidade) setPrivacidade(p.privacidade);
       setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
       setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
@@ -806,7 +821,7 @@ export default function NewPropertyPage() {
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, internetMbps,
     privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
-    amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados,
+    amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
     iaAnalisadas, sugeridos, comodidadesSugeridas,
@@ -1482,7 +1497,13 @@ export default function NewPropertyPage() {
             )}
 
             {step === ETAPA.detalhes && (
-              <EtapaEncontramos parte="espaco" {...camposImovel} />
+              <div className="space-y-6">
+                <EtapaEncontramos parte="espaco" {...camposImovel} />
+                {/* TIPO-CHACARA-B: acesso, tipo de internet e o ponto no mapa (obrigatórios para publicar este tipo). */}
+                {ehChacara(propertyType) && (
+                  <CamposChacara valor={chacara} onChange={setChacara} centro={UBERLANDIA_CENTER} pontoGravado={chacaraPontoGravado} />
+                )}
+              </div>
             )}
 
             {step === ETAPA.comodidades && (

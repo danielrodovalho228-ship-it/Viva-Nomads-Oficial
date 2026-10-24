@@ -9,6 +9,8 @@
  */
 import { horaFalada } from "./regras-casa.ts";
 
+import { normalizarChacara, tipoSemAndar, linhaChacara, ROTULO_CHACARA, type DadosChacara } from "./chacara.ts";
+
 export const ITENS_INCLUIDOS = [
   { chave: "agua", rotulo: "água" },
   { chave: "luz", rotulo: "luz" },
@@ -45,9 +47,12 @@ export interface DetalhesAnuncio {
   andar?: { andar: number; elevador?: boolean };
   janela?: { entradaDe?: string; entradaAte?: string; saidaAte?: string };
   vaga?: { coberta?: boolean; tipo?: "fixa" | "rotativa"; observacao?: string };
+  /** TIPO-CHACARA-B: só do tipo chácara/sítio, obrigatório para publicar (não é grupo com toggle). */
+  chacara?: DadosChacara;
 }
 
-export type ChaveGrupoDetalhe = keyof DetalhesAnuncio;
+/** Grupos opcionais com toggle (padrão E56). O grupo "chacara" fica fora: é do tipo, não do dono ligar. */
+export type ChaveGrupoDetalhe = Exclude<keyof DetalhesAnuncio, "chacara">;
 export const GRUPOS_DETALHE: { chave: ChaveGrupoDetalhe; titulo: string; descricao: string }[] = [
   { chave: "incluidoNoPreco", titulo: "Incluído no preço", descricao: "O que o valor mensal já cobre." },
   { chave: "areasCondominio", titulo: "Áreas do condomínio", descricao: "O que o morador pode usar no prédio." },
@@ -106,11 +111,14 @@ export function normalizarDetalhes(raw: unknown): DetalhesAnuncio | null {
       out.vaga = { ...(coberta !== undefined ? { coberta } : {}), ...(tipo ? { tipo } : {}), ...(obs ? { observacao: obs } : {}) };
   }
 
+  const chacara = normalizarChacara(r.chacara);
+  if (chacara) out.chacara = chacara;
+
   return Object.keys(out).length > 0 ? out : null;
 }
 
 /** Grupo com o mínimo para aparecer no anúncio (o medidor de completude usa isto para os blocos ligados). */
-export function grupoPreenchido(d: DetalhesAnuncio | null | undefined, chave: ChaveGrupoDetalhe): boolean {
+export function grupoPreenchido(d: DetalhesAnuncio | null | undefined, chave: ChaveGrupoDetalhe | "chacara"): boolean {
   return !!normalizarDetalhes(d)?.[chave];
 }
 
@@ -120,19 +128,23 @@ const rotulos = (base: readonly { chave: string; rotulo: string }[], chaves: str
 const maiuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 export interface LinhaDetalhe {
-  chave: ChaveGrupoDetalhe;
+  chave: ChaveGrupoDetalhe | "chacara";
   rotulo: string;
   texto: string;
 }
 
 /** Uma linha por grupo definido, em palavras simples (anúncio público: "Regras da estadia" e "Regras da casa"). */
-export function linhasDetalhes(d: DetalhesAnuncio | null | undefined): LinhaDetalhe[] {
+export function linhasDetalhes(d: DetalhesAnuncio | null | undefined, ctx: { tipo?: string | null; cidade?: string | null } = {}): LinhaDetalhe[] {
   const n = normalizarDetalhes(d);
   if (!n) return [];
   const l: LinhaDetalhe[] = [];
+  // TIPO-CHACARA-B: a linha do tipo (acesso, internet e a distância calculada do ponto marcado) vem primeiro.
+  const ch = linhaChacara(n.chacara, ctx.cidade);
+  if (ch) l.push({ chave: "chacara", rotulo: ROTULO_CHACARA, texto: ch });
   if (n.incluidoNoPreco) l.push({ chave: "incluidoNoPreco", rotulo: "Incluído no preço", texto: maiuscula(lista(rotulos(ITENS_INCLUIDOS, n.incluidoNoPreco))) });
   if (n.areasCondominio) l.push({ chave: "areasCondominio", rotulo: "Áreas do condomínio", texto: maiuscula(lista(rotulos(AREAS_CONDOMINIO, n.areasCondominio))) });
-  if (n.andar) {
+  // Andar e elevador não aparecem para casa nem chácara/sítio (regra de exibição).
+  if (n.andar && !tipoSemAndar(ctx.tipo)) {
     const andar = n.andar.andar === 0 ? "Térreo" : `${n.andar.andar}º andar`;
     const elev = n.andar.elevador === true ? " · com elevador" : n.andar.elevador === false ? " · sem elevador" : "";
     l.push({ chave: "andar", rotulo: "Andar", texto: andar + elev });

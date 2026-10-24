@@ -5,6 +5,9 @@ import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/
 import { RegrasCasaCampos, estadosConvivencia, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
 import { OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
 import { DetalhesAnuncioCampos, estadosDetalhes, formDeDetalhes, payloadDeDetalhes, type DetalhesForm } from "@/components/anuncio/detalhes-anuncio-campos";
+import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
+import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
+import { UBERLANDIA_CENTER } from "@/lib/integrations/geocoding";
 import { completudeBlocos, textoCompletude } from "@/lib/anuncio/bloco-opcional";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { ChegadaEPedidoCampos, formDeChegada, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
@@ -116,6 +119,9 @@ export function EditarImovelClient({
   // E56 + tela 06 dos mockups: cada regra da Convivência tem o seu toggle (o estado mora em regrasCasa.ligados).
   // CAMPOS-2: os 5 grupos opcionais do anúncio, cada um atrás do seu toggle (E56).
   const [detalhes, setDetalhes] = useState<DetalhesForm>(formDeDetalhes(property.detalhesAnuncio));
+  // TIPO-CHACARA-B: os campos do tipo (o ponto exato não volta ao navegador; vale o "já marcado").
+  const chacaraGravada = normalizarChacara((property.detalhesAnuncio as { chacara?: unknown } | null | undefined)?.chacara);
+  const [chacara, setChacara] = useState<ValorChacara>({ acesso: chacaraGravada?.acesso, internet: chacaraGravada?.internet });
   // Medidor dos opcionais: desligado = não se aplica (fora da conta).
   const completudeOpcionais = completudeBlocos([...estadosConvivencia(regrasCasa), ...estadosDetalhes(detalhes)]);
   const [childrenAllowed, setChildrenAllowed] = useState(property.childrenAllowed ?? true);
@@ -179,8 +185,13 @@ export function EditarImovelClient({
         tipoEntradaOk: property.status === "draft" && property.chegadaEPedido ? tipoEntradaValido(chegada.tipoEntrada) : undefined,
         // FILTROS-1 (E39): a mesma regra do servidor (rascunho só publica com a velocidade da internet).
         internetOk: property.status === "draft" ? fatos?.internetOk : undefined,
+        // TIPO-CHACARA-B: a mesma regra do servidor (chácara/sítio fora do ar só publica com os 3 campos).
+        chacaraFaltam:
+          ehChacara(property.propertyType) && property.status !== "active"
+            ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || !!chacaraGravada?.pontoMarcado })
+            : undefined,
       }),
-    [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, videoArquivo, videoUrl, chegada.tipoEntrada]
+    [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, videoArquivo, videoUrl, chegada.tipoEntrada, chacara, chacaraGravada?.pontoMarcado]
   );
   const [aceitouIa, setAceitouIa] = useState(false);
   const [publicadoAgora, setPublicadoAgora] = useState(false);
@@ -240,6 +251,8 @@ export function EditarImovelClient({
       regrasCasa: payloadDeRegrasCasa(regrasCasa),
       smokingAllowed: regrasCasa.ligados.fumo && regrasCasa.fumo ? regrasCasa.fumo === "permitido" : smokingAllowed,
       detalhesAnuncio: payloadDeDetalhes(detalhes),
+      // TIPO-CHACARA-B: o servidor grava o grupo do tipo (e usa o ponto novo, se marcado, no lugar do endereço).
+      chacara: ehChacara(property.propertyType) ? { acesso: chacara.acesso, internet: chacara.internet, ponto: chacara.ponto ?? null } : undefined,
       childrenAllowed,
       ...(property.chegadaEPedido ? payloadDaChegada(chegada) : {}),
       // Só manda quando a coluna existe (property.privacidade definida): senão não grava nada.
@@ -706,7 +719,15 @@ export function EditarImovelClient({
           onSave={() => saveSection("detalhes-anuncio")}
         >
           <p className="text-sm text-muted">Ligue só o que se aplica ao seu imóvel. O que ficar desligado não aparece no anúncio e não conta como pendência.</p>
-          <DetalhesAnuncioCampos value={detalhes} onChange={setDetalhes} />
+          {ehChacara(property.propertyType) && (
+            <CamposChacara
+              valor={chacara}
+              onChange={setChacara}
+              centro={property.lat && property.lng ? { lat: property.lat, lng: property.lng } : UBERLANDIA_CENTER}
+              pontoGravado={!!chacaraGravada?.pontoMarcado}
+            />
+          )}
+          <DetalhesAnuncioCampos value={detalhes} onChange={setDetalhes} tipo={property.propertyType} />
         </Section>
 
         {/* Detalhes & preço */}
