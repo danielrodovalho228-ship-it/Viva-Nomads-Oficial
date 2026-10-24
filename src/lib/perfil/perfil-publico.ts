@@ -168,7 +168,7 @@ export interface ItemProgresso {
   feito: boolean;
 }
 
-/** Barra "Complete seu perfil": nunca obrigatória. Quem só procura casa também vê profissão e motivo. */
+/** Barra "Complete seu perfil": nunca obrigatória. Quem só procura casa também vê a profissão. */
 export function progressoPerfil(
   p: { foto: boolean; bio: string | null; idiomas: string[]; cidade: string | null; profissao: string | null; motivo: string | null },
   /** telefone: undefined = verificação por SMS indisponível (o item não aparece). */
@@ -180,10 +180,9 @@ export function progressoPerfil(
     { chave: "idiomas", rotulo: "Idiomas", feito: p.idiomas.length > 0 },
     { chave: "cidade", rotulo: "Cidade", feito: !!p.cidade },
   ];
-  if (!opts.anuncia) {
-    itens.push({ chave: "profissao", rotulo: "Profissão", feito: !!p.profissao });
-    itens.push({ chave: "motivo", rotulo: "Motivo da estadia", feito: !!p.motivo });
-  }
+  // CONTA-A C2: o motivo da estadia NÃO entra na barra. Ele mora num lugar só (Dados da conta), onde "Prefiro não
+  // informar" é uma resposta válida — e no banco vale o mesmo que "sem motivo"; contar como falta dava dois estados.
+  if (!opts.anuncia) itens.push({ chave: "profissao", rotulo: "Profissão", feito: !!p.profissao });
   if (opts.telefone !== undefined)
     itens.push({ chave: "telefone", rotulo: "Verifique seu celular: perfis verificados passam mais confiança", feito: opts.telefone });
   const pct = Math.round((itens.filter((i) => i.feito).length / itens.length) * 100);
@@ -194,4 +193,29 @@ export function progressoPerfil(
 export function robotsDoProprietario(imoveisVisiveis: number): { index: boolean; follow: boolean } {
   const indexar = imoveisVisiveis > 0;
   return { index: indexar, follow: indexar };
+}
+
+/** Rótulo curto de cada item na linha de faltas (o do celular é uma frase longa na lista). */
+const CURTO: Partial<Record<string, string>> = { telefone: "Celular verificado" };
+
+/**
+ * CONTA-A C1 — o medidor declara o que conta e a linha de faltas lista TUDO o que falta: os itens do cadastro (nome,
+ * e-mail confirmado, documento — os mesmos do admin) mais os da barra (foto, frase, idiomas, cidade, profissão,
+ * celular). A foto está nos dois e conta uma vez. A porcentagem é sobre esta mesma lista.
+ */
+export function medidorPerfil(
+  barra: ItemProgresso[],
+  cadastro: { chave: string; rotulo: string; feito: boolean }[],
+): { itens: { chave: string; rotulo: string; feito: boolean }[]; pct: number; falta: string[] } {
+  const chaves = new Set(barra.map((i) => i.chave as string));
+  const itens = [...cadastro.filter((i) => !chaves.has(i.chave)), ...barra];
+  const pct = itens.length ? Math.round((itens.filter((i) => i.feito).length / itens.length) * 100) : 100;
+  const falta = itens.filter((i) => !i.feito).map((i) => CURTO[i.chave] ?? i.rotulo);
+  return { itens, pct, falta };
+}
+
+/** "A, B e C" (vazio → ""). */
+export function listaEmTexto(itens: string[]): string {
+  if (itens.length <= 1) return itens.join("");
+  return `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
 }

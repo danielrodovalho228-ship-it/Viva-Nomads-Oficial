@@ -32,7 +32,8 @@ export function EspelhoPerfil({
       </h2>
       <div className="mt-3 rounded-xl border border-line bg-white p-4" data-testid="espelho-cartao">
         <div className="flex items-center gap-3">
-          <Avatar name={nome} size={56} photoUrl={foto ?? undefined} />
+          {/* C8: a foto do espelho é a do cartão de conversa — menor, sem competir com a do topo. */}
+          <Avatar name={nome} size={40} photoUrl={foto ?? undefined} />
           <div className="min-w-0">
             <p className="truncate font-title text-base font-semibold text-ink" data-testid="espelho-nome">
               {nomeNoEspelho(nome)}

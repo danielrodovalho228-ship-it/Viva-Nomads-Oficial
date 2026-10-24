@@ -145,6 +145,8 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
   test("4) 'Meu local de trabalho' salvo vira o destino padrão da busca", async ({ browser }) => {
     const page = await entrar(browser as Browser, medica.email, senha);
     await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+    // C9/E56: sem local salvo o bloco nasce fechado; o toggle abre o campo.
+    await page.getByTestId("local-toggle-bloco-toggle").last().click({ timeout: 20_000 });
     const bloco = page.getByTestId("meu-local-trabalho").last();
     await bloco.getByTestId("destino-hc-ufu").click({ timeout: 20_000 });
     await bloco.getByTestId("salvar-local-trabalho").click();

@@ -22,7 +22,7 @@ import {
   normalizarContadores,
   type ContadoresPainel,
 } from "@/lib/painel/contadores";
-import { useViewMode, identidadeUsuario } from "@/lib/roles";
+import { useViewMode, identidadeUsuario, primeiroNomeExibicao } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
@@ -97,6 +97,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // "usuário" do e-mail (parte antes do @) — identifica sem expor o e-mail
   // inteiro; só então cai no rótulo neutro. NUNCA o e-mail cru.
   const nomeSidebar = identidadeUsuario(displayUser);
+  // CONTA-A: o rosto do avatar só usa o nome do perfil; sem nome, a silhueta (nunca letras do e-mail).
+  const nomeAvatar = primeiroNomeExibicao(displayUser);
 
   // Minha própria foto de perfil (opcional) para o avatar do topo.
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
@@ -250,7 +252,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const parceiroAprovado = useParceiroAprovado();
   const preferenciaParceiro = usePreferenciaParceiro();
   const papelAtivo = papelDaBarra({ admin: display.role === "admin", modo: mode === "owner" ? "owner" : "tenant", parceiroAprovado, preferenciaParceiro, pathname });
-  const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeSidebar} foto={myPhoto} />;
+  // C8/E55: na Conta a foto aparece uma vez (o topo editável; o espelho, menor). As miniaturas de navegação ficam só nas iniciais.
+  const fotoNav = pathname === "/dashboard/conta" ? null : myPhoto;
+  const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />;
 
   const sidebar = (
     <div className="flex h-full flex-col">
@@ -275,7 +279,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </nav>
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 px-3 py-2">
-          <Avatar name={nomeSidebar} size={36} mode={mode} photoUrl={myPhoto ?? undefined} />
+          {/* C7b: sem o selo do papel (a 36 px a lupa virava um rabisco "Q"); o papel já aparece no cabeçalho. */}
+          <span className="contents" data-testid="barra-avatar">
+            <Avatar name={nomeAvatar} size={36} photoUrl={fotoNav ?? undefined} />
+          </span>
           <div className="min-w-0 text-xs">
             {/* Item 4: nunca o e-mail cru — nome do perfil ou rótulo neutro. */}
             <p className="truncate font-medium text-white">{nomeSidebar}</p>
@@ -334,7 +341,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Folga no fim (sm+: --folga-flutuante = 112 px) e scroll-padding no contêiner que rola (lg): o botão flutuante "Fale com a
             Viva" (48 px, 24 px acima da borda) nunca fica por cima da última ação da tela (t241: "Salvar qualificação"
             coberto a 1280 px depois que os botões passaram a 56 px no #953). */}
-        <main key={mode} className="mode-transition flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
+        <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />

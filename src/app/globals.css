@@ -492,6 +492,13 @@ body:has([data-testid="barra-fixa-imovel"]) {
     left: 1.5rem;
   }
 }
+/* CONTA-A C4 — no painel (site), a coluna reserva a faixa da direita onde mora o "Fale com a Viva" redondo (48 px a
+   1,5 rem da borda): o botão nunca senta sobre um cartão durante a rolagem. No app o botão não existe. */
+@media (min-width: 768px) {
+  html:not([data-app]) [data-painel-main] {
+    padding-right: 5rem;
+  }
+}
 /* Rolagem até um elemento (âncora, foco, "rolar até o botão") para acima do botão flutuante da Viva, em qualquer
    largura: o flutuante não cobre a ação principal da tela (t241, #953). */
 html:has([data-testid="fale-com-a-viva-raiz"]) {

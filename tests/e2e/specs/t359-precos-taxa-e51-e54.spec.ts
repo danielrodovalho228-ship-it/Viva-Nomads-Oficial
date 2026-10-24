@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação do merge no lab-crítico do bloco 15 (t338).
  * T359 — /precos (auditoria de textos × lei do produto, 23/10):
  *   E51. "O que vai para o seu bolso": a taxa NUNCA aparece como dedução do que o morador paga. Dois fatos separados
  *        ("Você recebe do morador: R$ 12.000, integral e direto" e "Taxa de serviço da Viva: R$ 1.440, cobrada à parte,
