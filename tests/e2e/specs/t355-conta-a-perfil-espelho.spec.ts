@@ -170,7 +170,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       await expect(p).toHaveURL(/\/dashboard\/conta\/perfil$/);
       await p.getByTestId("perfil-cartao").waitFor();
       const espelho = p.locator('[data-testid="espelho-perfil"]:visible');
-      await expect(espelho.getByRole("heading")).toHaveText("É assim que o proprietário te vê");
+      await expect(espelho.getByRole("heading")).toHaveText("É assim que o proprietário te vê quando você pede para morar");
       await expect(espelho.getByTestId("espelho-nome")).toHaveText("Helena Prado");
       await expect(espelho.getByTestId("espelho-email")).toHaveText("E-mail confirmado");
       await p.locator("#perfil-cidade").fill("Santa Mônica");
