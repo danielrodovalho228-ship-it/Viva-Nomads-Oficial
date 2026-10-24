@@ -68,3 +68,7 @@ test("E95: a bolha 'Fale com a Viva' não cobre a busca; a ajuda fica como link 
   assert.match(chat.split("\n").find((l) => l.includes("const ESCONDER")) ?? "", /"\/buscar"/);
   assert.match(busca, /data-testid="buscar-ajuda"/);
 });
+
+test("E82-A: a folha de filtros recomeça com os filtros da URL, mesmo aberta antes de a URL ser lida", () => {
+  assert.match(busca, /<FolhaFiltros\s+key=\{JSON\.stringify\(filtrosPainel\)\}\s+inicial=\{filtrosPainel\}/);
+});

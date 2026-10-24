@@ -720,7 +720,10 @@ export function SearchClient({
         </BottomSheet>
       )}
       {painelAberto && (
+        // E82-A: "Mais filtros" já está na linha desde o 1º desenho; tocado antes de a URL ser lida (link com
+        // ?garantia=…), a folha recomeça com os filtros que valem — nunca abre vazia por cima de uma busca filtrada.
         <FolhaFiltros
+          key={JSON.stringify(filtrosPainel)}
           inicial={filtrosPainel}
           contar={contarComPainel}
           contarNaoMedidos={contarNaoMedidos}
