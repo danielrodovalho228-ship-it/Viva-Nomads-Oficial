@@ -18,7 +18,6 @@ const ids: { dono?: string; imovel?: string } = {};
 const TITULO = `Chácara Sem Internet ${sufixo}`;
 const PONTO = { lat: -18.95, lng: -48.4 };
 const MOTIVO = 'Internet: o padrão mínimo da Viva exige internet no imóvel (item "Internet informada" do Essencial).';
-const FOTOS_LOCAIS = ["sala", "quarto", "cozinha", "banheiro", "fachada", "sala", "quarto", "cozinha"];
 
 const lerRascunho = async () => {
   const { data } = await adm().from("properties").select("status, internet_mbps, draft_data, detalhes_anuncio").eq("id", ids.imovel!).single();
@@ -37,7 +36,11 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.imovel = await criarImovelPronto(ids.dono, TITULO, { semInternet: true });
-    const fotos = FOTOS_LOCAIS.map((n, i) => ({ id: `lab-${i}`, url: `/images/imoveis/placeholder-imovel-${n}.webp`, name: "", path: `${ids.dono}/${ids.imovel}-${i}.webp`, demo: false }));
+    // As 8 fotos que criarImovelPronto subiu (o Publicar sincroniza as fotos do rascunho com o armazenamento).
+    const fotos = Array.from({ length: 8 }, (_, i) => {
+      const caminho = `${ids.dono}/${ids.imovel}-${i}.png`;
+      return { id: `lab-${i}`, url: `https://lab.vivanomads.test/storage/v1/object/public/property-photos/${caminho}`, name: "", path: caminho, demo: false };
+    });
     const { error } = await adm()
       .from("properties")
       .update({
@@ -166,7 +169,10 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
     await aceitarTermoIaSePreciso(page);
     const publicar = page.locator('[data-testid="publicar-anuncio"]:visible');
     await expect(publicar).toBeEnabled({ timeout: 20_000 });
+    const faltaOutros = page.getByTestId("publicar-falta-outros");
+    expect(await faltaOutros.isVisible() ? await faltaOutros.innerText() : "", "nada mais falta para publicar").toBe("");
     await publicar.click();
+    await page.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
     await expect
       .poll(async () => {
         const r = await lerRascunho();
