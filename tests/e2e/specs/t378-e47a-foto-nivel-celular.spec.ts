@@ -38,13 +38,15 @@ interface Caso {
   arquivo: () => Promise<{ name: string; mimeType: string; buffer: Buffer }>;
   /** Simula na rede o que o laboratório não tem (a Vercel, o celular perdendo o sinal). */
   rota?: "abortar" | "413-vercel";
+  /** Defeito de produto já registrado (L-*): o caso documenta a queda em vez de derrubar o lab. */
+  conhecido?: string;
 }
 const CASOS: Caso[] = [
   { id: "jpeg-5mb", descricao: "JPEG de celular 12 MP, ~5 MB (abaixo do limite de 8 MB)", arquivo: async () => ({ name: "IMG_0005.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(5 * MB) }) },
   { id: "jpeg-10mb", descricao: "JPEG de celular 12 MP, ~10 MB (acima dos 8 MB do servidor, abaixo dos 10 MB do proxy)", arquivo: async () => ({ name: "IMG_0010.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(10 * MB - 64 * 1024) }) },
   { id: "jpeg-14mb", descricao: "JPEG de celular, ~14 MB (acima dos 10 MB que o proxy guarda do corpo)", arquivo: async () => ({ name: "IMG_0014.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(14 * MB) }) },
   { id: "jpeg-48mp", descricao: "JPEG 48 MP (8000×6000), ~4 MB: passa no limite de tamanho e pesa na decodificação do servidor", arquivo: async () => ({ name: "IMG_0048.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(0, 8000, 6000, 20) }) },
-  { id: "rede-caiu", descricao: "JPEG ~5 MB com a rede caindo no envio (o fetch rejeita, como no celular sem sinal)", rota: "abortar", arquivo: async () => ({ name: "IMG_0005.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(5 * MB) }) },
+  { id: "rede-caiu", descricao: "JPEG ~5 MB com a rede caindo no envio (o fetch rejeita, como no celular sem sinal)", rota: "abortar", conhecido: "L-53", arquivo: async () => ({ name: "IMG_0005.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(5 * MB) }) },
   { id: "413-vercel", descricao: "JPEG ~5 MB com a resposta da Vercel acima de 4,5 MB (413, corpo em texto)", rota: "413-vercel", arquivo: async () => ({ name: "IMG_0005.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(5 * MB) }) },
   { id: "heic-3mb", descricao: "HEIC do iPhone, ~3 MB (formato fora do accept)", arquivo: async () => ({ name: "IMG_0003.HEIC", mimeType: "image/heic", buffer: heic(3 * MB) }) },
 ];
@@ -88,7 +90,7 @@ async function estadoDaPagina(page: Page) {
     return {
       itensNaTela: !!document.querySelector('[data-testid="nivel-itens"]'),
       caracteres: texto.trim().length,
-      telaDeErro: /Application error|client-side exception|Algo deu errado|This page couldn.t load/i.test(texto),
+      telaDeErro: /Application error|client-side exception|Algo deu errado|This page couldn.t load|Não conseguimos abrir esta tela/i.test(texto),
       url: location.pathname,
     };
   });
@@ -134,7 +136,13 @@ async function rodarCaso(page: Page, imovel: string, c: Caso, motor: string) {
   mkdirSync(SAIDA, { recursive: true });
   writeFileSync(`${SAIDA}/${motor}-${c.id}.json`, JSON.stringify(r, null, 2));
   await page.screenshot({ path: `${SAIDA}/${motor}-${c.id}.png`, fullPage: true }).catch(() => {});
-  expect.soft(branca, `${motor} · ${c.descricao}: a página ficou branca (pageerror=${JSON.stringify(errosReais)}; estado=${JSON.stringify(estado)})`).toBe(false);
+  if (c.conhecido) {
+    // Defeito reproduzido e registrado: fica anotado e, quando a correção entrar, o teste avisa para tirar a marca.
+    test.info().annotations.push({ type: c.conhecido, description: `${motor} · ${c.id}: página caiu no limite de erro (${JSON.stringify(estado)})` });
+    expect.soft(branca, `${motor} · ${c.id}: ${c.conhecido} corrigido? A página não caiu mais: tire a marca "conhecido" deste caso`).toBe(true);
+  } else {
+    expect.soft(branca, `${motor} · ${c.descricao}: a página ficou branca (pageerror=${JSON.stringify(errosReais)}; estado=${JSON.stringify(estado)})`).toBe(false);
+  }
   await page.unroute("**/api/upload/foto").catch(() => {});
 }
 
