@@ -50,6 +50,8 @@ export const PHOTOS = {
     morador: `${I}/placeholder-imovel-sala.webp`,
     parceiro: "/images/unicas/parceiros-servicos.webp",
   },
+  // Conta › Ajuda (E71): a foto só no cartão de contato (uma pessoa numa conversa pelo celular).
+  ajudaContato: "/images/unicas/cf-conversa-registrada.webp",
   // Estados / OG (imagens reais geradas)
   emptyTenant: "/images/empty-inquilino-reservas.webp",
   emptyOwner: "/images/empty-prop-imoveis.webp",
