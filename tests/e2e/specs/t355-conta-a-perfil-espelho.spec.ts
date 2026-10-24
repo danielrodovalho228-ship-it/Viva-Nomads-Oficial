@@ -43,7 +43,9 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
   test.beforeAll(async () => {
     ids.semNome = await criarConta(semNome, senha);
     ids.dono = await criarConta(dono, senha);
+    // Conta de fato sem nome: nem no perfil nem nos dados do login (a sessão lê os dois).
     await adm().from("profiles").update({ full_name: null }).eq("id", ids.semNome);
+    await adm().auth.admin.updateUserById(ids.semNome, { user_metadata: { full_name: null } });
     ids.imovel = await criarImovelPronto(ids.dono, `Perfil t355 ${sufixo}`, { ativo: true });
   });
   test.afterAll(async () => {
@@ -60,7 +62,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       await expect(topo.locator('[data-rosto="silhueta"]')).toHaveCount(1);
       await expect(topo).not.toContainText("?");
       // O selo do cabeçalho também mostra a silhueta (não o "P"/"M" do papel, nem "?").
-      await expect(p.getByTestId("papel-ativo").locator('[data-rosto="silhueta"]')).toHaveCount(1);
+      await expect(p.locator('[data-testid="papel-ativo"]:visible [data-rosto="silhueta"]')).toHaveCount(1);
       // Nenhum título "Conta" sobrando e nenhum título numerado.
       await expect(p.getByRole("heading", { name: "Conta", exact: true })).toHaveCount(0);
       if (w === 1280) {
@@ -89,7 +91,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       // O input é acessível (sr-only), nunca display:none.
       expect(await p.getByTestId("topo-foto-input").evaluate((i) => getComputedStyle(i).display)).not.toBe("none");
       // O convite do painel abre o MESMO fluxo (não é mais uma âncora).
-      await p.goto("/dashboard", { waitUntil: "networkidle" });
+      await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
       const convite = p.getByTestId("convite-foto-adicionar");
       if (await convite.count()) {
         expect(await convite.evaluate((e) => e.tagName.toLowerCase())).toBe("button");
@@ -115,13 +117,17 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
     await expect(p.getByTestId("topo-foto-msg")).toHaveText("Foto atualizada", { timeout: 20_000 });
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
     await expect(p.getByTestId("topo-foto")).toHaveAccessibleName("Trocar foto");
-    // No cabeçalho, na hora (sem recarregar).
-    await expect(p.getByTestId("papel-ativo").locator("img")).toHaveCount(1);
+    // C8/E55: na Conta a foto aparece no topo e (menor) no espelho; o cabeçalho fica só nas iniciais.
+    await expect(p.getByTestId("espelho-perfil").locator("img")).toHaveCount(1);
+    await expect(p.getByTestId("papel-ativo").locator("img")).toHaveCount(0);
     // O progresso andou sem recarregar: "Nome e foto" feito.
     await expect(p.locator('[data-degrau="basico"]')).toHaveAttribute("data-feito", "1", { timeout: 15_000 });
     const caminho = (await adm().from("profiles").select("avatar_url").eq("id", ids.dono).single()).data?.avatar_url as string;
     expect(caminho).toBe(`${ids.dono}/avatar.webp`);
-    await p.reload({ waitUntil: "networkidle" });
+    // Fora da Conta, o cabeçalho mostra a foto nova.
+    await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await expect(p.getByTestId("papel-ativo").locator("img")).toHaveCount(1);
+    await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
     // Perfil público do proprietário (tem anúncio): a foto aparece.
     const pub = await (await browser.newContext()).newPage();

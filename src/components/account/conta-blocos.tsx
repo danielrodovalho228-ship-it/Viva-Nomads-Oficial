@@ -40,7 +40,7 @@ export function PerfilProfissional() {
   const { mode } = useViewMode();
   if (mode !== "tenant") return null;
   return (
-    <Panel title="Perfil profissional" className="mt-6">
+    <Panel title="Profissão" className="mt-6">
       <p className="text-sm text-muted">Ajuda o proprietário a conhecer você. Complementa a verificação de identidade, não a substitui.</p>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <CategoriaProfissional />
@@ -141,25 +141,36 @@ export function ConfiancaLista() {
   const busca = useSyncExternalStore(assinarBusca, () => window.location.search, () => "");
   const avisoLinkedin = AVISO_LINKEDIN[new URLSearchParams(busca).get("linkedin") ?? ""] ?? null;
   const [duasEtapas, setDuasEtapas] = useState<boolean | null>(null);
+  // C6: nenhum estado aparece antes de chegar — sem "Não verificado + Verificar" que vira "Em breve" um instante depois.
+  const [pronto, setPronto] = useState(false);
   // Identidade: o estado ÚNICO (complemento do prompt 23) — nenhum texto próprio aqui.
   const identidade = useEstadoIdentidade().situacao?.identidade ?? null;
 
   useEffect(() => {
     let vivo = true;
     const sb = createClient();
+    const leituras: Promise<unknown>[] = [];
     if (sb) {
-      void sb.auth.getUser().then(({ data }) => vivo && setEmailOk(Boolean(data.user?.email_confirmed_at)));
-      void sb.auth.mfa
-        .listFactors()
-        .then(({ data }) => vivo && setDuasEtapas(Boolean(data?.totp?.some((f) => f.status === "verified"))))
-        .catch(() => {});
+      leituras.push(sb.auth.getUser().then(({ data }) => vivo && setEmailOk(Boolean(data.user?.email_confirmed_at))));
+      leituras.push(
+        sb.auth.mfa
+          .listFactors()
+          .then(({ data }) => vivo && setDuasEtapas(Boolean(data?.totp?.some((f) => f.status === "verified"))))
+          .catch(() => {}),
+      );
     }
-    getTelefoneEstado()
-      .then((e) => vivo && e && setCelular({ disponivel: e.disponivel, verificado: e.verificado }))
-      .catch(() => {});
-    meuLinkedin()
-      .then((l) => vivo && setLinkedin(l))
-      .catch(() => {});
+    leituras.push(
+      getTelefoneEstado()
+        // Sem resposta, o celular fica como "Em breve" (o mesmo estado de quando o SMS não está disponível), nunca alternando.
+        .then((e) => vivo && setCelular(e ? { disponivel: e.disponivel, verificado: e.verificado } : { disponivel: false, verificado: false }))
+        .catch(() => vivo && setCelular({ disponivel: false, verificado: false })),
+    );
+    leituras.push(
+      meuLinkedin()
+        .then((l) => vivo && setLinkedin(l))
+        .catch(() => {}),
+    );
+    void Promise.allSettled(leituras).then(() => vivo && setPronto(true));
     return () => {
       vivo = false;
     };
@@ -186,7 +197,7 @@ export function ConfiancaLista() {
       icone: UserCheck,
       rotulo: "Identidade",
       situacao: !identidade ? "falta" : identidade.estado === "confirmada" ? "ok" : identidade.estado === "em_breve" ? "em_breve" : "falta",
-      detalhe: identidade?.texto ?? "Carregando…",
+      detalhe: identidade?.texto ?? "",
       // O texto do estado fica no detalhe; o botão é curto (o rótulo longo do estado estourava a 390 px).
       acao:
         identidade?.estado === "confirmada"
@@ -240,8 +251,10 @@ export function ConfiancaLista() {
     },
   ];
 
+  const carregando = (chave: string) => !pronto || (chave === "identidade" && !identidade);
+
   return (
-    <Panel className="mt-6" data-testid="confianca-lista">
+    <Panel className="mt-6" data-testid="confianca-lista" aria-busy={!pronto}>
       {avisoLinkedin && linkedin?.ativo && (
         <p role="status" className={cn("mb-2 text-sm", avisoLinkedin.ok ? "text-forest" : "text-red-700")} data-testid="linkedin-aviso">
           {avisoLinkedin.texto}
@@ -249,10 +262,13 @@ export function ConfiancaLista() {
       )}
       <ul className="divide-y divide-sage-200">
         {itens.map((i) => (
-          <li key={i.chave} className="flex items-center gap-3 py-3" data-testid={`confianca-${i.chave}`} data-situacao={i.situacao}>
+          <li key={i.chave} className="flex min-h-[4.25rem] items-center gap-3 py-3" data-testid={`confianca-${i.chave}`} data-situacao={carregando(i.chave) ? "carregando" : i.situacao}>
             <i.icone className="h-5 w-5 shrink-0 text-sage" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-ink">{i.rotulo}</p>
+              {carregando(i.chave) ? (
+                <span className="mt-1 block h-3 w-28 rounded bg-surface-2" aria-hidden />
+              ) : (
               <p className={cn("flex items-center gap-1 text-xs", i.situacao === "ok" ? "text-forest" : "text-muted")}>
                 {i.situacao === "ok" ? (
                   <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
@@ -263,8 +279,9 @@ export function ConfiancaLista() {
                 )}
                 {i.detalhe}
               </p>
+              )}
             </div>
-            {i.acao &&
+            {!carregando(i.chave) && i.acao &&
               (i.acao.externo ? (
                 // Rota do servidor que redireciona para o LinkedIn: navegação de verdade, sem prefetch.
                 <a href={i.acao.href} className="inline-flex min-h-11 shrink-0 items-center text-sm font-medium text-forest underline underline-offset-2" data-testid={`confianca-${i.chave}-acao`}>
@@ -275,7 +292,7 @@ export function ConfiancaLista() {
                   {i.acao.texto}
                 </Link>
               ))}
-            {i.botao && (
+            {!carregando(i.chave) && i.botao && (
               <button
                 type="button"
                 onClick={i.botao.onClick}

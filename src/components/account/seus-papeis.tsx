@@ -17,7 +17,11 @@ import { EVENTO_PAPEL, useTrocaPapel } from "@/components/papel/use-troca-papel"
  * a pessoa tem traz "Usar este" (a MESMA troca do selo do topo; o papel em uso fica marcado). Quem ainda não tem o papel
  * vê o convite ("Anunciar um imóvel", "Quero ser parceiro"). Só muda o menu e o painel que aparecem primeiro.
  */
-export function SeusPapeis() {
+/**
+ * `dentroDoBloco`: na Conta do site o bloco "Papéis e intenção" já é a região com o título — aqui vira um cartão simples,
+ * sem segunda região nem segundo título iguais aninhados (CONTA-A, C3e). No app, segue com o próprio título.
+ */
+export function SeusPapeis({ dentroDoBloco = false }: { dentroDoBloco?: boolean } = {}) {
   const [papeis, setPapeis] = useState<PapelDaConta[] | null>(null);
   const { papeis: podeUsar, trocando, erro, trocar } = useTrocaPapel();
   const admin = useAuthStore((s) => s.user?.role === "admin");
@@ -38,13 +42,23 @@ export function SeusPapeis() {
       window.removeEventListener(EVENTO_PAPEL, ler);
     };
   }, []);
-  if (!papeis) return null;
+  // C6: até os papéis chegarem, o cartão já ocupa o lugar (sem texto de carregando e sem a tela pular).
+  if (!papeis)
+    return (
+      <div className="min-h-40 rounded-xl border border-line bg-white p-4" data-testid="seus-papeis-carregando" aria-busy="true">
+        <span className="block h-4 w-2/3 rounded bg-surface-2" aria-hidden />
+        <span className="mt-4 block h-10 rounded bg-surface-2" aria-hidden />
+        <span className="mt-3 block h-10 rounded bg-surface-2" aria-hidden />
+      </div>
+    );
   return (
-    <section className="rounded-xl border border-line bg-white p-4" data-testid="seus-papeis" aria-labelledby="seus-papeis-titulo">
-      <h2 id="seus-papeis-titulo" className="font-title text-lg font-semibold text-ink">
-        Papéis e intenção
-      </h2>
-      <p className="mt-1 text-sm text-muted">O papel em uso decide o menu e o painel que aparecem primeiro. Não muda o que você pode fazer na conta.</p>
+    <Casca dentroDoBloco={dentroDoBloco}>
+      {!dentroDoBloco && (
+        <h2 id="seus-papeis-titulo" className="font-title text-lg font-semibold text-ink">
+          Papéis e intenção
+        </h2>
+      )}
+      <p className={dentroDoBloco ? "text-sm text-muted" : "mt-1 text-sm text-muted"}>O papel em uso decide o menu e o painel que aparecem primeiro. Não muda o que você pode fazer na conta.</p>
       <ul className="mt-2 divide-y divide-line">
         {papeis.map((p) => (
           <li
@@ -90,6 +104,21 @@ export function SeusPapeis() {
           {erro}
         </p>
       )}
+    </Casca>
+  );
+}
+
+function Casca({ dentroDoBloco, children }: { dentroDoBloco: boolean; children: React.ReactNode }) {
+  const cls = "rounded-xl border border-line bg-white p-4";
+  if (dentroDoBloco)
+    return (
+      <div className={cls} data-testid="seus-papeis">
+        {children}
+      </div>
+    );
+  return (
+    <section className={cls} data-testid="seus-papeis" aria-labelledby="seus-papeis-titulo">
+      {children}
     </section>
   );
 }

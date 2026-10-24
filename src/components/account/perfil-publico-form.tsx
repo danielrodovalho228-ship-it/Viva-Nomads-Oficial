@@ -7,7 +7,7 @@ import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { getMeuPerfilPublico, salvarMeuPerfilPublico, type MeuPerfilPublico } from "@/lib/data/perfil-actions";
 import { getMinhaIntencao } from "@/lib/data/intencao-actions";
-import { BIO_MAX, IDIOMAS, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
+import { BIO_MAX, IDIOMAS, listaEmTexto, medidorPerfil, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
 import type { Intencao } from "@/lib/auth/entrada";
 import { EspelhoPerfil } from "@/components/account/espelho-perfil";
 import { FOTO_ATUALIZADA, PERFIL_ATUALIZADO, useMinhaFoto } from "@/components/account/foto-perfil";
@@ -47,7 +47,7 @@ export function PerfilPublicoForm() {
     // CONTA-A, item 5: o progresso anda — nome salvo em Dados, foto nova ou intenção mudam o que já foi feito.
     const reler = () =>
       getMeuPerfilPublico()
-        .then((d) => vivo && d && setP((atual) => (atual ? { ...atual, temFoto: d.temFoto, nome: d.nome, telefone: d.telefone, cadastro: d.cadastro, emailConfirmado: d.emailConfirmado } : d)))
+        .then((d) => vivo && d && setP((atual) => (atual ? { ...atual, temFoto: d.temFoto, nome: d.nome, telefone: d.telefone, profissao: d.profissao, cadastro: d.cadastro, emailConfirmado: d.emailConfirmado } : d)))
         .catch(() => {});
     window.addEventListener(PERFIL_ATUALIZADO, reler);
     window.addEventListener(FOTO_ATUALIZADA, reler);
@@ -60,10 +60,13 @@ export function PerfilPublicoForm() {
 
   if (p === undefined || p === null) return null;
 
-  const prog = progressoPerfil(
-    { foto: p.temFoto || !!foto.url, bio: bio.trim() || null, idiomas, cidade: cidade.trim() || null, profissao: p.profissao, motivo: p.motivo },
+  const temFoto = p.temFoto || !!foto.url;
+  const barra = progressoPerfil(
+    { foto: temFoto, bio: bio.trim() || null, idiomas, cidade: cidade.trim() || null, profissao: p.profissao, motivo: null },
     { anuncia: p.anuncia, telefone: p.telefone },
-  );
+  ).itens;
+  // C1: o medidor conta o cadastro (nome, e-mail, documento) e a barra; a linha de faltas lista tudo o que falta.
+  const prog = medidorPerfil(barra, p.cadastro.itens.map((i) => (i.chave === "foto" ? { ...i, feito: temFoto } : i)));
   const bioCheck = validarBio(bio);
 
   async function salvar(): Promise<boolean> {
@@ -86,7 +89,9 @@ export function PerfilPublicoForm() {
         <p className="mt-1 text-sm text-muted">Opcional. Perfis completos passam mais confiança a quem vai alugar com você ou para você.</p>
         <p className="mt-2 text-sm text-ink" data-testid="conta-cadastro-completo" data-completo={p.cadastro.completo ? "sim" : "nao"}>
           Cadastro completo: <strong>{p.cadastro.completo ? "sim" : "não"}</strong>
-          {!p.cadastro.completo && p.cadastro.falta && <span className="text-muted"> · falta: {p.cadastro.falta}</span>}
+          <span className="text-muted" data-testid="perfil-falta" data-faltam={prog.falta.length}>
+            {prog.falta.length ? ` · falta: ${listaEmTexto(prog.falta)}` : " · nada faltando"}
+          </span>
         </p>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2" aria-hidden>
           <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${prog.pct}%` }} />
