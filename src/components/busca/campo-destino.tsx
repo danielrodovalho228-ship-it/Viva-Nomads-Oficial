@@ -232,7 +232,7 @@ function OutroLocal({ cidade, uf, onAchou }: { cidade: string; uf: string; onAch
           onChange={(e) => setTexto(e.target.value)}
           placeholder="Outro local: nome do lugar ou endereço"
           maxLength={150}
-          className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-white px-3 text-base text-ink outline-none focus:border-ink"
+          className="h-12 w-full min-w-0 rounded-lg border border-line bg-white px-3 text-base text-ink outline-none focus:border-ink sm:w-auto sm:flex-1"
           data-testid="outro-local-texto"
         />
         <Button type="submit" size="sm" variant="secondary" disabled={buscando || texto.trim().length < 3} data-testid="outro-local-buscar">
