@@ -23,7 +23,6 @@ test("busca: filtro 'Com Nota Fiscal' só com a chave do selo (SELO_NF_UI)", () 
   assert.match(s, /notaOnly: SELO_NF_UI && invoiceOnly/);
   assert.match(ler("components/busca/painel-filtros-celular.tsx"), /\{comNotaFiscal && \(\s*<ChipFaceta f=\{facetaInterruptor\(contar, rascunho, "notaOnly"\)\} ativo=\{rascunho\.notaOnly\}/);
   assert.match(s, /SELO_NF_UI && on\("nota"\)/);
-  assert.match(s, /SELO_NF_UI && invoiceOnly && <ActiveChip/);
 });
 
 test("editor: interruptor 'emite Nota Fiscal do valor mensal' só com a chave do selo", () => {

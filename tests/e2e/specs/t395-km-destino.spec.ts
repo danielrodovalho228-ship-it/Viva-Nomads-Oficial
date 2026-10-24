@@ -12,10 +12,15 @@ test.describe("T395 — E79: km até o destino no cartão e na página do imóve
 
   test("local pessoal: km no cartão e na página do imóvel", async ({ page }) => {
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    const campo = page.getByTestId("campo-destino");
+    // E82-A: o campo "Perto de…" mora no painel da pílula Local.
+    await page.getByTestId("pilula-local").click();
+    const campo = page.getByTestId("painel-pilula-local").getByTestId("campo-destino");
     await campo.getByTestId("outro-local-texto").fill("Hospital do Lab E79");
     await campo.getByTestId("outro-local-buscar").click();
     await expect(campo.getByTestId("destino-digitado")).toBeVisible({ timeout: 20_000 });
+    // O painel flutua sobre a lista: fecha antes de ler e clicar nos cartões.
+    await page.getByTestId("painel-pilula-fechar").click();
+    await expect(page.getByTestId("painel-pilula-local")).toHaveCount(0);
     const linhas = page.getByTestId("tempo-cartao");
     await expect(linhas.first()).toBeVisible({ timeout: 30_000 });
     // Depois do cálculo, nenhum cartão fica em "calculando…" e todos dizem o que é.

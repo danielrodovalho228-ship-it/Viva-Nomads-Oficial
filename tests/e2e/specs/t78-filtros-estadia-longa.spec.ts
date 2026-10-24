@@ -13,11 +13,10 @@ test.describe("T78 — Filtros de estadia longa", () => {
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     const total = async () => await page.locator('a[href^="/imoveis/"]').count();
     const antes = await total();
-    // Computador (ordem eac7e3a1): os filtros abrem pela busca compacta do cabeçalho.
-    await page.getByTestId("busca-compacta").click();
     // Prompt 40: "Mais filtros" abre a folha lateral; a escolha vale ao tocar em "Mostrar N imóveis".
+    // E82-A: "Mais filtros" é a pílula da linha única (sem busca compacta no cabeçalho).
     const aplicar = async (nome: string) => {
-      await page.getByRole("button", { name: /Mais filtros/ }).first().click();
+      await page.getByTestId("pilula-mais").click();
       const folha = page.getByRole("dialog", { name: "Filtros" });
       await folha.getByRole("button", { name: nome, exact: true }).click();
       const botao = folha.getByTestId("aplicar-filtros");
@@ -38,7 +37,7 @@ test.describe("T78 — Filtros de estadia longa", () => {
     test(`${largura} px: painel de filtros tem garagem e lavar, a linha de garantia, grava na URL e não estoura a largura`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 844 });
       await page.goto("/buscar", { waitUntil: "networkidle" });
-      await page.getByTestId("abrir-filtros").click();
+      await page.getByTestId("pilula-mais").click();
       const painel = page.getByRole("dialog", { name: "Filtros" });
       const bloco = painel.getByTestId("painel-comodidades");
       for (const nome of ["Garagem", "Máquina de lavar"]) {

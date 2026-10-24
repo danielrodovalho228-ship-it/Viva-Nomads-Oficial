@@ -1,7 +1,8 @@
 "use client";
 
+import { ROTULO_FALTA_CHACARA, linhasChacaraRevisao, type DadosChacara } from "@/lib/anuncio/chacara";
 import Link from "next/link";
-import { CheckCircle2, Circle, Clock, ImageIcon, XCircle } from "lucide-react";
+import { Check, CheckCircle2, Circle, Clock, ImageIcon, XCircle } from "lucide-react";
 import type { ItemProntidao, Prontidao } from "@/lib/anuncio/prontidao";
 import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,8 @@ export function EtapaRevisar(p: {
   conforto: string[];
   publishError: string | null;
   podePublicar: boolean;
+  /** E102-A: só no tipo Chácara/Sítio — os dados preenchidos do grupo rural. */
+  chacara?: DadosChacara | null;
 }) {
   const conf = conferenciaAssistente(p.prontidao);
   const total = calcularTotalMensal(p.previewProperty).total;
@@ -132,6 +135,19 @@ export function EtapaRevisar(p: {
           );
         })}
       </ul>
+      {p.chacara && (
+        <div className="mt-4 rounded-lg border border-line p-3" data-testid="revisao-chacara">
+          <p className="text-sm font-semibold text-ink">{ROTULO_FALTA_CHACARA}</p>
+          <ul className="mt-1 space-y-1 text-sm">
+            {linhasChacaraRevisao(p.chacara).map((l) => (
+              <li key={l.chave} className={cn("flex items-center gap-1", l.ok ? "text-ink" : "text-muted")} data-testid={`revisao-chacara-${l.chave}`}>
+                {l.texto}
+                {l.ok && <Check className="h-4 w-4 text-forest" aria-label="feito" />}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {conf.pendentesNaRevisao.length > 0 && (
         <p className="mt-2 text-sm text-ink" data-testid="conferencia-revisao">
           Falta: {conf.pendentesNaRevisao.join("; ")}

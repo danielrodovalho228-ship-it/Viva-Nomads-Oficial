@@ -1621,6 +1621,7 @@ export default function NewPropertyPage() {
                 conforto={conforto}
                 publishError={publishError}
                 podePublicar={podePublicar}
+                chacara={ehChacara(propertyType) ? { acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado } : null}
               />
             )}
 
