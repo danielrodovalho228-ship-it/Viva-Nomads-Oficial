@@ -17,6 +17,7 @@ import {
   filaDeRodizio,
   linhaDoTempoPedido,
   passosCumpridos,
+  complementoPassoIdentidade,
   prazoResposta,
   quandoVisita,
   quandoVisitaComFuso,
@@ -118,7 +119,12 @@ test("credenciamento: a identidade só conta verificada; o teste só conta revis
   assert.deepEqual(Object.values(passosCumpridos({ status: null, identidadeVerificada: false, ...sem })), [false, false, false, false, false]);
   assert.deepEqual(passosCumpridos({ status: "solicitado", identidadeVerificada: false, ...sem }), { identidade: false, experiencia: true, conduta: true, relacoes: true, teste: false });
   assert.equal(passosCumpridos({ status: "em_teste", identidadeVerificada: true, testeConcluido: true }).teste, false, "laudo feito mas ainda não revisado (ativado)");
-  assert.equal(passosCumpridos({ status: "ativo", identidadeVerificada: false, ...sem }).identidade, true, "a aprovação para teste já exigiu a identidade");
+  // E35-B: a identidade vem do FATO, nunca do status (aprovar para teste não exige mais a identidade).
+  assert.equal(passosCumpridos({ status: "em_teste", identidadeVerificada: false, ...sem }).identidade, false);
+  assert.equal(passosCumpridos({ status: "ativo", identidadeVerificada: true, ...sem }).identidade, true);
+  assert.equal(complementoPassoIdentidade("em_breve"), "Na ativação · a verificação abre perto do lançamento");
+  assert.equal(complementoPassoIdentidade("simulavel"), "Na ativação");
+  assert.equal(complementoPassoIdentidade("confirmada"), null);
   assert.equal(passosCumpridos({ status: "ativo", identidadeVerificada: true, testeConcluido: true }).teste, true);
   // E30: "Ativo" sem avaliação de teste registrada (massa de teste) NÃO cumpre o passo 5.
   assert.equal(passosCumpridos({ status: "ativo", identidadeVerificada: true, ...sem }).teste, false);
@@ -126,7 +132,8 @@ test("credenciamento: a identidade só conta verificada; o teste só conta revis
   // Pedido único do 62-B3 preservado: dados de parceiro só para quem ainda não é, pendência com o link, um só envio.
   assert.match(AVALIADOR, /\{!parc && \(\s*<fieldset[^>]*data-testid="credenciamento-dados-parceiro"/);
   assert.match(AVALIADOR, /data-testid="credenciamento-pendencia"[\s\S]*href="\/dashboard\/verificacao"/);
-  assert.match(AVALIADOR, /passosCumpridos\(\{ status, identidadeVerificada: identidadeOk, testeConcluido: teste\.concluido \}\)/);
+  assert.match(AVALIADOR, /passosCumpridos\(\{ status, identidadeVerificada: identidade === "confirmada", testeConcluido: teste\.concluido \}\)/);
+  assert.match(AVALIADOR, /data-testid="passo-identidade-quando"/);
   assert.match(AVALIADOR, /data-testid="credenciamento-passos"/);
   assert.match(AVALIADOR, /data-testid="credenciamento-estado">\{ESTADO_CREDENCIAMENTO\[/);
   assert.ok(primarios(AVALIADOR) <= 1, "no máximo um primário: o envio do pedido");

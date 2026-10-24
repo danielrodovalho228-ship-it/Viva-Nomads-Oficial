@@ -1,14 +1,16 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { noPasso } from "../fixtures/cadastro";
 
 /*
-  T194 — Cadastro do anúncio, passo 1 (prompt 20), a 390 e 1280 px:
+  T194 — Cadastro do anúncio, passo do Endereço (prompt 20; era o passo 1 dos 6 passos, é o 3º dos 10), a 390 e 1280 px:
   1. No topo, UM cartão "Deixe a IA preencher o anúncio para você" (Enviar fotos / Enviar matrícula); as duas caixas
      tracejadas saíram e viraram uma linha discreta no fim ("Importar" · "Falar com a equipe").
   2. CEP que sempre responde: ViaCEP → BrasilAPI. Achou → "Endereço encontrado" e foco no Número; 38482-288 (o do print)
      → "Não encontramos esse CEP" + "busque pelo endereço", que preenche o CEP certo; sem rede → mensagem.
-  3. Fotos pelo cartão sobem para a galeria do passo 2 e a IA analisa sozinha ("Analisando…" → "Pronto: …").
-  4. Celular: barra de fotos fixa no rodapé em todos os passos e faixa de passos sem texto cortado ("Passo 1 de 6").
+  3. Fotos pelo cartão sobem para a galeria do passo Fotos e a IA analisa sozinha ("Analisando…" → "Pronto: …").
+  4. Celular: barra de fotos fixa no rodapé em todos os passos; no topo, "Passo X de 10" com a barra de progresso (a
+     faixa de passos dos 6 passos saiu). No computador, a foto aparece na prévia ao vivo.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -23,9 +25,10 @@ async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
 
+/** Conta nova (sem rascunho): abre direto no passo Endereço pelo nome na URL. */
 async function abrirPasso1(page: Page) {
-  await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible({ timeout: 20_000 });
+  await page.goto("/dashboard/imoveis/novo?etapa=endereco", { waitUntil: "domcontentloaded" });
+  await noPasso(page, "endereco");
 }
 
 test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à vista", () => {
@@ -84,17 +87,18 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       await expect(page.getByTestId("importar-aviso")).toBeVisible();
       await page.screenshot({ path: `${SAIDA}/t194-passo1-${largura}.png`, fullPage: true });
 
-      // Celular: faixa de passos numa linha só, sem texto cortado; barra de fotos fixa à vista.
+      // Topo dos 10 passos: "Passo 3 de 10" numa linha só, sem texto cortado, e a barra de progresso (no lugar da
+      // faixa de passos). Celular: barra de fotos fixa à vista.
+      const topo = page.getByTestId("cabecalho-passos");
+      await expect(page.getByTestId("passo-texto")).toHaveText("Passo 3 de 10");
+      expect(await page.getByTestId("passo-texto").evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+      await expect(topo.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", "30");
       if (largura === 390) {
-        await expect(page.getByTestId("etapas-celular")).toHaveText(/^Passo 1 de 6 — Endereço e dados/);
-        await expect(page.getByTestId("etapas-cadastro")).toBeHidden();
-        const faixa = page.getByTestId("etapas-celular");
-        expect(await faixa.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
         await expect(page.getByTestId("barra-fotos")).toBeVisible();
         await expect(page.getByTestId("barra-fotos-contador")).toHaveText(/Fotos: 0 de 8 mínimas/);
       } else {
-        await expect(page.getByTestId("etapas-cadastro")).toBeVisible();
         await expect(page.getByTestId("barra-fotos")).toBeHidden();
+        await expect(page.getByTestId("novo-resumo").getByTestId("previa-sem-foto")).toBeVisible();
       }
 
       // 2) CEP do print (38482-288): nada encontrado → mensagem visível, sem apagar o digitado.
@@ -154,25 +158,38 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       await page.screenshot({ path: `${SAIDA}/t194-cartao-ia-pronto-${largura}.png`, fullPage: false });
       if (largura === 390) {
         await expect(page.getByTestId("barra-fotos-contador")).toContainText("Fotos: 8 enviadas");
-        await expect(page.getByTestId("etapas-celular")).toContainText("8 fotos");
       } else {
-        await expect(page.getByTestId("etapa-fotos-contador")).toHaveText("(8)");
+        // O contador "(8)" da faixa de passos saiu com ela: no computador, a foto principal entra na prévia ao vivo.
+        await expect(page.getByTestId("novo-resumo").getByTestId("previa-foto")).toBeVisible();
       }
       await semRolagemLateral(page);
 
-      // "Ver no passo 4": o que a IA preencheu, marcado para conferir.
+      // "Ver no passo": leva às Comodidades, com o que a IA preencheu marcado para conferir.
       await status.getByTestId("cartao-ia-ver-passo3").click();
-      await expect(page.getByRole("heading", { name: "Comodidades e segurança" })).toBeVisible({ timeout: 15_000 });
+      await noPasso(page, "comodidades", 15_000);
+      await expect(page.getByTestId("ia-resumo")).toBeVisible();
+      // O título sugerido pela IA agora fica no passo "Título e descrição" (2 passos adiante, sem trava no caminho).
+      await page.getByTestId("cadastro-continuar").click();
+      await noPasso(page, "regras");
+      await page.getByTestId("cadastro-continuar").click();
+      await noPasso(page, "descricao");
       await expect(page.getByTestId("cadastro-titulo")).not.toHaveValue("");
-      // As fotos estão na galeria do passo 3 (a mesma).
+      // As fotos estão na galeria do passo Fotos (a mesma). Celular: "Organizar" da barra; computador (a faixa de passos
+      // clicável saiu): "Voltar para o passo anterior" até as Fotos (Descrição → Regras → Comodidades → Detalhes →
+      // Endereço → Fotos).
       if (largura === 390) await page.getByTestId("barra-fotos").getByRole("button", { name: "Organizar" }).click();
-      else await page.getByTestId("etapas-cadastro").getByRole("button", { name: /Fotos/ }).click();
-      await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible({ timeout: 15_000 });
+      else {
+        for (const passo of ["regras", "comodidades", "detalhes", "endereco"] as const) {
+          await page.getByTestId("cadastro-voltar").click();
+          await noPasso(page, passo);
+        }
+        await page.getByTestId("cadastro-voltar").click();
+      }
+      await noPasso(page, "fotos", 15_000);
       await expect(page.getByText(/^8\/40 fotos/)).toBeVisible();
       if (largura === 390) {
-        // A barra continua à vista no passo 3 (e em todos os outros).
+        // A barra continua à vista no passo Fotos (e em todos os outros).
         await expect(page.getByTestId("barra-fotos")).toBeVisible();
-        await expect(page.getByTestId("etapas-celular")).toHaveText(/^Passo 3 de 6 — Fotos/);
       }
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t194-passo2-galeria-${largura}.png`, fullPage: false });

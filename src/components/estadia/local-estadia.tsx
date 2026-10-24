@@ -51,16 +51,15 @@ export function LocalEstadia({ local, imovelId }: { local: LocalDaEstadia; imove
           <h3 className="mt-4 text-sm font-semibold text-ink">O que tem por perto</h3>
           <ul className="mt-2 grid gap-2 sm:grid-cols-2" data-testid="estadia-proximidades">
             {local.proximidades.map((p) => {
-              const meta = ICONE[p.category];
+              const meta = ICONE[p.categoria];
               const Icon = meta?.icon ?? MapPin;
               return (
-                <li key={`${p.category}-${p.name}`} className="flex items-center gap-3 rounded-xl border border-sage-200 px-4 py-3">
+                <li key={`${p.categoria}-${p.nome}`} className="flex items-center gap-3 rounded-xl border border-sage-200 px-4 py-3">
                   <Icon className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden />
                   <span className="min-w-0">
-                    <span className="block text-sm font-medium text-ink">{p.name}</span>
+                    <span className="block text-sm font-medium text-ink">{p.nome}</span>
                     <span className="block text-xs text-muted">
-                      {meta?.label ?? p.category}
-                      {p.note ? ` · ${p.note}` : ""}
+                      {meta?.label ?? p.categoria} · {p.texto}
                     </span>
                   </span>
                 </li>

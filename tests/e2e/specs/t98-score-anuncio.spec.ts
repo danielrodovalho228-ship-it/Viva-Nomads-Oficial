@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
 
 /**
  * T98 — Score de qualidade do anúncio (ordem 0f9b9d58): o card "Anúncio em andamento"
@@ -25,8 +26,8 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
     await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
     const comecarOutro = page.getByRole("button", { name: "Começar outro" });
     if (await comecarOutro.isVisible().catch(() => false)) await comecarOutro.click();
-    // Anunciar em 6 passos (Prompt 43): o 1º passo é "Endereço e dados"; o endereço já cria o rascunho.
-    await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible({ timeout: 20_000 });
+    // Assistente em 10 passos: Tipo → Fotos (1 foto) → Endereço; o endereço já cria o rascunho.
+    await doTipoAoEndereco(page);
     await page.getByTestId("cadastro-rua").fill("Rua do Score");
     await page.getByTestId("cadastro-numero").fill("10");
     await page.getByTestId("cadastro-bairro").fill("Centro");
@@ -51,7 +52,8 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
     const antes = Number((await page.getByTestId("anuncio-score-valor").innerText()).replace("%", ""));
     // Painel mostra só as dicas que mais valem: com a descrição obrigatória (60+ caracteres, f9753c6), é ela que aparece.
     await page.getByTestId("score-dica").filter({ hasText: /Descrição com/ }).first().click();
-    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=3/); // passo 4, onde ficam título e descrição
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=6/); // passo 7 dos 10, "Título e descrição"
+    await noPasso(page, "descricao");
     const descricao = Array.from({ length: 45 }, (_, i) => `palavra${i}`).join(" ");
     await page.getByTestId("cadastro-descricao").fill(descricao);
     await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 20_000 });

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EXPO_LOTE, EXPO_PUSH_URL, emLotes, lerTickets, montarMensagens, separarTokens } from "./expo-push.ts";
+import { pushLigado } from "./preferencias.ts";
 
 /**
  * Envio de push (Expo Push + FCM HTTP v1) — SERVIDOR apenas, best-effort.
@@ -188,6 +189,22 @@ async function enviarFcm(admin: Admin, sa: ServiceAccount, tokens: string[], c: 
 }
 
 /**
+ * Só quem não desligou o push em Conta › Notificações (user_metadata.notif_push). Sem resposta da conta, segue a regra
+ * padrão (ligado), como a das categorias no notify().
+ */
+async function comPushLigado(admin: Admin, userIds: string[]): Promise<string[]> {
+  const unicos = [...new Set(userIds)];
+  const ligados = await Promise.all(
+    unicos.map(async (id) => {
+      const { data, error } = await admin.auth.admin.getUserById(id).catch(() => ({ data: null, error: true }));
+      if (error || !data?.user) return true;
+      return pushLigado(data.user.user_metadata as Record<string, unknown> | undefined);
+    })
+  );
+  return unicos.filter((_, i) => ligados[i]);
+}
+
+/**
  * Envia um push para todos os aparelhos dos usuários. Best-effort e não-bloqueante:
  * o chamador (`notify`) roda isto em paralelo ao e-mail, com timeout próprio.
  * `url` deve ser uma rota interna (validada na origem).
@@ -199,6 +216,10 @@ export async function sendPushParaUsuarios(
   if (userIds.length === 0) return { skipped: true };
   const admin = createAdminClient();
   if (!admin) return { skipped: true };
+  // Canal desligado = não envia (A6, Conta › Notificações). Vale para todo push a uma pessoa: notify, adiados das 7h,
+  // avisos da equipe e o teste do admin passam todos por aqui.
+  userIds = await comPushLigado(admin, userIds);
+  if (userIds.length === 0) return { skipped: true };
 
   // Tokens dos usuários (service role ignora RLS para ler os destinos).
   const { data: rows, error } = await admin.from("push_tokens").select("token").in("user_id", userIds);

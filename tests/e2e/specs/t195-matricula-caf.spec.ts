@@ -17,6 +17,7 @@ import {
   publicarPeloEditor,
   statusDoImovel,
 } from "../fixtures/laboratorio";
+import { abrirNoEndereco } from "../fixtures/cadastro";
 
 /*
   T195 — Matrícula do imóvel cruzada com a CAF (prompt 19), com matrículas FICTÍCIAS de tests/fixtures/ (nenhum dado
@@ -48,15 +49,15 @@ async function novaConta(chave: string, nome: string) {
   contas[chave] = { email, id, nome };
 }
 
-/** Dono na etapa 1 com CEP + número (ViaCEP simulado) e o rascunho salvo. */
+/** Dono no passo Endereço com CEP + número (ViaCEP simulado) e o rascunho salvo. */
 async function etapa1(browser: Browser, chave: string, largura: number): Promise<Page> {
   const page = await entrar(browser, contas[chave].email, senha);
   await page.setViewportSize({ width: largura, height: 900 });
   await page.route("https://viacep.com.br/ws/**", (r) =>
     r.fulfill({ json: { cep: "38400-100", logradouro: "Rua do Laboratório", bairro: "Centro", localidade: "Uberlândia", uf: "MG" } }),
   );
-  await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible({ timeout: 20_000 });
+  // Assistente em 10 passos: o endereço (e o documento) é o 3º passo; abre direto nele.
+  await abrirNoEndereco(page);
   await page.getByTestId("cadastro-cep").fill("38400100");
   await expect(page.getByTestId("cadastro-rua")).toHaveValue("Rua do Laboratório", { timeout: 10_000 });
   await page.getByTestId("cadastro-numero").fill("102");

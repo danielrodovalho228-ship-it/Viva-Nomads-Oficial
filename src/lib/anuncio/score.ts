@@ -59,11 +59,11 @@ export function scoreAnuncio(p: Prontidao, f: FatosAnuncio, x: ExtrasQualidade):
 
   const qualidade: { key: string; label: string; pontos: number; etapa: number; ok: boolean }[] = [
     { key: "fotos12", label: `Adicione fotos: ${MIN_FOTOS_BOAS}+ aparecem mais na busca (tem ${f.fotos})`, pontos: 8, etapa: ETAPA.fotos, ok: f.fotos >= MIN_FOTOS_BOAS },
-    { key: "palavras", label: `Descrição com pelo menos ${MIN_PALAVRAS} palavras`, pontos: 6, etapa: ETAPA.comodidades, ok: contarPalavras(f.descricao) >= MIN_PALAVRAS },
+    { key: "palavras", label: `Descrição com pelo menos ${MIN_PALAVRAS} palavras`, pontos: 6, etapa: ETAPA.descricao, ok: contarPalavras(f.descricao) >= MIN_PALAVRAS },
     { key: "comodidades", label: `Marque as comodidades (pelo menos ${MIN_COMODIDADES})`, pontos: 6, etapa: ETAPA.comodidades, ok: x.comodidades >= MIN_COMODIDADES },
     { key: "pets", label: "Defina as regras de pet", pontos: 4, etapa: ETAPA.regras, ok: x.petsDefinido },
     { key: "video", label: "Adicione um vídeo do imóvel", pontos: 3, etapa: ETAPA.fotos, ok: f.video },
-    { key: "selo", label: "Peça o Selo Pronto para Morar", pontos: 3, etapa: ETAPA.onde, ok: f.selo },
+    { key: "selo", label: "Peça o Selo Pronto para Morar", pontos: 3, etapa: ETAPA.endereco, ok: f.selo },
   ];
   for (const q of qualidade) {
     if (q.ok) pontos += q.pontos;

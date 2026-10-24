@@ -61,6 +61,7 @@ export function VisaoGeral({
   cidadePerfil = null,
   estadias = [],
   checklists = [],
+  totalCandidaturas = 0,
 }: {
   imoveisDono: Property[];
   interessados?: { atual: number; anterior: number };
@@ -74,6 +75,8 @@ export function VisaoGeral({
   cidadePerfil?: string | null;
   /** Prompt 43: checklist de ativação de cada papel que ainda não ativou (some sozinho). */
   checklists?: ChecklistAtivacao[];
+  /** E72: quantas candidaturas a pessoa enviou — o tamanho da lista de /dashboard/candidaturas (listMinhasCandidaturas). */
+  totalCandidaturas?: number;
 }) {
   // Identidade de EXIBIÇÃO: nunca cai na persona demo ("Marcos") para conta real
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
@@ -120,7 +123,7 @@ export function VisaoGeral({
         <h2 id="papel-morador" className="mb-3 font-title text-lg font-semibold text-ink">
           Como morador
         </h2>
-        <TenantDashboard name={firstName} cidade={ehDono ? null : cidadePerfil} />
+        <TenantDashboard name={firstName} cidade={ehDono ? null : cidadePerfil} totalCandidaturas={totalCandidaturas} />
       </section>
     </>
   );
@@ -420,7 +423,7 @@ function CartaoEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
   );
 }
 
-function TenantDashboard({ name, cidade }: { name: string; cidade: string | null }) {
+function TenantDashboard({ name, cidade, totalCandidaturas }: { name: string; cidade: string | null; totalCandidaturas: number }) {
   const demo = useDashDemo();
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
   void name;
@@ -429,7 +432,7 @@ function TenantDashboard({ name, cidade }: { name: string; cidade: string | null
       {/* KPIs de acesso rápido: 2×2 no mobile, 4 em linha no desktop. Candidaturas
           é o lar do acompanhamento (envio → resposta) — sem novo item no menu. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        <StatCard label="Candidaturas" value={demo ? "2" : "0"} icon={FileSignature} href="/dashboard/candidaturas" />
+        <StatCard label="Candidaturas" value={demo ? "2" : String(totalCandidaturas)} icon={FileSignature} href="/dashboard/candidaturas" />
         <StatCard label="Favoritos" value={demo ? "3" : "0"} icon={Heart} href="/dashboard/favoritos" />
         <StatCard label="Buscas salvas" value={demo ? "2" : "0"} icon={Search} href="/dashboard/buscas" />
         <StatCard label="Mensagens" value={demo ? "1" : "0"} icon={MessageSquare} href="/dashboard/mensagens" />

@@ -16,18 +16,18 @@ test("aviso de rascunho em andamento e seu botão Continuar têm data-testid", (
   assert.match(pagina, /data-testid="rascunho-continuar"/);
 });
 
-test("t115 não depende de a tela já ter carregado o aviso: espera o aviso OU o botão e abre a etapa 0", () => {
+test("t115 não depende de a tela já ter carregado o aviso: espera o aviso OU o botão e abre o passo Endereço", () => {
   assert.match(spec, /rascunho-continuar/);
-  assert.match(spec, /etapa=0/);
+  assert.match(spec, /etapa=endereco/);
   assert.doesNotMatch(spec, /isVisible\(\)\.catch/);
 });
 
-test("E50: uma apresentação só — o banner leva o H1; o cartão de retomar o rascunho e o indicador de passos ficam", () => {
+test("E50 + mockups cadastro-imovel-01..10: um H1 só (o título do passo); o cartão de retomar o rascunho e o 'Passo X de 10' ficam", () => {
   const src = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(src, /title=\{editingId \? "Editar anúncio" : "Anuncie seu imóvel"\}/);
-  assert.doesNotMatch(src, /"Em 6 passos\. Salvamos seu progresso automaticamente\."/);
-  assert.match(src, /<h1 className="font-title text-lg font-semibold sm:text-xl">Anunciar seu imóvel em 6 passos<\/h1>/);
+  assert.equal(src.match(/<h1\b/g)?.length, 1);
+  assert.match(src, /<h1 className=\{cn\(TITULO_PASSO_CADASTRO, "mt-3"\)\} data-testid="passo-titulo">\s*\{meta\.title\}/);
+  assert.doesNotMatch(src, /data-testid="cadastro-apresentacao"/, "o banner com foto saiu: o desenho abre direto na pergunta do passo");
   assert.match(src, /data-testid="rascunho-aviso"/);
-  assert.match(src, /data-testid="etapas-cadastro"/);
-  assert.match(src, /<PageTitle title="Editar anúncio"/);
+  assert.match(src, /<CabecalhoPassos pos=\{pos\} total=\{ORDEM_ETAPAS\.length\} \/>/);
+  assert.match(src, /\{editingId \? "Editar anúncio" : "Anunciar imóvel"\}/);
 });

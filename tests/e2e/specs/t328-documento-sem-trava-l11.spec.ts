@@ -53,7 +53,7 @@ test.describe("T328 — enviar documento sem trava silenciosa (L1-1)", () => {
   test("1. rascunho retomado com endereço salvo: envia sem redigitar", async ({ browser }) => {
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 390, height: 844 });
-    await p.goto(`/dashboard/imoveis/novo?draft=${ids.salvo}&etapa=onde`, { waitUntil: "domcontentloaded" });
+    await p.goto(`/dashboard/imoveis/novo?draft=${ids.salvo}&etapa=endereco`, { waitUntil: "domcontentloaded" });
     const botao = p.getByTestId("documento-enviar");
     await expect(botao).toBeVisible({ timeout: 20_000 });
     await expect(botao).toBeEnabled();
@@ -73,7 +73,7 @@ test.describe("T328 — enviar documento sem trava silenciosa (L1-1)", () => {
   test("2. sem número: 'Falta: número', foco e marca no campo; com o número, envia para conferência", async ({ browser }) => {
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 390, height: 844 });
-    await p.goto(`/dashboard/imoveis/novo?draft=${ids.semNumero}&etapa=onde`, { waitUntil: "domcontentloaded" });
+    await p.goto(`/dashboard/imoveis/novo?draft=${ids.semNumero}&etapa=endereco`, { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("cadastro-rua")).toHaveValue("Rua do Laboratório", { timeout: 20_000 });
     const botao = p.getByTestId("documento-enviar");
     await expect(botao).toBeEnabled();

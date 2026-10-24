@@ -93,7 +93,8 @@
         "t39-app-ida-e-volta",
         "t183-telas-logadas-390",
         "t255-admin-f15-f16-f18-f20",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t387-varredura-bloco22"
       ]
     },
     "/admin/ajuda-publicacao": {
@@ -179,7 +180,8 @@
       "specs": [
         "t116-admin-emails-teste",
         "t48-varredura",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t388-varredura-bloco23"
       ]
     },
     "/admin/financeiro": {
@@ -543,7 +545,8 @@
         "t320-pausar-anuncio-64b",
         "t344-avaliacao-telas-62a-parte2",
         "t355-conta-a-perfil-espelho",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t387-varredura-bloco22"
       ]
     },
     "/dashboard/assinatura": {
@@ -678,7 +681,8 @@
         "t353-varredura-bloco18",
         "t354-varredura-bloco19",
         "t370-conta-a3-papeis",
-        "t379-conta-conformidade"
+        "t391-conta-conformidade",
+        "t385-varredura-bloco21"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -692,7 +696,7 @@
         "t183-telas-logadas-390",
         "t297-varredura-logada-bloco3",
         "t354-varredura-bloco19",
-        "t379-conta-conformidade"
+        "t391-conta-conformidade"
       ]
     },
     "/dashboard/contratos": {
@@ -841,7 +845,9 @@
         "t320-pausar-anuncio-64b",
         "t337-varredura-redundancia",
         "t338-varredura-bloco15",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t386-cadastro-01-tipo",
+        "t387-varredura-bloco22"
       ]
     },
     "/dashboard/indicacoes": {
@@ -903,7 +909,8 @@
         "t205-fechamento-sem-beco",
         "t224-taxa-fora-da-api",
         "t221-contrato-estado-periodo",
-        "t288-padrao-minimo-59a"
+        "t288-padrao-minimo-59a",
+        "t388-varredura-bloco23"
       ]
     },
     "/dashboard/mensagens": {
@@ -922,7 +929,8 @@
         "t286-esqueletos-vazios-48",
         "t315-telas-avaliacao-dono-62a",
         "t329-varredura-bloco11",
-        "t351-telas-linkedin-63a"
+        "t351-telas-linkedin-63a",
+        "t379-55e2-filtro-contato-um-toque"
       ]
     },
     "/dashboard/notificacoes": {
@@ -936,7 +944,8 @@
         "t55-manutencao-ciclo",
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t388-varredura-bloco23"
       ]
     },
     "/dashboard/orcamentos": {
@@ -1079,7 +1088,8 @@
         "t4-fronteira-demo-real",
         "t183-telas-logadas-390",
         "t209-jornada-dois-lados",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t388-varredura-bloco23"
       ]
     },
     "/dashboard/viabilidade": {
@@ -1104,7 +1114,8 @@
         "t183-telas-logadas-390",
         "t209-jornada-dois-lados",
         "t211-complemento-23",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t388-varredura-bloco23"
       ]
     },
     "/decisao": {
@@ -1485,7 +1496,8 @@
       ],
       "specs": [
         "t209-jornada-dois-lados",
-        "t298-varredura-logada-bloco4"
+        "t298-varredura-logada-bloco4",
+        "t388-varredura-bloco23"
       ]
     },
     "/dashboard/propostas": {
@@ -1532,7 +1544,8 @@
         "t229-admin-conversa-com-tudo",
         "t48-varredura",
         "t240-conferencia-provas-admin",
-        "t271-admin-visual"
+        "t271-admin-visual",
+        "t388-varredura-bloco23"
       ]
     },
     "/admin/solicitacoes": {
@@ -1543,7 +1556,8 @@
         "t229-admin-conversa-com-tudo",
         "t48-varredura",
         "t231-admin-numeros-com-lista",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t388-varredura-bloco23"
       ]
     },
     "/admin/candidaturas": {
@@ -1553,7 +1567,8 @@
       "specs": [
         "t231-admin-numeros-com-lista",
         "t48-varredura",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t388-varredura-bloco23"
       ]
     },
     "/admin/eventos": {
@@ -1572,7 +1587,8 @@
       ],
       "specs": [
         "t235-cartoes-compartilhaveis",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t388-varredura-bloco23"
       ]
     },
     "/dashboard/parceiro": {
@@ -1751,7 +1767,8 @@
       ],
       "specs": [
         "t264-viva-automatico",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t388-varredura-bloco23"
       ]
     },
     "/admin/retencao": {
@@ -1770,7 +1787,8 @@
       "specs": [
         "t292-conforto-manutencao-59",
         "t288-padrao-minimo-59a",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t388-varredura-bloco23"
       ]
     },
     "/dashboard/imoveis/[id]/conforto": {
@@ -1780,7 +1798,8 @@
       "specs": [
         "t292-conforto-manutencao-59",
         "t288-padrao-minimo-59a",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t388-varredura-bloco23"
       ]
     },
     "/admin/pendencias": {
@@ -1790,7 +1809,8 @@
       "specs": [
         "t295-niveis-59-1",
         "t296-niveis-exibicao-59-1",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t388-varredura-bloco23"
       ]
     },
     "/dashboard/imoveis/[id]/nivel": {
@@ -1803,7 +1823,9 @@
         "t297-varredura-logada-bloco3",
         "t310-vao-fim-de-pagina",
         "t315-telas-avaliacao-dono-62a",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t378-e47a-foto-nivel-celular",
+        "t385-varredura-bloco21"
       ]
     },
     "/dashboard/recibos": {
@@ -1833,7 +1855,8 @@
         "t303-avaliadores-credenciados-62b1",
         "t306-varredura-bloco7",
         "t341-credenciamento-avaliador-62a",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t387-varredura-bloco22"
       ]
     },
     "/dashboard/parceiro/avaliacao": {
@@ -1844,7 +1867,8 @@
         "t303-avaliadores-credenciados-62b1",
         "t306-varredura-bloco7",
         "t315-telas-avaliacao-dono-62a",
-        "t341-credenciamento-avaliador-62a"
+        "t341-credenciamento-avaliador-62a",
+        "t387-varredura-bloco22"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -1915,7 +1939,9 @@
       ],
       "specs": [
         "t347-respostas-rapidas-55e2",
-        "t335-varredura-bloco13"
+        "t335-varredura-bloco13",
+        "t379-55e2-filtro-contato-um-toque",
+        "t385-varredura-bloco21"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
@@ -1924,7 +1950,8 @@
       ],
       "specs": [
         "t347-respostas-rapidas-55e2",
-        "t335-varredura-bloco13"
+        "t335-varredura-bloco13",
+        "t385-varredura-bloco21"
       ]
     },
     "/dashboard/conta/excluir": {
@@ -1948,7 +1975,8 @@
       ],
       "specs": [
         "t369-conta-a2-avaliacoes",
-        "t379-conta-conformidade"
+        "t391-conta-conformidade",
+        "t385-varredura-bloco21"
       ]
     }
   },
@@ -6034,6 +6062,22 @@
       ],
       "specs": [
         "t374-conta-a5-privacidade"
+      ]
+    },
+    "src/lib/data/proximidades-actions.ts#reportarProximidade": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t381-perto-por-perto"
+      ]
+    },
+    "src/lib/data/proximidades-actions.ts#resolverReporteProximidade": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t381-perto-por-perto"
       ]
     }
   }
