@@ -269,6 +269,7 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
   varrer("");
   assert.deepEqual(usos.sort(), [
     "app/(dashboard)/admin/agentes/central-client.tsx", // menu suspenso e botão flutuante da Central (Prompt 45)
+    "app/(dashboard)/dashboard/imoveis/novo/etapa-tipo.tsx", // setas de rolagem sobre as bordas da linha de tipos (01-b/E87)
     "app/(dashboard)/dashboard/imoveis/novo/painel-qualificacao.tsx", // gaveta lateral sobre a página (Prompt 45)
     "app/(public)/buscar/search-client.tsx", // faixa de filtros presa sob o cabeçalho e o seletor de moradores
     "app/(public)/pedidos/novo/page.tsx", // menu suspenso de sugestões (Prompt 45)
