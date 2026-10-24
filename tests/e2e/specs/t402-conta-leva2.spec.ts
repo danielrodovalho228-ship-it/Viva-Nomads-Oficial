@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T393 — Conta, leva 2 (QA do Muse, 24/10). Conta de proprietário sem parceria. 390 e 1280.
+ * T402 — Conta, leva 2 (QA do Muse, 24/10). Conta de proprietário sem parceria. 390 e 1280.
  *   E68. Verificação: "em breve" aparece uma vez só na tela.
  *   E69. Celular: o "voltar" das subtelas da Conta leva de volta para onde a pessoa estava; aberta direto, para a Conta.
  *        No computador o voltar não aparece.
@@ -16,12 +16,12 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 const SAIDA = "tests/laboratorio/saida";
 const FECHAMENTO = "Viva Nomads · Uberlândia, MG";
 
-test.describe("T393 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
+test.describe("T402 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
   const senha = novaSenha();
-  const conta = { email: `dono.t393.${novoSufixo()}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
+  const conta = { email: `dono.t402.${novoSufixo()}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
   let id = "";
   test.beforeAll(async () => {
     id = await criarConta(conta, senha);
@@ -70,7 +70,7 @@ test.describe("T393 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
       expect(vezes).toBe(1);
       await semRolagemLateral(p);
       await expect(p.getByTestId("conta-voltar")).toBeVisible({ visible: w === 390 });
-      await p.screenshot({ path: `${SAIDA}/t393-verificacao-${w}.png`, fullPage: w === 390 });
+      await p.screenshot({ path: `${SAIDA}/t402-verificacao-${w}.png`, fullPage: w === 390 });
       await p.context().close();
     });
 
@@ -93,7 +93,7 @@ test.describe("T393 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
       await fechaLimpo(p);
       await p.evaluate(() => document.querySelector("[data-painel-main]")?.scrollTo(0, 0));
       await p.evaluate(() => window.scrollTo(0, 0));
-      await p.screenshot({ path: `${SAIDA}/t393-pagamentos-${w}.png`, fullPage: w === 390 });
+      await p.screenshot({ path: `${SAIDA}/t402-pagamentos-${w}.png`, fullPage: w === 390 });
       await p.getByTestId("conta-cartao-avise").click();
       await expect(p.getByTestId("conta-cartao-avisado")).toHaveText("Avisaremos você quando abrir.");
       await p.reload({ waitUntil: "domcontentloaded" });
@@ -122,7 +122,7 @@ test.describe("T393 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
       await fechaLimpo(p);
       await p.evaluate(() => document.querySelector("[data-painel-main]")?.scrollTo(0, 0));
       await p.evaluate(() => window.scrollTo(0, 0));
-      await p.screenshot({ path: `${SAIDA}/t393-ajuda-${w}.png`, fullPage: w === 390 });
+      await p.screenshot({ path: `${SAIDA}/t402-ajuda-${w}.png`, fullPage: w === 390 });
       await p.context().close();
     });
   }
