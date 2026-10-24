@@ -52,7 +52,9 @@ test("rodapé do fluxo: 'Passo N de 10' + barra, Voltar (passos 2–10) e um só
   assert.match(rodape, /role="progressbar" aria-label="Progresso do cadastro"/);
   assert.match(rodape, /\{textoPasso\(p\.pos, p\.total\)\}/);
   assert.equal((rodape.match(/<Button\b/g) ?? []).length, 1, "um primário só");
-  assert.match(rodape, /sticky bottom-\[var\(--altura-barra-fotos,0px\)\]/, "sticky: ocupa o próprio espaço e não cobre o conteúdo");
+  assert.match(rodape, /vn-rodape-fluxo fixed inset-x-0/, "fixo na largura toda");
+  assert.match(ler("app/globals.css"), /\.vn-rodape-fluxo \{\s*bottom: var\(--altura-barra-fotos, 0px\);/, "acima da barra das fotos do celular");
+  assert.match(rodape, /aria-hidden className="h-28" data-testid="assistente-rodape-espaco"/, "o espaçador reserva o lugar do rodapé");
   assert.doesNotMatch(pagina, /data-testid="cadastro-(continuar|voltar)"|Cancelar e voltar|<CabecalhoPassos/, "Continuar, Voltar e o passo só no rodapé");
 });
 
