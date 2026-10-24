@@ -840,7 +840,8 @@
         "t337-varredura-redundancia",
         "t338-varredura-bloco15",
         "t352-varredura-bloco17",
-        "t377-cadastro-01-tipo"
+        "t377-cadastro-01-tipo",
+        "t380-cadastro-10-revisao"
       ]
     },
     "/dashboard/indicacoes": {

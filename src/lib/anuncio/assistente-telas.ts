@@ -63,6 +63,26 @@ export function linhaPrevia(quartos: number, areaM2: number): string {
   return partes.join(" · ");
 }
 
+/** Revisão (mockup cadastro-imovel-10): "2 quartos · 2 banheiros · 65 m²". */
+export function linhaRevisao(quartos: number, banheiros: number, areaM2: number): string {
+  const partes: string[] = [];
+  if (quartos > 0) partes.push(`${quartos} ${quartos === 1 ? "quarto" : "quartos"}`);
+  if (banheiros > 0) partes.push(`${banheiros} ${banheiros === 1 ? "banheiro" : "banheiros"}`);
+  if (areaM2 > 0) partes.push(`${areaM2} m²`);
+  return partes.join(" · ");
+}
+
+/**
+ * Textos da revisão (mockup cadastro-imovel-10). A linha do total troca o "Cobrado ao hóspede · Você recebe conforme
+ * política de pagamento" do desenho: o vocabulário da casa é morador, e a plataforma não recebe nem repassa dinheiro.
+ */
+export const TEXTOS_REVISAO = {
+  lista: "Lista de conferência",
+  listaTudoCerto: "Tudo certo para publicar",
+  linhaTotal: "Total mensal que o morador vê no anúncio",
+  editarDepois: "Você poderá editar a qualquer momento após publicar",
+} as const;
+
 /** "Santa Mônica, Uberlândia · MG". */
 export function localPrevia(bairro: string, cidade: string, uf: string): string {
   const lugar = [bairro.trim(), cidade.trim()].filter(Boolean).join(", ");

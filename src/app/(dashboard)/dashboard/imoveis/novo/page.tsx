@@ -394,11 +394,6 @@ export default function NewPropertyPage() {
     };
   }, [draftParam, editId]);
 
-  // Barra de qualidade do anúncio: fotos + descrição + selo (rodada 11).
-  const quality = Math.min(
-    100,
-    Math.round((Math.min(photos.length, 20) / 20) * 60) + (description.trim().length > 30 ? 20 : 0) + (qual.baseBadge ? 20 : 0)
-  );
 
   const proximidadesFinais: Proximity[] = [
     ...(proxOsm ?? []).filter((l) => !proxDesmarcados.includes(chaveLugar(l))).map(paraProximity),
@@ -416,6 +411,10 @@ export default function NewPropertyPage() {
     bathrooms: Number(bathrooms) || 0,
     areaM2: Number(areaM2) || 0,
     monthlyPrice: Number(monthlyPrice) || 0,
+    // Cadastro 10: o "R$ X/mês no total" da revisão é o mesmo total mensal do anúncio (calcularTotalMensal).
+    condoFee: Number(condoFee) || 0,
+    utilitiesMode,
+    utilitiesEstimate,
     photos: photos.map((p) => p.url),
     readyToLiveBadge: qual.baseBadge,
     tagHomeOffice: qual.tHome,
@@ -1311,7 +1310,7 @@ export default function NewPropertyPage() {
           (o H1 da tela), o formulário e "Continuar"; à direita (computador), a prévia do anúncio montando ao vivo. */}
       <CabecalhoPassos pos={pos} total={ORDEM_ETAPAS.length} />
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start" data-testid="novo-duas-colunas">
+      <div className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem]")} data-testid="novo-duas-colunas">
         <div className="min-w-0">
           <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
             {editingId ? "Editar anúncio" : "Anunciar imóvel"} <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
@@ -1510,24 +1509,21 @@ export default function NewPropertyPage() {
               <EtapaRevisar
                 previewProperty={previewProperty}
                 titulo={title}
-                descricao={description}
+                tipo={propertyType}
+                bairro={neighborhood}
                 fotos={photos.map((p) => p.url)}
-                endereco={[neighborhood, city].filter(Boolean).join(", ")}
-                comodidades={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
-                proximidades={proximidadesFinais}
                 negociacao={negociacao}
+                prontidao={prontidao}
                 completude={completude}
                 onResolver={resolverItem}
                 melhorar={prontidao.opcionais.filter((o) => !o.ok)}
-                quality={quality}
-                photosCount={photos.length}
-                qualBaseBadge={qual.baseBadge}
                 docEstado={docEstado}
                 docMotivos={docMotivos}
                 editingId={editingId}
                 publishing={publishing}
                 publish={publish}
                 irPara={irPara}
+                etapaEndereco={ETAPA.endereco}
                 aceitouIa={aceiteValido}
                 setAceitouIa={marcarAceite}
                 avisoAceite={textoMudouDepoisDoAceite ? AVISO_TEXTO_MUDOU : avisoAceite}
@@ -1567,6 +1563,8 @@ export default function NewPropertyPage() {
           </p>
         </div>
 
+        {/* Passo 10 (mockup cadastro-imovel-10): o cartão do anúncio fica dentro da revisão; a prévia lateral sai. */}
+        {step !== ETAPA.revisao && (
         <aside className="hidden lg:sticky lg:top-4 lg:block" data-testid="novo-resumo" aria-label="Visualização do anúncio">
           <PreviaAnuncio
             foto={photos[0]?.url ?? null}
@@ -1582,6 +1580,7 @@ export default function NewPropertyPage() {
             publicado={!!editingId}
           />
         </aside>
+        )}
       </div>
 
       {/* Prompt 20: fotos sempre à vista no celular, em todos os passos (abre a escolha de arquivos). */}

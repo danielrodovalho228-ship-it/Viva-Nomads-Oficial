@@ -172,10 +172,11 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       const id = await rascunho(d.id, { title: "Rascunho do T204", street: "Avenida João Naves de Ávila", numero: "100", cep: "38408-000", neighborhood: "Santa Mônica", city: "Uberlândia" });
       await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("etapa-revisar")).toBeVisible({ timeout: 30_000 });
-      const lista = page.getByTestId("etapa-revisar").getByTestId("checklist-publicar");
-      await expect(lista.getByTestId("checklist-item-qualificacao")).toHaveAttribute("data-ok", "0");
+      // Mockup cadastro-imovel-10: a lista de conferência agrupa por passo; a qualificação é do passo Tipo.
+      const lista = page.getByTestId("etapa-revisar").getByTestId("lista-conferencia");
+      await expect(lista.getByTestId("conferencia-tipo")).toHaveAttribute("data-ok", "0");
       await expect(page.getByTestId("aviso-qualificacao")).toHaveCount(0);
-      await lista.getByTestId("checklist-resolver-qualificacao").click();
+      await lista.getByTestId("conferencia-resolver-tipo").click();
       await expect(page.getByTestId("painel-qualificacao")).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(page.getByTestId("painel-qualificacao")).toHaveCount(0);
