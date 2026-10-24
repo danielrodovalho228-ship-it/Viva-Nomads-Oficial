@@ -71,6 +71,11 @@ test.describe("T377 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
       await expect(p.locator("main")).not.toContainText(/hósped|viajante|reserva|comiss/i);
       await semRolagemLateral(p);
       await continuarLivre(p);
+      // O print começa do topo do passo ("Passo 1 de 10"): no computador quem rola é o <main> do painel.
+      await p.evaluate(() => {
+        document.querySelector("[data-painel-main]")?.scrollTo(0, 0);
+        window.scrollTo(0, 0);
+      });
       await p.screenshot({ path: `${SAIDA}/t377-tipo-${w}.png`, fullPage: true });
       await p.context().close();
     });
