@@ -101,7 +101,8 @@ test.describe("T38 — Vários imóveis por dono", () => {
 
     await adm().from("properties").update({ status: "active" }).eq("id", ids.imoveis[0]);
     await publicar.click();
-    await expect(page.getByText(/Seu plano \(Gratuito\) permite até 1 anúncio\(s\) publicado\(s\)\. Pause um anúncio ou faça upgrade para publicar mais\./)).toBeVisible({ timeout: 15_000 });
+    // 64-B: o servidor recusa com a mesma conta do limite (mensagemLimitePublicar), dizendo quantos pausar.
+    await expect(page.getByText(/Seu plano permite 1 anúncio publicado e você tem 1\. Para publicar este, pause 1 anúncio ou mude de plano/).first()).toBeVisible({ timeout: 15_000 });
     expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
     expect(await contarAtivos(ids.dono!)).toBe(1);
     await page.screenshot({ path: "tests/laboratorio/saida/t38-2-servidor-barra-segundo.png", fullPage: true });
