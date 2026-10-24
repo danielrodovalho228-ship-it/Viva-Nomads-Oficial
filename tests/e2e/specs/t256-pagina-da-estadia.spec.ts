@@ -5,6 +5,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * L-43 (vigia, 24/10): o painel não assenta em "networkidle" (t183, L-40); espera até 10 s e segue para o elemento.
  * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T256 — Página da estadia (Prompt 32), com a jornada de teste do laboratório:
  * contrato assinado → página da estadia com o checklist (dono e morador) → card "Decisões" na home do painel →
@@ -141,7 +142,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     test.setTimeout(120_000);
     for (const largura of [1280, 390]) {
       const d = await abrir(browser, dono.email, largura);
-      await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+      await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+      await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       await expect(d.getByTestId("pagina-estadia")).toHaveAttribute("data-papel", "proprietario");
       await expect(d.getByTestId("estadia-topo-texto")).toHaveText("Entrada em 8 dias");
       await expect(d.getByTestId("checklist-assinatura")).toHaveAttribute("data-feito", "sim");
@@ -162,7 +164,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
       await d.context().close();
     }
     const m = await abrir(browser, morador.email, 390);
-    await m.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await m.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(m.getByTestId("pagina-estadia")).toHaveAttribute("data-papel", "inquilino");
     await expect(m.getByTestId("valor-taxa")).toHaveCount(0);
     await expect(m.getByTestId("checklist-instrucoes")).toHaveCount(0);
@@ -174,7 +177,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
   test("home do painel: o card 'Suas estadias' leva à estadia e a lista de decisões pede o que cada um decide (Prompt 42)", async ({ browser }) => {
     test.setTimeout(90_000);
     const d = await abrir(browser, dono.email, 390);
-    await d.goto("/dashboard", { waitUntil: "networkidle" });
+    await d.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const cartaoDono = d.locator(`[data-testid="home-estadia"][data-contrato="${ids.contrato}"]`);
     await expect(cartaoDono).toBeVisible();
     // Prompt 42: a decisão da estadia é uma linha de "Hoje você tem N decisões", com o link da própria decisão.
@@ -187,7 +191,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     await expect(d).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}$`));
     await d.context().close();
     const m = await abrir(browser, morador.email, 390);
-    await m.goto("/dashboard", { waitUntil: "networkidle" });
+    await m.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const cartaoMorador = m.locator(`[data-testid="home-estadia"][data-contrato="${ids.contrato}"]`);
     await expect(m.locator(`[data-testid="decisao"][data-decisao="estadia-${ids.contrato}-preencher_ocupantes"]`)).toBeVisible();
     await expect(cartaoMorador.getByTestId("home-estadia-acoes")).toContainText("Pedir limpeza/manutenção");
@@ -197,7 +202,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
   test("instruções de chegada: o dono preenche; o morador vê no D-7, não no D-8, e não sem o 1º pagamento", async ({ browser }) => {
     test.setTimeout(150_000);
     const d = await abrir(browser, dono.email);
-    await d.goto(`/dashboard/estadia/${ids.contrato}#instrucoes`, { waitUntil: "networkidle" });
+    await d.goto(`/dashboard/estadia/${ids.contrato}#instrucoes`, { waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await d.getByTestId("instrucoes-como_entrar").fill("Portaria 24 h: diga o seu nome na entrada.");
     await d.getByTestId("instrucoes-wifi_rede").fill("StudioLab");
     await d.getByTestId("instrucoes-wifi_senha").fill("senha-do-lab");
@@ -208,19 +214,22 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     const m = await abrir(browser, morador.email, 390);
     // D-7, mas sem o 1º pagamento: não aparecem.
     await entradaEm(7);
-    await m.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await m.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(m.getByTestId("instrucoes-bloqueadas")).toContainText(/1º pagamento/);
     await expect(m.getByText("senha-do-lab")).toHaveCount(0);
     // 1º pagamento registrado e confirmado.
     await adm().from("pagamentos_bloco").insert({ bloco_id: ids.bloco1, contrato_id: ids.contrato, tipo: "aluguel", valor: 3000, data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() });
     // D-8: ainda não.
     await entradaEm(8);
-    await m.reload({ waitUntil: "networkidle" });
+    await m.reload({ waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(m.getByTestId("instrucoes-bloqueadas")).toContainText(/^Liberadas em \d{2}\/\d{2}\/\d{4}\.$/);
     await expect(m.getByText("senha-do-lab")).toHaveCount(0);
     // D-7: aparecem.
     await entradaEm(7);
-    await m.reload({ waitUntil: "networkidle" });
+    await m.reload({ waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(m.getByTestId("instrucoes-liberadas")).toContainText("Portaria 24 h");
     await expect(m.getByTestId("instrucoes-liberadas")).toContainText("senha-do-lab");
     await expect(m.getByTestId("checklist-primeiro_pagamento")).toHaveAttribute("data-feito", "sim");
@@ -232,7 +241,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
       .from("contratos_checkin")
       .upsert({ contrato_id: ids.contrato, horario: "15:00", instrucoes: "Retire a chave na portaria apresentando documento.", plantao: "34999998888" }, { onConflict: "contrato_id" });
     const d2 = await abrir(browser, dono.email);
-    await d2.goto(`/dashboard/estadia/${ids.contrato}#instrucoes`, { waitUntil: "networkidle" });
+    await d2.goto(`/dashboard/estadia/${ids.contrato}#instrucoes`, { waitUntil: "domcontentloaded" });
+    await d2.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(d2.getByTestId("instrucoes-como_entrar")).toHaveValue("Retire a chave na portaria apresentando documento.");
     await expect(d2.getByTestId("instrucoes-wifi_senha")).toHaveValue("senha-do-lab");
     await expect(d2.getByTestId("instrucoes-como-entrar-do-contrato")).toBeVisible();
@@ -241,7 +251,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     await expect(d2.getByTestId("estadia-ok")).toBeVisible();
     await d2.context().close();
     const m2 = await abrir(browser, morador.email, 390);
-    await m2.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await m2.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await m2.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(m2.getByTestId("instrucoes-liberadas")).toContainText("Chave com o zelador");
     await expect(m2.getByTestId("instrucoes-liberadas")).not.toContainText("Retire a chave");
     await m2.context().close();
@@ -252,7 +263,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
   test("ocupantes: o morador preenche até o limite; o dono baixa a lista da portaria", async ({ browser }) => {
     test.setTimeout(150_000);
     const m = await abrir(browser, morador.email, 390);
-    await m.goto(`/dashboard/estadia/${ids.contrato}/ocupantes`, { waitUntil: "networkidle" });
+    await m.goto(`/dashboard/estadia/${ids.contrato}/ocupantes`, { waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(m.getByTestId("ocupantes-aviso")).toHaveText("Estes dados são usados só para a liberação na portaria.");
     for (const [nome, doc] of [["Moacir Estadia", "529.982.247-25"], ["Lia Estadia", "MG-12.345.678"]]) {
       await m.getByTestId("ocupante-nome").fill(nome);
@@ -267,7 +279,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     await m.context().close();
 
     const d = await abrir(browser, dono.email);
-    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await d.getByTestId("lista-portaria-abrir").click();
     await expect(d.getByTestId("lista-portaria-texto")).toHaveValue(/Lista para a portaria — Studio da estadia/);
     await expect(d.getByTestId("lista-portaria-texto")).toHaveValue(/1\. Moacir Estadia — 529\.982\.247-25\n2\. Lia Estadia — MG-12\.345\.678/);
@@ -281,15 +294,18 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
   test("nota privada: o dono escreve e o morador não vê", async ({ browser }) => {
     test.setTimeout(90_000);
     const d = await abrir(browser, dono.email);
-    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await d.getByTestId("nota-texto").fill("Trocar a resistência do chuveiro antes da entrada.");
     await d.getByTestId("nota-salvar").click();
     await expect(d.getByTestId("estadia-ok")).toHaveText("Nota salva.");
-    await d.reload({ waitUntil: "networkidle" });
+    await d.reload({ waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(d.getByTestId("nota-texto")).toHaveValue(/resistência do chuveiro/);
     await d.context().close();
     const m = await abrir(browser, morador.email, 390);
-    await m.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await m.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(m.getByTestId("nota-texto")).toHaveValue("");
     await expect(m.getByText("resistência do chuveiro")).toHaveCount(0);
     await m.context().close();
@@ -298,7 +314,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
   test("propor alteração +1 mês → aceite → aditivo assinado pelos dois com código → blocos e taxa atualizados", async ({ browser }) => {
     test.setTimeout(240_000);
     const m = await abrir(browser, morador.email, 390);
-    await m.goto(`/dashboard/estadia/${ids.contrato}/alteracao`, { waitUntil: "networkidle" });
+    await m.goto(`/dashboard/estadia/${ids.contrato}/alteracao`, { waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await m.getByTestId("alteracao-meses").selectOption("4");
     await m.getByTestId("alteracao-enviar").click();
     await expect(m).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}$`));
@@ -309,7 +326,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     expect(antes).toBe(2);
 
     const d = await abrir(browser, dono.email);
-    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await d.getByTestId("aditivo-aceitar").click();
     // A mensagem vem antes do status: se a ação falhar, o erro da tela aparece no relatório.
     await expect(d.getByTestId("estadia-ok").or(d.getByTestId("estadia-erro"))).toHaveText("Proposta aceita. Agora as duas partes assinam o aditivo.", { timeout: 30_000 });
@@ -317,7 +335,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     // Taxa só sobre o mês acrescentado, na faixa atual, com a base escrita — só na visão do dono.
     await expect(d.getByTestId("aditivo-taxa")).toContainText(/R\$ 3\.000,00 × 1 mês acrescentado × \d+(,\d)?% \(faixa atual\)/);
     for (const [pagina, quem] of [[d, ids.dono!], [m, ids.morador!]] as const) {
-      await pagina.reload({ waitUntil: "networkidle" });
+      await pagina.reload({ waitUntil: "domcontentloaded" });
+      await pagina.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const desde = new Date().toISOString();
       await pagina.getByTestId("aditivo-pedir-codigo").click();
       await expect(pagina.getByTestId("estadia-ok").or(pagina.getByTestId("estadia-erro"))).toHaveText("Código enviado para o seu e-mail.", { timeout: 30_000 });
@@ -332,10 +351,12 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     expect(ct!.prazo_total_dias).toBe(120);
     const { data: ev } = await adm().from("contrato_eventos").select("tipo").eq("contrato_id", ids.contrato!).eq("tipo", "estadia_remarcada");
     expect(ev).toHaveLength(1);
-    await d.reload({ waitUntil: "networkidle" });
+    await d.reload({ waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(d.getByTestId("estadia-historico")).toContainText(/Aditivo 1 — \d{2}\/\d{2}\/\d{4} — Meses: de 3 para 4/);
     await expect(d.getByTestId("estadia-historico")).toContainText("mês acrescentado");
-    await m.reload({ waitUntil: "networkidle" });
+    await m.reload({ waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(m.getByTestId("estadia-historico")).not.toContainText("acrescentado");
     await d.context().close();
     await m.context().close();
@@ -344,7 +365,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
   test("encerrar com a chave desligada: motivo → consequências sem valor → confirmar → pedido no admin", async ({ browser }) => {
     test.setTimeout(150_000);
     const m = await abrir(browser, morador.email, 1280);
-    await m.goto(`/dashboard/estadia/${ids.contrato}/encerrar`, { waitUntil: "networkidle" });
+    await m.goto(`/dashboard/estadia/${ids.contrato}/encerrar`, { waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await m.getByTestId("encerrar-motivo-mudanca_planos_morador").check();
     await m.getByTestId("encerrar-continuar").click();
     await expect(m.getByTestId("encerrar-consequencias")).toHaveText(
@@ -363,7 +385,8 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     test.skip(!hasAccount("admin"), "Sem conta admin de teste: a fila do admin fica para o reteste.");
     const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
     const a = await ctx.newPage();
-    await a.goto("/admin/contratos/encerramentos", { waitUntil: "networkidle" });
+    await a.goto("/admin/contratos/encerramentos", { waitUntil: "domcontentloaded" });
+    await a.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const cartao = a.locator(`[data-testid="admin-encerramento"][data-contrato="${ids.contrato}"]`);
     await expect(cartao).toBeVisible();
     await expect(cartao).toContainText("Mudança de planos do morador");
