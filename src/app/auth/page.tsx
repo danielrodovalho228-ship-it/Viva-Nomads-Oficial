@@ -361,12 +361,12 @@ export default function AuthPage() {
           treat={false}
           className="absolute inset-0 h-full w-full"
         />
-        {/* Véu só onde há texto: a foto fica clara e quente (alinhamento visual da porta, 23/10). */}
-        <div className={`absolute inset-x-0 top-0 h-40 ${VEU_TOPO_PORTA}`} data-testid="porta-veu-topo" aria-hidden />
-        <div className={`absolute inset-x-0 bottom-0 h-3/5 ${VEU_BASE_PORTA}`} data-testid="porta-veu-base" aria-hidden />
-        <div className="absolute inset-0 flex flex-col justify-between p-12 text-white">
-          <Logo href="/" light />
-          <div>
+        {/* Escuro só atrás do texto: a foto fica clara e quente (alinhamento visual da porta, 23/10). */}
+        <div className="absolute inset-0 flex flex-col items-start justify-between p-12 text-white">
+          <div className={VEU_TOPO_PORTA} data-testid="porta-veu-topo">
+            <Logo href="/" light />
+          </div>
+          <div className={VEU_BASE_PORTA} data-testid="porta-veu-base">
             <h1 className="font-title text-[28px] font-semibold leading-tight">
               {mode === "entrada" ? "Sua nova fase começa aqui." : "Bem-vindo de volta."}
             </h1>
@@ -374,7 +374,7 @@ export default function AuthPage() {
               Imóveis mobiliados para estadias de 30 a 180 dias, para profissionais em transição. Estadia de
               meses, com contrato de verdade e conversa registrada.
             </p>
-            <p className="mt-8 text-sm text-white/80">Estadias de 30 a 180 dias</p>
+            <p className="mt-6 text-sm text-white/80">Estadias de 30 a 180 dias</p>
           </div>
         </div>
       </div>
