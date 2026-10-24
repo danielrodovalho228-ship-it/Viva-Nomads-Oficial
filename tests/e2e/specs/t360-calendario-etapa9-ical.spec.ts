@@ -2,8 +2,8 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * Rodada da vigia 24/10 (Pista C): confirmação do merge no lab-crítico do bloco 15 (t338).
- * T359 — E44: calendário de disponibilidade da etapa 9 do assistente (mockup cadastro-imovel-09) e exportação iCal.
+ * Rodada da vigia 24/10 (Pista C): confirmação do merge no lab-crítico do bloco 15 (t338). Era t359, repetida com a do #1208 (L-46).
+ * T360 — E44: calendário de disponibilidade da etapa 9 do assistente (mockup cadastro-imovel-09) e exportação iCal.
  *   1. editor (Disponibilidade): a grade dos 3 meses renderiza com o bloqueio do dono marcado; "Exportar para outro site"
  *      mostra o link secreto .ics; o .ics responde 200 e traz o bloqueio manual como "Ocupado" (último dia incluso);
  *   2. cadastro (rascunho, etapa Preço e disponibilidade): a mesma grade e o mesmo link já aparecem (390 px);
@@ -28,7 +28,7 @@ async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
 
-test.describe("T359 — E44: grade do calendário + exportação iCal", () => {
+test.describe("T360 — E44: grade do calendário + exportação iCal", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
