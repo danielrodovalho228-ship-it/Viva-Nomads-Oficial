@@ -82,6 +82,8 @@ export interface MeusDados {
   linkedin: string;
   /** Chave de MOTIVOS (pedidos.ts) ou "" — pré-preenche pedidos novos. */
   motivoEstadia: string;
+  /** A4 (mockup perfil-04): a pílula "E-mail confirmado" ao lado do e-mail. */
+  emailConfirmado: boolean;
 }
 
 /** Lê os MEUS dados pessoais (nome, e-mail, telefone, LinkedIn). */
@@ -103,6 +105,7 @@ export async function getMeusDados(): Promise<MeusDados | null> {
     phone: (data?.phone as string) ?? "",
     linkedin: (data?.linkedin_url as string) ?? "",
     motivoEstadia: (data?.motivo_estadia as string) ?? "",
+    emailConfirmado: !!user.email_confirmed_at,
   };
 }
 

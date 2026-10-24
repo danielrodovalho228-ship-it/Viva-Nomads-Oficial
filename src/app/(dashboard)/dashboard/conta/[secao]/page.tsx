@@ -20,9 +20,8 @@ import { SUBTITULO_PAPEIS } from "@/lib/conta/tela-papeis";
 import { ALIAS_SECAO, type SecaoConta } from "@/lib/conta/secoes";
 
 /** Subtítulo de cada seção (A1; cada tela ganha o desenho do seu mockup nas entregas A2–A8). */
-const SUBTITULO: Record<Exclude<SecaoConta, "perfil" | "ajuda" | "avaliacoes" | "notificacoes" | "pagamentos">, string> = {
+const SUBTITULO: Record<Exclude<SecaoConta, "perfil" | "ajuda" | "avaliacoes" | "notificacoes" | "pagamentos" | "dados">, string> = {
   papeis: SUBTITULO_PAPEIS,
-  dados: "Atualize suas informações de cadastro. Só a Viva vê; vão no contrato e nos avisos.",
   privacidade: "O que já está verificado e como proteger a conta.",
 };
 
@@ -55,7 +54,8 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       );
     case "dados":
       return (
-        <CascaConta ativo="dados" subtitulo={SUBTITULO.dados}>
+        <CascaConta ativo="dados" titulo="Meus dados">
+          {/* Mockup perfil-04: o cartão "Meus dados". Embaixo, os blocos já aprovados que o desenho não mostra. */}
           <DadosPessoais />
           <RedesPrivadas />
           <TelefoneVerificacao />

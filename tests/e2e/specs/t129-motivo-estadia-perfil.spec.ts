@@ -23,7 +23,7 @@ test.describe("T129 — Motivo da estadia no perfil", () => {
       const novo = original === "viagem_longa" ? "mudanca_familiar" : "viagem_longa";
       try {
         await seletor.selectOption(novo);
-        await page.getByRole("button", { name: "Salvar alterações" }).click();
+        await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
         await expect(page.getByText("Dados salvos.")).toBeVisible();
         await page.reload({ waitUntil: "networkidle" });
         await expect(page.getByTestId("perfil-motivo-estadia")).toHaveValue(novo);
@@ -34,7 +34,7 @@ test.describe("T129 — Motivo da estadia no perfil", () => {
       } finally {
         await page.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
         await page.getByTestId("perfil-motivo-estadia").selectOption(original);
-        await page.getByRole("button", { name: "Salvar alterações" }).click();
+        await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
         await expect(page.getByText("Dados salvos.")).toBeVisible();
       }
     });

@@ -18,7 +18,7 @@ test.describe("T17 — Conta salva de verdade", () => {
     const telOriginal = await tel.inputValue();
 
     await tel.fill("34 99999-0017");
-    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
     await expect(page.getByText("Dados salvos.")).toBeVisible();
     await page.reload({ waitUntil: "networkidle" });
     await expect(page.getByLabel("Telefone")).toHaveValue("(34) 99999-0017");
@@ -26,12 +26,12 @@ test.describe("T17 — Conta salva de verdade", () => {
 
     // Telefone inválido: erro na tela, nada gravado.
     await page.getByLabel("Telefone").fill("123");
-    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
     await expect(page.getByText(/Telefone inválido/)).toBeVisible();
 
     // Devolve o original.
     await page.getByLabel("Telefone").fill(telOriginal);
-    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
     await expect(page.getByText("Dados salvos.")).toBeVisible();
   });
 

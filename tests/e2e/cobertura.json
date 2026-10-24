@@ -3433,14 +3433,18 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t371-conta-a6-notificacoes"
+      ]
     },
     "src/lib/data/canais-actions.ts#setCanais": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t371-conta-a6-notificacoes"
+      ]
     },
     "src/lib/data/carteira-teste-actions.ts#limparCarteiraDeTeste": {
       "personas": [
@@ -4242,6 +4246,24 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/nascimento-actions.ts#getNascimento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t373-conta-a4-dados"
+      ]
+    },
+    "src/lib/data/nascimento-actions.ts#salvarNascimento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t373-conta-a4-dados"
+      ]
     },
     "src/lib/data/nivel-actions.ts#analisarFotoNivel": {
       "personas": [
