@@ -84,7 +84,8 @@ test.describe("T389 — Conta: E55, E63, E64, E66, E67", () => {
         expect(vao).toBeLessThanOrEqual(48);
       }
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t389-dados-${w}.png`, fullPage: true });
+      await p.getByTestId("degraus-perfil").scrollIntoViewIfNeeded();
+      await p.screenshot({ path: `${SAIDA}/t389-dados-${w}.png`, fullPage: w === 390 });
       await p.context().close();
     });
 
