@@ -7,6 +7,7 @@ import { OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
 import { DetalhesAnuncioCampos, estadosDetalhes, formDeDetalhes, payloadDeDetalhes, type DetalhesForm } from "@/components/anuncio/detalhes-anuncio-campos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
+import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
 import { UBERLANDIA_CENTER } from "@/lib/integrations/geocoding";
 import { completudeBlocos, textoCompletude } from "@/lib/anuncio/bloco-opcional";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
@@ -193,6 +194,8 @@ export function EditarImovelClient({
           ehChacara(property.propertyType) && property.status !== "active"
             ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || !!chacaraGravada?.pontoMarcado })
             : undefined,
+        // E102-B: a mesma regra do servidor ("Não tem internet" fora do ar não publica).
+        semInternet: property.status !== "active" && !temInternet(tipoInternetDoAnuncio(property.propertyType, { chacara })) ? true : undefined,
       }),
     [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, videoArquivo, videoUrl, chegada.tipoEntrada, chacara, chacaraGravada?.pontoMarcado]
   );

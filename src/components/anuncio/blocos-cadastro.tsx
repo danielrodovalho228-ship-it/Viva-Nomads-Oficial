@@ -21,6 +21,7 @@ import { useState } from "react";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { MedirInternet } from "./medir-internet";
+import { SEM_INTERNET_NO_IMOVEL } from "@/lib/anuncio/internet-imovel";
 
 /* ── Proximidades automáticas (OSM) ───────────────────────────────────────── */
 
@@ -202,6 +203,7 @@ export function ProntoParaTrabalhar({
   mbps,
   onMbps,
   imovelId,
+  semInternet = false,
 }: {
   marcadas: Record<string, boolean>;
   onAlternar: (chave: string) => void;
@@ -210,6 +212,8 @@ export function ProntoParaTrabalhar({
   onMbps: (v: string) => void;
   /** Com o rascunho salvo, o dono mede a internet aqui mesmo (Prompt 57). */
   imovelId?: string | null;
+  /** E102-B: o dono respondeu "Não tem internet" — a velocidade não é pedida. */
+  semInternet?: boolean;
 }) {
   const n = essenciaisMarcados(marcadas);
   const item = (it: { chave: string; rotulo: string }, essencial: boolean) => {
@@ -248,7 +252,11 @@ export function ProntoParaTrabalhar({
         {ESSENCIAIS_TRABALHO.map((it) => item(it, true))}
         {OPCIONAIS_TRABALHO.map((it) => item(it, false))}
       </div>
-      {marcadas.internet_fibra && (
+      {semInternet ? (
+        <p className="mt-3 text-sm font-medium text-ink" data-testid="sem-internet-imovel">
+          {SEM_INTERNET_NO_IMOVEL}
+        </p>
+      ) : marcadas.internet_fibra && (
         <label className="mt-3 block max-w-xs text-sm text-ink">
           Velocidade da internet informada (opcional)
           <span className="mt-1 flex items-center gap-2">
@@ -257,7 +265,7 @@ export function ProntoParaTrabalhar({
           </span>
         </label>
       )}
-      {marcadas.internet_fibra && imovelId && <MedirInternet imovelId={imovelId} origem="cadastro" />}
+      {!semInternet && marcadas.internet_fibra && imovelId && <MedirInternet imovelId={imovelId} origem="cadastro" />}
       <p className="mt-3 text-xs text-muted">
         Com os 4 essenciais, o anúncio pode ganhar a etiqueta “Para trabalhar de casa” na qualificação.
       </p>
