@@ -2,8 +2,10 @@
 
 import { CampoReais } from "@/components/ui/campo-reais";
 import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/components/anuncio/limpeza-estadia-campos";
-import { RegrasCasaCampos, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
+import { RegrasCasaCampos, estadosConvivencia, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
 import { OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
+import { DetalhesAnuncioCampos, estadosDetalhes, formDeDetalhes, payloadDeDetalhes, type DetalhesForm } from "@/components/anuncio/detalhes-anuncio-campos";
+import { completudeBlocos, textoCompletude } from "@/lib/anuncio/bloco-opcional";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { ChegadaEPedidoCampos, formDeChegada, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
 import { avisoTipoEntradaNoPainel, tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
@@ -16,6 +18,7 @@ import {
   FileText,
   Briefcase,
   ScrollText,
+  ListChecks,
   Ruler,
   Check,
   ChevronDown,
@@ -109,6 +112,11 @@ export function EditarImovelClient({
   const smokingAllowed = property.smokingAllowed ?? false;
   // CAMPOS-1: regras estruturadas (o fumo daqui substitui o sim/não antigo quando definido).
   const [regrasCasa, setRegrasCasa] = useState<RegrasCasaForm>(formDeRegrasCasa(property.regrasCasa));
+  // E56 + tela 06 dos mockups: cada regra da Convivência tem o seu toggle (o estado mora em regrasCasa.ligados).
+  // CAMPOS-2: os 5 grupos opcionais do anúncio, cada um atrás do seu toggle (E56).
+  const [detalhes, setDetalhes] = useState<DetalhesForm>(formDeDetalhes(property.detalhesAnuncio));
+  // Medidor dos opcionais: desligado = não se aplica (fora da conta).
+  const completudeOpcionais = completudeBlocos([...estadosConvivencia(regrasCasa), ...estadosDetalhes(detalhes)]);
   const [childrenAllowed, setChildrenAllowed] = useState(property.childrenAllowed ?? true);
   // 61-B: indefinido = banco sem a 0225 (o bloco some e nada é gravado).
   const [chegada, setChegada] = useState<ChegadaEPedidoForm>(formDeChegada(property.chegadaEPedido));
@@ -227,8 +235,10 @@ export function EditarImovelClient({
       petsAllowed,
       petsRegras: petsAllowed ? petsRegras : undefined,
       limpezaEstadia: limpeza,
+      // Regra desligada = não definida (só as ligadas vão; nada ligado, o servidor grava null).
       regrasCasa: payloadDeRegrasCasa(regrasCasa),
-      smokingAllowed: regrasCasa.fumo ? regrasCasa.fumo === "permitido" : smokingAllowed,
+      smokingAllowed: regrasCasa.ligados.fumo && regrasCasa.fumo ? regrasCasa.fumo === "permitido" : smokingAllowed,
+      detalhesAnuncio: payloadDeDetalhes(detalhes),
       childrenAllowed,
       ...(property.chegadaEPedido ? payloadDaChegada(chegada) : {}),
       // Só manda quando a coluna existe (property.privacidade definida): senão não grava nada.
@@ -349,6 +359,10 @@ export function EditarImovelClient({
             {!comp.podePublicar && (
               <p className="mt-1 text-sm text-muted">Falta para publicar: {comp.faltam.join(" · ")}</p>
             )}
+            {/* E56: medidor dos detalhes opcionais — bloco desligado entra como "não se aplica". */}
+            <p className="mt-1 text-xs text-muted" data-testid="completude-opcionais">
+              Detalhes opcionais: {textoCompletude(completudeOpcionais)}
+            </p>
             {comp.melhorar.length > 0 && (
               <p className="mt-1 text-xs text-muted" data-testid="para-melhorar">
                 Para melhorar (opcional):{" "}
@@ -629,7 +643,7 @@ export function EditarImovelClient({
           testid="secao-regras"
           summary={[
             petsAllowed ? "aceita pets" : "sem pets",
-            regrasCasa.fumo
+            regrasCasa.ligados.fumo && regrasCasa.fumo
               ? `fumar: ${OPCOES_FUMO.find((o) => o.valor === regrasCasa.fumo)?.rotulo.toLowerCase()}`
               : smokingAllowed
                 ? "fumar ok"
@@ -673,6 +687,20 @@ export function EditarImovelClient({
               <PrivacidadeCampos valor={privacidade} onChange={setPrivacidade} />
             </div>
           )}
+        </Section>
+
+        {/* CAMPOS-2: detalhes opcionais do anúncio — cada grupo atrás do seu toggle (padrão E56). */}
+        <Section
+          icon={ListChecks}
+          title="Detalhes do imóvel"
+          testid="secao-detalhes-anuncio"
+          summary={textoCompletude(completudeOpcionais)}
+          saving={savingSection === "detalhes-anuncio"}
+          saved={savedSection === "detalhes-anuncio"}
+          onSave={() => saveSection("detalhes-anuncio")}
+        >
+          <p className="text-sm text-muted">Ligue só o que se aplica ao seu imóvel. O que ficar desligado não aparece no anúncio e não conta como pendência.</p>
+          <DetalhesAnuncioCampos value={detalhes} onChange={setDetalhes} />
         </Section>
 
         {/* Detalhes & preço */}
