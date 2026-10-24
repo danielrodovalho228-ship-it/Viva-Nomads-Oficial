@@ -138,6 +138,8 @@ export interface Property {
   chegadaEPedido?: import("@/lib/anuncio/chegada-e-pedido").ChegadaEPedido;
   /** Pacote de limpeza durante a estadia (ordem 4c74ac38; requer migração 0144). */
   limpezaEstadia?: import("@/lib/anuncio/limpeza-estadia").LimpezaEstadia;
+  /** CAMPOS-1 (0233): regras da casa estruturadas — silêncio, fumo, festas, visitas. Só o que o dono definiu. */
+  regrasCasa?: import("@/lib/anuncio/regras-casa").RegrasCasa;
   /** Negociação pública (aceita? itens; desconto por estadia longa) — prompt 17 §8, requer 0152. */
   negociacao?: import("@/lib/anuncio/negociacao").Negociacao;
   /** Velocidade da internet informada pelo dono (Mbps), opcional — requer 0152. */

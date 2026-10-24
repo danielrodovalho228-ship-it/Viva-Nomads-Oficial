@@ -79,9 +79,10 @@ test("descrição curta não pede 'Mostrar mais'; longa pede", () => {
 test("Bom saber: 3 linhas fixas, sem inventar regra", () => {
   const l = linhasBomSaber(com({ maxGuests: 2, petsAllowed: false, checkinAfter: "14:00", checkoutBefore: "11:00" }));
   assert.deepEqual(l.map((x) => x.chave), ["cancelamento", "regras", "seguranca"]);
-  assert.match(l[1].resumo, /14:00/);
-  assert.match(l[1].resumo, /2 pessoas/);
-  assert.match(l[1].resumo, /sem pets/i);
+  // CAMPOS-1: o resumo fica curto (os 2 primeiros fatos); entrada e saída seguem no detalhe.
+  assert.equal(l[1].resumo, "Até 2 pessoas · sem pets");
+  assert.ok(l[1].detalhe.includes("Entrada a partir das 14:00"));
+  assert.ok(l[1].detalhe.includes("Saída até às 11:00"));
 });
 
 test("Segurança: proteções da Viva sempre; sem declaração, convida a perguntar pelo chat", () => {
