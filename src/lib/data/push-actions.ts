@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { plataformaValida, podeEnviarTeste, tokenValido } from "@/lib/notifications/push-validacao";
 import { sendPush } from "@/lib/notifications/push";
+import { pushLigado } from "@/lib/notifications/preferencias";
 
 const historicoTeste = new Map<string, number[]>();
 
@@ -79,6 +80,9 @@ export async function enviarPushDeTeste(): Promise<{ ok: boolean; erro?: string;
     body: "Se você viu isto, o push está funcionando.",
     url: "/admin/agentes",
   });
+  if ("skipped" in r && !pushLigado(user.user_metadata as Record<string, unknown> | undefined)) {
+    return { ok: false, erro: "O push está desligado em Conta › Notificações. Ligue e tente de novo." };
+  }
   const enviados = "sent" in r ? r.sent : 0;
   return enviados > 0
     ? { ok: true, enviados }

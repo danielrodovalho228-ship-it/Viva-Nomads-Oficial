@@ -118,6 +118,10 @@ test.describe("T220 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
     await expect
       .poll(async () => (await adm().from("documentos_fiscais").select("id, enviado_em").eq("pagamento_id", ids.pagamento!)).data ?? [], { timeout: 30_000 })
       .toHaveLength(1);
+    // A linha nasce antes do envio terminar: espera o enviado_em (vigia, 24/10: 2 de 45 rodadas leram null logo após o insert).
+    await expect
+      .poll(async () => (await adm().from("documentos_fiscais").select("enviado_em").eq("pagamento_id", ids.pagamento!).single()).data?.enviado_em ?? null, { timeout: 30_000 })
+      .not.toBeNull();
     const { data: doc } = await adm().from("documentos_fiscais").select("id, numero, enviado_em, locador_doc").eq("pagamento_id", ids.pagamento!).single();
     expect(doc!.enviado_em).not.toBeNull();
     ids.doc = doc!.id as string;

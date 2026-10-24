@@ -300,11 +300,11 @@ export function LoginPorCodigo({
         <form onSubmit={conferir} method="post" className="mt-6 space-y-4">
           {aviso ? (
             <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest" data-testid="codigo-aviso">
-              <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" /> {aviso}
+              <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" /> <span className="min-w-0 [overflow-wrap:anywhere]">{aviso}</span>
             </p>
           ) : (
             <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-              <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" /> Código enviado para {email.trim()}.
+              <CheckCircle2 className="mt-1 h-4 w-4 shrink-0" /> <span className="min-w-0 [overflow-wrap:anywhere]">Código enviado para {email.trim()}.</span>
             </p>
           )}
           <input

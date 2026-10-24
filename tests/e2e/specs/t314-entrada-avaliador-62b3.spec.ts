@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, no
  *   1. visitante: /parceiros → "É avaliador de imóveis?" → /parceiros/avaliadores (indexável) → "Pedir credenciamento"
  *      leva à entrada com volta para o pedido;
  *   2. conta nova (não parceiro): UM formulário (dados de parceiro + credenciamento) → solicitação "vistoria" e
- *      credenciamento ligados → pendência "verificar identidade" para a pessoa e para o admin; a aprovação espera;
+ *      credenciamento ligados → pendência "verificar identidade" para a pessoa e para o admin (da ativação, E35-B);
  *   3. identidade verificada → admin vê UM pedido em /admin/avaliadores (fora da fila geral de parceiros) → "Aprovar para
  *      teste" ativa o parceiro e o credenciamento numa ação → a pessoa vê "Em teste" → /avaliadores/[numero] abre (noindex);
  *   4. parceiro de limpeza existente pede sem repetir dados.
@@ -112,14 +112,13 @@ test.describe("T314 — porta de entrada do avaliador (62-B3)", () => {
     await expect(p.getByTestId("credenciamento-pendencia")).toBeVisible();
     await p.context().close();
 
-    // Admin: UM pedido com os dados juntos e a pendência; a aprovação para teste espera a identidade.
+    // Admin: UM pedido com os dados juntos e a pendência de identidade (E35-B: ela é da ATIVAÇÃO; a aprovação para
+    // teste não espera por ela — coberto no t380).
     const a = await admin(browser, "/admin/avaliadores");
     const item = a.locator(`[data-testid="credenciamento-item"][data-numero="${numero}"]`);
     await expect(item).toHaveCount(1);
     await expect(item.getByTestId("credenciamento-dados-parceiro")).toContainText("Ainda não é parceiro");
-    await expect(item.getByTestId("credenciamento-pendencia")).toBeVisible();
-    await item.getByTestId("decidir-em_teste").getByRole("button", { name: "Aprovar para teste" }).click();
-    await expect(a.getByText("A identidade do candidato ainda não foi verificada.")).toBeVisible({ timeout: 15_000 });
+    await expect(item.getByTestId("credenciamento-pendencia")).toContainText("Na ativação");
     expect((await credDe(ids.nova))!.status).toBe("solicitado");
     // A fila geral de parceiros não mostra o pedido do avaliador.
     await a.goto("/admin/parceiros?aba=pendentes", { waitUntil: "domcontentloaded" });
