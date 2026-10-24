@@ -6,7 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ProximityCategory, Property } from "@/lib/types";
 import type { MapMarker } from "@/components/property-map";
 import { PropertyMap } from "@/components/property-map-lazy";
-import { distanciaAprox, proximidadesDoImovel } from "@/lib/anuncio/proximidades";
+import { proximidadesDoImovel, proximidadesVisiveis } from "@/lib/anuncio/proximidades";
 import { ServicosPorPerto } from "@/components/property/servicos-por-perto";
 import { TempoAte } from "@/components/property/tempo-ate";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
@@ -35,7 +35,8 @@ export function LocationNearby({ property }: { property: Property }) {
   // Antes do aceite, limitamos os POIs exibidos para não re-identificar o
   // endereço por combinação (item 4 do QA): no máximo 4, sem a lista completa.
   const MAX_POIS_PUBLICOS = 4;
-  const todosProximities = proximidadesDoImovel(property);
+  // PERTO-B: FONTE ÚNICA — a lista visível (texto calculado, até 3 por categoria); os chips leem a mesma.
+  const todosProximities = proximidadesVisiveis(proximidadesDoImovel(property));
   const proximities = todosProximities.slice(0, MAX_POIS_PUBLICOS);
   const ocultos = todosProximities.length - proximities.length;
   const hasProximities = proximities.length > 0;
@@ -118,20 +119,18 @@ export function LocationNearby({ property }: { property: Property }) {
           <h3 className="mt-6 text-sm font-semibold text-forest">O que tem por perto</h3>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {proximities.map((p) => {
-              const meta = PROXIMITY_META[p.category];
+              const meta = PROXIMITY_META[p.categoria];
               const Icon = meta?.icon ?? MapPin;
-              const dist = distanciaAprox(p.note);
               return (
                 <li
-                  key={`${p.category}-${p.name}`}
+                  key={`${p.categoria}-${p.nome}`}
                   className="flex items-center gap-3 rounded-xl border border-sage-200 px-4 py-3"
                 >
                   <Icon className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden />
                   <span className="min-w-0">
-                    <span className="block text-sm font-medium text-ink">{p.name}</span>
-                    <span className="block text-xs text-muted">
-                      {meta?.label ?? p.category}
-                      {dist ? ` · ${dist}` : ""}
+                    <span className="block text-sm font-medium text-ink">{p.nome}</span>
+                    <span className="block text-xs text-muted" data-testid="proximidade-texto">
+                      {meta?.label ?? p.categoria} · {p.texto}
                     </span>
                   </span>
                 </li>
@@ -145,7 +144,7 @@ export function LocationNearby({ property }: { property: Property }) {
           )}
         </>
       )}
-      <ServicosPorPerto proximidades={todosProximities} />
+      <ServicosPorPerto visiveis={todosProximities} />
       <TempoAte imovelId={property.id} />
     </section>
   );

@@ -68,6 +68,11 @@ export interface FatosAnuncio {
    * anúncio que ainda vai publicar; ausente = não se aplica (o publicado sem ela segue no ar).
    */
   internetOk?: boolean;
+  /**
+   * PERTO-B: lugares adicionados à mão antes da 0238 só com a "Distância" em texto, sem o endereço do lugar. Ficam fora
+   * da página pública até o dono informar o endereço. Ausente = não se aplica aqui.
+   */
+  proximidadesSemEndereco?: number;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -143,6 +148,9 @@ export function textoVagaNoPlano(limite?: number | null, ativos?: number | null)
   return `${quanto}. Para publicar este, pause outro ou mude de plano`;
 }
 
+/** PERTO-B: a pendência dos lugares por perto sem o endereço do lugar. */
+export const ROTULO_PROXIMIDADES_SEM_ENDERECO = "Endereço dos lugares por perto";
+
 export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   const obrigatorios: ItemProntidao[] = [
     { key: "endereco", label: OBRIGATORIOS_ROTULOS[0], ok: f.enderecoOk, etapa: ETAPA.endereco },
@@ -189,6 +197,10 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: ETAPA.endereco },
     { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: ETAPA.fotos },
   ];
+  if (f.proximidadesSemEndereco !== undefined && f.proximidadesSemEndereco > 0) {
+    const n = f.proximidadesSemEndereco;
+    opcionais.push({ key: "proximidades_endereco", label: ROTULO_PROXIMIDADES_SEM_ENDERECO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "1 lugar sem endereço não aparece no anúncio" : `${n} lugares sem endereço não aparecem no anúncio` });
+  }
   const cumpridos = obrigatorios.filter((i) => i.ok).length;
   return {
     podePublicar: obrigatorios.every((i) => i.ok),

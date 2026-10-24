@@ -255,11 +255,8 @@ export function EditarImovelClient({
       enderecoExato,
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
       googlePlaces: property.googlePlaces ?? [],
-      proximities: (property.proximities ?? []).map((p) => ({
-        category: p.category,
-        name: p.name,
-        note: p.note,
-      })),
+      // PERTO-B: a lista inteira (origem, "não mostrar", endereço); o servidor recalcula a distância e o tempo.
+      proximities: property.proximities ?? [],
     };
   }
 

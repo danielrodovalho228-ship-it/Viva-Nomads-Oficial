@@ -189,12 +189,11 @@ export async function adminDecidirCredenciamento(form: FormData): Promise<Res> {
   if (!transicaoCredenciamento(c.status as StatusCredenciamento, para).ok) return { ok: false, erro: "Mudança de situação não permitida." };
   if ((para === "suspenso" || para === "descredenciado") && !motivo) return { ok: false, erro: "Escreva o motivo." };
   const agora = new Date().toISOString();
-  // Correção 62-B3: "Aprovar para teste" é UMA aprovação — exige a identidade verificada e, para quem ainda não é
-  // parceiro, ativa o parceiro (categoria "vistoria") na mesma ação.
+  // Correção 62-B3: "Aprovar para teste" é UMA aprovação — para quem ainda não é parceiro, ativa o parceiro (categoria
+  // "vistoria", em rascunho, sem página pública) na mesma ação. E35-B: a identidade NÃO é exigida aqui, só na ativação.
   let parceiroId = (c.parceiro_id as string | null) ?? null;
   if (para === "em_teste") {
-    const ident = c.user_id ? await estadoIdentidade(a.admin, c.user_id as string) : null;
-    const pode = podeAprovarParaTeste({ status: c.status as string, identidadeVerificada: ident?.estado === "confirmada" });
+    const pode = podeAprovarParaTeste({ status: c.status as string });
     if (!pode.ok) return { ok: false, erro: pode.motivo };
     if (!parceiroId) {
       const r = await ativarParceiroDoAvaliador(a.admin, c.user_id as string, c.solicitacao_id as string | null, a.userId, agora);
@@ -202,10 +201,11 @@ export async function adminDecidirCredenciamento(form: FormData): Promise<Res> {
       parceiroId = r.parceiroId;
     }
   }
-  // E30: ativar é a SEGUNDA aprovação, só com a avaliação de teste registrada (laudo emitido num pedido de teste).
+  // E30 + E35-B: ativar é a SEGUNDA aprovação — exige a avaliação de teste registrada (laudo emitido num pedido de
+  // teste) E a identidade confirmada (fonte única estadoIdentidade).
   if (para === "ativo") {
-    const feito = (await comTesteConcluido(a.admin, [id])).has(id);
-    const pode = podeAtivar({ status: c.status as string, testeConcluido: feito });
+    const [feitos, ident] = await Promise.all([comTesteConcluido(a.admin, [id]), c.user_id ? estadoIdentidade(a.admin, c.user_id as string) : Promise.resolve(null)]);
+    const pode = podeAtivar({ status: c.status as string, testeConcluido: feitos.has(id), identidadeConfirmada: ident?.estado === "confirmada" });
     if (!pode.ok) return { ok: false, erro: pode.motivo };
   }
   await a.admin

@@ -196,7 +196,7 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       await page.getByLabel("Velocidade da internet em Mbps").fill("300");
       // Proximidades do OSM (simuladas): todas marcadas.
       const prox = page.getByTestId("proximidade-item");
-      await expect(prox).toHaveCount(7, { timeout: 20_000 });
+      await expect(prox).toHaveCount(8, { timeout: 20_000 }); // PERTO-B: escola entrou (8 tipos)
       for (const p of await prox.all()) await expect(p).toHaveAttribute("aria-pressed", "true");
       await prox.filter({ hasText: "Academia" }).click(); // desmarca uma
       // Nenhuma imagem decorativa no meio do formulário.
