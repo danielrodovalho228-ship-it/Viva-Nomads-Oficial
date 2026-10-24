@@ -28,7 +28,7 @@ test("a casca do painel dá lugar à moldura do assistente, depois dos hooks e a
 });
 
 test("topo mínimo: logo sem link, 'Precisa de ajuda?' e 'Sair' para Meus imóveis com a linha do rascunho salvo", () => {
-  assert.match(moldura, /<Logo href=\{null\} \/>/);
+  assert.match(moldura, /<Logo href=\{null\}[^>]*\/>/);
   assert.match(ler("components/ui/logo.tsx"), /if \(href === null\)/);
   assert.match(moldura, /href="\/ajuda"[\s\S]*?data-testid="assistente-ajuda"[\s\S]*?Precisa de ajuda\?/);
   assert.match(moldura, /export const HREF_SAIR_ASSISTENTE = "\/dashboard\/imoveis\?saiu=assistente";/);
