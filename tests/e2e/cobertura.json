@@ -68,7 +68,8 @@
         "t352-varredura-bloco17",
         "t404-admin-celular-e73",
         "t392-varredura-bloco24",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t442-foto-perfil-revisao"
       ]
     },
     "/admin/2fa/refazer": {
@@ -207,6 +208,14 @@
       "specs": [
         "t183-telas-logadas-390",
         "t301-varredura-logada-bloco5"
+      ]
+    },
+    "/admin/fotos-perfil": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t442-foto-perfil-revisao"
       ]
     },
     "/admin/marketing": {
@@ -1443,7 +1452,8 @@
         "t351-telas-linkedin-63a",
         "t349-imovel-sem-500-l31",
         "t355-conta-a-perfil-espelho",
-        "t338-varredura-bloco15"
+        "t338-varredura-bloco15",
+        "t442-foto-perfil-revisao"
       ]
     },
     "/qualificar": {
@@ -3113,7 +3123,8 @@
       ],
       "specs": [
         "t19-atendimento-online",
-        "t441-fiscal-parceiro"
+        "t441-fiscal-parceiro",
+        "t442-foto-perfil-revisao"
       ]
     },
     "src/lib/data/atendimento-actions.ts#alterarChamado": {
@@ -3371,7 +3382,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t442-foto-perfil-revisao"
+      ]
     },
     "src/lib/data/blocks-actions.ts#addBlock": {
       "personas": [
@@ -6354,6 +6367,38 @@
       ],
       "specs": [
         "t410-niveis-medir-rascunho"
+      ]
+    },
+    "src/lib/data/fotos-perfil-actions.ts#aprovarFotoPerfil": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t442-foto-perfil-revisao"
+      ]
+    },
+    "src/lib/data/fotos-perfil-actions.ts#filaFotosPerfil": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t442-foto-perfil-revisao"
+      ]
+    },
+    "src/lib/data/fotos-perfil-actions.ts#minhaFotoRemovida": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t442-foto-perfil-revisao"
+      ]
+    },
+    "src/lib/data/fotos-perfil-actions.ts#removerFotoPerfil": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t442-foto-perfil-revisao"
       ]
     }
   }

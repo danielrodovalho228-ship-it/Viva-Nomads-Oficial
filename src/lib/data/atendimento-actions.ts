@@ -37,6 +37,7 @@ import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { atenderViva } from "@/lib/atendimento/viva-motor";
 import { CENARIOS, entradaDoCenario, falhasDoCenario, ferramentasDeTeste } from "@/lib/atendimento/viva-cenarios";
 import { cotacaoDolar, custoUsd, modeloViva, PRECOS_USD } from "@/lib/atendimento/viva-custo";
+import { reabrirFotoPorDenuncia } from "@/lib/data/fotos-perfil-servidor";
 import { AVISO_ANUNCIO_PAUSADO } from "@/lib/atendimento/camera-anuncio";
 import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-regras";
 
@@ -49,7 +50,7 @@ import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-re
 type Res<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const CONTEXTOS = ["pedido", "contrato", "anuncio", "parceiro"] as const;
+const CONTEXTOS = ["pedido", "contrato", "anuncio", "parceiro", "perfil"] as const;
 type Contexto = (typeof CONTEXTOS)[number];
 
 async function ipHashAtual(): Promise<string> {
@@ -82,6 +83,12 @@ async function contextoValido(
   // FISCAL-PARCEIRO-B: parceiro publicado (qualquer conta denuncia pela página pública).
   if (tipo === "parceiro") {
     const { data } = await admin.from("parceiros").select("id").eq("id", id).eq("status", "publicado").maybeSingle();
+    return !!data;
+  }
+  // FOTO-PERFIL-B: a foto de outra pessoa que existe (ninguém denuncia a própria).
+  if (tipo === "perfil") {
+    if (id === userId) return false;
+    const { data } = await admin.from("profiles").select("id").eq("id", id).not("avatar_url", "is", null).maybeSingle();
     return !!data;
   }
   // Anúncio: público (qualquer um pode reportar um anúncio que existe).
@@ -231,6 +238,10 @@ export async function abrirChamado(
   // Câmera escondida: o anúncio sai da busca até a equipe decidir (só o inquilino do contrato).
   const contratoCamera = input.contratoId ?? (contextoTipo === "contrato" ? contextoId : null);
   const anuncioPausado = cat.key === "camera" ? await pausarAnuncioPorCamera(c.id, user?.id ?? null, contratoCamera) : false;
+  // FOTO-PERFIL-B: denúncia da foto de alguém → a foto atual volta para 'em_revisao', no topo da fila.
+  if (cat.key === "foto_perfil" && contextoTipo === "perfil" && contextoId && (await reabrirFotoPorDenuncia(admin, contextoId).catch(() => false))) {
+    await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "sistema", acao: "foto_reaberta", para: "em_revisao" });
+  }
 
   // Mensagem da pessoa + resposta automática (emergência primeiro; prazo).
   const aviso = [
@@ -582,7 +593,9 @@ export async function chamadoAdmin(id: string): Promise<{
       : null;
   const contextoLink = parceiroCtx
     ? `/parceiros/${parceiroCtx.slug}`
-    : ch.contexto_tipo === "anuncio" && ch.contexto_id
+    : ch.contexto_tipo === "perfil"
+      ? "/admin/fotos-perfil"
+      : ch.contexto_tipo === "anuncio" && ch.contexto_id
       ? `/imoveis/${ch.contexto_id}`
       : ch.contexto_tipo === "pedido"
         ? "/admin/pedidos"
