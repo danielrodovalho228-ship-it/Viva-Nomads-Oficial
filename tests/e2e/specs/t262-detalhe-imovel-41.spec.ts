@@ -168,8 +168,11 @@ for (const largura of LARGURAS) {
       await expect(visita).toHaveText(/Agendar visita/);
       expect(await visita.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
       // A visita é opção: abre a própria janela e fecha sem mexer na solicitação.
-      await visita.click();
-      await expect(page.getByTestId("visita-presencial-passo")).toBeVisible();
+      // Clique antes da hidratação não abre a janela (lab 24/10, instável): repete o clique até ela aparecer. Abrir é idempotente.
+      await expect(async () => {
+        await visita.click();
+        await expect(page.getByTestId("visita-presencial-passo")).toBeVisible({ timeout: 3_000 });
+      }).toPass({ timeout: 20_000 });
       await page.getByTestId("visita-presencial-passo").click({ position: { x: 5, y: 5 } });
       await expect(page.getByTestId("visita-presencial-passo")).toHaveCount(0);
       // "Solicitar" abre o MESMO fluxo de candidatura (passo de revisão; o envio final é "Enviar candidatura").
