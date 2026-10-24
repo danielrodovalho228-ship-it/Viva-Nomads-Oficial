@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * T372 — CONTA-A A7 (mockup perfil-07): Conta › Pagamentos.
@@ -27,11 +27,14 @@ test.describe("T372 — CONTA-A A7: Pagamentos (perfil-07)", () => {
   }
   test.beforeAll(async () => {
     ids.push(await criarConta(dono, senha), await criarConta(morador, senha));
+    // Papel de proprietário ativo = tem anúncio (como na t362).
+    await criarImovelPronto(ids[0], `Apartamento t372 ${sufixo}`, { ativo: true, preco: 2900 });
     const { error } = await adm().from("recebimento_pix").insert({ user_id: ids[0], tipo: "email", chave: `ana.ribeiro.${sufixo}@lab.vivanomads.test` });
     if (error) throw error;
   });
   test.afterAll(async () => {
     await adm().from("recebimento_pix").delete().eq("user_id", ids[0]);
+    await adm().from("properties").delete().eq("owner_id", ids[0]);
     await apagarContas(ids);
   });
 
