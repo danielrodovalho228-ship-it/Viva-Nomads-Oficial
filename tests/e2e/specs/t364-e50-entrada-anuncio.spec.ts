@@ -3,6 +3,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 import { acharRedundancias } from "../fixtures/redundancia";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T364 — E50: a entrada do assistente de anúncio (/dashboard/imoveis/novo) tem UMA apresentação — o banner com o CEP e
  * a IA, que leva o único H1 ("Anunciar seu imóvel em 6 passos"). O título "Anuncie seu imóvel / Em 6 passos…" saiu.
  * O indicador de passos continua. A 390 e 1280 px, com prints (FASE=antes|depois).

@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T318 — PAPEL-B: papel ativo com fonte única (profiles.papel_ativo) e troca explícita.
  *   1. troca pela Conta ("Usar este") grava, leva ao painel, sobrevive a recarregar e a outro aparelho (390 e 1280);
  *   2. uma sessão percorre as páginas do painel: o selo e a barra sempre batem com a página; páginas comuns mantêm o
