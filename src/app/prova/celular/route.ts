@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { TOKEN_FORMATO } from "@/lib/niveis/prova-camera";
+import { TOKEN_FORMATO, destinoLinkCelular } from "@/lib/niveis/prova-camera";
 import { hashDoToken } from "@/lib/niveis/prova-servidor";
 
 /**
  * FOTO-NA-HORA-B — o link "Continuar no celular" (QR ou e-mail). Uso único, 30 minutos, ligado ao dono: abre a tela de
- * prova do item (Nível, ruído e extras) no celular, já logado como o DONO. Nunca entra como outra conta: celular com
+ * prova do item (Nível, ruído e extras) — ou a medição da internet do ponto (NIVEIS-MEDIR-B) — no celular, já logado
+ * como o DONO. Nunca entra como outra conta: celular com
  * outra conta aberta é recusado (sem consumir o link). Token nunca vai a log; resposta sem cache e sem referrer.
  */
 function para(request: Request, destino: string) {
@@ -43,5 +44,6 @@ export async function GET(request: Request) {
     const { error } = hash ? await supabase.auth.verifyOtp({ token_hash: hash, type: "magiclink" }) : { error: true };
     if (error) return para(request, "/prova/celular/aviso?m=invalido");
   }
-  return para(request, `/dashboard/imoveis/${link.property_id}/nivel?fotografar=${encodeURIComponent(link.chave as string)}#nivel-itens`);
+  // A foto do item ou, no NIVEIS-MEDIR-B, a medição da internet do ponto (chave medir_<ponto>).
+  return para(request, destinoLinkCelular(link.property_id as string, link.chave as string));
 }

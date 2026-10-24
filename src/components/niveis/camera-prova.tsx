@@ -121,7 +121,7 @@ export function ProvaNaHora({
  * (aba em segundo plano, sem foco) e, antes, o botão ficava cinza para sempre. Passado 1 s, vale o que já se sabe:
  * toque sem resposta = celular (sem câmera de verdade, o getUserMedia cai no QR). Qualquer falha: computador (QR).
  */
-function useModoProva(): ModoProva | null {
+export function useModoProva(): ModoProva | null {
   const [modo, setModo] = useState<ModoProva | null>(null);
   useEffect(() => {
     let vivo = true;
