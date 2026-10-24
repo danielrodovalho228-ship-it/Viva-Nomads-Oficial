@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
+import { textoProximidade } from "@/lib/anuncio/proximidades";
 import { ChecklistPublicar } from "./checklist-publicar";
 import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import type { Property, Proximity } from "@/lib/types";
@@ -81,7 +82,7 @@ export function EtapaRevisar(p: {
           )}
           {p.proximidades.length > 0 && (
             <p className="mt-1 text-xs text-muted">
-              <strong className="text-ink">Por perto:</strong> {p.proximidades.map((x) => (x.note ? `${x.name} (${x.note})` : x.name)).join(" · ")}
+              <strong className="text-ink">Por perto:</strong> {p.proximidades.filter((x) => !x.oculto).map((x) => (textoProximidade(x) ? `${x.name} (${textoProximidade(x)})` : x.name)).join(" · ")}
             </p>
           )}
           <p className="mt-1 text-xs text-muted">

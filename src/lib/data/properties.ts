@@ -1,3 +1,4 @@
+import { lerProximidades } from "@/lib/data/proximidades";
 import { cache } from "react";
 import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { createClient } from "@/lib/supabase/server";
@@ -241,7 +242,8 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
-    safe(supabase.from("property_proximities").select("category, name, note, sort_order").eq("property_id", base.id).order("sort_order")),
+    // PERTO-B: as proximidades com distância/tempo calculados e "não mostrar" (sem a 0238, lê as colunas antigas).
+    lerProximidades(supabase, base.id).catch(() => []),
     safe(supabase.from("avaliacoes").select("id, nota_geral, comentario_publico, publicada_em").eq("imovel_id", base.id).eq("papel_autor", "inquilino").eq("status", "publicada").order("publicada_em", { ascending: false })),
     ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate, is_verified").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
     // Regras de pets (0119): coluna à parte para a página não quebrar se a migração atrasar.
@@ -309,11 +311,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
       type: w.type as Property["nearbyWorkspaces"][number]["type"],
       distanceM: w.distance_m ?? 0,
     })),
-    proximities: ((proximities as { category: string; name: string; note: string | null }[] | null) ?? []).map((p) => ({
-      category: p.category as NonNullable<Property["proximities"]>[number]["category"],
-      name: p.name,
-      note: p.note ?? undefined,
-    })),
+    proximities: proximities ?? [],
     // Avaliação real de quem morou (0089): sem nome digitado — "Inquilino verificado".
     reviews: ((reviews as { id: string; nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[] | null) ?? []).map((r) => ({
       id: r.id,

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { SAMPLE_PROPERTIES } from "../properties.ts";
 import { tituloAbaImovel } from "./metadados-imovel.ts";
 import { quartosTexto, banheirosTexto } from "./plural.ts";
-import { distanciaAprox, proximidadesDoImovel } from "./proximidades.ts";
+import { proximidadesDoImovel, proximidadesVisiveis } from "./proximidades.ts";
 import { destaquesDoImovel } from "./resumos-imovel.ts";
 import { textosTotalMensal } from "../precos.ts";
 import { estadoDiaCalendario } from "../availability.ts";
@@ -24,14 +24,14 @@ test("D7b: plural certo de quartos e banheiros", () => {
   assert.equal(banheirosTexto(2), "2 banheiros");
 });
 
-test("D8: destaque e 'O que tem por perto' mostram a mesma distância", () => {
+test("D8: destaque e 'O que tem por perto' mostram a mesma distância (a mesma lista visível)", () => {
   for (const p of SAMPLE_PROPERTIES) {
-    const lista = proximidadesDoImovel(p);
+    const lista = proximidadesVisiveis(proximidadesDoImovel(p));
     for (const d of destaquesDoImovel(p)) {
       if (d.chave !== "saude" && d.chave !== "educacao") continue;
-      const item = lista.find((x) => x.category === d.chave && d.titulo === `Perto de ${x.name.trim()}`);
+      const item = lista.find((x) => x.categoria === d.chave && d.titulo === `Perto de ${x.nome}`);
       assert.ok(item, `${p.id}: destaque sem item na lista`);
-      assert.equal(d.detalhe, distanciaAprox(item.note), `${p.id}: ${d.titulo}`);
+      assert.equal(d.detalhe, item.texto, `${p.id}: ${d.titulo}`);
     }
   }
 });
@@ -43,7 +43,7 @@ test("D9: todo exemplo com espaço de trabalho informado tem 'O que tem por pert
     assert.ok(lista.length > 0, `${id} sem proximidades`);
     const w = p.nearbyWorkspaces[0];
     assert.equal(lista[0].name, w.name);
-    assert.equal(lista[0].note, `${Math.round(w.distanceM / 80)} min a pé`);
+    assert.equal(lista[0].distanciaM, w.distanceM);
   }
   assert.deepEqual(proximidadesDoImovel({ ...SAMPLE_PROPERTIES[0], proximities: [], nearbyWorkspaces: [] }), []);
 });

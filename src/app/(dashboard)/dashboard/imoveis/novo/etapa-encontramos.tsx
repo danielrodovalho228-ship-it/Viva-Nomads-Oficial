@@ -56,6 +56,9 @@ export function EtapaEncontramos(p: {
   imovelId?: string | null;
   proxOsm: LugarProximo[] | null;
   proxCarregando: boolean;
+  proxBuscou: boolean;
+  medirLugar: (endereco: string) => Promise<number | null>;
+  reportarLugar: ((l: LugarProximo, motivo: string) => Promise<{ ok: boolean; erro?: string }>) | null;
   proxDesmarcados: string[];
   setProxDesmarcados: (fn: (s: string[]) => string[]) => void;
   manualProximities: Proximity[];
@@ -181,6 +184,9 @@ export function EtapaEncontramos(p: {
       <ProximidadesAutomaticas
         itens={p.proxOsm}
         carregando={p.proxCarregando}
+        buscou={p.proxBuscou}
+        medir={p.medirLugar}
+        reportar={p.reportarLugar}
         desmarcados={p.proxDesmarcados}
         onAlternar={(k) => p.setProxDesmarcados((s) => (s.includes(k) ? s.filter((x) => x !== k) : [...s, k]))}
         manuais={p.manualProximities}

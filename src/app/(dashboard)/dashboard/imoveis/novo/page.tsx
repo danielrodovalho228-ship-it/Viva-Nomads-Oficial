@@ -83,7 +83,9 @@ import {
 import { ETAPA } from "@/lib/anuncio/etapas-ids";
 import { capacidadeSugerida, consumoSugerido, mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { NEGOCIACAO_PADRAO, normalizarNegociacao, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
-import { cepValido, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
+import { cepValido, chaveBuscaPerto, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
+import { reportarProximidade } from "@/lib/data/proximidades-actions";
+import { manualSemEndereco } from "@/lib/anuncio/proximidades";
 import { estadoDoStatus, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
@@ -206,6 +208,8 @@ export default function NewPropertyPage() {
   const [proxOsm, setProxOsm] = useState<LugarProximo[] | null>(null);
   const [proxCarregando, setProxCarregando] = useState(false);
   const [proxDesmarcados, setProxDesmarcados] = useState<string[]>([]);
+  // PERTO-B: a busca já rodou para o endereço atual (uma mensagem só na tela: lista, "não achamos" ou "complete o endereço").
+  const [proxBuscou, setProxBuscou] = useState(false);
   const proxBuscadoRef = useRef<string | null>(null);
   const [googlePlaces, setGooglePlaces] = useState<CuratedPlace[]>([]);
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
@@ -305,6 +309,8 @@ export default function NewPropertyPage() {
     internetOk: editingId ? undefined : (mbpsValido(internetMbps) ?? 0) > 0,
     // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
     confortoFaltam: editingId ? undefined : itensFaltantes(conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }))).length,
+    // PERTO-B: lugar manual antigo, sem o endereço do lugar, fica fora da página até o dono informar onde fica.
+    proximidadesSemEndereco: manualProximities.filter(manualSemEndereco).length,
   });
   /** "Resolver" de um item do portão: vai à etapa; a qualificação abre ali mesmo. */
   function resolverItem(item: ItemProntidao) {
@@ -413,8 +419,9 @@ export default function NewPropertyPage() {
     Math.round((Math.min(photos.length, 20) / 20) * 60) + (description.trim().length > 30 ? 20 : 0) + (qual.baseBadge ? 20 : 0)
   );
 
+  // PERTO-B: os do OSM vão TODOS, com "não mostrar" (oculto) nos desmarcados; o servidor confere e calcula a distância.
   const proximidadesFinais: Proximity[] = [
-    ...(proxOsm ?? []).filter((l) => !proxDesmarcados.includes(chaveLugar(l))).map(paraProximity),
+    ...(proxOsm ?? []).map((l) => ({ ...paraProximity(l), oculto: proxDesmarcados.includes(chaveLugar(l)) })),
     ...manualProximities,
   ];
 
@@ -500,6 +507,8 @@ export default function NewPropertyPage() {
       neighborhood,
       // Rua, número e complemento vão para a coluna restrita (o rascunho é apagado ao publicar).
       enderecoExato: linhaEnderecoExato(street, numero, complemento),
+      // PERTO-B: para o servidor calcular a distância dos lugares (e guardar o CEP para a busca da edição).
+      enderecoProximidades: { cep, rua: street, numero, cidade: city, uf },
       bedrooms: Number(bedrooms) || 0,
       bathrooms: Number(bathrooms) || 0,
       areaM2: Number(areaM2) || 0,
@@ -624,7 +633,8 @@ export default function NewPropertyPage() {
     if (Array.isArray(d.manualProximities)) setManualProximities(d.manualProximities as Proximity[]);
     if (Array.isArray(d.proxOsm)) {
       setProxOsm(d.proxOsm as LugarProximo[]);
-      proxBuscadoRef.current = cepValido(d.cep);
+      setProxBuscou(true);
+      proxBuscadoRef.current = chaveBuscaPerto(d.cep, d.street, d.numero);
     }
     if (Array.isArray(d.proxDesmarcados)) setProxDesmarcados((d.proxDesmarcados as unknown[]).filter((x): x is string => typeof x === "string"));
     if (Array.isArray(d.iaAnalisadas)) setIaAnalisadas((d.iaAnalisadas as unknown[]).filter((x): x is string => typeof x === "string"));
@@ -772,7 +782,14 @@ export default function NewPropertyPage() {
       if (p.negociacao) setNegociacao(p.negociacao);
       setAmenityKeys(Object.fromEntries(amenityKeysFromLabels(p.amenities || []).map((k) => [k, true])));
       setGooglePlaces((p.googlePlaces || []).map((g) => ({ placeId: g.placeId, categoria: g.categoria, rotulo: g.rotulo })));
-      setManualProximities(p.proximities || []);
+      // PERTO-B: os do OSM salvos voltam como lista (com "não mostrar" nos ocultos) até a busca nova chegar; manuais à parte.
+      const salvas = p.proximities || [];
+      const doOsm = salvas.filter((x) => x.origem === "osm");
+      setManualProximities(salvas.filter((x) => x.origem !== "osm"));
+      if (doOsm.length) {
+        setProxOsm(doOsm.map((x) => ({ tipo: (x.tipo ?? "onibus") as LugarProximo["tipo"], categoria: x.category, nome: x.name, distanciaM: x.distanciaM ?? 0 })));
+        setProxDesmarcados(doOsm.filter((x) => x.oculto).map((x) => chaveLugar({ tipo: x.tipo, nome: x.name })));
+      }
       if (p.faixasAceitas?.length) setFaixas(Object.fromEntries(p.faixasAceitas.map((k) => [k, true])));
       if (p.garantiasAceitas?.length) setGarantias(Object.fromEntries(p.garantiasAceitas.map((k) => [k, true])));
       setPhotos((p.photos || []).map((url, i) => ({ id: `edit-${i}`, url, name: "", path: null, demo: false })));
@@ -985,30 +1002,49 @@ export default function NewPropertyPage() {
     bloco?.querySelector<HTMLInputElement>('input[type="file"]')?.click();
   }
 
-  // Proximidades em segundo plano: com CEP + rua + número, busca uma vez por CEP (cache no servidor).
+  // PERTO-B: a busca do "O que tem por perto" roda no cadastro novo E na edição, e de novo sempre que o endereço muda
+  // (CEP, rua ou número). O servidor usa o cache por CEP; "não mostrar" (desmarcados) é mantido entre buscas.
+  async function buscarPerto(corpo: Record<string, unknown>) {
+    setProxCarregando(true);
+    try {
+      const res = await fetch("/api/proximidades", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+      const data = (await res.json().catch(() => ({}))) as { itens?: LugarProximo[] };
+      if (Array.isArray(data.itens) && (data.itens.length > 0 || !proxOsm?.length)) setProxOsm(data.itens);
+    } catch {
+      /* sem rede: fica o que já havia */
+    } finally {
+      setProxBuscou(true);
+      setProxCarregando(false);
+    }
+  }
   useEffect(() => {
     const c = cepValido(cep);
-    if (!c || !street.trim() || !numero.trim() || proxBuscadoRef.current === c) return;
-    const t = setTimeout(async () => {
-      proxBuscadoRef.current = c;
-      setProxCarregando(true);
-      try {
-        const res = await fetch("/api/proximidades", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cep: c, rua: street, numero, bairro: neighborhood, cidade: city, uf }),
-        });
-        const data = (await res.json().catch(() => ({}))) as { itens?: LugarProximo[] };
-        setProxOsm(Array.isArray(data.itens) ? data.itens : []);
-        setProxDesmarcados([]);
-      } catch {
-        setProxOsm([]);
-      } finally {
-        setProxCarregando(false);
-      }
+    const chave = chaveBuscaPerto(cep, street, numero);
+    if (!c || !street.trim() || proxBuscadoRef.current === chave) return;
+    const t = setTimeout(() => {
+      proxBuscadoRef.current = chave;
+      void buscarPerto({ cep: c, rua: street, numero, bairro: neighborhood, cidade: city, uf });
     }, 800);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cep, street, numero, neighborhood, city, uf]);
+  // Edição (rascunho ou publicado sem o endereço no formulário): ao abrir, busca pelo endereço guardado no servidor.
+  useEffect(() => {
+    if (!editingId || cepValido(cep) || proxBuscadoRef.current) return;
+    proxBuscadoRef.current = `anuncio:${editingId}`;
+    void buscarPerto({ propertyId: editingId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingId, cep]);
+
+  /** Distância do endereço de um lugar adicionado à mão até o do anúncio (calculada no servidor). */
+  async function medirLugar(endereco: string): Promise<number | null> {
+    const c = cepValido(cep);
+    const corpo = c ? { acao: "lugar", endereco, cep: c, rua: street, numero, cidade: city, uf } : editingId ? { acao: "lugar", endereco, propertyId: editingId } : null;
+    if (!corpo) return null;
+    const res = await fetch("/api/proximidades", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+    const data = (await res.json().catch(() => ({}))) as { distanciaM?: number | null };
+    return typeof data.distanciaM === "number" ? data.distanciaM : null;
+  }
 
   // Preço sugerido para imóveis parecidos na região (mediana de anúncios reais; sem dados, nada).
   useEffect(() => {
@@ -1072,6 +1108,7 @@ export default function NewPropertyPage() {
     setManualProximities([]);
     setProxOsm(null);
     setProxDesmarcados([]);
+    setProxBuscou(false);
     proxBuscadoRef.current = null;
     setIaAnalisadas([]);
     setSugeridos([]);
@@ -1235,6 +1272,9 @@ export default function NewPropertyPage() {
     imovelId: draftServerId ?? editingId,
     proxOsm,
     proxCarregando,
+    proxBuscou,
+    medirLugar,
+    reportarLugar: imovelId ? (l: LugarProximo, motivo: string) => reportarProximidade(imovelId, l.nome, l.tipo, motivo) : null,
     proxDesmarcados,
     setProxDesmarcados,
     manualProximities,
