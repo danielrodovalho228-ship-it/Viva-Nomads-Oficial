@@ -28,7 +28,8 @@ export function RodapeAssistente(p: { pos: number; total: number; onVoltar: (() 
       <div className="h-1 w-full bg-surface-2" role="progressbar" aria-label="Progresso do cadastro" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
         <div className="h-full bg-forest transition-all" style={{ width: `${pct}%` }} />
       </div>
-      <div className="flex items-center justify-between gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-8">
+      {/* 16 px abaixo dos botões: o respiro até a barra das fotos do celular (t269/t270). */}
+      <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-8">
         <div className="flex min-w-0 items-center gap-3">
           {p.onVoltar && (
             <button type="button" onClick={p.onVoltar} className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-ink hover:bg-surface-2" data-testid="cadastro-voltar">

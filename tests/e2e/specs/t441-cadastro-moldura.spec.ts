@@ -20,7 +20,8 @@ const SAIDA = "tests/laboratorio/saida";
 const PASSOS = Object.keys(TITULO_PASSO) as PassoCadastro[];
 
 async function semCascaDoPainel(page: Page) {
-  await expect(page.locator("aside")).toHaveCount(0);
+  // A lateral do painel (a prévia do anúncio é um <aside> da própria página e fica).
+  await expect(page.locator('aside:not([data-testid="novo-resumo"])')).toHaveCount(0);
   await expect(page.locator("nav[data-papel]")).toHaveCount(0);
   await expect(page.locator('[aria-label="Abrir menu"]')).toHaveCount(0);
   await expect(page.locator('[aria-label^="Papel ativo"]')).toHaveCount(0);

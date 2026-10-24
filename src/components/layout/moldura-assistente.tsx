@@ -24,13 +24,13 @@ export function MolduraAssistente({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen w-full flex-col bg-surface-2" data-testid="moldura-assistente">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-line bg-white px-4 sm:px-8 print:hidden">
-        <Logo href={null} />
+        <Logo href={null} className="min-w-0 shrink" />
         <nav aria-label="Assistente" className="flex items-center gap-1 sm:gap-2">
           <Link
             href="/ajuda"
             target="_blank"
             rel="noopener"
-            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-ink underline underline-offset-4 hover:text-forest sm:px-3"
+            className="inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-1 text-sm font-medium text-ink underline underline-offset-4 hover:text-forest sm:px-3"
             data-testid="assistente-ajuda"
           >
             Precisa de ajuda?
@@ -38,7 +38,7 @@ export function MolduraAssistente({ children }: { children: React.ReactNode }) {
           <Link
             href={HREF_SAIR_ASSISTENTE}
             title={TEXTO_RASCUNHO_SALVO}
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-ink hover:bg-surface-2 sm:px-3"
+            className="inline-flex min-h-11 items-center gap-1 whitespace-nowrap rounded-lg px-1 text-sm font-semibold text-ink hover:bg-surface-2 sm:gap-2 sm:px-3"
             data-testid="assistente-sair"
           >
             <X className="h-5 w-5" aria-hidden /> Sair
