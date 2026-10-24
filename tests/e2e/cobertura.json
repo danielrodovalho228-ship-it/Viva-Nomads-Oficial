@@ -800,6 +800,7 @@
       ],
       "specs": [
         "t30-atendimento-autonomo",
+        "t364-e50-entrada-anuncio",
         "t32-autorizacao-preconferencia",
         "t8-rascunho",
         "t183-telas-logadas-390",
