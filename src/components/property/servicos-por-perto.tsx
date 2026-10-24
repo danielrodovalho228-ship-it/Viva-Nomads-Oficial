@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { Chip } from "@/components/ui/chip";
-import { servicosPorPerto } from "@/lib/anuncio/proximidades";
-import type { Proximity } from "@/lib/types";
+import { servicosPorPerto, type ItemPerto } from "@/lib/anuncio/proximidades";
 
 /**
- * Serviços por perto (adendo do prompt 37): Ônibus · Mercado · Farmácia. Cada chip mostra o tempo aproximado até o
- * mais perto, sem o nome do lugar (privacidade antes do aceite). Serviço sem dado não aparece.
+ * Serviços por perto (adendo do prompt 37): Ônibus · Mercado · Farmácia. Cada chip mostra o tempo calculado (ou a
+ * distância, sem provedor de rotas) até o mais perto, sem o nome do lugar (privacidade antes do aceite). PERTO-B: lê a
+ * MESMA lista visível de "O que tem por perto". Serviço sem dado não aparece.
  */
-export function ServicosPorPerto({ proximidades }: { proximidades: Proximity[] }) {
-  const servicos = servicosPorPerto(proximidades);
+export function ServicosPorPerto({ visiveis }: { visiveis: ItemPerto[] }) {
+  const servicos = servicosPorPerto(visiveis);
   const [ativo, setAtivo] = useState(servicos[0]?.tipo ?? null);
   if (servicos.length === 0) return null;
   const atual = servicos.find((s) => s.tipo === ativo);

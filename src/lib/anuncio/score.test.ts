@@ -18,7 +18,7 @@ test("anúncio vazio: score 0 e dicas clicáveis (etapa) para tudo", () => {
   const r = calc(vazio);
   assert.equal(r.score, 0);
   assert.ok(r.dicas.length >= 15);
-  assert.ok(r.dicas.every((d) => Number.isInteger(d.etapa) && d.etapa >= 0 && d.etapa <= 4));
+  assert.ok(r.dicas.every((d) => Number.isInteger(d.etapa) && d.etapa >= 0 && d.etapa <= 8));
 });
 
 test("parcial: obrigatórios feitos, qualidade em branco = 70", () => {
@@ -45,13 +45,14 @@ test("contarPalavras ignora espaços sobrando", () => {
   assert.equal(contarPalavras(""), 0);
 });
 
-test("dicas levam ao passo certo do Anunciar em 6 passos (t98, Prompt 43)", () => {
+test("dicas levam ao passo certo do assistente em 10 passos (t98; mockups cadastro-imovel-01..10)", () => {
   const r = calc({ ...completo, fotos: 8, descricao: palavras(10), selo: false, video: false });
   const etapa = (key: string) => r.dicas.find((d) => d.key === key)?.etapa;
-  assert.equal(etapa("fotos12"), 2);
-  assert.equal(etapa("video"), 2);
-  assert.equal(etapa("palavras"), 3);
-  assert.equal(etapa("comodidades"), 3);
-  assert.equal(etapa("pets"), 4);
-  assert.equal(etapa("selo"), 0);
+  // 0 Tipo · 1 Fotos · 2 Endereço · 3 Detalhes · 4 Comodidades · 5 Regras · 6 Descrição · 7 Preço · 8 Disponibilidade · 9 Revisão.
+  assert.equal(etapa("fotos12"), 1);
+  assert.equal(etapa("video"), 1);
+  assert.equal(etapa("palavras"), 6);
+  assert.equal(etapa("comodidades"), 4);
+  assert.equal(etapa("pets"), 5);
+  assert.equal(etapa("selo"), 2);
 });

@@ -30,19 +30,21 @@ test("sem dado real não há destaque (nada inventado)", () => {
 
 test("proximidade de saúde/educação cadastrada vira destaque, com o nome real", () => {
   const d = destaquesDoImovel(
-    com({ proximities: [{ category: "saude", name: "HC-UFU", note: "10 min a pé" }] }),
+    com({ proximities: [{ category: "saude", name: "HC-UFU", distanciaM: 820 }] }),
   );
   assert.equal(d.length, 1);
   assert.match(d[0].titulo, /HC-UFU/);
-  assert.equal(d[0].detalhe, "~10 min a pé");
+  assert.equal(d[0].detalhe, "a 800 m");
+  // PERTO-B: só texto livre antigo (sem distância calculada) não vira destaque.
+  assert.deepEqual(destaquesDoImovel(com({ proximities: [{ category: "saude", name: "HC-UFU", note: "10 min a pé" }] })), []);
 });
 
 test("máximo de 3 destaques, na ordem de prioridade", () => {
   const d = destaquesDoImovel(
     com({
       proximities: [
-        { category: "saude", name: "Hospital A" },
-        { category: "educacao", name: "Universidade B" },
+        { category: "saude", name: "Hospital A", distanciaM: 1200 },
+        { category: "educacao", name: "Universidade B", distanciaM: 900 },
       ],
       readyToLiveBadge: true,
       tagHomeOffice: true,

@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { authFile } from "../fixtures/auth";
+import { doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
 
 /**
  * T32 — CADASTRO CONFIÁVEL, parte B (laboratório): quem opera o imóvel + pré-conferência.
@@ -106,8 +107,8 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     const outro = page.getByRole("button", { name: "Começar outro" });
     if (await outro.isVisible().catch(() => false)) await outro.click();
 
-    // Anunciar em 6 passos (Prompt 43): quem opera e endereço ficam no 1º passo, "Endereço e dados".
-    await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible();
+    // Assistente em 10 passos: quem opera e endereço ficam no passo Endereço (3º), depois de Tipo e Fotos.
+    await doTipoAoEndereco(page);
     await page.getByTestId("cadastro-rua").fill("Rua da Procuração");
     await page.getByTestId("cadastro-numero").fill("7");
     await page.getByTestId("cadastro-bairro").fill("Centro");
@@ -130,7 +131,7 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     await page.screenshot({ path: "tests/laboratorio/saida/t32-1-administro-com-procuracao.png", fullPage: true });
 
     await continuar.click();
-    await expect(page.getByRole("heading", { name: "Tipo e quartos" })).toBeVisible({ timeout: 10_000 });
+    await noPasso(page, "detalhes", 10_000);
     // O arquivo foi para a pasta do próprio dono no bucket privado.
     const { data: lista } = await adm().storage.from("property-docs").list(ids.dono!);
     expect((lista ?? []).some((f) => f.name.endsWith(".pdf"))).toBe(true);

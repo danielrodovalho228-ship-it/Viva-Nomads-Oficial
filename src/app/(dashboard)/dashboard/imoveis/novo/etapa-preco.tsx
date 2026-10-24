@@ -21,6 +21,9 @@ import type { CampoSugerido } from "./tipos";
  * seletor de data (Q8/Q9), faixas de prazo, garantias e o bloco "Negociação" (prompt 17, §8).
  */
 export function EtapaPreco(p: {
+  /** Assistente em 10 passos: "preco" (passo 8: valores, garantias, negociação) ou "disponibilidade" (passo 9: datas,
+   *  prazo, calendário e faixas). Sem parte, tudo junto. */
+  parte?: "preco" | "disponibilidade";
   /** E44: id do rascunho já salvo — com ele, a grade do calendário (bloquear datas, importar e exportar .ics) aparece. */
   imovelId?: string | null;
   sugerido: (c: CampoSugerido) => boolean;
@@ -61,200 +64,214 @@ export function EtapaPreco(p: {
   const condo = Number(p.condoFee) || 0;
   const consumoFixo = p.utilitiesMode === "fixed" ? p.utilitiesEstimate || 0 : 0;
   const garantiaOk = Object.values(p.garantias).some(Boolean);
+  const vePreco = p.parte !== "disponibilidade";
+  const veDisponibilidade = p.parte !== "preco";
   return (
-    <div className="space-y-4" data-testid="etapa-preco">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0">
-        <Labeled label="Valor mensal (R$)" sugerido={p.sugerido("preco")}>
-          <CampoReais
-            semPrefixo
-            value={p.monthlyPrice === "" ? null : Number(p.monthlyPrice)}
-            onChange={(v) => {
-              p.setMonthlyPrice(v == null ? "" : String(v));
-              p.tirarSugestao("preco");
-            }}
-            placeholder="3.200"
-            testid="cadastro-preco"
-          />
-          {p.precoRegiao && (
-            <span className="mt-1 block text-xs text-muted" data-testid="preco-regiao">
-              Sugestão para imóveis parecidos na região ({formatBRL(p.precoRegiao.valor)}). Você pode mudar.
-            </span>
-          )}
-          <Erro msg={p.erros.preco} />
-        </Labeled>
-        <Labeled label="Condomínio (R$/mês)">
-          <CampoReais semPrefixo centavos value={p.condoFee === "" ? null : Number(p.condoFee)} onChange={(v) => p.setCondoFee(v == null ? "" : String(v))} placeholder="0" />
-          <span className="mt-1 block text-xs text-muted">{condo > 0 ? `${formatBRL(condo)}/mês` : "Deixe 0 se não houver."}</span>
-        </Labeled>
-      </div>
-
-      <div className="rounded-xl border border-sage-200 p-4">
-        <p className="text-sm font-medium text-ink">
-          Despesas de consumo (água, luz, gás)
-          <MarcaSugerido ativo={p.sugerido("consumo") && p.utilitiesMode === "fixed"} />
-        </p>
-        <div className="mt-2 flex gap-2">
-          {(["fixed", "real"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => p.setUtilitiesMode(m)}
-              className={cn(
-                "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                p.utilitiesMode === m ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
-              )}
-            >
-              {m === "fixed" ? "Valor fixo estimado" : "Consumo real"}
-            </button>
-          ))}
-        </div>
-        {p.utilitiesMode === "fixed" ? (
-          <div className="mt-3">
-            <p className="mb-2 text-xs text-muted">
-              Estimativa pelo número de quartos; ajuste pelas suas contas. O morador paga um valor fixo por mês junto do
-              valor mensal; se o consumo real passar cerca de 20% da estimativa, há cláusula de ajuste com comprovante.
-            </p>
-            <Labeled label="Estimativa (R$/mês)">
+    <div className="space-y-4" data-testid={p.parte === "disponibilidade" ? "etapa-disponibilidade" : "etapa-preco"}>
+      {vePreco && (
+        <>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0">
+            <Labeled label="Valor mensal (R$)" sugerido={p.sugerido("preco")}>
               <CampoReais
                 semPrefixo
-                centavos
-                value={p.utilitiesEstimate || null}
+                value={p.monthlyPrice === "" ? null : Number(p.monthlyPrice)}
                 onChange={(v) => {
-                  p.setUtilitiesEstimate(v ?? 0);
-                  p.tirarSugestao("consumo");
+                  p.setMonthlyPrice(v == null ? "" : String(v));
+                  p.tirarSugestao("preco");
                 }}
-                placeholder="200"
-                testid="cadastro-consumo"
+                placeholder="3.200"
+                testid="cadastro-preco"
               />
+              {p.precoRegiao && (
+                <span className="mt-1 block text-xs text-muted" data-testid="preco-regiao">
+                  Sugestão para imóveis parecidos na região ({formatBRL(p.precoRegiao.valor)}). Você pode mudar.
+                </span>
+              )}
+              <Erro msg={p.erros.preco} />
+            </Labeled>
+            <Labeled label="Condomínio (R$/mês)">
+              <CampoReais semPrefixo centavos value={p.condoFee === "" ? null : Number(p.condoFee)} onChange={(v) => p.setCondoFee(v == null ? "" : String(v))} placeholder="0" />
+              <span className="mt-1 block text-xs text-muted">{condo > 0 ? `${formatBRL(condo)}/mês` : "Deixe 0 se não houver."}</span>
             </Labeled>
           </div>
-        ) : (
-          <p className="mt-3 text-xs text-muted">O morador paga água, luz e gás pelo consumo real, pelo valor das faturas.</p>
-        )}
-      </div>
 
-      {aluguel > 0 && (
-        <div className="rounded-xl border border-sage-200 bg-sage-100/50 p-4">
-          <p className="text-xs font-semibold text-muted">Prévia — o morador vê</p>
-          <p className="mt-1 font-title text-2xl font-semibold text-forest">
-            {formatBRL(aluguel + condo + consumoFixo)}
-            <span className="text-sm font-normal text-muted">/mês tudo incluído</span>
-          </p>
-          <p className="mt-2 flex items-start gap-2 text-xs text-muted">
-            <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" />
-            <span>
-              <strong className="text-ink">Você recebe o valor mensal direto na sua conta.</strong> {TEXTO_REGRA_CURTO}
-            </span>
-          </p>
-        </div>
-      )}
-      <LinhaComparativoAnuncio aluguel={aluguel} />
-      <SimuladorBolso compacto valorMensal={aluguel} />
-      <PrecoSugerido aluguel={aluguel} onUsar={(v) => p.setMonthlyPrice(String(v))} onAirbnbMensal={(v) => p.setAirbnbMensal(v ? String(v) : "")} />
-
-      {/* Q8/Q9: um seletor só (calendário nativo), rótulos curtos, um embaixo do outro no celular; no computador os dois
-          campos alinham pela base (o "(opcional)" do segundo não o empurra para baixo). */}
-      <div className="rounded-xl border border-sage-200 p-4" data-testid="disponibilidade">
-        <p className="text-sm font-medium text-ink">Disponibilidade e prazo</p>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-end [&>*]:min-w-0">
-          <Labeled label="Disponível a partir de">
-            <CampoDataUnico value={p.availableFrom} onChange={p.setAvailableFrom} ariaLabel="Disponível a partir de" min={hojeBR()} testid="disponivel-de" />
-          </Labeled>
-          <Labeled label="Disponível até" ajuda="(opcional)">
-            <CampoDataUnico value={p.availableUntil} onChange={p.setAvailableUntil} ariaLabel="Disponível até" min={p.availableFrom || hojeBR()} testid="disponivel-ate" />
-          </Labeled>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <Labeled label="Duração mínima">
-            <select value={p.minPeriod} onChange={(e) => p.setMinPeriod(e.target.value)} className="input">
-              <option value="30">30 dias</option>
-              <option value="60">60 dias</option>
-              <option value="90">90 dias</option>
-              <option value="180">180 dias</option>
-            </select>
-          </Labeled>
-          <Labeled label="Duração máxima">
-            <select value={p.maxPeriod} onChange={(e) => p.setMaxPeriod(e.target.value)} className="input">
-              <option value="90">90 dias</option>
-              <option value="180">180 dias</option>
-            </select>
-          </Labeled>
-        </div>
-        <span className="mt-2 block text-xs text-muted">Estadias de 30 a 180 dias são o usual.</span>
-      </div>
-
-      {/* E44: o calendário do imóvel já no cadastro — a mesma grade do editor (bloquear, importar e exportar .ics). */}
-      <div className="rounded-xl border border-sage-200 p-4" data-testid="calendario-etapa">
-        <p className="text-sm font-medium text-ink">Calendário</p>
-        {p.imovelId ? (
-          <div className="mt-3">
-            <BlockCalendar propertyId={p.imovelId} />
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-muted" data-testid="calendario-etapa-aguardando">
-            O calendário aparece assim que o rascunho for salvo (leva alguns segundos).
-          </p>
-        )}
-      </div>
-
-      <div className="rounded-xl border border-sage-200 p-4">
-        <p className="text-sm font-medium text-ink">Faixas de prazo aceitas</p>
-        <p className="mb-3 text-xs text-muted">Cada faixa tem regras próprias. Marque as que você aceita.</p>
-        <div className="space-y-2">
-          {FAIXAS.map((f) => (
-            <div key={f.key}>
-              <Toggle checked={!!p.faixas[f.key]} onChange={() => p.setFaixas((s) => ({ ...s, [f.key]: !s[f.key] }))} label={`${f.label} · ${f.resumo}`} />
-              {p.faixas[f.key] && <p className="ml-1 mt-1 text-xs text-muted">{f.aviso}</p>}
+          <div className="rounded-xl border border-sage-200 p-4">
+            <p className="text-sm font-medium text-ink">
+              Despesas de consumo (água, luz, gás)
+              <MarcaSugerido ativo={p.sugerido("consumo") && p.utilitiesMode === "fixed"} />
+            </p>
+            <div className="mt-2 flex gap-2">
+              {(["fixed", "real"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => p.setUtilitiesMode(m)}
+                  className={cn(
+                    "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                    p.utilitiesMode === m ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
+                  )}
+                >
+                  {m === "fixed" ? "Valor fixo estimado" : "Consumo real"}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
-
-      <BlocoNegociacao valor={p.negociacao} onValor={p.setNegociacao} limites={p.limites} onLimites={p.setLimites} valorMensal={aluguel} />
-
-      <Labeled label="Taxa de preparação (R$, única)">
-        <CampoReais semPrefixo centavos value={p.prepFee || null} onChange={(v) => p.setPrepFee(v ?? 0)} placeholder="450" />
-        <span className="mt-1 block text-xs text-muted">Limpeza profunda antes da entrada, cobrada uma única vez.</span>
-      </Labeled>
-
-      {SELO_NF_UI && (
-        <Toggle
-          checked={p.issuesInvoice}
-          onChange={() => p.setIssuesInvoice((v) => !v)}
-          label="Este imóvel emite Nota Fiscal do valor mensal"
-          hint="Decisivo para o público corporativo (reembolso pela empresa)."
-        />
-      )}
-
-      <div>
-        <p className="mb-2 text-sm font-medium text-ink">Garantias que você aceita</p>
-        <p className="mb-2 text-xs text-muted">
-          Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a caução em dinheiro vai para uma
-          conta poupança, como manda a lei — a plataforma não tem acesso).
-        </p>
-        <div className="space-y-3">
-          {GARANTIAS_CADASTRO.map((g) =>
-            g.disabled ? (
-              <div key={g.key} className="flex items-center justify-between gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 opacity-70">
-                <span className="text-sm font-medium text-muted">Aceito {g.label}</span>
-                {g.badge && <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-800">{g.badge}</span>}
+            {p.utilitiesMode === "fixed" ? (
+              <div className="mt-3">
+                <p className="mb-2 text-xs text-muted">
+                  Estimativa pelo número de quartos; ajuste pelas suas contas. O morador paga um valor fixo por mês junto do
+                  valor mensal; se o consumo real passar cerca de 20% da estimativa, há cláusula de ajuste com comprovante.
+                </p>
+                <Labeled label="Estimativa (R$/mês)">
+                  <CampoReais
+                    semPrefixo
+                    centavos
+                    value={p.utilitiesEstimate || null}
+                    onChange={(v) => {
+                      p.setUtilitiesEstimate(v ?? 0);
+                      p.tirarSugestao("consumo");
+                    }}
+                    placeholder="200"
+                    testid="cadastro-consumo"
+                  />
+                </Labeled>
               </div>
             ) : (
-              <div key={g.key}>
-                <Toggle checked={!!p.garantias[g.key]} onChange={() => p.setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))} label={`Aceito ${g.label}`} />
-                {g.microtext && <p className="ml-1 mt-1 text-xs text-muted">{g.microtext}</p>}
-              </div>
-            )
+              <p className="mt-3 text-xs text-muted">O morador paga água, luz e gás pelo consumo real, pelo valor das faturas.</p>
+            )}
+          </div>
+
+          {aluguel > 0 && (
+            <div className="rounded-xl border border-sage-200 bg-sage-100/50 p-4">
+              <p className="text-xs font-semibold text-muted">Prévia — o morador vê</p>
+              <p className="mt-1 font-title text-2xl font-semibold text-forest">
+                {formatBRL(aluguel + condo + consumoFixo)}
+                <span className="text-sm font-normal text-muted">/mês tudo incluído</span>
+              </p>
+              <p className="mt-2 flex items-start gap-2 text-xs text-muted">
+                <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" />
+                <span>
+                  <strong className="text-ink">Você recebe o valor mensal direto na sua conta.</strong> {TEXTO_REGRA_CURTO}
+                </span>
+              </p>
+            </div>
           )}
-        </div>
-        {!garantiaOk && (
-          <p className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
-            Escolha ao menos uma garantia: contrato sem garantia deixa você sem cobertura de danos.
-          </p>
-        )}
-        <Erro msg={p.erros.garantia} />
-      </div>
+          <LinhaComparativoAnuncio aluguel={aluguel} />
+          <SimuladorBolso compacto valorMensal={aluguel} />
+          <PrecoSugerido aluguel={aluguel} onUsar={(v) => p.setMonthlyPrice(String(v))} onAirbnbMensal={(v) => p.setAirbnbMensal(v ? String(v) : "")} />
+
+        </>
+      )}
+      {veDisponibilidade && (
+        <>
+          {/* Q8/Q9: um seletor só (calendário nativo), rótulos curtos, um embaixo do outro no celular; no computador os dois
+              campos alinham pela base (o "(opcional)" do segundo não o empurra para baixo). */}
+          <div className="rounded-xl border border-sage-200 p-4" data-testid="disponibilidade">
+            <p className="text-sm font-medium text-ink">Disponibilidade e prazo</p>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-end [&>*]:min-w-0">
+              <Labeled label="Disponível a partir de">
+                <CampoDataUnico value={p.availableFrom} onChange={p.setAvailableFrom} ariaLabel="Disponível a partir de" min={hojeBR()} testid="disponivel-de" />
+              </Labeled>
+              <Labeled label="Disponível até" ajuda="(opcional)">
+                <CampoDataUnico value={p.availableUntil} onChange={p.setAvailableUntil} ariaLabel="Disponível até" min={p.availableFrom || hojeBR()} testid="disponivel-ate" />
+              </Labeled>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Labeled label="Duração mínima">
+                <select value={p.minPeriod} onChange={(e) => p.setMinPeriod(e.target.value)} className="input">
+                  <option value="30">30 dias</option>
+                  <option value="60">60 dias</option>
+                  <option value="90">90 dias</option>
+                  <option value="180">180 dias</option>
+                </select>
+              </Labeled>
+              <Labeled label="Duração máxima">
+                <select value={p.maxPeriod} onChange={(e) => p.setMaxPeriod(e.target.value)} className="input">
+                  <option value="90">90 dias</option>
+                  <option value="180">180 dias</option>
+                </select>
+              </Labeled>
+            </div>
+            <span className="mt-2 block text-xs text-muted">Estadias de 30 a 180 dias são o usual.</span>
+          </div>
+
+          {/* E44: o calendário do imóvel já no cadastro — a mesma grade do editor (bloquear, importar e exportar .ics). */}
+          <div className="rounded-xl border border-sage-200 p-4" data-testid="calendario-etapa">
+            <p className="text-sm font-medium text-ink">Calendário</p>
+            {p.imovelId ? (
+              <div className="mt-3">
+                <BlockCalendar propertyId={p.imovelId} />
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-muted" data-testid="calendario-etapa-aguardando">
+                O calendário aparece assim que o rascunho for salvo (leva alguns segundos).
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-sage-200 p-4">
+            <p className="text-sm font-medium text-ink">Faixas de prazo aceitas</p>
+            <p className="mb-3 text-xs text-muted">Cada faixa tem regras próprias. Marque as que você aceita.</p>
+            <div className="space-y-2">
+              {FAIXAS.map((f) => (
+                <div key={f.key}>
+                  <Toggle checked={!!p.faixas[f.key]} onChange={() => p.setFaixas((s) => ({ ...s, [f.key]: !s[f.key] }))} label={`${f.label} · ${f.resumo}`} />
+                  {p.faixas[f.key] && <p className="ml-1 mt-1 text-xs text-muted">{f.aviso}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </>
+      )}
+      {vePreco && (
+        <>
+          <BlocoNegociacao valor={p.negociacao} onValor={p.setNegociacao} limites={p.limites} onLimites={p.setLimites} valorMensal={aluguel} />
+
+          <Labeled label="Taxa de preparação (R$, única)">
+            <CampoReais semPrefixo centavos value={p.prepFee || null} onChange={(v) => p.setPrepFee(v ?? 0)} placeholder="450" />
+            <span className="mt-1 block text-xs text-muted">Limpeza profunda antes da entrada, cobrada uma única vez.</span>
+          </Labeled>
+
+          {SELO_NF_UI && (
+            <Toggle
+              checked={p.issuesInvoice}
+              onChange={() => p.setIssuesInvoice((v) => !v)}
+              label="Este imóvel emite Nota Fiscal do valor mensal"
+              hint="Decisivo para o público corporativo (reembolso pela empresa)."
+            />
+          )}
+
+          <div>
+            <p className="mb-2 text-sm font-medium text-ink">Garantias que você aceita</p>
+            <p className="mb-2 text-xs text-muted">
+              Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a caução em dinheiro vai para uma
+              conta poupança, como manda a lei — a plataforma não tem acesso).
+            </p>
+            <div className="space-y-3">
+              {GARANTIAS_CADASTRO.map((g) =>
+                g.disabled ? (
+                  <div key={g.key} className="flex items-center justify-between gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 opacity-70">
+                    <span className="text-sm font-medium text-muted">Aceito {g.label}</span>
+                    {g.badge && <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-800">{g.badge}</span>}
+                  </div>
+                ) : (
+                  <div key={g.key}>
+                    <Toggle checked={!!p.garantias[g.key]} onChange={() => p.setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))} label={`Aceito ${g.label}`} />
+                    {g.microtext && <p className="ml-1 mt-1 text-xs text-muted">{g.microtext}</p>}
+                  </div>
+                )
+              )}
+            </div>
+            {!garantiaOk && (
+              <p className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
+                Escolha ao menos uma garantia: contrato sem garantia deixa você sem cobertura de danos.
+              </p>
+            )}
+            <Erro msg={p.erros.garantia} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
