@@ -3,9 +3,8 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { CHAVE_ULTIMA_BUSCA, serializarUltimaBusca } from "@/lib/marcas/regra";
-import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users, Search, Megaphone } from "lucide-react";
+import { ChevronDown, ArrowRight, Megaphone } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 import { BarraComparar } from "@/components/busca/barra-comparar";
@@ -16,7 +15,7 @@ const SearchMap = dynamic(
   () => import("@/components/search-map").then((m) => m.SearchMap),
   { ssr: false }
 );
-import { cn, distanceKm, formatBRL } from "@/lib/utils";
+import { cn, distanceKm } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { comTotalMes } from "@/lib/precos";
 import { prioridadeNaBusca } from "@/lib/preco-justo";
@@ -31,18 +30,19 @@ import { SELO_NF_UI } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
-import { ROTULO_COMODIDADE, comodidadesDaUrl, comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { ROTULO_PORTE_CURTO, contarFiltrosPainel, seguroDaUrlLegada, naoMedidosDoPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { comodidadesDaUrl, comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
+import { naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
 import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
-import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, rotuloFiltroInternet, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
-import { Chip } from "@/components/ui/chip";
-import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
+import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
+import { BarraPilulas } from "@/components/busca/barra-pilulas";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { isExemplo } from "@/lib/demo-listing";
-import { exemplosForcadosNaUrl, mostrarCartaoPedido, semExemplosQuandoHaReal, TEXTO_CARTAO_PEDIDO, TEXTO_PUBLICAR_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
+import { exemplosForcadosNaUrl, mostrarCartaoPedido, semExemplosQuandoHaReal, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
@@ -64,27 +64,12 @@ const DEFAULT_RADIUS_KM = 10;
 const PEDIDO_MORADIA_ON = process.env.NEXT_PUBLIC_PEDIDO_MORADIA !== "off";
 
 /** ISO (yyyy-mm-dd) → dd/mm/aaaa (pt-BR), sem depender do locale do navegador. */
-function formatDatePtBR(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return y && m && d ? `${d}/${m}/${y}` : iso;
-}
-
-/** Rótulo do "Período da estadia" (dias → faixa de meses) para os chips ativos. */
-const PERIODO_LABEL: Record<number, string> = {
-  60: "1–2 meses",
-  120: "3–4 meses",
-  180: "5–6 meses",
-};
-
 export function SearchClient({
   properties: imoveis,
-  topo,
   destinos = [],
   modos = ["carro", "a_pe", "bicicleta"],
 }: {
   properties: Property[];
-  /** Título (e banner do tablet) vindo da página. */
-  topo?: React.ReactNode;
   /** Prompt 37: destinos cadastrados (chips) e meios com dado (ônibus só com a chave). */
   destinos?: DestinoChip[];
   modos?: ModoRota[];
@@ -125,7 +110,6 @@ export function SearchClient({
   const [workLocatedOnly, setWorkLocatedOnly] = useState(false);
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false); // acordeão de filtros (legado, sm+)
   // Folha de filtros (ordem 314f764e; Prompt 40): de baixo no celular, lateral no computador.
   const [painelAberto, setPainelAberto] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null); // hover: card ↔ pin (só destaque)
@@ -134,47 +118,12 @@ export function SearchClient({
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null); // pin clicado: card aberto no mapa
   // Mapa só a partir de 1024 px (lg): no celular/tablet nem carrega o componente.
   const [comMapa, setComMapa] = useState(false);
-  // Ordem eac7e3a1 (computador): a busca compacta fica no cabeçalho; os filtros abrem num painel logo abaixo.
-  const [slotHeader, setSlotHeader] = useState<HTMLElement | null>(null);
-  const [painelFiltros, setPainelFiltros] = useState(false);
-  // Borda de baixo do cabeçalho: o aviso de testes acima dele some ao rolar.
-  const [topoPainel, setTopoPainel] = useState(72);
-  const painelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    // O slot é do cabeçalho (fora desta árvore): só existe no DOM depois de montar.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSlotHeader(document.getElementById("slot-busca-header"));
-  }, []);
-  useEffect(() => {
-    if (!painelFiltros) return;
-    const medir = () => {
-      const fim = slotHeader?.closest("header")?.getBoundingClientRect().bottom;
-      if (fim !== undefined) setTopoPainel(Math.max(0, Math.round(fim)));
-    };
-    medir();
-    window.addEventListener("scroll", medir, { passive: true });
-    window.addEventListener("resize", medir);
-    const fora = (e: MouseEvent) => {
-      const alvo = e.target as Node;
-      // Alvo que saiu do DOM no próprio clique (ex.: o Limpar do painel some ao zerar) não conta como "fora".
-      // A folha de filtros (aberta por "Mais filtros") também não fecha a faixa.
-      if (!alvo.isConnected || painelRef.current?.contains(alvo) || slotHeader?.contains(alvo)) return;
-      if (alvo instanceof Element && alvo.closest("[data-folha]")) return;
-      // Popovers dos filtros (hóspedes, endereço) moram dentro do painel; o resto fecha.
-      setPainelFiltros(false);
-    };
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setPainelFiltros(false);
-    // "click" (não "mousedown"): o botão clicado fora (ex.: Limpar filtros) age antes do
-    // painel fechar — fechar no mousedown mudava o layout e o clique caía em outro lugar.
-    document.addEventListener("click", fora);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("click", fora);
-      document.removeEventListener("keydown", esc);
-      window.removeEventListener("scroll", medir);
-      window.removeEventListener("resize", medir);
-    };
-  }, [painelFiltros, slotHeader]);
+  // E82-A: a pílula "Mapa" alterna lista e mapa — no computador mostra/esconde a coluna do mapa; no celular troca a
+  // lista pelo mapa.
+  const [verMapa, setVerMapa] = useState(true);
+  const [mapaNoCelular, setMapaNoCelular] = useState(false);
+  // E82-A: "Descrever o que procuro" abre a descrição numa folha (fora da página).
+  const [descreverAberto, setDescreverAberto] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
     const aplicar = () => setComMapa(mq.matches);
@@ -206,7 +155,6 @@ export function SearchClient({
     const lat = Number(sp.get("lat"));
     const lng = Number(sp.get("lng"));
     const r = Number(sp.get("r"));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (local) setLocationQuery(local);
     if (Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0)) {
       setGeoCenter({ lat, lng });
@@ -547,13 +495,15 @@ export function SearchClient({
     ).length +
     comodidades.length;
 
-  // Filtros que vivem só na folha (fora da faixa do computador), para o contador do botão "Mais filtros".
+  // Filtros que vivem só na folha (fora da faixa do computador), para o contador do botão "Mais filtros". E82-A: sem a
+  // fileira de chips ativos, Estadia e Pronto para Morar (só na folha) também acendem a pílula.
   const secundariosAtivos =
     (typeFilter ? 1 : 0) +
     (garantia ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
+    (maxPeriod ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
-    [homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, operatedOnly].filter(Boolean).length +
+    [readyToLiveOnly, homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, operatedOnly].filter(Boolean).length +
     comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
@@ -632,7 +582,6 @@ export function SearchClient({
     else setComodidades((l) => l.filter((c) => c !== chave));
   }
 
-  const nPainel = contarFiltrosPainel(filtrosPainel);
   // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
@@ -664,424 +613,55 @@ export function SearchClient({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // h1 dinâmico (ordem 6a98c68e): local + contagem + filtros, nos dois layouts.
-  const tituloBusca = useMemo(
-    () => ({ n: results.length, local: locationQuery, pronto: readyToLiveOnly, pet: petsOnly }),
-    [results.length, locationQuery, readyToLiveOnly, petsOnly]
-  );
+  // E82-A: o nome do destino na pílula Local ("Perto de HC-UFU") e a cidade da linha da contagem.
+  const dest = estadoDestino.destino;
+  const nomeDoDestino = !dest ? null : "slug" in dest ? (destinos.find((d) => d.slug === dest.slug)?.nome ?? null) : dest.rot;
+  const cidadesDaLista = [...new Set(properties.map((p) => p.city).filter(Boolean))];
+  const cidadeDaLista = cidadesDaLista.length === 1 ? cidadesDaLista[0] : "";
 
   return (
-    // Computador (lg+, ordens ca0e7dad e d15ef6bf): largura total; no topo a barra de
-    // filtros centralizada e em destaque (fixa sob o cabeçalho), depois o título, a
-    // contagem "N imóveis em <cidade>" com "Salvar busca", e a lista (~58%, 3 cards
-    // por linha) + mapa fixo (~42%). A ordem visual no computador vem de `lg:order-*`.
-    <TituloBuscaContexto.Provider value={tituloBusca}>
+    // Computador (lg+, ordem ca0e7dad): largura total; a linha de pílulas, a contagem e a lista (~58%, 3 cards por
+    // linha) + mapa fixo (~42%).
     <div className="flex flex-col py-4 sm:py-6 lg:px-6 lg:py-0" data-testid="busca">
-      {topo && <div className="-mt-4 sm:-mt-6 lg:order-2 lg:mt-0">{topo}</div>}
-      <DescricaoBusca key={reinicioDescricao} locais={locaisDoCatalogo} onAplicar={aplicarDescricao} onRemover={removerDescricao} />
-      {slotHeader &&
-        createPortal(
-          <div className="flex min-w-0 max-w-full items-center gap-2">
-            <BuscaCompacta
-              local={locationQuery.trim()}
-              periodo={PERIODO_LABEL[maxPeriod] ?? (dataEntrada ? `Entrada ${formatDatePtBR(dataEntrada)}` : "")}
-              hospedes={adults + children}
-              nFiltros={activeCount}
-              aberto={painelFiltros}
-              onAlternar={() => setPainelFiltros((v) => !v)}
-            />
-            {/* Prompt 30, item 6: "Publicar pedido" sempre visível, também na barra condensada. */}
-            {PEDIDO_MORADIA_ON && (
-              <Link
-                href={pedidoHref}
-                data-testid="busca-publicar-pedido-topo"
-                className={buttonClasses({ variant: "busca", className: "hidden font-semibold lg:inline-flex" })}
-              >
-                <Megaphone className="h-4 w-4" aria-hidden /> {TEXTO_PUBLICAR_PEDIDO}
-              </Link>
-            )}
-          </div>,
-          slotHeader
-        )}
-
-      {/* ── CELULAR (ordem 314f764e): busca + botão de filtros + total ── */}
-      <div className="container-page mt-4 sm:hidden" data-testid="busca-celular">
-        {/* Barra de busca em pill com ícone (Prompt 40) + botão redondo de filtros. */}
-        <div className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-4 pr-1" data-testid="barra-busca">
-          <Search className="h-5 w-5 shrink-0 text-ink" aria-hidden />
-          <div className="min-w-0 flex-1">
-            <LocationSearch
-              embutido
-              placeholder="Cidade, bairro ou endereço"
-              value={locationQuery}
-              onChange={(text) => {
-                setLocationQuery(text);
-                setGeoCenter(null);
-              }}
-              onSelect={(s: GeoSuggestion) => {
-                setLocationQuery(s.label);
-                setGeoCenter({ lat: s.lat, lng: s.lng });
-              }}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => setPainelAberto(true)}
-            aria-label={nPainel ? `Filtros (${nPainel} ativos)` : "Filtros"}
-            aria-haspopup="dialog"
-            data-testid="abrir-filtros"
-            className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full border border-line text-ink transition-colors hover:border-ink"
-          >
-            <SlidersHorizontal className="h-5 w-5" />
-            {nPainel > 0 && (
-              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-forest px-1 text-[11px] font-semibold text-white">
-                {nPainel}
-              </span>
-            )}
-          </button>
-        </div>
-        <p className="mt-2 truncate px-4 text-xs text-muted" data-testid="resumo-filtros">
-          {resumoFiltros(filtrosPainel)}
-        </p>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <div className="flex min-w-0 flex-wrap items-center gap-1">
-            <SalvarBusca versao={versaoBusca} />
-            {PEDIDO_MORADIA_ON && (
-              <Link href={pedidoHref} data-testid="busca-publicar-pedido" className="ml-2 inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-ink underline underline-offset-4">
-                <Megaphone className="h-4 w-4" aria-hidden /> {TEXTO_PUBLICAR_PEDIDO}
-              </Link>
-            )}
-            {activeCount > 0 && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                data-testid="limpar-filtros-celular"
-                className="ml-2 whitespace-nowrap text-sm font-medium text-ink underline underline-offset-4 hover:text-forest"
-              >
-                Limpar filtros ({activeCount})
-              </button>
-            )}
-          </div>
-          <Select
-            label="Ordenar resultados"
-            value={sort}
-            onChange={(v) => setSort(v as typeof sort)}
-            options={opcoesOrdem("Mais recentes")}
-          />
-        </div>
-      </div>
-      {painelAberto && (
-        <FolhaFiltros
-          inicial={filtrosPainel}
+      {/* E82-A + E91 + E95 (mockup BUSCA-CARD): UMA linha de controles e, acima da lista, SÓ a linha da contagem com
+          "Salvar busca" e "Descrever o que procuro". Nada de título grande, banner, caixa de destino ou de descrição na
+          página: o destino vive no painel da pílula Local; a descrição, numa folha. */}
+      <div className="container-page mt-2 lg:max-w-none lg:px-0 lg:pt-4">
+        <BarraPilulas
+          filtros={filtrosPainel}
           contar={contarComPainel}
-          contarNaoMedidos={contarNaoMedidos}
-          onAplicar={aplicarPainel}
-          onFechar={() => setPainelAberto(false)}
-          garantias={GARANTIAS_FILTRO}
-          comNotaFiscal={SELO_NF_UI}
-          medicoes={medicoes}
-        />
-      )}
-
-      {/* Filtros do tablet (caixa) e do computador: no computador, aberto pela busca
-          compacta do cabeçalho, uma faixa presa sob o cabeçalho com a barra CENTRALIZADA.
-          Ordem 65116a07: a faixa ocupa espaço (sticky, não fixed) — empurra o título e a
-          linha com "Limpar filtros" em vez de cobri-los. Os mesmos controles nos dois. */}
-      <div
-        ref={painelRef}
-        data-testid="filtros-barra"
-        data-aberto={painelFiltros ? "1" : "0"}
-        style={painelFiltros ? ({ "--topo-painel": `${topoPainel}px` } as React.CSSProperties) : undefined}
-        className={cn(
-          "container-page hidden sm:block lg:order-1",
-          painelFiltros
-            ? "lg:sticky lg:top-(--topo-painel) lg:z-30 lg:-mx-6 lg:flex lg:w-auto lg:max-w-none lg:justify-center lg:border-b lg:border-divisor lg:bg-white lg:px-6 lg:py-4 lg:shadow-flutuante"
-            : "lg:hidden"
-        )}
-      >
-      <div
-        data-testid="filtros-caixa"
-        className="rounded-xl border border-line bg-white p-4 lg:relative lg:max-w-full lg:rounded-full lg:px-2 lg:py-2"
-      >
-        <div className="flex items-center justify-between gap-3 lg:hidden">
-          <button
-            type="button"
-            onClick={() => setFiltersOpen((v) => !v)}
-            aria-expanded={filtersOpen}
-            className="flex items-center gap-2 text-sm font-medium text-ink sm:pointer-events-none"
-          >
-            <SlidersHorizontal className="h-4 w-4" /> Filtros
-            {activeCount > 0 && (
-              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-forest px-1 text-xs font-semibold text-white">
-                {activeCount}
-              </span>
-            )}
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 transition-transform sm:hidden",
-                filtersOpen && "rotate-180"
-              )}
-            />
-          </button>
-          <Select
-            label="Ordenar resultados"
-            value={sort}
-            onChange={(v) => setSort(v as typeof sort)}
-            options={opcoesOrdem("Adicionados recentemente")}
-          />
-        </div>
-
-        <div
-          className={cn(
-            "mt-3 flex-wrap items-center gap-2 sm:flex lg:mt-0 lg:flex-nowrap",
-            filtersOpen ? "flex" : "hidden"
-          )}
-        >
-          {/* Localização: geocoding de endereço (Mapbox) ou bairros por nome */}
-          <LocationSearch
-            value={locationQuery}
-            onChange={(text) => {
-              setLocationQuery(text);
-              setGeoCenter(null);
-            }}
-            onSelect={(s: GeoSuggestion) => {
-              setLocationQuery(s.label);
-              setGeoCenter({ lat: s.lat, lng: s.lng });
-            }}
-          />
-          {geoCenter && (
-            <div className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface-2 py-1 pl-3 pr-2 text-sm text-ink">
-              <MapPin className="h-3.5 w-3.5 shrink-0 text-ink" />
-              <span className="text-muted">Raio</span>
-              <select
-                value={String(radiusKm)}
-                onChange={(e) => setRadiusKm(Number(e.target.value))}
-                aria-label="Raio de busca"
-                className="rounded-lg bg-transparent py-1 pl-1 font-medium text-ink outline-none"
-              >
-                {[5, 10, 20].map((km) => (
-                  <option key={km} value={km}>
-                    {km} km
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => {
-                  setLocationQuery("");
-                  setGeoCenter(null);
-                  setRadiusKm(DEFAULT_RADIUS_KM);
-                }}
-                className="rounded-full px-2 py-1 font-medium text-ink underline underline-offset-4 hover:bg-white"
-                title="Limpar endereço"
-              >
-                limpar
-              </button>
-            </div>
-          )}
-          <label className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-line bg-white px-4 text-sm text-ink lg:px-3 xl:px-4">
-            <span className="text-muted lg:hidden xl:inline">
-              Entrada<span className="lg:hidden"> a partir de</span>
-            </span>
-            <input
-              type="date"
-              lang="pt-BR"
-              value={dataEntrada}
-              onChange={(e) => setDataEntrada(e.target.value)}
-              aria-label="Data de entrada desejada (a partir de)"
-              className="bg-transparent text-ink outline-none"
-            />
-          </label>
-          <Select
-            label="Preço máximo"
-            value={String(maxPrice)}
-            onChange={(v) => setMaxPrice(Number(v))}
-            options={[
-              ["0", "Qualquer preço"],
-              ["2500", "Até R$ 2.500"],
-              ["3500", "Até R$ 3.500"],
-              ["5000", "Até R$ 5.000"],
-              // Teto vindo da busca por descrição (ex.: 2.000): aparece como opção para o select não ficar em branco.
-              ...(maxPrice > 0 && ![2500, 3500, 5000].includes(maxPrice) ? ([[String(maxPrice), `Até ${formatBRL(maxPrice)}`]] as [string, string][]) : []),
-            ]}
-          />
-          <GuestsPicker
-            adults={adults}
-            childrenCount={children}
-            onAdults={setAdults}
-            onChildren={setChildren}
-          />
-          <Select
-            label="Período da estadia"
-            value={String(maxPeriod)}
-            onChange={(v) => setMaxPeriod(Number(v))}
-            options={[
-              ["0", "Período da estadia"],
-              ["60", "1–2 meses"],
-              ["120", "3–4 meses"],
-              ["180", "5–6 meses"],
-            ]}
-          />
-
-          {/* E43: "Pronto para Morar" fica só na folha de filtros (com a contagem); o chip ativo aparece na linha de filtros. */}
-
-          {/* "Mais filtros" abre a folha de filtros (Prompt 40): de baixo no tablet, na lateral no computador. */}
-          <button
-            type="button"
-            onClick={() => setPainelAberto(true)}
-            aria-haspopup="dialog"
-            aria-label="Mais filtros"
-            data-testid="mais-filtros"
-            className={buttonClasses({ variant: "chip", className: "gap-2 lg:px-3 xl:px-4" })}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            <span className="lg:hidden xl:inline">Mais filtros</span>
-            <span className="hidden lg:inline xl:hidden">Filtros</span>
-            {secundariosAtivos > 0 && (
-              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-forest px-1 text-xs font-semibold text-white">
-                {secundariosAtivos}
-              </span>
-            )}
-          </button>
-
-          {/* 'Mobiliado' removido: todo imóvel da plataforma é mobiliado (promessa
-              da marca, não filtro). 'Bem localizado' removido: subjetivo, não
-              filtra nada objetivo. Dados no banco preservados. */}
-
-          {/* Ordem 65116a07: com o painel aberto, "Limpar filtros" fica dentro dele
-              (sempre visível e clicável, mesmo com a página rolada). */}
-          {activeCount > 0 && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              data-testid="limpar-filtros-painel"
-              className="hidden h-10 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-sm font-medium text-ink underline underline-offset-4 hover:bg-surface-2 lg:inline-flex"
-            >
-              Limpar filtros ({activeCount})
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setPainelFiltros(false)}
-            data-testid="fechar-painel-filtros"
-            className={buttonClasses({ size: "sm", className: "hidden shrink-0 whitespace-nowrap lg:inline-flex" })}
-          >
-            Ver <span className="tabular-nums">{results.length}</span> {results.length === 1 ? "imóvel" : "imóveis"}
-          </button>
-
-        </div>
-
-        {/* Filtros ativos (chips removíveis) + Limpar filtros (Fase 2). */}
-        {activeCount > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-divisor pt-3 lg:hidden">
-            {maxPrice > 0 && (
-              <ActiveChip label={`Até ${formatBRL(maxPrice)}`} onClear={() => setMaxPrice(0)} />
-            )}
-            {minBedrooms > 0 && (
-              <ActiveChip label={`${minBedrooms}+ quartos`} onClear={() => setMinBedrooms(0)} />
-            )}
-            {(adults > 1 || children > 0) && (
-              <ActiveChip
-                label={`${adults + children} ${adults + children === 1 ? "morador" : "moradores"}`}
-                onClear={() => {
-                  setAdults(1);
-                  setChildren(0);
-                }}
-              />
-            )}
-            {maxPeriod > 0 && (
-              <ActiveChip label={PERIODO_LABEL[maxPeriod] ?? "Período"} onClear={() => setMaxPeriod(0)} />
-            )}
-            {typeFilter && (
-              <ActiveChip
-                label={PROPERTY_TYPES.find((t) => t.value === typeFilter)?.label ?? "Tipo"}
-                onClear={() => setTypeFilter("")}
-              />
-            )}
-            {dataEntrada && (
-              <ActiveChip
-                label={`Entrada ${formatDatePtBR(dataEntrada)}`}
-                onClear={() => { setDataEntrada(""); setDatasFlexiveis(false); }}
-              />
-            )}
-            {dataEntrada && datasFlexiveis && <ActiveChip label="Datas flexíveis" onClear={() => setDatasFlexiveis(false)} />}
-            {garantia && (
-              <ActiveChip
-                label={GARANTIAS_FILTRO.find((g) => g.key === garantia)?.label ?? "Garantia"}
-                onClear={() => setGarantia("")}
-              />
-            )}
-            {readyToLiveOnly && (
-              <ActiveChip label="Pronto para Morar" onClear={() => setReadyToLiveOnly(false)} />
-            )}
-            {homeOfficeOnly && (
-              <ActiveChip label="Trabalhar de casa" onClear={() => { setHomeOfficeOnly(false); setSoInternetMedida(false); }} />
-            )}
-            {rotuloFiltroInternet({ internetMin, soInternetMedida }) && (
-              <ActiveChip label={rotuloFiltroInternet({ internetMin, soInternetMedida })!} onClear={() => { setInternetMin(0); setSoInternetMedida(false); }} />
-            )}
-            {petsOnly && <ActiveChip label={petPorte ? `Aceita pets ${ROTULO_PORTE_CURTO[petPorte]}` : "Aceita pets"} onClear={() => { setPetsOnly(false); setPetPorte(""); }} />}
-            {SELO_NF_UI && invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
-            {operatedOnly && (
-              <ActiveChip label="Gestor profissional" onClear={() => setOperatedOnly(false)} />
-            )}
-            {comodidades.map((c) => (
-              <ActiveChip key={c} label={ROTULO_COMODIDADE[c]} onClear={() => setComodidades((l) => l.filter((x) => x !== c))} />
-            ))}
-            <button
-              type="button"
-              onClick={clearFilters}
-              data-testid="limpar-filtros-chips"
-              className="ml-1 text-sm font-medium text-ink underline underline-offset-4 hover:text-forest"
-            >
-              Limpar filtros
-            </button>
-          </div>
-        )}
-      </div>
-
-      </div>
-
-      {/* Contagem estilo Airbnb ("15 imóveis em Uberlândia") + Salvar busca, logo
-          abaixo do título (tablet e computador). */}
-      <div className="container-page mt-4 hidden flex-wrap items-center justify-between gap-3 sm:flex lg:order-3 lg:mt-0 lg:max-w-none lg:px-0 lg:pb-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          {/* A contagem e o local estão no título (ordem 6a98c68e); aqui só o complemento. */}
-          <p className="text-base text-muted" data-testid="complemento-busca">
-            {dataEntrada && <>Entrada a partir de {formatDatePtBR(dataEntrada)} · </>}
-            R$ 0 de taxa para você
-          </p>
-          <SalvarBusca versao={versaoBusca} />
-          {PEDIDO_MORADIA_ON && (
-            <Link href={pedidoHref} data-testid="busca-publicar-pedido" className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-ink underline underline-offset-4 lg:hidden">
-              <Megaphone className="h-4 w-4" aria-hidden /> {TEXTO_PUBLICAR_PEDIDO}
-            </Link>
-          )}
-        </div>
-            <div className="hidden shrink-0 items-center gap-3 lg:flex">
-              {activeCount > 0 && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  data-testid="limpar-filtros"
-                  className="whitespace-nowrap text-sm font-medium text-ink underline underline-offset-4 hover:text-forest"
-                >
-                  Limpar filtros ({activeCount})
-                </button>
-              )}
-              <Select
-                label="Ordenar resultados"
-                value={sort}
-                onChange={(v) => setSort(v as typeof sort)}
-                options={opcoesOrdem("Mais recentes")}
-              />
-            </div>
-      </div>
-
-      <div className="container-page mt-4 lg:order-4 lg:mt-0 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
-        <div data-testid="busca-lista" className="min-w-0 lg:w-[58%] lg:py-4">
-          {/* DESTINO-PESSOAL-B: o "Outro local" é achado pelo servidor, então o campo aparece sempre (sem depender do token do navegador). */}
-          <div className="mb-6">
+          aplicar={aplicarPainel}
+          local={locationQuery}
+          perto={nomeDoDestino}
+          painelLocal={
+            <>
+              <div>
+                <p className="mb-2 text-sm font-semibold text-ink">Cidade ou bairro</p>
+                <LocationSearch
+                  value={locationQuery}
+                  onChange={(text) => {
+                    setLocationQuery(text);
+                    setGeoCenter(null);
+                  }}
+                  onSelect={(s: GeoSuggestion) => {
+                    setLocationQuery(s.label);
+                    setGeoCenter({ lat: s.lat, lng: s.lng });
+                  }}
+                />
+                {geoCenter && (
+                  <label className="mt-2 inline-flex items-center gap-2 text-sm text-ink">
+                    Raio
+                    <select value={String(radiusKm)} onChange={(e) => setRadiusKm(Number(e.target.value))} aria-label="Raio de busca" className="h-11 rounded-lg border border-line bg-white px-3 text-sm text-ink">
+                      {[5, 10, 20].map((km) => (
+                        <option key={km} value={km}>
+                          {km} km
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+              {/* DESTINO-PESSOAL-B: o "Outro local" é achado pelo servidor, então o campo aparece sempre. */}
               <CampoDestino
                 destinos={destinos}
                 modos={modos}
@@ -1090,11 +670,89 @@ export function SearchClient({
                 cidade={chaveCidade(locationQuery) ? (properties.find((p) => p.city && chaveCidade(locationQuery).includes(chaveCidade(p.city)))?.city ?? null) : null}
               />
               {estadoDestino.destino && tempoEmLinhaReta && (
-                <p className="mt-2 text-sm text-muted" data-testid="tempo-indisponivel">
+                <p className="text-sm text-muted" data-testid="tempo-indisponivel">
                   Tempo de deslocamento indisponível agora: mostramos a distância em linha reta.
                 </p>
               )}
+            </>
+          }
+          painelMoradores={
+            <fieldset data-testid="pilula-datas-moradores">
+              <legend className="mb-2 text-sm font-semibold text-ink">{"Moradores"}</legend>
+              <Stepper label="Adultos" hint="13 anos ou mais" value={adults} min={1} max={16} onChange={setAdults} />
+              <div className="my-3 h-px bg-divisor" />
+              <Stepper label="Crianças" hint="até 12 anos" value={children} min={0} max={10} onChange={setChildren} />
+            </fieldset>
+          }
+          nMaisFiltros={secundariosAtivos}
+          onMaisFiltros={() => setPainelAberto(true)}
+          ordem={sort}
+          opcoesOrdem={opcoesOrdem("Mais recentes")}
+          onOrdem={(v) => setSort(v as typeof sort)}
+          mapa={comMapa ? verMapa : mapaNoCelular}
+          onMapa={() => (comMapa ? setVerMapa((v) => !v) : setMapaNoCelular((v) => !v))}
+        />
+
+        {/* A linha da contagem (E91): "15 imóveis em Uberlândia · R$ 0 de taxa para você" + Salvar busca + Descrever. */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="linha-contagem">
+          <h1 className="text-base font-semibold tabular-nums text-ink" data-testid="titulo-busca">
+            {contagemDaBusca({ n: results.length, local: locationQuery.trim() || cidadeDaLista })}
+          </h1>
+          {results.length > 0 && <span className="text-sm text-muted" data-testid="complemento-busca">· R$ 0 de taxa para você</span>}
+          {/* As duas ações ficam juntas (no celular, uma linha só abaixo da contagem). */}
+          <div className="flex flex-wrap items-center gap-x-4">
+            {results.length > 0 && <SalvarBusca versao={versaoBusca} />}
+            <button type="button" onClick={() => setDescreverAberto(true)} className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest" data-testid="abrir-descrever">
+              Descrever o que procuro
+            </button>
           </div>
+        </div>
+      </div>
+
+      {descreverAberto && (
+        <BottomSheet open onClose={() => setDescreverAberto(false)} title="Descrever o que procuro" lateral testId="folha-descrever">
+          <DescricaoBusca key={reinicioDescricao}
+            locais={locaisDoCatalogo}
+            onAplicar={(f) => {
+              aplicarDescricao(f);
+              setDescreverAberto(false);
+            }}
+            onRemover={removerDescricao}
+          />
+        </BottomSheet>
+      )}
+      {painelAberto && (
+        // E82-A: "Mais filtros" já está na linha desde o 1º desenho; tocado antes de a URL ser lida (link com
+        // ?garantia=…), a folha recomeça com os filtros que valem — nunca abre vazia por cima de uma busca filtrada.
+        <FolhaFiltros
+          key={JSON.stringify(filtrosPainel)}
+          inicial={filtrosPainel}
+          contar={contarComPainel}
+          contarNaoMedidos={contarNaoMedidos}
+          onAplicar={aplicarPainel}
+          onFechar={() => setPainelAberto(false)}
+          garantias={GARANTIAS_FILTRO}
+          comNotaFiscal={SELO_NF_UI}
+          medicoes={medicoes}
+          topo={
+            // E82-A: o 1º bloco da folha é a descrição, recolhida numa linha (tocar abre o campo).
+            <button
+              type="button"
+              onClick={() => {
+                setPainelAberto(false);
+                setDescreverAberto(true);
+              }}
+              className="flex min-h-11 w-full items-center justify-between rounded-lg border border-line px-4 text-left text-sm font-semibold text-ink hover:border-ink"
+              data-testid="folha-descreva"
+            >
+              Descreva com suas palavras <ArrowRight className="h-4 w-4" aria-hidden />
+            </button>
+          }
+        />
+      )}
+
+      <div className="container-page mt-4 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
+        <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", comMapa && verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
           {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
             // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia-nivel">
@@ -1254,9 +912,12 @@ export function SearchClient({
             encosta na borda direita da tela. */}
         <div
           data-testid="busca-mapa"
-          className="hidden lg:sticky lg:top-18 lg:-mr-6 lg:block lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0"
+          className={cn(
+            "lg:sticky lg:top-18 lg:-mr-6 lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0",
+            mapaNoCelular ? "block h-[70vh] w-full lg:hidden" : comMapa && verMapa ? "hidden lg:block" : "hidden",
+          )}
         >
-          {comMapa && (
+          {((comMapa && verMapa) || mapaNoCelular) && (
             <SearchMap
               properties={results}
               activeId={activeId}
@@ -1271,109 +932,11 @@ export function SearchClient({
         </div>
       </div>
     </div>
-    </TituloBuscaContexto.Provider>
   );
 }
 
-/** Chip de filtro ATIVO — mostra o filtro aplicado com um × para remover (selecionado = tinta). */
-function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) {
-  return (
-    <span className="inline-flex h-8 items-center gap-1 rounded-full bg-ink pl-3 pr-1 text-xs font-medium text-white">
-      {label}
-      <button
-        type="button"
-        onClick={onClear}
-        aria-label={`Remover filtro ${label}`}
-        className="grid h-6 w-6 place-items-center rounded-full text-white hover:bg-white/15"
-      >
-        ×
-      </button>
-    </span>
-  );
-}
 
-function Select({
-  value,
-  onChange,
-  options,
-  label,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: [string, string][];
-  label: string;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      aria-label={label}
-      className="h-10 min-w-0 rounded-lg border border-line bg-white px-4 text-sm text-ink outline-none focus:border-ink lg:px-3 xl:px-4"
-    >
-      {options.map(([v, label]) => (
-        <option key={v} value={v}>
-          {label}
-        </option>
-      ))}
-    </select>
-  );
-}
 
-/**
- * Seletor de hóspedes estilo Airbnb (adultos + crianças). O total filtra pela
- * capacidade do imóvel (max_guests). Imóveis sem capacidade cadastrada não são
- * escondidos (ver filtro em `results`).
- */
-function GuestsPicker({
-  adults,
-  childrenCount,
-  onAdults,
-  onChildren,
-}: {
-  adults: number;
-  childrenCount: number;
-  onAdults: (n: number) => void;
-  onChildren: (n: number) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const total = adults + childrenCount;
-  const ativo = adults > 1 || childrenCount > 0;
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-label="Moradores"
-        className={cn(
-          "inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border px-4 text-sm outline-none lg:px-3 xl:px-4",
-          ativo ? "border-ink bg-ink text-white" : "border-line bg-white text-ink focus:border-ink"
-        )}
-      >
-        <Users className="h-4 w-4" />
-        {ativo ? (total === 1 ? "1 morador" : `${total} moradores`) : "Moradores"}
-        <ChevronDown className="h-4 w-4" />
-      </button>
-      {open && (
-        <>
-          {/* Backdrop invisível: clicar fora fecha. */}
-          <button
-            type="button"
-            aria-hidden
-            tabIndex={-1}
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-30 cursor-default"
-          />
-          <div className="absolute left-0 z-40 mt-2 w-64 rounded-xl border border-line bg-white p-4 shadow-flutuante">
-            <Stepper label="Adultos" hint="13 anos ou mais" value={adults} min={1} max={16} onChange={onAdults} />
-            <div className="my-3 h-px bg-divisor" />
-            <Stepper label="Crianças" hint="até 12 anos" value={childrenCount} min={0} max={10} onChange={onChildren} />
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 function Stepper({
   label,
@@ -1421,60 +984,3 @@ function Stepper({
   );
 }
 
-/**
- * Busca compacta no cabeçalho (ordem eac7e3a1, estilo Airbnb): resumo da busca
- * numa pílula na mesma linha do logo; clicar abre o painel completo de filtros
- * logo abaixo do cabeçalho. Sem faixa extra entre o cabeçalho e o conteúdo.
- */
-function BuscaCompacta({
-  local,
-  periodo,
-  hospedes,
-  nFiltros,
-  aberto,
-  onAlternar,
-}: {
-  local: string;
-  periodo: string;
-  hospedes: number;
-  nFiltros: number;
-  aberto: boolean;
-  onAlternar: () => void;
-}) {
-  const partes = [
-    { rotulo: local || "Qualquer cidade", forte: true },
-    { rotulo: periodo || "Qualquer período", forte: false },
-    { rotulo: hospedes > 1 ? `${hospedes} moradores` : "Moradores", forte: false },
-  ];
-  return (
-    <button
-      type="button"
-      onClick={onAlternar}
-      aria-expanded={aberto}
-      // Sem aria-label: o nome é o texto visível (local, período, moradores, "Filtros"); aria-expanded diz se abre ou
-      // fecha (axe label-content-name-mismatch, t251).
-      data-testid="busca-compacta"
-      className={cn(
-        "flex h-12 min-w-0 max-w-full items-center rounded-full border bg-white pl-4 pr-2 text-sm text-ink transition-colors hover:border-ink",
-        aberto ? "border-ink" : "border-line"
-      )}
-    >
-      {partes.map((p, i) => (
-        <span key={i} className={cn("flex min-w-0 items-center", i > 0 && "border-l border-line pl-4", i < partes.length - 1 && "pr-4")}>
-          <span className={cn("truncate whitespace-nowrap", p.forte ? "max-w-[11rem] font-semibold" : "text-muted")}>{p.rotulo}</span>
-        </span>
-      ))}
-      <span className="flex items-center gap-2 border-l border-line pl-4">
-        <span className="inline-flex items-center gap-2 whitespace-nowrap font-medium text-ink">
-          <SlidersHorizontal className="h-4 w-4" aria-hidden /> Filtros
-          {nFiltros > 0 && (
-            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-forest px-1 text-xs font-semibold text-white">{nFiltros}</span>
-          )}
-        </span>
-        <span className="grid h-9 w-9 place-items-center rounded-full bg-forest text-white" aria-hidden>
-          <Search className="h-4 w-4" />
-        </span>
-      </span>
-    </button>
-  );
-}

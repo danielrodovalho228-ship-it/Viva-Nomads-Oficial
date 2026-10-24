@@ -24,12 +24,8 @@ const LOCAL = `/buscar?local=${encodeURIComponent(CIDADE)}`;
 async function abrirFolha(page: Page, url: string) {
   await expect(async () => {
     await page.goto(url, { waitUntil: "domcontentloaded" });
-    const celular = page.getByTestId("abrir-filtros").filter({ visible: true });
-    if (await celular.count()) await celular.first().click({ timeout: 5_000 });
-    else {
-      if (!(await page.getByTestId("mais-filtros").isVisible())) await page.getByTestId("busca-compacta").click({ timeout: 5_000 });
-      await page.getByTestId("mais-filtros").click({ timeout: 5_000 });
-    }
+    // E82-A: a pílula "Mais filtros" da linha única, em toda largura.
+    await page.getByTestId("pilula-mais").click({ timeout: 5_000 });
     await expect(page.getByTestId("painel-filtros")).toBeVisible({ timeout: 5_000 });
   }).toPass({ timeout: 60_000 });
   return page.getByTestId("painel-filtros");
@@ -117,7 +113,7 @@ test.describe("T409 — Adendo 3 ao FILTROS-B: auditoria dos filtros (E39–E43)
     await expect(folha.getByRole("button", { name: /Aceita Seguro/i })).toHaveCount(0);
   });
 
-  test("E43 (7): Pronto para Morar — o chip da folha e o chip ativo são o mesmo estado e contam 1", async ({ page }) => {
+  test("E43 (7): Pronto para Morar — o chip da folha e o filtro ativo são o mesmo estado e contam 1", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await abrirFolha(page, LOCAL);
     await expect.poll(() => total(page), { timeout: 30_000 }).toBe(4);
@@ -127,13 +123,14 @@ test.describe("T409 — Adendo 3 ao FILTROS-B: auditoria dos filtros (E39–E43)
     await page.getByTestId("aplicar-filtros").click();
     await expect(page).toHaveURL(/pronto=1/);
     await expect(cartoes(page)).toHaveCount(1, { timeout: 20_000 });
-    // Um filtro ativo só, com o mesmo rótulo; tirar pelo chip ativo desmarca a folha.
-    const remover = page.getByRole("button", { name: "Remover filtro Pronto para Morar" });
-    await expect(remover).toHaveCount(1);
-    await remover.click();
+    // E82-A: sem a fileira de chips ativos — a pílula "Mais filtros" fica ativa; tirar pela folha (o mesmo estado) volta
+    // a lista inteira e a URL perde o ?pronto.
+    await expect(page.getByTestId("pilula-mais")).toHaveAttribute("aria-pressed", "true");
+    const folha = await abrirFolha(page, page.url());
+    await expect(folha.getByTestId("faceta-pronto")).toHaveAttribute("aria-pressed", "true");
+    await folha.getByTestId("faceta-pronto").click();
+    await page.getByTestId("aplicar-filtros").click();
     await expect(page).not.toHaveURL(/pronto=1/);
     await expect(cartoes(page)).toHaveCount(4, { timeout: 20_000 });
-    const folha = await abrirFolha(page, page.url());
-    await expect(folha.getByTestId("faceta-pronto")).toHaveAttribute("aria-pressed", "false");
   });
 });

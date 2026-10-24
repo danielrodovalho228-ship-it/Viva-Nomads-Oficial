@@ -204,7 +204,10 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
     await fetch(`${ROTAS}/__falhas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ vezes: 100 }) });
     try {
       await page.goto(`/buscar?dlat=${HC.lat + 0.03}&dlng=${HC.lng + 0.03}&drot=Rua+Sem+Rota&modo=carro&ate=20`, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("tempo-indisponivel")).toBeVisible({ timeout: 20_000 });
+      // E82-A: o aviso mora no painel da pílula Local (com o "Perto de…"); fecha antes de ler os cartões.
+      await page.getByTestId("pilula-local").click();
+      await expect(page.getByTestId("painel-pilula-local").getByTestId("tempo-indisponivel")).toBeVisible({ timeout: 20_000 });
+      await page.getByTestId("painel-pilula-fechar").click();
       const lista = await temposNaTela(page, { rota: false });
       expect(lista.map(([id]) => id)).toEqual(expect.arrayContaining([ids.perto, ids.medio, ids.longe]));
       const nossos = new Set([ids.perto, ids.medio, ids.longe]);

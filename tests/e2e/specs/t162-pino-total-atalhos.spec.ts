@@ -55,7 +55,9 @@ for (const largura of [390, 1280]) {
 
     test("parâmetro desconhecido é ignorado, sem chip fantasma", async ({ page }) => {
       await page.goto("/buscar?parametro_que_nao_existe=1", { waitUntil: "networkidle" });
-      await expect(page.getByTestId("limpar-filtros")).toHaveCount(0);
+      // E82-A: sem chips de filtro ativo — nenhuma pílula com valor e "Mais filtros" sem "(N)".
+      for (const id of ["datas", "local", "tipo", "preco", "nivel", "ordenar"]) await expect(page.getByTestId(`pilula-${id}`)).toHaveAttribute("data-valor", "");
+      await expect(page.getByTestId("pilula-mais")).not.toContainText("(");
       await expect(page.getByTestId("card-resultado").first()).toBeVisible();
     });
 

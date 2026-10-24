@@ -6,7 +6,9 @@ import { test, expect } from "@playwright/test";
  *  2. Painel de filtros (preço, quartos, aceita pets, home office) com
  *     "Mostrar N imóveis"; aplicar volta à lista já filtrada (e a URL guarda).
  *  3. Cards com foto, preço/mês, quartos/banheiros e bairro.
- * 360/390 px sem rolagem lateral; no computador os filtros antigos seguem iguais.
+ * 360/390 px sem rolagem lateral.
+ * E82-A: o topo é a mesma linha de pílulas em toda largura (sem bloco só do celular); "Mais filtros" abre a folha e
+ * mostra "(N)" com filtros da folha ligados; o preço aparece como valor da pílula "Preço".
  */
 test.describe("T67 — Busca no celular", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -15,9 +17,10 @@ test.describe("T67 — Busca no celular", () => {
     test(`${largura} px: topo com busca e filtros, sem rolagem lateral`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 844 });
       await page.goto("/buscar", { waitUntil: "networkidle" });
-      const topo = page.getByTestId("busca-celular");
+      const topo = page.getByTestId("linha-pilulas");
       await expect(topo).toBeVisible();
-      await expect(topo.getByRole("button", { name: /^Filtros/ })).toBeVisible();
+      await expect(topo.getByTestId("pilula-local")).toBeVisible();
+      await expect(topo.getByTestId("pilula-mais")).toBeVisible();
       await expect(page.getByTestId("titulo-busca")).toContainText(/\d+ imóve(l|is)/);
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(sobra).toBeLessThanOrEqual(1);
@@ -30,7 +33,7 @@ test.describe("T67 — Busca no celular", () => {
     await page.goto("/buscar", { waitUntil: "networkidle" });
     const totalAntes = Number((await page.getByTestId("titulo-busca").innerText()).match(/\d+/)?.[0]);
 
-    await page.getByTestId("abrir-filtros").click();
+    await page.getByTestId("pilula-mais").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
     await expect(painel).toBeVisible();
     for (const t of ["Preço por mês", "Quartos", "Aceita pets", "Para trabalhar de casa"]) await expect(painel).toContainText(t);
@@ -47,8 +50,9 @@ test.describe("T67 — Busca no celular", () => {
 
     await expect(painel).toHaveCount(0);
     await expect(page.getByTestId("titulo-busca")).toContainText(`${n} ${n === 1 ? "imóvel" : "imóveis"}`);
-    await expect(page.getByTestId("abrir-filtros")).toHaveAccessibleName("Filtros (2 ativos)");
-    await expect(page.getByTestId("resumo-filtros")).toHaveText("Até R$ 5.000 · 2+ quartos");
+    // E82-A: o preço vira o valor da pílula "Preço"; os quartos contam no "(N)" de "Mais filtros".
+    await expect(page.getByTestId("pilula-preco")).toHaveAttribute("data-valor", "Até R$ 5.000");
+    await expect(page.getByTestId("pilula-mais")).toContainText("(1)");
     await expect(page).toHaveURL(/quartos=2/);
     await expect(page).toHaveURL(/preco=5000/);
 
@@ -67,28 +71,33 @@ test.describe("T67 — Busca no celular", () => {
   test("390 px: Esc fecha o painel sem aplicar o rascunho", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/buscar", { waitUntil: "networkidle" });
-    await page.getByTestId("abrir-filtros").click();
+    await page.getByTestId("pilula-mais").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
     await painel.getByRole("button", { name: "Aceita pets", exact: true }).click();
     await page.keyboard.press("Escape");
     await expect(painel).toHaveCount(0);
-    await expect(page.getByTestId("abrir-filtros")).toHaveAccessibleName("Filtros");
+    await expect(page.getByTestId("pilula-mais")).not.toContainText("(");
+    await expect(page.getByTestId("pilula-mais")).toHaveAttribute("aria-pressed", "false");
     await expect(page).not.toHaveURL(/pet=1/);
   });
 
   test("link com filtros (atalho da home) abre o celular já filtrado", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/buscar?pet=1", { waitUntil: "networkidle" });
-    await expect(page.getByTestId("resumo-filtros")).toHaveText("Aceita pets");
-    await expect(page.getByTestId("abrir-filtros")).toHaveAccessibleName("Filtros (1 ativos)");
+    // E82-A: sem resumo de filtros no topo — "Mais filtros (1)" e o chip ligado na folha.
+    await expect(page.getByTestId("pilula-mais")).toContainText("(1)");
+    await page.getByTestId("pilula-mais").click();
+    await expect(page.getByRole("dialog", { name: "Filtros" }).getByRole("button", { name: "Aceita pets", exact: true })).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("1280 px: topo do celular escondido; filtros do computador visíveis", async ({ page }) => {
+  test("1280 px: a mesma linha de pílulas; Preço abre o painel com as faixas", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/buscar", { waitUntil: "networkidle" });
-    await expect(page.getByTestId("busca-celular")).toBeHidden();
-    // Ordem eac7e3a1: no computador os filtros abrem pela busca compacta do cabeçalho.
-    await page.getByTestId("busca-compacta").click();
-    await expect(page.getByRole("combobox", { name: "Preço máximo" })).toBeVisible();
+    // E82-A: sem bloco só do celular nem busca compacta no cabeçalho — a mesma linha em toda largura.
+    await expect(page.getByTestId("linha-pilulas")).toBeVisible();
+    await page.getByTestId("pilula-preco").click();
+    const painel = page.getByTestId("painel-pilula-preco");
+    await expect(painel).toBeVisible();
+    await expect(painel.getByTestId("pilula-preco-5000")).toContainText("Até R$ 5.000");
   });
 });

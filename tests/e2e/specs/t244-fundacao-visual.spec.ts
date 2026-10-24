@@ -128,14 +128,9 @@ async function totalDoTitulo(page: Page): Promise<number> {
   return Number(t.match(/^\d+/)?.[0] ?? 0);
 }
 
-/** Abre a folha de filtros: no celular pelo botão redondo; no computador pela busca compacta → "Mais filtros". */
-async function abrirFolha(page: Page, largura: number): Promise<Locator> {
-  if (largura < 1024) {
-    await page.getByTestId("abrir-filtros").click();
-  } else {
-    if ((await page.getByTestId("filtros-barra").getAttribute("data-aberto")) !== "1") await page.getByTestId("busca-compacta").click();
-    await page.getByTestId("mais-filtros").click();
-  }
+/** Abre a folha de filtros. E82-A: a mesma pílula "Mais filtros" da linha única em toda largura. */
+async function abrirFolha(page: Page): Promise<Locator> {
+  await page.getByTestId("pilula-mais").click();
   const folha = page.getByRole("dialog", { name: "Filtros" });
   await expect(folha).toBeVisible();
   return folha;
@@ -170,16 +165,17 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
         semDialogo(page);
         await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
         await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-        const barra = page.getByTestId(largura < 1024 ? "barra-busca" : "busca-compacta");
+        // E82-A: no lugar da barra de busca, a linha única de pílulas (em pill) — a mesma em toda largura.
+        const barra = page.getByTestId("linha-pilulas");
         await expect(barra).toBeVisible();
-        expect(Number.parseFloat((await estilo(barra)).raio), "barra de busca em pill").toBeGreaterThanOrEqual(20);
+        expect(Number.parseFloat((await estilo(page.getByTestId("pilula-local"))).raio), "pílula em pill").toBeGreaterThanOrEqual(20);
         await barra.screenshot({ path: `${SAIDA}/t244-buscar-barra-${largura}.png` });
 
         const cartoes = page.getByTestId("cartao-imovel");
         await expect(cartoes.first()).toBeVisible();
         await conferirCartao(cartoes.first(), "/buscar");
 
-        const folha = await abrirFolha(page, largura);
+        const folha = await abrirFolha(page);
         const caixa = (await folha.boundingBox())!;
         if (largura < 1024) {
           // De baixo para cima: encostada no rodapé da tela, largura toda.
@@ -222,7 +218,7 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
         const total = await totalDoTitulo(page);
         test.skip(total === 0, "Busca vazia nesta base.");
 
-        let folha = await abrirFolha(page, largura);
+        let folha = await abrirFolha(page);
         const aplicar = folha.getByTestId("aplicar-filtros");
         await expect(aplicar).toHaveAttribute("data-total", String(total));
         // Uma escolha que filtra de verdade (0 < n), tentando da mais seletiva para a menos.
@@ -241,7 +237,7 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
         expect(await totalDoTitulo(page)).toBe(n);
         await expect(page).toHaveURL(/quartos=\d/);
 
-        folha = await abrirFolha(page, largura);
+        folha = await abrirFolha(page);
         expect(await folha.locator('[aria-pressed="true"]').count()).toBeGreaterThan(0);
         await folha.getByTestId("limpar-tudo").click();
         await expect(folha.locator('[aria-pressed="true"]'), "Limpar tudo desliga todos os chips").toHaveCount(0);
@@ -429,16 +425,19 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
             .map((el) => (el.textContent ?? "").trim().slice(0, 30)),
         APOIO);
         expect(apoioGrande, "cinza de apoio só em miúdo").toEqual([]);
-        // Sombra: o cartão, a barra de busca e os chips não têm; o flutuante tem.
+        // Sombra: o cartão, a barra de busca e os chips não têm; o que flutua tem.
         expect((await estilo(cartoes.first().locator("a").first())).sombra).toBe("none");
-        const flut = page.getByTestId("fale-com-a-viva");
-        if (await flut.isVisible()) expect((await estilo(flut)).sombra).not.toBe("none");
+        expect((await estilo(page.getByTestId("pilula-preco"))).sombra, "pílula sem sombra").toBe("none");
+        // E95: o flutuante "Fale com a Viva" não aparece na /buscar.
+        await expect(page.getByTestId("fale-com-a-viva")).toBeHidden();
+        // E82-A: o painel da pílula flutua sob a linha (no lugar da faixa de filtros presa da busca compacta).
+        await page.getByTestId("pilula-preco").click();
+        expect((await estilo(page.getByTestId("painel-pilula-preco"))).sombra, "painel da pílula flutua").not.toBe("none");
+        await page.keyboard.press("Escape");
+        await expect(page.getByTestId("painel-pilula-preco")).toHaveCount(0);
         if (largura >= 1024) {
-          await page.getByTestId("busca-compacta").click();
-          expect((await estilo(page.getByTestId("filtros-barra"))).sombra, "faixa de filtros presa (busca fixa)").not.toBe("none");
           const pino = page.getByTestId("pin-mapa").first();
           if (await pino.isVisible().catch(() => false)) expect((await estilo(pino)).sombra, "botão do mapa").not.toBe("none");
-          await page.keyboard.press("Escape");
         }
         await page.mouse.wheel(0, 800);
         await expect.poll(async () => (await estilo(page.locator("header").first())).sombra, { message: "cabeçalho fixo ao rolar" }).not.toBe("none");

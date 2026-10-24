@@ -58,9 +58,9 @@ test("t209 compara o assunto sem o sufixo '· Viva Nomads' que o envio acrescent
   assert.match(spec, /\.map\(\(r\) => r\.assunto\.replace\(\/ · Viva Nomads\$\/, ""\)\)/);
 });
 
-test("t71 centraliza o grupo busca + 'Publicar pedido' no slot do cabeçalho, não só a pílula", () => {
+test("t71 (E82-A): sem busca compacta no cabeçalho; a linha de pílulas fica logo abaixo dele", () => {
   const spec = ler("tests/e2e/specs/t71-busca-topo.spec.ts");
-  assert.match(spec, /compacta\.locator\("xpath=\.\."\)\.boundingBox\(\)/);
+  assert.match(spec, /getByTestId\("busca-compacta"\)\)\.toHaveCount\(0\)/);
   assert.doesNotMatch(spec, /cBox\.x \+ cBox\.width \/ 2 - \(sBoxSlot/);
 });
 
