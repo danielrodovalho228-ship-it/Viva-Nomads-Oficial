@@ -196,9 +196,12 @@ test.describe("T405 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
       const fimBtn = document
         .querySelector('[data-testid="perfil-salvar-celular-faixa"]')!
         .getBoundingClientRect().bottom;
+      // E75 (outra entrega): a Conta fecha na linha institucional; quando ela existe, o "depois" vai até ela.
+      const fechamento = document.querySelector('[data-testid="conta-fechamento"]');
+      const ate = fechamento && (fechamento as HTMLElement).offsetParent !== null ? fechamento.getBoundingClientRect().top : window.innerHeight - altAbas;
       return {
         vaoAntes: btn.top - med.bottom,
-        depois: window.innerHeight - altAbas - fimBtn,
+        depois: ate - fimBtn,
         altAbas,
       };
     });
