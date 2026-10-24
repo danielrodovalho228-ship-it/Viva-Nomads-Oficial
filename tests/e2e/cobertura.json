@@ -67,7 +67,8 @@
         "t317-email-unico-49c1",
         "t352-varredura-bloco17",
         "t404-admin-celular-e73",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t407-varredura-bloco26"
       ]
     },
     "/admin/2fa/refazer": {
@@ -172,7 +173,8 @@
         "t241-contas-teste-36",
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
-        "t336-varredura-bloco14"
+        "t336-varredura-bloco14",
+        "t407-varredura-bloco26"
       ]
     },
     "/admin/emails-teste": {
@@ -413,7 +415,8 @@
         "t352-varredura-bloco17",
         "t368-varredura-bloco20",
         "t392-varredura-bloco24",
-        "t406-varredura-bloco25"
+        "t406-varredura-bloco25",
+        "t407-varredura-bloco26"
       ]
     },
     "/cidades": {
@@ -693,7 +696,8 @@
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
         "t403-nav-a",
-        "t402-conta-leva2"
+        "t402-conta-leva2",
+        "t407-varredura-bloco26"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -836,7 +840,8 @@
         "t334-varredura-bloco12",
         "t392-varredura-bloco24",
         "t406-varredura-bloco25",
-        "t433-l2a-itens-9-24"
+        "t433-l2a-itens-9-24",
+        "t407-varredura-bloco26"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -868,7 +873,8 @@
         "t392-varredura-bloco24",
         "t406-varredura-bloco25",
         "t431-perto-a",
-        "t433-l2a-itens-9-24"
+        "t433-l2a-itens-9-24",
+        "t407-varredura-bloco26"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1284,7 +1290,8 @@
         "t336-varredura-bloco14",
         "t337-varredura-redundancia",
         "t406-varredura-bloco25",
-        "t431-perto-a"
+        "t431-perto-a",
+        "t407-varredura-bloco26"
       ]
     },
     "/modelodenegocio": {
@@ -1854,7 +1861,8 @@
         "t344-avaliacao-telas-62a-parte2",
         "t378-e47a-foto-nivel-celular",
         "t385-varredura-bloco21",
-        "t406-varredura-bloco25"
+        "t406-varredura-bloco25",
+        "t407-varredura-bloco26"
       ]
     },
     "/dashboard/recibos": {
@@ -2015,7 +2023,8 @@
         "proprietario"
       ],
       "specs": [
-        "t397-foto-na-hora"
+        "t397-foto-na-hora",
+        "t407-varredura-bloco26"
       ]
     }
   },
