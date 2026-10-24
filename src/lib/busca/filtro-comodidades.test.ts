@@ -47,7 +47,8 @@ test("dois filtros combinados: precisa ter os dois (E, não OU)", () => {
 });
 
 test("URL: lê só chaves conhecidas, sem repetir; lixo é ignorado", () => {
-  assert.deepEqual(comodidadesDaUrl("wifi,garagem,wifi,<script>,x"), ["wifi", "garagem"]);
+  // FILTROS-2: wifi/cozinha de links antigos são garantia do mínimo, não filtro — ignoradas.
+  assert.deepEqual(comodidadesDaUrl("wifi,garagem,garagem,<script>,x,cozinha,lavar"), ["garagem", "lavar"]);
   assert.deepEqual(comodidadesDaUrl(null), []);
   assert.deepEqual(comodidadesDaUrl(""), []);
 });
@@ -70,5 +71,5 @@ test("a lista (/buscar) carrega só as 4 comodidades filtráveis, numa consulta 
   assert.match(tela, /comodidadesDaUrl\(sp\.get\("comod"\)\)/);
   assert.match(tela, /put\("comod"/);
   const painel = ler("components/busca/painel-filtros-celular.tsx");
-  assert.match(painel, /COMODIDADES_FILTRO/);
+  assert.match(painel, /COMODIDADES_FILTRAVEIS/);
 });
