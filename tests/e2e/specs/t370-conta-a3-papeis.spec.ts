@@ -6,6 +6,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
  *   1. Cartão "Quero morar" (Ativo + interruptor, "Procurando imóvel de 1 a 6 meses em <cidade>", resumo com o pino);
  *      cartão "Quero anunciar" com "Começar um anúncio"; pílulas "Preferências salvas" e "Ajuda com o cadastro";
  *      sem "viajantes"/"curto prazo". 1280 e 390, com prints.
+ *   1b. (perfil-03-papeis-com-fotos, 24/10) Três cartões num padrão só: "Quero ser parceiro" com "Cadastrar meu serviço";
+ *      cada cartão com a foto do acervo à esquerda, carregando de verdade, do MESMO tamanho e na mesma coluna nos três.
  *   2. Desligar "Quero morar" grava na hora (sem botão de salvar) e volta depois de recarregar; ligar de novo grava.
  */
 const SAIDA = "tests/laboratorio/saida";
@@ -33,7 +35,7 @@ test.describe("T370 — CONTA-A A3: Papéis e intenção (perfil-03)", () => {
   });
 
   for (const w of [1280, 390]) {
-    test(`1. a ${w} px: os dois cartões e as pílulas do desenho`, async ({ browser }) => {
+    test(`1. a ${w} px: os três cartões com foto e as pílulas do desenho`, async ({ browser }) => {
       const p = await como(browser, w);
       await p.goto(ROTA, { waitUntil: "domcontentloaded" });
       await p.getByTestId("tela-papeis").waitFor({ timeout: 20_000 });
@@ -44,6 +46,24 @@ test.describe("T370 — CONTA-A A3: Papéis e intenção (perfil-03)", () => {
       await expect(morar).toContainText("Procurando imóvel de 1 a 6 meses em Uberlândia");
       await expect(p.getByTestId("papel-morar-resumo")).toHaveText("Uberlândia · 1–6 meses · Mobiliado");
       await expect(p.getByTestId("papel-comecar-anuncio")).toHaveAttribute("href", "/dashboard/imoveis/novo");
+      const parceiro = p.getByTestId("papel-cartao-parceiro");
+      await expect(parceiro).toContainText("Quero ser parceiro");
+      await expect(parceiro).toContainText("Ofereça serviços para moradores e proprietários");
+      await expect(p.getByTestId("papel-parceiro-botao")).toHaveText("Cadastrar meu serviço");
+      await expect(p.getByTestId("papel-parceiro-botao")).toHaveAttribute("href", "/dashboard/parceiro");
+      const caixas = [];
+      for (const c of ["morar", "anunciar", "parceiro"]) {
+        const cartao = p.getByTestId(`papel-cartao-${c}`);
+        const foto = cartao.getByTestId("papel-foto");
+        const img = foto.locator("img");
+        await img.scrollIntoViewIfNeeded();
+        await expect.poll(() => img.evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0), { timeout: 15_000 }).toBe(true);
+        const f = (await foto.boundingBox())!;
+        const k = (await cartao.boundingBox())!;
+        caixas.push({ w: Math.round(f.width), h: Math.round(f.height), dx: Math.round(f.x - k.x) });
+      }
+      // Mesma medida e mesmo recuo à esquerda nos três cartões.
+      expect(new Set(caixas.map((c) => `${c.w}x${c.h}@${c.dx}`)).size, JSON.stringify(caixas)).toBe(1);
       await expect(p.getByTestId("papeis-preferencias")).toContainText("Preferências salvas");
       await expect(p.getByTestId("papeis-ajuda")).toHaveAttribute("href", "/ajuda");
       await expect(p.locator("main")).not.toContainText(/viajante|curto prazo|médio prazo/i);
