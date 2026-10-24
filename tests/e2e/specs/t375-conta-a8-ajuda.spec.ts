@@ -37,21 +37,33 @@ test.describe("T375 — CONTA-A A8: Ajuda (perfil-08)", () => {
   });
 
   for (const w of [1280, 390]) {
-    test(`1. a ${w} px: os quatro atalhos na ordem, Sair da conta e o rodapé`, async ({ browser }) => {
+    test(`1. a ${w} px: contato em destaque, as linhas com descrição, Sair no cartão e o fechamento`, async ({ browser }) => {
       const p = await como(browser, w);
       await p.goto("/dashboard/conta/ajuda", { waitUntil: "domcontentloaded" });
       await p.getByTestId("tela-ajuda").waitFor();
       await expect(p.locator("h1:visible")).toHaveText("Ajuda");
+      // E71: "Fale com a Viva" é o cartão em destaque (foto carregando + a frase do atendimento), primeiro na tela.
+      const contato = p.getByTestId("ajuda-contato");
+      await expect(contato).toContainText("Assistente Viva 24 h · resposta de uma pessoa em até 24 h");
+      const foto = contato.getByTestId("cartao-foto").locator("img");
+      await expect.poll(() => foto.evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0), { timeout: 15_000 }).toBe(true);
       const links = p.getByTestId("tela-ajuda").locator('a[data-testid^="ajuda-link-"]');
       await expect(links).toHaveCount(4);
-      for (const [i, [chave, rotulo, href]] of LINKS.entries()) {
+      const ordem = [LINKS[1], LINKS[0], LINKS[2], LINKS[3]];
+      for (const [i, [chave, rotulo, href]] of ordem.entries()) {
         const l = links.nth(i);
         await expect(l).toHaveAttribute("data-testid", `ajuda-link-${chave}`);
-        await expect(l).toHaveText(rotulo);
+        await expect(l).toContainText(chave === "fale" ? "Falar com a Viva" : rotulo);
         await expect(l).toHaveAttribute("href", href);
       }
+      // E71: cada linha com a sua descrição; foto só no contato.
+      await expect(p.getByTestId("ajuda-desc-central")).toHaveText("Guias e respostas rápidas");
+      await expect(p.getByTestId("ajuda-desc-termos")).toHaveText("As regras da plataforma");
+      await expect(p.getByTestId("ajuda-desc-privacidade")).toHaveText("Seus dados, suas regras");
+      await expect(p.getByTestId("tela-ajuda").getByTestId("cartao-foto")).toHaveCount(1);
+      // E71/E75: "Sair da conta" dentro do cartão; a tela fecha na linha institucional, sem vão.
       await expect(p.getByTestId("ajuda-sair")).toHaveText("Sair da conta");
-      await expect(p.getByTestId("ajuda-rodape")).toHaveText("Viva Nomads · Uberlândia, MG");
+      await expect(p.getByTestId("conta-fechamento")).toHaveText("Viva Nomads · Uberlândia, MG");
       if (w === 1280) await expect(p.getByTestId("conta-menu-ajuda")).toHaveAttribute("aria-current", "page");
       else await expect(p.getByTestId("conta-voltar")).toBeVisible();
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

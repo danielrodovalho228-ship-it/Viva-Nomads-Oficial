@@ -77,7 +77,9 @@ test.describe("T391 — Conta: E55, E63, E64, E66, E67", () => {
           const main = document.querySelector("[data-painel-main]") as HTMLElement;
           main.scrollTop = main.scrollHeight;
           window.scrollTo(0, document.documentElement.scrollHeight);
-          const fimCartao = document.querySelector('[data-testid="seus-dados-regras"]')!.getBoundingClientRect().bottom;
+          // E75: a tela fecha na linha institucional; o vão conta a partir dela quando ela existe.
+          const ultimo = document.querySelector('[data-testid="conta-fechamento"]') ?? document.querySelector('[data-testid="seus-dados-regras"]')!;
+          const fimCartao = ultimo.getBoundingClientRect().bottom;
           const fimMain = main.getBoundingClientRect().bottom;
           return Math.round(fimMain - fimCartao);
         });

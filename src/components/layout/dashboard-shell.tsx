@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { MarcaNavInterna } from "@/components/ui/voltar-celular";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, LogOut, Plus } from "lucide-react";
+import { ChevronLeft, Menu, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
@@ -82,6 +83,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     setPathnameDrawer(pathname);
     setOpen(false);
   }
+
   const router = useRouter();
   const { signOut, setActiveMode } = useAuthStore();
   const { mode, isOwner, isTenant } = useViewMode();
@@ -338,12 +340,27 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
+        {/* E73 (QA 24/10): no celular, nas telas da equipe (/admin), a navegação fica à vista — "Voltar ao site" e o menu da
+            equipe com nome — em vez de só o ícone do topo. No computador nada muda (a barra lateral já está aberta). */}
+        {pathname.startsWith("/admin") && (
+          <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 lg:hidden print:hidden" data-testid="admin-nav-celular">
+            <Link href="/" className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-forest" data-testid="admin-voltar-site">
+              <ChevronLeft className="h-5 w-5" aria-hidden /> Voltar ao site
+            </Link>
+            <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-line px-3 text-sm font-semibold text-ink" data-testid="admin-abrir-menu">
+              <Menu className="h-5 w-5" aria-hidden /> Menu da equipe
+            </button>
+          </nav>
+        )}
+
         {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
         <DemoBanner />
 
         {/* Folga no fim (sm+: --folga-flutuante = 112 px) e scroll-padding no contêiner que rola (lg): o botão flutuante "Fale com a
             Viva" (48 px, 24 px acima da borda) nunca fica por cima da última ação da tela (t241: "Salvar qualificação"
             coberto a 1280 px depois que os botões passaram a 56 px no #953). */}
+        {/* E69: marca a navegação interna para o "voltar" das subtelas no celular. */}
+        <MarcaNavInterna />
         <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}

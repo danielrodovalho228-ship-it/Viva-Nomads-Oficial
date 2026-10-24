@@ -4,6 +4,9 @@
   qual está ativa pela rota. Puro (node --test).
 */
 
+/** E75: a linha institucional que fecha toda tela da Conta e o menu. */
+export const LINHA_FECHAMENTO_CONTA = "Viva Nomads · Uberlândia, MG";
+
 export type SecaoConta = "perfil" | "avaliacoes" | "papeis" | "dados" | "privacidade" | "notificacoes" | "pagamentos" | "ajuda";
 
 export interface ItemSecao {
@@ -14,12 +17,16 @@ export interface ItemSecao {
   icone: "UserRound" | "Star" | "Users" | "FileText" | "Shield" | "Bell" | "CreditCard" | "CircleHelp";
   /** Linha curta do menu do celular. */
   descricao: string;
+  /** NAV-A: o nome no menu, quando difere do título da tela (ex.: "Como você usa a Viva" abre "Papéis e intenção"). */
+  rotuloMenu?: string;
 }
 
 export const SECOES_CONTA: readonly ItemSecao[] = [
   { id: "perfil", rotulo: "Perfil", href: "/dashboard/conta/perfil", icone: "UserRound", descricao: "Foto, nome, sobre você e o que o proprietário vê." },
+  // NAV-A (24/10): a ordem da Conta é Perfil, Como você usa a Viva, Avaliações, Dados, Privacidade, Notificações,
+  // Pagamentos, Ajuda (e Sair, no menu do celular).
+  { id: "papeis", rotulo: "Papéis e intenção", rotuloMenu: "Como você usa a Viva", href: "/dashboard/conta/papeis", icone: "Users", descricao: "O que você quer fazer na Viva." },
   { id: "avaliacoes", rotulo: "Avaliações", href: "/dashboard/conta/avaliacoes", icone: "Star", descricao: "O que disseram de você depois de cada estadia." },
-  { id: "papeis", rotulo: "Papéis e intenção", href: "/dashboard/conta/papeis", icone: "Users", descricao: "O que você quer fazer na Viva." },
   { id: "dados", rotulo: "Dados", href: "/dashboard/conta/dados", icone: "FileText", descricao: "Nome, contato e documento. Só a Viva vê." },
   { id: "privacidade", rotulo: "Privacidade", href: "/dashboard/conta/privacidade", icone: "Shield", descricao: "Verificações, senha e duas etapas." },
   { id: "notificacoes", rotulo: "Notificações", href: "/dashboard/conta/notificacoes", icone: "Bell", descricao: "Como e quando a Viva avisa você." },

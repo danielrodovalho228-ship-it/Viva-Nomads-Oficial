@@ -10,7 +10,7 @@ export const metadata = { title: "Sair da Viva", robots: { index: false } };
  */
 export default function SairDaVivaPage() {
   return (
-    <CascaConta ativo="privacidade" titulo="Sair da Viva" subtitulo="Pausar a conta, apagar seus dados ou ver as pendências.">
+    <CascaConta ativo="privacidade" subtela titulo="Sair da Viva" subtitulo="Pausar a conta, apagar seus dados ou ver as pendências.">
       <SairDaViva />
       <FalarComAViva className="mt-4" />
     </CascaConta>
