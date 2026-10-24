@@ -2009,7 +2009,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t359-calendario-etapa9-ical"
+      ]
     },
     "/api/comissao": {
       "personas": [
@@ -3179,6 +3181,14 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/blocks-actions.ts#linkExportacaoCalendario": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t359-calendario-etapa9-ical"
+      ]
     },
     "src/lib/data/blocks-actions.ts#getDatasIndisponiveis": {
       "personas": [
