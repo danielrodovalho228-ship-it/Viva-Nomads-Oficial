@@ -21,8 +21,9 @@ const TITULOS = { m320: `Studio medido 320 ${sufixo}`, m80: `Studio medido 80 ${
 const busca = (q = "") => `/buscar?local=${encodeURIComponent(BAIRRO)}${q}`;
 const cards = (page: Page) => page.getByTestId("grade-resultados").getByTestId("card-resultado");
 
+// E82-A: a folha abre pela pílula "Mais filtros" da linha única.
 async function abrirFolha(page: Page) {
-  await page.getByTestId("abrir-filtros").click();
+  await page.getByTestId("pilula-mais").click();
   return page.getByRole("dialog", { name: "Filtros" });
 }
 

@@ -24,13 +24,8 @@ const ids: { dono?: string; a?: string; b?: string; c?: string; d?: string; e?: 
 async function abrirFolha(page: Page, url: string) {
   await expect(async () => {
     await page.goto(url, { waitUntil: "domcontentloaded" });
-    // Celular: botão redondo; computador: "Mais filtros" na caixa (aberta pela busca compacta).
-    const celular = page.getByTestId("abrir-filtros").filter({ visible: true });
-    if (await celular.count()) await celular.first().click({ timeout: 5_000 });
-    else {
-      if (!(await page.getByTestId("mais-filtros").isVisible())) await page.getByTestId("busca-compacta").click({ timeout: 5_000 });
-      await page.getByTestId("mais-filtros").click({ timeout: 5_000 });
-    }
+    // E82-A: a pílula "Mais filtros" da linha única, em toda largura.
+    await page.getByTestId("pilula-mais").click({ timeout: 5_000 });
     await expect(page.getByTestId("painel-filtros")).toBeVisible({ timeout: 5_000 });
   }).toPass({ timeout: 60_000 });
   return page.getByTestId("painel-filtros");
@@ -149,9 +144,10 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
     await page.screenshot({ path: `${SAIDA}/t350-sem-medicao-1280.png`, fullPage: false });
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("painel-filtros")).toHaveCount(0);
-    if (!(await page.getByTestId("filtros-caixa").isVisible())) await page.getByTestId("busca-compacta").click();
-    await expect(page.getByTestId("filtros-caixa").getByTestId("mais-filtros")).toBeVisible();
-    await expect(page.getByTestId("filtros-caixa").getByRole("button", { name: /Pronto/i })).toHaveCount(0);
+    // E82-A: a barra de cima é a linha de pílulas — "Mais filtros" nela, "Pronto para Morar" não.
+    const linha = page.getByTestId("linha-pilulas");
+    await expect(linha.getByTestId("pilula-mais")).toBeVisible();
+    await expect(linha.getByRole("button", { name: /Pronto/i })).toHaveCount(0);
 
     // Veio pela URL com ?internet=100 e nada medido: o chip ligado fica (para desligar) e a linha diz o porquê do 0.
     await abrirFolha(page, `/buscar?local=${encodeURIComponent(CIDADE_SEM)}&internet=100`);

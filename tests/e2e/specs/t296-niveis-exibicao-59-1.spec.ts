@@ -134,12 +134,8 @@ test.describe("T296 — Adendo 59.1, Parte A: níveis na tela", () => {
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t296-1-cartoes-${w}.png` });
 
-      if (w === 390) await page.getByTestId("abrir-filtros").click();
-      else {
-        // No computador os filtros abrem pela busca compacta; "Mais filtros" abre a folha lateral (como no t222).
-        await page.getByTestId("busca-compacta").click();
-        await page.getByRole("button", { name: /Mais filtros/ }).first().click();
-      }
+      // E82-A: a pílula "Mais filtros" da linha única abre a folha em toda largura (como no t222).
+      await page.getByTestId("pilula-mais").click();
       const folha = page.getByRole("dialog", { name: "Filtros" });
       const grupo = folha.getByTestId("painel-nivel");
       await expect(grupo).toContainText("Nível a partir de");

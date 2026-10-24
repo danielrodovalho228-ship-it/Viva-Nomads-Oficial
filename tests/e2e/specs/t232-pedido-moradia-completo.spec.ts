@@ -260,7 +260,7 @@ test.describe("T232 — pedido de moradia completo", () => {
     await ctx.close();
   });
 
-  test("6. portas: 'Publicar pedido' na busca (inclusive barra condensada), cartão com menos de 3 reais, home e menu", async ({ browser }) => {
+  test("6. portas: 'Publicar pedido' na busca, cartão com menos de 3 reais, home e menu", async ({ browser }) => {
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page = await ctx.newPage();
     for (const largura of [390, 1280]) {
@@ -270,7 +270,8 @@ test.describe("T232 — pedido de moradia completo", () => {
       await expect(cartao).toContainText("Não achou? Publique um pedido e os proprietários vêm até você");
       const href = (await cartao.locator("a").getAttribute("href")) ?? "";
       expect(new URLSearchParams(href.split("?")[1] ?? "").get("cidade")).toBe("Patos de Minas");
-      await expect(page.getByTestId(largura === 390 ? "busca-publicar-pedido" : "busca-publicar-pedido-topo").first()).toBeVisible();
+      // E82-A: "Publicar pedido" saiu do topo e da linha da contagem; na busca, a porta é o cartão (ou o estado vazio).
+      await expect(cartao.locator("a")).toBeVisible();
       await expect(page.locator('[data-testid="card-resultado"]')).toHaveCount(1);
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t232-busca-${largura}.png`, fullPage: true });

@@ -5,6 +5,7 @@ import { test, expect } from "@playwright/test";
  * T222 — ordem 022afabb, item 3 e 6: filtro "Aceita pet" com porte na busca.
  *  1. Celular (390 px): ligar "Aceita pets" no painel mostra "Porte do pet"; a escolha vai para a URL.
  *  2. Computador: o chip "Aceita pet" abre o seletor de porte; a contagem nunca aumenta.
+ * E82-A: nas duas larguras a folha abre pela pílula "Mais filtros" da linha única.
  */
 test.describe("T222 — Filtro de pet com porte", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -13,7 +14,7 @@ test.describe("T222 — Filtro de pet com porte", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    await page.getByTestId("abrir-filtros").click();
+    await page.getByTestId("pilula-mais").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
     await expect(painel.getByTestId("painel-porte-pet")).toHaveCount(0);
     await painel.getByRole("button", { name: "Aceita pets", exact: true }).click();
@@ -30,9 +31,8 @@ test.describe("T222 — Filtro de pet com porte", () => {
   test("1280 px: na folha lateral, 'Aceita pets' mostra o porte e grava na URL", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    // Desde a busca compacta (#488) os filtros abrem por ela; "Mais filtros" abre a folha lateral (Prompt 40).
-    await page.getByTestId("busca-compacta").click();
-    await page.getByRole("button", { name: /Mais filtros/ }).first().click();
+    // E82-A: a pílula "Mais filtros" abre a folha lateral (Prompt 40).
+    await page.getByTestId("pilula-mais").click();
     const folha = page.getByRole("dialog", { name: "Filtros" });
     await expect(folha.getByTestId("painel-porte-pet")).toHaveCount(0);
     await folha.getByRole("button", { name: "Aceita pets", exact: true }).click();

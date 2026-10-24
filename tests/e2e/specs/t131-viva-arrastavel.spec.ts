@@ -3,7 +3,8 @@ import { test, expect } from "@playwright/test";
 /**
  * T131 — ordem a9982623: botão "Fale com a Viva" arrastável e parado (sem pulo).
  * Clique abre; arrastar (> 6 px) move, NÃO abre e a posição persiste ao trocar de página.
- * 390 e 1280 px, na home e em /buscar (a página do imóvel usa a mesma lógica).
+ * 390 e 1280 px, na home e em /como-funciona (a página do imóvel usa a mesma lógica). E95: na /buscar o flutuante
+ * não aparece, então a persistência é conferida noutra página.
  */
 for (const largura of [390, 1280]) {
   test.describe(`T131 — Viva arrastável (${largura}px)`, () => {
@@ -43,7 +44,7 @@ for (const largura of [390, 1280]) {
       expect(depois.x).toBeLessThan(c.x);
       expect(depois.y).toBeLessThan(c.y - 100);
 
-      await page.goto("/buscar", { waitUntil: "load" });
+      await page.goto("/como-funciona", { waitUntil: "load" });
       await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveAttribute("data-posicao", "esq");
       const outra = (await page.getByTestId("fale-com-a-viva").boundingBox())!;
       expect(Math.abs(outra.x - depois.x)).toBeLessThan(2);
