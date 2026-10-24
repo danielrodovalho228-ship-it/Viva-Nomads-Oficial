@@ -6108,6 +6108,59 @@
       "specs": [
         "t389-deteccao-fotos"
       ]
+    },
+    "src/lib/destinos/pessoal-actions.ts#buscarOutroLocal": {
+      "personas": [
+        "publico",
+        "inquilino"
+      ],
+      "specs": [
+        "t390-destino-pessoal"
+      ]
+    },
+    "src/lib/destinos/pessoal-actions.ts#meusLocais": {
+      "personas": [
+        "publico",
+        "inquilino"
+      ],
+      "specs": [
+        "t390-destino-pessoal"
+      ]
+    },
+    "src/lib/destinos/pessoal-actions.ts#usarLocal": {
+      "personas": [
+        "publico",
+        "inquilino"
+      ],
+      "specs": [
+        "t390-destino-pessoal"
+      ]
+    },
+    "src/lib/destinos/pessoal-actions.ts#apagarLocal": {
+      "personas": [
+        "publico",
+        "inquilino"
+      ],
+      "specs": [
+        "t390-destino-pessoal"
+      ]
+    },
+    "src/lib/destinos/pessoal-actions.ts#pedirLocalNaoAchado": {
+      "personas": [
+        "publico",
+        "inquilino"
+      ],
+      "specs": [
+        "t390-destino-pessoal"
+      ]
+    },
+    "src/lib/destinos/pessoal-actions.ts#resolverLocalNaoAchado": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t390-destino-pessoal"
+      ]
     }
   }
 }

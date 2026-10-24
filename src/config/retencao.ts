@@ -174,6 +174,9 @@ export const INVENTARIO: ItemInventario[] = [
   i("property_ownership_checks", "public.property_ownership_checks", "matrícula, motivo e campos conferidos", "titularidade", CONTA, "veredito"),
   i("qualification_checklists", "public.qualification_checklists", "caminho do documento do imóvel", "qualificação", CONTA, "veredito"),
   i("tempos_deslocamento", "public.tempos_deslocamento", "chave com lat/lng do local de trabalho digitado", "tempo até o trabalho (37)", CONTA),
+  // DESTINO-PESSOAL-B: o "Outro local" da pessoa logada (rótulo sem número, ponto com 3 casas). Só ela lê; sai com a conta.
+  i("destinos_pessoais", "public.destinos_pessoais", "rótulo e ponto (3 casas) do local de trabalho ou estudo que a pessoa usou na busca", "tempo até o local na busca e o agregado do admin (só regiões com 5+ pessoas)", { prazoDias: null, gatilho: "exclusao_conta", modo: "apagar", base: "pendente", fase: 2 }),
+  i("destinos_nao_achados", "public.destinos_nao_achados", "nome do lugar e cidade pedidos em 'Não achei meu local'", "a equipe cadastrar a âncora", CONTA, "nome do lugar e cidade, sem quem pediu"),
   // Prompt 51 F1: o motivo da saída (opcional) e o texto livre (só a equipe lê). Na exclusão da conta o user_id vira nulo.
   i("saidas_motivos", "public.saidas_motivos", "motivo da saída e texto livre opcional", "entender por que as pessoas saem (painel de qualidade)", { prazoDias: 365, gatilho: "sem_gatilho_automatico", modo: "anonimizar", base: "proposta", fase: 2 }, "papel, motivo e data, sem identificação (estatística)"),
   i("denuncias_anuncio", "public.denuncias_anuncio", "motivo e texto da denúncia de anúncio", "o atendimento analisar a denúncia", { prazoDias: 365, gatilho: "decisao_admin", modo: "apagar", base: "proposta", fase: 2 }, "o estado da denúncia no chamado"),
