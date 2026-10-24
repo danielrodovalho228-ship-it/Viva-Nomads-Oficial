@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
-import { alternarBuscaSalva, buscaEstaSalva } from "@/lib/data/buscas-salvas-actions";
+import { alternarBuscaSalva, buscaEstaSalva, definirAlertaBusca } from "@/lib/data/buscas-salvas-actions";
+import { HREF_NOTIFICACOES, ROTULO_LIGAR_NOTIFICACOES, ROTULO_NAO_AVISAR, avisoAoSalvar, textoDoAviso, type AvisoSalvarBusca } from "@/lib/busca/aviso-salvar-busca";
 import { cn } from "@/lib/utils";
 import { normalizarBusca } from "@/lib/busca/buscas-salvas";
 import { CHAVE_BUSCAS_CONVIDADO, alternarNaLista, lerLista } from "@/lib/convidado/guardados";
@@ -32,12 +34,15 @@ function guardarBuscasDoAparelho(lista: string[]): boolean {
  * novo remove. Prompt 49: o convidado salva no aparelho (vai para a conta quando ele entrar); sem armazenamento,
  * vai para a entrada ("Para salvar a busca…") e volta para a mesma busca.
  * `versao` muda quando os filtros mudam (reconsulta se a busca já está salva).
+ * Adendo ao E82-A: a frase depois de salvar diz se o aviso por e-mail está ligado ("Não me avisar" desliga o desta
+ * busca; com os avisos da conta desligados, leva a Notificações). O mesmo componente serve o "Criar alerta desta busca".
  */
 export function SalvarBusca({ versao, className, qs, rotulo = "Salvar busca", rotuloSalva = "Busca salva" }: { versao: string; className?: string; qs?: string; rotulo?: string; rotuloSalva?: string }) {
   const router = useRouter();
   const [salva, setSalva] = useState<boolean | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  const [aviso, setAviso] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<AvisoSalvarBusca | null>(null);
+  const [desligando, setDesligando] = useState(false);
 
   useEffect(() => {
     let vivo = true;
@@ -72,18 +77,26 @@ export function SalvarBusca({ versao, className, qs, rotulo = "Salvar busca", ro
           if (guardarBuscasDoAparelho(nova)) {
             const agora = nova.includes(chave);
             setSalva(agora);
-            setAviso(agora ? "Busca guardada neste aparelho. Entre com seu e-mail para receber alertas." : "Busca removida.");
+            setAviso({ tipo: agora ? "convidado" : "removida" });
             return;
           }
         }
         router.push(urlEntrada("busca", window.location.pathname + window.location.search));
         return;
       }
-      setAviso(r.error);
+      setAviso({ tipo: "erro", texto: r.error });
       return;
     }
     setSalva(r.salva);
-    setAviso(r.salva ? "Busca salva em Favoritos → Buscas salvas." : "Busca removida.");
+    setAviso(r.salva ? avisoAoSalvar({ id: r.id ?? null, avisoEmail: r.avisoEmail !== false }) : { tipo: "removida" });
+  }
+
+  /** "Não me avisar": desliga o alerta só desta busca (o liga/desliga continua em Buscas salvas). */
+  async function naoAvisar(id: string) {
+    setDesligando(true);
+    const r = await definirAlertaBusca(id, false).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
+    setDesligando(false);
+    setAviso(r.ok ? { tipo: "sem_aviso" } : { tipo: "erro", texto: r.error });
   }
 
   return (
@@ -100,8 +113,28 @@ export function SalvarBusca({ versao, className, qs, rotulo = "Salvar busca", ro
         {salva ? rotuloSalva : rotulo}
       </button>
       {aviso && (
-        <span role="status" className="text-xs text-muted">
-          {aviso}
+        <span role="status" className="inline-flex flex-wrap items-center gap-x-2 text-xs text-muted" data-testid="salvar-busca-aviso" data-tipo={aviso.tipo}>
+          {textoDoAviso(aviso)}
+          {aviso.tipo === "com_email" && (
+            <button
+              type="button"
+              onClick={() => void naoAvisar(aviso.id)}
+              disabled={desligando}
+              className="inline-flex min-h-11 items-center rounded-lg px-1 font-semibold text-ink underline underline-offset-4 hover:text-forest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest disabled:opacity-60"
+              data-testid="salvar-busca-nao-avisar"
+            >
+              {ROTULO_NAO_AVISAR}
+            </button>
+          )}
+          {aviso.tipo === "email_desligado" && (
+            <Link
+              href={HREF_NOTIFICACOES}
+              className="inline-flex min-h-11 items-center rounded-lg px-1 font-semibold text-ink underline underline-offset-4 hover:text-forest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest"
+              data-testid="salvar-busca-ligar-notificacoes"
+            >
+              {ROTULO_LIGAR_NOTIFICACOES}
+            </Link>
+          )}
         </span>
       )}
     </span>
