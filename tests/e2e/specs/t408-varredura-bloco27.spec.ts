@@ -38,7 +38,9 @@ const TELAS: Tela[] = [
   { conta: "INQUILINA", papel: "moradora", nome: "Conta, Perfil da moradora (#1299, #1305)", rota: () => "/dashboard/conta/perfil", clicar: false },
   { conta: "ADMIN", papel: "admin", nome: "Fila de fotos de perfil (#1305, tela nova)", rota: () => "/admin/fotos-perfil", clicar: false },
   { conta: "VISITANTE", papel: "visitante", nome: "Perfil público do dono (#1305)", rota: (m) => `/proprietario/${m.ids.DONO17}` },
-  { conta: "VISITANTE", papel: "visitante", nome: "Parceiros, seja parceiro (#1302)", rota: () => "/parceiros" },
+  // Sem o clique: o primário do main é o envio do pedido de parceria (grava ou manda o visitante ao login); no lab-crítico
+  // do #1308 o clique travou até o teto de 180 s nas duas tentativas.
+  { conta: "VISITANTE", papel: "visitante", nome: "Parceiros, seja parceiro (#1302)", rota: () => "/parceiros", clicar: false },
   { conta: "VISITANTE", papel: "visitante", nome: "Página do parceiro (#1302)", rota: async (m) => `/parceiros/${await slugParceiro(m)}` },
   { conta: "VISITANTE", papel: "visitante", nome: "Buscar parceiros (#1302)", rota: () => "/parceiros/buscar" },
   { conta: "PARCEIRO", papel: "parceiro", nome: "Painel do parceiro, nota fiscal (#1302)", rota: () => "/dashboard/parceiro", clicar: false },
@@ -121,12 +123,16 @@ test.describe("T408 — varredura da página inteira, bloco 27 (telas dos merges
                   // Primário que é link: a resposta é a navegação. O cliqueResponde lia a página no meio do
                   // redirecionamento (/para-proprietarios → /dashboard/imoveis/novo → /auth) e travava até o teto de 180 s.
                   const antes = page.url();
+                  const textoAntes = await page.locator("main").first().innerText().catch(() => "");
                   await primario.click({ timeout: 5_000, noWaitAfter: true }).catch(() => {});
                   const navegou = await page
                     .waitForURL((u) => u.href !== antes, { timeout: 3_000, waitUntil: "commit" })
                     .then(() => true)
                     .catch(() => false);
-                  clique = navegou ? [] : [`clique em "${nome}" (link) sem navegação em 3 s`];
+                  // Link que troca a tela sem navegar (preventDefault, ex.: "Abrir chamado" da /ajuda abre a aba do
+                  // formulário): também é resposta visível.
+                  const mudou = navegou || (await page.locator("main").first().innerText().catch(() => textoAntes)) !== textoAntes;
+                  clique = mudou ? [] : [`clique em "${nome}" (link) sem navegação nem mudança na tela em 3 s`];
                 } else {
                   clique = await cliqueResponde(page, primario, nome);
                 }
