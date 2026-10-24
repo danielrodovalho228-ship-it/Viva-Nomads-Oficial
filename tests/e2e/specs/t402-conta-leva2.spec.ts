@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * T402 — Conta, leva 2 (QA do Muse, 24/10). Conta de proprietário sem parceria. 390 e 1280.
@@ -25,6 +25,9 @@ test.describe("T402 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
   let id = "";
   test.beforeAll(async () => {
     id = await criarConta(conta, senha);
+    // Fora do modo "conta de teste" (que mostra a verificação simulada): assim a tela mostra o estado real, "em breve".
+    const { error } = await adm().from("profiles").update({ is_teste: false }).eq("id", id);
+    if (error) throw error;
   });
   test.afterAll(async () => {
     await apagarContas([id]);
