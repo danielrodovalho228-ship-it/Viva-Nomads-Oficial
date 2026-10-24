@@ -154,7 +154,7 @@ const BASE_PUBLICA = "/storage/v1/object/public/property-photos";
 export async function criarImovelPronto(
   ownerId: string,
   titulo: string,
-  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string; /** Prompt 59: sem o padrão mínimo de conforto confirmado (padrão do laboratório: os 10 itens confirmados) */ semConforto?: boolean; /** 61-B (#1155): sem o tipo de entrada, que passou a ser obrigatório para publicar anúncio novo (padrão do laboratório: "porteiro") */ semTipoEntrada?: boolean } = {}
+  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string; /** Prompt 59: sem o padrão mínimo de conforto confirmado (padrão do laboratório: os 10 itens confirmados) */ semConforto?: boolean; /** 61-B (#1155): sem o tipo de entrada, que passou a ser obrigatório para publicar anúncio novo (padrão do laboratório: "porteiro") */ semTipoEntrada?: boolean; /** FILTROS-1: sem a velocidade da internet (padrão: 300 Mbps) */ semInternet?: boolean } = {}
 ): Promise<string> {
   const { data, error } = await adm()
     .from("properties")
@@ -177,6 +177,8 @@ export async function criarImovelPronto(
       status: "draft",
       sem_cameras_interior: !opts.semDeclaracaoCameras,
       tipo_entrada: opts.semTipoEntrada ? null : "porteiro",
+      // FILTROS-1 (E39): publicar exige a velocidade da internet (padrão do laboratório: 300 Mbps informados).
+      internet_mbps: opts.semInternet ? null : 300,
     })
     .select("id")
     .single();
