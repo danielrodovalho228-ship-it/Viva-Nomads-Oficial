@@ -3,7 +3,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 
 /**
  * T358 — CAMPOS-2 no padrão E56 (toggle): os 5 grupos opcionais do anúncio (incluído no preço, áreas do condomínio,
- * andar/elevador, janela de entrada/saída, detalhe da vaga) e a Convivência do CAMPOS-1.
+ * andar/elevador, janela de entrada/saída, detalhe da vaga) e a Convivência do CAMPOS-1 — uma regra por toggle, como na
+ * tela 06 dos mockups aprovados (23/10 20:48).
  *   1. sem dado salvo, todo bloco nasce FECHADO (toggle desligado, campos escondidos) e o medidor diz "não se aplica";
  *   2. ligar abre o grupo inteiro; o medidor passa a contar o bloco (falta → preenchido);
  *   3. com dado salvo, o bloco nasce ABERTO ao recarregar;
@@ -55,18 +56,17 @@ test.describe("T358 — CAMPOS-2: blocos opcionais no padrão E56", () => {
       await expect(bloco(d, id).getByRole("switch")).toHaveAttribute("aria-checked", "false");
       await expect(d.getByTestId(`bloco-${id}-conteudo`)).toHaveCount(0);
     }
-    expect(await ligado(d, "convivencia")).toBe(false);
-    await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: Nenhum detalhe opcional ligado · 6 não se aplicam");
+    await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: Nenhum detalhe opcional ligado · 9 não se aplicam");
 
     // Ligar abre o grupo inteiro e o medidor passa a contá-lo (falta → preenchido).
     await d.getByTestId("bloco-andar-toggle").click();
     await expect(d.getByTestId("bloco-andar-conteudo")).toBeVisible();
     await expect(d.getByTestId("detalhe-andar")).toBeVisible();
     await expect(d.getByTestId("detalhe-elevador")).toBeVisible();
-    await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: 0 de 1 preenchido · 5 não se aplicam");
+    await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: 0 de 1 preenchido · 8 não se aplicam");
     await d.getByTestId("detalhe-andar").fill("3");
     await d.getByTestId("detalhe-elevador").getByLabel("Sim", { exact: true }).check();
-    await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: 1 de 1 preenchido · 5 não se aplicam");
+    await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: 1 de 1 preenchido · 8 não se aplicam");
 
     await d.getByTestId("bloco-janela-toggle").click();
     await d.getByTestId("detalhe-entrada-de").fill("14:00");
@@ -99,7 +99,7 @@ test.describe("T358 — CAMPOS-2: blocos opcionais no padrão E56", () => {
     expect(await ligado(d, "janela")).toBe(true);
     expect(await ligado(d, "vaga")).toBe(false);
     await expect(d.getByTestId("detalhe-andar")).toHaveValue("3");
-    await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: 2 de 2 preenchidos · 4 não se aplicam");
+    await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: 2 de 2 preenchidos · 7 não se aplicam");
 
     // Desligar com dados: confirmação na tela. "Manter" não mexe em nada.
     await d.getByTestId("bloco-andar-toggle").click();
@@ -114,7 +114,7 @@ test.describe("T358 — CAMPOS-2: blocos opcionais no padrão E56", () => {
     await d.getByTestId("bloco-andar-confirmar-desligar").click();
     expect(await ligado(d, "andar")).toBe(false);
     await expect(d.getByTestId("bloco-andar-conteudo")).toHaveCount(0);
-    await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: 1 de 1 preenchido · 5 não se aplicam");
+    await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: 1 de 1 preenchido · 8 não se aplicam");
     expect(await d.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     await secao.getByRole("button", { name: "Salvar seção" }).click();
     await expect.poll(async () => (await linha())?.detalhes_anuncio, { timeout: 20_000 }).toEqual({
@@ -133,27 +133,42 @@ test.describe("T358 — CAMPOS-2: blocos opcionais no padrão E56", () => {
     await p.close();
   });
 
-  test("Convivência (CAMPOS-1) no mesmo padrão: fechada sem regra, aberta com regra, desligar pede confirmação", async ({ browser }) => {
+  test("Convivência (CAMPOS-1): uma regra por toggle — fechada sem regra, aberta com regra, desligar pede confirmação", async ({ browser }) => {
     test.setTimeout(150_000);
     const d = await entrar(browser, dono.email, senha);
     await d.setViewportSize({ width: 1280, height: 900 });
     let secao = await abrirSecao(d, "secao-regras");
-    expect(await ligado(d, "convivencia")).toBe(false);
-    await expect(d.getByTestId("regras-casa")).toHaveCount(0);
-    await d.getByTestId("bloco-convivencia-toggle").click();
-    await expect(d.getByTestId("regras-casa")).toBeVisible();
+    for (const id of ["silencio", "fumo", "festas", "visitas"]) {
+      expect(await ligado(d, id), id).toBe(false);
+      await expect(d.getByTestId(`bloco-${id}-conteudo`)).toHaveCount(0);
+    }
+    // Ligar uma regra abre só ela (como na tela 06: visitas aberta, fumo e festas fechados).
+    await d.getByTestId("bloco-visitas-toggle").click();
+    await expect(d.getByTestId("regras-casa-visitas")).toBeVisible();
+    await d.getByTestId("regras-casa-visitas").getByLabel("Sim", { exact: true }).check();
+    await d.getByTestId("bloco-festas-toggle").click();
     await d.getByTestId("regras-casa-festas").getByLabel("Proibidas", { exact: true }).check();
+    expect(await ligado(d, "fumo")).toBe(false);
+    await d.getByTestId("regras-casa").screenshot({ path: `${SAIDA}/t358-convivencia-1280.png` });
     await secao.getByRole("button", { name: "Salvar seção" }).click();
-    await expect.poll(async () => (await linha())?.regras_casa, { timeout: 20_000 }).toEqual({ festas: "proibido" });
+    await expect.poll(async () => (await linha())?.regras_casa, { timeout: 20_000 }).toEqual({ festas: "proibido", visitas: { permitidas: true } });
 
+    // Recarregar: as regras salvas nascem abertas; as outras, fechadas.
     secao = await abrirSecao(d, "secao-regras");
-    expect(await ligado(d, "convivencia")).toBe(true);
-    await d.getByTestId("bloco-convivencia-toggle").click();
-    await expect(d.getByTestId("bloco-convivencia-confirmar")).toBeVisible();
-    await d.getByTestId("bloco-convivencia-confirmar-desligar").click();
-    expect(await ligado(d, "convivencia")).toBe(false);
+    expect(await ligado(d, "festas")).toBe(true);
+    expect(await ligado(d, "visitas")).toBe(true);
+    expect(await ligado(d, "fumo")).toBe(false);
+    expect(await ligado(d, "silencio")).toBe(false);
+    // Desligar com escolha pede confirmação; "Manter" não mexe; "Desligar e apagar" tira a regra ao salvar.
+    await d.getByTestId("bloco-festas-toggle").click();
+    await expect(d.getByTestId("bloco-festas-confirmar")).toBeVisible();
+    await d.getByTestId("bloco-festas-confirmar-manter").click();
+    expect(await ligado(d, "festas")).toBe(true);
+    await d.getByTestId("bloco-festas-toggle").click();
+    await d.getByTestId("bloco-festas-confirmar-desligar").click();
+    expect(await ligado(d, "festas")).toBe(false);
     await secao.getByRole("button", { name: "Salvar seção" }).click();
-    await expect.poll(async () => (await linha())?.regras_casa ?? null, { timeout: 20_000 }).toBeNull();
+    await expect.poll(async () => (await linha())?.regras_casa, { timeout: 20_000 }).toEqual({ visitas: { permitidas: true } });
     await d.context().close();
   });
 });

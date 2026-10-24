@@ -80,8 +80,8 @@ test("migração 0233: coluna jsonb objeto, leitura pública, aplicar idempotent
 test("formulário e servidor: editor tem o grupo, servidor valida, página lê à parte", () => {
   const editor = ler("src/app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx");
   assert.match(editor, /<RegrasCasaCampos value=\{regrasCasa\}/);
-  // E56: a Convivência agora é bloco opcional — desligada, vai vazia (o servidor grava null).
-  assert.match(editor, /regrasCasa: convivenciaLigada \? payloadDeRegrasCasa\(regrasCasa\) : \{\}/);
+  // E56 + tela 06: cada regra tem o seu toggle; só as ligadas vão.
+  assert.match(editor, /regrasCasa: payloadDeRegrasCasa\(regrasCasa\)/);
   const campos = ler("src/components/anuncio/regras-casa-campos.tsx");
   for (const id of ["regras-casa-silencio-inicio", "regras-casa-silencio-fim", "regras-casa-${nome}", "regras-casa-visitas-ate"]) assert.ok(campos.includes(id), id);
   const acoes = ler("src/lib/data/actions.ts");

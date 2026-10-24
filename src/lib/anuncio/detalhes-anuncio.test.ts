@@ -96,11 +96,11 @@ test("migração 0235: coluna jsonb objeto, leitura pública, aplicar idempotent
   assert.match(rb, /where version = '20261024000235'/);
 });
 
-test("editor e servidor: 5 grupos + Convivência no BlocoOpcional, medidor no topo, servidor valida e página lê", () => {
+test("editor e servidor: 5 grupos + 4 regras da Convivência em BlocoOpcional, medidor no topo, servidor valida e página lê", () => {
   const ed = ler("src/app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx");
-  assert.match(ed, /<BlocoOpcional\s+id="convivencia"/);
-  assert.match(ed, /nasceLigado\(!!property\.regrasCasa\)/);
-  assert.match(ed, /regrasCasa: convivenciaLigada \? payloadDeRegrasCasa\(regrasCasa\) : \{\}/);
+  assert.match(ed, /completudeBlocos\(\[\.\.\.estadosConvivencia\(regrasCasa\), \.\.\.estadosDetalhes\(detalhes\)\]\)/);
+  assert.match(ed, /regrasCasa: payloadDeRegrasCasa\(regrasCasa\)/);
+  assert.match(ler("src/components/anuncio/regras-casa-campos.tsx"), /REGRAS_CONVIVENCIA\.map[\s\S]*<BlocoOpcional/);
   assert.match(ed, /<DetalhesAnuncioCampos value=\{detalhes\}/);
   assert.match(ed, /data-testid="completude-opcionais"/);
   const campos = ler("src/components/anuncio/detalhes-anuncio-campos.tsx");
