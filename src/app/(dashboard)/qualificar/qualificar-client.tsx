@@ -623,7 +623,7 @@ export default function QualificationChecklistPage({
           </h2>
         </div>
         <p className="mt-2 text-sm text-muted">
-          Quanto mais itens, mais completo seu anúncio aparece para os inquilinos.
+          Quanto mais itens, mais completo seu anúncio aparece para os moradores.
         </p>
 
         {/* Placar do selo — ESTÁTICO no fluxo (ancorado na seção). Nada de sticky:
@@ -655,7 +655,7 @@ export default function QualificationChecklistPage({
         <div className="relative mt-6 h-36 overflow-hidden rounded-xl sm:h-40">
           <Image
             src="/images/unicas/qualificar-hero.webp"
-            alt="Sala mobiliada pronta para receber inquilinos"
+            alt="Sala mobiliada pronta para receber moradores"
             fill
             loading="lazy"
             sizes="(max-width: 640px) 100vw, 768px"
@@ -976,7 +976,7 @@ function TagBlock({
           })}
         </div>
         <p className="mt-3 text-xs text-muted">
-          Vira filtro na busca — inquilinos que procuram isso encontram seu imóvel primeiro.
+          Vira filtro na busca — moradores que procuram isso encontram seu imóvel primeiro.
         </p>
       </div>
     </div>

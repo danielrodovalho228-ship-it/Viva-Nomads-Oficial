@@ -270,7 +270,7 @@ function OfertaForm({ pedidoId, opcoes, onCancel, onDone }: { pedidoId: string; 
           </span>
         )}
       </label>
-      <p className="text-xs text-muted">O inquilino recebe a mensagem com o cartão do anúncio. A conversa é pela plataforma.</p>
+      <p className="text-xs text-muted">O morador recebe a mensagem com o cartão do anúncio. A conversa é pela plataforma.</p>
       {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700" role="alert">{erro}</p>}
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="ghost" onClick={onCancel} disabled={enviando}>

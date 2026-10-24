@@ -84,6 +84,7 @@ import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
 import { videoDoAnuncio } from "@/lib/video-anuncio";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 /** E53: linhas do resumo à vista no passo Revisar (o resto fica em "Detalhes dos valores"). */
 const LINHAS_REVISAR = new Set(["Motivo da estadia", "Valor por mês", "Total por mês", "Total da estadia"]);
@@ -121,7 +122,7 @@ export function PropertyDetail({
   const [motivoEstadia, setMotivoEstadia] = useState("");
   // Prompt 8: quantas pessoas vão morar (vai na candidatura; o servidor confere com a capacidade).
   const pessoas = selecao.pessoas;
-  // Composer de dúvida: o inquilino escreve a mensagem de verdade. A visita presencial (prompt 23) tem o próprio pedido,
+  // Composer de dúvida: o morador escreve a mensagem de verdade. A visita presencial (prompt 23) tem o próprio pedido,
   // com até 3 horários em horário de Brasília, como a visita por vídeo.
   const [composeKind, setComposeKind] = useState<"duvida" | null>(null);
   const [composeText, setComposeText] = useState("");
@@ -460,7 +461,7 @@ export function PropertyDetail({
     </div>
   );
 
-  // Modal de composição da dúvida/visita — o inquilino escreve o que quer.
+  // Modal de composição da dúvida/visita — o morador escreve o que quer.
   const composer = composeKind && (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-night/40 p-0 sm:items-center sm:p-4"
@@ -754,7 +755,7 @@ export function PropertyDetail({
           <header>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm text-muted">
-                <MapPin className="h-4 w-4" /> {property.neighborhood}, {property.city} - {property.state}
+                <MapPin className="h-4 w-4" /> {linhaLocalizacao(property.neighborhood, property.city, property.state)}
               </div>
               <span className="flex items-center gap-2">
                 {!exemplo && <ProblemaComIsto tipo="anuncio" id={property.id} />}

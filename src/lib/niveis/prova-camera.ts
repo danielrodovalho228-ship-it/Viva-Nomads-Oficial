@@ -108,5 +108,20 @@ export function ehCelular(env: { ponteiroGrosso: boolean; toque: boolean; temCam
   return env.ponteiroGrosso && env.toque && env.temCamera !== false;
 }
 
+export type ModoProva = "celular" | "computador";
+/** E100: no máximo 1 s decidindo (o botão mostra "Preparando…"); depois, vale o que já se sabe. */
+export const ESPERA_MODO_MS = 1000;
+export const PREPARANDO_CAMERA = "Preparando…";
+
+/** O caminho da prova: celular (câmera) ou computador (QR). Sem saber da câmera (null), o toque decide. */
+export function modoDaProva(env: { ponteiroGrosso: boolean; toque: boolean; getUserMedia: boolean; temCamera: boolean | null }): ModoProva {
+  return env.getUserMedia && ehCelular(env) ? "celular" : "computador";
+}
+
+/** Decide sem a lista de aparelhos quando ela não muda nada: sem toque ou sem getUserMedia, é computador já. */
+export function modoSemListaDeAparelhos(env: { ponteiroGrosso: boolean; toque: boolean; getUserMedia: boolean }): ModoProva | null {
+  return !env.getUserMedia || !env.ponteiroGrosso || !env.toque ? "computador" : null;
+}
+
 /** Caminho do link do celular (o servidor monta a URL completa). */
 export const caminhoLinkCelular = (token: string): string => `/prova/celular?t=${encodeURIComponent(token)}`;

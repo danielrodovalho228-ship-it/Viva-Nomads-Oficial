@@ -86,7 +86,7 @@ test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e dispo
   // Plural único (ordem dd15064d, D7b) pela síntese do cartão (src/lib/cartao-sintese.ts, quartosTexto/banheirosTexto).
   assert.match(c, /const sintese = itensSintese\(property\);/);
   assert.match(ler("lib/cartao-sintese.ts"), /quartosTexto\(p\.bedrooms\)[\s\S]*banheirosTexto\(p\.bathrooms\)/);
-  assert.match(c, /\{property\.neighborhood\}, \{property\.city\}/);
+  assert.match(c, /\{linhaLocalizacao\(property\.neighborhood, property\.city, property\.state\)\}/); // E101
   // Custo total do mês em destaque (ordem 1a555bfa), no formato do QA: "R$ X/mês · R$ Y em N meses".
   assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/);
   const hoje = new Date("2026-10-14T12:00:00Z");

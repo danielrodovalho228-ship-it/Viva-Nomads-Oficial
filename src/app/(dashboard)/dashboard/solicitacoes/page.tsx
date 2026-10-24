@@ -130,7 +130,7 @@ function OwnerView({
         <EmptyState
           icon={Wrench}
           title="Nenhuma solicitação ainda"
-          text="Quando um inquilino abrir uma ordem de manutenção em um dos seus imóveis, ela aparece aqui — por prioridade e com o prazo para responder." action={<ButtonLink href="/dashboard/imoveis" variant="secondary" size="sm">Ver meus imóveis</ButtonLink>} />
+          text="Quando um morador abrir uma ordem de manutenção em um dos seus imóveis, ela aparece aqui — por prioridade e com o prazo para responder." action={<ButtonLink href="/dashboard/imoveis" variant="secondary" size="sm">Ver meus imóveis</ButtonLink>} />
       ) : (
         <div className="grid gap-3">
           {sorted.map((o) => (

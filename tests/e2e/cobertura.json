@@ -67,7 +67,8 @@
         "t317-email-unico-49c1",
         "t352-varredura-bloco17",
         "t404-admin-celular-e73",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t407-varredura-bloco26"
       ]
     },
     "/admin/2fa/refazer": {
@@ -172,7 +173,8 @@
         "t241-contas-teste-36",
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
-        "t336-varredura-bloco14"
+        "t336-varredura-bloco14",
+        "t407-varredura-bloco26"
       ]
     },
     "/admin/emails-teste": {
@@ -283,7 +285,8 @@
         "t30-atendimento-autonomo",
         "t237-correcoes-35a",
         "t311-marco-principal-unico",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t438-vocab-a"
       ]
     },
     "/alerta-busca/desligar": {
@@ -413,6 +416,7 @@
         "t368-varredura-bloco20",
         "t392-varredura-bloco24",
         "t406-varredura-bloco25",
+        "t407-varredura-bloco26",
         "t436-busca-clean-e82"
       ]
     },
@@ -693,7 +697,9 @@
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
         "t403-nav-a",
-        "t402-conta-leva2"
+        "t402-conta-leva2",
+        "t407-varredura-bloco26",
+        "t439-e101-deteccao-espelho"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -820,7 +826,8 @@
         "t286-esqueletos-vazios-48",
         "t318-papel-ativo-fonte-unica",
         "t320-pausar-anuncio-64b",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t400-chacara-sem-internet"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -836,7 +843,9 @@
         "t334-varredura-bloco12",
         "t392-varredura-bloco24",
         "t406-varredura-bloco25",
-        "t433-l2a-itens-9-24"
+        "t433-l2a-itens-9-24",
+        "t407-varredura-bloco26",
+        "t400-chacara-sem-internet"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -868,7 +877,9 @@
         "t392-varredura-bloco24",
         "t406-varredura-bloco25",
         "t431-perto-a",
-        "t433-l2a-itens-9-24"
+        "t433-l2a-itens-9-24",
+        "t407-varredura-bloco26",
+        "t400-chacara-sem-internet"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1284,7 +1295,9 @@
         "t336-varredura-bloco14",
         "t337-varredura-redundancia",
         "t406-varredura-bloco25",
-        "t431-perto-a"
+        "t431-perto-a",
+        "t407-varredura-bloco26",
+        "t439-e101-deteccao-espelho"
       ]
     },
     "/modelodenegocio": {
@@ -1309,7 +1322,8 @@
         "t311-marco-principal-unico",
         "t325-fotos-ilustrativas-empresas",
         "t354-varredura-bloco19",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t438-vocab-a"
       ]
     },
     "/parceiros": {
@@ -1461,7 +1475,8 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t438-vocab-a"
       ]
     },
     "/simulacao": {
@@ -1852,7 +1867,9 @@
         "t344-avaliacao-telas-62a-parte2",
         "t378-e47a-foto-nivel-celular",
         "t385-varredura-bloco21",
-        "t406-varredura-bloco25"
+        "t406-varredura-bloco25",
+        "t407-varredura-bloco26",
+        "t439-e101-deteccao-espelho"
       ]
     },
     "/dashboard/recibos": {
@@ -2013,7 +2030,8 @@
         "proprietario"
       ],
       "specs": [
-        "t397-foto-na-hora"
+        "t397-foto-na-hora",
+        "t407-varredura-bloco26"
       ]
     }
   },
@@ -6148,6 +6166,22 @@
       ],
       "specs": [
         "t389-deteccao-fotos"
+      ]
+    },
+    "src/lib/data/comodidade-sugerida-actions.ts#comodidadesDoMeuImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t439-e101-deteccao-espelho"
+      ]
+    },
+    "src/lib/data/comodidade-sugerida-actions.ts#gravarComodidadeConfirmada": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t439-e101-deteccao-espelho"
       ]
     },
     "src/lib/data/deteccao-actions.ts#confirmarSugestaoFoto": {

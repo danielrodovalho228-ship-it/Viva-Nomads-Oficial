@@ -164,7 +164,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // Prompt 8: abre com quantas pessoas a candidatura informou (preso à capacidade).
   const [qtdOcupantes, setQtdOcupantes] = useState(() => ocupantesIniciais(ctx.ocupantesSugerido, CAPACIDADE));
   const ocupantesExcede = qtdOcupantes > CAPACIDADE;
-  // Caução flexível: como o inquilino paga a caução (não trava o aluguel).
+  // Caução flexível: como o morador paga a caução (não trava o aluguel).
   // À vista → poupança da caução (art. 38, §2º); parcelado → emissor do cartão. Nunca a plataforma.
   const [caucaoForma, setCaucaoForma] = useState<FormaPagamentoCaucao>("avista");
   const [caucaoParcelas, setCaucaoParcelas] = useState(MAX_PARCELAS);
@@ -371,7 +371,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         subtitle={
           demo
             ? `Contrato ${contractNumber} · você está fechando uma candidatura`
-            : "Fluxo do fechamento — os dados do inquilino e a verificação entram quando a candidatura é aceita."
+            : "Fluxo do fechamento — os dados do morador e a verificação entram quando a candidatura é aceita."
         }
       />
       {demo && (
@@ -736,14 +736,14 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   </table>
                 </div>
                 <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest">
-                  Para começar o inquilino paga só o <strong>1º bloco</strong>:{" "}
+                  Para começar o morador paga só o <strong>1º bloco</strong>:{" "}
                   {formatBRL(resumo.desembolsoPrimeiroBloco)} (aluguel + caução). Os próximos blocos
                   são contratados por renovação, sempre com o aceite das duas partes — nunca automática.
                 </p>
 
                 {/* Caução flexível: o inquilino escolhe como pagar. */}
                 <div>
-                  <p className="mb-2 font-medium text-ink">Como o inquilino vai pagar a caução?</p>
+                  <p className="mb-2 font-medium text-ink">Como o morador vai pagar a caução?</p>
                   <div className="flex rounded-full bg-surface-2 p-1 text-xs">
                     {(
                       [
@@ -813,7 +813,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     <>
                       O depósito vai para uma <strong>conta poupança</strong>, como manda o art. 38, §2º
                       da Lei 8.245/91 — a plataforma não tem acesso — e é devolvido ao fim, com
-                      os rendimentos a favor do inquilino.
+                      os rendimentos a favor do morador.
                     </>
                   ) : (
                     <>
@@ -822,7 +822,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     </>
                   )}{" "}
                   A plataforma registra e documenta — <strong>nunca recebe nem retém o valor</strong>.
-                  O inquilino anexa o comprovante e o status fica “caução comprovada”.
+                  O morador anexa o comprovante e o status fica “caução comprovada”.
                 </p>
               </div>
             )}
@@ -1072,7 +1072,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
             {/* Total que o inquilino vê no 1º pagamento */}
             <div className="rounded-xl bg-blue-50 p-4 text-sm">
-              <p className="font-medium text-blue-900">O inquilino vê no 1º pagamento</p>
+              <p className="font-medium text-blue-900">O morador vê no 1º pagamento</p>
               <div className="mt-2 space-y-1">
                 <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
                 <Row label="Consumo estimado" value={`${formatBRL(280)}/mês`} />
@@ -1118,7 +1118,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 uma cobrança à parte, no fechamento. {TEXTO_RENOVACAO_COMISSAO} O valor mensal, de todos os
                 meses, vai do inquilino{" "}
                 <strong>direto para a sua conta</strong> — a plataforma nunca cobra nem repassa
-                esse valor. O inquilino não paga taxa da Viva.
+                esse valor. O morador não paga taxa da Viva.
               </p>
               <div className="mt-3 space-y-1">
                 <Row label={`Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${prazoMeses} ${prazoMeses === 1 ? "mês" : "meses"})`} value={formatBRL(resumo.valorTotalPeriodo)} />
@@ -1222,7 +1222,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             </div>
             <div className="rounded-xl bg-surface-2 p-4 text-left text-sm">
               <Row
-                label="Verificação do inquilino"
+                label="Verificação do morador"
                 value={
                   verifStatus === "ok" && cafResult
                     ? TRAFFIC_LIGHT_META[cafResult.light].label
@@ -1271,7 +1271,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               />
             </div>
             <p className="rounded-lg bg-sage-100 px-3 py-2 text-left text-sm text-forest">
-              Ao fim da locação, você e o inquilino poderão se avaliar — construindo
+              Ao fim da locação, você e o morador poderão se avaliar — construindo
               reputação na plataforma.
             </p>
             <PlatformLegalNotice className="text-left" />
@@ -1377,10 +1377,10 @@ export function SuaProtecao({
   onCiente: (v: boolean) => void;
 }) {
   const linhas: [string, string, string][] = [
-    ["Quanto o inquilino paga", `${formatBRL(caucao)} depositados na entrada (50% de cada bloco, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
-    ["Volta para o inquilino?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
+    ["Quanto o morador paga", `${formatBRL(caucao)} depositados na entrada (50% de cada bloco, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
+    ["Volta para o morador?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
     ["O que cobre para o proprietário", `Aluguel e danos até ${formatBRL(caucao)}`, "Aluguel e danos até o limite da apólice"],
-    ["Se o inquilino quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra do inquilino"],
+    ["Se o morador quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra do morador"],
   ];
   return (
     <div className="rounded-xl border border-sage-200 p-4 text-sm" data-testid="sua-protecao">
@@ -1407,7 +1407,7 @@ export function SuaProtecao({
         </table>
       </div>
       <ul className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-2 text-xs font-medium text-ink">
-        <li>Em qualquer opção, o inquilino responde pelos danos que causar.</li>
+        <li>Em qualquer opção, o morador responde pelos danos que causar.</li>
         <li>Desgaste normal e defeitos são do proprietário.</li>
       </ul>
       <label className="mt-3 flex items-start gap-2 text-sm text-ink">
