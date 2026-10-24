@@ -25,7 +25,8 @@ test.describe("T373 — CONTA-A A4: Meus dados (perfil-04)", () => {
   }
   test.beforeAll(async () => {
     id = await criarConta(conta, senha);
-    await adm().from("profiles").update({ cpf: "52998224725", phone: "(34) 99999-1234" }).eq("id", id);
+    // O laboratório já dá um CPF válido e único a cada conta; aqui só o telefone.
+    await adm().from("profiles").update({ phone: "(34) 99999-1234" }).eq("id", id);
   });
   test.afterAll(async () => {
     await apagarContas([id]);
@@ -39,7 +40,7 @@ test.describe("T373 — CONTA-A A4: Meus dados (perfil-04)", () => {
       await cartao.waitFor({ timeout: 20_000 });
       await expect(p.locator("h1:visible")).toHaveText("Meus dados");
       await expect(cartao.getByLabel("Nome completo")).toHaveValue("Ana Ribeiro", { timeout: 20_000 });
-      await expect(p.getByTestId("dados-documento")).toHaveValue("***.982.247-**", { timeout: 20_000 });
+      await expect(p.getByTestId("dados-documento")).toHaveValue(/^\*\*\*\.\d{3}\.\d{3}-\*\*$/, { timeout: 20_000 });
       await expect(p.getByTestId("dados-documento")).toHaveAttribute("readonly", "");
       await expect(p.getByTestId("dados-nascimento")).toHaveAttribute("placeholder", "dd/mm/aaaa");
       await expect(cartao.getByLabel("Telefone")).toHaveValue(/99999-1234/);

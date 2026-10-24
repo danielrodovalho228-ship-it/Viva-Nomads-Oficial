@@ -102,7 +102,7 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
     await p.getByTestId("conta-menu-dados").click();
     await expect(p).toHaveURL(/\/dashboard\/conta\/dados$/);
-    await expect(h1Visiveis(p)).toHaveText("Dados");
+    await expect(h1Visiveis(p)).toHaveText("Meus dados"); // A4: título do mockup perfil-04
     await expect(p.getByTestId("conta-menu-dados")).toHaveAttribute("aria-current", "page");
 
     const titulos: Record<string, string> = {
