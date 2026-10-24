@@ -93,7 +93,8 @@
         "t39-app-ida-e-volta",
         "t183-telas-logadas-390",
         "t255-admin-f15-f16-f18-f20",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t387-varredura-bloco22"
       ]
     },
     "/admin/ajuda-publicacao": {
@@ -543,7 +544,8 @@
         "t320-pausar-anuncio-64b",
         "t344-avaliacao-telas-62a-parte2",
         "t355-conta-a-perfil-espelho",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t387-varredura-bloco22"
       ]
     },
     "/dashboard/assinatura": {
@@ -841,7 +843,8 @@
         "t337-varredura-redundancia",
         "t338-varredura-bloco15",
         "t352-varredura-bloco17",
-        "t386-cadastro-01-tipo"
+        "t386-cadastro-01-tipo",
+        "t387-varredura-bloco22"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1836,7 +1839,8 @@
         "t303-avaliadores-credenciados-62b1",
         "t306-varredura-bloco7",
         "t341-credenciamento-avaliador-62a",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t387-varredura-bloco22"
       ]
     },
     "/dashboard/parceiro/avaliacao": {
@@ -1847,7 +1851,8 @@
         "t303-avaliadores-credenciados-62b1",
         "t306-varredura-bloco7",
         "t315-telas-avaliacao-dono-62a",
-        "t341-credenciamento-avaliador-62a"
+        "t341-credenciamento-avaliador-62a",
+        "t387-varredura-bloco22"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
