@@ -18,6 +18,7 @@ import { mensagemCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/bu
 import { digitadoPelaPessoa, type CampoEndereco } from "@/lib/cep/aplicar";
 import { Erro, Labeled, Toggle } from "./campos";
 import { BuscaEndereco } from "./busca-endereco";
+import { ResumoEndereco, enderecoCompletoParaResumo } from "./resumo-endereco";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
 
@@ -92,6 +93,15 @@ export function EtapaOndeFica(p: {
   const digitosCep = p.cep.replace(/\D/g, "").length;
   const r = p.cepResultado;
   const podeBuscarEndereco = r?.tipo === "nao_encontrado" || r?.tipo === "cidade";
+  const avisoPrivacidade = (
+    <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted" data-testid="endereco-privacidade">
+      <MapPin className="mt-1 h-3.5 w-3.5 shrink-0 text-sage" />
+      <span>
+        <strong className="text-ink">Rua e número NUNCA aparecem no anúncio público</strong>: mostramos só a região
+        aproximada (um círculo do bairro). O endereço completo é liberado apenas <strong className="text-ink">após o aceite</strong>.
+      </span>
+    </p>
+  );
   return (
     <div className="space-y-4" data-testid="etapa-onde-fica">
       {p.topo}
@@ -291,13 +301,21 @@ export function EtapaOndeFica(p: {
         </p>
       )}
 
-      <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
-        <MapPin className="mt-1 h-3.5 w-3.5 shrink-0 text-sage" />
-        <span>
-          <strong className="text-ink">Rua e número NUNCA aparecem no anúncio público</strong>: mostramos só a região
-          aproximada (um círculo do bairro). O endereço completo é liberado apenas <strong className="text-ink">após o aceite</strong>.
-        </span>
-      </p>
+      {/* Mockup cadastro-imovel-03: com o endereço preenchido, a linha do endereço completo, o mapa do bairro, o aviso de
+          privacidade e as etiquetas do bairro e da cidade. Antes disso, só o aviso. */}
+      {enderecoCompletoParaResumo({ rua: p.street, numero: p.numero, bairro: p.neighborhood, cidade: p.city }) ? (
+        <ResumoEndereco
+          rua={p.street}
+          numero={p.numero}
+          complemento={p.complemento}
+          bairro={p.neighborhood}
+          cidade={p.city}
+          uf={p.uf}
+          aviso={avisoPrivacidade}
+        />
+      ) : (
+        avisoPrivacidade
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="min-w-0">
