@@ -217,6 +217,32 @@ export function medidorPerfil(
 }
 
 /** "A, B e C" (vazio → ""). */
+/**
+ * Extra do E62 (aprovado 24/10): cada falta do medidor é tocável e leva ao lugar dela. "campo" = elemento desta tela
+ * (data-testid) para rolar e focar; "rota" = outra tela da Conta (o que mora em Dados).
+ */
+export type DestinoFalta = { tipo: "campo"; alvo: string } | { tipo: "rota"; href: string };
+const DESTINO_FALTA: Readonly<Record<string, DestinoFalta>> = {
+  foto: { tipo: "campo", alvo: "topo-foto" },
+  nome: { tipo: "campo", alvo: "perfil-nome" },
+  bio: { tipo: "campo", alvo: "perfil-bio" },
+  cidade: { tipo: "campo", alvo: "perfil-cidade" },
+  idiomas: { tipo: "campo", alvo: "idiomas-toggle-bloco" },
+  profissao: { tipo: "campo", alvo: "profissao-toggle-bloco" },
+  email: { tipo: "rota", href: "/dashboard/conta/dados" },
+  documento: { tipo: "rota", href: "/dashboard/conta/dados#documento" },
+  telefone: { tipo: "rota", href: "/dashboard/conta/dados#celular" },
+};
+export function destinoDaFalta(chave: string): DestinoFalta {
+  return DESTINO_FALTA[chave] ?? { tipo: "rota", href: "/dashboard/conta/dados" };
+}
+
+/** Extra do E62: o estado do "Salvar alterações" — há o que salvar × tudo salvo. */
+export const ESTADO_SALVAR = { alterado: "Há alterações para salvar", salvo: "Tudo salvo" } as const;
+
+/** E62: a linha do estado de sucesso do medidor (100%), no lugar da porcentagem, da barra e da lista do que já foi feito. */
+export const LINHA_PERFIL_COMPLETO = "Tudo preenchido: é assim que os proprietários veem você.";
+
 export function listaEmTexto(itens: string[]): string {
   if (itens.length <= 1) return itens.join("");
   return `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
