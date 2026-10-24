@@ -215,7 +215,7 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
 
   test("D-V5 — editar anúncio publicado não mostra 'Falta para publicar' ao mesmo tempo", async ({ browser }) => {
     test.skip(!temContaVarredura("DONO17"), "sem a conta DONO17");
-    test.fail(true, "D-V5: 'Anúncio publicado' e 'Falta para publicar' juntos");
+    // L2-A item 9: corrigido (publicado mostra "Para melhorar o anúncio"); o teste passa a valer de verdade.
     const { context, page } = await abrirComoConta(browser, "DONO17", "1280");
     await abrirRota(page, `/dashboard/imoveis/${MASSA!.imovel17}/editar`);
     const main = page.locator("main");
