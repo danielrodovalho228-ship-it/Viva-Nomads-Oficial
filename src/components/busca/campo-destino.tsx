@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ATE_OPCOES, ROTULO_MODO, type ModoRota } from "@/lib/rotas/tempo";
 import type { DestinoBusca, EstadoDestino } from "@/lib/busca/destino-busca";
 import { MSG_NAO_ACHAMOS, ROTULO_NAO_ACHEI } from "@/lib/destinos/pessoal";
-import { buscarOutroLocal, meusLocais, pedirLocalNaoAchado, usarLocal, type LocalPessoal } from "@/lib/destinos/pessoal-actions";
+import { apagarLocal, buscarOutroLocal, meusLocais, pedirLocalNaoAchado, usarLocal, type LocalPessoal } from "@/lib/destinos/pessoal-actions";
 import { useEffect, useState } from "react";
 
 export interface DestinoChip {
@@ -40,6 +40,7 @@ export function CampoDestino({
 }) {
   const { destino, modo, ate } = valor;
   const [locais, setLocais] = useState<LocalPessoal[]>([]);
+  const [erroLocal, setErroLocal] = useState<string | null>(null);
   useEffect(() => {
     let vivo = true;
     meusLocais()
@@ -75,21 +76,48 @@ export function CampoDestino({
             {locais.map((l) => {
               const ativo = !!digitado && digitado.lat.toFixed(2) === l.lat.toFixed(2) && digitado.lng.toFixed(2) === l.lng.toFixed(2);
               return (
-                <Chip
-                  key={l.id}
-                  ativo={ativo}
-                  data-testid="destino-pessoal"
-                  onClick={() => {
-                    if (ativo) return escolher(null);
-                    void usarLocal(l.id).catch(() => undefined);
-                    escolher({ lat: l.lat, lng: l.lng, rot: l.rotulo });
-                  }}
-                >
-                  {l.rotulo}
-                </Chip>
+                <span key={l.id} className="inline-flex items-center gap-1" data-testid="destino-pessoal-item">
+                  <Chip
+                    ativo={ativo}
+                    data-testid="destino-pessoal"
+                    onClick={() => {
+                      if (ativo) return escolher(null);
+                      void usarLocal(l.id).catch(() => undefined);
+                      escolher({ lat: l.lat, lng: l.lng, rot: l.rotulo });
+                    }}
+                  >
+                    {l.rotulo}
+                  </Chip>
+                  {/* E81: apagar o local guardado vale na hora; se era o destino ativo, a busca volta para qualquer lugar. */}
+                  <button
+                    type="button"
+                    aria-label={`Apagar o local ${l.rotulo}`}
+                    title="Apagar este local"
+                    data-testid="destino-pessoal-apagar"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-red-700"
+                    onClick={async () => {
+                      setErroLocal(null);
+                      const antes = locais;
+                      setLocais((ls) => ls.filter((x) => x.id !== l.id));
+                      if (ativo) escolher(null);
+                      const r = await apagarLocal(l.id).catch(() => ({ ok: false }));
+                      if (!r.ok) {
+                        setLocais(antes);
+                        setErroLocal("Não foi possível apagar o local agora. Tente de novo.");
+                      }
+                    }}
+                  >
+                    <X className="h-4 w-4" aria-hidden />
+                  </button>
+                </span>
               );
             })}
           </div>
+          {erroLocal && (
+            <p role="alert" className="mt-1 text-sm text-red-700" data-testid="destino-pessoal-erro">
+              {erroLocal}
+            </p>
+          )}
         </div>
       )}
       <div className="mt-3 min-w-0">
