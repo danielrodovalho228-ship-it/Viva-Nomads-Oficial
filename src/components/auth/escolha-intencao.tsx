@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PRIMARIO_PORTA } from "@/lib/auth/porta-visual";
 import { getMinhaIntencao, salvarMinhaIntencao } from "@/lib/data/intencao-actions";
 import { INTENCOES, ROTULO_INTENCAO, painelInicial, type Intencao } from "@/lib/auth/entrada";
 
@@ -79,7 +80,7 @@ export function EscolhaIntencaoEntrada({ destino }: { destino: string }) {
           {erro}
         </p>
       )}
-      <Button type="button" className="mt-6 w-full" data-testid="intencao-continuar" disabled={salvando || marcadas.length === 0} onClick={() => concluir(marcadas)}>
+      <Button type="button" className={`mt-6 w-full ${PRIMARIO_PORTA}`} data-testid="intencao-continuar" aria-busy={salvando} disabled={salvando || marcadas.length === 0} onClick={() => concluir(marcadas)}>
         {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
         Continuar
       </Button>
