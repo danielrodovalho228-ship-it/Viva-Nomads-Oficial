@@ -4,6 +4,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, CHAVE_ANON, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T323 — 63-B: selo "LinkedIn conectado" com o OIDC simulado do laboratório (scripts/lab/linkedin-falso.mjs).
  *   1. nome divergente → "O nome no LinkedIn não confere com o nome da sua conta." e nada gravado;
  *   2. conectar → "Conectado em dd/mm/aaaa" na Conta; o banco guarda só o hash do sub, com validade de 12 meses;
