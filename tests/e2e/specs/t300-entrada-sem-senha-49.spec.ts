@@ -3,6 +3,7 @@ import { CAMINHO_ATIVAR_2FA, CAMINHO_VERIFICAR_2FA } from "../../../src/lib/admi
 import { NO_LABORATORIO, adm, apagarContas, criarAdmin, criarConta, liberarLimiteCodigo, liberarLimiteLogin, liberarLimiteLoginIp, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T300 — Prompt 49: entrada sem senha (e-mail + código), intenção como camada e convidado sem conta.
  * No laboratório a rota /api/auth/codigo não envia e-mail (INTEGRACOES_SIMULADAS): a conta nova nasce pelo cliente de
  * serviço e o código vem do Supabase local (admin.generateLink → email_otp), o mesmo que o e-mail traria.
