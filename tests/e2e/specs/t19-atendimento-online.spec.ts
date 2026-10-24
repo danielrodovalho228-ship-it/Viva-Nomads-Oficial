@@ -70,7 +70,11 @@ test.describe("T19 — Visitante @criticos", () => {
   });
 
   test("'pediram Pix por fora' = resposta fixa e chamado P1 na fila Antifraude", async ({ page, browser }) => {
-    await page.goto("/ajuda", { waitUntil: "networkidle" });
+    // L-43 (vigia, 24/10): instável por tempo em 4 laboratórios completos de 24/10 (45 s estourados esperando a rede
+    // assentar na /ajuda e no atendimento do admin). Espera curta pela rede e o resto pelos elementos; teto de 90 s.
+    test.setTimeout(90_000);
+    await page.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = page.getByTestId("viva-chat-bloco");
     await bloco.getByLabel("Sua mensagem para a Viva").fill("O dono pediu pra eu pagar o Pix por fora, direto pra ele");
     await bloco.getByRole("button", { name: "Enviar" }).click();
@@ -79,12 +83,12 @@ test.describe("T19 — Visitante @criticos", () => {
 
     const ctx = await browser.newContext({ storageState: authFile("admin") });
     const adm = await ctx.newPage();
-    await adm.goto("/admin/atendimento?aba=fila&fila=antifraude", { waitUntil: "networkidle" });
+    await adm.goto("/admin/atendimento?aba=fila&fila=antifraude", { waitUntil: "domcontentloaded" });
     const linha = adm.locator("body");
-    await expect(linha).toContainText(numero);
+    await expect(linha).toContainText(numero, { timeout: 20_000 });
     await expect(linha).toContainText("Antifraude (Fernanda)");
-    await adm.goto(`/admin/atendimento?aba=fila&fila=antifraude&prioridade=p1`, { waitUntil: "networkidle" });
-    await expect(adm.locator("body")).toContainText(numero);
+    await adm.goto(`/admin/atendimento?aba=fila&fila=antifraude&prioridade=p1`, { waitUntil: "domcontentloaded" });
+    await expect(adm.locator("body")).toContainText(numero, { timeout: 20_000 });
     await ctx.close();
   });
 });

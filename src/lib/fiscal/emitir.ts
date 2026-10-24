@@ -226,7 +226,11 @@ async function enviarDocumento(admin: Admin, doc: DocParaEnvio, partes: Pick<Par
  * mesmo número e o mesmo código de conferência —, sem emitir documento novo. Só a quem ainda não tem envio
  * confirmado (os dois, num documento sem registro de envio, como os emitidos antes deste registro).
  */
-export async function reenviarEmailDoDocumento(documentoId: string): Promise<{ ok: true; numero: string; envio: EnvioDestinatario[] } | { ok: false; motivo: string }> {
+export async function reenviarEmailDoDocumento(
+  documentoId: string,
+  /** L2-B item 14: o admin pede "Reenviar e-mail" na aba Emitidos → manda de novo às DUAS partes, mesmo a quem já recebeu. */
+  opcoes: { todos?: boolean } = {},
+): Promise<{ ok: true; numero: string; envio: EnvioDestinatario[] } | { ok: false; motivo: string }> {
   const admin = createAdminClient();
   if (!admin) return { ok: false, motivo: "sem servidor" };
   const { data: d } = await admin
@@ -242,7 +246,7 @@ export async function reenviarEmailDoDocumento(documentoId: string): Promise<{ o
   if (eDown || !arquivo) return { ok: false, motivo: `PDF guardado indisponível: ${eDown?.message ?? "vazio"}` };
   const pdf = new Uint8Array(await arquivo.arrayBuffer());
   const anterior = (Array.isArray(d.envio) ? d.envio : []) as EnvioDestinatario[];
-  const faltam = new Set<EnvioDestinatario["papel"]>((["locador", "locatario"] as const).filter((papel) => !anterior.some((e) => e.papel === papel && e.status === "enviado")));
+  const faltam = new Set<EnvioDestinatario["papel"]>((["locador", "locatario"] as const).filter((papel) => opcoes.todos || !anterior.some((e) => e.papel === papel && e.status === "enviado")));
   if (!faltam.size) return { ok: true, numero: d.numero as string, envio: anterior };
   const envio = await enviarDocumento(
     admin,

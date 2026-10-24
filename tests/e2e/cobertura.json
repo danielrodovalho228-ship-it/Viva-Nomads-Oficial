@@ -66,6 +66,7 @@
         "t288-padrao-minimo-59a",
         "t317-email-unico-49c1",
         "t352-varredura-bloco17",
+        "t404-admin-celular-e73",
         "t392-varredura-bloco24"
       ]
     },
@@ -6181,6 +6182,32 @@
       ],
       "specs": [
         "t390-destino-pessoal"
+      ]
+    },
+    "src/lib/data/emitidos-actions.ts#listarEmitidos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t396-emitidos-aceite-ia"
+      ]
+    },
+    "src/lib/data/emitidos-actions.ts#reenviarEmitido": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t396-emitidos-aceite-ia",
+        "t223-recibo-envio"
+      ]
+    },
+    "src/lib/data/termo-ia-actions.ts#meuAceiteTermoIa": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t396-emitidos-aceite-ia",
+        "t320-pausar-anuncio-64b"
       ]
     }
   }

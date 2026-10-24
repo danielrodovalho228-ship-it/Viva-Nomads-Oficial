@@ -25,14 +25,15 @@ export function DecisoesHoje({ decisoes }: { decisoes: DecisoesAdmin | null }) {
       ) : (
         <ul className="mt-4 divide-y divide-line border-y border-line">
           {decisoes.linhas.map((l) => (
-            <li key={l.chave} className="flex flex-wrap items-center justify-between gap-3 py-3" data-precisa={l.chave} data-decisao={l.chave}>
+            // E73: a linha inteira é tocável (o link do texto cobre a linha; o botão fica por cima, com o mesmo destino).
+            <li key={l.chave} className="relative flex min-h-14 flex-wrap items-center justify-between gap-3 py-3" data-precisa={l.chave} data-decisao={l.chave}>
               <span className="min-w-0">
-                <Link href={l.href} className="font-semibold text-ink underline-offset-4 hover:text-forest hover:underline" data-href={l.href} data-valor={l.n}>
+                <Link href={l.href} className="font-semibold text-ink underline-offset-4 after:absolute after:inset-0 after:content-[''] hover:text-forest hover:underline" data-href={l.href} data-valor={l.n}>
                   {l.texto}
                 </Link>
                 {l.detalhe && <span className="block text-sm text-muted">{l.detalhe}</span>}
               </span>
-              <ButtonLink href={l.href} variant="secondary" size="sm" data-testid={`decisao-${l.chave}`}>
+              <ButtonLink href={l.href} variant="secondary" size="sm" className="relative z-10" data-testid={`decisao-${l.chave}`}>
                 {l.acao}
               </ButtonLink>
             </li>
