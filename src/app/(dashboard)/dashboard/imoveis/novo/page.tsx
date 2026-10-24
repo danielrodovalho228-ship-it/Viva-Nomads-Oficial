@@ -36,6 +36,7 @@ import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
 import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
+import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
@@ -188,6 +189,7 @@ export default function NewPropertyPage() {
   // TIPO-CHACARA-B: acesso, tipo de internet e o ponto marcado pelo dono (só do tipo chácara/sítio).
   const [chacara, setChacara] = useState<ValorChacara>({});
   const [chacaraPontoGravado, setChacaraPontoGravado] = useState(false);
+  const semInternet = !temInternet(tipoInternetDoAnuncio(propertyType, { chacara }));
   const [description, setDescription] = useState("");
   // Mudou o título ou a descrição depois do aceite: o aceite deixa de valer (caixa desmarcada) e o aviso aparece.
   const textoMudouDepoisDoAceite = aceitouIa && aceiteTexto !== null && impressaoDoTexto(title, description) !== aceiteTexto;
@@ -323,6 +325,8 @@ export default function NewPropertyPage() {
     proximidadesSemEndereco: manualProximities.filter(manualSemEndereco).length,
     // TIPO-CHACARA-B: chácara/sítio só publica com acesso, tipo de internet e o ponto no mapa.
     chacaraFaltam: ehChacara(propertyType) ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado }) : undefined,
+    // E102-B: "Não tem internet" barra pelo padrão mínimo (e a velocidade nem é pedida).
+    semInternet: semInternet || undefined,
   });
   /** "Resolver" de um item do portão: vai à etapa; a qualificação abre ali mesmo. */
   function resolverItem(item: ItemProntidao) {
@@ -1288,6 +1292,7 @@ export default function NewPropertyPage() {
     comodidadesSugeridas,
     internetMbps,
     setInternetMbps,
+    semInternet,
     imovelId: draftServerId ?? editingId,
     proxOsm,
     proxCarregando,

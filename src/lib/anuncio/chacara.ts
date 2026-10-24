@@ -23,6 +23,8 @@ export const INTERNETS_CHACARA = [
   { valor: "radio", rotulo: "Rádio" },
   { valor: "satelite", rotulo: "Satélite" },
   { valor: "movel", rotulo: "Internet móvel (4G/5G)" },
+  // E102-B: resposta válida (salva o rascunho), mas não publica — temInternet (internet-imovel.ts) decide.
+  { valor: "nao_tem", rotulo: "Não tem internet" },
 ] as const;
 export type AcessoChacara = (typeof ACESSOS_CHACARA)[number]["valor"];
 export type InternetChacara = (typeof INTERNETS_CHACARA)[number]["valor"];
@@ -110,7 +112,8 @@ export function linhaChacara(d: DadosChacara | undefined, cidade?: string | null
   const acesso = ACESSOS_CHACARA.find((a) => a.valor === d.acesso)?.rotulo;
   if (acesso) partes.push(`Acesso: ${acesso.toLowerCase()}`);
   const internet = INTERNETS_CHACARA.find((a) => a.valor === d.internet)?.rotulo;
-  if (internet) partes.push(`internet: ${internet === "Internet móvel (4G/5G)" ? "móvel (4G/5G)" : internet.toLowerCase()}`);
+  if (d.internet === "nao_tem") partes.push("sem internet");
+  else if (internet) partes.push(`internet: ${internet === "Internet móvel (4G/5G)" ? "móvel (4G/5G)" : internet.toLowerCase()}`);
   if (d.distanciaCidadeKm !== undefined && cidade) partes.push(`~${kmFalado(d.distanciaCidadeKm)} do centro de ${cidade} em linha reta`);
   if (!partes.length) return null;
   const t = partes.join(" · ");

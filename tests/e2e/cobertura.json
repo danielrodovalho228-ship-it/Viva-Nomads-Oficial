@@ -819,7 +819,8 @@
         "t286-esqueletos-vazios-48",
         "t318-papel-ativo-fonte-unica",
         "t320-pausar-anuncio-64b",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t400-chacara-sem-internet"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -835,7 +836,8 @@
         "t334-varredura-bloco12",
         "t392-varredura-bloco24",
         "t406-varredura-bloco25",
-        "t433-l2a-itens-9-24"
+        "t433-l2a-itens-9-24",
+        "t400-chacara-sem-internet"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -867,7 +869,8 @@
         "t392-varredura-bloco24",
         "t406-varredura-bloco25",
         "t431-perto-a",
-        "t433-l2a-itens-9-24"
+        "t433-l2a-itens-9-24",
+        "t400-chacara-sem-internet"
       ]
     },
     "/dashboard/indicacoes": {
