@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { dataBRT } from "@/lib/datas-brasilia";
 import { ButtonLink } from "@/components/ui/button";
 import { Briefcase, MapPinned } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -6,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { maisBuscados, TIPOS_DESTINO } from "@/lib/destinos/regras";
-import { DestinoBotao, DestinoForm, type DestinoEditavel } from "./forms";
+import { DestinoBotao, DestinoForm, ResolverReporte, type DestinoEditavel } from "./forms";
 import { faltaParaRotas } from "@/lib/rotas/tempo";
 import { integracoesSimuladas } from "@/lib/integracoes";
 
@@ -18,6 +19,14 @@ interface Linha extends DestinoEditavel {
 }
 
 /** Contagem por destino e dia (tabela só do servidor: lida com o cliente de serviço, depois do portão do admin). */
+/** PERTO-B: avisos "Está errado" em aberto (lidos com o cliente de serviço, depois do portão do admin). */
+async function reportesAbertos(): Promise<{ id: string; nome: string; tipo: string | null; motivo: string; criado_em: string; properties: { title: string | null; city: string | null } | null }[]> {
+  const admin = createAdminClient();
+  if (!admin) return [];
+  const { data } = await admin.from("proximidades_reportes").select("id, nome, tipo, motivo, criado_em, properties(title, city)").is("resolvido_em", null).order("criado_em", { ascending: false }).limit(100);
+  return (data ?? []) as unknown as Awaited<ReturnType<typeof reportesAbertos>>;
+}
+
 async function buscasDe30Dias(): Promise<{ destino_id: string; n: number }[]> {
   const admin = createAdminClient();
   if (!admin) return [];
@@ -48,6 +57,7 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
   const { data, error } = await leitor.from("destinos").select("id, slug, nome, artigo, tipo, cidade, uf, lat, lng, ativo").order("nome");
   const lista = (data ?? []) as Linha[];
   const ranking = maisBuscados(await buscasDe30Dias(), new Map(lista.map((d) => [d.id, d.nome])));
+  const reportes = await reportesAbertos().catch(() => []);
   const emEdicao = lista.find((d) => d.slug === editar);
   const tipo = (t: string) => TIPOS_DESTINO.find((x) => x.valor === t)?.rotulo ?? t;
 
@@ -123,6 +133,28 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
           </ol>
         )}
         <p className="mt-2 text-xs text-muted">Só a contagem por destino: a Viva não guarda o endereço digitado nem quem buscou.</p>
+      </Panel>
+
+      <Panel title="Lugares por perto marcados como errados" id="proximidades-erradas" className="mt-6">
+        {reportes.length === 0 ? (
+          <p className="text-sm text-muted">Nenhum aviso em aberto.</p>
+        ) : (
+          <ul className="divide-y divide-sage-200 rounded-xl border border-sage-200" data-testid="proximidades-reportes">
+            {reportes.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-start justify-between gap-3 px-4 py-3 text-sm" data-testid="proximidade-reporte">
+                <span className="min-w-0">
+                  <span className="block font-semibold text-ink">{r.nome}</span>
+                  <span className="block text-muted">
+                    {r.motivo} · {r.properties?.title ?? "Anúncio"}
+                    {r.properties?.city ? ` (${r.properties.city})` : ""} · {dataBRT(r.criado_em)}
+                  </span>
+                </span>
+                <ResolverReporte id={r.id} />
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-2 text-xs text-muted">O dono marca um lugar achado pelo OpenStreetMap como errado. Confira e, se for o caso, corrija no OpenStreetMap.</p>
       </Panel>
     </>
   );

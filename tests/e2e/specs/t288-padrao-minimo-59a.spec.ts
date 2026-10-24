@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Locator, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
+import { continuarAte } from "../fixtures/cadastro";
 import {
   NO_LABORATORIO,
   adm,
@@ -186,8 +187,8 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t288-1-comodidades-faltando-${w}.png`, fullPage: true });
 
-      await page.getByTestId("cadastro-continuar").click();
-      await page.getByTestId("cadastro-continuar").click();
+      // 10 passos: das Comodidades à Revisão são 5 "Continuar" (Regras, Descrição, Preço, Disponibilidade, Revisão).
+      await continuarAte(page, "comodidades", "revisao");
       const falta = page.getByTestId("publicar-falta-conforto");
       await expect(falta).toContainText(`Falta confirmar: ${ITENS_CONFORTO[0].rotulo}, ${ITENS_CONFORTO[4].rotulo}.`, { timeout: 20_000 });
       await expect(page.getByTestId("publicar-anuncio")).toBeDisabled();
@@ -200,8 +201,7 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
       await expect(page.getByTestId("conforto-marcar-todos")).toBeEnabled();
       await page.getByTestId("conforto-marcar-todos").click();
       await expect(page.getByTestId("conforto-checklist")).toHaveAttribute("data-faltam", "0");
-      await page.getByTestId("cadastro-continuar").click();
-      await page.getByTestId("cadastro-continuar").click();
+      await continuarAte(page, "comodidades", "revisao");
       // Completo: a linha do padrão mínimo some; o que ainda falta no rascunho de teste continua listado ao lado.
       await expect(page.getByTestId("publicar-falta-outros")).toBeVisible({ timeout: 20_000 });
       await expect(page.getByTestId("publicar-falta-conforto")).toHaveCount(0);

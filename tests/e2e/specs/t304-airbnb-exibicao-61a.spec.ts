@@ -65,7 +65,7 @@ test.describe("T304 — Prompt 61-A: Estadia confirmada, horários e mapa, Como 
     for (const id of [ids.casa, ids.outra]) {
       const { error } = await adm().from("properties").update(local).eq("id", id);
       if (error) throw error;
-      await adm().from("property_proximities").insert({ property_id: id, category: "mercado", name: `Mercado do bairro ${sufixo}`, note: "5 min a pé", sort_order: 1 });
+      await adm().from("property_proximities").insert({ property_id: id, category: "mercado", name: `Mercado do bairro ${sufixo}`, tipo: "mercado", origem: "osm", distancia_m: 400, sort_order: 1 }); // PERTO-B: distância calculada (nota em texto livre não aparece mais)
     }
     // Contrato assinado pelos dois (Caução pendente) e outro só com a assinatura do morador.
     ids.contrato = await contrato(ids.casa);

@@ -21,3 +21,10 @@ export const SOMBRA_SO_CELULAR = "max-sm:shadow-[0_8px_24px_rgba(28,40,32,0.08)]
 
 /** Na raiz da casca: todo cartão branco (section) dentro dela ganha a mesma sombra do desenho. */
 export const CASCA_SOMBRA_CARTOES = "[&_section.bg-white]:shadow-[0_8px_24px_rgba(28,40,32,0.08)]";
+
+/*
+  Assistente de cadastro em 10 passos (cadastro-imovel-01..10, mesmo set de mockups e a mesma decisão de 24/10): o
+  título grande de cada passo e a sombra dos cartões (opções do passo, prévia do anúncio).
+*/
+export const TITULO_PASSO_CADASTRO = "font-title text-3xl font-semibold leading-tight text-ink lg:text-5xl";
+export const SOMBRA_CARTAO_CADASTRO = "shadow-[0_8px_24px_rgba(28,40,32,0.08)]";

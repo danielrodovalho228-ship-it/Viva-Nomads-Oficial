@@ -4,9 +4,10 @@ import { readFileSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { abrirNoEndereco } from "../fixtures/cadastro";
 
 /*
-  T187 — Conferência automática do documento do imóvel na etapa 1 do cadastro (prompt 11), com documentos de teste
+  T187 — Conferência automática do documento do imóvel no passo Endereço do cadastro (prompt 11), com documentos de teste
   FICTÍCIOS gerados aqui (sem dado real de ninguém) e a leitura da IA SIMULADA no laboratório:
   1. endereço errado → "Corrija" com o motivo detalhado; reenviar o certo → "Documentação conferida" (390 e 1280);
   2. documento editado (print de tela) → "Em revisão" e entra na fila do admin com o motivo, o checklist pré-marcado
@@ -29,7 +30,7 @@ function docLab(caso: "ok" | "endereco_errado" | "editado", extra = randomBytes(
   return Buffer.concat([Buffer.from(`%PDF-1.4\n% documento ficticio do laboratorio VIVA-LAB-DOC:${caso} ${extra}\n`), Buffer.alloc(12 * 1024, 0x20), Buffer.from("\n%%EOF\n")]);
 }
 
-/** Dono novo na etapa 1, com CEP + número (ViaCEP simulado) e o rascunho já salvo. */
+/** Dono novo no passo Endereço, com CEP + número (ViaCEP simulado) e o rascunho já salvo. */
 async function donoNaEtapa1(browser: Browser, largura: number, nome: string): Promise<Page> {
   const email = `dono.doc.${randomBytes(3).toString("hex")}.${sufixo}@lab.vivanomads.test`;
   ids.push(await criarConta({ email, nome, role: "owner" }, senha));
@@ -38,8 +39,8 @@ async function donoNaEtapa1(browser: Browser, largura: number, nome: string): Pr
   await page.route("https://viacep.com.br/ws/**", (r) =>
     r.fulfill({ json: { cep: "38400-100", logradouro: "Rua do Laboratório", bairro: "Centro", localidade: "Uberlândia", uf: "MG" } }),
   );
-  await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible({ timeout: 20_000 });
+  // Assistente em 10 passos: o endereço (e o documento) é o 3º passo; abre direto nele.
+  await abrirNoEndereco(page);
   await page.getByTestId("cadastro-cep").fill("38400100");
   await expect(page.getByTestId("cadastro-rua")).toHaveValue("Rua do Laboratório", { timeout: 10_000 });
   await page.getByTestId("cadastro-numero").fill("102");

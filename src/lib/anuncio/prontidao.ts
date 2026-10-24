@@ -68,6 +68,11 @@ export interface FatosAnuncio {
    * anúncio que ainda vai publicar; ausente = não se aplica (o publicado sem ela segue no ar).
    */
   internetOk?: boolean;
+  /**
+   * PERTO-B: lugares adicionados à mão antes da 0238 só com a "Distância" em texto, sem o endereço do lugar. Ficam fora
+   * da página pública até o dono informar o endereço. Ausente = não se aplica aqui.
+   */
+  proximidadesSemEndereco?: number;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -143,26 +148,29 @@ export function textoVagaNoPlano(limite?: number | null, ativos?: number | null)
   return `${quanto}. Para publicar este, pause outro ou mude de plano`;
 }
 
+/** PERTO-B: a pendência dos lugares por perto sem o endereço do lugar. */
+export const ROTULO_PROXIMIDADES_SEM_ENDERECO = "Endereço dos lugares por perto";
+
 export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   const obrigatorios: ItemProntidao[] = [
-    { key: "endereco", label: OBRIGATORIOS_ROTULOS[0], ok: f.enderecoOk, etapa: ETAPA.onde },
-    { key: "detalhes", label: OBRIGATORIOS_ROTULOS[1], ok: f.detalhesOk, etapa: ETAPA.espaco },
-    { key: "periodo", label: OBRIGATORIOS_ROTULOS[2], ok: f.periodoOk, etapa: ETAPA.regras },
+    { key: "endereco", label: OBRIGATORIOS_ROTULOS[0], ok: f.enderecoOk, etapa: ETAPA.endereco },
+    { key: "detalhes", label: OBRIGATORIOS_ROTULOS[1], ok: f.detalhesOk, etapa: ETAPA.detalhes },
+    { key: "periodo", label: OBRIGATORIOS_ROTULOS[2], ok: f.periodoOk, etapa: ETAPA.disponibilidade },
     { key: "fotos", label: OBRIGATORIOS_ROTULOS[3], ok: f.fotos >= MIN_FOTOS, etapa: ETAPA.fotos, detalhe: f.fotos < MIN_FOTOS ? `tem ${f.fotos}` : undefined },
-    { key: "titulo", label: OBRIGATORIOS_ROTULOS[4], ok: f.titulo.trim().length >= 3, etapa: ETAPA.comodidades },
+    { key: "titulo", label: OBRIGATORIOS_ROTULOS[4], ok: f.titulo.trim().length >= 3, etapa: ETAPA.descricao },
     {
       key: "descricao",
       label: OBRIGATORIOS_ROTULOS[5],
       ok: f.descricao.trim().length >= MIN_DESCRICAO,
-      etapa: ETAPA.comodidades,
+      etapa: ETAPA.descricao,
       detalhe: f.descricao.trim().length < MIN_DESCRICAO ? `tem ${f.descricao.trim().length}` : undefined,
     },
-    { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: ETAPA.regras },
-    { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: ETAPA.regras },
-    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: ETAPA.onde, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
+    { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: ETAPA.preco },
+    { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: ETAPA.preco },
+    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: ETAPA.endereco, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
   ];
   if (f.qualificacaoOk !== undefined) {
-    obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: ETAPA.onde, detalhe: f.qualificacaoOk ? undefined : "leva poucos minutos" });
+    obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: ETAPA.tipo, detalhe: f.qualificacaoOk ? undefined : "leva poucos minutos" });
   }
   if (f.tipoEntradaOk === false) {
     obrigatorios.push({ key: "tipo_entrada", label: ROTULO_FALTA_TIPO_ENTRADA, ok: false, etapa: ETAPA.regras, detalhe: "porteiro, chave, cofre ou fechadura com código" });
@@ -172,7 +180,7 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   if (!f.sublocacaoOk) {
     const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;
-    obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: ETAPA.onde });
+    obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: ETAPA.endereco });
   }
   if (!f.privacidadeOk) {
     obrigatorios.push({ key: "privacidade", label: ROTULO_FALTA_PRIVACIDADE, ok: false, etapa: ETAPA.comodidades });
@@ -183,12 +191,16 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   // A vaga só aparece quando é o único bloqueio que resta (ordem de8761b0, item 2).
   if (f.limitePlanoOk === false && obrigatorios.every((i) => i.ok)) {
-    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: ETAPA.revisar, detalhe: textoVagaNoPlano(f.limiteAnuncios, f.ativosAnuncios) });
+    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: ETAPA.revisao, detalhe: textoVagaNoPlano(f.limiteAnuncios, f.ativosAnuncios) });
   }
   const opcionais: ItemProntidao[] = [
-    { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: ETAPA.onde },
+    { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: ETAPA.endereco },
     { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: ETAPA.fotos },
   ];
+  if (f.proximidadesSemEndereco !== undefined && f.proximidadesSemEndereco > 0) {
+    const n = f.proximidadesSemEndereco;
+    opcionais.push({ key: "proximidades_endereco", label: ROTULO_PROXIMIDADES_SEM_ENDERECO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "1 lugar sem endereço não aparece no anúncio" : `${n} lugares sem endereço não aparecem no anúncio` });
+  }
   const cumpridos = obrigatorios.filter((i) => i.ok).length;
   return {
     podePublicar: obrigatorios.every((i) => i.ok),
