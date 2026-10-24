@@ -137,7 +137,20 @@ test.describe("T368 — varredura da página inteira, bloco 20 (detalhes e cliqu
                 }
                 await primario.scrollIntoViewIfNeeded().catch(() => {});
                 const nome = ((await primario.innerText().catch(() => "")) || (await primario.getAttribute("aria-label")) || "primário").trim().slice(0, 60);
-                clique = await cliqueResponde(page, primario, nome);
+                const href = await primario.evaluate((el) => (el instanceof HTMLAnchorElement ? el.href : null)).catch(() => null);
+                if (href) {
+                  // Primário que é link: a resposta é a navegação. O cliqueResponde lia a página no meio do
+                  // redirecionamento (/para-proprietarios → /dashboard/imoveis/novo → /auth) e travava até o teto de 180 s.
+                  const antes = page.url();
+                  await primario.click({ timeout: 5_000, noWaitAfter: true }).catch(() => {});
+                  const navegou = await page
+                    .waitForURL((u) => u.href !== antes, { timeout: 3_000, waitUntil: "commit" })
+                    .then(() => true)
+                    .catch(() => false);
+                  clique = navegou ? [] : [`clique em "${nome}" (link) sem navegação em 3 s`];
+                } else {
+                  clique = await cliqueResponde(page, primario, nome);
+                }
                 for (const a of clique) console.log(`VARREDURA|clique|${tam.nome}|${t.papel}|${rotulo}|${a}`);
                 for (const a of clique) {
                   const c = conhecido(rotulo, a);
