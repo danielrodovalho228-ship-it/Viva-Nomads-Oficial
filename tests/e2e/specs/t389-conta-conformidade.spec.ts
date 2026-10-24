@@ -3,7 +3,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T379 — Conformidade CONTA-A (QA do Muse, 24/10, conta sem avaliações) contra os mockups perfil-01/02/04/05. 390 e 1280.
+ * T389 — Conformidade CONTA-A (QA do Muse, 24/10, conta sem avaliações) contra os mockups perfil-01/02/04/05. 390 e 1280.
  *   E63. Avaliações: as abas Todas/Recentes/Positivas e a busca aparecem sempre — também sem nenhuma avaliação.
  *   E64. Meus dados: sem o endereço do LinkedIn e sem o motivo da estadia.
  *   E66. Privacidade: sem a lista de segurança (E-mail/Celular/Identidade/2FA/Senha); ela mora em /dashboard/conta/seguranca,
@@ -14,12 +14,12 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
  */
 const SAIDA = "tests/laboratorio/saida";
 
-test.describe("T379 — Conta: E55, E63, E64, E66, E67", () => {
+test.describe("T389 — Conta: E55, E63, E64, E66, E67", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
   const senha = novaSenha();
-  const conta = { email: `inq.t379.${novoSufixo()}@lab.vivanomads.test`, nome: "Clara Duarte", role: "tenant" as const };
+  const conta = { email: `inq.t389.${novoSufixo()}@lab.vivanomads.test`, nome: "Clara Duarte", role: "tenant" as const };
   let id = "";
   test.beforeAll(async () => {
     id = await criarConta(conta, senha);
@@ -52,7 +52,7 @@ test.describe("T379 — Conta: E55, E63, E64, E66, E67", () => {
       await expect(p.getByTestId("avaliacoes-busca")).toBeVisible();
       await expect(p.getByTestId("tela-avaliacoes")).toContainText("Nenhuma avaliação publicada ainda");
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t379-avaliacoes-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t389-avaliacoes-${w}.png`, fullPage: true });
       await p.context().close();
     });
 
@@ -84,7 +84,7 @@ test.describe("T379 — Conta: E55, E63, E64, E66, E67", () => {
         expect(vao).toBeLessThanOrEqual(48);
       }
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t379-dados-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t389-dados-${w}.png`, fullPage: true });
       await p.context().close();
     });
 
@@ -95,7 +95,7 @@ test.describe("T379 — Conta: E55, E63, E64, E66, E67", () => {
       await expect(p.getByTestId("privacidade-baixar")).toBeVisible();
       await expect(p.getByTestId("privacidade-excluir")).toBeVisible();
       await semRolagemLateral(p);
-      await p.screenshot({ path: `${SAIDA}/t379-privacidade-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t389-privacidade-${w}.png`, fullPage: true });
       await p.getByTestId("privacidade-seguranca").click();
       await expect(p).toHaveURL(/\/dashboard\/conta\/seguranca$/);
       await expect(p.locator("h1:visible")).toHaveText("Segurança e verificações");
@@ -110,7 +110,7 @@ test.describe("T379 — Conta: E55, E63, E64, E66, E67", () => {
       await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(0);
       // O herói editável mostra a foto (uma vez); fora do Perfil, o cabeçalho volta a mostrá-la.
       await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1, { timeout: 20_000 });
-      await p.screenshot({ path: `${SAIDA}/t379-perfil-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t389-perfil-${w}.png` });
       await p.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
       await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1, { timeout: 20_000 });
       await p.context().close();
