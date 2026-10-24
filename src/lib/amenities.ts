@@ -65,6 +65,7 @@ export const AMENITY_GROUPS: AmenityCatalogGroup[] = [
       { key: "lava_loucas", label: "Lava-louças" },
       { key: "enxoval", label: "Roupa de cama e banho inclusas" },
       { key: "cozinha_equipada", label: "Cozinha equipada" },
+      { key: "tv", label: "TV" },
       { key: "varanda", label: "Varanda" },
     ],
   },

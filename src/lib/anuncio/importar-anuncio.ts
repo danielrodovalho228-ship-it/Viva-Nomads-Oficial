@@ -51,6 +51,7 @@ const COMODIDADES: [string, RegExp][] = [
   ["lava_loucas", /lava[- ]lou[cç]as/i],
   ["enxoval", /roupa de cama|enxoval/i],
   ["cozinha_equipada", /cozinha (completa|equipada)/i],
+  ["tv", /\b(smart ?tv|tv|televis[aã]o)\b/i],
   ["varanda", /varanda|sacada/i],
   ["academia", /academia/i],
   ["piscina", /piscina/i],
