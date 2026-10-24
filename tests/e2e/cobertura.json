@@ -801,7 +801,8 @@
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
         "t320-pausar-anuncio-64b",
-        "t337-varredura-redundancia"
+        "t337-varredura-redundancia",
+        "t338-varredura-bloco15"
       ]
     },
     "/dashboard/indicacoes": {
@@ -831,7 +832,8 @@
         "t183-telas-logadas-390",
         "t213-jornada-teste-confirmacao",
         "t298-varredura-logada-bloco4",
-        "t351-telas-linkedin-63a"
+        "t351-telas-linkedin-63a",
+        "t338-varredura-bloco15"
       ]
     },
     "/dashboard/locacoes": {
@@ -1312,7 +1314,8 @@
         "t90-orcamento-velocidade",
         "t185-precos-3s",
         "t311-marco-principal-unico",
-        "t359-precos-taxa-e51-e54"
+        "t359-precos-taxa-e51-e54",
+        "t338-varredura-bloco15"
       ]
     },
     "/privacidade": {
@@ -1338,7 +1341,8 @@
         "t310-vao-fim-de-pagina",
         "t351-telas-linkedin-63a",
         "t349-imovel-sem-500-l31",
-        "t355-conta-a-perfil-espelho"
+        "t355-conta-a-perfil-espelho",
+        "t338-varredura-bloco15"
       ]
     },
     "/qualificar": {
