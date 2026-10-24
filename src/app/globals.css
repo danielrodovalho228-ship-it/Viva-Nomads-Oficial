@@ -606,3 +606,17 @@ body:has([data-testid="cogumelo"]) {
   --ajuda-bottom: calc(var(--cogumelo-bottom) + 4rem);
   --viva-piso: calc(var(--cogumelo-bottom) + 4rem);
 }
+
+/* E75 no celular (no fim do arquivo para valer sobre a folga F49 do body): a Conta e o menu também terminam na linha institucional. Sobravam ~190 px depois dela (folga do botão
+   flutuante no main + a mesma folga no body + o espaçador da barra de abas). Fica o espaçador da barra e 3 rem: o
+   "Fale com a Viva" (à direita, acima das abas) para sobre a área vazia depois da linha, nunca sobre um cartão. */
+@media (max-width: 767px) {
+  html:not([data-app]) [data-painel-main]:has([data-conta-casca]:not(.hidden *)),
+  html:not([data-app]) [data-painel-main]:has([data-testid="conta-menu"]) {
+    padding-bottom: 3rem;
+  }
+  html:not([data-app]) body:has([data-conta-casca]:not(.hidden *)),
+  html:not([data-app]) body:has([data-testid="conta-menu"]) {
+    padding-bottom: 0;
+  }
+}
