@@ -565,7 +565,8 @@
         "t355-conta-a-perfil-espelho",
         "t352-varredura-bloco17",
         "t387-varredura-bloco22",
-        "t403-nav-a"
+        "t403-nav-a",
+        "t411-varredura-bloco28"
       ]
     },
     "/dashboard/assinatura": {
@@ -837,7 +838,8 @@
         "t320-pausar-anuncio-64b",
         "t352-varredura-bloco17",
         "t400-chacara-sem-internet",
-        "t450-cadastro-moldura"
+        "t450-cadastro-moldura",
+        "t411-varredura-bloco28"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -893,6 +895,7 @@
         "t400-chacara-sem-internet",
         "t410-niveis-medir-rascunho",
         "t450-cadastro-moldura",
+        "t411-varredura-bloco28",
         "t435-cadastro-03-endereco"
       ]
     },
