@@ -305,10 +305,21 @@ export async function entrar(browser: Browser, email: string, senha: string): Pr
 }
 
 /** Abre o editor do imóvel e clica em Publicar (falha se o botão estiver travado). */
+/**
+ * L2-B item 23: a caixa do termo de IA só aparece para quem ainda não aceitou a versão atual (termo_ia_aceites, 0241).
+ * Quem já aceitou vê a linha "Você já aceitou o termo…". Marca a caixa quando ela está lá; senão confere a linha.
+ */
+export async function aceitarTermoIaSePreciso(page: Page): Promise<void> {
+  const caixa = page.getByTestId("aceite-ia").getByRole("checkbox");
+  const jaAceito = page.getByTestId("aceite-ia-ja-aceito");
+  await expect(caixa.or(jaAceito).first()).toBeVisible({ timeout: 20_000 });
+  if (await caixa.isVisible()) await caixa.check();
+}
+
 export async function publicarPeloEditor(page: Page, propertyId: string): Promise<void> {
   await page.goto(`/dashboard/imoveis/${propertyId}/editar`, { waitUntil: "domcontentloaded" });
   // O Publicar só habilita depois do aceite do termo de IA (editar-client.tsx): sem marcar, o clique esperava até estourar o tempo do teste.
-  await page.getByTestId("aceite-ia").getByRole("checkbox").check({ timeout: 20_000 });
+  await aceitarTermoIaSePreciso(page);
   const publicar = page.getByRole("button", { name: "Publicar", exact: true });
   await expect(publicar, "Publicar deveria estar habilitado: veja 'Falta para publicar' no editor").toBeEnabled({ timeout: 20_000 });
   await publicar.click();

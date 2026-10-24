@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, definirPlano, entrar, novaSenha, novoSufixo, statusDoImovel } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, definirPlano, entrar, novaSenha, novoSufixo, statusDoImovel, aceitarTermoIaSePreciso } from "../fixtures/laboratorio";
 import { aceiteParaRascunho } from "../../../src/lib/anuncio/aceite-ia-rascunho";
 
 /**
@@ -71,7 +71,7 @@ test.describe("T320 — pausar anúncio, limite do plano e aceite de IA (64-B)",
       expect(await motivo(id)).toBe("dono");
     }
     await p.goto(`/dashboard/imoveis/${ids.rascunho}/editar`, { waitUntil: "domcontentloaded" });
-    await p.getByTestId("aceite-ia").getByRole("checkbox").check({ timeout: 20_000 });
+    await aceitarTermoIaSePreciso(p);
     await p.getByRole("button", { name: "Publicar", exact: true }).click();
     await expect.poll(() => statusDoImovel(ids.rascunho), { timeout: 30_000 }).toBe("active");
     await p.context().close();
@@ -115,6 +115,8 @@ test.describe("T320 — pausar anúncio, limite do plano e aceite de IA (64-B)",
   });
 
   test("5. o aceite de IA volta com o rascunho e cai ao editar a descrição", async ({ browser }) => {
+    // L2-B item 23: o 64-B vale para quem ainda não aceitou o termo no servidor; os testes anteriores publicaram (e aceitaram).
+    await adm().from("termo_ia_aceites").delete().eq("user_id", ids.dono);
     const titulo = `Aceite t320 ${sufixo}`;
     const descricao = "Studio mobiliado no Centro, com home office, internet rápida e cozinha completa. Pronto para morar.";
     const { data, error } = await adm()
