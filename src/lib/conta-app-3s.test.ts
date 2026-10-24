@@ -12,6 +12,7 @@ const secao = readFileSync(new URL("../app/(dashboard)/dashboard/conta/[secao]/p
 test("menu da Conta no app não repete o título: o H1 é do TopoConta, único (CONTA-A; sem capa de foto — Prompt 42)", () => {
   const pagina = readFileSync(new URL("../app/(dashboard)/dashboard/conta/page.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(menu, /<PageTitle/);
+  assert.doesNotMatch(menu, /conta-cartao-usuario/);
   assert.doesNotMatch(menu, /capa=/);
   assert.match(pagina, /<TopoConta \/>\s*<div className="app-only">\s*<ContaMenu \/>/);
 });

@@ -8,7 +8,6 @@ import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { CaixaEmailsTeste } from "@/components/account/caixa-emails-teste";
 import { ContaMenu } from "@/components/account/conta-menu";
 import { SeusPapeis } from "@/components/account/seus-papeis";
-import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
 import { DegrausPerfil } from "@/components/account/degraus-perfil";
 import { AjudaContato, DadosPessoais, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
@@ -44,9 +43,7 @@ export default function AccountPage() {
           <div className="mt-6">
             <DegrausPerfil />
           </div>
-          <div className="mt-6">
-            <SeuPerfilPublico />
-          </div>
+          {/* C3c: a visão do proprietário fica só no ESPELHO (ao lado do formulário); o resumo repetido saiu daqui. */}
         </BlocoConta>
 
         <BlocoConta id="avaliacoes" titulo="Avaliações" subtitulo="O que disseram de você depois de cada estadia.">
@@ -55,9 +52,9 @@ export default function AccountPage() {
           </Link>
         </BlocoConta>
 
-        <BlocoConta id="papeis" titulo="Papéis e intenção" subtitulo="Só muda o menu e o painel que aparecem primeiro." semTitulo>
+        <BlocoConta id="papeis" titulo="Papéis e intenção" subtitulo="Só muda o menu e o painel que aparecem primeiro.">
           <div className="mt-4 grid gap-4">
-            <SeusPapeis />
+            <SeusPapeis dentroDoBloco />
             <MinhaIntencao />
           </div>
         </BlocoConta>
@@ -75,7 +72,7 @@ export default function AccountPage() {
         </BlocoConta>
 
         <BlocoConta id="notificacoes" titulo="Notificações" subtitulo="Como e quando a Viva avisa você.">
-          <NotificationsPanel />
+          <NotificationsPanel titulo={null} />
         </BlocoConta>
 
         <BlocoConta id="pagamentos" titulo="Pagamentos" subtitulo="Para onde vai o valor mensal.">

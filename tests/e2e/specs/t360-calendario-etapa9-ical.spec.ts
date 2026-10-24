@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * Rodada da vigia 24/10 (Pista C): confirmação do merge no lab-crítico do bloco 15 (t338). Era t359, repetida com a do #1208 (L-46).
+ * Rodada da vigia 24/10 (Pista C): confirmação do merge no lab-crítico do bloco 15 (t338).
  * T360 — E44: calendário de disponibilidade da etapa 9 do assistente (mockup cadastro-imovel-09) e exportação iCal.
  *   1. editor (Disponibilidade): a grade dos 3 meses renderiza com o bloqueio do dono marcado; "Exportar para outro site"
  *      mostra o link secreto .ics; o .ics responde 200 e traz o bloqueio manual como "Ocupado" (último dia incluso);
@@ -12,7 +12,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t359.${sufixo}@lab.vivanomads.test`, nome: "Clara Calendário", role: "owner" as const };
+const dono = { email: `dono.t360.${sufixo}@lab.vivanomads.test`, nome: "Clara Calendário", role: "owner" as const };
 const ids: { dono?: string; ativo?: string; rascunho?: string } = {};
 
 const emDias = (n: number) => {
@@ -58,7 +58,7 @@ test.describe("T360 — E44: grade do calendário + exportação iCal", () => {
     const link = d.getByTestId("exportar-calendario-link");
     await expect(link).toHaveValue(new RegExp(`/api/calendario/${ids.ativo}/[0-9a-f]{32}\\.ics$`), { timeout: 20_000 });
     await semRolagemLateral(d);
-    await d.getByTestId("exportar-calendario").screenshot({ path: `${SAIDA}/t359-exportar-1280.png` });
+    await d.getByTestId("exportar-calendario").screenshot({ path: `${SAIDA}/t360-exportar-1280.png` });
 
     const url = new URL((await link.inputValue()) as string);
     const r = await d.request.get(url.pathname);
@@ -87,7 +87,7 @@ test.describe("T360 — E44: grade do calendário + exportação iCal", () => {
     await expect(etapa.getByTestId("calendario-dono-grade")).toBeVisible({ timeout: 30_000 });
     await expect(etapa.getByTestId("exportar-calendario-link")).toHaveValue(new RegExp(`/api/calendario/${ids.rascunho}/`), { timeout: 20_000 });
     await semRolagemLateral(d);
-    await etapa.screenshot({ path: `${SAIDA}/t359-etapa-calendario-390.png` });
+    await etapa.screenshot({ path: `${SAIDA}/t360-etapa-calendario-390.png` });
     await d.context().close();
   });
 });
