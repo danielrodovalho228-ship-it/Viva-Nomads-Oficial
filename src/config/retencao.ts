@@ -127,6 +127,7 @@ export const INVENTARIO: ItemInventario[] = [
   i("proposta_versoes", "public.proposta_versoes", "mensagem da proposta", "proposta", CONTA),
   i("avaliacoes", "public.avaliacoes", "comentários", "avaliação pública", CONTA),
   i("avaliacao_respostas", "public.avaliacao_respostas", "resposta do dono", "avaliação pública", CONTA),
+  i("recebimento_pix", "public.recebimento_pix", "chave Pix (CPF, CNPJ, e-mail ou celular)", "receber o valor mensal direto do morador", CONTA),
   i("avaliacao_contestacoes", "public.avaliacao_contestacoes", "motivo da contestação", "moderação", CONTA),
   i("reviews", "public.reviews", "comentário (legado)", "avaliação", CONTA),
   i("property_reviews", "public.property_reviews", "nome do autor e comentário", "avaliação", CONTA),
