@@ -854,7 +854,8 @@
         "t352-varredura-bloco17",
         "t386-cadastro-01-tipo",
         "t387-varredura-bloco22",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t406-perto-a"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1267,7 +1268,8 @@
         "t351-telas-linkedin-63a",
         "t349-imovel-sem-500-l31",
         "t336-varredura-bloco14",
-        "t337-varredura-redundancia"
+        "t337-varredura-redundancia",
+        "t406-perto-a"
       ]
     },
     "/modelodenegocio": {

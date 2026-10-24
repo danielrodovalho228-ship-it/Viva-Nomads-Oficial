@@ -6,7 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ProximityCategory, Property } from "@/lib/types";
 import type { MapMarker } from "@/components/property-map";
 import { PropertyMap } from "@/components/property-map-lazy";
-import { proximidadesDoImovel, proximidadesVisiveis } from "@/lib/anuncio/proximidades";
+import { ORDEM_CATEGORIAS_PAGINA, proximidadesDoImovel, proximidadesVisiveis } from "@/lib/anuncio/proximidades";
 import { ServicosPorPerto } from "@/components/property/servicos-por-perto";
 import { TempoAte } from "@/components/property/tempo-ate";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
@@ -117,26 +117,33 @@ export function LocationNearby({ property }: { property: Property }) {
       {hasProximities && (
         <>
           <h3 className="mt-6 text-sm font-semibold text-forest">O que tem por perto</h3>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-            {proximities.map((p) => {
-              const meta = PROXIMITY_META[p.categoria];
-              const Icon = meta?.icon ?? MapPin;
+          {/* PERTO-A: agrupado pelas 5 categorias, na ordem fixa (Saúde, Educação, Trabalho, Mercado, Transporte). */}
+          <div className="mt-3 grid gap-4 sm:grid-cols-2" data-testid="perto-categorias">
+            {ORDEM_CATEGORIAS_PAGINA.filter((c) => proximities.some((p) => p.categoria === c)).map((c) => {
+              const meta = PROXIMITY_META[c];
+              const Icon = meta.icon;
               return (
-                <li
-                  key={`${p.categoria}-${p.nome}`}
-                  className="flex items-center gap-3 rounded-xl border border-sage-200 px-4 py-3"
-                >
-                  <Icon className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-ink">{p.nome}</span>
-                    <span className="block text-xs text-muted" data-testid="proximidade-texto">
-                      {meta?.label ?? p.categoria} · {p.texto}
-                    </span>
-                  </span>
-                </li>
+                <section key={c} aria-label={meta.label} data-testid={`perto-cat-${c}`}>
+                  <h4 className="flex items-center gap-2 text-sm font-semibold text-ink">
+                    <Icon className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden />
+                    {meta.label}
+                  </h4>
+                  <ul className="mt-2 divide-y divide-line rounded-xl border border-sage-200">
+                    {proximities
+                      .filter((p) => p.categoria === c)
+                      .map((p) => (
+                        <li key={`${p.categoria}-${p.nome}`} className="flex items-baseline justify-between gap-3 px-4 py-3">
+                          <span className="min-w-0 text-sm font-medium text-ink">{p.nome}</span>
+                          <span className="shrink-0 text-xs text-muted" data-testid="proximidade-texto">
+                            {p.texto}
+                          </span>
+                        </li>
+                      ))}
+                  </ul>
+                </section>
               );
             })}
-          </ul>
+          </div>
           {ocultos > 0 && (
             <p className="mt-2 text-xs text-muted">
               +{ocultos} ponto(s) de interesse revelados após o aceite da candidatura.
