@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação do merge no lab-crítico do bloco 18 (t353).
  * T366 — porta de entrada (/auth): alinhamento visual com os mockups aprovados (23/10). Só aparência.
  *   1. a foto da esquerda sem o véu escuro por cima de tudo: só degradês no topo e na base, e o título branco legível;
  *   2. o primário na família do verde da casa em todos os estados: habilitado (verde da marca), esperando (o mesmo verde

@@ -341,7 +341,8 @@
         "t69-botoes-header",
         "t300-entrada-sem-senha-49",
         "t306-varredura-bloco7",
-        "t317-email-unico-49c1"
+        "t317-email-unico-49c1",
+        "t353-varredura-bloco18"
       ]
     },
     "/auth/pronto": {
@@ -357,7 +358,8 @@
         "publico"
       ],
       "specs": [
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t353-varredura-bloco18"
       ]
     },
     "/auth/verificar-codigo": {
@@ -642,7 +644,8 @@
         "t361-conta-a-correcoes-qa",
         "t351-telas-linkedin-63a",
         "t355-conta-a-perfil-espelho",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t353-varredura-bloco18"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -664,7 +667,8 @@
         "t329-varredura-bloco11",
         "t332-merges-1170-1172",
         "t337-varredura-redundancia",
-        "t362-perfil-avaliacoes-pix"
+        "t362-perfil-avaliacoes-pix",
+        "t353-varredura-bloco18"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1288,7 +1292,8 @@
         "t201-qa-muse",
         "t231-admin-numeros-com-lista",
         "t236-parceiros-ciclo",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t353-varredura-bloco18"
       ]
     },
     "/pedidos": {
