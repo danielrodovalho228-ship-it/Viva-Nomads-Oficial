@@ -196,8 +196,10 @@ test.describe("T410 — NIVEIS-MEDIR-B: medir a internet antes de publicar", () 
 
     test("3. medição vencida: a rotina recalcula e o nível cai para o que os outros itens sustentam", async ({ browser }) => {
       expect(await nivelGravado(ids.p!)).toBe("premium");
+      // A medição "envelhece": feita há ~6 meses e vencida há 1 h (o banco exige valido_ate > medido_em).
       const vencida = new Date(Date.now() - 3600_000).toISOString();
-      const { error } = await adm().from("internet_medicoes").update({ valido_ate: vencida }).eq("property_id", ids.p!);
+      const medidaEm = new Date(Date.now() - 183 * 24 * 3600_000).toISOString();
+      const { error } = await adm().from("internet_medicoes").update({ medido_em: medidaEm, valido_ate: vencida }).eq("property_id", ids.p!);
       if (error) throw error;
       const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
       const a = await ctx.newPage();
