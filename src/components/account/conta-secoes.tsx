@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Bell, Trash2, Check, BadgeCheck } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
-import { useViewMode } from "@/lib/roles";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
@@ -22,13 +21,11 @@ import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, typ
 import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
 import { getCategoriasDesligadas, setCategoriasDesligadas } from "@/lib/data/notif-categorias-actions";
 import { CATEGORIAS_COM_INTERRUPTOR, ROTULO_CATEGORIA, type CategoriaComInterruptor } from "@/config/matriz-notificacoes";
-import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
 import { getNascimento, salvarNascimento } from "@/lib/data/nascimento-actions";
 import { mascararNascimento, validarNascimento } from "@/lib/conta/nascimento";
-import { cn } from "@/lib/utils";
 import { PILULA_EMAIL } from "@/lib/perfil/espelho";
 
 
@@ -39,12 +36,9 @@ import { PILULA_EMAIL } from "@/lib/perfil/espelho";
 
 export function DadosPessoais() {
   const user = useDisplayUser();
-  const { mode } = useViewMode();
   const setUser = useAuthStore((s) => s.setUser);
   const [nome, setNome] = useState(nomeCompletoLimpo(user?.fullName));
   const [telefone, setTelefone] = useState("");
-  const [linkedin, setLinkedin] = useState("");
-  const [motivoEstadia, setMotivoEstadia] = useState("");
   const [email, setEmail] = useState(user?.email ?? "");
   const [emailConfirmado, setEmailConfirmado] = useState(false);
   const [nascimento, setNascimento] = useState("");
@@ -61,8 +55,6 @@ export function DadosPessoais() {
         if (!vivo || !d) return;
         setNome(nomeCompletoLimpo(d.fullName));
         setTelefone(d.phone);
-        setLinkedin(d.linkedin);
-        setMotivoEstadia(d.motivoEstadia);
         setEmail(d.email);
         setEmailConfirmado(d.emailConfirmado);
       })
@@ -92,7 +84,6 @@ export function DadosPessoais() {
       salvarMeusDados({
         fullName: nome,
         phone: telefone,
-        ...(mode === "tenant" ? { linkedin, motivoEstadia } : {}),
       }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo.", dados: undefined })),
       salvarNascimento(nascimento).catch(() => ({ ok: false, error: "Sem conexão. Tente de novo." })),
     ]);
@@ -107,10 +98,6 @@ export function DadosPessoais() {
     }
     setNome(r.dados.fullName);
     setTelefone(r.dados.phone ?? "");
-    if (mode === "tenant") {
-      setLinkedin(r.dados.linkedin ?? "");
-      setMotivoEstadia(r.dados.motivoEstadia ?? "");
-    }
     // O nome novo aparece já no menu e no topo.
     const atual = useAuthStore.getState().user;
     if (atual) setUser({ ...atual, name: r.dados.fullName, fullName: r.dados.fullName });
@@ -123,6 +110,8 @@ export function DadosPessoais() {
   const docMascarado = pj ? documento?.cnpj : documento?.cpf;
 
   // A4 — mockup perfil-04 ("Meus dados"): um cartão, campos um embaixo do outro, e-mail com a pílula e "Salvar".
+  // E64 (QA 24/10): sem o endereço do LinkedIn (o selo é a conexão "Conectar LinkedIn") e sem o motivo da estadia
+  // (perguntado no próprio pedido) — nenhum dos dois está no desenho; os valores já gravados ficam como estão.
   return (
     <section className="rounded-xl bg-white p-4 sm:p-6" aria-label="Meus dados" data-testid="meus-dados">
       <form onSubmit={salvar} className="grid gap-4">
@@ -176,37 +165,6 @@ export function DadosPessoais() {
             )}
           </span>
         </label>
-        {mode === "tenant" && (
-          <CampoDados
-            // 63-B: o endereço do perfil é PRIVADO (só a Viva vê); o selo de confiança é o "Conectar LinkedIn".
-            label="Endereço do perfil no LinkedIn (opcional, só a Viva vê)"
-            value={linkedin}
-            onChange={(e) => setLinkedin(e.target.value)}
-            placeholder="https://linkedin.com/in/seu-perfil"
-            inputMode="url"
-          />
-        )}
-        {mode === "tenant" && (
-          <label className="block text-sm text-muted">
-            Motivo da estadia (opcional):
-            <select
-              data-testid="perfil-motivo-estadia"
-              value={motivoEstadia}
-              onChange={(e) => setMotivoEstadia(e.target.value)}
-              className={cn(CAMPO_DADOS, "mt-1 min-h-11")}
-            >
-              <option value="">Prefiro não informar</option>
-              {MOTIVOS.map((m) => (
-                <option key={m.key} value={m.key}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-            <span className="mt-1 block text-xs font-normal text-muted">
-              Já vem preenchido nos seus próximos pedidos. Você pode trocar a qualquer hora.
-            </span>
-          </label>
-        )}
         <p className="text-xs text-muted">O telefone não aparece para outros usuários: é usado só para avisos da plataforma.</p>
         {erro && (
           <p role="alert" className="text-sm text-red-600">

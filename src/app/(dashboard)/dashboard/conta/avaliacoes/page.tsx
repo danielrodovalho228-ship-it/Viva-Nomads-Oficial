@@ -35,18 +35,7 @@ export default async function ContaAvaliacoesPage({ searchParams }: { searchPara
   return (
     <CascaConta ativo="avaliacoes" subtitulo={SUBTITULO_AVALIACOES}>
       <div data-testid="tela-avaliacoes">
-        {res.avaliacoes.length === 0 ? (
-          <EmptyState
-            icon={Star}
-            title="Nenhuma avaliação publicada ainda"
-            text="Quando uma estadia termina, as duas partes avaliam. A avaliação aparece aqui depois de publicada."
-            action={
-              <ButtonLink href="/dashboard/locacoes" variant="secondary" size="sm">
-                Ver minhas estadias
-              </ButtonLink>
-            }
-          />
-        ) : (
+        {/* E63 (QA 24/10): a estrutura do desenho fica sempre — abas e busca — mesmo sem nenhuma avaliação ainda. */}
           <>
             <nav className="flex flex-wrap gap-3" aria-label="Filtrar avaliações">
               {ABAS_AVALIACOES.map((a) => (
@@ -77,7 +66,20 @@ export default async function ContaAvaliacoesPage({ searchParams }: { searchPara
               />
             </form>
 
-            {lista.length === 0 ? (
+            {res.avaliacoes.length === 0 ? (
+              <div className="mt-4">
+                <EmptyState
+                  icon={Star}
+                  title="Nenhuma avaliação publicada ainda"
+                  text="Quando uma estadia termina, as duas partes avaliam. A avaliação aparece aqui depois de publicada."
+                  action={
+                    <ButtonLink href="/dashboard/locacoes" variant="secondary" size="sm">
+                      Ver minhas estadias
+                    </ButtonLink>
+                  }
+                />
+              </div>
+            ) : lista.length === 0 ? (
               <p className="mt-6 text-sm text-muted" data-testid="avaliacoes-sem-resultado">
                 Nenhuma avaliação neste filtro.
               </p>
@@ -147,7 +149,6 @@ export default async function ContaAvaliacoesPage({ searchParams }: { searchPara
               </div>
             )}
           </>
-        )}
       </div>
     </CascaConta>
   );

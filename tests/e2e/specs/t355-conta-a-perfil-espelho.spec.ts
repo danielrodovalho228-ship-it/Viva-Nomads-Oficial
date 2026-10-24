@@ -113,9 +113,9 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
     await expect(p.getByTestId("topo-foto-msg")).toHaveText("Foto atualizada", { timeout: 20_000 });
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
     await expect(p.getByTestId("topo-foto")).toHaveAccessibleName("Trocar foto");
-    // A foto no topo e (menor) no espelho; o cabeçalho também mostra a foto (mockup perfil-01, decisão de 24/10).
+    // A foto no topo e (menor) no espelho; E55 (QA 24/10): no Perfil o cabeçalho mostra as iniciais, não a foto.
     await expect(p.locator('[data-testid="espelho-perfil"]:visible img:visible')).toHaveCount(1);
-    await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
+    await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
     // O medidor andou sem recarregar: "Foto de perfil" saiu da linha de faltas.
     await expect(p.getByTestId("perfil-falta")).not.toContainText("Foto de perfil", { timeout: 15_000 });
     const caminho = (await adm().from("profiles").select("avatar_url").eq("id", ids.dono).single()).data?.avatar_url as string;

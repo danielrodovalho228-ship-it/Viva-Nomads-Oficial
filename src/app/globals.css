@@ -499,6 +499,13 @@ body:has([data-testid="barra-fixa-imovel"]) {
     padding-right: 5rem;
   }
 }
+/* E67a (decidido pelo Daniel, 24/10): "Meus dados" termina limpa no computador — sem o vão depois do último cartão.
+   A partir de 768 px o "Fale com a Viva" mora na faixa reservada da direita (C4), então o fim não precisa da folga dele. */
+@media (min-width: 768px) {
+  html:not([data-app]) [data-painel-main]:has([data-conta-casca][data-secao="dados"]) {
+    padding-bottom: 2rem;
+  }
+}
 /* A1 (mockups perfil-01..08): as telas da Conta sobre o fundo areia, com cartões brancos. */
 [data-painel-main]:has([data-conta-casca]:not(.hidden *)),
 [data-painel-main]:has([data-testid="conta-menu"]) {

@@ -12,9 +12,9 @@ import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { DadosPessoais, DocumentoPessoa } from "@/components/account/conta-secoes";
 import { TelaNotificacoes } from "@/components/account/tela-notificacoes";
 import { TelaPrivacidade } from "@/components/account/tela-privacidade";
-import { ConfiancaLista } from "@/components/account/conta-blocos";
 import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
+import { SeusDadosRegras } from "@/components/account/seus-dados-regras";
 import { DegrausPerfil } from "@/components/account/degraus-perfil";
 import { RedesPrivadas } from "@/components/account/redes-privadas";
 import { SUBTITULO_PAPEIS } from "@/lib/conta/tela-papeis";
@@ -59,17 +59,18 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
           <div className="mt-6">
             <DegrausPerfil />
           </div>
+          {/* E67b: o cartão final curto — o que a Viva guarda, por quanto tempo, e o caminho para a Privacidade. */}
+          <div className="mt-6">
+            <SeusDadosRegras />
+          </div>
         </CascaConta>
       );
     case "privacidade":
       return (
         <CascaConta ativo="privacidade" trilha>
-          {/* Mockup perfil-05: as chaves, "Baixar meus dados" e "Excluir minha conta". Embaixo, a lista de confiança
-              (requisito aprovado que o desenho não mostra); senha e duas etapas seguem na subtela /seguranca. */}
+          {/* Mockup perfil-05: as chaves, "Baixar meus dados" e "Excluir minha conta". E66 (QA 24/10): a lista de segurança
+              (e-mail, celular, identidade, LinkedIn, duas etapas, senha) mora na rota própria /dashboard/conta/seguranca. */}
           <TelaPrivacidade />
-          <div className="mt-8">
-            <ConfiancaLista />
-          </div>
         </CascaConta>
       );
     case "notificacoes":

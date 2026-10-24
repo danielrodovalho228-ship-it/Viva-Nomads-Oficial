@@ -26,10 +26,10 @@ test("migração 0141: coluna, permissão só da coluna, aplicar e rollback", ()
   assert.match(ler("supabase/producao/rollback/0141_rollback.sql"), /drop column if exists motivo_estadia/i);
 });
 
-test("Conta mostra o seletor com a lista única MOTIVOS (só inquilino)", () => {
+test("E64 (QA 24/10): Meus dados não pergunta o motivo — o desenho perfil-04 não tem; ele é perguntado no pedido", () => {
   const c = ler("src/components/account/conta-secoes.tsx");
-  assert.match(c, /MOTIVOS/);
-  assert.match(c, /data-testid="perfil-motivo-estadia"/);
+  assert.doesNotMatch(c, /data-testid="perfil-motivo-estadia"/);
+  assert.doesNotMatch(c, /motivoEstadia/);
 });
 
 test("pedido novo pré-preenche com o motivo do perfil, sem sobrescrever o que já tem", () => {
