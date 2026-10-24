@@ -4,6 +4,7 @@ import { authFile } from "../fixtures/auth";
 import { account, hasAccount } from "../fixtures/accounts";
 
 /**
+ * L-43 (vigia, 24/10): a Conta não assenta em "networkidle"; espera até 10 s e segue para o elemento.
  * T129 — MOTIVO DA ESTADIA NO PERFIL (ordens a8bb8cfa e 9a723929). Conta salva o motivo em 390 e 1280 px,
  * o pedido novo vem pré-preenchido, e valor fora da lista é recusado pelo servidor (check do banco).
  * Devolve o motivo original no fim.
@@ -16,7 +17,8 @@ test.describe("T129 — Motivo da estadia no perfil", () => {
   for (const [nome, largura, altura] of [["390 px", 390, 844], ["1280 px", 1280, 800]] as const) {
     test(`Conta salva o motivo e o pedido novo vem pré-preenchido (${nome})`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: altura });
-      await page.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const seletor = page.getByTestId("perfil-motivo-estadia");
       await expect(seletor).toBeVisible();
       const original = await seletor.inputValue();
@@ -25,14 +27,17 @@ test.describe("T129 — Motivo da estadia no perfil", () => {
         await seletor.selectOption(novo);
         await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
         await expect(page.getByText("Dados salvos.")).toBeVisible();
-        await page.reload({ waitUntil: "networkidle" });
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         await expect(page.getByTestId("perfil-motivo-estadia")).toHaveValue(novo);
 
-        await page.goto("/pedidos/novo", { waitUntil: "networkidle" });
+        await page.goto("/pedidos/novo", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         // Prompt 12: o motivo é um select nativo, pré-preenchido com o do perfil.
         await expect(page.getByTestId("pedido-motivo")).toHaveValue(novo);
       } finally {
-        await page.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
+        await page.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         await page.getByTestId("perfil-motivo-estadia").selectOption(original);
         await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
         await expect(page.getByText("Dados salvos.")).toBeVisible();
