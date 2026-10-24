@@ -6076,6 +6076,38 @@
       "specs": [
         "t381-perto-por-perto"
       ]
+    },
+    "src/lib/data/deteccao-actions.ts#analisarFotosDoAnuncio": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t389-deteccao-fotos"
+      ]
+    },
+    "src/lib/data/deteccao-actions.ts#listarSugestoesFotos": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t389-deteccao-fotos"
+      ]
+    },
+    "src/lib/data/deteccao-actions.ts#confirmarSugestaoFoto": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t389-deteccao-fotos"
+      ]
+    },
+    "src/lib/data/deteccao-actions.ts#descartarSugestaoFoto": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t389-deteccao-fotos"
+      ]
     }
   }
 }

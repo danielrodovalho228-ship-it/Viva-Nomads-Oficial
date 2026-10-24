@@ -51,6 +51,7 @@ import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio
 import { avisoTituloBairro } from "@/lib/anuncio/titulo-bairro";
 import { formatBRL, cn } from "@/lib/utils";
 import { MedirInternet } from "@/components/anuncio/medir-internet";
+import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 
 const MIN_DESC = 60;
 
@@ -628,6 +629,14 @@ export function EditarImovelClient({
                 </div>
               </div>
             ))}
+            {/* DETECTA-B: o que as fotos da galeria mostram, como sugestão (marca aqui; grava no salvar da seção). */}
+            {!demo && (
+              <SugestoesDasFotos
+                propertyId={property.id}
+                comodidadesMarcadas={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
+                onComodidade={(k) => setAmenityKeys((a) => ({ ...a, [k]: true }))}
+              />
+            )}
             {/* Prompt 57: a velocidade medida no imóvel (o informado continua no cadastro). */}
             {!demo && <MedirInternet imovelId={property.id} origem="edicao" />}
           </div>

@@ -33,6 +33,7 @@ import { ERRO_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
+import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
@@ -190,6 +191,9 @@ export default function NewPropertyPage() {
   // 61-B: tipo de entrada (obrigatório para publicar anúncio novo), mensagem a quem pede e o que considerar.
   const [chegada, setChegada] = useState<ChegadaEPedidoForm>(() => formDeChegada());
   const [amenityKeys, setAmenityKeys] = useState<Record<string, boolean>>({});
+  // DETECTA-B: itens de nível sugeridos pelas fotos (saem do "o que falta") e releitura do nível após confirmar.
+  const [sugeridasFotos, setSugeridasFotos] = useState<string[]>([]);
+  const [nivelVersao, setNivelVersao] = useState(0);
   const [internetMbps, setInternetMbps] = useState("");
   // Proximidades: as do OSM (todas marcadas; o dono desmarca) + as manuais ("Adicionar outro").
   const [proxOsm, setProxOsm] = useState<LugarProximo[] | null>(null);
@@ -1492,8 +1496,16 @@ export default function NewPropertyPage() {
                   salvamento={conf.salvamento}
                   onTentarDeNovo={conf.tentarDeNovo}
                 />
+                {/* DETECTA-B: o que as fotos da galeria mostram, como sugestão (só conta depois de confirmar). */}
+                <SugestoesDasFotos
+                  propertyId={imovelId}
+                  comodidadesMarcadas={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
+                  onComodidade={(k) => setAmenityKeys((a) => ({ ...a, [k]: true }))}
+                  onSugeridas={setSugeridasFotos}
+                  onNivelMudou={() => setNivelVersao((v) => v + 1)}
+                />
                 {/* Adendo 59.1: o nível que o imóvel atinge agora e o que falta para o próximo, item a item, com foto. */}
-                <NivelNoCadastro propertyId={imovelId} conforto={conforto} />
+                <NivelNoCadastro propertyId={imovelId} conforto={conforto} sugeridas={sugeridasFotos} recarregar={nivelVersao} />
               </div>
             )}
 
