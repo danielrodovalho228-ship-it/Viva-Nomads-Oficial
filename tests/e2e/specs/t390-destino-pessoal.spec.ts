@@ -48,7 +48,8 @@ test.describe("T390 — DESTINO-PESSOAL-B: Outro local pessoal", () => {
     await campo.getByTestId("outro-local-buscar").click();
     await expect(campo.getByTestId("destino-digitado")).toContainText("Hospital do Lab", { timeout: 20_000 });
     await expect(campo.getByTestId("destino-digitado")).not.toContainText("123");
-    await expect(page).toHaveURL(/dlat=-?\d+\.\d{2}&dlng=-?\d+\.\d{2}/);
+    // E94: o ponto vai com 3 casas (~110 m), a mesma precisão guardada para quem está logado.
+    await expect(page).toHaveURL(/dlat=-?\d+\.\d{3}&dlng=-?\d+\.\d{3}/);
     expect((await adm().from("destinos_pessoais").select("id", { count: "exact", head: true })).count ?? 0).toBe(antes);
     await semRolagemLateral(page);
     await page.screenshot({ path: "tests/laboratorio/saida/t390-1-outro-local-390.png", fullPage: true });

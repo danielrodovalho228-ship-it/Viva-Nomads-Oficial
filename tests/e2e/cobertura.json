@@ -6171,7 +6171,8 @@
         "inquilino"
       ],
       "specs": [
-        "t390-destino-pessoal"
+        "t390-destino-pessoal",
+        "t398-local-pessoal-teste"
       ]
     },
     "src/lib/destinos/pessoal-actions.ts#meusLocais": {
@@ -6266,6 +6267,15 @@
       ],
       "specs": [
         "t397-foto-na-hora"
+      ]
+    },
+    "src/lib/destinos/pessoal-actions.ts#renomearLocal": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t398-local-pessoal-teste"
       ]
     }
   }
