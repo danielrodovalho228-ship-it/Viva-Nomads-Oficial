@@ -33,6 +33,12 @@ test.describe("T440 — E98-A: total do mês no JSON-LD e Bom saber completo", (
     await apagarContas([ids.dono]);
   });
 
+  test("as linhas do Bom saber vêm no HTML do servidor (antes de qualquer JavaScript)", async ({ request }) => {
+    const html = await (await request.get(`/imoveis/${ids.imovel}`)).text();
+    for (const c of ["cancelamento", "regras", "seguranca", "manutencao"]) expect(html).toContain(`data-testid="bom-saber-${c}"`);
+    expect(html).toContain("Antes do contrato assinado, nada é cobrado");
+  });
+
   for (const w of [390, 1280] as const) {
     test(`a ${w} px: JSON-LD com o total do mês e Bom saber com 4 linhas`, async ({ browser }) => {
       const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 } });
