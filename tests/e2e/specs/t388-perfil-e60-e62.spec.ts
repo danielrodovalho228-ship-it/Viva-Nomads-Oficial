@@ -109,10 +109,9 @@ test.describe("T388 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
             document.documentElement.clientWidth,
         ),
       ).toBeLessThanOrEqual(1);
-      await p.screenshot({
-        path: `${SAIDA}/t388-perfil-completo-${w}.png`,
-        fullPage: true,
-      });
+      // No computador quem rola é o <main> do painel: leva o medidor para a vista antes do print.
+      await medidor.scrollIntoViewIfNeeded();
+      await p.screenshot({ path: `${SAIDA}/t388-perfil-completo-${w}.png`, fullPage: w === 390 });
       await p.context().close();
     });
 
