@@ -78,9 +78,13 @@ test("descrição curta não pede 'Mostrar mais'; longa pede", () => {
   assert.equal(descricaoPrecisaMostrarMais(undefined), false);
 });
 
-test("Bom saber: 3 linhas fixas, sem inventar regra", () => {
+test("Bom saber: 4 linhas fixas (a manutenção entra no bloco), sem inventar regra", () => {
   const l = linhasBomSaber(com({ maxGuests: 2, petsAllowed: false, checkinAfter: "14:00", checkoutBefore: "11:00" }));
-  assert.deepEqual(l.map((x) => x.chave), ["cancelamento", "regras", "seguranca"]);
+  assert.deepEqual(l.map((x) => x.chave), ["cancelamento", "regras", "seguranca", "manutencao"]);
+  // E98-A: o compromisso de manutenção vem da mesma fonte do texto antigo, um prazo por linha.
+  assert.equal(l[3].titulo, "Manutenção");
+  assert.equal(l[3].resumo, "Urgente com solução provisória em até 24 h e definitiva em até 72 h");
+  assert.deepEqual(l[3].detalhe.slice(1), ["Comum em até 72 h", "Demais em até 7 dias"]);
   // CAMPOS-1: o resumo fica curto (os 2 primeiros fatos); entrada e saída seguem no detalhe.
   assert.equal(l[1].resumo, "Até 2 pessoas · sem pets");
   assert.ok(l[1].detalhe.includes("Entrada a partir das 14:00"));

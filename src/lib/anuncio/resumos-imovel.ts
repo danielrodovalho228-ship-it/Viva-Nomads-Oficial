@@ -7,6 +7,7 @@ import { linhasPrivacidadePublica } from "./privacidade.ts";
 import { proximidadesDoImovel, proximidadesVisiveis } from "./proximidades.ts";
 import { linhasRegrasCasa, type ChaveRegraCasa } from "./regras-casa.ts";
 import { linhasDetalhes } from "./detalhes-anuncio.ts";
+import { textoCompromissoManutencao } from "../conforto/exibicao.ts";
 
 export type ChaveDestaque = "saude" | "educacao" | "pronto" | "trabalho" | "vaga";
 export interface Destaque {
@@ -40,7 +41,7 @@ export function descricaoPrecisaMostrarMais(descricao: string | null | undefined
   return (descricao ?? "").trim().length > LIMITE_DESCRICAO_CURTA;
 }
 
-export type ChaveBomSaber = "cancelamento" | "regras" | "seguranca";
+export type ChaveBomSaber = "cancelamento" | "regras" | "seguranca" | "manutencao";
 export interface LinhaBomSaber {
   chave: ChaveBomSaber;
   titulo: string;
@@ -106,7 +107,16 @@ export function itensRegrasCasa(p: Property): ItemRegraCasa[] {
   return i;
 }
 
-/** As 3 linhas do bloco "Bom saber". O detalhe completo continua em "Regras da estadia". */
+/**
+ * E98-A: o compromisso de manutenção da Viva (vale para todo imóvel) é uma linha do "Bom saber", não um item solto
+ * embaixo dele. Resumo = o prazo da urgência; o detalhe traz os prazos um por linha. Mesma fonte (PRAZO_SOLUCAO_H).
+ */
+export function linhaManutencaoBomSaber(): LinhaBomSaber {
+  const partes = textoCompromissoManutencao().replace(/^Manutenção:\s*/, "").split(" · ").map(maiuscula);
+  return { chave: "manutencao", titulo: "Manutenção", resumo: partes[0], detalhe: partes };
+}
+
+/** As 4 linhas do bloco "Bom saber". O detalhe completo das regras continua em "Regras da estadia". */
 export function linhasBomSaber(p: Property): LinhaBomSaber[] {
   const itens = itensRegrasCasa(p);
   const curtos = itens.slice(0, MAX_RESUMO_REGRAS).map((x, k) => (k === 0 ? x.texto : x.texto.charAt(0).toLowerCase() + x.texto.slice(1)));
@@ -137,5 +147,6 @@ export function linhasBomSaber(p: Property): LinhaBomSaber[] {
       // Sempre as proteções da Viva; depois o que o anunciante declarou (ou o convite a perguntar).
       detalhe: [...PROTECOES_VIVA, ...(priv.length > 0 ? priv : [SEGURANCA_SEM_DECLARACAO])],
     },
+    linhaManutencaoBomSaber(),
   ];
 }
