@@ -68,6 +68,19 @@ test.describe("T370 — CONTA-A A3: Papéis e intenção (perfil-03)", () => {
       await expect(p.getByTestId("papeis-ajuda")).toHaveAttribute("href", "/ajuda");
       await expect(p.locator("main")).not.toContainText(/viajante|curto prazo|médio prazo/i);
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+      // Nada fixo (barra de abas, "Fale com a Viva") cobre o botão de nenhum dos três cartões.
+      for (const id of ["papel-morar-toggle", "papel-comecar-anuncio", "papel-parceiro-botao"]) {
+        const alvo = p.getByTestId(id);
+        await alvo.scrollIntoViewIfNeeded();
+        const livre = await alvo.evaluate((el) => {
+          const r = el.getBoundingClientRect();
+          const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return !!topo && (topo === el || el.contains(topo));
+        });
+        expect(livre, `nada fixo por cima de ${id}`).toBe(true);
+      }
+      await p.evaluate(() => document.querySelector("[data-painel-main]")?.scrollTo(0, 0));
+      await p.evaluate(() => window.scrollTo(0, 0));
       // O print só depois do bloco "papel em uso" carregar (sem o esqueleto no fim da tela).
       await p.getByTestId("seus-papeis").waitFor({ timeout: 20_000 });
       await p.screenshot({ path: `${SAIDA}/t370-papeis-${w}.png`, fullPage: true });
