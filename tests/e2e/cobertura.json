@@ -65,7 +65,8 @@
         "t286-esqueletos-vazios-48",
         "t288-padrao-minimo-59a",
         "t317-email-unico-49c1",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t392-varredura-bloco24"
       ]
     },
     "/admin/2fa/refazer": {
@@ -408,7 +409,8 @@
         "t344-avaliacao-telas-62a-parte2",
         "t350-filtros-honestos-buscar",
         "t352-varredura-bloco17",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t392-varredura-bloco24"
       ]
     },
     "/cidades": {
@@ -655,7 +657,8 @@
         "t355-conta-a-perfil-espelho",
         "t352-varredura-bloco17",
         "t353-varredura-bloco18",
-        "t354-varredura-bloco19"
+        "t354-varredura-bloco19",
+        "t392-varredura-bloco24"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -682,7 +685,8 @@
         "t354-varredura-bloco19",
         "t370-conta-a3-papeis",
         "t391-conta-conformidade",
-        "t385-varredura-bloco21"
+        "t385-varredura-bloco21",
+        "t392-varredura-bloco24"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -696,7 +700,8 @@
         "t183-telas-logadas-390",
         "t297-varredura-logada-bloco3",
         "t354-varredura-bloco19",
-        "t391-conta-conformidade"
+        "t391-conta-conformidade",
+        "t392-varredura-bloco24"
       ]
     },
     "/dashboard/contratos": {
@@ -821,7 +826,8 @@
         "t212-ferramentas-proprietario",
         "t211-complemento-23",
         "t320-pausar-anuncio-64b",
-        "t334-varredura-bloco12"
+        "t334-varredura-bloco12",
+        "t392-varredura-bloco24"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -847,7 +853,8 @@
         "t338-varredura-bloco15",
         "t352-varredura-bloco17",
         "t386-cadastro-01-tipo",
-        "t387-varredura-bloco22"
+        "t387-varredura-bloco22",
+        "t392-varredura-bloco24"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1749,7 +1756,8 @@
       "specs": [
         "t261-tempo-ate-o-trabalho",
         "t301-varredura-logada-bloco5",
-        "t332-merges-1170-1172"
+        "t332-merges-1170-1172",
+        "t392-varredura-bloco24"
       ]
     },
     "/imoveis-perto-de/[slug]": {
@@ -1856,7 +1864,8 @@
         "t306-varredura-bloco7",
         "t341-credenciamento-avaliador-62a",
         "t344-avaliacao-telas-62a-parte2",
-        "t387-varredura-bloco22"
+        "t387-varredura-bloco22",
+        "t392-varredura-bloco24"
       ]
     },
     "/dashboard/parceiro/avaliacao": {
@@ -1976,7 +1985,8 @@
       "specs": [
         "t369-conta-a2-avaliacoes",
         "t391-conta-conformidade",
-        "t385-varredura-bloco21"
+        "t385-varredura-bloco21",
+        "t392-varredura-bloco24"
       ]
     }
   },
