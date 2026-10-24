@@ -6,6 +6,15 @@ async function abrirFiltros(page: Page) {
   if (await compacta.isVisible()) await compacta.click();
 }
 
+/** E43 (FILTROS-1): "Pronto para Morar" saiu da barra de cima e mora só na folha de filtros, que aplica no botão. */
+async function ligarProntoParaMorar(page: Page) {
+  await abrirFiltros(page);
+  await page.getByRole("button", { name: /Mais filtros/ }).first().click();
+  const folha = page.getByRole("dialog", { name: "Filtros" });
+  await folha.getByTestId("faceta-pronto").click();
+  await folha.getByTestId("aplicar-filtros").click();
+}
+
 /**
  * T10 — BUSCA COMPARTILHÁVEL (G1) @criticos
  * L-43 (vigia, 24/10): o painel e a /buscar não assentam em "networkidle" (t183, L-40); espera até 10 s e segue para o elemento.
@@ -27,8 +36,7 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
     // Sem filtro, a URL não traz `pronto`.
     expect(page.url()).not.toMatch(/pronto=1/);
 
-    await abrirFiltros(page);
-    await page.getByRole("button", { name: /Pronto para Morar/i }).first().click();
+    await ligarProntoParaMorar(page);
 
     // O efeito de sync usa replaceState — espera o endereço refletir o filtro.
     await expect(async () => {
@@ -54,8 +62,7 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
   }) => {
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    await abrirFiltros(page);
-    await page.getByRole("button", { name: /Pronto para Morar/i }).first().click();
+    await ligarProntoParaMorar(page);
     await expect(async () => {
       expect(page.url()).toMatch(/pronto=1/);
     }).toPass({ timeout: 5_000 });
