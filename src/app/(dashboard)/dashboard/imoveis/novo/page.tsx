@@ -54,7 +54,8 @@ import { useAuthStore } from "@/lib/store";
 import { qualificadoDoServidor } from "@/lib/anuncio/qualificacao-rascunho";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento, registrarEventoUmaVez } from "@/lib/eventos/registrar";
-import { TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
+import { TERMO_IA_VERSAO, camposDaIa, precisaAceitarTermo } from "@/lib/anuncio/termo-ia";
+import { meuAceiteTermoIa } from "@/lib/data/termo-ia-actions";
 import { miniaturaBase64 } from "@/lib/fotos/miniatura";
 import {
   FOTOS_LADO_MAX_PX,
@@ -165,6 +166,19 @@ export default function NewPropertyPage() {
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
   const [aceitouIa, setAceitouIa] = useState(false);
+  // L2-B item 23: aceite do termo gravado por dono no servidor (versão atual). Já aceitou: a caixa não aparece.
+  const [termoJaAceito, setTermoJaAceito] = useState<{ aceitoEm: string } | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    meuAceiteTermoIa()
+      .then((a) => {
+        if (vivo && a && !precisaAceitarTermo(a)) setTermoJaAceito({ aceitoEm: a.aceitoEm });
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
   // 64-B: o aceite vale para o texto do momento em que foi dado (impressão do título + descrição); mudou → cai.
   const [aceiteTexto, setAceiteTexto] = useState<string | null>(null);
   const [avisoAceite, setAvisoAceite] = useState<string | null>(null);
@@ -177,7 +191,7 @@ export default function NewPropertyPage() {
   const [description, setDescription] = useState("");
   // Mudou o título ou a descrição depois do aceite: o aceite deixa de valer (caixa desmarcada) e o aviso aparece.
   const textoMudouDepoisDoAceite = aceitouIa && aceiteTexto !== null && impressaoDoTexto(title, description) !== aceiteTexto;
-  const aceiteValido = aceitouIa && !textoMudouDepoisDoAceite;
+  const aceiteValido = !!termoJaAceito || (aceitouIa && !textoMudouDepoisDoAceite);
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   const [areaM2, setAreaM2] = useState("");
@@ -1599,7 +1613,8 @@ export default function NewPropertyPage() {
                 etapaEndereco={ETAPA.endereco}
                 aceitouIa={aceiteValido}
                 setAceitouIa={marcarAceite}
-                avisoAceite={textoMudouDepoisDoAceite ? AVISO_TEXTO_MUDOU : avisoAceite}
+                avisoAceite={termoJaAceito ? null : textoMudouDepoisDoAceite ? AVISO_TEXTO_MUDOU : avisoAceite}
+                termoJaAceito={termoJaAceito}
                 conforto={conforto}
                 publishError={publishError}
                 podePublicar={podePublicar}

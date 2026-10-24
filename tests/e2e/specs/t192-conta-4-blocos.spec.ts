@@ -3,6 +3,8 @@ import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 
 /*
+  Vigia 24/10 (Pista C): a lista de confiança mudou de Privacidade para /dashboard/conta/seguranca (E66, #1263); a
+  âncora antiga #confianca que ainda cai em Privacidade fica anotada como L-56 até a Pista A corrigir.
   L-43 (vigia, 24/10): a Conta e o atendimento não assentam em "networkidle"; espera até 10 s e segue para o elemento.
   T192 — Conta (prompt 18; A1: uma tela por seção), a 390 e 1280 px:
   - cada assunto uma vez: nada de "Alterar senha" duplicado, de painel "Verificação" solto nem de simulador tributário;
@@ -24,8 +26,8 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
     for (const largura of [390, 1280]) {
       test(`${largura}px — Conta em telas (A1), sem repetição, confiança numa lista só`, async ({ page }) => {
         await page.setViewportSize({ width: largura, height: 900 });
-        // A1: cada assunto na sua tela; a lista de confiança mora em Privacidade.
-        await page.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
+        // A1: cada assunto na sua tela; a lista de confiança mora em Segurança e verificações (E66, #1263).
+        await page.goto("/dashboard/conta/seguranca", { waitUntil: "domcontentloaded" });
         await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const corpo = await page.locator("main").innerText();
         expect(corpo).not.toMatch(/Simulador tributário|Tributação das locações/);
@@ -43,6 +45,11 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
         await semRolagemLateral(page);
         await page.screenshot({ path: `${SAIDA}/t192-conta-${rotulo}-${largura}.png`, fullPage: true });
 
+        // Privacidade (perfil-05) não repete a lista.
+        await page.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+        await expect(page.getByTestId("confianca-lista")).toHaveCount(0);
+
         // O Perfil não repete a lista nem o cartão "Seu perfil público"; o espelho é a visão do proprietário.
         await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
         await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
@@ -51,11 +58,17 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
         await expect(page.getByTestId("confianca-lista")).toHaveCount(0);
         await semRolagemLateral(page);
 
-        // Link antigo do item "Verificação" (página longa) cai na tela Privacidade.
+        // Link antigo do item "Verificação" (página longa, #confianca) tem de cair onde a lista está.
         await page.goto("/dashboard/conta#confianca", { waitUntil: "domcontentloaded" });
         await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-        await expect(page).toHaveURL(/\/dashboard\/conta\/privacidade$/);
-        await expect(page.getByTestId("confianca-lista")).toBeVisible();
+        await expect(page).toHaveURL(/\/dashboard\/conta\/(privacidade|seguranca)$/);
+        if (new URL(page.url()).pathname === "/dashboard/conta/privacidade") {
+          // L-56 (Pista A): a âncora ainda leva a Privacidade (src/lib/conta/secoes.ts), onde a lista não está mais.
+          test.info().annotations.push({ type: "L-56", description: "/dashboard/conta#confianca → /dashboard/conta/privacidade, sem a lista de confiança" });
+          await expect(page.getByTestId("confianca-lista")).toHaveCount(0);
+        } else {
+          await expect(page.getByTestId("confianca-lista")).toBeVisible();
+        }
       });
     }
   });

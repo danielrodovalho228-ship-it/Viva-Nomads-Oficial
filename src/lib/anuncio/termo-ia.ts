@@ -37,6 +37,21 @@ export function validarAceiteIa(x: unknown): { ok: true; aceite: AceiteIa } | { 
   return { ok: true, aceite: { versao: TERMO_IA_VERSAO, camposGeradosIa: gerados, camposEditados: editados } };
 }
 
+/**
+ * L2-B item 23: o aceite fica gravado por dono e versão (termo_ia_aceites, 0241). Quem já aceitou a versão ATUAL não
+ * vê a caixa de novo; versão nova (TERMO_IA_VERSAO) pede de novo.
+ */
+export function precisaAceitarTermo(aceiteDoDono: { versao: string } | null | undefined): boolean {
+  return !aceiteDoDono || aceiteDoDono.versao !== TERMO_IA_VERSAO;
+}
+
+/** Linha que substitui a caixa para quem já aceitou ("aceito em 24/10/2026"). */
+export function textoTermoJaAceito(aceitoEm: string): string {
+  const d = new Date(aceitoEm);
+  const data = Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  return `Você já aceitou o termo de uso da inteligência artificial${data ? ` em ${data}` : ""}. Ele volta a aparecer só se o termo mudar.`;
+}
+
 /** Quais campos a IA escreveu e quais o dono mexeu depois (sem o original, nenhum conta como editado). */
 export function camposDaIa(a: {
   geradoPorIa: boolean;
