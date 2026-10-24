@@ -121,7 +121,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       await expect(p.getByTestId("topo-foto-msg")).toContainText("Foto atualizada");
       const comFoto = async () => {
         await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
-        await expect(p.locator('[data-testid="espelho-perfil"]:visible img')).toHaveCount(1);
+        await expect(p.locator('[data-testid="espelho-perfil"]:visible img:visible')).toHaveCount(1);
         // C8: nesta página o cabeçalho e a barra lateral ficam só nas iniciais (a foto não se repete).
         await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
         await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(0);
@@ -133,7 +133,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       );
       expect(tamanhos.length, tamanhos.join(",")).toBe(2);
       const topoW = Math.round((await p.getByTestId("topo-conta").locator("img").boundingBox())!.width);
-      const espelhoW = Math.round((await p.locator('[data-testid="espelho-perfil"]:visible img').boundingBox())!.width);
+      const espelhoW = Math.round((await p.locator('[data-testid="espelho-perfil"]:visible img:visible').boundingBox())!.width);
       expect(espelhoW).toBeLessThan(topoW);
       await p.screenshot({ path: `${SAIDA}/t361-depois-c5-salva-${w}.png` });
       await p.reload({ waitUntil: "networkidle" });

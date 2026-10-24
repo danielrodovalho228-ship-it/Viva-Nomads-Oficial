@@ -113,7 +113,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
     await expect(p.getByTestId("topo-foto")).toHaveAccessibleName("Trocar foto");
     // C8/E55: na Conta a foto aparece no topo e (menor) no espelho; o cabeçalho fica só nas iniciais.
-    await expect(p.locator('[data-testid="espelho-perfil"]:visible img')).toHaveCount(1);
+    await expect(p.locator('[data-testid="espelho-perfil"]:visible img:visible')).toHaveCount(1);
     await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
     // O medidor andou sem recarregar: "Foto de perfil" saiu da linha de faltas.
     await expect(p.getByTestId("perfil-falta")).not.toContainText("Foto de perfil", { timeout: 15_000 });
