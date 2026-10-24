@@ -54,11 +54,11 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
       const { error } = await adm().from("properties").update(campos).eq("id", id);
       if (error) throw error;
     };
-    await muda(ids.a, { city: CIDADE, property_type: "Studio", condo_fee: 300, utilities_mode: "measured", internet_mbps: 300, garantias_aceitas: ["seguro_fianca"], accepts_insurance: true });
-    await muda(ids.b, { city: CIDADE, property_type: "Apartamento", utilities_mode: "measured", internet_mbps: 300, garantias_aceitas: ["caucao"] });
-    await muda(ids.c, { city: CIDADE, property_type: "Apartamento", utilities_mode: "measured", internet_mbps: null, garantias_aceitas: ["caucao"] });
-    await muda(ids.d, { city: CIDADE_SEM, property_type: "Studio", utilities_mode: "measured", internet_mbps: 300 });
-    await muda(ids.e, { city: CIDADE, property_type: "Apartamento", utilities_mode: "measured", internet_mbps: 300, garantias_aceitas: ["caucao"] });
+    await muda(ids.a, { city: CIDADE, property_type: "Studio", condo_fee: 300, utilities_mode: "real", internet_mbps: 300, garantias_aceitas: ["seguro_fianca"], accepts_insurance: true });
+    await muda(ids.b, { city: CIDADE, property_type: "Apartamento", utilities_mode: "real", internet_mbps: 300, garantias_aceitas: ["caucao"] });
+    await muda(ids.c, { city: CIDADE, property_type: "Apartamento", utilities_mode: "real", internet_mbps: null, garantias_aceitas: ["caucao"] });
+    await muda(ids.d, { city: CIDADE_SEM, property_type: "Studio", utilities_mode: "real", internet_mbps: 300 });
+    await muda(ids.e, { city: CIDADE, property_type: "Apartamento", utilities_mode: "real", internet_mbps: 300, garantias_aceitas: ["caucao"] });
     const { error: eN } = await adm().from("imovel_nivel").upsert({ property_id: ids.e, nivel: "em_adequacao" });
     if (eN) throw eN;
     const agora = Date.now();
