@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
 import { account, hasAccount } from "../fixtures/accounts";
+import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * Rodada da vigia 24/10 (Pista C): re-teste dos instáveis do #1230 (run 40072532185) e do #1232 (run 40075189536).
@@ -9,14 +10,25 @@ import { account, hasAccount } from "../fixtures/accounts";
  * T129 — MOTIVO DA ESTADIA NO PERFIL (ordens a8bb8cfa e 9a723929). Conta salva o motivo em 390 e 1280 px,
  * o pedido novo vem pré-preenchido, e valor fora da lista é recusado pelo servidor (check do banco).
  * Devolve o motivo original no fim.
+ * Vigia 24/10: no laboratório os dois tamanhos usam uma moradora própria. Com a conta "inquilino" compartilhada, a t17
+ * salvava o mesmo formulário de Dados em paralelo e gravava por cima o motivo recém-salvo (lab-crítico do #1243).
  */
 test.describe("T129 — Motivo da estadia no perfil", () => {
   test.use({ storageState: authFile("inquilino") });
   // Os dois tamanhos de tela salvam e restauram o motivo da MESMA conta: em paralelo um desfazia o do outro.
   test.describe.configure({ mode: "serial" });
 
+  const propria = { email: `lab-t129-${novoSufixo()}@lab.vivanomads.test`, senha: novaSenha(), id: "" };
+  test.beforeAll(async () => {
+    if (NO_LABORATORIO) propria.id = await criarConta({ email: propria.email, nome: "Moradora T129", role: "tenant" }, propria.senha);
+  });
+  test.afterAll(async () => {
+    if (propria.id) await apagarContas([propria.id]);
+  });
+
   for (const [nome, largura, altura] of [["390 px", 390, 844], ["1280 px", 1280, 800]] as const) {
-    test(`Conta salva o motivo e o pedido novo vem pré-preenchido (${nome})`, async ({ page }) => {
+    test(`Conta salva o motivo e o pedido novo vem pré-preenchido (${nome})`, async ({ page: padrao, browser }) => {
+      const page = propria.id ? await entrar(browser, propria.email, propria.senha) : padrao;
       await page.setViewportSize({ width: largura, height: altura });
       await page.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
@@ -42,6 +54,7 @@ test.describe("T129 — Motivo da estadia no perfil", () => {
         await page.getByTestId("perfil-motivo-estadia").selectOption(original);
         await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
         await expect(page.getByText("Dados salvos.")).toBeVisible();
+        if (page !== padrao) await page.context().close();
       }
     });
   }
