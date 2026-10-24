@@ -25,6 +25,7 @@ import {
   pontoValido,
   rotuloDoLocal,
   validarNaoAchei,
+  validarNomeLocal,
 } from "./pessoal";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -55,10 +56,15 @@ async function chaveDoPedido(uid: string | null): Promise<string> {
   return `ip:${ipHash(new Request("http://viva.local", { headers: await headers() }))}`;
 }
 
-/** "Outro local": acha o endereço no servidor; logada, guarda para a pessoa. */
-export async function buscarOutroLocal(texto: string, cidade: string, uf: string): Promise<ResultadoOutroLocal> {
+/**
+ * "Outro local": acha o endereço no servidor; logada, guarda para a pessoa. E94: `nome` opcional ("Como chamar este
+ * lugar") aparece no lugar do rótulo limpo; sem nome, o rótulo limpo (sem número da casa nem CEP).
+ */
+export async function buscarOutroLocal(texto: string, cidade: string, uf: string, nome?: string | null): Promise<ResultadoOutroLocal> {
   const q = consultaDoLocal(texto, cidade, uf);
   if (!q) return { ok: false, erro: "Digite o nome do lugar ou o endereço (pelo menos 3 letras)." };
+  const n = validarNomeLocal(nome);
+  if (!n.ok) return { ok: false, erro: n.erro };
   const { supabase, uid } = await sessao();
   if (!(await consumirLimite(`destino-pessoal:${await chaveDoPedido(uid)}`, 30, HORA))) {
     return { ok: false, erro: "Muitas buscas seguidas. Tente de novo daqui a pouco." };
@@ -75,12 +81,14 @@ export async function buscarOutroLocal(texto: string, cidade: string, uf: string
   if (!ponto || !pontoValido(ponto)) return { ok: false, naoAchou: true, erro: MSG_NAO_ACHAMOS };
 
   const guardar = pontoGuardado(ponto);
-  const rotulo = rotuloDoLocal(q.endereco);
+  let rotulo = n.nome ?? rotuloDoLocal(q.endereco);
   let guardado = false;
   if (uid && supabase) {
     const agora = new Date().toISOString();
     // Mesmo ponto já guardado: só atualiza o uso (o cliente da pessoa só pode mudar rótulo e uso — grant da 0240).
-    const { data: ja } = await supabase.from("destinos_pessoais").select("id").eq("user_id", uid).eq("lat", guardar.lat).eq("lng", guardar.lng).maybeSingle();
+    // Sem nome novo, o local já guardado mantém o nome que a pessoa deu.
+    const { data: ja } = await supabase.from("destinos_pessoais").select("id, rotulo").eq("user_id", uid).eq("lat", guardar.lat).eq("lng", guardar.lng).maybeSingle();
+    if (ja && !n.nome) rotulo = ja.rotulo as string;
     const { error } = ja
       ? await supabase.from("destinos_pessoais").update({ rotulo, usado_em: agora }).eq("id", ja.id)
       : await supabase.from("destinos_pessoais").insert({ user_id: uid, rotulo, lat: guardar.lat, lng: guardar.lng });
@@ -113,6 +121,18 @@ export async function usarLocal(id: string): Promise<void> {
   const { supabase, uid } = await sessao();
   if (!supabase || !uid || !UUID.test(id ?? "")) return;
   await supabase.from("destinos_pessoais").update({ usado_em: new Date().toISOString() }).eq("id", id).eq("user_id", uid);
+}
+
+/** E94: dar ou trocar o nome de um local guardado (o cliente da pessoa: grant de rótulo e uso da 0240). */
+export async function renomearLocal(id: string, nome: string): Promise<{ ok: true; rotulo: string } | { ok: false; erro: string }> {
+  const { supabase, uid } = await sessao();
+  if (!supabase || !uid || !UUID.test(id ?? "")) return { ok: false, erro: "Entre na sua conta para dar nome ao local." };
+  const n = validarNomeLocal(nome);
+  if (!n.ok) return { ok: false, erro: n.erro };
+  if (!n.nome) return { ok: false, erro: "Escreva o nome do lugar (ex.: Trabalho)." };
+  const { data, error } = await supabase.from("destinos_pessoais").update({ rotulo: n.nome }).eq("id", id).eq("user_id", uid).select("id");
+  if (error || !data?.length) return { ok: false, erro: "Não foi possível salvar o nome agora." };
+  return { ok: true, rotulo: n.nome };
 }
 
 export async function apagarLocal(id: string): Promise<{ ok: boolean }> {

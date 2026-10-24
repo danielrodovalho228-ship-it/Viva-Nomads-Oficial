@@ -54,6 +54,8 @@ import type { Property } from "@/lib/types";
 import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { avisoTituloBairro } from "@/lib/anuncio/titulo-bairro";
 import { formatBRL, cn } from "@/lib/utils";
+import { calcularTudoIncluido } from "@/lib/precos";
+import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { MedirInternet } from "@/components/anuncio/medir-internet";
 import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 
@@ -384,8 +386,14 @@ export function EditarImovelClient({
             <p className="font-title text-lg font-semibold text-ink" data-testid="prontidao">
               {publicado ? "Anúncio publicado" : comp.podePublicar ? "100% · Pronto para publicar" : `Anúncio ${comp.pct}% completo`}
             </p>
-            {!comp.podePublicar && (
+            {/* L2-A item 9 (D-V5): só o rascunho tem "Falta para publicar". Publicado, o que estiver em aberto é melhoria. */}
+            {!comp.podePublicar && !publicado && (
               <p className="mt-1 text-sm text-muted">Falta para publicar: {comp.faltam.join(" · ")}</p>
+            )}
+            {publicado && comp.faltam.length > 0 && (
+              <p className="mt-1 text-sm text-muted" data-testid="para-melhorar-publicado">
+                Para melhorar o anúncio: {comp.faltam.join(" · ")}
+              </p>
             )}
             {/* E56: medidor dos detalhes opcionais — bloco desligado entra como "não se aplica". */}
             <p className="mt-1 text-xs text-muted" data-testid="completude-opcionais">
@@ -393,7 +401,7 @@ export function EditarImovelClient({
             </p>
             {comp.melhorar.length > 0 && (
               <p className="mt-1 text-xs text-muted" data-testid="para-melhorar">
-                Para melhorar (opcional):{" "}
+                {publicado ? "Para melhorar o anúncio (opcional): " : "Para melhorar (opcional): "}
                 {comp.opcionais
                   .filter((o) => !o.ok)
                   .map((o, i) => {
@@ -402,7 +410,7 @@ export function EditarImovelClient({
                       <span key={o.key}>
                         {i > 0 && " · "}
                         {href ? (
-                          <a href={`#${ANCORA_VIDEO_EDITOR}`} className="font-medium text-forest underline" data-testid={`melhorar-${o.key}`}>
+                          <a href={o.key === "video" ? `#${ANCORA_VIDEO_EDITOR}` : href} className="font-medium text-forest underline" data-testid={`melhorar-${o.key}`}>
                             {o.label}
                           </a>
                         ) : (
@@ -766,9 +774,27 @@ export function EditarImovelClient({
             <NumField label="Banheiros" value={bathrooms} onChange={setBathrooms} />
             <NumField label="Área (m²)" value={areaM2} onChange={setAreaM2} />
             <NumField label="Capacidade (pessoas)" value={maxGuests} onChange={setMaxGuests} />
-            <ReaisField label="Valor mensal (R$/mês)" value={monthlyPrice} onChange={setMonthlyPrice} testid="editar-preco" />
+            {/* L2-A item 24: o campo é só o valor mensal (sem condomínio e contas); o anúncio mostra o total do mês. */}
+            <ReaisField label="Valor mensal (sem condomínio e contas)" value={monthlyPrice} onChange={setMonthlyPrice} testid="editar-preco" />
             <ReaisField label="Condomínio (R$/mês)" value={condoFee} onChange={setCondoFee} centavos />
           </div>
+          {Number(monthlyPrice) > 0 && (
+            <p className="mt-3 text-sm text-ink" data-testid="editar-tudo-incluido">
+              No anúncio:{" "}
+              <strong className="font-semibold">
+                {formatBRL(
+                  calcularTudoIncluido({
+                    monthlyPrice: Number(monthlyPrice) || 0,
+                    condoFee: Number(condoFee) || 0,
+                    utilitiesMode: property.utilitiesMode,
+                    utilitiesEstimate: property.utilitiesEstimate,
+                    limpezaEstadia: normalizarLimpezaEstadia(limpeza) ?? undefined,
+                  }).total
+                )}
+                /mês tudo incluído
+              </strong>
+            </p>
+          )}
         </Section>
 
         {/* Negociação: o mesmo bloco do passo 4 do cadastro (Preço e disponibilidade). */}

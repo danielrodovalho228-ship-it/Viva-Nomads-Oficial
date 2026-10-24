@@ -8,7 +8,7 @@ const CHAVES = [
   "local", "lat", "lng", "r", "preco", "orcamento", "quartos", "adultos", "criancas", "periodo",
   "tipo", "faixa", "entrada", "garantia", "pet", "mobiliado", "pronto", "homeoffice", "localizado",
   "nota", "seguro", "gestor", "ordem",
-  // Prompt 37: destino (cadastrado ou endereço com 2 casas e rótulo sem número), meio e "até N min".
+  // Prompt 37: destino (cadastrado ou endereço com 3 casas e rótulo sem número), meio e "até N min".
   "destino", "dlat", "dlng", "drot", "modo", "ate",
   // Prompt 57 fase 2: internet medida (download mínimo) e "só com internet medida".
   "internet", "medida",

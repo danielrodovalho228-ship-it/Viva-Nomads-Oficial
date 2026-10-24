@@ -2,8 +2,9 @@
   DETECTA-B — o que as fotos da galeria mostram, como SUGESTÃO (PURO e testável).
   • Lista FECHADA: os itens de Conforto/Premium provados por foto (src/config/niveis.ts) e as comodidades estruturadas
     que os filtros da busca leem (src/lib/busca/filtro-comodidades.ts). Chave fora da lista é descartada.
-  • Sugestão NUNCA conta para o nível nem marca comodidade: confirmar segue o caminho de hoje (salvarItemNivel com a
-    foto; a comodidade pelo salvar do anúncio).
+  • Sugestão NUNCA conta para o nível nem marca comodidade. FOTO-NA-HORA-B: a foto da galeria não vira prova; confirmar
+    um item de nível abre a câmera (CameraProva) e o item só conta quando a foto feita na hora chega (salvarItemNivel
+    com o token). Sem a foto, a sugestão fica "Confirmada, falta a foto". A comodidade segue pelo salvar do anúncio.
   • Foto com pessoa não serve de prova: tudo o que veio dela é descartado e a tela avisa.
   • Chave DETECCAO_FOTOS_ATIVO desligada: nada é enviado e a tela fica como hoje.
 */
@@ -14,7 +15,7 @@ import type { ItemQueFalta } from "../niveis/exibicao.ts";
 import type { Area } from "../../config/niveis.ts";
 
 export type TipoDeteccao = "nivel" | "comodidade";
-export type StatusSugestao = "sugerida" | "aceita" | "descartada";
+export type StatusSugestao = "sugerida" | "aceita" | "descartada" | "confirmada_sem_foto";
 
 export interface ChaveDeteccao {
   chave: string;
@@ -42,8 +43,11 @@ export const chaveDeteccao = (chave: string): ChaveDeteccao | undefined => POR_C
 /** Abaixo disto a sugestão não aparece (o dono não perde tempo com palpite). */
 export const CONFIANCA_MINIMA = 0.6;
 
-/** Modelo e travas. O modelo é trocável aqui; o custo de cada um está em estimativaCusto (PR do DETECTA-B). */
-export const MODELO_DETECCAO = "claude-opus-5-5";
+/**
+ * Modelo e travas. O modelo é trocável aqui; o custo de cada um está em estimativaCusto (PR do DETECTA-B). Aprovado pelo
+ * Daniel (24/10): o EQUILIBRADO (Sonnet 5.5) da tabela de custo do #1259, no lugar do forte (Opus 5.5).
+ */
+export const MODELO_DETECCAO = "claude-sonnet-5-5";
 /** Lado maior da imagem mandada ao modelo (a foto da galeria tem até 2560 px; 1024 px basta para achar o item). */
 export const LADO_DETECCAO_PX = 1024;
 /** Fotos analisadas por dia: por anúncio (a galeria tem no máximo 40) e por dono (vários anúncios). */
@@ -58,7 +62,7 @@ export function deteccaoLigada(env: { chave: boolean; simulado: boolean; cookieL
   return env.chave || (env.simulado && env.cookieLab);
 }
 
-/** Caminho da foto da galeria no bucket, só da pasta do dono e no formato que salvarItemNivel aceita. */
+/** Caminho da foto da galeria no bucket, só da pasta do dono (só referência: a foto da galeria não serve de prova). */
 const CAMINHO_FOTO = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.webp$/i;
 export function caminhoDaGaleria(url: string, ownerId: string): string | null {
   const marca = "/object/public/property-photos/";
@@ -153,8 +157,9 @@ export interface SugestaoVisivel {
 }
 
 /**
- * O que a tela mostra para o dono confirmar: só 'sugerida', só de foto que ainda está na galeria, sem item de nível que
- * já tem foto valendo e sem comodidade já marcada. Uma por chave (a de maior confiança).
+ * O que a tela mostra para o dono confirmar: 'sugerida' (e, de item de nível, 'confirmada_sem_foto' — falta a foto da
+ * câmera), só de foto que ainda está na galeria, sem item de nível que já tem foto valendo e sem comodidade já marcada.
+ * Uma por chave (a confirmada primeiro; depois a de maior confiança).
  */
 export function sugestoesParaConfirmar(
   todas: readonly SugestaoVisivel[],
@@ -162,11 +167,13 @@ export function sugestoesParaConfirmar(
 ): SugestaoVisivel[] {
   const porChave = new Map<string, SugestaoVisivel>();
   for (const s of todas) {
-    if (s.status !== "sugerida" || !ctx.galeria.has(s.caminho) || !POR_CHAVE.has(s.chave)) continue;
+    const aberta = s.status === "sugerida" || (s.status === "confirmada_sem_foto" && s.tipo === "nivel");
+    if (!aberta || !ctx.galeria.has(s.caminho) || !POR_CHAVE.has(s.chave)) continue;
     if (s.tipo === "nivel" && ctx.nivelComFoto.has(s.chave)) continue;
     if (s.tipo === "comodidade" && ctx.comodidadesMarcadas.has(s.chave)) continue;
     const atual = porChave.get(s.chave);
-    if (!atual || atual.confianca < s.confianca) porChave.set(s.chave, s);
+    const confirmada = (x: SugestaoVisivel) => (x.status === "confirmada_sem_foto" ? 1 : 0);
+    if (!atual || confirmada(s) > confirmada(atual) || (confirmada(s) === confirmada(atual) && atual.confianca < s.confianca)) porChave.set(s.chave, s);
   }
   return [...porChave.values()].sort((a, b) => b.confianca - a.confianca);
 }

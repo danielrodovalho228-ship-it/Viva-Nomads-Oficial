@@ -19,7 +19,7 @@ const ORDEM: Record<NivelOuAdequacao, number> = { em_adequacao: -1, essencial: 0
 export async function entradaDoNivel(admin: Admin, propertyId: string, agora = new Date()): Promise<EntradaNivel> {
   const [decl, itens, medidas, ruido, pend] = await Promise.all([
     admin.from("conforto_declaracoes").select("chave, confirmado, versao_lista").eq("property_id", propertyId),
-    admin.from("nivel_itens").select("chave, declarado, foto_path, foto_status").eq("property_id", propertyId),
+    admin.from("nivel_itens").select("chave, declarado, foto_path, foto_status, foto_origem, refazer_ate").eq("property_id", propertyId),
     admin
       .from("internet_medicoes")
       .select("ponto, validada, valido_ate, medido_em, download_mbps, upload_mbps, latencia_ms")
@@ -33,8 +33,8 @@ export async function entradaDoNivel(admin: Admin, propertyId: string, agora = n
   ]);
   return {
     declaracoesConforto: (decl.data ?? []) as { chave: string; confirmado: boolean; versao_lista: number | null }[],
-    itens: ((itens.data ?? []) as { chave: string; declarado: boolean; foto_path: string | null; foto_status: StatusFoto }[]).map(
-      (i): ItemDeclarado => ({ chave: i.chave, declarado: i.declarado, fotoPath: i.foto_path, fotoStatus: i.foto_status }),
+    itens: ((itens.data ?? []) as { chave: string; declarado: boolean; foto_path: string | null; foto_status: StatusFoto; foto_origem?: "camera" | "arquivo" | null; refazer_ate?: string | null }[]).map(
+      (i): ItemDeclarado => ({ chave: i.chave, declarado: i.declarado, fotoPath: i.foto_path, fotoStatus: i.foto_status, fotoOrigem: i.foto_origem ?? null, refazerAte: i.refazer_ate ?? null }),
     ),
     medidas: ((medidas.data ?? []) as { ponto: MedidaPonto["ponto"]; validada: boolean; valido_ate: string; medido_em: string; download_mbps: number; upload_mbps: number; latencia_ms: number }[]).map(
       (m): MedidaPonto => ({ ponto: m.ponto, validada: m.validada, validoAte: m.valido_ate, medidoEm: m.medido_em, downloadMbps: Number(m.download_mbps), uploadMbps: Number(m.upload_mbps), latenciaMs: Number(m.latencia_ms) }),

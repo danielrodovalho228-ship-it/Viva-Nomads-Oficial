@@ -2,20 +2,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
-import { ROTULO_AREA, ROTULO_NIVEL } from "@/config/niveis";
+import { ROTULO_AREA, ROTULO_NIVEL, rotuloItem } from "@/config/niveis";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { nivelAgoraEFalta, type ItemQueFalta } from "@/lib/niveis/exibicao";
 import { entradaNivelDoCadastro, type EntradaNivelCadastro } from "@/lib/data/nivel-cadastro-actions";
-import { salvarItemNivel } from "@/lib/data/nivel-actions";
 import { faltaSemSugestao } from "@/lib/fotos/deteccao";
-
-import { MSG_FALHA_ENVIO_FOTO, enviarFotoDoAnuncio } from "@/lib/fotos/enviar-foto-cliente";
+import { ProvaNaHora } from "@/components/niveis/camera-prova";
+import { AVISO_PROVA_NA_HORA, MARCA_FOTO_ANTERIOR, provaAntigaNoPrazo, textoRefazerFoto } from "@/lib/niveis/prova-camera";
 
 /**
  * Adendo 59.1, Parte A — no passo Comodidades do cadastro: o nível que o imóvel atinge AGORA (com o padrão mínimo que
- * o dono está marcando logo acima) e, item a item, o que falta para o próximo, com o envio da foto em cada item.
- * Ruído e internet medida têm caminho próprio (página do nível e edição do anúncio).
+ * o dono está marcando logo acima) e, item a item, o que falta para o próximo, com a foto de cada item FEITA NA HORA
+ * (FOTO-NA-HORA-B: câmera no celular, QR para o celular no computador; nunca da galeria). Provas anteriores à regra
+ * aparecem com a marca e o prazo para refazer. Ruído e internet medida têm caminho próprio.
  */
 export function NivelNoCadastro({
   propertyId,
@@ -32,10 +31,7 @@ export function NivelNoCadastro({
 }) {
   const [entrada, setEntrada] = useState<EntradaNivelCadastro | null>(null);
   const [carregou, setCarregou] = useState(false);
-  const [enviando, setEnviando] = useState<string | null>(null);
-  const [msg, setMsg] = useState<{ ok: boolean; t: string; chave?: string } | null>(null);
-  // E47-A-CORRECAO: a foto que não subiu fica guardada, por item, para "Tentar de novo".
-  const [paraTentar, setParaTentar] = useState<{ chave: string; arquivo: File } | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
 
   const carregar = useCallback(async () => {
     if (!propertyId) return;
@@ -80,27 +76,12 @@ export function NivelNoCadastro({
   const falta = faltaSemSugestao(faltaTudo, new Set(sugeridas));
   const recusa = new Map(base.fotos.filter((f) => f.status === "recusada").map((f) => [f.chave, f.motivo]));
 
-  // Nunca lança: rede caindo, 413 ou 5xx viram mensagem na linha do item, com a foto guardada para tentar de novo.
-  async function enviar(item: ItemQueFalta, arquivo: File) {
-    setEnviando(item.chave);
-    setMsg(null);
-    try {
-      const up = await enviarFotoDoAnuncio(arquivo);
-      if (!up.ok) {
-        setParaTentar(up.motivo === "arquivo" || up.motivo === "recusada" ? null : { chave: item.chave, arquivo });
-        return setMsg({ ok: false, t: up.erro, chave: item.chave });
-      }
-      const r = await salvarItemNivel(propertyId!, item.chave, true, up.path);
-      setParaTentar(r.ok ? null : { chave: item.chave, arquivo });
-      setMsg(r.ok ? { ok: true, t: `Foto de "${item.rotulo}" enviada. O item já conta enquanto a foto é analisada.` } : { ok: false, t: r.erro, chave: item.chave });
-      if (r.ok) await carregar().catch(() => undefined);
-    } catch {
-      setParaTentar({ chave: item.chave, arquivo });
-      setMsg({ ok: false, t: MSG_FALHA_ENVIO_FOTO, chave: item.chave });
-    } finally {
-      setEnviando(null);
-    }
-  }
+  const recebida = (m: string) => {
+    setMsg({ ok: true, t: m });
+    void carregar().catch(() => undefined);
+  };
+  const agora = new Date();
+  const anteriores = base.itens.filter((i) => i.declarado && provaAntigaNoPrazo(i, agora) && i.refazerAte);
 
   return (
     <section className="rounded-xl border border-sage-200 p-4" data-testid="nivel-cadastro" data-nivel={nivel}>
@@ -118,6 +99,9 @@ export function NivelNoCadastro({
       {proximo && proximo !== "essencial" && falta.length > 0 && (
         <div className="mt-3" data-testid="nivel-cadastro-falta" data-proximo={proximo}>
           <p className="text-sm font-semibold text-ink">Para chegar a {ROTULO_NIVEL[proximo]}</p>
+          <p className="mt-1 text-sm text-ink" data-testid="nivel-cadastro-aviso-camera">
+            {AVISO_PROVA_NA_HORA}
+          </p>
           <p className="text-xs text-muted">Uma foto por item, sem pessoas. O nível é o da área mais fraca.</p>
           {falta.map((g) => (
             <div key={g.area} className="mt-3">
@@ -130,21 +114,11 @@ export function NivelNoCadastro({
                       <span className="block text-xs text-muted">{i.criterio}</span>
                       {recusa.has(i.chave) && (
                         <span className="block text-xs text-red-700" data-testid={`nivel-cadastro-recusada-${i.chave}`}>
-                          Foto recusada{recusa.get(i.chave) ? `: ${recusa.get(i.chave)}` : ""}. Envie outra.
+                          Foto recusada{recusa.get(i.chave) ? `: ${recusa.get(i.chave)}` : ""}. Fotografe de novo.
                         </span>
                       )}
                     </span>
-                    <AcaoItem item={i} propertyId={propertyId} enviando={enviando === i.chave} bloqueado={!!enviando} onFoto={(f) => enviar(i, f)} />
-                    {msg && !msg.ok && msg.chave === i.chave && (
-                      <span className="block w-full text-xs text-red-700" role="alert" data-testid={`nivel-cadastro-erro-${i.chave}`}>
-                        {msg.t}
-                        {paraTentar?.chave === i.chave && !enviando && (
-                          <button type="button" className="ml-2 min-h-11 font-semibold text-forest underline underline-offset-2" onClick={() => enviar(i, paraTentar.arquivo)} data-testid={`nivel-cadastro-tentar-${i.chave}`}>
-                            Tentar de novo
-                          </button>
-                        )}
-                      </span>
-                    )}
+                    <AcaoItem item={i} propertyId={propertyId} onRecebida={recebida} />
                   </li>
                 ))}
               </ul>
@@ -152,7 +126,24 @@ export function NivelNoCadastro({
           ))}
         </div>
       )}
-      {msg && !msg.chave && (
+      {anteriores.length > 0 && (
+        <div className="mt-3" data-testid="nivel-cadastro-anteriores">
+          <ul className="divide-y divide-line rounded-lg border border-line bg-white">
+            {anteriores.map((i) => (
+              <li key={i.chave} className="flex flex-col gap-2 p-3 text-sm sm:flex-row sm:items-center sm:justify-between" data-testid={`nivel-cadastro-anterior-${i.chave}`}>
+                <span className="min-w-0">
+                  <span className="block font-semibold text-ink">{rotuloItem(i.chave)}</span>
+                  <span className="block text-xs text-amber-800">
+                    {MARCA_FOTO_ANTERIOR} · {textoRefazerFoto(rotuloItem(i.chave), i.refazerAte!)}
+                  </span>
+                </span>
+                <ProvaNaHora propertyId={propertyId} chave={i.chave} rotulo={rotuloItem(i.chave)} onRecebida={recebida} testid={`nivel-cadastro-foto-${i.chave}`} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {msg && (
         <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "mt-3 text-sm text-ink" : "mt-3 text-sm text-red-700"} data-testid="nivel-cadastro-msg">
           {msg.t}
         </p>
@@ -164,7 +155,7 @@ export function NivelNoCadastro({
   );
 }
 
-function AcaoItem({ item, propertyId, enviando, bloqueado, onFoto }: { item: ItemQueFalta; propertyId: string; enviando: boolean; bloqueado: boolean; onFoto: (f: File) => void }) {
+function AcaoItem({ item, propertyId, onRecebida }: { item: ItemQueFalta; propertyId: string; onRecebida: (m: string) => void }) {
   if (item.prova === "medida") return <span className="shrink-0 text-xs text-muted">Meça na edição do anúncio, depois de publicar</span>;
   if (item.prova === "ruido")
     return (
@@ -172,22 +163,5 @@ function AcaoItem({ item, propertyId, enviando, bloqueado, onFoto }: { item: Ite
         Responder sobre o ruído
       </Link>
     );
-  return (
-    <label className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-line bg-white px-3 text-sm font-semibold text-forest">
-      {enviando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-      {enviando ? "Enviando…" : "Enviar foto"}
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="sr-only"
-        disabled={bloqueado}
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) onFoto(f);
-          e.target.value = "";
-        }}
-        data-testid={`nivel-cadastro-foto-${item.chave}`}
-      />
-    </label>
-  );
+  return <ProvaNaHora propertyId={propertyId} chave={item.chave} rotulo={item.rotulo} onRecebida={onRecebida} testid={`nivel-cadastro-foto-${item.chave}`} />;
 }

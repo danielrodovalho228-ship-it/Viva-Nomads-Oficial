@@ -47,17 +47,19 @@ test.describe("T381 — PERTO-B: O que tem por perto", () => {
   test("3. página pública: distância sem minuto; oculto e manual sem endereço fora; chips da mesma lista", async ({ page }) => {
     await adm().from("property_proximities").delete().eq("property_id", ids.imovel!);
     const { error } = await adm().from("property_proximities").insert([
-      { property_id: ids.imovel, category: "saude", name: "Farmácia Central (lab)", tipo: "farmacia", origem: "osm", distancia_m: 220, sort_order: 0 },
+      // Inserção em lote: todas as linhas com as mesmas colunas (a que falta vai como null, e "oculto" é NOT NULL).
+      { property_id: ids.imovel, category: "saude", name: "Farmácia Central (lab)", tipo: "farmacia", origem: "osm", distancia_m: 220, oculto: false, sort_order: 0 },
       { property_id: ids.imovel, category: "saude", name: "Academia Oculta (lab)", tipo: "academia", origem: "osm", distancia_m: 640, oculto: true, sort_order: 1 },
-      { property_id: ids.imovel, category: "transporte", name: "Parada de ônibus", tipo: "onibus", origem: "osm", distancia_m: 90, sort_order: 2 },
-      { property_id: ids.imovel, category: "educacao", name: "Escola Antiga (lab)", origem: "manual", note: "5 min a pé", sort_order: 3 },
+      { property_id: ids.imovel, category: "transporte", name: "Parada de ônibus", tipo: "onibus", origem: "osm", distancia_m: 90, oculto: false, sort_order: 2 },
+      { property_id: ids.imovel, category: "educacao", name: "Escola Antiga (lab)", tipo: null, origem: "manual", note: "5 min a pé", distancia_m: null, oculto: false, sort_order: 3 },
     ]);
     expect(error).toBeNull();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
     const secao = page.locator('section[aria-labelledby="localizacao-title"]');
     await expect(secao.getByText("Farmácia Central (lab)")).toBeVisible({ timeout: 30_000 });
-    await expect(secao.getByText("Saúde · a 200 m")).toBeVisible();
+    // PERTO-A: a categoria é o título do grupo; a linha traz o lugar e a distância.
+    await expect(secao.getByTestId("perto-cat-saude").getByTestId("proximidade-texto")).toHaveText("a 200 m");
     await expect(secao.getByText("Academia Oculta (lab)")).toHaveCount(0);
     await expect(secao.getByText("Escola Antiga (lab)")).toHaveCount(0);
     await expect(secao.getByTestId("proximidade-texto").filter({ hasText: /min/ })).toHaveCount(0);

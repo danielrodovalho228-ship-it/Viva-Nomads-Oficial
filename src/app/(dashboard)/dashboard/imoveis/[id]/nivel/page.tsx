@@ -13,8 +13,10 @@ const rotulo = (n: NivelOuAdequacao) => (n === "em_adequacao" ? "Em adequação"
  * Adendo 59.1 — nível do imóvel (Essencial / Conforto / Premium), ruído e extras. O nível é o da área mais fraca;
  * Conforto e Premium só contam com a foto de cada item. Nível não é selo e não muda a taxa nem a posição na busca.
  */
-export default async function NivelDoImovelPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function NivelDoImovelPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ fotografar?: string }> }) {
   const { id } = await params;
+  // FOTO-NA-HORA-B: o link do celular (e o item pendente da prontidão) chega com ?fotografar=<item> e abre a câmera dele.
+  const { fotografar } = await searchParams;
   const dados = await nivelDoMeuImovel(id);
   return (
     <div>
@@ -23,7 +25,7 @@ export default async function NivelDoImovelPage({ params }: { params: Promise<{ 
       </Link>
       <h1 className="mt-3 font-title text-2xl font-semibold text-ink">Nível, ruído e extras</h1>
       <p className="mt-1 max-w-2xl text-sm text-muted">
-        O nível é o da área mais fraca. Conforto e Premium contam com uma foto de cada item. O Essencial é o{" "}
+        O nível é o da área mais fraca. Conforto e Premium contam com uma foto de cada item, feita na hora. O Essencial é o{" "}
         <Link href={`/dashboard/imoveis/${id}/conforto`} className="text-forest underline">
           padrão mínimo
         </Link>
@@ -65,7 +67,7 @@ export default async function NivelDoImovelPage({ params }: { params: Promise<{ 
                 : "nenhuma medição válida por ponto. Meça no quarto principal e no ponto de trabalho pela edição do anúncio."}
             </p>
           </section>
-          <FormNivel propertyId={id} dados={dados} />
+          <FormNivel propertyId={id} dados={dados} fotografar={typeof fotografar === "string" ? fotografar : null} />
           {/* Prompt 62-B1/62-A: avaliação por avaliador credenciado (só com VISTORIA_ATIVA; a rota por foto acima continua grátis). */}
           <BlocoAvaliacaoDono propertyId={id} />
         </div>
