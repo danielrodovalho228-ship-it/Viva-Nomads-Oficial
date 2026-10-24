@@ -625,7 +625,8 @@
         "t198-rodape-painel-390",
         "t266-painel-42",
         "t318-papel-ativo-fonte-unica",
-        "t355-conta-a-perfil-espelho"
+        "t355-conta-a-perfil-espelho",
+        "t357-conta-a-correcoes-qa"
       ]
     },
     "/dashboard/conta/[secao]": {
