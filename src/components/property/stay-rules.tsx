@@ -15,6 +15,7 @@ import {
 import type { Property } from "@/lib/types";
 import { linhasRegrasPets } from "@/lib/anuncio/pets-regras";
 import { textoLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
+import { linhasRegrasCasa } from "@/lib/anuncio/regras-casa";
 
 /**
  * Regras da estadia: duração, mobília, animais, fumante, hóspedes, check-in/out
@@ -45,7 +46,10 @@ export function StayRules({ property }: { property: Property }) {
     });
   if (property.limpezaEstadia)
     rows.push({ icon: Sparkles, label: "Limpeza durante a estadia", value: textoLimpezaEstadia(property.limpezaEstadia) });
-  if (property.smokingAllowed !== undefined)
+  // CAMPOS-1: o fumo estruturado (com "só na área externa") tem precedência sobre o sim/não antigo.
+  const fumo = linhasRegrasCasa(property.regrasCasa).find((l) => l.chave === "fumo");
+  if (fumo) rows.push({ icon: Cigarette, label: "Fumante", value: fumo.texto });
+  else if (property.smokingAllowed !== undefined)
     rows.push({ icon: Cigarette, label: "Fumante", value: property.smokingAllowed ? "Permitido fumar" : "Não é permitido fumar" });
   if (property.maxGuests !== undefined)
     rows.push({ icon: Users, label: "Moradores", value: `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` });

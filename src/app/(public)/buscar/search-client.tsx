@@ -30,6 +30,7 @@ import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from
 import { SELO_NF_UI } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { medicoesDaBusca } from "@/lib/busca/facetas";
+import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
 import { ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
 import { ROTULO_PORTE_CURTO, contarFiltrosPainel, naoMedidosDoPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
@@ -451,6 +452,8 @@ export function SearchClient({
       // Hóspedes: só exclui quando a capacidade É conhecida e menor que o total
       // (imóveis sem capacidade cadastrada continuam aparecendo — não some estoque).
       if (p.maxGuests != null && p.maxGuests < adults + children) return false;
+      // FILTROS-2: anúncio em adequação (abaixo do padrão mínimo) nunca entra nos resultados — antes de qualquer filtro.
+      if (!cumpreGarantiaMinima(p)) return false;
       // Estadia, tipo, garantia, nota, seguro e gestor: na folha (passaNoPainel), para a contagem ao vivo bater.
       if (faixa && !(p.faixasAceitas ?? []).includes(faixa)) return false;
       if (furnishedOnly && !p.furnished) return false;

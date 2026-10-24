@@ -2,6 +2,8 @@
 
 import { CampoReais } from "@/components/ui/campo-reais";
 import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/components/anuncio/limpeza-estadia-campos";
+import { RegrasCasaCampos, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
+import { OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { ChegadaEPedidoCampos, formDeChegada, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
 import { avisoTipoEntradaNoPainel, tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
@@ -22,7 +24,6 @@ import {
   Info,
   Loader2,
   Dog,
-  Cigarette,
   Baby,
   Handshake,
   MapPin,
@@ -105,7 +106,9 @@ export function EditarImovelClient({
   const [petsAllowed, setPetsAllowed] = useState(property.petsAllowed ?? false);
   const [petsRegras, setPetsRegras] = useState<RegrasPetsForm>(formDeRegras(property.petsRegras));
   const [limpeza, setLimpeza] = useState<LimpezaEstadiaForm>(formDeLimpeza(property.limpezaEstadia));
-  const [smokingAllowed, setSmokingAllowed] = useState(property.smokingAllowed ?? false);
+  const smokingAllowed = property.smokingAllowed ?? false;
+  // CAMPOS-1: regras estruturadas (o fumo daqui substitui o sim/não antigo quando definido).
+  const [regrasCasa, setRegrasCasa] = useState<RegrasCasaForm>(formDeRegrasCasa(property.regrasCasa));
   const [childrenAllowed, setChildrenAllowed] = useState(property.childrenAllowed ?? true);
   // 61-B: indefinido = banco sem a 0225 (o bloco some e nada é gravado).
   const [chegada, setChegada] = useState<ChegadaEPedidoForm>(formDeChegada(property.chegadaEPedido));
@@ -224,7 +227,8 @@ export function EditarImovelClient({
       petsAllowed,
       petsRegras: petsAllowed ? petsRegras : undefined,
       limpezaEstadia: limpeza,
-      smokingAllowed,
+      regrasCasa: payloadDeRegrasCasa(regrasCasa),
+      smokingAllowed: regrasCasa.fumo ? regrasCasa.fumo === "permitido" : smokingAllowed,
       childrenAllowed,
       ...(property.chegadaEPedido ? payloadDaChegada(chegada) : {}),
       // Só manda quando a coluna existe (property.privacidade definida): senão não grava nada.
@@ -625,25 +629,23 @@ export function EditarImovelClient({
           testid="secao-regras"
           summary={[
             petsAllowed ? "aceita pets" : "sem pets",
-            smokingAllowed ? "fumar ok" : "não fumantes",
+            regrasCasa.fumo
+              ? `fumar: ${OPCOES_FUMO.find((o) => o.valor === regrasCasa.fumo)?.rotulo.toLowerCase()}`
+              : smokingAllowed
+                ? "fumar ok"
+                : "não fumantes",
             childrenAllowed ? "aceita crianças" : "sem crianças",
           ].join(" · ")}
           saving={savingSection === "regras"}
           saved={savedSection === "regras"}
           onSave={() => saveSection("regras")}
         >
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <RuleCard
               icon={Dog}
               label="Aceita animais de estimação?"
               value={petsAllowed}
               onChange={setPetsAllowed}
-            />
-            <RuleCard
-              icon={Cigarette}
-              label="Permite fumar no imóvel?"
-              value={smokingAllowed}
-              onChange={setSmokingAllowed}
             />
             <RuleCard
               icon={Baby}
@@ -660,6 +662,9 @@ export function EditarImovelClient({
               erroTipoEntrada={avisoTipoEntradaNoPainel({ tipoEntrada: chegada.tipoEntrada, status: property.status }) ?? undefined}
             />
           )}
+          <div className="mt-4">
+            <RegrasCasaCampos value={regrasCasa} onChange={setRegrasCasa} />
+          </div>
           <div className="mt-4">
             <LimpezaEstadiaCampos value={limpeza} onChange={setLimpeza} />
           </div>

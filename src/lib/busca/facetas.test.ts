@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { SAMPLE_PROPERTIES } from "../properties.ts";
 import { FILTROS_PAINEL_VAZIOS, OPCOES_PRECO, OPCOES_TIPO, cabeNaEstadia, passaNoPainel, precoDeBusca, type FiltrosPainel } from "./painel-filtros.ts";
+import { temComodidade } from "./filtro-comodidades.ts";
 import { faceta, facetaComodidade, facetaInterruptor, facetaUnica, faixasInternet, medicoesDaBusca, secaoInternetVisivel } from "./facetas.ts";
 import { prontidaoAnuncio, ROTULO_FALTA_INTERNET, type FatosAnuncio } from "../anuncio/prontidao.ts";
 
@@ -44,8 +45,6 @@ const MATRIZ: [string, Partial<FiltrosPainel>, number][] = [
   ["Contrato · Caução", { garantia: "caucao" }, 15],
   ["Contrato · Seguro-fiança", { garantia: "seguro_fianca" }, 14],
   ["Contrato · Gestor profissional", { gestorOnly: true }, 1],
-  ["Comodidades · Wi-Fi", { comodidades: ["wifi"] }, 12],
-  ["Comodidades · Cozinha equipada", { comodidades: ["cozinha"] }, 10],
   ["Comodidades · Garagem", { comodidades: ["garagem"] }, 12],
   ["Comodidades · Máquina de lavar", { comodidades: ["lavar"] }, 9],
 ];
@@ -70,10 +69,10 @@ test("E42/E6: a contagem do chip é a do aplicar; opção em 0 desabilita (menos
   for (const o of OPCOES_PRECO) assert.equal(facetaUnica(contar, V, "maxPrice", o.valor).n, com({ maxPrice: o.valor }));
 });
 
-test("E39: o chip Wi-Fi lê o que o anúncio declara (rótulo \"Wi-Fi\", fibra, Mbps informado ou medido)", () => {
-  assert.equal(com({ comodidades: ["wifi"] }), 12, "antes: 0 de 15 (só lia \"Internet fibra de alta velocidade\")");
+test("E39: a detecção de Wi-Fi lê o que o anúncio declara (rótulo \"Wi-Fi\", fibra, Mbps informado ou medido)", () => {
+  // FILTROS-2: Wi-Fi deixou de ser chip (é garantia do mínimo); a detecção continua valendo para os dados públicos.
   const base = { monthlyPrice: 2000, bedrooms: 1, tagHomeOffice: false };
-  const wifi = (p: Partial<Imovel>) => passaNoPainel({ ...base, ...p } as Imovel, { ...V, comodidades: ["wifi"] }, AGORA);
+  const wifi = (p: Partial<Imovel>) => temComodidade({ ...base, ...p } as Imovel, "wifi");
   assert.equal(wifi({ amenities: ["Wi-Fi"] }), true);
   assert.equal(wifi({ amenities: ["Internet fibra de alta velocidade"] }), true);
   assert.equal(wifi({ comodidadesFiltro: [], internetMbps: 300 }), true, "velocidade informada no anúncio");
@@ -113,7 +112,7 @@ test("E40 + E39: Wi-Fi + uma faixa de velocidade não vira beco sem saída", () 
   const contar2 = (f: FiltrosPainel) => lista.filter((p) => passaNoPainel(p, f, AGORA)).length;
   const faixas = faixasInternet(medicoesDaBusca(lista, AGORA), 0);
   assert.deepEqual(faixas, [50, 100]);
-  for (const v of faixas) assert.equal(facetaUnica(contar2, { ...V, comodidades: ["wifi"] }, "internetMin", v).n, 1, `Wi-Fi + ${v} Mbps`);
+  for (const v of faixas) assert.equal(facetaUnica(contar2, V, "internetMin", v).n, 1, `${v} Mbps`);
 });
 
 test("E41: estadia e caução filtram de verdade (o fixture aceita tudo; um anúncio diferente sai)", () => {

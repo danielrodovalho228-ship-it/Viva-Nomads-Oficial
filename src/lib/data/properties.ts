@@ -13,6 +13,7 @@ import { semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
 import { ROTULOS_FILTRAVEIS, chavesFiltroDe } from "@/lib/busca/filtro-comodidades";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { normalizarNegociacao } from "@/lib/anuncio/negociacao";
 
@@ -235,7 +236,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha, regrasLinha] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
@@ -254,6 +255,8 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("internet_medida_publica").select("download_mbps, upload_mbps, latencia_ms, medido_em, valido_ate").eq("property_id", base.id).maybeSingle()),
     // 61-B (0225): leitura à parte — sem a migração o anúncio abre igual.
     safe(supabase.from("properties").select("tipo_entrada, mensagem_para_pedido, considerar_antes, considerar_antes_texto").eq("id", base.id).maybeSingle()),
+    // CAMPOS-1 (0233): regras da casa estruturadas, leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("regras_casa").eq("id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
 
@@ -319,6 +322,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     })),
     petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
     limpezaEstadia: normalizarLimpezaEstadia((limpezaLinha as { limpeza_estadia?: unknown } | null)?.limpeza_estadia) ?? undefined,
+    regrasCasa: normalizarRegrasCasa((regrasLinha as { regras_casa?: unknown } | null)?.regras_casa) ?? undefined,
     ...negociacaoDaLinha(negLinha as { negociacao?: unknown; internet_mbps?: unknown } | null),
     internetMedida: medidaDaLinha(medidaLinha as LinhaMedida | null),
     chegadaEPedido: chegadaEPedidoDaLinha(chegadaLinha as LinhaChegadaEPedido | null),

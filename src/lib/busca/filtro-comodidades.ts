@@ -14,6 +14,17 @@ export const COMODIDADES_FILTRO: { chave: ComodidadeFiltro; rotulo: string; dica
   { chave: "lavar", rotulo: "Máquina de lavar", dica: "Lavar roupa sem sair de casa", amenityKey: "maquina_lavar" },
 ];
 
+/**
+ * FILTROS-2 (decisão do dono, 23/10): o que é item do PADRÃO MÍNIMO de 12 itens é garantia da plataforma, não filtro.
+ * Wi-Fi = "Internet informada" e Cozinha equipada = "Cozinha básica" (src/config/conforto-minimo.ts). Saem da folha;
+ * o painel mostra a linha de garantia no lugar. Garagem e Máquina de lavar NÃO são do mínimo (o mínimo pede só ACESSO a
+ * uma máquina, no imóvel ou no prédio; o chip pede máquina no imóvel) e continuam filtros.
+ */
+export const COMODIDADE_DO_MINIMO: Partial<Record<ComodidadeFiltro, string>> = { wifi: "internet_informada", cozinha: "cozinha_basica" };
+export const ehGarantidaPeloMinimo = (c: ComodidadeFiltro): boolean => c in COMODIDADE_DO_MINIMO;
+/** Os chips de comodidade que a folha mostra (os que não são garantia do mínimo). */
+export const COMODIDADES_FILTRAVEIS = COMODIDADES_FILTRO.filter((c) => !ehGarantidaPeloMinimo(c.chave));
+
 export const ROTULO_COMODIDADE: Record<ComodidadeFiltro, string> = Object.fromEntries(
   COMODIDADES_FILTRO.map((c) => [c.chave, c.rotulo])
 ) as Record<ComodidadeFiltro, string>;
@@ -60,14 +71,17 @@ export function temComodidade(p: ImovelComodidades, chave: ComodidadeFiltro): bo
   return chaves.includes(chave);
 }
 
-/** Todas as comodidades pedidas (E). Lista vazia = sem filtro. */
+/**
+ * Todas as comodidades pedidas (E). Lista vazia = sem filtro. As garantidas pelo mínimo não filtram (todo anúncio na
+ * busca tem o mínimo; quem não tem está em adequação e fora dos resultados — ver cumpreGarantiaMinima).
+ */
 export function passaComodidades(p: ImovelComodidades, pedidas: ComodidadeFiltro[]): boolean {
-  return pedidas.every((c) => temComodidade(p, c));
+  return pedidas.every((c) => ehGarantidaPeloMinimo(c) || temComodidade(p, c));
 }
 
-/** `?comod=wifi,garagem` → só chaves conhecidas, sem repetição. */
+/** `?comod=garagem,lavar` → só chaves que ainda são filtro, sem repetição (links antigos com wifi/cozinha: ignoradas). */
 export function comodidadesDaUrl(valor: string | null): ComodidadeFiltro[] {
   if (!valor) return [];
-  const validas = new Set<string>(COMODIDADES_FILTRO.map((c) => c.chave));
+  const validas = new Set<string>(COMODIDADES_FILTRAVEIS.map((c) => c.chave));
   return [...new Set(valor.split(",").map((s) => s.trim()))].filter((s): s is ComodidadeFiltro => validas.has(s));
 }

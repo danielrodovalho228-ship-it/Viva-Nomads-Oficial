@@ -1,12 +1,37 @@
 "use client";
 
 import { useState } from "react";
-import { Ban, ChevronRight, Home, ShieldCheck, type LucideIcon } from "lucide-react";
+import {
+  Ban,
+  ChevronRight,
+  Cigarette,
+  Home,
+  LogIn,
+  LogOut,
+  Moon,
+  PartyPopper,
+  PawPrint,
+  ShieldCheck,
+  UserPlus,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import type { Property } from "@/lib/types";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { linhasBomSaber, type ChaveBomSaber } from "@/lib/anuncio/resumos-imovel";
+import { linhasBomSaber, type ChaveBomSaber, type ChaveItemRegra } from "@/lib/anuncio/resumos-imovel";
 
 const ICONES: Record<ChaveBomSaber, LucideIcon> = { cancelamento: Ban, regras: Home, seguranca: ShieldCheck };
+/** CAMPOS-1: cada regra da casa com o seu ícone. */
+const ICONES_REGRA: Record<ChaveItemRegra, LucideIcon> = {
+  pessoas: Users,
+  pets: PawPrint,
+  entrada: LogIn,
+  saida: LogOut,
+  silencio: Moon,
+  fumo: Cigarette,
+  festas: PartyPopper,
+  visitas: UserPlus,
+};
 
 /** Bloco "Bom saber": 3 linhas-resumo; cada uma abre o detalhe. As regras completas seguem em "Regras da estadia". */
 export function BomSaber({ property }: { property: Property }) {
@@ -41,11 +66,25 @@ export function BomSaber({ property }: { property: Property }) {
         })}
       </ul>
       <BottomSheet open={!!atual} onClose={() => setAberta(null)} title={atual?.titulo ?? ""}>
-        <ul className="space-y-2 text-sm text-ink">
-          {atual?.detalhe.map((t) => (
-            <li key={t}>{t}</li>
-          ))}
-        </ul>
+        {atual?.itens && atual.itens.length > 0 ? (
+          <ul className="space-y-3 text-sm text-ink" data-testid="regras-casa-lista">
+            {atual.itens.map((it) => {
+              const Icone = ICONES_REGRA[it.chave];
+              return (
+                <li key={it.chave} className="flex items-start gap-3" data-testid={`regra-casa-${it.chave}`}>
+                  <Icone className="mt-1 h-5 w-5 shrink-0 text-sage" aria-hidden />
+                  <span>{it.texto}</span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <ul className="space-y-2 text-sm text-ink">
+            {atual?.detalhe.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        )}
         {atual?.chave === "regras" && (
           <a
             href="#regras-da-estadia"
