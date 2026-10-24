@@ -163,7 +163,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
   });
 
   for (const w of [390, 1280]) {
-    test(`5. a ${w} px: o espelho monta ao vivo; celular com "Salvar alterações" preso`, async ({ browser }) => {
+    test(`5. a ${w} px: o espelho monta ao vivo; celular com "Salvar alterações" logo depois do conteúdo (E61)`, async ({ browser }) => {
       const p = await como(browser, dono.email, w);
       await p.goto("/dashboard/conta#perfil-publico", { waitUntil: "domcontentloaded" });
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
@@ -194,9 +194,10 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
         await espelho.scrollIntoViewIfNeeded();
         await semRolagemLateral(p);
         await p.screenshot({ path: `${SAIDA}/t355-espelho-390.png` });
-        // Preso no fim da tela, acima da barra de abas, enquanto o perfil está à vista.
-        const caixa = await salvar.boundingBox();
-        expect(caixa!.y + caixa!.height).toBeLessThanOrEqual(altura(w));
+        // E61 (print do Daniel, 24/10): o botão vem logo depois do medidor, na ordem da página (sem faixa presa).
+        const med = (await p.getByTestId("complete-perfil").boundingBox())!;
+        const caixa = (await salvar.boundingBox())!;
+        expect(caixa.y - (med.y + med.height)).toBeLessThanOrEqual(32);
         await salvar.click();
         await expect(p.getByTestId("perfil-salvar-msg")).toHaveText("Alterações salvas.");
       }
