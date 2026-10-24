@@ -43,6 +43,8 @@ async function medir(page: Page): Promise<Medida> {
     const nome = (el: Element) => `${el.tagName.toLowerCase()} "${(el.getAttribute("aria-label") ?? el.textContent ?? el.getAttribute("alt") ?? "").trim().replace(/\s+/g, " ").slice(0, 40)}"`;
     const itens = Array.from(main.querySelectorAll<HTMLElement>(SEL)).filter((el) => {
       if (el.closest('[data-testid="barra-fotos"], [data-testid="fale-com-a-viva-raiz"], [aria-hidden="true"]')) return false;
+      // Conteúdo de <details> fechado não aparece, mas o Chromium ainda devolve a geometria dele: fica de fora.
+      if (el.closest("details:not([open]) > :not(summary)")) return false;
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
       return r.height > 0 && r.width > 0 && cs.visibility !== "hidden" && cs.display !== "none";

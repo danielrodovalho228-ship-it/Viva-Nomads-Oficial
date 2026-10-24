@@ -66,8 +66,8 @@
         "t288-padrao-minimo-59a",
         "t317-email-unico-49c1",
         "t352-varredura-bloco17",
-        "t392-varredura-bloco24",
-        "t404-admin-celular-e73"
+        "t404-admin-celular-e73",
+        "t392-varredura-bloco24"
       ]
     },
     "/admin/2fa/refazer": {
@@ -657,7 +657,6 @@
         "t355-conta-a-perfil-espelho",
         "t361-conta-a-correcoes-qa",
         "t351-telas-linkedin-63a",
-        "t355-conta-a-perfil-espelho",
         "t352-varredura-bloco17",
         "t353-varredura-bloco18",
         "t354-varredura-bloco19",
@@ -689,8 +688,8 @@
         "t353-varredura-bloco18",
         "t354-varredura-bloco19",
         "t370-conta-a3-papeis",
-        "t391-conta-conformidade",
         "t385-varredura-bloco21",
+        "t391-conta-conformidade",
         "t392-varredura-bloco24",
         "t403-nav-a",
         "t402-conta-leva2"
@@ -862,11 +861,12 @@
         "t338-varredura-bloco15",
         "t352-varredura-bloco17",
         "t386-cadastro-01-tipo",
+        "t401-cadastro-10-revisao",
+        "t434-cadastro-02-fotos",
         "t387-varredura-bloco22",
         "t392-varredura-bloco24",
-        "t431-perto-a",
-        "t401-cadastro-10-revisao",
         "t406-varredura-bloco25",
+        "t431-perto-a",
         "t433-l2a-itens-9-24",
         "t435-cadastro-03-endereco"
       ]
@@ -1283,8 +1283,8 @@
         "t349-imovel-sem-500-l31",
         "t336-varredura-bloco14",
         "t337-varredura-redundancia",
-        "t431-perto-a",
-        "t406-varredura-bloco25"
+        "t406-varredura-bloco25",
+        "t431-perto-a"
       ]
     },
     "/modelodenegocio": {
@@ -2003,8 +2003,8 @@
       ],
       "specs": [
         "t369-conta-a2-avaliacoes",
-        "t391-conta-conformidade",
         "t385-varredura-bloco21",
+        "t391-conta-conformidade",
         "t392-varredura-bloco24"
       ]
     },
