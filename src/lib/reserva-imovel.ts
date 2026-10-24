@@ -14,6 +14,8 @@ import { textoLimpezaEstadia, type LimpezaEstadia } from "./anuncio/limpeza-esta
 import { codigoDoImovel } from "./imovel-pagina.ts";
 import { isMotivo, motivoLabel } from "./pedidos/pedidos.ts";
 import { formatBRL } from "./utils.ts";
+import { totalDoPeriodo } from "./cartao-preco.ts";
+import { diasDaSelecao, mesesDaSelecao } from "./imovel/selecao-estadia.ts";
 
 export interface LinhaTaxa {
   chave: "mensal" | "condominio" | "consumo" | "preparacao" | "saida" | "pet" | "limpeza" | "caucao" | "viva";
@@ -95,6 +97,8 @@ const ISO_DIA = /^\d{4}-\d{2}-\d{2}$/;
 export function resumoSolicitacao(e: {
   monthlyPrice: number;
   inicioDesejado?: string;
+  /** E53: saída escolhida no calendário, na caixa ou no diálogo (opcional; precisa ser depois da entrada). */
+  fimDesejado?: string;
   motivoEstadia?: string;
   hoje: string;
   limpezaEstadia?: LimpezaEstadia | null;
@@ -102,22 +106,34 @@ export function resumoSolicitacao(e: {
   totalMensal?: number;
 }): ResumoSolicitacao {
   const inicio = (e.inicioDesejado ?? "").trim();
+  const fim = (e.fimDesejado ?? "").trim();
   const motivo = (e.motivoEstadia ?? "").trim();
   let erro: string | null = null;
   if (inicio && (!ISO_DIA.test(inicio) || inicio < e.hoje)) {
     erro = "A data de entrada precisa ser hoje ou depois. Ajuste ou apague a data para continuar.";
+  } else if (fim && (!ISO_DIA.test(fim) || (inicio && fim <= inicio))) {
+    erro = "A data de saída precisa ser depois da entrada. Ajuste ou apague a saída para continuar.";
   } else if (motivo && !isMotivo(motivo)) {
     erro = "Escolha um motivo da lista ou marque “Prefiro não informar”.";
   }
   const [a, m, d] = inicio.split("-");
+  const [af, mf, df] = fim.split("-");
+  const periodo = { entrada: inicio, saida: fim };
+  const dias = diasDaSelecao(periodo);
+  const meses = mesesDaSelecao(periodo);
   return {
     erro,
     linhas: [
       { rotulo: "Entrada", valor: inicio && ISO_DIA.test(inicio) ? `${d}/${m}/${a}` : "A combinar com o proprietário" },
+      { rotulo: "Saída", valor: fim && ISO_DIA.test(fim) ? `${df}/${mf}/${af}${dias ? ` (${dias} ${dias === 1 ? "dia" : "dias"})` : ""}` : "A combinar com o proprietário" },
       { rotulo: "Motivo da estadia", valor: motivo && isMotivo(motivo) ? motivoLabel(motivo) : "Prefiro não informar" },
       { rotulo: "Valor por mês", valor: formatBRL(e.monthlyPrice) },
       ...(e.limpezaEstadia ? [{ rotulo: "Limpeza durante a estadia", valor: textoLimpezaEstadia(e.limpezaEstadia) }] : []),
       ...(typeof e.totalMensal === "number" ? [{ rotulo: "Total por mês", valor: formatBRL(e.totalMensal) }] : []),
+      // E53: com o período completo, o total da estadia (mesma conta do cartão e do fechamento: totalDoPeriodo).
+      ...(typeof e.totalMensal === "number" && meses
+        ? [{ rotulo: "Total da estadia", valor: `${formatBRL(totalDoPeriodo(e.totalMensal, meses))} em ${meses} ${meses === 1 ? "mês" : "meses"}` }]
+        : []),
       { rotulo: "Caução", valor: "Paga uma vez, devolvida no fim (valor no contrato)" },
       { rotulo: "Taxa da Viva para você", valor: formatBRL(0) },
     ],

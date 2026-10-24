@@ -18,6 +18,7 @@ import { solicitarReserva } from "@/lib/data/reservas-actions";
 import { getDatasIndisponiveis } from "@/lib/data/blocks-actions";
 import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { clicarDia as proximaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { buttonClasses } from "@/components/ui/button";
 
 const MESES = [
@@ -43,8 +44,17 @@ function brDate(iso: string): string {
  * (abre a conversa com o proprietário). Derivado dos campos do imóvel — leitura
  * + uma ação best-effort. Bloqueios do proprietário chegam via `property.blocks`
  * quando existirem (hoje []).
+ * E53: a entrada/saída NÃO mora aqui — vem da página (a mesma seleção da caixa de reserva e do "Solicitar").
  */
-export function AvailabilityCalendar({ property }: { property: Property }) {
+export function AvailabilityCalendar({
+  property,
+  selecao,
+  onSelecao,
+}: {
+  property: Property;
+  selecao: SelecaoEstadia;
+  onSelecao: (s: SelecaoEstadia) => void;
+}) {
   const user = useAuthStore((s) => s.user);
   const today = useHoje();
   const [blockDays, setBlockDays] = useState<string[]>([]);
@@ -55,8 +65,8 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
       .catch(() => {});
   }, [property.id]);
 
-  const [checkIn, setCheckIn] = useState<string | null>(null);
-  const [checkOut, setCheckOut] = useState<string | null>(null);
+  const checkIn = selecao.entrada || null;
+  const checkOut = selecao.saida || null;
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
@@ -88,18 +98,8 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
   function clicarDia(iso: string) {
     setErroEnvio(null);
     setEnviado(false);
-    // 1º clique (ou reinício): define a entrada e limpa a saída.
-    if (!checkIn || checkOut) {
-      setCheckIn(iso);
-      setCheckOut(null);
-      return;
-    }
-    // 2º clique: saída se depois da entrada; senão vira a nova entrada.
-    if (iso > checkIn) setCheckOut(iso);
-    else {
-      setCheckIn(iso);
-      setCheckOut(null);
-    }
+    // 1º clique (ou reinício) = entrada; 2º = saída se for depois, senão vira a nova entrada (regra em selecao-estadia).
+    onSelecao(proximaSelecao(selecao, iso));
   }
 
   const reserva =
@@ -193,6 +193,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                       onClick={() => clicarDia(iso)}
                       aria-label={`${dia} de ${MESES[m]}${estado === "indisponivel" ? " (indisponível)" : ""}`}
                       data-estado-dia={estado}
+                      data-dia={iso}
                       className={cn(
                         "grid aspect-square place-items-center rounded-lg text-xs transition-colors",
                         estado === "passado" && "cursor-not-allowed text-muted/40",
@@ -234,7 +235,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
         <div className="mt-4 rounded-xl border border-sage-200 bg-surface-2 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm">
-              <p className="font-medium text-ink">
+              <p className="font-medium text-ink" data-testid="calendario-selecao">
                 {checkOut ? (
                   <>
                     {brDate(checkIn)} → {brDate(checkOut)}
@@ -257,8 +258,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
             <button
               type="button"
               onClick={() => {
-                setCheckIn(null);
-                setCheckOut(null);
+                onSelecao({ ...selecao, entrada: "", saida: "" });
                 setEnviado(false);
                 setErroEnvio(null);
               }}

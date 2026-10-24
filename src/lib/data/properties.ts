@@ -14,6 +14,7 @@ import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
 import { ROTULOS_FILTRAVEIS, chavesFiltroDe } from "@/lib/busca/filtro-comodidades";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
+import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { normalizarNegociacao } from "@/lib/anuncio/negociacao";
 
@@ -236,7 +237,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha, regrasLinha] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha, regrasLinha, detalhesLinha] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
@@ -257,6 +258,8 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("properties").select("tipo_entrada, mensagem_para_pedido, considerar_antes, considerar_antes_texto").eq("id", base.id).maybeSingle()),
     // CAMPOS-1 (0233): regras da casa estruturadas, leitura à parte — sem a migração o anúncio abre igual.
     safe(supabase.from("properties").select("regras_casa").eq("id", base.id).maybeSingle()),
+    // CAMPOS-2 (0235): detalhes opcionais do anúncio, leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("detalhes_anuncio").eq("id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
 
@@ -323,6 +326,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
     limpezaEstadia: normalizarLimpezaEstadia((limpezaLinha as { limpeza_estadia?: unknown } | null)?.limpeza_estadia) ?? undefined,
     regrasCasa: normalizarRegrasCasa((regrasLinha as { regras_casa?: unknown } | null)?.regras_casa) ?? undefined,
+    detalhesAnuncio: normalizarDetalhes((detalhesLinha as { detalhes_anuncio?: unknown } | null)?.detalhes_anuncio) ?? undefined,
     ...negociacaoDaLinha(negLinha as { negociacao?: unknown; internet_mbps?: unknown } | null),
     internetMedida: medidaDaLinha(medidaLinha as LinhaMedida | null),
     chegadaEPedido: chegadaEPedidoDaLinha(chegadaLinha as LinhaChegadaEPedido | null),
@@ -471,9 +475,11 @@ export async function getPropertyForOwner(id: string): Promise<Property | undefi
     if (!data) return SAMPLE_PROPERTIES.find((p) => p.id === id);
     const base = rowToProperty(data as unknown as PropertyRow);
     // 0091: só o "tem documento" (nunca o caminho). Sem a migração, fica indefinido.
-    const { data: aut } = await supabase.from("properties").select("autorizacao_anexada").eq("id", id).eq("owner_id", user.id).maybeSingle();
+    const { data: aut } = await supabase.from("properties").select("autorizacao_anexada, sublease_doc_tipo").eq("id", id).eq("owner_id", user.id).maybeSingle();
     if (aut && typeof (aut as { autorizacao_anexada?: unknown }).autorizacao_anexada === "boolean")
       base.autorizacaoAnexada = (aut as { autorizacao_anexada: boolean }).autorizacao_anexada;
+    const tipoDoc = (aut as { sublease_doc_tipo?: unknown } | null)?.sublease_doc_tipo;
+    if (typeof tipoDoc === "string") base.subleaseDocTipo = tipoDoc;
     await attachPrecoJusto(supabase, [base]);
     return enrichProperty(supabase, base, user.id);
   } catch {

@@ -6,6 +6,7 @@ import type { Property } from "../types";
 import { linhasPrivacidadePublica } from "./privacidade.ts";
 import { distanciaAprox, proximidadesDoImovel } from "./proximidades.ts";
 import { linhasRegrasCasa, type ChaveRegraCasa } from "./regras-casa.ts";
+import { linhasDetalhes } from "./detalhes-anuncio.ts";
 
 export type ChaveDestaque = "saude" | "educacao" | "pronto" | "trabalho" | "vaga";
 export interface Destaque {
@@ -93,8 +94,13 @@ export function itensRegrasCasa(p: Property): ItemRegraCasa[] {
   const i: ItemRegraCasa[] = [];
   if (p.maxGuests != null) i.push({ chave: "pessoas", texto: maiuscula(pessoas(p.maxGuests)) });
   if (p.petsAllowed !== undefined) i.push({ chave: "pets", texto: p.petsAllowed ? "Aceita pets" : "Sem pets" });
-  if (p.checkinAfter) i.push({ chave: "entrada", texto: `Entrada a partir das ${p.checkinAfter}` });
-  if (p.checkoutBefore) i.push({ chave: "saida", texto: `Saída até às ${p.checkoutBefore}` });
+  // CAMPOS-2: com a janela de entrada/saída ligada, ela substitui os horários antigos (uma linha só).
+  const janela = linhasDetalhes(p.detalhesAnuncio).find((d) => d.chave === "janela");
+  if (janela) i.push({ chave: "entrada", texto: janela.texto });
+  else {
+    if (p.checkinAfter) i.push({ chave: "entrada", texto: `Entrada a partir das ${p.checkinAfter}` });
+    if (p.checkoutBefore) i.push({ chave: "saida", texto: `Saída até às ${p.checkoutBefore}` });
+  }
   for (const r of linhasRegrasCasa(p.regrasCasa)) i.push(r);
   return i;
 }

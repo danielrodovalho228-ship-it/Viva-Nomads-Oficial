@@ -10,7 +10,7 @@ import { DocumentoVinculo, type EstadoDocumentoTela } from "@/components/anuncio
 import type { CampoEnderecoDoc, EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { EtapaIdentidade } from "@/components/anuncio/etapa-identidade";
 import type { PhotoItem } from "@/components/photo-uploader";
-import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, type Operacao } from "@/lib/anuncio/operacao";
+import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, TIPOS_DOC_GESTAO, type Operacao } from "@/lib/anuncio/operacao";
 import { LocationDatalist } from "@/lib/locations";
 import { CITIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,8 @@ export function EtapaOndeFica(p: {
   subleaseDoc: PhotoItem[];
   setSubleaseDoc: (d: PhotoItem[]) => void;
   docOperacaoAnexado: boolean;
+  subleaseDocTipo: string;
+  setSubleaseDocTipo: (t: string) => void;
   cep: string;
   setCep: (v: string) => void;
   cepLoading: boolean;
@@ -329,6 +331,23 @@ export function EtapaOndeFica(p: {
             label={doc.declaracao}
             hint="Declaração obrigatória. A equipe confere o documento antes de publicar."
           />
+          {p.ownershipType === "managed" && (
+            <fieldset className="space-y-2" data-testid="documento-operacao-tipo">
+              <legend className="mb-1 text-sm font-medium text-ink">O que você vai anexar?</legend>
+              {TIPOS_DOC_GESTAO.map((t) => (
+                <label key={t.valor} className="flex min-h-11 items-center gap-2 text-sm text-ink">
+                  <input
+                    type="radio"
+                    name="tipo-doc-operacao"
+                    value={t.valor}
+                    checked={p.subleaseDocTipo === t.valor}
+                    onChange={() => p.setSubleaseDocTipo(t.valor)}
+                  />
+                  {t.rotulo}
+                </label>
+              ))}
+            </fieldset>
+          )}
           <div>
             <span className="mb-2 block text-sm font-medium text-ink">
               {doc.titulo} <span className="font-normal text-muted">(obrigatório para publicar)</span>

@@ -7,7 +7,7 @@ import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascun
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { colunaVideoArquivo } from "@/lib/video-anuncio";
-import { caminhoDoDono, colunasDeOperacao } from "@/lib/anuncio/operacao";
+import { caminhoDoDono, colunasDeOperacao, tipoDocParaGravar } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { cookies } from "next/headers";
@@ -83,6 +83,7 @@ import {
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
+import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { apagarFotosDoAnuncio, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
@@ -426,6 +427,8 @@ export interface PropertyInput {
   ownershipType?: "own" | "subleased" | "managed";
   subleaseAuthorized?: boolean;
   subleaseDocUrl?: string;
+  /** Administrado: "contrato_gestao" ou "procuracao" (0234). */
+  subleaseDocTipo?: string;
   /** Privacidade e acesso (ordem f92bc582). Ausente = não mexe no que já está gravado. */
   semCamerasInterior?: boolean;
   camerasExternas?: string;
@@ -477,6 +480,8 @@ export interface PropertyInput {
   limpezaEstadia?: unknown;
   /** CAMPOS-1: regras da casa estruturadas (silêncio, fumo, festas, visitas); validadas no servidor (0233). */
   regrasCasa?: unknown;
+  /** CAMPOS-2: detalhes opcionais do anúncio (só os grupos ligados); validados no servidor (0235). */
+  detalhesAnuncio?: unknown;
   /**
    * Rua, número e complemento (complemento do prompt 23): vão para a coluna RESTRITA exact_address (nunca pública;
    * lida só pelo dono, admin, inquilino aceito e o morador de visita presencial confirmada). Vazio = não mexe.
@@ -761,6 +766,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       ...colunasDeOperacao(input.ownershipType, input.subleaseAuthorized),
       // Só um arquivo da PASTA DO DONO no bucket privado (nunca link externo/preview local).
       sublease_doc_url: caminhoDoDono(input.subleaseDocUrl, user.id) ? input.subleaseDocUrl! : null,
+      sublease_doc_tipo: tipoDocParaGravar(input.ownershipType, input.subleaseDocTipo),
       utilities_mode: input.utilitiesMode ?? "fixed",
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,
@@ -1020,6 +1026,9 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       // A edição não recarrega esse campo — mandar null por ausência APAGAVA o
       // documento a cada edição (mesmo padrão do risco do endereço).
       ...(caminhoDoDono(input.subleaseDocUrl, user.id) ? { sublease_doc_url: input.subleaseDocUrl } : {}),
+      // O tipo acompanha a operação (próprio zera; sublocação é "autorizacao"). Administrado sem tipo enviado nesta
+      // edição não mexe no que já está gravado (a edição não recarrega o campo, como o documento).
+      ...(input.ownershipType === "managed" && !input.subleaseDocTipo ? {} : { sublease_doc_tipo: tipoDocParaGravar(input.ownershipType, input.subleaseDocTipo) }),
       utilities_mode: input.utilitiesMode ?? "fixed",
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,
@@ -1097,6 +1106,19 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
         .eq("owner_id", user.id);
     } catch {
       /* migração 0233 ausente — segue com os fatos antigos */
+    }
+  }
+
+  // Detalhes opcionais (0235): validados aqui; grupo desligado não vem, nada definido grava null.
+  if ("detalhesAnuncio" in input) {
+    try {
+      await supabase
+        .from("properties")
+        .update({ detalhes_anuncio: normalizarDetalhes(input.detalhesAnuncio) })
+        .eq("id", id)
+        .eq("owner_id", user.id);
+    } catch {
+      /* migração 0235 ausente — segue sem os detalhes */
     }
   }
 
