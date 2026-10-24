@@ -162,7 +162,8 @@
         "t237-correcoes-35a",
         "t241-contas-teste-36",
         "t271-admin-visual",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t336-varredura-bloco14"
       ]
     },
     "/admin/emails-teste": {
@@ -576,7 +577,8 @@
         "t183-telas-logadas-390",
         "t205-fechamento-sem-beco",
         "t213-jornada-teste-confirmacao",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t336-varredura-bloco14"
       ]
     },
     "/dashboard/carteira": {
@@ -1197,6 +1199,7 @@
         "t342-galeria-video-segundo",
         "t344-avaliacao-telas-62a-parte2",
         "t349-imovel-sem-500-l31",
+        "t336-varredura-bloco14",
         "t337-varredura-redundancia"
       ]
     },

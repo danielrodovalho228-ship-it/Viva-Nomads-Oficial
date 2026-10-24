@@ -11,6 +11,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  *   2. o dono vê "Morador verificado · vínculo confirmado (carta do empregador)" SÓ com identidade + vínculo, e nunca o
  *      arquivo, o caminho ou valores; com a identidade vencida, o selo some;
  *   3. conta de teste aparece marcada na fila (fora das métricas).
+ * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
  */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
