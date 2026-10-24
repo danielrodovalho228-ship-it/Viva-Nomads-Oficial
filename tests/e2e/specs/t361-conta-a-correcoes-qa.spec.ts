@@ -128,9 +128,9 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       const comFoto = async () => {
         await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
         await expect(p.locator('[data-testid="espelho-perfil"]:visible img:visible')).toHaveCount(1);
-        // C8: nesta página o cabeçalho e a barra lateral ficam só nas iniciais (a foto não se repete).
-        await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
-        await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(0);
+        // Mockup perfil-01 (decisão de 24/10, no lugar da C8): o cabeçalho e a barra lateral mostram a foto.
+        await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
+        await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(1);
       };
       await comFoto();
       // C8: só duas aparições da foto na página (topo e espelho), e a do espelho menor que a do topo.

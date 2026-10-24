@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bell, ChevronLeft, CircleHelp, CreditCard, FileText, Shield, Star, UserRound, Users } from "lucide-react";
 import { SECOES_CONTA, itemDaSecao, type ItemSecao, type SecaoConta } from "@/lib/conta/secoes";
 import { cn } from "@/lib/utils";
+import { CASCA_SOMBRA_CARTOES, ROTULO_MENU_CONTA, SOMBRA_CARTAO_CONTA, TITULO_TELA_CONTA } from "@/lib/conta/visual-mockup";
 
 const ICONES: Record<ItemSecao["icone"], React.ComponentType<{ className?: string }>> = {
   UserRound,
@@ -39,23 +40,27 @@ export function CascaConta({
   const atual = itemDaSecao(ativo);
   const cabecalho = (
     <header className={cn("min-w-0", topoDireita && "xl:hidden")} data-testid="conta-cabecalho">
-      <Link
-        href={titulo ? atual.href : "/dashboard/conta"}
-        className="mb-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-ink lg:hidden"
-        data-testid="conta-voltar"
-      >
-        <ChevronLeft className="h-5 w-5" aria-hidden /> {titulo ? atual.rotulo : "Conta"}
-      </Link>
-      <h1 className="font-title text-[28px] font-semibold leading-tight text-ink" data-testid="conta-h1">
-        {titulo ?? atual.rotulo}
-      </h1>
-      {subtitulo && <p className="mt-1 text-sm text-muted">{subtitulo}</p>}
+      {/* Celular (mockups): a seta de voltar e o título na mesma linha, o título centralizado. */}
+      <div className="relative flex min-h-11 items-center justify-center lg:justify-start">
+        <Link
+          href={titulo ? atual.href : "/dashboard/conta"}
+          className="absolute left-0 inline-flex min-h-11 min-w-11 items-center justify-center text-ink lg:hidden"
+          aria-label={`Voltar para ${titulo ? atual.rotulo : "Conta"}`}
+          data-testid="conta-voltar"
+        >
+          <ChevronLeft className="h-6 w-6" aria-hidden />
+        </Link>
+        <h1 className={cn(TITULO_TELA_CONTA, "px-12 text-center lg:px-0 lg:text-left")} data-testid="conta-h1">
+          {titulo ?? atual.rotulo}
+        </h1>
+      </div>
+      {subtitulo && <p className="mt-1 text-center text-sm text-muted lg:text-left">{subtitulo}</p>}
     </header>
   );
   return (
-    <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start" data-conta-casca data-secao={ativo}>
-      <nav aria-label="Conta" className="hidden rounded-xl bg-white p-3 lg:sticky lg:top-24 lg:block" data-testid="conta-menu-lateral">
-        <p className="px-3 pb-2 pt-1 text-xs text-muted">Conta</p>
+    <div className={cn("grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start", CASCA_SOMBRA_CARTOES)} data-conta-casca data-secao={ativo}>
+      <nav aria-label="Conta" className={cn("hidden rounded-xl bg-white p-3 lg:sticky lg:top-24 lg:block", SOMBRA_CARTAO_CONTA)} data-testid="conta-menu-lateral">
+        <p className={cn("px-3 pb-2 pt-1", ROTULO_MENU_CONTA)}>Conta</p>
         <ul className="grid gap-1">
           {SECOES_CONTA.map((s) => {
             const Icone = ICONES[s.icone];
@@ -92,7 +97,7 @@ export function TituloSecaoLateral({ ativo, subtitulo }: { ativo: SecaoConta; su
   return (
     <header className="hidden xl:block" data-testid="conta-cabecalho-lateral">
       {/* No computador o H1 do Perfil fica aqui (o do topo some a partir de 1280 px, onde a coluna da direita aparece): um H1 visível por largura. */}
-      <h1 className="font-title text-[28px] font-semibold leading-tight text-ink" data-testid="conta-h1-lateral">
+      <h1 className={TITULO_TELA_CONTA} data-testid="conta-h1-lateral">
         {itemDaSecao(ativo).rotulo}
       </h1>
       <p className="mt-1 text-sm text-muted">{subtitulo}</p>
