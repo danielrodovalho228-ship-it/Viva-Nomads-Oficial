@@ -62,6 +62,9 @@ export function VivaChatFlutuante() {
   // Página do imóvel no celular (Q4): só o ícone redondo, para não tampar
   // estrelas e o total do mês. A barra fixa fica embaixo; o nome acessível continua "Fale com a Viva".
   const compacto = pathname.startsWith("/imoveis/");
+  // CONTA-A C4: no painel o botão é sempre o redondo (48 px) e a coluna reserva a faixa da direita (dashboard-shell),
+  // para ele nunca sentar sobre um cartão durante a rolagem.
+  const painel = pathname.startsWith("/dashboard");
 
   const medirTela = (): Tela => ({ largura: window.innerWidth, altura: window.innerHeight });
   const tamanhoBotao = (): Tamanho => {
@@ -166,12 +169,12 @@ export function VivaChatFlutuante() {
         onPointerCancel={aoSoltar}
         aria-expanded={aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0", arrastando && "cursor-grabbing")}
+        className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0", painel && !aberto && "w-12 rounded-full px-0 sm:px-0", arrastando && "cursor-grabbing")}
         data-testid="fale-com-a-viva"
-        data-compacto={compacto && !aberto ? "1" : undefined}
+        data-compacto={(compacto || painel) && !aberto ? "1" : undefined}
       >
-        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className={compacto ? "h-4 w-4 max-lg:h-5 max-lg:w-5" : "h-4 w-4"} />}
-        <span className={compacto && !aberto ? "max-lg:sr-only" : undefined}>{aberto ? "Fechar" : "Fale com a Viva"}</span>
+        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className={painel ? "h-5 w-5" : compacto ? "h-4 w-4 max-lg:h-5 max-lg:w-5" : "h-4 w-4"} />}
+        <span className={painel && !aberto ? "sr-only" : compacto && !aberto ? "max-lg:sr-only" : undefined}>{aberto ? "Fechar" : "Fale com a Viva"}</span>
       </button>
     </div>
   );

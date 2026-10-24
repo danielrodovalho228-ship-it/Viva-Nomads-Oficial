@@ -9,6 +9,8 @@ import {
   nomeNaProposta,
   nomeNaConversa,
   progressoPerfil,
+  medidorPerfil,
+  listaEmTexto,
   selosReais,
   tempoRespostaLabel,
   validarBio,
@@ -95,10 +97,11 @@ test("candidato DEPOIS do aceite: nome curto e foto — nunca o sobrenome comple
   assert.equal(cartaoCandidato({ ...base, reputacao: { media: 0, n: 0 } }, true).reputacao, null, "sem avaliação, sem nota");
 });
 
-test("Complete seu perfil: nunca obrigatório; quem só anuncia não precisa de profissão/motivo", () => {
+test("Complete seu perfil: nunca obrigatório; quem só anuncia não precisa de profissão; o motivo não entra (C2)", () => {
   const vazio = { foto: false, bio: null, idiomas: [], cidade: null, profissao: null, motivo: null };
   assert.equal(progressoPerfil(vazio, { anuncia: true }).itens.length, 4);
-  assert.equal(progressoPerfil(vazio, { anuncia: false }).itens.length, 6);
+  assert.equal(progressoPerfil(vazio, { anuncia: false }).itens.length, 5);
+  assert.equal(progressoPerfil(vazio, { anuncia: false }).itens.some((i) => i.chave === "motivo"), false);
   assert.equal(progressoPerfil(vazio, { anuncia: true }).pct, 0);
   const meio = { ...vazio, foto: true, bio: "Oi", idiomas: [], cidade: null };
   assert.equal(progressoPerfil(meio, { anuncia: true }).pct, 50);
@@ -146,4 +149,23 @@ test("proposta: nome completo das partes, nunca o curto; o interessado só depoi
   assert.equal(nomeNaProposta({ quemVe: "tenant", nomeCompleto: "Carlos  Eduardo Mendes", aceito: true }), "Carlos Eduardo Mendes");
   assert.equal(nomeNaProposta({ quemVe: "owner", nomeCompleto: "Juliana Prado", aceito: false }), "Candidato(a)");
   assert.equal(nomeNaProposta({ quemVe: "tenant", nomeCompleto: null, aceito: true }), "Proprietário");
+});
+
+test("CONTA-A C1: a linha de faltas lista TUDO o que falta (cadastro + barra), a foto uma vez só", () => {
+  const vazio = { foto: false, bio: null, idiomas: [], cidade: null, profissao: null, motivo: null };
+  const barra = progressoPerfil(vazio, { anuncia: false, telefone: false }).itens;
+  const cadastro = [
+    { chave: "nome", rotulo: "Nome", feito: true },
+    { chave: "email", rotulo: "E-mail confirmado", feito: true },
+    { chave: "documento", rotulo: "Documento (CPF ou CNPJ)", feito: false },
+    { chave: "foto", rotulo: "Foto de perfil", feito: false },
+  ];
+  const m = medidorPerfil(barra, cadastro);
+  assert.deepEqual(m.falta, ["Documento (CPF ou CNPJ)", "Foto de perfil", "Uma frase sobre você", "Idiomas", "Cidade", "Profissão", "Celular verificado"]);
+  assert.equal(m.itens.filter((i) => i.chave === "foto").length, 1);
+  assert.equal(m.pct, Math.round((2 / 9) * 100));
+  assert.equal(listaEmTexto(m.falta.slice(0, 3)), "Documento (CPF ou CNPJ), Foto de perfil e Uma frase sobre você");
+  const tudo = medidorPerfil(barra.map((i) => ({ ...i, feito: true })), cadastro.map((i) => ({ ...i, feito: true })));
+  assert.deepEqual(tudo.falta, []);
+  assert.equal(tudo.pct, 100);
 });

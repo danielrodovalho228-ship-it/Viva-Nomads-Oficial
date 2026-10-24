@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BlocoOpcional } from "@/components/ui/bloco-opcional";
+import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { Button } from "@/components/ui/button";
 import { REDES_USUARIO_ATIVO } from "@/lib/flags";
 import { minhasRedes, salvarMinhasRedes, type MinhasRedes } from "@/lib/linkedin/actions";
@@ -13,11 +15,20 @@ export function RedesPrivadas() {
   const [redes, setRedes] = useState<MinhasRedes | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [salvando, setSalvando] = useState(false);
+  // C9/E56: atrás do toggle; com alguma rede salva nasce ligado.
+  const [ligado, setLigado] = useState(false);
+  const [temSalvo, setTemSalvo] = useState(false);
   useEffect(() => {
     if (!REDES_USUARIO_ATIVO) return;
     let vivo = true;
     minhasRedes()
-      .then((r) => vivo && setRedes(r))
+      .then((r) => {
+        if (!vivo) return;
+        setRedes(r);
+        const tem = !!r && Object.values(r).some((v) => String(v ?? "").trim());
+        setTemSalvo(tem);
+        setLigado(toggleInicial(tem));
+      })
       .catch(() => {});
     return () => {
       vivo = false;
@@ -37,8 +48,27 @@ export function RedesPrivadas() {
       />
     </label>
   );
+  const t = textosToggle("redes");
   return (
-    <div className="mt-4 space-y-3" data-testid="redes-privadas">
+    <div className="mt-4" data-testid="redes-privadas">
+      <BlocoOpcional
+        pergunta={t.pergunta}
+        ligado={ligado}
+        onLigado={setLigado}
+        temDados={temSalvo}
+        textoConfirmar={t.confirmar}
+        onLimpar={async () => {
+          const vazio = Object.fromEntries(Object.keys(redes).map((k) => [k, ""])) as unknown as MinhasRedes;
+          const r = await salvarMinhasRedes(vazio);
+          if (r.ok) {
+            setRedes(vazio);
+            setTemSalvo(false);
+          }
+          return r.ok;
+        }}
+        testId="redes-toggle-bloco"
+      >
+      <div className="space-y-3">
       <p className="text-sm text-muted">Redes sociais (opcional). Só você e a equipe da Viva veem; não aparecem para mais ninguém.</p>
       {campo("instagram", "Instagram", "https://instagram.com/seu-perfil")}
       {campo("facebook", "Facebook", "https://facebook.com/seu-perfil")}
@@ -55,12 +85,17 @@ export function RedesPrivadas() {
         onClick={() => {
           setSalvando(true);
           void salvarMinhasRedes(redes)
-            .then((r) => setMsg(r.ok ? { ok: true, texto: "Redes salvas." } : { ok: false, texto: r.erro ?? "Não foi possível salvar." }))
+            .then((r) => {
+              setMsg(r.ok ? { ok: true, texto: "Redes salvas." } : { ok: false, texto: r.erro ?? "Não foi possível salvar." });
+              if (r.ok) setTemSalvo(Object.values(redes).some((v) => String(v ?? "").trim()));
+            })
             .finally(() => setSalvando(false));
         }}
       >
         Salvar redes
       </Button>
+      </div>
+      </BlocoOpcional>
     </div>
   );
 }

@@ -52,8 +52,9 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
         await expect(lista.getByTestId("confianca-linkedin")).toHaveCount(0);
         await expect(lista.getByTestId("confianca-senha").getByRole("link")).toHaveAttribute("href", "/dashboard/conta/seguranca");
 
-        // Prompt 43: o link "Ver como os outros veem" deu lugar ao próprio cartão do perfil público dentro de Conta.
-        await expect(page.getByTestId("seu-perfil-publico")).toBeVisible();
+        // CONTA-A (C3c): a visão do proprietário fica só no ESPELHO; o cartão "Seu perfil público" saiu da Conta do site.
+        await expect(page.getByTestId("espelho-perfil")).toBeVisible();
+        await expect(page.getByTestId("seu-perfil-publico")).toHaveCount(0);
         await semRolagemLateral(page);
         await page.screenshot({ path: `${SAIDA}/t192-conta-${rotulo}-${largura}.png`, fullPage: true });
 

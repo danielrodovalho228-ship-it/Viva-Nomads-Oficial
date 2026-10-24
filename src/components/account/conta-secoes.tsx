@@ -505,7 +505,8 @@ const DICA_CATEGORIA: Record<"decisao" | "seguranca" | CategoriaComInterruptor, 
   outros: "Novidades de buscas, pedidos e parceiros.",
 };
 
-export function NotificationsPanel() {
+/** `titulo`: a Conta e a subtela já têm o título "Notificações" — lá o cartão não repete (CONTA-A, C3a). */
+export function NotificationsPanel({ titulo = "Notificações" }: { titulo?: string | null } = {}) {
   // Preferência GRAVADA no perfil (notif_email). Prompt 30, item 8: sem aviso por WhatsApp (ficam e-mail e o aviso
   // no app; o canal da Viva é "Falar com a Viva").
   const [prefs, setPrefs] = useState<{ email: boolean } | null>(null);
@@ -594,7 +595,7 @@ export function NotificationsPanel() {
     },
   ];
   return (
-    <Panel title="Notificações" className="mt-6">
+    <Panel title={titulo ?? undefined} className="mt-6" data-testid="notificacoes-painel">
       <div className="space-y-2">
         {items.map((it) => (
           <div
