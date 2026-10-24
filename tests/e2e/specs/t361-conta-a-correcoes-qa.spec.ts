@@ -3,7 +3,7 @@ import sharp from "sharp";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T357 — CONTA-A, rodada de correções do QA do Muse (24/10), em /dashboard/conta:
+ * T361 — CONTA-A, rodada de correções do QA do Muse (24/10), em /dashboard/conta:
  *   C1. a linha de faltas lista TUDO o que falta (cadastro + barra) e anda depois de salvar;
  *   C2. o motivo da estadia tem um estado só: não conta como falta no Perfil e mora só em Dados ("Prefiro não informar");
  *   C3. cada conteúdo uma vez: um "Salvar perfil", um título "Notificações", sem o resumo repetido do perfil público,
@@ -20,12 +20,12 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
  *       ("Quer informar suas redes sociais?", atrás da chave REDES_USUARIO_ATIVO). Fechado sem dados; aberto com dados;
  *       desligar com dados pede confirmação na tela e só então limpa. O medidor não conta pets/local/redes (não penaliza).
  *   C7. sem vão grande depois do último bloco; o avatar do rodapé da barra lateral sem o selo "Q".
- * Prints: tests/laboratorio/saida/t357-<FASE>-conta-<largura>.png (FASE=antes|depois) — o teste "prints" roda nas duas.
+ * Prints: tests/laboratorio/saida/t361-<FASE>-conta-<largura>.png (FASE=antes|depois) — o teste "prints" roda nas duas.
  */
 const SAIDA = "tests/laboratorio/saida";
-const FASE = process.env.T357_FASE ?? "depois";
+const FASE = process.env.T361_FASE ?? "depois";
 
-test.describe("T357 — CONTA-A: correções do QA (C1–C7)", () => {
+test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -61,7 +61,7 @@ test.describe("T357 — CONTA-A: correções do QA (C1–C7)", () => {
           el.style.overflow = "visible";
         }
       });
-      await p.screenshot({ path: `${SAIDA}/t357-${FASE}-conta-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t361-${FASE}-conta-${w}.png`, fullPage: true });
       await p.context().close();
     });
   }
@@ -112,7 +112,7 @@ test.describe("T357 — CONTA-A: correções do QA (C1–C7)", () => {
       const area = p.getByTestId("foto-recorte-area");
       await area.focus();
       await p.keyboard.press("ArrowRight");
-      await p.screenshot({ path: `${SAIDA}/t357-depois-c5-recorte-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t361-depois-c5-recorte-${w}.png` });
       await p.getByTestId("foto-salvar").click();
       await expect(recorte).toBeHidden();
       await expect(p.getByTestId("topo-foto-msg")).toContainText("Foto atualizada");
@@ -132,7 +132,7 @@ test.describe("T357 — CONTA-A: correções do QA (C1–C7)", () => {
       const topoW = Math.round((await p.getByTestId("topo-conta").locator("img").boundingBox())!.width);
       const espelhoW = Math.round((await p.getByTestId("espelho-perfil").locator("img").boundingBox())!.width);
       expect(espelhoW).toBeLessThan(topoW / 2);
-      await p.screenshot({ path: `${SAIDA}/t357-depois-c5-salva-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t361-depois-c5-salva-${w}.png` });
       await p.reload({ waitUntil: "networkidle" });
       await comFoto();
       // Fora da Conta, o cabeçalho mostra a foto nova.
@@ -156,11 +156,11 @@ test.describe("T357 — CONTA-A: correções do QA (C1–C7)", () => {
       await expect(p.getByTestId("pets-form")).toHaveCount(0);
       await expect(bloco.locator("input, select")).toHaveCount(0);
       await bloco.scrollIntoViewIfNeeded();
-      await p.locator("#pets").screenshot({ path: `${SAIDA}/t357-depois-c9-pets-fechado-${w}.png` });
+      await p.locator("#pets").screenshot({ path: `${SAIDA}/t361-depois-c9-pets-fechado-${w}.png` });
       await toggle.click();
       const form = p.getByTestId("pets-form");
       for (const campo of ["Nome", "Espécie", "Porte", "Idade (anos)", "Raça (opcional)", "Castrado?"]) await expect(form.getByLabel(campo)).toBeVisible();
-      await p.locator("#pets").screenshot({ path: `${SAIDA}/t357-depois-c9-pets-aberto-${w}.png` });
+      await p.locator("#pets").screenshot({ path: `${SAIDA}/t361-depois-c9-pets-aberto-${w}.png` });
       await form.getByLabel("Nome").fill(`Thor${w}`);
       await form.getByRole("button", { name: "Adicionar pet" }).click();
       await expect(p.getByTestId("pets-lista")).toContainText(`Thor${w}`);
