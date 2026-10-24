@@ -45,6 +45,8 @@ export type NotificationEvent =
   // Prompt 59: prazo de solução da manutenção e padrão mínimo de conforto
   | "manutencao_prazo" // resolver até / prazo perto / vencido / reaberta → proprietário (e o morador sabe do aviso)
   | "conforto_prazo" // confirme o padrão mínimo até [data] / anúncio saiu da busca → proprietário
+  | "nivel_prova_celular" // FOTO-NA-HORA-B: link de uso único para fotografar o item do nível pelo celular → dono
+  | "nivel_prova_vencida" // FOTO-NA-HORA-B: prova anterior à regra venceu sem foto da câmera; o item deixou de contar → dono
   | "conforto_pendencia" // item do padrão mínimo que não confere (e o que aconteceu com ele) → as partes
   | "checkin_lembrete" // entrada em 2 dias / amanhã → proprietário e inquilino
   // Automações por data (cron /api/cron/automacoes, ordem d250ea2f item 5)
@@ -164,6 +166,8 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   manutencao_atualizada: { subject: "Atualização na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, a ordem de manutenção do imóvel mudou de status. Veja o histórico pela plataforma.`, cta: "Ver histórico", path: "/dashboard/solicitacoes" },
   manutencao_prazo: { subject: "Prazo de solução da manutenção", body: (n) => `Olá${n ? " " + n : ""}, um pedido de manutenção do seu imóvel tem prazo de solução. Veja o prazo e atualize a ordem pela plataforma.`, cta: "Ver a ordem", path: "/dashboard/solicitacoes" },
   conforto_prazo: { subject: "Confirme o padrão mínimo do seu anúncio", body: (n) => `Olá${n ? " " + n : ""}, o seu anúncio precisa do padrão mínimo de conforto confirmado para continuar na busca.`, cta: "Confirmar o padrão mínimo", path: "/dashboard/imoveis" },
+  nivel_prova_celular: { subject: "Fotografe o item pelo celular", body: (n) => `Olá${n ? " " + n : ""}, abra este e-mail no celular e toque no botão para fotografar o item do nível na hora, pela câmera. O link vale por 30 minutos e uma vez só.`, cta: "Continuar no celular", path: "/dashboard/imoveis" },
+  nivel_prova_vencida: { subject: "A foto de um item do nível venceu", body: (n) => `Olá${n ? " " + n : ""}, a foto de um item do nível do seu anúncio era anterior à regra e não foi refeita pela câmera no prazo. O item deixou de contar e o nível foi recalculado. Fotografe o item agora para ele voltar a contar.`, cta: "Fotografar agora", path: "/dashboard/imoveis" },
   conforto_pendencia: { subject: "Pendência do padrão mínimo no imóvel", body: (n) => `Olá${n ? " " + n : ""}, há uma pendência do padrão mínimo de conforto no imóvel do seu contrato. Veja pela plataforma.`, cta: "Ver a pendência", path: "/dashboard/contratos" },
   manutencao_mensagem: { subject: "Nova mensagem na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, há uma nova mensagem na ordem de manutenção do imóvel. Responda pela plataforma.`, cta: "Ver mensagem", path: "/dashboard/solicitacoes" },
   checkin_lembrete: { subject: "Lembrete: a entrada no imóvel está chegando", body: (n) => `Olá${n ? " " + n : ""}, a entrada no imóvel do seu contrato está chegando. Confira o horário e as instruções de entrada pela plataforma.`, cta: "Ver instruções de entrada", path: "/dashboard/contratos" },

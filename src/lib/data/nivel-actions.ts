@@ -15,6 +15,8 @@ import { CHAVES_NIVEL_FOTO, ehChaveNivel, itemNivel, type ChaveExtra, type Chave
 import { classeRuido, medidaPorPonto, nivelDoImovel, validarExtras, validarRespostasRuido, type ResultadoNivel, type RespostasRuido, type StatusFoto } from "@/lib/niveis/regras";
 import { entradaDoNivel, recalcularNivel } from "@/lib/niveis/servidor";
 import { avisarFotoRecusada } from "@/lib/niveis/avisos";
+import { ERRO_SEM_TOKEN, conferirCaptura, textoFotoRecebida, type OrigemFoto } from "@/lib/niveis/prova-camera";
+import { capturaPeloToken } from "@/lib/niveis/prova-servidor";
 
 export type ResultadoNivelAcao = { ok: true; mensagem?: string } | { ok: false; erro: string };
 
@@ -52,6 +54,9 @@ export interface ItemNivelTela {
   fotoUrl: string | null;
   fotoStatus: StatusFoto;
   motivoRecusa: string | null;
+  /** FOTO-NA-HORA-B: 'arquivo' = anterior à regra (marca "Foto anterior à regra" e o prazo para refazer). */
+  fotoOrigem: OrigemFoto | null;
+  refazerAte: string | null;
 }
 
 export interface NivelDoImovelTela {
@@ -69,11 +74,13 @@ export async function nivelDoMeuImovel(propertyId: string): Promise<NivelDoImove
   const agora = new Date();
   const [entrada, itens, extras] = await Promise.all([
     entradaDoNivel(c.admin, propertyId, agora),
-    c.admin.from("nivel_itens").select("chave, declarado, foto_path, foto_status, motivo_recusa").eq("property_id", propertyId),
+    c.admin.from("nivel_itens").select("chave, declarado, foto_path, foto_status, motivo_recusa, foto_origem, refazer_ate").eq("property_id", propertyId),
     c.admin.from("imovel_extras").select("chave").eq("property_id", propertyId),
   ]);
   const rec = await recalcularNivel(c.admin, propertyId, agora);
-  const porChave = new Map(((itens.data ?? []) as { chave: string; declarado: boolean; foto_path: string | null; foto_status: StatusFoto; motivo_recusa: string | null }[]).map((i) => [i.chave, i]));
+  const porChave = new Map(
+    ((itens.data ?? []) as { chave: string; declarado: boolean; foto_path: string | null; foto_status: StatusFoto; motivo_recusa: string | null; foto_origem: OrigemFoto | null; refazer_ate: string | null }[]).map((i) => [i.chave, i]),
+  );
   return {
     resultado: rec?.resultado ?? nivelDoImovel(entrada),
     itens: CHAVES_NIVEL_FOTO.map((chave) => {
@@ -84,6 +91,8 @@ export async function nivelDoMeuImovel(propertyId: string): Promise<NivelDoImove
         fotoUrl: i?.foto_path ? c.admin.storage.from("property-photos").getPublicUrl(i.foto_path).data.publicUrl : null,
         fotoStatus: i?.foto_status ?? "pendente",
         motivoRecusa: i?.motivo_recusa ?? null,
+        fotoOrigem: i?.foto_origem ?? null,
+        refazerAte: i?.refazer_ate ?? null,
       };
     }),
     ruido: entrada.ruido,
@@ -95,16 +104,29 @@ export async function nivelDoMeuImovel(propertyId: string): Promise<NivelDoImove
 /**
  * O dono declara (ou retira) um item de Conforto/Premium. Declarar exige a foto do item (uma por item, sem pessoas);
  * foto nova volta para "em análise". Sem foto, o item não conta para o nível.
+ * FOTO-NA-HORA-B: foto nova SÓ com o token de captura da câmera (o mesmo que /api/upload/prova prendeu à foto): do
+ * mesmo dono, anúncio e item, nos 10 minutos e nunca usado — vale para todo chamador (telas, sugestões das fotos,
+ * qualquer outro). Sem token, foto da galeria ou token vencido/usado: recusado. O token é consumido aqui (uso único).
  */
-export async function salvarItemNivel(propertyId: string, chave: string, declarado: boolean, fotoPath?: string | null): Promise<ResultadoNivelAcao> {
+export async function salvarItemNivel(propertyId: string, chave: string, declarado: boolean, fotoPath?: string | null, tokenCaptura?: string | null): Promise<ResultadoNivelAcao> {
   const c = await donoDoImovel(propertyId);
   if (!c) return { ok: false, erro: "Sem permissão." };
   if (!ehChaveNivel(chave) || itemNivel(chave).prova !== "foto") return { ok: false, erro: "Item inválido." };
   const { data: atual } = await c.admin.from("nivel_itens").select("foto_path").eq("property_id", propertyId).eq("chave", chave).maybeSingle();
   const novaFoto = typeof fotoPath === "string" && fotoPath ? fotoPath : null;
   if (novaFoto && (!FOTO_PATH.test(novaFoto) || !novaFoto.startsWith(`${c.uid}/`))) return { ok: false, erro: "Foto inválida." };
+  let captura: { capturada_em: string | null; foto_hash: string | null } | null = null;
+  if (novaFoto) {
+    const lida = await capturaPeloToken(c.admin, tokenCaptura);
+    const v = conferirCaptura(lida, { ownerId: c.uid, propertyId, chave }, new Date(), novaFoto);
+    if (!lida || !v.ok) return { ok: false, erro: ERRO_SEM_TOKEN };
+    // Uso único, atômico: só um salvar consome o token.
+    const { data: consumido } = await c.admin.from("prova_capturas").update({ usado_em: new Date().toISOString() }).eq("id", lida.id).is("usado_em", null).select("id");
+    if (!consumido?.length) return { ok: false, erro: ERRO_SEM_TOKEN };
+    captura = lida;
+  }
   const foto = novaFoto ?? ((atual?.foto_path as string | null) ?? null);
-  if (declarado && !foto) return { ok: false, erro: `Envie a foto de "${itemNivel(chave).rotulo}" para o item contar.` };
+  if (declarado && !foto) return { ok: false, erro: `Fotografe "${itemNivel(chave).rotulo}" pela câmera para o item contar.` };
   const agora = new Date().toISOString();
   const { error } = await c.admin.from("nivel_itens").upsert(
     {
@@ -112,7 +134,19 @@ export async function salvarItemNivel(propertyId: string, chave: string, declara
       chave,
       declarado,
       foto_path: foto,
-      ...(novaFoto ? { foto_status: "pendente", motivo_recusa: null, analisado_por: null, analisado_em: null } : {}),
+      ...(novaFoto
+        ? {
+            foto_status: "pendente",
+            motivo_recusa: null,
+            analisado_por: null,
+            analisado_em: null,
+            foto_origem: "camera",
+            foto_capturada_em: captura?.capturada_em ?? agora,
+            foto_hash: captura?.foto_hash ?? null,
+            refazer_ate: null,
+            vencida_avisada_em: null,
+          }
+        : {}),
       declarado_por: c.uid,
       declarado_em: agora,
     },
@@ -122,8 +156,19 @@ export async function salvarItemNivel(propertyId: string, chave: string, declara
     console.error("[salvarItemNivel]", error.code, error.message);
     return { ok: false, erro: "Não foi possível salvar agora." };
   }
+  // DETECTA-B: a sugestão das fotos deste item (sugerida ou "confirmada, falta a foto") fecha quando a foto da câmera chega.
+  if (novaFoto) {
+    await c.admin
+      .from("deteccao_sugestoes")
+      .update({ status: "aceita", decidida_em: agora })
+      .eq("property_id", propertyId)
+      .eq("chave", chave)
+      .in("status", ["sugerida", "confirmada_sem_foto"])
+      .then(() => undefined, () => undefined);
+  }
   const r = await recalcularNivel(c.admin, propertyId);
   revalidar(propertyId);
+  if (novaFoto) return { ok: true, mensagem: textoFotoRecebida(itemNivel(chave).rotulo) };
   return { ok: true, mensagem: r ? `Salvo. Nível do imóvel: ${rotuloNivel(r.resultado.nivel)}.` : "Salvo." };
 }
 

@@ -834,7 +834,8 @@
         "t320-pausar-anuncio-64b",
         "t334-varredura-bloco12",
         "t392-varredura-bloco24",
-        "t406-varredura-bloco25"
+        "t406-varredura-bloco25",
+        "t433-l2a-itens-9-24"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -864,7 +865,9 @@
         "t434-cadastro-02-fotos",
         "t387-varredura-bloco22",
         "t392-varredura-bloco24",
-        "t406-varredura-bloco25"
+        "t406-varredura-bloco25",
+        "t431-perto-a",
+        "t433-l2a-itens-9-24"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1279,7 +1282,8 @@
         "t349-imovel-sem-500-l31",
         "t336-varredura-bloco14",
         "t337-varredura-redundancia",
-        "t406-varredura-bloco25"
+        "t406-varredura-bloco25",
+        "t431-perto-a"
       ]
     },
     "/modelodenegocio": {
@@ -2002,6 +2006,14 @@
         "t391-conta-conformidade",
         "t392-varredura-bloco24"
       ]
+    },
+    "/prova/celular/aviso": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
+      ]
     }
   },
   "rotas": {
@@ -2684,6 +2696,22 @@
       ],
       "specs": [
         "t374-conta-a5-privacidade"
+      ]
+    },
+    "/api/upload/prova": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
+      ]
+    },
+    "/prova/celular": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
       ]
     }
   },
@@ -5578,7 +5606,8 @@
       ],
       "specs": [
         "t295-niveis-59-1",
-        "t296-niveis-exibicao-59-1"
+        "t296-niveis-exibicao-59-1",
+        "t397-foto-na-hora"
       ]
     },
     "src/lib/data/estrutura-actions.ts#salvarChecklistEstrutura": {
@@ -6142,7 +6171,8 @@
         "inquilino"
       ],
       "specs": [
-        "t390-destino-pessoal"
+        "t390-destino-pessoal",
+        "t398-local-pessoal-teste"
       ]
     },
     "src/lib/destinos/pessoal-actions.ts#meusLocais": {
@@ -6213,6 +6243,39 @@
       "specs": [
         "t396-emitidos-aceite-ia",
         "t320-pausar-anuncio-64b"
+      ]
+    },
+    "src/lib/data/prova-actions.ts#abrirCapturaProva": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
+      ]
+    },
+    "src/lib/data/prova-actions.ts#pedirLinkCelular": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
+      ]
+    },
+    "src/lib/data/prova-actions.ts#provaDoItem": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
+      ]
+    },
+    "src/lib/destinos/pessoal-actions.ts#renomearLocal": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t398-local-pessoal-teste"
       ]
     }
   }

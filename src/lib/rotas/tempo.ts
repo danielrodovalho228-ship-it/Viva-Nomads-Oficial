@@ -97,32 +97,57 @@ export function chaveDestino(d: { destinoId: string } | Ponto): string {
   return "destinoId" in d ? `d:${d.destinoId}` : `p:${d.lat.toFixed(3)},${d.lng.toFixed(3)}`;
 }
 
-/** O ponto na URL tem no máximo 2 casas (~1 km): o endereço digitado não vai inteiro para o link. */
+/**
+ * O ponto na URL tem no máximo 3 casas (~110 m), a mesma precisão guardada em destinos_pessoais (pontoGuardado): o
+ * endereço digitado não vai inteiro para o link. E94: antes eram 2 casas (até ~700 m de erro na distância e no tempo).
+ */
 export function pontoParaUrl(p: Ponto): { dlat: string; dlng: string } {
-  return { dlat: p.lat.toFixed(2), dlng: p.lng.toFixed(2) };
+  return { dlat: p.lat.toFixed(3), dlng: p.lng.toFixed(3) };
 }
 
 export function pontoDaUrl(dlat: string | null | undefined, dlng: string | null | undefined): Ponto | null {
   const lat = Number(dlat);
   const lng = Number(dlng);
   if (!dlat || !dlng || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  return { lat: Math.round(lat * 100) / 100, lng: Math.round(lng * 100) / 100 };
+  return { lat: Math.round(lat * 1000) / 1000, lng: Math.round(lng * 1000) / 1000 };
 }
 
-/** Rótulo do endereço digitado sem número de casa nem CEP: "Av. Pará, Umuarama, Uberlândia". */
+/** Separadores do endereço: vírgula, travessão, meia-risca e o hífen entre espaços (o hífen colado é parte do nome). */
+const SEPARADOR = /\s*(?:,|—|–|\s-\s)\s*/;
+/** Só a sigla do estado ("MG"): sai do rótulo. */
+const UF = /^[A-Z]{2}$/;
+
+/**
+ * Rótulo do endereço digitado sem número de casa nem CEP (privacidade) e sem pontuação pendurada: até duas partes
+ * (rua e bairro, ou o nome do lugar), unidas por "—" quando o endereço usava travessão entre elas e por "," quando
+ * não. "Av. João Naves de Ávila, 1331 — Santa Mônica, Uberlândia" → "Av. João Naves de Ávila — Santa Mônica".
+ */
 export function rotuloLimpo(texto: string): string {
-  const partes = texto
+  const pedacos = String(texto ?? "")
     .replace(/\b\d{5}-?\d{3}\b/g, "")
-    .split(",")
-    .map((p) =>
-      p
-        .replace(/\b(n[ºo°.]?|número)\s*\d+\w*/gi, "")
-        .replace(/(^|\s)\d+[\w/-]*/g, " ")
-        .replace(/\s{2,}/g, " ")
-        .replace(/^[\s–-]+|[\s–-]+$/g, ""),
-    )
-    .filter((p) => p && !/^(brasil|brazil)$/i.test(p) && /[a-zà-ú]/i.test(p));
-  return partes.slice(0, 3).join(", ").slice(0, 80);
+    .split(new RegExp(`(${SEPARADOR.source})`));
+  const partes: { texto: string; travessaoAntes: boolean }[] = [];
+  let travessao = false;
+  for (let i = 0; i < pedacos.length; i++) {
+    if (i % 2 === 1) {
+      if (/—|–|-/.test(pedacos[i])) travessao = true;
+      continue;
+    }
+    const p = pedacos[i]
+      .replace(/\b(n[ºo°.]?|número)\s*\d+\w*/gi, "")
+      .replace(/(^|\s)\d+[\w/-]*/g, " ")
+      .replace(/\s{2,}/g, " ")
+      .replace(/^[\s.,;:–—-]+|[\s,;:–—-]+$/g, "")
+      .trim();
+    if (!p || /^(brasil|brazil)$/i.test(p) || UF.test(p) || !/[a-zà-ú]/i.test(p)) continue;
+    partes.push({ texto: p, travessaoAntes: partes.length > 0 && travessao });
+    travessao = false;
+  }
+  return partes
+    .slice(0, 2)
+    .map((p, i) => (i === 0 ? p.texto : `${p.travessaoAntes ? " — " : ", "}${p.texto}`))
+    .join("")
+    .slice(0, 80);
 }
 
 /**

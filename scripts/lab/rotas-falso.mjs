@@ -8,7 +8,7 @@
   de antemão quem fica dentro do "até N min". Carro: 1,3 × d a 25 km/h (até 20 min ≈ 6,4 km em linha reta).
 
   Controle (só para os testes):
-    GET  /__chamadas   → as chamadas recebidas ({ provedor, perfil, origens })
+    GET  /__chamadas   → as chamadas recebidas ({ provedor, perfil, origens, destino })
     POST /__falhas     → { vezes } programa as próximas respostas 503 (provedor fora)
     POST /__limpar     → zera chamadas e falhas
 
@@ -71,7 +71,8 @@ createServer((req, res) => {
       if (pts.length > 25) return json(res, 422, { code: "InvalidInput", message: "Too many coordinates; maximum number of coordinates is 25." });
       const fontes = (url.searchParams.get("sources") ?? "").split(";").filter(Boolean).map(Number);
       const destino = pts[Number(url.searchParams.get("destinations") ?? 0)];
-      chamadas.push({ provedor: "mapbox", perfil, origens: fontes.length });
+      // E94: o destino recebido (lat/lng como veio) — o teste confere que o ponto tem 3 casas.
+      chamadas.push({ provedor: "mapbox", perfil, origens: fontes.length, destino });
       const t = fontes.map((i) => tempo(perfil, metros(pts[i], destino)));
       return json(res, 200, { code: "Ok", durations: t.map((x) => [x.seg]), distances: t.map((x) => [x.m]) });
     }
@@ -79,7 +80,7 @@ createServer((req, res) => {
     const b = JSON.parse(corpo || "{}");
     const lat = (w) => ({ lat: w.waypoint.location.latLng.latitude, lng: w.waypoint.location.latLng.longitude });
     const destino = lat(b.destinations[0]);
-    chamadas.push({ provedor: "google", perfil: "transit", origens: b.origins.length });
+    chamadas.push({ provedor: "google", perfil: "transit", origens: b.origins.length, destino });
     return json(
       res,
       200,

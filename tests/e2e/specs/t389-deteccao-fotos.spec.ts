@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
+import { celularComCamera, fotografarEUsar } from "../fixtures/camera";
 
 /*
   T389 — DETECTA-B: o que as fotos da galeria mostram, como SUGESTÃO. Só no laboratório (resposta fixa, nada sai).
@@ -11,8 +12,11 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
       não serve de prova"; o nível NÃO muda e nenhum item é gravado; o micro-ondas sai do "o que falta"; a JSON
       inválida não quebra a tela.
    3. Cache: voltar ao passo não analisa de novo (as mesmas 4 linhas, mesmas datas).
-   4. Confirmar: o micro-ondas vai pelo salvarItemNivel (foto da galeria, "em análise"); a máquina de lavar é marcada
-      nas comodidades do anúncio pelo salvar de sempre.
+   4. FOTO-NA-HORA-B: a foto da galeria NÃO vira prova. "Parece que você tem isto: fotografe agora para comprovar" →
+      "Fotografar pelo celular" (no computador) confirma a sugestão como "Confirmada, falta a foto" e o item NÃO conta
+      (nada em nivel_itens); a miniatura fica só como referência. No celular, "Fotografar agora" → câmera → o item conta
+      com a foto feita na hora (outra, não a da galeria) e a sugestão fecha. A máquina de lavar (comodidade) segue
+      marcada pelo salvar de sempre.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -118,16 +122,28 @@ test.describe("T389 — DETECTA-B: sugestões a partir das fotos", () => {
     await page.context().close();
   });
 
-  test("4. confirmar: item de nível pelo caminho de hoje; comodidade pelo salvar do anúncio", async ({ browser }) => {
+  test("4. item de nível: a foto da galeria não vira prova; confirmar abre a câmera e só a foto feita na hora conta", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await ligarNoLaboratorio(page);
+    await largura(page, 1280);
     await passo(page);
-    await page.getByTestId("deteccao-confirmar-cozinha_microondas").click({ timeout: 30_000 });
-    await expect(page.getByTestId("deteccao-msg")).toContainText('Foto de "Micro-ondas" enviada', { timeout: 30_000 });
-    const { data: item } = await adm().from("nivel_itens").select("declarado, foto_path, foto_status").eq("property_id", ids.imovel!).eq("chave", "cozinha_microondas").single();
-    expect(item).toMatchObject({ declarado: true, foto_path: caminhos[0], foto_status: "pendente" });
-    await expect(page.getByTestId("deteccao-sugestao-cozinha_microondas")).toHaveCount(0);
+    const linha = page.getByTestId("deteccao-sugestao-cozinha_microondas");
+    await expect(linha.getByTestId("deteccao-texto-cozinha_microondas")).toHaveText("Parece que você tem isto: fotografe agora para comprovar", { timeout: 30_000 });
+    await expect(linha.getByTestId("deteccao-referencia-cozinha_microondas")).toHaveText("Esta foto é do anúncio e não serve de prova");
+    await expect(linha.getByTestId("deteccao-confirmar-cozinha_microondas")).toHaveCount(0);
+    const botao = linha.getByTestId("deteccao-fotografar-cozinha_microondas-botao");
+    await expect(botao).toHaveText("Fotografar pelo celular");
+    await botao.click();
+    await expect(page.getByTestId("prova-celular-cozinha_microondas")).toBeVisible({ timeout: 20_000 });
+    await expect(linha.getByTestId("deteccao-texto-cozinha_microondas")).toHaveText("Confirmada, falta a foto");
+    // Confirmada sem foto: não conta (nada gravado em nivel_itens; a foto da galeria nunca vira prova).
+    await expect
+      .poll(async () => (await adm().from("deteccao_sugestoes").select("status").eq("property_id", ids.imovel!).eq("chave", "cozinha_microondas").limit(1).single()).data?.status, { timeout: 20_000 })
+      .toBe("confirmada_sem_foto");
+    expect((await adm().from("nivel_itens").select("chave").eq("property_id", ids.imovel!).eq("chave", "cozinha_microondas")).data ?? []).toHaveLength(0);
+    await expect(page.getByTestId("nivel-cadastro-agora")).toHaveAttribute("data-nivel", "essencial");
 
+    // A comodidade segue como antes: marcada pelo salvar do anúncio.
     await page.getByTestId("deteccao-confirmar-maquina_lavar").click();
     await expect(page.getByTestId("deteccao-msg")).toContainText('"Máquina de lavar" marcada nas comodidades');
     await expect(page.getByTestId("deteccao-sugestao-maquina_lavar")).toHaveCount(0);
@@ -138,15 +154,35 @@ test.describe("T389 — DETECTA-B: sugestões a partir das fotos", () => {
         return k.maquina_lavar === true;
       }, { timeout: 30_000 })
       .toBe(true);
-    const { data: sug } = await adm().from("deteccao_sugestoes").select("chave, status").eq("property_id", ids.imovel!).order("chave");
-    expect(sug).toEqual(
-      expect.arrayContaining([
-        { chave: "cozinha_microondas", status: "aceita" },
-        { chave: "maquina_lavar", status: "aceita" },
-        { chave: "sala_assentos", status: "descartada" },
-      ]),
-    );
-    await page.screenshot({ path: "tests/laboratorio/saida/t389-4-confirmado-1280.png", fullPage: true });
+    await page.screenshot({ path: "tests/laboratorio/saida/t389-4-falta-a-foto-1280.png", fullPage: true });
     await page.context().close();
+
+    // No celular: "Fotografar agora" → câmera → a foto feita na hora conta; a sugestão fecha.
+    const cel = await celularComCamera({ email: dono.email, senha });
+    try {
+      await ligarNoLaboratorio(cel.page);
+      await passo(cel.page);
+      const noCel = cel.page.getByTestId("deteccao-sugestao-cozinha_microondas");
+      await expect(noCel).toHaveAttribute("data-status", "confirmada_sem_foto", { timeout: 30_000 });
+      await expect(noCel.getByTestId("deteccao-fotografar-cozinha_microondas-botao")).toHaveText("Fotografar agora");
+      await noCel.getByTestId("deteccao-fotografar-cozinha_microondas-botao").click();
+      await fotografarEUsar(cel.page);
+      await expect(cel.page.getByTestId("deteccao-msg")).toHaveText("Foto de Micro-ondas recebida. O item já conta enquanto a foto é analisada.", { timeout: 30_000 });
+      await expect(cel.page.getByTestId("deteccao-sugestao-cozinha_microondas")).toHaveCount(0, { timeout: 20_000 });
+      const { data: item } = await adm().from("nivel_itens").select("declarado, foto_path, foto_status, foto_origem").eq("property_id", ids.imovel!).eq("chave", "cozinha_microondas").single();
+      expect(item).toMatchObject({ declarado: true, foto_status: "pendente", foto_origem: "camera" });
+      expect(caminhos).not.toContain(item?.foto_path);
+      const { data: sug } = await adm().from("deteccao_sugestoes").select("chave, status").eq("property_id", ids.imovel!).order("chave");
+      expect(sug).toEqual(
+        expect.arrayContaining([
+          { chave: "cozinha_microondas", status: "aceita" },
+          { chave: "maquina_lavar", status: "aceita" },
+          { chave: "sala_assentos", status: "descartada" },
+        ]),
+      );
+      await cel.page.screenshot({ path: "tests/laboratorio/saida/t389-4-camera-390.png", fullPage: true });
+    } finally {
+      await cel.fechar();
+    }
   });
 });

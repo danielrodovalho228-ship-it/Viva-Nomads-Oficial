@@ -4,14 +4,15 @@
   DETECTA-B — ações do passo Comodidades (cadastro e edição): analisar as fotos novas da galeria, listar as sugestões,
   confirmar ou descartar. Chave DETECCAO_FOTOS_ATIVO desligada: devolve { ligada: false } ANTES de qualquer leitura,
   e nada sai para o modelo. Só fotos da galeria do anúncio (property_photos, pasta do dono).
-  Confirmar segue o caminho de hoje: item de nível → salvarItemNivel com a foto (vai para a análise da Viva como
-  qualquer foto enviada); comodidade → a tela marca e o salvar do anúncio grava. Sugestão sozinha não conta.
+  FOTO-NA-HORA-B: a foto da galeria NUNCA vira prova. Confirmar item de nível → a sugestão fica 'confirmada_sem_foto'
+  ("Confirmada, falta a foto", não conta) e a tela abre a câmera do item; o item só conta quando a foto feita na hora
+  chega por salvarItemNivel com o token (que fecha a sugestão como 'aceita'). Comodidade → a tela marca e o salvar do
+  anúncio grava. Sugestão sozinha não conta.
 */
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
-import { salvarItemNivel } from "@/lib/data/nivel-actions";
 import { deteccaoAtiva } from "@/lib/fotos/deteccao-chave";
 import { detectarNaFoto } from "@/lib/fotos/deteccao-modelo";
 import { analisarFotosNovas } from "@/lib/fotos/deteccao-fluxo";
@@ -27,6 +28,7 @@ import {
   type SugestaoVisivel,
   type TipoDeteccao,
 } from "@/lib/fotos/deteccao";
+import { SUGESTAO_SEM_FOTO, provaAntigaVencida } from "@/lib/niveis/prova-camera";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BUCKET = "property-photos";
@@ -35,6 +37,8 @@ export interface SugestaoFoto {
   id: string;
   chave: string;
   tipo: TipoDeteccao;
+  /** 'confirmada_sem_foto': o dono confirmou o item de nível; falta a foto da câmera (não conta). */
+  status: StatusSugestao;
   rotulo: string;
   confianca: number;
   fotoUrl: string;
@@ -49,7 +53,7 @@ export interface EstadoDeteccao {
   limite: boolean;
 }
 
-export type ResultadoDeteccaoAcao = { ok: true; mensagem: string; comodidade?: string } | { ok: false; erro: string };
+export type ResultadoDeteccaoAcao = { ok: true; mensagem: string; comodidade?: string; /** Item de nível: a tela abre a câmera dele. */ fotografar?: string } | { ok: false; erro: string };
 
 const DESLIGADA: EstadoDeteccao = { ligada: false, sugestoes: [], comPessoa: 0, restantes: 0, limite: false };
 
@@ -80,14 +84,14 @@ async function sha256(bytes: Uint8Array): Promise<string> {
 async function montar(c: Dono, propertyId: string): Promise<Omit<EstadoDeteccao, "restantes" | "limite">> {
   const [fotos, sug, itens, pessoas] = await Promise.all([
     galeria(c, propertyId),
-    c.admin.from("deteccao_sugestoes").select("id, chave, tipo, confianca, status, caminho").eq("property_id", propertyId).eq("status", "sugerida"),
-    c.admin.from("nivel_itens").select("chave, declarado, foto_path, foto_status").eq("property_id", propertyId),
+    c.admin.from("deteccao_sugestoes").select("id, chave, tipo, confianca, status, caminho").eq("property_id", propertyId).in("status", ["sugerida", "confirmada_sem_foto"]),
+    c.admin.from("nivel_itens").select("chave, declarado, foto_path, foto_status, foto_origem, refazer_ate").eq("property_id", propertyId),
     c.admin.from("deteccao_fotos_analises").select("caminho").eq("property_id", propertyId).eq("pessoa", true),
   ]);
   const naGaleria = new Set(fotos);
   const nivelComFoto = new Set(
-    ((itens.data ?? []) as { chave: string; declarado: boolean; foto_path: string | null; foto_status: string | null }[])
-      .filter((i) => i.declarado && i.foto_path && i.foto_status !== "recusada")
+    ((itens.data ?? []) as { chave: string; declarado: boolean; foto_path: string | null; foto_status: string | null; foto_origem: "camera" | "arquivo" | null; refazer_ate: string | null }[])
+      .filter((i) => i.declarado && i.foto_path && i.foto_status !== "recusada" && !provaAntigaVencida({ fotoOrigem: i.foto_origem, refazerAte: i.refazer_ate }, new Date()))
       .map((i) => i.chave),
   );
   const todas: SugestaoVisivel[] = ((sug.data ?? []) as { id: string; chave: string; tipo: TipoDeteccao; confianca: number | string; status: StatusSugestao; caminho: string }[]).map(
@@ -102,6 +106,7 @@ async function montar(c: Dono, propertyId: string): Promise<Omit<EstadoDeteccao,
       id: s.id,
       chave: s.chave,
       tipo: s.tipo,
+      status: s.status,
       rotulo: chaveDeteccao(s.chave)?.rotulo ?? s.chave,
       confianca: s.confianca,
       fotoUrl: c.admin.storage.from(BUCKET).getPublicUrl(s.caminho).data.publicUrl,
@@ -190,7 +195,10 @@ async function sugestaoDoDono(id: string) {
   return c ? { c, s: data as { id: string; property_id: string; caminho: string; chave: string; tipo: TipoDeteccao; status: StatusSugestao } } : null;
 }
 
-/** Confirmar: item de nível pelo salvarItemNivel (com a foto da galeria); comodidade volta para a tela marcar. */
+/**
+ * Confirmar. Item de nível: a foto da galeria NÃO vira prova — a sugestão fica "Confirmada, falta a foto" (não conta) e
+ * a tela abre a câmera do item (no computador, o QR para o celular). Comodidade: volta para a tela marcar.
+ */
 export async function confirmarSugestaoFoto(id: string): Promise<ResultadoDeteccaoAcao> {
   const r = await sugestaoDoDono(id);
   if (!r) return { ok: false, erro: "Sem permissão." };
@@ -198,16 +206,16 @@ export async function confirmarSugestaoFoto(id: string): Promise<ResultadoDetecc
   const def = chaveDeteccao(s.chave);
   if (!def) return { ok: false, erro: "Item inválido." };
   if (s.status === "descartada") return { ok: false, erro: "Esta sugestão já foi descartada." };
-  let mensagem = `"${def.rotulo}" marcada nas comodidades; ela é gravada junto com o anúncio.`;
-  if (s.tipo === "nivel" && s.status === "sugerida") {
-    const salvo = await salvarItemNivel(s.property_id, s.chave, true, s.caminho);
-    if (!salvo.ok) return salvo;
-    mensagem = `Foto de "${def.rotulo}" enviada. ${salvo.mensagem}`;
+  if (s.tipo === "nivel") {
+    if (s.status === "sugerida") {
+      await c.admin.from("deteccao_sugestoes").update({ status: "confirmada_sem_foto", decidida_em: new Date().toISOString() }).eq("id", s.id).eq("status", "sugerida");
+    }
+    return { ok: true, mensagem: `${SUGESTAO_SEM_FOTO}: fotografe "${def.rotulo}" agora para o item contar.`, fotografar: s.chave };
   }
   if (s.status === "sugerida") {
     await c.admin.from("deteccao_sugestoes").update({ status: "aceita", decidida_em: new Date().toISOString() }).eq("id", s.id).eq("status", "sugerida");
   }
-  return s.tipo === "comodidade" ? { ok: true, mensagem, comodidade: s.chave } : { ok: true, mensagem };
+  return { ok: true, mensagem: `"${def.rotulo}" marcada nas comodidades; ela é gravada junto com o anúncio.`, comodidade: s.chave };
 }
 
 /** Descartar: some a sugestão (e as outras da mesma chave neste anúncio). Não mexe no nível nem nas comodidades. */
@@ -221,6 +229,6 @@ export async function descartarSugestaoFoto(id: string): Promise<ResultadoDetecc
     .update({ status: "descartada", motivo: "dono", decidida_em: new Date().toISOString() })
     .eq("property_id", s.property_id)
     .eq("chave", s.chave)
-    .eq("status", "sugerida");
+    .in("status", ["sugerida", "confirmada_sem_foto"]);
   return { ok: true, mensagem: "Sugestão descartada." };
 }

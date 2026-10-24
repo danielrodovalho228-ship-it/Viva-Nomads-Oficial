@@ -6,7 +6,8 @@
 
   Dois grupos que NUNCA se misturam:
     • obrigatórios — sem eles não publica (o banco também barra fotos e documento);
-    • opcionais    — só Selo Pronto para Morar e vídeo. Melhoram o anúncio,
+    • opcionais    — Selo Pronto para Morar, vídeo (e os pendentes que não barram: endereço
+                     dos lugares, refazer a prova do nível pela câmera). Melhoram o anúncio,
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
@@ -18,6 +19,7 @@ import { videoDoAnuncio } from "../video-anuncio.ts";
 import { ROTULO_FALTA_TIPO_ENTRADA } from "./chegada-e-pedido.ts";
 
 import { ROTULO_FALTA_CHACARA } from "./chacara.ts";
+import { textoRefazerFoto } from "../niveis/prova-camera.ts";
 export const MIN_FOTOS = 8;
 export const MIN_DESCRICAO = 60;
 /** FILTROS-1 (E39): item do portão de publicar quando falta a velocidade da internet. */
@@ -79,6 +81,11 @@ export interface FatosAnuncio {
    * não se aplica (outro tipo, ou o publicado sem eles segue no ar). Com falta, publicar é recusado.
    */
   chacaraFaltam?: string[];
+  /**
+   * FOTO-NA-HORA-B: provas de nível anteriores à regra, ainda no prazo (rótulo do item e a data limite). Cada uma vira
+   * um item pendente "Refaça a foto de [item] pela câmera até [data]". Ausente = não se aplica.
+   */
+  provasParaRefazer?: { chave: string; rotulo: string; ate: string }[];
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -210,6 +217,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     const n = f.proximidadesSemEndereco;
     opcionais.push({ key: "proximidades_endereco", label: ROTULO_PROXIMIDADES_SEM_ENDERECO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "1 lugar sem endereço não aparece no anúncio" : `${n} lugares sem endereço não aparecem no anúncio` });
   }
+  for (const p of f.provasParaRefazer ?? []) {
+    opcionais.push({ key: `refazer_foto_${p.chave}`, label: textoRefazerFoto(p.rotulo, p.ate), ok: false, etapa: ETAPA.comodidades });
+  }
   const cumpridos = obrigatorios.filter((i) => i.ok).length;
   return {
     podePublicar: obrigatorios.every((i) => i.ok),
@@ -270,8 +280,10 @@ export const ANCORA_VIDEO_ASSISTENTE = "bloco-video";
  * Vídeo do editor por seções; rascunho no assistente vai ao bloco de vídeo do passo Fotos. null = sem link.
  */
 export function hrefParaMelhorar(key: string, imovelId: string, noAssistente: boolean): string | null {
-  if (key !== "video") return null;
   const id = encodeURIComponent(imovelId);
+  // FOTO-NA-HORA-B: refazer a prova pela câmera → a tela Nível, ruído e extras, já no item.
+  if (key.startsWith("refazer_foto_")) return `/dashboard/imoveis/${id}/nivel?fotografar=${encodeURIComponent(key.slice("refazer_foto_".length))}#nivel-itens`;
+  if (key !== "video") return null;
   return noAssistente
     ? `/dashboard/imoveis/novo?draft=${id}&etapa=${ETAPA.fotos}#${ANCORA_VIDEO_ASSISTENTE}`
     : `/dashboard/imoveis/${id}/editar#${ANCORA_VIDEO_EDITOR}`;

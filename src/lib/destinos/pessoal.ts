@@ -73,6 +73,22 @@ export function agregarCelulas(
     .sort((a, b) => b.pessoas - a.pessoas || a.chave.localeCompare(b.chave));
 }
 
+/** E94: nome que a pessoa dá ao local ("Trabalho", "Cargill"), no lugar do rótulo limpo. Opcional ao salvar. */
+export const ROTULO_NOME_LOCAL = "Como chamar este lugar";
+export const AVISO_SEM_NUMERO = "Guardamos o lugar sem o número da casa, por privacidade.";
+export const NOME_LOCAL_MAX = 40;
+
+export type NomeDoLocal = { ok: true; nome: string | null } | { ok: false; erro: string };
+
+/** Nome do local: vazio = sem nome (vale o rótulo limpo); 2 a 40 letras; sem número da casa, contato nem link. */
+export function validarNomeLocal(nome: unknown): NomeDoLocal {
+  const n = String(nome ?? "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim();
+  if (!n) return { ok: true, nome: null };
+  if (n.length < 2 || n.length > NOME_LOCAL_MAX) return { ok: false, erro: `Dê um nome de 2 a ${NOME_LOCAL_MAX} letras (ex.: Trabalho).` };
+  if (/@|https?:\/\/|www\.|\d{2,}/i.test(n)) return { ok: false, erro: "Só o nome do lugar, sem número da casa." };
+  return { ok: true, nome: n };
+}
+
 /** Rótulo guardado do local: sem número de casa nem CEP (mesma limpeza da URL). */
 export function rotuloDoLocal(texto: string): string {
   return rotuloLimpo(String(texto ?? "")) || "Meu local";

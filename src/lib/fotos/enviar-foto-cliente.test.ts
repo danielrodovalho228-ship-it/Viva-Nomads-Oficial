@@ -56,13 +56,15 @@ test("5xx (com ou sem JSON) vira a mensagem de tentar de novo; recusa com motivo
 });
 
 test("as telas usam o envio que nunca lança e não chamam mais o fetch direto", () => {
-  for (const f of ["src/app/(dashboard)/dashboard/imoveis/[id]/nivel/form-nivel.tsx", "src/components/niveis/nivel-cadastro.tsx", "src/components/conforto/pendencias-conforto.tsx", "src/components/property/ajuda-publicar.tsx"]) {
+  for (const f of ["src/components/conforto/pendencias-conforto.tsx", "src/components/property/ajuda-publicar.tsx"]) {
     const s = ler(f);
     assert.match(s, /enviarFotoDoAnuncio\(/, f);
     assert.doesNotMatch(s, /fetch\("\/api\/upload\/foto"/, f);
   }
-  // A ação do servidor dentro da transição também não escapa: try/catch com a mesma mensagem.
-  const nivel = ler("src/app/(dashboard)/dashboard/imoveis/[id]/nivel/form-nivel.tsx");
-  assert.match(nivel, /\} catch \{\s*setParaTentar\(arquivo \?\? null\);\s*setMsg\(\{ ok: false, t: MSG_FALHA_ENVIO_FOTO \}\);/);
-  assert.match(nivel, /data-testid=\{`nivel-tentar-\$\{chave\}`\}/);
+  // FOTO-NA-HORA-B: a prova do nível não aceita arquivo — as duas telas do nível usam só a câmera (ProvaNaHora).
+  for (const f of ["src/app/(dashboard)/dashboard/imoveis/[id]/nivel/form-nivel.tsx", "src/components/niveis/nivel-cadastro.tsx"]) {
+    const s = ler(f);
+    assert.doesNotMatch(s, /enviarFotoDoAnuncio|type="file"|\/api\/upload\/foto/, f);
+    assert.match(s, /<ProvaNaHora/, f);
+  }
 });
