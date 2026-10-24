@@ -24,19 +24,23 @@ import {
   CHAVE_CONVERSA_PEDIDO,
   congelarValores,
   MENSAGENS_AUTOMATICAS,
-  MOTIVO_RECUSA_MAX,
+  contatoNoPedido,
+  linkOutroParceiro,
   podeFazer,
   podeSimularPagamento,
   provedorSimulado,
   STATUS_ABERTOS,
   STATUS_COM_DADOS_LIBERADOS,
   tetoAtingido,
+  textoRecusaAoCliente,
   textoTeto,
+  validarMotivoRecusa,
   validarOrcamento,
   validarPedido,
   visaoDoParceiro,
   horarioNaAgenda,
   type AcaoPedido,
+  type ContatoDoPedido,
   type PapelNoPedido,
 } from "./pedido";
 
@@ -257,17 +261,35 @@ export async function enviarOrcamento(pedidoId: string, valor: unknown): Promise
   );
 }
 
-export async function recusarPedido(pedidoId: string, motivo: string): Promise<Res> {
-  const m = (motivo ?? "").trim();
-  if (m.length < 3 || m.length > MOTIVO_RECUSA_MAX) return { ok: false, erro: `Diga o motivo em poucas palavras (até ${MOTIVO_RECUSA_MAX} caracteres).` };
-  return mudar(
+/** Já está no estado final da ação pedida, por esta mesma parte: o segundo toque (ou o envio repetido) não é erro. */
+async function jaFeito(pedidoId: string, papel: PapelNoPedido, status: string): Promise<boolean> {
+  const c = await carregar(pedidoId);
+  return !("erro" in c) && c.papel === papel && c.p.status === status;
+}
+
+/**
+ * L2-B item 17: recusa do parceiro. Motivo OPCIONAL (até MOTIVO_RECUSA_MAX); idempotente (recusar de novo um pedido
+ * já recusado devolve ok, sem repetir aviso nem mensagem). O cliente recebe a notificação na central e por e-mail,
+ * com o motivo (se houver) e o link "Pedir a outro parceiro".
+ */
+export async function recusarPedido(pedidoId: string, motivo?: string | null): Promise<Res> {
+  const v = validarMotivoRecusa(motivo);
+  if (!v.ok) return v;
+  const m = v.motivo ? guardContactInfo(v.motivo).text : null;
+  const r = await mudar(
     pedidoId,
     "recusar_pedido",
-    async () => ({ ok: true, valor: { status: "recusado", motivo_recusa: guardContactInfo(m).text } }),
+    async () => ({ ok: true, valor: { status: "recusado", motivo_recusa: m } }),
     async ({ admin, userId, p }) => {
-      await mensagem(admin, p, userId, `Pedido recusado pelo parceiro: ${m}`);
+      await mensagem(admin, p, userId, m ? `Pedido recusado pelo parceiro: ${m}` : "Pedido recusado pelo parceiro.");
+      await avisar(admin, p.cliente_id, "parceiro_pedido_recusado", p.id, {
+        texto: textoRecusaAoCliente(p.parceiros!.nome_publico, m),
+        url: linkOutroParceiro(p.categoria),
+      });
     },
   );
+  if (!r.ok && (await jaFeito(pedidoId, "parceiro", "recusado"))) return { ok: true, valor: null };
+  return r;
 }
 
 /** Aceite: taxa, valor da taxa e o que o parceiro recebe CONGELAM aqui. */
@@ -290,9 +312,12 @@ export async function aceitarOrcamento(pedidoId: string): Promise<Res> {
 }
 
 export async function recusarOrcamento(pedidoId: string): Promise<Res> {
-  return mudar(pedidoId, "recusar_orcamento", async () => ({ ok: true, valor: { status: "cancelado" } }), async ({ admin, userId, p }) => {
+  const r = await mudar(pedidoId, "recusar_orcamento", async () => ({ ok: true, valor: { status: "cancelado" } }), async ({ admin, userId, p }) => {
     await mensagem(admin, p, userId, "Orçamento recusado pelo cliente.");
   });
+  // L2-B item 17: idempotente como a recusa do parceiro.
+  if (!r.ok && (await jaFeito(pedidoId, "cliente", "cancelado"))) return { ok: true, valor: null };
+  return r;
 }
 
 export async function cancelarPedido(pedidoId: string): Promise<Res> {
@@ -571,6 +596,10 @@ export interface DetalhePedido {
   entregas: { id: string; legenda: string | null }[];
   temDocumento: boolean;
   motivoRecusa: string | null;
+  /** L2-B item 16: telefone e e-mail da OUTRA parte, só depois do aceite (null antes). */
+  contato: ContatoDoPedido | null;
+  /** "Pedir a outro parceiro" (recusado): a busca na mesma categoria. */
+  linkOutroParceiro: string;
   mensagens: { id: string; minha: boolean; texto: string; em: string }[];
   minhaAvaliacao: { nota: number; status: string } | null;
   avaliacaoDoOutro: { nota: number; texto: string | null } | null;
@@ -619,6 +648,7 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
   const outra = avaliacoes.find((a) => a.autor_id !== userId && a.status === "publicada") ?? null;
   const n = (v: number | string | null) => (v == null ? null : Number(v));
   const teste = papel === "cliente" ? await contaTeste(admin, userId) : false;
+  const contato = await contatoDaOutraParte(admin, p, papel);
   return {
     id: p.id,
     codigo: p.codigo,
@@ -639,6 +669,8 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
     entregas: ((ent.data ?? []) as { id: string; legenda: string | null }[]).map((e) => ({ id: e.id, legenda: e.legenda })),
     temDocumento: !!p.documento_parceiro_path,
     motivoRecusa: p.motivo_recusa,
+    contato,
+    linkOutroParceiro: linkOutroParceiro(p.categoria),
     mensagens: ((msgs.data ?? []) as { id: string; sender_id: string; body: string; created_at: string }[]).map((m) => ({ id: m.id, minha: m.sender_id === userId, texto: m.body, em: m.created_at })),
     minhaAvaliacao: minha ? { nota: minha.nota, status: minha.status } : null,
     avaliacaoDoOutro: outra ? { nota: outra.nota, texto: outra.texto } : null,
@@ -647,6 +679,23 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
     aguardandoDono: p.aguardando_dono,
     semResposta: !!p.sem_resposta_avisado_em && p.status === "solicitado",
   };
+}
+
+/**
+ * L2-B item 16: o contato da outra parte é LIDO só depois do aceite (antes, a linha nem sai do banco). Ao cliente:
+ * o telefone do perfil público do parceiro (ou o da conta) e o e-mail da conta. Ao parceiro: o telefone e o e-mail
+ * da conta do cliente.
+ */
+async function contatoDaOutraParte(admin: Admin, p: LinhaPedido, papel: PapelNoPedido): Promise<ContatoDoPedido | null> {
+  if (!contatoNoPedido(p.status, { telefone: "x", email: null })) return null;
+  const outro = papel === "cliente" ? p.parceiros!.user_id : p.cliente_id;
+  const [perfil, parceiro] = await Promise.all([
+    admin.from("profiles").select("email, phone").eq("id", outro).maybeSingle(),
+    papel === "cliente" ? admin.from("parceiros").select("telefone").eq("id", p.parceiro_id).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const pf = perfil.data as { email: string | null; phone: string | null } | null;
+  const tel = (parceiro.data as { telefone: string | null } | null)?.telefone ?? pf?.phone ?? null;
+  return contatoNoPedido(p.status, { telefone: tel, email: pf?.email ?? null });
 }
 
 export interface ResumoPedido {
