@@ -178,10 +178,10 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
 
   test("D-V3 — 'Enviar documento' do rascunho real responde e aponta o campo que falta", async ({ browser }) => {
     test.skip(!temContaVarredura("DONO17"), "sem a conta DONO17");
-    // L1-1: corrigido. O botão fica no passo Onde fica do assistente (o editor por seções não tem documento); o
+    // L1-1: corrigido. O botão fica no passo Endereço do assistente (o editor por seções não tem documento); o
     // rascunho da massa só tem o bairro, então o toque diz o que falta e leva ao 1º campo.
     const { context, page } = await abrirComoConta(browser, "DONO17", "390");
-    await abrirRota(page, `/dashboard/imoveis/novo?draft=${MASSA!.rascunho1}&etapa=onde`);
+    await abrirRota(page, `/dashboard/imoveis/novo?draft=${MASSA!.rascunho1}&etapa=endereco`);
     const botao = page.getByRole("button", { name: /enviar documento/i });
     await expect(botao).toBeVisible({ timeout: 20_000 });
     expect(await cliqueResponde(page, botao, "Enviar documento")).toEqual([]);

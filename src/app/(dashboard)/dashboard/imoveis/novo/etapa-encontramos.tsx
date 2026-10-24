@@ -3,7 +3,7 @@
 import { Sparkles } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
-import { AMENITY_GROUPS, PROPERTY_TYPES } from "@/lib/amenities";
+import { AMENITY_GROUPS } from "@/lib/amenities";
 import { ESSENCIAIS_TRABALHO, OPCIONAIS_TRABALHO } from "@/lib/anuncio/sugestoes-cadastro";
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import type { Privacidade } from "@/lib/anuncio/privacidade";
@@ -16,15 +16,16 @@ import type { CampoSugerido, EstadoIaFotos } from "./tipos";
 
 const CHAVES_BLOCO_TRABALHO = new Set<string>([...ESSENCIAIS_TRABALHO, ...OPCIONAIS_TRABALHO].map((i) => i.chave));
 
-/** Qual pedaço do cadastro esta tela mostra (Prompt 43, Anunciar em 6 passos). */
-export type ParteCadastro = "espaco" | "comodidades" | "regras";
+/** Qual pedaço do cadastro esta tela mostra (assistente em 10 passos, mockups cadastro-imovel-01..10). */
+export type ParteCadastro = "espaco" | "comodidades" | "regras" | "descricao";
 
 /**
- * Campos do imóvel, com "Sugerido · confira" no que veio das fotos (prompt 10), divididos pelos 6 passos (Prompt 43):
- *   • espaco (passo 2, Tipo e quartos): tipo, quartos, banheiros, pessoas (2 por quarto), área e vagas;
- *   • comodidades (passo 4, Comodidades e segurança): bloco "Pronto para trabalhar de casa", grupos de comodidades
- *     (com "Segurança"), câmeras e acesso, proximidades, título e descrição;
- *   • regras (passo 5): mobiliado, pets, crianças e fumar.
+ * Campos do imóvel, com "Sugerido · confira" no que veio das fotos (prompt 10), divididos pelos passos do assistente:
+ *   • espaco (passo 4, Detalhes): quartos, banheiros, pessoas (2 por quarto), área e vagas (o tipo é o passo 1);
+ *   • comodidades (passo 5): bloco "Pronto para trabalhar de casa", grupos de comodidades (com "Segurança"), câmeras e
+ *     acesso, proximidades;
+ *   • regras (passo 6): mobiliado, pets, crianças e fumar;
+ *   • descricao (passo 7): título e descrição.
  * Nenhuma imagem decorativa no meio do formulário.
  */
 export function EtapaEncontramos(p: {
@@ -111,18 +112,25 @@ export function EtapaEncontramos(p: {
     );
   }
 
+  if (p.parte === "descricao") {
+    return (
+      <div className="space-y-4" data-testid="etapa-descricao">
+        {aviso}
+        <Labeled label="Título do anúncio" sugerido={p.sugerido("titulo")}>
+          <input value={p.title} onChange={campo("titulo", p.setTitle)} maxLength={80} placeholder="Ex.: Studio mobiliado no Centro" className="input" data-testid="cadastro-titulo" />
+          <Erro msg={p.erros.titulo} />
+          <AvisoBairro titulo={p.title} bairro={p.neighborhood} />
+        </Labeled>
+        <Labeled label="Descrição" sugerido={p.sugerido("descricao")}>
+          <textarea rows={5} value={p.description} onChange={campo("descricao", p.setDescription)} className="input" placeholder="Descreva o imóvel…" data-testid="cadastro-descricao" />
+        </Labeled>
+      </div>
+    );
+  }
+
   if (p.parte === "espaco") {
     return (
       <div className="space-y-4" data-testid="etapa-espaco">
-        <Labeled label="Tipo de imóvel" sugerido={p.tipoSugerido}>
-          <select value={p.propertyType} onChange={(e) => p.setPropertyType(e.target.value)} className="input" data-testid="cadastro-tipo">
-            {PROPERTY_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </Labeled>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*]:min-w-0">
           <Labeled label="Quartos" sugerido={p.sugerido("quartos")}>
             <input type="number" min={0} value={p.bedrooms} onChange={campo("quartos", p.setBedrooms)} className="input" data-testid="cadastro-quartos" />
@@ -187,14 +195,6 @@ export function EtapaEncontramos(p: {
         onManuais={p.setManualProximities}
       />
 
-      <Labeled label="Título do anúncio" sugerido={p.sugerido("titulo")}>
-        <input value={p.title} onChange={campo("titulo", p.setTitle)} maxLength={80} placeholder="Ex.: Studio mobiliado no Centro" className="input" data-testid="cadastro-titulo" />
-        <Erro msg={p.erros.titulo} />
-        <AvisoBairro titulo={p.title} bairro={p.neighborhood} />
-      </Labeled>
-      <Labeled label="Descrição" sugerido={p.sugerido("descricao")}>
-        <textarea rows={5} value={p.description} onChange={campo("descricao", p.setDescription)} className="input" placeholder="Descreva o imóvel…" data-testid="cadastro-descricao" />
-      </Labeled>
     </div>
   );
 }

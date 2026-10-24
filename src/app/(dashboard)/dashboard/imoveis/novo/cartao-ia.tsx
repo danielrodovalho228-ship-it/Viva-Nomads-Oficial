@@ -49,14 +49,14 @@ export function CartaoIa(p: {
       <span>
         Pronto: {p.resumoIa ? <>encontramos {p.resumoIa}.</> : <>preenchemos o que dá para ver nas fotos.</>}{" "}
         <button type="button" onClick={p.onVerPasso3} className="font-semibold underline underline-offset-2" data-testid="cartao-ia-ver-passo3">
-          Ver no passo 4
+          Ver nas Comodidades
         </button>
       </span>
     );
   } else if (liberada && p.iaEstado === "erro" && p.iaFalha) {
     status = <FalhaIa falha={p.iaFalha} onTentarDeNovo={p.onTentarDeNovo} />;
   } else if (liberada && p.iaEstado === "sem_sugestoes") {
-    status = "Fotos recebidas. A IA não encontrou o que sugerir: você confere tudo no passo 4.";
+    status = "Fotos recebidas. A IA não encontrou o que sugerir: você confere tudo nas Comodidades.";
   } else if (liberada) {
     status = (
       <span className="flex items-center gap-2">

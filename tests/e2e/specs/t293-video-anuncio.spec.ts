@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { noPasso } from "../fixtures/cadastro";
 
 /**
  * T293 — vídeo curto no anúncio (ordem 8681ae95, parte 2): o envio recusa o que passa de 60 s ou não é MP4/MOV,
@@ -39,16 +40,10 @@ test.describe("T293 — Vídeo no anúncio", () => {
       await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
       const outro = page.getByRole("button", { name: "Começar outro" });
       if (await outro.isVisible().catch(() => false)) await outro.click();
-      await page.getByTestId("cadastro-rua").fill("Rua do Vídeo");
-      await page.getByTestId("cadastro-numero").fill("1");
-      await page.getByTestId("cadastro-bairro").fill("Centro");
-      await page.getByRole("button", { name: "Continuar", exact: true }).click();
-      await expect(page.getByRole("heading", { name: "Tipo e quartos" })).toBeVisible();
-      await page.getByTestId("cadastro-banheiros").fill("1");
-      await page.getByTestId("cadastro-capacidade").fill("2");
-      await page.getByTestId("cadastro-area").fill("30");
-      await page.getByRole("button", { name: "Continuar", exact: true }).click();
-      await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible();
+      // Assistente em 10 passos: Fotos (com o vídeo) é o 2º passo, logo depois do Tipo (que não tem trava).
+      await noPasso(page, "tipo");
+      await page.getByTestId("cadastro-continuar").click();
+      await noPasso(page, "fotos");
 
       const entrada = page.getByTestId("video-input");
       await entrada.setInputFiles({ name: "x.txt", mimeType: "text/plain", buffer: Buffer.from("não sou vídeo") });

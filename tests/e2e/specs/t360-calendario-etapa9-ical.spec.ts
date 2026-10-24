@@ -6,7 +6,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  * T360 — E44: calendário de disponibilidade da etapa 9 do assistente (mockup cadastro-imovel-09) e exportação iCal.
  *   1. editor (Disponibilidade): a grade dos 3 meses renderiza com o bloqueio do dono marcado; "Exportar para outro site"
  *      mostra o link secreto .ics; o .ics responde 200 e traz o bloqueio manual como "Ocupado" (último dia incluso);
- *   2. cadastro (rascunho, etapa Preço e disponibilidade): a mesma grade e o mesmo link já aparecem (390 px);
+ *   2. cadastro (rascunho, passo Disponibilidade, o 9º dos 10): a mesma grade e o mesmo link já aparecem (390 px);
  *   3. o link de outro imóvel (token trocado) não abre nada (404).
  */
 const SAIDA = "tests/laboratorio/saida";
@@ -77,11 +77,12 @@ test.describe("T360 — E44: grade do calendário + exportação iCal", () => {
     await d.context().close();
   });
 
-  test("2. cadastro (rascunho): a etapa de preço e disponibilidade já mostra a grade e o link — 390 px", async ({ browser }) => {
+  test("2. cadastro (rascunho): o passo Disponibilidade já mostra a grade e o link — 390 px", async ({ browser }) => {
     test.setTimeout(150_000);
     const d = await entrar(browser, dono.email, senha);
     await d.setViewportSize({ width: 390, height: 844 });
-    await d.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=regras`, { waitUntil: "domcontentloaded" });
+    // Nos 10 passos o calendário saiu de "Regras" (era Regras, valores e disponibilidade) para o passo Disponibilidade.
+    await d.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=disponibilidade`, { waitUntil: "domcontentloaded" });
     const etapa = d.getByTestId("calendario-etapa");
     await expect(etapa).toBeVisible({ timeout: 30_000 });
     await expect(etapa.getByTestId("calendario-dono-grade")).toBeVisible({ timeout: 30_000 });
