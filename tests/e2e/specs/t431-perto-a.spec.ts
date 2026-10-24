@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Page, type Route } from "@playwright/t
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T406 — PERTO-A: a tela do "O que tem por perto". 390 e 1280, com prints.
+ * T431 — PERTO-A: a tela do "O que tem por perto". 390 e 1280, com prints.
  *   1. Cadastro, os três estados (a busca é simulada pela rota, para cada estado aparecer de propósito):
  *      carregando ("Procurando…"); achou (as 5 categorias, até 3 em cada, "Mostrar" ligado e "Está errado");
  *      não achou ("Não achamos…" e "Adicionar um lugar", que abre o formulário do lugar).
@@ -22,13 +22,13 @@ const ACHADOS = [
   L("onibus", "transporte", "Parada de ônibus", 90),
 ];
 
-test.describe("T406 — PERTO-A: O que tem por perto", () => {
+test.describe("T431 — PERTO-A: O que tem por perto", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const dono = { email: `dono.t406.${sufixo}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
+  const dono = { email: `dono.t431.${sufixo}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
   const ids: { dono?: string; rascunho?: string; ativo?: string } = {};
 
   test.beforeAll(async () => {
@@ -57,7 +57,7 @@ test.describe("T406 — PERTO-A: O que tem por perto", () => {
     const bloco = p.getByTestId("proximidades-osm");
     await bloco.scrollIntoViewIfNeeded();
     expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-    await bloco.screenshot({ path: `${SAIDA}/t406-${nome}-${w}.png` });
+    await bloco.screenshot({ path: `${SAIDA}/t431-${nome}-${w}.png` });
   }
 
   for (const w of [390, 1280]) {
@@ -132,7 +132,7 @@ test.describe("T406 — PERTO-A: O que tem por perto", () => {
       await expect(grupos).not.toContainText(/min\b|minuto/);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await grupos.scrollIntoViewIfNeeded();
-      await page.locator('section[aria-labelledby="localizacao-title"]').screenshot({ path: `${SAIDA}/t406-pagina-${w}.png` });
+      await page.locator('section[aria-labelledby="localizacao-title"]').screenshot({ path: `${SAIDA}/t431-pagina-${w}.png` });
     });
   }
 });
