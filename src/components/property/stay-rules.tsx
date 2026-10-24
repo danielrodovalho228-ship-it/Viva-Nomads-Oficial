@@ -11,11 +11,25 @@ import {
   FileCheck,
   HandCoins,
   Sparkles,
+  Receipt,
+  Building2,
+  Layers,
+  Clock,
+  Car,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { linhasRegrasPets } from "@/lib/anuncio/pets-regras";
 import { textoLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { linhasRegrasCasa } from "@/lib/anuncio/regras-casa";
+import { linhasDetalhes, type ChaveGrupoDetalhe } from "@/lib/anuncio/detalhes-anuncio";
+
+const ICONE_DETALHE: Record<ChaveGrupoDetalhe, React.ComponentType<{ className?: string }>> = {
+  incluidoNoPreco: Receipt,
+  areasCondominio: Building2,
+  andar: Layers,
+  janela: Clock,
+  vaga: Car,
+};
 
 /**
  * Regras da estadia: duração, mobília, animais, fumante, hóspedes, check-in/out
@@ -53,10 +67,15 @@ export function StayRules({ property }: { property: Property }) {
     rows.push({ icon: Cigarette, label: "Fumante", value: property.smokingAllowed ? "Permitido fumar" : "Não é permitido fumar" });
   if (property.maxGuests !== undefined)
     rows.push({ icon: Users, label: "Moradores", value: `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` });
-  if (property.checkinAfter)
-    rows.push({ icon: LogIn, label: "Entrada", value: `A partir das ${property.checkinAfter}` });
-  if (property.checkoutBefore)
-    rows.push({ icon: LogOut, label: "Saída", value: `Até as ${property.checkoutBefore}` });
+  // CAMPOS-2: a janela de entrada/saída (quando ligada) tem precedência sobre os horários antigos.
+  const detalhes = linhasDetalhes(property.detalhesAnuncio);
+  if (!detalhes.some((d) => d.chave === "janela")) {
+    if (property.checkinAfter)
+      rows.push({ icon: LogIn, label: "Entrada", value: `A partir das ${property.checkinAfter}` });
+    if (property.checkoutBefore)
+      rows.push({ icon: LogOut, label: "Saída", value: `Até as ${property.checkoutBefore}` });
+  }
+  for (const d of detalhes) rows.push({ icon: ICONE_DETALHE[d.chave], label: d.rotulo, value: d.texto });
 
   return (
     <section id="regras-da-estadia" aria-labelledby="regras-title">

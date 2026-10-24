@@ -8,7 +8,7 @@
 */
 import { createHash, createHmac, createPublicKey, randomBytes, timingSafeEqual, verify, type JsonWebKey } from "node:crypto";
 
-export const SELO_LINKEDIN = "LinkedIn conectado";
+export { SELO_LINKEDIN, MSG_NOME_DIVERGENTE, MSG_JA_CONECTADO, MSG_FALHA, MSG_LIMITE } from "./textos.ts";
 export const VALIDADE_MESES = 12;
 export const AVISO_DIAS_ANTES = 30;
 export const VIDA_COOKIE_SEG = 10 * 60;
@@ -16,10 +16,6 @@ export const ESCOPO = "openid profile";
 /** Cookie httpOnly assinado com state, nonce e PKCE (só no caminho /api/conta/linkedin). */
 export const COOKIE_FLUXO = "vn_linkedin_fluxo";
 
-export const MSG_NOME_DIVERGENTE = "O nome no LinkedIn não confere com o nome da sua conta.";
-export const MSG_JA_CONECTADO = "Este LinkedIn já está conectado a outra conta.";
-export const MSG_FALHA = "Não foi possível conectar o LinkedIn agora. Tente de novo.";
-export const MSG_LIMITE = "Muitas tentativas. Tente de novo em uma hora.";
 export const MSG_AVISO_VENCENDO = "Reconecte seu LinkedIn para manter o selo";
 
 // ── Nome ─────────────────────────────────────────────────────────────────────────────────────────────────────────────

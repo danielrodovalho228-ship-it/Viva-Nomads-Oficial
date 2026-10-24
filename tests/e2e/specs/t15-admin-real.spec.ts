@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
+ * L-43 (vigia, 24/10): o painel não assenta em "networkidle" (t183, L-40); espera até 10 s e segue para o elemento.
  * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T15 — PAINEL DE ADMIN COM DADOS REAIS. Regressão do painel que mostrava
  * números e uma fila de checklists escritos no código (Marcos A., Patrícia L.,
@@ -11,7 +12,8 @@ test.describe("T15 — Admin real", () => {
   test.use({ storageState: authFile("admin") });
 
   test("/admin não tem dados de exemplo e mostra os números do banco", async ({ page }) => {
-    await page.goto("/admin", { waitUntil: "networkidle" });
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     // Prompt 46: o /admin abre com as decisões ("Hoje você tem N decisões" / "Nada pede sua decisão hoje").
     await expect(page.getByRole("heading", { level: 1, name: /decis/ })).toBeVisible();
     const corpo = page.locator("main");
@@ -34,8 +36,11 @@ test.describe("T15 — Admin real", () => {
   });
 
   test("visão geral: período, cidade, fórmula no i e nada de NaN/Infinity", async ({ page }) => {
+    // Seis cargas do /admin, cada uma com até 10 s de espera pela rede (L-43): 45 s não cabem.
+    test.setTimeout(120_000);
     for (const periodo of ["7", "30", "90", "ano"]) {
-      await page.goto(`/admin?periodo=${periodo}`, { waitUntil: "networkidle" });
+      await page.goto(`/admin?periodo=${periodo}`, { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const corpo = page.locator("main");
       await expect(page.getByTestId("admin-decisoes")).toBeVisible();
       const texto = await corpo.innerText();
@@ -51,16 +56,19 @@ test.describe("T15 — Admin real", () => {
     await page.getByRole("button", { name: "Como é calculado: Valor total dos contratos" }).click();
     await expect(page.locator("main")).toContainText("não passa pela plataforma");
     // Período inválido cai em 30 dias, sem erro.
-    await page.goto("/admin?periodo=custom&de=2026-02-31&ate=lixo", { waitUntil: "networkidle" });
+    await page.goto("/admin?periodo=custom&de=2026-02-31&ate=lixo", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(page.getByRole("link", { name: "30 dias" })).toHaveAttribute("aria-current", "true");
     // Cidade inexistente: tudo "—"/0, nada quebra.
-    await page.goto("/admin?periodo=30&cidade=Cidade%20Que%20Nao%20Existe", { waitUntil: "networkidle" });
+    await page.goto("/admin?periodo=30&cidade=Cidade%20Que%20Nao%20Existe", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     expect(await page.locator("main").innerText()).not.toMatch(/NaN|Infinity/);
   });
 
   test("financeiro: números honestos, \"i\" e aviso do aluguel", async ({ page }) => {
     for (const periodo of ["7", "30", "ano"]) {
-      await page.goto(`/admin/financeiro?periodo=${periodo}`, { waitUntil: "networkidle" });
+      await page.goto(`/admin/financeiro?periodo=${periodo}`, { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const corpo = page.locator("main");
       await expect(corpo.getByRole("heading", { name: "Financeiro", level: 1 })).toBeVisible();
       expect(await corpo.innerText(), `periodo=${periodo}`).not.toMatch(/NaN|Infinity|undefined/);
@@ -69,7 +77,8 @@ test.describe("T15 — Admin real", () => {
     await page.getByRole("button", { name: "Como é calculado: LTV" }).click();
     await expect(page.locator("main")).toContainText("ARPU ÷ churn mensal");
     // Filtro de cidade: assinaturas e marketing viram "—" (não têm cidade).
-    await page.goto("/admin/financeiro?periodo=30&cidade=Cidade%20Que%20Nao%20Existe", { waitUntil: "networkidle" });
+    await page.goto("/admin/financeiro?periodo=30&cidade=Cidade%20Que%20Nao%20Existe", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     expect(await page.locator("main").innerText()).not.toMatch(/NaN|Infinity|undefined/);
   });
 
@@ -79,7 +88,8 @@ test.describe("T15 — Admin real", () => {
       abriuPrompt = true;
       await d.dismiss();
     });
-    await page.goto("/admin/pedidos", { waitUntil: "networkidle" });
+    await page.goto("/admin/pedidos", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const ocultar = page.getByRole("button", { name: /Ocultar/ }).first();
     test.skip((await ocultar.count()) === 0, "nenhum pedido ativo para testar");
     await ocultar.click();

@@ -1519,6 +1519,7 @@ export default function NewPropertyPage() {
                 <ChegadaEPedidoCampos value={chegada} onChange={setChegada} />
               </div>
               <EtapaPreco
+                imovelId={imovelId}
                 sugerido={sugerido}
                 tirarSugestao={tirarSugestao}
                 monthlyPrice={monthlyPrice}

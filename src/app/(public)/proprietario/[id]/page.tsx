@@ -12,6 +12,8 @@ import { buttonClasses } from "@/components/ui/button";
 import { dataBR } from "@/lib/utils";
 import { proprietarioExemploPorId } from "@/config/exemplo-proprietarios";
 import { PerfilExemplo } from "./perfil-exemplo";
+import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
+import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -72,11 +74,15 @@ export default async function ProprietarioPage({ params }: Params) {
             <p className="text-sm font-medium text-sage">Proprietário</p>
             <h1 className="font-title text-[28px] font-semibold text-ink">{p.nome}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              {p.selos.map((s) => (
-                <span key={s} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
-                  <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {s}
-                </span>
-              ))}
+              {p.selos.map((s) =>
+                ehSeloLinkedin(s) ? (
+                  <SeloLinkedin key={s} formato="pilula" />
+                ) : (
+                  <span key={s} className="inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-forest">
+                    <BadgeCheck className="h-4 w-4" aria-hidden /> {s}
+                  </span>
+                ),
+              )}
               {p.reputacao.n > 0 && (
                 <a href="#avaliacoes" className="inline-flex items-center gap-1 text-sm font-medium text-ink hover:text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
