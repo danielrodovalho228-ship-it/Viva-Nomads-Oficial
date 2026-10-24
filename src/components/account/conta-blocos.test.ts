@@ -9,16 +9,19 @@ import { readFileSync } from "node:fs";
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 const CONTA = ler("src/app/(dashboard)/dashboard/conta/page.tsx");
 
-test("Conta (Prompt 43): 4 grupos na ordem Conta → Notificações → Privacidade e segurança → Pagamentos", () => {
-  const ordem = ["Conta", "Notificações", "Privacidade e segurança", "Pagamentos"].map((t) => CONTA.indexOf(`titulo="${t}"`));
+test("Conta (CONTA-A): topo único e os blocos na ordem Perfil → Avaliações → Papéis → Dados → Privacidade → Notificações → Pagamentos → Ajuda e Sair", () => {
+  assert.match(CONTA, /<TopoConta \/>/);
+  const ordem = ["perfil-publico", "avaliacoes", "papeis", "dados", "confianca", "notificacoes", "pagamentos", "sair-da-viva"].map((id) => CONTA.indexOf(`id="${id}"`));
   assert.ok(ordem.every((i) => i > 0), `faltou bloco: ${ordem}`);
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
+  assert.ok(CONTA.indexOf("<TopoConta />") < ordem[0]);
 });
 
-test("Conta: sem repetições — senha, verificação e 'Perfil do modo' saíram da página longa", () => {
+test("Conta: sem repetições — senha, verificação, 'Perfil do modo' e os blocos antigos de foto saíram da página longa", () => {
   assert.doesNotMatch(CONTA, /<ChangePassword|PerfilDoModo|title="Verificação"|title="Segurança"|TaxSimulator/);
   assert.equal(CONTA.match(/<ConfiancaLista \/>/g)?.length, 1);
-  assert.equal(CONTA.match(/<AvatarUploader \/>/g)?.length, 1);
+  // CONTA-A: o título "Conta", o bloco "Conta" e os dois blocos de foto deram lugar ao topo único.
+  assert.doesNotMatch(CONTA, /<PageTitle|<AvatarUploader|<ConviteFotoPerfil|titulo="Conta"|numero=\{/);
 });
 
 test("simulador tributário: fora da Conta e do cadastro; fica em Ferramentas (/dashboard/tributacao)", () => {

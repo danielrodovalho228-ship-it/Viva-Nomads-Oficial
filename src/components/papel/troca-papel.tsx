@@ -40,7 +40,7 @@ export function TrocaPapel({ papel, nome, foto }: { papel: Papel | null; nome: s
 
   const selo = (
     <>
-      <Avatar name={nome || rotulo} size={28} photoUrl={foto ?? undefined} />
+      <Avatar name={nome} size={28} photoUrl={foto ?? undefined} />
       <span className={cn("transition-opacity duration-200", trocando && "opacity-40")}>{rotulo}</span>
     </>
   );

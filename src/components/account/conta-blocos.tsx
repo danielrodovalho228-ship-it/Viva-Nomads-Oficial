@@ -19,19 +19,16 @@ import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
  * Conta em 4 blocos (prompt 18): 1. Perfil público · 2. Dados da conta · 3. Confiança e segurança · 4. Preferências.
  * Cada assunto aparece UMA vez; o que já tem tela própria (senha e duas etapas) vira uma linha com link.
  */
-export function BlocoConta({ id, numero, titulo, subtitulo, children }: { id: string; numero: number; titulo: string; subtitulo: string; children: React.ReactNode }) {
+export function BlocoConta({ id, titulo, subtitulo, semTitulo, children }: { id: string; titulo: string; subtitulo: string; semTitulo?: boolean; children: React.ReactNode }) {
+  // CONTA-A: sem números nos títulos. `semTitulo`: o conteúdo já traz o próprio título (ex.: "Papéis e intenção"), e o
+  // bloco não repete — o nome fica só para o leitor de tela.
   return (
     <section id={id} className="mt-12 scroll-mt-24 first:mt-6" data-testid={`bloco-${id}`} aria-labelledby={`${id}-titulo`}>
-      <div className="flex items-baseline gap-2 border-b border-sage-200 pb-2">
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-forest text-xs font-semibold text-white" aria-hidden>
-          {numero}
-        </span>
-        <div className="min-w-0">
-          <h2 id={`${id}-titulo`} className="font-title text-xl font-semibold text-ink">
-            {titulo}
-          </h2>
-          <p className="text-sm text-muted">{subtitulo}</p>
-        </div>
+      <div className={semTitulo ? "sr-only" : "border-b border-sage-200 pb-2"}>
+        <h2 id={`${id}-titulo`} className="font-title text-xl font-semibold text-ink">
+          {titulo}
+        </h2>
+        <p className="text-sm text-muted">{subtitulo}</p>
       </div>
       {children}
     </section>

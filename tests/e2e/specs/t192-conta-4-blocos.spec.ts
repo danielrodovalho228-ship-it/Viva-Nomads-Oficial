@@ -27,12 +27,16 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
         await page.setViewportSize({ width: largura, height: 900 });
         await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
         const blocos = page.locator('[data-testid^="bloco-"]');
-        await expect(blocos).toHaveCount(4);
+        // CONTA-A (entrega Perfil): topo único + 8 blocos, cada assunto uma vez.
         expect(await blocos.evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")))).toEqual([
-          "bloco-conta",
-          "bloco-notificacoes",
+          "bloco-perfil-publico",
+          "bloco-avaliacoes",
+          "bloco-papeis",
+          "bloco-dados",
           "bloco-confianca",
+          "bloco-notificacoes",
           "bloco-pagamentos",
+          "bloco-sair-da-viva",
         ]);
         const corpo = await page.locator("main").innerText();
         expect(corpo).not.toMatch(/Simulador tributário|Tributação das locações/);

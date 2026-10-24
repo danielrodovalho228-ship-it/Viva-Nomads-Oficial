@@ -16,7 +16,7 @@ export function PapelAtivo({ papel, nome, foto }: { papel: PapelBarra | null; no
       aria-label={`Papel ativo: ${rotulo} (abre o Perfil)`}
       className="inline-flex min-h-11 items-center gap-2 rounded-full pr-1 text-sm font-semibold text-ink"
     >
-      <Avatar name={nome || rotulo} size={28} photoUrl={foto ?? undefined} />
+      <Avatar name={nome} size={28} photoUrl={foto ?? undefined} />
       <span>{rotulo}</span>
     </Link>
   );
