@@ -4,13 +4,14 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 
 /**
  * T355 — CONTA-A, entrega 1 (Perfil): topo único, foto que envia de verdade, avatar sem nome, o espelho e o progresso.
- *   1. sem nome: H1 "Sua conta", silhueta (nunca "?") no topo e no cabeçalho; um H1 só; blocos na ordem — 360, 390, 1280;
+ *   1. sem nome: silhueta (nunca "?") no cartão da foto e no cabeçalho; um H1 visível ("Perfil") — 360, 390, 1280;
  *   2. o seletor de arquivo abre no clique e no teclado (topo e convite), a 390 e 1280;
  *   3. JPG com recorte (zoom) → "Foto atualizada" → aparece no topo, no cabeçalho e no perfil público → recarregar
  *      mantém → PNG troca → "Remover" volta às iniciais;
  *   4. erros: arquivo que não é imagem e HEIC que o navegador não lê ("Envie em JPG ou PNG") com "Tentar de novo";
- *   5. o espelho monta ao vivo (linha, pílula, balão) — à direita no computador, abaixo no celular com "Salvar e ver
- *      imóveis" preso no fim; o progresso anda depois de salvar (sem recarregar).
+ *   5. o espelho monta ao vivo (nome curto, pílula, balão) — à direita no computador, abaixo no celular com "Salvar
+ *      alterações" preso no fim; salvar grava cidade e frase.
+ * A1: a tela do Perfil é /dashboard/conta/perfil (no computador também /dashboard/conta).
  */
 const SAIDA = "tests/laboratorio/saida";
 const altura = (w: number) => (w === 1280 ? 900 : 844);
@@ -53,22 +54,16 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
   });
 
   for (const w of [360, 390, 1280]) {
-    test(`1. a ${w} px: sem nome → "Sua conta" e silhueta; um H1 só; blocos na ordem`, async ({ browser }) => {
+    test(`1. a ${w} px: sem nome → silhueta; um H1 visível ("Perfil")`, async ({ browser }) => {
       const p = await como(browser, semNome.email, w);
-      await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
-      await expect(p.getByTestId("conta-h1")).toHaveText("Sua conta");
-      await expect(p.locator("h1")).toHaveCount(1);
+      await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+      await expect(p.locator("h1:visible")).toHaveCount(1);
+      await expect(p.locator("h1:visible")).toHaveText("Perfil");
       const topo = p.getByTestId("topo-conta");
       await expect(topo.locator('[data-rosto="silhueta"]')).toHaveCount(1);
       await expect(topo).not.toContainText("?");
       // O selo do cabeçalho também mostra a silhueta (não o "P"/"M" do papel, nem "?").
       await expect(p.locator('[data-testid="papel-ativo"]:visible [data-rosto="silhueta"]')).toHaveCount(1);
-      // Nenhum título "Conta" sobrando e nenhum título numerado.
-      await expect(p.getByRole("heading", { name: "Conta", exact: true })).toHaveCount(0);
-      if (w === 1280) {
-        const blocos = await p.locator('[data-testid^="bloco-"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
-        expect(blocos).toEqual(["bloco-perfil-publico", "bloco-avaliacoes", "bloco-papeis", "bloco-dados", "bloco-confianca", "bloco-notificacoes", "bloco-pagamentos", "bloco-sair-da-viva"]);
-      }
       await semRolagemLateral(p);
       await p.screenshot({ path: `${SAIDA}/t355-sem-nome-${w}.png` });
       await p.context().close();
@@ -78,7 +73,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
   for (const w of [390, 1280]) {
     test(`2. a ${w} px: o seletor de arquivo abre no clique e no teclado (topo e convite)`, async ({ browser }) => {
       const p = await como(browser, dono.email, w);
-      await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
       const botao = p.getByTestId("topo-foto");
       await expect(botao).toHaveAccessibleName("Adicionar foto");
       let fc = p.waitForEvent("filechooser", { timeout: 5_000 });
@@ -105,7 +100,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
 
   test("3. JPG com recorte → topo, cabeçalho e perfil público; recarregar mantém; PNG troca; Remover volta às iniciais", async ({ browser }) => {
     const p = await como(browser, dono.email, 390);
-    await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
     await p.getByTestId("topo-foto-input").setInputFiles({ name: "rosto.jpg", mimeType: "image/jpeg", buffer: await imagem("jpeg") });
     const recorte = p.getByTestId("foto-recorte");
     await expect(recorte).toBeVisible();
@@ -118,16 +113,16 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
     await expect(p.getByTestId("topo-foto")).toHaveAccessibleName("Trocar foto");
     // C8/E55: na Conta a foto aparece no topo e (menor) no espelho; o cabeçalho fica só nas iniciais.
-    await expect(p.getByTestId("espelho-perfil").locator("img")).toHaveCount(1);
+    await expect(p.locator('[data-testid="espelho-perfil"]:visible img')).toHaveCount(1);
     await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
-    // O progresso andou sem recarregar: "Nome e foto" feito.
-    await expect(p.locator('[data-degrau="basico"]')).toHaveAttribute("data-feito", "1", { timeout: 15_000 });
+    // O medidor andou sem recarregar: "Foto de perfil" saiu da linha de faltas.
+    await expect(p.getByTestId("perfil-falta")).not.toContainText("Foto de perfil", { timeout: 15_000 });
     const caminho = (await adm().from("profiles").select("avatar_url").eq("id", ids.dono).single()).data?.avatar_url as string;
     expect(caminho).toBe(`${ids.dono}/avatar.webp`);
     // Fora da Conta, o cabeçalho mostra a foto nova.
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
-    await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
     // Perfil público do proprietário (tem anúncio): a foto aparece.
     const pub = await (await browser.newContext()).newPage();
@@ -146,7 +141,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
 
   test("4. erros com a causa e 'Tentar de novo': arquivo que não é imagem e HEIC ilegível", async ({ browser }) => {
     const p = await como(browser, dono.email, 390);
-    await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
     await p.getByTestId("topo-foto-input").setInputFiles({ name: "nota.txt", mimeType: "text/plain", buffer: Buffer.from("não sou imagem") });
     await expect(p.getByTestId("topo-foto-msg")).toContainText("Escolha um arquivo de imagem");
     await expect(p.getByTestId("topo-foto-msg").getByRole("button", { name: "Tentar de novo" })).toBeVisible();
@@ -160,18 +155,19 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
   });
 
   for (const w of [390, 1280]) {
-    test(`5. a ${w} px: o espelho monta ao vivo; o progresso anda; celular com "Salvar e ver imóveis" preso`, async ({ browser }) => {
+    test(`5. a ${w} px: o espelho monta ao vivo; celular com "Salvar alterações" preso`, async ({ browser }) => {
       const p = await como(browser, dono.email, w);
       await p.goto("/dashboard/conta#perfil-publico", { waitUntil: "networkidle" });
-      const espelho = p.getByTestId("espelho-perfil");
+      await expect(p).toHaveURL(/\/dashboard\/conta\/perfil$/);
+      await p.getByTestId("perfil-cartao").waitFor();
+      const espelho = p.locator('[data-testid="espelho-perfil"]:visible');
       await expect(espelho.getByRole("heading")).toHaveText("É assim que o proprietário te vê");
       await expect(espelho.getByTestId("espelho-nome")).toHaveText("Helena P.");
       await expect(espelho.getByTestId("espelho-email")).toHaveText("E-mail confirmado");
       await p.locator("#perfil-cidade").fill("Santa Mônica");
       await p.locator("#perfil-bio").fill("Professora, tranquila, cuido bem da casa.");
-      await expect(espelho.getByTestId("espelho-linha")).toContainText("Santa Mônica");
       await expect(espelho.getByTestId("espelho-sobre")).toHaveText("Professora, tranquila, cuido bem da casa.");
-      const form = await p.getByTestId("complete-perfil").boundingBox();
+      const form = await p.getByTestId("perfil-cartao").boundingBox();
       const esp = await espelho.boundingBox();
       if (w === 1280) {
         expect(esp!.x).toBeGreaterThan(form!.x + form!.width - 1);
@@ -179,7 +175,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
         await espelho.scrollIntoViewIfNeeded();
         await p.screenshot({ path: `${SAIDA}/t355-espelho-1280.png` });
         await p.getByTestId("perfil-salvar").click();
-        await expect(p.getByTestId("perfil-salvar-msg")).toHaveText("Perfil salvo.");
+        await expect(p.getByTestId("perfil-salvar-msg")).toHaveText("Alterações salvas.");
       } else {
         expect(esp!.y).toBeGreaterThan(form!.y + form!.height - 1);
         const salvar = p.getByTestId("perfil-salvar-celular");
@@ -192,7 +188,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
         const caixa = await salvar.boundingBox();
         expect(caixa!.y + caixa!.height).toBeLessThanOrEqual(altura(w));
         await salvar.click();
-        await p.waitForURL(/\/buscar/, { timeout: 30_000 });
+        await expect(p.getByTestId("perfil-salvar-msg")).toHaveText("Alterações salvas.");
       }
       expect((await adm().from("profiles").select("cidade, bio").eq("id", ids.dono).single()).data).toEqual({ cidade: "Santa Mônica", bio: "Professora, tranquila, cuido bem da casa." });
       await p.context().close();

@@ -253,7 +253,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const preferenciaParceiro = usePreferenciaParceiro();
   const papelAtivo = papelDaBarra({ admin: display.role === "admin", modo: mode === "owner" ? "owner" : "tenant", parceiroAprovado, preferenciaParceiro, pathname });
   // C8/E55: na Conta a foto aparece uma vez (o topo editável; o espelho, menor). As miniaturas de navegação ficam só nas iniciais.
-  const fotoNav = pathname === "/dashboard/conta" ? null : myPhoto;
+  const fotoNav = pathname === "/dashboard/conta" || pathname === "/dashboard/conta/perfil" ? null : myPhoto;
   const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />;
 
   const sidebar = (
