@@ -2017,7 +2017,7 @@
         "publico"
       ],
       "specs": [
-        "t359-calendario-etapa9-ical"
+        "t360-calendario-etapa9-ical"
       ]
     },
     "/api/comissao": {
@@ -3194,7 +3194,7 @@
         "proprietario"
       ],
       "specs": [
-        "t359-calendario-etapa9-ical"
+        "t360-calendario-etapa9-ical"
       ]
     },
     "src/lib/data/blocks-actions.ts#getDatasIndisponiveis": {
