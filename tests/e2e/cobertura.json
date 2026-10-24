@@ -450,7 +450,8 @@
         "t72-paginas-institucionais",
         "t177-video-institucional",
         "t201-qa-muse",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t354-varredura-bloco19"
       ]
     },
     "/comparar": {
@@ -645,7 +646,8 @@
         "t351-telas-linkedin-63a",
         "t355-conta-a-perfil-espelho",
         "t352-varredura-bloco17",
-        "t353-varredura-bloco18"
+        "t353-varredura-bloco18",
+        "t354-varredura-bloco19"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -668,7 +670,8 @@
         "t332-merges-1170-1172",
         "t337-varredura-redundancia",
         "t362-perfil-avaliacoes-pix",
-        "t353-varredura-bloco18"
+        "t353-varredura-bloco18",
+        "t354-varredura-bloco19"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -680,7 +683,8 @@
       "specs": [
         "t48-varredura",
         "t183-telas-logadas-390",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t354-varredura-bloco19"
       ]
     },
     "/dashboard/contratos": {
@@ -1257,7 +1261,8 @@
         "t69-botoes-header",
         "t72-paginas-institucionais",
         "t311-marco-principal-unico",
-        "t325-fotos-ilustrativas-empresas"
+        "t325-fotos-ilustrativas-empresas",
+        "t354-varredura-bloco19"
       ]
     },
     "/parceiros": {
