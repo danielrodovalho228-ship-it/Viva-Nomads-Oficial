@@ -3,14 +3,14 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 import { acharRedundancias } from "../fixtures/redundancia";
 
 /**
- * T360 — E50: a entrada do assistente de anúncio (/dashboard/imoveis/novo) tem UMA apresentação — o banner com o CEP e
+ * T364 — E50: a entrada do assistente de anúncio (/dashboard/imoveis/novo) tem UMA apresentação — o banner com o CEP e
  * a IA, que leva o único H1 ("Anunciar seu imóvel em 6 passos"). O título "Anuncie seu imóvel / Em 6 passos…" saiu.
  * O indicador de passos continua. A 390 e 1280 px, com prints (FASE=antes|depois).
  */
 const SAIDA = "tests/laboratorio/saida";
-const FASE = process.env.T360_FASE ?? "depois";
+const FASE = process.env.T364_FASE ?? "depois";
 
-test.describe("T360 — E50: entrada do anúncio sem título duplicado", () => {
+test.describe("T364 — E50: entrada do anúncio sem título duplicado", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
   const senha = novaSenha();
@@ -28,7 +28,7 @@ test.describe("T360 — E50: entrada do anúncio sem título duplicado", () => {
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: w, height: w === 1280 ? 900 : 844 });
       await p.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
-      await p.screenshot({ path: `${SAIDA}/t360-${FASE}-entrada-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t364-${FASE}-entrada-${w}.png` });
       if (FASE === "antes") return p.context().close();
       await expect(p.locator("h1")).toHaveCount(1);
       await expect(p.locator("h1")).toHaveText("Anunciar seu imóvel em 6 passos");
