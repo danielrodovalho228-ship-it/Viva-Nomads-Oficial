@@ -112,15 +112,20 @@ test.describe("T392 — Cadastro 10: Revise e publique (cadastro-imovel-10)", ()
       // O "Publicar anúncio" visível não fica sob nenhum elemento fixo (barra de fotos, "Fale com a Viva").
       const publicar = p.locator('[data-testid="publicar-anuncio"]:visible');
       await publicar.scrollIntoViewIfNeeded();
+      // Travado (falta o aceite), o botão tem pointer-events: none e o elementFromPoint passaria por ele: liga só para medir.
       const livre = await publicar.evaluate((el) => {
-        const r = el.getBoundingClientRect();
+        const b = el as HTMLElement;
+        const antes = b.style.pointerEvents;
+        b.style.pointerEvents = "auto";
+        const r = b.getBoundingClientRect();
         const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-        return !!topo && (topo === el || el.contains(topo));
+        b.style.pointerEvents = antes;
+        return !!topo && (topo === b || b.contains(topo));
       });
       expect(livre, "nada fixo por cima do Publicar").toBe(true);
       await p.evaluate(() => document.querySelector("[data-painel-main]")?.scrollTo(0, 0));
       await p.evaluate(() => window.scrollTo(0, 0));
-      await p.screenshot({ path: `${SAIDA}/t392-revisao-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t392-revisao-${w}.png`, fullPage: w === 390 });
       await p.context().close();
     });
   }
