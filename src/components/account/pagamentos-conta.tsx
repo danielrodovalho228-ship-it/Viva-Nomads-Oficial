@@ -67,7 +67,7 @@ export function PagamentosConta() {
   };
 
   return (
-    <div className="grid gap-4" data-testid="conta-pagamentos">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4" data-testid="conta-pagamentos">
       {dono && (
         <section className="rounded-xl bg-white p-4 sm:p-6" aria-labelledby="pag-recebe-titulo" data-testid="conta-pix">
           <h2 id="pag-recebe-titulo" className="font-title text-2xl font-semibold text-ink">

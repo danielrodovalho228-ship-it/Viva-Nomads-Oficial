@@ -34,3 +34,9 @@ test("a chave salva aparece mascarada no campo com o botão de copiar", () => {
   assert.match(tela, /\{pix\.rotuloTipo\}: \{pix\.mascarada\}/);
   assert.match(tela, /aria-label=\{copiado \? "Chave Pix copiada" : "Copiar chave Pix"\}/);
 });
+
+test("a coluna não alarga com chave Pix longa (390 px sem rolagem lateral)", () => {
+  const tela = ler("src/components/account/pagamentos-conta.tsx");
+  assert.match(tela, /grid grid-cols-\[minmax\(0,1fr\)\] gap-4" data-testid="conta-pagamentos"/);
+  assert.match(tela, /min-w-0 flex-1 truncate/);
+});
