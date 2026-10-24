@@ -82,6 +82,7 @@ import {
 } from "@/lib/contrato-blocos";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
+import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { apagarFotosDoAnuncio, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
@@ -474,6 +475,8 @@ export interface PropertyInput {
   petsRegras?: unknown;
   /** Pacote de limpeza durante a estadia; validado no servidor (0144). */
   limpezaEstadia?: unknown;
+  /** CAMPOS-1: regras da casa estruturadas (silêncio, fumo, festas, visitas); validadas no servidor (0233). */
+  regrasCasa?: unknown;
   /**
    * Rua, número e complemento (complemento do prompt 23): vão para a coluna RESTRITA exact_address (nunca pública;
    * lida só pelo dono, admin, inquilino aceito e o morador de visita presencial confirmada). Vazio = não mexe.
@@ -1078,6 +1081,22 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       await supabase.from("properties").update({ limpeza_estadia: pacote }).eq("id", id).eq("owner_id", user.id);
     } catch {
       /* migração 0144 ausente — segue sem o pacote */
+    }
+  }
+
+  // Regras da casa estruturadas (0233): validadas aqui; nada definido grava null. O fumo definido
+  // também acerta o smoking_allowed antigo (só "permitido" é fumar no imóvel), que outras telas leem.
+  if ("regrasCasa" in input) {
+    try {
+      const regras = normalizarRegrasCasa(input.regrasCasa);
+      const fumante = fumoParaSmokingAllowed(regras);
+      await supabase
+        .from("properties")
+        .update({ regras_casa: regras, ...(fumante !== undefined ? { smoking_allowed: fumante } : {}) })
+        .eq("id", id)
+        .eq("owner_id", user.id);
+    } catch {
+      /* migração 0233 ausente — segue com os fatos antigos */
     }
   }
 
