@@ -655,7 +655,6 @@
         "t355-conta-a-perfil-espelho",
         "t361-conta-a-correcoes-qa",
         "t351-telas-linkedin-63a",
-        "t355-conta-a-perfil-espelho",
         "t352-varredura-bloco17",
         "t353-varredura-bloco18",
         "t354-varredura-bloco19",
@@ -685,8 +684,8 @@
         "t353-varredura-bloco18",
         "t354-varredura-bloco19",
         "t370-conta-a3-papeis",
-        "t391-conta-conformidade",
         "t385-varredura-bloco21",
+        "t391-conta-conformidade",
         "t392-varredura-bloco24"
       ]
     },
@@ -855,6 +854,7 @@
         "t338-varredura-bloco15",
         "t352-varredura-bloco17",
         "t386-cadastro-01-tipo",
+        "t401-cadastro-10-revisao",
         "t387-varredura-bloco22",
         "t392-varredura-bloco24",
         "t406-varredura-bloco25"
@@ -1990,8 +1990,8 @@
       ],
       "specs": [
         "t369-conta-a2-avaliacoes",
-        "t391-conta-conformidade",
         "t385-varredura-bloco21",
+        "t391-conta-conformidade",
         "t392-varredura-bloco24"
       ]
     }

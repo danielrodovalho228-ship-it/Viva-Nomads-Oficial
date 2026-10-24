@@ -149,7 +149,7 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     await expect(page.getByTestId("conforto-faltam")).toHaveText("Falta confirmar 1 item.");
     // 10 passos: das Comodidades à Revisão são 5 "Continuar" (Regras, Descrição, Preço, Disponibilidade, Revisão).
     await continuarAte(page, "comodidades", "revisao");
-    await expect(page.getByTestId("etapa-revisar").getByTestId("checklist-item-conforto")).toHaveAttribute("data-ok", "0", { timeout: 20_000 });
+    await expect(page.getByTestId("etapa-revisar").locator('[data-itens~="conforto"]')).toHaveAttribute("data-ok", "0", { timeout: 20_000 });
     await expect(page.getByTestId("publicar-falta-conforto")).toContainText(`Falta confirmar: ${ITENS_CONFORTO[0].rotulo}.`);
     await expect(page.getByTestId("publicar-anuncio")).toBeDisabled();
     await semRolagemLateral(page);
