@@ -215,7 +215,8 @@
         "admin"
       ],
       "specs": [
-        "t442-foto-perfil-revisao"
+        "t442-foto-perfil-revisao",
+        "t408-varredura-bloco27"
       ]
     },
     "/admin/marketing": {
@@ -295,7 +296,8 @@
         "t237-correcoes-35a",
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
-        "t438-vocab-a"
+        "t438-vocab-a",
+        "t408-varredura-bloco27"
       ]
     },
     "/alerta-busca/desligar": {
@@ -426,7 +428,8 @@
         "t392-varredura-bloco24",
         "t406-varredura-bloco25",
         "t407-varredura-bloco26",
-        "t409-filtros-adendo3"
+        "t409-filtros-adendo3",
+        "t408-varredura-bloco27"
       ]
     },
     "/cidades": {
@@ -487,7 +490,8 @@
         "t100-comparar-imoveis",
         "t156-comparar-exemplos",
         "t48-varredura",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t408-varredura-bloco27"
       ]
     },
     "/conferir": {
@@ -643,7 +647,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t302-varredura-logada-bloco6"
+        "t302-varredura-logada-bloco6",
+        "t408-varredura-bloco27"
       ]
     },
     "/dashboard/conta": {
@@ -708,7 +713,8 @@
         "t403-nav-a",
         "t402-conta-leva2",
         "t407-varredura-bloco26",
-        "t439-e101-deteccao-espelho"
+        "t439-e101-deteccao-espelho",
+        "t408-varredura-bloco27"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -890,7 +896,8 @@
         "t433-l2a-itens-9-24",
         "t407-varredura-bloco26",
         "t400-chacara-sem-internet",
-        "t410-niveis-medir-rascunho"
+        "t410-niveis-medir-rascunho",
+        "t408-varredura-bloco27"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1309,7 +1316,8 @@
         "t431-perto-a",
         "t407-varredura-bloco26",
         "t439-e101-deteccao-espelho",
-        "t440-e98-imovel"
+        "t440-e98-imovel",
+        "t408-varredura-bloco27"
       ]
     },
     "/modelodenegocio": {
@@ -1348,7 +1356,8 @@
         "t171-faixas-taxa-cors",
         "t231-admin-numeros-com-lista",
         "t236-parceiros-ciclo",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t408-varredura-bloco27"
       ]
     },
     "/parceiros/avaliadores": {
@@ -1453,7 +1462,8 @@
         "t349-imovel-sem-500-l31",
         "t355-conta-a-perfil-espelho",
         "t338-varredura-bloco15",
-        "t442-foto-perfil-revisao"
+        "t442-foto-perfil-revisao",
+        "t408-varredura-bloco27"
       ]
     },
     "/qualificar": {
@@ -1650,7 +1660,8 @@
       ],
       "specs": [
         "t236-parceiros-ciclo",
-        "t239-cartao-parceiro"
+        "t239-cartao-parceiro",
+        "t408-varredura-bloco27"
       ]
     },
     "/parceiros/[slug]": {
@@ -1663,7 +1674,8 @@
         "t250-parceiros-contratacao",
         "t253-orcamento-na-pagina-do-parceiro",
         "t311-marco-principal-unico",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t408-varredura-bloco27"
       ]
     },
     "/parceiros/ativar": {
@@ -1684,7 +1696,8 @@
         "t241-contas-teste-36",
         "t262-detalhe-imovel-41",
         "t311-marco-principal-unico",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t408-varredura-bloco27"
       ]
     },
     "/admin/contratos/[id]": {
@@ -1883,7 +1896,8 @@
         "t406-varredura-bloco25",
         "t407-varredura-bloco26",
         "t439-e101-deteccao-espelho",
-        "t410-niveis-medir-rascunho"
+        "t410-niveis-medir-rascunho",
+        "t408-varredura-bloco27"
       ]
     },
     "/dashboard/recibos": {
