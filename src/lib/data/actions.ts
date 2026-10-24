@@ -606,16 +606,39 @@ async function exigirAceiteIa(
   supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
   propertyId: string,
   aceiteIa: unknown,
+  ownerId: string,
 ): Promise<string | null> {
   const v = validarAceiteIa(aceiteIa);
-  if (!v.ok) return "Marque a confirmação de que você revisou o anúncio para publicar.";
+  // L2-B item 23: quem já aceitou a versão atual (termo_ia_aceites) não marca de novo; o servidor confere aqui, nunca
+  // pela palavra do navegador.
+  const jaAceitou = v.ok ? false : await termoIaAceitoNoServidor(supabase, ownerId);
+  if (!v.ok && !jaAceitou) return "Marque a confirmação de que você revisou o anúncio para publicar.";
+  const aceite = v.ok ? v.aceite : { versao: TERMO_IA_VERSAO, camposGeradosIa: [], camposEditados: [] };
   const { error } = await supabase.from("anuncio_aceites_ia").insert({
     property_id: propertyId,
-    versao_termo: v.aceite.versao,
-    campos_gerados_ia: v.aceite.camposGeradosIa,
-    campos_editados: v.aceite.camposEditados,
+    versao_termo: aceite.versao,
+    campos_gerados_ia: aceite.camposGeradosIa,
+    campos_editados: aceite.camposEditados,
   });
-  return error ? "Não foi possível registrar a sua confirmação. Tente novamente." : null;
+  if (error) return "Não foi possível registrar a sua confirmação. Tente novamente.";
+  if (v.ok) await gravarAceiteTermoIa(supabase, ownerId);
+  return null;
+}
+
+/** O dono já aceitou a versão ATUAL do termo (L2-B item 23)? Sem a 0241 aplicada: não (pede a caixa, como antes). */
+async function termoIaAceitoNoServidor(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, ownerId: string): Promise<boolean> {
+  const { data, error } = await supabase.from("termo_ia_aceites").select("versao").eq("user_id", ownerId).eq("versao", TERMO_IA_VERSAO).maybeSingle();
+  return !error && !!data;
+}
+
+/** Grava o aceite do dono para a versão atual (uma linha por versão; repetir não é erro). Best-effort. */
+async function gravarAceiteTermoIa(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, ownerId: string): Promise<void> {
+  try {
+    if (await termoIaAceitoNoServidor(supabase, ownerId)) return;
+    await supabase.from("termo_ia_aceites").insert({ user_id: ownerId, versao: TERMO_IA_VERSAO });
+  } catch {
+    /* 0241 ausente: o aceite por anúncio continua valendo */
+  }
 }
 
 /**
@@ -904,7 +927,7 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   if (!input.asDraft) {
     const falta = await faltaParaPublicar(supabase, user.id, data.id as string);
     if (falta) return { ok: false, id: data.id, error: `${falta} O anúncio ficou salvo como rascunho.` };
-    const semAceite = await exigirAceiteIa(supabase, data.id as string, input.aceiteIa);
+    const semAceite = await exigirAceiteIa(supabase, data.id as string, input.aceiteIa, user.id);
     if (semAceite) return { ok: false, id: data.id, error: `${semAceite} O anúncio ficou salvo como rascunho.` };
   }
   const { error: stErr } = await supabase
@@ -1179,7 +1202,7 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
     const falta = await faltaParaPublicar(supabase, user.id, id);
     if (falta) return { ok: false, id, error: `${falta} Suas alterações foram salvas.` };
     if (antes?.status !== "active") {
-      const semAceite = await exigirAceiteIa(supabase, id, input.aceiteIa);
+      const semAceite = await exigirAceiteIa(supabase, id, input.aceiteIa, user.id);
       if (semAceite) return { ok: false, id, error: `${semAceite} Suas alterações foram salvas.` };
     }
     const { error: pubErr } = await supabase

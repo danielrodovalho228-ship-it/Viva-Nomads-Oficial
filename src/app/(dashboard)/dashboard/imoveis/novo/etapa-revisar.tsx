@@ -5,7 +5,7 @@ import { CheckCircle2, Circle, Clock, ImageIcon, XCircle } from "lucide-react";
 import type { ItemProntidao, Prontidao } from "@/lib/anuncio/prontidao";
 import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { TERMO_IA_TEXTO } from "@/lib/anuncio/termo-ia";
+import { TERMO_IA_TEXTO, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, type Negociacao } from "@/lib/anuncio/negociacao";
 import { conferenciaAssistente, etapaDoItemProntidao, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
 import { TEXTOS_REVISAO, linhaRevisao, tituloPrevia } from "@/lib/anuncio/assistente-telas";
@@ -49,6 +49,8 @@ export function EtapaRevisar(p: {
   setAceitouIa: (v: boolean) => void;
   /** 64-B: o texto mudou depois do aceite — aviso logo acima da caixa. */
   avisoAceite?: string | null;
+  /** L2-B item 23: o dono já aceitou a versão atual do termo (servidor) → linha no lugar da caixa. */
+  termoJaAceito?: { aceitoEm: string } | null;
   conforto: string[];
   publishError: string | null;
   podePublicar: boolean;
@@ -170,10 +172,16 @@ export function EtapaRevisar(p: {
               {p.avisoAceite}
             </p>
           )}
-          <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
-            <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-forest" />
-            <span>{TERMO_IA_TEXTO}</span>
-          </label>
+          {p.termoJaAceito ? (
+            <p className="text-sm text-muted" data-testid="aceite-ia-ja-aceito">
+              {textoTermoJaAceito(p.termoJaAceito.aceitoEm)}
+            </p>
+          ) : (
+            <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
+              <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-forest" />
+              <span>{TERMO_IA_TEXTO}</span>
+            </label>
+          )}
           {p.publishError && <p className="text-sm text-red-600">{p.publishError}</p>}
           {/* Ordem 504d9679, peça 3: convite opcional; nunca entra na conta de podePublicar. */}
           {!p.editingId && <ConviteFotoCandidatura texto={CONVITE_FOTO_ANUNCIO_TEXTO} testId="convite-foto-anuncio" />}

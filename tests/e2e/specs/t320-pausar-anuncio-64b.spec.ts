@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, definirPlano, entrar, novaSenha, novoSufixo, statusDoImovel } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, definirPlano, entrar, novaSenha, novoSufixo, statusDoImovel, aceitarTermoIaSePreciso } from "../fixtures/laboratorio";
 import { aceiteParaRascunho } from "../../../src/lib/anuncio/aceite-ia-rascunho";
 
 /**
@@ -71,7 +71,7 @@ test.describe("T320 — pausar anúncio, limite do plano e aceite de IA (64-B)",
       expect(await motivo(id)).toBe("dono");
     }
     await p.goto(`/dashboard/imoveis/${ids.rascunho}/editar`, { waitUntil: "domcontentloaded" });
-    await p.getByTestId("aceite-ia").getByRole("checkbox").check({ timeout: 20_000 });
+    await aceitarTermoIaSePreciso(p);
     await p.getByRole("button", { name: "Publicar", exact: true }).click();
     await expect.poll(() => statusDoImovel(ids.rascunho), { timeout: 30_000 }).toBe("active");
     await p.context().close();
@@ -108,13 +108,17 @@ test.describe("T320 — pausar anúncio, limite do plano e aceite de IA (64-B)",
     await expect(p.getByTestId("anuncio-pausado")).not.toContainText("R$");
     await p.screenshot({ path: `${SAIDA}/t320-publico-pausado-390.png`, fullPage: true });
     // Rascunho continua 404.
-    const { data } = await adm().from("properties").insert({ owner_id: ids.dono, title: "Rascunho invisível t320", city: "Uberlândia", status: "draft" }).select("id").single();
-    const r2 = await p.goto(`/imoveis/${data!.id}`, { waitUntil: "domcontentloaded" });
+    const { data, error } = await adm().from("properties").insert({ owner_id: ids.dono, title: `Rascunho invisível t320 ${sufixo}`, city: "Uberlândia", status: "draft", monthly_price: 3200 }).select("id").single();
+    // Sem o id, o motivo do banco aparece no relatório (antes: "Cannot read properties of null").
+    if (error || !data) throw new Error(`rascunho de teste não foi criado: ${error?.message ?? "sem linha"}`);
+    const r2 = await p.goto(`/imoveis/${data.id}`, { waitUntil: "domcontentloaded" });
     expect(r2?.status()).toBe(404);
     await ctx.close();
   });
 
   test("5. o aceite de IA volta com o rascunho e cai ao editar a descrição", async ({ browser }) => {
+    // L2-B item 23: o 64-B vale para quem ainda não aceitou o termo no servidor; os testes anteriores publicaram (e aceitaram).
+    await adm().from("termo_ia_aceites").delete().eq("user_id", ids.dono);
     const titulo = `Aceite t320 ${sufixo}`;
     const descricao = "Studio mobiliado no Centro, com home office, internet rápida e cozinha completa. Pronto para morar.";
     const { data, error } = await adm()
@@ -124,6 +128,7 @@ test.describe("T320 — pausar anúncio, limite do plano e aceite de IA (64-B)",
         title: titulo,
         city: "Uberlândia",
         status: "draft",
+        monthly_price: 3200,
         draft_data: { title: titulo, description: descricao, monthlyPrice: "3200", city: "Uberlândia", step: 5, ordemEtapas: 4, etapaMax: 5, aceiteIa: aceiteParaRascunho(true, titulo, descricao) },
       })
       .select("id")

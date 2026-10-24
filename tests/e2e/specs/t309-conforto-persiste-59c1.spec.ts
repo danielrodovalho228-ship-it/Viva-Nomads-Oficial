@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, aceitarTermoIaSePreciso } from "../fixtures/laboratorio";
 import { noPasso } from "../fixtures/cadastro";
 import { VERSAO_CONFORTO } from "../../../src/config/conforto-minimo";
 
@@ -117,7 +117,7 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
     await abrir(page, "revisao");
     await noPasso(page, "revisao", 30_000);
     await expect(page.getByTestId("publicar-falta-conforto")).toHaveCount(0);
-    await page.getByTestId("aceite-ia").getByRole("checkbox").check();
+    await aceitarTermoIaSePreciso(page);
     const publicar = page.getByTestId("publicar-anuncio");
     const faltaOutros = page.getByTestId("publicar-falta-outros");
     await expect(publicar.and(page.locator(":enabled")).or(faltaOutros)).toBeVisible({ timeout: 20_000 });
