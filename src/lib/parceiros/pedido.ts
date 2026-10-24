@@ -4,6 +4,7 @@
   A Viva só conecta: nunca guarda dinheiro. Taxa de serviço de 10% sobre o valor do serviço, todas as categorias.
 */
 import { dividirValor, TAXA_SERVICO_PARCEIRO } from "./regras.ts";
+import { lerReais } from "../reais.ts";
 
 // ── Estados ───────────────────────────────────────────────────────────────────────────────────────────────────
 export const STATUS_PEDIDO = [
@@ -136,7 +137,8 @@ export function congelarValores(valorCombinado: number): ValoresCongelados {
 }
 
 export function validarOrcamento(valor: unknown): { ok: true; valor: number } | { ok: false; erro: string } {
-  const v = typeof valor === "string" ? Number(valor.replace(/\./g, "").replace(",", ".")) : Number(valor);
+  const lido = typeof valor === "string" || typeof valor === "number" ? lerReais(valor) : null;
+  const v = lido?.ok && lido.valor != null ? lido.valor : NaN;
   if (!Number.isFinite(v) || v < VALOR_MIN) return { ok: false, erro: "Informe o valor do serviço." };
   if (v > VALOR_MAX) return { ok: false, erro: "Valor acima do limite. Fale com a equipe pelas mensagens." };
   return { ok: true, valor: Math.round(v * 100) / 100 };
@@ -196,6 +198,53 @@ export function visaoDoParceiro(status: string, imovel: ImovelDoPedido | null, c
       ? { bairro: imovel.bairro, cidade: imovel.cidade, areaM2: imovel.areaM2, quartos: imovel.quartos, endereco: liberado ? imovel.endereco : null }
       : null,
   };
+}
+
+// ── L2-B item 16: contato depois do aceite ────────────────────────────────────────────────────────────────────
+/*
+  Aceito o orçamento, o cliente vê o telefone e o e-mail do parceiro, e o parceiro vê os do cliente. Antes do aceite,
+  nada de contato: a conversa segue pela plataforma. A Viva não intermedeia o pagamento (PAGAMENTO_PARCEIROS_ATIVO
+  desligado) — o texto do pagamento inativo continua na tela.
+*/
+export interface ContatoDoPedido {
+  telefone: string | null;
+  email: string | null;
+}
+export const TEXTO_CONTATO_ANTES_DO_ACEITE = "Antes do aceite do orçamento, a conversa segue pela plataforma.";
+
+/** O contato da outra parte, só nos status depois do aceite (os mesmos do endereço). Sem nenhum dado, null. */
+export function contatoNoPedido(status: string, contato: ContatoDoPedido): ContatoDoPedido | null {
+  if (!(STATUS_COM_DADOS_LIBERADOS as readonly string[]).includes(status)) return null;
+  const telefone = (contato.telefone ?? "").replace(/\D/g, "") || null;
+  const email = (contato.email ?? "").trim() || null;
+  return telefone || email ? { telefone, email } : null;
+}
+
+/** "34999998888" → "(34) 99999-8888"; outro formato volta como veio. */
+export function telefoneNaTela(t: string): string {
+  const d = t.replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
+  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return t;
+}
+
+// ── L2-B item 17: recusa do parceiro ──────────────────────────────────────────────────────────────────────────
+/** Todo "Recusar" pede confirmação com este texto; o motivo é opcional. */
+export const AVISO_RECUSAR_PEDIDO = "Recusar este pedido? O cliente será avisado.";
+export const AVISO_RECUSAR_ORCAMENTO = "Recusar este orçamento? O parceiro será avisado.";
+/** "Pedir a outro parceiro": a busca de parceiros na mesma categoria. */
+export const linkOutroParceiro = (categoria: string) => `/parceiros/buscar?categoria=${encodeURIComponent(categoria)}`;
+
+/** Motivo opcional: vazio vale; acima do limite, erro. */
+export function validarMotivoRecusa(motivo: unknown): { ok: true; motivo: string | null } | { ok: false; erro: string } {
+  const m = String(motivo ?? "").trim().replace(/\s+/g, " ");
+  if (m.length > MOTIVO_RECUSA_MAX) return { ok: false, erro: `O motivo cabe em até ${MOTIVO_RECUSA_MAX} caracteres.` };
+  return { ok: true, motivo: m || null };
+}
+
+/** A frase que o cliente recebe (no app e por e-mail). */
+export function textoRecusaAoCliente(nomeParceiro: string, motivo: string | null): string {
+  return `${nomeParceiro} recusou o seu pedido${motivo ? `. Motivo: ${motivo}` : ""}. Você pode pedir a outro parceiro.`;
 }
 
 // ── Conclusão sem resposta ────────────────────────────────────────────────────────────────────────────────────

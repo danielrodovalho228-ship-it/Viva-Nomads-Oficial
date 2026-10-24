@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
+import { distanciaAte } from "@/lib/busca/distancia-destino";
+import { lerDestinoDaBusca } from "@/lib/busca/destino-sessao";
 
 interface Linha {
   destino: string;
@@ -15,7 +17,7 @@ interface Linha {
  * ativos da mesma cidade do anúncio (E31, destinosDoBloco) — de carro e a pé (de ônibus com a chave). Calculado no servidor com o ponto exato; aqui
  * chegam só os textos arredondados. Sem dado, o bloco não aparece.
  */
-export function TempoAte({ imovelId }: { imovelId: string }) {
+export function TempoAte({ imovelId, ponto }: { imovelId: string; /** E79: ponto PÚBLICO (aproximado) do anúncio, para a linha reta quando o servidor não traz. */ ponto?: { lat: number; lng: number } | null }) {
   const [linhas, setLinhas] = useState<Linha[] | null>(null);
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
@@ -24,14 +26,24 @@ export function TempoAte({ imovelId }: { imovelId: string }) {
       const v = sp.get(k);
       if (v) q.set(k, v);
     }
+    // E79: o cartão da busca não leva o destino no link — vale o destino ativo guardado pela busca nesta aba.
+    const sessao = q.has("destino") || q.has("dlat") ? null : lerDestinoDaBusca();
+    if (sessao) for (const [k, v] of Object.entries(sessao.params)) if (v) q.set(k, v);
+    // A linha do destino da busca nunca falta: sem resposta do servidor para ele, a linha reta daqui (ponto público).
+    const comDaBusca = (l: Linha[]): Linha[] => {
+      if (!sessao?.alvo || l.some((x) => x.daBusca)) return l;
+      const d = ponto ? distanciaAte(ponto, sessao.alvo) : null;
+      return d ? [{ destino: sessao.alvo.rotulo, slug: null, daBusca: true, tempos: [d.texto] }, ...l] : l;
+    };
     let vivo = true;
     fetch(`/api/tempos/imovel/${imovelId}?${q.toString()}`)
       .then((r) => r.json())
-      .then((j: { linhas?: Linha[] }) => vivo && setLinhas(j.linhas ?? []))
-      .catch(() => vivo && setLinhas([]));
+      .then((j: { linhas?: Linha[] }) => vivo && setLinhas(comDaBusca(j.linhas ?? [])))
+      .catch(() => vivo && setLinhas(comDaBusca([])));
     return () => {
       vivo = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- o ponto público do anúncio não muda na página
   }, [imovelId]);
 
   if (!linhas || linhas.length === 0) return null;

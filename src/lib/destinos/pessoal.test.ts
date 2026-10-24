@@ -116,3 +116,14 @@ test("RLS e privacidade: tabela só da pessoa; admin lê só o agregado (funçã
   const acoes = ler("src/lib/destinos/pessoal-actions.ts");
   assert.match(acoes, /consumirLimite\(/);
 });
+
+test("E81: o local guardado tem como ser apagado; apagado o ativo, a busca volta para qualquer lugar", () => {
+  const campo = ler("src/components/busca/campo-destino.tsx");
+  assert.match(campo, /data-testid="destino-pessoal-apagar"/);
+  assert.match(campo, /aria-label=\{`Apagar o local \$\{l\.rotulo\}`\}/);
+  // Some na hora (antes da resposta), o ativo cai e, se o servidor falhar, volta com o aviso.
+  assert.match(campo, /setLocais\(\(ls\) => ls\.filter\(\(x\) => x\.id !== l\.id\)\);\s*if \(ativo\) escolher\(null\);\s*const r = await apagarLocal\(l\.id\)/);
+  assert.match(campo, /setLocais\(antes\)/);
+  const acoes = ler("src/lib/destinos/pessoal-actions.ts");
+  assert.match(acoes, /from\("destinos_pessoais"\)\.delete\(\)\.eq\("id", id\)\.eq\("user_id", uid\)/);
+});

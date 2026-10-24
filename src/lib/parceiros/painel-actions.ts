@@ -7,6 +7,7 @@ import { BUCKET_PARCEIROS, urlMidiaParceiro } from "@/lib/data/parceiros-publico
 import { cidadeDoCep, ehUuid, normalizarCep } from "@/lib/fotografos/regras";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { chaveCidade } from "@/lib/cidades";
+import { lerReais } from "@/lib/reais";
 import { semMetadados } from "@/lib/foto-reconversao";
 import {
   CIDADES_MAX,
@@ -283,8 +284,8 @@ export async function salvarServico(e: { id?: string | null; categoria: string; 
   if (!categoriaValida(e.categoria) || !((m.p.categorias as string[]) ?? []).includes(e.categoria)) return { ok: false, erro: "Escolha uma das suas categorias." };
   const titulo = limpar(e.titulo, 80).replace(/\s+/g, " ");
   if (titulo.length < 3) return { ok: false, erro: "Dê um nome ao serviço." };
-  const precoTxt = String(e.precoBase ?? "").replace(/\./g, "").replace(",", ".").trim();
-  const preco = precoTxt ? Number(precoTxt) : null;
+  const precoLido = lerReais(typeof e.precoBase === "number" ? e.precoBase : String(e.precoBase ?? ""));
+  const preco = precoLido.ok ? precoLido.valor : NaN;
   if (preco != null && !(preco > 0 && preco < 1_000_000)) return { ok: false, erro: "Preço inválido (deixe em branco para \"sob consulta\")." };
   const unidade = UNIDADES_SERVICO.includes(String(e.unidade) as (typeof UNIDADES_SERVICO)[number]) ? String(e.unidade) : null;
   const prazo = String(e.prazoDias ?? "").trim() ? Number(e.prazoDias) : null;

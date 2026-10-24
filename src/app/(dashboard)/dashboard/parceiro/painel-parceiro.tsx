@@ -9,6 +9,7 @@ import { EnviarImagemParceiro } from "@/components/parceiros/enviar-imagem";
 import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
 import { meuCartaoDoParceiro } from "@/lib/data/cartoes-actions";
 import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
+import { reaisParaCampo } from "@/lib/reais";
 import { CIDADES_MAX, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
@@ -321,7 +322,7 @@ function AbaServicos({ p, rodar }: { p: PainelParceiro; rodar: Rodar }) {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setF({ id: s.id, categoria: s.categoria, titulo: s.titulo, descricao: s.descricao ?? "", precoBase: s.precoBase == null ? "" : String(s.precoBase), unidade: s.unidade ?? "por serviço", prazoDias: s.prazoDias == null ? "" : String(s.prazoDias) })}>
+                  <Button variant="ghost" size="sm" onClick={() => setF({ id: s.id, categoria: s.categoria, titulo: s.titulo, descricao: s.descricao ?? "", precoBase: reaisParaCampo(s.precoBase, true), unidade: s.unidade ?? "por serviço", prazoDias: s.prazoDias == null ? "" : String(s.prazoDias) })}>
                     Editar
                   </Button>
                   <ConfirmarNaPagina aviso="Remover este serviço?" confirmar="Remover" onConfirmar={() => rodar(() => removerServico(s.id), "Serviço removido.")} variant="ghost" size="sm">

@@ -10,6 +10,7 @@ import { cnpjValido, cpfValido } from "@/lib/documento-pessoa";
 import { contemContato } from "@/lib/pedidos/pedidos";
 import { semMetadados } from "@/lib/foto-reconversao";
 import { chaveCidade } from "@/lib/cidades";
+import { lerReais } from "@/lib/reais";
 import { vistoriaAtiva } from "./chave";
 import { CATEGORIA_AVALIADOR, pendenciasDoCredenciamento, podeAprovarParaTeste, podeAtivar, solicitacaoDoAvaliador, validarPedidoAvaliador } from "./entrada";
 import { slugBase } from "@/lib/parceiros/regras";
@@ -302,7 +303,8 @@ export async function adminSalvarPreco(form: FormData): Promise<Res> {
   if (!a) return SEM_ACESSO;
   const cidade = texto(form.get("cidade"), 80);
   const porte = String(form.get("porte") ?? "") as Porte;
-  const valor = Number(String(form.get("valor") ?? "").replace(/\./g, "").replace(",", "."));
+  const valorLido = lerReais(String(form.get("valor") ?? ""));
+  const valor = valorLido.ok && valorLido.valor != null ? valorLido.valor : NaN;
   const inclui = texto(form.get("inclui"), 300) || null;
   if (!chaveCidade(cidade)) return { ok: false, erro: "Informe a cidade." };
   if (!PORTES.includes(porte)) return { ok: false, erro: "Escolha o porte." };

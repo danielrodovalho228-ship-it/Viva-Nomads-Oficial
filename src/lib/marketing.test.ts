@@ -9,7 +9,9 @@ import { validarGasto, valorReais, totaisPorMes, gastosCsv, type GastoMarketing 
 test("valor em reais no formato brasileiro", () => {
   assert.equal(valorReais("1.234,56"), 1234.56);
   assert.equal(valorReais("R$ 350,5"), 350.5);
-  assert.equal(valorReais("350.5"), 350.5);
+  assert.equal(valorReais("3.300"), 3300, "ponto = milhar");
+  assert.equal(valorReais("3,5"), 3.5);
+  assert.ok(Number.isNaN(valorReais("350.5")), "ambíguo: erro, nunca número inventado");
   assert.ok(Number.isNaN(valorReais("abc")));
   assert.ok(Number.isNaN(valorReais("")));
 });
