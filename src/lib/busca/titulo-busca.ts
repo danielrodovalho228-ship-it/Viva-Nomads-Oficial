@@ -24,3 +24,13 @@ export function tituloDaBusca({ n, local, pronto, pet }: TituloBuscaEntrada): st
   const extra = pet ? (um ? " que aceita pets" : " que aceitam pets") : "";
   return `${qtd} ${nome}${onde}${extra}`;
 }
+
+/**
+ * E82-A + E91 (régua do leve): a linha da contagem que fica acima da lista no lugar do título grande —
+ * "15 imóveis em Uberlândia"; sem resultado, "Nenhum imóvel com estes filtros".
+ */
+export function contagemDaBusca({ n, local }: { n: number; local?: string }): string {
+  if (n === 0) return "Nenhum imóvel com estes filtros";
+  const lugar = local?.trim().replace(/\s+/g, " ").slice(0, 80);
+  return `${n} ${n === 1 ? "imóvel" : "imóveis"}${lugar ? ` em ${lugar}` : ""}`;
+}

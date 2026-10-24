@@ -4,10 +4,10 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
-test("4f8d17c6: o botão flutuante da Viva aparece também na /buscar (mesmo comportamento em todas as páginas)", () => {
+test("E95: a bolha flutuante da Viva não aparece na /buscar (não cobre os cards; a ajuda fica como link na página)", () => {
   const src = ler("components/ajuda/viva-chat.tsx");
   const linha = src.split("\n").find((l) => l.includes("const ESCONDER")) ?? "";
-  assert.doesNotMatch(linha, /"\/buscar"/);
+  assert.match(linha, /"\/buscar"/);
 });
 
 test("F3: /buscar mantém a ajuda como link na página", () => {
