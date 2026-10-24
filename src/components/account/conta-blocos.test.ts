@@ -28,8 +28,11 @@ test("Conta (A1): oito telas na ordem Perfil → Avaliações → Papéis e inte
 
 test("Conta: sem repetições — cada assunto numa tela só; nada de página longa", () => {
   assert.doesNotMatch(CONTA + SECAO, /PerfilDoModo|title="Verificação"|title="Segurança"|TaxSimulator|<AvatarUploader|<ConviteFotoPerfil|<TopoConta/);
-  assert.equal(SECAO.match(/<ConfiancaLista \/>/g)?.length, 1);
-  // A senha mora só na subtela /dashboard/conta/seguranca (Senha e duas etapas); a Privacidade tem o link.
+  // E66 (QA 24/10): a lista de confiança saiu da Privacidade (o desenho perfil-05 não a tem) e mora, uma vez só, na
+  // rota própria /dashboard/conta/seguranca (Segurança e verificações), junto com a senha; a Privacidade tem o link.
+  assert.doesNotMatch(SECAO, /<ConfiancaLista/);
+  assert.equal(ler("src/app/(dashboard)/dashboard/conta/seguranca/page.tsx").match(/<ConfiancaLista \/>/g)?.length, 1);
+  assert.match(ler("src/components/account/tela-privacidade.tsx"), /href="\/dashboard\/conta\/seguranca"/);
   assert.doesNotMatch(SECAO, /<ChangePassword/);
   assert.equal(ler("src/app/(dashboard)/dashboard/conta/seguranca/page.tsx").match(/<ChangePassword \/>/g)?.length, 1);
   assert.doesNotMatch(CONTA, /<PageTitle|<ConfiancaLista|<ChangePassword/);
@@ -45,8 +48,8 @@ test("simulador tributário: fora da Conta e do cadastro; fica em Ferramentas (/
   assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /conta#tributacao/);
 });
 
-test("menu: 'Verificação' aponta para a tela Privacidade (lista de Confiança e segurança)", () => {
-  assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/conta\/privacidade"/);
+test("menu: 'Verificação' aponta para a tela da lista de Confiança e segurança (E66: /dashboard/conta/seguranca)", () => {
+  assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/conta\/seguranca"/);
 });
 
 test("simulador: PJ sem '+ IBS/CBS', sem aviso de ago/2026 e com o custo de manter a empresa", () => {

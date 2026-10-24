@@ -253,7 +253,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const preferenciaParceiro = usePreferenciaParceiro();
   const papelAtivo = papelDaBarra({ admin: display.role === "admin", modo: mode === "owner" ? "owner" : "tenant", parceiroAprovado, preferenciaParceiro, pathname });
   // Mockup perfil-01 (decisão de 24/10: nestas telas vale o desenho): o cabeçalho mostra a foto também na Conta.
-  const fotoNav = myPhoto;
+  // E55 (QA 24/10, reincidência): na tela Perfil a foto aparece só no herói editável e no espelho — as miniaturas de
+  // navegação (barra lateral e cabeçalho) viram iniciais ali. No computador o Perfil abre também em /dashboard/conta.
+  const naTelaPerfil = pathname === "/dashboard/conta/perfil" || pathname === "/dashboard/conta";
+  const fotoNav = naTelaPerfil ? null : myPhoto;
   const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />;
 
   const sidebar = (
