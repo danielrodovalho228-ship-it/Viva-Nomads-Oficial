@@ -61,10 +61,12 @@ test.describe("T402 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
       window.scrollTo(0, document.documentElement.scrollHeight);
       const abas = [...document.querySelectorAll<HTMLElement>("nav[data-papel]")].find((n) => getComputedStyle(n).position === "fixed" && n.offsetHeight > 0);
       const piso = abas ? abas.getBoundingClientRect().top : (rolavel && alvo === rolavel ? rolavel.getBoundingClientRect().bottom : window.innerHeight);
-      return { depois: piso - el.getBoundingClientRect().bottom };
+      // Tela mais curta que a janela não rola: o espaço embaixo é a janela, não um vão depois do fim.
+      const rola = alvo.scrollHeight > alvo.clientHeight + 1;
+      return { depois: piso - el.getBoundingClientRect().bottom, rola };
     });
     expect(m.depois, JSON.stringify(m)).toBeGreaterThanOrEqual(0);
-    expect(m.depois, JSON.stringify(m)).toBeLessThanOrEqual(120);
+    if (m.rola) expect(m.depois, JSON.stringify(m)).toBeLessThanOrEqual(120);
   }
 
   for (const w of [390, 1280]) {

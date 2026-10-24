@@ -31,6 +31,7 @@ export function CascaConta({
   children,
   topoDireita,
   trilha,
+  subtela,
 }: {
   ativo: SecaoConta;
   /** H1 de uma subtela da seção (ex.: "Senha e duas etapas" dentro de Privacidade); sem ele, o nome da seção. */
@@ -41,6 +42,8 @@ export function CascaConta({
   topoDireita?: boolean;
   /** "Conta › <seção>" acima do título no computador (mockup perfil-05). */
   trilha?: boolean;
+  /** Tela dentro de uma seção (ex.: Segurança e verificações, em Privacidade): o voltar padrão é a seção, não a Conta. */
+  subtela?: boolean;
 }) {
   const atual = itemDaSecao(ativo);
   const cabecalho = (
@@ -56,8 +59,9 @@ export function CascaConta({
       )}
       {/* Celular (mockups): a seta de voltar e o título na mesma linha, o título centralizado. */}
       <div className="relative flex min-h-11 items-center justify-center lg:justify-start">
-        {/* E69: volta para onde a pessoa estava; aberta direto, para a Conta (ou a seção, numa subtela). */}
-        <VoltarCelular padrao={titulo ? atual.href : "/dashboard/conta"} rotulo={titulo ? atual.rotulo : "Conta"} className="absolute left-0" />
+        {/* E69: volta para onde a pessoa estava; aberta direto, para a Conta (ou a seção, numa subtela). Ter título
+            próprio não faz da tela uma subtela ("Meus dados" é a seção Dados). */}
+        <VoltarCelular padrao={subtela ? atual.href : "/dashboard/conta"} rotulo={subtela ? atual.rotulo : "Conta"} className="absolute left-0" />
         <h1 className={cn(TITULO_TELA_CONTA, "px-12 text-center lg:px-0 lg:text-left")} data-testid="conta-h1">
           {titulo ?? atual.rotulo}
         </h1>
