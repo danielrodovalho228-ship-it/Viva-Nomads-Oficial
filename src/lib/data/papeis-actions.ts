@@ -26,6 +26,10 @@ export interface MeuPerfilPublico {
   desde: string | null;
   selos: string[];
   avaliacoes: { media: number; n: number };
+  /** E55: tempo de resposta no chat (só para quem anuncia e com conversas suficientes). */
+  resposta: { taxa: number; tempo: string } | null;
+  /** E55: tem o papel de proprietário (a faixa do anúncio existe). */
+  ehDono: boolean;
   /** Link da página pública, quando ela existe (quem anuncia). */
   href: string | null;
 }
@@ -49,6 +53,8 @@ export async function meuPerfilPublico(): Promise<MeuPerfilPublico | null> {
       desde: dono.desde,
       selos: dono.selos,
       avaliacoes: dono.reputacao,
+      resposta: dono.resposta,
+      ehDono: true,
       href: `/proprietario/${user.id}`,
     };
   }
@@ -64,6 +70,8 @@ export async function meuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     desde: p.created_at ?? null,
     selos: user.email_confirmed_at ? ["E-mail confirmado"] : [],
     avaliacoes: { media: 0, n: 0 },
+    resposta: null,
+    ehDono: false,
     href: null,
   };
 }

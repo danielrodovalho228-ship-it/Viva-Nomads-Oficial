@@ -16,7 +16,7 @@ const ler = (p: string) => readFileSync(raiz + p, "utf8");
 const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 test("espelho: título, pílula e a linha 'Quer morar · cidade' (o que falta some)", () => {
-  assert.equal(TITULO_ESPELHO, "É assim que o proprietário te vê");
+  assert.equal(TITULO_ESPELHO, "É assim que o proprietário te vê quando você pede para morar"); // E55
   assert.equal(PILULA_EMAIL, "E-mail confirmado");
   assert.equal(linhaIntencaoCidade(["morar"], "Santa Mônica"), "Quer morar · Santa Mônica");
   assert.equal(linhaIntencaoCidade(["anunciar", "morar"], ""), "Tem imóvel");

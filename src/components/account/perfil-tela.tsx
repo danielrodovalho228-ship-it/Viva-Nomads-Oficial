@@ -8,7 +8,7 @@ import { Panel } from "@/components/dashboard/primitives";
 import { SOMBRA_SO_CELULAR, SOMBRA_SO_COMPUTADOR } from "@/lib/conta/visual-mockup";
 import { cn } from "@/lib/utils";
 import { BlocoOpcional } from "@/components/ui/bloco-opcional";
-import { EspelhoPerfil } from "@/components/account/espelho-perfil";
+import { EspelhoPorPapel } from "@/components/account/espelho-papel";
 import { PetsFicha } from "@/components/account/pets-ficha";
 import { CategoriaProfissional } from "@/components/account/categoria-profissional";
 import { TituloSecaoLateral } from "@/components/account/casca-conta";
@@ -34,6 +34,8 @@ const CAMPO = "w-full rounded-lg border border-line bg-white px-4 py-3 text-base
 export function PerfilTela() {
   const foto = useMinhaFoto();
   const { mode } = useViewMode();
+  // E55: o espelho segue o papel em uso (a mesma fonte da barra: o modo da conta).
+  const papelEspelho = mode === "owner" ? "proprietario" : "morador";
   const [p, setP] = useState<MeuPerfilPublico | null | undefined>(undefined);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -195,7 +197,7 @@ export function PerfilTela() {
         </section>
 
         <div className="xl:hidden">
-          <EspelhoPerfil foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
+          <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
         </div>
 
         <PetsFicha />
@@ -298,7 +300,7 @@ export function PerfilTela() {
 
       <aside className="hidden min-w-0 gap-6 xl:grid" aria-label="Como o proprietário te vê">
         <TituloSecaoLateral ativo="perfil" subtitulo={SUBTITULO_PERFIL} />
-        <EspelhoPerfil foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
+        <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
       </aside>
     </div>
   );

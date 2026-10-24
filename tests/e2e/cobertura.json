@@ -697,7 +697,8 @@
         "t392-varredura-bloco24",
         "t403-nav-a",
         "t402-conta-leva2",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t439-e101-deteccao-espelho"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1291,7 +1292,8 @@
         "t337-varredura-redundancia",
         "t406-varredura-bloco25",
         "t431-perto-a",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t439-e101-deteccao-espelho"
       ]
     },
     "/modelodenegocio": {
@@ -1862,7 +1864,8 @@
         "t378-e47a-foto-nivel-celular",
         "t385-varredura-bloco21",
         "t406-varredura-bloco25",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t439-e101-deteccao-espelho"
       ]
     },
     "/dashboard/recibos": {
@@ -6159,6 +6162,22 @@
       ],
       "specs": [
         "t389-deteccao-fotos"
+      ]
+    },
+    "src/lib/data/comodidade-sugerida-actions.ts#comodidadesDoMeuImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t439-e101-deteccao-espelho"
+      ]
+    },
+    "src/lib/data/comodidade-sugerida-actions.ts#gravarComodidadeConfirmada": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t439-e101-deteccao-espelho"
       ]
     },
     "src/lib/data/deteccao-actions.ts#confirmarSugestaoFoto": {
