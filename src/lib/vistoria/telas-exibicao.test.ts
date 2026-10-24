@@ -14,6 +14,8 @@ import {
   TITULO_ADMIN,
   TITULO_BLOCO_DONO,
   contagemDecisoes,
+  credenciamentoADecidir,
+  TITULO_SECAO_NA_REDE,
   filaDeRodizio,
   linhaDoTempoPedido,
   passosCumpridos,
@@ -27,6 +29,7 @@ import {
   visitaNaSemana,
 } from "./telas-exibicao.ts";
 import { FRASE_PAGA_AVALIACAO, type AvaliadorFila } from "./regras.ts";
+import type { StatusCredenciamento } from "./regras.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
@@ -169,7 +172,8 @@ test("admin: decisões primeiro, a aprovação única do 62-B3 e o rodízio com 
   assert.equal(rotuloDecisao("ativo", "suspenso"), "Suspender");
   assert.equal(rotuloDecisao("ativo", "descredenciado"), "Descredenciar");
   const n = contagemDecisoes({ credenciamentos: [{ status: "solicitado" }, { status: "em_teste" }, { status: "ativo" }], semAvaliador: 1, recusasAusencias: 2, cidadesProntas: 0, cidades: 1 });
-  assert.deepEqual(n.map((x) => [x.valor, x.ancora]), [[2, "#credenciamento"], [1, "#sem-avaliador"], [2, "#recusas"], [0, "#chave"]]);
+  // E77: em teste já foi decidido — só o pedido novo conta como "a decidir".
+  assert.deepEqual(n.map((x) => [x.valor, x.ancora]), [[1, "#credenciamento"], [1, "#sem-avaliador"], [2, "#recusas"], [0, "#chave"]]);
   const a = (id: string, status: AvaliadorFila["status"], ultima: string | null, teste = false): AvaliadorFila => ({ id, userId: id, cidade: "Uberlândia", status, teste, credenciadoEm: "2026-01-01T00:00:00Z", ultimaDesignacaoEm: ultima, relacoesDonos: [], relacoesImoveis: [] });
   const fila = filaDeRodizio([a("b", "ativo", "2026-10-01T00:00:00Z"), a("a", "ativo", null), a("s", "suspenso", null), a("t", "ativo", null, true), { ...a("x", "ativo", null), cidade: "Araguari" }], "Uberlândia", new Date());
   assert.deepEqual(fila.map((f) => [f.id, f.posicao, f.impedimento !== null]), [["a", 1, false], ["s", null, true], ["t", null, true], ["b", 2, false]]);
@@ -185,4 +189,18 @@ test("admin: decisões primeiro, a aprovação única do 62-B3 e o rodízio com 
 test("chave desligada: credenciamento e admin seguem de pé (montam a rede antes do lançamento)", () => {
   assert.doesNotMatch(AVALIADOR, /vistoriaAtiva/);
   assert.doesNotMatch(ADMIN, /vistoriaAtiva\(\)/);
+});
+
+test("E77: 'Aprovar para teste' tira o candidato da seção e da contagem 'a decidir' (uma regra para as duas)", () => {
+  const todos: StatusCredenciamento[] = ["solicitado", "em_teste", "ativo", "suspenso", "descredenciado"];
+  assert.deepEqual(todos.filter(credenciamentoADecidir), ["solicitado"]);
+  const antes = contagemDecisoes({ credenciamentos: [{ status: "solicitado" }], semAvaliador: 0, recusasAusencias: 0, cidadesProntas: 0, cidades: 1 });
+  const depois = contagemDecisoes({ credenciamentos: [{ status: "em_teste" }], semAvaliador: 0, recusasAusencias: 0, cidadesProntas: 0, cidades: 1 });
+  assert.equal(antes[0].valor, 1);
+  assert.equal(depois[0].valor, 0);
+  // A tela separa as seções pela MESMA função do número do topo, e o em teste aparece em "Em teste e credenciados".
+  assert.match(ADMIN, /const aDecidir = lista\.filter\(\(c\) => credenciamentoADecidir\(c\.status\)\);/);
+  assert.match(ADMIN, /const naRede = lista\.filter\(\(c\) => !credenciamentoADecidir\(c\.status\)\);/);
+  assert.doesNotMatch(ADMIN, /c\.status === "solicitado" \|\| c\.status === "em_teste"\)/);
+  assert.equal(TITULO_SECAO_NA_REDE, "Em teste e credenciados");
 });

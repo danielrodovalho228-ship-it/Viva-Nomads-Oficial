@@ -158,9 +158,18 @@ export function filaDeRodizio(fila: AvaliadorFila[], cidade: string, agora: Date
 }
 
 /** Os números do topo do admin ("decisões primeiro"): cada um leva à sua seção. */
+/**
+ * E77: o que está "a decidir" no credenciamento é só o pedido novo (solicitado). Aprovado para teste, o candidato já
+ * foi decidido e espera o teste/ativação: sai da seção e da contagem e vai para "Em teste e credenciados". Regra
+ * ÚNICA para a seção da tela e para o número do topo (mesma classe do E72: um número, uma fonte).
+ */
+export const credenciamentoADecidir = (status: StatusCredenciamento): boolean => status === "solicitado";
+export const TITULO_SECAO_A_DECIDIR = "A decidir";
+export const TITULO_SECAO_NA_REDE = "Em teste e credenciados";
+
 export function contagemDecisoes(e: { credenciamentos: { status: StatusCredenciamento }[]; semAvaliador: number; recusasAusencias: number; cidadesProntas: number; cidades: number }) {
   return [
-    { chave: "credenciamentos", rotulo: "credenciamentos para decidir", valor: e.credenciamentos.filter((c) => c.status === "solicitado" || c.status === "em_teste").length, ancora: "#credenciamento" },
+    { chave: "credenciamentos", rotulo: "credenciamentos para decidir", valor: e.credenciamentos.filter((c) => credenciamentoADecidir(c.status)).length, ancora: "#credenciamento" },
     { chave: "sem-avaliador", rotulo: "pedidos sem avaliador elegível", valor: e.semAvaliador, ancora: "#sem-avaliador" },
     { chave: "recusas", rotulo: "recusas e ausências (30 dias)", valor: e.recusasAusencias, ancora: "#recusas" },
     { chave: "chave", rotulo: `de ${e.cidades} ${e.cidades === 1 ? "cidade pronta" : "cidades prontas"} para ligar`, valor: e.cidadesProntas, ancora: "#chave" },
