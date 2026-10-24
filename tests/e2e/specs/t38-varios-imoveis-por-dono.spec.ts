@@ -13,6 +13,7 @@ import {
   novoSufixo,
   publicarPeloEditor,
   statusDoImovel,
+  aceitarTermoIaSePreciso,
 } from "../fixtures/laboratorio";
 
 /**
@@ -67,7 +68,8 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(page.getByTestId("prontidao")).toContainText("Anúncio", { timeout: 15_000 });
     await expect(page.getByText(/Vaga no seu plano/).first()).toBeVisible();
-    await expect(page.getByText(/Seu plano permite 1 anúncio no ar\. Para publicar este, pause outro ou mude de plano/).first()).toBeVisible();
+    // 64-B: com os publicados conhecidos, o texto diz quantos pausar ("1 anúncio publicado e você tem 1 … pause 1 anúncio").
+    await expect(page.getByText(/Seu plano permite 1 anúncio (no ar|publicado e você tem 1)\. Para publicar este, pause (outro|1 anúncio) ou mude de plano/).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Publicar", exact: true })).toBeDisabled();
     await page.screenshot({ path: "tests/laboratorio/saida/t38-1-gratuito-sem-vaga.png", fullPage: true });
     expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
@@ -77,7 +79,7 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const vaga = page.getByTestId("check-vaga").first();
-    await expect(vaga).toContainText("Seu plano permite 1 anúncio no ar", { timeout: 20_000 });
+    await expect(vaga).toContainText(/Seu plano permite 1 anúncio (no ar|publicado)/, { timeout: 20_000 });
     await expect(vaga.getByRole("link", { name: "Pausar outro anúncio" })).toHaveAttribute("href", "/dashboard/imoveis");
     await expect(vaga.getByRole("link", { name: "Mudar de plano" })).toHaveAttribute("href", "/precos");
     await page.screenshot({ path: "tests/laboratorio/saida/t38-1b-painel-vaga-390.png", fullPage: true });
@@ -93,13 +95,14 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     // O Publicar só habilita depois do aceite do termo de IA (como em publicarPeloEditor).
-    await page.getByTestId("aceite-ia").getByRole("checkbox").check({ timeout: 20_000 });
+    await aceitarTermoIaSePreciso(page);
     const publicar = page.getByRole("button", { name: "Publicar", exact: true });
     await expect(publicar).toBeEnabled();
 
     await adm().from("properties").update({ status: "active" }).eq("id", ids.imoveis[0]);
     await publicar.click();
-    await expect(page.getByText(/Seu plano \(Gratuito\) permite até 1 anúncio\(s\) publicado\(s\)\. Pause um anúncio ou faça upgrade para publicar mais\./)).toBeVisible({ timeout: 15_000 });
+    // 64-B: o servidor recusa com a mesma conta do limite (mensagemLimitePublicar), dizendo quantos pausar.
+    await expect(page.getByText(/Seu plano permite 1 anúncio publicado e você tem 1\. Para publicar este, pause 1 anúncio ou mude de plano/).first()).toBeVisible({ timeout: 15_000 });
     expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
     expect(await contarAtivos(ids.dono!)).toBe(1);
     await page.screenshot({ path: "tests/laboratorio/saida/t38-2-servidor-barra-segundo.png", fullPage: true });

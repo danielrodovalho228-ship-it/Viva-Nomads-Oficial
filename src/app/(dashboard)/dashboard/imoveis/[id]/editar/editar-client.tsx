@@ -47,7 +47,8 @@ import { AMENITY_GROUPS, amenityKeysFromLabels } from "@/lib/amenities";
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { ANCORA_VIDEO_EDITOR, MIN_FOTOS, hrefParaMelhorar, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
-import { TERMO_IA_TEXTO, aceiteDoEditor } from "@/lib/anuncio/termo-ia";
+import { TERMO_IA_TEXTO, aceiteDoEditor, precisaAceitarTermo, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
+import { meuAceiteTermoIa } from "@/lib/data/termo-ia-actions";
 import { carregarLimitesNegociacao, gravarVideoArquivo, salvarLimitesNegociacao, updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
 import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
@@ -196,6 +197,22 @@ export function EditarImovelClient({
     [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, videoArquivo, videoUrl, chegada.tipoEntrada, chacara, chacaraGravada?.pontoMarcado]
   );
   const [aceitouIa, setAceitouIa] = useState(false);
+  // L2-B item 23: quem já aceitou a versão atual (servidor) não vê a caixa; o aceite conta como dado.
+  const [termoJaAceito, setTermoJaAceito] = useState<{ aceitoEm: string } | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    meuAceiteTermoIa()
+      .then((a) => {
+        if (vivo && a && !precisaAceitarTermo(a)) {
+          setTermoJaAceito({ aceitoEm: a.aceitoEm });
+          setAceitouIa(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
   const [publicadoAgora, setPublicadoAgora] = useState(false);
   const publicado = publicadoAgora || property.status === "active";
 
@@ -433,7 +450,12 @@ export function EditarImovelClient({
             style={{ width: `${comp.pct}%` }}
           />
         </div>
-        {!publicado && (
+        {!publicado && termoJaAceito && (
+          <p className="mt-3 text-sm text-muted" data-testid="aceite-ia-ja-aceito">
+            {textoTermoJaAceito(termoJaAceito.aceitoEm)}
+          </p>
+        )}
+        {!publicado && !termoJaAceito && (
           <label className="mt-3 flex items-start gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
             <input
               type="checkbox"
