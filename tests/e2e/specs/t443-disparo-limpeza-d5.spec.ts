@@ -148,10 +148,11 @@ test.describe("T443 — disparo automático da limpeza em D-5 (Prompt 38)", () =
     expect(pD).toHaveLength(1);
     expect(pD[0]).toMatchObject({ parceiro_id: ids.parceiro, status: "solicitado", gatilho: "saida_limpeza", aguardando_dono: true, enviado_em: null });
 
+    // O assunto sai com o sufixo " · Viva Nomads" (camada do e-mail).
     const recebeu = (quem: keyof typeof contas, assunto: RegExp) => emails.filter((e) => e.para === contas[quem].email && assunto.test(String(e.assunto))).length;
-    expect(recebeu("limpa", /^Novo pedido de orçamento$/), "A: a parceira recebe 1 aviso de pedido novo (D não vai ao parceiro)").toBe(1);
-    expect(recebeu("donoC", /^Saída em 5 dias: quer agendar a limpeza\?$/)).toBe(1);
-    expect(recebeu("donoA", /^Confirme o pedido de serviço do imóvel$/), "D: o dono confirma com 1 toque").toBe(1);
+    expect(recebeu("limpa", /^Novo pedido de orçamento( · Viva Nomads)?$/), "A: a parceira recebe 1 aviso de pedido novo (D não vai ao parceiro)").toBe(1);
+    expect(recebeu("donoC", /^Saída em 5 dias: quer agendar a limpeza\?( · Viva Nomads)?$/)).toBe(1);
+    expect(recebeu("donoA", /^Confirme o pedido de serviço do imóvel( · Viva Nomads)?$/), "D: o dono confirma com 1 toque").toBe(1);
     expect(recebeu("donoA", /^Saída em 5 dias/), "A/B/D têm limpeza vinculada: sem aviso de 'sem parceiro'").toBe(0);
 
     // 2ª rodada (o cron roda todo dia): nada novo.
