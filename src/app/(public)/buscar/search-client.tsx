@@ -693,7 +693,8 @@ export function SearchClient({
           onMapa={() => (comMapa ? setVerMapa((v) => !v) : setMapaNoCelular((v) => !v))}
         />
 
-        {/* A linha da contagem (E91): "15 imóveis em Uberlândia · R$ 0 de taxa para você" + Salvar busca + Descrever. */}
+        {/* A linha da contagem (E91): "15 imóveis em Uberlândia · R$ 0 de taxa para você" + Salvar busca + Descrever +
+            Publicar pedido (E106). */}
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="linha-contagem">
           <h1 className="text-base font-semibold tabular-nums text-ink" data-testid="titulo-busca">
             {contagemDaBusca({ n: results.length, local: locationQuery.trim() || cidadeDaLista })}
@@ -705,6 +706,13 @@ export function SearchClient({
             <button type="button" onClick={() => setDescreverAberto(true)} className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest" data-testid="abrir-descrever">
               Descrever o que procuro
             </button>
+            {/* E106: o pedido de moradia na tela principal, como entrada SECUNDÁRIA (texto, nunca um 2º primário); o
+                cartão do fim da lista continua. */}
+            {PEDIDO_MORADIA_ON && (
+              <Link href={pedidoHref} className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest" data-testid="linha-publicar-pedido">
+                Publicar pedido
+              </Link>
+            )}
           </div>
         </div>
       </div>
