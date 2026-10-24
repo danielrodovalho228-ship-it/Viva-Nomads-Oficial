@@ -46,11 +46,9 @@ test("galeria do cadastro: principal larga, 3 colunas e o adicionar ao lado da p
   assert.match(galeria, /variante = "padrao"/);
 });
 
-test("a frase de reorganizar aparece só no passo Fotos, logo depois do Continuar", () => {
-  const cont = pagina.indexOf('data-testid="cadastro-continuar"');
-  const frase = pagina.indexOf("{step === ETAPA.fotos && (", cont);
-  assert.ok(cont > 0 && frase > cont);
-  assert.ok(frase < pagina.indexOf('data-testid="cadastro-voltar"', cont));
+test("a frase de reorganizar aparece só no passo Fotos, no fim do passo (CADASTRO-MOLDURA: logo acima do rodapé do fluxo)", () => {
+  assert.match(pagina, /\{step === ETAPA\.fotos && \(\s*<p className="mt-6 text-center text-sm text-muted" data-testid="fotos-reorganizar">/);
+  assert.ok(pagina.indexOf('data-testid="fotos-reorganizar"') < pagina.indexOf("<RodapeAssistente"));
 });
 
 test("a edição do anúncio não muda (galeria padrão)", () => {

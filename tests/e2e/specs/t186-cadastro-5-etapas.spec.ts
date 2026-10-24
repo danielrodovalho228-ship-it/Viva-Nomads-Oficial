@@ -294,9 +294,10 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       await expect(page.getByTestId("revisao-total")).toContainText("/mês no total");
       await expect(page.getByTestId("lista-conferencia")).toBeVisible();
       await page.screenshot({ path: `${SAIDA}/t186-10-revisao-${largura}.png`, fullPage: true });
+      // CADASTRO-MOLDURA: sem botão de salvar — o rascunho salva sozinho e o "Sair" do topo volta a Meus imóveis.
       await esperarSalvo(page);
-      await page.getByRole("button", { name: "Salvar como rascunho" }).click();
-      await page.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
+      await page.getByTestId("assistente-sair").click();
+      await page.waitForURL(/\/dashboard\/imoveis\?saiu=assistente$/, { timeout: 30_000 });
 
       // Laboratório: fotos https de teste no rascunho (a regra do editor só aceita https na pasta do dono).
       const { data: rasc } = await adm().from("properties").select("id, draft_data").eq("owner_id", donoId).eq("status", "draft").single();

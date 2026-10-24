@@ -826,7 +826,8 @@
         "t318-papel-ativo-fonte-unica",
         "t320-pausar-anuncio-64b",
         "t352-varredura-bloco17",
-        "t400-chacara-sem-internet"
+        "t400-chacara-sem-internet",
+        "t441-cadastro-moldura"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -878,7 +879,8 @@
         "t431-perto-a",
         "t433-l2a-itens-9-24",
         "t407-varredura-bloco26",
-        "t400-chacara-sem-internet"
+        "t400-chacara-sem-internet",
+        "t441-cadastro-moldura"
       ]
     },
     "/dashboard/indicacoes": {

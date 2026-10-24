@@ -87,9 +87,9 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       await expect(page.getByTestId("importar-aviso")).toBeVisible();
       await page.screenshot({ path: `${SAIDA}/t194-passo1-${largura}.png`, fullPage: true });
 
-      // Topo dos 10 passos: "Passo 3 de 10" numa linha só, sem texto cortado, e a barra de progresso (no lugar da
-      // faixa de passos). Celular: barra de fotos fixa à vista.
-      const topo = page.getByTestId("cabecalho-passos");
+      // "Passo 3 de 10" numa linha só, sem texto cortado, e a barra de progresso — CADASTRO-MOLDURA: os dois no rodapé
+      // do fluxo. Celular: barra de fotos fixa à vista.
+      const topo = page.getByTestId("assistente-rodape");
       await expect(page.getByTestId("passo-texto")).toHaveText("Passo 3 de 10");
       expect(await page.getByTestId("passo-texto").evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
       await expect(topo.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", "30");

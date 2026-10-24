@@ -134,5 +134,5 @@ test("a tela do cadastro fala em 10 passos (nenhum texto visível com '5 etapas'
   const pagina = readFileSync(new URL("../app/(dashboard)/dashboard/imoveis/novo/page.tsx", import.meta.url), "utf8");
   const semComentario = pagina.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
   assert.doesNotMatch(semComentario, /5 etapas|6 passos/);
-  assert.match(semComentario, /<CabecalhoPassos pos=\{pos\} total=\{ORDEM_ETAPAS\.length\} \/>/);
+  assert.match(semComentario, /<RodapeAssistente\s+pos=\{pos\}\s+total=\{ORDEM_ETAPAS\.length\}/);
 });
