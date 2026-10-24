@@ -6,10 +6,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { SECOES_CONTA, destinoDaAncora, itemDaSecao, secaoDaRota } from "./secoes.ts";
 
-test("oito seções na ordem do mockup, cada uma com a sua rota e uma descrição curta", () => {
+test("oito seções na ordem do NAV-A (24/10), cada uma com a sua rota e uma descrição curta", () => {
   assert.deepEqual(
     SECOES_CONTA.map((s) => s.rotulo),
-    ["Perfil", "Avaliações", "Papéis e intenção", "Dados", "Privacidade", "Notificações", "Pagamentos", "Ajuda"],
+    ["Perfil", "Papéis e intenção", "Avaliações", "Dados", "Privacidade", "Notificações", "Pagamentos", "Ajuda"],
   );
   for (const s of SECOES_CONTA) {
     assert.equal(s.href, `/dashboard/conta/${s.id}`);

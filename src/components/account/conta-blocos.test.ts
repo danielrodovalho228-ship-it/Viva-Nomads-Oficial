@@ -12,8 +12,8 @@ const CONTA = ler("src/app/(dashboard)/dashboard/conta/page.tsx");
 const SECAO = ler("src/app/(dashboard)/dashboard/conta/[secao]/page.tsx");
 const SECOES = ler("src/lib/conta/secoes.ts");
 
-test("Conta (A1): oito telas na ordem Perfil → Avaliações → Papéis e intenção → Dados → Privacidade → Notificações → Pagamentos → Ajuda", () => {
-  const ordem = ["perfil", "avaliacoes", "papeis", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"].map((id) => SECOES.indexOf(`id: "${id}"`));
+test("Conta (A1, NAV-A): oito telas na ordem Perfil → Papéis e intenção → Avaliações → Dados → Privacidade → Notificações → Pagamentos → Ajuda", () => {
+  const ordem = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"].map((id) => SECOES.indexOf(`id: "${id}"`));
   assert.ok(ordem.every((i) => i > 0), `faltou seção: ${ordem}`);
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
   // No computador /dashboard/conta é a tela Perfil na casca; no celular, o menu.
@@ -48,8 +48,8 @@ test("simulador tributário: fora da Conta e do cadastro; fica em Ferramentas (/
   assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /conta#tributacao/);
 });
 
-test("menu: 'Verificação' aponta para a tela da lista de Confiança e segurança (E66: /dashboard/conta/seguranca)", () => {
-  assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/conta\/seguranca"/);
+test("menu: 'Verificação' abre direto a tela de Verificação (E76: /dashboard/verificacao, não a Privacidade)", () => {
+  assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/verificacao"/);
 });
 
 test("simulador: PJ sem '+ IBS/CBS', sem aviso de ago/2026 e com o custo de manter a empresa", () => {
