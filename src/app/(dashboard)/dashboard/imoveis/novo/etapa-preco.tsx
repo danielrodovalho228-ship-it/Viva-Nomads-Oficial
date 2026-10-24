@@ -12,6 +12,7 @@ import { PrecoSugerido } from "@/components/precos/preco-sugerido";
 import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import type { LimitesPrivados, Negociacao } from "@/lib/anuncio/negociacao";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
+import { calcularTudoIncluido } from "@/lib/precos";
 import { CampoDataUnico, Erro, Labeled, MarcaSugerido, Toggle } from "./campos";
 import type { CampoSugerido } from "./tipos";
 
@@ -63,6 +64,7 @@ export function EtapaPreco(p: {
   const aluguel = Number(p.monthlyPrice) || 0;
   const condo = Number(p.condoFee) || 0;
   const consumoFixo = p.utilitiesMode === "fixed" ? p.utilitiesEstimate || 0 : 0;
+  const totalAnuncio = calcularTudoIncluido({ monthlyPrice: aluguel, condoFee: condo, utilitiesMode: p.utilitiesMode, utilitiesEstimate: p.utilitiesEstimate }).total;
   const garantiaOk = Object.values(p.garantias).some(Boolean);
   const vePreco = p.parte !== "disponibilidade";
   const veDisponibilidade = p.parte !== "preco";
@@ -71,7 +73,7 @@ export function EtapaPreco(p: {
       {vePreco && (
         <>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0">
-            <Labeled label="Valor mensal (R$)" sugerido={p.sugerido("preco")}>
+            <Labeled label="Valor mensal (sem condomínio e contas)" sugerido={p.sugerido("preco")}>
               <CampoReais
                 semPrefixo
                 value={p.monthlyPrice === "" ? null : Number(p.monthlyPrice)}
@@ -85,6 +87,12 @@ export function EtapaPreco(p: {
               {p.precoRegiao && (
                 <span className="mt-1 block text-xs text-muted" data-testid="preco-regiao">
                   Sugestão para imóveis parecidos na região ({formatBRL(p.precoRegiao.valor)}). Você pode mudar.
+                </span>
+              )}
+              {/* L2-A item 24: a linha do anúncio sai do mesmo cálculo da busca e do cartão (calcularTudoIncluido). */}
+              {aluguel > 0 && (
+                <span className="mt-1 block text-xs text-ink" data-testid="cadastro-tudo-incluido">
+                  No anúncio: <strong className="font-semibold">{formatBRL(totalAnuncio)}/mês tudo incluído</strong>
                 </span>
               )}
               <Erro msg={p.erros.preco} />
