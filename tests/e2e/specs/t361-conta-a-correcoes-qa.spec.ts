@@ -256,7 +256,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
   });
 
   for (const w of [1280, 390]) {
-    test(`C6. a ${w} px: nada pisca no carregamento (Carregando… e o celular em Privacidade)`, async ({ browser }) => {
+    test(`C6. a ${w} px: nada pisca no carregamento (Carregando… e o celular em Segurança e verificações)`, async ({ browser }) => {
       const p = await como(browser, w);
       // Grava, desde o primeiro quadro, cada texto "Carregando…" na Conta e cada estado do item Celular.
       await p.addInitScript(() => {
@@ -272,7 +272,8 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
         }).observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
       });
       for (let i = 0; i < 2; i++) {
-        await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
+        // E66: a lista de confiança (com o item Celular) mora em Segurança e verificações.
+        await p.goto("/dashboard/conta/seguranca", { waitUntil: "domcontentloaded" });
         await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         await expect(p.getByTestId("confianca-lista")).toHaveAttribute("aria-busy", "false");
         // Lê os registros do script de início (o objeto window inteiro não serializa; lê só as duas listas).
