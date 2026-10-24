@@ -15,85 +15,155 @@ import {
 import { itensDisponiveis, MAX_FAIXAS, PCT_MAX, type Negociacao, type LimitesPrivados } from "@/lib/anuncio/negociacao";
 import { TEXTO_TETO_RODADAS } from "@/lib/propostas/regras";
 import { cn, formatBRL } from "@/lib/utils";
+import { textoDistancia } from "@/lib/anuncio/proximidades";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { MedirInternet } from "./medir-internet";
 
 /* ── Proximidades automáticas (OSM) ───────────────────────────────────────── */
 
-export const chaveLugar = (l: { tipo: string; nome: string }) => `${l.tipo}|${l.nome}`;
+export const chaveLugar = (l: { tipo?: string | null; nome?: string; name?: string }) => `${l.tipo ?? ""}|${l.nome ?? l.name ?? ""}`;
+
+const ROTULO_CATEGORIA: Record<string, string> = { saude: "Saúde", educacao: "Educação", trabalho: "Trabalho", mercado: "Mercado", transporte: "Transporte" };
 
 /**
- * "O que tem por perto" (prompt 10): até 8 lugares achados pelo OpenStreetMap, TODOS marcados; o dono desmarca ou
- * adiciona outro à mão. Se o OSM falhar, aparece vazio com "Adicionar", sem travar a etapa.
+ * "O que tem por perto" (prompt 10; PERTO-B): até 3 lugares por categoria achados pelo OpenStreetMap, com a distância
+ * CALCULADA (sem minuto estimado). Marcado = mostra no anúncio; desmarcar = "não mostrar". "Está errado" manda um motivo
+ * curto que a equipe vê. A mensagem é UMA só: carregando, a lista, "não achamos" (busca feita e vazia) ou "complete o
+ * endereço" (busca ainda não feita). Adicionar à mão só o que faltou, com o endereço do lugar.
  */
 export function ProximidadesAutomaticas({
   itens,
   carregando,
+  buscou,
   desmarcados,
   onAlternar,
   manuais,
   onManuais,
+  medir,
+  reportar,
 }: {
   itens: LugarProximo[] | null;
   carregando: boolean;
+  /** A busca já rodou para o endereço atual (com ou sem resultado). */
+  buscou: boolean;
   desmarcados: string[];
   onAlternar: (chave: string) => void;
   manuais: Proximity[];
   onManuais: (p: Proximity[]) => void;
+  medir: (endereco: string) => Promise<number | null>;
+  /** "Está errado": só com o anúncio já salvo (rascunho ou publicado). */
+  reportar: ((l: LugarProximo, motivo: string) => Promise<{ ok: boolean; erro?: string }>) | null;
 }) {
+  const temItens = !carregando && !!itens && itens.length > 0;
   return (
     <div className="rounded-xl border border-sage-200 p-4" data-testid="proximidades-osm">
       <p className="flex items-center gap-2 text-sm font-semibold text-forest">
         <MapPin className="h-4 w-4" aria-hidden /> O que tem por perto
       </p>
-      <p className="mb-3 text-xs text-muted">Achamos pelo endereço, num raio de 2 km. Desmarque o que não quiser mostrar.</p>
-      {carregando && (
-        <SkeletonLinhas linhas={4} testid="proximidades-carregando" />
+      {carregando && <SkeletonLinhas linhas={4} testid="proximidades-carregando" />}
+      {temItens && (
+        <>
+          <p className="mb-3 text-xs text-muted" data-testid="proximidades-achamos">
+            Achamos pelo endereço, num raio de 2 km. Desmarque o que não quiser mostrar.
+          </p>
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {itens!.map((l) => (
+              <ItemProximidade key={chaveLugar(l)} lugar={l} marcado={!desmarcados.includes(chaveLugar(l))} onAlternar={() => onAlternar(chaveLugar(l))} reportar={reportar} />
+            ))}
+          </ul>
+        </>
       )}
-      {!carregando && itens && itens.length > 0 && (
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {itens.map((l) => {
-            const chave = chaveLugar(l);
-            const marcado = !desmarcados.includes(chave);
-            return (
-              <li key={chave}>
-                <button
-                  type="button"
-                  aria-pressed={marcado}
-                  onClick={() => onAlternar(chave)}
-                  data-testid="proximidade-item"
-                  className={cn(
-                    "flex w-full items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm",
-                    marcado ? "border-forest bg-sage-100" : "border-sage-200 text-muted",
-                  )}
-                >
-                  <span className={cn("mt-1 grid h-4 w-4 shrink-0 place-items-center rounded-lg border", marcado ? "border-forest bg-forest text-white" : "border-sage-200")}>
-                    {marcado && <Check className="h-3 w-3" />}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium text-ink">{l.nome}</span>
-                    <span className="block text-xs text-muted">{l.tempo}</span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {!carregando && (!itens || itens.length === 0) && (
+      {!carregando && !temItens && buscou && (
         <p className="text-sm text-muted" data-testid="proximidades-vazio">
           Não achamos lugares automaticamente. Adicione à mão os que importam.
         </p>
       )}
-      <details className="mt-3" open={!carregando && (!itens || itens.length === 0)}>
+      {!carregando && !temItens && !buscou && (
+        <p className="text-sm text-muted" data-testid="proximidades-aguardando">
+          Os lugares por perto aparecem aqui quando o endereço estiver completo (CEP e rua).
+        </p>
+      )}
+      <details className="mt-3" open={!carregando && buscou && !temItens}>
         <summary className="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-forest">
           <Plus className="h-4 w-4" aria-hidden /> Adicionar outro
         </summary>
         <div className="mt-3">
-          <ManualProximities value={manuais} onChange={onManuais} />
+          <ManualProximities value={manuais} onChange={onManuais} medir={medir} />
         </div>
       </details>
     </div>
+  );
+}
+
+function ItemProximidade({
+  lugar: l,
+  marcado,
+  onAlternar,
+  reportar,
+}: {
+  lugar: LugarProximo;
+  marcado: boolean;
+  onAlternar: () => void;
+  reportar: ((l: LugarProximo, motivo: string) => Promise<{ ok: boolean; erro?: string }>) | null;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const [motivo, setMotivo] = useState("");
+  const [estado, setEstado] = useState<"" | "enviando" | "enviado" | string>("");
+  async function enviar() {
+    if (!reportar || motivo.trim().length < 3) return;
+    setEstado("enviando");
+    const r = await reportar(l, motivo.trim()).catch(() => ({ ok: false, erro: "Sem conexão. Tente de novo." }));
+    setEstado(r.ok ? "enviado" : (r.erro ?? "Não foi possível enviar agora."));
+  }
+  return (
+    <li className="rounded-lg border border-sage-200" data-testid="proximidade-item-bloco">
+      <button
+        type="button"
+        aria-pressed={marcado}
+        onClick={onAlternar}
+        data-testid="proximidade-item"
+        className={cn("flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm", marcado ? "bg-sage-100" : "text-muted")}
+      >
+        <span className={cn("mt-1 grid h-4 w-4 shrink-0 place-items-center rounded-lg border", marcado ? "border-forest bg-forest text-white" : "border-sage-200")}>
+          {marcado && <Check className="h-3 w-3" />}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate font-medium text-ink">{l.nome}</span>
+          <span className="block text-xs text-muted" data-testid="proximidade-distancia">
+            {ROTULO_CATEGORIA[l.categoria] ?? l.categoria} · {textoDistancia(l.distanciaM)}
+            {marcado ? "" : " · não aparece no anúncio"}
+          </span>
+        </span>
+      </button>
+      {reportar && (
+        <div className="px-3 pb-2">
+          {estado === "enviado" ? (
+            <p className="text-xs text-muted" data-testid="proximidade-reportada">Obrigado. A equipe vai conferir.</p>
+          ) : aberto ? (
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+              <input
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value.slice(0, 200))}
+                placeholder="O que está errado? (ex.: fechou)"
+                aria-label={`O que está errado em ${l.nome}`}
+                className="min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-sm"
+                data-testid="proximidade-errado-motivo"
+              />
+              <Button type="button" variant="secondary" size="sm" onClick={enviar} disabled={motivo.trim().length < 3 || estado === "enviando"} data-testid="proximidade-errado-enviar">
+                Enviar
+              </Button>
+              {estado && estado !== "enviando" && <p className="text-xs text-red-700" role="alert">{estado}</p>}
+            </div>
+          ) : (
+            <button type="button" onClick={() => setAberto(true)} className="text-xs text-muted underline underline-offset-2 hover:text-ink" data-testid="proximidade-errado">
+              Está errado
+            </button>
+          )}
+        </div>
+      )}
+    </li>
   );
 }
 

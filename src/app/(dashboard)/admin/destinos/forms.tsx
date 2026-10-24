@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
+import { resolverReporteProximidade } from "@/lib/data/proximidades-actions";
 import { alternarDestino, buscarPontoDestino, salvarDestino, type ResultadoDestino } from "@/lib/destinos/actions";
 import { TIPOS_DESTINO } from "@/lib/destinos/regras";
 import { pontoColado, type PontoSugerido } from "@/lib/destinos/ponto";
@@ -192,6 +193,31 @@ export function DestinoBotao({ id, ativo, temPonto }: { id: string; ativo: boole
         })}
       >
         {ativo ? "Desativar" : "Ativar"}
+      </Button>
+      {erro && <span role="alert" className="text-xs text-red-600">{erro}</span>}
+    </span>
+  );
+}
+
+/** PERTO-B: "Resolvido" num aviso de lugar por perto marcado como errado pelo dono. */
+export function ResolverReporte({ id }: { id: string }) {
+  const [pendente, iniciar] = useTransition();
+  const [erro, setErro] = useState<string | null>(null);
+  return (
+    <span className="inline-flex flex-col items-end gap-1">
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        disabled={pendente}
+        data-testid="resolver-reporte"
+        onClick={() => iniciar(async () => {
+          const r = await resolverReporteProximidade(id);
+          setErro(r.ok ? null : r.erro ?? null);
+          if (r.ok) window.location.reload();
+        })}
+      >
+        Resolvido
       </Button>
       {erro && <span role="alert" className="text-xs text-red-600">{erro}</span>}
     </span>

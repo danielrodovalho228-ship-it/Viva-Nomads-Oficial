@@ -6060,6 +6060,22 @@
       "specs": [
         "t374-conta-a5-privacidade"
       ]
+    },
+    "src/lib/data/proximidades-actions.ts#reportarProximidade": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t381-perto-por-perto"
+      ]
+    },
+    "src/lib/data/proximidades-actions.ts#resolverReporteProximidade": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t381-perto-por-perto"
+      ]
     }
   }
 }

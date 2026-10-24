@@ -31,7 +31,18 @@ export type ProximityCategory = "saude" | "educacao" | "trabalho" | "mercado" | 
 export interface Proximity {
   category: ProximityCategory;
   name: string;
-  note?: string; // ex.: "10 min a pé"
+  /** Texto livre ANTIGO ("10 min a pé"); PERTO-B: não vai mais à tela (tempo só calculado). */
+  note?: string;
+  /** PERTO-B (0238): tipo do lugar (hospital, escola…), origem e distância/tempo CALCULADOS. */
+  tipo?: string | null;
+  origem?: "osm" | "manual";
+  distanciaM?: number | null;
+  tempoMin?: number | null;
+  tempoModo?: "a_pe" | "carro" | null;
+  /** Endereço do LUGAR (manual), geocodificado no servidor. */
+  endereco?: string | null;
+  /** "Não mostrar" escolhido pelo dono. */
+  oculto?: boolean;
 }
 
 export interface Review {
