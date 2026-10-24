@@ -5,6 +5,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T256 — Página da estadia (Prompt 32), com a jornada de teste do laboratório:
  * contrato assinado → página da estadia com o checklist (dono e morador) → card "Decisões" na home do painel →
  * morador preenche os ocupantes → dono baixa a

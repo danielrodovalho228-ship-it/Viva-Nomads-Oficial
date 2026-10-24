@@ -5,6 +5,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, criarLead, entrar, lerSaida, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T264 — "Viva rodando automático" (Prompt 38), só no laboratório, 390 e 1280 px, sem diálogo do navegador:
  * 1) o dono vincula a limpeza (automático) e a manutenção (confirmar) em "Parceiros do imóvel"; os parceiros aceitam
  *    em "Imóveis fixos";
