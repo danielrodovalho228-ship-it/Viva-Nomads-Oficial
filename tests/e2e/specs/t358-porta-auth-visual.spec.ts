@@ -16,6 +16,8 @@ const VERDE = "rgb(28, 107, 58)";
 async function corNoEstado(page: Page, testId: string, estado: { disabled: boolean; busy: boolean }) {
   return page.getByTestId(testId).evaluate((el, e) => {
     const b = el as HTMLButtonElement;
+    // Sem a transição de 150 ms da base: lê a cor final do estado, não um quadro no meio da troca.
+    b.style.transition = "none";
     b.disabled = e.disabled;
     b.setAttribute("aria-busy", String(e.busy));
     const cs = getComputedStyle(b);
