@@ -2,25 +2,27 @@
   Proximidades automáticas pelo OpenStreetMap (prompt 10, etapa 1) — regras PURAS.
 
   O servidor geocodifica o endereço no Nominatim e busca no Overpass, num raio de 2 km: hospital, universidade,
-  mercado, farmácia, academia, parada de ônibus e coworking. Aqui ficam a consulta, a leitura da resposta, a
-  distância, o tempo estimado (a pé até 1 km, de carro acima) e a escolha dos até 8 itens mais úteis.
+  escola, mercado, farmácia, academia, parada de ônibus e coworking. Aqui ficam a consulta, a leitura da resposta, a
+  distância e a escolha de até 3 por categoria, os mais próximos primeiro (PERTO-B). Tempo de deslocamento NÃO sai
+  daqui: só o motor de rotas (src/lib/integrations/rotas.ts) calcula minutos; sem provedor, a tela mostra a distância.
   Política de uso do OSM: User-Agent identificando a Viva e o e-mail de contato, no máximo 1 pedido por segundo e
   cache por CEP (src/app/api/proximidades/route.ts). O ponto exato nunca é público.
 */
 import type { Proximity, ProximityCategory } from "../types.ts";
 
 export const RAIO_METROS = 2000;
-export const MAX_ITENS = 8;
-/** Até 1 km o tempo é a pé (~80 m/min); acima, de carro na cidade (~25 km/h ≈ 420 m/min). */
-export const LIMITE_A_PE_M = 1000;
-const M_POR_MIN_A_PE = 80;
-const M_POR_MIN_CARRO = 420;
+/** PERTO-B: até 3 lugares por categoria (troca o teto de 8 no total). */
+export const MAX_POR_CATEGORIA = 3;
 
-export type TipoLugar = "hospital" | "universidade" | "mercado" | "farmacia" | "academia" | "onibus" | "coworking";
+export type TipoLugar = "hospital" | "universidade" | "escola" | "mercado" | "farmacia" | "academia" | "onibus" | "coworking";
+
+/** Ordem fixa das categorias na tela: Saúde, Educação, Trabalho, Mercado, Transporte. */
+export const ORDEM_CATEGORIAS: readonly ProximityCategory[] = ["saude", "educacao", "trabalho", "mercado", "transporte"];
 
 export const TIPOS_LUGAR: readonly { tipo: TipoLugar; rotulo: string; categoria: ProximityCategory; filtros: string[] }[] = [
   { tipo: "hospital", rotulo: "Hospital", categoria: "saude", filtros: ['["amenity"="hospital"]'] },
   { tipo: "universidade", rotulo: "Universidade", categoria: "educacao", filtros: ['["amenity"="university"]', '["amenity"="college"]'] },
+  { tipo: "escola", rotulo: "Escola", categoria: "educacao", filtros: ['["amenity"="school"]'] },
   { tipo: "mercado", rotulo: "Mercado", categoria: "mercado", filtros: ['["shop"="supermarket"]'] },
   { tipo: "farmacia", rotulo: "Farmácia", categoria: "saude", filtros: ['["amenity"="pharmacy"]'] },
   { tipo: "academia", rotulo: "Academia", categoria: "saude", filtros: ['["leisure"="fitness_centre"]'] },
@@ -32,9 +34,11 @@ export interface LugarProximo {
   tipo: TipoLugar;
   categoria: ProximityCategory;
   nome: string;
+  /** Distância em linha reta do endereço ao lugar (metros). */
   distanciaM: number;
-  /** "8 min a pé" / "6 min de carro". */
-  tempo: string;
+  /** Ponto do LUGAR (público), para o motor de rotas calcular o tempo. Nunca o ponto do imóvel. */
+  lat?: number;
+  lng?: number;
 }
 
 /** Distância em metros entre dois pontos (haversine). */
@@ -47,13 +51,7 @@ export function distanciaMetros(a: { lat: number; lng: number }, b: { lat: numbe
   return Math.round(2 * R * Math.asin(Math.min(1, Math.sqrt(h))));
 }
 
-/** Tempo estimado: a pé até 1 km, de carro acima disso (mínimo 1 min). */
-export function tempoEstimado(distanciaM: number): string {
-  if (distanciaM <= LIMITE_A_PE_M) return `${Math.max(1, Math.round(distanciaM / M_POR_MIN_A_PE))} min a pé`;
-  return `${Math.max(1, Math.round(distanciaM / M_POR_MIN_CARRO))} min de carro`;
-}
-
-/** Consulta Overpass QL: os 7 tipos num raio de 2 km do ponto, com centro dos polígonos. */
+/** Consulta Overpass QL: os 8 tipos num raio de 2 km do ponto, com centro dos polígonos. */
 export function consultaOverpass(lat: number, lng: number, raio = RAIO_METROS): string {
   const linhas = TIPOS_LUGAR.flatMap((t) =>
     t.filtros.flatMap((f) => [`node${f}(around:${raio},${lat},${lng});`, `way${f}(around:${raio},${lat},${lng});`]),
@@ -71,6 +69,7 @@ interface ElementoOverpass {
 function tipoDasTags(tags: Record<string, string>): TipoLugar | null {
   if (tags.amenity === "hospital") return "hospital";
   if (tags.amenity === "university" || tags.amenity === "college") return "universidade";
+  if (tags.amenity === "school") return "escola";
   if (tags.shop === "supermarket") return "mercado";
   if (tags.amenity === "pharmacy") return "farmacia";
   if (tags.leisure === "fitness_centre") return "academia";
@@ -86,14 +85,15 @@ function nomeDoLugar(tags: Record<string, string>, tipo: TipoLugar): string | nu
   return tipo === "onibus" ? "Parada de ônibus" : null;
 }
 
+
 /**
- * Lê a resposta do Overpass e escolhe até 8 lugares: o mais perto de cada tipo primeiro (na ordem da lista), depois
- * o segundo mais perto dos tipos com mais opções, até completar. Sem nome (exceto parada) fica de fora.
+ * Lê a resposta do Overpass e escolhe até 3 lugares por categoria, os mais próximos primeiro, na ordem fixa das
+ * categorias (Saúde, Educação, Trabalho, Mercado, Transporte). Sem nome (exceto parada) fica de fora.
  */
 export function escolherProximidades(resposta: unknown, origem: { lat: number; lng: number }): LugarProximo[] {
   const elementos = (resposta as { elements?: ElementoOverpass[] } | null)?.elements;
   if (!Array.isArray(elementos)) return [];
-  const porTipo = new Map<TipoLugar, LugarProximo[]>();
+  const porCategoria = new Map<ProximityCategory, LugarProximo[]>();
   const vistos = new Set<string>();
   for (const e of elementos) {
     const tags = e.tags ?? {};
@@ -109,30 +109,16 @@ export function escolherProximidades(resposta: unknown, origem: { lat: number; l
     if (vistos.has(chave)) continue;
     vistos.add(chave);
     const meta = TIPOS_LUGAR.find((t) => t.tipo === tipo)!;
-    const lista = porTipo.get(tipo) ?? [];
-    lista.push({ tipo, categoria: meta.categoria, nome, distanciaM, tempo: tempoEstimado(distanciaM) });
-    porTipo.set(tipo, lista);
+    const lista = porCategoria.get(meta.categoria) ?? [];
+    lista.push({ tipo, categoria: meta.categoria, nome, distanciaM, lat, lng });
+    porCategoria.set(meta.categoria, lista);
   }
-  for (const l of porTipo.values()) l.sort((a, b) => a.distanciaM - b.distanciaM);
-
-  const escolhidos: LugarProximo[] = [];
-  for (let rodada = 0; escolhidos.length < MAX_ITENS; rodada++) {
-    let algum = false;
-    for (const t of TIPOS_LUGAR) {
-      const l = porTipo.get(t.tipo);
-      if (l && l[rodada] && escolhidos.length < MAX_ITENS) {
-        escolhidos.push(l[rodada]);
-        algum = true;
-      }
-    }
-    if (!algum) break;
-  }
-  return escolhidos;
+  return ORDEM_CATEGORIAS.flatMap((c) => (porCategoria.get(c) ?? []).sort((a, b) => a.distanciaM - b.distanciaM).slice(0, MAX_POR_CATEGORIA));
 }
 
-/** Converte para o formato salvo em property_proximities (o mesmo das proximidades manuais). */
+/** Converte para o formato salvo em property_proximities: distância CALCULADA, sem minuto estimado. */
 export function paraProximity(l: LugarProximo): Proximity {
-  return { category: l.categoria, name: l.nome, note: l.tempo };
+  return { category: l.categoria, name: l.nome, tipo: l.tipo, origem: "osm", distanciaM: l.distanciaM };
 }
 
 /** CEP com 8 dígitos (ou null). */
@@ -141,19 +127,58 @@ export function cepValido(cep: unknown): string | null {
   return d.length === 8 ? d : null;
 }
 
+/** PERTO-B: a busca repete sempre que o endereço muda (CEP, rua ou número); mesma chave = mesma busca. */
+export function chaveBuscaPerto(cep: unknown, rua: unknown, numero: unknown): string {
+  return `${cepValido(cep) ?? ""}|${String(rua ?? "").trim().toLowerCase()}|${String(numero ?? "").trim()}`;
+}
+
+/** CEP no formato que o OpenStreetMap usa no Brasil ("38400-000"). */
+export function cepComHifen(cep: string): string {
+  const d = cep.replace(/\D/g, "");
+  return d.length === 8 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+}
+
+/**
+ * PERTO-B: as tentativas no Nominatim, da mais precisa para a mais larga. A consulta em texto único com o CEP só com
+ * dígitos e o bairro quase nunca casa no OSM do Brasil — por isso a busca ESTRUTURADA (rua com número, cidade,
+ * estado, CEP com hífen), depois sem o CEP, depois rua + cidade em texto e, por fim, só o CEP.
+ */
+export function tentativasNominatim(e: { rua?: string; numero?: string; cidade?: string; uf?: string; cep?: string }): URLSearchParams[] {
+  const limpo = (v?: string) => (v ?? "").trim();
+  const rua = [limpo(e.numero), limpo(e.rua)].filter(Boolean).join(" ");
+  const base = { format: "jsonv2", limit: "1", countrycodes: "br" };
+  const out: URLSearchParams[] = [];
+  const cep = limpo(e.cep) ? cepComHifen(limpo(e.cep)) : "";
+  if (rua && limpo(e.cidade)) {
+    out.push(new URLSearchParams({ ...base, street: rua, city: limpo(e.cidade), ...(limpo(e.uf) ? { state: limpo(e.uf) } : {}), ...(cep ? { postalcode: cep } : {}), country: "Brasil" }));
+    if (cep) out.push(new URLSearchParams({ ...base, street: rua, city: limpo(e.cidade), ...(limpo(e.uf) ? { state: limpo(e.uf) } : {}), country: "Brasil" }));
+    out.push(new URLSearchParams({ ...base, q: [limpo(e.rua), limpo(e.cidade), limpo(e.uf), "Brasil"].filter(Boolean).join(", ") }));
+  }
+  if (cep) out.push(new URLSearchParams({ ...base, postalcode: cep, country: "Brasil" }));
+  return out;
+}
+
 /** Endereço para o Nominatim (sem complemento: não ajuda a achar e é dado do dono). */
 export function consultaNominatim(e: { rua?: string; numero?: string; bairro?: string; cidade?: string; uf?: string; cep?: string }): string {
   const rua = [e.rua, e.numero].map((s) => s?.trim()).filter(Boolean).join(", ");
   return [rua, e.bairro, e.cidade, e.uf, e.cep, "Brasil"].map((s) => s?.trim()).filter(Boolean).join(", ");
 }
 
-/** Proximidades fixas do laboratório (sempre simulado: nada sai para a rede). */
+/** Proximidades fixas do laboratório (sempre simulado: nada sai para a rede). Distâncias fixas, sem minuto. */
 export const PROXIMIDADES_LAB: LugarProximo[] = [
-  { tipo: "hospital", categoria: "saude", nome: "Hospital de Clínicas (exemplo do laboratório)", distanciaM: 1800, tempo: tempoEstimado(1800) },
-  { tipo: "universidade", categoria: "educacao", nome: "Campus Santa Mônica (exemplo do laboratório)", distanciaM: 1200, tempo: tempoEstimado(1200) },
-  { tipo: "mercado", categoria: "mercado", nome: "Supermercado do Bairro (exemplo do laboratório)", distanciaM: 350, tempo: tempoEstimado(350) },
-  { tipo: "farmacia", categoria: "saude", nome: "Farmácia Central (exemplo do laboratório)", distanciaM: 220, tempo: tempoEstimado(220) },
-  { tipo: "academia", categoria: "saude", nome: "Academia Movimento (exemplo do laboratório)", distanciaM: 640, tempo: tempoEstimado(640) },
-  { tipo: "onibus", categoria: "transporte", nome: "Parada de ônibus", distanciaM: 90, tempo: tempoEstimado(90) },
-  { tipo: "coworking", categoria: "trabalho", nome: "Coworking Centro (exemplo do laboratório)", distanciaM: 900, tempo: tempoEstimado(900) },
+  { tipo: "hospital", categoria: "saude", nome: "Hospital de Clínicas (exemplo do laboratório)", distanciaM: 1800 },
+  { tipo: "farmacia", categoria: "saude", nome: "Farmácia Central (exemplo do laboratório)", distanciaM: 220 },
+  { tipo: "academia", categoria: "saude", nome: "Academia Movimento (exemplo do laboratório)", distanciaM: 640 },
+  { tipo: "universidade", categoria: "educacao", nome: "Campus Santa Mônica (exemplo do laboratório)", distanciaM: 1200 },
+  { tipo: "escola", categoria: "educacao", nome: "Escola Estadual do Bairro (exemplo do laboratório)", distanciaM: 450 },
+  { tipo: "coworking", categoria: "trabalho", nome: "Coworking Centro (exemplo do laboratório)", distanciaM: 900 },
+  { tipo: "mercado", categoria: "mercado", nome: "Supermercado do Bairro (exemplo do laboratório)", distanciaM: 350 },
+  { tipo: "onibus", categoria: "transporte", nome: "Parada de ônibus", distanciaM: 90 },
 ];
+
+/**
+ * Servidores Overpass, em ordem: o principal (overpass-api.de) e o espelho público da Kumi Systems
+ * (overpass.kumi.systems), cuja política aceita uso público sem chave, com o mesmo cuidado de volume. Só passa ao
+ * espelho quando o principal recusa (429/5xx) ou não responde.
+ */
+export const OVERPASS_SERVIDORES = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"] as const;

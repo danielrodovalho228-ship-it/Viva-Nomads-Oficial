@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
+import { abrirNoEndereco } from "../fixtures/cadastro";
 
 /**
  * T191 — ordem 65e999b2 (Próximo do FF 4/6, "Publicamos para você"): rota da fila fechada para quem não é admin
@@ -135,9 +136,9 @@ test.describe("T191 — o dono decide o rascunho (ordem 65e999b2, logado)", () =
     if (caminhosParaLimpar.length) await adm().storage.from(BUCKET).remove(caminhosParaLimpar);
   });
 
-  /** Abre o passo 1 do novo anúncio já hidratado e o formulário "Publicamos para você". */
+  /** Abre o passo Endereço do novo anúncio (onde fica o atalho "Prefere ajuda?") já hidratado e o formulário "Publicamos para você". */
   async function abrirPedido(page: import("@playwright/test").Page) {
-    await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+    await abrirNoEndereco(page);
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await page.getByTestId("ajuda-publicar-abrir").click();
     await expect(page.getByTestId("ajuda-publicar")).toBeVisible({ timeout: 20_000 });

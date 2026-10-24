@@ -10,8 +10,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, p
      buscar pelo endereço" com o link. Campos de endereço com autocomplete="off".
   2. IA das fotos: falha mostra o motivo e "Tentar de novo" (nunca o silencioso "sem sugestões"); de novo → sugestões.
      "Adicionar" abre a escolha de arquivos e a galeria aceita arrastar e soltar.
-  3. Portão único: "Antes de anunciar" pendente já no passo 1 (cartão "Pronto para publicar") e abre no painel
-     lateral, sem sair do cadastro; na revisão, uma lista só (sem o aviso separado).
+  3. Portão único: "Antes de anunciar" pendente já no passo 1 (Tipo, com "Responder agora"; nos 10 passos o cartão
+     recolhível "Pronto para publicar" do topo saiu) e abre no painel lateral, sem sair do cadastro; na revisão, uma
+     lista só (sem o aviso separado).
   4. Datas: no computador digita dd/mm/aaaa e cola; no celular (toque) segue o seletor nativo.
   5. Matrícula sem leitura: a tentativa fica gravada em property_ownership_checks (em revisão, com o motivo).
   6. /admin: painel "IA do cadastro" com ligada/desligada e o último erro (sem dado pessoal).
@@ -57,7 +58,7 @@ async function novoDono(browser: Browser, largura: number, opcoes: BrowserContex
   return { page, id, fechar: () => ctx.close() };
 }
 
-/** Rascunho no servidor (o cadastro abre por ?draft=<id>&etapa=N). */
+/** Rascunho no servidor (o cadastro abre por ?draft=<id>&etapa=<nome do passo>). */
 async function rascunho(donoId: string, dados: Record<string, unknown>): Promise<string> {
   const { data, error } = await adm()
     .from("properties")
@@ -109,7 +110,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       ids.push(d.id);
       const { page } = d;
       await simularCep(page);
-      await page.goto("/dashboard/imoveis/novo?etapa=0", { waitUntil: "domcontentloaded" });
+      await page.goto("/dashboard/imoveis/novo?etapa=endereco", { waitUntil: "domcontentloaded" });
       const cep = page.getByTestId("cadastro-cep");
       await expect(cep).toBeVisible({ timeout: 30_000 });
       for (const t of ["cadastro-cep", "cadastro-rua", "cadastro-numero", "cadastro-bairro", "cadastro-cidade"]) {
@@ -150,14 +151,15 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       const d = await novoDono(browser, largura);
       ids.push(d.id);
       const { page } = d;
-      await page.goto("/dashboard/imoveis/novo?etapa=0", { waitUntil: "domcontentloaded" });
-      const portao = page.getByTestId("checklist-publicar");
+      // 10 passos: o "Antes de anunciar" pendente aparece no próprio passo 1 (Tipo), no lugar do cartão recolhível
+      // "Pronto para publicar" que ficava no topo de cada passo (a lista completa segue na revisão, abaixo).
+      await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
+      const portao = page.getByTestId("tipo-qualificacao");
       await expect(portao).toBeVisible({ timeout: 30_000 });
-      await expect(portao).toContainText("falta “Antes de anunciar”");
-      await portao.locator("summary").click();
-      await expect(page.getByTestId("checklist-item-qualificacao")).toHaveAttribute("data-ok", "0");
+      await expect(portao).toContainText("Antes de anunciar");
+      await expect(page.getByTestId("checklist-publicar")).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t204-portao-passo1-${largura}.png`, fullPage: false });
-      await page.getByTestId("checklist-resolver-qualificacao").click();
+      await portao.getByRole("button", { name: "Responder agora" }).click();
       const painel = page.getByTestId("painel-qualificacao");
       await expect(painel).toBeVisible();
       await expect(painel).toContainText("Requisitos obrigatórios");
@@ -168,7 +170,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
 
       // Revisão: uma lista só (a qualificação é item dela) — nada de segundo aviso no fim.
       const id = await rascunho(d.id, { title: "Rascunho do T204", street: "Avenida João Naves de Ávila", numero: "100", cep: "38408-000", neighborhood: "Santa Mônica", city: "Uberlândia" });
-      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=5`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("etapa-revisar")).toBeVisible({ timeout: 30_000 });
       const lista = page.getByTestId("etapa-revisar").getByTestId("checklist-publicar");
       await expect(lista.getByTestId("checklist-item-qualificacao")).toHaveAttribute("data-ok", "0");
@@ -188,8 +190,8 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       const { page } = d;
       const id = await rascunho(d.id, { title: "Rascunho do T204" });
 
-      // Datas (computador, sem toque): campo de texto com máscara, colar e o calendário num botão.
-      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=4`, { waitUntil: "domcontentloaded" });
+      // Datas (computador, sem toque): campo de texto com máscara, colar e o calendário num botão (passo Disponibilidade).
+      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=disponibilidade`, { waitUntil: "domcontentloaded" });
       const de = page.getByTestId("disponivel-de");
       await expect(de).toHaveAttribute("type", "text", { timeout: 30_000 });
       await expect(page.getByTestId("disponivel-de-calendario")).toBeVisible();
@@ -205,7 +207,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       await page.screenshot({ path: `${SAIDA}/t204-datas-${largura}.png`, fullPage: false });
 
       // Fotos: a IA falha (simulado) → motivo + "Tentar de novo"; de novo → sugestões.
-      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=2`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=fotos`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("etapa-fotos")).toBeVisible({ timeout: 30_000 });
       let falhar = true;
       await page.route("**/api/ai/fotos", (r) =>
@@ -244,7 +246,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     const d = await novoDono(browser, 390, { hasTouch: true, isMobile: true });
     ids.push(d.id);
     const id = await rascunho(d.id, { title: "Rascunho do T204" });
-    await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=4`, { waitUntil: "domcontentloaded" });
+    await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=disponibilidade`, { waitUntil: "domcontentloaded" });
     await expect(d.page.getByTestId("disponivel-de")).toHaveAttribute("type", "date", { timeout: 30_000 });
     await expect(d.page.getByTestId("disponivel-de-calendario")).toHaveCount(0);
     await d.fechar();
@@ -255,7 +257,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     const d = await novoDono(browser, 1280);
     ids.push(d.id);
     const id = await rascunho(d.id, { title: "Rascunho do T204", street: "Avenida João Naves de Ávila", numero: "100", cep: "38408-000", neighborhood: "Santa Mônica", city: "Uberlândia" });
-    await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=0`, { waitUntil: "domcontentloaded" });
+    await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=endereco`, { waitUntil: "domcontentloaded" });
     await expect(d.page.getByTestId("documento-vinculo")).toBeVisible({ timeout: 30_000 });
     // PDF sem o marcador do laboratório: ninguém consegue ler (como um arquivo ilegível em produção).
     await d.page.getByTestId("documento-vinculo").locator('input[type="file"]').setInputFiles({ name: "matricula.pdf", mimeType: "application/pdf", buffer: pdf() });

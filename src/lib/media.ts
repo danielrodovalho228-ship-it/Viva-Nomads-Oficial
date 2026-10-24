@@ -43,6 +43,9 @@ export const PHOTOS = {
     welcome: `${C}/boas-vindas.webp`,
     uploadEmpty: `${C}/upload-vazio.webp`,
     workspace: `${C}/home-office.webp`,
+    // Assistente, passo 1 (cadastro-imovel-01): os cartões de tipo. Casa ainda sem foto própria (ícone até chegar).
+    tipoApartamento: `${I}/placeholder-imovel-fachada.webp`,
+    tipoQuarto: `${I}/placeholder-imovel-quarto.webp`,
   },
   // Conta › Pagamentos (E70): uma foto do acervo por cartão, no padrão dos Papéis.
   pagamentos: {

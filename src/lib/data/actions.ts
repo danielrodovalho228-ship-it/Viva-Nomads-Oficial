@@ -1,5 +1,6 @@
 "use server";
 
+import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { gravarMarca } from "@/lib/marcas/servidor";
 import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
@@ -61,7 +62,7 @@ import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
 import { SITE_URL } from "@/lib/site";
-import type { Property } from "@/lib/types";
+import type { Property, Proximity } from "@/lib/types";
 import { hojeBR, dataBR } from "@/lib/utils";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import {
@@ -487,6 +488,8 @@ export interface PropertyInput {
    * lida só pelo dono, admin, inquilino aceito e o morador de visita presencial confirmada). Vazio = não mexe.
    */
   enderecoExato?: string;
+  /** PERTO-B: o endereço do anúncio para calcular a distância dos lugares (CEP, rua, número, cidade, UF). */
+  enderecoProximidades?: EnderecoDoAnuncio;
   /** Negociação pública do anúncio (0152), validada em lib/anuncio/negociacao. */
   negociacao?: unknown;
   /** Limites PRIVADOS da negociação (0152): só o dono lê; nunca vão ao anúncio. */
@@ -506,7 +509,8 @@ export interface PropertyInput {
   /** Proximidades Google curadas (só place_id + categoria + rótulo). */
   googlePlaces?: { placeId: string; categoria: string; rotulo?: string }[];
   /** Proximidades manuais (nome + distância digitados). */
-  proximities?: { category: string; name: string; note?: string }[];
+  /** PERTO-B: lugares do OSM (origem "osm", conferidos no servidor pela busca do CEP) e manuais (com o endereço do lugar). */
+  proximities?: Proximity[];
 }
 
 /**
@@ -831,21 +835,13 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     }
   }
 
-  // Proximidades manuais (nome + distância). Best-effort.
-  if (input.proximities && input.proximities.length > 0) {
-    try {
-      await supabase.from("property_proximities").insert(
-        input.proximities.map((p, i) => ({
-          property_id: data.id,
-          category: p.category,
-          name: p.name,
-          note: p.note ?? null,
-          sort_order: i,
-        }))
-      );
-    } catch {
-      /* tabela ausente — segue sem proximidades */
-    }
+  // PERTO-B: proximidades com distância/tempo CALCULADOS no servidor (OSM do CEP + endereço do lugar manual). Best-effort.
+  // Sempre passa por aqui (mesmo sem lugar): o CEP fica guardado para a busca da edição.
+  try {
+    const admin = createAdminClient();
+    await gravarProximidades(supabase, data.id, await proximidadesParaGravar(admin, data.id, input.proximities ?? [], input.enderecoProximidades), admin, input.enderecoProximidades?.cep);
+  } catch {
+    /* tabela ausente — segue sem proximidades */
   }
 
   // Persiste as fotos enviadas ao Storage (a primeira é a capa). Ignora URLs
@@ -1142,16 +1138,13 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       sort_order: i,
     }))
   );
-  await resync(
-    "property_proximities",
-    (input.proximities ?? []).map((p, i) => ({
-      property_id: id,
-      category: p.category,
-      name: p.name,
-      note: p.note ?? null,
-      sort_order: i,
-    }))
-  );
+  // PERTO-B: distância/tempo calculados no servidor; "não mostrar" guardado.
+  try {
+    const admin = createAdminClient();
+    await gravarProximidades(supabase, id, await proximidadesParaGravar(admin, id, input.proximities ?? [], input.enderecoProximidades), admin, input.enderecoProximidades?.cep);
+  } catch {
+    /* tabela ausente — ignora */
+  }
 
   // Só (re)publica se for explicitamente "Publicar"; "Salvar rascunho" não
   // despublica um anúncio já ativo. Publica DEPOIS de salvar tudo e de passar

@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * L-43 (vigia, 24/10): a Conta e o atendimento não assentam em "networkidle"; espera até 10 s e segue para o elemento.
  * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T355 — CONTA-A, entrega 1 (Perfil): topo único, foto que envia de verdade, avatar sem nome, o espelho e o progresso.
  *   1. sem nome: silhueta (nunca "?") no cartão da foto e no cabeçalho; um H1 visível ("Perfil") — 360, 390, 1280;
@@ -57,7 +58,8 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
   for (const w of [360, 390, 1280]) {
     test(`1. a ${w} px: sem nome → silhueta; um H1 visível ("Perfil")`, async ({ browser }) => {
       const p = await como(browser, semNome.email, w);
-      await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
+      await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       await expect(p.locator("h1:visible")).toHaveCount(1);
       await expect(p.locator("h1:visible")).toHaveText("Perfil");
       const topo = p.getByTestId("topo-conta");
@@ -74,7 +76,8 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
   for (const w of [390, 1280]) {
     test(`2. a ${w} px: o seletor de arquivo abre no clique e no teclado (topo e convite)`, async ({ browser }) => {
       const p = await como(browser, dono.email, w);
-      await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
+      await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const botao = p.getByTestId("topo-foto");
       await expect(botao).toHaveAccessibleName("Adicionar foto");
       let fc = p.waitForEvent("filechooser", { timeout: 5_000 });
@@ -101,7 +104,8 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
 
   test("3. JPG com recorte → topo, cabeçalho e perfil público; recarregar mantém; PNG troca; Remover volta às iniciais", async ({ browser }) => {
     const p = await como(browser, dono.email, 390);
-    await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+    await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
+    await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await p.getByTestId("topo-foto-input").setInputFiles({ name: "rosto.jpg", mimeType: "image/jpeg", buffer: await imagem("jpeg") });
     const recorte = p.getByTestId("foto-recorte");
     await expect(recorte).toBeVisible();
@@ -123,11 +127,13 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
     // Fora da Conta, o cabeçalho mostra a foto nova.
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
-    await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+    await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
+    await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
     // Perfil público do proprietário (tem anúncio): a foto aparece.
     const pub = await (await browser.newContext()).newPage();
-    await pub.goto(`/proprietario/${ids.dono}`, { waitUntil: "networkidle" });
+    await pub.goto(`/proprietario/${ids.dono}`, { waitUntil: "domcontentloaded" });
+    await pub.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(pub.getByAltText(/^Foto de Helena/)).toBeVisible({ timeout: 20_000 });
     await pub.context().close();
     // PNG troca; "Remover" volta às iniciais.
@@ -142,7 +148,8 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
 
   test("4. erros com a causa e 'Tentar de novo': arquivo que não é imagem e HEIC ilegível", async ({ browser }) => {
     const p = await como(browser, dono.email, 390);
-    await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+    await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
+    await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await p.getByTestId("topo-foto-input").setInputFiles({ name: "nota.txt", mimeType: "text/plain", buffer: Buffer.from("não sou imagem") });
     await expect(p.getByTestId("topo-foto-msg")).toContainText("Escolha um arquivo de imagem");
     await expect(p.getByTestId("topo-foto-msg").getByRole("button", { name: "Tentar de novo" })).toBeVisible();
@@ -158,7 +165,8 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
   for (const w of [390, 1280]) {
     test(`5. a ${w} px: o espelho monta ao vivo; celular com "Salvar alterações" preso`, async ({ browser }) => {
       const p = await como(browser, dono.email, w);
-      await p.goto("/dashboard/conta#perfil-publico", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/conta#perfil-publico", { waitUntil: "domcontentloaded" });
+      await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       await expect(p).toHaveURL(/\/dashboard\/conta\/perfil$/);
       await p.getByTestId("perfil-cartao").waitFor();
       const espelho = p.locator('[data-testid="espelho-perfil"]:visible');

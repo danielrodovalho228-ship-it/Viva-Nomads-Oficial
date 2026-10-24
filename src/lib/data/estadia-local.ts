@@ -6,9 +6,10 @@ import "server-only";
   que quem pede é parte do contrato. Sem banco ou com erro: nada (a página segue sem o bloco).
 */
 import { createAdminClient } from "@/lib/supabase/admin";
-import { proximidadesDoImovel } from "@/lib/anuncio/proximidades";
+import { proximidadesDoImovel, proximidadesVisiveis, type ItemPerto } from "@/lib/anuncio/proximidades";
+import { lerProximidades } from "@/lib/data/proximidades";
 import { enderecoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
-import type { Property, Proximity } from "@/lib/types";
+import type { Property } from "@/lib/types";
 
 export interface LocalDaEstadia {
   lat: number;
@@ -16,7 +17,7 @@ export interface LocalDaEstadia {
   bairro: string | null;
   /** Só com o contrato assinado pelas duas partes. */
   endereco: EnderecoVisita | null;
-  proximidades: Proximity[];
+  proximidades: ItemPerto[];
 }
 
 export async function localDaEstadia(propertyId: string, contratada: boolean): Promise<LocalDaEstadia | null> {
@@ -25,7 +26,7 @@ export async function localDaEstadia(propertyId: string, contratada: boolean): P
   try {
     const [imovel, prox, trab] = await Promise.all([
       admin.from("properties").select("lat, lng, address, city, state").eq("id", propertyId).maybeSingle(),
-      admin.from("property_proximities").select("category, name, note, sort_order").eq("property_id", propertyId).order("sort_order"),
+      lerProximidades(admin, propertyId),
       admin.from("property_workspaces").select("name, type, distance_m").eq("property_id", propertyId),
     ]);
     const p = imovel.data as { lat: number | null; lng: number | null; address: string | null; city: string | null; state: string | null } | null;
@@ -33,10 +34,11 @@ export async function localDaEstadia(propertyId: string, contratada: boolean): P
     const exato = contratada
       ? ((await admin.from("properties").select("exact_address").eq("id", propertyId).maybeSingle()).data as { exact_address: string | null } | null)?.exact_address ?? null // consistency-ignore: Prompt 61-A — endereço exato só para as partes, com o contrato assinado pelas duas
       : null;
-    const proximidades = proximidadesDoImovel({
-      proximities: ((prox.data ?? []) as { category: Proximity["category"]; name: string; note: string | null }[]).map((x) => ({ category: x.category, name: x.name, note: x.note ?? undefined })),
+    // PERTO-B: a mesma lista visível da página do imóvel (texto calculado; oculto e manual sem endereço fora).
+    const proximidades = proximidadesVisiveis(proximidadesDoImovel({
+      proximities: prox,
       nearbyWorkspaces: ((trab.data ?? []) as { name: string; type: string; distance_m: number | null }[]).map((w) => ({ name: w.name, type: w.type, distanceM: w.distance_m ?? 0 })),
-    } as unknown as Property);
+    } as unknown as Property));
     return {
       lat: Number(p.lat),
       lng: Number(p.lng),

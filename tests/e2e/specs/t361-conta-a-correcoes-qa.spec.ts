@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): re-teste dos instáveis do #1230 (run 40072532185) e do #1232 (run 40075189536).
  * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * L-43 (vigia, 24/10): a Conta não assenta em "networkidle" (C9 a 1280 estourou 30 s no reload); espera até 10 s e segue.
  * T361 — CONTA-A, rodada de correções do QA do Muse (24/10), em /dashboard/conta:
@@ -255,7 +256,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
   });
 
   for (const w of [1280, 390]) {
-    test(`C6. a ${w} px: nada pisca no carregamento (Carregando… e o celular em Privacidade)`, async ({ browser }) => {
+    test(`C6. a ${w} px: nada pisca no carregamento (Carregando… e o celular em Segurança e verificações)`, async ({ browser }) => {
       const p = await como(browser, w);
       // Grava, desde o primeiro quadro, cada texto "Carregando…" na Conta e cada estado do item Celular.
       await p.addInitScript(() => {
@@ -271,7 +272,8 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
         }).observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
       });
       for (let i = 0; i < 2; i++) {
-        await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
+        // E66: a lista de confiança (com o item Celular) mora em Segurança e verificações.
+        await p.goto("/dashboard/conta/seguranca", { waitUntil: "domcontentloaded" });
         await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         await expect(p.getByTestId("confianca-lista")).toHaveAttribute("aria-busy", "false");
         // Lê os registros do script de início (o objeto window inteiro não serializa; lê só as duas listas).

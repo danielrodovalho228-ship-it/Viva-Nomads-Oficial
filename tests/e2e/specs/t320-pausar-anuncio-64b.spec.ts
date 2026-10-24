@@ -132,17 +132,17 @@ test.describe("T320 — pausar anúncio, limite do plano e aceite de IA (64-B)",
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
     const caixa = () => p.getByTestId("aceite-ia").getByRole("checkbox");
-    await p.goto(`/dashboard/imoveis/novo?draft=${data.id}&etapa=revisar`, { waitUntil: "domcontentloaded" });
+    await p.goto(`/dashboard/imoveis/novo?draft=${data.id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
     await expect(caixa()).toBeChecked({ timeout: 20_000 });
     // Ir a outra etapa e voltar: o aceite continua.
-    await p.goto(`/dashboard/imoveis/novo?draft=${data.id}&etapa=onde`, { waitUntil: "domcontentloaded" });
-    await p.goto(`/dashboard/imoveis/novo?draft=${data.id}&etapa=revisar`, { waitUntil: "domcontentloaded" });
+    await p.goto(`/dashboard/imoveis/novo?draft=${data.id}&etapa=endereco`, { waitUntil: "domcontentloaded" });
+    await p.goto(`/dashboard/imoveis/novo?draft=${data.id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
     await expect(caixa()).toBeChecked({ timeout: 20_000 });
-    // Editar a descrição: o aceite cai (e o rascunho salvo não o leva mais).
-    await p.goto(`/dashboard/imoveis/novo?draft=${data.id}&etapa=fotos`, { waitUntil: "domcontentloaded" });
+    // Editar a descrição (passo "Título e descrição" dos 10): o aceite cai (e o rascunho salvo não o leva mais).
+    await p.goto(`/dashboard/imoveis/novo?draft=${data.id}&etapa=descricao`, { waitUntil: "domcontentloaded" });
     await p.getByTestId("cadastro-descricao").fill(`${descricao} Varanda com vista.`);
     await expect.poll(async () => JSON.stringify((await adm().from("properties").select("draft_data").eq("id", data.id).single()).data?.draft_data ?? {}), { timeout: 20_000 }).toContain("Varanda com vista.");
-    await p.goto(`/dashboard/imoveis/novo?draft=${data.id}&etapa=revisar`, { waitUntil: "domcontentloaded" });
+    await p.goto(`/dashboard/imoveis/novo?draft=${data.id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
     await expect(caixa()).not.toBeChecked({ timeout: 20_000 });
     await p.context().close();
   });
