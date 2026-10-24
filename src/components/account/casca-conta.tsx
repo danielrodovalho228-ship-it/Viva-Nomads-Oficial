@@ -28,6 +28,7 @@ export function CascaConta({
   subtitulo,
   children,
   topoDireita,
+  trilha,
 }: {
   ativo: SecaoConta;
   /** H1 de uma subtela da seção (ex.: "Senha e duas etapas" dentro de Privacidade); sem ele, o nome da seção. */
@@ -36,10 +37,21 @@ export function CascaConta({
   children: React.ReactNode;
   /** No Perfil, o título e o subtítulo ficam na coluna da direita (acima do espelho), como no desenho. */
   topoDireita?: boolean;
+  /** "Conta › <seção>" acima do título no computador (mockup perfil-05). */
+  trilha?: boolean;
 }) {
   const atual = itemDaSecao(ativo);
   const cabecalho = (
     <header className={cn("min-w-0", topoDireita && "xl:hidden")} data-testid="conta-cabecalho">
+      {trilha && (
+        <nav aria-label="Trilha" className="mb-1 hidden text-base text-muted lg:block" data-testid="conta-trilha">
+          <Link href="/dashboard/conta" className="hover:text-forest">
+            Conta
+          </Link>
+          <span aria-hidden> › </span>
+          <span aria-current="page">{atual.rotulo}</span>
+        </nav>
+      )}
       {/* Celular (mockups): a seta de voltar e o título na mesma linha, o título centralizado. */}
       <div className="relative flex min-h-11 items-center justify-center lg:justify-start">
         <Link

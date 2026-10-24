@@ -2186,6 +2186,16 @@
         "t261-tempo-ate-o-trabalho"
       ]
     },
+    "/api/conta/meus-dados": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t374-conta-a5-privacidade"
+      ]
+    },
     "/api/contrato": {
       "personas": [
         "inquilino",
@@ -4749,6 +4759,24 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/privacidade-actions.ts#getPrivacidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t374-conta-a5-privacidade"
+      ]
+    },
+    "src/lib/data/privacidade-actions.ts#setPrivacidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t374-conta-a5-privacidade"
+      ]
     },
     "src/lib/data/propostas-actions.ts#contarPropostasAguardando": {
       "personas": [

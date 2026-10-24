@@ -11,6 +11,7 @@ import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { DadosPessoais, DocumentoPessoa } from "@/components/account/conta-secoes";
 import { TelaNotificacoes } from "@/components/account/tela-notificacoes";
+import { TelaPrivacidade } from "@/components/account/tela-privacidade";
 import { ConfiancaLista } from "@/components/account/conta-blocos";
 import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
@@ -18,12 +19,6 @@ import { DegrausPerfil } from "@/components/account/degraus-perfil";
 import { RedesPrivadas } from "@/components/account/redes-privadas";
 import { SUBTITULO_PAPEIS } from "@/lib/conta/tela-papeis";
 import { ALIAS_SECAO, type SecaoConta } from "@/lib/conta/secoes";
-
-/** Subtítulo de cada seção (A1; cada tela ganha o desenho do seu mockup nas entregas A2–A8). */
-const SUBTITULO: Record<Exclude<SecaoConta, "perfil" | "ajuda" | "avaliacoes" | "notificacoes" | "pagamentos" | "dados">, string> = {
-  papeis: SUBTITULO_PAPEIS,
-  privacidade: "O que já está verificado e como proteger a conta.",
-};
 
 /**
  * Telas da Conta (A1): cada seção na casca (menu lateral no computador; "‹ Conta" no celular), um H1 por tela.
@@ -48,7 +43,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       );
     case "papeis":
       return (
-        <CascaConta ativo="papeis" subtitulo={SUBTITULO.papeis}>
+        <CascaConta ativo="papeis" subtitulo={SUBTITULO_PAPEIS}>
           <TelaPapeis />
         </CascaConta>
       );
@@ -68,9 +63,13 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       );
     case "privacidade":
       return (
-        <CascaConta ativo="privacidade" subtitulo={SUBTITULO.privacidade}>
-          {/* Senha e duas etapas têm a sua subtela (/dashboard/conta/seguranca): aqui só a lista, cada item uma vez. */}
-          <ConfiancaLista />
+        <CascaConta ativo="privacidade" trilha>
+          {/* Mockup perfil-05: as chaves, "Baixar meus dados" e "Excluir minha conta". Embaixo, a lista de confiança
+              (requisito aprovado que o desenho não mostra); senha e duas etapas seguem na subtela /seguranca. */}
+          <TelaPrivacidade />
+          <div className="mt-8">
+            <ConfiancaLista />
+          </div>
         </CascaConta>
       );
     case "notificacoes":
