@@ -4,8 +4,9 @@ import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { ButtonLink, buttonClasses } from "@/components/ui/button";
-import { formatarCep, normalizarCep } from "@/lib/fotografos/regras";
+import { ButtonLink } from "@/components/ui/button";
+import { buscaVazia, formatarCep, normalizarCep } from "@/lib/fotografos/regras";
+import { BuscaFotografo } from "./busca-fotografo";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { AvisoFotografo } from "./aviso-fotografo";
 import { TITULO_SEM_FOTOGRAFO } from "@/lib/fotografos/aviso";
@@ -59,17 +60,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
       <p className="mt-2 text-ink/70">Fotos profissionais do seu imóvel mobiliado, feitas por fotógrafos aprovados pela Viva. As fotos vão direto para o seu anúncio.</p>
       <p className="mt-2 text-sm font-medium text-ink" data-testid="pedir-gratis">Pedir é grátis: a Viva não cobra nada de você pelo pedido.</p>
 
-      <form method="get" className="mt-6 grid gap-3 rounded-xl border border-sage-200 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-        <div>
-          <label htmlFor="cep" className="block text-sm font-medium text-ink">CEP do imóvel</label>
-          <input id="cep" name="cep" inputMode="numeric" autoComplete="postal-code" defaultValue={cepBusca ? formatarCep(cepBusca) : ""} placeholder="00000-000" className="mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
-        </div>
-        <div>
-          <label htmlFor="cidade" className="block text-sm font-medium text-ink">ou cidade</label>
-          <input id="cidade" name="cidade" autoComplete="address-level2" defaultValue={cidade} placeholder="Uberlândia" className="mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
-        </div>
-        <button type="submit" className={buttonClasses({ size: "md" })}>Buscar</button>
-      </form>
+      <BuscaFotografo cepInicial={cepBusca ? formatarCep(cepBusca) : ""} cidadeInicial={cidade} vazioNoServidor={buscaVazia(sp.cep, sp.cidade)} />
 
       {buscou && !cidade && (
         <p className="mt-6 text-ink/70" data-testid="fotografos-cep-nao-encontrado">

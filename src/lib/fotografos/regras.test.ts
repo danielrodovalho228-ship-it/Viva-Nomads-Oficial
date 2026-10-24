@@ -60,3 +60,13 @@ test("cidadeDoCep: usa ViaCEP; erro/inválido → null", async () => {
   assert.equal(await cidadeDoCep("38400100", fake({}, false)), null);
   assert.equal(await cidadeDoCep("abc", fake({})), null);
 });
+
+test("E52: 'Buscar' com CEP e cidade vazios avisa (sem recarregar em silêncio)", async () => {
+  const { buscaVazia, MSG_BUSCA_VAZIA } = await import("./regras.ts");
+  assert.equal(MSG_BUSCA_VAZIA, "Digite a cidade ou o CEP para buscar.");
+  assert.equal(buscaVazia("", ""), true);
+  assert.equal(buscaVazia("  ", " "), true);
+  assert.equal(buscaVazia(undefined, undefined), false, "primeira visita, sem busca enviada");
+  assert.equal(buscaVazia("38400-000", ""), false);
+  assert.equal(buscaVazia("", "Uberlândia"), false);
+});
