@@ -127,3 +127,17 @@ test("E60: no celular o 'Fale com a Viva' não monta sobre a barra de abas (piso
   const linha = chat.split("\n").find((l) => l.includes("const ESCONDER")) ?? "";
   assert.match(linha, /"\/dashboard\/conta\/perfil"/);
 });
+
+test("extras do E62: cada falta leva ao lugar dela e o Salvar mostra 'há alterações' × 'tudo salvo'", async () => {
+  const { destinoDaFalta, ESTADO_SALVAR } = await import("./perfil-publico.ts");
+  assert.deepEqual(destinoDaFalta("bio"), { tipo: "campo", alvo: "perfil-bio" });
+  assert.deepEqual(destinoDaFalta("foto"), { tipo: "campo", alvo: "topo-foto" });
+  assert.deepEqual(destinoDaFalta("documento"), { tipo: "rota", href: "/dashboard/conta/dados#documento" });
+  assert.deepEqual(destinoDaFalta("telefone"), { tipo: "rota", href: "/dashboard/conta/dados#celular" });
+  assert.deepEqual(destinoDaFalta("desconhecida"), { tipo: "rota", href: "/dashboard/conta/dados" });
+  assert.equal(ESTADO_SALVAR.alterado, "Há alterações para salvar");
+  assert.equal(ESTADO_SALVAR.salvo, "Tudo salvo");
+  const tela = ler("src/components/account/perfil-tela.tsx");
+  assert.match(tela, /data-testid=\{`perfil-falta-\$\{i\.chave\}`\}/);
+  assert.equal((tela.match(/<EstadoSalvar alterado=\{alterado\} \/>/g) ?? []).length, 2, "junto do botão no computador e no celular");
+});

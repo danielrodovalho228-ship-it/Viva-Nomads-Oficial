@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Check, CheckCircle2, CircleDashed, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -15,7 +16,7 @@ import { TituloSecaoLateral } from "@/components/account/casca-conta";
 import { EnviarFoto, FOTO_ATUALIZADA, PERFIL_ATUALIZADO, avisarFotoAtualizada, useMinhaFoto } from "@/components/account/foto-perfil";
 import { getMeuPerfilPublico, getMeusDados, salvarMeuPerfilPublico, salvarMeusDados, setMinhaCategoria, type MeuPerfilPublico } from "@/lib/data/perfil-actions";
 import { clearMyAvatar } from "@/lib/data/avatar-actions";
-import { BIO_MAX, IDIOMAS, LINHA_PERFIL_COMPLETO, medidorPerfil, rotuloCurto, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
+import { BIO_MAX, ESTADO_SALVAR, IDIOMAS, LINHA_PERFIL_COMPLETO, destinoDaFalta, medidorPerfil, rotuloCurto, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
 import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { CATEGORIA_NAO_INFORMAR } from "@/config/categorias-profissionais";
 import { useAuthStore } from "@/lib/store";
@@ -45,6 +46,8 @@ export function PerfilTela() {
   const [salvando, setSalvando] = useState(false);
   const [removendo, setRemovendo] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  // Extra do E62: o retrato do que está gravado, para o botão mostrar "há alterações" × "tudo salvo".
+  const [salvo, setSalvo] = useState<string | null>(null);
   // O aviso "Alterações salvas." fica junto do botão que a pessoa tocou: no cartão (computador) ou no fim (celular).
   const [largo, setLargo] = useState(false);
   useEffect(() => {
@@ -70,6 +73,7 @@ export function PerfilTela() {
         }
         setNome(dados?.fullName ?? d?.nome ?? "");
         setTelefone(dados?.phone ?? "");
+        setSalvo(retrato(dados?.fullName ?? d?.nome ?? "", d?.bio ?? "", d?.cidade ?? "", d && d.idiomas.length > 0 ? d.idiomas : []));
       })
       .catch(() => vivo && setP(null));
     // O medidor e o espelho andam: foto nova, profissão ou documento salvos em outra tela releem na hora.
@@ -90,6 +94,7 @@ export function PerfilTela() {
   if (p === null) return null;
 
   const temFoto = !!foto.url;
+  const alterado = salvo !== null && salvo !== retrato(nome, bio, cidade, idiomasLigado ? idiomas : []);
   const bioCheck = validarBio(bio);
   const barra = progressoPerfil(
     { foto: temFoto || p.temFoto, bio: bio.trim() || null, idiomas, cidade: cidade.trim() || null, profissao: p.profissao, motivo: null },
@@ -117,6 +122,7 @@ export function PerfilTela() {
       if (atual) useAuthStore.getState().setUser({ ...atual, name: rDados.dados.fullName, fullName: rDados.dados.fullName });
     }
     setMsg({ ok: true, texto: "Alterações salvas." });
+    setSalvo(retrato(nome, bio, cidade, idiomasLigado ? idiomas : []));
     window.dispatchEvent(new Event(PERFIL_ATUALIZADO));
     return true;
   }
@@ -172,6 +178,7 @@ export function PerfilTela() {
               </label>
               <textarea
                 id="perfil-bio"
+                data-testid="perfil-bio"
                 value={bio}
                 maxLength={BIO_MAX}
                 rows={3}
@@ -190,12 +197,13 @@ export function PerfilTela() {
             </div>
             <label className="block text-sm text-muted">
               Cidade onde você mora
-              <input id="perfil-cidade" className={`${CAMPO} mt-1`} value={cidade} maxLength={60} onChange={(e) => setCidade(e.target.value)} placeholder="Ex.: Uberlândia (MG)" />
+              <input id="perfil-cidade" data-testid="perfil-cidade" className={`${CAMPO} mt-1`} value={cidade} maxLength={60} onChange={(e) => setCidade(e.target.value)} placeholder="Ex.: Uberlândia (MG)" />
             </label>
           </div>
           <Button type="button" className="mt-6 hidden w-full lg:inline-flex" onClick={salvar} disabled={salvando || !bioCheck.ok} data-testid="perfil-salvar">
             {salvando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />} Salvar alterações
           </Button>
+          {largo && <EstadoSalvar alterado={alterado} />}
           {largo && <MsgSalvar msg={msg} />}
         </section>
 
@@ -276,6 +284,7 @@ export function PerfilTela() {
           <Button type="button" className="w-full" disabled={salvando || !bioCheck.ok} onClick={salvar} data-testid="perfil-salvar-celular">
             {salvando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />} Salvar alterações
           </Button>
+          {!largo && <EstadoSalvar alterado={alterado} />}
           {!largo && <MsgSalvar msg={msg} />}
         </div>
       </div>
@@ -327,14 +336,41 @@ function MedidorPerfil(p: { pct: number; falta: string[]; itens: ReturnType<type
         <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${p.pct}%` }} />
       </div>
       <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2" data-testid="perfil-falta" data-faltam={faltam.length}>
-        {faltam.map((i) => (
-          <li key={i.chave} className="flex items-center gap-2 text-ink">
-            <CircleDashed className="h-4 w-4 shrink-0 text-muted" aria-hidden /> {rotuloCurto(i)}
-          </li>
-        ))}
+        {/* Extra do E62 (aprovado 24/10): cada falta é tocável e leva direto ao campo (ou à tela de Dados). */}
+        {faltam.map((i) => {
+          const d = destinoDaFalta(i.chave);
+          const conteudo = (
+            <>
+              <CircleDashed className="h-4 w-4 shrink-0 text-muted" aria-hidden /> <span className="underline underline-offset-2">{rotuloCurto(i)}</span>
+            </>
+          );
+          const cls = "flex min-h-11 w-full items-center gap-2 text-left text-ink hover:text-forest";
+          return (
+            <li key={i.chave}>
+              {d.tipo === "rota" ? (
+                <Link href={d.href} className={cls} data-testid={`perfil-falta-${i.chave}`}>
+                  {conteudo}
+                </Link>
+              ) : (
+                <button type="button" className={cls} onClick={() => irParaCampo(d.alvo)} data-testid={`perfil-falta-${i.chave}`}>
+                  {conteudo}
+                </button>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </Panel>
   );
+}
+
+/** Rola até o campo da falta e põe o foco nele (ou no primeiro controle do bloco). */
+function irParaCampo(alvo: string) {
+  const el = document.querySelector<HTMLElement>(`[data-testid="${alvo}"]`) ?? document.getElementById(alvo);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  const foco = el.matches("input, textarea, button, select") ? el : el.querySelector<HTMLElement>("input, textarea, button, select");
+  foco?.focus({ preventScroll: true });
 }
 
 function EsqueletoPerfil() {
@@ -343,5 +379,18 @@ function EsqueletoPerfil() {
       <div className="h-96 rounded-xl bg-white" />
       <div className="hidden h-80 rounded-xl bg-white xl:block" />
     </div>
+  );
+}
+
+/** Extra do E62: o que o "Salvar alterações" grava, num texto só, para comparar com o que está no banco. */
+function retrato(nome: string, bio: string, cidade: string, idiomas: string[]): string {
+  return JSON.stringify([nome.trim(), bio.trim(), cidade.trim(), [...idiomas].sort()]);
+}
+
+function EstadoSalvar({ alterado }: { alterado: boolean }) {
+  return (
+    <p className={alterado ? "mt-2 text-sm font-semibold text-amber-800" : "mt-2 text-sm text-forest"} role="status" data-testid="perfil-salvar-estado" data-alterado={alterado ? "1" : "0"}>
+      {alterado ? ESTADO_SALVAR.alterado : ESTADO_SALVAR.salvo}
+    </p>
   );
 }
