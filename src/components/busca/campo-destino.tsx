@@ -2,11 +2,12 @@
 
 import { Briefcase, X } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
-import { LocationSearch } from "@/components/location-search";
-import { geocodingEnabled, type GeoSuggestion } from "@/lib/integrations/geocoding";
-import { ATE_OPCOES, ROTULO_MODO, rotuloLimpo, type ModoRota } from "@/lib/rotas/tempo";
+import { Button } from "@/components/ui/button";
+import { ATE_OPCOES, ROTULO_MODO, type ModoRota } from "@/lib/rotas/tempo";
 import type { DestinoBusca, EstadoDestino } from "@/lib/busca/destino-busca";
-import { useState } from "react";
+import { MSG_NAO_ACHAMOS, ROTULO_NAO_ACHEI } from "@/lib/destinos/pessoal";
+import { buscarOutroLocal, meusLocais, pedirLocalNaoAchado, usarLocal, type LocalPessoal } from "@/lib/destinos/pessoal-actions";
+import { useEffect, useState } from "react";
 
 export interface DestinoChip {
   slug: string;
@@ -15,24 +16,40 @@ export interface DestinoChip {
 }
 
 /**
- * "Onde você vai trabalhar ou estudar?" (prompt 37): chips dos destinos cadastrados da cidade, endereço livre, meio
- * e "até N min". Ônibus só aparece com a chave ligada (meio sem dado não aparece).
+ * "Onde você vai trabalhar ou estudar?" (prompt 37): chips dos destinos cadastrados da cidade, meio e "até N min".
+ * Ônibus só aparece com a chave ligada (meio sem dado não aparece).
+ * DESTINO-PESSOAL-B: "Outro local" — o servidor acha o endereço (OSM; Mapbox com token). Logada, a pessoa vê os locais
+ * que já usou ("Seus locais", só dela); sem login, o local vai só na URL. Não achou: "Não achamos este endereço." e
+ * "Não achei meu local" (nome do lugar + cidade) para a equipe cadastrar.
  */
 export function CampoDestino({
   destinos,
   modos,
   valor,
   onChange,
+  cidade,
+  uf = "MG",
 }: {
   destinos: DestinoChip[];
   modos: ModoRota[];
   valor: EstadoDestino;
   onChange: (e: EstadoDestino) => void;
+  /** Cidade da busca (para achar o endereço no lugar certo); sem ela, a dos destinos ou Uberlândia. */
+  cidade?: string | null;
+  uf?: string;
 }) {
-  const [texto, setTexto] = useState("");
   const { destino, modo, ate } = valor;
-  // Sem destino cadastrado e sem busca de endereço, o campo não teria o que oferecer: não aparece.
-  if (destinos.length === 0 && !geocodingEnabled && !destino) return null;
+  const [locais, setLocais] = useState<LocalPessoal[]>([]);
+  useEffect(() => {
+    let vivo = true;
+    meusLocais()
+      .then((l) => vivo && setLocais(l))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  const cidadeBusca = cidade || destinos[0]?.cidade || "Uberlândia";
   const slug = destino && "slug" in destino ? destino.slug : null;
   const digitado = destino && !("slug" in destino) ? destino : null;
   const escolher = (d: DestinoBusca | null) => onChange({ destino: d, modo, ate: d ? ate : 0 });
@@ -51,8 +68,32 @@ export function CampoDestino({
           ))}
         </div>
       )}
+      {locais.length > 0 && (
+        <div className="mt-3" data-testid="destinos-pessoais">
+          <p className="text-xs font-semibold text-muted">Seus locais</p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {locais.map((l) => {
+              const ativo = !!digitado && digitado.lat.toFixed(2) === l.lat.toFixed(2) && digitado.lng.toFixed(2) === l.lng.toFixed(2);
+              return (
+                <Chip
+                  key={l.id}
+                  ativo={ativo}
+                  data-testid="destino-pessoal"
+                  onClick={() => {
+                    if (ativo) return escolher(null);
+                    void usarLocal(l.id).catch(() => undefined);
+                    escolher({ lat: l.lat, lng: l.lng, rot: l.rotulo });
+                  }}
+                >
+                  {l.rotulo}
+                </Chip>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <div className="mt-3 min-w-0">
-        {!geocodingEnabled && !digitado ? null : digitado ? (
+        {digitado ? (
           <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-line px-3 py-2 text-sm text-ink" data-testid="destino-digitado">
             <span className="truncate">{digitado.rot || "Endereço informado"}</span>
             <button type="button" aria-label="Tirar o endereço" onClick={() => escolher(null)} className="shrink-0 text-muted hover:text-ink">
@@ -60,13 +101,12 @@ export function CampoDestino({
             </button>
           </p>
         ) : (
-          <LocationSearch
-            placeholder="Ou digite o endereço do trabalho"
-            value={texto}
-            onChange={setTexto}
-            onSelect={(s: GeoSuggestion) => {
-              setTexto("");
-              escolher({ lat: s.lat, lng: s.lng, rot: rotuloLimpo(s.label) });
+          <OutroLocal
+            cidade={cidadeBusca}
+            uf={uf}
+            onAchou={(r) => {
+              escolher({ lat: r.ponto.lat, lng: r.ponto.lng, rot: r.rotulo });
+              if (r.guardado) meusLocais().then(setLocais).catch(() => undefined);
             }}
           />
         )}
@@ -100,5 +140,128 @@ export function CampoDestino({
         </div>
       )}
     </section>
+  );
+}
+
+/** "Outro local": o servidor acha o endereço; não achou, oferece o pedido "Não achei meu local". */
+function OutroLocal({ cidade, uf, onAchou }: { cidade: string; uf: string; onAchou: (r: { ponto: { lat: number; lng: number }; rotulo: string; guardado: boolean }) => void }) {
+  const [texto, setTexto] = useState("");
+  const [buscando, setBuscando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [naoAchou, setNaoAchou] = useState(false);
+  const [pedido, setPedido] = useState<{ aberto: boolean; nome: string; cidade: string; msg: { ok: boolean; t: string } | null; enviando: boolean }>({ aberto: false, nome: "", cidade, msg: null, enviando: false });
+
+  async function buscar() {
+    setBuscando(true);
+    setErro(null);
+    setNaoAchou(false);
+    try {
+      const r = await buscarOutroLocal(texto, cidade, uf);
+      if (r.ok) {
+        setTexto("");
+        onAchou(r);
+      } else {
+        setErro(r.naoAchou ? MSG_NAO_ACHAMOS : r.erro);
+        setNaoAchou(r.naoAchou === true);
+        if (r.naoAchou) setPedido((p) => ({ ...p, nome: texto.trim().slice(0, 80) }));
+      }
+    } catch {
+      setErro("A busca não respondeu agora. Tente de novo.");
+    } finally {
+      setBuscando(false);
+    }
+  }
+
+  async function enviarPedido() {
+    setPedido((p) => ({ ...p, enviando: true, msg: null }));
+    try {
+      const r = await pedirLocalNaoAchado(pedido.nome, pedido.cidade);
+      setPedido((p) => ({ ...p, enviando: false, aberto: !r.ok, msg: r.ok ? { ok: true, t: r.mensagem } : { ok: false, t: r.erro } }));
+    } catch {
+      setPedido((p) => ({ ...p, enviando: false, msg: { ok: false, t: "Não foi possível enviar agora." } }));
+    }
+  }
+
+  return (
+    <div data-testid="outro-local">
+      <form
+        className="flex flex-col gap-2 sm:flex-row"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!buscando) void buscar();
+        }}
+      >
+        <label htmlFor="outro-local-texto" className="sr-only">
+          Outro local: nome do lugar ou endereço
+        </label>
+        <input
+          id="outro-local-texto"
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          placeholder="Outro local: nome do lugar ou endereço"
+          maxLength={150}
+          className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-white px-3 text-base text-ink outline-none focus:border-ink"
+          data-testid="outro-local-texto"
+        />
+        <Button type="submit" size="sm" variant="secondary" disabled={buscando || texto.trim().length < 3} data-testid="outro-local-buscar">
+          {buscando ? "Buscando…" : "Buscar"}
+        </Button>
+      </form>
+      {erro && (
+        <p role="alert" className="mt-2 text-sm text-red-700" data-testid="outro-local-erro">
+          {erro}
+        </p>
+      )}
+      {naoAchou && !pedido.aberto && !pedido.msg?.ok && (
+        <button
+          type="button"
+          className="mt-1 text-sm font-semibold text-forest underline underline-offset-2"
+          onClick={() => setPedido((p) => ({ ...p, aberto: true, msg: null }))}
+          data-testid="nao-achei-abrir"
+        >
+          {ROTULO_NAO_ACHEI}
+        </button>
+      )}
+      {pedido.aberto && (
+        <form
+          className="mt-2 grid gap-2 rounded-lg border border-line p-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end"
+          data-testid="nao-achei-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!pedido.enviando) void enviarPedido();
+          }}
+        >
+          <label className="block text-sm text-ink">
+            Nome do lugar
+            <input
+              value={pedido.nome}
+              onChange={(e) => setPedido((p) => ({ ...p, nome: e.target.value }))}
+              maxLength={80}
+              placeholder="Ex.: Clínica Bem Estar"
+              className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-3 text-base outline-none focus:border-ink"
+              data-testid="nao-achei-nome"
+            />
+          </label>
+          <label className="block text-sm text-ink">
+            Cidade
+            <input
+              value={pedido.cidade}
+              onChange={(e) => setPedido((p) => ({ ...p, cidade: e.target.value }))}
+              maxLength={80}
+              className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-3 text-base outline-none focus:border-ink"
+              data-testid="nao-achei-cidade"
+            />
+          </label>
+          <Button type="submit" size="sm" disabled={pedido.enviando} data-testid="nao-achei-enviar">
+            {pedido.enviando ? "Enviando…" : "Pedir o local"}
+          </Button>
+        </form>
+      )}
+      {pedido.msg && (
+        <p role={pedido.msg.ok ? "status" : "alert"} className={pedido.msg.ok ? "mt-2 text-sm text-ink" : "mt-2 text-sm text-red-700"} data-testid="nao-achei-msg">
+          {pedido.msg.t}
+        </p>
+      )}
+    </div>
   );
 }

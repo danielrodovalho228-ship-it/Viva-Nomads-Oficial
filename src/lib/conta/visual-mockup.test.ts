@@ -27,8 +27,10 @@ test("a casca usa os estilos do mockup e a guarda isenta só este arquivo", () =
   assert.equal((guarda.match(/visual-mockup/g) ?? []).length, 1);
 });
 
-test("mockup perfil-01: cabeçalho com foto na Conta; nome completo no espelho", () => {
-  assert.match(ler("src/components/layout/dashboard-shell.tsx"), /const fotoNav = myPhoto;/);
+test("mockup perfil-01: cabeçalho com foto na Conta, menos na tela Perfil (E55: iniciais); nome completo no espelho", () => {
+  const shell = ler("src/components/layout/dashboard-shell.tsx");
+  assert.match(shell, /const naTelaPerfil = pathname === "\/dashboard\/conta\/perfil" \|\| pathname === "\/dashboard\/conta";/);
+  assert.match(shell, /const fotoNav = naTelaPerfil \? null : myPhoto;/);
   assert.match(ler("src/components/account/espelho-perfil.tsx"), /nomeNoEspelho\(nome\)/);
 });
 
