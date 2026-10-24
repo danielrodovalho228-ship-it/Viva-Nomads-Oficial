@@ -78,7 +78,7 @@ test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () 
   assert.match(folha, /role="dialog"/);
   assert.match(folha, /aria-modal="true"/);
   assert.match(folha, /if \(e\.key === "Escape"\) fechar\.current\(\)/);
-  for (const t of ["Preço por mês", "Quartos", "Aceita pets", "Para trabalhar de casa", "Limpar tudo"]) assert.ok(p.includes(t), t);
+  for (const t of ["Quartos", "Estadia", "Aceita pets", "Para trabalhar de casa", "Limpar tudo"]) assert.ok(p.includes(t), t);
 });
 
 test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e disponibilidade", () => {

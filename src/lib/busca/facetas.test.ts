@@ -150,7 +150,12 @@ test("E42: todos os grupos da folha mostram contagem e desabilitam em 0 (fonte)"
     .map((l, i) => (/^\s*<Chip\b/.test(l) ? linhas.slice(i, i + 4).join(" ") : null))
     .filter((c): c is string => !!c && !/nivel\.desabilitado|disabled=\{f\.desabilitado\}/.test(c));
   assert.deepEqual(cru, []);
-  for (const t of ["faceta-preco-", "faceta-quartos-", "faceta-estadia-", "faceta-tipo-", "faceta-pets", "faceta-home-office", "faceta-pronto", "faceta-porte-", "faceta-internet-", "faceta-garantia-", "faceta-gestor", "faceta-comodidade-"]) {
+  for (const t of ["faceta-quartos-", "faceta-estadia-", "faceta-pets", "faceta-home-office", "faceta-pronto", "faceta-porte-", "faceta-internet-", "faceta-garantia-", "faceta-gestor", "faceta-comodidade-"]) {
     assert.ok(folha.includes(t), t);
   }
+  // E105: Preço, Tipo e Nível moram só nas pílulas — com a mesma contagem e o mesmo desabilitado em 0.
+  for (const t of ["faceta-preco-", "faceta-tipo-", "filtro-nivel-"]) assert.ok(!folha.includes(t), `${t} saiu da folha`);
+  const pilulas = readFileSync(new URL("../../components/busca/barra-pilulas.tsx", import.meta.url), "utf8");
+  assert.match(pilulas, /facetaUnica\(p\.contar, f, "tipo", o\.valor\)[\s\S]*?fc\.desabilitado/);
+  assert.match(pilulas, /facetaUnica\(p\.contar, f, "maxPrice", o\.valor\)[\s\S]*?fc\.desabilitado/);
 });

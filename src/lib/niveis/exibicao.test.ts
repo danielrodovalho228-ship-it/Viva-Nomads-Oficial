@@ -111,14 +111,13 @@ test("painel do dono: queda de nível por pendência aberta, com o item que segu
   assert.equal(d.filter((x) => x.id === "pendencia-x").length, 0, "a pendência que causou a queda não aparece duas vezes");
 });
 
-test("busca: 'Nível a partir de' Essencial / Conforto / Premium na folha, com contagem ao vivo e no resumo", () => {
+test("busca: Nível Essencial / Conforto / Premium na pílula (E105: saiu da folha), com contagem ao vivo e no resumo", () => {
   assert.equal(rotuloFiltroNivel("conforto"), "Nível Conforto ou acima");
   assert.equal(rotuloFiltroNivel("premium"), "Nível Premium");
   assert.equal(rotuloFiltroNivel(""), null);
   assert.match(resumoFiltros({ ...FILTROS_PAINEL_VAZIOS, nivelMin: "essencial" }), /Nível Essencial ou acima/);
-  const folha = ler("components/busca/painel-filtros-celular.tsx");
-  assert.match(folha, /titulo="Nível a partir de" testId="painel-nivel"/);
-  assert.match(folha, /contar\(\{ \.\.\.rascunho, nivelMin: v \}\)/, "cada chip conta ao vivo com os outros filtros");
+  const pilulas = ler("components/busca/barra-pilulas.tsx");
+  assert.match(pilulas, /p\.contar\(\{ \.\.\.f, nivelMin: v \}\)/, "cada chip conta ao vivo com os outros filtros");
   assert.match(ler("app/(public)/buscar/search-client.tsx"), /setNivelMin\(f\.nivelMin \?\? ""\)/);
 });
 

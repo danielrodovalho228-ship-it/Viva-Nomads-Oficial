@@ -36,15 +36,16 @@ test.describe("T67 — Busca no celular", () => {
     await page.getByTestId("pilula-mais").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
     await expect(painel).toBeVisible();
-    for (const t of ["Preço por mês", "Quartos", "Aceita pets", "Para trabalhar de casa"]) await expect(painel).toContainText(t);
+    for (const t of ["Quartos", "Estadia", "Aceita pets", "Para trabalhar de casa"]) await expect(painel).toContainText(t);
+    // E105: Preço, Tipo e Nível moram só nas pílulas de cima (um lugar só).
+    for (const t of ["Preço por mês", "Tipo de imóvel", "Nível a partir de"]) await expect(painel).not.toContainText(t);
     await expect(painel.getByTestId("aplicar-filtros")).toHaveText(`Mostrar ${totalAntes} ${totalAntes === 1 ? "imóvel" : "imóveis"}`);
     await painel.screenshot({ path: "tests/laboratorio/saida/t67-painel-390.png" });
 
     await painel.locator("fieldset", { hasText: "Quartos" }).getByRole("button", { name: "2+", exact: true }).click();
-    await painel.locator("fieldset", { hasText: "Preço por mês" }).getByRole("button", { name: "Até R$ 5.000", exact: true }).click();
     const rotulo = await painel.getByTestId("aplicar-filtros").innerText();
     const n = Number(rotulo.match(/\d+/)?.[0] ?? 0);
-    test.skip(n === 0, "Sem imóvel com 2+ quartos até R$ 5.000 nesta base.");
+    test.skip(n === 0, "Sem imóvel com 2+ quartos nesta base.");
     expect(n).toBeLessThanOrEqual(totalAntes);
     await painel.getByTestId("aplicar-filtros").click();
 

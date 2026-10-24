@@ -167,8 +167,9 @@ test("E42: tipos sem imóvel mostram '· 0', ficam desativados e não somem; o j
   const painel = ler("components/busca/painel-filtros-celular.tsx");
   assert.match(painel, /data-testid="limpar-tudo"/);
   assert.match(painel, /disabled=\{n === 0 && extras === 0\}/);
-  // Os chips de tipo usam o ChipFaceta (contagem "· n" e desabilitado em 0).
-  assert.match(painel, /OPCOES_TIPO\.map\(\(o\) => \(\s+<ChipFaceta key=\{o\.valor\} f=\{facetaUnica\(contar, rascunho, "tipo", o\.valor\)\}/);
+  // E105: os tipos moram só na pílula "Tipo", com a contagem "· n" e desabilitados em 0.
+  assert.doesNotMatch(painel, /OPCOES_TIPO/);
+  assert.match(ler("components/busca/barra-pilulas.tsx"), /OPCOES_TIPO\.map\(\(o\) => \{\s+const fc = facetaUnica\(p\.contar, f, "tipo", o\.valor\);\s+return opcao\(o\.valor, f\.tipo === o\.valor, fc\.n, fc\.desabilitado/);
 });
 
 test("E43 (6): seguro-fiança é um filtro só — seguroOnly saiu do painel; ?seguro=1 (URL e buscas salvas) vira garantia", () => {

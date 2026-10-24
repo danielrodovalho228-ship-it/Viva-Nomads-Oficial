@@ -202,12 +202,14 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
         const aplicar = folha.getByTestId("aplicar-filtros");
         await expect(aplicar).toHaveText(/^(Mostrar \d+ imóve(l|is)|Nenhum imóvel com esses filtros)$/);
         await conferirPrimario(aplicar, largura, "folha: Mostrar N imóveis");
+        // E105: "Limpar tudo" é botão de contorno (secundário) ao lado do "Mostrar N imóveis" — o Daniel não achou o texto.
         const limpar = await estilo(folha.getByTestId("limpar-tudo"));
-        expect(limpar.sublinhado, "Limpar tudo é terciário (sublinhado)").toContain("underline");
-        expect(limpar.fundo).toBe("rgba(0, 0, 0, 0)");
+        expect(limpar.sublinhado, "Limpar tudo sem sublinhado (botão)").not.toContain("underline");
+        expect(limpar.fundo).toBe("rgb(255, 255, 255)");
+        await expect(folha.getByTestId("limpar-tudo")).toHaveCSS("border-top-style", "solid");
         for (const proibido of ["Ambos", "Indiferente", "Tanto faz", "Qualquer"]) await expect(folha.getByRole("button", { name: proibido, exact: true })).toHaveCount(0);
         await page.screenshot({ path: `${SAIDA}/t244-buscar-folha-${largura}.png` });
-        await folha.getByTestId("painel-tipo").screenshot({ path: `${SAIDA}/t244-buscar-chips-${largura}.png` });
+        await folha.getByTestId("painel-estadia").screenshot({ path: `${SAIDA}/t244-buscar-chips-${largura}.png` });
         await semRolagemLateral(page);
       });
 
