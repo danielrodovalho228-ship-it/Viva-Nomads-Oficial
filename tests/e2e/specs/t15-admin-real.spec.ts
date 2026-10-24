@@ -36,6 +36,8 @@ test.describe("T15 — Admin real", () => {
   });
 
   test("visão geral: período, cidade, fórmula no i e nada de NaN/Infinity", async ({ page }) => {
+    // Seis cargas do /admin, cada uma com até 10 s de espera pela rede (L-43): 45 s não cabem.
+    test.setTimeout(120_000);
     for (const periodo of ["7", "30", "90", "ano"]) {
       await page.goto(`/admin?periodo=${periodo}`, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
