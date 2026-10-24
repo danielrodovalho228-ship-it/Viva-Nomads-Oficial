@@ -12,6 +12,10 @@ test("publicarPeloEditor marca o aceite da IA quando o editor o exige", () => {
   const trecho = apoio.slice(apoio.indexOf("export async function publicarPeloEditor"), apoio.indexOf("export async function apagarContas"));
   assert.match(editor, /data-testid="aceite-ia"/);
   assert.match(editor, /disabled=\{[^}]*!aceitouIa/);
-  assert.match(trecho, /aceite-ia/);
+  // L2-B item 23: o apoio marca a caixa só quando ela aparece (quem já aceitou a versão atual vê a linha "já aceitou").
+  assert.match(trecho, /aceitarTermoIaSePreciso\(page\)/);
+  const ajudante = apoio.slice(apoio.indexOf("export async function aceitarTermoIaSePreciso"), apoio.indexOf("export async function publicarPeloEditor"));
+  assert.match(ajudante, /getByTestId\("aceite-ia"\)\.getByRole\("checkbox"\)/);
+  assert.match(ajudante, /getByTestId\("aceite-ia-ja-aceito"\)/);
   assert.doesNotMatch(trecho, /networkidle/);
 });
