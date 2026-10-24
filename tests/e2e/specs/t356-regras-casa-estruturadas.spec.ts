@@ -127,4 +127,30 @@ test.describe("T356 — CAMPOS-1: regras da casa estruturadas", () => {
     }).toPass({ timeout: 60_000 });
     await p.close();
   });
+  test("4. CAMPOS-3: 'Outras regras' em texto livre vai ao banco e aparece por último na folha", async ({ browser }) => {
+    test.setTimeout(150_000);
+    const d = await entrar(browser, dono.email, senha);
+    await d.setViewportSize({ width: 390, height: 844 });
+    const secao = await abrirSecaoRegras(d);
+    const outras = secao.getByTestId("regras-casa-outras");
+    await outras.fill("  Tirar os sapatos   na sala ");
+    await expect(secao.getByTestId("regras-casa-outras-contador")).toContainText("de 280 caracteres");
+    await secao.getByTestId("regras-casa").screenshot({ path: `${SAIDA}/t356-outras-regras-editor-390.png` });
+    await secao.getByRole("button", { name: "Salvar seção" }).click();
+    await expect.poll(async () => ((await regrasNoBanco())?.regras_casa as { outras?: string } | null)?.outras ?? null, { timeout: 20_000 }).toBe("Tirar os sapatos na sala");
+    await d.context().close();
+
+    const p = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await expect(async () => {
+      await p.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
+      const janela = await abrirFolhaRegras(p);
+      const lista = janela.getByTestId("regras-casa-lista");
+      await expect(lista.locator("li").last()).toHaveAttribute("data-testid", "regra-casa-outras", { timeout: 3_000 });
+      await expect(janela.getByTestId("regra-casa-outras")).toHaveText("Tirar os sapatos na sala");
+      await expect(janela.getByTestId("regra-casa-outras").locator("svg")).toHaveCount(1);
+    }).toPass({ timeout: 60_000 });
+    await semRolagemLateral(p);
+    await p.screenshot({ path: `${SAIDA}/t356-outras-regras-folha-390.png` });
+    await p.close();
+  });
 });
