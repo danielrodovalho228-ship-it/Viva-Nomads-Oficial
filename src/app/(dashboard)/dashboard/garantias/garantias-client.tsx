@@ -8,32 +8,17 @@ import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONTRACTS } from "@/lib/demo/seed";
 import type { ContratoView } from "@/lib/data/contratos-actions";
 import { formatBRL } from "@/lib/utils";
+import { estadoCaucao, type EstadoCaucao } from "@/lib/caucao-estado";
 
 interface LinhaCaucao {
   id: string;
   imovel: string;
-  caucaoTotal: number;
-  status: string; // pendente / retida / devolvida
+  caucao: EstadoCaucao;
 }
 
-const STATUS_META: Record<string, { label: string; cls: string }> = {
-  retida: { label: "Retida (em custódia)", cls: "bg-sage-100 text-forest" },
-  pendente: { label: "Pendente", cls: "bg-amber-100 text-amber-800" },
-  devolvida: { label: "Devolvida", cls: "bg-sage-100 text-forest" },
-};
-
+/** L2-B item 13: o estado vem da função única (estadoCaucao), a mesma dos Contratos e da tela do inquilino. */
 function fromContratos(contratos: ContratoView[]): LinhaCaucao[] {
-  return contratos.map((c) => {
-    const caucaoTotal = c.blocos.reduce((s, b) => s + (b.caucao || 0), 0);
-    // status agregado: se algum bloco pendente → pendente; senão retida.
-    const algumPendente = c.blocos.some((b) => b.caucaoStatus === "pendente");
-    return {
-      id: c.id,
-      imovel: c.propertyTitle,
-      caucaoTotal,
-      status: c.blocos.length === 0 ? "pendente" : algumPendente ? "pendente" : "retida",
-    };
-  });
+  return contratos.map((c) => ({ id: c.id, imovel: c.propertyTitle, caucao: c.caucao }));
 }
 
 /** Cauções de DEMONSTRAÇÃO (a caução Viva é 50% do bloco; bloco padrão de 2 meses = 1 aluguel). */
@@ -41,8 +26,7 @@ function demoCaucoes(): LinhaCaucao[] {
   return DEMO_CONTRACTS.map((c, i) => ({
     id: `demo-cau-${i}`,
     imovel: c.imovel,
-    caucaoTotal: c.valorMes, // 50% de um bloco de 2 meses
-    status: i === 0 ? "retida" : i === 1 ? "pendente" : "retida",
+    caucao: estadoCaucao({ blocos: [{ caucao: c.valorMes, caucaoStatus: i === 1 ? "pendente" : "comprovada" }], pagamentos: [] }),
   }));
 }
 
@@ -128,17 +112,17 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
         ) : (
           <div className="mt-4 space-y-3">
             {linhas.map((l) => {
-              const meta = STATUS_META[l.status] ?? STATUS_META.pendente;
+              const cls = l.caucao.pendente ? "bg-amber-100 text-amber-800" : "bg-sage-100 text-forest";
               return (
                 <Panel key={l.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                   <div className="min-w-0">
                     <p className="font-title font-semibold text-ink">{l.imovel}</p>
                     <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted">
-                      <CircleDollarSign className="h-3.5 w-3.5" /> Caução {formatBRL(l.caucaoTotal)}
+                      <CircleDollarSign className="h-3.5 w-3.5" /> Caução {formatBRL(l.caucao.valor)}
                     </p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${meta.cls}`}>
-                    {meta.label}
+                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${cls}`} data-testid="garantia-caucao-estado" data-chave={l.caucao.chave}>
+                    {l.caucao.rotulo}
                   </span>
                 </Panel>
               );

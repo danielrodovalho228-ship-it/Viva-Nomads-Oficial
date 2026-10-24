@@ -29,7 +29,7 @@ Decisão do Daniel (24/10): só chácara/sítio. Fazenda e rancho ficam fora at�
   - editar sem marcar de novo mantém o ponto;
   - valores fora da lista caem;
   - o anúncio não mostra andar para este tipo.
-- **E2E `t392-tipo-chacara`:**
+- **E2E `t393-tipo-chacara`:**
   - filtro com contagem e `?tipo=chacara`;
   - linha fixa e os 3 campos no cadastro, com o item da prontidão sumindo quando preenchidos;
   - na edição, o ponto marcado vira o exato e a distância (≈15 km) é calculada dele.

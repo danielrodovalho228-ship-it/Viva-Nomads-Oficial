@@ -1,7 +1,8 @@
 /*
   Gastos de marketing (0067) — regras PURAS da tela do admin: canais, validação
-  do lançamento e totais por mês. Sem imports (testável com node --test).
+  do lançamento e totais por mês. Só imports puros (testável com node --test).
 */
+import { lerReais } from "./reais.ts";
 
 export const CANAIS_MARKETING = [
   { key: "instagram", label: "Instagram" },
@@ -30,14 +31,11 @@ export function canalLabel(k: string): string {
   return CANAIS_MARKETING.find((c) => c.key === k)?.label ?? k;
 }
 
-/** Valor em reais digitado ("1.234,56", "350.5", 350) → número, ou NaN. */
+/** Valor em reais digitado ("1.234,56", "3.300", 350) → número, ou NaN. Lê pela fonte única (lerReais). */
 export function valorReais(v: string | number): number {
   if (typeof v === "number") return v;
-  const s = v.trim().replace(/^R\$\s*/i, "");
-  if (!s) return NaN;
-  // Com vírgula: padrão brasileiro (ponto = milhar).
-  const n = s.includes(",") ? Number(s.replace(/\./g, "").replace(",", ".")) : Number(s);
-  return Number.isFinite(n) ? n : NaN;
+  const r = lerReais(v);
+  return r.ok && r.valor != null ? r.valor : NaN;
 }
 
 /** Valida o lançamento. Ok → linha pronta para gravar; senão, a mensagem. */

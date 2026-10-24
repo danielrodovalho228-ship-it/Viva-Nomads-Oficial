@@ -4,14 +4,16 @@ import sharp from "sharp";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, definirPlano, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Rodada da vigia 24/10 (Pista C): confirmação no lab-crítico depois do merge do #1273 (o run do PR foi cancelado).
   T378 — E47-A, PERNA DE LABORATÓRIO (Pista C, 24/10): diagnóstico do "clique em Enviar foto (prova de nível) → TELA
   BRANCA" que o Daniel viu no celular em 23/10. O QA do Muse (desktop, PNG pequeno) passou; a hipótese é a foto real de
   celular: arquivo GRANDE ou HEIC. Na página /dashboard/imoveis/:id/nivel, item "ar_quarto_principal", cada caso escolhe
   um arquivo no "Enviar a foto" e registra: erros de console e de página, a resposta de /api/upload/foto (status e
   corpo), a mensagem da linha e o estado da página depois (página viva ou branca). Roda no Chromium (390 px) e no WebKit
   (motor do Safari do iPhone, 390 px). Dois casos simulam na rede o que o laboratório não tem: a rede caindo no envio
-  (o fetch rejeita) e o 413 da Vercel para corpo acima de 4,5 MB (corpo em texto). Não corrige nada: só mede. A página branca derruba o teste (é a reprodução);
-  o resto fica no relatório tests/laboratorio/saida/e47a/.
+  (o fetch rejeita) e o 413 da Vercel para corpo acima de 4,5 MB (corpo em texto). Não corrige nada: só mede. A página branca derruba o teste;
+  o resto fica no relatório tests/laboratorio/saida/e47a/. A queda com a rede caindo (L-53) foi corrigida no #1268
+  (Pista B, 24/10): o caso deixou de ser "conhecido" e volta a exigir a página viva.
 */
 const ITEM = "ar_quarto_principal";
 const SAIDA = "tests/laboratorio/saida/e47a";
@@ -46,7 +48,7 @@ const CASOS: Caso[] = [
   { id: "jpeg-10mb", descricao: "JPEG de celular 12 MP, ~10 MB (acima dos 8 MB do servidor, abaixo dos 10 MB do proxy)", arquivo: async () => ({ name: "IMG_0010.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(10 * MB - 64 * 1024) }) },
   { id: "jpeg-14mb", descricao: "JPEG de celular, ~14 MB (acima dos 10 MB que o proxy guarda do corpo)", arquivo: async () => ({ name: "IMG_0014.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(14 * MB) }) },
   { id: "jpeg-48mp", descricao: "JPEG 48 MP (8000×6000), ~4 MB: passa no limite de tamanho e pesa na decodificação do servidor", arquivo: async () => ({ name: "IMG_0048.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(0, 8000, 6000, 20) }) },
-  { id: "rede-caiu", descricao: "JPEG ~5 MB com a rede caindo no envio (o fetch rejeita, como no celular sem sinal)", rota: "abortar", conhecido: "L-53", arquivo: async () => ({ name: "IMG_0005.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(5 * MB) }) },
+  { id: "rede-caiu", descricao: "JPEG ~5 MB com a rede caindo no envio (o fetch rejeita, como no celular sem sinal)", rota: "abortar", arquivo: async () => ({ name: "IMG_0005.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(5 * MB) }) },
   { id: "413-vercel", descricao: "JPEG ~5 MB com a resposta da Vercel acima de 4,5 MB (413, corpo em texto)", rota: "413-vercel", arquivo: async () => ({ name: "IMG_0005.JPG", mimeType: "image/jpeg", buffer: await jpegCelular(5 * MB) }) },
   { id: "heic-3mb", descricao: "HEIC do iPhone, ~3 MB (formato fora do accept)", arquivo: async () => ({ name: "IMG_0003.HEIC", mimeType: "image/heic", buffer: heic(3 * MB) }) },
 ];
