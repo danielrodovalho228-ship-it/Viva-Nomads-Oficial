@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * T402 — Conta, leva 2 (QA do Muse, 24/10). Conta de proprietário sem parceria. 390 e 1280.
@@ -26,6 +26,8 @@ test.describe("T402 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
   let id = "";
   test.beforeAll(async () => {
     id = await criarConta(conta, senha);
+    // Proprietário de verdade (com um anúncio): é quem vê o cartão "Como você recebe" (Pix) em Pagamentos.
+    await criarImovelPronto(id, `Studio da leva 2 ${novoSufixo()}`);
   });
   test.afterAll(async () => {
     await apagarContas([id]);
@@ -40,10 +42,12 @@ test.describe("T402 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
   }
   const semRolagemLateral = async (p: Page) =>
     expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-  const fotoCarregou = (p: Page, testId: string) =>
-    expect
-      .poll(() => p.getByTestId(testId).locator('[data-testid="cartao-foto"] img').evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0), { timeout: 15_000 })
-      .toBe(true);
+  // A foto é carregada sob demanda (lazy): rola até ela antes de conferir que carregou de verdade.
+  const fotoCarregou = async (p: Page, testId: string) => {
+    const img = p.getByTestId(testId).locator('[data-testid="cartao-foto"] img');
+    await img.scrollIntoViewIfNeeded();
+    await expect.poll(() => img.evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0), { timeout: 15_000 }).toBe(true);
+  };
   /** E75: a linha de fechamento é o último texto da tela e não sobra vão depois dela (até as abas, no celular). */
   async function fechaLimpo(p: Page) {
     const fim = p.getByTestId("conta-fechamento").filter({ visible: true });
