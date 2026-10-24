@@ -68,7 +68,8 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(page.getByTestId("prontidao")).toContainText("Anúncio", { timeout: 15_000 });
     await expect(page.getByText(/Vaga no seu plano/).first()).toBeVisible();
-    await expect(page.getByText(/Seu plano permite 1 anúncio no ar\. Para publicar este, pause outro ou mude de plano/).first()).toBeVisible();
+    // 64-B: com os publicados conhecidos, o texto diz quantos pausar ("1 anúncio publicado e você tem 1 … pause 1 anúncio").
+    await expect(page.getByText(/Seu plano permite 1 anúncio (no ar|publicado e você tem 1)\. Para publicar este, pause (outro|1 anúncio) ou mude de plano/).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Publicar", exact: true })).toBeDisabled();
     await page.screenshot({ path: "tests/laboratorio/saida/t38-1-gratuito-sem-vaga.png", fullPage: true });
     expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
@@ -78,7 +79,7 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const vaga = page.getByTestId("check-vaga").first();
-    await expect(vaga).toContainText("Seu plano permite 1 anúncio no ar", { timeout: 20_000 });
+    await expect(vaga).toContainText(/Seu plano permite 1 anúncio (no ar|publicado)/, { timeout: 20_000 });
     await expect(vaga.getByRole("link", { name: "Pausar outro anúncio" })).toHaveAttribute("href", "/dashboard/imoveis");
     await expect(vaga.getByRole("link", { name: "Mudar de plano" })).toHaveAttribute("href", "/precos");
     await page.screenshot({ path: "tests/laboratorio/saida/t38-1b-painel-vaga-390.png", fullPage: true });

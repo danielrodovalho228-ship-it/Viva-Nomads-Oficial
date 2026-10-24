@@ -108,8 +108,10 @@ test.describe("T320 — pausar anúncio, limite do plano e aceite de IA (64-B)",
     await expect(p.getByTestId("anuncio-pausado")).not.toContainText("R$");
     await p.screenshot({ path: `${SAIDA}/t320-publico-pausado-390.png`, fullPage: true });
     // Rascunho continua 404.
-    const { data } = await adm().from("properties").insert({ owner_id: ids.dono, title: "Rascunho invisível t320", city: "Uberlândia", status: "draft" }).select("id").single();
-    const r2 = await p.goto(`/imoveis/${data!.id}`, { waitUntil: "domcontentloaded" });
+    const { data, error } = await adm().from("properties").insert({ owner_id: ids.dono, title: `Rascunho invisível t320 ${sufixo}`, city: "Uberlândia", status: "draft" }).select("id").single();
+    // Sem o id, o motivo do banco aparece no relatório (antes: "Cannot read properties of null").
+    if (error || !data) throw new Error(`rascunho de teste não foi criado: ${error?.message ?? "sem linha"}`);
+    const r2 = await p.goto(`/imoveis/${data.id}`, { waitUntil: "domcontentloaded" });
     expect(r2?.status()).toBe(404);
     await ctx.close();
   });
