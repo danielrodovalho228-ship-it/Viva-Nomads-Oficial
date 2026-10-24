@@ -875,6 +875,7 @@
         "admin"
       ],
       "specs": [
+        "t370-conta-a3-papeis",
         "t368-conta-a8-ajuda",
         "t14-app-mode",
         "t17-conta-salvar",

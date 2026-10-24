@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { CascaConta } from "@/components/account/casca-conta";
 import { TelaAjuda } from "@/components/account/tela-ajuda";
+import { TelaPapeis } from "@/components/account/tela-papeis";
 import { PerfilTela } from "@/components/account/perfil-tela";
 import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
@@ -14,13 +15,12 @@ import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
 import { DegrausPerfil } from "@/components/account/degraus-perfil";
 import { RedesPrivadas } from "@/components/account/redes-privadas";
-import { SeusPapeis } from "@/components/account/seus-papeis";
-import { MinhaIntencao } from "@/components/auth/escolha-intencao";
+import { SUBTITULO_PAPEIS } from "@/lib/conta/tela-papeis";
 import { ALIAS_SECAO, type SecaoConta } from "@/lib/conta/secoes";
 
 /** Subtítulo de cada seção (A1; cada tela ganha o desenho do seu mockup nas entregas A2–A8). */
 const SUBTITULO: Record<Exclude<SecaoConta, "perfil" | "ajuda" | "avaliacoes">, string> = {
-  papeis: "O que você quer fazer na Viva. Só muda o menu e o painel que aparecem primeiro.",
+  papeis: SUBTITULO_PAPEIS,
   dados: "Atualize suas informações de cadastro. Só a Viva vê; vão no contrato e nos avisos.",
   privacidade: "O que já está verificado e como proteger a conta.",
   notificacoes: "Como e quando a Viva avisa você.",
@@ -51,10 +51,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
     case "papeis":
       return (
         <CascaConta ativo="papeis" subtitulo={SUBTITULO.papeis}>
-          <div className="grid gap-4">
-            <SeusPapeis dentroDoBloco />
-            <MinhaIntencao />
-          </div>
+          <TelaPapeis />
         </CascaConta>
       );
     case "dados":
