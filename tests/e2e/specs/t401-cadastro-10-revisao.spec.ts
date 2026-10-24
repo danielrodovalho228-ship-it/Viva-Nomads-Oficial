@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T392 — Cadastro 10: Revise e publique (mockup cadastro-imovel-10). 1280 e 390, com prints.
+ * T401 — Cadastro 10: Revise e publique (mockup cadastro-imovel-10). 1280 e 390, com prints.
  *   1. "Passo 10 de 10", um H1 ("Revise e publique"); a "Lista de conferência" com um item por passo (Fotos, Endereço,
  *      Detalhes, Comodidades, Regras, Preço, Disponibilidade), todos feitos; o cartão do anúncio com a foto carregando de
  *      verdade, "1 quarto · 1 banheiro · 40 m²" e "R$ 3.200/mês no total". No computador: lista à esquerda, cartão à
@@ -13,13 +13,13 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const SAIDA = "tests/laboratorio/saida";
 const FOTOS_LOCAIS = ["sala", "quarto", "cozinha", "banheiro", "fachada", "sala", "quarto", "cozinha"];
 
-test.describe("T392 — Cadastro 10: Revise e publique (cadastro-imovel-10)", () => {
+test.describe("T401 — Cadastro 10: Revise e publique (cadastro-imovel-10)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const dono = { email: `dono.t392.${sufixo}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
+  const dono = { email: `dono.t401.${sufixo}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
   const ids: { dono?: string; imovel?: string } = {};
 
   test.beforeAll(async () => {
@@ -125,7 +125,7 @@ test.describe("T392 — Cadastro 10: Revise e publique (cadastro-imovel-10)", ()
       expect(livre, "nada fixo por cima do Publicar").toBe(true);
       await p.evaluate(() => document.querySelector("[data-painel-main]")?.scrollTo(0, 0));
       await p.evaluate(() => window.scrollTo(0, 0));
-      await p.screenshot({ path: `${SAIDA}/t392-revisao-${w}.png`, fullPage: w === 390 });
+      await p.screenshot({ path: `${SAIDA}/t401-revisao-${w}.png`, fullPage: w === 390 });
       await p.context().close();
     });
   }
