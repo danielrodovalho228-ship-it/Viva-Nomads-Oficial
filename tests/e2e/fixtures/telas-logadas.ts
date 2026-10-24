@@ -18,6 +18,8 @@ export const TELAS_PAINEL = [
   "/dashboard/comparar",
   "/dashboard/conta",
   "/dashboard/conta/seguranca",
+  "/dashboard/conta/excluir",
+  "/dashboard/conta/avaliacoes",
   "/dashboard/contratos",
   "/dashboard/favoritos",
   "/dashboard/fechamento",

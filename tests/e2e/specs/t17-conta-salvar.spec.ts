@@ -20,7 +20,7 @@ test.describe("T17 — Conta salva de verdade", () => {
     const telOriginal = await tel.inputValue();
 
     await tel.fill("34 99999-0017");
-    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
     await expect(page.getByText("Dados salvos.")).toBeVisible();
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
@@ -29,29 +29,32 @@ test.describe("T17 — Conta salva de verdade", () => {
 
     // Telefone inválido: erro na tela, nada gravado.
     await page.getByLabel("Telefone").fill("123");
-    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
     await expect(page.getByText(/Telefone inválido/)).toBeVisible();
 
     // Devolve o original.
     await page.getByLabel("Telefone").fill(telOriginal);
-    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await page.getByTestId("dados-salvar").click(); // A4 (perfil-04): "Salvar"
     await expect(page.getByText("Dados salvos.")).toBeVisible();
   });
 
   test("preferência de notificação grava e volta depois do F5", async ({ page }) => {
     await page.goto("/dashboard/conta/notificacoes", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    const sw = page.getByRole("switch", { name: "Avisos por e-mail" });
+    // A6 (mockup perfil-06): o canal "E-mail" grava com "Salvar preferências".
+    const sw = page.getByTestId("notif-canal-email");
     await expect(sw).toBeEnabled();
     const antes = await sw.getAttribute("aria-checked");
     await sw.click();
-    await expect(page.getByText("Preferência salva.")).toBeVisible();
+    await page.getByTestId("notif-salvar").click();
+    await expect(page.getByTestId("notif-salvar-msg")).toHaveText("Preferências salvas.");
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    const depois = page.getByRole("switch", { name: "Avisos por e-mail" });
+    const depois = page.getByTestId("notif-canal-email");
     await expect(depois).toHaveAttribute("aria-checked", antes === "true" ? "false" : "true");
     await depois.click(); // devolve
-    await expect(page.getByText("Preferência salva.")).toBeVisible();
+    await page.getByTestId("notif-salvar").click();
+    await expect(page.getByTestId("notif-salvar-msg")).toHaveText("Preferências salvas.");
   });
 
   test("senha atual errada não troca a senha", async ({ page }) => {

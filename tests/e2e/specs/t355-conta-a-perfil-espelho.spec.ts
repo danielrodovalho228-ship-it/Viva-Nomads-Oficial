@@ -117,9 +117,9 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
     await expect(p.getByTestId("topo-foto-msg")).toHaveText("Foto atualizada", { timeout: 20_000 });
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
     await expect(p.getByTestId("topo-foto")).toHaveAccessibleName("Trocar foto");
-    // C8/E55: na Conta a foto aparece no topo e (menor) no espelho; o cabeçalho fica só nas iniciais.
+    // A foto no topo e (menor) no espelho; o cabeçalho também mostra a foto (mockup perfil-01, decisão de 24/10).
     await expect(p.locator('[data-testid="espelho-perfil"]:visible img:visible')).toHaveCount(1);
-    await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
+    await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
     // O medidor andou sem recarregar: "Foto de perfil" saiu da linha de faltas.
     await expect(p.getByTestId("perfil-falta")).not.toContainText("Foto de perfil", { timeout: 15_000 });
     const caminho = (await adm().from("profiles").select("avatar_url").eq("id", ids.dono).single()).data?.avatar_url as string;
@@ -171,7 +171,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       await p.getByTestId("perfil-cartao").waitFor();
       const espelho = p.locator('[data-testid="espelho-perfil"]:visible');
       await expect(espelho.getByRole("heading")).toHaveText("É assim que o proprietário te vê");
-      await expect(espelho.getByTestId("espelho-nome")).toHaveText("Helena P.");
+      await expect(espelho.getByTestId("espelho-nome")).toHaveText("Helena Prado");
       await expect(espelho.getByTestId("espelho-email")).toHaveText("E-mail confirmado");
       await p.locator("#perfil-cidade").fill("Santa Mônica");
       await p.locator("#perfil-bio").fill("Professora, tranquila, cuido bem da casa.");

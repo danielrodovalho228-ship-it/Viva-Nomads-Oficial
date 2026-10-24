@@ -18,7 +18,8 @@
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
         "t343-nivel-busca-sem-beco",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t368-varredura-bloco20"
       ]
     },
     "/acesso-socios": {
@@ -71,7 +72,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t368-varredura-bloco20"
+      ]
     },
     "/admin/agentes": {
       "personas": [
@@ -402,7 +405,8 @@
         "t343-nivel-busca-sem-beco",
         "t344-avaliacao-telas-62a-parte2",
         "t350-filtros-honestos-buscar",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t368-varredura-bloco20"
       ]
     },
     "/cidades": {
@@ -451,7 +455,8 @@
         "t177-video-institucional",
         "t201-qa-muse",
         "t311-marco-principal-unico",
-        "t354-varredura-bloco19"
+        "t354-varredura-bloco19",
+        "t368-varredura-bloco20"
       ]
     },
     "/comparar": {
@@ -671,7 +676,8 @@
         "t337-varredura-redundancia",
         "t362-perfil-avaliacoes-pix",
         "t353-varredura-bloco18",
-        "t354-varredura-bloco19"
+        "t354-varredura-bloco19",
+        "t370-conta-a3-papeis"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1125,7 +1131,8 @@
         "t69-botoes-header",
         "t72-paginas-institucionais",
         "t311-marco-principal-unico",
-        "t325-fotos-ilustrativas-empresas"
+        "t325-fotos-ilustrativas-empresas",
+        "t368-varredura-bloco20"
       ]
     },
     "/excluir-conta": {
@@ -1161,7 +1168,8 @@
         "publico"
       ],
       "specs": [
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t368-varredura-bloco20"
       ]
     },
     "/guias": {
@@ -1170,7 +1178,8 @@
       ],
       "specs": [
         "t105-guias",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t368-varredura-bloco20"
       ]
     },
     "/guias/[slug]": {
@@ -1262,7 +1271,8 @@
         "t72-paginas-institucionais",
         "t311-marco-principal-unico",
         "t325-fotos-ilustrativas-empresas",
-        "t354-varredura-bloco19"
+        "t354-varredura-bloco19",
+        "t368-varredura-bloco20"
       ]
     },
     "/parceiros": {
@@ -1330,7 +1340,8 @@
         "t188-pedido-novo-layout",
         "t232-pedido-moradia-completo",
         "t311-marco-principal-unico",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t368-varredura-bloco20"
       ]
     },
     "/precos": {
@@ -1350,7 +1361,8 @@
         "t185-precos-3s",
         "t311-marco-principal-unico",
         "t359-precos-taxa-e51-e54",
-        "t338-varredura-bloco15"
+        "t338-varredura-bloco15",
+        "t368-varredura-bloco20"
       ]
     },
     "/privacidade": {
@@ -1580,7 +1592,8 @@
         "t239-cartao-parceiro",
         "t250-parceiros-contratacao",
         "t253-orcamento-na-pagina-do-parceiro",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t368-varredura-bloco20"
       ]
     },
     "/parceiros/ativar": {
@@ -1600,7 +1613,8 @@
         "t236-parceiros-ciclo",
         "t241-contas-teste-36",
         "t262-detalhe-imovel-41",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t368-varredura-bloco20"
       ]
     },
     "/admin/contratos/[id]": {
@@ -1620,7 +1634,8 @@
         "parceiro"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t368-varredura-bloco20"
       ]
     },
     "/admin/parceiros/pedidos": {
@@ -1637,7 +1652,8 @@
         "admin"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t368-varredura-bloco20"
       ]
     },
     "/admin/contratos/encerramentos": {
@@ -1907,6 +1923,29 @@
       "specs": [
         "t347-respostas-rapidas-55e2",
         "t335-varredura-bloco13"
+      ]
+    },
+    "/dashboard/conta/excluir": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t316-sair-da-viva-51",
+        "t332-merges-1170-1172",
+        "t365-conta-a1-casca-perfil",
+        "t375-conta-a8-ajuda"
+      ]
+    },
+    "/dashboard/conta/avaliacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t369-conta-a2-avaliacoes"
       ]
     }
   },
@@ -2580,6 +2619,16 @@
       ],
       "specs": [
         "t348-triagem-vinculo-52"
+      ]
+    },
+    "/api/conta/meus-dados": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t374-conta-a5-privacidade"
       ]
     }
   },
@@ -5928,6 +5977,60 @@
       ],
       "specs": [
         "t362-perfil-avaliacoes-pix"
+      ]
+    },
+    "src/lib/data/canais-actions.ts#getCanais": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t371-conta-a6-notificacoes"
+      ]
+    },
+    "src/lib/data/canais-actions.ts#setCanais": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t371-conta-a6-notificacoes"
+      ]
+    },
+    "src/lib/data/nascimento-actions.ts#getNascimento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t373-conta-a4-dados"
+      ]
+    },
+    "src/lib/data/nascimento-actions.ts#salvarNascimento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t373-conta-a4-dados"
+      ]
+    },
+    "src/lib/data/privacidade-actions.ts#getPrivacidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t374-conta-a5-privacidade"
+      ]
+    },
+    "src/lib/data/privacidade-actions.ts#setPrivacidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t374-conta-a5-privacidade"
       ]
     }
   }

@@ -15,9 +15,11 @@ export function linhaIntencaoCidade(intencoes: readonly Intencao[], cidade: stri
   return partes.join(" · ");
 }
 
-/** Só o primeiro nome e a inicial do sobrenome, como o proprietário vê ("Ana S."). Sem nome: "Seu nome". */
+/**
+ * Nome no espelho: o nome completo, como no mockup perfil-01 (decisão de 24/10: nestas telas vale o desenho).
+ * Sem nome: "Seu nome".
+ */
 export function nomeNoEspelho(nome: string | null | undefined): string {
-  const p = (nome ?? "").trim().split(/\s+/).filter(Boolean);
-  if (p.length === 0) return "Seu nome";
-  return p.length === 1 ? p[0] : `${p[0]} ${p[p.length - 1].charAt(0).toUpperCase()}.`;
+  const n = (nome ?? "").trim().replace(/\s+/g, " ");
+  return n || "Seu nome";
 }

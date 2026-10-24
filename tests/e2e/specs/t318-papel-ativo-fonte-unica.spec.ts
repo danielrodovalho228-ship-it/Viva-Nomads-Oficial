@@ -102,11 +102,10 @@ test.describe("T318 — papel ativo com fonte única (PAPEL-B)", () => {
     await adm().from("profiles").update({ papel_ativo: "proprietario", preferred_mode: "owner", intencao: ["anunciar"] }).eq("id", ids.conta);
     const p = await abrir(browser, 1280);
     await p.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
-    const intencao = p.getByTestId("minha-intencao").filter({ visible: true });
-    await expect(intencao.getByTestId("intencao-morar")).toBeVisible({ timeout: 20_000 });
-    await intencao.getByTestId("intencao-anunciar").click();
-    await intencao.getByTestId("intencao-morar").click();
-    await intencao.getByRole("button", { name: /Salvar/ }).click();
+    // A3 (perfil-03): os cartões gravam a cada toque — liga "Quero morar" e desliga "Quero anunciar".
+    await p.getByTestId("papel-morar-toggle").click({ timeout: 20_000 });
+    await expect(p.getByTestId("papeis-preferencias")).toContainText("Preferências salvas");
+    await p.getByTestId("papel-anunciar-toggle").click();
     await expect.poll(async () => (await adm().from("profiles").select("intencao").eq("id", ids.conta).single()).data?.intencao, { timeout: 15_000 }).toEqual(["morar"]);
     expect(await gravado()).toBe("proprietario");
     await p.reload({ waitUntil: "domcontentloaded" });

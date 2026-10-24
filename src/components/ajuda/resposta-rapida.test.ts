@@ -22,7 +22,7 @@ test("Falar com a Viva: terciário, com a promessa única, no fim das telas de d
     "app/(dashboard)/dashboard/servicos/pedidos/[id]/page.tsx",
     "app/(dashboard)/dashboard/fechamento/page.tsx",
     "app/(dashboard)/dashboard/verificacao/page.tsx",
-    "app/(dashboard)/dashboard/conta/[secao]/page.tsx",
+    "app/(dashboard)/dashboard/conta/excluir/page.tsx",
   ])
     assert.match(ler(tela), /<FalarComAViva\b/, tela);
 });

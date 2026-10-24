@@ -5,6 +5,8 @@ import { Check, CircleDashed, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Panel } from "@/components/dashboard/primitives";
+import { SOMBRA_SO_CELULAR, SOMBRA_SO_COMPUTADOR } from "@/lib/conta/visual-mockup";
+import { cn } from "@/lib/utils";
 import { BlocoOpcional } from "@/components/ui/bloco-opcional";
 import { EspelhoPerfil } from "@/components/account/espelho-perfil";
 import { PetsFicha } from "@/components/account/pets-ficha";
@@ -126,9 +128,11 @@ export function PerfilTela() {
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]" data-testid="perfil-tela">
       <div className="grid min-w-0 gap-6">
-        <section className="rounded-xl bg-white p-4 sm:p-6" aria-labelledby="perfil-foto-titulo" data-testid="perfil-cartao">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6" data-testid="topo-conta">
-            <Avatar name={nome} size={120} photoUrl={foto.url ?? undefined} />
+        {/* Mockup perfil-01: no computador um cartão só (foto + campos); no celular a foto e "Trocar foto" ficam sobre o
+            fundo e o cartão branco começa nos campos. */}
+        <section className={cn("sm:rounded-xl sm:bg-white sm:p-6", SOMBRA_SO_COMPUTADOR)} aria-labelledby="perfil-foto-titulo" data-testid="perfil-cartao">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6" data-testid="topo-conta">
+            <Avatar name={nome} size={144} photoUrl={foto.url ?? undefined} />
             <div className="flex flex-col items-center gap-2 sm:items-start">
               <h2 id="perfil-foto-titulo" className="font-title text-xl font-semibold text-ink max-sm:sr-only">
                 Foto do perfil
@@ -148,7 +152,7 @@ export function PerfilTela() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4">
+          <div className={cn("mt-6 grid gap-4 max-sm:rounded-xl max-sm:bg-white max-sm:p-4", SOMBRA_SO_CELULAR)}>
             <label className="block text-sm text-muted">
               Nome completo:
               <input className={`${CAMPO} mt-1`} value={nome} maxLength={80} autoComplete="name" onChange={(e) => setNome(e.target.value)} data-testid="perfil-nome" />

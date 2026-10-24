@@ -23,7 +23,7 @@ test("seção pela rota: /dashboard/conta é Perfil; endereços antigos caem na 
   assert.equal(secaoDaRota("/dashboard/conta/"), "perfil");
   assert.equal(secaoDaRota("/dashboard/conta/notificacoes?x=1"), "notificacoes");
   assert.equal(secaoDaRota("/dashboard/conta/seguranca"), "privacidade");
-  assert.equal(secaoDaRota("/dashboard/conta/excluir"), "ajuda");
+  assert.equal(secaoDaRota("/dashboard/conta/excluir"), "privacidade");
   assert.equal(secaoDaRota("/dashboard/conta/perfil-publico"), null);
   assert.equal(secaoDaRota("/dashboard/conta/dados/x"), null);
   assert.equal(secaoDaRota("/dashboard"), null);
@@ -34,7 +34,7 @@ test("âncoras da página longa levam à tela nova (mantendo a busca e a âncora
   assert.equal(destinoDaAncora("#confianca", "?linkedin=conectado"), "/dashboard/conta/privacidade?linkedin=conectado");
   assert.equal(destinoDaAncora("#documento"), "/dashboard/conta/dados#documento");
   assert.equal(destinoDaAncora("celular"), "/dashboard/conta/dados#celular");
-  assert.equal(destinoDaAncora("#sair-da-viva"), "/dashboard/conta/ajuda");
+  assert.equal(destinoDaAncora("#sair-da-viva"), "/dashboard/conta/excluir");
   assert.equal(destinoDaAncora("#perfil-publico"), "/dashboard/conta/perfil");
   assert.equal(destinoDaAncora(""), null);
   assert.equal(destinoDaAncora("#qualquer"), null);

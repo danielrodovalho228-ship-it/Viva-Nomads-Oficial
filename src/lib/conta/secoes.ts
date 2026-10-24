@@ -24,14 +24,15 @@ export const SECOES_CONTA: readonly ItemSecao[] = [
   { id: "privacidade", rotulo: "Privacidade", href: "/dashboard/conta/privacidade", icone: "Shield", descricao: "Verificações, senha e duas etapas." },
   { id: "notificacoes", rotulo: "Notificações", href: "/dashboard/conta/notificacoes", icone: "Bell", descricao: "Como e quando a Viva avisa você." },
   { id: "pagamentos", rotulo: "Pagamentos", href: "/dashboard/conta/pagamentos", icone: "CreditCard", descricao: "Para onde vai o valor mensal." },
-  { id: "ajuda", rotulo: "Ajuda", href: "/dashboard/conta/ajuda", icone: "CircleHelp", descricao: "Central de ajuda, contato e sair da Viva." },
+  { id: "ajuda", rotulo: "Ajuda", href: "/dashboard/conta/ajuda", icone: "CircleHelp", descricao: "Central de ajuda, termos e sair da conta." },
 ] as const;
 
 /** Endereços antigos das subtelas que agora caem numa seção nova (links salvos, e-mails, app). */
 export const ALIAS_SECAO: Readonly<Record<string, SecaoConta>> = {
   // /dashboard/conta/seguranca é rota própria (subtela de Privacidade); o alias só vale para a seção ativa no menu.
   seguranca: "privacidade",
-  excluir: "ajuda",
+  // /dashboard/conta/excluir (Sair da Viva) é subtela de Privacidade, aberta por "Excluir minha conta" (perfil-05).
+  excluir: "privacidade",
 };
 
 /** A seção da rota: /dashboard/conta → perfil; /dashboard/conta/<id ou alias> → a seção; outra coisa → null. */
@@ -59,7 +60,7 @@ const ANCORA_SECAO: Readonly<Record<string, string>> = {
   papeis: "/dashboard/conta/papeis",
   notificacoes: "/dashboard/conta/notificacoes",
   pagamentos: "/dashboard/conta/pagamentos",
-  "sair-da-viva": "/dashboard/conta/ajuda",
+  "sair-da-viva": "/dashboard/conta/excluir",
   "perfil-publico": "/dashboard/conta/perfil",
   pets: "/dashboard/conta/perfil",
 };

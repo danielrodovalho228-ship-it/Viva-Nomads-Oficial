@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
+import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
 
 /**
  * "Seja parceiro" (Prompt 31a, item 2). Exige conta com e-mail confirmado: quem não entrou preenche, vai criar a
@@ -188,6 +190,14 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
               {k.rotulo}
             </label>
           ))}
+        </div>
+        {/* Prompt 62-A, item 1: avaliação de imóveis é credenciamento à parte (nunca categoria do catálogo). */}
+        <div className="mt-2 rounded-lg border border-sage-200 bg-white p-3 text-sm" data-testid="sp-convite-avaliacao">
+          <p className="font-semibold text-ink">{CONVITE_SEJA_PARCEIRO.titulo}</p>
+          <p className="mt-1 text-muted">{CONVITE_SEJA_PARCEIRO.texto}</p>
+          <Link href="/dashboard/parceiro/avaliacao" className="mt-1 inline-block font-semibold text-forest underline underline-offset-2">
+            {CONVITE_SEJA_PARCEIRO.link}
+          </Link>
         </div>
       </fieldset>
 

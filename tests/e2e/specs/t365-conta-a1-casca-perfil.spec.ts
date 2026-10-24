@@ -7,8 +7,8 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
  *   1. Computador (1280): /dashboard/conta abre a tela Perfil na casca — menu lateral "Conta" com as 8 seções na ordem
  *      do desenho, a ativa numa pílula verde; fundo areia; UM H1 visível ("Perfil", na coluna da direita, acima do
  *      espelho); cartão "Foto do perfil" com Nome completo / Sobre você / Cidade e "Salvar alterações"; o espelho à direita.
- *   2. Cada seção é a sua tela (/dashboard/conta/<seção>), com o seu H1; os endereços antigos (/seguranca, /excluir)
- *      caem em Privacidade e Ajuda.
+ *   2. Cada seção é a sua tela (/dashboard/conta/<seção>), com o seu H1; /seguranca e /excluir são subtelas de
+ *      Privacidade (A8).
  *   3. Celular (390): /dashboard/conta é o menu (H1 "Conta"); Perfil abre com "‹ Conta" e o "Salvar alterações" preso
  *      no fim; nada passa da largura da tela.
  *   4. Salvar: nome, frase e idiomas (toggle E56) ficam depois de recarregar e o espelho mostra a frase.
@@ -102,7 +102,7 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
     await p.getByTestId("conta-menu-dados").click();
     await expect(p).toHaveURL(/\/dashboard\/conta\/dados$/);
-    await expect(h1Visiveis(p)).toHaveText("Dados");
+    await expect(h1Visiveis(p)).toHaveText("Meus dados"); // A4: título do mockup perfil-04
     await expect(p.getByTestId("conta-menu-dados")).toHaveAttribute("aria-current", "page");
 
     const titulos: Record<string, string> = {
@@ -123,7 +123,8 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     await expect(h1Visiveis(p)).toHaveText("Senha e duas etapas");
     await expect(p.getByTestId("conta-menu-privacidade")).toHaveAttribute("aria-current", "page");
     await p.goto("/dashboard/conta/excluir", { waitUntil: "domcontentloaded" });
-    await expect(h1Visiveis(p)).toHaveText("Ajuda");
+    await expect(h1Visiveis(p)).toHaveText("Sair da Viva");
+    await expect(p.getByTestId("conta-menu-privacidade")).toHaveAttribute("aria-current", "page");
     await expect(p.getByTestId("sair-da-viva")).toBeVisible();
     await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
     await printInteiro(p, "privacidade-1280");
@@ -132,7 +133,8 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
 
   test("3. 390: menu da Conta → Perfil com '‹ Conta', um H1 e o salvar preso; sem rolagem para o lado", async ({ browser }) => {
     const p = await como(browser, 390);
-    await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+    // Toca depois de a página assentar: as leituras do painel (Server Actions) entram na mesma fila da navegação.
+    await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
     await p.getByTestId("conta-menu").waitFor();
     await expect(h1Visiveis(p)).toHaveCount(1);
     await expect(h1Visiveis(p)).toHaveText("Conta");
@@ -174,7 +176,7 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     await expect(p.getByTestId("perfil-nome")).toHaveValue("Lia Moura Costa");
     await expect(p.locator("#perfil-bio")).toHaveValue(frase);
     await expect(p.getByTestId("idiomas-toggle-bloco-toggle")).toHaveAttribute("aria-checked", "true");
-    await expect(p.locator('[data-testid="espelho-nome"]:visible')).toHaveText("Lia C.");
+    await expect(p.locator('[data-testid="espelho-nome"]:visible')).toHaveText("Lia Moura Costa");
     await p.context().close();
   });
 });
