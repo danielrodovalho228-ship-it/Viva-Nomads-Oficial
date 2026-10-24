@@ -287,6 +287,16 @@ export async function cliqueResponde(page: Page, botao: ReturnType<Page["locator
     return explica ? [] : [`botão "${nome}" desabilitado sem explicar o motivo`];
   }
   await botao.first().click({ timeout: 5_000 }).catch(() => {});
+  // Envio com campo obrigatório vazio: o navegador mostra o balão nativo de validação, que não entra no DOM
+  // (t368, /empresas, 24/10). Formulário inválido depois do clique conta como resposta.
+  const validacaoNativa = await botao
+    .first()
+    .evaluate((el) => {
+      const b = el as HTMLButtonElement;
+      return b.type === "submit" && !!b.form && !b.form.noValidate && !b.form.checkValidity();
+    })
+    .catch(() => false);
+  if (validacaoNativa) return [];
   const limite = Date.now() + 3_000;
   while (Date.now() < limite) {
     await page.waitForTimeout(200);
