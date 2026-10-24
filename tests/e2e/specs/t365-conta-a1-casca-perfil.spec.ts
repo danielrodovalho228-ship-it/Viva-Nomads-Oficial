@@ -173,7 +173,7 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     await expect(p.getByTestId("perfil-nome")).toHaveValue("Lia Moura Costa");
     await expect(p.locator("#perfil-bio")).toHaveValue(frase);
     await expect(p.getByTestId("idiomas-toggle-bloco-toggle")).toHaveAttribute("aria-checked", "true");
-    await expect(p.locator('[data-testid="espelho-nome"]:visible')).toHaveText("Lia C.");
+    await expect(p.locator('[data-testid="espelho-nome"]:visible')).toHaveText("Lia Moura Costa");
     await p.context().close();
   });
 });

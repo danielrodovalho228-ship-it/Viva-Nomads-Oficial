@@ -22,7 +22,8 @@ test("espelho: título, pílula e a linha 'Quer morar · cidade' (o que falta so
   assert.equal(linhaIntencaoCidade(["anunciar", "morar"], ""), "Tem imóvel");
   assert.equal(linhaIntencaoCidade([], "Uberlândia (MG)"), "Uberlândia (MG)");
   assert.equal(linhaIntencaoCidade([], "  "), "");
-  assert.equal(nomeNoEspelho("Ana Clara Souza"), "Ana S.");
+  // Mockup perfil-01 (decisão de 24/10): o espelho mostra o nome completo.
+  assert.equal(nomeNoEspelho("  Ana  Clara Souza "), "Ana Clara Souza");
   assert.equal(nomeNoEspelho("Ana"), "Ana");
   assert.equal(nomeNoEspelho(""), "Seu nome");
   for (const t of [TITULO_ESPELHO, PILULA_EMAIL]) assert.doesNotMatch(t, TEXTO_PROIBIDO);
