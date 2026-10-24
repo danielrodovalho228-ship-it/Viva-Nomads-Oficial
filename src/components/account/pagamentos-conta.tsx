@@ -1,17 +1,20 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { Check, Copy, CreditCard, Plus } from "lucide-react";
 import { meusPapeis } from "@/lib/data/papeis-actions";
 import { minhaChavePix, removerChavePix, salvarChavePix, type MinhaChavePix } from "@/lib/data/recebimento-actions";
 import { TIPOS_CHAVE_PIX, type TipoChavePix } from "@/lib/conta/chave-pix";
+import { NOTA_MORADOR, NOTA_RECEBE, SEM_CARTAO, TITULO_MORADOR, TITULO_RECEBE } from "@/lib/conta/tela-pagamentos";
 import { Button } from "@/components/ui/button";
 
 const campo = "w-full min-h-[44px] rounded-lg border border-line bg-white px-3 text-sm text-ink";
 
 /**
- * Configurações → Pagamentos (Prompt 43, item 3; mockup perfil-07-pagamentos). Para quem anuncia: "Como você recebe"
- * — a chave Pix em que o morador paga o valor mensal direto ao proprietário (PERFIL-B, 0236; só o dono lê e grava).
- * Para quem mora: como paga. A Viva não recebe o valor mensal.
+ * A7 — Conta › Pagamentos (mockup perfil-07). "Como você recebe (proprietário)": a chave Pix em que o morador paga o
+ * valor mensal direto ao proprietário (PERFIL-B, 0236; só o dono lê e grava), no campo com o botão de copiar.
+ * "Para suas estadias (morador)": a linha do cartão e "Adicionar cartão" como no desenho, sem cadastro nem cobrança —
+ * a Viva não recebe o valor mensal.
  */
 export function PagamentosConta() {
   const [dono, setDono] = useState(false);
@@ -51,6 +54,7 @@ export function PagamentosConta() {
       const r = await removerChavePix();
       if (!r.ok) return setErro(r.error ?? "Não foi possível remover.");
       setPix(null);
+      setCopiado(false);
     });
   const copiar = async () => {
     if (!pix) return;
@@ -63,64 +67,94 @@ export function PagamentosConta() {
   };
 
   return (
-    <section className="rounded-xl border border-line bg-white p-4 sm:p-6" data-testid="conta-pagamentos">
-      <h2 className="font-title text-lg font-semibold text-ink">{dono ? "Como o morador paga você" : "Como você paga"}</h2>
-      {dono ? (
-        <>
-          <p className="mt-2 text-sm text-ink">
-            O morador paga o valor mensal direto para a sua conta, nos dados que você informa no contrato. A Viva não recebe esse valor.
-          </p>
-          <div className="mt-4 grid gap-3" data-testid="conta-pix">
-            <h3 className="text-sm font-semibold text-ink">Sua chave Pix para receber</h3>
-            {pix && !editando ? (
-              <div className="grid gap-2">
-                <p className="text-sm text-ink" data-testid="conta-pix-salva">
-                  {pix.rotuloTipo}: <span className="font-semibold">{pix.mascarada}</span>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4" data-testid="conta-pagamentos">
+      {dono && (
+        <section className="rounded-xl bg-white p-4 sm:p-6" aria-labelledby="pag-recebe-titulo" data-testid="conta-pix">
+          <h2 id="pag-recebe-titulo" className="font-title text-2xl font-semibold text-ink">
+            {TITULO_RECEBE}
+          </h2>
+          {pix && !editando ? (
+            <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3">
+              <div className="flex min-h-14 min-w-0 items-center gap-3 rounded-lg border border-line px-4">
+                <p className="min-w-0 flex-1 truncate text-base text-ink">
+                  <span className="text-muted">Chave Pix · </span>
+                  <span className="font-semibold" data-testid="conta-pix-salva">
+                    {pix.rotuloTipo}: {pix.mascarada}
+                  </span>
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="secondary" size="sm" onClick={copiar} data-testid="conta-pix-copiar">
-                    {copiado ? "Copiada" : "Copiar chave"}
-                  </Button>
-                  <Button type="button" variant="secondary" size="sm" onClick={() => { setEditando(true); setTipo(pix.tipo); }} data-testid="conta-pix-trocar">
-                    Trocar chave
-                  </Button>
-                  <Button type="button" variant="destructive" size="sm" onClick={remover} disabled={pendente} data-testid="conta-pix-remover">
-                    Remover
-                  </Button>
-                </div>
+                <button
+                  type="button"
+                  onClick={copiar}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-ink hover:text-forest"
+                  aria-label={copiado ? "Chave Pix copiada" : "Copiar chave Pix"}
+                  data-testid="conta-pix-copiar"
+                >
+                  {copiado ? <Check className="h-5 w-5 text-forest" aria-hidden /> : <Copy className="h-5 w-5" aria-hidden />}
+                </button>
               </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-[180px_1fr_auto] sm:items-end">
-                <label className="grid gap-1 text-xs text-muted">
-                  Tipo da chave
-                  <select className={campo} value={tipo} onChange={(e) => setTipo(e.target.value as TipoChavePix)} data-testid="conta-pix-tipo">
-                    {TIPOS_CHAVE_PIX.map((t) => (
-                      <option key={t.valor} value={t.valor}>
-                        {t.rotulo}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-xs text-muted">
-                  Chave
-                  <input className={campo} value={chave} onChange={(e) => setChave(e.target.value)} autoComplete="off" data-testid="conta-pix-chave" />
-                </label>
-                <Button type="button" variant="secondary" size="sm" onClick={salvar} disabled={pendente || !chave.trim()} data-testid="conta-pix-salvar">
-                  Salvar chave
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="secondary" size="sm" onClick={() => { setEditando(true); setTipo(pix.tipo); }} data-testid="conta-pix-trocar">
+                  Trocar chave
+                </Button>
+                <Button type="button" variant="destructive" size="sm" onClick={remover} disabled={pendente} data-testid="conta-pix-remover">
+                  Remover
                 </Button>
               </div>
-            )}
-            {erro && (
-              <p className="text-sm text-red-700" role="alert" data-testid="conta-pix-erro">
-                {erro}
-              </p>
-            )}
-            <p className="text-xs text-muted">Só você vê esta chave. A Viva não recebe nem movimenta o valor mensal.</p>
-          </div>
-        </>
-      ) : (
-        <p className="mt-2 text-sm text-ink">Você paga o valor mensal direto ao proprietário, nos dados que estão no contrato. A Viva não recebe esse valor.</p>
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-3 sm:grid-cols-[180px_1fr_auto] sm:items-end">
+              <label className="grid gap-1 text-xs text-muted">
+                Tipo da chave
+                <select className={campo} value={tipo} onChange={(e) => setTipo(e.target.value as TipoChavePix)} data-testid="conta-pix-tipo">
+                  {TIPOS_CHAVE_PIX.map((t) => (
+                    <option key={t.valor} value={t.valor}>
+                      {t.rotulo}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-xs text-muted">
+                Chave Pix
+                <input className={campo} value={chave} onChange={(e) => setChave(e.target.value)} autoComplete="off" data-testid="conta-pix-chave" />
+              </label>
+              <Button type="button" variant="secondary" size="sm" onClick={salvar} disabled={pendente || !chave.trim()} data-testid="conta-pix-salvar">
+                Salvar chave
+              </Button>
+            </div>
+          )}
+          {erro && (
+            <p className="mt-2 text-sm text-red-700" role="alert" data-testid="conta-pix-erro">
+              {erro}
+            </p>
+          )}
+          <p className="mt-3 text-sm text-muted" data-testid="conta-pix-nota">
+            {NOTA_RECEBE}
+          </p>
+        </section>
       )}
-    </section>
+
+      <section className="rounded-xl bg-white p-4 sm:p-6" aria-labelledby="pag-morador-titulo" data-testid="conta-pag-morador">
+        <h2 id="pag-morador-titulo" className="font-title text-2xl font-semibold text-ink">
+          {TITULO_MORADOR}
+        </h2>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-line bg-sage-100 text-forest" aria-hidden>
+              <CreditCard className="h-6 w-6" />
+            </span>
+            <span className="text-base text-ink" data-testid="conta-cartao">
+              {SEM_CARTAO}
+            </span>
+          </div>
+          {/* Como no desenho, mas sem cadastro nem cobrança de cartão: nenhuma chave de pagamento é ligada. */}
+          <Button type="button" variant="secondary" size="lg" disabled aria-describedby="pag-morador-nota" data-testid="conta-cartao-adicionar">
+            <Plus className="h-4 w-4" aria-hidden /> Adicionar cartão
+          </Button>
+        </div>
+        <p id="pag-morador-nota" className="mt-3 text-sm text-muted">
+          {NOTA_MORADOR}
+        </p>
+      </section>
+    </div>
   );
 }

@@ -2620,6 +2620,16 @@
       "specs": [
         "t348-triagem-vinculo-52"
       ]
+    },
+    "/api/conta/meus-dados": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t374-conta-a5-privacidade"
+      ]
     }
   },
   "actions": {
@@ -5974,14 +5984,54 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t371-conta-a6-notificacoes"
+      ]
     },
     "src/lib/data/canais-actions.ts#setCanais": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t371-conta-a6-notificacoes"
+      ]
+    },
+    "src/lib/data/nascimento-actions.ts#getNascimento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t373-conta-a4-dados"
+      ]
+    },
+    "src/lib/data/nascimento-actions.ts#salvarNascimento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t373-conta-a4-dados"
+      ]
+    },
+    "src/lib/data/privacidade-actions.ts#getPrivacidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t374-conta-a5-privacidade"
+      ]
+    },
+    "src/lib/data/privacidade-actions.ts#setPrivacidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t374-conta-a5-privacidade"
+      ]
     }
   }
 }

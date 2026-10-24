@@ -4,7 +4,7 @@ import { AtivarNotificacoes } from "@/components/app/push-app";
 import { TEXTO_EXCLUSAO } from "@/lib/saida/regras";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Lock, Bell, Trash2, Check } from "lucide-react";
+import { Loader2, Lock, Bell, Trash2, Check, BadgeCheck } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
@@ -26,6 +26,10 @@ import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
+import { getNascimento, salvarNascimento } from "@/lib/data/nascimento-actions";
+import { mascararNascimento, validarNascimento } from "@/lib/conta/nascimento";
+import { cn } from "@/lib/utils";
+import { PILULA_EMAIL } from "@/lib/perfil/espelho";
 
 
 /*
@@ -42,6 +46,9 @@ export function DadosPessoais() {
   const [linkedin, setLinkedin] = useState("");
   const [motivoEstadia, setMotivoEstadia] = useState("");
   const [email, setEmail] = useState(user?.email ?? "");
+  const [emailConfirmado, setEmailConfirmado] = useState(false);
+  const [nascimento, setNascimento] = useState("");
+  const [documento, setDocumento] = useState<MeuDocumento | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -57,7 +64,14 @@ export function DadosPessoais() {
         setLinkedin(d.linkedin);
         setMotivoEstadia(d.motivoEstadia);
         setEmail(d.email);
+        setEmailConfirmado(d.emailConfirmado);
       })
+      .catch(() => {});
+    getNascimento()
+      .then((n) => vivo && setNascimento(n))
+      .catch(() => {});
+    getMeuDocumento()
+      .then((d) => vivo && setDocumento(d))
       .catch(() => {});
     return () => {
       vivo = false;
@@ -68,15 +82,27 @@ export function DadosPessoais() {
     e.preventDefault();
     setErro(null);
     setOk(false);
+    const nasc = validarNascimento(nascimento);
+    if (!nasc.ok) {
+      setErro(nasc.erro);
+      return;
+    }
     setSalvando(true);
-    const r = await salvarMeusDados({
-      fullName: nome,
-      phone: telefone,
-      ...(mode === "tenant" ? { linkedin, motivoEstadia } : {}),
-    }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo.", dados: undefined }));
+    const [r, rn] = await Promise.all([
+      salvarMeusDados({
+        fullName: nome,
+        phone: telefone,
+        ...(mode === "tenant" ? { linkedin, motivoEstadia } : {}),
+      }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo.", dados: undefined })),
+      salvarNascimento(nascimento).catch(() => ({ ok: false, error: "Sem conexão. Tente de novo." })),
+    ]);
     setSalvando(false);
     if (!r.ok || !r.dados) {
       setErro(r.error ?? "Não foi possível salvar.");
+      return;
+    }
+    if (!rn.ok) {
+      setErro(rn.error ?? "Não foi possível salvar a data de nascimento.");
       return;
     }
     setNome(r.dados.fullName);
@@ -93,81 +119,122 @@ export function DadosPessoais() {
     setOk(true);
   }
 
+  const pj = documento?.tipo === "pj";
+  const docMascarado = pj ? documento?.cnpj : documento?.cpf;
+
+  // A4 — mockup perfil-04 ("Meus dados"): um cartão, campos um embaixo do outro, e-mail com a pílula e "Salvar".
   return (
-    <Panel title="Dados pessoais">
-      <form onSubmit={salvar}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Nome completo"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Seu nome completo"
-            autoComplete="name"
-            required
-          />
-          <Field label="E-mail" value={email} type="email" readOnly title="Para trocar o e-mail, fale com a gente." />
-          <Field
-            label="Telefone"
-            value={telefone}
-            onChange={(e) => setTelefone(e.target.value)}
-            placeholder="(34) 99999-0000 ou +1 …"
-            inputMode="tel"
-            autoComplete="tel"
-          />
-          <Field label="Perfil" defaultValue={roleLabel(user?.role)} readOnly />
-          {mode === "tenant" && (
-            <Field
-              // 63-B: o endereço do perfil é PRIVADO (só a Viva vê); o selo de confiança é o "Conectar LinkedIn".
-              label="Endereço do perfil no LinkedIn (opcional, só a Viva vê)"
-              value={linkedin}
-              onChange={(e) => setLinkedin(e.target.value)}
-              placeholder="https://linkedin.com/in/seu-perfil"
-              inputMode="url"
-            />
-          )}
-          {mode === "tenant" && (
-            <label className="block text-sm font-medium text-ink">
-              Motivo da estadia (opcional)
-              <select
-                data-testid="perfil-motivo-estadia"
-                value={motivoEstadia}
-                onChange={(e) => setMotivoEstadia(e.target.value)}
-                className="mt-1 block min-h-11 w-full rounded-lg border border-border bg-white px-3 text-base font-normal text-ink"
-              >
-                <option value="">Prefiro não informar</option>
-                {MOTIVOS.map((m) => (
-                  <option key={m.key} value={m.key}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-              <span className="mt-1 block text-xs font-normal text-muted">
-                Já vem preenchido nos seus próximos pedidos. Você pode trocar a qualquer hora.
-              </span>
-            </label>
+    <section className="rounded-xl bg-white p-4 sm:p-6" aria-label="Meus dados" data-testid="meus-dados">
+      <form onSubmit={salvar} className="grid gap-4">
+        <CampoDados
+          label="Nome completo"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          placeholder="Seu nome completo"
+          autoComplete="name"
+          required
+        />
+        <div>
+          <CampoDados label={pj ? "CNPJ" : "CPF"} value={docMascarado ?? ""} readOnly placeholder="Ainda não informado" data-testid="dados-documento" />
+          {documento && !docMascarado && (
+            <a href="#documento" className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-2">
+              Informar {pj ? "CNPJ" : "CPF"}
+            </a>
           )}
         </div>
-        <p className="mt-3 text-xs text-muted">
-          O telefone não aparece para outros usuários: é usado só para avisos da plataforma.
-        </p>
+        <CampoDados
+          label="Data de nascimento"
+          value={nascimento}
+          onChange={(e) => setNascimento(mascararNascimento(e.target.value))}
+          placeholder="dd/mm/aaaa"
+          inputMode="numeric"
+          autoComplete="bday"
+          data-testid="dados-nascimento"
+        />
+        <CampoDados
+          label="Telefone"
+          value={telefone}
+          onChange={(e) => setTelefone(e.target.value)}
+          placeholder="(34) 99999-0000 ou +1 …"
+          inputMode="tel"
+          autoComplete="tel"
+        />
+        <label className="block">
+          <span className="mb-1 block text-sm text-muted">E-mail:</span>
+          <span className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface-2 px-4 py-2">
+            <input
+              value={email}
+              type="email"
+              readOnly
+              title="Para trocar o e-mail, fale com a gente."
+              className="min-w-0 flex-1 bg-transparent py-1 text-base text-ink outline-none"
+            />
+            {emailConfirmado && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-forest px-3 py-1 text-xs font-semibold text-white" data-testid="dados-email-confirmado">
+                <BadgeCheck className="h-4 w-4" aria-hidden /> {PILULA_EMAIL}
+              </span>
+            )}
+          </span>
+        </label>
+        {mode === "tenant" && (
+          <CampoDados
+            // 63-B: o endereço do perfil é PRIVADO (só a Viva vê); o selo de confiança é o "Conectar LinkedIn".
+            label="Endereço do perfil no LinkedIn (opcional, só a Viva vê)"
+            value={linkedin}
+            onChange={(e) => setLinkedin(e.target.value)}
+            placeholder="https://linkedin.com/in/seu-perfil"
+            inputMode="url"
+          />
+        )}
+        {mode === "tenant" && (
+          <label className="block text-sm text-muted">
+            Motivo da estadia (opcional):
+            <select
+              data-testid="perfil-motivo-estadia"
+              value={motivoEstadia}
+              onChange={(e) => setMotivoEstadia(e.target.value)}
+              className={cn(CAMPO_DADOS, "mt-1 min-h-11")}
+            >
+              <option value="">Prefiro não informar</option>
+              {MOTIVOS.map((m) => (
+                <option key={m.key} value={m.key}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-xs font-normal text-muted">
+              Já vem preenchido nos seus próximos pedidos. Você pode trocar a qualquer hora.
+            </span>
+          </label>
+        )}
+        <p className="text-xs text-muted">O telefone não aparece para outros usuários: é usado só para avisos da plataforma.</p>
         {erro && (
-          <p role="alert" className="mt-3 text-sm text-red-600">
+          <p role="alert" className="text-sm text-red-600">
             {erro}
           </p>
         )}
         {ok && (
-          <p className="mt-3 flex items-center gap-2 text-sm text-forest">
+          <p className="flex items-center gap-2 text-sm text-forest" role="status">
             <Check className="h-4 w-4" /> Dados salvos.
           </p>
         )}
-        <div className="mt-6">
-          <Button variant="secondary" type="submit" disabled={salvando}>
-            {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Salvar alterações
-          </Button>
-        </div>
+        <Button type="submit" size="lg" className="w-full" disabled={salvando} data-testid="dados-salvar">
+          {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          Salvar
+        </Button>
       </form>
-    </Panel>
+    </section>
+  );
+}
+
+const CAMPO_DADOS = "w-full rounded-lg border border-line bg-white px-4 py-3 text-base text-ink outline-none focus:border-forest read-only:bg-surface-2";
+
+function CampoDados({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-sm text-muted">{label}:</span>
+      <input {...props} className={CAMPO_DADOS} />
+    </label>
   );
 }
 
@@ -810,13 +877,6 @@ export function DangerZone() {
       )}
     </Panel>
   );
-}
-
-function roleLabel(role?: string) {
-  if (role === "owner") return "Proprietário";
-  if (role === "tenant") return "Inquilino";
-  if (role === "admin") return "Administrador";
-  return "—";
 }
 
 function Field({
