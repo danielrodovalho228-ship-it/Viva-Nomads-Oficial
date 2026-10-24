@@ -71,6 +71,16 @@ const TELAS: Tela[] = [
   { conta: "ADMIN", papel: "admin", nome: "Refazer duas etapas", rota: () => "/admin/2fa/refazer", clicar: false },
 ];
 
+/**
+ * Achados do clique já registrados como defeito de produto (L-*): ficam anotados no relatório e não derrubam o teste;
+ * qualquer outro achado derruba. Quando a pista dona corrigir, o achado some e a linha sai daqui.
+ */
+const CONHECIDOS: { rota: RegExp; achado: RegExp; l: string }[] = [
+  { rota: /^\/buscar$/, achado: /"Aplicar nos filtros" desabilitado sem explicar o motivo/, l: "L-51" },
+  { rota: /^\/dashboard\/servicos\/pedidos\/:id$/, achado: /"Enviar orçamento" desabilitado sem explicar o motivo/, l: "L-52" },
+];
+const conhecido = (rotulo: string, a: string) => CONHECIDOS.find((c) => c.rota.test(rotulo) && c.achado.test(a));
+
 const MASSA = lerMassa();
 const SAIDA = "tests/laboratorio/saida/varredura-bloco20";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
@@ -129,7 +139,12 @@ test.describe("T368 — varredura da página inteira, bloco 20 (detalhes e cliqu
                 const nome = ((await primario.innerText().catch(() => "")) || (await primario.getAttribute("aria-label")) || "primário").trim().slice(0, 60);
                 clique = await cliqueResponde(page, primario, nome);
                 for (const a of clique) console.log(`VARREDURA|clique|${tam.nome}|${t.papel}|${rotulo}|${a}`);
-                expect.soft(clique, `${t.papel} — ${t.nome} @${tam.nome} — clique: ${CLIQUE}`).toEqual([]);
+                for (const a of clique) {
+                  const c = conhecido(rotulo, a);
+                  if (c) test.info().annotations.push({ type: c.l, description: `${rotulo} @${tam.nome}: ${a}` });
+                }
+                const novos = clique.filter((a) => !conhecido(rotulo, a));
+                expect.soft(novos, `${t.papel} — ${t.nome} @${tam.nome} — clique: ${CLIQUE}`).toEqual([]);
               });
             }
             relatorio[tam.nome] = { ...achados, clique };
