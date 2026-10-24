@@ -66,7 +66,8 @@
         "t288-padrao-minimo-59a",
         "t317-email-unico-49c1",
         "t352-varredura-bloco17",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t404-admin-celular-e73"
       ]
     },
     "/admin/2fa/refazer": {
@@ -549,7 +550,8 @@
         "t344-avaliacao-telas-62a-parte2",
         "t355-conta-a-perfil-espelho",
         "t352-varredura-bloco17",
-        "t387-varredura-bloco22"
+        "t387-varredura-bloco22",
+        "t403-nav-a"
       ]
     },
     "/dashboard/assinatura": {
@@ -659,7 +661,9 @@
         "t352-varredura-bloco17",
         "t353-varredura-bloco18",
         "t354-varredura-bloco19",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t403-nav-a",
+        "t402-conta-leva2"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -687,7 +691,9 @@
         "t370-conta-a3-papeis",
         "t391-conta-conformidade",
         "t385-varredura-bloco21",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t403-nav-a",
+        "t402-conta-leva2"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1102,7 +1108,8 @@
         "t183-telas-logadas-390",
         "t209-jornada-dois-lados",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t402-conta-leva2"
       ]
     },
     "/dashboard/viabilidade": {

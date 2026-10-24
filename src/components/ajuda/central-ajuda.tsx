@@ -4,7 +4,7 @@ import { ROTULO_QUEM_RESPONDEU } from "@/lib/atendimento/quem-respondeu";
 import { ROTULO_ESTADO_CHAMADO, estadoDoChamado } from "@/lib/atendimento/estado-chamado";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, LifeBuoy, MessageSquare, Search, Send, UserRound } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, LifeBuoy, MessageSquare, Search, Send, UserRound } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
 import { abertoEmBR } from "@/lib/atendimento/data-br";
@@ -250,7 +250,16 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
                 {p.pergunta}
                 <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted transition-transform", aberta === p.id && "rotate-180")} />
               </button>
-              {aberta === p.id && <p className="pb-3 text-sm leading-relaxed text-muted">{respostaPara(p, perfil)}</p>}
+              {aberta === p.id && (
+                <div className="pb-3">
+                  <p className="text-sm leading-relaxed text-muted">{respostaPara(p, perfil)}</p>
+                  {p.links?.map((l) => (
+                    <Link key={l.href} href={l.href} className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-forest underline underline-offset-2" data-testid={`faq-link-${p.id}`}>
+                      {l.rotulo} <ChevronRight className="h-4 w-4" aria-hidden />
+                    </Link>
+                  ))}
+                </div>
+              )}
             </li>
           ))}
         </ul>
