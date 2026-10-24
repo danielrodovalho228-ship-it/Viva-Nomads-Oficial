@@ -199,7 +199,7 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
       await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       const revisar = page.getByTestId("etapa-revisar");
       await expect(revisar).toBeVisible({ timeout: 30_000 });
-      await expect(revisar.getByTestId("checklist-item-privacidade")).toHaveAttribute("data-ok", "0");
+      await expect(revisar.locator('[data-itens~="privacidade"]')).toHaveAttribute("data-ok", "0");
       await expect(page.getByTestId("publicar-anuncio")).toBeDisabled();
 
       // Nenhum campo salvo antes se perdeu: o rascunho no banco mantém tudo (só a etapa muda de ordem).

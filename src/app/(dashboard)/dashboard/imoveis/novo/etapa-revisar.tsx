@@ -103,8 +103,10 @@ export function EtapaRevisar(p: {
       <ul className="mt-3 divide-y divide-line">
         {conf.itens.map((i) => {
           const pendente = i.ok ? undefined : primeiroPendente(i.id);
+          // Os itens da prontidão que seguram este passo (ex.: "privacidade", "conforto" em Comodidades).
+          const itens = p.completude.filter((c) => !c.ok && etapaDoItemProntidao(c.key).id === i.id).map((c) => c.key).join(" ");
           return (
-            <li key={i.id} className="flex items-start gap-3 py-3" data-testid={`conferencia-${i.id}`} data-ok={i.ok ? "1" : "0"}>
+            <li key={i.id} className="flex items-start gap-3 py-3" data-testid={`conferencia-${i.id}`} data-ok={i.ok ? "1" : "0"} data-itens={itens || undefined}>
               {i.ok ? <CheckCircle2 className="mt-1 h-6 w-6 shrink-0 fill-forest text-white" aria-hidden /> : <Circle className="mt-1 h-6 w-6 shrink-0 text-muted" aria-hidden />}
               <span className="min-w-0 flex-1">
                 <span className="block text-lg text-ink">
@@ -157,32 +159,29 @@ export function EtapaRevisar(p: {
       {/* Estado do documento (prompt 11): aparece quando ainda segura a publicação; conferido, some (a lista já diz). */}
       {!p.editingId && <DocumentoEstado estado={p.docEstado} motivos={p.docMotivos} onEnviar={() => p.irPara(p.etapaEndereco)} />}
 
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-        <div className="min-w-0 lg:order-2">
-          {cartao}
-          <div className="mt-6 hidden lg:block">
-            <BotaoPublicar {...p} />
-          </div>
+      {/* Um "Publicar anúncio" só. Celular: cartão, lista, aceite e botão. Computador: lista à esquerda; cartão e botão à
+          direita; o aceite embaixo, na largura toda. */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="min-w-0 lg:col-start-2 lg:row-start-1">{cartao}</div>
+        <div className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1">{lista}</div>
+        <div className="min-w-0 space-y-6 lg:col-span-2 lg:row-start-3">
+          {p.avisoAceite && (
+            <p role="status" className="text-sm font-medium text-ink" data-testid="aceite-ia-aviso">
+              {p.avisoAceite}
+            </p>
+          )}
+          <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
+            <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-forest" />
+            <span>{TERMO_IA_TEXTO}</span>
+          </label>
+          {p.publishError && <p className="text-sm text-red-600">{p.publishError}</p>}
+          {/* Ordem 504d9679, peça 3: convite opcional; nunca entra na conta de podePublicar. */}
+          {!p.editingId && <ConviteFotoCandidatura texto={CONVITE_FOTO_ANUNCIO_TEXTO} testId="convite-foto-anuncio" />}
         </div>
-        <div className="min-w-0 lg:order-1">{lista}</div>
-      </div>
-
-      {p.avisoAceite && (
-        <p role="status" className="text-sm font-medium text-ink" data-testid="aceite-ia-aviso">
-          {p.avisoAceite}
-        </p>
-      )}
-      <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
-        <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-forest" />
-        <span>{TERMO_IA_TEXTO}</span>
-      </label>
-      {p.publishError && <p className="text-sm text-red-600">{p.publishError}</p>}
-      {/* Ordem 504d9679, peça 3: convite opcional; nunca entra na conta de podePublicar. */}
-      {!p.editingId && <ConviteFotoCandidatura texto={CONVITE_FOTO_ANUNCIO_TEXTO} testId="convite-foto-anuncio" />}
-
-      <div className="lg:hidden">
-        <BotaoPublicar {...p} />
-        <p className="mt-3 text-center text-sm text-muted">{TEXTOS_REVISAO.editarDepois}</p>
+        <div className="min-w-0 lg:col-start-2 lg:row-start-2">
+          <BotaoPublicar {...p} />
+          <p className="mt-3 text-center text-sm text-muted lg:hidden">{TEXTOS_REVISAO.editarDepois}</p>
+        </div>
       </div>
       {/* Prompt 59-A (critério f da varredura): o botão nunca fica desabilitado em silêncio — diz o que falta. */}
       {!p.podePublicar && !p.publishing && <FaltaParaPublicar {...p} />}
