@@ -1,20 +1,41 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Check, Copy, CreditCard, Plus } from "lucide-react";
+import { BellRing, Check, Copy, CreditCard } from "lucide-react";
 import { meusPapeis } from "@/lib/data/papeis-actions";
 import { minhaChavePix, removerChavePix, salvarChavePix, type MinhaChavePix } from "@/lib/data/recebimento-actions";
 import { TIPOS_CHAVE_PIX, type TipoChavePix } from "@/lib/conta/chave-pix";
-import { NOTA_MORADOR, NOTA_RECEBE, SEM_CARTAO, TITULO_MORADOR, TITULO_RECEBE } from "@/lib/conta/tela-pagamentos";
-import { Button } from "@/components/ui/button";
+import {
+  AVISE_CARTAO,
+  AVISO_CARTAO_GRAVADO,
+  BOTAO_PARCEIRO,
+  BOTAO_PARCEIRO_ATIVO,
+  CARTAO_EM_BREVE,
+  CONVITE_PARCEIRO,
+  DICA_SALVAR_CHAVE,
+  NOTA_MORADOR,
+  NOTA_PARCEIRO,
+  NOTA_RECEBE,
+  SEM_CARTAO,
+  TITULO_MORADOR,
+  TITULO_PARCEIRO,
+  TITULO_RECEBE,
+} from "@/lib/conta/tela-pagamentos";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { CartaoComFoto } from "@/components/account/cartao-com-foto";
+import { PHOTOS } from "@/lib/media";
+import { useParceiroAprovado } from "@/lib/use-papel-barra";
+import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
 
 const campo = "w-full min-h-[44px] rounded-lg border border-line bg-white px-3 text-sm text-ink";
 
 /**
  * A7 — Conta › Pagamentos (mockup perfil-07). "Como você recebe (proprietário)": a chave Pix em que o morador paga o
  * valor mensal direto ao proprietário (PERFIL-B, 0236; só o dono lê e grava), no campo com o botão de copiar.
- * "Para suas estadias (morador)": a linha do cartão e "Adicionar cartão" como no desenho, sem cadastro nem cobrança —
- * a Viva não recebe o valor mensal.
+ * "Para suas estadias (morador)": a linha do cartão e o estado honesto do pagamento com cartão (E70: "em breve" +
+ * "Avise-me", sem botão morto; nada de cadastro nem cobrança — a Viva não recebe o valor mensal).
+ * "Como você recebe (parceiro)" (E70): informativo enquanto o pagamento de parceiros está desligado; para quem ainda
+ * não é parceiro, o convite "Cadastrar meu serviço". Os três cartões com a foto pequena do padrão dos Papéis.
  */
 export function PagamentosConta() {
   const [dono, setDono] = useState(false);
@@ -25,6 +46,10 @@ export function PagamentosConta() {
   const [erro, setErro] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
   const [pendente, comecar] = useTransition();
+  const parceiro = useParceiroAprovado();
+  const interesseCartao = useLocalStorageBruto("vivanomads-cartao-interesse");
+  const [aviseLocal, setAviseLocal] = useState(false);
+  const avise = aviseLocal || !!interesseCartao;
 
   useEffect(() => {
     let vivo = true;
@@ -69,7 +94,7 @@ export function PagamentosConta() {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4" data-testid="conta-pagamentos">
       {dono && (
-        <section className="rounded-xl bg-white p-4 sm:p-6" aria-labelledby="pag-recebe-titulo" data-testid="conta-pix">
+        <CartaoComFoto foto={PHOTOS.pagamentos.proprietario} testId="conta-pix">
           <h2 id="pag-recebe-titulo" className="font-title text-2xl font-semibold text-ink">
             {TITULO_RECEBE}
           </h2>
@@ -117,9 +142,22 @@ export function PagamentosConta() {
                 Chave Pix
                 <input className={campo} value={chave} onChange={(e) => setChave(e.target.value)} autoComplete="off" data-testid="conta-pix-chave" />
               </label>
-              <Button type="button" variant="secondary" size="sm" onClick={salvar} disabled={pendente || !chave.trim()} data-testid="conta-pix-salvar">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={salvar}
+                disabled={pendente || !chave.trim()}
+                aria-describedby={chave.trim() ? undefined : "conta-pix-dica"}
+                data-testid="conta-pix-salvar"
+              >
                 Salvar chave
               </Button>
+              {!chave.trim() && (
+                <p id="conta-pix-dica" className="text-xs text-muted sm:col-span-3" data-testid="conta-pix-dica">
+                  {DICA_SALVAR_CHAVE}
+                </p>
+              )}
             </div>
           )}
           {erro && (
@@ -130,31 +168,57 @@ export function PagamentosConta() {
           <p className="mt-3 text-sm text-muted" data-testid="conta-pix-nota">
             {NOTA_RECEBE}
           </p>
-        </section>
+        </CartaoComFoto>
       )}
 
-      <section className="rounded-xl bg-white p-4 sm:p-6" aria-labelledby="pag-morador-titulo" data-testid="conta-pag-morador">
+      <CartaoComFoto foto={PHOTOS.pagamentos.morador} testId="conta-pag-morador">
         <h2 id="pag-morador-titulo" className="font-title text-2xl font-semibold text-ink">
           {TITULO_MORADOR}
         </h2>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-line bg-sage-100 text-forest" aria-hidden>
-              <CreditCard className="h-6 w-6" />
-            </span>
-            <span className="text-base text-ink" data-testid="conta-cartao">
-              {SEM_CARTAO}
-            </span>
-          </div>
-          {/* Como no desenho, mas sem cadastro nem cobrança de cartão: nenhuma chave de pagamento é ligada. */}
-          <Button type="button" variant="secondary" size="lg" disabled aria-describedby="pag-morador-nota" data-testid="conta-cartao-adicionar">
-            <Plus className="h-4 w-4" aria-hidden /> Adicionar cartão
-          </Button>
+        <div className="mt-3 flex min-w-0 items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-line bg-sage-100 text-forest" aria-hidden>
+            <CreditCard className="h-5 w-5" />
+          </span>
+          <span className="text-base text-ink" data-testid="conta-cartao">
+            {SEM_CARTAO}
+          </span>
         </div>
-        <p id="pag-morador-nota" className="mt-3 text-sm text-muted">
-          {NOTA_MORADOR}
+        {/* E70: sem botão morto — o pagamento com cartão ainda não existe; quem quiser, pede o aviso. */}
+        <p className="mt-3 text-sm font-semibold text-ink" data-testid="conta-cartao-em-breve">
+          {CARTAO_EM_BREVE}
         </p>
-      </section>
+        {avise ? (
+          <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-sage-100 px-4 py-2 text-sm font-medium text-forest" role="status" data-testid="conta-cartao-avisado">
+            <Check className="h-4 w-4" aria-hidden /> {AVISO_CARTAO_GRAVADO}
+          </p>
+        ) : (
+          <Button
+            type="button"
+            variant="secondary"
+            // No celular o texto quebra em duas linhas em vez de passar da tela (t402: 42 px de rolagem lateral a 390).
+            className="mt-2 h-auto min-h-11 max-w-full whitespace-normal py-2 text-left"
+            onClick={() => {
+              gravarLocalStorageBruto("vivanomads-cartao-interesse", "1");
+              setAviseLocal(true);
+            }}
+            data-testid="conta-cartao-avise"
+          >
+            <BellRing className="h-4 w-4" aria-hidden /> {AVISE_CARTAO}
+          </Button>
+        )}
+        <p className="mt-3 text-sm text-muted">{NOTA_MORADOR}</p>
+      </CartaoComFoto>
+
+      <CartaoComFoto foto={PHOTOS.pagamentos.parceiro} testId="conta-pag-parceiro">
+        <h2 className="font-title text-2xl font-semibold text-ink">{TITULO_PARCEIRO}</h2>
+        <p className="mt-2 text-sm text-ink" data-testid="conta-parceiro-nota">
+          {parceiro ? NOTA_PARCEIRO : CONVITE_PARCEIRO}
+        </p>
+        {!parceiro && <p className="mt-1 text-sm text-muted">{NOTA_PARCEIRO}</p>}
+        <ButtonLink href="/dashboard/parceiro" variant={parceiro ? "secondary" : "primary"} className="mt-3" data-testid="conta-parceiro-botao">
+          {parceiro ? BOTAO_PARCEIRO_ATIVO : BOTAO_PARCEIRO}
+        </ButtonLink>
+      </CartaoComFoto>
     </div>
   );
 }

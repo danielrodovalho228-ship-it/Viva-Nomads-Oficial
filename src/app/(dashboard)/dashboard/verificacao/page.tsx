@@ -32,6 +32,7 @@ import type { EstadoIdentidade } from "@/lib/identidade/estado";
 import { NOTA_VERIFICACAO_TESTE, ramoVerificacao } from "@/lib/contas-de-teste";
 import { validadeDoLaudo } from "@/lib/caf/validade";
 import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
+import { VoltarCelular } from "@/components/ui/voltar-celular";
 
 /**
  * Estados futuros da verificação (preparados; a integração real entra depois):
@@ -52,6 +53,16 @@ type VerifyCopy = {
   unlocks: readonly string[];
 };
 
+/**
+ * E68 (QA 24/10): o que a verificação destrava, em texto neutro — a tela serve morador, proprietário e parceiro; cada um
+ * lê o item que vale para si (antes a lista do proprietário falava só de "nos seus anúncios").
+ */
+export const UNLOCKS_NEUTROS: readonly string[] = [
+  "Selo de identidade conferida no seu perfil (e nos anúncios, para quem anuncia)",
+  "Candidatura com 1 clique, para quem procura imóvel",
+  "Mais confiança de quem fecha com você",
+];
+
 const VERIFY_COPY: Record<"tenant" | "owner", VerifyCopy> = {
   tenant: {
     title: "Verificação",
@@ -62,10 +73,7 @@ const VERIFY_COPY: Record<"tenant" | "owner", VerifyCopy> = {
     ctaTitle: "Candidatura com um clique ativada",
     ctaBody:
       "Ao encontrar um imóvel, basta clicar em Candidatar-se: enviamos o resumo do resultado (sem seus documentos) e uma mensagem ao proprietário automaticamente.",
-    unlocks: [
-      "Candidatura com 1 clique em qualquer imóvel",
-      "O resumo do resultado enviado ao proprietário automaticamente",
-    ],
+    unlocks: UNLOCKS_NEUTROS,
   },
   owner: {
     title: "Verificação",
@@ -76,10 +84,7 @@ const VERIFY_COPY: Record<"tenant" | "owner", VerifyCopy> = {
     ctaTitle: "Selo de confiança ativado",
     ctaBody:
       "Seu selo Proprietário Verificado passa a aparecer nos seus anúncios — mais confiança e melhor conversão dos interessados.",
-    unlocks: [
-      "Selo Proprietário Verificado nos seus anúncios",
-      "Mais confiança e conversão dos interessados",
-    ],
+    unlocks: UNLOCKS_NEUTROS,
   },
 }
 
@@ -97,7 +102,13 @@ export default function VerificationPage() {
 
   return (
     <div className="w-full">
-      <PageTitle title={C.title} subtitle={C.subtitle} />
+      {/* E69: no celular, a seta de voltar ao lado do título (volta para onde a pessoa estava; aberta direto, Conta). */}
+      <div className="flex items-start gap-1">
+        <VoltarCelular padrao="/dashboard/conta" rotulo="Conta" className="-ml-3 mt-1" />
+        <div className="min-w-0 flex-1">
+          <PageTitle title={C.title} subtitle={C.subtitle} />
+        </div>
+      </div>
       {demo ? <DemoFlow copy={C} mode={mode} /> : <VerificacaoDaConta copy={C} perfil={perfilCopy} />}
       <FalarComAViva />
     </div>
@@ -154,7 +165,8 @@ function VerificacaoDaConta({ copy, perfil }: { copy: VerifyCopy; perfil: "tenan
   }
   return (
     <div className="space-y-4">
-      {status?.identidade && <LinhaIdentidade id={status.identidade} />}
+      {/* E68: na conta real o "em breve" aparece uma vez só, no cartão abaixo (a faixa repetia o mesmo aviso). */}
+      {status?.identidade && status.identidade.estado !== "em_breve" && <LinhaIdentidade id={status.identidade} />}
       {ramo === "teste" && status ? (
         <TesteFlow copy={copy} perfil={perfil} inicial={status} onStatus={(st) => setStatus(st)} />
       ) : (
@@ -301,12 +313,11 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
             </span>
             <div>
               <h2 className="font-title text-lg font-semibold text-ink">Não verificado</h2>
-              <p className="text-sm text-muted">A verificação de identidade ainda não abriu para contas reais.</p>
+              <p className="text-sm text-muted" data-testid="verificacao-em-breve">
+                Disponível em breve, por meio de um parceiro.
+              </p>
             </div>
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-800">
-            <Info className="h-3.5 w-3.5" /> Disponível em breve
-          </span>
         </div>
 
         <div className="mt-4 rounded-xl border border-sage-200 bg-surface-2 p-4">

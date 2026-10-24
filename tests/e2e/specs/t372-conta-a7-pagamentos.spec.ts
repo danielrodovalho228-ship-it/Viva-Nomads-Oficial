@@ -51,9 +51,36 @@ test.describe("T372 — CONTA-A A7: Pagamentos (perfil-07)", () => {
       await expect(recebe.getByTestId("conta-pix-nota")).toHaveText("O pagamento do morador vai direto para você — a Viva não fica com o seu dinheiro.");
       await recebe.getByTestId("conta-pix-copiar").click();
       await expect(recebe.getByTestId("conta-pix-copiar")).toHaveAttribute("aria-label", "Chave Pix copiada");
+      // Extra do E70: com o campo vazio, "Salvar chave" diz por que está travado.
+      await recebe.getByTestId("conta-pix-trocar").click();
+      await expect(recebe.getByTestId("conta-pix-salvar")).toBeDisabled();
+      await expect(recebe.getByTestId("conta-pix-dica")).toHaveText("Preencha a chave para salvar.");
+      await recebe.getByTestId("conta-pix-chave").fill("x");
+      await expect(recebe.getByTestId("conta-pix-dica")).toHaveCount(0);
       const morar = p.getByTestId("conta-pag-morador");
       await expect(morar.getByRole("heading", { level: 2 })).toHaveText("Para suas estadias (morador)");
-      await expect(morar.getByTestId("conta-cartao-adicionar")).toBeDisabled();
+      // E70: sem botão morto — "em breve" + "Avise-me", que grava o aviso e vira a confirmação.
+      await expect(morar.getByTestId("conta-cartao-adicionar")).toHaveCount(0);
+      await expect(morar.getByTestId("conta-cartao-em-breve")).toHaveText("Pagamento com cartão: em breve.");
+      await morar.getByTestId("conta-cartao-avise").click();
+      await expect(morar.getByTestId("conta-cartao-avisado")).toContainText("Avisaremos você quando abrir.");
+      // E70: o terceiro cartão, do parceiro (convite para quem não é parceiro), e as fotos do acervo carregando.
+      const parceiro = p.getByTestId("conta-pag-parceiro");
+      await expect(parceiro.getByRole("heading", { level: 2 })).toHaveText("Como você recebe (parceiro)");
+      await expect(parceiro).toContainText("10% são a taxa de serviço da Viva");
+      await expect(parceiro.getByTestId("conta-parceiro-botao")).toHaveText("Cadastrar meu serviço");
+      await expect(parceiro.getByTestId("conta-parceiro-botao")).toHaveAttribute("href", "/dashboard/parceiro");
+      const caixas: string[] = [];
+      for (const c of ["conta-pix", "conta-pag-morador", "conta-pag-parceiro"]) {
+        const img = p.getByTestId(c).getByTestId("cartao-foto").locator("img");
+        await img.scrollIntoViewIfNeeded();
+        await expect.poll(() => img.evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0), { timeout: 15_000 }).toBe(true);
+        const b = (await p.getByTestId(c).getByTestId("cartao-foto").boundingBox())!;
+        caixas.push(`${Math.round(b.width)}x${Math.round(b.height)}`);
+      }
+      expect(new Set(caixas).size, caixas.join(",")).toBe(1);
+      // E75: a tela termina na linha institucional.
+      await expect(p.getByTestId("conta-fechamento")).toHaveText("Viva Nomads · Uberlândia, MG");
       await expect(p.locator("main")).not.toContainText(/comiss|reserva|hósped/i);
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await p.screenshot({ path: `${SAIDA}/t372-pagamentos-${w}.png`, fullPage: true });

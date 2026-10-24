@@ -1,5 +1,7 @@
 import "server-only";
-import { DatabaseBackup } from "lucide-react";
+import Link from "next/link";
+import { cache } from "react";
+import { AlertTriangle, DatabaseBackup } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { estadoBackup, duracaoLegivel, type EstadoParte, type LinhaBackup } from "@/lib/backup/cartao";
@@ -21,9 +23,13 @@ export async function lerExecucoesBackup(): Promise<LinhaBackup[] | "sem_tabela"
   return [...((copias.data ?? []) as LinhaBackup[]), ...((testes.data ?? []) as LinhaBackup[])];
 }
 
+/** Uma leitura por pedido: o cartão e o alerta do topo (E73) usam a mesma. */
+const lerUmaVez = cache(lerExecucoesBackup);
+
 function Estado({ ok, testId }: { ok: boolean; testId: string }) {
+  // E73: "Atenção" com peso de alerta (borda grossa vermelha), e não só a letra; o fundo segue branco (regra do admin).
   return (
-    <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", ok ? "border border-line bg-white text-forest" : "border border-line bg-white text-red-800")} data-testid={testId}>
+    <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", ok ? "border border-line bg-white text-forest" : "border-2 border-red-700 bg-white text-red-800")} data-testid={testId}>
       {ok ? "Em dia" : "Atenção"}
     </span>
   );
@@ -67,14 +73,14 @@ function Bloco({ titulo, parte, testId, children }: { titulo: string; parte: Est
  * de 8 dias (ou se o último falhou). Sem dado de usuário: só datas, tamanhos, contagens e o motivo curto.
  */
 export async function CartaoBackup({ agora = new Date() }: { agora?: Date }) {
-  const linhas = await lerExecucoesBackup().catch(() => "sem_tabela" as const);
+  const linhas = await lerUmaVez().catch(() => "sem_tabela" as const);
   if (linhas === null) return null;
   const pendente = linhas === "sem_tabela";
   const e = estadoBackup(pendente ? [] : linhas, agora);
   const ultimaCopia = e.copia.ultima;
   const ultimoTeste = e.drill.ultima;
   return (
-    <section className="rounded-xl border border-sage-200 bg-white p-4" data-testid="cartao-backup" data-estado={e.vermelho ? "vermelho" : "verde"}>
+    <section className={cn("rounded-xl border bg-white p-4", e.vermelho ? "border-2 border-red-700" : "border-sage-200")} data-testid="cartao-backup" data-estado={e.vermelho ? "vermelho" : "verde"}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
           <DatabaseBackup className="h-5 w-5 text-forest" aria-hidden /> Backup e recuperação
@@ -116,5 +122,31 @@ export async function CartaoBackup({ agora = new Date() }: { agora?: Date }) {
         </ButtonLink>
       </div>
     </section>
+  );
+}
+
+/**
+ * E73 (QA 24/10): no celular o cartão do backup fica lá embaixo da página; quando a cópia ou o teste falha, o alerta
+ * sobe para o topo do /admin, com o motivo em português simples e o atalho para o cartão. Verde: não aparece.
+ * No computador não aparece (a estrutura da tela lá não muda; o cartão já ganha a borda e o selo vermelhos).
+ * Peso de alerta sem fundo colorido (regra do admin): borda grossa vermelha, ícone, texto vermelho e role="alert".
+ */
+export async function AlertaBackupCelular({ agora = new Date() }: { agora?: Date }) {
+  const linhas = await lerUmaVez().catch(() => null);
+  if (linhas === null || linhas === "sem_tabela") return null;
+  const e = estadoBackup(linhas, agora);
+  if (!e.vermelho) return null;
+  const motivo = e.copia.porque ?? e.drill.porque;
+  return (
+    <div role="alert" className="mb-6 flex items-start gap-3 rounded-xl border-2 border-red-700 bg-white p-4 text-red-900 lg:hidden" data-testid="alerta-backup">
+      <AlertTriangle className="mt-1 h-5 w-5 shrink-0" aria-hidden />
+      <div className="min-w-0">
+        <p className="font-semibold">Backup com problema</p>
+        {motivo && <p className="mt-1 text-sm">{motivo}</p>}
+        <Link href="#backup" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-2" data-testid="alerta-backup-ver">
+          Ver o backup
+        </Link>
+      </div>
+    </div>
   );
 }
