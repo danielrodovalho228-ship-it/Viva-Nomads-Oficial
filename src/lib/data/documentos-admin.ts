@@ -189,7 +189,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
       const [docDono, { data: op }] = await Promise.all([
         lerDocumento(adm, ownerId),
         r.property_id
-          ? adm.from("properties").select("owner_id, ownership_type, sublease_authorized, sublease_doc_url").eq("id", r.property_id as string).maybeSingle() // consistency-ignore: service role, só depois de ehAdmin; o caminho vira link assinado de 10 min para o admin
+          ? adm.from("properties").select("owner_id, ownership_type, sublease_authorized, sublease_doc_url, sublease_doc_tipo").eq("id", r.property_id as string).maybeSingle() // consistency-ignore: service role, só depois de ehAdmin; o caminho vira link assinado de 10 min para o admin
           : Promise.resolve({ data: null }),
       ]);
       bloqueioAprovacao = motivoBloqueioAprovacao(docDono);
