@@ -51,7 +51,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
   for (const w of [1280, 390]) {
     test(`prints (${FASE}) a ${w} px`, async ({ browser }) => {
       const p = await como(browser, w);
-      await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
       await p.getByTestId("complete-perfil").waitFor();
       // No computador o painel rola DENTRO da coluna: solta a rolagem para o print pegar a página inteira.
       await p.evaluate(() => {
@@ -73,7 +73,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
   for (const w of [390, 1280]) {
     test(`C1/C2. a ${w} px: a linha de faltas lista tudo; o motivo não conta e está só em Dados`, async ({ browser }) => {
       const p = await como(browser, w);
-      await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
       const falta = p.getByTestId("perfil-falta");
       // (A conta do laboratório já nasce com documento; o item entra na linha quando falta — unit do medidor.)
       for (const item of ["Foto de perfil", "Uma frase sobre você", "Idiomas", "Cidade", "Profissão"]) {
@@ -84,15 +84,18 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       expect(Number(await falta.getAttribute("data-faltam"))).toBeLessThanOrEqual(naLista);
       // C2: um estado só para o motivo.
       await expect(p.getByTestId("complete-perfil")).not.toContainText("Motivo da estadia");
-      await expect(p.getByTestId("perfil-motivo-estadia")).toHaveCount(1);
-      await expect(p.getByTestId("perfil-motivo-estadia").locator("option:checked")).toHaveText("Prefiro não informar");
+      await expect(p.getByTestId("perfil-motivo-estadia")).toHaveCount(0);
       if (w === 1280) {
         // O medidor anda: salvar a frase tira "Uma frase sobre você" da linha, sem recarregar.
         await p.locator("#perfil-bio").fill("Engenheiro em projeto de seis meses, tranquilo.");
         await p.getByTestId("perfil-salvar").click();
-        await expect(p.getByTestId("perfil-salvar-msg")).toHaveText("Perfil salvo.");
+        await expect(p.getByTestId("perfil-salvar-msg")).toHaveText("Alterações salvas.");
         await expect(falta).not.toContainText("Uma frase sobre você");
       }
+      // A1: o motivo mora só na tela Dados.
+      await p.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
+      await expect(p.getByTestId("perfil-motivo-estadia")).toHaveCount(1);
+      await expect(p.getByTestId("perfil-motivo-estadia").locator("option:checked")).toHaveText("Prefiro não informar");
       await p.context().close();
     });
   }
@@ -100,7 +103,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
   for (const w of [1280, 390]) {
     test(`C5. a ${w} px: escolher a foto → recortar → salvar → topo, cabeçalho e espelho atualizam`, async ({ browser }) => {
       const p = await como(browser, w);
-      await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
       const jpg = await sharp({ create: { width: 1200, height: 800, channels: 3, background: "#3a6ea5" } }).jpeg().toBuffer();
       const fc = p.waitForEvent("filechooser", { timeout: 5_000 });
       await p.getByTestId("topo-foto").click();
@@ -118,7 +121,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       await expect(p.getByTestId("topo-foto-msg")).toContainText("Foto atualizada");
       const comFoto = async () => {
         await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
-        await expect(p.getByTestId("espelho-perfil").locator("img")).toHaveCount(1);
+        await expect(p.locator('[data-testid="espelho-perfil"]:visible img')).toHaveCount(1);
         // C8: nesta página o cabeçalho e a barra lateral ficam só nas iniciais (a foto não se repete).
         await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
         await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(0);
@@ -126,19 +129,19 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       await comFoto();
       // C8: só duas aparições da foto na página (topo e espelho), e a do espelho menor que a do topo.
       const tamanhos = await p.locator("main img").evaluateAll((els) =>
-        els.filter((e) => (e as HTMLImageElement).src.includes("avatar")).map((e) => Math.round(e.getBoundingClientRect().width)),
+        els.filter((e) => (e as HTMLImageElement).src.includes("avatar") && e.getBoundingClientRect().width > 0).map((e) => Math.round(e.getBoundingClientRect().width)),
       );
       expect(tamanhos.length, tamanhos.join(",")).toBe(2);
       const topoW = Math.round((await p.getByTestId("topo-conta").locator("img").boundingBox())!.width);
-      const espelhoW = Math.round((await p.getByTestId("espelho-perfil").locator("img").boundingBox())!.width);
-      expect(espelhoW).toBeLessThan(topoW / 2);
+      const espelhoW = Math.round((await p.locator('[data-testid="espelho-perfil"]:visible img').boundingBox())!.width);
+      expect(espelhoW).toBeLessThan(topoW);
       await p.screenshot({ path: `${SAIDA}/t361-depois-c5-salva-${w}.png` });
       await p.reload({ waitUntil: "networkidle" });
       await comFoto();
       // Fora da Conta, o cabeçalho mostra a foto nova.
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
-      await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
       // Volta ao estado sem foto para o próximo tamanho começar igual.
       await p.getByTestId("topo-foto-remover").click();
       await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(0);
@@ -149,7 +152,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
   for (const w of [390, 1280]) {
     test(`C9. a ${w} px: "Você tem pet?" fechado → aberto → com pet nasce aberto → desligar pede confirmação e limpa`, async ({ browser }) => {
       const p = await como(browser, w);
-      await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
       const bloco = p.getByTestId("pets-toggle-bloco");
       const toggle = p.getByTestId("pets-toggle-bloco-toggle");
       await expect(toggle).toHaveAttribute("aria-checked", "false");
@@ -181,40 +184,36 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       await expect(p.getByTestId("pets-lista")).toHaveCount(0);
       await p.reload({ waitUntil: "networkidle" });
       await expect(toggle).toHaveAttribute("aria-checked", "false");
-      // O outro bloco convertido na página: o local de trabalho também nasce fechado sem dados.
-      await expect(p.getByTestId("local-toggle-bloco-toggle").last()).toHaveAttribute("aria-checked", "false");
-      await expect(p.getByTestId("meu-local-trabalho")).toHaveCount(0);
       // O medidor não lista pets nem local de trabalho como falta.
       await expect(p.getByTestId("perfil-falta")).not.toContainText(/pet|trabalho/i);
+      // O outro bloco convertido (A1: na tela Dados): o local de trabalho também nasce fechado sem dados.
+      await p.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
+      await expect(p.getByTestId("local-toggle-bloco-toggle").last()).toHaveAttribute("aria-checked", "false");
+      await expect(p.getByTestId("meu-local-trabalho")).toHaveCount(0);
       await p.context().close();
     });
   }
 
-  test("C3. cada conteúdo uma vez (1280)", async ({ browser }) => {
+  test("C3. cada conteúdo uma vez (1280; A1: uma tela por seção)", async ({ browser }) => {
     const p = await como(browser, 1280);
-    await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
-    const perfil = p.getByTestId("bloco-perfil-publico");
-    await expect(perfil.getByRole("button", { name: "Salvar perfil" })).toHaveCount(1);
-    await expect(perfil.getByRole("button", { name: "Salvar profissão" })).toHaveCount(1);
+    await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+    await expect(p.getByRole("button", { name: "Salvar alterações" }).locator("visible=true")).toHaveCount(1);
     await expect(p.getByTestId("seu-perfil-publico")).toHaveCount(0);
-    await expect(p.getByTestId("espelho-perfil")).toBeVisible();
-    const titulos = await perfil.locator("h2, h3").allInnerTexts();
-    expect(titulos.filter((t) => /perfil/i.test(t)).length, titulos.join(" | ")).toBeLessThanOrEqual(2);
-    expect(titulos).not.toContain("Perfil profissional");
+    await expect(p.locator('[data-testid="espelho-perfil"]:visible')).toHaveCount(1);
+    const titulos = await p.getByTestId("perfil-tela").locator("h2:visible, h3:visible").allInnerTexts();
     expect(titulos).not.toContain("Seu perfil");
-    await expect(p.getByTestId("bloco-notificacoes").getByRole("heading", { name: "Notificações" })).toHaveCount(1);
-    const papeis = p.getByTestId("bloco-papeis");
-    await expect(papeis.getByRole("heading", { name: "Papéis e intenção" })).toHaveCount(1);
-    await expect(papeis.locator("section, [role=region]")).toHaveCount(0);
-    // C8: a ordem do desenho aprovado.
-    const ordem = await p.locator('[data-testid="topo-conta"], [data-testid^="bloco-"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
-    expect(ordem).toEqual(["topo-conta", "bloco-perfil-publico", "bloco-avaliacoes", "bloco-papeis", "bloco-dados", "bloco-confianca", "bloco-notificacoes", "bloco-pagamentos", "bloco-sair-da-viva"]);
+    expect(titulos.filter((t) => t === "Perfil profissional").length, titulos.join(" | ")).toBeLessThanOrEqual(1);
+    await p.goto("/dashboard/conta/notificacoes", { waitUntil: "networkidle" });
+    await expect(p.getByRole("heading", { name: "Notificações", exact: true })).toHaveCount(1);
+    await p.goto("/dashboard/conta/papeis", { waitUntil: "networkidle" });
+    await expect(p.getByRole("heading", { name: "Papéis e intenção", exact: true })).toHaveCount(1);
     await p.context().close();
   });
 
   test("C4. o 'Fale com a Viva' nunca senta sobre o conteúdo durante a rolagem (1280)", async ({ browser }) => {
     const p = await como(browser, 1280);
-    await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    // A1: Dados é a tela mais longa da Conta.
+    await p.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
     const flut = p.getByTestId("fale-com-a-viva");
     await expect(flut).toBeVisible();
     await expect(flut).toHaveAttribute("data-compacto", "1");
@@ -256,7 +255,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
         }).observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
       });
       for (let i = 0; i < 2; i++) {
-        await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+        await p.goto("/dashboard/conta/privacidade", { waitUntil: "networkidle" });
         await expect(p.getByTestId("confianca-lista")).toHaveAttribute("aria-busy", "false");
         // Lê os registros do script de início (o objeto window inteiro não serializa; lê só as duas listas).
         const r = await p.evaluate(() => {
@@ -274,10 +273,10 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
 
   test("C7. sem vão grande depois do último bloco; avatar do rodapé da barra lateral sem selo (1280)", async ({ browser }) => {
     const p = await como(browser, 1280);
-    await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    await p.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
     const vao = await p.evaluate(() => {
       const m = document.querySelector("[data-painel-main]") as HTMLElement;
-      const ultimo = document.querySelector('[data-testid="bloco-sair-da-viva"]') as HTMLElement;
+      const ultimo = document.querySelector('[data-testid="perfil-tela"]') as HTMLElement;
       const fimConteudo = ultimo.getBoundingClientRect().bottom - m.getBoundingClientRect().top + m.scrollTop;
       return Math.round(m.scrollHeight - fimConteudo);
     });

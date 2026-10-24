@@ -113,7 +113,7 @@ test.describe("T227 — e-mail do recibo na caixa de teste + fila de falhas leg�
 
     // Tela: a Caixa de e-mails de teste das duas contas mostra o recibo.
     for (const [p, largura] of [[t, 390], [d, 1280]] as const) {
-      await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+      await p.goto("/dashboard/conta/ajuda", { waitUntil: "domcontentloaded" });
       const caixa = p.getByTestId("caixa-emails-teste");
       await expect(caixa).toContainText("Seu recibo de pagamento · Viva Nomads", { timeout: 20_000 });
       await semRolagemLateral(p);

@@ -109,14 +109,9 @@ test.describe("T179 — isolamento do perfil", () => {
       await expect(bloco).toBeVisible({ timeout: 20_000 });
       const frase = `Frase de A ${largura} ${sufixo}`;
       await page.locator("#perfil-bio").fill(frase);
-      if (largura < 1024) {
-        // CONTA-A: no celular o primário é "Salvar e ver imóveis" (preso no fim da tela): salva e leva à busca.
-        await page.getByTestId("perfil-salvar-celular").click();
-        await page.waitForURL(/\/buscar/, { timeout: 20_000 });
-      } else {
-        await bloco.getByRole("button", { name: "Salvar perfil" }).click();
-        await expect(bloco.getByRole("status")).toHaveText("Perfil salvo.", { timeout: 20_000 });
-      }
+      // A1 (perfil-01): "Salvar alterações" — preso no fim da tela no celular; no cartão no computador.
+      await page.getByTestId(largura < 1024 ? "perfil-salvar-celular" : "perfil-salvar").click();
+      await expect(page.getByTestId("perfil-salvar-msg")).toHaveText("Alterações salvas.", { timeout: 20_000 });
       expect(adulterada, "a chamada da action foi interceptada e adulterada").toBe(true);
       await page.screenshot({ path: `${SAIDA}/t179-perfil-${largura}.png`, fullPage: false });
 

@@ -165,7 +165,8 @@ test.describe("T266 — Painel do Prompt 42", () => {
       const page = await abrir(browser, dono.email, largura);
       await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
       const titulo = page.locator("main h1:visible").first();
-      await expect(titulo).toHaveText("Conta", { timeout: 25_000 });
+      // A1: no celular /dashboard/conta é o menu ("Conta"); no computador abre a tela Perfil.
+      await expect(titulo).toHaveText(largura < 1024 ? "Conta" : "Perfil", { timeout: 25_000 });
       await expect(page.locator('[data-testid="painel-capa"]')).toHaveCount(0);
       // Título em texto: o h1 fica no alto, sem uma faixa de foto antes do conteúdo.
       const caixa = await titulo.boundingBox();

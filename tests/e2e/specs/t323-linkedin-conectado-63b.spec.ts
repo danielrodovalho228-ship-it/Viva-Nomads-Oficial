@@ -25,7 +25,7 @@ async function ligarChave(page: Page) {
   await page.context().addCookies([{ name: "vn_lab_linkedin", value: "1", url: new URL(page.url()).origin }]);
 }
 async function conectar(page: Page): Promise<string> {
-  await page.goto("/dashboard/conta#confianca", { waitUntil: "domcontentloaded" });
+  await page.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
   const linha = page.getByTestId("confianca-linkedin");
   await expect(linha).toHaveAttribute("data-situacao", "falta", { timeout: 20_000 });
   await linha.getByTestId("confianca-linkedin-acao").click();
@@ -152,7 +152,7 @@ test.describe("T323 — selo LinkedIn conectado (63-B)", () => {
   test("5. desconectar apaga a linha e o selo some na hora (para o dono também)", async ({ browser }) => {
     const p = await entrar(browser, ana.email, senha);
     await ligarChave(p);
-    await p.goto("/dashboard/conta#confianca", { waitUntil: "domcontentloaded" });
+    await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
     const linha = p.getByTestId("confianca-linkedin");
     await expect(linha).toHaveAttribute("data-situacao", "ok", { timeout: 20_000 });
     await linha.getByTestId("confianca-linkedin-botao").click();

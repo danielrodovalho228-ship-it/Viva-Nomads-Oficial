@@ -338,9 +338,9 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
 
   test("dono vira parceiro na mesma conta (mudança) e continua com os imóveis; link vencido pede novo", async ({ browser }) => {
     const page = await abrir(browser, dono.email, 390);
-    await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+    await page.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+    await page.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
     // Prompt 43: o painel "Quero ser parceiro" virou o convite da linha de parceiro em "Seus papéis".
     const convite = page.getByTestId("seus-papeis").locator('[data-papel="parceiro"]').getByRole("link", { name: "Quero ser parceiro" });
     await expect(convite).toHaveAttribute("href", "/dashboard/parceiro", { timeout: 20_000 });

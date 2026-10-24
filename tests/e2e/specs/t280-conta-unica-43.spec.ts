@@ -92,7 +92,7 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
     test(`${largura}px — conta com 3 papéis: Seus papéis, 4 grupos, sem seletor de modo`, async ({ browser }) => {
       const page = await entrar(browser, tres.email, senha);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+      await page.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
       const papeis = page.getByTestId("seus-papeis").locator("visible=true").first();
       await expect(papeis).toBeVisible({ timeout: 25_000 });
       for (const p of ["morador", "proprietario", "parceiro"]) await expect(papeis.locator(`[data-papel="${p}"]`)).toHaveAttribute("data-ativo", "1");
@@ -134,7 +134,7 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
       await expect(page.getByTestId("inicio-proprietario")).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t280-morador-inicio-${largura}.png`, fullPage: false });
 
-      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+      await page.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
       const papeis = page.getByTestId("seus-papeis").locator("visible=true").first();
       await expect(papeis).toBeVisible({ timeout: 25_000 });
       await expect(papeis.locator('[data-papel="proprietario"]')).toHaveAttribute("data-ativo", "0");

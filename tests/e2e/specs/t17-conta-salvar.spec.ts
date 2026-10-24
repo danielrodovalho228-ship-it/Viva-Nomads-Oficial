@@ -10,7 +10,7 @@ test.describe("T17 — Conta salva de verdade", () => {
   test.use({ storageState: authFile("inquilino") });
 
   test("nome e telefone gravam e voltam depois do F5", async ({ page }) => {
-    await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
     const nome = page.getByLabel("Nome completo");
     const tel = page.getByLabel("Telefone");
     await expect(nome).not.toHaveValue("");
@@ -36,7 +36,7 @@ test.describe("T17 — Conta salva de verdade", () => {
   });
 
   test("preferência de notificação grava e volta depois do F5", async ({ page }) => {
-    await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/conta/notificacoes", { waitUntil: "networkidle" });
     const sw = page.getByRole("switch", { name: "Avisos por e-mail" });
     await expect(sw).toBeEnabled();
     const antes = await sw.getAttribute("aria-checked");
