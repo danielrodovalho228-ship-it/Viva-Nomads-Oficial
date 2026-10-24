@@ -6,6 +6,7 @@ import { FormNivel } from "./form-nivel";
 import { SugestoesNoNivel } from "./sugestoes-no-nivel";
 import { comodidadesDoMeuImovel } from "@/lib/data/comodidade-sugerida-actions";
 import { BlocoAvaliacaoDono } from "@/components/vistoria/bloco-avaliacao-dono";
+import { MedirNoNivel } from "./medir-no-nivel";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +16,12 @@ const rotulo = (n: NivelOuAdequacao) => (n === "em_adequacao" ? "Em adequação"
  * Adendo 59.1 — nível do imóvel (Essencial / Conforto / Premium), ruído e extras. O nível é o da área mais fraca;
  * Conforto e Premium só contam com a foto de cada item. Nível não é selo e não muda a taxa nem a posição na busca.
  */
-export default async function NivelDoImovelPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ fotografar?: string }> }) {
+export default async function NivelDoImovelPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ fotografar?: string; medir?: string }> }) {
   const { id } = await params;
   // FOTO-NA-HORA-B: o link do celular (e o item pendente da prontidão) chega com ?fotografar=<item> e abre a câmera dele.
-  const { fotografar } = await searchParams;
+  const { fotografar, medir } = await searchParams;
+  // NIVEIS-MEDIR-B: o link do celular da medição chega com ?medir=<ponto>; sem ele, o quarto principal vem primeiro.
+  const pontoMedir = medir === "trabalho" ? "trabalho" : "quarto_principal";
   const [dados, comodidades] = await Promise.all([nivelDoMeuImovel(id), comodidadesDoMeuImovel(id)]);
   return (
     <div>
@@ -66,8 +69,12 @@ export default async function NivelDoImovelPage({ params, searchParams }: { para
               Internet medida:{" "}
               {dados.medidas.length
                 ? dados.medidas.map((m) => `${ROTULO_PONTO[m.ponto]} ${Math.round(m.downloadMbps)}/${Math.round(m.uploadMbps)} Mbps`).join(" · ")
-                : "nenhuma medição válida por ponto. Meça no quarto principal e no ponto de trabalho pela edição do anúncio."}
+                : "nenhuma medição válida por ponto. Meça no quarto principal e no ponto de trabalho, aqui embaixo, no imóvel."}
             </p>
+          </section>
+          {/* NIVEIS-MEDIR-B: mede antes ou depois de publicar, com as mesmas validações; o nível recalcula na hora. */}
+          <section data-testid="nivel-medir">
+            <MedirNoNivel propertyId={id} ponto={pontoMedir} />
           </section>
           {/* E101: o que as fotos sugerem fica acima dos itens de prova. */}
           <SugestoesNoNivel propertyId={id} comodidades={comodidades} />

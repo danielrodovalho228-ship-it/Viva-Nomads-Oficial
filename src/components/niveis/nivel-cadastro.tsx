@@ -8,7 +8,8 @@ import { nivelAgoraEFalta, type ItemQueFalta } from "@/lib/niveis/exibicao";
 import { entradaNivelDoCadastro, type EntradaNivelCadastro } from "@/lib/data/nivel-cadastro-actions";
 import { faltaSemSugestao } from "@/lib/fotos/deteccao";
 import { ProvaNaHora } from "@/components/niveis/camera-prova";
-import { AVISO_PROVA_NA_HORA, MARCA_FOTO_ANTERIOR, provaAntigaNoPrazo, textoRefazerFoto } from "@/lib/niveis/prova-camera";
+import { AVISO_PROVA_NA_HORA, MARCA_FOTO_ANTERIOR, pontoDoItemInternet, provaAntigaNoPrazo, textoRefazerFoto } from "@/lib/niveis/prova-camera";
+import { MedirNoImovel } from "@/components/niveis/medir-no-imovel";
 
 /**
  * Adendo 59.1, Parte A — no passo Comodidades do cadastro: o nível que o imóvel atinge AGORA (com o padrão mínimo que
@@ -156,7 +157,13 @@ export function NivelNoCadastro({
 }
 
 function AcaoItem({ item, propertyId, onRecebida }: { item: ItemQueFalta; propertyId: string; onRecebida: (m: string) => void }) {
-  if (item.prova === "medida") return <span className="shrink-0 text-xs text-muted">Meça na edição do anúncio, depois de publicar</span>;
+  // NIVEIS-MEDIR-B (E25b): mede-se já no rascunho ("Meça agora, no imóvel"); a medição vale ao publicar. A videochamada
+  // não tem foto: é a medição do ponto de trabalho que passa a regra.
+  const ponto = item.prova === "medida" ? pontoDoItemInternet(item.chave) : null;
+  if (ponto)
+    return (
+      <MedirNoImovel propertyId={propertyId} ponto={ponto} origem="cadastro" onMedida={() => onRecebida("Medição validada. O nível já foi recalculado.")} testid={`nivel-cadastro-medir-${item.chave}`} />
+    );
   if (item.prova === "ruido")
     return (
       <Link href={`/dashboard/imoveis/${propertyId}/nivel`} className="shrink-0 text-xs font-semibold text-forest underline underline-offset-2">

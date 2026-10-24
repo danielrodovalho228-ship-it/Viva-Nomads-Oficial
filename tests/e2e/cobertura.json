@@ -845,7 +845,8 @@
         "t406-varredura-bloco25",
         "t433-l2a-itens-9-24",
         "t407-varredura-bloco26",
-        "t400-chacara-sem-internet"
+        "t400-chacara-sem-internet",
+        "t410-niveis-medir-rascunho"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -879,7 +880,8 @@
         "t431-perto-a",
         "t433-l2a-itens-9-24",
         "t407-varredura-bloco26",
-        "t400-chacara-sem-internet"
+        "t400-chacara-sem-internet",
+        "t410-niveis-medir-rascunho"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1870,7 +1872,8 @@
         "t385-varredura-bloco21",
         "t406-varredura-bloco25",
         "t407-varredura-bloco26",
-        "t439-e101-deteccao-espelho"
+        "t439-e101-deteccao-espelho",
+        "t410-niveis-medir-rascunho"
       ]
     },
     "/dashboard/recibos": {
@@ -2613,7 +2616,8 @@
         "inquilino"
       ],
       "specs": [
-        "t275-internet-medida"
+        "t275-internet-medida",
+        "t410-niveis-medir-rascunho"
       ]
     },
     "/api/parceiros/pedidos/[id]": {
@@ -2731,7 +2735,8 @@
         "proprietario"
       ],
       "specs": [
-        "t397-foto-na-hora"
+        "t397-foto-na-hora",
+        "t410-niveis-medir-rascunho"
       ]
     }
   },
@@ -6312,6 +6317,22 @@
       ],
       "specs": [
         "t398-local-pessoal-teste"
+      ]
+    },
+    "src/lib/data/prova-actions.ts#pedirLinkMedicao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t410-niveis-medir-rascunho"
+      ]
+    },
+    "src/lib/data/prova-actions.ts#medicaoDoPonto": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t410-niveis-medir-rascunho"
       ]
     }
   }
