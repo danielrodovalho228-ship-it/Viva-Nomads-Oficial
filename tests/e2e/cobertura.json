@@ -17,7 +17,8 @@
         "t283-home-internet-57",
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
-        "t343-nivel-busca-sem-beco"
+        "t343-nivel-busca-sem-beco",
+        "t352-varredura-bloco17"
       ]
     },
     "/acesso-socios": {
@@ -62,7 +63,8 @@
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
         "t288-padrao-minimo-59a",
-        "t317-email-unico-49c1"
+        "t317-email-unico-49c1",
+        "t352-varredura-bloco17"
       ]
     },
     "/admin/2fa/refazer": {
@@ -256,7 +258,8 @@
         "t183-telas-logadas-390",
         "t241-contas-teste-36",
         "t271-admin-visual",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t352-varredura-bloco17"
       ]
     },
     "/ajuda": {
@@ -303,6 +306,7 @@
       ],
       "specs": [
         "t1-auth-guards",
+        "t366-porta-auth-visual",
         "t11-travessias",
         "t12-planos",
         "t14-app-mode",
@@ -395,7 +399,8 @@
         "t310-vao-fim-de-pagina",
         "t343-nivel-busca-sem-beco",
         "t344-avaliacao-telas-62a-parte2",
-        "t350-filtros-honestos-buscar"
+        "t350-filtros-honestos-buscar",
+        "t352-varredura-bloco17"
       ]
     },
     "/cidades": {
@@ -529,7 +534,8 @@
         "t318-papel-ativo-fonte-unica",
         "t320-pausar-anuncio-64b",
         "t344-avaliacao-telas-62a-parte2",
-        "t355-conta-a-perfil-espelho"
+        "t355-conta-a-perfil-espelho",
+        "t352-varredura-bloco17"
       ]
     },
     "/dashboard/assinatura": {
@@ -557,7 +563,8 @@
         "t182-jornada-completa",
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
-        "t362-perfil-avaliacoes-pix"
+        "t362-perfil-avaliacoes-pix",
+        "t352-varredura-bloco17"
       ]
     },
     "/dashboard/buscas": {
@@ -634,7 +641,8 @@
         "t355-conta-a-perfil-espelho",
         "t361-conta-a-correcoes-qa",
         "t351-telas-linkedin-63a",
-        "t355-conta-a-perfil-espelho"
+        "t355-conta-a-perfil-espelho",
+        "t352-varredura-bloco17"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -687,7 +695,8 @@
         "t209-jornada-dois-lados",
         "t224-taxa-fora-da-api",
         "t220-recibo-assinatura",
-        "t221-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t352-varredura-bloco17"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -778,7 +787,8 @@
         "t268-meus-imoveis-link",
         "t286-esqueletos-vazios-48",
         "t318-papel-ativo-fonte-unica",
-        "t320-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b",
+        "t352-varredura-bloco17"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -814,7 +824,8 @@
         "t296-niveis-exibicao-59-1",
         "t320-pausar-anuncio-64b",
         "t337-varredura-redundancia",
-        "t338-varredura-bloco15"
+        "t338-varredura-bloco15",
+        "t352-varredura-bloco17"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1273,6 +1284,7 @@
       ],
       "specs": [
         "t171-faixas-taxa-cors",
+        "t367-e52-busca-fotografo-vazia",
         "t201-qa-muse",
         "t231-admin-numeros-com-lista",
         "t236-parceiros-ciclo",
@@ -1484,7 +1496,8 @@
       ],
       "specs": [
         "t229-admin-conversa-com-tudo",
-        "t48-varredura"
+        "t48-varredura",
+        "t352-varredura-bloco17"
       ]
     },
     "/admin/contratos": {

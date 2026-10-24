@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   chipsDe,
+  DICA_SEM_FILTRO,
   FILTROS_DESCRICAO_VAZIOS,
   interpretarLocal,
   limparDescricao,
@@ -92,4 +93,16 @@ test("chips mostram os filtros e semFiltro tira só o escolhido", () => {
 test("localExistente só devolve lugar do catálogo", () => {
   assert.equal(localExistente("uberlandia", LOCAIS), "Uberlândia");
   assert.equal(localExistente("Narnia", LOCAIS), "");
+});
+
+test("L-49: a dica sem filtro só cita o que a descrição liga (nada de Wi-Fi nem cozinha, garantias do padrão mínimo)", () => {
+  assert.doesNotMatch(DICA_SEM_FILTRO, /wi-?fi|internet|cozinha/i);
+  // Cada coisa citada vira filtro de verdade.
+  const f = interpretarLocal("até 3 mil, 2 quartos, Centro, aceita pet, garagem", LOCAIS);
+  assert.equal(f.maxPrice, 3000);
+  assert.equal(f.minBedrooms, 2);
+  assert.equal(f.local, "Centro");
+  assert.equal(f.petsOnly, true);
+  assert.deepEqual(f.comodidades, ["garagem"]);
+  assert.match(DICA_SEM_FILTRO, /preço, quartos, cidade ou bairro, pets ou garagem/);
 });
