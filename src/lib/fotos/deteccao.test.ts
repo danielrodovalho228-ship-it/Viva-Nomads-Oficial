@@ -136,14 +136,25 @@ test("sugestão não conta para o nível antes de confirmar; o 'o que falta' tir
   assert.equal(semSug.length, itensFalta.length - 1);
 });
 
-test("confirmar usa o caminho de hoje: a tela chama salvarItemNivel com a foto e a comodidade vai pelo salvar do anúncio", () => {
+test("FOTO-NA-HORA-B: confirmar item de nível NÃO grava a foto da galeria como prova; abre a câmera e fica 'falta a foto'", () => {
   const acoes = readFileSync(new URL("../data/deteccao-actions.ts", import.meta.url), "utf8");
-  assert.match(acoes, /salvarItemNivel\(s\.property_id, s\.chave, true, s\.caminho\)/);
+  assert.doesNotMatch(acoes, /salvarItemNivel\(|from "@\/lib\/data\/nivel-actions"/, "a sugestão nunca chama salvarItemNivel (nem com a foto da galeria)");
+  assert.match(acoes, /update\(\{ status: "confirmada_sem_foto", decidida_em: new Date\(\)\.toISOString\(\) \}\)/);
+  assert.match(acoes, /fotografar: s\.chave/);
   assert.doesNotMatch(acoes, /from\("nivel_itens"\)\s*\.(insert|upsert|update)/, "nunca grava nivel_itens por fora");
   assert.doesNotMatch(acoes, /from\("property_amenities"\)/, "a comodidade não é marcada pela sugestão");
   const tela = readFileSync(new URL("../../components/niveis/sugestoes-fotos.tsx", import.meta.url), "utf8");
   assert.match(tela, /onComodidade\(r\.comodidade\)/);
+  assert.match(tela, /SUGESTAO_FOTOGRAFAR/);
+  assert.match(tela, /SUGESTAO_SO_REFERENCIA/);
+  assert.match(tela, /<ProvaNaHora/);
+  // A sugestão confirmada sem foto continua na lista (com a câmera) e não conta.
+  const s = (status: SugestaoVisivel["status"]): SugestaoVisivel => ({ id: status, chave: "cozinha_microondas", tipo: "nivel", confianca: 0.9, status, caminho: "a" });
+  const ctx = { galeria: new Set(["a"]), nivelComFoto: new Set<string>(), comodidadesMarcadas: new Set<string>() };
+  assert.deepEqual(sugestoesParaConfirmar([s("sugerida"), s("confirmada_sem_foto")], ctx).map((x) => x.status), ["confirmada_sem_foto"]);
+  assert.deepEqual(sugestoesParaConfirmar([s("aceita"), s("descartada")], ctx), []);
 });
+
 
 test("custo: tokens da imagem pela regra da Anthropic e conta por foto e por anúncio", () => {
   assert.equal(tokensDaImagem(1024, 768), 1049);

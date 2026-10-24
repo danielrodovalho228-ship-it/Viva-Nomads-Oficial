@@ -6,6 +6,9 @@ import "server-only";
    B. Pendências: corrigida sem resposta do morador em 48 h → conta como corrigida.
    C. Manutenção: "resolvido" sem resposta do morador em 48 h → fica resolvido na data do dono; avisos de prazo (antes do
       vencimento e vencido), uma vez cada, com silêncio das 22h às 7h, exceto urgente.
+   D. FOTO-NA-HORA-B: prova de item de nível anterior à regra (origem 'arquivo') com o prazo de refazer vencido → o item
+      deixa de contar (a regra pura já não conta), o nível é recalculado e o dono é avisado uma vez. Tokens de captura e
+      links do celular com mais de 1 dia saem.
   Nada financeiro (D7). `agora` é injetável (no laboratório a rota aceita a data simulada).
 */
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -14,6 +17,9 @@ import { voltarSeCompleto } from "@/lib/conforto/servidor";
 import { avisarConfortoPrazo } from "@/lib/conforto/avisos";
 import { avisoDevido, confirmacaoVencida, emSilencio, type AvisoSolucao, type OrdemSolucao } from "@/lib/manutencao-solucao";
 import { avisarPrazoManutencao } from "@/lib/manutencao-avisos";
+import { recalcularNivel } from "@/lib/niveis/servidor";
+import { avisarProvaVencida } from "@/lib/niveis/avisos";
+import { rotuloItem } from "@/config/niveis";
 
 type Admin = SupabaseClient;
 
@@ -24,11 +30,12 @@ export interface ResumoPrazos59 {
   pendenciasConfirmadas: number;
   ordensConfirmadas: number;
   avisosManutencao: number;
+  provasVencidas: number;
 }
 
 /** `soImoveis`: só estes imóveis (o laboratório isola o spec dos outros que rodam junto). */
 export async function rodarPrazos59(admin: Admin, agora = new Date(), soImoveis?: string[]): Promise<ResumoPrazos59> {
-  const r: ResumoPrazos59 = { lembretes: 0, pausados: 0, voltaram: 0, pendenciasConfirmadas: 0, ordensConfirmadas: 0, avisosManutencao: 0 };
+  const r: ResumoPrazos59 = { lembretes: 0, pausados: 0, voltaram: 0, pendenciasConfirmadas: 0, ordensConfirmadas: 0, avisosManutencao: 0, provasVencidas: 0 };
 
   // ── A. Padrão mínimo ─────────────────────────────────────────────────────────────────────────────────────────────
   let qAdq = admin.from("conforto_adequacao").select("property_id, prazo_ate, lembretes, pausado_em, properties!inner(status)").limit(5000);
@@ -105,6 +112,31 @@ export async function rodarPrazos59(admin: Admin, agora = new Date(), soImoveis?
     const aviso = avisoDevido(ordem, agora, enviados.get(o.id) ?? []);
     // Silêncio das 22h às 7h (o aviso sai na primeira rodada depois das 7h), exceto urgente.
     if (aviso && !emSilencio(agora, o.priority) && (await avisarPrazoManutencao(admin, o.id, aviso, agora))) r.avisosManutencao++;
+  }
+  // ── D. Provas anteriores à regra (FOTO-NA-HORA-B) ────────────────────────────────────────────────────────────────
+  let qProva = admin.from("nivel_itens").select("property_id, chave").eq("foto_origem", "arquivo").lte("refazer_ate", agora.toISOString()).is("vencida_avisada_em", null).limit(2000);
+  if (soImoveis) qProva = qProva.in("property_id", soImoveis);
+  const { data: vencidas } = await qProva;
+  const porImovelVencida = new Map<string, string[]>();
+  for (const v of (vencidas ?? []) as { property_id: string; chave: string }[]) porImovelVencida.set(v.property_id, [...(porImovelVencida.get(v.property_id) ?? []), v.chave]);
+  for (const [propertyId, chaves] of porImovelVencida) {
+    const { data: marcadas } = await admin
+      .from("nivel_itens")
+      .update({ vencida_avisada_em: agora.toISOString() })
+      .eq("property_id", propertyId)
+      .in("chave", chaves)
+      .eq("foto_origem", "arquivo")
+      .is("vencida_avisada_em", null)
+      .select("chave");
+    if (!marcadas?.length) continue;
+    await recalcularNivel(admin, propertyId, agora);
+    await avisarProvaVencida(admin, propertyId, (marcadas as { chave: string }[]).map((m) => rotuloItem(m.chave))).catch(() => null);
+    r.provasVencidas += marcadas.length;
+  }
+  if (!soImoveis) {
+    const ontem = new Date(agora.getTime() - 24 * 3600_000).toISOString();
+    await admin.from("prova_capturas").delete().lt("criado_em", ontem).then(() => undefined, () => undefined);
+    await admin.from("prova_links_celular").delete().lt("criado_em", ontem).then(() => undefined, () => undefined);
   }
   return r;
 }

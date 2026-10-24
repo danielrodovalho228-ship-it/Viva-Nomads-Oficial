@@ -86,6 +86,8 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   manutencao_atualizada: "manutencao",
   manutencao_prazo: "manutencao",
   conforto_prazo: "manutencao",
+  nivel_prova_celular: "transacional",
+  nivel_prova_vencida: "transacional",
   conforto_pendencia: "manutencao",
   manutencao_mensagem: "manutencao",
   checkin_lembrete: "contrato",

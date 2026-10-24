@@ -5,22 +5,22 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AREAS, EXTRAS, MATRIZ, PERGUNTAS_RUIDO, ROTULO_AREA, itemNivel, type ChaveNivel } from "@/config/niveis";
 import { salvarExtras, salvarItemNivel, salvarRuido, type NivelDoImovelTela } from "@/lib/data/nivel-actions";
+import { ProvaNaHora } from "@/components/niveis/camera-prova";
+import { AVISO_PROVA_NA_HORA, MARCA_FOTO_ANTERIOR, provaAntigaNoPrazo, textoRefazerFoto } from "@/lib/niveis/prova-camera";
 
 const STATUS = { pendente: "Foto em análise", aceita: "Foto aceita", recusada: "Foto recusada" } as const;
 
-import { MSG_FALHA_ENVIO_FOTO, enviarFotoDoAnuncio } from "@/lib/fotos/enviar-foto-cliente";
-
-export function FormNivel({ propertyId, dados }: { propertyId: string; dados: NivelDoImovelTela }) {
+export function FormNivel({ propertyId, dados, fotografar = null }: { propertyId: string; dados: NivelDoImovelTela; fotografar?: string | null }) {
   return (
     <div className="space-y-6">
-      <ItensNivel propertyId={propertyId} dados={dados} />
+      <ItensNivel propertyId={propertyId} dados={dados} fotografar={fotografar} />
       <Ruido propertyId={propertyId} inicial={dados.ruido} />
       <Extras propertyId={propertyId} inicial={dados.extras} />
     </div>
   );
 }
 
-function ItensNivel({ propertyId, dados }: { propertyId: string; dados: NivelDoImovelTela }) {
+function ItensNivel({ propertyId, dados, fotografar }: { propertyId: string; dados: NivelDoImovelTela; fotografar: string | null }) {
   const porChave = new Map(dados.itens.map((i) => [i.chave, i]));
   // Item que vale para duas áreas (ex.: ar-condicionado da sala) aparece uma vez só, na primeira.
   const vistos = new Set<string>();
@@ -33,13 +33,16 @@ function ItensNivel({ propertyId, dados }: { propertyId: string; dados: NivelDoI
   return (
     <section id="nivel-itens" className="scroll-mt-24 rounded-xl border border-line bg-white p-4" data-testid="nivel-itens">
       <h2 className="text-base font-semibold text-ink">Itens de Conforto e Premium</h2>
+      <p className="mt-1 text-sm text-ink" data-testid="prova-na-hora-aviso">
+        {AVISO_PROVA_NA_HORA}
+      </p>
       <p className="mt-1 text-xs text-muted">Uma foto por item, sem pessoas. Item sem foto não conta. O atendimento da Viva pode recusar uma foto que não mostra o item.</p>
       {grupos.map((g) => (
         <div key={g.area} className="mt-4">
           <p className="text-sm font-semibold text-ink">{ROTULO_AREA[g.area]}</p>
           <ul className="mt-2 space-y-3">
             {g.linhas.map(({ k, n }) => (
-              <LinhaItem key={k} propertyId={propertyId} chave={k} nivel={n} item={porChave.get(k)} />
+              <LinhaItem key={k} propertyId={propertyId} chave={k} nivel={n} item={porChave.get(k)} abrir={fotografar === k} />
             ))}
           </ul>
         </div>
@@ -48,39 +51,26 @@ function ItensNivel({ propertyId, dados }: { propertyId: string; dados: NivelDoI
   );
 }
 
-function LinhaItem({ propertyId, chave, nivel, item }: { propertyId: string; chave: ChaveNivel; nivel: "conforto" | "premium"; item: NivelDoImovelTela["itens"][number] | undefined }) {
+function LinhaItem({ propertyId, chave, nivel, item, abrir }: { propertyId: string; chave: ChaveNivel; nivel: "conforto" | "premium"; item: NivelDoImovelTela["itens"][number] | undefined; abrir: boolean }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
-  // E47-A-CORRECAO: a foto que não subiu fica guardada para "Tentar de novo" (nada de escolher de novo).
-  const [paraTentar, setParaTentar] = useState<File | null>(null);
   const info = itemNivel(chave);
-  // Nunca lança: falha de rede, 413 ou 5xx vira mensagem na linha (antes, o fetch rejeitado no meio do envio subia ao
-  // limite de erro do React e a tela ficava branca).
-  const salvar = (declarado: boolean, arquivo?: File | null) =>
+  // FOTO-NA-HORA-B: a foto da prova é feita na hora (ProvaNaHora); a caixa "O imóvel tem" só declara ou retira.
+  const salvar = (declarado: boolean) =>
     iniciar(async () => {
       setMsg(null);
       try {
-        let path: string | null = null;
-        if (arquivo) {
-          const up = await enviarFotoDoAnuncio(arquivo);
-          if (!up.ok) {
-            setParaTentar(up.motivo === "arquivo" || up.motivo === "recusada" ? null : arquivo);
-            return setMsg({ ok: false, t: up.erro });
-          }
-          path = up.path;
-        }
-        const r = await salvarItemNivel(propertyId, chave, declarado, path);
-        setParaTentar(r.ok ? null : arquivo ?? null);
+        const r = await salvarItemNivel(propertyId, chave, declarado);
         setMsg(r.ok ? { ok: true, t: r.mensagem ?? "Salvo." } : { ok: false, t: r.erro });
         if (r.ok) router.refresh();
       } catch {
-        setParaTentar(arquivo ?? null);
-        setMsg({ ok: false, t: MSG_FALHA_ENVIO_FOTO });
+        setMsg({ ok: false, t: "Não foi possível salvar agora." });
       }
     });
+  const anterior = !!item && provaAntigaNoPrazo({ fotoOrigem: item.fotoOrigem, refazerAte: item.refazerAte, fotoPath: item.fotoUrl }, new Date());
   return (
-    <li className="rounded-lg border border-line p-3 text-sm" data-testid={`nivel-item-${chave}`} data-declarado={item?.declarado ? "1" : "0"} data-foto={item?.fotoStatus ?? "pendente"}>
+    <li className="rounded-lg border border-line p-3 text-sm" data-testid={`nivel-item-${chave}`} data-declarado={item?.declarado ? "1" : "0"} data-foto={item?.fotoStatus ?? "pendente"} data-origem={item?.fotoOrigem ?? ""}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <span className="min-w-0">
           <span className="font-semibold text-ink">{info.rotulo}</span>
@@ -97,21 +87,18 @@ function LinhaItem({ propertyId, chave, nivel, item }: { propertyId: string; cha
           <input type="checkbox" checked={!!item?.declarado} disabled={pendente} onChange={(e) => salvar(e.target.checked)} data-testid={`nivel-tenho-${chave}`} />
           O imóvel tem
         </label>
-        <label className="text-xs text-forest underline">
-          {item?.fotoUrl ? "Trocar a foto" : "Enviar a foto"}
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="sr-only"
-            disabled={pendente}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) salvar(true, f);
-              e.target.value = "";
-            }}
-            data-testid={`nivel-foto-${chave}`}
-          />
-        </label>
+        <ProvaNaHora
+          propertyId={propertyId}
+          chave={chave}
+          rotulo={info.rotulo}
+          autoAbrir={abrir}
+          testid={`nivel-foto-${chave}`}
+          rotuloBotao={item?.fotoUrl && !anterior ? "Fotografar de novo" : undefined}
+          onRecebida={(m) => {
+            setMsg({ ok: true, t: m });
+            router.refresh();
+          }}
+        />
         {item?.fotoUrl && (
           <span className={item.fotoStatus === "recusada" ? "text-xs text-red-700" : "text-xs text-muted"} data-testid={`nivel-status-${chave}`}>
             {STATUS[item.fotoStatus]}
@@ -119,15 +106,15 @@ function LinhaItem({ propertyId, chave, nivel, item }: { propertyId: string; cha
           </span>
         )}
       </div>
+      {anterior && item?.refazerAte && (
+        <p className="mt-1 text-xs text-amber-800" data-testid={`nivel-anterior-${chave}`}>
+          <span className="font-semibold">{MARCA_FOTO_ANTERIOR}</span> · {textoRefazerFoto(info.rotulo, item.refazerAte)}.
+        </p>
+      )}
       {msg && (
         <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "mt-1 text-xs text-ink" : "mt-1 text-xs text-red-700"} data-testid={`nivel-msg-${chave}`}>
           {msg.t}
         </p>
-      )}
-      {paraTentar && !pendente && (
-        <button type="button" className="mt-1 min-h-11 text-xs font-semibold text-forest underline underline-offset-2" onClick={() => salvar(true, paraTentar)} data-testid={`nivel-tentar-${chave}`}>
-          Tentar de novo
-        </button>
       )}
     </li>
   );

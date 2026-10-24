@@ -402,7 +402,7 @@ export function EditarImovelClient({
                       <span key={o.key}>
                         {i > 0 && " · "}
                         {href ? (
-                          <a href={`#${ANCORA_VIDEO_EDITOR}`} className="font-medium text-forest underline" data-testid={`melhorar-${o.key}`}>
+                          <a href={o.key === "video" ? `#${ANCORA_VIDEO_EDITOR}` : href} className="font-medium text-forest underline" data-testid={`melhorar-${o.key}`}>
                             {o.label}
                           </a>
                         ) : (
