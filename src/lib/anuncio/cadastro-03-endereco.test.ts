@@ -55,3 +55,30 @@ test("ordem do mockup: endereço, mapa, aviso, confira, etiquetas — e textos s
   assert.match(resumo, /Confira se o endereço está certo antes de continuar\./);
   for (const t of [resumo, etapa]) assert.doesNotMatch(t, /h[oó]spede|reserva|temporada|check-in/i);
 });
+
+test("E104: o Passo 3 é SÓ endereço — sem IA, quem opera, identidade, documento do imóvel nem importar", () => {
+  const corpo = etapa.slice(etapa.indexOf("export function EtapaOndeFica"), etapa.indexOf("export function AntesDePublicar"));
+  for (const fora of [/CartaoIa|topo/, /Quem opera este imóvel\?/, /<EtapaIdentidade/, /<DocumentoVinculo/, /Já tem anúncio em outro site\?/, /ImportarAnuncio/]) {
+    assert.doesNotMatch(corpo, fora, String(fora));
+  }
+  const pagina = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
+  assert.doesNotMatch(pagina, /<CartaoIa/);
+  // As regras não somem: o cartão "Antes de publicar" mora na Revisão, e os atalhos no fim do Passo 1.
+  assert.match(pagina, /step === ETAPA\.revisao && \(\s*<div className="mb-6">\s*<AntesDePublicar/);
+  assert.match(pagina, /<AtalhosCadastro aplicarImportado=\{aplicarImportado\} \/>/);
+  const antes = etapa.slice(etapa.indexOf("export function AntesDePublicar"), etapa.indexOf("export function AtalhosCadastro"));
+  for (const dentro of [/Quem opera este imóvel\?/, /<EtapaIdentidade \/>/, /<DocumentoVinculo/]) assert.match(antes, dentro);
+  assert.match(ler("lib/anuncio/prontidao.ts"), /key: "documento"[^\n]*etapa: ETAPA\.revisao/);
+});
+
+test("E104: cartão branco sobre o fundo areia; nome do bairro fora do zoom do mapa; complemento sem supor apartamento", () => {
+  const pagina = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
+  assert.match(pagina, /step === ETAPA\.endereco && "rounded-xl border border-line bg-white p-4 sm:p-8"/);
+  assert.match(ler("components/layout/moldura-assistente.tsx"), /flex min-h-screen w-full flex-col bg-areia/);
+  // O zoom do Leaflet fica no canto de cima à ESQUERDA: a etiqueta do bairro vai para a direita.
+  assert.match(resumo, /absolute right-3 top-3[^"]*" data-testid="mapa-bairro-nome"/);
+  assert.doesNotMatch(resumo, /absolute left-3 top-3/);
+  assert.match(etapa, /export const PLACEHOLDER_COMPLEMENTO = "Bloco, apartamento, casa ou referência";/);
+  assert.match(etapa, /placeholder=\{PLACEHOLDER_COMPLEMENTO\}/);
+  assert.doesNotMatch(etapa, /Apto 101/);
+});

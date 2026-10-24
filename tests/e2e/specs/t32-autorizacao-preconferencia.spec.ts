@@ -2,13 +2,13 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { authFile } from "../fixtures/auth";
-import { doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
+import { doTipoAoEndereco, irParaAntesDePublicar } from "../fixtures/cadastro";
 
 /**
  * T32 — CADASTRO CONFIÁVEL, parte B (laboratório): quem opera o imóvel + pré-conferência.
  * Conta NOVA de dono (não mexe nas personas dos outros specs).
- *  1. "Administro para o proprietário": sem declaração e sem o contrato/procuração
- *     não avança; com o PDF anexado (pelo servidor), avança.
+ *  1. "Administro para o proprietário" (no "Antes de publicar" da Revisão — E104): sem declaração e sem o
+ *     contrato/procuração, diz o que falta e não publica; com o PDF anexado (pelo servidor), resolve.
  *  2. O banco recusa publicar imóvel administrado sem o documento (0091).
  *  3. /admin/documentos: "Parece OK" para o imóvel próprio com titular = conta;
  *     "Atenção: …" para o administrado sem procuração. Quem aprova é o admin.
@@ -98,7 +98,7 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     if (ids.dono) await adm().auth.admin.deleteUser(ids.dono);
   });
 
-  test("Administro para o proprietário: sem declaração e sem procuração não avança; com o PDF, avança", async ({ browser }) => {
+  test("Administro para o proprietário: sem declaração e sem procuração diz o que falta; com o PDF, resolve", async ({ browser }) => {
     test.setTimeout(90_000);
     const page = await entrar(browser, dono.email);
     // Qualificação aprovada (o portão do "Novo anúncio" lê esta marca da sessão).
@@ -107,21 +107,21 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     const outro = page.getByRole("button", { name: "Começar outro" });
     if (await outro.isVisible().catch(() => false)) await outro.click();
 
-    // Assistente em 10 passos: quem opera e endereço ficam no passo Endereço (3º), depois de Tipo e Fotos.
+    // Assistente em 10 passos: o endereço fica no Passo 3, depois de Tipo e Fotos; quem opera e o documento da
+    // operação, no "Antes de publicar" da Revisão (E104).
     await doTipoAoEndereco(page);
     await page.getByTestId("cadastro-rua").fill("Rua da Procuração");
     await page.getByTestId("cadastro-numero").fill("7");
     await page.getByTestId("cadastro-bairro").fill("Centro");
+    await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 15_000 });
+    await irParaAntesDePublicar(page);
 
     await page.getByRole("radio", { name: "Administro para o proprietário" }).click();
     const secao = page.getByTestId("documento-operacao");
     await expect(secao).toContainText("contrato de administração ou a procuração");
-    const continuar = page.getByRole("button", { name: "Continuar", exact: true });
-
-    await continuar.click();
-    await expect(secao).toContainText("Marque a declaração para continuar.");
+    // O que falta aparece na hora, e a publicação fica barrada até resolver.
+    await expect(secao).toContainText("Marque a declaração para publicar.");
     await secao.getByText("Administro este imóvel em nome do proprietário (gestor ou procurador)").click();
-    await continuar.click();
     await expect(secao).toContainText("Anexe: contrato de administração ou procuração.");
 
     await secao.locator('input[type="file"]').setInputFiles({ name: "procuracao.pdf", mimeType: "application/pdf", buffer: pdf() });
@@ -130,8 +130,6 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     await expect(secao).not.toContainText("Anexe: contrato de administração ou procuração.");
     await page.screenshot({ path: "tests/laboratorio/saida/t32-1-administro-com-procuracao.png", fullPage: true });
 
-    await continuar.click();
-    await noPasso(page, "detalhes", 10_000);
     // O arquivo foi para a pasta do próprio dono no bucket privado.
     const { data: lista } = await adm().storage.from("property-docs").list(ids.dono!);
     expect((lista ?? []).some((f) => f.name.endsWith(".pdf"))).toBe(true);

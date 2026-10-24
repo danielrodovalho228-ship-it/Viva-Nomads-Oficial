@@ -145,8 +145,8 @@ test("checklist do anúncio em andamento: ✓/○, cada pendência leva à etapa
   // 7 Preço · 8 Disponibilidade · 9 Revisão.
   assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=1");
   assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=6");
-  // o documento é enviado e conferido na etapa Endereço (prompt 11).
-  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=2");
+  // E104: o documento é enviado e conferido no cartão "Antes de publicar" da Revisão (o Passo 3 é só endereço).
+  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=9");
   assert.equal(c.itens.find((i) => i.key === "endereco")?.ok, true);
 });
 

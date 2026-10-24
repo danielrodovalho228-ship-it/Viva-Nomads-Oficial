@@ -120,6 +120,54 @@ test.describe("T435 — Cadastro 03: Endereço (cadastro-imovel-03)", () => {
     });
   }
 
+  for (const w of [390, 1280]) {
+    test(`E104 a ${w} px: Passo 3 só endereço, em cartão branco sobre o fundo areia; bairro fora do zoom; complemento neutro`, async ({ browser }) => {
+      const p = await abrir(w, browser);
+      // Só endereço: nada de IA, quem opera, identidade, documento do imóvel nem importar.
+      for (const fora of ["cartao-ia", "atalhos-passo1", "documento-vinculo", "documento-operacao", "etapa-identidade", "antes-de-publicar"]) {
+        await expect(p.getByTestId(fora), fora).toHaveCount(0);
+      }
+      for (const texto of ["Deixe a IA preencher o anúncio para você", "Quem opera este imóvel?", "Confirme sua identidade", "Já tem anúncio em outro site?"]) {
+        await expect(p.getByText(texto), texto).toHaveCount(0);
+      }
+      // Cartão branco sobre o fundo areia (#f7f2ea) da moldura.
+      const coluna = p.getByTestId("novo-coluna-form");
+      expect(await coluna.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
+      expect(await coluna.evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThan(0);
+      expect(await p.getByTestId("moldura-assistente").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(247, 242, 234)");
+      // A etiqueta do bairro não cobre o zoom do mapa (o "+" fica à vista).
+      const zoom = p.getByTestId("mapa-bairro").locator(".leaflet-control-zoom");
+      await expect(zoom).toBeVisible({ timeout: 20_000 });
+      const z = (await zoom.boundingBox())!;
+      const nome = (await p.getByTestId("mapa-bairro-nome").boundingBox())!;
+      const cruza = nome.x < z.x + z.width && nome.x + nome.width > z.x && nome.y < z.y + z.height && nome.y + nome.height > z.y;
+      expect(cruza, "a etiqueta do bairro por cima do zoom").toBe(false);
+      const mais = p.getByTestId("mapa-bairro").locator(".leaflet-control-zoom-in");
+      const b = (await mais.boundingBox())!;
+      expect(await mais.evaluate((el, pt) => document.elementFromPoint(pt.x, pt.y) === el || el.contains(document.elementFromPoint(pt.x, pt.y)), { x: b.x + b.width / 2, y: b.y + b.height / 2 })).toBe(true);
+      // Complemento sem supor apartamento.
+      await expect(p.getByTestId("cadastro-complemento")).toHaveAttribute("placeholder", "Bloco, apartamento, casa ou referência");
+      await p.evaluate(() => window.scrollTo(0, 0));
+      await p.waitForTimeout(800);
+      await p.screenshot({ path: `${SAIDA}/t435-e104-passo3-${w}.png`, fullPage: true });
+      await p.getByTestId("mapa-bairro").scrollIntoViewIfNeeded();
+      await p.waitForTimeout(500);
+      await p.getByTestId("mapa-bairro").screenshot({ path: `${SAIDA}/t435-e104-mapa-zoom-${w}.png` });
+      // O que saiu do Passo 3 continua no cadastro: "Antes de publicar" na Revisão.
+      const url = new URL(p.url());
+      url.searchParams.set("etapa", "revisao");
+      await p.goto(url.pathname + url.search, { waitUntil: "domcontentloaded" });
+      const antes = p.getByTestId("antes-de-publicar");
+      await expect(antes).toBeVisible({ timeout: 30_000 });
+      await expect(antes).toContainText("Quem opera este imóvel?");
+      await expect(antes.getByTestId("etapa-identidade")).toBeVisible();
+      await expect(antes.getByTestId("documento-vinculo")).toBeVisible();
+      await antes.scrollIntoViewIfNeeded();
+      await p.screenshot({ path: `${SAIDA}/t435-e104-antes-de-publicar-${w}.png`, fullPage: false });
+      await p.context().close();
+    });
+  }
+
   test("2. a 390 px, sem o número: o resumo e o mapa somem, fica o aviso", async ({ browser }) => {
     const p = await abrir(390, browser);
     await expect(p.getByTestId("endereco-resumo")).toBeVisible();

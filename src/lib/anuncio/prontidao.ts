@@ -186,7 +186,7 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     },
     { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: ETAPA.preco },
     { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: ETAPA.preco },
-    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: ETAPA.endereco, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
+    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: ETAPA.revisao, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
   ];
   if (f.qualificacaoOk !== undefined) {
     obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: ETAPA.tipo, detalhe: f.qualificacaoOk ? undefined : "leva poucos minutos" });
@@ -204,7 +204,7 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   if (!f.sublocacaoOk) {
     const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;
-    obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: ETAPA.endereco });
+    obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: ETAPA.revisao });
   }
   if (!f.privacidadeOk) {
     obrigatorios.push({ key: "privacidade", label: ROTULO_FALTA_PRIVACIDADE, ok: false, etapa: ETAPA.comodidades });
