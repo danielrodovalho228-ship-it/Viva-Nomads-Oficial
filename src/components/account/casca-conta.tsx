@@ -23,11 +23,14 @@ const ICONES: Record<ItemSecao["icone"], React.ComponentType<{ className?: strin
  */
 export function CascaConta({
   ativo,
+  titulo,
   subtitulo,
   children,
   topoDireita,
 }: {
   ativo: SecaoConta;
+  /** H1 de uma subtela da seção (ex.: "Senha e duas etapas" dentro de Privacidade); sem ele, o nome da seção. */
+  titulo?: string;
   subtitulo?: string;
   children: React.ReactNode;
   /** No Perfil, o título e o subtítulo ficam na coluna da direita (acima do espelho), como no desenho. */
@@ -37,14 +40,14 @@ export function CascaConta({
   const cabecalho = (
     <header className={cn("min-w-0", topoDireita && "xl:hidden")} data-testid="conta-cabecalho">
       <Link
-        href="/dashboard/conta"
+        href={titulo ? atual.href : "/dashboard/conta"}
         className="mb-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-ink lg:hidden"
         data-testid="conta-voltar"
       >
-        <ChevronLeft className="h-5 w-5" aria-hidden /> Conta
+        <ChevronLeft className="h-5 w-5" aria-hidden /> {titulo ? atual.rotulo : "Conta"}
       </Link>
       <h1 className="font-title text-[28px] font-semibold leading-tight text-ink" data-testid="conta-h1">
-        {atual.rotulo}
+        {titulo ?? atual.rotulo}
       </h1>
       {subtitulo && <p className="mt-1 text-sm text-muted">{subtitulo}</p>}
     </header>

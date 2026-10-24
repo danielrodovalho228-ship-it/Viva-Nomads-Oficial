@@ -25,7 +25,9 @@ test("Conta (A1): oito telas na ordem Perfil → Avaliações → Papéis e inte
 test("Conta: sem repetições — cada assunto numa tela só; nada de página longa", () => {
   assert.doesNotMatch(CONTA + SECAO, /PerfilDoModo|title="Verificação"|title="Segurança"|TaxSimulator|<AvatarUploader|<ConviteFotoPerfil|<TopoConta/);
   assert.equal(SECAO.match(/<ConfiancaLista \/>/g)?.length, 1);
-  assert.equal(SECAO.match(/<ChangePassword \/>/g)?.length, 1);
+  // A senha mora só na subtela /dashboard/conta/seguranca (Senha e duas etapas); a Privacidade tem o link.
+  assert.doesNotMatch(SECAO, /<ChangePassword/);
+  assert.equal(ler("src/app/(dashboard)/dashboard/conta/seguranca/page.tsx").match(/<ChangePassword \/>/g)?.length, 1);
   assert.doesNotMatch(CONTA, /<PageTitle|<ConfiancaLista|<ChangePassword/);
 });
 

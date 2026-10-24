@@ -9,7 +9,7 @@ import { PerfilTela } from "@/components/account/perfil-tela";
 import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { CentralAjuda } from "@/components/ajuda/central-ajuda";
-import { AjudaContato, ChangePassword, DadosPessoais, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
+import { AjudaContato, DadosPessoais, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
 import { ConfiancaLista } from "@/components/account/conta-blocos";
 import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
@@ -36,7 +36,7 @@ const SUBTITULO: Record<Exclude<SecaoConta, "perfil">, string> = {
 
 /**
  * Telas da Conta (A1): cada seção na casca (menu lateral no computador; "‹ Conta" no celular), um H1 por tela.
- * Endereços antigos: /seguranca → Privacidade, /excluir → Ajuda (ALIAS_SECAO). /perfil-publico segue como estava.
+ * Endereço antigo /excluir → Ajuda (ALIAS_SECAO); /seguranca é a subtela de senha e duas etapas (rota própria, na casca).
  */
 export default function ContaSecaoPage({ params }: { params: Promise<{ secao: string }> }) {
   const { secao: bruta } = use(params);
@@ -91,8 +91,8 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
     case "privacidade":
       return (
         <CascaConta ativo="privacidade" subtitulo={SUBTITULO.privacidade}>
+          {/* Senha e duas etapas têm a sua subtela (/dashboard/conta/seguranca): aqui só a lista, cada item uma vez. */}
           <ConfiancaLista />
-          <ChangePassword />
         </CascaConta>
       );
     case "notificacoes":

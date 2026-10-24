@@ -138,7 +138,8 @@ test.describe("T178 — telefone verificado por SMS (modo simulado)", () => {
 
   test("Complete seu perfil: celular entra como item opcional (390)", async ({ browser }) => {
     const page = await entrar(browser, inq.email, senha);
-    await page.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
+    // A1: o medidor "Complete seu perfil" fica na tela Perfil.
+    await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
     await expect(page.getByTestId("complete-perfil")).toContainText("Verifique seu celular: perfis verificados passam mais confiança");
     await page.context().close();
   });

@@ -29,6 +29,7 @@ export const SECOES_CONTA: readonly ItemSecao[] = [
 
 /** Endereços antigos das subtelas que agora caem numa seção nova (links salvos, e-mails, app). */
 export const ALIAS_SECAO: Readonly<Record<string, SecaoConta>> = {
+  // /dashboard/conta/seguranca é rota própria (subtela de Privacidade); o alias só vale para a seção ativa no menu.
   seguranca: "privacidade",
   excluir: "ajuda",
 };

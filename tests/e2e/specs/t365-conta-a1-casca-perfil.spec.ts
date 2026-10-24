@@ -117,8 +117,10 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
       await expect(h1Visiveis(p), s).toHaveText(t);
       await expect(p.getByTestId(`conta-menu-${s}`)).toHaveAttribute("aria-current", "page");
     }
+    // /seguranca é a subtela "Senha e duas etapas" de Privacidade (rota própria, na casca).
     await p.goto("/dashboard/conta/seguranca", { waitUntil: "domcontentloaded" });
-    await expect(h1Visiveis(p)).toHaveText("Privacidade");
+    await expect(h1Visiveis(p)).toHaveText("Senha e duas etapas");
+    await expect(p.getByTestId("conta-menu-privacidade")).toHaveAttribute("aria-current", "page");
     await p.goto("/dashboard/conta/excluir", { waitUntil: "domcontentloaded" });
     await expect(h1Visiveis(p)).toHaveText("Ajuda");
     await expect(p.getByTestId("bloco-sair-da-viva").or(p.getByRole("heading", { name: /Sair da Viva/ })).first()).toBeVisible();

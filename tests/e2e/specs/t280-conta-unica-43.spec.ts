@@ -99,8 +99,11 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
       await expect(page.getByRole("radiogroup", { name: /modo/i })).toHaveCount(0);
       await expect(page.getByText(/Proprietário \| Inquilino/)).toHaveCount(0);
       if (largura === 390) {
-        const grupos = await page.getByTestId("conta-grupo").evaluateAll((els) => els.map((e) => e.getAttribute("data-grupo")));
-        for (const g of ["Conta", "Notificações", "Privacidade e segurança", "Pagamentos"]) expect(grupos).toContain(g);
+        // A1: no celular /dashboard/conta é o menu; o grupo "Conta" leva às oito telas (Notificações, Privacidade, Pagamentos…).
+        await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+        const grupoConta = page.locator('[data-testid="conta-grupo"][data-grupo="Conta"]');
+        await expect(grupoConta).toBeVisible({ timeout: 25_000 });
+        for (const s of ["notificacoes", "privacidade", "pagamentos"]) await expect(grupoConta.locator(`a[href="/dashboard/conta/${s}"]`)).toHaveCount(1);
         // A barra segue o contexto da tela, sem troca manual nem segundo login.
         await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
         await expect(async () => expect(await abas(page)).toContain("Agenda")).toPass({ timeout: 25_000 });
