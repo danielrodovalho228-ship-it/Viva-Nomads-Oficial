@@ -83,14 +83,16 @@ async function pendentes(admin: Admin, buscaId: string): Promise<ImovelNoAlerta[
   if (ids.length === 0) return [];
   const { data } = await admin
     .from("properties")
-    .select("id, title, city, neighborhood, monthly_price, bedrooms, condo_fee, utilities_mode, utilities_estimate, min_period_days, available_from")
+    .select("id, title, city, address, state, monthly_price, bedrooms, condo_fee, utilities_mode, utilities_estimate, min_period_days, available_from")
     .in("id", ids)
     .eq("status", "active");
   return (data ?? []).map((r) => ({
     id: r.id as string,
     title: (r.title as string) || "Imóvel mobiliado",
     city: (r.city as string) ?? "",
-    neighborhood: (r.neighborhood as string) ?? "",
+    // O bairro mora na coluna `address` (não existe `neighborhood` na tabela; pedir essa coluna derrubava a consulta).
+    neighborhood: (r.address as string) ?? "",
+    state: (r.state as string) ?? "",
     monthlyPrice: Number(r.monthly_price) || 0,
     bedrooms: Number(r.bedrooms) || 0,
     totalMes: totalMesDaLinha(r),

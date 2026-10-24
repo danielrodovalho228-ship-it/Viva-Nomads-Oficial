@@ -19,3 +19,16 @@ test("'Outro local' não usa flex-1 na coluna do celular", () => {
   assert.doesNotMatch(trecho, /(^|\s)flex-1\b/);
   assert.match(trecho, /sm:flex-1/);
 });
+
+/*
+  t188 (lab 24/10, f166125): a 6ª altura de /pedidos/novo era 40 px — o select "até N min" (h-10). Os controles
+  do bloco "Trabalho ou estudo" têm 48 px (h-12), como o resto do formulário.
+*/
+test("select 'até N min' e nome do local têm 48 px (h-12)", () => {
+  for (const marca of ['data-testid="destino-ate"', 'data-testid="outro-local-nome"']) {
+    const fim = fonte.indexOf(marca);
+    const trechoCampo = fonte.slice(fonte.lastIndexOf("<", fim), fim + 120);
+    assert.match(trechoCampo, /\bh-12\b/, marca);
+    assert.doesNotMatch(trechoCampo, /\bh-10\b/, marca);
+  }
+});

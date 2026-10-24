@@ -697,7 +697,8 @@
         "t392-varredura-bloco24",
         "t403-nav-a",
         "t402-conta-leva2",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t439-e101-deteccao-espelho"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -824,7 +825,8 @@
         "t286-esqueletos-vazios-48",
         "t318-papel-ativo-fonte-unica",
         "t320-pausar-anuncio-64b",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t400-chacara-sem-internet"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -841,7 +843,8 @@
         "t392-varredura-bloco24",
         "t406-varredura-bloco25",
         "t433-l2a-itens-9-24",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t400-chacara-sem-internet"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -874,7 +877,8 @@
         "t406-varredura-bloco25",
         "t431-perto-a",
         "t433-l2a-itens-9-24",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t400-chacara-sem-internet"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1292,6 +1296,7 @@
         "t406-varredura-bloco25",
         "t431-perto-a",
         "t407-varredura-bloco26",
+        "t439-e101-deteccao-espelho",
         "t440-e98-imovel"
       ]
     },
@@ -1863,7 +1868,8 @@
         "t378-e47a-foto-nivel-celular",
         "t385-varredura-bloco21",
         "t406-varredura-bloco25",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t439-e101-deteccao-espelho"
       ]
     },
     "/dashboard/recibos": {
@@ -6160,6 +6166,22 @@
       ],
       "specs": [
         "t389-deteccao-fotos"
+      ]
+    },
+    "src/lib/data/comodidade-sugerida-actions.ts#comodidadesDoMeuImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t439-e101-deteccao-espelho"
+      ]
+    },
+    "src/lib/data/comodidade-sugerida-actions.ts#gravarComodidadeConfirmada": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t439-e101-deteccao-espelho"
       ]
     },
     "src/lib/data/deteccao-actions.ts#confirmarSugestaoFoto": {

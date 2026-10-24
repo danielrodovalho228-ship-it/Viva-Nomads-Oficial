@@ -4,6 +4,7 @@
   Vocabulário da casa: onde o desenho diz "hóspedes" ou "viajantes", aqui é "moradores". PURO.
 */
 import { propertyTypeLabel } from "../amenities.ts";
+import { linhaLocalizacao } from "../localizacao.ts";
 
 export interface TelaAssistente {
   /** Rótulo curto (barra de passos, lista de conferência). */
@@ -83,8 +84,7 @@ export const TEXTOS_REVISAO = {
   editarDepois: "Você poderá editar a qualquer momento após publicar",
 } as const;
 
-/** "Santa Mônica, Uberlândia · MG". */
+/** "Santa Mônica, Uberlândia - MG" — a mesma linha pública do anúncio (E101). */
 export function localPrevia(bairro: string, cidade: string, uf: string): string {
-  const lugar = [bairro.trim(), cidade.trim()].filter(Boolean).join(", ");
-  return [lugar, uf.trim().toUpperCase()].filter(Boolean).join(" · ");
+  return linhaLocalizacao(bairro, cidade, uf);
 }

@@ -12,6 +12,7 @@ import { useFavoritesStore } from "@/lib/favorites-store";
 import { useProperties } from "@/lib/use-properties";
 import { cn } from "@/lib/utils";
 import type { Property } from "@/lib/types";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 export default function ComparePage() {
   const ids = useFavoritesStore((s) => s.ids);
@@ -45,7 +46,7 @@ export default function ComparePage() {
       ),
     },
     { label: "Tipo", render: (p) => p.propertyType },
-    { label: "Bairro", render: (p) => `${p.neighborhood}, ${p.city}` },
+    { label: "Bairro", render: (p) => linhaLocalizacao(p.neighborhood, p.city, p.state) },
     { label: "Quartos", render: (p) => p.bedrooms },
     { label: "Banheiros", render: (p) => p.bathrooms },
     { label: "Área", render: (p) => `${p.areaM2} m²` },

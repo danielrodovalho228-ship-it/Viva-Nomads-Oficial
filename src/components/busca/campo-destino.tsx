@@ -216,7 +216,7 @@ export function CampoDestino({
               onChange={(e) => onChange({ destino, modo, ate: Number(e.target.value) })}
               aria-label="Tempo máximo até o trabalho"
               data-testid="destino-ate"
-              className="h-10 rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-ink"
+              className="h-12 rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-ink"
             >
               <option value="0">qualquer tempo</option>
               {ATE_OPCOES.map((n) => (
@@ -304,7 +304,7 @@ function OutroLocal({ cidade, uf, onAchou }: { cidade: string; uf: string; onAch
             onChange={(e) => setNome(e.target.value)}
             maxLength={NOME_LOCAL_MAX}
             placeholder="Ex.: Trabalho, Cargill"
-            className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-3 text-base text-ink outline-none focus:border-ink"
+            className="mt-1 h-12 w-full rounded-lg border border-line bg-white px-3 text-base text-ink outline-none focus:border-ink"
             data-testid="outro-local-nome"
           />
           <span className="mt-1 block text-xs text-muted" data-testid="outro-local-privacidade">

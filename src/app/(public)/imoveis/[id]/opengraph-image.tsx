@@ -5,6 +5,7 @@ import { getProperty } from "@/lib/data/properties";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { quartosTexto } from "@/lib/anuncio/plural";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 export const alt = "Imóvel no Viva Nomads";
 export const size = { width: 1200, height: 630 };
@@ -71,7 +72,7 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
 
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 26 }}>
-            {p ? `${p.neighborhood}, ${p.city}` : "Imóvel mobiliado"}
+            {p ? linhaLocalizacao(p.neighborhood, p.city, p.state) || "Imóvel mobiliado" : "Imóvel mobiliado"}
           </div>
           <div style={{ color: "white", fontSize: 58, fontWeight: 800, lineHeight: 1.08, marginTop: 10, maxWidth: 1000 }}>
             {p?.title ?? "Imóvel mobiliado para estadia de 30 a 180 dias"}
