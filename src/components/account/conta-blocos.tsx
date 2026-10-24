@@ -267,7 +267,7 @@ export function ConfiancaLista() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-ink">{i.rotulo}</p>
               {carregando(i.chave) ? (
-                <span className="mt-1 block h-3 w-28 rounded bg-surface-2" aria-hidden />
+                <span className="mt-1 block h-3 w-28 rounded-lg bg-surface-2" aria-hidden />
               ) : (
               <p className={cn("flex items-center gap-1 text-xs", i.situacao === "ok" ? "text-forest" : "text-muted")}>
                 {i.situacao === "ok" ? (

@@ -46,9 +46,9 @@ export function SeusPapeis({ dentroDoBloco = false }: { dentroDoBloco?: boolean 
   if (!papeis)
     return (
       <div className="min-h-40 rounded-xl border border-line bg-white p-4" data-testid="seus-papeis-carregando" aria-busy="true">
-        <span className="block h-4 w-2/3 rounded bg-surface-2" aria-hidden />
-        <span className="mt-4 block h-10 rounded bg-surface-2" aria-hidden />
-        <span className="mt-3 block h-10 rounded bg-surface-2" aria-hidden />
+        <span className="block h-4 w-2/3 rounded-lg bg-surface-2" aria-hidden />
+        <span className="mt-4 block h-10 rounded-lg bg-surface-2" aria-hidden />
+        <span className="mt-3 block h-10 rounded-lg bg-surface-2" aria-hidden />
       </div>
     );
   return (
