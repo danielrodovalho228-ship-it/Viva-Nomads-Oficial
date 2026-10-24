@@ -2,20 +2,20 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T408 — L2-A, itens 9 e 24. 390 e 1280, com prints.
+ * T433 — L2-A, itens 9 e 24. 390 e 1280, com prints.
  *   9. Editar um anúncio PUBLICADO: "Anúncio publicado" e nunca "Falta para publicar".
  *  24. O campo do preço é "Valor mensal (sem condomínio e contas)" e, embaixo, "No anúncio: R$ X/mês tudo incluído" (aluguel
  *      2.800 + condomínio 450 = R$ 3.250), mudando na hora com o valor — na edição e no passo Preço do cadastro.
  */
 const SAIDA = "tests/laboratorio/saida";
 
-test.describe("T408 — L2-A: publicado sem 'Falta para publicar'; valor mensal e o total do anúncio", () => {
+test.describe("T433 — L2-A: publicado sem 'Falta para publicar'; valor mensal e o total do anúncio", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const dono = { email: `dono.t408.${sufixo}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
+  const dono = { email: `dono.t433.${sufixo}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
   const ids: { dono?: string; ativo?: string; rascunho?: string } = {};
 
   test.beforeAll(async () => {
@@ -57,7 +57,7 @@ test.describe("T408 — L2-A: publicado sem 'Falta para publicar'; valor mensal 
       await expect(linha).toHaveText(/No anúncio: R\$\s?3\.450\/mês tudo incluído/);
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await linha.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t408-editar-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t433-editar-${w}.png` });
       await p.context().close();
 
       // Item 24 no cadastro, passo Preço.
@@ -68,7 +68,7 @@ test.describe("T408 — L2-A: publicado sem 'Falta para publicar'; valor mensal 
       await expect(linhaCad).toHaveText(/No anúncio: R\$\s?3\.250\/mês tudo incluído/);
       expect(await q.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await linhaCad.scrollIntoViewIfNeeded();
-      await q.screenshot({ path: `${SAIDA}/t408-cadastro-preco-${w}.png` });
+      await q.screenshot({ path: `${SAIDA}/t433-cadastro-preco-${w}.png` });
       await q.context().close();
     });
   }
