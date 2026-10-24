@@ -37,3 +37,9 @@ test("/dashboard/conta no celular não monta o Perfil do computador (as ações 
   assert.match(pagina, /window\.matchMedia\("\(min-width: 1024px\)"\)/);
   assert.match(pagina, /\{computador && \(\s*<div className="hidden lg:block" data-so-computador>/);
 });
+
+test("âncoras antigas de /dashboard/conta trocam de documento (fora da fila das Server Actions)", () => {
+  const pagina = readFileSync(new URL("../../app/(dashboard)/dashboard/conta/page.tsx", import.meta.url), "utf8");
+  assert.match(pagina, /if \(destino\) window\.location\.replace\(destino\);/);
+  assert.doesNotMatch(pagina, /router\.replace/);
+});
