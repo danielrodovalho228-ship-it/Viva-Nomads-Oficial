@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * T358 — porta de entrada (/auth): alinhamento visual com os mockups aprovados (23/10). Só aparência.
+ * T362 — porta de entrada (/auth): alinhamento visual com os mockups aprovados (23/10). Só aparência.
  *   1. a foto da esquerda sem o véu escuro por cima de tudo: só degradês no topo e na base, e o título branco legível;
  *   2. o primário na família do verde da casa em todos os estados: habilitado (verde da marca), esperando (o mesmo verde
  *      a 75%, nunca o sálvia lavado do opacity-50) e carregando (verde cheio) — também na tela do código;
@@ -9,7 +9,7 @@ import { test, expect, type Page } from "@playwright/test";
  *   prints a 390 e 1280 (FASE=antes|depois). Nenhum texto, campo ou fluxo muda (os mesmos textos estão na tela).
  */
 const SAIDA = "tests/laboratorio/saida";
-const FASE = process.env.T358_FASE ?? "depois";
+const FASE = process.env.T362_FASE ?? "depois";
 const VERDE = "rgb(28, 107, 58)";
 
 /** Cor de fundo do botão com o estado forçado (desabilitado e/ou carregando), sem mexer no fluxo. */
@@ -26,14 +26,14 @@ async function corNoEstado(page: Page, testId: string, estado: { disabled: boole
 }
 
 for (const w of [1280, 390]) {
-  test.describe(`T358 — porta do auth a ${w} px`, () => {
+  test.describe(`T362 — porta do auth a ${w} px`, () => {
     test.use({ viewport: { width: w, height: w === 1280 ? 900 : 844 } });
 
     test(`prints (${FASE})`, async ({ page }) => {
       await page.goto("/auth", { waitUntil: "networkidle" });
-      await page.screenshot({ path: `${SAIDA}/t358-${FASE}-auth-${w}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t362-${FASE}-auth-${w}.png`, fullPage: true });
       await page.getByTestId("entrar-com-senha").click();
-      await page.screenshot({ path: `${SAIDA}/t358-${FASE}-auth-senha-${w}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t362-${FASE}-auth-senha-${w}.png`, fullPage: true });
     });
 
     test("véu claro, estados do primário e formulário em cartão", async ({ page }) => {
