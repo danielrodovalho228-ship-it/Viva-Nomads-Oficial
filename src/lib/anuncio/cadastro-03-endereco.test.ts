@@ -82,3 +82,9 @@ test("E104: cartão branco sobre o fundo areia; nome do bairro fora do zoom do m
   assert.match(etapa, /placeholder=\{PLACEHOLDER_COMPLEMENTO\}/);
   assert.doesNotMatch(etapa, /Apto 101/);
 });
+
+test("E104 (laboratório): o preço sugerido é pedido nos Detalhes e de novo no Preço — avançar rápido não perde a sugestão", () => {
+  const pagina = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
+  assert.match(pagina, /if \(\(step !== ETAPA\.detalhes && step !== ETAPA\.preco\) \|\| !city\.trim\(\)\) return;\s*let alive = true;\s*precoDaRegiao\(/);
+  assert.match(pagina, /if \(r && !\(Number\(monthlyPrice\) > 0\)\) \{/, "nunca troca um valor que o dono já pôs");
+});

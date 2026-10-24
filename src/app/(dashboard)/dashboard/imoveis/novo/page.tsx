@@ -1064,9 +1064,10 @@ export default function NewPropertyPage() {
     return typeof data.distanciaM === "number" ? data.distanciaM : null;
   }
 
-  // Preço sugerido para imóveis parecidos na região (mediana de anúncios reais; sem dados, nada).
+  // Preço sugerido para imóveis parecidos na região (mediana de anúncios reais; sem dados, nada). Pede nos Detalhes e
+  // de novo no Preço: quem avança antes de a resposta chegar não perde a sugestão (corrida vista no laboratório do E104).
   useEffect(() => {
-    if (step !== 3 || !city.trim()) return;
+    if ((step !== ETAPA.detalhes && step !== ETAPA.preco) || !city.trim()) return;
     let alive = true;
     precoDaRegiao({ cidade: city, bairro: neighborhood, quartos: Number(bedrooms) || 0 })
       .then((r) => {
