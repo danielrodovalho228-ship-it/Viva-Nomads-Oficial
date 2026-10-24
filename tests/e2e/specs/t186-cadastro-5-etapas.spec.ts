@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo, pngDeTeste, aceitarTermoIaSePreciso } from "../fixtures/laboratorio";
 import { continuarAte, noPasso } from "../fixtures/cadastro";
 
 /*
@@ -323,7 +323,7 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
 
       await page.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       await noPasso(page, "revisao");
-      await page.getByTestId("aceite-ia").getByRole("checkbox").check();
+      await aceitarTermoIaSePreciso(page);
       // Sem o padrão mínimo confirmado, a revisão diz "Falta confirmar" e leva às Comodidades (Prompt 59-A): se o
       // rascunho reabrir sem ele, confirma por esse caminho e volta à revisão.
       const resolver = page.getByTestId("publicar-falta-conforto-resolver");
