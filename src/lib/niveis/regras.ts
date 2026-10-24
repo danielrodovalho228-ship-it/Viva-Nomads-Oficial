@@ -25,6 +25,7 @@ import {
 } from "../../config/niveis.ts";
 import { itensFaltantes, type DeclaracaoConforto } from "../conforto/regras.ts";
 import { boaParaVideochamada, type Rodada } from "../internet-medida.ts";
+import { provaAntigaVencida, type OrigemFoto } from "./prova-camera.ts";
 
 // ── Entradas ──────────────────────────────────────────────────────────────────────────────────────────────────────
 export type StatusFoto = "pendente" | "aceita" | "recusada";
@@ -34,6 +35,9 @@ export interface ItemDeclarado {
   declarado: boolean;
   fotoPath: string | null;
   fotoStatus: StatusFoto;
+  /** FOTO-NA-HORA-B: 'camera' (feita na hora) ou 'arquivo' (anterior à regra, com prazo). Ausente = conta como antes. */
+  fotoOrigem?: OrigemFoto | null;
+  refazerAte?: string | null;
 }
 
 export interface RespostasRuido {
@@ -62,9 +66,12 @@ export interface EntradaNivel {
 }
 
 // ── Prova ─────────────────────────────────────────────────────────────────────────────────────────────────────────
-/** Item provado por foto conta só declarado, com foto e sem recusa do atendimento (pendente de análise conta). */
-export function itemConta(i: ItemDeclarado | undefined): boolean {
-  return !!i && i.declarado && !!i.fotoPath && i.fotoStatus !== "recusada";
+/**
+ * Item provado por foto conta só declarado, com foto e sem recusa do atendimento (pendente de análise conta).
+ * FOTO-NA-HORA-B: a prova anterior à regra (origem 'arquivo') conta até o prazo de refazer; vencido, deixa de contar.
+ */
+export function itemConta(i: ItemDeclarado | undefined, agora: Date = new Date()): boolean {
+  return !!i && i.declarado && !!i.fotoPath && i.fotoStatus !== "recusada" && !provaAntigaVencida(i, agora);
 }
 
 // ── Ruído (item 4) ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -114,7 +121,7 @@ export function fatosAtendidos(e: EntradaNivel): Set<string> {
     const prova = itemNivel(k).prova;
     const ok =
       prova === "foto"
-        ? itemConta(porChave.get(k))
+        ? itemConta(porChave.get(k), e.agora)
         : prova === "ruido"
           ? ruidoControlado(e.ruido)
           : k === "internet_medida_quarto"

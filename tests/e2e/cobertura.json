@@ -2004,6 +2004,14 @@
         "t385-varredura-bloco21",
         "t392-varredura-bloco24"
       ]
+    },
+    "/prova/celular/aviso": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
+      ]
     }
   },
   "rotas": {
@@ -2686,6 +2694,22 @@
       ],
       "specs": [
         "t374-conta-a5-privacidade"
+      ]
+    },
+    "/api/upload/prova": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
+      ]
+    },
+    "/prova/celular": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
       ]
     }
   },
@@ -5580,7 +5604,8 @@
       ],
       "specs": [
         "t295-niveis-59-1",
-        "t296-niveis-exibicao-59-1"
+        "t296-niveis-exibicao-59-1",
+        "t397-foto-na-hora"
       ]
     },
     "src/lib/data/estrutura-actions.ts#salvarChecklistEstrutura": {
@@ -6215,6 +6240,30 @@
       "specs": [
         "t396-emitidos-aceite-ia",
         "t320-pausar-anuncio-64b"
+      ]
+    },
+    "src/lib/data/prova-actions.ts#abrirCapturaProva": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
+      ]
+    },
+    "src/lib/data/prova-actions.ts#pedirLinkCelular": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
+      ]
+    },
+    "src/lib/data/prova-actions.ts#provaDoItem": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t397-foto-na-hora"
       ]
     }
   }

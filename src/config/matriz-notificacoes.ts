@@ -82,6 +82,10 @@ export const MATRIZ_NOTIFICACOES = {
   // L2-B item 17: o parceiro recusou → o cliente vê na central do app e por e-mail, com o motivo e "Pedir a outro parceiro".
   parceiro_pedido_recusado: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
 
+  // FOTO-NA-HORA-B: o link do celular leva um token de uso único → só por e-mail (nunca na central nem no push).
+  nivel_prova_celular: { categoria: "decisao", papeis: ["proprietario"], canais: SO_EMAIL },
+  nivel_prova_vencida: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+
   // Prompt 53: data importada do Airbnb/Booking cruza compromisso da Viva (o dono decide); link .ics parou de responder.
   calendario_conflito: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   calendario_falha: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
