@@ -15,6 +15,10 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
  *   C8. a foto aparece uma vez como herói (o topo); o espelho a mostra MENOR; cabeçalho e barra lateral só iniciais nesta
  *       página; a ordem dos blocos confere com o desenho (Topo · Perfil · Avaliações · Papéis · Dados · Privacidade ·
  *       Notificações · Pagamentos · Ajuda/Sair);
+ *   C9/E56. padrão TOGGLE nos blocos opcionais da Conta. Convertidos nesta rodada (a lista vem de BLOCOS_TOGGLE_CONTA):
+ *       "Meus pets" ("Você tem pet?"), "Meu local de trabalho" ("Quer ver o tempo até o trabalho?") e as redes privadas
+ *       ("Quer informar suas redes sociais?", atrás da chave REDES_USUARIO_ATIVO). Fechado sem dados; aberto com dados;
+ *       desligar com dados pede confirmação na tela e só então limpa. O medidor não conta pets/local/redes (não penaliza).
  *   C7. sem vão grande depois do último bloco; o avatar do rodapé da barra lateral sem o selo "Q".
  * Prints: tests/laboratorio/saida/t357-<FASE>-conta-<largura>.png (FASE=antes|depois) — o teste "prints" roda nas duas.
  */
@@ -116,7 +120,7 @@ test.describe("T357 — CONTA-A: correções do QA (C1–C7)", () => {
         await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
         await expect(p.getByTestId("espelho-perfil").locator("img")).toHaveCount(1);
         // C8: nesta página o cabeçalho e a barra lateral ficam só nas iniciais (a foto não se repete).
-        await expect(p.getByTestId("papel-ativo").locator("img")).toHaveCount(0);
+        await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
         await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(0);
       };
       await comFoto();
@@ -133,11 +137,55 @@ test.describe("T357 — CONTA-A: correções do QA (C1–C7)", () => {
       await comFoto();
       // Fora da Conta, o cabeçalho mostra a foto nova.
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      await expect(p.getByTestId("papel-ativo").locator("img")).toHaveCount(1);
+      await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
       await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
       // Volta ao estado sem foto para o próximo tamanho começar igual.
       await p.getByTestId("topo-foto-remover").click();
       await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(0);
+      await p.context().close();
+    });
+  }
+
+  for (const w of [390, 1280]) {
+    test(`C9. a ${w} px: "Você tem pet?" fechado → aberto → com pet nasce aberto → desligar pede confirmação e limpa`, async ({ browser }) => {
+      const p = await como(browser, w);
+      await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
+      const bloco = p.getByTestId("pets-toggle-bloco");
+      const toggle = p.getByTestId("pets-toggle-bloco-toggle");
+      await expect(toggle).toHaveAttribute("aria-checked", "false");
+      await expect(p.getByTestId("pets-form")).toHaveCount(0);
+      await expect(bloco.locator("input, select")).toHaveCount(0);
+      await bloco.scrollIntoViewIfNeeded();
+      await p.locator("#pets").screenshot({ path: `${SAIDA}/t357-depois-c9-pets-fechado-${w}.png` });
+      await toggle.click();
+      const form = p.getByTestId("pets-form");
+      for (const campo of ["Nome", "Espécie", "Porte", "Idade (anos)", "Raça (opcional)", "Castrado?"]) await expect(form.getByLabel(campo)).toBeVisible();
+      await p.locator("#pets").screenshot({ path: `${SAIDA}/t357-depois-c9-pets-aberto-${w}.png` });
+      await form.getByLabel("Nome").fill(`Thor${w}`);
+      await form.getByRole("button", { name: "Adicionar pet" }).click();
+      await expect(p.getByTestId("pets-lista")).toContainText(`Thor${w}`);
+      await expect(form.getByRole("button", { name: "Adicionar outro pet" })).toBeVisible();
+      // Com pet salvo, recarregar abre o bloco ligado.
+      await p.reload({ waitUntil: "networkidle" });
+      await expect(toggle).toHaveAttribute("aria-checked", "true");
+      await expect(p.getByTestId("pets-lista")).toContainText(`Thor${w}`);
+      // Desligar com pet: confirmação na tela; "Manter" não apaga; "Remover" limpa e fecha.
+      await toggle.click();
+      await expect(p.getByTestId("pets-toggle-bloco-confirma")).toContainText("Remover os pets do seu perfil? Eles saem da sua candidatura.");
+      await p.getByTestId("pets-toggle-bloco-confirma-manter").click();
+      await expect(toggle).toHaveAttribute("aria-checked", "true");
+      await expect(p.getByTestId("pets-lista")).toContainText(`Thor${w}`);
+      await toggle.click();
+      await p.getByTestId("pets-toggle-bloco-confirma-remover").click();
+      await expect(toggle).toHaveAttribute("aria-checked", "false");
+      await expect(p.getByTestId("pets-lista")).toHaveCount(0);
+      await p.reload({ waitUntil: "networkidle" });
+      await expect(toggle).toHaveAttribute("aria-checked", "false");
+      // O outro bloco convertido na página: o local de trabalho também nasce fechado sem dados.
+      await expect(p.getByTestId("local-toggle-bloco-toggle").last()).toHaveAttribute("aria-checked", "false");
+      await expect(p.getByTestId("meu-local-trabalho")).toHaveCount(0);
+      // O medidor não lista pets nem local de trabalho como falta.
+      await expect(p.getByTestId("perfil-falta")).not.toContainText(/pet|trabalho/i);
       await p.context().close();
     });
   }

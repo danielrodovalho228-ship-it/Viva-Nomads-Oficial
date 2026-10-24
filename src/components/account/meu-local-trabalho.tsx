@@ -3,6 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/dashboard/primitives";
+import { BlocoOpcional } from "@/components/ui/bloco-opcional";
+import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import {
   CampoDestino,
   type DestinoChip,
@@ -28,6 +30,8 @@ export function MeuLocalTrabalho() {
   ]);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [pendente, iniciar] = useTransition();
+  // C9/E56: atrás do toggle; com local salvo nasce ligado.
+  const [ligado, setLigado] = useState(false);
 
   useEffect(() => {
     fetch("/api/conta/local-trabalho")
@@ -46,6 +50,7 @@ export function MeuLocalTrabalho() {
           if (j.modos?.length) setModos(j.modos);
           if (j.estado) setEstado(j.estado);
           setSalvo(j.rotulo);
+          setLigado(toggleInicial(!!j.rotulo));
         },
       )
       .catch(() => undefined);
@@ -82,6 +87,23 @@ export function MeuLocalTrabalho() {
   return (
     <section id="local-trabalho" className="scroll-mt-24">
       <Panel title="Meu local de trabalho" className="mt-6">
+        <BlocoOpcional
+          pergunta={textosToggle("local-trabalho").pergunta}
+          ligado={ligado}
+          onLigado={setLigado}
+          temDados={!!salvo}
+          textoConfirmar={textosToggle("local-trabalho").confirmar}
+          onLimpar={async () => {
+            const r = await salvarLocalTrabalho(null);
+            if (r.ok) {
+              setSalvo(null);
+              setEstado(VAZIO);
+              setMsg(null);
+            }
+            return r.ok;
+          }}
+          testId="local-toggle-bloco"
+        >
         <div className="space-y-3" data-testid="meu-local-trabalho">
           <p className="text-sm text-muted">
             Só você vê. Usamos para mostrar o tempo até o trabalho na busca, nos
@@ -135,6 +157,7 @@ export function MeuLocalTrabalho() {
             )}
           </div>
         </div>
+        </BlocoOpcional>
       </Panel>
     </section>
   );

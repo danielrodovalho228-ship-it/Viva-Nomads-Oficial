@@ -119,14 +119,14 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
     await expect(p.getByTestId("topo-foto")).toHaveAccessibleName("Trocar foto");
     // C8/E55: na Conta a foto aparece no topo e (menor) no espelho; o cabeçalho fica só nas iniciais.
     await expect(p.getByTestId("espelho-perfil").locator("img")).toHaveCount(1);
-    await expect(p.getByTestId("papel-ativo").locator("img")).toHaveCount(0);
+    await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
     // O progresso andou sem recarregar: "Nome e foto" feito.
     await expect(p.locator('[data-degrau="basico"]')).toHaveAttribute("data-feito", "1", { timeout: 15_000 });
     const caminho = (await adm().from("profiles").select("avatar_url").eq("id", ids.dono).single()).data?.avatar_url as string;
     expect(caminho).toBe(`${ids.dono}/avatar.webp`);
     // Fora da Conta, o cabeçalho mostra a foto nova.
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(p.getByTestId("papel-ativo").locator("img")).toHaveCount(1);
+    await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
     await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
     // Perfil público do proprietário (tem anúncio): a foto aparece.
