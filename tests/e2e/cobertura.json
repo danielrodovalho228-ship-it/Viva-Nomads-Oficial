@@ -557,7 +557,8 @@
         "t48-varredura",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t302-varredura-logada-bloco6"
+        "t302-varredura-logada-bloco6",
+        "t362-perfil-avaliacoes-pix"
       ]
     },
     "/dashboard/buscas": {
@@ -655,7 +656,8 @@
         "t183-telas-logadas-390",
         "t329-varredura-bloco11",
         "t332-merges-1170-1172",
-        "t337-varredura-redundancia"
+        "t337-varredura-redundancia",
+        "t362-perfil-avaliacoes-pix"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -799,6 +801,7 @@
       ],
       "specs": [
         "t30-atendimento-autonomo",
+        "t364-e50-entrada-anuncio",
         "t32-autorizacao-preconferencia",
         "t8-rascunho",
         "t183-telas-logadas-390",
@@ -5879,6 +5882,30 @@
       ],
       "specs": [
         "t348-triagem-vinculo-52"
+      ]
+    },
+    "src/lib/data/recebimento-actions.ts#minhaChavePix": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t362-perfil-avaliacoes-pix"
+      ]
+    },
+    "src/lib/data/recebimento-actions.ts#salvarChavePix": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t362-perfil-avaliacoes-pix"
+      ]
+    },
+    "src/lib/data/recebimento-actions.ts#removerChavePix": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t362-perfil-avaliacoes-pix"
       ]
     }
   }

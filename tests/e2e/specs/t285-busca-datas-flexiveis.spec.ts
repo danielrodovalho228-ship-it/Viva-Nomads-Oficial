@@ -68,7 +68,7 @@ test.describe("T285 — busca com datas flexíveis", () => {
     await page.goto(busca(`&entrada=${ENTRADA}`), { waitUntil: "domcontentloaded" });
     await expect(cards(page)).toHaveCount(1, { timeout: 20_000 });
     const folha = await abrirFolha(page);
-    await folha.getByTestId("painel-datas").getByText("Datas flexíveis (até 15 dias depois)", { exact: true }).click();
+    await folha.getByTestId("painel-datas").getByRole("button", { name: "Datas flexíveis (até 15 dias depois)", exact: true }).click();
     const aplicar = folha.getByTestId("aplicar-filtros");
     await expect(aplicar).toHaveText("Mostrar 2 imóveis");
     await folha.screenshot({ path: "tests/laboratorio/saida/t285-folha-datas-390.png" });

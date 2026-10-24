@@ -23,6 +23,7 @@ export const ICONE_POR_CHAVE: Record<string, LucideIcon> = {
   lava_loucas: UtensilsCrossed,
   enxoval: Shirt,
   cozinha_equipada: CookingPot,
+  tv: Tv,
   varanda: Sun,
   academia: Dumbbell,
   piscina: Waves,

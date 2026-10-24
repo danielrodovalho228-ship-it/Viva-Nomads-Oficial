@@ -40,7 +40,7 @@ export function ManualProximities({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <select
           value={categoria}
           onChange={(e) => setCategoria(e.target.value as ProximityCategory)}
@@ -55,7 +55,7 @@ export function ManualProximities({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nome do lugar (ex.: Hospital Santa Mônica)"
-          className="flex-1 rounded-xl border border-sage-200 bg-white px-3 py-3 text-sm outline-none focus:border-sage"
+          className="min-w-0 flex-1 rounded-xl border border-sage-200 bg-white px-3 py-3 text-sm outline-none focus:border-sage sm:min-w-[14rem]"
         />
         <input
           value={note}

@@ -1,6 +1,7 @@
 /**
  * Regras da casa ESTRUTURADAS (CAMPOS-1, item 1 do adendo de campos de 23/10). Puro: sem banco, sem tela.
- * Silêncio (início/fim), fumo, festas e visitas (permitidas, até que horas, pernoite). Tudo opcional:
+ * Silêncio (início/fim), fumo, festas e visitas (permitidas, até que horas, pernoite) e, desde o CAMPOS-3 (tela 06 dos
+ * mockups do assistente), "Outras regras" em texto curto. Tudo opcional:
  * regra não definida não existe — nem no banco, nem no anúncio (sem "não informado").
  * A validação roda no servidor; o formulário só repete para avisar cedo.
  */
@@ -23,6 +24,25 @@ export interface RegrasCasa {
   fumo?: Fumo;
   festas?: Festas;
   visitas?: { permitidas: boolean; ate?: string; pernoite?: boolean };
+  /** CAMPOS-3: "Outras regras (opcional)" da tela 06 — texto curto do dono, até MAX_OUTRAS_REGRAS caracteres. */
+  outras?: string;
+}
+
+/** Tamanho máximo de "Outras regras": cabe numa linha da folha "Regras da casa" sem virar uma segunda descrição. */
+export const MAX_OUTRAS_REGRAS = 280;
+
+/** Texto livre limpo: sem caracteres de controle, espaços e quebras colapsados, cortado no máximo. Vazio = sem regra. */
+export function limparOutrasRegras(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const t = v
+    .replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\s*\n\s*/g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .trim()
+    .slice(0, MAX_OUTRAS_REGRAS)
+    .trim();
+  return t.length > 0 ? t : undefined;
 }
 
 const HORA_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -53,6 +73,9 @@ export function normalizarRegrasCasa(raw: unknown): RegrasCasa | null {
     out.visitas = { permitidas: true, ...(ate ? { ate } : {}), ...(pernoite !== undefined ? { pernoite } : {}) };
   }
 
+  const outras = limparOutrasRegras(r.outras);
+  if (outras) out.outras = outras;
+
   return Object.keys(out).length > 0 ? out : null;
 }
 
@@ -62,7 +85,7 @@ export function horaFalada(h: string): string {
   return `${Number(hh)}h${mm === "00" ? "" : mm}`;
 }
 
-export type ChaveRegraCasa = "silencio" | "fumo" | "festas" | "visitas";
+export type ChaveRegraCasa = "silencio" | "fumo" | "festas" | "visitas" | "outras";
 export interface LinhaRegraCasa {
   chave: ChaveRegraCasa;
   texto: string;
@@ -78,7 +101,7 @@ const TEXTO_FESTAS: Record<Festas, string> = {
   permitido: "Festas e eventos são permitidos",
 };
 
-/** Uma linha por regra DEFINIDA, em palavras simples, na ordem fixa silêncio → fumo → festas → visitas. */
+/** Uma linha por regra DEFINIDA, em palavras simples, na ordem fixa silêncio → fumo → festas → visitas → outras. */
 export function linhasRegrasCasa(r: RegrasCasa | null | undefined): LinhaRegraCasa[] {
   if (!r) return [];
   const l: LinhaRegraCasa[] = [];
@@ -94,6 +117,7 @@ export function linhasRegrasCasa(r: RegrasCasa | null | undefined): LinhaRegraCa
       l.push({ chave: "visitas", texto: partes.join(" · ") });
     }
   }
+  if (r.outras) l.push({ chave: "outras", texto: r.outras });
   return l;
 }
 
