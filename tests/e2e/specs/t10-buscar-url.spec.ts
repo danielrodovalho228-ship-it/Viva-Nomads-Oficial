@@ -20,6 +20,7 @@ async function ligarProntoPelaFolha(page: Page) {
 }
 
 /**
+ * L-43 (vigia, 24/10): o painel e a /buscar não assentam em "networkidle" (t183, L-40); espera até 10 s e segue para o elemento.
  * T10 — BUSCA COMPARTILHÁVEL (G1) @criticos
  *
  * Regressão do fix G1: os filtros da /buscar vivem na URL (query params), então
@@ -34,7 +35,8 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("aplicar filtro na UI reflete na URL (pronto=1)", async ({ page }) => {
-    await page.goto("/buscar", { waitUntil: "networkidle" });
+    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     // Sem filtro, a URL não traz `pronto`.
     expect(page.url()).not.toMatch(/pronto=1/);
 
@@ -50,7 +52,8 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
   });
 
   test("abrir URL com filtro aplica e mostra chip ativo", async ({ page }) => {
-    await page.goto("/buscar?pronto=1&preco=3500", { waitUntil: "networkidle" });
+    await page.goto("/buscar?pronto=1&preco=3500", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(page.getByText(/Limpar filtros/i).filter({ visible: true }).first()).toBeVisible();
     await expect(page.getByText(/Pronto para Morar/i).filter({ visible: true }).first()).toBeVisible();
     // O parâmetro do preço continua na URL (não foi apagado pelo sync no mount).
@@ -61,7 +64,8 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
     page,
     context,
   }) => {
-    await page.goto("/buscar", { waitUntil: "networkidle" });
+    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await ligarProntoPelaFolha(page);
     await expect(async () => {
       expect(page.url()).toMatch(/pronto=1/);
@@ -69,7 +73,8 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
 
     const shared = page.url();
     const outra = await context.newPage();
-    await outra.goto(shared, { waitUntil: "networkidle" });
+    await outra.goto(shared, { waitUntil: "domcontentloaded" });
+    await outra.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(outra.getByText(/Pronto para Morar/i).filter({ visible: true }).first()).toBeVisible();
     await expect(outra.getByText(/Limpar filtros/i).filter({ visible: true }).first()).toBeVisible();
     await outra.close();
@@ -85,7 +90,8 @@ for (const largura of [360, 390]) {
   test(`F3 — "Filtros" clicável em ${largura}px, com o botão flutuante da Viva visível`, async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: largura, height: 800 } });
     const page = await ctx.newPage();
-    await page.goto("/buscar", { waitUntil: "networkidle" });
+    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(page.getByTestId("fale-com-a-viva")).toBeVisible();
     await page.getByTestId("abrir-filtros").click();
     await expect(page.getByRole("dialog", { name: "Filtros" })).toBeVisible();
@@ -95,7 +101,8 @@ for (const largura of [360, 390]) {
 test(`F3 — "Mais filtros" clicável em 1280px, com o botão flutuante da Viva visível`, async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
-  await page.goto("/buscar", { waitUntil: "networkidle" });
+  await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   await expect(page.getByTestId("fale-com-a-viva")).toBeVisible();
   await page.getByTestId("busca-compacta").click(); // ordem eac7e3a1: filtros abrem pelo cabeçalho
   await page.getByRole("button", { name: /Mais filtros/i }).click();
