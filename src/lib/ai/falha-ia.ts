@@ -7,7 +7,7 @@ import Anthropic from "@anthropic-ai/sdk";
   arquivo, modelo. Arquivo puro (sem "server-only"): a rota e os testes usam o mesmo código.
 */
 
-export type RotaIa = "fotos" | "documento" | "matricula";
+export type RotaIa = "fotos" | "documento" | "matricula" | "deteccao";
 export type MotivoFalhaIa = "desligada" | "limite" | "arquivo_grande" | "ilegivel" | "indisponivel";
 
 export interface FalhaIa {

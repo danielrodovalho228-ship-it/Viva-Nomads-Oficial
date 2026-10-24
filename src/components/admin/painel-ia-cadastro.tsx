@@ -5,7 +5,7 @@ import { MENSAGEM_FALHA_IA } from "@/lib/ai/falha-ia";
 import { cn } from "@/lib/utils";
 import { TestarLeituraIa } from "./testar-leitura-ia";
 
-const ROTA: Record<string, string> = { fotos: "fotos", documento: "documento", matricula: "matrícula" };
+const ROTA: Record<string, string> = { fotos: "fotos", documento: "documento", matricula: "matrícula", deteccao: "detecção nas fotos" };
 const quando = (iso: string) =>
   dataHoraBRT(iso, { tabela: true });
 

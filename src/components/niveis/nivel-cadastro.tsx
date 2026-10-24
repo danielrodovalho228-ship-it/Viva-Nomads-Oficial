@@ -8,6 +8,7 @@ import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { nivelAgoraEFalta, type ItemQueFalta } from "@/lib/niveis/exibicao";
 import { entradaNivelDoCadastro, type EntradaNivelCadastro } from "@/lib/data/nivel-cadastro-actions";
 import { salvarItemNivel } from "@/lib/data/nivel-actions";
+import { faltaSemSugestao } from "@/lib/fotos/deteccao";
 
 /** Envia a foto pelo upload do anúncio (re-codificada sem EXIF, na pasta do dono) e devolve o caminho. */
 async function enviarFoto(arquivo: File): Promise<{ ok: true; path: string } | { ok: false; erro: string }> {
@@ -23,7 +24,19 @@ async function enviarFoto(arquivo: File): Promise<{ ok: true; path: string } | {
  * o dono está marcando logo acima) e, item a item, o que falta para o próximo, com o envio da foto em cada item.
  * Ruído e internet medida têm caminho próprio (página do nível e edição do anúncio).
  */
-export function NivelNoCadastro({ propertyId, conforto }: { propertyId: string | null; conforto: string[] }) {
+export function NivelNoCadastro({
+  propertyId,
+  conforto,
+  sugeridas = [],
+  recarregar = 0,
+}: {
+  propertyId: string | null;
+  conforto: string[];
+  /** DETECTA-B: itens com sugestão das fotos esperando confirmação — aparecem lá, não no "o que falta". */
+  sugeridas?: readonly string[];
+  /** Muda quando outro bloco grava um item (ex.: sugestão confirmada) para reler o nível. */
+  recarregar?: number;
+}) {
   const [entrada, setEntrada] = useState<EntradaNivelCadastro | null>(null);
   const [carregou, setCarregou] = useState(false);
   const [enviando, setEnviando] = useState<string | null>(null);
@@ -49,7 +62,7 @@ export function NivelNoCadastro({ propertyId, conforto }: { propertyId: string |
     return () => {
       vivo = false;
     };
-  }, [propertyId]);
+  }, [propertyId, recarregar]);
 
   if (!propertyId) {
     return (
@@ -61,7 +74,7 @@ export function NivelNoCadastro({ propertyId, conforto }: { propertyId: string |
   if (!carregou) return null;
 
   const base = entrada ?? { itens: [], medidas: [], ruido: null, bloqueadas: [], fotos: [] };
-  const { nivel, proximo, falta } = nivelAgoraEFalta({
+  const { nivel, proximo, falta: faltaTudo } = nivelAgoraEFalta({
     declaracoesConforto: conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO })),
     itens: base.itens,
     medidas: base.medidas,
@@ -69,6 +82,7 @@ export function NivelNoCadastro({ propertyId, conforto }: { propertyId: string |
     bloqueadas: base.bloqueadas,
     agora: new Date(),
   });
+  const falta = faltaSemSugestao(faltaTudo, new Set(sugeridas));
   const recusa = new Map(base.fotos.filter((f) => f.status === "recusada").map((f) => [f.chave, f.motivo]));
 
   async function enviar(item: ItemQueFalta, arquivo: File) {

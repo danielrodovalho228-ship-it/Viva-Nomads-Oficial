@@ -187,6 +187,8 @@ export const SEM_DADO_PESSOAL: Record<string, string> = {
   proximidades_reportes: "aviso do dono de que um lugar público achado pelo OpenStreetMap está errado: nome do lugar e motivo curto; sai em cascata com o anúncio (PERTO-B)",
   imovel_extras: "lista fechada de extras do anúncio (Adendo 59.1), sem dado de pessoa",
   nivel_itens: "itens de nível do anúncio e a foto de cada um (sem pessoas); ficam enquanto o anúncio existir e saem em cascata com ele (Adendo 59.1)",
+  deteccao_fotos_analises: "cache das fotos da galeria já analisadas (caminho dono/uuid.webp, hash dos bytes, se havia pessoa); sem conteúdo; sai em cascata com o anúncio (DETECTA-B)",
+  deteccao_sugestoes: "sugestão de item/comodidade achado na foto da galeria (chave da lista fechada, confiança, status); sai em cascata com o anúncio (DETECTA-B)",
   conforto_declaracoes: "itens do padrão mínimo marcados pelo dono para o imóvel (chave do item, sem dado pessoal)",
   asaas_eventos: "chave de idempotência do webhook",
   automacoes_envios: "chave de idempotência do envio",
