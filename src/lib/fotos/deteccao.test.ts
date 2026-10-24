@@ -16,6 +16,7 @@ import {
   caminhoDaGaleria,
   deteccaoLigada,
   estimativaCusto,
+  MODELO_DETECCAO,
   faltaSemSugestao,
   linhasDaAnalise,
   respostaLab,
@@ -164,6 +165,9 @@ test("custo: tokens da imagem pela regra da Anthropic e conta por foto e por an√
   assert.ok(Math.abs(e.usdPorFoto - esperado) < 1e-5);
   assert.ok(Math.abs(e.usdPorAnuncio - esperado * 20) < 1e-3);
   assert.ok(estimativaCusto("claude-haiku-5-5").usdPorFoto < e.usdPorFoto / 10);
+  // Aprovado pelo Daniel (24/10): o equilibrado da tabela do #1259, pela metade do custo do forte.
+  assert.equal(MODELO_DETECCAO, "claude-sonnet-5-5");
+  assert.ok(Math.abs(estimativaCusto().usdPorFoto - e.usdPorFoto / 2) < 1e-5);
 });
 
 /* ---------- A rodada (depend√™ncias falsas) ---------- */

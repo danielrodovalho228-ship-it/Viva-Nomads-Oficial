@@ -43,8 +43,11 @@ export const chaveDeteccao = (chave: string): ChaveDeteccao | undefined => POR_C
 /** Abaixo disto a sugestão não aparece (o dono não perde tempo com palpite). */
 export const CONFIANCA_MINIMA = 0.6;
 
-/** Modelo e travas. O modelo é trocável aqui; o custo de cada um está em estimativaCusto (PR do DETECTA-B). */
-export const MODELO_DETECCAO = "claude-opus-5-5";
+/**
+ * Modelo e travas. O modelo é trocável aqui; o custo de cada um está em estimativaCusto (PR do DETECTA-B). Aprovado pelo
+ * Daniel (24/10): o EQUILIBRADO (Sonnet 5.5) da tabela de custo do #1259, no lugar do forte (Opus 5.5).
+ */
+export const MODELO_DETECCAO = "claude-sonnet-5-5";
 /** Lado maior da imagem mandada ao modelo (a foto da galeria tem até 2560 px; 1024 px basta para achar o item). */
 export const LADO_DETECCAO_PX = 1024;
 /** Fotos analisadas por dia: por anúncio (a galeria tem no máximo 40) e por dono (vários anúncios). */
