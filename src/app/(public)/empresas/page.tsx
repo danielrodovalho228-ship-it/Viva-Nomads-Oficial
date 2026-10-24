@@ -35,7 +35,7 @@ const BENEFICIOS = [
   "Estadias de 30 a 180 dias, no tempo do projeto — sem diária de hotel.",
   "Contrato formal e assinatura digital, com tudo registrado na plataforma.",
   "Recibo mensal da estadia, emitido pelo proprietário.",
-  "Nenhuma taxa para quem vem morar: a Viva Nomads não cobra o inquilino.",
+  "Nenhuma taxa para quem vem morar: a Viva Nomads não cobra o morador.",
   "Caução combinada com o proprietário e conversa direta pela plataforma.",
 ];
 
@@ -55,7 +55,7 @@ const PILARES = [
   {
     id: "recibo",
     titulo: "Recibo para reembolso",
-    texto: "Recibo mensal da estadia emitido pelo proprietário + contrato assinado, que podem ser usados no reembolso conforme a política da sua empresa. A Viva Nomads não cobra nada do inquilino.",
+    texto: "Recibo mensal da estadia emitido pelo proprietário + contrato assinado, que podem ser usados no reembolso conforme a política da sua empresa. A Viva Nomads não cobra nada do morador.",
   },
   {
     id: "relatorios",

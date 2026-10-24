@@ -128,7 +128,7 @@ export const FAQ: Pergunta[] = [
     id: "senha",
     pergunta: "Esqueci minha senha",
     resposta:
-      "Em Entrar, toque em \"Esqueci minha senha\" e informe o seu e-mail: enviamos um link para criar uma nova. Nunca pedimos a sua senha — nem por chamado, nem por e-mail.",
+      "Você não precisa de senha: em Entrar, digite o seu e-mail e use o código de 6 dígitos que enviamos. Se você criou uma senha e a esqueceu, em Entrar escolha \"Entrar com senha\" e toque em \"Esqueci minha senha\": enviamos um link para criar uma nova. Nunca pedimos a sua senha — nem por chamado, nem por e-mail.",
     termos: ["senha", "esqueci", "redefinir", "acesso"],
   },
   {

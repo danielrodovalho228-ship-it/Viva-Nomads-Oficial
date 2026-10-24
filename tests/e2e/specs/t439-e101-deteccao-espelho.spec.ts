@@ -29,7 +29,7 @@ test.describe("T439 — E101: localização, detecção na edição e espelho po
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Studio Espelho ${sufixo}`);
+    ids.imovel = await criarImovelPronto(ids.dono, `Studio Espelho ${sufixo}`, { ativo: true });
     // A mesma galeria da t389 (a 1ª foto mostra micro-ondas e máquina de lavar na resposta fixa do laboratório).
     const urls: string[] = [];
     for (let i = 0; i < 4; i++) {
@@ -49,12 +49,13 @@ test.describe("T439 — E101: localização, detecção na edição e espelho po
 
   test("1. sem UF, a localização não deixa hífen pendurado; com UF, 'Bairro, Cidade - UF'", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
-    await adm().from("properties").update({ neighborhood: "Santa Mônica", city: "Uberlândia", state: "" }).eq("id", ids.imovel);
+    const semUf = await adm().from("properties").update({ address: "Santa Mônica", city: "Uberlândia", state: "" }).eq("id", ids.imovel);
+    expect(semUf.error).toBeNull();
     await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
     const linha = page.locator("header").filter({ hasText: "Santa Mônica" }).first();
     await expect(linha).toContainText("Santa Mônica, Uberlândia");
     expect(await page.locator("main").innerText()).not.toMatch(/Uberlândia\s*-\s*(\n|$)/);
-    await adm().from("properties").update({ state: "MG" }).eq("id", ids.imovel);
+    expect((await adm().from("properties").update({ state: "MG" }).eq("id", ids.imovel)).error).toBeNull();
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.locator("main")).toContainText("Santa Mônica, Uberlândia - MG");
     await page.context().close();
@@ -74,12 +75,13 @@ test.describe("T439 — E101: localização, detecção na edição e espelho po
       const item = bloco.getByTestId("deteccao-sugestao-cozinha_microondas");
       await expect(item).toBeVisible({ timeout: 30_000 });
       await expect(item.getByTestId("deteccao-texto-cozinha_microondas")).toHaveText("Parece que você tem isto: fotografe agora para comprovar");
-      await expect(item.getByTestId("deteccao-fotografar-cozinha_microondas")).toBeVisible();
+      await expect(item.getByTestId("deteccao-fotografar-cozinha_microondas-botao")).toBeVisible();
       await expect(bloco.getByText("Usar esta foto")).toHaveCount(0);
       // Acima dos itens de prova (o formulário do nível).
       const yBloco = (await bloco.boundingBox())!.y;
       const form = page.locator("form, [data-testid^='nivel-item-']").first();
       expect(yBloco).toBeLessThan((await form.boundingBox())!.y);
+      await bloco.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t439-nivel-sugestoes-${w}.png` });
 
       if (w === 1280) {
@@ -106,11 +108,13 @@ test.describe("T439 — E101: localização, detecção na edição e espelho po
       await expect(espelho.getByTestId("espelho-titulo")).toHaveText("É assim que o morador te vê no seu anúncio");
       await expect(espelho.getByTestId("espelho-nome")).toContainText("Dora");
       await expect(espelho.getByTestId("espelho-desde")).toContainText("Na Viva desde");
+      await espelho.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t439-espelho-proprietario-${w}.png` });
       await espelho.getByTestId("espelho-ver-como").click();
       await expect(espelho).toHaveAttribute("data-papel", "morador");
       await expect(espelho.getByTestId("espelho-titulo")).toHaveText("É assim que o proprietário te vê quando você pede para morar");
       await expect(espelho.getByTestId("espelho-ver-como")).toHaveText("Ver como proprietário");
+      await espelho.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t439-espelho-morador-${w}.png` });
       await page.context().close();
     });

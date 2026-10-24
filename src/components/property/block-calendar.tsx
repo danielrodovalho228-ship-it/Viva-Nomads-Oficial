@@ -33,7 +33,7 @@ function brDate(iso: string): string {
 export function BlockCalendar({ propertyId }: { propertyId: string }) {
   const today = useHoje();
   const [blocks, setBlocks] = useState<BlocoDatas[]>([]);
-  // Estadias com contrato (pílulas com o inquilino). Falha aqui não derruba o calendário: fica só com os bloqueios.
+  // Estadias com contrato (pílulas com o morador). Falha aqui não derruba o calendário: fica só com os bloqueios.
   const [estadias, setEstadias] = useState<EstadiaCalendario[]>([]);
   const [sel, setSel] = useState<{ ini: string | null; fim: string | null }>({
     ini: null,

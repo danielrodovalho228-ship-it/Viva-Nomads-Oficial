@@ -80,7 +80,7 @@ export default async function HomePage() {
             Imóveis mobiliados para morar por meses
           </h1>
           <p className="mt-3 text-base font-medium text-white/85 sm:text-lg">
-            Estadias de 30 a 180 dias · sem taxa para o inquilino
+            Estadias de 30 a 180 dias · sem taxa para o morador
           </p>
           <div className="mt-8 w-full max-w-xl">
             <BuscaPrincipal />
@@ -239,7 +239,7 @@ export default async function HomePage() {
                   <CompareRow label="Contrato de locação com assinatura digital" a="yes" b="no" c="partial" />
                   <CompareRow label="Dinheiro direto na conta do proprietário" a="yes" b="no" c="no" />
                   <CompareRow label="Custo ao dono: taxa única por contrato" a="yes" b="no" c="no" />
-                  <CompareRow label="Inquilino paga R$ 0 de taxa de plataforma" a="yes" b="no" c="yes" />
+                  <CompareRow label="Morador paga R$ 0 de taxa de plataforma" a="yes" b="no" c="yes" />
                 </tbody>
               </table>
             </div>
@@ -264,7 +264,7 @@ export default async function HomePage() {
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 md:mt-12" data-testid="passos-home">
             <Step n="1" img={HOME_PASSOS_IMAGENS[0]} icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
             <Step n="2" img={HOME_PASSOS_IMAGENS[1]} icon={MessageSquare} title="Converse" text={PASSO_CONVERSE_TEXTO} />
-            <Step n="3" img={HOME_PASSOS_IMAGENS[2]} icon={FileSignature} title="Assine com segurança" text="Caução combinada entre proprietário e inquilino e contrato assinado digitalmente, com validade jurídica." />
+            <Step n="3" img={HOME_PASSOS_IMAGENS[2]} icon={FileSignature} title="Assine com segurança" text="Caução combinada entre proprietário e morador e contrato assinado digitalmente, com validade jurídica." />
             <Step n="4" img={HOME_PASSOS_IMAGENS[3]} icon={ClipboardCheck} title="Conferência de entrada" text="Na chegada, você e o proprietário conferem o estado do imóvel e registram tudo na plataforma." />
           </div>
         </div>
@@ -288,7 +288,7 @@ export default async function HomePage() {
                   Mais estabilidade e <span className="text-white">menos tempo com o imóvel parado</span>.
                 </h2>
                 <p className="mt-4 max-w-md text-white/65">
-                  Um inquilino por uma estadia inteira traz previsibilidade: agenda estável,
+                  Um morador por uma estadia inteira traz previsibilidade: agenda estável,
                   custos de consumo organizados no contrato e tudo registrado na plataforma. Você
                   anuncia de graça. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.
                 </p>

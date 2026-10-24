@@ -30,6 +30,15 @@ test("localização: todo lugar que mostra bairro e cidade usa linhaLocalizacao 
   assert.match(ler("lib/seo/anuncio-cidade.ts"), /\.\.\.\(p\.state\?\.trim\(\) \? \{ addressRegion: p\.state\.trim\(\)\.toUpperCase\(\) \} : \{\}\)/);
 });
 
+test("e-mail do alerta: o bairro vem da coluna `address` (a tabela não tem `neighborhood`) e a UF entra na linha", () => {
+  const f = ler("lib/data/alerta-busca-servidor.ts");
+  const select = f.match(/from\("properties"\)\s*\.select\("([^"]+)"\)/)?.[1] ?? "";
+  const colunas = select.split(",").map((c) => c.trim());
+  assert.ok(colunas.includes("address") && colunas.includes("state"), select);
+  assert.ok(!colunas.includes("neighborhood"), "a coluna neighborhood não existe em properties");
+  assert.match(f, /neighborhood: \(r\.address as string\)/);
+});
+
 test("detecção na edição: as sugestões ficam na página do nível, acima dos itens de prova; comodidade grava na hora", () => {
   const pagina = ler("app/(dashboard)/dashboard/imoveis/[id]/nivel/page.tsx");
   assert.ok(pagina.indexOf("<SugestoesNoNivel") > 0 && pagina.indexOf("<SugestoesNoNivel") < pagina.indexOf("<FormNivel"));

@@ -8,14 +8,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/seguranca" },
   title: "Sua segurança",
   description:
-    "Como a Viva Nomads protege proprietários e inquilinos de golpes na locação: conversa na plataforma, dinheiro direto ao proprietário e dossiê do inquilino.",
+    "Como a Viva Nomads protege proprietários e moradores de golpes: conversa na plataforma, dinheiro direto ao proprietário e dossiê do morador.",
 };
 
 const GOLPES = [
   {
-    golpe: "“Faça um PIX para reservar antes de visitar.”",
+    golpe: "“Faça um PIX para segurar o imóvel antes de visitar.”",
     protecao:
-      "A plataforma nunca pede pagamento para reservar e nunca movimenta o valor mensal — o dinheiro vai direto do inquilino para a conta do proprietário, já no fechamento oficial.",
+      "A plataforma nunca pede pagamento para segurar o imóvel e nunca movimenta o valor mensal — o dinheiro vai direto do morador para a conta do proprietário, já no fechamento oficial.",
     icon: Wallet,
   },
   {
@@ -25,9 +25,9 @@ const GOLPES = [
     icon: MessageSquareLock,
   },
   {
-    golpe: "Perfil falso / inquilino sem histórico.",
+    golpe: "Perfil falso / morador sem histórico.",
     protecao:
-      "A identidade só é revelada após o aceite — nome e foto, nunca contato. A verificação de identidade do inquilino chega em breve.",
+      "A identidade só é revelada após o aceite — nome e foto, nunca contato. A verificação de identidade do morador chega em breve.",
     icon: FileSearch,
   },
   {
@@ -55,10 +55,10 @@ export default function SegurancaPage() {
         <ShieldCheck className="h-3.5 w-3.5" /> Sua segurança
       </span>
       <h1 className="mt-4 font-title text-[28px] font-semibold text-ink">
-        Alugar com segurança no Viva Nomads
+        Morar com segurança na Viva Nomads
       </h1>
       <p className="mt-4 text-lg text-muted">
-        Locação atrai golpistas — quase sempre com pressa e pedido de dinheiro por fora. Veja os
+        Golpistas agem quase sempre com pressa e pedido de dinheiro por fora. Veja os
         golpes mais comuns e como a plataforma foi desenhada para proteger os dois lados.
       </p>
 
@@ -81,10 +81,10 @@ export default function SegurancaPage() {
       <section className="mt-12">
         <h2 className="font-title text-2xl font-semibold text-ink">Perguntas frequentes</h2>
         <div className="mt-4 grid gap-4">
-          <Faq q="Como o Viva Nomads protege meu dinheiro?">
+          <Faq q="Como a Viva Nomads protege meu dinheiro?">
             <p>
               A plataforma <strong className="text-ink">nunca movimenta o valor mensal</strong>: ele vai
-              direto do inquilino para a conta do proprietário. A taxa Viva é uma taxa única por
+              direto do morador para a conta do proprietário. A taxa de serviço da Viva é única por
               contrato, transparente no fechamento.
             </p>
           </Faq>
@@ -94,7 +94,7 @@ export default function SegurancaPage() {
               certo. O contato direto não é trocado — a negociação segue toda por aqui.
             </p>
           </Faq>
-          <Faq q="Vai haver verificação do inquilino?">
+          <Faq q="Vai haver verificação do morador?">
             <p>
               Em breve — ainda não está disponível. Hoje, a identidade completa só aparece após o
               aceite, e nunca o contato direto.
