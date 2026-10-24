@@ -1,9 +1,22 @@
 import { test, expect, type Page } from "@playwright/test";
 
-/** Computador (ordem eac7e3a1): os filtros abrem pela busca compacta do cabeçalho. */
-async function abrirFiltros(page: Page) {
-  const compacta = page.getByTestId("busca-compacta");
-  if (await compacta.isVisible()) await compacta.click();
+/**
+ * FILTROS-1 (E43): "Pronto para Morar" mora só na folha de filtros (saiu da barra de cima). Liga o filtro pela folha:
+ * celular pelo botão "Filtros"; computador por "Mais filtros" (que pode estar atrás da busca compacta). Aplica e espera
+ * a folha fechar.
+ */
+async function ligarProntoPelaFolha(page: Page) {
+  const celular = page.getByTestId("abrir-filtros").filter({ visible: true });
+  if (await celular.count()) await celular.first().click({ timeout: 10_000 });
+  else {
+    if (!(await page.getByTestId("mais-filtros").isVisible())) await page.getByTestId("busca-compacta").click({ timeout: 10_000 });
+    await page.getByTestId("mais-filtros").click({ timeout: 10_000 });
+  }
+  const folha = page.getByTestId("painel-filtros");
+  await expect(folha).toBeVisible({ timeout: 10_000 });
+  await folha.getByTestId("faceta-pronto").click({ timeout: 10_000 });
+  await folha.getByTestId("aplicar-filtros").click({ timeout: 10_000 });
+  await expect(folha).toBeHidden({ timeout: 10_000 });
 }
 
 /**
@@ -25,8 +38,7 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
     // Sem filtro, a URL não traz `pronto`.
     expect(page.url()).not.toMatch(/pronto=1/);
 
-    await abrirFiltros(page);
-    await page.getByRole("button", { name: /Pronto para Morar/i }).first().click();
+    await ligarProntoPelaFolha(page);
 
     // O efeito de sync usa replaceState — espera o endereço refletir o filtro.
     await expect(async () => {
@@ -50,8 +62,7 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
     context,
   }) => {
     await page.goto("/buscar", { waitUntil: "networkidle" });
-    await abrirFiltros(page);
-    await page.getByRole("button", { name: /Pronto para Morar/i }).first().click();
+    await ligarProntoPelaFolha(page);
     await expect(async () => {
       expect(page.url()).toMatch(/pronto=1/);
     }).toPass({ timeout: 5_000 });
