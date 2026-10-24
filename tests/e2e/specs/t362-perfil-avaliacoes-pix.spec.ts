@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T362 — PERFIL-B (ordem do Daniel 23/10 21:03, item 3): os dados das telas do perfil que faltavam.
  *   1. perfil-07-pagamentos, "Como você recebe": o proprietário salva a chave Pix na Conta → Pagamentos. CPF errado
  *      é recusado com mensagem; o certo grava só dígitos e volta MASCARADO; outra conta não lê a linha (RLS da 0236);
