@@ -79,7 +79,8 @@ export function ProximidadesAutomaticas({
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {ORDEM_CATEGORIAS_PAGINA.map((c) => {
-              const daCategoria = itens!.filter((l) => l.categoria === c).slice(0, MAX_POR_CATEGORIA_PAGINA);
+              // O mais perto primeiro; até 3 por categoria.
+              const daCategoria = itens!.filter((l) => l.categoria === c).sort((x, y) => (x.distanciaM ?? Infinity) - (y.distanciaM ?? Infinity)).slice(0, MAX_POR_CATEGORIA_PAGINA);
               return (
                 <section key={c} aria-label={ROTULO_CATEGORIA[c]} data-testid={`proximidades-cat-${c}`} data-qtd={daCategoria.length}>
                   <h4 className="mb-2 text-sm font-semibold text-ink">{ROTULO_CATEGORIA[c]}</h4>

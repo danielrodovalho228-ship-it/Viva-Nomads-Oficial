@@ -17,7 +17,7 @@ test("cadastro: três estados (carregando / achou / não achou) e o aviso sem en
   const b = ler("components/anuncio/blocos-cadastro.tsx");
   assert.match(b, /const estado = carregando \? "carregando" : temItens \? "achou" : buscou \? "vazio" : "aguardando";/);
   assert.match(b, /Procurando o que tem por perto do endereço…/);
-  assert.match(b, /ORDEM_CATEGORIAS_PAGINA\.map\(\(c\) => \{\s*const daCategoria = itens!\.filter\(\(l\) => l\.categoria === c\)\.slice\(0, MAX_POR_CATEGORIA_PAGINA\);/);
+  assert.match(b, /ORDEM_CATEGORIAS_PAGINA\.map\(\(c\) => \{\s*\/\/ O mais perto primeiro; até 3 por categoria\.\s*const daCategoria = itens!\.filter\(\(l\) => l\.categoria === c\)\.sort\(\(x, y\) => \(x\.distanciaM \?\? Infinity\) - \(y\.distanciaM \?\? Infinity\)\)\.slice\(0, MAX_POR_CATEGORIA_PAGINA\);/);
   assert.match(b, /Não achamos lugares por perto deste endereço\./);
   assert.match(b, /Adicionar um lugar/);
 });
