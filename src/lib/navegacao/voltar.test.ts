@@ -20,3 +20,12 @@ test("todas as subtelas da Conta e a Verificação usam o mesmo voltar do celula
   assert.match(ler("src/app/(dashboard)/dashboard/verificacao/page.tsx"), /<VoltarCelular padrao="\/dashboard\/conta"/);
   assert.match(ler("src/components/layout/dashboard-shell.tsx"), /<MarcaNavInterna \/>/);
 });
+
+test("E69: o voltar padrão é a Conta; só as subtelas (Segurança, Sair da Viva) voltam para a seção", async () => {
+  const { readFileSync } = await import("node:fs");
+  const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
+  assert.match(ler("components/account/casca-conta.tsx"), /padrao=\{subtela \? atual\.href : "\/dashboard\/conta"\}/);
+  assert.match(ler("app/(dashboard)/dashboard/conta/seguranca/page.tsx"), /<CascaConta ativo="privacidade" subtela /);
+  assert.match(ler("app/(dashboard)/dashboard/conta/excluir/page.tsx"), /<CascaConta ativo="privacidade" subtela /);
+  assert.doesNotMatch(ler("app/(dashboard)/dashboard/conta/[secao]/page.tsx"), /<CascaConta[^>]*\bsubtela\b/);
+});
