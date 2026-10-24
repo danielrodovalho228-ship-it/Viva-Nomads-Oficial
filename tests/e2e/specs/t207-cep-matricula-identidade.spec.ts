@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { abrirNoEndereco } from "../fixtures/cadastro";
 
 /*
   T207 — Prompt 25 (reteste do Muse do #838). 390 e 1280 px.
@@ -33,8 +34,8 @@ async function abrirPasso1(browser: Browser, email: string, largura: number, bra
     brasil.push(r.request().url());
     return r.fulfill({ json: FANTASMA });
   });
-  await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Endereço e dados" })).toBeVisible({ timeout: 20_000 });
+  // Assistente em 10 passos: o endereço (e o documento) é o 3º passo; abre direto nele.
+  await abrirNoEndereco(page);
   return page;
 }
 
@@ -91,7 +92,10 @@ test.describe("T207 — CEP fantasma, matrícula 400 e validade da identidade (p
 
       // Troca do CPF no cadastro → o gatilho 0164 invalida o laudo → a etapa pede para confirmar de novo.
       await adm().from("profiles").update({ cpf: largura === 390 ? "52998224725" : "11144477735" }).eq("id", id);
-      await page.reload({ waitUntil: "domcontentloaded" });
+      // Recarrega no passo Endereço pelo nome: o rascunho pode ter gravado outro passo (10 passos: Fotos vem antes).
+      const url = new URL(page.url());
+      url.searchParams.set("etapa", "endereco");
+      await page.goto(url.pathname + url.search, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("identidade-refazer")).toBeVisible({ timeout: 20_000 });
       await expect(page.getByTestId("identidade-confirmar")).toHaveText(/Confirmar de novo/);
       await page.getByTestId("etapa-identidade").scrollIntoViewIfNeeded();

@@ -6,7 +6,7 @@ import { authFile } from "../fixtures/auth";
  * T64 — ordem bbced3fa (parte 2): a área logada usa a largura cheia, igual à Visão geral.
  * (1) a 1280 e 1920 px o conteúdo de cada rota tem a mesma largura da Visão geral (±24 px);
  * (2) a 360 e 390 px nenhuma rota rola para o lado;
- * (3) "Anunciar" (novo) tem 2 colunas no computador (etapa + resumo) e 1 no celular.
+ * (3) "Anunciar" (novo) tem 2 colunas no computador (etapa + prévia do anúncio ao vivo) e 1 no celular.
  */
 const ROTAS = [
   "/dashboard",
@@ -74,11 +74,13 @@ for (const largura of [360, 390]) {
   });
 }
 
-test("T64 — novo anúncio: etapa à esquerda e resumo à direita a 1280px; uma coluna a 390px", async ({ page }) => {
+test("T64 — novo anúncio: etapa à esquerda e prévia à direita a 1280px; uma coluna a 390px", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await abrir(page, "/dashboard/imoveis/novo");
   const resumo = page.getByTestId("novo-resumo");
   await expect(resumo).toBeVisible();
+  // Assistente em 10 passos: a coluna da direita é a prévia do anúncio montando ao vivo.
+  await expect(resumo.getByTestId("previa-anuncio")).toBeVisible();
   const grade = page.getByTestId("novo-duas-colunas");
   const g = (await grade.boundingBox())!;
   const r = (await resumo.boundingBox())!;
@@ -87,8 +89,10 @@ test("T64 — novo anúncio: etapa à esquerda e resumo à direita a 1280px; uma
   expect(etapa.x + etapa.width).toBeLessThanOrEqual(r.x); // lado a lado, sem sobrepor
   await page.setViewportSize({ width: 390, height: 800 });
   await page.waitForTimeout(300);
+  // No celular a prévia sai (só aparece a partir de 1024 px, como no desenho): a etapa ocupa a largura toda.
+  await expect(resumo).toBeHidden();
   const g2 = (await grade.boundingBox())!;
-  const r2 = (await resumo.boundingBox())!;
-  expect(r2.y).toBeGreaterThan(g2.y + 100); // empilhado embaixo da etapa
-  expect(Math.abs(r2.x - g2.x)).toBeLessThanOrEqual(2);
+  const e2 = (await grade.locator("> div").first().boundingBox())!;
+  expect(Math.abs(e2.x - g2.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs(e2.width - g2.width)).toBeLessThanOrEqual(2);
 });

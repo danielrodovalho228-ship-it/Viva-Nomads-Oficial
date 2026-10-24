@@ -175,7 +175,8 @@ test.describe("T321 — vídeo do anúncio alcançável pelo dono (65-B)", () =>
     await p.setViewportSize({ width: 390, height: 844 });
     await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
     const link = p.getByTestId("melhorar-video");
-    await expect(link).toHaveAttribute("href", `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=2#bloco-video`, { timeout: 20_000 });
+    // O link usa o ID do passo Fotos: 1 nos 10 passos (era 2 nos 6 passos).
+    await expect(link).toHaveAttribute("href", `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=1#bloco-video`, { timeout: 20_000 });
     await link.click();
     const bloco = p.getByTestId("bloco-video");
     await expect(bloco).toBeVisible({ timeout: 30_000 });

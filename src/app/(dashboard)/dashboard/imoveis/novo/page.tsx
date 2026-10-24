@@ -2,7 +2,6 @@
 
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { linkQualificacao } from "@/lib/qualificar-link";
@@ -11,14 +10,7 @@ import {
   Check,
   ArrowRight,
   ArrowLeft,
-  MapPin,
-  Camera,
-  Sparkles,
-  Tag,
-  CheckCircle2,
   XCircle,
-  BedDouble,
-  ShieldCheck,
 } from "lucide-react";
 import {
   createProperty,
@@ -45,7 +37,6 @@ import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
-import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
@@ -54,7 +45,6 @@ import { MIN_PHOTOS } from "@/lib/listing";
 import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
-import { PHOTOS } from "@/lib/media";
 import type { Property, Proximity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
@@ -72,7 +62,6 @@ import {
 } from "@/lib/ai/fotos-prompt";
 import {
   etapaDaUrl,
-  etapaLiberada,
   etapaMaisAvancada,
   etapaDoRascunho,
   posMaxDoRascunho,
@@ -89,7 +78,6 @@ import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
 import { chaveLugar } from "@/components/anuncio/blocos-cadastro";
 import type { CampoSugerido, EstadoIaFotos, FalhaIaFotos } from "./tipos";
-import { ChecklistPublicar } from "./checklist-publicar";
 import { ChegadaEPedidoCampos, formDeChegada, formDeRascunho, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
 import { tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
 import { PainelQualificacao } from "./painel-qualificacao";
@@ -108,6 +96,11 @@ import { EtapaFotos } from "./etapa-fotos";
 import { EtapaEncontramos } from "./etapa-encontramos";
 import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
+import { EtapaTipo } from "./etapa-tipo";
+import { PreviaAnuncio } from "./previa-anuncio";
+import { CabecalhoPassos } from "./cabecalho-passos";
+import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
+import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
 
 /**
  * Anunciar em 6 passos (Prompt 43, sobre o cadastro de 5 etapas do prompt 10):
@@ -119,14 +112,8 @@ import { EtapaRevisar } from "./etapa-revisar";
  * faixas de prazo e o portão de publicação (documento aprovado — 0120). "Publicar com o que tem" quando os mínimos
  * existem, com a nota do que melhora.
  */
-const STEP_META = [
-  { label: "Endereço e dados", icon: MapPin, title: "Endereço e dados", subtitle: "Endereço, quem opera e o documento do imóvel." },
-  { label: "Tipo e quartos", icon: BedDouble, title: "Tipo e quartos", subtitle: "Tipo do imóvel, quartos, banheiros, área e vagas." },
-  { label: "Fotos", icon: Camera, title: "Fotos do imóvel", subtitle: "Mínimo de 8. Ao terminar, a IA sugere o resto do cadastro." },
-  { label: "Comodidades", icon: ShieldCheck, title: "Comodidades e segurança", subtitle: "O que o imóvel tem, câmeras, título e descrição." },
-  { label: "Regras e valores", icon: Tag, title: "Regras, valores e disponibilidade", subtitle: "Regras da casa, valor mensal, datas e prazos." },
-  { label: "Revisar", icon: CheckCircle2, title: "Revisar e publicar", subtitle: "Confira tudo como o morador vai ver." },
-] as const;
+/** Rótulo, título (H1) e subtítulo de cada passo — mockups cadastro-imovel-01..10 (assistente-telas.ts). */
+const STEP_META = TELAS_ASSISTENTE.map((t) => ({ label: t.rotulo, title: t.titulo, subtitle: t.subtitulo }));
 
 
 /** Tira o erro de um campo (o mesmo objeto quando ele não tem erro: não redesenha à toa). */
@@ -326,7 +313,7 @@ export default function NewPropertyPage() {
     if (a.comodidades.length) setAmenityKeys((s) => ({ ...s, ...Object.fromEntries(a.comodidades.map((k) => [k, true])) }));
     if (a.aceitaPet != null) setPetsOk(a.aceitaPet);
     if (a.permiteFumar != null) setSmokingAllowed(a.permiteFumar);
-    irPara(ETAPA.espaco);
+    irPara(ETAPA.detalhes);
   }
 
   const completude = prontidao.obrigatorios;
@@ -335,7 +322,7 @@ export default function NewPropertyPage() {
   /** Campos obrigatórios da etapa atual (chave → mensagem). Só barra o AVANÇO; a Revisão é o portão final. */
   function validarEtapa(s: number): Record<string, string> {
     const e: Record<string, string> = {};
-    if (s === ETAPA.onde) {
+    if (s === ETAPA.endereco) {
       if (exigeAutorizacao(ownershipType)) {
         if (!subleaseAuthorized) e.sublocacao = "Marque a declaração para continuar.";
         else if (!tipoDocValido(ownershipType, subleaseDocTipo)) e.sublocacao = "Escolha o que você está anexando: contrato de administração ou procuração.";
@@ -348,13 +335,13 @@ export default function NewPropertyPage() {
     }
     if (s === ETAPA.fotos && photos.length === 0)
       e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
-    if (s === ETAPA.espaco) {
+    if (s === ETAPA.detalhes) {
       if ((Number(bathrooms) || 0) < 1) e.banheiros = "Informe ao menos 1 banheiro.";
       if ((Number(areaM2) || 0) <= 0) e.area = "Informe a área do imóvel (m²).";
       if ((Number(maxGuests) || 0) < 1) e.capacidade = "Informe quantas pessoas podem morar no imóvel.";
     }
-    if (s === ETAPA.comodidades && title.trim().length < 3) e.titulo = "Dê um título ao anúncio (mín. 3 caracteres).";
-    if (s === ETAPA.regras) {
+    if (s === ETAPA.descricao && title.trim().length < 3) e.titulo = "Dê um título ao anúncio (mín. 3 caracteres).";
+    if (s === ETAPA.preco) {
       if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o valor mensal.";
       if (!garantiaOk) e.garantia = "Escolha ao menos uma garantia.";
     }
@@ -1260,61 +1247,33 @@ export default function NewPropertyPage() {
     erros,
   };
   const meta = STEP_META[step];
-  const StepIcon = meta.icon;
 
   return (
     <div className="w-full">
-      {/* E50 (regra do dono: cada conteúdo num lugar só, um título por tela): no cadastro novo a apresentação é UMA — o
-          banner com o CEP e a IA, que leva o H1. O título "Anuncie seu imóvel / Em 6 passos…" saiu; o estado de
-          salvamento fica numa linha discreta acima do banner. Editando, vale o título "Editar anúncio" (sem banner). */}
-      {editingId ? (
-        <PageTitle title="Editar anúncio" subtitle="Ajuste os dados do imóvel e salve as alterações." />
-      ) : (
-        <>
-          {saveStatus !== "idle" && (
-            <div className="mb-2 flex justify-end">
-              <span
-                data-testid="estado-salvamento"
-                data-estado={saveStatus}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium",
-                  saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
-                )}
-              >
-                {saveStatus === "saved" ? (
-                  <>
-                    <Check className="h-3.5 w-3.5" /> Salvo{savedAt ? ` às ${savedAt}` : ""}
-                  </>
-                ) : saveStatus === "error" ? (
-                  <>
-                    <XCircle className="h-3.5 w-3.5" /> {saveErro ? `Não foi possível salvar: ${saveErro}` : "Sem conexão — não salvo"}
-                  </>
-                ) : (
-                  "Salvando…"
-                )}
-              </span>
-            </div>
-          )}
-          <div className="relative mb-4 overflow-hidden rounded-xl" data-testid="cadastro-apresentacao">
-            <Image
-              src={PHOTOS.cadastro.welcome}
-              alt="Proprietário com as chaves de um imóvel mobiliado pronto para anunciar"
-              width={800}
-              height={300}
-              priority
-              className="h-28 w-full object-cover sm:h-36"
-            />
-            <div className="absolute inset-0 bg-night/50" />
-            <div className="absolute inset-0 flex flex-col justify-center p-4 text-white">
-              <h1 className="font-title text-lg font-semibold sm:text-xl">Anunciar seu imóvel em 6 passos</h1>
-              <p className="text-sm text-white/80" data-testid="cadastro-frase-topo">
-                {iaLigada ? "Comece pelo CEP. A IA preenche o resto pelas fotos." : "Comece pelo CEP. Depois, fotos, detalhes, preço e revisão."}
-              </p>
-            </div>
-          </div>
-        </>
+      {saveStatus !== "idle" && (
+        <div className="mb-2 flex justify-end">
+          <span
+            data-testid="estado-salvamento"
+            data-estado={saveStatus}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium",
+              saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
+            )}
+          >
+            {saveStatus === "saved" ? (
+              <>
+                <Check className="h-3.5 w-3.5" /> Salvo{savedAt ? ` às ${savedAt}` : ""}
+              </>
+            ) : saveStatus === "error" ? (
+              <>
+                <XCircle className="h-3.5 w-3.5" /> {saveErro ? `Não foi possível salvar: ${saveErro}` : "Sem conexão — não salvo"}
+              </>
+            ) : (
+              "Salvando…"
+            )}
+          </span>
+        </div>
       )}
-
       {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
         <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
@@ -1348,45 +1307,21 @@ export default function NewPropertyPage() {
         </div>
       )}
 
-      {/* Stepper + barra de progresso. Celular (prompt 20): "Passo 1 de 5 — Onde fica" numa linha (nada cortado);
-          do tablet para cima, as etapas em pílulas, com o contador de fotos. */}
-      <div className="mb-4">
-        <p className="pb-2 text-sm font-medium text-ink sm:hidden" data-testid="etapas-celular" aria-live="polite">
-          Passo {pos + 1} de {ORDEM_ETAPAS.length} — <span className="text-forest">{STEP_META[step].label}</span>
-          {step !== ETAPA.fotos && photos.length > 0 && <span className="text-muted"> · {photos.length} {photos.length === 1 ? "foto" : "fotos"}</span>}
-        </p>
-        <div className="hidden items-center gap-2 pb-2 sm:flex sm:flex-wrap" data-testid="etapas-cadastro">
-          {ORDEM_ETAPAS.map((id, i) => (
-            <button
-              key={STEP_META[id].label}
-              type="button"
-              onClick={() => {
-                if (etapaLiberada(i, pos, etapaMax)) {
-                  setErros({});
-                  irPara(id);
-                }
-              }}
-              disabled={!etapaLiberada(i, pos, etapaMax)}
-              aria-current={i === pos ? "step" : undefined}
-              className={cn(
-                "flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium transition-colors",
-                i === pos ? "bg-forest text-white" : etapaLiberada(i, pos, etapaMax) ? "bg-sage-100 text-forest hover:bg-blue-100" : "bg-surface-2 text-muted"
-              )}
-            >
-              {i < pos ? <Check className="h-3.5 w-3.5" /> : <span>{i + 1}</span>}
-              {STEP_META[id].label}
-              {id === ETAPA.fotos && photos.length > 0 && <span data-testid="etapa-fotos-contador">({photos.length})</span>}
-            </button>
-          ))}
-        </div>
-        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
-          <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${((pos + 1) / STEP_META.length) * 100}%` }} />
-        </div>
-      </div>
+      {/* Mockups cadastro-imovel-01..10: no topo, a barra de progresso e "Passo X de 10"; à esquerda, o título do passo
+          (o H1 da tela), o formulário e "Continuar"; à direita (computador), a prévia do anúncio montando ao vivo. */}
+      <CabecalhoPassos pos={pos} total={ORDEM_ETAPAS.length} />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start" data-testid="novo-duas-colunas">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start" data-testid="novo-duas-colunas">
         <div className="min-w-0">
-          <ChecklistPublicar itens={completude} onResolver={resolverItem} recolhivel />
+          <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
+            {editingId ? "Editar anúncio" : "Anunciar imóvel"} <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
+          </span>
+          <h1 className={cn(TITULO_PASSO_CADASTRO, "mt-3")} data-testid="passo-titulo">
+            {meta.title}
+          </h1>
+          <p className="mt-2 text-base text-muted" data-testid="passo-subtitulo">
+            {meta.subtitle}
+          </p>
           {painelQualificacao && (
             <PainelQualificacao
               imovelId={imovelId}
@@ -1397,18 +1332,28 @@ export default function NewPropertyPage() {
               }}
             />
           )}
-          <Panel>
-            <div className="mb-4 flex items-start gap-3">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
-                <StepIcon className="h-5 w-5" />
-              </span>
-              <div>
-                <h2 className="font-title text-xl font-semibold text-ink">{meta.title}</h2>
-                <p className="text-sm text-muted">{meta.subtitle}</p>
+          <div className="mt-6">
+            {step === ETAPA.tipo && (
+              <div className="space-y-6">
+                <EtapaTipo tipo={propertyType} onTipo={camposImovel.setPropertyType} sugerido={camposImovel.tipoSugerido} />
+                {/* "Antes de anunciar" (qualificação do imóvel), quando pendente, entra neste passo (mapa da Pista B). */}
+                {completude
+                  .filter((i) => i.key === "qualificacao" && !i.ok)
+                  .map((i) => (
+                    <div key={i.key} className="flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between" data-testid="tipo-qualificacao">
+                      <p className="text-sm text-ink">
+                        <span className="font-semibold">{i.label}</span>
+                        {i.detalhe ? ` · ${i.detalhe}` : ""}
+                      </p>
+                      <Button variant="secondary" size="sm" onClick={() => resolverItem(i)}>
+                        Responder agora
+                      </Button>
+                    </div>
+                  ))}
               </div>
-            </div>
+            )}
 
-            {step === ETAPA.onde && (
+            {step === ETAPA.endereco && (
               <EtapaOndeFica
                 topo={
                   <CartaoIa
@@ -1492,7 +1437,7 @@ export default function NewPropertyPage() {
               <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
             )}
 
-            {step === ETAPA.espaco && (
+            {step === ETAPA.detalhes && (
               <EtapaEncontramos parte="espaco" {...camposImovel} />
             )}
 
@@ -1513,12 +1458,17 @@ export default function NewPropertyPage() {
             )}
 
             {step === ETAPA.regras && (
-              <div className="space-y-6">
               <div>
                 <EtapaEncontramos parte="regras" {...camposImovel} />
                 <ChegadaEPedidoCampos value={chegada} onChange={setChegada} />
               </div>
+            )}
+
+            {step === ETAPA.descricao && <EtapaEncontramos parte="descricao" {...camposImovel} />}
+
+            {(step === ETAPA.preco || step === ETAPA.disponibilidade) && (
               <EtapaPreco
+                parte={step === ETAPA.preco ? "preco" : "disponibilidade"}
                 imovelId={imovelId}
                 sugerido={sugerido}
                 tirarSugestao={tirarSugestao}
@@ -1554,10 +1504,9 @@ export default function NewPropertyPage() {
                 setLimites={setLimites}
                 erros={erros}
               />
-              </div>
             )}
 
-            {step === ETAPA.revisar && (
+            {step === ETAPA.revisao && (
               <EtapaRevisar
                 previewProperty={previewProperty}
                 titulo={title}
@@ -1589,47 +1538,49 @@ export default function NewPropertyPage() {
             )}
 
             {pos < ULTIMA_ETAPA && (
-              <div className="mt-6 flex justify-between">
-                <Button variant="ghost" onClick={voltarEtapa} disabled={pos === 0}>
-                  <ArrowLeft className="h-4 w-4" /> Voltar
-                </Button>
-                <Button onClick={avancarEtapa} data-testid="cadastro-continuar">
+              <div className="mt-8">
+                <Button size="lg" className="w-full" onClick={avancarEtapa} data-testid="cadastro-continuar">
                   Continuar <ArrowRight className="h-4 w-4" />
                 </Button>
+                {pos > 0 && (
+                  <p className="mt-3 text-center">
+                    <button type="button" onClick={voltarEtapa} className="inline-flex min-h-11 items-center gap-1 text-sm text-ink underline underline-offset-4 hover:text-forest" data-testid="cadastro-voltar">
+                      <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar para o passo anterior
+                    </button>
+                  </p>
+                )}
               </div>
             )}
-          </Panel>
+            {pos === ULTIMA_ETAPA && (
+              <p className="mt-6 text-center">
+                <button type="button" onClick={voltarEtapa} className="inline-flex min-h-11 items-center gap-1 text-sm text-ink underline underline-offset-4 hover:text-forest" data-testid="cadastro-voltar">
+                  <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar para o passo anterior
+                </button>
+              </p>
+            )}
+          </div>
 
           <p className="mt-4 text-center text-sm text-muted">
-            <Link href="/dashboard/imoveis" className="hover:text-forest">
+            <Link href="/dashboard/imoveis" className="inline-flex min-h-11 items-center hover:text-forest">
               Cancelar e voltar
             </Link>
           </p>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-4" data-testid="novo-resumo" aria-label="Resumo e dicas">
-          <Panel>
-            <p className="text-xs font-semibold uppercase text-muted">Seu progresso</p>
-            <p className="mt-1 font-title text-2xl font-semibold text-forest">
-              Etapa {pos + 1} de {ORDEM_ETAPAS.length}
-            </p>
-            <ol className="mt-3 space-y-2 text-sm">
-              {ORDEM_ETAPAS.map((id, i) => (
-                <li key={STEP_META[id].label} className={cn("flex items-center gap-2", i === pos ? "font-semibold text-forest" : i < pos ? "text-ink" : "text-muted")}>
-                  {i < pos ? <Check className="h-4 w-4 shrink-0 text-forest" /> : <span className="grid h-4 w-4 shrink-0 place-items-center text-xs">{i + 1}</span>}
-                  {STEP_META[id].label}
-                </li>
-              ))}
-            </ol>
-          </Panel>
-          <Panel>
-            <p className="text-xs font-semibold uppercase text-muted">Dicas</p>
-            <ul className="mt-2 list-disc space-y-2 pl-4 text-sm text-ink">
-              <li>Suas respostas ficam salvas no rascunho: você pode sair e voltar.</li>
-              <li>Fotos claras, de dia e na horizontal, atraem mais pedidos.</li>
-              <li>O que a IA sugere aparece com “Sugerido · confira”: nada vai ao anúncio sem você confirmar.</li>
-            </ul>
-          </Panel>
+        <aside className="hidden lg:sticky lg:top-4 lg:block" data-testid="novo-resumo" aria-label="Visualização do anúncio">
+          <PreviaAnuncio
+            foto={photos[0]?.url ?? null}
+            titulo={title}
+            tipo={propertyType}
+            quartos={Number(bedrooms) || 0}
+            areaM2={Number(areaM2) || 0}
+            mobiliado={furnished}
+            pets={petsOk}
+            bairro={neighborhood}
+            cidade={city}
+            uf={uf}
+            publicado={!!editingId}
+          />
         </aside>
       </div>
 

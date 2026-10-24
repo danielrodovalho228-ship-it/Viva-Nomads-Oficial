@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { noPasso } from "../fixtures/cadastro";
 import { VERSAO_CONFORTO } from "../../../src/config/conforto-minimo";
 
 /*
@@ -104,16 +105,17 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
     await expect(page.getByTestId("conforto-checklist")).toHaveAttribute("data-faltam", "0", { timeout: 30_000 });
     await expect(page.getByTestId("conforto-faltam")).toHaveText("Todos os itens confirmados.");
 
-    // "Salvar como rascunho" logo depois de recarregar (o caminho que desmarcou tudo em produção).
-    await abrir(page, "5");
-    await expect(page.getByRole("heading", { name: "Revisar e publicar" })).toBeVisible({ timeout: 30_000 });
+    // "Salvar como rascunho" logo depois de recarregar (o caminho que desmarcou tudo em produção). A revisão vai pelo
+    // NOME do passo: nos 10 passos o "5" é Regras.
+    await abrir(page, "revisao");
+    await noPasso(page, "revisao", 30_000);
     await page.getByRole("button", { name: "Salvar como rascunho" }).click();
     await page.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
     expect(await confirmadosNoBanco(ids.imovel!)).toBe(12);
 
     // Publicar: sem "Falta confirmar" do padrão mínimo; o anúncio fica ativo.
-    await abrir(page, "5");
-    await expect(page.getByRole("heading", { name: "Revisar e publicar" })).toBeVisible({ timeout: 30_000 });
+    await abrir(page, "revisao");
+    await noPasso(page, "revisao", 30_000);
     await expect(page.getByTestId("publicar-falta-conforto")).toHaveCount(0);
     await page.getByTestId("aceite-ia").getByRole("checkbox").check();
     const publicar = page.getByTestId("publicar-anuncio");

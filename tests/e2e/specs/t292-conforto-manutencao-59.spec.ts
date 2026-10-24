@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
+import { continuarAte } from "../fixtures/cadastro";
 import {
   CHAVE_ANON,
   NO_LABORATORIO,
@@ -146,8 +147,8 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     await page.getByTestId("conforto-marcar-todos").click();
     await page.getByTestId(`conforto-item-${CHAVES_CONFORTO[0]}`).getByRole("checkbox").uncheck();
     await expect(page.getByTestId("conforto-faltam")).toHaveText("Falta confirmar 1 item.");
-    await page.getByTestId("cadastro-continuar").click();
-    await page.getByTestId("cadastro-continuar").click();
+    // 10 passos: das Comodidades à Revisão são 5 "Continuar" (Regras, Descrição, Preço, Disponibilidade, Revisão).
+    await continuarAte(page, "comodidades", "revisao");
     await expect(page.getByTestId("etapa-revisar").getByTestId("checklist-item-conforto")).toHaveAttribute("data-ok", "0", { timeout: 20_000 });
     await expect(page.getByTestId("publicar-falta-conforto")).toContainText(`Falta confirmar: ${ITENS_CONFORTO[0].rotulo}.`);
     await expect(page.getByTestId("publicar-anuncio")).toBeDisabled();
