@@ -16,6 +16,8 @@ export const PROPERTY_TYPES: { value: string; label: string }[] = [
   { value: "casa_condominio", label: "Casa de condomínio" },
   { value: "flat", label: "Flat / apart-hotel" },
   { value: "quarto", label: "Quarto privativo" },
+  // TIPO-CHACARA-B (24/10): só chácara/sítio; fazenda e rancho ficam fora até o parecer jurídico.
+  { value: "chacara", label: "Chácara/Sítio" },
 ];
 
 const PROPERTY_TYPE_LABEL: Record<string, string> = Object.fromEntries(

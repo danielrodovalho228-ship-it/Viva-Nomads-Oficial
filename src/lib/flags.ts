@@ -122,3 +122,11 @@ export const REDES_USUARIO_ATIVO = process.env.NEXT_PUBLIC_REDES_USUARIO_ATIVO =
  * (NEXT_PUBLIC_TRIAGEM_VINCULO_ATIVA="on"). No laboratório o teste liga no próprio navegador (src/lib/triagem/chave.ts).
  */
 export const TRIAGEM_VINCULO_ATIVA = process.env.NEXT_PUBLIC_TRIAGEM_VINCULO_ATIVA === "on";
+
+/**
+ * DETECTA-B — sugestões a partir das fotos da galeria (itens de Conforto/Premium e comodidades dos filtros). OFF até o
+ * Daniel ver o custo no PR. Desligada, nada é enviado ao modelo e a tela fica como hoje. Só o servidor lê a chave
+ * (DETECCAO_FOTOS_ATIVO="on"); usa a ANTHROPIC_API_KEY que já está em produção. No laboratório o teste liga só no
+ * próprio navegador (cookie, ver src/lib/fotos/deteccao-chave.ts).
+ */
+export const DETECCAO_FOTOS_ATIVO = process.env.DETECCAO_FOTOS_ATIVO === "on";

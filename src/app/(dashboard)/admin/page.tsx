@@ -3,6 +3,7 @@ import { resolverPeriodo } from "@/lib/admin/visao-geral";
 import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
 import { CartaoPush } from "@/components/admin/cartao-push";
 import { PainelIaCadastro } from "@/components/admin/painel-ia-cadastro";
+import { ContadorDeteccao } from "@/components/admin/contador-deteccao";
 import { CartaoBackup } from "@/components/admin/cartao-backup";
 import { CartaoMapas } from "@/components/admin/cartao-mapas";
 import { CartaoEntradaEmail } from "@/components/admin/cartao-entrada-email";
@@ -64,6 +65,9 @@ export default async function AdminPage({
       <AtalhosAdmin />
       <div className="mt-6">
         <PainelIaCadastro />
+      </div>
+      <div className="mt-6">
+        <ContadorDeteccao />
       </div>
       <div id="backup" className="mt-6 scroll-mt-24">
         <CartaoBackup />

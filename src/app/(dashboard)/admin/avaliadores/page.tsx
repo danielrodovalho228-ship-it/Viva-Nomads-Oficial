@@ -19,7 +19,7 @@ import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
 import { comTesteConcluido, filaDaCidade } from "@/lib/vistoria/servidor";
 import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada";
 import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
-import { TITULO_ADMIN, contagemDecisoes, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
+import { TITULO_ADMIN, TITULO_SECAO_A_DECIDIR, TITULO_SECAO_NA_REDE, contagemDecisoes, credenciamentoADecidir, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
 
 export const metadata = { title: "Avaliações do imóvel — Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -92,8 +92,9 @@ export default async function AdminAvaliadoresPage() {
   const semAvaliador = pedidosLista.filter((x) => x.aguardando_avaliador && x.status === "pedido");
   const recusasLista = (recusas ?? []) as unknown as { id: string; resposta: string; respondido_em: string; avaliador_id: string; vistoria_pedidos: { cidade: string } | null }[];
   const filaRestante = ((fila ?? []) as { id: string; tipo: string; motivo: string | null; criado_em: string }[]).filter((f) => f.tipo !== "sem_avaliador");
-  const aDecidir = lista.filter((c) => c.status === "solicitado" || c.status === "em_teste");
-  const naRede = lista.filter((c) => !(c.status === "solicitado" || c.status === "em_teste"));
+  // E77: a mesma regra do número do topo (contagemDecisoes) — em teste já não está "a decidir".
+  const aDecidir = lista.filter((c) => credenciamentoADecidir(c.status));
+  const naRede = lista.filter((c) => !credenciamentoADecidir(c.status));
   const tabela: LinhaPreco[] = ((precos ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const cidades = [...new Map([...lista.map((c) => c.cidade), ...tabela.map((t) => t.cidade)].map((c) => [chaveCidade(c), c])).values()];
   const condicoesPorCidade = cidades.map((cidade) => {
@@ -160,10 +161,10 @@ export default async function AdminAvaliadoresPage() {
         ) : (
           <div className="grid gap-4">
             {[
-              { titulo: "A decidir", itens: aDecidir, vazio: "Nada a decidir agora." },
-              { titulo: "Na rede", itens: naRede, vazio: "Ninguém na rede ainda." },
+              { chave: "a-decidir", titulo: TITULO_SECAO_A_DECIDIR, itens: aDecidir, vazio: "Nada a decidir agora." },
+              { chave: "na-rede", titulo: TITULO_SECAO_NA_REDE, itens: naRede, vazio: "Ninguém em teste nem credenciado ainda." },
             ].map((g) => (
-              <div key={g.titulo}>
+              <div key={g.chave} data-testid={`credenciamento-secao-${g.chave}`} data-total={g.itens.length}>
                 <h3 className="text-sm font-semibold text-ink">{g.titulo} ({g.itens.length})</h3>
                 {g.itens.length === 0 ? (
                   <p className="mt-1 text-sm text-muted">{g.vazio}</p>

@@ -55,6 +55,12 @@ export const PHOTOS = {
   },
   // Conta › Ajuda (E71): a foto só no cartão de contato (uma pessoa numa conversa pelo celular).
   ajudaContato: "/images/unicas/cf-conversa-registrada.webp",
+  // Conta › Papéis e intenção (perfil-03-papeis-com-fotos): uma foto do acervo por cartão, mesmo tamanho nos três.
+  papeis: {
+    morar: "/images/unicas/prop-sala-preparada.webp",
+    anunciar: `${I}/placeholder-imovel-quarto.webp`,
+    parceiro: "/images/unicas/parceiros-servicos.webp",
+  },
   // Estados / OG (imagens reais geradas)
   emptyTenant: "/images/empty-inquilino-reservas.webp",
   emptyOwner: "/images/empty-prop-imoveis.webp",
