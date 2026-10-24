@@ -3428,6 +3428,20 @@
         "t346-importar-calendario-53"
       ]
     },
+    "src/lib/data/canais-actions.ts#getCanais": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/canais-actions.ts#setCanais": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/carteira-teste-actions.ts#limparCarteiraDeTeste": {
       "personas": [
         "admin"

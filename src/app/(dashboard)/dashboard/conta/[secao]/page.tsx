@@ -9,7 +9,8 @@ import { TelaPapeis } from "@/components/account/tela-papeis";
 import { PerfilTela } from "@/components/account/perfil-tela";
 import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
-import { DadosPessoais, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
+import { DadosPessoais, DocumentoPessoa } from "@/components/account/conta-secoes";
+import { TelaNotificacoes } from "@/components/account/tela-notificacoes";
 import { ConfiancaLista } from "@/components/account/conta-blocos";
 import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
@@ -19,11 +20,10 @@ import { SUBTITULO_PAPEIS } from "@/lib/conta/tela-papeis";
 import { ALIAS_SECAO, type SecaoConta } from "@/lib/conta/secoes";
 
 /** Subtítulo de cada seção (A1; cada tela ganha o desenho do seu mockup nas entregas A2–A8). */
-const SUBTITULO: Record<Exclude<SecaoConta, "perfil" | "ajuda" | "avaliacoes">, string> = {
+const SUBTITULO: Record<Exclude<SecaoConta, "perfil" | "ajuda" | "avaliacoes" | "notificacoes">, string> = {
   papeis: SUBTITULO_PAPEIS,
   dados: "Atualize suas informações de cadastro. Só a Viva vê; vão no contrato e nos avisos.",
   privacidade: "O que já está verificado e como proteger a conta.",
-  notificacoes: "Como e quando a Viva avisa você.",
   pagamentos: "Para onde vai o valor mensal.",
 };
 
@@ -76,8 +76,9 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       );
     case "notificacoes":
       return (
-        <CascaConta ativo="notificacoes" subtitulo={SUBTITULO.notificacoes}>
-          <NotificationsPanel titulo={null} />
+        // Mockup perfil-06: sem subtítulo; o título e os dois cartões.
+        <CascaConta ativo="notificacoes">
+          <TelaNotificacoes />
         </CascaConta>
       );
     case "pagamentos":

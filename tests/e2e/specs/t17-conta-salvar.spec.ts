@@ -37,16 +37,19 @@ test.describe("T17 — Conta salva de verdade", () => {
 
   test("preferência de notificação grava e volta depois do F5", async ({ page }) => {
     await page.goto("/dashboard/conta/notificacoes", { waitUntil: "networkidle" });
-    const sw = page.getByRole("switch", { name: "Avisos por e-mail" });
+    // A6 (mockup perfil-06): o canal "E-mail" grava com "Salvar preferências".
+    const sw = page.getByTestId("notif-canal-email");
     await expect(sw).toBeEnabled();
     const antes = await sw.getAttribute("aria-checked");
     await sw.click();
-    await expect(page.getByText("Preferência salva.")).toBeVisible();
+    await page.getByTestId("notif-salvar").click();
+    await expect(page.getByTestId("notif-salvar-msg")).toHaveText("Preferências salvas.");
     await page.reload({ waitUntil: "networkidle" });
-    const depois = page.getByRole("switch", { name: "Avisos por e-mail" });
+    const depois = page.getByTestId("notif-canal-email");
     await expect(depois).toHaveAttribute("aria-checked", antes === "true" ? "false" : "true");
     await depois.click(); // devolve
-    await expect(page.getByText("Preferência salva.")).toBeVisible();
+    await page.getByTestId("notif-salvar").click();
+    await expect(page.getByTestId("notif-salvar-msg")).toHaveText("Preferências salvas.");
   });
 
   test("senha atual errada não troca a senha", async ({ page }) => {
