@@ -11,7 +11,6 @@ import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PasswordInput } from "@/components/ui/password-input";
-import { CategoriaProfissional } from "@/components/account/categoria-profissional";
 import { createClient } from "@/lib/supabase/client";
 import { nomeCompletoLimpo } from "@/lib/display-name";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
