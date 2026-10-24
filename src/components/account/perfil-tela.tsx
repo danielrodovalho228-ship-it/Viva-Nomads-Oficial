@@ -13,7 +13,7 @@ import { TituloSecaoLateral } from "@/components/account/casca-conta";
 import { EnviarFoto, FOTO_ATUALIZADA, PERFIL_ATUALIZADO, avisarFotoAtualizada, useMinhaFoto } from "@/components/account/foto-perfil";
 import { getMeuPerfilPublico, getMeusDados, salvarMeuPerfilPublico, salvarMeusDados, setMinhaCategoria, type MeuPerfilPublico } from "@/lib/data/perfil-actions";
 import { clearMyAvatar } from "@/lib/data/avatar-actions";
-import { BIO_MAX, IDIOMAS, listaEmTexto, medidorPerfil, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
+import { BIO_MAX, IDIOMAS, listaEmTexto, medidorPerfil, rotuloCurto, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
 import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { CATEGORIA_NAO_INFORMAR } from "@/config/categorias-profissionais";
 import { useAuthStore } from "@/lib/store";
@@ -124,7 +124,7 @@ export function PerfilTela() {
   const tProf = textosToggle("profissao");
 
   return (
-    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]" data-testid="perfil-tela">
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]" data-testid="perfil-tela">
       <div className="grid min-w-0 gap-6">
         <section className="rounded-xl bg-white p-4 sm:p-6" aria-labelledby="perfil-foto-titulo" data-testid="perfil-cartao">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6" data-testid="topo-conta">
@@ -278,7 +278,7 @@ export function PerfilTela() {
           <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
             {prog.itens.map((i) => (
               <li key={i.chave} className={i.feito ? "flex items-center gap-2 text-forest" : "flex items-center gap-2 text-muted"}>
-                {i.feito ? <Check className="h-4 w-4" aria-hidden /> : <CircleDashed className="h-4 w-4" aria-hidden />} {i.rotulo}
+                {i.feito ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : <CircleDashed className="h-4 w-4 shrink-0" aria-hidden />} {rotuloCurto(i)}
               </li>
             ))}
           </ul>

@@ -28,7 +28,7 @@ export function EspelhoPerfil({
     >
       {/* A1 (perfil-01): a pílula verde é o título do cartão. */}
       <h2 id="espelho-titulo" className="flex justify-start lg:justify-center">
-        <span className="inline-flex items-center gap-2 rounded-full bg-forest px-4 py-2 text-sm font-semibold text-white">
+        <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-forest px-3 py-2 text-sm font-semibold text-white">
           <Eye className="h-4 w-4" aria-hidden /> {TITULO_ESPELHO}
         </span>
       </h2>

@@ -197,6 +197,8 @@ export function robotsDoProprietario(imoveisVisiveis: number): { index: boolean;
 
 /** Rótulo curto de cada item na linha de faltas (o do celular é uma frase longa na lista). */
 const CURTO: Partial<Record<string, string>> = { telefone: "Celular verificado" };
+/** Rótulo curto de um item do medidor (a lista de marcação e a linha de faltas usam o mesmo). */
+export const rotuloCurto = (i: { chave: string; rotulo: string }): string => CURTO[i.chave] ?? i.rotulo;
 
 /**
  * CONTA-A C1 — o medidor declara o que conta e a linha de faltas lista TUDO o que falta: os itens do cadastro (nome,
@@ -210,7 +212,7 @@ export function medidorPerfil(
   const chaves = new Set(barra.map((i) => i.chave as string));
   const itens = [...cadastro.filter((i) => !chaves.has(i.chave)), ...barra];
   const pct = itens.length ? Math.round((itens.filter((i) => i.feito).length / itens.length) * 100) : 100;
-  const falta = itens.filter((i) => !i.feito).map((i) => CURTO[i.chave] ?? i.rotulo);
+  const falta = itens.filter((i) => !i.feito).map(rotuloCurto);
   return { itens, pct, falta };
 }
 
