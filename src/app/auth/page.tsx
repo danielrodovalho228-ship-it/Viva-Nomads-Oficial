@@ -22,6 +22,7 @@ import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/ca
 import { LoginPorCodigo } from "@/components/auth/login-por-codigo";
 import { chaveFalhas, exigeCaptchaPorFalhas, lerFalhas, segundosRestantes } from "@/lib/seguranca/tentativas-login";
 import { destinoDepoisDaEntrada, motivoDaEntrada } from "@/lib/auth/entrada";
+import { CARTAO_FORMULARIO_PORTA, FUNDO_FORMULARIO_PORTA, PRIMARIO_PORTA, VEU_BASE_PORTA, VEU_TOPO_PORTA } from "@/lib/auth/porta-visual";
 
 /**
  * Prompt 49 — entrada única: "entrada" (e-mail + código; entra E cria conta) é a tela padrão. "senha" é o
@@ -360,28 +361,31 @@ export default function AuthPage() {
           treat={false}
           className="absolute inset-0 h-full w-full"
         />
-        <div className="absolute inset-0 bg-night/65" />
+        {/* Véu só onde há texto: a foto fica clara e quente (alinhamento visual da porta, 23/10). */}
+        <div className={`absolute inset-x-0 top-0 h-40 ${VEU_TOPO_PORTA}`} data-testid="porta-veu-topo" aria-hidden />
+        <div className={`absolute inset-x-0 bottom-0 h-3/5 ${VEU_BASE_PORTA}`} data-testid="porta-veu-base" aria-hidden />
         <div className="absolute inset-0 flex flex-col justify-between p-12 text-white">
           <Logo href="/" light />
           <div>
             <h1 className="font-title text-[28px] font-semibold leading-tight">
               {mode === "entrada" ? "Sua nova fase começa aqui." : "Bem-vindo de volta."}
             </h1>
-            <p className="mt-4 max-w-md text-white/75">
+            <p className="mt-4 max-w-md text-white/90">
               Imóveis mobiliados para estadias de 30 a 180 dias, para profissionais em transição. Estadia de
               meses, com contrato de verdade e conversa registrada.
             </p>
+            <p className="mt-8 text-sm text-white/80">Estadias de 30 a 180 dias</p>
           </div>
-          <p className="text-sm text-white/50">Estadias de 30 a 180 dias</p>
         </div>
       </div>
 
-      {/* Formulário */}
-      <div className="flex items-center justify-center p-6 sm:p-12">
+      {/* Formulário: fundo quente e o formulário num cartão (sem o branco vazio). */}
+      <div className={`flex items-center justify-center px-4 py-8 sm:p-12 ${FUNDO_FORMULARIO_PORTA}`} data-testid="porta-formulario">
         <div className="w-full max-w-md">
-          <div className="mb-8 lg:hidden">
+          <div className="mb-6 flex justify-center lg:hidden">
             <Logo href="/" />
           </div>
+          <div className={CARTAO_FORMULARIO_PORTA} data-testid="porta-cartao">
 
           {mode === "entrada" ? (
             /* ── Entrada única: e-mail + código (Prompt 49) ── */
@@ -457,7 +461,7 @@ export default function AuthPage() {
                   </p>
                 )}
                 {captcha.widget}
-                <Button type="submit" className="w-full" disabled={loading || !podeEnviar(captcha.ligado, captcha.token)}>
+                <Button type="submit" className={`w-full ${PRIMARIO_PORTA}`} aria-busy={loading} disabled={loading || !podeEnviar(captcha.ligado, captcha.token)}>
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Enviar link de recuperação
                 </Button>
@@ -517,7 +521,7 @@ export default function AuthPage() {
                 )}
 
                 {captcha.widget}
-                <Button type="submit" className="w-full" disabled={loading || espera > 0 || !podeEnviar(captcha.ligado, captcha.token)}>
+                <Button type="submit" className={`w-full ${PRIMARIO_PORTA}`} aria-busy={loading} disabled={loading || espera > 0 || !podeEnviar(captcha.ligado, captcha.token)}>
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   {loading ? "Entrando…" : "Entrar"}
                 </Button>
@@ -531,6 +535,7 @@ export default function AuthPage() {
               localmente.
             </p>
           )}
+          </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PRIMARIO_PORTA } from "@/lib/auth/porta-visual";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmail } from "@/lib/auth-errors";
@@ -279,7 +280,7 @@ export function LoginPorCodigo({
             </p>
           )}
           {captcha.widget}
-          <Button type="submit" className="w-full" data-testid="entrada-continuar" disabled={carregando || !podeEnviar(captcha.ligado, captcha.token)}>
+          <Button type="submit" className={`w-full ${PRIMARIO_PORTA}`} data-testid="entrada-continuar" aria-busy={carregando} disabled={carregando || !podeEnviar(captcha.ligado, captcha.token)}>
             {carregando && <Loader2 className="h-4 w-4 animate-spin" />}
             Continuar
           </Button>
@@ -323,7 +324,7 @@ export function LoginPorCodigo({
               {erro}
             </p>
           )}
-          <Button type="submit" className="w-full" disabled={carregando || !codigoCompleto(codigo) || tentativasRestantes(erradas) === 0}>
+          <Button type="submit" className={`w-full ${PRIMARIO_PORTA}`} aria-busy={carregando} disabled={carregando || !codigoCompleto(codigo) || tentativasRestantes(erradas) === 0}>
             {carregando && <Loader2 className="h-4 w-4 animate-spin" />}
             Entrar
           </Button>
