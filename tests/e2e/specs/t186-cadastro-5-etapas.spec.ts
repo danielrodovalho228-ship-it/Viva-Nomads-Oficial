@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 
 /*
+  Rodada da vigia 24/10 (Pista C): falhou no lab completo de bde9c79; reproduzir sozinha no lab-crítico.
   T186 — Anunciar em 6 passos (Prompt 43, sobre o cadastro do prompt 10) + documento conferido na hora (prompt 11) +
   Negociação (prompt 17 §8), a 390 e 1280 px, com a IA, o OSM e o ViaCEP SIMULADOS (nada sai para a rede):
   1. Endereço e dados: o CEP vem com foco e preenche rua, bairro e cidade; o documento fictício é conferido → ✓.
