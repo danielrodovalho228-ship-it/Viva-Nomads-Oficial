@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T361 — CONTA-A, rodada de correções do QA do Muse (24/10), em /dashboard/conta:
  *   C1. a linha de faltas lista TUDO o que falta (cadastro + barra) e anda depois de salvar;
  *   C2. o motivo da estadia tem um estado só: não conta como falta no Perfil e mora só em Dados ("Prefiro não informar");

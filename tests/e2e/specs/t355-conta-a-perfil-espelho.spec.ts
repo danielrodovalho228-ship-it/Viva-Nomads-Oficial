@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T355 — CONTA-A, entrega 1 (Perfil): topo único, foto que envia de verdade, avatar sem nome, o espelho e o progresso.
  *   1. sem nome: silhueta (nunca "?") no cartão da foto e no cabeçalho; um H1 visível ("Perfil") — 360, 390, 1280;
  *   2. o seletor de arquivo abre no clique e no teclado (topo e convite), a 390 e 1280;
