@@ -111,5 +111,6 @@ test("a tela do cadastro fala em 6 passos (nenhum texto visível com '5 etapas')
   const pagina = readFileSync(new URL("../app/(dashboard)/dashboard/imoveis/novo/page.tsx", import.meta.url), "utf8");
   const semComentario = pagina.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
   assert.doesNotMatch(semComentario, /5 etapas/);
-  assert.match(semComentario, /Em 6 passos\./);
+  // E50: o H1 do banner é a única apresentação ("Anunciar seu imóvel em 6 passos").
+  assert.match(semComentario, /Anunciar seu imóvel em 6 passos/);
 });

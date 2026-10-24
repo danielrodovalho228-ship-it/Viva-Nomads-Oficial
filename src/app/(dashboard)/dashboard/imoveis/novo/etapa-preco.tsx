@@ -1,5 +1,6 @@
 "use client";
 
+import { BlockCalendar } from "@/components/property/block-calendar";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
@@ -20,6 +21,8 @@ import type { CampoSugerido } from "./tipos";
  * seletor de data (Q8/Q9), faixas de prazo, garantias e o bloco "Negociação" (prompt 17, §8).
  */
 export function EtapaPreco(p: {
+  /** E44: id do rascunho já salvo — com ele, a grade do calendário (bloquear datas, importar e exportar .ics) aparece. */
+  imovelId?: string | null;
   sugerido: (c: CampoSugerido) => boolean;
   tirarSugestao: (c: CampoSugerido) => void;
   monthlyPrice: string;
@@ -178,6 +181,20 @@ export function EtapaPreco(p: {
           </Labeled>
         </div>
         <span className="mt-2 block text-xs text-muted">Estadias de 30 a 180 dias são o usual.</span>
+      </div>
+
+      {/* E44: o calendário do imóvel já no cadastro — a mesma grade do editor (bloquear, importar e exportar .ics). */}
+      <div className="rounded-xl border border-sage-200 p-4" data-testid="calendario-etapa">
+        <p className="text-sm font-medium text-ink">Calendário</p>
+        {p.imovelId ? (
+          <div className="mt-3">
+            <BlockCalendar propertyId={p.imovelId} />
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted" data-testid="calendario-etapa-aguardando">
+            O calendário aparece assim que o rascunho for salvo (leva alguns segundos).
+          </p>
+        )}
       </div>
 
       <div className="rounded-xl border border-sage-200 p-4">

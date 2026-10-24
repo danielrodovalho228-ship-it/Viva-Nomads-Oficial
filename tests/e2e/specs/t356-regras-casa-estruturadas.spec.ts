@@ -7,7 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  *      proibidas, visitas até 22h sem pernoite → o servidor grava regras_casa validado e o smoking_allowed antigo acompanha;
  *   2. a folha pública "Regras da casa" (Bom saber) mostra os fatos de sempre e uma linha com ícone por regra definida,
  *      sem "não informado"; a linha-resumo continua com os 2 primeiros fatos (390 e 1280);
- *   3. o dono volta "Festas" para "Não definido" → a linha some da folha.
+ *   3. o dono desliga "Festas e eventos" (com confirmação) → a linha some da folha.
  */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -26,6 +26,11 @@ async function abrirSecaoRegras(d: Page) {
     await expect(secao.getByTestId("regras-casa")).toBeVisible({ timeout: 3_000 });
   }).toPass({ timeout: 30_000 });
   return secao;
+}
+/** E56 + tela 06: cada regra tem o seu toggle; liga a regra se ela estiver desligada. */
+async function ligarRegra(d: Page, id: string) {
+  if ((await d.getByTestId(`bloco-${id}`).getAttribute("data-ligado")) !== "sim") await d.getByTestId(`bloco-${id}-toggle`).click();
+  await expect(d.getByTestId(`bloco-${id}-conteudo`)).toBeVisible();
 }
 async function abrirFolhaRegras(page: Page) {
   const janela = page.getByRole("dialog");
@@ -57,6 +62,7 @@ test.describe("T356 — CAMPOS-1: regras da casa estruturadas", () => {
     const d = await entrar(browser, dono.email, senha);
     await d.setViewportSize({ width: 1280, height: 900 });
     const secao = await abrirSecaoRegras(d);
+    for (const id of ["silencio", "fumo", "festas", "visitas"]) await ligarRegra(d, id);
     await secao.getByTestId("regras-casa-silencio-inicio").fill("22:00");
     await secao.getByTestId("regras-casa-silencio-fim").fill("08:00");
     await secao.getByTestId("regras-casa-fumo").getByLabel("Só na área externa", { exact: true }).check();
@@ -100,12 +106,14 @@ test.describe("T356 — CAMPOS-1: regras da casa estruturadas", () => {
     });
   }
 
-  test("3. regra que volta a 'Não definido' some da folha", async ({ browser }) => {
+  test("3. regra desligada (com confirmação) some da folha", async ({ browser }) => {
     test.setTimeout(150_000);
     const d = await entrar(browser, dono.email, senha);
     await d.setViewportSize({ width: 390, height: 844 });
     const secao = await abrirSecaoRegras(d);
-    await secao.getByTestId("regras-casa-festas").getByLabel("Não definido", { exact: true }).check();
+    // Desligar a regra com escolha pede confirmação; "Desligar e apagar" a tira do anúncio ao salvar.
+    await d.getByTestId("bloco-festas-toggle").click();
+    await d.getByTestId("bloco-festas-confirmar-desligar").click();
     await secao.getByRole("button", { name: "Salvar seção" }).click();
     await expect.poll(async () => ((await regrasNoBanco())?.regras_casa as { festas?: string } | null)?.festas ?? null, { timeout: 20_000 }).toBeNull();
     await d.context().close();
@@ -117,6 +125,32 @@ test.describe("T356 — CAMPOS-1: regras da casa estruturadas", () => {
       await expect(janela.getByTestId("regra-casa-festas")).toHaveCount(0, { timeout: 3_000 });
       await expect(janela.getByTestId("regra-casa-silencio")).toBeVisible({ timeout: 3_000 });
     }).toPass({ timeout: 60_000 });
+    await p.close();
+  });
+  test("4. CAMPOS-3: 'Outras regras' em texto livre vai ao banco e aparece por último na folha", async ({ browser }) => {
+    test.setTimeout(150_000);
+    const d = await entrar(browser, dono.email, senha);
+    await d.setViewportSize({ width: 390, height: 844 });
+    const secao = await abrirSecaoRegras(d);
+    const outras = secao.getByTestId("regras-casa-outras");
+    await outras.fill("  Tirar os sapatos   na sala ");
+    await expect(secao.getByTestId("regras-casa-outras-contador")).toContainText("de 280 caracteres");
+    await secao.getByTestId("regras-casa").screenshot({ path: `${SAIDA}/t356-outras-regras-editor-390.png` });
+    await secao.getByRole("button", { name: "Salvar seção" }).click();
+    await expect.poll(async () => ((await regrasNoBanco())?.regras_casa as { outras?: string } | null)?.outras ?? null, { timeout: 20_000 }).toBe("Tirar os sapatos na sala");
+    await d.context().close();
+
+    const p = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await expect(async () => {
+      await p.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
+      const janela = await abrirFolhaRegras(p);
+      const lista = janela.getByTestId("regras-casa-lista");
+      await expect(lista.locator("li").last()).toHaveAttribute("data-testid", "regra-casa-outras", { timeout: 3_000 });
+      await expect(janela.getByTestId("regra-casa-outras")).toHaveText("Tirar os sapatos na sala");
+      await expect(janela.getByTestId("regra-casa-outras").locator("svg")).toHaveCount(1);
+    }).toPass({ timeout: 60_000 });
+    await semRolagemLateral(p);
+    await p.screenshot({ path: `${SAIDA}/t356-outras-regras-folha-390.png` });
     await p.close();
   });
 });

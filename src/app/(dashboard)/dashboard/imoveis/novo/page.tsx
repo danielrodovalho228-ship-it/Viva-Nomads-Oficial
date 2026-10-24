@@ -1264,52 +1264,56 @@ export default function NewPropertyPage() {
 
   return (
     <div className="w-full">
-      <PageTitle
-        title={editingId ? "Editar anúncio" : "Anuncie seu imóvel"}
-        subtitle={editingId ? "Ajuste os dados do imóvel e salve as alterações." : "Em 6 passos. Salvamos seu progresso automaticamente."}
-        action={
-          !editingId && saveStatus !== "idle" ? (
-            <span
-              data-testid="estado-salvamento"
-              data-estado={saveStatus}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium",
-                saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
-              )}
-            >
-              {saveStatus === "saved" ? (
-                <>
-                  <Check className="h-3.5 w-3.5" /> Salvo{savedAt ? ` às ${savedAt}` : ""}
-                </>
-              ) : saveStatus === "error" ? (
-                <>
-                  <XCircle className="h-3.5 w-3.5" /> {saveErro ? `Não foi possível salvar: ${saveErro}` : "Sem conexão — não salvo"}
-                </>
-              ) : (
-                "Salvando…"
-              )}
-            </span>
-          ) : undefined
-        }
-      />
-
-      <div className="relative mb-4 overflow-hidden rounded-xl">
-        <Image
-          src={PHOTOS.cadastro.welcome}
-          alt="Proprietário com as chaves de um imóvel mobiliado pronto para anunciar"
-          width={800}
-          height={300}
-          priority
-          className="h-28 w-full object-cover sm:h-36"
-        />
-        <div className="absolute inset-0 bg-night/50" />
-        <div className="absolute inset-0 flex flex-col justify-center p-4 text-white">
-          <p className="font-title text-lg font-semibold sm:text-xl">Anunciar seu imóvel em 6 passos</p>
-          <p className="text-sm text-white/80" data-testid="cadastro-frase-topo">
-            {iaLigada ? "Comece pelo CEP. A IA preenche o resto pelas fotos." : "Comece pelo CEP. Depois, fotos, detalhes, preço e revisão."}
-          </p>
-        </div>
-      </div>
+      {/* E50 (regra do dono: cada conteúdo num lugar só, um título por tela): no cadastro novo a apresentação é UMA — o
+          banner com o CEP e a IA, que leva o H1. O título "Anuncie seu imóvel / Em 6 passos…" saiu; o estado de
+          salvamento fica numa linha discreta acima do banner. Editando, vale o título "Editar anúncio" (sem banner). */}
+      {editingId ? (
+        <PageTitle title="Editar anúncio" subtitle="Ajuste os dados do imóvel e salve as alterações." />
+      ) : (
+        <>
+          {saveStatus !== "idle" && (
+            <div className="mb-2 flex justify-end">
+              <span
+                data-testid="estado-salvamento"
+                data-estado={saveStatus}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium",
+                  saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
+                )}
+              >
+                {saveStatus === "saved" ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" /> Salvo{savedAt ? ` às ${savedAt}` : ""}
+                  </>
+                ) : saveStatus === "error" ? (
+                  <>
+                    <XCircle className="h-3.5 w-3.5" /> {saveErro ? `Não foi possível salvar: ${saveErro}` : "Sem conexão — não salvo"}
+                  </>
+                ) : (
+                  "Salvando…"
+                )}
+              </span>
+            </div>
+          )}
+          <div className="relative mb-4 overflow-hidden rounded-xl" data-testid="cadastro-apresentacao">
+            <Image
+              src={PHOTOS.cadastro.welcome}
+              alt="Proprietário com as chaves de um imóvel mobiliado pronto para anunciar"
+              width={800}
+              height={300}
+              priority
+              className="h-28 w-full object-cover sm:h-36"
+            />
+            <div className="absolute inset-0 bg-night/50" />
+            <div className="absolute inset-0 flex flex-col justify-center p-4 text-white">
+              <h1 className="font-title text-lg font-semibold sm:text-xl">Anunciar seu imóvel em 6 passos</h1>
+              <p className="text-sm text-white/80" data-testid="cadastro-frase-topo">
+                {iaLigada ? "Comece pelo CEP. A IA preenche o resto pelas fotos." : "Comece pelo CEP. Depois, fotos, detalhes, preço e revisão."}
+              </p>
+            </div>
+          </div>
+        </>
+      )}
 
       {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
         <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1515,6 +1519,7 @@ export default function NewPropertyPage() {
                 <ChegadaEPedidoCampos value={chegada} onChange={setChegada} />
               </div>
               <EtapaPreco
+                imovelId={imovelId}
                 sugerido={sugerido}
                 tirarSugestao={tirarSugestao}
                 monthlyPrice={monthlyPrice}
