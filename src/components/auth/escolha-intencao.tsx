@@ -132,7 +132,12 @@ export function MinhaIntencao() {
       <h3 className="font-title text-base font-semibold text-ink">O que você quer fazer na Viva</h3>
       <p className="mt-1 text-sm text-muted">Define o que aparece primeiro no painel. Não muda o que você pode fazer na conta.</p>
       {carregando ? (
-        <Loader2 className="mt-4 h-4 w-4 animate-spin text-muted" aria-label="Carregando" />
+        // C6 (Conta): as três opções já ocupam o lugar enquanto a escolha salva chega — sem ícone girando e sem pulo.
+        <div className="mt-4 grid gap-3" aria-busy="true" data-testid="minha-intencao-carregando">
+          {[0, 1, 2].map((n) => (
+            <span key={n} className="block h-14 rounded-xl border-2 border-sage-200 bg-surface-2" aria-hidden />
+          ))}
+        </div>
       ) : (
         <>
           <div className="mt-4">

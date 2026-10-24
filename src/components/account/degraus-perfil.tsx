@@ -28,7 +28,7 @@ export function DegrausPerfil() {
   return (
     <section className="rounded-xl border border-line bg-white p-4" data-testid="degraus-perfil" aria-labelledby="degraus-titulo">
       <h2 id="degraus-titulo" className="font-title text-lg font-semibold text-ink">
-        Seu perfil
+        Quando cada dado é pedido
       </h2>
       <p className="text-sm text-muted">Cada dado é pedido só quando for usado.</p>
       <ol className="mt-2 divide-y divide-line">

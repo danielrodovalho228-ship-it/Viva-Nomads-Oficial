@@ -64,7 +64,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       return (
         <div className="w-full">
           <PageTitle title={TITULOS.notificacoes.titulo} subtitle={TITULOS.notificacoes.subtitulo} />
-          <NotificationsPanel />
+          <NotificationsPanel titulo={null} />
         </div>
       );
     case "ajuda":

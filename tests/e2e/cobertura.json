@@ -111,7 +111,8 @@
         "t183-telas-logadas-390",
         "t255-admin-f15-f16-f18-f20",
         "t271-admin-visual",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t339-varredura-bloco16"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -184,7 +185,8 @@
         "t15-admin-real",
         "t183-telas-logadas-390",
         "t231-admin-numeros-com-lista",
-        "t271-admin-visual"
+        "t271-admin-visual",
+        "t339-varredura-bloco16"
       ]
     },
     "/admin/fotografos": {
@@ -216,7 +218,8 @@
         "t239-cartao-parceiro",
         "t241-contas-teste-36",
         "t271-admin-visual",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t339-varredura-bloco16"
       ]
     },
     "/admin/pedidos": {
@@ -563,7 +566,8 @@
       "specs": [
         "t125-alerta-busca-salva",
         "t71-busca-topo",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t339-varredura-bloco16"
       ]
     },
     "/dashboard/candidaturas": {
@@ -591,7 +595,8 @@
         "t97-plangate-precos",
         "t183-telas-logadas-390",
         "t214-carteira-banco",
-        "t221-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t339-varredura-bloco16"
       ]
     },
     "/dashboard/comparar": {
@@ -625,6 +630,8 @@
         "t198-rodape-painel-390",
         "t266-painel-42",
         "t318-papel-ativo-fonte-unica",
+        "t355-conta-a-perfil-espelho",
+        "t361-conta-a-correcoes-qa",
         "t351-telas-linkedin-63a",
         "t355-conta-a-perfil-espelho"
       ]
@@ -701,7 +708,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t339-varredura-bloco16"
       ]
     },
     "/dashboard/fechamento": {
@@ -737,7 +745,8 @@
         "t2-persistencia-modo",
         "t39-app-ida-e-volta",
         "t183-telas-logadas-390",
-        "t266-painel-42"
+        "t266-painel-42",
+        "t339-varredura-bloco16"
       ]
     },
     "/dashboard/garantias": {
@@ -801,7 +810,8 @@
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
         "t320-pausar-anuncio-64b",
-        "t337-varredura-redundancia"
+        "t337-varredura-redundancia",
+        "t338-varredura-bloco15"
       ]
     },
     "/dashboard/indicacoes": {
@@ -831,7 +841,8 @@
         "t183-telas-logadas-390",
         "t213-jornada-teste-confirmacao",
         "t298-varredura-logada-bloco4",
-        "t351-telas-linkedin-63a"
+        "t351-telas-linkedin-63a",
+        "t338-varredura-bloco15"
       ]
     },
     "/dashboard/locacoes": {
@@ -1010,7 +1021,8 @@
       "specs": [
         "t55-manutencao-ciclo",
         "t183-telas-logadas-390",
-        "t288-padrao-minimo-59a"
+        "t288-padrao-minimo-59a",
+        "t339-varredura-bloco16"
       ]
     },
     "/dashboard/tributacao": {
@@ -1312,7 +1324,8 @@
         "t90-orcamento-velocidade",
         "t185-precos-3s",
         "t311-marco-principal-unico",
-        "t359-precos-taxa-e51-e54"
+        "t359-precos-taxa-e51-e54",
+        "t338-varredura-bloco15"
       ]
     },
     "/privacidade": {
@@ -1338,7 +1351,8 @@
         "t310-vao-fim-de-pagina",
         "t351-telas-linkedin-63a",
         "t349-imovel-sem-500-l31",
-        "t355-conta-a-perfil-espelho"
+        "t355-conta-a-perfil-espelho",
+        "t338-varredura-bloco15"
       ]
     },
     "/qualificar": {

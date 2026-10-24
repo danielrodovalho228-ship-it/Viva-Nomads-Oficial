@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Camera, PawPrint, Trash2, X } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
+import { BlocoOpcional } from "@/components/ui/bloco-opcional";
+import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { ROTULO_ESPECIE, ROTULO_PORTE, ESPECIES_PET, PORTES_PET, MAX_PETS } from "@/lib/anuncio/pets-regras";
 import { MAX_FOTOS_PET, podeAdicionarFotoPet, type TipoFotoPet } from "@/lib/anuncio/ficha-pet-fotos";
 import { cortarObservacoes, TEXTO_MAX_FOTOS_PET } from "@/lib/anuncio/ficha-pet-dono";
@@ -12,7 +14,11 @@ import { enviarImagemPet, removerImagemPet, removerPet, meusPets, salvarPet, typ
 const VAZIO = { nome: "", especie: "cao", porte: "P", idadeAnos: "0", raca: "", castrado: "nao", vacinasEmDia: "sim", observacoes: "" };
 const CAMPO = "w-full rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm outline-none focus:border-sage";
 
-/** Ficha do pet do morador (até 3): aparece na Conta; a candidatura usa a mesma ficha. */
+/**
+ * Ficha do pet do morador (até 3): aparece na Conta; a candidatura usa a mesma ficha.
+ * C9/E56: atrás do toggle "Você tem pet?" — desligado, nenhum campo; com pets salvos nasce ligado; desligar com pets
+ * pede confirmação e só então remove todos.
+ */
 export function PetsFicha() {
   const [pets, setPets] = useState<PetSalvo[] | null | undefined>(undefined);
   const [f, setF] = useState(VAZIO);
@@ -20,11 +26,16 @@ export function PetsFicha() {
   const [salvando, setSalvando] = useState(false);
   const [enviando, setEnviando] = useState<string | null>(null);
   const [verMais, setVerMais] = useState<Set<string>>(new Set());
+  const [ligado, setLigado] = useState(false);
 
   useEffect(() => {
     let vivo = true;
     meusPets()
-      .then((p) => vivo && setPets(p))
+      .then((p) => {
+        if (!vivo) return;
+        setPets(p);
+        setLigado(toggleInicial((p ?? []).length > 0));
+      })
       .catch(() => vivo && setPets(null));
     return () => {
       vivo = false;
@@ -76,10 +87,23 @@ export function PetsFicha() {
     setPets(r.pets);
   }
 
+  async function tirarTodos(): Promise<boolean> {
+    const atuais = pets ?? [];
+    const r = await Promise.all(atuais.map((p) => removerPet(p.id).catch(() => ({ ok: false }))));
+    const ok = r.every((x) => x.ok);
+    if (ok) {
+      setPets([]);
+      setF(VAZIO);
+    }
+    return ok;
+  }
+
   const lista = pets ?? [];
+  const t = textosToggle("pets");
   return (
     <section id="pets" className="scroll-mt-24">
       <Panel title="Meus pets" className="mt-6">
+        <BlocoOpcional pergunta={t.pergunta} ligado={ligado} onLigado={setLigado} temDados={lista.length > 0} textoConfirmar={t.confirmar} onLimpar={tirarTodos} testId="pets-toggle-bloco">
         <p className="text-sm text-muted">
           Cadastre até {MAX_PETS} pets. Quem anuncia vê a ficha na sua candidatura e confere se o imóvel aceita.
         </p>
@@ -213,10 +237,11 @@ export function PetsFicha() {
             </label>
             {erro && <p role="alert" className="text-sm text-red-700 sm:col-span-2">{erro}</p>}
             <div className="sm:col-span-2">
-              <Button type="submit" variant="secondary" disabled={salvando}>{salvando ? "Salvando…" : "Adicionar pet"}</Button>
+              <Button type="submit" variant="secondary" disabled={salvando}>{salvando ? "Salvando…" : lista.length > 0 ? "Adicionar outro pet" : "Adicionar pet"}</Button>
             </div>
           </form>
         )}
+        </BlocoOpcional>
       </Panel>
     </section>
   );

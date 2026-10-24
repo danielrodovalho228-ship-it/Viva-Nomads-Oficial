@@ -12,7 +12,7 @@ import { useAuthStore } from "@/lib/store";
 import { useFavoritesStore } from "@/lib/favorites-store";
 import { Avatar } from "@/components/ui/avatar";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
-import { identidadeUsuario } from "@/lib/roles";
+import { primeiroNomeExibicao } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 const PRINCIPAIS = PUBLIC_NAV.filter((i) => !i.mais);
@@ -137,7 +137,8 @@ export function Navbar() {
       vivo = false;
     };
   }, [mounted, userId]);
-  const nome = identidadeUsuario(user);
+  // CONTA-A: só o nome do perfil vira rosto; sem nome, a silhueta.
+  const nome = primeiroNomeExibicao(user);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
