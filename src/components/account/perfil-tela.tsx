@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, CircleDashed, Loader2, Trash2 } from "lucide-react";
+import { Check, CheckCircle2, CircleDashed, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Panel } from "@/components/dashboard/primitives";
@@ -15,7 +15,7 @@ import { TituloSecaoLateral } from "@/components/account/casca-conta";
 import { EnviarFoto, FOTO_ATUALIZADA, PERFIL_ATUALIZADO, avisarFotoAtualizada, useMinhaFoto } from "@/components/account/foto-perfil";
 import { getMeuPerfilPublico, getMeusDados, salvarMeuPerfilPublico, salvarMeusDados, setMinhaCategoria, type MeuPerfilPublico } from "@/lib/data/perfil-actions";
 import { clearMyAvatar } from "@/lib/data/avatar-actions";
-import { BIO_MAX, IDIOMAS, listaEmTexto, medidorPerfil, rotuloCurto, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
+import { BIO_MAX, IDIOMAS, LINHA_PERFIL_COMPLETO, medidorPerfil, rotuloCurto, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
 import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { CATEGORIA_NAO_INFORMAR } from "@/config/categorias-profissionais";
 import { useAuthStore } from "@/lib/store";
@@ -28,8 +28,8 @@ const CAMPO = "w-full rounded-lg border border-line bg-white px-4 py-3 text-base
  * A1 — a tela Perfil da Conta (mockup perfil-01-topo-espelho, aprovado em 23/10):
  * cartão "Foto do perfil" (foto, Trocar foto) com Nome completo, Sobre você e Cidade e o "Salvar alterações"; à direita
  * no computador, o título e O ESPELHO; embaixo, os blocos opcionais no padrão toggle (Meus pets, Perfil profissional,
- * Idiomas) e o medidor "Complete seu perfil" (C1). No celular: título no topo, foto grande, cartão, espelho, blocos e o
- * "Salvar alterações" preso no fim da tela.
+ * Idiomas) e o medidor "Complete seu perfil" (C1). No celular: título no topo, foto grande, cartão, espelho, blocos, o
+ * medidor e o "Salvar alterações" logo depois do conteúdo (E61).
  */
 export function PerfilTela() {
   const foto = useMinhaFoto();
@@ -45,6 +45,15 @@ export function PerfilTela() {
   const [salvando, setSalvando] = useState(false);
   const [removendo, setRemovendo] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  // O aviso "Alterações salvas." fica junto do botão que a pessoa tocou: no cartão (computador) ou no fim (celular).
+  const [largo, setLargo] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia("(min-width: 1024px)");
+    const ver = () => setLargo(m.matches);
+    ver();
+    m.addEventListener("change", ver);
+    return () => m.removeEventListener("change", ver);
+  }, []);
 
   useEffect(() => {
     let vivo = true;
@@ -187,11 +196,7 @@ export function PerfilTela() {
           <Button type="button" className="mt-6 hidden w-full lg:inline-flex" onClick={salvar} disabled={salvando || !bioCheck.ok} data-testid="perfil-salvar">
             {salvando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />} Salvar alterações
           </Button>
-          {msg && (
-            <p role="status" className={msg.ok ? "mt-3 text-sm text-forest" : "mt-3 text-sm text-red-700"} data-testid="perfil-salvar-msg">
-              {msg.texto}
-            </p>
-          )}
+          {largo && <MsgSalvar msg={msg} />}
         </section>
 
         <div className="xl:hidden">
@@ -263,36 +268,15 @@ export function PerfilTela() {
           </BlocoOpcional>
         </Panel>
 
-        <Panel data-testid="complete-perfil">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-title text-lg font-semibold text-ink">Complete seu perfil</h2>
-            <span className="text-sm font-semibold text-forest" data-testid="perfil-progresso">
-              {prog.pct}% completo
-            </span>
-          </div>
-          <p className="mt-2 text-sm text-ink" data-testid="conta-cadastro-completo" data-completo={p.cadastro.completo ? "sim" : "nao"}>
-            Cadastro completo: <strong>{p.cadastro.completo ? "sim" : "não"}</strong>
-            <span className="text-muted" data-testid="perfil-falta" data-faltam={prog.falta.length}>
-              {prog.falta.length ? ` · falta: ${listaEmTexto(prog.falta)}` : " · nada faltando"}
-            </span>
-          </p>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2" aria-hidden>
-            <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${prog.pct}%` }} />
-          </div>
-          <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-            {prog.itens.map((i) => (
-              <li key={i.chave} className={i.feito ? "flex items-center gap-2 text-forest" : "flex items-center gap-2 text-muted"}>
-                {i.feito ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : <CircleDashed className="h-4 w-4 shrink-0" aria-hidden />} {rotuloCurto(i)}
-              </li>
-            ))}
-          </ul>
-        </Panel>
+        <MedidorPerfil pct={prog.pct} falta={prog.falta} itens={prog.itens} cadastroCompleto={p.cadastro.completo} />
 
-        {/* Celular: o "Salvar alterações" preso no fim da tela (desenho perfil-01, versão celular). */}
-        <div className="vn-salvar-perfil sticky z-20 -mx-4 bg-areia px-4 py-3 lg:hidden" data-testid="perfil-salvar-celular-faixa">
+        {/* E61: no celular o "Salvar alterações" vem logo depois do conteúdo, na ordem da página (sem faixa presa e sem
+            vão morto antes ou depois dele). */}
+        <div className="lg:hidden" data-testid="perfil-salvar-celular-faixa">
           <Button type="button" className="w-full" disabled={salvando || !bioCheck.ok} onClick={salvar} data-testid="perfil-salvar-celular">
             {salvando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />} Salvar alterações
           </Button>
+          {!largo && <MsgSalvar msg={msg} />}
         </div>
       </div>
 
@@ -301,6 +285,55 @@ export function PerfilTela() {
         <EspelhoPerfil foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
       </aside>
     </div>
+  );
+}
+
+function MsgSalvar({ msg }: { msg: { ok: boolean; texto: string } | null }) {
+  if (!msg) return null;
+  return (
+    <p role="status" className={msg.ok ? "mt-3 text-sm text-forest" : "mt-3 text-sm text-red-700"} data-testid="perfil-salvar-msg">
+      {msg.texto}
+    </p>
+  );
+}
+
+/**
+ * E62 — o medidor lista o que FALTA (desenho aprovado). A 100% vira um estado de sucesso curto: "Perfil completo" e uma
+ * linha, sem porcentagem, barra nem a lista do que já foi feito.
+ */
+function MedidorPerfil(p: { pct: number; falta: string[]; itens: ReturnType<typeof medidorPerfil>["itens"]; cadastroCompleto: boolean }) {
+  if (p.pct >= 100 && p.falta.length === 0)
+    return (
+      <Panel data-testid="complete-perfil" data-completo="sim" data-cadastro-completo={p.cadastroCompleto ? "sim" : "nao"}>
+        <p className="flex items-center gap-3" data-testid="perfil-completo">
+          <CheckCircle2 className="h-6 w-6 shrink-0 text-forest" aria-hidden />
+          <span>
+            <span className="block font-title text-lg font-semibold text-ink">Perfil completo</span>
+            <span className="block text-sm text-muted">{LINHA_PERFIL_COMPLETO}</span>
+          </span>
+        </p>
+      </Panel>
+    );
+  const faltam = p.itens.filter((i) => !i.feito);
+  return (
+    <Panel data-testid="complete-perfil" data-completo="nao" data-cadastro-completo={p.cadastroCompleto ? "sim" : "nao"}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-title text-lg font-semibold text-ink">Complete seu perfil</h2>
+        <span className="text-sm font-semibold text-forest" data-testid="perfil-progresso">
+          {p.pct}% completo
+        </span>
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2" aria-hidden>
+        <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${p.pct}%` }} />
+      </div>
+      <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2" data-testid="perfil-falta" data-faltam={faltam.length}>
+        {faltam.map((i) => (
+          <li key={i.chave} className="flex items-center gap-2 text-ink">
+            <CircleDashed className="h-4 w-4 shrink-0 text-muted" aria-hidden /> {rotuloCurto(i)}
+          </li>
+        ))}
+      </ul>
+    </Panel>
   );
 }
 

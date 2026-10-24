@@ -26,9 +26,11 @@ import { buttonClasses } from "@/components/ui/button";
 // (login, anúncio, fechamento, segurança — t58) e no admin.
 // "/dashboard/conta/seguranca": cobria "Nova senha"/"Salvar nova senha" e os botões do 2FA a 390 px (t58).
 // "/app/boas-vindas": tela de 100dvh do app; o botão cobria "Quero anunciar" e o respiro do fim da página a fazia rolar (t16).
+// "/dashboard/conta/perfil" (E60, print do Daniel 24/10): no celular o botão montava sobre a barra de abas, cobrindo
+// "Perfil"; nesta tela a Ajuda da Conta já oferece o "Fale com a Viva".
 // "/dashboard/mensagens": a tela já é uma conversa (com a aba Suporte); no computador o botão ficava em cima do
 // "Enviar" da caixa de mensagem e o proprietário não conseguia mandar a resposta (t182).
-export const ESCONDER = ["/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens"];
+export const ESCONDER = ["/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
 const CHAVE = "vivanomads-viva-chat";
 
 function carregar(): MsgChat[] {

@@ -217,6 +217,9 @@ export function medidorPerfil(
 }
 
 /** "A, B e C" (vazio → ""). */
+/** E62: a linha do estado de sucesso do medidor (100%), no lugar da porcentagem, da barra e da lista do que já foi feito. */
+export const LINHA_PERFIL_COMPLETO = "Tudo preenchido: é assim que os proprietários veem você.";
+
 export function listaEmTexto(itens: string[]): string {
   if (itens.length <= 1) return itens.join("");
   return `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
