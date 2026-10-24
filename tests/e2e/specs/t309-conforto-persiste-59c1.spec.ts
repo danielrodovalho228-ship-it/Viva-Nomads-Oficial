@@ -105,12 +105,14 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
     await expect(page.getByTestId("conforto-checklist")).toHaveAttribute("data-faltam", "0", { timeout: 30_000 });
     await expect(page.getByTestId("conforto-faltam")).toHaveText("Todos os itens confirmados.");
 
-    // "Salvar como rascunho" logo depois de recarregar (o caminho que desmarcou tudo em produção). A revisão vai pelo
-    // NOME do passo: nos 10 passos o "5" é Regras.
+    // Sair do assistente logo depois de recarregar (antes, "Salvar como rascunho": o caminho que desmarcou tudo em
+    // produção). CADASTRO-MOLDURA: não existe mais botão de salvar — o rascunho salva sozinho e o "Sair" do topo volta a
+    // Meus imóveis. A revisão vai pelo NOME do passo: nos 10 passos o "5" é Regras.
     await abrir(page, "revisao");
     await noPasso(page, "revisao", 30_000);
-    await page.getByRole("button", { name: "Salvar como rascunho" }).click();
-    await page.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
+    await page.getByTestId("assistente-sair").click();
+    await page.waitForURL(/\/dashboard\/imoveis\?saiu=assistente$/, { timeout: 30_000 });
+    await expect(page.getByTestId("rascunho-fica-salvo")).toHaveText("Seu rascunho fica salvo.");
     expect(await confirmadosNoBanco(ids.imovel!)).toBe(12);
 
     // Publicar: sem "Falta confirmar" do padrão mínimo; o anúncio fica ativo.

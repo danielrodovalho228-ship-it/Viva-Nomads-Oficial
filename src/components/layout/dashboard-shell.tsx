@@ -25,6 +25,7 @@ import {
 } from "@/lib/painel/contadores";
 import { useViewMode, identidadeUsuario, primeiroNomeExibicao } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
+import { MolduraAssistente, ehAssistenteCadastro } from "@/components/layout/moldura-assistente";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
@@ -303,6 +304,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   );
+
+  // CADASTRO-MOLDURA (E89): no assistente de cadastro, a casca do painel sai de cena (topo mínimo e rodapé do fluxo).
+  if (ehAssistenteCadastro(pathname)) return <MolduraAssistente>{children}</MolduraAssistente>;
 
   return (
     // App-shell: no desktop a altura trava na viewport e SÓ o conteúdo (main)

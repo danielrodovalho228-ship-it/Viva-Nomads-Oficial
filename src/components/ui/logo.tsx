@@ -16,10 +16,18 @@ export function Logo({
   light = false,
   className,
 }: {
-  href?: string;
+  /** null = só a marca, sem link (CADASTRO-MOLDURA: no assistente o logo não tira ninguém do fluxo). */
+  href?: string | null;
   light?: boolean;
   className?: string;
 }) {
+  if (href === null)
+    return (
+      <span className={cn("inline-flex items-center gap-2", className)} aria-label="VivaNomads" role="img" data-logo>
+        <BrandMark onDark={light} />
+        <Wordmark light={light} />
+      </span>
+    );
   return (
     // O nome acessível CONTÉM o texto visível ("VivaNomads"): axe label-content-name-mismatch (t251).
     <Link href={href} className={cn("inline-flex items-center gap-2", className)} aria-label="VivaNomads — página inicial" data-logo>

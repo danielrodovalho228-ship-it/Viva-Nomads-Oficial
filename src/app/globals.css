@@ -379,6 +379,17 @@ html[data-app] .vn-barra-comparar {
    sem barra de abas: a barra encosta no fim da tela (antes ficava 3,5 rem acima, com o formulário passando por baixo).
    --altura-barra-fotos é medida pela própria barra. O "Fale com a Viva" fica 0,75 rem acima dela; o fim da página ganha
    respiro para a barra + o botão; a rolagem até um campo (foco, âncora) para acima dos dois. */
+/* CADASTRO-MOLDURA: o rodapé do fluxo do assistente (sem barra de abas lá; no celular, acima da barra das fotos). */
+.vn-rodape-fluxo {
+  bottom: var(--altura-barra-fotos, 0px);
+}
+/* No computador, Voltar e o primário alinham com a coluna do conteúdo (a largura máxima da moldura, 72rem). */
+@media (min-width: 1280px) {
+  .vn-rodape-fluxo [data-rodape-linha] {
+    padding-inline: calc((100% - 72rem) / 2 + 2rem);
+  }
+}
+
 .vn-barra-fotos {
   bottom: 0;
   padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
