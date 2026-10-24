@@ -84,8 +84,8 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       expect(await page.getByTestId("passo-texto").evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
       await expect(topo.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", "30");
       if (largura === 390) {
-        await expect(page.getByTestId("barra-fotos")).toBeVisible();
-        await expect(page.getByTestId("barra-fotos-contador")).toHaveText(/Fotos: 0 de 8 mínimas/);
+        // E88: a faixa de fotos mora só no passo Fotos (não vaza para o Endereço).
+        await expect(page.getByTestId("barra-fotos")).toHaveCount(0);
       } else {
         await expect(page.getByTestId("barra-fotos")).toBeHidden();
         await expect(page.getByTestId("novo-resumo").getByTestId("previa-sem-foto")).toBeVisible();

@@ -1661,8 +1661,9 @@ export default function NewPropertyPage() {
         )}
       </div>
 
-      {/* Prompt 20: fotos sempre à vista no celular, em todos os passos (abre a escolha de arquivos). */}
-      {!editingId && (
+      {/* E88 (celular): a faixa "Fotos: N de 8" mora só no passo Fotos — nos outros passos ela vazava para baixo do
+          rodapé do fluxo (print do Daniel no Passo 1, 18:27). No computador ela nunca aparece (md:hidden). */}
+      {!editingId && step === ETAPA.fotos && (
         <BarraFotos
           total={photos.length}
           minimo={MIN_PHOTOS}
