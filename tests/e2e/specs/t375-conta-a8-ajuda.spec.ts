@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T368 — CONTA-A A8 (mockup perfil-08): Conta › Ajuda.
+ * T375 — CONTA-A A8 (mockup perfil-08): Conta › Ajuda.
  *   1. Um cartão com Central de ajuda, Fale com a Viva, Termos de uso e Política de privacidade, nessa ordem, cada um
  *      com o seu destino; "Sair da conta"; o rodapé "Viva Nomads · Uberlândia, MG". 1280 e 390, com prints.
  *   2. "Sair da conta" encerra a sessão.
@@ -16,7 +16,7 @@ const LINKS = [
   ["privacidade", "Política de privacidade", "/privacidade"],
 ] as const;
 
-test.describe("T368 — CONTA-A A8: Ajuda (perfil-08)", () => {
+test.describe("T375 — CONTA-A A8: Ajuda (perfil-08)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -55,7 +55,7 @@ test.describe("T368 — CONTA-A A8: Ajuda (perfil-08)", () => {
       if (w === 1280) await expect(p.getByTestId("conta-menu-ajuda")).toHaveAttribute("aria-current", "page");
       else await expect(p.getByTestId("conta-voltar")).toBeVisible();
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-      await p.screenshot({ path: `${SAIDA}/t368-ajuda-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t375-ajuda-${w}.png`, fullPage: true });
       await p.context().close();
     });
   }
