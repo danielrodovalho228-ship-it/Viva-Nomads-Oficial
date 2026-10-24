@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /*
+  Rodada da vigia 24/10 (Pista C): confirmação no lab-crítico do L-57 corrigido no #1284 (campo "Outro local" com 48 px).
   T188 — /pedidos/novo no layout do prompt 12, a 390 e 1280 px, sem login.
   1280: imagem à esquerda (~45%) e formulário à direita começando até 120 px abaixo do header, sem cartão
         centralizado (sem sombra nem borda em volta do formulário); campos todos com 48 px.
