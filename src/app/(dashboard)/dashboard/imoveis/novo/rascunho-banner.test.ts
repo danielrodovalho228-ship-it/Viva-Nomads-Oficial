@@ -21,3 +21,13 @@ test("t115 não depende de a tela já ter carregado o aviso: espera o aviso OU o
   assert.match(spec, /etapa=0/);
   assert.doesNotMatch(spec, /isVisible\(\)\.catch/);
 });
+
+test("E50: uma apresentação só — o banner leva o H1; o cartão de retomar o rascunho e o indicador de passos ficam", () => {
+  const src = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(src, /title=\{editingId \? "Editar anúncio" : "Anuncie seu imóvel"\}/);
+  assert.doesNotMatch(src, /"Em 6 passos\. Salvamos seu progresso automaticamente\."/);
+  assert.match(src, /<h1 className="font-title text-lg font-semibold sm:text-xl">Anunciar seu imóvel em 6 passos<\/h1>/);
+  assert.match(src, /data-testid="rascunho-aviso"/);
+  assert.match(src, /data-testid="etapas-cadastro"/);
+  assert.match(src, /<PageTitle title="Editar anúncio"/);
+});
