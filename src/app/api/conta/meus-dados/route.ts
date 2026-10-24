@@ -38,7 +38,7 @@ export async function GET() {
     conta: { id: user.id, email: user.email ?? null, criadaEm: user.created_at, emailConfirmado: !!user.email_confirmed_at },
     perfil: limparLinha(perfil as Record<string, unknown> | null),
     preferencias: {
-      dataNascimento: typeof meta.data_nascimento === "string" ? meta.data_nascimento : null,
+      dataNascimento: typeof perfil?.data_nascimento === "string" ? perfil.data_nascimento : null,
       notificacaoNoCelular: meta.notif_push !== false,
       privacidade: normalizarPrivacidade(meta.privacidade),
     },

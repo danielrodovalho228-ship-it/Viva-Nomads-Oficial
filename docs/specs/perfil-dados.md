@@ -10,6 +10,7 @@ Item 3 da ordem do Daniel de 23/10, às 21:03: os dados que as telas do perfil p
 | `perfil-02-avaliacoes` | Avaliações recebidas: quem avaliou (nome curto e foto), nota, comentário, data, imóvel e cidade; abas Todas / Recentes / Positivas; busca; Responder | **Completado neste PR.** As avaliações e as respostas já existiam (0089, 0129). Faltavam quem avaliou, o imóvel, a cidade, as abas e a busca. Detalhes abaixo |
 | `perfil-03-papeis-intencao` | Papéis e intenção | Já existe (49, PAPEL-B) |
 | `perfil-04-dados` | Nome, e-mail, telefone, CPF/CNPJ | Já existe |
+| `perfil-04-dados` | Data de nascimento | **Migração 0237** (`profiles.data_nascimento`). A tela da A4 (#1241) guardava em `user_metadata`; a 0237 copia o que havia, e `nascimento-actions.ts` lê e grava a coluna |
 | `perfil-05-privacidade` | Privacidade e segurança | Já existe (seção Privacidade e segurança da Conta) |
 | `perfil-06-notificacoes` | Preferências de aviso | Já existe |
 | `perfil-07-pagamentos` | "Como você recebe (proprietário)": chave Pix com botão de copiar | **Criado neste PR: migração 0236.** A tela de Pagamentos dizia que esse dado "ainda não existe no cadastro" |
