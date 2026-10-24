@@ -6,7 +6,7 @@ import { TAMANHOS, abrirComoConta, cliqueResponde, lerMassa, temContaVarredura, 
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T380 — VARREDURA DA PÁGINA INTEIRA, BLOCO 21 (Pista C, 24/10). O protocolo do bloco 20 (t368): seis classes, página toda
+  T385 — VARREDURA DA PÁGINA INTEIRA, BLOCO 21 (Pista C, 24/10). O protocolo do bloco 20 (t368): seis classes, página toda
   rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400 e o clique no botão primário com resposta
   visível em até 3 s. Cobre as telas que mudaram depois do bloco 19 (t354): as seções da Conta redesenhadas no CONTA-A
   A2–A8 (avaliações, papéis, meus dados, privacidade, notificações, pagamentos, ajuda), da moradora e do dono, e as do
@@ -61,7 +61,7 @@ const SAIDA = "tests/laboratorio/saida/varredura-bloco21";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 const CLIQUE = "clique no botão primário sem resposta visível em 3 s";
 
-test.describe("T380 — varredura da página inteira, bloco 21 (Conta A2–A8 e telas do dono de 24/10) (390 e 1280 px)", () => {
+test.describe("T385 — varredura da página inteira, bloco 21 (Conta A2–A8 e telas do dono de 24/10) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (contas da massa da varredura)");
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
