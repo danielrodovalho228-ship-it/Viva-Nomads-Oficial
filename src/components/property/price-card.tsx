@@ -71,7 +71,7 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
         </li>
       </ul>
       <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}</p>
-      <p className="mt-1 text-xs text-muted">R$ 0 de taxa para você: o inquilino não paga nada à plataforma.</p>
+      <p className="mt-1 text-xs text-muted">R$ 0 de taxa para você: o morador não paga nada à plataforma.</p>
       {/* Negociação configurada pelo dono (prompt 17 §8): "Valor fixo" ou o desconto por estadia mais longa. */}
       {property.negociacao && (
         <div className="mt-2 flex flex-wrap gap-2" data-testid="negociacao-anuncio">

@@ -57,7 +57,7 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   {
     id: "booking",
     nome: "Booking",
-    regra: "Comissão de 18% sobre a estadia (programa Preferred Partner; a comissão padrão pode ser menor).",
+    regra: "Taxa de 18% sobre a estadia (programa Preferred Partner; a taxa padrão pode ser menor).",
     pct: 0.18,
     fonte: null,
     conferidoEm: null,

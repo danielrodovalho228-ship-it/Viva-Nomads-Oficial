@@ -57,7 +57,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const [rapidaBloqueada, setRapidaBloqueada] = useState(false);
   const [filtro, setFiltro] = useState<Filtro>("todas");
   // Fotos das conversas (map conversationId → URL). O SERVIDOR decide: foto do
-  // proprietário é pública; foto do inquilino só vem se a relação foi aceita.
+  // proprietário é pública; foto do morador só vem se a relação foi aceita.
   // Sem direito / demo → null → o Avatar cai para iniciais. Nunca em demo.
   const [avatars, setAvatars] = useState<Record<string, string | null>>({});
   useEffect(() => {

@@ -125,7 +125,7 @@ test("Gestor: R$ 500/mês com 20 imóveis incluídos + R$ 25 por adicional, comi
   assert.equal(COMISSAO_POR_PLANO.gestor, 0);
   assert.equal(assinaturaAnualGestor(20), 6000);
   assert.equal(assinaturaAnualGestor(25), 12 * (500 + 5 * 25));
-  assert.equal(GESTOR_RESUMO, "a partir de R$ 500/mês · comissão zero · para carteiras de 20+ imóveis");
+  assert.equal(GESTOR_RESUMO, "a partir de R$ 500/mês · taxa de serviço zero · para carteiras de 20+ imóveis");
   // Abaixo de 20 o Gestor não entra: com 19 ele (R$ 6.000) canibalizaria o Profissional (R$ 6.108).
   assert.equal(totalRM(19, "gestor"), null);
   assert.equal(totalRM(19, "pro"), 6108);

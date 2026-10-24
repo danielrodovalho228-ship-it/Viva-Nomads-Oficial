@@ -60,7 +60,7 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="container-page flex flex-col items-center justify-between gap-2 py-6 text-xs text-white/50 md:flex-row">
           <p>© {new Date().getFullYear()} Viva Nomads · Estadias de 30 a 180 dias</p>
-          <p>A plataforma conecta proprietários e inquilinos — não é parte do contrato.</p>
+          <p>A plataforma conecta proprietários e moradores — não é parte do contrato.</p>
         </div>
       </div>
     </footer>

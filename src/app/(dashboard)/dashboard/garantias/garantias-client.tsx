@@ -67,7 +67,7 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
               <RotateCcw className="mt-1 h-4 w-4 shrink-0 text-forest" />
               <span>
                 <strong>Devolução:</strong> ao encerrar, descontam-se apenas débitos/danos comprovados
-                (conferência de saída); o restante volta ao inquilino. A plataforma calcula e documenta.
+                (conferência de saída); o restante volta ao morador. A plataforma calcula e documenta.
               </span>
             </li>
           </ul>

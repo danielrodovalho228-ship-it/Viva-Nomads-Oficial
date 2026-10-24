@@ -283,7 +283,8 @@
         "t30-atendimento-autonomo",
         "t237-correcoes-35a",
         "t311-marco-principal-unico",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t438-vocab-a"
       ]
     },
     "/alerta-busca/desligar": {
@@ -1308,7 +1309,8 @@
         "t311-marco-principal-unico",
         "t325-fotos-ilustrativas-empresas",
         "t354-varredura-bloco19",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t438-vocab-a"
       ]
     },
     "/parceiros": {
@@ -1460,7 +1462,8 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t438-vocab-a"
       ]
     },
     "/simulacao": {
