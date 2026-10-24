@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { noPasso } from "../fixtures/cadastro";
 
 /**
  * T54 — upload de foto do anúncio (ordem 99c4d365, F46–F48): a rota do servidor
@@ -47,18 +48,10 @@ test.describe("T54 — Upload de foto seguro", () => {
       await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
       const outro = page.getByRole("button", { name: "Começar outro" });
       if (await outro.isVisible().catch(() => false)) await outro.click();
-      // Anunciar em 6 passos (Prompt 43): as fotos são o 3º passo, depois de endereço e de tipo e quartos.
-      await page.getByTestId("cadastro-rua").fill("Rua do Upload");
-      await page.getByTestId("cadastro-numero").fill("1");
-      await page.getByTestId("cadastro-bairro").fill("Centro");
-      await page.getByRole("button", { name: "Continuar", exact: true }).click();
-      // Passo 2 (Prompt 43): tipo e quartos.
-      await expect(page.getByRole("heading", { name: "Tipo e quartos" })).toBeVisible();
-      await page.getByTestId("cadastro-banheiros").fill("1");
-      await page.getByTestId("cadastro-capacidade").fill("2");
-      await page.getByTestId("cadastro-area").fill("30");
-      await page.getByRole("button", { name: "Continuar", exact: true }).click();
-      await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible();
+      // Assistente em 10 passos: as fotos são o 2º passo, logo depois do Tipo (que não tem trava).
+      await noPasso(page, "tipo");
+      await page.getByTestId("cadastro-continuar").click();
+      await noPasso(page, "fotos");
       await page.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles({
         name: "x.svg",
         mimeType: "image/svg+xml",

@@ -183,6 +183,8 @@ export const INVENTARIO: ItemInventario[] = [
 export const SEM_DADO_PESSOAL: Record<string, string> = {
   qualidade_correcoes: "item de correção do painel de qualidade: papel, motivo da taxonomia (chave fechada), contagem, responsável da equipe e prazo (Prompt 51)",
   agentes: "nome do agente de IA, não de pessoa",
+  property_proximities: "lugares públicos perto do anúncio (nome, categoria, endereço e ponto do LUGAR — hospital, mercado, ponto de ônibus), nunca o da pessoa (PERTO-B)",
+  proximidades_reportes: "aviso do dono de que um lugar público achado pelo OpenStreetMap está errado: nome do lugar e motivo curto; sai em cascata com o anúncio (PERTO-B)",
   imovel_extras: "lista fechada de extras do anúncio (Adendo 59.1), sem dado de pessoa",
   nivel_itens: "itens de nível do anúncio e a foto de cada um (sem pessoas); ficam enquanto o anúncio existir e saem em cascata com ele (Adendo 59.1)",
   conforto_declaracoes: "itens do padrão mínimo marcados pelo dono para o imóvel (chave do item, sem dado pessoal)",

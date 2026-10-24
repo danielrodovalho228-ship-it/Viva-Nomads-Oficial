@@ -13,6 +13,7 @@ import {
   novaSenha,
   novoSufixo,
 } from "../fixtures/laboratorio";
+import { noPasso } from "../fixtures/cadastro";
 
 /*
   T280 — Prompt 43 (perfil, calendários, fluxos, conta única, onboarding e Anunciar em 6 passos), a 390 e 1280 px:
@@ -22,8 +23,8 @@ import {
      proprietário ou parceiro além dos convites.
   3. Checklist some ao ativar: o dono com anúncio no ar não vê o checklist de proprietário.
   4. Mensagens: a conversa abre com o contexto no topo (tipo e imóvel).
-  5. Anunciar em 6 passos: um rascunho das 5 etapas reabre sem perder campo (antes = depois no banco) e, sem a
-     declaração das câmeras, não publica.
+  5. Anunciar (hoje o assistente em 10 passos; era o de 6): um rascunho das 5 etapas reabre sem perder campo (antes =
+     depois no banco) e, sem a declaração das câmeras, não publica.
   6. "Falar com a Viva" nas telas de decisão; perfil público sem CPF, telefone nem e-mail.
   7. Calendários: disponibilidade do imóvel e agenda do parceiro com o MESMO componente.
 */
@@ -165,32 +166,37 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
       await page.context().close();
     });
 
-    test(`${largura}px — Anunciar em 6 passos: rascunho antigo sem perder campo; sem a declaração das câmeras não publica`, async ({ browser }) => {
+    test(`${largura}px — Anunciar em 10 passos: rascunho antigo sem perder campo; sem a declaração das câmeras não publica`, async ({ browser }) => {
       await adm().from("properties").update({ draft_data: RASCUNHO_5_ETAPAS }).eq("id", ids.rascunho!);
       const { data: antes } = await adm().from("properties").select("draft_data").eq("id", ids.rascunho!).single();
       const page = await entrar(browser, tres.email, senha);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}`, { waitUntil: "domcontentloaded" });
-      // "O que encontramos" das 5 etapas reabre em "Tipo e quartos" (passo 2 de 6), com os campos de antes.
-      await expect(page.getByRole("heading", { name: "Tipo e quartos" })).toBeVisible({ timeout: 30_000 });
-      if (largura === 390) await expect(page.getByTestId("etapas-celular")).toHaveText(/^Passo 2 de 6 — Tipo e quartos/);
-      else await expect(page.getByTestId("etapas-cadastro").getByRole("button")).toHaveCount(6);
+      // "O que encontramos" das 5 etapas reabre em "Detalhes do imóvel" ("Passo 4 de 10"), com os campos de antes.
+      await noPasso(page, "detalhes", 30_000);
+      // No computador, a prévia ao vivo ao lado já mostra o que o rascunho tinha (no celular ela não aparece).
+      if (largura === 1280) await expect(page.getByTestId("novo-resumo").getByTestId("previa-titulo")).toHaveText("Rascunho T280 seis passos");
+      else await expect(page.getByTestId("novo-resumo")).toBeHidden();
       await expect(page.getByTestId("cadastro-banheiros")).toHaveValue("1");
       await expect(page.getByTestId("cadastro-capacidade")).toHaveValue("3");
       await expect(page.getByTestId("cadastro-area")).toHaveValue("41");
-      await page.screenshot({ path: `${SAIDA}/t280-anunciar-passo2-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t280-anunciar-detalhes-${largura}.png`, fullPage: false });
+
+      // O título saiu das Comodidades para o passo "Título e descrição".
+      await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=descricao`, { waitUntil: "domcontentloaded" });
+      await noPasso(page, "descricao", 30_000);
+      await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Rascunho T280 seis passos");
 
       await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
-      await expect(page.getByRole("heading", { name: "Comodidades e segurança" })).toBeVisible({ timeout: 30_000 });
-      await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Rascunho T280 seis passos");
+      await noPasso(page, "comodidades", 30_000);
       const seguranca = page.getByTestId("seguranca-imovel");
       await expect(seguranca.locator('[data-grupo="seguranca"] [data-comodidade]')).toHaveCount(2);
       await expect(seguranca.getByTestId("declaracao-sem-cameras")).toHaveAttribute("aria-checked", "false");
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t280-anunciar-passo4-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t280-anunciar-comodidades-${largura}.png`, fullPage: true });
 
       // Revisar: sem a declaração das câmeras, a privacidade fica pendente e o anúncio não publica.
-      await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=revisar`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       const revisar = page.getByTestId("etapa-revisar");
       await expect(revisar).toBeVisible({ timeout: 30_000 });
       await expect(revisar.getByTestId("checklist-item-privacidade")).toHaveAttribute("data-ok", "0");

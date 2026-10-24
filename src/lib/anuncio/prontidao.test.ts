@@ -141,11 +141,12 @@ test("checklist do anúncio em andamento: ✓/○, cada pendência leva à etapa
   assert.equal(c.itens.length, p.obrigatorios.length);
   assert.equal(c.itens.filter((i) => !i.ok).length, p.faltam.length);
   assert.equal(c.proximo?.key, "fotos");
-  // Anunciar em 6 passos (Prompt 43): 0 Endereço · 1 Tipo e quartos · 2 Fotos · 3 Comodidades · 4 Regras e valores · 5 Revisar.
-  assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=2");
-  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=3");
-  // o documento agora é enviado e conferido na etapa Onde fica (prompt 11).
-  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=0");
+  // Assistente em 10 passos: 0 Tipo · 1 Fotos · 2 Endereço · 3 Detalhes · 4 Comodidades · 5 Regras · 6 Descrição ·
+  // 7 Preço · 8 Disponibilidade · 9 Revisão.
+  assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=1");
+  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=6");
+  // o documento é enviado e conferido na etapa Endereço (prompt 11).
+  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=2");
   assert.equal(c.itens.find((i) => i.key === "endereco")?.ok, true);
 });
 
@@ -200,7 +201,7 @@ test("65-B: o fato Vídeo vale para arquivo enviado OU link; 'Para melhorar: Ví
 
   // Anúncio existente → seção Vídeo do editor por seções; rascunho no assistente → bloco de vídeo do passo Fotos.
   assert.equal(hrefParaMelhorar("video", "abc", false), `/dashboard/imoveis/abc/editar#${ANCORA_VIDEO_EDITOR}`);
-  assert.equal(hrefParaMelhorar("video", "abc", true), `/dashboard/imoveis/novo?draft=abc&etapa=2#${ANCORA_VIDEO_ASSISTENTE}`);
+  assert.equal(hrefParaMelhorar("video", "abc", true), `/dashboard/imoveis/novo?draft=abc&etapa=1#${ANCORA_VIDEO_ASSISTENTE}`);
   assert.equal(hrefParaMelhorar("selo", "abc", false), null);
 
   // O destino tem o campo: a âncora existe no editor (seção com o enviador) e no passo Fotos (bloco com o enviador).

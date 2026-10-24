@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { noPasso } from "../fixtures/cadastro";
 
 /**
  * T270 — QA do Muse (22/10) sobre o #1025, a 390 px, NA ETAPA DE FOTOS do Anunciar, com rascunhos de 0, 1 e 8 fotos
@@ -120,7 +121,7 @@ test.describe("T270 — barra de fotos na etapa de Fotos a 390 px (QA do Muse, #
       const ctx = await browser.newContext({ storageState: sessao, viewport: { width: LARGURA, height: ALTURA }, hasTouch: true, isMobile: true });
       const page = await ctx.newPage();
       await page.goto(`/dashboard/imoveis/novo?draft=${rascunhos[n]}&etapa=fotos`, { waitUntil: "domcontentloaded" });
-      await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible({ timeout: 25_000 });
+      await noPasso(page, "fotos", 25_000);
 
       const barra = page.getByTestId("barra-fotos");
       await expect(barra).toBeVisible();
