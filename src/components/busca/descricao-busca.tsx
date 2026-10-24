@@ -12,6 +12,7 @@ import {
   semFiltro,
   temFiltro,
   DESCRICAO_MAX_CARACTERES,
+  DICA_SEM_FILTRO,
   type ChaveChip,
   type FiltrosDescricao,
 } from "@/lib/busca/descricao-filtros";
@@ -102,7 +103,7 @@ export function DescricaoBusca({
       </form>
       {semResultado && (
         <p role="status" className="mt-2 text-sm text-muted" data-testid="descricao-vazia">
-          Não achei filtros nessa descrição. Cite preço, quartos, cidade ou bairro, pets ou Wi-Fi.
+          {DICA_SEM_FILTRO}
         </p>
       )}
       {chips.length > 0 && (
