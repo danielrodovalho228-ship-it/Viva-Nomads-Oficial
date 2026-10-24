@@ -10,14 +10,7 @@ import { entradaNivelDoCadastro, type EntradaNivelCadastro } from "@/lib/data/ni
 import { salvarItemNivel } from "@/lib/data/nivel-actions";
 import { faltaSemSugestao } from "@/lib/fotos/deteccao";
 
-/** Envia a foto pelo upload do anúncio (re-codificada sem EXIF, na pasta do dono) e devolve o caminho. */
-async function enviarFoto(arquivo: File): Promise<{ ok: true; path: string } | { ok: false; erro: string }> {
-  const fd = new FormData();
-  fd.set("file", arquivo);
-  const r = await fetch("/api/upload/foto", { method: "POST", body: fd });
-  const j = (await r.json().catch(() => ({}))) as { path?: string; error?: string };
-  return r.ok && j.path ? { ok: true, path: j.path } : { ok: false, erro: j.error ?? "Não foi possível enviar a foto." };
-}
+import { MSG_FALHA_ENVIO_FOTO, enviarFotoDoAnuncio } from "@/lib/fotos/enviar-foto-cliente";
 
 /**
  * Adendo 59.1, Parte A — no passo Comodidades do cadastro: o nível que o imóvel atinge AGORA (com o padrão mínimo que
@@ -40,7 +33,9 @@ export function NivelNoCadastro({
   const [entrada, setEntrada] = useState<EntradaNivelCadastro | null>(null);
   const [carregou, setCarregou] = useState(false);
   const [enviando, setEnviando] = useState<string | null>(null);
-  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; t: string; chave?: string } | null>(null);
+  // E47-A-CORRECAO: a foto que não subiu fica guardada, por item, para "Tentar de novo".
+  const [paraTentar, setParaTentar] = useState<{ chave: string; arquivo: File } | null>(null);
 
   const carregar = useCallback(async () => {
     if (!propertyId) return;
@@ -85,15 +80,23 @@ export function NivelNoCadastro({
   const falta = faltaSemSugestao(faltaTudo, new Set(sugeridas));
   const recusa = new Map(base.fotos.filter((f) => f.status === "recusada").map((f) => [f.chave, f.motivo]));
 
+  // Nunca lança: rede caindo, 413 ou 5xx viram mensagem na linha do item, com a foto guardada para tentar de novo.
   async function enviar(item: ItemQueFalta, arquivo: File) {
     setEnviando(item.chave);
     setMsg(null);
     try {
-      const up = await enviarFoto(arquivo);
-      if (!up.ok) return setMsg({ ok: false, t: up.erro });
+      const up = await enviarFotoDoAnuncio(arquivo);
+      if (!up.ok) {
+        setParaTentar(up.motivo === "arquivo" || up.motivo === "recusada" ? null : { chave: item.chave, arquivo });
+        return setMsg({ ok: false, t: up.erro, chave: item.chave });
+      }
       const r = await salvarItemNivel(propertyId!, item.chave, true, up.path);
-      setMsg(r.ok ? { ok: true, t: `Foto de "${item.rotulo}" enviada. O item já conta enquanto a foto é analisada.` } : { ok: false, t: r.erro });
-      if (r.ok) await carregar();
+      setParaTentar(r.ok ? null : { chave: item.chave, arquivo });
+      setMsg(r.ok ? { ok: true, t: `Foto de "${item.rotulo}" enviada. O item já conta enquanto a foto é analisada.` } : { ok: false, t: r.erro, chave: item.chave });
+      if (r.ok) await carregar().catch(() => undefined);
+    } catch {
+      setParaTentar({ chave: item.chave, arquivo });
+      setMsg({ ok: false, t: MSG_FALHA_ENVIO_FOTO, chave: item.chave });
     } finally {
       setEnviando(null);
     }
@@ -132,6 +135,16 @@ export function NivelNoCadastro({
                       )}
                     </span>
                     <AcaoItem item={i} propertyId={propertyId} enviando={enviando === i.chave} bloqueado={!!enviando} onFoto={(f) => enviar(i, f)} />
+                    {msg && !msg.ok && msg.chave === i.chave && (
+                      <span className="block w-full text-xs text-red-700" role="alert" data-testid={`nivel-cadastro-erro-${i.chave}`}>
+                        {msg.t}
+                        {paraTentar?.chave === i.chave && !enviando && (
+                          <button type="button" className="ml-2 min-h-11 font-semibold text-forest underline underline-offset-2" onClick={() => enviar(i, paraTentar.arquivo)} data-testid={`nivel-cadastro-tentar-${i.chave}`}>
+                            Tentar de novo
+                          </button>
+                        )}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -139,7 +152,7 @@ export function NivelNoCadastro({
           ))}
         </div>
       )}
-      {msg && (
+      {msg && !msg.chave && (
         <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "mt-3 text-sm text-ink" : "mt-3 text-sm text-red-700"} data-testid="nivel-cadastro-msg">
           {msg.t}
         </p>
