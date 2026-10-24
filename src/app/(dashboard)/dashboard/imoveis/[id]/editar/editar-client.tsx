@@ -68,7 +68,7 @@ const isPhotoUrl = (s?: string) =>
 /** Micro-texto por categoria de comodidade (por que preencher). */
 const AMENITY_HINT: Record<string, string> = {
   trabalho: "O que faz o nômade digital escolher o seu imóvel — aparece nos filtros de trabalho.",
-  conforto: "Itens do dia a dia que o inquilino procura e filtra na busca.",
+  conforto: "Itens do dia a dia que o morador procura e filtra na busca.",
   predio: "Comodidades do prédio/condomínio contam pontos e passam confiança.",
 };
 
@@ -505,7 +505,7 @@ export function EditarImovelClient({
         <Section
           icon={MapPin}
           title="Endereço exato"
-          summary={enderecoExato.trim() ? "Preenchido · só aparece para visita confirmada e inquilino aceito" : "Falta a rua e o número"}
+          summary={enderecoExato.trim() ? "Preenchido · só aparece para visita confirmada e morador aceito" : "Falta a rua e o número"}
           saving={savingSection === "endereco"}
           saved={savedSection === "endereco"}
           onSave={() => saveSection("endereco")}

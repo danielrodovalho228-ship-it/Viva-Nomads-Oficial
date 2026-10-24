@@ -40,7 +40,7 @@ export function CheckinContrato({
     try {
       const r = await salvarInstrucoesEntrada({ contratoId, horario, instrucoes, plantao });
       if (!r.ok) return setErro(r.error);
-      setAviso("Instruções salvas. O inquilino as vê depois que as duas partes assinarem.");
+      setAviso("Instruções salvas. O morador as vê depois que as duas partes assinarem.");
       router.refresh();
     } catch {
       setErro("Sem conexão. Tente de novo.");
@@ -78,7 +78,7 @@ export function CheckinContrato({
       {podeEditar && (
         <form onSubmit={salvar} className="space-y-3" data-testid="checkin-form">
           <p className="text-sm text-muted">
-            Combine a entrada com antecedência: horário, como o inquilino pega a chave ou o acesso e um telefone de plantão para o dia. O inquilino só vê isto depois que as duas partes assinarem.
+            Combine a entrada com antecedência: horário, como o morador pega a chave ou o acesso e um telefone de plantão para o dia. O morador só vê isto depois que as duas partes assinarem.
           </p>
           <label className="block text-sm font-medium text-ink">
             Horário de entrada

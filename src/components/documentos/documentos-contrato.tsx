@@ -81,10 +81,10 @@ function SeloAnulado({ motivo }: { motivo: string }) {
 }
 
 const STATUS_ACERTO: Record<string, string> = {
-  aguardando_confirmacao: "aguardando a confirmação do inquilino",
-  devolvida_integral: "devolução confirmada pelo inquilino",
-  desconto_confirmado: "devolução com descontos confirmada pelo inquilino",
-  desconto_contestado: "contestada pelo inquilino — fale pela Central de Ajuda",
+  aguardando_confirmacao: "aguardando a confirmação do morador",
+  devolvida_integral: "devolução confirmada pelo morador",
+  desconto_confirmado: "devolução com descontos confirmada pelo morador",
+  desconto_contestado: "contestada pelo morador — fale pela Central de Ajuda",
 };
 
 /** Proprietário: registra quanto devolveu da caução (depois do fim da locação). */
@@ -120,7 +120,7 @@ export function DevolucaoCaucaoDono({
   if (!aberto) {
     return (
       <div className="mt-3" data-testid="devolucao-caucao">
-        {acerto?.status === "desconto_contestado" && <p className="mb-2 text-xs text-amber-800">A devolução anterior foi contestada pelo inquilino.</p>}
+        {acerto?.status === "desconto_contestado" && <p className="mb-2 text-xs text-amber-800">A devolução anterior foi contestada pelo morador.</p>}
         <Button variant="outline" size="sm" onClick={() => setAberto(true)}>
           Registrar devolução da caução
         </Button>
@@ -130,7 +130,7 @@ export function DevolucaoCaucaoDono({
   return (
     <div className="mt-3 rounded-xl border border-sage-200 bg-white p-3" data-testid="devolucao-caucao">
       <p className="mb-2 flex items-center gap-2 text-xs font-medium text-ink">
-        <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Devolução da caução — você devolve direto ao inquilino; a plataforma só registra
+        <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Devolução da caução — você devolve direto ao morador; a plataforma só registra
       </p>
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="text-xs text-muted">
@@ -151,7 +151,7 @@ export function DevolucaoCaucaoDono({
           </select>
         </label>
       </div>
-      {Number(valor) < caucaoConfirmada && <p className="mt-2 text-[11px] text-amber-800">Com desconto, explique os motivos ao inquilino (com fotos da conferência) pela conversa antes de registrar.</p>}
+      {Number(valor) < caucaoConfirmada && <p className="mt-2 text-[11px] text-amber-800">Com desconto, explique os motivos ao morador (com fotos da conferência) pela conversa antes de registrar.</p>}
       {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
       <div className="mt-3 flex justify-end gap-2">
         <Button variant="ghost" size="sm" disabled={salvando} onClick={() => setAberto(false)}>
