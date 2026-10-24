@@ -4,6 +4,7 @@ import { listMyProperties } from "@/lib/data/properties";
 import { createClient } from "@/lib/supabase/server";
 import { contarInteressados } from "@/lib/painel/kpi-interessados";
 import { listarPropostas } from "@/lib/data/propostas-actions";
+import { listMinhasCandidaturas } from "@/lib/data/leads-actions";
 import { estadiasDaHome } from "@/lib/data/estadia";
 import { getLatestDraft } from "@/lib/data/actions";
 import { dadosDasDecisoes } from "@/lib/data/painel-decisoes";
@@ -85,7 +86,7 @@ function rascunhoDoDraft(d: Awaited<ReturnType<typeof getLatestDraft>>): Rascunh
  */
 export default async function DashboardPage() {
   const agora = new Date();
-  const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados] = await Promise.all([
+  const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados, candidaturas] = await Promise.all([
     listMyProperties(),
     cidadeDoPerfil(),
     interessadosDoDono(),
@@ -94,6 +95,8 @@ export default async function DashboardPage() {
     estadiasDaHome(agora).catch(() => []),
     getLatestDraft().catch(() => null),
     dadosDasDecisoes(),
+    // E72: o cartão "Candidaturas" conta a MESMA lista de /dashboard/candidaturas (um número, uma fonte).
+    listMinhasCandidaturas().catch(() => []),
   ]);
   const pausadaEm = await contaPausadaEm();
   // 64-B: o limite do plano (mesma conta da publicação), para quem já tem anúncio publicado.
@@ -153,6 +156,7 @@ export default async function DashboardPage() {
       cidadePerfil={cidadePerfil}
       estadias={estadias}
       checklists={checklists}
+      totalCandidaturas={candidaturas.length}
       />
     </>
   );

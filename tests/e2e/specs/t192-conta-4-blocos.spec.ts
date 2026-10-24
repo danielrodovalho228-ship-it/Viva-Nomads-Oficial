@@ -3,6 +3,7 @@ import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 
 /*
+  L-43 (vigia, 24/10): a Conta e o atendimento não assentam em "networkidle"; espera até 10 s e segue para o elemento.
   T192 — Conta (prompt 18; A1: uma tela por seção), a 390 e 1280 px:
   - cada assunto uma vez: nada de "Alterar senha" duplicado, de painel "Verificação" solto nem de simulador tributário;
   - a lista de confiança tem e-mail, celular, identidade (em breve), duas etapas e senha, cada um uma vez
@@ -24,7 +25,8 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
       test(`${largura}px — Conta em telas (A1), sem repetição, confiança numa lista só`, async ({ page }) => {
         await page.setViewportSize({ width: largura, height: 900 });
         // A1: cada assunto na sua tela; a lista de confiança mora em Privacidade.
-        await page.goto("/dashboard/conta/privacidade", { waitUntil: "networkidle" });
+        await page.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const corpo = await page.locator("main").innerText();
         expect(corpo).not.toMatch(/Simulador tributário|Tributação das locações/);
         expect(corpo.match(/Alterar senha/g)?.length ?? 0).toBeLessThanOrEqual(1);
@@ -42,14 +44,16 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
         await page.screenshot({ path: `${SAIDA}/t192-conta-${rotulo}-${largura}.png`, fullPage: true });
 
         // O Perfil não repete a lista nem o cartão "Seu perfil público"; o espelho é a visão do proprietário.
-        await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+        await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         await expect(page.locator('[data-testid="espelho-perfil"]:visible')).toHaveCount(1);
         await expect(page.getByTestId("seu-perfil-publico")).toHaveCount(0);
         await expect(page.getByTestId("confianca-lista")).toHaveCount(0);
         await semRolagemLateral(page);
 
         // Link antigo do item "Verificação" (página longa) cai na tela Privacidade.
-        await page.goto("/dashboard/conta#confianca", { waitUntil: "networkidle" });
+        await page.goto("/dashboard/conta#confianca", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         await expect(page).toHaveURL(/\/dashboard\/conta\/privacidade$/);
         await expect(page.getByTestId("confianca-lista")).toBeVisible();
       });
@@ -64,7 +68,8 @@ test.describe("T192 — simulador tributário só em Ferramentas", () => {
   for (const largura of [390, 1280]) {
     test(`${largura}px — Ferramentas › Tributação PF × PJ com outros rendimentos e custo da empresa; cadastro sem simulador`, async ({ page, browser }) => {
       await page.setViewportSize({ width: largura, height: 900 });
-      await page.goto("/dashboard/ferramentas", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/ferramentas", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       // O cartão da página (o menu lateral também aponta para cá desde o Prompt 42 e fica escondido a 390 px).
       const cartao = page.locator('main a[href="/dashboard/tributacao"]');
       await expect(cartao.first()).toBeVisible();
@@ -85,7 +90,8 @@ test.describe("T192 — simulador tributário só em Ferramentas", () => {
       // Cadastro (visitante): sem simulador e sem link para a página interna; só a dica de onde ele fica.
       const ctx = await browser.newContext({ viewport: { width: largura, height: 900 }, storageState: { cookies: [], origins: [] } });
       const visitante = await ctx.newPage();
-      await visitante.goto("/auth?cadastro=1&papel=owner", { waitUntil: "networkidle" });
+      await visitante.goto("/auth?cadastro=1&papel=owner", { waitUntil: "domcontentloaded" });
+      await visitante.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       expect(await visitante.locator("body").innerText()).not.toContain("Simulador tributário PF × PJ");
       await expect(visitante.locator('a[href="/tributario"]')).toHaveCount(0);
       await ctx.close();

@@ -4,8 +4,8 @@
   Um PEDIDO ÚNICO: quem ainda não é parceiro manda, no mesmo formulário, os dados de parceiro que o credenciamento
   precisa (nome público, tipo de pessoa, CPF/CNPJ, cidade) e os do credenciamento; quem já é parceiro manda só os do
   credenciamento. A categoria "vistoria" entra SÓ por este caminho (a solicitação comum continua recusando).
-  A identidade não verificada não recusa o pedido: fica como pendência visível ao candidato e ao admin, e a aprovação
-  para teste continua exigindo a identidade verificada. UMA SÓ APROVAÇÃO ativa o parceiro e põe o credenciamento em teste.
+  A identidade não verificada não recusa o pedido nem a aprovação para teste (E35-B): é requisito da ATIVAÇÃO, junto com
+  a avaliação de teste revisada. UMA SÓ APROVAÇÃO ativa o parceiro (em rascunho) e põe o credenciamento em teste.
 */
 import { chaveCidade } from "../cidades.ts";
 import { cnpjValido, cpfValido, soDigitos } from "../documento-pessoa.ts";
@@ -61,10 +61,12 @@ export function pendenciasDoCredenciamento(e: { identidadeVerificada: boolean })
   return e.identidadeVerificada ? [] : [PENDENCIA_IDENTIDADE];
 }
 
-/** "Aprovar para teste": só do pedido "solicitado" e com a identidade verificada. */
-export function podeAprovarParaTeste(e: { status: string; identidadeVerificada: boolean }): { ok: true } | { ok: false; motivo: string } {
+/**
+ * "Aprovar para teste": só do pedido "solicitado" (completo, o que validarPedidoAvaliador já conferiu no envio).
+ * E35-B: a identidade NÃO entra aqui — é requisito da ativação.
+ */
+export function podeAprovarParaTeste(e: { status: string }): { ok: true } | { ok: false; motivo: string } {
   if (e.status !== "solicitado") return { ok: false, motivo: "Só o pedido recebido vai para teste." };
-  if (!e.identidadeVerificada) return { ok: false, motivo: "A identidade do candidato ainda não foi verificada." };
   return { ok: true };
 }
 
@@ -76,10 +78,19 @@ export function podeAprovarParaTeste(e: { status: string; identidadeVerificada: 
 export const STATUS_TESTE_CONCLUIDO = "laudo_emitido";
 export const PENDENCIA_TESTE = "A avaliação de teste ainda não foi feita: marque um imóvel de teste e espere o laudo.";
 
-export function podeAtivar(e: { status: string; testeConcluido: boolean }): { ok: true } | { ok: false; motivo: string } {
-  if (e.status !== "em_teste" && e.status !== "suspenso") return { ok: false, motivo: "Só quem está em teste (ou suspenso) pode ser ativado." };
-  if (!e.testeConcluido) return { ok: false, motivo: PENDENCIA_TESTE };
-  return { ok: true };
+/** E35-B: o que falta para ativar, um item por linha. */
+export const FALTA_TESTE_ATIVACAO = "A avaliação de teste ainda não foi feita e revisada.";
+export const FALTA_IDENTIDADE_ATIVACAO = "A identidade ainda não foi confirmada.";
+
+/** E35-B: o portão da ativação (em_teste → ativo e suspenso → ativo) exige as DUAS coisas: o teste revisado E a identidade confirmada. */
+export function faltaParaAtivar(e: { testeConcluido: boolean; identidadeConfirmada: boolean }): string[] {
+  return [...(e.testeConcluido ? [] : [FALTA_TESTE_ATIVACAO]), ...(e.identidadeConfirmada ? [] : [FALTA_IDENTIDADE_ATIVACAO])];
+}
+
+export function podeAtivar(e: { status: string; testeConcluido: boolean; identidadeConfirmada: boolean }): { ok: true } | { ok: false; motivo: string; falta: string[] } {
+  if (e.status !== "em_teste" && e.status !== "suspenso") return { ok: false, motivo: "Só quem está em teste (ou suspenso) pode ser ativado.", falta: [] };
+  const falta = faltaParaAtivar(e);
+  return falta.length ? { ok: false, motivo: falta.join("\n"), falta } : { ok: true };
 }
 
 /**

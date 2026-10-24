@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): re-teste dos instáveis do #1230 (run 40072532185) e do #1232 (run 40075189536).
  * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * L-43 (vigia, 24/10): a Conta não assenta em "networkidle" (C9 a 1280 estourou 30 s no reload); espera até 10 s e segue.
  * T361 — CONTA-A, rodada de correções do QA do Muse (24/10), em /dashboard/conta:
