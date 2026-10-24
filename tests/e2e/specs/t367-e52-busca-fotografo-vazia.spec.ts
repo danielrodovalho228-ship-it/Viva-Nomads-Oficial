@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação do merge no lab-crítico do bloco 18 (t353).
  * T367 — E52 (3): em /parceiros/fotografos, "Buscar" com CEP e cidade vazios não recarrega a página — avisa "Digite a
  * cidade ou o CEP para buscar." e leva o foco ao CEP; digitar some o aviso; sem JavaScript (servidor), a URL vazia
  * mostra o mesmo aviso. Os estados vazios e o "Pedir credenciamento" não mudam. 390 e 1280 px, com prints.
