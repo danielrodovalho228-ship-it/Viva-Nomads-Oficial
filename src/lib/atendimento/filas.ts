@@ -10,7 +10,7 @@ import { detectarRiscoP1 } from "./classificar.ts";
 export type Fila = "suporte" | "manutencao_caucao" | "antifraude" | "financeiro" | "anuncios";
 
 export const FILAS: Record<Fila, { rotulo: string; agente: string; categorias: string[] }> = {
-  suporte: { rotulo: "Suporte (Viva)", agente: "viva", categorias: ["duvida", "conta", "contrato", "conflito", "sugestao"] },
+  suporte: { rotulo: "Suporte (Viva)", agente: "viva", categorias: ["duvida", "conta", "contrato", "conflito", "sugestao", "nota_parceiro"] },
   manutencao_caucao: { rotulo: "Manutenção e Caução (Caio)", agente: "caio", categorias: ["manutencao", "caucao", "imovel", "acesso_imovel"] },
   antifraude: { rotulo: "Antifraude (Fernanda)", agente: "fernanda", categorias: ["seguranca", "camera"] },
   financeiro: { rotulo: "Financeiro (Igor)", agente: "igor", categorias: ["cobranca"] },

@@ -10,6 +10,8 @@ import { imoveisParaServico } from "@/lib/parceiros/imoveis-servico";
 import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { parceiroPorSlug } from "@/lib/data/parceiros-publico";
 import { REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
+import { documentoDoServico } from "@/lib/parceiros/fiscal";
+import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 
 /*
   Página pública do parceiro (Prompt 31a, item 5): banner, foto, nome, categorias, cidades, descrição, serviços,
@@ -171,6 +173,12 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+            {/* FISCAL-PARCEIRO-B: quem declarou emitir nota pode ser denunciado por não emitir (Central de Ajuda). */}
+            {documentoDoServico(p) === "nota" && (
+              <div data-testid="parceiro-problema">
+                <ProblemaComIsto tipo="parceiro" id={p.id} />
               </div>
             )}
           </aside>

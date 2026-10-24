@@ -7,6 +7,7 @@ import { cidadeDoCep, normalizarCep } from "@/lib/fotografos/regras";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { chaveCidade } from "@/lib/cidades";
+import { passaFiltroNota } from "@/lib/parceiros/fiscal";
 import { filtrarParceiros, lerParceiroGeral, type ParceiroGeral, type ParceiroNaBusca } from "@/lib/parceiros/regras";
 
 /**
@@ -62,6 +63,8 @@ function deLinha(l: Linha): ParceiroPublico {
     lat: l.lat == null ? null : Number(l.lat),
     lng: l.lng == null ? null : Number(l.lng),
     raioKm: l.raio_km == null ? null : Number(l.raio_km),
+    tipoPessoa: (l.tipo_pessoa as string | null) ?? null,
+    emiteNota: typeof l.emite_nota === "boolean" ? l.emite_nota : null,
   };
 }
 
@@ -79,6 +82,8 @@ export interface ResultadoBusca {
   uf: string;
   cep: string;
   cepNaoEncontrado: boolean;
+  /** FISCAL-PARCEIRO-B: quantos da busca (sem o filtro da nota) emitem nota fiscal — a contagem ao lado do filtro. */
+  comNota: number;
 }
 
 /**
@@ -103,7 +108,7 @@ async function veParceirosDeTeste(): Promise<boolean> {
 }
 
 /** Busca pública: categoria, cidade e/ou CEP (o CEP vira cidade e, com o mapa ligado, um ponto para o raio). */
-export async function buscarParceiros(f: { categoria?: string | null; cidade?: string | null; uf?: string | null; cep?: string | null }): Promise<ResultadoBusca> {
+export async function buscarParceiros(f: { categoria?: string | null; cidade?: string | null; uf?: string | null; cep?: string | null; soNota?: boolean }): Promise<ResultadoBusca> {
   const cep = normalizarCep(f.cep) ?? "";
   const doCep = cep ? await cidadeDoCep(cep) : null;
   const cidade = (doCep?.cidade ?? f.cidade ?? "").toString().trim().slice(0, 80);
@@ -114,10 +119,13 @@ export async function buscarParceiros(f: { categoria?: string | null; cidade?: s
     if (!g.approximate) ponto = { lat: g.lat, lng: g.lng };
   }
   const sb = createPublicClient();
-  if (!sb) return { lista: [], cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep };
+  if (!sb) return { lista: [], cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep, comNota: 0 };
   const { data } = await sb.from("parceiros_publicos").select("*").limit(500);
-  const lista = filtrarParceiros(((data ?? []) as Linha[]).map(deLinha).filter((p) => p.categorias.length > 0), { categoria: f.categoria, cidade, ponto, verTeste: await veParceirosDeTeste() });
-  return { lista, cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep };
+  const todos = filtrarParceiros(((data ?? []) as Linha[]).map(deLinha).filter((p) => p.categorias.length > 0), { categoria: f.categoria, cidade, ponto, verTeste: await veParceirosDeTeste() });
+  // O filtro "Emite nota fiscal" passa pela mesma função do documento do serviço (fiscal.ts).
+  const comNota = todos.filter((p) => passaFiltroNota(p, true)).length;
+  const lista = f.soNota ? todos.filter((p) => passaFiltroNota(p, true)) : todos;
+  return { lista, cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep, comNota };
 }
 
 export interface ServicoPublico {

@@ -10,6 +10,7 @@ import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
 import { meuCartaoDoParceiro } from "@/lib/data/cartoes-actions";
 import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
 import { reaisParaCampo } from "@/lib/reais";
+import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 import { CIDADES_MAX, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
@@ -23,6 +24,7 @@ import {
   removerServico,
   salvarAtendimento,
   salvarPagina,
+  salvarEmiteNota,
   salvarRecebimento,
   salvarServico,
   type PainelParceiro,
@@ -107,6 +109,37 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
           </div>
         )}
       </Panel>
+
+      {/* FISCAL-PARCEIRO-B: a pergunta é obrigatória na trilha PJ; quem já está no ar vê como pendência, sem sair do ar. */}
+      {p.tipoPessoa === "pj" && !suspenso && (
+        <Panel>
+          <div data-testid="parceiro-nota" data-pendente={p.notaPendente ? "1" : "0"} data-emite={p.emiteNota === null ? "" : p.emiteNota ? "sim" : "nao"}>
+            {p.notaPendente && <p className="mb-2 text-sm font-semibold text-amber-800" data-testid="parceiro-nota-pendente">Pendência: responda à pergunta abaixo.</p>}
+            <p className="font-semibold text-ink">{PERGUNTA_NOTA}</p>
+            {p.notaSeloRemovido && (
+              <p className="mt-1 text-sm text-ink" data-testid="parceiro-nota-removido">
+                O selo de nota fiscal foi removido depois de uma denúncia procedente{p.notaSeloRemovido.motivo ? `: ${p.notaSeloRemovido.motivo}` : ""}. Para revisar, fale com a Viva pela Central de Ajuda.
+              </p>
+            )}
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:max-w-xs">
+              {([true, false] as const).map((v) => (
+                <Button
+                  key={String(v)}
+                  size="sm"
+                  variant={p.emiteNota === v ? "primary" : "secondary"}
+                  disabled={pendente || (v && !!p.notaSeloRemovido)}
+                  aria-pressed={p.emiteNota === v}
+                  onClick={() => rodar(() => salvarEmiteNota(v), "Resposta salva.")}
+                  data-testid={`parceiro-nota-${v ? "sim" : "nao"}`}
+                >
+                  {v ? "Sim" : "Não"}
+                </Button>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-muted">A nota do serviço é sua, para o cliente. A Viva emite o documento só da taxa dela.</p>
+          </div>
+        </Panel>
+      )}
 
       <div role="tablist" aria-label="Seções do painel de parceiro" className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {ABAS.map((a) => (

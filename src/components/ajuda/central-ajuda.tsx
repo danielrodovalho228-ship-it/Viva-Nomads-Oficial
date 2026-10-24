@@ -44,7 +44,7 @@ const STATUS: Record<string, string> = {
   encerrado: "Encerrado",
 };
 const AUTOR: Record<string, string> = { usuario: "Você", admin: ROTULO_QUEM_RESPONDEU.equipe, ia: "Viva (assistente virtual) · Resposta automática da Viva Nomads", sistema: "Viva Nomads" };
-const CONTEXTO_ROTULO: Record<string, string> = { pedido: "seu Pedido de Moradia", contrato: "seu contrato", anuncio: "este anúncio" };
+const CONTEXTO_ROTULO: Record<string, string> = { pedido: "seu Pedido de Moradia", contrato: "seu contrato", anuncio: "este anúncio", parceiro: "este parceiro" };
 
 function lerParams(): URLSearchParams {
   return typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
@@ -288,7 +288,7 @@ function NovoChamado({
   onCancelar: () => void;
   onAberto: (numero: string) => void;
 }) {
-  const [cat, setCat] = useState(contexto?.tipo === "contrato" ? "contrato" : contexto?.tipo === "anuncio" ? "anuncio" : "duvida");
+  const [cat, setCat] = useState(contexto?.tipo === "contrato" ? "contrato" : contexto?.tipo === "anuncio" ? "anuncio" : contexto?.tipo === "parceiro" ? "nota_parceiro" : "duvida");
   const [mensagem, setMensagem] = useState(codigoServico ? `Sobre o pedido de serviço ${codigoServico}: ` : "");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -299,7 +299,7 @@ function NovoChamado({
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const categorias = CATEGORIAS.filter((c) => !c.interna && (!c.exigeContrato || contratos.length > 0));
+  const categorias = CATEGORIAS.filter((c) => !c.interna && (!c.exigeContrato || contratos.length > 0) && (!c.soContexto || c.soContexto === contexto?.tipo));
   const manutencao = cat === "manutencao";
   const camera = cat === "camera";
   const emailMascarado = emailMascaradoDaConta(emailConta);
@@ -314,7 +314,7 @@ function NovoChamado({
       categoria: cat,
       mensagem,
       canal,
-      contextoTipo: (contexto?.tipo as "pedido" | "contrato" | "anuncio" | undefined) ?? null,
+      contextoTipo: (contexto?.tipo as "pedido" | "contrato" | "anuncio" | "parceiro" | undefined) ?? null,
       contextoId: contexto?.id ?? null,
       contratoId: manutencao || camera ? contratoId || null : null,
       urgencia: manutencao ? urgencia : undefined,

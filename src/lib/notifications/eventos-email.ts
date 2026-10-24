@@ -97,6 +97,7 @@ export type NotificationEvent =
   // Viva rodando automático (Prompt 38)
   | "vinculo_parceiro_convite" // o dono convidou o parceiro como fixo do imóvel → parceiro
   | "vinculo_parceiro_resposta" // o parceiro aceitou ou recusou o convite → dono
+  | "parceiro_selo_nota_removido" // FISCAL-PARCEIRO-B: denúncia procedente tirou o selo "Emite nota fiscal" → parceiro
   | "pedido_auto_confirmar" // pedido automático no modo "confirmar" → dono (1 toque)
   | "pedido_auto_sem_resposta" // parceiro sem resposta em 24 h → dono (pode trocar)
   | "pedido_auto_atualizado" // estadia remarcada: janela nova → parceiro
@@ -210,6 +211,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   estadia_encerramento_pedido: { subject: "Pedido de encerramento do contrato", body: (n) => `Olá${n ? " " + n : ""}, a outra parte pediu o encerramento do contrato. A Viva recebeu o pedido e vai conduzir o encerramento com vocês.`, cta: "Ver a estadia", path: "/dashboard/contratos" },
   estadia_encerramento_equipe: { subject: "Novo pedido de encerramento", body: () => "Uma das partes pediu o encerramento de um contrato. O pedido está na fila de encerramentos.", cta: "Abrir a fila", path: "/admin/contratos/encerramentos" },
   vinculo_parceiro_convite: { subject: "Convite para parceiro fixo de um imóvel", body: (n) => `Olá${n ? " " + n : ""}, um proprietário quer você como parceiro fixo do imóvel dele. Os pedidos chegam a cada saída de morador, e você aceita ou recusa cada um.`, cta: "Ver o convite", path: "/dashboard/parceiro" },
+  parceiro_selo_nota_removido: { subject: "O selo de nota fiscal saiu da sua página", body: (n) => `Olá${n ? " " + n : ""}, uma denúncia de que a nota fiscal declarada não foi emitida foi considerada procedente pela equipe. O selo "Emite nota fiscal" saiu da sua página e da busca. O motivo está no seu painel; para revisar, fale com a Viva pela Central de Ajuda.`, cta: "Abrir o meu painel", path: "/dashboard/parceiro" },
   vinculo_parceiro_resposta: { subject: "O parceiro respondeu ao seu convite", body: (n) => `Olá${n ? " " + n : ""}, o parceiro respondeu ao convite para o seu imóvel. Veja a resposta em Parceiros do imóvel.`, cta: "Ver a resposta", path: "/dashboard/imoveis" },
   pedido_auto_confirmar: { subject: "Confirme o pedido de serviço do imóvel", body: (n) => `Olá${n ? " " + n : ""}, a Viva preparou um pedido para o parceiro fixo do seu imóvel. Confira o valor-base e confirme com 1 toque.`, cta: "Confirmar o pedido", path: "/dashboard/servicos" },
   pedido_auto_sem_resposta: { subject: "O parceiro ainda não respondeu", body: (n) => `Olá${n ? " " + n : ""}, o parceiro não respondeu ao pedido em 24 horas. Você pode esperar ou trocar de parceiro com 1 toque.`, cta: "Ver o pedido", path: "/dashboard/servicos" },

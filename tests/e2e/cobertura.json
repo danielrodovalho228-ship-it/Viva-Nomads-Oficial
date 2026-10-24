@@ -3112,7 +3112,8 @@
         "proprietario"
       ],
       "specs": [
-        "t19-atendimento-online"
+        "t19-atendimento-online",
+        "t441-fiscal-parceiro"
       ]
     },
     "src/lib/data/atendimento-actions.ts#alterarChamado": {
@@ -3148,7 +3149,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t441-fiscal-parceiro"
+      ]
     },
     "src/lib/data/atendimento-actions.ts#chamadoDeOutraConta": {
       "personas": [
@@ -4875,6 +4878,14 @@
         "t236-parceiros-ciclo"
       ]
     },
+    "src/lib/parceiros/admin-actions.ts#denunciaNotaProcedente": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t441-fiscal-parceiro"
+      ]
+    },
     "src/lib/parceiros/ativacao-actions.ts#ativarParceria": {
       "personas": [
         "publico"
@@ -4924,7 +4935,8 @@
         "proprietario"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t441-fiscal-parceiro"
       ]
     },
     "src/lib/parceiros/painel-actions.ts#moverFotoGaleria": {
@@ -5008,6 +5020,14 @@
         "t236-parceiros-ciclo"
       ]
     },
+    "src/lib/parceiros/painel-actions.ts#salvarEmiteNota": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t441-fiscal-parceiro"
+      ]
+    },
     "src/lib/parceiros/painel-actions.ts#salvarServico": {
       "personas": [
         "inquilino",
@@ -5041,7 +5061,8 @@
         "publico"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t441-fiscal-parceiro"
       ]
     },
     "src/lib/parceiros/solicitacao-actions.ts#minhaParceria": {

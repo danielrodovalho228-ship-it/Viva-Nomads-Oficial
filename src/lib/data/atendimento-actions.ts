@@ -49,7 +49,7 @@ import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-re
 type Res<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const CONTEXTOS = ["pedido", "contrato", "anuncio"] as const;
+const CONTEXTOS = ["pedido", "contrato", "anuncio", "parceiro"] as const;
 type Contexto = (typeof CONTEXTOS)[number];
 
 async function ipHashAtual(): Promise<string> {
@@ -78,6 +78,11 @@ async function contextoValido(
     const { data } = await admin.from("contratos").select("id, tenant_id, properties(owner_id)").eq("id", id).maybeSingle();
     const dono = (data?.properties as { owner_id?: string } | null)?.owner_id;
     return !!data && (data.tenant_id === userId || dono === userId);
+  }
+  // FISCAL-PARCEIRO-B: parceiro publicado (qualquer conta denuncia pela página pública).
+  if (tipo === "parceiro") {
+    const { data } = await admin.from("parceiros").select("id").eq("id", id).eq("status", "publicado").maybeSingle();
+    return !!data;
   }
   // Anúncio: público (qualquer um pode reportar um anúncio que existe).
   const { data } = await admin.from("properties").select("id").eq("id", id).maybeSingle();
@@ -571,8 +576,13 @@ export async function chamadoAdmin(id: string): Promise<{
       : Promise.resolve({ data: null }),
   ]);
   const ch = c as ChamadoAdmin;
-  const contextoLink =
-    ch.contexto_tipo === "anuncio" && ch.contexto_id
+  const parceiroCtx =
+    ch.contexto_tipo === "parceiro" && ch.contexto_id
+      ? ((await ctx.admin.from("parceiros").select("slug").eq("id", ch.contexto_id).maybeSingle()).data as { slug: string } | null)
+      : null;
+  const contextoLink = parceiroCtx
+    ? `/parceiros/${parceiroCtx.slug}`
+    : ch.contexto_tipo === "anuncio" && ch.contexto_id
       ? `/imoveis/${ch.contexto_id}`
       : ch.contexto_tipo === "pedido"
         ? "/admin/pedidos"
