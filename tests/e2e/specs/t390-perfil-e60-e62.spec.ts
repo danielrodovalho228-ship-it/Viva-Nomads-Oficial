@@ -12,7 +12,7 @@ import {
 } from "../fixtures/laboratorio";
 
 /**
- * T388 — Perfil (perfil-01), correções do print do Daniel (24/10, celular):
+ * T390 — Perfil (perfil-01), correções do print do Daniel (24/10, celular):
  *   E62. Medidor a 100%: estado de sucesso curto ("Perfil completo" + uma linha), sem "Cadastro completo: sim", sem
  *        porcentagem, barra nem a lista do que já foi feito. Abaixo de 100%: só o que FALTA. 390 e 1280.
  *   E61. No celular o "Salvar alterações" vem logo depois do conteúdo: sem vão entre o medidor e o botão nem altura
@@ -23,7 +23,7 @@ import {
 const SAIDA = "tests/laboratorio/saida";
 const ROTA = "/dashboard/conta/perfil";
 
-test.describe("T388 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medidor a 100%)", () => {
+test.describe("T390 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medidor a 100%)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -111,7 +111,7 @@ test.describe("T388 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
       ).toBeLessThanOrEqual(1);
       // No computador quem rola é o <main> do painel: leva o medidor para a vista antes do print.
       await medidor.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t388-perfil-completo-${w}.png`, fullPage: w === 390 });
+      await p.screenshot({ path: `${SAIDA}/t390-perfil-completo-${w}.png`, fullPage: w === 390 });
       await p.context().close();
     });
 
@@ -208,7 +208,7 @@ test.describe("T388 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
     expect(m.depois, JSON.stringify(m)).toBeGreaterThanOrEqual(0);
     expect(m.depois, JSON.stringify(m)).toBeLessThanOrEqual(120);
     await p.screenshot({
-      path: `${SAIDA}/t388-perfil-fim-390.png`,
+      path: `${SAIDA}/t390-perfil-fim-390.png`,
       fullPage: false,
     });
     await p
@@ -263,7 +263,7 @@ test.describe("T388 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
       expect(r.base, JSON.stringify(r)).toBeLessThanOrEqual(r.topoAbas);
     }
     await p.screenshot({
-      path: `${SAIDA}/t388-flutuante-390.png`,
+      path: `${SAIDA}/t390-flutuante-390.png`,
       fullPage: false,
     });
     await p.context().close();
