@@ -92,15 +92,14 @@ export const ESTADO_CREDENCIAMENTO: Record<StatusCredenciamento, string> = {
 };
 
 /**
- * O que já está cumprido. Experiência, conduta e relações vão no pedido; a identidade é a verificação de verdade (a
- * aprovação para teste espera por ela, então quem já passou da análise a tem); o teste só conta revisado (ativo).
+ * O que já está cumprido. Experiência, conduta e relações vão no pedido; a identidade vem só do FATO (verificação
+ * confirmada) — E35-B: ela é requisito da ativação, não do teste, então o status não a implica; o teste só conta revisado.
  */
 export function passosCumpridos(e: { status: StatusCredenciamento | null; identidadeVerificada: boolean; testeConcluido: boolean }): Record<ChavePasso, boolean> {
   const enviado = e.status !== null;
-  const aprovado = e.status === "em_teste" || e.status === "ativo" || e.status === "suspenso";
   // E30: o passo 5 só conta com a avaliação de teste REGISTRADA (laudo emitido) e revisada (ativação) — nunca pelo
   // status sozinho (a massa de teste chegou a "Ativo" sem avaliação nenhuma).
-  return { identidade: e.identidadeVerificada || aprovado, experiencia: enviado, conduta: enviado, relacoes: enviado, teste: e.testeConcluido && (e.status === "ativo" || e.status === "suspenso") };
+  return { identidade: e.identidadeVerificada, experiencia: enviado, conduta: enviado, relacoes: enviado, teste: e.testeConcluido && (e.status === "ativo" || e.status === "suspenso") };
 }
 
 // ── Item 2: página pública ───────────────────────────────────────────────────────────────────────────────────
@@ -166,4 +165,14 @@ export function contagemDecisoes(e: { credenciamentos: { status: StatusCredencia
     { chave: "recusas", rotulo: "recusas e ausências (30 dias)", valor: e.recusasAusencias, ancora: "#recusas" },
     { chave: "chave", rotulo: `de ${e.cidades} ${e.cidades === 1 ? "cidade pronta" : "cidades prontas"} para ligar`, valor: e.cidadesProntas, ancora: "#chave" },
   ];
+}
+
+/**
+ * E35-B: o complemento do passo "Identidade verificada" enquanto não está confirmada. Com o provedor de verificação
+ * ainda desligado ("em breve"), avisa que o passo é da ativação e que a verificação abre perto do lançamento.
+ */
+export const TEXTO_IDENTIDADE_EM_BREVE = "Na ativação · a verificação abre perto do lançamento";
+export function complementoPassoIdentidade(estado: "confirmada" | "vencida" | "simulavel" | "em_breve"): string | null {
+  if (estado === "confirmada") return null;
+  return estado === "em_breve" ? TEXTO_IDENTIDADE_EM_BREVE : "Na ativação";
 }

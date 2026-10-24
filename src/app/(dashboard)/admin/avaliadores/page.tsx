@@ -17,7 +17,8 @@ import { laudoAtrasado } from "@/lib/vistoria/laudo";
 import { contagemContestacoes } from "@/lib/vistoria/telas-laudo";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
 import { comTesteConcluido, filaDaCidade } from "@/lib/vistoria/servidor";
-import { PENDENCIA_TESTE, contaComoAvaliadorAtivo } from "@/lib/vistoria/entrada";
+import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada";
+import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
 import { TITULO_ADMIN, contagemDecisoes, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
 
 export const metadata = { title: "Avaliações do imóvel — Admin", robots: { index: false, follow: false } };
@@ -56,10 +57,12 @@ export default async function AdminAvaliadoresPage() {
     admin.from("vistoria_laudos").select("id, numero, versao, resultado, property_id, emitido_em").order("emitido_em", { ascending: false }).limit(30),
   ]);
   const lista = (creds ?? []) as unknown as Cred[];
-  // Correção 62-B3: a pendência de identidade de cada pedido ainda não decidido (a aprovação para teste exige).
+  // E35-B: a identidade de quem ainda não está ativo (solicitado, em teste, suspenso) — é requisito da ATIVAÇÃO.
   const identidade = new Map(
     await Promise.all(
-      lista.filter((c) => c.status === "solicitado" && c.user_id).map(async (c) => [c.id, (await estadoIdentidade(admin, c.user_id!)).estado === "confirmada"] as const),
+      lista
+        .filter((c) => (c.status === "solicitado" || c.status === "em_teste" || c.status === "suspenso") && c.user_id)
+        .map(async (c) => [c.id, (await estadoIdentidade(admin, c.user_id!)).estado] as const),
     ),
   );
   const trintaDias = new Date(agora.getTime() - 30 * 86_400_000).toISOString();
@@ -181,8 +184,10 @@ export default async function AdminAvaliadoresPage() {
                             {c.parceiro_solicitacoes.email ? ` · ${c.parceiro_solicitacoes.email}` : ""}. A aprovação para teste ativa a conta de parceiro.
                           </span>
                         )}
-                        {c.status === "solicitado" && identidade.get(c.id) === false && (
-                          <span className="block font-semibold text-red-700" data-testid="credenciamento-pendencia">Pendência: verificar a identidade (a aprovação para teste espera).</span>
+                        {identidade.has(c.id) && identidade.get(c.id) !== "confirmada" && (
+                          <span className="block font-semibold text-red-700" data-testid="credenciamento-pendencia">
+                            Identidade verificada: pendente · {complementoPassoIdentidade(identidade.get(c.id)!)}
+                          </span>
                         )}
                         {c.experiencia_link && (
                           <span className="block text-muted">
@@ -197,11 +202,14 @@ export default async function AdminAvaliadoresPage() {
                         {c.motivo && <span className="block text-muted">Motivo: {c.motivo}</span>}
                         <div className="mt-3 grid gap-2">
                           {PROXIMOS[c.status].map((para) =>
-                            para === "ativo" && !testeFeito.has(c.id) ? (
-                              // E30: sem a avaliação de teste registrada, ativar não existe na interface.
-                              <p key={para} className="text-sm font-semibold text-red-700" data-testid="decidir-ativo-bloqueado">
-                                {rotuloDecisao(c.status, para)}: {PENDENCIA_TESTE}
-                              </p>
+                            para === "ativo" && faltaParaAtivar({ testeConcluido: testeFeito.has(c.id), identidadeConfirmada: identidade.get(c.id) === "confirmada" }).length > 0 ? (
+                              // E30 + E35-B: sem o teste revisado E a identidade confirmada, ativar não existe na interface.
+                              <div key={para} className="text-sm font-semibold text-red-700" data-testid="decidir-ativo-bloqueado">
+                                <p>{rotuloDecisao(c.status, para)}: falta</p>
+                                {faltaParaAtivar({ testeConcluido: testeFeito.has(c.id), identidadeConfirmada: identidade.get(c.id) === "confirmada" }).map((f) => (
+                                  <p key={f}>{f}</p>
+                                ))}
+                              </div>
                             ) : (
                             <FormAcao key={para} acao={adminDecidirCredenciamento} className="flex flex-wrap items-center gap-2" testid={`decidir-${para}`}>
                               <input type="hidden" name="id" value={c.id} />
