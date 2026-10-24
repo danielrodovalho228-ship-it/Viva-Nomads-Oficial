@@ -17,7 +17,7 @@ export function faixaNumerosCelular(agora: Metricas, atual: Metricas, cidade: st
   const comCidade = (href: string) => (cidade ? `${href}&cidade=${encodeURIComponent(cidade)}` : href);
   return [
     { chave: "imoveis", rotulo: "Imóveis no ar", valor: fmtInteiro(num(agora.imoveis_ativos)), href: comCidade("/admin/imoveis?tipo=real&status=active") },
-    { chave: "usuarios", rotulo: "Usuários", valor: fmtInteiro(num(agora.usuarios)), href: hrefUsuarios({}) },
+    { chave: "usuarios", rotulo: "Usuários cadastrados", valor: fmtInteiro(num(agora.usuarios)), href: hrefUsuarios({}) },
     { chave: "pedidos", rotulo: "Pedidos ativos", valor: fmtInteiro(num(agora.pedidos_ativos)), href: comCidade("/admin/pedidos?status=ativo") },
     { chave: "chamados", rotulo: "Chamados abertos", valor: fmtInteiro(num(atual.x_atd_abertos_agora)), href: "/admin/atendimento?aba=fila" },
   ];
