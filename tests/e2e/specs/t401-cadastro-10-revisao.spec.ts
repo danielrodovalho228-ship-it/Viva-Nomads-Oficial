@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, aceitarTermoIaSePreciso } from "../fixtures/laboratorio";
 
 /**
  * T401 — Cadastro 10: Revise e publique (mockup cadastro-imovel-10). 1280 e 390, com prints.
@@ -135,7 +135,7 @@ test.describe("T401 — Cadastro 10: Revise e publique (cadastro-imovel-10)", ()
     const publicar = p.locator('[data-testid="publicar-anuncio"]:visible');
     await expect(publicar).toBeDisabled();
     await expect(p.getByTestId("publicar-falta")).toContainText("aceite do termo da IA");
-    await p.getByTestId("aceite-ia").getByRole("checkbox").check();
+    await aceitarTermoIaSePreciso(p);
     await expect(publicar).toBeEnabled({ timeout: 10_000 });
     await expect(publicar).toHaveText("Publicar anúncio");
     await p.context().close();
