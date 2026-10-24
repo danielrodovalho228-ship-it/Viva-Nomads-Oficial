@@ -113,9 +113,12 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
         await expect(async () => expect(await abas(page)).toContain("Estadias")).toPass({ timeout: 25_000 });
         await expect(page).toHaveURL(/\/dashboard\/locacoes/);
       } else {
-        // CONTA-A: o antigo bloco "Conta" virou Perfil (#perfil-publico), Papéis e Dados; os grupos seguem com âncora.
-        for (const g of ["perfil-publico", "papeis", "dados", "notificacoes", "confianca", "pagamentos"]) await expect(page.locator(`#${g}`)).toHaveCount(1);
-        await expect(page.getByTestId("conta-pagamentos")).toContainText("A Viva não recebe esse valor");
+        // A1: no computador a Conta é uma casca com o menu lateral das oito telas; Pagamentos tem a sua tela.
+        await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+        const menu = page.getByTestId("conta-menu-lateral");
+        for (const s of ["perfil", "papeis", "dados", "privacidade", "notificacoes", "pagamentos"]) await expect(menu.locator(`a[href="/dashboard/conta/${s}"]`)).toHaveCount(1);
+        await page.goto("/dashboard/conta/pagamentos", { waitUntil: "domcontentloaded" });
+        await expect(page.getByTestId("conta-pagamentos")).toContainText("A Viva não recebe esse valor", { timeout: 25_000 });
       }
       // Início: as decisões e os blocos por papel, sem o checklist de proprietário (já tem anúncio no ar).
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });

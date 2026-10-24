@@ -166,7 +166,8 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       await expect(espelho.getByTestId("espelho-email")).toHaveText("E-mail confirmado");
       await p.locator("#perfil-cidade").fill("Santa Mônica");
       await p.locator("#perfil-bio").fill("Professora, tranquila, cuido bem da casa.");
-      await expect(espelho.getByTestId("espelho-sobre")).toHaveText("Professora, tranquila, cuido bem da casa.");
+      // O balão mostra a frase entre aspas, como uma mensagem.
+      await expect(espelho.getByTestId("espelho-sobre")).toContainText("Professora, tranquila, cuido bem da casa.");
       const form = await p.getByTestId("perfil-cartao").boundingBox();
       const esp = await espelho.boundingBox();
       if (w === 1280) {
