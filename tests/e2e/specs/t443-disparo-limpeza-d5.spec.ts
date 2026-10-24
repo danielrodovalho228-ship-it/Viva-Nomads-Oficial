@@ -8,11 +8,14 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
   Medição, não correção: monta o cenário com contas is_teste, roda o passo diário pelo mecanismo real
   (Admin › "Rodar a automação de hoje" → rodarAutomacaoAgora → automacaoDaEstadia, a MESMA função que o cron
   /api/cron/automacoes chama) e registra no log o que saiu: pedidos (parceiro, status, janela, gatilho) e e-mails
-  (destinatário e assunto do modelo). O conteúdo dos e-mails é lido na QA do Muse.
+  (destinatário e assunto do modelo) e LÊ POR DENTRO o que foi gerado: o corpo de cada e-mail (LAB_OUTBOX) e as
+  mensagens que o pedido abre no chat do parceiro (datas da janela e valor do serviço).
    A) saída em D+5, limpeza ATIVA (automático)   → pedido ao parceiro de limpeza + "Novo pedido de orçamento";
    B) saída em D+6, limpeza ATIVA (automático)   → fora da janela: nenhum pedido;
    C) saída em D+5, SEM limpeza vinculada        → aviso ao dono "Saída em 5 dias: quer agendar a limpeza?";
    D) saída em D+5, limpeza ATIVA (confirmar)    → pedido parado esperando o dono + "Confirme o pedido de serviço do imóvel".
+   E) saída em D+2, SEM limpeza vinculada        → o aviso ao dono também sai (está dentro da janela); o log registra
+      o texto, que diz "5 dias" mesmo faltando 2 (achado de vocabulário, medido e não corrigido aqui).
   A 2ª rodada não duplica nada.
 */
 const senha = novaSenha();
@@ -25,10 +28,12 @@ const contas = {
   morB: { email: `morb.t443.${sufixo}@lab.vivanomads.test`, nome: "Beto Morador Seis", role: "tenant" as const },
   morC: { email: `morc.t443.${sufixo}@lab.vivanomads.test`, nome: "Ciro Morador Cinco", role: "tenant" as const },
   morD: { email: `mord.t443.${sufixo}@lab.vivanomads.test`, nome: "Duda Moradora Cinco", role: "tenant" as const },
+  donoE: { email: `donoe.t443.${sufixo}@lab.vivanomads.test`, nome: "Eva Dona Doisdias", role: "owner" as const },
+  morE: { email: `more.t443.${sufixo}@lab.vivanomads.test`, nome: "Enzo Morador Dois", role: "tenant" as const },
   limpa: { email: `limpa.t443.${sufixo}@lab.vivanomads.test`, nome: "Lia Limpeza Teste", role: "owner" as const },
 };
 const ids: Record<string, string> = {};
-const cenario: Record<"A" | "B" | "C" | "D", { imovel: string; contrato: string }> = {} as never;
+const cenario: Record<"A" | "B" | "C" | "D" | "E", { imovel: string; contrato: string }> = {} as never;
 
 async function rodarAutomacao(browser: Browser): Promise<string> {
   const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
@@ -43,7 +48,7 @@ async function rodarAutomacao(browser: Browser): Promise<string> {
   return texto;
 }
 
-async function estadia(chave: "A" | "B" | "C" | "D", donoId: string, moradorId: string, saida: number) {
+async function estadia(chave: "A" | "B" | "C" | "D" | "E", donoId: string, moradorId: string, saida: number) {
   const imovel = await criarImovelPronto(donoId, `Disparo ${chave} ${sufixo}`, { ativo: true, preco: 3000 });
   await adm().from("properties").update({ checkout_before: "11:00", checkin_after: "14:00" }).eq("id", imovel);
   const lead = await criarLead(donoId, moradorId, imovel, true);
@@ -61,6 +66,10 @@ async function estadia(chave: "A" | "B" | "C" | "D", donoId: string, moradorId: 
   const { error: eb } = await adm().from("contrato_blocos").insert({ contrato_id: c.id, numero_bloco: 1, inicio: dia(saida - 60), fim: dia(saida), meses: 2, valor: 6000, caucao: 3000, status: "ativo" });
   if (eb) throw eb;
   cenario[chave] = { imovel, contrato: c.id as string };
+}
+
+function recebeuAssunto(emails: Array<Record<string, unknown>>, para: string, assunto: RegExp): number {
+  return emails.filter((e) => e.para === para && assunto.test(String(e.assunto))).length;
 }
 
 async function pedidos(contrato: string) {
@@ -94,6 +103,7 @@ test.describe("T443 — disparo automático da limpeza em D-5 (Prompt 38)", () =
     await estadia("B", ids.donoA, ids.morB, 6);
     await estadia("C", ids.donoC, ids.morC, 5);
     await estadia("D", ids.donoA, ids.morD, 5);
+    await estadia("E", ids.donoE, ids.morE, 2);
     // Vínculo ATIVO (o caminho pendente → aceite → ativo já foi provado no t264; aqui ele é o ponto de partida).
     for (const [k, modo] of [["A", "automatico"], ["B", "automatico"], ["D", "confirmar"]] as const) {
       const { error: ev } = await adm().from("imovel_parceiros").insert({ property_id: cenario[k].imovel, categoria: "limpeza", parceiro_id: ids.parceiro, servico_id: ids.servico, modo, status: "ativo", respondido_em: new Date().toISOString() });
@@ -121,12 +131,16 @@ test.describe("T443 — disparo automático da limpeza em D-5 (Prompt 38)", () =
     const pB = await pedidos(cenario.B.contrato);
     const pC = await pedidos(cenario.C.contrato);
     const pD = await pedidos(cenario.D.contrato);
-    for (const [k, p] of [["A", pA], ["B", pB], ["C", pC], ["D", pD]] as const) console.log(`[T443] pedidos ${k} (saída ${dia(k === "B" ? 6 : 5)}): ${JSON.stringify(p.map(({ id, ...r }) => ({ ...r, id: String(id).slice(0, 8) })))}`);
+    const pE = await pedidos(cenario.E.contrato);
+    const saidaDe = { A: 5, B: 6, C: 5, D: 5, E: 2 } as const;
+    for (const [k, p] of [["A", pA], ["B", pB], ["C", pC], ["D", pD], ["E", pE]] as const) console.log(`[T443] pedidos ${k} (saída ${dia(saidaDe[k])}): ${JSON.stringify(p.map(({ id, ...r }) => ({ ...r, id: String(id).slice(0, 8) })))}`);
 
     const emails = (await lerSaida()).slice(antes).filter((e) => e.servico === "email");
     const nossos = new Map(Object.entries(contas).map(([k, c]) => [c.email, k]));
     const linhas = emails.filter((e) => nossos.has(String(e.para))).map((e) => `${nossos.get(String(e.para))} <${e.para}> — "${e.assunto}"`);
     console.log(`[T443] e-mails do cenário (destinatário — assunto do modelo):\n  ${linhas.join("\n  ") || "(nenhum)"}`);
+    // Leitura por dentro: o corpo que sairia em cada e-mail (texto puro; o destino dos botões entre parênteses).
+    for (const e of emails.filter((x) => nossos.has(String(x.para)))) console.log(`[T443] corpo → ${nossos.get(String(e.para))} "${e.assunto}": ${e.corpo}`);
 
     // Caixa de e-mails de teste (contas is_teste): o NOME DO MODELO (evento) de cada envio, para a QA ler o conteúdo.
     const quem = new Map(Object.entries(contas).map(([k]) => [ids[k], k]));
@@ -140,6 +154,32 @@ test.describe("T443 — disparo automático da limpeza em D-5 (Prompt 38)", () =
     expect(pA[0].enviado_em).not.toBeNull();
     expect(new Date(String(pA[0].janela_inicio)).toISOString()).toBe(new Date(`${dia(5)}T13:00:00-03:00`).toISOString());
     expect(new Date(String(pA[0].janela_fim)).toISOString()).toBe(new Date(`${dia(7)}T11:00:00-03:00`).toISOString());
+    // Por dentro do pedido A: as mensagens que abrem o chat do parceiro (janela em horário de Brasília + serviço e valor).
+    const { data: msgs } = await adm().from("messages").select("sender_id, receiver_id, body").eq("parceiro_pedido_id", String(pA[0].id)).order("created_at");
+    const chat = (msgs ?? []) as { sender_id: string; receiver_id: string; body: string }[];
+    for (const m of chat) console.log(`[T443] chat do pedido A (${quem.get(m.sender_id)} → ${quem.get(m.receiver_id)}): ${m.body}`);
+    const ddmm = (n: number) => `${dia(n).slice(8, 10)}/${dia(n).slice(5, 7)}`;
+    expect(chat.length, "boas-vindas + descrição do pedido").toBe(2);
+    expect(chat.every((m) => m.sender_id === ids.donoA && m.receiver_id === ids.limpa), "do dono para a parceira").toBe(true);
+    expect(chat[1].body).toContain(`Limpeza depois da saída do morador: entre ${ddmm(5)} às 13:00 e ${ddmm(7)} às 11:00.`);
+    expect(chat[1].body).toContain("Serviço: Limpeza completa (a partir de R$ 250,00 por serviço).");
+    // Por dentro dos e-mails: quem recebe, o que diz e para onde o botão leva.
+    const corpo = (quem: keyof typeof contas, assunto: RegExp) => String(emails.find((e) => e.para === contas[quem].email && assunto.test(String(e.assunto)))?.corpo ?? "");
+    const cParceira = corpo("limpa", /^Novo pedido de orçamento/);
+    expect(cParceira).toContain("você recebeu um pedido de orçamento pela Viva Nomads");
+    expect(cParceira).toMatch(/Ver o pedido \(https?:\/\/[^)]*\/dashboard\/parceiro/);
+    const cConfirmar = corpo("donoA", /^Confirme o pedido de serviço do imóvel/);
+    expect(cConfirmar).toContain("confirme com 1 toque");
+    expect(cConfirmar).toMatch(/Confirmar o pedido \(https?:\/\/[^)]*\/dashboard\/servicos/);
+    const cSemParceiro = corpo("donoC", /^Saída em 5 dias/);
+    expect(cSemParceiro).toContain("o imóvel não tem limpeza fixa");
+    expect(cSemParceiro).toMatch(/Buscar limpeza \(https?:\/\/[^)]*\/parceiros\/buscar\?categoria=limpeza/);
+    // Os e-mails do disparo não levam valor nem dado de contato.
+    for (const c of [cParceira, cConfirmar, cSemParceiro]) expect(c).not.toMatch(/R\$\s?\d/);
+    // E: saída em D+2 sem limpeza → o aviso sai (dentro da janela). O texto fixo diz "5 dias": registrado, não corrigido.
+    expect(pE).toHaveLength(0);
+    console.log(`[T443] E (saída em ${dia(2)}, faltam 2 dias) — aviso ao dono: ${corpo("donoE", /^Saída em 5 dias/) || "(nenhum)"}`);
+    expect(recebeuAssunto(emails, contas.donoE.email, /^Saída em 5 dias: quer agendar a limpeza\?( · Viva Nomads)?$/)).toBe(1);
     // B: D+6 está fora da janela de 5 dias.
     expect(pB).toHaveLength(0);
     // C: sem limpeza vinculada → nenhum pedido; o dono recebe o aviso.
