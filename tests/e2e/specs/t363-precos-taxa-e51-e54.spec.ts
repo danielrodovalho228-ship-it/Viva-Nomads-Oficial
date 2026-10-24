@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T359 — /precos (auditoria de textos × lei do produto, 23/10):
+ * T363 — /precos (auditoria de textos × lei do produto, 23/10):
  *   E51. "O que vai para o seu bolso": a taxa NUNCA aparece como dedução do que o morador paga. Dois fatos separados
  *        ("Você recebe do morador: R$ 12.000, integral e direto" e "Taxa de serviço da Viva: R$ 1.440, cobrada à parte,
  *        só com contrato fechado"), sem linha de resultado subtraída; valores e faixas mantidos.
@@ -10,10 +10,10 @@ import { test, expect } from "@playwright/test";
  * Prints do bloco e da tabela a 390 e 1280 (FASE=antes|depois).
  */
 const SAIDA = "tests/laboratorio/saida";
-const FASE = process.env.T359_FASE ?? "depois";
+const FASE = process.env.T363_FASE ?? "depois";
 
 for (const w of [1280, 390]) {
-  test.describe(`T359 — /precos a ${w} px`, () => {
+  test.describe(`T363 — /precos a ${w} px`, () => {
     test.use({ viewport: { width: w, height: 900 } });
 
     test(`prints (${FASE}): bolso e Compare`, async ({ page }) => {
@@ -24,10 +24,10 @@ for (const w of [1280, 390]) {
       await page.getByTestId("bolso-meses").fill("4");
       await page.getByTestId("bolso-imoveis").fill("1");
       await expect(page.getByTestId("bolso-taxa")).toContainText("1.440");
-      await bolso.screenshot({ path: `${SAIDA}/t359-${FASE}-bolso-${w}.png` });
+      await bolso.screenshot({ path: `${SAIDA}/t363-${FASE}-bolso-${w}.png` });
       const compare = page.locator("#compare");
       await compare.scrollIntoViewIfNeeded();
-      await compare.screenshot({ path: `${SAIDA}/t359-${FASE}-compare-${w}.png` });
+      await compare.screenshot({ path: `${SAIDA}/t363-${FASE}-compare-${w}.png` });
     });
 
     test("E51 e E54: textos", async ({ page }) => {

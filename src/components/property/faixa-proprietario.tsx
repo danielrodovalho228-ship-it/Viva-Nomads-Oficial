@@ -3,6 +3,8 @@ import type { PerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { respostaExemploLabel, tempoNaVivaLabel, type ProprietarioExemplo } from "@/config/exemplo-proprietarios";
 import { iniciais, corAvatar } from "@/lib/avatar";
 import { SeloExemplo } from "@/components/property/selo-exemplo";
+import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
+import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 
 /**
  * Anfitrião (Prompt 41, item 1), logo depois da linha-síntese: foto, nome curto e selos numa linha; embaixo, em miúdo,
@@ -58,11 +60,17 @@ export function FaixaProprietario({
       </div>
       {selos.length > 0 && (
         <ul className="mt-3 flex flex-wrap gap-2" data-testid="faixa-selos">
-          {selos.map((s) => (
-            <li key={s} className="inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-ink">
-              <BadgeCheck className="h-4 w-4 text-forest" aria-hidden /> {s}
-            </li>
-          ))}
+          {selos.map((s) =>
+            ehSeloLinkedin(s) ? (
+              <li key={s}>
+                <SeloLinkedin formato="pilula" />
+              </li>
+            ) : (
+              <li key={s} className="inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-ink">
+                <BadgeCheck className="h-4 w-4 text-forest" aria-hidden /> {s}
+              </li>
+            ),
+          )}
         </ul>
       )}
       <dl className="mt-3 grid grid-cols-2 gap-4 text-sm">
