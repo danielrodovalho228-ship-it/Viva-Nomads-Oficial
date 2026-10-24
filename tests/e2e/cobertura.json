@@ -920,7 +920,8 @@
         "t286-esqueletos-vazios-48",
         "t315-telas-avaliacao-dono-62a",
         "t329-varredura-bloco11",
-        "t351-telas-linkedin-63a"
+        "t351-telas-linkedin-63a",
+        "t379-55e2-filtro-contato-um-toque"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1801,7 +1802,8 @@
         "t297-varredura-logada-bloco3",
         "t310-vao-fim-de-pagina",
         "t315-telas-avaliacao-dono-62a",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t378-e47a-foto-nivel-celular"
       ]
     },
     "/dashboard/recibos": {
@@ -1913,7 +1915,8 @@
       ],
       "specs": [
         "t347-respostas-rapidas-55e2",
-        "t335-varredura-bloco13"
+        "t335-varredura-bloco13",
+        "t379-55e2-filtro-contato-um-toque"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
