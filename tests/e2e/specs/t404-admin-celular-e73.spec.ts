@@ -4,7 +4,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T395 — E73 (QA 24/10): o /admin no celular. 390 e 1280 px.
+  T404 — E73 (QA 24/10): o /admin no celular. 390 e 1280 px.
    (a) no celular, "Voltar ao site" e "Menu da equipe" à vista no topo; o menu abre a navegação da equipe; no computador
        essa faixa não aparece (a barra lateral já está lá);
    (b) backup vermelho: no celular o alerta sobe para o topo (role=alert) com "Ver o backup"; no computador, não;
@@ -14,15 +14,15 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t395.${sufixo}@lab.vivanomads.test`, nome: "Dalva Celular Prado", role: "owner" as const };
-const inq = { email: `inq.t395.${sufixo}@lab.vivanomads.test`, nome: "Ivo Celular Prado", role: "tenant" as const };
+const dono = { email: `dono.t404.${sufixo}@lab.vivanomads.test`, nome: "Dalva Celular Prado", role: "owner" as const };
+const inq = { email: `inq.t404.${sufixo}@lab.vivanomads.test`, nome: "Ivo Celular Prado", role: "tenant" as const };
 const ids: Record<string, string | undefined> = {};
 
 async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
 
-test.describe("T395 — E73: o admin no celular", () => {
+test.describe("T404 — E73: o admin no celular", () => {
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.skip(!hasAccount("admin"), "conta de admin do laboratório não configurada");
@@ -83,7 +83,7 @@ test.describe("T395 — E73: o admin no celular", () => {
         await expect(faixa).toBeHidden();
       }
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t395-admin-topo-${largura}.png` });
+      await page.screenshot({ path: `${SAIDA}/t404-admin-topo-${largura}.png` });
 
       // (c) linha de decisão tocável: um toque no canto da linha (fora do texto e do botão) cai no link da linha.
       const linha = page.locator("[data-decisao]").first();
@@ -99,7 +99,7 @@ test.describe("T395 — E73: o admin no celular", () => {
       if (celular) {
         await page.getByTestId("admin-abrir-menu").click();
         await expect(page.getByTestId("menu-cascata").filter({ visible: true }).locator('a[href="/admin"]')).toBeVisible();
-        await page.screenshot({ path: `${SAIDA}/t395-admin-menu-390.png` });
+        await page.screenshot({ path: `${SAIDA}/t404-admin-menu-390.png` });
         await page.keyboard.press("Escape");
         await page.goto("/admin", { waitUntil: "domcontentloaded" });
         await page.locator("[data-decisao]").first().waitFor({ timeout: 25_000 });
