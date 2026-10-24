@@ -423,8 +423,16 @@ test('filtros: nunca "Qualquer", "Ambos", "Indiferente" ou "Tanto faz" como opç
   const folha = ler("components/busca/painel-filtros-celular.tsx");
   assert.doesNotMatch(folha.replace(/\/\*[\s\S]*?\*\//g, ""), /Ambos|Indiferente|Tanto faz|"Qualquer/);
   assert.match(ler("components/ui/chip.tsx"), /aria-pressed=\{ativo\}/);
-  // Tipos com os rótulos que o anúncio já usa (src/lib/amenities.ts), em número par.
-  assert.equal(OPCOES_TIPO.length % 2, 0);
+  // Tipos com os rótulos que o anúncio já usa (src/lib/amenities.ts): a lista aprovada pelo Daniel, na ordem.
+  // A regra antiga ("em número par") contava a lista de 8; os chips quebram linha (flex-wrap), não há grade de
+  // 2 colunas para fechar. Com a Chácara/Sítio (TIPO-CHACARA-B) são 9; Fazenda e Rancho não entram.
+  assert.deepEqual(
+    OPCOES_TIPO.map((o) => o.rotulo),
+    ["Apartamento", "Studio / kitnet", "Loft", "Cobertura", "Casa", "Casa de condomínio", "Flat / apart-hotel", "Quarto privativo", "Chácara/Sítio"],
+  );
+  assert.ok(!OPCOES_TIPO.some((o) => /fazenda|rancho/i.test(o.valor + o.rotulo)));
+  assert.match(folha, /<Grupo titulo="Tipo de imóvel"/);
+  assert.match(folha, /<div className="flex flex-wrap gap-2">\{children\}<\/div>/);
 });
 
 test("folha de filtros: chip de opção = pill; campo e botão = 8 px; Limpar tudo = texto (veredito do coordenador)", () => {

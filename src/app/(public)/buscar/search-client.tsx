@@ -47,6 +47,8 @@ import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
 import { useTempos } from "@/components/busca/use-tempos";
+import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
+import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
 import type { ModoRota } from "@/lib/rotas/tempo";
 
@@ -500,19 +502,22 @@ export function SearchClient({
   // provedor, tudo fica "em linha reta" e ninguém some; a ordem "Mais perto do trabalho" usa as faixas de minutos.
   const idsSemTempo = useMemo(() => semTempo.map((p) => p.id), [semTempo]);
   const { tempos, carregando: calculandoTempos, reta: tempoEmLinhaReta } = useTempos(estadoDestino.destino, estadoDestino.modo, idsSemTempo);
+  // E79: ponto do destino ativo (local pessoal ou âncora) para a linha reta no cartão que o servidor não traz.
+  const alvoDestino = useMemo(() => pontoDoDestino(estadoDestino.destino, destinos), [estadoDestino.destino, destinos]);
+  useEffect(() => {
+    guardarDestinoDaBusca(estadoDestino.destino, estadoDestino.modo, alvoDestino);
+  }, [estadoDestino.destino, estadoDestino.modo, alvoDestino]);
   const results = useMemo(() => {
-    if (!estadoDestino.destino || tempos.size === 0) return semTempo;
+    if (!estadoDestino.destino) return semTempo;
     let list = semTempo;
-    if (estadoDestino.ate && !tempoEmLinhaReta) list = list.filter((p) => {
+    if (estadoDestino.ate && !tempoEmLinhaReta && tempos.size > 0) list = list.filter((p) => {
       const t = tempos.get(p.id);
       return t?.min != null && t.min <= estadoDestino.ate;
     });
-    if (sort === "trabalho") {
-      const pos = (id: string) => tempos.get(id)?.pos ?? Number.MAX_SAFE_INTEGER;
-      list = [...list].sort((a, b) => pos(a.id) - pos(b.id));
-    }
+    // A mesma conta que o cartão mostra: posição do servidor primeiro; o resto pela distância em linha reta.
+    if (sort === "trabalho") list = ordenarPorDestino(list, (id) => tempos.get(id)?.pos, (p) => distanciaAte(p, alvoDestino)?.metros ?? null);
     return list;
-  }, [semTempo, estadoDestino, tempos, tempoEmLinhaReta, sort]);
+  }, [semTempo, estadoDestino, tempos, tempoEmLinhaReta, sort, alvoDestino]);
   const opcoesOrdem = (recentes: string): [string, string][] => [
     ...(estadoDestino.destino ? ([["trabalho", "Mais perto do trabalho"]] as [string, string][]) : []),
     ["relevance", "Relevância"],
@@ -1163,11 +1168,15 @@ export function SearchClient({
                     />
                   </div>
                   {/* Imóvel sem ponto (ou sem tempo depois do cálculo): sem dado, sem linha. */}
-                  {estadoDestino.destino && (tempos.get(p.id) || calculandoTempos) && (
-                    <p className="mt-2 text-sm font-medium text-ink" data-testid="tempo-cartao">
-                      {tempos.get(p.id)?.texto ?? "calculando…"}
-                    </p>
-                  )}
+                  {(() => {
+                    // E79: o km (linha reta enquanto não houver rota) fica sempre visível com destino ativo; nunca some.
+                    const texto = estadoDestino.destino ? textoDoCartao(tempos.get(p.id)?.texto, distanciaAte(p, alvoDestino), calculandoTempos) : null;
+                    return texto ? (
+                      <p className="mt-2 text-sm font-medium text-ink" data-testid="tempo-cartao">
+                        {texto}
+                      </p>
+                    ) : null;
+                  })()}
                   <label className="mt-2 flex min-h-11 cursor-pointer items-center gap-2 text-sm text-ink">
                     <input
                       type="checkbox"
