@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { ROTULO_AREA, ROTULO_NIVEL } from "@/config/niveis";
@@ -29,6 +29,7 @@ export function NivelNoCadastro({
   conforto,
   sugeridas = [],
   recarregar = 0,
+  onFaltaFoto,
 }: {
   propertyId: string | null;
   conforto: string[];
@@ -36,6 +37,8 @@ export function NivelNoCadastro({
   sugeridas?: readonly string[];
   /** Muda quando outro bloco grava um item (ex.: sugestão confirmada) para reler o nível. */
   recarregar?: number;
+  /** Detecção-A: os itens que ainda pedem foto para o próximo nível (o alerta do topo do passo). */
+  onFaltaFoto?: (itens: { chave: string; rotulo: string }[]) => void;
 }) {
   const [entrada, setEntrada] = useState<EntradaNivelCadastro | null>(null);
   const [carregou, setCarregou] = useState(false);
@@ -63,6 +66,31 @@ export function NivelNoCadastro({
       vivo = false;
     };
   }, [propertyId, recarregar]);
+
+  // Detecção-A: o que ainda pede foto (prova "foto") sobe para o alerta do topo do passo. Calculado antes dos retornos
+  // abaixo (regra dos hooks); a chave em texto evita avisar de novo a cada render.
+  const faltaFotoChave = (() => {
+    if (!propertyId || !carregou) return "[]";
+    const b = entrada ?? { itens: [], medidas: [], ruido: null, bloqueadas: [], fotos: [] };
+    const r = nivelAgoraEFalta({
+      declaracoesConforto: conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO })),
+      itens: b.itens,
+      medidas: b.medidas,
+      ruido: b.ruido,
+      bloqueadas: b.bloqueadas,
+      agora: new Date(),
+    });
+    if (!r.proximo || r.proximo === "essencial") return "[]";
+    const itens = faltaSemSugestao(r.falta, new Set(sugeridas)).flatMap((g) => g.itens.filter((i) => i.prova === "foto").map((i) => ({ chave: i.chave, rotulo: i.rotulo })));
+    return JSON.stringify(itens);
+  })();
+  const avisarFalta = useRef(onFaltaFoto);
+  useEffect(() => {
+    avisarFalta.current = onFaltaFoto;
+  }, [onFaltaFoto]);
+  useEffect(() => {
+    avisarFalta.current?.(JSON.parse(faltaFotoChave) as { chave: string; rotulo: string }[]);
+  }, [faltaFotoChave]);
 
   if (!propertyId) {
     return (
@@ -113,7 +141,7 @@ export function NivelNoCadastro({
         )}
       </p>
       {proximo && proximo !== "essencial" && falta.length > 0 && (
-        <div className="mt-3" data-testid="nivel-cadastro-falta" data-proximo={proximo}>
+        <div id="nivel-cadastro-falta" className="mt-3 scroll-mt-24" data-testid="nivel-cadastro-falta" data-proximo={proximo}>
           <p className="text-sm font-semibold text-ink">Para chegar a {ROTULO_NIVEL[proximo]}</p>
           <p className="text-xs text-muted">Uma foto por item, sem pessoas. O nível é o da área mais fraca.</p>
           {falta.map((g) => (

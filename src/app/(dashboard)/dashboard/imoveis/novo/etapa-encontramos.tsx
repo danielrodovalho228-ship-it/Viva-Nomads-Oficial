@@ -51,6 +51,8 @@ export function EtapaEncontramos(p: {
   amenityKeys: Record<string, boolean>;
   setAmenityKeys: (fn: (s: Record<string, boolean>) => Record<string, boolean>) => void;
   comodidadesSugeridas: string[];
+  /** Detecção-A: comodidades achadas nas fotos e ainda não confirmadas — tracejadas, com "Confirme". */
+  comodidadesDetectadas?: string[];
   internetMbps: string;
   setInternetMbps: (v: string) => void;
   /** Id do rascunho já salvo (a medição da internet precisa do imóvel gravado). */
@@ -172,7 +174,7 @@ export function EtapaEncontramos(p: {
       {p.qualTHome && <p className="text-xs text-forest">Da qualificação: etiqueta “Para trabalhar de casa” ativa.</p>}
 
       {AMENITY_GROUPS.filter((g) => g.category !== "seguranca").map((g) => (
-        <GrupoComodidades key={g.category} grupo={g} titulo={g.category === "trabalho" ? "No prédio" : g.label} marcadas={p.amenityKeys} sugeridas={p.comodidadesSugeridas} onAlternar={alternar} />
+        <GrupoComodidades key={g.category} grupo={g} titulo={g.category === "trabalho" ? "No prédio" : g.label} marcadas={p.amenityKeys} sugeridas={p.comodidadesSugeridas} detectadas={p.comodidadesDetectadas} onAlternar={alternar} />
       ))}
       {p.comodidadesSugeridas.length > 0 && (
         <p className="text-xs text-muted">
@@ -184,7 +186,7 @@ export function EtapaEncontramos(p: {
       <section className="space-y-3 border-t border-line pt-4" data-testid="seguranca-imovel">
         <h3 className="text-base font-semibold text-ink">Segurança e imóvel</h3>
         {AMENITY_GROUPS.filter((g) => g.category === "seguranca").map((g) => (
-          <GrupoComodidades key={g.category} grupo={g} titulo={g.label} marcadas={p.amenityKeys} sugeridas={p.comodidadesSugeridas} onAlternar={alternar} />
+          <GrupoComodidades key={g.category} grupo={g} titulo={g.label} marcadas={p.amenityKeys} sugeridas={p.comodidadesSugeridas} detectadas={p.comodidadesDetectadas} onAlternar={alternar} />
         ))}
         <PrivacidadeCampos valor={p.privacidade} onChange={p.setPrivacidade} />
       </section>
@@ -210,6 +212,7 @@ function GrupoComodidades(p: {
   titulo: string;
   marcadas: Record<string, boolean>;
   sugeridas: string[];
+  detectadas?: string[];
   onAlternar: (k: string) => void;
 }) {
   const itens = p.grupo.items.filter((it) => !CHAVES_BLOCO_TRABALHO.has(it.key));
@@ -221,6 +224,8 @@ function GrupoComodidades(p: {
         {itens.map((it) => {
           const on = !!p.marcadas[it.key];
           const sug = on && p.sugeridas.includes(it.key);
+          // Detecção-A: achada numa foto e ainda não marcada — tracejada, com "Confirme"; tocar marca (confirma).
+          const detectada = !on && !!p.detectadas?.includes(it.key);
           const Icone = iconeDaComodidade(it.key);
           return (
             <button
@@ -229,14 +234,20 @@ function GrupoComodidades(p: {
               aria-pressed={on}
               onClick={() => p.onAlternar(it.key)}
               data-sugerido={sug ? "1" : undefined}
+              data-detectada={detectada ? "1" : undefined}
               data-comodidade={it.key}
               className={cn(
                 "inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors",
-                on ? "border-forest bg-forest text-white" : "border-line bg-white text-ink hover:border-ink"
+                on ? "border-forest bg-forest text-white" : detectada ? "border-dashed border-forest bg-white text-forest" : "border-line bg-white text-ink hover:border-ink"
               )}
             >
               {sug ? <Sparkles className="h-4 w-4" aria-label="Sugerido · confira" /> : <Icone className="h-4 w-4" aria-hidden />}
               {it.label}
+              {detectada && (
+                <span className="font-medium underline underline-offset-2" data-testid={`comodidade-confirme-${it.key}`}>
+                  Confirme
+                </span>
+              )}
             </button>
           );
         })}

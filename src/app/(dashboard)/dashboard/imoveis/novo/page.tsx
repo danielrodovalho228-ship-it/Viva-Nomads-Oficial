@@ -33,7 +33,7 @@ import { ERRO_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
-import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
+import { AlertaFaltaFoto, SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
@@ -163,6 +163,10 @@ export default function NewPropertyPage() {
   const [iaAnalisadas, setIaAnalisadas] = useState<string[]>([]);
   const [sugeridos, setSugeridos] = useState<CampoSugerido[]>([]);
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
+  // Detecção-A (Entrega 3): chave ligada, comodidades achadas nas fotos e ainda não confirmadas, e o que falta foto.
+  const [deteccaoLigada, setDeteccaoLigada] = useState(false);
+  const [comodidadesDetectadas, setComodidadesDetectadas] = useState<string[]>([]);
+  const [faltaFoto, setFaltaFoto] = useState<{ chave: string; rotulo: string }[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
   const [aceitouIa, setAceitouIa] = useState(false);
   // 64-B: o aceite vale para o texto do momento em que foi dado (impressão do título + descrição); mudou → cai.
@@ -1508,7 +1512,9 @@ export default function NewPropertyPage() {
 
             {step === ETAPA.comodidades && (
               <div className="space-y-6">
-                <EtapaEncontramos parte="comodidades" {...camposImovel} />
+                {/* Detecção-A: no topo, o que ainda falta foto (só com a chave da detecção ligada). */}
+                {deteccaoLigada && <AlertaFaltaFoto itens={faltaFoto} />}
+                <EtapaEncontramos parte="comodidades" {...camposImovel} comodidadesDetectadas={comodidadesDetectadas} />
                 {/* Prompt 59-A: o padrão mínimo da Viva é confirmado junto das comodidades. */}
                 <ChecklistConforto
                   marcados={conforto}
@@ -1523,10 +1529,12 @@ export default function NewPropertyPage() {
                   comodidadesMarcadas={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
                   onComodidade={(k) => setAmenityKeys((a) => ({ ...a, [k]: true }))}
                   onSugeridas={setSugeridasFotos}
+                  onComodidadesSugeridas={setComodidadesDetectadas}
+                  onLigada={setDeteccaoLigada}
                   onNivelMudou={() => setNivelVersao((v) => v + 1)}
                 />
                 {/* Adendo 59.1: o nível que o imóvel atinge agora e o que falta para o próximo, item a item, com foto. */}
-                <NivelNoCadastro propertyId={imovelId} conforto={conforto} sugeridas={sugeridasFotos} recarregar={nivelVersao} />
+                <NivelNoCadastro propertyId={imovelId} conforto={conforto} sugeridas={sugeridasFotos} recarregar={nivelVersao} onFaltaFoto={setFaltaFoto} />
               </div>
             )}
 
