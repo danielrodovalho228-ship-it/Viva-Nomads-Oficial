@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T392 — TIPO-CHACARA-B: tipo "Chácara/Sítio". Só no laboratório.
+  T393 — TIPO-CHACARA-B: tipo "Chácara/Sítio". Só no laboratório.
    1. Busca: o tipo aparece no filtro "Tipo de imóvel" com a contagem e na URL (?tipo=chacara).
    2. Cadastro: no passo Detalhes do tipo aparecem a linha fixa e os 3 campos; sem eles, o item "Dados da chácara/sítio"
       barra o publicar; preenchidos, o item some.
@@ -30,7 +30,7 @@ async function abrirFolha(page: Page, url: string) {
   return page.getByTestId("painel-filtros");
 }
 
-test.describe("T392 — TIPO-CHACARA-B: Chácara/Sítio", () => {
+test.describe("T393 — TIPO-CHACARA-B: Chácara/Sítio", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
@@ -80,7 +80,7 @@ test.describe("T392 — TIPO-CHACARA-B: Chácara/Sítio", () => {
     await expect(campos.getByTestId("chacara-ponto")).toHaveAttribute("data-marcado", "1");
     await expect(campos).toHaveAttribute("data-falta", "");
     await expect(page.getByTestId("checklist-item-chacara")).toHaveCount(0);
-    await page.screenshot({ path: "tests/laboratorio/saida/t392-2-cadastro.png", fullPage: true });
+    await page.screenshot({ path: "tests/laboratorio/saida/t393-2-cadastro.png", fullPage: true });
     await page.context().close();
   });
 

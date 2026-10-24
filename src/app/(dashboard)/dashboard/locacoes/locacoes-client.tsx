@@ -16,6 +16,7 @@ import type { documentosDosContratos } from "@/lib/data/documentos-actions";
 import { ConfirmarPagamentos, DevolucaoCaucaoInquilino, ListaDocumentos } from "@/components/documentos/documentos-contrato";
 import { formatBRL } from "@/lib/utils";
 import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
+import { estadoCaucao } from "@/lib/caucao-estado";
 
 /** Locações de DEMONSTRAÇÃO (a partir do seed) para o piloto/testes. */
 function buildDemoLocacoes(): LocacaoView[] {
@@ -37,6 +38,7 @@ function buildDemoLocacoes(): LocacaoView[] {
     podeAvaliar: false,
     encerradoEm: null,
     pagamentos: [],
+    caucao: estadoCaucao({ blocos: [{ caucao: c.valorMes, caucaoStatus: "comprovada" }], pagamentos: [] }),
   }));
 }
 
@@ -101,6 +103,12 @@ export function LocacoesClient({
                   <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted">
                     <CircleDollarSign className="h-3.5 w-3.5" /> {formatBRL(l.aluguelMensal)}/mês
                   </p>
+                  {/* L2-B item 12: valor e estado da caução, pela mesma função dos Contratos e da Garantias. */}
+                  {l.caucao.chave !== "sem_caucao" && (
+                    <p className="mt-1 text-xs text-muted" data-testid="locacao-caucao" data-chave={l.caucao.chave}>
+                      Caução{l.caucao.valor > 0 ? ` ${formatBRL(l.caucao.valor)}` : ""} · {l.caucao.rotulo}
+                    </p>
+                  )}
                 </div>
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-medium ${tomDoSelo(l.estado)}`}

@@ -410,7 +410,8 @@
         "t350-filtros-honestos-buscar",
         "t352-varredura-bloco17",
         "t368-varredura-bloco20",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t406-varredura-bloco25"
       ]
     },
     "/cidades": {
@@ -829,7 +830,8 @@
         "t211-complemento-23",
         "t320-pausar-anuncio-64b",
         "t334-varredura-bloco12",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t406-varredura-bloco25"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -856,7 +858,9 @@
         "t352-varredura-bloco17",
         "t386-cadastro-01-tipo",
         "t387-varredura-bloco22",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t401-cadastro-10-revisao",
+        "t406-varredura-bloco25"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1270,7 +1274,8 @@
         "t351-telas-linkedin-63a",
         "t349-imovel-sem-500-l31",
         "t336-varredura-bloco14",
-        "t337-varredura-redundancia"
+        "t337-varredura-redundancia",
+        "t406-varredura-bloco25"
       ]
     },
     "/modelodenegocio": {
@@ -1810,7 +1815,8 @@
         "t292-conforto-manutencao-59",
         "t288-padrao-minimo-59a",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t406-varredura-bloco25"
       ]
     },
     "/admin/pendencias": {
@@ -1836,7 +1842,8 @@
         "t315-telas-avaliacao-dono-62a",
         "t344-avaliacao-telas-62a-parte2",
         "t378-e47a-foto-nivel-celular",
-        "t385-varredura-bloco21"
+        "t385-varredura-bloco21",
+        "t406-varredura-bloco25"
       ]
     },
     "/dashboard/recibos": {

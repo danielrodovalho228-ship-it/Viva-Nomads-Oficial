@@ -1,6 +1,7 @@
 "use client";
 
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
+import { estadoCaucao } from "@/lib/caucao-estado";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { CampoData } from "@/components/ui/campo-data";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
@@ -150,6 +151,7 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
       criadoEm: c.inicio,
       blocos,
       pagamentos,
+      caucao: estadoCaucao({ blocos, pagamentos }),
     };
   });
 }
@@ -304,6 +306,10 @@ function ContratoCard({
         <div className="mt-4 rounded-xl border border-sage-200 p-4" data-testid="caucao-contrato">
           <p className="text-sm font-medium text-ink" data-testid="caucao-contrato-rotulo">
             Caução do contrato — {formatBRL(caucaoTotal)}
+          </p>
+          {/* L2-B item 13: o mesmo estado que a Garantias e a tela do inquilino mostram (estadoCaucao). */}
+          <p className="mt-1 text-xs text-muted" data-testid="caucao-contrato-estado" data-chave={contrato.caucao.chave}>
+            {contrato.caucao.rotulo}
           </p>
           {caucaoRegistrada ? (
             <p className="mt-1 inline-flex items-center gap-2 text-xs text-forest" data-testid="caucao-contrato-status">
