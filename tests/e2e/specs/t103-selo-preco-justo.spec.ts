@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { account, hasAccount } from "../fixtures/accounts";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T103 — Selo "Preço justo" no anúncio e no cartão (ordem 4c74ac38, item 2; achado do Moacir no #567).
  * Caso positivo: equivalente mensal do Airbnb ACIMA do valor mensal → selo no /imoveis/<id> e no cartão de /buscar.
  * Caso negativo: equivalente ABAIXO (ou ausente) → sem selo. Restaura o valor original no fim.

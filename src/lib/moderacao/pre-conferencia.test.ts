@@ -23,7 +23,7 @@ test("autorização: declaração + arquivo NA PASTA DO DONO; nunca link externo
   const base = { owner_id: DONO, sublease_authorized: true };
   assert.ok(autorizacaoOk({ ownership_type: "own" }));
   assert.ok(autorizacaoOk({ ...base, ownership_type: "subleased", sublease_doc_url: `${DONO}/aut.pdf` }));
-  assert.ok(autorizacaoOk({ ...base, ownership_type: "managed", sublease_doc_url: `${DONO}/proc.pdf` }));
+  assert.ok(autorizacaoOk({ ...base, ownership_type: "managed", sublease_doc_tipo: "procuracao", sublease_doc_url: `${DONO}/proc.pdf` }));
   assert.ok(!autorizacaoOk({ ...base, ownership_type: "subleased", sublease_doc_url: null }));
   assert.ok(!autorizacaoOk({ ...base, sublease_authorized: false, ownership_type: "managed", sublease_doc_url: `${DONO}/proc.pdf` }));
   for (const c of ["outro/aut.pdf", "blob:http://x/1", "https://x.com/a.pdf", `${DONO}/../x/a.pdf`, `${DONO}/`])

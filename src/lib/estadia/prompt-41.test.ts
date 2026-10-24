@@ -51,7 +51,8 @@ test("página do imóvel: UM primário 'Solicitar' (a candidatura de sempre); a 
 
 test("valor: 'R$ X/mês · R$ Y em N meses' pela regra do cartão e 'a Viva não segura dinheiro' em todo rótulo de valor", () => {
   const d = ler("app/(public)/imoveis/[id]/property-detail.tsx");
-  assert.match(d, /const meses = mesesDoCartao\(mesesBusca \|\| undefined, property\.minPeriodDays\);/);
+  // E53: o período escolhido no calendário/caixa/diálogo vem primeiro; sem ele, a duração da busca ou a estadia mínima.
+  assert.match(d, /const meses = mesesDaSelecao\(selecao\) \?\? mesesDoCartao\(mesesBusca \|\| undefined, property\.minPeriodDays\);/);
   assert.match(ler("lib/barra-fixa-imovel.ts"), /rotuloPreco\(\{ mensal: total, meses: p\.meses \?\? 1 \}\)/);
   assert.match(ler("components/property/price-card.tsx"), /const preco = rotuloPreco\(\{ mensal: mes\.total, meses, disponivelEm: property\.availableFrom \}\);/);
   for (const f of ["components/property/barra-fixa-celular.tsx", "components/property/price-card.tsx"]) assert.match(ler(f), /FRASE_NAO_SEGURA_DINHEIRO/, f);

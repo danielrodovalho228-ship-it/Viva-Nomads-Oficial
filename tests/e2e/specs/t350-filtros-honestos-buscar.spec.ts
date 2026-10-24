@@ -7,9 +7,11 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
  *   B — Apartamento, R$ 2.000, internet informada (300 Mbps, sem medição), caução;
  *   C — Apartamento, R$ 2.400, sem internet informada, caução.
  *   D — (outra cidade) Studio sem medição: a seção "Internet medida" some.
- * Prova: cada chip mostra a contagem que o aplicar entrega; 0 desabilita; Wi-Fi lê o que o anúncio declara (E39); as faixas
- * de velocidade saem das medições reais (E40) e Wi-Fi + 100 Mbps não termina em beco sem saída; um chip só de
- * seguro-fiança e "Pronto para Morar" só na folha (E43); "Até R$ 2.500" compara o TOTAL (E20). Prints 390 e 1280.
+ *   E — Apartamento na mesma cidade, mas EM ADEQUAÇÃO (falta item do padrão mínimo): não entra em resultado nenhum.
+ * Prova: cada chip mostra a contagem que o aplicar entrega; 0 desabilita; as faixas de velocidade saem das medições
+ * reais (E40) e 100 Mbps não termina em beco sem saída; um chip só de seguro-fiança e "Pronto para Morar" só na folha
+ * (E43); "Até R$ 2.500" compara o TOTAL (E20). FILTROS-2: Wi-Fi e Cozinha equipada não são chips — viram a linha de
+ * garantia do padrão mínimo — e nenhum filtro traz de volta o imóvel em adequação. Prints 390 e 1280.
  */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -17,7 +19,7 @@ const sufixo = novoSufixo();
 const CIDADE = `Cidade Filtros ${sufixo}`;
 const CIDADE_SEM = `Cidade Sem Medicao ${sufixo}`;
 const dono = { email: `dono.t350.${sufixo}@lab.vivanomads.test`, nome: "Dulce Filtros", role: "owner" as const };
-const ids: { dono?: string; a?: string; b?: string; c?: string; d?: string } = {};
+const ids: { dono?: string; a?: string; b?: string; c?: string; d?: string; e?: string } = {};
 
 async function abrirFolha(page: Page, url: string) {
   await expect(async () => {
@@ -47,14 +49,18 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
     ids.b = await criarImovelPronto(ids.dono, `Apto B ${sufixo}`, { ativo: true, preco: 2000 });
     ids.c = await criarImovelPronto(ids.dono, `Apto C ${sufixo}`, { ativo: true, preco: 2400 });
     ids.d = await criarImovelPronto(ids.dono, `Studio D ${sufixo}`, { ativo: true, preco: 2000 });
+    ids.e = await criarImovelPronto(ids.dono, `Apto E ${sufixo}`, { ativo: true, preco: 1800 });
     const muda = async (id: string, campos: Record<string, unknown>) => {
       const { error } = await adm().from("properties").update(campos).eq("id", id);
       if (error) throw error;
     };
-    await muda(ids.a, { city: CIDADE, property_type: "Studio", condo_fee: 300, utilities_mode: "measured", internet_mbps: 300, garantias_aceitas: ["seguro_fianca"], accepts_insurance: true });
-    await muda(ids.b, { city: CIDADE, property_type: "Apartamento", utilities_mode: "measured", internet_mbps: 300, garantias_aceitas: ["caucao"] });
-    await muda(ids.c, { city: CIDADE, property_type: "Apartamento", utilities_mode: "measured", internet_mbps: null, garantias_aceitas: ["caucao"] });
-    await muda(ids.d, { city: CIDADE_SEM, property_type: "Studio", utilities_mode: "measured", internet_mbps: 300 });
+    await muda(ids.a, { city: CIDADE, property_type: "Studio", condo_fee: 300, utilities_mode: "real", internet_mbps: 300, garantias_aceitas: ["seguro_fianca"], accepts_insurance: true });
+    await muda(ids.b, { city: CIDADE, property_type: "Apartamento", utilities_mode: "real", internet_mbps: 300, garantias_aceitas: ["caucao"] });
+    await muda(ids.c, { city: CIDADE, property_type: "Apartamento", utilities_mode: "real", internet_mbps: null, garantias_aceitas: ["caucao"] });
+    await muda(ids.d, { city: CIDADE_SEM, property_type: "Studio", utilities_mode: "real", internet_mbps: 300 });
+    await muda(ids.e, { city: CIDADE, property_type: "Apartamento", utilities_mode: "real", internet_mbps: 300, garantias_aceitas: ["caucao"] });
+    const { error: eN } = await adm().from("imovel_nivel").upsert({ property_id: ids.e, nivel: "em_adequacao" });
+    if (eN) throw eN;
     const agora = Date.now();
     const { error } = await adm().from("internet_medicoes").insert({
       property_id: ids.a, user_id: ids.dono, papel: "dono", download_mbps: 150, upload_mbps: 20, latencia_ms: 12, distancia_m: 30,
@@ -75,8 +81,12 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
       const folha = await abrirFolha(page, `/buscar?local=${encodeURIComponent(CIDADE)}`);
       await expect.poll(() => total(page), { timeout: 30_000 }).toBe(3);
 
-      // E39: Wi-Fi conta quem declara internet (A e B), não zera.
-      expect(await n(page, "faceta-comodidade-wifi")).toBe(2);
+      // FILTROS-2: Wi-Fi e Cozinha equipada são garantia do padrão mínimo — linha no lugar do chip; E (em adequação) não conta.
+      await expect(page.getByTestId("painel-garantia-minima")).toHaveText("Padrão mínimo Viva em todos os imóveis: internet Wi-Fi, cozinha equipada e mais 10 itens.");
+      await expect(page.getByTestId("faceta-comodidade-wifi")).toHaveCount(0);
+      await expect(page.getByTestId("faceta-comodidade-cozinha")).toHaveCount(0);
+      await expect(page.getByTestId("faceta-comodidade-garagem")).toBeVisible();
+      await expect(page.getByTestId("faceta-comodidade-lavar")).toBeVisible();
       // E20: "Até R$ 2.500" compara o total (A = 2.300 + 300 de condomínio fica fora).
       expect(await n(page, "faceta-preco-2500")).toBe(2);
       expect(await n(page, "faceta-preco-3500")).toBe(3);
@@ -97,7 +107,7 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
       await expect(page.getByTestId("faceta-internet-300")).toHaveCount(0);
 
       // E6: escolher um chip leva o "Mostrar N" exatamente ao número que o chip mostrava.
-      for (const id of ["faceta-tipo-apartamento", "faceta-comodidade-wifi"]) {
+      for (const id of ["faceta-tipo-apartamento", "faceta-garantia-caucao"]) {
         const esperado = await n(page, id);
         await page.getByTestId(id).click();
         await expect.poll(() => total(page)).toBe(esperado);
@@ -105,8 +115,7 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
         await expect.poll(() => total(page)).toBe(3);
       }
 
-      // Wi-Fi + 100 Mbps: termina em 1 imóvel (o medido), nunca num "Nenhum imóvel" sem explicação.
-      await page.getByTestId("faceta-comodidade-wifi").click();
+      // 100 Mbps: termina em 1 imóvel (o medido), nunca num "Nenhum imóvel" sem explicação.
       expect(await n(page, "faceta-internet-100")).toBe(1);
       await page.getByTestId("faceta-internet-100").click();
       await expect(page.getByTestId("aplicar-filtros")).toBeEnabled();
@@ -119,6 +128,16 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     });
   }
+
+  test("FILTROS-2: imóvel em adequação não volta por filtro nenhum, nem por link antigo de Wi-Fi/Cozinha", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    for (const extra of ["", "&comod=wifi,cozinha", "&garantia=caucao", "&tipo=apartamento"]) {
+      await page.goto(`/buscar?local=${encodeURIComponent(CIDADE)}${extra}`, { waitUntil: "domcontentloaded" });
+      await expect(page.locator(`[data-testid="card-resultado"][data-id="${ids.b}"]`)).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator(`[data-testid="card-resultado"][data-id="${ids.e}"]`)).toHaveCount(0);
+    }
+  });
 
   test("E40: sem medição na busca, a seção some e a linha explica; Pronto para Morar não está na barra de cima", async ({ page }) => {
     test.setTimeout(120_000);

@@ -5,6 +5,8 @@
 import type { Property } from "../types";
 import { linhasPrivacidadePublica } from "./privacidade.ts";
 import { distanciaAprox, proximidadesDoImovel } from "./proximidades.ts";
+import { linhasRegrasCasa, type ChaveRegraCasa } from "./regras-casa.ts";
+import { linhasDetalhes } from "./detalhes-anuncio.ts";
 
 export type ChaveDestaque = "saude" | "educacao" | "pronto" | "trabalho" | "vaga";
 export interface Destaque {
@@ -43,7 +45,18 @@ export interface LinhaBomSaber {
   titulo: string;
   resumo: string;
   detalhe: string[];
+  /** Só em "regras": as mesmas linhas do detalhe, cada uma com a chave do seu ícone. */
+  itens?: ItemRegraCasa[];
 }
+
+export type ChaveItemRegra = "pessoas" | "pets" | "entrada" | "saida" | ChaveRegraCasa;
+export interface ItemRegraCasa {
+  chave: ChaveItemRegra;
+  texto: string;
+}
+
+/** Quantos fatos a linha-resumo de "Regras da casa" mostra (CAMPOS-1: continua curta). */
+export const MAX_RESUMO_REGRAS = 2;
 
 /*
   Textos fixos do "Bom saber" (prompt 4, 17/10). Só regras que a plataforma já aplica, sem regra
@@ -71,14 +84,32 @@ export const RESUMO_SEGURANCA_SEM_DECLARACAO = "Proteções da Viva · câmeras 
 
 const pessoas = (n: number) => `até ${n} ${n === 1 ? "pessoa" : "pessoas"}`;
 
+const maiuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/**
+ * Itens da folha "Regras da casa": os fatos de sempre (pessoas, pets, entrada, saída) e depois as regras
+ * estruturadas DEFINIDAS (CAMPOS-1: silêncio, fumo, festas, visitas). O que não foi definido não aparece.
+ */
+export function itensRegrasCasa(p: Property): ItemRegraCasa[] {
+  const i: ItemRegraCasa[] = [];
+  if (p.maxGuests != null) i.push({ chave: "pessoas", texto: maiuscula(pessoas(p.maxGuests)) });
+  if (p.petsAllowed !== undefined) i.push({ chave: "pets", texto: p.petsAllowed ? "Aceita pets" : "Sem pets" });
+  // CAMPOS-2: com a janela de entrada/saída ligada, ela substitui os horários antigos (uma linha só).
+  const janela = linhasDetalhes(p.detalhesAnuncio).find((d) => d.chave === "janela");
+  if (janela) i.push({ chave: "entrada", texto: janela.texto });
+  else {
+    if (p.checkinAfter) i.push({ chave: "entrada", texto: `Entrada a partir das ${p.checkinAfter}` });
+    if (p.checkoutBefore) i.push({ chave: "saida", texto: `Saída até às ${p.checkoutBefore}` });
+  }
+  for (const r of linhasRegrasCasa(p.regrasCasa)) i.push(r);
+  return i;
+}
+
 /** As 3 linhas do bloco "Bom saber". O detalhe completo continua em "Regras da estadia". */
 export function linhasBomSaber(p: Property): LinhaBomSaber[] {
-  const partes: string[] = [];
-  if (p.checkinAfter) partes.push(`entrada a partir das ${p.checkinAfter}`);
-  if (p.checkoutBefore) partes.push(`saída até às ${p.checkoutBefore}`);
-  if (p.maxGuests != null) partes.push(pessoas(p.maxGuests));
-  if (p.petsAllowed !== undefined) partes.push(p.petsAllowed ? "aceita pets" : "sem pets");
-  const regras = partes.length > 0 ? partes.join(" · ") : "Veja entrada, saída, pessoas e pets";
+  const itens = itensRegrasCasa(p);
+  const curtos = itens.slice(0, MAX_RESUMO_REGRAS).map((x, k) => (k === 0 ? x.texto : x.texto.charAt(0).toLowerCase() + x.texto.slice(1)));
+  const regras = curtos.length > 0 ? curtos.join(" · ") : "Veja entrada, saída, pessoas e pets";
 
   const priv = linhasPrivacidadePublica(p.privacidade);
   const declarado = priv.filter((l) => /câmera|^Acesso:/i.test(l));
@@ -95,7 +126,8 @@ export function linhasBomSaber(p: Property): LinhaBomSaber[] {
       chave: "regras",
       titulo: "Regras da casa",
       resumo: regras,
-      detalhe: partes.length > 0 ? partes.map((x) => x.charAt(0).toUpperCase() + x.slice(1)) : ["Sem regras informadas ainda."],
+      detalhe: itens.length > 0 ? itens.map((x) => x.texto) : ["Sem regras informadas ainda."],
+      itens,
     },
     {
       chave: "seguranca",

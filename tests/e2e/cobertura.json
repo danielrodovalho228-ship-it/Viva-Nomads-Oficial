@@ -625,6 +625,7 @@
         "t198-rodape-painel-390",
         "t266-painel-42",
         "t318-papel-ativo-fonte-unica",
+        "t351-telas-linkedin-63a",
         "t355-conta-a-perfil-espelho"
       ]
     },
@@ -829,7 +830,8 @@
         "t182-jornada-completa",
         "t183-telas-logadas-390",
         "t213-jornada-teste-confirmacao",
-        "t298-varredura-logada-bloco4"
+        "t298-varredura-logada-bloco4",
+        "t351-telas-linkedin-63a"
       ]
     },
     "/dashboard/locacoes": {
@@ -878,7 +880,8 @@
         "t209-jornada-dois-lados",
         "t286-esqueletos-vazios-48",
         "t315-telas-avaliacao-dono-62a",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t351-telas-linkedin-63a"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1198,6 +1201,7 @@
         "t320-pausar-anuncio-64b",
         "t342-galeria-video-segundo",
         "t344-avaliacao-telas-62a-parte2",
+        "t351-telas-linkedin-63a",
         "t349-imovel-sem-500-l31",
         "t336-varredura-bloco14",
         "t337-varredura-redundancia"
@@ -1307,7 +1311,8 @@
         "t72-paginas-institucionais",
         "t90-orcamento-velocidade",
         "t185-precos-3s",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t359-precos-taxa-e51-e54"
       ]
     },
     "/privacidade": {
@@ -1331,6 +1336,7 @@
         "t182-jornada-completa",
         "t307-varredura-bloco8",
         "t310-vao-fim-de-pagina",
+        "t351-telas-linkedin-63a",
         "t349-imovel-sem-500-l31",
         "t355-conta-a-perfil-espelho"
       ]
@@ -2008,7 +2014,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t360-calendario-etapa9-ical"
+      ]
     },
     "/api/comissao": {
       "personas": [
@@ -3178,6 +3186,14 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/blocks-actions.ts#linkExportacaoCalendario": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t360-calendario-etapa9-ical"
+      ]
     },
     "src/lib/data/blocks-actions.ts#getDatasIndisponiveis": {
       "personas": [

@@ -11,7 +11,8 @@ import {
   rotuloMostrar,
   type FiltrosPainel,
 } from "@/lib/busca/painel-filtros";
-import { COMODIDADES_FILTRO } from "@/lib/busca/filtro-comodidades";
+import { COMODIDADES_FILTRAVEIS } from "@/lib/busca/filtro-comodidades";
+import { TEXTO_GARANTIA_MINIMA } from "@/lib/busca/garantia-minima";
 import { rotuloVerNaoMedidos } from "@/lib/busca/filtro-internet";
 import { ROTULO_DATAS_FLEXIVEIS } from "@/lib/busca/datas-flexiveis";
 import { NIVEIS, ROTULO_NIVEL, type Nivel } from "@/config/niveis";
@@ -247,7 +248,8 @@ export function FolhaFiltros({
           )}
         </Grupo>
         <Grupo titulo="Comodidades" testId="painel-comodidades">
-          {COMODIDADES_FILTRO.map((c) => {
+          {/* FILTROS-2: Wi-Fi e Cozinha equipada são do padrão mínimo (garantia, não filtro) — a linha abaixo diz isso. */}
+          {COMODIDADES_FILTRAVEIS.map((c) => {
             const ligado = rascunho.comodidades.includes(c.chave);
             return (
               <ChipFaceta
@@ -263,6 +265,10 @@ export function FolhaFiltros({
             );
           })}
         </Grupo>
+        <p className="text-sm text-muted" data-testid="painel-garantia-minima">
+          {/* "Wi-Fi" não quebra no hífen em 390 px. */}
+          {TEXTO_GARANTIA_MINIMA.split("Wi-Fi").flatMap((t, i) => (i ? [<span key={i} className="whitespace-nowrap">Wi-Fi</span>, t] : [t]))}
+        </p>
       </div>
     </BottomSheet>
   );

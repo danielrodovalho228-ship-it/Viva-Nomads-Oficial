@@ -18,6 +18,7 @@ import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
 import { diasDoIntervalo, type MarcaDia } from "@/lib/calendario/grade";
 import { ImportarCalendario } from "@/components/property/importar-calendario";
+import { ExportarCalendario } from "@/components/property/exportar-calendario";
 
 function brDate(iso: string): string {
   const [y, m, d] = iso.split("-");
@@ -159,7 +160,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       )}
 
       <LegendaCalendario marcas={["bloqueado", "selecionado", "hoje"]} />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="calendario-dono-grade">
         {meses.map(({ year: y, month: m }) => (
           <CalendarioMes
             key={`${y}-${m}`}
@@ -234,6 +235,8 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
 
       <ImportarCalendario propertyId={propertyId} onMudou={recarregar} />
+      {/* E44: o par da importação — o link .ics para o Airbnb/Booking bloquear as datas daqui. */}
+      <ExportarCalendario propertyId={propertyId} />
 
       {/* Lista dos bloqueios */}
       {blocks.length > 0 && (
