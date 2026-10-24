@@ -109,14 +109,14 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
     });
   }
 
-  test("2) endereço digitado: calcula sob demanda e a 2ª busca vem do cache; URL com 2 casas e sem número", async ({ page }) => {
+  test("2) endereço digitado: calcula sob demanda e a 2ª busca vem do cache; URL com 3 casas (E94) e sem número", async ({ page }) => {
     await limparRotas();
     await page.goto(`/buscar?dlat=${HC.lat + 0.01}&dlng=${HC.lng}&drot=${encodeURIComponent("Rua do Lab, 123 - Centro")}&modo=a_pe`, { waitUntil: "domcontentloaded" });
     const lista = await temposNaTela(page);
-    expect(lista.find(([id]) => id === ids.perto)?.[1]).toMatch(/min a pé até Rua do Lab, Centro$/);
+    expect(lista.find(([id]) => id === ids.perto)?.[1]).toMatch(/min a pé até Rua do Lab — Centro$/);
     const depoisDaPrimeira = await chamadas();
     expect(depoisDaPrimeira, "a 1ª busca chama o provedor").toBeGreaterThan(0);
-    await expect(page).toHaveURL(/dlat=-18\.69&dlng=-48\.10&drot=Rua\+do\+Lab%2C\+Centro/);
+    await expect(page).toHaveURL(/dlat=-18\.690&dlng=-48\.100&drot=Rua\+do\+Lab\+%E2%80%94\+Centro/);
     expect(new URL(page.url()).search, "nem o número da casa na URL").not.toContain("123");
     await page.reload({ waitUntil: "domcontentloaded" });
     await temposNaTela(page);

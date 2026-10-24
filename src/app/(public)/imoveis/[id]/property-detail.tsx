@@ -48,6 +48,7 @@ import type { LeadKind } from "@/lib/leads";
 import { PriceCard } from "@/components/property/price-card";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
+import { FAIXA_TESTE_EQUIPE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { calcularTotalMensal } from "@/lib/precos";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
@@ -128,6 +129,10 @@ export function PropertyDetail({
   const usuario = useAuthStore((s) => s.user);
   const authChecked = useAuthStore((s) => s.authChecked);
   const semLogin = authChecked && !usuario && !isExemplo(property);
+  // E93: anúncio de teste aberto pelo link. Quem não é o dono nem admin (e enquanto a sessão não carregou) vê a faixa
+  // e o "Solicitar" desativado; o dono e o admin veem a página normal, com a faixa discreta.
+  const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin" });
+  const testeVisitante = modoTeste === "visitante";
   const [abrirVideo, setAbrirVideo] = useState(false);
   const [abrirPresencial, setAbrirPresencial] = useState(false);
   // "Agendar visita" do rodapé fixo do celular: abre a mesma janela do cartão (cada toque soma 1).
@@ -255,6 +260,7 @@ export function PropertyDetail({
   // "Enviar candidatura" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
   const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total });
   function abrirSolicitacao() {
+    if (testeVisitante) return;
     setLeadErro(null);
     // E53: o erro de data é ao vivo (resumo.erro); aqui só zera o da mensagem.
     setSolicitacaoErro(null);
@@ -390,11 +396,11 @@ export function PropertyDetail({
         size="lg"
         className="hidden w-full lg:inline-flex"
         onClick={abrirSolicitacao}
-        disabled={pending !== null}
+        disabled={pending !== null || testeVisitante}
         data-testid="cartao-solicitar"
       >
-        <FileSignature className="h-4 w-4" />
-        {pending === "candidatura" ? "Enviando..." : "Solicitar"}
+        {!testeVisitante && <FileSignature className="h-4 w-4" />}
+        {testeVisitante ? FAIXA_TESTE_VISITANTE : pending === "candidatura" ? "Enviando..." : "Solicitar"}
       </Button>
       {/* A visita é opção, nunca trava a solicitação: texto terciário. */}
       <VisitaPresencial
@@ -689,12 +695,27 @@ export function PropertyDetail({
     // disponibilidade → mapa aproximado → avaliações → proprietário; o rodapé fixo (celular) / cartão lateral
     // (computador) traz o valor e o "Solicitar".
     <div className="mx-auto w-full max-w-[1536px] px-4 py-8 pb-(--folga-rodape-imovel) sm:px-8 lg:pb-8" data-testid="imovel-largura-total">
+      {modoTeste && (
+        <p
+          role="note"
+          data-testid="faixa-anuncio-teste"
+          data-modo={modoTeste}
+          className={
+            modoTeste === "visitante"
+              ? "mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-ink"
+              : "mb-4 rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-muted"
+          }
+        >
+          {modoTeste === "visitante" ? FAIXA_TESTE_VISITANTE : FAIXA_TESTE_EQUIPE}
+        </p>
+      )}
       {composer}
       {solicitacao}
       <BarraFixaCelular
         key={property.id}
         barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
+        bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
         onSolicitar={abrirSolicitacao}
         onAgendarVisita={() => (semLogin ? irParaLogin("visita") : setSinalVisita((n) => n + 1))}
       />

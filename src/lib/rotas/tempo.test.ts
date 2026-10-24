@@ -10,6 +10,7 @@ import {
   emLotes,
   escolherCandidatos,
   faixaMinutos,
+  metrosEntre,
   minutosArredondados,
   pontoDaUrl,
   pontoParaUrl,
@@ -57,18 +58,44 @@ test("lotes de 25 coordenadas por chamada (1 destino + 24 imóveis)", () => {
   assert.deepEqual(emLotes([]), []);
 });
 
-test("URL: ponto com no máximo 2 casas; rótulo sem número de casa nem CEP", () => {
-  assert.deepEqual(pontoParaUrl({ lat: -18.918734, lng: -48.259876 }), { dlat: "-18.92", dlng: "-48.26" });
-  assert.deepEqual(pontoDaUrl("-18.918734", "-48.259876"), { lat: -18.92, lng: -48.26 });
+test("URL: ponto com no máximo 3 casas (E94, ~110 m, como em destinos_pessoais)", () => {
+  assert.deepEqual(pontoParaUrl({ lat: -18.918734, lng: -48.259876 }), { dlat: "-18.919", dlng: "-48.260" });
+  assert.deepEqual(pontoDaUrl("-18.918734", "-48.259876"), { lat: -18.919, lng: -48.26 });
   assert.equal(pontoDaUrl("abc", "1"), null);
   assert.equal(pontoDaUrl("95", "1"), null);
-  for (const p of [pontoDaUrl("-18.9187", "-48.2598")!, pontoDaUrl("-18.9", "-48.26")!]) {
-    assert.ok(String(p.lat).split(".")[1]?.length ?? 0 <= 2);
-    assert.ok((String(p.lng).split(".")[1]?.length ?? 0) <= 2);
+  for (const p of [pontoDaUrl("-18.91876", "-48.25981")!, pontoDaUrl("-18.9", "-48.26")!]) {
+    assert.ok((String(p.lat).split(".")[1]?.length ?? 0) <= 3);
+    assert.ok((String(p.lng).split(".")[1]?.length ?? 0) <= 3);
   }
-  assert.equal(rotuloLimpo("Av. Pará, 1720 - Umuarama, Uberlândia - MG, 38405-320, Brasil"), "Av. Pará, Umuarama, Uberlândia - MG");
+});
+
+test("E94: um local a ~1,2 km do imóvel fica a ~1,2 km (com 2 casas, o ponto andava até ~700 m)", () => {
+  const imovel = { lat: -18.915, lng: -48.275 };
+  const local = { lat: -18.9074, lng: -48.267 };
+  const real = metrosEntre(imovel, local);
+  assert.ok(real > 1150 && real < 1250, `real ${real}`);
+  const naUrl = pontoDaUrl(pontoParaUrl(local).dlat, pontoParaUrl(local).dlng)!;
+  assert.ok(Math.abs(metrosEntre(imovel, naUrl) - real) < 110, "3 casas: no máximo ~110 m de diferença");
+  // O arredondamento antigo (2 casas) punha o local a ~770 m — a diferença que o coordenador achou.
+  const antigo = { lat: Math.round(local.lat * 100) / 100, lng: Math.round(local.lng * 100) / 100 };
+  assert.ok(metrosEntre(imovel, antigo) < 900);
+  // O tempo (rotas e cache) usa o mesmo ponto de 3 casas.
+  assert.equal(chaveDestino(naUrl), "p:-18.907,-48.267");
+});
+
+test("E94: rótulo sem número da casa nem CEP e sem pontuação pendurada (6 formatos)", () => {
+  assert.equal(rotuloLimpo("Av. João Naves de Ávila, 1331 — Santa Mônica, Uberlândia"), "Av. João Naves de Ávila — Santa Mônica");
+  assert.equal(rotuloLimpo("Av. João Naves de Ávila, Santa Mônica"), "Av. João Naves de Ávila, Santa Mônica");
   assert.equal(rotuloLimpo("Rua Tito Teixeira nº 45, Santa Mônica"), "Rua Tito Teixeira, Santa Mônica");
-  assert.doesNotMatch(rotuloLimpo("Rua 10, 233, Centro"), /233/);
+  assert.equal(rotuloLimpo("Av. Pará, 1720 - Umuarama, Uberlândia - MG, 38405-320, Brasil"), "Av. Pará — Umuarama");
+  assert.equal(rotuloLimpo("— Rua Goiás, , Centro —"), "Rua Goiás, Centro");
+  assert.equal(rotuloLimpo("Cargill"), "Cargill");
+  // Nada de separador sobrando, nem número de casa, nem CEP.
+  for (const t of ["Rua 10, 233, Centro", "Av. Rondon Pacheco, 4600 -", ", 38400-000, Uberlândia", "Rua Sete-de-Setembro 50 — Centro"]) {
+    const r = rotuloLimpo(t);
+    assert.doesNotMatch(r, /^[\s,—–-]|[\s,—–-]$|,\s*,|—\s*—|\b(233|4600|38400|50)\b/, `${t} → ${r}`);
+  }
+  assert.equal(rotuloLimpo("Rua Sete-de-Setembro 50 — Centro"), "Rua Sete-de-Setembro — Centro");
 });
 
 test("chave do cache: id do destino ou ponto a 3 casas", () => {

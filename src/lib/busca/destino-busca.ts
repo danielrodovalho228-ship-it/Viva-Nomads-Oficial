@@ -1,7 +1,7 @@
 /*
   Destino da busca (prompt 37) na URL — regras PURAS.
   ?destino=hc-ufu&modo=carro&ate=20  (destino cadastrado)
-  ?dlat=-18.92&dlng=-48.26&drot=Av.+Pará,+Umuarama&modo=a_pe  (endereço digitado: ponto com 2 casas, rótulo sem número)
+  ?dlat=-18.919&dlng=-48.260&drot=Av.+Pará+—+Umuarama&modo=a_pe  (endereço digitado: ponto com 3 casas, rótulo sem número)
 */
 import { ATE_OPCOES, ehModo, pontoDaUrl, pontoParaUrl, rotuloLimpo, type ModoRota } from "../rotas/tempo.ts";
 
@@ -50,4 +50,4 @@ export function corpoDoDestino(d: DestinoBusca): Record<string, string> {
   return { dlat, dlng, drot: rotuloLimpo(d.rot) };
 }
 
-export const chaveDoDestino = (d: DestinoBusca | null) => (!d ? "" : "slug" in d ? d.slug : `${d.lat.toFixed(2)},${d.lng.toFixed(2)}`);
+export const chaveDoDestino = (d: DestinoBusca | null) => (!d ? "" : "slug" in d ? d.slug : `${d.lat.toFixed(3)},${d.lng.toFixed(3)}`);

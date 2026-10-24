@@ -20,11 +20,14 @@ import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 export function BarraFixaCelular({
   barra,
   pending,
+  bloqueio,
   onSolicitar,
   onAgendarVisita,
 }: {
   barra: BarraFixaImovel;
   pending: boolean;
+  /** E93: o "Solicitar" desativado com este texto (anúncio de teste visto por quem não é o dono nem admin). */
+  bloqueio?: string;
   onSolicitar: () => void;
   onAgendarVisita: () => void;
 }) {
@@ -105,12 +108,12 @@ export function BarraFixaCelular({
             <button
               type="button"
               onClick={onSolicitar}
-              disabled={pending}
+              disabled={pending || !!bloqueio}
               data-cta={marcaCta("primary")}
               data-testid="barra-solicitar"
-              className={buttonClasses({ variant: "primary", size: "sm", className: "h-11 flex-1 px-3" })}
+              className={buttonClasses({ variant: "primary", size: "sm", className: bloqueio ? "h-auto min-h-11 flex-1 px-3 py-1 text-xs leading-snug" : "h-11 flex-1 px-3" })}
             >
-              {pending ? "Enviando..." : "Solicitar"}
+              {bloqueio ? bloqueio : <>{pending ? "Enviando..." : "Solicitar"}</>}
             </button>
           )}
           <button type="button" onClick={onAgendarVisita} data-testid="barra-agendar-visita" className={buttonClasses({ variant: "tertiary", size: "sm" })}>
