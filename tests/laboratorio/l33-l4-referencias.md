@@ -4,6 +4,8 @@ Pista C, 23/10 à noite. **Nada foi atualizado.** Este arquivo lista o que difer
 
 ## Onde ver o diff
 
+**Rodada de 23/10, 23h: run [40037086141](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/actions/runs/40037086141), artefato `lab-critico-40037086141`** (válido até 30/10). Resultado: 39 capturas diferentes da referência, 23 iguais e 10 que não rodaram (dependem de um caso anterior). O log cita 78 arquivos `*-diff.png`.
+
 No lab-crítico do PR da vigia que adicionou este arquivo, o artefato `lab-critico-<run>` (Actions → o run do PR → Artifacts) traz, para cada captura que falha, três imagens em `tests/e2e/.artifacts/<teste>/`:
 
 - `*-expected.png`: a linha de base atual, em `tests/e2e/visual/<spec>/`;
@@ -36,6 +38,8 @@ Limite do projeto: `maxDiffPixelRatio: 0.01` (1 %). A diferença foi a mesma em 
 | t263 | 06 cogumelo da estadia (morador antes) | 2 % | — | |
 | t271 | /admin | 23 % | 13 % | |
 | t271 | /admin/documentos | 12 % | 9 % | fila nova do E28 (#1168) |
+| t271 | /admin/atendimento | difere | difere | **nova** na rodada de 23/10 23h |
+| t271 | /admin/parceiros | — | difere | **nova** na rodada de 23/10 23h |
 
 ## Para aprovar
 

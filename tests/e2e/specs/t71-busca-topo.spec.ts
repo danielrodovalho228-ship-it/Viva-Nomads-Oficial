@@ -163,7 +163,10 @@ test.describe("T71 — topo da /buscar", () => {
     expect(naCidade).toBeLessThanOrEqual(todos);
 
     await page.getByTestId("busca-compacta").click();
-    await page.getByTestId("filtros-caixa").getByRole("button", { name: /Pronto para Morar/i }).click();
+    // FILTROS-1 (E43): "Pronto para Morar" fica só na folha de filtros (saiu da barra de cima).
+    await page.getByTestId("filtros-caixa").getByTestId("mais-filtros").click();
+    await page.getByTestId("faceta-pronto").click();
+    await page.getByTestId("aplicar-filtros").click();
     await expect(titulo).toHaveText(/^(\d+|Nenhum) imóve(l|is) Pronto para Morar em Uberlândia$/);
     expect(await contar(page)).toBeLessThanOrEqual(naCidade);
     await page.screenshot({ path: "tests/laboratorio/saida/t71-titulo-1440.png" });
@@ -221,7 +224,10 @@ test.describe("T71 — Limpar filtros com o painel aberto (ordem 65116a07)", () 
 
     // Rolado: o painel continua preso sob o cabeçalho, com o Limpar dele à vista.
     if (!(await page.getByTestId("filtros-caixa").isVisible())) await page.getByTestId("busca-compacta").click();
-    await page.getByTestId("filtros-caixa").getByRole("button", { name: /Pronto para Morar/i }).click();
+    // FILTROS-1 (E43): "Pronto para Morar" fica só na folha de filtros (saiu da barra de cima).
+    await page.getByTestId("filtros-caixa").getByTestId("mais-filtros").click();
+    await page.getByTestId("faceta-pronto").click();
+    await page.getByTestId("aplicar-filtros").click();
     await page.mouse.wheel(0, 1200);
     await page.waitForTimeout(300);
     await expect(doPainel).toBeVisible();

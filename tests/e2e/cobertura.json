@@ -391,7 +391,8 @@
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
         "t343-nivel-busca-sem-beco",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t350-filtros-honestos-buscar"
       ]
     },
     "/cidades": {
@@ -642,7 +643,8 @@
         "t192-conta-4-blocos",
         "t183-telas-logadas-390",
         "t329-varredura-bloco11",
-        "t332-merges-1170-1172"
+        "t332-merges-1170-1172",
+        "t337-varredura-redundancia"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -795,7 +797,8 @@
         "t270-barra-fotos-etapa-fotos",
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
-        "t320-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b",
+        "t337-varredura-redundancia"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1194,7 +1197,8 @@
         "t342-galeria-video-segundo",
         "t344-avaliacao-telas-62a-parte2",
         "t349-imovel-sem-500-l31",
-        "t336-varredura-bloco14"
+        "t336-varredura-bloco14",
+        "t337-varredura-redundancia"
       ]
     },
     "/modelodenegocio": {
