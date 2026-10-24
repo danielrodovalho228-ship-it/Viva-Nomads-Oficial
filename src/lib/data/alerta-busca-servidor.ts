@@ -83,7 +83,7 @@ async function pendentes(admin: Admin, buscaId: string): Promise<ImovelNoAlerta[
   if (ids.length === 0) return [];
   const { data } = await admin
     .from("properties")
-    .select("id, title, city, neighborhood, monthly_price, bedrooms, condo_fee, utilities_mode, utilities_estimate, min_period_days, available_from")
+    .select("id, title, city, neighborhood, state, monthly_price, bedrooms, condo_fee, utilities_mode, utilities_estimate, min_period_days, available_from")
     .in("id", ids)
     .eq("status", "active");
   return (data ?? []).map((r) => ({
@@ -91,6 +91,7 @@ async function pendentes(admin: Admin, buscaId: string): Promise<ImovelNoAlerta[
     title: (r.title as string) || "Imóvel mobiliado",
     city: (r.city as string) ?? "",
     neighborhood: (r.neighborhood as string) ?? "",
+    state: (r.state as string) ?? "",
     monthlyPrice: Number(r.monthly_price) || 0,
     bedrooms: Number(r.bedrooms) || 0,
     totalMes: totalMesDaLinha(r),
