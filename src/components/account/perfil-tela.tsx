@@ -131,7 +131,7 @@ export function PerfilTela() {
         {/* Mockup perfil-01: no computador um cartão só (foto + campos); no celular a foto e "Trocar foto" ficam sobre o
             fundo e o cartão branco começa nos campos. */}
         <section className={cn("sm:rounded-xl sm:bg-white sm:p-6", SOMBRA_SO_COMPUTADOR)} aria-labelledby="perfil-foto-titulo" data-testid="perfil-cartao">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6" data-testid="topo-conta">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6" data-testid="topo-conta">
             <Avatar name={nome} size={144} photoUrl={foto.url ?? undefined} />
             <div className="flex flex-col items-center gap-2 sm:items-start">
               <h2 id="perfil-foto-titulo" className="font-title text-xl font-semibold text-ink max-sm:sr-only">
