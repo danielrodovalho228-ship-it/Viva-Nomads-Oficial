@@ -105,7 +105,7 @@ export function PagamentosConta() {
                   Chave
                   <input className={campo} value={chave} onChange={(e) => setChave(e.target.value)} autoComplete="off" data-testid="conta-pix-chave" />
                 </label>
-                <Button type="button" size="sm" onClick={salvar} disabled={pendente || !chave.trim()} data-testid="conta-pix-salvar">
+                <Button type="button" variant="secondary" size="sm" onClick={salvar} disabled={pendente || !chave.trim()} data-testid="conta-pix-salvar">
                   Salvar chave
                 </Button>
               </div>

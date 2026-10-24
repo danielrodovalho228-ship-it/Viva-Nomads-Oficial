@@ -14,9 +14,9 @@ test.describe("T222 — Filtro de pet com porte", () => {
     await page.getByTestId("abrir-filtros").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
     await expect(painel.getByTestId("painel-porte-pet")).toHaveCount(0);
-    await painel.getByText("Aceita pets", { exact: true }).click();
+    await painel.getByRole("button", { name: "Aceita pets", exact: true }).click();
     await expect(painel.getByTestId("painel-porte-pet")).toContainText("Porte do pet");
-    await painel.getByText("Grande (acima de 25 kg)", { exact: true }).click();
+    await painel.getByRole("button", { name: "Grande (acima de 25 kg)", exact: true }).click();
     await painel.screenshot({ path: "tests/laboratorio/saida/t77-painel-porte-390.png" });
     await painel.getByTestId("aplicar-filtros").click();
     await expect(page).toHaveURL(/pet=1/);
