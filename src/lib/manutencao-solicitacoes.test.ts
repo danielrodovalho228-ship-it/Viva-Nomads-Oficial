@@ -158,7 +158,8 @@ test("critério 5: notificações ligadas por padrão e /dashboard/notificacoes 
   assert.match(pagina, /<PageTitle/);
   assert.match(pagina, /<StatCard/);
   assert.match(pagina, /<NotificationsPanel \/>/);
-  assert.match(ler("components/account/conta-menu.tsx"), /href: "\/dashboard\/notificacoes"/);
+  // NAV-A: os avisos moram na barra verde (Mensagens → Notificações), não na Conta.
+  assert.match(ler("config/menu-por-papel.ts"), /href: "\/dashboard\/notificacoes"/);
   const sql = raiz("supabase/migrations/0109_manutencao_historico.sql");
   assert.match(sql, /alter column notif_email set default true/);
   assert.match(sql, /alter column notif_whatsapp set default true/);

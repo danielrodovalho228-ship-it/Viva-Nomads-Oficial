@@ -14,7 +14,7 @@ export const metadata = { title: "Segurança e verificações", robots: { index:
 export default async function SegurancaPage({ searchParams }: { searchParams: Promise<{ obrigatorio?: string; redirect?: string }> }) {
   const { obrigatorio, redirect } = await searchParams;
   return (
-    <CascaConta ativo="privacidade" titulo="Segurança e verificações" subtitulo="Troque a senha, ative a verificação em duas etapas e confira as verificações da conta.">
+    <CascaConta ativo="privacidade" subtela titulo="Segurança e verificações" subtitulo="Troque a senha, ative a verificação em duas etapas e confira as verificações da conta.">
       <DuasEtapasPanel obrigatorio={obrigatorio === "admin"} destino={safeInternalPath(redirect, "/admin")} />
       <ChangePassword />
       <div className="mt-8">
