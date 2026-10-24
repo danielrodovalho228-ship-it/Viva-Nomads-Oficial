@@ -109,14 +109,14 @@ export default function ReferralsPage() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <Panel title="Indicou um proprietário?">
           <p className="text-sm text-muted">
-            Você ganha <strong className="text-forest">crédito em comissão</strong> (ou serviço
+            Você ganha <strong className="text-forest">crédito na taxa de serviço</strong> (ou serviço
             grátis: verificação/contrato) quando o proprietário indicado fecha a primeira reserva.
           </p>
         </Panel>
-        <Panel title="Indicou um inquilino?">
+        <Panel title="Indicou um morador?">
           <p className="text-sm text-muted">
             Você ganha <strong className="text-forest">crédito em serviços</strong> quando o
-            inquilino indicado fecha a primeira locação. O indicado ganha um benefício de
+            morador indicado fecha a primeira locação. O indicado ganha um benefício de
             boas-vindas (1ª verificação de identidade grátis).
           </p>
         </Panel>

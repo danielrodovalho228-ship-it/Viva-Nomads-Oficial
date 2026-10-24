@@ -42,7 +42,7 @@ export const ETAPAS_ASSISTENTE: readonly EtapaAssistente[] = [
     campos: ["exactAddress", "neighborhood", "city", "state", "lat", "lng", "ownershipType"],
     prontidao: ["endereco", "documento", "sublocacao"],
   },
-  { n: 4, id: "detalhes", titulo: "Detalhes", mockup: "cadastro-imovel-04-detalhes", campos: ["bedrooms", "bathrooms", "areaM2", "maxGuests"], prontidao: ["detalhes", "chacara"] },
+  { n: 4, id: "detalhes", titulo: "Detalhes", mockup: "cadastro-imovel-04-detalhes", campos: ["bedrooms", "bathrooms", "areaM2", "maxGuests"], prontidao: ["detalhes", "chacara", "sem_internet"] },
   {
     n: 5,
     id: "comodidades",

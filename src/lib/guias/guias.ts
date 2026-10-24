@@ -32,7 +32,7 @@ export const GUIAS: Guia[] = [
         titulo: "O que entra e o que fica de fora",
         paragrafos: [
           "Diga no anúncio o que o valor mensal já inclui (condomínio, internet, contas) e o que é cobrado à parte. Quem não encontra isso claro costuma desistir ou perguntar de novo.",
-          "Taxa de limpeza e valor extra para pet também aparecem no anúncio. Combine-os antes de publicar, para o inquilino ver o total desde a primeira tela.",
+          "Taxa de limpeza e valor extra para pet também aparecem no anúncio. Combine-os antes de publicar, para o morador ver o total desde a primeira tela.",
         ],
       },
       {
@@ -53,7 +53,7 @@ export const GUIAS: Guia[] = [
   {
     slug: "o-que-e-a-caucao",
     titulo: "O que é a Caução e como funciona",
-    descricao: "Entenda a Caução nos contratos da Viva Nomads: quanto pode ser, onde fica o dinheiro e quando volta para o inquilino.",
+    descricao: "Entenda a Caução nos contratos da Viva Nomads: quanto pode ser, onde fica o dinheiro e quando volta para o morador.",
     publico: "todos",
     secoes: [
       {
@@ -61,7 +61,7 @@ export const GUIAS: Guia[] = [
         paragrafos: [CAUCAO_FRASE],
       },
       {
-        titulo: "Para o inquilino",
+        titulo: "Para o morador",
         paragrafos: [
           "A Caução fica em uma poupança e volta para você no fim do contrato, depois da conferência de saída, se não houver pendência combinada entre as partes.",
           "A plataforma não recebe nem guarda esse dinheiro. Desconfie de qualquer pedido de pagamento fora do que está no contrato (veja /seguranca).",
@@ -116,7 +116,7 @@ export const GUIAS: Guia[] = [
       {
         titulo: "O que é",
         paragrafos: [
-          "É o registro do estado do imóvel e dos móveis no começo do contrato, com cômodos, itens e fotos. Ela é feita pelo proprietário e pelo inquilino, cada um do seu lado.",
+          "É o registro do estado do imóvel e dos móveis no começo do contrato, com cômodos, itens e fotos. Ela é feita pelo proprietário e pelo morador, cada um do seu lado.",
         ],
       },
       {
@@ -172,7 +172,7 @@ export const GUIAS: Guia[] = [
   {
     slug: "documentos-para-morar-em-imovel-mobiliado",
     titulo: "Documentos para morar em imóvel mobiliado",
-    descricao: "Quais informações e documentos o inquilino costuma precisar ter à mão para fechar um contrato de 30 a 180 dias.",
+    descricao: "Quais informações e documentos o morador costuma precisar ter à mão para fechar um contrato de 30 a 180 dias.",
     publico: "inquilinos",
     secoes: [
       {
@@ -182,7 +182,7 @@ export const GUIAS: Guia[] = [
         ],
       },
       {
-        titulo: "Documento do inquilino",
+        titulo: "Documento do morador",
         paragrafos: [
           "Tenha à mão um documento oficial com foto. Ele é enviado dentro da plataforma, e você acompanha a análise no seu painel. Não envie documento por mensagem nem por e-mail comum.",
         ],

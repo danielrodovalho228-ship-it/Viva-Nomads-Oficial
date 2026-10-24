@@ -301,7 +301,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
 
     // 6b. Dono avalia a inquilina (1280).
     await abrir(pd, "/dashboard/contratos");
-    await pd.getByRole("button", { name: "Avaliar o inquilino" }).first().click();
+    await pd.getByRole("button", { name: "Avaliar o morador" }).first().click();
     await pd.getByRole("radio", { name: "5 estrelas" }).click();
     await pd.getByPlaceholder(/Comentário \(opcional\)/).fill(marcaDono);
     await pd.getByRole("button", { name: "Enviar avaliação" }).click();

@@ -28,6 +28,10 @@ import {
   textoFotoRecebida,
   textoRefazerFoto,
   type CapturaGravada,
+  ESPERA_MODO_MS,
+  PREPARANDO_CAMERA,
+  modoDaProva,
+  modoSemListaDeAparelhos,
 } from "./prova-camera.ts";
 import { fatosAtendidos, itemConta, type EntradaNivel } from "./regras.ts";
 import { prontidaoAnuncio, hrefParaMelhorar, type FatosAnuncio } from "../anuncio/prontidao.ts";
@@ -195,4 +199,25 @@ test("rotina dos prazos: prova vencida recalcula o nível e avisa o dono uma vez
   const r = ler("src/lib/prazos-59-servidor.ts");
   assert.match(r, /\.eq\("foto_origem", "arquivo"\)\.lte\("refazer_ate", agora\.toISOString\(\)\)\.is\("vencida_avisada_em", null\)/);
   assert.match(r, /await recalcularNivel\(admin, propertyId, agora\);\s*await avisarProvaVencida\(/);
+});
+
+test("E100: o caminho é decidido na montagem, sem permissão de câmera, em até 1 s; falha = computador (QR)", () => {
+  // Sem toque (ou sem getUserMedia): computador já, sem esperar a lista de aparelhos.
+  assert.equal(modoSemListaDeAparelhos({ ponteiroGrosso: false, toque: false, getUserMedia: true }), "computador");
+  assert.equal(modoSemListaDeAparelhos({ ponteiroGrosso: true, toque: true, getUserMedia: false }), "computador");
+  assert.equal(modoSemListaDeAparelhos({ ponteiroGrosso: true, toque: true, getUserMedia: true }), null);
+  // Com toque: câmera na lista = celular; sem câmera = computador; sem resposta em 1 s (null) = celular.
+  const toque = { ponteiroGrosso: true, toque: true, getUserMedia: true };
+  assert.equal(modoDaProva({ ...toque, temCamera: true }), "celular");
+  assert.equal(modoDaProva({ ...toque, temCamera: false }), "computador");
+  assert.equal(modoDaProva({ ...toque, temCamera: null }), "celular");
+  assert.equal(ESPERA_MODO_MS, 1000);
+  assert.equal(PREPARANDO_CAMERA, "Preparando…");
+  const c = ler("src/components/niveis/camera-prova.tsx");
+  const hook = c.slice(c.indexOf("function useModoProva"), c.indexOf("/** Arquivo arrastado"));
+  assert.doesNotMatch(hook, /getUserMedia\(/, "nada de pedir a câmera para decidir o caminho");
+  assert.match(hook, /window\.setTimeout\(\(\) => fim\(modoDaProva\(\{ \.\.\.ambiente, temCamera: null \}\)\), ESPERA_MODO_MS\)/);
+  assert.match(hook, /fim\("computador"\)/);
+  assert.match(c, /\{!modo \? PREPARANDO_CAMERA : celular \?/);
+  assert.match(c, /aria-busy=\{!modo\}/);
 });

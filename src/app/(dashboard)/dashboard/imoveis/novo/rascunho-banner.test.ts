@@ -28,6 +28,7 @@ test("E50 + mockups cadastro-imovel-01..10: um H1 só (o título do passo); o ca
   assert.match(src, /<h1 className=\{cn\(TITULO_PASSO_CADASTRO, "mt-3"\)\} data-testid="passo-titulo">\s*\{meta\.title\}/);
   assert.doesNotMatch(src, /data-testid="cadastro-apresentacao"/, "o banner com foto saiu: o desenho abre direto na pergunta do passo");
   assert.match(src, /data-testid="rascunho-aviso"/);
-  assert.match(src, /<CabecalhoPassos pos=\{pos\} total=\{ORDEM_ETAPAS\.length\} \/>/);
+  // CADASTRO-MOLDURA: o "Passo X de 10" mora no rodapé do fluxo.
+  assert.match(src, /<RodapeAssistente\s+pos=\{pos\}\s+total=\{ORDEM_ETAPAS\.length\}/);
   assert.match(src, /\{editingId \? "Editar anúncio" : "Anunciar imóvel"\}/);
 });

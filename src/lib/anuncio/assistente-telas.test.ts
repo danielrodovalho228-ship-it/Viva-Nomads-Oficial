@@ -51,7 +51,7 @@ test("prévia: '2 quartos · 65 m²' só com o que existe; lugar com a UF", () =
   assert.equal(linhaPrevia(1, 0), "1 quarto");
   assert.equal(linhaPrevia(0, 30), "30 m²");
   assert.equal(linhaPrevia(0, 0), "");
-  assert.equal(localPrevia("Santa Mônica", "Uberlândia", "mg"), "Santa Mônica, Uberlândia · MG");
+  assert.equal(localPrevia("Santa Mônica", "Uberlândia", "mg"), "Santa Mônica, Uberlândia - MG"); // E101: a mesma linha pública do anúncio
   assert.equal(localPrevia("", "", ""), "");
 });
 

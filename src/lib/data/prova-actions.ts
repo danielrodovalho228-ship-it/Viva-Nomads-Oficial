@@ -6,6 +6,8 @@
   • pedirLinkCelular: no computador, "Fotografar pelo celular" → link de uso único (30 min, ligado ao dono) em QR, na
     tela e por e-mail. O link abre a mesma tela de prova no celular, já logado como o dono (rota /prova/celular).
   • provaDoItem: o computador pergunta se a foto da câmera já chegou (o item se atualiza sozinho).
+  • NIVEIS-MEDIR-B: pedirLinkMedicao / medicaoDoPonto — o mesmo caminho para medir a internet no imóvel (a medição
+    precisa ser feita lá): link de uso único em QR, e o computador pergunta se a medição do ponto já chegou.
   Só o hash dos tokens vai ao banco. Toda gravação pelo cliente de serviço DEPOIS de conferir o dono.
 */
 import { headers } from "next/headers";
@@ -17,7 +19,7 @@ import { notify } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { DOMINIOS_PROPRIOS } from "@/lib/cartoes/compartilhar";
 import { ehChaveNivel, itemNivel } from "@/config/niveis";
-import { LINK_CELULAR_MINUTOS, TOKEN_CAPTURA_MINUTOS, caminhoLinkCelular, type OrigemFoto } from "@/lib/niveis/prova-camera";
+import { LINK_CELULAR_MINUTOS, TOKEN_CAPTURA_MINUTOS, caminhoLinkCelular, chaveLinkMedicao, type OrigemFoto } from "@/lib/niveis/prova-camera";
 import { novoToken } from "@/lib/niveis/prova-servidor";
 import type { StatusFoto } from "@/lib/niveis/regras";
 
@@ -107,4 +109,57 @@ export async function provaDoItem(propertyId: string, chave: string): Promise<Pr
   if (!c) return null;
   const { data } = await c.admin.from("nivel_itens").select("foto_origem, foto_capturada_em, foto_status").eq("property_id", propertyId).eq("chave", chave).maybeSingle();
   return { origem: (data?.foto_origem as OrigemFoto | null) ?? null, capturadaEm: (data?.foto_capturada_em as string | null) ?? null, fotoStatus: (data?.foto_status as StatusFoto | null) ?? null };
+}
+
+// ── NIVEIS-MEDIR-B (E25b) ─────────────────────────────────────────────────────────────────────────────────────────
+type PontoInternet = "quarto_principal" | "trabalho";
+const ehPontoInternet = (p: unknown): p is PontoInternet => p === "quarto_principal" || p === "trabalho";
+
+async function donoDoImovel(propertyId: string) {
+  if (!UUID.test(propertyId ?? "")) return null;
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!supabase || !admin) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  return data?.owner_id === user.id ? { uid: user.id, admin } : null;
+}
+
+/** No computador, "Medir pelo celular, no imóvel": link de uso único (30 min, ligado ao dono) em QR e na tela. */
+export async function pedirLinkMedicao(propertyId: string, ponto: string): Promise<Res<{ url: string; qr: string; expiraEm: string }>> {
+  if (!ehPontoInternet(ponto)) return { ok: false, erro: "Ponto inválido." };
+  const c = await donoDoImovel(propertyId);
+  if (!c) return { ok: false, erro: "Sem permissão." };
+  if (!(await consumirLimite(`prova-link:${c.uid}`, 30, DIA))) return { ok: false, erro: "Muitos links hoje. Tente novamente amanhã." };
+  const { token, hash } = novoToken();
+  const expiraEm = new Date(Date.now() + LINK_CELULAR_MINUTOS * 60_000).toISOString();
+  const { error } = await c.admin.from("prova_links_celular").insert({ token_hash: hash, owner_id: c.uid, property_id: propertyId, chave: chaveLinkMedicao(ponto), expira_em: expiraEm });
+  if (error) {
+    console.error("[pedirLinkMedicao]", error.code, error.message);
+    return { ok: false, erro: "Não foi possível gerar o link agora." };
+  }
+  const url = `${await origemDaTela()}${caminhoLinkCelular(token)}`;
+  const qr = `data:image/svg+xml;utf8,${encodeURIComponent(await QRCode.toString(url, { type: "svg", errorCorrectionLevel: "M", margin: 1, color: { dark: "#0f1722", light: "#ffffff" } }))}`;
+  return { ok: true, url, qr, expiraEm };
+}
+
+/** O computador pergunta quando foi a última medição VALIDADA do dono neste ponto (o item se atualiza sozinho). */
+export async function medicaoDoPonto(propertyId: string, ponto: string): Promise<string | null> {
+  if (!ehPontoInternet(ponto)) return null;
+  const c = await donoDoImovel(propertyId);
+  if (!c) return null;
+  const { data } = await c.admin
+    .from("internet_medicoes")
+    .select("medido_em")
+    .eq("property_id", propertyId)
+    .eq("papel", "dono")
+    .eq("ponto", ponto)
+    .eq("validada", true)
+    .order("medido_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data?.medido_em as string | null) ?? null;
 }

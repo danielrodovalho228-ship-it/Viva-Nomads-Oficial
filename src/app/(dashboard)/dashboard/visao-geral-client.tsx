@@ -206,7 +206,7 @@ function PainelDoDono({
               {demo ? "Verificação do perfil: 60%" : "Verifique seu perfil"}
             </h2>
             <p className="text-sm text-white/70">
-              Complete a verificação para gerar mais confiança nos inquilinos.
+              Complete a verificação para gerar mais confiança nos moradores.
             </p>
           </div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:items-end">

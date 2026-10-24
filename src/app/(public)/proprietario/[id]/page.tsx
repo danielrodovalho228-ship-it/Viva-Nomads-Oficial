@@ -14,6 +14,7 @@ import { proprietarioExemploPorId } from "@/config/exemplo-proprietarios";
 import { PerfilExemplo } from "./perfil-exemplo";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { ehSeloLinkedin } from "@/lib/linkedin/textos";
+import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -68,6 +69,12 @@ export default async function ProprietarioPage({ params }: Params) {
               aria-hidden
             >
               {iniciais(p.nome)}
+            </div>
+          )}
+          {/* FOTO-PERFIL-B: a foto é o rosto do titular; quem vê algo errado denuncia pela Central de Ajuda. */}
+          {p.fotoUrl && (
+            <div className="sm:order-last sm:ml-auto" data-testid="proprietario-problema-foto">
+              <ProblemaComIsto tipo="perfil" id={id} />
             </div>
           )}
           <div className="min-w-0">

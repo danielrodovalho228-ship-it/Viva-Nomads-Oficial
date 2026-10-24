@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { faqPageCidade, ofertaDoAnuncio, perguntasCidade } from "./anuncio-cidade.ts";
+import { DESCRICAO_PRECO_MES, faqPageCidade, ofertaDoAnuncio, perguntasCidade } from "./anuncio-cidade.ts";
 
 const SITE = "https://vivanomads.com.br";
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
@@ -19,6 +19,19 @@ test("#9f68d9d3: Offer + Accommodation com preço mensal, estadia mín/máx, mob
   assert.equal(o.itemOffered.amenityFeature[0].name, "Mobiliado");
   assert.equal(o.itemOffered.address.addressLocality, "Uberlândia");
   assert.equal(o.itemOffered.containedInPlace?.name, "Centro");
+});
+
+test("E98-A: o preço da oferta é o TOTAL do mês (calcularTudoIncluido), por mês, com a descrição do que inclui", () => {
+  // O Premium de teste: 2.900 de valor mensal + 220 de condomínio + 220 de contas fixas = 3.340.
+  const premium = { ...casa, monthlyPrice: 2900, condoFee: 220, utilitiesMode: "fixed" as const, utilitiesEstimate: 220 };
+  const o = ofertaDoAnuncio(SITE, premium, "https://schema.org/InStock");
+  assert.equal(o.price, 3340);
+  assert.equal(o.priceSpecification.price, 3340);
+  assert.equal(o.priceSpecification.unitCode, "MON");
+  assert.equal(o.description, "Valor do mês com condomínio e contas fixas incluídos");
+  assert.equal(DESCRICAO_PRECO_MES, o.description);
+  // Contas medidas (regime "real") não entram no total (a mesma regra do cartão).
+  assert.equal(ofertaDoAnuncio(SITE, { ...premium, utilitiesMode: "real" as const }, "https://schema.org/InStock").price, 3120);
 });
 
 test("#9f68d9d3: sem limite máximo no anúncio vale 180; sem endereço completo nem coordenada", () => {

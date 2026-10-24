@@ -12,11 +12,14 @@ export function EspelhoPerfil({
   nome,
   emailConfirmado,
   bio,
+  titulo = TITULO_ESPELHO,
 }: {
   foto: string | null;
   nome: string;
   emailConfirmado: boolean;
   bio: string;
+  /** E55: o título acompanha o papel (morador por padrão). */
+  titulo?: string;
 }) {
   const sobre = bio.trim();
   return (
@@ -28,8 +31,8 @@ export function EspelhoPerfil({
     >
       {/* A1 (perfil-01): a pílula verde é o título do cartão. */}
       <h2 id="espelho-titulo" className="flex justify-start lg:justify-center">
-        <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-forest px-3 py-2 text-sm font-semibold text-white xl:text-xs">
-          <Eye className="h-4 w-4" aria-hidden /> {TITULO_ESPELHO}
+        <span className="inline-flex items-center gap-2 rounded-full bg-forest px-3 py-2 text-sm font-semibold text-white xl:text-xs" data-testid="espelho-titulo">
+          <Eye className="h-4 w-4 shrink-0" aria-hidden /> {titulo}
         </span>
       </h2>
       <div className="mt-4 flex items-start gap-4 lg:flex-col lg:items-center lg:text-center" data-testid="espelho-cartao">

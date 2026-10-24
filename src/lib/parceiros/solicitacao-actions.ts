@@ -30,6 +30,7 @@ export interface MinhaParceria {
     motivoRecusa: string | null;
     nome: string;
     tipoPessoa: string | null;
+    emiteNota: boolean | null;
     categorias: string[];
     cidades: string[];
     portfolioUrl: string | null;
@@ -60,7 +61,7 @@ export async function minhaParceria(): Promise<MinhaParceria> {
     // Pela conta OU pelo e-mail (o pedido aberto pela equipe ainda não tem conta ligada).
     s.admin
       .from("parceiro_solicitacoes")
-      .select("id, user_id, email, status, origem, motivo_recusa, nome, tipo_pessoa, categorias, cidades, portfolio_url, descricao, criado_em")
+      .select("id, user_id, email, status, origem, motivo_recusa, nome, tipo_pessoa, emite_nota, categorias, cidades, portfolio_url, descricao, criado_em")
       .or(`user_id.eq.${s.user.id}${email ? `,email.eq.${email.toLowerCase()}` : ""}`)
       .order("criado_em", { ascending: false })
       .limit(5),
@@ -81,6 +82,7 @@ export async function minhaParceria(): Promise<MinhaParceria> {
           motivoRecusa: (sol.motivo_recusa as string | null) ?? null,
           nome: sol.nome as string,
           tipoPessoa: (sol.tipo_pessoa as string | null) ?? null,
+          emiteNota: (sol.emite_nota as boolean | null) ?? null,
           categorias: (sol.categorias as string[]) ?? [],
           cidades: (sol.cidades as string[]) ?? [],
           portfolioUrl: (sol.portfolio_url as string | null) ?? null,
@@ -128,6 +130,8 @@ export async function enviarSolicitacao(entrada: SolicitacaoEntrada & { armadilh
     email,
     nome: v.valor.nome,
     tipo_pessoa: v.valor.tipoPessoa,
+    // FISCAL-PARCEIRO-B: validado no servidor (PJ: Sim/Não obrigatório; PF: sempre null, também pelo check da 0243).
+    emite_nota: v.valor.emiteNota,
     documento: v.valor.documento,
     telefone: v.valor.telefone,
     categorias: v.valor.categorias,

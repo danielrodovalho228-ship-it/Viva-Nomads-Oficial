@@ -59,7 +59,7 @@ test("#74: /como-funciona sem seguradora parceira nem seguro-fiança; garantia �
   const t = ler("src/app/(public)/como-funciona/page.tsx");
   assert.doesNotMatch(t, /seguradora parceira/i);
   assert.doesNotMatch(t, /seguro-fian/i);
-  assert.match(t, /Combinada entre proprietário e inquilino\. A Viva não é garantidora\./);
+  assert.match(t, /Combinada entre proprietário e morador\. A Viva não é garantidora\./);
 });
 
 test("#79: /seguranca com description ≤ 155 e BreadcrumbList nas 4 páginas, sem AggregateRating", () => {

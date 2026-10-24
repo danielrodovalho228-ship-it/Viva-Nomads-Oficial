@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listProperties } from "@/lib/data/properties";
 import { hrefComparar, idsDeComparar, montarTabela, MIN_COMPARAR } from "@/lib/busca/comparar";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 export const revalidate = 60;
 
@@ -50,8 +51,7 @@ export default async function CompararPage({
                         {p.title}
                       </Link>
                       <div className="mt-1 text-xs font-normal text-muted">
-                        {p.neighborhood ? `${p.neighborhood}, ` : ""}
-                        {p.city}
+                        {linhaLocalizacao(p.neighborhood, p.city, p.state)}
                       </div>
                       <Link
                         href={hrefComparar(ids.filter((x) => x !== p.id))}

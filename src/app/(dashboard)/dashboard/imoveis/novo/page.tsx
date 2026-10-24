@@ -2,14 +2,12 @@
 
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { linkQualificacao } from "@/lib/qualificar-link";
 import {
   ClipboardCheck,
   Check,
   ArrowRight,
-  ArrowLeft,
   XCircle,
 } from "lucide-react";
 import {
@@ -36,6 +34,7 @@ import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
 import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
+import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
@@ -104,7 +103,7 @@ import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
 import { PreviaAnuncio } from "./previa-anuncio";
-import { CabecalhoPassos } from "./cabecalho-passos";
+import { RodapeAssistente } from "./rodape-assistente";
 import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
 
@@ -188,6 +187,7 @@ export default function NewPropertyPage() {
   // TIPO-CHACARA-B: acesso, tipo de internet e o ponto marcado pelo dono (só do tipo chácara/sítio).
   const [chacara, setChacara] = useState<ValorChacara>({});
   const [chacaraPontoGravado, setChacaraPontoGravado] = useState(false);
+  const semInternet = !temInternet(tipoInternetDoAnuncio(propertyType, { chacara }));
   const [description, setDescription] = useState("");
   // Mudou o título ou a descrição depois do aceite: o aceite deixa de valer (caixa desmarcada) e o aviso aparece.
   const textoMudouDepoisDoAceite = aceitouIa && aceiteTexto !== null && impressaoDoTexto(title, description) !== aceiteTexto;
@@ -323,6 +323,8 @@ export default function NewPropertyPage() {
     proximidadesSemEndereco: manualProximities.filter(manualSemEndereco).length,
     // TIPO-CHACARA-B: chácara/sítio só publica com acesso, tipo de internet e o ponto no mapa.
     chacaraFaltam: ehChacara(propertyType) ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado }) : undefined,
+    // E102-B: "Não tem internet" barra pelo padrão mínimo (e a velocidade nem é pedida).
+    semInternet: semInternet || undefined,
   });
   /** "Resolver" de um item do portão: vai à etapa; a qualificação abre ali mesmo. */
   function resolverItem(item: ItemProntidao) {
@@ -1288,6 +1290,7 @@ export default function NewPropertyPage() {
     comodidadesSugeridas,
     internetMbps,
     setInternetMbps,
+    semInternet,
     imovelId: draftServerId ?? editingId,
     proxOsm,
     proxCarregando,
@@ -1379,9 +1382,9 @@ export default function NewPropertyPage() {
         </div>
       )}
 
-      {/* Mockups cadastro-imovel-01..10: no topo, a barra de progresso e "Passo X de 10"; à esquerda, o título do passo
-          (o H1 da tela), o formulário e "Continuar"; à direita (computador), a prévia do anúncio montando ao vivo. */}
-      <CabecalhoPassos pos={pos} total={ORDEM_ETAPAS.length} />
+      {/* Mockups cadastro-imovel-01..10: à esquerda, o título do passo (o H1 da tela) e o formulário; à direita
+          (computador), a prévia do anúncio montando ao vivo. CADASTRO-MOLDURA: "Passo X de 10", a barra de progresso,
+          Voltar e o primário moram no rodapé do fluxo (RodapeAssistente). */}
 
       <div className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem]")} data-testid="novo-duas-colunas">
         <div className="min-w-0">
@@ -1621,39 +1624,12 @@ export default function NewPropertyPage() {
               />
             )}
 
-            {pos < ULTIMA_ETAPA && (
-              <div className="mt-8">
-                <Button size="lg" className="w-full" onClick={avancarEtapa} data-testid="cadastro-continuar">
-                  Continuar <ArrowRight className="h-4 w-4" />
-                </Button>
-                {step === ETAPA.fotos && (
-                  <p className="mt-3 text-center text-sm text-muted" data-testid="fotos-reorganizar">
-                    {FOTOS_REORGANIZAR}
-                  </p>
-                )}
-                {pos > 0 && (
-                  <p className="mt-3 text-center">
-                    <button type="button" onClick={voltarEtapa} className="inline-flex min-h-11 items-center gap-1 text-sm text-ink underline underline-offset-4 hover:text-forest" data-testid="cadastro-voltar">
-                      <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar para o passo anterior
-                    </button>
-                  </p>
-                )}
-              </div>
-            )}
-            {pos === ULTIMA_ETAPA && (
-              <p className="mt-6 text-center">
-                <button type="button" onClick={voltarEtapa} className="inline-flex min-h-11 items-center gap-1 text-sm text-ink underline underline-offset-4 hover:text-forest" data-testid="cadastro-voltar">
-                  <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar para o passo anterior
-                </button>
+            {step === ETAPA.fotos && (
+              <p className="mt-6 text-center text-sm text-muted" data-testid="fotos-reorganizar">
+                {FOTOS_REORGANIZAR}
               </p>
             )}
           </div>
-
-          <p className="mt-4 text-center text-sm text-muted">
-            <Link href="/dashboard/imoveis" className="inline-flex min-h-11 items-center hover:text-forest">
-              Cancelar e voltar
-            </Link>
-          </p>
         </div>
 
         {/* Passo 10 (mockup cadastro-imovel-10): o cartão do anúncio fica dentro da revisão; a prévia lateral sai. */}
@@ -1687,6 +1663,24 @@ export default function NewPropertyPage() {
           noPassoFotos={step === ETAPA.fotos}
         />
       )}
+      {/* CADASTRO-MOLDURA: o rodapé do fluxo, igual nos passos 1 a 10 — "Passo N de 10" com a barra, "Voltar" (passos
+          2–10) e um só primário: "Continuar"; no Passo 10, "Publicar anúncio" (o mesmo publish da revisão). */}
+      <RodapeAssistente
+        pos={pos}
+        total={ORDEM_ETAPAS.length}
+        onVoltar={pos > 0 ? voltarEtapa : null}
+        primario={
+          pos < ULTIMA_ETAPA
+            ? { rotulo: "Continuar", onClick: avancarEtapa, testid: "cadastro-continuar", seta: true }
+            : {
+                rotulo: publishing ? "Salvando..." : editingId ? "Salvar alterações" : "Publicar anúncio",
+                onClick: () => publish(false),
+                disabled: publishing || !podePublicar,
+                title: podePublicar ? undefined : "Resolva os itens pendentes da lista",
+                testid: "publicar-anuncio",
+              }
+        }
+      />
       <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid var(--color-sage-200);background:#fff;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-sage)}`}</style>
     </div>
   );

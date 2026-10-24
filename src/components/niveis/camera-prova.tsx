@@ -14,8 +14,12 @@ import {
   LINK_CELULAR_MINUTOS,
   PASSOS_PERMISSAO,
   PERMISSAO_CAMERA,
-  ehCelular,
+  ESPERA_MODO_MS,
+  PREPARANDO_CAMERA,
+  modoDaProva,
+  modoSemListaDeAparelhos,
   textoFotoRecebida,
+  type ModoProva,
 } from "@/lib/niveis/prova-camera";
 
 /**
@@ -64,13 +68,22 @@ export function ProvaNaHora({
   const id = testid ?? `prova-${chave}`;
   return (
     <>
-      <Button type="button" size="sm" variant="secondary" disabled={!modo}
+      {/* E100: enquanto decide (no máximo 1 s), "Preparando…" — nunca um botão cinza sem explicação. */}
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        disabled={!modo}
+        aria-busy={!modo}
         onClick={() => {
           setAberto(true);
           onAbrir?.();
-        }} data-testid={`${id}-botao`} data-modo={modo ? (celular ? "celular" : "computador") : ""}>
+        }}
+        data-testid={`${id}-botao`}
+        data-modo={modo ? (celular ? "celular" : "computador") : "preparando"}
+      >
         <Camera className="h-4 w-4" aria-hidden />
-        {celular ? (rotuloBotao ?? BOTAO_FOTOGRAFAR) : BOTAO_FOTOGRAFAR_CELULAR}
+        {!modo ? PREPARANDO_CAMERA : celular ? (rotuloBotao ?? BOTAO_FOTOGRAFAR) : BOTAO_FOTOGRAFAR_CELULAR}
       </Button>
       {aberto && celular && (
         <CameraProva
@@ -101,26 +114,46 @@ export function ProvaNaHora({
   );
 }
 
-/** Celular = toque como ponteiro principal e uma câmera; o resto (computador, aparelho sem câmera) vai pelo QR. */
-function useModoProva(): "celular" | "computador" | null {
-  const [modo, setModo] = useState<"celular" | "computador" | null>(null);
+/**
+ * Celular = toque como ponteiro principal e uma câmera; o resto (computador, aparelho sem câmera) vai pelo QR.
+ * E100: decidido na MONTAGEM, sem pedir permissão de câmera (a permissão só ao fotografar). Sem toque, é computador na
+ * hora. Com toque, a lista de aparelhos (enumerateDevices) responde em até 1 s — o navegador pode segurar essa resposta
+ * (aba em segundo plano, sem foco) e, antes, o botão ficava cinza para sempre. Passado 1 s, vale o que já se sabe:
+ * toque sem resposta = celular (sem câmera de verdade, o getUserMedia cai no QR). Qualquer falha: computador (QR).
+ */
+export function useModoProva(): ModoProva | null {
+  const [modo, setModo] = useState<ModoProva | null>(null);
   useEffect(() => {
     let vivo = true;
-    (async () => {
-      const ponteiroGrosso = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
-      const toque = "ontouchstart" in window || (navigator.maxTouchPoints ?? 0) > 0;
-      let temCamera: boolean | null = null;
-      try {
-        const dispositivos = await navigator.mediaDevices?.enumerateDevices?.();
-        if (dispositivos) temCamera = dispositivos.some((d) => d.kind === "videoinput");
-      } catch {
-        temCamera = null;
-      }
-      if (!navigator.mediaDevices?.getUserMedia) temCamera = false;
-      if (vivo) setModo(ehCelular({ ponteiroGrosso, toque, temCamera }) ? "celular" : "computador");
-    })();
+    const fim = (m: ModoProva) => vivo && setModo((atual) => atual ?? m);
+    let ambiente: { ponteiroGrosso: boolean; toque: boolean; getUserMedia: boolean };
+    try {
+      ambiente = {
+        ponteiroGrosso: typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches,
+        toque: "ontouchstart" in window || (navigator.maxTouchPoints ?? 0) > 0,
+        getUserMedia: !!navigator.mediaDevices?.getUserMedia,
+      };
+    } catch {
+      void Promise.resolve().then(() => fim("computador"));
+      return () => {
+        vivo = false;
+      };
+    }
+    const semCamera = modoSemListaDeAparelhos(ambiente);
+    if (semCamera) {
+      void Promise.resolve().then(() => fim(semCamera));
+      return () => {
+        vivo = false;
+      };
+    }
+    const teto = window.setTimeout(() => fim(modoDaProva({ ...ambiente, temCamera: null })), ESPERA_MODO_MS);
+    Promise.resolve()
+      .then(() => navigator.mediaDevices.enumerateDevices())
+      .then((d) => fim(modoDaProva({ ...ambiente, temCamera: d.some((x) => x.kind === "videoinput") })))
+      .catch(() => fim(modoDaProva({ ...ambiente, temCamera: null })));
     return () => {
       vivo = false;
+      window.clearTimeout(teto);
     };
   }, []);
   return modo;

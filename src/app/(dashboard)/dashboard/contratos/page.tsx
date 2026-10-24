@@ -28,7 +28,7 @@ export default async function ContratosPage() {
           {!temImovel ? (
             <PageTitle title="Contratos" subtitle="Seus contratos de locação: assine aqui na plataforma e acompanhe a situação de cada um." />
           ) : (
-            <h2 className="mb-3 font-title text-lg font-semibold text-ink">Contratos em que você é o inquilino</h2>
+            <h2 className="mb-3 font-title text-lg font-semibold text-ink">Contratos em que você é o morador</h2>
           )}
           <ContratosInquilino contratos={doInquilino} />
         </section>

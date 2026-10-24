@@ -12,17 +12,12 @@ export const DURACAO_TROCA_MS = 250;
 export const EVENTO_PAPEL = "vn-papel-ativo";
 
 /**
- * PAPEL-B — a troca explícita de papel, a MESMA no selo do topo e na Conta: grava o papel ativo no perfil, aplica no
- * store (o menu e a barra trocam na hora) e leva ao painel daquele papel.
+ * Os papéis que a conta TEM (estadoDosPapeis, a mesma fonte do selo do topo e da barra): só lê com a sessão no store
+ * (antes disso não há conta) e relê quando um papel muda. null = ainda não leu.
  */
-export function useTrocaPapel() {
-  const router = useRouter();
+export function usePapeisDaConta(): Papel[] | null {
   const userId = useAuthStore((s) => s.user?.id);
-  const setPapel = useAuthStore((s) => s.setPapel);
   const [papeis, setPapeis] = useState<Papel[] | null>(null);
-  const [trocando, setTrocando] = useState<Papel | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
-
   useEffect(() => {
     if (!userId) return;
     let vivo = true;
@@ -37,6 +32,19 @@ export function useTrocaPapel() {
       window.removeEventListener(EVENTO_PAPEL, ler);
     };
   }, [userId]);
+  return papeis;
+}
+
+/**
+ * PAPEL-B — a troca explícita de papel, a MESMA no selo do topo e na Conta: grava o papel ativo no perfil, aplica no
+ * store (o menu e a barra trocam na hora) e leva ao painel daquele papel.
+ */
+export function useTrocaPapel() {
+  const router = useRouter();
+  const setPapel = useAuthStore((s) => s.setPapel);
+  const papeis = usePapeisDaConta();
+  const [trocando, setTrocando] = useState<Papel | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
 
   const trocar = useCallback(
     async (papel: Papel) => {

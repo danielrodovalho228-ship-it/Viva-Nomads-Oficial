@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/como-funciona" },
   title: "Como funciona",
   description:
-    "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias no Viva Nomads — para inquilinos e para proprietários.",
+    "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias na Viva Nomads — para moradores e para proprietários.",
 };
 
 const IMG = "/images/como-funciona";
@@ -46,7 +46,7 @@ const OWNER_STEPS = [
 export default function HowItWorksPage() {
   return (
     <>
-      <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/como-funciona", nome: "Como funciona", descricao: "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias no Viva Nomads — para inquilinos e para proprietários." })} />
+      <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/como-funciona", nome: "Como funciona", descricao: "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias na Viva Nomads — para moradores e para proprietários." })} />
       <BannerTopo
         foto={PHOTOS.heroProfessional}
         alt="Pessoa chegando com a mala a um imóvel mobiliado"
@@ -58,7 +58,7 @@ export default function HowItWorksPage() {
           <p>
             Do anúncio ao contrato, com registro e segurança em cada passo — para{" "}
             <a href="#para-inquilinos" className="font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
-              inquilino
+              morador
             </a>{" "}
             e{" "}
             <a href="#para-proprietarios" className="font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
@@ -74,7 +74,7 @@ export default function HowItWorksPage() {
       {/* Vídeo institucional v3 no topo, antes dos passos (só toca no play). */}
       <VideoInstitucional />
 
-      <Steps id="para-inquilinos" title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para inquilinos" />
+      <Steps id="para-inquilinos" title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para moradores" />
 
       {/* Dois caminhos do inquilino: buscar (fluxo acima) ou publicar um pedido. */}
       <DoisCaminhos />
@@ -131,7 +131,7 @@ function GarantiasInquilino() {
           <h3 className="mt-4 font-title text-lg font-semibold text-ink">Caução (depósito devolvível)</h3>
           <dl className="mt-3 space-y-3 text-sm">
             <div>
-              <dt className="font-semibold text-ink">Para o inquilino</dt>
+              <dt className="font-semibold text-ink">Para o morador</dt>
               <dd className="text-muted">
                 Depósito <strong>devolvível</strong> ao fim da estadia, nos termos do contrato.
                 Sem mensalidade.
@@ -283,7 +283,7 @@ function ProtegidoPor() {
       img: "/images/como-funciona/08-feche.webp",
       alt: "Aperto de mãos fechando o contrato de locação",
       title: "Caução do contrato",
-      text: `${CAUCAO_FRASE} Combinada entre proprietário e inquilino. A Viva não é garantidora.`,
+      text: `${CAUCAO_FRASE} Combinada entre proprietário e morador. A Viva não é garantidora.`,
     },
   ];
   return (

@@ -33,11 +33,23 @@ function posicao(): Promise<{ lat: number; lng: number } | null> {
  * "Medir a internet agora" (Prompt 57): no cadastro e na edição (dono) e na conferência de entrada (morador).
  * Duas rodadas no navegador (mediana), com progresso e cancelar; o servidor confere a distância ao imóvel.
  */
-export function MedirInternet({ imovelId, origem }: { imovelId: string; origem: Origem }) {
+export function MedirInternet({
+  imovelId,
+  origem,
+  pontoInicial = "quarto_principal",
+  onMedida,
+}: {
+  imovelId: string;
+  origem: Origem;
+  /** NIVEIS-MEDIR-B: o ponto que o item do nível pede (quarto principal ou ponto de trabalho). */
+  pontoInicial?: PontoMedicao;
+  /** Medição salva (validada ou não): quem mostra o nível relê. */
+  onMedida?: (validada: boolean) => void;
+}) {
   const [estado, setEstado] = useState<EstadoMedir | null>(null);
   const [wifi, setWifi] = useState(false);
   // Adendo 59.1: onde está medindo (o nível pede o quarto principal e o ponto de trabalho).
-  const [ponto, setPonto] = useState<PontoMedicao>("quarto_principal");
+  const [ponto, setPonto] = useState<PontoMedicao>(pontoInicial);
   const [fase, setFase] = useState<"parado" | "local" | "medindo" | "salvando">("parado");
   const [progresso, setProgresso] = useState(0);
   const [resultado, setResultado] = useState<ResultadoMedicao | null>(null);
@@ -95,6 +107,7 @@ export function MedirInternet({ imovelId, origem }: { imovelId: string; origem: 
       });
       const r = (await resp.json()) as ResultadoMedicao;
       setResultado(r);
+      if (r.ok) onMedida?.(r.validada);
       if (r.ok && r.validada && estado.papel === "dono") setEstado({ ...estado, ultima: r.medicao, restantesHoje: estado.restantesHoje - 1 });
       else if (r.ok) setEstado({ ...estado, restantesHoje: estado.restantesHoje - 1 });
     } catch {

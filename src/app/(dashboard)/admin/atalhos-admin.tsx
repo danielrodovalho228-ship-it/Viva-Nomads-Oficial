@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Bot, Home, Users, FlaskConical, MapPinned, HandHelping, FileSignature, LifeBuoy, Mail, Megaphone, ShieldCheck, Star, TrendingUp, Wallet, Wrench } from "lucide-react";
+import { Bot, Home, UserRound, Users, FlaskConical, MapPinned, HandHelping, FileSignature, LifeBuoy, Mail, Megaphone, ShieldCheck, Star, TrendingUp, Wallet, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Panel } from "@/components/dashboard/primitives";
 import { ListaNumeros } from "@/components/admin/numeros";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contadoresAgentes } from "@/lib/data/admin-indicadores";
 import { AGENTES_DEFINICOES } from "@/lib/admin/indicadores";
+import { ROTULO_CONTADOR_FOTOS } from "@/lib/perfil/foto-revisao";
 
 /**
  * Áreas novas do admin na Visão geral (Caixa dos Sócios, Parceiros, Fotógrafos, Equipe), com números ao vivo.
@@ -16,6 +17,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/imoveis", label: "Imóveis", icon: Home },
   { href: "/admin/contratos", label: "Contratos", icon: FileSignature },
   { href: "/admin/usuarios", label: "Usuários", icon: Users },
+  { href: "/admin/fotos-perfil", label: "Fotos de perfil", icon: UserRound },
   { href: "/admin/pendencias", label: "Central de pendências", icon: Wrench },
   { href: "/admin/solicitacoes", label: "Solicitações de manutenção", icon: Wrench },
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
@@ -50,7 +52,7 @@ export async function AtalhosAdmin() {
   };
   const admin = createAdminClient();
   const meuUid = (await supabase.auth.getUser()).data.user?.id ?? null;
-  const [caixa, aceite, aceiteOrdens, interessados, fotografos, agentes, visitas] = await Promise.all([
+  const [caixa, aceite, aceiteOrdens, interessados, fotografos, agentes, visitas, fotosPerfil] = await Promise.all([
     contar(supabase.from("caixa_socios").select("id", { count: "exact", head: true }).in("status", ["novo", "precisa_daniel"])),
     // Ordem 3c3d8a9e: pedidos que o MEU pedido espera aceitar (a RLS é só de admin; filtra pelo autor logado).
     meuUid ? contar(supabase.from("caixa_socios").select("id", { count: "exact", head: true }).eq("status", "aguardando_aceite").eq("autor", meuUid)) : Promise.resolve("—"),
@@ -61,6 +63,8 @@ export async function AtalhosAdmin() {
     // Prompt 29, item 10: os números com nome, da mesma função da página de Agentes (o 263 somava pendentes + lidas).
     admin ? contadoresAgentes(admin).catch(() => null) : Promise.resolve(null),
     contar(supabase.from("visitas_video").select("id", { count: "exact", head: true }).eq("status", "pedido")),
+    // FOTO-PERFIL-B (E13): só o contador (sem alerta por e-mail para a equipe).
+    contar(supabase.from("fotos_perfil_revisao").select("id", { count: "exact", head: true }).eq("status", "em_revisao")),
   ]);
   return (
     <Panel title="Áreas do admin" className="mt-6">
@@ -74,6 +78,7 @@ export async function AtalhosAdmin() {
           { rotulo: `Equipe — ${AGENTES_DEFINICOES.aguardandoOk.rotulo.toLowerCase()}`, valor: agentes?.aguardandoOk ?? "—", href: "/admin/agentes" },
           { rotulo: `Equipe — ${AGENTES_DEFINICOES.ordensPendentes.rotulo.toLowerCase()}`, valor: agentes?.ordensPendentes ?? "—", href: "/admin/agentes" },
           { rotulo: "Visitas por vídeo — pedidos abertos", valor: visitas, href: "/dashboard/visitas" },
+          { rotulo: ROTULO_CONTADOR_FOTOS, valor: fotosPerfil, href: "/admin/fotos-perfil" },
         ]}
       />
       <ul data-testid="admin-outras-areas" className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">

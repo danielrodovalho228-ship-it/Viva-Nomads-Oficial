@@ -88,7 +88,7 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     const e = (await espelho.boundingBox())!;
     const c = (await cartao.boundingBox())!;
     expect(e.x).toBeGreaterThan(c.x + c.width - 1);
-    await expect(espelho).toContainText("É assim que o proprietário te vê");
+    await expect(espelho).toContainText("É assim que o proprietário te vê quando você pede para morar");
 
     // Opcionais fechados sem dados (E56).
     await expect(p.getByTestId("pets-toggle-bloco-toggle")).toHaveAttribute("aria-checked", "false");
