@@ -16,7 +16,7 @@ test("nasce fechado sem dados e aberto com dados; desligar com dados pede confir
 });
 
 test("blocos convertidos na Conta (a lista da rodada) e os textos aprovados", () => {
-  assert.deepEqual(BLOCOS_TOGGLE_CONTA.map((b) => b.id), ["pets", "local-trabalho", "redes"]);
+  assert.deepEqual(BLOCOS_TOGGLE_CONTA.map((b) => b.id), ["pets", "local-trabalho", "profissao", "idiomas", "redes"]);
   assert.equal(BLOCOS_TOGGLE_CONTA[0].pergunta, "Você tem pet?");
   assert.equal(BLOCOS_TOGGLE_CONTA[0].confirmar, "Remover os pets do seu perfil? Eles saem da sua candidatura.");
 });

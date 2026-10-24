@@ -123,7 +123,7 @@ const assinarBusca = (avisar: () => void) => {
 
 /**
  * Lista ÚNICA de confiança e segurança (prompt 18): e-mail, celular, identidade, LinkedIn, duas etapas e senha —
- * cada item uma vez. O item "Verificação" do menu aponta para cá (#confianca).
+ * cada item uma vez. O item "Verificação" do menu aponta para cá (/dashboard/conta/privacidade).
  */
 export function ConfiancaLista() {
   const [emailOk, setEmailOk] = useState<boolean | null>(null);
@@ -185,7 +185,7 @@ export function ConfiancaLista() {
       rotulo: "Celular",
       situacao: celular?.verificado ? "ok" : celular && !celular.disponivel ? "em_breve" : "falta",
       detalhe: celular?.verificado ? "Verificado por SMS" : celular && !celular.disponivel ? "Em breve" : "Não verificado (opcional)",
-      acao: celular?.verificado || (celular && !celular.disponivel) ? undefined : { texto: "Verificar", href: "#celular" },
+      acao: celular?.verificado || (celular && !celular.disponivel) ? undefined : { texto: "Verificar", href: "/dashboard/conta/dados#celular" },
     },
     {
       chave: "identidade",

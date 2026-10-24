@@ -92,15 +92,18 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
     test(`${largura}px — conta com 3 papéis: Seus papéis, 4 grupos, sem seletor de modo`, async ({ browser }) => {
       const page = await entrar(browser, tres.email, senha);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+      await page.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
       const papeis = page.getByTestId("seus-papeis").locator("visible=true").first();
       await expect(papeis).toBeVisible({ timeout: 25_000 });
       for (const p of ["morador", "proprietario", "parceiro"]) await expect(papeis.locator(`[data-papel="${p}"]`)).toHaveAttribute("data-ativo", "1");
       await expect(page.getByRole("radiogroup", { name: /modo/i })).toHaveCount(0);
       await expect(page.getByText(/Proprietário \| Inquilino/)).toHaveCount(0);
       if (largura === 390) {
-        const grupos = await page.getByTestId("conta-grupo").evaluateAll((els) => els.map((e) => e.getAttribute("data-grupo")));
-        for (const g of ["Conta", "Notificações", "Privacidade e segurança", "Pagamentos"]) expect(grupos).toContain(g);
+        // A1: no celular /dashboard/conta é o menu; o grupo "Conta" leva às oito telas (Notificações, Privacidade, Pagamentos…).
+        await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+        const grupoConta = page.locator('[data-testid="conta-grupo"][data-grupo="Conta"]');
+        await expect(grupoConta).toBeVisible({ timeout: 25_000 });
+        for (const s of ["notificacoes", "privacidade", "pagamentos"]) await expect(grupoConta.locator(`a[href="/dashboard/conta/${s}"]`)).toHaveCount(1);
         // A barra segue o contexto da tela, sem troca manual nem segundo login.
         await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
         await expect(async () => expect(await abas(page)).toContain("Agenda")).toPass({ timeout: 25_000 });
@@ -110,9 +113,12 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
         await expect(async () => expect(await abas(page)).toContain("Estadias")).toPass({ timeout: 25_000 });
         await expect(page).toHaveURL(/\/dashboard\/locacoes/);
       } else {
-        // CONTA-A: o antigo bloco "Conta" virou Perfil (#perfil-publico), Papéis e Dados; os grupos seguem com âncora.
-        for (const g of ["perfil-publico", "papeis", "dados", "notificacoes", "confianca", "pagamentos"]) await expect(page.locator(`#${g}`)).toHaveCount(1);
-        await expect(page.getByTestId("conta-pagamentos")).toContainText("A Viva não recebe esse valor");
+        // A1: no computador a Conta é uma casca com o menu lateral das oito telas; Pagamentos tem a sua tela.
+        await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+        const menu = page.getByTestId("conta-menu-lateral");
+        for (const s of ["perfil", "papeis", "dados", "privacidade", "notificacoes", "pagamentos"]) await expect(menu.locator(`a[href="/dashboard/conta/${s}"]`)).toHaveCount(1);
+        await page.goto("/dashboard/conta/pagamentos", { waitUntil: "domcontentloaded" });
+        await expect(page.getByTestId("conta-pagamentos")).toContainText("A Viva não recebe esse valor", { timeout: 25_000 });
       }
       // Início: as decisões e os blocos por papel, sem o checklist de proprietário (já tem anúncio no ar).
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
@@ -134,7 +140,7 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
       await expect(page.getByTestId("inicio-proprietario")).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t280-morador-inicio-${largura}.png`, fullPage: false });
 
-      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+      await page.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
       const papeis = page.getByTestId("seus-papeis").locator("visible=true").first();
       await expect(papeis).toBeVisible({ timeout: 25_000 });
       await expect(papeis.locator('[data-papel="proprietario"]')).toHaveAttribute("data-ativo", "0");

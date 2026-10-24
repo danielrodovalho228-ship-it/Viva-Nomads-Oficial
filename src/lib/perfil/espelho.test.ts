@@ -72,7 +72,7 @@ test("fluxo único da foto: input acessível (sr-only, nunca display:none), reco
   assert.match(f, /avisarFotoAtualizada\(nova\.url\)/);
   assert.match(ler("src/components/layout/dashboard-shell.tsx"), /FOTO_ATUALIZADA/);
   // Todos os pontos de foto usam o MESMO fluxo; os convites nunca mais levam a uma âncora.
-  for (const p of ["src/components/account/topo-conta.tsx", "src/components/account/convite-foto-perfil.tsx", "src/components/account/convite-foto-candidatura.tsx", "src/components/account/avatar-uploader.tsx"]) {
+  for (const p of ["src/components/account/perfil-tela.tsx", "src/components/account/convite-foto-perfil.tsx", "src/components/account/convite-foto-candidatura.tsx"]) {
     const s = ler(p);
     assert.match(s, /<EnviarFoto\b/, p);
     assert.doesNotMatch(s, /type="file"/, `${p} não tem seletor próprio`);
@@ -80,26 +80,28 @@ test("fluxo único da foto: input acessível (sr-only, nunca display:none), reco
   assert.doesNotMatch(ler("src/components/account/convite-foto-perfil.tsx"), /href=|#perfil-publico/);
 });
 
-test("Conta: um H1 só (o nome, ou 'Sua conta'), sem títulos numerados, âncoras mantidas", () => {
+test("Conta (A1): um H1 visível por largura (nome da seção), sem títulos numerados, âncoras do celular e documento mantidas", () => {
   const conta = semComentarios(ler("src/app/(dashboard)/dashboard/conta/page.tsx"));
-  const topo = ler("src/components/account/topo-conta.tsx");
-  assert.equal((topo.match(/<h1\b/g) ?? []).length, 1);
+  const casca = ler("src/components/account/casca-conta.tsx");
+  // Casca: um H1 no topo (some a partir de 1280 px quando o título vai para a coluna da direita) e o lateral.
+  assert.equal((casca.match(/<h1\b/g) ?? []).length, 2);
+  assert.match(casca, /topoDireita && "xl:hidden"/);
+  assert.match(casca, /<header className="hidden xl:block" data-testid="conta-cabecalho-lateral">/);
   assert.doesNotMatch(conta, /<h1\b|<PageTitle/);
-  assert.match(topo, /export const tituloDaConta = \(nome: string \| null \| undefined\) => \(nome \?\? ""\)\.trim\(\) \|\| "Sua conta"/);
-  assert.match(topo, /Ver meu perfil público/);
+  assert.match(ler("src/components/account/perfil-tela.tsx"), /<TituloSecaoLateral ativo="perfil"/);
   assert.doesNotMatch(ler("src/components/account/conta-blocos.tsx"), /numero\}|\{numero/);
-  for (const id of ["perfil-publico", "dados", "sair-da-viva"]) assert.match(conta, new RegExp(`id="${id}"`));
+  for (const id of ["celular", "documento"]) assert.match(ler("src/components/account/" + (id === "celular" ? "telefone-verificacao.tsx" : "conta-secoes.tsx")), new RegExp(`id="${id}"`), id);
 });
 
-test("progresso que anda: degraus, formulário e topo releem quando o perfil muda", () => {
-  for (const p of ["src/components/account/degraus-perfil.tsx", "src/components/account/perfil-publico-form.tsx", "src/components/account/topo-conta.tsx"]) assert.match(ler(p), /PERFIL_ATUALIZADO/, p);
+test("progresso que anda: degraus, tela do Perfil e o medidor releem quando o perfil muda", () => {
+  for (const p of ["src/components/account/degraus-perfil.tsx", "src/components/account/perfil-tela.tsx"]) assert.match(ler(p), /PERFIL_ATUALIZADO/, p);
   assert.match(ler("src/components/account/conta-secoes.tsx"), /window\.dispatchEvent\(new Event\(PERFIL_ATUALIZADO\)\)/);
 });
 
-test("espelho e celular: um verde só, o botão preso 'Salvar e ver imóveis' só no celular", () => {
-  const form = ler("src/components/account/perfil-publico-form.tsx");
-  assert.match(form, /Salvar e ver imóveis/);
-  assert.match(form, /vn-salvar-perfil sticky[^"]*lg:hidden/);
-  assert.match(form, /className="hidden lg:inline-flex"/);
-  assert.match(ler("src/components/account/espelho-perfil.tsx"), /bg-areia/);
+test("espelho e celular (perfil-01): pílula verde do título, 'Salvar alterações' preso só no celular", () => {
+  const tela = ler("src/components/account/perfil-tela.tsx");
+  assert.match(tela, /vn-salvar-perfil sticky[^"]*lg:hidden/);
+  assert.match(tela, /data-testid="perfil-salvar"/);
+  assert.doesNotMatch(tela, /Salvar e ver imóveis/);
+  assert.match(ler("src/components/account/espelho-perfil.tsx"), /bg-forest/);
 });

@@ -9,7 +9,7 @@ import { COOKIE_FLUXO, conferirIdToken, hashDoSub, lerCookie, nomeCompativel, re
 
 export const dynamic = "force-dynamic";
 
-const CONTA = "/dashboard/conta";
+const CONTA = "/dashboard/conta/privacidade";
 
 /**
  * 63-B — volta do LinkedIn. Confere a sessão Viva (a MESMA que começou), o state e o cookie de 10 min; troca o code no
@@ -18,7 +18,7 @@ const CONTA = "/dashboard/conta";
  */
 export async function GET(request: NextRequest) {
   const fim = (motivo: string) => {
-    const r = NextResponse.redirect(`${SITE_URL}${CONTA}?linkedin=${motivo}#confianca`, 303);
+    const r = NextResponse.redirect(`${SITE_URL}${CONTA}?linkedin=${motivo}`, 303);
     r.cookies.set(COOKIE_FLUXO, "", { path: "/api/conta/linkedin", maxAge: 0 });
     return r;
   };

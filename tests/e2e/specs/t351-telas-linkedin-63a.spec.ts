@@ -98,13 +98,13 @@ test.describe("T351 — telas do selo LinkedIn conectado (63-A)", () => {
     test(`1-2. a ${w} px: chave desligada esconde; desconectado e o retorno com as 3 falhas`, async ({ browser }) => {
       const p = await comoAna(browser, w);
       // Chave desligada: nada do LinkedIn, nem com o parâmetro de retorno.
-      await p.goto("/dashboard/conta?linkedin=nome#confianca", { waitUntil: "domcontentloaded" });
+      await p.goto("/dashboard/conta/privacidade?linkedin=nome", { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("confianca-email")).toBeVisible({ timeout: 20_000 });
       await expect(p.getByTestId("confianca-linkedin")).toHaveCount(0);
       await expect(p.getByTestId("linkedin-retorno")).toHaveCount(0);
 
       await ligarChave(p);
-      await p.goto("/dashboard/conta#confianca", { waitUntil: "domcontentloaded" });
+      await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
       const linha = p.getByTestId("confianca-linkedin");
       await expect(linha).toHaveAttribute("data-situacao", "falta", { timeout: 20_000 });
       await expect(linha).toContainText("Opcional");
@@ -121,7 +121,7 @@ test.describe("T351 — telas do selo LinkedIn conectado (63-A)", () => {
         cancelado: "Você cancelou a conexão com o LinkedIn. Nada foi gravado.",
       } as const;
       for (const [k, causa] of Object.entries(falhas)) {
-        await p.goto(`/dashboard/conta?linkedin=${k}#confianca`, { waitUntil: "domcontentloaded" });
+        await p.goto(`/dashboard/conta/privacidade?linkedin=${k}`, { waitUntil: "domcontentloaded" });
         const r = p.getByTestId("linkedin-retorno");
         await expect(r).toHaveAttribute("data-ok", "nao", { timeout: 20_000 });
         await expect(p.getByTestId("linkedin-aviso")).toHaveText(causa);
@@ -139,7 +139,7 @@ test.describe("T351 — telas do selo LinkedIn conectado (63-A)", () => {
     const p = await comoAna(browser, 390);
     await ligarChave(p);
     const conectar = async () => {
-      await p.goto("/dashboard/conta#confianca", { waitUntil: "domcontentloaded" });
+      await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("confianca-linkedin")).toHaveAttribute("data-situacao", "falta", { timeout: 20_000 });
       await p.getByTestId("confianca-linkedin-acao").click();
       await p.waitForURL(/linkedin=/, { timeout: 30_000 });
@@ -161,7 +161,7 @@ test.describe("T351 — telas do selo LinkedIn conectado (63-A)", () => {
 
     for (const w of LARGURAS) {
       await p.setViewportSize({ width: w, height: altura(w) });
-      await p.goto("/dashboard/conta#confianca", { waitUntil: "domcontentloaded" });
+      await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
       await expect(linha).toHaveAttribute("data-situacao", "ok", { timeout: 20_000 });
       await linha.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t351-conta-conectado-${w}.png` });

@@ -499,6 +499,11 @@ body:has([data-testid="barra-fixa-imovel"]) {
     padding-right: 5rem;
   }
 }
+/* A1 (mockups perfil-01..08): as telas da Conta sobre o fundo areia, com cartões brancos. */
+[data-painel-main]:has([data-conta-casca]:not(.hidden *)),
+[data-painel-main]:has([data-testid="conta-menu"]) {
+  background: var(--color-areia);
+}
 /* Rolagem até um elemento (âncora, foco, "rolar até o botão") para acima do botão flutuante da Viva, em qualquer
    largura: o flutuante não cobre a ação principal da tela (t241, #953). */
 html:has([data-testid="fale-com-a-viva-raiz"]) {

@@ -59,7 +59,7 @@ export function AvisoPetCandidatura({
           ))}
         </ul>
       )}
-      <Link href="/dashboard/conta" className="mt-1 inline-block font-semibold underline">
+      <Link href="/dashboard/conta/perfil" className="mt-1 inline-block font-semibold underline">
         Ver minha ficha de pets
       </Link>
     </div>

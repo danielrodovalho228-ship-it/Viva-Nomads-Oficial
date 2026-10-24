@@ -89,4 +89,4 @@ export function selosDoPedido(s: { emailConfirmado: boolean; telefoneConfirmado:
 }
 
 /** Onde a pessoa confirma o telefone/e-mail. */
-export const ROTA_CONFIRMAR_CONTATO = "/dashboard/conta/perfil";
+export const ROTA_CONFIRMAR_CONTATO = "/dashboard/conta/dados#celular"; // A1: o celular fica na tela Dados

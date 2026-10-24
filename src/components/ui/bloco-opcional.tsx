@@ -11,6 +11,8 @@ import { aoDesligar } from "@/lib/ui/bloco-opcional";
  */
 export function BlocoOpcional(p: {
   pergunta: string;
+  /** A1 (perfil-01, toggle-02): com título, o cartão é "Título ······ [switch]" e a pergunta vem embaixo. */
+  titulo?: string;
   ligado: boolean;
   onLigado: (v: boolean) => void;
   temDados: boolean;
@@ -42,12 +44,21 @@ export function BlocoOpcional(p: {
   return (
     <div data-testid={p.testId} data-ligado={p.ligado ? "1" : "0"}>
       <div className="flex items-center justify-between gap-4">
-        <span id={`${p.testId}-pergunta`} className="text-sm font-semibold text-ink">
-          {p.pergunta}
-        </span>
+        {p.titulo ? (
+          <h2 className="font-title text-xl font-semibold text-ink">{p.titulo}</h2>
+        ) : (
+          <span id={`${p.testId}-pergunta`} className="text-sm font-semibold text-ink">
+            {p.pergunta}
+          </span>
+        )}
         {/* O switch ÚNICO da casa (ui/switch, o mesmo do anúncio — CAMPOS-2). */}
         <Switch checked={p.ligado} onChange={alternar} label={p.pergunta} disabled={confirmando || limpando} testId={`${p.testId}-toggle`} />
       </div>
+      {p.titulo && (
+        <p id={`${p.testId}-pergunta`} className="mt-1 text-sm text-muted">
+          {p.pergunta}
+        </p>
+      )}
       {confirmando && (
         <div className="mt-3 rounded-xl border border-red-200 bg-white p-4" role="alertdialog" aria-labelledby={`${p.testId}-confirma-texto`} data-testid={`${p.testId}-confirma`}>
           <p id={`${p.testId}-confirma-texto`} className="text-sm text-ink">

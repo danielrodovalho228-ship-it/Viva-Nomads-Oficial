@@ -46,9 +46,9 @@ test.describe("T318 — papel ativo com fonte única (PAPEL-B)", () => {
       const alvo = largura === 390 ? "proprietario" : "morador";
       if (largura === 1280) await adm().from("profiles").update({ papel_ativo: "proprietario", preferred_mode: "owner" }).eq("id", ids.conta);
       const p = await abrir(browser, largura);
-      await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+      await p.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
       const papeis = p.getByTestId("seus-papeis").filter({ visible: true });
-      await expect(papeis.getByRole("heading", { name: "Papéis e intenção" })).toBeVisible({ timeout: 20_000 });
+      await expect(p.getByRole("heading", { name: "Papéis e intenção" })).toBeVisible({ timeout: 20_000 });
       await expect(papeis.getByTestId(`usar-papel-${alvo}`)).toBeVisible({ timeout: 20_000 });
       await p.screenshot({ path: `${SAIDA}/t318-conta-papeis-${largura}.png`, fullPage: true });
       await papeis.getByTestId(`usar-papel-${alvo}`).click();
@@ -99,7 +99,7 @@ test.describe("T318 — papel ativo com fonte única (PAPEL-B)", () => {
     test.setTimeout(120_000);
     await adm().from("profiles").update({ papel_ativo: "proprietario", preferred_mode: "owner", intencao: ["anunciar"] }).eq("id", ids.conta);
     const p = await abrir(browser, 1280);
-    await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+    await p.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
     const intencao = p.getByTestId("minha-intencao").filter({ visible: true });
     await expect(intencao.getByTestId("intencao-morar")).toBeVisible({ timeout: 20_000 });
     await intencao.getByTestId("intencao-anunciar").click();

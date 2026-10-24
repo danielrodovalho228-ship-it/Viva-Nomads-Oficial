@@ -95,7 +95,7 @@ function fechar(papel: Papel, titulo: string, itens: ItemAtivacao[]): ChecklistA
 
 export function checklistMorador(f: FatosConta): ChecklistAtivacao {
   return fechar("morador", "Para encontrar seu imóvel", [
-    item("perfil", "Nome e foto no perfil", f.temNome && f.temFoto, { rotulo: "Completar o perfil", href: "/dashboard/conta#perfil-publico" }, "O dono vê quem pede antes de responder."),
+    item("perfil", "Nome e foto no perfil", f.temNome && f.temFoto, { rotulo: "Completar o perfil", href: "/dashboard/conta/perfil" }, "O dono vê quem pede antes de responder."),
     item("salvar", "Salvar uma busca ou um favorito", f.favoritos + f.buscasSalvas > 0, { rotulo: "Buscar imóveis", href: "/buscar" }),
     item("pedido", "Enviar o primeiro pedido", f.pedidosEnviados > 0, { rotulo: "Fazer um pedido de moradia", href: "/pedidos/novo" }, "Pedido não é contrato: nada é cobrado até vocês assinarem."),
   ]);

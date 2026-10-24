@@ -16,7 +16,7 @@ test.describe("T129 — Motivo da estadia no perfil", () => {
   for (const [nome, largura, altura] of [["390 px", 390, 844], ["1280 px", 1280, 800]] as const) {
     test(`Conta salva o motivo e o pedido novo vem pré-preenchido (${nome})`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: altura });
-      await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
       const seletor = page.getByTestId("perfil-motivo-estadia");
       await expect(seletor).toBeVisible();
       const original = await seletor.inputValue();
@@ -32,7 +32,7 @@ test.describe("T129 — Motivo da estadia no perfil", () => {
         // Prompt 12: o motivo é um select nativo, pré-preenchido com o do perfil.
         await expect(page.getByTestId("pedido-motivo")).toHaveValue(novo);
       } finally {
-        await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+        await page.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
         await page.getByTestId("perfil-motivo-estadia").selectOption(original);
         await page.getByRole("button", { name: "Salvar alterações" }).click();
         await expect(page.getByText("Dados salvos.")).toBeVisible();

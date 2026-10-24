@@ -3,9 +3,7 @@ import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 
 /*
-  T192 — Conta em 4 blocos (prompt 18), a 390 e 1280 px:
-  - blocos Conta → Notificações → Privacidade e segurança → Pagamentos, nessa ordem (Prompt 43, #1038; o perfil
-    público e os dados ficam dentro de Conta);
+  T192 — Conta (prompt 18; A1: uma tela por seção), a 390 e 1280 px:
   - cada assunto uma vez: nada de "Alterar senha" duplicado, de painel "Verificação" solto nem de simulador tributário;
   - a lista de confiança tem e-mail, celular, identidade (em breve), duas etapas e senha, cada um uma vez
     (LinkedIn só no modo inquilino);
@@ -23,21 +21,10 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
     test.use({ storageState: authFile(persona) });
 
     for (const largura of [390, 1280]) {
-      test(`${largura}px — 4 blocos, sem repetição, confiança numa lista só`, async ({ page }) => {
+      test(`${largura}px — Conta em telas (A1), sem repetição, confiança numa lista só`, async ({ page }) => {
         await page.setViewportSize({ width: largura, height: 900 });
-        await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
-        const blocos = page.locator('[data-testid^="bloco-"]');
-        // CONTA-A (entrega Perfil): topo único + 8 blocos, cada assunto uma vez.
-        expect(await blocos.evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")))).toEqual([
-          "bloco-perfil-publico",
-          "bloco-avaliacoes",
-          "bloco-papeis",
-          "bloco-dados",
-          "bloco-confianca",
-          "bloco-notificacoes",
-          "bloco-pagamentos",
-          "bloco-sair-da-viva",
-        ]);
+        // A1: cada assunto na sua tela; a lista de confiança mora em Privacidade.
+        await page.goto("/dashboard/conta/privacidade", { waitUntil: "networkidle" });
         const corpo = await page.locator("main").innerText();
         expect(corpo).not.toMatch(/Simulador tributário|Tributação das locações/);
         expect(corpo.match(/Alterar senha/g)?.length ?? 0).toBeLessThanOrEqual(1);
@@ -51,16 +38,20 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
         // nesta rodada); o endereço do perfil saiu da lista de confiança e ficou em Dados pessoais (só a Viva vê).
         await expect(lista.getByTestId("confianca-linkedin")).toHaveCount(0);
         await expect(lista.getByTestId("confianca-senha").getByRole("link")).toHaveAttribute("href", "/dashboard/conta/seguranca");
-
-        // CONTA-A (C3c): a visão do proprietário fica só no ESPELHO; o cartão "Seu perfil público" saiu da Conta do site.
-        await expect(page.getByTestId("espelho-perfil")).toBeVisible();
-        await expect(page.getByTestId("seu-perfil-publico")).toHaveCount(0);
         await semRolagemLateral(page);
         await page.screenshot({ path: `${SAIDA}/t192-conta-${rotulo}-${largura}.png`, fullPage: true });
 
-        // "Verificação" do menu leva à lista.
+        // O Perfil não repete a lista nem o cartão "Seu perfil público"; o espelho é a visão do proprietário.
+        await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+        await expect(page.locator('[data-testid="espelho-perfil"]:visible')).toHaveCount(1);
+        await expect(page.getByTestId("seu-perfil-publico")).toHaveCount(0);
+        await expect(page.getByTestId("confianca-lista")).toHaveCount(0);
+        await semRolagemLateral(page);
+
+        // Link antigo do item "Verificação" (página longa) cai na tela Privacidade.
         await page.goto("/dashboard/conta#confianca", { waitUntil: "networkidle" });
-        await expect(page.getByTestId("bloco-confianca")).toBeInViewport();
+        await expect(page).toHaveURL(/\/dashboard\/conta\/privacidade$/);
+        await expect(page.getByTestId("confianca-lista")).toBeVisible();
       });
     }
   });

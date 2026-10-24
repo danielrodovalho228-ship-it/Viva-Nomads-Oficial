@@ -18,6 +18,17 @@ export const BLOCOS_TOGGLE_CONTA = [
     pergunta: "Quer ver o tempo até o trabalho?",
     confirmar: "Remover o seu local de trabalho? A busca e os alertas deixam de mostrar o tempo até lá.",
   },
+  // A1 (mockup toggle-02-perfil): profissão e idiomas também atrás do toggle na tela Perfil.
+  {
+    id: "profissao",
+    pergunta: "Quer mostrar sua profissão aos proprietários?",
+    confirmar: "Tirar a profissão do seu perfil? Ela deixa de aparecer na sua candidatura.",
+  },
+  {
+    id: "idiomas",
+    pergunta: "Quer mostrar os idiomas que você fala?",
+    confirmar: "Tirar os idiomas do seu perfil?",
+  },
   {
     id: "redes",
     pergunta: "Quer informar suas redes sociais?",

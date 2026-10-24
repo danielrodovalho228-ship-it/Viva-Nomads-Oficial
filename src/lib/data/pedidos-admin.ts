@@ -162,9 +162,9 @@ export async function definirChaveSms(ligar: boolean): Promise<ActionResult & { 
         email: perfil.email as string,
         name: (perfil.full_name as string) ?? undefined,
         userId: inqId,
-        pushUrl: "/dashboard/conta/perfil",
+        pushUrl: "/dashboard/conta/dados#celular",
         detailsHtml: `<p style="margin:12px 0 0;color:#334155;">${textoEmail(texto, 300)}</p>
-          <p style="margin:12px 0 0;"><a href="${SITE_URL}/dashboard/conta/perfil" style="color:#0f3d2e;font-weight:700;">Confirmar telefone →</a></p>`,
+          <p style="margin:12px 0 0;"><a href="${SITE_URL}/dashboard/conta/dados#celular" style="color:#0f3d2e;font-weight:700;">Confirmar telefone →</a></p>`,
         detailsText: `${texto} ${SITE_URL}/dashboard/conta/perfil`,
       });
       await admin.from("pedidos_moradia").update({ aviso_telefone_em: agora }).in("id", ids);

@@ -5,8 +5,8 @@ import { readFileSync } from "node:fs";
 // t183 (admin, 390 px): a Caixa de e-mails de teste entra na tela depois do carregamento. Se ficar acima de
 // "Excluir conta", empurra o botão para fora da tela depois da rolagem. Por isso vem por último.
 test("Conta: a caixa de e-mails de teste vem depois da zona de exclusão", () => {
-  const src = readFileSync(new URL("../app/(dashboard)/dashboard/conta/page.tsx", import.meta.url), "utf8");
-  // Prompt 51 F1: a zona de exclusão fica dentro de "Sair da Viva".
+  const src = readFileSync(new URL("../app/(dashboard)/dashboard/conta/[secao]/page.tsx", import.meta.url), "utf8");
+  // Prompt 51 F1: a zona de exclusão fica dentro de "Sair da Viva" (A1: na tela Ajuda).
   const exclusao = src.indexOf("<SairDaViva />");
   const caixa = src.indexOf("<CaixaEmailsTeste />");
   assert.ok(exclusao > 0 && caixa > 0);

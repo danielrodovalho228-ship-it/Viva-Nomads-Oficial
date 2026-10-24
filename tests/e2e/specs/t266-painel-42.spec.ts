@@ -164,9 +164,9 @@ test.describe("T266 — Painel do Prompt 42", () => {
       test.setTimeout(90_000);
       const page = await abrir(browser, dono.email, largura);
       await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-      // CONTA-A (#1214): o h1 único da Conta é o nome da pessoa (antes "Conta", repetido no bloco: E1).
-      const titulo = page.getByTestId("conta-h1");
-      await expect(titulo).toHaveText(dono.nome, { timeout: 25_000 });
+      // A1 (sobre o #1214): um h1 visível por tela — no celular /dashboard/conta é o menu ("Conta"); no computador, a tela Perfil.
+      const titulo = page.locator("main h1:visible").first();
+      await expect(titulo).toHaveText(largura < 1024 ? "Conta" : "Perfil", { timeout: 25_000 });
       await expect(page.locator("main h1:visible")).toHaveCount(1);
       await expect(page.locator('[data-testid="painel-capa"]')).toHaveCount(0);
       // Título em texto: o h1 fica no alto, sem uma faixa de foto antes do conteúdo.

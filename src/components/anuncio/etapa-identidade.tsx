@@ -68,7 +68,7 @@ export function EtapaIdentidade({ onConfirmada }: { onConfirmada?: () => void })
       {estado === "sem_cpf" && (
         <p className="mt-3 text-sm text-ink" data-testid="identidade-sem-cpf">
           Cadastre seu CPF em{" "}
-          <Link href="/dashboard/conta#documento" className="font-semibold text-forest underline">
+          <Link href="/dashboard/conta/dados#documento" className="font-semibold text-forest underline">
             Conta
           </Link>{" "}
           para confirmar a identidade. Você pode seguir o cadastro enquanto isso.
