@@ -31,15 +31,15 @@ test.describe("T113 — Busca por descrição", () => {
     // FILTROS-2: Wi-Fi é garantia do padrão mínimo, não filtro — a frase o cita, mas não vira filtro.
     await expect(page).not.toHaveURL(/comod=[^&]*wifi/);
 
-    // Tirar um filtro (pela folha) tira só aquele.
-    await page.getByTestId("pilula-mais").click();
-    const filtros = page.getByRole("dialog", { name: "Filtros" });
-    const pets = filtros.getByRole("button", { name: "Aceita pets", exact: true });
-    await expect(pets).toHaveAttribute("aria-pressed", "true");
-    await pets.click();
-    await filtros.getByTestId("aplicar-filtros").click();
-    await expect(page).not.toHaveURL(/pet=1/);
+    // Tirar um filtro tira só aquele: o preço sai pela própria pílula (vale na hora, mesmo com a lista vazia — a folha
+    // não aplica um conjunto que continua sem resultado).
+    await page.getByTestId("pilula-preco").click();
+    await page.getByTestId("painel-pilula-preco").getByTestId("pilula-preco-2500").click();
+    await expect(page).not.toHaveURL(/preco=2500/);
+    await expect(page.getByTestId("pilula-preco")).toHaveAttribute("data-valor", "");
     await expect(page).toHaveURL(/quartos=2/);
+    await expect(page).toHaveURL(/pet=1/);
+    await page.keyboard.press("Escape");
 
     const larguraDoc = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(larguraDoc).toBeLessThanOrEqual(0); // 390 px sem rolagem lateral

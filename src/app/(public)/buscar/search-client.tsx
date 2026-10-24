@@ -694,11 +694,14 @@ export function SearchClient({
           <h1 className="text-base font-semibold tabular-nums text-ink" data-testid="titulo-busca">
             {contagemDaBusca({ n: results.length, local: locationQuery.trim() || cidadeDaLista })}
           </h1>
-          {results.length > 0 && <span className="text-base text-muted" data-testid="complemento-busca">· R$ 0 de taxa para você</span>}
-          {results.length > 0 && <SalvarBusca versao={versaoBusca} />}
-          <button type="button" onClick={() => setDescreverAberto(true)} className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest" data-testid="abrir-descrever">
-            Descrever o que procuro
-          </button>
+          {results.length > 0 && <span className="text-sm text-muted" data-testid="complemento-busca">· R$ 0 de taxa para você</span>}
+          {/* As duas ações ficam juntas (no celular, uma linha só abaixo da contagem). */}
+          <div className="flex flex-wrap items-center gap-x-4">
+            {results.length > 0 && <SalvarBusca versao={versaoBusca} />}
+            <button type="button" onClick={() => setDescreverAberto(true)} className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest" data-testid="abrir-descrever">
+              Descrever o que procuro
+            </button>
+          </div>
         </div>
       </div>
 
