@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Locator, type Page } from "@playwright
 import { NO_LABORATORIO, apagarContas, criarAdmin, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T394 — NAV-A (24/10): a barra verde é a única navegação de trabalho; a Conta é só a pessoa. 390 e 1280.
+ * T403 — NAV-A (24/10): a barra verde é a única navegação de trabalho; a Conta é só a pessoa. 390 e 1280.
  *   1. A Conta (menu do celular e menu lateral do computador): Perfil, Como você usa a Viva, Avaliações, Dados,
  *      Privacidade, Notificações, Pagamentos, Ajuda — e Sair. Nada de Ferramentas, Painel Admin, Equipe, avisos,
  *      Verificação ou Indicações ali (nem para o admin).
@@ -13,15 +13,15 @@ const SAIDA = "tests/laboratorio/saida";
 const CONTA = ["Perfil", "Como você usa a Viva", "Avaliações", "Dados", "Privacidade", "Notificações", "Pagamentos", "Ajuda"];
 const FORA_DA_CONTA = ["Seus avisos", "Ferramentas", "Painel Admin", "Equipe e aprovações", "Indicações", "Verificação", "Termos de uso", "Política de privacidade"];
 
-test.describe("T394 — NAV-A: Conta só a pessoa; trabalho na barra verde", () => {
+test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const morador = { email: `inq.t394.${sufixo}@lab.vivanomads.test`, nome: "Clara Duarte", role: "tenant" as const };
-  const dono = { email: `dono.t394.${sufixo}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
-  const admin = { email: `admin.t394.${sufixo}@lab.vivanomads.test`, nome: "Ada Admin" };
+  const morador = { email: `inq.t403.${sufixo}@lab.vivanomads.test`, nome: "Clara Duarte", role: "tenant" as const };
+  const dono = { email: `dono.t403.${sufixo}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
+  const admin = { email: `admin.t403.${sufixo}@lab.vivanomads.test`, nome: "Ada Admin" };
   const ids: string[] = [];
   test.beforeAll(async () => {
     ids.push(await criarConta(morador, senha));
@@ -69,7 +69,7 @@ test.describe("T394 — NAV-A: Conta só a pessoa; trabalho na barra verde", () 
         if (w === 390) await expect(lista.getByRole("button", { name: /Sair/ })).toBeVisible();
         for (const fora of FORA_DA_CONTA) await expect(lista.getByText(fora, { exact: true }), `${quem}: ${fora}`).toHaveCount(0);
         await semRolagemLateral(p);
-        if (quem === "morador") await p.screenshot({ path: `${SAIDA}/t394-conta-depois-${w}.png`, fullPage: w === 390 });
+        if (quem === "morador") await p.screenshot({ path: `${SAIDA}/t403-conta-depois-${w}.png`, fullPage: w === 390 });
         await p.context().close();
       }
     });
@@ -90,7 +90,7 @@ test.describe("T394 — NAV-A: Conta só a pessoa; trabalho na barra verde", () 
           expect(doAdmin, quem).toEqual([0, 0]);
         }
         await semRolagemLateral(p);
-        await p.screenshot({ path: `${SAIDA}/t394-barra-${quem}-${w}.png` });
+        await p.screenshot({ path: `${SAIDA}/t403-barra-${quem}-${w}.png` });
         await p.context().close();
       }
     });

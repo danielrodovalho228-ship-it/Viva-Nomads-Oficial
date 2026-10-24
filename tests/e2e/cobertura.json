@@ -547,7 +547,7 @@
         "t355-conta-a-perfil-espelho",
         "t352-varredura-bloco17",
         "t387-varredura-bloco22",
-        "t394-nav-a"
+        "t403-nav-a"
       ]
     },
     "/dashboard/assinatura": {
@@ -658,7 +658,7 @@
         "t353-varredura-bloco18",
         "t354-varredura-bloco19",
         "t393-conta-leva2",
-        "t394-nav-a"
+        "t403-nav-a"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -687,7 +687,7 @@
         "t391-conta-conformidade",
         "t385-varredura-bloco21",
         "t393-conta-leva2",
-        "t394-nav-a"
+        "t403-nav-a"
       ]
     },
     "/dashboard/conta/seguranca": {
