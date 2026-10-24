@@ -4,6 +4,7 @@ import { authFile } from "../fixtures/auth";
 import { account, hasAccount } from "../fixtures/accounts";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): re-teste dos instáveis do #1230 (run 40072532185) e do #1232 (run 40075189536).
  * L-43 (vigia, 24/10): a Conta não assenta em "networkidle"; espera até 10 s e segue para o elemento.
  * T129 — MOTIVO DA ESTADIA NO PERFIL (ordens a8bb8cfa e 9a723929). Conta salva o motivo em 390 e 1280 px,
  * o pedido novo vem pré-preenchido, e valor fora da lista é recusado pelo servidor (check do banco).

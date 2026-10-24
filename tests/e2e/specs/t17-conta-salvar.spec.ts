@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
+ * L-43 (vigia, 24/10): a Conta e o atendimento não assentam em "networkidle"; espera até 10 s e segue para o elemento.
  * T17 — CONTA SALVA DE VERDADE. Regressão do "Salvar alterações" que não
  * chamava nada, das notificações que não gravavam e da senha atual ignorada.
  * Usa a conta de teste do inquilino e devolve os valores originais no fim.
@@ -10,7 +11,8 @@ test.describe("T17 — Conta salva de verdade", () => {
   test.use({ storageState: authFile("inquilino") });
 
   test("nome e telefone gravam e voltam depois do F5", async ({ page }) => {
-    await page.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const nome = page.getByLabel("Nome completo");
     const tel = page.getByLabel("Telefone");
     await expect(nome).not.toHaveValue("");
@@ -20,7 +22,8 @@ test.describe("T17 — Conta salva de verdade", () => {
     await tel.fill("34 99999-0017");
     await page.getByRole("button", { name: "Salvar alterações" }).click();
     await expect(page.getByText("Dados salvos.")).toBeVisible();
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(page.getByLabel("Telefone")).toHaveValue("(34) 99999-0017");
     await expect(page.getByLabel("Nome completo")).toHaveValue(nomeOriginal);
 
@@ -36,13 +39,15 @@ test.describe("T17 — Conta salva de verdade", () => {
   });
 
   test("preferência de notificação grava e volta depois do F5", async ({ page }) => {
-    await page.goto("/dashboard/conta/notificacoes", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/conta/notificacoes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const sw = page.getByRole("switch", { name: "Avisos por e-mail" });
     await expect(sw).toBeEnabled();
     const antes = await sw.getAttribute("aria-checked");
     await sw.click();
     await expect(page.getByText("Preferência salva.")).toBeVisible();
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const depois = page.getByRole("switch", { name: "Avisos por e-mail" });
     await expect(depois).toHaveAttribute("aria-checked", antes === "true" ? "false" : "true");
     await depois.click(); // devolve
@@ -51,7 +56,8 @@ test.describe("T17 — Conta salva de verdade", () => {
 
   test("senha atual errada não troca a senha", async ({ page }) => {
     // Prompt 18: a troca de senha fica numa tela só (Confiança e segurança); a Conta tem só o link.
-    await page.goto("/dashboard/conta/seguranca", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/conta/seguranca", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const painel = page.locator("form").filter({ hasText: "Salvar nova senha" });
     const campos = painel.locator('input[type="password"]');
     await campos.nth(0).fill("senha-errada-de-proposito");
