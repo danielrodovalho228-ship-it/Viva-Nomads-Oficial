@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T26 — AGENTES PROATIVOS: encaminhamento entre agentes (0087) e Rede ao vivo REAL.
  * As rondas entram pela mesma porta das rotinas (rpc registrar_ronda com a
  * service role). Disparo de rotina simulado no laboratório (LAB_OUTBOX).

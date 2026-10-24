@@ -4,6 +4,7 @@ import { authFile } from "../fixtures/auth";
 import { liberarLimiteChamados } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T21 — CENTRAL DE AGENTES v2 (/admin/agentes no visual do QG). Os dados vêm
  * do banco: o seed grava rondas "[lab]" (Bruno com alerta e P1 há 5 min,
  * Marina com falha, Helena com P2 de parceiros…).

@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T15 — PAINEL DE ADMIN COM DADOS REAIS. Regressão do painel que mostrava
  * números e uma fila de checklists escritos no código (Marcos A., Patrícia L.,
  * Família Souza; "Usuários: 28") e "Aprovado" sem gravar nada.

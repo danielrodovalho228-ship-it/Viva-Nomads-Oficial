@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T255 — Reteste dos achados F15, F16, F18 e F20 do /admin com o admin de teste em AAL2
  * (ordem 45ce8baf; 1 teste por achado, prints a 390 e 1280 px). Sem TESTES_ADMIN_TOTP_SEGREDO o
  * admin de teste não entra no /admin, então tudo se PULA com o motivo (nunca passa em falso).
