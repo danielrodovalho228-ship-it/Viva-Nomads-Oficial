@@ -31,11 +31,12 @@ import {
 } from "@/lib/estadia/estadia";
 import { instrucoesEfetivas, instrucoesLiberadas, instrucoesParaEditar, instrucoesPreenchidas, normalizarInstrucoes, textoAntesDaLiberacao, type Instrucoes } from "@/lib/estadia/instrucoes";
 import { blocoIniciado, linhaDoHistorico, mesesNaoIniciados, type BlocoAtual, type MudancasAditivo } from "@/lib/estadia/aditivo";
+import { caucaoDoChecklist, estadoCaucao as estadoCaucaoUnico } from "@/lib/caucao-estado";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const COLUNAS_ESTADIA =
-  "id, property_id, tenant_id, status, encerrado_em, created_at, qtd_ocupantes, capacidade_snapshot, aluguel_mensal, tamanho_bloco_meses, garantia, comissao_percent, comissao_valor, assinado_proprietario_em, assinado_inquilino_em, properties(id, title, city, owner_id, checkin_after, checkout_before, max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status), pagamentos_bloco(id, tipo, confirmado_pelo_inquilino, anulado_em)";
+  "id, property_id, tenant_id, status, encerrado_em, created_at, qtd_ocupantes, capacidade_snapshot, aluguel_mensal, tamanho_bloco_meses, garantia, comissao_percent, comissao_valor, assinado_proprietario_em, assinado_inquilino_em, properties(id, title, city, owner_id, checkin_after, checkout_before, max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status), pagamentos_bloco(id, tipo, valor, confirmado_pelo_inquilino, anulado_em)";
 
 export interface LinhaContratoEstadia {
   id: string;
@@ -55,7 +56,7 @@ export interface LinhaContratoEstadia {
   assinado_inquilino_em: string | null;
   properties: { id: string; title: string | null; city?: string | null; owner_id: string; checkin_after: string | null; checkout_before: string | null; max_guests: number | null } | null;
   contrato_blocos: (BlocoAtual & { id: string; caucao_status: string })[] | null;
-  pagamentos_bloco: { id: string; tipo: string; confirmado_pelo_inquilino: boolean; anulado_em: string | null }[] | null;
+  pagamentos_bloco: { id: string; tipo: string; valor?: number | string | null; confirmado_pelo_inquilino: boolean; anulado_em: string | null }[] | null;
 }
 
 export interface Contexto {
@@ -201,9 +202,6 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
   ]);
 
   const respostas = ((conf as { conferencia_respostas?: RespostaConferencia[] } | null)?.conferencia_respostas ?? []) as RespostaConferencia[];
-  const b1 = blocos[0];
-  const caucaoRecebida =
-    (b1?.caucao_status === "comprovada") || pagamentos.some((p) => p.tipo === "caucao" && p.confirmado_pelo_inquilino && !p.anulado_em);
   const ocupantes = ((ocup ?? []) as { id: string; nome: string; documento: string; parentesco_ou_relacao: string | null }[]).map((o) => ({
     id: o.id,
     nome: o.nome,
@@ -211,8 +209,14 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
     relacao: o.parentesco_ou_relacao,
   }));
   const previstos = Math.max(1, Number(c.qtd_ocupantes) || 1);
-  const estadoCaucao: "pendente" | "recebida" | "dispensada" =
-    c.garantia === "seguro_fianca" || !b1 || Number(b1.caucao) <= 0 ? "dispensada" : caucaoRecebida ? "recebida" : "pendente";
+  // L2-B item 12: a mesma função dos Contratos e da Garantias decide o estado da caução.
+  const estadoCaucao = caucaoDoChecklist(
+    estadoCaucaoUnico({
+      garantia: c.garantia,
+      blocos: blocos.map((b) => ({ caucao: b.caucao, caucaoStatus: b.caucao_status })),
+      pagamentos: pagamentos.map((p) => ({ tipo: p.tipo, valor: p.valor ?? 0, confirmado: p.confirmado_pelo_inquilino, anulado: !!p.anulado_em })),
+    }),
+  );
   const checklist = checklistAntesDaEntrada(
     {
       assinadoProprietario: !!c.assinado_proprietario_em,
