@@ -25,7 +25,11 @@ test.describe("T442 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => 
     ids.chacara = await criarImovelPronto(ids.dono, `Chácara Revisão ${sufixo}`);
     const { error } = await adm()
       .from("properties")
-      .update({ property_type: "chacara", detalhes_anuncio: { chacara: { acesso: "asfalto", internet: "fibra", pontoMarcado: true } } })
+      // O rascunho retomado (?draft=) lê o que a tela gravou em draft_data: tipo e os dados da chácara com o ponto.
+      .update({
+        property_type: "chacara",
+        draft_data: { propertyType: "chacara", chacara: { acesso: "asfalto", internet: "fibra", ponto: { lat: -18.95, lng: -48.4 } } },
+      })
       .eq("id", ids.chacara);
     expect(error).toBeNull();
   });
