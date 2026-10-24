@@ -117,6 +117,8 @@ export interface CategoriaDef {
   exigeContrato?: boolean;
   /** Não aparece no formulário: só a triagem automática usa (lib/atendimento/filas). */
   interna?: boolean;
+  /** Só aparece quando o chamado vem do "Problema com isto?" deste contexto (ex.: a página do parceiro). */
+  soContexto?: "parceiro" | "perfil";
 }
 
 export const CATEGORIAS: CategoriaDef[] = [
@@ -131,6 +133,10 @@ export const CATEGORIAS: CategoriaDef[] = [
   { key: "acesso_imovel", rotulo: "Não consigo entrar no imóvel", tipo: "seguranca", prioridade: "p1" },
   { key: "camera", rotulo: "Encontrei câmera ou dispositivo de gravação", tipo: "seguranca", prioridade: "p1" },
   { key: "sugestao", rotulo: "Sugestão ou elogio", tipo: "suporte", prioridade: "p4" },
+  // FISCAL-PARCEIRO-B: denúncia pela página do parceiro (contexto 'parceiro'); só aparece com esse contexto.
+  { key: "nota_parceiro", rotulo: "Não emitiu a nota fiscal declarada", tipo: "suporte", prioridade: "p3", soContexto: "parceiro" },
+  // FOTO-PERFIL-B: denúncia da foto de uma pessoa (contexto 'perfil'); a foto volta para a fila de revisão.
+  { key: "foto_perfil", rotulo: "Foto de perfil inadequada", tipo: "suporte", prioridade: "p3", soContexto: "perfil" },
   // Só a triagem automática (pelo texto) usa estas:
   { key: "caucao", rotulo: "Caução", tipo: "suporte", prioridade: "p2", interna: true },
   { key: "imovel", rotulo: "Problema no imóvel", tipo: "suporte", prioridade: "p2", interna: true },

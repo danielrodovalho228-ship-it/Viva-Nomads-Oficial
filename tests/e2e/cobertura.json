@@ -68,7 +68,8 @@
         "t352-varredura-bloco17",
         "t404-admin-celular-e73",
         "t392-varredura-bloco24",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t442-foto-perfil-revisao"
       ]
     },
     "/admin/2fa/refazer": {
@@ -207,6 +208,14 @@
       "specs": [
         "t183-telas-logadas-390",
         "t301-varredura-logada-bloco5"
+      ]
+    },
+    "/admin/fotos-perfil": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t442-foto-perfil-revisao"
       ]
     },
     "/admin/marketing": {
@@ -416,7 +425,8 @@
         "t368-varredura-bloco20",
         "t392-varredura-bloco24",
         "t406-varredura-bloco25",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t409-filtros-adendo3"
       ]
     },
     "/cidades": {
@@ -827,7 +837,7 @@
         "t320-pausar-anuncio-64b",
         "t352-varredura-bloco17",
         "t400-chacara-sem-internet",
-        "t441-cadastro-moldura"
+        "t450-cadastro-moldura"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -845,7 +855,8 @@
         "t406-varredura-bloco25",
         "t433-l2a-itens-9-24",
         "t407-varredura-bloco26",
-        "t400-chacara-sem-internet"
+        "t400-chacara-sem-internet",
+        "t410-niveis-medir-rascunho"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -880,7 +891,8 @@
         "t433-l2a-itens-9-24",
         "t407-varredura-bloco26",
         "t400-chacara-sem-internet",
-        "t441-cadastro-moldura"
+        "t410-niveis-medir-rascunho",
+        "t450-cadastro-moldura"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1298,7 +1310,8 @@
         "t406-varredura-bloco25",
         "t431-perto-a",
         "t407-varredura-bloco26",
-        "t439-e101-deteccao-espelho"
+        "t439-e101-deteccao-espelho",
+        "t440-e98-imovel"
       ]
     },
     "/modelodenegocio": {
@@ -1441,7 +1454,8 @@
         "t351-telas-linkedin-63a",
         "t349-imovel-sem-500-l31",
         "t355-conta-a-perfil-espelho",
-        "t338-varredura-bloco15"
+        "t338-varredura-bloco15",
+        "t442-foto-perfil-revisao"
       ]
     },
     "/qualificar": {
@@ -1870,7 +1884,8 @@
         "t385-varredura-bloco21",
         "t406-varredura-bloco25",
         "t407-varredura-bloco26",
-        "t439-e101-deteccao-espelho"
+        "t439-e101-deteccao-espelho",
+        "t410-niveis-medir-rascunho"
       ]
     },
     "/dashboard/recibos": {
@@ -2613,7 +2628,8 @@
         "inquilino"
       ],
       "specs": [
-        "t275-internet-medida"
+        "t275-internet-medida",
+        "t410-niveis-medir-rascunho"
       ]
     },
     "/api/parceiros/pedidos/[id]": {
@@ -2731,7 +2747,8 @@
         "proprietario"
       ],
       "specs": [
-        "t397-foto-na-hora"
+        "t397-foto-na-hora",
+        "t410-niveis-medir-rascunho"
       ]
     }
   },
@@ -3107,7 +3124,9 @@
         "proprietario"
       ],
       "specs": [
-        "t19-atendimento-online"
+        "t19-atendimento-online",
+        "t441-fiscal-parceiro",
+        "t442-foto-perfil-revisao"
       ]
     },
     "src/lib/data/atendimento-actions.ts#alterarChamado": {
@@ -3143,7 +3162,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t441-fiscal-parceiro"
+      ]
     },
     "src/lib/data/atendimento-actions.ts#chamadoDeOutraConta": {
       "personas": [
@@ -3363,7 +3384,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t442-foto-perfil-revisao"
+      ]
     },
     "src/lib/data/blocks-actions.ts#addBlock": {
       "personas": [
@@ -4870,6 +4893,14 @@
         "t236-parceiros-ciclo"
       ]
     },
+    "src/lib/parceiros/admin-actions.ts#denunciaNotaProcedente": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t441-fiscal-parceiro"
+      ]
+    },
     "src/lib/parceiros/ativacao-actions.ts#ativarParceria": {
       "personas": [
         "publico"
@@ -4919,7 +4950,8 @@
         "proprietario"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t441-fiscal-parceiro"
       ]
     },
     "src/lib/parceiros/painel-actions.ts#moverFotoGaleria": {
@@ -5003,6 +5035,14 @@
         "t236-parceiros-ciclo"
       ]
     },
+    "src/lib/parceiros/painel-actions.ts#salvarEmiteNota": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t441-fiscal-parceiro"
+      ]
+    },
     "src/lib/parceiros/painel-actions.ts#salvarServico": {
       "personas": [
         "inquilino",
@@ -5036,7 +5076,8 @@
         "publico"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t441-fiscal-parceiro"
       ]
     },
     "src/lib/parceiros/solicitacao-actions.ts#minhaParceria": {
@@ -6312,6 +6353,54 @@
       ],
       "specs": [
         "t398-local-pessoal-teste"
+      ]
+    },
+    "src/lib/data/prova-actions.ts#pedirLinkMedicao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t410-niveis-medir-rascunho"
+      ]
+    },
+    "src/lib/data/prova-actions.ts#medicaoDoPonto": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t410-niveis-medir-rascunho"
+      ]
+    },
+    "src/lib/data/fotos-perfil-actions.ts#aprovarFotoPerfil": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t442-foto-perfil-revisao"
+      ]
+    },
+    "src/lib/data/fotos-perfil-actions.ts#filaFotosPerfil": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t442-foto-perfil-revisao"
+      ]
+    },
+    "src/lib/data/fotos-perfil-actions.ts#minhaFotoRemovida": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t442-foto-perfil-revisao"
+      ]
+    },
+    "src/lib/data/fotos-perfil-actions.ts#removerFotoPerfil": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t442-foto-perfil-revisao"
       ]
     }
   }
