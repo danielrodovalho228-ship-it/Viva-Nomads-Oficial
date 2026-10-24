@@ -58,6 +58,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+// E33: a home lista os anúncios publicados. Sem isto ela era gerada só no build (estática): publicar ou pausar não
+// mudava a home até o próximo deploy. Agora: invalidada nas ações (revalidarAnuncio) + rede de segurança de 60 s.
+export const revalidate = 60;
+
 export default async function HomePage() {
   const todos = await listProperties();
   const featured = todos.slice(0, quantosDestaques(todos.length));
@@ -280,8 +284,8 @@ export default async function HomePage() {
               <div>
                 <Eyebrow light>Para proprietários</Eyebrow>
                 <h2 className="mt-4 font-title font-semibold display-lg">
-                  Mais estabilidade e{" "}
-                  <span className="text-white">menos tempo com o imóvel parado</span>.
+                  {/* MIUDOS-A: o espaço antes de "menos" fica no próprio texto do h2 (um {" "} solto some em título flex/grid). */}
+                  Mais estabilidade e <span className="text-white">menos tempo com o imóvel parado</span>.
                 </h2>
                 <p className="mt-4 max-w-md text-white/65">
                   Um inquilino por uma estadia inteira traz previsibilidade: agenda estável,

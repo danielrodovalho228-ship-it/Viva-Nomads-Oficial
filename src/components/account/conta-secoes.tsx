@@ -1,6 +1,7 @@
 "use client";
 
 import { AtivarNotificacoes } from "@/components/app/push-app";
+import { TEXTO_EXCLUSAO } from "@/lib/saida/regras";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Bell, Trash2, Check } from "lucide-react";
@@ -19,9 +20,12 @@ import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { Switch } from "@/components/ui/switch";
 import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
 import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
+import { getCategoriasDesligadas, setCategoriasDesligadas } from "@/lib/data/notif-categorias-actions";
+import { CATEGORIAS_COM_INTERRUPTOR, ROTULO_CATEGORIA, type CategoriaComInterruptor } from "@/config/matriz-notificacoes";
 import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
+import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
 
 
 /*
@@ -84,6 +88,8 @@ export function DadosPessoais() {
     // O nome novo aparece já no menu e no topo.
     const atual = useAuthStore.getState().user;
     if (atual) setUser({ ...atual, name: r.dados.fullName, fullName: r.dados.fullName });
+    // CONTA-A, item 5: o topo, o espelho e o progresso do perfil releem na hora.
+    window.dispatchEvent(new Event(PERFIL_ATUALIZADO));
     setOk(true);
   }
 
@@ -111,7 +117,8 @@ export function DadosPessoais() {
           <Field label="Perfil" defaultValue={roleLabel(user?.role)} readOnly />
           {mode === "tenant" && (
             <Field
-              label="LinkedIn (opcional)"
+              // 63-B: o endereço do perfil é PRIVADO (só a Viva vê); o selo de confiança é o "Conectar LinkedIn".
+              label="Endereço do perfil no LinkedIn (opcional, só a Viva vê)"
               value={linkedin}
               onChange={(e) => setLinkedin(e.target.value)}
               placeholder="https://linkedin.com/in/seu-perfil"
@@ -490,15 +497,26 @@ function PwdField({
   );
 }
 
-export function NotificationsPanel() {
+const DICA_CATEGORIA: Record<"decisao" | "seguranca" | CategoriaComInterruptor, string> = {
+  decisao: "Propostas, visitas, manutenção e prazos que dependem de você.",
+  seguranca: "Verificação, códigos e acesso à conta.",
+  mensagens: "Mensagens novas nas conversas.",
+  lembretes: "Entrada, saída, renovação e avaliações.",
+  outros: "Novidades de buscas, pedidos e parceiros.",
+};
+
+/** `titulo`: a Conta e a subtela já têm o título "Notificações" — lá o cartão não repete (CONTA-A, C3a). */
+export function NotificationsPanel({ titulo = "Notificações" }: { titulo?: string | null } = {}) {
   // Preferência GRAVADA no perfil (notif_email). Prompt 30, item 8: sem aviso por WhatsApp (ficam e-mail e o aviso
   // no app; o canal da Viva é "Falar com a Viva").
   const [prefs, setPrefs] = useState<{ email: boolean } | null>(null);
-  const [salvando, setSalvando] = useState<"email" | "equipe" | null>(null);
+  const [salvando, setSalvando] = useState<"email" | "equipe" | CategoriaComInterruptor | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   // null = não é admin (o interruptor nem aparece). Alertas da equipe: ordem 27cfd36a.
   const [alertasEquipe, setAlertasEquipeUi] = useState<boolean | null>(null);
+  // Prompt 44 (item 4): categorias desligadas (null = carregando). Decisões e segurança não desligam.
+  const [desligadas, setDesligadas] = useState<CategoriaComInterruptor[] | null>(null);
 
   useEffect(() => {
     let vivo = true;
@@ -508,6 +526,9 @@ export function NotificationsPanel() {
     getAlertasEquipe()
       .then((v) => vivo && setAlertasEquipeUi(v))
       .catch(() => vivo && setAlertasEquipeUi(null));
+    getCategoriasDesligadas()
+      .then((v) => vivo && setDesligadas(v))
+      .catch(() => vivo && setDesligadas([]));
     return () => {
       vivo = false;
     };
@@ -548,6 +569,24 @@ export function NotificationsPanel() {
     setOk(true);
   }
 
+  async function alternarCategoria(c: CategoriaComInterruptor) {
+    if (!desligadas) return;
+    const anterior = desligadas;
+    const novo = anterior.includes(c) ? anterior.filter((x) => x !== c) : [...anterior, c];
+    setDesligadas(novo);
+    setErro(null);
+    setOk(false);
+    setSalvando(c);
+    const r = await setCategoriasDesligadas(novo).catch(() => ({ ok: false as const, error: "Sem conexão." }));
+    setSalvando(null);
+    if (!r.ok) {
+      setDesligadas(anterior);
+      setErro("Não foi possível salvar a preferência. Tente de novo.");
+      return;
+    }
+    setOk(true);
+  }
+
   const items: { key: "email"; label: string; hint: string }[] = [
     {
       key: "email",
@@ -556,7 +595,7 @@ export function NotificationsPanel() {
     },
   ];
   return (
-    <Panel title="Notificações" className="mt-6">
+    <Panel title={titulo ?? undefined} className="mt-6" data-testid="notificacoes-painel">
       <div className="space-y-2">
         {items.map((it) => (
           <div
@@ -578,6 +617,38 @@ export function NotificationsPanel() {
             />
           </div>
         ))}
+        <div className="rounded-xl border border-sage-200 px-4 py-3" data-testid="notif-categorias">
+          <p className="text-sm font-medium text-ink">Por tipo de aviso</p>
+          <p className="mt-1 text-xs text-muted">Desligado, o tipo não chega por push nem por e-mail.</p>
+          <ul className="mt-2 divide-y divide-sage-100">
+            {(["decisao", "seguranca"] as const).map((c) => (
+              <li key={c} className="flex items-center justify-between gap-3 py-2" data-testid={`notif-categoria-${c}`}>
+                <span>
+                  <span className="block text-sm text-ink">{ROTULO_CATEGORIA[c]}</span>
+                  <span className="block text-xs text-muted">{DICA_CATEGORIA[c]}</span>
+                </span>
+                <span className="shrink-0 text-xs text-muted">Sempre chegam</span>
+              </li>
+            ))}
+            {CATEGORIAS_COM_INTERRUPTOR.map((c) => (
+              <li key={c} className="flex items-center justify-between gap-3 py-2" data-testid={`notif-categoria-${c}`}>
+                <span>
+                  <span className="flex items-center gap-2 text-sm text-ink">
+                    {ROTULO_CATEGORIA[c]}
+                    {salvando === c && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" />}
+                  </span>
+                  <span className="block text-xs text-muted">{DICA_CATEGORIA[c]}</span>
+                </span>
+                <Switch
+                  checked={desligadas ? !desligadas.includes(c) : true}
+                  onChange={() => alternarCategoria(c)}
+                  label={ROTULO_CATEGORIA[c]}
+                  disabled={!desligadas || salvando !== null}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
         {alertasEquipe !== null && (
           <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-sage-200 px-4 py-3 text-left">
             <span>
@@ -668,10 +739,7 @@ export function DangerZone() {
   return (
     <Panel title="Excluir conta" className="mt-6 border-red-200">
       <p className="text-sm font-medium text-red-600">
-        Esta ação remove seus dados pessoais (LGPD — direito ao esquecimento). Com locação
-        ativa, a exclusão é bloqueada até o encerramento. Se você tiver histórico de contratos,
-        sua identidade é removida e os contratos/pagamentos são mantidos sem identificação pelo
-        prazo exigido por lei.
+        {TEXTO_EXCLUSAO} Com locação ativa, a exclusão é bloqueada até o encerramento.
       </p>
 
       {step === 0 && (
@@ -683,7 +751,7 @@ export function DangerZone() {
       {step === 1 && (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="text-sm font-medium text-red-700">
-            Ao excluir, você perde permanentemente:
+            Ao excluir, apagamos sua conta e seus dados pessoais:
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-red-700">
             <li>Dados pessoais e perfil de verificação</li>
@@ -691,7 +759,7 @@ export function DangerZone() {
             <li>Favoritos, candidaturas e mensagens</li>
           </ul>
           <p className="mt-2 text-xs text-red-700">
-            Contratos e pagamentos, se existirem, são mantidos sem identificação pelo prazo legal.
+            Contratos assinados e registros financeiros são guardados pelo prazo legal, com acesso restrito.
           </p>
           <div className="mt-3 flex gap-2">
             <Button variant="ghost" size="sm" onClick={reset}>
@@ -735,7 +803,7 @@ export function DangerZone() {
               onClick={confirmDelete}
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Sim, excluir permanentemente
+              Sim, excluir minha conta
             </Button>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PRIMARIO_PORTA } from "@/lib/auth/porta-visual";
 import { getMinhaIntencao, salvarMinhaIntencao } from "@/lib/data/intencao-actions";
 import { INTENCOES, ROTULO_INTENCAO, painelInicial, type Intencao } from "@/lib/auth/entrada";
 
@@ -79,7 +80,7 @@ export function EscolhaIntencaoEntrada({ destino }: { destino: string }) {
           {erro}
         </p>
       )}
-      <Button type="button" className="mt-6 w-full" data-testid="intencao-continuar" disabled={salvando || marcadas.length === 0} onClick={() => concluir(marcadas)}>
+      <Button type="button" className={`mt-6 w-full ${PRIMARIO_PORTA}`} data-testid="intencao-continuar" aria-busy={salvando} disabled={salvando || marcadas.length === 0} onClick={() => concluir(marcadas)}>
         {salvando && <Loader2 className="h-4 w-4 animate-spin" />}
         Continuar
       </Button>
@@ -131,7 +132,12 @@ export function MinhaIntencao() {
       <h3 className="font-title text-base font-semibold text-ink">O que você quer fazer na Viva</h3>
       <p className="mt-1 text-sm text-muted">Define o que aparece primeiro no painel. Não muda o que você pode fazer na conta.</p>
       {carregando ? (
-        <Loader2 className="mt-4 h-4 w-4 animate-spin text-muted" aria-label="Carregando" />
+        // C6 (Conta): as três opções já ocupam o lugar enquanto a escolha salva chega — sem ícone girando e sem pulo.
+        <div className="mt-4 grid gap-3" aria-busy="true" data-testid="minha-intencao-carregando">
+          {[0, 1, 2].map((n) => (
+            <span key={n} className="block h-14 rounded-xl border-2 border-sage-200 bg-surface-2" aria-hidden />
+          ))}
+        </div>
       ) : (
         <>
           <div className="mt-4">

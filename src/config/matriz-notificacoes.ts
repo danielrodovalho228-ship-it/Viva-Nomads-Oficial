@@ -1,10 +1,10 @@
 /**
  * Matriz de notificações (Prompt 42, item 6 — base para o Prompt 44). Evento × papel × canal × categoria, a partir dos
  * eventos que já existem em src/lib/notifications/ (NotificationEvent, os de notify(), e os e-mails avulsos de
- * imagens-email.ts). AINDA NÃO muda o notify(): o Prompt 44 liga esta matriz ao envio.
+ * imagens-email.ts). Prompt 44: o notify() consulta esta matriz para decidir o push (regra-push.ts).
  *
  * Regras (Estudo 2, aprovado):
- *  • push SÓ para decisão com prazo e para segurança;
+ *  • push SÓ para decisão com prazo, segurança e mensagem nova (Prompt 44: só sem a conversa aberta há 10 min, agrupada);
  *  • mensagens, lembretes e outros têm interruptor (a pessoa desliga);
  *  • decisão e segurança NÃO têm interruptor (sempre chegam).
  * Códigos (assinatura, recuperação de duas etapas) e o aviso de exclusão da conta vão só por e-mail: código não aparece
@@ -80,6 +80,10 @@ export const MATRIZ_NOTIFICACOES = {
   parceiro_orcamento_recebido: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
   parceiro_entrega_feita: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
 
+  // Prompt 53: data importada do Airbnb/Booking cruza compromisso da Viva (o dono decide); link .ics parou de responder.
+  calendario_conflito: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+  calendario_falha: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+
   // ── Segurança (push permitido, sem interruptor) ───────────────────────────
   verification_ready: { categoria: "seguranca", papeis: ["morador"], canais: TODOS_OS_CANAIS },
   contract_signature_code: { categoria: "seguranca", papeis: DUAS_PARTES, canais: SO_EMAIL },
@@ -87,7 +91,9 @@ export const MATRIZ_NOTIFICACOES = {
   exclusao_conta: { categoria: "seguranca", papeis: ["morador", "proprietario", "parceiro"], canais: SO_EMAIL },
 
   // ── Mensagens (com interruptor) ───────────────────────────────────────────
-  new_message: { categoria: "mensagens", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  // Prompt 44: mensagem nova tem push, mas só se a pessoa não abriu a conversa nos últimos 10 min, agrupado
+  // ("3 mensagens novas de Ana", sem o texto) — regra em src/lib/notifications/regra-push.ts.
+  new_message: { categoria: "mensagens", papeis: DUAS_PARTES, canais: TODOS_OS_CANAIS },
   manutencao_mensagem: { categoria: "mensagens", papeis: DUAS_PARTES, canais: SEM_PUSH },
   chamado_respondido: { categoria: "mensagens", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   pedido_resposta: { categoria: "mensagens", papeis: ["morador"], canais: SEM_PUSH },
@@ -97,6 +103,8 @@ export const MATRIZ_NOTIFICACOES = {
   checkin_lembrete: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   saida_lembrete: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   vistoria_lembrete: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
+  // 63-B: "Reconecte seu LinkedIn para manter o selo" (30 dias antes de vencer).
+  linkedin_vencendo: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   vistoria_vistoriado_expira: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
   renovacao_aviso: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   avaliacao_pedido: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
@@ -133,6 +141,8 @@ export const MATRIZ_NOTIFICACOES = {
   parceiro_orcamento_aceito: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
   parceiro_horario_confirmado: { categoria: "outros", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   estadia_instrucoes_liberadas: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
+  // 61-B: o convidado pode não ter conta ainda — só e-mail (a central e o push dependem da conta).
+  estadia_convite_ocupante: { categoria: "outros", papeis: ["morador"], canais: SO_EMAIL },
   estadia_remarcada: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
   vinculo_parceiro_resposta: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   pedido_auto_atualizado: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
@@ -146,16 +156,24 @@ export const MATRIZ_NOTIFICACOES = {
   comprovante_caucao: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
 
   // ── Equipe (o admin desliga em "Receber alertas da equipe") ───────────────
-  chamado_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  // Prompt 44 (item 3): alertas operacionais com push — só admins com "receber alertas operacionais".
+  chamado_equipe: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },
+  alerta_backup_falhou: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },
+  alerta_email_falhou: { categoria: "outros", papeis: ["admin"], canais: ["push", "central"] },
   vistoria_sem_avaliador: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  // 63-B: tentativa de conectar um LinkedIn que já está em outra conta (sinal ao atendimento, sem expor quem).
+  linkedin_ja_conectado: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   vistoria_fila_admin: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   parceiro_sem_resposta: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   chamado_fora_promessa: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   verificacao_analise_humana: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
-  documento_recebido: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  documento_recebido: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },
   parceria_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   estadia_encerramento_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
 } as const satisfies Record<EventoNotificacao, LinhaMatriz>;
+
+/** Prompt 44 (item 3): alertas da equipe que vão por push (documento na fila, chamado P1/P2, cópia noturna, e-mail). */
+export const ALERTAS_OPERACIONAIS_COM_PUSH = ["documento_recebido", "chamado_equipe", "alerta_backup_falhou", "alerta_email_falhou"] as const;
 
 /** Os canais deste evento para este papel ([] quando o papel não recebe o evento). */
 export function canaisDoEvento(evento: EventoNotificacao, papel: PapelNotificacao): CanalNotificacao[] {
@@ -167,6 +185,23 @@ export function canaisDoEvento(evento: EventoNotificacao, papel: PapelNotificaca
 /** A pessoa pode desligar esta categoria? Decisão e segurança, não (sempre chegam). */
 export function categoriaTemInterruptor(categoria: CategoriaNotificacao): boolean {
   return categoria !== "decisao" && categoria !== "seguranca";
+}
+
+/** Prompt 44 (item 4): as categorias que a pessoa pode desligar em /dashboard/notificacoes. */
+export const CATEGORIAS_COM_INTERRUPTOR = ["mensagens", "lembretes", "outros"] as const;
+export type CategoriaComInterruptor = (typeof CATEGORIAS_COM_INTERRUPTOR)[number];
+
+/** O que vem do banco ou do formulário, só com categorias que têm interruptor, sem repetição e na ordem da tela. */
+export function categoriasDesligadasValidas(valor: unknown): CategoriaComInterruptor[] {
+  if (!Array.isArray(valor)) return [];
+  return CATEGORIAS_COM_INTERRUPTOR.filter((c) => valor.includes(c));
+}
+
+/** A pessoa desligou a categoria deste evento? Decisão e segurança nunca: sempre chegam. */
+export function eventoDesligadoPelaPessoa(evento: string, desligadas: readonly string[] | null | undefined): boolean {
+  const l = (MATRIZ_NOTIFICACOES as Record<string, LinhaMatriz | undefined>)[evento];
+  if (!l || !categoriaTemInterruptor(l.categoria) || !desligadas?.length) return false;
+  return desligadas.includes(l.categoria);
 }
 
 /** A categoria do evento. */

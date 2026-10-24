@@ -5,9 +5,12 @@ import { motivoParaDono } from "@/lib/pedidos/pedidos";
 import { dataBR } from "@/lib/utils";
 import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
 import { cartaoCandidato } from "@/lib/perfil/perfil-publico";
+import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { getReputacao } from "@/lib/data/avaliacoes-actions";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
+import { triagemVinculoAtiva } from "@/lib/triagem/chave";
+import { textoParaDono, type LinhaVinculo } from "@/lib/triagem/vinculo";
 import { donoVeFichaPet, resumoPetsCandidatura, type PetResumo } from "@/lib/anuncio/ficha-pet-dono";
 
 // Re-exporta os utilitários puros para compatibilidade com importações server-side.
@@ -86,7 +89,10 @@ export async function listLeads(): Promise<Lead[]> {
   const emailOk = new Map<string, boolean>();
   const reputacoes = new Map<string, { media: number; n: number }>();
   const foneOk = new Map<string, boolean>();
+  // 63-B: selo "LinkedIn conectado" (só o sim/não; nunca link, nome ou foto do LinkedIn).
+  let linkedin = new Set<string>();
   if (admin && tenantIds.length > 0) {
+    linkedin = await linkedinConectados(tenantIds, admin);
     // Selo "Telefone verificado" (0150): só o sim/não, nunca o número.
     const { data: fs, error: eFs } = await admin.rpc("telefones_verificados", { p_ids: tenantIds });
     if (!eFs) for (const f of (fs ?? []) as { id: string; verificado: boolean }[]) foneOk.set(f.id, f.verificado);
@@ -126,6 +132,20 @@ export async function listLeads(): Promise<Lead[]> {
 
   // Identidade do candidato pela fonte única (complemento do prompt 23): o mesmo texto que ele vê na Conta.
   const identidades = admin && tenantIds.length > 0 ? await estadosIdentidade(admin, tenantIds) : new Map();
+
+  // Prompt 52 (chave TRIAGEM_VINCULO_ATIVA): o selo "Morador verificado" (identidade + vínculo, 12 meses). O dono recebe
+  // SÓ o texto do selo com o tipo do vínculo — nunca o arquivo, o caminho ou valores.
+  const seloTriagem = new Map<string, string>();
+  if (admin && tenantIds.length > 0 && (await triagemVinculoAtiva())) {
+    const { data: vs } = await admin.from("triagem_vinculos").select("user_id, tipo, status, motivo, decidido_em, valido_ate, enviado_em").in("user_id", tenantIds).order("enviado_em", { ascending: false });
+    const recente = new Map<string, LinhaVinculo>();
+    for (const v of (vs ?? []) as (LinhaVinculo & { user_id: string })[]) if (!recente.has(v.user_id)) recente.set(v.user_id, v);
+    const agora = new Date();
+    for (const id of tenantIds) {
+      const t = textoParaDono(identidades.get(id) ?? null, recente.get(id) ?? null, agora);
+      if (t) seloTriagem.set(id, t);
+    }
+  }
 
   // Motivo da estadia: a coluna não é liberada ao navegador (SELECT por coluna em leads);
   // lido pelo servidor só dos leads deste dono (ids já filtrados pela RLS acima).
@@ -169,6 +189,7 @@ export async function listLeads(): Promise<Lead[]> {
         reputacao: reputacoes.get(r.tenant_id) ?? null,
         emailConfirmado: emailOk.get(r.tenant_id) ?? false,
         telefoneVerificado: foneOk.get(r.tenant_id) ?? false,
+        linkedinConectado: linkedin.has(r.tenant_id),
       },
       r.status === "accepted",
     );
@@ -186,6 +207,7 @@ export async function listLeads(): Promise<Lead[]> {
       light: v?.traffic_light ?? "yellow",
       verified: !!v?.traffic_light,
       identidade: identidades.get(r.tenant_id) ?? null,
+      moradorVerificado: seloTriagem.get(r.tenant_id) ?? null,
       motivo: motivos.get(r.id),
       fichaPet,
     };

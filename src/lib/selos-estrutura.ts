@@ -69,3 +69,19 @@ export function selosEstrutura(d: {
 }
 
 export const rotuloSeloEstrutura = (id: SeloEstruturaId) => SELOS[id].nome;
+
+const ITENS_CONHECIDOS: readonly string[] = [...CHECKLIST_ACESSIVEL, ...CHECKLIST_MOBILIDADE_REDUZIDA];
+
+/** Valida o checklist vindo do cliente: só chaves conhecidas, só booleanos. O servidor nunca confia no que chega. */
+export function validarChecklistEstrutura(
+  entrada: unknown,
+): { ok: true; checklist: ChecklistEstrutura } | { ok: false; erro: string } {
+  if (!entrada || typeof entrada !== "object" || Array.isArray(entrada)) return { ok: false, erro: "Checklist inválido." };
+  const checklist: ChecklistEstrutura = {};
+  for (const [chave, valor] of Object.entries(entrada)) {
+    if (!ITENS_CONHECIDOS.includes(chave)) return { ok: false, erro: "Item de checklist desconhecido." };
+    if (typeof valor !== "boolean") return { ok: false, erro: "Marque cada item como sim ou não." };
+    checklist[chave as ItemChecklist] = valor;
+  }
+  return { ok: true, checklist };
+}

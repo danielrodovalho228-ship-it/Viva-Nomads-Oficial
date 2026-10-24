@@ -2,6 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import type { Reputacao } from "@/lib/data/avaliacoes-actions";
+import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { metricaResposta, nomeCurto, selosReais, type MetricaResposta } from "@/lib/perfil/perfil-publico";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -74,7 +75,7 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
       estadiasConcluidas: l.estadias_concluidas ?? 0,
       resposta: metricaResposta(l.conversas ?? 0, l.conversas_respondidas ?? 0, l.resposta_media_min),
       reputacao,
-      selos: selosReais({ emailConfirmado: l.email_confirmado, telefoneVerificado }),
+      selos: selosReais({ emailConfirmado: l.email_confirmado, telefoneVerificado, linkedinConectado: (await linkedinConectados([donoId], undefined, { publico: true })).has(donoId) }),
     };
   } catch {
     return null;

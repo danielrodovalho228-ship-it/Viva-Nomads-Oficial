@@ -27,10 +27,10 @@ test.describe("T92 — Documento (CPF) na Conta", () => {
   });
 
   for (const c of [0, 1]) {
-    test(`${c === 0 ? "inquilino" : "proprietário"} vê a seção Documento em /dashboard/conta e /dashboard/conta/perfil#documento`, async ({ browser }) => {
+    test(`${c === 0 ? "inquilino" : "proprietário"} vê a seção Documento em /dashboard/conta/dados e no link antigo /dashboard/conta#documento`, async ({ browser }) => {
       test.setTimeout(90_000);
       const page = await entrar(browser, contas[c].email, senha);
-      for (const rota of ["/dashboard/conta", "/dashboard/conta/perfil#documento"]) {
+      for (const rota of ["/dashboard/conta/dados", "/dashboard/conta#documento"]) {
         for (const largura of [390, 1280]) {
           await page.setViewportSize({ width: largura, height: 844 });
           await page.goto(rota, { waitUntil: "domcontentloaded" });

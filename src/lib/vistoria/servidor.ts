@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { hojeEmBrasilia } from "@/lib/checkin";
+import { STATUS_TESTE_CONCLUIDO } from "./entrada";
 import {
   designacaoVencida,
   proximoAvaliador,
@@ -229,4 +230,23 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
     if (!error) sorteadas++;
   }
   return { expiradas, lembretes, sorteadas, reprocessados };
+}
+
+/**
+ * E30: credenciamentos com a avaliação de teste FEITA (pedido de teste designado a eles, laudo emitido). É o registro
+ * que libera a ativação e o passo 5 do checklist.
+ */
+export async function comTesteConcluido(admin: Admin, avaliadorIds: string[]): Promise<Set<string>> {
+  if (!avaliadorIds.length) return new Set();
+  const { data, error } = await admin
+    .from("vistoria_pedidos")
+    .select("avaliador_id")
+    .eq("teste", true)
+    .eq("status", STATUS_TESTE_CONCLUIDO)
+    .in("avaliador_id", avaliadorIds);
+  if (error) {
+    console.error("[vistoria] teste concluído:", error.message);
+    return new Set();
+  }
+  return new Set(((data ?? []) as { avaliador_id: string }[]).map((r) => r.avaliador_id));
 }

@@ -7,9 +7,10 @@ import { AjudaPublicar } from "@/components/property/ajuda-publicar";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import { DocumentoUploader } from "@/components/documento-uploader";
 import { DocumentoVinculo, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
+import type { CampoEnderecoDoc, EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { EtapaIdentidade } from "@/components/anuncio/etapa-identidade";
 import type { PhotoItem } from "@/components/photo-uploader";
-import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, type Operacao } from "@/lib/anuncio/operacao";
+import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, TIPOS_DOC_GESTAO, type Operacao } from "@/lib/anuncio/operacao";
 import { LocationDatalist } from "@/lib/locations";
 import { CITIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,8 @@ export function EtapaOndeFica(p: {
   subleaseDoc: PhotoItem[];
   setSubleaseDoc: (d: PhotoItem[]) => void;
   docOperacaoAnexado: boolean;
+  subleaseDocTipo: string;
+  setSubleaseDocTipo: (t: string) => void;
   cep: string;
   setCep: (v: string) => void;
   cepLoading: boolean;
@@ -75,6 +78,10 @@ export function EtapaOndeFica(p: {
   enderecoMatricula?: PreenchimentoMatricula["endereco"] | null;
   onEnderecoMatricula?: (usar: boolean) => void;
   erros: Record<string, string>;
+  /** L1-1: endereço já gravado do imóvel (rascunho retomado) — o "Enviar documento" não trava se ele estiver completo. */
+  enderecoSalvo?: EnderecoDoc | null;
+  /** L1-1: o toque em "Enviar documento" sem CEP/rua/número marca os campos que faltam. */
+  onFaltaDocumento?: (campos: CampoEnderecoDoc[]) => void;
 }) {
   const doc = exigeAutorizacao(p.ownershipType) ? DOC_AUTORIZACAO[p.ownershipType as "subleased" | "managed"] : null;
   const foraDaArea = !!p.city.trim() && !cidadeLiberada(p.city);
@@ -105,6 +112,7 @@ export function EtapaOndeFica(p: {
             placeholder="00000-000"
             className="input"
             autoFocus
+            aria-invalid={!!p.erros.cep}
             onBlur={() => setCepSaiu(true)}
             onFocus={() => setCepSaiu(false)}
             data-testid="cadastro-cep"
@@ -147,6 +155,7 @@ export function EtapaOndeFica(p: {
         ) : (
           <span className="mt-1 block text-xs text-muted">Com o CEP, preenchemos rua, bairro e cidade.</span>
         )}
+        <Erro msg={p.erros.cep} />
       </Labeled>
       {buscaAberta && podeBuscarEndereco && (
         <BuscaEndereco
@@ -172,6 +181,7 @@ export function EtapaOndeFica(p: {
             name="vn-cadastro-a2"
             className="input"
             placeholder="Rua ou avenida"
+            aria-invalid={!!p.erros.rua}
             data-testid="cadastro-rua"
           />
           <Erro msg={p.erros.rua} />
@@ -184,6 +194,7 @@ export function EtapaOndeFica(p: {
             name="vn-cadastro-a3"
             className="input"
             placeholder="123"
+            aria-invalid={!!p.erros.numero}
             inputMode="text"
             data-testid="cadastro-numero"
           />
@@ -320,6 +331,23 @@ export function EtapaOndeFica(p: {
             label={doc.declaracao}
             hint="Declaração obrigatória. A equipe confere o documento antes de publicar."
           />
+          {p.ownershipType === "managed" && (
+            <fieldset className="space-y-2" data-testid="documento-operacao-tipo">
+              <legend className="mb-1 text-sm font-medium text-ink">O que você vai anexar?</legend>
+              {TIPOS_DOC_GESTAO.map((t) => (
+                <label key={t.valor} className="flex min-h-11 items-center gap-2 text-sm text-ink">
+                  <input
+                    type="radio"
+                    name="tipo-doc-operacao"
+                    value={t.valor}
+                    checked={p.subleaseDocTipo === t.valor}
+                    onChange={() => p.setSubleaseDocTipo(t.valor)}
+                  />
+                  {t.rotulo}
+                </label>
+              ))}
+            </fieldset>
+          )}
           <div>
             <span className="mb-2 block text-sm font-medium text-ink">
               {doc.titulo} <span className="font-normal text-muted">(obrigatório para publicar)</span>
@@ -346,6 +374,8 @@ export function EtapaOndeFica(p: {
         motivos={p.docMotivos}
         onResultado={p.onDocumento}
         onMatricula={p.onMatricula}
+        enderecoSalvo={p.enderecoSalvo}
+        onFalta={p.onFaltaDocumento}
       />
 
       {/* Prompt 20: atalhos de exceção numa linha discreta (o caminho principal é o cartão da IA lá em cima). */}

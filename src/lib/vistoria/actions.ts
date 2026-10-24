@@ -11,11 +11,12 @@ import { contemContato } from "@/lib/pedidos/pedidos";
 import { semMetadados } from "@/lib/foto-reconversao";
 import { chaveCidade } from "@/lib/cidades";
 import { vistoriaAtiva } from "./chave";
+import { CATEGORIA_AVALIADOR, pendenciasDoCredenciamento, podeAprovarParaTeste, podeAtivar, solicitacaoDoAvaliador, validarPedidoAvaliador } from "./entrada";
+import { slugBase } from "@/lib/parceiros/regras";
 import {
   CODIGO_CONDUTA,
   PORTES,
   consequenciaAusencia,
-  faltaParaCredenciamento,
   pedidoPodeAbrir,
   podeReagendar,
   porteDoImovel,
@@ -24,12 +25,15 @@ import {
   siglaCidade,
   transicaoCredenciamento,
   validarConduta,
-  valorNovaAvaliacao,
+  valorDoPedido,
+  condicaoRetorno,
+  linhaDaTabela,
+  COLUNAS_PRECO,
   type LinhaPreco,
   type Porte,
   type StatusCredenciamento,
 } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, avisar, designar, naFilaDoAdmin, passarAoProximo, rotaDono, rotaMorador } from "./servidor";
+import { ROTA_ADMIN, ROTA_AVALIADOR, avisar, comTesteConcluido, designar, naFilaDoAdmin, passarAoProximo, rotaDono, rotaMorador } from "./servidor";
 
 /*
   Prompt 62-B1 — ações da avaliação do imóvel. Cada ação confere QUEM é (dono do imóvel, avaliador designado, morador
@@ -67,27 +71,32 @@ const texto = (v: FormDataEntryValue | null, max: number) => String(v ?? "").rep
 // ── Credenciamento (o parceiro pede) ───────────────────────────────────────────────────────────────────────────
 export async function pedirCredenciamento(form: FormData): Promise<Res> {
   const s = await sessao();
-  if (!s) return { ok: false, erro: "Entre na sua conta de parceiro." };
+  if (!s) return { ok: false, erro: "Entre na sua conta para pedir o credenciamento." };
   const { data: parc } = await s.admin.from("parceiros").select("id, documento, tipo_pessoa, categorias").eq("user_id", s.userId).maybeSingle();
-  if (!parc) return { ok: false, erro: "Primeiro ative a sua conta de parceiro em Seja parceiro." };
-  const { data: ja } = await s.admin.from("avaliadores_credenciamento").select("id").eq("parceiro_id", parc.id).maybeSingle();
-  if (ja) return { ok: false, erro: "Você já pediu o credenciamento." };
+  // Correção 62-B3: um só credenciamento por pessoa, seja ou não parceiro ainda.
+  const { data: ja } = await s.admin.from("avaliadores_credenciamento").select("id").or(parc ? `parceiro_id.eq.${parc.id},user_id.eq.${s.userId}` : `user_id.eq.${s.userId}`).limit(1);
+  if (ja?.length) return { ok: false, erro: "Você já pediu o credenciamento." };
 
-  const cidade = texto(form.get("cidade"), 80);
-  const link = texto(form.get("experienciaLink"), 300) || null;
   const arquivo = form.get("experienciaArquivo");
   const temArquivo = arquivo instanceof File && arquivo.size > 0;
-  const identidade = await estadoIdentidade(s.admin, s.userId);
-  const doc = String(parc.documento ?? "");
-  const falta = faltaParaCredenciamento({
-    identidadeVerificada: identidade.estado === "confirmada",
-    documentoValido: parc.tipo_pessoa === "pj" ? cnpjValido(doc) : cpfValido(doc),
+  // Pedido único (62-B3): quem não é parceiro manda os dados de parceiro no mesmo formulário; quem já é, só os do
+  // credenciamento. A identidade não recusa o pedido: fica como pendência (a aprovação para teste exige).
+  const v = validarPedidoAvaliador({
+    jaParceiro: !!parc,
+    nome: String(form.get("nome") ?? ""),
+    tipoPessoa: String(form.get("tipoPessoa") ?? ""),
+    documento: String(form.get("documento") ?? ""),
+    cidade: String(form.get("cidade") ?? ""),
+    experienciaLink: String(form.get("experienciaLink") ?? ""),
     experienciaArquivo: temArquivo,
-    experienciaLink: link,
     aceiteConduta: form.get("aceiteConduta") === "on",
-    cidade,
   });
-  if (falta.length) return { ok: false, erro: `Falta: ${falta.join(" ")}` };
+  if (!v.ok) return { ok: false, erro: `Falta: ${v.falta.join(" ")}` };
+  if (parc) {
+    const doc = String(parc.documento ?? "");
+    if (!(parc.tipo_pessoa === "pj" ? cnpjValido(doc) : cpfValido(doc))) return { ok: false, erro: "Falta: CPF ou CNPJ válido no cadastro de parceiro." };
+  }
+  const { cidade, experienciaLink: link } = v.valor;
 
   let experienciaPath: string | null = null;
   if (temArquivo) {
@@ -95,7 +104,7 @@ export async function pedirCredenciamento(form: FormData): Promise<Res> {
     if (!TIPOS_EXPERIENCIA.has(f.type) || f.size > 10 * 1024 * 1024) return { ok: false, erro: "Envie o portfólio em PDF ou imagem de até 10 MB." };
     const limpo = await semMetadados(new Uint8Array(await f.arrayBuffer()), f.type);
     if (!limpo) return { ok: false, erro: "Não foi possível ler o arquivo. Envie de novo." };
-    experienciaPath = `${parc.id}/experiencia-${Date.now()}-${randomBytes(3).toString("hex")}`;
+    experienciaPath = `${parc?.id ?? `u-${s.userId}`}/experiencia-${Date.now()}-${randomBytes(3).toString("hex")}`;
     const up = await s.admin.storage.from(BUCKET).upload(experienciaPath, Buffer.from(limpo), { contentType: f.type, upsert: false });
     if (up.error) return { ok: false, erro: "Não foi possível enviar o arquivo." };
   }
@@ -118,10 +127,28 @@ export async function pedirCredenciamento(form: FormData): Promise<Res> {
     }
   }
 
+  // Quem não é parceiro: a solicitação de parceiro com a categoria "vistoria" (só por este caminho), ligada ao pedido.
+  let solicitacaoId: string | null = null;
+  if (!parc) {
+    const { data: u } = await s.supabase.auth.getUser();
+    const { data: sol, error: eSol } = await s.admin
+      .from("parceiro_solicitacoes")
+      .insert(solicitacaoDoAvaliador(v.valor.parceiro!, cidade, link, s.userId, u.user?.email?.toLowerCase() ?? null))
+      .select("id")
+      .single();
+    if (eSol || !sol) {
+      console.error("[pedirCredenciamento] solicitação", eSol?.code, eSol?.message);
+      return { ok: false, erro: eSol?.code === "23505" ? "Você já tem um pedido de parceria em análise. Fale com o atendimento." : "Não foi possível registrar agora. Tente de novo." };
+    }
+    solicitacaoId = sol.id as string;
+  }
+
   const { data: numero, error: eNum } = await s.admin.rpc("proximo_numero_avaliador", { p_sigla: siglaCidade(cidade) });
   if (eNum || !numero) return { ok: false, erro: "Não foi possível registrar agora. Tente de novo." };
   const { error } = await s.admin.from("avaliadores_credenciamento").insert({
-    parceiro_id: parc.id,
+    parceiro_id: parc?.id ?? null,
+    user_id: s.userId,
+    solicitacao_id: solicitacaoId,
     cidade,
     numero_credenciado: numero,
     experiencia_path: experienciaPath,
@@ -131,11 +158,23 @@ export async function pedirCredenciamento(form: FormData): Promise<Res> {
     relacoes_imoveis: imoveis,
     relacoes_descricao: declaracao || null,
   });
-  if (error) return { ok: false, erro: "Não foi possível registrar agora. Tente de novo." };
-  const categorias = [...new Set([...((parc.categorias as string[]) ?? []), "vistoria"])];
-  await s.admin.from("parceiros").update({ categorias }).eq("id", parc.id);
+  if (error) {
+    console.error("[pedirCredenciamento]", error.code, error.message);
+    if (solicitacaoId) await s.admin.from("parceiro_solicitacoes").delete().eq("id", solicitacaoId);
+    return { ok: false, erro: "Não foi possível registrar agora. Tente de novo." };
+  }
+  if (parc) {
+    const categorias = [...new Set([...((parc.categorias as string[]) ?? []), CATEGORIA_AVALIADOR])];
+    await s.admin.from("parceiros").update({ categorias }).eq("id", parc.id);
+  }
+  const identidade = await estadoIdentidade(s.admin, s.userId);
+  const pend = pendenciasDoCredenciamento({ identidadeVerificada: identidade.estado === "confirmada" });
   revalidatePath(ROTA_AVALIADOR);
-  return { ok: true, mensagem: `Pedido de credenciamento registrado: nº ${numero}. A Viva confere e marca a sua avaliação de teste.` };
+  revalidatePath(ROTA_ADMIN);
+  return {
+    ok: true,
+    mensagem: `Pedido de credenciamento registrado: nº ${numero}. A Viva confere e marca a sua avaliação de teste.${pend.length ? ` Antes da aprovação: ${pend.join(" ").toLowerCase()}` : ""}`,
+  };
 }
 
 // ── Admin (duas etapas) ────────────────────────────────────────────────────────────────────────────────────────
@@ -145,19 +184,91 @@ export async function adminDecidirCredenciamento(form: FormData): Promise<Res> {
   const id = String(form.get("id") ?? "");
   const para = String(form.get("para") ?? "") as StatusCredenciamento;
   const motivo = texto(form.get("motivo"), 500) || null;
-  const { data: c } = await a.admin.from("avaliadores_credenciamento").select("status").eq("id", id).maybeSingle();
+  const { data: c } = await a.admin.from("avaliadores_credenciamento").select("status, user_id, parceiro_id, solicitacao_id").eq("id", id).maybeSingle();
   if (!c) return { ok: false, erro: "Credenciamento não encontrado." };
   if (!transicaoCredenciamento(c.status as StatusCredenciamento, para).ok) return { ok: false, erro: "Mudança de situação não permitida." };
   if ((para === "suspenso" || para === "descredenciado") && !motivo) return { ok: false, erro: "Escreva o motivo." };
   const agora = new Date().toISOString();
+  // Correção 62-B3: "Aprovar para teste" é UMA aprovação — exige a identidade verificada e, para quem ainda não é
+  // parceiro, ativa o parceiro (categoria "vistoria") na mesma ação.
+  let parceiroId = (c.parceiro_id as string | null) ?? null;
+  if (para === "em_teste") {
+    const ident = c.user_id ? await estadoIdentidade(a.admin, c.user_id as string) : null;
+    const pode = podeAprovarParaTeste({ status: c.status as string, identidadeVerificada: ident?.estado === "confirmada" });
+    if (!pode.ok) return { ok: false, erro: pode.motivo };
+    if (!parceiroId) {
+      const r = await ativarParceiroDoAvaliador(a.admin, c.user_id as string, c.solicitacao_id as string | null, a.userId, agora);
+      if (!r.ok) return r;
+      parceiroId = r.parceiroId;
+    }
+  }
+  // E30: ativar é a SEGUNDA aprovação, só com a avaliação de teste registrada (laudo emitido num pedido de teste).
+  if (para === "ativo") {
+    const feito = (await comTesteConcluido(a.admin, [id])).has(id);
+    const pode = podeAtivar({ status: c.status as string, testeConcluido: feito });
+    if (!pode.ok) return { ok: false, erro: pode.motivo };
+  }
   await a.admin
     .from("avaliadores_credenciamento")
-    .update({ status: para, motivo, decidido_por: a.userId, decidido_em: agora, ...(para === "ativo" && c.status === "em_teste" ? { ativado_em: agora } : {}) })
+    .update({ status: para, motivo, decidido_por: a.userId, decidido_em: agora, parceiro_id: parceiroId, ...(para === "ativo" && c.status === "em_teste" ? { ativado_em: agora } : {}) })
     .eq("id", id);
   if (para === "em_teste") await naFilaDoAdmin(a.admin, "avaliacao_teste", { avaliadorId: id }, "Marcar a avaliação de teste num imóvel de teste e revisar.");
   if (para === "ativo") await a.admin.from("vistoria_fila_admin").update({ resolvido_em: agora, resolvido_por: a.userId }).eq("avaliador_id", id).in("tipo", ["avaliacao_teste", "suspensao_automatica"]).is("resolvido_em", null);
   revalidatePath(ROTA_ADMIN);
   return { ok: true };
+}
+
+/**
+ * Ativa o parceiro do candidato a avaliador a partir da solicitação ligada (categoria "vistoria"), sem o link de
+ * ativação por e-mail: a pessoa já está logada na própria conta e a aprovação é uma só.
+ */
+async function ativarParceiroDoAvaliador(
+  admin: NonNullable<ReturnType<typeof createAdminClient>>,
+  userId: string,
+  solicitacaoId: string | null,
+  adminId: string,
+  agora: string,
+): Promise<{ ok: true; parceiroId: string } | { ok: false; erro: string }> {
+  const { data: existente } = await admin.from("parceiros").select("id, categorias").eq("user_id", userId).maybeSingle();
+  if (existente) {
+    const categorias = [...new Set([...((existente.categorias as string[]) ?? []), CATEGORIA_AVALIADOR])];
+    await admin.from("parceiros").update({ categorias }).eq("id", existente.id);
+    return { ok: true, parceiroId: existente.id as string };
+  }
+  if (!solicitacaoId) return { ok: false, erro: "Pedido sem os dados de parceiro." };
+  const { data: sol } = await admin.from("parceiro_solicitacoes").select("id, nome, tipo_pessoa, documento, cidades, descricao, telefone").eq("id", solicitacaoId).maybeSingle();
+  if (!sol) return { ok: false, erro: "Pedido sem os dados de parceiro." };
+  const base = slugBase(sol.nome as string);
+  for (let i = 0; i < 20; i++) {
+    const slug = i === 0 ? base : `${base.slice(0, 54)}-${i + 1}`;
+    const { data: p, error } = await admin
+      .from("parceiros")
+      .insert({
+        user_id: userId,
+        solicitacao_id: sol.id,
+        tipo_pessoa: sol.tipo_pessoa,
+        documento: sol.documento,
+        razao_social: sol.tipo_pessoa === "pj" ? sol.nome : null,
+        nome_publico: String(sol.nome).slice(0, 80),
+        slug,
+        categorias: [CATEGORIA_AVALIADOR],
+        cidades: sol.cidades,
+        descricao: sol.descricao,
+        telefone: sol.telefone,
+        status: "rascunho",
+      })
+      .select("id")
+      .single();
+    if (!error && p) {
+      await admin.from("parceiro_solicitacoes").update({ status: "ativada", decidido_por: adminId, decidido_em: agora, atualizado_em: agora }).eq("id", sol.id);
+      return { ok: true, parceiroId: p.id as string };
+    }
+    if (error && (error.code !== "23505" || !/slug/.test(error.message))) {
+      console.error("[ativarParceiroDoAvaliador]", error.code, error.message);
+      return { ok: false, erro: "Não foi possível ativar o parceiro agora. Tente de novo." };
+    }
+  }
+  return { ok: false, erro: "Não foi possível ativar o parceiro agora. Tente de novo." };
 }
 
 /** Avaliação de TESTE: o admin aponta um imóvel de teste (is_teste) e o avaliador em teste; a designação é direta. */
@@ -196,7 +307,23 @@ export async function adminSalvarPreco(form: FormData): Promise<Res> {
   if (!chaveCidade(cidade)) return { ok: false, erro: "Informe a cidade." };
   if (!PORTES.includes(porte)) return { ok: false, erro: "Escolha o porte." };
   if (!(valor > 0) || valor > 100_000) return { ok: false, erro: "Informe um valor válido." };
-  const { error } = await a.admin.from("vistoria_precos").insert({ cidade, porte, valor: Math.round(valor * 100) / 100, inclui_texto: inclui, alterado_por: a.userId });
+  // Adendo 62-B1: condição de retorno (opcional, depois da cotação). Os dois vazios = não existe; um só = erro.
+  const diasTxt = String(form.get("retornoDias") ?? "").trim();
+  const pctTxt = String(form.get("retornoPercentual") ?? "").trim().replace(",", ".");
+  let retorno: { dias: number; percentual: number } | null = null;
+  if (diasTxt || pctTxt) {
+    retorno = condicaoRetorno({ retornoDias: diasTxt ? Number(diasTxt) : null, retornoPercentual: pctTxt ? Number(pctTxt) : null });
+    if (!retorno) return { ok: false, erro: "Condição de retorno: preencha os dois campos (dias inteiros e desconto de 1 a 100%) ou deixe os dois vazios." };
+  }
+  const { error } = await a.admin.from("vistoria_precos").insert({
+    cidade,
+    porte,
+    valor: Math.round(valor * 100) / 100,
+    inclui_texto: inclui,
+    retorno_dias: retorno?.dias ?? null,
+    retorno_percentual: retorno?.percentual ?? null,
+    alterado_por: a.userId,
+  });
   if (error) return { ok: false, erro: "Não foi possível salvar." };
   revalidatePath(ROTA_ADMIN);
   return { ok: true };
@@ -242,8 +369,8 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   const { data: im } = await s.admin.from("properties").select("id, owner_id, status, city, bedrooms").eq("id", propertyId).maybeSingle();
   if (!im || im.owner_id !== s.userId) return SEM_ACESSO;
   const agora = new Date();
-  const { data: tabela } = await s.admin.from("vistoria_precos").select("cidade, porte, valor, inclui_texto, vigente_desde").eq("cidade", im.city ?? "");
-  const linhas: LinhaPreco[] = ((tabela ?? []) as { cidade: string; porte: Porte; valor: number | string; inclui_texto: string | null; vigente_desde: string }[]).map((l) => ({ cidade: l.cidade, porte: l.porte, valor: Number(l.valor), incluiTexto: l.inclui_texto, vigenteDesde: l.vigente_desde }));
+  const { data: tabela } = await s.admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? "");
+  const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const porte = porteDoImovel(im.bedrooms as number);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
   // Prompt 62-B2: o anúncio que a Viva tirou da busca (segurança grave ou 3º strike) volta justamente por nova avaliação.
@@ -257,12 +384,26 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
     (c.contrato_blocos ?? []).some((b) => b.status !== "nao_aceito" && b.inicio <= hoje && b.fim >= hoje),
   );
   const { data: dono } = await s.admin.from("profiles").select("is_teste").eq("id", s.userId).maybeSingle();
-  // Prompt 62-B2: reprovado há até 90 dias → nova avaliação pela metade (tipo nova_90d).
-  const { data: reprov } = await s.admin.from("vistoria_laudos").select("emitido_em").eq("property_id", im.id).eq("resultado", "reprovado").order("emitido_em", { ascending: false }).limit(1).maybeSingle();
-  const nova = valorNovaAvaliacao(preco!.valor, (reprov?.emitido_em as string | undefined) ?? null, agora);
+  // Adendo 62-B1: depois de "reprovado" ou de ressalva vencida, é NOVA AVALIAÇÃO (novo pedido completo, outro avaliador
+  // pelo rodízio): valor da tabela, menos a condição de retorno da cidade só se ela existir e estiver no prazo.
+  const { data: ultimo } = await s.admin.from("vistoria_laudos").select("resultado, emitido_em, ressalva_vencida_em").eq("property_id", im.id).order("emitido_em", { ascending: false }).limit(1).maybeSingle();
+  const desde = ultimo?.resultado === "reprovado" ? (ultimo.emitido_em as string) : ((ultimo?.ressalva_vencida_em as string | null | undefined) ?? null);
+  const tipo = desde ? "nova_avaliacao" : "inicial";
+  const cobranca = valorDoPedido(tipo, preco!, desde, agora);
   const { data: p, error } = await s.admin
     .from("vistoria_pedidos")
-    .insert({ property_id: im.id, owner_id: s.userId, cidade: im.city ?? "", tipo: nova.comDesconto ? "nova_90d" : "inicial", porte, valor_tabela: nova.valor, ocupado: !!ocupante, morador_id: ocupante?.tenant_id ?? null, teste: dono?.is_teste === true })
+    .insert({
+      property_id: im.id,
+      owner_id: s.userId,
+      cidade: im.city ?? "",
+      tipo,
+      porte,
+      valor_tabela: cobranca.valor,
+      retorno_percentual_aplicado: cobranca.retorno?.percentual ?? null,
+      ocupado: !!ocupante,
+      morador_id: ocupante?.tenant_id ?? null,
+      teste: dono?.is_teste === true,
+    })
     .select("id")
     .single();
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };

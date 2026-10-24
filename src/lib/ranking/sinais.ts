@@ -46,6 +46,8 @@ export interface ExtrasDoServidor {
   nivel?: NivelOuAdequacao | null;
   /** Prompt 62-B2: exibicaoAvaliacao(...) != null (laudo válido, sem strike). */
   vistoriado?: boolean;
+  /** 61-B: considerarPreenchido(...) — algum item ou texto em "o que considerar antes de pedir". */
+  considerarAntes?: boolean;
 }
 
 const n = (v: number | string | null | undefined) => (v == null || v === "" ? 0 : Number(v) || 0);
@@ -81,5 +83,6 @@ export function sinaisDaLinha(l: LinhaRankingSinais, extras: ExtrasDoServidor): 
     confortoPendenciasAbertas: extras.confortoPendenciasAbertas ?? 0,
     nivel: extras.nivel ?? null,
     vistoriado: extras.vistoriado === true,
+    considerarAntes: extras.considerarAntes === true,
   };
 }

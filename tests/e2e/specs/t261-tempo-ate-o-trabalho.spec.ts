@@ -124,7 +124,7 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
   });
 
   for (const largura of [390, 1280]) {
-    test(`3) página do imóvel: "Tempo até" com o destino da busca e os cadastrados mais próximos (${largura})`, async ({ browser }) => {
+    test(`3) página do imóvel: "Tempo até" com o destino da busca e os cadastrados da cidade (${largura})`, async ({ browser }) => {
       const ctx = await browser.newContext({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
       const page = await ctx.newPage();
       await page.goto(`/imoveis/${ids.perto}?destino=hc-ufu&modo=carro`, { waitUntil: "domcontentloaded" });
@@ -133,6 +133,8 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
       await expect(bloco.locator('[data-busca="1"]')).toContainText(/min de carro até o HC-UFU/);
       await expect(bloco).toContainText(/min a pé até o HC-UFU/);
       await expect(bloco).not.toContainText(/-18\.|-48\./);
+      // E31: destino de outra cidade (a clínica do lab, em Araguari) não entra no bloco do anúncio.
+      await expect(bloco).not.toContainText(`Clínica Lab ${sufixo}`);
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(page);
       await bloco.screenshot({ path: `${SAIDA}/t261-imovel-tempo-ate-${largura}.png` });
@@ -142,7 +144,9 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
 
   test("4) 'Meu local de trabalho' salvo vira o destino padrão da busca", async ({ browser }) => {
     const page = await entrar(browser as Browser, medica.email, senha);
-    await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+    await page.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
+    // C9/E56: sem local salvo o bloco nasce fechado; o toggle abre o campo.
+    await page.getByTestId("local-toggle-bloco-toggle").last().click({ timeout: 20_000 });
     const bloco = page.getByTestId("meu-local-trabalho").last();
     await bloco.getByTestId("destino-hc-ufu").click({ timeout: 20_000 });
     await bloco.getByTestId("salvar-local-trabalho").click();
@@ -211,9 +215,32 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
       await expect(hc).toContainText("Ativo");
       await expect(page.locator('[data-testid="destino-linha"][data-slug="ufu-umuarama"]').getByTestId("alternar-destino")).toBeDisabled();
       await expect(page.getByTestId("destinos-mais-buscados")).toContainText("HC-UFU");
+      // E31: com o provedor de rotas (no lab, o falso), o admin vê "ligado" e nenhuma variável faltando.
+      await expect(page.getByTestId("destinos-provedor")).toHaveAttribute("data-ok", "1");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t261-admin-destinos-${largura}.png` });
       await ctx.close();
     }
+  });
+
+  test("admin (E32): editar só o nome mantém o ponto e o ativo", async ({ browser }) => {
+    test.skip(!hasAccount("admin"), "sem conta admin de teste");
+    const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
+    const page = await ctx.newPage();
+    // Abre a lista primeiro e clica em "Editar" (o caminho do defeito: o formulário de cadastro já montado).
+    await page.goto("/admin/destinos", { waitUntil: "domcontentloaded" });
+    await page.locator(`[data-testid="destino-linha"][data-slug="lab-t261-${sufixo}"]`).getByRole("link", { name: "Editar" }).click();
+    const form = page.getByTestId("destino-form");
+    await expect(form.locator('input[name="slug"]')).toHaveValue(`lab-t261-${sufixo}`);
+    await expect(page.getByTestId("destino-lat")).toHaveValue(/^-18\.64/);
+    await expect(page.getByTestId("destino-lng")).toHaveValue(/^-48\.19/);
+    await form.getByLabel("Nome").fill(`Clínica Lab — Centro ${sufixo}`);
+    await page.getByTestId("salvar-destino").click();
+    await expect(form.getByRole("status")).toContainText("salvo.");
+    const { data } = await adm().from("destinos").select("nome, lat, lng, ativo").eq("id", ids.vazio!).single();
+    expect(data).toMatchObject({ nome: `Clínica Lab — Centro ${sufixo}`, ativo: true });
+    expect(Number(data!.lat)).toBeCloseTo(-18.64, 4);
+    expect(Number(data!.lng)).toBeCloseTo(-48.19, 4);
+    await ctx.close();
   });
 });

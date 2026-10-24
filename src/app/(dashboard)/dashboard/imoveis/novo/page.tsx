@@ -1,5 +1,6 @@
 "use client";
 
+import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,25 +28,28 @@ import {
   carregarQualificacao,
   saveDraftData,
   loadDraftData,
+  enderecoGravadoDoImovel,
   getLatestDraft,
   carregarLimitesNegociacao,
   salvarLimitesNegociacao,
   type DocumentStatus,
 } from "@/lib/data/actions";
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
-import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { ANCORA_VIDEO_ASSISTENTE, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { videoDoAnuncio } from "@/lib/video-anuncio";
+import { ERRO_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
-import { confortoDoImovel } from "@/lib/data/conforto-actions";
+import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
-import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao } from "@/lib/anuncio/operacao";
+import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoDocValido } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS } from "@/lib/listing";
 import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
@@ -86,6 +90,8 @@ import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricu
 import { chaveLugar } from "@/components/anuncio/blocos-cadastro";
 import type { CampoSugerido, EstadoIaFotos, FalhaIaFotos } from "./tipos";
 import { ChecklistPublicar } from "./checklist-publicar";
+import { ChegadaEPedidoCampos, formDeChegada, formDeRascunho, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
+import { tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
 import { PainelQualificacao } from "./painel-qualificacao";
 import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
@@ -123,6 +129,14 @@ const STEP_META = [
 ] as const;
 
 
+/** Tira o erro de um campo (o mesmo objeto quando ele não tem erro: não redesenha à toa). */
+function semErro(e: Record<string, string>, campo: string): Record<string, string> {
+  if (!(campo in e)) return e;
+  const resto = { ...e };
+  delete resto[campo];
+  return resto;
+}
+
 export default function NewPropertyPage() {
   // T1: o rascunho local é POR USUÁRIO — nunca abre o de outra conta.
   const userId = useAuthStore((s) => s.user?.id ?? null);
@@ -159,12 +173,16 @@ export default function NewPropertyPage() {
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
   const [aceitouIa, setAceitouIa] = useState(false);
-  // Prompt 59: itens do padrão mínimo de conforto marcados pelo dono (gravados no servidor ao salvar/publicar).
-  const [conforto, setConforto] = useState<string[]>([]);
+  // 64-B: o aceite vale para o texto do momento em que foi dado (impressão do título + descrição); mudou → cai.
+  const [aceiteTexto, setAceiteTexto] = useState<string | null>(null);
+  const [avisoAceite, setAvisoAceite] = useState<string | null>(null);
   const [textoIaOriginal, setTextoIaOriginal] = useState<{ titulo: string; descricao: string } | null>(null);
   const [title, setTitle] = useState("");
   const [propertyType, setPropertyType] = useState("apartamento");
   const [description, setDescription] = useState("");
+  // Mudou o título ou a descrição depois do aceite: o aceite deixa de valer (caixa desmarcada) e o aviso aparece.
+  const textoMudouDepoisDoAceite = aceitouIa && aceiteTexto !== null && impressaoDoTexto(title, description) !== aceiteTexto;
+  const aceiteValido = aceitouIa && !textoMudouDepoisDoAceite;
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   const [areaM2, setAreaM2] = useState("");
@@ -180,6 +198,8 @@ export default function NewPropertyPage() {
   const [privacidade, setPrivacidade] = useState<Privacidade>(PRIVACIDADE_VAZIA);
   const [smokingAllowed, setSmokingAllowed] = useState(false);
   const [childrenAllowed, setChildrenAllowed] = useState(true);
+  // 61-B: tipo de entrada (obrigatório para publicar anúncio novo), mensagem a quem pede e o que considerar.
+  const [chegada, setChegada] = useState<ChegadaEPedidoForm>(() => formDeChegada());
   const [amenityKeys, setAmenityKeys] = useState<Record<string, boolean>>({});
   const [internetMbps, setInternetMbps] = useState("");
   // Proximidades: as do OSM (todas marcadas; o dono desmarca) + as manuais ("Adicionar outro").
@@ -200,6 +220,8 @@ export default function NewPropertyPage() {
   const [neighborhood, setNeighborhood] = useState("");
   const [city, setCity] = useState("Uberlândia");
   const [cep, setCep] = useState("");
+  // L1-1: endereço já gravado do imóvel (rascunho retomado), para o "Enviar documento" não travar.
+  const [enderecoSalvo, setEnderecoSalvo] = useState<EnderecoDoc | null>(null);
   const [cepLoading, setCepLoading] = useState(false);
   // Prompt 20: toda busca de CEP vira uma mensagem (achou, só a cidade, não achou, sem rede).
   const [cepResultado, setCepResultado] = useState<ResultadoCep | null>(null);
@@ -225,8 +247,11 @@ export default function NewPropertyPage() {
   const [subleaseAuthorized, setSubleaseAuthorized] = useState(false);
   const [subleaseDoc, setSubleaseDoc] = useState<PhotoItem[]>([]);
   const [docOperacaoAnexado, setDocOperacaoAnexado] = useState(false);
+  const [subleaseDocTipo, setSubleaseDocTipo] = useState("");
   const [qual, setQual] = useState({ baseBadge: false, tHome: false, tWork: false });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  // 59-C1: a causa da recusa do servidor no autosave (null = falha de rede).
+  const [saveErro, setSaveErro] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string>("");
   const [draftServerId, setDraftServerId] = useState<string | null>(null);
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
@@ -237,6 +262,10 @@ export default function NewPropertyPage() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
   const draftParam = searchParams.get("draft");
+  // Prompt 59 / 59-C1: o padrão mínimo de conforto. Com id, cada item marcado grava na hora; sem id, grava assim que o
+  // primeiro autosave criar o rascunho. Só depois de carregar o que já estava salvo (nunca desmarca por omissão).
+  const conf = useConfortoSalvo(editId ?? draftParam ?? draftServerId);
+  const conforto = conf.marcados;
   const etapaParam = etapaDaUrl(searchParams.get("etapa"));
   const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
@@ -245,7 +274,7 @@ export default function NewPropertyPage() {
   const sugerido = (c: CampoSugerido) => sugeridos.includes(c);
 
   const docOperacaoOk = docOperacaoAnexado || subleaseDoc.some((d) => !!d.path && !d.demo);
-  const subleaseBlocked = exigeAutorizacao(ownershipType) && (!subleaseAuthorized || !docOperacaoOk);
+  const subleaseBlocked = exigeAutorizacao(ownershipType) && (!subleaseAuthorized || !docOperacaoOk || !tipoDocValido(ownershipType, subleaseDocTipo));
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
   const enderecoCompleto = [street.trim(), numero.trim()].filter(Boolean).join(", ");
@@ -266,9 +295,14 @@ export default function NewPropertyPage() {
     limitePlanoOk: null,
     descricao: description,
     selo: qual.baseBadge,
-    video: !!videoUrl.trim() || !!videoArquivo,
+    // 65-B: uma fonte só (arquivo, ou link permitido do YouTube/Vimeo).
+    video: videoDoAnuncio({ videoArquivo, videoUrl }).tipo !== null,
     // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
     qualificacaoOk: editingId ? undefined : qualificado,
+    // 61-B: o tipo de entrada só é exigido do anúncio NOVO (o publicado sem ele ganha só o aviso no painel).
+    tipoEntradaOk: editingId ? undefined : tipoEntradaValido(chegada.tipoEntrada),
+    // FILTROS-1 (E39): a velocidade da internet é o dado que o chip "Wi-Fi" da busca lê — anúncio novo só publica com ela.
+    internetOk: editingId ? undefined : (mbpsValido(internetMbps) ?? 0) > 0,
     // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
     confortoFaltam: editingId ? undefined : itensFaltantes(conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }))).length,
   });
@@ -277,6 +311,8 @@ export default function NewPropertyPage() {
     if (item.key === "qualificacao") setPainelQualificacao(true);
     else irPara(item.etapa);
     if (item.key === "conforto") setTimeout(() => document.querySelector('[data-testid="conforto-checklist"]')?.scrollIntoView({ block: "center" }), 50);
+    // 65-B: "Para melhorar: Vídeo do imóvel" leva ao bloco de vídeo do passo Fotos.
+    if (item.key === "video") setTimeout(() => document.getElementById(ANCORA_VIDEO_ASSISTENTE)?.scrollIntoView({ block: "start" }), 400);
   }
   // "Importar anúncio" (t115): preenche o que veio do texto colado e leva direto à etapa 3, com tudo preenchido.
   function aplicarImportado(a: AnuncioOrganizado) {
@@ -294,7 +330,7 @@ export default function NewPropertyPage() {
   }
 
   const completude = prontidao.obrigatorios;
-  const podePublicar = prontidao.podePublicar && qualificado && aceitouIa;
+  const podePublicar = prontidao.podePublicar && qualificado && aceiteValido;
 
   /** Campos obrigatórios da etapa atual (chave → mensagem). Só barra o AVANÇO; a Revisão é o portão final. */
   function validarEtapa(s: number): Record<string, string> {
@@ -302,6 +338,7 @@ export default function NewPropertyPage() {
     if (s === ETAPA.onde) {
       if (exigeAutorizacao(ownershipType)) {
         if (!subleaseAuthorized) e.sublocacao = "Marque a declaração para continuar.";
+        else if (!tipoDocValido(ownershipType, subleaseDocTipo)) e.sublocacao = "Escolha o que você está anexando: contrato de administração ou procuração.";
         else if (!docOperacaoOk) e.sublocacao = `Anexe: ${DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].titulo.toLowerCase()}.`;
       }
       if (!street.trim()) e.rua = "Informe a rua.";
@@ -340,19 +377,6 @@ export default function NewPropertyPage() {
   }, [editId]);
 
   const imovelId = editId ?? draftParam ?? draftServerId;
-  // O que o dono já confirmou do padrão mínimo (rascunho salvo ou anúncio publicado).
-  useEffect(() => {
-    if (!imovelId) return;
-    let vivo = true;
-    confortoDoImovel(imovelId)
-      .then((e) => {
-        if (vivo && e) setConforto((atual) => [...new Set([...atual, ...e.itens.filter((i) => i.confirmado).map((i) => i.chave)])]);
-      })
-      .catch(() => null);
-    return () => {
-      vivo = false;
-    };
-  }, [imovelId]);
   useEffect(() => {
     let alive = true;
     getMyDocumentStatus(imovelId)
@@ -453,7 +477,7 @@ export default function NewPropertyPage() {
       setPublishError("A duração máxima não pode ser menor que a mínima. Ajuste os prazos.");
       return;
     }
-    if (!asDraft && !aceitouIa) {
+    if (!asDraft && !aceiteValido) {
       setPublishError("Marque a confirmação de que você revisou o anúncio para publicar.");
       return;
     }
@@ -489,6 +513,7 @@ export default function NewPropertyPage() {
       ownershipType,
       subleaseAuthorized,
       subleaseDocUrl: subleaseDoc[0]?.path ?? subleaseDoc[0]?.url,
+      subleaseDocTipo: subleaseDocTipo || undefined,
       condoFee: Number(condoFee) || 0,
       descricaoGeradaPorIa,
       utilitiesMode,
@@ -511,6 +536,7 @@ export default function NewPropertyPage() {
       senhaTrocadaEstadia: privacidade.senhaTrocadaEstadia,
       smokingAllowed,
       childrenAllowed,
+      ...payloadDaChegada(chegada),
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
       googlePlaces,
       proximities: proximidadesFinais,
@@ -523,7 +549,8 @@ export default function NewPropertyPage() {
       videoUrl: videoUrl.trim() || undefined,
       videoArquivo,
       asDraft,
-      confortoConfirmados: conforto,
+      // 59-C1: a lista só vai quando o dono mexeu no checklist nesta sessão (já salva item a item); ausente = não mexe.
+      ...(conf.mexido ? { confortoConfirmados: conforto, confortoMexido: true } : {}),
       aceiteIa: asDraft
         ? undefined
         : {
@@ -557,6 +584,11 @@ export default function NewPropertyPage() {
     if (s(d.title)) setTitle(d.title as string);
     if (s(d.propertyType)) setPropertyType(d.propertyType as string);
     if (s(d.description)) setDescription(d.description as string);
+    // 64-B: o aceite do termo de IA volta com o rascunho (só com a versão atual e o mesmo texto).
+    const aceite = aceiteRestaurado(d.aceiteIa, s(d.title) ?? "", s(d.description) ?? "");
+    setAceitouIa(aceite.marcado);
+    setAceiteTexto(aceite.marcado ? impressaoDoTexto(s(d.title) ?? "", s(d.description) ?? "") : null);
+    setAvisoAceite(aceite.aviso);
     if (s(d.bedrooms)) setBedrooms(d.bedrooms as string);
     if (s(d.bathrooms)) setBathrooms(d.bathrooms as string);
     if (s(d.areaM2)) setAreaM2(d.areaM2 as string);
@@ -585,6 +617,7 @@ export default function NewPropertyPage() {
     if (d.privacidade && typeof d.privacidade === "object") setPrivacidade({ ...PRIVACIDADE_VAZIA, ...(d.privacidade as Partial<Privacidade>) });
     if (typeof d.smokingAllowed === "boolean") setSmokingAllowed(d.smokingAllowed);
     if (typeof d.childrenAllowed === "boolean") setChildrenAllowed(d.childrenAllowed);
+    setChegada((atual) => formDeRascunho(d, atual));
     if (typeof d.issuesInvoice === "boolean") setIssuesInvoice(d.issuesInvoice);
     if (d.amenityKeys && typeof d.amenityKeys === "object") setAmenityKeys(d.amenityKeys as Record<string, boolean>);
     if (Array.isArray(d.googlePlaces)) setGooglePlaces(d.googlePlaces as CuratedPlace[]);
@@ -607,6 +640,7 @@ export default function NewPropertyPage() {
     if (typeof d.subleaseAuthorized === "boolean") setSubleaseAuthorized(d.subleaseAuthorized);
     if (Array.isArray(d.photos)) setPhotos(d.photos as PhotoItem[]);
     if (Array.isArray(d.subleaseDoc)) setSubleaseDoc(d.subleaseDoc as PhotoItem[]);
+    if (typeof d.subleaseDocTipo === "string") setSubleaseDocTipo(d.subleaseDocTipo);
     if (d.qual && typeof d.qual === "object") {
       const q = d.qual as Record<string, unknown>;
       setQual({ baseBadge: !!q.baseBadge, tHome: !!q.tHome, tWork: !!q.tWork });
@@ -627,6 +661,7 @@ export default function NewPropertyPage() {
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+      enderecoGravadoDoImovel(draftParam).then((e) => alive && setEnderecoSalvo(e)).catch(() => {});
       carregarLimitesNegociacao(draftParam).then((l) => alive && setLimites(l)).catch(() => {});
       if (etapaParam !== null) {
         setStep(etapaParam);
@@ -698,6 +733,7 @@ export default function NewPropertyPage() {
       }
       setEditingId(editId);
       setApproved(true);
+      enderecoGravadoDoImovel(editId).then((e) => alive && setEnderecoSalvo(e)).catch(() => {});
       setTitle(p.title || "");
       setPropertyType(p.propertyType || "apartamento");
       setDescription(p.description || "");
@@ -718,6 +754,7 @@ export default function NewPropertyPage() {
       setPetsOk(p.petsAllowed ?? false);
       setSmokingAllowed(p.smokingAllowed ?? false);
       setChildrenAllowed(p.childrenAllowed ?? true);
+      setChegada(formDeChegada(p.chegadaEPedido));
       if (p.privacidade) setPrivacidade(p.privacidade);
       setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
       setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
@@ -728,6 +765,7 @@ export default function NewPropertyPage() {
       setOwnershipType(operacaoValida(p.ownershipType) ? p.ownershipType : "own");
       setSubleaseAuthorized(!!p.subleaseAuthorized);
       setDocOperacaoAnexado(!!p.autorizacaoAnexada);
+      setSubleaseDocTipo(p.subleaseDocTipo ?? "");
       setVideoUrl(p.videoUrl || "");
       setVideoArquivo(p.videoArquivo || "");
       setInternetMbps(p.internetMbps ? String(p.internetMbps) : "");
@@ -747,19 +785,28 @@ export default function NewPropertyPage() {
     };
   }, [editId]);
 
+  // 64-B: marcar/desmarcar o aceite guarda a impressão do texto daquele momento.
+  function marcarAceite(v: boolean) {
+    setAceitouIa(v);
+    setAceiteTexto(v ? impressaoDoTexto(title, description) : null);
+    setAvisoAceite(null);
+  }
+
   // Auto-save do rascunho + "Salvo ✓". Os limites PRIVADOS da negociação NÃO vão no JSON (salvos à parte).
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, internetMbps,
-    privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
+    privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
     iaAnalisadas, sugeridos, comodidadesSugeridas,
     qual,
+    aceiteIa: aceiteParaRascunho(aceiteValido, title, description),
     photos: photos.filter((p) => p.url && !p.url.startsWith("blob:")),
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
+    subleaseDocTipo,
   });
   useEffect(() => {
     if (approved !== true || editId) return;
@@ -778,17 +825,27 @@ export default function NewPropertyPage() {
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       if (!on) return;
-      const res = await saveDraftData({
-        id: draftIdRef.current,
-        title,
-        city,
-        monthlyPrice: Number(monthlyPrice) || 0,
-        neighborhood,
-        bathrooms: Number(bathrooms) || 0,
-        areaM2: Number(areaM2) || 0,
-        description,
-        data: JSON.parse(draftJson),
-      });
+      // 59-C1: rede (o fetch nem chegou) ≠ recusa do servidor (chegou e o banco disse não, com a causa).
+      let res: Awaited<ReturnType<typeof saveDraftData>>;
+      try {
+        res = await saveDraftData({
+          id: draftIdRef.current,
+          title,
+          city,
+          monthlyPrice: Number(monthlyPrice) || 0,
+          neighborhood,
+          bathrooms: Number(bathrooms) || 0,
+          areaM2: Number(areaM2) || 0,
+          description,
+          data: JSON.parse(draftJson),
+        });
+      } catch {
+        if (on) {
+          setSaveErro(null);
+          setSaveStatus("error");
+        }
+        return;
+      }
       if (!on) return;
       if (res.ok) {
         if (res.id) {
@@ -800,6 +857,7 @@ export default function NewPropertyPage() {
         setSaveStatus("saved");
         setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
       } else {
+        setSaveErro(res.error ?? "o servidor recusou a gravação.");
         setSaveStatus(res.demo ? "saved" : "error");
       }
     }, 2000);
@@ -1206,50 +1264,56 @@ export default function NewPropertyPage() {
 
   return (
     <div className="w-full">
-      <PageTitle
-        title={editingId ? "Editar anúncio" : "Anuncie seu imóvel"}
-        subtitle={editingId ? "Ajuste os dados do imóvel e salve as alterações." : "Em 6 passos. Salvamos seu progresso automaticamente."}
-        action={
-          !editingId && saveStatus !== "idle" ? (
-            <span
-              className={cn(
-                "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium",
-                saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
-              )}
-            >
-              {saveStatus === "saved" ? (
-                <>
-                  <Check className="h-3.5 w-3.5" /> Salvo{savedAt ? ` às ${savedAt}` : ""}
-                </>
-              ) : saveStatus === "error" ? (
-                <>
-                  <XCircle className="h-3.5 w-3.5" /> Sem conexão — não salvo
-                </>
-              ) : (
-                "Salvando…"
-              )}
-            </span>
-          ) : undefined
-        }
-      />
-
-      <div className="relative mb-4 overflow-hidden rounded-xl">
-        <Image
-          src={PHOTOS.cadastro.welcome}
-          alt="Proprietário com as chaves de um imóvel mobiliado pronto para anunciar"
-          width={800}
-          height={300}
-          priority
-          className="h-28 w-full object-cover sm:h-36"
-        />
-        <div className="absolute inset-0 bg-night/50" />
-        <div className="absolute inset-0 flex flex-col justify-center p-4 text-white">
-          <p className="font-title text-lg font-semibold sm:text-xl">Anunciar seu imóvel em 6 passos</p>
-          <p className="text-sm text-white/80" data-testid="cadastro-frase-topo">
-            {iaLigada ? "Comece pelo CEP. A IA preenche o resto pelas fotos." : "Comece pelo CEP. Depois, fotos, detalhes, preço e revisão."}
-          </p>
-        </div>
-      </div>
+      {/* E50 (regra do dono: cada conteúdo num lugar só, um título por tela): no cadastro novo a apresentação é UMA — o
+          banner com o CEP e a IA, que leva o H1. O título "Anuncie seu imóvel / Em 6 passos…" saiu; o estado de
+          salvamento fica numa linha discreta acima do banner. Editando, vale o título "Editar anúncio" (sem banner). */}
+      {editingId ? (
+        <PageTitle title="Editar anúncio" subtitle="Ajuste os dados do imóvel e salve as alterações." />
+      ) : (
+        <>
+          {saveStatus !== "idle" && (
+            <div className="mb-2 flex justify-end">
+              <span
+                data-testid="estado-salvamento"
+                data-estado={saveStatus}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium",
+                  saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
+                )}
+              >
+                {saveStatus === "saved" ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" /> Salvo{savedAt ? ` às ${savedAt}` : ""}
+                  </>
+                ) : saveStatus === "error" ? (
+                  <>
+                    <XCircle className="h-3.5 w-3.5" /> {saveErro ? `Não foi possível salvar: ${saveErro}` : "Sem conexão — não salvo"}
+                  </>
+                ) : (
+                  "Salvando…"
+                )}
+              </span>
+            </div>
+          )}
+          <div className="relative mb-4 overflow-hidden rounded-xl" data-testid="cadastro-apresentacao">
+            <Image
+              src={PHOTOS.cadastro.welcome}
+              alt="Proprietário com as chaves de um imóvel mobiliado pronto para anunciar"
+              width={800}
+              height={300}
+              priority
+              className="h-28 w-full object-cover sm:h-36"
+            />
+            <div className="absolute inset-0 bg-night/50" />
+            <div className="absolute inset-0 flex flex-col justify-center p-4 text-white">
+              <h1 className="font-title text-lg font-semibold sm:text-xl">Anunciar seu imóvel em 6 passos</h1>
+              <p className="text-sm text-white/80" data-testid="cadastro-frase-topo">
+                {iaLigada ? "Comece pelo CEP. A IA preenche o resto pelas fotos." : "Comece pelo CEP. Depois, fotos, detalhes, preço e revisão."}
+              </p>
+            </div>
+          </div>
+        </>
+      )}
 
       {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
         <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1373,18 +1437,30 @@ export default function NewPropertyPage() {
                   if (d.length) setErros(({ sublocacao: _resolvido, ...resto }) => resto);
                 }}
                 docOperacaoAnexado={docOperacaoAnexado}
+                subleaseDocTipo={subleaseDocTipo}
+                setSubleaseDocTipo={(t) => {
+                  setSubleaseDocTipo(t);
+                  setErros(({ sublocacao: _resolvido, ...resto }) => resto);
+                }}
                 cep={cep}
                 setCep={(v) => {
                   setCep(v);
+                  setErros((e) => semErro(e, "cep"));
                   if (v.replace(/\D/g, "").length === 8) void lookupCep(v);
                   else setCepResultado(null);
                 }}
                 cepLoading={cepLoading}
                 street={street}
-                setStreet={setStreet}
+                setStreet={(v) => {
+                  setStreet(v);
+                  setErros((e) => semErro(e, "rua"));
+                }}
                 marcarDigitado={(c) => digitadosRef.current.add(c)}
                 numero={numero}
-                setNumero={setNumero}
+                setNumero={(v) => {
+                  setNumero(v);
+                  setErros((e) => semErro(e, "numero"));
+                }}
                 complemento={complemento}
                 setComplemento={setComplemento}
                 neighborhood={neighborhood}
@@ -1407,6 +1483,8 @@ export default function NewPropertyPage() {
                 enderecoMatricula={enderecoMatricula}
                 onEnderecoMatricula={usarEnderecoMatricula}
                 erros={erros}
+                enderecoSalvo={enderecoSalvo}
+                onFaltaDocumento={(campos) => setErros((e) => ({ ...e, ...Object.fromEntries(campos.map((c) => [c, ERRO_CAMPO_ENDERECO[c]])) }))}
               />
             )}
 
@@ -1422,7 +1500,13 @@ export default function NewPropertyPage() {
               <div className="space-y-6">
                 <EtapaEncontramos parte="comodidades" {...camposImovel} />
                 {/* Prompt 59-A: o padrão mínimo da Viva é confirmado junto das comodidades. */}
-                <ChecklistConforto marcados={conforto} onChange={setConforto} desabilitado={publishing} />
+                <ChecklistConforto
+                  marcados={conforto}
+                  onChange={conf.alterar}
+                  desabilitado={publishing || !conf.carregado}
+                  salvamento={conf.salvamento}
+                  onTentarDeNovo={conf.tentarDeNovo}
+                />
                 {/* Adendo 59.1: o nível que o imóvel atinge agora e o que falta para o próximo, item a item, com foto. */}
                 <NivelNoCadastro propertyId={imovelId} conforto={conforto} />
               </div>
@@ -1430,8 +1514,12 @@ export default function NewPropertyPage() {
 
             {step === ETAPA.regras && (
               <div className="space-y-6">
-              <EtapaEncontramos parte="regras" {...camposImovel} />
+              <div>
+                <EtapaEncontramos parte="regras" {...camposImovel} />
+                <ChegadaEPedidoCampos value={chegada} onChange={setChegada} />
+              </div>
               <EtapaPreco
+                imovelId={imovelId}
                 sugerido={sugerido}
                 tirarSugestao={tirarSugestao}
                 monthlyPrice={monthlyPrice}
@@ -1481,7 +1569,7 @@ export default function NewPropertyPage() {
                 negociacao={negociacao}
                 completude={completude}
                 onResolver={resolverItem}
-                melhorar={prontidao.melhorar}
+                melhorar={prontidao.opcionais.filter((o) => !o.ok)}
                 quality={quality}
                 photosCount={photos.length}
                 qualBaseBadge={qual.baseBadge}
@@ -1491,8 +1579,9 @@ export default function NewPropertyPage() {
                 publishing={publishing}
                 publish={publish}
                 irPara={irPara}
-                aceitouIa={aceitouIa}
-                setAceitouIa={setAceitouIa}
+                aceitouIa={aceiteValido}
+                setAceitouIa={marcarAceite}
+                avisoAceite={textoMudouDepoisDoAceite ? AVISO_TEXTO_MUDOU : avisoAceite}
                 conforto={conforto}
                 publishError={publishError}
                 podePublicar={podePublicar}

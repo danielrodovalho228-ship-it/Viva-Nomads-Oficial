@@ -22,6 +22,8 @@ import { SeloDonoVerificado } from "@/components/property/selo-dono-verificado";
 import { SeloExemplo } from "@/components/property/selo-exemplo";
 import { buttonClasses } from "@/components/ui/button";
 import { hojeBR, numBR } from "@/lib/utils";
+import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
+import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 
 function AvatarDono({ nome, foto }: { nome: string; foto: string | null | undefined }) {
   return foto ? (
@@ -177,12 +179,18 @@ export function OwnerCard({
                 <SeloDonoVerificado />
               </li>
             )}
-            {d.selos.map((s) => (
-              <li key={s} className="inline-flex items-center gap-2">
-                <Check className="h-4 w-4 text-forest" aria-hidden />
-                {s}
-              </li>
-            ))}
+            {d.selos.map((s) =>
+              ehSeloLinkedin(s) ? (
+                <li key={s}>
+                  <SeloLinkedin />
+                </li>
+              ) : (
+                <li key={s} className="inline-flex items-center gap-2">
+                  <Check className="h-4 w-4 text-forest" aria-hidden />
+                  {s}
+                </li>
+              ),
+            )}
           </ul>
         </div>
 

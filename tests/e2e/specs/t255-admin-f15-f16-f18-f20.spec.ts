@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
+ * L-44 (24/10): F18 e F20 não dependem mais da ordem nem dos dados das outras specs.
  * T255 — Reteste dos achados F15, F16, F18 e F20 do /admin com o admin de teste em AAL2
  * (ordem 45ce8baf; 1 teste por achado, prints a 390 e 1280 px). Sem TESTES_ADMIN_TOTP_SEGREDO o
  * admin de teste não entra no /admin, então tudo se PULA com o motivo (nunca passa em falso).
@@ -50,23 +52,30 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
 
     test(`F18 — filtrar o funil por cidade só estreita, nunca soma (${largura} px)`, async ({ page }, info) => {
       await page.setViewportSize({ width: largura, height: 900 });
+      test.setTimeout(150_000);
       const valores = async (url: string) => {
         await page.goto(url, { waitUntil: "domcontentloaded" });
         const itens = page.getByTestId("funil-links").locator("[data-valor]");
         await expect(itens.first()).toBeVisible({ timeout: 20_000 });
         return (await itens.allInnerTexts()).map((t) => Number(t.replace(/\D/g, "")));
       };
-      const sem = await valores("/admin?periodo=90");
       await page.goto("/admin?periodo=90", { waitUntil: "domcontentloaded" });
       const cidades = await page.locator('select:has(option:text-is("Todas as cidades")) option').evaluateAll((os) =>
         (os as HTMLOptionElement[]).map((o) => o.value).filter(Boolean),
       );
       test.skip(cidades.length === 0, "Sem cidade com anúncio no ambiente.");
-      for (const cidade of cidades.slice(0, 3)) {
-        const com = await valores(`/admin?periodo=90&cidade=${encodeURIComponent(cidade)}`);
-        expect(com.length).toBe(sem.length);
-        com.forEach((v, i) => expect(v, `etapa ${i} em ${cidade}`).toBeLessThanOrEqual(sem[i]));
-      }
+      // L-44: outras specs criam dados enquanto esta lê (lab completo 40 → 75). Só compara quando o funil sem cidade
+      // ficou igual antes e depois das leituras por cidade; se mudou no meio, lê tudo de novo.
+      await expect(async () => {
+        const sem = await valores("/admin?periodo=90");
+        const porCidade: [string, number[]][] = [];
+        for (const cidade of cidades.slice(0, 3)) porCidade.push([cidade, await valores(`/admin?periodo=90&cidade=${encodeURIComponent(cidade)}`)]);
+        expect(await valores("/admin?periodo=90"), "o funil sem cidade mudou durante a leitura").toEqual(sem);
+        for (const [cidade, com] of porCidade) {
+          expect(com.length).toBe(sem.length);
+          com.forEach((v, i) => expect(v, `etapa ${i} em ${cidade}`).toBeLessThanOrEqual(sem[i]));
+        }
+      }).toPass({ timeout: 100_000, intervals: [2_000, 5_000] });
       await page.screenshot({ path: info.outputPath(`f18-${largura}.png`), fullPage: false });
     });
 
@@ -76,14 +85,22 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
       const busca = page.getByTestId("pedidos-busca");
       await expect(busca).toBeVisible({ timeout: 20_000 });
       const abas = page.getByRole("tab");
-      expect(await abas.count()).toBeGreaterThan(1);
+      // L-44: há "Todos (n)" e uma aba por situação que tem pedido (abasPedidos). Sem pedido no recorte, só "Todos (0)".
+      await expect(abas.first()).toHaveText(/^Todos \(\d+\)$/);
+      const total = (rotulo: string) => Number(rotulo.match(/\((\d+)\)$/)?.[1] ?? NaN);
+      const rotulos = await abas.allInnerTexts();
+      const todos = total(rotulos[0]);
+      expect(rotulos.slice(1).reduce((soma, r) => soma + total(r), 0), "as abas por situação somam o total").toBe(todos);
+      if (todos > 0) expect(rotulos.length).toBeGreaterThan(1);
       const antes = await page.getByTestId("lista-total").innerText();
       await busca.fill("zzzz-sem-resultado-t255");
       await expect(page.getByText("Nenhum pedido com esse filtro.").or(page.getByText("Nenhum pedido no sistema."))).toBeVisible();
       await busca.fill("");
       await expect(page.getByTestId("lista-total")).toHaveText(antes);
-      await abas.nth(1).click();
-      await expect(abas.nth(1)).toHaveAttribute("aria-selected", "true");
+      if (rotulos.length > 1) {
+        await abas.nth(1).click();
+        await expect(abas.nth(1)).toHaveAttribute("aria-selected", "true");
+      }
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(sobra).toBeLessThanOrEqual(0);
       await page.screenshot({ path: info.outputPath(`f20-${largura}.png`), fullPage: false });

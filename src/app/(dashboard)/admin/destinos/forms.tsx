@@ -32,6 +32,8 @@ export function DestinoForm({ inicial }: { inicial?: DestinoEditavel }) {
     lat: inicial?.lat != null ? String(inicial.lat) : "",
     lng: inicial?.lng != null ? String(inicial.lng) : "",
   });
+  // E32: apagar o ponto de um destino gravado é ação explícita e confirmada (o destino sai dos ativos).
+  const [limpar, setLimpar] = useState<"nao" | "confirmar" | "sim">("nao");
   const lat = Number(ponto.lat.replace(",", "."));
   const lng = Number(ponto.lng.replace(",", "."));
   const temPonto = ponto.lat !== "" && ponto.lng !== "" && Number.isFinite(lat) && Number.isFinite(lng);
@@ -128,6 +130,36 @@ export function DestinoForm({ inicial }: { inicial?: DestinoEditavel }) {
           <label className="text-xs text-muted">Latitude<input name="lat" value={ponto.lat} onChange={(e) => mudaCoordenada("lat", e.target.value)} inputMode="decimal" className={campo} data-testid="destino-lat" /></label>
           <label className="text-xs text-muted">Longitude<input name="lng" value={ponto.lng} onChange={(e) => mudaCoordenada("lng", e.target.value)} inputMode="decimal" className={campo} data-testid="destino-lng" /></label>
         </div>
+        {limpar === "sim" && <input type="hidden" name="limpar_ponto" value="1" />}
+        {inicial && inicial.lat != null && inicial.lng != null && limpar !== "sim" && (
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+            {limpar === "nao" ? (
+              <button type="button" className="font-semibold text-red-700 underline" onClick={() => setLimpar("confirmar")} data-testid="destino-remover-ponto">
+                Remover o ponto
+              </button>
+            ) : (
+              <>
+                <span className="text-ink">Sem ponto, o destino sai dos ativos. Remover mesmo?</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setLimpar("sim");
+                    setPonto({ lat: "", lng: "" });
+                  }}
+                  data-testid="destino-remover-ponto-confirmar"
+                >
+                  Remover o ponto
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setLimpar("nao")}>
+                  Manter
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+        {limpar === "sim" && <p className="mt-2 text-sm text-red-700" data-testid="destino-ponto-removido">O ponto será removido ao salvar.</p>}
         {temPonto && (
           <div className="mt-3 overflow-hidden rounded-xl" data-testid="destino-mapa">
             <PropertyMap className="aspect-[16/9] w-full" center={{ lat, lng }} markers={[{ id: "destino", lat, lng, label: "Destino", kind: "workspace" }]} />

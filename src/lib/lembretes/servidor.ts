@@ -66,8 +66,9 @@ export async function lembretesDoFunil(admin: Admin, agora: Date, simular: boole
       continue;
     }
     if (!(await umaVez(admin, `verificacao_parada:${t.id}`, "verificacao_parada", userId))) continue;
-    const { data: p } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", userId).maybeSingle();
-    const perfil = p as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
+    const { data: p } = await admin.from("profiles").select("email, full_name, notif_email, pausada_em").eq("id", userId).maybeSingle();
+    const perfil = p as { email: string | null; full_name: string | null; notif_email: boolean | null; pausada_em: string | null } | null;
+    if (perfil?.pausada_em) continue; // Prompt 51 F1: conta pausada não recebe lembretes.
     const m = MOTIVOS_VERIFICACAO[motivo];
     await notify({
       event: "verificacao_parada",
@@ -81,7 +82,7 @@ export async function lembretesDoFunil(admin: Admin, agora: Date, simular: boole
   }
 
   // 2) Solicitação de parceiro sem resposta em 1 dia útil → equipe.
-  const { data: sols } = await admin.from("parceiro_solicitacoes").select("id, user_id, criado_em, decidido_em, status").eq("status", "pendente").limit(1000);
+  const { data: sols } = await admin.from("parceiro_solicitacoes").select("id, user_id, criado_em, decidido_em, status").eq("status", "pendente").not("categorias", "cs", "{vistoria}").limit(1000);
   for (const s of (sols ?? []) as { id: string; user_id: string | null; criado_em: string; decidido_em: string | null }[]) {
     if ((s.user_id && contasTeste.has(s.user_id)) || !parceiroSemResposta(s.criado_em, s.decidido_em, agora)) continue;
     if (simular) {

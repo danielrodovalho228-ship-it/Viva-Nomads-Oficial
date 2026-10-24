@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, HORA } from "@/lib/limites";
-import { gerarIcs, segredoCalendario, tokenCalendarioValido } from "@/lib/calendario/ical";
+import { gerarIcs, ocupacoesDaExportacao, segredoCalendario, tokenCalendarioValido } from "@/lib/calendario/ical";
 
 /**
  * iCal de exportação do imóvel (ordem 7f905568, parte 1). Link secreto (HMAC do imóvel); o Airbnb/Booking
- * busca de tempos em tempos. Só datas "Ocupado" de contratos ativos — nenhum dado do inquilino.
+ * busca de tempos em tempos. Só datas "Ocupado" — contratos ativos e os bloqueios MANUAIS do dono (E44); o que veio
+ * importado de outro site não volta para fora. Nenhum dado do inquilino.
  */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -30,10 +31,18 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string;
     .not("start_date", "is", null)
     .not("end_date", "is", null);
   if (error) return new NextResponse("Serviço indisponível.", { status: 503 });
+  const { data: bloqueios } = await admin.from("property_blocks").select("inicio, fim, origem").eq("property_id", id);
 
   const ics = gerarIcs(
     id,
-    (data ?? []).map((c) => ({ inicio: String(c.start_date), fim: String(c.end_date) })),
+    ocupacoesDaExportacao({
+      contratos: (data ?? []).map((c) => ({ inicio: String(c.start_date), fim: String(c.end_date) })),
+      bloqueios: ((bloqueios ?? []) as { inicio: string; fim: string; origem?: string | null }[]).map((b) => ({
+        inicio: String(b.inicio),
+        fim: String(b.fim),
+        origem: b.origem,
+      })),
+    }),
     new Date(),
   );
   return new NextResponse(ics, {

@@ -7,7 +7,7 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/icon-button";
 import { cn } from "@/lib/utils";
-import { ITEM_VIDEO, itensDaGaleria } from "@/lib/video-tour";
+import { ITEM_VIDEO, fotoDoItem, itensDaGaleriaVideoDepoisDaCapa } from "@/lib/video-tour";
 import { VideoArquivoModal } from "@/components/video-arquivo";
 import { ROTULO_SELO_VIDEO } from "@/lib/card-selos";
 import { VideoModal } from "@/components/video-walkthrough";
@@ -47,16 +47,17 @@ export function PropertyGallery({
   const [videoAberto, setVideoAberto] = useState(false);
   const [index, setIndex] = useState(0);
   const fotos = photos.length ? photos : [""];
-  const list = itensDaGaleria(fotos, videoUrl, !!videoArquivoId);
-  const temVideo = list[0] === ITEM_VIDEO;
+  // 65-B: o vídeo é o 2º item, logo depois da capa (a capa segue como a foto grande do mosaico e a 1ª do carrossel).
+  const list = itensDaGaleriaVideoDepoisDaCapa(fotos, videoUrl, !!videoArquivoId);
 
   // O vídeo abre na janela própria; o lightbox só tem fotos (índice sem o vídeo).
   function openAt(i: number) {
-    if (list[i] === ITEM_VIDEO) {
+    const foto = fotoDoItem(list, i);
+    if (foto === null) {
       setVideoAberto(true);
       return;
     }
-    setIndex(temVideo ? i - 1 : i);
+    setIndex(foto);
     setLightbox(true);
   }
 
@@ -113,6 +114,7 @@ function Tile({
       <button
         type="button"
         data-testid={testId ?? "galeria-video"}
+        data-item="video"
         onClick={onClick}
         aria-label={`${ROTULO_SELO_VIDEO}: ${alt}`}
         className={cn("group relative block overflow-hidden bg-night", className)}

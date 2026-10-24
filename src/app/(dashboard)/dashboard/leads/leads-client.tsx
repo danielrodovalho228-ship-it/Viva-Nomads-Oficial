@@ -16,6 +16,8 @@ import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_LEADS } from "@/lib/demo/seed";
 import { cn } from "@/lib/utils";
 import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
+import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
+import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 
 /** Motivos de recusa pré-definidos (quick win #3). */
 const REJECT_REASONS = [
@@ -151,13 +153,24 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                     {/* Resumo do candidato em uma linha */}
                     <p className="mt-1 text-sm font-medium text-ink">{leadSummary(l)}</p>
                     <p className="text-xs text-muted">interesse em {l.property}</p>
+                    {l.moradorVerificado && (
+                      <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-forest" data-testid="selo-morador-verificado">
+                        <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {l.moradorVerificado}
+                      </p>
+                    )}
                     {(l.sinais?.length || l.selos?.length || l.reputacao) && (
                       <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink" data-testid="candidato-sinais">
-                        {l.selos?.map((x) => (
-                          <li key={x} className="inline-flex items-center gap-1 font-medium text-forest">
-                            <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {x}
-                          </li>
-                        ))}
+                        {l.selos?.map((x) =>
+                          ehSeloLinkedin(x) ? (
+                            <li key={x}>
+                              <SeloLinkedin />
+                            </li>
+                          ) : (
+                            <li key={x} className="inline-flex items-center gap-1 font-semibold text-forest">
+                              <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {x}
+                            </li>
+                          ),
+                        )}
                         {l.reputacao && (
                           <li className="inline-flex items-center gap-1">
                             <Star className="h-3.5 w-3.5 fill-champagne text-champagne" aria-hidden />

@@ -30,7 +30,9 @@ test.describe("T73 — Ficha do pet na Conta", () => {
   test("1. cadastra o pet, vê o cartão e o banco guarda a ficha", async ({ browser }) => {
     test.setTimeout(90_000);
     const page = await entrar(browser, inquilino.email, senha);
-    await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+    // C9/E56: sem pets o bloco nasce fechado; "Você tem pet?" abre o formulário.
+    await page.getByTestId("pets-toggle-bloco-toggle").click({ timeout: 15_000 });
     const form = page.getByTestId("pets-form");
     await expect(form).toBeVisible({ timeout: 15_000 });
     await form.getByLabel("Nome").fill("Thor");
@@ -45,8 +47,9 @@ test.describe("T73 — Ficha do pet na Conta", () => {
   test("2. outra pessoa não vê a ficha; limite de 3 no banco; remover funciona", async ({ browser }) => {
     test.setTimeout(90_000);
     const alheio = await entrar(browser, outro.email, senha);
-    await alheio.goto("/dashboard/conta", { waitUntil: "networkidle" });
-    await expect(alheio.getByTestId("pets-form")).toBeVisible({ timeout: 15_000 });
+    await alheio.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+    await expect(alheio.getByTestId("pets-toggle-bloco-toggle")).toHaveAttribute("aria-checked", "false", { timeout: 15_000 });
+    await expect(alheio.getByTestId("pets-form")).toHaveCount(0);
     await expect(alheio.getByTestId("pets-lista")).toHaveCount(0);
     await alheio.context().close();
 
@@ -56,7 +59,9 @@ test.describe("T73 — Ficha do pet na Conta", () => {
     expect((await adm().from("pets_inquilino").insert({ ...linha, nome: "Quarto" })).error).not.toBeNull();
 
     const page = await entrar(browser, inquilino.email, senha);
-    await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+    // Com pets salvos o bloco nasce aberto; no limite de 3, sem formulário.
+    await expect(page.getByTestId("pets-toggle-bloco-toggle")).toHaveAttribute("aria-checked", "true", { timeout: 15_000 });
     await expect(page.getByTestId("pets-form")).toHaveCount(0);
     await page.getByRole("button", { name: "Remover Mia" }).click();
     await expect(page.getByTestId("pets-form")).toBeVisible();
@@ -70,7 +75,7 @@ test.describe("T73 — Ficha do pet na Conta", () => {
     const petId = antes!.id as string;
 
     const page = await entrar(browser, inquilino.email, senha);
-    await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
     const nina = page.getByTestId("pets-lista").locator("li", { hasText: "Nina" });
     await nina.getByLabel("Enviar foto de Nina").setInputFiles({ name: "nina.jpg", mimeType: "image/jpeg", buffer: jpeg });
     await expect(nina.getByAltText("Foto 1 de Nina")).toBeVisible({ timeout: 20_000 });

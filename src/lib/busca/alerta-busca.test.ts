@@ -98,6 +98,8 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 test("servidor: respeita notif_email e alerta_ativo, limite diário, idempotência por (busca, imóvel) e não envia ao próprio dono", () => {
   const src = ler("src/lib/data/alerta-busca-servidor.ts");
   assert.match(src, /notificacaoLigada\(perfil\.notif_email/);
+  // Prompt 51 F1: conta pausada não recebe alerta de busca.
+  assert.match(src, /\|\| perfil\.pausada_em\)/);
   assert.match(src, /\.eq\("alerta_ativo", true\)/);
   assert.match(src, /consumirLimite\(`alerta-busca:\$\{busca\.id\}`, ALERTAS_POR_BUSCA_POR_DIA, DIA\)/);
   assert.match(src, /alertas_busca_envios"\)\.insert\(\{ busca_id: busca\.id, imovel_id: imovelId \}/);
@@ -107,7 +109,8 @@ test("servidor: respeita notif_email e alerta_ativo, limite diário, idempotênc
 
 test("publicar dispara o alerta (criar e editar) e o cron diário manda o resumo", () => {
   const acoes = ler("src/lib/data/actions.ts");
-  assert.equal((acoes.match(/avisarBuscasDoImovel\(/g) ?? []).length, 2);
+  // Criar, editar e (64-B) reativar o anúncio pausado pelo dono.
+  assert.equal((acoes.match(/avisarBuscasDoImovel\(/g) ?? []).length, 3);
   assert.match(ler("src/app/api/cron/resumo-pedidos/route.ts"), /enviarResumosAlertaBusca\(\)/);
 });
 

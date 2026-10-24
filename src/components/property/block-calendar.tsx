@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
 import { diasDoIntervalo, type MarcaDia } from "@/lib/calendario/grade";
+import { ImportarCalendario } from "@/components/property/importar-calendario";
+import { ExportarCalendario } from "@/components/property/exportar-calendario";
 
 function brDate(iso: string): string {
   const [y, m, d] = iso.split("-");
@@ -158,7 +160,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       )}
 
       <LegendaCalendario marcas={["bloqueado", "selecionado", "hoje"]} />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="calendario-dono-grade">
         {meses.map(({ year: y, month: m }) => (
           <CalendarioMes
             key={`${y}-${m}`}
@@ -232,6 +234,10 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       </div>
       {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
 
+      <ImportarCalendario propertyId={propertyId} onMudou={recarregar} />
+      {/* E44: o par da importação — o link .ics para o Airbnb/Booking bloquear as datas daqui. */}
+      <ExportarCalendario propertyId={propertyId} />
+
       {/* Lista dos bloqueios */}
       {blocks.length > 0 && (
         <div className="mt-4">
@@ -241,20 +247,28 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
               <li
                 key={b.id}
                 className="flex items-center justify-between rounded-lg border border-sage-200 px-3 py-2 text-sm"
+                data-testid="bloqueio-item"
+                data-origem={b.origem ?? "manual"}
+                data-inicio={b.inicio}
               >
                 <span className="inline-flex items-center gap-2 text-ink">
                   <Ban className="h-4 w-4 text-red-500" />
                   {brDate(b.inicio)}
                   {b.fim !== b.inicio && <> → {brDate(b.fim)}</>}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => remover(b.id)}
-                  disabled={busy}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-3.5 w-3.5" /> Remover
-                </button>
+                {b.origem === "importado" ? (
+                  // Prompt 53: vem do calendário de outro site; sai daqui quando sair de lá (ou ao remover o link).
+                  <span className="text-xs text-muted" data-testid="bloqueio-importado">Importado</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => remover(b.id)}
+                    disabled={busy}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Remover
+                  </button>
+                )}
               </li>
             ))}
           </ul>

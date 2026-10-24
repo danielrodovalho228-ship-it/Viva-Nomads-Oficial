@@ -118,7 +118,8 @@ export function TelefoneVerificacao() {
           )}
 
           {mostrarForm && (
-            <div className="mt-4 grid gap-4">
+            <div className="mt-4 grid gap-4 [&>*]:min-w-0">
+              {/* min-w-0: a 360 px o campo "+55" empurrava a coluna 16 px para fora da tela (CONTA-A, t355). */}
               {trocando && <p className="text-sm text-muted">Ao pedir o código para o novo número, o selo some até você confirmar.</p>}
               <div>
                 <label htmlFor="telefone-numero" className="mb-2 block text-sm font-medium text-ink">
@@ -135,7 +136,7 @@ export function TelefoneVerificacao() {
                     placeholder="(34) 99999-0000"
                     value={numero}
                     onChange={(e) => setNumero(mascaraCelular(e.target.value))}
-                    className="min-w-0 flex-1 rounded-r-xl px-3 py-3 outline-none"
+                    className="w-full min-w-0 flex-1 rounded-r-xl px-3 py-3 outline-none"
                   />
                 </div>
               </div>

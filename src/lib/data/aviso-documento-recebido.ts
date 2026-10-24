@@ -21,6 +21,8 @@ export async function avisarAdminsDocumentoRecebido(detalhes?: string): Promise<
       await notify({
         event: "documento_recebido",
         email: a.email,
+        // Prompt 44 (item 3): documento na fila também vai por push ao admin com alertas operacionais.
+        userId: a.id,
         name: a.full_name ?? undefined,
         pushUrl: "/admin/documentos",
         ...(detalhes ? { detailsText: detalhes } : {}),

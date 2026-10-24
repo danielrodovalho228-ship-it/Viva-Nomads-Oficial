@@ -5,9 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { normalizarIntencoes, type Intencao } from "@/lib/auth/entrada";
 
 /**
- * Prompt 49 — intenção (profiles.intencao): camada, não papel. Grava SÓ a intenção e, quando ela aponta um lado,
- * a preferência de modo do painel (preferred_mode, a mesma do seletor do topo). Nunca toca em role nem em
- * permissão. RLS: só o próprio perfil (update da coluna liberado na 0214).
+ * Prompt 49 — intenção (profiles.intencao): camada, não papel. Grava a intenção e, SÓ no primeiro acesso (intenção
+ * e papel ativo ainda vazios), o papel inicial que ela aponta. PAPEL-B: depois disso, mudar a intenção na Conta não
+ * troca o papel ativo (a troca é explícita: selo do topo ou "Usar este"). Nunca toca em role nem em permissão.
+ * RLS: só o próprio perfil (update da coluna liberado na 0214).
  */
 
 /** null = ainda não respondeu; [] = "Agora não". */
@@ -23,7 +24,7 @@ export async function getMinhaIntencao(): Promise<Intencao[] | null> {
   return v == null ? null : normalizarIntencoes(v);
 }
 
-export async function salvarMinhaIntencao(bruto: unknown, modo: "owner" | "tenant" | null): Promise<{ ok: boolean; error?: string }> {
+export async function salvarMinhaIntencao(bruto: unknown, modo: "owner" | "tenant" | null): Promise<{ ok: boolean; error?: string; papelAplicado?: "owner" | "tenant" | null }> {
   const intencao = normalizarIntencoes(bruto);
   const supabase = await createClient();
   if (!supabase) return { ok: true }; // demo/preview: sem servidor
@@ -31,11 +32,15 @@ export async function salvarMinhaIntencao(bruto: unknown, modo: "owner" | "tenan
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sessão expirada. Entre de novo." };
+  const { data: antes } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", user.id).maybeSingle();
+  const primeiroAcesso = (antes as { intencao?: unknown } | null)?.intencao == null && (antes as { papel_ativo?: unknown } | null)?.papel_ativo == null;
   const { error } = await supabase.from("profiles").update({ intencao }).eq("id", user.id);
   if (error) return { ok: false, error: "Não foi possível salvar agora." };
-  if (modo === "owner" || modo === "tenant") {
-    await supabase.from("profiles").update({ preferred_mode: modo }).eq("id", user.id);
+  let papelAplicado: "owner" | "tenant" | null = null;
+  if (primeiroAcesso && (modo === "owner" || modo === "tenant")) {
+    await supabase.from("profiles").update({ preferred_mode: modo, papel_ativo: modo === "owner" ? "proprietario" : "morador" }).eq("id", user.id);
+    papelAplicado = modo;
   }
   revalidatePath("/dashboard/conta");
-  return { ok: true };
+  return { ok: true, papelAplicado };
 }

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   chipsDe,
+  DICA_SEM_FILTRO,
   FILTROS_DESCRICAO_VAZIOS,
   interpretarLocal,
   limparDescricao,
@@ -35,7 +36,8 @@ test("quartos por extenso e teto de 3+", () => {
 
 test("comodidades, home office e porte do pet", () => {
   const f = interpretarLocal("cachorro grande, wi-fi, garagem e home office", LOCAIS);
-  assert.deepEqual(f.comodidades, ["wifi", "garagem"]);
+  // FILTROS-2: Wi-Fi é garantia do padrão mínimo, não filtro — a descrição não o liga.
+  assert.deepEqual(f.comodidades, ["garagem"]);
   assert.equal(f.homeOfficeOnly, true);
   assert.equal(f.petPorte, "G");
 });
@@ -62,33 +64,45 @@ test("sanearFiltros descarta o que a IA inventar", () => {
     minBedrooms: 9,
     petsOnly: true,
     petPorte: "XG",
-    comodidades: ["wifi", "piscina", "wifi"],
+    comodidades: ["garagem", "piscina", "garagem", "wifi"],
     local: "Centro (34) 99999-1234",
     extra: "ignorado",
   });
   assert.equal(f.maxPrice, 0);
   assert.equal(f.minBedrooms, 3);
   assert.equal(f.petPorte, "");
-  assert.deepEqual(f.comodidades, ["wifi"]);
+  assert.deepEqual(f.comodidades, ["garagem"], "repetida, inventada e garantida pelo mínimo saem");
   assert.ok(!/99999/.test(f.local));
   assert.deepEqual(sanearFiltros("lixo"), FILTROS_DESCRICAO_VAZIOS);
   assert.deepEqual(sanearFiltros(null), FILTROS_DESCRICAO_VAZIOS);
 });
 
 test("chips mostram os filtros e semFiltro tira só o escolhido", () => {
-  const f = interpretarLocal("2 quartos, aceita gato pequeno, até 2.500, wi-fi", []);
+  const f = interpretarLocal("2 quartos, aceita gato pequeno, até 2.500, garagem, wi-fi", []);
   assert.deepEqual(
     chipsDe(f).map((c) => c.rotulo),
-    ["Até R$ 2.500", "2+ quartos", "Aceita pets (pequeno)", "Wi-Fi"]
+    ["Até R$ 2.500", "2+ quartos", "Aceita pets (pequeno)", "Garagem"]
   );
   const g = semFiltro(f, "petsOnly");
   assert.equal(g.petsOnly, false);
   assert.equal(g.petPorte, "");
   assert.equal(g.minBedrooms, 2);
-  assert.deepEqual(semFiltro(f, "wifi").comodidades, []);
+  assert.deepEqual(semFiltro(f, "garagem").comodidades, []);
 });
 
 test("localExistente só devolve lugar do catálogo", () => {
   assert.equal(localExistente("uberlandia", LOCAIS), "Uberlândia");
   assert.equal(localExistente("Narnia", LOCAIS), "");
+});
+
+test("L-49: a dica sem filtro só cita o que a descrição liga (nada de Wi-Fi nem cozinha, garantias do padrão mínimo)", () => {
+  assert.doesNotMatch(DICA_SEM_FILTRO, /wi-?fi|internet|cozinha/i);
+  // Cada coisa citada vira filtro de verdade.
+  const f = interpretarLocal("até 3 mil, 2 quartos, Centro, aceita pet, garagem", LOCAIS);
+  assert.equal(f.maxPrice, 3000);
+  assert.equal(f.minBedrooms, 2);
+  assert.equal(f.local, "Centro");
+  assert.equal(f.petsOnly, true);
+  assert.deepEqual(f.comodidades, ["garagem"]);
+  assert.match(DICA_SEM_FILTRO, /preço, quartos, cidade ou bairro, pets ou garagem/);
 });

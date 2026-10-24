@@ -44,8 +44,9 @@ export function urlDesligarAlerta(buscaId: string): string | null {
 /** Envia o e-mail da busca com os imóveis pendentes (se o limite do dia deixar) e marca como enviados. */
 async function enviarDaBusca(admin: Admin, busca: BuscaLinha, imoveis: ImovelNoAlerta[]): Promise<"enviado" | "limite" | "sem_email" | "vazio"> {
   if (imoveis.length === 0) return "vazio";
-  const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", busca.usuario_id).maybeSingle();
-  if (!perfil?.email || !notificacaoLigada(perfil.notif_email as boolean | null)) {
+  const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email, pausada_em").eq("id", busca.usuario_id).maybeSingle();
+  // Prompt 51 F1: conta pausada não recebe alerta de busca.
+  if (!perfil?.email || !notificacaoLigada(perfil.notif_email) || perfil.pausada_em) {
     // Sem e-mail ou avisos desligados: não envia e descarta o pendente (não acumula nem reaparece depois).
     await admin.from("alertas_busca_envios").update({ enviado_em: new Date().toISOString() }).eq("busca_id", busca.id).is("enviado_em", null);
     return "sem_email";

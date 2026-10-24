@@ -98,8 +98,9 @@ export const ALCANCE = [
   "app/(public)/imoveis/[id]/property-detail.tsx",
   "app/(public)/parceiros/[slug]/page.tsx",
   "app/(public)/parceiros/buscar/page.tsx",
-  "components/account/avatar-uploader.tsx",
+  "components/account/casca-conta.tsx",
   "components/account/categoria-profissional.tsx",
+  "components/account/perfil-tela.tsx",
   "components/account/conta-menu.tsx",
   "components/account/conta-secoes.tsx",
   "components/account/telefone-verificacao.tsx",
@@ -200,6 +201,9 @@ test("Prompt 45: src inteiro sem sombra, raio, espaço, peso, caixa alta espaça
   for (const alvo of alvos) {
     for (const f of arquivos(alvo)) {
       if (f.startsWith("lib/estilo/")) continue; // as próprias regras e seus exemplos
+      // Telas da Conta: o set de mockups aprovado vale sobre a regra da casa (decisão de 24/10, ordem do Daniel de
+      // 23/10 20:53). Os estilos de exceção ficam todos neste arquivo; o resto das telas segue a guarda.
+      if (f === "lib/conta/visual-mockup.ts") continue;
       const t = ler(f);
       for (const v of [...violacoesEstilo(t), ...violacoesAdendo(t, { heroAte40: HEROS.has(f) })]) achados.push(`${f}:${v.linha} ${v.tipo} ${v.classe}`);
     }

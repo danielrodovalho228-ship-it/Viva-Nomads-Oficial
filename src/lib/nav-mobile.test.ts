@@ -67,8 +67,10 @@ test("papel da barra: admin sem barra só nas telas /admin; parceiro só aprovad
   assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: false }), "proprietario");
   // Pedido de parceria em análise (não aprovado): nunca a barra do parceiro, nem com a preferência ligada.
   assert.equal(papelDaBarra({ admin: false, modo: "tenant", parceiroAprovado: false, preferenciaParceiro: true, pathname: "/dashboard/parceiro" }), "morador");
-  // Prompt 43: sem troca manual — fora do contexto de parceiro, a preferência antiga não muda a barra.
-  assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: true, preferenciaParceiro: true }), "proprietario");
+  // PAPEL-B: parceiro escolhido como papel ativo (selo ou Conta, gravado no perfil) vale fora da área de parceiro;
+  // numa área de dono ou de morador, a área da página vence (e a troca é gravada).
+  assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: true, preferenciaParceiro: true }), "parceiro");
+  assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: true, preferenciaParceiro: true, pathname: "/dashboard/imoveis" }), "proprietario");
   assert.equal(papelDaBarra({ admin: false, modo: "tenant", parceiroAprovado: true, pathname: "/dashboard/parceiro/pedidos" }), "parceiro");
   assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: true, pathname: "/dashboard/parceiro" }), "parceiro");
   assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: true, pathname: "/dashboard/imoveis" }), "proprietario");

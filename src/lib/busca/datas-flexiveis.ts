@@ -35,3 +35,25 @@ export function passaEntrada(availableFrom: string | null | undefined, entrada: 
 
 // ── URL (a /buscar e o alerta de busca usam a mesma chave) ──────────────────────────────────────────────────────
 export const datasFlexiveisDaUrl = (sp: URLSearchParams): boolean => sp.get("flex") === "1";
+
+/**
+ * Prompt 53: as datas bloqueadas (do dono ou importadas do Airbnb/Booking) tiram o imóvel da busca nessa entrada. A
+ * estadia buscada começa na entrada e dura a faixa escolhida (ou 30 dias, o mínimo da Viva). Com "Datas flexíveis",
+ * passa se ALGUMA entrada até FOLGA_DATAS_FLEXIVEIS_DIAS depois couber sem bloqueio. Sem entrada, não tira ninguém.
+ */
+export function passaBloqueios(
+  bloqueios: readonly { inicio: string; fim: string }[] | null | undefined,
+  entrada: string,
+  flexivel: boolean,
+  estadiaDias = 30,
+): boolean {
+  if (!entrada || !DATA.test(entrada) || !bloqueios?.length) return true;
+  const dias = Math.max(30, estadiaDias || 30);
+  const ultimaEntrada = flexivel ? FOLGA_DATAS_FLEXIVEIS_DIAS : 0;
+  for (let d = 0; d <= ultimaEntrada; d++) {
+    const ini = somarDias(entrada, d);
+    const fim = somarDias(ini, dias - 1);
+    if (!bloqueios.some((b) => b.inicio <= fim && ini <= b.fim)) return true;
+  }
+  return false;
+}

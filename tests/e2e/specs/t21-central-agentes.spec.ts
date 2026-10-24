@@ -4,6 +4,8 @@ import { authFile } from "../fixtures/auth";
 import { liberarLimiteChamados } from "../fixtures/laboratorio";
 
 /**
+ * L-43 (vigia, 24/10): o painel e a /buscar não assentam em "networkidle" (t183, L-40); espera até 10 s e segue para o elemento.
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T21 — CENTRAL DE AGENTES v2 (/admin/agentes no visual do QG). Os dados vêm
  * do banco: o seed grava rondas "[lab]" (Bruno com alerta e P1 há 5 min,
  * Marina com falha, Helena com P2 de parceiros…).
@@ -35,7 +37,8 @@ test.describe("T21 — Central de Agentes v2", () => {
   });
 
   test("Equipe: Daniel → Moacir → Otávio, foto, status da última ronda e achados P1 reais", async ({ page }) => {
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const central = page.getByTestId("central-agentes");
     // Dono no topo: não é agente — sem botões; com foto.
     const dono = central.getByTestId("agente-daniel");
@@ -82,7 +85,8 @@ test.describe("T21 — Central de Agentes v2", () => {
   });
 
   test("Rede ao vivo e briefing com o resumo real da última ronda", async ({ page }) => {
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Rede ao vivo");
     await expect(page.getByTestId("rede-ao-vivo").locator("canvas")).toBeVisible();
     await page.getByRole("button", { name: /Assistir ao briefing/ }).click();
@@ -95,7 +99,8 @@ test.describe("T21 — Central de Agentes v2", () => {
   });
 
   test("Raio-X: ponto de atenção sai dos achados reais da camada", async ({ page }) => {
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Raio-X da Viva");
     const info = page.getByTestId("raio-x-info");
     await expect(info).toContainText("Banco e segurança");
@@ -106,7 +111,8 @@ test.describe("T21 — Central de Agentes v2", () => {
   });
 
   test("Conversar e Sala de reunião: todos com foto, Renato incluído", async ({ page }) => {
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await expect(page.getByRole("button", { name: /Renato/ }).first()).toBeVisible();
     await abrirAba(page, "Sala de reunião");
@@ -117,7 +123,8 @@ test.describe("T21 — Central de Agentes v2", () => {
 
   test("Executar agora: correção pedida ao Bruno vai para o Renato, dispara e a ordem aparece como Enviada", async ({ page }) => {
     const marca = `[teste-lab] t21-${Date.now()}`;
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Bruno/ }).click();
     await page.getByPlaceholder("Escreva para Bruno…").fill(`corrija o sitemap com URL que dá 404 (${marca})`);
@@ -135,7 +142,8 @@ test.describe("T21 — Central de Agentes v2", () => {
   });
 
   test("Chat tipo WhatsApp: pedido de ação sem urgência vira ordem na fila e o chat diz o que fez", async ({ page }) => {
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Bruno/ }).click();
     // Sem os 3 botões antigos: só o campo e o botão redondo de enviar.
@@ -168,7 +176,8 @@ test.describe("T21 — Central de Agentes v2", () => {
     // Um chamado novo de visitante (como chega de verdade, pelo chat da /ajuda).
     const vis = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const p = await vis.newPage();
-    await p.goto("/ajuda", { waitUntil: "networkidle" });
+    await p.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
     const form = p.getByTestId("form-pessoa");
@@ -181,7 +190,8 @@ test.describe("T21 — Central de Agentes v2", () => {
     const numero = (await ok.innerText()).match(/VN-\d+/)![0];
     await vis.close();
 
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
     await page.getByPlaceholder("Escreva para Moacir…").fill("Chegou chamado novo?");
@@ -210,20 +220,23 @@ test.describe("T21 — Central de Agentes v2", () => {
       p_slug: "renato", p_inicio: new Date().toISOString(), p_fim: new Date().toISOString(), p_status: "ok",
       p_resumo: "[lab] PR aberto com a correção do sitemap.", p_achados: [], p_ordens: [ordem!.id], p_link: "https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/999",
     });
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
     const retorno = page.getByText(`(ordem ${ordem!.id})`);
     await expect(retorno).toContainText("Retorno: Renato terminou o que eu pedi (ok).");
     await expect(retorno).toContainText("pull/999");
     // Uma vez só: recarregar não duplica.
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const { count } = await adm.from("agentes_conversas").select("id", { count: "exact", head: true }).like("texto", `%(ordem ${ordem!.id})%`);
     expect(count).toBe(1);
   });
 
   test("Diário de bordo: última ronda de cada agente com chips de prioridade", async ({ page }) => {
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Diário de bordo");
     const diario = page.getByTestId("diario");
     await expect(diario).toContainText("Bruno");
@@ -237,7 +250,8 @@ test.describe("T21 — Central de Agentes no celular (390 px)", () => {
   test.use({ storageState: authFile("admin"), viewport: { width: 390, height: 844 } });
 
   test("nenhuma aba rola para o lado", async ({ page }) => {
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     for (const aba of ["Equipe", "Rede ao vivo", "Raio-X da Viva", "Diário de bordo", "Conversar", "Sala de reunião"]) {
       await abrirAba(page, aba);
       await semRolagemLateral(page);

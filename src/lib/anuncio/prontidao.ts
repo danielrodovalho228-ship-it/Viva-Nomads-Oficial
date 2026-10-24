@@ -10,12 +10,17 @@
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
+import { mensagemLimitePublicar, situacaoComLimite } from "./pausa.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
+import { videoDoAnuncio } from "../video-anuncio.ts";
+import { ROTULO_FALTA_TIPO_ENTRADA } from "./chegada-e-pedido.ts";
 
 export const MIN_FOTOS = 8;
 export const MIN_DESCRICAO = 60;
+/** FILTROS-1 (E39): item do portão de publicar quando falta a velocidade da internet. */
+export const ROTULO_FALTA_INTERNET = "Velocidade da internet";
 
 export type StatusDocumento = "none" | "pending" | "approved" | "rejected";
 
@@ -39,6 +44,8 @@ export interface FatosAnuncio {
   limitePlanoOk: boolean | null;
   /** Quantos anúncios o plano permite no ar (para o texto da vaga); ausente = texto genérico. */
   limiteAnuncios?: number | null;
+  /** 64-B: quantos o dono tem publicados (para dizer quantos pausar); ausente = texto sem o número. */
+  ativosAnuncios?: number | null;
   /** Obrigatória: mínimo de MIN_DESCRICAO caracteres. */
   descricao: string;
   /**
@@ -51,6 +58,16 @@ export interface FatosAnuncio {
    * aplica aqui (editor de anúncio já publicado, que não muda de status). Com falta, publicar é bloqueado.
    */
   confortoFaltam?: number;
+  /**
+   * 61-B: tipo de entrada informado. Só se aplica a anúncio NOVO (rascunho); ausente = não se aplica (o publicado sem
+   * ele segue no ar e ganha o aviso no painel).
+   */
+  tipoEntradaOk?: boolean;
+  /**
+   * FILTROS-1 (E39): velocidade da internet informada (Mbps), o dado que o chip "Wi-Fi" da busca lê. Só se aplica a
+   * anúncio que ainda vai publicar; ausente = não se aplica (o publicado sem ela segue no ar).
+   */
+  internetOk?: boolean;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -118,8 +135,10 @@ export const ROTULO_FALTA_CONFORTO = "Padrão mínimo da Viva confirmado";
 /** Item da qualificação no portão único (prompt 22). */
 export const ROTULO_QUALIFICACAO = "Antes de anunciar (qualificação do imóvel)";
 
-export function textoVagaNoPlano(limite?: number | null): string {
+export function textoVagaNoPlano(limite?: number | null, ativos?: number | null): string {
   const n = typeof limite === "number" && limite > 0 && Number.isFinite(limite) ? limite : null;
+  // 64-B: com os publicados conhecidos, a mesma conta do servidor (situacaoLimite) diz quantos pausar.
+  if (n !== null && typeof ativos === "number" && Number.isFinite(ativos)) return mensagemLimitePublicar(situacaoComLimite(n, ativos));
   const quanto = n === null ? "O seu plano já tem o máximo de anúncios no ar" : `Seu plano permite ${n} ${n === 1 ? "anúncio" : "anúncios"} no ar`;
   return `${quanto}. Para publicar este, pause outro ou mude de plano`;
 }
@@ -145,6 +164,12 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   if (f.qualificacaoOk !== undefined) {
     obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: ETAPA.onde, detalhe: f.qualificacaoOk ? undefined : "leva poucos minutos" });
   }
+  if (f.tipoEntradaOk === false) {
+    obrigatorios.push({ key: "tipo_entrada", label: ROTULO_FALTA_TIPO_ENTRADA, ok: false, etapa: ETAPA.regras, detalhe: "porteiro, chave, cofre ou fechadura com código" });
+  }
+  if (f.internetOk === false) {
+    obrigatorios.push({ key: "internet", label: ROTULO_FALTA_INTERNET, ok: false, etapa: ETAPA.comodidades, detalhe: "em Mbps, no bloco Pronto para trabalhar de casa" });
+  }
   if (!f.sublocacaoOk) {
     const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;
     obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: ETAPA.onde });
@@ -158,7 +183,7 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   // A vaga só aparece quando é o único bloqueio que resta (ordem de8761b0, item 2).
   if (f.limitePlanoOk === false && obrigatorios.every((i) => i.ok)) {
-    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: ETAPA.revisar, detalhe: textoVagaNoPlano(f.limiteAnuncios) });
+    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: ETAPA.revisar, detalhe: textoVagaNoPlano(f.limiteAnuncios, f.ativosAnuncios) });
   }
   const opcionais: ItemProntidao[] = [
     { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: ETAPA.onde },
@@ -215,6 +240,22 @@ export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnunci
   return { itens, proximo: itens.find((i) => !i.ok) ?? null };
 }
 
+/** Âncoras do vídeo: a seção Vídeo do editor por seções e o bloco de vídeo do passo Fotos do assistente (65-B). */
+export const ANCORA_VIDEO_EDITOR = "secao-video";
+export const ANCORA_VIDEO_ASSISTENTE = "bloco-video";
+
+/**
+ * Para onde leva um item de "Para melhorar" (65-B). Hoje só o vídeo tem destino próprio: anúncio existente vai à seção
+ * Vídeo do editor por seções; rascunho no assistente vai ao bloco de vídeo do passo Fotos. null = sem link.
+ */
+export function hrefParaMelhorar(key: string, imovelId: string, noAssistente: boolean): string | null {
+  if (key !== "video") return null;
+  const id = encodeURIComponent(imovelId);
+  return noAssistente
+    ? `/dashboard/imoveis/novo?draft=${id}&etapa=${ETAPA.fotos}#${ANCORA_VIDEO_ASSISTENTE}`
+    : `/dashboard/imoveis/${id}/editar#${ANCORA_VIDEO_EDITOR}`;
+}
+
 /** Linha do banco (properties + fotos + documento) → fatos. */
 export interface LinhaAnuncio {
   title: string | null;
@@ -234,9 +275,11 @@ export interface LinhaAnuncio {
   description: string | null;
   ready_to_live_badge: boolean | null;
   video_url: string | null;
+  /** 0211: vídeo enviado como arquivo (65-B: conta para o fato "Vídeo" tanto quanto o link). */
+  video_arquivo?: string | null;
 }
 
-export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento, limitePlanoOk: boolean | null, limiteAnuncios?: number | null): FatosAnuncio {
+export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento, limitePlanoOk: boolean | null, limiteAnuncios?: number | null, ativosAnuncios?: number | null): FatosAnuncio {
   return {
     enderecoOk: !!(p.address?.trim() && p.city?.trim()),
     detalhesOk: (Number(p.bathrooms) || 0) >= 1 && (Number(p.area_m2) || 0) > 0,
@@ -252,9 +295,10 @@ export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDo
     documento,
     limitePlanoOk,
     limiteAnuncios,
+    ativosAnuncios,
     descricao: p.description ?? "",
     selo: !!p.ready_to_live_badge,
-    video: !!p.video_url,
+    video: videoDoAnuncio({ videoArquivo: p.video_arquivo, videoUrl: p.video_url }).tipo !== null,
   };
 }
 

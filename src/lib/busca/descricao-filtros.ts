@@ -5,7 +5,7 @@
   plano B) só PREENCHE filtros: nada aqui cria imóvel nem responde fora da busca.
   Tudo que vem da IA passa por sanearFiltros — valor fora da lista é descartado.
 */
-import { COMODIDADES_FILTRO, ROTULO_COMODIDADE, type ComodidadeFiltro } from "./filtro-comodidades.ts";
+import { COMODIDADES_FILTRAVEIS, ROTULO_COMODIDADE, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import type { PortePet } from "../anuncio/pets-regras.ts";
 
 export interface FiltrosDescricao {
@@ -111,7 +111,8 @@ export function interpretarLocal(descricao: string, locais: readonly string[] = 
   if (/cozinha/.test(t)) com.add("cozinha");
   if (/garagem|vaga|estacionamento/.test(t)) com.add("garagem");
   if (/maquina de lavar|lavadora|lavar roupa/.test(t)) com.add("lavar");
-  f.comodidades = COMODIDADES_FILTRO.map((c) => c.chave).filter((k) => com.has(k));
+  // FILTROS-2: Wi-Fi e cozinha são garantia do padrão mínimo, não filtro — a descrição não as liga.
+  f.comodidades = COMODIDADES_FILTRAVEIS.map((c) => c.chave).filter((k) => com.has(k));
 
   // Local: o nome mais longo do catálogo que aparece na descrição; "HC" = Umuarama.
   const candidatos = [...new Set(locais.map((l) => l.trim()).filter(Boolean))].sort((a, b) => b.length - a.length);
@@ -124,8 +125,14 @@ export function interpretarLocal(descricao: string, locais: readonly string[] = 
   return f;
 }
 
+/**
+ * Dica quando a descrição não vira filtro. Só cita o que `interpretarLocal` liga de verdade: desde o FILTROS-2,
+ * Wi-Fi e cozinha são garantia do padrão mínimo e não viram filtro (L-49) — a dica não pode prometê-los.
+ */
+export const DICA_SEM_FILTRO = "Não achei filtros nessa descrição. Cite preço, quartos, cidade ou bairro, pets ou garagem.";
+
 const PORTES: readonly string[] = ["P", "M", "G"];
-const CHAVES_COMODIDADE: readonly string[] = COMODIDADES_FILTRO.map((c) => c.chave);
+const CHAVES_COMODIDADE: readonly string[] = COMODIDADES_FILTRAVEIS.map((c) => c.chave);
 
 /**
  * Valida o que a IA devolveu. Qualquer campo fora do formato é descartado

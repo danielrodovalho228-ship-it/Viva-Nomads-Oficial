@@ -26,6 +26,7 @@ import { COLUNAS_ESTADO_CONTRATO, primeiroPagamentoConfirmado, type LinhaEstadoC
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarDono, liberaHoje, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
 import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos } from "@/lib/estadia/ocupantes";
+import { DIAS_APAGAR_CONVIDADO, convidadoVence } from "@/lib/anuncio/chegada-e-pedido";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { conferenciasParaFechar, type ConferenciaAberta } from "@/lib/fiscal/fechamento";
 import { precalcularTempos } from "@/lib/data/tempos";
@@ -38,6 +39,7 @@ import { lembretesDoFunil } from "@/lib/lembretes/servidor";
 import { emSilencio, textoRascunho } from "@/lib/lembretes/regras";
 import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { checklistAnuncio, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
 
 /**
  * Automações por data (ordem d250ea2f, item 5): rascunho de imóvel parado (3 dias, um aviso — Prompt 50), lembrete de saída (3 dias),
@@ -50,7 +52,7 @@ import { checklistAnuncio, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
  * Trava: sem `AUTOMACOES_ATIVO=1` no ambiente o cron SEMPRE simula, mesmo agendado no vercel.json.
  * Candidatura iniciada e não enviada fica de fora: a candidatura não guarda rascunho no banco.
  */
-type Alvo = { tipo: TipoAutomacao; usuarioId: string; refId: string; variante?: string; url: string; detalhe: string; subject?: string; ctaLabel?: string; depois?: () => Promise<unknown> };
+type Alvo = { tipo: TipoAutomacao; usuarioId: string; refId: string; variante?: string; url: string; detalhe: string; subject?: string; ctaLabel?: string; decisao?: DadosDaDecisao; depois?: () => Promise<unknown> };
 
 export async function GET(request: Request) {
   const segredo = process.env.CRON_SECRET;
@@ -156,6 +158,8 @@ export async function GET(request: Request) {
       variante: String(p.versao_atual),
       url: `/dashboard/propostas/${p.id}`,
       detalhe: detalheAutomacao("proposta_vencendo", { imovel: (p.properties as unknown as { title?: string } | null)?.title || undefined, numero: p.numero as string }),
+      // 44-SITE (item 2): "Proposta vencendo para o …: responda até hoje/amanhã".
+      decisao: { imovel: (p.properties as unknown as { title?: string } | null)?.title ?? null, prazo: p.valida_ate as string, destinatarioEhParte: true },
     });
   }
 
@@ -223,8 +227,8 @@ export async function GET(request: Request) {
 
   const contagem: Record<string, number> = {};
   for (const a of alvos) {
-    const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", a.usuarioId).maybeSingle();
-    if (!podeReceber(perfil as { email?: string; notif_email?: boolean } | null)) continue;
+    const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email, pausada_em").eq("id", a.usuarioId).maybeSingle();
+    if (!podeReceber(perfil as { email?: string; notif_email?: boolean; pausada_em?: string | null } | null)) continue;
     if (simular) {
       contagem[a.tipo] = (contagem[a.tipo] ?? 0) + 1;
       continue;
@@ -241,6 +245,7 @@ export async function GET(request: Request) {
       detailsText: a.detalhe,
       ...(a.subject ? { subject: a.subject } : {}),
       ...(a.ctaLabel ? { ctaLabel: a.ctaLabel } : {}),
+      ...(a.decisao ? { decisao: a.decisao } : {}),
     }).catch(() => null);
     if (a.depois) await a.depois().catch(() => null);
     contagem[a.tipo] = (contagem[a.tipo] ?? 0) + 1;
@@ -263,7 +268,7 @@ export async function GET(request: Request) {
   const avaliacoesParceiro = simular ? 0 : Number((await admin.rpc("publicar_avaliacoes_parceiro")).data ?? 0) || 0;
   // Página da estadia (Prompt 32): ocupantes apagados RETENCAO_OCUPANTES_DIAS depois do fim do contrato; aditivos sem
   // resposta em 7 dias vencem (nada muda no contrato). Na simulação, só conta.
-  const estadia = await manutencaoDaEstadia(admin, agora, simular).catch(() => ({ ocupantesApagados: 0, aditivosVencidos: 0 }));
+  const estadia = await manutencaoDaEstadia(admin, agora, simular).catch(() => ({ ocupantesApagados: 0, aditivosVencidos: 0, convidadosApagados: 0 }));
   // Documentos (Prompt 56, D5): a conferência de entrada e a de saída fecham quando a janela de 48 h do tipo encerra
   // (hash de fechamento + CND, registrando quem não respondeu). Na simulação, só conta.
   const conferenciasFechadas = await fecharConferenciasVencidas(admin, agora, simular).catch(() => 0);
@@ -294,7 +299,19 @@ async function manutencaoDaEstadia(admin: NonNullable<ReturnType<typeof createAd
     if (fim && fim < corte && ocupantesVencidos(fim, agora)) vencidos.add(o.contrato_id);
   }
   const { data: abertos } = await admin.from("contrato_aditivos").select("id, contrato_id").eq("status", "proposto").lt("expira_em", agora.toISOString());
-  if (simular) return { ocupantesApagados: vencidos.size, aditivosVencidos: abertos?.length ?? 0 };
+  // 61-B: convidados da estadia apagados DIAS_APAGAR_CONVIDADO depois do fim (inventário do 58). Sem a 0225, nada.
+  const { data: comConvidados } = await admin.from("estadia_convidados").select("contrato_id, contratos(contrato_blocos(fim, status))").limit(2000);
+  const convidadosVencidos = new Set<string>();
+  for (const o of (comConvidados ?? []) as unknown as { contrato_id: string; contratos: { contrato_blocos: { fim: string; status: string }[] | null } | null }[]) {
+    const fim = (o.contratos?.contrato_blocos ?? []).filter((b) => b.status !== "nao_aceito").map((b) => b.fim).sort().at(-1);
+    const vence = convidadoVence(fim ? `${fim}T00:00:00Z` : null);
+    if (vence && vence <= agora) convidadosVencidos.add(o.contrato_id);
+  }
+  if (simular) return { ocupantesApagados: vencidos.size, aditivosVencidos: abertos?.length ?? 0, convidadosApagados: convidadosVencidos.size };
+  for (const id of convidadosVencidos) {
+    await admin.from("estadia_convidados").delete().eq("contrato_id", id);
+    await admin.from("contrato_eventos").insert({ contrato_id: id, tipo: "convidados_apagados", dados: { retencao_dias: DIAS_APAGAR_CONVIDADO } });
+  }
   for (const id of vencidos) {
     await admin.from("contrato_ocupantes").delete().eq("contrato_id", id);
     await admin.from("contrato_eventos").insert({ contrato_id: id, tipo: "ocupantes_apagados", dados: { retencao_dias: RETENCAO_OCUPANTES_DIAS } });
@@ -303,7 +320,7 @@ async function manutencaoDaEstadia(admin: NonNullable<ReturnType<typeof createAd
     const { data } = await admin.from("contrato_aditivos").update({ status: "expirado" }).eq("id", a.id).eq("status", "proposto").select("id");
     if (data?.length) await admin.from("contrato_eventos").insert({ contrato_id: a.contrato_id, tipo: "aditivo_expirado", dados: { aditivo: a.id } });
   }
-  return { ocupantesApagados: vencidos.size, aditivosVencidos: abertos?.length ?? 0 };
+  return { ocupantesApagados: vencidos.size, aditivosVencidos: abertos?.length ?? 0, convidadosApagados: convidadosVencidos.size };
 }
 
 /** Conferências abertas (entrada e saída) com a janela de 48 h encerrada → fecha. `simular`: só conta. */

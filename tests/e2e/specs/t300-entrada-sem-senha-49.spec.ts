@@ -1,7 +1,9 @@
 import { test, expect, devices, type Page } from "@playwright/test";
+import { CAMINHO_ATIVAR_2FA, CAMINHO_VERIFICAR_2FA } from "../../../src/lib/admin/mfa";
 import { NO_LABORATORIO, adm, apagarContas, criarAdmin, criarConta, liberarLimiteCodigo, liberarLimiteLogin, liberarLimiteLoginIp, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T300 — Prompt 49: entrada sem senha (e-mail + código), intenção como camada e convidado sem conta.
  * No laboratório a rota /api/auth/codigo não envia e-mail (INTEGRACOES_SIMULADAS): a conta nova nasce pelo cliente de
  * serviço e o código vem do Supabase local (admin.generateLink → email_otp), o mesmo que o e-mail traria.
@@ -11,6 +13,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarAdmin, criarConta, liberarLimit
  *   4. admin entrando só com código não abre /admin (AAL2);
  *   5. convidado favorita 2 imóveis, cria conta no momento de valor e encontra os 2 na conta;
  *   6. app simulado entra por código sem sair do WebView.
+ * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
  */
 const SAIDA = "tests/laboratorio/saida";
 const UA_APP = `${devices["iPhone 14"].userAgent} VivaNomadsApp/1.0.4 (expo)`;
@@ -95,8 +98,9 @@ test.describe("T300 — entrada sem senha, intenção e convidado (Prompt 49)", 
     await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", id);
     await entrarPorCodigo(page, email, "/auth?redirect=%2Fdashboard%2Fconta");
     await page.waitForURL((u) => u.pathname === "/dashboard/conta", { timeout: 45_000 });
-    // A intenção aparece editável no Perfil.
-    await expect(page.getByTestId("minha-intencao").getByTestId("intencao-morar")).toHaveAttribute("aria-pressed", "true", { timeout: 20_000 });
+    // A intenção aparece editável em Conta › Papéis e intenção (A1).
+    await page.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("minha-intencao").filter({ visible: true }).getByTestId("intencao-morar")).toHaveAttribute("aria-pressed", "true", { timeout: 20_000 });
   });
 
   test("3. 'Entrar com senha' (terciário) continua entrando", async ({ page }) => {
@@ -126,7 +130,10 @@ test.describe("T300 — entrada sem senha, intenção e convidado (Prompt 49)", 
     await entrarPorCodigo(page, email);
     await page.waitForURL((u) => !u.pathname.startsWith("/auth") || u.pathname === "/auth/intencao", { timeout: 45_000 });
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/auth\/verificar-codigo|2fa/);
+    // Admin novo não tem fator TOTP: o portão manda ATIVAR o 2FA (/dashboard/conta/seguranca?obrigatorio=admin), não
+    // pedir o código; quem já tem o fator vai ao verificar-codigo (src/lib/admin/mfa.ts, decidirPortaoMfa).
+    await expect.poll(() => new URL(page.url()).pathname, { timeout: 15_000 }).toMatch(new RegExp(`^(${CAMINHO_ATIVAR_2FA}|${CAMINHO_VERIFICAR_2FA})$`));
+    if (new URL(page.url()).pathname === CAMINHO_ATIVAR_2FA) expect(new URL(page.url()).searchParams.get("obrigatorio")).toBe("admin");
     expect(new URL(page.url()).pathname).not.toBe("/admin");
   });
 
@@ -136,7 +143,8 @@ test.describe("T300 — entrada sem senha, intenção e convidado (Prompt 49)", 
     expect(imoveis?.length).toBe(2);
     for (const im of imoveis!) {
       await page.goto(`/imoveis/${im.id}`, { waitUntil: "domcontentloaded" });
-      const coracao = page.getByTestId("coracao").first();
+      // Um coração por tamanho de tela: vale o primeiro visível (lab-crítico do #1195, depois do #1190).
+      const coracao = page.getByTestId("coracao").locator("visible=true").first();
       await expect(async () => {
         if ((await coracao.getAttribute("aria-pressed")) !== "true") await coracao.click({ timeout: 4_000 });
         await expect(coracao).toHaveAttribute("aria-pressed", "true", { timeout: 3_000 });

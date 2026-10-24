@@ -6,3 +6,11 @@
 export function notificacaoLigada(valor: boolean | null | undefined): boolean {
   return valor !== false;
 }
+
+/**
+ * Prompt 51 F1: conta PAUSADA não recebe alertas nem lembretes (busca salva, resumos, automações, lembretes do funil).
+ * Avisos de contrato, segurança e jurídicos continuam: esses caminhos não passam por aqui.
+ */
+export function recebeAvisoComum(p: { notif_email?: boolean | null; pausada_em?: string | null } | null | undefined): boolean {
+  return !!p && notificacaoLigada(p.notif_email) && !p.pausada_em;
+}

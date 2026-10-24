@@ -29,10 +29,12 @@ import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 import { SELO_NF_UI } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
+import { medicoesDaBusca } from "@/lib/busca/facetas";
+import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
 import { ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
 import { ROTULO_PORTE_CURTO, contarFiltrosPainel, naoMedidosDoPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
-import { filtroNivelDaUrl, filtroNivelNaUrl } from "@/lib/busca/filtro-nivel";
+import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
 import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, rotuloFiltroInternet, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
 import { Chip } from "@/components/ui/chip";
@@ -245,7 +247,8 @@ export function SearchClient({
     if (on("localizado")) setWorkLocatedOnly(true);
     // "Com Nota Fiscal" só existe com a chave do selo ligada (aluguel de PF é recibo, não NF).
     if (SELO_NF_UI && on("nota")) setInvoiceOnly(true);
-    if (on("seguro")) setInsuranceOnly(true);
+    // E43: o atalho antigo `?seguro=1` vira a garantia "Seguro-fiança" (um chip só, mesmo critério).
+    if (on("seguro") && !gar) setGarantia("seguro_fianca");
     if (on("gestor")) setOperatedOnly(true);
     setComodidades(comodidadesDaUrl(sp.get("comod")));
     const fi = filtroInternetDaUrl(sp);
@@ -449,6 +452,8 @@ export function SearchClient({
       // Hóspedes: só exclui quando a capacidade É conhecida e menor que o total
       // (imóveis sem capacidade cadastrada continuam aparecendo — não some estoque).
       if (p.maxGuests != null && p.maxGuests < adults + children) return false;
+      // FILTROS-2: anúncio em adequação (abaixo do padrão mínimo) nunca entra nos resultados — antes de qualquer filtro.
+      if (!cumpreGarantiaMinima(p)) return false;
       // Estadia, tipo, garantia, nota, seguro e gestor: na folha (passaNoPainel), para a contagem ao vivo bater.
       if (faixa && !(p.faixasAceitas ?? []).includes(faixa)) return false;
       if (furnishedOnly && !p.furnished) return false;
@@ -464,6 +469,8 @@ export function SearchClient({
   );
   // Prompt 57, fase 2: os de internet informada, mas não medida (só com o filtro de internet ligado). Exemplo não entra.
   const contarNaoMedidos = useCallback((f: FiltrosPainel) => naoMedidosDoPainel(base, f).filter((p) => !isExemplo(p.id)).length, [base]);
+  // FILTROS-1 (E40): medições válidas da busca atual — sem nenhuma, a seção "Internet medida" some da folha.
+  const medicoes = useMemo(() => medicoesDaBusca(semExemplosQuandoHaReal(base, (p) => isExemplo(p.id), exemplosForcados)), [base, exemplosForcados]);
   const naoMedidos = useMemo(() => naoMedidosDoPainel(base, filtrosPainel).filter((p) => !isExemplo(p.id)), [base, filtrosPainel]);
 
   const semTempo = useMemo(() => {
@@ -764,6 +771,7 @@ export function SearchClient({
           onFechar={() => setPainelAberto(false)}
           garantias={GARANTIAS_FILTRO}
           comNotaFiscal={SELO_NF_UI}
+          medicoes={medicoes}
         />
       )}
 
@@ -907,10 +915,7 @@ export function SearchClient({
             ]}
           />
 
-          {/* Selo proprietário: chip como os outros (selecionado = tinta). */}
-          <Chip ativo={readyToLiveOnly} onClick={() => setReadyToLiveOnly((v) => !v)} aria-label="Pronto para Morar" className="lg:px-3 xl:px-4">
-            Pronto<span className="lg:hidden xl:inline"> para Morar</span>
-          </Chip>
+          {/* E43: "Pronto para Morar" fica só na folha de filtros (com a contagem); o chip ativo aparece na linha de filtros. */}
 
           {/* "Mais filtros" abre a folha de filtros (Prompt 40): de baixo no tablet, na lateral no computador. */}
           <button
@@ -1080,7 +1085,15 @@ export function SearchClient({
               )}
             </div>
           )}
-          {results.length === 0 ? (
+          {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
+            // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.
+            <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia-nivel">
+              <p className="font-title text-lg font-semibold text-ink">{avisoNivelSemResultado(nivelMin)}</p>
+              <button type="button" onClick={() => setNivelMin("")} className={buttonClasses({ className: "mt-4" })} data-testid="busca-vazia-nivel-ver-todos">
+                Ver todos
+              </button>
+            </div>
+          ) : results.length === 0 ? (
             // Prompt 48: busca sem resultado diz o que aconteceu e dá os três próximos passos — pedido de moradia,
             // limpar filtros (ou ampliar a busca) e criar alerta. Sem ilustração genérica.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia">

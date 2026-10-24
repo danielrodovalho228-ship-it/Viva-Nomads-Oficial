@@ -25,6 +25,21 @@ type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 const DOCS_BUCKET = "property-docs";
 const SIGNED_TTL = 60 * 10; // 10 min — janela curta para o admin abrir o documento
 
+/**
+ * E28: só admin (papel + 2FA, ehAdmin) — e daí em diante o cliente de serviço, como o contador da fila. A RLS pela
+ * sessão podia negar em silêncio (lista vazia, decisão "não encontrada") com o contador mostrando a fila.
+ */
+async function adminComServico() {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return null;
+  const adm = createAdminClient();
+  return adm ? { supabase, adm, user } : null;
+}
+
 export interface DocumentoPendente {
   id: string; // id da qualificação
   ownerId: string;
@@ -101,21 +116,19 @@ function resumoConferencia(c: unknown): ConferenciaResumo | null {
  * cliente (só o primeiro nome).
  */
 export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
-  const supabase = await createClient();
-  if (!supabase) return [];
-  const { data } = await supabase
+  // E28: confirma admin ANTES e lê com o cliente de serviço — a MESMA fonte do "na fila agora" (filaDocumentos).
+  // Pela sessão, a RLS (is_admin(), que exige aal2 no token de quem tem 2FA) devolvia [] em silêncio enquanto o
+  // contador, pelo serviço, mostrava a fila: contador 4, lista 0.
+  const ctx = await adminComServico();
+  if (!ctx) return [];
+  const { adm } = ctx;
+  const { data, error } = await adm
     .from("qualification_checklists")
     .select("*")
     .eq("document_status", "pending")
     .order("created_at", { ascending: true })
     .limit(200);
-
-  // Pré-conferência lê CPF/CNPJ do dono e o documento da operação (fora do grant
-  // do usuário) com o service role — SÓ depois de confirmar que quem pede é admin.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const adm = user && (await ehAdmin(supabase, user.id)) ? createAdminClient() : null;
+  if (error) console.error("[E28] fila de documentos:", error.message);
 
   // Um item por documento: re-salvar a qualificação repete o documento em
   // outra linha (0072) — mostra só a mais recente de cada (dono, imóvel, arquivo).
@@ -126,14 +139,14 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
   for (const r of unicos.values()) {
     const ownerId = r.owner_id as string;
     const nomeCompleto = (
-      await supabase.from("profiles").select("full_name").eq("id", ownerId).maybeSingle()
+      await adm.from("profiles").select("full_name").eq("id", ownerId).maybeSingle()
     ).data?.full_name as string | undefined;
 
     // Referência do imóvel (bairro/cidade do cadastro mais recente do dono) para
     // a conferência lado a lado — o admin compara com o que consta no documento.
     // O imóvel LIGADO à qualificação, quando houver; senão o mais recente do dono.
     let refImovel: string | null = null;
-    const propQuery = supabase.from("properties").select("title, address, city");
+    const propQuery = adm.from("properties").select("title, address, city");
     const { data: prop } = r.property_id
       ? await propQuery.eq("id", r.property_id as string).maybeSingle()
       : await propQuery
@@ -150,7 +163,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
     // Reuso do MESMO arquivo em outros cadastros (impressão digital, 0044).
     let duplicado = 0;
     if (r.document_hash_sha256) {
-      const { count } = await supabase
+      const { count } = await adm
         .from("qualification_checklists")
         .select("id", { count: "exact", head: true })
         .eq("document_hash_sha256", r.document_hash_sha256 as string)
@@ -160,7 +173,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
 
     let docUrl: string | null = null;
     if (r.document_path) {
-      const { data: signed } = await supabase.storage
+      const { data: signed } = await adm.storage
         .from(DOCS_BUCKET)
         .createSignedUrl(r.document_path as string, SIGNED_TTL);
       docUrl = signed?.signedUrl ?? null;
@@ -172,11 +185,11 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
     let autorizacaoUrl: string | null = null;
     let autorizacaoPath: string | null = null;
     let bloqueioAprovacao: string | null = null;
-    if (adm) {
+    {
       const [docDono, { data: op }] = await Promise.all([
         lerDocumento(adm, ownerId),
         r.property_id
-          ? adm.from("properties").select("owner_id, ownership_type, sublease_authorized, sublease_doc_url").eq("id", r.property_id as string).maybeSingle() // consistency-ignore: service role, só depois de ehAdmin; o caminho vira link assinado de 10 min para o admin
+          ? adm.from("properties").select("owner_id, ownership_type, sublease_authorized, sublease_doc_url, sublease_doc_tipo").eq("id", r.property_id as string).maybeSingle() // consistency-ignore: service role, só depois de ehAdmin; o caminho vira link assinado de 10 min para o admin
           : Promise.resolve({ data: null }),
       ]);
       bloqueioAprovacao = motivoBloqueioAprovacao(docDono);
@@ -261,6 +274,10 @@ export async function moderarDocumento(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  // E28: já confirmado admin (papel + 2FA): lê e grava pelo serviço, a mesma fonte da fila. As travas de conflito de
+  // interesse e "ninguém modera o próprio documento" continuam aqui.
+  const adm = createAdminClient();
+  if (!adm) return { ok: false, error: "Não foi possível conferir o documento agora. Tente de novo." };
 
   const motivoLimpo = (motivo ?? "").trim();
   if (!aprovado && !motivoLimpo) return { ok: false, error: "Informe o motivo da recusa." };
@@ -269,7 +286,7 @@ export async function moderarDocumento(
   // qualificação de novo sem trocar o arquivo herda o documento (0072). A
   // decisão vale para TODAS essas linhas — senão a mais recente (a que o
   // editor lê) ficava pendente e o Publicar não liberava.
-  const { data: alvo } = await supabase
+  const { data: alvo } = await adm
     .from("qualification_checklists")
     .select("owner_id, property_id, document_path")
     .eq("id", qualId)
@@ -281,12 +298,10 @@ export async function moderarDocumento(
   // Aprovar exige CPF (PF) / CNPJ (PJ) válidos do dono (#39). Lê com o service
   // role — só depois de confirmado admin acima; o número não sai do servidor.
   if (aprovado) {
-    const adm = createAdminClient();
-    if (!adm) return { ok: false, error: "Não foi possível conferir o documento do dono agora." };
     const bloqueio = motivoBloqueioAprovacao(await lerDocumento(adm, alvo.owner_id as string));
     if (bloqueio) return { ok: false, error: bloqueio };
   }
-  let upd = supabase
+  let upd = adm
     .from("qualification_checklists")
     .update(montarDecisaoDocumento(aprovado, motivoLimpo, user.id, new Date()))
     .eq("owner_id", alvo.owner_id as string)
@@ -303,7 +318,7 @@ export async function moderarDocumento(
   // Prompt 36, item 3b: "na fila agora" e o selo da barra lateral do admin (o cliente também chama router.refresh).
   revalidatePath("/admin", "layout");
   await logModeracao(
-    supabase,
+    adm,
     user.id,
     aprovado ? "aprovar_documento" : "recusar_documento",
     "qualificacao",
@@ -313,8 +328,7 @@ export async function moderarDocumento(
 
   // Aviso ao proprietário (rota rápida dos e-mails, item 3b): um por imóvel, com o imóvel, o tipo e a decisão de
   // cada documento. Se ainda há documento do mesmo imóvel na fila, o aviso espera o último (best-effort).
-  const adm = createAdminClient();
-  if (adm) await avisarDecisoesDoImovel(adm, qual.owner_id as string, (alvo.property_id as string | null) ?? null);
+  await avisarDecisoesDoImovel(adm, qual.owner_id as string, (alvo.property_id as string | null) ?? null);
   return { ok: true };
 }
 
@@ -339,7 +353,9 @@ export async function listConferidosAutomaticamente(limite = 30): Promise<Confer
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return [];
-  const { data } = await supabase
+  const adm = createAdminClient();
+  if (!adm) return [];
+  const { data } = await adm
     .from("qualification_checklists")
     .select("id, owner_id, property_id, document_path, created_at, conferencia")
     .eq("document_status", "approved")
@@ -349,11 +365,11 @@ export async function listConferidosAutomaticamente(limite = 30): Promise<Confer
   const out: ConferidoAutomatico[] = [];
   for (const r of data ?? []) {
     const [{ data: perfil }, prop, signed] = await Promise.all([
-      supabase.from("profiles").select("full_name").eq("id", r.owner_id as string).maybeSingle(),
+      adm.from("profiles").select("full_name").eq("id", r.owner_id as string).maybeSingle(),
       r.property_id
-        ? supabase.from("properties").select("title").eq("id", r.property_id as string).maybeSingle()
+        ? adm.from("properties").select("title").eq("id", r.property_id as string).maybeSingle()
         : Promise.resolve({ data: null }),
-      r.document_path ? supabase.storage.from(DOCS_BUCKET).createSignedUrl(r.document_path as string, SIGNED_TTL) : Promise.resolve({ data: null }),
+      r.document_path ? adm.storage.from(DOCS_BUCKET).createSignedUrl(r.document_path as string, SIGNED_TTL) : Promise.resolve({ data: null }),
     ]);
     out.push({
       id: r.id as string,
@@ -377,8 +393,10 @@ export async function contadoresConferencia(): Promise<{ automaticos: number; co
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return zero;
+  const adm = createAdminClient();
+  if (!adm) return zero;
   const desde = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  const { data } = await supabase
+  const { data } = await adm
     .from("qualification_checklists")
     .select("conferencia")
     .not("conferencia", "is", null)
@@ -406,7 +424,9 @@ export async function reabrirConferencia(qualId: string): Promise<ActionResult> 
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
-  const { data: alvo } = await supabase
+  const adm = createAdminClient();
+  if (!adm) return { ok: false, error: "Sem permissão." };
+  const { data: alvo } = await adm
     .from("qualification_checklists")
     .select("owner_id, property_id")
     .eq("id", qualId)
@@ -415,7 +435,7 @@ export async function reabrirConferencia(qualId: string): Promise<ActionResult> 
   if (!alvo) return { ok: false, error: "Documento não encontrado." };
   const conflito = erroConflitoInteresse(alvo.owner_id as string, user.id);
   if (conflito) return { ok: false, error: conflito };
-  const { data, error } = await supabase
+  const { data, error } = await adm
     .from("qualification_checklists")
     .update({
       document_status: "pending",
@@ -431,6 +451,6 @@ export async function reabrirConferencia(qualId: string): Promise<ActionResult> 
   if (error) return { ok: false, error: erroBancoPT(error) };
   if (!data?.length) return { ok: false, error: "Documento não encontrado." };
   revalidarAnuncio(alvo.property_id as string | null, revalidatePath);
-  await logModeracao(supabase, user.id, "reabrir_documento", "qualificacao", qualId, null);
+  await logModeracao(adm, user.id, "reabrir_documento", "qualificacao", qualId, null);
   return { ok: true };
 }

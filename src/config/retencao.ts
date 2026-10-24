@@ -81,6 +81,11 @@ export const INVENTARIO: ItemInventario[] = [
   i("vistoria_auditoria", "public.vistoria_auditoria", "revisão interna do laudo e o motivo", "auditar os avaliadores (fração interna)", DISPUTA),
   i("vistoria_fila_admin", "public.vistoria_fila_admin", "pendências da equipe (sem avaliador, suspensão, proposta de descredenciamento) com motivo", "operação da rede de avaliadores", DISPUTA),
   // Prompt 50: a data em que cada papel ativou (some com a conta) e a análise humana da verificação (motivo e decisão).
+  // 63-B: selo "LinkedIn conectado" — só o hash do identificador do LinkedIn, a data e a validade (12 meses); nada do
+  // perfil. Vale enquanto conectado; desconectar apaga a linha, e excluir a conta apaga junto.
+  i("confianca_linkedin", "public.confianca_linkedin", "hash do identificador do LinkedIn, data da conexão e validade (sem nome, link nem foto)", "selo de confiança \"LinkedIn conectado\" (63-B)", CONTA, "nada: desconectar apaga a linha"),
+  // 63-B (decisão do Daniel, 23/10): redes da própria pessoa, PRIVADAS (só ela e a equipe), atrás de REDES_USUARIO_ATIVO.
+  i("perfil_redes", "public.perfil_redes", "endereços do Instagram, Facebook e TikTok da própria pessoa (privados)", "a pessoa guardar as próprias redes; nunca aparecem para outro usuário", CONTA),
   i("ativacoes", "public.ativacoes", "data em que cada papel da pessoa ativou (morador, proprietário, parceiro)", "checklist de ativação e funil (Prompt 50)", CONTA),
   i("verificacao_revisoes", "public.verificacao_revisoes", "motivo da reprovação automática, decisão e observação da equipe", "análise humana da verificação de identidade (Prompt 50)", CONTA, "o laudo da revisão em tenant_verifications"),
   // Prompt 62-B2: execução da avaliação. Fotos e laudo ficam enquanto o laudo vale + a janela de disputa (prazo pendente,
@@ -101,6 +106,12 @@ export const INVENTARIO: ItemInventario[] = [
   i("vistoria-fotos", "bucket:vistoria-fotos", "fotos da vistoria (antiga)", "prova da vistoria", DISPUTA),
   i("vistoria_itens", "public.vistoria_itens", "observação da vistoria", "prova da vistoria", DISPUTA),
   i("contrato_ocupantes", "public.contrato_ocupantes", "nome e documento dos ocupantes", "lista da portaria", { prazoDias: 90, gatilho: "fim_estadia", modo: "apagar", base: "legal", fase: 2 }, "nada (já apagado pelo cron do Prompt 32)"),
+  i("triagem_vinculos", "public.triagem_vinculos", "tipo do comprovante de vínculo, situação da conferência, motivo da recusa e validade (sem valores)", "selo Morador verificado para o dono (52)", { prazoDias: null, gatilho: "exclusao_conta", modo: "apagar", base: "pendente", fase: 2 }, "prazo pendente do parecer do item 13 (Dra. Beatriz)"),
+  i("triagem-vinculos", "bucket:triagem-vinculos", "arquivo do comprovante de vínculo (carta da residência/programa, do empregador ou contracheque)", "a equipe conferir o vínculo (52)", { prazoDias: null, gatilho: "decisao_admin", modo: "apagar", base: "pendente", fase: 2 }, "prazo pendente do parecer do item 13 (Dra. Beatriz)"),
+  i("respostas_rapidas", "public.respostas_rapidas", "título e texto das respostas salvas do dono (sem contato: o filtro bloqueia)", "responder nas conversas com 1 toque (55-E2)", CONTA),
+  i("mensagens_programadas", "public.mensagens_programadas", "texto das mensagens programadas do dono por estadia (sem contato: o filtro bloqueia)", "enviar na conversa da estadia no horário marcado (55-E2)", { prazoDias: null, gatilho: "fim_estadia", modo: "apagar", base: "pendente", fase: 2 }, "a mensagem enviada continua em messages (mesma regra da conversa)"),
+  i("estadia_convidados", "public.estadia_convidados", "e-mail de quem vai morar junto", "acesso só leitura à estadia (61-B)", { prazoDias: 30, gatilho: "fim_estadia", modo: "apagar", base: "proposta", fase: 2 }, "nada (apagado pelo cron da estadia)"),
+  i("push_adiados", "public.push_adiados", "título e texto genérico do push adiado pelo silêncio", "entregar às 7h o aviso que caiu entre 22h e 7h (44)", { prazoDias: 1, gatilho: "sinal_processado", modo: "apagar", base: "proposta", fase: 2 }, "nada (apagado ao enviar)"),
   i("contrato_assinaturas", "public.contrato_assinaturas", "IP e hash da assinatura", "prova da assinatura", FISCAL),
   i("contrato_aditivo_assinaturas", "public.contrato_aditivo_assinaturas", "IP e hash da assinatura do aditivo", "prova da assinatura", FISCAL),
   i("contrato_notas", "public.contrato_notas", "notas do contrato", "registro da estadia", ESTADIA),
@@ -116,6 +127,7 @@ export const INVENTARIO: ItemInventario[] = [
   i("proposta_versoes", "public.proposta_versoes", "mensagem da proposta", "proposta", CONTA),
   i("avaliacoes", "public.avaliacoes", "comentários", "avaliação pública", CONTA),
   i("avaliacao_respostas", "public.avaliacao_respostas", "resposta do dono", "avaliação pública", CONTA),
+  i("recebimento_pix", "public.recebimento_pix", "chave Pix (CPF, CNPJ, e-mail ou celular)", "receber o valor mensal direto do morador", CONTA),
   i("avaliacao_contestacoes", "public.avaliacao_contestacoes", "motivo da contestação", "moderação", CONTA),
   i("reviews", "public.reviews", "comentário (legado)", "avaliação", CONTA),
   i("property_reviews", "public.property_reviews", "nome do autor e comentário", "avaliação", CONTA),
@@ -162,10 +174,14 @@ export const INVENTARIO: ItemInventario[] = [
   i("property_ownership_checks", "public.property_ownership_checks", "matrícula, motivo e campos conferidos", "titularidade", CONTA, "veredito"),
   i("qualification_checklists", "public.qualification_checklists", "caminho do documento do imóvel", "qualificação", CONTA, "veredito"),
   i("tempos_deslocamento", "public.tempos_deslocamento", "chave com lat/lng do local de trabalho digitado", "tempo até o trabalho (37)", CONTA),
+  // Prompt 51 F1: o motivo da saída (opcional) e o texto livre (só a equipe lê). Na exclusão da conta o user_id vira nulo.
+  i("saidas_motivos", "public.saidas_motivos", "motivo da saída e texto livre opcional", "entender por que as pessoas saem (painel de qualidade)", { prazoDias: 365, gatilho: "sem_gatilho_automatico", modo: "anonimizar", base: "proposta", fase: 2 }, "papel, motivo e data, sem identificação (estatística)"),
+  i("denuncias_anuncio", "public.denuncias_anuncio", "motivo e texto da denúncia de anúncio", "o atendimento analisar a denúncia", { prazoDias: 365, gatilho: "decisao_admin", modo: "apagar", base: "proposta", fase: 2 }, "o estado da denúncia no chamado"),
 ];
 
 /** Tabelas que a varredura acha por nome de coluna mas não guardam dado pessoal (com o porquê). */
 export const SEM_DADO_PESSOAL: Record<string, string> = {
+  qualidade_correcoes: "item de correção do painel de qualidade: papel, motivo da taxonomia (chave fechada), contagem, responsável da equipe e prazo (Prompt 51)",
   agentes: "nome do agente de IA, não de pessoa",
   imovel_extras: "lista fechada de extras do anúncio (Adendo 59.1), sem dado de pessoa",
   nivel_itens: "itens de nível do anúncio e a foto de cada um (sem pessoas); ficam enquanto o anúncio existir e saem em cascata com ele (Adendo 59.1)",

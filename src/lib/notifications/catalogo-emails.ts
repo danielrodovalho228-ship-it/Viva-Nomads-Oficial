@@ -20,7 +20,7 @@ export interface EmailDoCatalogo extends EmailMontado {
 }
 
 /** Eventos do notify que só vão para a equipe. */
-export const EVENTOS_SO_EQUIPE: NotificationEvent[] = ["chamado_equipe", "documento_recebido", "parceria_equipe"];
+export const EVENTOS_SO_EQUIPE: NotificationEvent[] = ["chamado_equipe", "documento_recebido", "parceria_equipe", "alerta_backup_falhou", "alerta_email_falhou"];
 
 const PROP = "1b2c3d4e-0000-4000-8000-000000000001";
 

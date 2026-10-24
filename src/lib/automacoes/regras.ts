@@ -64,8 +64,9 @@ export function chaveEnvio(tipo: TipoAutomacao, referenciaId: string, usuarioId:
 }
 
 /** Quem recebe: precisa de e-mail e de não ter desligado os avisos. */
-export function podeReceber(perfil: { email?: string | null; notif_email?: boolean | null } | null | undefined): boolean {
-  return !!perfil?.email && perfil.notif_email !== false;
+export function podeReceber(perfil: { email?: string | null; notif_email?: boolean | null; pausada_em?: string | null } | null | undefined): boolean {
+  // Prompt 51 F1: conta pausada não recebe as automações.
+  return !!perfil?.email && perfil.notif_email !== false && !perfil.pausada_em;
 }
 
 function dataBr(iso: string): string {

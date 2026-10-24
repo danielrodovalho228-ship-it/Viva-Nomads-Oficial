@@ -2,8 +2,14 @@
 
 import { CampoReais } from "@/components/ui/campo-reais";
 import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/components/anuncio/limpeza-estadia-campos";
+import { RegrasCasaCampos, estadosConvivencia, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
+import { OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
+import { DetalhesAnuncioCampos, estadosDetalhes, formDeDetalhes, payloadDeDetalhes, type DetalhesForm } from "@/components/anuncio/detalhes-anuncio-campos";
+import { completudeBlocos, textoCompletude } from "@/lib/anuncio/bloco-opcional";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
-import { useEffect, useMemo, useState } from "react";
+import { ChegadaEPedidoCampos, formDeChegada, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
+import { avisoTipoEntradaNoPainel, tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { DateFieldBR } from "@/components/ui/date-field-br";
 import {
@@ -12,6 +18,7 @@ import {
   FileText,
   Briefcase,
   ScrollText,
+  ListChecks,
   Ruler,
   Check,
   ChevronDown,
@@ -20,23 +27,25 @@ import {
   Info,
   Loader2,
   Dog,
-  Cigarette,
   Baby,
   Handshake,
   MapPin,
+  Video,
 } from "lucide-react";
 import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import { NEGOCIACAO_PADRAO, ITENS_NEGOCIAVEIS, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
+import { VideoUploader } from "@/components/video-uploader";
+import { payloadDoVideo, resumoDoVideo, videoDoAnuncio } from "@/lib/video-anuncio";
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { AMENITY_GROUPS, amenityKeysFromLabels } from "@/lib/amenities";
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
-import { MIN_FOTOS, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
+import { ANCORA_VIDEO_EDITOR, MIN_FOTOS, hrefParaMelhorar, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
 import { TERMO_IA_TEXTO, aceiteDoEditor } from "@/lib/anuncio/termo-ia";
-import { carregarLimitesNegociacao, salvarLimitesNegociacao, updateProperty, type PropertyInput } from "@/lib/data/actions";
+import { carregarLimitesNegociacao, gravarVideoArquivo, salvarLimitesNegociacao, updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
 import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { avisoTituloBairro } from "@/lib/anuncio/titulo-bairro";
@@ -100,8 +109,17 @@ export function EditarImovelClient({
   const [petsAllowed, setPetsAllowed] = useState(property.petsAllowed ?? false);
   const [petsRegras, setPetsRegras] = useState<RegrasPetsForm>(formDeRegras(property.petsRegras));
   const [limpeza, setLimpeza] = useState<LimpezaEstadiaForm>(formDeLimpeza(property.limpezaEstadia));
-  const [smokingAllowed, setSmokingAllowed] = useState(property.smokingAllowed ?? false);
+  const smokingAllowed = property.smokingAllowed ?? false;
+  // CAMPOS-1: regras estruturadas (o fumo daqui substitui o sim/não antigo quando definido).
+  const [regrasCasa, setRegrasCasa] = useState<RegrasCasaForm>(formDeRegrasCasa(property.regrasCasa));
+  // E56 + tela 06 dos mockups: cada regra da Convivência tem o seu toggle (o estado mora em regrasCasa.ligados).
+  // CAMPOS-2: os 5 grupos opcionais do anúncio, cada um atrás do seu toggle (E56).
+  const [detalhes, setDetalhes] = useState<DetalhesForm>(formDeDetalhes(property.detalhesAnuncio));
+  // Medidor dos opcionais: desligado = não se aplica (fora da conta).
+  const completudeOpcionais = completudeBlocos([...estadosConvivencia(regrasCasa), ...estadosDetalhes(detalhes)]);
   const [childrenAllowed, setChildrenAllowed] = useState(property.childrenAllowed ?? true);
+  // 61-B: indefinido = banco sem a 0225 (o bloco some e nada é gravado).
+  const [chegada, setChegada] = useState<ChegadaEPedidoForm>(formDeChegada(property.chegadaEPedido));
   const [bedrooms, setBedrooms] = useState(String(property.bedrooms || ""));
   const [bathrooms, setBathrooms] = useState(String(property.bathrooms || ""));
   const [areaM2, setAreaM2] = useState(String(property.areaM2 || ""));
@@ -122,6 +140,9 @@ export function EditarImovelClient({
     };
   }, [demo, property.id]);
   const [enderecoExato, setEnderecoExato] = useState(enderecoExatoInicial);
+  // 65-B: a seção Vídeo (arquivo enviado OU link do YouTube/Vimeo; o arquivo vence).
+  const [videoArquivo, setVideoArquivo] = useState(property.videoArquivo ?? "");
+  const [videoUrl, setVideoUrl] = useState(property.videoUrl ?? "");
 
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [savedSection, setSavedSection] = useState<string | null>(null);
@@ -147,11 +168,18 @@ export function EditarImovelClient({
         documento: fatos?.documento ?? "approved",
         limitePlanoOk: fatos?.limitePlanoOk ?? null,
         limiteAnuncios: fatos?.limiteAnuncios,
+        // 64-B: com os publicados, o texto diz quantos pausar (a mesma conta do servidor).
+        ativosAnuncios: fatos?.ativosAnuncios,
         descricao: description,
         selo: fatos?.selo ?? !!property.readyToLiveBadge,
-        video: fatos?.video ?? !!property.videoUrl,
+        // 65-B: o que está na seção Vídeo agora (arquivo ou link permitido), não o que estava no banco.
+        video: videoDoAnuncio({ videoArquivo, videoUrl }).tipo !== null,
+        // 61-B: rascunho aberto no editor só publica com o tipo de entrada (a mesma regra do servidor).
+        tipoEntradaOk: property.status === "draft" && property.chegadaEPedido ? tipoEntradaValido(chegada.tipoEntrada) : undefined,
+        // FILTROS-1 (E39): a mesma regra do servidor (rascunho só publica com a velocidade da internet).
+        internetOk: property.status === "draft" ? fatos?.internetOk : undefined,
       }),
-    [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description]
+    [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, videoArquivo, videoUrl, chegada.tipoEntrada]
   );
   const [aceitouIa, setAceitouIa] = useState(false);
   const [publicadoAgora, setPublicadoAgora] = useState(false);
@@ -186,8 +214,8 @@ export function EditarImovelClient({
       lat: property.lat,
       lng: property.lng,
       photoUrls: photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:")),
-      videoUrl: property.videoUrl,
-      videoArquivo: property.videoArquivo,
+      // 65-B: o estado da seção Vídeo (antes só repetia o valor antigo).
+      ...payloadDoVideo({ videoArquivo, videoUrl }),
       asDraft,
       descricaoGeradaPorIa: property.descricaoGeradaPorIa,
       aceiteIa:
@@ -207,8 +235,12 @@ export function EditarImovelClient({
       petsAllowed,
       petsRegras: petsAllowed ? petsRegras : undefined,
       limpezaEstadia: limpeza,
-      smokingAllowed,
+      // Regra desligada = não definida (só as ligadas vão; nada ligado, o servidor grava null).
+      regrasCasa: payloadDeRegrasCasa(regrasCasa),
+      smokingAllowed: regrasCasa.ligados.fumo && regrasCasa.fumo ? regrasCasa.fumo === "permitido" : smokingAllowed,
+      detalhesAnuncio: payloadDeDetalhes(detalhes),
       childrenAllowed,
+      ...(property.chegadaEPedido ? payloadDaChegada(chegada) : {}),
       // Só manda quando a coluna existe (property.privacidade definida): senão não grava nada.
       ...(property.privacidade
         ? {
@@ -258,6 +290,20 @@ export function EditarImovelClient({
       setErro(res.error ?? "Não foi possível salvar.");
     }
     return res.ok;
+  }
+
+  // 65-B: enviar, trocar ou remover o arquivo grava NA HORA (o enviador já apagou o anterior do bucket).
+  async function mudarVideoArquivo(novo: string) {
+    setVideoArquivo(novo);
+    if (demo) return;
+    setSavingSection("video");
+    setErro(null);
+    const r = await gravarVideoArquivo(property.id, novo);
+    setSavingSection(null);
+    if (r.ok) {
+      setSavedSection("video");
+      setTimeout(() => setSavedSection((s) => (s === "video" ? null : s)), 2500);
+    } else setErro(r.error ?? "Não foi possível gravar o vídeo.");
   }
 
   async function publish() {
@@ -313,8 +359,31 @@ export function EditarImovelClient({
             {!comp.podePublicar && (
               <p className="mt-1 text-sm text-muted">Falta para publicar: {comp.faltam.join(" · ")}</p>
             )}
+            {/* E56: medidor dos detalhes opcionais — bloco desligado entra como "não se aplica". */}
+            <p className="mt-1 text-xs text-muted" data-testid="completude-opcionais">
+              Detalhes opcionais: {textoCompletude(completudeOpcionais)}
+            </p>
             {comp.melhorar.length > 0 && (
-              <p className="mt-1 text-xs text-muted">Para melhorar (opcional): {comp.melhorar.join(" · ")}</p>
+              <p className="mt-1 text-xs text-muted" data-testid="para-melhorar">
+                Para melhorar (opcional):{" "}
+                {comp.opcionais
+                  .filter((o) => !o.ok)
+                  .map((o, i) => {
+                    const href = hrefParaMelhorar(o.key, property.id, false);
+                    return (
+                      <span key={o.key}>
+                        {i > 0 && " · "}
+                        {href ? (
+                          <a href={`#${ANCORA_VIDEO_EDITOR}`} className="font-medium text-forest underline" data-testid={`melhorar-${o.key}`}>
+                            {o.label}
+                          </a>
+                        ) : (
+                          o.label
+                        )}
+                      </span>
+                    );
+                  })}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -377,6 +446,20 @@ export function EditarImovelClient({
           <PhotoUploader photos={photos} onChange={setPhotos} max={20} />
         </Section>
 
+        {/* 65-B: Vídeo, logo depois das Fotos. O arquivo grava na hora; o link grava no "Salvar seção". */}
+        <Section
+          icon={Video}
+          title="Vídeo"
+          ancora={ANCORA_VIDEO_EDITOR}
+          testid="secao-video"
+          summary={resumoDoVideo({ videoArquivo, videoUrl })}
+          saving={savingSection === "video"}
+          saved={savedSection === "video"}
+          onSave={() => saveSection("video")}
+        >
+          <VideoUploader path={videoArquivo} onChange={(p) => void mudarVideoArquivo(p)} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} />
+        </Section>
+
         {/* Endereço exato (complemento do prompt 23): sem ele, a visita presencial confirmada não mostra rua e número. */}
         <Section
           icon={MapPin}
@@ -406,6 +489,7 @@ export function EditarImovelClient({
         <Section
           icon={CalendarRange}
           title="Disponibilidade"
+          ancora="calendario"
           summary={
             availableFrom
               ? `A partir de ${br(availableFrom)}${availableUntil ? ` até ${br(availableUntil)}` : ""}`
@@ -556,27 +640,26 @@ export function EditarImovelClient({
         <Section
           icon={ScrollText}
           title="Regras da casa"
+          testid="secao-regras"
           summary={[
             petsAllowed ? "aceita pets" : "sem pets",
-            smokingAllowed ? "fumar ok" : "não fumantes",
+            regrasCasa.ligados.fumo && regrasCasa.fumo
+              ? `fumar: ${OPCOES_FUMO.find((o) => o.valor === regrasCasa.fumo)?.rotulo.toLowerCase()}`
+              : smokingAllowed
+                ? "fumar ok"
+                : "não fumantes",
             childrenAllowed ? "aceita crianças" : "sem crianças",
           ].join(" · ")}
           saving={savingSection === "regras"}
           saved={savedSection === "regras"}
           onSave={() => saveSection("regras")}
         >
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <RuleCard
               icon={Dog}
               label="Aceita animais de estimação?"
               value={petsAllowed}
               onChange={setPetsAllowed}
-            />
-            <RuleCard
-              icon={Cigarette}
-              label="Permite fumar no imóvel?"
-              value={smokingAllowed}
-              onChange={setSmokingAllowed}
             />
             <RuleCard
               icon={Baby}
@@ -586,6 +669,16 @@ export function EditarImovelClient({
             />
           </div>
           {petsAllowed && <PetsRegrasCampos value={petsRegras} onChange={setPetsRegras} />}
+          {property.chegadaEPedido && (
+            <ChegadaEPedidoCampos
+              value={chegada}
+              onChange={setChegada}
+              erroTipoEntrada={avisoTipoEntradaNoPainel({ tipoEntrada: chegada.tipoEntrada, status: property.status }) ?? undefined}
+            />
+          )}
+          <div className="mt-4">
+            <RegrasCasaCampos value={regrasCasa} onChange={setRegrasCasa} />
+          </div>
           <div className="mt-4">
             <LimpezaEstadiaCampos value={limpeza} onChange={setLimpeza} />
           </div>
@@ -594,6 +687,20 @@ export function EditarImovelClient({
               <PrivacidadeCampos valor={privacidade} onChange={setPrivacidade} />
             </div>
           )}
+        </Section>
+
+        {/* CAMPOS-2: detalhes opcionais do anúncio — cada grupo atrás do seu toggle (padrão E56). */}
+        <Section
+          icon={ListChecks}
+          title="Detalhes do imóvel"
+          testid="secao-detalhes-anuncio"
+          summary={textoCompletude(completudeOpcionais)}
+          saving={savingSection === "detalhes-anuncio"}
+          saved={savedSection === "detalhes-anuncio"}
+          onSave={() => saveSection("detalhes-anuncio")}
+        >
+          <p className="text-sm text-muted">Ligue só o que se aplica ao seu imóvel. O que ficar desligado não aparece no anúncio e não conta como pendência.</p>
+          <DetalhesAnuncioCampos value={detalhes} onChange={setDetalhes} />
         </Section>
 
         {/* Detalhes & preço */}
@@ -656,22 +763,27 @@ function Section({
   saved,
   onSave,
   testid,
+  ancora,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   testid?: string;
+  /** Id da seção: abre sozinha quando o endereço chega com #ancora (ex.: "Para melhorar: Vídeo do imóvel"). */
+  ancora?: string;
   summary: string;
   children: React.ReactNode;
   saving: boolean;
   saved: boolean;
   onSave: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [aberta, setAberta] = useState<boolean | null>(null);
+  const hash = useSyncExternalStore(assinarHash, () => window.location.hash, () => "");
+  const open = aberta ?? (!!ancora && hash === `#${ancora}`);
   return (
-    <section className="overflow-hidden rounded-xl border border-sage-200 bg-white" data-testid={testid}>
+    <section id={ancora} className="scroll-mt-24 overflow-hidden rounded-xl border border-sage-200 bg-white" data-testid={testid} data-aberta={open}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setAberta(!open)}
         aria-expanded={open}
         className="flex w-full items-center gap-3 px-4 py-4 text-left hover:bg-surface-2"
       >
@@ -706,6 +818,11 @@ function Section({
       )}
     </section>
   );
+}
+
+function assinarHash(avisar: () => void) {
+  window.addEventListener("hashchange", avisar);
+  return () => window.removeEventListener("hashchange", avisar);
 }
 
 function RuleCard({

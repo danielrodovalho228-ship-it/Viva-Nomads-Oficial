@@ -36,6 +36,7 @@ test("só entram linhas com n > 0; N é a soma; ordem de urgência (P1 antes de 
     chamados_fora_promessa: { n: 0 },
     parceiros_sem_resposta_1_dia: { n: 0 },
     verificacao_analise_humana: { n: 0 },
+    correcoes_sem_dono: { n: 0 },
   });
   assert.equal(r.total, 7);
   assert.deepEqual(r.linhas.map((l) => l.chave), ["chamados_p1", "backup", "documentos_pendentes", "encerramentos"]);
@@ -87,4 +88,11 @@ test("Prompt 50: chamado fora da promessa vem antes de P1; parceria sem resposta
   assert.equal(r.linhas[0].texto, "2 chamados sem resposta de uma pessoa há mais de 24 h");
   assert.ok(r.linhas.some((l) => l.chave === "parceiros_sem_resposta_1_dia" && l.href === "/admin/parceiros?aba=pendentes"));
   assert.ok(r.linhas.some((l) => l.chave === "verificacao_analise_humana" && l.href === "/admin/documentos#verificacao"));
+});
+
+test("Prompt 51: Correção de qualidade sem dono ou prazo vira decisão e abre o painel de qualidade", () => {
+  const r = montarDecisoesAdmin({ correcoes_sem_dono: { n: 2 } });
+  assert.equal(r.total, 2);
+  assert.equal(r.linhas[0].texto, "2 Correções de qualidade sem dono ou prazo");
+  assert.equal(r.linhas[0].href, "/admin/qualidade#correcoes");
 });

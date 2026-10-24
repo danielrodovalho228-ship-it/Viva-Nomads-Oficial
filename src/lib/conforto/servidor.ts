@@ -4,27 +4,26 @@
 */
 import { recalcularNivel } from "@/lib/niveis/servidor";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { CHAVES_CONFORTO } from "@/config/conforto-minimo";
-import { estadoConfortoMinimo, itensFaltantes, linhasConfirmacao, pendenciaFechada, pendenciaVencida, type EstadoConforto, type PendenciaConforto } from "./regras";
+import { gravarDeclaracoes } from "./gravacao";
+import { estadoConfortoMinimo, itensFaltantes, pendenciaFechada, pendenciaVencida, type EstadoConforto, type PendenciaConforto } from "./regras";
 
 type Db = SupabaseClient;
 
 /**
  * Grava a confirmação do dono (os marcados viram confirmados na versão atual; os desmarcados deixam de valer).
- * Quem chama já conferiu que `donoId` é o dono do imóvel.
+ * Quem chama já conferiu que `donoId` é o dono do imóvel. Falhou: devolve a causa (código do banco), já registrada no log.
  */
-export async function salvarDeclaracoesConforto(db: Db, propertyId: string, donoId: string, marcados: readonly unknown[], agora = new Date()): Promise<{ ok: boolean }> {
-  const linhas = linhasConfirmacao(propertyId, marcados, donoId, agora);
-  const desmarcados = CHAVES_CONFORTO.filter((k) => !linhas.some((l) => l.chave === k));
-  if (linhas.length) {
-    const { error } = await db.from("conforto_declaracoes").upsert(linhas, { onConflict: "property_id,chave" });
-    if (error) {
-      console.error("[salvarDeclaracoesConforto]", error.code, error.message);
-      return { ok: false };
-    }
-  }
-  if (desmarcados.length) {
-    await db.from("conforto_declaracoes").update({ confirmado: false }).eq("property_id", propertyId).in("chave", desmarcados);
+export async function salvarDeclaracoesConforto(
+  db: Db,
+  propertyId: string,
+  donoId: string,
+  marcados: readonly unknown[],
+  agora = new Date(),
+): Promise<{ ok: true } | { ok: false; erro: { code: string | null; message: string | null } }> {
+  const r = await gravarDeclaracoes(db, propertyId, donoId, marcados, agora);
+  if (!r.ok) {
+    console.error("[salvarDeclaracoesConforto]", propertyId, r.code, r.message);
+    return { ok: false, erro: { code: r.code, message: r.message } };
   }
   await voltarSeCompleto(db, propertyId);
   // Adendo 59.1: o Essencial é o padrão mínimo — confirmar/desmarcar muda o nível.
@@ -38,7 +37,8 @@ export async function voltarSeCompleto(db: Db, propertyId: string): Promise<bool
   if (!adq?.pausado_em) return false;
   const { data: decl } = await db.from("conforto_declaracoes").select("chave, confirmado, versao_lista").eq("property_id", propertyId);
   if (itensFaltantes((decl ?? []) as { chave: string; confirmado: boolean; versao_lista?: number | null }[]).length) return false;
-  const { error } = await db.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused");
+  // 64-B: só devolve o que o padrão mínimo tirou do ar (nunca um anúncio que o dono pausou).
+  const { error } = await db.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused").eq("pausa_motivo", "conforto");
   if (error) {
     console.error("[voltarSeCompleto]", error.code, error.message);
     return false;

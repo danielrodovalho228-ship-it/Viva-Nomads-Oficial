@@ -195,7 +195,7 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
       for (const [conta, situacao, estado, texto] of casos) {
         const p = await entrar(browser, conta.email, senha);
         await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-        await abrir(p, "/dashboard/conta");
+        await abrir(p, "/dashboard/conta/privacidade");
         const passo = p.getByTestId("confianca-identidade");
         await expect(passo).toHaveAttribute("data-situacao", situacao, { timeout: 25_000 });
         await expect(passo).toContainText(texto);
@@ -223,7 +223,7 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
       const esperado = `Identidade confirmada · válida até ${ate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`;
       const d = await entrar(browser, dono.email, senha);
       await d.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await abrir(d, "/dashboard/conta");
+      await abrir(d, "/dashboard/conta/privacidade");
       await expect(d.getByTestId("confianca-identidade")).toContainText(esperado, { timeout: 25_000 });
       await expect(d.getByTestId("confianca-identidade")).toHaveAttribute("data-situacao", "ok");
       await semRolagemLateral(d);
@@ -235,7 +235,7 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
       await d.screenshot({ path: `${SAIDA}/t211-verificacao-identidade-${largura}.png` });
       // A mesma pessoa, com o laudo vencido: "Identidade vencida em … · Confirmar de novo" nas três telas.
       await adm().from("tenant_verifications").update({ valid_until: new Date(Date.now() - 2 * 86_400_000).toISOString() }).eq("tenant_id", ids.dono!);
-      await abrir(d, "/dashboard/conta");
+      await abrir(d, "/dashboard/conta/privacidade");
       await expect(d.getByTestId("confianca-identidade")).toContainText(/Identidade vencida em \d{2}\/\d{2}\/\d{4} · Confirmar de novo/, { timeout: 25_000 });
       await abrir(d, "/dashboard/verificacao");
       await expect(d.getByTestId("identidade-estado")).toHaveAttribute("data-estado", "vencida", { timeout: 25_000 });

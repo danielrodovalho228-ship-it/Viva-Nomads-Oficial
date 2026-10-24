@@ -1,0 +1,31 @@
+# 49-C1 — lembrete: PR que muda os e-mails de conta (modelos, remetente ou validade do código) só chega à produção
+# depois que alguém roda a Action manual "Aplicar e-mails de conta no Supabase". Este check não falha: deixa o aviso
+# no resumo do PR e na anotação. Depois do merge, o /admin (cartão "Entrada por e-mail") mostra se a Action rodou.
+name: Lembrete — e-mails de conta no Supabase
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/notifications/templates-supabase.ts"
+      - "src/lib/notifications/supabase-auth-config.ts"
+      - "src/lib/notifications/modelo-email.ts"
+      - "src/lib/notifications/remetente.ts"
+      - "src/lib/seguranca/codigo-acesso.ts"
+      - "supabase/templates/**"
+
+permissions:
+  contents: read
+
+jobs:
+  lembrete:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Lembrar de rodar a Action depois do merge
+        run: |
+          echo "::warning title=E-mails de conta::Depois do merge, rode a Action \"Aplicar e-mails de conta no Supabase\" (GitHub → Actions → Run workflow). Sem ela, a produção continua com os modelos antigos."
+          {
+            echo "### Depois do merge: rode a Action \"Aplicar e-mails de conta no Supabase\""
+            echo ""
+            echo "Este PR muda o que vai para os e-mails de conta (modelos, remetente ou validade do código). O Supabase só recebe a mudança quando a Action roda; o cartão \"Entrada por e-mail\" do /admin avisa enquanto ela não rodar."
+          } >> "$GITHUB_STEP_SUMMARY"

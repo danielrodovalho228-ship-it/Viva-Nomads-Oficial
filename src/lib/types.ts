@@ -46,6 +46,8 @@ export interface Review {
   /** Prompt 61-A: cidade do perfil de quem avaliou e a data da conta ("na Viva desde [ano]"). */
   cidade?: string | null;
   desde?: string | null;
+  /** 63-B: quem avaliou tem o selo "LinkedIn conectado" (só o sim; nada do LinkedIn em si). */
+  linkedinConectado?: boolean;
 }
 
 /** Perfil público do proprietário (bloco de confiança). */
@@ -104,6 +106,8 @@ export interface Property {
   subleaseAuthorized?: boolean;
   /** Dono: o documento da operação (autorização/procuração) já está anexado (0091). */
   autorizacaoAnexada?: boolean;
+  /** Administrado: "contrato_gestao" ou "procuracao" (só o dono lê; 0234). */
+  subleaseDocTipo?: string;
   /** Privacidade e acesso declarados pelo anunciante (0116). Indefinido = banco sem a coluna. */
   privacidade?: import("./anuncio/privacidade").Privacidade;
   // Qualidade do anúncio (rodada 11) — derivado da quantidade de fotos
@@ -126,12 +130,20 @@ export interface Property {
   condoFee?: number; // condomínio (R$/mês), separado das contas de consumo
   descricaoGeradaPorIa?: boolean; // auditoria: descrição gerada por IA
   availableFrom?: string; // ISO — "disponível a partir de"
+  /** Prompt 53: datas bloqueadas de hoje em diante (do dono ou importadas do Airbnb/Booking) — só datas, para a busca. */
+  bloqueios?: { inicio: string; fim: string }[];
   furnished?: boolean; // mobiliado
   petsAllowed?: boolean;
   /** Regras detalhadas de pets (espécies, porte, quantidade, reforço de Caução). */
   petsRegras?: import("@/lib/anuncio/pets-regras").RegrasPets;
+  /** 61-B (0225): tipo de entrada (público), mensagem a quem vai pedir e "o que considerar antes de pedir". */
+  chegadaEPedido?: import("@/lib/anuncio/chegada-e-pedido").ChegadaEPedido;
   /** Pacote de limpeza durante a estadia (ordem 4c74ac38; requer migração 0144). */
   limpezaEstadia?: import("@/lib/anuncio/limpeza-estadia").LimpezaEstadia;
+  /** CAMPOS-1 (0233): regras da casa estruturadas — silêncio, fumo, festas, visitas. Só o que o dono definiu. */
+  regrasCasa?: import("@/lib/anuncio/regras-casa").RegrasCasa;
+  /** CAMPOS-2 (0235): incluído no preço, áreas do condomínio, andar/elevador, janela de entrada/saída, detalhe da vaga. */
+  detalhesAnuncio?: import("@/lib/anuncio/detalhes-anuncio").DetalhesAnuncio;
   /** Negociação pública (aceita? itens; desconto por estadia longa) — prompt 17 §8, requer 0152. */
   negociacao?: import("@/lib/anuncio/negociacao").Negociacao;
   /** Velocidade da internet informada pelo dono (Mbps), opcional — requer 0152. */
@@ -140,6 +152,8 @@ export interface Property {
   internetMedida?: import("@/lib/internet-medida").Medicao;
   /** Adendo 59.1: nível Essencial/Conforto/Premium (imovel_nivel; não é selo nem posição). */
   nivel?: import("@/config/niveis").NivelOuAdequacao | null;
+  /** Prompt 62-A, Parte 2: o nível tem laudo de avaliação vigente (imovel_nivel.nivel_vistoriado_em). */
+  nivelVistoriado?: boolean;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;

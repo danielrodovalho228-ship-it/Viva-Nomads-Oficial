@@ -12,8 +12,10 @@ import { rotuloFiltroNivel } from "./filtro-nivel.ts";
 import { ROTULO_COMODIDADE, passaComodidades, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
-import { passaEntrada } from "./datas-flexiveis.ts";
+import { passaBloqueios, passaEntrada } from "./datas-flexiveis.ts";
 import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, type ImovelComInternet } from "./filtro-internet.ts";
+import { calcularTudoIncluido, type CamposTotalMes } from "../precos.ts";
+import type { LimpezaEstadia } from "../anuncio/limpeza-estadia.ts";
 
 export interface FiltrosPainel {
   maxPrice: number; // 0 = qualquer
@@ -118,9 +120,15 @@ export function cabeNaEstadia(p: { minPeriodDays?: number; maxPeriodDays?: numbe
 type ImovelFiltravel = ImovelComInternet & {
   /** Disponível a partir de (yyyy-mm-dd); sem ela, a data de entrada não tira o imóvel. */
   availableFrom?: string | null;
+  /** Prompt 53: datas bloqueadas de hoje em diante (do dono ou importadas). */
+  bloqueios?: { inicio: string; fim: string }[];
   monthlyPrice: number;
-  /** Total do mês anunciado no cartão; sem ele vale o valor mensal. */
+  /** Total do mês anunciado no cartão; sem ele, a mesma conta do cartão (aluguel + condomínio + contas + limpeza). */
   totalMes?: number;
+  condoFee?: number;
+  utilitiesMode?: string;
+  utilitiesEstimate?: number;
+  limpezaEstadia?: LimpezaEstadia | null;
   bedrooms: number;
   petsAllowed?: boolean;
   petsRegras?: RegrasPets | null;
@@ -159,9 +167,27 @@ export function aceitaGarantia(p: { garantiasAceitas?: string[]; acceptsInsuranc
   return arr.includes(g); // caucao_avista | caucao_parcelada | titulo
 }
 
-/** Preço que a busca compara e mostra: o total do mês do cartão (ordem 826719b1, D1). */
-export function precoDeBusca(p: { monthlyPrice: number; totalMes?: number }): number {
-  return p.totalMes && p.totalMes > 0 ? p.totalMes : p.monthlyPrice;
+/**
+ * Preço que a busca compara e mostra: o TOTAL do mês do cartão (ordem 826719b1, D1; FILTROS-1, E20). Antes, sem
+ * `totalMes`, comparava o aluguel base (2.850) e o cartão mostrava o total (3.070): "Até R$ 3.000" deixava passar um
+ * imóvel de R$ 3.070. Agora é a MESMA conta do cartão (calcularTudoIncluido).
+ */
+export function precoDeBusca(p: {
+  monthlyPrice: number;
+  totalMes?: number;
+  condoFee?: number;
+  utilitiesMode?: string;
+  utilitiesEstimate?: number;
+  limpezaEstadia?: LimpezaEstadia | null;
+}): number {
+  if (p.totalMes && p.totalMes > 0) return p.totalMes;
+  return calcularTudoIncluido({
+    monthlyPrice: p.monthlyPrice,
+    condoFee: p.condoFee,
+    utilitiesMode: p.utilitiesMode,
+    utilitiesEstimate: p.utilitiesEstimate,
+    limpezaEstadia: p.limpezaEstadia ?? undefined,
+  } as CamposTotalMes).total;
 }
 
 /** O imóvel passa nos filtros do painel? `agora` só pesa na validade da medição de internet. */
@@ -175,10 +201,13 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (!passaComodidades(p, f.comodidades)) return false;
   if (f.periodo && !cabeNaEstadia(p, f.periodo)) return false;
   if (!passaEntrada(p.availableFrom, f.entrada, f.datasFlexiveis)) return false;
+  // A faixa "1–2 meses" (60) começa em 30 dias: o bloqueio tira o imóvel só se nem a estadia mais curta da faixa cabe.
+  if (!passaBloqueios(p.bloqueios, f.entrada, f.datasFlexiveis, f.periodo ? f.periodo - 30 : 30)) return false;
   if (f.tipo && tipoCanonico(p.propertyType ?? "") !== f.tipo) return false;
   if (f.garantia && !aceitaGarantia(p, f.garantia)) return false;
   if (f.notaOnly && !p.issuesInvoice) return false;
-  if (f.seguroOnly && !p.acceptsInsurance) return false;
+  // E43: "Aceita Seguro-Fiança" era o mesmo critério da garantia "Seguro-fiança"; o atalho antigo (`?seguro=1`) usa a mesma regra.
+  if (f.seguroOnly && !aceitaGarantia(p, "seguro_fianca")) return false;
   if (f.gestorOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   if (!passaInternet(p, f, agora)) return false;
   if (f.nivelMin && !nivelAoMenos(p.nivel, f.nivelMin)) return false;

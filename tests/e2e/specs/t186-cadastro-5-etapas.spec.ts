@@ -175,6 +175,8 @@ test.describe("T186 — Anunciar em 6 passos com IA, OSM e documento simulados",
       await expect(page.getByTestId("trabalho-mesa_trabalho")).toHaveAttribute("aria-pressed", "true");
       await page.getByTestId("trabalho-home_office").click();
       await expect(page.getByTestId("trabalho-contador")).toHaveText("4 de 4 itens essenciais");
+      // FILTROS-1 (E39): publicar exige a velocidade da internet.
+      await page.getByLabel("Velocidade da internet em Mbps").fill("300");
       // Proximidades do OSM (simuladas): todas marcadas.
       const prox = page.getByTestId("proximidade-item");
       await expect(prox).toHaveCount(7, { timeout: 20_000 });
@@ -227,6 +229,8 @@ test.describe("T186 — Anunciar em 6 passos com IA, OSM e documento simulados",
       } else {
         expect(Math.abs(bate.y - bde.y)).toBeLessThanOrEqual(1); // lado a lado e alinhados
       }
+      // 61-B: o tipo de entrada é obrigatório para publicar o anúncio novo.
+      await page.getByTestId("tipo-entrada-porteiro").check();
       // Negociação: aceita, só "meses"; 6% a partir de 6 meses; limite privado de R$ 2.950.
       await page.getByTestId("negociar-sim").click();
       await page.getByTestId("negociavel-meses").click();

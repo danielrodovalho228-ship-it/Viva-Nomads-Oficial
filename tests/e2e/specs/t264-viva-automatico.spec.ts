@@ -5,6 +5,8 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, criarLead, entrar, lerSaida, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 
 /**
+ * L-43 (vigia, 24/10): o painel não assenta em "networkidle" (t183, L-40); espera até 10 s e segue para o elemento.
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T264 — "Viva rodando automático" (Prompt 38), só no laboratório, 390 e 1280 px, sem diálogo do navegador:
  * 1) o dono vincula a limpeza (automático) e a manutenção (confirmar) em "Parceiros do imóvel"; os parceiros aceitam
  *    em "Imóveis fixos";
@@ -67,7 +69,8 @@ async function abrirAdmin(browser: Browser): Promise<Page> {
 }
 async function rodarAutomacao(browser: Browser) {
   const a = await abrirAdmin(browser);
-  await a.goto("/admin/parceiros/pedidos", { waitUntil: "networkidle" });
+  await a.goto("/admin/parceiros/pedidos", { waitUntil: "domcontentloaded" });
+  await a.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   await a.getByTestId("rodar-automacao").click();
   await expect(a.getByTestId("rodar-automacao-resultado")).toContainText("Feito:", { timeout: 60_000 });
   await a.context().close();
@@ -167,7 +170,8 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
     const d = await abrir(browser, dono.email);
     await d.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("parceiros-imovel-link").first()).toBeVisible();
-    await d.goto(`/dashboard/imoveis/${ids.imovel}/parceiros`, { waitUntil: "networkidle" });
+    await d.goto(`/dashboard/imoveis/${ids.imovel}/parceiros`, { waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(d.getByTestId("parceiros-do-imovel")).toBeVisible();
     // Limpeza: Lara, automático, com instruções.
     const cl = d.getByTestId("convidar-limpeza");
@@ -197,7 +201,8 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
 
     for (const [email, largura] of [[limpa.email, 390], [reparo.email, 1280]] as const) {
       const p = await abrir(browser, email, largura);
-      await p.goto("/dashboard/parceiro", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
+      await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const item = p.getByTestId("imoveis-fixos").getByTestId("imovel-fixo");
       await expect(item).toHaveAttribute("data-status", "pendente");
       await expect(item).toContainText("Centro, Uberlândia");
@@ -227,7 +232,8 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
 
     for (const largura of [390, 1280]) {
       const p = await abrir(browser, limpa.email, largura);
-      await p.goto("/dashboard/parceiro", { waitUntil: "networkidle" });
+      await p.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
+      await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const linha = p.getByTestId("parceiro-pedido").filter({ has: p.getByTestId("pedido-automatico") });
       await expect(linha).toHaveCount(1);
       await semRolagemLateral(p);
@@ -244,7 +250,8 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
 
     // Admin: filtro e contagem por gatilho (contas de teste fora da contagem; a lista mostra tudo).
     const a = await abrirAdmin(browser);
-    await a.goto("/admin/parceiros/pedidos", { waitUntil: "networkidle" });
+    await a.goto("/admin/parceiros/pedidos", { waitUntil: "domcontentloaded" });
+    await a.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(a.getByTestId("admin-gatilho-saida_limpeza")).toBeVisible();
     await a.getByTestId("admin-filtro-automaticos").click();
     await expect(a).toHaveURL(/origem=automatico/);
@@ -260,7 +267,8 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
     expect(env).toHaveLength(1);
     for (const largura of [390, 1280]) {
       const m = await abrir(browser, morador.email, largura);
-      await m.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+      await m.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+      await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const cartao = m.getByTestId("estadia-ajuda-mudanca");
       await expect(cartao).toHaveAttribute("data-momento", "saida");
       await expect(cartao).toContainText("nada é contratado sem você");
@@ -281,7 +289,8 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
     await rodarAutomacao(browser);
     expect(await emailPara(dono.email, /O parceiro ainda não respondeu/, antes)).toBe(true);
     const d = await abrir(browser, dono.email);
-    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const cartao = d.getByTestId("estadia-depois-da-saida");
     await expect(cartao).toContainText("Sem resposta do parceiro em 24 horas");
     await semRolagemLateral(d);
@@ -298,7 +307,8 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
     const antigo = pedidos.find((p) => p.id === p0.id)!;
     const alerta = await cartao.getByRole("alert").allTextContents();
     expect(antigo.status, `ação: ${corpo.slice(-800)} · alerta: ${alerta.join(" | ")}`).toBe("cancelado");
-    await d.reload({ waitUntil: "networkidle" });
+    await d.reload({ waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(cartao).not.toContainText("Sem resposta do parceiro");
     expect(antigo.chave_automacao).toMatch(/:troca:\d+$/);
     const atual = pedidos.filter((p) => p.chave_automacao === BASE_LIMPEZA());
@@ -312,16 +322,19 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
     test.setTimeout(240_000);
     const [antes] = (await pedidosDaChave()).filter((p) => p.chave_automacao === BASE_LIMPEZA());
     const m = await abrir(browser, morador.email, 390);
-    await m.goto(`/dashboard/estadia/${ids.contrato}/alteracao`, { waitUntil: "networkidle" });
+    await m.goto(`/dashboard/estadia/${ids.contrato}/alteracao`, { waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await m.getByTestId("alteracao-meses").selectOption("3");
     await m.getByTestId("alteracao-enviar").click();
     await expect(m).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}$`));
     const d = await abrir(browser, dono.email);
-    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await d.getByTestId("aditivo-aceitar").click();
     await expect(d.getByTestId("estadia-aditivo")).toHaveAttribute("data-status", "aceito", { timeout: 30_000 });
     for (const [pagina, quem] of [[d, ids.dono!], [m, ids.morador!]] as const) {
-      await pagina.reload({ waitUntil: "networkidle" });
+      await pagina.reload({ waitUntil: "domcontentloaded" });
+      await pagina.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const desde = new Date().toISOString();
       await pagina.getByTestId("aditivo-pedir-codigo").click();
       await expect(pagina.getByTestId("estadia-ok").or(pagina.getByTestId("estadia-erro"))).toHaveText("Código enviado para o seu e-mail.", { timeout: 30_000 });
@@ -380,9 +393,11 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
 
     // O parceiro ainda não vê; o dono confirma pelo cartão "Depois da saída".
     const r = await abrir(browser, reparo.email);
-    await r.goto("/dashboard/parceiro", { waitUntil: "networkidle" });
+    await r.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
+    await r.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(r.getByTestId("parceiro-pedido")).toHaveCount(0);
-    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "networkidle" });
+    await d.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const cartao = d.getByTestId("estadia-depois-da-saida");
     await expect(cartao).toContainText("Reparo depois da conferência");
     await expect(cartao).toContainText("Espera a sua confirmação");
@@ -392,7 +407,8 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
     await cartao.getByTestId("depois-da-saida-confirmar").click();
     await expect(cartao).not.toContainText("Espera a sua confirmação", { timeout: 30_000 });
 
-    await r.reload({ waitUntil: "networkidle" });
+    await r.reload({ waitUntil: "domcontentloaded" });
+    await r.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await r.getByTestId("parceiro-pedido").first().click();
     await expect(r.getByTestId("pedido-parceiro")).toContainText("Banheiro: Torneira pingando (1 foto)");
     await expect(r.getByTestId("pedido-mensagens")).toContainText("Torneira pingando");
@@ -407,7 +423,8 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
   test("5. contrato encerrado → a limpeza automática não aceita é cancelada; a manutenção fica", async ({ browser }) => {
     test.setTimeout(150_000);
     const m = await abrir(browser, morador.email);
-    await m.goto(`/dashboard/estadia/${ids.contrato}/encerrar`, { waitUntil: "networkidle" });
+    await m.goto(`/dashboard/estadia/${ids.contrato}/encerrar`, { waitUntil: "domcontentloaded" });
+    await m.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await m.getByTestId("encerrar-motivo-mudanca_planos_morador").check();
     await m.getByTestId("encerrar-continuar").click();
     await m.getByTestId("encerrar-confirmar").click();
@@ -416,7 +433,8 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
     await m.context().close();
 
     const a = await abrirAdmin(browser);
-    await a.goto("/admin/contratos/encerramentos", { waitUntil: "networkidle" });
+    await a.goto("/admin/contratos/encerramentos", { waitUntil: "domcontentloaded" });
+    await a.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const card = a.locator(`[data-testid="admin-encerramento"][data-contrato="${ids.contrato}"]`);
     await card.getByTestId("encerramento-concluir").click();
     await card.getByTestId("encerramento-concluir-confirmar").click();

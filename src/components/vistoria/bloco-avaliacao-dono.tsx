@@ -10,9 +10,24 @@ import { brl } from "@/lib/fiscal/documento";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
-import { agendarVisita, avaliarConduta, confirmarRecebido, pedirAvaliacao, registrarAusencia } from "@/lib/vistoria/actions";
 import { ROTAS_NIVEL, TITULO_BLOCO_DONO, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
-import { CONDUTA_DONO, FRASE_PAGA_AVALIACAO, INCLUI_SEMPRE, ROTULO_CONDUTA, ROTULO_PORTE, pedidoPodeAbrir, porteDoImovel, precoVigente, type LinhaPreco, type Porte } from "@/lib/vistoria/regras";
+import { agendarVisita, avaliarConduta, confirmarRecebido, pedirAvaliacao, registrarAusencia } from "@/lib/vistoria/actions";
+import {
+  COLUNAS_PRECO,
+  CONDUTA_DONO,
+  FRASE_PAGA_AVALIACAO,
+  INCLUI_SEMPRE,
+  ROTULO_CONDUTA,
+  ROTULO_PORTE,
+  TEXTO_NOVA_AVALIACAO,
+  linhaDaTabela,
+  pedidoPodeAbrir,
+  porteDoImovel,
+  precoVigente,
+  textoCondicaoRetorno,
+  valorDoPedido,
+  type LinhaPreco,
+} from "@/lib/vistoria/regras";
 
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
 
@@ -34,17 +49,22 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
   if (!im || im.owner_id !== user.id) return null;
   const agora = new Date();
   const porte = porteDoImovel(im.bedrooms as number);
-  const [{ data: tabela }, { data: pedidos }] = await Promise.all([
-    admin.from("vistoria_precos").select("cidade, porte, valor, inclui_texto, vigente_desde").eq("cidade", im.city ?? ""),
+  const [{ data: tabela }, { data: pedidos }, { data: ultimoLaudo }] = await Promise.all([
+    admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? ""),
     admin
       .from("vistoria_pedidos")
       .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, avaliadores_credenciamento(numero_credenciado)")
       .eq("property_id", propertyId)
       .order("criado_em", { ascending: false })
       .limit(1),
+    admin.from("vistoria_laudos").select("resultado, emitido_em, ressalva_vencida_em").eq("property_id", propertyId).order("emitido_em", { ascending: false }).limit(1).maybeSingle(),
   ]);
-  const linhas: LinhaPreco[] = ((tabela ?? []) as { cidade: string; porte: Porte; valor: number | string; inclui_texto: string | null; vigente_desde: string }[]).map((l) => ({ cidade: l.cidade, porte: l.porte, valor: Number(l.valor), incluiTexto: l.inclui_texto, vigenteDesde: l.vigente_desde }));
+  const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
+  // Adendo 62-B1: depois de "reprovado" ou de ressalva vencida é NOVA AVALIAÇÃO; a condição de retorno só aparece se existir.
+  const desdeNova = ultimoLaudo?.resultado === "reprovado" ? (ultimoLaudo.emitido_em as string) : ((ultimoLaudo?.ressalva_vencida_em as string | null | undefined) ?? null);
+  const cobranca = preco ? valorDoPedido(desdeNova ? "nova_avaliacao" : "inicial", preco, desdeNova, agora) : null;
+  const condicao = textoCondicaoRetorno(cobranca?.retorno ?? null);
   const { data: bloq } = await admin.from("vistoria_bloqueios").select("id").eq("property_id", propertyId).is("resolvido_em", null).limit(1);
   const pode = pedidoPodeAbrir({ chaveAtiva: true, anuncioPublicado: im.status === "active" || !!bloq?.length, preco });
   const atual = ((pedidos ?? [])[0] ?? null) as unknown as {
@@ -149,13 +169,18 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               <p className="mt-1 text-muted">{ROTAS_NIVEL[0].texto}</p>
               <a href="#nivel-itens" className="mt-2 inline-block font-semibold text-forest underline underline-offset-2">Ver os itens</a>
             </div>
-            <div className="rounded-xl border border-line p-4" data-testid="rota-avaliacao">
+            <div id="rota-avaliacao" className="rounded-xl border border-line p-4" data-testid="rota-avaliacao">
               <h3 className="font-semibold text-ink">{ROTAS_NIVEL[1].titulo}</h3>
               <p className="mt-1 text-muted">{ROTAS_NIVEL[1].texto}</p>
               <p className="mt-2 text-ink">Porte do anúncio: {ROTULO_PORTE[porte]}</p>
               {preco ? (
                 <>
-                  <p className="mt-1 font-semibold text-ink" data-testid="avaliacao-valor">Valor da avaliação: {brl(preco.valor)}</p>
+                  {desdeNova && <p className="mt-2 text-ink" data-testid="avaliacao-nova">{TEXTO_NOVA_AVALIACAO}</p>}
+                  <p className="mt-1 font-semibold text-ink" data-testid="avaliacao-valor">
+                    {desdeNova ? "Valor da nova avaliação" : "Valor da avaliação"}: {brl(cobranca?.valor ?? preco.valor)}
+                    {condicao ? ` (tabela: ${brl(preco.valor)})` : ""}
+                  </p>
+                  {condicao && <p className="mt-1 text-muted" data-testid="avaliacao-retorno">{condicao}</p>}
                   <ul className="mt-2 list-disc pl-4 text-muted" data-testid="avaliacao-inclui">
                     {INCLUI_SEMPRE.map((t) => (
                       <li key={t}>{t}</li>

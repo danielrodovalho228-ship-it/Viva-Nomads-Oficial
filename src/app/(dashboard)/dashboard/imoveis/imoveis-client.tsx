@@ -15,11 +15,12 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
-import { faixaDocumentoAprovado, type Prontidao } from "@/lib/anuncio/prontidao";
+import { faixaDocumentoAprovado, hrefParaMelhorar, type Prontidao } from "@/lib/anuncio/prontidao";
 import { cn } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { calcularTudoIncluido } from "@/lib/precos";
+import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
 const STATUS_META: Record<PropertyStatus, { label: string; tone: string }> = {
@@ -35,7 +36,7 @@ const hasPhoto = (s?: string) =>
  * Lista "Meus imóveis". Em modo demonstração (admin) a fonte vira o seed em
  * memória (8 imóveis fictícios); desligado, volta à lista real do servidor.
  */
-export function MyPropertiesClient({ properties: real, prontidao = {} }: { properties: Property[]; prontidao?: Record<string, Prontidao> }) {
+export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = {} }: { properties: Property[]; prontidao?: Record<string, Prontidao>; pausas?: Record<string, string | null> }) {
   const { on: demoOn } = useDemoMode();
   // Ids excluídos nesta sessão (rascunhos descartados) — some da lista na hora.
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
@@ -110,14 +111,12 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                 )}
                 <div className="flex flex-1 flex-col">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        "rounded-full px-3 py-1 text-xs font-medium",
-                        STATUS_META[p.status].tone
-                      )}
-                    >
-                      {STATUS_META[p.status].label}
-                    </span>
+                    {/* 64-B: o selo vira o menu de pausa (demonstração: só o selo). */}
+                    {demoItem ? (
+                      <span className={cn("rounded-full px-3 py-1 text-xs font-medium", STATUS_META[p.status].tone)}>{STATUS_META[p.status].label}</span>
+                    ) : (
+                      <EstadoDoAnuncio id={p.id} status={p.status} motivo={pausas[p.id] ?? null} />
+                    )}
                     <span className="inline-flex items-center gap-1 rounded-full border border-sage-200 px-3 py-1 text-xs font-medium text-ink">
                       {p.ownershipType !== "own" ? (
                         <>
@@ -181,7 +180,29 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                         <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${comp.pct}%` }} />
                       </div>
                       {comp.faltam.length > 0 && <p className="mt-1 text-[11px] text-amber-800">Falta para publicar: {comp.faltam.join(" · ")}</p>}
-                      {comp.melhorar.length > 0 && <p className="mt-1 text-[11px] text-muted">Para melhorar (opcional): {comp.melhorar.join(" · ")}</p>}
+                      {comp.melhorar.length > 0 && (
+                        <p className="mt-1 text-[11px] text-muted">
+                          Para melhorar (opcional):{" "}
+                          {comp.opcionais
+                            .filter((o) => !o.ok)
+                            .map((o, i) => {
+                              // 65-B: o vídeo leva ao campo (rascunho: bloco do assistente; existente: seção Vídeo).
+                              const href = hrefParaMelhorar(o.key, p.id, p.status === "draft");
+                              return (
+                                <span key={o.key}>
+                                  {i > 0 && " · "}
+                                  {href ? (
+                                    <Link href={href} className="font-medium text-forest underline" data-testid={`melhorar-${o.key}`}>
+                                      {o.label}
+                                    </Link>
+                                  ) : (
+                                    o.label
+                                  )}
+                                </span>
+                              );
+                            })}
+                        </p>
+                      )}
                     </div>
                   )}
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
@@ -214,6 +235,12 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                         {p.status === "active" && (
                           <ButtonLink href={`/dashboard/imoveis/${p.id}/cartao`} variant="outline" size="sm" data-testid="cartao-anuncio-link">
                             Cartão para compartilhar
+                          </ButtonLink>
+                        )}
+                        {/* Prompt 54: desempenho do anúncio (visualizações, favoritos, candidaturas, com fórmula). */}
+                        {p.status !== "draft" && (
+                          <ButtonLink href={`/dashboard/imoveis/${p.id}/desempenho`} variant="outline" size="sm" data-testid="desempenho-link">
+                            Desempenho
                           </ButtonLink>
                         )}
                         {/* Parceiros do imóvel (Prompt 38): limpeza, manutenção, lavanderia e fotografia fixas. */}

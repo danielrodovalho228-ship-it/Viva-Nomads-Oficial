@@ -13,6 +13,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   - as telas novas do Prompt 62-B1 (#1111): a rede de avaliadores no admin e o credenciamento do parceiro.
   As páginas internas dos sócios (/socios, /roi…) ficam de fora: pedem o cookie do código e a /acesso-socios é a porta.
   Só no laboratório.
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; últimas, 23/10 com o bloco 11 (t329) e 23/10 à tarde, depois dos #1170 a #1173.
 */
 type Conta = ChaveConta | "ADMIN" | "VISITANTE";
 interface Tela {

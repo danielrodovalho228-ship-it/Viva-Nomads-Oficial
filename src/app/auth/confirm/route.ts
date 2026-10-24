@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { safeInternalPath } from "@/lib/safe-redirect";
+import { destinoDoLink } from "@/lib/auth/entrada";
 
 /**
  * Confirmação de e-mail via `token_hash` + `verifyOtp` — fluxo server-side
@@ -10,7 +11,9 @@ import { safeInternalPath } from "@/lib/safe-redirect";
  * o fluxo PKCE do /auth/callback, deixando o e-mail como "não confirmado").
  *
  * Os templates de e-mail do Supabase apontam para cá, por tipo, ex.:
- *   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next=/dashboard
+ *   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/auth/reset
+ * 49-C1: o cadastro e a entrada são por código; um link antigo de cadastro (type=signup) que ainda esteja na caixa
+ * de alguém continua valendo e cai no mesmo destino da entrada por código (tela de intenção da conta nova).
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -18,7 +21,7 @@ export async function GET(request: Request) {
   const type = searchParams.get("type") as EmailOtpType | null;
   // A7: `next` só pode ser caminho interno; nunca concatenar com a origem.
   // Recuperação de senha SEMPRE termina na tela de nova senha.
-  const next = type === "recovery" ? "/auth/reset" : safeInternalPath(searchParams.get("next"));
+  const next = type === "recovery" ? "/auth/reset" : destinoDoLink(type, safeInternalPath(searchParams.get("next")));
 
   if (token_hash && type) {
     const supabase = await createClient();

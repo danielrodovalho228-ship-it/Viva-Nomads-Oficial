@@ -30,9 +30,15 @@ function montar(itens: ItemDoPapel[], ctx: ContextoMenu): ItemMenu[] {
   return out;
 }
 
-/** O menu desta conta: as seções de MENU_POR_PAPEL (config/menu-por-papel.ts) dos papéis que ela tem. */
+/**
+ * O menu desta conta: as seções de MENU_POR_PAPEL (config/menu-por-papel.ts) dos papéis que ela tem. PAPEL-B: com o
+ * papel ativo, a seção dele sobe para logo depois da Visão geral (a 1ª seção); o resto mantém a ordem.
+ */
 export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
-  return MENU_POR_PAPEL.filter((s) => temPapel(s.papel, ctx)).flatMap((s) => montar(s.itens, ctx));
+  const secoes = MENU_POR_PAPEL.filter((s) => temPapel(s.papel, ctx));
+  const ativo = ctx.papelAtivo;
+  const ordem = ativo && secoes.some((s) => s.papel === ativo) ? [secoes[0], ...secoes.filter((s) => s.papel === ativo), ...secoes.slice(1).filter((s) => s.papel !== ativo)] : secoes;
+  return ordem.flatMap((s) => montar(s.itens, ctx));
 }
 
 /** Todas as folhas (links), em ordem. */

@@ -36,6 +36,7 @@ export const TELAS_PAINEL = [
   "/dashboard/pedidos-cidade",
   "/dashboard/propostas",
   "/dashboard/recibos",
+  "/dashboard/respostas-rapidas",
   "/dashboard/reembolsos",
   "/dashboard/roi-imovel",
   "/dashboard/simulador",
@@ -82,6 +83,7 @@ export const TELAS_ADMIN = [
   "/admin/candidaturas",
   "/admin/eventos",
   "/admin/funil",
+  "/admin/qualidade",
 ] as const;
 
 /**
@@ -98,12 +100,15 @@ export const ROTAS_COM_PARAMETRO: Record<string, readonly string[]> = {
   "/dashboard/estadia/[contratoId]/confirmada": [],
   "/dashboard/estadia/[contratoId]/encerrar": [],
   "/dashboard/estadia/[contratoId]/ocupantes": [],
+  "/dashboard/estadia/[contratoId]/mensagens": [],
+  "/dashboard/estadia/[contratoId]/convidado": [],
   "/dashboard/imoveis/[id]/cartao": [],
   "/dashboard/imoveis/[id]/parceiros": [],
   "/dashboard/imoveis/[id]/conforto": [],
   "/dashboard/avaliacao-imovel/[id]": [],
   "/dashboard/parceiro/avaliacao/[pedido]": [],
   "/dashboard/imoveis/[id]/nivel": [],
+  "/dashboard/imoveis/[id]/desempenho": [],
   "/dashboard/imoveis/[id]/editar": [],
   "/dashboard/locacoes/[id]": [],
   "/dashboard/propostas/[id]": [],

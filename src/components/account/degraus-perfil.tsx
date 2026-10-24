@@ -5,24 +5,30 @@ import Link from "next/link";
 import { Check, Circle } from "lucide-react";
 import { meusDegraus } from "@/lib/data/papeis-actions";
 import type { Degrau } from "@/lib/onboarding/degraus";
+import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
 
 /** Perfil em 4 degraus (Prompt 43): lista com o estado de cada um, sem barra de progresso. */
 export function DegrausPerfil() {
   const [degraus, setDegraus] = useState<Degrau[] | null>(null);
   useEffect(() => {
     let vivo = true;
-    meusDegraus()
-      .then((d) => vivo && setDegraus(d))
-      .catch(() => {});
+    const ler = () =>
+      meusDegraus()
+        .then((d) => vivo && setDegraus(d))
+        .catch(() => {});
+    ler();
+    // CONTA-A, item 5: o progresso anda — nome, foto ou telefone salvos refazem a lista na hora.
+    window.addEventListener(PERFIL_ATUALIZADO, ler);
     return () => {
       vivo = false;
+      window.removeEventListener(PERFIL_ATUALIZADO, ler);
     };
   }, []);
   if (!degraus) return null;
   return (
     <section className="rounded-xl border border-line bg-white p-4" data-testid="degraus-perfil" aria-labelledby="degraus-titulo">
       <h2 id="degraus-titulo" className="font-title text-lg font-semibold text-ink">
-        Seu perfil
+        Quando cada dado é pedido
       </h2>
       <p className="text-sm text-muted">Cada dado é pedido só quando for usado.</p>
       <ol className="mt-2 divide-y divide-line">

@@ -13,7 +13,7 @@ import { itemChecklist, type ValorItem } from "@/config/checklist-avaliacao";
 import { vistoriaAtiva } from "./chave";
 import { podeContestar, valorValido } from "./laudo";
 import { abrirContestacao, emitirLaudo, liberar, registrarCorrecao, type LinhaLaudo } from "./laudo-servidor";
-import { porteDoImovel, precoVigente, type LinhaPreco, type Porte } from "./regras";
+import { COLUNAS_PRECO, linhaDaTabela, porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, avisar, designar, rotaDono } from "./servidor";
 import type { MotivoVerificacao } from "./strikes";
 
@@ -278,8 +278,8 @@ export async function adminAbrirVerificacao(form: FormData): Promise<Res> {
   const { data: im } = await a.admin.from("properties").select("id, owner_id, city, bedrooms").eq("id", texto(form.get("propertyId"), 40)).maybeSingle();
   if (!im) return { ok: false, erro: "Imóvel não encontrado." };
   const agora = new Date();
-  const { data: tabela } = await a.admin.from("vistoria_precos").select("cidade, porte, valor, inclui_texto, vigente_desde").eq("cidade", im.city ?? "");
-  const linhas: LinhaPreco[] = ((tabela ?? []) as { cidade: string; porte: Porte; valor: number | string; inclui_texto: string | null; vigente_desde: string }[]).map((l) => ({ cidade: l.cidade, porte: l.porte, valor: Number(l.valor), incluiTexto: l.inclui_texto, vigenteDesde: l.vigente_desde }));
+  const { data: tabela } = await a.admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? "");
+  const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const porte = porteDoImovel(im.bedrooms as number);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
   if (!preco) return { ok: false, erro: "Sem preço na tabela para esta cidade e porte." };

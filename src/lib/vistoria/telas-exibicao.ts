@@ -1,11 +1,12 @@
 /*
-  Prompt 62-A, Parte 1 — textos e regras de EXIBIÇÃO das telas da avaliação do imóvel (dono, morador, avaliador, admin
-  e página pública). PURO (node --test). As regras de negócio ficam em ./regras.ts (Pista B); aqui só o que a tela mostra.
+  Prompt 62-A, Parte 1 — textos e regras de EXIBIÇÃO das telas da avaliação do imóvel do dono e do morador. PURO
+  (node --test). As regras de negócio ficam em ./regras.ts (Pista B); aqui só o que a tela mostra. O credenciamento, a
+  página pública do avaliador, a agenda do avaliador e o admin voltam depois do 62-B3 (caminho novo do credenciamento).
   Na tela: "avaliação do imóvel" e "avaliador credenciado". Nenhum número de ganho por nível; o dono não escolhe.
 */
 import { ETIQUETA_BRASILIA, dataBRT, horaBRT } from "../datas-brasilia.ts";
-import { HORAS_PARA_RESPONDER, ROTULO_IMPEDIMENTO, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
 import { chaveCidade } from "../cidades.ts";
+import { HORAS_PARA_RESPONDER, ROTULO_IMPEDIMENTO, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
 
 // ── Data e hora da visita (QA do #1111, item 6: sem segundos e com o fuso) ─────────────────────────────────────
 /** "25/10/2026 às 10:00" no horário de Brasília. */
@@ -16,9 +17,6 @@ export function quandoVisita(iso: string): string {
 export function quandoVisitaComFuso(iso: string): string {
   return `${quandoVisita(iso)}, ${ETIQUETA_BRASILIA}`;
 }
-
-// ── Item 2: página pública ───────────────────────────────────────────────────────────────────────────────────
-export const LINHA_PUBLICA_DESIGNACAO = "A Viva designa o avaliador. O proprietário não escolhe.";
 
 // ── Item 3: as duas rotas, lado a lado, no Nível do dono ─────────────────────────────────────────────────────
 export const ROTAS_NIVEL = [
@@ -75,7 +73,7 @@ export function situacaoPagamento(p: { recebidoMarcadoEm: string | null; recebid
   return "Você paga direto ao avaliador, depois da visita. A Viva só registra.";
 }
 
-// ── Item 1: credenciamento — passos e estado ─────────────────────────────────────────────────────────────────
+// ── Item 1: credenciamento (pedido único do 62-B3) — passos e estado ────────────────────────────────────────────
 export const PASSOS_CREDENCIAMENTO = [
   { chave: "identidade", rotulo: "Identidade verificada" },
   { chave: "experiencia", rotulo: "Experiência comprovada" },
@@ -83,23 +81,30 @@ export const PASSOS_CREDENCIAMENTO = [
   { chave: "relacoes", rotulo: "Relações declaradas" },
   { chave: "teste", rotulo: "Avaliação de teste revisada pela Viva" },
 ] as const;
+export type ChavePasso = (typeof PASSOS_CREDENCIAMENTO)[number]["chave"];
 
 export const ESTADO_CREDENCIAMENTO: Record<StatusCredenciamento, string> = {
   solicitado: "Em análise",
-  em_teste: "Avaliação de teste marcada",
+  em_teste: "Em teste",
   ativo: "Ativo",
   suspenso: "Suspenso",
   descredenciado: "Descredenciado",
 };
 
-/** Quais passos já estão cumpridos, pelo estado (os 4 primeiros vão no pedido; o teste é do admin). */
-export function passosCumpridos(status: StatusCredenciamento | null): Record<(typeof PASSOS_CREDENCIAMENTO)[number]["chave"], boolean> {
-  const enviado = status !== null;
-  return { identidade: enviado, experiencia: enviado, conduta: enviado, relacoes: enviado, teste: status === "ativo" || status === "suspenso" };
+/**
+ * O que já está cumprido. Experiência, conduta e relações vão no pedido; a identidade é a verificação de verdade (a
+ * aprovação para teste espera por ela, então quem já passou da análise a tem); o teste só conta revisado (ativo).
+ */
+export function passosCumpridos(e: { status: StatusCredenciamento | null; identidadeVerificada: boolean; testeConcluido: boolean }): Record<ChavePasso, boolean> {
+  const enviado = e.status !== null;
+  const aprovado = e.status === "em_teste" || e.status === "ativo" || e.status === "suspenso";
+  // E30: o passo 5 só conta com a avaliação de teste REGISTRADA (laudo emitido) e revisada (ativação) — nunca pelo
+  // status sozinho (a massa de teste chegou a "Ativo" sem avaliação nenhuma).
+  return { identidade: e.identidadeVerificada || aprovado, experiencia: enviado, conduta: enviado, relacoes: enviado, teste: e.testeConcluido && (e.status === "ativo" || e.status === "suspenso") };
 }
 
-/** O convite na tela "Seja parceiro" (definido em ../parceiros: a página /parceiros não cita a categoria interna). */
-export { CONVITE_SEJA_PARCEIRO } from "../parceiros/convite-avaliacao.ts";
+// ── Item 2: página pública ───────────────────────────────────────────────────────────────────────────────────
+export const LINHA_PUBLICA_DESIGNACAO = "A Viva designa o avaliador. O proprietário não escolhe.";
 
 // ── Item 6: agenda do avaliador ───────────────────────────────────────────────────────────────────────────────
 /** O contador das 24 h para aceitar: "Responda em 23 h 10 min". Vencido: passa ao próximo (a rotina faz). */
@@ -118,13 +123,13 @@ export function visitaNaSemana(agendadoPara: string | null, agora: Date): boolea
   return t >= -12 * 3_600_000 && t <= 7 * 86_400_000;
 }
 
-// ── Item 7: admin "Avaliações do imóvel" (já existe um "Avaliações", o das estadias) ────────────────────────────────────────────────────────────────────────────────
+// ── Item 7: admin "Avaliações do imóvel" (o "Avaliações" do admin é o das estadias) ───────────────────────────
 export const TITULO_ADMIN = "Avaliações do imóvel";
 
-/** O botão diz a ação (QA do #1111, item 2), não o estado de destino. */
+/** O botão diz a ação (QA do #1111, item 2), não o estado de destino. A aprovação única do 62-B3 é "Aprovar para teste". */
 export function rotuloDecisao(de: StatusCredenciamento, para: StatusCredenciamento): string {
   if (para === "ativo") return de === "em_teste" ? "Aprovar o teste (ativar)" : "Reativar";
-  if (para === "em_teste") return "Colocar em teste";
+  if (para === "em_teste") return "Aprovar para teste";
   if (para === "suspenso") return "Suspender";
   return "Descredenciar";
 }
@@ -159,6 +164,6 @@ export function contagemDecisoes(e: { credenciamentos: { status: StatusCredencia
     { chave: "credenciamentos", rotulo: "credenciamentos para decidir", valor: e.credenciamentos.filter((c) => c.status === "solicitado" || c.status === "em_teste").length, ancora: "#credenciamento" },
     { chave: "sem-avaliador", rotulo: "pedidos sem avaliador elegível", valor: e.semAvaliador, ancora: "#sem-avaliador" },
     { chave: "recusas", rotulo: "recusas e ausências (30 dias)", valor: e.recusasAusencias, ancora: "#recusas" },
-    { chave: "chave", rotulo: `de ${e.cidades} cidades prontas para ligar`, valor: e.cidadesProntas, ancora: "#chave" },
+    { chave: "chave", rotulo: `de ${e.cidades} ${e.cidades === 1 ? "cidade pronta" : "cidades prontas"} para ligar`, valor: e.cidadesProntas, ancora: "#chave" },
   ];
 }

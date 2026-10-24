@@ -6,6 +6,9 @@ import { listarFalhasDocumentos } from "@/lib/data/documentos-falhas-actions";
 import { FalhasDocumentos } from "./falhas-client";
 import { VerificacoesRevisao } from "@/components/admin/verificacoes-revisao";
 import { adminDaPagina, filaDocumentos } from "@/lib/data/admin-indicadores";
+import { listarVinculosPendentes } from "@/lib/data/triagem-actions";
+import { triagemVinculoAtiva } from "@/lib/triagem/chave";
+import { VinculosAdmin } from "./vinculos-admin-client";
 
 type ClienteAdmin = NonNullable<Awaited<ReturnType<typeof adminDaPagina>>>;
 
@@ -19,6 +22,9 @@ async function ultimaDecisao(admin: ClienteAdmin | null, tabela: "properties" | 
 
 export default async function AdminDocumentosPage() {
   const admin = await adminDaPagina();
+  // Prompt 52: a fila do vínculo só existe com a chave TRIAGEM_VINCULO_ATIVA.
+  const triagemLigada = await triagemVinculoAtiva();
+  const vinculos = triagemLigada ? await listarVinculosPendentes() : null;
   const [docs, auto, contadores, matriculas, contMatriculas, falhas, filaAgora, ultimaDoc, ultimaMatricula] = await Promise.all([
     listDocumentosPendentes(),
     listConferidosAutomaticamente(),
@@ -36,6 +42,7 @@ export default async function AdminDocumentosPage() {
       <MatriculasAdmin itens={matriculas} contadores={contMatriculas} ultimaDecisao={ultimaMatricula} />
       <FalhasDocumentos falhas={falhas.falhas} pendentes={falhas.pendentes} />
       <VerificacoesRevisao />
+      {triagemLigada ? <VinculosAdmin itens={vinculos?.itens ?? []} metricas={vinculos?.metricas ?? { pendentes: 0, aprovados: 0, recusados: 0 }} /> : null}
     </>
   );
 }

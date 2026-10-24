@@ -5,6 +5,9 @@ import { dispararEncaminhamentos } from "@/lib/agentes/motor";
 import { rodarAvisosDaniel } from "@/lib/agentes/avisos-daniel-servidor";
 import { avisarEquipe, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { notify } from "@/lib/notifications";
+import { enviarPushAdiados } from "@/lib/notifications/push-servidor";
+import { verificarCopiaNoturna } from "@/lib/notifications/alertas-operacionais";
+import { corteRetencaoPushEnvios } from "@/lib/notifications/diagnostico-push";
 import { prioridadeSubida } from "@/lib/atendimento/acolhimento";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { PRAZO_MANUTENCAO_H, type UrgenciaManutencao } from "@/config/atendimento";
@@ -82,14 +85,14 @@ export async function GET(request: Request) {
   let atrasadas = 0;
   const { data: ordens } = await admin
     .from("chamados")
-    .select("id, service_order_id, service_orders(id, owner_id, priority, opened_at, first_response_at, status)")
+    .select("id, service_order_id, service_orders(id, owner_id, priority, opened_at, first_response_at, status, properties(title))")
     .eq("simulacao", false)
     .eq("tipo", "manutencao")
     .not("service_order_id", "is", null)
     .not("status", "in", "(resolvido,encerrado)")
     .limit(200);
   for (const ch of ordens ?? []) {
-    const so = ch.service_orders as unknown as { id: string; owner_id: string; priority: UrgenciaManutencao; opened_at: string; first_response_at: string | null; status: string } | null;
+    const so = ch.service_orders as unknown as { id: string; owner_id: string; priority: UrgenciaManutencao; opened_at: string; first_response_at: string | null; status: string; properties?: { title?: string | null } | null } | null;
     if (!so || so.first_response_at || so.status === "resolvido") continue;
     const venceu = new Date(so.opened_at).getTime() + (PRAZO_MANUTENCAO_H[so.priority] ?? 24) * 3600_000 < Date.now();
     if (!venceu) continue;
@@ -99,8 +102,22 @@ export async function GET(request: Request) {
     await admin.from("chamado_eventos").insert({ chamado_id: ch.id, ator_tipo: "sistema", acao: "manutencao_atrasada", para: so.priority });
     const { data: dono } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", so.owner_id).maybeSingle();
     if (dono?.email && dono.notif_email !== false) {
-      await notify({ event: "manutencao_atrasada", email: dono.email as string, name: (dono.full_name as string) ?? undefined, userId: so.owner_id, pushUrl: "/dashboard/solicitacoes" }).catch(() => null);
+      // 44-SITE (item 2): o push diz qual imóvel (o prazo já venceu: sem "responda até").
+      await notify({
+        event: "manutencao_atrasada",
+        email: dono.email as string,
+        name: (dono.full_name as string) ?? undefined,
+        userId: so.owner_id,
+        pushUrl: "/dashboard/solicitacoes",
+        decisao: { imovel: so.properties?.title ?? null, destinatarioEhParte: true },
+      }).catch(() => null);
     }
   }
-  return NextResponse.json({ ok: true, alertas: alertas?.length ?? 0, escalados, manutencaoAtrasada: atrasadas });
+  // Prompt 44: este cron roda às 7h de Brasília — sai o push que esperou o silêncio (22h–7h).
+  const pushAdiados = await enviarPushAdiados(admin).catch(() => ({ enviados: 0, pendentes: 0 }));
+  // Prompt 44 (item 3): a cópia noturna da madrugada falhou? Alerta a equipe uma vez por execução.
+  const alertaCopia = await verificarCopiaNoturna(admin).catch(() => 0);
+  // Prompt 44 (item 6): o registro dos envios de push só serve ao cartão do admin (7 dias); some depois de 30.
+  await Promise.resolve(admin.from("push_envios").delete().lt("criado_em", corteRetencaoPushEnvios(new Date()))).catch(() => null);
+  return NextResponse.json({ ok: true, alertas: alertas?.length ?? 0, escalados, manutencaoAtrasada: atrasadas, pushAdiados, alertaCopia });
 }

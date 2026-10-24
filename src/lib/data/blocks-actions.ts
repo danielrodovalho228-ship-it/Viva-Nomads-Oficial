@@ -4,11 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { periodosOcupados } from "@/lib/data/periodo-servidor";
+import { segredoCalendario, urlExportacaoCalendario } from "@/lib/calendario/ical";
+import { SITE_URL } from "@/lib/site";
 
 export interface BlocoDatas {
   id: string;
   inicio: string; // ISO
   fim: string; // ISO
+  /** Prompt 53: "importado" veio do calendário de outro site (só a sincronia mexe); "manual" o dono bloqueou. */
+  origem?: "manual" | "importado";
 }
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string; id?: string };
@@ -21,13 +25,14 @@ export async function getBlocks(propertyId: string): Promise<BlocoDatas[]> {
   if (!supabase || !UUID_RE.test(propertyId)) return [];
   const { data } = await supabase
     .from("property_blocks")
-    .select("id, inicio, fim")
+    .select("id, inicio, fim, origem")
     .eq("property_id", propertyId)
     .order("inicio", { ascending: true });
-  return (data ?? []).map((b) => ({
+  return ((data ?? []) as { id: string; inicio: string; fim: string; origem?: string | null }[]).map((b) => ({
     id: String(b.id),
     inicio: String(b.inicio),
     fim: String(b.fim),
+    origem: b.origem === "importado" ? "importado" : "manual",
   }));
 }
 
@@ -76,4 +81,21 @@ export async function removeBlock(id: string): Promise<ActionResult> {
   const { error } = await supabase.from("property_blocks").delete().eq("id", id);
   if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true };
+}
+
+/**
+ * E44: link de EXPORTAÇÃO do calendário (.ics) para o dono colar no Airbnb/Booking. Só o dono do imóvel recebe o link
+ * (ele é secreto: quem tem o link vê as datas ocupadas). Demo/anúncio de exemplo: sem link.
+ */
+export async function linkExportacaoCalendario(propertyId: string): Promise<{ ok: boolean; demo?: boolean; url?: string; error?: string }> {
+  const supabase = await createClient();
+  if (!supabase || !UUID_RE.test(propertyId)) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre para ver o link do calendário." };
+  const { data: imovel } = await supabase.from("properties").select("id").eq("id", propertyId).eq("owner_id", user.id).maybeSingle();
+  if (!imovel) return { ok: false, error: "Só o dono do imóvel vê o link do calendário." };
+  const url = urlExportacaoCalendario(SITE_URL, propertyId, segredoCalendario());
+  return url ? { ok: true, url } : { ok: false, error: "O link do calendário não está disponível agora." };
 }

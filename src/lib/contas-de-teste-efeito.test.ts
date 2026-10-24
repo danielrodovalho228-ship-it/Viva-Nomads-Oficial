@@ -72,6 +72,6 @@ test("caixa de e-mails da própria conta de teste: rota só da sessão, só linh
   assert.match(r, /emails: null/);
   const secao = ler("src/components/account/caixa-emails-teste.tsx");
   assert.match(secao, /\/api\/conta\/caixa-teste/);
-  const conta = ler("src/app/(dashboard)/dashboard/conta/page.tsx");
+  const conta = ler("src/app/(dashboard)/dashboard/conta/[secao]/page.tsx");
   assert.match(conta, /<CaixaEmailsTeste/);
 });

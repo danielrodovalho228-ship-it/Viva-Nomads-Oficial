@@ -1,6 +1,7 @@
 "use server";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -91,6 +92,7 @@ async function sessao() {
 interface ImovelProposta {
   id: string;
   owner_id: string;
+  status?: string | null;
   title: string;
   monthly_price: number;
   min_period_days: number | null;
@@ -110,7 +112,7 @@ async function lerImovel(admin: Admin, propertyId: string): Promise<ImovelPropos
   const { data } = await admin
     .from("properties")
     .select(
-      "id, owner_id, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao",
+      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao",
     )
     .eq("id", propertyId)
     .maybeSingle();
@@ -181,6 +183,8 @@ async function avisarOutraParte(
   evento: NotificationEvent,
   /** Só vai no e-mail quando o destino é o DONO (a taxa nunca chega ao morador — especificação da taxa, R8). */
   detalhesSoDono?: string,
+  /** Prompt 44: valor mensal e validade para o texto do push ("Nova proposta de R$ 3.200 … responda até amanhã"). */
+  decisao?: { valorMensal: number; validaAte: string | null },
 ) {
   const remetente = de === "owner" ? p.owner_id : p.tenant_id;
   const destino = de === "owner" ? p.tenant_id : p.owner_id;
@@ -197,9 +201,16 @@ async function avisarOutraParte(
     /* o cartão é complemento; a proposta já está gravada */
   }
   try {
-    const { data: d } = await admin.from("profiles").select("email, full_name").eq("id", destino).maybeSingle();
+    const [{ data: d }, { data: im }] = await Promise.all([
+      admin.from("profiles").select("email, full_name").eq("id", destino).maybeSingle(),
+      decisao ? admin.from("properties").select("title").eq("id", p.property_id).maybeSingle() : Promise.resolve({ data: null }),
+    ]);
     await notify({
       event: evento,
+      // Quem recebe é parte da proposta (dono ou morador do lead): o valor pode ir no push.
+      decisao: decisao
+        ? { imovel: (im as { title?: string | null } | null)?.title ?? null, valor: decisao.valorMensal, prazo: decisao.validaAte, destinatarioEhParte: true }
+        : undefined,
       email: (d?.email as string | undefined) ?? undefined,
       name: (d?.full_name as string | undefined) ?? undefined,
       userId: destino,
@@ -332,6 +343,8 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
 
   const im = await lerImovel(s.admin, lead.property_id as string);
   if (!im || im.owner_id !== s.user.id) return { ok: false, error: "Imóvel não encontrado." };
+  // 64-B: anúncio pausado não recebe proposta nova (as candidaturas abertas continuam e seguem nas mensagens).
+  if (im.status === "paused") return { ok: false, error: "Este anúncio está pausado: reative para enviar uma proposta nova. As candidaturas abertas continuam nas mensagens." };
   const neg = normalizarNegociacao(im.negociacao);
   const meses = Math.round(num(e.meses));
   const termos: TermosProposta = {
@@ -392,6 +405,8 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
     "owner",
     `Proposta ${numero} enviada: ${brl(tot.valorMensal)}/mês × ${termos.meses} ${termos.meses === 1 ? "mês" : "meses"}, total do contrato ${brl(tot.totalContrato)}.`,
     "proposta_recebida",
+    undefined,
+    { valorMensal: tot.valorMensal, validaAte: (p as LinhaProposta).valida_ate ?? null },
   );
   return { ok: true, id: p.id as string, numero: numero as string };
 }
@@ -420,6 +435,8 @@ export interface PropostaView {
   leadId: string;
   imovel: { id: string; titulo: string };
   outraParte: string;
+  /** 63-B: na tela do dono, o interessado tem o selo "LinkedIn conectado" (só o sim). */
+  outraParteLinkedin: boolean;
   /** As duas partes pelo nome completo, sem CPF/CNPJ (Prompt 56, D4). */
   partes: { proprietario: string; interessado: string };
   /** Registro da versão vigente (Prompt 56): número com a versão e a linha do /conferir. */
@@ -613,6 +630,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
     leadId: p.lead_id,
     imovel: { id: p.property_id, titulo: im?.title ?? "Imóvel" },
     outraParte: await nomeOutraParte(s.admin, p, papel),
+    outraParteLinkedin: papel === "owner" && (await linkedinConectados([p.tenant_id], s.admin)).has(p.tenant_id),
     partes: await partesDaProposta(s.admin, p, papel),
     registro: await registroDaProposta(s.admin, p.id),
     versaoAtual: p.versao_atual,
@@ -735,6 +753,8 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
     papel,
     `Contraproposta ${p.numero} (versão ${versao}): ${brl(tot.valorMensal)}/mês × ${nova.meses} ${nova.meses === 1 ? "mês" : "meses"}, total ${brl(tot.totalContrato)}.${mensagem ? ` ${mensagem}` : ""}`,
     "proposta_recebida",
+    undefined,
+    { valorMensal: tot.valorMensal, validaAte: validaAteDe(p.validade_dias, agora) },
   );
   return { ok: true, versao };
 }

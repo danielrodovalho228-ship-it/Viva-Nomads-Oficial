@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { AlertTriangle, Loader2, PlayCircle, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
+import { useEffect } from "react";
+import { AlertTriangle, Loader2, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { GuiaFotos } from "@/components/fotos/guia-fotos";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { VideoUploader } from "@/components/video-uploader";
@@ -10,7 +11,8 @@ import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/li
 import { mensagemFaltamFotosIa, iaFotosLiberada } from "@/lib/ai/fotos-prompt";
 import { PHOTOS } from "@/lib/media";
 import { cn } from "@/lib/utils";
-import { Erro, Labeled } from "./campos";
+import { ANCORA_VIDEO_ASSISTENTE } from "@/lib/anuncio/prontidao";
+import { Erro } from "./campos";
 import type { EstadoIaFotos, FalhaIaFotos } from "./tipos";
 
 /** Busca de fotógrafos da cidade do imóvel; com o rascunho salvo, o imóvel vai junto até o "Solicitar orçamento". */
@@ -58,6 +60,10 @@ export function EtapaFotos({
   onTentarDeNovo?: () => void;
   erroFotos?: string;
 }) {
+  // 65-B: "Para melhorar: Vídeo do imóvel" chega com #bloco-video; o bloco só existe depois de o rascunho carregar.
+  useEffect(() => {
+    if (window.location.hash === `#${ANCORA_VIDEO_ASSISTENTE}`) document.getElementById(ANCORA_VIDEO_ASSISTENTE)?.scrollIntoView({ block: "start" });
+  }, []);
   const faltam = Math.max(0, MIN_PHOTOS - photos.length);
   const bloqueado = photos.length < MIN_PHOTOS;
   return (
@@ -118,6 +124,12 @@ export function EtapaFotos({
         <Erro msg={erroFotos} />
       </div>
 
+      {/* 65-B: o vídeo num bloco próprio, logo depois das fotos e antes da caixa da IA. Nunca bloqueia avançar. */}
+      <section id={ANCORA_VIDEO_ASSISTENTE} className="mt-6 scroll-mt-24" data-testid="bloco-video">
+        <h3 className="mb-3 font-title text-base font-semibold text-ink">Vídeo do imóvel (opcional)</h3>
+        <VideoUploader path={videoArquivo} onChange={setVideoArquivo} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} />
+      </section>
+
       {/* Análise automática das fotos (uma vez por rascunho). */}
       <div className="mt-4 rounded-xl bg-champagne/10 px-4 py-3 text-sm" data-testid="ia-fotos" data-estado={iaEstado}>
         {!iaFotosLiberada(photos.length) ? (
@@ -153,27 +165,6 @@ export function EtapaFotos({
         Removemos os metadados das fotos ao enviar, <strong className="text-ink">inclusive a localização (GPS)</strong>, para o
         endereço exato nunca sair na imagem.
       </p>
-
-      <div className="mt-4">
-        <VideoUploader path={videoArquivo} onChange={setVideoArquivo} />
-      </div>
-
-      <div className="mt-4 rounded-xl border border-sage-200 p-4">
-        <Labeled label="Link do vídeo do imóvel" ajuda="(opcional)">
-          <input
-            className="input"
-            type="url"
-            inputMode="url"
-            placeholder="Cole o link do YouTube, Vimeo ou do arquivo de vídeo"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-          />
-        </Labeled>
-        <p className="mt-2 flex items-center gap-2 text-xs text-muted">
-          <PlayCircle className="h-3.5 w-3.5" />
-          Um tour em vídeo aumenta a confiança e gera um selo “Vídeo” no anúncio.
-        </p>
-      </div>
     </div>
   );
 }

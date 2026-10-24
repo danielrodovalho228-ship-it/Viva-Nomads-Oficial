@@ -121,8 +121,22 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     await expect.poll(async () => (await credenciamento("A"))?.status, { timeout: 20_000 }).toBe("em_teste");
     await adm1.reload();
     await expect(adm1.locator('[data-testid="fila-item"][data-tipo="avaliacao_teste"]').first()).toBeVisible();
+    // E30: aprovar para teste NÃO ativa; sem a avaliação de teste registrada, o botão de ativar não existe.
+    expect((await credenciamento("A"))?.status).toBe("em_teste");
+    await expect(itemA.getByTestId("decidir-ativo-bloqueado")).toContainText("A avaliação de teste ainda não foi feita");
+    await expect(itemA.getByTestId("decidir-ativo")).toHaveCount(0);
+    // A avaliação de teste feita (laudo emitido num pedido de teste do A) libera a segunda aprovação.
+    const { data: pTeste, error: eTeste } = await adm()
+      .from("vistoria_pedidos")
+      .insert({ property_id: ids.imovel, owner_id: ids.dono, cidade: "Uberlândia", porte: "q1_2", valor_tabela: 0, status: "laudo_emitido", avaliador_id: a.id, teste: true })
+      .select("id")
+      .single();
+    expect(eTeste).toBeNull();
+    await adm1.reload();
     await itemA.getByTestId("decidir-ativo").getByRole("button", { name: "Aprovar o teste (ativar)" }).click();
     await expect.poll(async () => (await credenciamento("A"))?.status, { timeout: 20_000 }).toBe("ativo");
+    // O pedido de teste sai de cena: o resto do teste lê o pedido real deste imóvel.
+    await adm().from("vistoria_pedidos").delete().eq("id", pTeste!.id);
     // B aprovado direto (mesmo caminho do A, coberto acima); ordem do rodízio: X (impedido) → A → B → C.
     await adm().from("avaliadores_credenciamento").update({ status: "ativo", ativado_em: "2026-03-01T00:00:00Z" }).eq("id", (await credenciamento("B"))!.id);
     await adm().from("avaliadores_credenciamento").update({ ativado_em: "2026-02-01T00:00:00Z" }).eq("id", a.id);

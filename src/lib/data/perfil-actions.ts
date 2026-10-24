@@ -1,7 +1,7 @@
 "use server";
 
 import { getTelefoneEstado } from "@/lib/data/telefone-actions";
-import { cadastroCompleto, faltaNoCadastro } from "@/lib/perfil/cadastro-completo";
+import { cadastroCompleto, faltaNoCadastro, itensCadastro, type ItemCadastro } from "@/lib/perfil/cadastro-completo";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -233,7 +233,10 @@ export interface MeuPerfilPublico {
   /** Celular verificado (prompt 7). undefined = verificação por SMS indisponível: o item não entra na barra. */
   telefone?: boolean;
   /** "Cadastro completo" (Prompt 29): a mesma função que o admin vê na lista de usuários. */
-  cadastro: { completo: boolean; falta: string };
+  cadastro: { completo: boolean; falta: string; itens: ItemCadastro[] };
+  /** CONTA-A: o nome da conta (topo e espelho) e o e-mail confirmado (pílula do espelho). */
+  nome: string;
+  emailConfirmado: boolean;
 }
 
 export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
@@ -260,6 +263,8 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     motivo: (data?.motivo_estadia as string | null) ?? null,
     anuncia: (count ?? 0) > 0,
     telefone: fone?.disponivel ? fone.verificado : undefined,
+    nome: ((data?.full_name as string | null) ?? "").trim(),
+    emailConfirmado: !!user.email_confirmed_at,
     cadastro: (() => {
       const d = {
         nome: (data?.full_name as string | null) ?? null,
@@ -268,7 +273,7 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
         cnpj: doc?.cnpj ?? null,
         foto: !!data?.avatar_url,
       };
-      return { completo: cadastroCompleto(d), falta: faltaNoCadastro(d) };
+      return { completo: cadastroCompleto(d), falta: faltaNoCadastro(d), itens: itensCadastro(d) };
     })(),
   };
 }

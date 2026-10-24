@@ -21,6 +21,7 @@ import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { registrarDocumento } from "@/lib/fiscal/registro";
 import { linhaConferir, numeroAditivo } from "@/lib/fiscal/prefixos";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
+import { cancelarProgramadas, reagendarProgramadas } from "@/lib/respostas/servidor";
 import { aoEventoDaEstadia } from "@/lib/automacao/servidor";
 import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
 import { ehAdmin } from "@/lib/data/admin-guard";
@@ -460,6 +461,8 @@ async function aplicarAditivo(ctx: Contexto, a: LinhaAditivo): Promise<Res<{ com
   await evento(ctx.admin, a.contrato_id, ctx.userId, "estadia_remarcada", { aditivo: a.id, numero: a.numero, mudancas: a.mudancas });
   // Prompt 38: a limpeza/lavanderia automática da saída ganha a janela nova (mesma chave, nunca outro pedido).
   await aoEventoDaEstadia(ctx.admin, a.contrato_id, { tipo: "estadia_remarcada" });
+  // Prompt 55-E2: as mensagens programadas que ainda não saíram ganham o horário das datas novas.
+  await reagendarProgramadas(ctx.admin, a.contrato_id);
   for (const id of [ctx.c.tenant_id, String(ctx.c.properties?.owner_id ?? "")]) if (id) avisar(ctx.admin, id, "estadia_remarcada", a.contrato_id);
   return { ok: true, valor: { completo: true } };
 }
@@ -552,6 +555,8 @@ export async function atualizarPedidoEncerramento(pedidoId: string, status: "em_
     await registrarEncerramento(admin, pedido, user.id);
     // Prompt 38: a limpeza/lavanderia automática ainda não aceita é cancelada, com aviso ao parceiro.
     await aoEventoDaEstadia(admin, pedido.contrato_id, { tipo: "contrato_encerrado" });
+    // Prompt 55-E2: contrato encerrado cancela as mensagens programadas que não saíram.
+    await cancelarProgramadas(admin, pedido.contrato_id, "contrato_encerrado");
   }
   await logModeracao(supabase, user.id, status === "concluido" ? "concluir_encerramento" : "conduzir_encerramento", "contrato", pedido.contrato_id);
   revalidatePath("/admin/contratos/encerramentos");

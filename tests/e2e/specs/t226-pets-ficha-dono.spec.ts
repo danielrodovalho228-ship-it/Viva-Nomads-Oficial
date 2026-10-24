@@ -64,7 +64,9 @@ test.describe("T226 — ficha do pet para o dono da candidatura", () => {
   test("1. 390 + 1280 — inquilino: pet novo aparece com foto e carteira na hora; 3/3 fotos; raça e observações com 'ver mais'", async ({ browser }) => {
     test.setTimeout(150_000);
     const page = await abrir(browser, inq.email, 390);
-    await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+    // C9/E56: o bloco de pets nasce fechado sem pets; o toggle abre o formulário.
+    await page.getByTestId("pets-toggle-bloco-toggle").click({ timeout: 15_000 });
     const form = page.getByTestId("pets-form");
     await expect(form).toBeVisible({ timeout: 15_000 });
     await form.getByLabel("Nome").fill(PET);

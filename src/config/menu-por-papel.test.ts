@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { MENU_POR_PAPEL, temPapel, type ContextoMenu, type ItemDoPapel, type PapelMenu } from "./menu-por-papel.ts";
 import { folhas, menuDoPainel } from "./menu-painel.ts";
+import { secaoDaRota } from "../lib/conta/secoes.ts";
 
 const base: ContextoMenu = { temImovel: false, admin: false, estadiaAtiva: false };
 const tudo: ContextoMenu = { temImovel: true, admin: true, estadiaAtiva: true, parceiro: true, imoveisAtivos: 5 };
@@ -64,7 +65,9 @@ test("todo href da lista é rota que existe no painel (ou a busca/pedido públic
       continue;
     }
     assert.match(rota, /^\/(dashboard|admin|qualificar)(\/|$)/, rota);
-    assert.ok(existsSync(new URL(`../app/(dashboard)${rota}/page.tsx`, import.meta.url)), `tela existe: ${rota}`);
+    // As seções da Conta (A1) são telas da rota /dashboard/conta/[secao].
+    const pagina = secaoDaRota(rota) ? "/dashboard/conta/[secao]" : rota;
+    assert.ok(existsSync(new URL(`../app/(dashboard)${pagina}/page.tsx`, import.meta.url)), `tela existe: ${rota}`);
   }
 });
 

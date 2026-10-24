@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Lock, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { PRIMARIO_PORTA } from "@/lib/auth/porta-visual";
 import { PasswordInput } from "@/components/ui/password-input";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
@@ -221,7 +222,7 @@ export default function ResetPasswordPage() {
                 />
               )}
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className={`w-full ${PRIMARIO_PORTA}`} aria-busy={loading} disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Salvar nova senha
               </Button>

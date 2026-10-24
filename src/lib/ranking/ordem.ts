@@ -56,6 +56,8 @@ export interface SinaisAnuncio {
   nivel?: NivelOuAdequacao | null;
   /** Prompt 62-B2: laudo de avaliação válido ("· vistoriado"). Só um fato a mais na nota; não é selo nem ordem própria. */
   vistoriado?: boolean;
+  /** 61-B: "o que considerar antes de pedir" preenchido (algum item ou texto). Vazio não tira ponto. */
+  considerarAntes?: boolean;
 }
 
 export interface Motivo {
@@ -91,6 +93,8 @@ export const PESOS = {
   perdaManutencao: -10, // 3 soluções fora do prazo em 90 dias
   // Prompt 62-B2: nível confirmado por avaliador credenciado (laudo VIS válido). Não muda taxa.
   vistoriado: 3,
+  // 61-B: dizer antes o que pode incomodar (barulho, obra, escada, área compartilhada) evita surpresa.
+  considerarAntes: 2,
 } as const;
 
 export const MIN_COMODOS_CHEIO = 6;
@@ -164,6 +168,7 @@ export function notaQualidade(s: SinaisAnuncio, agora: Date): NotaQualidade {
   // Nível (Adendo 59.1): só um fato a mais na nota; o Essencial não soma nem tira.
   if (s.nivel === "conforto" || s.nivel === "premium") add("nivel", `Nível ${ROTULO_NIVEL[s.nivel]} provado por fotos`, PESO_NIVEL[s.nivel]);
   if (s.vistoriado) add("vistoriado", "Nível confirmado por avaliador credenciado", PESOS.vistoriado);
+  add("considerar_antes", s.considerarAntes ? "Diz o que considerar antes de pedir" : "Não diz o que considerar antes de pedir", s.considerarAntes ? PESOS.considerarAntes : 0);
 
   const soma = m.reduce((t, x) => t + x.pontos, 0);
   const nota = Math.max(0, Math.min(100, Math.round(soma)));

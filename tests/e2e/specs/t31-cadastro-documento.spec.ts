@@ -113,7 +113,7 @@ test.describe("T31 — Cadastro confiável: documento da pessoa", () => {
 
     // 3) Conta → Documento.
     await aviso.getByRole("link", { name: "Informar meu documento" }).click();
-    await page.waitForURL(/\/dashboard\/conta\/perfil#documento/);
+    await page.waitForURL(/\/dashboard\/conta\/dados#documento/);
     const secao = page.locator("#documento");
     await expect(secao).toBeVisible({ timeout: 15_000 });
     await secao.getByLabel("CPF").fill(CPF_INVALIDO);

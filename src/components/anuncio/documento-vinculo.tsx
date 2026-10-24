@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle2, Clock, FileText, Loader2, ShieldCheck, Upload, XCircle } from "lucide-react";
 import { DOCUMENTOS_ACEITOS_TEXTO, FORMATOS_ACEITOS_TEXTO, type EstadoConferencia } from "@/lib/documento/conferencia";
 import { validarArquivoDoc } from "@/lib/upload-limits";
-import { cn } from "@/lib/utils";
+import {
+  enderecoParaDocumento,
+  faltaEnderecoDocumento,
+  TESTID_CAMPO_ENDERECO,
+  textoFaltaEndereco,
+  type CampoEnderecoDoc,
+  type EnderecoDoc,
+} from "@/lib/documento/endereco-documento";
 import { MSG_MATRICULA } from "@/lib/documento/conferencia-matricula";
 import { MatriculaResultado, type InfoMatricula } from "./matricula-resultado";
 
@@ -22,6 +29,8 @@ export function estadoDoStatus(s: "none" | "pending" | "approved" | "rejected"):
  * O documento nunca aparece no anúncio; o CPF nunca volta para a tela.
  * Prompt 19: sendo MATRÍCULA, o resultado cruza com a CAF (conferido / provável / em revisão com o motivo) e o que
  * foi lido preenche o anúncio (`onMatricula`).
+ * L1-1 (D-V3): o botão nunca trava em silêncio. O endereço vem do passo e, campo a campo, do já gravado no imóvel
+ * (`enderecoSalvo`); faltando algo, o toque diz "Falta: número", leva ao 1º campo que falta e o marca (`onFalta`).
  */
 export function DocumentoVinculo({
   imovelId,
@@ -31,9 +40,15 @@ export function DocumentoVinculo({
   motivos,
   onResultado,
   onMatricula,
+  enderecoSalvo,
+  onFalta,
 }: {
   imovelId: string | null;
   endereco: { cep: string; rua: string; numero: string; bairro: string; cidade: string };
+  /** L1-1: endereço já gravado do imóvel (rascunho retomado): completa o que o passo trouxe vazio. */
+  enderecoSalvo?: EnderecoDoc | null;
+  /** L1-1: campos que faltam no toque (a tela marca cada um com o erro). */
+  onFalta?: (campos: CampoEnderecoDoc[]) => void;
   operacao: string;
   estado: EstadoDocumentoTela;
   motivos: string[];
@@ -45,14 +60,37 @@ export function DocumentoVinculo({
   const [nome, setNome] = useState<string | null>(null);
   const [ultimoPath, setUltimoPath] = useState<string | null>(null);
   const [matricula, setMatricula] = useState<InfoMatricula | null>(null);
-  const enderecoPronto = endereco.cep.replace(/\D/g, "").length === 8 && !!endereco.rua.trim() && !!endereco.numero.trim();
+  const [falta, setFalta] = useState<CampoEnderecoDoc[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const resolvido = enderecoParaDocumento(endereco, enderecoSalvo);
+  const faltamAgora = faltaEnderecoDocumento(resolvido);
+  // O aviso do toque some sozinho quando a pessoa completa o campo.
+  const faltaVisivel = falta.filter((c) => faltamAgora.includes(c));
+
+  /** Toque no botão: com o endereço completo abre o arquivo; faltando, diz o quê e leva ao 1º campo. */
+  function tocarEnviar() {
+    if (enviando) return;
+    if (faltamAgora.length) {
+      setFalta(faltamAgora);
+      onFalta?.(faltamAgora);
+      const campo = document.querySelector<HTMLInputElement>(`[data-testid="${TESTID_CAMPO_ENDERECO[faltamAgora[0]]}"]`);
+      if (campo) {
+        // Centro da tela: no celular o campo e o erro ficam acima do teclado que abre com o foco.
+        campo.scrollIntoView({ block: "center", behavior: "smooth" });
+        campo.focus({ preventScroll: true });
+      }
+      return;
+    }
+    setFalta([]);
+    inputRef.current?.click();
+  }
 
   async function conferir(path: string) {
     setEnviando("conferindo");
     const res = await fetch("/api/documentos/conferir", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path, imovelId, endereco, operacao }),
+      body: JSON.stringify({ path, imovelId, endereco: { ...endereco, ...resolvido }, operacao }),
     });
     const r = (await res.json().catch(() => ({}))) as { estado?: EstadoConferencia; motivos?: string[]; matricula?: InfoMatricula; error?: string };
     if (!res.ok || !r.estado) throw new Error(r.error ?? "Não foi possível conferir o documento agora.");
@@ -80,6 +118,12 @@ export function DocumentoVinculo({
   async function enviar(file: File | undefined) {
     if (!file) return;
     setErro(null);
+    // Mesma regra do toque: sem o endereço, não envia (e diz o que falta).
+    if (faltamAgora.length) {
+      setFalta(faltamAgora);
+      onFalta?.(faltamAgora);
+      return;
+    }
     const invalido = validarArquivoDoc({ type: file.type, size: file.size });
     if (invalido) return setErro(invalido);
     setNome(file.name);
@@ -178,11 +222,13 @@ export function DocumentoVinculo({
         />
       )}
 
-      <label
-        className={cn(
-          "mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:border-sage",
-          (!enderecoPronto || !!enviando) && "pointer-events-none opacity-60",
-        )}
+      <button
+        type="button"
+        onClick={tocarEnviar}
+        disabled={!!enviando}
+        aria-busy={!!enviando}
+        aria-describedby={faltaVisivel.length ? "documento-falta" : undefined}
+        className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:border-sage disabled:opacity-60"
         data-testid="documento-enviar"
       >
         {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : estado === "nenhum" ? <Upload className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
@@ -193,19 +239,27 @@ export function DocumentoVinculo({
             : estado === "nenhum"
               ? "Enviar documento"
               : "Enviar outro documento"}
-        <input
-          type="file"
-          accept="application/pdf,image/jpeg,image/png"
-          className="sr-only"
-          disabled={!enderecoPronto || !!enviando}
-          onChange={(e) => {
-            void enviar(e.target.files?.[0]);
-            e.target.value = "";
-          }}
-          aria-label="Enviar documento do imóvel"
-        />
-      </label>
-      {!enderecoPronto && <p className="mt-1 text-xs text-muted">Preencha o CEP, a rua e o número acima para enviar.</p>}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf,image/jpeg,image/png"
+        className="sr-only"
+        tabIndex={-1}
+        onChange={(e) => {
+          void enviar(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+        aria-label="Arquivo do documento do imóvel"
+        data-testid="documento-arquivo"
+      />
+      {faltaVisivel.length > 0 ? (
+        <p id="documento-falta" role="alert" className="mt-1 text-sm font-medium text-red-700" data-testid="documento-falta">
+          {textoFaltaEndereco(faltaVisivel)}
+        </p>
+      ) : (
+        faltamAgora.length > 0 && <p className="mt-1 text-xs text-muted">Para enviar, o endereço precisa ter CEP, rua e número.</p>
+      )}
       {nome && !enviando && <p className="mt-1 truncate text-xs text-muted">Último envio: {nome}</p>}
       {erro && <p className="mt-1 text-sm text-red-600">{erro}</p>}
       <p className="mt-2 flex items-start gap-2 text-xs text-muted">

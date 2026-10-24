@@ -41,6 +41,11 @@ export interface ContextoMenu {
   imoveisAtivos?: number;
   /** Prompt 31a: a conta tem o papel de parceiro (ou um pedido de parceria) — revela o item "Parceiro". */
   parceiro?: boolean;
+  /**
+   * PAPEL-B: o papel ativo. A seção dele vem logo depois da Visão geral (o resto segue na ordem de sempre). Só muda a
+   * ordem: nenhuma seção some ou aparece por causa dele.
+   */
+  papelAtivo?: "morador" | "proprietario" | "parceiro" | null;
 }
 
 export type PapelMenu = "todos" | "morador" | "proprietario" | "parceiro" | "admin";
@@ -229,7 +234,7 @@ const FERRAMENTAS_E_CONTA: ItemDoPapel[] = [
     filhos: [
       { id: "conta-dados", rotulo: "Perfil e dados", icone: "conta", href: "/dashboard/conta" },
       { id: "avaliacoes", rotulo: "Avaliações recebidas", icone: "conta", href: "/dashboard/avaliacoes" },
-      { id: "verificacao", rotulo: "Verificação", icone: "verificacao", href: "/dashboard/conta#confianca" },
+      { id: "verificacao", rotulo: "Verificação", icone: "verificacao", href: "/dashboard/conta/privacidade" },
     ],
   },
 ];

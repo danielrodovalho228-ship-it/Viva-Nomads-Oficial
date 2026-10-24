@@ -8,7 +8,7 @@ import { notify } from "@/lib/notifications";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { dataHoraBrasilia } from "@/config/atendimento";
-import { emSilencio, estadoSolucao, type AvisoSolucao, type OrdemSolucao } from "@/lib/manutencao-solucao";
+import { estadoSolucao, type AvisoSolucao, type OrdemSolucao } from "@/lib/manutencao-solucao";
 
 type Db = SupabaseClient;
 
@@ -46,7 +46,8 @@ export async function avisarPrazoManutencao(db: Db, ordemId: string, tipo: Aviso
     console.error("[avisarPrazoManutencao] histórico", error.code);
     return false;
   }
-  const semPush = emSilencio(agora, ordem.priority);
+  // Prompt 44: o silêncio é decidido no notify(); a manutenção urgente é prazo do dia e fura o silêncio.
+  const prazoHoje = ordem.priority === "urgente";
   const dono = await perfil(db, o.owner_id as string);
   if (dono?.email && notificacaoLigada(dono.notif_email as boolean | null)) {
     await notify({
@@ -57,7 +58,7 @@ export async function avisarPrazoManutencao(db: Db, ordemId: string, tipo: Aviso
       pushUrl: `/dashboard/solicitacoes?ordem=${ordemId}`,
       body: (n) => `Olá${n ? " " + n : ""}, ${textoDono[tipo]}`,
       ctaLabel: tipo === "vencido" ? "Ver a ordem e chamar um parceiro" : "Ver a ordem",
-      semPush,
+      prazoHoje,
     }).catch(() => null);
   }
   if (tipo === "vencido") {
@@ -71,7 +72,7 @@ export async function avisarPrazoManutencao(db: Db, ordemId: string, tipo: Aviso
         pushUrl: `/dashboard/solicitacoes?ordem=${ordemId}`,
         body: (n) => `Olá${n ? " " + n : ""}, o prazo de solução da sua manutenção venceu. O proprietário foi avisado em ${dataHoraBrasilia(agora)} (horário de Brasília).`,
         ctaLabel: "Ver a ordem",
-        semPush,
+        prazoHoje,
       }).catch(() => null);
     }
   }
