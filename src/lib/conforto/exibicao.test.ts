@@ -57,7 +57,9 @@ test("compromisso de manutenção: o texto exato, dos prazos do 59", () => {
   );
   assert.equal(TEXTO_PADRAO_CONFIRMADO, "Padrão mínimo da Viva: confirmado pelo proprietário");
   const bloco = ler("components/conforto/padrao-minimo-imovel.tsx");
-  assert.match(bloco, /\{confirmado && \(/, "a linha do padrão mínimo só aparece confirmada");
+  assert.match(bloco, /if \(!confirmado\) return null;/, "a linha do padrão mínimo só aparece confirmada");
+  // E98-A: o compromisso de manutenção saiu daqui e virou a linha "Manutenção" do Bom saber.
+  assert.doesNotMatch(bloco, /compromisso-manutencao|textoCompromissoManutencao/);
   assert.match(bloco, /O que é o padrão mínimo/);
   assert.match(bloco, /Os \{ITENS_CONFORTO\.length\} itens/, "a folha conta os itens pela lista, não por número fixo");
 });
