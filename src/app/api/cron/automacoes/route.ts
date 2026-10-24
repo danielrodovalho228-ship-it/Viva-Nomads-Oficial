@@ -39,6 +39,7 @@ import { lembretesDoFunil } from "@/lib/lembretes/servidor";
 import { emSilencio, textoRascunho } from "@/lib/lembretes/regras";
 import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { checklistAnuncio, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
 
 /**
  * Automações por data (ordem d250ea2f, item 5): rascunho de imóvel parado (3 dias, um aviso — Prompt 50), lembrete de saída (3 dias),
@@ -51,7 +52,7 @@ import { checklistAnuncio, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
  * Trava: sem `AUTOMACOES_ATIVO=1` no ambiente o cron SEMPRE simula, mesmo agendado no vercel.json.
  * Candidatura iniciada e não enviada fica de fora: a candidatura não guarda rascunho no banco.
  */
-type Alvo = { tipo: TipoAutomacao; usuarioId: string; refId: string; variante?: string; url: string; detalhe: string; subject?: string; ctaLabel?: string; depois?: () => Promise<unknown> };
+type Alvo = { tipo: TipoAutomacao; usuarioId: string; refId: string; variante?: string; url: string; detalhe: string; subject?: string; ctaLabel?: string; decisao?: DadosDaDecisao; depois?: () => Promise<unknown> };
 
 export async function GET(request: Request) {
   const segredo = process.env.CRON_SECRET;
@@ -157,6 +158,8 @@ export async function GET(request: Request) {
       variante: String(p.versao_atual),
       url: `/dashboard/propostas/${p.id}`,
       detalhe: detalheAutomacao("proposta_vencendo", { imovel: (p.properties as unknown as { title?: string } | null)?.title || undefined, numero: p.numero as string }),
+      // 44-SITE (item 2): "Proposta vencendo para o …: responda até hoje/amanhã".
+      decisao: { imovel: (p.properties as unknown as { title?: string } | null)?.title ?? null, prazo: p.valida_ate as string, destinatarioEhParte: true },
     });
   }
 
@@ -242,6 +245,7 @@ export async function GET(request: Request) {
       detailsText: a.detalhe,
       ...(a.subject ? { subject: a.subject } : {}),
       ...(a.ctaLabel ? { ctaLabel: a.ctaLabel } : {}),
+      ...(a.decisao ? { decisao: a.decisao } : {}),
     }).catch(() => null);
     if (a.depois) await a.depois().catch(() => null);
     contagem[a.tipo] = (contagem[a.tipo] ?? 0) + 1;

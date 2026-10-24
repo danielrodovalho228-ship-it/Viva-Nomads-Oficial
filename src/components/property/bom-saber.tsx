@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Cigarette,
   Home,
+  ListChecks,
   LogIn,
   LogOut,
   Moon,
@@ -31,6 +32,7 @@ const ICONES_REGRA: Record<ChaveItemRegra, LucideIcon> = {
   fumo: Cigarette,
   festas: PartyPopper,
   visitas: UserPlus,
+  outras: ListChecks,
 };
 
 /** Bloco "Bom saber": 3 linhas-resumo; cada uma abre o detalhe. As regras completas seguem em "Regras da estadia". */

@@ -5,6 +5,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, CHAVE_ANON, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação do merge no lab-crítico do bloco 15 (t338).
  * T351 — 63-A: telas do selo "LinkedIn conectado" (laboratório; a chave liga só no navegador do teste, pelo cookie).
  * Matriz do Muse, a 390 e 1280 px:
  *   1. chave desligada: a Conta não tem a linha do LinkedIn nem o retorno, mesmo com ?linkedin=…;

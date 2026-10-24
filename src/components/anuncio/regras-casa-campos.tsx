@@ -1,7 +1,7 @@
 "use client";
 
 import { BlocoOpcional } from "@/components/anuncio/bloco-opcional";
-import { OPCOES_FESTAS, OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
+import { MAX_OUTRAS_REGRAS, OPCOES_FESTAS, OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
 import { REGRAS_CONVIVENCIA, desligarRegra, regraTemDados, type RegraConvivencia, type RegrasCasaForm } from "@/lib/anuncio/regras-casa-form";
 
 export { estadosConvivencia, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/lib/anuncio/regras-casa-form";
@@ -107,6 +107,20 @@ export function RegrasCasaCampos({ value, onChange }: { value: RegrasCasaForm; o
           {conteudo[chave]}
         </BlocoOpcional>
       ))}
+      <label className="grid gap-1 text-sm font-semibold text-ink">
+        Outras regras (opcional)
+        <textarea
+          className="min-h-[88px] w-full rounded-lg border border-line bg-white px-3 py-2 text-sm font-normal text-ink"
+          value={value.outras}
+          maxLength={MAX_OUTRAS_REGRAS}
+          placeholder="Ex.: tirar os sapatos na sala, manter a varanda limpa"
+          onChange={(e) => muda({ outras: e.target.value })}
+          data-testid="regras-casa-outras"
+        />
+        <span className="text-xs font-normal text-muted" data-testid="regras-casa-outras-contador">
+          {value.outras.length} de {MAX_OUTRAS_REGRAS} caracteres
+        </span>
+      </label>
     </div>
   );
 }

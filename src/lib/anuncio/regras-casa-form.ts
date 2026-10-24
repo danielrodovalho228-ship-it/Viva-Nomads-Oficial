@@ -4,7 +4,7 @@
  * (não vai ao servidor, não aparece no anúncio). Puro: a tela só desenha.
  */
 import { nasceLigado, type EstadoBloco } from "./bloco-opcional.ts";
-import { normalizarRegrasCasa, type Festas, type Fumo, type RegrasCasa } from "./regras-casa.ts";
+import { limparOutrasRegras, normalizarRegrasCasa, type Festas, type Fumo, type RegrasCasa } from "./regras-casa.ts";
 
 export type RegraConvivencia = "silencio" | "fumo" | "festas" | "visitas";
 
@@ -27,6 +27,8 @@ export interface RegrasCasaForm {
   visitas: SimNao;
   visitasAte: string;
   pernoite: SimNao;
+  /** CAMPOS-3: "Outras regras (opcional)" da tela 06 — texto livre, sem toggle (vazio = não aparece). */
+  outras: string;
 }
 
 const simNao = (v: boolean | undefined): SimNao => (v === undefined ? "" : v ? "sim" : "nao");
@@ -47,11 +49,12 @@ export function formDeRegrasCasa(r?: RegrasCasa | null): RegrasCasaForm {
     visitas: simNao(r?.visitas?.permitidas),
     visitasAte: r?.visitas?.ate ?? "",
     pernoite: simNao(r?.visitas?.pernoite),
+    outras: r?.outras ?? "",
   };
 }
 
 /** O que cada regra enviaria, ligada ou não (base do "tem dados" e do envio). */
-function regras(f: Omit<RegrasCasaForm, "ligados">): RegrasCasa {
+function regras(f: Omit<RegrasCasaForm, "ligados" | "outras">): RegrasCasa {
   const r: RegrasCasa = {};
   if (f.silencioInicio && f.silencioFim) r.silencio = { inicio: f.silencioInicio, fim: f.silencioFim };
   if (f.fumo) r.fumo = f.fumo;
@@ -71,6 +74,8 @@ export function payloadDeRegrasCasa(f: RegrasCasaForm): RegrasCasa {
   const r = regras(f);
   const out: RegrasCasa = {};
   for (const { chave } of REGRAS_CONVIVENCIA) if (f.ligados[chave] && r[chave] !== undefined) Object.assign(out, { [chave]: r[chave] });
+  const outras = limparOutrasRegras(f.outras);
+  if (outras) out.outras = outras;
   return out;
 }
 
