@@ -20,6 +20,7 @@ import {
   validarRede,
   type ChaveRede,
 } from "./regras";
+import { emiteNotaParaGravar, faltaRespostaNota } from "./fiscal";
 
 /**
  * Painel do parceiro (/dashboard/parceiro, Prompt 31a item 5). Toda ação confere a sessão e grava pelo servidor
@@ -35,6 +36,12 @@ export interface PainelParceiro {
   status: string;
   suspensoMotivo: string | null;
   tipoPessoa: string;
+  /** FISCAL-PARCEIRO-B: Sim/Não do PJ (null = não respondeu; PF sempre null). */
+  emiteNota: boolean | null;
+  /** PJ sem resposta: pendência no painel (não tira do ar o que já está publicado). */
+  notaPendente: boolean;
+  /** Denúncia procedente tirou o selo: o motivo fica à vista e o parceiro não religa sozinho. */
+  notaSeloRemovido: { em: string; motivo: string | null } | null;
   documentoMascarado: string;
   razaoSocial: string | null;
   nomePublico: string;
@@ -93,6 +100,8 @@ function faltaDe(p: Record<string, unknown>, c: { servicos: number; fotos: numbe
     cidades: (p.cidades as string[]) ?? [],
     categorias: (p.categorias as string[]) ?? [],
     fotosGaleria: c.fotos,
+    // FISCAL-PARCEIRO-B: a resposta conclui o cadastro (primeira publicação); quem já esteve no ar não é bloqueado.
+    ...(p.publicado_em ? {} : { tipoPessoa: (p.tipo_pessoa as string | null) ?? null, emiteNota: (p.emite_nota as boolean | null) ?? null }),
   });
 }
 
@@ -134,6 +143,9 @@ export async function meuPainelParceiro(): Promise<PainelParceiro | null> {
     status: p.status as string,
     suspensoMotivo: (p.suspenso_motivo as string | null) ?? null,
     tipoPessoa: p.tipo_pessoa as string,
+    emiteNota: (p.emite_nota as boolean | null) ?? null,
+    notaPendente: faltaRespostaNota({ tipoPessoa: p.tipo_pessoa as string, emiteNota: p.emite_nota as boolean | null }),
+    notaSeloRemovido: p.nota_selo_removido_em ? { em: p.nota_selo_removido_em as string, motivo: (p.nota_selo_motivo as string | null) ?? null } : null,
     documentoMascarado: mascararDoc(p.tipo_pessoa as string, p.documento as string),
     razaoSocial: (p.razao_social as string | null) ?? null,
     nomePublico: p.nome_publico as string,
@@ -388,6 +400,23 @@ export async function salvarRecebimento(chave: string): Promise<Res<string>> {
   const { error } = await m.admin.from("parceiros").update({ dados_recebimento: { tipo: "pix", chave: c, atualizado_em: new Date().toISOString() } }).eq("id", m.p.id);
   if (error) return { ok: false, erro: "Não foi possível salvar." };
   return { ok: true, valor: finalRecebimento(c) };
+}
+
+/**
+ * FISCAL-PARCEIRO-B: o PJ responde (ou corrige) "Você emite nota fiscal de serviço para o cliente?". PF não tem a
+ * pergunta (o banco também recusa). Depois de uma denúncia procedente, só a equipe religa o selo.
+ */
+export async function salvarEmiteNota(resposta: boolean): Promise<Res> {
+  const m = await editavel();
+  if ("erro" in m) return { ok: false, erro: m.erro };
+  if (m.p.tipo_pessoa !== "pj") return { ok: false, erro: "A pergunta da nota fiscal é só para empresa ou MEI (CNPJ)." };
+  const v = emiteNotaParaGravar("pj", resposta);
+  if (!v.ok) return v;
+  if (v.valor === true && m.p.nota_selo_removido_em) return { ok: false, erro: "O selo de nota fiscal foi removido depois de uma denúncia. Fale com a Viva pela Central de Ajuda." };
+  const { error } = await m.admin.from("parceiros").update({ emite_nota: v.valor, atualizado_em: new Date().toISOString() }).eq("id", m.p.id).eq("tipo_pessoa", "pj");
+  if (error) return { ok: false, erro: "Não foi possível salvar." };
+  atualizarTelas(m.p.slug as string);
+  return { ok: true, valor: null };
 }
 
 export async function publicarPagina(): Promise<Res> {

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { integracoesSimuladas } from "@/lib/integracoes";
+import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { INTERNET } from "@/config/internet";
 import {
@@ -53,6 +54,34 @@ export async function coordenadasDoImovel(admin: Admin, imovelId: string): Promi
   const lat = r.lat_exata ?? r.lat;
   const lng = r.lng_exata ?? r.lng;
   return lat != null && lng != null && !(lat === 0 && lng === 0) ? { lat, lng } : null;
+}
+
+/**
+ * NIVEIS-MEDIR-B (E25b): a medição vale no RASCUNHO. O cadastro só geocodifica ao publicar, então o rascunho pode
+ * ainda não ter o ponto no mapa — e sem ele nenhuma medição valida. Para anúncio que ainda não está no ar, o servidor
+ * geocodifica o endereço do rascunho e grava o ponto (o mesmo que o Publicar gravaria). Só vale resultado PRECISO: o
+ * centro da cidade (fallback do geocodeForSave) nunca serve, para o raio de validação não afrouxar.
+ */
+export async function coordenadasParaMedir(admin: Admin, sessao: SupabaseClient, imovelId: string): Promise<{ lat: number; lng: number } | null> {
+  const atual = await coordenadasDoImovel(admin, imovelId);
+  if (atual) return atual;
+  const { data } = await admin.from("properties").select("status, neighborhood, city").eq("id", imovelId).maybeSingle();
+  const r = data as { status: string | null; neighborhood: string | null; city: string | null } | null;
+  if (!r || r.status === "active") return null;
+  // O endereço do rascunho é privado: só o dono lê, pela RPC (que confere a posse com a sessão dele).
+  const { data: priv } = await sessao.rpc("property_private_details", { prop_id: imovelId });
+  const linha = (Array.isArray(priv) ? priv[0] : priv) as { draft_data?: Record<string, unknown> | null; exact_address?: string | null } | null;
+  const d = linha?.draft_data && typeof linha.draft_data === "object" ? linha.draft_data : {};
+  const txt = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const rua = [txt(d.street), txt(d.numero)].filter(Boolean).join(", ") || txt(linha?.exact_address);
+  const bairro = txt(d.neighborhood) || txt(r.neighborhood);
+  const cidade = txt(d.city) || txt(r.city);
+  if (!rua || !cidade) return null;
+  const g = await geocodeForSave({ street: rua, neighborhood: bairro, city: cidade });
+  if (g.approximate) return null;
+  const { error } = await admin.from("properties").update({ lat: g.lat, lng: g.lng }).eq("id", imovelId).neq("status", "active");
+  if (error) return null;
+  return coordenadasDoImovel(admin, imovelId);
 }
 
 async function medicoesHoje(admin: Admin, imovelId: string, agora: Date): Promise<number> {
@@ -140,7 +169,7 @@ export async function estadoParaMedir(imovelId: string, origem: Origem): Promise
     simulado: integracoesSimuladas(),
     restantesHoje: Math.max(0, INTERNET.limitePorDia - (await medicoesHoje(admin, imovelId, agora))),
     ultima: papel === "dono" ? await ultimaMedidaDoDono(admin, imovelId, agora) : null,
-    temCoordenadas: !!(await coordenadasDoImovel(admin, imovelId)),
+    temCoordenadas: !!(await coordenadasParaMedir(admin, supabase, imovelId)),
   };
 }
 
@@ -183,7 +212,8 @@ export async function registrarMedicao(entrada: {
 
   const l = entrada.local as { lat?: unknown; lng?: unknown } | null;
   const aparelho = l && typeof l.lat === "number" && typeof l.lng === "number" ? { lat: l.lat, lng: l.lng } : null;
-  const local = validarLocal(aparelho, await coordenadasDoImovel(admin, imovelId), entrada.confirmouWifi === true);
+  // O mesmo raio e a mesma confirmação do Wi-Fi antes e depois de publicar; o rascunho só ganha o ponto no mapa.
+  const local = validarLocal(aparelho, await coordenadasParaMedir(admin, supabase, imovelId), entrada.confirmouWifi === true);
   const ate = validoAte(agora);
   const { error } = await admin.from("internet_medicoes").insert({
     property_id: imovelId,

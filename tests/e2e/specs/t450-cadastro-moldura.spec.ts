@@ -3,7 +3,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 import { NUMERO_PASSO, TITULO_PASSO, type PassoCadastro } from "../fixtures/cadastro";
 
 /*
-  T441 — CADASTRO-MOLDURA (E89). Só no laboratório (conta nova de proprietário, sem rascunho).
+  T450 — CADASTRO-MOLDURA (E89). Só no laboratório (conta nova de proprietário, sem rascunho).
   Nos 10 passos, a 390 e 1280 px:
    - nenhum elemento do DashboardShell no DOM (lateral, topo do painel, botão de menu, selo de papel, barra inferior);
    - o topo mínimo (logo sem link, "Precisa de ajuda?", "Sair") e o rodapé do fluxo ("Passo N de 10", barra, Voltar a
@@ -29,7 +29,7 @@ async function semCascaDoPainel(page: Page) {
   await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
 }
 
-test.describe("T441 — CADASTRO-MOLDURA: o assistente fora da casca do painel", () => {
+test.describe("T450 — CADASTRO-MOLDURA: o assistente fora da casca do painel", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
@@ -75,16 +75,16 @@ test.describe("T441 — CADASTRO-MOLDURA: o assistente fora da casca do painel",
         await expect(page.getByRole("button", { name: /^Salvar( como rascunho)?$/ })).toHaveCount(0);
 
         // No fim da página, o rodapé não cobre o conteúdo e não há rolagem para o lado.
-        // <html> tem scroll-smooth: a rolagem do teste é instantânea, senão a medida pega a página no meio do caminho.
-        await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
-        await expect.poll(() => page.evaluate(() => Math.ceil(window.scrollY + window.innerHeight) >= document.documentElement.scrollHeight - 1)).toBe(true);
+        // O fim do conteúdo: o espaçador do rodapé é o último elemento da página (quem rola é a página ou o <main>).
+        // <html> tem scroll-smooth: a rolagem é instantânea, senão a medida pega a página no meio do caminho.
+        await page.getByTestId("assistente-rodape-espaco").evaluate((el) => el.scrollIntoView({ block: "end", behavior: "instant" }));
         const conteudo = (await page.getByTestId("novo-duas-colunas").boundingBox())!;
         const caixaRodape = (await rodape.boundingBox())!;
         expect(conteudo.y + conteudo.height).toBeLessThanOrEqual(caixaRodape.y + 1);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 
         await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
-        await page.screenshot({ path: `${SAIDA}/t441-passo-${String(n).padStart(2, "0")}-${passo}-${w}.png`, fullPage: true });
+        await page.screenshot({ path: `${SAIDA}/t450-passo-${String(n).padStart(2, "0")}-${passo}-${w}.png`, fullPage: true });
       }
       await page.context().close();
     });

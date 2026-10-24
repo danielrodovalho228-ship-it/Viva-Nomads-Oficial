@@ -127,7 +127,6 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minu
   if (on("mobiliado") && !p.furnished) return false;
   if (on("localizado") && !p.tagWorkLocated) return false;
   if (on("nota") && !p.issuesInvoice) return false;
-  if (on("seguro") && !p.acceptsInsurance) return false;
   if (on("gestor") && !(p.ownershipType && p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   return true;
 }

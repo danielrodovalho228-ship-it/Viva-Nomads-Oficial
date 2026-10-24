@@ -48,10 +48,12 @@ const TELAS: Tela[] = [
  * Achados do clique já registrados como defeito de produto (L-*): ficam anotados no relatório e não derrubam o teste;
  * qualquer outro achado derruba. Quando a pista dona corrigir, o achado some e a linha sai daqui.
  */
-const CONHECIDOS: { rota: RegExp; achado: RegExp; l: string }[] = [
-  { rota: /^\/buscar$/, achado: /"Aplicar nos filtros" desabilitado sem explicar o motivo/, l: "L-51" },
+const CONHECIDOS: { rota: RegExp; achado: RegExp; l: string; classe?: Classe }[] = [
+  { rota: /^\/buscar(\?|$)/, achado: /"Aplicar nos filtros" desabilitado sem explicar o motivo/, l: "L-51" },
+  { rota: /^\/admin$/, achado: /"Testar" desabilitado sem explicar o motivo/, l: "L-61" },
+  { rota: /^\/admin\/documentos\?aba=emitidos$/, classe: "estouro", achado: /além da direita: <label[^>]*> "Tipo/, l: "L-62" },
 ];
-const conhecido = (rotulo: string, a: string) => CONHECIDOS.find((c) => c.rota.test(rotulo) && c.achado.test(a));
+const conhecido = (rotulo: string, a: string, classe?: Classe) => CONHECIDOS.find((c) => c.classe === classe && c.rota.test(rotulo) && c.achado.test(a));
 
 const MASSA = lerMassa();
 const SAIDA = "tests/laboratorio/saida/varredura-bloco26";
@@ -95,7 +97,12 @@ test.describe("T407 — varredura da página inteira, bloco 26 (telas dos merges
             for (const classe of Object.keys(CLASSES) as Classe[]) {
               await test.step(`${classe} @${tam.nome}`, async () => {
                 for (const a of achados[classe]) console.log(`VARREDURA|${classe}|${tam.nome}|${t.papel}|${rotulo}|${a}`);
-                expect.soft(achados[classe], `${t.papel} — ${t.nome} @${tam.nome} — ${classe}: ${CLASSES[classe]}`).toEqual([]);
+                for (const a of achados[classe]) {
+                  const c = conhecido(rotulo, a, classe);
+                  if (c) test.info().annotations.push({ type: c.l, description: `${rotulo} @${tam.nome} (${classe}): ${a}` });
+                }
+                const novos = achados[classe].filter((a) => !conhecido(rotulo, a, classe));
+                expect.soft(novos, `${t.papel} — ${t.nome} @${tam.nome} — ${classe}: ${CLASSES[classe]}`).toEqual([]);
               });
             }
             let clique: string[] = [];

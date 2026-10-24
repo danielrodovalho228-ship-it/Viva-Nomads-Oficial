@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T442 — Cadastro 01-b (E87) + E102-A. Só no laboratório.
+  T451 — Cadastro 01-b (E87) + E102-A. Só no laboratório.
    1. Passo 1, a 390 e 1280 px: os 9 tipos em cartões-foto, todos com foto e o selo "Imagem ilustrativa", numa linha só;
       nenhum chip nem "Outros tipos". Computador: setas (a da esquerda desativada no início, a da direita no fim), também
       pelo teclado. Celular: a linha desliza com encaixe. O cartão marcado leva o selo verde.
@@ -16,7 +16,7 @@ const ids: { dono?: string; chacara?: string } = {};
 const SAIDA = "tests/laboratorio/saida";
 const ROTULOS = ["Casa", "Apartamento", "Quarto", "Studio", "Loft", "Cobertura", "Casa de condomínio", "Flat/apart-hotel", "Chácara/Sítio"];
 
-test.describe("T442 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => {
+test.describe("T451 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
@@ -59,7 +59,7 @@ test.describe("T442 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => 
       // A linha rola (o conteúdo é mais largo que a tela) e a página não rola de lado.
       expect(await linha.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
-      await page.screenshot({ path: `${SAIDA}/t442-tipos-${w}.png` });
+      await page.screenshot({ path: `${SAIDA}/t451-tipos-${w}.png` });
 
       const esq = page.getByTestId("tipos-seta-esquerda");
       const dir = page.getByTestId("tipos-seta-direita");
@@ -75,7 +75,7 @@ test.describe("T442 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => 
         await expect(dir).toBeDisabled();
         await expect(esq).toBeEnabled();
         await expect(cartoes.last()).toBeInViewport();
-        await page.screenshot({ path: `${SAIDA}/t442-tipos-fim-${w}.png` });
+        await page.screenshot({ path: `${SAIDA}/t451-tipos-fim-${w}.png` });
       } else {
         await expect(esq).toBeHidden();
         await expect(dir).toBeHidden();
@@ -88,7 +88,7 @@ test.describe("T442 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => 
       await linha.getByTestId("tipo-chacara").click();
       await expect(linha.getByTestId("tipo-chacara")).toHaveAttribute("aria-checked", "true");
       await expect(linha.getByTestId("tipo-chacara").getByTestId("tipo-marcado")).toBeVisible();
-      await page.screenshot({ path: `${SAIDA}/t442-tipos-chacara-${w}.png` });
+      await page.screenshot({ path: `${SAIDA}/t451-tipos-chacara-${w}.png` });
       await page.context().close();
     });
   }
@@ -104,7 +104,7 @@ test.describe("T442 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => 
     await expect(bloco.getByTestId("revisao-chacara-ponto")).toHaveText("Ponto marcado no mapa");
     await expect(bloco.getByTestId("revisao-chacara-ponto").getByLabel("feito")).toBeVisible();
     await bloco.scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `${SAIDA}/t442-revisao-chacara.png` });
+    await page.screenshot({ path: `${SAIDA}/t451-revisao-chacara.png` });
 
     await page.goto(`/dashboard/imoveis/novo?draft=${ids.chacara}&etapa=disponibilidade`, { waitUntil: "domcontentloaded" });
     await expect(page.getByText("Escolha a partir de quando o imóvel está disponível e as datas que ficam fechadas.")).toBeVisible({ timeout: 30_000 });

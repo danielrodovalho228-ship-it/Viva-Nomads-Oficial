@@ -9,7 +9,7 @@
 import type { Nivel, NivelOuAdequacao } from "../../config/niveis.ts";
 import { nivelAoMenos } from "../niveis/regras.ts";
 import { rotuloFiltroNivel } from "./filtro-nivel.ts";
-import { ROTULO_COMODIDADE, passaComodidades, type ComodidadeFiltro } from "./filtro-comodidades.ts";
+import { ROTULO_COMODIDADE, comodidadesValidas, passaComodidades, type ComodidadeAntiga, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
 import { passaBloqueios, passaEntrada } from "./datas-flexiveis.ts";
@@ -25,8 +25,8 @@ export interface FiltrosPainel {
   petPorte: PortePet | "";
   homeOfficeOnly: boolean;
   readyToLiveOnly: boolean;
-  /** Wi-Fi, cozinha, garagem, máquina de lavar (ordem 583d2e71): precisa ter todas. */
-  comodidades: ComodidadeFiltro[];
+  /** Garagem, máquina de lavar (ordem 583d2e71): precisa ter todas. A antiga "wifi" é ignorada (Adendo 3, E39). */
+  comodidades: (ComodidadeFiltro | ComodidadeAntiga)[];
   /** Estadia (dias): 60 = 1–2 meses, 120 = 3–4, 180 = 5–6; 0 = desligado. Compara com min_period_days e max_period_days. */
   periodo: number;
   /** Tipo do imóvel (property_type, chave de PROPERTY_TYPES); "" = desligado. */
@@ -35,8 +35,12 @@ export interface FiltrosPainel {
   garantia: string;
   /** Só quem emite nota fiscal (o chip só aparece com SELO_NF_UI). */
   notaOnly: boolean;
-  /** Só quem aceita seguro-fiança. */
-  seguroOnly: boolean;
+  /**
+   * @deprecated Adendo 3 (E43): saiu do painel, da /buscar e da URL — `?seguro=1` (URL e buscas salvas) vira
+   * `garantia=seguro_fianca` no parser (seguroDaUrlLegada). Nada mais liga este campo; ele só sobrevive como APELIDO da
+   * garantia "Seguro-fiança" (mesmo critério, conta 1 junto com ela) até o teste de estilo da Pista A largar o campo.
+   */
+  seguroOnly?: boolean;
   /** Só imóveis com gestor profissional (sublocação autorizada). */
   gestorOnly: boolean;
   /** Prompt 57, fase 2: download MEDIDO mínimo (50 | 100 | 300); 0 = desligado. */
@@ -63,7 +67,6 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   tipo: "",
   garantia: "",
   notaOnly: false,
-  seguroOnly: false,
   gestorOnly: false,
   internetMin: 0,
   soInternetMedida: false,
@@ -206,7 +209,7 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (f.tipo && tipoCanonico(p.propertyType ?? "") !== f.tipo) return false;
   if (f.garantia && !aceitaGarantia(p, f.garantia)) return false;
   if (f.notaOnly && !p.issuesInvoice) return false;
-  // E43: "Aceita Seguro-Fiança" era o mesmo critério da garantia "Seguro-fiança"; o atalho antigo (`?seguro=1`) usa a mesma regra.
+  // Apelido legado da garantia "Seguro-fiança" (ver seguroOnly): o MESMO critério, nunca um segundo filtro.
   if (f.seguroOnly && !aceitaGarantia(p, "seguro_fianca")) return false;
   if (f.gestorOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   if (!passaInternet(p, f, agora)) return false;
@@ -224,6 +227,15 @@ export function naoMedidosDoPainel<T extends ImovelFiltravel>(lista: readonly T[
   return lista.filter((p) => passaNoPainel(p, semInternet, agora) && informadaNaoMedida(p, f, agora));
 }
 
+/**
+ * Adendo 3 (E43): o atalho antigo `?seguro=1` (URL, alerta e busca salva) vira a garantia "Seguro-fiança". Uma garantia
+ * já escolhida vence (é a escolha mais nova). Devolve a garantia que vale.
+ */
+export function seguroDaUrlLegada(garantia: string | null | undefined, seguro: string | null | undefined): string {
+  if (garantia) return garantia;
+  return seguro === "1" ? "seguro_fianca" : "";
+}
+
 /** Quantos filtros do painel estão ligados (o número no botão "Filtros"). */
 export function contarFiltrosPainel(f: FiltrosPainel): number {
   return (
@@ -231,13 +243,15 @@ export function contarFiltrosPainel(f: FiltrosPainel): number {
     (f.minBedrooms ? 1 : 0) +
     (f.periodo ? 1 : 0) +
     (f.tipo ? 1 : 0) +
-    (f.garantia ? 1 : 0) +
+    // Seguro-fiança conta 1, venha da garantia ou do apelido legado seguroOnly.
+    (f.garantia || f.seguroOnly ? 1 : 0) +
     (filtroInternetLigado(f) ? 1 : 0) +
     // A data de entrada conta fora da folha (chip "Entrada …"); aqui só a flexibilidade, e só com data.
     (f.entrada && f.datasFlexiveis ? 1 : 0) +
     (f.nivelMin ? 1 : 0) +
-    [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.seguroOnly, f.gestorOnly].filter(Boolean).length +
-    f.comodidades.length
+    // Adendo 3 (E43): "Pronto para Morar" é um estado só (readyToLiveOnly) — atalho e chip contam 1.
+    [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.gestorOnly].filter(Boolean).length +
+    comodidadesValidas(f.comodidades).length
   );
 }
 
@@ -263,10 +277,10 @@ export function resumoFiltros(f: FiltrosPainel): string {
   if (f.readyToLiveOnly) partes.push("Pronto para Morar");
   const nivel = rotuloFiltroNivel(f.nivelMin);
   if (nivel) partes.push(nivel);
-  for (const c of f.comodidades) partes.push(ROTULO_COMODIDADE[c]);
+  for (const c of comodidadesValidas(f.comodidades)) partes.push(ROTULO_COMODIDADE[c]);
   if (f.garantia) partes.push(ROTULO_GARANTIA[f.garantia] ?? "Garantia");
+  else if (f.seguroOnly) partes.push(ROTULO_GARANTIA.seguro_fianca);
   if (f.notaOnly) partes.push("Nota Fiscal");
-  if (f.seguroOnly) partes.push("Seguro-Fiança");
   if (f.gestorOnly) partes.push("Gestor profissional");
   return partes.length ? partes.join(" · ") : "Qualquer preço · todos os imóveis";
 }

@@ -46,7 +46,7 @@ async function larguraConteudo(page: Page): Promise<number> {
   return medir();
 }
 
-// CADASTRO-MOLDURA: /dashboard/imoveis/novo não usa a casca do painel (moldura própria do assistente, ver t441).
+// CADASTRO-MOLDURA: /dashboard/imoveis/novo não usa a casca do painel (moldura própria do assistente, ver t450).
 const ROTAS_COM_CASCA = ROTAS.slice(1).filter((r) => r !== "/dashboard/imoveis/novo");
 
 // Uma rota por teste: as 10 rotas em sequência estouravam os 135 s de um teste só quando o lab estava lento
