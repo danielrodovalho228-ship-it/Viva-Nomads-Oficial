@@ -28,8 +28,9 @@ test("cada bloco convertido usa o BlocoOpcional e o toggle é um switch acessív
     assert.match(src, /toggleInicial\(/, f);
   }
   const comp = ler("../../components/ui/bloco-opcional.tsx");
-  assert.match(comp, /role="switch"/);
-  assert.match(comp, /aria-checked=\{p\.ligado\}/);
+  // O switch é o único da casa (ui/switch, role="switch" + aria-checked).
+  assert.match(comp, /<Switch checked=\{p\.ligado\}/);
+  assert.match(ler("../../components/ui/switch.tsx"), /role="switch"[\s\S]*aria-checked=\{checked\}/);
   assert.match(comp, /\{p\.ligado && <div/);
   assert.doesNotMatch(comp, /window\.confirm|confirm\(/);
 });

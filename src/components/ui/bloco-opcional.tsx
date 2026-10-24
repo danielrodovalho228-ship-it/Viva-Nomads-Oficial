@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import { aoDesligar } from "@/lib/ui/bloco-opcional";
 
 /**
@@ -45,21 +45,8 @@ export function BlocoOpcional(p: {
         <span id={`${p.testId}-pergunta`} className="text-sm font-semibold text-ink">
           {p.pergunta}
         </span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={p.ligado}
-          aria-labelledby={`${p.testId}-pergunta`}
-          onClick={alternar}
-          disabled={confirmando || limpando}
-          data-testid={`${p.testId}-toggle`}
-          className={cn(
-            "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2 disabled:opacity-60",
-            p.ligado ? "bg-forest" : "bg-line",
-          )}
-        >
-          <span className={cn("inline-block h-5 w-5 rounded-full bg-white transition-transform", p.ligado ? "translate-x-6" : "translate-x-1")} />
-        </button>
+        {/* O switch ÚNICO da casa (ui/switch, o mesmo do anúncio — CAMPOS-2). */}
+        <Switch checked={p.ligado} onChange={alternar} label={p.pergunta} disabled={confirmando || limpando} testId={`${p.testId}-toggle`} />
       </div>
       {confirmando && (
         <div className="mt-3 rounded-xl border border-red-200 bg-white p-4" role="alertdialog" aria-labelledby={`${p.testId}-confirma-texto`} data-testid={`${p.testId}-confirma`}>
