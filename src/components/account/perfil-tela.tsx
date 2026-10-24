@@ -124,7 +124,7 @@ export function PerfilTela() {
   const tProf = textosToggle("profissao");
 
   return (
-    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]" data-testid="perfil-tela">
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]" data-testid="perfil-tela">
       <div className="grid min-w-0 gap-6">
         <section className="rounded-xl bg-white p-4 sm:p-6" aria-labelledby="perfil-foto-titulo" data-testid="perfil-cartao">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6" data-testid="topo-conta">

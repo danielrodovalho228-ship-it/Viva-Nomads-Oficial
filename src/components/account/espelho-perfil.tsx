@@ -22,13 +22,13 @@ export function EspelhoPerfil({
   return (
     <section
       id="espelho"
-      className="scroll-mt-24 rounded-xl bg-white p-4 sm:p-6 lg:sticky lg:top-24"
+      className="scroll-mt-24 rounded-xl bg-white p-4 sm:p-6 xl:p-4 lg:sticky lg:top-24"
       aria-labelledby="espelho-titulo"
       data-testid="espelho-perfil"
     >
       {/* A1 (perfil-01): a pílula verde é o título do cartão. */}
       <h2 id="espelho-titulo" className="flex justify-start lg:justify-center">
-        <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-forest px-3 py-2 text-sm font-semibold text-white">
+        <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-forest px-3 py-2 text-sm font-semibold text-white xl:text-xs">
           <Eye className="h-4 w-4" aria-hidden /> {TITULO_ESPELHO}
         </span>
       </h2>
