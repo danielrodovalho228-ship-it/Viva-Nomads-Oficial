@@ -655,7 +655,8 @@
         "t355-conta-a-perfil-espelho",
         "t352-varredura-bloco17",
         "t353-varredura-bloco18",
-        "t354-varredura-bloco19"
+        "t354-varredura-bloco19",
+        "t393-conta-leva2"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -682,7 +683,8 @@
         "t354-varredura-bloco19",
         "t370-conta-a3-papeis",
         "t391-conta-conformidade",
-        "t385-varredura-bloco21"
+        "t385-varredura-bloco21",
+        "t393-conta-leva2"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1089,7 +1091,8 @@
         "t183-telas-logadas-390",
         "t209-jornada-dois-lados",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t393-conta-leva2"
       ]
     },
     "/dashboard/viabilidade": {
