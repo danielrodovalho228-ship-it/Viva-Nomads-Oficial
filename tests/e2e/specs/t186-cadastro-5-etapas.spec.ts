@@ -289,9 +289,10 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       // ── Passo 10: Revise e publique ─────────────────────────────────────
       await noPasso(page, "revisao");
       await expect(page.getByTestId("revisar-documento")).toHaveAttribute("data-estado", "aprovado");
-      // No computador a prévia ao vivo (coluna da direita) também é "previa-anuncio": confere a da revisão.
-      await expect(page.getByTestId("etapa-revisar").getByTestId("previa-anuncio")).toContainText("6% de desconto a partir de 6 meses");
-      await expect(page.getByTestId("qualidade-anuncio")).toBeVisible();
+      // Mockup cadastro-imovel-10: o cartão do anúncio (com o total do mês e o desconto) e a lista de conferência.
+      await expect(page.getByTestId("revisao-cartao")).toContainText("6% de desconto a partir de 6 meses");
+      await expect(page.getByTestId("revisao-total")).toContainText("/mês no total");
+      await expect(page.getByTestId("lista-conferencia")).toBeVisible();
       await page.screenshot({ path: `${SAIDA}/t186-10-revisao-${largura}.png`, fullPage: true });
       await esperarSalvo(page);
       await page.getByRole("button", { name: "Salvar como rascunho" }).click();

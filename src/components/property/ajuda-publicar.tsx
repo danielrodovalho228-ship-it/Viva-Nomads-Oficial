@@ -1,4 +1,5 @@
 "use client";
+import { enviarFotoDoAnuncio } from "@/lib/fotos/enviar-foto-cliente";
 
 import { useState } from "react";
 import { HandHelping, X } from "lucide-react";
@@ -30,15 +31,13 @@ export function AjudaPublicar({ abertoInicial = false }: { /** Prompt 20: aberto
     setSubindo(true);
     const novas: { path: string; url: string }[] = [];
     for (const arq of Array.from(lista).slice(0, MAX_FOTOS_AJUDA - fotos.length)) {
-      const fd = new FormData();
-      fd.append("file", arq);
-      const res = await fetch("/api/upload/foto", { method: "POST", body: fd }).catch(() => null);
-      const j = res ? await res.json().catch(() => ({})) : {};
-      if (!res?.ok) {
-        setErro(j.error ?? "Não foi possível enviar a foto.");
+      // E47-A-CORRECAO: o mesmo envio que nunca lança (tamanho conferido antes; rede caindo vira mensagem).
+      const up = await enviarFotoDoAnuncio(arq);
+      if (!up.ok) {
+        setErro(up.erro);
         break;
       }
-      novas.push({ path: j.path, url: j.url });
+      novas.push({ path: up.path, url: up.url ?? "" });
     }
     setFotos((f) => [...f, ...novas]);
     setSubindo(false);

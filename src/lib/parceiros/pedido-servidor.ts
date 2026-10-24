@@ -40,11 +40,25 @@ export async function mensagem(admin: Admin, p: { id: string; cliente_id: string
 }
 
 /** Aviso por e-mail e push (best-effort: nunca derruba a ação). */
-export async function avisar(admin: Admin, destino: string, ev: NotificationEvent, pedidoId: string, opcoes: { semPush?: boolean } = {}) {
+export async function avisar(
+  admin: Admin,
+  destino: string,
+  ev: NotificationEvent,
+  pedidoId: string,
+  opcoes: { semPush?: boolean; /** Frase própria (ex.: o motivo da recusa). */ texto?: string; /** Destino do botão no lugar do pedido. */ url?: string } = {},
+) {
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: rota(pedidoId), semPush: opcoes.semPush });
+    await notify({
+      event: ev,
+      email: d?.notif_email === false ? undefined : (d?.email ?? undefined),
+      name: d?.full_name ?? undefined,
+      userId: destino,
+      pushUrl: opcoes.url ?? rota(pedidoId),
+      semPush: opcoes.semPush,
+      ...(opcoes.texto ? { body: (nome?: string) => `Olá${nome ? " " + nome : ""}, ${opcoes.texto}` } : {}),
+    });
   } catch {
     /* aviso é complemento */
   }

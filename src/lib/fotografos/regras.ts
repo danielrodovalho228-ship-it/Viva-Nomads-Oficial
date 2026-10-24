@@ -4,6 +4,7 @@
  * valor do serviço (config/taxa-servico-parceiros.ts). a coluna do valor fixo em fotografo_pedidos fica obsoleta (nem lida nem escrita).
  */
 import { mesmaCidade } from "../cidades.ts";
+import { lerReais } from "../reais.ts";
 
 export const MAX_DIAS_ANTECEDENCIA = 90;
 
@@ -54,7 +55,8 @@ export function podeAceitar(p: { status: string; taxa_paga_em: string | null | u
 }
 
 export function taxaValida(v: unknown): number | null {
-  const n = typeof v === "number" ? v : Number(String(v ?? "").replace(",", "."));
+  const lido = lerReais(typeof v === "number" ? v : String(v ?? ""));
+  const n = lido.ok && lido.valor != null ? lido.valor : typeof v === "number" ? v : NaN;
   return Number.isFinite(n) && n >= 0 && n <= 10000 ? Math.round(n * 100) / 100 : null;
 }
 

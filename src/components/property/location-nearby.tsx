@@ -152,7 +152,7 @@ export function LocationNearby({ property }: { property: Property }) {
         </>
       )}
       <ServicosPorPerto visiveis={todosProximities} />
-      <TempoAte imovelId={property.id} />
+      <TempoAte imovelId={property.id} ponto={Number.isFinite(property.lat) && Number.isFinite(property.lng) ? { lat: property.lat, lng: property.lng } : null} />
     </section>
   );
 }
