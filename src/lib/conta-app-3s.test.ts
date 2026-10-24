@@ -33,7 +33,7 @@ test("subtelas /dashboard/conta/[secao] têm o título da casca (um H1) e os end
   assert.match(casca, /data-testid="conta-voltar"/);
   for (const s of ["avaliacoes", "papeis", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"]) assert.match(secao, new RegExp(`case "${s}"`), s);
   assert.match(secao, /ALIAS_SECAO\[bruta\]/);
-  assert.match(readFileSync(new URL("./conta/secoes.ts", import.meta.url), "utf8"), /seguranca: "privacidade",\s*excluir: "ajuda"/);
+  assert.match(readFileSync(new URL("./conta/secoes.ts", import.meta.url), "utf8"), /seguranca: "privacidade",[\s\S]{0,200}?excluir: "privacidade"/);
 });
 
 test("Fechar datas: o indicador de carregamento some e a falha aparece com 'Tentar de novo'", () => {

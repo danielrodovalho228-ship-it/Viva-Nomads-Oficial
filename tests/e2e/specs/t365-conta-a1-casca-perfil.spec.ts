@@ -6,8 +6,8 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
  *   1. Computador (1280): /dashboard/conta abre a tela Perfil na casca — menu lateral "Conta" com as 8 seções na ordem
  *      do desenho, a ativa numa pílula verde; fundo areia; UM H1 visível ("Perfil", na coluna da direita, acima do
  *      espelho); cartão "Foto do perfil" com Nome completo / Sobre você / Cidade e "Salvar alterações"; o espelho à direita.
- *   2. Cada seção é a sua tela (/dashboard/conta/<seção>), com o seu H1; os endereços antigos (/seguranca, /excluir)
- *      caem em Privacidade e Ajuda.
+ *   2. Cada seção é a sua tela (/dashboard/conta/<seção>), com o seu H1; /seguranca e /excluir são subtelas de
+ *      Privacidade (A8).
  *   3. Celular (390): /dashboard/conta é o menu (H1 "Conta"); Perfil abre com "‹ Conta" e o "Salvar alterações" preso
  *      no fim; nada passa da largura da tela.
  *   4. Salvar: nome, frase e idiomas (toggle E56) ficam depois de recarregar e o espelho mostra a frase.
@@ -122,7 +122,8 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     await expect(h1Visiveis(p)).toHaveText("Senha e duas etapas");
     await expect(p.getByTestId("conta-menu-privacidade")).toHaveAttribute("aria-current", "page");
     await p.goto("/dashboard/conta/excluir", { waitUntil: "domcontentloaded" });
-    await expect(h1Visiveis(p)).toHaveText("Ajuda");
+    await expect(h1Visiveis(p)).toHaveText("Sair da Viva");
+    await expect(p.getByTestId("conta-menu-privacidade")).toHaveAttribute("aria-current", "page");
     await expect(p.getByTestId("sair-da-viva")).toBeVisible();
     await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
     await printInteiro(p, "privacidade-1280");

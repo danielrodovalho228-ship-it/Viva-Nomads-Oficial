@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Bell, ChevronRight, CircleHelp, CreditCard, FileText, Gift, LogOut, Shield, ShieldCheck, Star, UserRound, Users, Wrench } from "lucide-react";
-import { useAuthStore } from "@/lib/store";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
-import { removerPushToken } from "@/lib/data/push-actions";
-import { createClient } from "@/lib/supabase/client";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 import { SECOES_CONTA, type ItemSecao } from "@/lib/conta/secoes";
 import { mostraEquipe, ROTA_ADMIN, ROTA_EQUIPE } from "./conta-equipe";
+import { useSair } from "./use-sair";
 
 const ICONES_SECAO: Record<ItemSecao["icone"], React.ComponentType<{ className?: string }>> = {
   UserRound,
@@ -31,25 +28,10 @@ type Item = { href?: string; onClick?: () => void; label: string; descricao?: st
  * tela com "‹ Conta" — e, embaixo, os atalhos de sempre (avisos, verificação, ferramentas, equipe, termos e Sair).
  */
 export function ContaMenu() {
-  const router = useRouter();
   const user = useDisplayUser();
-  const { signOut } = useAuthStore();
 
 
-  async function sair() {
-    try {
-      const t = localStorage.getItem("vn-push-token");
-      if (t) {
-        removerPushToken(t).catch(() => {});
-        localStorage.removeItem("vn-push-token");
-      }
-    } catch {
-      /* segue */
-    }
-    await createClient()?.auth.signOut().catch(() => {});
-    signOut();
-    router.replace("/app/boas-vindas");
-  }
+  const sair = useSair();
 
   // A1: o grupo "Conta" são as oito seções (a mesma lista do menu lateral do computador, lib/conta/secoes).
   const grupos: Grupo[] = [
