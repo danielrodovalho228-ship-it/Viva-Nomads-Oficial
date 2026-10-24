@@ -8,8 +8,9 @@ import { canaisPadrao, normalizarCanais, type CanaisAviso } from "@/lib/conta/te
   A6 — Conta › Notificações (mockup perfil-06), bloco "Canais": a PREFERÊNCIA de cada canal, gravada pela sessão.
     • E-mail → profiles.notif_email; WhatsApp → profiles.notif_whatsapp (já existiam, 0028).
     • Notificação no celular (push) → user_metadata.notif_push (sem migração: a própria pessoa grava nos dados da conta).
-  Isto NÃO liga envio nenhum: WhatsApp só sai com o número oficial configurado e o push só com o app e as chaves — as
+  Isto não liga envio nenhum: WhatsApp só sai com o número oficial configurado e o push só com o app e as chaves — as
   mesmas travas de antes (decisão de 24/10: as preferências seguem o mockup; o envio segue atrás das chaves).
+  Desligar, sim, vale: com notif_push = false nenhum push sai para a pessoa (sendPushParaUsuarios, push.ts).
 */
 
 export async function getCanais(): Promise<CanaisAviso> {

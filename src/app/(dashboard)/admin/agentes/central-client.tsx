@@ -36,6 +36,7 @@ import { RedeAoVivo } from "@/components/admin/agentes/rede";
 import { AtivarNotificacoes } from "@/components/app/push-app";
 import { ChipPrioridade, RaioX } from "@/components/admin/agentes/raiox";
 import styles from "@/components/admin/agentes/central.module.css";
+import { estadoDaCentral } from "@/lib/agentes/selo-vivo";
 
 /*
   Central de Agentes v2 — o visual do QG dentro do admin: sala de comando
@@ -146,11 +147,16 @@ function TextoSimples({ texto }: { texto: string }) {
   );
 }
 
-function Vazio({ titulo, texto }: { titulo: string; texto: string }) {
+function Vazio({ titulo, texto, acao }: { titulo: string; texto: string; acao?: { rotulo: string; href: string } }) {
   return (
-    <div className="rounded-xl border border-dashed border-white/15 p-8 text-center">
+    <div className="rounded-xl border border-dashed border-white/15 p-8 text-center" data-testid="central-vazio">
       <p className="font-semibold text-white">{titulo}</p>
       <p className="mx-auto mt-1 max-w-md text-sm text-[#8C9AC4]">{texto}</p>
+      {acao && (
+        <Link href={acao.href} className="mt-4 inline-grid min-h-11 place-items-center rounded-xl border border-white/20 px-4 text-sm font-semibold text-white">
+          {acao.rotulo}
+        </Link>
+      )}
     </div>
   );
 }
@@ -175,7 +181,9 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
   const [conversarCom, setConversarCom] = useState<string | null>(null);
   const agora = useAgora();
   const porSlug = useMemo(() => Object.fromEntries(dados.agentes.map((a) => [a.slug, a])), [dados.agentes]);
-  const kpi = useMemo(() => (agora ? indicadores(dados.agentes, dados.rondas, agora) : null), [dados.agentes, dados.rondas, agora]);
+  // E74: sem acesso às tabelas, os números ficam "–" (não 0): zero seria afirmar que a equipe parou.
+  const kpi = useMemo(() => (agora && dados.acessoLiberado ? indicadores(dados.agentes, dados.rondas, agora) : null), [dados.agentes, dados.rondas, dados.acessoLiberado, agora]);
+  const estado = useMemo(() => estadoDaCentral({ acessoLiberado: dados.acessoLiberado, agentes: dados.agentes, rondas: dados.rondas, agora: agora ?? new Date(0) }), [dados, agora]);
   const [lidoEm, setLidoEm] = useState<Date | null>(null);
 
   // "Ao vivo": relê o banco a cada 90 s enquanto a aba do navegador está visível.
@@ -244,9 +252,19 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
               Texas <b className="font-semibold text-white">{horaTexas(agora)}</b>
             </span>
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1 text-xs text-[#8C9AC4]">
-            <span className={styles.ponto} />
-            Ao vivo · dados de {horaTexas(lidoEm)} TX
+          {/* E74: "Ao vivo" só com acesso às tabelas e ronda recente; fora disso, o selo diz o que está acontecendo. */}
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1 text-xs text-[#8C9AC4]" data-testid="selo-central" data-tipo={agora ? estado.tipo : "carregando"}>
+            {agora && estado.tipo === "ao_vivo" ? (
+              <>
+                <span className={styles.ponto} />
+                Ao vivo · dados de {horaTexas(lidoEm)} TX
+              </>
+            ) : (
+              <>
+                <span className="h-2 w-2 rounded-full bg-[#5B6894]" />
+                {agora ? estado.selo : "Carregando…"}
+              </>
+            )}
           </span>
         </div>
         <nav className="-mb-px flex gap-1 overflow-x-auto pb-2" role="tablist" style={{ scrollbarWidth: "none" }}>
@@ -308,8 +326,8 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
           </div>
         </section>
 
-        {dados.agentes.length === 0 ? (
-          <Vazio titulo="Nenhum agente cadastrado" texto="A tabela de agentes está vazia ou a migração 0078 ainda não foi aplicada neste banco." />
+        {estado.vazio ? (
+          <Vazio titulo={estado.vazio.titulo} texto={estado.vazio.texto} acao={estado.vazio.acao} />
         ) : aba === "Equipe" ? (
           <Equipe dados={dados} agora={agora} onConversar={abrirConversa} />
         ) : aba === "Rede ao vivo" ? (
