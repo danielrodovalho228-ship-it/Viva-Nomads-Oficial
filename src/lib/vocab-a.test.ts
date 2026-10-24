@@ -41,7 +41,8 @@ function arquivos(dir: string): string[] {
 
 test("guarda: nenhum 'comissão' nem 'inquilino' em texto visível (públicas e telas logadas)", () => {
   const achados: string[] = [];
-  for (const rel of ["app", "components", "config"].flatMap(arquivos)) {
+  // Os guias públicos (/guias) moram em lib, mas são texto de página: entram na guarda.
+  for (const rel of [...["app", "components", "config"].flatMap(arquivos), "lib/guias/guias.ts"]) {
     if (FORA.test(rel)) continue;
     for (const t of textosVisiveis(ler(rel))) if (PALAVRA.test(t)) achados.push(`${relative(".", rel)}: ${t.trim().slice(0, 80)}`);
   }
