@@ -44,6 +44,12 @@ export const PHOTOS = {
     uploadEmpty: `${C}/upload-vazio.webp`,
     workspace: `${C}/home-office.webp`,
   },
+  // Conta › Pagamentos (E70): uma foto do acervo por cartão, no padrão dos Papéis.
+  pagamentos: {
+    proprietario: `${H}/home-proprietarios-chaves.webp`,
+    morador: `${I}/placeholder-imovel-sala.webp`,
+    parceiro: "/images/unicas/parceiros-servicos.webp",
+  },
   // Estados / OG (imagens reais geradas)
   emptyTenant: "/images/empty-inquilino-reservas.webp",
   emptyOwner: "/images/empty-prop-imoveis.webp",
