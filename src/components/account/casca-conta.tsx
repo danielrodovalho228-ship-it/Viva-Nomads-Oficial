@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { VoltarCelular } from "@/components/ui/voltar-celular";
+import { LINHA_FECHAMENTO_CONTA } from "@/lib/conta/secoes";
 import { Bell, CircleHelp, CreditCard, FileText, Shield, Star, UserRound, Users } from "lucide-react";
 import { SECOES_CONTA, itemDaSecao, type ItemSecao, type SecaoConta } from "@/lib/conta/secoes";
 import { cn } from "@/lib/utils";
@@ -94,8 +95,21 @@ export function CascaConta({
         {!topoDireita && <div className="mb-6">{cabecalho}</div>}
         {topoDireita && <div className="mb-6 xl:hidden">{cabecalho}</div>}
         {children}
+        <FechamentoConta />
       </div>
     </div>
+  );
+}
+
+/**
+ * E75 (padrão de fechamento, 24/10): toda tela da Conta e o menu terminam numa linha institucional curta, logo
+ * depois do último cartão — sem altura forçada nem vão bege embaixo.
+ */
+export function FechamentoConta() {
+  return (
+    <p className="mt-8 text-center text-xs text-muted" data-testid="conta-fechamento">
+      {LINHA_FECHAMENTO_CONTA}
+    </p>
   );
 }
 

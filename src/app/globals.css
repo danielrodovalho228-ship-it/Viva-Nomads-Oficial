@@ -499,10 +499,12 @@ body:has([data-testid="barra-fixa-imovel"]) {
     padding-right: 5rem;
   }
 }
-/* E67a (decidido pelo Daniel, 24/10): "Meus dados" termina limpa no computador — sem o vão depois do último cartão.
-   A partir de 768 px o "Fale com a Viva" mora na faixa reservada da direita (C4), então o fim não precisa da folga dele. */
+/* E67a/E75 (padrão de fechamento, 24/10): as telas da Conta e o menu terminam limpas no computador, na linha
+   institucional — sem o vão depois do último cartão. A partir de 768 px o "Fale com a Viva" mora na faixa reservada da
+   direita (C4), então o fim não precisa da folga dele. No celular fica a folga do botão flutuante. */
 @media (min-width: 768px) {
-  html:not([data-app]) [data-painel-main]:has([data-conta-casca][data-secao="dados"]) {
+  html:not([data-app]) [data-painel-main]:has([data-conta-casca]),
+  html:not([data-app]) [data-painel-main]:has([data-testid="conta-menu"]) {
     padding-bottom: 2rem;
   }
 }

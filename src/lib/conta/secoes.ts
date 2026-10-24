@@ -4,6 +4,9 @@
   qual está ativa pela rota. Puro (node --test).
 */
 
+/** E75: a linha institucional que fecha toda tela da Conta e o menu. */
+export const LINHA_FECHAMENTO_CONTA = "Viva Nomads · Uberlândia, MG";
+
 export type SecaoConta = "perfil" | "avaliacoes" | "papeis" | "dados" | "privacidade" | "notificacoes" | "pagamentos" | "ajuda";
 
 export interface ItemSecao {

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { SECOES_CONTA, type ItemSecao } from "@/lib/conta/secoes";
 import { mostraEquipe, ROTA_ADMIN, ROTA_EQUIPE } from "./conta-equipe";
 import { useSair } from "./use-sair";
+import { FechamentoConta } from "./casca-conta";
 
 const ICONES_SECAO: Record<ItemSecao["icone"], React.ComponentType<{ className?: string }>> = {
   UserRound,
@@ -110,6 +111,7 @@ export function ContaMenu() {
           </ul>
           </section>
         ))}
+      <FechamentoConta />
     </div>
   );
 }
