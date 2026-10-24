@@ -1,12 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronRight, CircleHelp, CreditCard, FileText, Gift, LogOut, Shield, ShieldCheck, Star, UserRound, Users, Wrench } from "lucide-react";
-import { useDisplayUser } from "@/lib/demo/demo-mode";
-import { PROGRAMA_INDICACAO } from "@/lib/flags";
+import { Bell, ChevronRight, CircleHelp, CreditCard, FileText, LogOut, Shield, Star, UserRound, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SECOES_CONTA, type ItemSecao } from "@/lib/conta/secoes";
-import { mostraEquipe, ROTA_ADMIN, ROTA_EQUIPE } from "./conta-equipe";
 import { useSair } from "./use-sair";
 import { FechamentoConta } from "./casca-conta";
 
@@ -26,38 +23,22 @@ type Item = { href?: string; onClick?: () => void; label: string; descricao?: st
 
 /**
  * A Conta no CELULAR (site e app; A1, mockups perfil-01..08): o grupo "Conta" com as oito seções — cada uma abre a sua
- * tela com "‹ Conta" — e, embaixo, os atalhos de sempre (avisos, verificação, ferramentas, equipe, termos e Sair).
+ * tela com "‹ Conta" — e Sair. NAV-A (24/10): só a pessoa; o trabalho fica na barra verde (e na barra de abas).
  */
 export function ContaMenu() {
-  const user = useDisplayUser();
-
-
   const sair = useSair();
 
   // A1: o grupo "Conta" são as oito seções (a mesma lista do menu lateral do computador, lib/conta/secoes).
   const grupos: Grupo[] = [
     {
       titulo: "Conta",
-      itens: SECOES_CONTA.map((s) => ({ href: s.href, label: s.rotulo, descricao: s.descricao, icon: ICONES_SECAO[s.icone] })),
+      itens: SECOES_CONTA.map((s) => ({ href: s.href, label: s.rotuloMenu ?? s.rotulo, descricao: s.descricao, icon: ICONES_SECAO[s.icone] })),
     },
     {
+      // NAV-A: a Conta é só a PESSOA. Avisos (sino do topo), Verificação, Ferramentas, Indicações, Painel Admin e Equipe
+      // moram na barra verde de trabalho; Termos e Privacidade, na Ajuda. Sair fecha a lista.
       titulo: null,
-      itens: [
-        { href: "/dashboard/notificacoes", label: "Seus avisos", descricao: "Os avisos que chegaram para você.", icon: Bell },
-        { href: "/dashboard/verificacao", label: "Verificação", descricao: "Confirme sua identidade.", icon: ShieldCheck },
-        // Sem item de plano: não há mensalidade nesta fase (só taxa por contrato fechado).
-        { href: "/dashboard/ferramentas", label: "Ferramentas", descricao: "Simulador, ROI e orçamentos.", icon: Wrench },
-        ...(mostraEquipe(user?.role)
-          ? [
-              { href: ROTA_ADMIN, label: "Painel Admin", descricao: "Área da equipe.", icon: ShieldCheck },
-              { href: ROTA_EQUIPE, label: "Equipe e aprovações", descricao: "Documentos e pendências.", icon: Users },
-            ]
-          : []),
-        ...(PROGRAMA_INDICACAO ? [{ href: "/dashboard/indicacoes", label: "Indicações", descricao: "Convide e acompanhe.", icon: Gift }] : []),
-        { href: "/termos", label: "Termos de uso", descricao: "Regras da plataforma.", icon: FileText },
-        { href: "/privacidade", label: "Política de privacidade", descricao: "Como tratamos seus dados.", icon: FileText },
-        { onClick: sair, label: "Sair", descricao: "Encerrar a sessão neste aparelho.", icon: LogOut, tom: "perigo" },
-      ],
+      itens: [{ onClick: sair, label: "Sair", descricao: "Encerrar a sessão neste aparelho.", icon: LogOut, tom: "perigo" }],
     },
   ];
 

@@ -84,7 +84,7 @@ export function CascaConta({
                   )}
                   data-testid={`conta-menu-${s.id}`}
                 >
-                  <Icone className="h-5 w-5 shrink-0" aria-hidden /> {s.rotulo}
+                  <Icone className="h-5 w-5 shrink-0" aria-hidden /> {s.rotuloMenu ?? s.rotulo}
                 </Link>
               </li>
             );
