@@ -17,7 +17,8 @@ test.describe("T373 — CONTA-A A4: Meus dados (perfil-04)", () => {
   const senha = novaSenha();
   const conta = { email: `inq.t373.${novoSufixo()}@lab.vivanomads.test`, nome: "Ana Ribeiro", role: "tenant" as const };
   let id = "";
-  const nascimento = async () => ((await adm().auth.admin.getUserById(id)).data.user?.user_metadata as { data_nascimento?: string } | undefined)?.data_nascimento;
+  // Desde a 0237 a data fica em profiles.data_nascimento.
+  const nascimento = async () => ((await adm().from("profiles").select("data_nascimento").eq("id", id).maybeSingle()).data as { data_nascimento?: string | null } | null)?.data_nascimento ?? null;
   async function como(browser: Browser, w: number): Promise<Page> {
     const p = await entrar(browser, conta.email, senha);
     await p.setViewportSize({ width: w, height: w === 1280 ? 900 : 844 });
@@ -62,7 +63,7 @@ test.describe("T373 — CONTA-A A4: Meus dados (perfil-04)", () => {
     await expect(campo).toHaveValue("31/02/1991");
     await p.getByTestId("dados-salvar").click();
     await expect(p.getByTestId("meus-dados").getByRole("alert")).toHaveText("Data de nascimento inválida.");
-    expect(await nascimento()).toBeUndefined();
+    expect(await nascimento()).toBeNull();
     await campo.fill("14031991");
     await p.getByTestId("dados-salvar").click();
     await expect(p.getByText("Dados salvos.")).toBeVisible({ timeout: 20_000 });
