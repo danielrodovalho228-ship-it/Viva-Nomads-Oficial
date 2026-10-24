@@ -6,6 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { ANUNCIAR, contemRota, folhas, menuDoPainel, rotaAtiva } from "./menu-painel.ts";
+import { secaoDaRota } from "../lib/conta/secoes.ts";
 
 const base = { temImovel: false, admin: false, estadiaAtiva: false };
 const ids = (m: ReturnType<typeof menuDoPainel>) => m.map((i) => i.id);
@@ -65,7 +66,8 @@ test("regra 0.5: todo link é rota interna do painel (fora a busca pública) e a
     // Busca e formulário do pedido são públicos (Prompt 30, item 6: "Publicar pedido de moradia" no menu do inquilino).
     if (rota === "/buscar" || rota === "/pedidos/novo") continue;
     assert.match(rota, /^\/(dashboard|admin|qualificar)(\/|$)/, rota);
-    const pasta = new URL(`../app/(dashboard)${rota}/page.tsx`, import.meta.url);
+    // As seções da Conta (A1) são telas da rota /dashboard/conta/[secao].
+    const pasta = new URL(secaoDaRota(rota) ? "../app/(dashboard)/dashboard/conta/[secao]/page.tsx" : `../app/(dashboard)${rota}/page.tsx`, import.meta.url);
     assert.ok(existsSync(pasta), `tela existe: ${rota}`);
   }
 });

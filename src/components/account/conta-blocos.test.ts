@@ -9,19 +9,24 @@ import { readFileSync } from "node:fs";
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 const CONTA = ler("src/app/(dashboard)/dashboard/conta/page.tsx");
 
-test("Conta (CONTA-A): topo único e os blocos na ordem Perfil → Avaliações → Papéis → Dados → Privacidade → Notificações → Pagamentos → Ajuda e Sair", () => {
-  assert.match(CONTA, /<TopoConta \/>/);
-  const ordem = ["perfil-publico", "avaliacoes", "papeis", "dados", "confianca", "notificacoes", "pagamentos", "sair-da-viva"].map((id) => CONTA.indexOf(`id="${id}"`));
-  assert.ok(ordem.every((i) => i > 0), `faltou bloco: ${ordem}`);
+const SECAO = ler("src/app/(dashboard)/dashboard/conta/[secao]/page.tsx");
+const SECOES = ler("src/lib/conta/secoes.ts");
+
+test("Conta (A1): oito telas na ordem Perfil → Avaliações → Papéis e intenção → Dados → Privacidade → Notificações → Pagamentos → Ajuda", () => {
+  const ordem = ["perfil", "avaliacoes", "papeis", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"].map((id) => SECOES.indexOf(`id: "${id}"`));
+  assert.ok(ordem.every((i) => i > 0), `faltou seção: ${ordem}`);
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
-  assert.ok(CONTA.indexOf("<TopoConta />") < ordem[0]);
+  // No computador /dashboard/conta é a tela Perfil na casca; no celular, o menu.
+  assert.match(CONTA, /<CascaConta ativo="perfil" topoDireita>\s*<PerfilTela \/>/);
+  assert.match(CONTA, /<div className="lg:hidden">\s*<ContaMenu \/>/);
+  for (const id of ["avaliacoes", "papeis", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"]) assert.match(SECAO, new RegExp(`<CascaConta ativo="${id}"`), id);
 });
 
-test("Conta: sem repetições — senha, verificação, 'Perfil do modo' e os blocos antigos de foto saíram da página longa", () => {
-  assert.doesNotMatch(CONTA, /<ChangePassword|PerfilDoModo|title="Verificação"|title="Segurança"|TaxSimulator/);
-  assert.equal(CONTA.match(/<ConfiancaLista \/>/g)?.length, 1);
-  // CONTA-A: o título "Conta", o bloco "Conta" e os dois blocos de foto deram lugar ao topo único.
-  assert.doesNotMatch(CONTA, /<PageTitle|<AvatarUploader|<ConviteFotoPerfil|titulo="Conta"|numero=\{/);
+test("Conta: sem repetições — cada assunto numa tela só; nada de página longa", () => {
+  assert.doesNotMatch(CONTA + SECAO, /PerfilDoModo|title="Verificação"|title="Segurança"|TaxSimulator|<AvatarUploader|<ConviteFotoPerfil|<TopoConta/);
+  assert.equal(SECAO.match(/<ConfiancaLista \/>/g)?.length, 1);
+  assert.equal(SECAO.match(/<ChangePassword \/>/g)?.length, 1);
+  assert.doesNotMatch(CONTA, /<PageTitle|<ConfiancaLista|<ChangePassword/);
 });
 
 test("simulador tributário: fora da Conta e do cadastro; fica em Ferramentas (/dashboard/tributacao)", () => {
@@ -34,8 +39,8 @@ test("simulador tributário: fora da Conta e do cadastro; fica em Ferramentas (/
   assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /conta#tributacao/);
 });
 
-test("menu: 'Verificação' aponta para a lista de Confiança e segurança", () => {
-  assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/conta#confianca"/);
+test("menu: 'Verificação' aponta para a tela Privacidade (lista de Confiança e segurança)", () => {
+  assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/conta\/privacidade"/);
 });
 
 test("simulador: PJ sem '+ IBS/CBS', sem aviso de ago/2026 e com o custo de manter a empresa", () => {

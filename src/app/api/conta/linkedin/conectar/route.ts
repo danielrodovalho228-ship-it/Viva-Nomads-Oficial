@@ -8,7 +8,7 @@ import { COOKIE_FLUXO, ESCOPO, VIDA_COOKIE_SEG, assinarCookie, desafioPkce, novo
 
 export const dynamic = "force-dynamic";
 
-const CONTA = "/dashboard/conta";
+const CONTA = "/dashboard/conta/privacidade";
 
 /**
  * 63-B — começa o "Conectar LinkedIn" (não é login): exige sessão Viva, 5 tentativas por hora por conta, gera state, nonce
@@ -16,7 +16,7 @@ const CONTA = "/dashboard/conta";
  * OIDC simulado). Escopo "openid profile": nada de e-mail, foto ou contatos.
  */
 export async function GET() {
-  const volta = (motivo: string) => NextResponse.redirect(`${SITE_URL}${CONTA}?linkedin=${motivo}#confianca`, 303);
+  const volta = (motivo: string) => NextResponse.redirect(`${SITE_URL}${CONTA}?linkedin=${motivo}`, 303);
   if (!(await linkedinAtivo())) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
   const supabase = await createClient();
   if (!supabase) return volta("indisponivel");

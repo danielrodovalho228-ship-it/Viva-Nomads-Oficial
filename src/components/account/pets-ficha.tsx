@@ -102,8 +102,8 @@ export function PetsFicha() {
   const t = textosToggle("pets");
   return (
     <section id="pets" className="scroll-mt-24">
-      <Panel title="Meus pets" className="mt-6">
-        <BlocoOpcional pergunta={t.pergunta} ligado={ligado} onLigado={setLigado} temDados={lista.length > 0} textoConfirmar={t.confirmar} onLimpar={tirarTodos} testId="pets-toggle-bloco">
+      <Panel className="mt-6">
+        <BlocoOpcional titulo="Meus pets" pergunta={t.pergunta} ligado={ligado} onLigado={setLigado} temDados={lista.length > 0} textoConfirmar={t.confirmar} onLimpar={tirarTodos} testId="pets-toggle-bloco">
         <p className="text-sm text-muted">
           Cadastre até {MAX_PETS} pets. Quem anuncia vê a ficha na sua candidatura e confere se o imóvel aceita.
         </p>

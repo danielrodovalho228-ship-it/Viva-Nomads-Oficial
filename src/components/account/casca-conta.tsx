@@ -1,0 +1,98 @@
+"use client";
+
+import Link from "next/link";
+import { Bell, ChevronLeft, CircleHelp, CreditCard, FileText, Shield, Star, UserRound, Users } from "lucide-react";
+import { SECOES_CONTA, itemDaSecao, type ItemSecao, type SecaoConta } from "@/lib/conta/secoes";
+import { cn } from "@/lib/utils";
+
+const ICONES: Record<ItemSecao["icone"], React.ComponentType<{ className?: string }>> = {
+  UserRound,
+  Star,
+  Users,
+  FileText,
+  Shield,
+  Bell,
+  CreditCard,
+  CircleHelp,
+};
+
+/**
+ * A1 — a casca das telas da Conta (mockups perfil-01..08): fundo areia, menu lateral "Conta" com as oito seções (a
+ * ativa numa pílula verde) no computador; no celular, "‹ Conta" volta ao menu e o título fica no topo. Um H1 por tela
+ * (o nome da seção). `lateral` (opcional) é a coluna da direita no computador (ex.: o espelho do Perfil).
+ */
+export function CascaConta({
+  ativo,
+  subtitulo,
+  children,
+  topoDireita,
+}: {
+  ativo: SecaoConta;
+  subtitulo?: string;
+  children: React.ReactNode;
+  /** No Perfil, o título e o subtítulo ficam na coluna da direita (acima do espelho), como no desenho. */
+  topoDireita?: boolean;
+}) {
+  const atual = itemDaSecao(ativo);
+  const cabecalho = (
+    <header className={cn("min-w-0", topoDireita && "xl:hidden")} data-testid="conta-cabecalho">
+      <Link
+        href="/dashboard/conta"
+        className="mb-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-ink lg:hidden"
+        data-testid="conta-voltar"
+      >
+        <ChevronLeft className="h-5 w-5" aria-hidden /> Conta
+      </Link>
+      <h1 className="font-title text-[28px] font-semibold leading-tight text-ink" data-testid="conta-h1">
+        {atual.rotulo}
+      </h1>
+      {subtitulo && <p className="mt-1 text-sm text-muted">{subtitulo}</p>}
+    </header>
+  );
+  return (
+    <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start" data-conta-casca data-secao={ativo}>
+      <nav aria-label="Conta" className="hidden rounded-xl bg-white p-3 lg:sticky lg:top-24 lg:block" data-testid="conta-menu-lateral">
+        <p className="px-3 pb-2 pt-1 text-xs text-muted">Conta</p>
+        <ul className="grid gap-1">
+          {SECOES_CONTA.map((s) => {
+            const Icone = ICONES[s.icone];
+            const on = s.id === ativo;
+            return (
+              <li key={s.id}>
+                <Link
+                  href={s.href}
+                  aria-current={on ? "page" : undefined}
+                  className={cn(
+                    "flex min-h-11 items-center gap-3 rounded-full px-4 text-sm transition-colors",
+                    on ? "bg-forest font-semibold text-white" : "text-ink hover:bg-surface-2",
+                  )}
+                  data-testid={`conta-menu-${s.id}`}
+                >
+                  <Icone className="h-5 w-5 shrink-0" aria-hidden /> {s.rotulo}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      <div className="min-w-0">
+        {!topoDireita && <div className="mb-6">{cabecalho}</div>}
+        {topoDireita && <div className="mb-6 xl:hidden">{cabecalho}</div>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** Título e subtítulo da seção para a coluna da direita (Perfil no computador). */
+export function TituloSecaoLateral({ ativo, subtitulo }: { ativo: SecaoConta; subtitulo: string }) {
+  return (
+    <header className="hidden xl:block" data-testid="conta-cabecalho-lateral">
+      {/* No computador o H1 do Perfil fica aqui (o do topo some a partir de 1280 px, onde a coluna da direita aparece): um H1 visível por largura. */}
+      <h1 className="font-title text-[28px] font-semibold leading-tight text-ink" data-testid="conta-h1-lateral">
+        {itemDaSecao(ativo).rotulo}
+      </h1>
+      <p className="mt-1 text-sm text-muted">{subtitulo}</p>
+    </header>
+  );
+}

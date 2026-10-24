@@ -86,8 +86,9 @@ export function MeuLocalTrabalho() {
 
   return (
     <section id="local-trabalho" className="scroll-mt-24">
-      <Panel title="Meu local de trabalho" className="mt-6">
+      <Panel className="mt-6">
         <BlocoOpcional
+          titulo="Meu local de trabalho"
           pergunta={textosToggle("local-trabalho").pergunta}
           ligado={ligado}
           onLigado={setLigado}

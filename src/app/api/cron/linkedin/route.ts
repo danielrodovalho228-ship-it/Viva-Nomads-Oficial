@@ -17,6 +17,6 @@ export async function GET(request: Request) {
   if (!admin) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
   const simulada = integracoesSimuladas() ? new URL(request.url).searchParams.get("agora") : null;
   const agora = simulada && Number.isFinite(Date.parse(simulada)) ? new Date(simulada) : new Date();
-  const r = await rotinaLinkedin(admin, agora, (uid) => avisar(admin, uid, "linkedin_vencendo", "/dashboard/conta#confianca"));
+  const r = await rotinaLinkedin(admin, agora, (uid) => avisar(admin, uid, "linkedin_vencendo", "/dashboard/conta/privacidade"));
   return NextResponse.json({ ok: true, agora: agora.toISOString(), ...r });
 }

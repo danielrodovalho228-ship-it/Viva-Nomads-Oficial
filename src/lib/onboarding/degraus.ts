@@ -44,7 +44,7 @@ export function degrausPerfil(f: FatosDegraus): Degrau[] {
       paraQue: "Para quem recebe seu pedido ou sua proposta saber quem é você.",
       feito: basico,
       estado: basico ? "Feito" : "Pedido no seu primeiro pedido ou anúncio",
-      acao: basico ? null : { rotulo: "Completar agora", href: "/dashboard/conta#perfil-publico" },
+      acao: basico ? null : { rotulo: "Completar agora", href: "/dashboard/conta/perfil" },
     },
     {
       id: "telefone",
@@ -52,7 +52,7 @@ export function degrausPerfil(f: FatosDegraus): Degrau[] {
       paraQue: "Para o primeiro contato real com a outra parte. Não trava nada.",
       feito: f.temTelefone,
       estado: f.temTelefone ? "Feito" : "Pedido no primeiro contato",
-      acao: f.temTelefone ? null : { rotulo: "Informar agora", href: "/dashboard/conta#dados" },
+      acao: f.temTelefone ? null : { rotulo: "Informar agora", href: "/dashboard/conta/dados" },
     },
     {
       id: "identidade",
