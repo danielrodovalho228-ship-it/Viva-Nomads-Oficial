@@ -676,7 +676,8 @@
         "t337-varredura-redundancia",
         "t362-perfil-avaliacoes-pix",
         "t353-varredura-bloco18",
-        "t354-varredura-bloco19"
+        "t354-varredura-bloco19",
+        "t370-conta-a3-papeis"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1922,6 +1923,29 @@
       "specs": [
         "t347-respostas-rapidas-55e2",
         "t335-varredura-bloco13"
+      ]
+    },
+    "/dashboard/conta/excluir": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t316-sair-da-viva-51",
+        "t332-merges-1170-1172",
+        "t365-conta-a1-casca-perfil",
+        "t375-conta-a8-ajuda"
+      ]
+    },
+    "/dashboard/conta/avaliacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t369-conta-a2-avaliacoes"
       ]
     }
   },
@@ -5944,6 +5968,20 @@
       "specs": [
         "t362-perfil-avaliacoes-pix"
       ]
+    },
+    "src/lib/data/canais-actions.ts#getCanais": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/canais-actions.ts#setCanais": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     }
   }
 }

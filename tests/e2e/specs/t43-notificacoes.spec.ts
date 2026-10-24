@@ -79,9 +79,11 @@ test.describe("T43 — Notificações", () => {
     await page.goto("/dashboard/conta/notificacoes", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(page.getByText("Avisos por WhatsApp")).toHaveCount(0); // saiu na ordem p30 item 8
-    const chave = page.getByRole("switch", { name: "Avisos por e-mail" });
+    // A6 (mockup perfil-06): canal "E-mail" + "Salvar preferências".
+    const chave = page.getByTestId("notif-canal-email");
     await expect(chave).toBeEnabled({ timeout: 15_000 });
     await chave.click();
+    await page.getByTestId("notif-salvar").click();
     await expect.poll(async () => (await adm().from("profiles").select("notif_email").eq("id", ids.dono!).single()).data?.notif_email, { timeout: 15_000 }).toBe(false);
     await page.context().close();
   });

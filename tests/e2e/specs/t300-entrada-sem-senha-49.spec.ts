@@ -98,9 +98,9 @@ test.describe("T300 — entrada sem senha, intenção e convidado (Prompt 49)", 
     await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", id);
     await entrarPorCodigo(page, email, "/auth?redirect=%2Fdashboard%2Fconta");
     await page.waitForURL((u) => u.pathname === "/dashboard/conta", { timeout: 45_000 });
-    // A intenção aparece editável em Conta › Papéis e intenção (A1).
+    // A intenção aparece editável em Conta › Papéis e intenção (A3: o cartão "Quero morar" ligado).
     await page.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("minha-intencao").filter({ visible: true }).getByTestId("intencao-morar")).toHaveAttribute("aria-pressed", "true", { timeout: 20_000 });
+    await expect(page.getByTestId("papel-morar-toggle")).toHaveAttribute("aria-checked", "true", { timeout: 20_000 });
   });
 
   test("3. 'Entrar com senha' (terciário) continua entrando", async ({ page }) => {

@@ -4,7 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 const CONTA = ler("src/app/(dashboard)/dashboard/conta/page.tsx");
@@ -19,7 +19,11 @@ test("Conta (A1): oito telas na ordem Perfil → Avaliações → Papéis e inte
   // No computador /dashboard/conta é a tela Perfil na casca; no celular, o menu.
   assert.match(CONTA, /<CascaConta ativo="perfil" topoDireita>\s*<PerfilTela \/>/);
   assert.match(CONTA, /<div className="lg:hidden">\s*<ContaMenu \/>/);
-  for (const id of ["avaliacoes", "papeis", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"]) assert.match(SECAO, new RegExp(`<CascaConta ativo="${id}"`), id);
+  // Cada seção é um caso de /conta/[secao] ou a sua rota própria (as que leem dados no servidor, ex.: Avaliações).
+  for (const id of ["avaliacoes", "papeis", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"]) {
+    const propria = existsSync(new URL(`../../app/(dashboard)/dashboard/conta/${id}/page.tsx`, import.meta.url));
+    assert.match(propria ? ler(`src/app/(dashboard)/dashboard/conta/${id}/page.tsx`) : SECAO, new RegExp(`<CascaConta ativo="${id}"`), id);
+  }
 });
 
 test("Conta: sem repetições — cada assunto numa tela só; nada de página longa", () => {
