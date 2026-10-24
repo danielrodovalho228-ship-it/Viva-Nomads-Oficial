@@ -65,7 +65,8 @@
         "t286-esqueletos-vazios-48",
         "t288-padrao-minimo-59a",
         "t317-email-unico-49c1",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t395-admin-celular-e73"
       ]
     },
     "/admin/2fa/refazer": {
