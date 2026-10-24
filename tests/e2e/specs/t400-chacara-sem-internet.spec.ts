@@ -119,14 +119,17 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
     const bloco = page.getByTestId("pronto-trabalhar");
     await expect(bloco.getByTestId("sem-internet-imovel")).toHaveText("Sem internet no imóvel", { timeout: 20_000 });
     await expect(bloco.getByLabel("Velocidade da internet em Mbps")).toHaveCount(0);
-    await expect(page.getByTestId("checklist-item-sem_internet").first()).toContainText(MOTIVO);
-    await expect(page.getByTestId("checklist-item-internet")).toHaveCount(0);
     await page.screenshot({ path: "tests/laboratorio/saida/t400-2-passo5-sem-internet.png", fullPage: true });
 
     // Revisão: o motivo na lista e no "Falta resolver"; nada de "Velocidade da internet"; Publicar travado.
     await abrirCadastro(page, "revisao");
     await aceitarTermoIaSePreciso(page);
-    await expect(page.getByTestId("checklist-item-sem_internet").first()).toHaveAttribute("data-ok", "0");
+    // A lista de conferência: o motivo segura o passo Detalhes (onde se troca a resposta), não as Comodidades.
+    const detalhes = page.getByTestId("conferencia-detalhes");
+    await expect(detalhes).toHaveAttribute("data-ok", "0", { timeout: 20_000 });
+    await expect(detalhes).toHaveAttribute("data-itens", /\bsem_internet\b/);
+    await expect(detalhes).toContainText(MOTIVO);
+    await expect(page.getByTestId("lista-conferencia")).not.toContainText("Velocidade da internet");
     const falta = page.getByTestId("publicar-falta-outros");
     await expect(falta).toContainText(MOTIVO, { timeout: 20_000 });
     await expect(falta).not.toContainText("Velocidade da internet");
@@ -146,16 +149,17 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await abrirCadastro(page, "detalhes");
     await page.getByTestId("campos-chacara").getByTestId("chacara-internet-fibra").check({ timeout: 20_000 });
-    await expect(page.getByTestId("checklist-item-sem_internet")).toHaveCount(0);
-    // Sem a velocidade, o campo volta a ser obrigatório.
-    await expect(page.getByTestId("checklist-item-internet").first()).toHaveAttribute("data-ok", "0");
     await expect.poll(async () => (await lerRascunho()).draft_data?.chacara?.internet, { timeout: 30_000 }).toBe("fibra");
+    // Sem a velocidade, o campo volta a ser obrigatório; o motivo da falta de internet sai.
+    await abrirCadastro(page, "revisao");
+    await expect(page.getByTestId("conferencia-comodidades")).toHaveAttribute("data-itens", /\binternet\b/, { timeout: 20_000 });
+    await expect(page.getByTestId("lista-conferencia")).not.toContainText(MOTIVO);
+    await expect(page.getByTestId("publicar-falta-outros")).toContainText("Velocidade da internet");
 
     await abrirCadastro(page, "comodidades");
     const bloco = page.getByTestId("pronto-trabalhar");
     await expect(bloco.getByTestId("sem-internet-imovel")).toHaveCount(0);
     await bloco.getByLabel("Velocidade da internet em Mbps").fill("250");
-    await expect(page.getByTestId("checklist-item-internet")).toHaveCount(0);
     await expect.poll(async () => (await lerRascunho()).draft_data?.internetMbps, { timeout: 30_000 }).toBe("250");
 
     await abrirCadastro(page, "revisao");
