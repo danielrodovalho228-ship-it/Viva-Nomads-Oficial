@@ -71,8 +71,8 @@ test.describe("T202 — Cidades liberadas com login", () => {
   test("inquilino busca a cidade fechada em /buscar, vê o convite e deixa o interesse", async ({ browser }) => {
     test.setTimeout(90_000);
     const page = await entrar(browser, inquilino.email, senha);
-    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    await page.locator('input:visible[placeholder*="Cidade"]').first().fill(CIDADE);
+    // E82 (#1313): a busca limpa tirou o campo de cidade da tela; a cidade vai pela URL (a mesma da pílula Local).
+    await page.goto(`/buscar?local=${encodeURIComponent(CIDADE)}`, { waitUntil: "domcontentloaded" });
     const convite = page.getByTestId("convite-cidade");
     await expect(convite).toContainText(`A Viva ainda não chegou em ${CIDADE}`, { timeout: 20_000 });
     await convite.getByTestId("convite-cidade-botao").click();
