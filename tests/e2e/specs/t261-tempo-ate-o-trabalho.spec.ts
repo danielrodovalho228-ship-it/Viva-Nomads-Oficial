@@ -153,9 +153,15 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
     const page = await entrar(browser as Browser, medica.email, senha);
     await page.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
     // C9/E56: sem local salvo o bloco nasce fechado; o toggle abre o campo.
-    await page.getByTestId("local-toggle-bloco-toggle").last().click({ timeout: 20_000 });
+    // Vigia 24/10: instável/vermelho em 5 rodadas de 24/10 — o toque no switch antes da hidratação não abre o bloco.
+    // Toca de novo enquanto o switch não estiver ligado, até o chip do HC-UFU aparecer.
     const bloco = page.getByTestId("meu-local-trabalho").last();
-    await bloco.getByTestId("destino-hc-ufu").click({ timeout: 20_000 });
+    await expect(async () => {
+      const chave = page.getByTestId("local-toggle-bloco-toggle").last();
+      if ((await chave.getAttribute("aria-checked")) !== "true") await chave.click({ timeout: 5_000 });
+      await expect(bloco.getByTestId("destino-hc-ufu")).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 40_000 });
+    await bloco.getByTestId("destino-hc-ufu").click();
     await bloco.getByTestId("salvar-local-trabalho").click();
     await expect(bloco.getByRole("status")).toHaveText("Local de trabalho salvo.");
     await expect(bloco.getByTestId("local-salvo")).toContainText("HC-UFU");
