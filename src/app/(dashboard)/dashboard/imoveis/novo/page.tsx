@@ -98,7 +98,7 @@ import { enviarFotos } from "@/lib/fotos/enviar";
 import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
 import { uploadPropertyPhoto } from "@/lib/data/storage";
 import { resumoDaSugestao } from "@/lib/anuncio/resumo-ia";
-import { EtapaFotos } from "./etapa-fotos";
+import { EtapaFotos, FOTOS_REORGANIZAR } from "./etapa-fotos";
 import { EtapaEncontramos } from "./etapa-encontramos";
 import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
@@ -1626,6 +1626,11 @@ export default function NewPropertyPage() {
                 <Button size="lg" className="w-full" onClick={avancarEtapa} data-testid="cadastro-continuar">
                   Continuar <ArrowRight className="h-4 w-4" />
                 </Button>
+                {step === ETAPA.fotos && (
+                  <p className="mt-3 text-center text-sm text-muted" data-testid="fotos-reorganizar">
+                    {FOTOS_REORGANIZAR}
+                  </p>
+                )}
                 {pos > 0 && (
                   <p className="mt-3 text-center">
                     <button type="button" onClick={voltarEtapa} className="inline-flex min-h-11 items-center gap-1 text-sm text-ink underline underline-offset-4 hover:text-forest" data-testid="cadastro-voltar">
