@@ -45,10 +45,13 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   {
     id: "airbnb",
     nome: "Airbnb",
-    regra: "Taxa de serviço de 16% sobre cada estadia para anfitriões no Brasil.",
+    // E54 (onda 1A, 23/10): o artigo 1857 separa quem paga o quê. Anfitrião no Brasil: taxa única de 16%; na estrutura
+    // dividida (em extinção), 4% do anfitrião e 14,1% a 16,5% do hóspede. A linha diz as duas, sem atribuir ao
+    // anfitrião a taxa do hóspede. O número do cartão (≈ 16%) é o da taxa única, a que vale para quem entra hoje.
+    regra: "Anfitrião no Brasil: taxa única de 16% sobre a estadia. Na estrutura dividida, que está sendo encerrada, o anfitrião paga 4% e o viajante paga de 14,1% a 16,5%.",
     pct: 0.16,
     fonte: { nome: "Central de Ajuda do Airbnb — taxas de serviço (artigo 1857)", url: "https://www.airbnb.com.br/help/article/1857" },
-    conferidoEm: "2026-10-10",
+    conferidoEm: "2026-10-24",
   },
   // Abaixo: valores informados pelo Daniel, SEM fonte pública conferida até aqui → ocultos.
   {

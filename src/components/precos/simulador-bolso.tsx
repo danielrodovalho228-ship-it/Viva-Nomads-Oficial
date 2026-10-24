@@ -73,34 +73,34 @@ export function SimuladorBolso(p: {
         {b.estado === "invalido" ? (
           <p className="text-sm text-muted">Informe valor mensal, meses e quantos imóveis você tem para ver a conta.</p>
         ) : (
-          <dl className="divide-y divide-line rounded-xl border border-line">
+          <div className="grid gap-3 sm:grid-cols-2">
             {b.estado === "gestor" ? (
               <>
-                <Linha rotulo="Você recebe do morador" detalhe="integral, direto a você" testid="bolso-recebe" valor={formatBRL(b.recebe)} />
-                <div className="flex items-center justify-between gap-3 p-3 text-sm sm:p-4">
+                <Fato rotulo="Você recebe do morador" detalhe="integral e direto a você" testid="bolso-recebe" valor={formatBRL(b.recebe)} />
+                <dl className="rounded-xl border border-line p-4 text-sm">
                   <dt className="text-ink">Taxa de serviço da Viva</dt>
-                  <dd className="text-right font-semibold text-ink" data-testid="bolso-gestor">
+                  <dd className="mt-1 font-semibold text-ink" data-testid="bolso-gestor">
                     Plano Gestor:{" "}
                     <Link href={`mailto:${SUPORTE_EMAIL}`} className="underline">
                       fale com a Viva
                     </Link>
                   </dd>
-                </div>
+                </dl>
               </>
             ) : (
               (() => {
-                // Três blocos separados: a taxa é cobrada à parte, nunca descontada do que o morador paga ao dono.
-                const [recebe, taxa, resultado] = blocosBolso(b, valor, Number(meses));
+                // E51: dois fatos lado a lado, sem conta entre eles — a taxa é cobrada à parte, nunca descontada do que o
+                // morador paga ao dono (a Viva só intermedia, não segura pagamentos).
+                const [recebe, taxa] = blocosBolso(b, valor, Number(meses));
                 return (
                   <>
-                    <Linha {...recebe} testid="bolso-recebe" />
-                    <Linha {...taxa} testid="bolso-taxa" />
-                    <Linha {...resultado} testid="bolso-seu-resultado" destaque />
+                    <Fato {...recebe} testid="bolso-recebe" />
+                    <Fato {...taxa} testid="bolso-taxa" />
                   </>
                 );
               })()
             )}
-          </dl>
+          </div>
         )}
       </div>
       <p className="mt-3 text-xs text-muted">{NOTA_BOLSO}</p>
@@ -108,20 +108,19 @@ export function SimuladorBolso(p: {
   );
 }
 
-function Linha(p: { rotulo: string; valor: string; detalhe?: string | null; testid: string; destaque?: boolean }) {
+/** Um fato num cartão próprio: rótulo, valor e a explicação embaixo. */
+function Fato(p: { rotulo: string; valor: string; detalhe?: string | null; testid: string }) {
   return (
-    <div className={cn("flex items-start justify-between gap-3 p-3 text-sm sm:p-4", p.destaque && "bg-surface-2")}>
-      <dt className="min-w-0 text-ink">
-        <span className="block">{p.rotulo}</span>
-        {p.detalhe && (
-          <span className="mt-1 block text-xs text-muted" data-testid={`${p.testid}-detalhe`}>
-            {p.detalhe}
-          </span>
-        )}
-      </dt>
-      <dd className={cn("shrink-0 text-right tabular-nums", p.destaque ? "text-lg font-semibold text-ink" : "font-semibold text-ink")} data-testid={p.testid}>
+    <dl className="rounded-xl border border-line p-4 text-sm">
+      <dt className="text-ink">{p.rotulo}</dt>
+      <dd className="mt-1 text-lg font-semibold tabular-nums text-ink" data-testid={p.testid}>
         {p.valor}
       </dd>
-    </div>
+      {p.detalhe && (
+        <dd className="mt-1 text-xs text-muted" data-testid={`${p.testid}-detalhe`}>
+          {p.detalhe}
+        </dd>
+      )}
+    </dl>
   );
 }
