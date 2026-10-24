@@ -76,6 +76,7 @@ export type NotificationEvent =
   // Contratação de parceiros (Prompt 31b)
   | "parceiro_pedido_novo" // pedido de orçamento novo → parceiro
   | "parceiro_orcamento_recebido" // o parceiro orçou → cliente
+  | "parceiro_pedido_recusado" // L2-B item 17: o parceiro recusou → cliente (motivo + pedir a outro parceiro)
   | "parceiro_orcamento_aceito" // o cliente aceitou → parceiro
   | "parceiro_horario_confirmado" // horário confirmado → as duas partes
   | "parceiro_lembrete" // lembrete do dia anterior → as duas partes
@@ -189,6 +190,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   parceria_equipe: { subject: "Pedido de parceria para analisar", body: () => "Há um pedido de parceria aguardando a equipe. Confira a ficha, o checklist e decida pelo painel.", cta: "Abrir parceiros", path: "/admin/parceiros" },
   parceiro_pedido_novo: { subject: "Novo pedido de orçamento", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um pedido de orçamento pela Viva Nomads. Veja o que a pessoa precisa e responda pelas mensagens da plataforma.`, cta: "Ver o pedido", path: "/dashboard/parceiro" },
   parceiro_orcamento_recebido: { subject: "Você recebeu um orçamento", body: (n) => `Olá${n ? " " + n : ""}, o parceiro enviou o orçamento do seu pedido. Confira o valor e aceite ou recuse pela plataforma.`, cta: "Ver o orçamento", path: "/dashboard/servicos" },
+  parceiro_pedido_recusado: { subject: "O parceiro recusou o seu pedido", body: (n) => `Olá${n ? " " + n : ""}, o parceiro recusou o seu pedido de serviço. Você pode pedir a outro parceiro pela plataforma.`, cta: "Pedir a outro parceiro", path: "/parceiros/buscar" },
   parceiro_orcamento_aceito: { subject: "Seu orçamento foi aceito", body: (n) => `Boa notícia${n ? ", " + n : ""}! O cliente aceitou o seu orçamento. Confirme o horário pelo pedido.`, cta: "Confirmar o horário", path: "/dashboard/parceiro" },
   parceiro_horario_confirmado: { subject: "Horário do serviço confirmado", body: (n) => `Olá${n ? " " + n : ""}, o horário do serviço está confirmado. Os detalhes estão no pedido.`, cta: "Ver o pedido", path: "/dashboard/servicos" },
   parceiro_lembrete: { subject: "Lembrete: o serviço está chegando", body: (n) => `Olá${n ? " " + n : ""}, o serviço combinado pela Viva Nomads está marcado para as próximas horas. Os detalhes estão no pedido.`, cta: "Ver o pedido", path: "/dashboard/servicos" },

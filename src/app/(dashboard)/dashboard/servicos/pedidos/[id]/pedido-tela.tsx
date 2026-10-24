@@ -3,18 +3,22 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import {
+  AVISO_RECUSAR_ORCAMENTO,
+  AVISO_RECUSAR_PEDIDO,
   MOTIVO_RECUSA_MAX,
   proximoPasso,
   ROTULO_REGISTRO_SEM_DINHEIRO,
   rotuloStatus,
+  TEXTO_CONTATO_ANTES_DO_ACEITE,
   TEXTO_DIVISAO_NA_ORIGEM,
   TEXTO_PAGAMENTO_INATIVO,
+  telefoneNaTela,
   textoDivisaoParceiro,
 } from "@/lib/parceiros/pedido";
 import {
@@ -100,7 +104,17 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
               {passo}
             </p>
           )}
-          {d.status === "recusado" && d.motivoRecusa && <p className="mt-2 text-sm text-ink">Motivo: {d.motivoRecusa}</p>}
+          {d.status === "recusado" && d.motivoRecusa && (
+            <p className="mt-2 text-sm text-ink" data-testid="pedido-motivo-recusa">
+              Motivo: {d.motivoRecusa}
+            </p>
+          )}
+          {/* L2-B item 17: recusado → o cliente pede a outro parceiro da mesma categoria. */}
+          {cliente && d.status === "recusado" && (
+            <ButtonLink href={d.linkOutroParceiro} variant="secondary" size="sm" className="mt-3" data-testid="pedido-outro-parceiro">
+              Pedir a outro parceiro
+            </ButtonLink>
+          )}
           {/* Prompt 38: pedido gerado pela regra do imóvel. */}
           {d.automatico && (
             <p className="mt-2 text-sm text-muted" data-testid="pedido-automatico-info">
@@ -137,6 +151,31 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
             </p>
           )}
         </Panel>
+
+        {/* L2-B item 16: depois do aceite, telefone e e-mail da outra parte; antes, a conversa segue pela plataforma. */}
+        {!["recusado", "cancelado"].includes(d.status) && (
+          <Panel title={cliente ? "Contato do parceiro" : "Contato do cliente"} data-testid="pedido-contato">
+            {d.contato ? (
+              <ul className="grid gap-1 text-sm text-ink">
+                {d.contato.telefone && (
+                  <li data-testid="pedido-contato-telefone">
+                    Telefone: <a className="underline" href={`tel:+55${d.contato.telefone.replace(/^55(?=\d{10,11}$)/, "")}`}>{telefoneNaTela(d.contato.telefone)}</a>
+                  </li>
+                )}
+                {d.contato.email && (
+                  <li data-testid="pedido-contato-email">
+                    E-mail: <a className="underline" href={`mailto:${d.contato.email}`}>{d.contato.email}</a>
+                  </li>
+                )}
+                <li className="mt-1 text-muted">{TEXTO_PAGAMENTO_INATIVO}</li>
+              </ul>
+            ) : (
+              <p className="text-sm text-muted" data-testid="pedido-contato-antes">
+                {TEXTO_CONTATO_ANTES_DO_ACEITE}
+              </p>
+            )}
+          </Panel>
+        )}
 
         <Panel title="Horário">
           {d.horarioConfirmado ? (
@@ -278,8 +317,8 @@ function Acoes({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; ro
         <label className="mt-3 text-sm font-semibold text-ink" htmlFor="pedido-motivo">
           Não vai atender?
         </label>
-        <input id="pedido-motivo" className={campo} maxLength={MOTIVO_RECUSA_MAX} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo em poucas palavras" />
-        <ConfirmarNaPagina aviso="Recusar este pedido? O cliente vê o motivo." confirmar="Recusar o pedido" disabled={pendente || motivo.trim().length < 3} onConfirmar={() => rodar("recusar-pedido", { motivo })} testid="pedido-recusar">
+        <input id="pedido-motivo" className={campo} maxLength={MOTIVO_RECUSA_MAX} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo (opcional), em poucas palavras" />
+        <ConfirmarNaPagina aviso={AVISO_RECUSAR_PEDIDO} confirmar="Recusar o pedido" disabled={pendente} onConfirmar={() => rodar("recusar-pedido", { motivo })} testid="pedido-recusar">
           Recusar o pedido
         </ConfirmarNaPagina>
       </div>,
@@ -291,7 +330,7 @@ function Acoes({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; ro
         <Button variant="primary" disabled={pendente} onClick={() => rodar("aceitar-orcamento", {}, "Orçamento aceito.")} data-testid="pedido-aceitar">
           Aceitar o orçamento
         </Button>
-        <ConfirmarNaPagina aviso="Recusar o orçamento encerra este pedido." confirmar="Recusar o orçamento" disabled={pendente} onConfirmar={() => rodar("recusar-orcamento")} testid="pedido-recusar-orcamento">
+        <ConfirmarNaPagina aviso={AVISO_RECUSAR_ORCAMENTO} confirmar="Recusar o orçamento" disabled={pendente} onConfirmar={() => rodar("recusar-orcamento")} testid="pedido-recusar-orcamento">
           Recusar o orçamento
         </ConfirmarNaPagina>
       </div>,
