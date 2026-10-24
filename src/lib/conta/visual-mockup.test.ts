@@ -31,3 +31,9 @@ test("mockup perfil-01: cabeçalho com foto na Conta; nome completo no espelho",
   assert.match(ler("src/components/layout/dashboard-shell.tsx"), /const fotoNav = myPhoto;/);
   assert.match(ler("src/components/account/espelho-perfil.tsx"), /nomeNoEspelho\(nome\)/);
 });
+
+test("/dashboard/conta no celular não monta o Perfil do computador (as ações dele devolviam a URL ao menu)", () => {
+  const pagina = readFileSync(new URL("../../app/(dashboard)/dashboard/conta/page.tsx", import.meta.url), "utf8");
+  assert.match(pagina, /window\.matchMedia\("\(min-width: 1024px\)"\)/);
+  assert.match(pagina, /\{computador && \(\s*<div className="hidden lg:block" data-so-computador>/);
+});

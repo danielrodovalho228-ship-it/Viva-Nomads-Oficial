@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ContaMenu } from "@/components/account/conta-menu";
 import { CascaConta } from "@/components/account/casca-conta";
@@ -16,6 +16,16 @@ import { destinoDaAncora } from "@/lib/conta/secoes";
  */
 export default function AccountPage() {
   const router = useRouter();
+  // O Perfil desta página só existe no computador. No celular ele NÃO é montado: escondido por CSS, ele disparava as
+  // ações do servidor e a resposta, chegando depois do toque numa seção, devolvia a URL para /dashboard/conta.
+  const [computador, setComputador] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const ver = () => setComputador(mq.matches);
+    ver();
+    mq.addEventListener("change", ver);
+    return () => mq.removeEventListener("change", ver);
+  }, []);
   // Links antigos da página longa (/dashboard/conta#confianca, #documento…): cada âncora vai para a sua tela.
   useEffect(() => {
     const destino = destinoDaAncora(window.location.hash, window.location.search);
@@ -26,11 +36,13 @@ export default function AccountPage() {
       <div className="lg:hidden">
         <ContaMenu />
       </div>
-      <div className="hidden lg:block" data-so-computador>
-        <CascaConta ativo="perfil" topoDireita>
-          <PerfilTela />
-        </CascaConta>
-      </div>
+      {computador && (
+        <div className="hidden lg:block" data-so-computador>
+          <CascaConta ativo="perfil" topoDireita>
+            <PerfilTela />
+          </CascaConta>
+        </div>
+      )}
     </>
   );
 }
