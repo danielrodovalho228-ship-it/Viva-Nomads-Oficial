@@ -16,7 +16,8 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
  */
 const SAIDA = "tests/laboratorio/saida";
 const AREIA = "rgb(247, 242, 234)";
-const ORDEM = ["perfil", "avaliacoes", "papeis", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"];
+// NAV-A (24/10): "Como você usa a Viva" (papeis) logo depois do Perfil.
+const ORDEM = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"];
 
 test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");

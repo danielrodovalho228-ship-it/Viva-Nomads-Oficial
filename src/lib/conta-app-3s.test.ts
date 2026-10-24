@@ -20,8 +20,8 @@ test("menu da Conta no celular: um H1 só ('Conta'), sem capa de foto (A1; Promp
 
 test("cada item do menu tem ícone, título e descrição curta", () => {
   const itens = menu.match(/\{\s*(?:href|onClick):[^}]*\}/g) ?? [];
-  assert.ok(itens.length >= 10, `esperava ao menos 10 itens, achei ${itens.length}`);
-  // As oito seções vêm de SECOES_CONTA (cada uma com descrição); os outros itens têm a descrição escrita.
+  // NAV-A: as oito seções (SECOES_CONTA, cada uma com descrição) e Sair; o trabalho mora na barra verde.
+  assert.equal(itens.length, 2, `esperava as seções e o Sair, achei ${itens.length}`);
   for (const it of itens) assert.match(it, /descricao: (?:"|s\.descricao)/, `item sem descrição: ${it}`);
   for (const d of readFileSync(new URL("./conta/secoes.ts", import.meta.url), "utf8").match(/\{ id: "[^}]*\}/g) ?? []) assert.match(d, /descricao: "/, d);
   assert.match(menu, /\{it\.descricao &&/);

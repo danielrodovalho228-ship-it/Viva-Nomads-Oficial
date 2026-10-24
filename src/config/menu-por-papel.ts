@@ -11,6 +11,7 @@
  */
 
 import { MIN_IMOVEIS_ANALISE_CARTEIRA } from "../lib/cobranca/regra.ts";
+import { PROGRAMA_INDICACAO } from "../lib/flags.ts";
 
 export type IconeMenu =
   | "visao" | "moradia" | "buscar" | "favoritos" | "buscas" | "pedidos" | "candidaturas"
@@ -75,7 +76,9 @@ const ADMIN: ItemDoPapel[] = [
     rotulo: "Administração",
     icone: "admin",
     filhos: [
-      { id: "admin-painel", rotulo: "Painel da equipe", icone: "admin", href: "/admin" },
+      // NAV-A: "Painel Admin" e "Equipe e aprovações" saíram da Conta e moram só aqui, na barra de trabalho.
+      { id: "admin-painel", rotulo: "Painel Admin", icone: "admin", href: "/admin" },
+      { id: "admin-equipe", rotulo: "Equipe e aprovações", icone: "agentes", href: "/admin/agentes#aprovacoes" },
       {
         id: "admin-cadastros",
         rotulo: "Cadastros",
@@ -225,6 +228,8 @@ const FERRAMENTAS_E_CONTA: ItemDoPapel[] = [
         quando: (ctx) => (ctx.imoveisAtivos ?? 0) >= MIN_IMOVEIS_ANALISE_CARTEIRA,
       },
       { id: "orcamentos", rotulo: "Orçamentos", icone: "orcamentos", href: "/dashboard/orcamentos", quando: (ctx) => ctx.temImovel },
+      // NAV-A: o programa de indicação saiu do menu da Conta (a Conta é só a pessoa) e mora aqui, com a mesma chave.
+      { id: "indicacoes", rotulo: "Indicações", icone: "ferramentas", href: "/dashboard/indicacoes", quando: () => PROGRAMA_INDICACAO },
     ],
   },
   {

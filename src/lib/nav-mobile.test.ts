@@ -110,7 +110,8 @@ test("painel /admin lista todos os itens do menu do admin como atalhos", () => {
   const atalhos = readFileSync(new URL("../app/(dashboard)/admin/atalhos-admin.tsx", import.meta.url), "utf8");
   const menu = [...config.matchAll(/href: "(\/admin[^"]*)"/g)].map((m) => m[1]);
   assert.ok(menu.length >= 10);
-  for (const h of menu.filter((x) => x !== "/admin")) assert.ok(atalhos.includes(`href="${h}"`) || atalhos.includes(`href: "${h}"`), h);
+  // A âncora de "Equipe e aprovações" é parte da tela Agentes: o atalho é o da tela.
+  for (const h of new Set(menu.filter((x) => x !== "/admin").map((x) => x.split("#")[0]))) assert.ok(atalhos.includes(`href="${h}"`) || atalhos.includes(`href: "${h}"`), h);
   assert.match(atalhos, /min-h-11/);
 });
 
