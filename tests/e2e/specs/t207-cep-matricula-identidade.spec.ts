@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { abrirNoEndereco } from "../fixtures/cadastro";
 
 /*
@@ -91,7 +91,9 @@ test.describe("T207 — CEP fantasma, matrícula 400 e validade da identidade (p
       await expect(page.getByTestId("identidade-confirmada")).toContainText(ate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }), { timeout: 20_000 });
 
       // Troca do CPF no cadastro → o gatilho 0164 invalida o laudo → a etapa pede para confirmar de novo.
-      await adm().from("profiles").update({ cpf: largura === 390 ? "52998224725" : "11144477735" }).eq("id", id);
+      // CPF novo e único (o índice profiles_cpf_unico recusava um número fixo que outra conta do lab já tinha).
+      const troca = await adm().from("profiles").update({ cpf: cpfAleatorio() }).eq("id", id);
+      expect(troca.error).toBeNull();
       // Recarrega no passo Endereço pelo nome: o rascunho pode ter gravado outro passo (10 passos: Fotos vem antes).
       const url = new URL(page.url());
       url.searchParams.set("etapa", "endereco");

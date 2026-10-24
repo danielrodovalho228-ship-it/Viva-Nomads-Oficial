@@ -172,6 +172,8 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       // As fotos vêm antes agora: a IA (simulada) já sugeriu 2 quartos e 1 banheiro. Sem a área, não avança e diz o que falta.
       await expect(page.getByTestId("cadastro-quartos")).toHaveValue("2");
       await expect(page.getByTestId("cadastro-banheiros")).toHaveValue("1");
+      // A área pode já vir preenchida (sugestão da IA ou rascunho anterior da conta): esvazia para provar a trava.
+      await page.getByTestId("cadastro-area").fill("");
       await continuar.click();
       await expect(page.getByText("Informe a área do imóvel (m²).")).toBeVisible();
       await page.getByTestId("cadastro-banheiros").fill("1");
