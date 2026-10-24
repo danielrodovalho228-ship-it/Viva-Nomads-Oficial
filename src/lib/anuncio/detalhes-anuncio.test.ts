@@ -106,6 +106,8 @@ test("editor e servidor: 5 grupos + 4 regras da Convivência em BlocoOpcional, m
   const campos = ler("src/components/anuncio/detalhes-anuncio-campos.tsx");
   assert.match(campos, /<BlocoOpcional/);
   const acoes = ler("src/lib/data/actions.ts");
-  assert.match(acoes, /detalhes_anuncio: normalizarDetalhes\(input\.detalhesAnuncio\)/);
+  // TIPO-CHACARA-B: o servidor valida os grupos do formulário e mantém o grupo do tipo (chácara/sítio) já gravado.
+  assert.match(acoes, /normalizarDetalhes\(input\.detalhesAnuncio\)/);
+  assert.match(acoes, /detalhes_anuncio: normalizarDetalhes\(\{ \.\.\.novos, \.\.\.\(chacaraGravada \? \{ chacara: chacaraGravada \} : \{\}\) \}\)/);
   assert.match(ler("src/lib/data/properties.ts"), /select\("detalhes_anuncio"\)/);
 });

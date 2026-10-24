@@ -17,6 +17,7 @@ import { ETAPA } from "./etapas-ids.ts";
 import { videoDoAnuncio } from "../video-anuncio.ts";
 import { ROTULO_FALTA_TIPO_ENTRADA } from "./chegada-e-pedido.ts";
 
+import { ROTULO_FALTA_CHACARA } from "./chacara.ts";
 export const MIN_FOTOS = 8;
 export const MIN_DESCRICAO = 60;
 /** FILTROS-1 (E39): item do portão de publicar quando falta a velocidade da internet. */
@@ -73,6 +74,11 @@ export interface FatosAnuncio {
    * da página pública até o dono informar o endereço. Ausente = não se aplica aqui.
    */
   proximidadesSemEndereco?: number;
+  /**
+   * TIPO-CHACARA-B: o que falta dos campos do tipo chácara/sítio (acesso, tipo de internet, ponto no mapa). Ausente =
+   * não se aplica (outro tipo, ou o publicado sem eles segue no ar). Com falta, publicar é recusado.
+   */
+  chacaraFaltam?: string[];
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -177,6 +183,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   if (f.internetOk === false) {
     obrigatorios.push({ key: "internet", label: ROTULO_FALTA_INTERNET, ok: false, etapa: ETAPA.comodidades, detalhe: "em Mbps, no bloco Pronto para trabalhar de casa" });
+  }
+  if (f.chacaraFaltam && f.chacaraFaltam.length > 0) {
+    obrigatorios.push({ key: "chacara", label: ROTULO_FALTA_CHACARA, ok: false, etapa: ETAPA.detalhes, detalhe: `falta ${f.chacaraFaltam.join(", ")}` });
   }
   if (!f.sublocacaoOk) {
     const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;

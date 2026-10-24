@@ -2,6 +2,7 @@ import { situacaoLimite } from "@/lib/anuncio/pausa";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { tipoEntradaBloqueia } from "@/lib/anuncio/chegada-e-pedido";
+import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
 
 /**
@@ -44,6 +45,15 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     // 61-B: tipo de entrada (sem a 0225, erro → não barra). FILTROS-1: a velocidade da internet na mesma leitura.
     cliente.from("properties").select("id, tipo_entrada, internet_mbps").in("id", idsLista),
   ]);
+  // TIPO-CHACARA-B: tipo e o grupo do tipo (0235). Leitura à parte: sem a coluna, erro → não barra aqui.
+  const tipoLido = await cliente.from("properties").select("id, property_type, detalhes_anuncio").in("id", idsLista);
+  const chacaraPor = tipoLido.error
+    ? null
+    : new Map(
+        ((tipoLido.data ?? []) as { id: string; property_type: string | null; detalhes_anuncio: { chacara?: unknown } | null }[])
+          .filter((r) => ehChacara(r.property_type))
+          .map((r) => [r.id, faltaChacara(normalizarChacara(r.detalhes_anuncio?.chacara))]),
+      );
   const tipoEntradaPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; tipo_entrada: string | null }[]).map((e) => [e.id, e.tipo_entrada]));
   const internetPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; internet_mbps: number | null }[]).map((e) => [e.id, Number(e.internet_mbps) || 0]));
   const declPor = new Map<string, { chave: string; confirmado: boolean; versao_lista?: number | null }[]>();
@@ -69,6 +79,8 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     if (tipoEntradaPor && p.status === "draft") f.tipoEntradaOk = !tipoEntradaBloqueia({ tipoEntrada: tipoEntradaPor.get(p.id), jaPublicado: false });
     // FILTROS-1 (E39): o anúncio novo só publica com a velocidade da internet (o publicado sem ela segue no ar).
     if (internetPor && p.status === "draft") f.internetOk = (internetPor.get(p.id) ?? 0) > 0;
+    // TIPO-CHACARA-B: chácara/sítio só passa a publicado com acesso, tipo de internet e o ponto marcado no mapa.
+    if (chacaraPor?.has(p.id) && p.status !== "active") f.chacaraFaltam = chacaraPor.get(p.id);
     mapa.set(p.id, f);
   }
   return mapa;

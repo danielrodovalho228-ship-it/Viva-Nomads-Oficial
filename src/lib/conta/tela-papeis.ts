@@ -26,6 +26,11 @@ export function textoQueroAnunciar(cidade: string | null | undefined): string {
   return `Publique seu imóvel para profissionais que buscam estadias de 1 a 6 meses${c ? ` em ${c}` : ""}.`;
 }
 
+/** O cartão "Quero ser parceiro" (perfil-03-papeis-com-fotos): mesmo padrão dos outros dois. */
+export const TEXTO_QUERO_PARCEIRO = "Ofereça serviços para moradores e proprietários";
+export const BOTAO_QUERO_PARCEIRO = "Cadastrar meu serviço";
+export const BOTAO_PARCEIRO_ATIVO = "Abrir meu painel de parceiro";
+
 /** Ligar/desligar uma intenção mantém as outras (a ordem é a da lista oficial). */
 export function alternarIntencao(atuais: readonly Intencao[], alvo: Intencao, ligar: boolean): Intencao[] {
   const conjunto = new Set(atuais);

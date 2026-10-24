@@ -82,6 +82,7 @@ const COORDENADAS_PERMITIDAS: Record<string, string> = {
   destinos: "lugar: hospital, universidade ou empresa",
   "profiles.local_trabalho": "PESSOA: endereço de trabalho digitado (Prompt 37); prazo no item 13",
   "pedidos_moradia.destino": "PESSOA: destino do pedido de moradia (Prompt 37); prazo no item 13",
+  destinos_pessoais: "PESSOA: 'Outro local' da busca (DESTINO-PESSOAL-B), ponto com 3 casas, RLS só da pessoa; admin vê só o agregado de 5+",
 };
 
 test("coordenadas: só nas tabelas permitidas, com motivo; a medição de internet não guarda ponto", () => {

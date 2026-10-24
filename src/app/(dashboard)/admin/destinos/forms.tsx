@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { resolverReporteProximidade } from "@/lib/data/proximidades-actions";
+import { resolverLocalNaoAchado } from "@/lib/destinos/pessoal-actions";
 import { alternarDestino, buscarPontoDestino, salvarDestino, type ResultadoDestino } from "@/lib/destinos/actions";
 import { TIPOS_DESTINO } from "@/lib/destinos/regras";
 import { pontoColado, type PontoSugerido } from "@/lib/destinos/ponto";
@@ -22,7 +23,7 @@ export interface DestinoEditavel {
 }
 
 /** Cadastro/correção: busca pelo nome (o geocoding sugere), confere no mapa e salva. */
-export function DestinoForm({ inicial }: { inicial?: DestinoEditavel }) {
+export function DestinoForm({ inicial, pontoInicial }: { inicial?: DestinoEditavel; /** DESTINO-PESSOAL-B: "Promover a âncora" chega com o centro da célula. */ pontoInicial?: { lat: number; lng: number } | null }) {
   const [res, acao, pendente] = useActionState<ResultadoDestino | null, FormData>(salvarDestino, null);
   const [busca, setBusca] = useState("");
   const [buscando, iniciarBusca] = useTransition();
@@ -30,8 +31,8 @@ export function DestinoForm({ inicial }: { inicial?: DestinoEditavel }) {
   const [fonte, setFonte] = useState<string>("");
   const [erroBusca, setErroBusca] = useState<string | null>(null);
   const [ponto, setPonto] = useState<{ lat: string; lng: string }>({
-    lat: inicial?.lat != null ? String(inicial.lat) : "",
-    lng: inicial?.lng != null ? String(inicial.lng) : "",
+    lat: inicial?.lat != null ? String(inicial.lat) : pontoInicial ? String(pontoInicial.lat) : "",
+    lng: inicial?.lng != null ? String(inicial.lng) : pontoInicial ? String(pontoInicial.lng) : "",
   });
   // E32: apagar o ponto de um destino gravado é ação explícita e confirmada (o destino sai dos ativos).
   const [limpar, setLimpar] = useState<"nao" | "confirmar" | "sim">("nao");
@@ -213,6 +214,31 @@ export function ResolverReporte({ id }: { id: string }) {
         data-testid="resolver-reporte"
         onClick={() => iniciar(async () => {
           const r = await resolverReporteProximidade(id);
+          setErro(r.ok ? null : r.erro ?? null);
+          if (r.ok) window.location.reload();
+        })}
+      >
+        Resolvido
+      </Button>
+      {erro && <span role="alert" className="text-xs text-red-600">{erro}</span>}
+    </span>
+  );
+}
+
+/** DESTINO-PESSOAL-B: "Não achei meu local" atendido (âncora cadastrada ou nada a fazer). */
+export function ResolverNaoAchado({ id }: { id: string }) {
+  const [pendente, iniciar] = useTransition();
+  const [erro, setErro] = useState<string | null>(null);
+  return (
+    <span className="inline-flex flex-col items-end gap-1">
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        disabled={pendente}
+        data-testid="resolver-nao-achado"
+        onClick={() => iniciar(async () => {
+          const r = await resolverLocalNaoAchado(id);
           setErro(r.ok ? null : r.erro ?? null);
           if (r.ok) window.location.reload();
         })}

@@ -62,8 +62,21 @@ test.describe("T380 — E35-B: identidade na ativação do avaliador", () => {
     const a = await admin(browser);
     const item = a.locator(`[data-testid="credenciamento-item"][data-numero="${(await cred()).numero_credenciado}"]`);
     await expect(item.getByTestId("credenciamento-pendencia")).toContainText("Na ativação");
+    // E77: antes de aprovar, o cartão está em "A decidir" e conta no número do topo.
+    const numeroTopo = a.getByTestId("avaliacoes-decidir").getByTestId("decidir-numero-credenciamentos");
+    await expect(a.getByTestId("credenciamento-secao-a-decidir").locator(`[data-numero="${(await cred()).numero_credenciado}"]`)).toBeVisible();
+    await expect(numeroTopo).not.toHaveAttribute("data-valor", "0");
     await item.getByTestId("decidir-em_teste").getByRole("button", { name: "Aprovar para teste" }).click();
     await expect.poll(async () => (await cred()).status, { timeout: 20_000 }).toBe("em_teste");
+    // E77: em teste sai da seção e da contagem "a decidir" e aparece em "Em teste e credenciados".
+    await a.reload({ waitUntil: "domcontentloaded" });
+    const numero = (await cred()).numero_credenciado;
+    await expect(a.getByTestId("credenciamento-secao-na-rede").locator(`[data-numero="${numero}"]`)).toHaveAttribute("data-status", "em_teste", { timeout: 20_000 });
+    await expect(a.getByTestId("credenciamento-secao-na-rede")).toContainText("Em teste e credenciados");
+    await expect(a.getByTestId("credenciamento-secao-a-decidir").locator(`[data-numero="${numero}"]`)).toHaveCount(0);
+    // Um número, uma fonte: o topo é igual ao total da seção "A decidir" (outros testes do laboratório podem criar pedidos).
+    const totalSecao = await a.getByTestId("credenciamento-secao-a-decidir").getAttribute("data-total");
+    await expect(numeroTopo).toHaveAttribute("data-valor", totalSecao!);
     const c = await cred();
     const { data: parc } = await adm().from("parceiros").select("status").eq("id", c.parceiro_id!).single();
     expect(parc!.status).toBe("rascunho");
