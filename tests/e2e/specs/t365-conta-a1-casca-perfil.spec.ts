@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T365 — CONTA-A, A1 (sequência-mestre; mockup perfil-01 aprovado em 23/10): a Conta em oito telas.
  *   1. Computador (1280): /dashboard/conta abre a tela Perfil na casca — menu lateral "Conta" com as 8 seções na ordem
  *      do desenho, a ativa numa pílula verde; fundo areia; UM H1 visível ("Perfil", na coluna da direita, acima do
