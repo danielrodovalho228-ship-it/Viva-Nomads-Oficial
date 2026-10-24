@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 
 /*
-  T407 — Detecção-A (Entrega 3, chave DETECCAO_FOTOS_ATIVO; no laboratório o cookie vn_lab_deteccao liga só neste
+  T432 — Detecção-A (Entrega 3, chave DETECCAO_FOTOS_ATIVO; no laboratório o cookie vn_lab_deteccao liga só neste
   navegador). Mesma galeria da t389 (micro-ondas + máquina de lavar na 1ª foto; pessoa na 2ª). 390 e 1280, com prints.
    1. Desligada: nem o alerta do topo, nem o bloco, nem comodidade tracejada.
    2. Ligada: "Encontramos isto numa foto sua" com "Usar esta foto" e "Não é isso"; a máquina de lavar achada aparece
@@ -12,7 +12,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t407.${sufixo}@lab.vivanomads.test`, nome: "Dalia Detecta", role: "owner" as const };
+const dono = { email: `dono.t432.${sufixo}@lab.vivanomads.test`, nome: "Dalia Detecta", role: "owner" as const };
 const ids: { dono?: string; imovel?: string } = {};
 const caminhos: string[] = [];
 const LARGURAS = [390, 1280] as const;
@@ -25,7 +25,7 @@ async function ligarNoLaboratorio(page: Page) {
 }
 const passo = (page: Page) => page.goto(`/dashboard/imoveis/novo?draft=${ids.imovel}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
 
-test.describe("T407 — Detecção-A: a tela das sugestões das fotos", () => {
+test.describe("T432 — Detecção-A: a tela das sugestões das fotos", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
@@ -94,9 +94,9 @@ test.describe("T407 — Detecção-A: a tela das sugestões das fotos", () => {
       expect(a!.y).toBeLessThan(g!.y);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.screenshot({ path: `tests/laboratorio/saida/t407-deteccao-topo-${w}.png` });
+      await page.screenshot({ path: `tests/laboratorio/saida/t432-deteccao-topo-${w}.png` });
       await bloco.scrollIntoViewIfNeeded();
-      await bloco.screenshot({ path: `tests/laboratorio/saida/t407-deteccao-bloco-${w}.png` });
+      await bloco.screenshot({ path: `tests/laboratorio/saida/t432-deteccao-bloco-${w}.png` });
       await page.getByTestId("deteccao-falta-enviar").click();
       await expect(page.getByTestId("nivel-cadastro-falta")).toBeInViewport();
       await page.context().close();
