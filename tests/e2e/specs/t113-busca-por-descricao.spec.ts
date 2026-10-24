@@ -20,7 +20,7 @@ test.describe("T113 — Busca por descrição", () => {
     await expect(chips).toContainText("Até R$ 2.500");
     await expect(chips).toContainText("2+ quartos");
     await expect(chips).toContainText("Aceita pets");
-    // FILTROS-2 (4b9ab7d7): Wi-Fi é garantia do padrão mínimo, não filtro — a frase não liga chip de Wi-Fi.
+    // FILTROS-2: Wi-Fi é garantia do padrão mínimo, não filtro — a frase o cita, mas não vira chip.
     await expect(chips).not.toContainText("Wi-Fi");
 
     // O filtro vai para a URL (compartilhável) e o resumo do celular acompanha.

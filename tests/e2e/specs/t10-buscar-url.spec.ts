@@ -1,23 +1,27 @@
 import { test, expect, type Page } from "@playwright/test";
 
-/** Computador (ordem eac7e3a1): os filtros abrem pela busca compacta do cabeçalho. */
-async function abrirFiltros(page: Page) {
-  const compacta = page.getByTestId("busca-compacta");
-  if (await compacta.isVisible()) await compacta.click();
-}
-
-/** E43 (FILTROS-1): "Pronto para Morar" saiu da barra de cima e mora só na folha de filtros, que aplica no botão. */
-async function ligarProntoParaMorar(page: Page) {
-  await abrirFiltros(page);
-  await page.getByRole("button", { name: /Mais filtros/ }).first().click();
-  const folha = page.getByRole("dialog", { name: "Filtros" });
-  await folha.getByTestId("faceta-pronto").click();
-  await folha.getByTestId("aplicar-filtros").click();
+/**
+ * FILTROS-1 (E43): "Pronto para Morar" mora só na folha de filtros (saiu da barra de cima). Liga o filtro pela folha:
+ * celular pelo botão "Filtros"; computador por "Mais filtros" (que pode estar atrás da busca compacta). Aplica e espera
+ * a folha fechar.
+ */
+async function ligarProntoPelaFolha(page: Page) {
+  const celular = page.getByTestId("abrir-filtros").filter({ visible: true });
+  if (await celular.count()) await celular.first().click({ timeout: 10_000 });
+  else {
+    if (!(await page.getByTestId("mais-filtros").isVisible())) await page.getByTestId("busca-compacta").click({ timeout: 10_000 });
+    await page.getByTestId("mais-filtros").click({ timeout: 10_000 });
+  }
+  const folha = page.getByTestId("painel-filtros");
+  await expect(folha).toBeVisible({ timeout: 10_000 });
+  await folha.getByTestId("faceta-pronto").click({ timeout: 10_000 });
+  await folha.getByTestId("aplicar-filtros").click({ timeout: 10_000 });
+  await expect(folha).toBeHidden({ timeout: 10_000 });
 }
 
 /**
- * T10 — BUSCA COMPARTILHÁVEL (G1) @criticos
  * L-43 (vigia, 24/10): o painel e a /buscar não assentam em "networkidle" (t183, L-40); espera até 10 s e segue para o elemento.
+ * T10 — BUSCA COMPARTILHÁVEL (G1) @criticos
  *
  * Regressão do fix G1: os filtros da /buscar vivem na URL (query params), então
  * a busca é compartilhável/salvável e sobrevive a reload. Cobre os dois sentidos:
@@ -36,7 +40,7 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
     // Sem filtro, a URL não traz `pronto`.
     expect(page.url()).not.toMatch(/pronto=1/);
 
-    await ligarProntoParaMorar(page);
+    await ligarProntoPelaFolha(page);
 
     // O efeito de sync usa replaceState — espera o endereço refletir o filtro.
     await expect(async () => {
@@ -62,7 +66,7 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
   }) => {
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    await ligarProntoParaMorar(page);
+    await ligarProntoPelaFolha(page);
     await expect(async () => {
       expect(page.url()).toMatch(/pronto=1/);
     }).toPass({ timeout: 5_000 });

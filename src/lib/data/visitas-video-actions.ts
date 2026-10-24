@@ -10,6 +10,7 @@ import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { after } from "next/server";
 import { notify } from "@/lib/notifications";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
+import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
 import { enderecoDaVisita, mostraEnderecoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
 import {
   ehModalidade,
@@ -38,7 +39,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * a outra parte. Sem nome, telefone ou e-mail do morador para o dono (contato protegido até o aceite).
  * Depois da resposta (`after`) e best-effort: o aviso nunca quebra o fluxo.
  */
-function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, detalhe: string, endereco?: EnderecoVisita | null) {
+/** `decisao` (44-SITE, item 2): o push de visita pedida/remarcada diz o imóvel e até quando responder. */
+function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, detalhe: string, endereco?: EnderecoVisita | null, decisao?: DadosDaDecisao) {
   after(async () => {
     try {
       const { data: p } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", para).maybeSingle();
@@ -49,6 +51,7 @@ function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, det
         name: ((p.full_name as string | null) ?? "").split(" ")[0] || undefined,
         userId: para,
         pushUrl: "/dashboard/visitas",
+        ...(decisao ? { decisao } : {}),
         // Visita presencial confirmada: o endereço exato e "Abrir no mapa" vão SÓ para o morador (complemento do prompt 23).
         detailsText: endereco ? `${detalhe}\nEndereço: ${endereco.texto}\nAbrir no mapa: ${endereco.mapa}` : detalhe,
         detailsHtml:
@@ -88,7 +91,7 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, needsAuth: true, error: modalidade === "video" ? "Entre para pedir a visita por vídeo." : "Entre para agendar a visita." };
 
-  const { data: prop } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  const { data: prop } = await supabase.from("properties").select("owner_id, title").eq("id", propertyId).maybeSingle();
   const ownerId = (prop?.owner_id as string | undefined) ?? null;
   if (!ownerId) return { ok: false, error: "Imóvel não encontrado ou indisponível." };
   if (ownerId === user.id) return { ok: false, error: "Este anúncio é seu." };
@@ -121,6 +124,9 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     ownerId,
     "visita_pedida",
     `Visita ${MODALIDADE_ROTULO[modalidade].toLowerCase()} pedida. Horários propostos: ${v.horarios.map(formatarHorarioBrasilia).join("; ")}. Confirme um, proponha outro ou recuse em Visitas.`,
+    undefined,
+    // Responder antes do primeiro horário proposto.
+    { imovel: (prop?.title as string | null) ?? null, prazo: [...v.horarios].sort()[0] ?? null, destinatarioEhParte: true },
   );
   revalidatePath("/dashboard/visitas");
   revalidatePath("/dashboard/agenda");
@@ -293,7 +299,12 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
     }
     avisarVisita(admin, outro, "visita_confirmada", `Visita ${tipo} confirmada para ${formatarHorarioBrasilia(campos.horario_confirmado)}.`, endereco);
   } else if (campos.status === "remarcar" && campos.horario_proposto) {
-    avisarVisita(admin, outro, "visita_remarcada", `O proprietário propôs outro horário para a visita ${tipo}: ${formatarHorarioBrasilia(campos.horario_proposto)}. Aceite ou cancele em Visitas.`);
+    const { data: imovel } = await admin.from("properties").select("title").eq("id", v.property_id).maybeSingle();
+    avisarVisita(admin, outro, "visita_remarcada", `O proprietário propôs outro horário para a visita ${tipo}: ${formatarHorarioBrasilia(campos.horario_proposto)}. Aceite ou cancele em Visitas.`, null, {
+      imovel: (imovel?.title as string | null) ?? null,
+      prazo: campos.horario_proposto,
+      destinatarioEhParte: true,
+    });
   } else if (campos.status === "cancelado") {
     avisarVisita(admin, outro, "visita_cancelada", `A visita ${tipo} foi cancelada${campos.motivo_recusa ? `. Motivo: ${campos.motivo_recusa}` : ""}.`);
   }

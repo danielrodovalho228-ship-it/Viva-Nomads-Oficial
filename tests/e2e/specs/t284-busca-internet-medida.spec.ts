@@ -67,7 +67,7 @@ test.describe("T284 — busca por internet medida", () => {
     await expect(cards(page)).toHaveCount(4, { timeout: 20_000 });
     const folha = await abrirFolha(page);
     await expect(folha.getByTestId("painel-internet")).toContainText("Internet medida a partir de");
-    await folha.getByTestId("painel-internet").getByText("100 Mbps", { exact: true }).click();
+    await folha.getByTestId("painel-internet").getByRole("button", { name: "100 Mbps", exact: true }).click();
     const aplicar = folha.getByTestId("aplicar-filtros");
     await expect(aplicar).toHaveText("Mostrar 1 imóvel");
     await expect(aplicar).toHaveAttribute("data-nao-medidos", "1");
@@ -95,7 +95,7 @@ test.describe("T284 — busca por internet medida", () => {
     const folha = await abrirFolha(page);
     await expect(folha.getByTestId("painel-home-office")).toHaveCount(0);
     await folha.getByText("Para trabalhar de casa", { exact: true }).first().click();
-    await folha.getByTestId("painel-home-office").getByText("Só com internet medida", { exact: true }).click();
+    await folha.getByTestId("painel-home-office").getByRole("button", { name: "Só com internet medida", exact: true }).click();
     await expect(folha.getByTestId("aplicar-filtros")).toHaveText("Mostrar 2 imóveis");
     await folha.getByTestId("aplicar-filtros").click();
     await expect(page).toHaveURL(/medida=1/);
