@@ -13,9 +13,9 @@ import {
   entrar,
   novaSenha,
   novoSufixo,
-  pngDeTeste,
   tornarContratoVigente,
 } from "../fixtures/laboratorio";
+import { celularComCamera, fotografarEUsar } from "../fixtures/camera";
 import { AREAS, CHAVES_NIVEL_FOTO, MATRIZ } from "../../../src/config/niveis";
 
 /*
@@ -45,7 +45,7 @@ const SILENCIOSO = { via_intensa: false, noturno_obra_100m: false, aviao_ferrovi
 async function itensComFoto(propertyId: string, chaves: readonly string[]) {
   const { error } = await adm()
     .from("nivel_itens")
-    .upsert(chaves.map((chave) => ({ property_id: propertyId, chave, declarado: true, foto_path: `${ids.dono}/${randomUUID()}.webp`, foto_status: "aceita" })), { onConflict: "property_id,chave" });
+    .upsert(chaves.map((chave) => ({ property_id: propertyId, chave, declarado: true, foto_path: `${ids.dono}/${randomUUID()}.webp`, foto_status: "aceita", foto_origem: "camera", foto_capturada_em: new Date().toISOString() })), { onConflict: "property_id,chave" });
   if (error) throw error;
 }
 async function medidas(propertyId: string, trabalhoBoa: boolean) {
@@ -207,13 +207,25 @@ test.describe("T296 — Adendo 59.1, Parte A: níveis na tela", () => {
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t296-3-cadastro-${w}.png`, fullPage: true });
     }
-    // A foto de um item: sai da lista do que falta e entra "em análise" (conta enquanto isso).
-    await page.getByTestId("nivel-cadastro-foto-sono_dois_jogos").setInputFiles({ name: "jogos.png", mimeType: "image/png", buffer: pngDeTeste(5) });
-    await expect(page.getByTestId("nivel-cadastro-msg")).toContainText('Foto de "2 jogos de roupa de cama" enviada', { timeout: 30_000 });
-    await expect(page.getByTestId("nivel-cadastro-item-sono_dois_jogos")).toHaveCount(0);
-    const { data } = await adm().from("nivel_itens").select("declarado, foto_status").eq("property_id", ids.r!).eq("chave", "sono_dois_jogos").single();
-    expect(data).toMatchObject({ declarado: true, foto_status: "pendente" });
+    // FOTO-NA-HORA-B: no computador, o item oferece "Fotografar pelo celular" (nunca arquivo nem webcam).
+    await expect(page.getByTestId("nivel-cadastro-aviso-camera")).toContainText("Para provar o nível, a foto é feita na hora, pela câmera.");
+    await expect(page.getByTestId("nivel-cadastro-foto-sono_dois_jogos-botao")).toHaveText("Fotografar pelo celular");
+    await expect(page.getByTestId("nivel-cadastro").locator('input[type="file"]')).toHaveCount(0);
     await page.context().close();
+    // A foto de um item, feita na hora no celular: sai da lista do que falta e entra "em análise" (conta enquanto isso).
+    const cel = await celularComCamera({ email: dono.email, senha });
+    try {
+      await cel.page.goto(`/dashboard/imoveis/novo?draft=${ids.r}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
+      await expect(cel.page.getByTestId("nivel-cadastro-foto-sono_dois_jogos-botao")).toHaveText("Fotografar agora", { timeout: 30_000 });
+      await cel.page.getByTestId("nivel-cadastro-foto-sono_dois_jogos-botao").click();
+      await fotografarEUsar(cel.page);
+      await expect(cel.page.getByTestId("nivel-cadastro-msg")).toHaveText("Foto de 2 jogos de roupa de cama recebida. O item já conta enquanto a foto é analisada.", { timeout: 30_000 });
+      await expect(cel.page.getByTestId("nivel-cadastro-item-sono_dois_jogos")).toHaveCount(0);
+      const { data } = await adm().from("nivel_itens").select("declarado, foto_status, foto_origem").eq("property_id", ids.r!).eq("chave", "sono_dois_jogos").single();
+      expect(data).toMatchObject({ declarado: true, foto_status: "pendente", foto_origem: "camera" });
+    } finally {
+      await cel.fechar();
+    }
   });
 
   test("4. painel do dono: 'não confere' derruba o Premium e a decisão diz o que corrigir, com o prazo", async ({ browser }) => {

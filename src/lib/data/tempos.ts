@@ -77,7 +77,7 @@ export async function destinosAtivos(admin: Admin | null = createAdminClient()):
   return (data ?? []) as DestinoPublico[];
 }
 
-/** Destino da busca a partir da URL: ?destino=<slug> ou ?dlat=&dlng=&drot= (ponto com 2 casas). */
+/** Destino da busca a partir da URL: ?destino=<slug> ou ?dlat=&dlng=&drot= (ponto com 3 casas). */
 export async function resolverDestino(
   q: { destino?: string | null; dlat?: string | null; dlng?: string | null; drot?: string | null },
   admin: Admin | null = createAdminClient(),
