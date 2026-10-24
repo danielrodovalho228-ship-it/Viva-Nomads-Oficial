@@ -12,6 +12,7 @@ import type { EtapaContrato } from "@/lib/contrato-etapas";
 import { estadoDoContratoUnico, type ChaveEstado, type EstadoContrato, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { podeAvaliarLocacao } from "@/lib/contrato-assinar";
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
+import { acertoMaisRecente, estadoCaucao, type EstadoCaucao } from "@/lib/caucao-estado";
 
 /**
  * Contratos & blocos do PROPRIETÁRIO + registro DECLARATÓRIO de pagamento
@@ -29,7 +30,21 @@ const MSG_JA_REGISTRADO = "Este recebimento já foi registrado";
 
 /** Colunas de `contratos` que as partes leem pela sessão (sem a taxa — 0177). */
 const COLUNAS_CONTRATO_PARTES =
-  "id, property_id, tenant_id, lead_id, status, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em";
+  "id, property_id, tenant_id, lead_id, status, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, garantia";
+
+/** O acerto da devolução vem junto (o RLS deixa as partes lerem): entra no estado único da caução. */
+const ACERTOS_CAUCAO = "caucao_acertos(status, valor_devolvido, created_at)";
+
+/** Estado único da caução (L2-B, item 13) a partir da linha do banco. */
+function caucaoDaLinha(c: Record<string, unknown>, blocos: { caucao: number; caucaoStatus: string }[], pagamentos: PagamentoView[]): EstadoCaucao {
+  const acerto = acertoMaisRecente((c.caucao_acertos as { status: string; valor_devolvido: number | null; created_at: string }[] | null) ?? []);
+  return estadoCaucao({
+    garantia: (c.garantia as string | null) ?? null,
+    blocos,
+    pagamentos,
+    acerto: acerto ? { status: acerto.status, valorDevolvido: acerto.valor_devolvido } : null,
+  });
+}
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -83,6 +98,8 @@ export interface ContratoView {
   criadoEm: string;
   blocos: BlocoView[];
   pagamentos: PagamentoView[];
+  /** Estado único da caução (o mesmo da Garantias e da tela do inquilino). */
+  caucao: EstadoCaucao;
 }
 
 function toBloco(b: Record<string, unknown>): BlocoView {
@@ -213,6 +230,8 @@ export interface LocacaoView {
   encerradoEm: string | null;
   /** Pagamentos registrados pelo proprietário (o inquilino confirma → recibo). */
   pagamentos: PagamentoView[];
+  /** Valor e estado da caução, pela mesma função dos Contratos e da Garantias (L2-B, item 12). */
+  caucao: EstadoCaucao;
 }
 
 /**
@@ -229,7 +248,7 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
 
   const { data } = await supabase
     .from("contratos")
-    .select("id, property_id, aluguel_mensal, status, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim))")
+    .select(`id, property_id, aluguel_mensal, status, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, garantia, properties(title, owner_id), contrato_blocos(caucao, caucao_status), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim)), ${ACERTOS_CAUCAO}`)
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -250,6 +269,11 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
       podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
       encerradoEm: (c.encerrado_em as string | null) ?? null,
       pagamentos,
+      caucao: caucaoDaLinha(
+        c,
+        ((c.contrato_blocos as Record<string, unknown>[]) ?? []).map((b) => ({ caucao: Number(b.caucao) || 0, caucaoStatus: String(b.caucao_status ?? "pendente") })),
+        pagamentos,
+      ),
     };
   });
 }
@@ -284,7 +308,7 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
   // Lista fechada de colunas: a taxa (comissao_*) não sai mais pela API (0177) e vem do servidor logo abaixo.
   const { data } = await supabase
     .from("contratos")
-    .select(`${COLUNAS_CONTRATO_PARTES}, contrato_blocos(*), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim))`)
+    .select(`${COLUNAS_CONTRATO_PARTES}, contrato_blocos(*), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim)), ${ACERTOS_CAUCAO}`)
     .in("property_id", ids)
     .order("created_at", { ascending: false });
 
@@ -324,6 +348,7 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
       criadoEm: String(c.created_at),
       blocos,
       pagamentos,
+      caucao: caucaoDaLinha(c, blocos, pagamentos),
     };
   });
 }

@@ -79,6 +79,8 @@ export const MATRIZ_NOTIFICACOES = {
   vinculo_parceiro_convite: { categoria: "decisao", papeis: ["parceiro"], canais: SEM_PUSH },
   parceiro_orcamento_recebido: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
   parceiro_entrega_feita: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
+  // L2-B item 17: o parceiro recusou → o cliente vê na central do app e por e-mail, com o motivo e "Pedir a outro parceiro".
+  parceiro_pedido_recusado: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
 
   // Prompt 53: data importada do Airbnb/Booking cruza compromisso da Viva (o dono decide); link .ics parou de responder.
   calendario_conflito: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },

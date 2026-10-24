@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
   endereço com "inexistente" não é achado).
    1. Sem login: o servidor acha o local; ele vai só na URL (rótulo sem número) e nada é guardado.
    2. Endereço inválido: "Não achamos este endereço." + "Não achei meu local" → pedido (nome + cidade) na fila do admin.
-   3. Logada: o local fica guardado só para ela e volta como "Seus locais".
+   3. Logada: o local fica guardado só para ela e volta como "Seus locais"; E81: o × apaga na hora (o ativo cai).
    4. Admin: vê só o agregado — a região com 5 pessoas aparece, a com 4 não; nenhum rótulo pessoal na tela;
       "Promover a âncora" leva o centro da região ao cadastro; o pedido "Não achei" é resolvido na mesma tela.
 */
@@ -87,6 +87,13 @@ test.describe("T390 — DESTINO-PESSOAL-B: Outro local pessoal", () => {
     await expect(page.getByTestId("destinos-pessoais").getByTestId("destino-pessoal")).toContainText(`Trabalho da Pessoa ${sufixo}`, { timeout: 20_000 });
     await page.getByTestId("destino-pessoal").first().click();
     await expect(page).toHaveURL(/dlat=/);
+    // E81: apagar o local ativo — some na hora, a busca volta para qualquer lugar e a linha sai do banco.
+    await page.getByTestId("destino-pessoal-apagar").first().click();
+    await expect(page.getByTestId("destino-pessoal")).toHaveCount(0);
+    await expect(page).not.toHaveURL(/dlat=/);
+    await expect.poll(async () => (await adm().from("destinos_pessoais").select("id").eq("user_id", ids[0])).data?.length ?? -1, { timeout: 20_000 }).toBe(0);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("destinos-pessoais")).toHaveCount(0);
     await page.context().close();
   });
 

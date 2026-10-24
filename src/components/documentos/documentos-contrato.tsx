@@ -1,6 +1,7 @@
 "use client";
 
 import { CampoData } from "@/components/ui/campo-data";
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Download, FileText, ShieldCheck } from "lucide-react";
@@ -134,7 +135,7 @@ export function DevolucaoCaucaoDono({
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="text-xs text-muted">
           Valor devolvido (caução: {formatBRL(caucaoConfirmada)})
-          <input type="number" min={0} max={caucaoConfirmada} value={valor} onChange={(e) => setValor(e.target.value)} className={input} />
+          <CampoReais semPrefixo centavos value={valor === "" ? null : Number(valor)} onChange={(v) => setValor(v == null ? "" : String(v))} className={input} />
         </label>
         <label className="text-xs text-muted">
           Data
