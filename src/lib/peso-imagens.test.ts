@@ -14,9 +14,8 @@ const fonte = readFileSync(new URL("./media.ts", import.meta.url), "utf8");
  * Cadastro 01-b (E87): as fotos dos cartões de tipo que o Daniel sobe no PR. Enquanto o arquivo não chegou, fica fora da
  * pesagem; quando chega, é pesado como as outras (e o teste abaixo pede para tirar daqui).
  */
-const FOTOS_A_SUBIR = ["tipo-casa", "tipo-studio", "tipo-loft", "tipo-cobertura", "tipo-casa-condominio", "tipo-flat", "placeholder-imovel-chacara"].map(
-  (n) => `/images/imoveis/${n}.webp`,
-);
+// As 7 chegaram como fotos PROVISÓRIAS (1200×900); as oficiais da pasta do Daniel entram nos mesmos caminhos.
+const FOTOS_A_SUBIR: string[] = [];
 const existe = (c: string) => existsSync(new URL(`../../public${c}`, import.meta.url));
 
 test("fotos a subir (01-b): só ficam na lista enquanto o arquivo não está no repositório", () => {
