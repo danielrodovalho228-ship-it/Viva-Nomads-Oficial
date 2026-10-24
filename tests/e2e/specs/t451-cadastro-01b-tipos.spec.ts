@@ -93,6 +93,19 @@ test.describe("T451 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => 
     });
   }
 
+  test("3. Chácara/Sítio abre o bloco rural do Passo 4 (linha fixa e os 3 campos)", async ({ browser }) => {
+    const page = await entrar(browser, dono.email, senha);
+    await page.goto(`/dashboard/imoveis/novo?draft=${ids.chacara}&etapa=detalhes`, { waitUntil: "domcontentloaded" });
+    const campos = page.getByTestId("campos-chacara");
+    await expect(campos.getByTestId("chacara-linha-fixa")).toHaveText(
+      "Anuncie só a casa para morar. Uso da terra para plantio ou criação não entra no anúncio.",
+      { timeout: 30_000 },
+    );
+    await expect(campos.getByTestId("chacara-acesso-asfalto")).toBeChecked();
+    await expect(campos.getByTestId("chacara-internet-fibra")).toBeChecked();
+    await page.context().close();
+  });
+
   test("2. E102-A: a Revisão mostra os dados da chácara/sítio preenchidos; Passo 9 sem 'aluguel'", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await page.goto(`/dashboard/imoveis/novo?draft=${ids.chacara}&etapa=revisao`, { waitUntil: "domcontentloaded" });
