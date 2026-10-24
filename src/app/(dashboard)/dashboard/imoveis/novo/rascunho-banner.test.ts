@@ -16,9 +16,9 @@ test("aviso de rascunho em andamento e seu botão Continuar têm data-testid", (
   assert.match(pagina, /data-testid="rascunho-continuar"/);
 });
 
-test("t115 não depende de a tela já ter carregado o aviso: espera o aviso OU o botão e abre a etapa 0", () => {
+test("t115 não depende de a tela já ter carregado o aviso: espera o aviso OU o botão e abre o passo Endereço", () => {
   assert.match(spec, /rascunho-continuar/);
-  assert.match(spec, /etapa=0/);
+  assert.match(spec, /etapa=endereco/);
   assert.doesNotMatch(spec, /isVisible\(\)\.catch/);
 });
 
