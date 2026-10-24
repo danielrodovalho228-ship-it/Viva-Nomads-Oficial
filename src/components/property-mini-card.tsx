@@ -6,6 +6,7 @@ import type { Property } from "@/lib/types";
 import { ReadyToLiveBadge, PropertyTags } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 /**
  * Card compacto do imóvel para o topo do orçamento/fechamento (Atualização 16).
@@ -38,7 +39,7 @@ export function PropertyMiniCard({ property }: { property: Property }) {
         <div className="flex items-center gap-1 text-xs text-muted">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">
-            {property.neighborhood}, {property.city}
+            {linhaLocalizacao(property.neighborhood, property.city, property.state)}
           </span>
         </div>
         {/* Título com espaço próprio — line-clamp-2, nada por cima. */}

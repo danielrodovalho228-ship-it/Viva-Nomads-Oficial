@@ -23,10 +23,10 @@ export const EXCECOES: { arquivo: string; trecho: string; motivo: string }[] = [
   { arquivo: "src/app/(public)/privacidade/page.tsx", trecho: "Verificação de identidade do inquilino (em breve)", motivo: "texto jurídico (/privacidade)" },
   // Páginas institucionais que explicam o que ainda NÃO existe (não prometem no fluxo de candidatura). Fora do
   // escopo do 35A: se o Daniel decidir tirar, saem daqui junto.
-  { arquivo: "src/app/(public)/seguranca/page.tsx", trecho: "A verificação de identidade do inquilino chega em breve.", motivo: "FAQ institucional" },
+  { arquivo: "src/app/(public)/seguranca/page.tsx", trecho: "A verificação de identidade do morador chega em breve.", motivo: "FAQ institucional" },
   { arquivo: "src/app/(public)/seguranca/page.tsx", trecho: "Em breve — ainda não está disponível.", motivo: "FAQ institucional" },
   { arquivo: "src/app/(public)/como-funciona/page.tsx", trecho: "A verificação de identidade chega em breve.", motivo: "passo a passo institucional" },
-  { arquivo: "src/app/(public)/para-proprietarios/page.tsx", trecho: "Verificação de identidade do inquilino — em breve.", motivo: "lista de benefícios" },
+  { arquivo: "src/app/(public)/para-proprietarios/page.tsx", trecho: "Verificação de identidade do morador — em breve.", motivo: "lista de benefícios" },
 ];
 
 function arquivos(dir: string): string[] {

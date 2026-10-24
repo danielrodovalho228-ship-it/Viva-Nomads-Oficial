@@ -56,7 +56,7 @@ export function ofertaDoAnuncio(siteUrl: string, p: AnuncioParaSchema, disponibi
       numberOfBathroomsTotal: p.bathrooms,
       floorSize: { "@type": "QuantitativeValue", value: p.areaM2, unitCode: "MTK" },
       amenityFeature: [{ "@type": "LocationFeatureSpecification", name: "Mobiliado", value: p.furnished !== false }],
-      address: { "@type": "PostalAddress", addressLocality: p.city, addressRegion: p.state, addressCountry: "BR" },
+      address: { "@type": "PostalAddress", addressLocality: p.city, ...(p.state?.trim() ? { addressRegion: p.state.trim().toUpperCase() } : {}), addressCountry: "BR" },
       ...(p.neighborhood ? { containedInPlace: { "@type": "Place", name: p.neighborhood } } : {}),
     },
   };

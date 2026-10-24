@@ -4,6 +4,8 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): 1) instável e 6) vermelho nos laboratórios completos de b5ed0e94 e 8ba1aa1d — a
+ * lista era lida antes da resposta do /api/tempos (linha reta do E79 no lugar do "calculando…").
  * T261 — Busca pelo local de trabalho (Prompt 37), com o provedor de rotas FALSO do laboratório (scripts/lab/rotas-falso.mjs,
  * tempos determinísticos: carro = 1,3 × linha reta a 25 km/h):
  *  1) HC-UFU + carro + até 20 → só imóveis dentro, em ordem, com "~N min de carro até o HC-UFU" no cartão;
@@ -31,10 +33,15 @@ async function semRolagemLateral(page: Page) {
 const chamadas = async (): Promise<number> => ((await (await fetch(`${ROTAS}/__chamadas`)).json()) as unknown[]).length;
 const limparRotas = () => fetch(`${ROTAS}/__limpar`, { method: "POST" });
 
-/** Espera os tempos chegarem (nenhum cartão em "calculando…") e devolve [id, texto] na ordem da tela. */
-async function temposNaTela(page: Page): Promise<[string, string][]> {
+/**
+ * Espera os tempos chegarem e devolve [id, texto] na ordem da tela. Desde o E79 (#1270) o cartão mostra a linha reta
+ * calculada no navegador ANTES da resposta do /api/tempos, e o filtro "até N min" só vale depois dela: com rota, espera
+ * um cartão com minutos (a lista já filtrada, no mesmo render); sem rota (provedor fora), quem chama espera o aviso.
+ */
+async function temposNaTela(page: Page, { rota = true }: { rota?: boolean } = {}): Promise<[string, string][]> {
   await expect(page.getByTestId("tempo-cartao").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByTestId("tempo-cartao").filter({ hasText: "calculando…" })).toHaveCount(0, { timeout: 20_000 });
+  if (rota) await expect(page.getByTestId("tempo-cartao").filter({ hasText: / min / }).first()).toBeVisible({ timeout: 20_000 });
   // Cartão de imóvel sem ponto não tem linha de tempo (sem dado, sem linha): fica fora da lista.
   return page.getByTestId("card-resultado").evaluateAll((els) =>
     els
@@ -192,7 +199,7 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
     try {
       await page.goto(`/buscar?dlat=${HC.lat + 0.03}&dlng=${HC.lng + 0.03}&drot=Rua+Sem+Rota&modo=carro&ate=20`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("tempo-indisponivel")).toBeVisible({ timeout: 20_000 });
-      const lista = await temposNaTela(page);
+      const lista = await temposNaTela(page, { rota: false });
       expect(lista.map(([id]) => id)).toEqual(expect.arrayContaining([ids.perto, ids.medio, ids.longe]));
       for (const [, texto] of lista) {
         expect(texto).toMatch(/^≈ [\d,]+ (km|m) em linha reta até Rua Sem Rota$/);

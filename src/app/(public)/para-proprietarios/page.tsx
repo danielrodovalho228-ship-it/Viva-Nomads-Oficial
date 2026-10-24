@@ -12,13 +12,20 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { servicoProprietarios } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
+import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
+
+// VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
+const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor);
+const TAXA_MAIOR = pctTexto(Math.max(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
+const TAXA_MENOR = pctTexto(Math.min(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
+const LIMITE_FAIXAS = Math.max(...FAIXAS_PUBLICAS.map((f) => f.maxImoveis ?? 0));
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
   title: "Para proprietários: estadias de 1 a 6 meses",
   openGraph: { type: "website", locale: "pt_BR", siteName: "Viva Nomads", url: "/para-proprietarios" },
   description:
-    "Anuncie seu imóvel mobiliado para estadias de 30 a 180 dias. Menos rotatividade, menos meses parado e custos repassáveis ao inquilino conforme o contrato.",
+    "Anuncie seu imóvel mobiliado para estadias de 30 a 180 dias. Menos rotatividade, menos meses parado e custos repassáveis ao morador conforme o contrato.",
 };
 
 export default function ForLandlordsPage() {
@@ -39,10 +46,10 @@ export default function ForLandlordsPage() {
             <p>
               Locação mobiliada de média duração (30 a 180 dias), com contrato formal e a
               negociação registrada na plataforma. Menos entra-e-sai, menos meses com o imóvel parado e com água, luz,
-              condomínio e IPTU que podem ser transferidos ao inquilino conforme o contrato.
+              condomínio e IPTU que podem ser transferidos ao morador conforme o contrato.
             </p>
             <p className="mt-4 text-base text-white/90">
-              <strong>Anuncie de graça.</strong> A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (de 12% a 6%; acima de 30 imóveis, condições negociadas). Sem mensalidade —{" "}
+              <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}; acima de {LIMITE_FAIXAS} imóveis, condições negociadas). Sem mensalidade —{" "}
               <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
                 ver os preços
               </Link>
@@ -73,8 +80,8 @@ export default function ForLandlordsPage() {
           <ol className="mt-12 grid gap-6 md:grid-cols-3">
             {[
               { foto: "/images/unicas/prop-passo-anuncie.webp", alt: "Proprietário fotografando a sala para o anúncio", t: "Anuncie de graça", d: "Fotos, valor e regras da casa. Você pode oferecer limpezas durante a estadia, com quantidade e valor por mês. A qualificação ajuda a ganhar o selo Pronto para Morar." },
-              { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o inquilino pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite." },
-              { foto: "/images/unicas/prop-passo-feche.webp", alt: "Entrega das chaves ao inquilino", t: "Feche com contrato", d: "Contrato digital de 30 a 180 dias, caução combinada e o valor mensal direto na sua conta." },
+              { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o morador pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite." },
+              { foto: "/images/unicas/prop-passo-feche.webp", alt: "Entrega das chaves ao morador", t: "Feche com contrato", d: "Contrato digital de 30 a 180 dias, caução combinada e o valor mensal direto na sua conta." },
             ].map((p, i) => (
               <li key={p.t} className="overflow-hidden rounded-xl border border-line bg-white ">
                 <BrandImage src={p.foto} alt={p.alt} rounded="rounded-none" sizes="(max-width: 768px) 100vw, 33vw" className="aspect-[16/10] w-full" />
@@ -101,10 +108,10 @@ export default function ForLandlordsPage() {
           </p>
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Benefit id="custos" title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
-          <Benefit id="ocupacao" title="Menos imóvel parado" text="Um inquilino por uma estadia inteira, inclusive nos meses fracos do turismo." />
+          <Benefit id="custos" title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do morador durante a estadia, conforme o contrato." />
+          <Benefit id="ocupacao" title="Menos imóvel parado" text="Um morador por uma estadia inteira, inclusive nos meses fracos do turismo." />
           <Benefit id="contrato" title="Contrato com validade jurídica" text="Contrato de 30 a 180 dias gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit id="caucao" title="Caução" text={`Caução documentada, combinada entre proprietário e inquilino. ${CAUCAO_FRASE} Outras modalidades de garantia locatícia: em breve. A plataforma organiza e documenta; não é a garantidora.`} />
+          <Benefit id="caucao" title="Caução" text={`Caução documentada, combinada entre proprietário e morador. ${CAUCAO_FRASE} Outras modalidades de garantia locatícia: em breve. A plataforma organiza e documenta; não é a garantidora.`} />
         </div>
       </section>
 
@@ -125,7 +132,7 @@ export default function ForLandlordsPage() {
               {[
                 "Checklist de qualificação que ajuda a declarar a regularidade da locação.",
                 "Selo Pronto para Morar para seu anúncio se destacar na busca.",
-                "Verificação de identidade do inquilino — em breve.",
+                "Verificação de identidade do morador — em breve.",
                 "Contrato de 30 a 180 dias gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento mensal direto na sua conta.",
               ].map((item) => (

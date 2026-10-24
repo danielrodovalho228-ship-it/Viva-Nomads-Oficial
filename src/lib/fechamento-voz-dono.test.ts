@@ -26,11 +26,11 @@ test("F42: textos do inquilino em 2ª pessoa não aparecem no Fechamento do prop
 
 test("F42: os equivalentes neutros existem", () => {
   for (const frase of [
-    "Como o inquilino vai pagar a caução?",
+    "Como o morador vai pagar a caução?",
     "Por quanto tempo será a estadia?",
-    "Quanto o inquilino paga",
-    "Volta para o inquilino?",
-    "Se o inquilino quebrar algo",
+    "Quanto o morador paga",
+    "Volta para o morador?",
+    "Se o morador quebrar algo",
   ]) {
     assert.ok(f.includes(frase), `falta: ${frase}`);
   }
@@ -38,7 +38,7 @@ test("F42: os equivalentes neutros existem", () => {
 
 test("achado #596: dano em voz neutra e taxa lida da constante única (F35)", () => {
   assert.ok(!f.includes("você responde pelos danos"));
-  assert.ok(f.includes("o inquilino responde pelos danos que causar"));
+  assert.ok(f.includes("o morador responde pelos danos que causar"));
   assert.ok(!f.includes("A comissão é cobrada"));
   assert.ok(f.includes("{TEXTO_RENOVACAO_COMISSAO}"));
 });

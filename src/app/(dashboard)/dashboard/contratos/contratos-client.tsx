@@ -315,8 +315,8 @@ function ContratoCard({
             <p className="mt-1 inline-flex items-center gap-2 text-xs text-forest" data-testid="caucao-contrato-status">
               <Check className="h-3.5 w-3.5" />
               {caucaoRegistrada.confirmado
-                ? "Recebimento registrado e confirmado pelo inquilino."
-                : "Recebimento registrado. Aguardando a confirmação do inquilino."}
+                ? "Recebimento registrado e confirmado pelo morador."
+                : "Recebimento registrado. Aguardando a confirmação do morador."}
             </p>
           ) : contrato.etapa === "aguardando_assinatura" ? (
             <p className="mt-1 text-xs text-muted">O registro da Caução abre depois que as duas partes assinarem.</p>
@@ -374,8 +374,8 @@ function ContratoCard({
         contratoId={contrato.id}
         alvoId={contrato.tenantId}
         papelAutor="proprietario"
-        abrirLabel="Avaliar o inquilino"
-        titulo="Como foi a locação com este inquilino?"
+        abrirLabel="Avaliar o morador"
+        titulo="Como foi a locação com este morador?"
         placeholder="Comentário (opcional) — pontualidade, cuidado com o imóvel, comunicação…"
         demo={demo}
       />
@@ -563,8 +563,8 @@ function RegistrarRecebimento({
           : demo
           ? "Registro de exemplo — em produção fica no histórico do contrato."
           : tipo === "caucao"
-            ? "Caução registrada. Quando o inquilino confirmar, sai o comprovante da caução."
-            : "Recebimento registrado. Quando o inquilino confirmar, o recibo em PDF fica disponível aqui e vai por e-mail para vocês dois."}
+            ? "Caução registrada. Quando o morador confirmar, sai o comprovante da caução."
+            : "Recebimento registrado. Quando o morador confirmar, o recibo em PDF fica disponível aqui e vai por e-mail para vocês dois."}
       </p>
     );
   }

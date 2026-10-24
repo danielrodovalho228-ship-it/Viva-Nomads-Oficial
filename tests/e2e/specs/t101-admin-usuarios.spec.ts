@@ -10,7 +10,7 @@ test.describe("T101 — Admin: lista de usuários", () => {
 
   test("cartão Usuários leva a /admin/usuarios", async ({ page }) => {
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await page.locator('main a[href="/admin/usuarios"]').first().click();
+    await page.locator('main a[href="/admin/usuarios"]:visible').first().click();
     await expect(page).toHaveURL(/\/admin\/usuarios$/);
     await expect(page.getByRole("heading", { level: 1, name: "Usuários" })).toBeVisible();
   });
@@ -40,7 +40,7 @@ test.describe("T101 — Admin: lista de usuários", () => {
   ] as const) {
     test(`total da lista = número do cartão ${rotulo}`, async ({ page }) => {
       await page.goto("/admin", { waitUntil: "domcontentloaded" });
-      const cartao = page.locator(`main a[href="${rota}"]`).first();
+      const cartao = page.locator(`main a[href="${rota}"]:visible`).first();
       await expect(cartao).toBeVisible();
       const doCartao = Number(((await cartao.innerText()).match(/\d[\d.]*/g) ?? []).pop()?.replace(/\./g, ""));
       await page.goto(rota, { waitUntil: "domcontentloaded" });
