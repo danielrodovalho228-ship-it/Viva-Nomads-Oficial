@@ -67,7 +67,8 @@ for (const w of [1280, 390]) {
         await expect(page.getByTestId("porta-veu-topo")).toHaveCount(1);
         await expect(page.getByTestId("porta-veu-base")).toHaveCount(1);
         const cheios = await page.locator(".lg\\:block .absolute.inset-0").evaluateAll((els) =>
-          els.filter((e) => /rgba?\(/.test(getComputedStyle(e).backgroundColor) && getComputedStyle(e).backgroundColor !== "rgba(0, 0, 0, 0)").length,
+          // A própria foto (o invólucro da imagem, com o fundo de espera) não é véu: só conta camada sem imagem dentro.
+          els.filter((e) => !e.querySelector("img") && e.tagName !== "IMG" && /rgba?\(/.test(getComputedStyle(e).backgroundColor) && getComputedStyle(e).backgroundColor !== "rgba(0, 0, 0, 0)").length,
         );
         expect(cheios, "nenhuma camada escura cobrindo a foto inteira").toBe(0);
         const titulo = page.getByRole("heading", { level: 1 });
