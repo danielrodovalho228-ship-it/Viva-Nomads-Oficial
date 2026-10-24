@@ -1,4 +1,5 @@
 "use client";
+import { MSG_FALHA_ENVIO_FOTO, enviarFotoDoAnuncio } from "@/lib/fotos/enviar-foto-cliente";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -57,21 +58,23 @@ function Linha({ papel, p: doServidor }: { papel: PapelPendencia; p: PendenciaPa
   const itemDeNivel = ehChaveNivel(p.chave);
   const agir = (acao: "corrigir" | "contestar" | "confirmar" | "reabrir", arquivo?: File) =>
     iniciar(async () => {
-      let foto: string | undefined;
-      if (arquivo) {
-        const fd = new FormData();
-        fd.set("file", arquivo);
-        const up = await fetch("/api/upload/foto", { method: "POST", body: fd });
-        const j = (await up.json().catch(() => ({}))) as { path?: string; error?: string };
-        if (!up.ok || !j.path) return setMsg({ ok: false, t: j.error ?? "Não foi possível enviar a foto." });
-        foto = j.path;
-      }
-      const r = await agirNaPendencia(p.id, acao, acao === "contestar" ? { motivo } : foto ? { foto } : {});
-      setMsg(r.ok ? { ok: true, t: r.mensagem ?? "Feito." } : { ok: false, t: r.erro });
-      if (r.ok) {
-        setLocal({ de: estadoServidor, campos: { ...EFEITO[acao](new Date().toISOString()), ...(acao === "contestar" ? { motivo_contestacao: motivo.trim() } : {}) } });
-        setContestando(false);
-        router.refresh();
+      // E47-A-CORRECAO: nada aqui lança (rede caindo vira mensagem na linha, nunca tela branca).
+      try {
+        let foto: string | undefined;
+        if (arquivo) {
+          const up = await enviarFotoDoAnuncio(arquivo);
+          if (!up.ok) return setMsg({ ok: false, t: up.erro });
+          foto = up.path;
+        }
+        const r = await agirNaPendencia(p.id, acao, acao === "contestar" ? { motivo } : foto ? { foto } : {});
+        setMsg(r.ok ? { ok: true, t: r.mensagem ?? "Feito." } : { ok: false, t: r.erro });
+        if (r.ok) {
+          setLocal({ de: estadoServidor, campos: { ...EFEITO[acao](new Date().toISOString()), ...(acao === "contestar" ? { motivo_contestacao: motivo.trim() } : {}) } });
+          setContestando(false);
+          router.refresh();
+        }
+      } catch {
+        setMsg({ ok: false, t: MSG_FALHA_ENVIO_FOTO });
       }
     });
   const aguardaMorador = p.status === "corrigida" && !p.fechada;

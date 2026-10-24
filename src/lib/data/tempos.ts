@@ -42,6 +42,9 @@ export interface DestinoPublico {
   tipo: "hospital" | "universidade" | "empresa" | "outro";
   cidade: string;
   uf: string;
+  /** E79: o ponto cadastrado (lugar público, não pessoa) para a linha reta no cartão quando o servidor não traz. */
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface DestinoResolvido {
@@ -64,7 +67,7 @@ export async function destinosAtivos(admin: Admin | null = createAdminClient()):
   if (!admin) return [];
   const { data, error } = await admin
     .from("destinos")
-    .select("id, slug, nome, artigo, tipo, cidade, uf")
+    .select("id, slug, nome, artigo, tipo, cidade, uf, lat, lng")
     .eq("ativo", true)
     .order("nome");
   if (error) {

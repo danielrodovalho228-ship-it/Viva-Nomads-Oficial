@@ -8,6 +8,7 @@ import { Megaphone, ShieldCheck, Info, Loader2, Minus, Plus, Check, PawPrint, Ba
 import { Button } from "@/components/ui/button";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { CampoData } from "@/components/ui/campo-data";
+import { CampoReais } from "@/components/ui/campo-reais";
 import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
 import { BAIRROS_MAX, NECESSIDADES, PORTES_PET_PEDIDO, QUALQUER_BAIRRO, QUARTOS_OPCOES, dataPedidoBR, expiraEmPedido, limparBairro } from "@/lib/pedidos/campos";
 import { CHAVE_ULTIMA_BUSCA, CHAVE_ULTIMO_MOTIVO, ultimaBuscaParaPedido, ultimoMotivoParaPedido } from "@/lib/marcas/regra";
@@ -18,7 +19,6 @@ import {
   buscarCidades,
   fraseContador,
   lerCidadeUf,
-  mascararMilhar,
   rotuloCidade,
   soDigitos,
 } from "@/lib/pedidos/formulario";
@@ -703,15 +703,14 @@ function PedidoForm() {
                 <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-muted" aria-hidden>
                   R$
                 </span>
-                <input
+                <CampoReais
+                  semPrefixo
                   id="pedido-orcamento-min"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={mascararMilhar(orcamentoMin)}
-                  onChange={(e) => setOrcamentoMin(soDigitos(e.target.value))}
+                  value={orcamentoMin === "" ? null : Number(orcamentoMin)}
+                  onChange={(v) => setOrcamentoMin(v == null ? "" : String(Math.round(v)))}
                   placeholder="2.000"
                   className={cn(CAMPO, "pl-12")}
-                  data-testid="pedido-orcamento-min"
+                  testid="pedido-orcamento-min"
                 />
               </div>
             </div>
@@ -721,16 +720,14 @@ function PedidoForm() {
                 <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-muted" aria-hidden>
                   R$
                 </span>
-                <input
+                <CampoReais
+                  semPrefixo
                   id="pedido-orcamento"
-                  required
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={mascararMilhar(orcamento)}
-                  onChange={(e) => setOrcamento(soDigitos(e.target.value))}
+                  value={orcamento === "" ? null : Number(orcamento)}
+                  onChange={(v) => setOrcamento(v == null ? "" : String(Math.round(v)))}
                   placeholder="3.500"
                   className={cn(CAMPO, "pl-12")}
-                  data-testid="pedido-orcamento"
+                  testid="pedido-orcamento"
                 />
               </div>
               <span className="mt-1 block text-[13px] text-muted">Valor mensal total que cabe no seu bolso.</span>
