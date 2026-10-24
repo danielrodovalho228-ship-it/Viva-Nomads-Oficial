@@ -125,3 +125,9 @@ export async function cidadeDoCep(
     return null;
   }
 }
+
+/** E52 (onda 1C): "Buscar" com CEP e cidade vazios avisa o que fazer, em vez de recarregar a página em silêncio. */
+export const MSG_BUSCA_VAZIA = "Digite a cidade ou o CEP para buscar.";
+/** Busca enviada (os dois campos vieram na URL) e os dois vazios. */
+export const buscaVazia = (cep: string | undefined, cidade: string | undefined): boolean =>
+  cep !== undefined && cidade !== undefined && !cep.trim() && !cidade.trim();
