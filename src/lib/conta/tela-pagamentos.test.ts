@@ -39,4 +39,5 @@ test("a coluna não alarga com chave Pix longa (390 px sem rolagem lateral)", ()
   const tela = ler("src/components/account/pagamentos-conta.tsx");
   assert.match(tela, /grid grid-cols-\[minmax\(0,1fr\)\] gap-4" data-testid="conta-pagamentos"/);
   assert.match(tela, /min-w-0 flex-1 truncate/);
+  assert.match(tela, /mt-4 grid grid-cols-\[minmax\(0,1fr\)\] gap-3/);
 });
