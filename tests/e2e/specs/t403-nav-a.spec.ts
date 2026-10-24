@@ -49,7 +49,7 @@ test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () 
     if (w === 390) await p.getByRole("button", { name: "Abrir menu" }).first().click();
     const barra = p.getByTestId("menu-cascata").filter({ visible: true }).first();
     await barra.waitFor({ timeout: 20_000 });
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 30; i++) {
       const fechado = barra.locator('[data-menu-grupo] > button[aria-expanded="false"]');
       if ((await fechado.count()) === 0) break;
       await fechado.first().click();
