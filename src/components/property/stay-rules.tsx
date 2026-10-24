@@ -15,15 +15,15 @@ import {
   Building2,
   Layers,
   Clock,
-  Car,
-} from "lucide-react";
+  Car, Trees } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { linhasRegrasPets } from "@/lib/anuncio/pets-regras";
 import { textoLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { linhasRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { linhasDetalhes, type ChaveGrupoDetalhe } from "@/lib/anuncio/detalhes-anuncio";
 
-const ICONE_DETALHE: Record<ChaveGrupoDetalhe, React.ComponentType<{ className?: string }>> = {
+const ICONE_DETALHE: Record<ChaveGrupoDetalhe | "chacara", React.ComponentType<{ className?: string }>> = {
+  chacara: Trees,
   incluidoNoPreco: Receipt,
   areasCondominio: Building2,
   andar: Layers,
@@ -68,7 +68,7 @@ export function StayRules({ property }: { property: Property }) {
   if (property.maxGuests !== undefined)
     rows.push({ icon: Users, label: "Moradores", value: `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` });
   // CAMPOS-2: a janela de entrada/saída (quando ligada) tem precedência sobre os horários antigos.
-  const detalhes = linhasDetalhes(property.detalhesAnuncio);
+  const detalhes = linhasDetalhes(property.detalhesAnuncio, { tipo: property.propertyType, cidade: property.city });
   if (!detalhes.some((d) => d.chave === "janela")) {
     if (property.checkinAfter)
       rows.push({ icon: LogIn, label: "Entrada", value: `A partir das ${property.checkinAfter}` });

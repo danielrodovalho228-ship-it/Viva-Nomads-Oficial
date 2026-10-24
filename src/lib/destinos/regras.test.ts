@@ -40,5 +40,6 @@ test("E32: editar só o nome mantém o ponto e o ativo; só 'Remover o ponto' ap
   assert.match(acao, /pontoAoSalvar\(\{[\s\S]*?limparPonto: form\.get\("limpar_ponto"\) === "1"/);
   assert.match(acao, /ponto\.desativar \? \{ ativo: false \} : \{\}/);
   const pagina = readFileSync(new URL("../../app/(dashboard)/admin/destinos/page.tsx", import.meta.url), "utf8");
-  assert.match(pagina, /<DestinoForm key=\{emEdicao\?\.slug \?\? "novo"\} inicial=\{emEdicao\} \/>/);
+  // DESTINO-PESSOAL-B: o formulário também remonta para "Promover a âncora" (o ponto da região chega preenchido).
+  assert.match(pagina, /<DestinoForm key=\{emEdicao\?\.slug \?\? \(pontoPromover \? `promover-\$\{promover\}` : "novo"\)\} inicial=\{emEdicao\} pontoInicial=\{emEdicao \? null : pontoPromover\} \/>/);
 });

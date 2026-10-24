@@ -72,6 +72,10 @@ export function TelaPrivacidade() {
           Excluir minha conta
         </Link>
       </div>
+      {/* E66: a segurança (senha, duas etapas e verificações) fica na rota própria; daqui, só o caminho até ela. */}
+      <Link href="/dashboard/conta/seguranca" className="inline-flex min-h-11 items-center text-base font-semibold text-ink underline underline-offset-4 hover:text-forest" data-testid="privacidade-seguranca">
+        Segurança e verificações
+      </Link>
       <p className="text-sm text-ink" data-testid="privacidade-rodape">
         {RODAPE_PRIVACIDADE}
       </p>

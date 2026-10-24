@@ -39,7 +39,7 @@ export const TIPOS_PRINCIPAIS: readonly { valor: "casa" | "apartamento" | "quart
   { valor: "quarto", rotulo: "Quarto", apoio: "Quarto individual ou compartilhado" },
 ];
 /** Os demais tipos do catálogo (PROPERTY_TYPES), em "Outros tipos". */
-export const OUTROS_TIPOS = ["studio", "loft", "cobertura", "casa_condominio", "flat"] as const;
+export const OUTROS_TIPOS = ["studio", "loft", "cobertura", "casa_condominio", "flat", "chacara"] as const;
 
 /** O cartão grande que fica marcado para um tipo (um dos "outros" não marca nenhum). */
 export function cartaoDoTipo(tipo: string): "casa" | "apartamento" | "quarto" | null {

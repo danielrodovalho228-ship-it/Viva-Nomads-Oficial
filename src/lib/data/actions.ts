@@ -98,6 +98,7 @@ import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
 import { anotarInteresseDoDono, bloqueioPorCidade } from "@/lib/cidades-liberadas/servidor";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { avisarAdminsDocumentoRecebido } from "@/lib/data/aviso-documento-recebido";
+import { aplicarPontoChacara, gravarChacara } from "@/lib/anuncio/chacara-servidor";
 import {
   caminhoDoDonoValido,
   documentoJaNaFila,
@@ -490,6 +491,8 @@ export interface PropertyInput {
   enderecoExato?: string;
   /** PERTO-B: o endereço do anúncio para calcular a distância dos lugares (CEP, rua, número, cidade, UF). */
   enderecoProximidades?: EnderecoDoAnuncio;
+  /** TIPO-CHACARA-B: acesso, tipo de internet e o ponto marcado pelo dono (só para o tipo chácara/sítio). */
+  chacara?: { acesso?: string; internet?: string; ponto?: { lat: number; lng: number } | null } | null;
   /** Negociação pública do anúncio (0152), validada em lib/anuncio/negociacao. */
   negociacao?: unknown;
   /** Limites PRIVADOS da negociação (0152): só o dono lê; nunca vão ao anúncio. */
@@ -693,7 +696,9 @@ export async function carregarLimitesNegociacao(id: string): Promise<{ valorMini
   }
 }
 
-export async function createProperty(input: PropertyInput): Promise<ActionResult> {
+export async function createProperty(entrada: PropertyInput): Promise<ActionResult> {
+  // TIPO-CHACARA-B: o ponto marcado pelo dono vale no lugar da geocodificação do endereço.
+  const input = aplicarPontoChacara(entrada);
   // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
@@ -889,6 +894,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       .eq("owner_id", user.id)
       .is("property_id", null);
   }
+  await gravarChacara(supabase, user.id, data.id as string, input);
   const confortoNovo = confortoParaGravar(input.confortoConfirmados, input.confortoMexido);
   if (confortoNovo) {
     // O imóvel acabou de ser criado por este dono (a RLS conferiu): o servidor grava a confirmação.
@@ -939,7 +945,9 @@ export async function loadPropertyForEdit(id: string): Promise<Property | null> 
  * (comodidades, proximidades, fotos) apagando e regravando. Best-effort nas
  * tabelas de enriquecimento — migração ausente não derruba a edição base.
  */
-export async function updateProperty(id: string, input: PropertyInput): Promise<ActionResult> {
+export async function updateProperty(id: string, entrada: PropertyInput): Promise<ActionResult> {
+  // TIPO-CHACARA-B: o ponto marcado pelo dono vale no lugar da geocodificação do endereço.
+  const input = aplicarPontoChacara(entrada);
   if (!periodoDisponivelValido(input.availableFrom, input.availableUntil)) {
     return { ok: false, error: MSG_DISPONIVEL_ATE_ANTES };
   }
@@ -1108,15 +1116,22 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   // Detalhes opcionais (0235): validados aqui; grupo desligado não vem, nada definido grava null.
   if ("detalhesAnuncio" in input) {
     try {
+      // TIPO-CHACARA-B: o grupo do tipo não vem do formulário de detalhes (não tem toggle): mantém o gravado.
+      const { data: det } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", user.id).maybeSingle();
+      const chacaraGravada = normalizarDetalhes(det?.detalhes_anuncio)?.chacara;
+      // O grupo do formulário de detalhes nunca traz "chacara" (nem distância): se vier, é descartado.
+      const { chacara: _ignorada, ...novos } = normalizarDetalhes(input.detalhesAnuncio) ?? {};
+      void _ignorada;
       await supabase
         .from("properties")
-        .update({ detalhes_anuncio: normalizarDetalhes(input.detalhesAnuncio) })
+        .update({ detalhes_anuncio: normalizarDetalhes({ ...novos, ...(chacaraGravada ? { chacara: chacaraGravada } : {}) }) })
         .eq("id", id)
         .eq("owner_id", user.id);
     } catch {
       /* migração 0235 ausente — segue sem os detalhes */
     }
   }
+  await gravarChacara(supabase, user.id, id, input);
 
   await gravarNegociacao(supabase, user.id, id, input);
 

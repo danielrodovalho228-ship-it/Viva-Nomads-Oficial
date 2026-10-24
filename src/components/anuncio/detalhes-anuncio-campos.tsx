@@ -2,6 +2,7 @@
 
 import { BlocoOpcional } from "@/components/anuncio/bloco-opcional";
 import { AREAS_CONDOMINIO, GRUPOS_DETALHE, ITENS_INCLUIDOS, MAX_ANDAR, MAX_OBS_VAGA, type ChaveGrupoDetalhe } from "@/lib/anuncio/detalhes-anuncio";
+import { tipoSemAndar } from "@/lib/anuncio/chacara";
 import { desligarGrupo, grupoTemDados, type DetalhesForm } from "@/lib/anuncio/detalhes-form";
 
 export { estadosDetalhes, formDeDetalhes, payloadDeDetalhes, type DetalhesForm } from "@/lib/anuncio/detalhes-form";
@@ -48,7 +49,7 @@ const SIM_NAO: { valor: "sim" | "nao"; rotulo: string }[] = [
   { valor: "nao", rotulo: "Não" },
 ];
 
-export function DetalhesAnuncioCampos({ value, onChange }: { value: DetalhesForm; onChange: (v: DetalhesForm) => void }) {
+export function DetalhesAnuncioCampos({ value, onChange, tipo }: { value: DetalhesForm; onChange: (v: DetalhesForm) => void; /** TIPO-CHACARA-B: casa e chácara/sítio não têm andar nem elevador. */ tipo?: string | null }) {
   const muda = (p: Partial<DetalhesForm>) => onChange({ ...value, ...p });
   const bloco = (chave: ChaveGrupoDetalhe, conteudo: React.ReactNode) => {
     const g = GRUPOS_DETALHE.find((x) => x.chave === chave)!;
@@ -71,7 +72,7 @@ export function DetalhesAnuncioCampos({ value, onChange }: { value: DetalhesForm
     <div className="grid gap-3" data-testid="detalhes-anuncio">
       {bloco("incluidoNoPreco", <Marcas nome="incluido" itens={ITENS_INCLUIDOS} valor={value.incluidoNoPreco} onChange={(incluidoNoPreco) => muda({ incluidoNoPreco })} />)}
       {bloco("areasCondominio", <Marcas nome="area" itens={AREAS_CONDOMINIO} valor={value.areasCondominio} onChange={(areasCondominio) => muda({ areasCondominio })} />)}
-      {bloco(
+      {!tipoSemAndar(tipo) && bloco(
         "andar",
         <>
           <label className="grid gap-1 text-sm font-semibold text-ink">
