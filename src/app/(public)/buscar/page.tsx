@@ -36,7 +36,7 @@ export default async function SearchPage({
     <>
       <SearchClient
         properties={properties}
-        destinos={destinos.map((d) => ({ slug: d.slug, nome: d.nome, cidade: d.cidade }))}
+        destinos={destinos.map((d) => ({ slug: d.slug, nome: d.nome, cidade: d.cidade, artigo: d.artigo, lat: d.lat == null ? null : Number(d.lat), lng: d.lng == null ? null : Number(d.lng) }))}
         modos={modosDisponiveis()}
         topo={
           <>

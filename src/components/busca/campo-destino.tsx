@@ -13,6 +13,10 @@ export interface DestinoChip {
   slug: string;
   nome: string;
   cidade: string;
+  /** E79: ponto público da âncora e o artigo, para a linha reta no cartão (opcionais). */
+  artigo?: "o" | "a" | "";
+  lat?: number | null;
+  lng?: number | null;
 }
 
 /**
