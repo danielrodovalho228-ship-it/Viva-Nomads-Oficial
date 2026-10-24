@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T377 — Assistente de cadastro em 10 passos, entrega 01 (mockup cadastro-imovel-01, Entrega 3 do CONTA-A).
+ * T386 — Assistente de cadastro em 10 passos, entrega 01 (mockup cadastro-imovel-01, Entrega 3 do CONTA-A).
  *   1. Topo "Passo 1 de 10" com a barra; um H1 só, "Qual é o tipo do seu imóvel?"; cartões Casa, Apartamento e Quarto
  *      (Apartamento marcado por padrão) com a foto carregando de verdade; "Outros tipos" com os demais do catálogo.
  *      No computador, a "Visualização do anúncio · Ao vivo" ao lado. Sem rolagem lateral, e nada fixo cobrindo o
@@ -28,12 +28,12 @@ async function continuarLivre(p: Page) {
   expect(livre, "nenhum elemento fixo por cima do Continuar").toBe(true);
 }
 
-test.describe("T377 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () => {
+test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
   const senha = novaSenha();
-  const dono = { email: `dono.t377.${novoSufixo()}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
+  const dono = { email: `dono.t386.${novoSufixo()}@lab.vivanomads.test`, nome: "Rui Teixeira", role: "owner" as const };
   let id = "";
   test.beforeAll(async () => {
     id = await criarConta(dono, senha);
@@ -76,7 +76,7 @@ test.describe("T377 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
         document.querySelector("[data-painel-main]")?.scrollTo(0, 0);
         window.scrollTo(0, 0);
       });
-      await p.screenshot({ path: `${SAIDA}/t377-tipo-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t386-tipo-${w}.png`, fullPage: true });
       await p.context().close();
     });
   }
@@ -98,7 +98,7 @@ test.describe("T377 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
     await p.getByTestId("cadastro-continuar").click();
     await expect(p.getByTestId("passo-texto")).toHaveText("Passo 2 de 10");
     await expect(p.locator("h1")).toHaveText("Adicione as fotos do imóvel");
-    await p.screenshot({ path: `${SAIDA}/t377-passo2-1280.png` });
+    await p.screenshot({ path: `${SAIDA}/t386-passo2-1280.png` });
     await p.getByTestId("cadastro-voltar").click();
     await expect(p.getByTestId("passo-texto")).toHaveText("Passo 1 de 10");
     await expect(p.getByTestId("tipo-studio")).toHaveAttribute("aria-checked", "true");
