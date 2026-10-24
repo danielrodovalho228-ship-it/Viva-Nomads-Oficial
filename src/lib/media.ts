@@ -47,6 +47,14 @@ export const PHOTOS = {
     tipoApartamento: `${I}/placeholder-imovel-fachada.webp`,
     tipoQuarto: `${I}/placeholder-imovel-quarto.webp`,
   },
+  // Conta › Pagamentos (E70): uma foto do acervo por cartão, no padrão dos Papéis.
+  pagamentos: {
+    proprietario: `${H}/home-proprietarios-chaves.webp`,
+    morador: `${I}/placeholder-imovel-sala.webp`,
+    parceiro: "/images/unicas/parceiros-servicos.webp",
+  },
+  // Conta › Ajuda (E71): a foto só no cartão de contato (uma pessoa numa conversa pelo celular).
+  ajudaContato: "/images/unicas/cf-conversa-registrada.webp",
   // Conta › Papéis e intenção (perfil-03-papeis-com-fotos): uma foto do acervo por cartão, mesmo tamanho nos três.
   papeis: {
     morar: "/images/unicas/prop-sala-preparada.webp",

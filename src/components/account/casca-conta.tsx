@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronLeft, CircleHelp, CreditCard, FileText, Shield, Star, UserRound, Users } from "lucide-react";
+import { VoltarCelular } from "@/components/ui/voltar-celular";
+import { LINHA_FECHAMENTO_CONTA } from "@/lib/conta/secoes";
+import { Bell, CircleHelp, CreditCard, FileText, Shield, Star, UserRound, Users } from "lucide-react";
 import { SECOES_CONTA, itemDaSecao, type ItemSecao, type SecaoConta } from "@/lib/conta/secoes";
 import { cn } from "@/lib/utils";
 import { CASCA_SOMBRA_CARTOES, ROTULO_MENU_CONTA, SOMBRA_CARTAO_CONTA, TITULO_TELA_CONTA } from "@/lib/conta/visual-mockup";
@@ -29,6 +31,7 @@ export function CascaConta({
   children,
   topoDireita,
   trilha,
+  subtela,
 }: {
   ativo: SecaoConta;
   /** H1 de uma subtela da seção (ex.: "Senha e duas etapas" dentro de Privacidade); sem ele, o nome da seção. */
@@ -39,6 +42,8 @@ export function CascaConta({
   topoDireita?: boolean;
   /** "Conta › <seção>" acima do título no computador (mockup perfil-05). */
   trilha?: boolean;
+  /** Tela dentro de uma seção (ex.: Segurança e verificações, em Privacidade): o voltar padrão é a seção, não a Conta. */
+  subtela?: boolean;
 }) {
   const atual = itemDaSecao(ativo);
   const cabecalho = (
@@ -54,14 +59,9 @@ export function CascaConta({
       )}
       {/* Celular (mockups): a seta de voltar e o título na mesma linha, o título centralizado. */}
       <div className="relative flex min-h-11 items-center justify-center lg:justify-start">
-        <Link
-          href={titulo ? atual.href : "/dashboard/conta"}
-          className="absolute left-0 inline-flex min-h-11 min-w-11 items-center justify-center text-ink lg:hidden"
-          aria-label={`Voltar para ${titulo ? atual.rotulo : "Conta"}`}
-          data-testid="conta-voltar"
-        >
-          <ChevronLeft className="h-6 w-6" aria-hidden />
-        </Link>
+        {/* E69: volta para onde a pessoa estava; aberta direto, para a Conta (ou a seção, numa subtela). Ter título
+            próprio não faz da tela uma subtela ("Meus dados" é a seção Dados). */}
+        <VoltarCelular padrao={subtela ? atual.href : "/dashboard/conta"} rotulo={subtela ? atual.rotulo : "Conta"} className="absolute left-0" />
         <h1 className={cn(TITULO_TELA_CONTA, "px-12 text-center lg:px-0 lg:text-left")} data-testid="conta-h1">
           {titulo ?? atual.rotulo}
         </h1>
@@ -88,7 +88,7 @@ export function CascaConta({
                   )}
                   data-testid={`conta-menu-${s.id}`}
                 >
-                  <Icone className="h-5 w-5 shrink-0" aria-hidden /> {s.rotulo}
+                  <Icone className="h-5 w-5 shrink-0" aria-hidden /> {s.rotuloMenu ?? s.rotulo}
                 </Link>
               </li>
             );
@@ -99,8 +99,21 @@ export function CascaConta({
         {!topoDireita && <div className="mb-6">{cabecalho}</div>}
         {topoDireita && <div className="mb-6 xl:hidden">{cabecalho}</div>}
         {children}
+        <FechamentoConta />
       </div>
     </div>
+  );
+}
+
+/**
+ * E75 (padrão de fechamento, 24/10): toda tela da Conta e o menu terminam numa linha institucional curta, logo
+ * depois do último cartão — sem altura forçada nem vão bege embaixo.
+ */
+export function FechamentoConta() {
+  return (
+    <p className="mt-8 text-center text-xs text-muted" data-testid="conta-fechamento">
+      {LINHA_FECHAMENTO_CONTA}
+    </p>
   );
 }
 

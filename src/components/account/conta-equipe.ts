@@ -1,9 +1,9 @@
 /*
-  Atalho "Equipe e aprovações" no menu Perfil do app (ordem 12a8086d, item 1).
+  Atalho "Equipe e aprovações" (ordem 12a8086d, item 1). NAV-A (24/10): mora na barra verde do admin, não na Conta.
   Só aparece para role admin. Isto é conveniência de tela: quem decide o acesso
   é o servidor (layout de /admin devolve 404 a quem não é admin).
 */
-/** Painel /admin (números e atalhos), acima de "Equipe e aprovações" no menu Conta do app. */
+/** Painel /admin (números e atalhos), acima de "Equipe e aprovações" na barra verde do admin. */
 export const ROTA_ADMIN = "/admin";
 export const ROTA_EQUIPE = "/admin/agentes#aprovacoes";
 
