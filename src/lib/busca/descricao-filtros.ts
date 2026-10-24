@@ -125,6 +125,12 @@ export function interpretarLocal(descricao: string, locais: readonly string[] = 
   return f;
 }
 
+/**
+ * Dica quando a descrição não vira filtro. Só cita o que `interpretarLocal` liga de verdade: desde o FILTROS-2,
+ * Wi-Fi e cozinha são garantia do padrão mínimo e não viram filtro (L-49) — a dica não pode prometê-los.
+ */
+export const DICA_SEM_FILTRO = "Não achei filtros nessa descrição. Cite preço, quartos, cidade ou bairro, pets ou garagem.";
+
 const PORTES: readonly string[] = ["P", "M", "G"];
 const CHAVES_COMODIDADE: readonly string[] = COMODIDADES_FILTRAVEIS.map((c) => c.chave);
 

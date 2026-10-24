@@ -185,7 +185,7 @@ test.describe("T71 — topo da /buscar", () => {
 
     await page.getByTestId("abrir-filtros").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
-    await painel.getByText("Aceita pets", { exact: true }).click();
+    await painel.getByRole("button", { name: "Aceita pets", exact: true }).click();
     await painel.getByTestId("aplicar-filtros").click();
     await expect(titulo).toHaveText(/em Uberlândia que aceita(m)? pets$/);
     expect(await contar(page)).toBeLessThanOrEqual(naCidade);

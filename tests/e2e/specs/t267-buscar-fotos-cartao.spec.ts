@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
+ * Rodada da vigia 24/10 (Pista C): falhou no lab completo de bde9c79; reproduzir sozinha no lab-crítico.
  * T267 — D-V da t249 (/buscar a 1280 px: 4 imagens "acima da dobra" sem carregar). Eram a 5ª foto do carrossel dos
  * cartões, escondida pelo corte do cartão. Agora cada cartão só põe na página a foto visível e a próxima; ao passar
  * para a próxima, a seguinte entra. Nenhuma imagem dentro da tela fica sem carregar. 390 e 1280 px.
