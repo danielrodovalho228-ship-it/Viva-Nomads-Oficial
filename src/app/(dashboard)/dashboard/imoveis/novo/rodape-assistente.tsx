@@ -33,13 +33,14 @@ export function RodapeAssistente(p: { pos: number; total: number; onVoltar: (() 
         {/* 16 px abaixo dos botões: o respiro até a barra das fotos do celular (t269/t270). */}
         {/* No computador, os botões alinham com a coluna do conteúdo (a mesma largura máxima da moldura, 72rem). */}
         <div className="flex w-full items-center justify-between gap-3 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-8" data-rodape-linha>
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-3">
             {p.onVoltar && (
               <button type="button" onClick={p.onVoltar} className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-ink hover:bg-surface-2" data-testid="cadastro-voltar">
                 <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar
               </button>
             )}
-            <p className="truncate text-sm text-muted" aria-live="polite" data-testid="passo-texto">
+            {/* No celular, ao lado do "Publicar anúncio", o passo cabe inteiro em texto menor (nunca cortado). */}
+            <p className="whitespace-nowrap text-xs text-muted sm:text-sm" aria-live="polite" data-testid="passo-texto">
               {textoPasso(p.pos, p.total)}
             </p>
           </div>
