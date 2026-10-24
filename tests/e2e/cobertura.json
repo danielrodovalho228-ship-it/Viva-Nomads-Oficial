@@ -652,7 +652,6 @@
         "t355-conta-a-perfil-espelho",
         "t361-conta-a-correcoes-qa",
         "t351-telas-linkedin-63a",
-        "t355-conta-a-perfil-espelho",
         "t352-varredura-bloco17",
         "t353-varredura-bloco18",
         "t354-varredura-bloco19"
@@ -844,9 +843,8 @@
         "t337-varredura-redundancia",
         "t338-varredura-bloco15",
         "t352-varredura-bloco17",
-        "t377-cadastro-01-tipo",
-        "t380-cadastro-10-revisao",
         "t386-cadastro-01-tipo",
+        "t392-cadastro-10-revisao",
         "t387-varredura-bloco22"
       ]
     },
