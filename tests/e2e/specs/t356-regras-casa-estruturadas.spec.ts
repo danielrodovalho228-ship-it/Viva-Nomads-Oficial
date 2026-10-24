@@ -23,8 +23,11 @@ async function abrirSecaoRegras(d: Page) {
   const secao = d.getByTestId("secao-regras");
   await expect(async () => {
     if ((await secao.getAttribute("data-aberta")) !== "true") await secao.getByRole("button").first().click({ timeout: 3_000 });
-    await expect(secao.getByTestId("regras-casa")).toBeVisible({ timeout: 3_000 });
+    await expect(secao.getByTestId("bloco-convivencia")).toBeVisible({ timeout: 3_000 });
   }).toPass({ timeout: 30_000 });
+  // E56: a Convivência nasce fechada sem regra salva (aberta com regra salva); liga se estiver desligada.
+  if ((await secao.getByTestId("bloco-convivencia").getAttribute("data-ligado")) !== "sim") await secao.getByTestId("bloco-convivencia-toggle").click();
+  await expect(secao.getByTestId("regras-casa")).toBeVisible();
   return secao;
 }
 async function abrirFolhaRegras(page: Page) {

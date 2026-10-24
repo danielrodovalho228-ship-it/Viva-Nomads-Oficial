@@ -82,11 +82,8 @@ export function RegrasCasaCampos({ value, onChange }: { value: RegrasCasaForm; o
   const muda = (p: Partial<RegrasCasaForm>) => onChange({ ...value, ...p });
   const silencioIncompleto = (value.silencioInicio === "") !== (value.silencioFim === "");
   return (
-    <div className="grid gap-4 rounded-xl border border-line bg-white p-4" data-testid="regras-casa">
-      <div>
-        <h3 className="text-sm font-semibold text-ink">Convivência</h3>
-        <p className="mt-1 text-xs text-muted">Opcional. O que você definir aparece em “Regras da casa” no anúncio; o que ficar sem definir não aparece.</p>
-      </div>
+    // E56: o título e o toggle ficam no BlocoOpcional que envolve estes campos.
+    <div className="grid gap-4" data-testid="regras-casa">
       <fieldset>
         <legend className="text-sm font-semibold text-ink">Horário de silêncio</legend>
         <div className="mt-2 grid grid-cols-2 gap-3">

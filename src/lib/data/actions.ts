@@ -83,6 +83,7 @@ import {
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
+import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { apagarFotosDoAnuncio, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
@@ -479,6 +480,8 @@ export interface PropertyInput {
   limpezaEstadia?: unknown;
   /** CAMPOS-1: regras da casa estruturadas (silêncio, fumo, festas, visitas); validadas no servidor (0233). */
   regrasCasa?: unknown;
+  /** CAMPOS-2: detalhes opcionais do anúncio (só os grupos ligados); validados no servidor (0235). */
+  detalhesAnuncio?: unknown;
   /**
    * Rua, número e complemento (complemento do prompt 23): vão para a coluna RESTRITA exact_address (nunca pública;
    * lida só pelo dono, admin, inquilino aceito e o morador de visita presencial confirmada). Vazio = não mexe.
@@ -1103,6 +1106,19 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
         .eq("owner_id", user.id);
     } catch {
       /* migração 0233 ausente — segue com os fatos antigos */
+    }
+  }
+
+  // Detalhes opcionais (0235): validados aqui; grupo desligado não vem, nada definido grava null.
+  if ("detalhesAnuncio" in input) {
+    try {
+      await supabase
+        .from("properties")
+        .update({ detalhes_anuncio: normalizarDetalhes(input.detalhesAnuncio) })
+        .eq("id", id)
+        .eq("owner_id", user.id);
+    } catch {
+      /* migração 0235 ausente — segue sem os detalhes */
     }
   }
 
