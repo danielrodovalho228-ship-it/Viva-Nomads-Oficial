@@ -75,9 +75,9 @@ test.describe("T441 — CADASTRO-MOLDURA: o assistente fora da casca do painel",
         await expect(page.getByRole("button", { name: /^Salvar( como rascunho)?$/ })).toHaveCount(0);
 
         // No fim da página, o rodapé não cobre o conteúdo e não há rolagem para o lado.
-        // <html> tem scroll-smooth: a rolagem do teste é instantânea, senão a medida pega a página no meio do caminho.
-        await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
-        await expect.poll(() => page.evaluate(() => Math.ceil(window.scrollY + window.innerHeight) >= document.documentElement.scrollHeight - 1)).toBe(true);
+        // O fim do conteúdo: o espaçador do rodapé é o último elemento da página (quem rola é a página ou o <main>).
+        // <html> tem scroll-smooth: a rolagem é instantânea, senão a medida pega a página no meio do caminho.
+        await page.getByTestId("assistente-rodape-espaco").evaluate((el) => el.scrollIntoView({ block: "end", behavior: "instant" }));
         const conteudo = (await page.getByTestId("novo-duas-colunas").boundingBox())!;
         const caixaRodape = (await rodape.boundingBox())!;
         expect(conteudo.y + conteudo.height).toBeLessThanOrEqual(caixaRodape.y + 1);
