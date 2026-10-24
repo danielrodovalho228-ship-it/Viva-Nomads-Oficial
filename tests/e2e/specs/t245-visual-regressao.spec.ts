@@ -89,11 +89,8 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
 
       test("04 /buscar com a folha de filtros aberta", async ({ page }) => {
         await page.goto("/buscar", { waitUntil: "networkidle" });
-        if (largura < 1024) await page.getByTestId("abrir-filtros").click();
-        else {
-          await page.getByTestId("busca-compacta").click();
-          await page.getByTestId("mais-filtros").click();
-        }
+        // E82-A: a folha abre pela pílula "Mais filtros" da linha única (a mesma em toda largura).
+        await page.getByTestId("pilula-mais").click();
         const folha = page.getByRole("dialog", { name: "Filtros" });
         await expect(folha).toBeVisible();
         // A contagem do botão muda com a base: o botão vai mascarado.

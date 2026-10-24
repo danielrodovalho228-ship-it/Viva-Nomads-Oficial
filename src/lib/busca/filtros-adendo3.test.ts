@@ -202,7 +202,10 @@ test("E43 (7): Pronto para Morar é um estado só (readyToLiveOnly) — chip e f
   const painel = ler("components/busca/painel-filtros-celular.tsx");
   // O chip da folha e o chip ativo da linha de filtros leem e escrevem o MESMO estado, com o mesmo rótulo.
   assert.match(painel, /ativo=\{rascunho\.readyToLiveOnly\} onClick=\{\(\) => muda\("readyToLiveOnly", !rascunho\.readyToLiveOnly\)\} testId="faceta-pronto">\s+Pronto para Morar/);
-  assert.match(busca, /<ActiveChip label="Pronto para Morar" onClear=\{\(\) => setReadyToLiveOnly\(false\)\} \/>/);
+  // E82-A: a fileira de chips ativos saiu da /buscar (a linha de pílulas mostra os valores e "Mais filtros (N)" conta o
+  // resto); o Pronto para Morar continua um estado só, limpo pela mesma chave da folha.
+  assert.doesNotMatch(busca, /<ActiveChip /);
+  assert.match(busca, /else if \(chave === "readyToLiveOnly"\) setReadyToLiveOnly\(false\);/);
   assert.match(busca, /setReadyToLiveOnly\(f\.readyToLiveOnly\);/);
   assert.match(busca, /put\("pronto", readyToLiveOnly, "1"\)/);
   // Uma vez só na contagem de filtros ativos da /buscar.

@@ -55,6 +55,7 @@ export function FolhaFiltros({
   garantias,
   comNotaFiscal = false,
   medicoes = [],
+  topo,
 }: {
   inicial: FiltrosPainel;
   contar: (f: FiltrosPainel) => number;
@@ -68,6 +69,8 @@ export function FolhaFiltros({
   comNotaFiscal?: boolean;
   /** FILTROS-1 (E40): downloads medidos (Mbps) dos anúncios da busca atual — sem nenhum, a seção de internet some. */
   medicoes?: number[];
+  /** E82-A: o 1º bloco da folha (a descrição, recolhida numa linha). */
+  topo?: React.ReactNode;
 }) {
   const [rascunho, setRascunho] = useState<FiltrosPainel>(inicial);
   const n = contar(rascunho);
@@ -119,6 +122,7 @@ export function FolhaFiltros({
       }
     >
       <div className="space-y-6">
+        {topo}
         <Grupo titulo="Preço por mês">
           {OPCOES_PRECO.map((o) => (
             <ChipFaceta key={o.valor} f={facetaUnica(contar, rascunho, "maxPrice", o.valor)} ativo={rascunho.maxPrice === o.valor} onClick={() => alterna("maxPrice", o.valor)} testId={`faceta-preco-${o.valor}`}>

@@ -21,8 +21,9 @@ const TITULOS = { m320: `Studio medido 320 ${sufixo}`, m80: `Studio medido 80 ${
 const busca = (q = "") => `/buscar?local=${encodeURIComponent(BAIRRO)}${q}`;
 const cards = (page: Page) => page.getByTestId("grade-resultados").getByTestId("card-resultado");
 
+// E82-A: a folha abre pela pílula "Mais filtros" da linha única.
 async function abrirFolha(page: Page) {
-  await page.getByTestId("abrir-filtros").click();
+  await page.getByTestId("pilula-mais").click();
   return page.getByRole("dialog", { name: "Filtros" });
 }
 
@@ -94,7 +95,7 @@ test.describe("T284 — busca por internet medida", () => {
     await expect(cards(page)).toHaveCount(4, { timeout: 20_000 });
     const folha = await abrirFolha(page);
     await expect(folha.getByTestId("painel-home-office")).toHaveCount(0);
-    await folha.getByText("Para trabalhar de casa", { exact: true }).first().click();
+    await folha.getByTestId("faceta-home-office").click(); // o chip mostra a contagem ("· N"): pelo testid, não pelo texto exato
     await folha.getByTestId("painel-home-office").getByRole("button", { name: "Só com internet medida", exact: true }).click();
     await expect(folha.getByTestId("aplicar-filtros")).toHaveText("Mostrar 2 imóveis");
     await folha.getByTestId("aplicar-filtros").click();

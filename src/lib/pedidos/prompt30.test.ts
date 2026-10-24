@@ -144,8 +144,9 @@ test("item 6: exemplos somem com imóvel real; menos de 3 reais → cartão do p
   assert.equal(mostrarCartaoPedido([{ id: "r1" }, { id: "r2" }, { id: "r3" }], ehEx), false);
   assert.equal(TEXTO_CARTAO_PEDIDO, "Não achou? Publique um pedido e os proprietários vêm até você");
   const busca = ler("src/app/(public)/buscar/search-client.tsx");
-  assert.match(busca, /data-testid="busca-publicar-pedido-topo"/);
-  assert.match(busca, /data-testid="busca-publicar-pedido"/);
+  // E82-A: o topo da busca é só a linha de controles + a contagem; o pedido fica no vazio e no cartão da lista.
+  assert.doesNotMatch(busca, /data-testid="busca-publicar-pedido-topo"/);
+  assert.match(busca, /data-testid="busca-vazia-pedido"/);
   assert.match(busca, /data-testid="busca-cartao-pedido"/);
   assert.match(ler("src/app/(public)/page.tsx"), /Publicar pedido de moradia/);
   assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Publicar pedido de moradia", icone: "pedidos", href: "\/pedidos\/novo"/);
