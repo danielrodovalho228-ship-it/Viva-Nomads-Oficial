@@ -192,8 +192,9 @@ test.describe("T388 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
       );
       const altAbas = abas ? abas.getBoundingClientRect().height : 0;
       window.scrollTo(0, document.documentElement.scrollHeight);
+      // O fim é a faixa do Salvar inteira (botão + a linha "Tudo salvo"/"Você tem alterações", extra do E62).
       const fimBtn = document
-        .querySelector('[data-testid="perfil-salvar-celular"]')!
+        .querySelector('[data-testid="perfil-salvar-celular-faixa"]')!
         .getBoundingClientRect().bottom;
       return {
         vaoAntes: btn.top - med.bottom,
