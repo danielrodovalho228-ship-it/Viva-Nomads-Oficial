@@ -29,10 +29,10 @@ import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 import { SELO_NF_UI } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
-import { medicoesDaBusca } from "@/lib/busca/facetas";
+import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
-import { ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { ROTULO_PORTE_CURTO, contarFiltrosPainel, naoMedidosDoPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { ROTULO_COMODIDADE, comodidadesDaUrl, comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
+import { ROTULO_PORTE_CURTO, contarFiltrosPainel, seguroDaUrlLegada, naoMedidosDoPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
 import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
@@ -121,10 +121,9 @@ export function SearchClient({
   // Prompt 55 B2: datas flexíveis (só vale com data de entrada).
   const [datasFlexiveis, setDatasFlexiveis] = useState(false);
   const [verNaoMedidos, setVerNaoMedidos] = useState(false);
-  const [comodidades, setComodidades] = useState<ComodidadeFiltro[]>([]); // Wi-Fi, cozinha, garagem, lavar (ordem 583d2e71)
+  const [comodidades, setComodidades] = useState<ComodidadeFiltro[]>([]); // garagem, lavar (ordem 583d2e71; Wi-Fi saiu no Adendo 3)
   const [workLocatedOnly, setWorkLocatedOnly] = useState(false);
   const [invoiceOnly, setInvoiceOnly] = useState(false);
-  const [insuranceOnly, setInsuranceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false); // acordeão de filtros (legado, sm+)
   // Folha de filtros (ordem 314f764e; Prompt 40): de baixo no celular, lateral no computador.
@@ -249,8 +248,8 @@ export function SearchClient({
     if (on("localizado")) setWorkLocatedOnly(true);
     // "Com Nota Fiscal" só existe com a chave do selo ligada (aluguel de PF é recibo, não NF).
     if (SELO_NF_UI && on("nota")) setInvoiceOnly(true);
-    // E43: o atalho antigo `?seguro=1` vira a garantia "Seguro-fiança" (um chip só, mesmo critério).
-    if (on("seguro") && !gar) setGarantia("seguro_fianca");
+    // E43 (Adendo 3): o atalho antigo `?seguro=1` vira a garantia "Seguro-fiança" — a mesma migração das buscas salvas.
+    if (!gar && seguroDaUrlLegada(gar, sp.get("seguro"))) setGarantia("seguro_fianca");
     if (on("gestor")) setOperatedOnly(true);
     setComodidades(comodidadesDaUrl(sp.get("comod")));
     const fi = filtroInternetDaUrl(sp);
@@ -318,7 +317,7 @@ export function SearchClient({
     put("homeoffice", homeOfficeOnly, "1");
     put("localizado", workLocatedOnly, "1");
     put("nota", invoiceOnly, "1");
-    put("seguro", insuranceOnly, "1");
+    params.delete("seguro"); // Adendo 3 (E43): o atalho antigo não volta para a URL (virou garantia=seguro_fianca).
     put("gestor", operatedOnly, "1");
     put("comod", comodidades.length > 0, comodidades.join(","));
     filtroInternetNaUrl(params, { internetMin, soInternetMedida });
@@ -334,7 +333,7 @@ export function SearchClient({
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
-    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades, estadoDestino,
+    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, comodidades, estadoDestino,
     internetMin, soInternetMedida, datasFlexiveis, nivelMin,
   ]);
 
@@ -411,7 +410,6 @@ export function SearchClient({
     setHomeOfficeOnly(false);
     setWorkLocatedOnly(false);
     setInvoiceOnly(false);
-    setInsuranceOnly(false);
     setOperatedOnly(false);
     setComodidades([]);
     setInternetMin(0);
@@ -427,11 +425,11 @@ export function SearchClient({
   const filtrosPainel: FiltrosPainel = useMemo(
     () => ({
       maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades,
-      periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: SELO_NF_UI && invoiceOnly, seguroOnly: insuranceOnly, gestorOnly: operatedOnly,
+      periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: SELO_NF_UI && invoiceOnly, gestorOnly: operatedOnly,
       internetMin, soInternetMedida,
       entrada: dataEntrada, datasFlexiveis, nivelMin,
     }),
-    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, insuranceOnly, operatedOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin]
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin]
   );
 
   const { base, dist } = useMemo(() => {
@@ -473,6 +471,13 @@ export function SearchClient({
   const contarNaoMedidos = useCallback((f: FiltrosPainel) => naoMedidosDoPainel(base, f).filter((p) => !isExemplo(p.id)).length, [base]);
   // FILTROS-1 (E40): medições válidas da busca atual — sem nenhuma, a seção "Internet medida" some da folha.
   const medicoes = useMemo(() => medicoesDaBusca(semExemplosQuandoHaReal(base, (p) => isExemplo(p.id), exemplosForcados)), [base, exemplosForcados]);
+  // Adendo 3 (E40): sem nenhuma medição válida na busca atual, o filtro de internet (vindo da URL ou de antes) é
+  // ignorado — o chip ativo sai e a URL perde ?internet/?medida. Ajuste de estado no render (padrão do React para
+  // estado derivado), sem efeito: a lista nunca chega a zerar por um filtro que ninguém pode cumprir.
+  if (!secaoInternetVisivel(medicoes) && (internetMin > 0 || soInternetMedida)) {
+    setInternetMin(0);
+    setSoInternetMedida(false);
+  }
   const naoMedidos = useMemo(() => naoMedidosDoPainel(base, filtrosPainel).filter((p) => !isExemplo(p.id)), [base, filtrosPainel]);
 
   const semTempo = useMemo(() => {
@@ -537,7 +542,7 @@ export function SearchClient({
     (dataEntrada && datasFlexiveis ? 1 : 0) +
     (garantia ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
-    [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(
+    [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly].filter(
       Boolean
     ).length +
     comodidades.length;
@@ -548,7 +553,7 @@ export function SearchClient({
     (garantia ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
-    [homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, insuranceOnly, operatedOnly].filter(Boolean).length +
+    [homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, operatedOnly].filter(Boolean).length +
     comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
@@ -580,7 +585,6 @@ export function SearchClient({
     setHomeOfficeOnly(false);
     setWorkLocatedOnly(false);
     setInvoiceOnly(false);
-    setInsuranceOnly(false);
     setOperatedOnly(false);
     setComodidades([]);
     setInternetMin(0);
@@ -632,7 +636,7 @@ export function SearchClient({
   // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
-    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades.join(","),
+    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, comodidades.join(","),
     internetMin, soInternetMedida, datasFlexiveis, nivelMin,
   ].join("|");
   function aplicarPainel(f: FiltrosPainel) {
@@ -642,7 +646,7 @@ export function SearchClient({
     setPetPorte(f.petsOnly ? f.petPorte : "");
     setHomeOfficeOnly(f.homeOfficeOnly);
     setReadyToLiveOnly(f.readyToLiveOnly);
-    setComodidades(f.comodidades);
+    setComodidades(comodidadesValidas(f.comodidades));
     setInternetMin(f.internetMin);
     setNivelMin(f.nivelMin ?? "");
     setSoInternetMedida(f.homeOfficeOnly && f.soInternetMedida);
@@ -655,7 +659,6 @@ export function SearchClient({
     setTypeFilter(f.tipo);
     setGarantia(f.garantia);
     setInvoiceOnly(f.notaOnly);
-    setInsuranceOnly(f.seguroOnly);
     setOperatedOnly(f.gestorOnly);
     setPainelAberto(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1019,9 +1022,6 @@ export function SearchClient({
             )}
             {petsOnly && <ActiveChip label={petPorte ? `Aceita pets ${ROTULO_PORTE_CURTO[petPorte]}` : "Aceita pets"} onClear={() => { setPetsOnly(false); setPetPorte(""); }} />}
             {SELO_NF_UI && invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
-            {insuranceOnly && (
-              <ActiveChip label="Seguro-Fiança" onClear={() => setInsuranceOnly(false)} />
-            )}
             {operatedOnly && (
               <ActiveChip label="Gestor profissional" onClear={() => setOperatedOnly(false)} />
             )}

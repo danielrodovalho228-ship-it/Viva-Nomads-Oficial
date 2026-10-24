@@ -107,11 +107,11 @@ export function interpretarLocal(descricao: string, locais: readonly string[] = 
   if (/mobiliad|mobilia/.test(t)) f.furnishedOnly = true;
 
   const com = new Set<ComodidadeFiltro>();
-  if (/wi-?fi|internet|fibra/.test(t)) com.add("wifi");
   if (/cozinha/.test(t)) com.add("cozinha");
   if (/garagem|vaga|estacionamento/.test(t)) com.add("garagem");
   if (/maquina de lavar|lavadora|lavar roupa/.test(t)) com.add("lavar");
-  // FILTROS-2: Wi-Fi e cozinha são garantia do padrão mínimo, não filtro — a descrição não as liga.
+  // FILTROS-2: cozinha é garantia do padrão mínimo, não filtro — a descrição não a liga. Adendo 3 (E39): "Wi-Fi" não é
+  // mais comodidade (internet só pela velocidade medida); a descrição não liga nada por "wi-fi"/"internet".
   f.comodidades = COMODIDADES_FILTRAVEIS.map((c) => c.chave).filter((k) => com.has(k));
 
   // Local: o nome mais longo do catálogo que aparece na descrição; "HC" = Umuarama.
