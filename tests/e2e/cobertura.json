@@ -427,7 +427,8 @@
         "t406-varredura-bloco25",
         "t407-varredura-bloco26",
         "t409-filtros-adendo3",
-        "t436-busca-clean-e82"
+        "t436-busca-clean-e82",
+        "t412-varredura-bloco29"
       ]
     },
     "/cidades": {
@@ -898,7 +899,8 @@
         "t450-cadastro-moldura",
         "t411-varredura-bloco28",
         "t451-cadastro-01b-tipos",
-        "t435-cadastro-03-endereco"
+        "t435-cadastro-03-endereco",
+        "t412-varredura-bloco29"
       ]
     },
     "/dashboard/indicacoes": {
