@@ -20,11 +20,10 @@ import { SUBTITULO_PAPEIS } from "@/lib/conta/tela-papeis";
 import { ALIAS_SECAO, type SecaoConta } from "@/lib/conta/secoes";
 
 /** Subtítulo de cada seção (A1; cada tela ganha o desenho do seu mockup nas entregas A2–A8). */
-const SUBTITULO: Record<Exclude<SecaoConta, "perfil" | "ajuda" | "avaliacoes" | "notificacoes">, string> = {
+const SUBTITULO: Record<Exclude<SecaoConta, "perfil" | "ajuda" | "avaliacoes" | "notificacoes" | "pagamentos">, string> = {
   papeis: SUBTITULO_PAPEIS,
   dados: "Atualize suas informações de cadastro. Só a Viva vê; vão no contrato e nos avisos.",
   privacidade: "O que já está verificado e como proteger a conta.",
-  pagamentos: "Para onde vai o valor mensal.",
 };
 
 /**
@@ -83,7 +82,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       );
     case "pagamentos":
       return (
-        <CascaConta ativo="pagamentos" subtitulo={SUBTITULO.pagamentos}>
+        <CascaConta ativo="pagamentos">
           <PagamentosConta />
         </CascaConta>
       );
