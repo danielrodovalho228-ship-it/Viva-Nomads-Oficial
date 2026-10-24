@@ -97,11 +97,11 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
         await expect(p.getByTestId("perfil-salvar-msg")).toHaveText("Alterações salvas.");
         await expect(falta).not.toContainText("Uma frase sobre você");
       }
-      // A1: o motivo mora só na tela Dados.
+      // E64 (QA 24/10): o motivo também saiu de Meus dados (o desenho perfil-04 não tem); ele é perguntado no pedido.
       await p.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-      await expect(p.getByTestId("perfil-motivo-estadia")).toHaveCount(1);
-      await expect(p.getByTestId("perfil-motivo-estadia").locator("option:checked")).toHaveText("Prefiro não informar");
+      await expect(p.getByTestId("meus-dados")).toBeVisible();
+      await expect(p.getByTestId("perfil-motivo-estadia")).toHaveCount(0);
       await p.context().close();
     });
   }
@@ -129,9 +129,9 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       const comFoto = async () => {
         await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
         await expect(p.locator('[data-testid="espelho-perfil"]:visible img:visible')).toHaveCount(1);
-        // Mockup perfil-01 (decisão de 24/10, no lugar da C8): o cabeçalho e a barra lateral mostram a foto.
-        await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
-        await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(1);
+        // E55 (QA 24/10): na tela Perfil a foto fica só no herói e no espelho; cabeçalho e barra lateral mostram iniciais.
+        await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
+        await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(0);
       };
       await comFoto();
       // C8: só duas aparições da foto na página (topo e espelho), e a do espelho menor que a do topo.
@@ -256,7 +256,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
   });
 
   for (const w of [1280, 390]) {
-    test(`C6. a ${w} px: nada pisca no carregamento (Carregando… e o celular em Privacidade)`, async ({ browser }) => {
+    test(`C6. a ${w} px: nada pisca no carregamento (Carregando… e o celular em Segurança e verificações)`, async ({ browser }) => {
       const p = await como(browser, w);
       // Grava, desde o primeiro quadro, cada texto "Carregando…" na Conta e cada estado do item Celular.
       await p.addInitScript(() => {
@@ -272,7 +272,8 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
         }).observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
       });
       for (let i = 0; i < 2; i++) {
-        await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
+        // E66: a lista de confiança (com o item Celular) mora em Segurança e verificações.
+        await p.goto("/dashboard/conta/seguranca", { waitUntil: "domcontentloaded" });
         await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         await expect(p.getByTestId("confianca-lista")).toHaveAttribute("aria-busy", "false");
         // Lê os registros do script de início (o objeto window inteiro não serializa; lê só as duas listas).

@@ -114,6 +114,6 @@ test("Conta: estado, 'Conectar', 'Desconectar' com confirmação de 1 passo na p
   assert.match(c, /avisoLinkedin && linkedin\?\.ativo/);
 });
 
-test("Dados pessoais: o campo de URL tem o rótulo do 63-A", () => {
-  assert.match(ler("src/components/account/conta-secoes.tsx"), /label="Endereço do perfil no LinkedIn \(opcional, só a Viva vê\)"/);
+test("E64 (QA 24/10): Meus dados sem o campo de URL do LinkedIn — o selo é a conexão, não um endereço digitado", () => {
+  assert.doesNotMatch(ler("src/components/account/conta-secoes.tsx"), /Endereço do perfil no LinkedIn|setLinkedin/);
 });

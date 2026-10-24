@@ -681,6 +681,7 @@
         "t353-varredura-bloco18",
         "t354-varredura-bloco19",
         "t370-conta-a3-papeis",
+        "t391-conta-conformidade",
         "t385-varredura-bloco21"
       ]
     },
@@ -694,7 +695,8 @@
         "t48-varredura",
         "t183-telas-logadas-390",
         "t297-varredura-logada-bloco3",
-        "t354-varredura-bloco19"
+        "t354-varredura-bloco19",
+        "t391-conta-conformidade"
       ]
     },
     "/dashboard/contratos": {
@@ -1973,6 +1975,7 @@
       ],
       "specs": [
         "t369-conta-a2-avaliacoes",
+        "t391-conta-conformidade",
         "t385-varredura-bloco21"
       ]
     }

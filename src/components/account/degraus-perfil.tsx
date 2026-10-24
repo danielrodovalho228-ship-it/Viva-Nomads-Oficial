@@ -33,7 +33,13 @@ export function DegrausPerfil() {
       <p className="text-sm text-muted">Cada dado é pedido só quando for usado.</p>
       <ol className="mt-2 divide-y divide-line">
         {degraus.map((d) => (
-          <li key={d.id} className="flex flex-wrap items-center justify-between gap-3 py-3" data-degrau={d.id} data-feito={d.feito ? "1" : "0"}>
+          <li
+            key={d.id}
+            // E67c: o estado ("Feito") fica numa coluna só, alinhado no mesmo ponto em todas as linhas.
+            className="grid grid-cols-[minmax(0,1fr)_7rem] items-center gap-3 py-3 sm:grid-cols-[minmax(0,1fr)_9rem]"
+            data-degrau={d.id}
+            data-feito={d.feito ? "1" : "0"}
+          >
             <span className="flex min-w-0 items-start gap-2">
               {d.feito ? <Check className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden /> : <Circle className="mt-1 h-4 w-4 shrink-0 text-muted" aria-hidden />}
               <span className="min-w-0">
@@ -41,8 +47,10 @@ export function DegrausPerfil() {
                 <span className="block text-sm text-muted">{d.paraQue}</span>
               </span>
             </span>
-            <span className="flex items-center gap-3">
-              <span className="text-sm text-ink" data-testid="degrau-estado">{d.estado}</span>
+            <span className="flex flex-col items-start">
+              <span className="text-sm text-ink" data-testid="degrau-estado">
+                {d.estado}
+              </span>
               {d.acao && (
                 <Link href={d.acao.href} className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest">
                   {d.acao.rotulo}
