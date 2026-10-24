@@ -6,6 +6,7 @@ import { TAMANHOS, abrirComoConta, cliqueResponde, lerMassa, temContaVarredura, 
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
+  Rodada da vigia 24/10 (Pista C): confirmação no lab-crítico depois do merge do #1273 (o run do PR foi cancelado).
   T406 — VARREDURA DA PÁGINA INTEIRA, BLOCO 25 (Pista C, 24/10). O protocolo do bloco 21 (t385): seis classes, página toda
   rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400 e o clique no primário com resposta
   visível em até 3 s. Cobre as telas que os merges depois do bloco 24 mexeram: o tipo chácara no cadastro, na edição e

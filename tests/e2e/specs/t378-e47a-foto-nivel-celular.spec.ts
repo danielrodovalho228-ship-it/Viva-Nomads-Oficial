@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, definirPlano, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Rodada da vigia 24/10 (Pista C): confirmação no lab-crítico depois do merge do #1273 (o run do PR foi cancelado).
   T378 — E47-A, PERNA DE LABORATÓRIO (Pista C, 24/10): diagnóstico do "clique em Enviar foto (prova de nível) → TELA
   BRANCA" que o Daniel viu no celular em 23/10. O QA do Muse (desktop, PNG pequeno) passou; a hipótese é a foto real de
   celular: arquivo GRANDE ou HEIC. Na página /dashboard/imoveis/:id/nivel, item "ar_quarto_principal", cada caso escolhe
