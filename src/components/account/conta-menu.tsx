@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,11 +19,7 @@ import {
   Eye,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
-import { identidadeUsuario } from "@/lib/roles";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
-import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
-import { Avatar } from "@/components/ui/avatar";
-import { PageTitle } from "@/components/dashboard/primitives";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { createClient } from "@/lib/supabase/client";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
@@ -45,19 +40,6 @@ export function ContaMenu() {
   const user = useDisplayUser();
   const { signOut } = useAuthStore();
 
-  // Foto do próprio usuário (opcional); sem foto, o Avatar mostra as iniciais.
-  const [foto, setFoto] = useState<string | null>(null);
-  useEffect(() => {
-    let vivo = true;
-    getMyAvatarUrl()
-      .then((r) => {
-        if (vivo) setFoto(r.url);
-      })
-      .catch(() => {});
-    return () => {
-      vivo = false;
-    };
-  }, [user?.id]);
 
   async function sair() {
     try {
@@ -114,19 +96,7 @@ export function ContaMenu() {
 
   return (
     <div className="w-full space-y-4">
-      {/* Mesma capa 3S do site; no app só a navegação muda (cabeçalho curto + abas). */}
-      <PageTitle title="Conta" subtitle="Seus dados, segurança e preferências." />
-      {/* Toque na foto leva ao Perfil (trocar/enviar foto). */}
-      <Link
-        href="/dashboard/conta/perfil"
-        data-testid="conta-cartao-usuario"
-        aria-label="Abrir Perfil para trocar a foto"
-        className="flex items-center gap-3 rounded-xl border border-line bg-white p-4"
-      >
-        <Avatar name={identidadeUsuario(user)} size={56} photoUrl={foto ?? undefined} />
-        <p className="min-w-0 flex-1 truncate font-title text-lg font-semibold text-ink">{identidadeUsuario(user)}</p>
-        <ChevronRight className="h-4 w-4 text-muted" aria-hidden />
-      </Link>
+      {/* CONTA-A: o título e o cartão do usuário saíram — o topo único da Conta (foto, nome no H1, papéis) vale no site e no app. */}
       <SeusPapeis />
       {grupos
         .filter((g) => g.itens.length > 0)
