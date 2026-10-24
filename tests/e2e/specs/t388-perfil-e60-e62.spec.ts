@@ -3,7 +3,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, confirmarContatoDaConta, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T378 — Perfil (perfil-01), correções do print do Daniel (24/10, celular):
+ * T388 — Perfil (perfil-01), correções do print do Daniel (24/10, celular):
  *   E62. Medidor a 100%: estado de sucesso curto ("Perfil completo" + uma linha), sem "Cadastro completo: sim", sem
  *        porcentagem, barra nem a lista do que já foi feito. Abaixo de 100%: só o que FALTA. 390 e 1280.
  *   E61. No celular o "Salvar alterações" vem logo depois do conteúdo: sem vão entre o medidor e o botão nem altura
@@ -14,7 +14,7 @@ import { NO_LABORATORIO, adm, apagarContas, confirmarContatoDaConta, criarConta,
 const SAIDA = "tests/laboratorio/saida";
 const ROTA = "/dashboard/conta/perfil";
 
-test.describe("T378 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medidor a 100%)", () => {
+test.describe("T388 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medidor a 100%)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -67,7 +67,7 @@ test.describe("T378 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
       await expect(medidor.locator('[style*="width"]')).toHaveCount(0);
       await expect(p.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-      await p.screenshot({ path: `${SAIDA}/t378-perfil-completo-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t388-perfil-completo-${w}.png`, fullPage: true });
       await p.context().close();
     });
 
@@ -105,7 +105,7 @@ test.describe("T378 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
     // No fim da rolagem, do botão até a barra de abas sobra só o respiro da página (nada de altura morta).
     expect(m.depois, JSON.stringify(m)).toBeGreaterThanOrEqual(0);
     expect(m.depois, JSON.stringify(m)).toBeLessThanOrEqual(120);
-    await p.screenshot({ path: `${SAIDA}/t378-perfil-fim-390.png`, fullPage: false });
+    await p.screenshot({ path: `${SAIDA}/t388-perfil-fim-390.png`, fullPage: false });
     await p.locator("#perfil-bio").fill("Pesquisador em projeto de seis meses.");
     await salvar.click();
     await expect(p.getByTestId("perfil-salvar-msg")).toHaveText("Alterações salvas.", { timeout: 20_000 });
@@ -138,7 +138,7 @@ test.describe("T378 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
       expect(r.direita, JSON.stringify(r)).toBeLessThanOrEqual(r.largura);
       expect(r.base, JSON.stringify(r)).toBeLessThanOrEqual(r.topoAbas);
     }
-    await p.screenshot({ path: `${SAIDA}/t378-flutuante-390.png`, fullPage: false });
+    await p.screenshot({ path: `${SAIDA}/t388-flutuante-390.png`, fullPage: false });
     await p.context().close();
   });
 });
