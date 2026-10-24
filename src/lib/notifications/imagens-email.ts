@@ -135,6 +135,8 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   estadia_encerramento_equipe: "atendimento",
   vinculo_parceiro_convite: "novo-interessado",
   vinculo_parceiro_resposta: "transacional",
+  parceiro_selo_nota_removido: "transacional",
+  foto_perfil_removida: "transacional",
   pedido_auto_confirmar: "transacional",
   pedido_auto_sem_resposta: "transacional",
   pedido_auto_atualizado: "visita",

@@ -39,7 +39,7 @@ const T = {
   antigo: `Loft sem padrão 59-A ${sufixo}`,
   casa: `Casa do compromisso 59-A ${sufixo}`,
 };
-const COMPROMISSO = "Manutenção: urgente com solução provisória em até 24 h e definitiva em até 72 h · comum em até 72 h · demais em até 7 dias";
+const COMPROMISSO_RESUMO = "Urgente com solução provisória em até 24 h e definitiva em até 72 h";
 const H = 3_600_000;
 const LARGURAS = [390, 1280] as const;
 const ORDENS = {
@@ -259,8 +259,9 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
       const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 } });
       const page = await ctx.newPage();
       await page.goto(`/imoveis/${ids.antigo}`, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("compromisso-manutencao")).toHaveText(COMPROMISSO, { timeout: 30_000 });
-      await expect(page.getByTestId("padrao-minimo-confirmado")).toHaveCount(0);
+      // E98-A: o compromisso é a linha "Manutenção" do Bom saber; sem o padrão confirmado, o bloco do padrão some.
+      await expect(page.getByTestId("bom-saber-manutencao")).toContainText(COMPROMISSO_RESUMO, { timeout: 30_000 });
+      await expect(page.getByTestId("padrao-minimo-imovel")).toHaveCount(0);
       await expect(page.getByTestId("proprietario-manutencao-prazo")).toHaveCount(0);
       await ctx.close();
     }
@@ -290,7 +291,11 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
       const bloco = page.getByTestId("padrao-minimo-imovel");
       await expect(bloco).toBeVisible({ timeout: 30_000 });
       await expect(page.getByTestId("padrao-minimo-confirmado")).toContainText("Padrão mínimo da Viva: confirmado pelo proprietário");
-      await expect(page.getByTestId("compromisso-manutencao")).toHaveText(COMPROMISSO);
+      await expect(page.getByTestId("compromisso-manutencao")).toHaveCount(0);
+      await page.getByTestId("bom-saber-manutencao").click();
+      await expect(page.getByRole("dialog")).toContainText(COMPROMISSO_RESUMO);
+      await expect(page.getByRole("dialog")).toContainText("Demais em até 7 dias");
+      await page.keyboard.press("Escape");
       await expect(page.getByTestId("proprietario-manutencao-prazo")).toContainText("Manutenção resolvida no prazo: 67%");
       await semRolagemLateral(page);
       await bloco.scrollIntoViewIfNeeded();

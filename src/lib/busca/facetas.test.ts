@@ -7,9 +7,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { SAMPLE_PROPERTIES } from "../properties.ts";
-import { FILTROS_PAINEL_VAZIOS, OPCOES_PRECO, OPCOES_TIPO, cabeNaEstadia, passaNoPainel, precoDeBusca, type FiltrosPainel } from "./painel-filtros.ts";
-import { temComodidade } from "./filtro-comodidades.ts";
-import { faceta, facetaComodidade, facetaInterruptor, facetaUnica, faixasInternet, medicoesDaBusca, secaoInternetVisivel } from "./facetas.ts";
+import { FILTROS_PAINEL_VAZIOS, OPCOES_PRECO, OPCOES_TIPO, cabeNaEstadia, naoMedidosDoPainel, passaNoPainel, precoDeBusca, type FiltrosPainel } from "./painel-filtros.ts";
+import { faceta, facetaComodidade, facetaInterruptor, facetaUnica, faixasInternet, filtroInternetEfetivo, medicoesDaBusca, secaoInternetVisivel } from "./facetas.ts";
 import { prontidaoAnuncio, ROTULO_FALTA_INTERNET, type FatosAnuncio } from "../anuncio/prontidao.ts";
 
 type Imovel = Parameters<typeof passaNoPainel>[0];
@@ -63,21 +62,10 @@ test("E42/E6: a contagem do chip é a do aplicar; opção em 0 desabilita (menos
   // Loft já escolhido (veio da URL): mostra 0, mas fica clicável para desligar.
   assert.deepEqual(facetaUnica(contar, { ...V, tipo: "loft" }, "tipo", "loft"), { n: 0, desabilitado: false });
   assert.deepEqual(faceta(0, true), { n: 0, desabilitado: false });
-  // As contagens valem com o resto do rascunho: Wi-Fi com "Casa" ligado.
-  assert.equal(facetaComodidade(contar, { ...V, tipo: "casa" }, "wifi").n, com({ tipo: "casa", comodidades: ["wifi"] }));
+  // As contagens valem com o resto do rascunho: Garagem com "Casa" ligado.
+  assert.equal(facetaComodidade(contar, { ...V, tipo: "casa" }, "garagem").n, com({ tipo: "casa", comodidades: ["garagem"] }));
   assert.equal(facetaInterruptor(contar, { ...V, petsOnly: false }, "petsOnly").n, 7);
   for (const o of OPCOES_PRECO) assert.equal(facetaUnica(contar, V, "maxPrice", o.valor).n, com({ maxPrice: o.valor }));
-});
-
-test("E39: a detecção de Wi-Fi lê o que o anúncio declara (rótulo \"Wi-Fi\", fibra, Mbps informado ou medido)", () => {
-  // FILTROS-2: Wi-Fi deixou de ser chip (é garantia do mínimo); a detecção continua valendo para os dados públicos.
-  const base = { monthlyPrice: 2000, bedrooms: 1, tagHomeOffice: false };
-  const wifi = (p: Partial<Imovel>) => temComodidade({ ...base, ...p } as Imovel, "wifi");
-  assert.equal(wifi({ amenities: ["Wi-Fi"] }), true);
-  assert.equal(wifi({ amenities: ["Internet fibra de alta velocidade"] }), true);
-  assert.equal(wifi({ comodidadesFiltro: [], internetMbps: 300 }), true, "velocidade informada no anúncio");
-  assert.equal(wifi({ comodidadesFiltro: [], internetMedida: { downloadMbps: 120, validoAte: "2027-01-01" } }), true);
-  assert.equal(wifi({ amenities: ["Cozinha equipada"] }), false, "sem internet declarada: fica fora");
 });
 
 test("E39 (b): anúncio novo só publica com a velocidade da internet; o publicado não muda", () => {
@@ -91,28 +79,35 @@ test("E39 (b): anúncio novo só publica com a velocidade da internet; o publica
   assert.deepEqual(falta(fatos), [], "ausente (anúncio já publicado): não barra");
 });
 
-test("E40: sem medição na busca, a seção de internet medida some; as faixas saem das medições reais", () => {
+test("E40 (Adendo 3): sem medição na busca, a seção some e o filtro da URL é ignorado; com uma, as três faixas", () => {
   assert.deepEqual(medicoesDaBusca(LISTA, AGORA), [], "nenhum exemplo tem medição");
-  assert.deepEqual(faixasInternet([], 0), []);
-  assert.equal(secaoInternetVisivel([], { internetMin: 0, soInternetMedida: false }), false);
-  // Veio da URL com ?internet=100 e nada medido: o chip escolhido fica (para desligar) e a explicação aparece.
-  assert.deepEqual(faixasInternet([], 100), [100]);
-  assert.equal(secaoInternetVisivel([], { internetMin: 100, soInternetMedida: false }), true);
-  assert.deepEqual(faixasInternet([80, 320], 0), [50, 100, 300]);
-  assert.deepEqual(faixasInternet([80], 0), [50], "100 e 300 não existem: ninguém alcança");
+  assert.deepEqual(faixasInternet([]), []);
+  assert.equal(secaoInternetVisivel([]), false);
+  // Veio da URL com ?internet=100 e nada medido: o filtro é ignorado (o chip ativo sai).
+  assert.deepEqual(filtroInternetEfetivo([], { ...V, internetMin: 100, soInternetMedida: true }), { ...V, internetMin: 0, soInternetMedida: false });
+  // Com uma medição: 50/100/300, cada uma com a contagem do aplicar; faixa em 0 desativada.
+  assert.deepEqual(faixasInternet([80]), [50, 100, 300]);
+  assert.equal(secaoInternetVisivel([80]), true);
+  assert.deepEqual(filtroInternetEfetivo([80], { ...V, internetMin: 100 }).internetMin, 100);
   const medido = { ...LISTA[3], internetMedida: { downloadMbps: 150, validoAte: "2027-01-01" } } as Imovel;
   const vencido = { ...LISTA[4], internetMedida: { downloadMbps: 500, validoAte: "2026-01-01" } } as Imovel;
   assert.deepEqual(medicoesDaBusca([medido, vencido, LISTA[5]], AGORA), [150], "medição vencida não conta");
 });
 
-test("E40 + E39: Wi-Fi + uma faixa de velocidade não vira beco sem saída", () => {
-  // Sem medição, a faixa nem aparece; com uma medição de 150, só 50 e 100 existem e a contagem é a do aplicar.
-  assert.deepEqual(faixasInternet(medicoesDaBusca(LISTA, AGORA), 0), []);
-  const lista = LISTA.map((p, i) => (i === 3 ? ({ ...p, internetMedida: { downloadMbps: 150, validoAte: "2027-01-01" } } as Imovel) : p));
+test("E40: as faixas contam igual ao aplicar, a de 0 fica desativada e a linha dos não medidos continua", () => {
+  const lista = LISTA.map((p, i) =>
+    i === 3 ? ({ ...p, internetMedida: { downloadMbps: 150, validoAte: "2027-01-01" } } as Imovel) : i === 4 ? ({ ...p, internetMbps: 400 } as Imovel) : p,
+  );
   const contar2 = (f: FiltrosPainel) => lista.filter((p) => passaNoPainel(p, f, AGORA)).length;
-  const faixas = faixasInternet(medicoesDaBusca(lista, AGORA), 0);
-  assert.deepEqual(faixas, [50, 100]);
-  for (const v of faixas) assert.equal(facetaUnica(contar2, V, "internetMin", v).n, 1, `${v} Mbps`);
+  const faixas = faixasInternet(medicoesDaBusca(lista, AGORA));
+  assert.deepEqual(faixas, [50, 100, 300]);
+  assert.deepEqual(faixas.map((v) => facetaUnica(contar2, V, "internetMin", v)), [
+    { n: 1, desabilitado: false },
+    { n: 1, desabilitado: false },
+    { n: 0, desabilitado: true },
+  ]);
+  // A linha "Mais N com internet informada, mas não medida" segue (o de 400 Mbps informados, sem medição).
+  assert.equal(naoMedidosDoPainel(lista, { ...V, internetMin: 300 }, AGORA).length, 1);
 });
 
 test("E41: estadia e caução filtram de verdade (o fixture aceita tudo; um anúncio diferente sai)", () => {
@@ -127,13 +122,14 @@ test("E41: estadia e caução filtram de verdade (o fixture aceita tudo; um anú
 });
 
 test("E43: um chip de seguro-fiança (o atalho antigo é o mesmo critério) e Pronto para Morar num lugar só", () => {
+  // Adendo 3: o campo antigo saiu do painel e da URL; sobra só como apelido da garantia (mesmo critério).
   assert.equal(com({ seguroOnly: true }), com({ garantia: "seguro_fianca" }));
   const folha = readFileSync(new URL("../../components/busca/painel-filtros-celular.tsx", import.meta.url), "utf8");
   const busca = readFileSync(new URL("../../app/(public)/buscar/search-client.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(folha, /Aceita Seguro-Fiança/);
   assert.match(folha, /testId="faceta-pronto"/);
   assert.doesNotMatch(busca, /aria-label="Pronto para Morar"/, "a barra de cima não tem mais o chip");
-  assert.match(busca, /on\("seguro"\) && !gar\) setGarantia\("seguro_fianca"\)/);
+  assert.match(busca, /seguroDaUrlLegada\(gar, sp\.get\("seguro"\)\)\) setGarantia\("seguro_fianca"\)/);
 });
 
 test("E20: o preço compara o TOTAL do mês (o mesmo do cartão), não o aluguel base", () => {

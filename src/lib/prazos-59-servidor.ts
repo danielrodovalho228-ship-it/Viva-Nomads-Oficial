@@ -9,6 +9,9 @@ import "server-only";
    D. FOTO-NA-HORA-B: prova de item de nível anterior à regra (origem 'arquivo') com o prazo de refazer vencido → o item
       deixa de contar (a regra pura já não conta), o nível é recalculado e o dono é avisado uma vez. Tokens de captura e
       links do celular com mais de 1 dia saem.
+   E. NIVEIS-MEDIR-B: medição da internet por ponto (dono) que venceu nas últimas 24 h → o nível é recalculado e cai
+      para o que os outros itens sustentam (sem esperar outra mudança no anúncio). Recalcular é idempotente; o aviso de
+      queda só sai quando o nível gravado cai.
   Nada financeiro (D7). `agora` é injetável (no laboratório a rota aceita a data simulada).
 */
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -31,11 +34,13 @@ export interface ResumoPrazos59 {
   ordensConfirmadas: number;
   avisosManutencao: number;
   provasVencidas: number;
+  /** E. Imóveis recalculados porque uma medição de ponto venceu. */
+  medicoesVencidas: number;
 }
 
 /** `soImoveis`: só estes imóveis (o laboratório isola o spec dos outros que rodam junto). */
 export async function rodarPrazos59(admin: Admin, agora = new Date(), soImoveis?: string[]): Promise<ResumoPrazos59> {
-  const r: ResumoPrazos59 = { lembretes: 0, pausados: 0, voltaram: 0, pendenciasConfirmadas: 0, ordensConfirmadas: 0, avisosManutencao: 0, provasVencidas: 0 };
+  const r: ResumoPrazos59 = { lembretes: 0, pausados: 0, voltaram: 0, pendenciasConfirmadas: 0, ordensConfirmadas: 0, avisosManutencao: 0, provasVencidas: 0, medicoesVencidas: 0 };
 
   // ── A. Padrão mínimo ─────────────────────────────────────────────────────────────────────────────────────────────
   let qAdq = admin.from("conforto_adequacao").select("property_id, prazo_ate, lembretes, pausado_em, properties!inner(status)").limit(5000);
@@ -132,6 +137,21 @@ export async function rodarPrazos59(admin: Admin, agora = new Date(), soImoveis?
     await recalcularNivel(admin, propertyId, agora);
     await avisarProvaVencida(admin, propertyId, (marcadas as { chave: string }[]).map((m) => rotuloItem(m.chave))).catch(() => null);
     r.provasVencidas += marcadas.length;
+  }
+  // ── E. Medição de ponto vencida (NIVEIS-MEDIR-B) ─────────────────────────────────────────────────────────────────
+  let qMed = admin
+    .from("internet_medicoes")
+    .select("property_id")
+    .eq("papel", "dono")
+    .eq("validada", true)
+    .not("ponto", "is", null)
+    .lte("valido_ate", agora.toISOString())
+    .gt("valido_ate", new Date(agora.getTime() - 24 * 3600_000).toISOString())
+    .limit(2000);
+  if (soImoveis) qMed = qMed.in("property_id", soImoveis);
+  const { data: medVencidas } = await qMed;
+  for (const propertyId of new Set(((medVencidas ?? []) as { property_id: string }[]).map((m) => m.property_id))) {
+    if (await recalcularNivel(admin, propertyId, agora)) r.medicoesVencidas++;
   }
   if (!soImoveis) {
     const ontem = new Date(agora.getTime() - 24 * 3600_000).toISOString();

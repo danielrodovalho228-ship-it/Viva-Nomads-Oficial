@@ -78,8 +78,9 @@ export function FolhaFiltros({
   // NIVEL-BUSCA-A: contagem ao vivo de cada nível; opção em 0 desabilitada, as três em 0 tiram o grupo.
   const porNivel = Object.fromEntries(NIVEIS.map((v) => [v, contar({ ...rascunho, nivelMin: v })])) as Record<Nivel, number>;
   const nivel = grupoNivel(porNivel, rascunho.nivelMin ?? "");
-  const internetVisivel = secaoInternetVisivel(medicoes, rascunho);
-  const faixas = faixasInternet(medicoes, rascunho.internetMin);
+  // Adendo 3 (E40): a seção só existe com medição na busca; aí as três faixas, cada uma com a contagem.
+  const internetVisivel = secaoInternetVisivel(medicoes);
+  const faixas = faixasInternet(medicoes);
   const muda = <K extends keyof FiltrosPainel>(k: K, v: FiltrosPainel[K]) => setRascunho((r) => ({ ...r, [k]: v }));
   /** Escolha única: tocar na escolhida desliga o filtro (volta ao valor vazio). */
   const alterna = <K extends "maxPrice" | "minBedrooms" | "periodo" | "tipo" | "petPorte" | "garantia" | "internetMin">(k: K, v: FiltrosPainel[K]) =>
@@ -215,7 +216,7 @@ export function FolhaFiltros({
             {TEXTO_SEM_NIVEIS}
           </p>
         )}
-        {/* E40: sem nenhuma medição na busca, a seção some (as faixas zeravam tudo); as faixas saem das medições reais. */}
+        {/* E40 (Adendo 3): sem nenhuma medição na busca, a seção some (e o filtro da URL é ignorado na /buscar). */}
         {internetVisivel ? (
           <Grupo titulo="Internet medida a partir de" testId="painel-internet">
             {faixas.map((v) => (
@@ -223,12 +224,6 @@ export function FolhaFiltros({
                 {v} Mbps
               </ChipFaceta>
             ))}
-            {/* Veio ligado pela URL sem nenhuma medição na busca: o chip fica para desligar, com o porquê do 0. */}
-            {medicoes.length === 0 && (
-              <p className="w-full text-sm text-muted" data-testid="painel-internet-vazio">
-                {TEXTO_SEM_INTERNET_MEDIDA}
-              </p>
-            )}
           </Grupo>
         ) : (
           <p className="text-sm text-muted" data-testid="painel-internet-vazio">
@@ -252,7 +247,8 @@ export function FolhaFiltros({
           )}
         </Grupo>
         <Grupo titulo="Comodidades" testId="painel-comodidades">
-          {/* FILTROS-2: Wi-Fi e Cozinha equipada são do padrão mínimo (garantia, não filtro) — a linha abaixo diz isso. */}
+          {/* FILTROS-2: Cozinha equipada é do padrão mínimo (garantia, não filtro) — a linha abaixo diz isso. Adendo 3
+              (E39): Wi-Fi não é mais comodidade; a internet só se filtra pela velocidade medida. */}
           {COMODIDADES_FILTRAVEIS.map((c) => {
             const ligado = rascunho.comodidades.includes(c.chave);
             return (

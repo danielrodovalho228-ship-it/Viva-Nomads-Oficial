@@ -7,6 +7,7 @@
 */
 import { chaveCidade } from "../cidades.ts";
 import { cnpjValido, cpfValido, soDigitos, type TipoPessoa } from "../documento-pessoa.ts";
+import { emiteNotaParaGravar, faltaRespostaNota, passaFiltroNota, PENDENCIA_NOTA } from "./fiscal.ts";
 
 // ── Categorias ─────────────────────────────────────────────────────────────────────────────────────────────────
 export const CATEGORIAS_PARCEIRO = [
@@ -66,6 +67,8 @@ export interface SolicitacaoEntrada {
   telefone?: string | null;
   empresa?: string | null;
   veiculo?: string | null;
+  /** FISCAL-PARCEIRO-B: Sim/Não obrigatório na trilha PJ (MEI conta como PJ); PF não responde (grava null). */
+  emiteNota?: unknown;
   aceite: boolean;
 }
 
@@ -79,6 +82,7 @@ export interface SolicitacaoValida {
   descricao: string | null;
   telefone: string | null;
   dadosCategoria: { empresa?: string; veiculo?: string };
+  emiteNota: boolean | null;
 }
 
 const limpar = (t: string | null | undefined, max: number) =>
@@ -137,8 +141,11 @@ export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: So
   if (categorias.some((c) => c !== "fotografia" && c !== "mudanca") && !descricao) return { ok: false, erro: "Descreva o serviço que você oferece." };
   const tel = soDigitos(e.telefone);
   if (tel && (tel.length < 10 || tel.length > 13)) return { ok: false, erro: "Telefone inválido (com DDD)." };
+  // Portão que BLOQUEIA: PJ sem Sim/Não não conclui o cadastro.
+  const nota = emiteNotaParaGravar(tipo, e.emiteNota);
+  if (!nota.ok) return nota;
   if (!e.aceite) return { ok: false, erro: "Confirme que a Viva pode usar estes dados para analisar a parceria." };
-  return { ok: true, valor: { nome, tipoPessoa: tipo, documento: doc, categorias, cidades, portfolioUrl, descricao, telefone: tel || null, dadosCategoria: dados } };
+  return { ok: true, valor: { nome, tipoPessoa: tipo, documento: doc, categorias, cidades, portfolioUrl, descricao, telefone: tel || null, dadosCategoria: dados, emiteNota: nota.valor } };
 }
 
 // ── Token de ativação (7 dias, uso único; o banco guarda só o hash) ─────────────────────────────────────────────
@@ -208,6 +215,9 @@ export interface PaginaParaPublicar {
   cidades: string[];
   categorias: string[];
   fotosGaleria: number;
+  /** FISCAL-PARCEIRO-B: PJ sem resposta não publica a primeira vez (quem já está no ar não sai). */
+  tipoPessoa?: string | null;
+  emiteNota?: boolean | null;
 }
 
 /** O que falta para publicar (vazio = pode publicar). */
@@ -218,6 +228,7 @@ export function faltaParaPublicar(p: PaginaParaPublicar): string[] {
   if (p.servicosAtivos < 1) f.push("Pelo menos 1 serviço");
   if (!p.cidades.length) f.push("Pelo menos 1 cidade atendida");
   if (p.categorias.includes("fotografia") && p.fotosGaleria < FOTOS_MIN_FOTOGRAFIA) f.push(`${FOTOS_MIN_FOTOGRAFIA} fotos na galeria (fotografia)`);
+  if (p.tipoPessoa !== undefined && faltaRespostaNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota })) f.push(PENDENCIA_NOTA);
   return f;
 }
 
@@ -270,6 +281,8 @@ export interface ParceiroNaBusca {
   lat?: number | null;
   lng?: number | null;
   raioKm?: number | null;
+  tipoPessoa?: string | null;
+  emiteNota?: boolean | null;
 }
 
 export function distanciaKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
@@ -289,12 +302,13 @@ export function distanciaKm(a: { lat: number; lng: number }, b: { lat: number; l
  */
 export function filtrarParceiros<T extends ParceiroNaBusca>(
   lista: T[],
-  f: { categoria?: string | null; cidade?: string | null; ponto?: { lat: number; lng: number } | null; verTeste?: boolean },
+  f: { categoria?: string | null; cidade?: string | null; ponto?: { lat: number; lng: number } | null; verTeste?: boolean; soNota?: boolean },
 ): T[] {
   const cid = chaveCidade(f.cidade ?? "");
   return lista
     .filter((p) => p.status === "publicado" && (!p.teste || f.verTeste === true))
     .filter((p) => !f.categoria || p.categorias.includes(f.categoria))
+    .filter((p) => passaFiltroNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota }, f.soNota === true))
     .filter((p) => {
       if (!cid && !f.ponto) return true;
       const naCidade = !!cid && p.cidades.some((c) => chaveCidade(c) === cid);

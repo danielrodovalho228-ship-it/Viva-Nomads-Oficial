@@ -4,7 +4,9 @@
   completo nem coordenada (o endereço só é liberado após o aceite).
 */
 
-export interface AnuncioParaSchema {
+import { calcularTudoIncluido, type CamposTotalMes } from "../precos.ts";
+
+export interface AnuncioParaSchema extends Partial<Omit<CamposTotalMes, "monthlyPrice">> {
   id: string;
   monthlyPrice: number;
   city: string;
@@ -18,6 +20,9 @@ export interface AnuncioParaSchema {
   furnished?: boolean;
 }
 
+/** O que o preço da oferta inclui (E98-A). */
+export const DESCRICAO_PRECO_MES = "Valor do mês com condomínio e contas fixas incluídos";
+
 /** Limite de estadia da plataforma (regra de negócio: 30 a 180 dias). */
 const MAXIMO_PADRAO_DIAS = 180;
 
@@ -28,16 +33,19 @@ const MAXIMO_PADRAO_DIAS = 180;
  */
 export function ofertaDoAnuncio(siteUrl: string, p: AnuncioParaSchema, disponibilidade: string) {
   const url = `${siteUrl}/imoveis/${p.id}`;
+  // O preço é o TOTAL do mês (a mesma conta do cartão e da página), não só o valor mensal.
+  const totalMes = calcularTudoIncluido(p as CamposTotalMes).total;
   return {
     "@type": "Offer" as const,
     "@id": `${url}#oferta`,
     url,
     priceCurrency: "BRL",
-    price: p.monthlyPrice,
+    price: totalMes,
+    description: DESCRICAO_PRECO_MES,
     // O preço é por mês.
     priceSpecification: {
       "@type": "UnitPriceSpecification",
-      price: p.monthlyPrice,
+      price: totalMes,
       priceCurrency: "BRL",
       unitCode: "MON",
       referenceQuantity: { "@type": "QuantitativeValue", value: 1, unitCode: "MON" },

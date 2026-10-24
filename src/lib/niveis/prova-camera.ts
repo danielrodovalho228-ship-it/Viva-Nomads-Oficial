@@ -125,3 +125,30 @@ export function modoSemListaDeAparelhos(env: { ponteiroGrosso: boolean; toque: b
 
 /** Caminho do link do celular (o servidor monta a URL completa). */
 export const caminhoLinkCelular = (token: string): string => `/prova/celular?t=${encodeURIComponent(token)}`;
+
+// ── NIVEIS-MEDIR-B (E25b): medir a internet antes de publicar ─────────────────────────────────────────────────────
+/** Botão do item de internet no cadastro (no lugar de "Meça na edição do anúncio, depois de publicar"). */
+export const BOTAO_MEDIR_AGORA = "Meça agora, no imóvel";
+export const MEDIR_NO_IMOVEL = "A medição é feita no imóvel, conectado ao Wi-Fi dele: abra o link no celular quando estiver lá.";
+
+type PontoInternet = "quarto_principal" | "trabalho";
+/** O ponto que cada item de internet do nível pede (a videochamada é a medição do ponto de trabalho). */
+export function pontoDoItemInternet(chave: string): PontoInternet | null {
+  if (chave === "internet_medida_quarto") return "quarto_principal";
+  if (chave === "internet_medida_trabalho" || chave === "internet_videochamada_trabalho") return "trabalho";
+  return null;
+}
+
+/** O link do celular da medição usa a mesma tabela do FOTO-NA-HORA, com a chave `medir_<ponto>`. */
+export const chaveLinkMedicao = (ponto: PontoInternet): string => `medir_${ponto}`;
+export function pontoDaChaveLink(chave: string): PontoInternet | null {
+  const p = chave.startsWith("medir_") ? chave.slice("medir_".length) : "";
+  return p === "quarto_principal" || p === "trabalho" ? p : null;
+}
+
+/** Para onde o link do celular leva: a câmera do item (foto) ou a medição do ponto (internet). */
+export function destinoLinkCelular(propertyId: string, chave: string): string {
+  const ponto = pontoDaChaveLink(chave);
+  if (ponto) return `/dashboard/imoveis/${propertyId}/nivel?medir=${ponto}#internet`;
+  return `/dashboard/imoveis/${propertyId}/nivel?fotografar=${encodeURIComponent(chave)}#nivel-itens`;
+}

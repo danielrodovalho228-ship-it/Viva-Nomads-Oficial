@@ -52,8 +52,9 @@ test("CPF/CNPJ: dígitos verificadores conferidos; PF com CPF e PJ com CNPJ", ()
   }
   assert.equal(validarSolicitacao({ ...base, documento: "529.982.247-26" }).ok, false);
   assert.equal(validarSolicitacao({ ...base, documento: "111.111.111-11" }).ok, false);
-  assert.equal(validarSolicitacao({ ...base, tipoPessoa: "pj", documento: CNPJ_OK }).ok, true);
-  assert.equal(validarSolicitacao({ ...base, tipoPessoa: "pj", documento: CPF_OK }).ok, false);
+  // FISCAL-PARCEIRO-B: na trilha PJ a pergunta da nota é obrigatória (ver fiscal.test.ts).
+  assert.equal(validarSolicitacao({ ...base, tipoPessoa: "pj", documento: CNPJ_OK, emiteNota: true }).ok, true);
+  assert.equal(validarSolicitacao({ ...base, tipoPessoa: "pj", documento: CPF_OK, emiteNota: true }).ok, false);
 });
 
 test("campos por categoria: fotografia exige portfólio; mudança empresa + veículo; demais, descrição", () => {
