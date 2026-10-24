@@ -258,7 +258,11 @@ test.describe("T357 — CONTA-A: correções do QA (C1–C7)", () => {
       for (let i = 0; i < 2; i++) {
         await p.goto("/dashboard/conta", { waitUntil: "networkidle" });
         await expect(p.getByTestId("confianca-lista")).toHaveAttribute("aria-busy", "false");
-        const r = await p.evaluate(() => (window as unknown as { __vistos: string[]; __celular: string[] }));
+        // Lê os registros do script de início (o objeto window inteiro não serializa; lê só as duas listas).
+        const r = await p.evaluate(() => {
+          const w = window as unknown as { __vistos?: string[]; __celular?: string[] };
+          return { __vistos: w.__vistos ?? [], __celular: w.__celular ?? [] };
+        });
         expect(r.__vistos, "nenhum 'Carregando…' na Conta").toEqual([]);
         // No máximo: carregando → estado final (nunca "falta" e depois "em_breve", nem o contrário).
         const reais = r.__celular.filter((s) => s !== "carregando");
