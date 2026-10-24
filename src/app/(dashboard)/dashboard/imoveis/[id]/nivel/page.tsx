@@ -3,6 +3,8 @@ import { ArrowLeft } from "lucide-react";
 import { nivelDoMeuImovel } from "@/lib/data/nivel-actions";
 import { AREAS, ROTULO_AREA, ROTULO_NIVEL, ROTULO_PONTO, rotuloItem, type NivelOuAdequacao } from "@/config/niveis";
 import { FormNivel } from "./form-nivel";
+import { SugestoesNoNivel } from "./sugestoes-no-nivel";
+import { comodidadesDoMeuImovel } from "@/lib/data/comodidade-sugerida-actions";
 import { BlocoAvaliacaoDono } from "@/components/vistoria/bloco-avaliacao-dono";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +19,7 @@ export default async function NivelDoImovelPage({ params, searchParams }: { para
   const { id } = await params;
   // FOTO-NA-HORA-B: o link do celular (e o item pendente da prontidão) chega com ?fotografar=<item> e abre a câmera dele.
   const { fotografar } = await searchParams;
-  const dados = await nivelDoMeuImovel(id);
+  const [dados, comodidades] = await Promise.all([nivelDoMeuImovel(id), comodidadesDoMeuImovel(id)]);
   return (
     <div>
       <Link href="/dashboard/imoveis" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
@@ -67,6 +69,8 @@ export default async function NivelDoImovelPage({ params, searchParams }: { para
                 : "nenhuma medição válida por ponto. Meça no quarto principal e no ponto de trabalho pela edição do anúncio."}
             </p>
           </section>
+          {/* E101: o que as fotos sugerem fica acima dos itens de prova. */}
+          <SugestoesNoNivel propertyId={id} comodidades={comodidades} />
           <FormNivel propertyId={id} dados={dados} fotografar={typeof fotografar === "string" ? fotografar : null} />
           {/* Prompt 62-B1/62-A: avaliação por avaliador credenciado (só com VISTORIA_ATIVA; a rota por foto acima continua grátis). */}
           <BlocoAvaliacaoDono propertyId={id} />
