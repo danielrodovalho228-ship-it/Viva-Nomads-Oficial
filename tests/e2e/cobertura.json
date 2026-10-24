@@ -836,7 +836,8 @@
         "t320-pausar-anuncio-64b",
         "t334-varredura-bloco12",
         "t392-varredura-bloco24",
-        "t406-varredura-bloco25"
+        "t406-varredura-bloco25",
+        "t433-l2a-itens-9-24"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -865,7 +866,8 @@
         "t387-varredura-bloco22",
         "t392-varredura-bloco24",
         "t401-cadastro-10-revisao",
-        "t406-varredura-bloco25"
+        "t406-varredura-bloco25",
+        "t433-l2a-itens-9-24"
       ]
     },
     "/dashboard/indicacoes": {

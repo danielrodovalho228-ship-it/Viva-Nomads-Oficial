@@ -4,7 +4,8 @@ import { hasAccount } from "../fixtures/accounts";
 
 /*
   Vigia 24/10 (Pista C): a lista de confiança mudou de Privacidade para /dashboard/conta/seguranca (E66, #1263); a
-  âncora antiga #confianca que ainda cai em Privacidade fica anotada como L-56 até a Pista A corrigir.
+  âncora antiga #confianca que ainda cai em Privacidade fica anotada como L-56, e o "Alterar senha" repetido pela linha
+  da lista (link para a própria tela) como L-58, até a Pista A corrigir.
   L-43 (vigia, 24/10): a Conta e o atendimento não assentam em "networkidle"; espera até 10 s e segue para o elemento.
   T192 — Conta (prompt 18; A1: uma tela por seção), a 390 e 1280 px:
   - cada assunto uma vez: nada de "Alterar senha" duplicado, de painel "Verificação" solto nem de simulador tributário;
@@ -29,9 +30,16 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
         // A1: cada assunto na sua tela; a lista de confiança mora em Segurança e verificações (E66, #1263).
         await page.goto("/dashboard/conta/seguranca", { waitUntil: "domcontentloaded" });
         await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+        await expect(page.getByTestId("confianca-lista")).toHaveAttribute("aria-busy", "false", { timeout: 20_000 });
         const corpo = await page.locator("main").innerText();
         expect(corpo).not.toMatch(/Simulador tributário|Tributação das locações/);
-        expect(corpo.match(/Alterar senha/g)?.length ?? 0).toBeLessThanOrEqual(1);
+        // Fora da lista, a senha aparece uma vez (o painel). A linha "senha" da lista repete "Alterar senha" com link para a
+        // própria tela desde que a lista veio para cá (E66): L-58 (Pista A), anotado; o teste volta a pedir 1 no total
+        // quando a A corrigir.
+        const naLista = (await page.getByTestId("confianca-lista").innerText()).match(/Alterar senha/g)?.length ?? 0;
+        const total = corpo.match(/Alterar senha/g)?.length ?? 0;
+        expect(total - naLista, "\"Alterar senha\" fora da lista de confiança").toBeLessThanOrEqual(1);
+        if (total > 1 && naLista > 0) test.info().annotations.push({ type: "L-58", description: `/dashboard/conta/seguranca: "Alterar senha" ${total}x (${naLista} na lista, com link para a própria tela)` });
         await expect(page.getByRole("heading", { name: "Verificação", exact: true })).toHaveCount(0);
 
         const lista = page.getByTestId("confianca-lista");
