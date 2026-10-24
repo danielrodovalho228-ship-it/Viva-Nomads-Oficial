@@ -77,11 +77,15 @@ import { FaixaProprietario } from "@/components/property/faixa-proprietario";
 import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo } from "@/config/exemplo-proprietarios";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
+import { SELECAO_VAZIA, comEntrada, comPessoas, comSaida, linhaPeriodoNaMensagem, mesesDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
 import { videoDoAnuncio } from "@/lib/video-anuncio";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
+
+/** E53: linhas do resumo à vista no passo Revisar (o resto fica em "Detalhes dos valores"). */
+const LINHAS_REVISAR = new Set(["Motivo da estadia", "Valor por mês", "Total por mês", "Total da estadia"]);
 
 export function PropertyDetail({
   property: anuncio,
@@ -108,11 +112,14 @@ export function PropertyDetail({
   const [leadErro, setLeadErro] = useState<string | null>(null);
   const [candidatouSe, setCandidatouSe] = useState(false);
   // F37: quando a pessoa quer entrar (opcional); o Fechamento do dono abre com essa data.
-  const [inicioDesejado, setInicioDesejado] = useState("");
+  // E53: entrada, saída e pessoas são UMA seleção — o calendário de Disponibilidade, a caixa de reserva e o diálogo do
+  // "Solicitar" leem e escrevem a mesma (regras em selecao-estadia).
+  const [selecao, setSelecao] = useState<SelecaoEstadia>(SELECAO_VAZIA);
+  const inicioDesejado = selecao.entrada;
   // Motivo da estadia (lista única MOTIVOS): vem do perfil, editável; o servidor revalida.
   const [motivoEstadia, setMotivoEstadia] = useState("");
   // Prompt 8: quantas pessoas vão morar (vai na candidatura; o servidor confere com a capacidade).
-  const [pessoas, setPessoas] = useState(1);
+  const pessoas = selecao.pessoas;
   // Composer de dúvida: o inquilino escreve a mensagem de verdade. A visita presencial (prompt 23) tem o próprio pedido,
   // com até 3 horários em horário de Brasília, como a visita por vídeo.
   const [composeKind, setComposeKind] = useState<"duvida" | null>(null);
@@ -181,7 +188,7 @@ export function PropertyDetail({
     try {
       const { inicio, meses } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
       // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o localStorage só no navegador (SSR não tem)
-      if (inicio) setInicioDesejado((atual) => atual || inicio);
+      if (inicio) setSelecao((atual) => (atual.entrada ? atual : comEntrada(atual, inicio)));
       if (meses) setMesesBusca(meses);
     } catch {
       /* localStorage bloqueado: segue sem pré-preencher */
@@ -211,6 +218,9 @@ export function PropertyDetail({
     if (kind === "candidatura") registrarEvento("iniciar_candidatura", { imovelId: property.id, cidade: property.city });
     setPending(kind);
     setLeadErro(null);
+    // E53: a saída ainda não tem coluna no pedido — com o período completo ela segue numa linha da mensagem.
+    const periodo = kind === "candidatura" ? linhaPeriodoNaMensagem(selecao) : null;
+    if (periodo) note = note ? `${note}\n\n${periodo}` : periodo;
     const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined, kind === "candidatura" ? motivoEstadia : undefined, kind === "candidatura" ? pessoas : undefined).catch(() => null);
     setPending(null);
     if (r?.needsAuth) {
@@ -243,10 +253,11 @@ export function PropertyDetail({
   }
 
   // "Enviar candidatura" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
-  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total });
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total });
   function abrirSolicitacao() {
     setLeadErro(null);
-    setSolicitacaoErro(resumo.erro);
+    // E53: o erro de data é ao vivo (resumo.erro); aqui só zera o da mensagem.
+    setSolicitacaoErro(null);
     setEtapa("revisar");
     setSolicitacaoAberta(true);
   }
@@ -302,27 +313,37 @@ export function PropertyDetail({
   // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono fica mascarado até o aceite.
   const contatoViva = destinoContatoViva(property.id);
 
-  // Bloco de ações reutilizado dentro do card de preço.
-  const actions = candidatouSe ? (
-    confirmacaoCandidatura
-  ) : (
-    <div className="flex flex-col gap-2">
+  // E53: entrada, saída e pessoas — os MESMOS campos na caixa ("candidatura-*") e no diálogo ("solicitacao-*"),
+  // ligados à mesma seleção do calendário: mudar em um muda nos outros e o total recalcula.
+  const camposPeriodo = (prefixo: "candidatura" | "solicitacao") => (
+    <>
+      {/* Um embaixo do outro, na largura do cartão (Q3: campo de data inteiro no iPhone, como o select do motivo). */}
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Quando quer entrar? (opcional)
         <CampoData
-          data-testid="candidatura-inicio"
+          data-testid={`${prefixo}-inicio`}
           min={hojeBR()}
-          value={inicioDesejado}
-          onChange={(e) => setInicioDesejado(e.target.value)}
+          value={selecao.entrada}
+          onChange={(e) => setSelecao((s) => comEntrada(s, e.target.value))}
+          className="h-11 rounded-xl border border-line bg-white px-3 text-base text-ink"
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-ink">
+        Até quando? (opcional)
+        <CampoData
+          data-testid={`${prefixo}-saida`}
+          min={selecao.entrada || hojeBR()}
+          value={selecao.saida}
+          onChange={(e) => setSelecao((s) => comSaida(s, e.target.value))}
           className="h-11 rounded-xl border border-line bg-white px-3 text-base text-ink"
         />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Quantas pessoas vão morar?
         <select
-          data-testid="candidatura-pessoas"
+          data-testid={`${prefixo}-pessoas`}
           value={pessoas}
-          onChange={(e) => setPessoas(Number(e.target.value))}
+          onChange={(e) => setSelecao((s) => comPessoas(s, Number(e.target.value)))}
           className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
         >
           {Array.from({ length: Math.max(1, Math.min(20, property.maxGuests ?? 10)) }, (_, i) => i + 1).map((n) => (
@@ -332,6 +353,15 @@ export function PropertyDetail({
           ))}
         </select>
       </label>
+    </>
+  );
+
+  // Bloco de ações reutilizado dentro do card de preço.
+  const actions = candidatouSe ? (
+    confirmacaoCandidatura
+  ) : (
+    <div className="flex flex-col gap-2">
+      {camposPeriodo("candidatura")}
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Motivo da estadia (opcional)
         <select
@@ -546,27 +576,35 @@ export function PropertyDetail({
               </>
             ) : (
               <>
+                {/* E53: no Revisar, entrada, saída e pessoas vêm da seleção da página e são editáveis aqui mesmo. */}
+                {etapa === "revisar" && (
+                  <div className="mt-3 flex flex-col gap-2" data-testid="solicitacao-periodo">
+                    {camposPeriodo("solicitacao")}
+                  </div>
+                )}
                 <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
-                  {(etapa === "revisar" ? resumo.linhas.slice(0, 3) : resumo.linhas).map((l) => (
+                  {(etapa === "revisar" ? resumo.linhas.filter((l) => LINHAS_REVISAR.has(l.rotulo)) : resumo.linhas).map((l) => (
                     <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
                       <dt className="text-muted">{l.rotulo}</dt>
                       <dd className="text-right font-medium text-ink">{l.valor}</dd>
                     </div>
                   ))}
-                  <div className="flex items-baseline justify-between gap-3">
-                    <dt className="text-muted">Pessoas</dt>
-                    <dd className="text-right font-medium text-ink">{pessoas === 1 ? "1 pessoa" : `${pessoas} pessoas`}</dd>
-                  </div>
+                  {etapa !== "revisar" && (
+                    <div className="flex items-baseline justify-between gap-3">
+                      <dt className="text-muted">Pessoas</dt>
+                      <dd className="text-right font-medium text-ink">{pessoas === 1 ? "1 pessoa" : `${pessoas} pessoas`}</dd>
+                    </div>
+                  )}
                 </dl>
                 {etapa === "revisar" && (
                   <>
                     <button type="button" className="mt-2 text-sm font-medium text-forest underline" onClick={() => setSolicitacaoAberta(false)}>
-                      Alterar período, pessoas ou motivo
+                      Alterar o motivo
                     </button>
                     <details className="mt-3 rounded-lg border border-line px-3 py-2 text-sm" data-testid="candidatura-detalhes">
                       <summary className="cursor-pointer font-medium text-ink">Detalhes dos valores</summary>
                       <dl className="mt-2 space-y-2">
-                        {resumo.linhas.slice(3).map((l) => (
+                        {resumo.linhas.filter((l) => !LINHAS_REVISAR.has(l.rotulo) && l.rotulo !== "Entrada" && l.rotulo !== "Saída").map((l) => (
                           <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
                             <dt className="text-muted">{l.rotulo}</dt>
                             <dd className="text-right text-ink">{l.valor}</dd>
@@ -590,17 +628,17 @@ export function PropertyDetail({
                 Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
               </p>
             )}
-            {solicitacaoErro && (
+            {(resumo.erro ?? solicitacaoErro) && (
               <p role="alert" data-testid="solicitacao-erro" className="mt-3 text-sm text-red-600">
-                {solicitacaoErro}
+                {resumo.erro ?? solicitacaoErro}
               </p>
             )}
-            {!solicitacaoErro && leadErro && !exemplo && <p role="alert" className="mt-3 text-sm text-red-600">{leadErro}</p>}
+            {!resumo.erro && !solicitacaoErro && leadErro && !exemplo && <p role="alert" className="mt-3 text-sm text-red-600">{leadErro}</p>}
             <div className="mt-4 flex justify-end gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => (etapa === "revisar" ? setSolicitacaoAberta(false) : (setSolicitacaoErro(resumo.erro), setEtapa(etapaAnterior(etapa))))}
+                onClick={() => (etapa === "revisar" ? setSolicitacaoAberta(false) : (setSolicitacaoErro(null), setEtapa(etapaAnterior(etapa))))}
                 disabled={pending !== null}
               >
                 {etapa === "revisar" ? (exemplo ? "Entendi" : "Cancelar") : "Voltar"}
@@ -623,8 +661,9 @@ export function PropertyDetail({
     </div>
   );
 
-  // Total pela duração escolhida (Prompt 41): a duração da última busca ou, sem busca, a estadia mínima do imóvel.
-  const meses = mesesDoCartao(mesesBusca || undefined, property.minPeriodDays);
+  // Total pela duração escolhida (Prompt 41): o período selecionado (E53) ou a duração da última busca ou, sem nenhum,
+  // a estadia mínima do imóvel.
+  const meses = mesesDaSelecao(selecao) ?? mesesDoCartao(mesesBusca || undefined, property.minPeriodDays);
   // Linha-síntese (Prompt 41): pessoas · quartos · banheiros (as camas entram quando o anúncio tiver o dado).
   const sintese = [
     property.maxGuests != null ? `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` : null,
@@ -801,7 +840,7 @@ export function PropertyDetail({
             <PrivacidadeAcesso privacidade={property.privacidade} />
           </div>
           <div id="disponibilidade" className="scroll-mt-36">
-            <AvailabilityCalendar property={property} />
+            <AvailabilityCalendar property={property} selecao={selecao} onSelecao={setSelecao} />
           </div>
           {/* Mapa aproximado (endereço exato só após o aceite). */}
           <div id="localizacao" className="scroll-mt-36 space-y-12">
