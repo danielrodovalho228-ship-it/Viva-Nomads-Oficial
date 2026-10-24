@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { MarcaNavInterna } from "@/components/ui/voltar-celular";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
@@ -82,6 +83,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     setPathnameDrawer(pathname);
     setOpen(false);
   }
+
   const router = useRouter();
   const { signOut, setActiveMode } = useAuthStore();
   const { mode, isOwner, isTenant } = useViewMode();
@@ -344,6 +346,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Folga no fim (sm+: --folga-flutuante = 112 px) e scroll-padding no contêiner que rola (lg): o botão flutuante "Fale com a
             Viva" (48 px, 24 px acima da borda) nunca fica por cima da última ação da tela (t241: "Salvar qualificação"
             coberto a 1280 px depois que os botões passaram a 56 px no #953). */}
+        {/* E69: marca a navegação interna para o "voltar" das subtelas no celular. */}
+        <MarcaNavInterna />
         <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}

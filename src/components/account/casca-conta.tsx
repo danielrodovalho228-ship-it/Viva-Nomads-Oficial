@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronLeft, CircleHelp, CreditCard, FileText, Shield, Star, UserRound, Users } from "lucide-react";
+import { VoltarCelular } from "@/components/ui/voltar-celular";
+import { Bell, CircleHelp, CreditCard, FileText, Shield, Star, UserRound, Users } from "lucide-react";
 import { SECOES_CONTA, itemDaSecao, type ItemSecao, type SecaoConta } from "@/lib/conta/secoes";
 import { cn } from "@/lib/utils";
 import { CASCA_SOMBRA_CARTOES, ROTULO_MENU_CONTA, SOMBRA_CARTAO_CONTA, TITULO_TELA_CONTA } from "@/lib/conta/visual-mockup";
@@ -54,14 +55,8 @@ export function CascaConta({
       )}
       {/* Celular (mockups): a seta de voltar e o título na mesma linha, o título centralizado. */}
       <div className="relative flex min-h-11 items-center justify-center lg:justify-start">
-        <Link
-          href={titulo ? atual.href : "/dashboard/conta"}
-          className="absolute left-0 inline-flex min-h-11 min-w-11 items-center justify-center text-ink lg:hidden"
-          aria-label={`Voltar para ${titulo ? atual.rotulo : "Conta"}`}
-          data-testid="conta-voltar"
-        >
-          <ChevronLeft className="h-6 w-6" aria-hidden />
-        </Link>
+        {/* E69: volta para onde a pessoa estava; aberta direto, para a Conta (ou a seção, numa subtela). */}
+        <VoltarCelular padrao={titulo ? atual.href : "/dashboard/conta"} rotulo={titulo ? atual.rotulo : "Conta"} className="absolute left-0" />
         <h1 className={cn(TITULO_TELA_CONTA, "px-12 text-center lg:px-0 lg:text-left")} data-testid="conta-h1">
           {titulo ?? atual.rotulo}
         </h1>

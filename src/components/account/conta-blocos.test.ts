@@ -48,8 +48,8 @@ test("simulador tributário: fora da Conta e do cadastro; fica em Ferramentas (/
   assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /conta#tributacao/);
 });
 
-test("menu: 'Verificação' aponta para a tela da lista de Confiança e segurança (E66: /dashboard/conta/seguranca)", () => {
-  assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/conta\/seguranca"/);
+test("menu: 'Verificação' abre direto a tela de Verificação (E76: /dashboard/verificacao, não a Privacidade)", () => {
+  assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/verificacao"/);
 });
 
 test("simulador: PJ sem '+ IBS/CBS', sem aviso de ago/2026 e com o custo de manter a empresa", () => {
