@@ -74,8 +74,8 @@ export function PagamentosConta() {
             {TITULO_RECEBE}
           </h2>
           {pix && !editando ? (
-            <div className="mt-4 grid gap-3">
-              <div className="flex min-h-14 items-center gap-3 rounded-lg border border-line px-4">
+            <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3">
+              <div className="flex min-h-14 min-w-0 items-center gap-3 rounded-lg border border-line px-4">
                 <p className="min-w-0 flex-1 truncate text-base text-ink">
                   <span className="text-muted">Chave Pix · </span>
                   <span className="font-semibold" data-testid="conta-pix-salva">
