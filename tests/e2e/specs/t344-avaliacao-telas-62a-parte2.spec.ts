@@ -14,6 +14,7 @@ import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
  *   5. Admin: contestações, devoluções e laudos atrasados no topo "Para decidir" e na seção #contestacoes.
  * Datas e resultados simulados no banco do laboratório (como no t305).
  * Rodada da vigia (Pista C, 23/10): o lab-crítico do #1177 morreu no apt antes de rodar (L-35); esta linha a põe no portão do PR da vigia.
+ * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
  */
 test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");

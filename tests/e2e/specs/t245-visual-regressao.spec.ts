@@ -18,6 +18,7 @@ import { hasAccount } from "../fixtures/accounts";
   Estabilidade: fotos (img/vídeo/canvas), mapa, datas, contagens e avatares vão MASCARADOS; animações paradas;
   só a área visível (sem fullPage). Rode t245 ANTES do resto da suíte (ou isolado): outros specs criam imóveis
   e conversas no laboratório e mudariam as listas.
+  Rodada L-33/L-4 (Pista C, 23/10 à noite): roda no lab-crítico do PR da vigia só para publicar o diff (esperado, obtido, diferença) para o QA do Muse; a linha de base só muda com o OK registrado.
 */
 const LARGURAS = [390, 1280] as const;
 const altura = (l: number) => (l === 390 ? 844 : 900);

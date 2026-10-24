@@ -49,13 +49,19 @@ test.describe("T174 — Complete seu perfil na página completa da Conta", () =>
 
       const texto = `Pesquisadora ${largura} ${rota.length}.`;
       await frase.fill(texto);
-      await bloco.getByRole("button", { name: "Salvar perfil" }).click();
-      await expect(bloco.getByRole("status")).toHaveText("Perfil salvo.");
-      const { data } = await adm().from("profiles").select("bio").eq("id", id!).single();
-      expect(data?.bio).toBe(texto);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await bloco.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t174-conta-${largura}-${rota.split("/").pop()}.png`, fullPage: false });
+      // CONTA-A: no celular o primário é "Salvar e ver imóveis" (preso no fim da tela, leva à busca); no computador, "Salvar perfil".
+      if (largura < 1024) {
+        await page.getByTestId("perfil-salvar-celular").click();
+        await page.waitForURL(/\/buscar/, { timeout: 30_000 });
+      } else {
+        await bloco.getByRole("button", { name: "Salvar perfil" }).click();
+        await expect(bloco.getByRole("status")).toHaveText("Perfil salvo.");
+      }
+      const { data } = await adm().from("profiles").select("bio").eq("id", id!).single();
+      expect(data?.bio).toBe(texto);
       await page.context().close();
     });
   }

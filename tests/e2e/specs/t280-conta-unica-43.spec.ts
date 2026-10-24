@@ -110,7 +110,8 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
         await expect(async () => expect(await abas(page)).toContain("Estadias")).toPass({ timeout: 25_000 });
         await expect(page).toHaveURL(/\/dashboard\/locacoes/);
       } else {
-        for (const g of ["conta", "notificacoes", "confianca", "pagamentos"]) await expect(page.locator(`#${g}`)).toHaveCount(1);
+        // CONTA-A: o antigo bloco "Conta" virou Perfil (#perfil-publico), Papéis e Dados; os grupos seguem com âncora.
+        for (const g of ["perfil-publico", "papeis", "dados", "notificacoes", "confianca", "pagamentos"]) await expect(page.locator(`#${g}`)).toHaveCount(1);
         await expect(page.getByTestId("conta-pagamentos")).toContainText("A Viva não recebe esse valor");
       }
       // Início: as decisões e os blocos por papel, sem o checklist de proprietário (já tem anúncio no ar).

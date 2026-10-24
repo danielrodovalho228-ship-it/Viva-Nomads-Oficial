@@ -41,10 +41,11 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     cliente.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active"),
     // Prompt 59: declarações do padrão mínimo (sem a 0210, erro → não barra aqui; o banco é a trava).
     cliente.from("conforto_declaracoes").select("property_id, chave, confirmado, versao_lista").in("property_id", idsLista),
-    // 61-B: tipo de entrada (sem a 0225, erro → não barra).
-    cliente.from("properties").select("id, tipo_entrada").in("id", idsLista),
+    // 61-B: tipo de entrada (sem a 0225, erro → não barra). FILTROS-1: a velocidade da internet na mesma leitura.
+    cliente.from("properties").select("id, tipo_entrada, internet_mbps").in("id", idsLista),
   ]);
   const tipoEntradaPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; tipo_entrada: string | null }[]).map((e) => [e.id, e.tipo_entrada]));
+  const internetPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; internet_mbps: number | null }[]).map((e) => [e.id, Number(e.internet_mbps) || 0]));
   const declPor = new Map<string, { chave: string; confirmado: boolean; versao_lista?: number | null }[]>();
   const confortoLido = !conforto.error;
   for (const d of (conforto.data ?? []) as { property_id: string; chave: string; confirmado: boolean; versao_lista?: number | null }[]) {
@@ -66,6 +67,8 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     if (confortoLido && p.status !== "active") f.confortoFaltam = itensFaltantes(declPor.get(p.id) ?? []).length;
     // 61-B: o tipo de entrada só barra o anúncio NOVO (rascunho); o que já foi publicado segue sem bloqueio retroativo.
     if (tipoEntradaPor && p.status === "draft") f.tipoEntradaOk = !tipoEntradaBloqueia({ tipoEntrada: tipoEntradaPor.get(p.id), jaPublicado: false });
+    // FILTROS-1 (E39): o anúncio novo só publica com a velocidade da internet (o publicado sem ela segue no ar).
+    if (internetPor && p.status === "draft") f.internetOk = (internetPor.get(p.id) ?? 0) > 0;
     mapa.set(p.id, f);
   }
   return mapa;

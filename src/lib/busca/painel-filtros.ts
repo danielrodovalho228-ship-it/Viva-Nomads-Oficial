@@ -14,6 +14,8 @@ import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-reg
 import { PROPERTY_TYPES } from "../amenities.ts";
 import { passaBloqueios, passaEntrada } from "./datas-flexiveis.ts";
 import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, type ImovelComInternet } from "./filtro-internet.ts";
+import { calcularTudoIncluido, type CamposTotalMes } from "../precos.ts";
+import type { LimpezaEstadia } from "../anuncio/limpeza-estadia.ts";
 
 export interface FiltrosPainel {
   maxPrice: number; // 0 = qualquer
@@ -121,8 +123,12 @@ type ImovelFiltravel = ImovelComInternet & {
   /** Prompt 53: datas bloqueadas de hoje em diante (do dono ou importadas). */
   bloqueios?: { inicio: string; fim: string }[];
   monthlyPrice: number;
-  /** Total do mês anunciado no cartão; sem ele vale o valor mensal. */
+  /** Total do mês anunciado no cartão; sem ele, a mesma conta do cartão (aluguel + condomínio + contas + limpeza). */
   totalMes?: number;
+  condoFee?: number;
+  utilitiesMode?: string;
+  utilitiesEstimate?: number;
+  limpezaEstadia?: LimpezaEstadia | null;
   bedrooms: number;
   petsAllowed?: boolean;
   petsRegras?: RegrasPets | null;
@@ -161,9 +167,27 @@ export function aceitaGarantia(p: { garantiasAceitas?: string[]; acceptsInsuranc
   return arr.includes(g); // caucao_avista | caucao_parcelada | titulo
 }
 
-/** Preço que a busca compara e mostra: o total do mês do cartão (ordem 826719b1, D1). */
-export function precoDeBusca(p: { monthlyPrice: number; totalMes?: number }): number {
-  return p.totalMes && p.totalMes > 0 ? p.totalMes : p.monthlyPrice;
+/**
+ * Preço que a busca compara e mostra: o TOTAL do mês do cartão (ordem 826719b1, D1; FILTROS-1, E20). Antes, sem
+ * `totalMes`, comparava o aluguel base (2.850) e o cartão mostrava o total (3.070): "Até R$ 3.000" deixava passar um
+ * imóvel de R$ 3.070. Agora é a MESMA conta do cartão (calcularTudoIncluido).
+ */
+export function precoDeBusca(p: {
+  monthlyPrice: number;
+  totalMes?: number;
+  condoFee?: number;
+  utilitiesMode?: string;
+  utilitiesEstimate?: number;
+  limpezaEstadia?: LimpezaEstadia | null;
+}): number {
+  if (p.totalMes && p.totalMes > 0) return p.totalMes;
+  return calcularTudoIncluido({
+    monthlyPrice: p.monthlyPrice,
+    condoFee: p.condoFee,
+    utilitiesMode: p.utilitiesMode,
+    utilitiesEstimate: p.utilitiesEstimate,
+    limpezaEstadia: p.limpezaEstadia ?? undefined,
+  } as CamposTotalMes).total;
 }
 
 /** O imóvel passa nos filtros do painel? `agora` só pesa na validade da medição de internet. */
@@ -182,7 +206,8 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (f.tipo && tipoCanonico(p.propertyType ?? "") !== f.tipo) return false;
   if (f.garantia && !aceitaGarantia(p, f.garantia)) return false;
   if (f.notaOnly && !p.issuesInvoice) return false;
-  if (f.seguroOnly && !p.acceptsInsurance) return false;
+  // E43: "Aceita Seguro-Fiança" era o mesmo critério da garantia "Seguro-fiança"; o atalho antigo (`?seguro=1`) usa a mesma regra.
+  if (f.seguroOnly && !aceitaGarantia(p, "seguro_fianca")) return false;
   if (f.gestorOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   if (!passaInternet(p, f, agora)) return false;
   if (f.nivelMin && !nivelAoMenos(p.nivel, f.nivelMin)) return false;

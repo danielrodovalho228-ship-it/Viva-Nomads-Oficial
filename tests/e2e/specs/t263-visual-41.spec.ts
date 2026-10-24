@@ -29,6 +29,7 @@ import {
   Estabilidade: fotos, mapa, datas, contagens, nomes e o calendário vão MASCARADOS; a duração da busca é fixada
   (localStorage vazio = estadia mínima do imóvel); os "imóveis parecidos" (que mudam com a base) mascaram o texto dos
   cartões e mantêm a forma (como a tela 09 do t245). As telas 04 e 06–08 criam contas próprias: só no laboratório.
+  Rodada L-33/L-4 (Pista C, 23/10 à noite): roda no lab-crítico do PR da vigia só para publicar o diff (esperado, obtido, diferença) para o QA do Muse; a linha de base só muda com o OK registrado.
 */
 const LARGURAS = [390, 1280] as const;
 const altura = (l: number) => (l === 390 ? 844 : 900);

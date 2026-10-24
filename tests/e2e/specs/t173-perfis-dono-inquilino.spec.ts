@@ -174,12 +174,15 @@ test.describe("T173 — perfis do proprietário e do inquilino", () => {
       await expect(bloco.getByTestId("perfil-progresso")).toContainText("% completo");
       await page.locator("#perfil-bio").fill("me chama no 34 99999-8888");
       await expect(bloco).toContainText("Tire telefone, e-mail, @ ou link da bio");
-      await expect(bloco.getByRole("button", { name: "Salvar perfil" })).toBeDisabled();
+      // CONTA-A: no celular o primário é "Salvar e ver imóveis" (preso no fim da tela); no computador, "Salvar perfil".
+      const salvar = largura < 1024 ? page.getByTestId("perfil-salvar-celular") : bloco.getByRole("button", { name: "Salvar perfil" });
+      await expect(salvar).toBeDisabled();
       await page.locator("#perfil-bio").fill("Pesquisadora, organizada e tranquila.");
       await bloco.getByRole("button", { name: "Português" }).click();
-      await bloco.getByRole("button", { name: "Salvar perfil" }).click();
-      await expect(bloco.getByRole("status")).toHaveText("Perfil salvo.");
       await page.screenshot({ path: `${SAIDA}/t173-complete-perfil-${largura}.png`, fullPage: false });
+      await salvar.click();
+      if (largura < 1024) await page.waitForURL(/\/buscar/, { timeout: 30_000 });
+      else await expect(bloco.getByRole("status")).toHaveText("Perfil salvo.");
     }
     const { data } = await adm().from("profiles").select("bio, idiomas").eq("id", ids.inq!).single();
     expect(data?.bio).toBe("Pesquisadora, organizada e tranquila.");

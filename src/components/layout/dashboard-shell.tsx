@@ -8,6 +8,7 @@ import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { FOTO_ATUALIZADA } from "@/components/account/foto-perfil";
 import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
 import { removerPushToken } from "@/lib/data/push-actions";
@@ -106,8 +107,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         if (alive) setMyPhoto(r.url);
       })
       .catch(() => {});
+    // CONTA-A: a foto nova (ou removida) aparece na hora no selo do cabeçalho.
+    const aoMudar = (e: Event) => setMyPhoto((e as CustomEvent<{ url: string | null }>).detail?.url ?? null);
+    window.addEventListener(FOTO_ATUALIZADA, aoMudar);
     return () => {
       alive = false;
+      window.removeEventListener(FOTO_ATUALIZADA, aoMudar);
     };
   }, [displayUser?.id]);
 

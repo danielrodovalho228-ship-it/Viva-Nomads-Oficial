@@ -11,6 +11,7 @@ import { NO_LABORATORIO, CHAVE_ANON, URL_SUPABASE, adm, apagarContas, criarConta
  *      desligada, nada aparece; a avaliação do morador mostra o selo na página do imóvel;
  *   4. o mesmo LinkedIn em outra conta é recusado ("Este LinkedIn já está conectado a outra conta.");
  *   5. desconectar apaga a linha e o selo some na hora, para o dono também.
+ * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
  */
 const SAIDA = "tests/laboratorio/saida";
 const LAB_LINKEDIN = process.env.LAB_LINKEDIN_URL ?? "http://127.0.0.1:3997";

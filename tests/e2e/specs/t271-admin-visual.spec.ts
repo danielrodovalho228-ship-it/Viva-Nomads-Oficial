@@ -10,6 +10,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   (documentos, atendimento) — o admin é web, fora do app.
   O que muda de uma base para outra (números, datas, nomes, linhas das tabelas) vai mascarado: a imagem guarda a
   anatomia da tela (título, decisões, herói, listas, filtros, cabeçalhos), não os dados.
+  Rodada L-33/L-4 (Pista C, 23/10 à noite): roda no lab-crítico do PR da vigia só para publicar o diff (esperado, obtido, diferença) para o QA do Muse; a linha de base só muda com o OK registrado.
 */
 const DESKTOP = ["/admin", "/admin/financeiro", "/admin/documentos", "/admin/atendimento", "/admin/parceiros", "/admin/contratos", "CONTRATO", "/admin/usuarios"];
 const CELULAR = ["/admin", "/admin/documentos", "/admin/atendimento"];

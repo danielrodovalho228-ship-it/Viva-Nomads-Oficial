@@ -153,6 +153,11 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                     {/* Resumo do candidato em uma linha */}
                     <p className="mt-1 text-sm font-medium text-ink">{leadSummary(l)}</p>
                     <p className="text-xs text-muted">interesse em {l.property}</p>
+                    {l.moradorVerificado && (
+                      <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-forest" data-testid="selo-morador-verificado">
+                        <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {l.moradorVerificado}
+                      </p>
+                    )}
                     {(l.sinais?.length || l.selos?.length || l.reputacao) && (
                       <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink" data-testid="candidato-sinais">
                         {l.selos?.map((x) =>

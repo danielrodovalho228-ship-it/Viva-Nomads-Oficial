@@ -12,6 +12,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarAdmin, criarConta, liberarLimit
  *   4. admin entrando só com código não abre /admin (AAL2);
  *   5. convidado favorita 2 imóveis, cria conta no momento de valor e encontra os 2 na conta;
  *   6. app simulado entra por código sem sair do WebView.
+ * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
  */
 const SAIDA = "tests/laboratorio/saida";
 const UA_APP = `${devices["iPhone 14"].userAgent} VivaNomadsApp/1.0.4 (expo)`;
@@ -140,7 +141,8 @@ test.describe("T300 — entrada sem senha, intenção e convidado (Prompt 49)", 
     expect(imoveis?.length).toBe(2);
     for (const im of imoveis!) {
       await page.goto(`/imoveis/${im.id}`, { waitUntil: "domcontentloaded" });
-      const coracao = page.getByTestId("coracao").first();
+      // Um coração por tamanho de tela: vale o primeiro visível (lab-crítico do #1195, depois do #1190).
+      const coracao = page.getByTestId("coracao").locator("visible=true").first();
       await expect(async () => {
         if ((await coracao.getAttribute("aria-pressed")) !== "true") await coracao.click({ timeout: 4_000 });
         await expect(coracao).toHaveAttribute("aria-pressed", "true", { timeout: 3_000 });

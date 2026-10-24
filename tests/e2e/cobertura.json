@@ -162,7 +162,8 @@
         "t237-correcoes-35a",
         "t241-contas-teste-36",
         "t271-admin-visual",
-        "t286-esqueletos-vazios-48"
+        "t286-esqueletos-vazios-48",
+        "t336-varredura-bloco14"
       ]
     },
     "/admin/emails-teste": {
@@ -390,7 +391,8 @@
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
         "t343-nivel-busca-sem-beco",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t350-filtros-honestos-buscar"
       ]
     },
     "/cidades": {
@@ -523,7 +525,8 @@
         "t310-vao-fim-de-pagina",
         "t318-papel-ativo-fonte-unica",
         "t320-pausar-anuncio-64b",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t355-conta-a-perfil-espelho"
       ]
     },
     "/dashboard/assinatura": {
@@ -574,7 +577,8 @@
         "t183-telas-logadas-390",
         "t205-fechamento-sem-beco",
         "t213-jornada-teste-confirmacao",
-        "t297-varredura-logada-bloco3"
+        "t297-varredura-logada-bloco3",
+        "t336-varredura-bloco14"
       ]
     },
     "/dashboard/carteira": {
@@ -621,7 +625,8 @@
         "t198-rodape-painel-390",
         "t266-painel-42",
         "t318-papel-ativo-fonte-unica",
-        "t351-telas-linkedin-63a"
+        "t351-telas-linkedin-63a",
+        "t355-conta-a-perfil-espelho"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -641,7 +646,8 @@
         "t192-conta-4-blocos",
         "t183-telas-logadas-390",
         "t329-varredura-bloco11",
-        "t332-merges-1170-1172"
+        "t332-merges-1170-1172",
+        "t337-varredura-redundancia"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -794,7 +800,8 @@
         "t270-barra-fotos-etapa-fotos",
         "t288-padrao-minimo-59a",
         "t296-niveis-exibicao-59-1",
-        "t320-pausar-anuncio-64b"
+        "t320-pausar-anuncio-64b",
+        "t337-varredura-redundancia"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1194,7 +1201,10 @@
         "t320-pausar-anuncio-64b",
         "t342-galeria-video-segundo",
         "t344-avaliacao-telas-62a-parte2",
-        "t351-telas-linkedin-63a"
+        "t351-telas-linkedin-63a",
+        "t349-imovel-sem-500-l31",
+        "t336-varredura-bloco14",
+        "t337-varredura-redundancia"
       ]
     },
     "/modelodenegocio": {
@@ -1325,7 +1335,9 @@
         "t182-jornada-completa",
         "t307-varredura-bloco8",
         "t310-vao-fim-de-pagina",
-        "t351-telas-linkedin-63a"
+        "t351-telas-linkedin-63a",
+        "t349-imovel-sem-500-l31",
+        "t355-conta-a-perfil-espelho"
       ]
     },
     "/qualificar": {
@@ -1843,7 +1855,8 @@
         "proprietario"
       ],
       "specs": [
-        "t347-respostas-rapidas-55e2"
+        "t347-respostas-rapidas-55e2",
+        "t335-varredura-bloco13"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
@@ -1851,7 +1864,8 @@
         "proprietario"
       ],
       "specs": [
-        "t347-respostas-rapidas-55e2"
+        "t347-respostas-rapidas-55e2",
+        "t335-varredura-bloco13"
       ]
     }
   },
@@ -2515,6 +2529,14 @@
       ],
       "specs": [
         "t347-respostas-rapidas-55e2"
+      ]
+    },
+    "/api/upload/triagem-vinculo": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
       ]
     }
   },
@@ -5791,6 +5813,46 @@
       ],
       "specs": [
         "t347-respostas-rapidas-55e2"
+      ]
+    },
+    "src/lib/data/triagem-actions.ts#meuVinculo": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
+      ]
+    },
+    "src/lib/data/triagem-actions.ts#linkMeuVinculo": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
+      ]
+    },
+    "src/lib/data/triagem-actions.ts#listarVinculosPendentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
+      ]
+    },
+    "src/lib/data/triagem-actions.ts#linkVinculoAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
+      ]
+    },
+    "src/lib/data/triagem-actions.ts#decidirVinculo": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t348-triagem-vinculo-52"
       ]
     }
   }
