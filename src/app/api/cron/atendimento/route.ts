@@ -85,14 +85,14 @@ export async function GET(request: Request) {
   let atrasadas = 0;
   const { data: ordens } = await admin
     .from("chamados")
-    .select("id, service_order_id, service_orders(id, owner_id, priority, opened_at, first_response_at, status)")
+    .select("id, service_order_id, service_orders(id, owner_id, priority, opened_at, first_response_at, status, properties(title))")
     .eq("simulacao", false)
     .eq("tipo", "manutencao")
     .not("service_order_id", "is", null)
     .not("status", "in", "(resolvido,encerrado)")
     .limit(200);
   for (const ch of ordens ?? []) {
-    const so = ch.service_orders as unknown as { id: string; owner_id: string; priority: UrgenciaManutencao; opened_at: string; first_response_at: string | null; status: string } | null;
+    const so = ch.service_orders as unknown as { id: string; owner_id: string; priority: UrgenciaManutencao; opened_at: string; first_response_at: string | null; status: string; properties?: { title?: string | null } | null } | null;
     if (!so || so.first_response_at || so.status === "resolvido") continue;
     const venceu = new Date(so.opened_at).getTime() + (PRAZO_MANUTENCAO_H[so.priority] ?? 24) * 3600_000 < Date.now();
     if (!venceu) continue;
@@ -102,7 +102,15 @@ export async function GET(request: Request) {
     await admin.from("chamado_eventos").insert({ chamado_id: ch.id, ator_tipo: "sistema", acao: "manutencao_atrasada", para: so.priority });
     const { data: dono } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", so.owner_id).maybeSingle();
     if (dono?.email && dono.notif_email !== false) {
-      await notify({ event: "manutencao_atrasada", email: dono.email as string, name: (dono.full_name as string) ?? undefined, userId: so.owner_id, pushUrl: "/dashboard/solicitacoes" }).catch(() => null);
+      // 44-SITE (item 2): o push diz qual imóvel (o prazo já venceu: sem "responda até").
+      await notify({
+        event: "manutencao_atrasada",
+        email: dono.email as string,
+        name: (dono.full_name as string) ?? undefined,
+        userId: so.owner_id,
+        pushUrl: "/dashboard/solicitacoes",
+        decisao: { imovel: so.properties?.title ?? null, destinatarioEhParte: true },
+      }).catch(() => null);
     }
   }
   // Prompt 44: este cron roda às 7h de Brasília — sai o push que esperou o silêncio (22h–7h).

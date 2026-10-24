@@ -266,6 +266,8 @@ export async function avisarProprietarioManutencao(ordem: OrdemCriada, agora: Da
     userId: ordem.ownerId,
     pushUrl: "/dashboard/solicitacoes",
     subject: assuntoManutencao({ urgente: ordem.urgencia === "urgente", lembrete }),
+    // 44-SITE (item 2): o push diz o imóvel e até quando responder.
+    decisao: { imovel: ordem.propertyTitle === "seu imóvel" ? null : ordem.propertyTitle, prazo: prazoManutencao(ordem.urgencia, agora).toISOString(), destinatarioEhParte: true },
     // A urgência e o prazo vão no corpo (o assunto não grita).
     detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Imóvel: <strong>${textoEmail(ordem.propertyTitle, 120)}</strong><br/>Urgência: ${ordem.urgencia === "urgente" ? "urgente" : "normal"} · responda em até ${PRAZO_MANUTENCAO_H[ordem.urgencia]} h<br/>Prazo para responder: até ${prazoManutencao(ordem.urgencia, agora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.<br/>${textoEmail(fraseSolucao(ordem.urgencia, agora), 200)}.</p>`,
   }).catch(() => null);
