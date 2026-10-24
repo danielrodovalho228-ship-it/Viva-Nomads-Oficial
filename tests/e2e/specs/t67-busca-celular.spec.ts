@@ -37,8 +37,8 @@ test.describe("T67 — Busca no celular", () => {
     await expect(painel.getByTestId("aplicar-filtros")).toHaveText(`Mostrar ${totalAntes} ${totalAntes === 1 ? "imóvel" : "imóveis"}`);
     await painel.screenshot({ path: "tests/laboratorio/saida/t67-painel-390.png" });
 
-    await painel.locator("fieldset", { hasText: "Quartos" }).getByText("2+", { exact: true }).click();
-    await painel.locator("fieldset", { hasText: "Preço por mês" }).getByText("Até R$ 5.000", { exact: true }).click();
+    await painel.locator("fieldset", { hasText: "Quartos" }).getByRole("button", { name: "2+", exact: true }).click();
+    await painel.locator("fieldset", { hasText: "Preço por mês" }).getByRole("button", { name: "Até R$ 5.000", exact: true }).click();
     const rotulo = await painel.getByTestId("aplicar-filtros").innerText();
     const n = Number(rotulo.match(/\d+/)?.[0] ?? 0);
     test.skip(n === 0, "Sem imóvel com 2+ quartos até R$ 5.000 nesta base.");
@@ -69,7 +69,7 @@ test.describe("T67 — Busca no celular", () => {
     await page.goto("/buscar", { waitUntil: "networkidle" });
     await page.getByTestId("abrir-filtros").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
-    await painel.getByText("Aceita pets", { exact: true }).click();
+    await painel.getByRole("button", { name: "Aceita pets", exact: true }).click();
     await page.keyboard.press("Escape");
     await expect(painel).toHaveCount(0);
     await expect(page.getByTestId("abrir-filtros")).toHaveAccessibleName("Filtros");
