@@ -77,6 +77,7 @@ export const MATRIZ_NOTIFICACOES = {
   vistoria_strike: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   vistoria_verificacao: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   vinculo_parceiro_convite: { categoria: "decisao", papeis: ["parceiro"], canais: SEM_PUSH },
+  parceiro_selo_nota_removido: { categoria: "decisao", papeis: ["parceiro"], canais: SEM_PUSH },
   parceiro_orcamento_recebido: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
   parceiro_entrega_feita: { categoria: "decisao", papeis: CLIENTE, canais: SEM_PUSH },
   // L2-B item 17: o parceiro recusou → o cliente vê na central do app e por e-mail, com o motivo e "Pedir a outro parceiro".

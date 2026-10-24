@@ -237,7 +237,7 @@ async function ativarParceiroDoAvaliador(
     return { ok: true, parceiroId: existente.id as string };
   }
   if (!solicitacaoId) return { ok: false, erro: "Pedido sem os dados de parceiro." };
-  const { data: sol } = await admin.from("parceiro_solicitacoes").select("id, nome, tipo_pessoa, documento, cidades, descricao, telefone").eq("id", solicitacaoId).maybeSingle();
+  const { data: sol } = await admin.from("parceiro_solicitacoes").select("id, nome, tipo_pessoa, emite_nota, documento, cidades, descricao, telefone").eq("id", solicitacaoId).maybeSingle();
   if (!sol) return { ok: false, erro: "Pedido sem os dados de parceiro." };
   const base = slugBase(sol.nome as string);
   for (let i = 0; i < 20; i++) {
@@ -248,6 +248,7 @@ async function ativarParceiroDoAvaliador(
         user_id: userId,
         solicitacao_id: sol.id,
         tipo_pessoa: sol.tipo_pessoa,
+        emite_nota: sol.tipo_pessoa === "pj" ? ((sol.emite_nota as boolean | null) ?? null) : null,
         documento: sol.documento,
         razao_social: sol.tipo_pessoa === "pj" ? sol.nome : null,
         nome_publico: String(sol.nome).slice(0, 80),

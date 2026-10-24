@@ -8,6 +8,7 @@ import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, rotuloCategoria, valid
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
+import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 
 /**
  * "Seja parceiro" (Prompt 31a, item 2). Exige conta com e-mail confirmado: quem não entrou preenche, vai criar a
@@ -34,6 +35,8 @@ interface Campos {
   telefone: string;
   empresa: string;
   veiculo: string;
+  /** FISCAL-PARCEIRO-B: só na trilha PJ; "" = ainda não respondeu (o envio não conclui). */
+  emiteNota: "" | "sim" | "nao";
   aceite: boolean;
 }
 
@@ -52,6 +55,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
     telefone: "",
     empresa: "",
     veiculo: "",
+    emiteNota: sol?.emiteNota === true ? "sim" : sol?.emiteNota === false ? "nao" : "",
     aceite: false,
   }));
   const [armadilha, setArmadilha] = useState("");
@@ -119,7 +123,11 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
     e.preventDefault();
     setErro(null);
     if (!estado.logado) return irParaConta();
-    const entrada = { ...c, cidades: c.cidades.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean) };
+    const entrada = {
+      ...c,
+      cidades: c.cidades.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean),
+      emiteNota: c.tipoPessoa === "pj" && c.emiteNota ? c.emiteNota === "sim" : undefined,
+    };
     const v = validarSolicitacao(entrada);
     if (!v.ok) return setErro(v.erro);
     iniciar(async () => {
@@ -175,6 +183,20 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         <input id="sp-doc" inputMode="numeric" autoComplete="off" value={c.documento} onChange={(e) => set("documento", e.target.value)} placeholder={c.tipoPessoa === "pf" ? "000.000.000-00" : "00.000.000/0000-00"} className={input} />
         <p className="mt-1 text-xs text-muted">Usado só pela equipe para conferir a parceria. Nunca aparece na sua página.</p>
       </div>
+      {c.tipoPessoa === "pj" && (
+        <fieldset data-testid="sp-emite-nota">
+          <legend className="text-sm font-medium text-ink">{PERGUNTA_NOTA}</legend>
+          <div className="mt-1 grid grid-cols-2 gap-2">
+            {(["sim", "nao"] as const).map((v) => (
+              <label key={v} className={`flex h-11 cursor-pointer items-center justify-center rounded-lg border text-sm font-semibold ${c.emiteNota === v ? "border-blue-500 bg-blue-50 text-blue-700" : "border-sage-200 bg-white text-ink"}`}>
+                <input type="radio" name="sp-emite-nota" value={v} checked={c.emiteNota === v} onChange={() => set("emiteNota", v)} className="sr-only" data-testid={`sp-emite-nota-${v}`} />
+                {v === "sim" ? "Sim" : "Não"}
+              </label>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-muted">A nota (ou o recibo) do serviço é sua, para o cliente. A Viva emite o documento só da taxa dela.</p>
+        </fieldset>
+      )}
 
       <fieldset>
         <legend className="text-sm font-medium text-ink">Categorias</legend>
