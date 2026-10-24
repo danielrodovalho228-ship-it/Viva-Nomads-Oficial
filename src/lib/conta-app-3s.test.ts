@@ -4,7 +4,7 @@
 */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const menu = readFileSync(new URL("../components/account/conta-menu.tsx", import.meta.url), "utf8");
 const secao = readFileSync(new URL("../app/(dashboard)/dashboard/conta/[secao]/page.tsx", import.meta.url), "utf8");
@@ -31,7 +31,10 @@ test("subtelas /dashboard/conta/[secao] têm o título da casca (um H1) e os end
   const casca = readFileSync(new URL("../components/account/casca-conta.tsx", import.meta.url), "utf8");
   assert.match(casca, /<h1 [^>]*data-testid="conta-h1"/);
   assert.match(casca, /data-testid="conta-voltar"/);
-  for (const s of ["avaliacoes", "papeis", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"]) assert.match(secao, new RegExp(`case "${s}"`), s);
+  for (const s of ["avaliacoes", "papeis", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"]) {
+    const propria = existsSync(new URL(`../app/(dashboard)/dashboard/conta/${s}/page.tsx`, import.meta.url));
+    assert.ok(propria || new RegExp(`case "${s}"`).test(secao), s);
+  }
   assert.match(secao, /ALIAS_SECAO\[bruta\]/);
   assert.match(readFileSync(new URL("./conta/secoes.ts", import.meta.url), "utf8"), /seguranca: "privacidade",[\s\S]{0,200}?excluir: "privacidade"/);
 });

@@ -892,6 +892,16 @@
         "t353-varredura-bloco18"
       ]
     },
+    "/dashboard/conta/avaliacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t369-conta-a2-avaliacoes"
+      ]
+    },
     "/dashboard/conta/excluir": {
       "personas": [
         "inquilino",

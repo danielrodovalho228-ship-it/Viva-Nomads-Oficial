@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { use } from "react";
 import { notFound } from "next/navigation";
 import { PageTitle } from "@/components/dashboard/primitives";
@@ -20,8 +19,7 @@ import { MinhaIntencao } from "@/components/auth/escolha-intencao";
 import { ALIAS_SECAO, type SecaoConta } from "@/lib/conta/secoes";
 
 /** Subtítulo de cada seção (A1; cada tela ganha o desenho do seu mockup nas entregas A2–A8). */
-const SUBTITULO: Record<Exclude<SecaoConta, "perfil" | "ajuda">, string> = {
-  avaliacoes: "O que disseram de você depois de cada estadia.",
+const SUBTITULO: Record<Exclude<SecaoConta, "perfil" | "ajuda" | "avaliacoes">, string> = {
   papeis: "O que você quer fazer na Viva. Só muda o menu e o painel que aparecem primeiro.",
   dados: "Atualize suas informações de cadastro. Só a Viva vê; vão no contrato e nos avisos.",
   privacidade: "O que já está verificado e como proteger a conta.",
@@ -48,16 +46,6 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       return (
         <CascaConta ativo="perfil" topoDireita>
           <PerfilTela />
-        </CascaConta>
-      );
-    case "avaliacoes":
-      return (
-        <CascaConta ativo="avaliacoes" subtitulo={SUBTITULO.avaliacoes}>
-          <section className="rounded-xl bg-white p-4 sm:p-6">
-            <Link href="/dashboard/avaliacoes" className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-2" data-testid="conta-ver-avaliacoes">
-              Ver as avaliações que você recebeu
-            </Link>
-          </section>
         </CascaConta>
       );
     case "papeis":
