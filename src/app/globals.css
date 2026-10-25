@@ -346,13 +346,11 @@ html[data-app] .vn-tabbar-spacer {
   --folga-rodape-imovel: 16rem;
   --altura-abas: 3.5rem;
 }
-/* CONTA-A: "Salvar e ver imóveis" preso no fim da tela do celular, acima da barra de abas; o "Fale com a Viva" sobe. */
-.vn-salvar-perfil {
-  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
-}
-@media (max-width: 1023px) {
-  body:has([data-testid="perfil-salvar-celular"]) {
-    --ajuda-bottom: 9rem;
+/* E60: no celular o "Fale com a Viva" nunca desce até a barra de abas — nem na posição padrão nem depois de arrastado
+   (o piso da posição arrastada é o mesmo da padrão de cada tela). */
+@media (max-width: 767px) {
+  body {
+    --viva-piso: var(--ajuda-bottom, 5.25rem);
   }
 }
 /* Barra "Comparar" da busca (ordem 7ffea8c7): no celular fica ACIMA das abas (altura + safe-area + 12 px);

@@ -718,7 +718,8 @@
         "t402-conta-leva2",
         "t407-varredura-bloco26",
         "t439-e101-deteccao-espelho",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t405-perfil-e60-e62"
       ]
     },
     "/dashboard/conta/seguranca": {
