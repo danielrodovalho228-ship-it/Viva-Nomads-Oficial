@@ -81,9 +81,9 @@ PR). Confirmados no lab-crítico do #1367 (runs 40190394864, 40190996396, 401916
 
 | Item | Spec · caso | Hoje | O que o lab viu |
 |---|---|---|---|
-| E133 | t422 · 1 (3 fotos) | **vermelho** (`test.fail`) | O Continuar do Passo 2 leva ao Endereço com 3 fotos (`validarEtapa` só pede 1) |
+| E133 | t422 · 1 (3 fotos) | verde — **corrigido no #1373** | Antes: o Continuar do Passo 2 levava ao Endereço com 3 fotos (`validarEtapa` só pedia 1). Depois do #1373 (run 40196508151): "3 / 8 fotos", "Faltam 5 fotos" e o Continuar desabilitado |
 | E133 | t422 · 2 (8 fotos) | verde | Avança (controle) |
-| E133 | t422 · 3 ("não parece imóvel") | `fixme` | Sem veredito por foto no produto nem no simulador do laboratório (`ehImovel` é do conjunto) |
+| E133 | "não parece imóvel" não vira principal | coberto pela t468 · 2 (Pista A, #1373) | O `fixme` da t422 saiu: o #1373 trouxe o veredito por foto e a t468 · 2 testa o caso; a t422 não duplica |
 | E135 | t423 · 1 (válidos) | verde | Avança para o Preço |
 | E135 | t423 · 2 (vazios) | **vermelho** (`test.fail`) | O Continuar não tem estado "não pronto" (sem `aria-disabled`); a descrição vazia não entra no que falta |
 | E136 | t424 · 1 (1280) | verde | dd/mm/aaaa, nenhum mês em inglês |
