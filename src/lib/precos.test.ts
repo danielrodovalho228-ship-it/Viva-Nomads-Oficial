@@ -152,3 +152,34 @@ test("PROP-2: imóvel com pacote de limpeza — 3.200 + 200 + 180 = 3.580/mês (
   assert.equal(r.totalContrato, 4 * 3580 + 450);
   assert.equal(precoDoImovel(imovel({ monthlyPrice: 3200 })).totalContrato, null, "sem duração, sem total do contrato");
 });
+
+import { readFileSync as lerArquivo } from "node:fs";
+import { parcelaDoMes, precoDoFechamento, primeiroPagamentoDoPreco, ROTULO_MENSAL as ROTULO_MENSAL_F } from "./precos.ts";
+
+test("PROP-2: Fechamento com proposta aceita = preço da proposta; 1º pagamento com os valores reais", () => {
+  const imovel = { monthlyPrice: 3500, condoFee: 300, utilitiesMode: "fixed", utilitiesEstimate: 280, limpezaEstadia: { valorMes: 180, porMes: 2 }, prepFee: 600 } as unknown as Parameters<typeof precoDoFechamento>[0];
+  const acordo = { valorMensal: 3200, meses: 4, termos: { condominio: 0, consumo: 200, limpezasMes: 0, valorLimpeza: 0, taxaPet: 0, limpezaUnica: 450 } };
+  const f = precoDoFechamento(imovel, acordo, 6);
+  assert.deepEqual(f.parcelasMes, [{ rotulo: ROTULO_MENSAL_F, valor: 3200 }, { rotulo: "Consumo estimado", valor: 200 }]);
+  assert.equal(f.meses, 4, "os meses da proposta, não o seletor");
+  assert.equal(f.totalContrato, 14050);
+  assert.equal(primeiroPagamentoDoPreco(f), 3850);
+  assert.equal(parcelaDoMes(f, "Consumo", "Água"), 200);
+  // Proposta antiga sem termos: valor acordado com as parcelas do anúncio (nunca some o acordo).
+  const semTermos = precoDoFechamento(imovel, { valorMensal: 3200, meses: 4 }, 6);
+  assert.equal(semTermos.mensal, 3200);
+  assert.equal(semTermos.meses, 4);
+  // Sem proposta: as parcelas do anúncio; 1º pagamento = total do mês + preparação do anúncio (saída fica fora).
+  const anuncio = precoDoFechamento({ ...imovel, checkoutCleaningEnabled: true, checkoutCleaningFee: 250 } as typeof imovel, null, 3);
+  assert.equal(anuncio.totalPorMes, 3500 + 300 + 280 + 180);
+  assert.equal(primeiroPagamentoDoPreco(anuncio), 3500 + 300 + 280 + 180 + 600);
+  assert.equal(parcelaDoMes(anuncio, "Consumo", "Água"), 280);
+});
+
+test("PROP-2: o Fechamento não tem mais valor fixo de consumo, preparação ou saída", () => {
+  const f = lerArquivo(new URL("../app/(dashboard)/dashboard/fechamento/closing-flow.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(f, /PREP_FEE|CHECKOUT_FEE|formatBRL\(280\)|\+ 280\b/);
+  assert.match(f, /primeiroPagamento: primeiroPagamentoDoPreco\(PRECO_FECHAMENTO\)/);
+  assert.match(f, /const PRECO_FECHAMENTO = precoDoFechamento\(PROPERTY_FULL, ACORDO, prazoMeses\);/);
+  assert.match(f, /data-testid="fechamento-proposta-conta"/);
+});

@@ -151,6 +151,18 @@ export interface PropostaAcordada {
   meses: number;
   dataEntrada: string;
   taxa: number | null;
+  /** PROP-2: os termos que formam o preço da proposta (o Fechamento mostra o MESMO total da proposta, com a conta). */
+  termos: TermosDoAcordo;
+}
+
+/** Parcelas da versão acordada além do valor mensal e dos meses (mesmos campos de TermosPreco). */
+export interface TermosDoAcordo {
+  condominio: number;
+  consumo: number;
+  limpezasMes: number;
+  valorLimpeza: number;
+  taxaPet: number;
+  limpezaUnica: number;
 }
 
 /** Proposta ACEITA de uma candidatura (a mais recente): o fechamento e o contrato abrem com estes valores. */
@@ -166,7 +178,7 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
   if (!p) return null;
   const { data: v } = await admin
     .from("proposta_versoes")
-    .select("valor_mensal, meses, data_entrada")
+    .select("valor_mensal, meses, data_entrada, condominio, consumo, limpezas_mes, valor_limpeza, taxa_pet, limpeza_unica")
     .eq("proposta_id", p.id)
     .eq("versao", p.versao_atual)
     .maybeSingle();
@@ -178,6 +190,14 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
     meses: Number(v.meses),
     dataEntrada: String(v.data_entrada).slice(0, 10),
     taxa: p.taxa_congelada == null ? null : Number(p.taxa_congelada),
+    termos: {
+      condominio: Number(v.condominio) || 0,
+      consumo: Number(v.consumo) || 0,
+      limpezasMes: Number(v.limpezas_mes) || 0,
+      valorLimpeza: Number(v.valor_limpeza) || 0,
+      taxaPet: Number(v.taxa_pet) || 0,
+      limpezaUnica: Number(v.limpeza_unica) || 0,
+    },
   };
 }
 
