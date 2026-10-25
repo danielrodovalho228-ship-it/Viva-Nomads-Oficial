@@ -30,7 +30,7 @@ import {
 } from "@/lib/agentes/central";
 import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, lerTextoSimples, moverTrocaParaAgente, textoFeito } from "@/lib/agentes/conversa";
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
-import { carregarAtas, carregarConversas, deixarOrdem, responderAceiteOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
+import { deixarOrdem, responderAceiteOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
 import { buttonClasses } from "@/components/ui/button";
 import { CartoesAprovacao } from "@/components/admin/agentes/cartoes-aprovacao";
@@ -53,6 +53,21 @@ import { estadoDaCentral } from "@/lib/agentes/selo-vivo";
 const ABAS = ABAS_AGENTES;
 type Aba = AbaAgentes;
 const ATUALIZA_MS = 90_000;
+
+/** ADMIN-5: uma página do chat (slug) ou das atas (sem slug), por GET — nunca Server Action (ver agentes-conversas.ts). */
+interface PaginaConversas {
+  itens: Conversa[];
+  temMais: boolean;
+}
+async function lerPagina(qs: Record<string, string | null | undefined>): Promise<PaginaConversas> {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(qs)) if (v) p.set(k, v);
+  const r = await fetch(`/api/admin/agentes/conversas?${p}`, { cache: "no-store" });
+  if (!r.ok) throw new Error(String(r.status));
+  return (await r.json()) as PaginaConversas;
+}
+const carregarConversas = (slug: string, antes?: string | null) => lerPagina({ slug, antes });
+const carregarAtas = (antes?: string | null) => lerPagina({ atas: "1", antes });
 
 const COR_STATUS: Record<StatusAgente, string> = {
   espera: "#15803D",
