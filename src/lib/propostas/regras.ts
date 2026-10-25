@@ -361,18 +361,23 @@ export function daVez(autorUltimaVersao: Autor): Autor {
   return autorUltimaVersao === "owner" ? "tenant" : "owner";
 }
 
+/** O dia (AAAA-MM-DD) no horário de Brasília — o mesmo dia que a tela mostra em "Válida até dd/mm". */
+function diaBrasilia(instante: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(instante);
+}
+
 /**
- * Contagem regressiva da validade (prompt 27, item 7): "vence hoje" (menos de 24 h), "vence amanhã", "vence em N
- * dias" ou "venceu". Em dias corridos a partir de agora.
+ * Contagem regressiva da validade (prompt 27, item 7): "vence hoje", "vence amanhã", "vence em N dias" ou "venceu".
+ * E183 (QA 25/10): conta DIAS DO CALENDÁRIO de Brasília, os mesmos da data "Válida até dd/mm" — antes, "menos de 24 h"
+ * virava "vence hoje" e uma proposta válida até 26/10 aparecia como "vence hoje" já em 25/10.
  */
 export function textoVencimento(validaAte: string | Date, agora: Date): string {
-  const fim = new Date(validaAte).getTime();
-  if (!Number.isFinite(fim)) return "";
-  const ms = fim - agora.getTime();
-  if (ms <= 0) return "venceu";
-  const dias = Math.ceil(ms / 86_400_000);
-  if (dias <= 1) return "vence hoje";
-  if (dias === 2) return "vence amanhã";
+  const fim = new Date(validaAte);
+  if (!Number.isFinite(fim.getTime())) return "";
+  if (fim.getTime() - agora.getTime() <= 0) return "venceu";
+  const dias = Math.round((Date.parse(`${diaBrasilia(fim)}T00:00:00Z`) - Date.parse(`${diaBrasilia(agora)}T00:00:00Z`)) / 86_400_000);
+  if (dias <= 0) return "vence hoje";
+  if (dias === 1) return "vence amanhã";
   return `vence em ${dias} dias`;
 }
 
