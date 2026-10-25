@@ -761,7 +761,8 @@
         "t439-e101-deteccao-espelho",
         "t408-varredura-bloco27",
         "t405-perfil-e60-e62",
-        "t415-varredura-bloco32"
+        "t415-varredura-bloco32",
+        "t552-por-que-na-cidade"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1001,7 +1002,8 @@
         "t533-e138-desbloquear-no-dia",
         "t534-e147-bairro-santa-monica",
         "t535-e153-documento-um-lugar",
-        "t536-e164-previa-sem-foto-sinalizada"
+        "t536-e164-previa-sem-foto-sinalizada",
+        "t554-e149a-documento-inicio-persiste"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1034,7 +1036,9 @@
         "t351-telas-linkedin-63a",
         "t338-varredura-bloco15",
         "t416-varredura-bloco33",
-        "t486-e174b-selo-vinculo"
+        "t486-e174b-selo-vinculo",
+        "t552-por-que-na-cidade",
+        "t555-e174b-selo-vinculo-1280"
       ]
     },
     "/dashboard/locacoes": {
@@ -1089,7 +1093,8 @@
         "t351-telas-linkedin-63a",
         "t379-55e2-filtro-contato-um-toque",
         "t541-e168-painel-acompanha-filtro",
-        "t486-e174b-selo-vinculo"
+        "t486-e174b-selo-vinculo",
+        "t555-e174b-selo-vinculo-1280"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1130,7 +1135,8 @@
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t556-e178-primeiro-pagamento-sem-extras"
       ]
     },
     "/dashboard/pedidos": {
@@ -1171,7 +1177,8 @@
         "t193-propostas",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t487-e178-primeiro-pagamento"
+        "t487-e178-primeiro-pagamento",
+        "t556-e178-primeiro-pagamento-sem-extras"
       ]
     },
     "/dashboard/reembolsos": {
