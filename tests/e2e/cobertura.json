@@ -462,7 +462,8 @@
       "specs": [
         "t18-seo-a11y",
         "t20-p1-agentes",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t421-varredura-bloco38"
       ]
     },
     "/cidades/[cidade]": {
@@ -486,7 +487,8 @@
         "t117-polos-cidade",
         "t18-seo-a11y",
         "t20-p1-agentes",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t421-varredura-bloco38"
       ]
     },
     "/como-funciona": {
@@ -1310,7 +1312,8 @@
       ],
       "specs": [
         "t105-guias",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t421-varredura-bloco38"
       ]
     },
     "/imoveis/[id]": {
@@ -1590,7 +1593,8 @@
       "specs": [
         "t18-seo-a11y",
         "t68-comissao-valor-total",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t421-varredura-bloco38"
       ]
     },
     "/tributario": {
@@ -2119,7 +2123,8 @@
         "t316-sair-da-viva-51",
         "t332-merges-1170-1172",
         "t365-conta-a1-casca-perfil",
-        "t375-conta-a8-ajuda"
+        "t375-conta-a8-ajuda",
+        "t421-varredura-bloco38"
       ]
     },
     "/dashboard/conta/avaliacoes": {
