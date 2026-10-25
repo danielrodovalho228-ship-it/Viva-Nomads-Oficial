@@ -1051,7 +1051,8 @@
         "t213-jornada-teste-confirmacao",
         "t224-taxa-fora-da-api",
         "t220-recibo-assinatura",
-        "t221-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t491-e182-estadias-com-nome"
       ]
     },
     "/dashboard/locacoes/[id]": {
