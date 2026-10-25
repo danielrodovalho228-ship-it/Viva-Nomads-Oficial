@@ -28,6 +28,15 @@ async function abrirFolha(page: Page) {
   return folha;
 }
 
+/** E105: abre o painel da pílula "Nível" (o único lugar do filtro de nível). */
+async function abrirNivel(page: Page) {
+  await expect(async () => {
+    await page.getByTestId("pilula-nivel").click({ timeout: 5_000 });
+    await expect(page.getByTestId("painel-pilula-nivel")).toBeVisible({ timeout: 5_000 });
+  }).toPass({ timeout: 30_000 });
+  return page.getByTestId("painel-pilula-nivel");
+}
+
 test.describe("T343 — nível na busca sem beco sem saída", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
@@ -65,15 +74,14 @@ test.describe("T343 — nível na busca sem beco sem saída", () => {
       }).toPass({ timeout: 90_000 });
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => undefined);
 
-      const folha = await abrirFolha(page);
-      const grupo = folha.getByTestId("painel-nivel");
-      await grupo.scrollIntoViewIfNeeded();
-      await expect(grupo.getByTestId("filtro-nivel-essencial-n")).toHaveText("· 2");
-      await expect(grupo.getByTestId("filtro-nivel-conforto-n")).toHaveText("· 1");
-      await expect(grupo.getByTestId("filtro-nivel-premium-n")).toHaveText("· 0");
-      await expect(grupo.getByTestId("filtro-nivel-premium")).toBeDisabled();
-      await expect(grupo.getByTestId("filtro-nivel-essencial")).toBeEnabled();
-      await expect(grupo.getByTestId("filtro-nivel-conforto")).toBeEnabled();
+      // E105: o nível mora só na pílula "Nível" (saiu da folha "Mais filtros").
+      const grupo = await abrirNivel(page);
+      await expect(grupo.getByTestId("pilula-nivel-essencial-n")).toHaveText("· 2");
+      await expect(grupo.getByTestId("pilula-nivel-conforto-n")).toHaveText("· 1");
+      await expect(grupo.getByTestId("pilula-nivel-premium-n")).toHaveText("· 0");
+      await expect(grupo.getByTestId("pilula-nivel-premium")).toBeDisabled();
+      await expect(grupo.getByTestId("pilula-nivel-essencial")).toBeEnabled();
+      await expect(grupo.getByTestId("pilula-nivel-conforto")).toBeEnabled();
       await page.screenshot({ path: `${SAIDA}/t343-folha-nivel-${w}.png` });
       await page.keyboard.press("Escape");
 
@@ -83,9 +91,9 @@ test.describe("T343 — nível na busca sem beco sem saída", () => {
         await expect(cards(page)).toHaveCount(1, { timeout: 5_000 });
       }).toPass({ timeout: 60_000 });
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => undefined);
-      const folha2 = await abrirFolha(page);
-      await expect(folha2.getByTestId("painel-nivel")).toHaveCount(0);
-      const linha = folha2.getByTestId("painel-nivel-vazio");
+      const grupo2 = await abrirNivel(page);
+      await expect(grupo2.getByTestId("pilula-nivel-essencial")).toHaveCount(0);
+      const linha = grupo2.getByTestId("painel-nivel-vazio");
       await expect(linha).toHaveText("Os níveis aparecem quando os anúncios desta busca tiverem o padrão mínimo confirmado.");
       await expect(linha.locator("a")).toHaveCount(0);
       await linha.scrollIntoViewIfNeeded();

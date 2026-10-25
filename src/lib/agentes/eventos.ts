@@ -19,13 +19,13 @@ export interface EventoRede {
 }
 
 export const COR_EVENTO: Record<TipoEvento, string> = {
-  ronda: "#38BDF8",
-  encaminhamento: "#FF7A6B",
-  ordem: "#7FD321",
-  retorno: "#7FD321",
-  chamado: "#FFB547",
+  ronda: "#0369A1",
+  encaminhamento: "#C2410C",
+  ordem: "#15803D",
+  retorno: "#15803D",
+  chamado: "#B45309",
   pr: "#C084FC",
-  deploy: "#8C9AC4",
+  deploy: "#6B7280",
 };
 
 export const ROTULO_EVENTO: Record<TipoEvento, string> = {

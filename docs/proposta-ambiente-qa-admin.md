@@ -51,6 +51,7 @@ Todas as rotas de `src/app/(dashboard)/admin`. Em cada uma: 390 px e 1280 px, se
 | `/admin/conforto` | Abrir o link antigo das contestações | Leva à Central de pendências já filtrada em "Contestações para decidir" |
 | `/admin/pendencias` | Central de pendências: filtrar, decidir uma contestação, aceitar/recusar foto de nível, rodar os prazos | Contagem de cada filtro igual ao topo de decisões; contas de teste à parte; foto recusada some do nível do imóvel |
 | `/admin/destinos` | Conferir o ponto de um destino no mapa e ativar | Sem ponto não ativa; ativo aparece nos chips da busca; "Destinos mais buscados" só com contagem |
+| `/admin/sistema` | Ver as chaves da plataforma (SMS e parceiro geral), as chaves de ambiente (só leitura) e a saúde das integrações | Não ligar nem desligar chave nenhuma em produção; nenhum valor de segredo na tela |
 | `/admin/retencao` | Ver o inventário, o relatório "o que seria apagado hoje" e as eliminações da semana | Só contagens, nenhum caminho de arquivo; teste contado à parte; simulado não apaga |
 | `/admin/contratos` | Abrir contrato de teste | Marca "MINUTA DE TESTE — sem validade"; linha do tempo do contrato |
 | `/admin/contratos/[id]` | Abrir o contrato pela lista (só leitura) e baixar o pacote de provas | Selo de estado, assinaturas com hash igual/diferente, pagamentos (anulados marcados), conferências com fotos e o prazo; PDF com "Gerado pela equipe Viva Nomads"; não admin recebe 404 |

@@ -36,25 +36,28 @@ test.describe("T67 — Busca no celular", () => {
     await page.getByTestId("pilula-mais").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
     await expect(painel).toBeVisible();
-    for (const t of ["Preço por mês", "Quartos", "Aceita pets", "Para trabalhar de casa"]) await expect(painel).toContainText(t);
+    for (const t of ["Quartos", "Estadia", "Aceita pets", "Para trabalhar de casa"]) await expect(painel).toContainText(t);
+    // E105: Preço, Tipo e Nível moram só nas pílulas de cima (um lugar só).
+    for (const t of ["Preço por mês", "Tipo de imóvel", "Nível a partir de"]) await expect(painel).not.toContainText(t);
     await expect(painel.getByTestId("aplicar-filtros")).toHaveText(`Mostrar ${totalAntes} ${totalAntes === 1 ? "imóvel" : "imóveis"}`);
     await painel.screenshot({ path: "tests/laboratorio/saida/t67-painel-390.png" });
 
-    await painel.locator("fieldset", { hasText: "Quartos" }).getByRole("button", { name: "2+", exact: true }).click();
-    await painel.locator("fieldset", { hasText: "Preço por mês" }).getByRole("button", { name: "Até R$ 5.000", exact: true }).click();
+    // Faceta sem imóvel fica desabilitada (contagem 0): sem imóvel com 2+ quartos nesta base, não há o que filtrar.
+    const doisMais = painel.locator("fieldset", { hasText: "Quartos" }).getByRole("button", { name: "2+", exact: true });
+    test.skip(await doisMais.isDisabled(), "Sem imóvel com 2+ quartos nesta base.");
+    await doisMais.click();
     const rotulo = await painel.getByTestId("aplicar-filtros").innerText();
     const n = Number(rotulo.match(/\d+/)?.[0] ?? 0);
-    test.skip(n === 0, "Sem imóvel com 2+ quartos até R$ 5.000 nesta base.");
     expect(n).toBeLessThanOrEqual(totalAntes);
     await painel.getByTestId("aplicar-filtros").click();
 
     await expect(painel).toHaveCount(0);
     await expect(page.getByTestId("titulo-busca")).toContainText(`${n} ${n === 1 ? "imóvel" : "imóveis"}`);
-    // E82-A: o preço vira o valor da pílula "Preço"; os quartos contam no "(N)" de "Mais filtros".
-    await expect(page.getByTestId("pilula-preco")).toHaveAttribute("data-valor", "Até R$ 5.000");
+    // E105: o preço não está mais nesta folha (só na pílula "Preço"); os quartos contam no "(N)" de "Mais filtros".
+    await expect(page.getByTestId("pilula-preco")).toHaveAttribute("data-valor", "");
     await expect(page.getByTestId("pilula-mais")).toContainText("(1)");
     await expect(page).toHaveURL(/quartos=2/);
-    await expect(page).toHaveURL(/preco=5000/);
+    await expect(page).not.toHaveURL(/preco=/);
 
     // Cards: foto, preço por mês, quartos/banheiros e bairro.
     const cartoes = page.locator('a[href^="/imoveis/"]');
@@ -73,12 +76,16 @@ test.describe("T67 — Busca no celular", () => {
     await page.goto("/buscar", { waitUntil: "networkidle" });
     await page.getByTestId("pilula-mais").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
-    await painel.getByRole("button", { name: "Aceita pets", exact: true }).click();
+    // Qualquer faceta com imóvel serve para o rascunho (as de contagem 0 ficam desabilitadas).
+    const faceta = painel.locator('button[data-testid^="faceta-"]:not([disabled])').first();
+    await expect(faceta).toBeVisible();
+    await faceta.click();
+    await expect(faceta).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("Escape");
     await expect(painel).toHaveCount(0);
     await expect(page.getByTestId("pilula-mais")).not.toContainText("(");
     await expect(page.getByTestId("pilula-mais")).toHaveAttribute("aria-pressed", "false");
-    await expect(page).not.toHaveURL(/pet=1/);
+    await expect(page).toHaveURL(/\/buscar$/);
   });
 
   test("link com filtros (atalho da home) abre o celular já filtrado", async ({ page }) => {

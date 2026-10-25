@@ -66,14 +66,14 @@ export const ALCANCE = [
   "app/(dashboard)/admin/ajuda-publicacao/ajuda-publicacao-client.tsx",
   "app/(dashboard)/admin/atendimento/[id]/chamado-client.tsx",
   "app/(dashboard)/admin/atendimento/atendimento-client.tsx",
-  "app/(dashboard)/admin/avaliacoes/forms.tsx",
+  "components/admin/decidir-revisao-avaliacao.tsx",
   "app/(dashboard)/admin/dados-de-teste/nova-jornada.tsx",
   "app/(dashboard)/admin/dados-de-teste/semear-carteira.tsx",
   "app/(dashboard)/admin/documentos/admin-documentos-client.tsx",
   "app/(dashboard)/admin/documentos/falhas-client.tsx",
   "app/(dashboard)/admin/documentos/matriculas-admin-client.tsx",
   "app/(dashboard)/admin/parceiros/page.tsx",
-  "app/(dashboard)/admin/pedidos/chave-sms.tsx",
+  "components/admin/chave-sms.tsx",
   "app/(dashboard)/admin/servicos/mudar-estado.tsx",
   "app/(dashboard)/dashboard/avaliacoes/acoes.tsx",
   "app/(dashboard)/dashboard/buscas/page.tsx",
@@ -416,7 +416,8 @@ test('filtros: "Limpar tudo" zera — volta a contar todos os imóveis e o conta
   assert.equal(contar(FILTROS_PAINEL_VAZIOS), IMOVEIS.length);
   assert.equal(contarFiltrosPainel(FILTROS_PAINEL_VAZIOS), 0);
   const folha = ler("components/busca/painel-filtros-celular.tsx");
-  assert.match(folha, /onClick=\{\(\) => setRascunho\(FILTROS_PAINEL_VAZIOS\)\}\s+data-testid="limpar-tudo"\s+className=\{buttonClasses\(\{ variant: "tertiary" \}\)\}/);
+  // E105: botão de contorno (secundário), ao lado do "Mostrar N imóveis".
+  assert.match(folha, /onClick=\{\(\) => setRascunho\(FILTROS_PAINEL_VAZIOS\)\}\s+data-testid="limpar-tudo"\s+className=\{buttonClasses\(\{ variant: "secondary"/);
 });
 
 test('filtros: nunca "Qualquer", "Ambos", "Indiferente" ou "Tanto faz" como opção; chips com aria-pressed', () => {
@@ -433,18 +434,19 @@ test('filtros: nunca "Qualquer", "Ambos", "Indiferente" ou "Tanto faz" como opç
     ["Apartamento", "Studio / kitnet", "Loft", "Cobertura", "Casa", "Casa de condomínio", "Flat / apart-hotel", "Quarto privativo", "Chácara/Sítio"],
   );
   assert.ok(!OPCOES_TIPO.some((o) => /fazenda|rancho/i.test(o.valor + o.rotulo)));
-  assert.match(folha, /<Grupo titulo="Tipo de imóvel"/);
+  // E105: o tipo mora só na pílula "Tipo".
+  assert.doesNotMatch(folha, /<Grupo titulo="Tipo de imóvel"/);
   assert.match(folha, /<div className="flex flex-wrap gap-2">\{children\}<\/div>/);
 });
 
-test("folha de filtros: chip de opção = pill; campo e botão = 8 px; Limpar tudo = texto (veredito do coordenador)", () => {
+test("folha de filtros: chip de opção = pill; campo e botão = 8 px; Limpar tudo = botão de contorno (E105)", () => {
   const folha = ler("components/busca/painel-filtros-celular.tsx");
   assert.match(folha, /chip de opção = pill/);
   assert.match(folha, /campo \(número, seleção, data\) = 8 px/);
   // Na folha, a única pill vem do <Chip>; nenhum rounded-full escrito à mão.
   assert.doesNotMatch(folha.replace(/\/\*[\s\S]*?\*\//g, ""), /rounded-full/);
   assert.match(folha, /data-testid="aplicar-filtros"[\s\S]{0,120}className=\{buttonClasses\(\{ className:/); // primário (raio 8)
-  assert.match(folha, /className=\{buttonClasses\(\{ variant: "tertiary" \}\)\}/);
+  assert.match(folha, /data-testid="limpar-tudo"\s+className=\{buttonClasses\(\{ variant: "secondary"/); // contorno (raio 8)
   // Campos da faixa de filtros da /buscar (seleção, data, moradores, raio): 8 px.
   const busca = ler("app/(public)/buscar/search-client.tsx");
   // E82-A: a linha de pílulas (chips = pill) e, nos painéis, campos de 8 px (data e raio).

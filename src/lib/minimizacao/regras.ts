@@ -46,6 +46,16 @@ export function eliminaDeVerdade(item: Pick<ItemInventario, "fase" | "base" | "p
 }
 
 /**
+ * ADMIN-6: por que o item roda em modo simulado (uma linha para a tela de Retenção); null quando apaga de verdade.
+ */
+export function motivoSimulado(item: Pick<ItemInventario, "fase" | "base" | "prazoDias" | "gatilho">): string | null {
+  if (eliminaDeVerdade(item)) return null;
+  if (item.base === "pendente") return "o prazo depende do parecer jurídico (item 13)";
+  if (item.prazoDias === null) return item.gatilho === "sem_gatilho_automatico" ? "fica enquanto a conta existir; sai na exclusão da conta" : "o prazo ainda não foi definido";
+  return "entra na fase 2 da eliminação automática";
+}
+
+/**
  * Venceu? `desde` é o instante do gatilho (decisão do admin, fim da estadia…). Sai quando passaram MAIS que prazoDias
  * dias inteiros: com 30 dias, o dia 29 e o dia 30 ficam, o dia 31 sai.
  */

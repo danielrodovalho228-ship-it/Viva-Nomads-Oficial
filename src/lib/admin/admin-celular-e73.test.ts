@@ -22,12 +22,14 @@ test("(b) backup vermelho: alerta no topo só no celular (role=alert, borda gros
   const alerta = c.slice(c.indexOf("export async function AlertaBackupCelular"));
   assert.match(alerta, /if \(!e\.vermelho\) return null;/);
   assert.match(alerta, /role="alert"[^>]*border-2 border-red-700[^>]*lg:hidden/);
-  assert.match(alerta, /href="#backup"/);
+  // ADMIN-3: o cartão do backup mora em /admin/sistema.
+  assert.match(alerta, /href="\/admin\/sistema#backup"/);
   // O selo "Atenção" ganha borda grossa; o fundo continua branco (regra do admin).
   assert.match(c, /"border-2 border-red-700 bg-white text-red-800"/);
   const pagina = ler("app/(dashboard)/admin/page.tsx");
-  assert.ok(pagina.indexOf("<AlertaBackupCelular />") < pagina.indexOf("<DecisoesHoje"));
-  assert.match(pagina, /<div id="backup"/);
+  // ADMIN-4: o alerta vem antes dos 4 números da inicial.
+  assert.ok(pagina.indexOf("<AlertaBackupCelular />") < pagina.indexOf('data-testid="admin-numeros"'));
+  assert.match(ler("app/(dashboard)/admin/sistema/page.tsx"), /<div id="backup"/);
 });
 
 test("(c) a linha de decisão inteira é tocável e leva ao mesmo destino do botão", () => {

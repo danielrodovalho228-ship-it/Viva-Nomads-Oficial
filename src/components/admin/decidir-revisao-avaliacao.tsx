@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { decidirRevisaoAvaliacao } from "@/lib/data/avaliacoes-resposta-actions";
 import { Button } from "@/components/ui/button";
 
-export function DecidirForm({ id }: { id: string }) {
+/** Decisão do pedido de revisão de uma avaliação (ADMIN-2: mora na Central de Pendências, filtro "Avaliações contestadas"). */
+export function DecidirRevisaoAvaliacao({ id }: { id: string }) {
   const [just, setJust] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, start] = useTransition();
@@ -18,7 +19,7 @@ export function DecidirForm({ id }: { id: string }) {
       router.refresh();
     });
   return (
-    <div className="mt-3 space-y-2">
+    <div className="mt-3 space-y-2" data-testid="decidir-revisao-avaliacao">
       <label htmlFor={`just-${id}`} className="block text-sm font-semibold text-ink">Justificativa da decisão</label>
       <textarea
         id={`just-${id}`}

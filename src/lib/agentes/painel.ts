@@ -9,7 +9,7 @@ import { prioridadesDe, proximaRonda, tempoRelativo, type Achado, type Agente, t
 // ── Última ronda e status ──────────────────────────────────────────────────
 export type CorRonda = "ok" | "alerta" | "falhou" | "sem";
 
-export const COR_RONDA_HEX: Record<CorRonda, string> = { ok: "#7FD321", alerta: "#FFB547", falhou: "#FF5470", sem: "#5B6894" };
+export const COR_RONDA_HEX: Record<CorRonda, string> = { ok: "#15803D", alerta: "#B45309", falhou: "#B91C1C", sem: "#6B7280" };
 
 /** Última ronda de cada agente (as rondas podem vir em qualquer ordem). */
 export function ultimaPorAgente(rondas: Ronda[]): Record<string, Ronda> {
@@ -79,7 +79,7 @@ export interface NoRede {
 }
 
 export type TipoFluxo = "achados" | "pendencias" | "relatorio" | "pacote";
-export const COR_FLUXO: Record<TipoFluxo, string> = { achados: "#38BDF8", pendencias: "#FFB547", relatorio: "#8C9AC4", pacote: "#7FD321" };
+export const COR_FLUXO: Record<TipoFluxo, string> = { achados: "#0369A1", pendencias: "#B45309", relatorio: "#6B7280", pacote: "#15803D" };
 
 /** Documentos e pessoas que não são linhas da tabela agentes. */
 const NOS_FIXOS: NoRede[] = [
@@ -196,7 +196,7 @@ export const CAMADAS: Camada[] = [
     id: "vitrine",
     nome: "Vitrine",
     sub: "site · busca · anúncios · SEO · Instagram",
-    cor: "#3D7BFF",
+    cor: "#1D4ED8",
     descricao: "O que o mundo vê: site público, busca de imóveis mobiliados, preços, Google e Instagram.",
     quem: ["rafael", "luana", "bruno"],
     chave: /seo|google|sitemap|robots|indexa|vitrine|p[áa]gina p[úu]blica|busca|anúncio|anuncio|instagram|post|landing|llms/i,
@@ -205,7 +205,7 @@ export const CAMADAS: Camada[] = [
     id: "app",
     nome: "App",
     sub: "inquilino · proprietário · chamados · vistoria",
-    cor: "#7FD321",
+    cor: "#15803D",
     descricao: "O que inquilinos e proprietários usam: pedidos, contratos, chamados, rascunho do anúncio e vistoria.",
     quem: ["marina", "renato", "otavio", "viva", "vitoria"],
     chave: /\bapp\b|tela|rascunho|pedido|chamado|vistoria|dashboard|painel|modo|login|cadastro|formul/i,
@@ -214,7 +214,7 @@ export const CAMADAS: Camada[] = [
     id: "dinheiro",
     nome: "Dinheiro e contratos",
     sub: "Asaas · ZapSign · recibos · Caução",
-    cor: "#FFB547",
+    cor: "#B45309",
     descricao: "Cobrança, assinatura, recibos e o Caução. Uma garantia só por contrato.",
     quem: ["sergio", "carla", "igor", "caio"],
     chave: /cau[çc][ãa]o|contrato|recibo|cobran|asaas|zapsign|pagamento|comiss|plano|assinatura|nota fiscal|imposto|cnpj/i,
@@ -223,7 +223,7 @@ export const CAMADAS: Camada[] = [
     id: "banco",
     nome: "Banco e segurança",
     sub: "Supabase · RLS · rotinas · migrações",
-    cor: "#38BDF8",
+    cor: "#0369A1",
     descricao: "O núcleo: dados, permissões por usuário, rotinas de prazos e migrações. É onde um erro custa mais caro.",
     quem: ["bruno", "renato", "otavio"],
     chave: /supabase|rls|banco|migra|sql|fun[çc][ãa]o|security|seguran|senha|exclus|lgpd|vazad|policy|grant/i,
@@ -232,7 +232,7 @@ export const CAMADAS: Camada[] = [
     id: "parceiros",
     nome: "Parceiros",
     sub: "seguradoras · contador · advogada",
-    cor: "#FF7A6B",
+    cor: "#C2410C",
     descricao: "Quem está fora do código, mas dentro do negócio: seguradoras, contador e jurídico.",
     quem: ["thiago", "sergio", "helena"],
     chave: /segurador|easycover|chubb|pottencial|porto|parceir|contador|advogad|jur[íi]dic|dra\.? beatriz/i,

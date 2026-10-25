@@ -26,6 +26,7 @@ test.describe("T291 — Aceite nas ordens dos agentes", () => {
         await page.goto("/admin/agentes", { waitUntil: "networkidle" });
         await page.getByRole("tab", { name: "Conversar" }).click();
         await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Renato/ }).click();
+        await expect(page.getByTestId("chat-carregando")).toHaveCount(0, { timeout: 20_000 });
         return page.locator('[data-testid="ordem"]').filter({ hasText: texto });
       };
       let cartao = await abrir();

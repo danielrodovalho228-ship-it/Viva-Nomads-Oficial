@@ -1,3 +1,4 @@
+import { NumeroDaFonte } from "@/components/admin/numero-da-fonte";
 import { filaAtendimento, listarMacros, metricasAtendimento } from "@/lib/data/atendimento-actions";
 import { AtendimentoClient } from "./atendimento-client";
 import { adminDaPagina } from "@/lib/data/admin-indicadores";
@@ -39,16 +40,19 @@ export default async function AdminAtendimentoPage({
       : Promise.resolve(null),
   ]);
   return (
-    <AtendimentoClient
-      aba={aba}
-      fila={fila ?? []}
-      aprovacao={aprovacao ?? []}
-      metricas={metricas}
-      macros={macros}
-      filtros={filtros}
-      semAcesso={fila === null}
-      agoraISO={new Date().toISOString()}
-      ultimaDecisao={(ultimo as string | null) ?? null}
-    />
+    <>
+      <NumeroDaFonte chave="chamados" />
+      <AtendimentoClient
+        aba={aba}
+        fila={fila ?? []}
+        aprovacao={aprovacao ?? []}
+        metricas={metricas}
+        macros={macros}
+        filtros={filtros}
+        semAcesso={fila === null}
+        agoraISO={new Date().toISOString()}
+        ultimaDecisao={(ultimo as string | null) ?? null}
+      />
+    </>
   );
 }

@@ -74,7 +74,17 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
   }
 
   /** Link que retoma o rascunho de onde parou (o botão principal agora leva ao próximo passo do checklist). */
-  const retomar = (page: Page) => page.getByTestId("retomar-rascunho");
+  // PROP-6 (#1349): no modo dono o Início é o "Continue seu anúncio" (bloco principal do tipo rascunho); retomar é o
+  // "Continuar de onde parou", que abre no primeiro passo que falta, com o mesmo ?draft=.
+  const blocoRascunho = (page: Page) => page.locator('[data-testid="inicio-dono-principal"][data-tipo="rascunho"]');
+  const retomar = (page: Page) => blocoRascunho(page).getByTestId("inicio-dono-botao");
+  /** Depois de retomar, vai ao Endereço pelo nome da etapa, com o mesmo ?draft=. */
+  async function noEnderecoDoRascunho(page: Page) {
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=/, { timeout: 20_000 });
+    const url = new URL(page.url());
+    url.searchParams.set("etapa", "endereco");
+    await page.goto(url.pathname + url.search, { waitUntil: "domcontentloaded" });
+  }
 
   test("T-RASC-1 — autosave mostra 'Salvando…' → 'Salvo' e reload mantém", async ({ page }) => {
     const marca = await novoComEndereco(page);
@@ -89,54 +99,49 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await esperarSalvo(page);
     // Sai do editor SEM publicar; a Visão geral deve oferecer retomar.
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    const card = page.getByText(/Anúncio em andamento/i);
-    await expect(card).toBeVisible({ timeout: 10_000 });
+    await expect(blocoRascunho(page)).toBeVisible({ timeout: 20_000 });
     await retomar(page).click();
-    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=/);
-    // "Retomar" abre na etapa gravada no rascunho, que pode não ser o Endereço. Vai ao
-    // endereço pelo nome da etapa, com o mesmo ?draft= (lab-crítico do #1061, 22/10: instável sem isto).
-    const url = new URL(page.url());
-    url.searchParams.set("etapa", "endereco");
-    await page.goto(url.pathname + url.search, { waitUntil: "domcontentloaded" });
+    // "Continuar de onde parou" abre no 1º passo que falta, que pode não ser o Endereço (lab-crítico do #1061, 22/10).
+    await noEnderecoDoRascunho(page);
     // Restaurou do SERVIDOR (não do localStorage desta aba): bairro de volta.
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca, { timeout: 15_000 });
   });
 
-  test("T-RASC-6 — 'Anúncio em andamento' é um checklist: ✓ feito / ○ falta, cada item abre o campo certo (ordem de8761b0, item 1)", async ({ page }) => {
+  test("T-RASC-6 — 'Continue seu anúncio' traz os próximos passos: ✓ feito / ○ falta, cada item abre o campo certo (ordem de8761b0, item 1)", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await novoComEndereco(page);
     await esperarSalvo(page);
     // O "Salvo" pode ser do autosave das fotos, anterior ao endereço (debounce de 2 s):
-    // recarrega a Visão geral até o servidor refletir o endereço, em vez de sair cedo.
-    const lista = page.getByTestId("anuncio-checklist");
+    // recarrega o Início até o servidor refletir o endereço, em vez de sair cedo.
+    // PROP-6 (#1349): o checklist virou "Próximos passos" do bloco "Continue seu anúncio" (até 3: o feito mais recente
+    // e os que faltam, cada um "Concluído" ou "Pendente").
+    const lista = page.getByTestId("inicio-dono-passos");
+    // Até 3 itens: o feito mais recente e os 2 primeiros que faltam (a ordem é a da prontidão).
+    const pendente = lista.getByRole("link", { name: /Pendente/ }).first();
     await expect(async () => {
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      // O painel mostra só o que falta (até 3 itens); os feitos aparecem em "Ver todos os itens".
-      await page.getByTestId("checklist-ver-todos").click({ timeout: 3_000 });
-      await expect(lista.getByTestId("check-feito").filter({ hasText: "Endereço preenchido" })).toBeVisible({ timeout: 3_000 });
+      await expect(pendente).toBeVisible({ timeout: 5_000 });
+      await expect(lista.getByRole("link", { name: /Endereço preenchido.*Pendente/ })).toHaveCount(0);
     }).toPass({ timeout: 40_000, intervals: [2_000, 3_000] });
-    // Endereço já preenchido = feito; fotos (só 1 de 8) = falta e é clicável.
-    await expect(lista.getByTestId("check-falta").filter({ hasText: "Endereço preenchido" })).toHaveCount(0);
     // Sem rolagem lateral a 390 px.
     const estouro = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
     expect(estouro).toBe(false);
-    // O próximo passo vem em destaque no resumo e no botão.
-    await expect(page.getByTestId("prontidao-visao-geral")).toContainText(/Próximo passo:/);
-    // Clicar no item que falta abre o editor JÁ na etapa certa (Fotos, o passo 2 dos 10: ?etapa=1).
-    await lista.getByTestId("check-falta").filter({ hasText: "Pelo menos 8 fotos" }).click();
-    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=1/);
-    // A URL já é a da etapa certa; no lab-crítico do #1080 o editor ficou 15 s sem montar as Fotos e só abriu no retry.
-    // Se não montar, reabre a mesma URL (é ela que o produto promete) em vez de esperar o tempo todo.
-    const fotos = page.getByTestId("passo-titulo").filter({ hasText: "Adicione as fotos do imóvel" });
+    // O quanto falta vem no bloco (% pronto).
+    await expect(blocoRascunho(page).getByTestId("inicio-dono-pct")).toBeVisible();
+    // Clicar no item que falta abre o editor JÁ na etapa certa: a do próprio link (?draft=…&etapa=…).
+    const destino = await pendente.getAttribute("href");
+    expect(destino).toMatch(/\/dashboard\/imoveis\/novo\?draft=.*etapa=/);
+    await pendente.click();
+    await expect(page).toHaveURL(new RegExp(`etapa=${new URL(destino!, "http://x").searchParams.get("etapa")}`), { timeout: 20_000 });
+    // Se o editor não montar a tempo (lab-crítico do #1080), reabre a mesma URL em vez de esperar o tempo todo.
     await expect(async () => {
-      await expect(fotos)
+      await expect(page.getByTestId("passo-titulo"))
         .toBeVisible({ timeout: 8_000 })
         .catch(async (e) => {
           await page.goto(page.url(), { waitUntil: "domcontentloaded" });
           throw e;
         });
     }).toPass({ timeout: 40_000 });
-    await expect(page).toHaveURL(/&etapa=1/);
   });
 
   test("T-RASC-3 — 'Novo anúncio' detecta rascunho e 'Começar outro' limpa", async ({ page }) => {
@@ -191,8 +196,8 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     // Retoma pela Visão geral: abre no Endereço, e os passos seguintes já visitados seguem com o que foi preenchido.
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await retomar(page).click();
-    await expect(page).toHaveURL(/\?draft=/);
-    await expect(page.getByTestId("cadastro-rua")).toBeVisible();
+    await noEnderecoDoRascunho(page);
+    await expect(page.getByTestId("cadastro-rua")).toBeVisible({ timeout: 20_000 });
     // Os 10 passos não têm mais a barra de etapas clicável (nem o "nunca visitado" desabilitado): o caminho para frente
     // é o "Continuar", que valida — e passa porque o rascunho trouxe os Detalhes de volta.
     // Logo depois de retomar, o autosave redesenha a tela; tenta em janelas curtas até a etapa abrir (só clica de novo

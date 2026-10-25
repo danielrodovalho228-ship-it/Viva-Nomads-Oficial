@@ -86,14 +86,15 @@ test("sem cartão de indicador (StatCard) no admin", () => {
   assert.deepEqual(TODOS.filter((a) => /\bStatCard\b/.test(ler(a))), []);
 });
 
-test("início do /admin: decisões primeiro, um número-herói, números em lista com divisor fino", () => {
+test("início do /admin (ADMIN-4): 4 números, atenção, atividade, saúde e rodapé; indicadores em Funil e indicadores", () => {
   const pagina = ler("app/(dashboard)/admin/page.tsx");
   const cliente = ler("app/(dashboard)/admin/visao-geral-client.tsx");
-  assert.ok(pagina.indexOf("<DecisoesHoje") < pagina.indexOf("<VisaoGeralClient"), "as decisões vêm antes dos números");
-  assert.equal((cliente.match(/<NumeroHeroi\b/g) ?? []).length, 1, "um número-herói só");
-  assert.match(cliente, /<ListaNumeros itens=\{agoraItens\} testId="home-agora" \/>/);
+  const ordem = ['data-testid="admin-numeros"', 'data-testid="admin-atencao"', 'data-testid="admin-atividade"', 'data-testid="admin-saude"', 'data-testid="admin-rodape"'].map((t) => pagina.indexOf(t));
+  assert.ok(ordem.every((i, k) => i > 0 && (k === 0 || i > ordem[k - 1])), "a ordem da inicial");
+  assert.doesNotMatch(pagina, /<VisaoGeralClient|<DecisoesHoje|<AtalhosAdmin|<NumeroHeroi/, "a inicial não repete indicadores, decisões nem áreas");
+  assert.match(ler("app/(dashboard)/admin/funil/page.tsx"), /<VisaoGeralClient /);
   assert.match(cliente, /divide-y divide-line border-y border-line/);
-  assert.doesNotMatch(cliente, /Sparkline|<Funil\b|PrecisaAgora/);
+  assert.doesNotMatch(cliente, /Sparkline|<Funil\b|PrecisaAgora|<NumeroHeroi/);
   const numeros = ler("components/admin/numeros.tsx");
   assert.match(numeros, /tituloDecisoesAdmin\(total\)/);
   assert.match(numeros, /variant="secondary" size="sm"/, "o botão da decisão é secundário (o primário é único por tela)");

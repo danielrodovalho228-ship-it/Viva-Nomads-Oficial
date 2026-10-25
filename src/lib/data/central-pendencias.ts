@@ -11,6 +11,7 @@ import { CONFIRMACAO_MORADOR_H } from "@/lib/manutencao-solucao";
 import { gravidadePeloPrazo, montarCentral, type Central, type FiltroCentral, type LinhaCentral } from "@/lib/admin/central-pendencias";
 import { contasTeste, ordensForaDoPrazo, prazoVencidoEm } from "@/lib/data/admin-prazos-59";
 import { filaDocumentos } from "@/lib/data/admin-indicadores";
+import { MOTIVOS_REVISAO, ehMotivoRevisao } from "@/lib/avaliacoes-resposta";
 
 type Admin = SupabaseClient;
 const H = 3_600_000;
@@ -25,7 +26,7 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
   const ehTeste = (dono: string | undefined) => !!dono && teste.has(dono);
   const ler = async <T,>(f: () => Promise<T[]>): Promise<T[]> => f().catch((e) => (console.error("[central]", e), [] as T[]));
 
-  const [pend, ordensFora, ordensConfirmar, adequ, fotos, docs] = await Promise.all([
+  const [pend, ordensFora, ordensConfirmar, adequ, fotos, docs, revisoes] = await Promise.all([
     ler(async () => {
       const { data, error } = await admin
         .from("conforto_pendencias")
@@ -78,6 +79,19 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
       return (data ?? []) as unknown as { property_id: string; chave: string; foto_path: string; declarado_em: string | null; properties: Prop }[];
     }),
     ler(async () => [await filaDocumentos(admin)]),
+    ler(async () => {
+      const { data, error } = await admin
+        .from("avaliacao_contestacoes")
+        .select("id, autor_id, motivo, detalhe, criada_em, avaliacoes(nota_geral, comentario_publico)")
+        .eq("status", "aberta")
+        .order("criada_em", { ascending: true })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as unknown as {
+        id: string; autor_id: string; motivo: string; detalhe: string; criada_em: string;
+        avaliacoes: { nota_geral: number; comentario_publico: string | null } | { nota_geral: number; comentario_publico: string | null }[] | null;
+      }[];
+    }),
   ]);
 
   const out: LinhaCentral[] = [];
@@ -169,6 +183,20 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
       acao: { rotulo: "Analisar", href: "/admin/pendencias?filtro=fotos_nivel" },
       teste: ehTeste(f.properties.owner_id),
       ref: { imovel: f.property_id, chave: f.chave, foto: admin.storage.from("property-photos").getPublicUrl(f.foto_path).data.publicUrl },
+    });
+  }
+  for (const r of revisoes) {
+    const av = Array.isArray(r.avaliacoes) ? r.avaliacoes[0] : r.avaliacoes;
+    add("avaliacoes_contestadas", {
+      id: r.id,
+      titulo: `Pedido de revisão · ${ehMotivoRevisao(r.motivo) ? MOTIVOS_REVISAO[r.motivo] : r.motivo}`,
+      detalhe: [av ? `Avaliação (${av.nota_geral}/5): ${av.comentario_publico ? `“${av.comentario_publico}”` : "sem comentário"}` : null, `Explicação: ${r.detalhe}`].filter(Boolean).join(" · "),
+      desde: r.criada_em,
+      prazoAte: null,
+      gravidade: "media",
+      acao: { rotulo: "Decidir", href: "/admin/pendencias?filtro=avaliacoes_contestadas" },
+      teste: ehTeste(r.autor_id),
+      ref: { revisao: r.id },
     });
   }
   const d = docs[0];

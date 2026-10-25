@@ -1,3 +1,4 @@
+import { NumeroDaFonte } from "@/components/admin/numero-da-fonte";
 import Link from "next/link";
 import { Home } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -83,6 +84,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
           </Link>
         }
       />
+      <NumeroDaFonte chave="anuncios" />
       <form action="/admin/imoveis" method="get" className="mb-4 flex flex-wrap items-end gap-2" role="search">
         {p && <input type="hidden" name="de" value={p.inicio} />}
         {p && <input type="hidden" name="ate" value={p.fim} />}
