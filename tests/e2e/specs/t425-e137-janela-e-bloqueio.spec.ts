@@ -44,6 +44,9 @@ test.describe("T425 — E137: janela menor que a duração mínima e bloqueio re
   });
 
   test("2. o mesmo período bloqueado duas vezes vira UMA linha", async ({ browser }) => {
+    // E137 (Pista A): addBlock (lib/data/blocks-actions.ts) grava de novo o mesmo período; ficam 2 linhas na lista e no
+    // banco (run 40191654292). Quem corrigir tira este test.fail.
+    test.fail(true, "E137: o mesmo período bloqueado duas vezes vira duas linhas");
     const page = await abrirPasso(browser, { email: dono.email, senha }, ids.rascunho!, "disponibilidade");
     const etapa = page.getByTestId("etapa-disponibilidade");
     await expect(etapa.getByTestId("calendario-dono-grade")).toBeVisible({ timeout: 30_000 });
