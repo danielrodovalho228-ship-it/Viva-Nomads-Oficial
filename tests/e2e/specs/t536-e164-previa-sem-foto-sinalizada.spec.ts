@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { FOTOS_TESTE_MINIMO, noPasso } from "../fixtures/cadastro";
+import { FOTOS_TESTE_MINIMO, abrirCadastroNovo, noPasso } from "../fixtures/cadastro";
 
 /*
   T536 — E164, guarda permanente da Pista C: a "Visualização do anúncio" (prévia lateral do computador, 1280 px) não
@@ -22,11 +22,8 @@ const srcPrevia = (p: Page) => p.getByTestId("novo-resumo").getByTestId("previa-
 const srcSinalizada = (p: Page) => p.locator('[data-nao-imovel="1"] img').first().getAttribute("src");
 
 async function abrirPassoFotos(p: Page) {
-  await p.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-  const aviso = p.getByTestId("rascunho-aviso");
-  await expect(p.getByTestId("passo-titulo").or(aviso).first()).toBeVisible({ timeout: 30_000 });
-  if (await aviso.isVisible()) await aviso.getByRole("button", { name: "Começar outro" }).click();
-  await noPasso(p, "tipo");
+  // E132-A (#1396): o cadastro novo abre a Qualificação antes do Passo 1 — "Responder depois" leva ao Tipo.
+  await abrirCadastroNovo(p);
   await p.getByTestId("cadastro-continuar").click();
   await noPasso(p, "fotos");
 }
