@@ -1323,9 +1323,10 @@ export default function NewPropertyPage() {
     };
   }, []);
 
-  // E132-A — a Qualificação: só no cadastro NOVO (nunca na edição nem num rascunho já aberto), antes do Passo 1.
+  // E132-A — a Qualificação: só no cadastro NOVO (nunca na edição nem num rascunho já aberto), antes do Passo 1. Um
+  // link que já diz o passo (?etapa=, ex.: "Resolver" de uma pendência) vai direto a ele.
   const mostrarQualificacao =
-    approved === true && !editId && !draftParam && !draftServerId && qualConf.status === "pendente" && (!existingDraft || draftBannerDismissed);
+    approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente" && (!existingDraft || draftBannerDismissed);
 
   /** Responder: as MESMAS confirmações de conforto e comodidades do Passo 5 (fonte única), e a velocidade da internet. */
   function responderQualificacao(id: string, valor: string | boolean) {
