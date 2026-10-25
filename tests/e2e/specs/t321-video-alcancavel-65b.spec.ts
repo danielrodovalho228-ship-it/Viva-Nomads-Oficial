@@ -81,6 +81,8 @@ test.describe("T321 — vídeo do anúncio alcançável pelo dono (65-B)", () =>
     await confirmarVideoDoImovel(p);
     await expect(secao(p).getByTestId("video-enviado")).toHaveText("Vídeo enviado (00:10)", { timeout: 60_000 });
     await expect.poll(() => caminhoNoBanco(ids.imovel), { timeout: 20_000 }).toMatch(/-10s\.mp4$/);
+    // A gravação do vídeo recarrega a página do editor: se a seção fechou, abre de novo antes de salvar.
+    if ((await secao(p).getAttribute("data-aberta")) !== "true") await secao(p).getByRole("button").first().click();
     await secao(p).getByRole("button", { name: "Salvar seção" }).click();
     await expect(secao(p)).toContainText("Alterações salvas.", { timeout: 20_000 });
     await p.screenshot({ path: `${SAIDA}/t321-secao-video-1280.png`, fullPage: true });
