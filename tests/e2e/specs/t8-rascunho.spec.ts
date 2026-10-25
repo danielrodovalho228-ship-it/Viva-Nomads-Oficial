@@ -143,9 +143,6 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
         });
     }).toPass({ timeout: 40_000 });
   });
-    }).toPass({ timeout: 40_000 });
-    await expect(page).toHaveURL(/&etapa=1/);
-  });
 
   test("T-RASC-3 — 'Novo anúncio' detecta rascunho e 'Começar outro' limpa", async ({ page }) => {
     const marca = await novoComEndereco(page);
