@@ -32,8 +32,12 @@ test.describe("T222 — Filtro de pet com porte", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     // E82-A: a pílula "Mais filtros" abre a folha lateral (Prompt 40).
-    await page.getByTestId("pilula-mais").click();
     const folha = page.getByRole("dialog", { name: "Filtros" });
+    // Desde o E131 (#1332) o 1º toque pode chegar antes da hidratação: toca de novo até a folha abrir (como a t458).
+    await expect(async () => {
+      if (!(await folha.isVisible())) await page.getByTestId("pilula-mais").click({ timeout: 5_000 });
+      await expect(folha).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 40_000 });
     await expect(folha.getByTestId("painel-porte-pet")).toHaveCount(0);
     await folha.getByRole("button", { name: "Aceita pets", exact: true }).click();
     await expect(folha.getByTestId("painel-porte-pet")).toContainText("Porte do pet");
