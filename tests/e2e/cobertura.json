@@ -19,7 +19,8 @@
         "t310-vao-fim-de-pagina",
         "t343-nivel-busca-sem-beco",
         "t352-varredura-bloco17",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t483-menu-mais-fecha.spec.ts"
       ]
     },
     "/acesso-socios": {
