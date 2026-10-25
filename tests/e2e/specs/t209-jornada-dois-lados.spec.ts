@@ -145,7 +145,7 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
 
     // O dono (Chicago também) vê 15:00 e o rótulo "horário de Brasília".
     const d = await entrarNoFuso(browser, dono.email, "America/Chicago", 1280);
-    await abrir(d, "/dashboard/visitas");
+    await abrir(d, "/dashboard/visitas?de=dono");
     const cartao = d.getByTestId("cartao-visita").first();
     await expect(cartao).toContainText("15:00", { timeout: 25_000 });
     await expect(d.getByText(/horário de Brasília/).first()).toBeVisible();
@@ -164,7 +164,7 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
     await a.context().close();
 
     const d = await entrar(browser, dono.email, senha);
-    await abrir(d, "/dashboard/visitas");
+    await abrir(d, "/dashboard/visitas?de=dono");
     const va = await visitaDe(ids.inqA!);
     const cartao = d.locator(`#visita-${va!.id}`);
     await cartao.getByTestId("visita-confirmar").click();
@@ -222,7 +222,7 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
     await adm().from("visitas_video").insert({ property_id: ids.imovel, owner_id: ids.dono, tenant_id: ids.real, horarios: [iso], modalidade: "presencial" });
     const vr = (await adm().from("visitas_video").select("id").eq("tenant_id", ids.real!).single()).data!;
     const d = await entrar(browser, dono.email, senha);
-    await abrir(d, "/dashboard/visitas");
+    await abrir(d, "/dashboard/visitas?de=dono");
     const cartao = d.locator(`#visita-${vr.id}`);
     await cartao.getByTestId("visita-recusar").click();
     await cartao.getByTestId("visita-recusar-enviar").click();

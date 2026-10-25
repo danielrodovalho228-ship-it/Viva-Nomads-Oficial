@@ -13,8 +13,8 @@ test("abas do topo (snapshot): Início · Anúncios · Interessados · Contratos
     [["Início", "/dashboard"], ["Anúncios", "/dashboard/imoveis"], ["Interessados", "/dashboard/leads"], ["Contratos", "/dashboard/contratos"], ["Mensagens", "/dashboard/mensagens"]],
   );
   assert.deepEqual(ABAS_DONO.find((a) => a.id === "interessados")!.subabas!.map((s) => s.rotulo), ["Interessados", "Propostas", "Fechamento", "Pedidos na cidade"]);
-  assert.deepEqual(ABAS_DONO.find((a) => a.id === "contratos")!.subabas!.map((s) => s.rotulo), ["Contratos", "Caução", "Recibos e notas"]);
-  assert.equal(GANHOS_DISPONIVEL, false, "Ganhos nasce no PROP-4; até lá a subaba não aparece");
+  assert.deepEqual(ABAS_DONO.find((a) => a.id === "contratos")!.subabas!.map((s) => s.rotulo), ["Contratos", "Ganhos", "Caução", "Recibos e notas"]);
+  assert.equal(GANHOS_DISPONIVEL, true, "E176: Contratos ganha a subaba Ganhos");
 });
 
 test("menu Conta ▾ (snapshot), com Modo morador e Sair como ações; MENUS-5: Ferramentas saíram da Conta", () => {

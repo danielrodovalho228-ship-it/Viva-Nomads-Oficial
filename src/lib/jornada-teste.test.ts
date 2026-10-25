@@ -47,8 +47,9 @@ test("Nova jornada: confirmação em dois passos na página e resultado sempre v
   assert.match(ler("../app/(dashboard)/admin/dados-de-teste/page.tsx"), /Últimas jornadas de teste/);
 });
 
-test("Locações do dono: sem estadia própria, cai em Contratos & blocos e o menu não mostra 'Locações'", () => {
-  assert.match(ler("../app/(dashboard)/dashboard/locacoes/page.tsx"), /locacoes\.length === 0 && \(await temImovelAnunciado\(\)\)\) redirect\("\/dashboard\/contratos"\)/);
+test("Estadias: o servidor não troca o papel em silêncio (E176); quem só é dono e abre a rota do morador vai a Contratos pelo guarda", () => {
+  // E176 (D1 + papel persiste): a página não redireciona mais o dono em modo morador para os Contratos do dono.
+  assert.doesNotMatch(ler("../app/(dashboard)/dashboard/locacoes/page.tsx"), /redirect\("\/dashboard\/contratos"\)/);
   assert.match(ler("../config/menu-por-papel.ts"), /href: "\/dashboard\/locacoes", quando: \(ctx\) => !\(ctx\.temImovel && !ctx\.estadiaAtiva\)/);
   // O guarda do painel no navegador segue a mesma regra (no celular ele corria antes do servidor).
   assert.equal(destinoForaDoPapel("/dashboard/locacoes"), "/dashboard/contratos");

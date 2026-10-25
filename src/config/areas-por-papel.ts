@@ -8,6 +8,7 @@ export const AREA_PROPRIETARIO = [
   "/qualificar",
   "/dashboard/imoveis",
   "/dashboard/carteira",
+  "/dashboard/ganhos",
   "/dashboard/viabilidade",
   "/dashboard/leads",
   "/dashboard/orcamentos",

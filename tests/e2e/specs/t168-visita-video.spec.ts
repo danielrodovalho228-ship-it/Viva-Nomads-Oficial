@@ -74,7 +74,7 @@ test.describe("T168 — Visita por vídeo: pedir → confirmar", () => {
     test.setTimeout(120_000);
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/dashboard/visitas", { waitUntil: "domcontentloaded" });
+    await page.goto("/dashboard/visitas?de=dono", { waitUntil: "domcontentloaded" });
     const recebidas = page.getByTestId("visitas-recebidas");
     await expect(recebidas).toBeVisible({ timeout: 25_000 });
     await expect(page.getByText("Moradorsobrenome")).toHaveCount(0);

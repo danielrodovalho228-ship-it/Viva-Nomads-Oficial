@@ -60,6 +60,7 @@ const OWNER_ONLY = [
   "/qualificar",
   "/dashboard/imoveis",
   "/dashboard/carteira",
+  "/dashboard/ganhos",
   "/dashboard/viabilidade",
   "/dashboard/leads",
   "/dashboard/orcamentos",

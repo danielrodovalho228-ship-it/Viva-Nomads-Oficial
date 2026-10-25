@@ -4,7 +4,7 @@
  * sino ou Conta (avatar). PURA (testada em abas-painel.test.ts); quem desenha é o TopoPainel (computador) e a
  * MobileTabBar (celular). O admin fora (trilha ADMIN: config/menu-admin.ts).
  *
- *  • Morador (MORADOR-NAV): Início · Buscar · Pedidos · Mensagens · Estadia (só com contrato). Sem contrato, 4.
+ *  • Morador (MORADOR-NAV + E176 D1): Início · Buscar · Pedidos · Mensagens · Estadia — Estadia SEMPRE visível.
  *  • Proprietário (PROP-1): Início · Anúncios · Interessados · Contratos · Mensagens — igual no celular.
  *  • Parceiro: Início · Pedidos · Agenda · Ganhos · Mensagens (as seções do painel do parceiro, até o PARCEIRO-A).
  */
@@ -91,8 +91,8 @@ export const ABAS_MORADOR: readonly AbaPainel[] = [
   },
 ];
 
-/** /dashboard/ganhos nasce no PROP-4; até lá a subaba "Ganhos" de Contratos não aparece. */
-export const GANHOS_DISPONIVEL = false;
+/** E176 (D1): Contratos ganha a subaba "Ganhos" (/dashboard/ganhos). */
+export const GANHOS_DISPONIVEL = true;
 
 export const ABAS_PROPRIETARIO: readonly AbaPainel[] = [
   INICIO,
@@ -142,7 +142,10 @@ const BASE: Record<PapelAbas, readonly AbaPainel[]> = { morador: ABAS_MORADOR, p
 /** As abas do papel neste contexto (no máximo 5). Sem papel (admin nas telas /admin): nenhuma. */
 export function abasDoPapelPainel(papel: PapelAbas | null, ctx: ContextoAbas = { comContrato: false }): readonly AbaPainel[] {
   if (!papel) return [];
-  return BASE[papel].filter((a) => a.id !== "estadia" || papel !== "morador" || ctx.comContrato);
+  // E176 (D1): a aba "Estadia" do morador aparece SEMPRE (sem estadia, a tela mostra o estado vazio com o caminho para
+  // buscar). `ctx` fica para quem ainda passa o contexto.
+  void ctx;
+  return BASE[papel];
 }
 
 function acende(item: ItemAba, pathname: string): boolean {

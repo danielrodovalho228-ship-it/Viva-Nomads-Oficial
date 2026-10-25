@@ -19,7 +19,8 @@ const existe = (href: string) => {
 test("no máximo 5 destinos por papel, com e sem contrato", () => {
   for (const papel of PAPEIS) for (const comContrato of [true, false]) assert.ok(abasDoPapelPainel(papel, { comContrato }).length <= 5, papel);
   assert.deepEqual(abasDoPapelPainel("morador", { comContrato: true }).map((a) => a.rotulo), ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"]);
-  assert.deepEqual(abasDoPapelPainel("morador", { comContrato: false }).map((a) => a.rotulo), ["Início", "Buscar", "Pedidos", "Mensagens"]);
+  // E176 (D1): a Estadia aparece sempre, mesmo sem estadia ativa (a tela mostra o estado vazio).
+  assert.deepEqual(abasDoPapelPainel("morador", { comContrato: false }).map((a) => a.rotulo), ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"]);
   assert.deepEqual(abasDoPapelPainel("proprietario").map((a) => a.rotulo), ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"]);
 });
 

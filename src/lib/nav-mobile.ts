@@ -16,7 +16,7 @@ import { abasDoPapelPainel, type AbaPainel, type ContextoAbas, type IconeAba } f
 /**
  * Abas da BARRA INFERIOR. MENUS-5: saem da MESMA lista das abas do topo do computador (config/abas-painel.ts) —
  * rótulos e hrefs idênticos nos dois. No máximo 5 por papel; a aba "Perfil" saiu (a Conta abre no avatar do topo).
- *  - morador:      Início · Buscar · Pedidos · Mensagens · Minha estadia (só com contrato)
+ *  - morador:      Início · Buscar · Pedidos · Mensagens · Estadia (sempre, E176 D1)
  *  - proprietário: Início · Anúncios · Interessados · Contratos · Mensagens
  *  - parceiro:     Início · Pedidos · Agenda · Ganhos · Mensagens
  */

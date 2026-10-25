@@ -27,6 +27,9 @@ import { textoVencimento } from "../propostas/regras.ts";
 import type { DecisaoEstadia } from "../estadia/estadia.ts";
 import type { Prontidao } from "../anuncio/prontidao.ts";
 
+/** E176 (papel persiste): as visitas do dono abrem o lado do dono; a aba "Visitas" do morador mostra só as dele. */
+export const HREF_VISITAS_DONO = "/dashboard/visitas?de=dono";
+
 export type TipoDecisao =
   | "contrato"
   | "proposta"
@@ -312,7 +315,7 @@ export function decisoesDoProprietario(d: DadosDecisoes, agora: Date = new Date(
       id: `visita-${v.id}`,
       tipo: "visita",
       texto: `Pedido de visita ${v.modalidade === "presencial" ? "presencial" : "por vídeo"} para ${nomeImovel(v.imovel)}`,
-      href: "/dashboard/visitas",
+      href: HREF_VISITAS_DONO,
       prazo: primeiro,
       prazoTexto: primeiro ? `1º horário: ${formatarHorario(primeiro)}` : null,
       atrasada: false,

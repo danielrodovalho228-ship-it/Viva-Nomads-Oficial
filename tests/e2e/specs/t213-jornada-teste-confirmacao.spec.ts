@@ -152,7 +152,7 @@ test.describe("T213 — Nova jornada de teste com confirmação na página (aden
       await t.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await abrir(t, "/dashboard/locacoes");
       expect(new URL(t.url()).pathname).toBe("/dashboard/locacoes");
-      await expect(t.getByRole("heading", { name: "Minhas locações" })).toBeVisible();
+      await expect(t.getByRole("heading", { name: "Minhas estadias" })).toBeVisible();
       await semRolagemLateral(t);
       await t.context().close();
     });
