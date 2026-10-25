@@ -4,6 +4,7 @@ import { listMyProperties } from "@/lib/data/properties";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ContratosClient } from "./contratos-client";
 import { ContratosInquilino } from "./contratos-inquilino";
+import { ContratosPorModo } from "./contratos-por-modo";
 import { hojeBR } from "@/lib/utils";
 import { BlocoRecibosDono } from "@/components/recibos/blocos-recibos";
 import { estadosConferenciaEntradaDaPessoa } from "@/lib/data/conferencia-lista";
@@ -25,21 +26,18 @@ export default async function ContratosPage() {
   const ids = contratos.map((c) => c.id);
   const [extras, conferencias] = temImovel ? await Promise.all([documentosDosContratos(ids), estadosConferenciaEntradaDaPessoa(ids)]) : [{}, new Map()];
   const conferenciaPendente = contratoComConferenciaPendente(contratos, conferencias);
-  return (
-    <>
-      {(doInquilino.length > 0 || !temImovel) && (
-        <section className="mb-8" data-testid="secao-contratos-inquilino">
-          {!temImovel ? (
-            <PageTitle title="Contratos" subtitle="Seus contratos de locação: assine aqui na plataforma e acompanhe a situação de cada um." />
-          ) : (
-            <h2 className="mb-3 font-title text-lg font-semibold text-ink">Contratos em que você é o morador</h2>
-          )}
-          <ContratosInquilino contratos={doInquilino} />
-        </section>
-      )}
-      {/* Prompt 39-B1: "Recibos e notas" no celular é um bloco da aba Ganhos (no computador, item do menu). */}
-      {temImovel && <BlocoRecibosDono />}
-      {temImovel && <ContratosClient contratos={contratos} hojeISO={hojeISO} extras={extras} conferenciaPendente={conferenciaPendente} />}
-    </>
+  const inquilino = (
+    <section className="mb-8" data-testid="secao-contratos-inquilino">
+      <PageTitle title="Contratos" subtitle="Seus contratos de locação: assine aqui na plataforma e acompanhe a situação de cada um." />
+      <ContratosInquilino contratos={doInquilino} />
+    </section>
   );
+  const dono = temImovel ? (
+    <>
+      {/* Prompt 39-B1: "Recibos e notas" no celular é um bloco da aba Ganhos (no computador, item do menu). */}
+      <BlocoRecibosDono />
+      <ContratosClient contratos={contratos} hojeISO={hojeISO} extras={extras} conferenciaPendente={conferenciaPendente} />
+    </>
+  ) : null;
+  return <ContratosPorModo inquilino={inquilino} dono={dono} temInquilino={doInquilino.length > 0} />;
 }

@@ -32,5 +32,6 @@ test("qualificação elegível do imóvel: está qualificado", () => {
 test("a tela lê a qualificação do imóvel do servidor ao retomar rascunho", () => {
   const pagina = readFileSync(join(process.cwd(), "src/app/(dashboard)/dashboard/imoveis/novo/page.tsx"), "utf8");
   assert.match(pagina, /carregarQualificacao\(draftParam\)/);
-  assert.match(pagina, /setQualificado\(qualificadoDoServidor\(/);
+  // E132-A: a qualificação antiga do servidor abre as declarações do Passo 10 (sem sobrescrever o que o rascunho já tem).
+  assert.match(pagina, /declaracoesRespondidas\(d\) \? d :/);
 });

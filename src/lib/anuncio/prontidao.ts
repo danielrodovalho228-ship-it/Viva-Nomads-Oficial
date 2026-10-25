@@ -157,7 +157,8 @@ export const OBRIGATORIOS_ROTULOS = [
 export const ROTULO_FALTA_CONFORTO = "Padrão mínimo da Viva confirmado";
 
 /** Item da qualificação no portão único (prompt 22). */
-export const ROTULO_QUALIFICACAO = "Antes de anunciar (qualificação do imóvel)";
+/** E132-A: os requisitos legais viraram declarações do cartão "Antes de publicar" (Passo 10). */
+export const ROTULO_QUALIFICACAO = "Declarações do imóvel (IPTU, água, luz e gás)";
 
 export function textoVagaNoPlano(limite?: number | null, ativos?: number | null): string {
   const n = typeof limite === "number" && limite > 0 && Number.isFinite(limite) ? limite : null;
@@ -189,7 +190,7 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: ETAPA.revisao, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
   ];
   if (f.qualificacaoOk !== undefined) {
-    obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: ETAPA.tipo, detalhe: f.qualificacaoOk ? undefined : "leva poucos minutos" });
+    obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: ETAPA.revisao, detalhe: f.qualificacaoOk ? undefined : "um toque cada, no “Antes de publicar”" });
   }
   if (f.tipoEntradaOk === false) {
     obrigatorios.push({ key: "tipo_entrada", label: ROTULO_FALTA_TIPO_ENTRADA, ok: false, etapa: ETAPA.regras, detalhe: "porteiro, chave, cofre ou fechadura com código" });

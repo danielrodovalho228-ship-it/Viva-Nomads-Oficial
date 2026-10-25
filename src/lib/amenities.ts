@@ -150,6 +150,14 @@ function perfilDoTipo(tipo: string | null | undefined): PerfilDoTipo {
   return "tudo";
 }
 
+/**
+ * E132-A: o imóvel fica em condomínio (prédio — apartamento, studio, loft, cobertura, flat, quarto — ou casa de
+ * condomínio)? A mesma fonte de tipo do E111. Casa e chácara: não (a pergunta da convenção não aparece).
+ */
+export function tipoEmCondominio(tipo: string | null | undefined): boolean {
+  return perfilDoTipo(tipo) !== "casa";
+}
+
 /** A comodidade aparece (e conta) para este tipo de imóvel? */
 export function comodidadeValeParaTipo(chave: string, tipo: string | null | undefined): boolean {
   const perfil = perfilDoTipo(tipo);

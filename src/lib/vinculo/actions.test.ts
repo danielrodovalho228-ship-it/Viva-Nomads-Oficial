@@ -44,3 +44,16 @@ test("o e-mail do código existe, diz 15 minutos e não fala de duas etapas", as
   assert.doesNotMatch(m.html + m.text, /duas etapas|vistoria|apartamento/i);
   assert.match(m.assunto, /· Viva Nomads$/);
 });
+
+test("meuVinculo lê só a linha da sessão e só devolve o domínio quando confirmado", () => {
+  const c = corpo("meuVinculo");
+  assert.match(c, /await sessao\(\)/);
+  assert.match(c, /\.eq\("user_id", s\.user\.id\)/);
+  assert.match(c, /data\?\.confirmado_em \? \{ dominio/);
+  assert.doesNotMatch(c, /codigo_hash/);
+});
+
+test("actions.ts exporta só funções (arquivo use server); as frases ficam em textos.ts", () => {
+  assert.doesNotMatch(src, /^export const /m);
+  assert.match(src, /from "\.\/textos"/);
+});

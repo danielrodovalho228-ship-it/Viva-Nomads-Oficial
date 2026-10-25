@@ -12,13 +12,17 @@ test.describe("T-NOVO — Novo anúncio começa pelo passo 1 (Tipo) @criticos", 
       await page.getByRole("link", { name: /Novo anúncio/ }).first().click();
       await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo/);
       await expect(page).not.toHaveURL(/qualificar/);
+      // E132-A: o cadastro novo abre na Qualificação; "Responder depois" leva ao Passo 1.
+      await page.getByTestId("qualificacao-depois").click();
       await noPasso(page, "tipo");
     });
   }
 
-  test("/qualificar sem imóvel redireciona para o cadastro (passo 1, Tipo)", async ({ page }) => {
+  test("/qualificar sem imóvel redireciona para o cadastro (a Qualificação, E132-A)", async ({ page }) => {
     await page.goto("/qualificar", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo/);
+    await expect(page.getByTestId("qualificacao")).toBeVisible({ timeout: 20_000 });
+    await page.getByTestId("qualificacao-depois").click();
     await noPasso(page, "tipo");
   });
 

@@ -19,7 +19,8 @@
         "t310-vao-fim-de-pagina",
         "t343-nivel-busca-sem-beco",
         "t352-varredura-bloco17",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t483-menu-mais-fecha"
       ]
     },
     "/acesso-socios": {
@@ -378,7 +379,8 @@
         "t306-varredura-bloco7",
         "t317-email-unico-49c1",
         "t353-varredura-bloco18",
-        "t471-login-apple"
+        "t471-login-apple",
+        "t522-login-google-sem-apple"
       ]
     },
     "/auth/pronto": {
@@ -601,7 +603,8 @@
         "t416-varredura-bloco33",
         "t459-prop1-navegacao-dono",
         "t418-varredura-bloco35",
-        "t464-prop6-inicio-dono"
+        "t464-prop6-inicio-dono",
+        "t480-menus5-morador-nav"
       ]
     },
     "/dashboard/assinatura": {
@@ -713,7 +716,8 @@
         "t354-varredura-bloco19",
         "t392-varredura-bloco24",
         "t403-nav-a",
-        "t402-conta-leva2"
+        "t402-conta-leva2",
+        "t482-e170-caixas-vazias"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -847,7 +851,8 @@
         "t39-app-ida-e-volta",
         "t183-telas-logadas-390",
         "t266-painel-42",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t482-e170-caixas-vazias"
       ]
     },
     "/dashboard/garantias": {
@@ -972,6 +977,11 @@
         "t477-e141-passo5-comodidades",
         "t479-e136b-calendario-pt-br",
         "t478-e164-previa-foto-principal",
+        "t520-e134-contadores-valores-grandes",
+        "t523-e133-limite-7-8-troca",
+        "t524-passo8-conta-meses",
+        "t525-e161-rascunho-cheio",
+        "t481-e132a-qualificacao",
         "t530-e135-um-campo-vazio",
         "t531-e136-datas-ptbr-revisao",
         "t532-e137-janela-24-e-duplo-clique",
@@ -1568,6 +1578,7 @@
         "t237-correcoes-35a",
         "t241-contas-teste-36",
         "t312-varredura-bloco9",
+        "t481-e132a-qualificacao",
         "t535-e153-documento-um-lugar"
       ]
     },
@@ -2183,7 +2194,8 @@
         "proprietario"
       ],
       "specs": [
-        "t470-qa-leitor-caixas"
+        "t470-qa-leitor-caixas",
+        "t521-qa-caixa-sem-token"
       ]
     }
   },
@@ -6094,6 +6106,13 @@
       "specs": []
     },
     "src/lib/vinculo/actions.ts#confirmarVinculo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/vinculo/actions.ts#meuVinculo": {
       "personas": [
         "inquilino",
         "proprietario"

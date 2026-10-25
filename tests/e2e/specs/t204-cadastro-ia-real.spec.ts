@@ -146,40 +146,25 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       await d.fechar();
     });
 
-    test(`${largura}px — portão único: "Antes de anunciar" já no passo 1, abre no painel; revisão com uma lista só`, async ({ browser }) => {
+    test(`${largura}px — portão único (E132-A): Passo 1 só com o tipo; as declarações moram no "Antes de publicar" da revisão`, async ({ browser }) => {
       test.setTimeout(120_000);
       const d = await novoDono(browser, largura);
       ids.push(d.id);
       const { page } = d;
-      // 10 passos: o "Antes de anunciar" pendente aparece no próprio passo 1 (Tipo), no lugar do cartão recolhível
-      // "Pronto para publicar" que ficava no topo de cada passo (a lista completa segue na revisão, abaixo).
+      // E132-A: a caixa "Antes de anunciar" e o painel saíram do Passo 1 (a Qualificação vem antes, como etapa própria).
       await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
-      const portao = page.getByTestId("tipo-qualificacao");
-      await expect(portao).toBeVisible({ timeout: 30_000 });
-      await expect(portao).toContainText("Antes de anunciar");
+      await expect(page.getByTestId("passo-titulo")).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByTestId("tipo-qualificacao")).toHaveCount(0);
+      await expect(page.getByTestId("painel-qualificacao")).toHaveCount(0);
       await expect(page.getByTestId("checklist-publicar")).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t204-portao-passo1-${largura}.png`, fullPage: false });
-      await portao.getByRole("button", { name: "Responder agora" }).click();
-      const painel = page.getByTestId("painel-qualificacao");
-      await expect(painel).toBeVisible();
-      await expect(painel).toContainText("Requisitos obrigatórios");
-      await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo/); // não saiu do cadastro
-      await page.screenshot({ path: `${SAIDA}/t204-painel-qualificacao-${largura}.png`, fullPage: false });
-      await page.getByTestId("painel-qualificacao-fechar").click();
-      await expect(painel).toHaveCount(0);
 
-      // Revisão: uma lista só (a qualificação é item dela) — nada de segundo aviso no fim.
+      // Revisão: uma lista só, e os requisitos legais viram declarações de um toque no "Antes de publicar".
       const id = await rascunho(d.id, { title: "Rascunho do T204", street: "Avenida João Naves de Ávila", numero: "100", cep: "38408-000", neighborhood: "Santa Mônica", city: "Uberlândia" });
       await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("etapa-revisar")).toBeVisible({ timeout: 30_000 });
-      // Mockup cadastro-imovel-10: a lista de conferência agrupa por passo; a qualificação é do passo Tipo.
-      const lista = page.getByTestId("etapa-revisar").getByTestId("lista-conferencia");
-      await expect(lista.getByTestId("conferencia-tipo")).toHaveAttribute("data-ok", "0");
       await expect(page.getByTestId("aviso-qualificacao")).toHaveCount(0);
-      await lista.getByTestId("conferencia-resolver-tipo").click();
-      await expect(page.getByTestId("painel-qualificacao")).toBeVisible();
-      await page.keyboard.press("Escape");
-      await expect(page.getByTestId("painel-qualificacao")).toHaveCount(0);
+      await expect(page.getByTestId("declaracoes-passo10")).toBeVisible();
       await semRolagemLateral(page);
       await d.fechar();
     });

@@ -124,7 +124,9 @@ test.describe("T263 — Regressão visual do Prompt 41", () => {
         await page.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => undefined); // o painel mantém conexão aberta
           const barra = page.locator(largura === 1280 ? 'nav[aria-label="Abas do app"]' : 'nav[aria-label="Navegação principal"]');
           await expect(barra).toBeVisible();
-          await expect(barra.getByRole("link")).toHaveCount(5);
+          // MENUS-5: até 5 abas; o morador sem contrato não tem "Estadia" (4).
+          await expect(barra.getByRole("link").nth(3)).toBeVisible();
+          expect(await barra.getByRole("link").count()).toBeLessThanOrEqual(5);
           await pronta(page);
           const nome = papel === "inquilino" ? "morador" : "proprietario";
           await expect(barra).toHaveScreenshot(`${n}-barra-${nome}-${largura}${largura === 1280 ? "-app" : ""}.png`, { mask: mascaras(page) });

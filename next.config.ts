@@ -46,6 +46,9 @@ const nextConfig: NextConfig = {
       // 301 para a raiz. Antes "/" redirecionava para "/home" e as duas ficavam
       // no sitemap/canonical — conteúdo duplicado.
       { source: "/home", destination: "/", permanent: true },
+      // E132-A, item 10: /qualificar sem ?imovel abre o cadastro novo (que começa pela Qualificação). Aqui, e não só no
+      // redirect() da página: dentro da casca do painel o redirect da página não navegava (a tela ficava vazia).
+      { source: "/qualificar", missing: [{ type: "query" as const, key: "imovel" }], destination: "/dashboard/imoveis/novo", permanent: false },
       // /planos é natural de digitar e pode ter links antigos; a página canônica
       // é /precos (o rótulo "Planos" no menu/rodapé já aponta para /precos).
       { source: "/planos", destination: "/precos", permanent: true },
