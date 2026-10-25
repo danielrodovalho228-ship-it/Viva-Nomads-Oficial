@@ -2,10 +2,8 @@ import Link from "next/link";
 import { Check, Scale } from "lucide-react";
 import { COMPARE_ALUGUEL, COMPARE_CONTRATO, COMPARE_MESES, COMPARE_RODAPE, DIFERENCIAIS_VIVA, linhasPublicas, type LinhaCompare } from "@/config/compare-precos";
 import { reaisInteiros } from "@/config/planos";
-import { TAXA_COMISSAO_PADRAO, comissaoSobreContrato, pctTexto } from "@/lib/cobranca/regra";
+import { pctTexto } from "@/lib/cobranca/regra";
 import { cartoesCompare, type CartaoCompare } from "@/lib/precos-pagina";
-
-const MESES_EXEMPLO = COMPARE_MESES;
 
 /**
  * "Compare" — regra única de 12% × o que o mercado cobra. Números só de
@@ -17,7 +15,6 @@ function dataBR(iso: string): string {
   return `${d}/${m}/${a}`;
 }
 
-const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const aprox = (p: number) => `≈ ${pctTexto(p)}`;
 
 function Fonte({ l }: { l: Pick<LinhaCompare, "fonte" | "conferidoEm"> | CartaoCompare }) {
@@ -122,19 +119,5 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
       </ul>
       <p className="mt-4 text-xs text-muted">{COMPARE_RODAPE}</p>
     </section>
-  );
-}
-
-/** Linha da etapa de preço do Anunciar: "Você paga R$ X uma vez." */
-export function LinhaComparativoAnuncio({ aluguel, meses = MESES_EXEMPLO }: { aluguel: number; meses?: number }) {
-  if (!(aluguel > 0) || !(meses > 0)) return null;
-  const valor = comissaoSobreContrato(aluguel, meses, TAXA_COMISSAO_PADRAO);
-  return (
-    <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-ink" data-testid="linha-comparativo">
-      Num contrato de {meses} {meses === 1 ? "mês" : "meses"} neste valor mensal, a taxa de serviço é de <strong>{brl(valor)} uma vez</strong> ({pctTexto(TAXA_COMISSAO_PADRAO)} sobre o valor total do contrato para quem tem 1 ou 2 imóveis; menor com mais imóveis), só quando o contrato é fechado.{" "}
-      <Link href="/precos" className="web-only font-medium text-forest underline">
-        Ver preços
-      </Link>
-    </p>
   );
 }
