@@ -95,6 +95,9 @@ test.describe("T476 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
 
     // Com 30 dias a janela cabe e o Continuar avança.
     await p.getByTestId("disponivel-ate").fill(dia(32));
+    // Primeiro o valor (o texto pt-BR do campo), depois o aviso: separa "não entrou" de "não recalculou".
+    await expect(p.getByTestId("disponivel-ate")).toHaveValue(dia(32));
+    await expect(p.getByTestId("disponivel-ate-texto")).toHaveText(br(dia(32)));
     await expect(p.getByTestId("janela-curta")).toHaveCount(0);
     await p.getByTestId("cadastro-continuar").tap();
     await noPasso(p, "revisao", 20_000);
