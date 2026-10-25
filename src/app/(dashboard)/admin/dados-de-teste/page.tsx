@@ -10,8 +10,9 @@ import { ACOES_DADOS_TESTE, ACOES_JORNADA, ALVOS_JORNADA, ROTULO_ACAO_DADOS_TEST
 import { EncerrarJornadasTeste } from "./encerrar-jornadas";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { SemearCarteiraTeste } from "./semear-carteira";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Dados de teste — Admin" };
+export const metadata = { title: tituloDoAdmin("/admin/dados-de-teste") };
 export const dynamic = "force-dynamic";
 
 /**
@@ -58,7 +59,7 @@ export default async function AdminDadosDeTestePage() {
 
   return (
     <div data-testid="admin-dados-de-teste">
-      <PageTitle title="Dados de teste" subtitle="Ações que só valem para contas de teste (is_teste) e anúncios [TESTE QA]. Cada botão pede confirmação e fica no registro." />
+      <PageTitle title={rotuloDoAdmin("/admin/dados-de-teste")} subtitle="Ações que só valem para contas de teste (is_teste) e anúncios [TESTE QA]. Cada botão pede confirmação e fica no registro." />
       <Panel title="Caixa de e-mails de teste" className="mb-6">
         <p className="text-sm text-muted">
           Os e-mails enviados às contas de teste (recibos, códigos, avisos) ficam guardados para conferência.{" "}

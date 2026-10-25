@@ -5,7 +5,7 @@ import { estadoCaucao } from "@/lib/caucao-estado";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { CampoData } from "@/components/ui/campo-data";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
@@ -48,6 +48,7 @@ import { type EtapaContrato } from "@/lib/contrato-etapas";
 import { rotuloDoBloco } from "@/lib/bloco-status";
 import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
+import { hrefContratoDono } from "@/lib/contratos/area-dono";
 
 /** Texto imutável da regra de ouro (declaratório — nunca movimenta valores). */
 const REGRA_PAGAMENTO =
@@ -148,12 +149,22 @@ export function ContratosClient({
   contratos: real,
   hojeISO,
   extras = {},
+  conferenciaPendente = null,
 }: {
   contratos: ContratoView[];
   hojeISO: string;
   extras?: Extras;
+  /** PROP-5: o contrato com a conferência de entrada pendente (o atalho #conferencia abre ele). */
+  conferenciaPendente?: string | null;
 }) {
   const { on: demoOn } = useDemoMode();
+  const router = useRouter();
+  // PROP-5: a conferência mora dentro do contrato. O atalho antigo /dashboard/contratos#conferencia leva ao contrato com
+  // a conferência pendente; sem pendência, a lista fica onde está.
+  useEffect(() => {
+    if (demoOn || !conferenciaPendente || window.location.hash !== "#conferencia") return;
+    router.replace(`${hrefContratoDono(conferenciaPendente)}#conferencia`);
+  }, [demoOn, conferenciaPendente, router]);
   const demoContratos = useMemo(() => buildDemoContratos(hojeISO), [hojeISO]);
   const contratos = demoOn ? demoContratos : real;
 
@@ -172,11 +183,10 @@ export function ContratosClient({
         <span>{REGRA_PAGAMENTO}</span>
       </div>
 
-      {/* Âncora do menu "Conferência de entrada" (ordem 9f3085d8): a conferência é por
-          contrato — abra o contrato para registrar a entrada e a saída. */}
-      <p id="conferencia" className="mb-6 scroll-mt-24 text-sm text-muted">
-        <strong className="font-semibold text-ink">Conferência de entrada e saída:</strong> abra o contrato
-        abaixo para registrar o estado do imóvel na entrada e na saída do morador.
+      {/* PROP-5: a conferência é uma etapa dentro de cada contrato (linha do tempo do detalhe). A âncora fica para o
+          atalho antigo quando não há conferência pendente. */}
+      <p id="conferencia" className="mb-6 scroll-mt-24 text-sm text-muted" data-testid="contratos-conferencia-aviso">
+        <strong className="font-semibold text-ink">Conferência de entrada e saída:</strong> fica dentro de cada contrato, na linha do tempo da estadia.
       </p>
 
       {contratos.length === 0 ? (
