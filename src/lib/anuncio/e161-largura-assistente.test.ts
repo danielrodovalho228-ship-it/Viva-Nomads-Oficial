@@ -50,3 +50,7 @@ test("E161: a faixa da direita do flutuante (CONTA-A C4) não vale no assistente
   assert.match(css, /html:not\(\[data-app\]\) \[data-painel-main\]:not\(\[data-testid="assistente-largura"\]\) \{\s*padding-right: 5rem;/);
   assert.match(MOLDURA, /data-painel-main[^>]*data-testid="assistente-largura"/);
 });
+
+test("E161: o botão do tamanho real aparece uma vez no passo (sem bloco duplicado)", () => {
+  assert.equal((NOVO.match(/data-testid="previa-tamanho-real-passo"/g) ?? []).length, 1);
+});

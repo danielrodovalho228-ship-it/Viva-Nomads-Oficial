@@ -1382,10 +1382,6 @@ export default function NewPropertyPage() {
           <div className={cn("mt-2", step !== ETAPA.revisao && "lg:hidden")} data-testid="previa-tamanho-real-passo">
             <BotaoTamanhoReal imovel={previewProperty} />
           </div>
-          {/* E161: no celular (sem a prévia lateral) e na Revisão (sem coluna lateral), o anúncio no tamanho real fica aqui. */}
-          <div className={cn("mt-2", step !== ETAPA.revisao && "lg:hidden")} data-testid="previa-tamanho-real-passo">
-            <BotaoTamanhoReal imovel={previewProperty} />
-          </div>
           <h1 className={cn(TITULO_PASSO_CADASTRO, "mt-3")} data-testid="passo-titulo">
             {meta.title}
           </h1>
