@@ -137,7 +137,8 @@ test("ficha e cadastro: blocos montados nas telas certas", () => {
   for (const id of ["nivel-diferenciais", "nivel-ruido", "nivel-extras"]) assert.match(bloco, new RegExp(`data-testid="${id}"`));
   const cadastro = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
   const comodidades = cadastro.slice(cadastro.indexOf("{step === ETAPA.comodidades && ("), cadastro.indexOf("{step === ETAPA.regras && ("));
-  assert.match(comodidades, /<NivelNoCadastro propertyId=\{imovelId\} conforto=\{conforto\} sugeridas=\{sugeridasFotos\} recarregar=\{nivelVersao\} \/>/);
+  // Detecção-A: o nível também avisa o que falta foto (onFaltaFoto) para o alerta do topo do passo.
+  assert.match(comodidades, /<NivelNoCadastro propertyId=\{imovelId\} conforto=\{conforto\} sugeridas=\{sugeridasFotos\} recarregar=\{nivelVersao\} onFaltaFoto=\{setFaltaFoto\} \/>/);
   // DETECTA-B: as sugestões das fotos ficam logo antes do nível, no mesmo passo.
   assert.ok(comodidades.indexOf("<SugestoesDasFotos") >= 0 && comodidades.indexOf("<SugestoesDasFotos") < comodidades.indexOf("<NivelNoCadastro"));
   assert.match(ler("components/niveis/nivel-cadastro.tsx"), /nivel-cadastro-foto-\$\{item\.chave\}/);

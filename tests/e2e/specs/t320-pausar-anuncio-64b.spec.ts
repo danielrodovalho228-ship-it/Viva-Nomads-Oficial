@@ -45,7 +45,8 @@ test.describe("T320 — pausar anúncio, limite do plano e aceite de IA (64-B)",
     const bloco = p.getByTestId("bloco-limite");
     await expect(bloco).toHaveAttribute("data-ativos", "4");
     await expect(bloco).toContainText("4 publicados — seu plano permite 1");
-    await expect(bloco).toContainText("pause 4 anúncios");
+    // PROP-3 (E114): no painel, a pausar = publicados − limite (4 − 1 = 3); para publicar mais um, a prontidão pede 4.
+    await expect(bloco).toContainText("pause 3 anúncios");
     await p.screenshot({ path: `${SAIDA}/t320-limite-390.png`, fullPage: true });
     await p.goto(`/dashboard/imoveis/${ids.rascunho}/editar`, { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("prontidao").locator("..")).toContainText("pause 4 anúncios", { timeout: 20_000 });

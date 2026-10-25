@@ -131,3 +131,14 @@ test("renovação só cabe até 180 dias no total", () => {
   assert.equal(PRAZO_MAX_DIAS, 180);
   assert.equal(PRAZO_MAX_MESES, 6);
 });
+
+test("PROP-3 (E115): o percentual da caução vem do valor real — 50% no bloco cheio, menos quando o teto de 3 aluguéis corta", async () => {
+  const { percentualCaucao, caucaoDoBloco } = await import("./contrato-blocos.ts");
+  assert.equal(percentualCaucao(3200, 6400), "50%");
+  // 3 blocos de 2 meses a 3.200: o 3º bloco só completa o teto de 3 aluguéis (9.600 − 6.400 = 3.200 → 50%); com 4 meses
+  // por bloco o teto corta: 12.800 × 50% = 6.400, mas só cabem 9.600 no total.
+  const segundo = caucaoDoBloco(12800, 3200, 6400);
+  assert.equal(segundo, 3200);
+  assert.equal(percentualCaucao(segundo, 12800), "25%");
+  assert.equal(percentualCaucao(100, 0), "—");
+});

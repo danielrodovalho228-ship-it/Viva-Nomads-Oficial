@@ -9,6 +9,7 @@ import { CONFIRMACAO_PENDENCIA_H, type PapelPendencia } from "@/lib/conforto/reg
 import { agirNaPendencia } from "@/lib/data/conforto-actions";
 import type { PendenciaParaTela } from "@/lib/conforto/servidor";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { statusHumano } from "@/lib/status-humano";
 
 const ROTULO_STATUS: Record<string, string> = {
   aberta: "Aberta",
@@ -84,7 +85,7 @@ function Linha({ papel, p: doServidor }: { papel: PapelPendencia; p: PendenciaPa
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="font-semibold text-ink">{rotulo}</p>
         <span className="text-xs text-muted" data-testid="pendencia-conforto-status">
-          {p.status === "corrigida" && p.fechada ? "Corrigida e confirmada" : ROTULO_STATUS[p.status] ?? p.status}
+          {p.status === "corrigida" && p.fechada ? "Corrigida e confirmada" : ROTULO_STATUS[p.status] ?? statusHumano(p.status)}
         </span>
       </div>
       {p.texto_morador && <p className="mt-1 break-words text-muted">Morador: {p.texto_morador}</p>}
