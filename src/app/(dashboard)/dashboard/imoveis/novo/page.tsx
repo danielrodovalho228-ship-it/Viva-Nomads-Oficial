@@ -761,6 +761,8 @@ export default function NewPropertyPage() {
       const salvas = declaracoesDoRascunho(d.declaracoesPasso10);
       if (declaracoesRespondidas(salvas)) setDeclaracoes(salvas);
     }
+    // E149-A: o documento enviado no começo do cadastro continua "enviado no início" no Passo 10 depois de recarregar.
+    if (d.documentoNoInicio === true) setDocumentoNoInicio(true);
     // Rascunho das ordens antigas (7 etapas) abre na primeira etapa ainda incompleta.
     setStep(etapaDoRascunho(d));
     setEtapaMax(posMaxDoRascunho(d));
@@ -932,6 +934,7 @@ export default function NewPropertyPage() {
     qual,
     qualificacaoConforto: qualConf,
     declaracoesPasso10: declaracoes,
+    documentoNoInicio,
     aceiteIa: aceiteParaRascunho(aceiteValido, title, description),
     photos: photos.filter((p) => p.url && !p.url.startsWith("blob:")),
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
