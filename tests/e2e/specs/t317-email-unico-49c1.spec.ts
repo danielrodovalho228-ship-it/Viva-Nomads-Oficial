@@ -124,10 +124,11 @@ test.describe("T317 — e-mail único com código (49-C1)", () => {
     await ctx.close();
   });
 
-  test("4. /admin: cartão 'Entrada por e-mail' com a validade da constante", async ({ browser }) => {
+  test("4. /admin/sistema: cartão 'Entrada por e-mail' com a validade da constante", async ({ browser }) => {
     const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
     const p = await ctx.newPage();
-    await p.goto("/admin", { waitUntil: "domcontentloaded" });
+    // ADMIN-4 (#1354): o cartão saiu do Início do admin e mora em "Chaves e integrações" (/admin/sistema).
+    await p.goto("/admin/sistema", { waitUntil: "domcontentloaded" });
     const cartao = p.getByTestId("admin-entrada-email");
     await expect(cartao).toBeVisible({ timeout: 20_000 });
     await expect(cartao).toContainText("10 minutos");
