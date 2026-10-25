@@ -195,10 +195,12 @@ test.describe("T71 — topo da /buscar", () => {
 
     await page.getByTestId("pilula-mais").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
-    await painel.getByRole("button", { name: "Aceita pets", exact: true }).click();
+    // E131: as facetas contam na mesma base da lista; faceta sem imóvel fica desligada. Liga a primeira que tem.
+    const antes = page.url();
+    await painel.locator('button[data-testid^="faceta-"][aria-pressed="false"]:not([disabled])').first().click();
     await painel.getByTestId("aplicar-filtros").click();
-    // E91: a contagem não diz mais o filtro ("que aceitam pets" saiu do título).
-    await expect(page).toHaveURL(/pet=1/);
+    // E91: a contagem não diz o filtro no título.
+    await expect.poll(() => page.url()).not.toBe(antes);
     await expect(titulo).toHaveText(/^(\d+ imóve(l|is) em Uberlândia|Nenhum imóvel com estes filtros)$/);
     expect(await contar(page)).toBeLessThanOrEqual(naCidade);
     expect(await semRolagem(page)).toBeLessThanOrEqual(1);
