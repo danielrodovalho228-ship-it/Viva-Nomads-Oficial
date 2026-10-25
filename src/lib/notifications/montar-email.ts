@@ -109,6 +109,26 @@ export function emailCodigo2fa(siteUrl: string, o: { codigo: string }): EmailMon
   };
 }
 
+/** Código de 6 dígitos para confirmar o vínculo profissional (e-mail corporativo). Só o código; nada além do domínio vai para o perfil. */
+export function emailCodigoVinculo(siteUrl: string, o: { codigo: string }): EmailMontado {
+  const img = imagemDoEvento("recuperacao_2fa");
+  return {
+    evento: "vinculo_codigo",
+    assunto: comMarca(ASSUNTOS.codigoVinculo),
+    titulo: ASSUNTOS.codigoVinculo,
+    html: corpoCodigo(siteUrl, {
+      title: ASSUNTOS.codigoVinculo,
+      intro: "Use o código abaixo para confirmar o seu e-mail profissional no Viva Nomads. Ele vale por 15 minutos.",
+      code: o.codigo,
+      outro: "Se não foi você, ignore este e-mail. Nunca passe este código a ninguém.",
+      image: imagemEmail(siteUrl, img.arquivo, img.alt),
+    }),
+    text: `Seu código para confirmar o e-mail profissional: ${o.codigo}\nVale por 15 minutos. Se não foi você, ignore este e-mail.`,
+    imagem: `${img.arquivo}.jpg`,
+    botao: null,
+  };
+}
+
 /** Confirmação de exclusão de conta: o link (com token) só no botão; o texto puro nunca leva o link. */
 export function emailExclusaoConta(siteUrl: string, o: { url: string }): EmailMontado {
   const img = imagemDoEvento("exclusao_conta");
