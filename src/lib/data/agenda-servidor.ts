@@ -10,6 +10,8 @@ import type { ItemAgenda } from "@/lib/agenda";
   vê nada daqui. Visitas (vídeo e presencial, sem as canceladas), entradas e saídas dos contratos ativos e as datas
   bloqueadas, de todos os imóveis. Nome curto e foto do inquilino SÓ depois do aceite (contrato ou candidatura
   aceita); antes disso a visita mostra só "Interessado(a)".
+  AGENDA-A: a estadia também vem como período (faixa contínua na grade), o bloqueio traz a origem (o importado só
+  a sincronia tira) e a visita traz os horários que as ações do dia precisam.
 */
 
 export interface AgendaDoDono {
@@ -52,7 +54,7 @@ export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
       .in("status", ["pedido", "remarcar", "confirmado", "feito"])
       .limit(500),
     admin.from("contratos").select("id, property_id, tenant_id, status, contrato_blocos(inicio, fim)").in("property_id", ids).eq("status", "ativo"),
-    admin.from("property_blocks").select("id, property_id, inicio, fim").in("property_id", ids),
+    admin.from("property_blocks").select("id, property_id, inicio, fim, origem").in("property_id", ids),
     admin.from("leads").select("tenant_id, property_id").eq("owner_id", user.id).eq("status", "accepted"),
   ]);
 
@@ -94,6 +96,7 @@ export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
       status: v.status,
       pessoa: pessoa(v.tenant_id, v.property_id),
       href: `/dashboard/visitas#visita-${v.id}`,
+      visita: { id: v.id, horarios: v.horarios ?? [], horarioConfirmado: v.horario_confirmado, horarioProposto: v.horario_proposto },
     });
   }
   for (const c of (contratos ?? []) as { id: string; property_id: string; tenant_id: string; contrato_blocos: { inicio: string; fim: string }[] | null }[]) {
@@ -102,10 +105,11 @@ export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
     const inicio = blocos.map((b) => b.inicio).sort()[0];
     const fim = blocos.map((b) => b.fim).sort().at(-1)!;
     const base = { propertyId: c.property_id, imovel: titulo.get(c.property_id) ?? "Imóvel", pessoa: pessoa(c.tenant_id, c.property_id), href: `/dashboard/contratos/${c.id}` };
+    itens.push({ ...base, id: `estadia-${c.id}`, tipo: "estadia", quando: inicio, ate: fim });
     itens.push({ ...base, id: `entrada-${c.id}`, tipo: "entrada", quando: inicio });
     itens.push({ ...base, id: `saida-${c.id}`, tipo: "saida", quando: fim });
   }
-  for (const b of (bloqueios ?? []) as { id: string; property_id: string; inicio: string; fim: string }[]) {
+  for (const b of (bloqueios ?? []) as { id: string; property_id: string; inicio: string; fim: string; origem?: string | null }[]) {
     itens.push({
       id: `bloqueio-${b.id}`,
       tipo: "bloqueio",
@@ -113,6 +117,7 @@ export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
       imovel: titulo.get(b.property_id) ?? "Imóvel",
       quando: b.inicio,
       ate: b.fim,
+      origem: b.origem === "importado" ? "importado" : "manual",
       pessoa: null,
       href: null,
     });

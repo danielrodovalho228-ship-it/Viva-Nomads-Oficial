@@ -2,9 +2,12 @@
   Agenda do proprietário (prompt 23, item 5) — Ferramentas › Agenda. Regras puras (a página e os testes usam as mesmas):
   visitas (vídeo e presencial), entradas e saídas das estadias e datas bloqueadas, de todos os imóveis, por dia no
   horário de Brasília. Nome curto e foto do inquilino só depois do aceite (o servidor já manda null antes).
+
+  AGENDA-A (E83): a estadia vira um item de PERÍODO (faixa contínua do início ao fim, com a entrada e a saída
+  marcadas), o bloqueio pinta todos os dias do período e cada dia diz o que dá para fazer nele (`acaoDoDia`).
 */
 
-export type TipoAgenda = "visita" | "entrada" | "saida" | "bloqueio";
+export type TipoAgenda = "visita" | "entrada" | "saida" | "bloqueio" | "estadia";
 
 export interface ItemAgenda {
   id: string;
@@ -13,8 +16,12 @@ export interface ItemAgenda {
   imovel: string;
   /** Instante (visita, ISO com hora) ou dia (AAAA-MM-DD) das entradas, saídas e bloqueios. */
   quando: string;
-  /** Bloqueio: último dia (AAAA-MM-DD). */
+  /** Bloqueio e estadia: último dia (AAAA-MM-DD). */
   ate?: string | null;
+  /** Bloqueio: "importado" veio do calendário de outro site (só a sincronia tira); "manual" o dono bloqueou. */
+  origem?: "manual" | "importado";
+  /** Visita: o que as ações do dia precisam (as mesmas de /dashboard/visitas). */
+  visita?: VisitaDaAgenda;
   /** Visita: "video" | "presencial" e o status (Pedida / Confirmada / Remarcar). */
   modalidade?: "video" | "presencial";
   status?: string;
@@ -24,12 +31,28 @@ export interface ItemAgenda {
   href: string | null;
 }
 
+export interface VisitaDaAgenda {
+  id: string;
+  horarios: string[];
+  horarioConfirmado: string | null;
+  horarioProposto: string | null;
+}
+
 export const ROTULO_TIPO_AGENDA: Record<TipoAgenda, string> = {
   visita: "Visita",
   entrada: "Entrada",
   saida: "Saída",
   bloqueio: "Bloqueado",
+  estadia: "Estadia",
 };
+
+/** Legenda fixa sob a grade, nesta ordem (cor + ícone na tela). */
+export const LEGENDA_AGENDA = ["Estadia", "Entrada", "Saída", "Bloqueado", "Visita", "Visita a confirmar"] as const;
+
+/** Visita ainda sem horário fechado: pedida (o dono não respondeu) ou com outro horário proposto (o interessado não aceitou). */
+export function visitaAConfirmar(i: ItemAgenda): boolean {
+  return i.tipo === "visita" && (i.status === "pedido" || i.status === "remarcar");
+}
 
 const DATA_PURA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -57,13 +80,17 @@ function somarDias(dia: string, n: number): string {
   return t.toISOString().slice(0, 10);
 }
 
-/** Dias em que o item aparece (o bloqueio ocupa do início ao fim; os demais, um dia só). */
+const DE_PERIODO: TipoAgenda[] = ["bloqueio", "estadia"];
+
+/** Dias em que o item aparece (bloqueio e estadia ocupam do início ao fim; os demais, um dia só). */
 export function diasDoItem(i: ItemAgenda): string[] {
   const ini = diaBrasilia(i.quando);
   if (!ini) return [];
-  if (i.tipo !== "bloqueio" || !i.ate || !DATA_PURA.test(i.ate) || i.ate < ini) return [ini];
+  // Só a parte de data: um "fim" vindo com hora (AAAA-MM-DDT…) não pode encolher o período para o 1º dia.
+  const ate = i.ate ? i.ate.slice(0, 10) : null;
+  if (!DE_PERIODO.includes(i.tipo) || !ate || !DATA_PURA.test(ate) || ate < ini) return [ini];
   const dias: string[] = [];
-  for (let d = ini; d <= i.ate && dias.length < 400; d = somarDias(d, 1)) dias.push(d);
+  for (let d = ini; d <= ate && dias.length < 400; d = somarDias(d, 1)) dias.push(d);
   return dias;
 }
 
@@ -71,9 +98,9 @@ export function filtrarPorImovel(itens: ItemAgenda[], propertyId: string | null)
   return propertyId ? itens.filter((i) => i.propertyId === propertyId) : itens;
 }
 
-const ORDEM_TIPO: Record<TipoAgenda, number> = { saida: 0, entrada: 1, visita: 2, bloqueio: 3 };
+const ORDEM_TIPO: Record<TipoAgenda, number> = { saida: 0, entrada: 1, estadia: 2, visita: 3, bloqueio: 4 };
 
-/** Itens por dia (AAAA-MM-DD), cada dia em ordem: saída, entrada, visitas pela hora, bloqueio. */
+/** Itens por dia (AAAA-MM-DD), cada dia em ordem: saída, entrada, estadia, visitas pela hora, bloqueio. */
 export function agruparPorDia(itens: ItemAgenda[]): Map<string, ItemAgenda[]> {
   const mapa = new Map<string, ItemAgenda[]>();
   for (const i of itens) for (const d of diasDoItem(i)) mapa.set(d, [...(mapa.get(d) ?? []), i]);
@@ -108,4 +135,61 @@ export function gradeDoMes(ano: number, mes: number): { dia: string; doMes: bool
 export function moverMes(ano: number, mes: number, delta: number): { ano: number; mes: number } {
   const t = ano * 12 + (mes - 1) + delta;
   return { ano: Math.floor(t / 12), mes: (t % 12) + 1 };
+}
+
+/** O que um dia tem: as estadias (com a ponta de entrada/saída), os bloqueios e as visitas. */
+export interface EstadoDoDia {
+  estadias: { item: ItemAgenda; entrada: boolean; saida: boolean }[];
+  bloqueios: ItemAgenda[];
+  visitas: ItemAgenda[];
+}
+
+export function estadoDoDia(lista: ItemAgenda[] | undefined, dia: string): EstadoDoDia {
+  const itens = lista ?? [];
+  return {
+    estadias: itens
+      .filter((i) => i.tipo === "estadia")
+      .map((item) => ({ item, entrada: diaBrasilia(item.quando) === dia, saida: (item.ate ?? "").slice(0, 10) === dia })),
+    bloqueios: itens.filter((i) => i.tipo === "bloqueio"),
+    visitas: itens.filter((i) => i.tipo === "visita"),
+  };
+}
+
+/**
+ * A ação que o dia oferece (AGENDA-A, item 2). Bloquear e desbloquear pedem um imóvel escolhido no filtro; dia com
+ * estadia NUNCA bloqueia (mostra a estadia e o contrato); dia passado não bloqueia. Nunca só "nada marcado".
+ */
+export type AcaoDoDia = "escolher-imovel" | "bloquear" | "desbloquear" | "estadia" | "passado";
+
+export function acaoDoDia(estado: EstadoDoDia, dia: string, hoje: string, imovelEscolhido: boolean): AcaoDoDia {
+  if (estado.estadias.length) return "estadia";
+  if (!imovelEscolhido) return "escolher-imovel";
+  if (estado.bloqueios.length) return "desbloquear";
+  if (dia < hoje) return "passado";
+  return "bloquear";
+}
+
+/** O período a bloquear não pode encostar numa estadia (contrato): devolve o 1º dia que conflita, ou null. */
+export function conflitoComEstadia(itens: ItemAgenda[], propertyId: string, inicio: string, fim: string): string | null {
+  for (const i of itens) {
+    if (i.tipo !== "estadia" || i.propertyId !== propertyId) continue;
+    const dias = diasDoItem(i);
+    const choque = dias.find((d) => d >= inicio && d <= fim);
+    if (choque) return choque;
+  }
+  return null;
+}
+
+const MESES_TITULO = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+/** "Outubro de 2026" (só o mês com inicial maiúscula; nada de "De"). mes = 1..12. */
+export function tituloDoMes(ano: number, mes: number): string {
+  return `${MESES_TITULO[mes - 1]} de ${ano}`;
+}
+
+/** O mês mostrado tem algum item? (sem itens, a grade usa células menores). */
+export function mesTemItens(porDia: Map<string, ItemAgenda[]>, ano: number, mes: number): boolean {
+  const prefixo = `${ano}-${String(mes).padStart(2, "0")}-`;
+  for (const [d, l] of porDia) if (d.startsWith(prefixo) && l.length) return true;
+  return false;
 }

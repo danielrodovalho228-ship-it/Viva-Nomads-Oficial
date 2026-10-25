@@ -23,7 +23,16 @@ export const GANHOS_DISPONIVEL = false;
 
 export const ABAS_DONO: readonly AbaDono[] = [
   { id: "inicio", rotulo: "Início", href: "/dashboard" },
-  { id: "anuncios", rotulo: "Anúncios", href: "/dashboard/imoveis" },
+  {
+    id: "anuncios",
+    rotulo: "Anúncios",
+    href: "/dashboard/imoveis",
+    // AGENDA-A: a Agenda é aba de Anúncios (estadias, visitas, bloqueios e a sincronização por imóvel).
+    subabas: [
+      { id: "anuncios", rotulo: "Anúncios", href: "/dashboard/imoveis" },
+      { id: "agenda", rotulo: "Agenda", href: "/dashboard/agenda" },
+    ],
+  },
   {
     id: "interessados",
     rotulo: "Interessados",

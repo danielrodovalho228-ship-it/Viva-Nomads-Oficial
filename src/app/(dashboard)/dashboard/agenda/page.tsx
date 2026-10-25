@@ -13,20 +13,20 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-/** Ferramentas › Agenda (prompt 23): visitas, entradas, saídas e datas bloqueadas de todos os imóveis. */
+/** Anúncios › Agenda (prompt 23; AGENDA-A): estadias, visitas e datas bloqueadas, com bloquear e sincronizar no mesmo lugar. */
 export default async function AgendaPage() {
   const { itens, imoveis } = await carregarAgendaDoDono();
   return (
     <>
-      <PageTitle title="Agenda" subtitle={`Visitas, entradas, saídas e datas bloqueadas de todos os seus imóveis (${ROTULO_FUSO}).`} />
+      <PageTitle title="Agenda" subtitle={`Estadias, visitas e datas bloqueadas dos seus imóveis (${ROTULO_FUSO}).`} />
       {imoveis.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
           title="Nenhum imóvel ainda"
-          text="Quando você anunciar, as visitas e as estadias de todos os imóveis aparecem aqui num calendário só."
+          text="Cadastre um imóvel para ver aqui as estadias, as visitas e as datas bloqueadas num calendário só."
           action={
-            <ButtonLink href="/dashboard/imoveis/novo" variant="primary">
-              Anunciar imóvel
+            <ButtonLink href="/dashboard/imoveis/novo" variant="primary" data-testid="agenda-cadastrar-imovel">
+              Cadastrar imóvel
             </ButtonLink>
           }
         />

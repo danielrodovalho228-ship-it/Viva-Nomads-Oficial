@@ -124,6 +124,8 @@ const PROPRIETARIO: ItemDoPapel[] = [
     icone: "imoveis",
     filhos: [
       { id: "imoveis-lista", rotulo: "Anúncios", icone: "imoveis", href: "/dashboard/imoveis" },
+      // AGENDA-A: a Agenda é aba de Anúncios (antes em Ferramentas).
+      { id: "agenda", rotulo: "Agenda", icone: "visitas", href: "/dashboard/agenda", quando: (ctx) => ctx.temImovel },
       { id: "interessados", rotulo: "Interessados", icone: "interessados", href: "/dashboard/leads" },
       { id: "pedidos-cidade", rotulo: "Pedidos de moradia", icone: "pedidosCidade", href: "/dashboard/pedidos-cidade" },
       { id: "fechamento", rotulo: "Fechamento", icone: "fechamento", href: "/dashboard/fechamento" },
@@ -153,7 +155,6 @@ const FERRAMENTAS_E_CONTA: ItemDoPapel[] = [
     icone: "ferramentas",
     filhos: [
       { id: "ferramentas-todas", rotulo: "Todas as ferramentas", icone: "ferramentas", href: "/dashboard/ferramentas" },
-      { id: "agenda", rotulo: "Agenda", icone: "visitas", href: "/dashboard/agenda", quando: (ctx) => ctx.temImovel },
       { id: "simulador", rotulo: "Simulador de rentabilidade", icone: "simulador", href: "/dashboard/simulador" },
       { id: "roi", rotulo: "Calculadora de ROI", icone: "roi", href: "/dashboard/roi-imovel" },
       // Prompt 42, item 4: o simulador PF × PJ (já em /dashboard/tributacao e no hub) também no menu.

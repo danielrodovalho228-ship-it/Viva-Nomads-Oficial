@@ -12,6 +12,7 @@ test("abas do topo (snapshot): Início · Anúncios · Interessados · Contratos
     ABAS_DONO.map((a) => [a.rotulo, a.href]),
     [["Início", "/dashboard"], ["Anúncios", "/dashboard/imoveis"], ["Interessados", "/dashboard/leads"], ["Contratos", "/dashboard/contratos"], ["Mensagens", "/dashboard/mensagens"]],
   );
+  assert.deepEqual(ABAS_DONO.find((a) => a.id === "anuncios")!.subabas!.map((s) => s.rotulo), ["Anúncios", "Agenda"]);
   assert.deepEqual(ABAS_DONO.find((a) => a.id === "interessados")!.subabas!.map((s) => s.rotulo), ["Interessados", "Propostas", "Fechamento", "Pedidos na cidade"]);
   assert.deepEqual(ABAS_DONO.find((a) => a.id === "contratos")!.subabas!.map((s) => s.rotulo), ["Contratos", "Caução", "Recibos e notas"]);
   assert.equal(GANHOS_DISPONIVEL, false, "Ganhos nasce no PROP-4; até lá a subaba não aparece");
@@ -33,7 +34,8 @@ test("toda aba, subaba e item da Conta aponta para uma tela que existe (rotas an
 test("aba ativa certa nas subrotas", () => {
   const casos: Array<[string, string | null, string | null]> = [
     ["/dashboard", "inicio", null],
-    ["/dashboard/imoveis/123/editar", "anuncios", null],
+    ["/dashboard/imoveis/123/editar", "anuncios", "anuncios"],
+    ["/dashboard/agenda", "anuncios", "agenda"],
     ["/dashboard/leads", "interessados", "interessados"],
     ["/dashboard/orcamentos", "interessados", "propostas"],
     ["/dashboard/propostas", "interessados", "propostas"],
