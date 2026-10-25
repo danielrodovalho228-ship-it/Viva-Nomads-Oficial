@@ -20,6 +20,7 @@ import {
 } from "@/lib/admin/indicadores";
 import { FILAS, ORDEM_FILAS, filaDaCategoria } from "@/lib/atendimento/filas";
 import { apagarMacro, salvarMacro, testarViva, type ChamadoAdmin, type Macro, type ResultadoCenario } from "@/lib/data/atendimento-actions";
+import { rotuloDoAdmin } from "@/config/menu-admin";
 
 const ABAS = [
   { id: "fila", rotulo: "Fila" },
@@ -82,7 +83,7 @@ export function AtendimentoClient({
   const agora = new Date(agoraISO);
   return (
     <>
-      <PageTitle title="Atendimento" subtitle="Chamados por prioridade e prazo. Simulações ficam fora." />
+      <PageTitle title={rotuloDoAdmin("/admin/atendimento")} subtitle="Chamados por prioridade e prazo. Simulações ficam fora." />
       {semAcesso && (
         <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Sem acesso aos chamados agora (banco sem a migração 0073, sem chave de serviço ou sem permissão).

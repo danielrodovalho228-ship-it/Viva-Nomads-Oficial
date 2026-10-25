@@ -18,7 +18,8 @@ const ajuda = LINHAS_AJUDA.map((l) => l.href);
 const menuConta = readFileSync(new URL("../components/account/conta-menu.tsx", import.meta.url), "utf8");
 
 // Os destinos do grupo de baixo da Conta antiga (antes do NAV-A), cada um com o lugar novo.
-const SAIRAM_PARA_BARRA = ["/dashboard/notificacoes", "/dashboard/verificacao", "/dashboard/ferramentas", "/dashboard/indicacoes", "/admin", "/admin/agentes#aprovacoes"];
+const SAIRAM_PARA_BARRA = ["/dashboard/notificacoes", "/dashboard/verificacao", "/dashboard/ferramentas", "/dashboard/indicacoes", "/admin"];
+// ADMIN-1: "Equipe e aprovações" (/admin/agentes#aprovacoes) saiu da barra; vira aba no ADMIN-2.
 const SAIRAM_PARA_AJUDA = ["/termos", "/privacidade"];
 
 test("cada rota de trabalho que saiu da Conta tem exatamente um caminho na barra verde e nenhum na Conta", () => {
@@ -36,13 +37,9 @@ test("Termos e Privacidade ficam só na Ajuda da Conta", () => {
   }
 });
 
-test("admin tem Painel Admin e Equipe e aprovações na barra, na seção do papel admin", () => {
+test("ADMIN-1: a seção do papel admin em /dashboard é só 'Painel admin' ('Equipe e aprovações' vira aba no ADMIN-2)", () => {
   const admin = MENU_POR_PAPEL.filter((s) => s.papel === "admin").flatMap((s) => folhas(s.itens));
-  const painel = admin.find((i) => i.href === "/admin");
-  const equipe = admin.find((i) => i.href === "/admin/agentes#aprovacoes");
-  assert.equal(painel?.rotulo, "Painel Admin");
-  assert.equal(equipe?.rotulo, "Equipe e aprovações");
-  assert.ok(admin.indexOf(painel!) < admin.indexOf(equipe!));
+  assert.deepEqual(admin.map((i) => [i.rotulo, i.href]), [["Painel admin", "/admin"]]);
 });
 
 test("a Conta: Perfil, Como você usa a Viva, Avaliações, Dados, Privacidade, Notificações, Pagamentos, Ajuda — e Sair", () => {

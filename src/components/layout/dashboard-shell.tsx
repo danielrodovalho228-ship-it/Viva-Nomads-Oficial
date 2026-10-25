@@ -30,6 +30,7 @@ import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
 import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
+import { BARRA_ADMIN, MINHA_CONTA_ADMIN } from "@/config/menu-admin";
 import { PapelAtivo } from "@/components/layout/papel-ativo";
 import { papelDaBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
@@ -174,6 +175,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   } = contadores;
 
   const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan, imoveisAtivos, parceiro });
+  // ADMIN-1: em /admin* a barra mostra SÓ o admin (grupos da barra-alvo), com "Minha conta →" no rodapé; em
+  // /dashboard* o admin vê as áreas de usuário e um item "Painel admin".
+  const naAreaAdmin = pathname.startsWith("/admin");
   const badges = { "admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando };
 
   // Guarda de rota por papel (B1). Ao abrir por URL/deep-link uma tela exclusiva
@@ -270,7 +274,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <nav aria-label="Menu do painel" className="flex-1 overflow-y-auto p-3">
         {/* Quem ainda não anunciou: entrada direta para anunciar (as seções de dono
             aparecem no menu depois do primeiro anúncio). */}
-        {!temImovel && display.role !== "admin" && (
+        {!naAreaAdmin && !temImovel && display.role !== "admin" && (
           <Link
             href={ANUNCIAR.href!}
             onClick={(e) => aoNavegar(ANUNCIAR.href!, e)}
@@ -281,7 +285,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             {ANUNCIAR.rotulo}
           </Link>
         )}
-        <MenuCascata itens={menu} pathname={pathname} badges={badges} aoNavegar={aoNavegar} />
+        <MenuCascata itens={naAreaAdmin ? [...BARRA_ADMIN] : menu} pathname={pathname} badges={badges} aoNavegar={aoNavegar} />
+        {naAreaAdmin && (
+          <Link href={MINHA_CONTA_ADMIN.href} className="mt-3 flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white" data-testid="admin-minha-conta">
+            {MINHA_CONTA_ADMIN.rotulo}
+          </Link>
+        )}
       </nav>
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 px-3 py-2">

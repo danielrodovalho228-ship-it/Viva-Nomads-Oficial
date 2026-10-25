@@ -4,8 +4,9 @@ import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { pedidosServicoAdmin } from "@/lib/data/servicos-morador-actions";
 import { FAIXAS_HORARIO, codigoDoPedido, rotuloEstado } from "@/lib/servicos-morador";
 import { MudarEstado } from "./mudar-estado";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Serviços do morador — Admin" };
+export const metadata = { title: tituloDoAdmin("/admin/servicos") };
 export const dynamic = "force-dynamic";
 
 const dataBR = (iso: string) => iso.split("-").reverse().join("/");
@@ -18,7 +19,7 @@ export default async function AdminServicosPage() {
   const andamento = pedidos.filter((p) => p.status === "confirmado").length;
   return (
     <>
-      <PageTitle title="Serviços do morador" subtitle="Pedidos feitos pelos moradores. A Viva não recebe nem repassa dinheiro: o pagamento é direto ao prestador." />
+      <PageTitle title={rotuloDoAdmin("/admin/servicos")} subtitle="Pedidos feitos pelos moradores. A Viva não recebe nem repassa dinheiro: o pagamento é direto ao prestador." />
       <NumeroHeroi rotulo="Pedidos novos" valor={novos} href="#lista" />
       <ListaNumeros className="mb-6" itens={[{ rotulo: "Confirmados", valor: andamento, href: "#lista" }]} />
       <Panel id="lista" className="scroll-mt-24">

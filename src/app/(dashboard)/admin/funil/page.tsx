@@ -4,8 +4,9 @@ import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives"
 import { dataBRT } from "@/lib/datas-brasilia";
 import { funilDaSemana } from "@/lib/data/funil";
 import { FORMULAS, type ChaveFunil } from "@/lib/funil/regras";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Funil — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/funil"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const formatar = (v: number | null, tipo: "percentual" | "horas") => (v == null ? "sem base" : tipo === "percentual" ? `${String(v).replace(".", ",")}%` : `${String(v).replace(".", ",")} h`);
@@ -41,7 +42,7 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
 
   return (
     <div data-testid="admin-funil">
-      <PageTitle title="Funil" subtitle={`Últimos 7 dias (até ${dataBRT(f.periodo.ate)}) contra os 7 anteriores · contas de teste fora`} />
+      <PageTitle title={rotuloDoAdmin("/admin/funil")} subtitle={`Últimos 7 dias (até ${dataBRT(f.periodo.ate)}) contra os 7 anteriores · contas de teste fora`} />
       <Panel className="mb-6" data-testid="funil-topo">
         {topo ? (
           <p className="text-sm text-ink">
