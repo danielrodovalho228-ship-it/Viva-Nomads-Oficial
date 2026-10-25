@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { telasDaPersona, telasDoDisco, telasForaDaLista } from "../e2e/fixtures/telas-logadas.ts";
+import { TELAS_RESTRITAS, telasDaPersona, telasDoDisco, telasForaDaLista } from "../e2e/fixtures/telas-logadas.ts";
 
 /**
  * Guarda do t183 (todas as telas logadas a 390 px): a lista estática de telas precisa bater com
@@ -24,4 +24,11 @@ test("o disco tem as telas básicas e o admin visita também o painel comum", ()
   assert.ok(adm.includes("/dashboard/conta/perfil") && adm.includes("/admin/usuarios"));
   assert.ok(!telasDaPersona("inquilino").some((r) => r.startsWith("/admin")));
   assert.ok(telasDaPersona("inquilino").every((r) => !r.includes("[")), "nenhuma rota com [parâmetro] é visitada literalmente");
+});
+
+test("tela restrita (404 para as personas) fica fora da varredura e tem spec próprio", () => {
+  for (const persona of ["inquilino", "proprietario", "admin"] as const) {
+    for (const r of TELAS_RESTRITAS) assert.ok(!telasDaPersona(persona).includes(r), `${persona} não visita ${r}`);
+  }
+  assert.deepEqual([...TELAS_RESTRITAS], ["/dashboard/qa/emails"]);
 });

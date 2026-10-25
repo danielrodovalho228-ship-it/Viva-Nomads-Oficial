@@ -2148,6 +2148,14 @@
         "t397-foto-na-hora",
         "t407-varredura-bloco26"
       ]
+    },
+    "/dashboard/qa/emails": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t470-qa-leitor-caixas"
+      ]
     }
   },
   "rotas": {
