@@ -60,7 +60,7 @@ test.describe("T459 — PROP-1: navegação do dono", () => {
 
     await page.goto("/dashboard/garantias", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("aba-dono-contratos")).toHaveAttribute("aria-current", "page", { timeout: 30_000 });
-    await expect(page.getByTestId("subabas-dono").locator("a")).toHaveText(["Contratos", "Caução", "Recibos e notas"]);
+    await expect(page.getByTestId("subabas-dono").locator("a")).toHaveText(["Contratos", "Ganhos", "Caução", "Recibos e notas"]);
     await expect(page.getByTestId("subaba-dono-caucao")).toHaveAttribute("aria-current", "page");
     await page.screenshot({ path: `${SAIDA}/t459-contratos-1280.png` });
     await page.context().close();

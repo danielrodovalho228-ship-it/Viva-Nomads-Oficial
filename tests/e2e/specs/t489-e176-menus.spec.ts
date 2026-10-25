@@ -47,7 +47,7 @@ test.describe("T489 — E176-IMPL: menus conforme a especificação aprovada", (
         await expect(p.getByTestId("menu-conta-morador").getByRole("menuitem")).toHaveText(["Minha conta", "Ajuda", "Sair"]);
       } else {
         await expect.poll(async () => (await barra(p).locator("a").allInnerTexts()).map((t) => t.trim()), { timeout: 30_000 }).toEqual(MORADOR_5);
-        await p.getByTestId("conta-morador-celular").click();
+        await p.getByTestId("topo-celular").getByTestId("conta-morador-celular").click();
         await expect(p.getByTestId("menu-conta-morador-celular").getByRole("menuitem")).toHaveText(["Minha conta", "Ajuda", "Sair"]);
       }
       await expect(p.getByText("Sair", { exact: true })).toHaveCount(1);

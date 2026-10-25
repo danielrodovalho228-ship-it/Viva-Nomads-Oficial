@@ -36,7 +36,9 @@ test.describe("T460 — ADMIN-1: barra do admin", () => {
     await page.screenshot({ path: `${SAIDA}/t460-admin-contratos-1280.png` });
 
     await page.getByTestId("admin-minha-conta").filter({ visible: true }).click();
-    await expect(page).toHaveURL(/\/dashboard\/?$/, { timeout: 30_000 });
+    // E176 (D3): "Minha conta" leva à Conta; dali, o Início do painel mostra só "Painel admin".
+    await expect(page).toHaveURL(/\/dashboard\/conta$/, { timeout: 30_000 });
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     // PROP-1: no modo dono a navegação do computador é o topo ("Conta ▾"); no modo morador, a barra.
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const topoDono = page.getByTestId("topo-dono");

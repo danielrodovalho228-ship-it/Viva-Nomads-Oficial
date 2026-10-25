@@ -317,9 +317,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         )}
         <MenuCascata itens={naAreaAdmin ? [...BARRA_ADMIN] : menu} pathname={pathname} badges={badges} aoNavegar={aoNavegar} />
         {naAreaAdmin && (
-          <Link href={MINHA_CONTA_ADMIN.href} className="mt-3 flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white" data-testid="admin-minha-conta">
+          // Troca de documento (não pelo roteador): uma Server Action pendente do /admin devolvia a URL para a tela
+          // anterior depois de abrir a Conta (mesma causa descrita em dashboard/conta/page.tsx).
+          <a href={MINHA_CONTA_ADMIN.href} className="mt-3 flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white" data-testid="admin-minha-conta">
             {MINHA_CONTA_ADMIN.rotulo}
-          </Link>
+          </a>
         )}
       </nav>
       <div className="border-t border-white/10 p-3">
