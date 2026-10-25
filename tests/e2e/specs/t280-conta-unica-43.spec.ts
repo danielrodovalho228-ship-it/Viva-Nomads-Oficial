@@ -110,9 +110,10 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
         await expect(async () => expect(await abas(page)).toContain("Agenda")).toPass({ timeout: 25_000 });
         await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
         await expect(async () => expect(await abas(page)).toContain("Anúncios")).toPass({ timeout: 25_000 });
-        await page.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
-        await expect(async () => expect(await abas(page)).toContain("Estadias")).toPass({ timeout: 25_000 });
-        await expect(page).toHaveURL(/\/dashboard\/locacoes/);
+        // MENUS-5: sem contrato a aba "Estadia" não aparece; a tela do morador traz as abas do morador.
+        await page.goto("/dashboard/candidaturas", { waitUntil: "domcontentloaded" });
+        await expect(async () => expect(await abas(page)).toContain("Pedidos")).toPass({ timeout: 25_000 });
+        await expect(page).toHaveURL(/\/dashboard\/candidaturas/);
       } else {
         // A1: no computador a Conta é uma casca com o menu lateral das oito telas; Pagamentos tem a sua tela.
         await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
