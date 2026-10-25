@@ -99,7 +99,7 @@ export function EtapaEncontramos(p: {
   if (p.parte === "regras") {
     return (
       <div className="space-y-2" data-testid="etapa-regras-casa">
-        <p className="text-sm font-semibold text-ink">Regras da casa</p>
+        {/* E110: "Regras da casa" já é o título do passo (H1); não se repete aqui. */}
         <Toggle
           checked={p.furnished}
           onChange={() => {

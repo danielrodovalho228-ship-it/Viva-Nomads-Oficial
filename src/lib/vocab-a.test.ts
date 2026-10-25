@@ -49,6 +49,29 @@ test("guarda: nenhum 'comissão' nem 'inquilino' em texto visível (públicas e 
   assert.deepEqual(achados, []);
 });
 
+/** E108–E110: o assistente de cadastro lê textos que moram em lib (faixas, prontidão…) — a guarda acima não os via. */
+const ASSISTENTE = [
+  ...["app/(dashboard)/dashboard/imoveis/novo", "components/anuncio", "components/precos", "lib/anuncio"].flatMap(arquivos),
+  "lib/faixas.ts",
+  "config/niveis.ts",
+].filter((rel) => !/\.test\./.test(rel));
+const NO_ASSISTENTE: Array<[string, RegExp]> = [
+  ["inquilino/comissão", PALAVRA],
+  ["número de prompt interno", /\bPrompt \d+/],
+  ["promessa sem data", /\bem breve\b/i],
+];
+
+test("E108–E110: textos do assistente de cadastro sem 'inquilino', 'Prompt NN' nem 'Em breve'", () => {
+  const achados: string[] = [];
+  for (const rel of ASSISTENTE) {
+    for (const t of textosVisiveis(ler(rel))) {
+      for (const [nome, re] of NO_ASSISTENTE) if (re.test(t)) achados.push(`${rel} (${nome}): ${t.trim().slice(0, 80)}`);
+    }
+  }
+  assert.deepEqual(achados, []);
+  assert.ok(ASSISTENTE.includes("lib/faixas.ts") && ASSISTENTE.some((r) => r.endsWith("etapa-preco.tsx")));
+});
+
 test("a guarda pega frase e texto de JSX, mas não chave nem nome de variável", () => {
   assert.ok(textosVisiveis('const a = "O inquilino confirma";').some((t) => PALAVRA.test(t)));
   assert.ok(textosVisiveis("<p>Avaliar o inquilino</p>").some((t) => PALAVRA.test(t)));
@@ -87,4 +110,19 @@ test("(c) /para-proprietarios: 'taxa de serviço' com os números da fonte únic
 
 test("(e) /decisao já exige o acesso dos sócios (porta única no proxy)", () => {
   assert.match(ler("proxy.ts"), /"\/decisao",\s*"\/decisao\/:path\*"/);
+});
+
+test("E110: Passo 8 com um horizonte só — o exemplo da taxa acompanha os meses do simulador; sem seguro-fiança 'Em breve'", () => {
+  const preco = ler("app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx");
+  assert.match(preco, /useState\(MESES_EXEMPLO\)/);
+  assert.match(preco, /<LinhaComparativoAnuncio aluguel=\{aluguel\} meses=\{mesesExemplo\} \/>/);
+  assert.match(preco, /<SimuladorBolso compacto valorMensal=\{aluguel\} mesesIniciais=\{mesesExemplo\} onMeses=\{setMesesExemplo\} \/>/);
+  assert.match(ler("components/precos/simulador-bolso.tsx"), /p\.onMeses\?\.\(/);
+  assert.match(ler("components/precos/comparativo-precos.tsx"), /Num contrato de \{meses\} \{meses === 1 \? "mês" : "meses"\}/);
+  assert.doesNotMatch(ler("lib/faixas.ts").replace(/\/\*[\s\S]*?\*\//g, ""), /key: "seguro_fianca", label: "Seguro-fiança", disabled/);
+});
+
+test("E110: Passo 6 não repete 'Regras da casa' (já é o título do passo)", () => {
+  const regras = textosVisiveis(ler("app/(dashboard)/dashboard/imoveis/novo/etapa-encontramos.tsx")).filter((t) => t.trim() === "Regras da casa");
+  assert.equal(regras.length, 0);
 });
