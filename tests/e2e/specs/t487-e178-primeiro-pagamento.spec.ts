@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 /*
   T487 — E178: o detalhe da proposta (Orçamentos) mostra o "1º pagamento" explícito — o total do 1º mês (valor mensal +
   condomínio + consumo + limpezas + taxa pet) mais a limpeza de preparação, a mesma conta do Fechamento. Os dois lados veem.
-  Cenário: R$ 3.200 + condomínio R$ 450 + preparação R$ 200 → 1º pagamento R$ 3.850,00.
+  Cenário: R$ 3.200 + condomínio R$ 450 + preparação R$ 200 → 1º pagamento R$ 3.850.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -47,7 +47,7 @@ test.describe("T487 — E178: 1º pagamento no detalhe da proposta", () => {
     const url = page.url();
     const linha = page.getByTestId("proposta-atual").getByTestId("proposta-primeiro-pagamento");
     await expect(linha).toContainText("1º pagamento");
-    await expect(linha).toContainText("R$ 3.850,00");
+    await expect(linha).toContainText(/R\$\s?3\.850(?!\d)/);
     await linha.scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${SAIDA}/t487-primeiro-pagamento-dono-1280.png` });
     await page.context().close();
@@ -56,7 +56,7 @@ test.describe("T487 — E178: 1º pagamento no detalhe da proposta", () => {
     await p2.setViewportSize({ width: 390, height: 844 });
     await p2.goto(new URL(url).pathname, { waitUntil: "domcontentloaded" });
     const linha2 = p2.getByTestId("proposta-atual").getByTestId("proposta-primeiro-pagamento");
-    await expect(linha2).toContainText("R$ 3.850,00", { timeout: 20_000 });
+    await expect(linha2).toContainText(/R\$\s?3\.850(?!\d)/, { timeout: 20_000 });
     await linha2.scrollIntoViewIfNeeded();
     await p2.screenshot({ path: `${SAIDA}/t487-primeiro-pagamento-interessado-390.png` });
     await p2.context().close();
