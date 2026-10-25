@@ -17,15 +17,17 @@ test.describe("T2 — Conta única, sem seletor de modo @criticos", () => {
 
   test("não há seletor nem texto de modo no menu lateral", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(page.locator("aside nav")).toBeVisible();
+    // PROP-1 (#1337): no computador o dono não tem barra lateral — a casca é o topo com abas (topo-dono).
+    await expect(page.locator('aside nav:visible, [data-testid="topo-dono"]:visible').first()).toBeVisible();
     await expect(page.locator("aside")).not.toContainText(/Modo:/);
+    await expect(page.getByTestId("topo-dono")).not.toContainText(/Modo:/);
     await expect(page.getByRole("button", { name: /^Trocar para /i })).toHaveCount(0);
   });
 
   test("deep-link /dashboard/ferramentas abre dentro da casca, sem redirect", async ({ page }) => {
     await page.goto("/dashboard/ferramentas", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/dashboard\/ferramentas/);
-    await expect(page.locator("aside nav")).toBeVisible();
+    await expect(page.locator('aside nav:visible, [data-testid="topo-dono"]:visible').first()).toBeVisible();
   });
 
   test("B3 — página pública com sessão não mostra 'Entrar'", async ({ page }) => {
