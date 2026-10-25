@@ -77,13 +77,6 @@ test.describe("T229 — admin conversa com tudo", () => {
     await apagarContas([ids.dono, ids.inq, ids.teste]);
   });
 
-  /** Valor do cartão da home (data-indicador) e o link que ele abre. */
-  async function cartao(page: Page, chave: string): Promise<{ valor: string; href: string | null }> {
-    const c = page.locator(`[data-indicador="${chave}"]`);
-    const v = c.locator("[data-valor]");
-    return { valor: (await v.innerText()).trim(), href: await v.getAttribute("data-href") };
-  }
-  const n = (s: string) => Number(s.replace(/\D/g, "") || "NaN");
   async function semRolagemLateral(page: Page) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
   }
@@ -91,33 +84,17 @@ test.describe("T229 — admin conversa com tudo", () => {
   for (const largura of [1280, 390]) {
     test(`${largura}px — cada cartão abre a lista que ele conta, com o mesmo número`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      // ADMIN-4 (#1354): os cartões de Receita e Operação saíram da inicial (a Receita mora no Financeiro; os 4 números
+      // da inicial contra a página de destino são da t465). Aqui ficam os destinos com o mesmo filtro (período e a
+      // cidade única do spec) e o "um número, uma fonte" entre Contratos e Financeiro.
+      const qs = `periodo=custom&de=${de}&ate=${hoje}&cidade=${encodeURIComponent(CIDADE)}`;
       await page.goto(HOME, { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("funil-indicadores")).toBeVisible({ timeout: 30_000 });
       await semRolagemLateral(page);
-
-      // Manutenção ≠ atendimento: dois cartões, dois destinos.
-      const manut = await cartao(page, "chamados");
-      await expect(page.locator('[data-indicador="chamados"]')).toContainText("Solicitações de manutenção abertas");
-      expect(manut.valor).toBe("1");
-      expect(manut.href).toMatch(/^\/admin\/solicitacoes\?periodo=custom&de=/);
-      const atd = await cartao(page, "atendimento_abertos");
-      expect(atd.href).toBe("/admin/atendimento?aba=fila");
-
-      // Contratos: 1 contrato, valor total 12.800, taxa 1.536, take rate 12%.
-      const contratos = await cartao(page, "contratos");
-      expect(contratos.valor).toBe("1");
-      expect((await cartao(page, "valor_total_contratos")).valor).toMatch(/R\$\s?12\.800/);
-      expect((await cartao(page, "taxa_gerada")).valor).toMatch(/R\$\s?1\.536/);
-      expect((await cartao(page, "take_rate")).valor).toBe("12%");
-      expect((await cartao(page, "valor_mensal_contratado")).valor).toMatch(/R\$\s?3\.200/);
-      const pedidos = await cartao(page, "pedidos");
-      // Desde o Prompt 46 a home só lista decisão com n > 0 (decisoes-admin.ts): com a fila vazia (banco limpo do
-      // lab-crítico) a linha de documentos não aparece, e a conta abaixo vale 0.
-      const fila = page.locator('[data-precisa="documentos_pendentes"]');
-      if (await fila.count()) await expect(fila).toContainText(/na fila \(\d+ documentos? \+ \d+ matrículas?\)/);
       await page.screenshot({ path: `${SAIDA}/t229-home-${largura}.png`, fullPage: true });
 
-      // Destinos: a lista conta o mesmo.
-      await page.goto(contratos.href!, { waitUntil: "domcontentloaded" });
+      // Contratos: 1 contrato, valor total 12.800, taxa 1.536.
+      await page.goto(`/admin/contratos?${qs}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText("1");
       await expect(page.getByTestId("contratos-valor-total")).toHaveText(/R\$\s?12\.800/);
       await expect(page.getByTestId("contratos-taxa")).toHaveText(/R\$\s?1\.536/);
@@ -126,22 +103,16 @@ test.describe("T229 — admin conversa com tudo", () => {
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t229-contratos-${largura}.png`, fullPage: true });
 
-      await page.goto(`/admin/financeiro?periodo=custom&de=${de}&ate=${hoje}&cidade=${encodeURIComponent(CIDADE)}`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/admin/financeiro?${qs}`, { waitUntil: "domcontentloaded" });
       await expect(page.locator('[data-indicador="f-valor-total-dos-contratos"] [data-valor]')).toHaveText(/R\$\s?12\.800/);
       await expect(page.locator('[data-indicador="f-taxa-de-servi-o-gerada"] [data-valor]')).toHaveText(/R\$\s?1\.536/);
       await expect(page.locator('[data-indicador="f-take-rate"] [data-valor]')).toHaveText("12%");
       await expect(page.locator("main")).not.toContainText("Aluguel contratado");
 
-      await page.goto(manut.href!, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("lista-total")).toHaveText(manut.valor);
+      // Manutenção ≠ atendimento: a solicitação do spec na lista de manutenção, com o horário em BRT.
+      await page.goto(`/admin/solicitacoes?${qs}`, { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("lista-total")).toHaveText("1");
       await expect(page.getByTestId("solicitacao-linha").first()).toContainText("BRT");
-
-      await page.goto(pedidos.href!, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("lista-total")).toHaveText(String(n(pedidos.valor)));
-
-      // Atendimento: o número da home = as linhas da fila (a home guarda 5 min; o chamado do spec já existia antes).
-      await page.goto(atd.href!, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("chamado-linha")).toHaveCount(n(atd.valor));
 
       // Documentos: home = página = selo da barra lateral.
       // A fila de documentos é global e as outras specs do laboratório mexem nela em paralelo: a home lida
@@ -215,7 +186,8 @@ test.describe("T229 — admin conversa com tudo", () => {
 
   test("Dados de teste: encerrar jornadas pede confirmação e grava no registro; fotógrafos dizem quem recebe", async ({ page }) => {
     await page.goto("/admin/dados-de-teste", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("link-emails-teste")).toHaveAttribute("href", "/admin/emails-teste");
+    // ADMIN-2 (#1354): os e-mails de teste viraram a aba "E-mails" da própria página.
+    await expect(page.getByTestId("dados-teste-aba-emails")).toHaveAttribute("href", "/admin/dados-de-teste?aba=emails");
     await page.getByTestId("encerrar-jornadas").click();
     await page.getByTestId("encerrar-jornadas-confirmar").click();
     await expect(page.getByTestId("encerrar-jornadas-resultado")).toContainText(/encerrados? em \d+ anúncios? de teste/);
