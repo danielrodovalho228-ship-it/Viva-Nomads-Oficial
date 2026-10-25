@@ -16,6 +16,9 @@ const sufixo = novoSufixo();
 const dono = { email: `dono.t478.${sufixo}@lab.vivanomads.test`, nome: "Paula Prévia", role: "owner" as const };
 const ids: Record<string, string> = {};
 
+/** O src da foto principal da galeria (consulta direta, sem esperar elemento). */
+const srcPrincipal = (p: Page) => p.evaluate(() => document.querySelector('[data-testid="foto-principal"] img')?.getAttribute("src") ?? null);
+
 const enviar = (p: Page, arquivos: string | string[]) => p.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles(arquivos);
 
 /** O src da 1ª foto elegível do uploader (sem pendência de "não parece imóvel"), na ordem da galeria; null se nenhuma. */
@@ -104,8 +107,7 @@ test.describe("T478 — E164: a prévia nunca mostra a foto sinalizada pendente 
     await expect(p.locator('[data-nao-imovel="1"]')).toHaveCount(0);
     await expect(p.getByTestId("selo-principal-bloqueada")).toHaveCount(0);
     const confirmada = await conferePrevia(p, "confirmada");
-    const principal = await p.getByTestId("foto-principal").locator("img").first().getAttribute("src");
-    expect(confirmada, "confirmada: a prévia mostra a foto marcada como principal").toBe(principal);
+    await expect.poll(() => srcPrincipal(p), { timeout: 15_000, message: "confirmada: a prévia mostra a foto marcada como principal" }).toBe(confirmada);
     await p.screenshot({ path: `${SAIDA}/t478-confirmada-1280.png` });
     await p.context().close();
   });
@@ -128,7 +130,7 @@ test.describe("T478 — E164: a prévia nunca mostra a foto sinalizada pendente 
     await expect(p.getByText(/^1\/40 fotos/)).toBeVisible({ timeout: 30_000 });
     await expect(p.locator('[data-nao-imovel="1"]')).toHaveCount(0);
     const trocada = await conferePrevia(p, "trocada");
-    expect(trocada).toBe(await p.getByTestId("foto-principal").locator("img").first().getAttribute("src"));
+    await expect.poll(() => srcPrincipal(p), { timeout: 15_000 }).toBe(trocada);
     await expect(p.getByTestId("selo-foto-principal")).toHaveText("Foto principal");
     await p.screenshot({ path: `${SAIDA}/t478-trocada-1280.png` });
     await p.context().close();
