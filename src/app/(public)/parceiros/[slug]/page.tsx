@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Clock, MapPin, Star } from "lucide-react";
 import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { imoveisParaServico } from "@/lib/parceiros/imoveis-servico";
 import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { parceiroPorSlug } from "@/lib/data/parceiros-publico";
+import { destinoDaCategoria } from "@/lib/parceiros/rotas-categoria";
 import { REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
 import { documentoDoServico } from "@/lib/parceiros/fiscal";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
@@ -41,7 +42,12 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
   const { slug } = await params;
   const sp = (await searchParams) ?? {};
   const d = await parceiroPorSlug(slug);
-  if (!d) notFound();
+  if (!d) {
+    // E187: /parceiros/limpeza, /parceiros/montagem… (sem parceiro com esse endereço) vão à busca já filtrada.
+    const destino = destinoDaCategoria(slug);
+    if (destino) redirect(destino);
+    notFound();
+  }
   // Prompt 31b: "Solicitar orçamento" ativo. Vindo do passo de fotos do cadastro, o imóvel já vem escolhido.
   const supabase = await createClient();
   const usuario = supabase ? (await supabase.auth.getUser()).data.user : null;
