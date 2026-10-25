@@ -28,7 +28,8 @@ test.describe("T471 — Login com Apple atrás da flag", () => {
       // só o formulário. Espera o campo de e-mail, presente nos dois tamanhos.
       await expect(page.locator('input[type="email"], input[name="email"]').first()).toBeVisible();
       await expect(page.getByTestId("login-apple")).toHaveCount(0);
-      await expect(page.locator("main")).not.toContainText(/Apple/);
+      // /auth não tem <main> (D-V8, t249): o texto da tela inteira.
+      await expect(page.locator("body")).not.toContainText(/Apple/);
     }
     expect(pedidosApple).toEqual([]);
   });
