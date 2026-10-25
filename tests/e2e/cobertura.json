@@ -1163,7 +1163,8 @@
       "specs": [
         "t193-propostas",
         "t212-ferramentas-proprietario",
-        "t216-taxa-matriz"
+        "t216-taxa-matriz",
+        "t487-e178-primeiro-pagamento"
       ]
     },
     "/dashboard/reembolsos": {
