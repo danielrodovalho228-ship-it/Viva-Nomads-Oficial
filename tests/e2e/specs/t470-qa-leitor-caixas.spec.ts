@@ -149,3 +149,4 @@ test.describe("T470 — QA-CAIXA-B: leitor de QA das caixas de teste", () => {
     });
   }
 });
+

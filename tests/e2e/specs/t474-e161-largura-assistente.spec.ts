@@ -123,3 +123,4 @@ test.describe("T474 — E161: assistente na largura do anúncio", () => {
     await p.context().close();
   });
 });
+
