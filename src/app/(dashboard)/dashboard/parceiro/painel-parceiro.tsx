@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, ExternalLink, Loader2, QrCode, Trash2 } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
+import { CampoData } from "@/components/ui/campo-data";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { EnviarImagemParceiro } from "@/components/parceiros/enviar-imagem";
@@ -516,11 +517,11 @@ function AbaAtendimento({ p, rodar }: { p: PainelParceiro; rodar: Rodar }) {
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:items-end">
           <div>
             <label htmlFor="bl-de" className="block text-sm font-medium text-ink">De</label>
-            <input id="bl-de" type="date" value={de} onChange={(e) => setDe(e.target.value)} className={campo} />
+            <CampoData id="bl-de" value={de} onChange={(e) => setDe(e.target.value)} className={campo} />
           </div>
           <div>
             <label htmlFor="bl-ate" className="block text-sm font-medium text-ink">Até</label>
-            <input id="bl-ate" type="date" value={ate} onChange={(e) => setAte(e.target.value)} className={campo} />
+            <CampoData id="bl-ate" value={ate} onChange={(e) => setAte(e.target.value)} className={campo} />
           </div>
           <Button variant="secondary" className="col-span-2 sm:col-span-1" onClick={() => rodar(() => adicionarAgenda({ tipo: "bloqueio", dataInicio: de, dataFim: ate }), "Bloqueio adicionado.")}>
             Adicionar bloqueio

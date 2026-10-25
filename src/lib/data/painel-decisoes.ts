@@ -128,7 +128,7 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
       supabase.from("conforto_pendencias").select(`${COLUNAS_PENDENCIA}, dono:properties!inner(owner_id)`).eq("dono.owner_id", user.id).eq("status", "aberta").limit(50),
       supabase.from("conforto_pendencias").select(`${COLUNAS_PENDENCIA}, contratos!inner(tenant_id)`).eq("contratos.tenant_id", user.id).eq("status", "corrigida").is("confirmada_em", null).limit(50),
       // Adendo 59.1: fotos de nível recusadas (a RLS mostra ao dono os itens dos próprios imóveis).
-      supabase.from("nivel_itens").select("property_id, chave, motivo_recusa, properties!inner(title, owner_id)").eq("properties.owner_id", user.id).eq("foto_status", "recusada").eq("declarado", true).limit(50),
+      supabase.from("nivel_itens").select("property_id, chave, motivo_recusa, properties!inner(title, owner_id, status)").eq("properties.owner_id", user.id).eq("foto_status", "recusada").eq("declarado", true).limit(50),
     ]);
     // Declarações dos imóveis com prazo de adequação (consulta à parte: as duas tabelas só se ligam pelo imóvel).
     const idsAdequacao = ((adequacao.data ?? []) as { property_id: string }[]).map((a) => a.property_id);
@@ -165,11 +165,13 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
         .map((a) => ({ propertyId: a.property_id, imovel: titulo(a.properties), prazoAte: a.prazo_ate, pausado: !!a.pausado_em })),
       pendenciasDono: ((pDono.data ?? []) as unknown as LinhaPendencia[]).map(pendencia),
       pendenciasMorador: ((pMorador.data ?? []) as unknown as LinhaPendencia[]).map(pendencia),
-      fotosNivelRecusadas: ((fotosRec.data ?? []) as unknown as { property_id: string; chave: string; motivo_recusa: string | null; properties: Titulo }[]).map((f) => ({
+      fotosNivelRecusadas: ((fotosRec.data ?? []) as unknown as { property_id: string; chave: string; motivo_recusa: string | null; properties: Titulo & { status?: string | null } }[]).map((f) => ({
         propertyId: f.property_id,
         imovel: titulo(f.properties),
         chave: f.chave,
         motivo: f.motivo_recusa,
+        // E143: o link vai ao nível do contexto (rascunho → Passo 5; publicado → edição).
+        status: f.properties?.status ?? null,
       })),
       candidaturas: ((leads.data ?? []) as unknown as { id: string; property_id: string; status: string; property: Titulo }[]).map((l) => ({
         id: l.id,

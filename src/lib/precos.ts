@@ -183,3 +183,138 @@ export function textosTotalMensal(property: Property): { destaque: string; detal
   else if (t.contasMedidas) detalhe += " + consumo medido";
   return { destaque: `${formatBRL(t.total)}/mês total`, detalhe };
 }
+
+/*
+  PROP-2 — PREÇO NUMA FONTE SÓ, SEMPRE COM RÓTULO. Toda tela que mostra valor de imóvel, proposta ou contrato passa
+  por precoRotulado: "Mensal" (o aluguel), "Total por mês (com contas)" e "Total do contrato" — este sempre com a conta
+  aberta ("4 × R$ 3.400 + limpeza de preparação R$ 450 = R$ 14.050"). Nada de número solto sem nome.
+*/
+export const ROTULO_MENSAL = "Mensal";
+export const ROTULO_TOTAL_MES = "Total por mês (com contas)";
+export const ROTULO_TOTAL_CONTRATO = "Total do contrato";
+/** Pagamento único da entrada (vai no 1º pagamento); a limpeza de saída fica para o fim. */
+export const ROTULO_PREPARACAO = "Limpeza de preparação";
+
+export interface ParcelaPreco {
+  rotulo: string;
+  valor: number;
+}
+
+export interface EntradaPreco {
+  /** Aluguel do mês (já com desconto, se houver). */
+  mensal: number;
+  /** O que entra todo mês além do aluguel (condomínio, contas, limpezas, taxa pet), na ordem de exibição. */
+  extrasMes?: ParcelaPreco[];
+  /** Duração em meses; sem duração não há total do contrato. */
+  meses?: number | null;
+  /** Pagamentos únicos que entram no total do contrato (preparação, saída). */
+  unicos?: ParcelaPreco[];
+}
+
+export interface PrecoRotulado {
+  mensal: number;
+  totalPorMes: number;
+  totalContrato: number | null;
+  meses: number | null;
+  /** Parcelas do mês (a 1ª é sempre o "Mensal"); somam totalPorMes. */
+  parcelasMes: ParcelaPreco[];
+  unicos: ParcelaPreco[];
+  /** A conta do total do contrato, por extenso; null sem duração. */
+  conta: string | null;
+}
+
+const centavos = (n: number) => Math.round(n * 100) / 100;
+
+export function precoRotulado(e: EntradaPreco): PrecoRotulado {
+  const mensal = centavos(Number(e.mensal) || 0);
+  const extras = (e.extrasMes ?? []).filter((p) => positivo(p.valor)).map((p) => ({ rotulo: p.rotulo, valor: centavos(p.valor) }));
+  const unicos = (e.unicos ?? []).filter((p) => positivo(p.valor)).map((p) => ({ rotulo: p.rotulo, valor: centavos(p.valor) }));
+  const parcelasMes = [{ rotulo: ROTULO_MENSAL, valor: mensal }, ...extras];
+  const totalPorMes = centavos(parcelasMes.reduce((s, p) => s + p.valor, 0));
+  const meses = e.meses != null && Number.isFinite(e.meses) && e.meses > 0 ? Math.round(e.meses) : null;
+  if (meses == null) return { mensal, totalPorMes, totalContrato: null, meses: null, parcelasMes, unicos, conta: null };
+  const totalContrato = centavos(totalPorMes * meses + unicos.reduce((s, p) => s + p.valor, 0));
+  const partes = [`${meses} × ${formatBRL(totalPorMes)}`, ...unicos.map((u) => `${u.rotulo.toLowerCase()} ${formatBRL(u.valor)}`)];
+  return { mensal, totalPorMes, totalContrato, meses, parcelasMes, unicos, conta: `${partes.join(" + ")} = ${formatBRL(totalContrato)}` };
+}
+
+/** Preço de um IMÓVEL (anúncio): as mesmas parcelas de calcularTudoIncluido, com rótulo; os únicos do anúncio. */
+export function precoDoImovel(
+  p: CamposTotalMes & Partial<Pick<Property, "prepFee" | "checkoutCleaningEnabled" | "checkoutCleaningFee">>,
+  meses?: number | null,
+): PrecoRotulado {
+  const inc = calcularTudoIncluido(p);
+  const unicos: ParcelaPreco[] = [];
+  if (positivo(p.prepFee)) unicos.push({ rotulo: ROTULO_PREPARACAO, valor: p.prepFee });
+  if (p.checkoutCleaningEnabled && positivo(p.checkoutCleaningFee)) unicos.push({ rotulo: "Limpeza de saída", valor: p.checkoutCleaningFee });
+  return precoRotulado({
+    mensal: inc.aluguel,
+    extrasMes: [
+      { rotulo: "Condomínio", valor: inc.condominio },
+      { rotulo: "Água, luz e gás (estimativa)", valor: inc.consumoFixo },
+      { rotulo: "Limpeza durante a estadia", valor: inc.limpezaMes },
+    ],
+    meses,
+    unicos,
+  });
+}
+
+/** Termos de uma versão de proposta (os mesmos campos de TermosProposta; os totais batem com calcularTotais). */
+export interface TermosPreco {
+  valorMensal: number;
+  meses: number;
+  condominio: number;
+  consumo: number;
+  limpezasMes: number;
+  valorLimpeza: number;
+  taxaPet: number;
+  limpezaUnica: number;
+}
+
+/** Preço de uma PROPOSTA (qualquer versão) ou do contrato que nasceu dela. */
+export function precoDaProposta(t: TermosPreco): PrecoRotulado {
+  const qtd = Math.round(Number(t.limpezasMes) || 0);
+  return precoRotulado({
+    mensal: t.valorMensal,
+    extrasMes: [
+      { rotulo: "Condomínio", valor: Number(t.condominio) || 0 },
+      { rotulo: "Consumo estimado", valor: Number(t.consumo) || 0 },
+      { rotulo: `Limpezas (${qtd}/mês)`, valor: qtd * (Number(t.valorLimpeza) || 0) },
+      { rotulo: "Taxa pet", valor: Number(t.taxaPet) || 0 },
+    ],
+    meses: t.meses,
+    unicos: [{ rotulo: ROTULO_PREPARACAO, valor: Number(t.limpezaUnica) || 0 }],
+  });
+}
+
+/** Proposta aceita como o Fechamento a recebe: valor mensal, meses e, quando houver, os termos da versão acordada. */
+export interface AcordoDoFechamento {
+  valorMensal: number;
+  meses: number;
+  termos?: Omit<TermosPreco, "valorMensal" | "meses"> | null;
+}
+
+/**
+ * PROP-2 — preço do FECHAMENTO. Com proposta aceita, o preço DA PROPOSTA (o mesmo total por mês e do contrato que as
+ * duas partes aceitaram, com a conta aberta). Sem proposta, o do anúncio (as mesmas parcelas do cartão).
+ * Substitui a mistura antiga (valor acordado + extras ATUAIS do anúncio), que mostrava um total que ninguém aceitou.
+ */
+export function precoDoFechamento(
+  property: CamposTotalMes & Partial<Pick<Property, "prepFee" | "checkoutCleaningEnabled" | "checkoutCleaningFee">>,
+  acordo: AcordoDoFechamento | null | undefined,
+  meses: number,
+): PrecoRotulado {
+  if (acordo?.termos) return precoDaProposta({ ...acordo.termos, valorMensal: acordo.valorMensal, meses: acordo.meses });
+  if (acordo && acordo.valorMensal > 0) return precoDoImovel({ ...property, monthlyPrice: acordo.valorMensal }, acordo.meses);
+  return precoDoImovel(property, meses);
+}
+
+/** 1º pagamento: o total do 1º mês (aluguel + contas do mês) + a limpeza de preparação. A caução fica fora (ao lado). */
+export function primeiroPagamentoDoPreco(p: Pick<PrecoRotulado, "totalPorMes" | "unicos">): number {
+  return centavos(p.totalPorMes + p.unicos.filter((u) => u.rotulo === ROTULO_PREPARACAO).reduce((s, u) => s + u.valor, 0));
+}
+
+/** Uma parcela do mês pelo começo do rótulo (ex.: "Consumo", "Água") — 0 quando não há. */
+export function parcelaDoMes(p: Pick<PrecoRotulado, "parcelasMes">, ...comecos: string[]): number {
+  return p.parcelasMes.filter((x) => comecos.some((c) => x.rotulo.startsWith(c))).reduce((s, x) => s + x.valor, 0);
+}

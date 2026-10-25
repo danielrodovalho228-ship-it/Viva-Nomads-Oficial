@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { aasa, assetlinks, caminhoDoLink, IMPRESSAO_PLAY_APP_SIGNING, impressoesAndroid, caminhoInterno, destinoDaRota, intentFiltersExpo, ROTAS_APP } from "./rotas-app.ts";
+import { aasa, assetlinks, caminhoDoLink, IMPRESSAO_PLAY_APP_SIGNING, impressoesAndroid, caminhoInterno, destinoDaRota, intentFiltersExpo, ROTAS_APP, ROTAS_AUTH } from "./rotas-app.ts";
 import { safeInternalPath } from "../lib/safe-redirect.ts";
 import { GET as getApple } from "../app/api/well-known/apple/route.ts";
 import { GET as getAndroid } from "../app/api/well-known/android/route.ts";
@@ -108,7 +108,26 @@ test("apple-app-site-association: JSON válido, auth excluída antes, telas do a
   const primeiraInclusao = comps.findIndex((c) => !c.exclude);
   assert.ok(comps.slice(0, primeiraInclusao).every((c) => c.exclude), "exclusões vêm primeiro");
   assert.ok(comps.some((c) => c["/"] === "/auth/confirm/*" && c.exclude));
-  for (const r of ROTAS_APP) assert.ok(comps.some((c) => c["/"] === r.caminho && !c.exclude), r.caminho);
+  for (const r of ROTAS_APP.filter((r) => !/^\/(admin|auth)(\/|$)/.test(r.caminho))) assert.ok(comps.some((c) => c["/"] === r.caminho && !c.exclude), r.caminho);
+});
+
+test("apple-app-site-association: /admin, /admin/*, /auth e /auth/* fora das inclusões; o resto igual", () => {
+  const a = aasa(["ABCDE12345.br.com.vivanomads.app"]) as { applinks: { details: { appIDs: string[]; components: { "/": string; exclude?: boolean }[] }[] }; webcredentials: { apps: string[] } };
+  const comps = a.applinks.details[0].components;
+  const incluidos = comps.filter((c) => !c.exclude).map((c) => c["/"]);
+  for (const fora of ["/admin", "/admin/*", "/auth", "/auth/*", "/auth/intencao"]) assert.ok(!incluidos.includes(fora), fora);
+  assert.ok(!incluidos.some((p) => /^\/(admin|auth)(\/|$)/.test(p)), "nenhum caminho de admin ou auth incluído");
+  // As exclusões de autenticação continuam (navegador obrigatório), na frente.
+  for (const r of ROTAS_AUTH) assert.ok(comps.some((c) => c["/"] === r.caminho && c.exclude), r.caminho);
+  // Demais telas do app seguem no arquivo, e o identificador do app não muda.
+  for (const p of ["/buscar", "/buscar/*", "/dashboard", "/dashboard/conta/*", "/excluir-conta", "/termos"]) assert.ok(incluidos.includes(p), p);
+  assert.deepEqual(a.applinks.details[0].appIDs, ["ABCDE12345.br.com.vivanomads.app"]);
+  assert.deepEqual(a.webcredentials.apps, ["ABCDE12345.br.com.vivanomads.app"]);
+  // Só o arquivo da Apple muda: dentro do app e no Android, /admin e /auth seguem como antes.
+  assert.equal(destinoDaRota("/admin/documentos"), "app");
+  assert.equal(destinoDaRota("/auth"), "app");
+  const android = (intentFiltersExpo() as { data: { path?: string; pathPrefix?: string }[] }[])[0].data;
+  assert.ok(android.some((d) => d.path === "/admin") && android.some((d) => d.path === "/auth"));
 });
 
 test("assetlinks.json no formato do Google", () => {

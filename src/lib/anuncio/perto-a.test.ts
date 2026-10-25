@@ -15,10 +15,11 @@ test("as 5 categorias na ordem fixa e até 3 por categoria", () => {
 
 test("cadastro: três estados (carregando / achou / não achou) e o aviso sem endereço, um por vez", () => {
   const b = ler("components/anuncio/blocos-cadastro.tsx");
-  assert.match(b, /const estado = carregando \? "carregando" : temItens \? "achou" : buscou \? "vazio" : "aguardando";/);
+  // E145: "não respondeu" (indisponível) é um estado à parte de "não achamos".
+  assert.match(b, /const estado = carregando \? "carregando" : temItens \? "achou" : buscou \? \(naoRespondeu \? "indisponivel" : "vazio"\) : "aguardando";/);
   assert.match(b, /Procurando o que tem por perto do endereço…/);
   assert.match(b, /ORDEM_CATEGORIAS_PAGINA\.map\(\(c\) => \{\s*\/\/ O mais perto primeiro; até 3 por categoria\.\s*const daCategoria = itens!\.filter\(\(l\) => l\.categoria === c\)\.sort\(\(x, y\) => \(x\.distanciaM \?\? Infinity\) - \(y\.distanciaM \?\? Infinity\)\)\.slice\(0, MAX_POR_CATEGORIA_PAGINA\);/);
-  assert.match(b, /Não achamos lugares por perto deste endereço\./);
+  assert.match(b, /Não achamos lugares por perto deste endereço, num raio de 2 km\./);
   assert.match(b, /Adicionar um lugar/);
 });
 

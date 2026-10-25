@@ -18,7 +18,7 @@ import { lerDocumento, temDocumento } from "@/lib/data/documento-servidor";
 import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
-import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { propostaAcordadaDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
 import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
@@ -265,7 +265,7 @@ export interface FechamentoContexto {
   /** F37: data de início que o Fechamento abre preenchida (a da candidatura, se ainda vale; senão hoje). */
   inicioSugerido?: string;
   /** Prompt 17: proposta ACEITA desta candidatura — o fechamento abre com estes valores, sem redigitar. */
-  proposta?: { id: string; numero: string; valorMensal: number; meses: number; dataEntrada: string } | null;
+  proposta?: { id: string; numero: string; valorMensal: number; meses: number; dataEntrada: string; termos?: TermosDoAcordo | null } | null;
   /** Prompt 8: quantas pessoas vão morar, da candidatura (o Fechamento abre com o número). */
   ocupantesSugerido?: number | null;
   /** PROP-3 (E118): identidade do INQUILINO, pela mesma fonte de Interessados (estadosIdentidade). */
@@ -316,7 +316,7 @@ export async function getFechamentoContext(
       const { data: d } = await admin.from("leads").select("inicio_desejado, qtd_ocupantes").eq("id", lead.id).maybeSingle();
       inicioDesejado = (d?.inicio_desejado as string | null) ?? null;
       const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
-      if (acordada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada };
+      if (acordada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada, termos: acordada.termos };
       ocupantesSugerido = (d?.qtd_ocupantes as number | null) ?? null;
       const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
       if (!documentoCompleto(docDono)) documentoPendente = { quem: "dono", mensagem: MSG_DOCUMENTO.fecharDono };

@@ -4,6 +4,9 @@ import { MSG_ASSINATURA_INATIVA, ROTULO_ETAPA } from "../../../src/lib/contrato-
 import { addDiasISO } from "../../../src/lib/contrato-blocos";
 import { hojeBR } from "../../../src/lib/utils";
 
+/** E136: no computador o campo de data mostra dd/mm/aaaa (o calendário é o do site, em pt-BR). */
+const dataBR = (iso: string) => iso.split("-").reverse().join("/");
+
 /*
   T182 — JORNADA COMPLETA, do anúncio publicado até a avaliação dos dois lados, sem cobrança real (laboratório).
   Contas NOVAS (dono e inquilina) e um anúncio ativo com fotos reais (fixtures). Inquilina a 390 px, dono a 1280 px;
@@ -201,7 +204,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await abrir(page, "/dashboard/leads");
     await page.getByRole("link", { name: "Iniciar fechamento" }).first().click();
     await expect(page).toHaveURL(/\/dashboard\/fechamento/);
-    await expect(page.getByTestId("inicio-estadia")).toHaveValue(hojeBR(), { timeout: 20_000 });
+    await expect(page.getByTestId("inicio-estadia")).toHaveValue(dataBR(hojeBR()), { timeout: 20_000 });
     await expect(page.getByRole("heading", { name: "Candidatura e verificação" })).toBeVisible();
 
     // Etapa 1: portão suave — conta real fica "Verificação pendente" e segue.

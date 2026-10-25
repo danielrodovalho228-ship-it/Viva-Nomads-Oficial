@@ -25,7 +25,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       const passo = page.getByTestId("solicitacao-passo");
       await expect(passo).toBeVisible();
       // E53: no Revisar a entrada vem no campo editável do diálogo (a mesma seleção da caixa e do calendário).
-      await expect(passo.getByTestId("solicitacao-inicio")).toHaveValue("2099-01-10");
+      await expect(passo.getByTestId("solicitacao-inicio")).toHaveValue("10/01/2099");
       await expect(passo).toContainText("Trabalho remoto");
       await expect(passo).toContainText("devolvida no fim");
       await expect(passo.getByTestId("solicitacao-demo")).toHaveText(DEMO);
