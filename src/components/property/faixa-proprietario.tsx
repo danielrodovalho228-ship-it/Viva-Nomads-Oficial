@@ -5,6 +5,8 @@ import { iniciais, corAvatar } from "@/lib/avatar";
 import { SeloExemplo } from "@/components/property/selo-exemplo";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { ehSeloLinkedin } from "@/lib/linkedin/textos";
+import { SeloVinculo } from "@/components/confianca/selo-vinculo";
+import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
 
 /**
  * Anfitrião (Prompt 41, item 1), logo depois da linha-síntese: foto, nome curto e selos numa linha; embaixo, em miúdo,
@@ -64,6 +66,10 @@ export function FaixaProprietario({
             ehSeloLinkedin(s) ? (
               <li key={s}>
                 <SeloLinkedin formato="pilula" />
+              </li>
+            ) : ehSeloVinculo(s) ? (
+              <li key={s}>
+                <SeloVinculo dominio={dominioDoSelo(s)} formato="pilula" />
               </li>
             ) : (
               <li key={s} className="inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-ink">

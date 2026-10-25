@@ -5,6 +5,7 @@
   Contato (telefone/e-mail) nunca aparece em nenhum dos dois, em fase alguma.
 */
 import { guardContactInfo } from "../messages/contact-guard.ts";
+import { seloVinculoPublico } from "../vinculo/textos.ts";
 
 /** "Maria Souza Lima" → "Maria L."; um nome só → ele mesmo; vazio → null. */
 export function nomeCurto(nome: string | null | undefined): string | null {
@@ -84,12 +85,15 @@ export function validarCidade(texto: string): Validacao<string | null> {
 }
 
 /** Selos que só aparecem com verificação REAL registrada. Telefone: código por SMS (prompt 7). Identidade: Certta (depois). */
-export function selosReais(p: { emailConfirmado?: boolean | null; telefoneVerificado?: boolean | null; linkedinConectado?: boolean | null }): string[] {
+export function selosReais(p: { emailConfirmado?: boolean | null; telefoneVerificado?: boolean | null; linkedinConectado?: boolean | null; vinculoDominio?: string | null }): string[] {
   const s: string[] = [];
   if (p.emailConfirmado === true) s.push("E-mail confirmado");
   if (p.telefoneVerificado === true) s.push("Telefone verificado");
   // 63-B: só o selo (texto), nunca link, nome ou foto do LinkedIn. Não soma em ranking nem taxa.
   if (p.linkedinConectado === true) s.push("LinkedIn conectado");
+  // E174-B: "Vínculo profissional · <domínio>" — só o domínio confirmado, nunca o e-mail.
+  const vinculo = seloVinculoPublico(p.vinculoDominio);
+  if (vinculo) s.push(vinculo);
   return s;
 }
 
@@ -108,6 +112,8 @@ export interface CandidatoBase {
   telefoneVerificado?: boolean;
   /** 63-B: LinkedIn conectado e dentro da validade. */
   linkedinConectado?: boolean;
+  /** E174-B: domínio do vínculo profissional confirmado (só o domínio). */
+  vinculoDominio?: string | null;
 }
 
 export interface CartaoCandidato {
@@ -132,7 +138,7 @@ export function cartaoCandidato(c: CandidatoBase, aceito: boolean): CartaoCandid
     titulo: aceito ? (nomeCurto(c.nome) ?? "Candidato(a)") : "Candidato(a)",
     fotoUrl: aceito ? c.fotoUrl : null,
     sinais,
-    selos: selosReais({ emailConfirmado: c.emailConfirmado, telefoneVerificado: c.telefoneVerificado, linkedinConectado: c.linkedinConectado }),
+    selos: selosReais({ emailConfirmado: c.emailConfirmado, telefoneVerificado: c.telefoneVerificado, linkedinConectado: c.linkedinConectado, vinculoDominio: c.vinculoDominio }),
     reputacao: c.reputacao && c.reputacao.n > 0 ? c.reputacao : null,
   };
 }

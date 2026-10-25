@@ -59,6 +59,8 @@ export interface Review {
   desde?: string | null;
   /** 63-B: quem avaliou tem o selo "LinkedIn conectado" (só o sim; nada do LinkedIn em si). */
   linkedinConectado?: boolean;
+  /** E174-B: domínio do vínculo profissional confirmado de quem avaliou (só o domínio). */
+  vinculoDominio?: string | null;
 }
 
 /** Perfil público do proprietário (bloco de confiança). */

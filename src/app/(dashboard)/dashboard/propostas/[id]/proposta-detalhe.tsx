@@ -2,6 +2,7 @@
 
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
+import { SeloVinculo } from "@/components/confianca/selo-vinculo";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import Link from "next/link";
@@ -140,6 +141,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
         Proprietário: <span className="font-medium text-ink">{p.partes.proprietario}</span> · Interessado:{" "}
         <span className="font-medium text-ink">{p.partes.interessado}</span>
         {p.outraParteLinkedin && <SeloLinkedin className="ml-2" />}
+        {p.outraParteVinculo && <SeloVinculo dominio={p.outraParteVinculo} className="ml-2" />}
       </p>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
