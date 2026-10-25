@@ -130,9 +130,12 @@ async function totalDoTitulo(page: Page): Promise<number> {
 
 /** Abre a folha de filtros. E82-A: a mesma pílula "Mais filtros" da linha única em toda largura. */
 async function abrirFolha(page: Page): Promise<Locator> {
-  await page.getByTestId("pilula-mais").click();
   const folha = page.getByRole("dialog", { name: "Filtros" });
-  await expect(folha).toBeVisible();
+  // Desde o E131 (#1332) o 1º toque pode chegar antes da hidratação e se perder: toca de novo até a folha abrir (como a t458).
+  await expect(async () => {
+    if (!(await folha.isVisible())) await page.getByTestId("pilula-mais").click({ timeout: 5_000 });
+    await expect(folha).toBeVisible({ timeout: 5_000 });
+  }).toPass({ timeout: 60_000 });
   return folha;
 }
 
