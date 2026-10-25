@@ -34,16 +34,6 @@ export interface DadosCentral {
 
 const VAZIO: DadosCentral = { agentes: [], rondas: [], ordens: [], uid: null, acessoLiberado: false };
 
-/** ADMIN-5: uma página do chat ou das atas (o mais novo primeiro no banco; devolvido em ordem de leitura). */
-export interface PaginaConversas {
-  itens: Conversa[];
-  /** Há mensagens mais antigas que a primeira desta página. */
-  temMais: boolean;
-}
-const POR_PAGINA_CHAT = 50;
-const POR_PAGINA_ATAS = 10;
-const CAMPOS_CONVERSA = "id, agente_slug, papel, autor_slug, texto, criado_em";
-const ehIso = (v: string | null | undefined): v is string => typeof v === "string" && !Number.isNaN(Date.parse(v));
 
 export async function carregarCentral(): Promise<DadosCentral> {
   const supabase = await createClient();
@@ -63,28 +53,6 @@ export async function carregarCentral(): Promise<DadosCentral> {
     uid,
     acessoLiberado: adm.data === true,
   };
-}
-
-/** ADMIN-5: o chat com UM agente, 50 mensagens por vez; "antesDe" pede a página anterior. RLS is_admin() decide. */
-export async function carregarConversas(slug: string, antesDe?: string | null): Promise<PaginaConversas> {
-  const supabase = await createClient();
-  if (!supabase || !/^[a-z0-9-]{1,40}$/.test(slug)) return { itens: [], temMais: false };
-  let q = supabase.from("agentes_conversas").select(CAMPOS_CONVERSA).eq("agente_slug", slug).order("criado_em", { ascending: false }).limit(POR_PAGINA_CHAT + 1);
-  if (ehIso(antesDe)) q = q.lt("criado_em", antesDe);
-  const { data } = await q;
-  const linhas = (data ?? []) as Conversa[];
-  return { itens: linhas.slice(0, POR_PAGINA_CHAT).reverse(), temMais: linhas.length > POR_PAGINA_CHAT };
-}
-
-/** ADMIN-5: as atas da Sala de reunião, 10 por vez (a mais nova primeiro). */
-export async function carregarAtas(antesDe?: string | null): Promise<PaginaConversas> {
-  const supabase = await createClient();
-  if (!supabase) return { itens: [], temMais: false };
-  let q = supabase.from("agentes_conversas").select(CAMPOS_CONVERSA).is("agente_slug", null).eq("papel", "sistema").order("criado_em", { ascending: false }).limit(POR_PAGINA_ATAS + 1);
-  if (ehIso(antesDe)) q = q.lt("criado_em", antesDe);
-  const { data } = await q;
-  const linhas = (data ?? []) as Conversa[];
-  return { itens: linhas.slice(0, POR_PAGINA_ATAS), temMais: linhas.length > POR_PAGINA_ATAS };
 }
 
 /**

@@ -26,8 +26,8 @@ test.describe("T466 — ADMIN-5: Central de Agentes", () => {
       const page = await novaPagina(browser, w);
       const leiturasDoChat: string[] = [];
       page.on("request", (r) => {
-        // Server Action do Next: POST na própria página com o cabeçalho next-action.
-        if (r.method() === "POST" && r.headers()["next-action"]) leiturasDoChat.push(r.url());
+        // O chat e as atas são lidos por GET em /api/admin/agentes/conversas, só quando a aba abre.
+        if (r.url().includes("/api/admin/agentes/conversas")) leiturasDoChat.push(r.url());
       });
       // Aquecimento (a primeira carga compila a rota no servidor do laboratório), depois a medida.
       await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
@@ -61,9 +61,10 @@ test.describe("T466 — ADMIN-5: Central de Agentes", () => {
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t466-equipe-${w}.png` });
 
-      // O chat e as atas não vêm no HTML da abertura: as abas os leem por Server Action quando abrem.
+      // O chat e as atas não vêm na abertura: as abas os leem quando abrem.
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const naAbertura = leiturasDoChat.length;
+      expect(naAbertura, "nenhuma leitura do chat/atas na aba Equipe").toBe(0);
       expect(await page.content(), "nenhuma mensagem do chat no HTML da abertura").not.toContain('data-testid="bolha-agente"');
 
       await page.getByRole("tab", { name: "Conversar" }).click();

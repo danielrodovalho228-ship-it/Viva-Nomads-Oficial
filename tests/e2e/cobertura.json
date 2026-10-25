@@ -2137,6 +2137,14 @@
       ],
       "specs": []
     },
+    "/api/admin/agentes/conversas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t466-admin5-agentes"
+      ]
+    },
     "/api/admin/agentes/executar": {
       "personas": [
         "admin"
@@ -3132,22 +3140,6 @@
         "admin"
       ],
       "specs": []
-    },
-    "src/lib/data/agentes-actions.ts#carregarAtas": {
-      "personas": [
-        "admin"
-      ],
-      "specs": [
-        "t466-admin5-agentes"
-      ]
-    },
-    "src/lib/data/agentes-actions.ts#carregarConversas": {
-      "personas": [
-        "admin"
-      ],
-      "specs": [
-        "t466-admin5-agentes"
-      ]
     },
     "src/lib/data/agentes-actions.ts#deixarOrdem": {
       "personas": [
