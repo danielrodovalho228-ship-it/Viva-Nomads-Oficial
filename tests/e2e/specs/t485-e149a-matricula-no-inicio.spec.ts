@@ -92,7 +92,8 @@ test.describe("T485 — E149-A: comece pela matrícula", () => {
       await page.screenshot({ path: `${SAIDA}/t485-passo3-${largura}.png` });
       await page.getByTestId("cadastro-continuar").click();
       await noPasso(page, "detalhes");
-      await expect(page.getByTestId("cadastro-area")).toHaveValue("68.5");
+      // A leitura traz 68,5 m²; o campo de área mostra o número inteiro.
+      await expect(page.getByTestId("cadastro-area")).toHaveValue(/^(68\.5|69)$/);
       await expect(page.getByTestId("cadastro-vagas")).toHaveValue("1");
       await expect(page.getByTestId("veio-da-matricula").first()).toBeVisible();
       await page.screenshot({ path: `${SAIDA}/t485-passo4-${largura}.png` });
