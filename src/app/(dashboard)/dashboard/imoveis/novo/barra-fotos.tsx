@@ -19,6 +19,8 @@ export function BarraFotos(p: {
   onFotos: (files: File[]) => void;
   onOrganizar: () => void;
   noPassoFotos: boolean;
+  /** E104: o erro do envio pela barra (antes aparecia no cartão da IA do Passo 3, que saiu). */
+  erro?: string | null;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const barra = useRef<HTMLDivElement>(null);
@@ -85,6 +87,11 @@ export function BarraFotos(p: {
             }}
           />
         </div>
+        {p.erro && (
+          <p className="pb-2 text-xs text-red-700" role="alert" data-testid="barra-fotos-erro">
+            {p.erro}
+          </p>
+        )}
       </div>
     </>
   );

@@ -432,6 +432,7 @@
         "t436-busca-clean-e82",
         "t412-varredura-bloco29",
         "t408-varredura-bloco27",
+        "t413-varredura-bloco30",
         "t454-salvar-busca-avisar-me"
       ]
     },
@@ -908,7 +909,9 @@
         "t451-cadastro-01b-tipos",
         "t435-cadastro-03-endereco",
         "t412-varredura-bloco29",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t413-varredura-bloco30",
+        "t455-cadastro-textos-e108"
       ]
     },
     "/dashboard/indicacoes": {

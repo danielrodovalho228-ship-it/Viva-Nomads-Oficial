@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { abrirNoEndereco } from "../fixtures/cadastro";
+import { abrirNoEndereco, irParaAntesDePublicar } from "../fixtures/cadastro";
 
 /*
   T187 — Conferência automática do documento do imóvel no passo Endereço do cadastro (prompt 11), com documentos de teste
@@ -39,13 +39,15 @@ async function donoNaEtapa1(browser: Browser, largura: number, nome: string): Pr
   await page.route("https://viacep.com.br/ws/**", (r) =>
     r.fulfill({ json: { cep: "38400-100", logradouro: "Rua do Laboratório", bairro: "Centro", localidade: "Uberlândia", uf: "MG" } }),
   );
-  // Assistente em 10 passos: o endereço (e o documento) é o 3º passo; abre direto nele.
+  // Assistente em 10 passos: o endereço é o 3º passo; abre direto nele.
   await abrirNoEndereco(page);
   await page.getByTestId("cadastro-cep").fill("38400100");
   await expect(page.getByTestId("cadastro-rua")).toHaveValue("Rua do Laboratório", { timeout: 10_000 });
   await page.getByTestId("cadastro-numero").fill("102");
   await page.waitForTimeout(2_500);
   await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 15_000 });
+  // E104: o documento mora no "Antes de publicar" da Revisão.
+  await irParaAntesDePublicar(page);
   return page;
 }
 

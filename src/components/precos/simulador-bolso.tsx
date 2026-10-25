@@ -14,6 +14,8 @@ import { SUPORTE_EMAIL } from "@/lib/site";
 export function SimuladorBolso(p: {
   valorMensal?: number;
   mesesIniciais?: number;
+  /** E110: no cadastro, o exemplo do texto acompanha os meses do simulador (um horizonte só na tela). */
+  onMeses?: (meses: number) => void;
   compacto?: boolean;
   className?: string;
 }) {
@@ -53,7 +55,11 @@ export function SimuladorBolso(p: {
             className="input mt-1 w-full"
             inputMode="numeric"
             value={meses}
-            onChange={(e) => setMeses(e.target.value.replace(/\D/g, ""))}
+            onChange={(e) => {
+              const m = e.target.value.replace(/\D/g, "");
+              setMeses(m);
+              p.onMeses?.(Number(m) || 0);
+            }}
             data-testid="bolso-meses"
           />
         </label>

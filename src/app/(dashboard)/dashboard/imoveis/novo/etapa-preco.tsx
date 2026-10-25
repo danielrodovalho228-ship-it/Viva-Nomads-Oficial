@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
@@ -13,6 +14,7 @@ import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import type { LimitesPrivados, Negociacao } from "@/lib/anuncio/negociacao";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
+import { MESES_EXEMPLO } from "@/config/planos";
 import { CampoDataUnico, Erro, Labeled, MarcaSugerido, Toggle } from "./campos";
 import type { CampoSugerido } from "./tipos";
 
@@ -62,6 +64,8 @@ export function EtapaPreco(p: {
   erros: Record<string, string>;
 }) {
   const aluguel = Number(p.monthlyPrice) || 0;
+  // E110: um horizonte só no Passo 8 — o exemplo do texto acompanha os meses do simulador.
+  const [mesesExemplo, setMesesExemplo] = useState(MESES_EXEMPLO);
   const condo = Number(p.condoFee) || 0;
   const consumoFixo = p.utilitiesMode === "fixed" ? p.utilitiesEstimate || 0 : 0;
   const totalAnuncio = calcularTudoIncluido({ monthlyPrice: aluguel, condoFee: condo, utilitiesMode: p.utilitiesMode, utilitiesEstimate: p.utilitiesEstimate }).total;
@@ -163,8 +167,8 @@ export function EtapaPreco(p: {
               </p>
             </div>
           )}
-          <LinhaComparativoAnuncio aluguel={aluguel} />
-          <SimuladorBolso compacto valorMensal={aluguel} />
+          <LinhaComparativoAnuncio aluguel={aluguel} meses={mesesExemplo} />
+          <SimuladorBolso compacto valorMensal={aluguel} mesesIniciais={mesesExemplo} onMeses={setMesesExemplo} />
           <PrecoSugerido aluguel={aluguel} onUsar={(v) => p.setMonthlyPrice(String(v))} onAirbnbMensal={(v) => p.setAirbnbMensal(v ? String(v) : "")} />
 
         </>

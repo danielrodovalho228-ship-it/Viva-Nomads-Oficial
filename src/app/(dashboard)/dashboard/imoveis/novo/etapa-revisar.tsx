@@ -46,7 +46,6 @@ export function EtapaRevisar(p: {
   publishing: boolean;
   publish: (asDraft?: boolean, irParaQualificacao?: boolean) => void;
   irPara: (i: number) => void;
-  etapaEndereco: number;
   aceitouIa: boolean;
   setAceitouIa: (v: boolean) => void;
   /** 64-B: o texto mudou depois do aceite — aviso logo acima da caixa. */
@@ -176,7 +175,7 @@ export function EtapaRevisar(p: {
   return (
     <div className="space-y-6" data-testid="etapa-revisar">
       {/* Estado do documento (prompt 11): aparece quando ainda segura a publicação; conferido, some (a lista já diz). */}
-      {!p.editingId && <DocumentoEstado estado={p.docEstado} motivos={p.docMotivos} onEnviar={() => p.irPara(p.etapaEndereco)} />}
+      {!p.editingId && <DocumentoEstado estado={p.docEstado} motivos={p.docMotivos} onEnviar={() => document.querySelector('[data-testid="antes-de-publicar"]')?.scrollIntoView({ behavior: "smooth", block: "start" })} />}
 
       {/* Um "Publicar anúncio" só. Celular: cartão, lista, aceite e botão. Computador: lista à esquerda; cartão e botão à
           direita; o aceite embaixo, na largura toda. */}
