@@ -37,13 +37,16 @@ test.describe("T423 — E135: Passo 7, título e descrição", () => {
   });
 
   test("2. campos vazios: o Continuar não fica pronto e o clique diz o que falta", async ({ browser }) => {
-    // E135 (corrigido na Pista A): o Continuar fica "não pronto" (aria-disabled) e o Passo 7 confere título e descrição.
+    // E135 (corrigido na Pista A): o Continuar fica "não pronto" (data-pendente) e o Passo 7 confere título e descrição.
     const page = await abrirPasso(browser, { email: dono.email, senha }, ids.rascunho!, "descricao");
     await expect(page.getByTestId("cadastro-titulo")).not.toHaveValue("", { timeout: 20_000 });
     await page.getByTestId("cadastro-titulo").fill("");
     await page.getByTestId("cadastro-descricao").fill("");
     const continuar = page.getByTestId("cadastro-continuar");
-    await expect(continuar, "sem título nem descrição o Continuar não pode parecer pronto").toHaveAttribute("aria-disabled", "true");
+    // O estado "não pronto" é data-pendente (esmaecido + o que falta no title), não aria-disabled: o clique precisa valer
+    // para dizer o que falta, e aria-disabled faz o botão ser tratado como desligado.
+    await expect(continuar, "sem título nem descrição o Continuar não pode parecer pronto").toHaveAttribute("data-pendente", "1");
+    await expect(continuar).toHaveAttribute("title", /título[\s\S]*descrição/);
     await continuar.click();
     await noPasso(page, "descricao");
     const avisos = page.getByTestId("etapa-descricao").getByRole("alert");

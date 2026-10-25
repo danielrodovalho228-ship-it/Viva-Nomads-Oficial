@@ -56,8 +56,8 @@ export function RodapeAssistente(p: { pos: number; total: number; onVoltar: (() 
             onClick={p.primario.onClick}
             disabled={p.primario.disabled}
             title={p.primario.title}
-            // E135: "não pronto" também para o leitor de tela; o clique continua valendo e diz o que falta.
-            aria-disabled={p.primario.pendente && !p.primario.disabled ? true : undefined}
+            // E135: "não pronto" sem aria-disabled — o clique continua valendo e diz o que falta (aria-disabled faria o botão
+            // parecer desligado e o toque seria ignorado por quem segue o atributo). O motivo vai no title e na caixa.
             data-pendente={p.primario.pendente ? "1" : undefined}
             className={cn("shrink-0 sm:min-w-40", p.primario.disabled && "cursor-not-allowed opacity-60", p.primario.pendente && !p.primario.disabled && "opacity-60")}
             data-testid={p.primario.testid}
