@@ -767,7 +767,6 @@
         "t405-perfil-e60-e62",
         "t415-varredura-bloco32",
         "t549-varredura-bloco39",
-        "t552-por-que-na-cidade",
         "t553-varredura-bloco41"
       ]
     },
@@ -1004,6 +1003,13 @@
         "t484-e148a-titulo-descricao",
         "t488-e179-conforto-sem-repetidos",
         "t485-e149a-matricula-no-inicio",
+        "t530-e135-um-campo-vazio",
+        "t531-e136-datas-ptbr-revisao",
+        "t532-e137-janela-24-e-duplo-clique",
+        "t533-e138-desbloquear-no-dia",
+        "t534-e147-bairro-santa-monica",
+        "t535-e153-documento-um-lugar",
+        "t536-e164-previa-sem-foto-sinalizada",
         "t547-e148a-texto-sugerido-passo7",
         "t548-e132a-declaracoes-persistem",
         "t549-varredura-bloco39",
@@ -1043,7 +1049,6 @@
         "t338-varredura-bloco15",
         "t416-varredura-bloco33",
         "t486-e174b-selo-vinculo",
-        "t552-por-que-na-cidade",
         "t553-varredura-bloco41"
       ]
     },
@@ -1616,7 +1621,8 @@
         "t237-correcoes-35a",
         "t241-contas-teste-36",
         "t312-varredura-bloco9",
-        "t481-e132a-qualificacao"
+        "t481-e132a-qualificacao",
+        "t535-e153-documento-um-lugar"
       ]
     },
     "/roi": {
@@ -1752,7 +1758,8 @@
         "t240-conferencia-provas-admin",
         "t271-admin-visual",
         "t388-varredura-bloco23",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t537-e165-admin-contrato-assinaturas"
       ]
     },
     "/admin/solicitacoes": {
@@ -1852,7 +1859,8 @@
       "specs": [
         "t240-conferencia-provas-admin",
         "t271-admin-visual",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t537-e165-admin-contrato-assinaturas"
       ]
     },
     "/dashboard/servicos/pedidos/[id]": {
