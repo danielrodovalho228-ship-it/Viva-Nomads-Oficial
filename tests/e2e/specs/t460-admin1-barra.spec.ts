@@ -8,7 +8,7 @@ import { authFile } from "../fixtures/auth";
    1. Computador (1280), /admin: só a barra do admin (Visão geral, Pendências e os sete grupos), nada do /dashboard;
       "Minha conta →" leva às áreas de usuário; <title> e <h1> de Contratos = rótulo da barra.
    2. /dashboard: o admin vê as áreas de usuário e UM item "Painel admin" (sem os itens do /admin).
-   3. Celular (390): "Menu da equipe" abre a barra com os grupos recolhidos.
+   3. Celular (390): o hambúrguer do topo (único caminho de menu, E176) abre a barra com os grupos recolhidos.
 */
 const SAIDA = "tests/laboratorio/saida";
 const TOPO = ["Visão geral", "Pendências", "Anúncios e pessoas", "Estadias", "Rede", "Cidades e marketing", "Números", "Equipe", "Sistema"];
@@ -55,7 +55,7 @@ test.describe("T460 — ADMIN-1: barra do admin", () => {
     await page.context().close();
   });
 
-  test("3. celular: 'Menu da equipe' abre a barra com os grupos recolhidos", async ({ browser }) => {
+  test("3. celular: o hambúrguer do topo (único caminho, E176) abre a barra com os grupos recolhidos", async ({ browser }) => {
     const page = await novaPagina(browser, 390);
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
     await page.getByTestId("admin-abrir-menu").click();

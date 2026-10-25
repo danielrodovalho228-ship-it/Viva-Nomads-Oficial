@@ -56,7 +56,8 @@ export const BARRA_ADMIN: readonly ItemMenu[] = [
 ];
 
 /** O rodapé da barra do admin leva de volta às áreas de usuário. */
-export const MINHA_CONTA_ADMIN = { rotulo: "Minha conta →", href: "/dashboard" } as const;
+// E176 (D3): "Minha conta" do admin leva à Conta (não ao Início do painel).
+export const MINHA_CONTA_ADMIN = { rotulo: "Minha conta →", href: "/dashboard/conta" } as const;
 
 /** Em /dashboard*, o admin vê UM item que leva à barra do admin. */
 export const ITEM_PAINEL_ADMIN: ItemMenu = { id: "admin", rotulo: "Painel admin", icone: "admin", href: "/admin" };

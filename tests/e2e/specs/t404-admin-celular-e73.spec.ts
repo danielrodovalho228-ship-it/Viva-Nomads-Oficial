@@ -5,7 +5,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 
 /*
   T404 — E73 (QA 24/10): o /admin no celular. 390 e 1280 px.
-   (a) no celular, "Voltar ao site" e "Menu da equipe" à vista no topo; o menu abre a navegação da equipe; no computador
+   (a) no celular, "Voltar ao site" à vista no topo e o hambúrguer (único caminho, E176) abre a navegação da equipe; no computador
        essa faixa não aparece (a barra lateral já está lá);
    (b) backup vermelho: no celular o alerta sobe para o topo (role=alert) com "Ver o backup"; no computador, não;
    (c) a linha de "Precisa da sua atenção" inteira é tocável (tocar fora do texto e do botão abre a mesma lista);
@@ -54,23 +54,17 @@ test.describe("T404 — E73: o admin no celular", () => {
       if (celular) {
         await expect(nav).toBeVisible();
         await expect(page.getByTestId("admin-voltar-site")).toHaveAttribute("href", "/");
-        await expect(page.getByTestId("admin-abrir-menu")).toHaveText("Menu da equipe");
+        // E176 (D3): UM caminho de menu — o hambúrguer do topo; o botão "Menu da equipe" saiu.
+        await expect(page.getByTestId("admin-abrir-menu")).toHaveAttribute("aria-label", "Abrir menu");
+        await expect(page.getByText("Menu da equipe")).toHaveCount(0);
       } else {
         await expect(nav).toBeHidden();
       }
 
-      // (b) alerta do backup: só no celular e só quando o cartão está vermelho.
+      // (b) E176 (D3): o alerta do backup aparece UMA vez, dentro de "Precisa da sua atenção" (sem a faixa duplicada).
       const vermelho = Number(await page.getByTestId("admin-saude").getAttribute("data-alertas")) > 0;
-      const alerta = page.getByTestId("alerta-backup");
-      if (celular && vermelho) {
-        await expect(alerta).toBeVisible();
-        await expect(alerta).toHaveAttribute("role", "alert");
-        await expect(page.getByTestId("alerta-backup-ver")).toHaveAttribute("href", "/admin/sistema#backup");
-        const [a, d] = await Promise.all([alerta.boundingBox(), page.getByTestId("admin-numeros").boundingBox()]);
-        expect(a!.y, "alerta antes dos números").toBeLessThan(d!.y);
-      } else {
-        await expect(alerta).toBeHidden();
-      }
+      await expect(page.getByTestId("alerta-backup")).toHaveCount(0);
+      await expect(page.getByTestId("admin-atencao").locator('[data-chave="backup"]')).toHaveCount(vermelho ? 1 : 0);
 
       // (d) os 4 números antes da atenção; cada número é link.
       const numeros = page.getByTestId("admin-numeros");
