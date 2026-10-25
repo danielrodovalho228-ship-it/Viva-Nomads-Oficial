@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { GERACAO_IA_ATIVA } from "@/lib/flags";
 import { consumirLimite, ipHash, DIA } from "@/lib/limites";
 import { integracoesSimuladas } from "@/lib/integracoes";
+import { nivelDoMeuImovel } from "@/lib/data/nivel-actions";
+import { ROTULO_NIVEL } from "@/config/niveis";
 import {
   montarBrief,
   limparSaida,
@@ -11,6 +13,7 @@ import {
   IA_SYSTEM_PROMPT,
   IA_OUTPUT_SCHEMA,
   IA_LIMITE_DIA,
+  type AnuncioBrief,
   type AnuncioBriefInput,
 } from "@/lib/ai/anuncio-prompt";
 
@@ -67,6 +70,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
   }
   const brief = montarBrief(body);
+  // E148-A: o nível entra no brief só COMPROVADO, lido no servidor pelo motor dos níveis (nunca o "estimado" da
+  // Qualificação, nunca o que o cliente mandar). nivelDoMeuImovel confere que o imóvel é do próprio dono.
+  if (typeof body.imovelId === "string") {
+    const n = (await nivelDoMeuImovel(body.imovelId).catch(() => null))?.resultado.nivel;
+    if (n && n !== "em_adequacao") brief.nivel = ROTULO_NIVEL[n] as AnuncioBrief["nivel"];
+  }
 
   // Limites (antes de chamar o modelo): por pessoa e por IP, janela de 24h.
   const okPessoa = await consumirLimite(`ia:user:${user.id}`, IA_LIMITE_DIA, DIA);

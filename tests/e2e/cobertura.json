@@ -991,7 +991,9 @@
         "t524-passo8-conta-meses",
         "t525-e161-rascunho-cheio",
         "t481-e132a-qualificacao",
-        "t544-e136-popup-calendario-ptbr"
+        "t544-e136-popup-calendario-ptbr",
+        "t484-e148a-titulo-descricao",
+        "t488-e179-conforto-sem-repetidos"
       ]
     },
     "/dashboard/indicacoes": {
