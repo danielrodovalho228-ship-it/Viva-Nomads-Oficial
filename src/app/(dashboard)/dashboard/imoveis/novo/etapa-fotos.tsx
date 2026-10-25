@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { ANCORA_VIDEO_ASSISTENTE } from "@/lib/anuncio/prontidao";
 import { Erro } from "./campos";
 import type { EstadoIaFotos, FalhaIaFotos } from "./tipos";
+import type { ConteudoFoto, EstadoPassoFotos } from "@/lib/fotos/conteudo";
 
 /** Mockup cadastro-imovel-02: a dica embaixo da galeria. */
 export const DICA_FOTOS = "Dica: use fotos com boa iluminação e ambiente organizado.";
@@ -44,6 +45,9 @@ export function EtapaFotos({
   setVideoUrl,
   videoArquivo,
   setVideoArquivo,
+  videoConteudo,
+  setVideoConteudo,
+  passoFotos,
   iaEstado,
   iaFalha,
   onTentarDeNovo,
@@ -60,6 +64,11 @@ export function EtapaFotos({
   /** Vídeo enviado como arquivo (ordem 8681ae95): caminho no bucket anuncio-videos, "" = sem vídeo. */
   videoArquivo: string;
   setVideoArquivo: (v: string) => void;
+  /** E133 (c): triagem do vídeo enviado e a confirmação do dono. */
+  videoConteudo?: ConteudoFoto | null;
+  setVideoConteudo?: (c: ConteudoFoto | null) => void;
+  /** E133: o que trava o "Continuar" deste passo (contagem, foto ou vídeo sinalizado). */
+  passoFotos?: EstadoPassoFotos;
   iaEstado: EstadoIaFotos;
   iaFalha?: FalhaIaFotos | null;
   onTentarDeNovo?: () => void;
@@ -98,6 +107,11 @@ export function EtapaFotos({
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
           <div className={cn("h-full rounded-full transition-all", bloqueado ? "bg-champagne" : "bg-forest")} style={{ width: `${Math.min(100, (photos.length / 20) * 100)}%` }} />
         </div>
+        {passoFotos && !passoFotos.podeContinuar && passoFotos.mensagem && (
+          <p className="mt-2 text-sm font-semibold text-red-700" data-testid="fotos-trava" data-trava={passoFotos.trava ?? undefined}>
+            {passoFotos.mensagem}
+          </p>
+        )}
         <p className="mt-2 text-xs text-muted">
           8–11 padrão · 12–19 <strong>Anúncio completo</strong> · 20+ <strong>Anúncio premium</strong> (mais prioridade na busca).
         </p>
@@ -132,7 +146,7 @@ export function EtapaFotos({
       {/* 65-B: o vídeo num bloco próprio, logo depois das fotos e antes da caixa da IA. Nunca bloqueia avançar. */}
       <section id={ANCORA_VIDEO_ASSISTENTE} className="mt-6 scroll-mt-24" data-testid="bloco-video">
         <h3 className="mb-3 font-title text-base font-semibold text-ink">Vídeo do imóvel (opcional)</h3>
-        <VideoUploader path={videoArquivo} onChange={setVideoArquivo} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} />
+        <VideoUploader path={videoArquivo} onChange={setVideoArquivo} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} conteudo={videoConteudo} onConteudo={setVideoConteudo} />
       </section>
 
       {/* Análise automática das fotos (uma vez por rascunho). */}
