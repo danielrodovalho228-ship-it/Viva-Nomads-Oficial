@@ -17,8 +17,8 @@ test("abas do topo (snapshot): Início · Anúncios · Interessados · Contratos
   assert.equal(GANHOS_DISPONIVEL, false, "Ganhos nasce no PROP-4; até lá a subaba não aparece");
 });
 
-test("menu Conta ▾ (snapshot), com Modo morador e Sair como ações", () => {
-  assert.deepEqual(CONTA_DONO.map((i) => i.rotulo), ["Perfil e dados", "Verificação", "Pagamentos e recebimentos", "Notificações", "Avaliações recebidas", "Plano", "Ferramentas", "Modo morador", "Sair"]);
+test("menu Conta ▾ (snapshot), com Modo morador e Sair como ações; MENUS-5: Ferramentas saíram da Conta", () => {
+  assert.deepEqual(CONTA_DONO.map((i) => i.rotulo), ["Perfil e dados", "Verificação", "Pagamentos e recebimentos", "Notificações", "Avaliações recebidas", "Plano", "Modo morador", "Sair"]);
   assert.deepEqual(CONTA_DONO.filter((i) => i.acao).map((i) => i.acao), ["modo-morador", "sair"]);
 });
 
@@ -65,13 +65,14 @@ test("'Conferência de entrada' saiu do menu", () => {
   assert.ok(!todos.includes("Conferência de entrada"));
 });
 
-test("o shell troca a barra lateral pelo topo só no modo dono, fora do /admin, e só no computador", () => {
+test("MENUS-5: fora do /admin, todo papel navega pelo topo (sem barra lateral); a barra lateral só na equipe", () => {
   const s = readFileSync("src/components/layout/dashboard-shell.tsx", "utf8");
-  assert.match(s, /const donoNoTopo = mode === "owner" && !pathname\.startsWith\("\/admin"\);/);
-  assert.match(s, /donoNoTopo && "lg:hidden"\)\} data-testid="barra-lateral"/);
-  assert.match(s, /<TopoDono /);
-  assert.match(s, /<SubabasDono pathname=\{pathname\} \/>/);
+  assert.match(s, /const papelTopo = naAreaAdmin \? null : papelAtivo;/);
+  assert.match(s, /\{!papelTopo && <aside [^>]*data-testid="barra-lateral">/);
+  assert.match(s, /<TopoPainel papel=\{papelTopo\}/);
+  assert.match(s, /<SubabasPainel papel=\{papelTopo\}/);
   assert.match(s, /modo: mode === "owner" \? "owner" : "tenant"/);
-  // Celular: a barra de abas do NAV-A continua.
-  assert.match(s, /<MobileTabBar /);
+  // Celular: a barra de baixo (da mesma fonte) e a Conta no avatar do topo.
+  assert.match(s, /<MobileTabBar [^>]*comContrato=\{comContrato\}/);
+  assert.match(s, /<MenuConta [^>]*compacto \/>/);
 });

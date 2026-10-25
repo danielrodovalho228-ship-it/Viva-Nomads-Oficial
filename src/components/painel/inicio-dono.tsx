@@ -118,6 +118,10 @@ export function InicioDono({ alerta, bloco }: { alerta: Decisao | null; bloco: B
             );
           })}
         </ul>
+        {/* MENUS-5, item 3: as Ferramentas saíram do menu da Conta; o resto delas mora aqui. */}
+        <Link href="/dashboard/ferramentas" className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-forest underline underline-offset-4" data-testid="inicio-dono-todas-ferramentas">
+          Todas as ferramentas <ChevronRight className="h-4 w-4" aria-hidden />
+        </Link>
       </section>
     </div>
   );
