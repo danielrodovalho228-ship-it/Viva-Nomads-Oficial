@@ -76,7 +76,8 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
       const page = await entrar(browser, dono.email, senha);
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await page.goto("/dashboard/leads", { waitUntil: "domcontentloaded" });
-      await expect(page.locator("main")).toContainText(ana.nome.split(" ")[0], { timeout: 30_000 });
+      // Antes do aceite a candidatura mostra "Candidato(a)", não o nome: espera pelo imóvel do interesse.
+      await expect(page.locator("main")).toContainText(`interesse em Cidade t552 ${sufixo}`, { timeout: 30_000 });
       const texto = await page.locator("main").innerText();
       expect(texto, "empresa visível antes do aceite").not.toContain(EMPRESA);
       expect(texto, "frase visível antes do aceite").not.toContain(FRASE);
