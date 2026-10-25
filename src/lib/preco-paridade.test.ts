@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { SAMPLE_PROPERTIES } from "./properties.ts";
-import { calcularTotalMensal, calcularTudoIncluido, mensalDoFechamento } from "./precos.ts";
+import { calcularTotalMensal, calcularTudoIncluido, mensalDoFechamento, precoDoFechamento, primeiroPagamentoDoPreco } from "./precos.ts";
 import { rotuloPreco, textoPreco } from "./cartao-preco.ts";
 import { barraFixaImovel } from "./barra-fixa-imovel.ts";
 
@@ -31,11 +31,19 @@ test("6 imóveis × 1/3/6 meses: cartão = página = rodapé fixo = fechamento, 
   }
 });
 
-test("fechamento com proposta aceita: o mesmo cálculo, com o valor mensal acordado", () => {
-  const p = SAMPLE_PROPERTIES.find((x) => (x.condoFee ?? 0) > 0) ?? SAMPLE_PROPERTIES[0];
-  const acordado = p.monthlyPrice - 100;
-  const extras = calcularTudoIncluido(p).total - p.monthlyPrice;
-  assert.equal(mensalDoFechamento(p, acordado), acordado + extras);
+test("fechamento com proposta aceita: o preço DA PROPOSTA (não o valor acordado somado aos extras atuais do anúncio)", () => {
+  // PROP-2 (substitui a regra do Prompt 47 para proposta aceita): caso real da proposta 301a58ca — R$ 3.200 + consumo
+  // R$ 200, 4 meses, preparação R$ 450; o anúncio tem pacote de limpeza de R$ 180 que NÃO entrou na proposta.
+  const p = { ...(SAMPLE_PROPERTIES.find((x) => (x.condoFee ?? 0) > 0) ?? SAMPLE_PROPERTIES[0]), monthlyPrice: 3500, limpezaEstadia: { valorMes: 180, porMes: 2 } } as (typeof SAMPLE_PROPERTIES)[number];
+  const acordo = { valorMensal: 3200, meses: 4, termos: { condominio: 0, consumo: 200, limpezasMes: 0, valorLimpeza: 0, taxaPet: 0, limpezaUnica: 450 } };
+  const f = precoDoFechamento(p, acordo, 4);
+  assert.equal(f.totalPorMes, 3400);
+  assert.equal(f.totalContrato, 14050);
+  assert.equal(f.conta?.replace(/\u00a0/g, " "), "4 × R$ 3.400 + limpeza de preparação R$ 450 = R$ 14.050");
+  assert.equal(primeiroPagamentoDoPreco(f), 3850);
+  assert.notEqual(f.totalPorMes, mensalDoFechamento(p, 3200), "a mistura antiga (acordado + extras do anúncio) não vale mais");
+  // Sem proposta: o anúncio, igual ao cartão.
+  assert.equal(precoDoFechamento(p, null, 3).totalPorMes, calcularTudoIncluido(p).total);
   assert.equal(mensalDoFechamento(p, 0), calcularTudoIncluido(p).total, "sem acordo, o anúncio");
 });
 

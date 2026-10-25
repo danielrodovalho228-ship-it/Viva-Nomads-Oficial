@@ -1,7 +1,7 @@
 "use client";
 
 import { rotuloPreco } from "@/lib/cartao-preco";
-import { mensalDoFechamento } from "@/lib/precos";
+import { mensalDoFechamento, parcelaDoMes, precoDoFechamento, primeiroPagamentoDoPreco, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { CampoData } from "@/components/ui/campo-data";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
@@ -79,9 +79,6 @@ const MESES_MAX = 6;
 const TAMANHO_BLOCO = 2;
 // Serviços visíveis (inclui "em breve" como slot). Opcionais e combináveis.
 const SERVICOS_VISIVEIS = servicosVisiveis();
-// Taxa de limpeza/preparação (Bloco B)
-const PREP_FEE = 450;
-const CHECKOUT_FEE = 250;
 
 /**
  * Fluxo do fechamento — SEMPRE a partir de um contexto real (candidatura aceita)
@@ -133,6 +130,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const VALOR_ESTADIA = resumo.valorTotalPeriodo;
   // Prompt 47 (adendo): o total do período mostrado é o MESMO do cartão para a mesma duração (função única).
   const PRECO_PERIODO = rotuloPreco({ mensal: mensalDoFechamento(PROPERTY_FULL, ACORDO?.valorMensal), meses: prazoMeses });
+  // PROP-2: com proposta aceita, o preço DA PROPOSTA (total por mês, total do contrato e a conta); sem ela, o do anúncio.
+  // O 1º pagamento, o consumo e as limpezas saem daqui — nada de valor fixo (antes 280/450/250 para todo imóvel).
+  const PRECO_FECHAMENTO = precoDoFechamento(PROPERTY_FULL, ACORDO, prazoMeses);
+  const CONSUMO_MES = parcelaDoMes(PRECO_FECHAMENTO, "Consumo", "Água");
+  const PREPARACAO = PRECO_FECHAMENTO.unicos.find((u) => u.rotulo === ROTULO_PREPARACAO)?.valor ?? 0;
+  const SAIDA_LIMPEZA = PRECO_FECHAMENTO.unicos.find((u) => u.rotulo !== ROTULO_PREPARACAO)?.valor ?? 0;
   const PLATFORM_COMMISSION = resumo.comissaoValor;
   const CAUCAO_50 = resumo.caucaoTotal; // total do período (soma dos blocos)
   // PROP-3 (E115): o percentual no texto vem dos valores reais (o teto de 3 aluguéis pode baixar a caução).
@@ -156,7 +159,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [guaranteeId, setGuaranteeId] = useState<string | null>("caucao");
   // Quadro "antes da entrada" (prompt 24): 1º pagamento + Caução ao lado (some com seguro-fiança).
   const quadroEntrada = quadroAntesDaEntrada({
-    primeiroPagamento: PROPERTY.monthlyRent + 280 + PREP_FEE,
+    primeiroPagamento: primeiroPagamentoDoPreco(PRECO_FECHAMENTO),
     caucao: CAUCAO_50,
     garantia: garantiaDoContrato(guaranteeId),
   });
@@ -577,18 +580,29 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               )}
               {ACORDO && (
                 <p className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest" data-testid="fechamento-proposta">
-                  Valores da proposta <strong>{ACORDO.numero}</strong>, aceita pelas duas partes: {formatBRL(ACORDO.valorMensal)}/mês ×{" "}
-                  {ACORDO.meses} {ACORDO.meses === 1 ? "mês" : "meses"} = <strong>{formatBRL(ACORDO.valorMensal * ACORDO.meses)}</strong>.
+                  Valores da proposta <strong>{ACORDO.numero}</strong>, aceita pelas duas partes: {ROTULO_TOTAL_MES.toLowerCase()}{" "}
+                  <strong data-testid="fechamento-proposta-mes">{formatBRL(PRECO_FECHAMENTO.totalPorMes)}</strong> · {ROTULO_TOTAL_CONTRATO.toLowerCase()}{" "}
+                  <strong data-testid="fechamento-proposta-contrato">{formatBRL(PRECO_FECHAMENTO.totalContrato ?? 0)}</strong>
+                  {PRECO_FECHAMENTO.conta && <span className="block" data-testid="fechamento-proposta-conta">{PRECO_FECHAMENTO.conta}</span>}
                 </p>
               )}
               <p className="mt-3 text-xs text-muted">
                 {resumo.blocos.length} {resumo.blocos.length === 1 ? "bloco" : "blocos"} ·{" "}
-                <span data-testid="fechamento-preco">
-                  {PRECO_PERIODO.mes} · total do período{" "}
-                  <strong className="text-ink" data-testid="fechamento-total-periodo" data-total={PRECO_PERIODO.total}>
-                    {formatBRL(PRECO_PERIODO.total)}
-                  </strong>
-                </span>
+                {ACORDO ? (
+                  <span data-testid="fechamento-preco">
+                    {formatBRL(PRECO_FECHAMENTO.totalPorMes)}/mês · {ROTULO_TOTAL_CONTRATO.toLowerCase()}{" "}
+                    <strong className="text-ink" data-testid="fechamento-total-periodo" data-total={PRECO_FECHAMENTO.totalContrato ?? 0}>
+                      {formatBRL(PRECO_FECHAMENTO.totalContrato ?? 0)}
+                    </strong>
+                  </span>
+                ) : (
+                  <span data-testid="fechamento-preco">
+                    {PRECO_PERIODO.mes} · total do período{" "}
+                    <strong className="text-ink" data-testid="fechamento-total-periodo" data-total={PRECO_PERIODO.total}>
+                      {formatBRL(PRECO_PERIODO.total)}
+                    </strong>
+                  </span>
+                )}
                 .
               </p>
             </div>
@@ -1062,19 +1076,23 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {/* Regime de consumo no contrato (Atualização 6) */}
             <div className="rounded-xl border border-sage-200 p-4 text-sm">
               <p className="font-medium text-ink">Despesas de consumo</p>
-              <p className="mt-1 text-muted">
-                Regime: <strong>valor fixo estimado</strong> de {formatBRL(280)}/mês, com
-                cláusula de ajuste se o consumo exceder 20%. A cobrança complementar (com
-                comprovante) é registrada pela plataforma — não intermediada.
-              </p>
+              {CONSUMO_MES > 0 ? (
+                <p className="mt-1 text-muted">
+                  Regime: <strong>valor fixo estimado</strong> de {formatBRL(CONSUMO_MES)}/mês, com
+                  cláusula de ajuste se o consumo exceder 20%. A cobrança complementar (com
+                  comprovante) é registrada pela plataforma — não intermediada.
+                </p>
+              ) : (
+                <p className="mt-1 text-muted">Sem valor fixo de consumo nesta locação: as contas seguem o combinado no anúncio.</p>
+              )}
             </div>
 
             {/* Taxa de preparação/limpeza (Bloco B) */}
             <div className="rounded-xl border border-sage-200 p-4 text-sm">
               <p className="font-medium text-ink">Limpeza & preparação</p>
               <div className="mt-2 space-y-1">
-                <Row label="Preparação (limpeza profunda, única)" value={formatBRL(PREP_FEE)} />
-                <Row label="Limpeza de saída (opcional)" value={formatBRL(CHECKOUT_FEE)} />
+                <Row label="Preparação (limpeza profunda, única)" value={PREPARACAO > 0 ? formatBRL(PREPARACAO) : "Não cobrada"} />
+                {SAIDA_LIMPEZA > 0 && <Row label="Limpeza de saída" value={formatBRL(SAIDA_LIMPEZA)} />}
               </div>
               <p className="mt-2 text-xs text-muted">
                 A preparação é cobrada <strong>uma única vez</strong> (não a cada hóspede). A
@@ -1086,9 +1104,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             <div className="rounded-xl bg-blue-50 p-4 text-sm">
               <p className="font-medium text-blue-900">O morador vê no 1º pagamento</p>
               <div className="mt-2 space-y-1">
-                <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
-                <Row label="Consumo estimado" value={`${formatBRL(280)}/mês`} />
-                <Row label="Preparação (única)" value={formatBRL(PREP_FEE)} />
+                {PRECO_FECHAMENTO.parcelasMes.map((x) => (
+                  <Row key={x.rotulo} label={x.rotulo} value={`${formatBRL(x.valor)}/mês`} />
+                ))}
+                {PREPARACAO > 0 && <Row label="Preparação (única)" value={formatBRL(PREPARACAO)} />}
                 <div className="flex items-center justify-between border-t border-blue-200 pt-1 font-semibold text-blue-900">
                   <span>1º pagamento</span>
                   <span data-testid="entrada-primeiro-pagamento">{formatBRL(quadroEntrada.primeiroPagamento)}</span>
