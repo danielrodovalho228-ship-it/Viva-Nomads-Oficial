@@ -22,6 +22,19 @@ export function termoBusca(v: string | undefined | null): string | null {
   return t || null;
 }
 
+/**
+ * L-69 — quem é "usuário" na contagem: proprietários e inquilinos não anonimizados. A MESMA regra vale para a lista
+ * padrão de /admin/usuarios e para o número do topo (NumeroDaFonte → contarUsuarios); o admin e as contas anonimizadas
+ * ficam fora das duas pontas. Contas de teste entram separadas ("N reais · M de teste") e a lista só as mostra com
+ * "Mostrar contas de teste".
+ */
+export const PAPEIS_USUARIOS = ["owner", "tenant"] as const;
+
+/** A regra acima, para um perfil já lido. */
+export function contaComoUsuario(p: { role: string | null; anonymized_at: string | null }): boolean {
+  return p.anonymized_at === null && (PAPEIS_USUARIOS as readonly (string | null)[]).includes(p.role);
+}
+
 const PAPEIS = { proprietario: "owner", inquilino: "tenant", admin: "admin" } as const;
 
 function dataValida(v: string): boolean {

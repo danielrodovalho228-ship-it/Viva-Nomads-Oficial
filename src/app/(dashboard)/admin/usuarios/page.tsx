@@ -12,7 +12,7 @@ import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { idsContasTeste } from "@/lib/data/admin-indicadores";
 import { tipoImovel } from "@/lib/admin/indicadores";
 import { dataBRT } from "@/lib/datas-brasilia";
-import { cadastroCompleto, faltaNoCadastro, filtrosUsuarios, hrefUsuarios, rotuloFiltroUsuarios, type DadosCadastro } from "@/lib/admin/usuarios-lista";
+import { PAPEIS_USUARIOS, cadastroCompleto, faltaNoCadastro, filtrosUsuarios, hrefUsuarios, rotuloFiltroUsuarios, type DadosCadastro } from "@/lib/admin/usuarios-lista";
 import { Users } from "lucide-react";
 import { BotaoContaTeste } from "./conta-teste";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
@@ -36,7 +36,8 @@ type Linha = {
 
 /**
  * Lista que os cartões da visão geral abrem (ordem 61454243 + Prompt 29). Mesmo critério do número da home:
- * perfis não anonimizados com papel de dono ou inquilino, contas de teste fora (filtro "Mostrar contas de teste").
+ * perfis não anonimizados com papel de dono ou inquilino (PAPEIS_USUARIOS, a mesma regra do número do topo — L-69),
+ * contas de teste fora (filtro "Mostrar contas de teste").
  * O admin aparece com "Papel: admin". Cadastro completo = a MESMA função da Conta. Sem CPF, telefone ou e-mail na tela.
  */
 export default async function AdminUsuariosPage({
@@ -76,7 +77,7 @@ export default async function AdminUsuariosPage({
       .limit(2000);
     // Fundadores conta como o cartão: qualquer perfil com fundador, sem filtro de papel.
     if (f.fundador) q = q.eq("fundador", true);
-    if (!f.fundador) q = q.is("anonymized_at", null).in("role", f.papel ? [f.papel] : ["owner", "tenant"]);
+    if (!f.fundador) q = q.is("anonymized_at", null).in("role", f.papel ? [f.papel] : [...PAPEIS_USUARIOS]);
     if (f.fundador && f.papel) q = q.eq("role", f.papel);
     if (!f.teste) q = q.or("is_teste.is.null,is_teste.eq.false");
     if (f.q) q = q.ilike("full_name", `%${f.q}%`);

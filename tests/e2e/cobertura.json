@@ -377,7 +377,8 @@
         "t300-entrada-sem-senha-49",
         "t306-varredura-bloco7",
         "t317-email-unico-49c1",
-        "t353-varredura-bloco18"
+        "t353-varredura-bloco18",
+        "t471-login-apple"
       ]
     },
     "/auth/pronto": {
@@ -462,8 +463,7 @@
       "specs": [
         "t18-seo-a11y",
         "t20-p1-agentes",
-        "t311-marco-principal-unico",
-        "t421-varredura-bloco38"
+        "t311-marco-principal-unico"
       ]
     },
     "/cidades/[cidade]": {
@@ -2148,6 +2148,14 @@
         "t397-foto-na-hora",
         "t407-varredura-bloco26"
       ]
+    },
+    "/dashboard/qa/emails": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t470-qa-leitor-caixas"
+      ]
     }
   },
   "rotas": {
@@ -2598,7 +2606,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t471-login-apple"
+      ]
     },
     "/auth/confirm": {
       "personas": [
