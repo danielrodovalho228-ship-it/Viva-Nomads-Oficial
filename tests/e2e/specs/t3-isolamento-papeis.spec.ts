@@ -60,7 +60,7 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
       const sub = page.getByTestId("subabas-dono").locator("a");
       if (await sub.count()) for (const h of await sub.evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute("href")!))) hrefs.add(h);
     }
-    expect(hrefs.size).toBeGreaterThan(8);
+    expect(hrefs.size).toBeGreaterThanOrEqual(7); // MENUS-5: 5 abas + subabas
     // Páginas públicas (fora da casca), como /buscar e /pedidos/novo, não contam.
     for (const href of [...hrefs].filter((h) => !PUBLICAS_FORA_DA_CASCA.includes(h))) {
       await page.goto(href, { waitUntil: "domcontentloaded" });
