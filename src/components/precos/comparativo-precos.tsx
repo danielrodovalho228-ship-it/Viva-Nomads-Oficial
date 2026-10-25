@@ -126,12 +126,12 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
 }
 
 /** Linha da etapa de preço do Anunciar: "Você paga R$ X uma vez." */
-export function LinhaComparativoAnuncio({ aluguel }: { aluguel: number }) {
-  if (!(aluguel > 0)) return null;
-  const valor = comissaoSobreContrato(aluguel, MESES_EXEMPLO, TAXA_COMISSAO_PADRAO);
+export function LinhaComparativoAnuncio({ aluguel, meses = MESES_EXEMPLO }: { aluguel: number; meses?: number }) {
+  if (!(aluguel > 0) || !(meses > 0)) return null;
+  const valor = comissaoSobreContrato(aluguel, meses, TAXA_COMISSAO_PADRAO);
   return (
     <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-ink" data-testid="linha-comparativo">
-      Num contrato de {MESES_EXEMPLO} meses neste valor mensal, a taxa de serviço é de <strong>{brl(valor)} uma vez</strong> ({pctTexto(TAXA_COMISSAO_PADRAO)} sobre o valor total do contrato para quem tem 1 ou 2 imóveis; menor com mais imóveis), só quando o contrato é fechado.{" "}
+      Num contrato de {meses} {meses === 1 ? "mês" : "meses"} neste valor mensal, a taxa de serviço é de <strong>{brl(valor)} uma vez</strong> ({pctTexto(TAXA_COMISSAO_PADRAO)} sobre o valor total do contrato para quem tem 1 ou 2 imóveis; menor com mais imóveis), só quando o contrato é fechado.{" "}
       <Link href="/precos" className="web-only font-medium text-forest underline">
         Ver preços
       </Link>
