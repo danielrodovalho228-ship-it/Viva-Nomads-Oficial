@@ -46,7 +46,12 @@ test.describe("T484 — E136: datas em pt-BR no Passo 9 e na Revisão, navegador
       await preencherData(page, "disponivel-de", de);
       await preencherData(page, "disponivel-ate", ate);
       const etapa = page.getByTestId("etapa-disponibilidade");
-      await expect(etapa).toContainText(isoParaBR(de), { timeout: 15_000 });
+      // No computador a data fica no VALOR do campo de texto (dd/mm/aaaa); no toque, no texto ao lado do seletor nativo.
+      if ((await page.getByTestId("disponivel-de").getAttribute("type")) === "date") {
+        await expect(page.getByTestId("disponivel-de-texto")).toHaveText(isoParaBR(de), { timeout: 15_000 });
+      } else {
+        await expect(page.getByTestId("disponivel-de")).toHaveValue(isoParaBR(de), { timeout: 15_000 });
+      }
 
       // Um bloqueio: a linha dele também tem datas.
       const livres = await diasLivres(etapa);

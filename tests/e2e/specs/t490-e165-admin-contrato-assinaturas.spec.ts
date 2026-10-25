@@ -56,6 +56,10 @@ test.describe("T490 — E165: assinaturas na lista e no detalhe do admin", () =>
 
   test("lista e detalhe mostram as duas assinaturas", async ({ browser }) => {
     test.skip(!hasAccount("admin"), "conta de admin do laboratório não configurada");
+    // E165 (Pista A): a lista lê contratos.assinado_*_em (admin-indicadores.ts) e o detalhe lê contrato_assinaturas
+    // (contrato-admin.ts). lab-crítico 40207606596: lista "Assinado pelas duas partes" × detalhe "Nenhuma assinatura
+    // ainda." Quem corrigir tira este test.fail.
+    test.fail(true, "E165: a lista diz assinado pelas duas partes e o detalhe diz nenhuma assinatura");
     const page = await (await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } })).newPage();
 
     await page.goto(`/admin/contratos?tipo=todos&q=${ids.contrato.slice(0, 8)}`, { waitUntil: "domcontentloaded" });

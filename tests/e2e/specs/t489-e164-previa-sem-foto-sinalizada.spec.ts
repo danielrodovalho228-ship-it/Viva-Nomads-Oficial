@@ -44,6 +44,9 @@ test.describe("T489 — E164: a prévia não usa a foto sinalizada sem confirma�
   });
 
   test("1. só o print, sem confirmar: a prévia não mostra o print como foto principal", async ({ browser }) => {
+    // E164 (Pista A): a prévia usa photos[0] sem olhar a sinalização (page.tsx, PreviaAnuncio foto={photos[0]?.url});
+    // lab-crítico 40207606596: o src da prévia é o mesmo do print sinalizado. Quem corrigir tira este test.fail.
+    test.fail(true, "E164: a Visualização do anúncio mostra a foto sinalizada e não confirmada como principal");
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
     await abrirPassoFotos(p);

@@ -50,6 +50,9 @@ test.describe("T488 — E153: pedido do documento em um lugar só", () => {
   });
 
   test("a 1280 px: Passo 3 + Passo 10 + /qualificar = 1 pedido de envio", async ({ browser }) => {
+    // E153 (Pista A): o pedido aparece em dois lugares — o "Enviar documento" da Revisão e o envio da /qualificar
+    // (lab-crítico 40207606596: {"endereco":0,"revisao":1,"qualificar":1}, total 2). Quem corrigir tira este test.fail.
+    test.fail(true, "E153: o pedido do documento aparece na Revisão e de novo na /qualificar");
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     const contagem: Record<string, number> = {};

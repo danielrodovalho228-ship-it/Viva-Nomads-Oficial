@@ -46,7 +46,11 @@ test.describe("T485 — E137: 24 dias no computador e bloqueio com clique duplo"
     const etapa = page.getByTestId("etapa-disponibilidade");
     const [ini, fim] = (await diasLivres(etapa)).slice(5, 7);
     const bloquear = await marcarPeriodo(etapa, ini, fim);
-    await Promise.all([bloquear.click(), bloquear.click({ force: true, delay: 0 }).catch(() => {})]);
+    // Os dois cliques no mesmo tique, antes de a tela travar o botão (o duplo toque de quem tem pressa).
+    await bloquear.evaluate((b: HTMLButtonElement) => {
+      b.click();
+      b.click();
+    });
     const linha = etapa.locator(`[data-testid="bloqueio-item"][data-inicio="${ini}"]`);
     await expect(linha.first()).toBeVisible({ timeout: 20_000 });
     await page.waitForTimeout(1_500);
