@@ -74,7 +74,8 @@
         "t442-foto-perfil-revisao",
         "t460-admin1-barra",
         "t465-admin4-inicial",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t546-e175-parcerias-uma-linha"
       ]
     },
     "/admin/2fa/refazer": {
@@ -992,7 +993,9 @@
         "t525-e161-rascunho-cheio",
         "t481-e132a-qualificacao",
         "t544-e136-popup-calendario-ptbr",
-        "t484-e148a-titulo-descricao"
+        "t484-e148a-titulo-descricao",
+        "t547-e148a-texto-sugerido-passo7",
+        "t548-e132a-declaracoes-persistem"
       ]
     },
     "/dashboard/indicacoes": {
@@ -2594,7 +2597,8 @@
         "admin"
       ],
       "specs": [
-        "t54-upload-foto-seguro"
+        "t54-upload-foto-seguro",
+        "t545-e177-cache-foto-anuncio"
       ]
     },
     "/api/upload/video/confirmar": {
