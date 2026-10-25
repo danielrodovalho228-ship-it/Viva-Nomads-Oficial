@@ -49,9 +49,13 @@ test.describe("T466 — ADMIN-5: Central de Agentes", () => {
         return cores;
       });
       expect(fundos).not.toContain("rgb(5, 10, 24)");
-      const luz = await page.locator("main").evaluate((m) => {
-        const [r, g, b] = (getComputedStyle(m).backgroundColor.match(/\d+/g) ?? ["255", "255", "255"]).map(Number);
-        return (r + g + b) / 3;
+      // O primeiro fundo não transparente a partir da Central (o main herda o do layout).
+      const luz = await central.evaluate((el) => {
+        for (let e: Element | null = el; e; e = e.parentElement) {
+          const [r, g, b, a] = (getComputedStyle(e).backgroundColor.match(/[\d.]+/g) ?? []).map(Number);
+          if (r !== undefined && (a === undefined || a > 0)) return (r + g + b) / 3;
+        }
+        return 255;
       });
       expect(luz, "fundo claro").toBeGreaterThan(200);
       await semRolagemLateral(page);

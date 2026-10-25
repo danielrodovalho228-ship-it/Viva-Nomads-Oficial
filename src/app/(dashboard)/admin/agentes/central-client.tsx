@@ -649,6 +649,12 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
     };
   }, [slug]);
   const carregandoChat = historico?.slug !== slug;
+  /** Depois de enviar: relê a página mais nova do chat (o que o servidor gravou), como fazia o router.refresh antes. */
+  const reler = useCallback((alvo: string) => {
+    carregarConversas(alvo)
+      .then((p) => setHistorico((h) => (h === null || h.slug === alvo ? { slug: alvo, ...p } : h)))
+      .catch(() => undefined);
+  }, []);
   const salvas = historico?.slug === slug ? historico.itens : [];
   async function verAnteriores() {
     if (!historico || !historico.itens[0] || lendoAntigas) return;
@@ -731,6 +737,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
       const rumo = decidirEnvio(pergunta, !!j.acao);
       if (rumo === "pergunta" || !j.acao) {
         setExtra((e) => [...e, ...passos, resposta]);
+        reler(slug);
         return;
       }
       // Pedido de ação: o servidor já respondeu; agora vira ordem (e aciona na hora se for P0/P1/"agora").
@@ -755,6 +762,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
         return alvo.slug !== slug ? moverTrocaParaAgente(todas, [`p-${agoraIso}`, ...troca.map((m) => m.id)], alvo.slug) : todas;
       });
       if (alvo.slug !== slug) setSlug(alvo.slug);
+      else reler(slug);
       startTransition(() => router.refresh());
     } catch {
       setErro("Sem conexão. Tente de novo.");
