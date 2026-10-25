@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T493 — MENUS-5 / E85, guarda permanente da Pista C: a estrutura de menus.
+  T542 — MENUS-5 / E85, guarda permanente da Pista C: a estrutura de menus.
    1. No máximo 5 destinos principais: a barra lateral do morador (1280), as abas do topo do proprietário (1280) e a
       barra inferior dos dois papéis (390).
    2. Conta: cada destino com UM nome só. Juntando a barra lateral (grupos abertos), o menu lateral da Conta (1280) e os
@@ -11,8 +11,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const morador = { email: `mor.t493.${sufixo}@lab.vivanomads.test`, nome: "Mara Menu", role: "tenant" as const };
-const dono = { email: `dono.t493.${sufixo}@lab.vivanomads.test`, nome: "Dino Menu", role: "owner" as const };
+const morador = { email: `mor.t542.${sufixo}@lab.vivanomads.test`, nome: "Mara Menu", role: "tenant" as const };
+const dono = { email: `dono.t542.${sufixo}@lab.vivanomads.test`, nome: "Dino Menu", role: "owner" as const };
 const ids: Record<string, string> = {};
 
 const caminho = (href: string) => new URL(href, "http://x").pathname.replace(/\/$/, "") || "/";
@@ -26,14 +26,14 @@ async function links(page: Page, raiz: string): Promise<[string, string][]> {
   );
 }
 
-test.describe("T493 — MENUS-5 / E85: 5 destinos e um nome por destino", () => {
+test.describe("T542 — MENUS-5 / E85: 5 destinos e um nome por destino", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
 
   test.beforeAll(async () => {
     ids.morador = await criarConta(morador, senha);
     ids.dono = await criarConta(dono, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Studio dos menus t493 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Studio dos menus t542 ${sufixo}`, { ativo: true });
     await adm().from("profiles").update({ preferred_mode: "owner", papel_ativo: "proprietario" }).eq("id", ids.dono);
   });
   test.afterAll(async () => {
@@ -63,7 +63,7 @@ test.describe("T493 — MENUS-5 / E85: 5 destinos e um nome por destino", () => 
     await pd.context().close();
 
     test.info().annotations.push({ type: "menus", description: JSON.stringify(contagem) });
-    console.log(`t493 menus ${JSON.stringify(contagem)}`);
+    console.log(`t542 menus ${JSON.stringify(contagem)}`);
     const acima = Object.entries(contagem).filter(([, v]) => v.length > 5 || v.length === 0).map(([k, v]) => `${k}: ${v.length} ${JSON.stringify(v)}`);
     expect(acima, "menus com mais de 5 destinos principais (ou vazios)").toEqual([]);
   });
@@ -102,7 +102,7 @@ test.describe("T493 — MENUS-5 / E85: 5 destinos e um nome por destino", () => 
       .filter(([, v]) => new Set([...v].map(soNome)).size > 1)
       .map(([c, v]) => `${c}: ${[...v].join(" | ")}`);
     test.info().annotations.push({ type: "nomes-duplos", description: JSON.stringify(duplos) });
-    console.log(`t493 nomes duplos ${JSON.stringify(duplos)}`);
+    console.log(`t542 nomes duplos ${JSON.stringify(duplos)}`);
     expect(duplos, "destinos alcançáveis por dois nomes diferentes").toEqual([]);
   });
 });

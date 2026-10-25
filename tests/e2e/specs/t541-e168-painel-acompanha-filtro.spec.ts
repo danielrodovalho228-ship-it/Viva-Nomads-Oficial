@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T492 — E168 (#1383), guarda permanente da Pista C: a t84 abre a caixa e troca o filtro. Aqui a conversa é ABERTA
+  T541 — E168 (#1383), guarda permanente da Pista C: a t84 abre a caixa e troca o filtro. Aqui a conversa é ABERTA
   pelo clique (como a pessoa faz) e só depois o filtro "Como morador" (que zera a lista do dono) é escolhido:
    - o painel da conversa esvazia (sem o nome, sem o campo de resposta, com o aviso de filtro vazio);
    - voltar a "Como proprietário" traz a conversa de volta.
@@ -11,18 +11,18 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t492.${sufixo}@lab.vivanomads.test`, nome: "Dalva Caixa", role: "owner" as const };
-const inq = { email: `inq.t492.${sufixo}@lab.vivanomads.test`, nome: "Ivo Conversa", role: "tenant" as const };
+const dono = { email: `dono.t541.${sufixo}@lab.vivanomads.test`, nome: "Dalva Caixa", role: "owner" as const };
+const inq = { email: `inq.t541.${sufixo}@lab.vivanomads.test`, nome: "Ivo Conversa", role: "tenant" as const };
 const ids: Record<string, string> = {};
 
-test.describe("T492 — E168: o painel da conversa acompanha o filtro", () => {
+test.describe("T541 — E168: o painel da conversa acompanha o filtro", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 90_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.inq = await criarConta(inq, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Studio da caixa t492 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Studio da caixa t541 ${sufixo}`, { ativo: true });
     await criarLead(ids.dono, ids.inq, ids.imovel);
     await gravarMensagem(ids.inq, ids.dono, ids.imovel, "Oi! O studio ainda está disponível?", conversationId(ids.inq, ids.dono, ids.imovel));
   });
@@ -49,7 +49,7 @@ test.describe("T492 — E168: o painel da conversa acompanha o filtro", () => {
       await expect(page.getByTestId("conversa-nome"), "a conversa de outro filtro ficou no painel").toHaveCount(0);
       await expect(page.getByTestId("mensagem-campo")).toHaveCount(0);
       await expect(page.getByTestId("mensagens-detalhe-vazio")).toBeVisible();
-      await page.screenshot({ path: `tests/laboratorio/saida/t492-filtro-vazio-${w}.png` });
+      await page.screenshot({ path: `tests/laboratorio/saida/t541-filtro-vazio-${w}.png` });
 
       await page.getByTestId("mensagens-filtro-proprietario").click();
       await expect(conversa).toHaveCount(1);

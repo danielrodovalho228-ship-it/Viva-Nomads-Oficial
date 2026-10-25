@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /*
-  T494 — E166 (#1381), guarda permanente da Pista C: a troca do fundo bege/creme pelo clean não regride nas páginas
+  T543 — E166 (#1381), guarda permanente da Pista C: a troca do fundo bege/creme pelo clean não regride nas páginas
   PÚBLICAS. O unitário fundo-clean-e166.test.ts olha o código; aqui é o que a página DESENHA: em cada página, nenhum
   elemento visível com o fundo bege "areia" (#f7f2ea) ou creme (#fbfaf4) — nem o body. A 390 e 1280 px, sem login.
 */
@@ -24,7 +24,7 @@ const PAGINAS = [
 ];
 const PROIBIDOS = ["rgb(247, 242, 234)", "rgb(251, 250, 244)"];
 
-test.describe("T494 — E166: nenhuma página pública com o fundo bege/creme", () => {
+test.describe("T543 — E166: nenhuma página pública com o fundo bege/creme", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
   test.describe.configure({ timeout: 240_000 });
 
@@ -53,7 +53,7 @@ test.describe("T494 — E166: nenhuma página pública com o fundo bege/creme", 
         }, PROIBIDOS);
         for (const b of bege) achados.push(`${rota}: ${b}`);
       }
-      console.log(`t494 ${w}: ${JSON.stringify(achados)}`);
+      console.log(`t543 ${w}: ${JSON.stringify(achados)}`);
       expect(achados, "elementos com o fundo bege/creme antigo").toEqual([]);
     });
   }
