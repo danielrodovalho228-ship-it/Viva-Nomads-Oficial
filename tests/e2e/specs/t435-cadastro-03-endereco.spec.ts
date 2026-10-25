@@ -130,11 +130,11 @@ test.describe("T435 — Cadastro 03: Endereço (cadastro-imovel-03)", () => {
       for (const texto of ["Deixe a IA preencher o anúncio para você", "Quem opera este imóvel?", "Confirme sua identidade", "Já tem anúncio em outro site?"]) {
         await expect(p.getByText(texto), texto).toHaveCount(0);
       }
-      // Cartão branco sobre o fundo areia (#f7f2ea) da moldura.
+      // Cartão branco sobre o fundo clean (#f7f7f7, E166; antes, areia) da moldura.
       const coluna = p.getByTestId("novo-coluna-form");
       expect(await coluna.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
       expect(await coluna.evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThan(0);
-      expect(await p.getByTestId("moldura-assistente").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(247, 242, 234)");
+      expect(await p.getByTestId("moldura-assistente").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(247, 247, 247)");
       // A etiqueta do bairro não cobre o zoom do mapa (o "+" fica à vista).
       await p.getByTestId("mapa-bairro").scrollIntoViewIfNeeded();
       await p.waitForTimeout(500);

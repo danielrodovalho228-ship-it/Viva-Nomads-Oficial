@@ -341,7 +341,7 @@ export function PhotoUploader({
               "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-forest",
               cad
                 ? cn(
-                    "border-2 border-apoio/60 bg-areia p-3 text-ink hover:border-forest",
+                    "border-2 border-apoio/60 bg-surface-2 p-3 text-ink hover:border-forest",
                     photos.length === 0 ? "col-span-3 min-h-48 lg:col-span-4" : "aspect-[4/3] lg:col-start-4 lg:row-start-1 lg:self-center"
                   )
                 : "aspect-[4/3] border-sage-200 text-sage hover:border-sage",

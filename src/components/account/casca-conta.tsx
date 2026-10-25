@@ -20,7 +20,7 @@ const ICONES: Record<ItemSecao["icone"], React.ComponentType<{ className?: strin
 };
 
 /**
- * A1 — a casca das telas da Conta (mockups perfil-01..08): fundo areia, menu lateral "Conta" com as oito seções (a
+ * A1 — a casca das telas da Conta (mockups perfil-01..08): fundo clean (E166; antes, areia), menu lateral "Conta" com as oito seções (a
  * ativa numa pílula verde) no computador; no celular, "‹ Conta" volta ao menu e o título fica no topo. Um H1 por tela
  * (o nome da seção). `lateral` (opcional) é a coluna da direita no computador (ex.: o espelho do Perfil).
  */

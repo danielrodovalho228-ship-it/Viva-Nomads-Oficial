@@ -31,7 +31,7 @@ test("foto: escuro só atrás do texto (pílula no logo, cartão no título), se
 });
 
 test("formulário: cartão branco sobre areia, sem sombra, raio do padrão", () => {
-  assert.equal(FUNDO_FORMULARIO_PORTA, "bg-areia");
+  assert.equal(FUNDO_FORMULARIO_PORTA, "bg-surface-2"); // E166: fundo clean (antes, areia)
   assert.match(CARTAO_FORMULARIO_PORTA, /bg-white/);
   assert.match(CARTAO_FORMULARIO_PORTA, /rounded-xl/);
   assert.doesNotMatch(CARTAO_FORMULARIO_PORTA, /shadow/);
