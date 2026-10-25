@@ -120,7 +120,10 @@ export function SugestoesDasFotos({
   return (
     <section className="rounded-xl border border-sage-200 p-4" data-testid="deteccao-fotos">
       <h3 className="text-base font-semibold text-ink">Encontramos isto numa foto sua</h3>
-      <p className="mt-1 text-xs text-muted">Confirme o que está certo. Nada conta para o nível nem vira comodidade antes de você confirmar; item de nível só conta com a foto feita na hora.</p>
+      <p className="mt-1 text-xs text-muted">Confirme o que está certo. Nada conta para o nível nem vira comodidade antes de você confirmar.</p>
+      <p className="mt-1 text-xs text-muted" data-testid="deteccao-referencia">
+        {SUGESTAO_SO_REFERENCIA}
+      </p>
       {analisando && <Analisando />}
       {estado.comPessoa > 0 && (
         <p role="alert" className="mt-3 rounded-lg border border-line bg-white px-3 py-2 text-sm text-red-700" data-testid="deteccao-pessoa">
@@ -135,12 +138,12 @@ export function SugestoesDasFotos({
         <ul className="mt-3 divide-y divide-line rounded-lg border border-line bg-white">
           {sugestoes.map((s) =>
             s.tipo === "nivel" ? (
-              <li key={s.id} className="flex flex-col gap-3 p-3 text-sm sm:flex-row sm:items-center" data-testid={`deteccao-sugestao-${s.chave}`} data-tipo={s.tipo} data-status={s.status}>
+              <li key={s.id} className="flex flex-col gap-3 p-3 text-sm sm:flex-row sm:flex-wrap sm:items-center" data-testid={`deteccao-sugestao-${s.chave}`} data-tipo={s.tipo} data-status={s.status}>
                 <figure className="shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={s.fotoUrl} alt="" className="h-16 w-16 rounded-lg object-cover" loading="lazy" />
-                  <figcaption className="mt-1 max-w-24 text-[11px] leading-tight text-muted" data-testid={`deteccao-referencia-${s.chave}`}>
-                    {SUGESTAO_SO_REFERENCIA}
+                  <figcaption className="mt-1 text-[11px] leading-tight text-muted" data-testid={`deteccao-origem-${s.chave}`}>
+                    Da sua galeria
                   </figcaption>
                 </figure>
                 <span className="min-w-0 flex-1">
@@ -150,7 +153,7 @@ export function SugestoesDasFotos({
                   </span>
                   <span className="block text-xs text-muted">Item de nível · confiança {rotuloConfianca(s.confianca)}</span>
                 </span>
-                <span className="flex shrink-0 flex-wrap gap-2">
+                <span className="flex shrink-0 flex-wrap gap-2 sm:max-w-full">
                   <ProvaNaHora
                     propertyId={propertyId}
                     chave={s.chave}
@@ -170,8 +173,13 @@ export function SugestoesDasFotos({
               </li>
             ) : (
               <li key={s.id} className="flex flex-col gap-3 p-3 text-sm sm:flex-row sm:items-center" data-testid={`deteccao-sugestao-${s.chave}`} data-tipo={s.tipo}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.fotoUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" loading="lazy" />
+                <figure className="shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={s.fotoUrl} alt="" className="h-16 w-16 rounded-lg object-cover" loading="lazy" />
+                  <figcaption className="mt-1 text-[11px] leading-tight text-muted" data-testid={`deteccao-origem-${s.chave}`}>
+                    Da sua galeria
+                  </figcaption>
+                </figure>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold text-ink">{s.rotulo}</span>
                   <span className="block text-xs text-muted">Comodidade · confiança {rotuloConfianca(s.confianca)}</span>
@@ -206,30 +214,6 @@ function Analisando() {
         Olhando suas fotos…
       </p>
       <SkeletonLinhas linhas={2} testid="deteccao-analisando" />
-    </div>
-  );
-}
-
-/**
- * Detecção-A (Entrega 3, só com a chave ligada): no topo do passo Comodidades, o que ainda falta foto para o próximo
- * nível, com "Enviar foto", que leva à lista do nível (onde cada item tem o envio). Nada falta: não aparece.
- */
-export function AlertaFaltaFoto({ itens }: { itens: readonly { chave: string; rotulo: string }[] }) {
-  if (itens.length === 0) return null;
-  const nomes = itens.map((i) => i.rotulo);
-  const texto = nomes.length === 1 ? nomes[0] : `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-line bg-white p-4 sm:flex-row sm:items-center sm:justify-between" role="status" data-testid="deteccao-falta">
-      <p className="text-sm text-ink">
-        <strong className="font-semibold">Falta foto de:</strong> {texto}.
-      </p>
-      <a
-        href="#nivel-cadastro-falta"
-        className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-line bg-white px-4 text-sm font-semibold text-forest"
-        data-testid="deteccao-falta-enviar"
-      >
-        Enviar foto
-      </a>
     </div>
   );
 }

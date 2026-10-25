@@ -30,6 +30,8 @@ export interface DepsDeteccao {
   /** Chama o modelo com a foto e devolve o JSON cru (lança se a API falhar). `indice` = posição na galeria. */
   modelo: (bytes: Uint8Array, indice: number) => Promise<unknown>;
   gravar: (a: AnaliseParaGravar) => Promise<void>;
+  /** E142: a foto parece tela (print, cartão, documento)? Sim = não vai ao modelo e nunca vira sugestão. */
+  pareceTela?: (bytes: Uint8Array) => Promise<boolean>;
   porRodada?: number;
 }
 
@@ -42,6 +44,8 @@ export interface ResumoRodada {
   /** Fotos novas que ficaram para a próxima rodada. */
   restantes: number;
   limite: boolean;
+  /** E142: fotos que pareciam tela (print, cartão) e ficaram fora da detecção. */
+  telas?: number;
 }
 
 const VAZIO: ResumoRodada = { ligada: false, analisadas: 0, invalidas: 0, falhas: 0, comPessoa: 0, restantes: 0, limite: false };
@@ -74,6 +78,14 @@ export async function analisarFotosNovas(d: DepsDeteccao): Promise<ResumoRodada>
       // Mesma foto com outro caminho (enviada de novo): registra o caminho, sem modelo e sem cota.
       await d.gravar({ caminho: f.caminho, hash, pessoa: false, valida: true, linhas: [] });
       ja.caminhos.add(f.caminho);
+      continue;
+    }
+    if (d.pareceTela && (await d.pareceTela(bytes))) {
+      // E142: print ou cartão ("[TESTE QA]" lido como ar-condicionado) não é foto do imóvel: grava sem itens, sem cota.
+      await d.gravar({ caminho: f.caminho, hash, pessoa: false, valida: false, linhas: [] });
+      ja.caminhos.add(f.caminho);
+      ja.hashes.add(hash);
+      r.telas = (r.telas ?? 0) + 1;
       continue;
     }
     if (!(await d.limite())) {

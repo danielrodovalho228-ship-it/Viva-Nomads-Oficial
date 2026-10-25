@@ -37,7 +37,8 @@ const ler = (p: string) => readFileSync(raiz + p, "utf8");
 const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 const BLOCO_DONO = ler("src/components/vistoria/bloco-avaliacao-dono.tsx");
-const NIVEL = ler("src/app/(dashboard)/dashboard/imoveis/[id]/nivel/page.tsx") + ler("src/app/(dashboard)/dashboard/imoveis/[id]/nivel/form-nivel.tsx");
+// E143: ruído e extras saíram para um componente compartilhado (página do nível e Passo 5).
+const NIVEL = ler("src/app/(dashboard)/dashboard/imoveis/[id]/nivel/page.tsx") + ler("src/app/(dashboard)/dashboard/imoveis/[id]/nivel/form-nivel.tsx") + ler("src/components/niveis/ruido-extras.tsx");
 const MORADOR = ler("src/app/(dashboard)/dashboard/avaliacao-imovel/[id]/page.tsx");
 const CARTAO_CONVERSA = ler("src/components/vistoria/avaliacao-na-conversa.tsx");
 const CONVERSA_ACAO = ler("src/lib/vistoria/conversa-actions.ts");
