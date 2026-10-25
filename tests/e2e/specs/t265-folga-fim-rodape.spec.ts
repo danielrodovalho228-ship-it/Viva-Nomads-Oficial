@@ -229,14 +229,11 @@ test.describe("T265 — proprietário novo (laboratório)", () => {
     test.setTimeout(120_000);
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    // PROP-6 (#1349): o Início do dono sem imóvel é o bloco "Anuncie seu primeiro imóvel" com "Anunciar meu imóvel".
-    const bloco = page.locator('[data-testid="inicio-dono-principal"][data-tipo="primeiro_anuncio"]');
-    await expect(bloco.getByRole("heading", { name: "Anuncie seu primeiro imóvel" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("heading", { level: 1, name: "Nada pede sua decisão hoje" })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("passos-proprietario")).toHaveCount(0);
-    // Um primário por tela (Prompt 41). Hoje são dois: o do bloco e o "Publicar pedido de moradia" (L-66, Pista A).
     const primarios = page.locator('main [data-cta="primary"]:visible');
-    await expect(primarios, "L-66: dois primários no Início do dono").toHaveCount(1);
-    await expect(primarios.first()).toHaveText(/Anunciar meu imóvel/);
+    await expect(primarios).toHaveCount(1);
+    await expect(primarios.first()).toHaveText(/Cadastrar meu imóvel/);
     await expect(page.locator('nav[aria-label="Navegação principal"]')).toBeVisible();
     await page.screenshot({ path: "tests/laboratorio/saida/t265-dono-novo-390.png", fullPage: true });
     await page.context().close();
