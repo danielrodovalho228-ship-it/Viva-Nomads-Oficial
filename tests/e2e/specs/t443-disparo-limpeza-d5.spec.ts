@@ -162,7 +162,8 @@ test.describe("T443 — disparo automático da limpeza em D-5 (Prompt 38)", () =
     expect(chat.length, "boas-vindas + descrição do pedido").toBe(2);
     expect(chat.every((m) => m.sender_id === ids.donoA && m.receiver_id === ids.limpa), "do dono para a parceira").toBe(true);
     expect(chat[1].body).toContain(`Limpeza depois da saída do morador: entre ${ddmm(5)} às 13:00 e ${ddmm(7)} às 11:00.`);
-    expect(chat[1].body).toContain("Serviço: Limpeza completa (a partir de R$ 250,00 por serviço).");
+    // O valor sai do Intl pt-BR: "R$" e o número separados por espaço inseparável (U+00A0).
+    expect(chat[1].body.replace(/\u00a0/g, " ")).toContain("Serviço: Limpeza completa (a partir de R$ 250,00 por serviço).");
     // Por dentro dos e-mails: quem recebe, o que diz e para onde o botão leva.
     const corpo = (quem: keyof typeof contas, assunto: RegExp) => String(emails.find((e) => e.para === contas[quem].email && assunto.test(String(e.assunto)))?.corpo ?? "");
     const cParceira = corpo("limpa", /^Novo pedido de orçamento/);
