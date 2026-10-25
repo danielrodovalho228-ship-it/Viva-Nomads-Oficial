@@ -25,12 +25,11 @@ export function RodapeAssistente(p: { pos: number; total: number; onVoltar: (() 
   const pct = progressoPasso(p.pos, p.total);
   return (
     <>
-      <div aria-hidden className="h-28" data-testid="assistente-rodape-espaco" />
+      <div aria-hidden className="h-32" data-testid="assistente-rodape-espaco" />
       <div className="vn-rodape-fluxo fixed inset-x-0 z-20 border-t border-line bg-white print:hidden" data-testid="assistente-rodape">
         <div className="h-1 w-full bg-surface-2" role="progressbar" aria-label="Progresso do cadastro" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
           <div className="h-full bg-forest transition-all" style={{ width: `${pct}%` }} />
         </div>
-        {/* 16 px abaixo dos botões: o respiro até a barra das fotos do celular (t269/t270). */}
         {/* No computador, os botões alinham com a coluna do conteúdo (a mesma largura máxima da moldura, 72rem). */}
         <div className="flex w-full items-center justify-between gap-3 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-8" data-rodape-linha>
           <div className="flex min-w-0 items-center gap-1 sm:gap-3">

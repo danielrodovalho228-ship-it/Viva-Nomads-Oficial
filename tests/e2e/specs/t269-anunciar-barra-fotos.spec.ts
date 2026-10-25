@@ -64,7 +64,7 @@ test.describe("T269 — Anunciar: sem a faixa fixa de fotos; nada embaixo do rod
       // Cada controle do formulário, ao receber o foco, fica inteiro acima do que é fixo embaixo.
       const total = await page.locator("main").evaluate((m) => {
         const els = Array.from(m.querySelectorAll<HTMLElement>("button, input:not([type=hidden]), select, textarea, a[href]"))
-          .filter((el) => el.getBoundingClientRect().height > 0 && getComputedStyle(el).visibility !== "hidden");
+          .filter((el) => !el.closest('[data-testid="assistente-rodape"]') && el.getBoundingClientRect().height > 0 && getComputedStyle(el).visibility !== "hidden");
         els.forEach((el, i) => el.setAttribute("data-t269", String(i)));
         return els.length;
       });
@@ -95,7 +95,7 @@ test.describe("T269 — Anunciar: sem a faixa fixa de fotos; nada embaixo do rod
       await page.waitForTimeout(300);
       const ultimo = await page.locator("main").evaluate((m) => {
         const els = Array.from(m.querySelectorAll<HTMLElement>("button, input:not([type=hidden]), select, textarea, a[href]"))
-          .filter((el) => el.getBoundingClientRect().height > 0 && getComputedStyle(el).visibility !== "hidden");
+          .filter((el) => !el.closest('[data-testid="assistente-rodape"]') && el.getBoundingClientRect().height > 0 && getComputedStyle(el).visibility !== "hidden");
         const r = els.sort((a, b) => b.getBoundingClientRect().bottom - a.getBoundingClientRect().bottom)[0].getBoundingClientRect();
         return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
       });

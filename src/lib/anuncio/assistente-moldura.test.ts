@@ -54,7 +54,7 @@ test("rodapé do fluxo: 'Passo N de 10' + barra, Voltar (passos 2–10) e um só
   assert.equal((rodape.match(/<Button\b/g) ?? []).length, 1, "um primário só");
   assert.match(rodape, /vn-rodape-fluxo fixed inset-x-0/, "fixo na largura toda");
   assert.match(ler("app/globals.css"), /\.vn-rodape-fluxo \{\s*bottom: 0;/, "encosta no fim da tela (E107: sem barra de fotos)");
-  assert.match(rodape, /aria-hidden className="h-28" data-testid="assistente-rodape-espaco"/, "o espaçador reserva o lugar do rodapé");
+  assert.match(rodape, /aria-hidden className="h-32" data-testid="assistente-rodape-espaco"/, "o espaçador reserva o lugar do rodapé");
   assert.doesNotMatch(pagina, /data-testid="cadastro-(continuar|voltar)"|Cancelar e voltar|<CabecalhoPassos/, "Continuar, Voltar e o passo só no rodapé");
 });
 
