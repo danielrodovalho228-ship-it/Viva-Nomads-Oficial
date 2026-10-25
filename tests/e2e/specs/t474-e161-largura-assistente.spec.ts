@@ -81,6 +81,16 @@ test.describe("T474 — E161: assistente na largura do anúncio", () => {
       await p.getByTestId("novo-resumo").getByTestId("previa-tamanho-real-abrir").click();
       const real = p.getByTestId("previa-tamanho-real");
       await expect(real).toBeVisible();
+      // Por cima de tudo: o "Fechar" da prévia é o que está no topo da tela, não o "Sair" do assistente.
+      const noTopo = await p.evaluate(() => document.elementFromPoint(window.innerWidth - 40, 30)?.closest("[data-testid]")?.getAttribute("data-testid"));
+      expect(noTopo).toBe("previa-tamanho-real-fechar");
+      const rodapeCoberto = await p.evaluate(() => {
+        const r = document.querySelector('[data-testid="assistente-rodape"]')!.getBoundingClientRect();
+        return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('[data-testid="previa-tamanho-real"]') != null;
+      });
+      expect(rodapeCoberto, "o rodapé do assistente fica por baixo da prévia").toBe(true);
+        expect(rodapeCoberto, "o rodapé do assistente fica por baixo da prévia").toBe(true);
+      });
       expect(Math.abs((await largura(p, "previa-real-largura")) - imovel)).toBeLessThanOrEqual(1);
       // A galeria do computador (o mosaico); o carrossel do celular fica escondido nesta largura.
       const mosaico = real.getByTestId("galeria-mosaico");

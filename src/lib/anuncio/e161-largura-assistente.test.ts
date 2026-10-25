@@ -54,3 +54,8 @@ test("E161: a faixa da direita do flutuante (CONTA-A C4) não vale no assistente
 test("E161: o botão do tamanho real aparece uma vez no passo (sem bloco duplicado)", () => {
   assert.equal((NOVO.match(/data-testid="previa-tamanho-real-passo"/g) ?? []).length, 1);
 });
+
+test("E161: o tamanho real abre no document.body (portal), por cima do topo e do rodapé do assistente", () => {
+  assert.match(REAL, /createPortal\(/);
+  assert.match(REAL, /document\.body,/);
+});

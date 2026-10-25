@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Maximize2, MapPin, X } from "lucide-react";
 import { PropertyGallery } from "@/components/property-gallery";
 import { PriceCard } from "@/components/property/price-card";
@@ -37,7 +38,10 @@ export function BotaoTamanhoReal({ imovel, className }: { imovel: Property; clas
       >
         <Maximize2 className="h-4 w-4" aria-hidden /> Ver no tamanho real
       </button>
-      {aberto && (
+      {/* No document.body: aberta da coluna lateral (sticky = outro contexto de empilhamento), ela ficava por baixo do
+          topo e do rodapé do assistente. */}
+      {aberto &&
+        createPortal(
         <div role="dialog" aria-modal="true" aria-label="O anúncio no tamanho real" className="fixed inset-0 z-50 overflow-y-auto bg-white" data-testid="previa-tamanho-real">
           <div className="sticky top-0 z-10 flex h-16 items-center justify-between gap-2 border-b border-line bg-white px-4 sm:px-8">
             <p className="text-sm font-semibold text-ink">Assim o morador vê o seu anúncio</p>
@@ -68,8 +72,9 @@ export function BotaoTamanhoReal({ imovel, className }: { imovel: Property; clas
               </aside>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
     </>
   );
 }
