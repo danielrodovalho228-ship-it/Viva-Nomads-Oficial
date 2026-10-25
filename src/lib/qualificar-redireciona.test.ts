@@ -35,3 +35,8 @@ test("estado vazio de Meus imóveis começa pelas fotos", () => {
   assert.match(src, /Cadastrar imóvel/);
   assert.doesNotMatch(src, /Qualificar imóvel/);
 });
+
+test("E132-A: o redirect de /qualificar sem ?imovel também mora no next.config (a casca do painel engolia o da página)", () => {
+  const cfg = readFileSync(join(process.cwd(), "next.config.ts"), "utf8");
+  assert.match(cfg, /source: "\/qualificar", missing: \[\{ type: "query" as const, key: "imovel" \}\], destination: "\/dashboard\/imoveis\/novo"/);
+});
