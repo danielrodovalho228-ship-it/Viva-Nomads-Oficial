@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { existsSync } from "node:fs";
+import { PAGINAS_BARRA_ADMIN } from "../config/menu-admin.ts";
 import {
   ABAS_POR_PAPEL,
   ROTULO_GANHOS_DONO,
@@ -105,10 +106,9 @@ test("Voltar do app tem alvo de toque de 44 px e a spec t14 repete o toque até 
 });
 
 test("painel /admin lista todos os itens do menu do admin como atalhos", () => {
-  // Menu em cascata (ordem 9f3085d8): o grupo Administração mora em config/menu-por-papel.ts (Prompt 42).
-  const config = readFileSync(new URL("../config/menu-por-papel.ts", import.meta.url), "utf8");
+  // ADMIN-1: a barra do admin mora em config/menu-admin.ts (itens ainda desligados, como o Sistema, ficam fora).
   const atalhos = readFileSync(new URL("../app/(dashboard)/admin/atalhos-admin.tsx", import.meta.url), "utf8");
-  const menu = [...config.matchAll(/href: "(\/admin[^"]*)"/g)].map((m) => m[1]);
+  const menu = PAGINAS_BARRA_ADMIN.map((i) => i.href!);
   assert.ok(menu.length >= 10);
   // A âncora de "Equipe e aprovações" é parte da tela Agentes: o atalho é o da tela.
   for (const h of new Set(menu.filter((x) => x !== "/admin").map((x) => x.split("#")[0]))) assert.ok(atalhos.includes(`href="${h}"`) || atalhos.includes(`href: "${h}"`), h);

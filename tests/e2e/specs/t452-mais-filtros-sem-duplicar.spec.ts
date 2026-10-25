@@ -55,7 +55,8 @@ for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
 
       // Zera o rascunho: escolher Quartos e limpar volta o "Mostrar N" ao total.
       const total = Number(await mostrar.getAttribute("data-total"));
-      await folha.getByTestId("faceta-quartos-3").click();
+      // Uma faceta com imóvel (as de contagem 0 ficam desabilitadas).
+      await folha.locator('button[data-testid^="faceta-"]:not([disabled])').first().click();
       await limpar.click();
       await expect(mostrar).toHaveAttribute("data-total", String(total));
     });

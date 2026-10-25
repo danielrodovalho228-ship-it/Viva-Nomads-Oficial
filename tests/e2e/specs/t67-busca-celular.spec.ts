@@ -42,10 +42,12 @@ test.describe("T67 — Busca no celular", () => {
     await expect(painel.getByTestId("aplicar-filtros")).toHaveText(`Mostrar ${totalAntes} ${totalAntes === 1 ? "imóvel" : "imóveis"}`);
     await painel.screenshot({ path: "tests/laboratorio/saida/t67-painel-390.png" });
 
-    await painel.locator("fieldset", { hasText: "Quartos" }).getByRole("button", { name: "2+", exact: true }).click();
+    // Faceta sem imóvel fica desabilitada (contagem 0): sem imóvel com 2+ quartos nesta base, não há o que filtrar.
+    const doisMais = painel.locator("fieldset", { hasText: "Quartos" }).getByRole("button", { name: "2+", exact: true });
+    test.skip(await doisMais.isDisabled(), "Sem imóvel com 2+ quartos nesta base.");
+    await doisMais.click();
     const rotulo = await painel.getByTestId("aplicar-filtros").innerText();
     const n = Number(rotulo.match(/\d+/)?.[0] ?? 0);
-    test.skip(n === 0, "Sem imóvel com 2+ quartos nesta base.");
     expect(n).toBeLessThanOrEqual(totalAntes);
     await painel.getByTestId("aplicar-filtros").click();
 
@@ -74,12 +76,16 @@ test.describe("T67 — Busca no celular", () => {
     await page.goto("/buscar", { waitUntil: "networkidle" });
     await page.getByTestId("pilula-mais").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
-    await painel.getByRole("button", { name: "Aceita pets", exact: true }).click();
+    // Qualquer faceta com imóvel serve para o rascunho (as de contagem 0 ficam desabilitadas).
+    const faceta = painel.locator('button[data-testid^="faceta-"]:not([disabled])').first();
+    await expect(faceta).toBeVisible();
+    await faceta.click();
+    await expect(faceta).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("Escape");
     await expect(painel).toHaveCount(0);
     await expect(page.getByTestId("pilula-mais")).not.toContainText("(");
     await expect(page.getByTestId("pilula-mais")).toHaveAttribute("aria-pressed", "false");
-    await expect(page).not.toHaveURL(/pet=1/);
+    await expect(page).toHaveURL(/\/buscar$/);
   });
 
   test("link com filtros (atalho da home) abre o celular já filtrado", async ({ page }) => {

@@ -1,7 +1,8 @@
 import { listarCaixa } from "@/lib/socios/caixa-actions";
 import { CaixaSociosClient } from "./caixa-client";
+import { tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Caixa dos Sócios — Admin" };
+export const metadata = { title: tituloDoAdmin("/admin/socios") };
 // A leitura do arquivo (transcrição do áudio, leitura do print/PDF) roda na própria ação de envio.
 export const maxDuration = 60;
 

@@ -15,6 +15,7 @@ import { MotivoDialog } from "@/components/admin/motivo-dialog";
 import { dataPedidoBR, textoBairros, textoFaixaValor } from "@/lib/pedidos/campos";
 import type { ColunasPedidoAdmin } from "@/lib/data/pedidos-admin-colunas";
 import { abasPedidos, filtrarPedidosAdmin } from "@/lib/admin/pedidos-filtro";
+import { rotuloDoAdmin } from "@/config/menu-admin";
 
 type Pedido = {
   id: string;
@@ -91,7 +92,7 @@ export function AdminPedidosClient({
   return (
     <>
       <PageTitle
-        title="Moderação de pedidos"
+        title={rotuloDoAdmin("/admin/pedidos")}
         subtitle="Ocultar pedidos impróprios (com motivo, notificando o inquilino) e reativar."
       />
       {/* Recorte único dos cartões e da lista (complemento do P29, item 5b). */}

@@ -7,8 +7,9 @@ import { dataBRT } from "@/lib/datas-brasilia";
 import { contextoDaSaida, painelQualidade } from "@/lib/data/qualidade";
 import { adminDefinirCorrecao, adminEstadoDenuncia, adminFecharCorrecao } from "@/lib/saida/acoes";
 import { ESTADOS_DENUNCIA, MOTIVOS_DENUNCIA, ROTULO_ESTADO_DENUNCIA, ROTULO_NIVEL_SAIDA, ROTULO_PAPEL_SAIDA, prioridadeDenuncia, rotuloMotivo, type EstadoDenuncia, type NivelSaida, type PapelSaida } from "@/lib/saida/regras";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Qualidade — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/qualidade"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
@@ -33,7 +34,7 @@ export default async function AdminQualidadePage({ searchParams }: { searchParam
 
   return (
     <div data-testid="admin-qualidade">
-      <PageTitle title="Qualidade" subtitle="Por que as pessoas saem e o que a Viva corrige · contas de teste fora" />
+      <PageTitle title={rotuloDoAdmin("/admin/qualidade")} subtitle="Por que as pessoas saem e o que a Viva corrige · contas de teste fora" />
 
       <Panel className="mb-6" data-testid="qualidade-decisoes">
         {semDono.length === 0 && p1Abertas.length === 0 ? (

@@ -149,5 +149,5 @@ test("admin: Central de Pendências com 'decisões primeiro' — a equipe decide
   assert.ok(c.indexOf("<DecisoesDaCentral") < c.indexOf("<Panel title={filtro ?"), "as decisões vêm antes da lista");
   assert.match(c, /\{ lado: "equipe", titulo: "Decide a equipe da Viva" \}/);
   assert.match(c, /data-testid=\{`central-filtro-\$\{f\.chave\}`\}/);
-  assert.match(ler("config/menu-por-papel.ts"), /href: "\/admin\/pendencias"/);
+  assert.match(ler("config/menu-admin.ts"), /"\/admin\/pendencias"/);
 });

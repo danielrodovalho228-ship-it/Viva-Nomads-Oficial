@@ -7,8 +7,9 @@ import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { rankingInteresse, type LinhaInteresse } from "@/lib/cidades-liberadas/regras";
 import { listarCidades } from "@/lib/cidades-liberadas/servidor";
 import { CadastroCidadeForm, CidadeBotao } from "./forms";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Cidades liberadas — Admin" };
+export const metadata = { title: tituloDoAdmin("/admin/cidades") };
 
 /**
  * Admin → Cidades liberadas (ordem 335b4064): libera/pausa cidade e ranking de interesse (proprietários × inquilinos),
@@ -20,7 +21,7 @@ export default async function AdminCidadesPage() {
   if (!supabase) {
     return (
       <>
-        <PageTitle title="Cidades liberadas" />
+        <PageTitle title={rotuloDoAdmin("/admin/cidades")} />
         <EmptyState icon={MapPinned} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
@@ -36,7 +37,7 @@ export default async function AdminCidadesPage() {
 
   return (
     <>
-      <PageTitle title="Cidades liberadas" subtitle="Só dá para publicar imóvel em cidade liberada. Quem busca ou pede moradia em outra cidade pode deixar o interesse." />
+      <PageTitle title={rotuloDoAdmin("/admin/cidades")} subtitle="Só dá para publicar imóvel em cidade liberada. Quem busca ou pede moradia em outra cidade pode deixar o interesse." />
       {(cidades === null || error) && (
         <p role="alert" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Não foi possível ler todos os dados agora. Tente de novo em instantes.

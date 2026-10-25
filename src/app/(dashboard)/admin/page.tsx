@@ -17,6 +17,7 @@ import { FaixaNumerosCelular } from "@/components/admin/faixa-numeros-celular";
 import { AlertaBackupCelular } from "@/components/admin/cartao-backup";
 import { faixaNumerosCelular } from "@/lib/admin/faixa-celular";
 import { showDemoProperties } from "@/lib/data/properties";
+import { tituloDoAdmin } from "@/config/menu-admin";
 
 /**
  * Início do /admin na anatomia "decisões primeiro" (Prompt 46, D5): "Hoje você tem N decisões" (cada fila com o botão
@@ -24,6 +25,8 @@ import { showDemoProperties } from "@/lib/data/properties";
  * personalizado) com variação contra o anterior, filtro de cidade, fórmula no "i", funil e CSV. Todo número abre a
  * lista que conta. O layout já exige admin; a leitura confere de novo (getVisaoGeral).
  */
+export const metadata = { title: tituloDoAdmin("/admin") };
+
 export default async function AdminPage({
   searchParams,
 }: {
