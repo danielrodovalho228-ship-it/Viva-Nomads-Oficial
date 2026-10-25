@@ -288,6 +288,7 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
     "components/property/places-picker.tsx", // menu suspenso de sugestões (Prompt 45)
     "components/search-map.tsx", // botões (pinos) do mapa
     "components/ui/button.tsx", // variante flutuante
+    "components/ui/calendario-br.tsx", // pop-up do calendário dos campos de data (E136)
   ]);
   // E nenhuma outra sombra nesses arquivos de flutuantes (a guarda geral cobre o resto do alcance).
   for (const f of ["components/property/barra-fixa-celular.tsx", "components/search-map.tsx", "components/layout/navbar.tsx", "components/layout/mobile-tab-bar.tsx"]) {
@@ -452,7 +453,7 @@ test("folha de filtros: chip de opção = pill; campo e botão = 8 px; Limpar tu
   // E82-A: a linha de pílulas (chips = pill) e, nos painéis, campos de 8 px (data e raio).
   const pilulas = ler("components/busca/barra-pilulas.tsx");
   assert.match(pilulas, /<Chip/);
-  assert.match(pilulas, /type="date"[\s\S]{0,400}rounded-lg border border-line/); // data
+  assert.match(pilulas, /<CampoData[\s\S]{0,400}rounded-lg border border-line/); // data (E136: o campo do site, calendário em pt-BR)
   assert.match(busca, /aria-label="Raio de busca" className="h-11 rounded-lg border border-line/); // raio
 });
 

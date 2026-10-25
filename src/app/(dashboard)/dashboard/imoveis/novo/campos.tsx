@@ -1,8 +1,10 @@
 "use client";
 
-import { Children, cloneElement, isValidElement, useRef, useState, useSyncExternalStore } from "react";
-import { AlertTriangle, CalendarDays, Check, Minus, Plus, Sparkles } from "lucide-react";
-import { brParaIso, interpretarDataColada, isoParaBr, mascararData } from "@/lib/data-digitada";
+import { Children, cloneElement, isValidElement } from "react";
+import { AlertTriangle, Check, Minus, Plus, Sparkles } from "lucide-react";
+import { isoParaBr } from "@/lib/data-digitada";
+import { CampoDataTexto } from "@/components/ui/campo-data";
+import { useToque } from "@/components/ui/use-toque";
 import { MARCA_SUGERIDO } from "@/lib/anuncio/sugestoes-cadastro";
 import { cn } from "@/lib/utils";
 
@@ -208,25 +210,13 @@ export function Toggle({
   );
 }
 
-/** Tela de toque (celular/tablet)? Lido do navegador; no servidor, "não" (o campo do computador). */
-function useToque(): boolean {
-  return useSyncExternalStore(
-    (avisar) => {
-      const mq = window.matchMedia("(pointer: coarse)");
-      mq.addEventListener("change", avisar);
-      return () => mq.removeEventListener("change", avisar);
-    },
-    () => window.matchMedia("(pointer: coarse)").matches,
-    () => false,
-  );
-}
-
 /**
  * Campo de data do cadastro. Valor em AAAA-MM-DD.
  *  • Celular (toque): o `input type="date"` nativo, SEM máscara (Q8/Q9) — no iPhone abre só o calendário. Ocupa 100%
  *    da largura e não sai do cartão no iOS (`appearance: none`, `min-width: 0`).
  *  • Computador (prompt 22): digitar dd/mm/aaaa com máscara, COLAR em vários formatos (01/11/2026, 2026-11-01…) e o
- *    calendário num botão ao lado (o campo nativo do computador é segmentado e não aceitava digitar nem colar).
+ *    calendário num botão ao lado (o campo nativo do computador é segmentado e não aceitava digitar nem colar). E136:
+ *    o calendário é o do site, em pt-BR (`CalendarioBR`); o pop-up do navegador saía no idioma do navegador.
  */
 export function CampoDataUnico({
   value,
@@ -242,14 +232,6 @@ export function CampoDataUnico({
   testid?: string;
 }) {
   const toque = useToque();
-  const calendario = useRef<HTMLInputElement>(null);
-  const [texto, setTexto] = useState(isoParaBr(value));
-  // Mudança de fora (rascunho, calendário): o texto acompanha — ajuste na renderização, sem efeito.
-  const [anterior, setAnterior] = useState(value);
-  if (anterior !== value) {
-    setAnterior(value);
-    if (brParaIso(texto) !== value) setTexto(isoParaBr(value));
-  }
 
   if (toque) {
     // E136: o campo nativo escreve a data no idioma do APARELHO ("Oct 25, 2026" num iPhone em inglês). O texto nativo
@@ -277,59 +259,15 @@ export function CampoDataUnico({
   const antesDoMinimo = !!value && !!min && value < min;
   return (
     <span className="block min-w-0">
-      <span className="relative block min-w-0">
-        <input
-          type="text"
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="dd/mm/aaaa"
-          value={texto}
-          onChange={(e) => {
-            const m = mascararData(e.target.value);
-            setTexto(m);
-            onChange(brParaIso(m) ?? "");
-          }}
-          onPaste={(e) => {
-            const iso = interpretarDataColada(e.clipboardData.getData("text"));
-            if (!iso) return; // formato desconhecido: deixa o navegador colar e a máscara limpar
-            e.preventDefault();
-            setTexto(isoParaBr(iso));
-            onChange(iso);
-          }}
-          aria-label={ariaLabel}
-          aria-invalid={antesDoMinimo || undefined}
-          data-testid={testid}
-          className="input box-border block h-11 w-full min-w-0 max-w-full pr-12"
-        />
-        <button
-          type="button"
-          onClick={() => {
-            const c = calendario.current;
-            if (!c) return;
-            try {
-              c.showPicker();
-            } catch {
-              c.focus();
-            }
-          }}
-          aria-label={`Abrir calendário: ${ariaLabel}`}
-          className="absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-forest hover:bg-sage-50"
-          data-testid={testid ? `${testid}-calendario` : undefined}
-        >
-          <CalendarDays className="h-5 w-5" aria-hidden />
-        </button>
-        {/* O calendário do navegador, sem aparecer: o botão acima o abre. */}
-        <input
-          ref={calendario}
-          type="date"
-          tabIndex={-1}
-          aria-hidden
-          value={value}
-          min={min}
-          onChange={(e) => onChange(e.target.value)}
-          className="pointer-events-none absolute bottom-0 right-0 h-px w-px opacity-0"
-        />
-      </span>
+      <CampoDataTexto
+        value={value}
+        aoMudar={onChange}
+        min={min}
+        ariaLabel={ariaLabel}
+        testid={testid}
+        aria-invalid={antesDoMinimo || undefined}
+        className="input h-11"
+      />
       {antesDoMinimo && (
         <span className="mt-1 block text-xs text-red-700" role="alert">
           A data não pode ser antes de {isoParaBr(min!)}.

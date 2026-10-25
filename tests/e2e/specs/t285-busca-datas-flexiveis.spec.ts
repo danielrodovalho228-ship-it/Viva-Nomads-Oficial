@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+/** E136: no computador o campo de data mostra dd/mm/aaaa (o calendário é o do site, em pt-BR). */
+const dataBR = (iso: string) => iso.split("-").reverse().join("/");
+
 /**
  * T285 — Datas flexíveis na busca (Prompt 55, parte B2). Três imóveis num bairro só deste teste, para a entrada D:
  *   livre desde D-5 · livre em D+10 · livre em D+20.
@@ -71,7 +74,7 @@ test.describe("T285 — busca com datas flexíveis", () => {
     await expect(cards(page).first()).toHaveAttribute("data-id", ids.antes!);
     // E105: a data (e a flexibilidade) mora só na pílula "Datas" — saiu da folha "Mais filtros".
     const painel = await abrirDatas(page);
-    await expect(painel.getByTestId("pilula-datas-entrada")).toHaveValue(ENTRADA);
+    await expect(painel.getByTestId("pilula-datas-entrada")).toHaveValue(dataBR(ENTRADA));
     await expect(page.getByTestId("pilula-datas")).toContainText(`Entrada ${ENTRADA.split("-").reverse().slice(0, 2).join("/")}`);
     const folha = await abrirFolha(page);
     await expect(folha.getByTestId("painel-datas")).toHaveCount(0);

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { CampoData } from "@/components/ui/campo-data";
 import { PERIODOS, type Periodo } from "@/lib/admin/visao-geral";
 
 /**
@@ -69,11 +70,15 @@ export function FiltrosAdmin({
       >
         <label className="text-xs text-muted">
           De
-          <input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="mt-1 block rounded-lg border border-line px-2 py-2 text-sm text-ink" />
+          <span className="mt-1 block w-44">
+            <CampoData value={de} onChange={(e) => setDe(e.target.value)} className="rounded-lg border border-line px-2 py-2 text-sm text-ink" />
+          </span>
         </label>
         <label className="text-xs text-muted">
           Até
-          <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="mt-1 block rounded-lg border border-line px-2 py-2 text-sm text-ink" />
+          <span className="mt-1 block w-44">
+            <CampoData value={ate} onChange={(e) => setAte(e.target.value)} className="rounded-lg border border-line px-2 py-2 text-sm text-ink" />
+          </span>
         </label>
         <button
           type="submit"
