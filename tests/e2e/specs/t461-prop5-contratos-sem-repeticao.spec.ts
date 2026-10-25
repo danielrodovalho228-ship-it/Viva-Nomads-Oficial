@@ -41,7 +41,7 @@ test.describe("T461 — PROP-5: Contratos sem repetição", () => {
     const { error: eb } = await adm().from("contrato_blocos").insert([
       { contrato_id: ids.contrato, numero_bloco: 1, inicio: em(0), fim: em(59), meses: 2, valor: 6400, caucao: 1600, caucao_status: "comprovada", status: "ativo" },
       // O 2º bloco é renovação (0065): precisa do aceite das duas partes.
-      { contrato_id: ids.contrato, numero_bloco: 2, inicio: em(60), fim: em(119), meses: 2, valor: 6400, caucao: 1600, status: "agendado", aceite_proprietario_em: agora, aceite_inquilino_em: agora },
+      { contrato_id: ids.contrato, numero_bloco: 2, inicio: em(60), fim: em(119), meses: 2, valor: 6400, caucao: 1600, caucao_status: "pendente", status: "agendado", aceite_proprietario_em: agora, aceite_inquilino_em: agora },
     ]);
     if (eb) throw eb;
   });
