@@ -3,7 +3,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 import { TITULO_PASSO } from "../fixtures/cadastro";
 
 /*
-  T477 — Passo 8 (#1372), guarda permanente da Pista C: a mesma conta da t472 (aluguel R$ 3.600 + condomínio R$ 350 +
+  T496 — Passo 8 (#1372), guarda permanente da Pista C: a mesma conta da t472 (aluguel R$ 3.600 + condomínio R$ 350 +
   contas R$ 150) em OUTROS períodos (a t472 fixa 4 meses). Conta nova de proprietário: 1ª faixa = 12%.
    - prévia: R$ 4.100/mês tudo incluído;
    - "Você recebe do morador" = R$ 4.100 × meses;
@@ -12,7 +12,7 @@ import { TITULO_PASSO } from "../fixtures/cadastro";
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t477.${sufixo}@lab.vivanomads.test`, nome: "Ana Meses", role: "owner" as const };
+const dono = { email: `dono.t496.${sufixo}@lab.vivanomads.test`, nome: "Ana Meses", role: "owner" as const };
 const ids: { dono?: string } = {};
 const brl = (n: number) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
 
@@ -26,7 +26,7 @@ async function abrirPrecoPreenchido(page: Page) {
   await expect(page.getByTestId("cadastro-tudo-incluido")).toHaveText(/R\$\s?4\.100\/mês tudo incluído/);
 }
 
-test.describe("T477 — Passo 8: recebe = total × meses; taxa = 12% × aluguel × meses", () => {
+test.describe("T496 — Passo 8: recebe = total × meses; taxa = 12% × aluguel × meses", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
@@ -54,7 +54,7 @@ test.describe("T477 — Passo 8: recebe = total × meses; taxa = 12% × aluguel 
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await simulador.scrollIntoViewIfNeeded();
-      await page.screenshot({ path: `tests/laboratorio/saida/t477-simulador-${w}.png`, fullPage: true });
+      await page.screenshot({ path: `tests/laboratorio/saida/t496-simulador-${w}.png`, fullPage: true });
       await page.context().close();
     });
   }
