@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { consumirLimite } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
-import { BUCKET_CAIXA, ENVIOS_POR_HORA, IMAGEM_LEGIVEL, validarEnvio, validarReabertura, type EnvioEntrada, type ExtracaoStatus, type StatusCaixa } from "./caixa";
+import { AVISO_CAIXA_ILEGIVEL, BUCKET_CAIXA, ENVIOS_POR_HORA, IMAGEM_LEGIVEL, validarEnvio, validarReabertura, type EnvioEntrada, type ExtracaoStatus, type StatusCaixa } from "./caixa";
 import { textoDocx, textoXlsx } from "./office";
 
 export type ItemCaixa = {
@@ -139,15 +139,14 @@ export async function listarCaixa(): Promise<{ itens: ItemCaixa[]; aviso: string
   if (!s) return { itens: [], aviso: "Sem permissão ou sem conexão com o banco.", uid: null };
   const { data, error } = await s.supabase
     .from("caixa_socios")
-    .select("id, criado_em, autor, tipo, texto, arquivo_path, arquivo_nome, texto_extraido, extracao_status, status, resposta, respondido_em, aceito_em, reaberto_motivo, profiles(full_name)")
+    .select("id, criado_em, autor, tipo, texto, arquivo_path, arquivo_nome, texto_extraido, extracao_status, status, resposta, respondido_em, aceito_em, reaberto_motivo, autor_perfil:profiles!caixa_socios_autor_fkey(full_name)")
     .order("criado_em", { ascending: false })
     .limit(100);
   if (error) {
-    return {
-      uid: s.uid,
-      itens: [],
-      aviso: /caixa_socios/.test(error.message) ? "A Caixa dos Sócios ainda não existe no banco (migração 0107 pendente)." : "Não foi possível ler a Caixa agora.",
-    };
+    // ADMIN-0: nada de deduzir a causa pelo texto do erro (a tabela existe; o defeito era o embed ambíguo, com duas
+    // FKs para profiles). Mensagem genérica na tela; o código do erro vai para o log.
+    console.error(`[caixa-socios] leitura falhou: ${error.code ?? "sem código"}`);
+    return { uid: s.uid, itens: [], aviso: AVISO_CAIXA_ILEGIVEL };
   }
   const caminhos = (data ?? []).map((r) => r.arquivo_path).filter((p): p is string => !!p);
   const urls = new Map<string, string>();
@@ -159,7 +158,7 @@ export async function listarCaixa(): Promise<{ itens: ItemCaixa[]; aviso: string
     aviso: null,
     uid: s.uid,
     itens: (data ?? []).map((r) => {
-      const perfil = r.profiles as unknown as { full_name: string | null } | null;
+      const perfil = r.autor_perfil as unknown as { full_name: string | null } | null;
       return {
         id: r.id,
         criado_em: r.criado_em,
