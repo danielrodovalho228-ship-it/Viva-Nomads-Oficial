@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { ehSeloLinkedin } from "@/lib/linkedin/textos";
+import { identidadeParaOutraParte } from "@/lib/identidade/estado";
 
 /** Motivos de recusa pré-definidos (quick win #3). */
 const REJECT_REASONS = [
@@ -133,22 +134,17 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                         {LIGHT[l.light].label}
                       </span>
                       <h3 className="font-title text-lg font-semibold text-ink" data-testid="candidato-nome">{l.name}</h3>
-                      {l.identidade ? (
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-1 text-xs font-semibold",
-                            l.identidade.estado === "confirmada" ? "bg-champagne text-night" : "bg-surface-2 text-muted",
-                          )}
-                          data-testid="candidato-identidade"
-                          data-estado={l.identidade.estado}
-                        >
-                          {l.identidade.texto}
-                        </span>
-                      ) : (
-                        l.verified && (
-                          <span className="rounded-full bg-champagne px-2 py-1 text-xs font-semibold text-night">Identidade conferida</span>
-                        )
-                      )}
+                      {/* PROP-3 (E118): verificada/pendente pela MESMA função do Fechamento; sem os textos "para mim". */}
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-1 text-xs font-semibold",
+                          identidadeParaOutraParte(l.identidade).verificada ? "bg-champagne text-night" : "bg-surface-2 text-muted",
+                        )}
+                        data-testid="candidato-identidade"
+                        data-estado={l.identidade?.estado ?? "pendente"}
+                      >
+                        {identidadeParaOutraParte(l.identidade).rotulo}
+                      </span>
                     </div>
                     {/* Resumo do candidato em uma linha */}
                     <p className="mt-1 text-sm font-medium text-ink">{leadSummary(l)}</p>

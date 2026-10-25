@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn, dataBR } from "@/lib/utils";
 import { rotuloPreco, textoPreco } from "@/lib/cartao-preco";
 import { totalMesDaLinha } from "@/lib/precos";
+import { statusHumano } from "@/lib/status-humano";
 import {
   motivoLabel,
   PEDIDO_STATUS_LABEL,
@@ -174,7 +175,7 @@ export function PedidosClient({
                           STATUS_TONE[p.status] ?? "bg-surface-2 text-muted"
                         )}
                       >
-                        {PEDIDO_STATUS_LABEL[p.status] ?? p.status}
+                        {PEDIDO_STATUS_LABEL[p.status] ?? statusHumano(p.status)}
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-muted" data-testid="meu-pedido-resumo">
@@ -295,7 +296,7 @@ export function PedidosClient({
                                   {r.properties?.title ?? "Imóvel"}
                                 </span>
                                 <span className="rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold text-muted">
-                                  {RESPOSTA_STATUS_LABEL[r.status] ?? r.status}
+                                  {RESPOSTA_STATUS_LABEL[r.status] ?? statusHumano(r.status)}
                                 </span>
                               </div>
                               <p className="mt-1 text-muted">

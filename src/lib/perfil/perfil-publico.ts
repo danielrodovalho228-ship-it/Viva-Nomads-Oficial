@@ -8,6 +8,8 @@ import { guardContactInfo } from "../messages/contact-guard.ts";
 
 /** "Maria Souza Lima" → "Maria L."; um nome só → ele mesmo; vazio → null. */
 export function nomeCurto(nome: string | null | undefined): string | null {
+  // PROP-3 (E118): nome que é um e-mail não é nome (nunca mostra o e-mail; cai no rótulo neutro de quem chama).
+  if ((nome ?? "").includes("@")) return null;
   const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
   if (partes.length === 0) return null;
   if (partes.length === 1) return partes[0];
