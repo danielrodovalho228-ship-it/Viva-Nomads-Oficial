@@ -11,6 +11,7 @@ import { dataBR } from "@/lib/fiscal/documento";
 import type { AcertoView, DocumentoView, ReciboView } from "@/lib/data/documentos-actions";
 import { registrarDevolucaoCaucao, responderDevolucaoCaucao } from "@/lib/data/documentos-actions";
 import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-actions";
+import { statusHumano } from "@/lib/status-humano";
 
 /**
  * Documentos do contrato e devolução da caução — mesmas peças em "Contratos &
@@ -112,7 +113,7 @@ export function DevolucaoCaucaoDono({
   if (acerto && acerto.status !== "desconto_contestado") {
     return (
       <p className="mt-3 text-xs text-muted" data-testid="devolucao-caucao">
-        Caução: devolvidos {formatBRL(acerto.valorDevolvido)} de {formatBRL(acerto.caucaoTotal)} em {dataBR(acerto.dataDevolucao)} — {STATUS_ACERTO[acerto.status] ?? acerto.status}.
+        Caução: devolvidos {formatBRL(acerto.valorDevolvido)} de {formatBRL(acerto.caucaoTotal)} em {dataBR(acerto.dataDevolucao)} — {STATUS_ACERTO[acerto.status] ?? statusHumano(acerto.status)}.
       </p>
     );
   }
@@ -187,7 +188,7 @@ export function DevolucaoCaucaoInquilino({ acerto }: { acerto: AcertoView | null
   if (acerto.status !== "aguardando_confirmacao") {
     return (
       <p className="mt-3 text-xs text-muted" data-testid="devolucao-caucao">
-        Caução: {formatBRL(acerto.valorDevolvido)} de {formatBRL(acerto.caucaoTotal)} — {STATUS_ACERTO[acerto.status] ?? acerto.status}.
+        Caução: {formatBRL(acerto.valorDevolvido)} de {formatBRL(acerto.caucaoTotal)} — {STATUS_ACERTO[acerto.status] ?? statusHumano(acerto.status)}.
       </p>
     );
   }

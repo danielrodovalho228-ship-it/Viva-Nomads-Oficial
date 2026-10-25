@@ -82,7 +82,8 @@ export function mensagemLimiteReativar(s: SituacaoLimite): string {
 /** A linha do painel: "M publicados — seu plano permite N" e, acima do limite, o que fazer. */
 export function linhasDoLimite(s: SituacaoLimite): string[] {
   const linhas = [`${plural(s.ativos, "publicado", "publicados")} — seu plano permite ${s.limite}`];
-  if (s.ativos > s.limite) linhas.push(`Os que já estavam publicados continuam. Para publicar outro, pause ${plural(s.precisaPausar, "anúncio", "anúncios")} ou mude de plano.`);
+  // PROP-3 (E114): acima do limite, a pausar = publicados − limite (3 − 1 = 2), não o total.
+  if (s.ativos > s.limite) linhas.push(`Os que já estavam publicados continuam. Para ficar dentro do plano, pause ${plural(s.excedente, "anúncio", "anúncios")} ou mude de plano.`);
   return linhas;
 }
 

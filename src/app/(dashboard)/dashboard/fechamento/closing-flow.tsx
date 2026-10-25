@@ -54,7 +54,7 @@ import { textoTaxaPainel, pctTexto, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobra
 import { registrarContrato } from "@/lib/data/actions";
 import { lerEstadoDoContrato, type EstadoContratoView } from "@/lib/data/contratos-actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
-import { resumoContrato } from "@/lib/contrato-blocos";
+import { percentualCaucao, resumoContrato } from "@/lib/contrato-blocos";
 import { faixaForDays, faixaLabel } from "@/lib/faixas";
 import {
   selecionarModeloContrato,
@@ -67,6 +67,7 @@ import { ocupantesIniciais } from "@/lib/candidaturas/ocupantes";
 import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { passoDaRespostaContrato, quadroAntesDaEntrada } from "@/lib/fechamento-contrato";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
+import { identidadeParaOutraParte } from "@/lib/identidade/estado";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
 
@@ -134,6 +135,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const PRECO_PERIODO = rotuloPreco({ mensal: mensalDoFechamento(PROPERTY_FULL, ACORDO?.valorMensal), meses: prazoMeses });
   const PLATFORM_COMMISSION = resumo.comissaoValor;
   const CAUCAO_50 = resumo.caucaoTotal; // total do período (soma dos blocos)
+  // PROP-3 (E115): o percentual no texto vem dos valores reais (o teto de 3 aluguéis pode baixar a caução).
+  const PCT_CAUCAO_BLOCO1 = percentualCaucao(resumo.blocos[0]?.caucao ?? 0, resumo.blocos[0]?.valor ?? 0);
+  const PCT_CAUCAO_TOTAL = percentualCaucao(resumo.caucaoTotal, resumo.valorTotalPeriodo);
   const [verified, setVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cafResult, setCafResult] = useState<CafResult | null>(null);
@@ -459,6 +463,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <p className="mt-1 text-sm text-muted">
                 {tenant.name} · {tenant.profile}
               </p>
+              {/* PROP-3 (E118): a identidade do morador pela MESMA função de Interessados. */}
+              {!demo && (
+                <p className="mt-1 text-xs font-semibold text-ink" data-testid="fechamento-identidade-inquilino">
+                  {identidadeParaOutraParte(ctx.identidadeInquilino).rotulo}
+                </p>
+              )}
             </div>
 
             {verifStatus === "none" ? (
@@ -682,7 +692,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             </div>
 
             {/* Sua proteção — as duas opções lado a lado, com os valores reais do contrato. */}
-            <SuaProtecao caucao={CAUCAO_50} aluguel={PROPERTY.monthlyRent} ciente={cienteProtecao} onCiente={setCienteProtecao} />
+            <SuaProtecao caucao={CAUCAO_50} percentual={PCT_CAUCAO_TOTAL} aluguel={PROPERTY.monthlyRent} ciente={cienteProtecao} onCiente={setCienteProtecao} />
 
             {/* Regra de ouro — sempre visível na etapa de garantia. */}
             <p className="flex items-start gap-2 rounded-lg border border-sage-200 bg-surface-2 px-3 py-2 text-xs text-muted">
@@ -693,10 +703,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {/* Sub-fluxo conforme a garantia escolhida. */}
             {selectedGarantia?.tipo === "caucao" && (
               <div className="space-y-3 rounded-xl border border-sage-200 p-4 text-sm">
-                <p className="font-medium text-ink">Caução por bloco (50% do bloco)</p>
+                <p className="font-medium text-ink">Caução por bloco ({PCT_CAUCAO_BLOCO1} do 1º bloco)</p>
                 <p className="text-xs text-muted">
                   O período é contratado em blocos de {TAMANHO_BLOCO} meses. Cada bloco tem a
-                  caução <strong>integral</strong> (50% do valor do bloco) — cabe no cartão e vai
+                  caução <strong>integral</strong> ({PCT_CAUCAO_TOTAL} do valor do período, no máximo 3 aluguéis) — cabe no cartão e vai
                   para a poupança da caução. A plataforma nunca recebe.
                 </p>
 
@@ -707,7 +717,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                       <tr className="text-left text-muted">
                         <th className="py-2 pr-2 font-medium">Bloco</th>
                         <th className="py-2 pr-2 font-medium">Aluguel</th>
-                        <th className="py-2 pr-2 font-medium">Caução (50%)</th>
+                        <th className="py-2 pr-2 font-medium">Caução</th>
                         <th className="py-2 font-medium">Desembolso</th>
                       </tr>
                     </thead>
@@ -718,7 +728,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                             {b.numero} <span className="text-muted">({b.meses}m)</span>
                           </td>
                           <td className="py-2 pr-2 text-ink">{formatBRL(b.valor)}</td>
-                          <td className="py-2 pr-2 text-ink">{formatBRL(b.caucao)}</td>
+                          <td className="py-2 pr-2 text-ink">
+                            {formatBRL(b.caucao)} <span className="text-muted">({percentualCaucao(b.caucao, b.valor)})</span>
+                          </td>
                           <td className="py-2 font-medium text-forest">
                             {formatBRL(b.desembolso)}
                           </td>
@@ -1088,7 +1100,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 <div className="mt-3 space-y-1 border-t border-blue-200 pt-2" data-testid="entrada-caucao">
                   <div className="flex items-start justify-between gap-3">
                     <span className="min-w-0">
-                      Caução (50% antes da entrada) — devolvida no fim, conforme a conferência de saída
+                      Caução ({PCT_CAUCAO_TOTAL} do período, antes da entrada) — devolvida no fim, conforme a conferência de saída
                     </span>
                     <span className="shrink-0">{formatBRL(quadroEntrada.caucao)}</span>
                   </div>
@@ -1228,7 +1240,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     ? TRAFFIC_LIGHT_META[cafResult.light].label
                     : verifStatus === "pendente"
                       ? "⏳ Verificação pendente"
-                      : "—"
+                      : identidadeParaOutraParte(ctx.identidadeInquilino).rotulo
                 }
               />
               <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
@@ -1367,17 +1379,20 @@ function Row({ label, value }: { label: string; value: string }) {
  */
 export function SuaProtecao({
   caucao,
+  percentual,
   aluguel,
   ciente,
   onCiente,
 }: {
   caucao: number;
+  /** PROP-3 (E115): caução ÷ valor do período, calculado dos valores reais. */
+  percentual: string;
   aluguel: number;
   ciente: boolean;
   onCiente: (v: boolean) => void;
 }) {
   const linhas: [string, string, string][] = [
-    ["Quanto o morador paga", `${formatBRL(caucao)} depositados na entrada (50% de cada bloco, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
+    ["Quanto o morador paga", `${formatBRL(caucao)} depositados na entrada (${percentual} do período, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
     ["Volta para o morador?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
     ["O que cobre para o proprietário", `Aluguel e danos até ${formatBRL(caucao)}`, "Aluguel e danos até o limite da apólice"],
     ["Se o morador quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra do morador"],

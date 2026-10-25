@@ -14,6 +14,7 @@ import { ABAS_DONO, MENSAGEM_OFERTA_PADRAO, STATUS_CONVERSA, type AbaDono } from
 import { chaveCidade } from "@/lib/cidades";
 import { ignorarPedido, oferecerImovel, voltarParaNovos } from "@/lib/data/pedidos-actions";
 import type { PedidoParaDono, PropriedadeMinima } from "@/lib/data/pedidos-actions";
+import { statusHumano } from "@/lib/status-humano";
 
 const ORDEM_SITUACAO = { compativel: 0, quase: 1, demais: 2 } as const;
 
@@ -167,7 +168,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
                       <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest" data-testid="pedido-status-conversa">
                         <Check className="mt-1 h-4 w-4 shrink-0" aria-hidden />
                         <span>
-                          Você ofereceu <strong>{p.minhaResposta.imovelTitulo}</strong> · {STATUS_CONVERSA[p.minhaResposta.status] ?? p.minhaResposta.status}
+                          Você ofereceu <strong>{p.minhaResposta.imovelTitulo}</strong> · {STATUS_CONVERSA[p.minhaResposta.status] ?? statusHumano(p.minhaResposta.status)}
                           {p.encerrado ? " · o pedido foi encerrado" : ""}
                         </span>
                       </p>

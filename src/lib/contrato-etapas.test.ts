@@ -40,7 +40,8 @@ test("as telas de contratos e locações usam o selo da fonte única, não o ró
   const locacoes = ler("../app/(dashboard)/dashboard/locacoes/locacoes-client.tsx");
   assert.match(contratos, /\{contrato\.estado\.selo\}/);
   assert.doesNotMatch(contratos, /\? "Ativo"/);
-  assert.match(contratos, /statusMeta\(bloco\.status, etapa\)/);
+  // PROP-3 (E117): o rótulo do bloco passa pela função única (com a etapa e o estado do contrato).
+  assert.match(contratos, /rotuloDoBloco\(bloco\.status, etapa, contratoAtivo\)/);
   assert.match(locacoes, /\{l\.estado\.selo\}/);
   assert.doesNotMatch(locacoes, /"Ativa"/);
 });
