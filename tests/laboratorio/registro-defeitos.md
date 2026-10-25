@@ -90,8 +90,8 @@ PR). Confirmados no lab-crítico do #1367 (runs 40190394864, 40190996396, 401916
 | E136 | t424 · 2 (390, toque) | **vermelho** (`test.fail`) | O seletor nativo desenha no idioma do aparelho; nenhum dd/mm/aaaa da data escolhida na tela |
 | E137 | t425 · 1 (janela 10 dias, mínimo 30) | **vermelho** (`test.fail`) | Aceita e vai à Revisão, sem mensagem |
 | E137 | t425 · 2 (mesmo bloqueio 2×) | **vermelho** (`test.fail`) | 2 linhas na lista e no banco (`addBlock` grava de novo) |
-| E139/E140 | t426 · 1 (a mesma história) | **vermelho** (`test.fail`) | Prévia R$ 3.500/mês; "Você recebe do morador" R$ 12.000 em 4 meses (sem as contas); taxa R$ 1.440 (12% × 3.000 × 4) |
-| E139/E140 | t426 · 2 (mesmo período) | verde | Comparativo e simulador com os mesmos meses e a mesma taxa |
+| E139/E140 | t426 · 1 (a mesma história) | verde — **corrigido no #1372** | Antes: "Você recebe do morador" R$ 12.000 em 4 meses, sem as contas. Depois do #1372 (run 40195729482): R$ 14.000 (R$ 3.500 × 4) e taxa R$ 1.440 (12% × valor mensal × meses, sem condomínio e contas, a leitura do E139) |
+| E139/E140 | t426 · 2 (mesmo período) | verde | O comparador do Preço sugerido acompanha os meses do simulador (#1372 tirou a linha do comparativo) |
 | E141 | t427 · 1 | verde | Essencial publica sem foto de prova |
 | E142 | t428 (390 e 1280) | **vermelho** (`test.fail`) | O bloco da detecção é desenhado fora da tela na chegada (viewport ratio 0) |
 | E146 | t429 (390 e 1280) | verde | O contador bate com os chips essenciais marcados |
