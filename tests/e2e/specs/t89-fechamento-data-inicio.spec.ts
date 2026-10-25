@@ -41,8 +41,8 @@ test.describe("T89 — data de início no Fechamento", () => {
     await pagina.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "networkidle" });
     const campo = pagina.getByTestId("inicio-estadia");
     await expect(campo).toBeVisible({ timeout: 15_000 });
-    await expect(campo).toHaveValue(hoje);
-    await expect(campo).toHaveAttribute("min", hoje);
+    await expect(campo).toHaveValue(dataBR(hoje));
+    // E136: no computador o campo é dd/mm/aaaa com o calendário do site; o mínimo vale no calendário e na validação.
 
     await campo.fill(addDiasISO(hoje, -3));
     await expect(pagina.getByTestId("inicio-estadia-erro")).toContainText(/passado/i);
