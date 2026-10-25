@@ -8,7 +8,7 @@ import { TITULO_PASSO, noPasso, type PassoCadastro } from "../fixtures/cadastro"
       contador à direita — todos os contadores na MESMA coluna e com a mesma largura; nenhuma dica desloca a caixa;
       sem buraco de grade; sem rolagem lateral.
    2. "−" e "+" mudam o número e o campo continua digitável.
-   3. Varredura "corrigir tudo": os 10 passos a 390 e 1280 sem rolagem lateral (prints para a régua de alinhamento).
+   3. Varredura "corrigir tudo": os 10 passos a 390 e 1280 sem rolagem lateral e sem botão vazando (prints para a régua).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -77,6 +77,13 @@ test.describe("T469 — E134: Passo 4 alinhado", () => {
         await noPasso(p, passo, 30_000);
         await p.waitForTimeout(500);
         expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), passo).toBeLessThanOrEqual(1);
+        // Régua: nenhum botão do passo corta o texto nem passa da borda da tela.
+        const vazados = await p.locator("main button:visible").evaluateAll((els) =>
+          els
+            .filter((b) => b.scrollWidth > b.clientWidth + 1 || b.getBoundingClientRect().right > window.innerWidth + 1)
+            .map((b) => (b.textContent ?? "").trim().slice(0, 60)),
+        );
+        expect(vazados, `${passo}: botões vazando`).toEqual([]);
         await p.screenshot({ path: `${SAIDA}/t469-varredura-${passo}-${w}.png`, fullPage: true });
       }
       await p.context().close();
