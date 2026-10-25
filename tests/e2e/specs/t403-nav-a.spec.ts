@@ -11,7 +11,7 @@ import { NO_LABORATORIO, apagarContas, criarAdmin, criarConta, criarImovelPronto
  *      dono troca a barra pelo topo (abas, sino e "Conta ▾"); a mesma conta vale no topo.
  */
 const SAIDA = "tests/laboratorio/saida";
-const CONTA = ["Perfil", "Como você usa a Viva", "Avaliações", "Dados", "Privacidade", "Notificações", "Pagamentos", "Ajuda"];
+const CONTA = ["Perfil", "Como você usa a Viva", "Avaliações", "Dados", "Privacidade", "Segurança e verificações", "Notificações", "Pagamentos", "Ajuda"];
 const FORA_DA_CONTA = ["Seus avisos", "Ferramentas", "Painel Admin", "Equipe e aprovações", "Indicações", "Verificação", "Termos de uso", "Política de privacidade"];
 
 test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () => {

@@ -120,13 +120,16 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
       await expect(h1Visiveis(p), s).toHaveText(t);
       await expect(p.getByTestId(`conta-menu-${s}`)).toHaveAttribute("aria-current", "page");
     }
-    // /seguranca é a subtela "Segurança e verificações" de Privacidade (rota própria, na casca).
+    // E176 (parte 2): "Segurança e verificações" é item próprio da Conta.
     await p.goto("/dashboard/conta/seguranca", { waitUntil: "domcontentloaded" });
     await expect(h1Visiveis(p)).toHaveText("Segurança e verificações");
-    await expect(p.getByTestId("conta-menu-privacidade")).toHaveAttribute("aria-current", "page");
+    await expect(p.getByTestId("conta-menu-seguranca")).toHaveAttribute("aria-current", "page");
     await p.goto("/dashboard/conta/excluir", { waitUntil: "domcontentloaded" });
     await expect(h1Visiveis(p)).toHaveText("Sair da Viva");
     await expect(p.getByTestId("conta-menu-privacidade")).toHaveAttribute("aria-current", "page");
+    // E176 (parte 2): a subtela tem "← Privacidade" no topo, também no computador.
+    await expect(p.getByTestId("voltar-lista")).toHaveText("← Privacidade");
+    await expect(p.getByTestId("voltar-lista")).toHaveAttribute("href", "/dashboard/conta/privacidade");
     await expect(p.getByTestId("sair-da-viva")).toBeVisible();
     await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
     await printInteiro(p, "privacidade-1280");

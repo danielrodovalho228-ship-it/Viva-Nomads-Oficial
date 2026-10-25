@@ -13,17 +13,19 @@ const SECAO = ler("src/app/(dashboard)/dashboard/conta/[secao]/page.tsx");
 const SECOES = ler("src/lib/conta/secoes.ts");
 
 test("Conta (A1, NAV-A): oito telas na ordem Perfil → Papéis e intenção → Avaliações → Dados → Privacidade → Notificações → Pagamentos → Ajuda", () => {
-  const ordem = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"].map((id) => SECOES.indexOf(`id: "${id}"`));
+  const ordem = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "seguranca", "notificacoes", "pagamentos", "ajuda"].map((id) => SECOES.indexOf(`id: "${id}"`));
   assert.ok(ordem.every((i) => i > 0), `faltou seção: ${ordem}`);
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
   // No computador /dashboard/conta é a tela Perfil na casca; no celular, o menu.
   assert.match(CONTA, /<CascaConta ativo="perfil" topoDireita>\s*<PerfilTela \/>/);
   assert.match(CONTA, /<div className="lg:hidden">\s*<ContaMenu \/>/);
   // Cada seção é um caso de /conta/[secao] ou a sua rota própria (as que leem dados no servidor, ex.: Avaliações).
-  for (const id of ["avaliacoes", "papeis", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"]) {
+  for (const id of ["avaliacoes", "papeis", "dados", "privacidade", "seguranca", "pagamentos", "ajuda"]) {
     const propria = existsSync(new URL(`../../app/(dashboard)/dashboard/conta/${id}/page.tsx`, import.meta.url));
     assert.match(propria ? ler(`src/app/(dashboard)/dashboard/conta/${id}/page.tsx`) : SECAO, new RegExp(`<CascaConta ativo="${id}"`), id);
   }
+  // E176 (parte 2): Notificações é uma página só — a do sino, na casca da Conta.
+  assert.match(ler("src/app/(dashboard)/dashboard/notificacoes/page.tsx"), /<CascaConta ativo="notificacoes">/);
 });
 
 test("Conta: sem repetições — cada assunto numa tela só; nada de página longa", () => {

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { VoltarCelular } from "@/components/ui/voltar-celular";
+import { VoltarLista } from "@/components/ui/voltar-lista";
 import { LINHA_FECHAMENTO_CONTA } from "@/lib/conta/secoes";
-import { Bell, CircleHelp, CreditCard, FileText, Shield, Star, UserRound, Users } from "lucide-react";
+import { Bell, CircleHelp, CreditCard, FileText, Shield, ShieldCheck, Star, UserRound, Users } from "lucide-react";
 import { SECOES_CONTA, itemDaSecao, type ItemSecao, type SecaoConta } from "@/lib/conta/secoes";
 import { cn } from "@/lib/utils";
 import { CASCA_SOMBRA_CARTOES, ROTULO_MENU_CONTA, SOMBRA_CARTAO_CONTA, TITULO_TELA_CONTA } from "@/lib/conta/visual-mockup";
@@ -14,6 +15,7 @@ const ICONES: Record<ItemSecao["icone"], React.ComponentType<{ className?: strin
   Users,
   FileText,
   Shield,
+  ShieldCheck,
   Bell,
   CreditCard,
   CircleHelp,
@@ -42,12 +44,14 @@ export function CascaConta({
   topoDireita?: boolean;
   /** "Conta › <seção>" acima do título no computador (mockup perfil-05). */
   trilha?: boolean;
-  /** Tela dentro de uma seção (ex.: Segurança e verificações, em Privacidade): o voltar padrão é a seção, não a Conta. */
+  /** Tela dentro de uma seção (ex.: Sair da Viva, em Privacidade): E176 — "← <seção>" no topo, em toda largura. */
   subtela?: boolean;
 }) {
   const atual = itemDaSecao(ativo);
   const cabecalho = (
     <header className={cn("min-w-0", topoDireita && "xl:hidden")} data-testid="conta-cabecalho">
+      {/* E176 (parte 2): o padrão único de voltar nas filhas da Conta — "← <seção>" no topo, celular e computador. */}
+      {subtela && <VoltarLista href={atual.href} rotulo={atual.rotulo} />}
       {trilha && (
         <nav aria-label="Trilha" className="mb-1 hidden text-base text-muted lg:block" data-testid="conta-trilha">
           <Link href="/dashboard/conta" className="hover:text-forest">
@@ -61,7 +65,7 @@ export function CascaConta({
       <div className="relative flex min-h-11 items-center justify-center lg:justify-start">
         {/* E69: volta para onde a pessoa estava; aberta direto, para a Conta (ou a seção, numa subtela). Ter título
             próprio não faz da tela uma subtela ("Meus dados" é a seção Dados). */}
-        <VoltarCelular padrao={subtela ? atual.href : "/dashboard/conta"} rotulo={subtela ? atual.rotulo : "Conta"} className="absolute left-0" />
+        {!subtela && <VoltarCelular padrao="/dashboard/conta" rotulo="Conta" className="absolute left-0" />}
         <h1 className={cn(TITULO_TELA_CONTA, "px-12 text-center lg:px-0 lg:text-left")} data-testid="conta-h1">
           {titulo ?? atual.rotulo}
         </h1>

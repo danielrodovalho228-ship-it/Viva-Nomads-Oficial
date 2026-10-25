@@ -140,7 +140,8 @@ test.describe("T402 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
     await p.getByTestId("conta-menu").waitFor({ timeout: 20_000 });
     await fechaLimpo(p);
     await p.getByTestId("conta-menu").getByRole("link", { name: /Notificações/ }).click();
-    await p.waitForURL("**/dashboard/conta/notificacoes");
+    // E176 (parte 2): Notificações é a página única do sino, na casca da Conta.
+    await p.waitForURL("**/dashboard/notificacoes");
     await p.getByTestId("conta-voltar").click();
     await p.waitForURL((u) => u.pathname === "/dashboard/conta");
     // Aberta direto (sem histórico do site): o voltar vai para a Conta.
