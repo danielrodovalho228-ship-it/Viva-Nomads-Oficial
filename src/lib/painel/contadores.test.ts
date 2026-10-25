@@ -20,6 +20,9 @@ import { EVENTO_FILA_DOCUMENTOS } from "../admin/fila-evento.ts";
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 const SHELL = "src/components/layout/dashboard-shell.tsx";
 const ROTA = "src/app/api/painel/contadores/route.ts";
+const SERVIDOR = "src/lib/painel/contadores-servidor.ts";
+const LAYOUT = "src/app/(dashboard)/layout.tsx";
+const PROVEDOR = "src/components/painel/contadores-iniciais.tsx";
 
 test("resposta completa vira os contadores; o formato é fechado (sem campo a mais)", () => {
   const c = normalizarContadores({
@@ -116,9 +119,27 @@ test("a rota é GET, sem cache, autentica pela sessão do servidor e só conta o
   assert.doesNotMatch(r, /export async function (POST|PUT|PATCH|DELETE)/);
   assert.match(r, /export const dynamic = "force-dynamic"/);
   assert.match(r, /"Cache-Control": "no-store"/);
-  assert.match(r, /from "@\/lib\/supabase\/server"/);
   assert.match(r, /status: 401/);
-  assert.match(r, /admin \? countDocumentosPendentes\(\)/);
-  assert.match(r, /admin \? contarAprovacoesPendentes\(\)/);
-  assert.match(r, /contadoresVisiveis\(c, admin\)/);
+  // PROP-0: as contagens moram numa função só, a mesma do layout.
+  assert.match(r, /from "@\/lib\/painel\/contadores-servidor"/);
+  assert.match(r, /const c = await contadoresDoPainel\(\);/);
+  const s = ler(SERVIDOR);
+  assert.match(s, /from "@\/lib\/supabase\/server"/);
+  assert.match(s, /if \(!user\) return "sem-sessao";/);
+  assert.match(s, /admin \? countDocumentosPendentes\(\)/);
+  assert.match(s, /admin \? contarAprovacoesPendentes\(\)/);
+  assert.match(s, /return contadoresVisiveis\(c, admin\);/);
+});
+
+test("PROP-0: o layout do painel resolve o contexto do menu no servidor e entrega à casca na 1ª pintura", () => {
+  const l = ler(LAYOUT);
+  assert.match(l, /const \[initialMode, contadoresIniciais\] = await Promise\.all\(\[resolveInitialMode\(\), contadoresIniciaisDoPainel\(\)\]\);/);
+  assert.match(l, /<ContadoresIniciais valor=\{contadoresIniciais\}>\s*<DashboardShell>\{children\}<\/DashboardShell>\s*<\/ContadoresIniciais>/);
+  const s = ler(SERVIDOR);
+  // Falha ou sem sessão: null (a casca segue com a rota); nunca derruba o painel.
+  assert.match(s, /const r = await contadoresDoPainel\(\)\.catch\(\(\) => null\);\n\s+return r && r !== "sem-sessao" \? r : null;/);
+  const p = ler(PROVEDOR);
+  assert.match(p, /^"use client";/);
+  assert.match(p, /createContext<ContadoresPainel \| null>\(null\)/);
+  assert.match(p, /export function useContadoresIniciais\(\): ContadoresPainel \| null/);
 });
