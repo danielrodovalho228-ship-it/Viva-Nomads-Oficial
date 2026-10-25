@@ -19,6 +19,7 @@ import {
   type StatusVisita,
 } from "@/lib/visitas-video";
 import { cn } from "@/lib/utils";
+import { visitaJaPassou } from "@/lib/visitas/endereco-visita";
 
 const TOM: Record<StatusVisita, string> = {
   pedido: "bg-blue-50 text-blue-700",
@@ -27,6 +28,9 @@ const TOM: Record<StatusVisita, string> = {
   feito: "bg-slate-100 text-muted",
   cancelado: "bg-slate-100 text-muted",
 };
+
+/** E184: a etiqueta da visita confirmada cujo horário já passou. */
+export const HORARIO_PASSOU = "Horário passou";
 
 export interface VisitaNaTela {
   id: string;
@@ -66,6 +70,9 @@ export function CartaoVisita({
   const [alterado, setAlterado] = useState<{ de: StatusVisita; para: StatusVisita } | null>(null);
   const status = alterado && alterado.de === v.status ? alterado.para : v.status;
   const onStatus = (para: StatusVisita) => setAlterado({ de: v.status, para });
+  // E184: confirmada com o horário já passado — não é mais "Confirmada" e não se cancela o que já passou.
+  const [agora] = useState(() => new Date());
+  const passou = status === "confirmado" && visitaJaPassou(v, agora);
   return (
     <div id={`visita-${v.id}`} data-testid="cartao-visita" data-status={v.status} data-modalidade={v.modalidade} className={cn(compacto && "text-sm")}>
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -76,8 +83,8 @@ export function CartaoVisita({
           {!compacto && <h3 className="line-clamp-2 font-title text-base font-semibold text-ink">{v.imovel}</h3>}
           {v.motivo && <p className="text-xs text-muted">Motivo da estadia: {v.motivo}</p>}
         </div>
-        <span data-testid="visita-status" className={`rounded-full px-3 py-1 text-xs font-semibold ${TOM[status]}`}>
-          {STATUS_VISITA_ROTULO[status]}
+        <span data-testid="visita-status" data-passou={passou ? "1" : undefined} className={`rounded-full px-3 py-1 text-xs font-semibold ${passou ? TOM.feito : TOM[status]}`}>
+          {passou ? HORARIO_PASSOU : STATUS_VISITA_ROTULO[status]}
         </span>
       </div>
 
@@ -117,7 +124,7 @@ export function CartaoVisita({
         </p>
       )}
 
-      {papel === "morador" && v.modalidade === "presencial" && (v.status === "pedido" || v.status === "remarcar" || v.status === "confirmado") && (
+      {papel === "morador" && v.modalidade === "presencial" && !passou && (v.status === "pedido" || v.status === "remarcar" || v.status === "confirmado") && (
         v.status === "confirmado" && v.endereco ? (
           <div className="mt-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-ink" data-testid="visita-endereco">
             <p className="flex items-start gap-2">
@@ -129,6 +136,11 @@ export function CartaoVisita({
               </a>
             )}
           </div>
+        ) : v.status === "confirmado" ? (
+          // E184: confirmada, mas o anúncio ainda não tem a rua e o número gravados — nada de prometer o que não vem.
+          <p className="mt-2 text-xs text-muted" data-testid="visita-endereco-pendente">
+            O proprietário ainda não informou o endereço exato. Peça pelas mensagens antes de sair.
+          </p>
         ) : (
           <p className="mt-2 text-xs text-muted" data-testid="visita-endereco-oculto">
             O endereço exato aparece aqui quando a visita for confirmada.
@@ -136,7 +148,7 @@ export function CartaoVisita({
         )
       )}
 
-      {papel === "dono" ? <AcoesDono v={v} onMudou={onMudou} onStatus={onStatus} /> : <AcoesMorador v={v} onMudou={onMudou} onStatus={onStatus} />}
+      {papel === "dono" ? <AcoesDono v={v} passou={passou} onMudou={onMudou} onStatus={onStatus} /> : passou ? null : <AcoesMorador v={v} onMudou={onMudou} onStatus={onStatus} />}
     </div>
   );
 }
@@ -170,7 +182,7 @@ function Erro({ msg }: { msg: string | null }) {
 }
 
 /** Ações do PROPRIETÁRIO: confirmar um horário (vídeo: com o link), propor outro (Remarcar), recusar com motivo, concluir. */
-function AcoesDono({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () => void; onStatus?: (s: StatusVisita) => void }) {
+function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; passou?: boolean; onMudou?: () => void; onStatus?: (s: StatusVisita) => void }) {
   const { msg, ocupado, respondido, rodar } = useResposta(onMudou, onStatus);
   const [horario, setHorario] = useState(v.horarios[0] ?? "");
   const [outro, setOutro] = useState("");
@@ -281,9 +293,11 @@ function AcoesDono({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () => 
           <Button variant="secondary" size="sm" disabled={ocupado} data-testid="visita-concluir" onClick={() => rodar({ acao: "concluir", id: v.id })}>
             Marcar como feita
           </Button>
-          <Button variant="ghost" size="sm" disabled={ocupado} data-testid="visita-cancelar" onClick={() => rodar({ acao: "cancelar", id: v.id })}>
-            Cancelar
-          </Button>
+          {!passou && (
+            <Button variant="ghost" size="sm" disabled={ocupado} data-testid="visita-cancelar" onClick={() => rodar({ acao: "cancelar", id: v.id })}>
+              Cancelar
+            </Button>
+          )}
         </div>
       )}
       {recusa}
