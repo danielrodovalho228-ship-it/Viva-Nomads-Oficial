@@ -44,7 +44,7 @@ import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoDocValido } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS } from "@/lib/listing";
-import { erroJanelaDisponivel } from "@/lib/anuncio/periodo-disponivel";
+import { erroJanelaDisponivel, errosComJanelaAtual } from "@/lib/anuncio/periodo-disponivel";
 import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
 import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
@@ -268,7 +268,7 @@ export default function NewPropertyPage() {
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [erros, setErros] = useState<Record<string, string>>({});
+  const [errosGravados, setErros] = useState<Record<string, string>>({});
   const [publishError, setPublishError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
@@ -398,6 +398,9 @@ export default function NewPropertyPage() {
   }
 
   const faltaNoPasso = Object.values(validarEtapa(step));
+
+  // E137: corrigida a data, o erro da janela gravado pelo Continuar recusado acompanha (muda ou some).
+  const erros = errosComJanelaAtual(errosGravados, erroJanelaDisponivel(availableFrom, availableUntil, minPeriod));
 
   function avancarEtapa() {
     const e = validarEtapa(step);

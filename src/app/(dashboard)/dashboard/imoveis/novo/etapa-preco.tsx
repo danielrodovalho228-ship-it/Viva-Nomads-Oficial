@@ -215,7 +215,7 @@ export function EtapaPreco(p: {
             <span className="mt-2 block text-xs text-muted">Estadias de 30 a 180 dias são o usual.</span>
             {/* E137: a janela de datas precisa caber a duração mínima (aviso já ao escolher, e o Continuar recusa). */}
             {(() => {
-              const msg = p.erros.janela ?? erroJanelaDisponivel(p.availableFrom, p.availableUntil, p.minPeriod);
+              const msg = erroJanelaDisponivel(p.availableFrom, p.availableUntil, p.minPeriod);
               return msg ? (
                 <p role="alert" className="mt-2 text-sm font-semibold text-red-700" data-testid="janela-curta">
                   {msg}

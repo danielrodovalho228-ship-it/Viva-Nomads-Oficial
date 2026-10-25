@@ -26,3 +26,17 @@ test("E137 — 25/10 a 18/11 (24 dias) com mínimo de 30 é recusado, com a data
   assert.equal(erroJanelaDisponivel("2026-10-25", "", "30"), null, "sem data final não há janela");
   assert.match(erroJanelaDisponivel("2026-10-25", "2027-01-10", 90)!, /menos que a duração mínima de 90 dias/);
 });
+
+// E137 (lab e135g): corrigida a data, o erro gravado pelo Continuar recusado não fica velho.
+import { errosComJanelaAtual } from "./periodo-disponivel.ts";
+test("E137 — o erro da janela some quando a data é corrigida e muda quando a janela muda", () => {
+  const velho = erroJanelaDisponivel("2026-10-27", "2026-11-20", 30)!;
+  const erros = { janela: velho, preco: "Informe o valor mensal." };
+  assert.deepEqual(errosComJanelaAtual(erros, erroJanelaDisponivel("2026-10-27", "2026-11-26", 30)), { preco: "Informe o valor mensal." });
+  const novo = erroJanelaDisponivel("2026-10-27", "2026-11-22", 30)!;
+  assert.equal(errosComJanelaAtual(erros, novo).janela, novo);
+  assert.equal(errosComJanelaAtual(erros, velho), erros);
+  // Sem Continuar recusado, não aparece erro na caixa: o aviso ao vivo fica no próprio campo.
+  const sem = { preco: "x" };
+  assert.equal(errosComJanelaAtual(sem, novo), sem);
+});
