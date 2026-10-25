@@ -36,8 +36,11 @@ test.describe("T459 — PROP-1: navegação do dono", () => {
     await expect(topo.getByTestId("abas-dono").locator("a")).toHaveText(["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"]);
     await expect(topo.getByTestId("aba-dono-inicio")).toHaveAttribute("aria-current", "page");
     await expect(topo.getByTestId("sino-dono")).toBeVisible();
+    // Item 4 vale para a NAVEGAÇÃO (topo e barra). O conteúdo da Início (checklist de ativação por papel, Prompt 43) é
+    // do PROP-6.
+    const navegacao = page.locator('[data-testid="topo-dono"], [data-testid="barra-lateral"]');
     for (const t of ["Buscar imóveis", "Buscas salvas", "Favoritos & comparações", "Meus pedidos", "Candidaturas", "Locações", "Conferência de entrada"]) {
-      await expect(page.getByRole("link", { name: t, exact: true }).filter({ visible: true }), t).toHaveCount(0);
+      await expect(navegacao.getByRole("link", { name: t, exact: true }).filter({ visible: true }), t).toHaveCount(0);
     }
     await page.screenshot({ path: `${SAIDA}/t459-inicio-1280.png` });
 
