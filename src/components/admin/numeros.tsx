@@ -11,13 +11,14 @@ import { avisoSemLeitura, tituloDecisoesAdmin, type DecisoesAdmin } from "@/lib/
 */
 
 /** "Hoje você tem N decisões": uma linha por fila com decisão esperando, cada uma com o botão da decisão. */
-export function DecisoesHoje({ decisoes }: { decisoes: DecisoesAdmin | null }) {
+export function DecisoesHoje({ decisoes, nivel = "h1" }: { decisoes: DecisoesAdmin | null; nivel?: "h1" | "h2" }) {
   const total = decisoes?.total ?? 0;
+  const Titulo = nivel;
   return (
     <section aria-labelledby="decisoes-titulo" className="mb-8" data-testid="admin-decisoes" data-total={total}>
-      <h1 id="decisoes-titulo" className="font-title text-2xl font-semibold text-ink sm:text-[28px]">
+      <Titulo id="decisoes-titulo" className="font-title text-2xl font-semibold text-ink sm:text-[28px]">
         {tituloDecisoesAdmin(total)}
-      </h1>
+      </Titulo>
       {decisoes === null ? (
         <p className="mt-2 text-sm text-muted">Sem conexão com o banco: nenhuma fila para ler agora.</p>
       ) : decisoes.linhas.length === 0 ? (

@@ -12,6 +12,8 @@ import { AnalisarFotoNivel } from "@/components/admin/analisar-foto-nivel";
 import { RodarPrazos } from "@/components/conforto/rodar-prazos";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
+import { DecisoesHoje } from "@/components/admin/numeros";
+import { decisoesDoAdmin } from "@/lib/data/admin-decisoes";
 
 export const metadata = { title: tituloDoAdmin("/admin/pendencias"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -36,7 +38,11 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
   const filtro = ehFiltroCentral(sp.filtro) ? sp.filtro : null;
   const admin = createAdminClient();
   const agora = new Date();
-  const central = admin ? await centralDePendencias(admin, agora, filtro).catch(() => null) : null;
+  // ADMIN-4: as filas de operação (antes na inicial) abrem a página; a inicial mostra as 5 primeiras delas.
+  const [central, decisoes] = await Promise.all([
+    admin ? centralDePendencias(admin, agora, filtro).catch(() => null) : null,
+    filtro ? null : decisoesDoAdmin(agora).catch(() => null),
+  ]);
   return (
     <div data-testid="central-pendencias">
       <PageTitle
@@ -48,6 +54,7 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
           </Link>
         }
       />
+      {!filtro && <DecisoesHoje decisoes={decisoes} nivel="h2" />}
       {!central && (
         <p role="alert" className="mb-4 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Não foi possível ler as pendências agora. Tente de novo em instantes.

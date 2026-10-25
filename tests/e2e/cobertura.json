@@ -70,7 +70,8 @@
         "t392-varredura-bloco24",
         "t407-varredura-bloco26",
         "t442-foto-perfil-revisao",
-        "t460-admin1-barra"
+        "t460-admin1-barra",
+        "t465-admin4-inicial"
       ]
     },
     "/admin/2fa/refazer": {

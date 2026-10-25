@@ -30,7 +30,8 @@ test.describe("T242 — Admin: cartão Backup e recuperação", () => {
   }
   async function abrir(page: Page, largura: number) {
     await page.setViewportSize({ width: largura, height: 900 });
-    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    // ADMIN-3: o cartão do backup mora em /admin/sistema.
+    await page.goto("/admin/sistema", { waitUntil: "domcontentloaded" });
     const cartao = page.getByTestId("cartao-backup");
     await expect(cartao).toBeVisible({ timeout: 30_000 });
     const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

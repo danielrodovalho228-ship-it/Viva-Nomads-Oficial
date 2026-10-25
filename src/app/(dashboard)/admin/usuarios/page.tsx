@@ -1,3 +1,4 @@
+import { NumeroDaFonte } from "@/components/admin/numero-da-fonte";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -116,6 +117,7 @@ export default async function AdminUsuariosPage({
           </Link>
         }
       />
+      <NumeroDaFonte chave="usuarios" />
       <NumeroHeroi rotulo="Usuários nesta lista" valor={total} href="#lista" />
       <ListaNumeros
         className="mb-6"

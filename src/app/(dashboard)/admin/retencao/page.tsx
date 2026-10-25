@@ -8,6 +8,7 @@ import { eliminaDeVerdade, textoPrazo } from "@/lib/minimizacao/regras";
 import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
 import { resumoDaSemana, rotuloMotivo, type LinhaLivro } from "@/lib/minimizacao/painel";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
+import { textoRealTeste } from "@/lib/admin/contagens";
 
 export const metadata = { title: tituloDoAdmin("/admin/retencao"), robots: { index: false, follow: false } };
 
@@ -60,12 +61,11 @@ export default async function AdminRetencaoPage() {
           Não foi possível ler o livro de eliminações agora. Tente de novo em instantes.
         </AvisoAdmin>
       )}
-      <NumeroHeroi rotulo="Eliminados de verdade em 7 dias" valor={semana.total} href="#semana" testId="retencao-semana-total" />
+      <NumeroHeroi rotulo="Eliminados de verdade em 7 dias" valor={textoRealTeste({ reais: semana.total, teste: semana.teste })} href="#semana" testId="retencao-semana-total" />
       <ListaNumeros
         className="mb-6"
         itens={[
           { rotulo: "Alertas abertos", valor: abertos.length, href: "#alertas" },
-          { rotulo: "De contas de teste (7 dias)", valor: semana.teste, href: "#semana" },
           { rotulo: "Itens no inventário", valor: INVENTARIO.length, href: "#inventario" },
         ]}
       />

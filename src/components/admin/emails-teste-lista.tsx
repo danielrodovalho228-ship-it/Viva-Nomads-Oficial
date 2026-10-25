@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { LISTA_MAX } from "@/lib/notifications/caixa-teste";
+import { contarEmailsTeste } from "@/lib/data/admin-contagens";
 
 interface Linha {
   id: string;
@@ -24,15 +25,19 @@ const quando = (iso: string) =>
  */
 export async function EmailsTesteLista() {
   const supabase = await createClient();
-  const { data } = supabase
-    ? await supabase.from("emails_teste").select("id, criado_em, evento, assunto, corpo, destinatario_mascarado").order("criado_em", { ascending: false }).limit(LISTA_MAX)
-    : { data: null };
+  // ADMIN-4 (E128): o número é o total exato da tabela (mesma função da contagem do admin), não o tamanho da lista.
+  const [{ data }, total] = supabase
+    ? await Promise.all([
+        supabase.from("emails_teste").select("id, criado_em, evento, assunto, corpo, destinatario_mascarado").order("criado_em", { ascending: false }).limit(LISTA_MAX),
+        contarEmailsTeste(supabase).catch(() => null),
+      ])
+    : [{ data: null }, null];
   const linhas = (data ?? []) as Linha[];
 
   return (
     <div data-testid="emails-teste">
       <p className="mb-4 text-sm text-muted">Tudo o que o sistema enviou às contas de teste. Só texto puro, destinatário mascarado.</p>
-      <NumeroHeroi rotulo="E-mails guardados (últimos 100)" valor={linhas.length} href="#lista" />
+      <NumeroHeroi rotulo="E-mails de teste guardados" valor={total ?? linhas.length} href="#lista" nota={total !== null && total > linhas.length ? `A lista mostra os ${linhas.length} mais recentes.` : null} testId="emails-teste-total" />
       <ListaNumeros className="mb-6" itens={[{ rotulo: "Último recebido", valor: linhas[0] ? quando(linhas[0].criado_em) : "—", href: "#lista" }]} />
       <Panel title="Mais recentes primeiro" id="lista" className="scroll-mt-24">
         {linhas.length === 0 ? (

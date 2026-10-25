@@ -27,7 +27,8 @@ test("(b) backup vermelho: alerta no topo só no celular (role=alert, borda gros
   // O selo "Atenção" ganha borda grossa; o fundo continua branco (regra do admin).
   assert.match(c, /"border-2 border-red-700 bg-white text-red-800"/);
   const pagina = ler("app/(dashboard)/admin/page.tsx");
-  assert.ok(pagina.indexOf("<AlertaBackupCelular />") < pagina.indexOf("<DecisoesHoje"));
+  // ADMIN-4: o alerta vem antes dos 4 números da inicial.
+  assert.ok(pagina.indexOf("<AlertaBackupCelular />") < pagina.indexOf('data-testid="admin-numeros"'));
   assert.match(ler("app/(dashboard)/admin/sistema/page.tsx"), /<div id="backup"/);
 });
 
