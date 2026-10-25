@@ -33,6 +33,8 @@ import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel
 import { PapelAtivo } from "@/components/layout/papel-ativo";
 import { papelDaBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
+import { SubabasDono, TopoDono } from "@/components/layout/topo-dono";
+import { cn } from "@/lib/utils";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -173,7 +175,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     estadiaAtiva,
   } = contadores;
 
-  const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan, imoveisAtivos, parceiro });
+  const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan, imoveisAtivos, parceiro, modo: mode === "owner" ? "owner" : "tenant" });
+  // PROP-1: no computador, o modo dono não tem barra lateral — abas no topo, sino, "Conta ▾" e subabas. Fora do
+  // /admin (a barra do admin é o ADMIN-1). No celular nada muda.
+  const donoNoTopo = mode === "owner" && !pathname.startsWith("/admin");
+  async function irParaModoMorador() {
+    setActiveMode("tenant");
+    await salvarModo("tenant").catch(() => {});
+    router.push("/dashboard");
+  }
   const badges = { "admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando };
 
   // Guarda de rota por papel (B1). Ao abrir por URL/deep-link uma tela exclusiva
@@ -314,7 +324,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // fluxo normal (rolagem da página inteira).
     <div className="flex min-h-screen w-full bg-surface-2 lg:h-screen lg:overflow-hidden print:h-auto print:overflow-visible">
       {/* Sidebar desktop — fixa (altura da viewport). */}
-      <aside className="web-only hidden w-64 shrink-0 bg-forest lg:block lg:h-screen print:hidden">{sidebar}</aside>
+      <aside className={cn("web-only hidden w-64 shrink-0 bg-forest lg:block lg:h-screen print:hidden", donoNoTopo && "lg:hidden")} data-testid="barra-lateral">{sidebar}</aside>
 
       {/* Drawer mobile */}
       {open && (
@@ -329,7 +339,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Modo app: cabeçalho curto (voltar + título), no lugar do topo do site. */}
         <AppHeader direita={<>{papelChip}{chipModo}</>} />
 
-        <div className="web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden">
+        {donoNoTopo && (
+          <TopoDono pathname={pathname} nome={nomeAvatar} foto={fotoNav} admin={display.role === "admin"} onModoMorador={() => void irParaModoMorador()} onSair={handleSignOut} />
+        )}
+        <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", donoNoTopo && "lg:hidden")}>
           <Logo className="lg:hidden" />
           <div className="flex items-center gap-2">
             {papelChip}
@@ -366,6 +379,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* E69: marca a navegação interna para o "voltar" das subtelas no celular. */}
         <MarcaNavInterna />
         <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
+          {donoNoTopo && (
+            <div className="hidden lg:block">
+              <SubabasDono pathname={pathname} />
+            </div>
+          )}
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />

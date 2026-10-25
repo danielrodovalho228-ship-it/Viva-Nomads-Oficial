@@ -184,7 +184,8 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
     await abrirRota(page, `/dashboard/imoveis/novo?draft=${MASSA!.rascunho1}&etapa=revisao`);
     const botao = page.getByTestId("documento-enviar");
     await expect(botao).toBeVisible({ timeout: 20_000 });
-    expect(await cliqueResponde(page, botao, "Enviar documento")).toEqual([]);
+    // O toque troca de passo: a resposta é a ida ao Passo 3 (o cliqueResponde lia a tela no meio da troca e travava).
+    await botao.click();
     await expect(page.getByTestId("passo-texto")).toHaveText("Passo 3 de 10", { timeout: 15_000 });
     await expect(page.getByTestId("cadastro-cep")).toBeFocused();
     await expect(page.getByTestId("cadastro-cep")).toHaveAttribute("aria-invalid", "true");

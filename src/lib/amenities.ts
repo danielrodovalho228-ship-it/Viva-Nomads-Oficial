@@ -124,3 +124,65 @@ for (const [key, label] of Object.entries(AMENITY_LABEL)) {
 export function amenityKeysFromLabels(labels: string[]): string[] {
   return labels.map((l) => AMENITY_KEY_BY_LABEL[l]).filter(Boolean);
 }
+
+/*
+  E111-A — comodidades conforme o tipo do imóvel (fonte única da regra; o Passo 5, a tela de editar, a página do
+  anúncio, os ícones do cartão e as sugestões das fotos usam estas duas funções). O corte é por item:
+   • prédio (apartamento, studio, loft, cobertura, flat) e quarto: tudo;
+   • casa de condomínio: tudo menos elevador; "No prédio" vira "No condomínio" e o grupo vira "Condomínio";
+   • casa e chácara: sem os itens de prédio; piscina, churrasqueira e vaga ficam em "Área externa e garagem";
+   • tipo ainda não escolhido ou desconhecido: tudo.
+  A regra só decide o que aparece: as chaves marcadas continuam salvas e voltam se o tipo voltar.
+*/
+type PerfilDoTipo = "tudo" | "casa_condominio" | "casa";
+
+/** Itens que só fazem sentido num prédio (somem de casa e chácara). */
+const SO_EM_PREDIO = new Set(["sala_reuniao", "coworking", "cabine_chamadas", "academia", "portaria_24h", "elevador", "salao_festas", "lavanderia", "bicicletario"]);
+/** Casa de condomínio: tudo, menos elevador. */
+const FORA_DO_CONDOMINIO = new Set(["elevador"]);
+
+function perfilDoTipo(tipo: string | null | undefined): PerfilDoTipo {
+  const t = (tipo ?? "").trim().toLowerCase();
+  // Aceita a chave canônica ou o rótulo legado ("Casa de condomínio", "Chácara/Sítio").
+  const chave = PROPERTY_TYPES.find((p) => p.value === t || p.label.toLowerCase() === t)?.value;
+  if (chave === "casa_condominio") return "casa_condominio";
+  if (chave === "casa" || chave === "chacara") return "casa";
+  return "tudo";
+}
+
+/** A comodidade aparece (e conta) para este tipo de imóvel? */
+export function comodidadeValeParaTipo(chave: string, tipo: string | null | undefined): boolean {
+  const perfil = perfilDoTipo(tipo);
+  if (perfil === "casa") return !SO_EM_PREDIO.has(chave);
+  if (perfil === "casa_condominio") return !FORA_DO_CONDOMINIO.has(chave);
+  return true;
+}
+
+export interface GrupoDoTipo extends AmenityCatalogGroup {
+  /** Título no Passo 5 (o grupo Trabalho aparece lá só com os itens do prédio: "No prédio"/"No condomínio"). */
+  titulo: string;
+}
+
+/** Os grupos de comodidades já filtrados e com o título certo para o tipo. Grupo vazio não volta. */
+export function comodidadesDoTipo(tipo: string | null | undefined): GrupoDoTipo[] {
+  const perfil = perfilDoTipo(tipo);
+  const rotuloEdificio = perfil === "casa" ? "Área externa e garagem" : perfil === "casa_condominio" ? "Condomínio" : null;
+  const tituloTrabalho = perfil === "casa" ? "Trabalho" : perfil === "casa_condominio" ? "No condomínio" : "No prédio";
+  return AMENITY_GROUPS.map((g) => {
+    const label = g.category === "edificio" && rotuloEdificio ? rotuloEdificio : g.label;
+    return {
+      ...g,
+      label,
+      titulo: g.category === "trabalho" ? tituloTrabalho : label,
+      items: g.items.filter((it) => comodidadeValeParaTipo(it.key, tipo)),
+    };
+  }).filter((g) => g.items.length > 0);
+}
+
+/** Rótulos gravados (property_amenities) que o tipo mostra; texto que não é do catálogo passa como está. */
+export function rotulosQueValemParaTipo(rotulos: string[], tipo: string | null | undefined): string[] {
+  return rotulos.filter((r) => {
+    const chave = AMENITY_KEY_BY_LABEL[r];
+    return !chave || comodidadeValeParaTipo(chave, tipo);
+  });
+}
