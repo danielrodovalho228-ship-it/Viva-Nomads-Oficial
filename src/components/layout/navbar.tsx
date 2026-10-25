@@ -18,21 +18,24 @@ import { cn } from "@/lib/utils";
 const PRINCIPAIS = PUBLIC_NAV.filter((i) => !i.mais);
 const MAIS = PUBLIC_NAV.filter((i) => i.mais);
 
-/** Menu "Mais" do desktop: fecha ao clicar fora, com Esc e ao escolher um link. */
+/** Menu "Mais" do desktop: fecha ao clicar ou tocar fora, ao rolar a página, com Esc e ao escolher um link (MS-1). */
 function MenuMais() {
   const [aberto, setAberto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!aberto) return;
-    const fora = (e: MouseEvent) => {
+    const fora = (e: PointerEvent) => {
       if (!ref.current?.contains(e.target as Node)) setAberto(false);
     };
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setAberto(false);
-    document.addEventListener("mousedown", fora);
+    const rolou = () => setAberto(false);
+    document.addEventListener("pointerdown", fora);
     document.addEventListener("keydown", esc);
+    window.addEventListener("scroll", rolou, { passive: true });
     return () => {
-      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("pointerdown", fora);
       document.removeEventListener("keydown", esc);
+      window.removeEventListener("scroll", rolou);
     };
   }, [aberto]);
   return (
@@ -42,12 +45,13 @@ function MenuMais() {
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
         aria-haspopup="true"
+        data-testid="menu-mais"
         className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg text-sm font-medium text-ink/75 transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       >
         Mais <ChevronDown className={cn("h-4 w-4 transition-transform", aberto && "rotate-180")} aria-hidden />
       </button>
       {aberto && (
-        <div className="absolute left-1/2 top-full z-50 mt-3 w-52 -translate-x-1/2 rounded-xl border border-line bg-white p-2 shadow-flutuante">
+        <div data-testid="menu-mais-lista" className="absolute left-1/2 top-full z-50 mt-3 w-52 -translate-x-1/2 rounded-xl border border-line bg-white p-2 shadow-flutuante">
           {MAIS.map((item) => (
             <Link
               key={item.href}
