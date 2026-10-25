@@ -475,7 +475,8 @@
         "t18-seo-a11y",
         "t20-p1-agentes",
         "t311-marco-principal-unico",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t557-varredura-bloco42"
       ]
     },
     "/cidades/[cidade]": {
@@ -488,7 +489,8 @@
         "t20-p1-agentes",
         "t176-exemplo-proprietario-avaliacoes",
         "t197-anuncio-teste-oculto",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t557-varredura-bloco42"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -629,7 +631,8 @@
         "t35-troca-de-plano",
         "t38-varios-imoveis-por-dono",
         "t39-app-ida-e-volta",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t557-varredura-bloco42"
       ]
     },
     "/dashboard/avaliacoes": {
@@ -1066,7 +1069,8 @@
         "t213-jornada-teste-confirmacao",
         "t224-taxa-fora-da-api",
         "t220-recibo-assinatura",
-        "t221-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t557-varredura-bloco42"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1530,7 +1534,8 @@
         "t15-admin-real",
         "t18-seo-a11y",
         "t5-pedido-moradia",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t557-varredura-bloco42"
       ]
     },
     "/pedidos/novo": {
@@ -1583,7 +1588,8 @@
       "specs": [
         "t18-seo-a11y",
         "t311-marco-principal-unico",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t557-varredura-bloco42"
       ]
     },
     "/proprietario/[id]": {
@@ -1644,7 +1650,8 @@
         "t18-seo-a11y",
         "t311-marco-principal-unico",
         "t438-vocab-a",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t557-varredura-bloco42"
       ]
     },
     "/simulacao": {
@@ -2128,7 +2135,8 @@
         "publico"
       ],
       "specs": [
-        "t314-entrada-avaliador-62b3"
+        "t314-entrada-avaliador-62b3",
+        "t557-varredura-bloco42"
       ]
     },
     "/avaliadores/[numero]": {
