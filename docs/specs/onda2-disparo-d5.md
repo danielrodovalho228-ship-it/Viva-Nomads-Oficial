@@ -89,3 +89,21 @@ Development sem a chave. Ligar em produção é decisão do Daniel.
   morador recebe "Precisa de ajuda com a mudança?". Para provar o pedido automático antes de dezembro é preciso uma
   estadia is_teste com saída em até 5 dias e um vínculo de limpeza ativo com parceiro publicado — criação de dado em
   produção, que depende de autorização.
+
+## 1ª rodada armada (25/10, 13:00 UTC — leitura em produção, sem alterar nada)
+
+- **Rodou em modo real.** `automacoes_envios` ganhou 20 registros entre 13:00:21 e 13:00:31 UTC: 11 `anuncio_incompleto`,
+  2 `proposta_vencendo`, 4 `documento_orfao`, 3 `parceiro_sem_resposta` (o Muse contou 14 e-mails na caixa). Em
+  simulação nada seria marcado, então a chave `"1"` vale.
+- **O passo do D-5 rodou e não achou estadia.** `automacaoDaEstadia` roda antes dos lembretes do funil (de onde vêm os
+  `parceiro_sem_resposta` das 13:00:30), então a rodada passou por ele. Janela de hoje: saída em 26/10–30/10. Os únicos
+  contratos ativos assinados são `a238bd01` (saída 27/12/2026) e `11281a61` (14/02/2027): nenhum na janela.
+  `parceiro_pedidos` automáticos: 0. Nenhum e-mail de limpeza.
+- **Limite da evidência:** a rota não grava a resposta (contagens por passo) e a Vercel não reteve log da chamada;
+  `automacaoDaEstadia` está sob `.catch(() => zeros)`, então um erro silencioso nela também daria 0. O resultado bate
+  com "rodou e não achou", que é o esperado com nenhum caso na janela.
+- **D-5 segue não provado em produção.** Para provar antes de 22/12 é preciso uma estadia is_teste com saída em até
+  5 dias e limpeza vinculada. Bloqueios: (1) pelo app não dá — mínimo de 30 dias e início no passado recusado
+  (`src/lib/inicio-estadia.ts`), então uma saída em 31/10 exigiria início ≤ 01/10; (2) não existe parceiro de limpeza
+  em produção (0 solicitações com `limpeza`; vínculos só de fotografia, nenhum ativo). Só por dado gravado em
+  produção — decisão do Muse/Daniel (script revisado em PR ou gravação autorizada).
