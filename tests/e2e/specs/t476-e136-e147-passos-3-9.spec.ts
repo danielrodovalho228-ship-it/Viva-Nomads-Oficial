@@ -94,6 +94,8 @@ test.describe("T476 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
     await expect(p.getByTestId("bloqueio-item")).toHaveCount(0, { timeout: 15_000 });
 
     // Com 30 dias a janela cabe e o Continuar avança.
+    // O campo segue sendo o seletor nativo de data (aparelho de toque) depois de mexer no calendário.
+    await expect(p.getByTestId("disponivel-ate")).toHaveAttribute("type", "date");
     await p.getByTestId("disponivel-ate").fill(dia(32));
     // Primeiro o valor (o texto pt-BR do campo), depois o aviso: separa "não entrou" de "não recalculou".
     await expect(p.getByTestId("disponivel-ate")).toHaveValue(dia(32));
