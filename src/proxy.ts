@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { rotaDetalheContrato } from "@/lib/contrato-rota";
+import { podeLerCaixasQa, rotaLeitorQa } from "@/lib/notifications/caixa-teste";
 import { createServerClient } from "@supabase/ssr";
 import {
   isInternalPath,
@@ -228,6 +229,18 @@ export async function proxy(request: NextRequest) {
         response.cookies.getAll().forEach((c) => resposta.cookies.set(c));
         return resposta;
       }
+    }
+  }
+
+  // Leitor de QA (QA-CAIXA-B): /dashboard/qa só para conta de teste com qa_leitor; as demais recebem 404 DE VERDADE.
+  // Fora de /admin: sem papel admin e sem 2FA. A página confere de novo e a RLS é a trava real da leitura.
+  if (user && rotaLeitorQa(pathname)) {
+    const { data: perfilQa } = await supabase.from("profiles").select("qa_leitor, is_teste").eq("id", user.id).maybeSingle();
+    if (!podeLerCaixasQa(perfilQa)) {
+      const naoEncontrado = request.nextUrl.clone();
+      naoEncontrado.pathname = "/nao-encontrado-admin";
+      naoEncontrado.search = "";
+      return NextResponse.rewrite(naoEncontrado, { status: 404 });
     }
   }
 

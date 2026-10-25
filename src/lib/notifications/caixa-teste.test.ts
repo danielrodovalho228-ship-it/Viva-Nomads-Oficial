@@ -51,8 +51,11 @@ test("0136: tabela com RLS (só admin lê, ninguém grava pela API) + aplicar id
 test("a tela /admin/emails-teste existe, está no menu e nos atalhos do admin", () => {
   const p = ler("src/app/(dashboard)/admin/emails-teste/page.tsx");
   assert.match(p, /PageTitle/);
-  assert.match(p, /md:hidden/);
-  assert.match(p, /hidden md:block/);
+  // A lista (cartões no celular, tabela no computador) é a mesma do leitor de QA (QA-CAIXA-B).
+  assert.match(p, /<ListaEmailsTeste/);
+  const lista = ler("src/components/admin/lista-emails-teste.tsx");
+  assert.match(lista, /md:hidden/);
+  assert.match(lista, /hidden md:block/);
   assert.match(ler("src/config/menu-por-papel.ts"), /href: "\/admin\/emails-teste"/);
   assert.match(ler("src/app/(dashboard)/admin/atalhos-admin.tsx"), /\/admin\/emails-teste/);
 });
