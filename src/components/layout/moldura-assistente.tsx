@@ -48,7 +48,8 @@ export function MolduraAssistente({ children }: { children: React.ReactNode }) {
       <DemoBanner />
       {/* O rodapé do fluxo fica preso no fim da tela: o foco e a rolagem até um campo param acima dele. */}
       <style>{`html{scroll-padding-bottom:8rem}`}</style>
-      <main data-painel-main className="mx-auto w-full max-w-6xl min-w-0 flex-1 px-4 pt-6 sm:px-8">
+      {/* E161: a mesma régua da página do imóvel (imovel-largura-total: 1536 px, px-4/sm:px-8) em todos os passos. */}
+      <main data-painel-main className="mx-auto w-full max-w-[1536px] min-w-0 flex-1 px-4 pt-6 sm:px-8" data-testid="assistente-largura">
         {children}
       </main>
     </div>
