@@ -218,7 +218,8 @@ function Resultado({ respostas, onComecar, onVer, onResponderDeNovo, ocupado }: 
   const { conforto } = aplicarRespostas(respostas);
   const faltam = faltamDoEssencial(conforto);
   const { titulo, subtitulo } = tituloResultado(faltam.length);
-  const { nivel, paraSubir } = nivelDoResultado(conforto);
+  // E179: o que as respostas já mostram (ex.: micro-ondas na cozinha) sai do "Para subir a Conforto".
+  const { nivel, paraSubir } = nivelDoResultado(conforto, respostas);
   return (
     <div className="mt-6 space-y-4" data-testid="qualificacao-resultado" data-faltam={faltam.length}>
       <div className="rounded-xl border border-line bg-white p-6 sm:p-8">
