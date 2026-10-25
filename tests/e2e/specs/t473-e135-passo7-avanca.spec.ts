@@ -3,16 +3,16 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, novaSenh
 import { noPasso } from "../fixtures/cadastro";
 
 /*
-  T470 — E135: no Passo 7 (Título e descrição), com título e descrição preenchidos, o "Continuar" AVANÇA para o
+  T473 — E135: no Passo 7 (Título e descrição), com título e descrição preenchidos, o "Continuar" AVANÇA para o
   Passo 8; sem título, diz no próprio passo o que falta. Celular de toque (teclado aberto no campo) e computador.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t470.${sufixo}@lab.vivanomads.test`, nome: "Dina Descrição", role: "owner" as const };
+const dono = { email: `dono.t473.${sufixo}@lab.vivanomads.test`, nome: "Dina Descrição", role: "owner" as const };
 const ids: Record<string, string> = {};
 
-test.describe("T470 — E135: Passo 7 avança", () => {
+test.describe("T473 — E135: Passo 7 avança", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
   test.beforeAll(async () => {
@@ -51,7 +51,7 @@ test.describe("T470 — E135: Passo 7 avança", () => {
       if (tipo === "celular") await p.getByTestId("cadastro-continuar").tap();
       else await p.getByTestId("cadastro-continuar").click();
       await noPasso(p, "preco", 15_000);
-      await p.screenshot({ path: `${SAIDA}/t470-passo8-${tipo}.png` });
+      await p.screenshot({ path: `${SAIDA}/t473-passo8-${tipo}.png` });
       await ctx.close();
     });
   }

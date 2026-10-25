@@ -1,5 +1,5 @@
 import { test, expect, devices, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { noPasso, type PassoCadastro } from "../fixtures/cadastro";
 
 /*
@@ -34,6 +34,8 @@ test.describe("T471 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.dono);
+    // O calendário do Passo 9 só aparece num rascunho já salvo no servidor: abre um pronto.
+    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t471 ${sufixo}`, {});
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
@@ -55,7 +57,8 @@ test.describe("T471 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
     void _t;
     const ctx = await browser.newContext({ ...iphone, locale: "en-US" });
     const p = await entrarNaPagina(await ctx.newPage(), dono.email, senha);
-    await abrir(p, "disponibilidade");
+    await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=disponibilidade`, { waitUntil: "domcontentloaded" });
+    await noPasso(p, "disponibilidade", 30_000);
     const de = dia(2);
     const ateCurto = dia(26); // 24 dias
     await p.getByTestId("disponivel-de").fill(de);
