@@ -11,8 +11,9 @@ import { manutencaoForaDoPrazo, pedidosDeReclassificacao, taxasDeSolucaoDosDonos
 import { estadoSolucao } from "@/lib/manutencao-solucao";
 import { ReclassificarOrdem } from "@/components/admin/reclassificar-ordem";
 import type { UrgenciaManutencao } from "@/config/atendimento";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Solicitações de manutenção — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/solicitacoes"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const STATUS: Record<string, string> = { aberto: "Aberta", visto: "Vista", em_andamento: "Em andamento", resolvido: "Resolvida" };
@@ -49,7 +50,7 @@ export default async function AdminSolicitacoesPage({ searchParams }: { searchPa
   return (
     <div data-testid="admin-solicitacoes">
       <PageTitle
-        title="Solicitações de manutenção"
+        title={rotuloDoAdmin("/admin/solicitacoes")}
         subtitle={
           foraPrazo
             ? "Abertas com o prazo de solução vencido · agora · sem simulações nem contas de teste"

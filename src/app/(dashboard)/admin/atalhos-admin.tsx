@@ -16,6 +16,7 @@ import { ROTULO_CONTADOR_FOTOS } from "@/lib/perfil/foto-revisao";
 const OUTRAS_AREAS = [
   { href: "/admin/imoveis", label: "Imóveis", icon: Home },
   { href: "/admin/contratos", label: "Contratos", icon: FileSignature },
+  { href: "/admin/candidaturas", label: "Candidaturas", icon: FileSignature },
   { href: "/admin/usuarios", label: "Usuários", icon: Users },
   { href: "/admin/fotos-perfil", label: "Fotos de perfil", icon: UserRound },
   { href: "/admin/pendencias", label: "Central de pendências", icon: Wrench },
@@ -34,6 +35,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/avaliacoes", label: "Avaliações", icon: Star },
   { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
   { href: "/admin/funil", label: "Funil de ativação", icon: TrendingUp },
+  { href: "/admin/eventos", label: "Eventos", icon: TrendingUp },
   { href: "/admin/qualidade", label: "Qualidade (saídas e denúncias)", icon: LifeBuoy },
   { href: "/admin/agentes", label: "Agentes", icon: Bot },
   { href: "/admin/retencao", label: "Dados e retenção", icon: ShieldCheck },
