@@ -77,10 +77,22 @@ test.describe("T469 — E134: Passo 4 alinhado", () => {
         await noPasso(p, passo, 30_000);
         await p.waitForTimeout(500);
         expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), passo).toBeLessThanOrEqual(1);
-        // Régua: nenhum botão do passo corta o texto nem passa da borda da tela.
+        // Régua: nenhum TEXTO de botão sai da caixa do botão nem da tela (imagem cortada de propósito, como nos cartões
+        // de tipo do Passo 1, não conta).
         const vazados = await p.locator("main button:visible").evaluateAll((els) =>
           els
-            .filter((b) => b.scrollWidth > b.clientWidth + 1 || b.getBoundingClientRect().right > window.innerWidth + 1)
+            .filter((b) => {
+              const caixa = b.getBoundingClientRect();
+              const andar = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
+              for (let n = andar.nextNode(); n; n = andar.nextNode()) {
+                if (!n.textContent?.trim()) continue;
+                const r = document.createRange();
+                r.selectNodeContents(n);
+                const t = r.getBoundingClientRect();
+                if (t.width && (t.right > caixa.right + 1 || t.left < caixa.left - 1 || t.right > window.innerWidth + 1)) return true;
+              }
+              return false;
+            })
             .map((b) => (b.textContent ?? "").trim().slice(0, 60)),
         );
         expect(vazados, `${passo}: botões vazando`).toEqual([]);
