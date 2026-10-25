@@ -1,33 +1,26 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, apagarContas, criarAdmin, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO } from "../fixtures/laboratorio";
+import { authFile } from "../fixtures/auth";
 
 /*
-  T460 — ADMIN-1: a barra-alvo do admin. Só no laboratório (conta nova de admin).
+  T460 — ADMIN-1: a barra-alvo do admin. Só no laboratório, com a sessão de admin já em duas etapas (authFile): uma
+  conta de admin nova cairia na verificação em duas etapas antes do /admin.
    1. Computador (1280), /admin: só a barra do admin (Visão geral, Pendências e os sete grupos), nada do /dashboard;
       "Minha conta →" leva às áreas de usuário; <title> e <h1> de Contratos = rótulo da barra.
    2. /dashboard: o admin vê as áreas de usuário e UM item "Painel admin" (sem os itens do /admin).
    3. Celular (390): "Menu da equipe" abre a barra com os grupos recolhidos.
 */
-const senha = novaSenha();
-const sufixo = novoSufixo();
-const admin = { email: `admin.t460.${sufixo}@lab.vivanomads.test`, nome: "Iara Barra" };
-const ids: { admin?: string } = {};
 const SAIDA = "tests/laboratorio/saida";
 const TOPO = ["Visão geral", "Pendências", "Anúncios e pessoas", "Estadias", "Rede", "Cidades e marketing", "Números", "Equipe", "Sistema"];
 
 test.describe("T460 — ADMIN-1: barra do admin", () => {
-  test.skip(!NO_LABORATORIO, "Só no laboratório (conta nova de admin).");
+  test.skip(!NO_LABORATORIO, "Só no laboratório (sessão de admin em duas etapas).");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
-  test.beforeAll(async () => {
-    ids.admin = await criarAdmin(admin.email, admin.nome, senha);
-  });
-  test.afterAll(async () => {
-    await apagarContas([ids.admin]);
-  });
+  const novaPagina = async (browser: import("@playwright/test").Browser, width: number) =>
+    (await browser.newContext({ storageState: authFile("admin"), viewport: { width, height: width === 390 ? 844 : 900 } })).newPage();
 
   test("1–2. computador: barra do admin em /admin; em /dashboard só 'Painel admin'", async ({ browser }) => {
-    const page = await entrar(browser, admin.email, senha);
-    await page.setViewportSize({ width: 1280, height: 900 });
+    const page = await novaPagina(browser, 1280);
     await page.goto("/admin/contratos", { waitUntil: "domcontentloaded" });
     const menu = page.getByTestId("menu-cascata").filter({ visible: true });
     await expect(menu).toHaveCount(1, { timeout: 30_000 });
@@ -53,8 +46,7 @@ test.describe("T460 — ADMIN-1: barra do admin", () => {
   });
 
   test("3. celular: 'Menu da equipe' abre a barra com os grupos recolhidos", async ({ browser }) => {
-    const page = await entrar(browser, admin.email, senha);
-    await page.setViewportSize({ width: 390, height: 844 });
+    const page = await novaPagina(browser, 390);
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
     await page.getByTestId("admin-abrir-menu").click();
     const menu = page.getByTestId("menu-cascata").filter({ visible: true });

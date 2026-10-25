@@ -83,9 +83,9 @@ test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () 
         }
         const doAdmin = [await quantas(barra, "/admin"), await quantas(barra, "/admin/agentes#aprovacoes")];
         if (quem === "admin") {
-          expect(doAdmin).toEqual([1, 1]);
-          await expect(barra.locator('a[href="/admin"]')).toHaveText("Painel Admin");
-          await expect(barra.locator('a[href="/admin/agentes#aprovacoes"]')).toHaveText("Equipe e aprovações");
+          // ADMIN-1: no /dashboard o admin vê só "Painel admin"; "Equipe e aprovações" saiu da barra (aba no ADMIN-2).
+          expect(doAdmin).toEqual([1, 0]);
+          await expect(barra.locator('a[href="/admin"]')).toHaveText("Painel admin");
         } else {
           expect(doAdmin, quem).toEqual([0, 0]);
         }
