@@ -98,6 +98,7 @@ import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
 import { PreviaAnuncio } from "./previa-anuncio";
+import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
 import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
@@ -1377,12 +1378,20 @@ export default function NewPropertyPage() {
           (computador), a prévia do anúncio montando ao vivo. CADASTRO-MOLDURA: "Passo X de 10", a barra de progresso,
           Voltar e o primário moram no rodapé do fluxo (RodapeAssistente). */}
 
-      <div className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem]")} data-testid="novo-duas-colunas">
+      {/* E161: a grade da página do imóvel — conteúdo + coluna lateral do tamanho do cartão do anúncio (22rem/26rem). */}
+      <div
+        className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12")}
+        data-testid="novo-duas-colunas"
+      >
         {/* E104 (mockup cadastro-imovel-03): o Passo 3 é um cartão branco sobre o fundo areia da moldura. */}
         <div className={cn("min-w-0", step === ETAPA.endereco && "rounded-xl border border-line bg-white p-4 sm:p-8")} data-testid="novo-coluna-form">
           <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
             {editingId ? "Editar anúncio" : "Anunciar imóvel"} <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
           </span>
+          {/* E161: no celular (sem a prévia lateral) e na Revisão (sem coluna lateral), o anúncio no tamanho real fica aqui. */}
+          <div className={cn("mt-2", step !== ETAPA.revisao && "lg:hidden")} data-testid="previa-tamanho-real-passo">
+            <BotaoTamanhoReal imovel={previewProperty} />
+          </div>
           <h1 className={cn(TITULO_PASSO_CADASTRO, "mt-3")} data-testid="passo-titulo">
             {meta.title}
           </h1>
@@ -1656,6 +1665,7 @@ export default function NewPropertyPage() {
             uf={uf}
             publicado={!!editingId}
           />
+          <BotaoTamanhoReal imovel={previewProperty} className="mt-2" />
         </aside>
         )}
       </div>
