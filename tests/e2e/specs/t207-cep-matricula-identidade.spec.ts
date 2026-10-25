@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { abrirNoEndereco } from "../fixtures/cadastro";
+import { abrirNoEndereco, noPasso } from "../fixtures/cadastro";
 
 /*
   T207 — Prompt 25 (reteste do Muse do #838). 390 e 1280 px.
@@ -34,7 +34,7 @@ async function abrirPasso1(browser: Browser, email: string, largura: number, bra
     brasil.push(r.request().url());
     return r.fulfill({ json: FANTASMA });
   });
-  // Assistente em 10 passos: o endereço (e o documento) é o 3º passo; abre direto nele.
+  // Assistente em 10 passos: o endereço é o 3º passo; abre direto nele.
   await abrirNoEndereco(page);
   return page;
 }
@@ -88,15 +88,18 @@ test.describe("T207 — CEP fantasma, matrícula 400 e validade da identidade (p
         .from("tenant_verifications")
         .insert({ tenant_id: id, caf_result: { identity: true, document: true, liveness: true, light: "green", simulado: true }, traffic_light: "green", created_at: criado.toISOString(), valid_until: ate.toISOString() });
       const page = await abrirPasso1(browser, `dono.t207.${largura}.${sufixo}@lab.vivanomads.test`, largura, []);
+      // E104: a identidade mora no "Antes de publicar" da Revisão (o Passo 3 é só endereço).
+      await page.goto("/dashboard/imoveis/novo?etapa=revisao", { waitUntil: "domcontentloaded" });
+      await noPasso(page, "revisao");
       await expect(page.getByTestId("identidade-confirmada")).toContainText(ate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }), { timeout: 20_000 });
 
       // Troca do CPF no cadastro → o gatilho 0164 invalida o laudo → a etapa pede para confirmar de novo.
       // CPF novo e único (o índice profiles_cpf_unico recusava um número fixo que outra conta do lab já tinha).
       const troca = await adm().from("profiles").update({ cpf: cpfAleatorio() }).eq("id", id);
       expect(troca.error).toBeNull();
-      // Recarrega no passo Endereço pelo nome: o rascunho pode ter gravado outro passo (10 passos: Fotos vem antes).
+      // Recarrega na Revisão pelo nome (E104: a identidade fica no "Antes de publicar").
       const url = new URL(page.url());
-      url.searchParams.set("etapa", "endereco");
+      url.searchParams.set("etapa", "revisao");
       await page.goto(url.pathname + url.search, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("identidade-refazer")).toBeVisible({ timeout: 20_000 });
       await expect(page.getByTestId("identidade-confirmar")).toHaveText(/Confirmar de novo/);

@@ -45,8 +45,12 @@ test.describe("T269 — Anunciar: a barra de fotos não cobre o formulário", ()
       const page = await entrar(browser, dono.email, senha);
       const altura = largura === 390 ? 844 : 900;
       await page.setViewportSize({ width: largura, height: altura });
+      // E88: a faixa de fotos só existe no passo Fotos (no Passo 1 não aparece).
       await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 25_000 });
+      await expect(page.getByTestId("barra-fotos")).toHaveCount(0);
+      await page.goto("/dashboard/imoveis/novo?etapa=fotos", { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("etapa-fotos")).toBeVisible({ timeout: 25_000 });
 
       const barra = page.getByTestId("barra-fotos");
       if (largura === 390) {
