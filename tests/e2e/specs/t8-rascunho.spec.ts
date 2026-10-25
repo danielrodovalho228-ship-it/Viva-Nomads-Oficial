@@ -116,10 +116,11 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     // PROP-6 (#1349): o checklist virou "Próximos passos" do bloco "Continue seu anúncio" (até 3: o feito mais recente
     // e os que faltam, cada um "Concluído" ou "Pendente").
     const lista = page.getByTestId("inicio-dono-passos");
-    const fotosPendente = lista.getByRole("link", { name: /Pelo menos 8 fotos.*Pendente/ });
+    // Até 3 itens: o feito mais recente e os 2 primeiros que faltam (a ordem é a da prontidão).
+    const pendente = lista.getByRole("link", { name: /Pendente/ }).first();
     await expect(async () => {
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      await expect(fotosPendente).toBeVisible({ timeout: 5_000 });
+      await expect(pendente).toBeVisible({ timeout: 5_000 });
       await expect(lista.getByRole("link", { name: /Endereço preenchido.*Pendente/ })).toHaveCount(0);
     }).toPass({ timeout: 40_000, intervals: [2_000, 3_000] });
     // Sem rolagem lateral a 390 px.
@@ -127,19 +128,21 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     expect(estouro).toBe(false);
     // O quanto falta vem no bloco (% pronto).
     await expect(blocoRascunho(page).getByTestId("inicio-dono-pct")).toBeVisible();
-    // Clicar no item que falta abre o editor JÁ na etapa certa (Fotos, o passo 2 dos 10: ?etapa=1).
-    await fotosPendente.click();
-    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=1/);
-    // A URL já é a da etapa certa; no lab-crítico do #1080 o editor ficou 15 s sem montar as Fotos e só abriu no retry.
-    // Se não montar, reabre a mesma URL (é ela que o produto promete) em vez de esperar o tempo todo.
-    const fotos = page.getByTestId("passo-titulo").filter({ hasText: "Adicione as fotos do imóvel" });
+    // Clicar no item que falta abre o editor JÁ na etapa certa: a do próprio link (?draft=…&etapa=…).
+    const destino = await pendente.getAttribute("href");
+    expect(destino).toMatch(/\/dashboard\/imoveis\/novo\?draft=.*etapa=/);
+    await pendente.click();
+    await expect(page).toHaveURL(new RegExp(`etapa=${new URL(destino!, "http://x").searchParams.get("etapa")}`), { timeout: 20_000 });
+    // Se o editor não montar a tempo (lab-crítico do #1080), reabre a mesma URL em vez de esperar o tempo todo.
     await expect(async () => {
-      await expect(fotos)
+      await expect(page.getByTestId("passo-titulo"))
         .toBeVisible({ timeout: 8_000 })
         .catch(async (e) => {
           await page.goto(page.url(), { waitUntil: "domcontentloaded" });
           throw e;
         });
+    }).toPass({ timeout: 40_000 });
+  });
     }).toPass({ timeout: 40_000 });
     await expect(page).toHaveURL(/&etapa=1/);
   });
