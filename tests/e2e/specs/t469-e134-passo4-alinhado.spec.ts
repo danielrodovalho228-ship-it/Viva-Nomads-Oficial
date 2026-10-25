@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { noPasso } from "../fixtures/cadastro";
+import { TITULO_PASSO, noPasso, type PassoCadastro } from "../fixtures/cadastro";
 
 /*
   T469 — E134: Passo 4 ("Detalhes do imóvel") alinhado, como o mockup cadastro-imovel-04. A 390 e a 1280:
@@ -8,6 +8,7 @@ import { noPasso } from "../fixtures/cadastro";
       contador à direita — todos os contadores na MESMA coluna e com a mesma largura; nenhuma dica desloca a caixa;
       sem buraco de grade; sem rolagem lateral.
    2. "−" e "+" mudam o número e o campo continua digitável.
+   3. Varredura "corrigir tudo": os 10 passos a 390 e 1280 sem rolagem lateral (prints para a régua de alinhamento).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -61,6 +62,22 @@ test.describe("T469 — E134: Passo 4 alinhado", () => {
       const pessoas = p.getByTestId("cadastro-capacidade");
       await pessoas.fill("1");
       await expect(p.getByRole("button", { name: "Diminuir Pessoas" })).toBeDisabled();
+      await p.context().close();
+    });
+  }
+
+  for (const w of [390, 1280] as const) {
+    test(`3. a ${w} px: os 10 passos sem rolagem lateral (prints)`, async ({ browser }) => {
+      test.setTimeout(240_000);
+      const p = await entrar(browser, dono.email, senha);
+      await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+      for (const passo of Object.keys(TITULO_PASSO) as PassoCadastro[]) {
+        await p.goto(`/dashboard/imoveis/novo?etapa=${passo}`, { waitUntil: "domcontentloaded" });
+        await noPasso(p, passo, 30_000);
+        await p.waitForTimeout(500);
+        expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), passo).toBeLessThanOrEqual(1);
+        await p.screenshot({ path: `${SAIDA}/t469-varredura-${passo}-${w}.png`, fullPage: true });
+      }
       await p.context().close();
     });
   }
