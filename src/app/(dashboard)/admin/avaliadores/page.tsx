@@ -20,8 +20,9 @@ import { comTesteConcluido, filaDaCidade } from "@/lib/vistoria/servidor";
 import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada";
 import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
 import { TITULO_ADMIN, TITULO_SECAO_A_DECIDIR, TITULO_SECAO_NA_REDE, contagemDecisoes, credenciamentoADecidir, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
+import { tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Avaliações do imóvel — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/avaliadores"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const mascararDocumento = (d: string | null) => (d ? `${"•".repeat(Math.max(0, d.length - 4))}${d.slice(-4)}` : "—");

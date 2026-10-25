@@ -55,11 +55,15 @@ test("a mesma caução nas duas telas (e na do inquilino): todas leem estadoCauc
   // Dono (Contratos e Garantias) e inquilino (Minhas locações) recebem `caucao` da mesma função, com o acerto junto.
   assert.equal((acoes.match(/caucao: caucaoDaLinha\(/g) ?? []).length, 2);
   assert.match(acoes, /caucao_acertos\(status, valor_devolvido, created_at\)/);
+  // PROP-5: a Caução lista por bloco (lib/contratos/area-dono.ts), com o status de estadoCaucao e a devolução do
+  // estado do contrato (c.caucao, que já traz o acerto).
   const garantias = ler("src/app/(dashboard)/dashboard/garantias/garantias-client.tsx");
-  assert.match(garantias, /caucao: c\.caucao/);
-  assert.doesNotMatch(garantias, /c\.blocos\.length === 0 \? "pendente"/, "sem blocos não vira pendente");
+  assert.match(garantias, /linhasCaucaoPorBloco\(demoOn \? demoContratos\(\) : contratos\)/);
   assert.doesNotMatch(garantias, /caucaoStatus === "pendente"/);
-  assert.match(garantias, /\{l\.caucao\.rotulo\}/);
+  assert.match(garantias, /\{linha\.status\}/);
+  const area = ler("src/lib/contratos/area-dono.ts");
+  assert.match(area, /const e = estadoCaucao\(\{ blocos: \[b\], pagamentos: c\.pagamentos \}\)/);
+  assert.match(area, /c\.caucao\.rotulo : DEVOLUCAO_AO_FIM/);
   assert.match(ler("src/app/(dashboard)/dashboard/contratos/contratos-client.tsx"), /data-testid="caucao-contrato-estado"[^>]*>\s*\{contrato\.caucao\.rotulo\}/);
   assert.match(ler("src/app/(dashboard)/dashboard/locacoes/locacoes-client.tsx"), /data-testid="locacao-caucao"[\s\S]{0,200}\{l\.caucao\.rotulo\}/);
   assert.match(ler("src/lib/data/estadia.ts"), /caucaoDoChecklist\(\s*estadoCaucaoUnico\(/);

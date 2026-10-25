@@ -20,8 +20,9 @@ import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { estadosConferenciaEntrada } from "@/lib/data/contrato-admin";
 import { ROTULO_ESTADO_CONFERENCIA, type EstadoConferenciaLista } from "@/lib/conferencia";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Contratos — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/contratos"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const STATUS: Record<string, string> = {
@@ -68,7 +69,7 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
   return (
     <div data-testid="admin-contratos">
       <PageTitle
-        title="Contratos"
+        title={rotuloDoAdmin("/admin/contratos")}
         subtitle={`${p ? rotuloPeriodo(p.inicio, p.fim) : "Todos os períodos"}${cidade ? ` · ${cidade}` : ""} · ${tipo === "real" ? "só reais" : tipo === "teste" ? "só de teste" : "reais e de teste"}`}
         action={
           <span className="flex flex-wrap gap-3">

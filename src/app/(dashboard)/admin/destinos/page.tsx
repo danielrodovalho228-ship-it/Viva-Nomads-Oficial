@@ -11,8 +11,9 @@ import { DestinoBotao, DestinoForm, ResolverNaoAchado, ResolverReporte, type Des
 import { JANELA_AGREGADO_DIAS, MIN_PESSOAS_AGREGADO, pontoValido } from "@/lib/destinos/pessoal";
 import { faltaParaRotas } from "@/lib/rotas/tempo";
 import { integracoesSimuladas } from "@/lib/integracoes";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Destinos — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/destinos"), robots: { index: false, follow: false } };
 
 interface Linha extends DestinoEditavel {
   id: string;
@@ -70,7 +71,7 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
   if (!supabase) {
     return (
       <>
-        <PageTitle title="Destinos" />
+        <PageTitle title={rotuloDoAdmin("/admin/destinos")} />
         <EmptyState icon={MapPinned} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
@@ -88,7 +89,7 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
 
   return (
     <>
-      <PageTitle title="Destinos" subtitle="Hospitais, universidades e empresas para a busca pelo tempo até o trabalho." />
+      <PageTitle title={rotuloDoAdmin("/admin/destinos")} subtitle="Hospitais, universidades e empresas para a busca pelo tempo até o trabalho." />
       {error && (
         <p role="alert" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Não foi possível ler os destinos agora. Tente de novo em instantes.
