@@ -16,6 +16,7 @@
 */
 import { rotuloItem, type Nivel } from "../../config/niveis.ts";
 import { textoQueda } from "../niveis/exibicao.ts";
+import { destinoNivel } from "../niveis/destino-nivel.ts";
 import { estadoDoContratoUnico, type LinhaEstadoContrato } from "../contrato-estado.ts";
 import { podeTransicionar, formatarHorario, type StatusVisita } from "../visitas-video.ts";
 import { prazoDaOrdem } from "../manutencao-solicitacoes.ts";
@@ -150,7 +151,7 @@ export interface DadosDecisoes {
   pendenciasDono?: PendenciaParaDecisao[];
   pendenciasMorador?: PendenciaParaDecisao[];
   /** Adendo 59.1: fotos de item de nível recusadas pelo atendimento (o item não conta até uma foto nova). */
-  fotosNivelRecusadas?: { propertyId: string; imovel: string | null; chave: string; motivo: string | null }[];
+  fotosNivelRecusadas?: { propertyId: string; imovel: string | null; chave: string; motivo: string | null; status?: string | null }[];
   /** Adendo 59.1, Parte A: o nível caiu por pendência aberta ("não confere" na entrada) — o que corrigir para voltar. */
   quedasNivel?: { propertyId: string; imovel: string | null; de: Nivel; para: Nivel; itens: string[]; contratoId: string | null; prazoAte: string | null }[];
 }
@@ -268,7 +269,7 @@ export function decisoesDoProprietario(d: DadosDecisoes, agora: Date = new Date(
       id: `foto-nivel-${f.propertyId}-${f.chave}`,
       tipo: "conforto",
       texto: `Envie outra foto de "${rotuloItem(f.chave)}" em ${nomeImovel(f.imovel)}`,
-      href: `/dashboard/imoveis/${f.propertyId}/nivel`,
+      href: destinoNivel(f.propertyId, f.status),
       prazoTexto: f.motivo ? `Recusada: ${f.motivo}` : null,
       prazo: null,
       atrasada: false,
@@ -283,7 +284,8 @@ export function decisoesDoProprietario(d: DadosDecisoes, agora: Date = new Date(
       id: `nivel-queda-${q.propertyId}`,
       tipo: "conforto",
       texto: textoQueda(nomeImovel(q.imovel), q, q.itens.map(rotuloItem)),
-      href: q.contratoId ? `/dashboard/contratos/${q.contratoId}#pendencias-conforto` : `/dashboard/imoveis/${q.propertyId}/nivel`,
+      // Queda de nível só acontece com anúncio publicado: sem contrato, a seção do nível na edição (E143).
+      href: q.contratoId ? `/dashboard/contratos/${q.contratoId}#pendencias-conforto` : destinoNivel(q.propertyId, null),
       prazoTexto: q.prazoAte ? `Corrija até ${dataHoraBrasilia(new Date(q.prazoAte))}` : null,
       ...pz,
     });

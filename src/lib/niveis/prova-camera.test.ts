@@ -64,7 +64,7 @@ test("textos exatos da ordem", () => {
   assert.equal(MARCA_FOTO_ANTERIOR, "Foto anterior à regra");
   assert.equal(textoRefazerFoto("Micro-ondas", "2026-11-23T15:00:00Z"), "Refaça a foto de Micro-ondas pela câmera até 23/11/2026");
   assert.equal(SUGESTAO_FOTOGRAFAR, "Parece que você tem isto: fotografe agora para comprovar");
-  assert.equal(SUGESTAO_SO_REFERENCIA, "Esta foto é do anúncio e não serve de prova");
+  assert.equal(SUGESTAO_SO_REFERENCIA, "As fotos do anúncio servem de pista, não de prova: para subir de nível, a foto de cada item é feita na hora.");
   assert.equal(SUGESTAO_SEM_FOTO, "Confirmada, falta a foto");
   assert.deepEqual([TOKEN_CAPTURA_MINUTOS, LINK_CELULAR_MINUTOS, PRAZO_REFAZER_DIAS], [10, 30, 30]);
 });

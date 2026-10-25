@@ -89,7 +89,9 @@ test("a edição chama a busca (pelo endereço guardado) e mudar CEP, rua ou nú
 test("uma mensagem só no bloco: lista, 'não achamos' (busca feita) ou 'complete o endereço' (busca não feita)", () => {
   const bloco = ler("src/components/anuncio/blocos-cadastro.tsx");
   assert.match(bloco, /\{temItens && \(\s*<>\s*<p className="mb-3 text-xs text-muted" data-testid="proximidades-achamos">/);
-  assert.match(bloco, /!carregando && !temItens && buscou && \(/);
+  // E145: com a busca feita, "não respondeu" e "não achamos" são mensagens separadas (uma por vez).
+  assert.match(bloco, /!carregando && !temItens && buscou && naoRespondeu && \(/);
+  assert.match(bloco, /!carregando && !temItens && buscou && !naoRespondeu && \(/);
   assert.match(bloco, /!carregando && !temItens && !buscou && \(/);
 });
 

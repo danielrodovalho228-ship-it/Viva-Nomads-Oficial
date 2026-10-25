@@ -68,23 +68,26 @@ export function ProvaNaHora({
   const id = testid ?? `prova-${chave}`;
   return (
     <>
-      {/* E100: enquanto decide (no máximo 1 s), "Preparando…" — nunca um botão cinza sem explicação. */}
-      <Button
-        type="button"
-        size="sm"
-        variant="secondary"
-        disabled={!modo}
-        aria-busy={!modo}
-        onClick={() => {
-          setAberto(true);
-          onAbrir?.();
-        }}
-        data-testid={`${id}-botao`}
-        data-modo={modo ? (celular ? "celular" : "computador") : "preparando"}
-      >
-        <Camera className="h-4 w-4" aria-hidden />
-        {!modo ? PREPARANDO_CAMERA : celular ? (rotuloBotao ?? BOTAO_FOTOGRAFAR) : BOTAO_FOTOGRAFAR_CELULAR}
-      </Button>
+      {/* E100: enquanto decide (no máximo 1 s), "Preparando…" — nunca um botão cinza sem explicação.
+          E144: um caminho por vez — com o QR aberto, o botão sai (a caixa tem o próprio "Fechar"). */}
+      {!(aberto && !celular && modo) && (
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          disabled={!modo}
+          aria-busy={!modo}
+          onClick={() => {
+            setAberto(true);
+            onAbrir?.();
+          }}
+          data-testid={`${id}-botao`}
+          data-modo={modo ? (celular ? "celular" : "computador") : "preparando"}
+        >
+          <Camera className="h-4 w-4" aria-hidden />
+          {!modo ? PREPARANDO_CAMERA : celular ? (rotuloBotao ?? BOTAO_FOTOGRAFAR) : BOTAO_FOTOGRAFAR_CELULAR}
+        </Button>
+      )}
       {aberto && celular && (
         <CameraProva
           propertyId={propertyId}
@@ -436,7 +439,7 @@ function PeloCelular({ propertyId, chave, rotulo, onFechar, onRecebida }: { prop
   }, [link, propertyId, chave, rotulo, onRecebida]);
 
   return (
-    <div className="mt-3 w-full rounded-lg border border-line bg-white p-4 text-sm text-ink" data-testid={`prova-celular-${chave}`}>
+    <div className="mt-3 w-full basis-full rounded-lg border border-line bg-white p-4 text-sm text-ink" data-testid={`prova-celular-${chave}`}>
       <div className="flex items-start justify-between gap-3">
         <p className="font-semibold">Fotografe {rotulo} pelo celular</p>
         <button type="button" className="inline-flex min-h-11 min-w-11 items-center justify-center text-muted" aria-label="Fechar" onClick={onFechar} data-testid="prova-celular-fechar">

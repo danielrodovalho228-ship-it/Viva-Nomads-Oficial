@@ -32,7 +32,8 @@ export const PASSOS_PERMISSAO: readonly string[] = [
 export const MARCA_FOTO_ANTERIOR = "Foto anterior à regra";
 export const CONTINUAR_NO_CELULAR = "Continuar no celular";
 export const SUGESTAO_FOTOGRAFAR = "Parece que você tem isto: fotografe agora para comprovar";
-export const SUGESTAO_SO_REFERENCIA = "Esta foto é do anúncio e não serve de prova";
+/** E142: dito UMA vez no topo do bloco da detecção (antes, um carimbo embaixo de cada foto). */
+export const SUGESTAO_SO_REFERENCIA = "As fotos do anúncio servem de pista, não de prova: para subir de nível, a foto de cada item é feita na hora.";
 export const SUGESTAO_SEM_FOTO = "Confirmada, falta a foto";
 export const ERRO_LINK_CELULAR = "Este link não vale mais. No computador, toque em Fotografar pelo celular para gerar outro.";
 export const ERRO_LINK_OUTRA_CONTA = "Este link é de outra conta. Saia da conta aberta neste celular e abra o link de novo.";

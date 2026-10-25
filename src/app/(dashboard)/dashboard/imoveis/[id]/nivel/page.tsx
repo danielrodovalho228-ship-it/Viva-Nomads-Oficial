@@ -7,6 +7,8 @@ import { SugestoesNoNivel } from "./sugestoes-no-nivel";
 import { comodidadesDoMeuImovel } from "@/lib/data/comodidade-sugerida-actions";
 import { BlocoAvaliacaoDono } from "@/components/vistoria/bloco-avaliacao-dono";
 import { MedirNoNivel } from "./medir-no-nivel";
+import { createClient } from "@/lib/supabase/server";
+import { destinoNivel, rotuloVoltaNivel } from "@/lib/niveis/destino-nivel";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +25,24 @@ export default async function NivelDoImovelPage({ params, searchParams }: { para
   // NIVEIS-MEDIR-B: o link do celular da medição chega com ?medir=<ponto>; sem ele, o quarto principal vem primeiro.
   const pontoMedir = medir === "trabalho" ? "trabalho" : "quarto_principal";
   const [dados, comodidades] = await Promise.all([nivelDoMeuImovel(id), comodidadesDoMeuImovel(id)]);
+  // E143: esta página segue viva para a CAPTURA (link do celular/QR) e a avaliação. Quem chegou para fotografar ou medir
+  // tem o caminho de volta ao lugar do anúncio: rascunho → Passo 5 do cadastro; publicado → a seção do nível na edição.
+  const captura = typeof fotografar === "string" || typeof medir === "string";
+  const supabase = captura && dados ? await createClient() : null;
+  const status = supabase ? ((await supabase.from("properties").select("status").eq("id", id).maybeSingle()).data?.status as string | null | undefined) : undefined;
   return (
     <div>
       <Link href="/dashboard/imoveis" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" /> Meus imóveis
       </Link>
       <h1 className="mt-3 font-title text-2xl font-semibold text-ink">Nível, ruído e extras</h1>
+      {captura && dados && (
+        <p className="mt-2 text-sm">
+          <Link href={destinoNivel(id, status)} className="font-semibold text-forest underline underline-offset-2" data-testid="nivel-captura-voltar">
+            {rotuloVoltaNivel(status)}
+          </Link>
+        </p>
+      )}
       <p className="mt-1 max-w-2xl text-sm text-muted">
         O nível é o da área mais fraca. Conforto e Premium contam com uma foto de cada item, feita na hora. O Essencial é o{" "}
         <Link href={`/dashboard/imoveis/${id}/conforto`} className="text-forest underline">

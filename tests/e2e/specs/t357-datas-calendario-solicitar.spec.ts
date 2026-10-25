@@ -1,5 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 
+/** E136: no computador o campo de data mostra dd/mm/aaaa (o calendário é o do site, em pt-BR). */
+const dataBR = (iso: string) => iso.split("-").reverse().join("/");
+
 /**
  * T357 — E53 (onda de testes 1B, 23/10, walk no UBE-001): as datas escolhidas no calendário chegam ao "Solicitar".
  *   1. o morador escolhe entrada e saída (30 dias) no calendário de Disponibilidade → a caixa de reserva já mostra as
@@ -44,16 +47,16 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       const { entrada, saida } = await escolherNoCalendario(page, 30);
       // A caixa de reserva já é a mesma seleção.
       const card = page.locator("#cartao-preco");
-      await expect(card.getByTestId("candidatura-inicio")).toHaveValue(entrada);
-      await expect(card.getByTestId("candidatura-saida")).toHaveValue(saida);
+      await expect(card.getByTestId("candidatura-inicio")).toHaveValue(dataBR(entrada));
+      await expect(card.getByTestId("candidatura-saida")).toHaveValue(dataBR(saida));
       await card.getByTestId("candidatura-pessoas").selectOption("2");
 
       const gatilho = largura >= 1024 ? card : page.getByTestId("barra-fixa-imovel");
       await gatilho.getByRole("button", { name: "Solicitar", exact: true }).click();
       const passo = page.getByTestId("solicitacao-passo");
       await expect(passo).toBeVisible();
-      await expect(passo.getByTestId("solicitacao-inicio")).toHaveValue(entrada);
-      await expect(passo.getByTestId("solicitacao-saida")).toHaveValue(saida);
+      await expect(passo.getByTestId("solicitacao-inicio")).toHaveValue(dataBR(entrada));
+      await expect(passo.getByTestId("solicitacao-saida")).toHaveValue(dataBR(saida));
       await expect(passo.getByTestId("solicitacao-pessoas")).toHaveValue("2");
       await expect(passo).not.toContainText("A combinar com o proprietário");
       const totalEstadia = passo.locator("div", { hasText: /^Total da estadia/ }).first();
@@ -79,7 +82,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       // Fechar: a caixa e o calendário mostram o que mudou no diálogo.
       await passo.getByRole("button", { name: "Entendi" }).click();
       await expect(passo).toHaveCount(0);
-      await expect(card.getByTestId("candidatura-saida")).toHaveValue(novaSaida);
+      await expect(card.getByTestId("candidatura-saida")).toHaveValue(dataBR(novaSaida));
       await expect(card.getByTestId("candidatura-pessoas")).toHaveValue("3");
       await expect(page.getByTestId("calendario-selecao")).toContainText(`${br(entrada)} → ${br(novaSaida)}`);
     });

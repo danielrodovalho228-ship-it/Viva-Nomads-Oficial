@@ -458,6 +458,7 @@
         "t452-mais-filtros-sem-duplicar",
         "t419-varredura-bloco36",
         "t475-e131-vitrine-conta-teste",
+        "t479-e136b-calendario-pt-br",
         "t494-e166-fundo-clean-publico"
       ]
     },
@@ -977,6 +978,8 @@
         "t474-e161-largura-assistente",
         "t473-e135-passo7-avanca",
         "t476-e136-e147-passos-3-9",
+        "t477-e141-passo5-comodidades",
+        "t479-e136b-calendario-pt-br",
         "t495-e136-popup-calendario-ptbr"
       ]
     },
@@ -1505,6 +1508,7 @@
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
         "t368-varredura-bloco20",
+        "t479-e136b-calendario-pt-br",
         "t494-e166-fundo-clean-publico"
       ]
     },

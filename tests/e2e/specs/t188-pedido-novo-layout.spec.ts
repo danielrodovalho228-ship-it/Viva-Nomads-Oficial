@@ -121,9 +121,9 @@ test("390px — faixa de 200 px, autocomplete de cidade, pessoas, R$, contador e
   await page.getByPlaceholder(/Conte um pouco do seu perfil/i).fill("Analista em projeto de seis meses.");
   await expect(page.getByTestId("pedido-apresentacao-contador")).toHaveText("34/500");
 
-  await expect(page.getByTestId("campo-data-exemplo")).toHaveText("dd/mm/aaaa");
+  await expect(page.getByTestId("pedido-data")).toHaveAttribute("placeholder", "dd/mm/aaaa");
   await page.getByTestId("pedido-data").fill("2027-03-01");
-  await expect(page.getByTestId("pedido-data")).toHaveValue("2027-03-01");
+  await expect(page.getByTestId("pedido-data")).toHaveValue("01/03/2027");
   const alturas = await alturasDosCampos(page);
   expect(new Set(alturas), `alturas ${alturas.join(",")}`).toEqual(new Set([48]));
 

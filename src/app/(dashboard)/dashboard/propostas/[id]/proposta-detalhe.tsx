@@ -30,6 +30,10 @@ import {
 } from "@/lib/propostas/regras";
 import { rotuloTaxaServico } from "@/lib/cobranca/regra";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
+import { precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
+
+/** PROP-2: o preço da versão pela fonte única (rótulos e conta aberta). */
+const precoDaVersao = (v: VersaoView) => precoDaProposta({ ...v.termos, valorMensal: v.totais.valorMensal });
 
 const quem = (a: "owner" | "tenant") => (a === "owner" ? "Proprietário" : "Interessado");
 
@@ -45,9 +49,10 @@ function Linha({ rotulo, valor, forte }: { rotulo: string; valor: string; forte?
 function Valores({ v }: { v: VersaoView }) {
   const t = v.termos;
   const desconto = t.descontoPct + t.descontoEstadiaPct;
+  const preco = precoDaVersao(v);
   return (
     <dl className="text-sm">
-      <Linha rotulo="Valor mensal" valor={`${formatBRL(v.totais.valorMensal)}${desconto > 0 || t.descontoValor > 0 ? ` (de ${formatBRL(t.valorBase)})` : ""}`} forte />
+      <Linha rotulo={ROTULO_MENSAL} valor={`${formatBRL(preco.mensal)}${desconto > 0 || t.descontoValor > 0 ? ` (de ${formatBRL(t.valorBase)})` : ""}`} forte />
       {t.descontoEstadiaPct > 0 && <Linha rotulo="Desconto de estadia longa" valor={`${String(t.descontoEstadiaPct).replace(".", ",")}%`} />}
       {(t.descontoPct > 0 || t.descontoValor > 0) && (
         <Linha
@@ -63,8 +68,13 @@ function Valores({ v }: { v: VersaoView }) {
       {t.taxaPet > 0 && <Linha rotulo="Taxa pet" valor={`${formatBRL(t.taxaPet)}/mês`} />}
       {t.limpezaUnica > 0 && <Linha rotulo="Limpeza de preparação (única)" valor={formatBRL(t.limpezaUnica)} />}
       <div className="mt-2 border-t border-sage-200 pt-2">
-        <Linha rotulo="Total por mês" valor={formatBRL(v.totais.totalMensal)} forte />
-        <Linha rotulo="Total do contrato" valor={formatBRL(v.totais.totalContrato)} forte />
+        <Linha rotulo={ROTULO_TOTAL_MES} valor={formatBRL(preco.totalPorMes)} forte />
+        <Linha rotulo={ROTULO_TOTAL_CONTRATO} valor={formatBRL(preco.totalContrato ?? 0)} forte />
+        {preco.conta && (
+          <p className="mt-1 text-right text-xs text-muted" data-testid="proposta-conta">
+            {preco.conta}
+          </p>
+        )}
       </div>
     </dl>
   );
@@ -303,7 +313,9 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                           </li>
                         ))}
                       </ul>
-                      <p className="mt-1 text-muted">Novo total do contrato: {formatBRL(totNova.totalContrato)}</p>
+                      <p className="mt-1 text-muted">
+                        Novo {ROTULO_TOTAL_CONTRATO.toLowerCase()}: {precoDaProposta({ ...nova, valorMensal: totNova.valorMensal }).conta ?? formatBRL(totNova.totalContrato)}
+                      </p>
                     </div>
                   )}
                   {aviso && (
@@ -346,7 +358,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                       v{v.versao} · {quem(v.autor)} · {dataBR(v.criadaEm)}
                     </p>
                     <p className="mt-1 text-sm font-medium text-ink">
-                      {formatBRL(v.totais.valorMensal)} × {v.termos.meses} = {formatBRL(v.totais.totalContrato)}
+                      {ROTULO_MENSAL} {formatBRL(v.totais.valorMensal)} · {ROTULO_TOTAL_CONTRATO.toLowerCase()}: {precoDaVersao(v).conta}
                     </p>
                     {v.mudou.length > 0 && (
                       <ul className="mt-2 space-y-1 text-[13px]">
