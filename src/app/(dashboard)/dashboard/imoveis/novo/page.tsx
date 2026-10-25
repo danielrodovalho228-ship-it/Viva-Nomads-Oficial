@@ -36,6 +36,7 @@ import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
+import { camposQueRecebem, donoEscreveu, pedeSugestaoAoEntrar, textoDoModelo } from "@/lib/anuncio/texto-sugerido";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { confirmarConforto } from "@/lib/data/conforto-actions";
@@ -52,7 +53,7 @@ import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual } from "@/lib/anuncio/periodo-disponivel";
 import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosDaPrevia, type ConteudoFoto } from "@/lib/fotos/conteudo";
-import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
+import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
 import type { Property, Proximity } from "@/lib/types";
@@ -97,6 +98,8 @@ import { tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
 import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
 import { AntesDePublicar, AtalhosCadastro, EtapaOndeFica } from "./etapa-onde-fica";
+import { MatriculaNoInicio } from "./matricula-no-inicio";
+import { camposDaMatriculaNoInicio, linhaDocumentoDoInicio, resumoDoPreenchimento } from "@/lib/documento/matricula-no-inicio";
 import { buscarCep, formatarCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
 import { aplicarResultadoCep, type CampoEndereco } from "@/lib/cep/aplicar";
 import { EtapaFotos, FOTOS_REORGANIZAR } from "./etapa-fotos";
@@ -148,6 +151,9 @@ export default function NewPropertyPage() {
   // Prompt 19: campos preenchidos pela matrícula (etiqueta "veio da matrícula") e o endereço dela, quando ≠ do CEP.
   const [daMatricula, setDaMatricula] = useState<Set<string>>(() => new Set());
   const [enderecoMatricula, setEnderecoMatricula] = useState<PreenchimentoMatricula["endereco"] | null>(null);
+  // E149-A: "Comece pela matrícula" no Passo 1 (a folha) e se o documento já foi enviado lá (o Passo 10 não pede de novo).
+  const [matriculaInicioAberta, setMatriculaInicioAberta] = useState(false);
+  const [documentoNoInicio, setDocumentoNoInicio] = useState(false);
   const [step, setStep] = useState<number>(ORDEM_ETAPAS[0]);
   const pos = step;
   // Etapa mais avançada já visitada (bug 13 da L2): guardada no rascunho.
@@ -170,6 +176,11 @@ export default function NewPropertyPage() {
   // Detecção-A (Entrega 3): comodidades achadas nas fotos e ainda não confirmadas.
   const [comodidadesDetectadas, setComodidadesDetectadas] = useState<string[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
+  // E148-A: a sugestão de título e descrição do Passo 7 (IA, ou o modelo fixo quando a IA não responde).
+  const [sugestaoTexto, setSugestaoTexto] = useState<{ titulo: string; descricao: string } | null>(null);
+  const [estadoSugestao, setEstadoSugestao] = useState<"ocioso" | "carregando" | "ia" | "modelo">("ocioso");
+  const [avisoSugestao, setAvisoSugestao] = useState<string | null>(null);
+  const sugestaoPedidaPara = useRef<string | null>(null);
   const [aceitouIa, setAceitouIa] = useState(false);
   // L2-B item 23: aceite do termo gravado por dono no servidor (versão atual). Já aceitou: a caixa não aparece.
   const [termoJaAceito, setTermoJaAceito] = useState<{ aceitoEm: string } | null>(null);
@@ -452,6 +463,70 @@ export default function NewPropertyPage() {
   }, [editId]);
 
   const imovelId = editId ?? draftParam ?? draftServerId;
+
+  // E148-A — título e descrição sugeridos no Passo 7. O texto atual mora num ref para a resposta (que chega depois)
+  // nunca sobrescrever o que o dono digitou enquanto esperava.
+  const textoAtual = useRef({ titulo: title, descricao: description });
+  textoAtual.current = { titulo: title, descricao: description };
+  async function pedirSugestao(trocarTudo: boolean) {
+    setEstadoSugestao("carregando");
+    setAvisoSugestao(null);
+    const comodidades = Object.keys(AMENITY_LABEL).filter((k) => amenityKeys[k]).map((k) => AMENITY_LABEL[k]);
+    const dados = {
+      tipo: propertyType,
+      quartos: Number(bedrooms) || undefined,
+      banheiros: Number(bathrooms) || undefined,
+      areaM2: Number(areaM2) || undefined,
+      bairro: neighborhood.trim() || undefined,
+      cidade: city.trim() || undefined,
+      internetMbps: Number(internetMbps) || undefined,
+      semInternet,
+      comodidades,
+    };
+    let texto: { titulo: string; descricao: string } | null = null;
+    let origem: "ia" | "modelo" = "modelo";
+    try {
+      const r = await fetch("/api/ai/anuncio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...dados,
+          vagas: Number(parkingSpots) || undefined,
+          mobiliado: furnished,
+          aceitaPet: petsOk,
+          internetTipo: tipoInternetDoAnuncio(propertyType, { chacara }) ?? undefined,
+          imovelId: imovelId ?? undefined,
+        }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { titulo?: string; descricao?: string; error?: string };
+      if (r.ok && j.titulo && j.descricao) {
+        texto = { titulo: j.titulo, descricao: j.descricao };
+        origem = "ia";
+      } else if (r.status === 429) setAvisoSugestao("Você usou as sugestões de hoje. Usamos um texto pronto com os dados do cadastro.");
+    } catch {
+      /* sem rede: o modelo fixo abaixo */
+    }
+    // Sem IA (desligada, 503, limite ou erro), o passo nunca fica vazio: o modelo fixo monta com o que já foi informado.
+    if (!texto) texto = textoDoModelo(dados);
+    const recebe = trocarTudo ? { titulo: true, descricao: true } : camposQueRecebem(textoAtual.current, sugestaoTexto);
+    if (recebe.titulo) setTitle(texto.titulo);
+    if (recebe.descricao) setDescription(texto.descricao);
+    setSugestaoTexto(texto);
+    setEstadoSugestao(origem);
+    // A sugestão da IA conta para o aceite do texto gerado por IA (o modelo fixo não é IA).
+    if (origem === "ia") {
+      if (recebe.descricao) setDescricaoGeradaPorIa(true);
+      setTextoIaOriginal(texto);
+    }
+  }
+  useEffect(() => {
+    if (step !== ETAPA.descricao || editId || approved !== true) return;
+    const chave = imovelId ?? "novo";
+    if (sugestaoPedidaPara.current === chave || !pedeSugestaoAoEntrar(title, description)) return;
+    sugestaoPedidaPara.current = chave;
+    void pedirSugestao(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, editId, approved, imovelId]);
   useEffect(() => {
     let alive = true;
     getMyDocumentStatus(imovelId)
@@ -756,6 +831,8 @@ export default function NewPropertyPage() {
       const salvas = declaracoesDoRascunho(d.declaracoesPasso10);
       if (declaracoesRespondidas(salvas)) setDeclaracoes(salvas);
     }
+    // E149-A: o documento enviado no começo do cadastro continua "enviado no início" no Passo 10 depois de recarregar.
+    if (d.documentoNoInicio === true) setDocumentoNoInicio(true);
     // Rascunho das ordens antigas (7 etapas) abre na primeira etapa ainda incompleta.
     setStep(etapaDoRascunho(d));
     setEtapaMax(posMaxDoRascunho(d));
@@ -927,6 +1004,7 @@ export default function NewPropertyPage() {
     qual,
     qualificacaoConforto: qualConf,
     declaracoesPasso10: declaracoes,
+    documentoNoInicio,
     aceiteIa: aceiteParaRascunho(aceiteValido, title, description),
     photos: photos.filter((p) => p.url && !p.url.startsWith("blob:")),
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
@@ -1069,6 +1147,41 @@ export default function NewPropertyPage() {
     }
     setDaMatricula(marcados);
     setEnderecoMatricula(m.avisos.some((a) => a.codigo === "endereco_diferente") ? p.endereco : null);
+  }
+
+  /**
+   * E149-A: a matrícula lida no início preenche o endereço (Passo 3) e área, vagas e unidade (Passo 4), com a etiqueta
+   * "veio da matrícula", só nos campos ainda vazios. Devolve o resumo para a folha.
+   */
+  function aplicarMatriculaNoInicio(m: InfoMatricula): string {
+    const p = m.preenchimento;
+    if (!p) return "";
+    const campos = camposDaMatriculaNoInicio(p, { cep, rua: street, numero, bairro: neighborhood, areaM2, vagas: parkingSpots, complemento });
+    const marcados = new Set(daMatricula);
+    if (campos.includes("endereco")) {
+      const e = p.endereco;
+      if (e.cep) setCep(formatarCep(e.cep));
+      if (e.rua) setStreet(e.rua);
+      if (e.numero) setNumero(e.numero.slice(0, 20));
+      if (e.bairro && bairroAceitavel(e.bairro, e.cidade ?? city)) setNeighborhood(bairroAceitavel(e.bairro, e.cidade ?? city));
+      if (e.cidade) setCity(e.cidade);
+      if (e.uf) setUf(e.uf.slice(0, 2));
+      marcados.add("endereco");
+    }
+    if (campos.includes("area") && p.areaM2) {
+      setAreaM2(String(p.areaM2));
+      marcados.add("area");
+    }
+    if (campos.includes("vagas") && p.vagas != null) {
+      setParkingSpots(String(p.vagas));
+      marcados.add("vagas");
+    }
+    if (campos.includes("complemento") && p.unidade) {
+      setComplemento(p.unidade.slice(0, 60));
+      marcados.add("complemento");
+    }
+    setDaMatricula(marcados);
+    return resumoDoPreenchimento(campos);
   }
 
   function usarEnderecoMatricula(usar: boolean) {
@@ -1461,6 +1574,13 @@ export default function NewPropertyPage() {
     setProxDesmarcados,
     manualProximities,
     setManualProximities,
+    sugestaoTexto: {
+      estado: estadoSugestao,
+      aviso: avisoSugestao,
+      ehSugestao: !!sugestaoTexto && (title === sugestaoTexto.titulo || description === sugestaoTexto.descricao),
+      donoEscreveu: donoEscreveu({ titulo: title, descricao: description }, sugestaoTexto),
+      gerarDeNovo: () => void pedirSugestao(true),
+    },
     title,
     setTitle,
     description,
@@ -1581,7 +1701,24 @@ export default function NewPropertyPage() {
             {step === ETAPA.tipo && (
               <div className="space-y-6">
                 <EtapaTipo tipo={propertyType} onTipo={camposImovel.setPropertyType} sugerido={camposImovel.tipoSugerido} />
-                {!editingId && <AtalhosCadastro aplicarImportado={aplicarImportado} />}
+                {!editingId && <AtalhosCadastro aplicarImportado={aplicarImportado} onComecePelaMatricula={() => setMatriculaInicioAberta(true)} />}
+                {matriculaInicioAberta && (
+                  <MatriculaNoInicio
+                    imovelId={imovelId}
+                    estado={docEstado}
+                    motivos={docMotivos}
+                    onResultado={(e, m) => {
+                      setDocEstado(e);
+                      setDocMotivos(m);
+                      setDocStatus(e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none");
+                      if (e !== "nenhum") setDocumentoNoInicio(true);
+                    }}
+                    onMatricula={aplicarMatriculaNoInicio}
+                    operacao={ownershipType}
+                    onOperacao={setOwnershipType}
+                    onFechar={() => setMatriculaInicioAberta(false)}
+                  />
+                )}
               </div>
             )}
 
@@ -1745,6 +1882,7 @@ export default function NewPropertyPage() {
                   }}
                   onMatricula={aplicarMatricula}
                   enderecoSalvo={enderecoSalvo}
+                  linhaDocumentoInicio={documentoNoInicio ? linhaDocumentoDoInicio(docEstado) : null}
                   declaracoes={declaracoes}
                   setDeclaracoes={setDeclaracoes}
                   emCondominio={tipoEmCondominio(propertyType)}

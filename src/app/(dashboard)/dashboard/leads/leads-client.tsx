@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { ehSeloLinkedin } from "@/lib/linkedin/textos";
+import { SeloVinculo } from "@/components/confianca/selo-vinculo";
+import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
 
 /** Motivos de recusa pré-definidos (quick win #3). */
@@ -160,6 +162,10 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                           ehSeloLinkedin(x) ? (
                             <li key={x}>
                               <SeloLinkedin />
+                            </li>
+                          ) : ehSeloVinculo(x) ? (
+                            <li key={x}>
+                              <SeloVinculo dominio={dominioDoSelo(x)} />
                             </li>
                           ) : (
                             <li key={x} className="inline-flex items-center gap-1 font-semibold text-forest">

@@ -11,6 +11,7 @@ import { ProntoParaTrabalhar, ProximidadesAutomaticas } from "@/components/anunc
 import { avisosConsistenciaTitulo } from "@/lib/anuncio/titulo-bairro";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { cn } from "@/lib/utils";
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { Erro, Labeled, LinhaNumero, Toggle } from "./campos";
 import type { CampoSugerido, EstadoIaFotos } from "./tipos";
 
@@ -72,6 +73,16 @@ export function EtapaEncontramos(p: {
   manualProximities: Proximity[];
   setManualProximities: (p: Proximity[]) => void;
   neighborhood: string;
+  /** E148-A: a sugestão de título e descrição do Passo 7. */
+  sugestaoTexto?: {
+    estado: "ocioso" | "carregando" | "ia" | "modelo";
+    aviso: string | null;
+    /** Os campos ainda mostram a sugestão (o rótulo discreto aparece). */
+    ehSugestao: boolean;
+    /** O dono escreveu algo diferente da sugestão: "Gerar de novo" confirma antes de trocar. */
+    donoEscreveu: boolean;
+    gerarDeNovo: () => void;
+  };
   title: string;
   setTitle: (v: string) => void;
   description: string;
@@ -123,18 +134,64 @@ export function EtapaEncontramos(p: {
   }
 
   if (p.parte === "descricao") {
+    const sugestao = p.sugestaoTexto;
+    const escrevendo = sugestao?.estado === "carregando";
     return (
       <div className="space-y-4" data-testid="etapa-descricao">
         {aviso}
+        {sugestao?.ehSugestao && sugestao.estado !== "carregando" && (
+          <p className="text-sm text-muted" data-testid="sugestao-rotulo">
+            Sugestão, edite à vontade.
+          </p>
+        )}
         <Labeled label="Título do anúncio" sugerido={p.sugerido("titulo")}>
-          <input value={p.title} onChange={campo("titulo", p.setTitle)} maxLength={80} placeholder="Ex.: Studio mobiliado no Centro" className="input" data-testid="cadastro-titulo" />
+          <input
+            value={p.title}
+            onChange={campo("titulo", p.setTitle)}
+            maxLength={80}
+            placeholder={escrevendo ? "Escrevendo uma sugestão…" : "Ex.: Studio mobiliado no Centro"}
+            className={cn("input", escrevendo && !p.title && "animate-pulse bg-surface-2")}
+            aria-busy={escrevendo || undefined}
+            data-testid="cadastro-titulo"
+          />
           <Erro msg={p.erros.titulo} />
           <AvisoBairro titulo={p.title} bairro={p.neighborhood} tipo={p.propertyType} quartos={p.bedrooms} />
         </Labeled>
         <Labeled label="Descrição" sugerido={p.sugerido("descricao")}>
-          <textarea rows={5} value={p.description} onChange={campo("descricao", p.setDescription)} className="input" placeholder="Descreva o imóvel…" data-testid="cadastro-descricao" />
+          <textarea
+            rows={5}
+            value={p.description}
+            onChange={campo("descricao", p.setDescription)}
+            className={cn("input", escrevendo && !p.description && "animate-pulse bg-surface-2")}
+            placeholder={escrevendo ? "Escrevendo uma sugestão…" : "Descreva o imóvel…"}
+            aria-busy={escrevendo || undefined}
+            data-testid="cadastro-descricao"
+          />
           <Erro msg={p.erros.descricao} />
         </Labeled>
+        {sugestao?.aviso && (
+          <p className="text-sm text-muted" role="status" data-testid="sugestao-aviso">
+            {sugestao.aviso}
+          </p>
+        )}
+        {/* E148-A: "Gerar de novo" em texto (o único botão cheio do passo é o Continuar). Só com a IA respondendo; por
+            cima do texto do dono, pede confirmação antes de trocar. */}
+        {sugestao?.estado === "ia" &&
+          (sugestao.donoEscreveu ? (
+            <ConfirmarNaPagina
+              aviso="Trocar o seu texto por uma nova sugestão? O que você escreveu será substituído."
+              confirmar="Trocar"
+              onConfirmar={sugestao.gerarDeNovo}
+              botaoClassName="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-4"
+              testid="sugestao-gerar-de-novo"
+            >
+              Gerar de novo
+            </ConfirmarNaPagina>
+          ) : (
+            <button type="button" onClick={sugestao.gerarDeNovo} className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-4" data-testid="sugestao-gerar-de-novo">
+              Gerar de novo
+            </button>
+          ))}
       </div>
     );
   }

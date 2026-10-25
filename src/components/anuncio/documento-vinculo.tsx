@@ -42,6 +42,7 @@ export function DocumentoVinculo({
   onMatricula,
   enderecoSalvo,
   onFalta,
+  enderecoOpcional = false,
 }: {
   imovelId: string | null;
   endereco: { cep: string; rua: string; numero: string; bairro: string; cidade: string };
@@ -54,6 +55,11 @@ export function DocumentoVinculo({
   motivos: string[];
   onResultado: (estado: EstadoDocumentoTela, motivos: string[]) => void;
   onMatricula?: (m: InfoMatricula) => void;
+  /**
+   * E149-A: "Comece pela matrícula" (Passo 1). O endereço ainda não existe — é a matrícula que vai preenchê-lo —,
+   * então o envio não espera CEP, rua e número. A mesma leitura e a mesma conferência do Passo 10.
+   */
+  enderecoOpcional?: boolean;
 }) {
   const [enviando, setEnviando] = useState<"enviando" | "conferindo" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -63,7 +69,7 @@ export function DocumentoVinculo({
   const [falta, setFalta] = useState<CampoEnderecoDoc[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const resolvido = enderecoParaDocumento(endereco, enderecoSalvo);
-  const faltamAgora = faltaEnderecoDocumento(resolvido);
+  const faltamAgora = enderecoOpcional ? [] : faltaEnderecoDocumento(resolvido);
   // O aviso do toque some sozinho quando a pessoa completa o campo.
   const faltaVisivel = falta.filter((c) => faltamAgora.includes(c));
 

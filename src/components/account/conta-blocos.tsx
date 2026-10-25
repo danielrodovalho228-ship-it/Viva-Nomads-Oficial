@@ -13,6 +13,7 @@ import { ROTA_CONECTAR, TEXTO_DESCONECTAR, TEXTO_OPCIONAL, TEXTO_O_QUE_E, retorn
 import { getTelefoneEstado } from "@/lib/data/telefone-actions";
 import { VinculoProfissional } from "./vinculo-profissional";
 import { CategoriaProfissional } from "./categoria-profissional";
+import { PorQueNaCidade } from "./por-que-na-cidade";
 import { cn } from "@/lib/utils";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
 
@@ -46,6 +47,7 @@ export function PerfilProfissional() {
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <CategoriaProfissional />
       </div>
+      <PorQueNaCidade />
     </Panel>
   );
 }

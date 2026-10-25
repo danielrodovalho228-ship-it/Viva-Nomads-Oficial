@@ -24,6 +24,8 @@ import { buttonClasses } from "@/components/ui/button";
 import { hojeBR, numBR } from "@/lib/utils";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { ehSeloLinkedin } from "@/lib/linkedin/textos";
+import { SeloVinculo } from "@/components/confianca/selo-vinculo";
+import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
 
 function AvatarDono({ nome, foto }: { nome: string; foto: string | null | undefined }) {
   return foto ? (
@@ -183,6 +185,10 @@ export function OwnerCard({
               ehSeloLinkedin(s) ? (
                 <li key={s}>
                   <SeloLinkedin />
+                </li>
+              ) : ehSeloVinculo(s) ? (
+                <li key={s}>
+                  <SeloVinculo dominio={dominioDoSelo(s)} />
                 </li>
               ) : (
                 <li key={s} className="inline-flex items-center gap-2">
