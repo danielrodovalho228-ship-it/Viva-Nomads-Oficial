@@ -439,7 +439,8 @@
         "t413-varredura-bloco30",
         "t458-buscar-base-unica-e131",
         "t454-salvar-busca-avisar-me",
-        "t417-varredura-bloco34"
+        "t417-varredura-bloco34",
+        "t453-buscar-descobribilidade"
       ]
     },
     "/cidades": {
@@ -582,7 +583,9 @@
         "t403-nav-a",
         "t411-varredura-bloco28",
         "t416-varredura-bloco33",
-        "t459-prop1-navegacao-dono"
+        "t459-prop1-navegacao-dono",
+        "t418-varredura-bloco35",
+        "t464-prop6-inicio-dono"
       ]
     },
     "/dashboard/assinatura": {
@@ -765,7 +768,8 @@
         "t220-recibo-assinatura",
         "t221-contrato-estado-periodo",
         "t352-varredura-bloco17",
-        "t416-varredura-bloco33"
+        "t416-varredura-bloco33",
+        "t418-varredura-bloco35"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -838,7 +842,8 @@
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
         "t416-varredura-bloco33",
-        "t461-prop5-contratos-sem-repeticao"
+        "t461-prop5-contratos-sem-repeticao",
+        "t418-varredura-bloco35"
       ]
     },
     "/dashboard/imoveis": {
@@ -863,7 +868,8 @@
         "t352-varredura-bloco17",
         "t400-chacara-sem-internet",
         "t450-cadastro-moldura",
-        "t411-varredura-bloco28"
+        "t411-varredura-bloco28",
+        "t418-varredura-bloco35"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -883,7 +889,8 @@
         "t407-varredura-bloco26",
         "t400-chacara-sem-internet",
         "t410-niveis-medir-rascunho",
-        "t415-varredura-bloco32"
+        "t415-varredura-bloco32",
+        "t418-varredura-bloco35"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -931,7 +938,8 @@
         "t432-deteccao-a",
         "t415-varredura-bloco32",
         "t456-comodidades-tipo-e111a",
-        "t457-revisao-documento-e112"
+        "t457-revisao-documento-e112",
+        "t418-varredura-bloco35"
       ]
     },
     "/dashboard/indicacoes": {
@@ -995,7 +1003,8 @@
         "t224-taxa-fora-da-api",
         "t221-contrato-estado-periodo",
         "t288-padrao-minimo-59a",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t418-varredura-bloco35"
       ]
     },
     "/dashboard/mensagens": {
@@ -1798,7 +1807,8 @@
         "t256-pagina-da-estadia",
         "t262-detalhe-imovel-41",
         "t263-visual-41",
-        "t304-airbnb-exibicao-61a"
+        "t304-airbnb-exibicao-61a",
+        "t418-varredura-bloco35"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -1956,7 +1966,8 @@
       "specs": [
         "t299-recibos-notas-39b1",
         "t302-varredura-logada-bloco6",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t418-varredura-bloco35"
       ]
     },
     "/auth/intencao": {

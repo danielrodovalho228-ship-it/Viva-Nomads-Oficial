@@ -7,8 +7,6 @@ import { AvisoAtendimentoAdmin } from "@/components/admin/aviso-atendimento";
 import { adminDaPagina, idsContasTeste } from "@/lib/data/admin-indicadores";
 import { atividadeRecente, numerosDaInicial } from "@/lib/data/admin-contagens";
 import { decisoesDoAdmin } from "@/lib/data/admin-decisoes";
-import { lerExecucoesBackup } from "@/components/admin/cartao-backup";
-import { estadoBackup } from "@/lib/backup/cartao";
 import { ROTULOS_NUMEROS, RODAPE_CONTAGENS, primeirosSemDuplicata, textoRealTeste } from "@/lib/admin/contagens";
 import { haQuantoTempo } from "@/lib/admin/decisoes-admin";
 import { idadeHoras } from "@/lib/admin/central-pendencias";
@@ -22,22 +20,22 @@ export const dynamic = "force-dynamic";
  * ADMIN-4 — inicial enxuta do /admin (mockup admin-visao-geral): 4 números (cada um da MESMA função da página de
  * destino, contas de teste à parte) · "Precisa da sua atenção" (os 5 primeiros da Central, sem duplicata) · "Atividade
  * recente" · uma linha de saúde · o rodapé das contas de teste. Os indicadores do período moram em "Funil e
- * indicadores"; a Receita no Financeiro; os blocos de sistema em Sistema. Quatro leituras em paralelo.
+ * indicadores"; a Receita no Financeiro; os blocos de sistema em Sistema. Três leituras em paralelo.
  */
 export default async function AdminPage() {
   const admin = (await adminDaPagina()) ? createAdminClient() : null;
   const agora = new Date();
   const teste = admin ? await idsContasTeste(admin).catch(() => new Set<string>()) : new Set<string>();
-  const [numeros, decisoes, atividade, backup] = await Promise.all([
+  const [numeros, decisoes, atividade] = await Promise.all([
     admin ? numerosDaInicial(admin, teste).catch(() => null) : null,
     admin ? decisoesDoAdmin(agora).catch(() => null) : null,
     admin ? atividadeRecente(admin, teste).catch(() => []) : [],
-    lerExecucoesBackup().catch(() => null),
   ]);
   // As filas de Pendências (a mesma leitura do topo de /admin/pendencias), as 5 primeiras; duas filas que levam ao mesmo
   // lugar contam uma vez só.
   const atencao = decisoes ? primeirosSemDuplicata(decisoes.linhas, (l) => l.href) : [];
-  const alertas = backup && backup !== "sem_tabela" && estadoBackup(backup, agora).vermelho ? 1 : 0;
+  // Saúde: os alertas de sistema da MESMA leitura das filas (hoje, o backup), o mesmo número da linha "alertas de backup".
+  const alertas = decisoes?.linhas.find((l) => l.chave === "backup")?.n ?? 0;
 
   return (
     <div data-testid="admin-inicial">

@@ -16,9 +16,11 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
     test(`F15 — selo de "Agentes" no menu conta aprovações, não achados P1 (${largura} px)`, async ({ page }, info) => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/admin", { waitUntil: "domcontentloaded" });
-      if (largura < 1024) await page.getByRole("button", { name: "Abrir menu" }).click();
-      const menu = page.getByRole("navigation", { name: "Menu do painel" });
-      const agentes = menu.getByRole("link", { name: /^Agentes/ }).first();
+      // ADMIN-1: no celular a barra abre em "Menu da equipe"; a Central de Agentes mora no grupo "Equipe" (recolhido).
+      if (largura < 1024) await page.getByTestId("admin-abrir-menu").click();
+      const menu = page.getByTestId("menu-cascata").filter({ visible: true });
+      const agentes = menu.locator('a[href="/admin/agentes"]').first();
+      if (!(await agentes.isVisible())) await menu.locator("li[data-menu-grupo] > button").filter({ hasText: "Equipe" }).first().click();
       await expect(agentes).toBeVisible({ timeout: 20_000 });
       const selo = agentes.locator('[aria-label$="aguardando"]');
       await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
