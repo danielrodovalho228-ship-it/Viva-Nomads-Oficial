@@ -6,6 +6,8 @@ import { hashPerceptual, reconverterFotoParaWebp } from "@/lib/foto-reconversao"
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const BUCKET = "property-photos";
+/** E177: a foto do anúncio fica 1 ano em cache (nome único por foto; trocar a foto gera outro endereço). */
+const CACHE_FOTO_ANUNCIO = "31536000";
 
 /**
  * Upload da FOTO do anúncio com validação NO SERVIDOR (QA teste 4, F46–F48):
@@ -52,7 +54,8 @@ export async function POST(request: Request) {
   }
 
   const path = `${user.id}/${crypto.randomUUID()}.webp`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, webp, { contentType: "image/webp", upsert: false });
+  // E177: nome único (UUID) e sem sobrescrever, então a foto nunca muda no mesmo endereço; cache de 1 ano na origem.
+  const { error } = await supabase.storage.from(BUCKET).upload(path, webp, { contentType: "image/webp", upsert: false, cacheControl: CACHE_FOTO_ANUNCIO });
   if (error) return NextResponse.json({ error: "Não foi possível salvar a foto. Tente de novo." }, { status: 500 });
 
   // Prompt 58: o hash perceptual fica no servidor (antifraude) e sobrevive à remoção do anúncio; a foto não.
