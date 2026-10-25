@@ -161,6 +161,11 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await pd.getByPlaceholder("Escreva uma mensagem...").fill(resposta);
     await pd.getByRole("button", { name: "Enviar" }).click();
     await expect(pd.getByText(resposta).last()).toBeVisible({ timeout: 15_000 });
+    // A tela mostra a mensagem na hora (atualização otimista), antes de a ação do servidor gravar. Fechar o contexto
+    // logo depois cortava a gravação sob a carga do lab completo (59b8652d e f68801cf): a inquilina não via a resposta.
+    await expect
+      .poll(async () => ((await adm().from("messages").select("id").eq("body", resposta)).data ?? []).length, { timeout: 30_000 })
+      .toBe(1);
     await foto(pd, "3-mensagens-dono", [1280, 390]);
     await pd.context().close();
 
