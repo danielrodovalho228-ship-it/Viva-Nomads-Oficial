@@ -69,8 +69,8 @@ test.describe("T474 — E161: assistente na largura do anúncio", () => {
           const cs = getComputedStyle(e);
           return { esq: Math.round(r.left + parseFloat(cs.paddingLeft)), dir: Math.round(r.right - parseFloat(cs.paddingRight)) };
         });
-        expect(Math.abs(linha.esq - borda.esq), `${passo}: rodapé à esquerda`).toBeLessThanOrEqual(1);
-        expect(Math.abs(linha.dir - borda.dir), `${passo}: rodapé à direita`).toBeLessThanOrEqual(1);
+        expect(Math.abs(linha.esq - borda.esq), `${passo}: rodapé à esquerda (rodapé ${JSON.stringify(linha)} × conteúdo ${JSON.stringify(borda)}, janela ${w})`).toBeLessThanOrEqual(1);
+        expect(Math.abs(linha.dir - borda.dir), `${passo}: rodapé à direita (rodapé ${JSON.stringify(linha)} × conteúdo ${JSON.stringify(borda)}, janela ${w})`).toBeLessThanOrEqual(1);
         expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), passo).toBeLessThanOrEqual(1);
         await p.screenshot({ path: `${SAIDA}/t474-passo-${passo}-${w}.png` });
       }
