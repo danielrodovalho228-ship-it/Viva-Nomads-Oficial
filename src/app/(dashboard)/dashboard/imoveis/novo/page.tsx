@@ -1362,9 +1362,10 @@ export default function NewPropertyPage() {
       const res = await saveDraftData({ id: null, title, city, monthlyPrice: 0, neighborhood, bathrooms: 0, areaM2: 0, description, data: dados });
       if (!res.ok || !res.id) return null;
       draftIdRef.current = res.id;
+      // As confirmações gravam ANTES de a tela sair da Qualificação: quem abre o Passo 5 em seguida já as encontra.
+      if (conforto.length) await confirmarConforto(res.id, conforto).catch(() => {});
       setDraftServerId(res.id);
       window.history.replaceState(null, "", `/dashboard/imoveis/novo?draft=${res.id}`);
-      if (conforto.length) await confirmarConforto(res.id, conforto).catch(() => {});
       return res.id;
     } catch {
       return null;

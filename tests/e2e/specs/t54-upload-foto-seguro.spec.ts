@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { noPasso } from "../fixtures/cadastro";
+import { noPasso, abrirCadastroNovo } from "../fixtures/cadastro";
 
 /**
  * T54 — upload de foto do anúncio (ordem 99c4d365, F46–F48): a rota do servidor
@@ -45,7 +45,7 @@ test.describe("T54 — Upload de foto seguro", () => {
     });
 
     test("F47 na tela: SVG é recusado com mensagem visível e o contador não sobe", async ({ page }) => {
-      await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "networkidle" });
+      await abrirCadastroNovo(page, "networkidle");
       const outro = page.getByRole("button", { name: "Começar outro" });
       if (await outro.isVisible().catch(() => false)) await outro.click();
       // Assistente em 10 passos: as fotos são o 2º passo, logo depois do Tipo (que não tem trava).

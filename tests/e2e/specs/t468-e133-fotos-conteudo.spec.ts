@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { join } from "node:path";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { authFile } from "../fixtures/auth";
-import { FOTOS_TESTE_MINIMO, noPasso } from "../fixtures/cadastro";
+import { FOTOS_TESTE_MINIMO, noPasso, abrirCadastroNovo } from "../fixtures/cadastro";
 
 /*
   T468 — E133: o Passo 2 (Fotos) não aceita qualquer imagem. Só no laboratório (a conferência usa a medida local de
@@ -30,7 +30,7 @@ async function semRolagemLateral(p: Page) {
 }
 
 async function abrirPassoFotos(p: Page) {
-  await p.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
+  await abrirCadastroNovo(p, "domcontentloaded");
   const aviso = p.getByTestId("rascunho-aviso");
   const tipo = p.getByTestId("passo-titulo");
   await expect(tipo.or(aviso).first()).toBeVisible({ timeout: 30_000 });

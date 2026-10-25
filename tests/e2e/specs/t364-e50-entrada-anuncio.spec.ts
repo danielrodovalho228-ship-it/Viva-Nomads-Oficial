@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { acharRedundancias } from "../fixtures/redundancia";
-import { noPasso } from "../fixtures/cadastro";
+import { noPasso, abrirCadastroNovo } from "../fixtures/cadastro";
 
 /**
  * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
@@ -30,7 +30,7 @@ test.describe("T364 — E50: entrada do anúncio sem título duplicado", () => {
     test(`a ${w} px`, async ({ browser }) => {
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: w, height: w === 1280 ? 900 : 844 });
-      await p.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "networkidle" });
+      await abrirCadastroNovo(p, "networkidle");
       await p.screenshot({ path: `${SAIDA}/t364-${FASE}-entrada-${w}.png` });
       if (FASE === "antes") return p.context().close();
       await expect(p.locator("h1")).toHaveCount(1);

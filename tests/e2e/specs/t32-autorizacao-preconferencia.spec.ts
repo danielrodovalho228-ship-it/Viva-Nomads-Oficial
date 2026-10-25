@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { authFile } from "../fixtures/auth";
-import { doTipoAoEndereco, irParaAntesDePublicar } from "../fixtures/cadastro";
+import { doTipoAoEndereco, irParaAntesDePublicar, abrirCadastroNovo } from "../fixtures/cadastro";
 
 /**
  * T32 — CADASTRO CONFIÁVEL, parte B (laboratório): quem opera o imóvel + pré-conferência.
@@ -103,7 +103,7 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     const page = await entrar(browser, dono.email);
     // Qualificação aprovada (o portão do "Novo anúncio" lê esta marca da sessão).
     await page.evaluate(() => sessionStorage.setItem("vivanomads-qualification", JSON.stringify({ eligible: true, score: 80 })));
-    await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "networkidle" });
+    await abrirCadastroNovo(page, "networkidle");
     const outro = page.getByRole("button", { name: "Começar outro" });
     if (await outro.isVisible().catch(() => false)) await outro.click();
 
