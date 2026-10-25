@@ -49,3 +49,20 @@ export function validarPorQueNaCidade(entrada: {
   if (!frase.ok) return frase;
   return { ok: true, valor: { inicio, fim, empresa: empresa.valor, frase: frase.valor } };
 }
+
+const dataBr = (iso: string) => iso.split("-").reverse().join("/");
+
+/**
+ * O que o proprietário lê do cartão "Por que estou na cidade" (ordem 9950ef15, itens 3 e 4): NADA antes do aceite
+ * (identidade e história do morador ficam ocultas); depois do aceite, período, empresa/instituição e a frase.
+ */
+export function sinaisPorQueParaDono(p: PorQueNaCidade | null | undefined, aceito: boolean): string[] {
+  if (!aceito || !p) return [];
+  const s: string[] = [];
+  if (p.inicio && p.fim) s.push(`Na cidade de ${dataBr(p.inicio)} a ${dataBr(p.fim)}`);
+  else if (p.inicio) s.push(`Na cidade desde ${dataBr(p.inicio)}`);
+  else if (p.fim) s.push(`Na cidade até ${dataBr(p.fim)}`);
+  if (p.empresa) s.push(`Empresa ou instituição: ${p.empresa}`);
+  if (p.frase) s.push(`“${p.frase}”`);
+  return s;
+}
