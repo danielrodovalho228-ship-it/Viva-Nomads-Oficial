@@ -75,7 +75,8 @@
         "t460-admin1-barra",
         "t465-admin4-inicial",
         "t419-varredura-bloco36",
-        "t546-e175-parcerias-uma-linha"
+        "t546-e175-parcerias-uma-linha",
+        "t549-varredura-bloco39"
       ]
     },
     "/admin/2fa/refazer": {
@@ -613,7 +614,8 @@
         "t464-prop6-inicio-dono",
         "t480-menus5-morador-nav",
         "t540-e167-morador-sem-blocos-de-dono",
-        "t542-menus5-e85-estrutura"
+        "t542-menus5-e85-estrutura",
+        "t549-varredura-bloco39"
       ]
     },
     "/dashboard/assinatura": {
@@ -762,7 +764,8 @@
         "t439-e101-deteccao-espelho",
         "t408-varredura-bloco27",
         "t405-perfil-e60-e62",
-        "t415-varredura-bloco32"
+        "t415-varredura-bloco32",
+        "t549-varredura-bloco39"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -862,7 +865,8 @@
         "t183-telas-logadas-390",
         "t266-painel-42",
         "t339-varredura-bloco16",
-        "t482-e170-caixas-vazias"
+        "t482-e170-caixas-vazias",
+        "t549-varredura-bloco39"
       ]
     },
     "/dashboard/garantias": {
@@ -995,7 +999,8 @@
         "t544-e136-popup-calendario-ptbr",
         "t484-e148a-titulo-descricao",
         "t547-e148a-texto-sugerido-passo7",
-        "t548-e132a-declaracoes-persistem"
+        "t548-e132a-declaracoes-persistem",
+        "t549-varredura-bloco39"
       ]
     },
     "/dashboard/indicacoes": {
