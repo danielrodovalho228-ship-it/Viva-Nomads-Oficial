@@ -82,6 +82,14 @@ test.describe("T469 — E134: Passo 4 alinhado", () => {
         const vazados = await p.locator("main button:visible").evaluateAll((els) =>
           els
             .filter((b) => {
+              // Carrossel com rolagem horizontal (os cartões de tipo do Passo 1): o que passa da tela é continuação.
+              let pai = b.parentElement;
+              let emCarrossel = false;
+              while (pai && !emCarrossel) {
+                const ox = getComputedStyle(pai).overflowX;
+                emCarrossel = (ox === "auto" || ox === "scroll") && pai.scrollWidth > pai.clientWidth + 1;
+                pai = pai.parentElement;
+              }
               const caixa = b.getBoundingClientRect();
               const andar = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
               for (let n = andar.nextNode(); n; n = andar.nextNode()) {
@@ -89,7 +97,7 @@ test.describe("T469 — E134: Passo 4 alinhado", () => {
                 const r = document.createRange();
                 r.selectNodeContents(n);
                 const t = r.getBoundingClientRect();
-                if (t.width && (t.right > caixa.right + 1 || t.left < caixa.left - 1 || t.right > window.innerWidth + 1)) return true;
+                if (t.width && (t.right > caixa.right + 1 || t.left < caixa.left - 1 || (!emCarrossel && t.right > window.innerWidth + 1))) return true;
               }
               return false;
             })
