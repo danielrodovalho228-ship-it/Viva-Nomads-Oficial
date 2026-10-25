@@ -379,7 +379,7 @@
         "t317-email-unico-49c1",
         "t353-varredura-bloco18",
         "t471-login-apple",
-        "t481-login-google-sem-apple"
+        "t522-login-google-sem-apple"
       ]
     },
     "/auth/pronto": {
@@ -972,10 +972,10 @@
         "t476-e136-e147-passos-3-9",
         "t477-e141-passo5-comodidades",
         "t479-e136b-calendario-pt-br",
-        "t482-e133-limite-7-8-troca",
-        "t496-passo8-conta-meses",
-        "t478-e134-contadores-valores-grandes",
-        "t497-e161-rascunho-cheio"
+        "t523-e133-limite-7-8-troca",
+        "t524-passo8-conta-meses",
+        "t520-e134-contadores-valores-grandes",
+        "t525-e161-rascunho-cheio"
       ]
     },
     "/dashboard/indicacoes": {
@@ -2178,7 +2178,7 @@
       ],
       "specs": [
         "t470-qa-leitor-caixas",
-        "t480-qa-caixa-sem-token"
+        "t521-qa-caixa-sem-token"
       ]
     }
   },

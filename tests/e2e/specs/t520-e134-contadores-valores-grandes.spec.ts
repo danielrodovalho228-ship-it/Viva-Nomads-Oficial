@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 import { noPasso } from "../fixtures/cadastro";
 
 /*
-  T478 — E134 (#1375), guarda permanente da Pista C: os contadores do Passo 4 numa ÚNICA coluna também com os números
+  T520 — E134 (#1375), guarda permanente da Pista C: os contadores do Passo 4 numa ÚNICA coluna também com os números
   preenchidos e grandes (a t469 confere o passo vazio). Quartos 12, Banheiros 10, Área 1250 m², Pessoas 16, Vagas 10:
   as 5 caixas com a mesma borda direita, a mesma largura e a mesma altura; o número inteiro cabe na caixa; sem rolagem
   lateral. A 390 e 1280 px.
@@ -11,7 +11,7 @@ import { noPasso } from "../fixtures/cadastro";
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t478.${sufixo}@lab.vivanomads.test`, nome: "Dino Contador", role: "owner" as const };
+const dono = { email: `dono.t520.${sufixo}@lab.vivanomads.test`, nome: "Dino Contador", role: "owner" as const };
 const ids: Record<string, string> = {};
 const VALORES: [string, string][] = [
   ["cadastro-quartos", "12"],
@@ -28,7 +28,7 @@ async function caixas(p: Page) {
     .evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => ({ x: Math.round(r.right), w: Math.round(r.width), h: Math.round(r.height) })));
 }
 
-test.describe("T478 — E134: contadores numa coluna com valores grandes", () => {
+test.describe("T520 — E134: contadores numa coluna com valores grandes", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
 
@@ -61,7 +61,7 @@ test.describe("T478 — E134: contadores numa coluna com valores grandes", () =>
       }
       expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await p.getByTestId("cartao-numeros").scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t478-contadores-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t520-contadores-${w}.png`, fullPage: true });
       await p.context().close();
     });
   }

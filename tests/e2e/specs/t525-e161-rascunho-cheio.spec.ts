@@ -4,7 +4,7 @@ import { TITULO_PASSO, noPasso, type PassoCadastro } from "../fixtures/cadastro"
 import { prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
-  T497 — E161 (#1376), guarda permanente da Pista C: a t474 mede o assistente VAZIO. Aqui, um rascunho cheio (8 fotos,
+  T525 — E161 (#1376), guarda permanente da Pista C: a t474 mede o assistente VAZIO. Aqui, um rascunho cheio (8 fotos,
   título longo, descrição com uma palavra de 70 letras sem espaço, preço e período) aberto em cada um dos 10 passos:
    1. 1280 px: a área do assistente tem a largura do conteúdo da página do imóvel em todos os passos;
    2. 390 px: nenhum passo estoura na horizontal.
@@ -12,19 +12,19 @@ import { prepararRascunho } from "../fixtures/rascunho-cadastro";
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t497.${sufixo}@lab.vivanomads.test`, nome: "Rita Rascunho", role: "owner" as const };
+const dono = { email: `dono.t525.${sufixo}@lab.vivanomads.test`, nome: "Rita Rascunho", role: "owner" as const };
 const ids: Record<string, string> = {};
 const PASSOS = Object.keys(TITULO_PASSO) as PassoCadastro[];
 const PALAVRA = "Supercalifragilisticoexpialidociosamenteespacosoeiluminadoapartamentox";
 const TITULO = `Apartamento amplo e iluminado perto da UFU com varanda gourmet ${sufixo}`;
 
-test.describe("T497 — E161: rascunho cheio na largura do anúncio e íntegro no celular", () => {
+test.describe("T525 — E161: rascunho cheio na largura do anúncio e íntegro no celular", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 300_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
-    ids.ref = await criarImovelPronto(ids.dono, `Régua t497 ${sufixo}`, { ativo: true });
+    ids.ref = await criarImovelPronto(ids.dono, `Régua t525 ${sufixo}`, { ativo: true });
     ids.rascunho = await prepararRascunho(ids.dono, TITULO, {
       description: `Um apartamento ${PALAVRA} com sala ampla, dois quartos e varanda. `.repeat(4),
       monthlyPrice: "3600",
@@ -49,7 +49,7 @@ test.describe("T497 — E161: rascunho cheio na largura do anúncio e íntegro n
       expect(Math.abs(assistente - imovel), `${passo}: assistente ${assistente} × imóvel ${imovel}`).toBeLessThanOrEqual(1);
       expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), passo).toBeLessThanOrEqual(1);
     }
-    await p.screenshot({ path: `${SAIDA}/t497-revisao-1280.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t525-revisao-1280.png`, fullPage: true });
     await p.context().close();
   });
 
@@ -61,10 +61,10 @@ test.describe("T497 — E161: rascunho cheio na largura do anúncio e íntegro n
       await noPasso(p, passo, 30_000);
       await p.waitForTimeout(300);
       const sobra = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      if (sobra > 1) await p.screenshot({ path: `${SAIDA}/t497-estouro-${passo}-390.png`, fullPage: true });
+      if (sobra > 1) await p.screenshot({ path: `${SAIDA}/t525-estouro-${passo}-390.png`, fullPage: true });
       expect(sobra, `${passo}: estouro horizontal de ${sobra}px`).toBeLessThanOrEqual(1);
     }
-    await p.screenshot({ path: `${SAIDA}/t497-revisao-390.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t525-revisao-390.png`, fullPage: true });
     await p.context().close();
   });
 });
