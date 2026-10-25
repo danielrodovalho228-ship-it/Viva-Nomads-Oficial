@@ -9,9 +9,10 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   T421 — VARREDURA DA PÁGINA INTEIRA, BLOCO 38 (Pista C, 25/10). O protocolo do bloco 21 (t385): seis classes, página toda
   rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400 e o clique no primário com resposta
   visível em até 3 s. Sem merge de tela depois do bloco 37 (#1361–#1363 só mexeram em teste), o bloco segue a fila das
-  páginas do cobertura.json que nenhuma varredura de página inteira cobria: índice de cidades, polo, guias, termos e a
-  exclusão de conta (sem o clique: o primário apaga a conta). "Imóveis perto de" fica fora: o destino do laboratório
-  nasce inativo (404) e só a t261 o liga, com o ponto. Só no laboratório.
+  páginas do cobertura.json que nenhuma varredura de página inteira cobria: polo, guias, termos e a exclusão de conta
+  (sem o clique: o primário apaga a conta). "Imóveis perto de" fica fora: o destino do laboratório
+  nasce inativo (404) e só a t261 o liga, com o ponto; /cidades é só o 308 para /cidades/uberlandia (já varrida).
+  Só no laboratório.
 */
 type Conta = ChaveConta | "ADMIN" | "VISITANTE";
 interface Tela {
@@ -24,7 +25,6 @@ interface Tela {
 }
 
 const TELAS: Tela[] = [
-  { conta: "VISITANTE", papel: "visitante", nome: "Índice de cidades", rota: () => "/cidades" },
   { conta: "VISITANTE", papel: "visitante", nome: "Polo HC-UFU Umuarama (Uberlândia)", rota: () => "/cidades/uberlandia/hc-ufu-umuarama" },
   { conta: "VISITANTE", papel: "visitante", nome: "Guia: como precificar estadia de meses", rota: () => "/guias/como-precificar-estadia-de-meses" },
   { conta: "VISITANTE", papel: "visitante", nome: "Guia: o que é a caução", rota: () => "/guias/o-que-e-a-caucao" },
@@ -51,7 +51,7 @@ const SAIDA = "tests/laboratorio/saida/varredura-bloco38";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 const CLIQUE = "clique no botão primário sem resposta visível em 3 s";
 
-test.describe("T421 — varredura da página inteira, bloco 38 (cidades, polo, guias, termos e exclusão de conta) (390 e 1280 px)", () => {
+test.describe("T421 — varredura da página inteira, bloco 38 (polo, guias, termos e exclusão de conta) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (contas da massa da varredura)");
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
