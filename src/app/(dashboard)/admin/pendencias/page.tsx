@@ -7,6 +7,7 @@ import { centralDePendencias } from "@/lib/data/central-pendencias";
 import { FILTROS_CENTRAL, ehFiltroCentral, hrefCentral, idadeHoras, textoPrazo, type FiltroCentral, type LinhaCentral } from "@/lib/admin/central-pendencias";
 import { haQuantoTempo } from "@/lib/admin/decisoes-admin";
 import { DecidirContestacao } from "@/components/admin/decidir-contestacao";
+import { DecidirRevisaoAvaliacao } from "@/components/admin/decidir-revisao-avaliacao";
 import { AnalisarFotoNivel } from "@/components/admin/analisar-foto-nivel";
 import { RodarPrazos } from "@/components/conforto/rodar-prazos";
 import { integracoesSimuladas } from "@/lib/integracoes";
@@ -149,6 +150,7 @@ function Linha({ l, agora }: { l: LinhaCentral; agora: Date }) {
         </Link>
       </p>
       {l.filtro === "conforto_contestacoes" && l.ref?.pendencia && <DecidirContestacao id={l.ref.pendencia} />}
+      {l.filtro === "avaliacoes_contestadas" && l.ref?.revisao && <DecidirRevisaoAvaliacao id={l.ref.revisao} />}
       {l.filtro === "fotos_nivel" && l.ref?.imovel && l.ref?.chave && (
         <div className="flex flex-wrap items-center gap-3" data-testid="foto-nivel-linha" data-chave={l.ref.chave}>
           {l.ref.foto && (

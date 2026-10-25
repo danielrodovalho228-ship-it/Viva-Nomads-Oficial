@@ -115,7 +115,7 @@ test("item 4: excluir some para os donos, avisa respostas em andamento e deixa o
   assert.match(acoes, /event: "pedido_encerrado"/);
   assert.match(acoes, /\.neq\("status", "excluido"\)/, "a lista do inquilino não mostra o excluído");
   // Confirmação na página, nunca window.confirm/alert.
-  for (const f of ["src/app/(dashboard)/dashboard/pedidos/pedidos-client.tsx", "src/app/(dashboard)/dashboard/pedidos-cidade/pedidos-dono-client.tsx", "src/app/(dashboard)/admin/pedidos/chave-sms.tsx"]) {
+  for (const f of ["src/app/(dashboard)/dashboard/pedidos/pedidos-client.tsx", "src/app/(dashboard)/dashboard/pedidos-cidade/pedidos-dono-client.tsx", "src/components/admin/chave-sms.tsx"]) {
     assert.doesNotMatch(ler(f), /window\.confirm|\balert\(|\bconfirm\(/, f);
   }
   assert.match(ler("src/app/(dashboard)/dashboard/pedidos/pedidos-client.tsx"), /data-testid="pedido-excluir-confirmacao"/);

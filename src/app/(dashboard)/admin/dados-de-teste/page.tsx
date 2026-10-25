@@ -11,6 +11,8 @@ import { EncerrarJornadasTeste } from "./encerrar-jornadas";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { SemearCarteiraTeste } from "./semear-carteira";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
+import { ABAS_DADOS_TESTE, HREF_EMAILS_TESTE, abaDadosTeste, type AbaDadosTeste } from "@/lib/admin/dados-teste-abas";
+import { EmailsTesteLista } from "@/components/admin/emails-teste-lista";
 
 export const metadata = { title: tituloDoAdmin("/admin/dados-de-teste") };
 export const dynamic = "force-dynamic";
@@ -19,8 +21,19 @@ export const dynamic = "force-dynamic";
  * Admin → Dados de teste (prompt 28; o prompt 29 completa esta página). Tudo aqui age SÓ sobre contas is_teste e
  * anúncios [TESTE QA]. "Nova jornada de teste": candidatura nova, aceita e com documentos fictícios, pronta para o
  * Fechamento — sem apagar a candidatura nem o contrato antigos.
+ * ADMIN-2: abas "Dados | E-mails" (?aba=emails); /admin/emails-teste redireciona para a aba E-mails.
  */
-export default async function AdminDadosDeTestePage() {
+export default async function AdminDadosDeTestePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const aba = abaDadosTeste((await searchParams).aba);
+  if (aba === "emails") {
+    return (
+      <div data-testid="admin-dados-de-teste">
+        <PageTitle title={rotuloDoAdmin("/admin/dados-de-teste")} subtitle="Ações e e-mails das contas de teste (is_teste) e dos anúncios [TESTE QA]." />
+        <AbasDadosTeste ativa={aba} />
+        <EmailsTesteLista />
+      </div>
+    );
+  }
   const admin = createAdminClient();
   const { data: perfis } = admin
     ? await admin.from("profiles").select("id, full_name, email, role").eq("is_teste", true).order("email")
@@ -60,14 +73,7 @@ export default async function AdminDadosDeTestePage() {
   return (
     <div data-testid="admin-dados-de-teste">
       <PageTitle title={rotuloDoAdmin("/admin/dados-de-teste")} subtitle="Ações que só valem para contas de teste (is_teste) e anúncios [TESTE QA]. Cada botão pede confirmação e fica no registro." />
-      <Panel title="Caixa de e-mails de teste" className="mb-6">
-        <p className="text-sm text-muted">
-          Os e-mails enviados às contas de teste (recibos, códigos, avisos) ficam guardados para conferência.{" "}
-          <Link href="/admin/emails-teste" className="font-semibold text-forest underline" data-testid="link-emails-teste">
-            Abrir a caixa de e-mails de teste
-          </Link>
-        </p>
-      </Panel>
+      <AbasDadosTeste ativa={aba} />
       <Panel title="Nova jornada de teste" className="min-w-0">
         {contas.length === 0 || anuncios.length === 0 ? (
           <EmptyState icon={FlaskConical} title="Faltam dados de teste" text="É preciso ao menos uma conta de inquilino de teste e um anúncio [TESTE QA] de um proprietário de teste." action={<ButtonLink href="/admin/usuarios?teste=1" variant="secondary" size="sm">Ver contas de teste</ButtonLink>} />
@@ -145,7 +151,7 @@ export default async function AdminDadosDeTestePage() {
                   <Link href="/admin/contratos?tipo=teste" className="font-semibold text-forest underline">
                     Contratos de teste
                   </Link>
-                  <Link href="/admin/emails-teste" className="font-semibold text-forest underline">
+                  <Link href={HREF_EMAILS_TESTE} className="font-semibold text-forest underline">
                     E-mails
                   </Link>
                 </span>
@@ -155,5 +161,24 @@ export default async function AdminDadosDeTestePage() {
         )}
       </Panel>
     </div>
+  );
+}
+
+/** As abas "Dados | E-mails" (links: a página recarrega no servidor com a aba pedida). */
+function AbasDadosTeste({ ativa }: { ativa: AbaDadosTeste }) {
+  return (
+    <nav aria-label="Dados de teste" className="mb-6 flex gap-2 border-b border-line" data-testid="dados-teste-abas">
+      {ABAS_DADOS_TESTE.map((a) => (
+        <Link
+          key={a.valor}
+          href={a.href}
+          aria-current={ativa === a.valor ? "page" : undefined}
+          className={`inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold ${ativa === a.valor ? "border-forest text-forest" : "border-transparent text-muted hover:text-ink"}`}
+          data-testid={`dados-teste-aba-${a.valor}`}
+        >
+          {a.rotulo}
+        </Link>
+      ))}
+    </nav>
   );
 }

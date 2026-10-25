@@ -1,5 +1,6 @@
 "use client";
 
+import { ABAS_AGENTES, abaDaUrl, type AbaAgentes } from "@/lib/admin/agentes-abas";
 import { dataHoraBRT, horaBRT } from "@/lib/datas-brasilia";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
@@ -48,8 +49,9 @@ import { estadoDaCentral } from "@/lib/agentes/selo-vivo";
   (token só no servidor). O chat só conversa: não faz nada no mundo.
 */
 
-const ABAS = ["Equipe", "Rede ao vivo", "Raio-X da Viva", "Diário de bordo", "Conversar", "Sala de reunião"] as const;
-type Aba = (typeof ABAS)[number];
+// ADMIN-2: "Aprovações" é aba (?aba=aprovacoes; o antigo #aprovacoes abre a mesma aba).
+const ABAS = ABAS_AGENTES;
+type Aba = AbaAgentes;
 const ATUALIZA_MS = 90_000;
 
 const COR_STATUS: Record<StatusAgente, string> = {
@@ -175,9 +177,15 @@ const botaoLinha = `${botao} border border-white/15 text-white hover:bg-white/5`
 const campoBase = "rounded-lg border border-white/15 bg-[#0B1430] px-3 py-2 text-sm text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none";
 const campo = `w-full ${campoBase}`;
 
-export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral; vermelhos?: ChamadoVermelho[] }) {
+export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }: { dados: DadosCentral; vermelhos?: ChamadoVermelho[]; abaInicial?: Aba }) {
   const router = useRouter();
-  const [aba, setAba] = useState<Aba>("Equipe");
+  const [aba, setAba] = useState<Aba>(abaInicial);
+  // O link antigo /admin/agentes#aprovacoes (o hash não chega ao servidor) abre a aba Aprovações.
+  useEffect(() => {
+    if (abaDaUrl(null, window.location.hash) !== "Aprovações") return;
+    const t = window.setTimeout(() => setAba("Aprovações"), 0);
+    return () => window.clearTimeout(t);
+  }, []);
   const [conversarCom, setConversarCom] = useState<string | null>(null);
   const agora = useAgora();
   const porSlug = useMemo(() => Object.fromEntries(dados.agentes.map((a) => [a.slug, a])), [dados.agentes]);
@@ -273,6 +281,7 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
               key={a}
               role="tab"
               aria-selected={aba === a}
+              data-testid={a === "Aprovações" ? "aba-aprovacoes" : undefined}
               onClick={() => setAba(a)}
               className={`whitespace-nowrap rounded-lg border px-3 py-2 text-[13px] font-semibold sm:text-sm ${aba === a ? "border-white/20 bg-[#111F47] text-white" : "border-transparent text-[#8C9AC4] hover:text-white"}`}
             >
@@ -294,11 +303,6 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
           </Link>
         </div>
       </div>
-
-      <section id="aprovacoes" aria-label="Aprovações" className="scroll-mt-24 px-4 pt-4 sm:px-8" data-testid="secao-aprovacoes">
-        <h2 className="mb-2 text-sm font-semibold text-[#8C9AC4]">Aprovações</h2>
-        <CartoesAprovacao versao={0} mostrarVazio />
-      </section>
 
       <div className="px-4 pb-16 sm:px-8">
         <section className={`grid items-end gap-4 lg:grid-cols-[1.3fr_1fr] lg:gap-6 ${aba === "Equipe" ? "py-8" : "py-4"}`}>
@@ -326,7 +330,12 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
           </div>
         </section>
 
-        {estado.vazio ? (
+        {aba === "Aprovações" ? (
+          <section id="aprovacoes" aria-label="Aprovações" className="scroll-mt-24" data-testid="secao-aprovacoes">
+            <h2 className="mb-2 text-sm font-semibold text-[#8C9AC4]">Aprovações</h2>
+            <CartoesAprovacao versao={0} mostrarVazio />
+          </section>
+        ) : estado.vazio ? (
           <Vazio titulo={estado.vazio.titulo} texto={estado.vazio.texto} acao={estado.vazio.acao} />
         ) : aba === "Equipe" ? (
           <Equipe dados={dados} agora={agora} onConversar={abrirConversa} />

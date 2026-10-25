@@ -5,8 +5,8 @@
  */
 import type { ItemMenu } from "./menu-por-papel.ts";
 
-/** /admin/sistema ("Chaves e integrações") nasce no ADMIN-3; até lá o item não aparece. */
-export const SISTEMA_DISPONIVEL = false;
+/** /admin/sistema ("Chaves e integrações") nasceu no ADMIN-3: o item aparece na barra. */
+export const SISTEMA_DISPONIVEL = true;
 
 const folha = (id: string, rotulo: string, href: string, icone: ItemMenu["icone"]): ItemMenu => ({ id, rotulo, href, icone });
 const grupo = (id: string, rotulo: string, icone: ItemMenu["icone"], filhos: ItemMenu[]): ItemMenu => ({ id, rotulo, icone, filhos });
@@ -66,16 +66,15 @@ export const ITEM_PAINEL_ADMIN: ItemMenu = { id: "admin", rotulo: "Painel admin"
  * barra ou aqui). Nenhuma página foi apagada.
  */
 export const FORA_DA_BARRA_ADMIN: Readonly<Record<string, string>> = {
-  "/admin/avaliacoes": "pedidos de revisão das avaliações; vira o filtro 'Avaliações contestadas' da Central de Pendências no ADMIN-2",
+  "/admin/avaliacoes": "redireciona para o filtro 'Avaliações contestadas' da Central de Pendências (ADMIN-2)",
   "/admin/conforto": "redireciona para a Central de Pendências (contestações de conforto)",
-  "/admin/fotografos": "vira a aba 'Fotógrafos' de Parceiros no ADMIN-2",
-  "/admin/emails-teste": "vira a aba 'E-mails' de Testes no ADMIN-2",
+  "/admin/fotografos": "redireciona para a aba 'Fotógrafos' de Parceiros (ADMIN-2)",
+  "/admin/emails-teste": "redireciona para a aba 'E-mails' de Testes (ADMIN-2)",
   "/admin/atendimento/[id]": "subpágina de Atendimento",
   "/admin/contratos/[id]": "subpágina de Contratos",
   "/admin/contratos/encerramentos": "subpágina de Contratos",
   "/admin/parceiros/pedidos": "subpágina de Parceiros",
   "/admin/parceiros/pedidos/[id]": "subpágina de Parceiros",
-  "/admin/sistema": "nasce no ADMIN-3",
 };
 
 function folhasDe(itens: readonly ItemMenu[]): ItemMenu[] {

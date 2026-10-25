@@ -11,9 +11,10 @@ import { dataPedidoBR } from "@/lib/pedidos/campos";
 /**
  * Chave SMS_ATIVO (Prompt 30, item 1). Desligada: o pedido chega aos donos com o e-mail confirmado dos dois lados.
  * Ligada: volta a exigência do telefone confirmado; quem já tinha pedido publicado ganha 7 dias e recebe um aviso.
- * Ligar é decisão do Daniel (o provedor de SMS precisa estar configurado no Supabase antes).
+ * Ligar é decisão do Daniel (o provedor de SMS precisa estar configurado no Supabase antes). ADMIN-3: mora em
+ * /admin/sistema (Chaves e integrações).
  */
-export function ChaveSmsPainel({ ligada, ligadaEm }: { ligada: boolean; ligadaEm: string | null }) {
+export function ChaveSmsPainel({ ligada, ligadaEm, quem }: { ligada: boolean; ligadaEm: string | null; /** ADMIN-3: quem mudou a chave por último. */ quem?: string | null }) {
   const router = useRouter();
   const [confirmando, setConfirmando] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export function ChaveSmsPainel({ ligada, ligadaEm }: { ligada: boolean; ligadaEm
       <p className="text-sm text-ink" data-testid="chave-sms-estado">
         <Smartphone className="mr-1 inline h-4 w-4 text-forest" aria-hidden />
         {ligada
-          ? `Ligada${ligadaEm ? ` desde ${dataPedidoBR(ligadaEm)}` : ""}: o pedido só chega aos donos com e-mail e telefone confirmados.`
+          ? `Ligada${ligadaEm ? ` desde ${dataPedidoBR(ligadaEm)}` : ""}${quem ? ` por ${quem}` : ""}: o pedido só chega aos donos com e-mail e telefone confirmados.`
           : "Desligada: o pedido chega aos donos com o e-mail confirmado dos dois lados. O cartão mostra \"Telefone ainda não confirmado\"."}
       </p>
       <p className="mt-1 text-xs text-muted">

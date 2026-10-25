@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { ROTA_EQUIPE } from "./conta-equipe.ts";
 
-// O atalho "Equipe e aprovações" do Perfil aponta para uma âncora: ela precisa existir na Central.
-test("a âncora do atalho da Equipe existe na Central e mostra o estado vazio", () => {
-  const ancora = ROTA_EQUIPE.split("#")[1];
+// O atalho "Equipe e aprovações" abre a aba Aprovações da Central (ADMIN-2: ?aba=aprovacoes; a âncora antiga segue).
+test("a aba do atalho da Equipe existe na Central e mostra o estado vazio", () => {
+  const ancora = new URL(ROTA_EQUIPE, "https://x").searchParams.get("aba");
   assert.equal(ancora, "aprovacoes");
   const central = readFileSync("src/app/(dashboard)/admin/agentes/central-client.tsx", "utf8");
   assert.match(central, new RegExp(`id="${ancora}"`));
