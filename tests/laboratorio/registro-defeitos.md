@@ -88,6 +88,13 @@ Só defeito de produto confirmado, cada um com o teste do laboratório que o rep
 
 Critério da ordem: 1 trava o dono de publicar; 2 quebra a tela; 3 atrapalha quem usa leitor de tela; 4 põe página que não existe no índice do Google; 5 mostra número errado ao admin; 6 confunde, mas não trava; 7 deixa a foto em branco por um instante ao deslizar; 8 pode ser só baseline desatualizada. O D-V7 (levava o dono a uma página que não existe) saiu da ordem ao ser corrigido.
 
+## Fila da rodada 19 (Pista C, 25/10)
+
+- **#1338 (QA-CAIXA-B, rascunho)**: traz a t462 (leitor das caixas de teste). Ao mesclar, a vigia confirma a t462 no lab-crítico da `main` e varre `/dashboard/qa/emails` e `/admin/emails-teste`.
+- **E132-A (qualificação)**: ainda sem PR no GitHub (nenhum PR aberto ou fechado, nenhuma branch ou commit com "E132"). A vigia prepara o teste permanente quando ele aparecer.
+- **#1310 (rascunho, t443)**: SEGURADO até a Onda 2 concluir; a vigia não mexe.
+- **BACKUP-CAUSA (24/10)**: a cópia noturna falha toda noite desde 21/10 (runs 39595513343, 39774567147, 39948118408 e 40088583579). Causa confirmada no log do passo "Montar o rclone.conf": "Faltam segredos no ambiente backup-producao: RCLONE_DRIVE_CONF BACKUP_SENHA_1 BACKUP_SENHA_2 SUPABASE_S3_ACCESS_KEY_ID SUPABASE_S3_SECRET_ACCESS_KEY". O alarme também não sai: faltam RESEND_API_KEY e AVISO_DANIEL_EMAIL. Não é defeito de código; é o passo do Daniel em `docs/RESTAURACAO.md` (os segredos da Resiliência).
+
 ## Fechados sem registro
 
 - **t50 · anon em `imovel_nivel`** (laboratório de `7cc1c81`): o nível do anúncio ATIVO é público de propósito (migração 0213, policy "nivel: anuncio ativo"); a spec entrou em `LEITURA_PUBLICA` na main depois desse commit (`601dc84e`).
