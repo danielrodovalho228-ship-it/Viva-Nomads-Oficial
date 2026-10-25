@@ -44,6 +44,8 @@ import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoDocValido } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS } from "@/lib/listing";
+import { erroJanelaDisponivel } from "@/lib/anuncio/periodo-disponivel";
+import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
 import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
@@ -368,6 +370,11 @@ export default function NewPropertyPage() {
       if (!street.trim()) e.rua = "Informe a rua.";
       if (!numero.trim()) e.numero = "Informe o número (ou s/n).";
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
+      else {
+        // E147: "Minas Gerais" (ou outro estado, a sigla ou a própria cidade) não é bairro.
+        const problema = problemaDoBairro(neighborhood, city);
+        if (problema) e.bairro = problema;
+      }
       if (!city.trim()) e.cidade = "Informe a cidade.";
     }
     if (s === ETAPA.fotos && photos.length === 0)
@@ -382,13 +389,25 @@ export default function NewPropertyPage() {
       if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o valor mensal.";
       if (!garantiaOk) e.garantia = "Escolha ao menos uma garantia.";
     }
+    if (s === ETAPA.disponibilidade) {
+      // E137: a janela de datas precisa caber a duração mínima do anúncio.
+      const janela = erroJanelaDisponivel(availableFrom, availableUntil, minPeriod);
+      if (janela) e.janela = janela;
+    }
     return e;
   }
+
+  const faltaNoPasso = Object.values(validarEtapa(step));
 
   function avancarEtapa() {
     const e = validarEtapa(step);
     setErros(e);
-    if (Object.keys(e).length === 0) irPara(Math.min(ULTIMA_ETAPA, step + 1));
+    if (Object.keys(e).length === 0) {
+      irPara(Math.min(ULTIMA_ETAPA, step + 1));
+      return;
+    }
+    // E135: recusado → leva o olho até a lista do que falta.
+    setTimeout(() => document.querySelector('[data-testid="passo-erros"]')?.scrollIntoView({ block: "center", behavior: "smooth" }), 0);
   }
 
   function voltarEtapa() {
@@ -464,10 +483,10 @@ export default function NewPropertyPage() {
     if (!asDraft && !editingId && docStatus !== "approved") {
       setPublishError(
         docStatus === "rejected"
-          ? "O documento precisa ser corrigido: reenvie na etapa Onde fica para publicar."
+          ? "O documento precisa ser corrigido: envie outro no cartão “Antes de publicar”, aqui na Revisão."
           : docStatus === "pending"
             ? "Documentação em revisão. Você pode salvar como rascunho; a publicação libera depois da conferência."
-            : "Envie o documento do imóvel na etapa Onde fica para publicar."
+            : "Envie o documento do imóvel no cartão “Antes de publicar”, aqui na Revisão."
       );
       return;
     }
@@ -497,6 +516,12 @@ export default function NewPropertyPage() {
     }
     const minDays = Number(minPeriod) || 30;
     const maxDays = Number(maxPeriod) || 0;
+    const janela = erroJanelaDisponivel(availableFrom, availableUntil, minPeriod);
+    if (!asDraft && janela) {
+      setPublishError(janela);
+      irPara(ETAPA.disponibilidade);
+      return;
+    }
     if (maxDays && maxDays < minDays) {
       setPublishError("A duração máxima não pode ser menor que a mínima. Ajuste os prazos.");
       return;
@@ -949,7 +974,8 @@ export default function NewPropertyPage() {
 
   function aplicarNoFormulario(a: ReturnType<typeof aplicarResultadoCep>) {
     if (a.rua !== undefined) setStreet(a.rua);
-    if (a.bairro !== undefined) setNeighborhood(a.bairro);
+    // E147: bairro que é o estado/UF/cidade nunca entra (o campo fica para a pessoa preencher).
+    if (a.bairro !== undefined) setNeighborhood(bairroAceitavel(a.bairro, a.cidade ?? city));
     if (a.cidade !== undefined) setCity(a.cidade);
     if (a.uf) setUf(a.uf);
     if (a.perguntarBairro) setBairroDoCep(a.perguntarBairro);
@@ -995,7 +1021,7 @@ export default function NewPropertyPage() {
     if (e.cep) setCep(formatarCep(e.cep));
     if (e.rua) setStreet(e.rua);
     if (e.numero) setNumero(e.numero.slice(0, 20));
-    if (e.bairro) setNeighborhood(e.bairro);
+    if (e.bairro && bairroAceitavel(e.bairro, e.cidade ?? city)) setNeighborhood(bairroAceitavel(e.bairro, e.cidade ?? city));
     if (e.cidade) setCity(e.cidade);
     if (e.uf) setUf(e.uf.slice(0, 2));
     setDaMatricula((atual) => new Set(atual).add("endereco"));
@@ -1389,6 +1415,17 @@ export default function NewPropertyPage() {
               }}
             />
           )}
+          {/* E135: "Continuar" recusado SEMPRE diz no próprio passo o que falta (nunca um clique mudo). */}
+          {Object.keys(erros).length > 0 && (
+            <div role="alert" className="mt-4 rounded-xl border border-red-300 bg-white p-3 text-sm text-red-700" data-testid="passo-erros">
+              <p className="font-semibold">Para continuar, falta:</p>
+              <ul className="mt-1 list-disc pl-4">
+                {Object.values(erros).map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="mt-6">
             {step === ETAPA.tipo && (
               <div className="space-y-6">
@@ -1660,7 +1697,15 @@ export default function NewPropertyPage() {
         onVoltar={pos > 0 ? voltarEtapa : null}
         primario={
           pos < ULTIMA_ETAPA
-            ? { rotulo: "Continuar", onClick: avancarEtapa, testid: "cadastro-continuar", seta: true }
+            ? {
+                rotulo: "Continuar",
+                onClick: avancarEtapa,
+                testid: "cadastro-continuar",
+                seta: true,
+                // E135: o botão reflete o passo — esmaecido (e com o motivo no title) quando falta algo.
+                pendente: faltaNoPasso.length > 0,
+                title: faltaNoPasso.length ? `Falta: ${faltaNoPasso.join(" ")}` : undefined,
+              }
             : {
                 rotulo: publishing ? "Salvando..." : editingId ? "Salvar alterações" : "Publicar anúncio",
                 onClick: () => publish(false),

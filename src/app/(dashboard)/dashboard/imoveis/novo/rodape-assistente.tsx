@@ -13,6 +13,11 @@ export interface PrimarioRodape {
   /** "Continuar" leva a seta; "Publicar anúncio" não. */
   seta?: boolean;
   title?: string;
+  /**
+   * E135: falta algo no passo — o botão aparece esmaecido (nunca "verde cheio" com o passo incompleto), mas continua
+   * clicável: o clique mostra no passo o que falta.
+   */
+  pendente?: boolean;
 }
 
 /**
@@ -45,10 +50,14 @@ export function RodapeAssistente(p: { pos: number; total: number; onVoltar: (() 
           </div>
           <Button
             size="lg"
+            // E135: com o teclado aberto (celular), o 1º toque só tirava o foco do campo, a tela pulava e o clique se
+            // perdia. Sem roubar o foco no pressionar, o mesmo toque já vale.
+            onMouseDown={(e) => e.preventDefault()}
             onClick={p.primario.onClick}
             disabled={p.primario.disabled}
             title={p.primario.title}
-            className={cn("shrink-0 sm:min-w-40", p.primario.disabled && "cursor-not-allowed opacity-60")}
+            data-pendente={p.primario.pendente ? "1" : undefined}
+            className={cn("shrink-0 sm:min-w-40", p.primario.disabled && "cursor-not-allowed opacity-60", p.primario.pendente && !p.primario.disabled && "opacity-60")}
             data-testid={p.primario.testid}
           >
             {p.primario.rotulo} {p.primario.seta && <ArrowRight className="h-4 w-4" />}

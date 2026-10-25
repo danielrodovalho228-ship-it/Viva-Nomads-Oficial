@@ -79,21 +79,23 @@ test("identidade (estado único) — 3. simulável: conta de teste sem laudo", (
 });
 
 test("identidade (estado único) — 4. em breve: conta real sem laudo (e laudo simulado numa conta real não conta)", () => {
-  assert.equal(estadoIdentidadeDe(null, false, AGORA).texto, "Em breve, por meio de um parceiro");
+  // E152: o caminho de hoje (conferência da equipe), nunca promessa de função futura.
+  assert.equal(estadoIdentidadeDe(null, false, AGORA).texto, "Conferida pela equipe da Viva");
   const simuladoEmContaReal = estadoIdentidadeDe(laudo("2027-10-18T15:00:00Z", { simulado: true }), false, AGORA);
   assert.equal(simuladoEmContaReal.estado, "em_breve");
   // Na conta de teste, o mesmo laudo simulado vale.
   assert.equal(estadoIdentidadeDe(laudo("2027-10-18T15:00:00Z", { simulado: true }), true, AGORA).estado, "confirmada");
 });
 
-test("identidade — guarda: o texto 'Em breve, por meio de um parceiro' só existe na função; as telas usam a fonte única", () => {
+test("identidade — guarda: o texto do estado 'em breve' só existe na função; as telas usam a fonte única (e nada promete 'Em breve')", () => {
   const raiz = fileURLToPath(new URL("../", import.meta.url));
   const achados: string[] = [];
   const andar = (dir: string) => {
     for (const n of readdirSync(dir)) {
       const c = join(dir, n);
       if (statSync(c).isDirectory()) andar(c);
-      else if (/\.(ts|tsx)$/.test(n) && !/\.test\.ts$/.test(n) && readFileSync(c, "utf8").includes("Em breve, por meio de um parceiro")) achados.push(c.slice(raiz.length));
+      else if (/\.(ts|tsx)$/.test(n) && !/\.test\.ts$/.test(n) && readFileSync(c, "utf8").includes("Conferida pela equipe da Viva")) achados.push(c.slice(raiz.length));
+      if (/\.(ts|tsx)$/.test(n) && !/\.test\.ts$/.test(n) && readFileSync(c, "utf8").includes("Em breve, por meio de um parceiro")) achados.push(`PROMESSA ${c.slice(raiz.length)}`);
     }
   };
   andar(raiz);
