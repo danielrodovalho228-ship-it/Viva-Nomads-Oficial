@@ -7,7 +7,8 @@ const CLASSE_MARCA: Record<MarcaDia, string> = {
   selecionado: "bg-ink font-semibold text-white",
   entrada: "bg-forest font-semibold text-white",
   saida: "bg-forest font-semibold text-white",
-  bloqueado: "bg-surface-2 text-muted line-through",
+  // E138: bloqueado precisa ler de longe (antes: cinza claríssimo, quase igual ao dia livre).
+  bloqueado: "bg-red-100 font-semibold text-red-800 line-through ring-1 ring-inset ring-red-300",
   evento: "font-semibold text-forest ring-1 ring-inset ring-forest",
   periodo: "bg-sage-100 text-ink",
   hoje: "font-semibold text-ink underline underline-offset-2",

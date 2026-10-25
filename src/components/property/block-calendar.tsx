@@ -19,6 +19,7 @@ import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calend
 import { diasDoIntervalo, type MarcaDia } from "@/lib/calendario/grade";
 import { ImportarCalendario } from "@/components/property/importar-calendario";
 import { ExportarCalendario } from "@/components/property/exportar-calendario";
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 
 function brDate(iso: string): string {
   const [y, m, d] = iso.split("-");
@@ -40,6 +41,8 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
     fim: null,
   });
   const [busy, setBusy] = useState(false);
+  // E138: tocar num dia bloqueado abre as opções DESTE bloqueio (desbloquear), em vez de começar uma seleção.
+  const [diaBloqueado, setDiaBloqueado] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   // Carregamento das datas: o indicador SEMPRE some (sucesso ou falha); falha vira aviso com "Tentar de novo".
   const [carregando, setCarregando] = useState(true);
@@ -84,13 +87,20 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
   // Marcas da grade única (Prompt 43): bloqueio, período selecionado (início e fim em destaque).
   const marcasDoMes: Record<string, MarcaDia[]> = {};
   for (const d of diasBloqueados) marcasDoMes[d] = ["bloqueado"];
-  if (sel.ini && sel.fim) for (const d of diasDoIntervalo(sel.ini, sel.fim)) marcasDoMes[d] = [...(marcasDoMes[d] ?? []), "periodo"];
+  // E138: o período escolhido (ainda não bloqueado) é "Selecionado" — "periodo" é a marca da ESTADIA (verde-pálido).
+  if (sel.ini && sel.fim) for (const d of diasDoIntervalo(sel.ini, sel.fim)) marcasDoMes[d] = ["selecionado", ...(marcasDoMes[d] ?? [])];
   for (const d of [sel.ini, sel.fim]) if (d) marcasDoMes[d] = ["selecionado", ...(marcasDoMes[d] ?? [])];
 
   if (!anchor) return null;
 
   function clicar(iso: string) {
     setErro(null);
+    if (diasBloqueados.has(iso)) {
+      setSel({ ini: null, fim: null });
+      setDiaBloqueado(iso);
+      return;
+    }
+    setDiaBloqueado(null);
     if (!sel.ini || sel.fim) {
       setSel({ ini: iso, fim: null });
     } else if (iso >= sel.ini) {
@@ -124,17 +134,21 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
   async function remover(id: string) {
     setBusy(true);
     const r = await removeBlock(id);
-    if (r.ok) setBlocks((b) => b.filter((x) => x.id !== id));
+    if (r.ok) {
+      setBlocks((b) => b.filter((x) => x.id !== id));
+      setDiaBloqueado(null);
+    }
     else setErro(r.error ?? "Não foi possível remover.");
     setBusy(false);
   }
 
   return (
     <div>
-      <p className="mb-3 flex items-center gap-2 text-sm text-muted">
-        <CalendarDays className="h-4 w-4 text-sage" />
-        Toque no início e no fim de um período para <strong>bloquear</strong> (o imóvel fica
-        indisponível nessas datas na busca e na reserva).
+      {/* E154: parágrafo único (o flex quebrava o texto em colunas entrelaçadas no celular). */}
+      <p className="mb-3 text-sm text-muted" data-testid="calendario-instrucao">
+        <CalendarDays className="mr-1 inline h-4 w-4 align-[-3px] text-sage" aria-hidden />
+        Toque no início e no fim de um período para <strong>bloquear</strong>. O imóvel fica indisponível nessas datas na busca
+        e nos pedidos. Toque num dia bloqueado para desbloquear.
       </p>
 
       {carregando && (
@@ -160,6 +174,34 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       )}
 
       <LegendaCalendario marcas={["bloqueado", "selecionado", "hoje"]} />
+      {diaBloqueado &&
+        (() => {
+          const b = blocks.find((x) => x.inicio.slice(0, 10) <= diaBloqueado && x.fim.slice(0, 10) >= diaBloqueado);
+          if (!b) return null;
+          return (
+            <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-red-300 bg-white p-3 text-sm" data-testid="dia-bloqueado-opcoes">
+              <span className="text-ink">
+                <strong>Bloqueado</strong> {b.fim !== b.inicio ? `de ${brDate(b.inicio)} a ${brDate(b.fim)}` : `em ${brDate(b.inicio)}`}
+              </span>
+              {b.origem === "importado" ? (
+                <span className="text-xs text-muted">Veio do calendário de outro site (sai daqui quando sair de lá).</span>
+              ) : (
+                <ConfirmarNaPagina
+                  aviso={b.fim !== b.inicio ? `Desbloquear de ${brDate(b.inicio)} a ${brDate(b.fim)}?` : `Desbloquear ${brDate(b.inicio)}?`}
+                  confirmar="Desbloquear"
+                  onConfirmar={() => remover(b.id)}
+                  size="sm"
+                  testid="calendario-desbloquear"
+                >
+                  Desbloquear
+                </ConfirmarNaPagina>
+              )}
+              <button type="button" onClick={() => setDiaBloqueado(null)} className="min-h-11 text-xs font-medium text-muted underline">
+                Fechar
+              </button>
+            </div>
+          );
+        })()}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="calendario-dono-grade">
         {meses.map(({ year: y, month: m }) => (
           <CalendarioMes
@@ -243,7 +285,8 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
         <div className="mt-4">
           <p className="mb-2 text-sm font-medium text-ink">Datas bloqueadas</p>
           <ul className="space-y-2">
-            {blocks.map((b) => (
+            {/* E137: o mesmo período nunca aparece duas vezes (bloqueios antigos duplicados são mostrados uma vez). */}
+            {blocks.filter((b, i, todos) => todos.findIndex((x) => x.inicio === b.inicio && x.fim === b.fim && (x.origem ?? "manual") === (b.origem ?? "manual")) === i).map((b) => (
               <li
                 key={b.id}
                 className="flex items-center justify-between rounded-lg border border-sage-200 px-3 py-2 text-sm"

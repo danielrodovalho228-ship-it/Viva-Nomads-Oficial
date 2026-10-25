@@ -255,7 +255,7 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
       await a.context().close();
     }
     // Complemento do prompt 23 (estado único da identidade): no laboratório a CAF é SIMULADA, então a conta real também
-    // é "simulável" aqui; em produção ela fica "Em breve, por meio de um parceiro" (unitário complemento-23.test.ts, estado 4).
+    // é "simulável" aqui; em produção ela fica "Conferida pela equipe da Viva" (unitário complemento-23.test.ts, estado 4).
     const r = await entrar(browser, real.email, senha);
     await abrir(r, "/dashboard/verificacao?como=inquilino");
     await expect(r.getByTestId("identidade-estado")).toHaveAttribute("data-estado", "simulavel", { timeout: 25_000 });

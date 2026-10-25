@@ -14,7 +14,7 @@ import { campoBrasiliaParaIso, instanteParaCampoBrasilia } from "../../../src/li
    4. Identidade com UMA fonte (estadoIdentidadeDe): Conta do inquilino, em Privacidade e segurança, e a linha de estado em
       /dashboard/verificacao (confirmada / simulável; o Início deixou de ter o passo no Prompt 43);
    5. o proprietário vê o mesmo texto na Conta, no assistente do anúncio e em /dashboard/verificacao (confirmada e
-      vencida). "Em breve, por meio de um parceiro" (conta real em produção) fica no unitário: no laboratório a CAF é
+      vencida). "Conferida pela equipe da Viva" (conta real em produção) fica no unitário: no laboratório a CAF é
       simulada.
 */
 const senha = novaSenha();
