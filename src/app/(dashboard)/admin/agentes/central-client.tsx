@@ -30,8 +30,9 @@ import {
 } from "@/lib/agentes/central";
 import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, lerTextoSimples, moverTrocaParaAgente, textoFeito } from "@/lib/agentes/conversa";
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
-import { deixarOrdem, responderAceiteOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
+import { carregarAtas, carregarConversas, deixarOrdem, responderAceiteOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
+import { buttonClasses } from "@/components/ui/button";
 import { CartoesAprovacao } from "@/components/admin/agentes/cartoes-aprovacao";
 import { RedeAoVivo } from "@/components/admin/agentes/rede";
 import { AtivarNotificacoes } from "@/components/app/push-app";
@@ -40,9 +41,8 @@ import styles from "@/components/admin/agentes/central.module.css";
 import { estadoDaCentral } from "@/lib/agentes/selo-vivo";
 
 /*
-  Central de Agentes v2 — o visual do QG dentro do admin: sala de comando
-  escura (#050A18 com grade), avatares hexagonais com foto e anel da última
-  ronda. Abas: Equipe · Rede ao vivo · Raio-X · Diário de bordo · Conversar ·
+  Central de Agentes v2 — ADMIN-5: nos tokens do admin (fundo claro, sem o tema escuro do QG), avatares hexagonais
+  com foto e anel da última ronda; o chat e as atas são lidos só quando a aba abre, com paginação. Abas: Equipe · Rede ao vivo · Raio-X · Diário de bordo · Conversar ·
   Sala de reunião. Tudo vem do banco (agentes, agentes_rondas, agentes_ordens);
   a página se atualiza sozinha a cada 90 s. "Deixar ordem" grava para a próxima
   ronda; "Executar agora" grava e dispara a rotina real do agente na hora
@@ -55,28 +55,27 @@ type Aba = AbaAgentes;
 const ATUALIZA_MS = 90_000;
 
 const COR_STATUS: Record<StatusAgente, string> = {
-  espera: "#7FD321",
-  alerta: "#FFB547",
-  falhou: "#FF5470",
-  sem_ronda: "#8C9AC4",
-  no_ar: "#7FD321",
-  planejado: "#8C9AC4",
-  pausado: "#8C9AC4",
+  espera: "#15803D",
+  alerta: "#B45309",
+  falhou: "#B91C1C",
+  sem_ronda: "#6B7280",
+  no_ar: "#15803D",
+  planejado: "#6B7280",
+  pausado: "#6B7280",
 };
 const COR_ESTADO: Record<EstadoOrdem, string> = {
-  aguardando: "#FFB547",
-  enviada: "#38BDF8",
-  falhou: "#FF5470",
-  em_execucao: "#3D7BFF",
-  aguardando_aceite: "#FFB547",
-  concluida: "#7FD321",
-  cancelada: "#8C9AC4",
+  aguardando: "#B45309",
+  enviada: "#0369A1",
+  falhou: "#B91C1C",
+  em_execucao: "#1D4ED8",
+  aguardando_aceite: "#B45309",
+  concluida: "#15803D",
+  cancelada: "#6B7280",
 };
-const COR_RONDA: Record<Ronda["status"], string> = { ok: "#7FD321", alerta: "#FFB547", falhou: "#FF5470" };
+const COR_RONDA: Record<Ronda["status"], string> = { ok: "#15803D", alerta: "#B45309", falhou: "#B91C1C" };
 const ROTULO_RONDA: Record<Ronda["status"], string> = { ok: "OK", alerta: "Alerta", falhou: "Falhou" };
 
-const mono = { fontFamily: "var(--font-mono-agentes), ui-monospace, monospace" };
-const display = { fontFamily: "var(--font-display-agentes), var(--font-jakarta), sans-serif" };
+const mono = { fontVariantNumeric: "tabular-nums" } as const;
 
 /** Trilha da investigação do gerente ("Moacir → Viva: …", "Viva: …", "Disparei…") vira um bloco recolhido. */
 const ehPasso = (c: Conversa) => c.papel === "agente" && (c.autor_slug !== c.agente_slug || /^(Moacir → |Disparei |Não consegui disparar )/.test(c.texto));
@@ -113,7 +112,7 @@ const dataHora = (iso: string) => dataHoraBRT(iso, { tabela: true });
 /** Marca fixa: deixa claro que todo agente da Central é uma IA (a persona é só o jeito de falar). */
 function MarcaIA() {
   return (
-    <span className="inline-flex items-center rounded-full border border-white/20 px-2 py-1 text-[10px] font-semibold text-[#C5CFEE]" data-testid="marca-ia">
+    <span className="inline-flex items-center rounded-full border border-line px-2 py-1 text-[10px] font-semibold text-ink" data-testid="marca-ia">
       agente de IA
     </span>
   );
@@ -151,11 +150,11 @@ function TextoSimples({ texto }: { texto: string }) {
 
 function Vazio({ titulo, texto, acao }: { titulo: string; texto: string; acao?: { rotulo: string; href: string } }) {
   return (
-    <div className="rounded-xl border border-dashed border-white/15 p-8 text-center" data-testid="central-vazio">
-      <p className="font-semibold text-white">{titulo}</p>
-      <p className="mx-auto mt-1 max-w-md text-sm text-[#8C9AC4]">{texto}</p>
+    <div className="rounded-xl border border-dashed border-line p-8 text-center" data-testid="central-vazio">
+      <p className="font-semibold text-ink">{titulo}</p>
+      <p className="mx-auto mt-1 max-w-md text-sm text-muted">{texto}</p>
       {acao && (
-        <Link href={acao.href} className="mt-4 inline-grid min-h-11 place-items-center rounded-xl border border-white/20 px-4 text-sm font-semibold text-white">
+        <Link href={acao.href} className="mt-4 inline-grid min-h-11 place-items-center rounded-xl border border-line px-4 text-sm font-semibold text-ink">
           {acao.rotulo}
         </Link>
       )}
@@ -165,16 +164,16 @@ function Vazio({ titulo, texto, acao }: { titulo: string; texto: string; acao?: 
 
 function Rotulo({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-3 mt-8 flex items-center gap-3 text-[11px] text-[#8C9AC4] after:h-px after:flex-1 after:bg-white/15">
+    <h2 className="mb-3 mt-8 flex items-center gap-3 text-[11px] text-muted after:h-px after:flex-1 after:bg-line">
       {children}
     </h2>
   );
 }
 
 const botao = "rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50";
-const botaoAzul = `${botao} bg-[#005DFC] text-white hover:bg-[#2C7BFF]`;
-const botaoLinha = `${botao} border border-white/15 text-white hover:bg-white/5`;
-const campoBase = "rounded-lg border border-white/15 bg-[#0B1430] px-3 py-2 text-sm text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none";
+const botaoAzul = buttonClasses({ size: "sm" });
+const botaoLinha = `${botao} border border-line text-ink hover:bg-surface-2`;
+const campoBase = "rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-forest focus:outline-none";
 const campo = `w-full ${campoBase}`;
 
 export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }: { dados: DadosCentral; vermelhos?: ChamadoVermelho[]; abaInicial?: Aba }) {
@@ -212,26 +211,16 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
   }
 
   return (
-    <div
-      className="-m-4 min-h-screen overflow-x-hidden text-[#E8EEFF] sm:-m-8"
-      style={{
-        fontFamily: "var(--font-jakarta), system-ui, sans-serif",
-        backgroundColor: "#050A18",
-        backgroundImage:
-          "radial-gradient(900px 500px at 85% -10%, rgba(0,93,252,.22), transparent 60%), linear-gradient(rgba(61,123,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(61,123,255,0.05) 1px, transparent 1px)",
-        backgroundSize: "auto, 40px 40px, 40px 40px",
-      }}
-      data-testid="central-agentes"
-    >
+    <div className="overflow-x-hidden text-ink" data-testid="central-agentes">
       {vermelhos.length > 0 && (
-        <div className="border-b border-[#FF5470]/40 bg-[#FF5470]/15 px-4 py-3 text-sm text-[#FFD1D9] sm:px-8" role="alert" data-testid="chamados-vermelhos">
-          <b className="text-white">
+        <div className="mb-4 rounded-lg border border-red-200 bg-white px-4 py-3 text-sm text-red-800" role="alert" data-testid="chamados-vermelhos">
+          <b className="text-ink">
             {vermelhos.length} chamado{vermelhos.length > 1 ? "s" : ""} sem resposta da equipe há 6 h ou mais:
           </b>{" "}
           {vermelhos.map((c, i) => (
             <span key={c.id}>
               {i > 0 && " · "}
-              <a href={`/admin/atendimento/${c.id}`} className="font-semibold text-white underline">
+              <a href={`/admin/atendimento/${c.id}`} className="font-semibold text-ink underline">
                 {c.numero}
               </a>{" "}
               ({c.categoria}, {c.horas} h)
@@ -239,29 +228,22 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
           ))}
         </div>
       )}
-      <header className="border-b border-white/10 bg-[#050A18]/85 px-4 backdrop-blur sm:px-8 lg:sticky lg:top-0 lg:z-20">
+      <header className="border-b border-line bg-white">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
-          <div className="flex items-center gap-3">
-            <span className="grid h-[34px] w-[34px] place-items-center rounded-lg bg-[#005DFC] text-[13px] font-semibold text-white" style={display}>
-              VN
-            </span>
-            <div>
-              <h1 className="text-[15px] font-semibold tracking-wide text-white" style={display}>
-                Central de Agentes
-              </h1>
-              <p className="text-[11px] text-[#8C9AC4]">Viva Nomads · sala de comando</p>
-            </div>
+          <div>
+            <h1 className="font-title text-2xl font-semibold text-ink sm:text-[28px]">Central de Agentes</h1>
+            <p className="text-sm text-muted">A equipe de agentes de IA da Viva: rondas, ordens e conversas.</p>
           </div>
-          <div className="flex flex-wrap gap-4 text-xs text-[#8C9AC4] sm:ml-auto" style={mono}>
+          <div className="flex flex-wrap gap-4 text-xs text-muted sm:ml-auto" style={mono}>
             <span>
-              Brasília <b className="font-semibold text-white">{agora ? horaBRT(agora) : "--:--"}</b>
+              Brasília <b className="font-semibold text-ink">{agora ? horaBRT(agora) : "--:--"}</b>
             </span>
             <span>
-              Texas <b className="font-semibold text-white">{horaTexas(agora)}</b>
+              Texas <b className="font-semibold text-ink">{horaTexas(agora)}</b>
             </span>
           </div>
           {/* E74: "Ao vivo" só com acesso às tabelas e ronda recente; fora disso, o selo diz o que está acontecendo. */}
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1 text-xs text-[#8C9AC4]" data-testid="selo-central" data-tipo={agora ? estado.tipo : "carregando"}>
+          <span className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-1 text-xs text-muted" data-testid="selo-central" data-tipo={agora ? estado.tipo : "carregando"}>
             {agora && estado.tipo === "ao_vivo" ? (
               <>
                 <span className={styles.ponto} />
@@ -269,7 +251,7 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
               </>
             ) : (
               <>
-                <span className="h-2 w-2 rounded-full bg-[#5B6894]" />
+                <span className="h-2 w-2 rounded-full bg-muted" />
                 {agora ? estado.selo : "Carregando…"}
               </>
             )}
@@ -283,7 +265,7 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
               aria-selected={aba === a}
               data-testid={a === "Aprovações" ? "aba-aprovacoes" : undefined}
               onClick={() => setAba(a)}
-              className={`whitespace-nowrap rounded-lg border px-3 py-2 text-[13px] font-semibold sm:text-sm ${aba === a ? "border-white/20 bg-[#111F47] text-white" : "border-transparent text-[#8C9AC4] hover:text-white"}`}
+              className={`whitespace-nowrap rounded-lg border px-3 py-2 text-[13px] font-semibold sm:text-sm ${aba === a ? "border-line bg-surface-2 text-ink" : "border-transparent text-muted hover:text-ink"}`}
             >
               {a}
             </button>
@@ -292,26 +274,26 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
       </header>
 
       {/* Só dentro do app: notificações e atalhos da equipe (no site, escondido por .app-only). */}
-      <div className="app-only border-b border-white/10 px-4 py-3" data-testid="atalhos-app">
+      <div className="app-only border-b border-line px-4 py-3" data-testid="atalhos-app">
         <div className="flex flex-wrap gap-2">
-          <AtivarNotificacoes className="border-white/20 bg-[#111F47] text-white" />
-          <Link href="/admin/documentos" className="grid min-h-11 place-items-center rounded-xl border border-white/20 px-4 text-sm font-semibold text-white">
+          <AtivarNotificacoes className="border-line bg-surface-2 text-ink" />
+          <Link href="/admin/documentos" className="grid min-h-11 place-items-center rounded-xl border border-line px-4 text-sm font-semibold text-ink">
             Documentos
           </Link>
-          <Link href="/admin/atendimento" className="grid min-h-11 place-items-center rounded-xl border border-white/20 px-4 text-sm font-semibold text-white">
+          <Link href="/admin/atendimento" className="grid min-h-11 place-items-center rounded-xl border border-line px-4 text-sm font-semibold text-ink">
             Atendimento
           </Link>
         </div>
       </div>
 
-      <div className="px-4 pb-16 sm:px-8">
+      <div className="pb-16">
         <section className={`grid items-end gap-4 lg:grid-cols-[1.3fr_1fr] lg:gap-6 ${aba === "Equipe" ? "py-8" : "py-4"}`}>
           <div className={aba === "Equipe" ? "" : "hidden lg:block"}>
-            <p className="text-[clamp(24px,3.6vw,36px)] font-semibold leading-tight tracking-tight text-white" style={display}>
+            <p className="font-title text-xl font-semibold text-ink">
               A equipe trabalhando{" "}
-              <span className="text-[#38BDF8]">24 horas</span>, cada agente com nome e função.
+              <span className="text-forest">24 horas</span>, cada agente com nome e função.
             </p>
-            <p className="mt-2 max-w-[60ch] text-sm text-[#8C9AC4]">Status, rondas e achados vêm direto do banco. Converse com um agente, reúna vários de uma vez ou deixe uma ordem para a próxima ronda.</p>
+            <p className="mt-2 max-w-[60ch] text-sm text-muted">Status, rondas e achados vêm direto do banco. Converse com um agente, reúna vários de uma vez ou deixe uma ordem para a próxima ronda.</p>
           </div>
           <div className="grid grid-cols-4 gap-2" data-testid="kpis">
             {[
@@ -320,11 +302,11 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
               [kpi?.falhas, "falharam na última"],
               [kpi?.p1, "achados P1 (última ronda)"],
             ].map(([v, l]) => (
-              <div key={String(l)} className="min-w-0 rounded-xl border border-white/10 bg-[#0D1838]/60 px-2 py-2 sm:px-3 sm:py-3">
-                <b className="block text-lg font-semibold text-white sm:text-[22px]" style={mono}>
+              <div key={String(l)} className="min-w-0 rounded-xl border border-line bg-white px-2 py-2 sm:px-3 sm:py-3">
+                <b className="block text-lg font-semibold text-ink sm:text-[22px]" style={mono}>
                   {v ?? "–"}
                 </b>
-                <span className="block text-[9.5px] leading-tight text-[#8C9AC4] sm:text-[11px]">{l}</span>
+                <span className="block text-[9.5px] leading-tight text-muted sm:text-[11px]">{l}</span>
               </div>
             ))}
           </div>
@@ -332,7 +314,7 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
 
         {aba === "Aprovações" ? (
           <section id="aprovacoes" aria-label="Aprovações" className="scroll-mt-24" data-testid="secao-aprovacoes">
-            <h2 className="mb-2 text-sm font-semibold text-[#8C9AC4]">Aprovações</h2>
+            <h2 className="mb-2 text-sm font-semibold text-muted">Aprovações</h2>
             <CartoesAprovacao versao={0} mostrarVazio />
           </section>
         ) : estado.vazio ? (
@@ -380,50 +362,50 @@ function CardAgente({
   const p1 = achadosDaPrioridade(ultima, "P0", "P1");
   return (
     <article
-      className={`relative grid min-w-0 gap-3 rounded-xl border border-white/10 bg-[#0D1838] transition hover:border-[color:var(--c)] ${grande ? "grid-cols-[64px_1fr] p-4" : "grid-cols-[52px_1fr] p-3"} ${ativo ? "" : "opacity-60"}`}
+      className={`relative grid min-w-0 gap-3 rounded-xl border border-line bg-white transition hover:border-[color:var(--c)] ${grande ? "grid-cols-[64px_1fr] p-4" : "grid-cols-[52px_1fr] p-3"} ${ativo ? "" : "opacity-60"}`}
       style={{ ["--c" as string]: `${cor}99` }}
       data-testid={`agente-${a.slug}`}
     >
       <AvatarAgente slug={a.slug} nome={a.nome} cor={cor} anel={anel} recente={!!agora && rondaRecente(ultima, agora)} tamanho={grande ? 64 : 52} />
       <div className="min-w-0">
-        <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold text-white">
+        <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold text-ink">
           {a.nome} <MarcaIA /> <Chip cor={COR_STATUS[st]}>{ROTULO_STATUS[st]}</Chip>
         </h3>
-        <p className="text-[13px] text-[#8C9AC4]">{a.cargo}</p>
+        <p className="text-[13px] text-muted">{a.cargo}</p>
         {st === "no_ar" ? (
           <>
-            <p className="mt-2 text-[13px] text-[#C3CDEB]" data-testid="no-ar">
+            <p className="mt-2 text-[13px] text-ink" data-testid="no-ar">
               {SEM_RONDAS[a.slug] ?? "Não faz rondas."}
             </p>
             {a.rotina_texto && (
-              <p className="mt-2 text-xs text-[#8C9AC4]" style={mono}>
+              <p className="mt-2 text-xs text-muted" style={mono}>
                 {a.rotina_texto}
               </p>
             )}
           </>
         ) : ativo ? (
           <>
-            <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs text-[#8C9AC4]" style={mono}>
+            <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs text-muted" style={mono}>
               <dt>Última</dt>
-              <dd className="text-white" data-testid="ultima-ronda">
+              <dd className="text-ink" data-testid="ultima-ronda">
                 {ultima && agora ? `${tempoRelativo(ultima.iniciada_em, agora)}${dur ? ` · ${dur}` : ""}` : "—"}
               </dd>
               <dt>Próxima</dt>
-              <dd className="text-white">{proxima ?? a.rotina_texto ?? "—"}</dd>
+              <dd className="text-ink">{proxima ?? a.rotina_texto ?? "—"}</dd>
               {pendentes > 0 && (
                 <>
                   <dt>Ordens</dt>
-                  <dd className="text-white">{pendentes} pendente{pendentes > 1 ? "s" : ""}</dd>
+                  <dd className="text-ink">{pendentes} pendente{pendentes > 1 ? "s" : ""}</dd>
                 </>
               )}
             </dl>
             {ultima?.resumo && (
-              <p className="mt-2 border-l-2 pl-2 text-[12.5px] text-[#C3CDEB]" style={{ borderColor: cor }} data-testid="resumo-ronda">
+              <p className="mt-2 border-l-2 pl-2 text-[12.5px] text-ink" style={{ borderColor: cor }} data-testid="resumo-ronda">
                 {resumoCurto(ultima.resumo)}
               </p>
             )}
             {p1.length > 0 && (
-              <ul className="mt-2 space-y-1 text-[12.5px] text-[#FFC2CC]" data-testid="achados-p1">
+              <ul className="mt-2 space-y-1 text-[12.5px] text-red-800" data-testid="achados-p1">
                 {p1.slice(0, 3).map((x, i) => (
                   <li key={i}>
                     <ChipPrioridade p={String(x.prioridade)} />
@@ -433,18 +415,18 @@ function CardAgente({
               </ul>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button className="rounded-lg bg-[#005DFC] px-3 py-2 text-[13px] font-semibold text-white hover:bg-[#2C7BFF]" onClick={() => onConversar(a.slug)}>
+              <button className={buttonClasses({ size: "sm" })} onClick={() => onConversar(a.slug)}>
                 Conversar
               </button>
               {ultima?.link_sessao && (
-                <a className="text-xs font-semibold text-[#38BDF8] hover:underline" href={ultima.link_sessao} target="_blank" rel="noopener noreferrer">
+                <a className="text-xs font-semibold text-forest hover:underline" href={ultima.link_sessao} target="_blank" rel="noopener noreferrer">
                   Abrir última ronda ↗
                 </a>
               )}
             </div>
           </>
         ) : (
-          <p className="mt-2 text-[13px] text-[#C3CDEB]">
+          <p className="mt-2 text-[13px] text-ink">
             {a.esquadrao === "plataforma" ? "Vai trabalhar dentro do app, com inquilinos e proprietários." : "Agente proposto. Peça ao Moacir para ativar."}
           </p>
         )}
@@ -467,23 +449,23 @@ function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Dat
       <Rotulo>Donos</Rotulo>
       {/* Não são agentes (não estão em public.agentes): sem status, rondas nem botões. */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-[#0D1838] p-4" data-testid="agente-daniel">
-          <AvatarAgente slug="daniel" nome="Daniel Rodovalho" cor="#7FD321" anel="#7FD321" tamanho={72} />
+        <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-line bg-white p-4" data-testid="agente-daniel">
+          <AvatarAgente slug="daniel" nome="Daniel Rodovalho" cor="#15803D" anel="#15803D" tamanho={72} />
           <div className="min-w-0">
-            <h3 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-white">
-              Daniel Rodovalho <Chip cor="#7FD321">Dono</Chip>
+            <h3 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-ink">
+              Daniel Rodovalho <Chip cor="#15803D">Dono</Chip>
             </h3>
-            <p className="text-[13px] text-[#8C9AC4]">Fundador · aprova, decide e assina</p>
-            <p className="mt-2 text-[13px] text-[#C3CDEB]">Tudo que muda o site, o banco, publica ou manda mensagem passa pelos donos. Os agentes preparam; os donos aprovam.</p>
+            <p className="text-[13px] text-muted">Fundador · aprova, decide e assina</p>
+            <p className="mt-2 text-[13px] text-ink">Tudo que muda o site, o banco, publica ou manda mensagem passa pelos donos. Os agentes preparam; os donos aprovam.</p>
           </div>
         </article>
-        <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-[#0D1838] p-4" data-testid="agente-rogerio">
-          <AvatarAgente slug="rogerio" nome="Rogério" cor="#7FD321" anel="#7FD321" tamanho={72} />
+        <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-line bg-white p-4" data-testid="agente-rogerio">
+          <AvatarAgente slug="rogerio" nome="Rogério" cor="#15803D" anel="#15803D" tamanho={72} />
           <div className="min-w-0">
-            <h3 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-white">
-              Rogério <Chip cor="#7FD321">Dono</Chip>
+            <h3 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-ink">
+              Rogério <Chip cor="#15803D">Dono</Chip>
             </h3>
-            <p className="text-[13px] text-[#8C9AC4]">Sócio · aprova e decide junto</p>
+            <p className="text-[13px] text-muted">Sócio · aprova e decide junto</p>
           </div>
         </article>
       </div>
@@ -498,11 +480,11 @@ function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Dat
         {esquadroes.map((e) => {
           const lista = dados.agentes.filter((a) => a.esquadrao === e);
           return (
-            <section key={e} className="flex min-w-0 flex-col gap-3 rounded-xl border border-white/10 bg-[#0A1430]/55 p-3">
-              <h3 className="flex items-center gap-2 text-xs font-semibold text-[#8C9AC4]">
+            <section key={e} className="flex min-w-0 flex-col gap-3 rounded-xl border border-line bg-surface-2 p-3">
+              <h3 className="flex items-center gap-2 text-xs font-semibold text-muted">
                 <i className="h-2 w-2 rounded-lg" style={{ background: COR_ESQUADRAO[e] }} /> {NOME_ESQUADRAO[e]}
               </h3>
-              {lista.length ? lista.map((a) => card(a)) : <p className="text-xs text-[#8C9AC4]">Ninguém neste esquadrão ainda.</p>}
+              {lista.length ? lista.map((a) => card(a)) : <p className="text-xs text-muted">Ninguém neste esquadrão ainda.</p>}
             </section>
           );
         })}
@@ -532,19 +514,19 @@ function Diario({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Recor
             const a = porSlug[r.agente_slug];
             const achados = (Array.isArray(r.achados) ? r.achados : []).filter((x) => /^P[0-3]$/i.test(String(x?.prioridade ?? "")));
             return (
-              <li key={r.id} className="grid grid-cols-[40px_1fr] gap-3 rounded-xl border border-white/10 bg-[#0D1838]/55 p-3">
+              <li key={r.id} className="grid grid-cols-[40px_1fr] gap-3 rounded-xl border border-line bg-white p-3">
                 {a ? <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} anel={COR_RONDA[r.status]} recente={!!agora && rondaRecente(r, agora)} tamanho={40} /> : <span />}
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <b className="text-white">{a?.nome ?? r.agente_slug}</b>
+                    <b className="text-ink">{a?.nome ?? r.agente_slug}</b>
                     <Chip cor={COR_RONDA[r.status]}>{ROTULO_RONDA[r.status]}</Chip>
-                    <span className="text-xs text-[#8C9AC4]" style={mono}>
+                    <span className="text-xs text-muted" style={mono}>
                       {dataHora(r.iniciada_em)}{agora ? ` · ${tempoRelativo(r.iniciada_em, agora)}` : ""}
                     </span>
                   </div>
-                  {r.resumo && <p className="mt-1 text-[13px] text-[#C3CDEB]">{resumoCurto(r.resumo, 260)}</p>}
+                  {r.resumo && <p className="mt-1 text-[13px] text-ink">{resumoCurto(r.resumo, 260)}</p>}
                   {achados.length > 0 && (
-                    <ul className="mt-2 space-y-1 text-[13px] text-[#C3CDEB]">
+                    <ul className="mt-2 space-y-1 text-[13px] text-ink">
                       {achados.slice(0, 5).map((x, i) => (
                         <li key={i}>
                           <ChipPrioridade p={String(x.prioridade)} />
@@ -554,7 +536,7 @@ function Diario({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Recor
                     </ul>
                   )}
                   {r.link_sessao && (
-                    <a href={r.link_sessao} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-semibold text-[#38BDF8] hover:underline">
+                    <a href={r.link_sessao} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-semibold text-forest hover:underline">
                       Abrir ronda ↗
                     </a>
                   )}
@@ -595,28 +577,28 @@ function Rondas({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Recor
       {dados.rondas.length === 0 ? null : lista.length === 0 ? (
         <Vazio titulo="Nada com esse filtro" texto="Troque o agente ou a prioridade." />
       ) : (
-        <ol className="relative space-y-3 border-l border-white/10 pl-4">
+        <ol className="relative space-y-3 border-l border-line pl-4">
           {lista.map((r) => {
             const a = porSlug[r.agente_slug];
             const dur = duracao(r.iniciada_em, r.concluida_em);
             return (
               <li key={r.id} className="relative">
-                <span className="absolute -left-[27px] top-3 h-3 w-3 rounded-full ring-4 ring-[#050A18]" style={{ background: COR_RONDA[r.status] }} />
-                <div className="rounded-xl border border-white/10 bg-[#0B1430]/80 p-3">
+                <span className="absolute -left-[27px] top-3 h-3 w-3 rounded-full ring-4 ring-white" style={{ background: COR_RONDA[r.status] }} />
+                <div className="rounded-xl border border-line bg-white p-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <b className="text-white">{a?.nome ?? r.agente_slug}</b>
+                    <b className="text-ink">{a?.nome ?? r.agente_slug}</b>
                     <Chip cor={COR_RONDA[r.status]}>{ROTULO_RONDA[r.status]}</Chip>
-                    <span className="ml-auto text-xs text-[#8C9AC4]" style={mono}>
+                    <span className="ml-auto text-xs text-muted" style={mono}>
                       {dataHora(r.iniciada_em)}
                       {agora ? ` · ${tempoRelativo(r.iniciada_em, agora)}` : ""}
                       {dur ? ` · ${dur}` : ""}
                     </span>
                   </div>
-                  {r.resumo && <p className="mt-2 whitespace-pre-line text-sm text-[#C9D2F0]">{r.resumo}</p>}
+                  {r.resumo && <p className="mt-2 whitespace-pre-line text-sm text-ink">{r.resumo}</p>}
                   {Array.isArray(r.achados) && r.achados.length > 0 && (
                     <ul className="mt-2 space-y-1">
                       {r.achados.map((x, i) => (
-                        <li key={i} className="text-sm text-[#C9D2F0]">
+                        <li key={i} className="text-sm text-ink">
                           <ChipPrioridade p={String(x?.prioridade ?? "—")} />
                           {x?.titulo ?? x?.detalhe ?? ""}
                         </li>
@@ -653,7 +635,38 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
   // Correção de código vai para o Renato (Engenheiro), que abre o PR.
   const destino = a ? dados.agentes.find((x) => x.slug === destinoDaOrdem(a.slug, texto, dados.agentes)) ?? a : null;
   const podeExecutar = (x: Agente | null | undefined) => !!x && x.status === "ativo" && !!x.trigger_id;
-  const thread = mesclarConversas(dados.conversas, extra).filter((c) => c.agente_slug === slug);
+  // ADMIN-5: o chat é lido só quando esta aba abre (e por agente), 50 mensagens por vez.
+  const [historico, setHistorico] = useState<{ slug: string; itens: Conversa[]; temMais: boolean } | null>(null);
+  const [lendoAntigas, setLendoAntigas] = useState(false);
+  useEffect(() => {
+    if (!slug) return;
+    let vivo = true;
+    carregarConversas(slug)
+      .then((p) => vivo && setHistorico({ slug, ...p }))
+      .catch(() => vivo && setHistorico({ slug, itens: [], temMais: false }));
+    return () => {
+      vivo = false;
+    };
+  }, [slug]);
+  const carregandoChat = historico?.slug !== slug;
+  const salvas = historico?.slug === slug ? historico.itens : [];
+  async function verAnteriores() {
+    if (!historico || !historico.itens[0] || lendoAntigas) return;
+    setLendoAntigas(true);
+    const el = listaRef.current;
+    const altura = el?.scrollHeight ?? 0;
+    try {
+      const p = await carregarConversas(slug, historico.itens[0].criado_em);
+      setHistorico((h) => (h && h.slug === slug ? { slug, itens: [...p.itens, ...h.itens], temMais: p.temMais } : h));
+      // Mantém na tela a mensagem que estava no topo.
+      setTimeout(() => {
+        if (el) el.scrollTop += el.scrollHeight - altura;
+      }, 0);
+    } finally {
+      setLendoAntigas(false);
+    }
+  }
+  const thread = mesclarConversas(salvas, extra).filter((c) => c.agente_slug === slug);
   const ordens = dados.ordens.filter((o) => o.agente_slug === slug);
 
   const irParaOFim = useCallback((suave: boolean) => {
@@ -789,12 +802,12 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
               setErro(null);
                     setLinkSessao(null);
             }}
-            className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-left ${x.slug === slug ? "border-[#3D7BFF] bg-[#3D7BFF]/10" : "border-white/10 hover:bg-white/5"}`}
+            className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-left ${x.slug === slug ? "border-forest bg-sage-100" : "border-line hover:bg-surface-2"}`}
           >
             <AvatarAgente slug={x.slug} nome={x.nome} cor={COR_ESQUADRAO[x.esquadrao]} tamanho={32} />
             <span className="min-w-0">
-              <span className="flex items-center gap-2 text-sm font-semibold text-white">{x.nome} <MarcaIA /></span>
-              <span className="hidden truncate text-[11px] text-[#8C9AC4] lg:block">{x.cargo}</span>
+              <span className="flex items-center gap-2 text-sm font-semibold text-ink">{x.nome} <MarcaIA /></span>
+              <span className="hidden truncate text-[11px] text-muted lg:block">{x.cargo}</span>
             </span>
           </button>
         ))}
@@ -802,12 +815,12 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
 
       {a && (
         <section className="flex min-w-0 flex-col gap-4">
-          <div className="flex h-[calc(100dvh-14rem)] min-h-[420px] flex-col rounded-xl border border-white/10 bg-[#0B1430]/80" data-testid="chat-agente">
-            <div className="flex shrink-0 items-center gap-3 border-b border-white/10 p-3">
+          <div className="flex h-[calc(100dvh-14rem)] min-h-[420px] flex-col rounded-xl border border-line bg-white" data-testid="chat-agente">
+            <div className="flex shrink-0 items-center gap-3 border-b border-line p-3">
               <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={44} />
               <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 font-semibold text-white">{a.nome} <MarcaIA /></p>
-                <p className="truncate text-xs text-[#8C9AC4]">{a.cargo}</p>
+                <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">{a.nome} <MarcaIA /></p>
+                <p className="truncate text-xs text-muted">{a.cargo}</p>
               </div>
               <div className="relative">
                 <button
@@ -816,16 +829,16 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   aria-haspopup="menu"
                   aria-expanded={menu}
                   onClick={() => setMenu((v) => !v)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-xl font-semibold leading-none text-white hover:bg-white/10"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-xl font-semibold leading-none text-ink hover:bg-surface-3"
                   data-testid="menu-chat"
                 >
                   …
                 </button>
                 {menu && (
-                  <div role="menu" className="absolute right-0 top-12 z-20 w-64 rounded-xl border border-white/15 bg-[#0B1430] p-1 shadow-flutuante">
+                  <div role="menu" className="absolute right-0 top-12 z-20 w-64 rounded-xl border border-line bg-white p-1 shadow-flutuante">
                     <button
                       role="menuitem"
-                      className="w-full rounded-lg px-3 py-3 text-left text-sm font-semibold text-[#B5EC7A] hover:bg-white/5 disabled:opacity-50"
+                      className="w-full rounded-lg px-3 py-3 text-left text-sm font-semibold text-forest hover:bg-surface-2 disabled:opacity-50"
                       disabled={ocupado || !texto.trim() || !podeExecutar(destino)}
                       title={podeExecutar(destino) ? "Grava a ordem e dispara a rotina real agora" : `${destino?.nome ?? "Este agente"} não tem rotina para disparar`}
                       onClick={() => {
@@ -836,7 +849,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                     >
                       Executar agora{destino && destino.slug !== a.slug ? ` → ${destino.nome}` : ""}
                     </button>
-                    <p className="px-3 pb-2 text-[11px] text-[#8C9AC4]">Escreva a ordem na caixa de texto e depois toque aqui para acionar na hora.</p>
+                    <p className="px-3 pb-2 text-[11px] text-muted">Escreva a ordem na caixa de texto e depois toque aqui para acionar na hora.</p>
                   </div>
                 )}
               </div>
@@ -844,18 +857,27 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
 
             <div className="relative min-h-0 flex-1">
               <div ref={listaRef} onScroll={aoRolar} className="h-full space-y-2 overflow-y-auto overscroll-contain px-3 py-3" aria-live="polite" data-testid="lista-mensagens">
-                {thread.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-[#8C9AC4]">
+                {!carregandoChat && historico?.temMais && (
+                  <button type="button" className={`${botaoLinha} mx-auto block min-h-11`} disabled={lendoAntigas} onClick={() => void verAnteriores()} data-testid="chat-anteriores">
+                    {lendoAntigas ? "Carregando…" : "Ver mensagens anteriores"}
+                  </button>
+                )}
+                {carregandoChat && thread.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted" data-testid="chat-carregando">
+                    Carregando a conversa…
+                  </p>
+                ) : thread.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted">
                     Nenhuma conversa com {a.nome} ainda. Pergunte algo sobre as rondas, ou peça uma correção: vira ordem.
                   </p>
                 ) : (
                   agruparTrilha(thread).map((g) =>
                     g.tipo === "trilha" ? (
-                      <details key={g.itens[0].id} data-testid="trilha-gerente" className="ml-3 max-w-[85%] text-xs text-[#AEB9DD]">
-                        <summary className="cursor-pointer select-none py-1 text-[#8C9AC4]">ver como apurei ({g.itens.length})</summary>
+                      <details key={g.itens[0].id} data-testid="trilha-gerente" className="ml-3 max-w-[85%] text-xs text-muted">
+                        <summary className="cursor-pointer select-none py-1 text-muted">ver como apurei ({g.itens.length})</summary>
                         <div className="space-y-1">
                           {g.itens.map((c) => (
-                            <div key={c.id} data-testid="passo-gerente" className="whitespace-pre-line border-l-2 border-[#38BDF8]/50 py-1 pl-3">
+                            <div key={c.id} data-testid="passo-gerente" className="whitespace-pre-line border-l-2 border-line py-1 pl-3">
                               {c.texto}
                             </div>
                           ))}
@@ -865,7 +887,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                       <div
                         key={g.itens[0].id}
                         data-testid={g.itens[0].papel === "daniel" ? "bolha-minha" : "bolha-agente"}
-                        className={`max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2 text-sm ${g.itens[0].papel === "daniel" ? "ml-auto rounded-br-lg bg-[#3D7BFF] text-white" : "rounded-bl-lg bg-white/5 text-[#DCE3FA]"}`}
+                        className={`max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2 text-sm ${g.itens[0].papel === "daniel" ? "ml-auto rounded-br-lg bg-forest text-white" : "rounded-bl-lg bg-surface-2 text-ink"}`}
                       >
                         {(() => {
                           const { resumo, detalhes } = g.itens[0].papel === "daniel" ? { resumo: g.itens[0].texto, detalhes: "" } : dividirResposta(g.itens[0].texto);
@@ -874,7 +896,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                               {g.itens[0].papel === "daniel" ? resumo : <TextoSimples texto={resumo} />}
                               {detalhes && (
                                 <details data-testid="resposta-detalhes" className="mt-1">
-                                  <summary className="cursor-pointer select-none text-xs font-semibold text-[#38BDF8]">ver detalhes</summary>
+                                  <summary className="cursor-pointer select-none text-xs font-semibold text-forest">ver detalhes</summary>
                                   <div className="mt-1">
                                     <TextoSimples texto={detalhes} />
                                   </div>
@@ -891,7 +913,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   )
                 )}
                 {ocupado && (
-                  <div data-testid="digitando" className="inline-flex items-center gap-1 rounded-xl rounded-bl-lg bg-white/5 px-3 py-2 text-sm text-[#8C9AC4]" role="status">
+                  <div data-testid="digitando" className="inline-flex items-center gap-1 rounded-xl rounded-bl-lg bg-surface-2 px-3 py-2 text-sm text-muted" role="status">
                     <span className="sr-only">{a.nome} está digitando</span>
                     <span aria-hidden>digitando…</span>
                   </div>
@@ -903,13 +925,13 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   onClick={() => irParaOFim(true)}
                   aria-label="Ir para a última mensagem"
                   data-testid="ir-para-o-fim"
-                  className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-[#0B1430] text-white shadow-flutuante hover:bg-[#16224a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D7BFF]"
+                  className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white text-ink shadow-flutuante hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-forest"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M12 5v14M5 12l7 7 7-7" />
                   </svg>
                   {naoLidas > 0 && (
-                    <span data-testid="nao-lidas" className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF7A6B] px-1 text-[11px] font-semibold text-white">
+                    <span data-testid="nao-lidas" className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-red-700 bg-white px-1 text-[11px] font-semibold text-red-700">
                       {naoLidas > 9 ? "9+" : naoLidas}
                     </span>
                   )}
@@ -917,10 +939,10 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
               )}
             </div>
 
-            <div className="shrink-0 space-y-2 border-t border-white/10 p-3">
+            <div className="shrink-0 space-y-2 border-t border-line p-3">
               {a.slug === "moacir" && <CartoesAprovacao versao={thread.length} />}
               {aviso && (
-                <p className="rounded-lg bg-[#7FD321]/10 px-3 py-2 text-sm text-[#B5EC7A]" data-testid="aviso-ordem">
+                <p className="rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest" data-testid="aviso-ordem">
                   {aviso}{" "}
                   {linkSessao && (
                     <a href={linkSessao} target="_blank" rel="noreferrer" className="font-semibold underline">
@@ -929,7 +951,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   )}
                 </p>
               )}
-              {erro && <p className="rounded-lg bg-[#FF7A6B]/10 px-3 py-2 text-sm text-[#FFB0A6]">{erro}</p>}
+              {erro && <p className="rounded-lg bg-white px-3 py-2 text-sm text-red-700">{erro}</p>}
               <form
                 className="flex items-end gap-2"
                 onSubmit={(e) => {
@@ -940,7 +962,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                 <textarea
                   aria-label={`Mensagem para ${a.nome}`}
                   rows={1}
-                  className="max-h-32 min-h-11 flex-1 resize-none rounded-xl border border-white/15 bg-[#0B1430] px-4 py-2 text-base text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none"
+                  className="max-h-32 min-h-11 flex-1 resize-none rounded-xl border border-line bg-white px-4 py-2 text-base text-ink placeholder:text-muted focus:border-forest focus:outline-none"
                   placeholder={`Escreva para ${a.nome}…`}
                   value={texto}
                   maxLength={4000}
@@ -958,58 +980,58 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   aria-label="Enviar"
                   data-testid="enviar"
                   disabled={ocupado || !texto.trim()}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#005DFC] text-white hover:bg-[#2C7BFF] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-forest text-white hover:bg-forest-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M12 19V5M5 12l7-7 7 7" />
                   </svg>
                 </button>
               </form>
-              <p className="text-[11px] text-[#8C9AC4]">{agora ? avisoOrdem(a, agora).replace(/^O /, "Ordem: o ") : ""}</p>
+              <p className="text-[11px] text-muted">{agora ? avisoOrdem(a, agora).replace(/^O /, "Ordem: o ") : ""}</p>
             </div>
           </div>
 
           <MemoriaAgente key={a.slug} slug={a.slug} nome={a.nome} />
 
-          <div className="rounded-xl border border-white/10 bg-[#0B1430]/80 p-4">
-            <h3 className="text-sm font-semibold text-white">Ordens para {a.nome}</h3>
+          <div className="rounded-xl border border-line bg-white p-4">
+            <h3 className="text-sm font-semibold text-ink">Ordens para {a.nome}</h3>
             {ordens.length === 0 ? (
-              <p className="mt-2 text-sm text-[#8C9AC4]">Nenhuma ordem ainda.</p>
+              <p className="mt-2 text-sm text-muted">Nenhuma ordem ainda.</p>
             ) : (
               <ul className="mt-3 space-y-3">
                 {ordens.map((o) => {
                   const estado = estadoDaOrdem(o);
                   const link = linkDaOrdem(o, dados.rondas);
                   return (
-                  <li key={o.id} className="border-t border-white/5 pt-3 first:border-0 first:pt-0" data-testid="ordem" data-estado={estado}>
+                  <li key={o.id} className="border-t border-line pt-3 first:border-0 first:pt-0" data-testid="ordem" data-estado={estado}>
                     <div className="flex flex-wrap items-center gap-2">
                       <Chip cor={COR_ESTADO[estado]}>{ROTULO_ESTADO[estado]}</Chip>
                       {o.origem_slug && (
-                        <span className="text-xs font-semibold text-[#FF7A6B]" data-testid="ordem-origem">
+                        <span className="text-xs font-semibold text-red-700" data-testid="ordem-origem">
                           {o.retorno_de ? "retorno de" : "encaminhado por"} {dados.agentes.find((x) => x.slug === o.origem_slug)?.nome ?? o.origem_slug}
                           {o.prioridade ? ` · ${o.prioridade}` : ""}
                         </span>
                       )}
-                      <span className="text-xs text-[#8C9AC4]" style={mono}>
+                      <span className="text-xs text-muted" style={mono}>
                         {dataHora(o.criada_em)}
                       </span>
                       {rotuloAcionado(o) && (
-                        <span className="text-xs text-[#8C9AC4]" data-testid="ordem-acionado">
+                        <span className="text-xs text-muted" data-testid="ordem-acionado">
                           {rotuloAcionado(o)}
                         </span>
                       )}
                       {link && (
-                        <a href={link} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#38BDF8] hover:underline">
+                        <a href={link} target="_blank" rel="noreferrer" className="text-xs font-semibold text-forest hover:underline">
                           {estado === "concluida" ? "Ver PR / ronda" : "Ver sessão"}
                         </a>
                       )}
                     </div>
-                    {estado === "falhou" && o.disparo_erro && <p className="mt-1 text-xs text-[#FFB0A6]">Disparo: {o.disparo_erro}. O Moacir aciona em até 1 hora.</p>}
-                    <p className="mt-1 whitespace-pre-line text-sm text-[#DCE3FA]">{o.texto}</p>
-                    {o.resposta && <p className="mt-1 whitespace-pre-line border-l-2 border-[#7FD321]/50 pl-2 text-sm text-[#AEB9DD]">{o.resposta}</p>}
+                    {estado === "falhou" && o.disparo_erro && <p className="mt-1 text-xs text-red-700">Disparo: {o.disparo_erro}. O Moacir aciona em até 1 hora.</p>}
+                    <p className="mt-1 whitespace-pre-line text-sm text-ink">{o.texto}</p>
+                    {o.resposta && <p className="mt-1 whitespace-pre-line border-l-2 border-line pl-2 text-sm text-muted">{o.resposta}</p>}
                     {estado === "aguardando_aceite" && <AceiteOrdem ordemId={o.id} podeDecidir={podeAceitarOrdem(o, dados.uid)} />}
                     {o.reaberto_motivo && estado !== "aguardando_aceite" && o.status !== "concluida" && (
-                      <p className="mt-1 text-xs text-[#FFB547]" data-testid="ordem-reaberta">Reaberta: {o.reaberto_motivo}</p>
+                      <p className="mt-1 text-xs text-amber-800" data-testid="ordem-reaberta">Reaberta: {o.reaberto_motivo}</p>
                     )}
                   </li>
                   );
@@ -1037,30 +1059,30 @@ function AceiteOrdem({ ordemId, podeDecidir }: { ordemId: string; podeDecidir: b
       if (!r.ok) return setErro(r.erro ?? "Não foi possível registrar agora.");
       router.refresh();
     });
-  if (!podeDecidir) return <p className="mt-2 text-xs text-[#8C9AC4]" data-testid="aceite-ordem">Aguardando o aceite de quem criou a ordem.</p>;
+  if (!podeDecidir) return <p className="mt-2 text-xs text-muted" data-testid="aceite-ordem">Aguardando o aceite de quem criou a ordem.</p>;
   return (
-    <div className="mt-2 rounded-lg border border-white/10 p-3 text-sm" data-testid="aceite-ordem">
-      <p className="font-semibold text-white">Aguardando seu aceite</p>
+    <div className="mt-2 rounded-lg border border-line p-3 text-sm" data-testid="aceite-ordem">
+      <p className="font-semibold text-ink">Aguardando seu aceite</p>
       <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" onClick={() => decidir("aceitar")} disabled={pendente} className="min-h-[44px] rounded-lg bg-[#7FD321] px-4 text-sm font-semibold text-[#0B1430] disabled:opacity-50">
+        <button type="button" onClick={() => decidir("aceitar")} disabled={pendente} className={buttonClasses({ size: "sm", className: "min-h-11" })}>
           Aceito
         </button>
-        <button type="button" onClick={() => setReabrindo((v) => !v)} disabled={pendente} className="min-h-[44px] rounded-lg border border-white/20 px-4 text-sm font-semibold text-white disabled:opacity-50">
+        <button type="button" onClick={() => setReabrindo((v) => !v)} disabled={pendente} className="min-h-[44px] rounded-lg border border-line px-4 text-sm font-semibold text-ink disabled:opacity-50">
           Reabrir
         </button>
       </div>
       {reabrindo && (
         <div className="mt-2 space-y-2">
-          <label className="block text-xs text-[#8C9AC4]" htmlFor={`falta-${ordemId}`}>
+          <label className="block text-xs text-muted" htmlFor={`falta-${ordemId}`}>
             O que falta?
           </label>
-          <textarea id={`falta-${ordemId}`} value={falta} onChange={(e) => setFalta(e.target.value)} maxLength={1000} rows={3} className="w-full rounded-lg border border-white/10 bg-[#0B1430] p-2 text-sm text-white" />
-          <button type="button" onClick={() => decidir("reabrir")} disabled={pendente || !falta.trim()} className="min-h-[44px] rounded-lg bg-[#3D7BFF] px-4 text-sm font-semibold text-white disabled:opacity-50">
+          <textarea id={`falta-${ordemId}`} value={falta} onChange={(e) => setFalta(e.target.value)} maxLength={1000} rows={3} className="w-full rounded-lg border border-line bg-white p-2 text-sm text-ink" />
+          <button type="button" onClick={() => decidir("reabrir")} disabled={pendente || !falta.trim()} className={buttonClasses({ variant: "secondary", size: "sm", className: "min-h-11" })}>
             Reabrir com este texto
           </button>
         </div>
       )}
-      {erro && <p role="alert" className="mt-2 text-xs text-[#FFB0A6]">{erro}</p>}
+      {erro && <p role="alert" className="mt-2 text-xs text-red-700">{erro}</p>}
     </div>
   );
 }
@@ -1081,6 +1103,24 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [virou, setVirou] = useState<Record<string, string>>({});
+  // ADMIN-5: as atas são lidas quando a Sala abre, 10 por vez.
+  const [atas, setAtas] = useState<{ itens: Conversa[]; temMais: boolean } | null>(null);
+  const [lendoAtas, setLendoAtas] = useState(false);
+  const lerAtas = useCallback(async (antesDe?: string) => {
+    setLendoAtas(true);
+    try {
+      const p = await carregarAtas(antesDe ?? null);
+      setAtas((a) => (antesDe && a ? { itens: [...a.itens, ...p.itens], temMais: p.temMais } : p));
+    } catch {
+      setAtas((a) => a ?? { itens: [], temMais: false });
+    } finally {
+      setLendoAtas(false);
+    }
+  }, []);
+  useEffect(() => {
+    const t = setTimeout(() => void lerAtas(), 0);
+    return () => clearTimeout(t);
+  }, [lerAtas]);
 
   const alternar = (s: string) => setEscolhidos((e) => (e.includes(s) ? e.filter((x) => x !== s) : [...e, s]));
 
@@ -1095,6 +1135,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
       if (!r.ok) setErro(j.erro ?? "Não consegui fazer a reunião agora.");
       else {
         setRes(j);
+        void lerAtas();
         router.refresh();
       }
     } catch {
@@ -1112,12 +1153,12 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
 
   return (
     <div className="w-full space-y-4">
-      <div className="space-y-3 rounded-xl border border-white/10 bg-[#0B1430]/80 p-4">
-        <label className="block text-sm font-semibold text-white" htmlFor="pauta">
+      <div className="space-y-3 rounded-xl border border-line bg-white p-4">
+        <label className="block text-sm font-semibold text-ink" htmlFor="pauta">
           Pauta
         </label>
         <textarea id="pauta" className={`${campo} min-h-[80px]`} placeholder="O que a equipe precisa decidir?" value={pauta} maxLength={2000} onChange={(e) => setPauta(e.target.value)} />
-        <p className="text-sm font-semibold text-white">Participantes</p>
+        <p className="text-sm font-semibold text-ink">Participantes</p>
         <div className="flex flex-wrap gap-2">
           {ativos.map((a) => {
             const fixo = a.slug === "moacir";
@@ -1128,7 +1169,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
                 disabled={fixo}
                 onClick={() => alternar(a.slug)}
                 aria-pressed={on}
-                className={`flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm ${on ? "border-[#3D7BFF] bg-[#3D7BFF]/15 text-white" : "border-white/15 text-[#8C9AC4] opacity-70"}`}
+                className={`flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm ${on ? "border-forest bg-white font-semibold text-ink" : "border-line text-muted opacity-70"}`}
               >
                 <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={24} />
                 {a.nome}
@@ -1141,7 +1182,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
         <button className={botaoAzul} disabled={ocupado || !pauta.trim() || escolhidos.filter((s) => s !== "moacir").length === 0} onClick={reunir}>
           {ocupado ? "Reunindo…" : "Começar reunião"}
         </button>
-        {erro && <p className="rounded-lg bg-[#FF7A6B]/10 px-3 py-2 text-sm text-[#FFB0A6]">{erro}</p>}
+        {erro && <p className="rounded-lg bg-white px-3 py-2 text-sm text-red-700">{erro}</p>}
       </div>
 
       {res && (
@@ -1150,18 +1191,18 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
             const a = porSlug[f.slug];
             const chave = `f${i}`;
             return (
-              <div key={chave} className="rounded-xl border border-white/10 bg-[#0B1430]/80 p-4">
+              <div key={chave} className="rounded-xl border border-line bg-white p-4">
                 <div className="flex items-center gap-2">
                   {a && <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={32} />}
-                  <b className="text-white">{a?.nome ?? f.slug}</b> <MarcaIA />
-                  <span className="text-xs text-[#8C9AC4]">{a?.cargo}</span>
+                  <b className="text-ink">{a?.nome ?? f.slug}</b> <MarcaIA />
+                  <span className="text-xs text-muted">{a?.cargo}</span>
                 </div>
-                <p className="mt-2 whitespace-pre-line text-sm text-[#DCE3FA]">{f.texto}</p>
+                <p className="mt-2 whitespace-pre-line text-sm text-ink">{f.texto}</p>
                 <div className="mt-2">
                   {virou[chave] ? (
-                    <p className="text-xs text-[#B5EC7A]">{virou[chave]}</p>
+                    <p className="text-xs text-forest">{virou[chave]}</p>
                   ) : (
-                    <button className="text-xs font-semibold text-[#38BDF8] hover:underline" onClick={() => virarOrdem(chave, f.slug, f.texto)}>
+                    <button className="text-xs font-semibold text-forest hover:underline" onClick={() => virarOrdem(chave, f.slug, f.texto)}>
                       Virar ordem
                     </button>
                   )}
@@ -1169,9 +1210,9 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
               </div>
             );
           })}
-          <div className="rounded-xl border border-[#3D7BFF]/40 bg-[#3D7BFF]/10 p-4">
-            <p className="text-sm font-semibold text-white">{res.fallback ? "Reunião não concluída" : "Consolidado do Moacir"}</p>
-            <p className="mt-1 whitespace-pre-line text-sm text-[#DCE3FA]">{res.consolidado.texto}</p>
+          <div className="rounded-xl border border-line bg-sage-100 p-4">
+            <p className="text-sm font-semibold text-ink">{res.fallback ? "Reunião não concluída" : "Consolidado do Moacir"}</p>
+            <p className="mt-1 whitespace-pre-line text-sm text-ink">{res.consolidado.texto}</p>
             {res.consolidado.passos.length > 0 && (
               <ol className="mt-3 space-y-2">
                 {res.consolidado.passos.map((p, i) => {
@@ -1179,15 +1220,15 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
                   const dono = porSlug[p.dono];
                   return (
                     <li key={chave} className="flex flex-wrap items-baseline gap-2 text-sm">
-                      <b className="text-white">
+                      <b className="text-ink">
                         {i + 1}. {dono?.nome ?? p.dono}
                       </b>
-                      <span className="text-[#DCE3FA]">{p.acao}</span>
+                      <span className="text-ink">{p.acao}</span>
                       {dono &&
                         (virou[chave] ? (
-                          <span className="text-xs text-[#B5EC7A]">{virou[chave]}</span>
+                          <span className="text-xs text-forest">{virou[chave]}</span>
                         ) : (
-                          <button className="text-xs font-semibold text-[#38BDF8] hover:underline" onClick={() => virarOrdem(chave, p.dono, p.acao)}>
+                          <button className="text-xs font-semibold text-forest hover:underline" onClick={() => virarOrdem(chave, p.dono, p.acao)}>
                             Virar ordem
                           </button>
                         ))}
@@ -1200,26 +1241,34 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
         </div>
       )}
 
-      <div className="rounded-xl border border-white/10 bg-[#0B1430]/80 p-4">
-        <h3 className="text-sm font-semibold text-white">Atas anteriores</h3>
-        {dados.atas.length === 0 ? (
-          <p className="mt-2 text-sm text-[#8C9AC4]">Nenhuma reunião ainda. A ata de cada reunião fica guardada aqui.</p>
+      <div className="rounded-xl border border-line bg-white p-4">
+        <h3 className="text-sm font-semibold text-ink">Atas anteriores</h3>
+        {atas === null ? (
+          <p className="mt-2 text-sm text-muted" data-testid="atas-carregando">
+            Carregando as atas…
+          </p>
+        ) : atas.itens.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">Nenhuma reunião ainda. A ata de cada reunião fica guardada aqui.</p>
         ) : (
-          <ul className="mt-3 space-y-2">
-            {dados.atas.map((c) => (
-              <li key={c.id}>
-                <details className="rounded-xl border border-white/5 p-3">
-                  <summary className="cursor-pointer text-sm text-white">
-                    <span className="text-xs text-[#8C9AC4]" style={mono}>
-                      {dataHora(c.criado_em)}
-                    </span>{" "}
-                    {c.texto.split("\n")[0].replace(/^Pauta: /, "")}
-                  </summary>
-                  <p className="mt-2 whitespace-pre-line text-sm text-[#C9D2F0]">{c.texto}</p>
-                </details>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="mt-3 space-y-2" data-testid="atas-lista">
+              {atas.itens.map((c) => (
+                <li key={c.id}>
+                  <details className="rounded-lg border border-line p-3">
+                    <summary className="cursor-pointer text-sm text-ink">
+                      <span className="text-xs text-muted tabular-nums">{dataHora(c.criado_em)}</span> {c.texto.split("\n")[0].replace(/^Pauta: /, "")}
+                    </summary>
+                    <p className="mt-2 whitespace-pre-line text-sm text-ink">{c.texto}</p>
+                  </details>
+                </li>
+              ))}
+            </ul>
+            {atas.temMais && (
+              <button type="button" className={`${botaoLinha} mt-3 min-h-11`} disabled={lendoAtas} onClick={() => void lerAtas(atas.itens[atas.itens.length - 1].criado_em)} data-testid="atas-mais">
+                {lendoAtas ? "Carregando…" : "Ver atas anteriores"}
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -1259,20 +1308,20 @@ function MemoriaAgente({ slug, nome }: { slug: string; nome: string }) {
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#0B1430]/80 p-4">
+    <div className="rounded-xl border border-line bg-white p-4">
       <button className={botaoLinha} onClick={abrir} aria-expanded={aberto} data-testid="memoria-abrir">
         O que {nome} sabe sobre você
       </button>
       {aberto && (
         <div className="mt-3" data-testid="memoria-lista">
-          {erro && <p className="rounded-lg bg-[#FF7A6B]/10 px-3 py-2 text-sm text-[#FFB0A6]">{erro}</p>}
-          {itens && itens.length === 0 && <p className="text-sm text-[#8C9AC4]">{nome} ainda não guardou nada sobre você.</p>}
+          {erro && <p className="rounded-lg bg-white px-3 py-2 text-sm text-red-700">{erro}</p>}
+          {itens && itens.length === 0 && <p className="text-sm text-muted">{nome} ainda não guardou nada sobre você.</p>}
           {itens && itens.length > 0 && (
             <ul className="space-y-2">
               {itens.map((m) => (
-                <li key={m.id} className="flex items-start justify-between gap-3 border-t border-white/5 pt-2 first:border-0 first:pt-0">
-                  <span className="text-sm text-[#DCE3FA]">{m.fato}</span>
-                  <button className="shrink-0 text-xs font-semibold text-[#FFB0A6] hover:underline" onClick={() => apagar(m.id)} aria-label={`Apagar: ${m.fato}`}>
+                <li key={m.id} className="flex items-start justify-between gap-3 border-t border-line pt-2 first:border-0 first:pt-0">
+                  <span className="text-sm text-ink">{m.fato}</span>
+                  <button className="shrink-0 text-xs font-semibold text-red-700 hover:underline" onClick={() => apagar(m.id)} aria-label={`Apagar: ${m.fato}`}>
                     Apagar
                   </button>
                 </li>

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import { carregarCentral, chamadosEmVermelho, postarRetornosDoMoacir } from "@/lib/data/agentes-actions";
 import { dispararEncaminhamentosDaSessao } from "@/lib/agentes/servidor";
 import { CentralAgentes } from "./central-client";
@@ -9,22 +8,6 @@ import { AGENTES_DEFINICOES } from "@/lib/admin/indicadores";
 import { tituloDoAdmin } from "@/config/menu-admin";
 
 export const metadata: Metadata = { title: tituloDoAdmin("/admin/agentes") };
-
-const jakarta = localFont({ variable: "--font-jakarta", src: [
-    { path: "../../../fonts/plus-jakarta-sans-latin-400-normal.woff2", weight: "400", style: "normal" },
-    { path: "../../../fonts/plus-jakarta-sans-latin-500-normal.woff2", weight: "500", style: "normal" },
-    { path: "../../../fonts/plus-jakarta-sans-latin-600-normal.woff2", weight: "600", style: "normal" },
-    { path: "../../../fonts/plus-jakarta-sans-latin-700-normal.woff2", weight: "700", style: "normal" },
-  ], display: "swap" });
-const mono = localFont({ variable: "--font-mono-agentes", src: [
-    { path: "../../../fonts/jetbrains-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
-    { path: "../../../fonts/jetbrains-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
-    { path: "../../../fonts/jetbrains-mono-latin-600-normal.woff2", weight: "600", style: "normal" },
-  ], display: "swap" });
-const unbounded = localFont({ variable: "--font-display-agentes", src: [
-    { path: "../../../fonts/unbounded-latin-500-normal.woff2", weight: "500", style: "normal" },
-    { path: "../../../fonts/unbounded-latin-700-normal.woff2", weight: "700", style: "normal" },
-  ], display: "swap" });
 
 /** Central de Agentes (admin). O layout de /admin já exige papel admin. */
 export default async function AgentesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -40,12 +23,12 @@ export default async function AgentesPage({ searchParams }: { searchParams: Prom
     admin ? contadoresAgentes(admin).catch(() => null) : Promise.resolve(null),
   ]);
   return (
-    <div className={`${jakarta.variable} ${mono.variable} ${unbounded.variable}`}>
+    <div>
       {/* Prompt 29, item 10: os três números com nome. O selo da barra lateral mostra só "Aguardando o seu OK". */}
       {contadores && (
         <ul className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3" data-testid="agentes-contadores">
           {(["aguardandoOk", "ordensPendentes", "ordensLidas"] as const).map((k) => (
-            <li key={k} className="rounded-xl border border-sage-200 bg-white p-3" title={AGENTES_DEFINICOES[k].formula} data-testid={`agentes-${k}`}>
+            <li key={k} className="rounded-lg border border-line bg-white p-3" title={AGENTES_DEFINICOES[k].formula} data-testid={`agentes-${k}`}>
               <p className="font-title text-2xl font-semibold text-forest" data-valor>
                 {contadores[k]}
               </p>

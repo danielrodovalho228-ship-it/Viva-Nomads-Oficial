@@ -74,12 +74,12 @@ export interface Conversa {
 }
 
 export const COR_ESQUADRAO: Record<Esquadrao, string> = {
-  comando: "#3D7BFF",
-  operacoes: "#7FD321",
-  tecnologia: "#38BDF8",
-  crescimento: "#FFB547",
-  financas: "#FF7A6B",
-  plataforma: "#8C9AC4",
+  comando: "#1D4ED8",
+  operacoes: "#15803D",
+  tecnologia: "#0369A1",
+  crescimento: "#B45309",
+  financas: "#C2410C",
+  plataforma: "#6B7280",
 };
 
 export const NOME_ESQUADRAO: Record<Esquadrao, string> = {

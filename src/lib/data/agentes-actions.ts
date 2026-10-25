@@ -23,8 +23,6 @@ export interface DadosCentral {
   agentes: Agente[];
   rondas: Ronda[];
   ordens: Ordem[];
-  conversas: Conversa[];
-  atas: Conversa[];
   /** Quem está logado: só o criador da ordem vê Aceito/Reabrir (a ação e o gatilho do banco conferem de novo). */
   uid: string | null;
   /**
@@ -34,29 +32,59 @@ export interface DadosCentral {
   acessoLiberado: boolean;
 }
 
-const VAZIO: DadosCentral = { agentes: [], rondas: [], ordens: [], conversas: [], atas: [], uid: null, acessoLiberado: false };
+const VAZIO: DadosCentral = { agentes: [], rondas: [], ordens: [], uid: null, acessoLiberado: false };
+
+/** ADMIN-5: uma página do chat ou das atas (o mais novo primeiro no banco; devolvido em ordem de leitura). */
+export interface PaginaConversas {
+  itens: Conversa[];
+  /** Há mensagens mais antigas que a primeira desta página. */
+  temMais: boolean;
+}
+const POR_PAGINA_CHAT = 50;
+const POR_PAGINA_ATAS = 10;
+const CAMPOS_CONVERSA = "id, agente_slug, papel, autor_slug, texto, criado_em";
+const ehIso = (v: string | null | undefined): v is string => typeof v === "string" && !Number.isNaN(Date.parse(v));
 
 export async function carregarCentral(): Promise<DadosCentral> {
   const supabase = await createClient();
   if (!supabase) return VAZIO;
   const uid = (await supabase.auth.getUser()).data.user?.id ?? null;
-  const [a, r, o, c, at, adm] = await Promise.all([
+  // ADMIN-5: o chat e as atas não vêm aqui; cada aba lê a sua página quando abre (carregarConversas / carregarAtas).
+  const [a, r, o, adm] = await Promise.all([
     supabase.from("agentes").select("slug, nome, cargo, esquadrao, rotina_texto, trigger_id, status, briefing, ordem").order("ordem"),
     supabase.from("agentes_rondas").select("id, agente_slug, iniciada_em, concluida_em, status, resumo, achados, link_sessao, ordens_atendidas").order("iniciada_em", { ascending: false }).limit(200),
     supabase.from("agentes_ordens").select("*") /* "*": vale antes e depois da 0085 (colunas do disparo) */.order("criada_em", { ascending: false }).limit(100),
-    supabase.from("agentes_conversas").select("id, agente_slug, papel, autor_slug, texto, criado_em").not("agente_slug", "is", null).order("criado_em", { ascending: false }).limit(300),
-    supabase.from("agentes_conversas").select("id, agente_slug, papel, autor_slug, texto, criado_em").is("agente_slug", null).eq("papel", "sistema").order("criado_em", { ascending: false }).limit(20),
     supabase.rpc("is_admin"),
   ]);
   return {
     agentes: (a.data ?? []) as Agente[],
     rondas: (r.data ?? []) as Ronda[],
     ordens: (o.data ?? []) as Ordem[],
-    conversas: ((c.data ?? []) as Conversa[]).reverse(),
-    atas: (at.data ?? []) as Conversa[],
     uid,
     acessoLiberado: adm.data === true,
   };
+}
+
+/** ADMIN-5: o chat com UM agente, 50 mensagens por vez; "antesDe" pede a página anterior. RLS is_admin() decide. */
+export async function carregarConversas(slug: string, antesDe?: string | null): Promise<PaginaConversas> {
+  const supabase = await createClient();
+  if (!supabase || !/^[a-z0-9-]{1,40}$/.test(slug)) return { itens: [], temMais: false };
+  let q = supabase.from("agentes_conversas").select(CAMPOS_CONVERSA).eq("agente_slug", slug).order("criado_em", { ascending: false }).limit(POR_PAGINA_CHAT + 1);
+  if (ehIso(antesDe)) q = q.lt("criado_em", antesDe);
+  const { data } = await q;
+  const linhas = (data ?? []) as Conversa[];
+  return { itens: linhas.slice(0, POR_PAGINA_CHAT).reverse(), temMais: linhas.length > POR_PAGINA_CHAT };
+}
+
+/** ADMIN-5: as atas da Sala de reunião, 10 por vez (a mais nova primeiro). */
+export async function carregarAtas(antesDe?: string | null): Promise<PaginaConversas> {
+  const supabase = await createClient();
+  if (!supabase) return { itens: [], temMais: false };
+  let q = supabase.from("agentes_conversas").select(CAMPOS_CONVERSA).is("agente_slug", null).eq("papel", "sistema").order("criado_em", { ascending: false }).limit(POR_PAGINA_ATAS + 1);
+  if (ehIso(antesDe)) q = q.lt("criado_em", antesDe);
+  const { data } = await q;
+  const linhas = (data ?? []) as Conversa[];
+  return { itens: linhas.slice(0, POR_PAGINA_ATAS), temMais: linhas.length > POR_PAGINA_ATAS };
 }
 
 /**

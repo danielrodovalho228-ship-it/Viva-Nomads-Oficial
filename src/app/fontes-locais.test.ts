@@ -28,5 +28,6 @@ test("todo .woff2 referenciado por localFont existe no repositório", () => {
       assert.ok(existsSync(resolve(dirname(f), m[1])), `${f}: fonte ausente ${m[1]}`);
     }
   }
-  assert.ok(total >= 13, "esperava ao menos 13 pesos de fonte referenciados");
+  // ADMIN-5: a Central de Agentes deixou as fontes próprias; ficam os 4 pesos da Inter.
+  assert.ok(total >= 4, "esperava ao menos 4 pesos de fonte referenciados");
 });

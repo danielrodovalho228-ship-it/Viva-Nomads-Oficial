@@ -100,7 +100,8 @@
         "t183-telas-logadas-390",
         "t255-admin-f15-f16-f18-f20",
         "t301-varredura-logada-bloco5",
-        "t387-varredura-bloco22"
+        "t387-varredura-bloco22",
+        "t466-admin5-agentes"
       ]
     },
     "/admin/ajuda-publicacao": {
@@ -3118,6 +3119,22 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/data/agentes-actions.ts#carregarAtas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t466-admin5-agentes"
+      ]
+    },
+    "src/lib/data/agentes-actions.ts#carregarConversas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t466-admin5-agentes"
+      ]
     },
     "src/lib/data/agentes-actions.ts#deixarOrdem": {
       "personas": [

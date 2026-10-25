@@ -1,5 +1,6 @@
 "use client";
 
+import { buttonClasses } from "@/components/ui/button";
 import { horaBRT } from "@/lib/datas-brasilia";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { iniciais, tempoRelativo, type Agente, type Ronda } from "@/lib/agentes/central";
@@ -28,7 +29,7 @@ import { fotoDoAgente } from "./avatar";
   prefers-reduced-motion: sem pacotes andando, sem pulso, câmera sem animação.
 */
 
-const NEUTRO = "#E8EEFF";
+const NEUTRO = "#6B7280";
 
 function useMenosMovimento(): boolean {
   const [reduz, setReduz] = useState(false);
@@ -171,7 +172,7 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
       for (const [a, b] of fluxos) {
         const [x1, y1] = P(a);
         const [x2, y2] = P(b);
-        ctx!.strokeStyle = "#8C9AC4" + (f ? "10" : "26");
+        ctx!.strokeStyle = "#6B7280" + (f ? "10" : "26");
         ctx!.lineWidth = 1;
         ctx!.beginPath();
         ctx!.moveTo(x1, y1);
@@ -229,7 +230,7 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
           ctx!.arc(x, y, r + 6 + pulso, 0, Math.PI * 2);
           ctx!.stroke();
         }
-        ctx!.fillStyle = "#0B1638";
+        ctx!.fillStyle = "#FFFFFF";
         ctx!.strokeStyle = cor;
         ctx!.lineWidth = 2;
         if (n.doc) {
@@ -260,7 +261,7 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
           hexagono(x, y, r);
           ctx!.stroke();
         }
-        ctx!.fillStyle = "#C3CDEB";
+        ctx!.fillStyle = "#1F2937";
         ctx!.font = `600 ${estreito() ? 10 : 12}px system-ui, sans-serif`;
         ctx!.textAlign = "center";
         ctx!.fillText(n.rotulo, x, y + r + 20);
@@ -316,21 +317,21 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-white/10 bg-[#081028]/80" data-testid="rede-ao-vivo">
-      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 p-3">
-        <button className="rounded-lg bg-[#005DFC] px-3 py-2 text-sm font-semibold text-white hover:bg-[#2C7BFF] disabled:opacity-50" onClick={() => ir(0)} disabled={!passos.length}>
+    <div className="overflow-hidden rounded-xl border border-line bg-white" data-testid="rede-ao-vivo">
+      <div className="flex flex-wrap items-center gap-2 border-b border-line p-3">
+        <button className={buttonClasses({ size: "sm" })} onClick={() => ir(0)} disabled={!passos.length}>
           {passo >= 0 ? "↺ Recomeçar" : "▶ Assistir ao briefing"}
         </button>
         {passo >= 0 && (
           <>
-            <button className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-white hover:bg-white/5" onClick={() => ir(passo + 1)}>
+            <button className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink hover:bg-surface-2" onClick={() => ir(passo + 1)}>
               Próximo
             </button>
-            <button className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-white hover:bg-white/5" onClick={() => ir(passos.length)}>
+            <button className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink hover:bg-surface-2" onClick={() => ir(passos.length)}>
               Parar
             </button>
-            <div className="h-1 min-w-20 flex-1 overflow-hidden rounded-lg bg-white/10" aria-hidden>
-              <div className="h-full bg-[#38BDF8] transition-[width] duration-300" style={{ width: `${((passo + 1) / passos.length) * 100}%` }} />
+            <div className="h-1 min-w-20 flex-1 overflow-hidden rounded-lg bg-surface-3" aria-hidden>
+              <div className="h-full bg-forest transition-[width] duration-300" style={{ width: `${((passo + 1) / passos.length) * 100}%` }} />
             </div>
           </>
         )}
@@ -339,23 +340,23 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
         <div className="relative">
           <canvas ref={canvas} className="block h-[540px] w-full" aria-label="Mapa de quem passa trabalho para quem, com a cor do status da última ronda de cada agente" role="img" />
           {atual && (
-            <div className="absolute inset-x-3 top-3 rounded-xl border border-white/15 bg-[#050A18]/90 px-4 py-3 text-sm backdrop-blur" aria-live="polite" data-testid="briefing-legenda">
-              <span className="block font-mono text-[11px] text-[#8C9AC4]">
+            <div className="absolute inset-x-3 top-3 rounded-xl border border-line bg-white px-4 py-3 text-sm backdrop-blur" aria-live="polite" data-testid="briefing-legenda">
+              <span className="block font-mono text-[11px] text-muted">
                 {String(passo + 1).padStart(2, "0")} / {passos.length}
               </span>
-              <b style={{ color: atual.cor === "sem" ? "#38BDF8" : COR_RONDA_HEX[atual.cor] }}>{atual.titulo}</b>
-              <p className="mt-1 text-[#DCE3FA]">{atual.texto.slice(0, digitado)}</p>
+              <b style={{ color: atual.cor === "sem" ? "#0369A1" : COR_RONDA_HEX[atual.cor] }}>{atual.titulo}</b>
+              <p className="mt-1 text-ink">{atual.texto.slice(0, digitado)}</p>
             </div>
           )}
           {eventos !== null && linhas.length === 0 && !atual && (
-            <p className="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg bg-[#050A18]/85 px-3 py-2 text-center text-xs text-[#8C9AC4]">
+            <p className="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg bg-white px-3 py-2 text-center text-xs text-muted">
               Nenhum evento real nas últimas 24 h: as linhas só acendem quando alguém faz alguma coisa.
             </p>
           )}
         </div>
         <LinhaDoTempo eventos={eventos} lidoEm={lidoEm} erro={erro} agora={agora} />
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 px-4 py-3 text-xs text-[#8C9AC4]">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-line px-4 py-3 text-xs text-muted">
         {(Object.keys(COR_EVENTO) as (keyof typeof COR_EVENTO)[])
           .filter((t) => t !== "retorno")
           .map((t) => (
@@ -365,7 +366,7 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
             </span>
           ))}
         <span>tracejado = organograma (sem evento) · linha acesa = evento real em 24 h</span>
-        <span>Nó: <b className="text-[#7FD321]">ok</b> · <b className="text-[#FFB547]">alerta</b> · <b className="text-[#FF5470]">falhou</b> · anel pulsando = ronda há menos de 15 min</span>
+        <span>Nó: <b className="text-forest">ok</b> · <b className="text-amber-800">alerta</b> · <b className="text-red-700">falhou</b> · anel pulsando = ronda há menos de 15 min</span>
       </div>
     </div>
   );
@@ -376,30 +377,30 @@ const horaBR = (iso: string) => `${horaBRT(iso)} BRT`;
 /** Linha do tempo dos eventos reais, do mais novo para o mais antigo. */
 function LinhaDoTempo({ eventos, lidoEm, erro, agora }: { eventos: EventoRede[] | null; lidoEm: string | null; erro: boolean; agora: Date | null }) {
   return (
-    <aside className="flex max-h-[540px] min-w-0 flex-col border-t border-white/10 lg:border-l lg:border-t-0" data-testid="rede-linha-do-tempo">
-      <div className="flex items-baseline justify-between gap-2 border-b border-white/10 px-4 py-3">
-        <b className="text-sm text-white">Últimas 24 h</b>
-        <span className="font-mono text-[11px] text-[#8C9AC4]">{lidoEm ? `lido ${horaBR(lidoEm)} · a cada ${ATUALIZA_REDE_S} s` : "lendo…"}</span>
+    <aside className="flex max-h-[540px] min-w-0 flex-col border-t border-line lg:border-l lg:border-t-0" data-testid="rede-linha-do-tempo">
+      <div className="flex items-baseline justify-between gap-2 border-b border-line px-4 py-3">
+        <b className="text-sm text-ink">Últimas 24 h</b>
+        <span className="font-mono text-[11px] text-muted">{lidoEm ? `lido ${horaBR(lidoEm)} · a cada ${ATUALIZA_REDE_S} s` : "lendo…"}</span>
       </div>
-      {erro && <p className="px-4 py-2 text-xs text-[#FF7A6B]">Não consegui ler os eventos agora; tento de novo em {ATUALIZA_REDE_S} s.</p>}
+      {erro && <p className="px-4 py-2 text-xs text-red-700">Não consegui ler os eventos agora; tento de novo em {ATUALIZA_REDE_S} s.</p>}
       {eventos !== null && eventos.length === 0 ? (
-        <p className="px-4 py-4 text-sm text-[#8C9AC4]">Nenhum evento nas últimas 24 h.</p>
+        <p className="px-4 py-4 text-sm text-muted">Nenhum evento nas últimas 24 h.</p>
       ) : (
         <ol className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {(eventos ?? []).map((e, i) => (
-            <li key={`${e.em}-${i}`} className="flex gap-3 rounded-lg px-2 py-2 text-sm hover:bg-white/5" data-tipo={e.tipo}>
+            <li key={`${e.em}-${i}`} className="flex gap-3 rounded-lg px-2 py-2 text-sm hover:bg-surface-2" data-tipo={e.tipo}>
               <span className="mt-2 inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: COR_EVENTO[e.tipo] }} aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className="block break-words text-[#DCE3FA]">
+                <span className="block break-words text-ink">
                   {e.link ? (
-                    <a href={e.link} target="_blank" rel="noreferrer" className="underline decoration-white/30 underline-offset-2 hover:decoration-white">
+                    <a href={e.link} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-2 hover:decoration-ink">
                       {e.texto}
                     </a>
                   ) : (
                     e.texto
                   )}
                 </span>
-                <span className="font-mono text-[11px] text-[#8C9AC4]">
+                <span className="font-mono text-[11px] text-muted">
                   {horaBR(e.em)} · {agora ? tempoRelativo(e.em, agora) : ""} · {ROTULO_EVENTO[e.tipo]}
                 </span>
               </span>
