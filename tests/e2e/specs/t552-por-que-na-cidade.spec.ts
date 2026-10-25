@@ -10,13 +10,16 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
       CONTA-A (6f5b9c97, 24/10: a Perfil passou a usar `CategoriaProfissional` direto em perfil-tela.tsx). O cartão
       não aparece em tela nenhuma. Quando a Pista A montar, o test.fail vira "passou inesperadamente" e sai daqui;
    3. o proprietário NÃO lê o período, a empresa nem a frase antes do aceite: candidatura nova em /dashboard/leads,
-      com os campos gravados no perfil da candidata.
+      com os campos gravados no perfil da candidata;
+   4. depois do aceite (#1407), outro proprietário, com a candidatura da mesma moradora ACEITA, lê na candidatura
+      "Na cidade de 01/11/2026 a 30/04/2027", "Empresa ou instituição: …" e a frase entre aspas.
   A 390 e 1280 px.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const ana = { email: `ana.t552.${sufixo}@lab.vivanomads.test`, nome: "Ana Cidade", role: "tenant" as const };
 const dono = { email: `dono.t552.${sufixo}@lab.vivanomads.test`, nome: "Davi Cidade", role: "owner" as const };
+const donoAceito = { email: `dono2.t552.${sufixo}@lab.vivanomads.test`, nome: "Dora Aceite", role: "owner" as const };
 const ids: Record<string, string> = {};
 const EMPRESA = `Hospital Laboratório ${sufixo}`;
 const FRASE = `Residência de seis meses na cidade ${sufixo}`;
@@ -43,10 +46,13 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
     if (error) throw error;
     ids.imovel = await criarImovelPronto(ids.dono, `Cidade t552 ${sufixo}`, { ativo: true });
     await criarLead(ids.dono, ids.ana, ids.imovel);
+    ids.donoAceito = await criarConta(donoAceito, senha);
+    ids.imovelAceito = await criarImovelPronto(ids.donoAceito, `Aceite t552 ${sufixo}`, { ativo: true });
+    await criarLead(ids.donoAceito, ids.ana, ids.imovelAceito, true);
   });
   test.afterAll(async () => {
-    await adm().from("leads").delete().eq("owner_id", ids.dono ?? "");
-    await apagarContas([ids.ana, ids.dono]);
+    await adm().from("leads").delete().in("owner_id", [ids.dono, ids.donoAceito].filter(Boolean));
+    await apagarContas([ids.ana, ids.dono, ids.donoAceito]);
   });
 
   for (const w of [390, 1280] as const) {
@@ -83,6 +89,19 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
       expect(texto, "frase visível antes do aceite").not.toContain(FRASE);
       expect(texto).not.toMatch(/30\/04\/2027|01\/11\/2026/);
       await page.screenshot({ path: `tests/laboratorio/saida/t552-leads-${w}.png`, fullPage: true });
+      await page.context().close();
+    });
+
+    test(`4. a ${w} px: depois do aceite o proprietário lê período, empresa e frase na candidatura (#1407)`, async ({ browser }) => {
+      const page = await entrar(browser, donoAceito.email, senha);
+      await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+      await page.goto("/dashboard/leads", { waitUntil: "domcontentloaded" });
+      const sinais = page.getByTestId("candidato-sinais").first();
+      await expect(sinais).toContainText("Na cidade de 01/11/2026 a 30/04/2027", { timeout: 30_000 });
+      await expect(sinais).toContainText(`Empresa ou instituição: ${EMPRESA}`);
+      await expect(sinais).toContainText(`“${FRASE}”`);
+      await sinais.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `tests/laboratorio/saida/t552-leads-aceito-${w}.png` });
       await page.context().close();
     });
   }
