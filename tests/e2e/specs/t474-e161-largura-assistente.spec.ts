@@ -58,6 +58,19 @@ test.describe("T474 — E161: assistente na largura do anúncio", () => {
           const previa = await largura(p, "novo-resumo");
           expect(Math.abs(previa - cartao), `${passo}: prévia ${previa} × cartão do anúncio ${cartao}`).toBeLessThanOrEqual(1);
         }
+        // O rodapé do fluxo alinha com as bordas da régua: "Voltar"/"Passo N" à esquerda, o primário à direita.
+        const borda = await p.getByTestId("assistente-largura").evaluate((e) => {
+          const r = e.getBoundingClientRect();
+          const cs = getComputedStyle(e);
+          return { esq: Math.round(r.left + parseFloat(cs.paddingLeft)), dir: Math.round(r.right - parseFloat(cs.paddingRight)) };
+        });
+        const linha = await p.locator("[data-rodape-linha]").evaluate((e) => {
+          const r = e.getBoundingClientRect();
+          const cs = getComputedStyle(e);
+          return { esq: Math.round(r.left + parseFloat(cs.paddingLeft)), dir: Math.round(r.right - parseFloat(cs.paddingRight)) };
+        });
+        expect(Math.abs(linha.esq - borda.esq), `${passo}: rodapé à esquerda`).toBeLessThanOrEqual(1);
+        expect(Math.abs(linha.dir - borda.dir), `${passo}: rodapé à direita`).toBeLessThanOrEqual(1);
         expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), passo).toBeLessThanOrEqual(1);
         await p.screenshot({ path: `${SAIDA}/t474-passo-${passo}-${w}.png` });
       }
@@ -69,9 +82,10 @@ test.describe("T474 — E161: assistente na largura do anúncio", () => {
       const real = p.getByTestId("previa-tamanho-real");
       await expect(real).toBeVisible();
       expect(Math.abs((await largura(p, "previa-real-largura")) - imovel)).toBeLessThanOrEqual(1);
-      const foto = real.getByTestId("galeria-tile-0").first();
-      await expect(foto).toBeVisible();
-      const alturaFoto = await real.locator(".h-\\[480px\\]").first().evaluate((e) => Math.round(e.getBoundingClientRect().height));
+      // A galeria do computador (o mosaico); o carrossel do celular fica escondido nesta largura.
+      const mosaico = real.getByTestId("galeria-mosaico");
+      await expect(mosaico.getByTestId("galeria-tile-0")).toBeVisible();
+      const alturaFoto = await mosaico.locator(".h-\\[480px\\]").first().evaluate((e) => Math.round(e.getBoundingClientRect().height));
       expect(alturaFoto).toBe(480);
       expect(Math.abs((await real.locator("#cartao-preco").evaluate((e) => Math.round(e.getBoundingClientRect().width))) - cartao)).toBeLessThanOrEqual(1);
       await p.screenshot({ path: `${SAIDA}/t474-tamanho-real-${w}.png` });

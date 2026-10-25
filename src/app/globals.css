@@ -378,10 +378,11 @@ html[data-app] .vn-barra-comparar {
 .vn-rodape-fluxo {
   bottom: 0;
 }
-/* No computador, Voltar e o primário alinham com a coluna do conteúdo (a largura máxima da moldura, 72rem). */
-@media (min-width: 1280px) {
+/* No computador, Voltar e o primário alinham com a coluna do conteúdo: a régua da moldura, a mesma da página do
+   imóvel (E161: 1536 px = 96rem, com 2rem de margem). */
+@media (min-width: 640px) {
   .vn-rodape-fluxo [data-rodape-linha] {
-    padding-inline: calc((100% - 72rem) / 2 + 2rem);
+    padding-inline: max(2rem, calc((100% - 96rem) / 2 + 2rem));
   }
 }
 

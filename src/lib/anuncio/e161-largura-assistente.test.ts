@@ -38,3 +38,9 @@ test("E161: 'Ver no tamanho real' usa a galeria e o cartão de preço da página
   assert.match(NOVO, /<BotaoTamanhoReal imovel=\{previewProperty\} className="mt-2" \/>/);
   assert.match(NOVO, /step !== ETAPA\.revisao && "lg:hidden"\)\} data-testid="previa-tamanho-real-passo"/);
 });
+
+test("E161: o rodapé do fluxo alinha com a régua de 1536 px (96rem), não com a moldura antiga (72rem)", () => {
+  const css = ler("src/app/globals.css");
+  assert.match(css, /\.vn-rodape-fluxo \[data-rodape-linha\] \{\s*padding-inline: max\(2rem, calc\(\(100% - 96rem\) \/ 2 \+ 2rem\)\);/);
+  assert.doesNotMatch(css, /100% - 72rem/);
+});
