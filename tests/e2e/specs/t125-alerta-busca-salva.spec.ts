@@ -8,6 +8,10 @@ import { adm } from "../fixtures/laboratorio";
  *  2. Logado: em Buscas salvas o alerta vem ligado, desliga e liga de novo (e o banco acompanha).
  * O envio do e-mail em si é coberto por unitários (bate/não bate, limite de 1 por dia, preferência).
  */
+const SALVAR = /^(Salvar busca|Criar alerta desta busca)$/;
+const SALVA = /^(Busca salva|Alerta criado)$/;
+const SALVAR_OU_SALVA = /^(Salvar busca|Criar alerta desta busca|Busca salva|Alerta criado)$/;
+
 test.describe("T125 — alerta de busca salva", () => {
   test("1. link de desligar sem assinatura válida não desliga nada", async ({ page }) => {
     await page.goto("/alerta-busca/desligar?b=00000000-0000-4000-8000-000000000000&t=invalido", { waitUntil: "domcontentloaded" });
@@ -27,11 +31,12 @@ test.describe("T125 — alerta de busca salva", () => {
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const salvar = page.getByTestId("salvar-busca").filter({ visible: true });
       // Uma execução anterior interrompida pode ter deixado a busca salva: parte sempre do estado "não salva".
-      await expect(salvar).toHaveText(/Salvar busca|Busca salva/, { timeout: 10_000 });
-      if ((await salvar.textContent())?.includes("Busca salva")) await salvar.click();
-      await expect(salvar).toHaveText("Salvar busca", { timeout: 10_000 });
+      // #1334: com a lista vazia, o mesmo botão diz "Criar alerta desta busca" / "Alerta criado".
+      await expect(salvar).toHaveText(SALVAR_OU_SALVA, { timeout: 10_000 });
+      if (SALVA.test((await salvar.textContent()) ?? "")) await salvar.click();
+      await expect(salvar).toHaveText(SALVAR, { timeout: 10_000 });
       await salvar.click();
-      await expect(salvar).toHaveText("Busca salva", { timeout: 10_000 });
+      await expect(salvar).toHaveText(SALVA, { timeout: 10_000 });
 
       await page.goto("/dashboard/buscas", { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
@@ -48,9 +53,9 @@ test.describe("T125 — alerta de busca salva", () => {
       // Limpa: remove a busca de teste pelo coração.
       await page.goto("/buscar?local=Uberl%C3%A2ndia&homeoffice=1&quartos=2", { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-      await expect(salvar).toHaveText("Busca salva", { timeout: 10_000 });
+      await expect(salvar).toHaveText(SALVA, { timeout: 10_000 });
       await salvar.click();
-      await expect(salvar).toHaveText("Salvar busca", { timeout: 10_000 });
+      await expect(salvar).toHaveText(SALVAR, { timeout: 10_000 });
     });
   });
 });
