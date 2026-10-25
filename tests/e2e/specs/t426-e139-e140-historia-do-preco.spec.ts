@@ -47,6 +47,10 @@ test.describe("T426 — E139/E140: Passo 8, a prévia, o 'você recebe' e a taxa
   });
 
   test("1. a prévia tudo incluído, o 'você recebe do morador' e a taxa contam a mesma história", async ({ browser }) => {
+    // E139/E140 (Pista A): a prévia mostra R$ 3.500/mês tudo incluído, mas o simulador diz "Você recebe do morador"
+    // R$ 12.000 em 4 meses (só o valor mensal × meses, sem as contas) e a taxa R$ 1.440 (12% sobre R$ 3.000 × 4), não
+    // sobre o total do contrato (run 40190394864). Quem corrigir tira este test.fail.
+    test.fail(true, "E139/E140: a prévia tudo incluído, o 'você recebe' e a taxa não contam a mesma história");
     const page = await abrirPasso(browser, { email: dono.email, senha }, ids.rascunho!, "preco");
     const t = await lerTela(page);
     console.log(`T426|total=${t.total}|meses=${t.meses}|recebe=${t.recebe}|taxa=${t.taxa}|pct=${t.pct}`);

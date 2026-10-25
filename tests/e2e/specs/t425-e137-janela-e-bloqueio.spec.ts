@@ -30,6 +30,9 @@ test.describe("T425 — E137: janela menor que a duração mínima e bloqueio re
   });
 
   test("1. janela de 10 dias com mínimo de 30: recusada com mensagem, o Continuar não avança", async ({ browser }) => {
+    // E137 (Pista A): o Passo 9 não confere a janela contra a duração mínima; com 10 dias e mínimo de 30 o Continuar
+    // leva à Revisão, sem mensagem (run 40190394864). Quem corrigir tira este test.fail.
+    test.fail(true, "E137: janela mais curta que a duração mínima é aceita sem mensagem");
     const page = await abrirPasso(browser, { email: dono.email, senha }, ids.rascunho!, "disponibilidade");
     await page.getByTestId("disponivel-de").fill(isoParaBR(emDiasBR(10)));
     await page.getByTestId("disponivel-ate").fill(isoParaBR(emDiasBR(20)));

@@ -14,7 +14,8 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t424.${sufixo}@lab.vivanomads.test`, nome: "Dora Datas", role: "owner" as const };
 const ids: { dono?: string; rascunho?: string } = {};
-const MES_EM_INGLES = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b/;
+// Abreviação ou nome em inglês, palavra inteira ("Nov", "October"); "Novembro" e "Dezembro" do calendário em pt-BR não contam.
+const MES_EM_INGLES = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|June|July|August|September|October|November|December)\b/;
 const DATA = emDiasBR(40);
 
 test.describe("T424 — E136: datas do Passo 9 em pt-BR", () => {

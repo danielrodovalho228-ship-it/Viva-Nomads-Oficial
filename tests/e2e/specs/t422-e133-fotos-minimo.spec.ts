@@ -29,6 +29,9 @@ test.describe("T422 — E133: mínimo de 8 fotos no Passo 2", () => {
   });
 
   test("1. com 3 fotos, o Continuar não avança e diz que o mínimo é 8", async ({ browser }) => {
+    // E133 (Pista A): hoje o Passo 2 só exige 1 foto para avançar (validarEtapa em imoveis/novo/page.tsx); com 3 fotos
+    // o Continuar leva ao Endereço (lab-crítico do #1367, run 40190394864). Quem corrigir tira este test.fail.
+    test.fail(true, "E133: com menos de 8 fotos o Continuar do Passo 2 avança");
     const page = await abrirPasso(browser, { email: dono.email, senha }, ids.com3!, "fotos");
     await expect(page.getByTestId("fotos-contagem")).toContainText("3 / 8 fotos", { timeout: 20_000 });
     await page.getByTestId("cadastro-continuar").click();
