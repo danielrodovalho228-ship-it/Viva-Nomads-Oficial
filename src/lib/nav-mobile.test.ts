@@ -19,13 +19,16 @@ import {
   type PapelBarra,
 } from "./nav-mobile.ts";
 
+// MENUS-5: as mesmas abas do topo do computador (config/abas-painel.ts); "Perfil" saiu (a Conta abre no avatar).
 const ROTULOS: Record<PapelBarra, string[]> = {
-  morador: ["Início", "Buscar", "Mensagens", "Estadias", "Perfil"],
-  proprietario: ["Início", "Anúncios", "Mensagens", "Ganhos", "Perfil"],
-  parceiro: ["Início", "Pedidos", "Agenda", "Ganhos", "Perfil"],
+  morador: ["Início", "Buscar", "Pedidos", "Mensagens", "Minha estadia"],
+  proprietario: ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"],
+  parceiro: ["Início", "Pedidos", "Agenda", "Ganhos", "Mensagens"],
 };
 
-test("barra por papel: 5 itens, na ordem do Prompt 41", () => {
+test("barra por papel: no máximo 5 itens, na ordem do MENUS-5; morador sem contrato tem 4", () => {
+  assert.deepEqual(abasDoPapel("morador", { comContrato: false }).map((a) => a.label), ["Início", "Buscar", "Pedidos", "Mensagens"]);
+  for (const abas of Object.values(ABAS_POR_PAPEL)) assert.ok(!abas.some((a) => a.label === "Perfil"));
   for (const papel of Object.keys(ROTULOS) as PapelBarra[]) {
     const abas = ABAS_POR_PAPEL[papel];
     assert.equal(abas.length, 5, papel);
@@ -49,11 +52,9 @@ test("cada aba aponta para uma rota que JÁ existe (nenhuma tela nova)", () => {
   assert.match(painel, /<Panel id="agenda"/);
 });
 
-test("Ganhos do proprietário leva o rótulo 'pago direto na sua conta'", () => {
-  const ganhos = ABAS_POR_PAPEL.proprietario.find((a) => a.label === "Ganhos");
+test("MENUS-5: Ganhos saiu da barra de baixo do dono (vira subaba de Contratos)", () => {
   assert.equal(ROTULO_GANHOS_DONO, "pago direto na sua conta");
-  assert.equal(ganhos?.descricao, "Ganhos: pago direto na sua conta");
-  assert.equal(ganhos?.href, "/dashboard/contratos");
+  assert.ok(!ABAS_POR_PAPEL.proprietario.some((a) => a.label === "Ganhos"));
 });
 
 test("papel da barra: admin sem barra só nas telas /admin; parceiro só aprovado; senão o modo", () => {
@@ -120,7 +121,7 @@ test("a barra decide o papel pela regra única (admin sem barra) e flutua com a 
   assert.match(f, /papelDaBarra\(\{ admin: user\?\.role === "admin"/);
   assert.match(f, /if \(!papel \|\| tabs\.length === 0\) return null;/);
   assert.match(f, /shadow-flutuante/);
-  assert.match(f, /grid grid-cols-5/);
+  assert.match(f, /gridTemplateColumns: `repeat\(\$\{tabs\.length\}, minmax\(0, 1fr\)\)`/);
 });
 
 test("Central no app: botão Ativar notificações e atalhos visíveis só no app", () => {

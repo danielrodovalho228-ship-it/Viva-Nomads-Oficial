@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
 import { useIsNative } from "@/lib/use-native";
 import { isFlowRoute, abasDoPapel, papelDaBarra, type MobileTab, type PapelBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
+import { ROTA_CONTADORES, normalizarContadores } from "@/lib/painel/contadores";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,9 +21,12 @@ import { cn } from "@/lib/utils";
 export function MobileTabBar({
   world,
   badges,
+  comContrato,
 }: {
   world: "tenant" | "owner";
   badges?: Partial<Record<NonNullable<MobileTab["badge"]>, number>>;
+  /** MENUS-5: o morador tem contrato ("Minha estadia" aparece). A casca passa; nas páginas públicas a barra lê. */
+  comContrato?: boolean;
 }) {
   const pathname = usePathname();
   const native = useIsNative();
@@ -30,17 +35,20 @@ export function MobileTabBar({
   const parceiroAprovado = useParceiroAprovado();
   const preferenciaParceiro = usePreferenciaParceiro();
 
+  const contrato = useComContrato(comContrato, !!user);
+
   // Telas de fluxo não mostram a barra (mostram o MobileHeader).
   if (isFlowRoute(pathname)) return null;
 
   const modo: "tenant" | "owner" = user ? (activeMode ?? world) : "tenant";
   const papel = papelDaBarra({ admin: user?.role === "admin", modo, parceiroAprovado, preferenciaParceiro, pathname });
-  const tabs = abasDoPapel(papel);
+  const tabs = abasDoPapel(papel, { comContrato: contrato });
   if (!papel || tabs.length === 0) return null;
 
   function isActive(tab: MobileTab): boolean {
     const [rota, ancora] = tab.href.split("#");
-    if (tab.ativoEm && (pathname === tab.ativoEm || pathname.startsWith(tab.ativoEm + "/"))) return true;
+    // As subabas da aba (ex.: Candidaturas em Pedidos) também a acendem; "/dashboard" só exato.
+    if ((tab.ativoEm ?? []).some((h) => (h === "/dashboard" ? pathname === h : pathname === h || pathname.startsWith(h + "/")))) return true;
     // Abas do parceiro são âncoras da mesma página: acende só a 1ª (Pedidos) na própria página.
     if (ancora) return pathname === rota && ancora === "pedidos";
     if (pathname === rota) return true;
@@ -58,7 +66,7 @@ export function MobileTabBar({
         className={cn("fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface shadow-flutuante print:hidden", className)}
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        <ul className="grid grid-cols-5">
+        <ul className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = isActive(tab);
@@ -103,4 +111,24 @@ export function MobileTabBar({
       {barra(papel, "vn-tabbar hidden", "Abas do app")}
     </>
   );
+}
+
+/** Fora da casca (páginas públicas), a barra lê o mesmo GET dos contadores para saber se há contrato. */
+function useComContrato(doPai: boolean | undefined, logado: boolean): boolean {
+  const [lido, setLido] = useState(false);
+  useEffect(() => {
+    if (doPai !== undefined || !logado) return;
+    const controle = new AbortController();
+    fetch(ROTA_CONTADORES, { cache: "no-store", credentials: "same-origin", signal: controle.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (json) {
+          const c = normalizarContadores(json);
+          setLido(c.estadiaAtiva || c.contratosParaAssinar > 0);
+        }
+      })
+      .catch(() => {});
+    return () => controle.abort();
+  }, [doPai, logado]);
+  return doPai ?? lido;
 }
