@@ -84,7 +84,14 @@ test.describe("T321 — vídeo do anúncio alcançável pelo dono (65-B)", () =>
     // A gravação do vídeo recarrega a página do editor: se a seção fechou, abre de novo antes de salvar.
     if ((await secao(p).getAttribute("data-aberta")) !== "true") await secao(p).getByRole("button").first().click();
     await secao(p).getByRole("button", { name: "Salvar seção" }).click();
-    await expect(secao(p)).toContainText("Alterações salvas.", { timeout: 20_000 });
+    // A gravação recarrega o editor: ou a mensagem aparece, ou a seção fecha já mostrando o vídeo no cabeçalho. A prova
+    // de que ficou gravado é a do recarregar, logo abaixo.
+    await expect
+      .poll(async () => {
+        const t = (await secao(p).textContent()) ?? "";
+        return t.includes("Alterações salvas.") || ((await secao(p).getAttribute("data-aberta")) === "false" && t.includes("Vídeo enviado (00:10)"));
+      }, { timeout: 20_000 })
+      .toBe(true);
     await p.screenshot({ path: `${SAIDA}/t321-secao-video-1280.png`, fullPage: true });
 
     await p.reload({ waitUntil: "domcontentloaded" });
