@@ -1,5 +1,6 @@
 import type { Property } from "../types.ts";
 import { agruparComodidades } from "./comodidades.ts";
+import { AMENITY_KEY_BY_LABEL, comodidadeValeParaTipo } from "../amenities.ts";
 
 /**
  * Itens que o morador costuma esperar. Lista curta e FIXA em código (ordem da tela "Tem / Não tem").
@@ -25,5 +26,10 @@ export function comodidadesQueNaoTem(property: Property): string[] {
   const { grupos, total } = agruparComodidades(property);
   if (total === 0) return [];
   const textos = grupos.flatMap((g) => g.items).flatMap((i) => [i.toLowerCase(), semAcento(i)]);
-  return ESPERADAS.filter((e) => !textos.some((t) => e.padrao.test(t))).map((e) => e.rotulo);
+  // E111-A: o que o tipo do imóvel não comporta (ex.: elevador numa chácara) também não entra no "Não tem".
+  const valeNoTipo = (rotulo: string) => {
+    const chave = AMENITY_KEY_BY_LABEL[rotulo];
+    return !chave || comodidadeValeParaTipo(chave, property.propertyType);
+  };
+  return ESPERADAS.filter((e) => valeNoTipo(e.rotulo) && !textos.some((t) => e.padrao.test(t))).map((e) => e.rotulo);
 }
