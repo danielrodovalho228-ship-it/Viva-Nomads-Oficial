@@ -63,7 +63,7 @@ export const DECISOES_ADMIN: readonly DefinicaoDecisaoAdmin[] = [
   { chave: "chamados_fora_promessa", fila: "chamados fora da promessa", um: "chamado sem resposta de uma pessoa há mais de 24 h", varios: "chamados sem resposta de uma pessoa há mais de 24 h", acao: "Responder", href: "/admin/atendimento?aba=fila&sem_resposta=1" },
   { chave: "chamados_p1", fila: "chamados P1", um: "chamado P1 aberto", varios: "chamados P1 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p1" },
   { chave: "chamados_p2", fila: "chamados P2", um: "chamado P2 aberto", varios: "chamados P2 abertos", acao: "Atender", href: "/admin/atendimento?aba=fila&prioridade=p2" },
-  { chave: "backup", fila: "backup", um: "alerta de backup", varios: "alertas de backup", acao: "Ver o backup", href: "/admin#backup" },
+  { chave: "backup", fila: "backup", um: "alerta de backup", varios: "alertas de backup", acao: "Ver o backup", href: "/admin/sistema#backup" },
   { chave: "falhas_documento", fila: "recibos", um: "recibo ou documento que não saiu", varios: "recibos ou documentos que não saíram", acao: "Emitir de novo", href: "/admin/documentos#falhas" },
   { chave: "documentos_pendentes", fila: "documentos", um: "documento na fila para conferir", varios: "documentos na fila para conferir", acao: "Conferir", href: "/admin/documentos" },
   { chave: "encerramentos", fila: "encerramentos", um: "pedido de encerramento de contrato", varios: "pedidos de encerramento de contrato", acao: "Conduzir", href: "/admin/contratos/encerramentos" },

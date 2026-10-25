@@ -11,7 +11,8 @@ test("owner, tenant e sem papel não veem", () => {
 });
 
 test("a rota é a área de aprovações da Central, coberta por ROTAS_APP", async () => {
-  assert.equal(ROTA_EQUIPE, "/admin/agentes#aprovacoes");
+  // ADMIN-2: Aprovações é aba (?aba=aprovacoes); o antigo #aprovacoes abre a mesma aba.
+  assert.equal(ROTA_EQUIPE, "/admin/agentes?aba=aprovacoes");
   const { destinoDaRota } = await import("../../config/rotas-app.ts");
   assert.equal(destinoDaRota("/admin/agentes"), "app");
 });

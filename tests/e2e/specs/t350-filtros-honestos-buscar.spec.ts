@@ -73,8 +73,26 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
     test(`facetas com contagem, zero desabilitado e aplicar = chip — ${largura} px`, async ({ page }) => {
       test.setTimeout(150_000);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      // E105: Preço e Tipo moram só nas pílulas da linha de cima — as contagens honestas aparecem lá.
+      await page.goto(`/buscar?local=${encodeURIComponent(CIDADE)}`, { waitUntil: "domcontentloaded" });
+      await expect(async () => {
+        await page.getByTestId("pilula-preco").click({ timeout: 5_000 });
+        await expect(page.getByTestId("painel-pilula-preco")).toBeVisible({ timeout: 5_000 });
+      }).toPass({ timeout: 60_000 });
+      // E20: "Até R$ 2.500" compara o total (A = 2.300 + 300 de condomínio fica fora).
+      await expect.poll(() => n(page, "pilula-preco-2500"), { timeout: 30_000 }).toBe(2);
+      expect(await n(page, "pilula-preco-3500")).toBe(3);
+      await page.getByTestId("pilula-tipo").click();
+      // E42: tipos com contagem; os de 0 ficam desabilitados.
+      expect(await n(page, "pilula-tipo-studio")).toBe(1);
+      expect(await n(page, "pilula-tipo-apartamento")).toBe(2);
+      await expect(page.getByTestId("pilula-tipo-loft")).toBeDisabled();
+      await expect(page.getByTestId("pilula-tipo-loft-n")).toHaveText("· 0");
+      await page.keyboard.press("Escape");
       const folha = await abrirFolha(page, `/buscar?local=${encodeURIComponent(CIDADE)}`);
       await expect.poll(() => total(page), { timeout: 30_000 }).toBe(3);
+      await expect(folha.getByTestId("faceta-tipo-apartamento")).toHaveCount(0);
+      await expect(folha.getByTestId("faceta-preco-2500")).toHaveCount(0);
 
       // FILTROS-2: Wi-Fi e Cozinha equipada são garantia do padrão mínimo — linha no lugar do chip; E (em adequação) não conta.
       await expect(page.getByTestId("painel-garantia-minima")).toHaveText("Padrão mínimo Viva em todos os imóveis: internet Wi-Fi, cozinha equipada e mais 10 itens.");
@@ -82,14 +100,6 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
       await expect(page.getByTestId("faceta-comodidade-cozinha")).toHaveCount(0);
       await expect(page.getByTestId("faceta-comodidade-garagem")).toBeVisible();
       await expect(page.getByTestId("faceta-comodidade-lavar")).toBeVisible();
-      // E20: "Até R$ 2.500" compara o total (A = 2.300 + 300 de condomínio fica fora).
-      expect(await n(page, "faceta-preco-2500")).toBe(2);
-      expect(await n(page, "faceta-preco-3500")).toBe(3);
-      // E42: tipos com contagem; os de 0 ficam desabilitados.
-      expect(await n(page, "faceta-tipo-studio")).toBe(1);
-      expect(await n(page, "faceta-tipo-apartamento")).toBe(2);
-      await expect(page.getByTestId("faceta-tipo-loft")).toBeDisabled();
-      await expect(page.getByTestId("faceta-tipo-loft-n")).toHaveText("· 0");
       // E41/E43: caução e seguro-fiança com critério real, um chip só de seguro.
       expect(await n(page, "faceta-garantia-caucao")).toBe(2);
       expect(await n(page, "faceta-garantia-seguro_fianca")).toBe(1);
@@ -103,7 +113,7 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
       await expect(page.getByTestId("faceta-internet-300-n")).toHaveText("· 0");
 
       // E6: escolher um chip leva o "Mostrar N" exatamente ao número que o chip mostrava.
-      for (const id of ["faceta-tipo-apartamento", "faceta-garantia-caucao"]) {
+      for (const id of ["faceta-quartos-1", "faceta-garantia-caucao"]) {
         const esperado = await n(page, id);
         await page.getByTestId(id).click();
         await expect.poll(() => total(page)).toBe(esperado);

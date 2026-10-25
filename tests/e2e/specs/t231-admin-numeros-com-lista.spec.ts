@@ -27,7 +27,8 @@ const ids: Record<string, string | undefined> = {};
 const hoje = new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10); // dia de Brasília
 const de = new Date(Date.now() - (40 + Math.floor(Math.random() * 300)) * 86_400_000).toISOString().slice(0, 10);
 const FILTRO = `periodo=custom&de=${de}&ate=${hoje}&cidade=${encodeURIComponent(CIDADE)}`;
-const HOME = `/admin?${FILTRO}`;
+// ADMIN-4: os indicadores do período moram em "Funil e indicadores"; as filas, no topo de Pendências.
+const HOME = `/admin/funil?${FILTRO}`;
 const n = (s: string) => Number(s.replace(/\D/g, "") || "NaN");
 
 async function semRolagemLateral(page: Page) {
@@ -110,7 +111,7 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
     test(`${largura}px — todo número da home é link e a lista aberta tem a mesma contagem`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await page.goto(HOME, { waitUntil: "domcontentloaded" });
-      await expect(page.locator('[data-indicador="contratos"] [data-valor]')).toBeVisible();
+      await expect(page.locator('[data-indicador="buscas"] [data-valor]')).toBeVisible();
       await semRolagemLateral(page);
 
       // Guarda: nenhum número da home sem href (cartões, funil e filas).
@@ -137,7 +138,7 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
       };
 
       const alvos: { nome: string; valor: number; href: string; esperado?: number }[] = [];
-      for (const [chave, esperado] of [["buscas", 3], ["visualizacoes", 2], ["candidaturas", 2], ["pedidos", 1], ["contratos", 1]] as const) {
+      for (const [chave, esperado] of [["buscas", 3], ["visualizacoes", 2], ["candidaturas", 2], ["pedidos", 1]] as const) {
         const c = await cartao(chave);
         alvos.push({ nome: `cartão ${chave}`, valor: n(c.valor), href: c.href, esperado });
       }
@@ -145,6 +146,8 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
         const f = await funil(rotulo);
         alvos.push({ nome: `funil ${rotulo}`, valor: n(f.valor), href: f.href, esperado });
       }
+      await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("admin-decisoes")).toBeVisible({ timeout: 30_000 });
       for (const chave of ["candidaturas_sem_resposta_48h", "chamados_urgentes_sem_resposta", "comissoes_vencidas", "pedidos_sem_resposta_expirando"]) {
         const f = await fila(chave);
         alvos.push({ nome: `fila ${chave}`, valor: f.valor, href: f.href });

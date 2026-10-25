@@ -32,6 +32,15 @@ async function abrirFolha(page: Page) {
   return page.getByRole("dialog", { name: "Filtros" });
 }
 
+/** E105: o painel da pílula "Datas" (entrada e "datas flexíveis" moram só lá). */
+async function abrirDatas(page: Page) {
+  await expect(async () => {
+    await page.getByTestId("pilula-datas").click({ timeout: 5_000 });
+    await expect(page.getByTestId("painel-pilula-datas")).toBeVisible({ timeout: 5_000 });
+  }).toPass({ timeout: 30_000 });
+  return page.getByTestId("painel-pilula-datas");
+}
+
 test.describe("T285 — busca com datas flexíveis", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
@@ -60,20 +69,21 @@ test.describe("T285 — busca com datas flexíveis", () => {
     await page.goto(busca(`&entrada=${ENTRADA}`), { waitUntil: "domcontentloaded" });
     await expect(cards(page)).toHaveCount(1, { timeout: 20_000 });
     await expect(cards(page).first()).toHaveAttribute("data-id", ids.antes!);
+    // E105: a data (e a flexibilidade) mora só na pílula "Datas" — saiu da folha "Mais filtros".
+    const painel = await abrirDatas(page);
+    await expect(painel.getByTestId("pilula-datas-entrada")).toHaveValue(ENTRADA);
+    await expect(page.getByTestId("pilula-datas")).toContainText(`Entrada ${ENTRADA.split("-").reverse().slice(0, 2).join("/")}`);
     const folha = await abrirFolha(page);
-    await expect(folha.getByTestId("painel-datas")).toContainText(`Entrada em ${ENTRADA.split("-").reverse().join("/")}`);
-    await expect(folha.getByTestId("aplicar-filtros")).toHaveText("Mostrar 1 imóvel");
+    await expect(folha.getByTestId("painel-datas")).toHaveCount(0);
   });
 
-  test("2. 'Datas flexíveis': a folha conta 2 e a lista bate", async ({ page }) => {
+  test("2. 'Datas flexíveis' (na pílula Datas): a lista passa a 2", async ({ page }) => {
     await page.goto(busca(`&entrada=${ENTRADA}`), { waitUntil: "domcontentloaded" });
     await expect(cards(page)).toHaveCount(1, { timeout: 20_000 });
-    const folha = await abrirFolha(page);
-    await folha.getByTestId("painel-datas").getByRole("button", { name: "Datas flexíveis (até 15 dias depois)", exact: true }).click();
-    const aplicar = folha.getByTestId("aplicar-filtros");
-    await expect(aplicar).toHaveText("Mostrar 2 imóveis");
-    await folha.screenshot({ path: "tests/laboratorio/saida/t285-folha-datas-390.png" });
-    await aplicar.click();
+    // A flexibilidade vale na hora, no painel da pílula "Datas" (E105).
+    const painel = await abrirDatas(page);
+    await painel.getByTestId("pilula-datas-flexiveis").check();
+    await painel.screenshot({ path: "tests/laboratorio/saida/t285-folha-datas-390.png" });
     await expect(page).toHaveURL(/flex=1/);
     await expect(cards(page)).toHaveCount(2);
     await expect(page.locator(`[data-testid="card-resultado"][data-id="${ids.d20}"]`)).toHaveCount(0);
@@ -81,10 +91,10 @@ test.describe("T285 — busca com datas flexíveis", () => {
     expect(sobra).toBeLessThanOrEqual(1);
   });
 
-  test("3. sem data de entrada, a folha não mostra a opção", async ({ page }) => {
+  test("3. sem data de entrada, a pílula Datas não mostra a opção", async ({ page }) => {
     await page.goto(busca("&flex=1"), { waitUntil: "domcontentloaded" });
     await expect(cards(page)).toHaveCount(3, { timeout: 20_000 });
-    const folha = await abrirFolha(page);
-    await expect(folha.getByTestId("painel-datas")).toHaveCount(0);
+    const painel = await abrirDatas(page);
+    await expect(painel.getByTestId("pilula-datas-flexiveis")).toHaveCount(0);
   });
 });

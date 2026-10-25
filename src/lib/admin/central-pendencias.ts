@@ -10,6 +10,8 @@ export const FILTROS_CENTRAL = [
   { chave: "manutencao_fora_prazo", rotulo: "Manutenção fora do prazo", lado: "equipe" },
   { chave: "fotos_nivel", rotulo: "Fotos de nível para analisar", lado: "equipe" },
   { chave: "documentos_pendentes", rotulo: "Documentos para conferir", lado: "equipe" },
+  // ADMIN-2: os pedidos de revisão de avaliação (a antiga /admin/avaliacoes) viram filtro daqui.
+  { chave: "avaliacoes_contestadas", rotulo: "Avaliações contestadas", lado: "equipe" },
   { chave: "conforto_abertas", rotulo: "\"Não confere\" abertos", lado: "proprietario" },
   { chave: "adequacoes", rotulo: "Adequações vencendo ou vencidas", lado: "proprietario" },
   { chave: "confirmacoes_48h", rotulo: "Confirmações de 48 h do morador", lado: "morador" },

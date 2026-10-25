@@ -31,7 +31,9 @@ test("pílula ativa mostra o valor; inativa, o rótulo", () => {
   assert.equal(valorDaPilula("tipo", { ...f, tipo: "apartamento" }, {}), "Apartamento");
   assert.equal(valorDaPilula("nivel", { ...f, nivelMin: "conforto" }, {}), "Conforto+");
   assert.equal(valorDaPilula("nivel", { ...f, nivelMin: "premium" }, {}), "Premium");
-  assert.equal(valorDaPilula("datas", { ...f, entrada: "2026-11-05", periodo: 120 }, {}), "Entrada 05/11 · 3–4 meses");
+  // E105: o período da estadia mora só no "Mais filtros" — a pílula Datas mostra só a entrada.
+  assert.equal(valorDaPilula("datas", { ...f, entrada: "2026-11-05", periodo: 120 }, {}), "Entrada 05/11");
+  assert.equal(valorDaPilula("datas", { ...f, periodo: 120 }, {}), null);
   assert.equal(valorDaPilula("local", f, { local: "  Uberlândia " }), "Uberlândia");
   // Local é ÚNICO: com "Perto de", a mesma pílula mostra o destino (sem segundo cartão de destino na página).
   assert.equal(valorDaPilula("local", f, { local: "Uberlândia", perto: "HC-UFU" }), "Perto de HC-UFU");
@@ -77,6 +79,25 @@ test("E82-A: 'Mais filtros' conta os filtros que só existem na folha (Estadia e
   const conta = busca.slice(busca.indexOf("const secundariosAtivos"), busca.indexOf("comodidades.length;", busca.indexOf("const secundariosAtivos")));
   assert.match(conta, /\(maxPeriod \? 1 : 0\)/);
   assert.match(conta, /readyToLiveOnly/);
+});
+
+test("E105: cada filtro num lugar só — Preço, Tipo, Nível e a data nas pílulas; o resto no 'Mais filtros'", () => {
+  const folha = ler("components/busca/painel-filtros-celular.tsx");
+  const semComentario = folha.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+  for (const fora of [/Preço por mês/, /Tipo de imóvel/, /Nível a partir de/, /Entrada em/, /OPCOES_PRECO|OPCOES_TIPO|NIVEIS/]) assert.doesNotMatch(semComentario, fora, String(fora));
+  for (const fica of ["Quartos", "Estadia", "Do seu jeito", "Contrato", "Comodidades"]) assert.match(folha, new RegExp(`titulo="${fica}"`), fica);
+  // A pílula Datas não repete o período da estadia (mora na seção "Estadia" da folha).
+  assert.doesNotMatch(barra, /Período da estadia|OPCOES_ESTADIA/);
+  for (const id of ["tipo", "preco", "nivel"]) assert.match(barra, new RegExp(`aberto === "${id}"`), id);
+  // "Mais filtros (N)" conta só o que mora na folha.
+  const conta = busca.slice(busca.indexOf("const secundariosAtivos"), busca.indexOf("comodidades.length;", busca.indexOf("const secundariosAtivos")));
+  assert.doesNotMatch(conta, /typeFilter|maxPrice|nivelMin/);
+});
+
+test("E105: 'Limpar tudo' é botão de contorno, ao lado do 'Mostrar N imóveis'", () => {
+  const folha = ler("components/busca/painel-filtros-celular.tsx");
+  assert.match(folha, /data-testid="limpar-tudo"\s+className=\{buttonClasses\(\{ variant: "secondary"/);
+  assert.match(folha, /<div className="flex items-center justify-end gap-3">\s*<button[\s\S]*?Limpar tudo[\s\S]*?data-testid="aplicar-filtros"/);
 });
 
 test("E106: 'Publicar pedido' na linha da contagem, como texto secundário (o cartão do fim da lista fica)", () => {

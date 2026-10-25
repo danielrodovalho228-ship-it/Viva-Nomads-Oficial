@@ -33,7 +33,7 @@ test("ordem da barra (instantâneo): Visão geral, Pendências e os sete grupos"
     "Cidades e marketing: Cidades · Destinos · Marketing",
     "Números: Financeiro · Funil e indicadores · Eventos · Qualidade",
     "Equipe: Central de Agentes · Caixa dos Sócios",
-    "Sistema: Dados e retenção · Testes",
+    "Sistema: Chaves e integrações · Dados e retenção · Testes",
   ]);
 });
 

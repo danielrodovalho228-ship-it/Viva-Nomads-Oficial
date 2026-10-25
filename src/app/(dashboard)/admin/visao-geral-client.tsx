@@ -3,23 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FiltrosAdmin } from "@/components/admin/filtros";
-import { AvisoAdmin, ListaNumeros, NumeroHeroi, type ItemNumero } from "@/components/admin/numeros";
+import { AvisoAdmin } from "@/components/admin/numeros";
 import { Button } from "@/components/ui/button";
 import { Download, Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { hrefUsuarios } from "@/lib/admin/usuarios-lista";
 import {
   BLOCOS,
   FUNIL,
   csvVisaoGeral,
   fmtInteiro,
   fmtPct,
-  fmtReais,
   diasAteHoje,
   formatar,
   funil,
-  mrr,
-  num,
   rotuloPeriodo,
   variacao,
   type FiltroHome,
@@ -28,6 +24,9 @@ import {
   type Periodo,
 } from "@/lib/admin/visao-geral";
 import { JANELA_AGORA, janelaDias } from "@/lib/admin/indicadores";
+
+/** ADMIN-4: blocos que moram em "Funil e indicadores" (Receita → Financeiro; Operação → Central de Pendências). */
+export const BLOCOS_DO_FUNIL: readonly string[] = ["crescimento", "oferta", "demanda", "liquidez"];
 import { horaBRT, ETIQUETA_BRASILIA } from "@/lib/datas-brasilia";
 import type { VisaoGeral } from "@/lib/data/admin-visao-geral";
 
@@ -42,23 +41,19 @@ export function VisaoGeralClient({
   periodo,
   cidade,
   cidades,
-  demonstracao,
+  base = "/admin/funil",
 }: {
   dados: VisaoGeral | null;
   aviso: string | null;
   periodo: Periodo;
   cidade: string | null;
   cidades: string[];
-  /** Anúncios de exemplo: quantos existem e se aparecem na busca pública agora. */
-  demonstracao: { total: number; publicos: boolean };
+  /** ADMIN-4: a página que mostra os indicadores (os filtros voltam para ela). */
+  base?: string;
 }) {
   const filtro: FiltroHome = { inicio: periodo.inicio, fim: periodo.fim, cidade };
-  // Os cartões "Agora" que têm cidade levam o mesmo filtro para a lista (Prompt 29: número = lista).
-  const comCidade = (href: string) => (cidade ? `${href}&cidade=${encodeURIComponent(cidade)}` : href);
   const atual: Metricas = dados?.atual ?? {};
   const anterior: Metricas = dados?.anterior ?? {};
-  const agora: Metricas = dados?.agora ?? {};
-  const receita = mrr((dados?.agora?.assinaturas as Record<string, unknown> | null | undefined) ?? null);
 
   function baixarCsv() {
     const blob = new Blob(["﻿" + csvVisaoGeral(atual, anterior, periodo, cidade)], { type: "text/csv;charset=utf-8" });
@@ -70,39 +65,15 @@ export function VisaoGeralClient({
     URL.revokeObjectURL(url);
   }
 
-  // Prompt 46: UM número-herói (o que a plataforma tem no ar agora); o resto em lista com divisor fino.
-  const heroi = { rotulo: "Imóveis reais publicados agora", valor: fmtInteiro(num(agora.imoveis_ativos)), href: comCidade("/admin/imoveis?tipo=real&status=active") };
-  const agoraItens: ItemNumero[] = [
-    { rotulo: "Usuários", valor: fmtInteiro(num(agora.usuarios)), href: hrefUsuarios({}) },
-    { rotulo: `Demonstração (${demonstracao.publicos ? "aparecem na busca" : "escondidos"})`, valor: demonstracao.total, href: "/admin/imoveis?tipo=demonstracao" },
-    { rotulo: "Anúncios de teste (fora da busca)", valor: fmtInteiro(num(agora.x_imoveis_teste)), href: comCidade("/admin/imoveis?tipo=teste") },
-    { rotulo: "Rascunhos", valor: fmtInteiro(num(agora.rascunhos)), href: comCidade("/admin/imoveis?tipo=real&status=draft") },
-    { rotulo: "Donos com anúncio", valor: fmtInteiro(num(agora.proprietarios_com_anuncio)), href: hrefUsuarios({ comAnuncio: true }) },
-    { rotulo: "Pedidos ativos", valor: fmtInteiro(num(agora.pedidos_ativos)), href: comCidade("/admin/pedidos?status=ativo") },
-    { rotulo: "MRR", valor: fmtReais(receita.valor), href: "/admin/financeiro" },
-    { rotulo: "Fundadores", valor: fmtInteiro(num(agora.fundadores)), href: hrefUsuarios({ fundador: true }) },
-    { rotulo: "Atendimento: chamados abertos", valor: fmtInteiro(num(atual.x_atd_abertos_agora)), href: "/admin/atendimento?aba=fila" },
-  ].map((i) => ({ ...i, atributos: { "data-agora": i.rotulo } }));
+  // ADMIN-4: os números "Agora" moram na inicial do /admin (contagens.ts); aqui ficam os indicadores do período.
+  // A Receita mora só no Financeiro e a Operação na Central de Pendências.
+  const blocos = BLOCOS.filter((b) => BLOCOS_DO_FUNIL.includes(b.id));
 
   return (
     <>
       {aviso && <AvisoAdmin className="mb-6">{aviso}</AvisoAdmin>}
 
-      <NumeroHeroi rotulo={heroi.rotulo} valor={heroi.valor} href={heroi.href} testId="admin-heroi" />
-
-      <section aria-labelledby="agora-titulo" className="mb-8">
-        <h2 id="agora-titulo" className="mb-2 font-title text-lg font-semibold text-ink">
-          Agora
-        </h2>
-        <ListaNumeros itens={agoraItens} testId="home-agora" />
-        <p className="mt-2 text-xs text-muted">
-          MRR = assinaturas ativas × preço mensal do plano ({fmtInteiro(receita.ativas)} ativas
-          {receita.semPreco > 0 ? `; ${receita.semPreco} no Gestor, sob consulta, fora do valor` : ""}).
-          {cidade ? " Usuários, MRR e Fundadores não têm cidade: com filtro, aparecem como \"—\"." : ""}
-        </p>
-      </section>
-
-      <FiltrosAdmin base="/admin" periodo={periodo} cidade={cidade} cidades={cidades} />
+      <FiltrosAdmin base={base} periodo={periodo} cidade={cidade} cidades={cidades} />
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">
@@ -116,7 +87,7 @@ export function VisaoGeralClient({
       </div>
 
       <div className="grid gap-8">
-        {BLOCOS.map((b) => (
+        {blocos.map((b) => (
           <section key={b.id} aria-labelledby={`bloco-${b.id}`}>
             <h2 id={`bloco-${b.id}`} className="mb-2 font-title text-lg font-semibold text-ink">
               {b.titulo}

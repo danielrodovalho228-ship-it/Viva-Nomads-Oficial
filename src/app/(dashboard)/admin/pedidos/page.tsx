@@ -1,6 +1,8 @@
+import { NumeroDaFonte } from "@/components/admin/numero-da-fonte";
 import { adminListPedidos, getChaveSmsAdmin, getMetricasPedidosAdmin } from "@/lib/data/pedidos-admin";
 import { colunasPedidosAdmin } from "@/lib/data/pedidos-admin-colunas";
-import { ChaveSmsPainel } from "./chave-sms";
+import Link from "next/link";
+import { HREF_SISTEMA } from "@/config/chaves-ambiente";
 import { adminDaPagina, idsContasTeste, intervaloBRT, pedidosExpirandoSemResposta, pedidosParaMetrica } from "@/lib/data/admin-indicadores";
 import { periodoDaLista, recorteDaUrl, respostaPedidos, ROTULO_RECORTE_PEDIDOS, textoComCompativel } from "@/lib/admin/indicadores";
 import { rotuloPeriodo, somarDias } from "@/lib/admin/visao-geral";
@@ -64,7 +66,16 @@ export default async function AdminPedidosPage({ searchParams }: { searchParams:
   const listaComColunas = lista.map((x) => ({ ...x, colunas: colunas.get(String(x.id)) ?? null }));
   return (
     <>
-    {chave && <ChaveSmsPainel ligada={chave.ligada} ligadaEm={chave.ligadaEm} />}
+      <NumeroDaFonte chave="pedidos" />
+      {/* ADMIN-3: a chave SMS_ATIVO muda em Sistema; aqui, só o estado em uma linha. */}
+      {chave && (
+        <p className="mb-6 text-sm text-muted" data-testid="aviso-chave-sms">
+          SMS {chave.ligada ? "ligado" : "desligado"} ·{" "}
+          <Link href={`${HREF_SISTEMA}#chaves`} className="font-semibold text-forest underline">
+            alterar em Sistema
+          </Link>
+        </p>
+      )}
     <AdminPedidosClient
       pedidos={listaComColunas}
       metricas={metricas}

@@ -87,11 +87,7 @@ test.describe("T409 — Adendo 3 ao FILTROS-B: auditoria dos filtros (E39–E43)
     expect(await n(page, "faceta-estadia-60")).toBe(3); // C (mínimo 120) fora
     expect(await n(page, "faceta-estadia-120")).toBe(3); // D (máximo 60) fora
     expect(await n(page, "faceta-estadia-180")).toBe(3);
-    for (const tipo of ["loft", "cobertura", "casa_condominio", "flat", "quarto", "chacara"]) {
-      await expect(page.getByTestId(`faceta-tipo-${tipo}`), tipo).toBeDisabled();
-      await expect(page.getByTestId(`faceta-tipo-${tipo}-n`), tipo).toHaveText("· 0");
-    }
-    expect(await n(page, "faceta-tipo-apartamento")).toBe(2);
+    // E105: os tipos moram só na pílula "Tipo" (conferidos no fim deste teste, com a folha fechada).
     // Escolher caução leva o "Mostrar N" ao número do chip, e a lista ao mesmo número.
     await page.getByTestId("faceta-garantia-caucao").click();
     await expect.poll(() => total(page)).toBe(3);
@@ -99,6 +95,14 @@ test.describe("T409 — Adendo 3 ao FILTROS-B: auditoria dos filtros (E39–E43)
     await page.getByTestId("aplicar-filtros").click();
     await expect(cartoes(page)).toHaveCount(3, { timeout: 20_000 });
     await expect(page.locator(`[data-testid="card-resultado"][data-id="${ids.b}"]`)).toHaveCount(0);
+    // E42 na pílula "Tipo" (E105: o único lugar do tipo): os de 0 com "· 0" e desativados; Apartamento (A e D, ambos com
+    // caução) conta 2.
+    await page.getByTestId("pilula-tipo").click();
+    for (const tipo of ["loft", "cobertura", "casa_condominio", "flat", "quarto", "chacara"]) {
+      await expect(page.getByTestId(`pilula-tipo-${tipo}`), tipo).toBeDisabled();
+      await expect(page.getByTestId(`pilula-tipo-${tipo}-n`), tipo).toHaveText("· 0");
+    }
+    expect(await n(page, "pilula-tipo-apartamento")).toBe(2);
   });
 
   test("E43 (6): ?seguro=1 vira a garantia 'Seguro-fiança' — um chip só, mesmo critério", async ({ page }) => {

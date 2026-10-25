@@ -66,8 +66,14 @@ export default async function AdminQualidadePage({ searchParams }: { searchParam
                   <span className="font-semibold text-ink">{q.rotulo}</span>
                 )}
                 <p className="text-xs text-muted">Sinal: {q.sinal}.</p>
+                {/* ADMIN-6: sem medição, a linha diz o que falta gravar para medir (no lugar de um número). */}
+                {q.faltaParaMedir && (
+                  <p className="text-xs text-ink" data-testid="quebrador-falta">
+                    Para medir, falta {q.faltaParaMedir}.
+                  </p>
+                )}
               </div>
-              <span className="font-title text-lg text-ink">{q.n == null ? "sem medição" : q.n}</span>
+              <span className="font-title text-lg text-ink">{q.n == null ? "—" : q.n}</span>
             </li>
           ))}
         </ul>
