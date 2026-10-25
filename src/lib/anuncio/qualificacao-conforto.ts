@@ -177,9 +177,26 @@ export function tituloResultado(faltam: number): { titulo: string; subtitulo: st
  * O nível que o motor dá agora (decisão do Muse: o real, nunca estimado): com os 12 itens, Essencial; sem eles, ainda
  * sem nível (não publica). E os itens a MAIS do Conforto, da matriz dos níveis, para a lista "Para subir a Conforto".
  */
-export function nivelDoResultado(conforto: readonly string[]): { nivel: "Essencial" | null; paraSubir: string[] } {
-  const paraSubir = [...new Set(Object.values(MATRIZ).flatMap((a) => a.conforto as readonly ChaveNivel[]))].map((c) => itemNivel(c).rotulo);
+export function nivelDoResultado(conforto: readonly string[], respostas: Respostas = {}): { nivel: "Essencial" | null; paraSubir: string[] } {
+  const jaTem = new Set(jaTemDoConforto(respostas));
+  const paraSubir = [...new Set(Object.values(MATRIZ).flatMap((a) => a.conforto as readonly ChaveNivel[]))].filter((c) => !jaTem.has(c)).map((c) => itemNivel(c).rotulo);
   return { nivel: faltamDoEssencial(conforto).length === 0 ? "Essencial" : null, paraSubir };
+}
+
+/**
+ * E179: itens do Conforto que as respostas já mostram que o imóvel tem — saem da lista "Para subir a Conforto" (pedir o
+ * que já existe confunde). Só o que a resposta diz sem dúvida: a cozinha com micro-ondas (a opção "completa" vem acima
+ * dela na escala), ar-condicionado em todos os quartos (inclui o principal) e a máquina de lavar no imóvel. A foto na
+ * hora continua valendo no cadastro, como para todo item do nível.
+ */
+const CONFORTO_PELAS_RESPOSTAS: readonly { pergunta: string; opcoes: readonly string[]; item: ChaveNivel }[] = [
+  { pergunta: "cozinha", opcoes: ["micro", "completa"], item: "cozinha_microondas" },
+  { pergunta: "ventilacao", opcoes: ["ar"], item: "ar_quarto_principal" },
+  { pergunta: "lavanderia", opcoes: ["imovel"], item: "lavadora_no_imovel" },
+];
+
+export function jaTemDoConforto(r: Respostas): ChaveNivel[] {
+  return CONFORTO_PELAS_RESPOSTAS.filter((x) => typeof r[x.pergunta] === "string" && x.opcoes.includes(r[x.pergunta] as string)).map((x) => x.item);
 }
 
 /** Estado da Qualificação no rascunho (dados do rascunho, sem coluna nova). */
