@@ -972,9 +972,10 @@
         "t476-e136-e147-passos-3-9",
         "t477-e141-passo5-comodidades",
         "t479-e136b-calendario-pt-br",
+        "t478-e164-previa-foto-principal",
+        "t520-e134-contadores-valores-grandes",
         "t523-e133-limite-7-8-troca",
         "t524-passo8-conta-meses",
-        "t520-e134-contadores-valores-grandes",
         "t525-e161-rascunho-cheio"
       ]
     },
@@ -6080,6 +6081,20 @@
       "specs": [
         "t305-laudo-avaliacao-62b2"
       ]
+    },
+    "src/lib/vinculo/actions.ts#pedirVinculo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/vinculo/actions.ts#confirmarVinculo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     },
     "src/lib/vistoria/laudo-actions.ts#contestarLaudo": {
       "personas": [
