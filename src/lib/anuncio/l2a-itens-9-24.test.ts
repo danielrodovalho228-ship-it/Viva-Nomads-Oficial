@@ -24,7 +24,8 @@ test("9: 'Falta para publicar' só no rascunho; publicado mostra 'Para melhorar 
 test("24: rótulo do valor mensal e a linha 'No anúncio' na edição e no cadastro", () => {
   for (const f of [EDITAR, PRECO]) {
     assert.match(f, /Valor mensal \(sem condomínio e contas\)/);
-    assert.match(f, /No anúncio:/);
+    // E139: no cadastro, a linha virou a prévia com a conta aberta ("Prévia — o morador vê no anúncio").
+    assert.match(f, f === PRECO ? /o morador vê no anúncio/ : /No anúncio:/);
     assert.match(f, /\/mês tudo incluído/);
     assert.match(f, /calcularTudoIncluido\(/);
     assert.doesNotMatch(f, /label="Valor mensal \(R\$/);

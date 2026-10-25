@@ -62,7 +62,8 @@ test("#645 (ajuste do Moacir): comparativo e /precos dizem 'contrato' e 'Cauçã
   const comp = ler("components/precos/comparativo-precos.tsx");
   assert.doesNotMatch(comp, /[Rr]eserva/);
   assert.match(comp, /Contrato de \$\{COMPARE_MESES\} meses/);
-  assert.match(comp, /só quando o contrato é fechado/);
+  // E151: a linha do Passo 8 que repetia a regra saiu; "só com contrato fechado" fica na nota do simulador.
+  assert.match(ler("lib/cobranca/bolso.ts"), /A taxa só é cobrada com contrato fechado/);
   const cfg = ler("config/compare-precos.ts");
   assert.match(cfg, /"Você só paga quando o contrato é fechado"/);
   const precos = ler("app/(public)/precos/page.tsx") + ler("lib/precos-pagina.ts");
