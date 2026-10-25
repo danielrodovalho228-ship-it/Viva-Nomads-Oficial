@@ -6091,6 +6091,13 @@
       ],
       "specs": []
     },
+    "src/lib/vinculo/actions.ts#meuVinculo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/vistoria/laudo-actions.ts#contestarLaudo": {
       "personas": [
         "proprietario"
