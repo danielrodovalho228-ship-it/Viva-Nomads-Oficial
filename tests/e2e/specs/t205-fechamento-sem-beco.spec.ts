@@ -122,7 +122,9 @@ test.describe("T205 — fechamento: 'Gerar contrato' sem beco, dos dois lados at
     await ateContrato(page);
 
     // Caução FORA do 1º pagamento, mostrada ao lado, com o total antes da entrada (Daniel, 18/10).
-    await expect(page.getByTestId("entrada-primeiro-pagamento")).toContainText("3.930");
+    // PROP-2: o 1º pagamento sai dos valores reais do anúncio (sem proposta): aluguel R$ 3.200, sem consumo fixo nem
+    // preparação neste imóvel do laboratório — não mais o R$ 280 + R$ 450 fixos de antes (era 3.930).
+    await expect(page.getByTestId("entrada-primeiro-pagamento")).toContainText("3.200");
     await expect(page.getByTestId("entrada-caucao")).toContainText("devolvida no fim, conforme a conferência de saída");
     await expect(page.getByTestId("entrada-total")).toContainText("Total antes da entrada");
     await page.getByTestId("entrada-caucao").scrollIntoViewIfNeeded();

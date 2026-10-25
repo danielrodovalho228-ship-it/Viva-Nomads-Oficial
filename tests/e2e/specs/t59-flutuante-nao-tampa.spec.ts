@@ -196,10 +196,10 @@ test("Q3 — /imoveis/ube-001 a 390 px: campo de data dentro do cartão e com ex
   expect(Math.abs(cd.x - cm.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(cd.width - cm.width)).toBeLessThanOrEqual(1);
   expect(Math.abs(cd.height - cm.height)).toBeLessThanOrEqual(1);
-  const wrap = data.locator("xpath=..");
-  await expect(wrap.getByTestId("campo-data-exemplo")).toHaveText("dd/mm/aaaa");
+  // E136: no computador o campo é dd/mm/aaaa com o calendário do site (pt-BR); o exemplo é o placeholder.
+  await expect(data).toHaveAttribute("placeholder", "dd/mm/aaaa");
   await data.fill("2030-01-15");
-  await expect(wrap.getByTestId("campo-data-exemplo")).toHaveCount(0);
+  await expect(data).toHaveValue("15/01/2030");
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
   await page.screenshot({ path: "tests/laboratorio/saida/t59-q3-data-390.png" });
 });

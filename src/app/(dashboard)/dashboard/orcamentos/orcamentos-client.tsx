@@ -10,6 +10,7 @@ import { PlatformLegalNotice } from "@/components/legal-notice";
 import { FILTROS_STATUS, type StatusProposta } from "@/lib/propostas/regras";
 import type { InteressadoParaProposta, PropostaResumo } from "@/lib/data/propostas-actions";
 import { cn, dataBR, formatBRL } from "@/lib/utils";
+import { ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { StatusChip } from "@/components/propostas/status-chip";
 
 export function OrcamentosClient({ propostas, interessados }: { propostas: PropostaResumo[]; interessados: InteressadoParaProposta[] }) {
@@ -134,7 +135,10 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
                     <StatusChip status={p.status} />
                   </div>
                   <p className="mt-2 text-sm text-ink">
-                    <strong>{formatBRL(p.totalContrato)}</strong> no contrato · {formatBRL(p.valorMensal)}/mês × {p.meses}
+                    {ROTULO_MENSAL} {formatBRL(p.valorMensal)} · {ROTULO_TOTAL_MES.toLowerCase()} {formatBRL(p.totalPorMes)}
+                  </p>
+                  <p className="text-xs text-muted" data-testid="orcamento-conta">
+                    {ROTULO_TOTAL_CONTRATO}: <strong className="text-ink">{p.conta ?? formatBRL(p.totalContrato)}</strong>
                   </p>
                   <p className="text-xs text-muted">Validade: {dataBR(p.validaAte)}</p>
                 </Link>
@@ -163,7 +167,10 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
                     </td>
                     <td className="max-w-[16rem] truncate px-4 py-3 text-ink">{p.imovel}</td>
                     <td className="px-4 py-3 text-ink">{p.outraParte}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-ink">{formatBRL(p.totalContrato)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-ink" title={p.conta ?? undefined}>
+                      {formatBRL(p.totalContrato)}
+                      {p.conta && <span className="block text-xs font-normal text-muted">{p.conta}</span>}
+                    </td>
                     <td className="px-4 py-3 text-muted">{dataBR(p.validaAte)}</td>
                     <td className="px-4 py-3">
                       <StatusChip status={p.status} />

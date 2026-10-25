@@ -9,6 +9,7 @@ import { addDiasISO } from "@/lib/contrato-blocos";
 import { useDashDemo, useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PORTFOLIO } from "@/lib/demo/seed";
 import { dataBR, formatBRL } from "@/lib/utils";
+import { ROTULO_MENSAL } from "@/lib/precos";
 
 /**
  * Análise da carteira (complemento do prompt 27, item 8). A fonte é o BANCO (getCarteiraDoDono, lida no servidor e
@@ -124,7 +125,7 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
                 <th className="pb-2 font-medium">Imóvel</th>
                 <th className="pb-2 font-medium">Situação</th>
                 <th className="pb-2 font-medium">Morador</th>
-                <th className="pb-2 text-right font-medium">Valor mensal</th>
+                <th className="pb-2 text-right font-medium">{ROTULO_MENSAL}</th>
                 <th className="pb-2 font-medium">Início</th>
                 <th className="pb-2 font-medium">Fim</th>
                 <th className="pb-2 font-medium">Contrato</th>

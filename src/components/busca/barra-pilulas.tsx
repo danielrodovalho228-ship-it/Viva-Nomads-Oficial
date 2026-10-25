@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpDown, Award, CalendarDays, Home, Map as IconeMapa, MapPin, SlidersHorizontal, Wallet } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
+import { CampoData } from "@/components/ui/campo-data";
 import { OPCOES_PRECO, OPCOES_TIPO, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { ROTULO_PILULA, valorDaPilula, type IdPilula } from "@/lib/busca/pilulas";
 import { facetaUnica } from "@/lib/busca/facetas";
@@ -119,14 +120,15 @@ export function BarraPilulas(p: {
             <div className="space-y-4">
               <label className="block text-sm font-semibold text-ink">
                 Entrada a partir de
-                <input
-                  type="date"
-                  lang="pt-BR"
-                  value={f.entrada}
-                  onChange={(e) => p.aplicar({ ...f, entrada: e.target.value, datasFlexiveis: e.target.value ? f.datasFlexiveis : false })}
-                  className="mt-2 block h-11 w-full rounded-lg border border-line bg-white px-4 text-sm font-normal text-ink outline-none focus:border-ink"
-                  data-testid="pilula-datas-entrada"
-                />
+                {/* E136: o campo de data do site (no computador, o calendário em pt-BR; no celular, o do aparelho). */}
+                <span className="mt-2 block">
+                  <CampoData
+                    value={f.entrada}
+                    onChange={(e) => p.aplicar({ ...f, entrada: e.target.value, datasFlexiveis: e.target.value ? f.datasFlexiveis : false })}
+                    className="block h-11 w-full rounded-lg border border-line bg-white px-4 text-sm font-normal text-ink outline-none focus:border-ink"
+                    data-testid="pilula-datas-entrada"
+                  />
+                </span>
               </label>
               {f.entrada && (
                 <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
