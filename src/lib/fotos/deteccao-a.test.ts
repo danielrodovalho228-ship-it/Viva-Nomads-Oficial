@@ -21,15 +21,14 @@ test("'Olhando suas fotos…' à vista enquanto analisa; com erro, o bloco some 
   assert.match(SUG, /if \(!propertyId \|\| !estado\?\.ligada\) \{\s*return analisando \? <Analisando \/> : null;/);
 });
 
-test("alerta do topo: o que falta foto, com 'Enviar foto' para a lista do nível; só com a chave ligada", () => {
-  assert.match(SUG, /export function AlertaFaltaFoto/);
-  assert.match(SUG, /if \(itens\.length === 0\) return null;/);
-  assert.match(SUG, /href="#nivel-cadastro-falta"[\s\S]{0,400}Enviar foto/);
+test("E141/E142: sem o 'Falta foto de' do topo (uma cobrança só, no nível); a detecção abre o passo", () => {
+  assert.doesNotMatch(SUG, /AlertaFaltaFoto|Falta foto de/);
   const nivel = ler("components/niveis/nivel-cadastro.tsx");
   assert.match(nivel, /id="nivel-cadastro-falta"/);
-  assert.match(nivel, /g\.itens\.filter\(\(i\) => i\.prova === "foto"\)/);
+  assert.doesNotMatch(nivel, /onFaltaFoto/);
   const pagina = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
-  assert.match(pagina, /\{deteccaoLigada && <AlertaFaltaFoto itens=\{faltaFoto\} \/>\}\s*<EtapaEncontramos parte="comodidades"/);
+  assert.doesNotMatch(pagina, /AlertaFaltaFoto/);
+  assert.match(pagina, /\{step === ETAPA\.comodidades && \(\s*<div className="space-y-6">[\s\S]{0,600}<SugestoesDasFotos[\s\S]*?<EtapaEncontramos parte="comodidades"/);
 });
 
 test("comodidade achada e ainda não marcada: tracejada, com 'Confirme'; tocar marca", () => {

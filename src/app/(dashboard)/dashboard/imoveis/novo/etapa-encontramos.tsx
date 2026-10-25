@@ -62,6 +62,9 @@ export function EtapaEncontramos(p: {
   proxOsm: LugarProximo[] | null;
   proxCarregando: boolean;
   proxBuscou: boolean;
+  /** E145: de onde veio a última resposta da busca automática. */
+  proxFonte?: string | null;
+  tentarPerto?: () => void;
   medirLugar: (endereco: string) => Promise<number | null>;
   reportarLugar: ((l: LugarProximo, motivo: string) => Promise<{ ok: boolean; erro?: string }>) | null;
   proxDesmarcados: string[];
@@ -190,6 +193,8 @@ export function EtapaEncontramos(p: {
         itens={p.proxOsm}
         carregando={p.proxCarregando}
         buscou={p.proxBuscou}
+        fonte={p.proxFonte ?? null}
+        onTentarDeNovo={p.tentarPerto}
         medir={p.medirLugar}
         reportar={p.reportarLugar}
         desmarcados={p.proxDesmarcados}
