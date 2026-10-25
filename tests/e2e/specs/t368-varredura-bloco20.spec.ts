@@ -1,3 +1,4 @@
+// Rodada 19 da vigia (Pista C, 25/10, lote B): varredura completa na main com o PROP-1 (#1337), a 390 e 1280 px.
 import { randomBytes } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";

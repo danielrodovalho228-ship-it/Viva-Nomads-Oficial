@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { ANUNCIAR, contemRota, folhas, menuDoPainel, rotaAtiva } from "./menu-painel.ts";
 import { secaoDaRota } from "../lib/conta/secoes.ts";
+import { PAGINAS_BARRA_ADMIN } from "./menu-admin.ts";
 
 const base = { temImovel: false, admin: false, estadiaAtiva: false };
 const ids = (m: ReturnType<typeof menuDoPainel>) => m.map((i) => i.id);
@@ -33,17 +34,15 @@ test("seções de dono só para quem já anunciou; quem nunca anunciou não vê 
   assert.ok(!folhas(com).some((i) => /assinatura|mensalidade/i.test(i.rotulo)), "nenhum rótulo de mensalidade");
   const contratos = folhas(com.filter((i) => i.id === "contratos")).map((i) => i.rotulo);
   // Prompt 39-B1: "Recibos e notas" é subitem da área de Ganhos do dono.
-  assert.deepEqual(contratos, ["Contratos & blocos", "Caução e garantias", "Conferência de entrada", "Recibos e notas"]);
+  // PROP-1: "Conferência de entrada" saiu do menu (vai para dentro do contrato no PROP-5).
+  assert.deepEqual(contratos, ["Contratos & blocos", "Caução e garantias", "Recibos e notas"]);
   assert.equal(ANUNCIAR.href, "/dashboard/imoveis/novo");
 });
 
-test("Administração separada, só para admin, com itens dentro de itens", () => {
+test("ADMIN-1: em /dashboard o admin vê UM item 'Painel admin' (a barra do admin mora em menu-admin.ts)", () => {
   assert.ok(!ids(menuDoPainel(base)).includes("admin"));
   const adm = menuDoPainel({ ...base, admin: true }).find((i) => i.id === "admin")!;
-  assert.ok(adm.filhos!.some((f) => f.filhos && f.filhos.length > 1), "subgrupos (cascata de 3 níveis)");
-  const hrefs = folhas([adm]).map((i) => i.href);
-  for (const h of ["/admin", "/admin/pedidos", "/admin/ajuda-publicacao", "/admin/documentos", "/admin/socios", "/admin/parceiros", "/admin/fotografos", "/admin/atendimento", "/admin/financeiro", "/admin/marketing", "/admin/agentes"])
-    assert.ok(hrefs.includes(h), h);
+  assert.deepEqual({ rotulo: adm.rotulo, href: adm.href, filhos: adm.filhos }, { rotulo: "Painel admin", href: "/admin", filhos: undefined });
 });
 
 test("estadia ativa revela Solicitações dentro de Minha moradia", () => {
@@ -51,10 +50,10 @@ test("estadia ativa revela Solicitações dentro de Minha moradia", () => {
   assert.ok(folhas(m).some((i) => i.href === "/dashboard/solicitacoes"));
 });
 
-test("ordem 521c5af7: Serviços só para quem tem locação ativa; o admin vê Serviços do morador", () => {
+test("ordem 521c5af7: Serviços só para quem tem locação ativa; o admin vê Serviços do morador (na barra do admin)", () => {
   assert.ok(!folhas(menuDoPainel({ ...base, estadiaAtiva: false })).some((i) => i.href === "/dashboard/servicos"));
   assert.ok(folhas(menuDoPainel({ ...base, estadiaAtiva: true })).some((i) => i.href === "/dashboard/servicos"));
-  assert.ok(folhas(menuDoPainel({ ...base, admin: true })).some((i) => i.href === "/admin/servicos"));
+  assert.ok(PAGINAS_BARRA_ADMIN.some((i) => i.href === "/admin/servicos"));
 });
 
 test("regra 0.5: todo link é rota interna do painel (fora a busca pública) e a tela existe", () => {

@@ -44,7 +44,7 @@ const CONVERSA_ACAO = ler("src/lib/vistoria/conversa-actions.ts");
 const AVALIADOR = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx");
 const ADMIN = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
 const PUBLICA = ler("src/app/(public)/avaliadores/[numero]/page.tsx");
-const MENU = ler("src/config/menu-por-papel.ts");
+const MENU = ler("src/config/menu-admin.ts");
 const primarios = (f: string) => (semComentarios(f).match(/<Button(?![^>]*variant=)[^>]*>/g) ?? []).length + (semComentarios(f).match(/variant="primary"/g) ?? []).length;
 
 test("textos exatos: frase do pagamento, as duas rotas e o título do bloco", () => {
@@ -165,7 +165,7 @@ test("agenda do avaliador: contador das 24 h, visitas da semana e hora sem segun
 
 test("admin: decisões primeiro, a aprovação única do 62-B3 e o rodízio com o motivo", () => {
   assert.equal(TITULO_ADMIN, "Avaliações do imóvel");
-  assert.match(MENU, /rotulo: "Avaliações do imóvel", icone: "parceiros", href: "\/admin\/avaliadores"/);
+  assert.match(MENU, /folha\("admin-avaliadores", "Avaliações do imóvel", "\/admin\/avaliadores", "parceiros"\)/);
   assert.equal(rotuloDecisao("solicitado", "em_teste"), "Aprovar para teste");
   assert.equal(rotuloDecisao("em_teste", "ativo"), "Aprovar o teste (ativar)");
   assert.equal(rotuloDecisao("suspenso", "ativo"), "Reativar");

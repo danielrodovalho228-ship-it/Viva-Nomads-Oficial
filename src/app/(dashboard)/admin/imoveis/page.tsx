@@ -12,8 +12,9 @@ import { showDemoProperties } from "@/lib/data/properties";
 import { TIER_META, type QualityTier } from "@/lib/listing";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { PausarImovel } from "./pausar";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Imóveis — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/imoveis"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const STATUS: Record<string, string> = { active: "Ativo", draft: "Rascunho", paused: "Pausado" };
@@ -74,7 +75,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
   return (
     <div data-testid="admin-imoveis">
       <PageTitle
-        title="Imóveis"
+        title={rotuloDoAdmin("/admin/imoveis")}
         subtitle={`${tipo ? ROTULO_TIPO_IMOVEL[tipo] : "Todos os tipos"}${status ? ` · ${STATUS[status] ?? status}` : ""}${p ? ` · criados ${rotuloPeriodo(p.inicio, p.fim)}` : ""} · demonstração ${demos ? "aparece na busca" : "escondida"}`}
         action={
           <Link href="/admin" className="text-sm text-forest underline">

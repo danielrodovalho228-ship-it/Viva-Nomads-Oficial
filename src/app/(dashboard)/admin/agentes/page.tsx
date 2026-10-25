@@ -5,8 +5,9 @@ import { dispararEncaminhamentosDaSessao } from "@/lib/agentes/servidor";
 import { CentralAgentes } from "./central-client";
 import { adminDaPagina, contadoresAgentes } from "@/lib/data/admin-indicadores";
 import { AGENTES_DEFINICOES } from "@/lib/admin/indicadores";
+import { tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata: Metadata = { title: "Agentes" };
+export const metadata: Metadata = { title: tituloDoAdmin("/admin/agentes") };
 
 const jakarta = localFont({ variable: "--font-jakarta", src: [
     { path: "../../../fonts/plus-jakarta-sans-latin-400-normal.woff2", weight: "400", style: "normal" },

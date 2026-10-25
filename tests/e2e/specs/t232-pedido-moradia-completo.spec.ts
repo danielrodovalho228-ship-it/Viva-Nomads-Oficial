@@ -270,8 +270,11 @@ test.describe("T232 — pedido de moradia completo", () => {
       await expect(cartao).toContainText("Não achou? Publique um pedido e os proprietários vêm até você");
       const href = (await cartao.locator("a").getAttribute("href")) ?? "";
       expect(new URLSearchParams(href.split("?")[1] ?? "").get("cidade")).toBe("Patos de Minas");
-      // E82-A: "Publicar pedido" saiu do topo e da linha da contagem; na busca, a porta é o cartão (ou o estado vazio).
       await expect(cartao.locator("a")).toBeVisible();
+      // E106: "Publicar pedido" também na linha da contagem, como texto (entrada secundária), com a mesma cidade.
+      const linha = page.getByTestId("linha-publicar-pedido");
+      await expect(linha).toHaveText("Publicar pedido");
+      expect(new URLSearchParams(((await linha.getAttribute("href")) ?? "").split("?")[1] ?? "").get("cidade")).toBe("Patos de Minas");
       await expect(page.locator('[data-testid="card-resultado"]')).toHaveCount(1);
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t232-busca-${largura}.png`, fullPage: true });

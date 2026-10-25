@@ -7,8 +7,9 @@ import { periodoDaLista } from "@/lib/admin/indicadores";
 import { rotuloPeriodo, somarDias } from "@/lib/admin/visao-geral";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { hojeBR } from "@/lib/utils";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Candidaturas — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/candidaturas"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const FILTROS = {
@@ -48,7 +49,7 @@ export default async function AdminCandidaturasPage({ searchParams }: { searchPa
   return (
     <div data-testid="admin-candidaturas">
       <PageTitle
-        title="Candidaturas"
+        title={rotuloDoAdmin("/admin/candidaturas")}
         subtitle={subtitulo}
         action={
           <Link href="/admin" className="text-sm text-forest underline">

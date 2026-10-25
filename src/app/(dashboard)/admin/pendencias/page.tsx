@@ -10,8 +10,9 @@ import { DecidirContestacao } from "@/components/admin/decidir-contestacao";
 import { AnalisarFotoNivel } from "@/components/admin/analisar-foto-nivel";
 import { RodarPrazos } from "@/components/conforto/rodar-prazos";
 import { integracoesSimuladas } from "@/lib/integracoes";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Central de pendências — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/pendencias"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const ROTULO_GRAVIDADE = { alta: "Alta", media: "Média", baixa: "Baixa" } as const;
@@ -38,7 +39,7 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
   return (
     <div data-testid="central-pendencias">
       <PageTitle
-        title="Central de pendências"
+        title={rotuloDoAdmin("/admin/pendencias")}
         subtitle="Uma fila só. Gravidade, prazo e idade de cada item; a ação em um toque. Contas de teste à parte."
         action={
           <Link href="/admin" className="text-sm text-forest underline">

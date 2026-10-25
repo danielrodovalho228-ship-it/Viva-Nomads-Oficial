@@ -44,7 +44,7 @@ import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoDocValido } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS } from "@/lib/listing";
-import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
+import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
 import type { Property, Proximity } from "@/lib/types";
@@ -338,6 +338,9 @@ export default function NewPropertyPage() {
     if (item.key === "conforto") setTimeout(() => document.querySelector('[data-testid="conforto-checklist"]')?.scrollIntoView({ block: "center" }), 50);
     // 65-B: "Para melhorar: Vídeo do imóvel" leva ao bloco de vídeo do passo Fotos.
     if (item.key === "video") setTimeout(() => document.getElementById(ANCORA_VIDEO_ASSISTENTE)?.scrollIntoView({ block: "start" }), 400);
+    // E112: documento e quem opera moram no "Antes de publicar" desta mesma Revisão — "Resolver" desce até lá.
+    if (item.key === "documento" || item.key === "sublocacao")
+      setTimeout(() => document.querySelector(item.key === "documento" ? '[data-testid="documento-vinculo"]' : '[data-testid="antes-de-publicar"]')?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
   // "Importar anúncio" (t115): preenche o que veio do texto colado e leva direto à etapa 3, com tudo preenchido.
   function aplicarImportado(a: AnuncioOrganizado) {
@@ -1136,9 +1139,12 @@ export default function NewPropertyPage() {
       setFurnished(d.mobiliado);
       marcados.push("mobiliado");
     }
-    if (d.comodidades?.length) {
-      const novas = d.comodidades.filter((k) => !amenityKeys[k]);
-      setAmenityKeys((a) => ({ ...a, ...Object.fromEntries(d.comodidades.map((k) => [k, true])) }));
+    // E111-A: a IA não sugere comodidade que o tipo do imóvel não mostra (ex.: elevador numa chácara).
+    const tipoEfetivo = marcados.includes("tipo") ? d.tipo : propertyType;
+    const comodidadesDoTipoIa = (d.comodidades ?? []).filter((k) => comodidadeValeParaTipo(k, tipoEfetivo));
+    if (comodidadesDoTipoIa.length) {
+      const novas = comodidadesDoTipoIa.filter((k) => !amenityKeys[k]);
+      setAmenityKeys((a) => ({ ...a, ...Object.fromEntries(comodidadesDoTipoIa.map((k) => [k, true])) }));
       setComodidadesSugeridas(novas);
     }
     if (d.titulo && !title.trim()) {
@@ -1476,6 +1482,7 @@ export default function NewPropertyPage() {
                 <SugestoesDasFotos
                   propertyId={imovelId}
                   comodidadesMarcadas={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
+                  tipoImovel={propertyType}
                   onComodidade={(k) => setAmenityKeys((a) => ({ ...a, [k]: true }))}
                   onSugeridas={setSugeridasFotos}
                   onComodidadesSugeridas={setComodidadesDetectadas}

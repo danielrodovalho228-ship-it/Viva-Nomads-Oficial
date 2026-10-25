@@ -1,8 +1,9 @@
 import { filaAtendimento, listarMacros, metricasAtendimento } from "@/lib/data/atendimento-actions";
 import { AtendimentoClient } from "./atendimento-client";
 import { adminDaPagina } from "@/lib/data/admin-indicadores";
+import { tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Atendimento — Admin" };
+export const metadata = { title: tituloDoAdmin("/admin/atendimento") };
 
 /** Admin → Atendimento: fila com relógio de prazo, aprovação, métricas e respostas prontas. */
 export default async function AdminAtendimentoPage({

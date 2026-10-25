@@ -138,9 +138,10 @@ export interface LinhaEmailTeste {
   destinatario_mascarado: string;
 }
 
-/** A linha como a tela mostra: assunto, corpo e destinatário passam pela máscara (defesa em profundidade). */
+/** A linha como a tela mostra: e-mails mascarados e links com token removidos de novo (defesa em profundidade). */
 export function linhaParaTela<T extends LinhaEmailTeste>(l: T): T {
-  return { ...l, assunto: mascararEmailsNoTexto(l.assunto), corpo: mascararEmailsNoTexto(l.corpo), destinatario_mascarado: mascararEmailsNoTexto(l.destinatario_mascarado) };
+  const limpa = (s: string) => mascararEmailsNoTexto(semLinksComToken(s));
+  return { ...l, assunto: limpa(l.assunto), corpo: limpa(l.corpo), destinatario_mascarado: mascararEmailsNoTexto(l.destinatario_mascarado) };
 }
 
 export interface OpcoesFiltroQa {

@@ -40,6 +40,10 @@ test("a linha da tela passa assunto, corpo e destinatário pela máscara", () =>
   assert.equal(l.assunto, "Para j•••@ex.com");
   assert.equal(l.corpo, "Oi m•••@ex.com");
   assert.equal(l.destinatario_mascarado, "z•••@lab.vivanomads.test");
+  // Linha antiga gravada antes do filtro: link com token nunca chega à tela.
+  const antiga = linhaParaTela({ id: "2", criado_em: "2026-10-25T12:00:00Z", evento: "x", assunto: "a", corpo: "Entre: https://vivanomads.com.br/auth/confirm?token=abc123&type=magic", destinatario_mascarado: "•••" });
+  assert.doesNotMatch(antiga.corpo, /token=|abc123/);
+  assert.match(antiga.corpo, /\[link com token removido\]/);
 });
 
 test("opções dos filtros saem das próprias linhas (sem outra tabela), conta pelo destinatário mascarado", () => {

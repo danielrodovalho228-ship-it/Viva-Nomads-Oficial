@@ -7,8 +7,9 @@ import { EVENTOS_HOME, periodoDaLista, type TipoEventoHome } from "@/lib/admin/i
 import { rotuloPeriodo, somarDias } from "@/lib/admin/visao-geral";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { hojeBR } from "@/lib/utils";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Relatório de eventos — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/eventos"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 /**
@@ -36,8 +37,8 @@ export default async function AdminEventosPage({ searchParams }: { searchParams:
   return (
     <div data-testid="admin-eventos">
       <PageTitle
-        title={`Relatório: ${EVENTOS_HOME[tipo]}`}
-        subtitle={`${rotuloPeriodo(p.inicio, p.fim)}${cidade ? ` · ${cidade}` : ""} · eventos anônimos, contas de teste fora`}
+        title={rotuloDoAdmin("/admin/eventos")}
+        subtitle={`Relatório: ${EVENTOS_HOME[tipo]} · ${rotuloPeriodo(p.inicio, p.fim)}${cidade ? ` · ${cidade}` : ""} · eventos anônimos, contas de teste fora`}
         action={
           <Link href="/admin" className="text-sm text-forest underline">
             Voltar à visão geral

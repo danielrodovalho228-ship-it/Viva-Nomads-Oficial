@@ -9,6 +9,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { BUCKET_CAIXA, LIMITE_BYTES, LIMITE_FALTA, LIMITE_TEXTO, ROTULO_EXTRACAO, ROTULO_STATUS, mimeAceito, nomeSeguro, podeAceitar } from "@/lib/socios/caixa";
 import { enviarParaCaixa, relerArquivo, responderAceite, type ItemCaixa } from "@/lib/socios/caixa-actions";
+import { rotuloDoAdmin } from "@/config/menu-admin";
 
 const COR_STATUS: Record<ItemCaixa["status"], string> = {
   novo: "border border-line bg-white text-forest",
@@ -162,7 +163,7 @@ export function CaixaSociosClient({ itens, aviso, uid, transcricaoLigada }: { it
 
   return (
     <>
-      <PageTitle title="Caixa dos Sócios" subtitle="Mande texto, áudio, documento ou print. A equipe lê, distribui e responde aqui." />
+      <PageTitle title={rotuloDoAdmin("/admin/socios")} subtitle="Mande texto, áudio, documento ou print. A equipe lê, distribui e responde aqui." />
 
       {aviso && <p role="alert" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">{aviso}</p>}
 

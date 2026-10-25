@@ -24,6 +24,7 @@ import {
 } from "@/lib/admin/indicadores";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import type { ContratoLinhaAdmin } from "@/lib/data/admin-indicadores";
+import { rotuloDoAdmin } from "@/config/menu-admin";
 
 /**
  * /admin/financeiro: receita recorrente (MRR/ARR/churn/ARPU/LTV), o que entrou
@@ -70,7 +71,7 @@ export function FinanceiroClient({
 
   return (
     <BaseDaPagina.Provider value={ROTULO_RECORTE[recorte]}>
-      <PageTitle title="Financeiro" subtitle="Receita recorrente, o que entrou, taxas de serviço e retorno do marketing." />
+      <PageTitle title={rotuloDoAdmin("/admin/financeiro")} subtitle="Receita recorrente, o que entrou, taxas de serviço e retorno do marketing." />
       <FiltrosAdmin base="/admin/financeiro" periodo={periodo} cidade={cidade} cidades={cidades} manter={{ tipo: recorte === "real" ? null : recorte }} />
       <form method="get" action="/admin/financeiro" className="mb-6 flex flex-wrap items-end gap-2" data-testid="financeiro-recorte">
         <input type="hidden" name="periodo" value={periodo.id} />
