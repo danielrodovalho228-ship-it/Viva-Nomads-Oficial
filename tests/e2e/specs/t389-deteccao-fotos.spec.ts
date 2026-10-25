@@ -129,7 +129,9 @@ test.describe("T389 — DETECTA-B: sugestões a partir das fotos", () => {
     await passo(page);
     const linha = page.getByTestId("deteccao-sugestao-cozinha_microondas");
     await expect(linha.getByTestId("deteccao-texto-cozinha_microondas")).toHaveText("Parece que você tem isto: fotografe agora para comprovar", { timeout: 30_000 });
-    await expect(linha.getByTestId("deteccao-referencia-cozinha_microondas")).toHaveText("Esta foto é do anúncio e não serve de prova");
+    // E142: a explicação vem uma vez, no topo do bloco; cada sugestão diz de onde veio.
+    await expect(page.getByTestId("deteccao-referencia")).toHaveText("As fotos do anúncio servem de pista, não de prova: para subir de nível, a foto de cada item é feita na hora.");
+    await expect(linha.getByTestId("deteccao-origem-cozinha_microondas")).toHaveText("Da sua galeria");
     await expect(linha.getByTestId("deteccao-confirmar-cozinha_microondas")).toHaveCount(0);
     const botao = linha.getByTestId("deteccao-fotografar-cozinha_microondas-botao");
     await expect(botao).toHaveText("Fotografar pelo celular");

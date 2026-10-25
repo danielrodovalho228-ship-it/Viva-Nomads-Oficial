@@ -35,6 +35,7 @@ import {
   Handshake,
   MapPin,
   Video,
+  Award,
 } from "lucide-react";
 import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import { NEGOCIACAO_PADRAO, ITENS_NEGOCIAVEIS, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
@@ -60,6 +61,9 @@ import { calcularTudoIncluido } from "@/lib/precos";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { MedirInternet } from "@/components/anuncio/medir-internet";
 import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
+import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
+import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
+import { ANCORA_NIVEL_EDICAO } from "@/lib/niveis/destino-nivel";
 
 const MIN_DESC = 60;
 
@@ -704,6 +708,10 @@ export function EditarImovelClient({
           </div>
         </Section>
 
+        {/* E143: o nível do anúncio publicado fica na própria edição (a página antiga segue só para a captura no celular e a
+            avaliação). Cada item grava sozinho: a seção não tem "Salvar seção". */}
+        {!demo && <SecaoNivel propertyId={property.id} />}
+
         {/* Regras da casa */}
         <Section
           icon={ScrollText}
@@ -868,7 +876,8 @@ function Section({
   children: React.ReactNode;
   saving: boolean;
   saved: boolean;
-  onSave: () => void;
+  /** Sem onSave, a seção não tem "Salvar seção" (o que está dentro grava sozinho). */
+  onSave?: () => void;
 }) {
   const [aberta, setAberta] = useState<boolean | null>(null);
   const hash = useSyncExternalStore(assinarHash, () => window.location.hash, () => "");
@@ -896,21 +905,33 @@ function Section({
       {open && (
         <div className="border-t border-sage-200 px-4 py-4">
           {children}
-          <div className="mt-4 flex items-center justify-end gap-3">
-            {saved && <span className="text-sm text-forest">Alterações salvas.</span>}
-            <Button variant="gold" size="sm" onClick={onSave} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Salvando…
-                </>
-              ) : (
-                "Salvar seção"
-              )}
-            </Button>
-          </div>
+          {onSave && (
+            <div className="mt-4 flex items-center justify-end gap-3">
+              {saved && <span className="text-sm text-forest">Alterações salvas.</span>}
+              <Button variant="gold" size="sm" onClick={onSave} disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Salvando…
+                  </>
+                ) : (
+                  "Salvar seção"
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </section>
+  );
+}
+
+/** E143: "Nível do anúncio" no editor — o mesmo bloco do Passo 5 (nível, subir de nível com foto na hora, ruído e extras). */
+function SecaoNivel({ propertyId }: { propertyId: string }) {
+  const conf = useConfortoSalvo(propertyId);
+  return (
+    <Section icon={Award} title="Nível do anúncio" summary="Essencial, Conforto ou Premium" testid="secao-nivel" ancora={ANCORA_NIVEL_EDICAO} saving={false} saved={false}>
+      {conf.carregado ? <NivelNoCadastro propertyId={propertyId} conforto={conf.marcados} /> : <p className="text-sm text-muted">Carregando…</p>}
+    </Section>
   );
 }
 

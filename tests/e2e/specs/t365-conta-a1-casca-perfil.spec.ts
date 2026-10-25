@@ -15,7 +15,8 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
  * Prints: tests/laboratorio/saida/t365-<tela>-<largura>.png.
  */
 const SAIDA = "tests/laboratorio/saida";
-const AREIA = "rgb(247, 242, 234)";
+// E166: o fundo da Conta é o clean do Início do proprietário (antes, areia #f7f2ea).
+const AREIA = "rgb(247, 247, 247)";
 // NAV-A (24/10): "Como você usa a Viva" (papeis) logo depois do Perfil.
 const ORDEM = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"];
 

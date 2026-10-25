@@ -88,9 +88,40 @@ export function corpoComCabecalho(texto: string, p: { remetente?: string; imagem
   return linhas.length ? `${linhas.join("\n")}\n\n${texto}` : texto;
 }
 
-/** Links com token (exclusão de conta, recuperação…) nunca vão para a caixa: viram "[link com token removido]". */
+/** Links absolutos (http/https) ou caminhos do site ("/auth/confirm?…") que trazem query ou fragmento. */
+const LINK_COM_PARAMETROS = /https?:\/\/[^\s<>"'`]+|(?<![\w/:.])\/[\w\-./~%]*[?#][^\s<>"'`]*/gi;
+/** Rotas de entrada, confirmação e recuperação: com qualquer parâmetro, o link inteiro sai (E163). */
+const ROTA_DE_ACESSO = /\/(?:auth|login|entrar|confirm\w*|verify|verificar|callback|magic\w*|reset\w*|recover\w*|recuperar\w*|redefinir\w*|senha)(?:[/?#]|$)/i;
+/** Nome de parâmetro que carrega credencial, hoje ou no futuro (token_hash, tokenHash, access_token, code, otp…). */
+const PARAMETRO_DE_CREDENCIAL = /^(?:t|k|h|sig)$|token|hash|code|codigo|otp|secret|segredo|senha|password|key|chave|sig(?:nature)?|jwt|session|sessao|auth|access|refresh|nonce|ticket/i;
+
+function temCredencial(link: string): boolean {
+  const corte = link.search(/[?#]/);
+  if (corte < 0) return false;
+  if (ROTA_DE_ACESSO.test(link.slice(0, corte + 1))) return true;
+  return link
+    .slice(corte + 1)
+    .split(/[?#&;]/)
+    .some((par) => {
+      const nome = par.split("=")[0];
+      let decodificado = nome;
+      try {
+        decodificado = decodeURIComponent(nome);
+      } catch {
+        /* nome malformado: avalia como veio */
+      }
+      return PARAMETRO_DE_CREDENCIAL.test(decodificado);
+    });
+}
+
+/**
+ * Nenhum link com token/credencial vai para a caixa de QA (E163): vira "[link com token removido]". Sai o link inteiro
+ * quando (a) é rota de entrada/confirmação/recuperação com qualquer parâmetro (ex.: /auth/confirm?token_hash=…) ou
+ * (b) qualquer parâmetro, na query ou no fragmento, tem nome de credencial (token, token_hash, tokenHash, code, otp…).
+ * Vale para link absoluto e para caminho do site.
+ */
 export function semLinksComToken(texto: string): string {
-  return texto.replace(/https?:\/\/\S*[?&](?:token|code|codigo|access_token|t)=\S*/gi, "[link com token removido]");
+  return texto.replace(LINK_COM_PARAMETROS, (link) => (temCredencial(link) ? "[link com token removido]" : link));
 }
 
 /**
