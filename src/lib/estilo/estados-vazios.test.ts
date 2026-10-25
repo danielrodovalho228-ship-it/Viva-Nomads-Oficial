@@ -28,7 +28,6 @@ const TSX = arquivos(SRC).map((p) => ({ rel: relative(SRC, p), src: readFileSync
 const SPINNER_DE_ACAO = new Set([
   "components/ajuda/viva-chat.tsx", // "A Viva está escrevendo…"
   "app/(dashboard)/dashboard/imoveis/novo/cartao-ia.tsx", // a IA preenchendo o anúncio depois do clique
-  "app/(dashboard)/dashboard/imoveis/novo/barra-fotos.tsx", // envio das fotos escolhidas
   "app/(dashboard)/dashboard/imoveis/novo/etapa-fotos.tsx", // envio das fotos escolhidas
   "components/photo-uploader.tsx", // miniatura da foto sendo enviada
 ]);

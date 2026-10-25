@@ -19,7 +19,7 @@ export interface PrimarioRodape {
  * CADASTRO-MOLDURA (E89): o rodapé é do FLUXO e é igual nos passos 1 a 10 — "Passo N de 10" com a barra de progresso,
  * "Voltar" à esquerda (secundário; não existe no Passo 1) e um só primário à direita ("Continuar"; no Passo 10,
  * "Publicar anúncio"). Fica preso no fim da tela na largura toda (fixed); um espaçador da mesma altura no fim da página
- * reserva o lugar dele, então nunca cobre o conteúdo. No celular, sobe acima da barra das fotos (--altura-barra-fotos).
+ * reserva o lugar dele, então nunca cobre o conteúdo.
  */
 export function RodapeAssistente(p: { pos: number; total: number; onVoltar: (() => void) | null; primario: PrimarioRodape }) {
   const pct = progressoPasso(p.pos, p.total);
