@@ -98,6 +98,8 @@ import { tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
 import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
 import { AntesDePublicar, AtalhosCadastro, EtapaOndeFica } from "./etapa-onde-fica";
+import { MatriculaNoInicio } from "./matricula-no-inicio";
+import { camposDaMatriculaNoInicio, linhaDocumentoDoInicio, resumoDoPreenchimento } from "@/lib/documento/matricula-no-inicio";
 import { buscarCep, formatarCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
 import { aplicarResultadoCep, type CampoEndereco } from "@/lib/cep/aplicar";
 import { EtapaFotos, FOTOS_REORGANIZAR } from "./etapa-fotos";
@@ -149,6 +151,9 @@ export default function NewPropertyPage() {
   // Prompt 19: campos preenchidos pela matrícula (etiqueta "veio da matrícula") e o endereço dela, quando ≠ do CEP.
   const [daMatricula, setDaMatricula] = useState<Set<string>>(() => new Set());
   const [enderecoMatricula, setEnderecoMatricula] = useState<PreenchimentoMatricula["endereco"] | null>(null);
+  // E149-A: "Comece pela matrícula" no Passo 1 (a folha) e se o documento já foi enviado lá (o Passo 10 não pede de novo).
+  const [matriculaInicioAberta, setMatriculaInicioAberta] = useState(false);
+  const [documentoNoInicio, setDocumentoNoInicio] = useState(false);
   const [step, setStep] = useState<number>(ORDEM_ETAPAS[0]);
   const pos = step;
   // Etapa mais avançada já visitada (bug 13 da L2): guardada no rascunho.
@@ -826,6 +831,8 @@ export default function NewPropertyPage() {
       const salvas = declaracoesDoRascunho(d.declaracoesPasso10);
       if (declaracoesRespondidas(salvas)) setDeclaracoes(salvas);
     }
+    // E149-A: o documento enviado no começo do cadastro continua "enviado no início" no Passo 10 depois de recarregar.
+    if (d.documentoNoInicio === true) setDocumentoNoInicio(true);
     // Rascunho das ordens antigas (7 etapas) abre na primeira etapa ainda incompleta.
     setStep(etapaDoRascunho(d));
     setEtapaMax(posMaxDoRascunho(d));
@@ -997,6 +1004,7 @@ export default function NewPropertyPage() {
     qual,
     qualificacaoConforto: qualConf,
     declaracoesPasso10: declaracoes,
+    documentoNoInicio,
     aceiteIa: aceiteParaRascunho(aceiteValido, title, description),
     photos: photos.filter((p) => p.url && !p.url.startsWith("blob:")),
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
@@ -1139,6 +1147,41 @@ export default function NewPropertyPage() {
     }
     setDaMatricula(marcados);
     setEnderecoMatricula(m.avisos.some((a) => a.codigo === "endereco_diferente") ? p.endereco : null);
+  }
+
+  /**
+   * E149-A: a matrícula lida no início preenche o endereço (Passo 3) e área, vagas e unidade (Passo 4), com a etiqueta
+   * "veio da matrícula", só nos campos ainda vazios. Devolve o resumo para a folha.
+   */
+  function aplicarMatriculaNoInicio(m: InfoMatricula): string {
+    const p = m.preenchimento;
+    if (!p) return "";
+    const campos = camposDaMatriculaNoInicio(p, { cep, rua: street, numero, bairro: neighborhood, areaM2, vagas: parkingSpots, complemento });
+    const marcados = new Set(daMatricula);
+    if (campos.includes("endereco")) {
+      const e = p.endereco;
+      if (e.cep) setCep(formatarCep(e.cep));
+      if (e.rua) setStreet(e.rua);
+      if (e.numero) setNumero(e.numero.slice(0, 20));
+      if (e.bairro && bairroAceitavel(e.bairro, e.cidade ?? city)) setNeighborhood(bairroAceitavel(e.bairro, e.cidade ?? city));
+      if (e.cidade) setCity(e.cidade);
+      if (e.uf) setUf(e.uf.slice(0, 2));
+      marcados.add("endereco");
+    }
+    if (campos.includes("area") && p.areaM2) {
+      setAreaM2(String(p.areaM2));
+      marcados.add("area");
+    }
+    if (campos.includes("vagas") && p.vagas != null) {
+      setParkingSpots(String(p.vagas));
+      marcados.add("vagas");
+    }
+    if (campos.includes("complemento") && p.unidade) {
+      setComplemento(p.unidade.slice(0, 60));
+      marcados.add("complemento");
+    }
+    setDaMatricula(marcados);
+    return resumoDoPreenchimento(campos);
   }
 
   function usarEnderecoMatricula(usar: boolean) {
@@ -1658,7 +1701,24 @@ export default function NewPropertyPage() {
             {step === ETAPA.tipo && (
               <div className="space-y-6">
                 <EtapaTipo tipo={propertyType} onTipo={camposImovel.setPropertyType} sugerido={camposImovel.tipoSugerido} />
-                {!editingId && <AtalhosCadastro aplicarImportado={aplicarImportado} />}
+                {!editingId && <AtalhosCadastro aplicarImportado={aplicarImportado} onComecePelaMatricula={() => setMatriculaInicioAberta(true)} />}
+                {matriculaInicioAberta && (
+                  <MatriculaNoInicio
+                    imovelId={imovelId}
+                    estado={docEstado}
+                    motivos={docMotivos}
+                    onResultado={(e, m) => {
+                      setDocEstado(e);
+                      setDocMotivos(m);
+                      setDocStatus(e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none");
+                      if (e !== "nenhum") setDocumentoNoInicio(true);
+                    }}
+                    onMatricula={aplicarMatriculaNoInicio}
+                    operacao={ownershipType}
+                    onOperacao={setOwnershipType}
+                    onFechar={() => setMatriculaInicioAberta(false)}
+                  />
+                )}
               </div>
             )}
 
@@ -1822,6 +1882,7 @@ export default function NewPropertyPage() {
                   }}
                   onMatricula={aplicarMatricula}
                   enderecoSalvo={enderecoSalvo}
+                  linhaDocumentoInicio={documentoNoInicio ? linhaDocumentoDoInicio(docEstado) : null}
                   declaracoes={declaracoes}
                   setDeclaracoes={setDeclaracoes}
                   emCondominio={tipoEmCondominio(propertyType)}
