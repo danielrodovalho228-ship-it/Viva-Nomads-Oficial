@@ -7,6 +7,7 @@ import { sendEmail } from "@/lib/notifications/email";
 import { emailCodigoVinculo } from "@/lib/notifications/montar-email";
 import { SITE_URL } from "@/lib/site";
 import { dominioCorporativo } from "./dominio-corporativo";
+import { MSG_DOMINIO_RECUSADO, MSG_MUITOS_PEDIDOS } from "./textos";
 import { conferirCodigo, gerarCodigo, hashDoCodigo, MAX_TENTATIVAS, VALIDADE_CODIGO_MIN } from "./codigo";
 
 /**
@@ -18,8 +19,6 @@ import { conferirCodigo, gerarCodigo, hashDoCodigo, MAX_TENTATIVAS, VALIDADE_COD
 type Res<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 const ERRO_GERAL = "Não foi possível agora. Tente de novo em instantes.";
-export const MSG_DOMINIO_RECUSADO = "Use o e-mail da sua empresa, hospital ou universidade. E-mails como Gmail e Hotmail não servem para este selo.";
-export const MSG_MUITOS_PEDIDOS = "Você pediu códigos demais. Aguarde uma hora e tente de novo.";
 
 async function sessao() {
   const supabase = await createClient();
@@ -93,4 +92,13 @@ export async function confirmarVinculo(codigoBruto: string): Promise<Res<{ domin
     .select("user_id");
   if (!feito?.length) return { ok: false, error: ERRO_GERAL };
   return { ok: true, dominio: p.dominio as string };
+}
+
+/** O selo da própria pessoa: o domínio confirmado, ou null. Só lê a linha do id da sessão. */
+export async function meuVinculo(): Promise<{ dominio: string } | null> {
+  const s = await sessao();
+  const admin = createAdminClient();
+  if (!s || !admin) return null;
+  const { data } = await admin.from("vinculo_profissional").select("dominio, confirmado_em").eq("user_id", s.user.id).maybeSingle();
+  return data?.confirmado_em ? { dominio: data.dominio as string } : null;
 }

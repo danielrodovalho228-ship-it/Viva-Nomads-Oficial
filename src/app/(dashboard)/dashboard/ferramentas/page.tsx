@@ -22,6 +22,7 @@ import {
 import { PageTitle } from "@/components/dashboard/primitives";
 import { FOTOS_FERRAMENTAS } from "@/components/dashboard/capas";
 import { BRAND_BLUR } from "@/lib/media";
+import { PREVIAS_FOTOS } from "@/lib/previas-fotos";
 
 /*
   Central de Ferramentas (ampliação da ordem 9f3085d8). Três grupos, quatro
@@ -236,7 +237,9 @@ export default function FerramentasPage() {
                     fill
                     sizes="(min-width: 1024px) 30vw, 100vw"
                     placeholder="blur"
-                    blurDataURL={BRAND_BLUR}
+                    // E170: a própria foto borrada enquanto carrega (o BRAND_BLUR liso parecia uma caixa vazia).
+                    blurDataURL={PREVIAS_FOTOS[foto.src] ?? BRAND_BLUR}
+                    priority={g.id === GRUPOS[0].id}
                     className="object-cover"
                   />
                 </div>

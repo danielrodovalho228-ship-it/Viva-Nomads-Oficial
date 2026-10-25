@@ -96,7 +96,7 @@ export function PagamentosConta() {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4" data-testid="conta-pagamentos">
       {dono && (
-        <CartaoComFoto foto={PHOTOS.pagamentos.proprietario} testId="conta-pix">
+        <CartaoComFoto foto={PHOTOS.pagamentos.proprietario} testId="conta-pix" prioridade>
           <h2 id="pag-recebe-titulo" className="font-title text-2xl font-semibold text-ink">
             {TITULO_RECEBE}
           </h2>
@@ -173,7 +173,7 @@ export function PagamentosConta() {
         </CartaoComFoto>
       )}
 
-      <CartaoComFoto foto={PHOTOS.pagamentos.morador} testId="conta-pag-morador">
+      <CartaoComFoto foto={PHOTOS.pagamentos.morador} testId="conta-pag-morador" prioridade={!dono}>
         <h2 id="pag-morador-titulo" className="font-title text-2xl font-semibold text-ink">
           {TITULO_MORADOR}
         </h2>
