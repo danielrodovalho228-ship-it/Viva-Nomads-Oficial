@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { LIMITE_BUSCAS_SALVAS, normalizarBusca, resumoDaBusca } from "@/lib/busca/buscas-salvas";
+import { notificacaoLigada } from "@/lib/notifications/preferencias";
 
 /**
  * Buscas salvas (ordem d15ef6bf) — sempre como a própria pessoa (RLS da 0122:
@@ -29,8 +30,11 @@ export async function buscaEstaSalva(qs: string): Promise<{ salva: boolean | nul
   return { salva: !!data };
 }
 
-/** Salva (ou, se já salva, remove) a busca atual — o coração alterna. */
-export async function alternarBuscaSalva(qs: string): Promise<Res<{ salva: boolean }>> {
+/**
+ * Salva (ou, se já salva, remove) a busca atual — o coração alterna. Ao salvar, devolve o id (para o "Não me avisar") e
+ * se os avisos por e-mail da conta estão ligados (profiles.notif_email, o mesmo que o envio do alerta respeita).
+ */
+export async function alternarBuscaSalva(qs: string): Promise<Res<{ salva: boolean; id?: string | null; avisoEmail?: boolean }>> {
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre para salvar esta busca.", precisaEntrar: true };
   const parametros = normalizarBusca(qs);
@@ -48,10 +52,15 @@ export async function alternarBuscaSalva(qs: string): Promise<Res<{ salva: boole
   }
   const { count } = await s.supabase.from("buscas_salvas").select("id", { count: "exact", head: true }).eq("usuario_id", s.user.id);
   if ((count ?? 0) >= LIMITE_BUSCAS_SALVAS) return { ok: false, error: `Você já tem ${LIMITE_BUSCAS_SALVAS} buscas salvas. Apague uma em Buscas salvas.` };
-  const { error } = await s.supabase.from("buscas_salvas").insert({ usuario_id: s.user.id, parametros, resumo: resumoDaBusca(parametros) });
+  const { data: nova, error } = await s.supabase
+    .from("buscas_salvas")
+    .insert({ usuario_id: s.user.id, parametros, resumo: resumoDaBusca(parametros) })
+    .select("id")
+    .maybeSingle();
   if (error) return { ok: false, error: "Não foi possível salvar a busca. Tente de novo." };
   revalidatePath("/dashboard/buscas");
-  return { ok: true, salva: true };
+  const { data: perfil } = await s.supabase.from("profiles").select("notif_email").eq("id", s.user.id).maybeSingle();
+  return { ok: true, salva: true, id: (nova?.id as string | undefined) ?? null, avisoEmail: notificacaoLigada(perfil?.notif_email as boolean | null | undefined) };
 }
 
 /** Buscas salvas da própria pessoa (mais recentes primeiro). */

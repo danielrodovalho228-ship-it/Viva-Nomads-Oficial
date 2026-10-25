@@ -44,7 +44,7 @@ import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { VideoUploader } from "@/components/video-uploader";
 import { payloadDoVideo, resumoDoVideo, videoDoAnuncio } from "@/lib/video-anuncio";
 import { BlockCalendar } from "@/components/property/block-calendar";
-import { AMENITY_GROUPS, amenityKeysFromLabels } from "@/lib/amenities";
+import { amenityKeysFromLabels, comodidadeValeParaTipo, comodidadesDoTipo } from "@/lib/amenities";
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { ANCORA_VIDEO_EDITOR, MIN_FOTOS, hrefParaMelhorar, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
@@ -641,13 +641,14 @@ export function EditarImovelClient({
         <Section
           icon={Briefcase}
           title="Comodidades"
-          summary={`${Object.values(amenityKeys).filter(Boolean).length} selecionada(s)`}
+          summary={`${Object.keys(amenityKeys).filter((k) => amenityKeys[k] && comodidadeValeParaTipo(k, property.propertyType)).length} selecionada(s)`}
           saving={savingSection === "amen"}
           saved={savedSection === "amen"}
           onSave={() => saveSection("amen")}
         >
           <div className="space-y-4">
-            {AMENITY_GROUPS.map((g) => (
+            {/* E111-A: só o que o tipo do imóvel mostra; o marcado que o tipo não mostra fica salvo. */}
+            {comodidadesDoTipo(property.propertyType).map((g) => (
               <div key={g.category}>
                 <p className="font-medium text-ink">{g.label}</p>
                 <p className="mb-2 text-xs text-muted">{AMENITY_HINT[g.category] ?? ""}</p>

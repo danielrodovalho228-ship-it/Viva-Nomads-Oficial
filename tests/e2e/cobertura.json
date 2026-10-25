@@ -434,6 +434,7 @@
         "t408-varredura-bloco27",
         "t413-varredura-bloco30",
         "t458-buscar-base-unica-e131",
+        "t454-salvar-busca-avisar-me",
         "t417-varredura-bloco34"
       ]
     },
@@ -576,7 +577,8 @@
         "t387-varredura-bloco22",
         "t403-nav-a",
         "t411-varredura-bloco28",
-        "t416-varredura-bloco33"
+        "t416-varredura-bloco33",
+        "t459-prop1-navegacao-dono"
       ]
     },
     "/dashboard/assinatura": {
@@ -922,7 +924,8 @@
         "t455-cadastro-textos-e108",
         "t414-varredura-bloco31",
         "t432-deteccao-a",
-        "t415-varredura-bloco32"
+        "t415-varredura-bloco32",
+        "t456-comodidades-tipo-e111a"
       ]
     },
     "/dashboard/indicacoes": {
