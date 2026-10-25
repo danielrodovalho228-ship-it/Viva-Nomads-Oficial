@@ -65,7 +65,7 @@ test("E104: o Passo 3 é SÓ endereço — sem IA, quem opera, identidade, docum
   assert.doesNotMatch(pagina, /<CartaoIa/);
   // As regras não somem: o cartão "Antes de publicar" mora na Revisão, e os atalhos no fim do Passo 1.
   assert.match(pagina, /step === ETAPA\.revisao && \(\s*<div className="mb-6">\s*<AntesDePublicar/);
-  assert.match(pagina, /<AtalhosCadastro aplicarImportado=\{aplicarImportado\} \/>/);
+  assert.match(pagina, /<AtalhosCadastro aplicarImportado=\{aplicarImportado\}( onComecePelaMatricula=\{[^}]*\})? \/>/);
   const antes = etapa.slice(etapa.indexOf("export function AntesDePublicar"), etapa.indexOf("export function AtalhosCadastro"));
   for (const dentro of [/Quem opera este imóvel\?/, /<EtapaIdentidade \/>/, /<DocumentoVinculo/]) assert.match(antes, dentro);
   assert.match(ler("lib/anuncio/prontidao.ts"), /key: "documento"[^\n]*etapa: ETAPA\.revisao/);

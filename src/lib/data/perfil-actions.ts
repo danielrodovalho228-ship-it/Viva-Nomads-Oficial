@@ -9,6 +9,7 @@ import { lerDocumento } from "@/lib/data/documento-servidor";
 import { DOCUMENTO_VAZIO_PF, documentoCompleto, mascararCnpj, mascararCpf, msgDocumentoDuplicado, validarDocumento, type DocumentoInput, type TipoPessoa } from "@/lib/documento-pessoa";
 import { contemContato } from "@/lib/pedidos/pedidos";
 import { validarNome, normalizarTelefone, validarLinkedin, validarMotivoEstadia } from "@/lib/conta-validacao";
+import { validarPorQueNaCidade, type PorQueNaCidade } from "@/lib/perfil/por-que-na-cidade";
 import { validarBio, validarCidade, validarIdiomas } from "@/lib/perfil/perfil-publico";
 import {
   isCategoriaKey,
@@ -69,6 +70,56 @@ export async function setMinhaCategoria(raw: string): Promise<Result> {
   const { error } = await supabase
     .from("profiles")
     .update({ professional_category: value })
+    .eq("id", user.id);
+  if (error) return { ok: false, error: "Não foi possível salvar agora." };
+  revalidatePath("/dashboard/conta");
+  return { ok: true };
+}
+
+/** Lê o MEU cartão "Por que estou na cidade" (período, empresa, frase). */
+export async function getMeuPorQueNaCidade(): Promise<PorQueNaCidade | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("profiles")
+    .select("cidade_periodo_inicio, cidade_periodo_fim, cidade_empresa, cidade_frase")
+    .eq("id", user.id)
+    .maybeSingle();
+  return {
+    inicio: (data?.cidade_periodo_inicio as string | null) ?? null,
+    fim: (data?.cidade_periodo_fim as string | null) ?? null,
+    empresa: (data?.cidade_empresa as string | null) ?? null,
+    frase: (data?.cidade_frase as string | null) ?? null,
+  };
+}
+
+/** Grava o MEU cartão "Por que estou na cidade" (validado aqui; RLS: só o próprio perfil). */
+export async function setMeuPorQueNaCidade(entrada: {
+  inicio?: string;
+  fim?: string;
+  empresa?: string;
+  frase?: string;
+}): Promise<Result> {
+  const v = validarPorQueNaCidade(entrada ?? {});
+  if (!v.ok) return { ok: false, error: v.erro };
+  const supabase = await createClient();
+  if (!supabase) return { ok: true }; // demo/preview: sem servidor
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sessão expirada." };
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      cidade_periodo_inicio: v.valor.inicio,
+      cidade_periodo_fim: v.valor.fim,
+      cidade_empresa: v.valor.empresa,
+      cidade_frase: v.valor.frase,
+    })
     .eq("id", user.id);
   if (error) return { ok: false, error: "Não foi possível salvar agora." };
   revalidatePath("/dashboard/conta");

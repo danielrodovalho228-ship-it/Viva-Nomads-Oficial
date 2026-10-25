@@ -3,6 +3,7 @@
 import { marcarConversaAberta } from "@/lib/data/conversa-aberta-actions";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
+import { SeloVinculo } from "@/components/confianca/selo-vinculo";
 import { useEffect, useState } from "react";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
@@ -277,6 +278,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             <div className="min-w-0">
               <p className="truncate font-medium text-ink" data-testid="conversa-nome">{active.name}</p>
               {active.linkedinConectado && <SeloLinkedin />}
+              {active.vinculoDominio && <SeloVinculo dominio={active.vinculoDominio} />}
               {active.property && (
                 <p className="truncate text-xs text-muted">Sobre: {active.property}</p>
               )}
