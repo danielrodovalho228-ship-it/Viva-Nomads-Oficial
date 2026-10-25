@@ -437,6 +437,7 @@
         "t458-buscar-base-unica-e131",
         "t454-salvar-busca-avisar-me",
         "t417-varredura-bloco34",
+        "t453-buscar-descobribilidade",
         "t452-mais-filtros-sem-duplicar"
       ]
     },
@@ -581,7 +582,8 @@
         "t411-varredura-bloco28",
         "t416-varredura-bloco33",
         "t459-prop1-navegacao-dono",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t464-prop6-inicio-dono"
       ]
     },
     "/dashboard/assinatura": {

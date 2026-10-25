@@ -99,3 +99,17 @@ test("E105: 'Limpar tudo' é botão de contorno, ao lado do 'Mostrar N imóveis'
   assert.match(folha, /data-testid="limpar-tudo"\s+className=\{buttonClasses\(\{ variant: "secondary"/);
   assert.match(folha, /<div className="flex items-center justify-end gap-3">\s*<button[\s\S]*?Limpar tudo[\s\S]*?data-testid="aplicar-filtros"/);
 });
+
+test("E106: 'Publicar pedido' na linha da contagem, como texto secundário (o cartão do fim da lista fica)", () => {
+  const linha = busca.slice(busca.indexOf('data-testid="linha-contagem"'), busca.indexOf("{descreverAberto && ("));
+  assert.match(linha, /<Link href=\{pedidoHref\} className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest" data-testid="linha-publicar-pedido">\s*Publicar pedido/);
+  assert.doesNotMatch(linha, /buttonClasses\(/, "nenhum botão (muito menos um 2º primário) na linha da contagem");
+  assert.match(busca, /data-testid="busca-cartao-pedido"/);
+});
+
+test("E106: o 'Tempo máximo até o trabalho' aparece ao abrir o Local, desabilitado com a dica até haver destino", () => {
+  const campo = ler("components/busca/campo-destino.tsx");
+  assert.match(campo, /export const ROTULO_TEMPO_MAXIMO = "Tempo máximo até o trabalho";/);
+  assert.match(campo, /\{destino \? \([\s\S]*data-testid="destino-opcoes"[\s\S]*\) : \([\s\S]*data-testid="destino-ate-espera"[\s\S]*disabled[\s\S]*\{DICA_TEMPO_SEM_DESTINO\}/);
+  assert.match(campo, /export const DICA_TEMPO_SEM_DESTINO = "escolha um destino";/);
+});
