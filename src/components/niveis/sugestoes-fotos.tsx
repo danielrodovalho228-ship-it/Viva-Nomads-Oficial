@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { comodidadeValeParaTipo } from "@/lib/amenities";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { AVISO_FOTO_COM_PESSOA, rotuloConfianca } from "@/lib/fotos/deteccao";
 import { SUGESTAO_FOTOGRAFAR, SUGESTAO_SEM_FOTO, SUGESTAO_SO_REFERENCIA } from "@/lib/niveis/prova-camera";
@@ -28,12 +29,15 @@ const MAX_RODADAS = 8;
 export function SugestoesDasFotos({
   propertyId,
   comodidadesMarcadas,
+  tipoImovel,
   onComodidade,
   onSugeridas,
   onNivelMudou,
 }: {
   propertyId: string | null;
   comodidadesMarcadas: readonly string[];
+  /** E111-A: comodidade que o tipo do imóvel não mostra não vira sugestão (ex.: elevador numa chácara). */
+  tipoImovel?: string | null;
   onComodidade: (chave: string) => void;
   /** Itens de nível com sugestão esperando confirmação (saem do "o que falta"). */
   onSugeridas?: (chaves: string[]) => void;
@@ -81,7 +85,7 @@ export function SugestoesDasFotos({
   }
 
   const marcadas = new Set(comodidadesMarcadas);
-  const sugestoes = estado.sugestoes.filter((s) => s.tipo !== "comodidade" || !marcadas.has(s.chave));
+  const sugestoes = estado.sugestoes.filter((s) => s.tipo !== "comodidade" || (!marcadas.has(s.chave) && comodidadeValeParaTipo(s.chave, tipoImovel)));
 
   // Item de nível: confirmar = "Confirmada, falta a foto" (a câmera abre junto; a lista não recarrega para não fechá-la).
   async function decidir(id: string, confirmar: boolean, abrindoCamera = false) {
