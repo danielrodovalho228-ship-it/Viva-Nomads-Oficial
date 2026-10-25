@@ -8,7 +8,8 @@
     • documentos que não saíram → documentos_falhas em aberto + pagamentos confirmados sem recibo (/admin/documentos);
     • documentos na fila → filaDocumentos (a mesma do selo e de /admin/documentos);
     • encerramentos → contrato_encerramento_pedidos aberto ou em condução (/admin/contratos/encerramentos);
-    • parcerias para aprovar → parceiro_solicitacoes pendente ou aguardando e-mail (a aba "Pendentes");
+    • parcerias para aprovar → parceiro_solicitacoes pendente ou aguardando e-mail (a aba "Pendentes"); as sem resposta
+      há mais de 1 dia útil são parte delas e entram no detalhe, não numa segunda linha (E175);
     • pedidos a parceiros sem orçamento → parceiro_pedidos "solicitado";
     • Correções de qualidade sem dono ou prazo → qualidade_correcoes aberta (/admin/qualidade#correcoes);
     • e as filas que já existiam ("Precisa de você agora"): candidaturas 48 h, manutenção urgente 4 h, taxas vencidas,
@@ -67,11 +68,12 @@ export const DECISOES_ADMIN: readonly DefinicaoDecisaoAdmin[] = [
   { chave: "falhas_documento", fila: "recibos", um: "recibo ou documento que não saiu", varios: "recibos ou documentos que não saíram", acao: "Emitir de novo", href: "/admin/documentos#falhas" },
   { chave: "documentos_pendentes", fila: "documentos", um: "documento na fila para conferir", varios: "documentos na fila para conferir", acao: "Conferir", href: "/admin/documentos" },
   { chave: "encerramentos", fila: "encerramentos", um: "pedido de encerramento de contrato", varios: "pedidos de encerramento de contrato", acao: "Conduzir", href: "/admin/contratos/encerramentos" },
-  { chave: "parceiros_sem_resposta_1_dia", fila: "parcerias sem resposta", um: "pedido de parceria sem resposta há mais de 1 dia útil", varios: "pedidos de parceria sem resposta há mais de 1 dia útil", acao: "Responder", href: "/admin/parceiros?aba=pendentes" },
+  // E175: UMA linha de parcerias — as sem resposta há mais de 1 dia útil são parte das pendentes (contavam duas vezes);
+  // o atraso vira o detalhe da linha (juntarParcerias), e o número é o da aba "Pendentes".
+  { chave: "parceiros_para_aprovar", fila: "parcerias", um: "pedido de parceria para aprovar", varios: "pedidos de parceria para aprovar", acao: "Analisar", href: "/admin/parceiros?aba=pendentes" },
   { chave: "verificacao_analise_humana", fila: "verificação de identidade", um: "verificação de identidade para analisar", varios: "verificações de identidade para analisar", acao: "Analisar", href: "/admin/documentos#verificacao" },
   // Prompt 51: a Correção do painel de qualidade (motivo de saída > 3 em 30 dias) sem dono ou prazo espera a equipe.
   { chave: "correcoes_sem_dono", fila: "correções de qualidade", um: "Correção de qualidade sem dono ou prazo", varios: "Correções de qualidade sem dono ou prazo", acao: "Definir", href: "/admin/qualidade#correcoes" },
-  { chave: "parceiros_para_aprovar", fila: "parcerias", um: "pedido de parceria para aprovar", varios: "pedidos de parceria para aprovar", acao: "Analisar", href: "/admin/parceiros?aba=pendentes" },
   { chave: "pedidos_parceiro_sem_resposta", fila: "pedidos a parceiros", um: "pedido a parceiro sem orçamento", varios: "pedidos a parceiros sem orçamento", acao: "Acompanhar", href: "/admin/parceiros/pedidos?filtro=solicitado#lista" },
   { chave: "chamados_urgentes_sem_resposta", fila: "manutenção urgente", um: "manutenção urgente sem resposta há mais de 4 h", varios: "manutenções urgentes sem resposta há mais de 4 h", acao: "Cobrar", href: "/admin/solicitacoes?prioridade=urgente&sem_resposta=1" },
   { chave: "candidaturas_sem_resposta_48h", fila: "candidaturas", um: "candidatura sem resposta há mais de 48 h", varios: "candidaturas sem resposta há mais de 48 h", acao: "Cobrar", href: "/admin/candidaturas?status=sem_resposta" },
@@ -102,7 +104,22 @@ export interface DecisoesAdmin {
   semLeitura: ChaveDecisaoAdmin[];
 }
 
-export function montarDecisoesAdmin(contagens: Partial<Record<ChaveDecisaoAdmin, ContagemDecisao | null>>): DecisoesAdmin {
+/**
+ * E175: "parcerias sem resposta há mais de 1 dia útil" é um pedaço de "parcerias para aprovar" (a mesma aba Pendentes).
+ * Somadas, a mesma parceria contava duas vezes ("Ver todas (8)" com 5 itens distintos). Fica a linha das pendentes,
+ * com o atraso no detalhe ("3 sem resposta há mais de 1 dia útil · mais antigo há 2 dias").
+ */
+export function juntarParcerias(contagens: Partial<Record<ChaveDecisaoAdmin, ContagemDecisao | null>>): Partial<Record<ChaveDecisaoAdmin, ContagemDecisao | null>> {
+  const { parceiros_sem_resposta_1_dia: atrasadas, ...resto } = contagens;
+  const pendentes = resto.parceiros_para_aprovar;
+  if (!pendentes || pendentes.n === null || !atrasadas || !atrasadas.n || atrasadas.n <= 0) return resto;
+  const n = Math.floor(atrasadas.n);
+  const atraso = `${n} sem resposta há mais de 1 dia útil`;
+  return { ...resto, parceiros_para_aprovar: { n: pendentes.n, detalhe: [atraso, atrasadas.detalhe?.trim() || pendentes.detalhe?.trim()].filter(Boolean).join(" · ") } };
+}
+
+export function montarDecisoesAdmin(entrada: Partial<Record<ChaveDecisaoAdmin, ContagemDecisao | null>>): DecisoesAdmin {
+  const contagens = juntarParcerias(entrada);
   const linhas: LinhaDecisaoAdmin[] = [];
   const semLeitura: ChaveDecisaoAdmin[] = [];
   for (const d of DECISOES_ADMIN) {
