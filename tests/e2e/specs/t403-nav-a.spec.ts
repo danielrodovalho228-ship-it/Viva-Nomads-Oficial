@@ -45,31 +45,17 @@ test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () 
   const semRolagemLateral = async (p: Page) =>
     expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
-  /** Abre todos os grupos da barra (inclusive os de dentro) e devolve a barra visível. */
-  async function barraAberta(p: Page, w: number): Promise<Locator> {
-    if (w === 390) await p.getByRole("button", { name: "Abrir menu" }).first().click();
-    const barra = p.getByTestId("menu-cascata").filter({ visible: true }).first();
-    await barra.waitFor({ timeout: 20_000 });
-    for (let i = 0; i < 30; i++) {
-      const fechado = barra.locator('[data-menu-grupo] > button[aria-expanded="false"]');
-      if ((await fechado.count()) === 0) break;
-      await fechado.first().click();
-    }
-    return barra;
-  }
   const quantas = (barra: Locator, href: string) => barra.locator(`a[href="${href}"]`).count();
   /**
-   * PROP-1: no computador, quem está no modo dono não tem barra lateral — a navegação é o topo (abas, sino e "Conta ▾").
-   * Devolve o topo com o menu da Conta aberto; senão, a barra aberta.
+   * MENUS-5 (25/10): fora do /admin não há barra lateral nem gaveta — a navegação é o topo (abas, sino e "Conta ▾") no
+   * computador e o topo do celular (sino e avatar da Conta). Abre a Conta e devolve o topo visível (o menu mora nele).
    */
   async function navegacao(p: Page, w: number): Promise<Locator> {
-    const topo = p.getByTestId("topo-dono");
-    if (w === 1280 && (await topo.isVisible())) {
-      await topo.getByTestId("conta-dono").click();
-      await topo.getByTestId("menu-conta-dono").waitFor({ timeout: 15_000 });
-      return topo;
-    }
-    return barraAberta(p, w);
+    const topo = (w === 1280 ? p.locator("header[data-papel]") : p.getByTestId("topo-celular")).filter({ visible: true }).first();
+    await topo.waitFor({ timeout: 20_000 });
+    await topo.locator('button[aria-haspopup="menu"]').first().click();
+    await topo.getByRole("menu").waitFor({ timeout: 15_000 });
+    return topo;
   }
 
   for (const w of [390, 1280]) {
@@ -88,13 +74,15 @@ test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () 
       }
     });
 
-    test(`2. a ${w} px: a barra verde de morador, dono e admin`, async ({ browser }) => {
+    test(`2. a ${w} px: a navegação (topo e Conta) de morador, dono e admin`, async ({ browser }) => {
       for (const [quem, email] of [["morador", morador.email], ["dono", dono.email], ["admin", admin.email]] as const) {
         const p = await abrir(browser, email, w, "/dashboard");
         const barra = await navegacao(p, w);
-        for (const href of ["/dashboard/verificacao", "/dashboard/ferramentas", "/dashboard/notificacoes"]) {
+        for (const href of ["/dashboard/verificacao", "/dashboard/notificacoes"]) {
           expect(await quantas(barra, href), `${quem}: ${href}`).toBe(1);
         }
+        // MENUS-5, item 3: as Ferramentas saíram da Conta (o dono as acha no Início).
+        expect(await quantas(barra, "/dashboard/ferramentas"), `${quem}: sem Ferramentas na navegação`).toBe(0);
         const doAdmin = [await quantas(barra, "/admin"), await quantas(barra, "/admin/agentes#aprovacoes")];
         if (quem === "admin") {
           // ADMIN-1: no /dashboard o admin vê só "Painel admin"; "Equipe e aprovações" saiu da barra (aba no ADMIN-2).
