@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 import { FOTOS_TESTE_MINIMO, noPasso } from "../fixtures/cadastro";
 
 /*
-  T476 — E133 (#1373), guarda permanente da Pista C: o limite exato e a TROCA, que a t468 não cobre (ela vai de 2 para 9
+  T482 — E133 (#1373), guarda permanente da Pista C: o limite exato e a TROCA, que a t468 não cobre (ela vai de 2 para 9
   fotos e só passa pela confirmação).
    1. Com 7 fotos do imóvel o "Continuar" fica desabilitado ("Falta 1 foto"); com a 8ª, libera.
    2. Um print enviado PRIMEIRO (sozinho na posição 1) não fica como principal quando chegam as 8 fotos do imóvel, não
@@ -14,7 +14,7 @@ const SAIDA = "tests/laboratorio/saida";
 const PRINT = "docs/capturas/e44/exportar-1280.png";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t476.${sufixo}@lab.vivanomads.test`, nome: "Sete Fotos", role: "owner" as const };
+const dono = { email: `dono.t482.${sufixo}@lab.vivanomads.test`, nome: "Sete Fotos", role: "owner" as const };
 const ids: Record<string, string> = {};
 
 const continuar = (p: Page) => p.getByTestId("cadastro-continuar");
@@ -30,7 +30,7 @@ async function abrirPassoFotos(p: Page) {
   await noPasso(p, "fotos");
 }
 
-test.describe("T476 — E133: 7 trava, 8 libera; print não vira principal e a troca destrava", () => {
+test.describe("T482 — E133: 7 trava, 8 libera; print não vira principal e a troca destrava", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
@@ -80,7 +80,7 @@ test.describe("T476 — E133: 7 trava, 8 libera; print não vira principal e a t
       await expect(p.getByTestId("foto-miniatura").filter({ has: sinalizada }).getByRole("button", { name: "Usar como foto principal" })).toHaveCount(0);
       await expect(p.getByTestId("fotos-trava")).toHaveAttribute("data-trava", "sinalizadas");
       await expect(continuar(p)).toBeDisabled();
-      await p.screenshot({ path: `${SAIDA}/t476-print-primeiro-${w}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t482-print-primeiro-${w}.png`, fullPage: true });
       // A troca: remover o print, sem confirmar nada.
       await p.getByTestId("foto-nao-imovel-remover").click();
       await expect(p.getByText(/^8\/40 fotos/)).toBeVisible({ timeout: 30_000 });
