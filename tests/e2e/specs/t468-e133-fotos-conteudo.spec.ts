@@ -86,9 +86,13 @@ test.describe("T468 — E133: fotos, vídeo e link que não mostram o imóvel", 
 
       // O rascunho guarda o aviso: recarregado, continua travado.
       await expect(p).toHaveURL(/draft=/, { timeout: 30_000 });
-      await p.waitForTimeout(2_500); // autosave do rascunho
+      // Autosave (debounce de 2 s): espera o "Salvo" das 9 fotos antes de recarregar.
+      await p.waitForTimeout(2_500);
+      await expect(p.getByText("Salvando…")).toHaveCount(0, { timeout: 15_000 });
+      await expect(p.getByText(/Salvo/).first()).toBeVisible({ timeout: 15_000 });
       await p.reload({ waitUntil: "domcontentloaded" });
       await noPasso(p, "fotos", 30_000);
+      await expect(p.getByText(/^9\/40 fotos/)).toBeVisible({ timeout: 30_000 });
       await expect(p.getByTestId("aviso-foto-nao-imovel")).toBeVisible({ timeout: 30_000 });
       await expect(continuar(p)).toBeDisabled();
 
