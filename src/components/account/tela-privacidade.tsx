@@ -41,22 +41,24 @@ export function TelaPrivacidade() {
 
   return (
     <div className="grid gap-6" data-testid="tela-privacidade">
-      <section className="rounded-xl bg-white px-4 sm:px-6" aria-label="Permissões">
-        {p ? (
-          <ul className="divide-y divide-line">
-            {CHAVES_PRIVACIDADE.map((c) => (
-              <li key={c.chave} className="flex items-center justify-between gap-4 py-4">
-                <span className="min-w-0">
-                  <span className="block text-lg font-semibold text-ink">{c.titulo}</span>
-                  <span className="block text-sm text-ink">{c.texto}</span>
-                </span>
+      {/* E170: as três permissões aparecem na hora; só a chave de cada uma espera a leitura (antes, o cartão inteiro
+          ficava em branco até a resposta do servidor). */}
+      <section className="rounded-xl bg-white px-4 sm:px-6" aria-label="Permissões" aria-busy={!p}>
+        <ul className="divide-y divide-line">
+          {CHAVES_PRIVACIDADE.map((c) => (
+            <li key={c.chave} className="flex items-center justify-between gap-4 py-4">
+              <span className="min-w-0">
+                <span className="block text-lg font-semibold text-ink">{c.titulo}</span>
+                <span className="block text-sm text-ink">{c.texto}</span>
+              </span>
+              {p ? (
                 <Switch checked={p[c.chave]} onChange={(v) => void alternar(c.chave, v)} label={c.titulo} testId={`privacidade-${c.chave}`} />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <span className="block h-56" aria-busy="true" />
-        )}
+              ) : (
+                <span className="block h-6 w-11 shrink-0 rounded-full bg-surface-2" aria-hidden data-testid={`privacidade-${c.chave}-carregando`} />
+              )}
+            </li>
+          ))}
+        </ul>
       </section>
       {erro && (
         <p role="alert" className="text-sm text-red-700">
