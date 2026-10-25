@@ -747,8 +747,12 @@ export default function NewPropertyPage() {
     }
     // E132-A: rascunho sem o registro da Qualificação (anterior a ela) não volta para as 5 telas.
     setQualConf(estadoDoRascunho(d.qualificacaoConforto) ?? { status: "pulada", respostas: {} });
-    // Rascunho sem as declarações (anterior ao E132-A): não apaga o que veio da qualificação antiga do servidor.
-    if (d.declaracoesPasso10) setDeclaracoes(declaracoesDoRascunho(d.declaracoesPasso10));
+    // Rascunho sem declaração respondida (anterior ao E132-A ou ainda em branco): não apaga o que veio da qualificação
+    // antiga do servidor (as duas leituras chegam em qualquer ordem).
+    {
+      const salvas = declaracoesDoRascunho(d.declaracoesPasso10);
+      if (declaracoesRespondidas(salvas)) setDeclaracoes(salvas);
+    }
     // Rascunho das ordens antigas (7 etapas) abre na primeira etapa ainda incompleta.
     setStep(etapaDoRascunho(d));
     setEtapaMax(posMaxDoRascunho(d));
