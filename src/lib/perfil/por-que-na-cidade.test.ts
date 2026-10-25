@@ -40,3 +40,30 @@ test("o servidor valida e grava só na própria linha; a migração tem rollback
   assert.match(ler("supabase/producao/aplicar-0249.sql"), /20261025000249/);
   assert.match(ler("supabase/producao/rollback/0249_rollback.sql"), /drop column if exists cidade_frase/);
 });
+
+import { sinaisPorQueParaDono } from "./por-que-na-cidade.ts";
+
+const cheio = { inicio: "2026-11-01", fim: "2027-02-01", empresa: "Hospital Santa Clara", frase: "Residência médica" };
+
+test("dono: antes do aceite não vê nada do 'Por que estou na cidade'", () => {
+  assert.deepEqual(sinaisPorQueParaDono(cheio, false), []);
+});
+
+test("dono: depois do aceite vê período, empresa e frase", () => {
+  assert.deepEqual(sinaisPorQueParaDono(cheio, true), [
+    "Na cidade de 01/11/2026 a 01/02/2027",
+    "Empresa ou instituição: Hospital Santa Clara",
+    "“Residência médica”",
+  ]);
+});
+
+test("dono: sem dados preenchidos, nada aparece (nem rótulo vazio)", () => {
+  assert.deepEqual(sinaisPorQueParaDono({ inicio: null, fim: null, empresa: null, frase: null }, true), []);
+  assert.deepEqual(sinaisPorQueParaDono(null, true), []);
+});
+
+test("leads.ts usa sinaisPorQueParaDono com o aceite", () => {
+  const src = ler("src/lib/data/leads.ts");
+  assert.match(src, /sinaisPorQueParaDono\(/);
+  assert.match(src, /cidade_empresa/);
+});
