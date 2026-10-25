@@ -89,18 +89,21 @@ export function LinhaNumero({
           >
             <Minus className="h-4 w-4" aria-hidden />
           </button>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={min}
-            value={valor}
-            placeholder={placeholder}
-            onChange={(e) => onChange(e.target.value)}
-            aria-label={label}
-            className="h-9 w-14 bg-transparent text-center text-base font-semibold tabular-nums text-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            data-testid={testid}
-          />
-          {sufixo && <span className="pr-1 text-xs text-muted">{sufixo}</span>}
+          {/* Miolo de largura fixa: o sufixo (m²) cabe dentro, e todos os contadores têm a mesma largura (E134). */}
+          <span className="flex w-20 items-center justify-center">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={min}
+              value={valor}
+              placeholder={placeholder}
+              onChange={(e) => onChange(e.target.value)}
+              aria-label={label}
+              className="h-9 w-full min-w-0 bg-transparent text-center text-base font-semibold tabular-nums text-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              data-testid={testid}
+            />
+            {sufixo && <span className="shrink-0 text-xs text-muted">{sufixo}</span>}
+          </span>
           <button
             type="button"
             onClick={() => mudar(passo)}

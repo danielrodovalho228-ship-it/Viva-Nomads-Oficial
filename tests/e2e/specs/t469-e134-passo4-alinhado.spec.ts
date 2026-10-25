@@ -45,6 +45,7 @@ test.describe("T469 — E134: Passo 4 alinhado", () => {
       // A mesma coluna (borda direita) e a mesma altura; a largura varia só pelo sufixo "m²" da Área.
       expect(new Set(caixas.map((c) => c.x)).size, "contadores alinhados à direita").toBe(1);
       expect(new Set(caixas.map((c) => c.h)).size, "contadores da mesma altura").toBe(1);
+      expect(new Set(caixas.map((c) => c.w)).size, "contadores da mesma largura (o m² da Área não alarga o dele)").toBe(1);
       const linhas = await cartao.locator('[data-testid^="linha-"]').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));
       expect(linhas).toHaveLength(5);
       expect(Math.max(...linhas) - Math.min(...linhas), "linhas da mesma altura").toBeLessThanOrEqual(2);
