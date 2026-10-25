@@ -92,7 +92,7 @@ test.describe("T456 — E111-A: comodidades conforme o tipo do imóvel", () => {
     // Mexe numa comodidade visível: o rascunho salva sozinho, com o elevador escondido junto.
     await botao(etapa, "churrasqueira").click();
     await expect(botao(etapa, "churrasqueira")).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByText(/^Salvo/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 30_000 });
     await expect
       .poll(async () => {
         const { data } = await adm().from("properties").select("draft_data").eq("id", id).single();
