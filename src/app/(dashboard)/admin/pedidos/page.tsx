@@ -7,6 +7,7 @@ import { rotuloPeriodo, somarDias } from "@/lib/admin/visao-geral";
 import { chaveCidade } from "@/lib/cidades";
 import { hojeBR } from "@/lib/utils";
 import { AdminPedidosClient } from "./admin-pedidos-client";
+import { tituloDoAdmin } from "@/config/menu-admin";
 
 /**
  * Admin → Pedidos. Cartões e lista com o MESMO recorte (complemento do P29, item 5b): período (padrão: 30 dias) e
@@ -14,6 +15,8 @@ import { AdminPedidosClient } from "./admin-pedidos-client";
  * de respostaPedidos(pedidosParaMetrica) — a mesma função da home. Vindo da home: "Pedidos ativos" (status=ativo, agora)
  * e "Pedidos expirando sem resposta" (expirando=1, agora) abrem a lista que cada número contou.
  */
+export const metadata = { title: tituloDoAdmin("/admin/pedidos") };
+
 export default async function AdminPedidosPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const um = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string).trim().slice(0, 80) : "");

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { formatBRL, hojeBR } from "@/lib/utils";
 import { CANAIS_MARKETING, canalLabel, gastosCsv, totaisPorMes, type GastoMarketing } from "@/lib/marketing";
 import { lancarGastoMarketing, apagarGastoMarketing } from "@/lib/data/marketing-admin";
+import { rotuloDoAdmin } from "@/config/menu-admin";
 
 function mesLabel(mes: string): string {
   const [a, m] = mes.split("-").map(Number);
@@ -71,7 +72,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
 
   return (
     <>
-      <PageTitle title="Gastos de marketing" subtitle="Quanto foi investido por mês e canal. É a base do CAC e do ROI." />
+      <PageTitle title={rotuloDoAdmin("/admin/marketing")} subtitle="Quanto foi investido por mês e canal. É a base do CAC e do ROI." />
 
       {aviso && (
         <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">{aviso}</p>

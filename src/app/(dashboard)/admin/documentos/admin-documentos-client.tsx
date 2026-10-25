@@ -31,6 +31,7 @@ import {
   comporMotivoRecusa,
 } from "@/lib/moderacao-doc";
 import { cn } from "@/lib/utils";
+import { rotuloDoAdmin } from "@/config/menu-admin";
 
 /**
  * Fila de CONFERÊNCIA dos documentos de imóvel (matrícula / contrato de gestão).
@@ -74,7 +75,7 @@ export function AdminDocumentosClient({
   return (
     <div>
       <PageTitle
-        title="Documentos em conferência"
+        title={rotuloDoAdmin("/admin/documentos")}
         subtitle="A conferência automática aprova o que bate e devolve ao dono o que está claramente errado. Aqui ficam só os casos em revisão. Conferimos o documento, não atestamos a propriedade."
       />
 

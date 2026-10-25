@@ -12,8 +12,9 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { lerParceiroGeral, rotuloCategoria } from "@/lib/parceiros/regras";
 import { FORMULAS_CARTAO_PARCEIRO, numerosCartaoParceiro } from "@/lib/cartoes/compartilhar";
 import { FichaSolicitacao, LinhaAprovada, LinhaAtiva, ParceiroGeralForm, SuporteForm, type Ficha } from "./fichas";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Parceiros — Admin" };
+export const metadata = { title: tituloDoAdmin("/admin/parceiros") };
 
 const ABAS = [
   { valor: "pendentes", rotulo: "Pendentes" },
@@ -37,7 +38,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
   if (!admin) {
     return (
       <>
-        <PageTitle title="Parceiros" subtitle="Rede de parceiros da Viva." />
+        <PageTitle title={rotuloDoAdmin("/admin/parceiros")} subtitle="Rede de parceiros da Viva." />
         <EmptyState icon={Handshake} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
@@ -126,7 +127,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
   return (
     <>
       <PageTitle
-        title="Parceiros"
+        title={rotuloDoAdmin("/admin/parceiros")}
         subtitle="Pedidos de parceria, páginas ativas e avisos por cidade."
         action={
           <span className="flex flex-wrap gap-2">

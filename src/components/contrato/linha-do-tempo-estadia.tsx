@@ -10,8 +10,11 @@ import { formatarDiaCurto, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 export function LinhaDoTempoEstadia({
   etapas,
   semMensagens = false,
+  hrefConferencia,
 }: {
   etapas: EtapaEstadia[];
+  /** PROP-5: no detalhe do contrato, as etapas de conferência levam à seção da conferência. */
+  hrefConferencia?: string;
   /** Página da estadia: a "Mensagem" já é o primário do topo. */ semMensagens?: boolean;
 }) {
   if (etapas.length === 0) return null;
@@ -32,7 +35,13 @@ export function LinhaDoTempoEstadia({
               {formatarDiaCurto(e.dia)}
             </span>
             <span className="min-w-0">
-              <span className="block font-medium text-ink">{e.titulo}</span>
+              {hrefConferencia && (e.chave === "conferencia" || e.chave === "conferencia_saida") ? (
+                <Link href={hrefConferencia} className="block font-medium text-forest underline underline-offset-4" data-testid={`estadia-etapa-${e.chave}-abrir`}>
+                  {e.titulo}
+                </Link>
+              ) : (
+                <span className="block font-medium text-ink">{e.titulo}</span>
+              )}
               <span className="block text-sm text-muted">{e.horario}</span>
             </span>
           </li>

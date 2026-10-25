@@ -15,6 +15,7 @@ import { ABA_EMITIDOS, filtrosEmitidos } from "@/lib/fiscal/emitidos";
 import { PREFIXOS, type Prefixo } from "@/lib/fiscal/prefixos";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { tituloDoAdmin } from "@/config/menu-admin";
 
 type ClienteAdmin = NonNullable<Awaited<ReturnType<typeof adminDaPagina>>>;
 
@@ -45,6 +46,8 @@ function Abas({ atual }: { atual: "fila" | "emitidos" }) {
     </nav>
   );
 }
+
+export const metadata = { title: tituloDoAdmin("/admin/documentos") };
 
 export default async function AdminDocumentosPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
