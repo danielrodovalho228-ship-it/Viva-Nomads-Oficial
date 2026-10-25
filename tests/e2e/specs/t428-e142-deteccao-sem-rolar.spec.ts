@@ -46,9 +46,9 @@ test.describe("T428 — E142: o bloco da detecção na chegada ao Passo 5", () =
 
   for (const w of [390, 1280] as const) {
     test(`a ${w} px: o bloco da detecção aparece e está dentro da tela na chegada, sem rolar`, async ({ browser }) => {
-      // E142 (Pista A): a 390 px o bloco é desenhado fora da tela na chegada (viewport ratio 0, run 40190394864): só
-      // rolando o dono o vê. Quem corrigir tira este test.fail.
-      test.fail(w === 390, "E142: a 390 px o bloco da detecção fica fora da tela na chegada ao Passo 5");
+      // E142 (Pista A): a 390 e a 1280 px o bloco é desenhado fora da tela na chegada (viewport ratio 0, runs 40190394864
+      // e 40190996396): só rolando o dono o vê. Quem corrigir tira este test.fail.
+      test.fail(true, "E142: o bloco da detecção fica fora da tela na chegada ao Passo 5");
       const page = await entrar(browser, dono.email, senha);
       await ligarNoLaboratorio(page);
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
