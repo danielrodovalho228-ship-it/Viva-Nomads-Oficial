@@ -4,7 +4,7 @@ import { ICONE_POR_CHAVE } from "@/lib/anuncio/comodidades-icones";
 import type { Property } from "@/lib/types";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { precoDeBusca } from "@/lib/busca/painel-filtros";
-import { AMENITY_KEY_BY_LABEL, AMENITY_LABEL } from "@/lib/amenities";
+import { AMENITY_KEY_BY_LABEL, AMENITY_LABEL, rotulosQueValemParaTipo } from "@/lib/amenities";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -18,8 +18,8 @@ const ICONES: [string, LucideIcon][] = CHAVES_NO_CARD.map((k) => [k, ICONE_POR_C
 const isPhoto = (s?: string) => typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
 
 /** Ícones de comodidade do imóvel (máx. 6), com o nome para leitor de tela. */
-export function iconesComodidades(p: Pick<Property, "amenities" | "petsAllowed">): { chave: string; rotulo: string; Icone: LucideIcon }[] {
-  const tem = new Set((p.amenities ?? []).map((a) => AMENITY_KEY_BY_LABEL[a] ?? a));
+export function iconesComodidades(p: Pick<Property, "amenities" | "petsAllowed"> & Partial<Pick<Property, "propertyType">>): { chave: string; rotulo: string; Icone: LucideIcon }[] {
+  const tem = new Set(rotulosQueValemParaTipo(p.amenities ?? [], p.propertyType).map((a) => AMENITY_KEY_BY_LABEL[a] ?? a));
   const out = ICONES.filter(([k]) => tem.has(k)).map(([k, Icone]) => ({ chave: k, rotulo: AMENITY_LABEL[k] ?? k, Icone }));
   if (p.petsAllowed) out.push({ chave: "pet", rotulo: "Aceita pets", Icone: PawPrint });
   return out.slice(0, 6);
