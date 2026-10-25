@@ -169,8 +169,12 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       await expect(p).toHaveURL(/\/dashboard\/conta\/perfil$/);
       await p.getByTestId("perfil-cartao").waitFor();
+      // E55: a Helena é proprietária, então o espelho abre no do proprietário; o do morador fica em "Ver como morador".
+      const papel = p.locator('[data-testid="espelho-papel"]:visible').first();
+      await expect(papel.getByTestId("espelho-titulo")).toHaveText("É assim que o morador te vê no seu anúncio");
+      await papel.getByTestId("espelho-ver-como").click();
       const espelho = p.locator('[data-testid="espelho-perfil"]:visible');
-      await expect(espelho.getByRole("heading")).toHaveText("É assim que o proprietário te vê");
+      await expect(espelho.getByRole("heading")).toHaveText("É assim que o proprietário te vê quando você pede para morar");
       await expect(espelho.getByTestId("espelho-nome")).toHaveText("Helena Prado");
       await expect(espelho.getByTestId("espelho-email")).toHaveText("E-mail confirmado");
       await p.locator("#perfil-cidade").fill("Santa Mônica");

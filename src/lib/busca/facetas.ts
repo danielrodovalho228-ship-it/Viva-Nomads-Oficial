@@ -5,8 +5,9 @@
   então o número do chip é o que aparece ao aplicar — a contagem nunca muda em silêncio). Opção com 0 fica desabilitada
   (não prende ninguém num "Nenhum imóvel"), exceto a já escolhida, que precisa continuar clicável para ser desligada.
 
-  Internet medida (E40): a seção só existe quando algum anúncio da busca atual tem medição válida; as faixas saem das
-  medições reais (só as faixas que algum anúncio alcança). Sem medição, uma linha honesta no lugar, como a dos níveis.
+  Internet medida (E40): a seção só existe quando algum anúncio da busca atual (a MESMA base do contar(), antes do filtro
+  de internet) tem medição válida. Adendo 3: aí aparecem as faixas 50/100/300, cada uma com a contagem (faixa em 0
+  desativada). Sem medição, a seção some e o filtro de internet que veio na URL é ignorado (filtroInternetEfetivo).
 */
 import { CHIPS_INTERNET, downloadMedido, type ImovelComInternet } from "./filtro-internet.ts";
 import type { FiltrosPainel } from "./painel-filtros.ts";
@@ -55,16 +56,20 @@ export function medicoesDaBusca(lista: readonly ImovelComInternet[], agora: Date
   return lista.map((p) => downloadMedido(p, agora)).filter((d): d is number => d !== null);
 }
 
-/**
- * As faixas "a partir de" que existem nesta busca: só as que algum anúncio medido alcança. A já escolhida continua
- * (para poder desligar). Sem nenhuma medição → [] e a seção some.
- */
-export function faixasInternet(medicoes: readonly number[], escolhida: number): number[] {
-  if (medicoes.length === 0) return escolhida ? [escolhida] : [];
-  return CHIPS_INTERNET.filter((c) => c === escolhida || medicoes.some((d) => d >= c));
+/** As faixas "a partir de" da seção: as três (50/100/300) quando a busca tem medição; sem medição, nenhuma. */
+export function faixasInternet(medicoes: readonly number[]): readonly number[] {
+  return medicoes.length > 0 ? CHIPS_INTERNET : [];
 }
 
-/** A seção de internet medida aparece? Só com medição real na busca (ou com o filtro já ligado, para desligar). */
-export function secaoInternetVisivel(medicoes: readonly number[], f: Pick<FiltrosPainel, "internetMin" | "soInternetMedida">): boolean {
-  return medicoes.length > 0 || f.internetMin > 0 || f.soInternetMedida;
+/** A seção de internet medida aparece? Só com pelo menos uma medição válida na busca atual. */
+export function secaoInternetVisivel(medicoes: readonly number[]): boolean {
+  return medicoes.length > 0;
+}
+
+/**
+ * Adendo 3 (E40): sem medição na busca, `?internet=` / `?medida=1` são ignorados (o chip ativo sai e a lista não zera
+ * por um filtro que nenhum anúncio pode cumprir).
+ */
+export function filtroInternetEfetivo<F extends Pick<FiltrosPainel, "internetMin" | "soInternetMedida">>(medicoes: readonly number[], f: F): F {
+  return secaoInternetVisivel(medicoes) ? f : { ...f, internetMin: 0, soInternetMedida: false };
 }

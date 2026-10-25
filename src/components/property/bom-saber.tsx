@@ -15,13 +15,14 @@ import {
   ShieldCheck,
   UserPlus,
   Users,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { linhasBomSaber, type ChaveBomSaber, type ChaveItemRegra } from "@/lib/anuncio/resumos-imovel";
 
-const ICONES: Record<ChaveBomSaber, LucideIcon> = { cancelamento: Ban, regras: Home, seguranca: ShieldCheck };
+const ICONES: Record<ChaveBomSaber, LucideIcon> = { cancelamento: Ban, regras: Home, seguranca: ShieldCheck, manutencao: Wrench };
 /** CAMPOS-1: cada regra da casa com o seu ícone. */
 const ICONES_REGRA: Record<ChaveItemRegra, LucideIcon> = {
   pessoas: Users,
@@ -35,7 +36,7 @@ const ICONES_REGRA: Record<ChaveItemRegra, LucideIcon> = {
   outras: ListChecks,
 };
 
-/** Bloco "Bom saber": 3 linhas-resumo; cada uma abre o detalhe. As regras completas seguem em "Regras da estadia". */
+/** Bloco "Bom saber": 4 linhas-resumo (cancelamento, regras, segurança, manutenção); cada uma abre o detalhe. As regras completas seguem em "Regras da estadia". */
 export function BomSaber({ property }: { property: Property }) {
   const linhas = linhasBomSaber(property);
   const [aberta, setAberta] = useState<ChaveBomSaber | null>(null);

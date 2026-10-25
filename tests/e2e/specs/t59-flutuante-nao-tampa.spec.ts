@@ -50,14 +50,11 @@ for (const largura of [360, 390]) {
       await page.goto("/ajuda", { waitUntil: "networkidle" });
       await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
       await nadaTampa(page);
+      // E95: na /buscar o flutuante não aparece (cobria os cartões); a ajuda fica como link no fim da lista.
       await page.goto("/buscar", { waitUntil: "networkidle" });
-      await expect(flut).toBeVisible();
+      await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
+      await expect(page.getByTestId("buscar-ajuda")).toContainText("Fale com a Viva");
       await nadaTampa(page);
-      for (const y of [600, 1400, 2600]) {
-        await page.evaluate((yy) => window.scrollTo(0, yy), y);
-        await page.waitForTimeout(300);
-        await expect(flut, `visível na /buscar após rolar ${y}px`).toBeVisible();
-      }
     });
 
     test("campo em foco esconde o flutuante e ele volta ao sair", async ({ page }) => {
@@ -114,13 +111,13 @@ for (const largura of [360, 390]) {
 }
 
 /** Ordem 4f8d17c6: mesmo formato e mesmos tokens do botão primário em todas as páginas e larguras. */
-test("4f8d17c6 — flutuante idêntico em /, /buscar, /precos e /como-funciona a 390, 768 e 1280 px", async ({ page }) => {
-  // 12 páginas (3 larguras × 4 rotas): não cabe nos 45 s padrão; só o HTML (o "load" de /buscar fica preso no mapa).
+test("4f8d17c6 — flutuante idêntico em /, /precos e /como-funciona a 390, 768 e 1280 px", async ({ page }) => {
+  // 9 páginas (3 larguras × 3 rotas): não cabe nos 45 s padrão. E95: a /buscar saiu (lá o flutuante não aparece).
   test.setTimeout(180_000);
   const estilos = new Set<string>();
   for (const largura of [390, 768, 1280]) {
     await page.setViewportSize({ width: largura, height: 800 });
-    for (const rota of ["/", "/buscar", "/precos", "/como-funciona"]) {
+    for (const rota of ["/", "/precos", "/como-funciona"]) {
       await page.goto(rota, { waitUntil: "domcontentloaded" });
       const flut = page.getByTestId("fale-com-a-viva");
       await expect(flut, `${rota} a ${largura}px`).toBeVisible();

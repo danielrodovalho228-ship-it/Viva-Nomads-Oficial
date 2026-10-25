@@ -40,7 +40,7 @@ const PLANOS_BASE: Plano[] = [
     beneficios: [
       "1 anúncio ativo (limitado)",
       "Aparece na busca",
-      "Recebe consultas de inquilinos",
+      "Recebe consultas de moradores",
       "Checklist de qualificação",
     ],
     custoLabel: "",
@@ -96,14 +96,14 @@ const PLANOS_BASE: Plano[] = [
       "Feito para administradoras — recursos de carteira em construção com os primeiros gestores parceiros",
       "Atendimento dedicado",
     ],
-    custoLabel: "Comissão zero — você paga só a assinatura",
+    custoLabel: "Taxa de serviço zero — você paga só a assinatura",
     cta: "Falar com vendas",
   },
 ];
 
 /** Texto da comissão, sempre em reais: "12% do valor total do contrato (≈ R$ 288 por mês de aluguel)". */
 export function textoComissao(comissao: number, aluguel?: number): string {
-  if (comissao === 0) return "Comissão zero: você paga só a assinatura";
+  if (comissao === 0) return "Taxa de serviço zero: você paga só a assinatura";
   const pct = `${Math.round(comissao * 1000) / 10}`.replace(".", ",");
   const valor = aluguel && aluguel > 0 ? ` (≈ ${reaisInteiros(aluguel * comissao)} por mês de aluguel)` : "";
   return `${pct}% do valor total do contrato${valor}`;
@@ -242,8 +242,8 @@ export function assinaturaAnualGestor(imoveis: number): number {
   return 12 * (GESTOR_PRECO.mensalBase + GESTOR_PRECO.porImovelAdicional * Math.max(0, n - GESTOR_PRECO.imoveisInclusos));
 }
 
-/** "a partir de R$ 500/mês · comissão zero · para carteiras de 20+ imóveis" */
-export const GESTOR_RESUMO = `a partir de ${reaisInteiros(GESTOR_PRECO.mensalBase)}/mês · comissão zero · para carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis`;
+/** "a partir de R$ 500/mês · taxa de serviço zero · para carteiras de 20+ imóveis" */
+export const GESTOR_RESUMO = `a partir de ${reaisInteiros(GESTOR_PRECO.mensalBase)}/mês · taxa de serviço zero · para carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis`;
 
 /**
  * Regras do CONTRATO — fonte única (prazo, teto legal, caução, blocos).

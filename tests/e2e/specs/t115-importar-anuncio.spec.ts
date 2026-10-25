@@ -11,18 +11,18 @@ test.describe("T115 — Importar meu anúncio", () => {
   test.use({ storageState: authFile("proprietario"), viewport: { width: 390, height: 844 } });
 
   test("cola, confere, aplica e o cadastro recebe os campos", async ({ page }) => {
-    // Abre direto no passo Endereço (?etapa=endereco, o 3º dos 10), onde fica o atalho de importar. Não depende do token
-    // no localStorage nem de rascunho local.
-    await page.goto("/dashboard/imoveis/novo?etapa=endereco", { waitUntil: "domcontentloaded" });
+    // Abre direto no Passo 1 (?etapa=tipo), onde fica o atalho de importar (E104: saiu do Passo 3, que é só endereço).
+    // Não depende do token no localStorage nem de rascunho local.
+    await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
     const abrir = page.getByTestId("importar-abrir");
     const continuar = page.getByTestId("rascunho-continuar");
-    // Com rascunho no servidor a tela oferece "Continuar": reabre o rascunho já no passo Endereço.
+    // Com rascunho no servidor a tela oferece "Continuar": reabre o rascunho já no Passo 1.
     await expect(abrir.or(continuar)).toBeVisible({ timeout: 30_000 });
     const tinhaRascunho = await continuar.isVisible();
     if (tinhaRascunho) {
       await continuar.click();
       await page.waitForURL(/draft=/, { timeout: 15_000 });
-      await page.goto(`${page.url()}&etapa=endereco`, { waitUntil: "domcontentloaded" });
+      await page.goto(`${page.url()}&etapa=tipo`, { waitUntil: "domcontentloaded" });
     }
 
     // Sem networkidle (estourava os 45 s no lab): repete o clique até a página hidratar e o aviso abrir.

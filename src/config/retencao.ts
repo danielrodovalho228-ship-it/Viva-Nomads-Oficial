@@ -67,6 +67,8 @@ export const INVENTARIO: ItemInventario[] = [
   i("documentos_inquilino", "public.documentos_inquilino", "caminho e hash do documento da candidatura", "ligar o arquivo à candidatura", ESTADIA, "tipo, data de envio e o veredito"),
   i("profiles", "public.profiles", "nome, e-mail, telefone, CPF/CNPJ, data de nascimento, bio, cidade, foto, local de trabalho", "a conta", CONTA),
   i("avatars", "bucket:avatars", "foto de perfil", "mostrar quem é a pessoa", CONTA),
+  // FOTO-PERFIL-B (E13): a fila de revisão guarda o caminho da foto e o motivo da remoção (lista fechada).
+  i("fotos_perfil_revisao", "public.fotos_perfil_revisao", "caminho da foto de perfil enviada, situação da revisão e motivo da remoção", "conferir que a foto é o rosto do titular adulto", CONTA),
   i("tenant_verifications", "public.tenant_verifications", "veredito da identidade (CAF: semáforo, confere nome/CPF)", "confiança", CONTA, "só o veredito; a Viva não grava imagem de documento nem selfie"),
   i("messages", "public.messages", "mensagens do chat", "conversa entre as partes", DISPUTA),
   i("service_order_messages", "public.service_order_messages", "mensagens de ordem de serviço", "conversa do serviço", DISPUTA),
@@ -179,6 +181,10 @@ export const INVENTARIO: ItemInventario[] = [
   i("destinos_nao_achados", "public.destinos_nao_achados", "nome do lugar e cidade pedidos em 'Não achei meu local'", "a equipe cadastrar a âncora", CONTA, "nome do lugar e cidade, sem quem pediu"),
   // Prompt 51 F1: o motivo da saída (opcional) e o texto livre (só a equipe lê). Na exclusão da conta o user_id vira nulo.
   i("saidas_motivos", "public.saidas_motivos", "motivo da saída e texto livre opcional", "entender por que as pessoas saem (painel de qualidade)", { prazoDias: 365, gatilho: "sem_gatilho_automatico", modo: "anonimizar", base: "proposta", fase: 2 }, "papel, motivo e data, sem identificação (estatística)"),
+  // FOTO-NA-HORA-B: token de captura (hash) com a foto da prova tirada com ele, e o link "Continuar no celular" (hash).
+  // A rotina dos prazos (prazos-59-servidor, passo D) apaga os dois com mais de 1 dia; saem em cascata com a conta.
+  i("prova_capturas", "public.prova_capturas", "hash do token de captura, item, caminho e hash perceptual da foto da prova feita na hora", "provar que a foto do item foi feita na hora, uma vez só", { prazoDias: 1, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "proposta", fase: 2 }, "a prova gravada em nivel_itens (caminho, hora da captura, hash)"),
+  i("prova_links_celular", "public.prova_links_celular", "hash do link de uso único, item e dono", "abrir a câmera do item no celular do próprio dono", { prazoDias: 1, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "proposta", fase: 2 }, "nada"),
   i("denuncias_anuncio", "public.denuncias_anuncio", "motivo e texto da denúncia de anúncio", "o atendimento analisar a denúncia", { prazoDias: 365, gatilho: "decisao_admin", modo: "apagar", base: "proposta", fase: 2 }, "o estado da denúncia no chamado"),
 ];
 
@@ -189,7 +195,7 @@ export const SEM_DADO_PESSOAL: Record<string, string> = {
   property_proximities: "lugares públicos perto do anúncio (nome, categoria, endereço e ponto do LUGAR — hospital, mercado, ponto de ônibus), nunca o da pessoa (PERTO-B)",
   proximidades_reportes: "aviso do dono de que um lugar público achado pelo OpenStreetMap está errado: nome do lugar e motivo curto; sai em cascata com o anúncio (PERTO-B)",
   imovel_extras: "lista fechada de extras do anúncio (Adendo 59.1), sem dado de pessoa",
-  nivel_itens: "itens de nível do anúncio e a foto de cada um (sem pessoas); ficam enquanto o anúncio existir e saem em cascata com ele (Adendo 59.1)",
+  nivel_itens: "itens de nível do anúncio e a foto de cada um (sem pessoas), com a origem (câmera/arquivo), a hora da captura e o hash perceptual (FOTO-NA-HORA-B); ficam enquanto o anúncio existir e saem em cascata com ele (Adendo 59.1)",
   deteccao_fotos_analises: "cache das fotos da galeria já analisadas (caminho dono/uuid.webp, hash dos bytes, se havia pessoa); sem conteúdo; sai em cascata com o anúncio (DETECTA-B)",
   deteccao_sugestoes: "sugestão de item/comodidade achado na foto da galeria (chave da lista fechada, confiança, status); sai em cascata com o anúncio (DETECTA-B)",
   conforto_declaracoes: "itens do padrão mínimo marcados pelo dono para o imóvel (chave do item, sem dado pessoal)",

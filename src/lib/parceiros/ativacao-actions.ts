@@ -25,7 +25,7 @@ async function lerPedido(token: string) {
   if (!admin || !tokenBemFormado(token)) return { admin, sol: null };
   const { data } = await admin
     .from("parceiro_solicitacoes")
-    .select("id, user_id, email, nome, tipo_pessoa, documento, telefone, categorias, cidades, descricao, status, token_expira_em")
+    .select("id, user_id, email, nome, tipo_pessoa, emite_nota, documento, telefone, categorias, cidades, descricao, status, token_expira_em")
     .eq("token_ativacao_hash", hashToken(token))
     .maybeSingle();
   return { admin, sol: data };
@@ -79,6 +79,7 @@ export async function ativarParceria(token: string): Promise<{ ok: true; slug: s
       user_id: user.id,
       solicitacao_id: sol.id,
       tipo_pessoa: sol.tipo_pessoa,
+      emite_nota: sol.tipo_pessoa === "pj" ? ((sol.emite_nota as boolean | null) ?? null) : null,
       documento: sol.documento,
       razao_social: sol.tipo_pessoa === "pj" ? sol.nome : null,
       nome_publico: String(sol.nome).slice(0, 80),

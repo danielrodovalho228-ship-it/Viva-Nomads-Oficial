@@ -45,6 +45,8 @@ export type NotificationEvent =
   // Prompt 59: prazo de solução da manutenção e padrão mínimo de conforto
   | "manutencao_prazo" // resolver até / prazo perto / vencido / reaberta → proprietário (e o morador sabe do aviso)
   | "conforto_prazo" // confirme o padrão mínimo até [data] / anúncio saiu da busca → proprietário
+  | "nivel_prova_celular" // FOTO-NA-HORA-B: link de uso único para fotografar o item do nível pelo celular → dono
+  | "nivel_prova_vencida" // FOTO-NA-HORA-B: prova anterior à regra venceu sem foto da câmera; o item deixou de contar → dono
   | "conforto_pendencia" // item do padrão mínimo que não confere (e o que aconteceu com ele) → as partes
   | "checkin_lembrete" // entrada em 2 dias / amanhã → proprietário e inquilino
   // Automações por data (cron /api/cron/automacoes, ordem d250ea2f item 5)
@@ -95,6 +97,8 @@ export type NotificationEvent =
   // Viva rodando automático (Prompt 38)
   | "vinculo_parceiro_convite" // o dono convidou o parceiro como fixo do imóvel → parceiro
   | "vinculo_parceiro_resposta" // o parceiro aceitou ou recusou o convite → dono
+  | "foto_perfil_removida" // FOTO-PERFIL-B: a equipe removeu a foto do perfil pela fila (motivo da lista fechada) → a pessoa
+  | "parceiro_selo_nota_removido" // FISCAL-PARCEIRO-B: denúncia procedente tirou o selo "Emite nota fiscal" → parceiro
   | "pedido_auto_confirmar" // pedido automático no modo "confirmar" → dono (1 toque)
   | "pedido_auto_sem_resposta" // parceiro sem resposta em 24 h → dono (pode trocar)
   | "pedido_auto_atualizado" // estadia remarcada: janela nova → parceiro
@@ -164,6 +168,8 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   manutencao_atualizada: { subject: "Atualização na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, a ordem de manutenção do imóvel mudou de status. Veja o histórico pela plataforma.`, cta: "Ver histórico", path: "/dashboard/solicitacoes" },
   manutencao_prazo: { subject: "Prazo de solução da manutenção", body: (n) => `Olá${n ? " " + n : ""}, um pedido de manutenção do seu imóvel tem prazo de solução. Veja o prazo e atualize a ordem pela plataforma.`, cta: "Ver a ordem", path: "/dashboard/solicitacoes" },
   conforto_prazo: { subject: "Confirme o padrão mínimo do seu anúncio", body: (n) => `Olá${n ? " " + n : ""}, o seu anúncio precisa do padrão mínimo de conforto confirmado para continuar na busca.`, cta: "Confirmar o padrão mínimo", path: "/dashboard/imoveis" },
+  nivel_prova_celular: { subject: "Fotografe o item pelo celular", body: (n) => `Olá${n ? " " + n : ""}, abra este e-mail no celular e toque no botão para fotografar o item do nível na hora, pela câmera. O link vale por 30 minutos e uma vez só.`, cta: "Continuar no celular", path: "/dashboard/imoveis" },
+  nivel_prova_vencida: { subject: "A foto de um item do nível venceu", body: (n) => `Olá${n ? " " + n : ""}, a foto de um item do nível do seu anúncio era anterior à regra e não foi refeita pela câmera no prazo. O item deixou de contar e o nível foi recalculado. Fotografe o item agora para ele voltar a contar.`, cta: "Fotografar agora", path: "/dashboard/imoveis" },
   conforto_pendencia: { subject: "Pendência do padrão mínimo no imóvel", body: (n) => `Olá${n ? " " + n : ""}, há uma pendência do padrão mínimo de conforto no imóvel do seu contrato. Veja pela plataforma.`, cta: "Ver a pendência", path: "/dashboard/contratos" },
   manutencao_mensagem: { subject: "Nova mensagem na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, há uma nova mensagem na ordem de manutenção do imóvel. Responda pela plataforma.`, cta: "Ver mensagem", path: "/dashboard/solicitacoes" },
   checkin_lembrete: { subject: "Lembrete: a entrada no imóvel está chegando", body: (n) => `Olá${n ? " " + n : ""}, a entrada no imóvel do seu contrato está chegando. Confira o horário e as instruções de entrada pela plataforma.`, cta: "Ver instruções de entrada", path: "/dashboard/contratos" },
@@ -206,6 +212,8 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   estadia_encerramento_pedido: { subject: "Pedido de encerramento do contrato", body: (n) => `Olá${n ? " " + n : ""}, a outra parte pediu o encerramento do contrato. A Viva recebeu o pedido e vai conduzir o encerramento com vocês.`, cta: "Ver a estadia", path: "/dashboard/contratos" },
   estadia_encerramento_equipe: { subject: "Novo pedido de encerramento", body: () => "Uma das partes pediu o encerramento de um contrato. O pedido está na fila de encerramentos.", cta: "Abrir a fila", path: "/admin/contratos/encerramentos" },
   vinculo_parceiro_convite: { subject: "Convite para parceiro fixo de um imóvel", body: (n) => `Olá${n ? " " + n : ""}, um proprietário quer você como parceiro fixo do imóvel dele. Os pedidos chegam a cada saída de morador, e você aceita ou recusa cada um.`, cta: "Ver o convite", path: "/dashboard/parceiro" },
+  foto_perfil_removida: { subject: "A foto do seu perfil foi removida", body: (n) => `Olá${n ? " " + n : ""}, a equipe da Viva Nomads removeu a foto do seu perfil. A foto do perfil precisa ser o seu rosto. Você pode enviar outra foto quando quiser.`, cta: "Enviar outra foto", path: "/dashboard/conta/perfil" },
+  parceiro_selo_nota_removido: { subject: "O selo de nota fiscal saiu da sua página", body: (n) => `Olá${n ? " " + n : ""}, uma denúncia de que a nota fiscal declarada não foi emitida foi considerada procedente pela equipe. O selo "Emite nota fiscal" saiu da sua página e da busca. O motivo está no seu painel; para revisar, fale com a Viva pela Central de Ajuda.`, cta: "Abrir o meu painel", path: "/dashboard/parceiro" },
   vinculo_parceiro_resposta: { subject: "O parceiro respondeu ao seu convite", body: (n) => `Olá${n ? " " + n : ""}, o parceiro respondeu ao convite para o seu imóvel. Veja a resposta em Parceiros do imóvel.`, cta: "Ver a resposta", path: "/dashboard/imoveis" },
   pedido_auto_confirmar: { subject: "Confirme o pedido de serviço do imóvel", body: (n) => `Olá${n ? " " + n : ""}, a Viva preparou um pedido para o parceiro fixo do seu imóvel. Confira o valor-base e confirme com 1 toque.`, cta: "Confirmar o pedido", path: "/dashboard/servicos" },
   pedido_auto_sem_resposta: { subject: "O parceiro ainda não respondeu", body: (n) => `Olá${n ? " " + n : ""}, o parceiro não respondeu ao pedido em 24 horas. Você pode esperar ou trocar de parceiro com 1 toque.`, cta: "Ver o pedido", path: "/dashboard/servicos" },

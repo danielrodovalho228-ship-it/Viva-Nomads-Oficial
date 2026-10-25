@@ -4,6 +4,8 @@ import { test, expect, type Page } from "@playwright/test";
  * T157 — Lote busca (ordem 826719b1, D1/D5/D12), pública, 390 e 1280 px.
  * D1: "Até R$ 2.500" não mostra anúncio de total maior; D5: Limpar filtros zera a descrição e os chips;
  * D12: clicar no coração favorita SEM navegar para o anúncio.
+ * E82-A: a descrição vive numa folha ("Descrever o que procuro"), que fecha ao aplicar; limpar é o "Limpar filtros"
+ * do estado vazio ou o "Limpar tudo" da folha de filtros.
  */
 const brl = (t: string) => Number((t.match(/R\$\s*([\d.]+)/)?.[1] ?? "0").replace(/\./g, ""));
 
@@ -24,14 +26,29 @@ for (const largura of [390, 1280]) {
 
     test("Limpar filtros zera o campo de descrição e os chips", async ({ page }) => {
       await page.goto("/buscar", { waitUntil: "networkidle" });
-      const campo = page.getByLabel("Descreva o lugar ideal");
-      await campo.fill("2 quartos, aceita gato, até 2.500");
-      await page.getByTestId("descricao-aplicar").click();
-      await expect(page.getByTestId("descricao-chips")).toBeVisible();
-      // Só um dos três "Limpar filtros" aparece em cada largura (celular: abaixo dos chips; computador: barra ou painel).
-      await page.locator('[data-testid^="limpar-filtros"]:visible').first().click();
-      await expect(page.getByTestId("descricao-chips")).toHaveCount(0);
-      await expect(campo).toHaveValue("");
+      await page.getByTestId("abrir-descrever").click();
+      const folha = page.getByTestId("folha-descrever");
+      await folha.getByLabel("Descreva o lugar ideal").fill("2 quartos, aceita gato, até 2.500");
+      await folha.getByTestId("descricao-aplicar").click();
+      // Aplicar fecha a folha; os filtros da frase entram na busca.
+      await expect(folha).toHaveCount(0);
+      await expect(page).toHaveURL(/preco=2500/);
+      await expect(page.getByTestId("pilula-preco")).toHaveAttribute("data-valor", "Até R$ 2.500");
+      // Sem resultado: o "Limpar filtros" do estado vazio; com resultado: "Limpar tudo" da folha de filtros.
+      const vazia = page.getByTestId("busca-vazia-limpar");
+      if (await vazia.isVisible()) await vazia.click();
+      else {
+        await page.getByTestId("pilula-mais").click();
+        const filtros = page.getByRole("dialog", { name: "Filtros" });
+        await filtros.getByTestId("limpar-tudo").click();
+        await filtros.getByTestId("aplicar-filtros").click();
+      }
+      await expect(page).not.toHaveURL(/preco=/);
+      await expect(page.getByTestId("pilula-preco")).toHaveAttribute("data-valor", "");
+      // Reaberta, a descrição volta vazia e sem chips.
+      await page.getByTestId("abrir-descrever").click();
+      await expect(folha.getByTestId("descricao-chips")).toHaveCount(0);
+      await expect(folha.getByLabel("Descreva o lugar ideal")).toHaveValue("");
     });
 
     test("clicar no coração favorita sem navegar", async ({ page }) => {

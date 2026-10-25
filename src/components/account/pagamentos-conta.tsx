@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { BellRing, Check, Copy, CreditCard } from "lucide-react";
-import { meusPapeis } from "@/lib/data/papeis-actions";
+import { usePapeisDaConta } from "@/components/papel/use-troca-papel";
 import { minhaChavePix, removerChavePix, salvarChavePix, type MinhaChavePix } from "@/lib/data/recebimento-actions";
 import { TIPOS_CHAVE_PIX, type TipoChavePix } from "@/lib/conta/chave-pix";
 import {
@@ -38,7 +38,10 @@ const campo = "w-full min-h-[44px] rounded-lg border border-line bg-white px-3 t
  * não é parceiro, o convite "Cadastrar meu serviço". Os três cartões com a foto pequena do padrão dos Papéis.
  */
 export function PagamentosConta() {
-  const [dono, setDono] = useState(false);
+  // E70: a MESMA fonte de papéis do selo do topo e da barra (estadoDosPapeis): espera a sessão e relê quando o papel
+  // muda. Antes, lia uma vez na montagem, sem esperar a sessão, e o bloco do dono não voltava.
+  const papeis = usePapeisDaConta();
+  const dono = !!papeis?.includes("proprietario");
   const [pix, setPix] = useState<MinhaChavePix | null>(null);
   const [editando, setEditando] = useState(false);
   const [tipo, setTipo] = useState<TipoChavePix>("cpf");
@@ -51,18 +54,17 @@ export function PagamentosConta() {
   const [aviseLocal, setAviseLocal] = useState(false);
   const avise = aviseLocal || !!interesseCartao;
 
+  // A chave Pix só interessa ao dono: lê quando o papel de proprietário aparece (já com a sessão).
   useEffect(() => {
+    if (!dono) return;
     let vivo = true;
-    meusPapeis()
-      .then((p) => vivo && setDono(!!p?.find((x) => x.papel === "proprietario")?.ativo))
-      .catch(() => {});
     minhaChavePix()
       .then((c) => vivo && setPix(c))
       .catch(() => {});
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [dono]);
 
   const salvar = () =>
     comecar(async () => {

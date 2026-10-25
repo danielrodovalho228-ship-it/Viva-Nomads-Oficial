@@ -8,8 +8,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
  *   C — Apartamento, R$ 2.400, sem internet informada, caução.
  *   D — (outra cidade) Studio sem medição: a seção "Internet medida" some.
  *   E — Apartamento na mesma cidade, mas EM ADEQUAÇÃO (falta item do padrão mínimo): não entra em resultado nenhum.
- * Prova: cada chip mostra a contagem que o aplicar entrega; 0 desabilita; as faixas de velocidade saem das medições
- * reais (E40) e 100 Mbps não termina em beco sem saída; um chip só de seguro-fiança e "Pronto para Morar" só na folha
+ * Prova: cada chip mostra a contagem que o aplicar entrega; 0 desabilita; a seção de velocidade só existe com medição
+ * (E40, Adendo 3: faixas 50/100/300 com contagem) e 100 Mbps não termina em beco sem saída; um chip só de seguro-fiança e "Pronto para Morar" só na folha
  * (E43); "Até R$ 2.500" compara o TOTAL (E20). FILTROS-2: Wi-Fi e Cozinha equipada não são chips — viram a linha de
  * garantia do padrão mínimo — e nenhum filtro traz de volta o imóvel em adequação. Prints 390 e 1280.
  */
@@ -24,13 +24,8 @@ const ids: { dono?: string; a?: string; b?: string; c?: string; d?: string; e?: 
 async function abrirFolha(page: Page, url: string) {
   await expect(async () => {
     await page.goto(url, { waitUntil: "domcontentloaded" });
-    // Celular: botão redondo; computador: "Mais filtros" na caixa (aberta pela busca compacta).
-    const celular = page.getByTestId("abrir-filtros").filter({ visible: true });
-    if (await celular.count()) await celular.first().click({ timeout: 5_000 });
-    else {
-      if (!(await page.getByTestId("mais-filtros").isVisible())) await page.getByTestId("busca-compacta").click({ timeout: 5_000 });
-      await page.getByTestId("mais-filtros").click({ timeout: 5_000 });
-    }
+    // E82-A: a pílula "Mais filtros" da linha única, em toda largura.
+    await page.getByTestId("pilula-mais").click({ timeout: 5_000 });
     await expect(page.getByTestId("painel-filtros")).toBeVisible({ timeout: 5_000 });
   }).toPass({ timeout: 60_000 });
   return page.getByTestId("painel-filtros");
@@ -100,11 +95,12 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
       expect(await n(page, "faceta-garantia-seguro_fianca")).toBe(1);
       await expect(folha.getByRole("button", { name: /Aceita Seguro/i })).toHaveCount(0);
       await expect(folha.getByTestId("faceta-pronto")).toBeVisible();
-      // E40: as faixas saem das medições reais (150 Mbps → 50 e 100; 300 não existe).
+      // E40 (Adendo 3): com uma medição na busca, as três faixas; a de 300 (ninguém alcança) aparece com "· 0" e desativada.
       await expect(page.getByTestId("painel-internet")).toBeVisible();
-      await expect(page.getByTestId("faceta-internet-50")).toBeVisible();
-      await expect(page.getByTestId("faceta-internet-100")).toBeVisible();
-      await expect(page.getByTestId("faceta-internet-300")).toHaveCount(0);
+      await expect(page.getByTestId("faceta-internet-50")).toBeEnabled();
+      await expect(page.getByTestId("faceta-internet-100")).toBeEnabled();
+      await expect(page.getByTestId("faceta-internet-300")).toBeDisabled();
+      await expect(page.getByTestId("faceta-internet-300-n")).toHaveText("· 0");
 
       // E6: escolher um chip leva o "Mostrar N" exatamente ao número que o chip mostrava.
       for (const id of ["faceta-tipo-apartamento", "faceta-garantia-caucao"]) {
@@ -149,15 +145,18 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
     await page.screenshot({ path: `${SAIDA}/t350-sem-medicao-1280.png`, fullPage: false });
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("painel-filtros")).toHaveCount(0);
-    if (!(await page.getByTestId("filtros-caixa").isVisible())) await page.getByTestId("busca-compacta").click();
-    await expect(page.getByTestId("filtros-caixa").getByTestId("mais-filtros")).toBeVisible();
-    await expect(page.getByTestId("filtros-caixa").getByRole("button", { name: /Pronto/i })).toHaveCount(0);
+    // E82-A: a barra de cima é a linha de pílulas — "Mais filtros" nela, "Pronto para Morar" não.
+    const linha = page.getByTestId("linha-pilulas");
+    await expect(linha.getByTestId("pilula-mais")).toBeVisible();
+    await expect(linha.getByRole("button", { name: /Pronto/i })).toHaveCount(0);
 
-    // Veio pela URL com ?internet=100 e nada medido: o chip ligado fica (para desligar) e a linha diz o porquê do 0.
+    // Adendo 3 (E40): veio pela URL com ?internet=100 e nada medido — o filtro é ignorado (sem chip, sem seção) e a
+    // URL perde o ?internet.
     await abrirFolha(page, `/buscar?local=${encodeURIComponent(CIDADE_SEM)}&internet=100`);
-    await expect(page.getByTestId("faceta-internet-100")).toBeEnabled();
+    await expect.poll(() => total(page), { timeout: 30_000 }).toBe(1);
+    await expect(page.getByTestId("painel-internet")).toHaveCount(0);
+    await expect(page.getByTestId("faceta-internet-100")).toHaveCount(0);
     await expect(page.getByTestId("painel-internet-vazio")).toBeVisible();
-    await page.getByTestId("faceta-internet-100").click();
-    await expect.poll(() => total(page)).toBe(1);
+    await expect(page).not.toHaveURL(/[?&]internet=/);
   });
 });

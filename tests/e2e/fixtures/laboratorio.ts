@@ -282,10 +282,14 @@ export async function liberarLimiteCodigo(): Promise<void> {
 
 /** Login pela tela, em contexto próprio de 390 px (celular). */
 export async function entrar(browser: Browser, email: string, senha: string): Promise<Page> {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  return entrarNaPagina(await ctx.newPage(), email, senha);
+}
+
+/** O mesmo login de entrar(), numa página já aberta (ex.: o celular com câmera falsa de fixtures/camera.ts). */
+export async function entrarNaPagina(page: Page, email: string, senha: string): Promise<Page> {
   await liberarLimiteLogin(email);
   await liberarLimiteLoginIp();
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const page = await ctx.newPage();
   // networkidle sem teto pendurava até o fim do teste na 1ª carga fria (t168 a 390 px, lab 17/10): espera até 10 s e segue.
   await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});

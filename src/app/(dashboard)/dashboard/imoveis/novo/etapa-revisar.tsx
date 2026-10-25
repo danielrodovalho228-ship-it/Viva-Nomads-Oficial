@@ -1,7 +1,8 @@
 "use client";
 
+import { ROTULO_FALTA_CHACARA, linhasChacaraRevisao, type DadosChacara } from "@/lib/anuncio/chacara";
 import Link from "next/link";
-import { CheckCircle2, Circle, Clock, ImageIcon, XCircle } from "lucide-react";
+import { Check, CheckCircle2, Circle, Clock, ImageIcon, XCircle } from "lucide-react";
 import type { ItemProntidao, Prontidao } from "@/lib/anuncio/prontidao";
 import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -20,10 +21,11 @@ import { CONVITE_FOTO_ANUNCIO_TEXTO } from "@/lib/perfil/convite-foto";
 /**
  * Passo 10 — Revise e publique (mockup cadastro-imovel-10). No computador, duas colunas: à esquerda a "Lista de
  * conferência" (uma linha por passo, com o que falta e "Resolver"); à direita o cartão do anúncio (foto, título,
- * quartos · banheiros · área, "R$ X/mês no total" pelo total mensal do anúncio) e "Publicar anúncio". No celular, o
- * cartão vem primeiro, depois a lista ("Tudo certo para publicar" quando nada falta) e o botão.
+ * quartos · banheiros · área, "R$ X/mês no total" pelo total mensal do anúncio). No celular, o cartão vem primeiro,
+ * depois a lista ("Tudo certo para publicar" quando nada falta). CADASTRO-MOLDURA: o "Publicar anúncio" é o primário
+ * do rodapé do fluxo, e o rascunho salva sozinho (sem botão de salvar no cadastro novo).
  * Ficam as travas que já existiam e o desenho não mostra: estado do documento (quando não está conferido), aceite do
- * termo da IA, o convite opcional da foto do anfitrião, "Salvar como rascunho" e o que falta para publicar embaixo do botão.
+ * termo da IA, o convite opcional da foto do anfitrião e o que falta para publicar.
  */
 export function EtapaRevisar(p: {
   previewProperty: Property;
@@ -44,7 +46,6 @@ export function EtapaRevisar(p: {
   publishing: boolean;
   publish: (asDraft?: boolean, irParaQualificacao?: boolean) => void;
   irPara: (i: number) => void;
-  etapaEndereco: number;
   aceitouIa: boolean;
   setAceitouIa: (v: boolean) => void;
   /** 64-B: o texto mudou depois do aceite — aviso logo acima da caixa. */
@@ -54,6 +55,8 @@ export function EtapaRevisar(p: {
   conforto: string[];
   publishError: string | null;
   podePublicar: boolean;
+  /** E102-A: só no tipo Chácara/Sítio — os dados preenchidos do grupo rural. */
+  chacara?: DadosChacara | null;
 }) {
   const conf = conferenciaAssistente(p.prontidao);
   const total = calcularTotalMensal(p.previewProperty).total;
@@ -131,6 +134,19 @@ export function EtapaRevisar(p: {
           );
         })}
       </ul>
+      {p.chacara && (
+        <div className="mt-4 rounded-lg border border-line p-3" data-testid="revisao-chacara">
+          <p className="text-sm font-semibold text-ink">{ROTULO_FALTA_CHACARA}</p>
+          <ul className="mt-1 space-y-1 text-sm">
+            {linhasChacaraRevisao(p.chacara).map((l) => (
+              <li key={l.chave} className={cn("flex items-center gap-1", l.ok ? "text-ink" : "text-muted")} data-testid={`revisao-chacara-${l.chave}`}>
+                {l.texto}
+                {l.ok && <Check className="h-4 w-4 text-forest" aria-label="feito" />}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {conf.pendentesNaRevisao.length > 0 && (
         <p className="mt-2 text-sm text-ink" data-testid="conferencia-revisao">
           Falta: {conf.pendentesNaRevisao.join("; ")}
@@ -159,7 +175,7 @@ export function EtapaRevisar(p: {
   return (
     <div className="space-y-6" data-testid="etapa-revisar">
       {/* Estado do documento (prompt 11): aparece quando ainda segura a publicação; conferido, some (a lista já diz). */}
-      {!p.editingId && <DocumentoEstado estado={p.docEstado} motivos={p.docMotivos} onEnviar={() => p.irPara(p.etapaEndereco)} />}
+      {!p.editingId && <DocumentoEstado estado={p.docEstado} motivos={p.docMotivos} onEnviar={() => document.querySelector('[data-testid="antes-de-publicar"]')?.scrollIntoView({ behavior: "smooth", block: "start" })} />}
 
       {/* Um "Publicar anúncio" só. Celular: cartão, lista, aceite e botão. Computador: lista à esquerda; cartão e botão à
           direita; o aceite embaixo, na largura toda. */}
@@ -186,18 +202,24 @@ export function EtapaRevisar(p: {
           {/* Ordem 504d9679, peça 3: convite opcional; nunca entra na conta de podePublicar. */}
           {!p.editingId && <ConviteFotoCandidatura texto={CONVITE_FOTO_ANUNCIO_TEXTO} testId="convite-foto-anuncio" />}
         </div>
+        {/* CADASTRO-MOLDURA: o "Publicar anúncio" é o primário do rodapé do fluxo (um só por tela). */}
         <div className="min-w-0 lg:col-start-2 lg:row-start-2">
-          <BotaoPublicar {...p} />
-          <p className="mt-3 text-center text-sm text-muted lg:hidden">{TEXTOS_REVISAO.editarDepois}</p>
+          <p className="text-center text-sm text-muted lg:hidden">{TEXTOS_REVISAO.editarDepois}</p>
         </div>
       </div>
       {/* Prompt 59-A (critério f da varredura): o botão nunca fica desabilitado em silêncio — diz o que falta. */}
       {!p.podePublicar && !p.publishing && <FaltaParaPublicar {...p} />}
 
       <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-        <Button variant="outline" onClick={() => p.publish(true)} disabled={p.publishing}>
-          {p.editingId ? "Salvar sem publicar" : "Salvar como rascunho"}
-        </Button>
+        {/* O rascunho salva sozinho ("Salvo às HH:MM"): sem "Salvar como rascunho". Na edição de um anúncio, salvar sem
+            publicar continua possível. */}
+        {p.editingId ? (
+          <Button variant="outline" onClick={() => p.publish(true)} disabled={p.publishing}>
+            Salvar sem publicar
+          </Button>
+        ) : (
+          <span aria-hidden />
+        )}
         <p className="text-center text-sm text-muted" data-testid="revisao-termos">
           Ao publicar, você concorda com os{" "}
           <Link href="/termos" className="underline underline-offset-2">
@@ -211,21 +233,6 @@ export function EtapaRevisar(p: {
         </p>
       </div>
     </div>
-  );
-}
-
-function BotaoPublicar(p: { podePublicar: boolean; publishing: boolean; editingId: string | null; publish: (asDraft?: boolean) => void }) {
-  return (
-    <Button
-      size="lg"
-      className={cn("w-full", !p.podePublicar && "cursor-not-allowed opacity-60")}
-      onClick={() => p.publish(false)}
-      disabled={p.publishing || !p.podePublicar}
-      title={p.podePublicar ? undefined : "Resolva os itens pendentes da lista"}
-      data-testid="publicar-anuncio"
-    >
-      {p.publishing ? "Salvando..." : p.editingId ? "Salvar alterações" : "Publicar anúncio"}
-    </Button>
   );
 }
 

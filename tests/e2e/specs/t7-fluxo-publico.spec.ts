@@ -16,11 +16,13 @@ test.describe("T7 — Fluxo público", () => {
     expect(temBusca).toBeTruthy();
   });
 
-  test("/buscar com filtro na URL mostra chip ativo e 'Limpar filtros'", async ({ page }) => {
-    // `pronto=1` liga o filtro "Pronto para Morar" → vira chip removível ativo.
+  test("/buscar com filtro na URL mostra a pílula ativa e o filtro marcado na folha", async ({ page }) => {
+    // E82-A: sem chips nem "Limpar filtros" na página — o orçamento vira o valor da pílula "Preço" e
+    // `pronto=1` ("Pronto para Morar") aparece marcado na folha de filtros.
     await page.goto("/buscar?pronto=1&orcamento=3500", { waitUntil: "networkidle" });
-    await expect(page.getByText(/Limpar filtros/i).filter({ visible: true }).first()).toBeVisible();
-    await expect(page.getByText(/Pronto para Morar/i).filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByTestId("pilula-preco")).toHaveAttribute("data-valor", "Até R$ 3.500");
+    await page.getByTestId("pilula-mais").click();
+    await expect(page.getByRole("dialog", { name: "Filtros" }).getByTestId("faceta-pronto")).toHaveAttribute("aria-pressed", "true");
   });
 
   test("página de imóvel exibe preço e (quando houver) selo Pronto para Morar", async ({ page }) => {

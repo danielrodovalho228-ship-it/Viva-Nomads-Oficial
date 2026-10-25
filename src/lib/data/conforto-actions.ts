@@ -122,12 +122,10 @@ export async function agirNaPendencia(
     return { ok: false, erro: "Não foi possível salvar agora." };
   }
   await avisarPendenciaConforto(admin, pendenciaId, acao).catch((e: unknown) => console.error("[agirNaPendencia] aviso", e));
-  // Adendo 59.1: item que define o nível. Corrigido com foto nova → a foto do item é trocada (volta para análise);
-  // procedente → a foto deixa de valer até o dono mandar outra. Em todo passo, o nível é recalculado.
+  // Adendo 59.1: item que define o nível. Procedente → a foto deixa de valer até o dono mandar outra. Em todo passo, o
+  // nível é recalculado. FOTO-NA-HORA-B: a foto da correção fica na pendência (prova da correção) e NÃO troca a prova do
+  // item — a prova nova só entra feita na hora, pela câmera (salvarItemNivel com o token de captura).
   if (ehChaveNivel(p.chave as string)) {
-    const foto = typeof extra.foto === "string" && /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.webp$/i.test(extra.foto) && extra.foto.startsWith(`${s.uid}/`) ? extra.foto : null;
-    if (acao === "corrigir" && foto)
-      await admin.from("nivel_itens").update({ foto_path: foto, foto_status: "pendente", motivo_recusa: null, declarado: true, declarado_em: new Date().toISOString() }).eq("property_id", p.property_id).eq("chave", p.chave);
     if (acao === "decidir" && extra.decisao === "procedente")
       await admin.from("nivel_itens").update({ foto_status: "recusada", motivo_recusa: "Pendência procedente: envie uma foto nova do item corrigido.", analisado_por: s.uid, analisado_em: new Date().toISOString() }).eq("property_id", p.property_id).eq("chave", p.chave);
   }

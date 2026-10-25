@@ -3,6 +3,9 @@ import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { tipoEntradaBloqueia } from "@/lib/anuncio/chegada-e-pedido";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
+import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
+import { rotuloItem } from "@/config/niveis";
+import { provaAntigaNoPrazo, type OrigemFoto } from "@/lib/niveis/prova-camera";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
 
 /**
@@ -54,6 +57,22 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
           .filter((r) => ehChacara(r.property_type))
           .map((r) => [r.id, faltaChacara(normalizarChacara(r.detalhes_anuncio?.chacara))]),
       );
+  // E102-B: "Não tem internet" (qualquer tipo com a pergunta) barra pelo padrão mínimo.
+  const semInternetPor = new Set(
+    tipoLido.error
+      ? []
+      : ((tipoLido.data ?? []) as { id: string; property_type: string | null; detalhes_anuncio: unknown }[])
+          .filter((r) => !temInternet(tipoInternetDoAnuncio(r.property_type, r.detalhes_anuncio)))
+          .map((r) => r.id),
+  );
+  // FOTO-NA-HORA-B: provas de nível anteriores à regra ainda no prazo (sem a 0242, erro → nada aparece).
+  const provasLidas = await cliente.from("nivel_itens").select("property_id, chave, foto_path, foto_origem, refazer_ate").in("property_id", idsLista).eq("foto_origem", "arquivo");
+  const provasPor = new Map<string, { chave: string; rotulo: string; ate: string }[]>();
+  const agora = new Date();
+  for (const x of provasLidas.error ? [] : ((provasLidas.data ?? []) as { property_id: string; chave: string; foto_path: string | null; foto_origem: OrigemFoto; refazer_ate: string | null }[])) {
+    if (!x.refazer_ate || !provaAntigaNoPrazo({ fotoOrigem: x.foto_origem, refazerAte: x.refazer_ate, fotoPath: x.foto_path }, agora)) continue;
+    provasPor.set(x.property_id, [...(provasPor.get(x.property_id) ?? []), { chave: x.chave, rotulo: rotuloItem(x.chave), ate: x.refazer_ate }]);
+  }
   const tipoEntradaPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; tipo_entrada: string | null }[]).map((e) => [e.id, e.tipo_entrada]));
   const internetPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; internet_mbps: number | null }[]).map((e) => [e.id, Number(e.internet_mbps) || 0]));
   const declPor = new Map<string, { chave: string; confirmado: boolean; versao_lista?: number | null }[]>();
@@ -81,6 +100,9 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     if (internetPor && p.status === "draft") f.internetOk = (internetPor.get(p.id) ?? 0) > 0;
     // TIPO-CHACARA-B: chácara/sítio só passa a publicado com acesso, tipo de internet e o ponto marcado no mapa.
     if (chacaraPor?.has(p.id) && p.status !== "active") f.chacaraFaltam = chacaraPor.get(p.id);
+    // E102-B: sem internet no imóvel, não passa a publicado; o motivo é a falta de internet, não os Mbps em branco.
+    if (semInternetPor.has(p.id) && p.status !== "active") f.semInternet = true;
+    if (provasPor.has(p.id)) f.provasParaRefazer = provasPor.get(p.id);
     mapa.set(p.id, f);
   }
   return mapa;

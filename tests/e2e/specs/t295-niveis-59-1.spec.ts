@@ -16,16 +16,19 @@ import {
   pngDeTeste,
   tornarContratoVigente,
 } from "../fixtures/laboratorio";
+import { celularComCamera, fotografarEUsar } from "../fixtures/camera";
 import { AREAS, CHAVES_NIVEL_FOTO, MATRIZ, type ChaveNivel } from "../../../src/config/niveis";
 
 /*
   T295 — Adendo 59.1 (parte funcional): níveis Essencial / Conforto / Premium. Só no laboratório.
   Três anúncios do mesmo dono — Essencial, Conforto e Premium — com as fotos de cada item, as medidas por ponto e o ruído.
-   1. Cada um no nível certo (calculado pelo servidor); declarar item sem foto é recusado; a foto pelo upload entra "em análise".
+   1. Cada um no nível certo (calculado pelo servidor); declarar item sem foto é recusado; a foto feita na hora (câmera do
+      celular, FOTO-NA-HORA-B) entra "em análise".
    2. Elo mais fraco: o Premium com uma área em Conforto (tira o ar da sala) vira Conforto; volta ao repor.
    3. Foto recusada pelo atendimento (Central de pendências) tira o item: Premium → Conforto; foto nova → Premium.
    4. Conferência de entrada: o morador marca "não confere" no ar-condicionado dos quartos → exibido como Conforto →
-      o dono corrige com foto → volta a Premium.
+      o dono corrige com foto → volta a Premium. FOTO-NA-HORA-B: a foto da correção fica na pendência e não troca a prova
+      do item (a prova só entra pela câmera).
    5. Filtro "a partir de Conforto" (`?nivel=conforto`) mostra o Conforto e o Premium, não o Essencial.
   Cartão e ficha com o nível e os extras são da exibição (Pista A).
 */
@@ -42,7 +45,7 @@ const SILENCIOSO = { via_intensa: false, noturno_obra_100m: false, aviao_ferrovi
 async function itensComFoto(propertyId: string, chaves: readonly string[]) {
   const { error } = await adm()
     .from("nivel_itens")
-    .upsert(chaves.map((chave) => ({ property_id: propertyId, chave, declarado: true, foto_path: `${ids.dono}/${randomUUID()}.webp`, foto_status: "aceita" })), { onConflict: "property_id,chave" });
+    .upsert(chaves.map((chave) => ({ property_id: propertyId, chave, declarado: true, foto_path: `${ids.dono}/${randomUUID()}.webp`, foto_status: "aceita", foto_origem: "camera", foto_capturada_em: new Date().toISOString() })), { onConflict: "property_id,chave" });
   if (error) throw error;
 }
 async function medidas(propertyId: string, trabalhoBoa: boolean) {
@@ -105,7 +108,7 @@ test.describe("T295 — Adendo 59.1: níveis Essencial / Conforto / Premium", ()
     await apagarContas([ids.dono, ids.inquilino]);
   });
 
-  test("1. os três anúncios no nível certo; item sem foto não conta; a foto pelo upload entra em análise", async ({ browser }) => {
+  test("1. os três anúncios no nível certo; item sem foto não conta; a foto feita na hora entra em análise", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await paginaNivel(page, ids.e!, "essencial");
     await paginaNivel(page, ids.c!, "conforto");
@@ -114,21 +117,30 @@ test.describe("T295 — Adendo 59.1: níveis Essencial / Conforto / Premium", ()
     await semRolagemLateral(page);
     await page.screenshot({ path: "tests/laboratorio/saida/t295-1-premium-390.png", fullPage: true });
 
-    // No Essencial: declarar sem foto é recusado; com a foto enviada pelo upload, o item fica "em análise".
+    // No Essencial: declarar sem foto é recusado; com a foto feita na hora pela câmera, o item fica "em análise".
     await paginaNivel(page, ids.e!, "essencial");
     const item: ChaveNivel = "ar_quarto_principal";
     // A caixa é controlada pelo servidor: sem foto, a declaração é recusada e ela continua desmarcada (por isso click, não check).
     await page.getByTestId(`nivel-tenho-${item}`).click();
     await expect(page.getByTestId(`nivel-tenho-${item}`)).not.toBeChecked();
-    await expect(page.getByTestId(`nivel-msg-${item}`)).toContainText("Envie a foto", { timeout: 20_000 });
-    await page.getByTestId(`nivel-foto-${item}`).setInputFiles({ name: "ar.png", mimeType: "image/png", buffer: pngDeTeste(3) });
-    await expect(page.getByTestId(`nivel-status-${item}`)).toHaveText("Foto em análise", { timeout: 30_000 });
-    const { data: linha } = await adm().from("nivel_itens").select("declarado, foto_status, foto_path").eq("property_id", ids.e!).eq("chave", item).single();
-    expect(linha).toMatchObject({ declarado: true, foto_status: "pendente" });
-    expect(String(linha?.foto_path)).toMatch(new RegExp(`^${ids.dono}/[0-9a-f-]{36}\\.webp$`));
-    // Um item só não muda o nível (elo mais fraco).
-    await paginaNivel(page, ids.e!, "essencial");
+    await expect(page.getByTestId(`nivel-msg-${item}`)).toContainText("pela câmera", { timeout: 20_000 });
     await page.context().close();
+
+    const cel = await celularComCamera({ email: dono.email, senha });
+    try {
+      await paginaNivel(cel.page, ids.e!, "essencial");
+      await cel.page.getByTestId(`nivel-foto-${item}-botao`).click();
+      await fotografarEUsar(cel.page);
+      await expect(cel.page.getByTestId(`nivel-msg-${item}`)).toHaveText(/^Foto de .+ recebida\. O item já conta enquanto a foto é analisada\.$/, { timeout: 30_000 });
+      await expect(cel.page.getByTestId(`nivel-status-${item}`)).toHaveText("Foto em análise", { timeout: 30_000 });
+      const { data: linha } = await adm().from("nivel_itens").select("declarado, foto_status, foto_path, foto_origem").eq("property_id", ids.e!).eq("chave", item).single();
+      expect(linha).toMatchObject({ declarado: true, foto_status: "pendente", foto_origem: "camera" });
+      expect(String(linha?.foto_path)).toMatch(new RegExp(`^${ids.dono}/[0-9a-f-]{36}\\.webp$`));
+      // Um item só não muda o nível (elo mais fraco).
+      await paginaNivel(cel.page, ids.e!, "essencial");
+    } finally {
+      await cel.fechar();
+    }
   });
 
   test("2. elo mais fraco: o Premium sem o ar da sala vira Conforto; ao repor, volta a Premium", async ({ browser }) => {
@@ -168,11 +180,18 @@ test.describe("T295 — Adendo 59.1: níveis Essencial / Conforto / Premium", ()
     // O painel do dono espelha a pendência.
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.getByText(`Envie outra foto de "Ar-condicionado em todos os quartos" em ${T.p}`).first()).toBeVisible({ timeout: 20_000 });
-    await page.goto(`/dashboard/imoveis/${ids.p}/nivel`, { waitUntil: "domcontentloaded" });
-    await page.getByTestId("nivel-foto-ar_todos_quartos").setInputFiles({ name: "ar2.png", mimeType: "image/png", buffer: pngDeTeste(5) });
-    await expect(page.getByTestId("nivel-status-ar_todos_quartos")).toHaveText("Foto em análise", { timeout: 30_000 });
-    await expect(page.getByTestId("nivel-atual")).toHaveAttribute("data-nivel", "premium", { timeout: 20_000 });
     await page.context().close();
+    // A foto nova é feita na hora, pela câmera do celular.
+    const cel = await celularComCamera({ email: dono.email, senha });
+    try {
+      await cel.page.goto(`/dashboard/imoveis/${ids.p}/nivel`, { waitUntil: "domcontentloaded" });
+      await cel.page.getByTestId("nivel-foto-ar_todos_quartos-botao").click();
+      await fotografarEUsar(cel.page);
+      await expect(cel.page.getByTestId("nivel-status-ar_todos_quartos")).toHaveText("Foto em análise", { timeout: 30_000 });
+      await expect(cel.page.getByTestId("nivel-atual")).toHaveAttribute("data-nivel", "premium", { timeout: 20_000 });
+    } finally {
+      await cel.fechar();
+    }
   });
 
   test("4. 'não confere' no ar-condicionado dos quartos → Conforto; o dono corrige com foto → volta a Premium", async ({ browser }) => {
@@ -196,11 +215,14 @@ test.describe("T295 — Adendo 59.1: níveis Essencial / Conforto / Premium", ()
     await donoPg.goto(`/dashboard/contratos/${ids.contrato}`, { waitUntil: "domcontentloaded" });
     const pend = donoPg.locator('[data-testid="pendencia-conforto"][data-chave="ar_todos_quartos"]');
     await expect(pend).toHaveAttribute("data-status", "aberta", { timeout: 20_000 });
+    const { data: antes } = await adm().from("nivel_itens").select("foto_status, foto_path, foto_origem").eq("property_id", ids.p!).eq("chave", "ar_todos_quartos").single();
     await pend.getByTestId("pendencia-foto-corrigido").setInputFiles({ name: "ar3.png", mimeType: "image/png", buffer: pngDeTeste(7) });
     await expect(pend).toHaveAttribute("data-status", "corrigida", { timeout: 30_000 });
     await expect.poll(() => nivelGravado(ids.p!), { timeout: 20_000 }).toBe("premium");
-    const { data: item } = await adm().from("nivel_itens").select("foto_status, foto_path").eq("property_id", ids.p!).eq("chave", "ar_todos_quartos").single();
-    expect(item?.foto_status).toBe("pendente");
+    // FOTO-NA-HORA-B: a foto da correção (galeria) fica na pendência; a prova do item continua a da câmera.
+    const { data: item } = await adm().from("nivel_itens").select("foto_status, foto_path, foto_origem").eq("property_id", ids.p!).eq("chave", "ar_todos_quartos").single();
+    expect(item).toEqual(antes);
+    expect(item?.foto_origem).toBe("camera");
     await donoPg.context().close();
   });
 

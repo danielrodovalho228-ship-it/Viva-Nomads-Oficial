@@ -9,6 +9,7 @@ import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 /** Comodidades com ícone no card do mapa (as mais procuradas por quem fica meses). */
 const CHAVES_NO_CARD = ["internet_fibra", "home_office", "ar_condicionado", "maquina_lavar", "vaga_garagem", "piscina", "academia"];
@@ -62,7 +63,7 @@ export function CardPinMapa({ property: p, onFechar }: { property: Property; onF
         <div className="space-y-2 p-3">
           <p className="line-clamp-1 text-sm font-semibold text-ink">{p.title}</p>
           <p className="truncate text-xs text-muted">
-            {p.neighborhood}, {p.city}
+            {linhaLocalizacao(p.neighborhood, p.city, p.state)}
           </p>
           {preco.disponivel && <p className="text-xs text-muted">{preco.disponivel}</p>}
           <p className="tabular-nums">

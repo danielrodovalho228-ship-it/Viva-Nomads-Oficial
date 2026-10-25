@@ -18,6 +18,7 @@ import { respostaDaSugestao } from "@/lib/atendimento/acolhimento";
 import { mascararEmail, podeDevolverParaViva } from "@/lib/atendimento/copiloto-regras";
 import { telefoneMascarado } from "@/lib/atendimento/identificacao-chamado";
 import { QuemEAPessoa } from "./copiloto";
+import { DenunciaNota } from "./denuncia-nota";
 import { relogio } from "../atendimento-client";
 import { EXPLICA_AGUARDANDO_APROVACAO } from "@/lib/atendimento/dono";
 
@@ -334,6 +335,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 ) : null}
               </p>
             )}
+            {c.categoria === "nota_parceiro" && c.contexto_tipo === "parceiro" && <DenunciaNota chamadoId={c.id} jaProcedente={eventos.some((e) => e.acao === "denuncia_procedente")} />}
           </Panel>
           <Panel title="Quem é a pessoa">
             <QuemEAPessoa chamadoId={c.id} />

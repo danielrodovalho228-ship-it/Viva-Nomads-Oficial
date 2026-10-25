@@ -3,12 +3,17 @@
  * salva e o resumo legível que aparece em "Buscas salvas".
  */
 
+import { seguroDaUrlLegada } from "./painel-filtros.ts";
+import { comodidadesDaUrl } from "./filtro-comodidades.ts";
+
 /** Parâmetros da /buscar que definem a busca (o resto da URL é ignorado). */
 const CHAVES = [
   "local", "lat", "lng", "r", "preco", "orcamento", "quartos", "adultos", "criancas", "periodo",
   "tipo", "faixa", "entrada", "garantia", "pet", "mobiliado", "pronto", "homeoffice", "localizado",
-  "nota", "seguro", "gestor", "ordem",
-  // Prompt 37: destino (cadastrado ou endereço com 2 casas e rótulo sem número), meio e "até N min".
+  "nota", "gestor", "ordem",
+  // Comodidades que ainda filtram (garagem, máquina de lavar); "wifi" e "cozinha" antigas saem (Adendo 3, E39).
+  "comod",
+  // Prompt 37: destino (cadastrado ou endereço com 3 casas e rótulo sem número), meio e "até N min".
   "destino", "dlat", "dlng", "drot", "modo", "ate",
   // Prompt 57 fase 2: internet medida (download mínimo) e "só com internet medida".
   "internet", "medida",
@@ -18,9 +23,18 @@ const CHAVES = [
 
 export const LIMITE_BUSCAS_SALVAS = 20;
 
-/** Normaliza a query string: só as chaves conhecidas, sem vazios, em ordem fixa (mesma busca = mesmo texto). */
+/**
+ * Normaliza a query string: só as chaves conhecidas, sem vazios, em ordem fixa (mesma busca = mesmo texto).
+ * Adendo 3 (E43): buscas salvas antes com `seguro=1` passam a valer como `garantia=seguro_fianca` (migração aqui, no
+ * parser: a busca salva continua alertando, com o mesmo critério do chip "Seguro-fiança").
+ */
 export function normalizarBusca(qs: string): string {
   const sp = new URLSearchParams(qs.startsWith("?") ? qs.slice(1) : qs);
+  const garantia = seguroDaUrlLegada(sp.get("garantia")?.trim(), sp.get("seguro"));
+  if (garantia) sp.set("garantia", garantia);
+  const comod = comodidadesDaUrl(sp.get("comod")).join(",");
+  if (comod) sp.set("comod", comod);
+  else sp.delete("comod");
   const out = new URLSearchParams();
   for (const k of CHAVES) {
     const v = sp.get(k)?.trim();

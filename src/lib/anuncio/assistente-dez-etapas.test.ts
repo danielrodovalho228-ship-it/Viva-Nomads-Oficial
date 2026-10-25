@@ -55,7 +55,9 @@ test("mapa: todo item obrigatório da prontidão cai numa etapa (nenhum fica sem
     const etapas = ETAPAS_ASSISTENTE.filter((e) => e.prontidao.includes(k));
     assert.equal(etapas.length, 1, `${k} em ${etapas.length} etapas`);
   }
-  assert.equal(etapaDoItemProntidao("documento").id, "endereco");
+  assert.equal(etapaDoItemProntidao("documento").id, "revisao"); // E104: o Passo 3 é só endereço
+  assert.equal(etapaDoItemProntidao("sublocacao").id, "revisao");
+  assert.equal(etapaDoItemProntidao("endereco").id, "endereco");
   assert.equal(etapaDoItemProntidao("titulo").id, "descricao");
   assert.equal(etapaDoItemProntidao("chave-nova").id, "revisao");
 });

@@ -6,7 +6,7 @@ import { paginaInstitucional } from "@/lib/seo/estruturados";
 import { GUIAS } from "@/lib/guias/guias";
 import { SITE_URL } from "@/lib/site";
 
-const DESCRICAO = "Guias da Viva Nomads para proprietários e inquilinos de imóveis mobiliados: preço, Caução, conferência de entrada, bairro e documentos.";
+const DESCRICAO = "Guias da Viva Nomads para proprietários e moradores de imóveis mobiliados: preço, Caução, conferência de entrada, bairro e documentos.";
 
 export const metadata: Metadata = {
   title: "Guias",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/guias" },
 };
 
-const PUBLICO = { proprietarios: "Para proprietários", inquilinos: "Para inquilinos", todos: "Para todos" } as const;
+const PUBLICO = { proprietarios: "Para proprietários", inquilinos: "Para moradores", todos: "Para todos" } as const;
 
 export default function GuiasPage() {
   return (

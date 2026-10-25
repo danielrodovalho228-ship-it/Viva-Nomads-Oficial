@@ -4,6 +4,7 @@
   Vocabulário da casa: onde o desenho diz "hóspedes" ou "viajantes", aqui é "moradores". PURO.
 */
 import { propertyTypeLabel } from "../amenities.ts";
+import { linhaLocalizacao } from "../localizacao.ts";
 
 export interface TelaAssistente {
   /** Rótulo curto (barra de passos, lista de conferência). */
@@ -23,7 +24,7 @@ export const TELAS_ASSISTENTE: readonly TelaAssistente[] = [
   { rotulo: "Regras", titulo: "Regras da casa", subtitulo: "Configure as regras para o seu morador." },
   { rotulo: "Descrição", titulo: "Título e descrição do anúncio", subtitulo: "Escreva o título e a descrição que aparecerão no seu anúncio." },
   { rotulo: "Preço", titulo: "Quanto custa por mês?", subtitulo: "Informe os custos mensais do imóvel. Você poderá editar depois." },
-  { rotulo: "Disponibilidade", titulo: "Disponibilidade", subtitulo: "Escolha o período disponível para aluguel do imóvel." },
+  { rotulo: "Disponibilidade", titulo: "Disponibilidade", subtitulo: "Escolha a partir de quando o imóvel está disponível e as datas que ficam fechadas." },
   { rotulo: "Revisão", titulo: "Revise e publique", subtitulo: "Confirme todos os detalhes antes de publicar seu anúncio. Você poderá editar depois." },
 ];
 
@@ -32,19 +33,22 @@ export const textoPasso = (pos: number, total = TELAS_ASSISTENTE.length) => `Pas
 /** Largura da barra de progresso (0–100). */
 export const progressoPasso = (pos: number, total = TELAS_ASSISTENTE.length) => Math.round(((pos + 1) / total) * 100);
 
-/** Os três cartões grandes do passo 1 (mockup) e a linha de apoio de cada um. */
-export const TIPOS_PRINCIPAIS: readonly { valor: "casa" | "apartamento" | "quarto"; rotulo: string; apoio: string }[] = [
-  { valor: "casa", rotulo: "Casa", apoio: "Casa inteira só para o morador" },
-  { valor: "apartamento", rotulo: "Apartamento", apoio: "Unidade em edifício" },
-  { valor: "quarto", rotulo: "Quarto", apoio: "Quarto individual ou compartilhado" },
+/**
+ * Passo 1 (Cadastro 01-b / E87, mockup cadastro-imovel-01): os NOVE tipos, todos em cartões-foto numa linha única
+ * rolável, nesta ordem — um só array (saíram os três cartões grandes, a seção "Outros tipos" e os chips). `alt` descreve
+ * o tipo da foto, que é ilustrativa.
+ */
+export const TIPOS_ASSISTENTE: readonly { valor: string; rotulo: string; alt: string }[] = [
+  { valor: "casa", rotulo: "Casa", alt: "Foto ilustrativa de uma casa" },
+  { valor: "apartamento", rotulo: "Apartamento", alt: "Foto ilustrativa de um prédio de apartamentos" },
+  { valor: "quarto", rotulo: "Quarto", alt: "Foto ilustrativa de um quarto mobiliado" },
+  { valor: "studio", rotulo: "Studio", alt: "Foto ilustrativa de um studio" },
+  { valor: "loft", rotulo: "Loft", alt: "Foto ilustrativa de um loft" },
+  { valor: "cobertura", rotulo: "Cobertura", alt: "Foto ilustrativa de uma cobertura" },
+  { valor: "casa_condominio", rotulo: "Casa de condomínio", alt: "Foto ilustrativa de uma casa de condomínio" },
+  { valor: "flat", rotulo: "Flat/apart-hotel", alt: "Foto ilustrativa de um flat em apart-hotel" },
+  { valor: "chacara", rotulo: "Chácara/Sítio", alt: "Foto ilustrativa de uma chácara" },
 ];
-/** Os demais tipos do catálogo (PROPERTY_TYPES), em "Outros tipos". */
-export const OUTROS_TIPOS = ["studio", "loft", "cobertura", "casa_condominio", "flat", "chacara"] as const;
-
-/** O cartão grande que fica marcado para um tipo (um dos "outros" não marca nenhum). */
-export function cartaoDoTipo(tipo: string): "casa" | "apartamento" | "quarto" | null {
-  return tipo === "casa" || tipo === "apartamento" || tipo === "quarto" ? tipo : null;
-}
 
 /** Título da prévia: o do dono; sem título, "Apartamento no Santa Mônica" (tipo + bairro), como no desenho. */
 export function tituloPrevia(titulo: string, tipo: string, bairro: string): string {
@@ -83,8 +87,7 @@ export const TEXTOS_REVISAO = {
   editarDepois: "Você poderá editar a qualquer momento após publicar",
 } as const;
 
-/** "Santa Mônica, Uberlândia · MG". */
+/** "Santa Mônica, Uberlândia - MG" — a mesma linha pública do anúncio (E101). */
 export function localPrevia(bairro: string, cidade: string, uf: string): string {
-  const lugar = [bairro.trim(), cidade.trim()].filter(Boolean).join(", ");
-  return [lugar, uf.trim().toUpperCase()].filter(Boolean).join(" · ");
+  return linhaLocalizacao(bairro, cidade, uf);
 }

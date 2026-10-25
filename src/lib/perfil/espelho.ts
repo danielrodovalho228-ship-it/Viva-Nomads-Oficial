@@ -4,7 +4,12 @@
 */
 import type { Intencao } from "../auth/entrada.ts";
 
-export const TITULO_ESPELHO = "É assim que o proprietário te vê";
+/** E55: o espelho acompanha o papel em uso. Morador: o que o proprietário vê quando ele pede para morar. */
+export const TITULO_ESPELHO = "É assim que o proprietário te vê quando você pede para morar";
+/** E55: proprietário: a faixa do anúncio, como o morador a vê. */
+export const TITULO_ESPELHO_DONO = "É assim que o morador te vê no seu anúncio";
+/** "Ver como proprietário" / "Ver como morador" — para quem tem os dois papéis. */
+export const verComo = (outro: "morador" | "proprietario") => (outro === "proprietario" ? "Ver como proprietário" : "Ver como morador");
 export const PILULA_EMAIL = "E-mail confirmado";
 
 const ROTULO: Record<Intencao, string> = { morar: "Quer morar", anunciar: "Tem imóvel", servicos: "Presta serviços" };

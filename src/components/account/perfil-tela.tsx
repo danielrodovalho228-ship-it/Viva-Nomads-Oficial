@@ -9,13 +9,14 @@ import { Panel } from "@/components/dashboard/primitives";
 import { SOMBRA_SO_CELULAR, SOMBRA_SO_COMPUTADOR } from "@/lib/conta/visual-mockup";
 import { cn } from "@/lib/utils";
 import { BlocoOpcional } from "@/components/ui/bloco-opcional";
-import { EspelhoPerfil } from "@/components/account/espelho-perfil";
+import { EspelhoPorPapel } from "@/components/account/espelho-papel";
 import { PetsFicha } from "@/components/account/pets-ficha";
 import { CategoriaProfissional } from "@/components/account/categoria-profissional";
 import { TituloSecaoLateral } from "@/components/account/casca-conta";
 import { EnviarFoto, FOTO_ATUALIZADA, PERFIL_ATUALIZADO, avisarFotoAtualizada, useMinhaFoto } from "@/components/account/foto-perfil";
 import { getMeuPerfilPublico, getMeusDados, salvarMeuPerfilPublico, salvarMeusDados, setMinhaCategoria, type MeuPerfilPublico } from "@/lib/data/perfil-actions";
 import { clearMyAvatar } from "@/lib/data/avatar-actions";
+import { AvisoFotoRemovida } from "@/components/account/aviso-foto-removida";
 import { BIO_MAX, ESTADO_SALVAR, IDIOMAS, LINHA_PERFIL_COMPLETO, destinoDaFalta, medidorPerfil, rotuloCurto, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
 import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { CATEGORIA_NAO_INFORMAR } from "@/config/categorias-profissionais";
@@ -35,6 +36,8 @@ const CAMPO = "w-full rounded-lg border border-line bg-white px-4 py-3 text-base
 export function PerfilTela() {
   const foto = useMinhaFoto();
   const { mode } = useViewMode();
+  // E55: o espelho segue o papel em uso (a mesma fonte da barra: o modo da conta).
+  const papelEspelho = mode === "owner" ? "proprietario" : "morador";
   const [p, setP] = useState<MeuPerfilPublico | null | undefined>(undefined);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -143,6 +146,7 @@ export function PerfilTela() {
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]" data-testid="perfil-tela">
       <div className="grid min-w-0 gap-6">
+        <AvisoFotoRemovida />
         {/* Mockup perfil-01: no computador um cartão só (foto + campos); no celular a foto e "Trocar foto" ficam sobre o
             fundo e o cartão branco começa nos campos. */}
         <section className={cn("sm:rounded-xl sm:bg-white sm:p-6", SOMBRA_SO_COMPUTADOR)} aria-labelledby="perfil-foto-titulo" data-testid="perfil-cartao">
@@ -208,7 +212,7 @@ export function PerfilTela() {
         </section>
 
         <div className="xl:hidden">
-          <EspelhoPerfil foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
+          <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
         </div>
 
         <PetsFicha />
@@ -291,7 +295,7 @@ export function PerfilTela() {
 
       <aside className="hidden min-w-0 gap-6 xl:grid" aria-label="Como o proprietário te vê">
         <TituloSecaoLateral ativo="perfil" subtitulo={SUBTITULO_PERFIL} />
-        <EspelhoPerfil foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
+        <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
       </aside>
     </div>
   );

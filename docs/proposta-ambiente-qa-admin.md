@@ -64,6 +64,7 @@ Todas as rotas de `src/app/(dashboard)/admin`. Em cada uma: 390 px e 1280 px, se
 | `/admin/financeiro` | Ver comissão e MRR | Comissão de contrato `is_teste` aparece como simulada (TESTE) e não entra no MRR |
 | `/admin/avaliadores` | Credenciar um avaliador de teste (em teste → ativo), salvar a tabela de preço da cidade e ver a fila | As 3 condições da chave VISTORIA_ATIVA com o estado de cada uma; "tabela sem valor" sem preço; histórico de preço; ativar exige duas etapas |
 | `/admin/fotografos` | Ver parceiros fotógrafos | Lista e contagens carregam |
+| `/admin/fotos-perfil` | Revisar fotos de perfil (Aprovar / Remover com motivo) | Denunciadas no topo, depois a mais antiga; remover exige motivo da lista |
 | `/admin/imoveis` | Moderar anúncio (publicar e despublicar) | Publicação exige documento aprovado; despublicar tira da busca |
 | `/admin/marketing` | Abrir a área de marketing | Carrega sem enviar nada |
 | `/admin/parceiros` | Aprovar um parceiro | Status muda; conta `is_teste` marcada |

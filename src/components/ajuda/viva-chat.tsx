@@ -30,7 +30,8 @@ import { buttonClasses } from "@/components/ui/button";
 // "Perfil"; nesta tela a Ajuda da Conta já oferece o "Fale com a Viva".
 // "/dashboard/mensagens": a tela já é uma conversa (com a aba Suporte); no computador o botão ficava em cima do
 // "Enviar" da caixa de mensagem e o proprietário não conseguia mandar a resposta (t182).
-export const ESCONDER = ["/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
+// "/buscar" (E95): no celular o botão sentava sobre o título dos cartões; a ajuda da busca fica como link no fim da lista.
+export const ESCONDER = ["/buscar", "/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
 const CHAVE = "vivanomads-viva-chat";
 
 function carregar(): MsgChat[] {
