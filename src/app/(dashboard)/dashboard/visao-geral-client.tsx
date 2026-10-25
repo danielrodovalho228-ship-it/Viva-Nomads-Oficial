@@ -62,6 +62,8 @@ export function VisaoGeral({
   estadias = [],
   checklists = [],
   totalCandidaturas = 0,
+  visualizacoes = null,
+  totalConversas = 0,
 }: {
   imoveisDono: Property[];
   interessados?: { atual: number; anterior: number };
@@ -77,6 +79,10 @@ export function VisaoGeral({
   checklists?: ChecklistAtivacao[];
   /** E72: quantas candidaturas a pessoa enviou — o tamanho da lista de /dashboard/candidaturas (listMinhasCandidaturas). */
   totalCandidaturas?: number;
+  /** PROP-3 (E113): soma das visualizações dos imóveis do dono, pela mesma conta do painel de desempenho (30 dias). */
+  visualizacoes?: number | null;
+  /** PROP-3 (E113): quantas conversas a pessoa tem — o tamanho da lista de /dashboard/mensagens. */
+  totalConversas?: number;
 }) {
   // Identidade de EXIBIÇÃO: nunca cai na persona demo ("Marcos") para conta real
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
@@ -116,14 +122,22 @@ export function VisaoGeral({
           <h2 id="papel-proprietario" className="mb-3 font-title text-lg font-semibold text-ink">
             Como proprietário
           </h2>
-          <OwnerDashboard imoveisDono={imoveisDono} interessados={interessados} rascunho={rascunho} cidade={cidadePerfil} semImovel={semImovel} />
+          <OwnerDashboard
+            imoveisDono={imoveisDono}
+            interessados={interessados}
+            rascunho={rascunho}
+            cidade={cidadePerfil}
+            semImovel={semImovel}
+            visualizacoes={visualizacoes}
+            totalConversas={totalConversas}
+          />
         </section>
       )}
       <section aria-labelledby="papel-morador" data-testid="inicio-morador">
         <h2 id="papel-morador" className="mb-3 font-title text-lg font-semibold text-ink">
           Como morador
         </h2>
-        <TenantDashboard name={firstName} cidade={ehDono ? null : cidadePerfil} totalCandidaturas={totalCandidaturas} />
+        <TenantDashboard name={firstName} cidade={ehDono ? null : cidadePerfil} totalCandidaturas={totalCandidaturas} totalConversas={totalConversas} ehDono={ehDono} />
       </section>
     </>
   );
@@ -135,12 +149,16 @@ function OwnerDashboard({
   rascunho,
   cidade,
   semImovel,
+  visualizacoes,
+  totalConversas,
 }: {
   imoveisDono: Property[];
   interessados: { atual: number; anterior: number };
   rascunho: RascunhoPendente | null;
   cidade: string | null;
   semImovel: boolean;
+  visualizacoes: number | null;
+  totalConversas: number;
 }) {
   // Fonte demo: build de demonstração OU modo demonstração do admin. Os dados
   // reais e o seed NUNCA se misturam — a fonte é uma ou outra.
@@ -149,7 +167,8 @@ function OwnerDashboard({
   // "Meus imóveis"). Rascunhos não entram nos KPIs nem na lista da visão geral —
   // eles têm o próprio card de "anúncio em andamento" abaixo.
   const allProperties = imoveisPublicados(demo ? DEMO_PROPERTIES : imoveisDono);
-  const myProperties = allProperties.slice(0, 2);
+  // PROP-3 (E113): a prévia mostra os mesmos ativos de "Meus imóveis" (antes cortava em 2 e escondia o 3º).
+  const myProperties = allProperties;
   const kpiLeads = kpiInteressados(interessados.atual, interessados.anterior, {
     temImovelPublicado: allProperties.length > 0,
   });
@@ -160,7 +179,15 @@ function OwnerDashboard({
     <>
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
       {semImovel && <PrimeiroImovel />}
-      {allProperties.length > 0 && <PainelDoDono demo={demo} allProperties={allProperties} myProperties={myProperties} kpiLeads={kpiLeads} cidade={cidade} />}
+      {allProperties.length > 0 && <PainelDoDono
+          demo={demo}
+          allProperties={allProperties}
+          myProperties={myProperties}
+          kpiLeads={kpiLeads}
+          cidade={cidade}
+          visualizacoes={visualizacoes}
+          totalConversas={totalConversas}
+        />}
     </>
   );
 }
@@ -189,12 +216,16 @@ function PainelDoDono({
   myProperties,
   kpiLeads,
   cidade,
+  visualizacoes,
+  totalConversas,
 }: {
   demo: boolean;
   allProperties: Property[];
   myProperties: Property[];
   kpiLeads: ReturnType<typeof kpiInteressados>;
   cidade: string | null;
+  visualizacoes: number | null;
+  totalConversas: number;
 }) {
   return (
     <>
@@ -234,7 +265,8 @@ function PainelDoDono({
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label="Visualizações"
-          value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : "0"}
+          value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : visualizacoes == null ? "—" : visualizacoes.toLocaleString("pt-BR")}
+          hint={demo ? undefined : "Últimos 30 dias, nos seus anúncios"}
           icon={Eye}
         />
         {demo ? (
@@ -248,7 +280,7 @@ function PainelDoDono({
             icon={Users}
           />
         )}
-        <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : "0"} icon={MessageSquare} />
+        <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : String(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
 
@@ -423,7 +455,20 @@ function CartaoEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
   );
 }
 
-function TenantDashboard({ name, cidade, totalCandidaturas }: { name: string; cidade: string | null; totalCandidaturas: number }) {
+function TenantDashboard({
+  name,
+  cidade,
+  totalCandidaturas,
+  totalConversas,
+  ehDono,
+}: {
+  name: string;
+  cidade: string | null;
+  totalCandidaturas: number;
+  totalConversas: number;
+  /** PROP-3 (E113): "Buscas salvas" é de morador — sai do Início de quem é dono. */
+  ehDono: boolean;
+}) {
   const demo = useDashDemo();
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
   void name;
@@ -434,8 +479,9 @@ function TenantDashboard({ name, cidade, totalCandidaturas }: { name: string; ci
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <StatCard label="Candidaturas" value={demo ? "2" : String(totalCandidaturas)} icon={FileSignature} href="/dashboard/candidaturas" />
         <StatCard label="Favoritos" value={demo ? "3" : "0"} icon={Heart} href="/dashboard/favoritos" />
-        <StatCard label="Buscas salvas" value={demo ? "2" : "0"} icon={Search} href="/dashboard/buscas" />
-        <StatCard label="Mensagens" value={demo ? "1" : "0"} icon={MessageSquare} href="/dashboard/mensagens" />
+        {!ehDono && <StatCard label="Buscas salvas" value={demo ? "2" : "0"} icon={Search} href="/dashboard/buscas" />}
+        {/* Dono: as Mensagens já estão no bloco de proprietário (o mesmo número). */}
+        {!ehDono && <StatCard label="Mensagens" value={demo ? "1" : String(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">

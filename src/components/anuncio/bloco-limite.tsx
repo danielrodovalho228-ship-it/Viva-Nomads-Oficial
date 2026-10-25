@@ -8,7 +8,7 @@ import { linhasDoLimite, type SituacaoLimite } from "@/lib/anuncio/pausa";
 export function BlocoLimite({ situacao, link = false }: { situacao: SituacaoLimite; link?: boolean }) {
   const [principal, acima] = linhasDoLimite(situacao);
   return (
-    <div className="rounded-xl border border-line p-4 text-sm" data-testid="bloco-limite" data-ativos={situacao.ativos} data-limite={situacao.limite} data-pausar={situacao.precisaPausar}>
+    <div className="rounded-xl border border-line p-4 text-sm" data-testid="bloco-limite" data-ativos={situacao.ativos} data-limite={situacao.limite} data-pausar={situacao.excedente}>
       <p className="font-semibold text-ink">{principal}</p>
       {acima && <p className="mt-1 text-ink/80">{acima}</p>}
       {link && (

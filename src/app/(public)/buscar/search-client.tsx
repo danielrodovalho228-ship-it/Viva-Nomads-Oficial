@@ -42,7 +42,7 @@ import { BarraPilulas } from "@/components/busca/barra-pilulas";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { isExemplo } from "@/lib/demo-listing";
-import { exemplosForcadosNaUrl, mostrarCartaoPedido, semExemplosQuandoHaReal, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
+import { baseDaBusca, contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
@@ -411,14 +411,14 @@ export function SearchClient({
     return { base: list, dist };
   }, [properties, locationQuery, geoCenter, radiusKm, adults, children, faixa, furnishedOnly, workLocatedOnly]);
 
-  const contarComPainel = useCallback(
-    (f: FiltrosPainel) => semExemplosQuandoHaReal(base.filter((p) => passaNoPainel(p, f)), (p) => isExemplo(p.id), exemplosForcados).length,
-    [base, exemplosForcados]
-  );
+  // E131: a lista e todas as contagens partem da MESMA base (a regra dos exemplos decidida uma vez, sem os filtros da
+  // folha). Assim nenhuma pílula ou faceta conta mais imóveis do que a lista sem filtro mostra.
+  const baseVisivel = useMemo(() => baseDaBusca(base, (p) => isExemplo(p.id), exemplosForcados), [base, exemplosForcados]);
+  const contarComPainel = useCallback((f: FiltrosPainel) => contarNaBase(baseVisivel, (p) => passaNoPainel(p, f)), [baseVisivel]);
   // Prompt 57, fase 2: os de internet informada, mas não medida (só com o filtro de internet ligado). Exemplo não entra.
   const contarNaoMedidos = useCallback((f: FiltrosPainel) => naoMedidosDoPainel(base, f).filter((p) => !isExemplo(p.id)).length, [base]);
   // FILTROS-1 (E40): medições válidas da busca atual — sem nenhuma, a seção "Internet medida" some da folha.
-  const medicoes = useMemo(() => medicoesDaBusca(semExemplosQuandoHaReal(base, (p) => isExemplo(p.id), exemplosForcados)), [base, exemplosForcados]);
+  const medicoes = useMemo(() => medicoesDaBusca(baseVisivel), [baseVisivel]);
   // Adendo 3 (E40): sem nenhuma medição válida na busca atual, o filtro de internet (vindo da URL ou de antes) é
   // ignorado — o chip ativo sai e a URL perde ?internet/?medida. Ajuste de estado no render (padrão do React para
   // estado derivado), sem efeito: a lista nunca chega a zerar por um filtro que ninguém pode cumprir.
@@ -429,9 +429,8 @@ export function SearchClient({
   const naoMedidos = useMemo(() => naoMedidosDoPainel(base, filtrosPainel).filter((p) => !isExemplo(p.id)), [base, filtrosPainel]);
 
   const semTempo = useMemo(() => {
-    let list = base.filter((p) => passaNoPainel(p, filtrosPainel));
-    // Prompt 30, item 6: com imóvel real no resultado, os exemplos saem; só exemplos → aparecem marcados "exemplo".
-    list = semExemplosQuandoHaReal(list, (p) => isExemplo(p.id), exemplosForcados);
+    // Prompt 30, item 6 (com imóvel real na busca, os exemplos saem) já vale na baseVisivel — a mesma das contagens.
+    let list = baseVisivel.filter((p) => passaNoPainel(p, filtrosPainel));
     if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
     else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
@@ -449,7 +448,7 @@ export function SearchClient({
           prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto)
       );
     return list;
-  }, [base, dist, exemplosForcados, filtrosPainel, sort]);
+  }, [baseVisivel, dist, filtrosPainel, sort]);
 
   // Prompt 37: tempos até o destino (do servidor, arredondados). O filtro "até N min" só vale com tempo de rota — sem
   // provedor, tudo fica "em linha reta" e ninguém some; a ordem "Mais perto do trabalho" usa as faixas de minutos.
