@@ -111,3 +111,19 @@ export async function voltarAte(page: Page, ate: PassoCadastro) {
   }
   await noPasso(page, ate);
 }
+
+/**
+ * Abre um cadastro NOVO como o dono abre ("Anunciar" → /dashboard/imoveis/novo): com rascunho anterior, "Começar outro";
+ * na Qualificação (E132-A, antes do Passo 1), "Responder depois". Termina no Passo 1 (Tipo).
+ */
+export async function abrirCadastroNovo(page: Page, waitUntil: "domcontentloaded" | "networkidle" = "domcontentloaded") {
+  await page.goto("/dashboard/imoveis/novo", { waitUntil });
+  const titulo = page.getByTestId("passo-titulo");
+  const comecarOutro = page.getByRole("button", { name: "Começar outro" });
+  const qualificacao = page.getByTestId("qualificacao");
+  await titulo.or(comecarOutro).or(qualificacao).first().waitFor({ state: "visible", timeout: 30_000 });
+  if (await comecarOutro.isVisible()) await comecarOutro.click();
+  await titulo.or(qualificacao).first().waitFor({ state: "visible", timeout: 30_000 });
+  if (await qualificacao.isVisible()) await page.getByTestId("qualificacao-depois").click();
+  await noPasso(page, "tipo", 30_000);
+}

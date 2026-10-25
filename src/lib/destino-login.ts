@@ -9,7 +9,10 @@ export function destinoAposLogin(pathname: string, search: string): string {
   return safeInternalPath(pathname + search, safeInternalPath(pathname));
 }
 
-/** /qualificar sem ?imovel: com rascunho em andamento → lista; senão → cadastro novo. */
-export function destinoQualificarSemImovel(temRascunho: boolean): string {
-  return temRascunho ? "/dashboard/imoveis" : "/dashboard/imoveis/novo";
+/**
+ * /qualificar sem ?imovel → sempre o cadastro novo (E132-A, item 10): ele abre a Qualificação se ainda não respondida e,
+ * com rascunho em andamento, oferece retomá-lo (o mesmo aviso de "Novo anúncio").
+ */
+export function destinoQualificarSemImovel(): string {
+  return "/dashboard/imoveis/novo";
 }
