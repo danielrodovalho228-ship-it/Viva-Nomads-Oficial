@@ -70,6 +70,9 @@ test.describe("T542 — MENUS-5 / E85: 5 destinos, fonte única e um nome por de
   });
 
   test("2. Conta: cada destino com um nome só (abas, menu da Conta no avatar, menu lateral e cartões)", async ({ browser }) => {
+    // E85 (Pista A): lab-crítico 40220134584 — /dashboard/conta/pagamentos é "Pagamentos e recebimentos" no menu da Conta
+    // do avatar e "Pagamentos" no menu lateral da Conta e nos cartões. Quem unificar o nome tira este test.fail.
+    test.fail(true, "E85: /dashboard/conta/pagamentos com dois nomes (avatar × menu lateral e cartões da Conta)");
     const nomes = new Map<string, Set<string>>();
     const somar = (pares: [string, string][], onde: string) => {
       for (const [href, texto] of pares) {
