@@ -4,11 +4,15 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo, tornarContratoVigente } from "../fixtures/laboratorio";
 
 /*
-  T537 — E165, guarda permanente da Pista C: a lista e o DETALHE de contratos do admin dizem o mesmo sobre as
-  assinaturas. Contrato de teste com as duas assinaturas registradas (como o laboratório e os dados de teste fazem:
-  contratos.assinado_proprietario_em e assinado_inquilino_em, tornarContratoVigente):
+  T537 — E165, guarda permanente da Pista C: a lista e o DETALHE de contratos do admin dizem o mesmo sobre um
+  contrato assinado como na regra real. E165 FECHADO em 25/10 (prova da Pista B): a regra do D-5 lê as COLUNAS
+  contratos.assinado_*_em + status 'ativo' + contrato_blocos — nunca a tabela contrato_assinaturas. A assinatura pela
+  tela (contrato-assinar-actions.ts) grava as duas coisas: a linha em contrato_assinaturas (quem, papel, quando, hash)
+  e a coluna assinado_*_em. A versão anterior desta spec só gravava as colunas e cobrava as linhas da tabela no
+  detalhe — media o que o fluxo real não produz (vermelho de 40207606596, agora sem valor).
+   0. o contrato satisfaz a regra do D-5 campo a campo (colunas, status, bloco ativo);
    - a lista (/admin/contratos) diz "Assinado pelas duas partes";
-   - o detalhe (/admin/contratos/[id]) mostra as duas assinaturas (Proprietário e Inquilino), não "Nenhuma assinatura".
+   - o detalhe (/admin/contratos/[id]) mostra as duas assinaturas (Proprietário e Inquilino).
   A 1280 px.
 */
 const senha = novaSenha();
@@ -47,7 +51,17 @@ test.describe("T537 — E165: assinaturas na lista e no detalhe do admin", () =>
       .single();
     if (error) throw error;
     ids.contrato = data.id as string;
+    // Regra do D-5: colunas assinado_*_em, status 'ativo' e o bloco 1 em vigência (tornarContratoVigente).
     await tornarContratoVigente(ids.contrato, ids.dono);
+    // A assinatura pela tela grava também a linha de cada parte em contrato_assinaturas, no mesmo instante da coluna.
+    const { data: c } = await adm().from("contratos").select("assinado_proprietario_em, assinado_inquilino_em").eq("id", ids.contrato).single();
+    const { error: eAss } = await adm()
+      .from("contrato_assinaturas")
+      .insert([
+        { contrato_id: ids.contrato, user_id: ids.dono, papel: "proprietario", assinado_em: c!.assinado_proprietario_em, ip: null, hash_documento: "a".repeat(64) },
+        { contrato_id: ids.contrato, user_id: ids.inquilino, papel: "inquilino", assinado_em: c!.assinado_inquilino_em, ip: null, hash_documento: "b".repeat(64) },
+      ]);
+    if (eAss) throw eAss;
   });
   test.afterAll(async () => {
     if (ids.contrato) await adm().from("contratos").delete().eq("id", ids.contrato);
@@ -56,10 +70,12 @@ test.describe("T537 — E165: assinaturas na lista e no detalhe do admin", () =>
 
   test("lista e detalhe mostram as duas assinaturas", async ({ browser }) => {
     test.skip(!hasAccount("admin"), "conta de admin do laboratório não configurada");
-    // E165 (Pista A): a lista lê contratos.assinado_*_em (admin-indicadores.ts) e o detalhe lê contrato_assinaturas
-    // (contrato-admin.ts). lab-crítico 40207606596: lista "Assinado pelas duas partes" × detalhe "Nenhuma assinatura
-    // ainda." Quem corrigir tira este test.fail.
-    test.fail(true, "E165: a lista diz assinado pelas duas partes e o detalhe diz nenhuma assinatura");
+    // 0. A regra do D-5, campo a campo.
+    const { data: regra } = await adm().from("contratos").select("status, assinado_proprietario_em, assinado_inquilino_em, contrato_blocos(status)").eq("id", ids.contrato).single();
+    expect(regra?.status).toBe("ativo");
+    expect(regra?.assinado_proprietario_em).toBeTruthy();
+    expect(regra?.assinado_inquilino_em).toBeTruthy();
+    expect((regra?.contrato_blocos as { status: string }[] | null)?.some((b) => b.status === "ativo")).toBe(true);
     const page = await (await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } })).newPage();
 
     await page.goto(`/admin/contratos?tipo=todos&q=${ids.contrato.slice(0, 8)}`, { waitUntil: "domcontentloaded" });
