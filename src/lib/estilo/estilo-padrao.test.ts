@@ -352,8 +352,8 @@ const contar = (f: FiltrosPainel) => IMOVEIS.filter((p) => passaNoPainel(p, f)).
 
 test("filtros: a contagem do botão é a MESMA função da lista (uma regra só)", () => {
   const s = ler("app/(public)/buscar/search-client.tsx");
-  assert.match(s, /let list = base\.filter\(\(p\) => passaNoPainel\(p, filtrosPainel\)\)/);
-  assert.match(s, /\(f: FiltrosPainel\) => semExemplosQuandoHaReal\(base\.filter\(\(p\) => passaNoPainel\(p, f\)\), \(p\) => isExemplo\(p\.id\), exemplosForcados\)\.length/);
+  assert.match(s, /let list = baseVisivel\.filter\(\(p\) => passaNoPainel\(p, filtrosPainel\)\)/);
+  assert.match(s, /\(f: FiltrosPainel\) => contarNaBase\(baseVisivel, \(p\) => passaNoPainel\(p, f\)\)/);
   // Estadia e tipo saíram do filtro de base: senão o rascunho da folha não mudava a contagem.
   assert.doesNotMatch(s, /if \(maxPeriod && p\.minPeriodDays > maxPeriod\) return false/);
   assert.doesNotMatch(s, /if \(typeFilter && /);
