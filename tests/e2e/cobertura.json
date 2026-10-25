@@ -453,7 +453,8 @@
         "t417-varredura-bloco34",
         "t453-buscar-descobribilidade",
         "t452-mais-filtros-sem-duplicar",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t475-e131-vitrine-conta-teste"
       ]
     },
     "/cidades": {
@@ -904,7 +905,8 @@
         "t400-chacara-sem-internet",
         "t410-niveis-medir-rascunho",
         "t415-varredura-bloco32",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t427-e141-essencial-sem-prova"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -954,6 +956,15 @@
         "t456-comodidades-tipo-e111a",
         "t457-revisao-documento-e112",
         "t418-varredura-bloco35",
+        "t472-e139-passo8-conta",
+        "t422-e133-fotos-minimo",
+        "t423-e135-titulo-descricao",
+        "t424-e136-datas-ptbr",
+        "t425-e137-janela-e-bloqueio",
+        "t426-e139-e140-historia-do-preco",
+        "t428-e142-deteccao-sem-rolar",
+        "t429-e146-contador-essenciais",
+        "t469-e134-passo4-alinhado",
         "t474-e161-largura-assistente"
       ]
     },
@@ -2217,6 +2228,14 @@
         "admin"
       ],
       "specs": []
+    },
+    "/api/fotos/conferir": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
+      ]
     },
     "/api/ai/fotos": {
       "personas": [
@@ -5910,6 +5929,30 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t315-telas-avaliacao-dono-62a"
+      ]
+    },
+    "src/lib/data/video-link-actions.ts#conferirLinkVideo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
+      ]
+    },
+    "src/lib/data/video-link-actions.ts#listarLinksDeVideoPendentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
+      ]
+    },
+    "src/lib/data/video-link-actions.ts#decidirLinkDeVideo": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
       ]
     },
     "src/lib/vistoria/actions.ts#agendarVisita": {

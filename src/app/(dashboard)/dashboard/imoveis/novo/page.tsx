@@ -44,6 +44,7 @@ import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoDocValido } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS } from "@/lib/listing";
+import { estadoPassoFotos, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
@@ -245,6 +246,8 @@ export default function NewPropertyPage() {
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
   const [videoArquivo, setVideoArquivo] = useState("");
+  // E133 (c): triagem do vídeo enviado (quadros início/meio/fim) e a confirmação do dono, se sinalizado.
+  const [videoConteudo, setVideoConteudo] = useState<ConteudoFoto | null>(null);
   const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
   const [utilitiesEstimate, setUtilitiesEstimate] = useState(0);
   const [issuesInvoice, setIssuesInvoice] = useState(false);
@@ -297,6 +300,8 @@ export default function NewPropertyPage() {
           : "";
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
+  // E133: o Passo 2 só segue com o mínimo de fotos e sem foto/vídeo "não parece imóvel" sem tratar.
+  const passoFotos = estadoPassoFotos(photos, videoArquivo ? videoConteudo : null);
   const enderecoCompleto = [street.trim(), numero.trim()].filter(Boolean).join(", ");
 
   const garantiaOk = Object.values(garantias).some(Boolean);
@@ -371,8 +376,7 @@ export default function NewPropertyPage() {
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
       if (!city.trim()) e.cidade = "Informe a cidade.";
     }
-    if (s === ETAPA.fotos && photos.length === 0)
-      e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
+    if (s === ETAPA.fotos && !passoFotos.podeContinuar) e.fotos = passoFotos.mensagem ?? "Confira as fotos para continuar.";
     if (s === ETAPA.detalhes) {
       if ((Number(bathrooms) || 0) < 1) e.banheiros = "Informe ao menos 1 banheiro.";
       if ((Number(areaM2) || 0) <= 0) e.area = "Informe a área do imóvel (m²).";
@@ -486,6 +490,11 @@ export default function NewPropertyPage() {
     }
     if (!asDraft && photoBlocked) {
       setPublishError(`Adicione pelo menos ${MIN_PHOTOS} fotos para publicar. Faltam ${photosMissing}.`);
+      return;
+    }
+    if (!asDraft && !passoFotos.podeContinuar) {
+      setPublishError(passoFotos.mensagem ?? "Confira as fotos para publicar.");
+      irPara(ETAPA.fotos);
       return;
     }
     if (!asDraft && subleaseBlocked) {
@@ -640,6 +649,7 @@ export default function NewPropertyPage() {
     if (s(d.cep)) setCep(d.cep as string);
     if (s(d.videoUrl)) setVideoUrl(d.videoUrl as string);
     if (s(d.videoArquivo)) setVideoArquivo(d.videoArquivo as string);
+    if (d.videoConteudo && typeof d.videoConteudo === "object") setVideoConteudo(d.videoConteudo as ConteudoFoto);
     if (s(d.internetMbps)) setInternetMbps(d.internetMbps as string);
     if (d.chacara && typeof d.chacara === "object") setChacara(d.chacara as ValorChacara);
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
@@ -839,7 +849,7 @@ export default function NewPropertyPage() {
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
-    street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, internetMbps,
+    street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
     privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
@@ -1461,7 +1471,7 @@ export default function NewPropertyPage() {
             )}
 
             {step === ETAPA.fotos && (
-              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
+              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} videoConteudo={videoConteudo} setVideoConteudo={setVideoConteudo} passoFotos={passoFotos} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
             )}
 
             {step === ETAPA.detalhes && (
@@ -1670,7 +1680,14 @@ export default function NewPropertyPage() {
         onVoltar={pos > 0 ? voltarEtapa : null}
         primario={
           pos < ULTIMA_ETAPA
-            ? { rotulo: "Continuar", onClick: avancarEtapa, testid: "cadastro-continuar", seta: true }
+            ? {
+                rotulo: "Continuar",
+                onClick: avancarEtapa,
+                testid: "cadastro-continuar",
+                seta: true,
+                // E133: no Passo 2, desabilitado de verdade (visual e clique) até o mínimo de fotos e sem aviso pendente.
+                ...(step === ETAPA.fotos && !passoFotos.podeContinuar ? { disabled: true, title: passoFotos.mensagem ?? undefined } : {}),
+              }
             : {
                 rotulo: publishing ? "Salvando..." : editingId ? "Salvar alterações" : "Publicar anúncio",
                 onClick: () => publish(false),

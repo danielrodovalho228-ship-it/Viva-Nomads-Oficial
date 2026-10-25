@@ -65,7 +65,8 @@ test.describe("T433 — L2-A: publicado sem 'Falta para publicar'; valor mensal 
       await q.getByTestId("etapa-preco").waitFor({ timeout: 30_000 });
       await expect(q.getByText("Valor mensal (sem condomínio e contas)")).toBeVisible();
       const linhaCad = q.getByTestId("cadastro-tudo-incluido");
-      await expect(linhaCad).toHaveText(/No anúncio: R\$\s?3\.250\/mês tudo incluído/);
+      // E139: no cadastro a linha virou a prévia, com o mesmo total.
+      await expect(linhaCad).toHaveText(/R\$\s?3\.250\/mês tudo incluído/);
       expect(await q.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await linhaCad.scrollIntoViewIfNeeded();
       await q.screenshot({ path: `${SAIDA}/t433-cadastro-preco-${w}.png` });

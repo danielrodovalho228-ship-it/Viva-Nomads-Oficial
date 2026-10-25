@@ -27,6 +27,18 @@ const ORDEM_PASSOS = Object.keys(TITULO_PASSO) as PassoCadastro[];
 /** Foto de teste que o passo Fotos aceita (a mesma que os specs já usavam). */
 export const FOTO_TESTE = "public/images/imoveis/ube/ube-001-sala.webp";
 
+/** E133: o Passo 2 só segue com o mínimo de 8 fotos — 8 fotos de imóvel diferentes (a conferência não sinaliza). */
+export const FOTOS_TESTE_MINIMO = ["sala", "cozinha", "banheiro", "quarto-1", "quarto-2", "varanda", "fachada", "home-office"].map(
+  (c) => `public/images/imoveis/ube/ube-001-${c}.webp`,
+);
+
+/** Sobe as 8 fotos de teste no Passo 2 e espera a contagem (o "Continuar" só habilita com elas). */
+export async function subirFotosMinimas(page: Page, timeout = 60_000) {
+  await page.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles(FOTOS_TESTE_MINIMO);
+  await expect(page.getByText(/^8\/40 fotos/)).toBeVisible({ timeout });
+  await expect(page.getByTestId("cadastro-continuar")).toBeEnabled({ timeout });
+}
+
 /** Espera o assistente mostrar o passo: o H1 do passo e o "Passo X de 10" do topo. */
 export async function noPasso(page: Page, passo: PassoCadastro, timeout = 20_000) {
   await expect(page.getByTestId("passo-titulo")).toHaveText(TITULO_PASSO[passo], { timeout });
@@ -46,15 +58,14 @@ export async function continuarAte(page: Page, de: PassoCadastro, ate: PassoCada
 }
 
 /**
- * Anúncio NOVO, do passo Tipo até o Endereço pelo "Continuar": Tipo (sem trava) → Fotos (exige 1 foto) → Endereço.
- * Nos 6 passos o endereço era o 1º passo; agora vem depois das fotos, então sobe 1 foto de teste no caminho.
+ * Anúncio NOVO, do passo Tipo até o Endereço pelo "Continuar": Tipo (sem trava) → Fotos (E133: exige as 8 fotos do
+ * mínimo) → Endereço. Nos 6 passos o endereço era o 1º passo; agora vem depois das fotos.
  */
 export async function doTipoAoEndereco(page: Page) {
   await noPasso(page, "tipo");
   await page.getByTestId("cadastro-continuar").click();
   await noPasso(page, "fotos");
-  await page.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles(FOTO_TESTE);
-  await expect(page.getByText(/^1\/40 fotos/)).toBeVisible({ timeout: 20_000 });
+  await subirFotosMinimas(page);
   await page.getByTestId("cadastro-continuar").click();
   await noPasso(page, "endereco");
 }

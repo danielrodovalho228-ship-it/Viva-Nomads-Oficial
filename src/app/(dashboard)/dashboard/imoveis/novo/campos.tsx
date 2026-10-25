@@ -1,7 +1,7 @@
 "use client";
 
 import { Children, cloneElement, isValidElement, useRef, useState, useSyncExternalStore } from "react";
-import { AlertTriangle, CalendarDays, Check, Sparkles } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, Minus, Plus, Sparkles } from "lucide-react";
 import { brParaIso, interpretarDataColada, isoParaBr, mascararData } from "@/lib/data-digitada";
 import { MARCA_SUGERIDO } from "@/lib/anuncio/sugestoes-cadastro";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,96 @@ export function MarcaSugerido({ ativo, className }: { ativo: boolean; className?
     >
       <Sparkles className="h-3 w-3" aria-hidden /> {MARCA_SUGERIDO}
     </span>
+  );
+}
+
+/**
+ * E134 (mockup cadastro-imovel-04): uma linha do cartão de números — rótulo e dica à esquerda, contador "− N +" à
+ * direita. Todas as linhas têm a mesma altura e o contador fica sempre na mesma coluna: a dica nunca desloca a caixa,
+ * e não há grade com buraco. O campo continua digitável (o "−"/"+" só ajudam).
+ */
+export function LinhaNumero({
+  label,
+  dica,
+  valor,
+  onChange,
+  min = 0,
+  passo = 1,
+  sufixo,
+  sugerido = false,
+  daMatricula = false,
+  testid,
+  erro,
+  placeholder,
+}: {
+  label: string;
+  dica: string;
+  valor: string;
+  onChange: (v: string) => void;
+  min?: number;
+  passo?: number;
+  sufixo?: string;
+  sugerido?: boolean;
+  daMatricula?: boolean;
+  testid?: string;
+  erro?: string;
+  placeholder?: string;
+}) {
+  const n = Number(valor);
+  const atual = valor === "" || !Number.isFinite(n) ? null : n;
+  const mudar = (d: number) => onChange(String(Math.max(min, (atual ?? min) + d)));
+  return (
+    <div className="py-3" data-testid={testid ? `linha-${testid}` : undefined}>
+      <div className="flex min-h-11 items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="flex flex-wrap items-center text-sm font-semibold text-ink">
+            <span>{label}</span>
+            <MarcaSugerido ativo={sugerido} />
+            {daMatricula && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-sage-50 px-2 py-1 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
+                veio da matrícula
+              </span>
+            )}
+          </p>
+          <p className="text-xs text-muted">{dica}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1 rounded-full border border-line bg-white p-1" data-testid="contador">
+          <button
+            type="button"
+            onClick={() => mudar(-passo)}
+            disabled={atual !== null && atual <= min}
+            aria-label={`Diminuir ${label}`}
+            className="grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-surface-2 disabled:opacity-40"
+          >
+            <Minus className="h-4 w-4" aria-hidden />
+          </button>
+          {/* Miolo de largura fixa: o sufixo (m²) cabe dentro, e todos os contadores têm a mesma largura (E134). */}
+          <span className="flex w-20 items-center justify-center">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={min}
+              value={valor}
+              placeholder={placeholder}
+              onChange={(e) => onChange(e.target.value)}
+              aria-label={label}
+              className="h-9 w-full min-w-0 bg-transparent text-center text-base font-semibold tabular-nums text-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              data-testid={testid}
+            />
+            {sufixo && <span className="shrink-0 text-xs text-muted">{sufixo}</span>}
+          </span>
+          <button
+            type="button"
+            onClick={() => mudar(passo)}
+            aria-label={`Aumentar ${label}`}
+            className="grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-surface-2"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      </div>
+      <Erro msg={erro} />
+    </div>
   );
 }
 

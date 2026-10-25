@@ -1,5 +1,6 @@
 "use server";
 
+import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { gravarMarca } from "@/lib/marcas/servidor";
@@ -769,6 +770,13 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
     if (limite) return { ok: false, error: limite };
   }
 
+  // E133 (d): link de vídeo só da plataforma, existente e incorporável (oEmbed). Fica pendente da equipe para aparecer.
+  const linkVideo = input.videoUrl?.trim() || null;
+  if (linkVideo) {
+    const v = await verificarLinkVideo(linkVideo);
+    if (!v.ok) return { ok: false, error: v.erro };
+  }
+
   const { data, error } = await supabase
     .from("properties")
     .insert({
@@ -805,7 +813,7 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
       accepts_insurance: input.acceptsInsurance ?? false,
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
-      video_url: input.videoUrl?.trim() || null,
+      video_url: linkVideo,
       ...colunaVideoArquivo(input.videoArquivo, user.id),
     })
     .select("id")
@@ -1019,7 +1027,14 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
 
   // Status ANTES da edição: só a PUBLICAÇÃO (rascunho/pausado → ativo) avisa
   // os pedidos compatíveis — editar um anúncio já ativo não reenvia avisos.
-  const { data: antes } = await supabase.from("properties").select("status, owner_id").eq("id", id).maybeSingle();
+  const { data: antes } = await supabase.from("properties").select("status, owner_id, video_url").eq("id", id).maybeSingle();
+
+  // E133 (d): link de vídeo NOVO (ou trocado) só da plataforma, existente e incorporável; o já gravado não é refeito.
+  const linkVideo = input.videoUrl?.trim() || null;
+  if (linkVideo && linkVideo !== (antes as { video_url?: string | null } | null)?.video_url) {
+    const v = await verificarLinkVideo(linkVideo);
+    if (!v.ok) return { ok: false, error: v.erro };
+  }
 
   // Fotos ANTES do status: o banco só deixa publicar com 8 fotos gravadas em
   // property_photos (0009). Antes elas eram regravadas DEPOIS da mudança para
@@ -1062,7 +1077,7 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
       accepts_insurance: input.acceptsInsurance ?? false,
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
-      video_url: input.videoUrl?.trim() || null,
+      video_url: linkVideo,
       ...colunaVideoArquivo(input.videoArquivo, user.id),
     })
     .eq("id", id)
