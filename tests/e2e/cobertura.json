@@ -435,7 +435,8 @@
         "t408-varredura-bloco27",
         "t413-varredura-bloco30",
         "t458-buscar-base-unica-e131",
-        "t454-salvar-busca-avisar-me"
+        "t454-salvar-busca-avisar-me",
+        "t417-varredura-bloco34"
       ]
     },
     "/cidades": {
@@ -833,7 +834,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
-        "t416-varredura-bloco33"
+        "t416-varredura-bloco33",
+        "t461-prop5-contratos-sem-repeticao"
       ]
     },
     "/dashboard/imoveis": {
@@ -925,7 +927,8 @@
         "t414-varredura-bloco31",
         "t432-deteccao-a",
         "t415-varredura-bloco32",
-        "t456-comodidades-tipo-e111a"
+        "t456-comodidades-tipo-e111a",
+        "t457-revisao-documento-e112"
       ]
     },
     "/dashboard/indicacoes": {
