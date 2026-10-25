@@ -24,7 +24,9 @@ test.describe("T471 — Login com Apple atrás da flag", () => {
     for (const largura of [390, 1280]) {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/auth", { waitUntil: "domcontentloaded" });
-      await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+      // O único h1 de /auth mora no painel da foto, que só existe a partir de 1024 px (hidden lg:block): a 390 a tela é
+      // só o formulário. Espera o campo de e-mail, presente nos dois tamanhos.
+      await expect(page.locator('input[type="email"], input[name="email"]').first()).toBeVisible();
       await expect(page.getByTestId("login-apple")).toHaveCount(0);
       await expect(page.locator("main")).not.toContainText(/Apple/);
     }
