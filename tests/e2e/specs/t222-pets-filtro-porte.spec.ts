@@ -17,6 +17,8 @@ test.describe("T222 — Filtro de pet com porte", () => {
     await page.getByTestId("pilula-mais").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
     await expect(painel.getByTestId("painel-porte-pet")).toHaveCount(0);
+    // E131 (#1332): sem imóvel que aceite pet nesta base, a opção vem desabilitada (data-n="0").
+    test.skip(await painel.getByRole("button", { name: "Aceita pets", exact: true }).isDisabled(), "Sem imóvel que aceite pet nesta base.");
     await painel.getByRole("button", { name: "Aceita pets", exact: true }).click();
     await expect(painel.getByTestId("painel-porte-pet")).toContainText("Porte do pet");
     await painel.getByRole("button", { name: "Grande (acima de 25 kg)", exact: true }).click();
@@ -32,9 +34,15 @@ test.describe("T222 — Filtro de pet com porte", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     // E82-A: a pílula "Mais filtros" abre a folha lateral (Prompt 40).
-    await page.getByTestId("pilula-mais").click();
     const folha = page.getByRole("dialog", { name: "Filtros" });
+    // Desde o E131 (#1332) o 1º toque pode chegar antes da hidratação: toca de novo até a folha abrir (como a t458).
+    await expect(async () => {
+      if (!(await folha.isVisible())) await page.getByTestId("pilula-mais").click({ timeout: 5_000 });
+      await expect(folha).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 40_000 });
     await expect(folha.getByTestId("painel-porte-pet")).toHaveCount(0);
+    // E131 (#1332): sem imóvel que aceite pet nesta base, a opção vem desabilitada (data-n="0").
+    test.skip(await folha.getByRole("button", { name: "Aceita pets", exact: true }).isDisabled(), "Sem imóvel que aceite pet nesta base.");
     await folha.getByRole("button", { name: "Aceita pets", exact: true }).click();
     await expect(folha.getByTestId("painel-porte-pet")).toContainText("Porte do pet");
     await folha.getByRole("button", { name: "Pequeno (até 10 kg)", exact: true }).click();

@@ -6,6 +6,8 @@ import { ContratosClient } from "./contratos-client";
 import { ContratosInquilino } from "./contratos-inquilino";
 import { hojeBR } from "@/lib/utils";
 import { BlocoRecibosDono } from "@/components/recibos/blocos-recibos";
+import { estadosConferenciaEntradaDaPessoa } from "@/lib/data/conferencia-lista";
+import { contratoComConferenciaPendente } from "@/lib/contratos/area-dono";
 
 /**
  * "Contratos & blocos" (Dashboard Fase 4): o servidor busca os contratos REAIS
@@ -20,7 +22,9 @@ export default async function ContratosPage() {
   const temImovel = imoveis.length > 0 || contratos.length > 0;
   const hojeISO = hojeBR();
   // Recibos, comprovantes e a devolução da caução de cada contrato (o RLS filtra).
-  const extras = temImovel ? await documentosDosContratos(contratos.map((c) => c.id)) : {};
+  const ids = contratos.map((c) => c.id);
+  const [extras, conferencias] = temImovel ? await Promise.all([documentosDosContratos(ids), estadosConferenciaEntradaDaPessoa(ids)]) : [{}, new Map()];
+  const conferenciaPendente = contratoComConferenciaPendente(contratos, conferencias);
   return (
     <>
       {(doInquilino.length > 0 || !temImovel) && (
@@ -35,7 +39,7 @@ export default async function ContratosPage() {
       )}
       {/* Prompt 39-B1: "Recibos e notas" no celular é um bloco da aba Ganhos (no computador, item do menu). */}
       {temImovel && <BlocoRecibosDono />}
-      {temImovel && <ContratosClient contratos={contratos} hojeISO={hojeISO} extras={extras} />}
+      {temImovel && <ContratosClient contratos={contratos} hojeISO={hojeISO} extras={extras} conferenciaPendente={conferenciaPendente} />}
     </>
   );
 }
