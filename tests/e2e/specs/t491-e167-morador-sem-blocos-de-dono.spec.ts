@@ -50,9 +50,10 @@ test.describe("T491 — E167: o papel morador sem blocos nem menus de dono", () 
   }
 
   test("2. a 1280 px: a barra lateral do morador sem itens de dono e com 'Minha estadia'", async ({ browser }) => {
-    // E167 (Pista A): "Ferramentas" é seção de todos os papéis (config/menu-por-papel.ts, papel "todos") e a estadia se
-    // chama "Locações" no menu; lab-crítico 40211777060, t493: a barra do morador = ["Visão geral","Minha moradia",
-    // "Mensagens","Ferramentas","Minha conta"], sem "Minha estadia". Quem corrigir tira este test.fail.
+    // E167 (Pista A): as seções de dono entram no menu para quem tem imóvel mesmo com o papel morador ativo,
+    // "Ferramentas" é de todos os papéis (config/menu-por-papel.ts) e a estadia se chama "Locações". lab-crítico
+    // 40215697341: barra = ["Visão geral","Minha moradia","Mensagens","Meus imóveis","Contratos e garantias",
+    // "Ferramentas","Minha conta"], sem "Minha estadia". Quem corrigir tira este test.fail.
     test.fail(true, "E167: a barra do morador tem 'Ferramentas' e não tem 'Minha estadia'");
     const page = await entrar(browser, conta.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });

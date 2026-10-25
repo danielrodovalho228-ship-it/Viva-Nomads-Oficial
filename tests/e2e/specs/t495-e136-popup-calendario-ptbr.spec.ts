@@ -15,7 +15,8 @@ const sufixo = novoSufixo();
 const dono = { email: `dono.t495.${sufixo}@lab.vivanomads.test`, nome: "Paula Pop-up", role: "owner" as const };
 const ids: Record<string, string> = {};
 const MES_PT = /\b(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/i;
-const DIA_PT = /\b(dom|seg|ter|qua|qui|sex|sáb)\b/i;
+// Dias da semana em pt-BR: abreviados (dom, seg…) ou as iniciais do calendário do site ("D S T Q Q S S").
+const DIA_PT = /\b(dom|seg|ter|qua|qui|sex|sáb)\b|\bD S T Q Q S S\b/i;
 const EM_INGLES = /\b(January|February|March|April|June|July|August|September|October|November|December|Sun|Mon|Tue|Wed|Thu|Fri|Sat|Today|Clear)\b/;
 
 /** Elementos de calendário que apareceram na página depois do toque (fora da grade de bloqueios do Passo 9). */

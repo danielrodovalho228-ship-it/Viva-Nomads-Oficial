@@ -85,7 +85,9 @@ test.describe("T493 — MENUS-5 / E85: 5 destinos e um nome por destino", () => 
     await page.goto("/dashboard/conta/notificacoes", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("barra-lateral")).toBeVisible({ timeout: 30_000 });
     // Abre os grupos fechados da barra lateral.
-    for (const b of await page.getByTestId("barra-lateral").locator('[data-menu-grupo] > button[aria-expanded="false"]').all()) await b.click();
+    // Abre um de cada vez: abrir um grupo redesenha a lista (a lista de botões lida antes fica velha).
+    const fechado = page.getByTestId("barra-lateral").locator('[data-menu-grupo] > button[aria-expanded="false"]');
+    for (let i = 0; i < 12 && (await fechado.count()) > 0; i++) await fechado.first().click();
     somar(await links(page, '[data-testid="barra-lateral"]'), "barra lateral");
     await expect(page.getByTestId("conta-menu-lateral")).toBeVisible({ timeout: 20_000 });
     somar(await links(page, '[data-testid="conta-menu-lateral"]'), "menu da Conta");
