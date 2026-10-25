@@ -7,8 +7,10 @@ import { adm, apagarContas, criarConta, entrar, NO_LABORATORIO, novaSenha, novoS
   esqueça a limpeza) com os links de token que o produto manda hoje:
     - /auth/v1/verify?token=…  (Supabase)        - /auth/confirm?token_hash=…  (templates-supabase.ts, #182)
     - /prova/celular?token=…   (prova pelo celular) - /api/conta/excluir?code=…
-  1. Conta de teste COM qa_leitor: vê a linha, destinatário mascarado, e NENHUM desses tokens no HTML (nem em texto nem
+  1. Conta de teste COM qa_leitor: vê a linha, destinatário mascarado, e nenhum token=/code= no HTML (nem em texto nem
      em href); nenhum <a> no corpo.
+  1b. O mesmo para o token_hash= do /auth/confirm — VERMELHO (test.fail QA-CAIXA-B): `semLinksComToken` só casa
+      token|code|codigo|access_token|t, e "token_hash=" passa (run 40204172450).
   2. Conta de teste SEM a marca: 404 na mesma URL.
   A 390 e 1280 px.
 */
@@ -67,7 +69,7 @@ test.describe("T480 — QA-CAIXA-B: corpo sem link com token", () => {
       const html = await p.content();
       expect(html, "destinatário completo").not.toContain(semFlag.email);
       expect(html).toContain("q•••@lab.vivanomads.test");
-      const vazados = Object.entries(SEGREDOS).filter(([, s]) => html.includes(s)).map(([k]) => k);
+      const vazados = Object.entries(SEGREDOS).filter(([k, s]) => k !== "tokenHash" && html.includes(s)).map(([k]) => k);
       expect(vazados, "tokens que chegaram à tela").toEqual([]);
       await expect(lista.locator("pre a")).toHaveCount(0);
       await expect(lista).toContainText("[link com token removido]");
@@ -75,6 +77,18 @@ test.describe("T480 — QA-CAIXA-B: corpo sem link com token", () => {
       await p.context().close();
     });
   }
+
+  test("1b. o token_hash= do /auth/confirm também não chega à tela", async ({ browser }) => {
+    // QA-CAIXA-B (Pista A): a 390 e a 1280 o HTML da tela traz o token_hash inteiro (run 40204172450: vazados =
+    // ["tokenHash"]). `semLinksComToken` (src/lib/notifications/caixa-teste.ts) não casa "token_hash=". Quem corrigir tira
+    // este test.fail.
+    test.fail(true, "QA-CAIXA-B: o link /auth/confirm?token_hash=… passa pela limpeza da caixa de teste");
+    const p = await abrir(browser, leitor.email, 1280);
+    await p.goto(`/dashboard/qa/emails?evento=${EVENTO}`, { waitUntil: "domcontentloaded" });
+    await expect(p.getByTestId("emails-teste-tabela")).toContainText(`T480 ${sufixo}`, { timeout: 20_000 });
+    expect(await p.content(), "token_hash na tela").not.toContain(SEGREDOS.tokenHash);
+    await p.context().close();
+  });
 
   test("2. conta de teste sem a marca: 404", async ({ browser }) => {
     const p = await abrir(browser, semFlag.email, 1280);

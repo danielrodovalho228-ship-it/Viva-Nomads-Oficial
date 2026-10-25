@@ -110,6 +110,7 @@ Só defeito de produto confirmado, cada um com o teste do laboratório que o rep
 | 5 | L-1 | Funil filtrado por cidade soma em vez de estreitar (88 com o máximo de 37) | /admin, funil de pedidos, 390 px | t255 · "F18" | A |
 | 6 | D-V5 | "Anúncio publicado" e "Falta para publicar" ao mesmo tempo | Editar anúncio (`/dashboard/imoveis/:id/editar`), 1280 px | t249 · "D-V5" (`test.fail`) | A |
 | 7 | L-8 | A próxima foto do cartão não carrega antes do toque (lazy escondida pelo corte do carrossel) | `/buscar` e `/cidades`, 1280 px | t267 · 1280 px | A |
+| — | QA-CAIXA-B | O link `/auth/confirm?token_hash=…` chega inteiro à tela do leitor de QA: `semLinksComToken` (`src/lib/notifications/caixa-teste.ts`) só casa `token\|code\|codigo\|access_token\|t`, e o `token_hash=` passa (lab-crítico 40204172450, `vazados = ["tokenHash"]`; `token=` e `code=` saem) | `/dashboard/qa/emails`, 390 e 1280 px | t480 · 1b (`test.fail`) | A |
 | 8 | L-4 | Diferença contra a linha de base nas telas do Prompt 41 | Página do imóvel, barras inferiores, estadia | t263 · 01, 02, 03 e 06 | A + Muse: atualizar a baseline se a tela nova está aprovada |
 
 Critério da ordem: 1 trava o dono de publicar; 2 quebra a tela; 3 atrapalha quem usa leitor de tela; 4 põe página que não existe no índice do Google; 5 mostra número errado ao admin; 6 confunde, mas não trava; 7 deixa a foto em branco por um instante ao deslizar; 8 pode ser só baseline desatualizada. O D-V7 (levava o dono a uma página que não existe) saiu da ordem ao ser corrigido.
