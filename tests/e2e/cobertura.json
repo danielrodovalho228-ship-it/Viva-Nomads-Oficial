@@ -990,6 +990,7 @@
         "t523-e133-limite-7-8-troca",
         "t524-passo8-conta-meses",
         "t525-e161-rascunho-cheio",
+        "t481-e132a-qualificacao",
         "t544-e136-popup-calendario-ptbr"
       ]
     },
@@ -1587,7 +1588,8 @@
         "t183-telas-logadas-390",
         "t237-correcoes-35a",
         "t241-contas-teste-36",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t481-e132a-qualificacao"
       ]
     },
     "/roi": {

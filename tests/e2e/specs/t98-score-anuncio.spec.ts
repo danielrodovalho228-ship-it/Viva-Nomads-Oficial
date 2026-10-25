@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
+import { doTipoAoEndereco, noPasso, abrirCadastroNovo } from "../fixtures/cadastro";
 
 /**
  * T98 — Score de qualidade do anúncio (ordem 0f9b9d58): o card "Anúncio em andamento"
@@ -23,7 +23,7 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
         /* sem sessionStorage — ignora */
       }
     });
-    await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+    await abrirCadastroNovo(page, "domcontentloaded");
     const comecarOutro = page.getByRole("button", { name: "Começar outro" });
     if (await comecarOutro.isVisible().catch(() => false)) await comecarOutro.click();
     // Assistente em 10 passos: Tipo → Fotos (1 foto) → Endereço; o endereço já cria o rascunho.

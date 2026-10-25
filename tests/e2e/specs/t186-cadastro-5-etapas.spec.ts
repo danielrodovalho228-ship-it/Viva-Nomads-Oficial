@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo, pngDeTeste, aceitarTermoIaSePreciso } from "../fixtures/laboratorio";
-import { continuarAte, noPasso } from "../fixtures/cadastro";
+import { continuarAte, noPasso, abrirCadastroNovo } from "../fixtures/cadastro";
 
 /*
   T186 — Assistente de cadastro em 10 passos (mockups cadastro-imovel-01..10; antes, os 6 passos do Prompt 43) +
@@ -121,7 +121,7 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       const continuar = page.getByTestId("cadastro-continuar");
 
       // ── Passo 1: Tipo ───────────────────────────────────────────────────
-      await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+      await abrirCadastroNovo(page, "domcontentloaded");
       await noPasso(page, "tipo");
       // O tipo padrão segue "apartamento" (antes era o <select> do passo "Tipo e quartos"; agora são os cartões).
       await expect(page.getByTestId("tipo-apartamento")).toHaveAttribute("aria-checked", "true");

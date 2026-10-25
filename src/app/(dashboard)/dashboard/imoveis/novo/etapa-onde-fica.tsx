@@ -18,6 +18,8 @@ import { mensagemCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/bu
 import { digitadoPelaPessoa, type CampoEndereco } from "@/lib/cep/aplicar";
 import { Erro, Labeled, Toggle } from "./campos";
 import { BuscaEndereco } from "./busca-endereco";
+import { DeclaracoesDoImovel } from "./declaracoes-passo10";
+import type { DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
 import { ResumoEndereco, enderecoCompletoParaResumo } from "./resumo-endereco";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
@@ -332,6 +334,10 @@ export function AntesDePublicar(p: {
   enderecoSalvo?: EnderecoDoc | null;
   /** L1-1: o toque em "Enviar documento" sem CEP/rua/número marca os campos que faltam. */
   onFaltaDocumento?: (campos: CampoEnderecoDoc[]) => void;
+  /** E132-A: as declarações de um toque (IPTU, água/luz/gás e, em condomínio, a convenção). */
+  declaracoes: DeclaracoesPasso10;
+  setDeclaracoes: (d: DeclaracoesPasso10) => void;
+  emCondominio: boolean;
 }) {
   const doc = exigeAutorizacao(p.ownershipType) ? DOC_AUTORIZACAO[p.ownershipType as "subleased" | "managed"] : null;
   return (
@@ -418,6 +424,7 @@ export function AntesDePublicar(p: {
         onFalta={p.onFaltaDocumento}
       />
 
+      <DeclaracoesDoImovel valor={p.declaracoes} onChange={p.setDeclaracoes} emCondominio={p.emCondominio} />
     </section>
   );
 }
@@ -431,14 +438,15 @@ export function AtalhosCadastro(p: { aplicarImportado: (a: AnuncioOrganizado) =>
   return (
     <div className="space-y-4">
       {/* Prompt 20: atalhos de exceção numa linha discreta (o caminho principal é o cartão da IA lá em cima). */}
-      <p className="text-xs text-muted" data-testid="atalhos-passo1">
-        Já tem anúncio em outro site?{" "}
+      {/* E132-A, item 6: UMA linha de texto, só no cadastro novo (links, não botões cheios). */}
+      <p className="text-sm text-muted" data-testid="atalhos-passo1">
+        Já anuncia em outro site?{" "}
         <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setAtalho("importar")} data-testid="importar-abrir">
-          Importar
+          Importar o anúncio
         </button>
         {" · "}Prefere ajuda?{" "}
         <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setAtalho("ajuda")} data-testid="ajuda-publicar-abrir">
-          Falar com a equipe
+          Fale com a Viva
         </button>
       </p>
       {/* Atalho (t115): importar o texto do próprio anúncio leva direto à etapa 3, com tudo preenchido. */}
