@@ -228,7 +228,10 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
         let n = 0;
         const quartos = folha.locator("fieldset", { hasText: "Quartos" });
         for (const rotulo of ["3+", "2+", "1+"]) {
-          await quartos.getByRole("button", { name: rotulo, exact: true }).click();
+          // E131 (#1332): a opção sem imóvel nesta base vem desabilitada (data-n="0"); pula para a próxima.
+          const opcao = quartos.getByRole("button", { name: rotulo, exact: true });
+          if (await opcao.isDisabled()) continue;
+          await opcao.click();
           n = Number(await aplicar.getAttribute("data-total"));
           if (n > 0) break;
         }
