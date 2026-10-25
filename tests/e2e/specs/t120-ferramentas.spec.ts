@@ -45,6 +45,7 @@ test("Ferramentas: cada card com link abre uma tela do painel", async ({ page })
     const res = await page.goto(href, { waitUntil: "domcontentloaded" });
     if (res) expect(res.status(), href).toBeLessThan(400);
     expect(new URL(page.url()).pathname, href).toBe(href.split("#")[0]);
-    await expect(page.locator("aside nav"), href).toBeVisible();
+    // PROP-1 (#1337): no computador o dono não tem barra lateral — a casca é o topo com abas (topo-dono).
+    await expect(page.locator('aside nav:visible, [data-testid="topo-dono"]:visible').first(), href).toBeVisible();
   }
 });

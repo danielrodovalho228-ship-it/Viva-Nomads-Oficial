@@ -9,6 +9,10 @@ import { AVISO_SEM_NUMERO, MSG_NAO_ACHAMOS, NOME_LOCAL_MAX, ROTULO_NAO_ACHEI, RO
 import { apagarLocal, buscarOutroLocal, meusLocais, pedirLocalNaoAchado, renomearLocal, usarLocal, type LocalPessoal } from "@/lib/destinos/pessoal-actions";
 import { useEffect, useState } from "react";
 
+/** E106: o seletor de tempo nasce visível no painel Local, desabilitado até haver destino. */
+export const ROTULO_TEMPO_MAXIMO = "Tempo máximo até o trabalho";
+export const DICA_TEMPO_SEM_DESTINO = "escolha um destino";
+
 export interface DestinoChip {
   slug: string;
   nome: string;
@@ -200,7 +204,7 @@ export function CampoDestino({
           />
         )}
       </div>
-      {destino && (
+      {destino ? (
         <div className="mt-3 flex flex-wrap items-center gap-2" data-testid="destino-opcoes">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Como você vai">
             {modos.map((m) => (
@@ -226,6 +230,27 @@ export function CampoDestino({
               ))}
             </select>
           </label>
+        </div>
+      ) : (
+        // E106: o tempo de trajeto (o diferencial da Viva) aparece já ao abrir o painel Local — desabilitado, com a dica,
+        // até o destino ser escolhido. Escolhido o destino, vira o seletor de cima (com o meio de transporte).
+        <div className="mt-3" data-testid="destino-ate-espera">
+          <label className="inline-flex flex-wrap items-center gap-2 text-sm text-ink">
+            {ROTULO_TEMPO_MAXIMO}
+            <select
+              value="0"
+              disabled
+              aria-label="Tempo máximo até o trabalho"
+              aria-describedby="destino-ate-dica"
+              data-testid="destino-ate"
+              className="h-12 rounded-lg border border-line bg-surface-2 px-3 text-sm text-muted outline-none disabled:cursor-not-allowed"
+            >
+              <option value="0">{DICA_TEMPO_SEM_DESTINO}</option>
+            </select>
+          </label>
+          <p id="destino-ate-dica" className="mt-1 text-xs text-muted" data-testid="destino-ate-dica">
+            Escolha um destino acima para ver só os imóveis a esse tempo dele.
+          </p>
         </div>
       )}
     </section>

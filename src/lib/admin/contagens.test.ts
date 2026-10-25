@@ -56,6 +56,7 @@ test("a inicial: rodapé, saúde e no máximo ~6 leituras em paralelo", () => {
   assert.match(pagina, /Tudo funcionando/);
   assert.match(pagina, /alertas === 1 \? "alerta" : "alertas"\} → Sistema/);
   const bloco = pagina.slice(pagina.indexOf("await Promise.all(["), pagina.indexOf("]);", pagina.indexOf("await Promise.all([")));
-  assert.equal(bloco.split("\n").filter((l) => /^\s+\S.*,$/.test(l)).length, 4, "4 leituras na inicial");
+  assert.equal(bloco.split("\n").filter((l) => /^\s+\S.*,$/.test(l)).length, 3, "3 leituras na inicial");
+  assert.match(pagina, /l\.chave === "backup"/, "a saúde usa a mesma leitura das filas");
   assert.match(pagina, /numerosDaInicial\(admin, teste\)/, "as contas de teste são lidas uma vez só");
 });
