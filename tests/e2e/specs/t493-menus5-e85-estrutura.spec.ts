@@ -48,8 +48,8 @@ test.describe("T493 — MENUS-5 / E85: 5 destinos e um nome por destino", () => 
     await expect(pm.getByTestId("barra-lateral")).toBeVisible({ timeout: 30_000 });
     contagem["morador-lateral-1280"] = (await pm.getByTestId("barra-lateral").locator('[data-testid="menu-cascata"] > li').allInnerTexts()).map(primeiraLinha);
     await pm.setViewportSize({ width: 390, height: 844 });
-    await expect(pm.locator("nav[data-papel] ul > li").first()).toBeVisible({ timeout: 15_000 });
-    contagem["morador-barra-390"] = (await pm.locator("nav[data-papel] ul > li").allInnerTexts()).map(primeiraLinha);
+    await expect(pm.locator("nav[data-papel]:visible ul > li").first()).toBeVisible({ timeout: 15_000 });
+    contagem["morador-barra-390"] = (await pm.locator("nav[data-papel]:visible ul > li").allInnerTexts()).map(primeiraLinha);
     await pm.context().close();
 
     const pd = await entrar(browser, dono.email, senha);
@@ -58,8 +58,8 @@ test.describe("T493 — MENUS-5 / E85: 5 destinos e um nome por destino", () => 
     await expect(pd.getByTestId("abas-dono")).toBeVisible({ timeout: 30_000 });
     contagem["dono-topo-1280"] = (await pd.locator('[data-testid^="aba-dono-"]').allInnerTexts()).map(primeiraLinha);
     await pd.setViewportSize({ width: 390, height: 844 });
-    await expect(pd.locator("nav[data-papel] ul > li").first()).toBeVisible({ timeout: 15_000 });
-    contagem["dono-barra-390"] = (await pd.locator("nav[data-papel] ul > li").allInnerTexts()).map(primeiraLinha);
+    await expect(pd.locator("nav[data-papel]:visible ul > li").first()).toBeVisible({ timeout: 15_000 });
+    contagem["dono-barra-390"] = (await pd.locator("nav[data-papel]:visible ul > li").allInnerTexts()).map(primeiraLinha);
     await pd.context().close();
 
     test.info().annotations.push({ type: "menus", description: JSON.stringify(contagem) });

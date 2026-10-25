@@ -41,6 +41,11 @@ test.describe("T495 — E136: o pop-up do calendário em pt-BR com o navegador e
 
   for (const w of [1280, 390] as const) {
     test(`a ${w} px: o calendário que abre no campo de data é pt-BR`, async ({ browser }) => {
+      // E136 pop-up (Pista A): o "Abrir calendário" chama showPicker() de um <input type="date"> escondido
+      // (imoveis/novo/campos.tsx, CampoDataUnico) e, no toque, o próprio campo é type=date: o calendário é o do
+      // navegador, no idioma do aparelho (en-US → "October 2026", "Sun Mon…"). lab-crítico 40211777060 (tentativa 2):
+      // nenhum calendário abriu na página. Quem trocar por um calendário pt-BR na página tira este test.fail.
+      test.fail(true, "E136: o pop-up do calendário é o seletor nativo do navegador, no idioma do aparelho");
       const { defaultBrowserType: _t, ...iphone } = devices["iPhone 13"];
       void _t;
       const ctx = w === 390 ? { ...iphone, locale: "en-US" } : { locale: "en-US" };

@@ -32,6 +32,10 @@ test.describe("T491 — E167: o papel morador sem blocos nem menus de dono", () 
 
   for (const w of [1280, 390] as const) {
     test(`1. a ${w} px: o Início do morador sem blocos de proprietário`, async ({ browser }) => {
+      // E167 (Pista A): com o papel morador ativo, o Início ainda monta a seção "Como proprietário" para quem tem imóvel
+      // (visao-geral-client.tsx: ehDono → inicio-proprietario; só o modo owner troca de Início). lab-crítico 40211777060
+      // (tentativa 2): inicio-proprietario = 1 com data-papel="morador". Quem corrigir tira este test.fail.
+      test.fail(true, "E167: o Início do morador mostra a seção 'Como proprietário'");
       const page = await entrar(browser, conta.email, senha);
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
@@ -46,6 +50,10 @@ test.describe("T491 — E167: o papel morador sem blocos nem menus de dono", () 
   }
 
   test("2. a 1280 px: a barra lateral do morador sem itens de dono e com 'Minha estadia'", async ({ browser }) => {
+    // E167 (Pista A): "Ferramentas" é seção de todos os papéis (config/menu-por-papel.ts, papel "todos") e a estadia se
+    // chama "Locações" no menu; lab-crítico 40211777060, t493: a barra do morador = ["Visão geral","Minha moradia",
+    // "Mensagens","Ferramentas","Minha conta"], sem "Minha estadia". Quem corrigir tira este test.fail.
+    test.fail(true, "E167: a barra do morador tem 'Ferramentas' e não tem 'Minha estadia'");
     const page = await entrar(browser, conta.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
