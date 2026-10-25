@@ -397,15 +397,17 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
       if (largura === 390) {
         await expect(page.getByTestId("parceiro-geral")).toHaveCount(0); // desligado por padrão
         const a = await admin(browser, 1280);
-        await a.goto("/admin/parceiros", { waitUntil: "domcontentloaded" });
+        // ADMIN-4 (#1354): as chaves moram em /admin/sistema; ligar o cartão pede a confirmação na página.
+        await a.goto("/admin/sistema", { waitUntil: "domcontentloaded" });
         const g = a.getByTestId("parceiro-geral-admin");
         await g.getByLabel("Nome").fill("AquiResolve");
         await g.getByLabel("Cidade").fill("Uberlândia");
         await g.getByLabel("Descrição").fill("Pequenos reparos e serviços gerais para imóveis mobiliados.");
         await g.getByRole("switch").click();
         await g.getByTestId("parceiro-geral-salvar").click();
+        await g.getByTestId("parceiro-geral-salvar-confirmar").click();
         await expect(g.getByTestId("admin-parceria-msg")).toHaveText("Salvo.", { timeout: 15_000 });
-        await expect(a.getByTestId("chave-pagamento-parceiros")).toContainText("desligada");
+        await expect(a.locator('[data-testid="chave-ambiente"][data-nome="PAGAMENTO_PARCEIROS_ATIVO"]')).toContainText("Desligada");
         await a.context().close();
       }
       await page.goto(url, { waitUntil: "domcontentloaded" });
