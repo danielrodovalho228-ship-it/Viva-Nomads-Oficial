@@ -252,24 +252,24 @@ export function CampoDataUnico({
   }
 
   if (toque) {
-    // No iOS o campo de data vazio aparece em branco: um exemplo "dd/mm/aaaa" por cima, que some ao tocar.
+    // E136: o campo nativo escreve a data no idioma do APARELHO ("Oct 25, 2026" num iPhone em inglês). O texto nativo
+    // fica transparente e a data aparece por cima SEMPRE em pt-BR (25/10/2026); o toque continua abrindo o calendário.
     return (
       <span className="relative block min-w-0">
         <input
           type="date"
+          lang="pt-BR"
           value={value}
           min={min}
           onChange={(e) => onChange(e.target.value)}
           aria-label={ariaLabel}
           data-testid={testid}
           data-vazio={value ? undefined : "1"}
-          className="peer input box-border block h-11 w-full min-w-0 max-w-full appearance-none data-[vazio=1]:text-transparent focus:text-ink"
+          className="input box-border block h-11 w-full min-w-0 max-w-full appearance-none text-transparent [&::-webkit-datetime-edit]:text-transparent"
         />
-        {!value && (
-          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-muted peer-focus:hidden" aria-hidden>
-            dd/mm/aaaa
-          </span>
-        )}
+        <span className={cn("pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm tabular-nums", value ? "text-ink" : "text-muted")} aria-hidden data-testid={testid ? `${testid}-texto` : undefined}>
+          {value ? isoParaBr(value) : "dd/mm/aaaa"}
+        </span>
       </span>
     );
   }

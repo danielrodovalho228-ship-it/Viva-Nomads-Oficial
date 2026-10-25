@@ -7,6 +7,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  * Como morador / Parceiros / Falar com a Viva (ids: todas, proprietario, inquilino, parceiros, suporte). O dono vê a
  * conversa em "Como proprietário"; o morador, em "Como morador"; nenhum dos dois tem conversa em "Parceiros" nem em
  * "Falar com a Viva".
+ * E168 (QA ao vivo do Muse, 25/10): a 1280 px (lista e conversa lado a lado), o painel da conversa acompanha o
+ * filtro — filtro sem conversa = painel vazio, nunca a conversa de outro filtro.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -75,6 +77,25 @@ test.describe("T84 — filtros da caixa de Mensagens", () => {
     await expect(pagina.getByTestId("mensagens-conversa")).toHaveCount(0);
     await (await contagem(pagina, "suporte")).click();
     await expect(pagina.getByTestId("mensagens-conversa")).toHaveCount(0);
+    await pagina.context().close();
+  });
+
+  test("E168 — a 1280 px, o painel da conversa acompanha o filtro (filtro vazio = painel vazio)", async ({ browser }) => {
+    test.setTimeout(90_000);
+    const pagina = await entrar(browser, dono.email, senha);
+    await pagina.setViewportSize({ width: 1280, height: 900 });
+    await pagina.goto("/dashboard/mensagens", { waitUntil: "networkidle" });
+    await expect(pagina.getByTestId("conversa-nome"), "a conversa aberta em Todas").toBeVisible({ timeout: 30_000 });
+    await pagina.getByTestId("mensagens-filtro-inquilino").click();
+    await expect(pagina.getByTestId("mensagens-conversa")).toHaveCount(0);
+    await expect(pagina.getByTestId("conversa-nome"), "nenhuma conversa de outro filtro no painel").toHaveCount(0);
+    await expect(pagina.getByTestId("mensagem-campo")).toHaveCount(0);
+    await expect(pagina.getByTestId("mensagens-detalhe-vazio")).toBeVisible();
+    await expect(pagina.getByTestId("mensagens-detalhe-vazio")).toContainText("Não há conversa neste filtro.");
+    await pagina.screenshot({ path: "tests/laboratorio/saida/t84-e168-filtro-vazio-1280.png" });
+    await pagina.getByTestId("mensagens-filtro-proprietario").click();
+    await expect(pagina.getByTestId("mensagens-detalhe-vazio")).toHaveCount(0);
+    await expect(pagina.getByTestId("conversa-nome")).toBeVisible();
     await pagina.context().close();
   });
 });

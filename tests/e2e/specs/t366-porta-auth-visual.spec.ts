@@ -48,7 +48,7 @@ for (const w of [1280, 390]) {
       const cartao = page.getByTestId("porta-cartao");
       await expect(cartao).toBeVisible();
       expect(await cartao.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
-      expect(await page.getByTestId("porta-formulario").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(247, 242, 234)");
+      expect(await page.getByTestId("porta-formulario").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(247, 247, 247)"); // E166: clean (antes, areia)
       expect(await cartao.evaluate((el) => getComputedStyle(el).boxShadow)).toBe("none");
 
       // 2. Estados do primário.

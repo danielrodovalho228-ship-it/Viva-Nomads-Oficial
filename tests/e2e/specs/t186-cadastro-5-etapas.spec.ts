@@ -169,7 +169,8 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       // A área pode já vir preenchida (sugestão da IA ou rascunho anterior da conta): esvazia para provar a trava.
       await page.getByTestId("cadastro-area").fill("");
       await continuar.click();
-      await expect(page.getByText("Informe a área do imóvel (m²).")).toBeVisible();
+      // E135: a mensagem aparece no campo e na caixa "Para continuar, falta:".
+      await expect(page.getByTestId("passo-erros")).toContainText("Informe a área do imóvel (m²).");
       await page.getByTestId("cadastro-banheiros").fill("1");
       await page.getByTestId("cadastro-capacidade").fill("4");
       await page.getByTestId("cadastro-area").fill("52");

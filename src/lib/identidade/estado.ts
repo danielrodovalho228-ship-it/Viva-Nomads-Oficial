@@ -4,7 +4,8 @@
    1. confirmada  → "Identidade confirmada · válida até dd/mm/aaaa"
    2. vencida     → "Identidade vencida em dd/mm/aaaa · Confirmar de novo"
    3. simulavel   → "Verificar identidade (simulado — conta de teste)"  (conta is_teste sem laudo válido)
-   4. em_breve    → "Em breve, por meio de um parceiro"                  (conta real, CAF ainda não ativa)
+   4. em_breve    → "Conferida pela equipe da Viva"                       (conta real, CAF ainda não ativa)
+  E152: nada de prometer função futura ("em breve, com um parceiro"): o texto diz o caminho de HOJE.
   Nenhuma tela escreve o próprio texto: Conta › Confiança e segurança, /dashboard/verificacao, a etapa de identidade
   do anúncio, o cartão da Visão geral do inquilino, o cartão do candidato e a coluna "Identidade" do admin usam esta
   função (a do servidor é estadoIdentidade, em estado-servidor.ts).
@@ -30,7 +31,7 @@ export function dataIdentidade(iso: string | null | undefined): string {
   return Number.isFinite(d.getTime()) ? d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "";
 }
 
-const TEXTO_EM_BREVE = "Em breve, por meio de um parceiro";
+const TEXTO_EM_BREVE = "Conferida pela equipe da Viva";
 const TEXTO_SIMULAVEL = "Verificar identidade (simulado — conta de teste)";
 
 /**

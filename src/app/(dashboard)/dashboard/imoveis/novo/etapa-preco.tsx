@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BlockCalendar } from "@/components/property/block-calendar";
+import { erroJanelaDisponivel } from "@/lib/anuncio/periodo-disponivel";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
@@ -212,6 +213,15 @@ export function EtapaPreco(p: {
               </Labeled>
             </div>
             <span className="mt-2 block text-xs text-muted">Estadias de 30 a 180 dias são o usual.</span>
+            {/* E137: a janela de datas precisa caber a duração mínima (aviso já ao escolher, e o Continuar recusa). */}
+            {(() => {
+              const msg = erroJanelaDisponivel(p.availableFrom, p.availableUntil, p.minPeriod);
+              return msg ? (
+                <p role="alert" className="mt-2 text-sm font-semibold text-red-700" data-testid="janela-curta">
+                  {msg}
+                </p>
+              ) : null;
+            })()}
           </div>
 
           {/* E44: o calendário do imóvel já no cadastro — a mesma grade do editor (bloquear, importar e exportar .ics). */}
