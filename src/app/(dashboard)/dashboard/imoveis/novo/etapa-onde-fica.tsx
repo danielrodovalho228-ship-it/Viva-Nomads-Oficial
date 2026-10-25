@@ -28,25 +28,16 @@ function cidadeLiberada(cidade: string): boolean {
   return CITIES.some((c) => n(c.name) === n(cidade));
 }
 
+/** E104: o Complemento serve a casa, chácara e apartamento — o exemplo não supõe o tipo do imóvel. */
+export const PLACEHOLDER_COMPLEMENTO = "Bloco, apartamento, casa ou referência";
+
 /**
- * Etapa 1 — Onde fica (prompt 10): tipo do imóvel, quem opera, CEP PRIMEIRO (com foco; ViaCEP e, se não achar,
- * BrasilAPI), número e complemento, aviso de cidade fora da lista e o documento do imóvel (prompt 11), conferido na
- * hora. Prompt 20: no topo, o cartão "Preencher com IA" (`topo`); o CEP sempre responde com uma mensagem (e, se não
- * existir, "buscar pelo endereço"); importar e pedir ajuda viram uma linha discreta no fim.
+ * Passo 3 — Endereço (mockup cadastro-imovel-03; E104): SÓ o endereço. CEP primeiro (com foco; ViaCEP e, se não achar,
+ * BrasilAPI; sempre responde com uma mensagem e, se não existir, "buscar pelo endereço"), rua e número, complemento,
+ * bairro e cidade, aviso de cidade fora da lista; com o endereço completo, a linha do endereço e o mapa do bairro.
+ * Quem opera, identidade, documento do imóvel e importar/ajuda NÃO moram aqui (ver AntesDePublicar e AtalhosCadastro).
  */
 export function EtapaOndeFica(p: {
-  /** Cartão "Preencher com IA" (prompt 20), no topo do passo. */
-  topo?: React.ReactNode;
-  aplicarImportado: (a: AnuncioOrganizado) => void;
-  ownershipType: Operacao;
-  setOwnershipType: (v: Operacao) => void;
-  subleaseAuthorized: boolean;
-  setSubleaseAuthorized: (fn: (v: boolean) => boolean) => void;
-  subleaseDoc: PhotoItem[];
-  setSubleaseDoc: (d: PhotoItem[]) => void;
-  docOperacaoAnexado: boolean;
-  subleaseDocTipo: string;
-  setSubleaseDocTipo: (t: string) => void;
   cep: string;
   setCep: (v: string) => void;
   cepLoading: boolean;
@@ -68,28 +59,16 @@ export function EtapaOndeFica(p: {
   city: string;
   setCity: (v: string) => void;
   uf: string;
-  imovelId: string | null;
-  docEstado: EstadoDocumentoTela;
-  docMotivos: string[];
-  onDocumento: (estado: EstadoDocumentoTela, motivos: string[]) => void;
-  /** Prompt 19: a matrícula conferida preenche o anúncio. */
-  onMatricula?: (m: InfoMatricula) => void;
   daMatricula?: Set<string>;
   /** Endereço da matrícula quando é diferente do CEP: o dono escolhe qual vale. */
   enderecoMatricula?: PreenchimentoMatricula["endereco"] | null;
   onEnderecoMatricula?: (usar: boolean) => void;
   erros: Record<string, string>;
-  /** L1-1: endereço já gravado do imóvel (rascunho retomado) — o "Enviar documento" não trava se ele estiver completo. */
-  enderecoSalvo?: EnderecoDoc | null;
-  /** L1-1: o toque em "Enviar documento" sem CEP/rua/número marca os campos que faltam. */
-  onFaltaDocumento?: (campos: CampoEnderecoDoc[]) => void;
 }) {
-  const doc = exigeAutorizacao(p.ownershipType) ? DOC_AUTORIZACAO[p.ownershipType as "subleased" | "managed"] : null;
   const foraDaArea = !!p.city.trim() && !cidadeLiberada(p.city);
   // Erro de formato do CEP só ao sair do campo (nunca enquanto a pessoa digita).
   const [cepSaiu, setCepSaiu] = useState(false);
   const [buscaAberta, setBuscaAberta] = useState(false);
-  const [atalho, setAtalho] = useState<"importar" | "ajuda" | null>(null);
   const digitosCep = p.cep.replace(/\D/g, "").length;
   const r = p.cepResultado;
   const podeBuscarEndereco = r?.tipo === "nao_encontrado" || r?.tipo === "cidade";
@@ -104,7 +83,6 @@ export function EtapaOndeFica(p: {
   );
   return (
     <div className="space-y-4" data-testid="etapa-onde-fica">
-      {p.topo}
       <Labeled label="CEP">
         <div className="relative">
           <input
@@ -235,7 +213,7 @@ export function EtapaOndeFica(p: {
           autoComplete="off"
           name="vn-cadastro-a4"
           className="input"
-          placeholder="Apto 101, bloco B"
+          placeholder={PLACEHOLDER_COMPLEMENTO}
           data-testid="cadastro-complemento"
         />
       </Labeled>
@@ -317,6 +295,50 @@ export function EtapaOndeFica(p: {
         avisoPrivacidade
       )}
 
+    </div>
+  );
+}
+
+/**
+ * E104: o que o Passo 3 carregava e não é endereço — quem opera (e o documento da sublocação/gestão), a identidade
+ * (CAF) e o documento do imóvel (matrícula) — mora na Revisão (Passo 10), num cartão "Antes de publicar". As regras
+ * não mudam: a prontidão continua barrando a publicação sem eles (itens "sublocacao" e "documento", agora resolvidos na
+ * Revisão). A ordem da decisão do Daniel (18/10) segue: endereço (Passo 3) → identidade → matrícula.
+ */
+export function AntesDePublicar(p: {
+  ownershipType: Operacao;
+  setOwnershipType: (v: Operacao) => void;
+  subleaseAuthorized: boolean;
+  setSubleaseAuthorized: (fn: (v: boolean) => boolean) => void;
+  subleaseDoc: PhotoItem[];
+  setSubleaseDoc: (d: PhotoItem[]) => void;
+  docOperacaoAnexado: boolean;
+  subleaseDocTipo: string;
+  setSubleaseDocTipo: (t: string) => void;
+  cep: string;
+  street: string;
+  numero: string;
+  neighborhood: string;
+  city: string;
+  imovelId: string | null;
+  docEstado: EstadoDocumentoTela;
+  docMotivos: string[];
+  onDocumento: (estado: EstadoDocumentoTela, motivos: string[]) => void;
+  /** Prompt 19: a matrícula conferida preenche o anúncio. */
+  onMatricula?: (m: InfoMatricula) => void;
+  /** O que ainda falta na operação (declaração, tipo do documento ou o anexo); "" = nada. */
+  faltaOperacao: string;
+  /** L1-1: endereço já gravado do imóvel (rascunho retomado) — o "Enviar documento" não trava se ele estiver completo. */
+  enderecoSalvo?: EnderecoDoc | null;
+  /** L1-1: o toque em "Enviar documento" sem CEP/rua/número marca os campos que faltam. */
+  onFaltaDocumento?: (campos: CampoEnderecoDoc[]) => void;
+}) {
+  const doc = exigeAutorizacao(p.ownershipType) ? DOC_AUTORIZACAO[p.ownershipType as "subleased" | "managed"] : null;
+  return (
+    <section className="space-y-4 rounded-xl border border-line bg-white p-4 sm:p-6" data-testid="antes-de-publicar" aria-labelledby="antes-de-publicar-titulo">
+      <h2 id="antes-de-publicar-titulo" className="text-lg font-semibold text-ink">
+        Antes de publicar
+      </h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="min-w-0">
           <span className="mb-2 block text-sm font-medium text-ink">Quem opera este imóvel?</span>
@@ -377,7 +399,7 @@ export function EtapaOndeFica(p: {
             )}
             <DocumentoUploader docs={p.subleaseDoc} onChange={p.setSubleaseDoc} rotulo="Anexar documento" />
           </div>
-          <Erro msg={p.erros.sublocacao} />
+          <Erro msg={p.faltaOperacao || undefined} />
         </div>
       )}
 
@@ -396,6 +418,18 @@ export function EtapaOndeFica(p: {
         onFalta={p.onFaltaDocumento}
       />
 
+    </section>
+  );
+}
+
+/**
+ * E104: os atalhos de exceção (prompt 20) — importar o texto de um anúncio de outro site ou pedir ajuda à equipe —
+ * numa linha discreta no fim do Passo 1, o começo do cadastro (no Passo 3 só fica o endereço).
+ */
+export function AtalhosCadastro(p: { aplicarImportado: (a: AnuncioOrganizado) => void }) {
+  const [atalho, setAtalho] = useState<"importar" | "ajuda" | null>(null);
+  return (
+    <div className="space-y-4">
       {/* Prompt 20: atalhos de exceção numa linha discreta (o caminho principal é o cartão da IA lá em cima). */}
       <p className="text-xs text-muted" data-testid="atalhos-passo1">
         Já tem anúncio em outro site?{" "}

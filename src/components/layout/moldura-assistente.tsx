@@ -22,7 +22,7 @@ export const TEXTO_RASCUNHO_SALVO = "Seu rascunho fica salvo.";
  */
 export function MolduraAssistente({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen w-full flex-col bg-surface-2" data-testid="moldura-assistente">
+    <div className="flex min-h-screen w-full flex-col bg-areia" data-testid="moldura-assistente">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-line bg-white px-4 sm:px-8 print:hidden">
         <Logo href={null} className="min-w-0 shrink" />
         <nav aria-label="Assistente" className="flex items-center gap-1 sm:gap-2">
@@ -46,8 +46,8 @@ export function MolduraAssistente({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
       <DemoBanner />
-      {/* O rodapé do fluxo fica preso no fim da tela: o foco e a rolagem até um campo param acima dele (e da barra das fotos). */}
-      <style>{`html{scroll-padding-bottom:calc(var(--altura-barra-fotos,0px) + 8rem)}`}</style>
+      {/* O rodapé do fluxo fica preso no fim da tela: o foco e a rolagem até um campo param acima dele. */}
+      <style>{`html{scroll-padding-bottom:8rem}`}</style>
       <main data-painel-main className="mx-auto w-full max-w-6xl min-w-0 flex-1 px-4 pt-6 sm:px-8">
         {children}
       </main>

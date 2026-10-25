@@ -432,6 +432,9 @@
         "t436-busca-clean-e82",
         "t412-varredura-bloco29",
         "t408-varredura-bloco27",
+        "t413-varredura-bloco30",
+        "t458-buscar-base-unica-e131",
+        "t454-salvar-busca-avisar-me",
         "t453-buscar-descobribilidade"
       ]
     },
@@ -573,7 +576,9 @@
         "t352-varredura-bloco17",
         "t387-varredura-bloco22",
         "t403-nav-a",
-        "t411-varredura-bloco28"
+        "t411-varredura-bloco28",
+        "t416-varredura-bloco33",
+        "t459-prop1-navegacao-dono"
       ]
     },
     "/dashboard/assinatura": {
@@ -718,7 +723,9 @@
         "t402-conta-leva2",
         "t407-varredura-bloco26",
         "t439-e101-deteccao-espelho",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t405-perfil-e60-e62",
+        "t415-varredura-bloco32"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -753,7 +760,8 @@
         "t224-taxa-fora-da-api",
         "t220-recibo-assinatura",
         "t221-contrato-estado-periodo",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -800,7 +808,8 @@
         "t209-jornada-dois-lados",
         "t216-taxa-matriz",
         "t224-taxa-fora-da-api",
-        "t221-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/ferramentas": {
@@ -823,7 +832,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t302-varredura-logada-bloco6"
+        "t302-varredura-logada-bloco6",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/imoveis": {
@@ -867,7 +877,8 @@
         "t433-l2a-itens-9-24",
         "t407-varredura-bloco26",
         "t400-chacara-sem-internet",
-        "t410-niveis-medir-rascunho"
+        "t410-niveis-medir-rascunho",
+        "t415-varredura-bloco32"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -908,7 +919,13 @@
         "t451-cadastro-01b-tipos",
         "t435-cadastro-03-endereco",
         "t412-varredura-bloco29",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t413-varredura-bloco30",
+        "t455-cadastro-textos-e108",
+        "t414-varredura-bloco31",
+        "t432-deteccao-a",
+        "t415-varredura-bloco32",
+        "t456-comodidades-tipo-e111a"
       ]
     },
     "/dashboard/indicacoes": {
@@ -939,7 +956,8 @@
         "t213-jornada-teste-confirmacao",
         "t298-varredura-logada-bloco4",
         "t351-telas-linkedin-63a",
-        "t338-varredura-bloco15"
+        "t338-varredura-bloco15",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/locacoes": {
@@ -1045,7 +1063,8 @@
         "t11-travessias",
         "t183-telas-logadas-390",
         "t232-pedido-moradia-completo",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1058,7 +1077,8 @@
         "t11-travessias",
         "t183-telas-logadas-390",
         "t232-pedido-moradia-completo",
-        "t298-varredura-logada-bloco4"
+        "t298-varredura-logada-bloco4",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/propostas/[id]": {
@@ -1354,7 +1374,8 @@
         "t325-fotos-ilustrativas-empresas",
         "t354-varredura-bloco19",
         "t368-varredura-bloco20",
-        "t438-vocab-a"
+        "t438-vocab-a",
+        "t414-varredura-bloco31"
       ]
     },
     "/parceiros": {
@@ -1445,7 +1466,8 @@
         "t311-marco-principal-unico",
         "t359-precos-taxa-e51-e54",
         "t338-varredura-bloco15",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t414-varredura-bloco31"
       ]
     },
     "/privacidade": {
@@ -1908,7 +1930,8 @@
         "t407-varredura-bloco26",
         "t439-e101-deteccao-espelho",
         "t410-niveis-medir-rascunho",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t415-varredura-bloco32"
       ]
     },
     "/dashboard/recibos": {

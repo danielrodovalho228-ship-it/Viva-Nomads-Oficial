@@ -16,6 +16,8 @@ import { ativacoesDaSessao } from "@/lib/data/ativacao";
 import { VisaoGeral, type RascunhoPendente } from "./visao-geral-client";
 import { ContaPausada } from "@/components/account/sair-da-viva";
 import { AvisoStrikePainel } from "@/components/vistoria/aviso-strike-painel";
+import { visualizacoesDoDono } from "@/lib/data/desempenho-anuncio";
+import { listConversations } from "@/lib/data/messages";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -86,7 +88,7 @@ function rascunhoDoDraft(d: Awaited<ReturnType<typeof getLatestDraft>>): Rascunh
  */
 export default async function DashboardPage() {
   const agora = new Date();
-  const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados, candidaturas] = await Promise.all([
+  const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados, candidaturas, visualizacoes, conversas] = await Promise.all([
     listMyProperties(),
     cidadeDoPerfil(),
     interessadosDoDono(),
@@ -97,6 +99,9 @@ export default async function DashboardPage() {
     dadosDasDecisoes(),
     // E72: o cartão "Candidaturas" conta a MESMA lista de /dashboard/candidaturas (um número, uma fonte).
     listMinhasCandidaturas().catch(() => []),
+    // PROP-3 (E113): Visualizações e Mensagens da MESMA função das páginas de destino (Desempenho e Mensagens).
+    visualizacoesDoDono(agora).catch(() => null),
+    listConversations().catch(() => []),
   ]);
   const pausadaEm = await contaPausadaEm();
   // 64-B: o limite do plano (mesma conta da publicação), para quem já tem anúncio publicado.
@@ -157,6 +162,8 @@ export default async function DashboardPage() {
       estadias={estadias}
       checklists={checklists}
       totalCandidaturas={candidaturas.length}
+      visualizacoes={visualizacoes}
+      totalConversas={conversas.length}
       />
     </>
   );

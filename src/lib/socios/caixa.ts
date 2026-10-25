@@ -8,6 +8,8 @@ export type StatusCaixa = "novo" | "em_andamento" | "feito" | "precisa_daniel" |
 export type ExtracaoStatus = "nao_se_aplica" | "pendente" | "ok" | "falhou" | "desligada";
 
 export const BUCKET_CAIXA = "caixa-socios";
+/** ADMIN-0: aviso único quando a leitura da Caixa falha (o erro nunca é traduzido como "migração pendente"). */
+export const AVISO_CAIXA_ILEGIVEL = "Não foi possível ler a Caixa agora.";
 export const LIMITE_BYTES = 25 * 1024 * 1024;
 export const LIMITE_TEXTO = 4000;
 export const ENVIOS_POR_HORA = 30;

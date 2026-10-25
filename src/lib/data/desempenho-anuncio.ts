@@ -150,3 +150,31 @@ export async function painelDesempenho(propertyId: string, agora: Date = new Dat
 }
 
 export { DIAS_PERIODO };
+
+/**
+ * PROP-3 (E113): Visualizações do Início do dono = a soma, nos imóveis dele, da MESMA conta do painel de desempenho
+ * (contar() na janela atual, sem o dono e sem contas de teste). Antes o Início mostrava "0" fixo.
+ */
+export async function visualizacoesDoDono(agora: Date = new Date()): Promise<number | null> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!supabase || !admin) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: ims } = await admin.from("properties").select("id").eq("owner_id", user.id);
+  const ids = ((ims ?? []) as { id: string }[]).map((i) => i.id);
+  if (!ids.length) return 0;
+  const j = janelas(agora);
+  const { data: evs } = await admin
+    .from("eventos")
+    .select("tipo, criado_em, usuario_id")
+    .in("imovel_id", ids)
+    .eq("tipo", "ver_anuncio")
+    .gte("criado_em", new Date(j.atual[0]).toISOString())
+    .limit(20000);
+  const eventos = (evs ?? []) as Evento[];
+  const fora = { donoId: user.id, contasTeste: await contasDeTeste(admin, eventos.map((e) => e.usuario_id ?? "")) };
+  return contar(eventos, j.atual, fora).visualizacoes;
+}

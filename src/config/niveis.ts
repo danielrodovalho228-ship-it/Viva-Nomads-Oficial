@@ -72,8 +72,8 @@ export const ITENS_NIVEL = [
   { chave: "trabalho_mesa_cadeira", rotulo: "Mesa e cadeira de trabalho", criterio: "Mesa de trabalho e cadeira.", prova: "foto" },
   { chave: "trabalho_cadeira_regulavel", rotulo: "Cadeira com regulagem de altura", criterio: "Cadeira de trabalho com regulagem de altura.", prova: "foto" },
   // Internet (medida do Prompt 57, por ponto)
-  { chave: "internet_medida_quarto", rotulo: "Internet medida no quarto principal", criterio: "Medição válida (Prompt 57) no quarto principal.", prova: "medida" },
-  { chave: "internet_medida_trabalho", rotulo: "Internet medida no ponto de trabalho", criterio: "Medição válida (Prompt 57) no ponto de trabalho.", prova: "medida" },
+  { chave: "internet_medida_quarto", rotulo: "Internet medida no quarto principal", criterio: "Medição válida no quarto principal.", prova: "medida" },
+  { chave: "internet_medida_trabalho", rotulo: "Internet medida no ponto de trabalho", criterio: "Medição válida no ponto de trabalho.", prova: "medida" },
   { chave: "internet_videochamada_trabalho", rotulo: "Videochamada no ponto de trabalho", criterio: "A medição do ponto de trabalho passa a regra de videochamada.", prova: "medida" },
   // Lavanderia
   { chave: "lavadora_no_imovel", rotulo: "Máquina de lavar no imóvel", criterio: "Máquina de lavar dentro do imóvel.", prova: "foto" },
