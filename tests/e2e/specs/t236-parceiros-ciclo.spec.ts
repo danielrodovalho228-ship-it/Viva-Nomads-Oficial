@@ -419,6 +419,15 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
   test("portas: etapa de fotos do anúncio e a seção Serviços do painel levam à busca", async ({ browser }) => {
     const page = await abrir(browser, dono.email, 390);
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    // PROP-6 (#1349): no modo dono o Início é o do mockup; a seção Serviços passou para /dashboard/servicos, e a porta
+    // do Início é o "Pedir um serviço" do bloco "Peça na Viva".
+    const pedirServico = page.getByTestId("inicio-dono-servico");
+    await page.getByTestId("painel-servicos-parceiros").or(pedirServico).first().waitFor({ state: "visible", timeout: 20_000 });
+    if (await pedirServico.isVisible()) {
+      await expect(pedirServico).toHaveAttribute("href", "/dashboard/servicos");
+      await pedirServico.click();
+      await expect(page).toHaveURL(/\/dashboard\/servicos$/, { timeout: 20_000 });
+    }
     const servicos = page.getByTestId("painel-servicos-parceiros");
     await expect(servicos).toBeVisible({ timeout: 20_000 });
     await expect(servicos.getByTestId("servicos-fotografia")).toHaveAttribute("href", /\/parceiros\/buscar\?categoria=fotografia/);
