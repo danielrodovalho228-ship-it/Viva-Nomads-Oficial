@@ -7,7 +7,7 @@ import { abrirNoEndereco, irParaAntesDePublicar } from "../fixtures/cadastro";
   "Enviar no passo Endereço", mas o Passo 3 não tem mais o envio. Só no laboratório (contas novas).
    1. Com o endereço completo: o botão diz "Enviar o documento agora" e abre a escolha do arquivo ali mesmo (o
       "Enviar documento" do cartão "Antes de publicar"). Nenhum "passo Endereço" na tela.
-   2. Sem o endereço: o mesmo botão leva ao Passo 3 com o foco no CEP (o que falta para conferir o documento).
+   2. Sem o número: o mesmo botão leva ao Passo 3 com o foco no número (o que falta para conferir o documento).
   A 390 e 1280 px, com prints do Passo 10.
 */
 const senha = novaSenha();
@@ -63,19 +63,27 @@ test.describe("T457 — E112: o documento do imóvel se envia na própria Revis�
       await page.context().close();
     });
 
-    test(`2. ${largura}px — sem endereço: o botão leva ao Passo 3 com o foco no CEP`, async ({ browser }) => {
+    test(`2. ${largura}px — sem o número: o botão leva ao Passo 3 com o foco no número`, async ({ browser }) => {
       const page = await dono(browser, largura, "sem");
+      await page.route("https://viacep.com.br/ws/**", (r) =>
+        r.fulfill({ json: { cep: "38400-100", logradouro: "Rua do Laboratório", bairro: "Centro", localidade: "Uberlândia", uf: "MG" } }),
+      );
+      // O mesmo começo do teste 1 (o rascunho salvo); depois o número sai — falta ele para conferir o documento.
       await abrirNoEndereco(page);
-      // Só o número: o rascunho salva (vira draft=…), mas faltam CEP e rua para conferir o documento.
-      await page.getByTestId("cadastro-numero").fill("10");
+      await page.getByTestId("cadastro-cep").fill("38400100");
+      await expect(page.getByTestId("cadastro-rua")).toHaveValue("Rua do Laboratório", { timeout: 10_000 });
+      await page.getByTestId("cadastro-numero").fill("102");
       await page.waitForTimeout(2_500);
+      await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 15_000 });
+      await page.getByTestId("cadastro-numero").fill("");
+      await page.waitForTimeout(3_500);
       await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 15_000 });
       await irParaAntesDePublicar(page);
       const botao = page.getByTestId("revisar-documento-enviar");
       await expect(botao).toHaveText("Enviar o documento agora");
       await botao.click();
       await expect(page.getByTestId("passo-texto")).toHaveText("Passo 3 de 10", { timeout: 10_000 });
-      await expect(page.getByTestId("cadastro-cep")).toBeFocused({ timeout: 10_000 });
+      await expect(page.getByTestId("cadastro-numero")).toBeFocused({ timeout: 10_000 });
       await page.context().close();
     });
   }
