@@ -497,7 +497,7 @@ export function SearchClient({
   // Filtros que vivem só na folha (fora da faixa do computador), para o contador do botão "Mais filtros". E82-A: sem a
   // fileira de chips ativos, Estadia e Pronto para Morar (só na folha) também acendem a pílula.
   const secundariosAtivos =
-    (typeFilter ? 1 : 0) +
+    // E105: Tipo, Preço e Nível têm pílula própria e não entram aqui (só o que mora na folha conta).
     (garantia ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
     (maxPeriod ? 1 : 0) +

@@ -24,7 +24,10 @@ const bolhasDaRonda = (page: Page) => page.getByTestId("bolha-agente").filter({ 
 const linhasDe = (t: string) => t.split("\n").map((l) => l.trim()).filter(Boolean);
 
 async function perguntarAoOtavio(page: Page, texto: string) {
-  await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+  // L-43 (vigia, 25/10): o /admin mantém conexões abertas; com "networkidle" o caso estourava os 45 s em 4 laboratórios
+  // completos seguidos (b5ed0e94, 8cfc180e, 96c0b6e4, de4cc854). Espera curta pela rede e o resto pelos elementos.
+  await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   await page.getByRole("tab", { name: "Conversar" }).click();
   await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Otávio/ }).click();
   // ADMIN-5: o chat é lido quando a aba abre; conta só depois de a conversa chegar.
@@ -41,6 +44,7 @@ test.describe("T27 — Agentes com dados ao vivo", () => {
 
   test("Otávio: 'alguma pendência?' — migração aplicada e chamado resolvido não aparecem como pendentes", async ({ page }) => {
     test.skip(process.env.INTEGRACOES_SIMULADAS !== "on" || !URL || !SERVICE, "Só no laboratório.");
+    test.setTimeout(90_000);
     const db = adm();
     const prazo = new Date(Date.now() + 24 * 3_600_000).toISOString();
     const { data: ch, error: e1 } = await db
@@ -93,7 +97,10 @@ test.describe("T27 — Agentes com dados ao vivo", () => {
     expect((data as { name: string; version: string }[]).some((m) => m.name.startsWith(`${ULTIMA_MIGRACAO}_`) || m.version === ULTIMA_MIGRACAO || m.version.endsWith(ULTIMA_MIGRACAO))).toBe(true);
     expect(Object.keys((data as object[])[0]).sort()).toEqual(["name", "version"]);
     // Logado (mesmo admin) não chama a função direto: só o servidor.
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    // L-43 (vigia, 25/10): o /admin mantém conexões abertas; com "networkidle" o caso estourava os 45 s em 4 laboratórios
+  // completos seguidos (b5ed0e94, 8cfc180e, 96c0b6e4, de4cc854). Espera curta pela rede e o resto pelos elementos.
+  await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const anon = createClient(URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
     const r = await anon.rpc("migracoes_aplicadas");
     expect(r.error).not.toBeNull();

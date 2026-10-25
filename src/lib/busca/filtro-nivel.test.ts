@@ -41,8 +41,10 @@ test("NIVEL-BUSCA-A: a folha e a busca usam as regras (sem link na linha; 'Ver t
   const { readFileSync } = await import("node:fs");
   const folha = readFileSync("src/components/busca/painel-filtros-celular.tsx", "utf8");
   const busca = readFileSync("src/app/(public)/buscar/search-client.tsx", "utf8");
-  assert.match(folha, /disabled=\{nivel\.desabilitado\[v\]\}/);
-  assert.match(folha, /· \{porNivel\[v\]\}/);
-  assert.match(folha, /nivel\.visivel \?[\s\S]*data-testid="painel-nivel-vazio"[^>]*>\s*\{TEXTO_SEM_NIVEIS\}\s*<\/p>/);
+  // E105: o nível mora só na pílula "Nível" (saiu da folha "Mais filtros").
+  assert.doesNotMatch(folha, /painel-nivel|filtro-nivel-/);
+  const pilulas = readFileSync("src/components/busca/barra-pilulas.tsx", "utf8");
+  assert.match(pilulas, /opcao\(v, f\.nivelMin === v, porNivel\[v\], nivel\.desabilitado\[v\]/);
+  assert.match(pilulas, /nivel\.visivel \?[\s\S]*data-testid="painel-nivel-vazio"[^>]*>\s*\{TEXTO_SEM_NIVEIS\}\s*<\/p>/);
   assert.match(busca, /data-testid="busca-vazia-nivel"[\s\S]*\{avisoNivelSemResultado\(nivelMin\)\}[\s\S]*onClick=\{\(\) => setNivelMin\(""\)\}[\s\S]*Ver todos/);
 });

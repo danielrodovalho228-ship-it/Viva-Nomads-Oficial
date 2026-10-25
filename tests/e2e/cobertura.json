@@ -71,7 +71,8 @@
         "t407-varredura-bloco26",
         "t442-foto-perfil-revisao",
         "t460-admin1-barra",
-        "t465-admin4-inicial"
+        "t465-admin4-inicial",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/2fa/refazer": {
@@ -101,6 +102,7 @@
         "t255-admin-f15-f16-f18-f20",
         "t301-varredura-logada-bloco5",
         "t387-varredura-bloco22",
+        "t419-varredura-bloco36",
         "t466-admin5-agentes"
       ]
     },
@@ -125,7 +127,8 @@
         "t255-admin-f15-f16-f18-f20",
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -148,7 +151,8 @@
         "t48-varredura",
         "t183-telas-logadas-390",
         "t286-esqueletos-vazios-48",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/cidades": {
@@ -189,7 +193,8 @@
         "t116-admin-emails-teste",
         "t48-varredura",
         "t183-telas-logadas-390",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/financeiro": {
@@ -210,7 +215,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/fotos-perfil": {
@@ -244,7 +250,8 @@
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
-        "t462-admin2-fusoes"
+        "t462-admin2-fusoes",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/pedidos": {
@@ -257,7 +264,8 @@
         "t231-admin-numeros-com-lista",
         "t232-pedido-moradia-completo",
         "t255-admin-f15-f16-f18-f20",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/socios": {
@@ -282,7 +290,8 @@
         "t241-contas-teste-36",
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t419-varredura-bloco36"
       ]
     },
     "/ajuda": {
@@ -440,7 +449,9 @@
         "t458-buscar-base-unica-e131",
         "t454-salvar-busca-avisar-me",
         "t417-varredura-bloco34",
-        "t453-buscar-descobribilidade"
+        "t453-buscar-descobribilidade",
+        "t452-mais-filtros-sem-duplicar",
+        "t419-varredura-bloco36"
       ]
     },
     "/cidades": {
@@ -1597,7 +1608,8 @@
       "specs": [
         "t210-contrato-estado-jornada",
         "t213-jornada-teste-confirmacao",
-        "t212-ferramentas-proprietario"
+        "t212-ferramentas-proprietario",
+        "t419-varredura-bloco36"
       ]
     },
     "/dashboard/agenda": {
@@ -1643,7 +1655,8 @@
       "specs": [
         "t229-admin-conversa-com-tudo",
         "t48-varredura",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/contratos": {
@@ -1655,7 +1668,8 @@
         "t48-varredura",
         "t240-conferencia-provas-admin",
         "t271-admin-visual",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/solicitacoes": {
@@ -1891,7 +1905,8 @@
         "admin"
       ],
       "specs": [
-        "t463-admin3-sistema"
+        "t463-admin3-sistema",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/retencao": {
@@ -1901,6 +1916,7 @@
       "specs": [
         "t281-minimizacao",
         "t301-varredura-logada-bloco5",
+        "t419-varredura-bloco36",
         "t467-admin6-rotas"
       ]
     },
@@ -1935,7 +1951,8 @@
         "t295-niveis-59-1",
         "t296-niveis-exibicao-59-1",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t419-varredura-bloco36"
       ]
     },
     "/dashboard/imoveis/[id]/nivel": {
@@ -2045,7 +2062,8 @@
       ],
       "specs": [
         "t313-ativacao-funil-50",
-        "t319-varredura-bloco10"
+        "t319-varredura-bloco10",
+        "t419-varredura-bloco36"
       ]
     },
     "/admin/qualidade": {
