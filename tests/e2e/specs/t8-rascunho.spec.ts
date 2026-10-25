@@ -40,13 +40,17 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
   async function comecarOutroSeHouver(page: Page) {
     // E104 (#1319): o Passo 1 não tem mais a barra de fotos (nem o campo de arquivo); o editor pronto é o título do passo (ou o aviso de rascunho).
     const comecarOutro = page.getByRole("button", { name: "Começar outro" });
-    await page.getByTestId("passo-titulo").or(comecarOutro).first().waitFor({ state: "visible", timeout: 20_000 });
+    // E132-A: o cadastro novo abre na Qualificação (antes do Passo 1); "Responder depois" leva ao Passo 1.
+    const qualificacao = page.getByTestId("qualificacao");
+    await page.getByTestId("passo-titulo").or(comecarOutro).or(qualificacao).first().waitFor({ state: "visible", timeout: 20_000 });
     try {
       await comecarOutro.waitFor({ state: "visible", timeout: 4_000 });
       await comecarOutro.click();
     } catch {
       /* sem rascunho anterior — editor em branco */
     }
+    await page.getByTestId("passo-titulo").or(qualificacao).first().waitFor({ state: "visible", timeout: 20_000 });
+    if (await qualificacao.isVisible()) await page.getByTestId("qualificacao-depois").click();
   }
 
   /** Abre o editor em branco, vai ao passo Endereço e preenche o endereço (dispara o autosave). Devolve
@@ -163,7 +167,7 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
   });
 
-  test("T-RASC-5 — o cadastro abre pelo passo 1 (Tipo), não pela qualificação; no Endereço o CEP vem em foco (prompt 10)", async ({ page }) => {
+  test("T-RASC-5 — o cadastro abre pela Qualificação (E132-A) e 'Responder depois' leva ao passo 1 (Tipo); no Endereço o CEP vem em foco (prompt 10)", async ({ page }) => {
     await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
     await comecarOutroSeHouver(page);
     // Assistente em 10 passos: o 1º passo é o Tipo; o CEP (antes no 1º passo) segue com foco ao chegar no Endereço.

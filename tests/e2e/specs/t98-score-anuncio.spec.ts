@@ -23,7 +23,7 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
         /* sem sessionStorage — ignora */
       }
     });
-    await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+    await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
     const comecarOutro = page.getByRole("button", { name: "Começar outro" });
     if (await comecarOutro.isVisible().catch(() => false)) await comecarOutro.click();
     // Assistente em 10 passos: Tipo → Fotos (1 foto) → Endereço; o endereço já cria o rascunho.

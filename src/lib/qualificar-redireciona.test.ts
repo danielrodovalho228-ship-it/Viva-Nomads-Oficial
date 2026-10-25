@@ -13,11 +13,10 @@ function arquivos(dir: string): string[] {
   });
 }
 
-test("/qualificar sem ?imovel= redireciona (servidor): rascunho → lista, senão cadastro pelas Fotos", () => {
+test("/qualificar sem ?imovel= redireciona (servidor) para o cadastro novo (E132-A)", () => {
   const page = readFileSync(join(raiz, "app/(dashboard)/qualificar/page.tsx"), "utf8");
   assert.doesNotMatch(page, /"use client"/);
-  assert.match(page, /if \(!id\) \{/);
-  assert.match(page, /redirect\(destinoQualificarSemImovel\(temRascunho\)\)/);
+  assert.match(page, /if \(!id\) redirect\(destinoQualificarSemImovel\(\)\)/);
   assert.match(page, /searchParams/);
 });
 

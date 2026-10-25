@@ -37,7 +37,7 @@ test.describe("T293 — Vídeo no anúncio", () => {
     });
 
     test("na etapa Fotos: arquivo que não é vídeo e vídeo de 90 s são recusados com mensagem, sem marcar 'Vídeo enviado'", async ({ page }) => {
-      await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "networkidle" });
       const outro = page.getByRole("button", { name: "Começar outro" });
       if (await outro.isVisible().catch(() => false)) await outro.click();
       // Assistente em 10 passos: Fotos (com o vídeo) é o 2º passo, logo depois do Tipo (que não tem trava).

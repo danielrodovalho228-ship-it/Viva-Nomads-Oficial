@@ -30,7 +30,7 @@ async function semRolagemLateral(p: Page) {
 }
 
 async function abrirPassoFotos(p: Page) {
-  await p.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+  await p.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
   const aviso = p.getByTestId("rascunho-aviso");
   const tipo = p.getByTestId("passo-titulo");
   await expect(tipo.or(aviso).first()).toBeVisible({ timeout: 30_000 });

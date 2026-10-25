@@ -103,7 +103,7 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     const page = await entrar(browser, dono.email);
     // Qualificação aprovada (o portão do "Novo anúncio" lê esta marca da sessão).
     await page.evaluate(() => sessionStorage.setItem("vivanomads-qualification", JSON.stringify({ eligible: true, score: 80 })));
-    await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "networkidle" });
     const outro = page.getByRole("button", { name: "Começar outro" });
     if (await outro.isVisible().catch(() => false)) await outro.click();
 

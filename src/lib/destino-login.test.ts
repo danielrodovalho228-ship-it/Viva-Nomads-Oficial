@@ -27,7 +27,6 @@ test("negativo: destino externo/estranho nunca vira redirect aberto", () => {
   assert.equal(destinoAposLogin("/dashboard", "?x=\n//evil.com"), "/dashboard");
 });
 
-test("/qualificar sem imóvel: rascunho → lista; sem rascunho → novo", () => {
-  assert.equal(destinoQualificarSemImovel(true), "/dashboard/imoveis");
-  assert.equal(destinoQualificarSemImovel(false), "/dashboard/imoveis/novo");
+test("/qualificar sem imóvel: sempre o cadastro novo (E132-A; ele oferece retomar o rascunho)", () => {
+  assert.equal(destinoQualificarSemImovel(), "/dashboard/imoveis/novo");
 });

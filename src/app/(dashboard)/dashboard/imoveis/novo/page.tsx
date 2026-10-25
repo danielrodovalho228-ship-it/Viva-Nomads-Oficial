@@ -747,7 +747,8 @@ export default function NewPropertyPage() {
     }
     // E132-A: rascunho sem o registro da Qualificação (anterior a ela) não volta para as 5 telas.
     setQualConf(estadoDoRascunho(d.qualificacaoConforto) ?? { status: "pulada", respostas: {} });
-    setDeclaracoes(declaracoesDoRascunho(d.declaracoesPasso10));
+    // Rascunho sem as declarações (anterior ao E132-A): não apaga o que veio da qualificação antiga do servidor.
+    if (d.declaracoesPasso10) setDeclaracoes(declaracoesDoRascunho(d.declaracoesPasso10));
     // Rascunho das ordens antigas (7 etapas) abre na primeira etapa ainda incompleta.
     setStep(etapaDoRascunho(d));
     setEtapaMax(posMaxDoRascunho(d));
@@ -1350,7 +1351,12 @@ export default function NewPropertyPage() {
   async function rascunhoDaQualificacao(status: EstadoQualificacao["status"]): Promise<string | null> {
     const estado: EstadoQualificacao = { status, respostas: qualConf.respostas };
     setQualConf(estado);
-    if (draftIdRef.current) return draftIdRef.current;
+    const { conforto } = aplicarRespostas(qualConf.respostas);
+    // O rascunho pode já existir (o autosave o criou durante as respostas): as confirmações vão para ele do mesmo jeito.
+    if (draftIdRef.current) {
+      if (conforto.length) await confirmarConforto(draftIdRef.current, conforto).catch(() => {});
+      return draftIdRef.current;
+    }
     const dados = { ...JSON.parse(draftJson), qualificacaoConforto: estado };
     try {
       const res = await saveDraftData({ id: null, title, city, monthlyPrice: 0, neighborhood, bathrooms: 0, areaM2: 0, description, data: dados });
@@ -1358,7 +1364,6 @@ export default function NewPropertyPage() {
       draftIdRef.current = res.id;
       setDraftServerId(res.id);
       window.history.replaceState(null, "", `/dashboard/imoveis/novo?draft=${res.id}`);
-      const { conforto } = aplicarRespostas(qualConf.respostas);
       if (conforto.length) await confirmarConforto(res.id, conforto).catch(() => {});
       return res.id;
     } catch {

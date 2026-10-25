@@ -121,7 +121,7 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       const continuar = page.getByTestId("cadastro-continuar");
 
       // ── Passo 1: Tipo ───────────────────────────────────────────────────
-      await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+      await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
       await noPasso(page, "tipo");
       // O tipo padrão segue "apartamento" (antes era o <select> do passo "Tipo e quartos"; agora são os cartões).
       await expect(page.getByTestId("tipo-apartamento")).toHaveAttribute("aria-checked", "true");
