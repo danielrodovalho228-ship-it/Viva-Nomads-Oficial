@@ -34,7 +34,8 @@ test("seções de dono só para quem já anunciou; quem nunca anunciou não vê 
   assert.ok(!folhas(com).some((i) => /assinatura|mensalidade/i.test(i.rotulo)), "nenhum rótulo de mensalidade");
   const contratos = folhas(com.filter((i) => i.id === "contratos")).map((i) => i.rotulo);
   // Prompt 39-B1: "Recibos e notas" é subitem da área de Ganhos do dono.
-  assert.deepEqual(contratos, ["Contratos & blocos", "Caução e garantias", "Conferência de entrada", "Recibos e notas"]);
+  // PROP-1: "Conferência de entrada" saiu do menu (vai para dentro do contrato no PROP-5).
+  assert.deepEqual(contratos, ["Contratos & blocos", "Caução e garantias", "Recibos e notas"]);
   assert.equal(ANUNCIAR.href, "/dashboard/imoveis/novo");
 });
 

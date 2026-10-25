@@ -35,7 +35,8 @@ function montar(itens: ItemDoPapel[], ctx: ContextoMenu): ItemMenu[] {
  * papel ativo, a seção dele sobe para logo depois da Visão geral (a 1ª seção); o resto mantém a ordem.
  */
 export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
-  const secoes = MENU_POR_PAPEL.filter((s) => temPapel(s.papel, ctx));
+  // PROP-1, item 4: Buscar, Buscas salvas, Favoritos, Meus pedidos, Locações e Candidaturas só no modo morador.
+  const secoes = MENU_POR_PAPEL.filter((s) => temPapel(s.papel, ctx) && !(s.papel === "morador" && ctx.modo === "owner"));
   const ativo = ctx.papelAtivo;
   const ordem = ativo && secoes.some((s) => s.papel === ativo) ? [secoes[0], ...secoes.filter((s) => s.papel === ativo), ...secoes.slice(1).filter((s) => s.papel !== ativo)] : secoes;
   return ordem.flatMap((s) => montar(s.itens, ctx));
