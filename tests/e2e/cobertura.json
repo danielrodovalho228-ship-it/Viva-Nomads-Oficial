@@ -378,7 +378,8 @@
         "t306-varredura-bloco7",
         "t317-email-unico-49c1",
         "t353-varredura-bloco18",
-        "t471-login-apple"
+        "t471-login-apple",
+        "t481-login-google-sem-apple"
       ]
     },
     "/auth/pronto": {
@@ -965,7 +966,11 @@
         "t428-e142-deteccao-sem-rolar",
         "t429-e146-contador-essenciais",
         "t469-e134-passo4-alinhado",
-        "t474-e161-largura-assistente"
+        "t474-e161-largura-assistente",
+        "t476-e133-limite-7-8-troca",
+        "t477-passo8-conta-meses",
+        "t478-e134-contadores-valores-grandes",
+        "t479-e161-rascunho-cheio"
       ]
     },
     "/dashboard/indicacoes": {
@@ -2166,7 +2171,8 @@
         "proprietario"
       ],
       "specs": [
-        "t470-qa-leitor-caixas"
+        "t470-qa-leitor-caixas",
+        "t480-qa-caixa-sem-token"
       ]
     }
   },
