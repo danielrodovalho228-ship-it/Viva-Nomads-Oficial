@@ -256,7 +256,8 @@
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
         "t462-admin2-fusoes",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t551-varredura-bloco40"
       ]
     },
     "/admin/pedidos": {
@@ -926,7 +927,8 @@
         "t410-niveis-medir-rascunho",
         "t415-varredura-bloco32",
         "t418-varredura-bloco35",
-        "t427-e141-essencial-sem-prova"
+        "t427-e141-essencial-sem-prova",
+        "t551-varredura-bloco40"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1002,7 +1004,8 @@
         "t547-e148a-texto-sugerido-passo7",
         "t548-e132a-declaracoes-persistem",
         "t549-varredura-bloco39",
-        "t550-e179-conforto-respostas-completas"
+        "t550-e179-conforto-respostas-completas",
+        "t551-varredura-bloco40"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1430,7 +1433,8 @@
         "t407-varredura-bloco26",
         "t439-e101-deteccao-espelho",
         "t440-e98-imovel",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t551-varredura-bloco40"
       ]
     },
     "/modelodenegocio": {
@@ -2007,7 +2011,8 @@
         "t288-padrao-minimo-59a",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
-        "t406-varredura-bloco25"
+        "t406-varredura-bloco25",
+        "t551-varredura-bloco40"
       ]
     },
     "/admin/pendencias": {
