@@ -15,6 +15,7 @@
 import type { Property } from "@/lib/types";
 import { formatBRL } from "./utils.ts";
 import type { LimpezaEstadia } from "./anuncio/limpeza-estadia.ts";
+import { comissaoSobreContrato } from "./cobranca/regra.ts";
 
 export interface TudoIncluido {
   aluguel: number;
@@ -37,6 +38,46 @@ export function calcularTudoIncluido(property: CamposTotalMes): TudoIncluido {
   const limpezaMes = property.limpezaEstadia && property.limpezaEstadia.valorMes > 0 ? property.limpezaEstadia.valorMes : 0;
   const total = aluguel + condominio + consumoFixo + limpezaMes;
   return { aluguel, condominio, consumoFixo, limpezaMes, total, temExtras: total > aluguel };
+}
+
+/** "valor mensal R$ 3.600 + condomínio R$ 350 + contas R$ 150" — a conta aberta do mês (só as parcelas que existem). */
+export function parcelasDoMes(m: TudoIncluido): string {
+  const partes = [`valor mensal ${formatBRL(m.aluguel)}`];
+  if (m.condominio > 0) partes.push(`condomínio ${formatBRL(m.condominio)}`);
+  if (m.consumoFixo > 0) partes.push(`contas ${formatBRL(m.consumoFixo)}`);
+  if (m.limpezaMes > 0) partes.push(`limpeza ${formatBRL(m.limpezaMes)}`);
+  return partes.join(" + ");
+}
+
+/*
+  E139 — a conta do PERÍODO, uma só para o Passo 8 inteiro (prévia, simulador e comparador): o total do mês é o de
+  calcularTudoIncluido; o morador paga esse total × meses, direto ao dono; a taxa de serviço é a da regra
+  (comissaoSobreContrato: valor mensal × meses × taxa — condomínio e contas não entram na base).
+*/
+export interface ContaPeriodo {
+  mes: TudoIncluido;
+  meses: number;
+  /** total do mês × meses: o que o morador paga ao dono no período. */
+  totalMorador: number;
+  /** valor mensal × meses: a base da taxa. */
+  baseTaxa: number;
+  taxa: number;
+  valorTaxa: number;
+}
+
+export function contaDoPeriodo(campos: CamposTotalMes, meses: number, taxa: number): ContaPeriodo | null {
+  const mes = calcularTudoIncluido(campos);
+  const m = Number.isFinite(meses) ? Math.floor(meses) : 0;
+  if (!(mes.aluguel > 0) || m < 1) return null;
+  const centavos = (v: number) => Math.round(v * 100) / 100;
+  return {
+    mes,
+    meses: m,
+    totalMorador: centavos(mes.total * m),
+    baseTaxa: centavos(mes.aluguel * m),
+    taxa,
+    valorTaxa: comissaoSobreContrato(mes.aluguel, m, taxa),
+  };
 }
 
 /** Total "tudo incluído" × meses (para o total do período na busca). */
