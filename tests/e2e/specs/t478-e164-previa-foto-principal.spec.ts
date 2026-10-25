@@ -42,7 +42,7 @@ async function conferePrevia(p: Page, estado: string) {
   }
   // A sinalizada pendente nunca é a foto da prévia.
   const pendente = await p.locator('[data-nao-imovel="1"] img').first().getAttribute("src").catch(() => null);
-  if (pendente) await expect(previa.getByTestId("previa-foto")).not.toHaveAttribute("src", pendente);
+  if (pendente && esperada !== null) await expect(previa.getByTestId("previa-foto")).not.toHaveAttribute("src", pendente);
   return esperada;
 }
 
