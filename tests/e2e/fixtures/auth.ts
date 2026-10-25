@@ -28,7 +28,7 @@ export async function loginAs(page: Page, role: Role): Promise<void> {
   // O login cai no /dashboard (ou no destino do ?redirect=). Espera a casca: a barra lateral ou, no modo dono no
   // computador (PROP-1), o topo do dono — a barra continua no DOM, escondida, por isso o filtro de visível.
   await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
-  await page.locator('aside nav, [data-testid="topo-dono"]').filter({ visible: true }).first().waitFor({ state: "visible", timeout: 15_000 });
+  await page.locator('aside nav, [data-testid="topo-dono"], [data-testid="topo-morador"], [data-testid="topo-parceiro"], [data-testid="topo-celular"]').filter({ visible: true }).first().waitFor({ state: "visible", timeout: 15_000 });
   // Conta de teste já "viu" o modal de boas-vindas (escolha de papel): sem isso
   // ele abre em todo teste e bloqueia os cliques. O próprio modal grava esta
   // marca quando a pessoa escolhe.

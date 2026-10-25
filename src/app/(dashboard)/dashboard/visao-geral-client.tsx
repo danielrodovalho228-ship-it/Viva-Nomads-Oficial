@@ -109,6 +109,29 @@ export function VisaoGeral({
     return <InicioDono alerta={inicioDono.alerta} bloco={inicioDono.bloco} />;
   }
 
+  // E167 / MORADOR-NAV: no modo morador, o Início é SÓ do morador — nada de "Como proprietário", "Novo anúncio",
+  // decisões ou checklist do dono (o dono os vê no modo proprietário, que a Conta troca).
+  if (mode !== "owner" && !demo) {
+    const doMorador = decisoesMorador; // sem o rótulo "Morador" em cada linha: aqui tudo é do morador
+    const blocosMorador = checklists.filter((c) => c.papel !== "proprietario");
+    return (
+      <div data-testid="inicio-so-morador">
+        <PageTitle
+          title={tituloDecisoes(doMorador.length)}
+          subtitle={doMorador.length ? "Toque para decidir na tela certa." : "Quando algo pedir sua resposta, aparece aqui."}
+        />
+        {doMorador.length === 0 && blocosMorador.map((c) => <ChecklistAtivacaoBloco key={c.papel} checklist={c} />)}
+        <ListaDecisoes decisoes={doMorador} />
+        {doMorador.length > 0 && blocosMorador.map((c) => <ChecklistAtivacaoBloco key={c.papel} checklist={c} />)}
+        <ConviteFotoPerfil className="mb-6" />
+        <CartaoEstadias estadias={estadias} />
+        <section aria-label="Morador" data-testid="inicio-morador">
+          <TenantDashboard name={firstName} cidade={cidadePerfil} totalCandidaturas={totalCandidaturas} totalConversas={totalConversas} ehDono={false} />
+        </section>
+      </div>
+    );
+  }
+
   return (
     <>
       <PageTitle

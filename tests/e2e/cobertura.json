@@ -19,7 +19,8 @@
         "t310-vao-fim-de-pagina",
         "t343-nivel-busca-sem-beco",
         "t352-varredura-bloco17",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t483-menu-mais-fecha.spec.ts"
       ]
     },
     "/acesso-socios": {
@@ -601,7 +602,8 @@
         "t416-varredura-bloco33",
         "t459-prop1-navegacao-dono",
         "t418-varredura-bloco35",
-        "t464-prop6-inicio-dono"
+        "t464-prop6-inicio-dono",
+        "t480-menus5-morador-nav"
       ]
     },
     "/dashboard/assinatura": {
@@ -6084,6 +6086,13 @@
       "specs": []
     },
     "src/lib/vinculo/actions.ts#confirmarVinculo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/vinculo/actions.ts#meuVinculo": {
       "personas": [
         "inquilino",
         "proprietario"

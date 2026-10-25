@@ -111,7 +111,7 @@ const COMUNICACAO: ItemDoPapel[] = [
     rotulo: "Mensagens",
     icone: "mensagens",
     filhos: [
-      { id: "mensagens", rotulo: "Conversas", icone: "mensagens", href: "/dashboard/mensagens" },
+      { id: "mensagens", rotulo: "Mensagens", icone: "mensagens", href: "/dashboard/mensagens" },
       { id: "notificacoes", rotulo: "Notificações", icone: "notificacoes", href: "/dashboard/notificacoes" },
     ],
   },
