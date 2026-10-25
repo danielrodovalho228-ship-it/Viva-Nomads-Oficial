@@ -6625,6 +6625,20 @@
       "specs": [
         "t442-foto-perfil-revisao"
       ]
+    },
+    "src/lib/data/perfil-actions.ts#getMeuPorQueNaCidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#setMeuPorQueNaCidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     }
   }
 }
