@@ -2209,6 +2209,14 @@
       ],
       "specs": []
     },
+    "/api/fotos/conferir": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
+      ]
+    },
     "/api/ai/fotos": {
       "personas": [
         "inquilino",
@@ -5899,6 +5907,30 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t315-telas-avaliacao-dono-62a"
+      ]
+    },
+    "src/lib/data/video-link-actions.ts#conferirLinkVideo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
+      ]
+    },
+    "src/lib/data/video-link-actions.ts#listarLinksDeVideoPendentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
+      ]
+    },
+    "src/lib/data/video-link-actions.ts#decidirLinkDeVideo": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
       ]
     },
     "src/lib/vistoria/actions.ts#agendarVisita": {

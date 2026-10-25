@@ -21,9 +21,16 @@ test.describe("T342 — vídeo como 2º item da galeria", () => {
     ids.semVideo = await criarImovelPronto(ids.dono, `Galeria sem vídeo t342 ${sufixo}`, { ativo: true });
     const { error } = await adm().from("properties").update({ video_url: "https://youtu.be/dQw4w9WgXcQ" }).eq("id", ids.comVideo);
     if (error) throw error;
+    // E133 (d): link do YouTube só aparece depois da aprovação da equipe (registro de moderação do admin).
+    const { data: admin } = await adm().from("profiles").select("id").eq("role", "admin").limit(1).maybeSingle();
+    const { error: e2 } = await adm()
+      .from("moderacao_log")
+      .insert({ admin_id: (admin?.id as string | undefined) ?? ids.dono, acao: "aprovar_video_link", alvo_tipo: "video_link", alvo_id: ids.comVideo, motivo: "https://youtu.be/dQw4w9WgXcQ" });
+    if (e2) throw e2;
   });
 
   test.afterAll(async () => {
+    if (ids.comVideo) await adm().from("moderacao_log").delete().eq("alvo_id", ids.comVideo);
     await apagarContas([ids.dono]);
   });
 

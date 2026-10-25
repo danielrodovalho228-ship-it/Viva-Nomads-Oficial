@@ -41,6 +41,7 @@ import { NEGOCIACAO_PADRAO, ITENS_NEGOCIAVEIS, type LimitesPrivados, type Negoci
 import { PageTitle } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
+import { conteudoPendente, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { VideoUploader } from "@/components/video-uploader";
 import { payloadDoVideo, resumoDoVideo, videoDoAnuncio } from "@/lib/video-anuncio";
 import { BlockCalendar } from "@/components/property/block-calendar";
@@ -158,6 +159,8 @@ export function EditarImovelClient({
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [savedSection, setSavedSection] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // E133 (c): triagem do vídeo enviado nesta edição (início, meio e fim).
+  const [videoConteudo, setVideoConteudo] = useState<ConteudoFoto | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -300,6 +303,18 @@ export function EditarImovelClient({
     setSavingSection(key);
     setErro(null);
     setSavedSection(null);
+    // E133: foto "não parece imóvel" sem troca nem confirmação do dono não vai para o anúncio publicado.
+    const pendentes = photos.filter((f) => conteudoPendente(f.conteudo)).length;
+    if (videoArquivo && conteudoPendente(videoConteudo)) {
+      setErro("O vídeo não parece mostrar o imóvel. Remova ou confirme o vídeo para salvar.");
+      setSavingSection(null);
+      return false;
+    }
+    if (pendentes > 0) {
+      setErro(`${pendentes === 1 ? "1 foto não parece" : `${pendentes} fotos não parecem`} ser do imóvel. Remova ou confirme cada uma para salvar.`);
+      setSavingSection(null);
+      return false;
+    }
     if (!periodoDisponivelValido(availableFrom, availableUntil)) {
       setErro(MSG_DISPONIVEL_ATE_ANTES);
       setSavingSection(null);
@@ -337,6 +352,17 @@ export function EditarImovelClient({
       setSavedSection("video");
       setTimeout(() => setSavedSection((s) => (s === "video" ? null : s)), 2500);
     } else setErro(r.error ?? "Não foi possível gravar o vídeo.");
+  }
+
+  /**
+   * E133 (c): na edição o vídeo é gravado ao enviar; se a triagem sinalizar, ele sai do anúncio (coluna limpa, o arquivo
+   * fica) até o dono remover ou confirmar — a confirmação grava de novo.
+   */
+  async function mudarConteudoDoVideo(c: ConteudoFoto | null, caminho: string) {
+    setVideoConteudo(c);
+    if (demo || !caminho) return;
+    if (conteudoPendente(c)) await gravarVideoArquivo(property.id, "").catch(() => null);
+    else if (c?.naoImovel && c.confirmadaEm) await gravarVideoArquivo(property.id, caminho).catch(() => null);
   }
 
   async function publish() {
@@ -501,7 +527,7 @@ export function EditarImovelClient({
           saved={savedSection === "video"}
           onSave={() => saveSection("video")}
         >
-          <VideoUploader path={videoArquivo} onChange={(p) => void mudarVideoArquivo(p)} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} />
+          <VideoUploader path={videoArquivo} onChange={(p) => void mudarVideoArquivo(p)} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} conteudo={videoConteudo} onConteudo={(c, caminho) => void mudarConteudoDoVideo(c, caminho)} />
         </Section>
 
         {/* Endereço exato (complemento do prompt 23): sem ele, a visita presencial confirmada não mostra rua e número. */}

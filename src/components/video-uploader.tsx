@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
-import { Loader2, RotateCcw, Trash2, Video } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AlertTriangle, CheckCircle2, Loader2, RotateCcw, Trash2, Video } from "lucide-react";
 import { enviarVideoAnuncio, ErroEnvioVideo, removerVideoAnuncio, VIDEO_ACCEPT } from "@/lib/data/storage-video";
 import { erroDoLinkDeVideo, formatarDuracao, GUIA_VIDEO_HREF, segundosDoCaminho, TEXTO_LIMITES_VIDEO } from "@/lib/video-anuncio";
 import { useAuthStore } from "@/lib/store";
+import { conferirVideo } from "@/lib/fotos/conferir-cliente";
+import { AVISO_VIDEO_NAO_IMOVEL, ROTULO_MOTIVO, confirmarConteudo, conteudoPendente, type ConteudoFoto } from "@/lib/fotos/conteudo";
+import { conferirLinkVideo } from "@/lib/data/video-link-actions";
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 
 /**
  * Vídeo do anúncio (ordem 8681ae95; 65-B): 1 por anúncio, até 60 s e 50 MB, MP4/MOV. Funciona pelo celular (abre a
@@ -19,11 +23,16 @@ export function VideoUploader({
   onChange,
   videoUrl,
   onVideoUrlChange,
+  conteudo,
+  onConteudo,
 }: {
   path: string;
   onChange: (path: string) => void;
   videoUrl?: string;
   onVideoUrlChange?: (url: string) => void;
+  /** E133 (c): a triagem dos quadros do vídeo enviado (início, meio, fim) e a confirmação do dono, se sinalizado. */
+  conteudo?: ConteudoFoto | null;
+  onConteudo?: (c: ConteudoFoto | null, caminho: string) => void;
 }) {
   const ownerId = useAuthStore((s) => s.user?.id);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +40,30 @@ export function VideoUploader({
   // `arquivo`: queda de rede — o mesmo arquivo pode ir de novo pelo "Tentar de novo".
   const [erro, setErro] = useState<{ texto: string; arquivo: File | null } | null>(null);
   const segundos = segundosDoCaminho(path);
-  const erroLink = erroDoLinkDeVideo(videoUrl ?? "");
+  const erroFormato = erroDoLinkDeVideo(videoUrl ?? "");
+  // E133 (d): o link de formato válido é conferido no provedor (existe e pode ser incorporado).
+  const [linkConferido, setLinkConferido] = useState<{ url: string; ok: boolean; erro?: string } | null>(null);
+  const [conferindoLink, setConferindoLink] = useState(false);
+  const [conferindoVideo, setConferindoVideo] = useState(false);
+  const linkAtual = (videoUrl ?? "").trim();
+  useEffect(() => {
+    if (!linkAtual || erroFormato || !onVideoUrlChange) return;
+    if (linkConferido?.url === linkAtual) return;
+    let vivo = true;
+    const t = setTimeout(async () => {
+      setConferindoLink(true);
+      const r = await conferirLinkVideo(linkAtual).catch(() => ({ ok: false as const, erro: "Não conseguimos conferir o vídeo agora. Tente de novo em instantes." }));
+      if (!vivo) return;
+      setConferindoLink(false);
+      setLinkConferido({ url: linkAtual, ok: r.ok, erro: r.ok ? undefined : r.erro });
+    }, 700);
+    return () => {
+      vivo = false;
+      clearTimeout(t);
+    };
+  }, [linkAtual, erroFormato, onVideoUrlChange, linkConferido?.url]);
+  const erroLink = erroFormato ?? (linkConferido?.url === linkAtual && !linkConferido.ok ? linkConferido.erro ?? null : null);
+  const linkOk = !erroFormato && linkConferido?.url === linkAtual && linkConferido.ok;
 
   async function escolher(file: File | undefined) {
     if (!file) return;
@@ -41,6 +73,12 @@ export function VideoUploader({
       const novo = await enviarVideoAnuncio(file, ownerId);
       const antigo = path;
       onChange(novo);
+      // E133 (c): início, meio e fim do vídeo passam pela mesma conferência das fotos.
+      if (onConteudo) {
+        setConferindoVideo(true);
+        onConteudo(await conferirVideo(file).catch(() => null), novo);
+        setConferindoVideo(false);
+      }
       if (antigo) await removerVideoAnuncio(antigo); // troca: o anterior sai do bucket
     } catch (e) {
       const tentarDeNovo = e instanceof ErroEnvioVideo && e.tentarDeNovo;
@@ -54,6 +92,7 @@ export function VideoUploader({
   async function remover() {
     const antigo = path;
     onChange("");
+    onConteudo?.(null, "");
     await removerVideoAnuncio(antigo);
   }
 
@@ -92,6 +131,39 @@ export function VideoUploader({
             </>
           )}
         </div>
+        {conferindoVideo && (
+          <p className="mt-2 text-sm text-muted" data-testid="video-conferindo">
+            Conferindo se o vídeo mostra o imóvel…
+          </p>
+        )}
+        {path && conteudoPendente(conteudo) && (
+          <div role="alert" className="mt-3 rounded-lg border border-red-600 bg-red-50 p-3 text-sm text-red-800" data-testid="aviso-video-nao-imovel">
+            <p className="flex items-start gap-2">
+              <AlertTriangle className="mt-1 h-4 w-4 shrink-0" aria-hidden />
+              <span>
+                <strong>{AVISO_VIDEO_NAO_IMOVEL}.</strong> {conteudo?.motivo ? ROTULO_MOTIVO[conteudo.motivo] : ""} Ele não deixa publicar até você trocar,
+                remover ou confirmar.
+              </span>
+            </p>
+            <span className="mt-2 flex flex-wrap items-start gap-2">
+              <ConfirmarNaPagina
+                aviso="Confirmo que este vídeo mostra o imóvel anunciado."
+                confirmar="Confirmo, é do imóvel"
+                onConfirmar={() => conteudo && onConteudo?.(confirmarConteudo(conteudo), path)}
+                size="sm"
+                variant="ghost"
+                testid="video-nao-imovel-confirmar"
+              >
+                É do imóvel
+              </ConfirmarNaPagina>
+            </span>
+          </div>
+        )}
+        {path && conteudo?.naoImovel && conteudo.confirmadaEm && (
+          <p className="mt-2 text-xs text-muted" data-testid="video-conteudo-confirmado">
+            Você confirmou que o vídeo é do imóvel.
+          </p>
+        )}
         {erro && (
           <div className="mt-2">
             <p role="alert" className="text-sm text-red-600" data-testid="video-erro">
@@ -128,7 +200,16 @@ export function VideoUploader({
             data-testid="video-link"
           />
           {erroLink ? (
-            <p className="mt-2 text-sm text-red-600" data-testid="video-link-erro">{erroLink}</p>
+            <p role="alert" className="mt-2 text-sm text-red-600" data-testid="video-link-erro">{erroLink}</p>
+          ) : conferindoLink ? (
+            <p className="mt-2 text-xs text-muted" data-testid="video-link-conferindo">
+              Conferindo o vídeo…
+            </p>
+          ) : linkOk && !path ? (
+            <p className="mt-2 flex items-start gap-2 text-xs text-muted" data-testid="video-link-ok">
+              <CheckCircle2 className="mt-1 h-3.5 w-3.5 shrink-0 text-forest" aria-hidden />
+              Vídeo encontrado. Ele aparece no anúncio depois que a equipe conferir que mostra o imóvel.
+            </p>
           ) : (
             path && videoUrl?.trim() && <p className="mt-2 text-xs text-muted">Com um vídeo enviado, o anúncio mostra o vídeo enviado. O link fica guardado.</p>
           )}
