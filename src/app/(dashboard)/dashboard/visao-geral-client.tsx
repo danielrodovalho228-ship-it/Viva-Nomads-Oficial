@@ -48,6 +48,9 @@ import { juntarDecisoes, tituloDecisoes, type Decisao, type DecisaoDoPapel, type
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { ServicosPainel } from "@/components/parceiros/servicos-painel";
 import type { EstadiaNaHome } from "@/lib/data/estadia";
+import { useViewMode } from "@/lib/roles";
+import { InicioDono } from "@/components/painel/inicio-dono";
+import type { BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
 
 /** Card de pendência "Anúncio em andamento" — o rascunho mais recente, lido no servidor (page.tsx). */
 export type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist: ChecklistAnuncio | null; score?: ScoreAnuncio | null };
@@ -64,6 +67,7 @@ export function VisaoGeral({
   totalCandidaturas = 0,
   visualizacoes = null,
   totalConversas = 0,
+  inicioDono = null,
 }: {
   imoveisDono: Property[];
   interessados?: { atual: number; anterior: number };
@@ -83,6 +87,8 @@ export function VisaoGeral({
   visualizacoes?: number | null;
   /** PROP-3 (E113): quantas conversas a pessoa tem — o tamanho da lista de /dashboard/mensagens. */
   totalConversas?: number;
+  /** PROP-6: o Início do dono (faixa + bloco principal), montado no servidor; aparece no modo dono. */
+  inicioDono?: { alerta: Decisao | null; bloco: BlocoPrincipalDono } | null;
 }) {
   // Identidade de EXIBIÇÃO: nunca cai na persona demo ("Marcos") para conta real
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
@@ -96,6 +102,12 @@ export function VisaoGeral({
   const ehDono = imoveisDono.length > 0 || !!rascunho || checklists.some((c) => c.papel === "proprietario") || demo;
   const semImovel = !demo && imoveisDono.length === 0 && !rascunho && checklists.some((c) => c.papel === "proprietario");
   const blocos = demo ? [] : checklists;
+  const { mode } = useViewMode();
+
+  // PROP-6: no modo dono, o Início é o do mockup painel-proprietario (sem os blocos de morador; PROP-1).
+  if (mode === "owner" && !demo && inicioDono) {
+    return <InicioDono alerta={inicioDono.alerta} bloco={inicioDono.bloco} />;
+  }
 
   return (
     <>
