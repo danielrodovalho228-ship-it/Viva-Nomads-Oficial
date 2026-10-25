@@ -1,3 +1,4 @@
+import { NumeroDaFonte } from "@/components/admin/numero-da-fonte";
 import Link from "next/link";
 import { FileSignature } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -82,6 +83,7 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
           </span>
         }
       />
+      <NumeroDaFonte chave="estadias" />
       <form action="/admin/contratos" method="get" className="mb-4 flex flex-wrap items-end gap-2" role="search">
         {p && <input type="hidden" name="de" value={p.inicio} />}
         {p && <input type="hidden" name="ate" value={p.fim} />}

@@ -8,8 +8,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    (a) no celular, "Voltar ao site" e "Menu da equipe" à vista no topo; o menu abre a navegação da equipe; no computador
        essa faixa não aparece (a barra lateral já está lá);
    (b) backup vermelho: no celular o alerta sobe para o topo (role=alert) com "Ver o backup"; no computador, não;
-   (c) a linha de decisão inteira é tocável (tocar fora do texto e do botão abre a mesma lista);
-   (d) no celular, a faixa curta de números-chave abre a tela, antes das decisões; cada número é link; no computador, não.
+   (c) a linha de "Precisa da sua atenção" inteira é tocável (tocar fora do texto e do botão abre a mesma lista);
+   (d) ADMIN-4: os 4 números da inicial (cada um link) vêm antes da atenção, no celular e no computador (a antiga faixa
+       só do celular saiu: os números já são os mesmos nas duas larguras).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -45,7 +46,7 @@ test.describe("T404 — E73: o admin no celular", () => {
     test(`${largura}px — navegação, alerta do backup, linha tocável e números-chave`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await page.goto("/admin", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("admin-decisoes")).toBeVisible({ timeout: 25_000 });
+      await expect(page.getByTestId("admin-numeros")).toBeVisible({ timeout: 25_000 });
       const celular = largura === 390;
 
       // (a) navegação à vista no celular.
@@ -59,29 +60,24 @@ test.describe("T404 — E73: o admin no celular", () => {
       }
 
       // (b) alerta do backup: só no celular e só quando o cartão está vermelho.
-      const vermelho = (await page.getByTestId("cartao-backup").getAttribute("data-estado")) === "vermelho";
+      const vermelho = Number(await page.getByTestId("admin-saude").getAttribute("data-alertas")) > 0;
       const alerta = page.getByTestId("alerta-backup");
       if (celular && vermelho) {
         await expect(alerta).toBeVisible();
         await expect(alerta).toHaveAttribute("role", "alert");
-        await expect(page.getByTestId("alerta-backup-ver")).toHaveAttribute("href", "#backup");
-        const [a, d] = await Promise.all([alerta.boundingBox(), page.getByTestId("admin-decisoes").boundingBox()]);
-        expect(a!.y, "alerta antes das decisões").toBeLessThan(d!.y);
+        await expect(page.getByTestId("alerta-backup-ver")).toHaveAttribute("href", "/admin/sistema#backup");
+        const [a, d] = await Promise.all([alerta.boundingBox(), page.getByTestId("admin-numeros").boundingBox()]);
+        expect(a!.y, "alerta antes dos números").toBeLessThan(d!.y);
       } else {
         await expect(alerta).toBeHidden();
       }
 
-      // (d) faixa de números-chave: no topo do celular, antes das decisões; cada número é link.
-      const faixa = page.getByTestId("admin-faixa-numeros");
-      if (celular) {
-        await expect(faixa).toBeVisible();
-        await expect(faixa.locator("a")).toHaveCount(4);
-        await expect(page.getByTestId("admin-faixa-imoveis")).toHaveAttribute("href", "/admin/imoveis?tipo=real&status=active");
-        const [f, d] = await Promise.all([faixa.boundingBox(), page.getByTestId("admin-decisoes").boundingBox()]);
-        expect(f!.y, "faixa antes das decisões").toBeLessThan(d!.y);
-      } else {
-        await expect(faixa).toBeHidden();
-      }
+      // (d) os 4 números antes da atenção; cada número é link.
+      const numeros = page.getByTestId("admin-numeros");
+      await expect(numeros.locator("a")).toHaveCount(4);
+      await expect(page.getByTestId("admin-numero-anuncios")).toHaveAttribute("href", "/admin/imoveis?tipo=real");
+      const [f, d] = await Promise.all([numeros.boundingBox(), page.getByTestId("admin-atencao").boundingBox()]);
+      expect(f!.y, "números antes da atenção").toBeLessThan(d!.y);
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t404-admin-topo-${largura}.png` });
 

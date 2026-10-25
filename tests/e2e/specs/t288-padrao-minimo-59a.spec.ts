@@ -357,7 +357,8 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
   test("6. admin: as duas filas do 59 no topo das decisões e a decisão da contestação", async ({ browser }) => {
     for (const w of LARGURAS) {
       const a = await admin(browser, w);
-      await a.goto("/admin", { waitUntil: "domcontentloaded" });
+      // ADMIN-4: as decisões moram no topo de Pendências.
+      await a.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
       const linhas = a.getByTestId("admin-decisoes").locator("li[data-decisao]");
       await expect(linhas.first()).toHaveAttribute("data-decisao", "manutencao_fora_prazo", { timeout: 30_000 });
       await expect(linhas.first()).toContainText(/\d+ (manutenção|manutenções) fora do prazo/);

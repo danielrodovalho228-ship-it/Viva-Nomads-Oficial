@@ -70,7 +70,8 @@
         "t392-varredura-bloco24",
         "t407-varredura-bloco26",
         "t442-foto-perfil-revisao",
-        "t460-admin1-barra"
+        "t460-admin1-barra",
+        "t465-admin4-inicial"
       ]
     },
     "/admin/2fa/refazer": {
@@ -241,7 +242,8 @@
         "t241-contas-teste-36",
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t462-admin2-fusoes"
       ]
     },
     "/admin/pedidos": {
@@ -1881,6 +1883,14 @@
         "t264-viva-automatico",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23"
+      ]
+    },
+    "/admin/sistema": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t463-admin3-sistema"
       ]
     },
     "/admin/retencao": {

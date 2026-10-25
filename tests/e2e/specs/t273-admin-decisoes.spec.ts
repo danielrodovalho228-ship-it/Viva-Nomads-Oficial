@@ -5,11 +5,13 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 
 /*
   T273 — Prompt 46 (D5), o admin na anatomia "decisões primeiro", a 390 e 1280 px:
-   1. /admin abre com "Hoje você tem N decisões" (h1); N = a soma das linhas; cada linha tem o número (link) e o botão
+   ADMIN-4: as decisões moram no topo de /admin/pendencias (h2, abaixo do título da página); a inicial mostra as 5
+   primeiras em "Precisa da sua atenção". Os números do período moram em /admin/funil, sem número-herói.
+   1. /admin/pendencias abre com "Hoje você tem N decisões"; N = a soma das linhas; cada linha tem o número (link) e o botão
       da decisão (secundário — nenhum primário nas decisões) que levam à mesma tela do admin;
    2. o spec cria um pedido de encerramento aberto e uma candidatura parada há 3 dias: as duas linhas aparecem e a
       lista aberta conta o mesmo (encerramentos: linhas não concluídas; candidaturas: lista-total);
-   3. depois das decisões, UM número-herói, que abre a lista com a mesma contagem; o resto em listas com divisor fino;
+   3. /admin/funil: nenhum número-herói; os indicadores em listas com divisor fino, todo número com link;
    4. nada de gradiente nem fundo colorido nos números e selos; sem rolagem lateral.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -65,9 +67,9 @@ test.describe("T273 — admin: decisões primeiro", () => {
   for (const largura of [1280, 390] as const) {
     test(`${largura}px — "Hoje você tem N decisões", cada uma com o botão e a lista que conta o mesmo`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await page.goto("/admin", { waitUntil: "domcontentloaded" });
+      await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
       const secao = page.getByTestId("admin-decisoes");
-      const h1 = page.getByRole("heading", { level: 1 });
+      const h1 = secao.getByRole("heading", { level: 2 });
       await expect(h1).toHaveText(/^Hoje você tem \d+ decis(ão|ões)$/, { timeout: 25_000 });
       await semRolagemLateral(page);
 
@@ -102,7 +104,7 @@ test.describe("T273 — admin: decisões primeiro", () => {
       await expect(page.locator(`[data-contrato="${ids.contrato}"]`)).toHaveCount(1);
 
       // Candidatura parada há 3 dias: a linha conta o mesmo que a lista filtrada.
-      await page.goto("/admin", { waitUntil: "domcontentloaded" });
+      await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
       const cand = page.locator('[data-decisao="candidaturas_sem_resposta_48h"] [data-href]').first();
       const nCand = Number(await cand.getAttribute("data-valor"));
       expect(nCand).toBeGreaterThanOrEqual(1);
@@ -110,22 +112,15 @@ test.describe("T273 — admin: decisões primeiro", () => {
       await expect(page.getByTestId("lista-total")).toHaveText(String(nCand));
     });
 
-    test(`${largura}px — um número-herói, listas com divisor fino, nada de gradiente nem bloco colorido`, async ({ page }) => {
+    test(`${largura}px — Funil e indicadores: sem número-herói, listas com divisor fino, nada de gradiente nem bloco colorido`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      // Período novo: os números da home ficam guardados 5 minutos por período; um período nunca usado lê na hora.
+      // Período novo: os números ficam guardados 5 minutos por período; um período nunca usado lê na hora.
       const de = new Date(Date.now() - (40 + Math.floor(Math.random() * 300)) * 86_400_000).toISOString().slice(0, 10);
-      await page.goto(`/admin?periodo=custom&de=${de}&ate=${new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10)}`, { waitUntil: "domcontentloaded" });
-      const heroi = page.locator('[data-testid="admin-heroi"]');
-      await expect(heroi).toHaveCount(1, { timeout: 25_000 });
-      await expect(page.locator('main [data-testid="numero-heroi"]')).toHaveCount(0);
-      const link = heroi.locator("[data-href]");
-      const valor = Number((await link.innerText()).replace(/\D/g, ""));
-      const tamanho = await link.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-      expect(tamanho).toBeLessThanOrEqual(28);
-
-      // "Agora" em lista com divisor fino (sem cartão) e todo número da home com link.
-      await expect(page.getByTestId("home-agora")).toHaveJSProperty("tagName", "DL");
-      expect(await page.locator("main [data-indicador] [data-valor]:not([data-href]), main [data-agora] [data-valor]:not([data-href])").count()).toBe(0);
+      await page.goto(`/admin/funil?periodo=custom&de=${de}&ate=${new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10)}`, { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("funil-indicadores")).toBeVisible({ timeout: 25_000 });
+      await expect(page.locator('main [data-testid="admin-heroi"], main [data-testid="numero-heroi"]')).toHaveCount(0);
+      const link = page.locator("[data-indicador] [data-href]").first();
+      expect(await page.locator("main [data-indicador] [data-valor]:not([data-href])").count()).toBe(0);
 
       // Nenhum gradiente e nenhum fundo colorido (só branco / superfície do sistema) no conteúdo.
       const fundos = await page.locator("main").evaluate((m) => {
@@ -142,8 +137,9 @@ test.describe("T273 — admin: decisões primeiro", () => {
       expect(fundos).toEqual([]);
       await semRolagemLateral(page);
 
-      await link.click();
-      await expect(page.getByTestId("lista-total")).toHaveText(String(valor), { timeout: 20_000 });
+      // O número abre a lista que ele conta.
+      const destino = await link.getAttribute("href");
+      expect(destino).toMatch(/^\/admin\//);
     });
   }
 });

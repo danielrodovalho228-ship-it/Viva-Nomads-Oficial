@@ -5,11 +5,16 @@ import { dataBRT } from "@/lib/datas-brasilia";
 import { funilDaSemana } from "@/lib/data/funil";
 import { FORMULAS, type ChaveFunil } from "@/lib/funil/regras";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
+import { hojeBR } from "@/lib/utils";
+import { resolverPeriodo } from "@/lib/admin/visao-geral";
+import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
+import { baseDoFunil } from "@/lib/admin/contagens";
+import { VisaoGeralClient } from "../visao-geral-client";
 
 export const metadata = { title: tituloDoAdmin("/admin/funil"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-const formatar = (v: number | null, tipo: "percentual" | "horas") => (v == null ? "sem base" : tipo === "percentual" ? `${String(v).replace(".", ",")}%` : `${String(v).replace(".", ",")} h`);
+const formatar = (v: number | null, tipo: "percentual" | "horas") => (v == null ? "—" : tipo === "percentual" ? `${String(v).replace(".", ",")}%` : `${String(v).replace(".", ",")} h`);
 /** Onde cada item da lista abre (sem dado pessoal na URL: o id só vai na busca do próprio admin). */
 const HREF: Record<ChaveFunil, (id: string) => string> = {
   visita_conta: (id) => `/admin/usuarios?q=${id}`,
@@ -35,7 +40,24 @@ const ROTULO_LISTA: Record<ChaveFunil, string> = {
 export default async function AdminFunilPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const aberta = typeof sp.etapa === "string" && sp.etapa in FORMULAS ? (sp.etapa as ChaveFunil) : null;
-  const f = await funilDaSemana().catch(() => null);
+  const um = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : null);
+  const periodo = resolverPeriodo({ periodo: um("periodo"), de: um("de"), ate: um("ate") }, hojeBR());
+  const cidade = (um("cidade") ?? "").trim().slice(0, 80) || null;
+  // ADMIN-4: Crescimento, Oferta, Demanda e Liquidez saíram da inicial e moram aqui, abaixo do funil da semana.
+  const [f, indicadores, cidades] = await Promise.all([
+    funilDaSemana().catch(() => null),
+    getVisaoGeral(periodo.inicio, periodo.fim, cidade),
+    cidadesComAnuncio(),
+  ]);
+  const avisoIndicadores = indicadores.ok
+    ? null
+    : {
+        demo: "Sem conexão com o banco (modo demonstração): nenhum número real para mostrar.",
+        sem_permissao: "Sem permissão para ver os números da plataforma.",
+        sem_chave: "Chave de serviço não configurada: os números não podem ser lidos.",
+        sem_migracao: "A função da visão geral ainda não existe no banco.",
+        erro: "Não foi possível ler os números agora.",
+      }[indicadores.motivo];
   if (!f) return <EmptyState icon={TrendingDown} title="Sem dados" text="Não foi possível ler o funil agora." action={null} />;
   const topo = f.etapas.find((e) => (e.queda ?? 0) > 0) ?? null;
   const lista = aberta ? f.etapas.find((e) => e.chave === aberta) : null;
@@ -61,7 +83,7 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
                 <span className="font-title text-lg">{formatar(e.valor, e.tipo)}</span>
               </Link>
               <p className="text-xs text-muted">
-                Fórmula: {e.formula}. {e.tipo === "percentual" ? `${e.base.de} de ${e.base.total}.` : `${e.base.total} tempo(s).`} Semana anterior: {formatar(e.anterior, e.tipo)}.
+                Fórmula: {e.formula}. {baseDoFunil(e.tipo, e.base)} Semana anterior: {formatar(e.anterior, e.tipo)}.
               </p>
             </li>
           ))}
@@ -93,6 +115,9 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
           )}
         </Panel>
       )}
+      <section className="mt-6" data-testid="funil-indicadores">
+        <VisaoGeralClient dados={indicadores.ok ? indicadores.dados : null} aviso={avisoIndicadores} periodo={periodo} cidade={cidade} cidades={cidades} base="/admin/funil" />
+      </section>
     </div>
   );
 }

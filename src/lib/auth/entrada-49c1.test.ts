@@ -97,8 +97,8 @@ test("leitura das respostas do GitHub (sem confiar no formato)", () => {
   assert.equal(ultimaMudancaDosArquivos([]), null);
 });
 
-test("o /admin mostra o cartão e o PR que muda os modelos lembra de rodar a Action", () => {
-  assert.match(ler("src/app/(dashboard)/admin/page.tsx"), /<CartaoEntradaEmail \/>/);
+test("o /admin/sistema mostra o cartão (ADMIN-3) e o PR que muda os modelos lembra de rodar a Action", () => {
+  assert.match(ler("src/app/(dashboard)/admin/sistema/page.tsx"), /<CartaoEntradaEmail \/>/);
   const lembrete = ler(".github/workflows/lembrete-emails-supabase.yml");
   assert.match(lembrete, /templates-supabase\.ts/);
   assert.match(lembrete, /codigo-acesso\.ts/);
