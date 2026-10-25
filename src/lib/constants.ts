@@ -34,18 +34,18 @@ export const PERSONAS: Persona[] = [
 ];
 
 /**
- * Navegação pública. `mais`: no desktop fica no menu "Mais" do cabeçalho (os 7
- * links lado a lado não cabem com o logo e os botões); no menu mobile, todos.
+ * Navegação pública (E176, PUBLICO-A — mockups aprovados): Imóveis · Anunciar · Empresas, com "Fale com a Viva" em
+ * texto e "Entrar" à direita. "Anunciar" tem um nome só em todo o site. Como funciona, Preços e Parceiros ficam no
+ * rodapé.
  */
 export const PUBLIC_NAV = [
-  { href: "/buscar", label: "Buscar imóveis" },
-  { href: "/pedidos/novo", label: "Publicar pedido" },
-  { href: "/como-funciona", label: "Como funciona", mais: true },
-  { href: "/para-proprietarios", label: "Para proprietários" },
-  { href: "/empresas", label: "Para empresas" },
-  { href: "/precos", label: "Preços" },
-  { href: "/parceiros", label: "Parceiros", mais: true },
-] as { href: string; label: string; mais?: true }[];
+  { href: "/buscar", label: "Imóveis" },
+  { href: "/dashboard/imoveis/novo", label: "Anunciar" },
+  { href: "/empresas", label: "Empresas" },
+] as { href: string; label: string }[];
+
+/** "Fale com a Viva" em texto no topo público (a mesma página de ajuda do link da /buscar). */
+export const FALE_COM_A_VIVA = { href: "/ajuda", label: "Fale com a Viva" } as const;
 
 /**
  * Cidades atendidas (com inventário) — usadas no footer e no sitemap.

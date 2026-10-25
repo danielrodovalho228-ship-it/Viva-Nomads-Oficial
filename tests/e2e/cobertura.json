@@ -20,7 +20,6 @@
         "t343-nivel-busca-sem-beco",
         "t352-varredura-bloco17",
         "t368-varredura-bloco20",
-        "t483-menu-mais-fecha",
         "t543-e166-fundo-clean-publico"
       ]
     },
@@ -383,7 +382,8 @@
         "t353-varredura-bloco18",
         "t471-login-apple",
         "t522-login-google-sem-apple",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t489-e176-menus"
       ]
     },
     "/auth/pronto": {
@@ -461,7 +461,8 @@
         "t419-varredura-bloco36",
         "t475-e131-vitrine-conta-teste",
         "t479-e136b-calendario-pt-br",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t489-e176-menus"
       ]
     },
     "/cidades": {
@@ -612,7 +613,8 @@
         "t464-prop6-inicio-dono",
         "t480-menus5-morador-nav",
         "t540-e167-morador-sem-blocos-de-dono",
-        "t542-menus5-e85-estrutura"
+        "t542-menus5-e85-estrutura",
+        "t489-e176-menus"
       ]
     },
     "/dashboard/assinatura": {
@@ -668,6 +670,15 @@
         "t213-jornada-teste-confirmacao",
         "t297-varredura-logada-bloco3",
         "t336-varredura-bloco14"
+      ]
+    },
+    "/dashboard/ganhos": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t183-telas-logadas-390",
+        "t489-e176-menus"
       ]
     },
     "/dashboard/carteira": {
@@ -846,7 +857,8 @@
         "t216-taxa-matriz",
         "t224-taxa-fora-da-api",
         "t221-contrato-estado-periodo",
-        "t416-varredura-bloco33"
+        "t416-varredura-bloco33",
+        "t489-e176-menus"
       ]
     },
     "/dashboard/ferramentas": {
@@ -1044,7 +1056,8 @@
         "t213-jornada-teste-confirmacao",
         "t224-taxa-fora-da-api",
         "t220-recibo-assinatura",
-        "t221-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t489-e176-menus"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1270,7 +1283,8 @@
         "t209-jornada-dois-lados",
         "t211-complemento-23",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t489-e176-menus"
       ]
     },
     "/decisao": {

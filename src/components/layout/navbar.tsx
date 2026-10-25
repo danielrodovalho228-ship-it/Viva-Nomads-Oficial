@@ -1,90 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMontado } from "@/lib/use-client-state";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, Heart } from "lucide-react";
-import { PUBLIC_NAV } from "@/lib/constants";
+import { Menu, X } from "lucide-react";
+import { FALE_COM_A_VIVA, PUBLIC_NAV } from "@/lib/constants";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/store";
-import { useFavoritesStore } from "@/lib/favorites-store";
 import { Avatar } from "@/components/ui/avatar";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { primeiroNomeExibicao } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
-const PRINCIPAIS = PUBLIC_NAV.filter((i) => !i.mais);
-const MAIS = PUBLIC_NAV.filter((i) => i.mais);
-
-/** Menu "Mais" do desktop: fecha ao clicar ou tocar fora, ao rolar a página, com Esc e ao escolher um link (MS-1). */
-function MenuMais() {
-  const [aberto, setAberto] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!aberto) return;
-    const fora = (e: PointerEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setAberto(false);
-    };
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setAberto(false);
-    const rolou = () => setAberto(false);
-    document.addEventListener("pointerdown", fora);
-    document.addEventListener("keydown", esc);
-    window.addEventListener("scroll", rolou, { passive: true });
-    return () => {
-      document.removeEventListener("pointerdown", fora);
-      document.removeEventListener("keydown", esc);
-      window.removeEventListener("scroll", rolou);
-    };
-  }, [aberto]);
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setAberto((v) => !v)}
-        aria-expanded={aberto}
-        aria-haspopup="true"
-        data-testid="menu-mais"
-        className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg text-sm font-medium text-ink/75 transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-      >
-        Mais <ChevronDown className={cn("h-4 w-4 transition-transform", aberto && "rotate-180")} aria-hidden />
-      </button>
-      {aberto && (
-        <div data-testid="menu-mais-lista" className="absolute left-1/2 top-full z-50 mt-3 w-52 -translate-x-1/2 rounded-xl border border-line bg-white p-2 shadow-flutuante">
-          {MAIS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setAberto(false)}
-              className="block whitespace-nowrap rounded-lg px-3 py-3 text-sm font-medium text-ink hover:bg-blue-50"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** "Favoritos (N)": o contador atualiza na hora; no servidor e antes de montar não mostra número (evita mismatch). */
-function LinkFavoritos({ className, onClick }: { className?: string; onClick?: () => void }) {
-  const total = useFavoritesStore((s) => s.ids.length);
-  const montado = useMontado();
-  return (
-    <Link
-      href="/favoritos"
-      data-testid="link-favoritos"
-      onClick={onClick}
-      className={cn("inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-blue-500", className)}
-    >
-      <Heart className="h-4 w-4" aria-hidden />
-      {/* a 1280 px o texto não cabe ao lado dos links (t69): só o coração; o texto volta a partir de 2xl */}
-      <span className={cn(!className && "sr-only 2xl:not-sr-only")}>Favoritos{montado && total > 0 ? ` (${total})` : ""}</span>
-    </Link>
-  );
-}
+const LINK = "whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-forest";
 
 /**
  * "Meu painel" com a foto (ou as iniciais) de quem está logado, como o "My
@@ -97,7 +26,7 @@ function MeuPainel({ nome, foto, onClick, className }: { nome: string; foto: str
       onClick={onClick}
       data-testid="nav-meu-painel"
       className={cn(
-        "inline-flex h-10 shrink-0 items-center gap-3 whitespace-nowrap rounded-lg pl-2 pr-4 text-sm font-semibold text-blue-500 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+        "inline-flex h-10 shrink-0 items-center gap-3 whitespace-nowrap rounded-lg pl-2 pr-4 text-sm font-semibold text-forest transition-colors hover:bg-sage-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest",
         className
       )}
     >
@@ -108,17 +37,13 @@ function MeuPainel({ nome, foto, onClick, className }: { nome: string; foto: str
 }
 
 /**
- * Cabeçalho público (ordens c67e818f e 0ee6d5f6): largura total, com o logo
- * perto da borda esquerda e mais respiro entre logo, links e ações. O logo nunca
- * encosta nos links (gap fixo e `shrink-0`) e os botões nunca quebram. Os links
- * completos aparecem a partir de 1280 px (xl); abaixo disso, menu hambúrguer.
+ * Cabeçalho público — E176 (PUBLICO-A, mockups aprovados): Imóveis · Anunciar · Empresas + "Fale com a Viva" em texto
+ * + Entrar (logado: "Meu painel"). Fundo clean, verde da marca. O cabeçalho NÃO some na /buscar: logo, links e conta
+ * ficam (como no Furnished Finder). Abaixo de 1024 px, o mesmo conteúdo no menu hambúrguer.
  */
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  // Ordem d15ef6bf: na /buscar o topo fica limpo (só logo + ações); a barra de
-  // filtros da própria busca ocupa o centro, como no Airbnb/Furnished Finder.
-  const naBusca = (usePathname() ?? "").startsWith("/buscar");
   // Reconhece a sessão: sem isto o cabeçalho mostrava "Entrar" mesmo logado.
   // `mounted` evita mismatch de hidratação (o servidor sempre renderiza o estado
   // deslogado; o cliente corrige após reidratar o store).
@@ -152,81 +77,61 @@ export function Navbar() {
   }, []);
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-40 border-b transition-shadow",
-        scrolled
-          ? "border-line bg-white/90 backdrop-blur-md shadow-flutuante"
-          : "border-transparent bg-white"
-      )}
-    >
+    <header className={cn("sticky top-0 z-40 border-b bg-white transition-shadow", scrolled ? "border-line shadow-flutuante" : "border-transparent")} data-testid="topo-publico">
       <nav className="flex h-18 w-full items-center gap-8 px-4 py-3 sm:px-8 2xl:gap-12 2xl:px-12">
         <Logo className="shrink-0" />
 
-        {/* Ordem eac7e3a1: na /buscar, a busca compacta (estilo Airbnb) entra AQUI, na mesma
-            linha do logo e dos botões — a página da busca a coloca neste espaço. */}
-        {naBusca && <div id="slot-busca-header" data-testid="slot-busca-header" className="hidden min-w-0 flex-1 justify-center lg:flex" />}
-        <div data-testid="nav-links" className={cn("hidden min-w-0 flex-1 items-center gap-6 xl:flex 2xl:gap-8", naBusca && "xl:hidden")}>
-          {PRINCIPAIS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-blue-500"
-            >
+        <div data-testid="nav-links" className="hidden min-w-0 flex-1 items-center gap-6 lg:flex 2xl:gap-8">
+          {PUBLIC_NAV.map((item) => (
+            <Link key={item.href} href={item.href} className={LINK}>
               {item.label}
             </Link>
           ))}
-          {MAIS.length > 0 && <MenuMais />}
         </div>
 
-        <div data-testid="nav-acoes" className={cn("hidden shrink-0 items-center gap-3 xl:flex 2xl:gap-4", naBusca && "ml-auto lg:flex")}>
-          <LinkFavoritos />
+        <div data-testid="nav-acoes" className="hidden shrink-0 items-center gap-4 lg:flex">
+          <Link href={FALE_COM_A_VIVA.href} className={LINK} data-testid="nav-fale-com-a-viva">
+            {FALE_COM_A_VIVA.label}
+          </Link>
           {loggedIn ? (
             <MeuPainel nome={nome} foto={foto} />
           ) : (
-            <ButtonLink href="/auth" variant="ghost" size="sm">
+            <ButtonLink href="/auth" variant="primary" size="sm" data-testid="nav-entrar">
               Entrar
             </ButtonLink>
           )}
-          <ButtonLink href="/dashboard/imoveis/novo" variant="primary" size="sm">
-            {loggedIn ? "Anunciar imóvel" : "Entrar para anunciar"}
-          </ButtonLink>
         </div>
 
         <button
-          className={cn("ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-lg text-ink xl:hidden", naBusca && "lg:hidden")}
+          className="ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-lg text-ink lg:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={open}
+          data-testid="nav-menu"
         >
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </nav>
 
       {open && (
-        <div className="border-t border-line bg-white xl:hidden">
+        <div className="border-t border-line bg-white lg:hidden" data-testid="nav-menu-lista">
           <div className="flex flex-col gap-1 px-4 py-4 sm:px-8">
             {PUBLIC_NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-lg px-3 py-3 text-base font-medium text-ink hover:bg-blue-50"
-                onClick={() => setOpen(false)}
-              >
+              <Link key={item.href} href={item.href} className="rounded-lg px-3 py-3 text-base font-medium text-ink hover:bg-sage-50" onClick={() => setOpen(false)}>
                 {item.label}
               </Link>
             ))}
-            <LinkFavoritos className="rounded-lg px-3 py-3 text-base text-ink" onClick={() => setOpen(false)} />
+            <Link href={FALE_COM_A_VIVA.href} className="rounded-lg px-3 py-3 text-base font-medium text-ink hover:bg-sage-50" onClick={() => setOpen(false)}>
+              {FALE_COM_A_VIVA.label}
+            </Link>
             <div className="mt-2 flex flex-col gap-2">
               {loggedIn ? (
-                <MeuPainel nome={nome} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-blue-500" />
+                <MeuPainel nome={nome} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-forest" />
               ) : (
-                <ButtonLink href="/auth" variant="secondary" onClick={() => setOpen(false)}>
+                <ButtonLink href="/auth" variant="primary" onClick={() => setOpen(false)}>
                   Entrar
                 </ButtonLink>
               )}
-              <ButtonLink href="/dashboard/imoveis/novo" variant="primary" onClick={() => setOpen(false)}>
-                {loggedIn ? "Anunciar imóvel" : "Entrar para anunciar"}
-              </ButtonLink>
             </div>
           </div>
         </div>

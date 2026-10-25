@@ -7,7 +7,7 @@ import { test, expect } from "@playwright/test";
 test("/empresas: menu, passos, FAQ e sem rolagem lateral a 390 px", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/");
-  await expect(page.locator("header").getByRole("link", { name: "Para empresas" }).first()).toBeVisible();
+  await expect(page.locator("header").getByRole("link", { name: "Empresas", exact: true }).first()).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto("/empresas");

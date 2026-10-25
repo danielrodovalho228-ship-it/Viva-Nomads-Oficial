@@ -26,8 +26,8 @@ const ROTULOS: Record<PapelBarra, string[]> = {
   parceiro: ["Início", "Pedidos", "Agenda", "Ganhos", "Mensagens"],
 };
 
-test("barra por papel: no máximo 5 itens, na ordem do MENUS-5; morador sem contrato tem 4", () => {
-  assert.deepEqual(abasDoPapel("morador", { comContrato: false }).map((a) => a.label), ["Início", "Buscar", "Pedidos", "Mensagens"]);
+test("barra por papel: no máximo 5 itens, na ordem do MENUS-5; morador sempre com a Estadia (E176 D1)", () => {
+  assert.deepEqual(abasDoPapel("morador", { comContrato: false }).map((a) => a.label), ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"]);
   for (const abas of Object.values(ABAS_POR_PAPEL)) assert.ok(!abas.some((a) => a.label === "Perfil"));
   for (const papel of Object.keys(ROTULOS) as PapelBarra[]) {
     const abas = ABAS_POR_PAPEL[papel];

@@ -4,8 +4,9 @@ import { authFile } from "../fixtures/auth";
 /**
  * T69 — ordem c67e818f: header e botões.
  *  1. Desktop (1280–1920): o logo nunca encosta nos links (≥ 24 px de folga), os
- *     links não encostam nos botões e "Entrar para anunciar" fica numa linha só.
- *  2. Abaixo de 1280 px: menu hambúrguer, sem links espremidos ao lado do logo.
+ *     links não encostam nos botões e "Entrar" fica numa linha só.
+ *  2. Abaixo de 1024 px: menu hambúrguer, sem links espremidos ao lado do logo.
+ *  E176 (PUBLICO-A): Imóveis · Anunciar · Empresas + "Fale com a Viva" em texto + Entrar.
  *  3. Nas páginas públicas, a 360/390/768/1280 px: nenhum botão quebra o texto
  *     nem estoura a caixa ou a tela; todos com cantos de 8 px e semibold; os
  *     preenchidos só no verde-marca (primário) ou branco (secundário/inverso).
@@ -49,7 +50,7 @@ test.describe("T69 — header e botões padronizados", () => {
       expect(m.primeiroEsq! - m.logoDir, "folga logo → primeiro link").toBeGreaterThanOrEqual(24);
       expect(m.acoesEsq! - m.ultimoDir!, "folga links → botões").toBeGreaterThanOrEqual(16);
       expect(m.acoesDir!).toBeLessThanOrEqual(m.larguraTela);
-      expect(m.botoes.map((b) => b.texto)).toContain("Entrar para anunciar");
+      expect(m.botoes.map((b) => b.texto)).toEqual(["Fale com a Viva", "Entrar"]);
       for (const b of m.botoes) {
         expect(b.h, `${b.texto} numa linha`).toBeLessThanOrEqual(44);
         expect(b.sobra, `${b.texto} sem estourar`).toBeLessThanOrEqual(0);
@@ -59,17 +60,18 @@ test.describe("T69 — header e botões padronizados", () => {
     });
   }
 
-  test("menu 'Mais' no desktop mostra Como funciona e Parceiros", async ({ page }) => {
+  test("E176 (PUBLICO-A): Imóveis · Anunciar · Empresas + Fale com a Viva + Entrar; sem 'Mais' nem Favoritos", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
-    await page.locator("header").getByRole("button", { name: "Mais" }).click();
-    await expect(page.locator("header").getByRole("link", { name: "Como funciona" })).toBeVisible();
-    await expect(page.locator("header").getByRole("link", { name: "Parceiros" })).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(page.locator("header").getByRole("link", { name: "Parceiros" })).toHaveCount(0);
+    const header = page.locator("header").first();
+    await expect(header.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas"]);
+    await expect(header.getByTestId("nav-fale-com-a-viva")).toHaveText("Fale com a Viva");
+    await expect(header.getByTestId("nav-entrar")).toHaveText("Entrar");
+    await expect(header.getByRole("button", { name: "Mais" })).toHaveCount(0);
+    await expect(header.getByTestId("link-favoritos")).toHaveCount(0);
   });
 
-  for (const largura of [1024, 1180, 1279]) {
+  for (const largura of [768, 900, 1000]) {
     test(`header a ${largura}px: menu hambúrguer, logo sem nada encostado`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/", { waitUntil: "networkidle" });
@@ -77,7 +79,8 @@ test.describe("T69 — header e botões padronizados", () => {
       expect(m.linksVisiveis).toBe(false);
       await expect(page.getByRole("button", { name: "Abrir menu" })).toBeVisible();
       await page.getByRole("button", { name: "Abrir menu" }).click();
-      await expect(page.getByRole("link", { name: "Entrar para anunciar" }).last()).toBeVisible();
+      await expect(page.getByTestId("nav-menu-lista").getByRole("link", { name: "Anunciar" })).toBeVisible();
+      await expect(page.getByTestId("nav-menu-lista").getByRole("link", { name: "Entrar" })).toBeVisible();
       expect(m.rolagem).toBeLessThanOrEqual(1);
     });
   }
@@ -99,7 +102,7 @@ test.describe("T69 — header e botões padronizados", () => {
         // Abre o menu mobile do header (se a página tiver o header público) para medir os botões dele também.
         // Só clica no botão visível (a 768 px podem existir dois "Abrir menu", um escondido).
         const menu = page.getByRole("button", { name: "Abrir menu" }).locator("visible=true");
-        if (largura < 1280 && (await menu.count())) await menu.first().click({ timeout: 5_000 });
+        if (largura < 1024 && (await menu.count())) await menu.first().click({ timeout: 5_000 });
         const r = await page.evaluate(() => {
           const out: { txt: string; prob?: string; estilo?: string }[] = [];
           for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-cta]"))) {
@@ -130,7 +133,7 @@ test.describe("T69 — header e botões padronizados", () => {
   test("foco pelo teclado mostra o anel no botão primário", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
-    const cta = page.locator("header").getByRole("link", { name: "Entrar para anunciar" });
+    const cta = page.locator("header").getByTestId("nav-entrar");
     await cta.focus();
     await page.keyboard.press("Shift+Tab");
     await page.keyboard.press("Tab");

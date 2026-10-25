@@ -60,7 +60,8 @@ test("a inicial: rodapé, saúde e no máximo ~6 leituras em paralelo", () => {
   assert.ok(pagina.includes("{RODAPE_CONTAGENS}"));
   assert.equal(RODAPE_CONTAGENS, "Contas de teste não entram nestas contagens.");
   assert.match(pagina, /Tudo funcionando/);
-  assert.match(pagina, /alertas === 1 \? "alerta" : "alertas"\} → Sistema/);
+  // E176 (D3): a saúde não repete o alerta do backup (ele mora em "Precisa da sua atenção").
+  assert.match(pagina, /Há alertas em “Precisa da sua atenção”\./);
   const bloco = pagina.slice(pagina.indexOf("await Promise.all(["), pagina.indexOf("]);", pagina.indexOf("await Promise.all([")));
   assert.equal(bloco.split("\n").filter((l) => /^\s+\S.*,$/.test(l)).length, 3, "3 leituras na inicial");
   assert.match(pagina, /l\.chave === "backup"/, "a saúde usa a mesma leitura das filas");

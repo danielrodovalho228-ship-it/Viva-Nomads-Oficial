@@ -11,7 +11,7 @@ const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "ut
 const page = ler("app/(public)/empresas/page.tsx");
 
 test("/empresas está no menu público e no rodapé", () => {
-  assert.match(ler("lib/constants.ts"), /PUBLIC_NAV = \[[\s\S]*?href: "\/empresas", label: "Para empresas"[\s\S]*?\];/);
+  assert.match(ler("lib/constants.ts"), /PUBLIC_NAV = \[[\s\S]*?href: "\/empresas", label: "Empresas"[\s\S]*?\];/);
   assert.match(ler("components/layout/footer.tsx"), /href="\/empresas"/);
 });
 

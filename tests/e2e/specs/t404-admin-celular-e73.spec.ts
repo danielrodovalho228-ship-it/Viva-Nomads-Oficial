@@ -7,7 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   T404 — E73 (QA 24/10): o /admin no celular. 390 e 1280 px.
    (a) no celular, "Voltar ao site" à vista no topo e o hambúrguer (único caminho, E176) abre a navegação da equipe; no computador
        essa faixa não aparece (a barra lateral já está lá);
-   (b) backup vermelho: no celular o alerta sobe para o topo (role=alert) com "Ver o backup"; no computador, não;
+   (b) E176 (D3): o alerta do backup aparece UMA vez, dentro de "Precisa da sua atenção" (sem faixa duplicada);
    (c) a linha de "Precisa da sua atenção" inteira é tocável (tocar fora do texto e do botão abre a mesma lista);
    (d) ADMIN-4: os 4 números da inicial (cada um link) vêm antes da atenção, no celular e no computador (a antiga faixa
        só do celular saiu: os números já são os mesmos nas duas larguras).

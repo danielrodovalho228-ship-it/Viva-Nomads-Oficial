@@ -4,7 +4,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, no
 /*
   T459 — PROP-1 (substitui o NAV-A2): navegação do dono, como no mockup painel-proprietario-desktop. Só no laboratório.
    1. Computador (1280): sem barra lateral; abas Início · Anúncios · Interessados · Contratos · Mensagens; sino;
-      "Conta ▾" com Perfil e dados … Modo morador · Sair; nenhum item de morador à vista.
+      "Conta ▾" com Minha conta · Modo morador · Ajuda · Sair (E176); nenhum item de morador à vista.
    2. Subrotas: /dashboard/orcamentos acende "Interessados" e a subaba "Propostas"; /dashboard/garantias acende
       "Contratos" e "Caução".
    3. Celular (390): o topo do dono não aparece; a barra de abas do NAV-A continua.
@@ -46,7 +46,7 @@ test.describe("T459 — PROP-1: navegação do dono", () => {
 
     await topo.getByTestId("conta-dono").click();
     const menu = page.getByTestId("menu-conta-dono");
-    await expect(menu.getByRole("menuitem")).toHaveText(["Perfil e dados", "Verificação", "Pagamentos e recebimentos", "Notificações", "Avaliações recebidas", "Plano", "Modo morador", "Sair"]); // MENUS-5: Ferramentas saíram da Conta
+    await expect(menu.getByRole("menuitem")).toHaveText(["Minha conta", "Modo morador", "Ajuda", "Sair"]); // E176 (D2): o avatar é um atalho curto
     await page.screenshot({ path: `${SAIDA}/t459-conta-1280.png` });
     await page.keyboard.press("Escape");
     await expect(menu).toHaveCount(0);

@@ -89,7 +89,7 @@ test("header: logo não encolhe e tem distância fixa dos links; links e ações
   const nav = ler("components/layout/navbar.tsx");
   assert.match(nav, /<Logo className="shrink-0" \/>/);
   assert.match(nav, /<nav className="flex h-18 w-full items-center gap-8 px-4/);
-  assert.match(nav, /data-testid="nav-acoes" className=\{cn\("hidden shrink-0/);
+  assert.match(nav, /data-testid="nav-acoes" className="hidden shrink-0/);
   assert.match(nav, /whitespace-nowrap text-sm font-medium/);
 });
 
