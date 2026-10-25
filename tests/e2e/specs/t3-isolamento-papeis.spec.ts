@@ -13,6 +13,7 @@ import { authFile } from "../fixtures/auth";
  */
 
 // MENUS-5: o dono navega pelas abas do topo (fonte única config/abas-painel.ts), sem barra lateral.
+const PUBLICAS_FORA_DA_CASCA = ["/buscar", "/pedidos/novo"];
 const OWNER_MENU = ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"];
 
 const PAGINAS_INTERNAS = ["/simulacao", "/roi", "/socios", "/decisao", "/modelodenegocio"];
@@ -60,7 +61,8 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
       if (await sub.count()) for (const h of await sub.evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute("href")!))) hrefs.add(h);
     }
     expect(hrefs.size).toBeGreaterThan(8);
-    for (const href of hrefs) {
+    // Páginas públicas (fora da casca), como /buscar e /pedidos/novo, não contam.
+    for (const href of [...hrefs].filter((h) => !PUBLICAS_FORA_DA_CASCA.includes(h))) {
       await page.goto(href, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("topo-dono"), `casca ausente em ${href}`).toBeVisible();
     }
