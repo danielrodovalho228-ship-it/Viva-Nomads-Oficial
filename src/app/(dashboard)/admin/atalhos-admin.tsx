@@ -38,6 +38,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/eventos", label: "Eventos", icon: TrendingUp },
   { href: "/admin/qualidade", label: "Qualidade (saídas e denúncias)", icon: LifeBuoy },
   { href: "/admin/agentes", label: "Agentes", icon: Bot },
+  { href: "/admin/sistema", label: "Chaves e integrações", icon: ShieldCheck },
   { href: "/admin/retencao", label: "Dados e retenção", icon: ShieldCheck },
 ];
 

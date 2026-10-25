@@ -1,12 +1,6 @@
 import { hojeBR } from "@/lib/utils";
 import { resolverPeriodo } from "@/lib/admin/visao-geral";
 import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
-import { CartaoPush } from "@/components/admin/cartao-push";
-import { PainelIaCadastro } from "@/components/admin/painel-ia-cadastro";
-import { ContadorDeteccao } from "@/components/admin/contador-deteccao";
-import { CartaoBackup } from "@/components/admin/cartao-backup";
-import { CartaoMapas } from "@/components/admin/cartao-mapas";
-import { CartaoEntradaEmail } from "@/components/admin/cartao-entrada-email";
 import { VisaoGeralClient } from "./visao-geral-client";
 import { AtalhosAdmin } from "./atalhos-admin";
 import { AvisoAtendimentoAdmin } from "@/components/admin/aviso-atendimento";
@@ -72,24 +66,7 @@ export default async function AdminPage({
         demonstracao={{ total: SAMPLE_PROPERTIES.length, publicos: showDemoProperties() }}
       />
       <AtalhosAdmin />
-      <div className="mt-6">
-        <PainelIaCadastro />
-      </div>
-      <div className="mt-6">
-        <ContadorDeteccao />
-      </div>
-      <div id="backup" className="mt-6 scroll-mt-24">
-        <CartaoBackup />
-      </div>
-      <div id="entrada-email" className="mt-6 scroll-mt-24">
-        <CartaoEntradaEmail />
-      </div>
-      <div className="mt-6">
-        <CartaoMapas />
-      </div>
-      <div id="push" className="mt-6 scroll-mt-24">
-        <CartaoPush />
-      </div>
+      {/* ADMIN-3: os blocos de saúde (IA, Detecção, Backup, E-mail, Mapas e Push) moram em /admin/sistema. */}
     </>
   );
 }

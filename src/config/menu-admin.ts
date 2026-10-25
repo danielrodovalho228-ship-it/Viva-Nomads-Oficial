@@ -5,8 +5,8 @@
  */
 import type { ItemMenu } from "./menu-por-papel.ts";
 
-/** /admin/sistema ("Chaves e integrações") nasce no ADMIN-3; até lá o item não aparece. */
-export const SISTEMA_DISPONIVEL = false;
+/** /admin/sistema ("Chaves e integrações") nasceu no ADMIN-3: o item aparece na barra. */
+export const SISTEMA_DISPONIVEL = true;
 
 const folha = (id: string, rotulo: string, href: string, icone: ItemMenu["icone"]): ItemMenu => ({ id, rotulo, href, icone });
 const grupo = (id: string, rotulo: string, icone: ItemMenu["icone"], filhos: ItemMenu[]): ItemMenu => ({ id, rotulo, icone, filhos });
@@ -75,7 +75,6 @@ export const FORA_DA_BARRA_ADMIN: Readonly<Record<string, string>> = {
   "/admin/contratos/encerramentos": "subpágina de Contratos",
   "/admin/parceiros/pedidos": "subpágina de Parceiros",
   "/admin/parceiros/pedidos/[id]": "subpágina de Parceiros",
-  "/admin/sistema": "nasce no ADMIN-3",
 };
 
 function folhasDe(itens: readonly ItemMenu[]): ItemMenu[] {
