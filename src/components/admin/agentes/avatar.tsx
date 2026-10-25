@@ -56,9 +56,9 @@ export function AvatarAgente({
       {anel && <span className={styles.anel} style={{ background: anel }} />}
       {foto ? (
         // eslint-disable-next-line @next/next/no-img-element -- 256 px local, sem otimização
-        <img ref={imgRef} src={fotoDoAgente(slug)} alt="" width={tamanho} height={tamanho} loading="lazy" onError={() => setFalhou(true)} className={`${styles.hex} block h-full w-full bg-[#0B1638] object-cover`} />
+        <img ref={imgRef} src={fotoDoAgente(slug)} alt="" width={tamanho} height={tamanho} loading="lazy" onError={() => setFalhou(true)} className={`${styles.hex} block h-full w-full bg-surface-2 object-cover`} />
       ) : (
-        <span className={`${styles.hex} block h-full w-full bg-[#0B1638]`}>
+        <span className={`${styles.hex} block h-full w-full bg-surface-2`}>
           <Hex nome={nome} cor={cor} tamanho={tamanho} />
         </span>
       )}

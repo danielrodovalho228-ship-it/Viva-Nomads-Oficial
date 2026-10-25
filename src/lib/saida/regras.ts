@@ -204,13 +204,15 @@ export interface Quebrador {
   sinal: string;
   href: string | null;
   semMedicao?: true;
+  /** ADMIN-6: sem medição, o que falta gravar para o número existir (a tela mostra isso no lugar do número). */
+  faltaParaMedir?: string;
 }
 export const QUEBRADORES: Quebrador[] = [
   { chave: "chamado_fora_prazo", rotulo: "Chamado fora do prazo", sinal: "chamados em aberto com o prazo estourado", href: "/admin/atendimento" },
-  { chave: "abandono_valores", rotulo: "Abandono na tela de valores", sinal: "a tela de valores ainda não grava abertura nem saída", href: null, semMedicao: true },
+  { chave: "abandono_valores", rotulo: "Abandono na tela de valores", sinal: "quem abre a tela de valores e sai sem seguir", href: null, semMedicao: true, faltaParaMedir: "gravar um evento ao abrir e ao sair da tela de valores (tabela eventos)" },
   { chave: "comprovante_suporte", rotulo: "Pedido de comprovante no suporte", sinal: "chamados dos últimos 7 dias com \"comprovante\" ou \"recibo\" no assunto", href: "/admin/atendimento?q=comprovante" },
   { chave: "verificacao_parada", rotulo: "Verificação parada 24 h", sinal: "verificações na análise humana sem decisão há mais de 24 h", href: "/admin/documentos" },
-  { chave: "contrato_sem_assinatura", rotulo: "Contrato aberto várias vezes sem assinatura", sinal: "a abertura do contrato ainda não é gravada", href: null, semMedicao: true },
+  { chave: "contrato_sem_assinatura", rotulo: "Contrato aberto várias vezes sem assinatura", sinal: "contratos abertos 3 vezes ou mais sem assinatura", href: null, semMedicao: true, faltaParaMedir: "gravar um evento a cada abertura do contrato (tabela eventos)" },
   { chave: "avaliacao_baixa", rotulo: "Avaliação baixa pós-entrada", sinal: "avaliações de morador com nota 1 ou 2 nos últimos 7 dias", href: "/admin/avaliacoes" },
   { chave: "exclusao_email", rotulo: "Pedido de exclusão por e-mail", sinal: "pedidos pela página pública de exclusão nos últimos 7 dias", href: null },
   { chave: "denuncia_anuncio", rotulo: "Denúncia de anúncio", sinal: "denúncias ainda não resolvidas", href: "/admin/qualidade#denuncias" },

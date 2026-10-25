@@ -70,3 +70,17 @@ test("a rodada só apaga de verdade com a chave ligada (ou no laboratório); ped
   assert.equal(rodadaSimulada({ pedidoSimular: false, laboratorio: true, chaveAtiva: undefined }), false, "laboratório: real");
   assert.equal(rodadaSimulada({ pedidoSimular: true, laboratorio: true, chaveAtiva: "1" }), true, "pedido de simulação: nunca apaga");
 });
+
+test("ADMIN-6: motivoSimulado — null só onde apaga de verdade; uma linha com o porquê no resto", async () => {
+  const { motivoSimulado } = await import("./regras.ts");
+  const { INVENTARIO } = await import("../../config/retencao.ts");
+  for (const i of INVENTARIO) {
+    const m = motivoSimulado(i);
+    if (eliminaDeVerdade(i)) assert.equal(m, null, i.id);
+    else {
+      assert.ok(m && m.length > 10 && !m.includes("\n"), i.id);
+    }
+  }
+  assert.equal(motivoSimulado({ fase: 1, base: "pendente", prazoDias: 30, gatilho: "fim_estadia" }), "o prazo depende do parecer jurídico (item 13)");
+  assert.equal(motivoSimulado({ fase: 2, base: "proposta", prazoDias: 30, gatilho: "fim_estadia" }), "entra na fase 2 da eliminação automática");
+});

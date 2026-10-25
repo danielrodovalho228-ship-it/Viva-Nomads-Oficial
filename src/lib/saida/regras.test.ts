@@ -118,3 +118,10 @@ test("os 8 quebradores, cada um com o sinal escrito; o motivo abre o contexto ce
   assert.equal(contextoDoMotivo("poucos_pedidos"), null);
   assert.equal(contextoDoMotivo(null), null);
 });
+
+test("ADMIN-6: todo quebrador sem medição diz o que falta gravar para medir", () => {
+  for (const q of QUEBRADORES) {
+    if (q.semMedicao) assert.match(q.faltaParaMedir ?? "", /^gravar /, q.chave);
+    else assert.equal(q.faltaParaMedir, undefined, q.chave);
+  }
+});

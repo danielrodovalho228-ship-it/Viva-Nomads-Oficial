@@ -23,8 +23,6 @@ export interface DadosCentral {
   agentes: Agente[];
   rondas: Ronda[];
   ordens: Ordem[];
-  conversas: Conversa[];
-  atas: Conversa[];
   /** Quem está logado: só o criador da ordem vê Aceito/Reabrir (a ação e o gatilho do banco conferem de novo). */
   uid: string | null;
   /**
@@ -34,26 +32,24 @@ export interface DadosCentral {
   acessoLiberado: boolean;
 }
 
-const VAZIO: DadosCentral = { agentes: [], rondas: [], ordens: [], conversas: [], atas: [], uid: null, acessoLiberado: false };
+const VAZIO: DadosCentral = { agentes: [], rondas: [], ordens: [], uid: null, acessoLiberado: false };
+
 
 export async function carregarCentral(): Promise<DadosCentral> {
   const supabase = await createClient();
   if (!supabase) return VAZIO;
   const uid = (await supabase.auth.getUser()).data.user?.id ?? null;
-  const [a, r, o, c, at, adm] = await Promise.all([
+  // ADMIN-5: o chat e as atas não vêm aqui; cada aba lê a sua página quando abre (carregarConversas / carregarAtas).
+  const [a, r, o, adm] = await Promise.all([
     supabase.from("agentes").select("slug, nome, cargo, esquadrao, rotina_texto, trigger_id, status, briefing, ordem").order("ordem"),
     supabase.from("agentes_rondas").select("id, agente_slug, iniciada_em, concluida_em, status, resumo, achados, link_sessao, ordens_atendidas").order("iniciada_em", { ascending: false }).limit(200),
     supabase.from("agentes_ordens").select("*") /* "*": vale antes e depois da 0085 (colunas do disparo) */.order("criada_em", { ascending: false }).limit(100),
-    supabase.from("agentes_conversas").select("id, agente_slug, papel, autor_slug, texto, criado_em").not("agente_slug", "is", null).order("criado_em", { ascending: false }).limit(300),
-    supabase.from("agentes_conversas").select("id, agente_slug, papel, autor_slug, texto, criado_em").is("agente_slug", null).eq("papel", "sistema").order("criado_em", { ascending: false }).limit(20),
     supabase.rpc("is_admin"),
   ]);
   return {
     agentes: (a.data ?? []) as Agente[],
     rondas: (r.data ?? []) as Ronda[],
     ordens: (o.data ?? []) as Ordem[],
-    conversas: ((c.data ?? []) as Conversa[]).reverse(),
-    atas: (at.data ?? []) as Conversa[],
     uid,
     acessoLiberado: adm.data === true,
   };

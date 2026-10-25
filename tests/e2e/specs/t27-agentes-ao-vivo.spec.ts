@@ -30,6 +30,8 @@ async function perguntarAoOtavio(page: Page, texto: string) {
   await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   await page.getByRole("tab", { name: "Conversar" }).click();
   await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Otávio/ }).click();
+  // ADMIN-5: o chat é lido quando a aba abre; conta só depois de a conversa chegar.
+  await expect(page.getByTestId("chat-carregando")).toHaveCount(0, { timeout: 20_000 });
   const antes = await bolhasDaRonda(page).count();
   await page.getByPlaceholder("Escreva para Otávio…").fill(texto);
   await page.getByRole("button", { name: "Enviar" }).click();
