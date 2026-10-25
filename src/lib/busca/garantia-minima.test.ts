@@ -20,10 +20,8 @@ const busca = readFileSync(new URL("../../app/(public)/buscar/search-client.tsx"
  * pede máquina no imóvel.)
  */
 const COMPOSICAO: { chip: string; testId: string; porque: string }[] = [
-  { chip: "Preço por mês", testId: "faceta-preco-", porque: "não é item do mínimo" },
   { chip: "Quartos", testId: "faceta-quartos-", porque: "não é item do mínimo" },
   { chip: "Estadia", testId: "faceta-estadia-", porque: "não é item do mínimo" },
-  { chip: "Tipo de imóvel", testId: "faceta-tipo-", porque: "não é item do mínimo" },
   { chip: "Aceita pets / porte", testId: "faceta-pets", porque: "não é item do mínimo" },
   { chip: "Para trabalhar de casa", testId: "faceta-home-office", porque: "não é item do mínimo" },
   { chip: "Pronto para Morar", testId: "faceta-pronto", porque: "selo, não item do mínimo" },

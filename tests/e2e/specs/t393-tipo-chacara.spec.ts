@@ -16,16 +16,6 @@ const ids: { dono?: string; ativa?: string; rascunho?: string } = {};
 // ~15 km a oeste do centro de Uberlândia (centro conhecido: -18.9113, -48.2622).
 const PONTO = { lat: -18.95, lng: -48.4 };
 
-async function abrirFolha(page: Page, url: string) {
-  await expect(async () => {
-    await page.goto(url, { waitUntil: "domcontentloaded" });
-    // E82-A: a pílula "Mais filtros" da linha única, em toda largura.
-    await page.getByTestId("pilula-mais").click({ timeout: 5_000 });
-    await expect(page.getByTestId("painel-filtros")).toBeVisible({ timeout: 5_000 });
-  }).toPass({ timeout: 60_000 });
-  return page.getByTestId("painel-filtros");
-}
-
 test.describe("T393 — TIPO-CHACARA-B: Chácara/Sítio", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
@@ -48,9 +38,14 @@ test.describe("T393 — TIPO-CHACARA-B: Chácara/Sítio", () => {
   });
 
   test("1. busca: o tipo no filtro (com contagem) e na URL", async ({ page }) => {
-    const folha = await abrirFolha(page, `/buscar?local=${encodeURIComponent(CIDADE)}`);
-    await expect(folha.getByTestId("faceta-tipo-chacara")).toContainText("Chácara/Sítio");
-    expect(Number(await folha.getByTestId("faceta-tipo-chacara").getAttribute("data-n"))).toBe(1);
+    // E105: o tipo mora só na pílula "Tipo" da linha de cima.
+    await page.goto(`/buscar?local=${encodeURIComponent(CIDADE)}`, { waitUntil: "domcontentloaded" });
+    await expect(async () => {
+      await page.getByTestId("pilula-tipo").click({ timeout: 5_000 });
+      await expect(page.getByTestId("painel-pilula-tipo")).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 60_000 });
+    await expect(page.getByTestId("pilula-tipo-chacara")).toContainText("Chácara/Sítio");
+    await expect.poll(async () => Number(await page.getByTestId("pilula-tipo-chacara").getAttribute("data-n")), { timeout: 30_000 }).toBe(1);
     await page.goto(`/buscar?local=${encodeURIComponent(CIDADE)}&tipo=chacara`, { waitUntil: "domcontentloaded" });
     await expect(page.getByText(`Chácara Ativa ${sufixo}`).first()).toBeVisible({ timeout: 30_000 });
     // Na página do anúncio: a linha do tipo e nada de andar.

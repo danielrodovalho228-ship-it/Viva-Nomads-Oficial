@@ -21,7 +21,7 @@ import { AREAS, CHAVES_NIVEL_FOTO, MATRIZ } from "../../../src/config/niveis";
 /*
   T296 — Adendo 59.1, Parte A (exibição dos níveis). Só no laboratório. Três anúncios de teste do mesmo dono —
   Essencial, Conforto e Premium — e um rascunho; tudo a 390 e 1280 px.
-   1. Cartão: o nível abre a linha de fatos ("Conforto · 1 quarto · …"). Busca: "Nível a partir de" na folha de
+   1. Cartão: o nível abre a linha de fatos ("Conforto · 1 quarto · …"). Busca: o nível na pílula "Nível" (E105; antes na folha) de
       filtros, com a contagem de cada chip ao vivo; Premium mostra só o Premium.
    2. Página do imóvel: bloco "Nível …" com critério, "Acima do nível" (Conforto com a sala Premium), ruído, extras e
       "· vistoriado" no Premium; "Como funcionam os níveis" abre a explicação. O Essencial silencioso tem "Ruído: Premium".
@@ -134,21 +134,17 @@ test.describe("T296 — Adendo 59.1, Parte A: níveis na tela", () => {
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t296-1-cartoes-${w}.png` });
 
-      // E82-A: a pílula "Mais filtros" da linha única abre a folha em toda largura (como no t222).
-      await page.getByTestId("pilula-mais").click();
-      const folha = page.getByRole("dialog", { name: "Filtros" });
-      const grupo = folha.getByTestId("painel-nivel");
-      await expect(grupo).toContainText("Nível a partir de");
-      const n = async (v: string) => Number((await grupo.getByTestId(`filtro-nivel-${v}-n`).textContent())!.replace(/\D/g, ""));
+      // E105: o nível mora só na pílula "Nível" da linha de cima (saiu da folha "Mais filtros"); a escolha vale na hora.
+      await page.getByTestId("pilula-nivel").click();
+      const grupo = page.getByTestId("painel-pilula-nivel");
+      await expect(grupo).toBeVisible();
+      const n = async (v: string) => Number(await grupo.getByTestId(`pilula-nivel-${v}`).getAttribute("data-n"));
       const [ne, nc, np] = [await n("essencial"), await n("conforto"), await n("premium")];
       expect(ne).toBeGreaterThanOrEqual(nc);
       expect(nc).toBeGreaterThanOrEqual(np);
       expect(np).toBeGreaterThanOrEqual(1);
-      await grupo.getByTestId("filtro-nivel-premium").click();
-      await expect(grupo.getByTestId("filtro-nivel-premium")).toHaveAttribute("aria-pressed", "true");
-      await expect(folha.getByTestId("aplicar-filtros")).toHaveAttribute("data-total", String(np));
-      await folha.screenshot({ path: `tests/laboratorio/saida/t296-1-folha-nivel-${w}.png` });
-      await folha.getByTestId("aplicar-filtros").click();
+      await grupo.screenshot({ path: `tests/laboratorio/saida/t296-1-folha-nivel-${w}.png` });
+      await grupo.getByTestId("pilula-nivel-premium").click();
       await expect(page).toHaveURL(/nivel=premium/);
       await expect(page.getByTestId("cartao-titulo").filter({ hasText: T.p }).first()).toBeVisible({ timeout: 30_000 });
       await expect(page.getByTestId("cartao-titulo").filter({ hasText: T.c })).toHaveCount(0);
