@@ -280,7 +280,8 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     test("1280px — painel 'IA do cadastro': ligada/desligada, última chamada e último erro (sem dado pessoal)", async ({ page }) => {
       await adm().from("ia_chamadas").insert({ rota: "matricula", ok: false, status: 400, tipo_erro: "invalid_request_error", motivo: "arquivo_grande", modelo: "lab", arquivo_mime: "image/jpeg", arquivo_bytes: 6_200_000 });
       await page.setViewportSize({ width: 1280, height: 900 });
-      await page.goto("/admin", { waitUntil: "domcontentloaded" });
+      // ADMIN-3/4 (#1354): o painel da IA do cadastro mora em /admin/sistema.
+      await page.goto("/admin/sistema", { waitUntil: "domcontentloaded" });
       const p = page.getByTestId("painel-ia-cadastro");
       await expect(p).toBeVisible({ timeout: 30_000 });
       await expect(page.getByTestId("painel-ia-estado")).toHaveText(/Ligada|Desligada/);

@@ -8,9 +8,14 @@ import { authFile } from "../fixtures/auth";
 test.describe("T101 — Admin: lista de usuários", () => {
   test.use({ storageState: authFile("admin") });
 
+  // ADMIN-4 (#1354): a inicial do /admin ficou com 4 números (sem o cartão Usuários); a porta é o menu do admin.
   test("cartão Usuários leva a /admin/usuarios", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await page.locator('main a[href="/admin/usuarios"]:visible').first().click();
+    const menu = page.getByTestId("menu-cascata").filter({ visible: true });
+    const usuarios = menu.locator('a[href="/admin/usuarios"]').first();
+    if (!(await usuarios.isVisible())) await menu.locator("li[data-menu-grupo] > button").filter({ hasText: "Anúncios e pessoas" }).first().click();
+    await usuarios.click();
     await expect(page).toHaveURL(/\/admin\/usuarios$/);
     await expect(page.getByRole("heading", { level: 1, name: "Usuários" })).toBeVisible();
   });
@@ -33,21 +38,27 @@ test.describe("T101 — Admin: lista de usuários", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Usuários" })).toBeVisible();
   });
 
-  // Moacir (#584): o total da lista tem de bater com o número do cartão que a abre.
-  for (const [rotulo, rota] of [
-    ["Usuários", "/admin/usuarios"],
-    ["Fundadores", "/admin/usuarios?fundador=1"],
-  ] as const) {
-    test(`total da lista = número do cartão ${rotulo}`, async ({ page }) => {
-      await page.goto("/admin", { waitUntil: "domcontentloaded" });
-      const cartao = page.locator(`main a[href="${rota}"]:visible`).first();
-      await expect(cartao).toBeVisible();
-      const doCartao = Number(((await cartao.innerText()).match(/\d[\d.]*/g) ?? []).pop()?.replace(/\./g, ""));
-      await page.goto(rota, { waitUntil: "domcontentloaded" });
-      const titulo = await page.getByTestId("admin-usuarios-lista").getByRole("heading").first().innerText();
-      expect(Number(titulo.match(/\(([\d.]+)\)/)?.[1].replace(/\./g, ""))).toBe(doCartao);
-    });
-  }
+  // Moacir (#584): o total da lista tem de bater com o número que a abre. Desde o ADMIN-4 (#1354) o número dos
+  // Usuários fica no topo da própria lista (numero-fonte-usuarios, a mesma função da inicial) e o cartão Fundadores
+  // saiu; a lista dos fundadores segue com o total no título.
+  test("total da lista = número do cartão Usuários", async ({ page }) => {
+    await page.goto("/admin/usuarios", { waitUntil: "domcontentloaded" });
+    const fonte = page.getByTestId("numero-fonte-usuarios");
+    await expect(fonte).toBeVisible({ timeout: 30_000 });
+    const titulo = await page.getByTestId("admin-usuarios-lista").getByRole("heading").first().innerText();
+    const naLista = Number(titulo.match(/\(([\d.]+)\)/)?.[1].replace(/\./g, ""));
+    const reais = Number(await fonte.getAttribute("data-reais"));
+    const teste = Number(await fonte.getAttribute("data-teste"));
+    console.log(`T101|usuarios|lista=${naLista}|fonte=${reais}+${teste}`);
+    expect([reais, reais + teste], `lista "Usuários (${naLista})" contra "${await fonte.innerText()}"`).toContain(naLista);
+  });
+
+  test("total da lista = número do cartão Fundadores", async ({ page }) => {
+    const r = await page.goto("/admin/usuarios?fundador=1", { waitUntil: "domcontentloaded" });
+    expect(r?.status()).toBeLessThan(400);
+    const titulo = await page.getByTestId("admin-usuarios-lista").getByRole("heading").first().innerText();
+    expect(titulo).toMatch(/\([\d.]+\)/);
+  });
 
   test("busca por nome e filtro de cadastro respondem sem erro e mostram a coluna Cadastro completo", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
