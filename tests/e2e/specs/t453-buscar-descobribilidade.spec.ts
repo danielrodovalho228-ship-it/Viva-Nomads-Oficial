@@ -23,7 +23,10 @@ for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
       const pedido = linha.getByTestId("linha-publicar-pedido");
       await expect(pedido).toBeVisible({ timeout: 30_000 });
       await expect(pedido).toHaveText("Publicar pedido");
-      expect(new URLSearchParams(((await pedido.getAttribute("href")) ?? "").split("?")[1] ?? "").get("cidade")).toBe("Uberlândia");
+      // A cidade entra no link quando a busca assenta (a URL é lida depois da hidratação).
+      await expect
+        .poll(async () => new URLSearchParams(((await pedido.getAttribute("href")) ?? "").split("?")[1] ?? "").get("cidade"), { timeout: 15_000 })
+        .toBe("Uberlândia");
       // Texto como as outras ações da linha: sem fundo, sublinhado, na mesma altura do "Descrever o que procuro".
       expect(await pedido.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
       expect(await pedido.evaluate((el) => getComputedStyle(el).textDecorationLine)).toContain("underline");
