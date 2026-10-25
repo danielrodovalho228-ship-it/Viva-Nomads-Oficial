@@ -649,10 +649,20 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
     };
   }, [slug]);
   const carregandoChat = historico?.slug !== slug;
-  /** Depois de enviar: relê a página mais nova do chat (o que o servidor gravou), como fazia o router.refresh antes. */
+  /**
+   * Depois de enviar: relê a página mais nova do chat (o que o servidor gravou) e SOMA ao que já está na tela (por id),
+   * sem tirar as mais antigas já carregadas — a janela só cresce.
+   */
   const reler = useCallback((alvo: string) => {
     carregarConversas(alvo)
-      .then((p) => setHistorico((h) => (h === null || h.slug === alvo ? { slug: alvo, ...p } : h)))
+      .then((p) =>
+        setHistorico((h) => {
+          if (h && h.slug !== alvo) return h;
+          const vistos = new Set((h?.itens ?? []).map((c) => c.id));
+          const itens = [...(h?.itens ?? []), ...p.itens.filter((c) => !vistos.has(c.id))].sort((x, y) => x.criado_em.localeCompare(y.criado_em));
+          return { slug: alvo, itens, temMais: h ? h.temMais : p.temMais };
+        })
+      )
       .catch(() => undefined);
   }, []);
   const salvas = historico?.slug === slug ? historico.itens : [];
