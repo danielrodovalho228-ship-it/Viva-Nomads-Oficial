@@ -44,7 +44,8 @@ async function conferePrevia(p: Page, estado: string) {
     await expect(previa.getByTestId("previa-foto"), `${estado}: a prévia mostra a 1ª foto elegível`).toHaveAttribute("src", esperada);
   }
   // A sinalizada pendente nunca é a foto da prévia.
-  const pendente = await p.locator('[data-nao-imovel="1"] img').first().getAttribute("src").catch(() => null);
+  // Consulta direta: sem sinalizada, um locator.getAttribute esperaria o elemento até o fim do teste.
+  const pendente = await p.evaluate(() => document.querySelector('[data-nao-imovel="1"] img')?.getAttribute("src") ?? null);
   if (pendente && esperada !== null) await expect(previa.getByTestId("previa-foto")).not.toHaveAttribute("src", pendente);
   return esperada;
 }
