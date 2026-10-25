@@ -76,3 +76,27 @@ export async function abrirNoEndereco(page: Page, timeout = 20_000) {
     await noPasso(page, "endereco");
   }
 }
+
+/**
+ * E104: quem opera, identidade e documento do imóvel moram no cartão "Antes de publicar" da Revisão (o Passo 3 é só
+ * endereço). Com o rascunho já gravado (?draft= na URL), reabre o mesmo rascunho no Passo 10 e espera o cartão.
+ */
+export async function irParaAntesDePublicar(page: Page, timeout = 30_000) {
+  await expect(page).toHaveURL(/draft=/, { timeout });
+  const url = new URL(page.url());
+  url.searchParams.set("etapa", "revisao");
+  await page.goto(url.pathname + url.search, { waitUntil: "domcontentloaded" });
+  await noPasso(page, "revisao", timeout);
+  await expect(page.getByTestId("antes-de-publicar")).toBeVisible({ timeout });
+  return page.getByTestId("antes-de-publicar");
+}
+
+/** Volta passo a passo pelo "Voltar" do rodapé (sem recarregar: o que a tela guardou na memória continua). */
+export async function voltarAte(page: Page, ate: PassoCadastro) {
+  for (let i = 0; i < ORDEM_PASSOS.length; i++) {
+    if ((await page.getByTestId("passo-titulo").textContent()) === TITULO_PASSO[ate]) break;
+    await page.getByTestId("cadastro-voltar").click();
+    await page.waitForTimeout(150);
+  }
+  await noPasso(page, ate);
+}

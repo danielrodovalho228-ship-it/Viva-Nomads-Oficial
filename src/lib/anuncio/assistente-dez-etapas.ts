@@ -39,8 +39,8 @@ export const ETAPAS_ASSISTENTE: readonly EtapaAssistente[] = [
     id: "endereco",
     titulo: "Endereço",
     mockup: "cadastro-imovel-03-endereco",
-    campos: ["exactAddress", "neighborhood", "city", "state", "lat", "lng", "ownershipType"],
-    prontidao: ["endereco", "documento", "sublocacao"],
+    campos: ["exactAddress", "neighborhood", "city", "state", "lat", "lng"],
+    prontidao: ["endereco"],
   },
   { n: 4, id: "detalhes", titulo: "Detalhes", mockup: "cadastro-imovel-04-detalhes", campos: ["bedrooms", "bathrooms", "areaM2", "maxGuests"], prontidao: ["detalhes", "chacara", "sem_internet"] },
   {
@@ -76,7 +76,8 @@ export const ETAPAS_ASSISTENTE: readonly EtapaAssistente[] = [
     campos: ["availableFrom", "availableUntil", "minPeriodDays", "bloqueios"],
     prontidao: ["periodo"],
   },
-  { n: 10, id: "revisao", titulo: "Revise e publique", mockup: "cadastro-imovel-10-revisao", campos: [], prontidao: ["limite"] },
+  // E104: quem opera, o documento da operação e o documento do imóvel ficam no cartão "Antes de publicar" da Revisão.
+  { n: 10, id: "revisao", titulo: "Revise e publique", mockup: "cadastro-imovel-10-revisao", campos: ["ownershipType"], prontidao: ["limite", "documento", "sublocacao"] },
 ];
 
 /** Etapa onde um item da prontidão se resolve; item desconhecido cai na revisão (nunca some da lista). */

@@ -27,3 +27,9 @@ test("a barra mede a própria altura; respiro, rolagem até o campo e o 'Fale co
   // :root (0,2,0) vence html:has(fale-com-a-viva-raiz) (0,1,1), que vem depois no arquivo.
   assert.match(css, /:root:has\(\[data-testid="barra-fotos"\]\)\s*\{\s*scroll-padding-bottom: calc\(var\(--altura-barra-fotos, 4rem\) \+ 5rem\);/);
 });
+
+test("E88 (celular): a faixa 'Fotos: N de 8' só no passo Fotos — não vaza para o Passo 1 nem para os outros", () => {
+  const pagina = readFileSync(join("src", "app/(dashboard)/dashboard/imoveis/novo/page.tsx"), "utf8");
+  assert.match(pagina, /\{!editingId && step === ETAPA\.fotos && \(\s*<BarraFotos/);
+  assert.equal((pagina.match(/<BarraFotos/g) ?? []).length, 1);
+});
