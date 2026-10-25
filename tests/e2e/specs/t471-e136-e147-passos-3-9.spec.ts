@@ -34,8 +34,6 @@ test.describe("T471 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.dono);
-    // O calendário do Passo 9 só aparece num rascunho já salvo no servidor: abre um pronto.
-    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t471 ${sufixo}`, {});
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
@@ -57,6 +55,9 @@ test.describe("T471 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
     void _t;
     const ctx = await browser.newContext({ ...iphone, locale: "en-US" });
     const p = await entrarNaPagina(await ctx.newPage(), dono.email, senha);
+    // O calendário do Passo 9 só aparece num rascunho já salvo no servidor: abre um pronto (criado só aqui, depois do
+    // teste do Passo 3, para o aviso "anúncio em andamento" não desviar aquele teste).
+    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t471 ${sufixo}`, {});
     await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=disponibilidade`, { waitUntil: "domcontentloaded" });
     await noPasso(p, "disponibilidade", 30_000);
     const de = dia(2);
