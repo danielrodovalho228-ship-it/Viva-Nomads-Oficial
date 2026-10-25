@@ -46,7 +46,8 @@ test("sem 'Fale com a Viva' flutuante no assistente (a ajuda é o link do topo)"
 
 test("rodapé do fluxo: 'Passo N de 10' + barra, Voltar (passos 2–10) e um só primário (Continuar; Publicar anúncio no 10)", () => {
   assert.match(pagina, /<RodapeAssistente\s+pos=\{pos\}\s+total=\{ORDEM_ETAPAS\.length\}\s+onVoltar=\{pos > 0 \? voltarEtapa : null\}/);
-  assert.match(pagina, /pos < ULTIMA_ETAPA\s+\? \{ rotulo: "Continuar", onClick: avancarEtapa, testid: "cadastro-continuar", seta: true \}/);
+  // E133: no Passo 2 o "Continuar" fica desabilitado de verdade até o mínimo de fotos e sem aviso pendente.
+  assert.match(pagina, /pos < ULTIMA_ETAPA\s+\? \{\s+rotulo: "Continuar",\s+onClick: avancarEtapa,\s+testid: "cadastro-continuar",\s+seta: true,/);
   assert.match(pagina, /editingId \? "Salvar alterações" : "Publicar anúncio"/);
   assert.match(pagina, /testid: "publicar-anuncio"/);
   assert.match(rodape, /role="progressbar" aria-label="Progresso do cadastro"/);

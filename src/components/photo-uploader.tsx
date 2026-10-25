@@ -11,6 +11,9 @@ import { useAuthStore } from "@/lib/store";
 import { tratarFoto } from "@/lib/fotos/processar";
 import { enviarFotos } from "@/lib/fotos/enviar";
 import { MAX_FOTOS_POR_ANUNCIO, type AvisoFoto } from "@/lib/fotos/qualidade";
+import { conferirFotos } from "@/lib/fotos/conferir-cliente";
+import { AVISO_NAO_IMOVEL, ROTULO_MOTIVO, confirmarConteudo, conteudoPendente, podeSerPrincipal, type ConteudoFoto } from "@/lib/fotos/conteudo";
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { cn } from "@/lib/utils";
 
 export interface PhotoItem extends UploadedPhoto {
@@ -22,6 +25,18 @@ export interface PhotoItem extends UploadedPhoto {
   avisos?: AvisoFoto[];
   /** A foto passou por ajuste leve de exposição (dá para voltar ao original). */
   melhorada?: boolean;
+  /** E133: a conferência "é do imóvel?" e, se sinalizada, a confirmação expressa do dono (fica no rascunho). */
+  conteudo?: ConteudoFoto | null;
+}
+
+/** E133: foto sinalizada (sem confirmação) não fica como principal — a 1ª foto sem pendência vai para a frente. */
+export function comPrincipalBoa<T extends { conteudo?: ConteudoFoto | null }>(fotos: T[]): T[] {
+  if (fotos.length < 2 || podeSerPrincipal(fotos[0].conteudo)) return fotos;
+  const boa = fotos.findIndex((x) => podeSerPrincipal(x.conteudo));
+  if (boa <= 0) return fotos;
+  const out = [...fotos];
+  out.unshift(...out.splice(boa, 1));
+  return out;
 }
 
 /**
@@ -42,6 +57,7 @@ export function PhotoUploader({
   remover = removePropertyPhoto,
   variante = "padrao",
   imagemVazia,
+  conferir = tratar,
 }: {
   photos: PhotoItem[];
   onChange: (photos: PhotoItem[]) => void;
@@ -57,12 +73,15 @@ export function PhotoUploader({
   variante?: "padrao" | "cadastro";
   /** Ilustração dentro do "+ Adicionar foto" quando ainda não há foto (só no "cadastro"). */
   imagemVazia?: string;
+  /** E133: confere se cada foto enviada é do imóvel (padrão: as fotos tratadas do anúncio; documentos não). */
+  conferir?: boolean;
 }) {
   const cad = variante === "cadastro";
   const ownerId = useAuthStore((s) => s.user?.id);
   const [uploading, setUploading] = useState(false);
   // Progresso do envio em lote ("3 de 12").
   const [progresso, setProgresso] = useState<{ feitas: number; total: number } | null>(null);
+  const [conferindo, setConferindo] = useState(false);
   // Arquivos originais desta sessão, para "usar original".
   const [originais, setOriginais] = useState<Record<string, File>>({});
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +99,8 @@ export function PhotoUploader({
     const next = [...photos];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
+    // E133: arrastar não põe foto sinalizada (sem confirmação) na posição de foto principal.
+    if (!podeSerPrincipal(next[0]?.conteudo)) return;
     onChange(next);
   }
 
@@ -97,7 +118,17 @@ export function PhotoUploader({
         uploader,
         aoProgresso: (feitas, total) => setProgresso({ feitas, total }),
       });
-      onChange([...photos, ...r.novas]);
+      let novas: PhotoItem[] = r.novas;
+      // E133: cada foto nova passa pela conferência "é do imóvel?" antes de entrar na galeria.
+      if (conferir && novas.length) {
+        setConferindo(true);
+        const urls = novas.map((n) => (n.url && !n.url.startsWith("blob:") ? n.url : ""));
+        const res = await conferirFotos(urls.filter(Boolean)).catch(() => []);
+        let k = 0;
+        novas = novas.map((n, i) => (urls[i] ? { ...n, conteudo: res[k++] ?? null } : n));
+        setConferindo(false);
+      }
+      onChange(comPrincipalBoa([...photos, ...novas]));
       setOriginais((o) => ({ ...o, ...r.originais }));
       if (r.erro) setError(r.erro);
     } finally {
@@ -124,12 +155,19 @@ export function PhotoUploader({
   }
 
   async function remove(item: PhotoItem) {
-    onChange(photos.filter((p) => p.id !== item.id));
+    onChange(comPrincipalBoa(photos.filter((p) => p.id !== item.id)));
     await remover(item.path);
   }
 
   function makeCover(item: PhotoItem) {
+    if (!podeSerPrincipal(item.conteudo)) return;
     onChange([item, ...photos.filter((p) => p.id !== item.id)]);
+  }
+
+  /** E133: o dono confirma expressamente que a foto sinalizada é do imóvel (data gravada no rascunho). */
+  function confirmarFoto(item: PhotoItem) {
+    if (!item.conteudo) return;
+    onChange(photos.map((p) => (p.id === item.id ? { ...p, conteudo: confirmarConteudo(item.conteudo!) } : p)));
   }
 
   return (
@@ -168,8 +206,10 @@ export function PhotoUploader({
             onDragEnd={() => setDragIndex(null)}
             className={cn(
               "group relative aspect-[4/3] cursor-move overflow-hidden rounded-xl border border-sage-200",
+              conteudoPendente(p.conteudo) && "border-2 border-red-600",
               dragIndex === i && "opacity-50 ring-2 ring-forest"
             )}
+            data-nao-imovel={conteudoPendente(p.conteudo) ? "1" : undefined}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.url} alt={p.name} className="h-full w-full object-cover" />
@@ -196,7 +236,11 @@ export function PhotoUploader({
                 );
               })}
 
-            {i === 0 &&
+            {i === 0 && conteudoPendente(p.conteudo) ? (
+              <span className="absolute left-3 top-3 rounded-lg bg-red-600 px-3 py-1 text-sm font-semibold text-white" data-testid="selo-principal-bloqueada">
+                Não pode ser a foto principal
+              </span>
+            ) : i === 0 &&
               (cad ? (
                 <span className="absolute left-3 top-3 rounded-lg bg-forest px-3 py-1 text-sm font-semibold text-white" data-testid="selo-foto-principal">
                   Foto principal
@@ -213,7 +257,7 @@ export function PhotoUploader({
             )}
 
             <div className="absolute right-2 top-2 flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-              {i !== 0 && (
+              {i !== 0 && podeSerPrincipal(p.conteudo) && (
                 <button
                   type="button"
                   onClick={() => makeCover(p)}
@@ -235,6 +279,37 @@ export function PhotoUploader({
               </button>
             </div>
           </div>
+          {conteudoPendente(p.conteudo) && (
+            <div role="alert" className="mt-1 rounded-lg border border-red-600 bg-red-50 p-2 text-xs text-red-800" data-testid="aviso-foto-nao-imovel">
+              <p className="flex items-start gap-1">
+                <AlertTriangle className="mt-1 h-3 w-3 shrink-0" aria-hidden />
+                <span>
+                  <strong>{AVISO_NAO_IMOVEL}.</strong> {p.conteudo?.motivo ? ROTULO_MOTIVO[p.conteudo.motivo] : ""} Ela não entra como foto
+                  principal nem deixa publicar até você trocar ou confirmar.
+                </span>
+              </p>
+              <span className="mt-2 flex flex-wrap items-start gap-2">
+                <button type="button" onClick={() => remove(p)} className="min-h-11 font-semibold text-red-700 underline underline-offset-4" data-testid="foto-nao-imovel-remover">
+                  Remover foto
+                </button>
+                <ConfirmarNaPagina
+                  aviso="Confirmo que esta foto mostra o imóvel anunciado."
+                  confirmar="Confirmo, é do imóvel"
+                  onConfirmar={() => confirmarFoto(p)}
+                  size="sm"
+                  variant="ghost"
+                  testid="foto-nao-imovel-confirmar"
+                >
+                  É do imóvel
+                </ConfirmarNaPagina>
+              </span>
+            </div>
+          )}
+          {p.conteudo?.naoImovel && p.conteudo.confirmadaEm && (
+            <p className="mt-1 text-xs text-muted" data-testid="foto-conteudo-confirmada">
+              Você confirmou que esta foto é do imóvel.
+            </p>
+          )}
           {(p.avisos?.some((a) => a.codigo !== "repetida") || p.melhorada) ? (
             <div className="mt-1 space-y-1 text-xs">
               {p.avisos?.filter((a) => a.codigo !== "repetida").map((a) => (
@@ -286,7 +361,7 @@ export function PhotoUploader({
               <Upload className="h-5 w-5" />
             )}
             <span className={cad ? "text-center text-sm font-medium sm:text-base" : "text-xs"}>
-              {uploading ? (progresso ? `Enviando ${Math.min(progresso.feitas + 1, progresso.total)} de ${progresso.total}…` : "Enviando...") : cad ? "+ Adicionar foto" : "Adicionar"}
+              {uploading ? (conferindo ? "Conferindo as fotos…" : progresso ? `Enviando ${Math.min(progresso.feitas + 1, progresso.total)} de ${progresso.total}…` : "Enviando...") : cad ? "+ Adicionar foto" : "Adicionar"}
             </span>
             <span className="hidden text-[11px] text-muted sm:block">ou arraste as fotos para cá</span>
           </button>
