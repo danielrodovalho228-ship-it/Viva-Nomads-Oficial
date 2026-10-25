@@ -186,7 +186,8 @@ test.describe("T229 — admin conversa com tudo", () => {
 
   test("Dados de teste: encerrar jornadas pede confirmação e grava no registro; fotógrafos dizem quem recebe", async ({ page }) => {
     await page.goto("/admin/dados-de-teste", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("link-emails-teste")).toHaveAttribute("href", "/admin/emails-teste");
+    // ADMIN-2 (#1354): os e-mails de teste viraram a aba "E-mails" da própria página.
+    await expect(page.getByTestId("dados-teste-aba-emails")).toHaveAttribute("href", "/admin/dados-de-teste?aba=emails");
     await page.getByTestId("encerrar-jornadas").click();
     await page.getByTestId("encerrar-jornadas-confirmar").click();
     await expect(page.getByTestId("encerrar-jornadas-resultado")).toContainText(/encerrados? em \d+ anúncios? de teste/);
