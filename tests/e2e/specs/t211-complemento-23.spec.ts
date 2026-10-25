@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { abrirNoEndereco } from "../fixtures/cadastro";
+import { noPasso } from "../fixtures/cadastro";
 import { campoBrasiliaParaIso, instanteParaCampoBrasilia } from "../../../src/lib/visitas-video";
 
 /*
@@ -229,8 +229,9 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
       await expect(d.getByTestId("confianca-identidade")).toHaveAttribute("data-situacao", "ok");
       await semRolagemLateral(d);
       await d.screenshot({ path: `${SAIDA}/t211-conta-identidade-${largura}.png` });
-      // A etapa de identidade fica no passo Endereço (3º dos 10).
-      await abrirNoEndereco(d, 25_000);
+      // E104 (#1319): a identidade mora no cartão "Antes de publicar" da Revisão (o Passo 3 é só endereço).
+      await d.goto("/dashboard/imoveis/novo?etapa=revisao", { waitUntil: "domcontentloaded" });
+      await noPasso(d, "revisao", 25_000);
       await expect(d.getByTestId("identidade-confirmada")).toHaveText(esperado, { timeout: 25_000 });
       await abrir(d, "/dashboard/verificacao");
       await expect(d.getByTestId("identidade-estado")).toHaveText(esperado, { timeout: 25_000 });

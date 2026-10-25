@@ -78,18 +78,13 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       await page.screenshot({ path: `${SAIDA}/t194-passo1-${largura}.png`, fullPage: true });
 
       // "Passo 3 de 10" numa linha só, sem texto cortado, e a barra de progresso — CADASTRO-MOLDURA: os dois no rodapé
-      // do fluxo. Celular: barra de fotos fixa à vista.
+      // do fluxo. E107: sem a faixa fixa de fotos.
       const topo = page.getByTestId("assistente-rodape");
       await expect(page.getByTestId("passo-texto")).toHaveText("Passo 3 de 10");
       expect(await page.getByTestId("passo-texto").evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
       await expect(topo.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", "30");
-      if (largura === 390) {
-        // E88: a faixa de fotos mora só no passo Fotos (não vaza para o Endereço).
-        await expect(page.getByTestId("barra-fotos")).toHaveCount(0);
-      } else {
-        await expect(page.getByTestId("barra-fotos")).toBeHidden();
-        await expect(page.getByTestId("novo-resumo").getByTestId("previa-sem-foto")).toBeVisible();
-      }
+      await expect(page.getByTestId("barra-fotos")).toHaveCount(0);
+      if (largura === 1280) await expect(page.getByTestId("novo-resumo").getByTestId("previa-sem-foto")).toBeVisible();
 
       // 2) CEP do print (38482-288): nada encontrado → mensagem visível, sem apagar o digitado.
       const cep = page.getByTestId("cadastro-cep");
@@ -145,11 +140,10 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       await expect(ia).toHaveAttribute("data-estado", "feita", { timeout: 120_000 });
       await expect(ia).toContainText(/^Pronto: /);
       await expect(page.getByText(/^8\/40 fotos/)).toBeVisible({ timeout: 30_000 });
-      if (largura === 390) {
-        await expect(page.getByTestId("barra-fotos-contador")).toContainText("Fotos: 8 enviadas");
-        // A barra continua à vista no passo Fotos (e em todos os outros).
-        await expect(page.getByTestId("barra-fotos")).toBeVisible();
-      } else {
+      // E107: o contador é o da página (uma fonte só); a faixa fixa do celular saiu.
+      await expect(page.getByTestId("fotos-contagem")).toContainText("8 / 8 fotos");
+      await expect(page.getByTestId("barra-fotos")).toHaveCount(0);
+      if (largura === 1280) {
         // No computador, a foto principal entra na prévia ao vivo.
         await expect(page.getByTestId("novo-resumo").getByTestId("previa-foto")).toBeVisible();
       }

@@ -3,7 +3,7 @@
 import { Sparkles } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
-import { AMENITY_GROUPS } from "@/lib/amenities";
+import { comodidadeValeParaTipo, comodidadesDoTipo, type GrupoDoTipo } from "@/lib/amenities";
 import { ESSENCIAIS_TRABALHO, OPCIONAIS_TRABALHO } from "@/lib/anuncio/sugestoes-cadastro";
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import type { Privacidade } from "@/lib/anuncio/privacidade";
@@ -51,6 +51,8 @@ export function EtapaEncontramos(p: {
   amenityKeys: Record<string, boolean>;
   setAmenityKeys: (fn: (s: Record<string, boolean>) => Record<string, boolean>) => void;
   comodidadesSugeridas: string[];
+  /** Detecção-A: comodidades achadas nas fotos e ainda não confirmadas — tracejadas, com "Confirme". */
+  comodidadesDetectadas?: string[];
   internetMbps: string;
   setInternetMbps: (v: string) => void;
   /** E102-B: "Não tem internet" — o campo de velocidade não é pedido. */
@@ -160,13 +162,16 @@ export function EtapaEncontramos(p: {
     );
   }
 
+  // E111-A: os grupos e itens que o tipo do imóvel mostra (o marcado que o tipo não mostra fica salvo, só não aparece).
+  const grupos = comodidadesDoTipo(p.propertyType);
+  const sugeridas = p.comodidadesSugeridas.filter((k) => comodidadeValeParaTipo(k, p.propertyType));
   return (
-    <div className="space-y-4" data-testid="etapa-encontramos">
+    <div className="space-y-4" data-testid="etapa-encontramos" data-tipo-imovel={p.propertyType || undefined}>
       {aviso}
       <ProntoParaTrabalhar
         marcadas={p.amenityKeys}
         onAlternar={alternar}
-        sugeridas={p.comodidadesSugeridas}
+        sugeridas={sugeridas}
         mbps={p.internetMbps}
         onMbps={p.setInternetMbps}
         imovelId={p.imovelId}
@@ -174,10 +179,10 @@ export function EtapaEncontramos(p: {
       />
       {p.qualTHome && <p className="text-xs text-forest">Da qualificação: etiqueta “Para trabalhar de casa” ativa.</p>}
 
-      {AMENITY_GROUPS.filter((g) => g.category !== "seguranca").map((g) => (
-        <GrupoComodidades key={g.category} grupo={g} titulo={g.category === "trabalho" ? "No prédio" : g.label} marcadas={p.amenityKeys} sugeridas={p.comodidadesSugeridas} onAlternar={alternar} />
+      {grupos.filter((g) => g.category !== "seguranca").map((g) => (
+        <GrupoComodidades key={g.category} grupo={g} titulo={g.titulo} marcadas={p.amenityKeys} sugeridas={sugeridas} detectadas={p.comodidadesDetectadas} onAlternar={alternar} />
       ))}
-      {p.comodidadesSugeridas.length > 0 && (
+      {sugeridas.length > 0 && (
         <p className="text-xs text-muted">
           <Sparkles className="mr-1 inline h-3 w-3" aria-hidden />
           Comodidades com a estrela foram sugeridas pelas fotos. Toque para desmarcar o que não tiver.
@@ -186,8 +191,8 @@ export function EtapaEncontramos(p: {
 
       <section className="space-y-3 border-t border-line pt-4" data-testid="seguranca-imovel">
         <h3 className="text-base font-semibold text-ink">Segurança e imóvel</h3>
-        {AMENITY_GROUPS.filter((g) => g.category === "seguranca").map((g) => (
-          <GrupoComodidades key={g.category} grupo={g} titulo={g.label} marcadas={p.amenityKeys} sugeridas={p.comodidadesSugeridas} onAlternar={alternar} />
+        {grupos.filter((g) => g.category === "seguranca").map((g) => (
+          <GrupoComodidades key={g.category} grupo={g} titulo={g.titulo} marcadas={p.amenityKeys} sugeridas={sugeridas} detectadas={p.comodidadesDetectadas} onAlternar={alternar} />
         ))}
         <PrivacidadeCampos valor={p.privacidade} onChange={p.setPrivacidade} />
       </section>
@@ -209,10 +214,11 @@ export function EtapaEncontramos(p: {
 }
 
 function GrupoComodidades(p: {
-  grupo: (typeof AMENITY_GROUPS)[number];
+  grupo: GrupoDoTipo;
   titulo: string;
   marcadas: Record<string, boolean>;
   sugeridas: string[];
+  detectadas?: string[];
   onAlternar: (k: string) => void;
 }) {
   const itens = p.grupo.items.filter((it) => !CHAVES_BLOCO_TRABALHO.has(it.key));
@@ -224,6 +230,8 @@ function GrupoComodidades(p: {
         {itens.map((it) => {
           const on = !!p.marcadas[it.key];
           const sug = on && p.sugeridas.includes(it.key);
+          // Detecção-A: achada numa foto e ainda não marcada — tracejada, com "Confirme"; tocar marca (confirma).
+          const detectada = !on && !!p.detectadas?.includes(it.key);
           const Icone = iconeDaComodidade(it.key);
           return (
             <button
@@ -232,14 +240,20 @@ function GrupoComodidades(p: {
               aria-pressed={on}
               onClick={() => p.onAlternar(it.key)}
               data-sugerido={sug ? "1" : undefined}
+              data-detectada={detectada ? "1" : undefined}
               data-comodidade={it.key}
               className={cn(
                 "inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors",
-                on ? "border-forest bg-forest text-white" : "border-line bg-white text-ink hover:border-ink"
+                on ? "border-forest bg-forest text-white" : detectada ? "border-dashed border-forest bg-white text-forest" : "border-line bg-white text-ink hover:border-ink"
               )}
             >
               {sug ? <Sparkles className="h-4 w-4" aria-label="Sugerido · confira" /> : <Icone className="h-4 w-4" aria-hidden />}
               {it.label}
+              {detectada && (
+                <span className="font-medium underline underline-offset-2" data-testid={`comodidade-confirme-${it.key}`}>
+                  Confirme
+                </span>
+              )}
             </button>
           );
         })}
