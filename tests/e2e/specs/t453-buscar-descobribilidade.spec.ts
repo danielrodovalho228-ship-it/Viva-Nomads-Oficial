@@ -32,7 +32,10 @@ for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
       expect(await pedido.evaluate((el) => getComputedStyle(el).textDecorationLine)).toContain("underline");
       const p = (await pedido.boundingBox())!;
       const d = (await linha.getByTestId("abrir-descrever").boundingBox())!;
-      expect(Math.abs(p.y - d.y), "na mesma linha das outras ações").toBeLessThanOrEqual(2);
+      // No computador, na mesma linha das outras ações; no celular as três ações quebram dentro da linha da contagem
+      // (a altura de um toque abaixo, no máximo), sem virar um bloco à parte.
+      if (largura === 1280) expect(Math.abs(p.y - d.y), "na mesma linha das outras ações").toBeLessThanOrEqual(2);
+      else expect(Math.abs(p.y - d.y), "no grupo de ações da linha da contagem").toBeLessThanOrEqual(48);
       // Um primário só na tela de cima (nenhum botão verde novo na linha).
       expect(await linha.locator('[data-cta="primary"]').count()).toBe(0);
       await page.screenshot({ path: `${SAIDA}/t453-linha-pedido-${largura}.png`, fullPage: false });
