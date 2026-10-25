@@ -219,7 +219,9 @@ export async function investigar(
  */
 export function modeloGerenteSimulado(agora: Date): ModeloGerente {
   return async ({ messages }) => {
-    const pergunta = String(messages[0]?.content ?? "").toLowerCase();
+    // A pergunta é a ÚLTIMA mensagem de texto do Daniel (antes era messages[0], a mais antiga do histórico: a resposta
+    // do laboratório dependia do que tinha sobrado no banco).
+    const pergunta = String([...messages].reverse().find((m) => m.role === "user" && typeof m.content === "string")?.content ?? "").toLowerCase();
     const resultados = messages.filter((m) => m.role === "user" && Array.isArray(m.content)).flatMap((m) => m.content as { content?: string }[]);
     const sobreChamado = /chamad|cliente|atendimento|suporte/.test(pergunta);
     if (resultados.length === 0) {
