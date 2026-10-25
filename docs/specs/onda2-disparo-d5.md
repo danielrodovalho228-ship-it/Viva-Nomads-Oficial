@@ -72,3 +72,20 @@ Development sem a chave. Ligar em produção é decisão do Daniel.
 - Para destravar: (a) um Preview com Supabase próprio (decisão do Daniel: trocar as variáveis do Preview), ou
   (b) admin de teste + autorização para criar a estadia de teste em produção pelo app; ou (c) o Daniel liga
   `AUTOMACOES_ATIVO=1` em produção e o cron das 13:00 UTC age sobre uma estadia is_teste montada na janela.
+
+## Produção armada (25/10, 02:10 UTC — leitura, sem alterar nada)
+
+- **Chave:** a entrada de Production `AUTOMACOES_ATIVO` foi recriada em 24/10 às 17:18:59 CDT (22:18 UTC) — bate com o
+  "ligado com '1', redeploy 17:22" do Daniel. Valor não decriptado (só metadados). Preview segue com `1`.
+- **O cron ainda não rodou armado:** `/api/cron/automacoes` roda às 13:00 UTC; a última rodada foi 24/10 13:00 UTC,
+  antes da chave. A 1ª rodada armada é **25/10 às 13:00 UTC**.
+- **Desde o armar:** `automacoes_envios` 0 linhas (o último envio é de 24/10 10:00 UTC), `parceiro_pedidos` automáticos
+  0, nenhum e-mail de automação na caixa de teste.
+- **Nenhum caso na janela D-5:** só 2 contratos ativos assinados (ambos de conta is_teste), saída em 27/12/2026 (64 dias)
+  e 14/02/2027 (113 dias); nenhum imóvel com limpeza fixa ativa; nenhum parceiro de limpeza publicado.
+- **Primeiro caso que prova:** contrato `a238bd01`, saída 27/12/2026 → entra na janela no cron de **22/12/2026**
+  (13:00 UTC). Sem limpeza vinculada, o esperado é: nenhum pedido; aviso único "Saída em 5 dias: quer agendar a
+  limpeza?" ao dono; a rodada de 23/12 não reenvia (chave em `automacoes_envios`). Antes disso, em 20/12 (D-7), o
+  morador recebe "Precisa de ajuda com a mudança?". Para provar o pedido automático antes de dezembro é preciso uma
+  estadia is_teste com saída em até 5 dias e um vínculo de limpeza ativo com parceiro publicado — criação de dado em
+  produção, que depende de autorização.
