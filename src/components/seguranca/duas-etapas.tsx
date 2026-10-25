@@ -12,6 +12,7 @@ import { safeInternalPath } from "@/lib/safe-redirect";
 import { agruparChave, urlOtpauth } from "@/lib/seguranca/chave-totp";
 import { contarCodigosRecuperacao, gerarCodigosRecuperacao, usarCodigoRecuperacao } from "@/lib/seguranca/recuperacao-actions";
 import { CodigosGerados, CodigosRecuperacaoBloco } from "@/components/seguranca/codigos-recuperacao";
+import { SkeletonLinhas } from "@/components/ui/skeleton";
 
 const CHAVE_FALHAS = "vn:2fa-falhas";
 
@@ -136,7 +137,7 @@ export function VerificarCodigoForm({ destino }: { destino: string }) {
           maxLength={12}
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}
-          className="h-12 w-full rounded-xl border border-sage-300 bg-white px-4 text-center text-lg uppercase tracking-widest text-ink focus:border-forest focus:outline-none"
+          className="h-12 w-full rounded-xl border border-sage-300 bg-white px-4 text-center text-lg text-ink focus:border-forest focus:outline-none"
           placeholder="XXXXX-XXXXX"
         />
         <p className="text-xs text-muted">Cada código vale uma vez. Ao usar, a verificação do app é desligada e você cadastra o app de novo.</p>
@@ -152,7 +153,7 @@ export function VerificarCodigoForm({ destino }: { destino: string }) {
   return (
     <form onSubmit={enviar} className="mt-6 space-y-4 text-left">
       {carregando ? (
-        <p className="flex items-center gap-2 text-sm text-muted"><Loader2 className="h-4 w-4 animate-spin" /> Carregando…</p>
+        <SkeletonLinhas linhas={3} />
       ) : (
         <>
           <CampoCodigo id="codigo-2fa" valor={codigo} onChange={setCodigo} />
@@ -295,11 +296,11 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
     <Panel title="Verificação em duas etapas">
       {obrigatorio && estado.tipo !== "ativo" && (
         <p role="status" className="mb-4 flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" /> Obrigatório para o admin. Ative abaixo para continuar.
+          <ShieldAlert className="mt-1 h-4 w-4 shrink-0" /> Obrigatório para o admin. Ative abaixo para continuar.
         </p>
       )}
       {estado.tipo === "carregando" && (
-        <p className="flex items-center gap-2 text-sm text-muted"><Loader2 className="h-4 w-4 animate-spin" /> Carregando…</p>
+        <SkeletonLinhas linhas={3} />
       )}
       {estado.tipo === "sem-fator" && (
         <div className="space-y-4">
@@ -313,7 +314,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
       )}
       {estado.tipo === "configurando" && (
         <form onSubmit={ativar} className="space-y-4">
-          <ol className="list-decimal space-y-1 pl-5 text-sm text-muted">
+          <ol className="list-decimal space-y-1 pl-4 text-sm text-muted">
             <li>Abra o app autenticador e escolha “adicionar conta”.</li>
             <li>No computador, leia o QR code. No próprio celular, copie a chave ou toque em “Abrir no app autenticador”.</li>
             <li>Digite o código de 6 números que o app mostrar.</li>
@@ -323,7 +324,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
           </p>
           <div className="space-y-3 rounded-xl border border-sage-200 bg-sage-50 p-3">
             <p className="text-sm font-medium text-ink">Chave do autenticador</p>
-            <code data-testid="chave-2fa" className="block break-all rounded bg-white px-3 py-2 text-base tracking-wider text-ink">{agruparChave(estado.segredo)}</code>
+            <code data-testid="chave-2fa" className="block break-all rounded-lg bg-white px-3 py-2 text-base tracking-wider text-ink">{agruparChave(estado.segredo)}</code>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto" onClick={() => copiarChave(estado.segredo)}>
                 {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copiado ? "Copiado!" : "Copiar código"}

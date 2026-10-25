@@ -1,6 +1,9 @@
-import { Mail, Clock } from "lucide-react";
+import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { ButtonLink } from "@/components/ui/button";
+import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { LISTA_MAX } from "@/lib/notifications/caixa-teste";
 
 export const metadata = { title: "E-mails de teste — Admin" };
@@ -16,7 +19,7 @@ interface Linha {
 }
 
 const quando = (iso: string) =>
-  new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  dataHoraBRT(iso, { tabela: true });
 
 /** Admin → E-mails de teste: o que o sistema enviou às contas de teste, para o QA ler sem encaminhamento manual. */
 export default async function AdminEmailsTestePage() {
@@ -29,25 +32,23 @@ export default async function AdminEmailsTestePage() {
   return (
     <div data-testid="emails-teste">
       <PageTitle title="E-mails de teste" subtitle="Tudo o que o sistema enviou às contas de teste. Só texto puro, destinatário mascarado." />
-      <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-4">
-        <StatCard label="Guardados (últimos 100)" value={linhas.length} icon={Mail} />
-        <StatCard label="Último recebido" value={linhas[0] ? quando(linhas[0].criado_em) : "—"} icon={Clock} />
-      </div>
-      <Panel title="Mais recentes primeiro">
+      <NumeroHeroi rotulo="E-mails guardados (últimos 100)" valor={linhas.length} href="#lista" />
+      <ListaNumeros className="mb-6" itens={[{ rotulo: "Último recebido", valor: linhas[0] ? quando(linhas[0].criado_em) : "—", href: "#lista" }]} />
+      <Panel title="Mais recentes primeiro" id="lista" className="scroll-mt-24">
         {linhas.length === 0 ? (
-          <EmptyState icon={Mail} title="Nenhum e-mail de teste ainda" text="Quando uma conta de teste receber um e-mail do sistema, ele aparece aqui." />
+          <EmptyState icon={Mail} title="Nenhum e-mail de teste ainda" text="Quando uma conta de teste receber um e-mail do sistema, ele aparece aqui." action={<ButtonLink href="/admin/dados-de-teste" variant="secondary" size="sm">Abrir os dados de teste</ButtonLink>} />
         ) : (
           <>
             {/* Celular: cartões */}
             <ul className="space-y-3 md:hidden" data-testid="emails-teste-cartoes">
               {linhas.map((l) => (
-                <li key={l.id} className="min-w-0 rounded-2xl border border-sage-200 p-3">
+                <li key={l.id} className="min-w-0 rounded-xl border border-sage-200 p-3">
                   <p className="text-xs text-muted">
                     {quando(l.criado_em)} · {l.destinatario_mascarado}
                   </p>
-                  <p className="mt-1 break-words font-medium text-ink">{l.assunto}</p>
+                  <p className="mt-1 break-words font-semibold text-ink">{l.assunto}</p>
                   <details className="mt-2">
-                    <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium text-forest">Ler o e-mail</summary>
+                    <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-forest">Ler o e-mail</summary>
                     <pre className="whitespace-pre-wrap break-words text-sm text-ink">{l.corpo}</pre>
                   </details>
                 </li>
@@ -70,7 +71,7 @@ export default async function AdminEmailsTestePage() {
                       <td className="break-words py-2 pr-2">{l.destinatario_mascarado}</td>
                       <td className="py-2">
                         <details>
-                          <summary className="cursor-pointer break-words font-medium text-ink">{l.assunto}</summary>
+                          <summary className="cursor-pointer break-words font-semibold text-ink">{l.assunto}</summary>
                           <pre className="mt-2 whitespace-pre-wrap break-words text-sm text-ink">{l.corpo}</pre>
                         </details>
                       </td>

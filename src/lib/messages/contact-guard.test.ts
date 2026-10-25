@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { guardContactInfo } from "./contact-guard.ts";
 
-const MASK = "🔒 [contato protegido]";
+const MASK = "[contato protegido]";
 
 test("mascara celular com DDD (formatado)", () => {
   const r = guardContactInfo("me chama no (34) 99999-0001 por favor");
@@ -68,4 +68,14 @@ test("NÃO mascara CEP, data, valor e texto comum", () => {
 test("é idempotente (mascarar duas vezes não muda)", () => {
   const once = guardContactInfo("tel (34) 99999-0001").text;
   assert.equal(guardContactInfo(once).text, once);
+});
+
+test("não mascara id (UUID) com sequência de dígitos parecida com telefone", () => {
+  for (const id of ["c869356d-8442-51f0-9234-56789012abcd", "c869356d-8442-51f0-8a3b-123456789012"]) {
+    const s = `Denúncia de mensagem suspeita na conversa ${id}. Observação da pessoa: ok.`;
+    const r = guardContactInfo(s);
+    assert.equal(r.masked, false, `mascarou o id: "${r.text}"`);
+    assert.equal(r.text, s);
+  }
+  assert.equal(guardContactInfo("id 12345678-1234-1234-1234-123456789012 e tel (34) 99999-0001").masked, true);
 });

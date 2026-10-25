@@ -5,7 +5,18 @@
   Roda: node --test src/lib/automacoes/regras.test.ts
 */
 
-export type TipoAutomacao = "anuncio_incompleto" | "saida_lembrete" | "avaliacao_pedido" | "renovacao_aviso";
+export type TipoAutomacao =
+  | "anuncio_incompleto"
+  | "saida_lembrete"
+  | "avaliacao_pedido"
+  | "renovacao_aviso"
+  | "proposta_vencendo"
+  // Contratação de parceiros (Prompt 31b)
+  | "parceiro_lembrete"
+  | "parceiro_conclusao_pendente"
+  // Página da estadia (Prompt 32)
+  | "estadia_instrucoes_liberadas"
+  | "estadia_instrucoes_pendentes";
 
 const DIA_MS = 86_400_000;
 
@@ -24,10 +35,12 @@ export function dataEmBrasilia(instante: Date | string): string {
   return new Date(t - 3 * 3600_000).toISOString().slice(0, 10);
 }
 
-/** Rascunho de imóvel parado: avisa com 1 dia (≈24 h) e com 3 dias. Outro dia: nada. */
-export function avisoAnuncioIncompleto(criadoEm: string, hoje: string): 1 | 3 | null {
-  const dias = diasEntre(dataEmBrasilia(criadoEm), hoje);
-  return dias === 1 || dias === 3 ? dias : null;
+/**
+ * Rascunho de imóvel parado (Prompt 50): UM aviso, a partir do 3º dia ("Faltam N passos para publicar…"); a chave de
+ * envio garante que sai uma vez por rascunho. Antes disso: nada (o aviso de 1 dia saiu — não havia decisão nova).
+ */
+export function avisoAnuncioIncompleto(criadoEm: string, hoje: string): 3 | null {
+  return diasEntre(dataEmBrasilia(criadoEm), hoje) >= 3 ? 3 : null;
 }
 
 /** Faltam exatamente 3 dias para a saída. */
@@ -51,8 +64,9 @@ export function chaveEnvio(tipo: TipoAutomacao, referenciaId: string, usuarioId:
 }
 
 /** Quem recebe: precisa de e-mail e de não ter desligado os avisos. */
-export function podeReceber(perfil: { email?: string | null; notif_email?: boolean | null } | null | undefined): boolean {
-  return !!perfil?.email && perfil.notif_email !== false;
+export function podeReceber(perfil: { email?: string | null; notif_email?: boolean | null; pausada_em?: string | null } | null | undefined): boolean {
+  // Prompt 51 F1: conta pausada não recebe as automações.
+  return !!perfil?.email && perfil.notif_email !== false && !perfil.pausada_em;
 }
 
 function dataBr(iso: string): string {
@@ -61,17 +75,27 @@ function dataBr(iso: string): string {
 }
 
 /** Linha de detalhe (texto puro) do e-mail/WhatsApp: só datas e nome do imóvel, nada pessoal. */
-export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fim?: string; dias?: 1 | 3 }): string {
+export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fim?: string; dias?: 1 | 3; numero?: string; quando?: string; faltam?: string[] }): string {
   const imovel = ctx.imovel ? `Imóvel: ${ctx.imovel}.` : "";
   switch (tipo) {
     case "anuncio_incompleto":
-      return `${imovel} ${ctx.dias === 3 ? "Seu cadastro está parado há 3 dias." : "Seu cadastro está parado desde ontem."} Termine para enviar a documentação e publicar.`.trim();
+      return `${imovel} ${ctx.faltam?.length ? `Falta: ${ctx.faltam.join("; ")}.` : "Seu cadastro está parado há 3 dias."} O botão leva direto ao próximo passo.`.trim();
     case "saida_lembrete":
       return `${imovel} Saída em ${ctx.fim ? dataBr(ctx.fim) : "3 dias"}. Combine a conferência de saída pela plataforma.`.trim();
     case "avaliacao_pedido":
       return `${imovel} A estadia terminou em ${ctx.fim ? dataBr(ctx.fim) : "ontem"}. Sua avaliação leva 2 minutos e ajuda os próximos moradores.`.trim();
     case "renovacao_aviso":
       return `${imovel} O bloco termina em ${ctx.fim ? dataBr(ctx.fim) : "15 dias"}. Quer renovar? Combine pela plataforma.`.trim();
+    case "proposta_vencendo":
+      return `${imovel} A proposta ${ctx.numero ?? ""} vence em menos de 24 horas. Aceite, contraproponha ou recuse pela plataforma.`.replace(/\s+/g, " ").trim();
+    case "parceiro_lembrete":
+      return `Pedido ${ctx.numero ?? ""}: serviço marcado para ${ctx.quando ?? "as próximas horas"} (horário de Brasília). Combine os detalhes pelas mensagens do pedido.`.replace(/\s+/g, " ").trim();
+    case "parceiro_conclusao_pendente":
+      return `Pedido ${ctx.numero ?? ""}: a entrega foi marcada há 7 dias. Confirme a conclusão ou fale com o parceiro pelas mensagens do pedido. Nada é concluído sem você.`.replace(/\s+/g, " ").trim();
+    case "estadia_instrucoes_liberadas":
+      return `${imovel} Entrada em ${ctx.fim ? dataBr(ctx.fim) : "7 dias"}. As instruções de chegada estão na página da estadia.`.trim();
+    case "estadia_instrucoes_pendentes":
+      return `${imovel} Entrada do morador em ${ctx.fim ? dataBr(ctx.fim) : "10 dias"}. Preencha as instruções de chegada: o morador recebe 7 dias antes.`.trim();
   }
 }
 

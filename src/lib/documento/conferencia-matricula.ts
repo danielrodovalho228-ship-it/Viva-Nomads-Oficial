@@ -54,7 +54,7 @@ export interface LeituraMatricula {
 }
 
 export interface LaudoCafResumo {
-  /** Existe laudo válido (90 dias) da própria pessoa. */
+  /** Existe laudo válido (12 meses) da própria pessoa. */
   feita: boolean;
   /** Identidade, documento e prova de vida aprovados, sem risco alto. */
   ok: boolean;
@@ -80,6 +80,9 @@ export type MotivoMatricula =
   | "dono_diferente"
   | "detalhe_matricula"
   | "falha_leitura"
+  | "falha_arquivo_grande"
+  | "falha_ilegivel"
+  | "falha_indisponivel"
   | "sinal_edicao"
   | "duplicado";
 
@@ -98,13 +101,16 @@ export const VALORES_CASO: readonly string[] = CASOS_DONO.map((c) => c.valor);
 export const MATRICULA_ATUALIZADA_DIAS = 30;
 
 export const MSG_MATRICULA = {
-  conferido: "Documentação conferida ✓",
-  provavel: "Documentação conferida ✓",
+  conferido: "Documentação conferida",
+  provavel: "Documentação conferida",
   falta_identidade: "Documento recebido — falta confirmar sua identidade",
   identidade_nao_confirmada: "Documento recebido — não conseguimos confirmar sua identidade. A equipe confere em até 48 horas.",
   dono_diferente: "O nome ou o CPF da matrícula é diferente do seu cadastro. Escolha o seu caso e anexe o documento.",
   detalhe_matricula: "Precisamos olhar um detalhe da matrícula. A equipe confere em até 48 horas e avisa por e-mail.",
   falha_leitura: "Não foi possível ler a matrícula automaticamente. A equipe confere em até 48 horas.",
+  falha_arquivo_grande: "Arquivo grande demais para a leitura automática. Envie um PDF ou uma foto menor — enquanto isso, a equipe confere em até 48 horas.",
+  falha_ilegivel: "Imagem ilegível. Envie uma foto mais nítida, com a matrícula inteira e boa luz — enquanto isso, a equipe confere em até 48 horas.",
+  falha_indisponivel: "Leitura indisponível agora — tente de novo em alguns minutos. Enquanto isso, a equipe confere em até 48 horas.",
   sinal_edicao: "A equipe precisa conferir este documento. Prazo de até 48 horas.",
   duplicado: "Este documento já foi usado em outra conta. Envie a matrícula do seu imóvel.",
   matricula_antiga: "Para conferência mais rápida, envie a certidão atualizada (emitida nos últimos 30 dias).",
@@ -137,6 +143,17 @@ export interface DecisaoMatricula {
   pedirCaf: boolean;
   avisos: AvisoMatricula[];
   comparacao: ComparacaoProprietario[];
+}
+
+/**
+ * Prompt 22: a leitura falhou (arquivo grande, ilegível, serviço fora) → o motivo e a mensagem certos, em vez do
+ * genérico "não foi possível ler". A decisão continua "em revisão" (a equipe confere), e a tentativa fica gravada.
+ */
+export function decisaoComFalhaDeLeitura(d: DecisaoMatricula, falha: { motivo: "desligada" | "limite" | "arquivo_grande" | "ilegivel" | "indisponivel" } | undefined): DecisaoMatricula {
+  if (!falha || d.motivo !== "falha_leitura") return d;
+  const motivo: MotivoMatricula =
+    falha.motivo === "arquivo_grande" ? "falha_arquivo_grande" : falha.motivo === "ilegivel" ? "falha_ilegivel" : "falha_indisponivel";
+  return { ...d, motivo, mensagem: MSG_MATRICULA[motivo] };
 }
 
 /* ── Comparações ──────────────────────────────────────────────────────────── */
@@ -303,7 +320,8 @@ export function camposParaGravar(l: LeituraMatricula, comparacao: ComparacaoProp
 
 /* ── Laudo CAF → resumo ───────────────────────────────────────────────────── */
 
-export const CAF_VALIDADE_DIAS = 90;
+/** Laudo antigo sem valid_until: vale 12 meses a partir de criado (decisão do Daniel, 18/10). */
+export const CAF_VALIDADE_DIAS = 365;
 
 export interface LaudoCafGravado {
   caf_result: Record<string, unknown> | null;
@@ -313,7 +331,7 @@ export interface LaudoCafGravado {
 }
 
 /**
- * Resumo do laudo mais recente da pessoa: vale por 90 dias. Laudo SIMULADO (laboratório ou conta de teste) só conta
+ * Resumo do laudo mais recente da pessoa: vale por 12 meses (decisão do Daniel, 18/10). Laudo SIMULADO (laboratório ou conta de teste) só conta
  * quando `aceitaSimulado` — numa conta real em produção, nunca.
  */
 export function resumoDoLaudo(l: LaudoCafGravado | null, agora: Date, aceitaSimulado: boolean): LaudoCafResumo {

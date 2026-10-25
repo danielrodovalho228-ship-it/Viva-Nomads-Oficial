@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EXPO_LOTE, EXPO_PUSH_URL, emLotes, lerTickets, montarMensagens, separarTokens } from "./expo-push.ts";
+import { pushLigado } from "./preferencias.ts";
 
 /**
  * Envio de push (Expo Push + FCM HTTP v1) — SERVIDOR apenas, best-effort.
@@ -9,7 +10,8 @@ import { EXPO_LOTE, EXPO_PUSH_URL, emLotes, lerTickets, montarMensagens, separar
  *  • Tokens "ExponentPushToken[...]" (app Expo) vão ao exp.host e NÃO dependem do FCM;
  *    `EXPO_ACCESS_TOKEN` é opcional. Tokens antigos seguem pelo FCM (`FCM_SERVICE_ACCOUNT_JSON`);
  *    sem a credencial do FCM, só eles são ignorados — nunca quebra.
- *  • O conteúdo NUNCA leva contato, sobrenome nem valores — só o evento + o link.
+ *  • O conteúdo NUNCA leva contato, sobrenome nem documento; valores só para quem é parte (texto da decisão da matriz,
+ *    regra-push.ts) — o resto é o evento + o link.
  *  • Nunca atrasa o `notify()`: timeout curto e falha só vira log.
  *  • Token OAuth do Google em cache (~50 min).
  *  • Resposta UNREGISTERED/404 → apaga o token da tabela (limpa aparelho morto).
@@ -101,11 +103,20 @@ interface Conteudo {
   title: string;
   body: string;
   url?: string;
+  /** Prompt 44 (item 6): só para o registro do diagnóstico (push_envios); não vai ao aparelho. */
+  evento?: string;
+}
+
+/** Quantos receberam e quantos tokens mortos foram apagados (diagnóstico do admin, Prompt 44). */
+interface Contagem {
+  enviados: number;
+  mortos: number;
 }
 
 /** Lotes de até 100 para o exp.host; ticket DeviceNotRegistered apaga o token. */
-async function enviarExpo(admin: Admin, tokens: string[], c: Conteudo): Promise<number> {
+async function enviarExpo(admin: Admin, tokens: string[], c: Conteudo): Promise<Contagem> {
   let sent = 0;
+  let mortos = 0;
   const msgs = montarMensagens(tokens, c);
   for (const lote of emLotes(msgs, EXPO_LOTE)) {
     try {
@@ -122,23 +133,27 @@ async function enviarExpo(admin: Admin, tokens: string[], c: Conteudo): Promise<
       }
       const r = lerTickets(lote.map((m) => m.to), await res.json().catch(() => null));
       sent += r.enviados;
-      if (r.mortos.length) await admin.from("push_tokens").delete().in("token", r.mortos);
+      if (r.mortos.length) {
+        mortos += r.mortos.length;
+        await admin.from("push_tokens").delete().in("token", r.mortos);
+      }
     } catch (e) {
       console.error("[push] expo erro:", (e as Error).message);
     }
   }
-  return sent;
+  return { enviados: sent, mortos };
 }
 
-async function enviarFcm(admin: Admin, sa: ServiceAccount, tokens: string[], c: Conteudo): Promise<number> {
+async function enviarFcm(admin: Admin, sa: ServiceAccount, tokens: string[], c: Conteudo): Promise<Contagem> {
   const accessToken = await getAccessToken(sa);
-  if (!accessToken) return 0;
+  if (!accessToken) return { enviados: 0, mortos: 0 };
 
   const endpoint = `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`;
   const data: Record<string, string> = {};
   if (c.url) data.url = c.url;
 
   let sent = 0;
+  let mortos = 0;
   await Promise.allSettled(
     tokens.map(async (token) => {
       try {
@@ -160,6 +175,7 @@ async function enviarFcm(admin: Admin, sa: ServiceAccount, tokens: string[], c: 
         // Token morto → apaga da tabela.
         const txt = await res.text().catch(() => "");
         if (res.status === 404 || /UNREGISTERED|NOT_FOUND/i.test(txt)) {
+          mortos++;
           await admin.from("push_tokens").delete().eq("token", token);
         } else {
           console.error("[push] envio falhou:", res.status, txt.slice(0, 200));
@@ -169,7 +185,23 @@ async function enviarFcm(admin: Admin, sa: ServiceAccount, tokens: string[], c: 
       }
     })
   );
-  return sent;
+  return { enviados: sent, mortos };
+}
+
+/**
+ * Só quem não desligou o push em Conta › Notificações (user_metadata.notif_push). Sem resposta da conta, segue a regra
+ * padrão (ligado), como a das categorias no notify().
+ */
+async function comPushLigado(admin: Admin, userIds: string[]): Promise<string[]> {
+  const unicos = [...new Set(userIds)];
+  const ligados = await Promise.all(
+    unicos.map(async (id) => {
+      const { data, error } = await admin.auth.admin.getUserById(id).catch(() => ({ data: null, error: true }));
+      if (error || !data?.user) return true;
+      return pushLigado(data.user.user_metadata as Record<string, unknown> | undefined);
+    })
+  );
+  return unicos.filter((_, i) => ligados[i]);
 }
 
 /**
@@ -184,6 +216,10 @@ export async function sendPushParaUsuarios(
   if (userIds.length === 0) return { skipped: true };
   const admin = createAdminClient();
   if (!admin) return { skipped: true };
+  // Canal desligado = não envia (A6, Conta › Notificações). Vale para todo push a uma pessoa: notify, adiados das 7h,
+  // avisos da equipe e o teste do admin passam todos por aqui.
+  userIds = await comPushLigado(admin, userIds);
+  if (userIds.length === 0) return { skipped: true };
 
   // Tokens dos usuários (service role ignora RLS para ler os destinos).
   const { data: rows, error } = await admin.from("push_tokens").select("token").in("user_id", userIds);
@@ -191,11 +227,18 @@ export async function sendPushParaUsuarios(
 
   const { expo, fcm } = separarTokens(rows.map((r: { token: string }) => r.token));
   const sa = serviceAccount();
+  const vazio: Contagem = { enviados: 0, mortos: 0 };
   const [a, b] = await Promise.all([
-    expo.length ? enviarExpo(admin, expo, params) : 0,
-    fcm.length && sa ? enviarFcm(admin, sa, fcm, params) : 0,
+    expo.length ? enviarExpo(admin, expo, params) : vazio,
+    fcm.length && sa ? enviarFcm(admin, sa, fcm, params) : vazio,
   ]);
-  return { sent: a + b };
+  const enviados = a.enviados + b.enviados;
+  // Prompt 44 (item 6): o registro do diagnóstico (sem conteúdo). Best-effort: sem a 0227, segue sem registrar.
+  await admin
+    .from("push_envios")
+    .insert({ user_id: userIds.length === 1 ? userIds[0] : null, evento: params.evento ?? null, enviados, falhas: Math.max(0, rows.length - enviados), tokens_mortos: a.mortos + b.mortos })
+    .then(undefined, () => {});
+  return { sent: enviados };
 }
 
 export async function sendPush(params: { userId?: string } & Conteudo): Promise<{ sent: number } | { skipped: true }> {

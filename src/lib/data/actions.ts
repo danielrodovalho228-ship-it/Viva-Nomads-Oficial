@@ -1,17 +1,23 @@
 "use server";
 
+import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
+import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { gravarMarca } from "@/lib/marcas/servidor";
 import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
-import { atualizarRascunhoDoDono } from "@/lib/data/rascunho-dono";
+import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascunho-dono";
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
-import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
+import { colunaVideoArquivo } from "@/lib/video-anuncio";
+import { caminhoDoDono, colunasDeOperacao, tipoDocParaGravar } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { cookies } from "next/headers";
 import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { registrarAtivacao } from "@/lib/ativacao/servidor";
 import type { EligibilityState, QualityState } from "@/lib/qualification";
 import {
   isEligible,
@@ -22,7 +28,8 @@ import {
 } from "@/lib/qualification";
 import { findNearbyWorkspaces } from "@/lib/integrations/places";
 import { notify } from "@/lib/notifications";
-import { listingLimit, PLAN_LABEL } from "@/lib/plan";
+import { ASSUNTOS } from "@/lib/notifications/assuntos";
+import { donoPodeReativar, mensagemLimitePublicar, mensagemLimiteReativar, situacaoLimite, textoDaPausa, type EmAndamento, type SituacaoLimite } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
 import { amenityRows } from "@/lib/amenities";
@@ -31,10 +38,11 @@ import { taxaDoContrato } from "@/config/planos";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
-import { validarAceiteIa } from "@/lib/anuncio/termo-ia";
+import { TERMO_IA_VERSAO, validarAceiteIa } from "@/lib/anuncio/termo-ia";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { salvarDeclaracoesConforto } from "@/lib/conforto/servidor";
+import { confortoParaGravar } from "@/lib/conforto/gravacao";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
-import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { avisarBuscasDoImovel } from "@/lib/data/alerta-busca-servidor";
 import { INTERNET_META } from "@/lib/internet";
@@ -44,13 +52,17 @@ import { colunaAirbnb } from "@/lib/preco-justo";
 import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
 import { prontidaoDoImovel, fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { chegadaDoRascunho, colunasChegadaEPedido, type EntradaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
+import { atribuirLead, garantirCartao } from "@/lib/data/cartoes-servidor";
+import { REF_COOKIE } from "@/lib/cartoes/compartilhar";
 import { scoreAnuncio, type ScoreAnuncio } from "@/lib/anuncio/score";
 import type { Prontidao } from "@/lib/anuncio/prontidao";
-import { guardContactInfo } from "@/lib/messages/contact-guard";
+import { guardContactInfo, DOCUMENTO_BLOQUEADO } from "@/lib/messages/contact-guard";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
+import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
 import { SITE_URL } from "@/lib/site";
-import type { Property } from "@/lib/types";
+import type { Property, Proximity } from "@/lib/types";
 import { hojeBR, dataBR } from "@/lib/utils";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import {
@@ -71,23 +83,38 @@ import {
 } from "@/lib/contrato-blocos";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
+import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
+import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
+import { apagarFotosDoAnuncio, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
+import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
+import { ERRO_SOBREPOSICAO_PG } from "@/lib/contrato-periodo";
 import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
 import { anotarInteresseDoDono, bloqueioPorCidade } from "@/lib/cidades-liberadas/servidor";
 import { MUNICIPIOS } from "@/lib/municipios";
+import { avisarAdminsDocumentoRecebido } from "@/lib/data/aviso-documento-recebido";
+import { aplicarPontoChacara, gravarChacara } from "@/lib/anuncio/chacara-servidor";
+import {
+  caminhoDoDonoValido,
+  documentoJaNaFila,
+  documentoNoSalvar,
+  hashValido,
+  limparTitularDocumento,
+  linhaDoEnvio,
+  salvarNaMesmaLinha,
+  CAMPOS_FIXOS_DA_FILA,
+} from "@/lib/documento/fila-envio";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
 /** Persiste o checklist de qualificação (Fase 4). */
 /** Nome do titular digitado pelo dono (só texto, até 150 caracteres). */
-function limparTitular(v: unknown): string | undefined {
-  const t = String(v ?? "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 150);
-  return t || undefined;
-}
+const limparTitular = limparTitularDocumento;
 
 export async function saveQualification(
   elig: EligibilityState,
@@ -119,6 +146,17 @@ export async function saveQualification(
     if (!prop) return { ok: false, error: "Imóvel não encontrado." };
   }
 
+  // Prompt 35A, item 1: o documento já entrou na fila no ENVIO (enviarDocumentoParaConferencia)? Então esta
+  // linha grava SEM documento e o banco herda o da linha anterior (0072) — sem segundo item na fila nem segundo
+  // aviso. Arquivo que ainda não está na fila segue o caminho de antes (entra "em análise" e avisa).
+  let ultimoQ = supabase.from("qualification_checklists").select("id, document_path, document_status").eq("owner_id", user.id);
+  ultimoQ = propertyId ? ultimoQ.eq("property_id", propertyId) : ultimoQ.is("property_id", null);
+  const { data: ultimo } = documentPath
+    ? await ultimoQ.order("created_at", { ascending: false }).limit(1).maybeSingle()
+    : { data: null };
+  const doc = documentoNoSalvar((ultimo?.document_path as string | null | undefined) ?? null, documentPath ?? null);
+  const docGravado = doc.gravarPath;
+
   const eligible = isEligible(elig);
   const ready_to_live_score = readyToLiveScore(quality);
 
@@ -134,14 +172,14 @@ export async function saveQualification(
     // Caminho do documento no bucket PRIVADO (migration 0041). Só a referência
     // — a exibição usa URL assinada. null quando não enviado: aí o banco herda o
     // documento (e a revisão) da qualificação anterior do mesmo imóvel (0072).
-    document_path: documentPath ?? null,
+    document_path: docGravado,
     // Impressão digital do arquivo (0044) — detecta reuso entre contas na
     // conferência. Carimbo de quando foi enviado (distinto do created_at).
-    document_hash_sha256: documentPath ? (documentHash ?? null) : null,
-    document_uploaded_at: documentPath ? new Date().toISOString() : null,
+    document_hash_sha256: docGravado ? (documentHash ?? null) : null,
+    document_uploaded_at: docGravado ? new Date().toISOString() : null,
     // Anti-fraude (migration 0042): documento enviado entra "em análise"; um
     // admin aprova/recusa. Só aprovado libera Publicar. O banco decide (0060/0072).
-    document_status: documentPath ? "pending" : "none",
+    document_status: docGravado ? "pending" : "none",
     eligible,
     // Selo base + etiquetas (Atualização 11)
     ready_to_live_score,
@@ -153,9 +191,31 @@ export async function saveQualification(
     status: eligible ? "approved" : "not_eligible",
   };
   // O estado completo da tela (0072) — para o /qualificar abrir preenchido.
+  const formulario = { versao: 1, elig: { ...elig, titularDocumento: limparTitular(elig.titularDocumento) }, quality };
+
+  // Prompt 36, item 3a: o envio já pôs ESTE arquivo na fila e ele ainda está em análise → atualiza a MESMA linha
+  // (respostas + formulário com o titular), sem criar outra. O gatilho da 0072 não deixa o dono alterar a linha
+  // gravada; por isso grava pelo cliente de serviço, preso ao id E ao dono, e sem tocar no documento nem na revisão.
+  if (salvarNaMesmaLinha(ultimo, documentPath)) {
+    const servico = createAdminClient();
+    if (servico) {
+      const respostas: Record<string, unknown> = { ...linha };
+      for (const k of CAMPOS_FIXOS_DA_FILA) delete respostas[k];
+      const { data: upd, error: erroUpd } = await servico
+        .from("qualification_checklists")
+        .update({ ...respostas, formulario })
+        .eq("id", ultimo.id)
+        .eq("owner_id", user.id)
+        .eq("document_status", "pending")
+        .select("id");
+      if (!erroUpd && upd?.length) return { ok: true, id: ultimo.id };
+      if (erroUpd) console.error("[saveQualification] falha ao atualizar a linha da fila:", erroUpd.message);
+    }
+  }
+
   let { data, error } = await supabase
     .from("qualification_checklists")
-    .insert({ ...linha, formulario: { versao: 1, elig: { ...elig, titularDocumento: limparTitular(elig.titularDocumento) }, quality } })
+    .insert({ ...linha, formulario })
     .select("id")
     .single();
   // Sem a 0072 aplicada a coluna não existe: grava sem o formulário.
@@ -169,28 +229,73 @@ export async function saveQualification(
     return { ok: false, error: "Não foi possível salvar a qualificação agora. Tente novamente em instantes." };
   }
 
-  // Documento entrou na fila → avisa os admins (best-effort; nunca trava nem
-  // vaza dados do documento — só o fato de que há item para conferir).
-  if (documentPath) {
-    try {
-      // Pelo servidor: a RLS de profiles só mostra o próprio perfil ao dono,
-      // então a lista vinha vazia e o aviso nunca saía.
-      // Só admins que ligaram "receber alertas" na Conta (ordem 27cfd36a).
-      const admins = await adminsPorAviso<{ email: string | null; full_name: string | null; notif_email: boolean | null }>("operacional", "email, full_name, notif_email");
-      for (const a of admins) {
-        if (a.email && a.notif_email !== false) {
-          await notify({
-            event: "documento_recebido",
-            email: a.email as string,
-            name: (a.full_name as string) ?? undefined,
-            pushUrl: "/admin/documentos",
-          });
-        }
-      }
-    } catch {
-      /* best-effort */
-    }
+  // Documento NOVO entrou na fila → avisa os admins (best-effort; nunca trava nem
+  // vaza dados do documento — só o fato de que há item para conferir). Só
+  // admins que ligaram "receber alertas" na Conta (ordem 27cfd36a).
+  if (doc.avisarAdmins) await avisarAdminsDocumentoRecebido();
+  return { ok: true, id: (data as { id: string }).id };
+}
+
+/**
+ * Prompt 35A, item 1 — DOCUMENTO ENFILEIRADO NO ENVIO. Chamada pelo /qualificar logo depois do
+ * /api/upload/documento: grava a linha da qualificação com o documento "em análise" (document_status 'pending',
+ * caminho, impressão digital e data do envio), herdando as respostas da qualificação anterior do MESMO imóvel, e
+ * avisa os admins (documento_recebido). Assim o documento entra na fila de /admin/documentos mesmo que a pessoa
+ * saia da tela sem concluir. Sem imóvel (`propertyId` nulo): a linha fica à espera e se liga ao próximo imóvel
+ * criado (mesma regra do saveQualification); a fila mostra "Documento sem imóvel ligado".
+ * Idempotente: o mesmo arquivo já na fila não cria outra linha nem outro aviso. Grava com o cliente da pessoa —
+ * o banco força o 'pending' e confere o imóvel (0060/0072).
+ */
+export async function enviarDocumentoParaConferencia(
+  propertyId: string | null,
+  path: string,
+  hash: string | null,
+  /** Prompt 36, item 3a: o nome do titular escrito no campo NO MOMENTO do envio (vai para formulario.elig). */
+  titularDocumento?: string | null
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre na sua conta para enviar o documento." };
+  if (!caminhoDoDonoValido(path, user.id)) return { ok: false, error: "Documento inválido. Envie o arquivo de novo." };
+  if (propertyId) {
+    if (!UUID_RE.test(propertyId)) return { ok: false, error: "Imóvel inválido." };
+    const { data: prop } = await supabase
+      .from("properties")
+      .select("id")
+      .eq("id", propertyId)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (!prop) return { ok: false, error: "Imóvel não encontrado." };
   }
+  if (!(await dentroDoLimite(`doc-fila:${user.id}`, 30, DIA_SEGUNDOS))) {
+    return { ok: false, error: "Muitos envios de documento hoje. Tente novamente amanhã." };
+  }
+
+  // Respostas da qualificação anterior do MESMO imóvel (ou da que está à espera): a linha nova só troca o documento.
+  let q = supabase.from("qualification_checklists").select("*").eq("owner_id", user.id);
+  q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
+  const { data: anterior } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (anterior && documentoJaNaFila(anterior.document_path as string | null, path)) {
+    return { ok: true, id: anterior.id as string };
+  }
+
+  const linha = linhaDoEnvio((anterior as Record<string, unknown> | null) ?? null, {
+    ownerId: user.id,
+    propertyId: propertyId ?? null,
+    path,
+    hash: hashValido(hash),
+    agora: new Date(),
+    titular: titularDocumento,
+  });
+  const { data, error } = await supabase.from("qualification_checklists").insert(linha).select("id").single();
+  if (error || !data) {
+    console.error("[enviarDocumentoParaConferencia] falha ao gravar:", error?.message ?? "sem linha");
+    return { ok: false, error: "Não foi possível colocar o documento na fila de conferência agora. Tente de novo." };
+  }
+  await avisarAdminsDocumentoRecebido();
   return { ok: true, id: (data as { id: string }).id };
 }
 
@@ -324,6 +429,8 @@ export interface PropertyInput {
   ownershipType?: "own" | "subleased" | "managed";
   subleaseAuthorized?: boolean;
   subleaseDocUrl?: string;
+  /** Administrado: "contrato_gestao" ou "procuracao" (0234). */
+  subleaseDocTipo?: string;
   /** Privacidade e acesso (ordem f92bc582). Ausente = não mexe no que já está gravado. */
   semCamerasInterior?: boolean;
   camerasExternas?: string;
@@ -342,6 +449,8 @@ export interface PropertyInput {
   lng?: number;
   photoUrls?: string[];
   videoUrl?: string;
+  /** Vídeo enviado (ordem 8681ae95): caminho "<uid>/<arquivo>" no bucket anuncio-videos. Ausente = não mexe; "" = remove. */
+  videoArquivo?: string;
   /**
    * Salvar como rascunho (não publicar). Padrão: false = publica direto.
    * Publicar grava status "active" — é o que torna o imóvel visível na busca
@@ -351,6 +460,13 @@ export interface PropertyInput {
   asDraft?: boolean;
   /** Aceite do termo de IA (obrigatório ao publicar; validado e gravado no servidor). */
   aceiteIa?: unknown;
+  /**
+   * Prompt 59: chaves do padrão mínimo de conforto que o dono marcou (gravadas no servidor antes do portão).
+   * 59-C1: só vale com `confortoMexido: true` (o dono mexeu no checklist nesta sessão, depois de carregar o que já
+   * estava salvo). Ausente = não mexe; nunca desmarca por omissão.
+   */
+  confortoConfirmados?: string[];
+  confortoMexido?: boolean;
   // ── Enriquecimento (FASE 1/2) — gravados best-effort (requer migrações 0018/0019) ──
   parkingSpots?: number;
   condoFee?: number;
@@ -364,6 +480,19 @@ export interface PropertyInput {
   petsRegras?: unknown;
   /** Pacote de limpeza durante a estadia; validado no servidor (0144). */
   limpezaEstadia?: unknown;
+  /** CAMPOS-1: regras da casa estruturadas (silêncio, fumo, festas, visitas); validadas no servidor (0233). */
+  regrasCasa?: unknown;
+  /** CAMPOS-2: detalhes opcionais do anúncio (só os grupos ligados); validados no servidor (0235). */
+  detalhesAnuncio?: unknown;
+  /**
+   * Rua, número e complemento (complemento do prompt 23): vão para a coluna RESTRITA exact_address (nunca pública;
+   * lida só pelo dono, admin, inquilino aceito e o morador de visita presencial confirmada). Vazio = não mexe.
+   */
+  enderecoExato?: string;
+  /** PERTO-B: o endereço do anúncio para calcular a distância dos lugares (CEP, rua, número, cidade, UF). */
+  enderecoProximidades?: EnderecoDoAnuncio;
+  /** TIPO-CHACARA-B: acesso, tipo de internet e o ponto marcado pelo dono (só para o tipo chácara/sítio). */
+  chacara?: { acesso?: string; internet?: string; ponto?: { lat: number; lng: number } | null } | null;
   /** Negociação pública do anúncio (0152), validada em lib/anuncio/negociacao. */
   negociacao?: unknown;
   /** Limites PRIVADOS da negociação (0152): só o dono lê; nunca vão ao anúncio. */
@@ -372,13 +501,19 @@ export interface PropertyInput {
   internetMbps?: unknown;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
+  /** 61-B (0225): tipo de entrada (público), mensagem a quem vai pedir e "o que considerar antes de pedir". */
+  tipoEntrada?: string | null;
+  mensagemParaPedido?: string | null;
+  considerarAntes?: string[];
+  considerarAntesTexto?: string | null;
   maxGuests?: number;
   /** Chaves de comodidade selecionadas (catálogo único). */
   amenityKeys?: string[];
   /** Proximidades Google curadas (só place_id + categoria + rótulo). */
   googlePlaces?: { placeId: string; categoria: string; rotulo?: string }[];
   /** Proximidades manuais (nome + distância digitados). */
-  proximities?: { category: string; name: string; note?: string }[];
+  /** PERTO-B: lugares do OSM (origem "osm", conferidos no servidor pela busca do CEP) e manuais (com o endereço do lugar). */
+  proximities?: Proximity[];
 }
 
 /**
@@ -409,6 +544,26 @@ async function gravarPrivacidade(
     if (error) console.error("[gravarPrivacidade]", error.code, error.message);
   } catch (e) {
     console.error("[gravarPrivacidade] erro:", e);
+  }
+}
+
+/**
+ * 61-B: tipo de entrada, mensagem a quem vai pedir e "o que considerar" em UPDATE à parte (como a privacidade): sem a
+ * 0225 o erro é só logado. A forma já foi validada por colunasChegadaEPedido antes de gravar o resto.
+ */
+async function gravarChegadaEPedido(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  id: string,
+  entrada: EntradaChegadaEPedido
+): Promise<void> {
+  const r = colunasChegadaEPedido(entrada);
+  if (!r.ok || Object.keys(r.colunas).length === 0) return;
+  try {
+    const { error } = await supabase.from("properties").update(r.colunas).eq("id", id).eq("owner_id", ownerId);
+    if (error) console.error("[gravarChegadaEPedido]", error.code, error.message);
+  } catch (e) {
+    console.error("[gravarChegadaEPedido] erro:", e);
   }
 }
 
@@ -451,16 +606,39 @@ async function exigirAceiteIa(
   supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
   propertyId: string,
   aceiteIa: unknown,
+  ownerId: string,
 ): Promise<string | null> {
   const v = validarAceiteIa(aceiteIa);
-  if (!v.ok) return "Marque a confirmação de que você revisou o anúncio para publicar.";
+  // L2-B item 23: quem já aceitou a versão atual (termo_ia_aceites) não marca de novo; o servidor confere aqui, nunca
+  // pela palavra do navegador.
+  const jaAceitou = v.ok ? false : await termoIaAceitoNoServidor(supabase, ownerId);
+  if (!v.ok && !jaAceitou) return "Marque a confirmação de que você revisou o anúncio para publicar.";
+  const aceite = v.ok ? v.aceite : { versao: TERMO_IA_VERSAO, camposGeradosIa: [], camposEditados: [] };
   const { error } = await supabase.from("anuncio_aceites_ia").insert({
     property_id: propertyId,
-    versao_termo: v.aceite.versao,
-    campos_gerados_ia: v.aceite.camposGeradosIa,
-    campos_editados: v.aceite.camposEditados,
+    versao_termo: aceite.versao,
+    campos_gerados_ia: aceite.camposGeradosIa,
+    campos_editados: aceite.camposEditados,
   });
-  return error ? "Não foi possível registrar a sua confirmação. Tente novamente." : null;
+  if (error) return "Não foi possível registrar a sua confirmação. Tente novamente.";
+  if (v.ok) await gravarAceiteTermoIa(supabase, ownerId);
+  return null;
+}
+
+/** O dono já aceitou a versão ATUAL do termo (L2-B item 23)? Sem a 0241 aplicada: não (pede a caixa, como antes). */
+async function termoIaAceitoNoServidor(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, ownerId: string): Promise<boolean> {
+  const { data, error } = await supabase.from("termo_ia_aceites").select("versao").eq("user_id", ownerId).eq("versao", TERMO_IA_VERSAO).maybeSingle();
+  return !error && !!data;
+}
+
+/** Grava o aceite do dono para a versão atual (uma linha por versão; repetir não é erro). Best-effort. */
+async function gravarAceiteTermoIa(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, ownerId: string): Promise<void> {
+  try {
+    if (await termoIaAceitoNoServidor(supabase, ownerId)) return;
+    await supabase.from("termo_ia_aceites").insert({ user_id: ownerId, versao: TERMO_IA_VERSAO });
+  } catch {
+    /* 0241 ausente: o aceite por anúncio continua valendo */
+  }
 }
 
 /**
@@ -541,11 +719,15 @@ export async function carregarLimitesNegociacao(id: string): Promise<{ valorMini
   }
 }
 
-export async function createProperty(input: PropertyInput): Promise<ActionResult> {
+export async function createProperty(entrada: PropertyInput): Promise<ActionResult> {
+  // TIPO-CHACARA-B: o ponto marcado pelo dono vale no lugar da geocodificação do endereço.
+  const input = aplicarPontoChacara(entrada);
   // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
   }
+  const chegada = colunasChegadaEPedido(input);
+  if (!chegada.ok) return { ok: false, error: chegada.erro };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -596,6 +778,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       property_type: input.propertyType,
       city: input.city,
       address: input.neighborhood,
+      ...colunaEnderecoExato(input.enderecoExato),
       lat: input.lat ?? null,
       lng: input.lng ?? null,
       bedrooms: input.bedrooms,
@@ -612,11 +795,10 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       tag_home_office: input.tagHomeOffice ?? false,
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
-      ownership_type: operacaoValida(input.ownershipType) ? input.ownershipType : "own",
-      sublease_authorized:
-        (input.ownershipType ?? "own") === "own" ? true : input.subleaseAuthorized ?? false,
+      ...colunasDeOperacao(input.ownershipType, input.subleaseAuthorized),
       // Só um arquivo da PASTA DO DONO no bucket privado (nunca link externo/preview local).
       sublease_doc_url: caminhoDoDono(input.subleaseDocUrl, user.id) ? input.subleaseDocUrl! : null,
+      sublease_doc_tipo: tipoDocParaGravar(input.ownershipType, input.subleaseDocTipo),
       utilities_mode: input.utilitiesMode ?? "fixed",
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,
@@ -624,6 +806,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
       video_url: input.videoUrl?.trim() || null,
+      ...colunaVideoArquivo(input.videoArquivo, user.id),
     })
     .select("id")
     .single();
@@ -659,6 +842,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     /* migração 0018/0019/0020 ausente — segue sem os campos extras */
   }
   await gravarPrivacidade(supabase, user.id, data.id as string, input);
+  await gravarChegadaEPedido(supabase, user.id, data.id as string, input);
 
   // Comodidades por categoria (catálogo único). Best-effort.
   if (input.amenityKeys && input.amenityKeys.length > 0) {
@@ -679,21 +863,13 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     }
   }
 
-  // Proximidades manuais (nome + distância). Best-effort.
-  if (input.proximities && input.proximities.length > 0) {
-    try {
-      await supabase.from("property_proximities").insert(
-        input.proximities.map((p, i) => ({
-          property_id: data.id,
-          category: p.category,
-          name: p.name,
-          note: p.note ?? null,
-          sort_order: i,
-        }))
-      );
-    } catch {
-      /* tabela ausente — segue sem proximidades */
-    }
+  // PERTO-B: proximidades com distância/tempo CALCULADOS no servidor (OSM do CEP + endereço do lugar manual). Best-effort.
+  // Sempre passa por aqui (mesmo sem lugar): o CEP fica guardado para a busca da edição.
+  try {
+    const admin = createAdminClient();
+    await gravarProximidades(supabase, data.id, await proximidadesParaGravar(admin, data.id, input.proximities ?? [], input.enderecoProximidades), admin, input.enderecoProximidades?.cep);
+  } catch {
+    /* tabela ausente — segue sem proximidades */
   }
 
   // Persiste as fotos enviadas ao Storage (a primeira é a capa). Ignora URLs
@@ -710,6 +886,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
         }))
       );
       if (error) console.error("[createProperty] falha ao gravar fotos:", error.message);
+      else await ligarHashesAoImovel(createAdminClient(), data.id, persistableUrls);
     } catch (e) {
       console.error("[createProperty] erro ao gravar fotos:", e);
     }
@@ -740,10 +917,17 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       .eq("owner_id", user.id)
       .is("property_id", null);
   }
+  await gravarChacara(supabase, user.id, data.id as string, input);
+  const confortoNovo = confortoParaGravar(input.confortoConfirmados, input.confortoMexido);
+  if (confortoNovo) {
+    // O imóvel acabou de ser criado por este dono (a RLS conferiu): o servidor grava a confirmação.
+    const adm = createAdminClient();
+    if (adm) await salvarDeclaracoesConforto(adm, data.id as string, user.id, confortoNovo);
+  }
   if (!input.asDraft) {
     const falta = await faltaParaPublicar(supabase, user.id, data.id as string);
     if (falta) return { ok: false, id: data.id, error: `${falta} O anúncio ficou salvo como rascunho.` };
-    const semAceite = await exigirAceiteIa(supabase, data.id as string, input.aceiteIa);
+    const semAceite = await exigirAceiteIa(supabase, data.id as string, input.aceiteIa, user.id);
     if (semAceite) return { ok: false, id: data.id, error: `${semAceite} O anúncio ficou salvo como rascunho.` };
   }
   const { error: stErr } = await supabase
@@ -784,11 +968,18 @@ export async function loadPropertyForEdit(id: string): Promise<Property | null> 
  * (comodidades, proximidades, fotos) apagando e regravando. Best-effort nas
  * tabelas de enriquecimento — migração ausente não derruba a edição base.
  */
-export async function updateProperty(id: string, input: PropertyInput): Promise<ActionResult> {
+export async function updateProperty(id: string, entrada: PropertyInput): Promise<ActionResult> {
+  // TIPO-CHACARA-B: o ponto marcado pelo dono vale no lugar da geocodificação do endereço.
+  const input = aplicarPontoChacara(entrada);
+  if (!periodoDisponivelValido(input.availableFrom, input.availableUntil)) {
+    return { ok: false, error: MSG_DISPONIVEL_ATE_ANTES };
+  }
   // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
   }
+  const chegada = colunasChegadaEPedido(input);
+  if (!chegada.ok) return { ok: false, error: chegada.erro };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -828,7 +1019,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
 
   // Status ANTES da edição: só a PUBLICAÇÃO (rascunho/pausado → ativo) avisa
   // os pedidos compatíveis — editar um anúncio já ativo não reenvia avisos.
-  const { data: antes } = await supabase.from("properties").select("status").eq("id", id).maybeSingle();
+  const { data: antes } = await supabase.from("properties").select("status, owner_id").eq("id", id).maybeSingle();
 
   // Fotos ANTES do status: o banco só deixa publicar com 8 fotos gravadas em
   // property_photos (0009). Antes elas eram regravadas DEPOIS da mudança para
@@ -843,6 +1034,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       property_type: input.propertyType,
       city: input.city,
       address: input.neighborhood,
+      ...colunaEnderecoExato(input.enderecoExato),
       lat: input.lat ?? null,
       lng: input.lng ?? null,
       bedrooms: input.bedrooms,
@@ -856,13 +1048,14 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       tag_home_office: input.tagHomeOffice ?? false,
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
-      ownership_type: operacaoValida(input.ownershipType) ? input.ownershipType : "own",
-      sublease_authorized:
-        (input.ownershipType ?? "own") === "own" ? true : input.subleaseAuthorized ?? false,
+      ...colunasDeOperacao(input.ownershipType, input.subleaseAuthorized),
       // Só grava o documento da operação quando o dono enviou um nesta edição.
       // A edição não recarrega esse campo — mandar null por ausência APAGAVA o
       // documento a cada edição (mesmo padrão do risco do endereço).
       ...(caminhoDoDono(input.subleaseDocUrl, user.id) ? { sublease_doc_url: input.subleaseDocUrl } : {}),
+      // O tipo acompanha a operação (próprio zera; sublocação é "autorizacao"). Administrado sem tipo enviado nesta
+      // edição não mexe no que já está gravado (a edição não recarrega o campo, como o documento).
+      ...(input.ownershipType === "managed" && !input.subleaseDocTipo ? {} : { sublease_doc_tipo: tipoDocParaGravar(input.ownershipType, input.subleaseDocTipo) }),
       utilities_mode: input.utilitiesMode ?? "fixed",
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,
@@ -870,6 +1063,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
       video_url: input.videoUrl?.trim() || null,
+      ...colunaVideoArquivo(input.videoArquivo, user.id),
     })
     .eq("id", id)
     .eq("owner_id", user.id);
@@ -906,6 +1100,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     /* migração ausente — segue sem os campos extras */
   }
   await gravarPrivacidade(supabase, user.id, id, input);
+  await gravarChegadaEPedido(supabase, user.id, id, input);
 
   // Regras de pets (0119): validadas aqui; só vale com "aceita pets" marcado.
   try {
@@ -924,6 +1119,42 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       /* migração 0144 ausente — segue sem o pacote */
     }
   }
+
+  // Regras da casa estruturadas (0233): validadas aqui; nada definido grava null. O fumo definido
+  // também acerta o smoking_allowed antigo (só "permitido" é fumar no imóvel), que outras telas leem.
+  if ("regrasCasa" in input) {
+    try {
+      const regras = normalizarRegrasCasa(input.regrasCasa);
+      const fumante = fumoParaSmokingAllowed(regras);
+      await supabase
+        .from("properties")
+        .update({ regras_casa: regras, ...(fumante !== undefined ? { smoking_allowed: fumante } : {}) })
+        .eq("id", id)
+        .eq("owner_id", user.id);
+    } catch {
+      /* migração 0233 ausente — segue com os fatos antigos */
+    }
+  }
+
+  // Detalhes opcionais (0235): validados aqui; grupo desligado não vem, nada definido grava null.
+  if ("detalhesAnuncio" in input) {
+    try {
+      // TIPO-CHACARA-B: o grupo do tipo não vem do formulário de detalhes (não tem toggle): mantém o gravado.
+      const { data: det } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", user.id).maybeSingle();
+      const chacaraGravada = normalizarDetalhes(det?.detalhes_anuncio)?.chacara;
+      // O grupo do formulário de detalhes nunca traz "chacara" (nem distância): se vier, é descartado.
+      const { chacara: _ignorada, ...novos } = normalizarDetalhes(input.detalhesAnuncio) ?? {};
+      void _ignorada;
+      await supabase
+        .from("properties")
+        .update({ detalhes_anuncio: normalizarDetalhes({ ...novos, ...(chacaraGravada ? { chacara: chacaraGravada } : {}) }) })
+        .eq("id", id)
+        .eq("owner_id", user.id);
+    } catch {
+      /* migração 0235 ausente — segue sem os detalhes */
+    }
+  }
+  await gravarChacara(supabase, user.id, id, input);
 
   await gravarNegociacao(supabase, user.id, id, input);
 
@@ -945,21 +1176,24 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       sort_order: i,
     }))
   );
-  await resync(
-    "property_proximities",
-    (input.proximities ?? []).map((p, i) => ({
-      property_id: id,
-      category: p.category,
-      name: p.name,
-      note: p.note ?? null,
-      sort_order: i,
-    }))
-  );
+  // PERTO-B: distância/tempo calculados no servidor; "não mostrar" guardado.
+  try {
+    const admin = createAdminClient();
+    await gravarProximidades(supabase, id, await proximidadesParaGravar(admin, id, input.proximities ?? [], input.enderecoProximidades), admin, input.enderecoProximidades?.cep);
+  } catch {
+    /* tabela ausente — ignora */
+  }
 
   // Só (re)publica se for explicitamente "Publicar"; "Salvar rascunho" não
   // despublica um anúncio já ativo. Publica DEPOIS de salvar tudo e de passar
   // pela prontidão (fonte única). Ao publicar, ZERA o draft_data (ele guarda a
   // rua exata e a linha fica pública — C4/T1).
+  const confortoEditado = confortoParaGravar(input.confortoConfirmados, input.confortoMexido);
+  if (confortoEditado && antes?.owner_id === user.id) {
+    // Só o dono do imóvel: o servidor grava a confirmação do padrão mínimo (Prompt 59).
+    const adm = createAdminClient();
+    if (adm) await salvarDeclaracoesConforto(adm, id, user.id, confortoEditado);
+  }
   if (input.asDraft === false) {
     if (antes?.status !== "active") {
       const fechada = await cidadeFechada(supabase, user.id, input.city);
@@ -968,7 +1202,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     const falta = await faltaParaPublicar(supabase, user.id, id);
     if (falta) return { ok: false, id, error: `${falta} Suas alterações foram salvas.` };
     if (antes?.status !== "active") {
-      const semAceite = await exigirAceiteIa(supabase, id, input.aceiteIa);
+      const semAceite = await exigirAceiteIa(supabase, id, input.aceiteIa, user.id);
       if (semAceite) return { ok: false, id, error: `${semAceite} Suas alterações foram salvas.` };
     }
     const { error: pubErr } = await supabase
@@ -977,6 +1211,8 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       .eq("id", id)
       .eq("owner_id", user.id);
     if (pubErr) return { ok: false, id, error: erroBancoPT(pubErr) };
+    // Prompt 50: o 1º anúncio publicado ativa o proprietário (1× por papel).
+    await registrarAtivacao(user.id, "proprietario");
   }
 
   // Página pública do anúncio não pode ficar presa em cache (F9).
@@ -989,9 +1225,18 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     } catch {
       /* best-effort */
     }
+    // Cartão do anúncio (cartões compartilháveis, T2): nasce ao publicar e fica em Meus imóveis → Cartão.
+    const adm = createAdminClient();
+    if (adm) await garantirCartao(adm, { tipo: "ownercard", usuarioId: user.id, propertyId: id }).catch(() => null);
   }
 
   return { ok: true, id };
+}
+
+/** exact_address só quando o formulário mandou a rua (vazio nunca apaga o que já estava gravado). */
+function colunaEnderecoExato(v: string | undefined): { exact_address?: string } {
+  const t = typeof v === "string" ? v.trim().slice(0, 300) : "";
+  return t ? { exact_address: t } : {};
 }
 
 /** Adiciona ou remove um imóvel dos favoritos do inquilino. */
@@ -1106,7 +1351,7 @@ const FAIXAS_CONTRATO = new Set(["temporada", "media_estadia", "longa"]);
  */
 export async function registrarContrato(
   input: ContratoInput
-): Promise<ActionResult & { blocos?: number }> {
+): Promise<ActionResult & { blocos?: number; existente?: boolean }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -1117,7 +1362,7 @@ export async function registrarContrato(
 
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, owner_id, tenant_id, property_id, accepted_plan, accepted_commission_rate")
+    .select("id, owner_id, tenant_id, property_id")
     .eq("id", input.leadId)
     .eq("owner_id", user.id)
     .eq("status", "accepted")
@@ -1128,7 +1373,8 @@ export async function registrarContrato(
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
   const { data: existente } = await admin.from("contratos").select("id").eq("lead_id", lead.id).maybeSingle();
-  if (existente) return { ok: true, id: existente.id as string, blocos: 0 };
+  // Prompt 28: avisa que o contrato JÁ existia (o Resumo mostra "gerado em" e o estado real dele).
+  if (existente) return { ok: true, id: existente.id as string, blocos: 0, existente: true };
 
   // F32: o contrato nasce só com o documento das DUAS partes e os documentos do
   // inquilino — a trava vale aqui no servidor, não só na tela do fechamento.
@@ -1161,15 +1407,23 @@ export async function registrarContrato(
   const inicio = validarInicioEstadia(input.inicioISO, hojeBR());
   if (!inicio.ok) return { ok: false, error: inicio.error };
 
-  const plano = (lead.accepted_plan as string) ?? "free";
+  // Plano e taxa do aceite pelo servidor (a sessão não lê mais essas colunas — 0177); o dono já foi conferido acima.
+  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
+  const plano = taxaLead?.acceptedPlan ?? "free";
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
-  const rate = taxaDoContrato(lead.accepted_commission_rate, lead.accepted_plan);
+  const rate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
   const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
   const resumo = resumoContrato(prazo, aluguel, rate, tamanho);
   // Garantia única: o servidor confere a escolha (fiança só ligada e na faixa de prazo).
   const garantia: GarantiaContrato = input.garantia === "seguro_fianca" ? "seguro_fianca" : "caucao";
   const okGarantia = validarGarantia(garantia, resumo.prazoTotalMeses * DIAS_POR_MES);
   if (!okGarantia.ok) return { ok: false, error: okGarantia.error };
+
+  // Disponibilidade por datas (0176): o período inteiro (1º início ao último fim) não pode cruzar outro contrato ativo.
+  const comDatas = encadearDatas(input.inicioISO, resumo.blocos);
+  const periodo = { inicio: comDatas[0]?.inicio ?? input.inicioISO, fim: comDatas[comDatas.length - 1]?.fim ?? input.inicioISO };
+  const conflito = await conflitoNoImovel(admin, lead.property_id as string, periodo);
+  if (conflito) return { ok: false, error: conflito };
 
   const { data: contrato, error: cErr } = await admin
     .from("contratos")
@@ -1187,12 +1441,18 @@ export async function registrarContrato(
       qtd_ocupantes: ocupantes,
       capacidade_snapshot: input.capacidadeSnapshot ?? null,
       garantia,
+      // O período já nasce no contrato: o banco recusa a sobreposição antes dos blocos (o gatilho o mantém depois).
+      periodo: `[${periodo.inicio},${periodo.fim}]`,
     })
     .select("id")
     .single();
-  if (cErr) return { ok: false, error: "Não foi possível registrar o contrato." };
+  if (cErr) {
+    // Corrida com outro contrato gravado entre a checagem e o insert: o EXCLUDE da 0176 recusa.
+    if (cErr.code === ERRO_SOBREPOSICAO_PG)
+      return { ok: false, error: (await conflitoNoImovel(admin, lead.property_id as string, periodo)) ?? "Este imóvel já tem contrato nessas datas. Escolha outra data de entrada." };
+    return { ok: false, error: "Não foi possível registrar o contrato." };
+  }
 
-  const comDatas = encadearDatas(input.inicioISO, resumo.blocos);
   const rows = comDatas.map((b: BlocoComDatas, i) => ({
     contrato_id: contrato!.id,
     numero_bloco: b.numero,
@@ -1210,6 +1470,25 @@ export async function registrarContrato(
   const { error: bErr } = await admin.from("contrato_blocos").insert(rows);
   // Best-effort: o contrato-mãe já existe mesmo se a inserção dos blocos falhar.
   if (acordada) await marcarPropostaEmContrato(admin, lead.id as string).catch(() => {});
+  // Prompt 24: o contrato aparece nos dois lados e o inquilino é avisado (na conta de teste, na caixa de teste).
+  const contratoNovoId = contrato!.id as string;
+  after(async () => {
+    try {
+      const { data: pessoa } = await admin.auth.admin.getUserById(lead.tenant_id as string);
+      await notify({
+        event: "contract_status",
+        email: pessoa?.user?.email ?? undefined,
+        userId: lead.tenant_id as string,
+        pushUrl: `/dashboard/locacoes/${contratoNovoId}`,
+        subject: ASSUNTOS.contratoPronto,
+      });
+    } catch {
+      /* aviso é best-effort: o contrato já está registrado */
+    }
+  });
+  revalidatePath("/dashboard/contratos");
+  revalidatePath("/dashboard/locacoes");
+  revalidatePath("/dashboard/candidaturas");
   if (bErr) return { ok: true, id: contrato!.id, blocos: 0, error: erroBancoPT(bErr) };
   return { ok: true, id: contrato!.id, blocos: rows.length };
 }
@@ -1324,7 +1603,12 @@ export async function renovarBloco(
       status: "pendente_aceite",
       [colunaAceite]: new Date().toISOString(),
     });
-    if (bErr) return { ok: false, error: "Não foi possível propor a renovação." };
+    if (bErr) {
+      // O novo bloco cruzaria o contrato do próximo morador (0176).
+      if (bErr.code === ERRO_SOBREPOSICAO_PG)
+        return { ok: false, error: (await conflitoNoImovel(admin, contrato.property_id as string, { inicio, fim }, contratoId)) ?? "O imóvel já tem outro contrato nessas datas. Não dá para renovar." };
+      return { ok: false, error: "Não foi possível propor a renovação." };
+    }
     aguardando = true;
   }
 
@@ -1546,6 +1830,13 @@ export async function requestLead(
       if (leadErr && leadErr.code !== "23505") {
         console.error("[requestLead] falha ao gravar lead:", leadErr.message);
       }
+      // Cartões compartilháveis: a visita veio de um QR/link assinado deste imóvel? O lead guarda a atribuição.
+      if (!leadErr) {
+        const adm = createAdminClient();
+        if (adm) await atribuirLead(adm, { propertyId, tenantId: user.id, cookieValor: (await cookies()).get(REF_COOKIE)?.value }).catch(() => false);
+        // Prompt 50: o 1º pedido enviado ativa o morador (1× por papel).
+        await registrarAtivacao(user.id, "morador", new Date(), adm);
+      }
       const conversationId = idConversa(user.id, ownerId, propertyId);
       // Mensagem do inquilino: usa o texto que ele escreveu (dúvida/horários),
       // com contato mascarado (regra de ouro — nada de telefone/e-mail no chat
@@ -1577,7 +1868,8 @@ export async function requestLead(
       name: tenantName,
     });
     await notify({
-      event: "new_lead",
+      // Prompt 23: candidatura tem e-mail próprio ("Nova candidatura no seu imóvel"); dúvida/visita seguem como interessado.
+      event: kind === "candidatura" ? "candidatura_nova" : "new_lead",
       email: ownerEmail ?? undefined,
       phone: ownerPhone ?? undefined,
       name: ownerName ?? undefined,
@@ -1597,9 +1889,12 @@ export async function sendMessage(input: {
   receiverId?: string;
   propertyId?: string;
   body: string;
+  /** Prompt 55-E2: texto vindo de uma resposta rápida — com contato direto, BLOQUEIA (não mascara). */
+  respostaRapida?: boolean;
 }): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true, id: input.conversationId };
+  if (input.respostaRapida && temContato(input.body)) return { ok: false, error: MSG_CONTATO_BLOQUEADO };
 
   const {
     data: { user },
@@ -1613,7 +1908,9 @@ export async function sendMessage(input: {
   // Proteção de contato: telefones/e-mails/links de mensageria são mascarados
   // ANTES de gravar — a negociação fica registrada na plataforma e o contato
   // direto só é liberado no fluxo oficial (após o aceite do proprietário).
-  const { text: safeBody } = guardContactInfo(input.body);
+  const { text: safeBody, documento } = guardContactInfo(input.body);
+  // Prompt 32: CPF/RG não vai pelo chat (nem mascarado) — vai no campo Ocupantes da estadia.
+  if (documento) return { ok: false, error: `${DOCUMENTO_BLOQUEADO}.` };
 
   const { data: gravada, error } = await supabase
     .from("messages")
@@ -1657,23 +1954,30 @@ export async function sendMessage(input: {
       !!contact?.email &&
       (await dentroDoLimite(`msg-email:${conversationId}:${destinatarioId}`, 1, 30 * 60)) &&
       (await dentroDoLimite(`msg-email-remetente:${user.id}`, 30, HORA));
-    if (contact?.email && podeAvisar) {
-      const { data: me } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .maybeSingle();
-      // Identidade pós-aceite: só o PRIMEIRO nome no e-mail (nunca o sobrenome).
-      const senderName = (me?.full_name ?? "").trim().split(/\s+/)[0] || "Um usuário";
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    // Identidade pós-aceite: só o PRIMEIRO nome no e-mail (nunca o sobrenome).
+    const senderName = (me?.full_name ?? "").trim().split(/\s+/)[0] || "Um usuário";
+    // Prompt 44: o push da mensagem nova não depende do limite do e-mail. O notify() decide pela matriz: sem push com a
+    // conversa aberta há menos de 10 min, agrupado por conversa ("3 mensagens novas de Ana") e sem o texto.
+    const comEmail = !!contact?.email && podeAvisar;
+    const link = `${SITE_URL}/dashboard/mensagens`;
+    if (comEmail || contact) {
       // Nome e prévia são texto do USUÁRIO: sem HTML ativo e sem links no e-mail.
       const nomeHtml = textoEmail(senderName, 40);
       const previewHtml = textoEmail(safeBody, 140);
       const previewTexto = textoPlano(safeBody, 140);
-      const link = `${SITE_URL}/dashboard/mensagens`;
       await notify({
         event: "new_message",
-        email: contact.email,
-        name: contact.full_name ?? undefined,
+        email: comEmail ? (contact!.email as string) : undefined,
+        name: contact?.full_name ?? undefined,
+        userId: destinatarioId,
+        pushUrl: "/dashboard/mensagens",
+        conversationId,
+        remetenteNome: senderName,
         detailsHtml:
           `<p><strong>${nomeHtml}</strong> escreveu:</p>` +
           `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">${previewHtml}</blockquote>` +
@@ -1702,6 +2006,9 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
 
+  // Prompt 58: as fotos saem do bucket com o anúncio (o hash fica, antifraude). Só as do próprio dono.
+  const { data: dono } = await supabase.from("properties").select("id").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const { data: fotos } = dono ? await supabase.from("property_photos").select("url").eq("property_id", id) : { data: null };
   for (const table of ["property_photos", "property_amenities", "property_proximities"]) {
     try {
       await supabase.from(table).delete().eq("property_id", id);
@@ -1711,6 +2018,7 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   }
   const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
   if (error) return { ok: false, error: erroBancoPT(error) };
+  if (fotos?.length) await apagarFotosDoAnuncio(createAdminClient(), (fotos as { url: string }[]).map((f) => f.url));
   revalidarAnuncio(id, revalidatePath);
   return { ok: true };
 }
@@ -1729,6 +2037,11 @@ export async function countMyDrafts(): Promise<number> {
     .eq("owner_id", user.id)
     .eq("status", "draft");
   return count ?? 0;
+}
+
+/** Operação guardada no estado do editor (draft_data). */
+function rascunhoOperacao(d: unknown): { ownershipType?: unknown; subleaseAuthorized?: unknown } {
+  return d && typeof d === "object" ? (d as { ownershipType?: unknown; subleaseAuthorized?: unknown }) : {};
 }
 
 /**
@@ -1757,6 +2070,7 @@ export async function saveDraftData(snap: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
 
+  const op = rascunhoOperacao(snap.data);
   const fields = {
     owner_id: user.id,
     status: "draft" as const,
@@ -1765,26 +2079,57 @@ export async function saveDraftData(snap: {
     monthly_price: Number.isFinite(snap.monthlyPrice) ? (snap.monthlyPrice as number) : 0,
     // Colunas que a prontidão lê (Visão geral, Meus imóveis): endereço e detalhes não ficam só no draft_data.
     ...camposDeConteudoDoRascunho(snap),
+    // 59-C1: a operação vai junto, pela regra do updateProperty — uma linha antiga "própria com sublocação" (que a
+    // restrição da 0200 recusa em qualquer update) fica no permitido já no primeiro autosave.
+    ...colunasDeOperacao(op.ownershipType, op.subleaseAuthorized),
     draft_data: snap.data as object,
   };
 
-  if (snap.id) {
-    const { atualizou, error } = await atualizarRascunhoDoDono(supabase, snap.id, user.id, fields);
-    if (error) return { ok: false, error: erroBancoPT(error as Parameters<typeof erroBancoPT>[0]) };
+  // Anúncio novo (sem id): continua o rascunho vazio de menos de 72 h em vez de abrir outro igual (ordem 378c07c4).
+  const rascunhoId = snap.id || (await rascunhoVazioRecente(supabase, user.id));
+  if (rascunhoId) {
+    const { atualizou, error } = await atualizarRascunhoDoDono(supabase, rascunhoId, user.id, fields);
+    if (error) {
+      // O erro do banco não some mais: o código fica no log do servidor e a causa em português vai para a tela.
+      const e = error as Parameters<typeof erroBancoPT>[0];
+      console.error("[saveDraftData]", rascunhoId, e?.code, e?.message);
+      return { ok: false, error: erroBancoPT(e) };
+    }
     // 0 linhas = rascunho de outro dono (ou já publicado): não liga foto nem qualificação.
-    if (!atualizou) return { ok: true, id: snap.id };
-    await sincronizarFotos(supabase, snap.id, user.id, urlsDoRascunho(snap.data));
-    await ligarQualificacaoAoImovel(supabase, user.id, snap.id);
-    await ligarMatriculaAoImovel(createAdminClient(), user.id, snap.id);
-    return { ok: true, id: snap.id };
+    if (!atualizou) return { ok: true, id: rascunhoId };
+    await gravarChegadaEPedido(supabase, user.id, rascunhoId, chegadaDoRascunho(snap.data));
+    await sincronizarFotos(supabase, rascunhoId, user.id, urlsDoRascunho(snap.data));
+    await ligarQualificacaoAoImovel(supabase, user.id, rascunhoId);
+    await ligarMatriculaAoImovel(createAdminClient(), user.id, rascunhoId);
+    return { ok: true, id: rascunhoId };
   }
   const { data, error } = await supabase.from("properties").insert(fields).select("id").single();
-  if (error) return { ok: false, error: erroBancoPT(error) };
+  if (error) {
+    console.error("[saveDraftData] novo", error.code, error.message);
+    return { ok: false, error: erroBancoPT(error) };
+  }
+  await gravarChegadaEPedido(supabase, user.id, data.id as string, chegadaDoRascunho(snap.data));
   await sincronizarFotos(supabase, data.id as string, user.id, urlsDoRascunho(snap.data));
   // A qualificação enviada antes do rascunho passa a pertencer a ele (prontidão "Em análise", não "Não enviado").
   await ligarQualificacaoAoImovel(supabase, user.id, data.id as string);
   await ligarMatriculaAoImovel(createAdminClient(), user.id, data.id as string);
   return { ok: true, id: data.id };
+}
+
+/**
+ * 64-B: a situação do limite do plano (a MESMA conta da prontidão e do painel — situacaoLimite). `exceto` = o anúncio
+ * que se quer (re)publicar: os publicados contam sem ele.
+ */
+async function situacaoDoLimite(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  exceto: string | null,
+): Promise<SituacaoLimite> {
+  const plan = await planoDoProprietario(supabase, ownerId);
+  let q = supabase.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active");
+  if (exceto) q = q.neq("id", exceto);
+  const { count } = await q;
+  return situacaoLimite(plan as string, count ?? 0);
 }
 
 /**
@@ -1797,18 +2142,8 @@ async function limiteDePublicacao(
   ownerId: string,
   exceto: string | null
 ): Promise<string | null> {
-  const plan = (await planoDoProprietario(supabase, ownerId)) as SubscriptionPlan;
-  let q = supabase
-    .from("properties")
-    .select("id", { count: "exact", head: true })
-    .eq("owner_id", ownerId)
-    .eq("status", "active");
-  if (exceto) q = q.neq("id", exceto);
-  const { count } = await q;
-  if ((count ?? 0) >= listingLimit(plan)) {
-    return `Seu plano (${PLAN_LABEL[plan]}) permite até ${listingLimit(plan)} anúncio(s) publicado(s). Pause um anúncio ou faça upgrade para publicar mais.`;
-  }
-  return null;
+  const s = await situacaoDoLimite(supabase, ownerId, exceto);
+  return s.podePublicarNovo ? null : `${mensagemLimitePublicar(s)}.`;
 }
 
 /**
@@ -1839,7 +2174,11 @@ async function sincronizarFotos(
         .from("property_photos")
         .insert(novas.map((url, i) => ({ property_id: propertyId, url, sort_order: i })));
       if (error) console.error("[sincronizarFotos] falha ao gravar fotos:", error.message);
+      else await ligarHashesAoImovel(createAdminClient(), propertyId, novas);
     }
+    // Prompt 58: a foto que o dono tirou do anúncio sai do bucket (o hash fica).
+    const sairam = ((atuais ?? []) as { url: string }[]).map((r) => r.url).filter((u) => !novas.includes(u));
+    if (sairam.length) await apagarFotosDoAnuncio(createAdminClient(), sairam);
   } catch (e) {
     console.error("[sincronizarFotos] erro:", e);
   }
@@ -1857,6 +2196,28 @@ export async function loadDraftData(id: string): Promise<unknown | null> {
   const { data } = await supabase.rpc("property_private_details", { prop_id: id });
   const row = Array.isArray(data) ? data[0] : data;
   return (row as { draft_data?: unknown } | null)?.draft_data ?? null;
+}
+
+/**
+ * L1-1 (D-V3): o endereço já GRAVADO do imóvel do dono, para o "Enviar documento" do passo Onde fica não travar quando
+ * a tela chega vazia ou em outro formato (rascunho retomado). Vem do rascunho (draft_data: CEP, rua, número) e, sem ele,
+ * da linha exata gravada (exact_address: "Rua, número, complemento"). Só o dono lê (RPC confere). null sem nada.
+ */
+export async function enderecoGravadoDoImovel(id: string): Promise<{ cep: string; rua: string; numero: string } | null> {
+  const supabase = await createClient();
+  if (!supabase || !UUID_RE.test(id)) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.rpc("property_private_details", { prop_id: id });
+  const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: Record<string, unknown> | null; exact_address?: string | null } | null;
+  if (!row) return null;
+  const d = row.draft_data && typeof row.draft_data === "object" ? row.draft_data : {};
+  const txt = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const rua = txt(d.street) || txt(row.exact_address);
+  const r = { cep: txt(d.cep), rua, numero: txt(d.street) ? txt(d.numero) : "" };
+  return r.cep || r.rua || r.numero ? r : null;
 }
 
 /** Rascunho mais recente do dono (para "Novo anúncio detecta rascunho" e o card
@@ -1912,4 +2273,134 @@ export async function getLatestDraft(): Promise<{
     prontidao,
     score,
   };
+}
+
+// ── 64-B: pausar e reativar anúncio pelo dono ──────────────────────────────────────────────────────────────────────
+
+export type ResultadoPausa = { ok: true; mensagem?: string } | { ok: false; erro: string; faltas?: { rotulo: string; href: string }[] };
+
+/** O dono do anúncio (pela sessão) — ou null. */
+async function anuncioDoDono(id: string) {
+  const supabase = await createClient();
+  if (!supabase || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("properties")
+    .select("id, owner_id, status, pausa_motivo, city, descricao_gerada_por_ia")
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!data) return null;
+  return { supabase, userId: user.id, p: data as { id: string; owner_id: string; status: string; pausa_motivo: string | null; city: string | null; descricao_gerada_por_ia: boolean | null } };
+}
+
+function revalidarPausa(id: string) {
+  revalidatePath("/dashboard/imoveis");
+  revalidatePath("/dashboard");
+  // E33: todas as listagens públicas (home incluída), não só /buscar e a página do anúncio.
+  revalidarAnuncio(id, revalidatePath);
+}
+
+/**
+ * 65-B: grava SÓ o arquivo do vídeo, na hora em que o dono envia, troca ou remove na seção Vídeo do editor. O
+ * enviador já apaga o arquivo anterior do bucket; gravar na hora evita o anúncio apontar para um arquivo que não
+ * existe mais se a pessoa sair sem "Salvar seção". Caminho só da pasta do próprio dono; "" remove.
+ */
+export async function gravarVideoArquivo(id: string, videoArquivo: string): Promise<ActionResult> {
+  const a = await anuncioDoDono(id);
+  if (!a) return { ok: false, error: "Anúncio não encontrado." };
+  const coluna = colunaVideoArquivo(videoArquivo, a.userId);
+  if (!("video_arquivo" in coluna)) return { ok: false, error: "Vídeo não encontrado." };
+  const { error } = await a.supabase.from("properties").update(coluna).eq("id", id).eq("owner_id", a.userId);
+  if (error) return { ok: false, error: "Não foi possível gravar o vídeo agora. Tente de novo." };
+  revalidatePath(`/imoveis/${id}`);
+  revalidatePath(`/dashboard/imoveis/${id}/editar`);
+  return { ok: true };
+}
+
+/** O que está em andamento no anúncio e CONTINUA depois da pausa (a tela lista antes de confirmar). */
+export async function emAndamentoDoAnuncio(id: string): Promise<EmAndamento | null> {
+  const a = await anuncioDoDono(id);
+  const adm = createAdminClient();
+  if (!a || !adm) return null;
+  const contar = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0;
+  const [candidaturasAbertas, propostasAceitas, visitasMarcadas, contratosVigentes] = await Promise.all([
+    contar(adm.from("leads").select("id", { count: "exact", head: true }).eq("property_id", id).in("status", ["new", "accepted"])),
+    contar(adm.from("propostas").select("id", { count: "exact", head: true }).eq("property_id", id).in("status", ["aceita", "em_contrato"])),
+    contar(adm.from("visitas_video").select("id", { count: "exact", head: true }).eq("property_id", id).eq("status", "confirmado")),
+    contar(adm.from("contratos").select("id", { count: "exact", head: true }).eq("property_id", id).eq("status", "ativo")),
+  ]);
+  return { candidaturasAbertas, propostasAceitas, visitasMarcadas, contratosVigentes };
+}
+
+/**
+ * Pausar (dono): publicado → pausado com motivo "dono". Sai da busca, do mapa e dos alertas; a página pública diz que
+ * está pausado; não aceita candidatura, proposta nem visita novas. O que está em andamento continua. Nunca bloqueado.
+ */
+export async function pausarAnuncio(id: string): Promise<ResultadoPausa> {
+  const a = await anuncioDoDono(id);
+  if (!a) return { ok: false, erro: "Anúncio não encontrado." };
+  if (a.p.status !== "active") return { ok: false, erro: "Só um anúncio publicado pode ser pausado." };
+  // O motivo só o servidor grava (a coluna não é do dono, 0223): cliente de serviço, depois de conferir o dono acima.
+  const adm = createAdminClient();
+  if (!adm) return { ok: false, erro: "Não foi possível pausar agora. Tente de novo." };
+  const { data, error } = await adm
+    .from("properties")
+    .update({ status: "paused", pausa_motivo: "dono" })
+    .eq("id", id)
+    .eq("owner_id", a.userId)
+    .eq("status", "active")
+    .select("id");
+  if (error || !data?.length) return { ok: false, erro: "Não foi possível pausar agora. Tente de novo." };
+  revalidarPausa(id);
+  return { ok: true, mensagem: "Anúncio pausado. Ele saiu da busca; o que já estava em andamento continua." };
+}
+
+/**
+ * Reativar (dono): só o que ELE pausou, e pela MESMA porta da publicação — cidade aberta, prontidão (documento, fotos,
+ * padrão mínimo…), aceite do termo de IA quando a descrição veio da IA, e a vaga no plano contando os publicados SEM
+ * este. Faltando algo: a lista do que falta, cada item com o link para resolver. Os gatilhos do banco conferem de novo.
+ */
+export async function reativarAnuncio(id: string): Promise<ResultadoPausa> {
+  const a = await anuncioDoDono(id);
+  if (!a) return { ok: false, erro: "Anúncio não encontrado." };
+  const { supabase, userId, p } = a;
+  if (p.status !== "paused") return { ok: false, erro: "Este anúncio não está pausado." };
+  if (!donoPodeReativar(p.pausa_motivo)) {
+    const t = textoDaPausa(p.pausa_motivo);
+    return { ok: false, erro: t.motivo, faltas: t.caminho ? [t.caminho] : [] };
+  }
+  const editar = `/dashboard/imoveis/${id}/editar`;
+  const faltas: { rotulo: string; href: string }[] = [];
+  const cidade = p.city ? await cidadeFechada(supabase, userId, p.city) : null;
+  if (cidade) faltas.push({ rotulo: cidade, href: editar });
+  const pr = await prontidaoDoImovel(supabase, userId, id);
+  for (const i of pr?.obrigatorios ?? []) if (!i.ok && i.key !== "limite") faltas.push({ rotulo: i.detalhe ? `${i.label}: ${i.detalhe}` : i.label, href: editar });
+  if (p.descricao_gerada_por_ia) {
+    const { count } = await supabase.from("anuncio_aceites_ia").select("id", { count: "exact", head: true }).eq("property_id", id).eq("versao_termo", TERMO_IA_VERSAO);
+    if (!count) faltas.push({ rotulo: "Aceite do termo da IA (confira o texto e aceite na etapa Revisar)", href: editar });
+  }
+  const lim = await situacaoDoLimite(supabase, userId, id);
+  if (!lim.podePublicarNovo) faltas.push({ rotulo: `${mensagemLimiteReativar(lim)}.`, href: "/dashboard/imoveis" });
+  if (faltas.length) return { ok: false, erro: "Para reativar, falta:", faltas };
+  // Pela sessão do dono: os gatilhos de publicação do banco (documento, fotos, padrão mínimo, laudo, IA) valem aqui.
+  const { data, error } = await supabase.from("properties").update({ status: "active" }).eq("id", id).eq("owner_id", userId).eq("status", "paused").select("id");
+  if (error || !data?.length) return { ok: false, erro: error?.message ?? "Não foi possível reativar agora. Tente de novo." };
+  await avisarBuscasDoImovel(id).catch(() => null);
+  revalidarPausa(id);
+  return { ok: true, mensagem: "Anúncio reativado: ele voltou para a busca." };
+}
+
+/** 64-B: o limite do plano do dono logado (painel e Meus imóveis) — a mesma conta da publicação. */
+export async function minhaSituacaoLimite(): Promise<SituacaoLimite | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  return situacaoDoLimite(supabase, user.id, null);
 }

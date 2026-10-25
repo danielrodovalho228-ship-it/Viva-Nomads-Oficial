@@ -13,7 +13,8 @@ const sufixo = novoSufixo();
 const conta = { email: `dono.modo.${sufixo}@lab.vivanomads.test`, nome: "Moa Modo App", role: "owner" as const };
 const ids: { id?: string } = {};
 
-const ABAS_PROPRIETARIO = ["Painel", "Imóveis", "Interessados", "Mensagens", "Conta"];
+// Prompt 41: barra por papel (5 itens).
+const ABAS_PROPRIETARIO = ["Início", "Anúncios", "Mensagens", "Ganhos", "Perfil"];
 
 async function abas(page: Page, nomes: string[]) {
   const barra = page.locator("nav.vn-tabbar");
@@ -22,7 +23,7 @@ async function abas(page: Page, nomes: string[]) {
 }
 
 async function entrarNoApp(page: Page) {
-  await page.goto("/auth", { waitUntil: "networkidle" });
+  await page.goto("/auth?senha=1", { waitUntil: "networkidle" });
   await page.locator('input[name="email"], input[type="email"]').first().fill(conta.email);
   await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
   await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

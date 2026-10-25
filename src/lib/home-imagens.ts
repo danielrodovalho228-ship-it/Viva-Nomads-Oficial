@@ -1,9 +1,15 @@
 /**
- * Imagens da home (ordem 86dcb4db, H1/H4). Os 4 passos ficam SEM foto: as únicas fotos reais livres já estão em
- * /como-funciona e outras páginas, e o t112 proíbe repetir imagem entre páginas (regressão 0f204e06). Quando
- * houver 4 fotos próprias dos passos, voltar a incluí-las aqui. O fundo dos proprietários continua esperando a foto
- * única (public/images/unicas/home-proprietarios-fundo.webp; trocar `pronta` para true quando chegar).
+ * Slots de imagem da home (ordem 86dcb4db, H1/H4). Os 4 passos usam fotos que nenhuma outra página pública usa
+ * (t112, ordem 0f204e06: nada de imagem repetida entre / e /como-funciona). Enquanto não chegam fotos próprias de
+ * cada passo, as legendas descrevem só o que a foto mostra. O fundo dos proprietários continua esperando a foto única
+ * (public/images/unicas/home-proprietarios-fundo.webp; trocar `pronta` para true quando chegar).
  */
+export const HOME_PASSOS_IMAGENS = [
+  { src: "/images/unicas/cf-seguro-condominio.webp", alt: "Prédio residencial moderno com varandas e árvores na calçada", pronta: true },
+  { src: "/images/dashboard/dash-inquilino-welcome.webp", alt: "Sala iluminada com poltrona azul, livro e xícara ao lado da janela", pronta: true },
+  { src: "/images/dashboard/dash-prop-onboarding.webp", alt: "Sala mobiliada com sofá azul, mesa de centro e plantas", pronta: true },
+  { src: "/images/app/app-boas-vindas.webp", alt: "Moradora com mala abrindo a porta do imóvel na chegada", pronta: true },
+];
 export const HOME_PROPRIETARIOS_FUNDO = {
   src: "/images/unicas/home-proprietarios-fundo.webp",
   pronta: false,

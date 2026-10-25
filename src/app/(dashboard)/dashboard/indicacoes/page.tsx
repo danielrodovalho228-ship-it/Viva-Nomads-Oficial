@@ -59,12 +59,12 @@ export default function ReferralsPage() {
 
   return (
     <>
-      <PageTitle capa="indicacoes"
+      <PageTitle
         title="Programa de indicação"
         subtitle="Indique e ganhe créditos quando seus indicados fecharem a primeira reserva."
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Indicados" value="0" icon={Users} />
         <StatCard label="Aguardando 1ª reserva" value="0" icon={Clock} />
         <StatCard label="Converteram" value="0" icon={Check} />
@@ -74,7 +74,7 @@ export default function ReferralsPage() {
       <Panel className="bg-forest text-white">
         <div className="flex items-center gap-2">
           <Gift className="h-5 w-5 text-champagne" />
-          <h2 className="font-title text-lg font-bold">Seu link de indicação</h2>
+          <h2 className="font-title text-lg font-semibold">Seu link de indicação</h2>
         </div>
         <p className="mt-1 text-sm text-white/70">
           Seu código: <strong className="text-green-300">{code}</strong>
@@ -84,12 +84,12 @@ export default function ReferralsPage() {
           <input
             readOnly
             value={link}
-            className="flex-1 rounded-xl bg-white/10 px-4 py-2.5 text-sm text-white outline-none"
+            className="flex-1 rounded-xl bg-white/10 px-4 py-3 text-sm text-white outline-none"
           />
           <div className="flex gap-2">
             <button
               onClick={copy}
-              className="inline-flex items-center gap-2 rounded-xl bg-champagne px-4 py-2.5 text-sm font-semibold text-forest"
+              className="inline-flex items-center gap-2 rounded-xl bg-champagne px-4 py-3 text-sm font-semibold text-forest"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? "Copiado" : "Copiar"}
@@ -98,7 +98,7 @@ export default function ReferralsPage() {
               href={whatsapp}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-forest"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-forest"
             >
               WhatsApp
             </a>
@@ -109,14 +109,14 @@ export default function ReferralsPage() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <Panel title="Indicou um proprietário?">
           <p className="text-sm text-muted">
-            Você ganha <strong className="text-forest">crédito em comissão</strong> (ou serviço
+            Você ganha <strong className="text-forest">crédito na taxa de serviço</strong> (ou serviço
             grátis: verificação/contrato) quando o proprietário indicado fecha a primeira reserva.
           </p>
         </Panel>
-        <Panel title="Indicou um inquilino?">
+        <Panel title="Indicou um morador?">
           <p className="text-sm text-muted">
             Você ganha <strong className="text-forest">crédito em serviços</strong> quando o
-            inquilino indicado fecha a primeira locação. O indicado ganha um benefício de
+            morador indicado fecha a primeira locação. O indicado ganha um benefício de
             boas-vindas (1ª verificação de identidade grátis).
           </p>
         </Panel>

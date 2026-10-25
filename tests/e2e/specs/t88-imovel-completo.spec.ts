@@ -55,7 +55,9 @@ test.describe("T88 — Página do imóvel completa", () => {
     // ainda está na tela: ao rolar para além da grade (Localização), o cartão sai junto
     // com ela e y negativo é esperado, não é defeito.
     const cartao = (await page.locator("#cartao-preco").boundingBox())!;
-    expect(cartao.y).toBeGreaterThanOrEqual(caixaNav.y + caixaNav.height - 1);
+    // Folga de 4 px: perto do fim da grade o cartão sobe junto com a coluna (sticky), e o vídeo/níveis
+    // mudaram a altura da página em ~2 px; o defeito que importa é o cartão ENTRAR por baixo das abas.
+    expect(cartao.y).toBeGreaterThanOrEqual(caixaNav.y + caixaNav.height - 4);
 
     // Rolar até a localização muda a aba ativa sozinho.
     await page.locator("#localizacao").evaluate((el) => el.scrollIntoView({ block: "start" }));

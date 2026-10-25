@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
  * sem defeito de tela. "networkidle" nunca assenta quando o painel mantém uma conexão aberta e o prazo
  * vai embora esperando. Nesses specs a navegação espera "domcontentloaded" e a verificação é a asserção
  * com espera automática do próprio Playwright. A tela de login (/auth) fica fora: lá o formulário precisa
- * estar hidratado antes de preencher.
+ * estar hidratado antes de preencher (inclusive /auth?senha=1, o "Entrar com senha" do Prompt 49).
  */
 const SPECS = {
   "t64-telas-largas": "tests/e2e/specs/t64-telas-largas.spec.ts",
@@ -24,7 +24,7 @@ const SPECS = {
 function navegacoesComNetworkidle(arquivo: string): string[] {
   return readFileSync(arquivo, "utf8")
     .split("\n")
-    .filter((l) => /\.(goto|reload)\(/.test(l) && /networkidle/.test(l) && !/["']\/auth["']/.test(l))
+    .filter((l) => /\.(goto|reload)\(/.test(l) && /networkidle/.test(l) && !/["']\/auth(\?[^"']*)?["']/.test(l))
     .map((l) => l.trim());
 }
 

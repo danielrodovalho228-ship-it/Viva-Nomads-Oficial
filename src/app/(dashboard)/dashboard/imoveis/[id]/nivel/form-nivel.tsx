@@ -1,0 +1,226 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { AREAS, EXTRAS, MATRIZ, PERGUNTAS_RUIDO, ROTULO_AREA, itemNivel, type ChaveNivel } from "@/config/niveis";
+import { salvarExtras, salvarItemNivel, salvarRuido, type NivelDoImovelTela } from "@/lib/data/nivel-actions";
+import { ProvaNaHora } from "@/components/niveis/camera-prova";
+import { AVISO_PROVA_NA_HORA, MARCA_FOTO_ANTERIOR, provaAntigaNoPrazo, textoRefazerFoto } from "@/lib/niveis/prova-camera";
+
+const STATUS = { pendente: "Foto em análise", aceita: "Foto aceita", recusada: "Foto recusada" } as const;
+
+export function FormNivel({ propertyId, dados, fotografar = null }: { propertyId: string; dados: NivelDoImovelTela; fotografar?: string | null }) {
+  return (
+    <div className="space-y-6">
+      <ItensNivel propertyId={propertyId} dados={dados} fotografar={fotografar} />
+      <Ruido propertyId={propertyId} inicial={dados.ruido} />
+      <Extras propertyId={propertyId} inicial={dados.extras} />
+    </div>
+  );
+}
+
+function ItensNivel({ propertyId, dados, fotografar }: { propertyId: string; dados: NivelDoImovelTela; fotografar: string | null }) {
+  const porChave = new Map(dados.itens.map((i) => [i.chave, i]));
+  // Item que vale para duas áreas (ex.: ar-condicionado da sala) aparece uma vez só, na primeira.
+  const vistos = new Set<string>();
+  const grupos = AREAS.map((a) => ({
+    area: a,
+    linhas: (["conforto", "premium"] as const).flatMap((n) =>
+      MATRIZ[a][n].filter((k) => itemNivel(k).prova === "foto" && !vistos.has(k) && (vistos.add(k), true)).map((k) => ({ k, n })),
+    ),
+  })).filter((g) => g.linhas.length > 0);
+  return (
+    <section id="nivel-itens" className="scroll-mt-24 rounded-xl border border-line bg-white p-4" data-testid="nivel-itens">
+      <h2 className="text-base font-semibold text-ink">Itens de Conforto e Premium</h2>
+      <p className="mt-1 text-sm text-ink" data-testid="prova-na-hora-aviso">
+        {AVISO_PROVA_NA_HORA}
+      </p>
+      <p className="mt-1 text-xs text-muted">Uma foto por item, sem pessoas. Item sem foto não conta. O atendimento da Viva pode recusar uma foto que não mostra o item.</p>
+      {grupos.map((g) => (
+        <div key={g.area} className="mt-4">
+          <p className="text-sm font-semibold text-ink">{ROTULO_AREA[g.area]}</p>
+          <ul className="mt-2 space-y-3">
+            {g.linhas.map(({ k, n }) => (
+              <LinhaItem key={k} propertyId={propertyId} chave={k} nivel={n} item={porChave.get(k)} abrir={fotografar === k} />
+            ))}
+          </ul>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function LinhaItem({ propertyId, chave, nivel, item, abrir }: { propertyId: string; chave: ChaveNivel; nivel: "conforto" | "premium"; item: NivelDoImovelTela["itens"][number] | undefined; abrir: boolean }) {
+  const router = useRouter();
+  const [pendente, iniciar] = useTransition();
+  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
+  const info = itemNivel(chave);
+  // FOTO-NA-HORA-B: a foto da prova é feita na hora (ProvaNaHora); a caixa "O imóvel tem" só declara ou retira.
+  const salvar = (declarado: boolean) =>
+    iniciar(async () => {
+      setMsg(null);
+      try {
+        const r = await salvarItemNivel(propertyId, chave, declarado);
+        setMsg(r.ok ? { ok: true, t: r.mensagem ?? "Salvo." } : { ok: false, t: r.erro });
+        if (r.ok) router.refresh();
+      } catch {
+        setMsg({ ok: false, t: "Não foi possível salvar agora." });
+      }
+    });
+  const anterior = !!item && provaAntigaNoPrazo({ fotoOrigem: item.fotoOrigem, refazerAte: item.refazerAte, fotoPath: item.fotoUrl }, new Date());
+  return (
+    <li className="rounded-lg border border-line p-3 text-sm" data-testid={`nivel-item-${chave}`} data-declarado={item?.declarado ? "1" : "0"} data-foto={item?.fotoStatus ?? "pendente"} data-origem={item?.fotoOrigem ?? ""}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <span className="min-w-0">
+          <span className="font-semibold text-ink">{info.rotulo}</span>
+          <span className="ml-2 text-xs text-muted">{nivel === "conforto" ? "Conforto" : "Premium"}</span>
+          <span className="block text-xs text-muted">{info.criterio}</span>
+        </span>
+        {item?.fotoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.fotoUrl} alt={`Foto: ${info.rotulo}`} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+        )}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <label className="flex min-h-11 items-center gap-2 text-ink">
+          <input type="checkbox" checked={!!item?.declarado} disabled={pendente} onChange={(e) => salvar(e.target.checked)} data-testid={`nivel-tenho-${chave}`} />
+          O imóvel tem
+        </label>
+        <ProvaNaHora
+          propertyId={propertyId}
+          chave={chave}
+          rotulo={info.rotulo}
+          autoAbrir={abrir}
+          testid={`nivel-foto-${chave}`}
+          rotuloBotao={item?.fotoUrl && !anterior ? "Fotografar de novo" : undefined}
+          onRecebida={(m) => {
+            setMsg({ ok: true, t: m });
+            router.refresh();
+          }}
+        />
+        {item?.fotoUrl && (
+          <span className={item.fotoStatus === "recusada" ? "text-xs text-red-700" : "text-xs text-muted"} data-testid={`nivel-status-${chave}`}>
+            {STATUS[item.fotoStatus]}
+            {item.fotoStatus === "recusada" && item.motivoRecusa ? `: ${item.motivoRecusa}` : ""}
+          </span>
+        )}
+      </div>
+      {anterior && item?.refazerAte && (
+        <p className="mt-1 text-xs text-amber-800" data-testid={`nivel-anterior-${chave}`}>
+          <span className="font-semibold">{MARCA_FOTO_ANTERIOR}</span> · {textoRefazerFoto(info.rotulo, item.refazerAte)}.
+        </p>
+      )}
+      {msg && (
+        <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "mt-1 text-xs text-ink" : "mt-1 text-xs text-red-700"} data-testid={`nivel-msg-${chave}`}>
+          {msg.t}
+        </p>
+      )}
+    </li>
+  );
+}
+
+function Ruido({ propertyId, inicial }: { propertyId: string; inicial: NivelDoImovelTela["ruido"] }) {
+  const router = useRouter();
+  const [r, setR] = useState<Record<string, boolean | null>>(() => Object.fromEntries(PERGUNTAS_RUIDO.map((p) => [p.chave, inicial ? inicial[p.chave] : null])));
+  const [pendente, iniciar] = useTransition();
+  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
+  const completo = PERGUNTAS_RUIDO.every((p) => r[p.chave] !== null);
+  return (
+    <section className="rounded-xl border border-line bg-white p-4" data-testid="ruido-form">
+      <h2 className="text-base font-semibold text-ink">Ruído</h2>
+      <p className="mt-1 text-xs text-muted">A classe sai da exposição (baixo, médio ou alto). O morador confere na entrada.</p>
+      <ul className="mt-3 space-y-2">
+        {PERGUNTAS_RUIDO.map((p) => (
+          <li key={p.chave} className="text-sm text-ink" role="radiogroup" aria-label={p.texto}>
+            <p>{p.texto}</p>
+            <div className="mt-1 flex gap-4">
+              <label className="flex min-h-11 items-center gap-2">
+                <input type="radio" name={`ruido-${p.chave}`} checked={r[p.chave] === true} onChange={() => setR((a) => ({ ...a, [p.chave]: true }))} data-testid={`ruido-${p.chave}-sim`} />
+                Sim
+              </label>
+              <label className="flex min-h-11 items-center gap-2">
+                <input type="radio" name={`ruido-${p.chave}`} checked={r[p.chave] === false} onChange={() => setR((a) => ({ ...a, [p.chave]: false }))} data-testid={`ruido-${p.chave}-nao`} />
+                Não
+              </label>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={pendente || !completo}
+          onClick={() =>
+            iniciar(async () => {
+              const res = await salvarRuido(propertyId, r);
+              setMsg(res.ok ? { ok: true, t: res.mensagem ?? "Salvo." } : { ok: false, t: res.erro });
+              if (res.ok) router.refresh();
+            })
+          }
+          data-testid="ruido-salvar"
+        >
+          Salvar ruído
+        </Button>
+        {msg && (
+          <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-sm text-ink" : "text-sm text-red-700"} data-testid="ruido-resultado">
+            {msg.t}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Extras({ propertyId, inicial }: { propertyId: string; inicial: string[] }) {
+  const router = useRouter();
+  const [sel, setSel] = useState<Set<string>>(() => new Set(inicial));
+  const [pendente, iniciar] = useTransition();
+  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
+  return (
+    <section className="rounded-xl border border-line bg-white p-4" data-testid="extras-form">
+      <h2 className="text-base font-semibold text-ink">Extras</h2>
+      <p className="mt-1 text-xs text-muted">Aparecem na ficha como fato. Não mudam o nível.</p>
+      <ul className="mt-3 grid gap-1 sm:grid-cols-2">
+        {EXTRAS.map((e) => (
+          <li key={e.chave}>
+            <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={sel.has(e.chave)}
+                onChange={() => setSel((s) => (s.has(e.chave) ? new Set([...s].filter((k) => k !== e.chave)) : new Set([...s, e.chave])))}
+                data-testid={`extra-${e.chave}`}
+              />
+              {e.rotulo}
+            </label>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          disabled={pendente}
+          onClick={() =>
+            iniciar(async () => {
+              const res = await salvarExtras(propertyId, [...sel]);
+              setMsg(res.ok ? { ok: true, t: res.mensagem ?? "Salvo." } : { ok: false, t: res.erro });
+              if (res.ok) router.refresh();
+            })
+          }
+          data-testid="extras-salvar"
+        >
+          Salvar extras
+        </Button>
+        {msg && (
+          <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-sm text-ink" : "text-sm text-red-700"} data-testid="extras-resultado">
+            {msg.t}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}

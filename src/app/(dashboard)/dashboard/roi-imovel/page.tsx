@@ -4,13 +4,13 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Percent, Info, Download, Scale } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
-import { FAIXAS_COMISSAO_PADRAO, faixaPorImoveisAtivos, pctTexto } from "@/lib/cobranca/regra";
-import { COMPARE_RODAPE, RETORNO_AIRBNB_UBERLANDIA, linhasPublicas } from "@/config/compare-precos";
+import { FAIXAS_COMISSAO_PADRAO, comissaoSobreContrato, faixaPorImoveisAtivos, pctTexto, rotuloTaxaServico } from "@/lib/cobranca/regra";
+import { COMPARE_RODAPE, RETORNO_AIRBNB_UBERLANDIA, canaisDaCalculadora } from "@/config/compare-precos";
 import { PADROES_TRADICIONAL, cenariosOcupacao, simularROI, type Cobranca, type EntradaROI } from "@/lib/simulador";
 import { imprimirSimulacao } from "@/lib/print-simulacao";
 import { formatBRL, numBR } from "@/lib/utils";
 import { MAX_ALUGUEL_MENSAL, MAX_INVESTIMENTO } from "@/lib/campos-valor";
-import { BarraValor, CobrancaToggle, ComoCalculamos, NumInput, ResultCard, SimDisclaimer, SimHero } from "@/components/simulador/ui";
+import { CobrancaToggle, ComoCalculamos, GraficoColunas, NumInput, ResultCard, SimDisclaimer, SimHero } from "@/components/simulador/ui";
 import { buttonClasses } from "@/components/ui/button";
 
 const INCLUI =
@@ -18,7 +18,7 @@ const INCLUI =
 
 /** Fórmulas da tela (prompt 15). O mobiliado usa a MESMA base do simulador (baseMobiliadoAno). */
 const COMO_CALCULAMOS = [
-  "Mobiliado: valor mensal × meses ocupados − taxa de serviço da sua faixa (sobre o valor total dos contratos) − condomínio/IPTU e contas conforme a cobrança − reposição da mobília. É a mesma conta do Simulador de rentabilidade.",
+  "Mobiliado: valor mensal × meses ocupados − taxa de serviço da sua faixa (sobre o valor mensal × meses) − condomínio/IPTU e contas conforme a cobrança − reposição e desgaste da mobília. É a mesma conta do Simulador de rentabilidade (a mesma função): com os mesmos números, o líquido é igual.",
   "Tradicional (12 meses ou mais, sem mobília): valor mensal × (12 − meses vazios) × (1 − taxa de administração) − 1 valor mensal a cada N meses de contrato (taxa de contrato da imobiliária) − condomínio/IPTU nos meses vazios.",
   "Os padrões do tradicional (1 mês vazio por ano, 10% de administração, 1 valor mensal a cada 30 meses) são referência de mercado: confira com a sua imobiliária e ajuste.",
   "Ganho adicional = líquido do mobiliado − líquido do tradicional, no mesmo ano. Payback = investimento ÷ ganho adicional por mês. ROI anual = ganho adicional ÷ investimento.",
@@ -69,7 +69,8 @@ export default function RoiImovelPage() {
     ...c,
     r: simularROI({ ...base, mesesOcupados: c.mesesOcupados }, faixa.taxa, 0),
   }));
-  const comparativo = linhasPublicas().filter((l) => l.pct !== null);
+  // Prompt 27: Viva, Airbnb (com fonte) e o contrato tradicional com os números desta tela (decisão do Daniel, prompt 15, item 4).
+  const comparativo = canaisDaCalculadora({ taxaAdm: admTradPct / 100, intermediacaoACadaMeses: contratoACada });
 
   // Textos dos resultados (prêmio com sinal; payback/ROI sem investimento).
   const premioTexto = `${res.premioMensal >= 0 ? "+ " : "− "}${formatBRL(Math.abs(res.premioMensal))}/mês`;
@@ -87,11 +88,10 @@ export default function RoiImovelPage() {
         : `≈ ${numBR(res.paybackMeses / 12, 1)} anos`;
   const roiTexto = res.roiAnual === null ? "—" : `${Math.round(res.roiAnual * 100)}%`;
 
-  const maxAbs = Math.max(1, ...res.acumulado.flatMap((a) => [Math.abs(a.mobiliado), Math.abs(a.vazio)]));
 
   return (
     <>
-      <PageTitle capa="roi" title="Calculadora de ROI" subtitle="Vale a pena mobiliar o seu imóvel para média duração?" />
+      <PageTitle title="Calculadora de ROI" subtitle="Vale a pena mobiliar o seu imóvel para média duração?" />
 
       <SimHero
         icon={Percent}
@@ -106,13 +106,13 @@ export default function RoiImovelPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Entradas */}
         <div className="space-y-4">
-          <div className="rounded-2xl border border-sage-200 bg-white p-5">
-            <h2 className="font-title text-lg font-bold text-ink">Mobiliado na Viva</h2>
+          <div className="rounded-xl border border-sage-200 bg-white p-4">
+            <h2 className="font-title text-lg font-semibold text-ink">Mobiliado na Viva</h2>
             <div className="mt-4 space-y-4">
               <div>
                 <NumInput label="Investimento para mobiliar" value={investimentoMobiliar} onChange={setInvest} step={1000} prefix="R$" max={MAX_INVESTIMENTO} />
-                <p className="mt-1 flex items-start gap-1.5 text-xs text-muted">
-                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {INCLUI}
+                <p className="mt-1 flex items-start gap-2 text-xs text-muted">
+                  <Info className="mt-1 h-3.5 w-3.5 shrink-0" /> {INCLUI}
                 </p>
               </div>
               <NumInput label="Valor mensal MOBILIADO pretendido" value={aluguelMobiliado} onChange={setMob} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
@@ -142,7 +142,7 @@ export default function RoiImovelPage() {
               <div>
                 <label htmlFor="imoveis-ativos" className="mb-1 block text-sm font-medium text-ink">
                   Imóveis ativos na Viva: <strong className="text-forest">{imoveisAtivos}</strong> · taxa de serviço{" "}
-                  <strong className="text-forest">{pctTexto(faixa.taxa)}</strong> do valor total de cada contrato
+                  <strong className="text-forest">{pctTexto(faixa.taxa)}</strong> sobre o valor mensal × meses de cada contrato
                 </label>
                 <input
                   id="imoveis-ativos"
@@ -157,8 +157,8 @@ export default function RoiImovelPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-sage-200 bg-white p-5" data-testid="roi-tradicional">
-            <h2 className="font-title text-lg font-bold text-ink">Contrato tradicional (sem mobília)</h2>
+          <div className="rounded-xl border border-sage-200 bg-white p-4" data-testid="roi-tradicional">
+            <h2 className="font-title text-lg font-semibold text-ink">Contrato tradicional (sem mobília)</h2>
             <p className="mt-1 text-xs text-muted">Padrões de referência de mercado — confira com a sua imobiliária e ajuste.</p>
             <div className="mt-4 space-y-4">
               <NumInput label="Valor mensal VAZIO de referência" value={aluguelVazio} onChange={setVazio} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
@@ -196,9 +196,13 @@ export default function RoiImovelPage() {
             <ResultCard label="Líquido do tradicional / ano" value={formatBRL(res.netVazioAnual)} />
           </div>
 
+          <p className="rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted" data-testid="roi-taxa-rotulo">
+            {rotuloTaxaServico(faixa.taxa, aluguelMobiliado, mesesOcupados, comissaoSobreContrato(aluguelMobiliado, mesesOcupados, faixa.taxa))} no ano (mobiliado).
+          </p>
+
           {/* Ponto de equilíbrio. */}
-          <div className="rounded-2xl border border-forest/30 bg-sage-100/50 p-5" data-testid="roi-equilibrio">
-            <p className="flex items-center gap-2 text-sm font-bold text-forest">
+          <div className="rounded-xl border border-forest/30 bg-sage-100/50 p-4" data-testid="roi-equilibrio">
+            <p className="flex items-center gap-2 text-sm font-semibold text-forest">
               <Scale className="h-4 w-4" aria-hidden /> Ponto de equilíbrio com o tradicional
             </p>
             <ul className="mt-2 space-y-1 text-sm text-ink">
@@ -235,16 +239,19 @@ export default function RoiImovelPage() {
           </div>
 
           {/* Gráfico: acumulado ano 1-2-3 mobiliado × tradicional */}
-          <div className="rounded-2xl border border-sage-200 bg-white p-5" data-testid="roi-grafico">
+          <div className="rounded-xl border border-sage-200 bg-white p-4" data-testid="roi-grafico">
             <p className="text-sm font-medium text-ink">Acumulado — mobiliado × tradicional</p>
-            <div className="mt-4 space-y-3">
-              {res.acumulado.map((a) => (
-                <div key={a.ano}>
-                  <p className="mb-1 text-xs text-muted">Ano {a.ano}</p>
-                  <BarraValor label="Mobiliado" valor={a.mobiliado} max={maxAbs} tone="forest" formatar={formatBRL} />
-                  <BarraValor label="Tradicional" valor={a.vazio} max={maxAbs} tone="sage" formatar={formatBRL} />
-                </div>
-              ))}
+            <div className="mt-4">
+              <GraficoColunas
+                testid="roi-acumulado"
+                legenda="Acumulado do mobiliado e do tradicional, por ano"
+                series={[
+                  { nome: "Mobiliado", cor: "bg-forest" },
+                  { nome: "Tradicional", cor: "bg-sage" },
+                ]}
+                grupos={res.acumulado.map((a) => ({ rotulo: `Ano ${a.ano}`, valores: [a.mobiliado, a.vazio] }))}
+                formatar={formatBRL}
+              />
             </div>
             <p className="mt-3 text-[11px] text-muted">O mobiliado desconta o investimento no ano 1 — por isso pode começar atrás e ultrapassar depois.</p>
           </div>
@@ -254,7 +261,7 @@ export default function RoiImovelPage() {
             onClick={() =>
               imprimirSimulacao({
                 titulo: "Calculadora de ROI — mobiliar o imóvel",
-                subtitulo: `Taxa de serviço ${pctTexto(faixa.taxa)} do valor total de cada contrato`,
+                subtitulo: rotuloTaxaServico(faixa.taxa, aluguelMobiliado, mesesOcupados),
                 entradas: [
                   { label: "Investimento para mobiliar", valor: formatBRL(investimentoMobiliar) },
                   { label: "Valor mensal tradicional", valor: formatBRL(aluguelVazio) },
@@ -267,18 +274,24 @@ export default function RoiImovelPage() {
                   { label: "Ganho líquido adicional / ano", valor: formatBRL(res.ganhoAdicionalAnual) },
                   { label: "Payback do investimento", valor: paybackTexto },
                   { label: "ROI anual", valor: roiTexto },
+                  { label: "Reposição e desgaste da mobília", valor: `${numBR(reposicaoPct, 1)}% de ${formatBRL(investimentoMobiliar)} por ano` },
+                  { label: "Líquido do mobiliado / ano", valor: formatBRL(res.netMobiliadoAnual) },
                 ],
+                cenarios: cenarios.map((c) => ({
+                  label: `${c.nome} (${c.mesesOcupados} meses)`,
+                  valor: `${formatBRL(c.r.ganhoAdicionalAnual)}/ano · payback ${c.r.paybackMeses === null ? "—" : c.r.paybackMeses === 0 ? "imediato" : `${c.r.paybackMeses} meses`}`,
+                })),
               })
             }
-            className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage"
+            className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:border-sage"
           >
             <Download className="h-4 w-4" /> Baixar PDF
           </button>
         </div>
       </div>
 
-      <section aria-labelledby="roi-cenarios-titulo" className="mt-6 rounded-2xl border border-sage-200 bg-white p-5" data-testid="roi-cenarios">
-        <h2 id="roi-cenarios-titulo" className="font-title text-lg font-bold text-ink">
+      <section aria-labelledby="roi-cenarios-titulo" className="mt-6 rounded-xl border border-sage-200 bg-white p-4" data-testid="roi-cenarios">
+        <h2 id="roi-cenarios-titulo" className="font-title text-lg font-semibold text-ink">
           Cenários de ocupação
         </h2>
         <p className="mt-1 text-xs text-muted">A mesma conta com 2 meses ocupados a menos e 2 a mais que o seu número.</p>
@@ -286,15 +299,15 @@ export default function RoiImovelPage() {
           <table className="w-full min-w-[20rem] text-left text-sm">
             <thead className="text-xs text-muted">
               <tr>
-                <th className="py-1.5 pr-3 font-medium">Cenário</th>
-                <th className="py-1.5 pr-3 font-medium">Meses</th>
-                <th className="py-1.5 pr-3 text-right font-medium">Ganho / ano</th>
-                <th className="py-1.5 text-right font-medium">Payback</th>
+                <th className="py-2 pr-3 font-medium">Cenário</th>
+                <th className="py-2 pr-3 font-medium">Meses</th>
+                <th className="py-2 pr-3 text-right font-medium">Ganho / ano</th>
+                <th className="py-2 text-right font-medium">Payback</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-sage-200">
               {cenarios.map((c) => (
-                <tr key={c.nome} className={c.nome === "Esperado" ? "font-semibold text-forest" : "text-ink"}>
+                <tr key={c.nome} className={c.nome === "Realista" ? "font-semibold text-forest" : "text-ink"}>
                   <td className="py-2 pr-3">{c.nome}</td>
                   <td className="py-2 pr-3">{c.mesesOcupados}</td>
                   <td className="py-2 pr-3 text-right">{formatBRL(c.r.ganhoAdicionalAnual)}</td>
@@ -308,14 +321,14 @@ export default function RoiImovelPage() {
         </div>
       </section>
 
-      <section aria-labelledby="comparar-canais" className="mt-6 rounded-2xl border border-sage-200 bg-white p-5">
-        <h2 id="comparar-canais" className="font-title text-lg font-bold text-ink">
+      <section aria-labelledby="comparar-canais" className="mt-6 rounded-xl border border-sage-200 bg-white p-4">
+        <h2 id="comparar-canais" className="font-title text-lg font-semibold text-ink">
           Quanto fica de cada mês em cada canal
         </h2>
         <p className="mt-1 text-xs text-muted">Percentual do total pago pelo morador que o canal retém, em média.</p>
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-3 space-y-2" data-testid="roi-canais">
           {comparativo.map((l) => (
-            <li key={l.id} className="flex items-start justify-between gap-3 text-sm">
+            <li key={l.id} className="flex items-start justify-between gap-3 text-sm" data-testid="roi-canal">
               <span className="text-ink">
                 <strong>{l.nome}</strong> <span className="text-muted">— {l.regra}</span>
               </span>
@@ -325,7 +338,7 @@ export default function RoiImovelPage() {
         </ul>
         <p className="mt-3 text-xs text-muted">{RETORNO_AIRBNB_UBERLANDIA.texto}</p>
         <p className="mt-2 text-[11px] text-muted">
-          Fontes: {comparativo.filter((l) => l.fonte).map((l) => l.fonte?.nome).join("; ")}; {RETORNO_AIRBNB_UBERLANDIA.fonte}. {COMPARE_RODAPE}
+          Fontes: {comparativo.filter((l) => l.fonte).map((l) => l.fonte?.nome).join("; ")}; {RETORNO_AIRBNB_UBERLANDIA.fonte}. {comparativo.find((l) => l.id === "tradicional")?.nota} {COMPARE_RODAPE}
         </p>
       </section>
 

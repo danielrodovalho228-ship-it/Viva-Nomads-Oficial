@@ -40,7 +40,7 @@ test.describe("T37 — Números do código (fonte única)", () => {
     // Exemplo: R$ 2.400 × 4 meses = R$ 9.600 → R$ 1.152 / 768 / 384 / 0.
     expect(PLANOS.map((p) => resumoContrato(4, 2400, p.comissao).comissaoValor)).toEqual([1152, 768, 384, 0]);
     expect(textoComissao(0.12, 2400)).toContain("12% do valor total do contrato");
-    expect(textoComissao(0)).toContain("Comissão zero");
+    expect(textoComissao(0)).toContain("Taxa de serviço zero");
   });
 
   test("Caução: 50% de cada bloco e, no total, no máximo 3 aluguéis", () => {
@@ -78,7 +78,11 @@ test.describe("T37 — /precos (visitante)", () => {
       else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
     // O Plano Gestor é um botão que abre a janela de contato (t185); não há mais bloco fixo na página.
-    await page.getByTestId("plano-gestor-botao").click();
+    // O clique antes da hidratação não abre a janela: repete o toque até o formulário aparecer.
+    await expect(async () => {
+      await page.getByTestId("plano-gestor-botao").click();
+      await expect(page.getByTestId("plano-gestor-form")).toBeVisible({ timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
     await expect(page.getByTestId("plano-gestor-form")).toContainText("31 imóveis ou mais");
     await page.keyboard.press("Escape");
     const corpo = limpo(await page.locator("body").innerText());

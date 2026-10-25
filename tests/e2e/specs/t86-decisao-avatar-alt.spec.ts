@@ -74,12 +74,11 @@ test.describe("T86 — #536: avatar sem 'P(' e alt 'imóvel mobiliado'", () => {
     test.skip(!hasAccount("proprietario"), "conta de teste do proprietário não configurada");
     test.use({ storageState: authFile("proprietario") });
 
-    test("capa da Visão geral do dono: alt de sala mobiliada (nunca 'apartamento mobiliado')", async ({ page }) => {
+    test("Visão geral do dono sem capa de foto (Prompt 42) e nenhum alt 'apartamento mobiliado'", async ({ page }) => {
       // "networkidle" estourava 45 s no lab (a Visão geral mantém requisições abertas): basta o HTML.
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      // O banner antigo virou a capa do painel (ordem ec7988fe): o alt agora vem de CAPAS.imoveis.
-      const capa = page.getByTestId("painel-capa").first().locator("img");
-      await expect(capa).toHaveAttribute("alt", /sala mobiliada/i, { timeout: 20_000 });
+      await expect(page.locator("main h1:visible").first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.locator('[data-testid="painel-capa"]')).toHaveCount(0);
       await expect(page.getByAltText(/apartamento mobiliado/i)).toHaveCount(0);
     });
   });

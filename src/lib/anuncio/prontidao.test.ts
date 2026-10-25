@@ -141,11 +141,12 @@ test("checklist do anúncio em andamento: ✓/○, cada pendência leva à etapa
   assert.equal(c.itens.length, p.obrigatorios.length);
   assert.equal(c.itens.filter((i) => !i.ok).length, p.faltam.length);
   assert.equal(c.proximo?.key, "fotos");
-  // Cadastro em 5 etapas (prompt 10): 0 Onde fica · 1 Fotos · 2 O que encontramos · 3 Preço · 4 Revisar.
+  // Assistente em 10 passos: 0 Tipo · 1 Fotos · 2 Endereço · 3 Detalhes · 4 Comodidades · 5 Regras · 6 Descrição ·
+  // 7 Preço · 8 Disponibilidade · 9 Revisão.
   assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=1");
-  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=2");
-  // o documento agora é enviado e conferido na etapa Onde fica (prompt 11).
-  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=0");
+  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=6");
+  // E104: o documento é enviado e conferido no cartão "Antes de publicar" da Revisão (o Passo 3 é só endereço).
+  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=9");
   assert.equal(c.itens.find((i) => i.key === "endereco")?.ok, true);
 });
 
@@ -170,4 +171,46 @@ test("vaga no plano: texto curto com o número, 2 botões, e só aparece se for 
 test("checklist: o id do rascunho vai codificado na URL", () => {
   const c = checklistAnuncio(prontidaoAnuncio({ ...completo(), fotos: 0 }), "a&b=1");
   assert.ok(c.proximo?.href.includes("draft=a%26b%3D1"));
+});
+
+import { ROTULO_QUALIFICACAO } from "./prontidao.ts";
+
+test("p22 — portão único: no cadastro, 'Antes de anunciar' é item da mesma lista desde o início; fora dele não aparece", () => {
+  const fatos = {
+    enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Studio mobiliado", preco: 3000, garantiaOk: true,
+    sublocacaoOk: true, privacidadeOk: true, documento: "approved" as const, limitePlanoOk: null, descricao: "x".repeat(200), selo: false, video: false,
+  };
+  const sem = prontidaoAnuncio({ ...fatos, qualificacaoOk: false });
+  const item = sem.obrigatorios.find((i) => i.key === "qualificacao");
+  assert.ok(item);
+  assert.equal(item.label, ROTULO_QUALIFICACAO);
+  assert.equal(item.ok, false);
+  assert.equal(sem.podePublicar, false, "sem a qualificação não publica — e isso aparece na lista, não num segundo bloqueio");
+  assert.ok(sem.faltam.some((f) => f.startsWith(ROTULO_QUALIFICACAO)));
+  assert.equal(prontidaoAnuncio({ ...fatos, qualificacaoOk: true }).podePublicar, true);
+  assert.equal(prontidaoAnuncio(fatos).obrigatorios.some((i) => i.key === "qualificacao"), false, "editor/lista: não se aplica");
+});
+
+test("65-B: o fato Vídeo vale para arquivo enviado OU link; 'Para melhorar: Vídeo do imóvel' aponta para o campo", async () => {
+  const { hrefParaMelhorar, ANCORA_VIDEO_EDITOR, ANCORA_VIDEO_ASSISTENTE } = await import("./prontidao.ts");
+  const dono = "11111111-1111-4111-8111-111111111111";
+  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_arquivo: `${dono}/v-10s.mp4` }, 8, "approved", true).video, true);
+  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_url: "https://youtu.be/dQw4w9WgXcQ" }, 8, "approved", true).video, true);
+  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_url: "https://evil.com/v" }, 8, "approved", true).video, false);
+  assert.equal(completo().video, false);
+
+  // Anúncio existente → seção Vídeo do editor por seções; rascunho no assistente → bloco de vídeo do passo Fotos.
+  assert.equal(hrefParaMelhorar("video", "abc", false), `/dashboard/imoveis/abc/editar#${ANCORA_VIDEO_EDITOR}`);
+  assert.equal(hrefParaMelhorar("video", "abc", true), `/dashboard/imoveis/novo?draft=abc&etapa=1#${ANCORA_VIDEO_ASSISTENTE}`);
+  assert.equal(hrefParaMelhorar("selo", "abc", false), null);
+
+  // O destino tem o campo: a âncora existe no editor (seção com o enviador) e no passo Fotos (bloco com o enviador).
+  const editor = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx", import.meta.url), "utf8");
+  assert.match(editor, /ancora=\{ANCORA_VIDEO_EDITOR\}[\s\S]{0,400}<VideoUploader path=\{videoArquivo\}[^\n]*onVideoUrlChange=\{setVideoUrl\}/);
+  const fotos = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/etapa-fotos.tsx", import.meta.url), "utf8");
+  assert.match(fotos, /id=\{ANCORA_VIDEO_ASSISTENTE\}[\s\S]{0,300}<VideoUploader [^\n]*onVideoUrlChange=\{setVideoUrl\}/);
+  // No assistente o bloco vem depois do envio de fotos e ANTES da caixa da IA.
+  assert.ok(fotos.indexOf("<PhotoUploader") < fotos.indexOf('data-testid="bloco-video"'));
+  assert.ok(fotos.indexOf('data-testid="bloco-video"') < fotos.indexOf('data-testid="ia-fotos"'));
+  assert.doesNotMatch(fotos, /Link do vídeo do imóvel/, "o campo antigo misturado saiu");
 });

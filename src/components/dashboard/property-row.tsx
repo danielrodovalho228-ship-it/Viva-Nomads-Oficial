@@ -1,8 +1,9 @@
+import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { coverPhoto } from "@/lib/media";
-import { formatBRL } from "@/lib/utils";
 import { isExemplo } from "@/lib/demo-listing";
 
 /**
@@ -17,6 +18,9 @@ export function PropertyRow({
   id,
   title,
   monthlyPrice,
+  totalMes,
+  minPeriodDays,
+  availableFrom,
   neighborhood,
   photos,
   demo = false,
@@ -24,6 +28,10 @@ export function PropertyRow({
   id: string;
   title: string;
   monthlyPrice: number;
+  /** Total do mês (calcularTudoIncluido); sem ele, o valor mensal. */
+  totalMes?: number;
+  minPeriodDays?: number;
+  availableFrom?: string;
   neighborhood?: string;
   photos?: string[];
   demo?: boolean;
@@ -41,28 +49,25 @@ export function PropertyRow({
         <span className="block truncate text-sm font-medium text-ink">{title}</span>
         {/* Anúncio de exemplo: selo honesto também nas listas do painel. */}
         {isExemplo(id) && (
-          <span className="mt-0.5 inline-flex rounded-full bg-night/85 px-2 py-0.5 text-[10px] font-semibold text-white">
+          <span className="mt-1 inline-flex rounded-full bg-night/85 px-2 py-1 text-[10px] font-semibold text-white">
             Exemplo ilustrativo
           </span>
         )}
-        <span className="block text-sm font-semibold text-forest">
-          {formatBRL(monthlyPrice)}
-          <span className="font-normal text-muted">/mês</span>
-          {neighborhood ? <span className="font-normal text-muted"> · {neighborhood}</span> : null}
-        </span>
+        <PrecoComContexto rotulo={rotuloPreco({ mensal: totalMes ?? monthlyPrice, meses: mesesDoCartao(undefined, minPeriodDays), disponivelEm: availableFrom })} destaque="sm" />
+        {neighborhood ? <span className="block text-xs text-muted">{neighborhood}</span> : null}
       </span>
       {!demo && <ChevronRight className="h-5 w-5 shrink-0 text-muted" />}
     </>
   );
 
   if (demo) {
-    return <div className="flex items-center gap-3 py-2.5">{inner}</div>;
+    return <div className="flex items-center gap-3 py-3">{inner}</div>;
   }
 
   return (
     <Link
       href={`/imoveis/${id}`}
-      className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-surface-2"
+      className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-surface-2"
     >
       {inner}
     </Link>

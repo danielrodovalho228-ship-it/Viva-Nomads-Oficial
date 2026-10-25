@@ -1,34 +1,35 @@
 "use client";
 
-import { Check, FileSignature, MessageCircle, MessageSquare } from "lucide-react";
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { buttonClasses } from "@/components/ui/button";
+import { useEffect, useRef } from "react";
+import { buttonClasses, marcaCta } from "@/components/ui/button";
 import type { BarraFixaImovel } from "@/lib/barra-fixa-imovel";
+import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 
 /**
- * Barra fixa no rodapé do celular (< lg) da página do imóvel: valor por mês,
- * "Caução e taxas no detalhe" (leva ao cartão de preço) e as MESMAS três ações do
- * cartão do computador: Enviar candidatura / Mensagem / WhatsApp (da Viva).
- * Fica acima da barra de abas (.vn-barra-fixa); `data-cta` na barra faz o botão flutuante
- * "Fale com a Viva" subir acima dela em vez de cobrir valor e botões.
- * O link "Caução e taxas" nunca é cortado e tem alvo de toque de 44 px (ordem c9d21980, D1);
- * ao voltar pelo cache de página (bfcache do Safari) a página é recarregada para a barra
- * mostrar os dados do próprio imóvel (D2).
+ * Rodapé fixo do celular (< lg) da página do imóvel (Prompt 41, item 1): "R$ X/mês · R$ Y em N meses" (N = 1 → só
+ * "/mês"), o detalhe "Caução e taxas" (leva ao cartão de preço), "A Viva não segura dinheiro", e UM primário:
+ * "Solicitar" (a candidatura de sempre; só o rótulo mudou). A visita é opção: "Agendar visita" em texto terciário,
+ * nunca trava a solicitação. Mensagem e WhatsApp da Viva seguem no cartão de preço.
+ * Fica acima da barra de abas (.vn-barra-fixa); `data-cta` na barra faz o botão flutuante "Fale com a Viva" subir
+ * acima dela. Flutua: sombra única --shadow-flutuante. O link "Caução e taxas" tem alvo de toque de 44 px (ordem
+ * c9d21980, D1); ao voltar pelo cache de página (bfcache do Safari) a página é recarregada (D2).
  */
 export function BarraFixaCelular({
   barra,
   pending,
+  bloqueio,
   onSolicitar,
-  onMensagem,
-  contato,
+  onAgendarVisita,
 }: {
   barra: BarraFixaImovel;
   pending: boolean;
+  /** E93: o "Solicitar" desativado com este texto (anúncio de teste visto por quem não é o dono nem admin). */
+  bloqueio?: string;
   onSolicitar: () => void;
-  onMensagem: () => void;
-  contato: { href: string; rotulo: string };
+  onAgendarVisita: () => void;
 }) {
   const router = useRouter();
   useEffect(() => {
@@ -38,14 +39,29 @@ export function BarraFixaCelular({
     window.addEventListener("pageshow", aoVoltar);
     return () => window.removeEventListener("pageshow", aoVoltar);
   }, [router]);
+  // A altura real da barra (muda com o aviso de exemplo, a quebra de linha e a fonte) vira --altura-barra-fixa: o
+  // "Fale com a Viva" e a folga do rodapé (globals.css, D-V) se posicionam por ela, sem número fixo.
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const raiz = document.documentElement;
+    const medir = () => raiz.style.setProperty("--altura-barra-fixa", `${Math.ceil(el.getBoundingClientRect().height)}px`);
+    medir();
+    const obs = new ResizeObserver(medir);
+    obs.observe(el);
+    return () => {
+      obs.disconnect();
+      raiz.style.removeProperty("--altura-barra-fixa");
+    };
+  }, [barra.visivel]);
   if (!barra.visivel) return null;
-  const primario = buttonClasses({ variant: "primary", size: "sm", className: "h-11 px-3" });
-  const secundario = buttonClasses({ variant: "secondary", size: "sm", className: "h-11 px-3" });
   return (
     <div
+      ref={ref}
       data-testid="barra-fixa-imovel"
       data-cta
-      className="vn-barra-fixa fixed inset-x-0 z-30 border-t border-line bg-white px-4 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] lg:hidden print:hidden"
+      className="vn-barra-fixa fixed inset-x-0 z-30 border-t border-line bg-white px-4 py-2 shadow-flutuante lg:hidden print:hidden"
     >
       <div className="mx-auto max-w-xl">
         {barra.demonstracao && (
@@ -57,14 +73,22 @@ export function BarraFixaCelular({
           <Link
             href="#cartao-preco"
             data-testid="barra-total"
-            aria-label={`Total por mês ${barra.valor}: ver caução e taxas no detalhe`}
+            aria-label={`${barra.mes}${barra.estadia ? ` · ${barra.estadia}` : ""}: ver caução e taxas no detalhe`}
             className="flex min-h-11 min-w-0 flex-1 flex-col justify-center"
           >
-            <span>
-              <span className="font-title text-lg font-bold text-forest">{barra.valor}</span>
-              <span className="text-sm text-muted"> /mês total</span>
+            <span className="tabular-nums">
+              <span data-testid="barra-preco-mes" className="text-lg font-semibold text-forest">
+                {barra.valor}
+              </span>
+              <span className="text-sm text-ink">/mês</span>
+              {barra.estadia && (
+                <span data-testid="barra-total-estadia" className="text-sm text-muted">
+                  {" "}
+                  · {barra.estadia}
+                </span>
+              )}
             </span>
-            <span data-testid="barra-detalhe" className="text-[11px] leading-snug text-muted underline">
+            <span data-testid="barra-detalhe" className="text-xs leading-snug text-muted underline">
               {barra.linha}
             </span>
           </Link>
@@ -72,27 +96,29 @@ export function BarraFixaCelular({
             {barra.status}
           </span>
         </div>
-        <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+        <p data-testid="barra-nao-segura" className="text-[11px] leading-snug text-muted">
+          {FRASE_NAO_SEGURA_DINHEIRO}: o valor vai direto ao proprietário.
+        </p>
+        <div className="mt-1 flex items-center gap-4">
           {barra.estado === "candidatou" ? (
-            <Link href="/dashboard/mensagens" className={buttonClasses({ variant: "secondary", size: "sm", className: "h-11 px-3" })}>
+            <Link href="/dashboard/mensagens" className={buttonClasses({ variant: "secondary", size: "sm", className: "h-11 flex-1 px-3" })}>
               <Check className="h-4 w-4" /> Candidatura enviada
             </Link>
           ) : (
-            <button type="button" onClick={onSolicitar} disabled={pending} className={primario}>
-              <FileSignature className="h-4 w-4" />
-              {pending ? "Enviando..." : "Enviar candidatura"}
+            <button
+              type="button"
+              onClick={onSolicitar}
+              disabled={pending || !!bloqueio}
+              data-cta={marcaCta("primary")}
+              data-testid="barra-solicitar"
+              className={buttonClasses({ variant: "primary", size: "sm", className: bloqueio ? "h-auto min-h-11 flex-1 px-3 py-1 text-xs leading-snug" : "h-11 flex-1 px-3" })}
+            >
+              {bloqueio ? bloqueio : <>{pending ? "Enviando..." : "Solicitar"}</>}
             </button>
           )}
-          <button type="button" onClick={onMensagem} aria-label="Enviar mensagem" className={secundario}>
-            <MessageSquare className="h-4 w-4" /> <span>Mensagem</span>
+          <button type="button" onClick={onAgendarVisita} data-testid="barra-agendar-visita" className={buttonClasses({ variant: "tertiary", size: "sm" })}>
+            Agendar visita
           </button>
-          <a
-            href={contato.href}
-            aria-label={contato.rotulo}
-            className={secundario}
-          >
-            <MessageCircle className="h-4 w-4" /> <span className="sr-only sm:not-sr-only">Viva</span>
-          </a>
         </div>
       </div>
     </div>

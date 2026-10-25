@@ -1,4 +1,8 @@
+import { lerProximidades } from "@/lib/data/proximidades";
+import { cache } from "react";
+import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { createClient } from "@/lib/supabase/server";
+import { comNovaTentativa } from "@/lib/nova-tentativa";
 import { isExemplo } from "@/lib/demo-listing";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Property, AmenityGroup } from "@/lib/types";
@@ -10,10 +14,19 @@ import { semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
 import { ROTULOS_FILTRAVEIS, chavesFiltroDe } from "@/lib/busca/filtro-comodidades";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
+import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { normalizarNegociacao } from "@/lib/anuncio/negociacao";
 
 /** Negociação pública e Mbps (0152); linha ausente ou sem configuração = nada. */
+type LinhaMedida = { download_mbps: number | string; upload_mbps: number | string; latencia_ms: number; medido_em: string; valido_ate: string };
+/** Linha da view internet_medida_publica → medição (Prompt 57). */
+function medidaDaLinha(l: LinhaMedida | null): Medicao | undefined {
+  if (!l) return undefined;
+  return { downloadMbps: Number(l.download_mbps), uploadMbps: Number(l.upload_mbps), latenciaMs: Number(l.latencia_ms), medidoEm: l.medido_em, validoAte: l.valido_ate };
+}
+
 function negociacaoDaLinha(l: { negociacao?: unknown; internet_mbps?: unknown } | null) {
   return {
     negociacao: l?.negociacao ? normalizarNegociacao(l.negociacao) : undefined,
@@ -21,6 +34,7 @@ function negociacaoDaLinha(l: { negociacao?: unknown; internet_mbps?: unknown } 
   };
 }
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
+import type { Medicao } from "@/lib/internet-medida";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
 
 /**
@@ -58,7 +72,7 @@ export const PROPERTY_PUBLIC_COLUMNS =
   "garantias_aceitas, google_places, parking_spots, condo_fee, " +
   "descricao_gerada_por_ia, available_from, furnished, pets_allowed, " +
   "smoking_allowed, children_allowed, max_guests, available_until, " +
-  "max_period_days, checkin_after, checkout_before";
+  "max_period_days, checkin_after, checkout_before, video_arquivo";
 
 /*
   Camada de acesso a imóveis. Usa o Supabase quando configurado; caso
@@ -104,6 +118,7 @@ interface PropertyRow {
   ownership_type: string | null;
   sublease_authorized: boolean | null;
   video_url: string | null;
+  video_arquivo?: string | null;
   created_at: string | null;
   faixas_aceitas: string[] | null;
   garantias_aceitas: string[] | null;
@@ -130,7 +145,7 @@ interface PropertyRow {
   assim a busca/home nunca aparecem vazias. Para esconder os demos quando houver
   catálogo real suficiente, defina NEXT_PUBLIC_SHOW_DEMO_PROPERTIES=false na Vercel.
 */
-function showDemoProperties(): boolean {
+export function showDemoProperties(): boolean {
   return process.env.NEXT_PUBLIC_SHOW_DEMO_PROPERTIES !== "false";
 }
 
@@ -176,6 +191,7 @@ function rowToProperty(row: PropertyRow): Property {
     ownershipType: (row.ownership_type as Property["ownershipType"]) ?? "own",
     subleaseAuthorized: row.sublease_authorized ?? undefined,
     videoUrl: row.video_url ?? undefined,
+    videoArquivo: row.video_arquivo ?? undefined,
     createdAt: row.created_at ?? undefined,
     photos: [],
     amenities: [],
@@ -222,11 +238,12 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha, regrasLinha, detalhesLinha] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
-    safe(supabase.from("property_proximities").select("category, name, note, sort_order").eq("property_id", base.id).order("sort_order")),
+    // PERTO-B: as proximidades com distância/tempo calculados e "não mostrar" (sem a 0238, lê as colunas antigas).
+    lerProximidades(supabase, base.id).catch(() => []),
     safe(supabase.from("avaliacoes").select("id, nota_geral, comentario_publico, publicada_em").eq("imovel_id", base.id).eq("papel_autor", "inquilino").eq("status", "publicada").order("publicada_em", { ascending: false })),
     ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate, is_verified").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
     // Regras de pets (0119): coluna à parte para a página não quebrar se a migração atrasar.
@@ -237,6 +254,14 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("properties").select("limpeza_estadia").eq("id", base.id).maybeSingle()),
     // Negociação pública e Mbps (0152): leitura à parte — sem a migração o anúncio abre igual.
     safe(supabase.from("properties").select("negociacao, internet_mbps").eq("id", base.id).maybeSingle()),
+    // Internet medida no imóvel (Prompt 57): só a última validada do dono, vigente — sem a migração, nada.
+    safe(supabase.from("internet_medida_publica").select("download_mbps, upload_mbps, latencia_ms, medido_em, valido_ate").eq("property_id", base.id).maybeSingle()),
+    // 61-B (0225): leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("tipo_entrada, mensagem_para_pedido, considerar_antes, considerar_antes_texto").eq("id", base.id).maybeSingle()),
+    // CAMPOS-1 (0233): regras da casa estruturadas, leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("regras_casa").eq("id", base.id).maybeSingle()),
+    // CAMPOS-2 (0235): detalhes opcionais do anúncio, leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("detalhes_anuncio").eq("id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
 
@@ -286,13 +311,10 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
       type: w.type as Property["nearbyWorkspaces"][number]["type"],
       distanceM: w.distance_m ?? 0,
     })),
-    proximities: ((proximities as { category: string; name: string; note: string | null }[] | null) ?? []).map((p) => ({
-      category: p.category as NonNullable<Property["proximities"]>[number]["category"],
-      name: p.name,
-      note: p.note ?? undefined,
-    })),
+    proximities: proximities ?? [],
     // Avaliação real de quem morou (0089): sem nome digitado — "Inquilino verificado".
     reviews: ((reviews as { id: string; nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[] | null) ?? []).map((r) => ({
+      id: r.id,
       author: "Inquilino verificado",
       rating: Number(r.nota_geral),
       comment: r.comentario_publico ?? "",
@@ -301,7 +323,11 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     })),
     petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
     limpezaEstadia: normalizarLimpezaEstadia((limpezaLinha as { limpeza_estadia?: unknown } | null)?.limpeza_estadia) ?? undefined,
+    regrasCasa: normalizarRegrasCasa((regrasLinha as { regras_casa?: unknown } | null)?.regras_casa) ?? undefined,
+    detalhesAnuncio: normalizarDetalhes((detalhesLinha as { detalhes_anuncio?: unknown } | null)?.detalhes_anuncio) ?? undefined,
     ...negociacaoDaLinha(negLinha as { negociacao?: unknown; internet_mbps?: unknown } | null),
+    internetMedida: medidaDaLinha(medidaLinha as LinhaMedida | null),
+    chegadaEPedido: chegadaEPedidoDaLinha(chegadaLinha as LinhaChegadaEPedido | null),
     privacidade,
     ownerName: ownerRow?.full_name ?? base.ownerName,
     ownerId: ownerId ?? base.ownerId,
@@ -323,11 +349,16 @@ export async function listProperties(): Promise<Property[]> {
   if (!supabase) return SAMPLE_PROPERTIES;
 
   try {
-    const { data, error } = await supabase
-      .from("properties")
-      .select(PROPERTY_PUBLIC_COLUMNS)
-      .eq("status", "active")
-      .order("created_at", { ascending: false });
+    // Uma nova tentativa automática com espera curta (ordem aad2b751: erro transitório na home).
+    const { data, error } = await comNovaTentativa(
+      async () =>
+        await supabase
+          .from("properties")
+          .select(PROPERTY_PUBLIC_COLUMNS)
+          .eq("status", "active")
+          .order("created_at", { ascending: false }),
+      (r) => !!r.error || !r.data,
+    );
 
     // Diagnóstico (FASE 0): a chave anon NÃO lança quando a RLS bloqueia — ela
     // devolve data=[] e error=null. Logamos o error para distinguir "0 imóveis"
@@ -341,6 +372,9 @@ export async function listProperties(): Promise<Property[]> {
     await attachComodidadesFiltro(supabase, mapped); // Wi-Fi/cozinha/garagem/lavar, para os filtros da busca (best-effort)
     await attachPrecoJusto(supabase, mapped); // selo Preço justo (0130; best-effort)
     await attachPetsRegras(supabase, mapped); // porte máximo de pet, para o filtro da busca (0119; best-effort)
+    await attachInternet(supabase, mapped); // internet informada e medida, para o filtro da busca (Prompt 57 fase 2; best-effort)
+    await attachNivel(supabase, mapped); // nível Essencial/Conforto/Premium, para o filtro "a partir de" (59.1; best-effort)
+    await attachBloqueios(supabase, mapped); // datas bloqueadas (do dono e importadas), para a data de entrada da busca (Prompt 53)
     return withDemos(mapped);
   } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
@@ -370,7 +404,7 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
   }
 }
 
-export async function getProperty(id: string): Promise<Property | undefined> {
+async function getPropertySemCache(id: string): Promise<Property | undefined> {
   const supabase = createPublicClient();
   // Modo demonstração (sem Supabase): dados de exemplo.
   if (!supabase) return SAMPLE_PROPERTIES.find((p) => p.id === id);
@@ -400,6 +434,22 @@ export async function getProperty(id: string): Promise<Property | undefined> {
   }
 }
 
+/** Um anúncio público; a mesma consulta vale para layout, metadados e página na mesma requisição. */
+export const getProperty = cache(getPropertySemCache);
+
+/**
+ * 64-B: anúncio PAUSADO por URL direta (link já compartilhado, favorito, push): não é 404 — a página diz "Este anúncio
+ * está pausado", só com o título e a cidade (sem preço, sem foto, sem botão de pedido). Rascunho continua 404.
+ */
+export const anuncioPausadoPublico = cache(async (id: string): Promise<{ id: string; titulo: string; cidade: string | null } | null> => {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("properties").select("id, title, city").eq("id", id).eq("status", "paused").maybeSingle();
+  const p = data as { id: string; title: string | null; city: string | null } | null;
+  return p ? { id: p.id, titulo: p.title ?? "Anúncio", cidade: p.city } : null;
+});
+
 /**
  * Carrega um imóvel do PRÓPRIO dono para edição — qualquer status (inclusive
  * rascunho/pausado), com o cliente autenticado (a RLS garante que só o dono lê o
@@ -423,9 +473,11 @@ export async function getPropertyForOwner(id: string): Promise<Property | undefi
     if (!data) return SAMPLE_PROPERTIES.find((p) => p.id === id);
     const base = rowToProperty(data as unknown as PropertyRow);
     // 0091: só o "tem documento" (nunca o caminho). Sem a migração, fica indefinido.
-    const { data: aut } = await supabase.from("properties").select("autorizacao_anexada").eq("id", id).eq("owner_id", user.id).maybeSingle();
+    const { data: aut } = await supabase.from("properties").select("autorizacao_anexada, sublease_doc_tipo").eq("id", id).eq("owner_id", user.id).maybeSingle();
     if (aut && typeof (aut as { autorizacao_anexada?: unknown }).autorizacao_anexada === "boolean")
       base.autorizacaoAnexada = (aut as { autorizacao_anexada: boolean }).autorizacao_anexada;
+    const tipoDoc = (aut as { sublease_doc_tipo?: unknown } | null)?.sublease_doc_tipo;
+    if (typeof tipoDoc === "string") base.subleaseDocTipo = tipoDoc;
     await attachPrecoJusto(supabase, [base]);
     return enrichProperty(supabase, base, user.id);
   } catch {
@@ -503,6 +555,60 @@ async function attachPrecoJusto(supabase: SupabaseLike, list: Property[]): Promi
     }
   } catch {
     /* sem a coluna, sem selo */
+  }
+}
+
+/** Prompt 57, fase 2: Mbps informado pelo dono e a medição válida (view pública) de cada imóvel da lista. */
+async function attachInternet(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  const ids = list.map((p) => p.id);
+  try {
+    const [{ data: inf }, { data: med }] = await Promise.all([
+      supabase.from("properties").select("id, internet_mbps").in("id", ids),
+      supabase.from("internet_medida_publica").select("property_id, download_mbps, upload_mbps, latencia_ms, medido_em, valido_ate").in("property_id", ids),
+    ]);
+    const informada = new Map(((inf as { id: string; internet_mbps: unknown }[] | null) ?? []).map((r) => [r.id, mbpsValido(r.internet_mbps) ?? undefined]));
+    const medida = new Map(((med as (LinhaMedida & { property_id: string })[] | null) ?? []).map((r) => [r.property_id, medidaDaLinha(r)]));
+    for (const p of list) {
+      p.internetMbps = informada.get(p.id) ?? p.internetMbps;
+      p.internetMedida = medida.get(p.id) ?? p.internetMedida;
+    }
+  } catch {
+    /* sem a view ou a coluna, o filtro de internet não acha medição: ninguém passa como medido */
+  }
+}
+
+async function attachNivel(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  try {
+    const { data } = await supabase.from("imovel_nivel").select("property_id, nivel, nivel_vistoriado_em").in("property_id", list.map((p) => p.id));
+    const porId = new Map(((data as { property_id: string; nivel: Property["nivel"]; nivel_vistoriado_em: string | null }[] | null) ?? []).map((r) => [r.property_id, r]));
+    for (const p of list) {
+      const r = porId.get(p.id);
+      p.nivel = r?.nivel ?? p.nivel ?? null;
+      if (r?.nivel_vistoriado_em) p.nivelVistoriado = true;
+    }
+  } catch {
+    /* sem a 0211: ninguém tem nível e o filtro "a partir de" não acha ninguém */
+  }
+}
+
+/** Prompt 53: datas bloqueadas de hoje em diante (manuais e importadas), para a busca tirar o imóvel nessas datas. */
+async function attachBloqueios(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  try {
+    const hoje = new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10);
+    const { data } = await supabase.from("property_blocks").select("property_id, inicio, fim").in("property_id", list.map((p) => p.id)).gte("fim", hoje);
+    const porId = new Map<string, { inicio: string; fim: string }[]>();
+    for (const r of (data as { property_id: string; inicio: string; fim: string }[] | null) ?? []) {
+      porId.set(r.property_id, [...(porId.get(r.property_id) ?? []), { inicio: String(r.inicio), fim: String(r.fim) }]);
+    }
+    for (const p of list) {
+      const b = porId.get(p.id);
+      if (b) p.bloqueios = b;
+    }
+  } catch {
+    /* sem bloqueios lidos: a busca segue só pela data de disponibilidade */
   }
 }
 

@@ -3,10 +3,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { situacaoCandidatura, ROTULOS_CANDIDATURA } from "./status.ts";
 
-test("aceite → 'Aceita 🎉' (sucesso)", () => {
+test("aceite → 'Aceita' (sucesso)", () => {
   const r = situacaoCandidatura("accepted");
   assert.equal(r.chave, "aceita");
-  assert.equal(r.label, "Aceita 🎉");
+  assert.equal(r.label, "Aceita");
   assert.equal(r.tom, "sucesso");
 });
 

@@ -5,8 +5,12 @@ import { consumirLimite, DIA, situacaoLimite } from "@/lib/limites";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { agoraBRTexto } from "@/lib/atendimento/data-br";
 import { notify } from "@/lib/notifications";
+import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
+import { createHash } from "node:crypto";
+import { enviarCodigoPorEmail } from "@/lib/auth/codigo-por-email";
+import { TEXTO_VALIDADE_CODIGO, avaliarEnvioCodigo } from "@/lib/seguranca/codigo-acesso";
 import { calcularPrazos, frasePrazo, prazoPrometido, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
 import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { atenderViva, maisUrgente, type ChamarModelo, type Ferramentas, type ResultadoViva } from "@/lib/atendimento/viva-motor";
@@ -204,18 +208,22 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
       });
       return { conteudo: json(lista) };
     },
-    reenviar_email_confirmacao: async () => {
+    // 49-C1: a entrada é por código. Nada de link de confirmação: manda o código de acesso (o mesmo e-mail da tela
+    // de entrada), com o limite da Viva (24 h) e o mesmo limite de envios por hora da rota /api/auth/codigo.
+    enviar_codigo_acesso: async () => {
       const { email, userId } = await emailDaConta(admin, c);
       if (!email || !userId) return { conteudo: SEM_LOGIN_EMAIL };
-      const { data: u } = await admin.auth.admin.getUserById(userId);
-      if (u?.user?.email_confirmed_at) return { conteudo: "O e-mail desta conta já está confirmado: é só entrar com e-mail e senha." };
-      if (!(await consumirLimite(`viva:reenvio:${userId}`, LIMITE_ACOES_VIVA.reenvio, DIA))) {
-        await registrarAcaoViva(admin, c, "viva_limite", "reenvio da confirmação recusado: limite de 24h");
-        return { conteudo: `Já reenviei ${LIMITE_ACOES_VIVA.reenvio} vezes nas últimas 24 horas. Peça para conferir o spam; se não chegar, passo para a equipe.`, erro: true };
+      const emailHash = createHash("sha256").update(`codigo:${email.trim().toLowerCase()}`).digest("hex").slice(0, 32);
+      const porHora = await avaliarEnvioCodigo(emailHash, `viva:${userId}`, situacaoLimite);
+      if (!porHora || !(await consumirLimite(`viva:reenvio:${userId}`, LIMITE_ACOES_VIVA.reenvio, DIA))) {
+        await registrarAcaoViva(admin, c, "viva_limite", "código de acesso recusado: limite de envios");
+        return { conteudo: `Já mandei o código ${LIMITE_ACOES_VIVA.reenvio} vezes há pouco. Peça para conferir o spam e a aba Promoções; se não chegar, passo para a equipe.`, erro: true };
       }
-      const { error } = await admin.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${SITE_URL}/auth/callback` } });
-      await registrarAcaoViva(admin, c, "viva_reenvio_confirmacao", error ? "falhou" : "enviado ao e-mail cadastrado da conta");
-      return error ? { conteudo: "Não consegui reenviar agora.", erro: true } : { conteudo: "E-mail de confirmação reenviado para o e-mail cadastrado na conta." };
+      const ok = await enviarCodigoPorEmail(admin, email, false, userId);
+      await registrarAcaoViva(admin, c, "viva_codigo_acesso", ok ? "código enviado ao e-mail cadastrado da conta" : "falhou");
+      return ok
+        ? { conteudo: `Código de acesso enviado para o e-mail cadastrado na conta. É só digitar os 6 dígitos na tela Entrar; ele vale por ${TEXTO_VALIDADE_CODIGO}.` }
+        : { conteudo: "Não consegui enviar o código agora.", erro: true };
     },
     enviar_link_redefinir_senha: async () => {
       const { email, userId } = await emailDaConta(admin, c);
@@ -286,7 +294,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
           name: (dono.full_name as string) ?? undefined,
           userId: lead.owner_id as string,
           pushUrl: "/dashboard/leads",
-          subject: "Lembrete: um interessado aguarda sua resposta",
+          subject: ASSUNTOS.lembreteInteressado,
         }).catch(() => null);
       }
       await registrarAcaoViva(admin, c, "viva_lembrete_dono", "candidatura");

@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { linkQualificacao } from "./qualificar-link.ts";
+import { linkQualificacao, rotaVoltarAoAnuncio } from "./qualificar-link.ts";
 
 const ID = "ddf86c66-a214-463d-8563-66a5204010b5";
 
@@ -22,4 +22,10 @@ test("sem id (rascunho não salvo) não devolve link", () => {
 test("id malformado não vira link", () => {
   assert.equal(linkQualificacao("../novo"), null);
   assert.equal(linkQualificacao(`${ID}&x=1`), null);
+});
+
+test("voltar ao anúncio: rascunho reabre por ?draft=, publicado pela edição, sem imóvel um anúncio novo", () => {
+  assert.equal(rotaVoltarAoAnuncio({ id: ID, rascunho: true }), `/dashboard/imoveis/novo?draft=${ID}`);
+  assert.equal(rotaVoltarAoAnuncio({ id: ID, rascunho: false }), `/dashboard/imoveis/novo?id=${ID}`);
+  assert.equal(rotaVoltarAoAnuncio(null), "/dashboard/imoveis/novo");
 });

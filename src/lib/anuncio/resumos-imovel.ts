@@ -4,7 +4,10 @@
 */
 import type { Property } from "../types";
 import { linhasPrivacidadePublica } from "./privacidade.ts";
-import { distanciaAprox, proximidadesDoImovel } from "./proximidades.ts";
+import { proximidadesDoImovel, proximidadesVisiveis } from "./proximidades.ts";
+import { linhasRegrasCasa, type ChaveRegraCasa } from "./regras-casa.ts";
+import { linhasDetalhes } from "./detalhes-anuncio.ts";
+import { textoCompromissoManutencao } from "../conforto/exibicao.ts";
 
 export type ChaveDestaque = "saude" | "educacao" | "pronto" | "trabalho" | "vaga";
 export interface Destaque {
@@ -20,11 +23,12 @@ export const LIMITE_DESCRICAO_CURTA = 280;
 /** Até 3 destaques, em ordem de relevância; só com dado cadastrado. */
 export function destaquesDoImovel(p: Property): Destaque[] {
   const d: Destaque[] = [];
-  const prox = proximidadesDoImovel(p);
-  const saude = prox.find((x) => x.category === "saude" && x.name.trim());
-  const educ = prox.find((x) => x.category === "educacao" && x.name.trim());
-  if (saude) d.push({ chave: "saude", titulo: `Perto de ${saude.name.trim()}`, detalhe: distanciaAprox(saude.note) });
-  if (educ) d.push({ chave: "educacao", titulo: `Perto de ${educ.name.trim()}`, detalhe: distanciaAprox(educ.note) });
+  // PERTO-B: a mesma lista visível de "O que tem por perto" (o mais perto de cada categoria vem primeiro).
+  const prox = proximidadesVisiveis(proximidadesDoImovel(p));
+  const saude = prox.find((x) => x.categoria === "saude");
+  const educ = prox.find((x) => x.categoria === "educacao");
+  if (saude) d.push({ chave: "saude", titulo: `Perto de ${saude.nome}`, detalhe: saude.texto });
+  if (educ) d.push({ chave: "educacao", titulo: `Perto de ${educ.nome}`, detalhe: educ.texto });
   if (p.readyToLiveBadge) d.push({ chave: "pronto", titulo: "Pronto para morar", detalhe: "Imóvel mobiliado e equipado" });
   if (p.tagHomeOffice || (p.workFeatures ?? []).length > 0)
     d.push({ chave: "trabalho", titulo: "Espaço para trabalhar", detalhe: p.workFeatures?.[0] });
@@ -37,13 +41,24 @@ export function descricaoPrecisaMostrarMais(descricao: string | null | undefined
   return (descricao ?? "").trim().length > LIMITE_DESCRICAO_CURTA;
 }
 
-export type ChaveBomSaber = "cancelamento" | "regras" | "seguranca";
+export type ChaveBomSaber = "cancelamento" | "regras" | "seguranca" | "manutencao";
 export interface LinhaBomSaber {
   chave: ChaveBomSaber;
   titulo: string;
   resumo: string;
   detalhe: string[];
+  /** Só em "regras": as mesmas linhas do detalhe, cada uma com a chave do seu ícone. */
+  itens?: ItemRegraCasa[];
 }
+
+export type ChaveItemRegra = "pessoas" | "pets" | "entrada" | "saida" | ChaveRegraCasa;
+export interface ItemRegraCasa {
+  chave: ChaveItemRegra;
+  texto: string;
+}
+
+/** Quantos fatos a linha-resumo de "Regras da casa" mostra (CAMPOS-1: continua curta). */
+export const MAX_RESUMO_REGRAS = 2;
 
 /*
   Textos fixos do "Bom saber" (prompt 4, 17/10). Só regras que a plataforma já aplica, sem regra
@@ -71,14 +86,41 @@ export const RESUMO_SEGURANCA_SEM_DECLARACAO = "Proteções da Viva · câmeras 
 
 const pessoas = (n: number) => `até ${n} ${n === 1 ? "pessoa" : "pessoas"}`;
 
-/** As 3 linhas do bloco "Bom saber". O detalhe completo continua em "Regras da estadia". */
+const maiuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/**
+ * Itens da folha "Regras da casa": os fatos de sempre (pessoas, pets, entrada, saída) e depois as regras
+ * estruturadas DEFINIDAS (CAMPOS-1: silêncio, fumo, festas, visitas). O que não foi definido não aparece.
+ */
+export function itensRegrasCasa(p: Property): ItemRegraCasa[] {
+  const i: ItemRegraCasa[] = [];
+  if (p.maxGuests != null) i.push({ chave: "pessoas", texto: maiuscula(pessoas(p.maxGuests)) });
+  if (p.petsAllowed !== undefined) i.push({ chave: "pets", texto: p.petsAllowed ? "Aceita pets" : "Sem pets" });
+  // CAMPOS-2: com a janela de entrada/saída ligada, ela substitui os horários antigos (uma linha só).
+  const janela = linhasDetalhes(p.detalhesAnuncio).find((d) => d.chave === "janela");
+  if (janela) i.push({ chave: "entrada", texto: janela.texto });
+  else {
+    if (p.checkinAfter) i.push({ chave: "entrada", texto: `Entrada a partir das ${p.checkinAfter}` });
+    if (p.checkoutBefore) i.push({ chave: "saida", texto: `Saída até às ${p.checkoutBefore}` });
+  }
+  for (const r of linhasRegrasCasa(p.regrasCasa)) i.push(r);
+  return i;
+}
+
+/**
+ * E98-A: o compromisso de manutenção da Viva (vale para todo imóvel) é uma linha do "Bom saber", não um item solto
+ * embaixo dele. Resumo = o prazo da urgência; o detalhe traz os prazos um por linha. Mesma fonte (PRAZO_SOLUCAO_H).
+ */
+export function linhaManutencaoBomSaber(): LinhaBomSaber {
+  const partes = textoCompromissoManutencao().replace(/^Manutenção:\s*/, "").split(" · ").map(maiuscula);
+  return { chave: "manutencao", titulo: "Manutenção", resumo: partes[0], detalhe: partes };
+}
+
+/** As 4 linhas do bloco "Bom saber". O detalhe completo das regras continua em "Regras da estadia". */
 export function linhasBomSaber(p: Property): LinhaBomSaber[] {
-  const partes: string[] = [];
-  if (p.checkinAfter) partes.push(`entrada a partir das ${p.checkinAfter}`);
-  if (p.checkoutBefore) partes.push(`saída até às ${p.checkoutBefore}`);
-  if (p.maxGuests != null) partes.push(pessoas(p.maxGuests));
-  if (p.petsAllowed !== undefined) partes.push(p.petsAllowed ? "aceita pets" : "sem pets");
-  const regras = partes.length > 0 ? partes.join(" · ") : "Veja entrada, saída, pessoas e pets";
+  const itens = itensRegrasCasa(p);
+  const curtos = itens.slice(0, MAX_RESUMO_REGRAS).map((x, k) => (k === 0 ? x.texto : x.texto.charAt(0).toLowerCase() + x.texto.slice(1)));
+  const regras = curtos.length > 0 ? curtos.join(" · ") : "Veja entrada, saída, pessoas e pets";
 
   const priv = linhasPrivacidadePublica(p.privacidade);
   const declarado = priv.filter((l) => /câmera|^Acesso:/i.test(l));
@@ -95,7 +137,8 @@ export function linhasBomSaber(p: Property): LinhaBomSaber[] {
       chave: "regras",
       titulo: "Regras da casa",
       resumo: regras,
-      detalhe: partes.length > 0 ? partes.map((x) => x.charAt(0).toUpperCase() + x.slice(1)) : ["Sem regras informadas ainda."],
+      detalhe: itens.length > 0 ? itens.map((x) => x.texto) : ["Sem regras informadas ainda."],
+      itens,
     },
     {
       chave: "seguranca",
@@ -104,5 +147,6 @@ export function linhasBomSaber(p: Property): LinhaBomSaber[] {
       // Sempre as proteções da Viva; depois o que o anunciante declarou (ou o convite a perguntar).
       detalhe: [...PROTECOES_VIVA, ...(priv.length > 0 ? priv : [SEGURANCA_SEM_DECLARACAO])],
     },
+    linhaManutencaoBomSaber(),
   ];
 }

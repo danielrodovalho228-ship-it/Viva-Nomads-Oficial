@@ -21,8 +21,9 @@ export function friendlyAuthError(message: string, contexto: "login" | "cadastro
     return "Confirme seu e-mail antes de entrar. Reenvie a confirmação se precisar.";
 
   // ── Cadastro ──
+  // Anti-enumeração (ordem dddccd2f): e-mail repetido recebe a MESMA mensagem de um novo.
   if (m.includes("user already registered") || m.includes("already been registered"))
-    return "Este e-mail já possui uma conta. Faça login ou recupere a senha.";
+    return MSG_CADASTRO_NEUTRO;
   if (
     m.includes("password should be at least") ||
     m.includes("password is too short") ||
@@ -57,7 +58,7 @@ export function friendlyAuthError(message: string, contexto: "login" | "cadastro
     return "Conta criada. Não conseguimos enviar o e-mail de confirmação agora; tente reenviar em instantes.";
 
   // ── Genéricos ──
-  if (m.includes("rate limit") || m.includes("too many"))
+  if (m.includes("rate limit") || m.includes("too many") || m.includes("muitas tentativas"))
     return "Muitas tentativas. Aguarde um instante e tente de novo.";
   if (m.includes("network") || m.includes("fetch"))
     return "Falha de conexão. Verifique sua internet e tente novamente.";
@@ -86,3 +87,16 @@ export function isValidEmail(email: string): boolean {
 }
 
 export const MIN_PASSWORD = 8;
+
+/** Aviso do cadastro, igual para e-mail novo e já existente (não revela se há conta). */
+export const MSG_CADASTRO_NEUTRO =
+  "Se este e-mail puder ser cadastrado, enviamos um link de confirmação. Confira a caixa de entrada e o spam.";
+
+/**
+ * Com "Confirm email" ligado, o Supabase responde ao cadastro de e-mail repetido
+ * com um usuário "ofuscado" (identities vazio). Detecta esse caso para a tela
+ * tratá-lo igual a um cadastro novo.
+ */
+export function cadastroDuplicadoOfuscado(user: { identities?: unknown[] | null } | null | undefined): boolean {
+  return !!user && Array.isArray(user.identities) && user.identities.length === 0;
+}

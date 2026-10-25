@@ -1,58 +1,48 @@
 "use client";
 
-import { PetsFicha } from "@/components/account/pets-ficha";
-import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
-import { PageTitle } from "@/components/dashboard/primitives";
-import { AvatarUploader } from "@/components/account/avatar-uploader";
-import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
-import { CaixaEmailsTeste } from "@/components/account/caixa-emails-teste";
+import { useEffect, useState } from "react";
 import { ContaMenu } from "@/components/account/conta-menu";
-import { AjudaContato, DadosPessoais, DangerZone, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
-import { BlocoConta, ConfiancaLista, PerfilProfissional, VerComoOutrosVeem } from "@/components/account/conta-blocos";
+import { CascaConta } from "@/components/account/casca-conta";
+import { PerfilTela } from "@/components/account/perfil-tela";
+import { destinoDaAncora } from "@/lib/conta/secoes";
 
 /**
- * Conta (prompt 18). No SITE: 4 blocos, cada assunto uma vez —
- * 1. Perfil público (foto, bio, idiomas, cidade e "Ver como os outros veem");
- * 2. Dados da conta (nome, e-mail, celular com SMS, documento, pets);
- * 3. Confiança e segurança (uma lista: e-mail, celular, identidade, LinkedIn, duas etapas e senha);
- * 4. Preferências (notificações, ajuda, excluir conta).
- * O simulador tributário fica só em Ferramentas (/dashboard/tributacao). No APP: o menu de subtelas.
+ * Conta (A1, sequência-mestre CONTA-A, mockups perfil-01..08 aprovados em 23/10).
+ * - Computador (≥ 1024 px): a tela Perfil (perfil-01) dentro da casca da Conta, com o menu lateral das oito seções;
+ *   cada seção é a sua própria tela em /dashboard/conta/<seção>.
+ * - Celular (site e app): o menu da Conta; cada seção abre a sua tela com "‹ Conta".
+ * Um H1 visível por largura: "Conta" no menu do celular; "Perfil" no computador.
  */
 export default function AccountPage() {
+  // O Perfil desta página só existe no computador. No celular ele NÃO é montado: escondido por CSS, ele disparava as
+  // ações do servidor e a resposta, chegando depois do toque numa seção, devolvia a URL para /dashboard/conta.
+  const [computador, setComputador] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const ver = () => setComputador(mq.matches);
+    ver();
+    mq.addEventListener("change", ver);
+    return () => mq.removeEventListener("change", ver);
+  }, []);
+  // Links antigos da página longa (/dashboard/conta#confianca, #documento…): cada âncora vai para a sua tela.
+  // Troca de documento (não pelo roteador): as Server Actions entram numa fila com a navegação do roteador (docs do
+  // Next, "Server Actions are queued"), e a resposta de uma leitura do painel devolvia a URL para /dashboard/conta.
+  useEffect(() => {
+    const destino = destinoDaAncora(window.location.hash, window.location.search);
+    if (destino) window.location.replace(destino);
+  }, []);
   return (
     <>
-      <div className="app-only">
+      <div className="lg:hidden">
         <ContaMenu />
       </div>
-      <div className="web-only">
-        <PageTitle capa="conta" title="Conta" subtitle="Seu perfil, seus dados e suas preferências." />
-
-        <BlocoConta id="perfil-publico" numero={1} titulo="Perfil público" subtitulo="O que os outros veem de você.">
-          <AvatarUploader />
-          <PerfilPublicoForm />
-          <PerfilProfissional />
-          <VerComoOutrosVeem />
-        </BlocoConta>
-
-        <BlocoConta id="dados" numero={2} titulo="Dados da conta" subtitulo="Só a Viva vê. Vão no contrato e nos avisos.">
-          <DadosPessoais />
-          <TelefoneVerificacao />
-          <DocumentoPessoa />
-          <PetsFicha />
-        </BlocoConta>
-
-        <BlocoConta id="confianca" numero={3} titulo="Confiança e segurança" subtitulo="O que já está verificado e como proteger a conta.">
-          <ConfiancaLista />
-        </BlocoConta>
-
-        <BlocoConta id="preferencias" numero={4} titulo="Preferências" subtitulo="Avisos, ajuda e a sua conta.">
-          <NotificationsPanel />
-          <AjudaContato />
-          <DangerZone />
-          {/* Por último: carrega depois da tela e não pode empurrar "Excluir conta" para fora do alcance (t183). */}
-          <CaixaEmailsTeste />
-        </BlocoConta>
-      </div>
+      {computador && (
+        <div className="hidden lg:block" data-so-computador>
+          <CascaConta ativo="perfil" topoDireita>
+            <PerfilTela />
+          </CascaConta>
+        </div>
+      )}
     </>
   );
 }

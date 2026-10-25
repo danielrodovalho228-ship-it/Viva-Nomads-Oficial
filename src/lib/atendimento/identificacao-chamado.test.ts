@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { emailMascaradoDaConta, validarVisitante } from "./identificacao-chamado.ts";
+import { emailMascaradoDaConta, normalizarTelefone, telefoneMascarado, validarVisitante } from "./identificacao-chamado.ts";
 
 test("F24: e-mail da conta aparece mascarado, nunca inteiro", () => {
   assert.equal(emailMascaradoDaConta("daniel@gmail.com"), "da***@gmail.com");
@@ -40,4 +40,29 @@ test("F24: e-mails legítimos passam (subdomínio, .com.br, maiúsculas, domíni
   for (const e of ["ana@lab.vivanomads.test", "ana@example.com", "ANA@Example.ORG", "ana@x.localhost"]) {
     assert.equal(validarVisitante({ nome: "Ana", email: e }).ok, false, e);
   }
+});
+
+test("F24: telefone do visitante é opcional, só dígitos e guardado normalizado", () => {
+  assert.equal(normalizarTelefone(undefined), "");
+  assert.equal(normalizarTelefone("   "), "");
+  assert.equal(normalizarTelefone("(34) 99999-1234"), "34999991234");
+  assert.equal(normalizarTelefone("+55 34 99999-1234"), "5534999991234");
+  assert.equal(normalizarTelefone("3432221234"), "3432221234");
+});
+
+test("F24: telefone inválido (curto, longo, letras) é recusado; vazio passa", () => {
+  const base = { nome: "Ana", email: "ana@gmail.com" };
+  assert.deepEqual(validarVisitante({ ...base, telefone: "" }), { ok: true, nome: "Ana", email: "ana@gmail.com" });
+  assert.deepEqual(validarVisitante({ ...base, telefone: "(34) 99999-1234" }), { ok: true, nome: "Ana", email: "ana@gmail.com", telefone: "34999991234" });
+  for (const t of ["12345", "abc", "123456789012345678", "34 9999"]) {
+    const r = validarVisitante({ ...base, telefone: t });
+    assert.equal(r.ok, false, t);
+  }
+});
+
+test("F24: a equipe vê o telefone mascarado, nunca inteiro", () => {
+  assert.equal(telefoneMascarado("34999991234"), "(34) •••••-1234");
+  assert.equal(telefoneMascarado("5534999991234"), "(34) •••••-1234");
+  assert.equal(telefoneMascarado(null), null);
+  assert.equal(telefoneMascarado("123"), null);
 });

@@ -35,11 +35,11 @@ export interface CafResult {
 
 export const TRAFFIC_LIGHT_META: Record<
   TrafficLight,
-  { label: string; emoji: string; tone: string; ring: string }
+  { label: string; tone: string; ring: string }
 > = {
-  green: { label: "Perfil limpo", emoji: "🟢", tone: "text-emerald-700 bg-emerald-50", ring: "ring-emerald-200" },
-  yellow: { label: "Pontos de atenção", emoji: "🟡", tone: "text-amber-700 bg-amber-50", ring: "ring-amber-200" },
-  red: { label: "Alto risco", emoji: "🔴", tone: "text-red-700 bg-red-50", ring: "ring-red-200" },
+  green: { label: "Perfil limpo", tone: "text-emerald-700 bg-emerald-50", ring: "ring-emerald-200" },
+  yellow: { label: "Pontos de atenção", tone: "text-amber-700 bg-amber-50", ring: "ring-amber-200" },
+  red: { label: "Alto risco", tone: "text-red-700 bg-red-50", ring: "ring-red-200" },
 };
 
 /** Opções de garantia locatícia. Apenas UMA pode ser escolhida (art. 37, parágrafo único). */

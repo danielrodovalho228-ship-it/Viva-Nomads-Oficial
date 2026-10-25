@@ -24,7 +24,7 @@ página continua no ar, mostrando só o rótulo do lugar.
 
 ## Onde colocar a chave (Vercel)
 - Vercel → seu projeto → **Settings → Environment Variables**.
-- Adicione: `GOOGLE_MAPS_API_KEY = sua_chave` (Production).
+- Adicione: `GOOGLE_PLACES_API_KEY = sua_chave` (o nome antigo `GOOGLE_MAPS_API_KEY` continua valendo como apelido) (Production).
 - **Não** use o prefixo `NEXT_PUBLIC_` — isso exporia a chave no navegador.
 - Faça **Redeploy** para a variável valer.
 

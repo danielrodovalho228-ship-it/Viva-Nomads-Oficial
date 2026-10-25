@@ -29,6 +29,7 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     // A sessão (@supabase/ssr) mora em COOKIE, não em localStorage: o id vem do cookie sb-*-auth-token.
     const id = await idDoUsuarioPeloCookie(context);
     expect(id, "id do usuário no cookie de sessão").toBeTruthy();
+    // Rascunho da ordem de 5 etapas (versão 3), passo 3 = Preço: nos 10 passos ele reabre no Preço (DE_5_PARA_10).
     await page.evaluate((uid) => localStorage.setItem(`vivanomads-novo-draft:${uid}`, JSON.stringify({ step: 3, ordemEtapas: 3, monthlyPrice: "" })), id);
     await page.reload({ waitUntil: "networkidle" });
     // Só o "Continuar" do AVISO de rascunho: o "Continuar" do rodapé do cadastro também casaria com a regex
@@ -44,10 +45,10 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     });
     if (await retomar.isVisible()) {
       // Conta com rascunho no servidor: "Continuar" abre ?draft=<id> na etapa gravada lá, não no passo de preço.
-      // Vai direto ao passo de preço pela URL (?etapa=3 no cadastro em 5 etapas), que vale para rascunho do servidor.
+      // Vai direto ao passo de preço pela URL, pelo NOME (?etapa=preco, passo 8 dos 10), que vale para rascunho do servidor.
       await retomar.click();
       await page.waitForURL(/[?&]draft=/);
-      await page.goto(`${page.url()}&etapa=3`, { waitUntil: "networkidle" });
+      await page.goto(`${page.url()}&etapa=preco`, { waitUntil: "networkidle" });
     }
     // Falha alto (nada de skip silencioso): se o passo de preço não abrir, o lab precisa mostrar.
     await expect(bloco).toBeVisible({ timeout: 30000 });
@@ -56,7 +57,7 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     await expect(page.getByTestId("recebe-airbnb")).toContainText("8.652");
     await expect(bloco).toContainText("4.916");
     await bloco.getByRole("button", { name: "Usar preço sugerido" }).click();
-    await expect(page.locator('input[placeholder="3200"]')).toHaveValue("4916");
+    await expect(page.getByTestId("cadastro-preco")).toHaveValue("4.916");
     const larguraDoc = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(larguraDoc).toBeLessThanOrEqual(0); // 390 px sem rolagem lateral
     await page.screenshot({ path: "tests/laboratorio/saida/t102-preco-sugerido.png", fullPage: true });

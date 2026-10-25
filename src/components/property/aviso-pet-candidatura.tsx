@@ -40,9 +40,9 @@ export function AvisoPetCandidatura({
   return (
     <div
       data-testid={ok ? "pet-candidatura-ok" : "pet-candidatura-aviso"}
-      className={`rounded-xl border px-3 py-2.5 text-xs ${ok ? "border-sage-200 bg-sage-100 text-ink" : "border-amber-300 bg-amber-50 text-amber-900"}`}
+      className={`rounded-xl border px-3 py-3 text-xs ${ok ? "border-sage-200 bg-sage-100 text-ink" : "border-amber-300 bg-amber-50 text-amber-900"}`}
     >
-      <p className="flex items-center gap-1.5 font-semibold">
+      <p className="flex items-center gap-2 font-semibold">
         {ok ? <PawPrint className="h-4 w-4 shrink-0" /> : <TriangleAlert className="h-4 w-4 shrink-0" />}
         {ok ? "Seus pets vão na candidatura" : "Atenção: seu pet pode não caber nas regras deste imóvel"}
       </p>
@@ -59,7 +59,7 @@ export function AvisoPetCandidatura({
           ))}
         </ul>
       )}
-      <Link href="/dashboard/conta" className="mt-1 inline-block font-semibold underline">
+      <Link href="/dashboard/conta/perfil" className="mt-1 inline-block font-semibold underline">
         Ver minha ficha de pets
       </Link>
     </div>

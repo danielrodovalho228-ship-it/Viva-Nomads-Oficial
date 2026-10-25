@@ -50,14 +50,11 @@ for (const largura of [360, 390]) {
       await page.goto("/ajuda", { waitUntil: "networkidle" });
       await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
       await nadaTampa(page);
+      // E95: na /buscar o flutuante não aparece (cobria os cartões); a ajuda fica como link no fim da lista.
       await page.goto("/buscar", { waitUntil: "networkidle" });
-      await expect(flut).toBeVisible();
+      await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
+      await expect(page.getByTestId("buscar-ajuda")).toContainText("Fale com a Viva");
       await nadaTampa(page);
-      for (const y of [600, 1400, 2600]) {
-        await page.evaluate((yy) => window.scrollTo(0, yy), y);
-        await page.waitForTimeout(300);
-        await expect(flut, `visível na /buscar após rolar ${y}px`).toBeVisible();
-      }
     });
 
     test("campo em foco esconde o flutuante e ele volta ao sair", async ({ page }) => {
@@ -80,18 +77,47 @@ for (const largura of [360, 390]) {
         await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
         await nadaTampa(page);
       });
+
+      // Ordem b36ca0ee (D6): no fim da rolagem, o último card do painel fica inteiro fora da área do flutuante.
+      for (const rota of ["/dashboard", "/dashboard/locacoes", "/dashboard/solicitacoes"]) {
+        test(`${rota}: botão flutuante não cobre o último card`, async ({ page }) => {
+          await page.goto(rota, { waitUntil: "networkidle" });
+          await rolarAteOFim(page);
+          const flut = page.getByTestId("fale-com-a-viva-raiz");
+          if ((await flut.count()) === 0 || !(await flut.isVisible())) return; // sem flutuante nesta tela
+          // O painel carrega cartões aos poucos (lab 3c9bd126: coberto numa leitura, livre na seguinte): rola ao fim de novo a cada tentativa.
+          const cobre = async () => {
+            await rolarAteOFim(page);
+            return page.evaluate(() => {
+              let el: Element | null = document.querySelector("main");
+              let ultimo: Element | null = null;
+              while (el && el.lastElementChild) {
+                el = el.lastElementChild;
+                const r = el.getBoundingClientRect();
+                if (r.height >= 40 && r.width >= 120) ultimo = el;
+              }
+              const f = document.querySelector('[data-testid="fale-com-a-viva-raiz"]')!.getBoundingClientRect();
+              if (!ultimo) return false;
+              const c = ultimo.getBoundingClientRect();
+              const sobrepoe = c.left < f.right && c.right > f.left && c.top < f.bottom && c.bottom > f.top;
+              return sobrepoe;
+            });
+          };
+          await expect.poll(cobre, { message: "o flutuante cobre o último card", timeout: 10_000, intervals: [500] }).toBe(false);
+        });
+      }
     });
   });
 }
 
 /** Ordem 4f8d17c6: mesmo formato e mesmos tokens do botão primário em todas as páginas e larguras. */
-test("4f8d17c6 — flutuante idêntico em /, /buscar, /precos e /como-funciona a 390, 768 e 1280 px", async ({ page }) => {
-  // 12 páginas (3 larguras × 4 rotas): não cabe nos 45 s padrão; só o HTML (o "load" de /buscar fica preso no mapa).
+test("4f8d17c6 — flutuante idêntico em /, /precos e /como-funciona a 390, 768 e 1280 px", async ({ page }) => {
+  // 9 páginas (3 larguras × 3 rotas): não cabe nos 45 s padrão. E95: a /buscar saiu (lá o flutuante não aparece).
   test.setTimeout(180_000);
   const estilos = new Set<string>();
   for (const largura of [390, 768, 1280]) {
     await page.setViewportSize({ width: largura, height: 800 });
-    for (const rota of ["/", "/buscar", "/precos", "/como-funciona"]) {
+    for (const rota of ["/", "/precos", "/como-funciona"]) {
       await page.goto(rota, { waitUntil: "domcontentloaded" });
       const flut = page.getByTestId("fale-com-a-viva");
       await expect(flut, `${rota} a ${largura}px`).toBeVisible();

@@ -9,7 +9,7 @@ import { codigoDoImovel, secoesDoImovel, sinaisDeConfianca, statusDisponibilidad
 test("abas na ordem de leitura; avaliações com contagem; sem dono, sem aba de dono", () => {
   assert.deepEqual(
     secoesDoImovel({ avaliacoes: 3, temDono: true }).map((s) => s.rotulo),
-    ["Visão geral", "Comodidades", "Disponibilidade", "Avaliações (3)", "Proprietário", "Localização"]
+    ["Visão geral", "Comodidades", "Disponibilidade", "Localização", "Avaliações (3)", "Proprietário"]
   );
   const sem = secoesDoImovel({ avaliacoes: 0, temDono: false });
   assert.ok(sem.some((s) => s.rotulo === "Avaliações"));

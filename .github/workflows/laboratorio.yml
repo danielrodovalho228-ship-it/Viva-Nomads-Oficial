@@ -13,16 +13,9 @@ on:
   # public.lab_execucoes (ordem 225d0648).
   push:
     branches: [main]
-  # Valida o próprio laboratório quando ele muda (o PR não fica vermelho por
-  # falhas conhecidas da suíte: elas vão no resumo e no relatório).
-  pull_request:
-    paths:
-      - ".github/workflows/laboratorio.yml"
-      - "supabase/config.toml"
-      - "supabase/lab/**"
-      - "supabase/migrations/**"
-      - "scripts/lab/**"
-      - "tests/e2e/**"
+  # Em PR não roda (decisão do Muse, 21/10): a suíte inteira não cabe no teto e ficava verde com teste falhando.
+  # O portão de PR é o lab-critico (lista crítica + specs do próprio PR, falha = vermelho). Aqui, na main e no
+  # noturno, falha também deixa o job vermelho (último passo).
 
 permissions:
   contents: read
@@ -43,13 +36,19 @@ jobs:
       NEXT_PUBLIC_SITE_URL: http://localhost:3123
       INTEGRACOES_SIMULADAS: "on"
       LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
+      # Resend falso (scripts/lab/resend-falso.mjs): confere o formato do e-mail e devolve um id; nada sai para a rede.
+      LAB_RESEND_URL: http://127.0.0.1:3999
+      # LinkedIn falso (scripts/lab/linkedin-falso.mjs, 63-B): OIDC mínimo com id_token RS256 de verdade; nada sai para a rede.
+      LAB_LINKEDIN_URL: http://127.0.0.1:3997
+      # Rotas falsas (scripts/lab/rotas-falso.mjs): tempos determinísticos no formato Mapbox/Google; nada sai para a rede.
+      LAB_ROTAS_URL: http://127.0.0.1:3998
       TESTES_BASE_URL: http://localhost:3123
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: "24.22.1"
           cache: npm
 
       - name: Instalar dependências
@@ -99,17 +98,38 @@ jobs:
       - name: Criar as personas e os imóveis de teste
         run: node scripts/lab/seed-lab.mjs
 
+      - name: Criar a massa da varredura visual (t249)
+        # Contas @varredura.lab.vivanomads.test e tests/laboratorio/saida/varredura.json. Sem este passo a t249 ficava
+        # pulada em toda execução. Se falhar, a suíte segue e a t249 reprova dizendo que falta a massa.
+        continue-on-error: true
+        run: node scripts/lab/massa-varredura.mjs
+
       - name: Build do site (modo simulado)
         run: npm run build
 
       - name: Subir o site em localhost:3123
         run: |
+          node scripts/lab/resend-falso.mjs 3999 > tests/laboratorio/saida/resend-falso.log 2>&1 &
+          node scripts/lab/linkedin-falso.mjs 3997 > tests/laboratorio/saida/linkedin-falso.log 2>&1 &
+          node scripts/lab/rotas-falso.mjs 3998 > tests/laboratorio/saida/rotas-falso.log 2>&1 &
           npx next start -p 3123 > tests/laboratorio/saida/servidor.log 2>&1 &
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
 
       - name: Instalar Chromium do Playwright
-        run: npx playwright install --with-deps chromium webkit
+        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas. O timeout
+        # mata o npx, mas o apt-get filho fica segurando a trava do dpkg: antes de repetir, encerra o apt que sobrou,
+        # espera a trava soltar e conserta o dpkg (senão as tentativas seguintes morrem na hora).
+        timeout-minutes: 25
+        run: |
+          for i in 1 2 3; do
+            timeout 420 npx playwright install --with-deps chromium webkit && exit 0
+            echo "tentativa $i travou ou falhou"
+            sudo pkill -f '[a]pt-get|[d]pkg' || true
+            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
+            sudo dpkg --configure -a || true
+          done
+          exit 1
 
       - name: Rodar a suíte E2E
         id: e2e
@@ -144,13 +164,15 @@ jobs:
           retention-days: 14
 
       - name: Registrar no banco
-        # Uma linha em public.lab_execucoes por execução (nunca em PR). Só contagens e títulos
+        # Uma linha em public.lab_execucoes por execução. PR só do próprio repositório (nunca de fork, que não
+        # recebe segredo): grava gatilho=pull_request com o commit da cabeça do PR (ordem 1424d64a). Só contagens e títulos
         # de testes. O JSON entra como variável do psql (:'resumo'::jsonb) — nada de texto cru
         # dentro do SQL. A URL do banco vem do secret e nunca é impressa.
-        if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+        if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         continue-on-error: true
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GATILHO: ${{ github.event_name }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
@@ -159,12 +181,13 @@ jobs:
             exit 0
           fi
           RESUMO="$(node scripts/lab/resumo-specs.mjs --json tests/laboratorio/saida/resultado.json)"
+          CATEGORIA="$(node scripts/lab/gerar-cobertura.mjs --json || echo '{}')"
           psql "$SUPABASE_DB_URL" -X -q -v ON_ERROR_STOP=1 \
-            -v sha="$GITHUB_SHA" -v gatilho="$GATILHO" -v run_url="$RUN_URL" -v resumo="$RESUMO" >/dev/null <<'SQL'
-          insert into public.lab_execucoes (commit_sha, gatilho, passou, falhou, pulou, instavel, por_spec, falhas, run_url)
+            -v sha="$COMMIT_SHA" -v gatilho="$GATILHO" -v run_url="$RUN_URL" -v resumo="$RESUMO" -v categoria="$CATEGORIA" >/dev/null <<'SQL'
+          insert into public.lab_execucoes (commit_sha, gatilho, passou, falhou, pulou, instavel, por_spec, falhas, run_url, por_categoria)
           select :'sha', :'gatilho',
                  (j->>'passou')::int, (j->>'falhou')::int, (j->>'pulou')::int, (j->>'instavel')::int,
-                 j->'por_spec', j->'falhas', :'run_url'
+                 j->'por_spec', j->'falhas', :'run_url', :'categoria'::jsonb
             from (select :'resumo'::jsonb as j) x;
           SQL
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, Clock, CheckCircle2, Wrench, AlertTriangle } from "lucide-react";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { ServiceOrderNotice } from "@/components/legal-notice";
 import { useViewMode } from "@/lib/roles";
@@ -105,13 +105,13 @@ function OwnerView({
 
   return (
     <>
-      <PageTitle capa="solicitacoes"
+      <PageTitle
         title="Solicitações de manutenção"
         subtitle="Ordens dos seus imóveis, por prioridade, com o prazo para responder."
         action={metrics.responsive ? <ResponsiveOwnerBadge /> : undefined}
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Em aberto" value={openCount} icon={Wrench} />
         <StatCard label="Fora do prazo" value={vencidas} icon={AlertTriangle} />
         <StatCard
@@ -130,8 +130,7 @@ function OwnerView({
         <EmptyState
           icon={Wrench}
           title="Nenhuma solicitação ainda"
-          text="Quando um inquilino abrir uma ordem de manutenção em um dos seus imóveis, ela aparece aqui — por prioridade e com o prazo para responder."
-        />
+          text="Quando um morador abrir uma ordem de manutenção em um dos seus imóveis, ela aparece aqui — por prioridade e com o prazo para responder." action={<ButtonLink href="/dashboard/imoveis" variant="secondary" size="sm">Ver meus imóveis</ButtonLink>} />
       ) : (
         <div className="grid gap-3">
           {sorted.map((o) => (
@@ -215,17 +214,17 @@ function TenantView({
 
   return (
     <>
-      <PageTitle capa="solicitacoes"
+      <PageTitle
         title="Minhas solicitações"
         subtitle="Abra e acompanhe chamados de manutenção do seu imóvel."
         action={
-          <Button variant="accent" disabled={semContrato} onClick={() => setOpenForm((v) => !v)}>
+          <Button variant="secondary" disabled={semContrato} onClick={() => setOpenForm((v) => !v)}>
             <Plus className="h-4 w-4" /> Abrir solicitação
           </Button>
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:gap-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4">
         <StatCard label="Em aberto" value={mine.filter((o) => o.status !== "resolvido").length} icon={Wrench} />
         <StatCard label="Resolvidas" value={mine.filter((o) => o.status === "resolvido").length} icon={CheckCircle2} />
       </div>
@@ -249,11 +248,11 @@ function TenantView({
           <form onSubmit={submit} className="space-y-4">
             {!demo && contratos.length > 1 && (
               <label className="block">
-                <span className="mb-1.5 block text-sm font-medium text-ink">Imóvel</span>
+                <span className="mb-2 block text-sm font-medium text-ink">Imóvel</span>
                 <select
                   value={contratoId}
                   onChange={(e) => setContratoId(e.target.value)}
-                  className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+                  className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
                   required
                 >
                   <option value="">Escolha o imóvel</option>
@@ -267,11 +266,11 @@ function TenantView({
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-1.5 block text-sm font-medium text-ink">Categoria</span>
+                <span className="mb-2 block text-sm font-medium text-ink">Categoria</span>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value as SOCategory)}
-                  className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+                  className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
                 >
                   {SO_CATEGORIES.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -283,13 +282,13 @@ function TenantView({
             </div>
             <SeletorPrioridade valor={priority} onChange={setPriority} />
             <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink">Descrição</span>
+              <span className="mb-2 block text-sm font-medium text-ink">Descrição</span>
               <textarea
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descreva o problema..."
-                className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+                className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
               />
             </label>
             {erro && (

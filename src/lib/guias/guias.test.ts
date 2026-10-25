@@ -4,9 +4,10 @@ import { GUIAS, artigoGuia, guiaPorSlug, textoDoGuia } from "./guias.ts";
 
 const SUFIXO = " · Viva Nomads";
 
-test("#1438f18d: 6 guias iniciais, slugs únicos", () => {
-  assert.equal(GUIAS.length, 6);
-  assert.equal(new Set(GUIAS.map((g) => g.slug)).size, 6);
+test("#1438f18d + 65-B: 7 guias (o do vídeo no anúncio), slugs únicos", () => {
+  assert.equal(GUIAS.length, 7);
+  assert.equal(new Set(GUIAS.map((g) => g.slug)).size, 7);
+  assert.ok(guiaPorSlug("como-por-um-video-no-anuncio"));
   assert.ok(guiaPorSlug("o-que-e-a-caucao"));
   assert.equal(guiaPorSlug("nao-existe"), undefined);
 });

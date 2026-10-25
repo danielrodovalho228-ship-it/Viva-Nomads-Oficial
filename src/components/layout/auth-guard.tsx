@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
+import { SkeletonLista } from "@/components/ui/skeleton";
 
 /**
  * Proteção de rota no cliente (QA): rotas do dashboard só renderizam com sessão.
@@ -43,8 +43,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   // Com usuário → libera. Sem usuário mas ainda conferindo → aguarda (spinner).
   if (!user) {
     return (
-      <div className="grid min-h-screen place-items-center bg-surface-2">
-        <Loader2 className="h-6 w-6 animate-spin text-forest" />
+      <div className="min-h-screen bg-surface-2 px-4 py-8 sm:px-8" data-testid="auth-guard-carregando">
+        <SkeletonLista />
       </div>
     );
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ComoFuncionamAvaliacoes } from "@/components/avaliacoes/como-funcionam-avaliacoes";
 import { Star } from "lucide-react";
 import { numBR } from "@/lib/utils";
 import { iniciais, corAvatar } from "@/lib/avatar";
@@ -25,11 +26,11 @@ function CartaoAvaliacao({ a }: { a: AvaliacaoExemplo }) {
   const [aberto, setAberto] = useState(false);
   const longo = a.texto.length > LIMITE;
   return (
-    <article data-testid="avaliacao-exemplo" className="rounded-2xl border border-sage-200 p-4">
+    <article data-testid="avaliacao-exemplo" className="rounded-xl border border-sage-200 p-4">
       <div className="flex items-center gap-3">
         <span
           aria-hidden
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold text-white"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
           style={{ backgroundColor: corAvatar(a.autor) }}
         >
           {iniciais(a.autor)}
@@ -68,7 +69,7 @@ export function AvaliacoesExemplo({ avaliacoes }: { avaliacoes: AvaliacaoExemplo
   return (
     <section aria-labelledby="avaliacoes-title" data-testid="avaliacoes-exemplo">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h2 id="avaliacoes-title" className="flex items-center gap-2 font-title text-2xl font-bold text-ink">
+        <h2 id="avaliacoes-title" className="flex items-center gap-2 font-title text-2xl font-semibold text-ink">
           Avaliações
           <span className="inline-flex items-center gap-1 text-base font-semibold text-forest">
             <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
@@ -76,23 +77,24 @@ export function AvaliacoesExemplo({ avaliacoes }: { avaliacoes: AvaliacaoExemplo
           </span>
         </h2>
         <SeloExemplo />
+        <ComoFuncionamAvaliacoes />
       </div>
       <p className="mt-2 text-sm text-muted">{AVISO_EXEMPLO}</p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {avaliacoes.map((a) => (
           <CartaoAvaliacao key={`${a.autor}-${a.mes}`} a={a} />
         ))}
       </div>
-      <div className="mt-5">
+      <div className="mt-4">
         <button
           type="button"
           disabled
           aria-describedby="escrever-avaliacao-dica"
-          className="inline-flex min-h-11 cursor-not-allowed items-center rounded-full border border-sage-200 px-5 text-sm font-semibold text-muted"
+          className="inline-flex min-h-11 cursor-not-allowed items-center rounded-full border border-sage-200 px-4 text-sm font-semibold text-muted"
         >
           Escrever avaliação
         </button>
-        <p id="escrever-avaliacao-dica" className="mt-1.5 text-xs text-muted">
+        <p id="escrever-avaliacao-dica" className="mt-2 text-xs text-muted">
           Disponível após uma estadia verificada.
         </p>
       </div>

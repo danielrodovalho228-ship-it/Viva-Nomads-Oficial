@@ -41,7 +41,7 @@ test("painel: preço, quartos, pets, home office e selo filtram como a lista", (
 
 test("painel: contador do botão, texto de aplicar e resumo do topo", () => {
   assert.equal(contarFiltrosPainel(FILTROS_PAINEL_VAZIOS), 0);
-  assert.equal(contarFiltrosPainel({ maxPrice: 2500, minBedrooms: 2, petsOnly: true, petPorte: "", homeOfficeOnly: false, readyToLiveOnly: true, comodidades: [] }), 4);
+  assert.equal(contarFiltrosPainel({ ...FILTROS_PAINEL_VAZIOS, maxPrice: 2500, minBedrooms: 2, petsOnly: true, readyToLiveOnly: true }), 4);
   assert.equal(rotuloMostrar(0), "Nenhum imóvel com esses filtros");
   assert.equal(rotuloMostrar(1), "Mostrar 1 imóvel");
   assert.equal(rotuloMostrar(12), "Mostrar 12 imóveis");
@@ -52,18 +52,19 @@ test("painel: contador do botão, texto de aplicar e resumo do topo", () => {
 test("busca usa UMA regra para a lista e para a contagem do painel", () => {
   const s = ler("app/(public)/buscar/search-client.tsx");
   assert.match(s, /let list = base\.filter\(\(p\) => passaNoPainel\(p, filtrosPainel\)\)/);
-  assert.match(s, /const contarComPainel = useCallback\(\(f: FiltrosPainel\) => base\.filter\(\(p\) => passaNoPainel\(p, f\)\)\.length/);
+  // Prompt 30: a lista e a contagem tiram os exemplos do mesmo jeito (semExemplosQuandoHaReal).
+  assert.match(s, /\(f: FiltrosPainel\) => semExemplosQuandoHaReal\(base\.filter\(\(p\) => passaNoPainel\(p, f\)\), \(p\) => isExemplo\(p\.id\), exemplosForcados\)\.length/);
+  assert.match(s, /list = semExemplosQuandoHaReal\(list, \(p\) => isExemplo\(p\.id\), exemplosForcados\)/);
   // As 5 regras saíram do filtro antigo (sem duplicar).
   assert.doesNotMatch(s, /if \(petsOnly && !p\.petsAllowed\) return false/);
   assert.doesNotMatch(s, /if \(maxPrice && p\.monthlyPrice > maxPrice\) return false/);
-  // Celular: topo com busca + botão de filtros; filtros antigos só do tablet para cima.
-  assert.match(s, /className="container-page mt-4 sm:hidden" data-testid="busca-celular"/);
-  assert.match(s, /data-testid="abrir-filtros"/);
-  assert.match(s, /placeholder="Cidade, bairro ou endereço"/);
-  assert.match(s, /"container-page hidden sm:block lg:order-1"/);
-  // Computador (ordem eac7e3a1): busca compacta no cabeçalho abre o painel de filtros.
-  assert.match(s, /createPortal\(\s*<BuscaCompacta/);
-  assert.match(s, /data-testid="busca-compacta"/);
+  // E82-A: UMA linha de controles para celular e computador (sem bloco só do celular nem busca compacta no cabeçalho).
+  assert.equal((s.match(/<BarraPilulas/g) ?? []).length, 1);
+  assert.doesNotMatch(s, /data-testid="busca-celular"|BuscaCompacta|createPortal/);
+  // O destino vive no painel da pílula Local; "Salvar busca" fica só na linha da contagem (e no vazio, como alerta).
+  assert.match(s, /painelLocal=\{[\s\S]*?<LocationSearch[\s\S]*?<CampoDestino[\s\S]*?\}\s*painelMoradores=/);
+  const linha = s.slice(s.indexOf('data-testid="linha-contagem"'), s.indexOf('data-testid="abrir-descrever"'));
+  assert.match(linha, /<SalvarBusca versao=\{versaoBusca\} \/>/);
 });
 
 test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () => {
@@ -71,18 +72,23 @@ test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () 
   assert.match(p, /useState<FiltrosPainel>\(inicial\)/);
   assert.match(p, /onClick=\{\(\) => onAplicar\(rascunho\)\}/);
   assert.match(p, /\{rotuloMostrar\(n\)\}/);
-  assert.match(p, /role="dialog"/);
-  assert.match(p, /aria-modal="true"/);
-  assert.match(p, /e\.key === "Escape" && onFechar\(\)/);
-  for (const t of ["Preço por mês", "Quartos", "Aceita pets", "Para trabalhar de casa"]) assert.ok(p.includes(t), t);
+  // Prompt 40: a folha é o BottomSheet (de baixo no celular, lateral no computador).
+  assert.match(p, /<BottomSheet\s+open\s+onClose=\{onFechar\}\s+title="Filtros"\s+lateral/);
+  const folha = ler("components/ui/bottom-sheet.tsx");
+  assert.match(folha, /role="dialog"/);
+  assert.match(folha, /aria-modal="true"/);
+  assert.match(folha, /if \(e\.key === "Escape"\) fechar\.current\(\)/);
+  for (const t of ["Preço por mês", "Quartos", "Aceita pets", "Para trabalhar de casa", "Limpar tudo"]) assert.ok(p.includes(t), t);
 });
 
 test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e disponibilidade", () => {
   const c = ler("components/property-card.tsx");
-  assert.match(c, /\{quartosTexto\(property\.bedrooms\)\}/); // plural único (ordem dd15064d, D7b)
-  assert.match(c, /\{banheirosTexto\(property\.bathrooms\)\}/);
-  assert.match(c, /\{property\.neighborhood\}, \{property\.city\}/);
-  assert.match(c, /\/mês total<\/span>/); // custo total do mês em destaque (ordem 1a555bfa)
+  // Plural único (ordem dd15064d, D7b) pela síntese do cartão (src/lib/cartao-sintese.ts, quartosTexto/banheirosTexto).
+  assert.match(c, /const sintese = itensSintese\(property\);/);
+  assert.match(ler("lib/cartao-sintese.ts"), /quartosTexto\(p\.bedrooms\)[\s\S]*banheirosTexto\(p\.bathrooms\)/);
+  assert.match(c, /\{linhaLocalizacao\(property\.neighborhood, property\.city, property\.state\)\}/); // E101
+  // Custo total do mês em destaque (ordem 1a555bfa), no formato do QA: "R$ X/mês · R$ Y em N meses".
+  assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/);
   const hoje = new Date("2026-10-14T12:00:00Z");
   assert.equal(disponivelAPartirDe("2026-11-15", hoje), "15/11");
   assert.equal(disponivelAPartirDe("2027-01-05", hoje), "05/01/2027");

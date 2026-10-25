@@ -69,13 +69,13 @@ export function LinksDoApp() {
     const url = `https://${DOMINIO_APP}${pathname}${typeof window !== "undefined" ? window.location.search : ""}`;
     return (
       <div role="dialog" aria-modal="true" aria-labelledby="so-site-titulo" className="fixed inset-0 z-[90] flex items-center justify-center bg-ink/40 p-4">
-        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+        <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-flutuante">
           <ExternalLink className="h-6 w-6 text-forest" />
-          <h2 id="so-site-titulo" className="mt-3 font-title text-lg font-bold text-ink">
+          <h2 id="so-site-titulo" className="mt-3 font-title text-lg font-semibold text-ink">
             Esta parte fica no site
           </h2>
           <p className="mt-1 text-sm text-muted">Ela abre no navegador do celular, com mais espaço. Se pedir, entre com a mesma conta: depois você volta direto para esta tela.</p>
-          <Button className="mt-5 w-full" onClick={() => abrirNoNavegador(url)}>
+          <Button className="mt-4 w-full" onClick={() => abrirNoNavegador(url)}>
             <ExternalLink className="h-4 w-4" /> Abrir no navegador
           </Button>
           <button
@@ -96,7 +96,7 @@ export function LinksDoApp() {
     const loja = `https://play.google.com/store/apps/details?id=br.com.vivanomads.app`;
     const intent = `intent://${DOMINIO_APP}${pathname}#Intent;scheme=https;package=br.com.vivanomads.app;S.browser_fallback_url=${encodeURIComponent(loja)};end`;
     return (
-      <div className="web-only fixed inset-x-0 top-0 z-[80] flex items-center gap-3 border-b border-line bg-white px-4 py-2 text-sm shadow-sm">
+      <div className="web-only fixed inset-x-0 top-0 z-[80] flex items-center gap-3 border-b border-line bg-white px-4 py-2 text-sm ">
         <Smartphone className="h-5 w-5 shrink-0 text-forest" />
         <span className="min-w-0 flex-1 text-ink">Abrir no app Viva Nomads</span>
         <a href={intent} className={buttonClasses({ size: "sm" })}>

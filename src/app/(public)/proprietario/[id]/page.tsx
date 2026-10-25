@@ -12,6 +12,9 @@ import { buttonClasses } from "@/components/ui/button";
 import { dataBR } from "@/lib/utils";
 import { proprietarioExemploPorId } from "@/config/exemplo-proprietarios";
 import { PerfilExemplo } from "./perfil-exemplo";
+import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
+import { ehSeloLinkedin } from "@/lib/linkedin/textos";
+import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -55,28 +58,38 @@ export default async function ProprietarioPage({ params }: Params) {
 
   return (
     <div className="container-page py-8 sm:py-12" data-testid="pagina-proprietario">
-      <section className="rounded-2xl border border-sage-200 bg-white p-5 sm:p-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+      <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           {p.fotoUrl ? (
             <Image src={p.fotoUrl} alt={`Foto de ${p.nome}`} width={112} height={112} className="h-24 w-24 rounded-full object-cover sm:h-28 sm:w-28" />
           ) : (
             <div
-              className="grid h-24 w-24 place-items-center rounded-full font-title text-3xl font-bold text-white sm:h-28 sm:w-28"
+              className="grid h-24 w-24 place-items-center rounded-full font-title text-2xl font-semibold text-white sm:h-28 sm:w-28"
               style={{ backgroundColor: corAvatar(p.nome) }}
               aria-hidden
             >
               {iniciais(p.nome)}
             </div>
           )}
+          {/* FOTO-PERFIL-B: a foto é o rosto do titular; quem vê algo errado denuncia pela Central de Ajuda. */}
+          {p.fotoUrl && (
+            <div className="sm:order-last sm:ml-auto" data-testid="proprietario-problema-foto">
+              <ProblemaComIsto tipo="perfil" id={id} />
+            </div>
+          )}
           <div className="min-w-0">
-            <p className="text-sm font-medium uppercase tracking-wide text-sage">Proprietário</p>
-            <h1 className="font-title text-3xl font-bold text-ink">{p.nome}</h1>
+            <p className="text-sm font-medium text-sage">Proprietário</p>
+            <h1 className="font-title text-[28px] font-semibold text-ink">{p.nome}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              {p.selos.map((s) => (
-                <span key={s} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-forest">
-                  <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {s}
-                </span>
-              ))}
+              {p.selos.map((s) =>
+                ehSeloLinkedin(s) ? (
+                  <SeloLinkedin key={s} formato="pilula" />
+                ) : (
+                  <span key={s} className="inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-forest">
+                    <BadgeCheck className="h-4 w-4" aria-hidden /> {s}
+                  </span>
+                ),
+              )}
               {p.reputacao.n > 0 && (
                 <a href="#avaliacoes" className="inline-flex items-center gap-1 text-sm font-medium text-ink hover:text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
@@ -90,11 +103,11 @@ export default async function ProprietarioPage({ params }: Params) {
         <ul className="mt-6 grid gap-2 text-sm text-ink sm:grid-cols-2">
           {fatos.map((f) => (
             <li key={f.texto} className="flex items-start gap-2">
-              <f.icone className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden /> {f.texto}
+              <f.icone className="mt-1 h-4 w-4 shrink-0 text-sage" aria-hidden /> {f.texto}
             </li>
           ))}
         </ul>
-        {p.bio && <p className="mt-5 max-w-2xl leading-relaxed text-muted">{p.bio}</p>}
+        {p.bio && <p className="mt-4 max-w-2xl leading-relaxed text-muted">{p.bio}</p>}
         {imoveis[0] && (
           <Link
             href={`/imoveis/${imoveis[0].id}#proprietario`}
@@ -106,14 +119,14 @@ export default async function ProprietarioPage({ params }: Params) {
         <p className="mt-3 text-xs text-muted">A conversa acontece pelo chat da Viva, a partir de um dos imóveis. Contato direto fica protegido.</p>
       </section>
 
-      <section className="mt-10" aria-labelledby="imoveis-proprietario">
-        <h2 id="imoveis-proprietario" className="font-title text-2xl font-bold text-ink">
+      <section className="mt-12" aria-labelledby="imoveis-proprietario">
+        <h2 id="imoveis-proprietario" className="font-title text-2xl font-semibold text-ink">
           Imóveis de {p.nome}
         </h2>
         {imoveis.length === 0 ? (
           <p className="mt-3 text-muted">Nenhum imóvel ativo no momento.</p>
         ) : (
-          <div className="mt-5 grid auto-rows-fr gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid gap-4 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
             {imoveis.map((im) => (
               <PropertyCard key={im.id} property={im} />
             ))}
@@ -121,16 +134,16 @@ export default async function ProprietarioPage({ params }: Params) {
         )}
       </section>
 
-      <section id="avaliacoes" className="mt-10 scroll-mt-28" aria-labelledby="avaliacoes-proprietario">
-        <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-bold text-ink">
+      <section id="avaliacoes" className="mt-12 scroll-mt-28" aria-labelledby="avaliacoes-proprietario">
+        <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-semibold text-ink">
           Avaliações recebidas
         </h2>
         {avaliacoes.length === 0 ? (
           <p className="mt-3 text-muted">Ainda sem avaliações publicadas.</p>
         ) : (
-          <ul className="mt-5 grid gap-4">
+          <ul className="mt-4 grid gap-4">
             {avaliacoes.map((a) => (
-              <li key={a.id} className="rounded-2xl border border-sage-200 bg-white p-5">
+              <li key={a.id} className="rounded-xl border border-sage-200 bg-white p-4">
                 <p className="flex items-center gap-1 text-sm font-semibold text-ink">
                   <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden /> {a.nota.toLocaleString("pt-BR")}
                   {a.data && <span className="ml-2 font-normal text-muted">{dataBR(a.data.slice(0, 10))}</span>}

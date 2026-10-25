@@ -104,8 +104,9 @@ test("critério 4: status Aberta → Em atendimento → Resolvida, por lado", ()
 test("critério 4: carimbos — 1ª ação do proprietário = primeira resposta; inquilino não volta status", () => {
   const iso = AGORA.toISOString();
   assert.deepEqual(camposTransicao("aberto", "em_andamento", "proprietario", null, AGORA), { status: "em_andamento", first_response_at: iso });
-  assert.deepEqual(camposTransicao("em_andamento", "resolvido", "proprietario", "x", AGORA), { status: "resolvido", resolved_at: iso });
-  assert.deepEqual(camposTransicao("aberto", "resolvido", "inquilino", null, AGORA), { status: "resolvido", resolved_at: iso });
+  assert.deepEqual(camposTransicao("em_andamento", "resolvido", "proprietario", "x", AGORA), { status: "resolvido", resolved_at: iso, solucao_marcada_em: iso });
+  // Prompt 59: o "resolvido" do morador já confirma a solução.
+  assert.deepEqual(camposTransicao("aberto", "resolvido", "inquilino", null, AGORA), { status: "resolvido", resolved_at: iso, solucao_confirmada_em: iso });
   assert.equal(camposTransicao("aberto", "em_andamento", "inquilino", null, AGORA), null);
   assert.equal(camposTransicao("resolvido", "em_andamento", "proprietario", "x", AGORA), null);
   assert.equal(camposTransicao("em_andamento", "aberto", "proprietario", "x", AGORA), null);
@@ -157,7 +158,8 @@ test("critério 5: notificações ligadas por padrão e /dashboard/notificacoes 
   assert.match(pagina, /<PageTitle/);
   assert.match(pagina, /<StatCard/);
   assert.match(pagina, /<NotificationsPanel \/>/);
-  assert.match(ler("components/account/conta-menu.tsx"), /href: "\/dashboard\/notificacoes"/);
+  // NAV-A: os avisos moram na barra verde (Mensagens → Notificações), não na Conta.
+  assert.match(ler("config/menu-por-papel.ts"), /href: "\/dashboard\/notificacoes"/);
   const sql = raiz("supabase/migrations/0109_manutencao_historico.sql");
   assert.match(sql, /alter column notif_email set default true/);
   assert.match(sql, /alter column notif_whatsapp set default true/);
@@ -183,7 +185,8 @@ test("F31: Visão geral usa a mesma consulta e a mesma regra de 'publicado' de M
   assert.equal(imovelPublicado({ status: "draft" }), false);
   assert.deepEqual(imoveisPublicados([{ status: "active" }, { status: "paused" }]), [{ status: "active" }]);
   const pagina = ler("app/(dashboard)/dashboard/page.tsx");
-  assert.match(pagina, /await listMyProperties\(\)/);
+  // Prompt 42: lida no servidor junto com o resto da página (Promise.all), ainda pela mesma consulta.
+  assert.match(pagina, /await Promise\.all\(\[\n\s+listMyProperties\(\),/);
   assert.match(ler("app/(dashboard)/dashboard/imoveis/page.tsx"), /listMyProperties\(\)/);
   const visao = ler("app/(dashboard)/dashboard/visao-geral-client.tsx");
   assert.match(visao, /imoveisPublicados\(demo \? DEMO_PROPERTIES : imoveisDono\)/);

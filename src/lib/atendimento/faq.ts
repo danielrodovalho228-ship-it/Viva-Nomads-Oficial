@@ -28,7 +28,12 @@ export interface Pergunta {
   termos: string[];
   /** Resposta diferente conforme quem lê (ex.: só quem tem contrato ativo vê a opção de manutenção). */
   porPerfil?: Partial<Record<PerfilAjuda, string>>;
+  /** E71 (lacuna da varredura de 23/10): para onde a resposta leva quando o tema tem página própria. */
+  links?: { rotulo: string; href: string }[];
 }
+
+const LINK_PRECOS = { rotulo: "Ver os preços e a taxa de serviço", href: "/precos" };
+const LINK_SEGURANCA = { rotulo: "Como a Viva protege você", href: "/seguranca" };
 
 /** Quem está lendo a Central de Ajuda. */
 export type PerfilAjuda = "visitante" | "sem_contrato" | "com_contrato";
@@ -48,6 +53,7 @@ export const FAQ: Pergunta[] = [
     pergunta: "Quanto custa anunciar?",
     resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos: 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–30 = 6%; com 31 ou mais, fale com a gente sobre o Plano Gestor. Exemplo: contrato de 3 meses a R$ 3.000 por mês, na faixa de 12%: valor total R$ 9.000, taxa R$ 1.080. A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado. Veja a comparação com outras opções em /precos.`,
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
+    links: [LINK_PRECOS],
   },
   {
     id: "como-virar-parceiro",
@@ -56,10 +62,19 @@ export const FAQ: Pergunta[] = [
     termos: ["parceiro", "parceria", "virar parceiro", "modo parceiro", "cadastro", "cnpj", "mei", "empresa", "gestor", "fotografo", "servico", "limpeza", "seguro", "mobilia"],
   },
   {
+    // Correção 62-B3: a entrada do avaliador credenciado.
+    id: "como-ser-avaliador",
+    pergunta: "Como ser avaliador credenciado",
+    resposta:
+      "O avaliador credenciado faz a avaliação do imóvel pelo checklist da Viva. É independente: a Viva designa cada avaliação por rodízio e o dono nunca escolhe quem vai. Para pedir o credenciamento, abra a página Seja avaliador credenciado (em Parceiros) e toque em Pedir credenciamento: é um só pedido, mesmo para quem ainda não é parceiro. A Viva pede a identidade verificada, CPF ou CNPJ válido, experiência comprovada, o aceite do código de conduta e uma avaliação de teste revisada antes da primeira real.",
+    termos: ["avaliador", "avaliador credenciado", "credenciamento", "avaliacao de imovel", "avaliar imoveis", "laudo"],
+  },
+  {
     id: "taxa-parceria",
-    pergunta: "Taxa de parceria",
+    pergunta: "Taxa de serviço dos parceiros",
     resposta: `${TAXA_PARCERIA_TEXTO} ${CONTATO_NO_ACEITE} ${REGRAS_ENTREGA}`,
-    termos: ["taxa de parceria", "taxa parceiro", "40", "60", "80", "fotos", "advertencia", "suspensao", "credito", "mensalidade", "dinheiro do servico", "contato", "aceite", "liberado", "entregar"],
+    termos: ["taxa de parceria", "taxa de servico", "taxa parceiro", "10%", "90%", "fotos", "advertencia", "suspensao", "mensalidade", "dinheiro do servico", "contato", "aceite", "liberado", "entregar"],
+    links: [LINK_PRECOS],
   },
   {
     id: "contratar-fotografo",
@@ -73,6 +88,7 @@ export const FAQ: Pergunta[] = [
     resposta:
       "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o inquilino. A taxa de 12% sobre o valor total do contrato fechado é cobrada só do proprietário. O valor mensal e a caução são combinados entre as partes e não passam pela plataforma.",
     termos: ["taxa", "inquilino", "custo", "gratis"],
+    links: [LINK_PRECOS],
   },
   {
     id: "prazo",
@@ -103,16 +119,16 @@ export const FAQ: Pergunta[] = [
   },
   {
     id: "email-confirmacao",
-    pergunta: "Não recebi o e-mail de confirmação",
+    pergunta: "Não recebi o código de acesso",
     resposta:
-      "Confira a caixa de spam e as abas Promoções/Atualizações. Se não estiver lá, vá em Entrar e digite o seu e-mail e a senha: como a conta ainda não foi confirmada, aparece o botão \"Reenviar e-mail de confirmação\". Persistindo, abra um chamado.",
-    termos: ["email", "confirmacao", "confirmar", "nao recebi", "spam"],
+      "A Viva Nomads não manda link de confirmação: a conta é criada e confirmada pelo código de 6 dígitos que chega no seu e-mail. Confira a caixa de spam e as abas Promoções/Atualizações. Se não estiver lá, espere 60 segundos e toque em \"Reenviar código\" na tela Entrar. Persistindo, abra um chamado.",
+    termos: ["email", "codigo", "confirmacao", "confirmar", "nao recebi", "spam"],
   },
   {
     id: "senha",
     pergunta: "Esqueci minha senha",
     resposta:
-      "Em Entrar, toque em \"Esqueci minha senha\" e informe o seu e-mail: enviamos um link para criar uma nova. Nunca pedimos a sua senha — nem por chamado, nem por e-mail.",
+      "Você não precisa de senha: em Entrar, digite o seu e-mail e use o código de 6 dígitos que enviamos. Se você criou uma senha e a esqueceu, em Entrar escolha \"Entrar com senha\" e toque em \"Esqueci minha senha\": enviamos um link para criar uma nova. Nunca pedimos a sua senha — nem por chamado, nem por e-mail.",
     termos: ["senha", "esqueci", "redefinir", "acesso"],
   },
   {
@@ -121,6 +137,7 @@ export const FAQ: Pergunta[] = [
     resposta:
       "Para a sua segurança, a conversa acontece toda pela plataforma: telefone, e-mail e redes sociais aparecem como \"contato protegido\". Assim tudo fica registrado e vale como prova se houver qualquer problema.",
     termos: ["telefone", "whatsapp", "contato", "zap", "numero"],
+    links: [LINK_SEGURANCA],
   },
   {
     id: "manutencao",
@@ -138,6 +155,7 @@ export const FAQ: Pergunta[] = [
     resposta:
       "Não pague nada fora do que está no contrato assinado pela plataforma. A Viva Nomads nunca pede Pix ou depósito. Abra um chamado em \"Segurança, golpe ou pagamento por fora\" — uma pessoa da equipe responde com prioridade máxima.",
     termos: ["golpe", "pix", "por fora", "fraude", "pagamento"],
+    links: [LINK_SEGURANCA],
   },
   {
     id: "cancelar-pedido",

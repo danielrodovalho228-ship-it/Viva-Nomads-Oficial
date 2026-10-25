@@ -1,14 +1,23 @@
 "use client";
 
+import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Clock, Trash2 } from "lucide-react";
-import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import { Check, Clock, Trash2, X } from "lucide-react";
+import { FilaVazia, PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PRAZOS, estadoPrazo, type Prioridade } from "@/config/atendimento";
 import { PRECOS_USD } from "@/lib/atendimento/viva-custo";
+import {
+  fmtTempoMin,
+  resolvidosAtendimento,
+  FORMULA_1A_RESPOSTA_ATENDIMENTO,
+  FORMULA_CHAMADOS_ABERTOS,
+  FORMULA_RESOLVIDOS_ATENDIMENTO,
+} from "@/lib/admin/indicadores";
 import { FILAS, ORDEM_FILAS, filaDaCategoria } from "@/lib/atendimento/filas";
 import { apagarMacro, salvarMacro, testarViva, type ChamadoAdmin, type Macro, type ResultadoCenario } from "@/lib/data/atendimento-actions";
 
@@ -33,19 +42,19 @@ export function relogio(c: ChamadoAdmin, agora: Date): { cor: string; texto: str
   const primeira = new Date(c.prazo_primeira_resposta);
   if (c.primeira_resposta_em) {
     // Respondido: atrasado fica marcado; no prazo, passa a contar o prazo de resolução.
-    if (new Date(c.primeira_resposta_em).getTime() > primeira.getTime()) return { cor: "bg-red-100 text-red-800", texto: "1ª resposta fora do prazo" };
+    if (new Date(c.primeira_resposta_em).getTime() > primeira.getTime()) return { cor: "border border-line bg-white text-red-800", texto: "1ª resposta fora do prazo" };
     if (c.status === "resolvido" || c.status === "encerrado") return { cor: "bg-surface-2 text-muted", texto: "respondido" };
     const estado = estadoPrazo(new Date(c.criado_em), new Date(c.prazo_resolucao), agora, false);
     const rest = Math.round((new Date(c.prazo_resolucao).getTime() - agora.getTime()) / 60000);
-    if (estado === "estourado") return { cor: "bg-red-100 text-red-800", texto: `resolução estourou há ${fmt(rest)}` };
-    if (estado === "em_risco") return { cor: "bg-amber-100 text-amber-800", texto: `resolução: ${fmt(rest)} restantes` };
+    if (estado === "estourado") return { cor: "border border-line bg-white text-red-800", texto: `resolução estourou há ${fmt(rest)}` };
+    if (estado === "em_risco") return { cor: "border border-line bg-white text-amber-800", texto: `resolução: ${fmt(rest)} restantes` };
     return { cor: "bg-surface-2 text-muted", texto: `respondido · resolver em ${fmt(rest)}` };
   }
   const estado = estadoPrazo(new Date(c.criado_em), primeira, agora, false);
   const restMin = Math.round((primeira.getTime() - agora.getTime()) / 60000);
-  if (estado === "estourado") return { cor: "bg-red-100 text-red-800", texto: `estourou há ${fmt(restMin)}` };
-  if (estado === "em_risco") return { cor: "bg-amber-100 text-amber-800", texto: `${fmt(restMin)} restantes` };
-  return { cor: "bg-green-100 text-green-800", texto: `${fmt(restMin)} restantes` };
+  if (estado === "estourado") return { cor: "border border-line bg-white text-red-800", texto: `estourou há ${fmt(restMin)}` };
+  if (estado === "em_risco") return { cor: "border border-line bg-white text-amber-800", texto: `${fmt(restMin)} restantes` };
+  return { cor: "border border-line bg-white text-forest", texto: `${fmt(restMin)} restantes` };
 }
 
 export function AtendimentoClient({
@@ -57,6 +66,7 @@ export function AtendimentoClient({
   filtros,
   semAcesso,
   agoraISO,
+  ultimaDecisao = null,
 }: {
   aba: (typeof ABAS)[number]["id"];
   fila: ChamadoAdmin[];
@@ -64,6 +74,8 @@ export function AtendimentoClient({
   metricas: Record<string, unknown> | null;
   macros: Macro[];
   filtros: { fila?: string; prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean };
+  /** Quando a equipe resolveu o último chamado — aparece na fila vazia (Prompt 48). */
+  ultimaDecisao?: string | null;
   semAcesso: boolean;
   agoraISO: string;
 }) {
@@ -72,20 +84,20 @@ export function AtendimentoClient({
     <>
       <PageTitle title="Atendimento" subtitle="Chamados por prioridade e prazo. Simulações ficam fora." />
       {semAcesso && (
-        <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Sem acesso aos chamados agora (banco sem a migração 0073, sem chave de serviço ou sem permissão).
         </p>
       )}
-      <nav aria-label="Seções do atendimento" className="mb-6 flex flex-wrap gap-1.5">
+      <nav aria-label="Seções do atendimento" className="mb-6 flex flex-wrap gap-2">
         {ABAS.map((a) => (
           <Link
             key={a.id}
             href={`/admin/atendimento?aba=${a.id}`}
             aria-current={aba === a.id ? "page" : undefined}
-            className={cn("rounded-lg px-3 py-1.5 text-sm", aba === a.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest")}
+            className={cn("rounded-lg px-3 py-2 text-sm", aba === a.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest")}
           >
             {a.rotulo}
-            {a.id === "aprovacao" && aprovacao.length > 0 && <span className="ml-1.5 rounded-full bg-amber-200 px-1.5 text-xs text-amber-900">{aprovacao.length}</span>}
+            {a.id === "aprovacao" && aprovacao.length > 0 && <span className="border border-line ml-2 rounded-full bg-white px-2 text-xs text-amber-900">{aprovacao.length}</span>}
           </Link>
         ))}
       </nav>
@@ -93,13 +105,17 @@ export function AtendimentoClient({
       {aba === "fila" && (
         <>
           <Filtros filtros={filtros} />
-          <Tabela itens={fila} agora={agora} vazio="Nenhum chamado na fila com esses filtros." />
+          {fila.length === 0 && !Object.values(filtros).some(Boolean) ? (
+            <FilaVazia ultimaDecisao={ultimaDecisao} />
+          ) : (
+            <Tabela itens={fila} agora={agora} vazio="Nenhum chamado na fila com esses filtros." />
+          )}
         </>
       )}
       {aba === "aprovacao" && (
         <Panel title="Aguardando aprovação interna">
           <p className="mb-3 text-sm text-muted">Aprovação da equipe, não do cliente (o cliente vê &ldquo;Em análise pela equipe&rdquo;). Casos preparados para decisão: estorno, exceção, documento contestado, conflito. A Viva prepara o resumo e a resposta sugerida.</p>
-          <Tabela itens={aprovacao} agora={agora} vazio="Nada aguardando aprovação." />
+          {aprovacao.length === 0 ? <FilaVazia ultimaDecisao={ultimaDecisao} /> : <Tabela itens={aprovacao} agora={agora} vazio="Nada aguardando aprovação." />}
         </Panel>
       )}
       {aba === "metricas" && (
@@ -114,17 +130,17 @@ export function AtendimentoClient({
 }
 
 function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean } }) {
-  const campo = "rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink";
+  const campo = "rounded-lg border border-line bg-white px-2 py-2 text-sm text-ink";
   return (
-    <form method="get" action="/admin/atendimento" className="mb-4 flex flex-wrap items-end gap-2 rounded-2xl border border-sage-200 bg-white p-3">
+    <form method="get" action="/admin/atendimento" className="mb-4 flex flex-wrap items-end gap-2 rounded-xl border border-sage-200 bg-white p-3">
       <input type="hidden" name="aba" value="fila" />
       <label className="text-xs text-muted">
         Busca
-        <input name="q" defaultValue={filtros.busca} placeholder="VN-000123 ou assunto" className={cn(campo, "mt-0.5 block w-52")} />
+        <input name="q" defaultValue={filtros.busca} placeholder="VN-000123 ou assunto" className={cn(campo, "mt-1 block w-52")} />
       </label>
       <label className="text-xs text-muted">
         Fila
-        <select name="fila" defaultValue={filtros.fila ?? ""} className={cn(campo, "mt-0.5 block")}>
+        <select name="fila" defaultValue={filtros.fila ?? ""} className={cn(campo, "mt-1 block")}>
           <option value="">Todas</option>
           {ORDEM_FILAS.map((f) => (
             <option key={f} value={f}>
@@ -135,7 +151,7 @@ function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; t
       </label>
       <label className="text-xs text-muted">
         Prioridade
-        <select name="prioridade" defaultValue={filtros.prioridade ?? ""} className={cn(campo, "mt-0.5 block")}>
+        <select name="prioridade" defaultValue={filtros.prioridade ?? ""} className={cn(campo, "mt-1 block")}>
           <option value="">Todas</option>
           {(["p1", "p2", "p3", "p4"] as Prioridade[]).map((p) => (
             <option key={p} value={p}>
@@ -146,7 +162,7 @@ function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; t
       </label>
       <label className="text-xs text-muted">
         Tipo
-        <select name="tipo" defaultValue={filtros.tipo ?? ""} className={cn(campo, "mt-0.5 block")}>
+        <select name="tipo" defaultValue={filtros.tipo ?? ""} className={cn(campo, "mt-1 block")}>
           <option value="">Todos</option>
           <option value="suporte">Suporte</option>
           <option value="manutencao">Manutenção</option>
@@ -155,13 +171,13 @@ function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; t
       </label>
       <label className="text-xs text-muted">
         Responsável
-        <select name="responsavel" defaultValue={filtros.responsavel ?? ""} className={cn(campo, "mt-0.5 block")}>
+        <select name="responsavel" defaultValue={filtros.responsavel ?? ""} className={cn(campo, "mt-1 block")}>
           <option value="">Todos</option>
           <option value="humano">Pessoa</option>
           <option value="ia">IA</option>
         </select>
       </label>
-      <label className="flex items-center gap-1.5 text-xs text-muted">
+      <label className="flex items-center gap-2 text-xs text-muted">
         <input type="checkbox" name="fechados" value="1" defaultChecked={filtros.fechados} /> Incluir resolvidos
       </label>
       <Button type="submit" variant="outline">
@@ -172,27 +188,28 @@ function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; t
 }
 
 function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; vazio: string }) {
-  if (itens.length === 0) return <p className="rounded-2xl border border-sage-200 bg-white p-4 text-sm text-muted">{vazio}</p>;
+  if (itens.length === 0) return <p className="rounded-xl border border-sage-200 bg-white p-4 text-sm text-muted">{vazio}</p>;
   return (
     <ul className="grid min-w-0 gap-2">
       {itens.map((c) => {
         const r = relogio(c, agora);
         return (
-          <li key={c.id} className="min-w-0">
+          <li key={c.id} className="min-w-0" data-testid="chamado-linha">
             <Link href={`/admin/atendimento/${c.id}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-sage-200 bg-white px-4 py-3 hover:border-forest">
               <span className="min-w-0 flex-1 basis-56">
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className={cn("rounded px-1.5 py-0.5 text-xs font-bold", c.prioridade === "p1" ? "bg-red-600 text-white" : c.prioridade === "p2" ? "bg-amber-500 text-white" : "bg-surface-2 text-ink")}>
+                  <span className={cn("rounded-full border border-line bg-white px-2 py-1 text-xs font-semibold", c.prioridade === "p1" ? "text-red-700" : c.prioridade === "p2" ? "text-amber-800" : "text-ink")}>
                     {c.prioridade.toUpperCase()}
                   </span>
-                  <span className="truncate font-medium text-ink">{c.assunto}</span>
+                  <span className="truncate font-semibold text-ink">{c.assunto}</span>
                 </span>
-                <span className="mt-0.5 block text-xs text-muted">
+                <span className="mt-1 block text-xs text-muted">
                   {c.numero_publico} · {FILAS[filaDaCategoria(c.categoria)].rotulo} · {c.canal} · {STATUS[c.status] ?? c.status}
                   {c.visitante_email ? " · visitante" : ""}
+                  <span data-testid="chamado-aberto-em"> · Aberto em {dataHoraBRT(c.criado_em, { tabela: true })}</span>
                 </span>
               </span>
-              <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium", r.cor)}>
+              <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold", r.cor)}>
                 <Clock className="h-3.5 w-3.5" /> {r.texto}
               </span>
             </Link>
@@ -217,15 +234,22 @@ function num(v: unknown, suf = ""): string {
   return x === null ? "—" : `${x.toLocaleString("pt-BR")}${suf}`;
 }
 
+/** Resolvidos = (resolvidos + encerrados) ÷ chamados do período — a mesma função da home (Prompt 29, item 7). */
+function pctResolvidos(m: Record<string, unknown>): string {
+  const r = resolvidosAtendimento({ total: n(m.total) ?? 0, resolvidos: n(m.resolvidos) ?? 0, encerradosSemResolucao: n(m.encerrados_sem_resolucao) ?? 0 });
+  return r === null ? "—" : `${(Math.round(r * 1000) / 10).toLocaleString("pt-BR")}%`;
+}
+
 function Metricas({ m }: { m: Record<string, unknown> | null }) {
   if (!m) return <Panel><p className="text-sm text-muted">— sem dados (migração 0073 pendente ou sem acesso).</p></Panel>;
   const est = (m.estourados as Record<string, number>) ?? {};
   const cards: [string, string, string][] = [
-    ["Chamados no período", num(m.total), "Chamados reais abertos nos últimos dias (simulação fora)."],
-    ["Abertos agora", num(m.abertos), "Sem resolver nem encerrar."],
-    ["1ª resposta — média", num(m.primeira_resposta_media_min, " min"), "Do abrir até a primeira resposta (da Viva ou de uma pessoa)."],
-    ["1ª resposta — p90", num(m.primeira_resposta_p90_min, " min"), "9 em cada 10 respondidos até este tempo."],
-    ["Resolução — média", num(m.resolucao_media_h, " h"), "Do abrir até marcar resolvido."],
+    ["Chamados no período", num(m.total), `Chamados reais abertos nos últimos ${num(m.dias)} dias (simulação fora).`],
+    ["Abertos agora", num(m.abertos_agora ?? m.abertos), FORMULA_CHAMADOS_ABERTOS],
+    ["Resolvidos", pctResolvidos(m), FORMULA_RESOLVIDOS_ATENDIMENTO],
+    ["1ª resposta — média", fmtTempoMin(n(m.primeira_resposta_media_min)), FORMULA_1A_RESPOSTA_ATENDIMENTO],
+    ["1ª resposta — p90", fmtTempoMin(n(m.primeira_resposta_p90_min)), "9 em cada 10 respondidos até este tempo."],
+    ["Resolução — média", fmtTempoMin(n(m.resolucao_media_h) === null ? null : (n(m.resolucao_media_h) as number) * 60), "Do abrir até marcar resolvido."],
     ["Resolvidos pela IA", pct(m.resolvidos_ia, m.resolvidos), "Resolvidos só pela Viva ÷ resolvidos."],
     ["Pediram uma pessoa", pct(m.pediu_humano, m.total), "Chamados em que a pessoa pediu atendimento humano."],
     ["Reabertos em 7 dias", pct(m.reabertos_7d, m.resolvidos), "Voltaram em até 7 dias depois de resolvidos."],
@@ -246,17 +270,19 @@ function Metricas({ m }: { m: Record<string, unknown> | null }) {
           const corpo = (
             <>
               <p className="text-sm text-muted">{t}</p>
-              <p className="mt-1 font-title text-2xl font-bold text-ink">{v}</p>
+              <p className="mt-1 font-title text-2xl font-semibold text-ink" data-valor>
+                {v}
+              </p>
               <p className="mt-1 text-xs text-muted">{f}</p>
               {destino && <p className="mt-2 text-xs font-semibold text-forest">Ver chamados →</p>}
             </>
           );
           return destino ? (
-            <Link key={t} href={destino} className="block rounded-xl border border-line bg-white p-3 transition-colors hover:border-sage" title={f}>
+            <Link key={t} href={destino} className="block rounded-xl border border-line bg-white p-3 transition-colors hover:border-sage" title={f} data-metrica={t}>
               {corpo}
             </Link>
           ) : (
-            <div key={t} className="rounded-xl border border-line bg-white p-3" title={f}>
+            <div key={t} className="rounded-xl border border-line bg-white p-3" title={f} data-metrica={t}>
               {corpo}
             </div>
           );
@@ -320,23 +346,24 @@ function Macros({ macros }: { macros: Macro[] }) {
         ) : (
           <ul className="divide-y divide-line">
             {macros.map((m) => (
-              <li key={m.id} className="flex items-start justify-between gap-3 py-2.5">
+              <li key={m.id} className="flex items-start justify-between gap-3 py-3">
                 <button type="button" onClick={() => setEdit(m)} className="min-w-0 text-left">
-                  <span className="block font-medium text-ink">{m.titulo}</span>
+                  <span className="block font-semibold text-ink">{m.titulo}</span>
                   <span className="block truncate text-xs text-muted">{m.corpo}</span>
                 </button>
-                <button
-                  type="button"
-                  aria-label={`Apagar ${m.titulo}`}
-                  onClick={async () => {
-                    if (!window.confirm("Apagar esta resposta pronta?")) return;
+                <ConfirmarNaPagina
+                  aviso="Apagar esta resposta pronta?"
+                  confirmar="Apagar"
+                  ariaLabel={`Apagar ${m.titulo}`}
+                  className="shrink-0"
+                  botaoClassName="rounded-lg p-2 text-muted hover:bg-surface-2 hover:text-red-700"
+                  onConfirmar={async () => {
                     await apagarMacro(m.id);
                     router.refresh();
                   }}
-                  className="shrink-0 rounded-lg p-1.5 text-muted hover:bg-red-50 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
-                </button>
+                </ConfirmarNaPagina>
               </li>
             ))}
           </ul>
@@ -367,7 +394,7 @@ function TestarViva() {
         certos e nenhum erro nos cenários 6, 7, 13 e 14. Até 3 rodadas por dia.
       </p>
       <label className="mt-3 block text-sm">
-        <span className="mb-1 block font-medium text-ink">Modelo</span>
+        <span className="mb-1 block font-semibold text-ink">Modelo</span>
         <select value={modelo} onChange={(e) => setModelo(e.target.value)} className="w-full max-w-xs rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink">
           <option value="">O configurado (ATENDIMENTO_IA_MODELO)</option>
           {Object.entries(PRECOS_USD).map(([id, p]) => (
@@ -377,7 +404,7 @@ function TestarViva() {
           ))}
         </select>
       </label>
-      <Button
+      <Button variant="secondary"
         className="mt-3"
         size="sm"
         disabled={rodando}
@@ -423,8 +450,8 @@ function TestarViva() {
           <ul className="mt-3 divide-y divide-line text-sm">
             {res.map((r) => (
               <li key={r.n} className="py-2">
-                <p className="font-medium text-ink">
-                  {r.falhas.length === 0 ? "✓" : "✗"} {r.n}. “{r.mensagem}”{r.critico ? " · crítico" : ""}
+                <p className="font-semibold text-ink">
+                  {r.falhas.length === 0 ? <Check className="mr-1 inline h-4 w-4 text-forest" aria-label="passou" /> : <X className="mr-1 inline h-4 w-4 text-red-700" aria-label="falhou" />} {r.n}. “{r.mensagem}”{r.critico ? " · crítico" : ""}
                 </p>
                 <p className="text-xs text-muted">
                   Esperado: {r.quemResolve}, {r.prazo} · Obtido: {r.rota} → {r.destino}, {r.prioridade.toUpperCase()} · {r.chamadas} chamada(s) à IA

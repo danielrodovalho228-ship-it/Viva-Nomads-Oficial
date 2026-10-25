@@ -39,7 +39,7 @@ export function QuemEAPessoa({ chamadoId }: { chamadoId: string }) {
         <Button variant="outline" size="sm" disabled={carregando} onClick={ver}>
           <Eye className="h-4 w-4" /> {carregando ? "Carregando…" : "Ver quem é a pessoa"}
         </Button>
-        <p className="mt-1.5 text-xs text-muted">Só o necessário para resolver. A consulta fica no histórico (quem viu e quando).</p>
+        <p className="mt-2 text-xs text-muted">Só o necessário para resolver. A consulta fica no histórico (quem viu e quando).</p>
         {erro && <p className="mt-1 text-xs text-red-700">{erro}</p>}
       </div>
     );
@@ -102,7 +102,7 @@ export function QuemEAPessoa({ chamadoId }: { chamadoId: string }) {
 function Bloco({ titulo, vazio, children }: { titulo: string; vazio: string; children: React.ReactNode[] }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{titulo}</p>
+      <p className="text-xs font-semibold text-muted">{titulo}</p>
       {children.length ? <ul className="mt-1 space-y-1 text-xs">{children}</ul> : <p className="mt-1 text-xs text-muted">{vazio}</p>}
     </div>
   );
@@ -158,7 +158,7 @@ export function FontesDaSugestao({ s, onConferir }: { s: SugestaoVista; onConfer
     <div className="mb-3 rounded-xl border border-forest/30 bg-sage-100/60 p-3 text-xs text-ink" data-testid="fontes-sugestao">
       <p className="font-semibold">Rascunho da Viva — o que ela consultou</p>
       {s.fontes.length ? (
-        <ul className="mt-1.5 space-y-1">
+        <ul className="mt-2 space-y-1">
           {s.fontes.map((f, i) => (
             <li key={i}>
               <strong>{f.rotulo}</strong>
@@ -171,7 +171,7 @@ export function FontesDaSugestao({ s, onConferir }: { s: SugestaoVista; onConfer
       )}
       {s.aviso && <p className="mt-2 font-semibold text-amber-800">{s.aviso}</p>}
       {s.custo && <p className="mt-1 text-muted">Custo estimado: {s.custo}</p>}
-      <label className="mt-2 flex items-center gap-2 font-medium">
+      <label className="mt-2 flex items-center gap-2 font-semibold">
         <input type="checkbox" checked={s.conferida} onChange={(e) => onConferir(e.target.checked)} /> Conferi as fontes e o texto
       </label>
     </div>

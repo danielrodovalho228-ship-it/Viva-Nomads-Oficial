@@ -2,13 +2,19 @@
 
 import { after } from "next/server";
 import { headers } from "next/headers";
+import { HREF_CONFIRMADA } from "@/lib/estadia/confirmacao";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { sendEmail } from "@/lib/notifications/email";
+import { emailCodigoAssinatura } from "@/lib/notifications/montar-email";
+import { garantirCartao } from "@/lib/data/cartoes-servidor";
+import { SITE_URL } from "@/lib/site";
 import {
   assuntoAvisoOutraParte,
   avisoAssinatura,
+  linhasAssinatura,
   hashResumo,
   petsRegrasDoResumo,
   totalMesAplicavel,
@@ -24,7 +30,13 @@ import { qtdPetsCongelada } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { motivoFaltamInstrucoes } from "@/lib/checkin";
 import { instrucoesPreenchidas } from "@/lib/checkin-servidor";
+import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { estadoDoContratoUnico, seloParaEquipe, type EstadoContrato } from "@/lib/contrato-estado";
+import { ehAdmin } from "@/lib/data/admin-guard";
+import { escaparHtml } from "@/lib/escapar-html";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
+import { periodoDosBlocos } from "@/lib/contrato-blocos";
+import { prazoConferenciaEntrada, prazoConferenciaSaida } from "@/lib/conferencia";
 import {
   MSG_CODIGO_BLOQUEADO,
   VALIDADE_CODIGO_ASSINATURA_MS,
@@ -58,6 +70,12 @@ export interface ContratoParaAssinar {
   inicioEstadia: string | null;
   /** Entrada, conferência e saída com dia e horário (vazio se o contrato ainda não tem blocos). */
   linhaDoTempo: EtapaEstadia[];
+  /** Estado pela fonte única (o mesmo selo das listas e da carteira). */
+  estado: EstadoContrato;
+  /** Prazo da conferência de entrada (ISO), pela fonte única prazoConferenciaEntrada (Prompt 35B, F2). */
+  prazoConferenciaEm: string | null;
+  /** Prazo da conferência de saída (ISO), pela fonte única prazoConferenciaSaida (Prompt 56). */
+  prazoConferenciaSaidaEm: string | null;
 }
 
 interface LinhaContrato {
@@ -80,10 +98,11 @@ interface LinhaContrato {
   /** Pets do inquilino agora (só vale antes da 1ª assinatura; depois vale o congelado). */
   qtd_pets_vivos?: number;
   contrato_blocos?: { inicio: string; fim: string }[] | null;
+  pagamentos_bloco?: { tipo?: string | null; confirmado_pelo_inquilino?: boolean | null }[] | null;
 }
 
 const COLUNAS =
-  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim)";
+  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino)";
 
 function objetoOuVazio(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -135,21 +154,20 @@ async function lerLimpezaViva(propertyId: string | undefined): Promise<unknown> 
   }
 }
 
-function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
+function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string | null; inquilino: string | null }): ContratoParaAssinar | null {
   const ownerId = String(c.properties?.owner_id ?? "");
   const papel = papelNoContrato(userId, c.tenant_id, ownerId);
   if (!papel) return null;
   const imovel = c.properties?.title ?? "Imóvel";
-  const datas = (c.contrato_blocos ?? []).filter((b) => b?.inicio && b?.fim);
-  const inicio = datas.map((b) => b.inicio).sort()[0] ?? null;
-  const fim = datas.map((b) => b.fim).sort().at(-1) ?? null;
+  const { inicio, fim } = periodoDosBlocos(c.contrato_blocos ?? []);
   const resumo = resumoContrato({
     contratoId: c.id,
     imovel,
     aluguelMensal: Number(c.aluguel_mensal),
     prazoDias: Number(c.prazo_total_dias),
     ocupantes: Number(c.qtd_ocupantes),
-    criadoEm: c.created_at.slice(0, 10),
+    // Prompt 35B (ii): o resumo mostra o dia de criação em Brasília; quem assinou o dia em UTC continua conferindo (variantesDoResumo).
+    criadoEm: c.created_at,
     inicioEstadia: inicio,
     petsRegras: petsRegrasDoResumo({
       algumaAssinatura: !!(c.assinado_proprietario_em || c.assinado_inquilino_em),
@@ -182,9 +200,15 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     resumo,
     assinadoProprietarioEm: a.proprietario,
     assinadoInquilinoEm: a.inquilino,
-    aviso: avisoAssinatura(papel, a),
+    aviso: avisoAssinatura(papel, {
+      proprietario: { nome: nomes?.proprietario ?? null, em: a.proprietario },
+      inquilino: { nome: nomes?.inquilino ?? null, em: a.inquilino },
+    }),
     euAssinei: !!(papel === "inquilino" ? a.inquilino : a.proprietario),
+    estado: estadoDoContratoUnico(c, papel),
     inicioEstadia: inicio,
+    prazoConferenciaEm: prazoConferenciaEntrada({ inicio, checkinAfter: c.properties?.checkin_after ?? null })?.toISOString() ?? null,
+    prazoConferenciaSaidaEm: prazoConferenciaSaida({ fim, checkoutBefore: c.properties?.checkout_before ?? null })?.toISOString() ?? null,
     linhaDoTempo: montarLinhaDoTempo({
       inicio,
       fim,
@@ -208,7 +232,53 @@ export async function getContratoParaAssinar(contratoId: string): Promise<Contra
   // O RLS acima já provou que a pessoa é parte; o dono não lê a ficha do inquilino, então a contagem vem do servidor.
   const linha = data as unknown as LinhaContrato;
   await completarPets(linha);
-  return montar(linha, user.id);
+  return montar(linha, user.id, await nomesDasPartes(String(linha.properties?.owner_id ?? ""), linha.tenant_id));
+}
+
+export interface ContratoParaEquipe {
+  visao: ContratoParaAssinar;
+  /** Selo da fonte única, sem o "falta você" de quem é parte. */
+  selo: string;
+  ownerId: string;
+  tenantId: string;
+  nomes: { proprietario: string | null; inquilino: string | null };
+  criadoEm: string;
+}
+
+/**
+ * Admin › contrato (Prompt 35B, F5): o MESMO resumo que as partes leem e assinam, para a equipe conferir.
+ * Só admin com verificação em duas etapas (ehAdmin, no servidor); a leitura pelo cliente de serviço vem DEPOIS.
+ * Quem não é admin recebe null (a página responde 404).
+ */
+export async function getContratoParaEquipe(contratoId: string): Promise<ContratoParaEquipe | null> {
+  if (!UUID_RE.test(String(contratoId))) return null;
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  if (!data) return null;
+  const linha = data as unknown as LinhaContrato;
+  await completarPets(linha);
+  const ownerId = String(linha.properties?.owner_id ?? "");
+  const nomes = await nomesDasPartes(ownerId, linha.tenant_id);
+  // O resumo não depende do papel: monta na visão do inquilino só para reaproveitar a mesma conta.
+  const visao = montar(linha, linha.tenant_id, nomes);
+  if (!visao) return null;
+  return { visao, selo: seloParaEquipe(linha), ownerId, tenantId: linha.tenant_id, nomes, criadoEm: linha.created_at };
+}
+
+/** Nome curto das duas partes (só o nome: nunca contato nem documento) — para "Ana S. (proprietário) assinou em…". */
+async function nomesDasPartes(ownerId: string, tenantId: string): Promise<{ proprietario: string | null; inquilino: string | null }> {
+  const admin = createAdminClient();
+  if (!admin) return { proprietario: null, inquilino: null };
+  const { data } = await admin.from("profiles").select("id, full_name").in("id", [ownerId, tenantId].filter(Boolean));
+  const nome = (id: string) => nomeCurto((((data ?? []) as { id: string; full_name: string | null }[]).find((p) => p.id === id)?.full_name ?? "").replace(/\S+@\S+/g, "").trim());
+  return { proprietario: nome(ownerId), inquilino: nome(tenantId) };
 }
 
 /** Envia ao e-mail da conta um código de 6 dígitos, de uso único, que vale 15 minutos (conferido no servidor). */
@@ -255,11 +325,16 @@ export async function pedirCodigoAssinatura(contratoId: string): Promise<{ ok: b
     { onConflict: "contrato_id,user_id" },
   );
   if (errGrava) return { ok: false, error: "Não foi possível gerar o código. Tente de novo." };
+  const m = emailCodigoAssinatura(SITE_URL, { imovel: visao.imovel, codigo });
   const r = await sendEmail({
     to: user.email,
-    subject: "Seu código para assinar o contrato",
-    text: `Seu código para assinar o contrato de "${visao.imovel}": ${codigo}\nVale por 15 minutos e só pode ser usado uma vez. Se não foi você, ignore este e-mail e troque a senha.`,
-    html: `<p>Seu código para assinar o contrato de <strong>${visao.imovel.replace(/[<>&]/g, "")}</strong>: <strong style="font-size:20px;letter-spacing:4px">${codigo}</strong></p><p>Vale por 15 minutos e só pode ser usado uma vez. Se não foi você, ignore este e-mail e troque a senha.</p>`,
+    subject: m.assunto,
+    text: m.text,
+    // Conta de teste (is_teste): o sendEmail guarda o código na caixa da própria conta (o QA lê lá). Conta real: nada.
+    evento: "contract_signature_code",
+    usuarioId: user.id,
+    imagem: m.imagem,
+    html: m.html,
   });
   if (r.error) return { ok: false, error: "Não foi possível enviar o e-mail agora. Tente de novo." };
   return { ok: true };
@@ -270,7 +345,13 @@ export async function assinarContrato(input: {
   aceite: boolean;
   /** 6 dígitos recebidos por e-mail (pedirCodigoAssinatura). */
   codigo?: string;
-}): Promise<{ ok: boolean; error?: string }> {
+}): Promise<{
+  ok: boolean;
+  error?: string;
+  /** Cartão de assinaturas já com a assinatura nova: a tela mostra na hora, sem esperar o recarregamento. */ aviso?: string;
+  /** Prompt 61-A: esta foi a segunda assinatura — a tela leva a "Estadia confirmada". */
+  ambos?: boolean;
+}> {
   if (!UUID_RE.test(String(input.contratoId))) return { ok: false, error: "Contrato inválido." };
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -396,31 +477,70 @@ export async function assinarContrato(input: {
     papel: visao.papel,
     assinado_em: agora,
     ip,
-    hash_documento: hashResumo(linhasParaHash(visao.resumo, hashDaOutraParte)),
+    hash_documento: hashResumo(linhasParaHash(visao.resumo, hashDaOutraParte, c.created_at)),
   });
   if (errReg) return { ok: false, error: "Não foi possível registrar a assinatura. Tente de novo." };
 
   const coluna = visao.papel === "inquilino" ? "assinado_inquilino_em" : "assinado_proprietario_em";
   const { error: errCol } = await admin.from("contratos").update({ [coluna]: agora }).eq("id", c.id).is(coluna, null);
   if (errCol) return { ok: false, error: "Não foi possível registrar a assinatura. Tente de novo." };
+  // A tela do contrato (dos dois lados) e as listas voltam já com o aviso novo, na mesma resposta da ação.
+  revalidatePath("/dashboard/locacoes/[id]", "page");
+  revalidatePath("/dashboard/contratos/[id]", "page");
+  revalidatePath("/dashboard/contratos");
+  revalidatePath("/dashboard/locacoes");
 
   // Avisa a outra parte (notificação + e-mail), depois da resposta.
   const outraJaAssinou = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
   const outroId = visao.papel === "inquilino" ? String(c.properties?.owner_id ?? "") : c.tenant_id;
   after(async () => {
     try {
+      // Jornada de assinatura (19/10): com as duas assinaturas, o e-mail traz as mesmas linhas da página do contrato.
+      const nomes = outraJaAssinou ? await nomesDasPartes(String(c.properties?.owner_id ?? ""), c.tenant_id) : null;
+      const linhas = nomes
+        ? linhasAssinatura(visao.papel, {
+            proprietario: { nome: nomes.proprietario, em: visao.papel === "proprietario" ? agora : c.assinado_proprietario_em },
+            inquilino: { nome: nomes.inquilino, em: visao.papel === "inquilino" ? agora : c.assinado_inquilino_em },
+          })
+        : null;
+      const detalhes = linhas ? `<p>${linhas.map(escaparHtml).join("<br>")}</p>` : undefined;
       const { data: pessoa } = await admin.auth.admin.getUserById(outroId);
       await notify({
         event: "contract_status",
         email: pessoa?.user?.email ?? undefined,
         userId: outroId,
         // Quem recebe é a outra parte: o dono abre em Contratos, o inquilino em Minhas locações.
-        pushUrl: visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
+        // Prompt 61-A: com as duas assinaturas, o aviso de quem assinou antes abre a tela "Estadia confirmada".
+        pushUrl: outraJaAssinou ? HREF_CONFIRMADA(c.id) : visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
         subject: assuntoAvisoOutraParte(outraJaAssinou),
+        detailsHtml: detalhes,
       });
+      // Prompt 24: com as duas assinaturas, quem assinou por último também recebe o "contrato assinado" (os dois lados).
+      if (outraJaAssinou) {
+        await notify({
+          event: "contract_status",
+          email: user.email ?? undefined,
+          userId: user.id,
+          pushUrl: HREF_CONFIRMADA(c.id),
+          subject: assuntoAvisoOutraParte(true),
+          detailsHtml: detalhes,
+        });
+        // Cartões compartilháveis (T2): com o contrato assinado, o dono recebe (push) o cartão do anúncio publicado.
+        const ownerId = String(c.properties?.owner_id ?? "");
+        const imovelId = String(c.property_id ?? "");
+        const { data: imovel } = imovelId ? await admin.from("properties").select("status").eq("id", imovelId).maybeSingle() : { data: null };
+        if (ownerId && imovel?.status === "active" && (await garantirCartao(admin, { tipo: "ownercard", usuarioId: ownerId, propertyId: imovelId }))) {
+          await notify({ event: "anuncio_compartilhar", userId: ownerId, pushUrl: `/dashboard/imoveis/${imovelId}/cartao` });
+        }
+      }
     } catch {
       /* aviso é best-effort: a assinatura já está gravada */
     }
   });
-  return { ok: true };
+  const nomesAviso = await nomesDasPartes(String(c.properties?.owner_id ?? ""), c.tenant_id);
+  const aviso = avisoAssinatura(visao.papel, {
+    proprietario: { nome: nomesAviso.proprietario, em: visao.papel === "proprietario" ? agora : c.assinado_proprietario_em },
+    inquilino: { nome: nomesAviso.inquilino, em: visao.papel === "inquilino" ? agora : c.assinado_inquilino_em },
+  });
+  return { ok: true, aviso, ambos: outraJaAssinou };
 }

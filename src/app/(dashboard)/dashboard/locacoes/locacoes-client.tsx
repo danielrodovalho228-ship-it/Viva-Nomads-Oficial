@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { Home, CircleDollarSign } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
@@ -14,10 +15,16 @@ import type { LocacaoView } from "@/lib/data/contratos-actions";
 import type { documentosDosContratos } from "@/lib/data/documentos-actions";
 import { ConfirmarPagamentos, DevolucaoCaucaoInquilino, ListaDocumentos } from "@/components/documentos/documentos-contrato";
 import { formatBRL } from "@/lib/utils";
-import { ROTULO_ETAPA } from "@/lib/contrato-etapas";
+import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
+import { estadoCaucao } from "@/lib/caucao-estado";
 
 /** Locações de DEMONSTRAÇÃO (a partir do seed) para o piloto/testes. */
 function buildDemoLocacoes(): LocacaoView[] {
+  // Demonstração: assinada e com o 1º pagamento confirmado, pelo mesmo estado das locações reais.
+  const estado = estadoDoContratoUnico(
+    { status: "ativo", assinado_proprietario_em: "2026-01-01", assinado_inquilino_em: "2026-01-01", pagamentos_bloco: [{ tipo: "aluguel", confirmado_pelo_inquilino: true }] },
+    "inquilino",
+  );
   return DEMO_CONTRACTS.map((c, i) => ({
     id: `demo-loc-${i}`,
     propertyId: `demo-prop-${i}`,
@@ -25,10 +32,13 @@ function buildDemoLocacoes(): LocacaoView[] {
     ownerId: `demo-owner-${i}`,
     aluguelMensal: c.valorMes,
     status: "ativo",
-    etapa: "em_vigencia",
+    etapa: estado.etapa ?? "em_vigencia",
+    estado,
     criadoEm: c.inicio,
     podeAvaliar: false,
+    encerradoEm: null,
     pagamentos: [],
+    caucao: estadoCaucao({ blocos: [{ caucao: c.valorMes, caucaoStatus: "comprovada" }], pagamentos: [] }),
   }));
 }
 
@@ -48,7 +58,7 @@ export function LocacoesClient({
 
   return (
     <>
-      <PageTitle capa="locacoes"
+      <PageTitle
         title="Minhas locações"
         subtitle="Suas estadias e a avaliação do proprietário."
         action={demoOn ? <DemoBadge /> : undefined}
@@ -66,12 +76,12 @@ export function LocacoesClient({
           }
         />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {locacoes.map((l) => (
-            <Panel key={l.id} className="p-5">
+            <Panel key={l.id} className="p-4" id={`contrato-${l.id}`} data-testid="locacao-cartao" data-contrato={l.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="font-title text-lg font-bold text-ink">
+                  <h2 className="font-title text-lg font-semibold text-ink">
                     {demoOn ? (
                       l.propertyTitle
                     ) : (
@@ -82,7 +92,7 @@ export function LocacoesClient({
                   </h2>
                   {!demoOn && (
                     <p
-                      className="mt-1 inline-flex max-w-full items-center gap-1.5 text-xs font-medium text-forest"
+                      className="mt-1 inline-flex max-w-full items-center gap-2 text-xs font-medium text-forest"
                       data-testid="locacao-selo"
                       aria-label={selos[l.id] ? `Anfitrião: ${selos[l.id].rotulo}` : "Sua estadia"}
                     >
@@ -93,12 +103,19 @@ export function LocacoesClient({
                   <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted">
                     <CircleDollarSign className="h-3.5 w-3.5" /> {formatBRL(l.aluguelMensal)}/mês
                   </p>
+                  {/* L2-B item 12: valor e estado da caução, pela mesma função dos Contratos e da Garantias. */}
+                  {l.caucao.chave !== "sem_caucao" && (
+                    <p className="mt-1 text-xs text-muted" data-testid="locacao-caucao" data-chave={l.caucao.chave}>
+                      Caução{l.caucao.valor > 0 ? ` ${formatBRL(l.caucao.valor)}` : ""} · {l.caucao.rotulo}
+                    </p>
+                  )}
                 </div>
                 <span
-                  className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest"
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${tomDoSelo(l.estado)}`}
                   data-testid="locacao-etapa"
+                  data-chave={l.estado.chave}
                 >
-                  {l.status === "ativo" ? ROTULO_ETAPA[l.etapa] : l.status}
+                  {l.estado.selo}
                 </span>
               </div>
 
@@ -107,15 +124,21 @@ export function LocacoesClient({
                 <>
                   <ConfirmarPagamentos pagamentos={l.pagamentos} />
                   <DevolucaoCaucaoInquilino acerto={extras[l.id]?.acerto ?? null} />
-                  <ListaDocumentos documentos={extras[l.id]?.documentos ?? []} />
+                  <ListaDocumentos documentos={extras[l.id]?.documentos ?? []} recibos={extras[l.id]?.recibos ?? []} />
                 </>
               )}
 
               {!demoOn && (
                 <Link href={`/dashboard/locacoes/${l.id}`} className="mt-4 inline-block" data-testid="locacao-ver-contrato">
-                  <Button variant={l.etapa === "aguardando_assinatura" ? "gold" : "outline"}>
+                  <Button variant="secondary">
                     {l.etapa === "aguardando_assinatura" && l.status === "ativo" ? "Ver e assinar contrato" : "Ver contrato"}
                   </Button>
+                </Link>
+              )}
+              {/* Prompt 32: a página da estadia (datas, checklist, ocupantes, instruções de chegada e alterações). */}
+              {!demoOn && (
+                <Link href={HREF_ESTADIA(l.id)} className="ml-3 mt-4 inline-block" data-testid="locacao-abrir-estadia">
+                  <Button variant="outline">Abrir a página da estadia</Button>
                 </Link>
               )}
 
@@ -129,6 +152,7 @@ export function LocacoesClient({
                 titulo="Como foi sua experiência com este proprietário?"
                 placeholder="Comentário (opcional) — comunicação, o imóvel como anunciado, suporte…"
                 demo={demoOn}
+                encerradoEm={l.encerradoEm}
               />
               )}
             </Panel>

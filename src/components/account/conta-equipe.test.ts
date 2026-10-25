@@ -16,11 +16,12 @@ test("a rota é a área de aprovações da Central, coberta por ROTAS_APP", asyn
   assert.equal(destinoDaRota("/admin/agentes"), "app");
 });
 
-test("Conta: Painel Admin (/admin) vem acima de Equipe e aprovações e só para admin", async () => {
-  assert.equal(ROTA_ADMIN, "/admin");
+test("NAV-A: Painel Admin e Equipe e aprovações moram na barra verde do admin, com as mesmas rotas", async () => {
+  const { MENU_POR_PAPEL } = await import("../../config/menu-por-papel.ts");
   const { readFileSync } = await import("node:fs");
+  const admin = JSON.stringify(MENU_POR_PAPEL.filter((s) => s.papel === "admin"));
+  assert.ok(admin.includes(`"href":"${ROTA_ADMIN}"`));
+  assert.ok(admin.includes(`"href":"${ROTA_EQUIPE}"`));
   const f = readFileSync(new URL("./conta-menu.tsx", import.meta.url), "utf8");
-  assert.ok(f.indexOf('label: "Painel Admin"') > 0);
-  assert.ok(f.indexOf('label: "Painel Admin"') < f.indexOf('label: "Equipe e aprovações"'));
-  assert.match(f, /mostraEquipe\(user\?\.role\)\s*\?/);
+  assert.ok(!f.includes('label: "Painel Admin"'));
 });

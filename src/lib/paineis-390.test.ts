@@ -25,24 +25,26 @@ test("D4: aviso final da Verificação é um bloco de texto único, não colunas
 test("D6: conteúdo dos painéis reserva espaço inferior para o botão da Viva (celular)", () => {
   const f = ler("src/components/layout/dashboard-shell.tsx");
   const main = f.slice(f.indexOf("<main"), f.indexOf(">", f.indexOf("<main")));
-  assert.match(main, /pb-\[calc\(6rem\+env\(safe-area-inset-bottom\)\)\]/);
+  assert.match(main, /pb-\[calc\(var\(--folga-flutuante-celular\)\+env\(safe-area-inset-bottom\)\)\]/);
   assert.match(main, /sm:p-8/, "no computador o padding volta ao normal");
 });
 
-test("D2: a visão geral tem h1 (o banner de boas-vindas)", () => {
-  const f = ler("src/components/dashboard/banner.tsx");
-  assert.match(f, /<h1 /);
-  assert.doesNotMatch(f, /<h2 /);
+test("D2: a visão geral tem h1 (Prompt 42: o título em texto do PageTitle, sem a faixa de boas-vindas)", () => {
+  const f = ler("src/components/dashboard/primitives.tsx");
+  const titulo = f.slice(f.indexOf("export function PageTitle"), f.indexOf("export function StatCard"));
+  assert.match(titulo, /<h1 /);
+  assert.doesNotMatch(titulo, /<h2 /);
+  assert.match(ler("src/app/(dashboard)/dashboard/visao-geral-client.tsx"), /<PageTitle/);
 });
 
-test("D5: Favoritos, Comparações e Buscas salvas mostram a capa antes das abas", () => {
+test("D5: Favoritos, Comparações e Buscas salvas mostram o título antes das abas", () => {
   for (const r of ["favoritos", "comparar", "buscas"]) {
     const f = ler(`src/app/(dashboard)/dashboard/${r}/page.tsx`);
     for (const m of f.matchAll(/<PageTitle/g)) {
       const antes = f.slice(0, m.index);
       const ultimaAba = antes.lastIndexOf("<FavoritosTabs />");
       const ultimoRetorno = Math.max(antes.lastIndexOf("return ("), antes.lastIndexOf("<>"));
-      assert.ok(ultimaAba < ultimoRetorno, `${r}: aba antes da capa`);
+      assert.ok(ultimaAba < ultimoRetorno, `${r}: aba antes do título`);
     }
   }
 });
@@ -52,10 +54,11 @@ test("D7: títulos dos cards de Ferramentas limitados a 2 linhas e com altura un
   assert.match(f, /<h3 className="[^"]*line-clamp-2[^"]*min-h-\[2\.75rem\][^"]*">\{f\.titulo\}/);
 });
 
-test("D8: estado vazio sem ilustração usa o ícone em destaque (círculo), igual ao de Mensagens", () => {
+test("D8 (revisto no Prompt 48): estado vazio com ícone pequeno, sem ilustração e sempre com um próximo passo", () => {
   const f = ler("src/components/dashboard/primitives.tsx");
-  const bloco = f.slice(f.indexOf("export function EmptyState"));
-  assert.match(bloco, /data-testid="estado-vazio-icone"[\s\S]*rounded-full bg-blue-50/);
-  assert.match(bloco, /h-20 w-20/);
-  assert.doesNotMatch(bloco, /mx-auto h-8 w-8 text-blue-500/, "sem o ícone pequeno solto");
+  const bloco = f.slice(f.indexOf("export function EmptyState"), f.indexOf("export function FilaVazia"));
+  assert.match(bloco, /data-testid="estado-vazio-icone"[\s\S]*h-5 w-5/);
+  assert.doesNotMatch(bloco, /illustration|h-20 w-20|rounded-full bg-blue-50/, "sem ilustração nem ícone em círculo grande");
+  assert.match(bloco, /action: React\.ReactNode;/, "a ação é obrigatória");
+  assert.match(bloco, /data-testid="estado-vazio-acao"/);
 });

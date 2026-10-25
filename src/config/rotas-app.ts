@@ -36,6 +36,7 @@ const ramo = (caminho: string): Regra => ({ caminho, abaixo: true });
  */
 export const ROTAS_APP: Regra[] = [
   exato("/auth"), // entrar / criar conta
+  exato("/auth/intencao"), // Prompt 49: 1 toque depois do 1º código da conta nova (sem trocar de navegador)
   ramo("/app"), // boas-vindas do app
   ramo("/buscar"),
   ramo("/imoveis"), // anúncio público
@@ -48,12 +49,17 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/favoritos"),
   ramo("/dashboard/candidaturas"),
   ramo("/dashboard/visitas"),
+  ramo("/dashboard/agenda"),
   ramo("/dashboard/leads"), // interessados (proprietário)
   ramo("/dashboard/pedidos"),
   ramo("/dashboard/pedidos-cidade"),
   ramo("/dashboard/contratos"),
+  ramo("/dashboard/recibos"), // Prompt 39-B1: Recibos e notas do proprietário (resumo do Carnê-Leão e informe)
   ramo("/dashboard/locacoes"),
   ramo("/dashboard/solicitacoes"), // manutenção
+  ramo("/dashboard/servicos"), // serviços de parceiros para o morador
+  ramo("/dashboard/parceiro"), // painel do parceiro: Pedidos, Agenda e Ganhos da barra do parceiro (Prompt 41)
+  ramo("/dashboard/avaliacao-imovel"), // Prompt 62-B1: o morador concorda com a visita de avaliação (imóvel ocupado)
   ramo("/dashboard/buscas"), // buscas salvas
   ramo("/dashboard/imoveis"), // meus imóveis, criar e editar anúncio (fotos pelo celular)
   ramo("/qualificar"), // qualificação, que vem antes do anúncio
@@ -168,6 +174,21 @@ export function aasa(appIds: string[]): unknown {
 }
 
 /** assetlinks.json (Android App Links). */
+/**
+ * Impressão SHA-256 da chave de assinatura do Play (Play App Signing): é com ela que o Play assina o app que o
+ * usuário instala. Fica fixa aqui (é pública); APP_ANDROID_SHA256 traz a de upload do EAS e outras, se houver.
+ */
+export const IMPRESSAO_PLAY_APP_SIGNING = "9C:54:64:53:98:96:35:68:86:59:04:4A:7D:6E:FC:AD:8A:A1:DD:7A:54:56:65:04:5D:07:0F:AE:56:40:FB:3C";
+
+/** Impressões do assetlinks: as de APP_ANDROID_SHA256 (vírgula para várias) primeiro, depois a do Play; sem repetir. */
+export function impressoesAndroid(variavel: string | undefined): string[] {
+  const validas = (variavel ?? "")
+    .split(",")
+    .map((s) => s.trim().toUpperCase())
+    .filter((s) => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(s));
+  return [...new Set([...validas, IMPRESSAO_PLAY_APP_SIGNING])];
+}
+
 export function assetlinks(pacote: string, fingerprints: string[]): unknown {
   return [
     {

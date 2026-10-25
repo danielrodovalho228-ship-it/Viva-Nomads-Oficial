@@ -13,14 +13,14 @@ import {
 } from "./simulador.ts";
 import { PLANOS } from "../config/planos.ts";
 
-// Espelha config/planos.ts (Grátis 12%/R$0, Essencial 10%/R$588, Pro 8%/R$1548,
-// Gestor sob consulta).
-const PLANOS_CALC: PlanoCalc[] = [
-  { id: "free", nome: "Gratuito", comissao: 0.12, assinaturaAnual: 0 },
-  { id: "essential", nome: "Essencial", comissao: 0.1, assinaturaAnual: 588 },
-  { id: "pro", nome: "Profissional", comissao: 0.08, assinaturaAnual: 1548 },
-  { id: "gestor", nome: "Gestor", comissao: 0, assinaturaAnual: null },
-];
+// Usa a configuração REAL (src/config/planos.ts): o fixture copiado ficou velho
+// (10%/8%) quando as taxas viraram 12%/8%/4% e a recomendação mudou sem o teste ver.
+const PLANOS_CALC: PlanoCalc[] = PLANOS.map((p) => ({
+  id: p.id,
+  nome: p.nome,
+  comissao: p.comissao,
+  assinaturaAnual: p.assinaturaAnual,
+}));
 
 test("contratosPorAno = meses / prazo (limitado a 12 meses)", () => {
   assert.equal(contratosPorAno(10, 4), 2.5);
@@ -73,24 +73,32 @@ test("comparador: líquido cai conforme comissão/assinatura sobem", () => {
 });
 
 test("recomendação: BAIXO volume → Gratuito é o melhor plano (honestidade)", () => {
-  // 3.000/mês, 6 meses ocupados, prazo 6 → ~1 contrato/ano. A assinatura anual
-  // não se paga: o Gratuito deixa mais líquido.
+  // 2.000/mês, 6 meses ocupados → R$ 12.000/ano de aluguel. Abaixo de ~R$ 14.700/ano
+  // (588 ÷ 4 pontos de taxa) a assinatura do Essencial não se paga: o Gratuito deixa mais líquido.
   const r = recomendarPlano(
-    { aluguelMensal: 3000, condoIptu: 0, contas: 0, mesesOcupados: 6, prazoMedioMeses: 6 },
+    { aluguelMensal: 2000, condoIptu: 0, contas: 0, mesesOcupados: 6, prazoMedioMeses: 6 },
     PLANOS_CALC
   );
   assert.equal(r?.planoId, "free");
 });
 
+test("recomendação: valor médio → Essencial; a taxa incide sobre o valor TOTAL do contrato", () => {
+  // 3.000/mês × 6 meses = R$ 18.000/ano: Gratuito 12% = 2.160; Essencial 8% + 588 = 2.028.
+  const r = recomendarPlano(
+    { aluguelMensal: 3000, condoIptu: 0, contas: 0, mesesOcupados: 6, prazoMedioMeses: 6 },
+    PLANOS_CALC
+  );
+  assert.equal(r?.planoId, "essential");
+});
+
 test("recomendação: ALTO volume/valor → plano pago vence e MUDA com o volume", () => {
-  // 10.000/mês, 12 meses, prazo 2 → 6 contratos/ano. A economia de comissão
-  // supera a assinatura: o recomendado deixa de ser o Gratuito.
+  // 10.000/mês, 12 meses → R$ 120.000/ano: 4% + 1.548 = 6.348 < 8% + 588 = 10.188 < 12% = 14.400.
   const r = recomendarPlano(
     { aluguelMensal: 10000, condoIptu: 0, contas: 0, mesesOcupados: 12, prazoMedioMeses: 2 },
     PLANOS_CALC
   );
   assert.notEqual(r?.planoId, "free");
-  assert.equal(r?.planoId, "pro"); // 8% + 1548 < 10% + 588 < 12% neste volume
+  assert.equal(r?.planoId, "pro");
 });
 
 test("recomendação: Gestor (sob consulta) nunca é recomendado automaticamente", () => {
@@ -305,7 +313,7 @@ test("prompt 15 — cenários de ocupação: −2 / informado / +2, presos em 6.
   assert.deepEqual(cenariosOcupacao(10).map((c) => c.mesesOcupados), [8, 10, 12]);
   assert.deepEqual(cenariosOcupacao(12).map((c) => c.mesesOcupados), [10, 12, 12]);
   assert.deepEqual(cenariosOcupacao(6).map((c) => c.mesesOcupados), [6, 6, 8]);
-  assert.deepEqual(cenariosOcupacao(3).map((c) => c.nome), ["Pessimista", "Esperado", "Otimista"]);
+  assert.deepEqual(cenariosOcupacao(3).map((c) => c.nome), ["Conservador", "Realista", "Otimista"]);
 });
 
 test("prompt 15 — cenários: mais meses ocupados nunca dão líquida menor (mesma base do simulador)", () => {

@@ -82,10 +82,12 @@ export function validarCidade(texto: string): Validacao<string | null> {
 }
 
 /** Selos que só aparecem com verificação REAL registrada. Telefone: código por SMS (prompt 7). Identidade: Certta (depois). */
-export function selosReais(p: { emailConfirmado?: boolean | null; telefoneVerificado?: boolean | null }): string[] {
+export function selosReais(p: { emailConfirmado?: boolean | null; telefoneVerificado?: boolean | null; linkedinConectado?: boolean | null }): string[] {
   const s: string[] = [];
   if (p.emailConfirmado === true) s.push("E-mail confirmado");
   if (p.telefoneVerificado === true) s.push("Telefone verificado");
+  // 63-B: só o selo (texto), nunca link, nome ou foto do LinkedIn. Não soma em ranking nem taxa.
+  if (p.linkedinConectado === true) s.push("LinkedIn conectado");
   return s;
 }
 
@@ -102,6 +104,8 @@ export interface CandidatoBase {
   reputacao: { media: number; n: number } | null;
   emailConfirmado: boolean;
   telefoneVerificado?: boolean;
+  /** 63-B: LinkedIn conectado e dentro da validade. */
+  linkedinConectado?: boolean;
 }
 
 export interface CartaoCandidato {
@@ -126,7 +130,7 @@ export function cartaoCandidato(c: CandidatoBase, aceito: boolean): CartaoCandid
     titulo: aceito ? (nomeCurto(c.nome) ?? "Candidato(a)") : "Candidato(a)",
     fotoUrl: aceito ? c.fotoUrl : null,
     sinais,
-    selos: selosReais({ emailConfirmado: c.emailConfirmado, telefoneVerificado: c.telefoneVerificado }),
+    selos: selosReais({ emailConfirmado: c.emailConfirmado, telefoneVerificado: c.telefoneVerificado, linkedinConectado: c.linkedinConectado }),
     reputacao: c.reputacao && c.reputacao.n > 0 ? c.reputacao : null,
   };
 }
@@ -148,13 +152,23 @@ export function nomeNaConversa(p: {
   return p.primeiroNome || "Conversa";
 }
 
+/**
+ * Nomes das partes NA PROPOSTA (Prompt 56, D4): nome completo, nunca o curto ("Daniel Teste 1" virava "Daniel 1.") e
+ * sem CPF/CNPJ. O interessado continua "Candidato(a)" para o proprietário até o aceite da candidatura (prompt 6).
+ */
+export function nomeNaProposta(p: { quemVe: "owner" | "tenant"; nomeCompleto: string | null; aceito: boolean }): string {
+  const nome = (p.nomeCompleto ?? "").replace(/\s+/g, " ").trim() || null;
+  if (p.quemVe === "owner") return p.aceito && nome ? nome : "Candidato(a)";
+  return nome ?? "Proprietário";
+}
+
 export interface ItemProgresso {
   chave: "foto" | "bio" | "idiomas" | "cidade" | "profissao" | "motivo" | "telefone";
   rotulo: string;
   feito: boolean;
 }
 
-/** Barra "Complete seu perfil": nunca obrigatória. Quem só procura casa também vê profissão e motivo. */
+/** Barra "Complete seu perfil": nunca obrigatória. Quem só procura casa também vê a profissão. */
 export function progressoPerfil(
   p: { foto: boolean; bio: string | null; idiomas: string[]; cidade: string | null; profissao: string | null; motivo: string | null },
   /** telefone: undefined = verificação por SMS indisponível (o item não aparece). */
@@ -166,10 +180,9 @@ export function progressoPerfil(
     { chave: "idiomas", rotulo: "Idiomas", feito: p.idiomas.length > 0 },
     { chave: "cidade", rotulo: "Cidade", feito: !!p.cidade },
   ];
-  if (!opts.anuncia) {
-    itens.push({ chave: "profissao", rotulo: "Profissão", feito: !!p.profissao });
-    itens.push({ chave: "motivo", rotulo: "Motivo da estadia", feito: !!p.motivo });
-  }
+  // CONTA-A C2: o motivo da estadia NÃO entra na barra. Ele mora num lugar só (Dados da conta), onde "Prefiro não
+  // informar" é uma resposta válida — e no banco vale o mesmo que "sem motivo"; contar como falta dava dois estados.
+  if (!opts.anuncia) itens.push({ chave: "profissao", rotulo: "Profissão", feito: !!p.profissao });
   if (opts.telefone !== undefined)
     itens.push({ chave: "telefone", rotulo: "Verifique seu celular: perfis verificados passam mais confiança", feito: opts.telefone });
   const pct = Math.round((itens.filter((i) => i.feito).length / itens.length) * 100);
@@ -180,4 +193,31 @@ export function progressoPerfil(
 export function robotsDoProprietario(imoveisVisiveis: number): { index: boolean; follow: boolean } {
   const indexar = imoveisVisiveis > 0;
   return { index: indexar, follow: indexar };
+}
+
+/** Rótulo curto de cada item na linha de faltas (o do celular é uma frase longa na lista). */
+const CURTO: Partial<Record<string, string>> = { telefone: "Celular verificado" };
+/** Rótulo curto de um item do medidor (a lista de marcação e a linha de faltas usam o mesmo). */
+export const rotuloCurto = (i: { chave: string; rotulo: string }): string => CURTO[i.chave] ?? i.rotulo;
+
+/**
+ * CONTA-A C1 — o medidor declara o que conta e a linha de faltas lista TUDO o que falta: os itens do cadastro (nome,
+ * e-mail confirmado, documento — os mesmos do admin) mais os da barra (foto, frase, idiomas, cidade, profissão,
+ * celular). A foto está nos dois e conta uma vez. A porcentagem é sobre esta mesma lista.
+ */
+export function medidorPerfil(
+  barra: ItemProgresso[],
+  cadastro: { chave: string; rotulo: string; feito: boolean }[],
+): { itens: { chave: string; rotulo: string; feito: boolean }[]; pct: number; falta: string[] } {
+  const chaves = new Set(barra.map((i) => i.chave as string));
+  const itens = [...cadastro.filter((i) => !chaves.has(i.chave)), ...barra];
+  const pct = itens.length ? Math.round((itens.filter((i) => i.feito).length / itens.length) * 100) : 100;
+  const falta = itens.filter((i) => !i.feito).map(rotuloCurto);
+  return { itens, pct, falta };
+}
+
+/** "A, B e C" (vazio → ""). */
+export function listaEmTexto(itens: string[]): string {
+  if (itens.length <= 1) return itens.join("");
+  return `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
 }

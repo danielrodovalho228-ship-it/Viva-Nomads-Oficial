@@ -36,3 +36,9 @@ test("#141: seguro incêndio sai de 'Você fica protegido por' e anúncio não d
   assert.doesNotMatch(anuncio, /conecta,\s+verifica/);
   assert.match(anuncio, /confere a documentação do imóvel e registra a negociação, mas nunca recebe o dinheiro/);
 });
+
+test("MIUDOS-A: o espaço antes de 'menos' fica dentro do texto do h2 (sem {\" \"} solto)", () => {
+  const home = readFileSync("src/app/(public)/page.tsx", "utf8");
+  assert.match(home, /Mais estabilidade e <span className="text-white">menos tempo com o imóvel parado<\/span>\./);
+  assert.doesNotMatch(home, /Mais estabilidade e\{" "\}/);
+});

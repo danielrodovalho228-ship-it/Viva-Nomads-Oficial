@@ -21,7 +21,7 @@ export default async function RefazerPage() {
     <div className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-md text-center">
         <Logo href="/" />
-        <h1 className="mt-8 font-title text-2xl font-bold text-ink">Refazer a verificação em duas etapas</h1>
+        <h1 className="mt-8 font-title text-2xl font-semibold text-ink">Refazer a verificação em duas etapas</h1>
         <p className="mt-2 text-sm text-muted">Confirme sua senha e o código que enviamos ao seu e-mail. Depois você cadastra o app autenticador de novo.</p>
         <RefazerDuasEtapasForm email={data.user.email ?? ""} />
       </div>

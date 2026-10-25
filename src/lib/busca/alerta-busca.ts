@@ -7,11 +7,15 @@
   por palpite). Endereço/coordenada nunca entram no e-mail: só cidade e bairro
   (região aproximada), como na página pública.
 */
+import { mesesDoCartao, rotuloPreco, textoPreco } from "../cartao-preco.ts";
 import { normalizarBusca, resumoDaBusca } from "./buscas-salvas.ts";
-import { passaNoPainel } from "./painel-filtros.ts";
+import { FILTROS_PAINEL_VAZIOS, passaNoPainel } from "./painel-filtros.ts";
 import { comodidadesDaUrl } from "./filtro-comodidades.ts";
-import { PROPERTY_TYPES } from "../amenities.ts";
+import { filtroInternetDaUrl } from "./filtro-internet.ts";
+import { datasFlexiveisDaUrl } from "./datas-flexiveis.ts";
 import type { PortePet, RegrasPets } from "../anuncio/pets-regras.ts";
+import { destinoDaUrl, type DestinoBusca } from "./destino-busca.ts";
+import { dentroDoTempo, type ModoRota } from "../rotas/tempo.ts";
 
 export interface ImovelParaAlerta {
   id: string;
@@ -22,6 +26,8 @@ export interface ImovelParaAlerta {
   monthlyPrice: number;
   bedrooms: number;
   minPeriodDays: number;
+  /** Duração máxima (max_period_days); sem ela, não há teto. */
+  maxPeriodDays?: number | null;
   maxGuests?: number | null;
   availableFrom?: string | null;
   furnished?: boolean | null;
@@ -39,6 +45,9 @@ export interface ImovelParaAlerta {
   amenities?: string[];
   comodidadesFiltro?: string[];
   parkingSpots?: number;
+  /** Prompt 57 fase 2: internet informada pelo dono e a medição válida (o filtro "internet medida" usa só a medição). */
+  internetMbps?: number;
+  internetMedida?: { downloadMbps: number; validoAte: string };
 }
 
 /** Máximo de e-mails de alerta por busca por dia (o resto vai no resumo). */
@@ -48,12 +57,6 @@ export const MAX_IMOVEIS_NO_EMAIL = 5;
 
 const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
-function tipoCanonico(pt: string): string {
-  const low = pt.toLowerCase();
-  if (PROPERTY_TYPES.some((t) => t.value === low)) return low;
-  return PROPERTY_TYPES.find((t) => t.label.toLowerCase() === low || t.label.toLowerCase().startsWith(low))?.value ?? low;
-}
-
 function aceitaGarantia(p: ImovelParaAlerta, g: string): boolean {
   const arr = p.garantiasAceitas ?? [];
   if (g === "seguro_fianca") return arr.includes("seguro_fianca") || !!p.acceptsInsurance;
@@ -61,9 +64,19 @@ function aceitaGarantia(p: ImovelParaAlerta, g: string): boolean {
   return arr.includes(g);
 }
 
+/** Minutos (do cache do servidor) do imóvel até o destino da busca, no meio pedido; null/undefined = sem tempo. */
+export type MinutosAte = (destino: DestinoBusca, modo: ModoRota) => number | null | undefined;
+
 /** O imóvel combina com a busca salva (query string normalizada)? */
-export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta): boolean {
+export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minutosAte?: MinutosAte, agora: Date = new Date()): boolean {
   const sp = new URLSearchParams(normalizarBusca(parametros));
+  // Prompt 37: "até N min" de um DESTINO CADASTRADO — só com tempo de rota conferido (sem tempo, não alertamos por
+  // palpite). Endereço digitado fica como hoje: sem alerta por tempo (decisão do Muse, 21/10).
+  const d = destinoDaUrl(sp);
+  if (d.destino && "slug" in d.destino && d.ate) {
+    const m = minutosAte?.(d.destino, d.modo);
+    if (m == null || !dentroDoTempo(m, d.ate)) return false;
+  }
   const on = (k: string) => sp.get(k) === "1";
   const num = (k: string) => Number(sp.get(k)) || 0;
 
@@ -83,7 +96,9 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta): boo
   const orc = num("orcamento") || num("preco");
   const quartos = num("quartos");
   const porte = sp.get("porte");
+  const perMap: Record<number, number> = { 30: 60, 60: 60, 90: 120, 120: 120, 180: 180 };
   const painel = {
+    ...FILTROS_PAINEL_VAZIOS,
     maxPrice: orc >= 300 && orc <= 50000 ? orc : 0,
     minBedrooms: [1, 2, 3].includes(quartos) ? quartos : 0,
     petsOnly: on("pet"),
@@ -91,29 +106,27 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta): boo
     homeOfficeOnly: on("homeoffice"),
     readyToLiveOnly: on("pronto"),
     comodidades: comodidadesDaUrl(sp.get("comod")),
+    // Estadia e tipo pela MESMA regra da folha de filtros da /buscar (Prompt 40).
+    periodo: perMap[num("periodo")] ?? 0,
+    tipo: sp.get("tipo") ?? "",
+    // Prompt 57 fase 2: "internet medida a partir de" / "só com internet medida" — sem medição válida, não alerta.
+    ...filtroInternetDaUrl(sp),
+    // Prompt 55 B2: data de entrada com ou sem flexibilidade, pela mesma regra da lista.
+    entrada: /^\d{4}-\d{2}-\d{2}$/.test(sp.get("entrada") ?? "") ? sp.get("entrada")! : "",
+    datasFlexiveis: datasFlexiveisDaUrl(sp),
   };
-  if (!passaNoPainel(p, painel)) return false;
+  if (!passaNoPainel(p, painel, agora)) return false;
 
   const hospedes = (num("adultos") || 1) + num("criancas");
   if (p.maxGuests != null && p.maxGuests < hospedes) return false;
-
-  const perMap: Record<number, number> = { 30: 60, 60: 60, 90: 120, 120: 120, 180: 180 };
-  const periodo = perMap[num("periodo")];
-  if (periodo && p.minPeriodDays > periodo) return false;
-
-  const tipo = sp.get("tipo");
-  if (tipo && tipoCanonico(p.propertyType) !== tipo) return false;
   const faixa = sp.get("faixa");
   if (faixa && !(p.faixasAceitas ?? []).includes(faixa)) return false;
-  const entrada = sp.get("entrada");
-  if (entrada && /^\d{4}-\d{2}-\d{2}$/.test(entrada) && p.availableFrom && p.availableFrom > entrada) return false;
   const garantia = sp.get("garantia");
   if (garantia && !aceitaGarantia(p, garantia)) return false;
 
   if (on("mobiliado") && !p.furnished) return false;
   if (on("localizado") && !p.tagWorkLocated) return false;
   if (on("nota") && !p.issuesInvoice) return false;
-  if (on("seguro") && !p.acceptsInsurance) return false;
   if (on("gestor") && !(p.ownershipType && p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   return true;
 }
@@ -121,6 +134,7 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta): boo
 // ── Link de desligar (sem login), assinado por HMAC — só no servidor ──────────
 
 import crypto from "node:crypto";
+import { linhaLocalizacao } from "../localizacao.ts";
 
 /** Assinatura do link "Desligar este alerta" (um por busca; não expira, só desliga). */
 export function assinarDesligarAlerta(buscaId: string, segredo: string): string {
@@ -141,11 +155,22 @@ export interface ImovelNoAlerta {
   title: string;
   city: string;
   neighborhood: string;
+  /** UF (pode faltar: a linha de localização junta só o que existe). */
+  state?: string;
   monthlyPrice: number;
   bedrooms: number;
+  /** Total do mês (condomínio e contas fixas incluídos); sem ele, o valor mensal. */
+  totalMes?: number;
+  minPeriodDays?: number;
+  availableFrom?: string | null;
 }
 
-const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
+/** Preço com contexto do imóvel no e-mail (Prompt 47): a mesma função do cartão da busca. */
+function precoNoAlerta(i: ImovelNoAlerta): string {
+  const r = rotuloPreco({ mensal: i.totalMes ?? i.monthlyPrice, meses: mesesDoCartao(undefined, i.minPeriodDays), disponivelEm: i.availableFrom });
+  return [textoPreco(r), r.disponivel].filter(Boolean).join(" · ").replace(/\u00a0/g, " ");
+}
+
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /** Assunto: 1 imóvel → "Novo imóvel para sua busca"; vários → resumo com a contagem. */
@@ -155,9 +180,9 @@ export function assuntoDoAlerta(n: number): string {
 
 /** Linha de cada imóvel: "Studio no Centro · Uberlândia · R$ 2.400/mês · 1 quarto" (sem endereço, sem dono). */
 export function linhaDoImovel(i: ImovelNoAlerta): string {
-  const regiao = [i.neighborhood, i.city].filter(Boolean).join(", ");
+  const regiao = linhaLocalizacao(i.neighborhood, i.city, i.state);
   const q = i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : "";
-  return `${i.title}${regiao ? ` — ${regiao}` : ""} · ${brl(i.monthlyPrice)}/mês${q}`;
+  return `${i.title}${regiao ? ` — ${regiao}` : ""} · ${precoNoAlerta(i)}${q}`;
 }
 
 export function montarAlerta(o: {
@@ -179,7 +204,7 @@ export function montarAlerta(o: {
         .map(
           (i) => `<li style="margin:0 0 12px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:12px;">
         <div style="font-weight:700;color:#0f3d2e;">${esc(i.title)}</div>
-        <div style="color:#475569;font-size:14px;margin-top:2px;">${esc([i.neighborhood, i.city].filter(Boolean).join(", "))} · ${brl(i.monthlyPrice)}/mês${i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : ""}</div>
+        <div style="color:#475569;font-size:14px;margin-top:2px;">${esc(linhaLocalizacao(i.neighborhood, i.city, i.state))} · ${esc(precoNoAlerta(i))}${i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : ""}</div>
         <a href="${link(i)}" style="display:inline-block;margin-top:10px;background:#1c6b3a;color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;text-decoration:none;">Ver imóvel</a>
       </li>`
         )

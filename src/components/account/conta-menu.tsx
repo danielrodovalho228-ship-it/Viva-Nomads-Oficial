@@ -1,143 +1,66 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  UserRound,
-  ShieldCheck,
-  Bell,
-  Lock,
-  Wrench,
-  Gift,
-  LifeBuoy,
-  FileText,
-  Trash2,
-  LogOut,
-  ChevronRight,
-  Users,
-} from "lucide-react";
-import { useAuthStore, type ViewMode } from "@/lib/store";
-import { useViewMode, identidadeUsuario } from "@/lib/roles";
-import { useDisplayUser } from "@/lib/demo/demo-mode";
-import { salvarModo } from "@/lib/salvar-modo";
-import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
-import { Avatar } from "@/components/ui/avatar";
-import { PageTitle } from "@/components/dashboard/primitives";
-import { removerPushToken } from "@/lib/data/push-actions";
-import { createClient } from "@/lib/supabase/client";
-import { appHome } from "@/lib/app-mode";
-import { PROGRAMA_INDICACAO } from "@/lib/flags";
+import { Bell, ChevronRight, CircleHelp, CreditCard, FileText, LogOut, Shield, Star, UserRound, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SeletorModo } from "./seletor-modo";
-import { mostraEquipe, ROTA_ADMIN, ROTA_EQUIPE } from "./conta-equipe";
+import { SECOES_CONTA, type ItemSecao } from "@/lib/conta/secoes";
+import { useSair } from "./use-sair";
+import { FechamentoConta } from "./casca-conta";
 
+const ICONES_SECAO: Record<ItemSecao["icone"], React.ComponentType<{ className?: string }>> = {
+  UserRound,
+  Star,
+  Users,
+  FileText,
+  Shield,
+  Bell,
+  CreditCard,
+  CircleHelp,
+};
+
+type Grupo = { titulo: string | null; itens: Item[] };
 type Item = { href?: string; onClick?: () => void; label: string; descricao?: string; icon: React.ComponentType<{ className?: string }>; tom?: "perigo" };
 
 /**
- * Conta no APP (mapa, seção 4): lista curta de itens que abrem subtelas. A troca
- * inquilino ⇄ proprietário fica AQUI no app (no site segue no topo do painel).
+ * A Conta no CELULAR (site e app; A1, mockups perfil-01..08): o grupo "Conta" com as oito seções — cada uma abre a sua
+ * tela com "‹ Conta" — e Sair. NAV-A (24/10): só a pessoa; o trabalho fica na barra verde (e na barra de abas).
  */
 export function ContaMenu() {
-  const router = useRouter();
-  const user = useDisplayUser();
-  const { signOut, setActiveMode } = useAuthStore();
-  const { mode } = useViewMode();
+  const sair = useSair();
 
-  // Foto do próprio usuário (opcional); sem foto, o Avatar mostra as iniciais.
-  const [foto, setFoto] = useState<string | null>(null);
-  useEffect(() => {
-    let vivo = true;
-    getMyAvatarUrl()
-      .then((r) => {
-        if (vivo) setFoto(r.url);
-      })
-      .catch(() => {});
-    return () => {
-      vivo = false;
-    };
-  }, [user?.id]);
-
-  async function trocarModo(outro: ViewMode) {
-    setActiveMode(outro);
-    // Espera gravar a preferência antes de navegar (ver dashboard-shell: 8.3).
-    await salvarModo(outro);
-    router.replace(appHome(outro));
-  }
-
-  async function sair() {
-    try {
-      const t = localStorage.getItem("vn-push-token");
-      if (t) {
-        removerPushToken(t).catch(() => {});
-        localStorage.removeItem("vn-push-token");
-      }
-    } catch {
-      /* segue */
-    }
-    await createClient()?.auth.signOut().catch(() => {});
-    signOut();
-    router.replace("/app/boas-vindas");
-  }
-
-  const grupos: Item[][] = [
-    [
-      { href: "/dashboard/conta/perfil", label: "Perfil", descricao: "Nome, telefone, documento e foto.", icon: UserRound },
-      { href: "/dashboard/verificacao", label: "Verificação", descricao: "Confirme sua identidade.", icon: ShieldCheck },
-      { href: "/dashboard/notificacoes", label: "Notificações", descricao: "Avisos por e-mail e no app.", icon: Bell },
-      { href: "/dashboard/conta/seguranca", label: "Senha e segurança", descricao: "Senha e verificação em duas etapas.", icon: Lock },
-    ],
-    [
-      // Sem item de plano: não há mensalidade nesta fase (só taxa por contrato fechado).
-      ...(mode === "owner" ? [{ href: "/dashboard/ferramentas", label: "Ferramentas", descricao: "Simulador, ROI e orçamentos.", icon: Wrench }] : []),
-      ...(mostraEquipe(user?.role)
-        ? [
-            { href: ROTA_ADMIN, label: "Painel Admin", descricao: "Área da equipe.", icon: ShieldCheck },
-            { href: ROTA_EQUIPE, label: "Equipe e aprovações", descricao: "Documentos e pendências.", icon: Users },
-          ]
-        : []),
-      ...(PROGRAMA_INDICACAO ? [{ href: "/dashboard/indicacoes", label: "Indicações", descricao: "Convide e acompanhe.", icon: Gift }] : []),
-    ],
-    [
-      { href: "/dashboard/conta/ajuda", label: "Ajuda e contato", descricao: "Central de ajuda e chamados.", icon: LifeBuoy },
-      { href: "/termos", label: "Termos de uso", descricao: "Regras da plataforma.", icon: FileText },
-      { href: "/privacidade", label: "Privacidade", descricao: "Como tratamos seus dados.", icon: FileText },
-    ],
-    [
-      { href: "/dashboard/conta/excluir", label: "Excluir conta", descricao: "Apaga seus dados, com confirmação.", icon: Trash2, tom: "perigo" },
-      { onClick: sair, label: "Sair", descricao: "Encerrar a sessão neste aparelho.", icon: LogOut, tom: "perigo" },
-    ],
+  // A1: o grupo "Conta" são as oito seções (a mesma lista do menu lateral do computador, lib/conta/secoes).
+  const grupos: Grupo[] = [
+    {
+      titulo: "Conta",
+      itens: SECOES_CONTA.map((s) => ({ href: s.href, label: s.rotuloMenu ?? s.rotulo, descricao: s.descricao, icon: ICONES_SECAO[s.icone] })),
+    },
+    {
+      // NAV-A: a Conta é só a PESSOA. Avisos (sino do topo), Verificação, Ferramentas, Indicações, Painel Admin e Equipe
+      // moram na barra verde de trabalho; Termos e Privacidade, na Ajuda. Sair fecha a lista.
+      titulo: null,
+      itens: [{ onClick: sair, label: "Sair", descricao: "Encerrar a sessão neste aparelho.", icon: LogOut, tom: "perigo" }],
+    },
   ];
 
   return (
-    <div className="w-full space-y-4">
-      {/* Mesma capa 3S do site; no app só a navegação muda (cabeçalho curto + abas). */}
-      <PageTitle capa="conta" title="Conta" subtitle="Seus dados, segurança e preferências." />
-      {/* Toque na foto leva ao Perfil (trocar/enviar foto). O modo atual aparece no chip do topo e no seletor abaixo. */}
-      <Link
-        href="/dashboard/conta/perfil"
-        data-testid="conta-cartao-usuario"
-        aria-label="Abrir Perfil para trocar a foto"
-        className="flex items-center gap-3 rounded-2xl border border-sage-200 bg-white p-4"
-      >
-        <Avatar name={identidadeUsuario(user)} size={56} photoUrl={foto ?? undefined} />
-        <p className="min-w-0 flex-1 truncate font-title text-lg font-bold text-ink">{identidadeUsuario(user)}</p>
-        <ChevronRight className="h-4 w-4 text-muted" aria-hidden />
-      </Link>
-      {/* Toda conta pode usar os dois papéis: seletor de dois lados. */}
-      <SeletorModo mode={mode} onSwitch={trocarModo} />
+    <div className="w-full space-y-4" data-testid="conta-menu">
+      {/* A1: no celular (site e app) a Conta abre neste menu; cada seção é uma tela com "‹ Conta". */}
+      <h1 className="font-title text-[28px] font-semibold leading-tight text-ink" data-testid="conta-h1">
+        Conta
+      </h1>
       {grupos
-        .filter((g) => g.length > 0)
+        .filter((g) => g.itens.length > 0)
         .map((g, i) => (
-          <ul key={i} className="divide-y divide-sage-100 overflow-hidden rounded-2xl border border-sage-200 bg-white">
-            {g.map((it) => {
+          <section key={i} aria-label={g.titulo ?? "Mais"} data-testid="conta-grupo" data-grupo={g.titulo ?? "mais"}>
+          {g.titulo && <h2 className="mb-2 font-title text-base font-semibold text-ink">{g.titulo}</h2>}
+          <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-white">
+            {g.itens.map((it) => {
               const Icon = it.icon;
               const conteudo = (
                 <>
                   <span
                     className={cn(
-                      "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
-                      it.tom === "perigo" ? "bg-red-50" : "bg-sage-100"
+                      "grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line bg-white"
                     )}
                   >
                     <Icon className={cn("h-5 w-5", it.tom === "perigo" ? "text-red-600" : "text-forest")} />
@@ -167,7 +90,9 @@ export function ContaMenu() {
               );
             })}
           </ul>
+          </section>
         ))}
+      <FechamentoConta />
     </div>
   );
 }

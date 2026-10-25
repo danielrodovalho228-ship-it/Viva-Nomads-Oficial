@@ -43,6 +43,31 @@ export const PHOTOS = {
     welcome: `${C}/boas-vindas.webp`,
     uploadEmpty: `${C}/upload-vazio.webp`,
     workspace: `${C}/home-office.webp`,
+    // Assistente, passo 1 (Cadastro 01-b / E87): um cartão-foto por tipo, todos 4:3. Apartamento e Quarto continuam
+    // com as fotos atuais; as outras sete o Daniel sobe em public/images/imoveis/ (lista no PR).
+    tipoCasa: `${I}/tipo-casa.webp`,
+    tipoApartamento: `${I}/placeholder-imovel-fachada.webp`,
+    tipoQuarto: `${I}/placeholder-imovel-quarto.webp`,
+    tipoStudio: `${I}/tipo-studio.webp`,
+    tipoLoft: `${I}/tipo-loft.webp`,
+    tipoCobertura: `${I}/tipo-cobertura.webp`,
+    tipoCasaCondominio: `${I}/tipo-casa-condominio.webp`,
+    tipoFlat: `${I}/tipo-flat.webp`,
+    tipoChacara: `${I}/placeholder-imovel-chacara.webp`,
+  },
+  // Conta › Pagamentos (E70): uma foto do acervo por cartão, no padrão dos Papéis.
+  pagamentos: {
+    proprietario: `${H}/home-proprietarios-chaves.webp`,
+    morador: `${I}/placeholder-imovel-sala.webp`,
+    parceiro: "/images/unicas/parceiros-servicos.webp",
+  },
+  // Conta › Ajuda (E71): a foto só no cartão de contato (uma pessoa numa conversa pelo celular).
+  ajudaContato: "/images/unicas/cf-conversa-registrada.webp",
+  // Conta › Papéis e intenção (perfil-03-papeis-com-fotos): uma foto do acervo por cartão, mesmo tamanho nos três.
+  papeis: {
+    morar: "/images/unicas/prop-sala-preparada.webp",
+    anunciar: `${I}/placeholder-imovel-quarto.webp`,
+    parceiro: "/images/unicas/parceiros-servicos.webp",
   },
   // Estados / OG (imagens reais geradas)
   emptyTenant: "/images/empty-inquilino-reservas.webp",

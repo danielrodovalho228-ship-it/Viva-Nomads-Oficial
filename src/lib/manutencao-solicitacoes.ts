@@ -6,37 +6,26 @@
 */
 import { SO_STATUS_META, type ServiceOrder, type SOCategory, type SOPriority, type SOStatus } from "./service-orders.ts";
 import { dataHoraBrasilia, prazoManutencao, responderAte } from "../config/atendimento.ts";
-import { etapaContrato } from "./contrato-etapas.ts";
+import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "./contrato-estado.ts";
 
 /** Contrato em que a manutenção pode ser pedida (mesma regra do servidor). */
 export const STATUS_CONTRATO_COM_MANUTENCAO = ["ativo", "encerrado_em_acerto"] as const;
 
 /** Colunas de `contratos` que a regra abaixo precisa (use no select, junto de `id`). */
-export const COLUNAS_VIGENCIA = "status, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(tipo, confirmado_pelo_inquilino)";
+export const COLUNAS_VIGENCIA = COLUNAS_ESTADO_CONTRATO;
 
-export interface ContratoParaManutencao {
-  status?: string | null;
-  assinado_proprietario_em?: string | null;
-  assinado_inquilino_em?: string | null;
-  pagamentos_bloco?: { tipo?: string | null; confirmado_pelo_inquilino?: boolean | null }[] | null;
-}
+export type ContratoParaManutencao = LinhaEstadoContrato;
 
 /**
- * Regra ÚNICA de "contrato em vigência" para pedir manutenção (ordem a8905671, F27).
- * "ativo" no banco NÃO basta: a etapa tem de ser "Em vigência" (duas assinaturas + 1º
- * pagamento confirmado), a MESMA função da tela de contratos. Em acerto de saída
+ * Regra de "contrato em vigência" para pedir manutenção (ordem a8905671, F27).
+ * "ativo" no banco NÃO basta: o estado tem de ser "Em vigência" (duas assinaturas + 1º
+ * pagamento confirmado), lido da fonte única (estadoDoContratoUnico). Em acerto de saída
  * (encerrado_em_acerto) o contrato já foi vigente e segue valendo.
  */
 export function contratoPermiteManutencao(c: ContratoParaManutencao): boolean {
-  if (c.status === "encerrado_em_acerto") return true;
-  if (c.status !== "ativo") return false;
-  return (
-    etapaContrato({
-      assinadoProprietarioEm: c.assinado_proprietario_em,
-      assinadoInquilinoEm: c.assinado_inquilino_em,
-      primeiroPagamentoConfirmado: (c.pagamentos_bloco ?? []).some((p) => p.tipo === "aluguel" && p.confirmado_pelo_inquilino === true),
-    }) === "em_vigencia"
-  );
+  if (c.status !== "ativo" && c.status !== "encerrado_em_acerto") return false;
+  const e = estadoDoContratoUnico(c, "proprietario");
+  return e.chave === "em_vigencia" || e.chave === "em_acerto";
 }
 
 export interface LinhaOrdem {
@@ -48,8 +37,16 @@ export interface LinhaOrdem {
   opened_at: string;
   first_response_at: string | null;
   resolved_at: string | null;
-  properties?: { title?: string | null } | null;
+  properties?: { title?: string | null; city?: string | null } | null;
   tenant_name?: string | null;
+  // Prompt 59 (colunas da 0210; ausentes = telas antigas).
+  property_id?: string | null;
+  provisoria_em?: string | null;
+  solucao_marcada_em?: string | null;
+  solucao_confirmada_em?: string | null;
+  reaberta_em?: string | null;
+  prioridade_original?: string | null;
+  reclassificacao_pedida_em?: string | null;
 }
 
 const CATEGORIAS: SOCategory[] = ["hidraulica", "eletrica", "eletrodomesticos", "estrutura", "internet", "outros"];
@@ -68,6 +65,14 @@ export function linhaParaOrdem(l: LinhaOrdem): ServiceOrder {
     openedAt: l.opened_at,
     firstResponseAt: l.first_response_at ?? undefined,
     resolvedAt: l.resolved_at ?? undefined,
+    propertyId: l.property_id ?? undefined,
+    cidade: l.properties?.city?.trim() || undefined,
+    provisoriaEm: l.provisoria_em ?? undefined,
+    solucaoMarcadaEm: l.solucao_marcada_em ?? undefined,
+    solucaoConfirmadaEm: l.solucao_confirmada_em ?? undefined,
+    reabertaEm: l.reaberta_em ?? undefined,
+    prioridadeOriginal: PRIORIDADES.includes(l.prioridade_original as SOPriority) ? (l.prioridade_original as SOPriority) : undefined,
+    reclassificacaoPedidaEm: l.reclassificacao_pedida_em ?? undefined,
   };
 }
 
@@ -89,6 +94,7 @@ export function proximosStatus(atual: SOStatus, papel: PapelOrdem): SOStatus[] {
 /**
  * Colunas a gravar na transição; null = transição proibida. A primeira ação do
  * PROPRIETÁRIO carimba a primeira resposta (uma vez); a resolução carimba o fim.
+ * Prompt 59: o "resolvido" do dono marca a solução (o morador confirma ou reabre em 48 h); o do morador já confirma.
  */
 export function camposTransicao(
   atual: SOStatus,
@@ -101,7 +107,11 @@ export function camposTransicao(
   const iso = agora.toISOString();
   const campos: Record<string, string> = { status: novo };
   if (papel === "proprietario" && !firstResponseAt) campos.first_response_at = iso;
-  if (novo === "resolvido") campos.resolved_at = iso;
+  if (novo === "resolvido") {
+    campos.resolved_at = iso;
+    if (papel === "proprietario") campos.solucao_marcada_em = iso;
+    else campos.solucao_confirmada_em = iso;
+  }
   return campos;
 }
 

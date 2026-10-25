@@ -37,12 +37,12 @@ export function AmenitiesGrid({ property }: { property: Property }) {
 
   return (
     <section aria-labelledby="comodidades-title" data-testid="comodidades">
-      <h2 id="comodidades-title" className="font-title text-2xl font-bold text-ink">
+      <h2 id="comodidades-title" className="font-title text-2xl font-semibold text-ink">
         Comodidades
       </h2>
-      <div className={naoTem.length > 0 ? "mt-5 grid gap-6 md:grid-cols-2" : "mt-5"}>
+      <div className={naoTem.length > 0 ? "mt-4 grid gap-6 md:grid-cols-2" : "mt-4"}>
         <div data-testid="comodidades-tem">
-          {naoTem.length > 0 && <h3 className="text-sm font-bold text-forest">Tem</h3>}
+          {naoTem.length > 0 && <h3 className="text-sm font-semibold text-forest">Tem</h3>}
           <ul className={`${naoTem.length > 0 ? "mt-3 " : ""}grid grid-cols-2 gap-x-4 gap-y-3`} data-testid="comodidades-principais">
             {principais.map((item) => (
               <ItemComodidade key={item} item={item} />
@@ -50,8 +50,8 @@ export function AmenitiesGrid({ property }: { property: Property }) {
           </ul>
         </div>
         {naoTem.length > 0 && (
-          <div data-testid="comodidades-nao-tem" className="rounded-2xl bg-surface-2 p-4">
-            <h3 className="text-sm font-bold text-forest">Não tem</h3>
+          <div data-testid="comodidades-nao-tem" className="rounded-xl bg-surface-2 p-4">
+            <h3 className="text-sm font-semibold text-forest">Não tem</h3>
             <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
               {naoTem.map((item) => (
                 <li key={item} className="flex items-center gap-3 text-sm text-muted" data-testid="comodidade-nao-tem-item">
@@ -80,7 +80,7 @@ export function AmenitiesGrid({ property }: { property: Property }) {
                 const Icon = meta?.icon ?? Check;
                 return (
                   <div key={g.category}>
-                    <h3 className="flex items-center gap-2 text-sm font-bold text-forest">
+                    <h3 className="flex items-center gap-2 text-sm font-semibold text-forest">
                       <Icon className="h-4 w-4 text-sage" aria-hidden /> {meta?.label ?? g.category}
                     </h3>
                     <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">

@@ -38,8 +38,8 @@ test("D1: o total anotado na busca é o mesmo do cartão (calcularTotalMensal)",
 });
 
 test("D1: o pino e o cartão do mapa mostram o total", () => {
-  assert.match(ler("components/search-map.tsx"), /formatBRL\(precoDeBusca\(p\)\)/);
-  assert.match(ler("components/busca/card-pin-mapa.tsx"), /formatBRL\(precoDeBusca\(p\)\)/);
+  assert.match(ler("components/search-map.tsx"), /rotuloPreco\(\{ mensal: precoDeBusca\(p\)/);
+  assert.match(ler("components/busca/card-pin-mapa.tsx"), /rotuloPreco\(\{ mensal: precoDeBusca\(p\)/);
 });
 
 test("D5: Limpar filtros remonta a busca por descrição (campo e chips)", () => {
@@ -58,7 +58,7 @@ test("D12: o coração fica fora do <a> do cartão", () => {
 test("D1 (achado do Moacir no #702): os dois pinos do mapa (Mapbox e Leaflet) mostram o total do mês", () => {
   const mapa = ler("components/search-map.tsx");
   assert.doesNotMatch(mapa, /formatBRL\(p\.monthlyPrice\)/);
-  assert.equal((mapa.match(/formatBRL\(precoDeBusca\(p\)\)/g) ?? []).length, 2);
+  assert.equal((mapa.match(/rotuloPreco\(\{ mensal: precoDeBusca\(p\)/g) ?? []).length, 2);
 });
 
 test("#544b148a: a home conta os atalhos pelo total do mês", () => {
@@ -87,10 +87,9 @@ test("#544b148a D1: pino = cartão para todos os imóveis de exemplo (inclui os 
   assert.equal(precoDeBusca(comTotalMes(santa!)), 3960);
 });
 
-test("D5: o 'Limpar filtros' do celular (<390 px) fica no bloco do celular, não na caixa que some abaixo de sm (t157)", () => {
+test("D5 + E82-A: sem bloco do celular; limpar fica no vazio (busca-vazia-limpar) e na folha ('Limpar tudo')", () => {
   const src = ler("app/(public)/buscar/search-client.tsx");
-  const celular = src.slice(src.indexOf('data-testid="busca-celular"'), src.indexOf('data-testid="filtros-barra"'));
-  assert.match(celular, /data-testid="limpar-filtros-celular"/);
-  assert.match(celular, /onClick=\{clearFilters\}/);
-  assert.equal((src.match(/data-testid="limpar-filtros/g) ?? []).length, 4);
+  assert.doesNotMatch(src, /data-testid="busca-celular"|data-testid="limpar-filtros/);
+  assert.match(src, /onClick=\{clearFilters\}[^>]*data-testid="busca-vazia-limpar"/);
+  assert.match(ler("components/busca/painel-filtros-celular.tsx"), /Limpar tudo/);
 });

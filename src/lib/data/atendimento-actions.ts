@@ -18,6 +18,7 @@ import {
   PRAZO_MANUTENCAO_H,
   type Prioridade,
   type UrgenciaManutencao,
+  PROMESSA_HUMANA_H,
 } from "@/config/atendimento";
 import { avisoEmergencia, categoria, ORIENTACAO_CAMERA, classificar, ehNumeroPublico, numeroEmergencia } from "@/lib/atendimento/classificar";
 import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pausarAnuncioPorCamera, pessoaValida, registrarMensagemDaPessoa, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
@@ -36,6 +37,7 @@ import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { atenderViva } from "@/lib/atendimento/viva-motor";
 import { CENARIOS, entradaDoCenario, falhasDoCenario, ferramentasDeTeste } from "@/lib/atendimento/viva-cenarios";
 import { cotacaoDolar, custoUsd, modeloViva, PRECOS_USD } from "@/lib/atendimento/viva-custo";
+import { reabrirFotoPorDenuncia } from "@/lib/data/fotos-perfil-servidor";
 import { AVISO_ANUNCIO_PAUSADO } from "@/lib/atendimento/camera-anuncio";
 import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-regras";
 
@@ -48,7 +50,7 @@ import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-re
 type Res<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const CONTEXTOS = ["pedido", "contrato", "anuncio"] as const;
+const CONTEXTOS = ["pedido", "contrato", "anuncio", "parceiro", "perfil"] as const;
 type Contexto = (typeof CONTEXTOS)[number];
 
 async function ipHashAtual(): Promise<string> {
@@ -78,6 +80,17 @@ async function contextoValido(
     const dono = (data?.properties as { owner_id?: string } | null)?.owner_id;
     return !!data && (data.tenant_id === userId || dono === userId);
   }
+  // FISCAL-PARCEIRO-B: parceiro publicado (qualquer conta denuncia pela página pública).
+  if (tipo === "parceiro") {
+    const { data } = await admin.from("parceiros").select("id").eq("id", id).eq("status", "publicado").maybeSingle();
+    return !!data;
+  }
+  // FOTO-PERFIL-B: a foto de outra pessoa que existe (ninguém denuncia a própria).
+  if (tipo === "perfil") {
+    if (id === userId) return false;
+    const { data } = await admin.from("profiles").select("id").eq("id", id).not("avatar_url", "is", null).maybeSingle();
+    return !!data;
+  }
   // Anúncio: público (qualquer um pode reportar um anúncio que existe).
   const { data } = await admin.from("properties").select("id").eq("id", id).maybeSingle();
   return !!data;
@@ -99,6 +112,8 @@ export interface AbrirChamadoInput {
   pedePessoa?: boolean;
   visitanteNome?: string;
   visitanteEmail?: string;
+  /** Telefone opcional do visitante (só para a equipe; nunca em log nem URL). */
+  visitanteTelefone?: string;
   /** Token do Turnstile (só visitante, e só quando o captcha está ligado). */
   captchaToken?: string;
 }
@@ -119,8 +134,9 @@ export async function abrirChamado(
 
   let visitanteEmail: string | null = null;
   let visitanteNome: string | null = null;
+  let visitanteTelefone: string | null = null;
   if (!user) {
-    const v = await validarVisitanteComDns({ nome: input.visitanteNome, email: input.visitanteEmail });
+    const v = await validarVisitanteComDns({ nome: input.visitanteNome, email: input.visitanteEmail, telefone: input.visitanteTelefone });
     if (!v.ok) return { ok: false, error: v.error };
     const cap = await verificarCaptchaServidor(input.captchaToken, {
       chavePublica: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
@@ -129,6 +145,7 @@ export async function abrirChamado(
     if (!cap.ok) return { ok: false, error: cap.error };
     visitanteEmail = v.email;
     visitanteNome = v.nome;
+    visitanteTelefone = v.telefone ?? null;
   }
 
   // Limite: 8 chamados por hora por pessoa (ou por IP, para visitante).
@@ -197,6 +214,7 @@ export async function abrirChamado(
       usuario_id: user?.id ?? null,
       visitante_email: visitanteEmail,
       visitante_nome: visitanteNome,
+      visitante_telefone: visitanteTelefone,
       tipo,
       categoria: cat.key,
       prioridade,
@@ -220,6 +238,10 @@ export async function abrirChamado(
   // Câmera escondida: o anúncio sai da busca até a equipe decidir (só o inquilino do contrato).
   const contratoCamera = input.contratoId ?? (contextoTipo === "contrato" ? contextoId : null);
   const anuncioPausado = cat.key === "camera" ? await pausarAnuncioPorCamera(c.id, user?.id ?? null, contratoCamera) : false;
+  // FOTO-PERFIL-B: denúncia da foto de alguém → a foto atual volta para 'em_revisao', no topo da fila.
+  if (cat.key === "foto_perfil" && contextoTipo === "perfil" && contextoId && (await reabrirFotoPorDenuncia(admin, contextoId).catch(() => false))) {
+    await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "sistema", acao: "foto_reaberta", para: "em_revisao" });
+  }
 
   // Mensagem da pessoa + resposta automática (emergência primeiro; prazo).
   const aviso = [
@@ -275,6 +297,8 @@ export interface ChamadoLista {
   tipo: string;
   criado_em: string;
   atualizado_em: string;
+  /** Prompt 50: o estado que quem abriu vê (aberto · respondido · resolvido) sai daqui. */
+  primeira_resposta_em?: string | null;
 }
 
 /** Meus chamados (RLS: só os da pessoa). */
@@ -287,7 +311,7 @@ export async function meusChamados(): Promise<ChamadoLista[]> {
   if (!user) return [];
   const { data } = await supabase
     .from("chamados")
-    .select("id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em")
+    .select("id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, primeira_resposta_em")
     .eq("usuario_id", user.id)
     .order("atualizado_em", { ascending: false })
     .limit(50);
@@ -489,10 +513,11 @@ export interface ChamadoAdmin extends ChamadoLista {
   usuario_id: string | null;
   visitante_email: string | null;
   visitante_nome: string | null;
+  visitante_telefone: string | null;
 }
 
 const COLS_ADMIN =
-  "id, numero_publico, assunto, status, prioridade, tipo, canal, categoria, contexto_tipo, contexto_id, service_order_id, responsavel_tipo, responsavel_admin, prazo_primeira_resposta, prazo_resolucao, primeira_resposta_em, sla_estado, nota_satisfacao, usuario_id, visitante_email, visitante_nome, criado_em, atualizado_em";
+  "id, numero_publico, assunto, status, prioridade, tipo, canal, categoria, contexto_tipo, contexto_id, service_order_id, responsavel_tipo, responsavel_admin, prazo_primeira_resposta, prazo_resolucao, primeira_resposta_em, sla_estado, nota_satisfacao, usuario_id, visitante_email, visitante_nome, visitante_telefone, criado_em, atualizado_em";
 
 export interface FiltrosFila {
   status?: string;
@@ -504,6 +529,8 @@ export interface FiltrosFila {
   busca?: string;
   aprovacao?: boolean;
   fechados?: boolean;
+  /** Prompt 50: só os chamados sem a 1ª resposta de uma pessoa além da promessa pública (24 h). */
+  semResposta?: boolean;
 }
 
 /** Fila do admin (simulação fora). Ordem: prioridade, depois prazo. */
@@ -518,6 +545,7 @@ export async function filaAtendimento(f: FiltrosFila = {}): Promise<ChamadoAdmin
   if (f.tipo && ["suporte", "manutencao", "seguranca"].includes(f.tipo)) q = q.eq("tipo", f.tipo);
   if (f.responsavel === "ia" || f.responsavel === "humano") q = q.eq("responsavel_tipo", f.responsavel);
   if (ehFila(f.fila)) q = q.in("categoria", FILAS[f.fila].categorias);
+  if (f.semResposta) q = q.is("primeira_resposta_em", null).lt("criado_em", new Date(Date.now() - PROMESSA_HUMANA_H * 3_600_000).toISOString());
   const busca = (f.busca ?? "").trim().slice(0, 60);
   if (busca) {
     q = ehNumeroPublico(busca) ? q.eq("numero_publico", busca.toUpperCase()) : q.ilike("assunto", `%${busca.replace(/[%_]/g, "")}%`);
@@ -559,8 +587,15 @@ export async function chamadoAdmin(id: string): Promise<{
       : Promise.resolve({ data: null }),
   ]);
   const ch = c as ChamadoAdmin;
-  const contextoLink =
-    ch.contexto_tipo === "anuncio" && ch.contexto_id
+  const parceiroCtx =
+    ch.contexto_tipo === "parceiro" && ch.contexto_id
+      ? ((await ctx.admin.from("parceiros").select("slug").eq("id", ch.contexto_id).maybeSingle()).data as { slug: string } | null)
+      : null;
+  const contextoLink = parceiroCtx
+    ? `/parceiros/${parceiroCtx.slug}`
+    : ch.contexto_tipo === "perfil"
+      ? "/admin/fotos-perfil"
+      : ch.contexto_tipo === "anuncio" && ch.contexto_id
       ? `/imoveis/${ch.contexto_id}`
       : ch.contexto_tipo === "pedido"
         ? "/admin/pedidos"

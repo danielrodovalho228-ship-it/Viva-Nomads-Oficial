@@ -40,7 +40,8 @@ test("painel: porte do pet filtra junto com 'Aceita pets' (lista e contagem)", (
 test("busca lê e grava o porte na URL e o painel mostra a escolha", () => {
   const s = ler("app/(public)/buscar/search-client.tsx");
   assert.match(s, /put\("porte", petsOnly && !!petPorte, petPorte\)/);
-  assert.match(s, /data-testid="filtro-porte-pet"/);
+  // Prompt 40: o porte saiu da faixa do computador e mora só na folha de filtros (celular e computador).
+  assert.match(s, /setPetPorte\(f\.petsOnly \? f\.petPorte : ""\)/);
   const p = ler("components/busca/painel-filtros-celular.tsx");
   assert.match(p, /data-testid="painel-porte-pet"/);
   const d = ler("lib/data/properties.ts");

@@ -1,77 +1,96 @@
 "use client";
 
-import { PetsFicha } from "@/components/account/pets-ficha";
-import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
 import { use } from "react";
 import { notFound } from "next/navigation";
-import { AvatarUploader } from "@/components/account/avatar-uploader";
-import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { PageTitle } from "@/components/dashboard/primitives";
-import { CentralAjuda } from "@/components/ajuda/central-ajuda";
-import {
-  ChangePassword,
-  DadosPessoais,
-  DangerZone,
-  DocumentoPessoa,
-  NotificationsPanel,
-} from "@/components/account/conta-secoes";
-import { ConfiancaLista, PerfilProfissional, VerComoOutrosVeem } from "@/components/account/conta-blocos";
+import { CascaConta } from "@/components/account/casca-conta";
+import { TelaAjuda } from "@/components/account/tela-ajuda";
+import { TelaPapeis } from "@/components/account/tela-papeis";
+import { PerfilTela } from "@/components/account/perfil-tela";
+import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
+import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
+import { DadosPessoais, DocumentoPessoa } from "@/components/account/conta-secoes";
+import { TelaNotificacoes } from "@/components/account/tela-notificacoes";
+import { TelaPrivacidade } from "@/components/account/tela-privacidade";
+import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
+import { PagamentosConta } from "@/components/account/pagamentos-conta";
+import { SeusDadosRegras } from "@/components/account/seus-dados-regras";
+import { DegrausPerfil } from "@/components/account/degraus-perfil";
+import { RedesPrivadas } from "@/components/account/redes-privadas";
+import { SUBTITULO_PAPEIS } from "@/lib/conta/tela-papeis";
+import { ALIAS_SECAO, type SecaoConta } from "@/lib/conta/secoes";
 
-const TITULOS: Record<string, { titulo: string; subtitulo: string }> = {
-  perfil: { titulo: "Perfil", subtitulo: "Seus dados, documento e foto." },
-  seguranca: { titulo: "Confiança e segurança", subtitulo: "O que está verificado, duas etapas e senha." },
-  notificacoes: { titulo: "Notificações", subtitulo: "Escolha como quer ser avisado." },
-  excluir: { titulo: "Excluir conta", subtitulo: "Apaga seus dados, com confirmação." },
-};
-
-/** Subtelas da Conta (app). No site, a página /dashboard/conta mostra tudo junto. */
+/**
+ * Telas da Conta (A1): cada seção na casca (menu lateral no computador; "‹ Conta" no celular), um H1 por tela.
+ * /seguranca (senha e duas etapas) e /excluir (Sair da Viva) são subtelas de Privacidade, com rota própria na casca.
+ */
 export default function ContaSecaoPage({ params }: { params: Promise<{ secao: string }> }) {
-  const { secao } = use(params);
+  const { secao: bruta } = use(params);
+  if (bruta === "perfil-publico")
+    return (
+      <div className="w-full">
+        <PageTitle title="Seu perfil público" subtitle="O que os outros veem de você." />
+        <SeuPerfilPublico />
+      </div>
+    );
+  const secao = (ALIAS_SECAO[bruta] ?? bruta) as SecaoConta;
   switch (secao) {
     case "perfil":
       return (
-        <div className="w-full">
-          <PageTitle title={TITULOS.perfil.titulo} subtitle={TITULOS.perfil.subtitulo} />
-          <AvatarUploader />
-          <PerfilPublicoForm />
-          <PerfilProfissional />
-          <VerComoOutrosVeem />
+        <CascaConta ativo="perfil" topoDireita>
+          <PerfilTela />
+        </CascaConta>
+      );
+    case "papeis":
+      return (
+        <CascaConta ativo="papeis" subtitulo={SUBTITULO_PAPEIS}>
+          <TelaPapeis />
+        </CascaConta>
+      );
+    case "dados":
+      return (
+        <CascaConta ativo="dados" titulo="Meus dados">
+          {/* Mockup perfil-04: o cartão "Meus dados". Embaixo, os blocos já aprovados que o desenho não mostra. */}
           <DadosPessoais />
+          <RedesPrivadas />
           <TelefoneVerificacao />
           <DocumentoPessoa />
-          <PetsFicha />
-        </div>
+          <MeuLocalTrabalho />
+          <div className="mt-6">
+            <DegrausPerfil />
+          </div>
+          {/* E67b: o cartão final curto — o que a Viva guarda, por quanto tempo, e o caminho para a Privacidade. */}
+          <div className="mt-6">
+            <SeusDadosRegras />
+          </div>
+        </CascaConta>
       );
-    case "seguranca":
+    case "privacidade":
       return (
-        <div className="w-full">
-          <PageTitle title={TITULOS.seguranca.titulo} subtitle={TITULOS.seguranca.subtitulo} />
-          <ConfiancaLista />
-          <ChangePassword />
-        </div>
+        <CascaConta ativo="privacidade" trilha>
+          {/* Mockup perfil-05: as chaves, "Baixar meus dados" e "Excluir minha conta". E66 (QA 24/10): a lista de segurança
+              (e-mail, celular, identidade, LinkedIn, duas etapas, senha) mora na rota própria /dashboard/conta/seguranca. */}
+          <TelaPrivacidade />
+        </CascaConta>
       );
     case "notificacoes":
       return (
-        <div className="w-full">
-          <PageTitle title={TITULOS.notificacoes.titulo} subtitle={TITULOS.notificacoes.subtitulo} />
-          <NotificationsPanel />
-        </div>
+        // Mockup perfil-06: sem subtítulo; o título e os dois cartões.
+        <CascaConta ativo="notificacoes">
+          <TelaNotificacoes />
+        </CascaConta>
+      );
+    case "pagamentos":
+      return (
+        <CascaConta ativo="pagamentos">
+          <PagamentosConta />
+        </CascaConta>
       );
     case "ajuda":
-      // App: a MESMA Central de Ajuda do site, aqui dentro (sem tela nova). Com o título principal (h1) que a
-      // /ajuda do site tem — sem ele a tela ficava sem cabeçalho (t183).
       return (
-        <div className="w-full">
-          <PageTitle title="Central de Ajuda" subtitle="Perguntas frequentes, chamados e contato com a equipe." />
-          <CentralAjuda canal="app" />
-        </div>
-      );
-    case "excluir":
-      return (
-        <div className="w-full">
-          <PageTitle title={TITULOS.excluir.titulo} subtitle={TITULOS.excluir.subtitulo} />
-          <DangerZone />
-        </div>
+        <CascaConta ativo="ajuda">
+          <TelaAjuda />
+        </CascaConta>
       );
     default:
       notFound();

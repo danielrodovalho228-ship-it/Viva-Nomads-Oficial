@@ -17,6 +17,7 @@ export function Switch({
   label,
   disabled = false,
   className,
+  testId,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
@@ -24,6 +25,8 @@ export function Switch({
   label?: string;
   disabled?: boolean;
   className?: string;
+  /** data-testid do botão (opcional). */
+  testId?: string;
 }) {
   return (
     <button
@@ -31,6 +34,7 @@ export function Switch({
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      data-testid={testId}
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
       className={cn(
@@ -43,7 +47,7 @@ export function Switch({
     >
       <span
         aria-hidden
-        className="pointer-events-none h-5 w-5 rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform"
+        className="pointer-events-none h-5 w-5 rounded-full bg-white ring-1 ring-black/10 transition-transform"
         // 44px de trilho, bolinha de 20px, folga de 2px: off=2px, on=22px (mantém DENTRO do trilho).
         style={{ transform: checked ? "translateX(22px)" : "translateX(2px)" }}
       />

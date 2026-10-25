@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { getPedidosParaProprietario, getMinhasRespostas } from "@/lib/data/pedidos-actions";
-import { PedidosProprietarioClient } from "@/app/(public)/pedidos/pedidos-prop-client";
+import { Suspense } from "react";
+import { getPedidosParaProprietario } from "@/lib/data/pedidos-actions";
+import { PedidosDonoClient } from "./pedidos-dono-client";
 
 export const metadata: Metadata = {
   title: "Pedidos de moradia",
@@ -8,21 +9,14 @@ export const metadata: Metadata = {
 };
 
 /**
- * Visão do PROPRIETÁRIO dos Pedidos de Moradia — AGORA dentro da casca do
- * dashboard (grupo (dashboard) → DashboardShell + AuthGuard). Antes o menu
- * apontava para /pedidos (rota do grupo (public)), que abria "solta", sem menu
- * nem topo (bug 0.4). O conteúdo é o mesmo mural, só que na área logada.
+ * Visão do PROPRIETÁRIO dos Pedidos de Moradia, dentro da casca do dashboard (a rota antiga /pedidos redireciona
+ * para cá). Prompt 30, item 5: abas "Novos para você" · "Respondidos" · "Ignorados".
  */
 export default async function PedidosCidadePage() {
-  const [{ pedidos, myProperties }, minhasRespostas] = await Promise.all([
-    getPedidosParaProprietario(),
-    getMinhasRespostas(),
-  ]);
+  const { pedidos, myProperties } = await getPedidosParaProprietario();
   return (
-    <PedidosProprietarioClient
-      pedidos={pedidos}
-      myProperties={myProperties}
-      minhasRespostas={minhasRespostas}
-    />
+    <Suspense fallback={<div className="min-h-[20rem]" aria-busy="true" />}>
+      <PedidosDonoClient pedidos={pedidos} myProperties={myProperties} />
+    </Suspense>
   );
 }

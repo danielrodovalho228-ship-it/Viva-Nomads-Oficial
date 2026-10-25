@@ -98,6 +98,8 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 test("servidor: respeita notif_email e alerta_ativo, limite diário, idempotência por (busca, imóvel) e não envia ao próprio dono", () => {
   const src = ler("src/lib/data/alerta-busca-servidor.ts");
   assert.match(src, /notificacaoLigada\(perfil\.notif_email/);
+  // Prompt 51 F1: conta pausada não recebe alerta de busca.
+  assert.match(src, /\|\| perfil\.pausada_em\)/);
   assert.match(src, /\.eq\("alerta_ativo", true\)/);
   assert.match(src, /consumirLimite\(`alerta-busca:\$\{busca\.id\}`, ALERTAS_POR_BUSCA_POR_DIA, DIA\)/);
   assert.match(src, /alertas_busca_envios"\)\.insert\(\{ busca_id: busca\.id, imovel_id: imovelId \}/);
@@ -107,7 +109,8 @@ test("servidor: respeita notif_email e alerta_ativo, limite diário, idempotênc
 
 test("publicar dispara o alerta (criar e editar) e o cron diário manda o resumo", () => {
   const acoes = ler("src/lib/data/actions.ts");
-  assert.equal((acoes.match(/avisarBuscasDoImovel\(/g) ?? []).length, 2);
+  // Criar, editar e (64-B) reativar o anúncio pausado pelo dono.
+  assert.equal((acoes.match(/avisarBuscasDoImovel\(/g) ?? []).length, 3);
   assert.match(ler("src/app/api/cron/resumo-pedidos/route.ts"), /enviarResumosAlertaBusca\(\)/);
 });
 
@@ -127,4 +130,22 @@ test("0137: coluna e tabela idempotentes, RLS sem acesso do usuário aos envios,
   assert.match(ap, /'0137_alerta_busca_salva'/);
   assert.match(ap, /where not exists \(select 1 from supabase_migrations\.schema_migrations/);
   assert.match(ler("supabase/producao/rollback/0137_rollback.sql"), /drop table if exists public\.alertas_busca_envios/);
+});
+
+test("37: alerta com destino e 'até N min' só bate com tempo de rota dentro do limite", () => {
+  const qs = "local=Uberl%C3%A2ndia&destino=hc-ufu&modo=carro&ate=20";
+  assert.equal(imovelBateComBusca(qs, imovel, () => 17), true);
+  assert.equal(imovelBateComBusca(qs, imovel, () => 21), false, "aparece como ~25 min");
+  assert.equal(imovelBateComBusca(qs, imovel, () => null), false, "sem tempo de rota, não alerta por palpite");
+  assert.equal(imovelBateComBusca(qs, imovel), false);
+  // Sem "até", o destino não tira ninguém do alerta.
+  assert.equal(imovelBateComBusca("local=Uberl%C3%A2ndia&destino=hc-ufu&modo=carro", imovel), true);
+  // O meio vai junto: a consulta recebe o modo da busca.
+  let modo = "";
+  imovelBateComBusca("local=Uberl%C3%A2ndia&destino=hc-ufu&modo=a_pe&ate=30", imovel, (_d, m) => ((modo = m), 10));
+  assert.equal(modo, "a_pe");
+  // Endereço digitado: sem alerta por tempo (fica como hoje) — o "até" não filtra nem consulta tempo.
+  let consultou = false;
+  assert.equal(imovelBateComBusca("local=Uberl%C3%A2ndia&dlat=-18.92&dlng=-48.26&drot=Av.+Par%C3%A1&modo=carro&ate=10", imovel, () => ((consultou = true), 99)), true);
+  assert.equal(consultou, false);
 });

@@ -1,9 +1,12 @@
+import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { calcularTudoIncluido } from "@/lib/precos";
 import { Bath, BedDouble, Ruler, MapPin } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge, PropertyTags } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 /**
  * Card compacto do imóvel para o topo do orçamento/fechamento (Atualização 16).
@@ -15,7 +18,7 @@ export function PropertyMiniCard({ property }: { property: Property }) {
     typeof cover === "string" && (/^https?:\/\//.test(cover) || cover.startsWith("/"));
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-sage-200 bg-white p-3 sm:flex-row sm:gap-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-sage-200 bg-white p-3 sm:flex-row sm:gap-4">
       {/* Mobile: foto largura total no topo. sm+: foto à esquerda. */}
       <div className="relative w-full shrink-0 sm:w-36">
         {hasPhoto ? (
@@ -36,15 +39,15 @@ export function PropertyMiniCard({ property }: { property: Property }) {
         <div className="flex items-center gap-1 text-xs text-muted">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">
-            {property.neighborhood}, {property.city}
+            {linhaLocalizacao(property.neighborhood, property.city, property.state)}
           </span>
         </div>
         {/* Título com espaço próprio — line-clamp-2, nada por cima. */}
-        <h3 className="mt-1 line-clamp-2 font-title text-base font-bold leading-snug text-ink">
+        <h3 className="mt-1 line-clamp-2 font-title text-base font-semibold leading-snug text-ink">
           {property.title}
         </h3>
         {/* Selos em fluxo normal, quebram naturalmente (sem position absolute). */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           {property.readyToLiveBadge && <ReadyToLiveBadge size="sm" />}
           <PropertyTags property={property} />
         </div>
@@ -60,12 +63,14 @@ export function PropertyMiniCard({ property }: { property: Property }) {
               <Ruler className="h-3.5 w-3.5" /> {property.areaM2} m²
             </span>
           </div>
-          <span className="font-title text-base font-bold text-ink">
-            {/* Preço 0 = anúncio ainda incompleto → "R$ —" (nunca "R$ 0", que
-                parece imóvel de graça). Anúncio publicado sempre tem preço > 0. */}
-            {property.monthlyPrice > 0 ? formatBRL(property.monthlyPrice) : "R$ —"}
-            <span className="text-xs font-normal text-muted">/mês</span>
-          </span>
+          {/* Preço 0 = anúncio ainda incompleto → "R$ —" (nunca "R$ 0", que parece imóvel de graça). */}
+          {property.monthlyPrice > 0 ? (
+            <PrecoComContexto
+              rotulo={rotuloPreco({ mensal: calcularTudoIncluido(property).total, meses: mesesDoCartao(undefined, property.minPeriodDays), disponivelEm: property.availableFrom })}
+            />
+          ) : (
+            <span className="font-title text-base font-semibold text-ink">R$ —</span>
+          )}
         </div>
       </div>
     </div>

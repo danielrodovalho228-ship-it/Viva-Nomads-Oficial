@@ -1,11 +1,11 @@
 /**
  * Fotógrafos parceiros — regras puras (ordem 46edeaa5).
- * A Viva não recebe dinheiro do dono: a "taxa de parceria" é paga pelo fotógrafo no aceite.
- * Contato do dono fica mascarado até esse pagamento.
+ * A taxa fixa por pedido saiu no complemento do Prompt 29: vale a taxa de serviço de 10% sobre o
+ * valor do serviço (config/taxa-servico-parceiros.ts). a coluna do valor fixo em fotografo_pedidos fica obsoleta (nem lida nem escrita).
  */
 import { mesmaCidade } from "../cidades.ts";
+import { lerReais } from "../reais.ts";
 
-export const TAXA_PARCERIA_PADRAO = 40;
 export const MAX_DIAS_ANTECEDENCIA = 90;
 
 export type StatusPedido = "enviado" | "aceito" | "recusado" | "cancelado" | "entregue" | "concluido";
@@ -54,18 +54,9 @@ export function podeAceitar(p: { status: string; taxa_paga_em: string | null | u
   return p.status === "enviado" && !!p.taxa_paga_em;
 }
 
-/**
- * Pedido cancelado pelo dono antes do ensaio: a taxa paga vira crédito para o fotógrafo.
- * Pedido ainda não aceito (sem taxa paga) não gera crédito.
- */
-export function creditoNoCancelamento(p: { status: string; taxa_paga_em: string | null | undefined; taxa_valor: number | null | undefined }): number {
-  if (p.status !== "aceito" || !p.taxa_paga_em) return 0;
-  const v = Number(p.taxa_valor ?? 0);
-  return Number.isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : 0;
-}
-
 export function taxaValida(v: unknown): number | null {
-  const n = typeof v === "number" ? v : Number(String(v ?? "").replace(",", "."));
+  const lido = lerReais(typeof v === "number" ? v : String(v ?? ""));
+  const n = lido.ok && lido.valor != null ? lido.valor : typeof v === "number" ? v : NaN;
   return Number.isFinite(n) && n >= 0 && n <= 10000 ? Math.round(n * 100) / 100 : null;
 }
 
@@ -136,3 +127,9 @@ export async function cidadeDoCep(
     return null;
   }
 }
+
+/** E52 (onda 1C): "Buscar" com CEP e cidade vazios avisa o que fazer, em vez de recarregar a página em silêncio. */
+export const MSG_BUSCA_VAZIA = "Digite a cidade ou o CEP para buscar.";
+/** Busca enviada (os dois campos vieram na URL) e os dois vazios. */
+export const buscaVazia = (cep: string | undefined, cidade: string | undefined): boolean =>
+  cep !== undefined && cidade !== undefined && !cep.trim() && !cidade.trim();

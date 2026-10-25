@@ -1,11 +1,13 @@
 "use client";
 
 import { ROTULO_QUEM_RESPONDEU } from "@/lib/atendimento/quem-respondeu";
+import { ROTULO_ESTADO_CHAMADO, estadoDoChamado } from "@/lib/atendimento/estado-chamado";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, LifeBuoy, MessageSquare, Search, Send, UserRound } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, LifeBuoy, MessageSquare, Search, Send, UserRound } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
+import { abertoEmBR } from "@/lib/atendimento/data-br";
 import { useAuthStore } from "@/lib/store";
 import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
@@ -42,7 +44,7 @@ const STATUS: Record<string, string> = {
   encerrado: "Encerrado",
 };
 const AUTOR: Record<string, string> = { usuario: "Você", admin: ROTULO_QUEM_RESPONDEU.equipe, ia: "Viva (assistente virtual) · Resposta automática da Viva Nomads", sistema: "Viva Nomads" };
-const CONTEXTO_ROTULO: Record<string, string> = { pedido: "seu Pedido de Moradia", contrato: "seu contrato", anuncio: "este anúncio" };
+const CONTEXTO_ROTULO: Record<string, string> = { pedido: "seu Pedido de Moradia", contrato: "seu contrato", anuncio: "este anúncio", parceiro: "este parceiro", perfil: "a foto desta pessoa" };
 
 function lerParams(): URLSearchParams {
   return typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
@@ -53,6 +55,8 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   const [aba, setAba] = useState<"inicio" | "novo" | "chamado">("inicio");
   const [numeroAberto, setNumeroAberto] = useState<string | null>(null);
   const [contexto, setContexto] = useState<{ tipo: string; id: string } | null>(null);
+  // Ordem 521c5af7 (S3): "Algo deu errado? Fale com a Viva" chega com o código do pedido de serviço.
+  const [codigoServico, setCodigoServico] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [pessoaLink, setPessoaLink] = useState<{ c: string; s: string } | null>(null);
   const [lista, setLista] = useState<ChamadoLista[] | null>(null);
@@ -75,6 +79,11 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
     if (tipo && id && CONTEXTO_ROTULO[tipo]) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setContexto({ tipo, id });
+      setAba("novo");
+    }
+    const servico = (p.get("servico") ?? "").toUpperCase();
+    if (/^SV-[0-9A-F]{8}$/.test(servico)) {
+      setCodigoServico(servico);
       setAba("novo");
     }
     const chamado = p.get("chamado");
@@ -126,6 +135,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
         <NovoChamado
           canal={canal}
           contexto={contexto}
+          codigoServico={codigoServico}
           logado={!!user}
           emailConta={user?.email ?? null}
           contratos={contratos}
@@ -146,8 +156,8 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
       ) : (
         <>
           <Perguntas perfil={perfil} />
-          <section className="mt-6 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
-            <h2 className="font-title text-lg font-bold text-ink">Não achou a resposta?</h2>
+          <section className="mt-6 rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
+            <h2 className="font-title text-lg font-semibold text-ink">Não achou a resposta?</h2>
             <p className="mt-1 text-sm text-muted">
               Abra um chamado: você recebe um número e acompanha tudo por aqui. {PROMESSA_ATENDIMENTO}.
             </p>
@@ -164,8 +174,8 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
             </ButtonLink>
           </section>
           {user && (
-            <section className="mt-6 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
-              <h2 className="font-title text-lg font-bold text-ink">Meus chamados</h2>
+            <section className="mt-6 rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
+              <h2 className="font-title text-lg font-semibold text-ink">Meus chamados</h2>
               {lista === null ? (
                 <p className="mt-2 text-sm text-muted">Carregando…</p>
               ) : lista.length === 0 ? (
@@ -183,11 +193,15 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
                         </span>
                         <span
                           className={cn(
-                            "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
+                            "shrink-0 rounded-full px-3 py-1 text-xs font-medium",
                             c.status === "aguardando_usuario" ? "bg-amber-100 text-amber-800" : c.status === "resolvido" || c.status === "encerrado" ? "bg-surface-2 text-muted" : "bg-sage-100 text-forest"
                           )}
                         >
-                          {STATUS[c.status] ?? c.status}
+                          {/* Prompt 50: aberto · respondido · resolvido (e "aguardando você" quando a vez é da pessoa). */}
+                          <span data-testid="chamado-estado" data-estado={estadoDoChamado({ status: c.status, primeiraRespostaEm: c.primeira_resposta_em ?? null })}>
+                            {ROTULO_ESTADO_CHAMADO[estadoDoChamado({ status: c.status, primeiraRespostaEm: c.primeira_resposta_em ?? null })]}
+                            {c.status === "aguardando_usuario" ? " · aguardando você" : ""}
+                          </span>
                         </span>
                       </button>
                     </li>
@@ -207,8 +221,8 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
   const [aberta, setAberta] = useState<string | null>(null);
   const resultado = useMemo(() => buscarFaq(q), [q]);
   return (
-    <section className="rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
-      <h2 className="font-title text-lg font-bold text-ink">Perguntas frequentes</h2>
+    <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
+      <h2 className="font-title text-lg font-semibold text-ink">Perguntas frequentes</h2>
       <label className="relative mt-3 block">
         <span className="sr-only">Buscar nas perguntas frequentes</span>
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
@@ -218,7 +232,7 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Ex.: caução, senha, anúncio não publica"
-          className="w-full rounded-xl border border-line bg-white py-2.5 pl-9 pr-3 text-sm text-ink focus:border-forest focus:outline-none"
+          className="w-full rounded-xl border border-line bg-white py-3 pl-12 pr-3 text-sm text-ink focus:border-forest focus:outline-none"
         />
       </label>
       {resultado.length === 0 ? (
@@ -236,7 +250,16 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
                 {p.pergunta}
                 <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted transition-transform", aberta === p.id && "rotate-180")} />
               </button>
-              {aberta === p.id && <p className="pb-3 text-sm leading-relaxed text-muted">{respostaPara(p, perfil)}</p>}
+              {aberta === p.id && (
+                <div className="pb-3">
+                  <p className="text-sm leading-relaxed text-muted">{respostaPara(p, perfil)}</p>
+                  {p.links?.map((l) => (
+                    <Link key={l.href} href={l.href} className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-forest underline underline-offset-2" data-testid={`faq-link-${p.id}`}>
+                      {l.rotulo} <ChevronRight className="h-4 w-4" aria-hidden />
+                    </Link>
+                  ))}
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -249,6 +272,7 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
 function NovoChamado({
   canal,
   contexto,
+  codigoServico,
   logado,
   emailConta,
   contratos,
@@ -257,23 +281,25 @@ function NovoChamado({
 }: {
   canal: "site" | "app";
   contexto: { tipo: string; id: string } | null;
+  codigoServico: string | null;
   logado: boolean;
   emailConta?: string | null;
   contratos: { id: string; titulo: string }[];
   onCancelar: () => void;
   onAberto: (numero: string) => void;
 }) {
-  const [cat, setCat] = useState(contexto?.tipo === "contrato" ? "contrato" : contexto?.tipo === "anuncio" ? "anuncio" : "duvida");
-  const [mensagem, setMensagem] = useState("");
+  const [cat, setCat] = useState(contexto?.tipo === "contrato" ? "contrato" : contexto?.tipo === "anuncio" ? "anuncio" : contexto?.tipo === "parceiro" ? "nota_parceiro" : contexto?.tipo === "perfil" ? "foto_perfil" : "duvida");
+  const [mensagem, setMensagem] = useState(codigoServico ? `Sobre o pedido de serviço ${codigoServico}: ` : "");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [contratoId, setContratoId] = useState<string>(contexto?.tipo === "contrato" ? contexto.id : "");
   const [urgencia, setUrgencia] = useState<"urgente" | "media" | "baixa">("media");
   const [catManut, setCatManut] = useState("outros");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const categorias = CATEGORIAS.filter((c) => !c.interna && (!c.exigeContrato || contratos.length > 0));
+  const categorias = CATEGORIAS.filter((c) => !c.interna && (!c.exigeContrato || contratos.length > 0) && (!c.soContexto || c.soContexto === contexto?.tipo));
   const manutencao = cat === "manutencao";
   const camera = cat === "camera";
   const emailMascarado = emailMascaradoDaConta(emailConta);
@@ -288,13 +314,14 @@ function NovoChamado({
       categoria: cat,
       mensagem,
       canal,
-      contextoTipo: (contexto?.tipo as "pedido" | "contrato" | "anuncio" | undefined) ?? null,
+      contextoTipo: (contexto?.tipo as "pedido" | "contrato" | "anuncio" | "parceiro" | "perfil" | undefined) ?? null,
       contextoId: contexto?.id ?? null,
       contratoId: manutencao || camera ? contratoId || null : null,
       urgencia: manutencao ? urgencia : undefined,
       categoriaManutencao: manutencao ? catManut : undefined,
       visitanteNome: logado ? undefined : nome,
       visitanteEmail: logado ? undefined : email,
+      visitanteTelefone: logado ? undefined : telefone,
       captchaToken: logado ? undefined : (captcha.token ?? undefined),
     }).catch(() => ({ ok: false as const, error: "Falha de conexão. Tente de novo." }));
     if (!logado) captcha.reset(); // o token vale uma vez só
@@ -306,13 +333,13 @@ function NovoChamado({
     onAberto(r.numero);
   }
 
-  const campo = "w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-forest focus:outline-none";
+  const campo = "w-full rounded-xl border border-line bg-white px-3 py-3 text-sm text-ink focus:border-forest focus:outline-none";
   return (
-    <form onSubmit={enviar} className="rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
+    <form onSubmit={enviar} className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
       <button type="button" onClick={onCancelar} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-forest">
         <ArrowLeft className="h-4 w-4" /> Voltar
       </button>
-      <h2 className="font-title text-lg font-bold text-ink">Abrir chamado</h2>
+      <h2 className="font-title text-lg font-semibold text-ink">Abrir chamado</h2>
       {contexto && <p className="mt-1 text-sm text-muted">Sobre {CONTEXTO_ROTULO[contexto.tipo]} — a equipe já recebe o link.</p>}
 
       <AvisoEmergencia texto={mensagem} />
@@ -402,6 +429,10 @@ function NovoChamado({
               <span className="mb-1 block font-medium text-ink">Seu e-mail (para a resposta)</span>
               <input type="email" required name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={campo} />
             </label>
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block font-medium text-ink">Telefone com DDD (opcional)</span>
+              <input type="tel" inputMode="tel" name="telefone" autoComplete="tel" maxLength={20} value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(34) 99999-1234" className={campo} />
+            </label>
             {captcha.widget && <div className="sm:col-span-2">{captcha.widget}</div>}
             <p data-testid="chamado-aviso-dados" className="text-xs text-muted sm:col-span-2">
               Usamos esses dados só para responder este chamado. Tem conta? <Link href="/auth?redirect=/ajuda" className="font-medium text-forest underline">Entre</Link> para acompanhar o chamado aqui.
@@ -421,7 +452,7 @@ function NovoChamado({
           {erro}
         </p>
       )}
-      <Button type="submit" className="mt-5" disabled={enviando}>
+      <Button type="submit" className="mt-4" disabled={enviando}>
         <Send className="h-4 w-4" /> {enviando ? "Enviando…" : "Enviar chamado"}
       </Button>
       <p className="mt-3 text-xs text-muted">
@@ -437,7 +468,7 @@ function AvisoEmergencia({ texto }: { texto: string }) {
   if (!emergencia) return null;
   return (
     <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {avisoEmergencia(emergencia)}
+      <AlertTriangle className="mt-1 h-4 w-4 shrink-0" /> {avisoEmergencia(emergencia)}
     </p>
   );
 }
@@ -447,8 +478,8 @@ function ConfirmarPessoa({ link, onFeito }: { link: { c: string; s: string }; on
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   return (
-    <section className="mb-4 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
-      <h2 className="font-title text-lg font-bold text-ink">Falar com uma pessoa da equipe?</h2>
+    <section className="mb-4 rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
+      <h2 className="font-title text-lg font-semibold text-ink">Falar com uma pessoa da equipe?</h2>
       <p className="mt-1 text-sm text-muted">Passamos seu chamado para a equipe agora. A resposta chega por e-mail.</p>
       {erro && <p className="mt-2 text-sm text-red-700">{erro}</p>}
       <Button
@@ -533,7 +564,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
   const idUltimaViva = dados?.mensagens.filter((m) => m.autor === "ia").at(-1)?.id;
 
   return (
-    <section className="rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
+    <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
       <button type="button" onClick={onVoltar} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-forest">
         <ArrowLeft className="h-4 w-4" /> Meus chamados
       </button>
@@ -554,9 +585,10 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
         <p className="text-sm text-muted">Chamado não encontrado. Entre com a conta que abriu o chamado.</p>
       ) : (
         <>
-          <h2 className="font-title text-lg font-bold text-ink">{dados.chamado.assunto}</h2>
+          <h2 className="font-title text-lg font-semibold text-ink">{dados.chamado.assunto}</h2>
           <p className="mt-1 text-sm text-muted">
             {dados.chamado.numero_publico} · {STATUS[dados.chamado.status] ?? dados.chamado.status}
+            <span data-testid="chamado-aberto-em"> · {abertoEmBR(dados.chamado.criado_em)}</span>
             {comViva ? " · com a Viva (assistente virtual)" : ""}
           </p>
           <ol className="mt-4 space-y-3">
@@ -568,7 +600,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                   m.autor === "usuario" ? "ml-6 bg-sage-100 text-ink" : m.autor === "sistema" ? "bg-surface-2 text-muted" : "mr-6 border border-line bg-white text-ink"
                 )}
               >
-                <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-muted">
+                <span className="mb-1 flex items-center gap-2 text-xs font-semibold text-muted">
                   <MessageSquare className="h-3.5 w-3.5" /> {AUTOR[m.autor]} · {new Date(m.criado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}
                 </span>
                 <span className="whitespace-pre-wrap">{m.corpo}</span>
@@ -579,7 +611,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                         type="button"
                         disabled={enviando}
                         onClick={() => acao(pedirPessoa)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-forest px-3 py-1.5 text-xs font-semibold text-forest hover:bg-sage-100 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-2 text-xs font-semibold text-forest hover:bg-sage-100 disabled:opacity-50"
                       >
                         <UserRound className="h-3.5 w-3.5" /> Falar com uma pessoa
                       </button>
@@ -591,7 +623,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                         type="button"
                         disabled={enviando}
                         onClick={() => acao(marcarResolvido)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-2 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-2 text-xs font-semibold text-ink hover:bg-surface-2 disabled:opacity-50"
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" /> Sim, resolveu
                       </button>
@@ -617,7 +649,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                   value={texto}
                   onChange={(e) => setTexto(e.target.value)}
                   placeholder={dados.chamado.status === "resolvido" ? "Algo ficou pendente? Responda para reabrir." : "Escreva sua mensagem"}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-forest focus:outline-none"
+                  className="w-full rounded-xl border border-line bg-white px-3 py-3 text-sm text-ink focus:border-forest focus:outline-none"
                 />
               </label>
               <AvisoEmergencia texto={texto} />

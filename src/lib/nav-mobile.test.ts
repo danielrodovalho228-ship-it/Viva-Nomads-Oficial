@@ -1,29 +1,79 @@
 /*
-  Abas do app: admin ganha "Equipe" (Central dos agentes); os demais papéis não.
+  Barra inferior por papel (Prompt 41, item 2): morador, proprietário e parceiro aprovado com 5 abas cada; admin sem
+  barra (fica fora do app). Cada aba aponta para uma rota que já existe.
   Roda: node --test src/lib/nav-mobile.test.ts
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { abasDoApp, ehAbaRaizApp, tituloDaTelaApp, voltaParaAdmin } from "./nav-mobile.ts";
+import { existsSync } from "node:fs";
+import {
+  ABAS_POR_PAPEL,
+  ROTULO_GANHOS_DONO,
+  abasDoPapel,
+  ehAbaRaizApp,
+  papelDaBarra,
+  tituloDaTelaApp,
+  voltaParaAdmin,
+  type PapelBarra,
+} from "./nav-mobile.ts";
 
-test("admin vê a aba Admin (6 abas) em qualquer mundo", () => {
-  for (const mundo of ["owner", "tenant"] as const) {
-    const abas = abasDoApp(mundo, true);
-    assert.equal(abas.length, 6);
-    assert.deepEqual(abas.at(-1)?.href, "/admin");
-    assert.equal(abas.at(-1)?.label, "Admin");
-    assert.equal(abas.at(-1)?.ativoEm, "/admin");
-    assert.equal(abas.at(-1)?.badge, "equipe");
+const ROTULOS: Record<PapelBarra, string[]> = {
+  morador: ["Início", "Buscar", "Mensagens", "Estadias", "Perfil"],
+  proprietario: ["Início", "Anúncios", "Mensagens", "Ganhos", "Perfil"],
+  parceiro: ["Início", "Pedidos", "Agenda", "Ganhos", "Perfil"],
+};
+
+test("barra por papel: 5 itens, na ordem do Prompt 41", () => {
+  for (const papel of Object.keys(ROTULOS) as PapelBarra[]) {
+    const abas = ABAS_POR_PAPEL[papel];
+    assert.equal(abas.length, 5, papel);
+    assert.deepEqual(abas.map((a) => a.label), ROTULOS[papel], papel);
+    assert.ok(!abas.some((a) => a.href.startsWith("/admin")), papel);
   }
 });
 
-test("quem não é admin continua com 5 abas e sem link para /admin", () => {
-  for (const mundo of ["owner", "tenant"] as const) {
-    const abas = abasDoApp(mundo, false);
-    assert.equal(abas.length, 5);
-    assert.ok(!abas.some((a) => a.href.startsWith("/admin")));
-  }
+test("cada aba aponta para uma rota que JÁ existe (nenhuma tela nova)", () => {
+  const raiz = new URL("../app/", import.meta.url);
+  const pagina = (rota: string) =>
+    rota === "/buscar"
+      ? existsSync(new URL("(public)/buscar/page.tsx", raiz))
+      : existsSync(new URL(`(dashboard)${rota}/page.tsx`, raiz));
+  for (const abas of Object.values(ABAS_POR_PAPEL)) for (const a of abas) assert.ok(pagina(a.href.split("#")[0]), a.href);
+  // As âncoras do parceiro existem no painel /dashboard/parceiro.
+  const pedidos = readFileSync(new URL("../components/parceiros/pedidos-do-parceiro.tsx", import.meta.url), "utf8");
+  const painel = readFileSync(new URL("../app/(dashboard)/dashboard/parceiro/painel-parceiro.tsx", import.meta.url), "utf8");
+  assert.match(pedidos, /<Panel id="pedidos"/);
+  assert.match(pedidos, /<Panel id="ganhos"/);
+  assert.match(painel, /<Panel id="agenda"/);
+});
+
+test("Ganhos do proprietário leva o rótulo 'pago direto na sua conta'", () => {
+  const ganhos = ABAS_POR_PAPEL.proprietario.find((a) => a.label === "Ganhos");
+  assert.equal(ROTULO_GANHOS_DONO, "pago direto na sua conta");
+  assert.equal(ganhos?.descricao, "Ganhos: pago direto na sua conta");
+  assert.equal(ganhos?.href, "/dashboard/contratos");
+});
+
+test("papel da barra: admin sem barra só nas telas /admin; parceiro só aprovado; senão o modo", () => {
+  assert.equal(papelDaBarra({ admin: true, modo: "owner", parceiroAprovado: true, preferenciaParceiro: true }), null);
+  assert.equal(papelDaBarra({ admin: true, modo: "owner", parceiroAprovado: false, pathname: "/admin" }), null);
+  assert.equal(papelDaBarra({ admin: true, modo: "owner", parceiroAprovado: false, pathname: "/admin/documentos" }), null);
+  // D-V: o admin no painel (como proprietário ou morador) tem a barra do modo ativo.
+  assert.equal(papelDaBarra({ admin: true, modo: "owner", parceiroAprovado: false, pathname: "/dashboard" }), "proprietario");
+  assert.equal(papelDaBarra({ admin: true, modo: "tenant", parceiroAprovado: false, pathname: "/dashboard/locacoes" }), "morador");
+  assert.deepEqual(abasDoPapel(null), []);
+  assert.equal(papelDaBarra({ admin: false, modo: "tenant", parceiroAprovado: false }), "morador");
+  assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: false }), "proprietario");
+  // Pedido de parceria em análise (não aprovado): nunca a barra do parceiro, nem com a preferência ligada.
+  assert.equal(papelDaBarra({ admin: false, modo: "tenant", parceiroAprovado: false, preferenciaParceiro: true, pathname: "/dashboard/parceiro" }), "morador");
+  // PAPEL-B: parceiro escolhido como papel ativo (selo ou Conta, gravado no perfil) vale fora da área de parceiro;
+  // numa área de dono ou de morador, a área da página vence (e a troca é gravada).
+  assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: true, preferenciaParceiro: true }), "parceiro");
+  assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: true, preferenciaParceiro: true, pathname: "/dashboard/imoveis" }), "proprietario");
+  assert.equal(papelDaBarra({ admin: false, modo: "tenant", parceiroAprovado: true, pathname: "/dashboard/parceiro/pedidos" }), "parceiro");
+  assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: true, pathname: "/dashboard/parceiro" }), "parceiro");
+  assert.equal(papelDaBarra({ admin: false, modo: "owner", parceiroAprovado: true, pathname: "/dashboard/imoveis" }), "proprietario");
 });
 
 test("títulos e aba raiz da Equipe no cabeçalho do app", () => {
@@ -33,6 +83,8 @@ test("títulos e aba raiz da Equipe no cabeçalho do app", () => {
   assert.equal(tituloDaTelaApp("/admin"), "Admin");
   assert.equal(ehAbaRaizApp("/admin"), true);
   assert.equal(ehAbaRaizApp("/admin/agentes"), false);
+  assert.equal(ehAbaRaizApp("/dashboard/locacoes"), true);
+  assert.equal(ehAbaRaizApp("/dashboard/parceiro"), true);
 });
 
 test("Voltar nas telas /admin/* leva ao painel /admin; o painel e o resto não", () => {
@@ -53,18 +105,22 @@ test("Voltar do app tem alvo de toque de 44 px e a spec t14 repete o toque até 
 });
 
 test("painel /admin lista todos os itens do menu do admin como atalhos", () => {
-  // Menu em cascata (ordem 9f3085d8): o grupo Administração mora em config/menu-painel.ts.
-  const config = readFileSync(new URL("../config/menu-painel.ts", import.meta.url), "utf8");
+  // Menu em cascata (ordem 9f3085d8): o grupo Administração mora em config/menu-por-papel.ts (Prompt 42).
+  const config = readFileSync(new URL("../config/menu-por-papel.ts", import.meta.url), "utf8");
   const atalhos = readFileSync(new URL("../app/(dashboard)/admin/atalhos-admin.tsx", import.meta.url), "utf8");
   const menu = [...config.matchAll(/href: "(\/admin[^"]*)"/g)].map((m) => m[1]);
   assert.ok(menu.length >= 10);
-  for (const h of menu.filter((x) => x !== "/admin")) assert.ok(atalhos.includes(`href="${h}"`) || atalhos.includes(`href: "${h}"`), h);
+  // A âncora de "Equipe e aprovações" é parte da tela Agentes: o atalho é o da tela.
+  for (const h of new Set(menu.filter((x) => x !== "/admin").map((x) => x.split("#")[0]))) assert.ok(atalhos.includes(`href="${h}"`) || atalhos.includes(`href: "${h}"`), h);
   assert.match(atalhos, /min-h-11/);
 });
 
-test("a barra só recebe a aba Admin quando o papel é admin", () => {
+test("a barra decide o papel pela regra única (admin sem barra) e flutua com a sombra única", () => {
   const f = readFileSync(new URL("../components/layout/mobile-tab-bar.tsx", import.meta.url), "utf8");
-  assert.match(f, /abasDoApp\(appWorld, user\?\.role === "admin"\)/);
+  assert.match(f, /papelDaBarra\(\{ admin: user\?\.role === "admin"/);
+  assert.match(f, /if \(!papel \|\| tabs\.length === 0\) return null;/);
+  assert.match(f, /shadow-flutuante/);
+  assert.match(f, /grid grid-cols-5/);
 });
 
 test("Central no app: botão Ativar notificações e atalhos visíveis só no app", () => {

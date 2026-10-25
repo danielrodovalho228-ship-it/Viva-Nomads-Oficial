@@ -12,6 +12,7 @@ import {
   semFiltro,
   temFiltro,
   DESCRICAO_MAX_CARACTERES,
+  DICA_SEM_FILTRO,
   type ChaveChip,
   type FiltrosDescricao,
 } from "@/lib/busca/descricao-filtros";
@@ -83,7 +84,7 @@ export function DescricaoBusca({
           Descreva o lugar ideal
         </label>
         <div className="relative min-w-0 flex-1">
-          <Sparkles className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-forest" aria-hidden />
+          <Sparkles className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink" aria-hidden />
           <input
             id="descricao-busca-campo"
             name="descricao"
@@ -93,7 +94,7 @@ export function DescricaoBusca({
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Descreva o lugar ideal: 2 quartos perto do HC, aceita gato, até 2.500"
-            className="h-12 w-full rounded-xl border border-line bg-white pl-10 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-forest"
+            className="h-12 w-full rounded-full border border-line bg-white pl-12 pr-4 text-sm text-ink outline-none placeholder:text-muted hover:border-ink focus:border-ink"
           />
         </div>
         <Button type="submit" disabled={carregando || limparDescricao(texto).length < 3} data-testid="descricao-aplicar" className="h-12 shrink-0">
@@ -102,15 +103,15 @@ export function DescricaoBusca({
       </form>
       {semResultado && (
         <p role="status" className="mt-2 text-sm text-muted" data-testid="descricao-vazia">
-          Não achei filtros nessa descrição. Cite preço, quartos, cidade ou bairro, pets ou Wi-Fi.
+          {DICA_SEM_FILTRO}
         </p>
       )}
       {chips.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-2" aria-label="Filtros aplicados pela descrição" data-testid="descricao-chips">
           {chips.map((c) => (
-            <li key={c.chave} className="inline-flex items-center gap-1 rounded-full border border-sage-200 bg-surface-2 py-1 pl-3 pr-1.5 text-sm text-ink">
+            <li key={c.chave} className="inline-flex items-center gap-1 rounded-full bg-ink py-1 pl-3 pr-1 text-sm text-white">
               {c.rotulo}
-              <button type="button" onClick={() => tirar(c.chave)} aria-label={`Tirar filtro ${c.rotulo}`} className="grid h-6 w-6 place-items-center rounded-full text-muted hover:text-forest">
+              <button type="button" onClick={() => tirar(c.chave)} aria-label={`Tirar filtro ${c.rotulo}`} className="grid h-6 w-6 place-items-center rounded-full text-white hover:bg-white/15">
                 <X className="h-3.5 w-3.5" aria-hidden />
               </button>
             </li>

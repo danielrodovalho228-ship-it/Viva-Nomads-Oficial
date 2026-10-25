@@ -39,3 +39,11 @@ test("\"+N mais\" é botão pequeno no canto: não cobre a miniatura da foto 5 (
   assert.match(botao, /absolute (left|right)-\d+ (bottom|top)-\d/);
   assert.match(src, /testId=\{`galeria-tile-\$\{i \+ 1\}`\}[\s\S]{0,40}\/>\s*\{isLast/);
 });
+
+test("carrossel do celular: a foto N abre o lightbox na posição N (ordem a45eec8b, achado #701)", () => {
+  // Prompt 41: carrossel em tela cheia (sai do recuo da página).
+  const carrossel = src.match(/className="relative -mx-4 -mt-8 sm:-mx-8 md:hidden"[\s\S]{0,900}/)?.[0] ?? "";
+  assert.match(carrossel, /photos\.map\(\(p, i\) =>/);
+  assert.match(carrossel, /onClick=\{\(\) => onOpen\(i\)\}/);
+  assert.match(carrossel, /testId=\{`galeria-tile-\$\{i\}`\}/);
+});

@@ -63,7 +63,7 @@ export function Decisao({ meses }: { meses: number }) {
             </div>
 
             <div className={`${styles.pathcard} ${styles.hi}`}>
-              <span className={`${styles.badge} ${styles.badgeHi}`}>★ Híbrido</span>
+              <span className={`${styles.badge} ${styles.badgeHi}`}>Híbrido</span>
               <h3>Assinatura + comissão decrescente</h3>
               <p className={styles.pathdesc}>Plataforma de serviços (Furnished Finder adaptado).</p>
               <ul className={`${styles.plist} ${styles.pros}`}>
@@ -118,8 +118,8 @@ export function Decisao({ meses }: { meses: number }) {
           </p>
           <form method="get" action="/decisao#regra-da-taxa" className="my-3 flex flex-wrap items-center gap-2">
             <label htmlFor="meses">Duração média do contrato (meses)</label>
-            <input id="meses" name="meses" type="number" inputMode="numeric" min={1} max={12} step={1} defaultValue={cmp.meses} className="w-20 rounded border px-2 py-1" />
-            <button type="submit" className="rounded border px-3 py-1 font-semibold">Recalcular</button>
+            <input id="meses" name="meses" type="number" inputMode="numeric" min={1} max={12} step={1} defaultValue={cmp.meses} className="w-20 rounded-lg border px-2 py-1" />
+            <button type="submit" className="rounded-lg border px-3 py-1 font-semibold">Recalcular</button>
           </form>
           <div className={styles.tableWrap}>
             <table className={styles.table}>

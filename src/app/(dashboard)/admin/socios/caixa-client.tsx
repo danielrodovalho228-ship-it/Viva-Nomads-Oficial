@@ -1,24 +1,26 @@
 "use client";
 
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Image as ImageIcon, Inbox, Loader2, Mic, Paperclip, RotateCw, Send, Square, X } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { BUCKET_CAIXA, LIMITE_BYTES, LIMITE_TEXTO, ROTULO_EXTRACAO, ROTULO_STATUS, mimeAceito, nomeSeguro } from "@/lib/socios/caixa";
-import { enviarParaCaixa, relerArquivo, type ItemCaixa } from "@/lib/socios/caixa-actions";
+import { BUCKET_CAIXA, LIMITE_BYTES, LIMITE_FALTA, LIMITE_TEXTO, ROTULO_EXTRACAO, ROTULO_STATUS, mimeAceito, nomeSeguro, podeAceitar } from "@/lib/socios/caixa";
+import { enviarParaCaixa, relerArquivo, responderAceite, type ItemCaixa } from "@/lib/socios/caixa-actions";
 
 const COR_STATUS: Record<ItemCaixa["status"], string> = {
-  novo: "bg-sky-100 text-sky-800",
-  em_andamento: "bg-amber-100 text-amber-800",
-  feito: "bg-lime-100 text-forest",
-  precisa_daniel: "bg-red-100 text-red-800",
+  novo: "border border-line bg-white text-forest",
+  em_andamento: "border border-line bg-white text-amber-800",
+  aguardando_aceite: "border border-line bg-white text-amber-800",
+  feito: "border border-line bg-white text-forest",
+  precisa_daniel: "border border-line bg-white text-red-800",
 };
 const ACEITA = "audio/*,image/*,.pdf,.docx,.xlsx,.txt,.m4a,.opus,.ogg";
 
 const quando = (iso: string) =>
-  new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  dataHoraBRT(iso, { tabela: true });
 
 function IconeTipo({ tipo }: { tipo: ItemCaixa["tipo"] }) {
   const cls = "h-4 w-4 shrink-0 text-sage";
@@ -33,7 +35,7 @@ function IconeTipo({ tipo }: { tipo: ItemCaixa["tipo"] }) {
  * O arquivo sobe direto do navegador para o bucket privado (pasta do próprio usuário) e a ação do servidor registra,
  * transcreve/lê e devolve. O Moacir lê de hora em hora e responde no próprio item.
  */
-export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: ItemCaixa[]; aviso: string | null; transcricaoLigada: boolean }) {
+export function CaixaSociosClient({ itens, aviso, uid, transcricaoLigada }: { itens: ItemCaixa[]; aviso: string | null; uid: string | null; transcricaoLigada: boolean }) {
   const router = useRouter();
   const [texto, setTexto] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -42,6 +44,9 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
   const [ok, setOk] = useState<string | null>(null);
   const [gravando, setGravando] = useState(false);
   const [relendo, setRelendo] = useState<string | null>(null);
+  const [reabrindo, setReabrindo] = useState<string | null>(null);
+  const [falta, setFalta] = useState("");
+  const [decidindo, setDecidindo] = useState<string | null>(null);
   const gravador = useRef<MediaRecorder | null>(null);
   const pedacos = useRef<Blob[]>([]);
   const inputArquivo = useRef<HTMLInputElement>(null);
@@ -144,14 +149,25 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
     router.refresh();
   }
 
+  async function decidir(id: string, decisao: "aceitar" | "reabrir") {
+    setDecidindo(id);
+    setErro(null);
+    const r = await responderAceite(id, decisao, falta);
+    setDecidindo(null);
+    if (!r.ok) return setErro(r.erro ?? "Não foi possível registrar.");
+    setReabrindo(null);
+    setFalta("");
+    router.refresh();
+  }
+
   return (
     <>
       <PageTitle title="Caixa dos Sócios" subtitle="Mande texto, áudio, documento ou print. A equipe lê, distribui e responde aqui." />
 
-      {aviso && <p role="alert" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{aviso}</p>}
+      {aviso && <p role="alert" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">{aviso}</p>}
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        <Panel title="Novo envio" className="lg:col-span-1 lg:self-start">
+        <Panel title="Novo envio" className="scroll-mt-24 lg:col-span-1 lg:self-start" id="enviar">
           <form onSubmit={enviar} className="space-y-3">
             <label htmlFor="caixa-texto" className="sr-only">Mensagem</label>
             <textarea
@@ -175,16 +191,16 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
 
             <div className="flex flex-wrap gap-2">
               <input ref={inputArquivo} id="caixa-arquivo" type="file" accept={ACEITA} className="sr-only" onChange={(e) => escolher(e.target.files?.[0] ?? null)} />
-              <label htmlFor="caixa-arquivo" className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-sage-200 bg-white px-4 text-sm font-medium text-ink hover:border-sage">
+              <label htmlFor="caixa-arquivo" className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-sage-200 bg-white px-4 text-sm font-semibold text-ink hover:border-sage">
                 <Paperclip className="h-4 w-4" /> Anexar
               </label>
               {podeGravar &&
                 (gravando ? (
-                  <button type="button" onClick={parar} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white">
+                  <button type="button" onClick={parar} className="border border-line inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-red-700">
                     <Square className="h-4 w-4" /> Parar gravação
                   </button>
                 ) : (
-                  <button type="button" onClick={gravar} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-sage-200 bg-white px-4 text-sm font-medium text-ink hover:border-sage">
+                  <button type="button" onClick={gravar} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-sage-200 bg-white px-4 text-sm font-semibold text-ink hover:border-sage">
                     <Mic className="h-4 w-4" /> Gravar áudio
                   </button>
                 ))}
@@ -206,17 +222,17 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
 
         <Panel title={`Conversa (${itens.length})`} className="lg:col-span-2">
           {itens.length === 0 ? (
-            <EmptyState icon={Inbox} title="Nada enviado ainda" text="O primeiro envio aparece aqui, com a leitura do arquivo e a resposta da equipe." />
+            <EmptyState icon={Inbox} title="Nada enviado ainda" text="O primeiro envio aparece aqui, com a leitura do arquivo e a resposta da equipe." action={<ButtonLink href="#enviar" variant="secondary" size="sm">Enviar o primeiro arquivo</ButtonLink>} />
           ) : (
             <ul className="space-y-4">
               {itens.map((i) => (
                 <li key={i.id} className="rounded-xl border border-sage-200 p-3 sm:p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-                    <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-2">
                       <IconeTipo tipo={i.tipo} />
                       <strong className="text-ink">{i.autor_nome}</strong> · {quando(i.criado_em)}
                     </span>
-                    <span className={`rounded-full px-2 py-0.5 font-semibold ${COR_STATUS[i.status]}`}>{ROTULO_STATUS[i.status]}</span>
+                    <span className={`rounded-full px-2 py-1 font-semibold ${COR_STATUS[i.status]}`}>{i.status === "aguardando_aceite" && podeAceitar(i, uid ?? "") ? "Aguardando seu aceite" : ROTULO_STATUS[i.status]}</span>
                   </div>
 
                   {i.texto && <p className="mt-2 whitespace-pre-wrap break-words text-sm text-ink">{i.texto}</p>}
@@ -237,7 +253,7 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
                       )}
                       {i.extracao_status === "ok" && i.texto_extraido && (
                         <details className="rounded-lg bg-surface-2 p-2 text-sm">
-                          <summary className="cursor-pointer font-medium text-ink">{i.tipo === "audio" ? "Transcrição" : "Leitura do arquivo"}</summary>
+                          <summary className="cursor-pointer font-semibold text-ink">{i.tipo === "audio" ? "Transcrição" : "Leitura do arquivo"}</summary>
                           <p className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap break-words text-ink">{i.texto_extraido}</p>
                         </details>
                       )}
@@ -245,7 +261,7 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                           <span>{ROTULO_EXTRACAO[i.extracao_status]}</span>
                           {(i.extracao_status === "falhou" || i.extracao_status === "desligada") && (
-                            <button type="button" onClick={() => reler(i.id)} disabled={relendo === i.id} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-sage-200 px-2 font-medium text-ink">
+                            <button type="button" onClick={() => reler(i.id)} disabled={relendo === i.id} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-sage-200 px-2 font-semibold text-ink">
                               <RotateCw className={`h-3.5 w-3.5 ${relendo === i.id ? "animate-spin" : ""}`} /> Tentar ler de novo
                             </button>
                           )}
@@ -260,6 +276,33 @@ export function CaixaSociosClient({ itens, aviso, transcricaoLigada }: { itens: 
                       <p className="mt-1 whitespace-pre-wrap break-words text-ink">{i.resposta}</p>
                     </div>
                   )}
+
+                  {i.status === "aguardando_aceite" && (
+                    <div className="mt-3 rounded-lg border border-line p-3 text-sm" data-testid="aceite-socio">
+                      {podeAceitar(i, uid ?? "") ? (
+                        <>
+                          <p className="font-semibold text-ink">A equipe entregou. Está como você pediu?</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Button type="button" onClick={() => decidir(i.id, "aceitar")} disabled={decidindo === i.id}>Aceito</Button>
+                            <button type="button" onClick={() => { setReabrindo(i.id); setFalta(""); }} className="inline-flex min-h-11 items-center rounded-xl border border-sage-200 bg-white px-4 font-semibold text-ink hover:border-sage">
+                              Reabrir
+                            </button>
+                          </div>
+                          {reabrindo === i.id && (
+                            <div className="mt-3 space-y-2">
+                              <label htmlFor={`falta-${i.id}`} className="block text-xs font-semibold text-ink">O que falta?</label>
+                              <textarea id={`falta-${i.id}`} value={falta} onChange={(e) => setFalta(e.target.value)} maxLength={LIMITE_FALTA} rows={3} className="w-full rounded-xl border border-sage-200 p-3 text-base" />
+                              <Button type="button" onClick={() => decidir(i.id, "reabrir")} disabled={decidindo === i.id || !falta.trim()}>Reabrir com este texto</Button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-muted">Aguardando o aceite de {i.autor_nome}, que fez o pedido.</p>
+                      )}
+                    </div>
+                  )}
+                  {i.status === "feito" && i.aceito_em && <p className="mt-2 text-xs text-muted">Aceito em {quando(i.aceito_em)}.</p>}
+                  {i.reaberto_motivo && i.status === "em_andamento" && <p className="mt-2 text-xs text-amber-800">Reaberto: {i.reaberto_motivo}</p>}
                 </li>
               ))}
             </ul>

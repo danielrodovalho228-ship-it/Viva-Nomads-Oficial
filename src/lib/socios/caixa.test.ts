@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { deflateRawSync } from "node:zlib";
-import { caminhoDoAutor, mimeAceito, nomeSeguro, tipoDoMime, validarEnvio, LIMITE_BYTES } from "./caixa.ts";
+import { podeAceitar, validarReabertura, ROTULO_STATUS, caminhoDoAutor, mimeAceito, nomeSeguro, tipoDoMime, validarEnvio, LIMITE_BYTES } from "./caixa.ts";
 import { textoDocx, textoXlsx } from "./office.ts";
 
 const UID = "11111111-2222-3333-4444-555555555555";
@@ -90,4 +90,33 @@ test("textoXlsx junta strings compartilhadas e números", () => {
 
 test("leitor de Office recusa arquivo que não é zip", () => {
   assert.throws(() => textoDocx(Buffer.from("não sou zip")));
+});
+
+test("aceite do sócio: só o autor aceita, e só aguardando aceite", () => {
+  assert.equal(podeAceitar({ status: "aguardando_aceite", autor_id: UID }, UID), true);
+  assert.equal(podeAceitar({ status: "aguardando_aceite", autor_id: UID }, OUTRO), false); // outro sócio não aceita
+  assert.equal(podeAceitar({ status: "aguardando_aceite", autor_id: null }, UID), false);
+  for (const status of ["novo", "em_andamento", "feito", "precisa_daniel"] as const) {
+    assert.equal(podeAceitar({ status, autor_id: UID }, UID), false, status);
+  }
+  assert.equal(ROTULO_STATUS.aguardando_aceite, "Aguardando aceite");
+});
+
+test("reabrir exige o que falta", () => {
+  assert.deepEqual(validarReabertura("  faltou o print  "), { ok: true, falta: "faltou o print" });
+  assert.equal(validarReabertura("   ").ok, false);
+  assert.equal(validarReabertura(undefined).ok, false);
+  assert.equal(validarReabertura("x".repeat(1001)).ok, false);
+});
+
+test("ADMIN-0: a lista pede o autor pela FK (há duas para profiles) e um erro nunca vira aviso de migração", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { AVISO_CAIXA_ILEGIVEL } = await import("./caixa.ts");
+  const src = readFileSync(new URL("./caixa-actions.ts", import.meta.url), "utf8");
+  const corpo = src.slice(src.indexOf("export async function listarCaixa"), src.indexOf("export async function", src.indexOf("export async function listarCaixa") + 10));
+  assert.match(corpo, /profiles!caixa_socios_autor_fkey\(full_name\)/, "embed explícito pela FK do autor");
+  assert.doesNotMatch(src, /[\s,"]profiles\(/, "nenhum embed de profiles sem o nome da FK no arquivo");
+  assert.doesNotMatch(corpo, /migra[çc][ãa]o/i, "o erro não é traduzido como migração pendente");
+  assert.match(corpo, /if \(error\) \{[\s\S]*?console\.error\([^)]*error\.code[\s\S]*?aviso: AVISO_CAIXA_ILEGIVEL/);
+  assert.equal(AVISO_CAIXA_ILEGIVEL, "Não foi possível ler a Caixa agora.");
 });

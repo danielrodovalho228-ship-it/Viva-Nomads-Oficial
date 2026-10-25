@@ -6,6 +6,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { listMinhasCandidaturas } from "@/lib/data/leads-actions";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import type { RotuloCandidatura } from "@/lib/candidaturas/status";
+import { VinculoMorador } from "@/components/triagem/vinculo-morador";
+import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 
 export const metadata: Metadata = {
   title: "Minhas candidaturas",
@@ -15,10 +17,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const TOM: Record<RotuloCandidatura["tom"], string> = {
-  neutro: "bg-slate-100 text-slate-700",
+  neutro: "bg-slate-100 text-muted",
   andamento: "bg-blue-50 text-blue-700",
   sucesso: "bg-emerald-100 text-emerald-700",
-  encerrado: "bg-slate-100 text-slate-500",
+  encerrado: "bg-slate-100 text-muted",
 };
 
 function dataBR(iso: string | null): string {
@@ -29,14 +31,16 @@ function dataBR(iso: string | null): string {
 }
 
 export default async function CandidaturasPage() {
-  const candidaturas = await listMinhasCandidaturas();
+  const [candidaturas, triagemLigada] = await Promise.all([listMinhasCandidaturas(), triagemVinculoAtiva()]);
 
   return (
     <>
-      <PageTitle capa="candidaturas"
+      <PageTitle
         title="Minhas candidaturas"
         subtitle="Acompanhe suas candidaturas do envio até a resposta. A conversa segue sempre pela plataforma."
       />
+      {/* Prompt 52 (chave TRIAGEM_VINCULO_ATIVA): o comprovante de vínculo, no degrau da candidatura aceita. */}
+      {triagemLigada && <VinculoMorador />}
 
       {candidaturas.length === 0 ? (
         <EmptyState
@@ -55,7 +59,7 @@ export default async function CandidaturasPage() {
             <Panel key={c.id}>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="font-title text-base font-bold text-ink">{c.propertyTitle}</h3>
+                  <h3 className="font-title text-base font-semibold text-ink">{c.propertyTitle}</h3>
                   {c.createdAt && (
                     <p className="text-xs text-muted">Enviada em {dataBR(c.createdAt)}</p>
                   )}
@@ -69,13 +73,23 @@ export default async function CandidaturasPage() {
                   {c.situacao.chave === "aceita" && (
                     <Link
                       href="/dashboard/mensagens"
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:underline"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-forest hover:underline"
                     >
                       <MessageSquare className="h-4 w-4" /> Conversar
                     </Link>
                   )}
                 </div>
               </div>
+              {c.contrato && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest" data-testid="candidatura-contrato">
+                  <span className="min-w-0">
+                    Contrato: <strong data-testid="candidatura-contrato-status">{c.contrato.status}</strong>
+                  </span>
+                  <Link href={`/dashboard/locacoes/${c.contrato.id}`} className="font-medium underline" data-testid="candidatura-contrato-abrir">
+                    Ver contrato
+                  </Link>
+                </div>
+              )}
               {c.situacao.chave === "aceita" && (
                 <div className="mt-4 border-t border-sage-200 pt-4">
                   <DocumentosInquilino leadId={c.id} modo="inquilino" />

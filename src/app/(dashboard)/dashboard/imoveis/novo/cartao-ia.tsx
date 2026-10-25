@@ -4,7 +4,8 @@ import { useRef } from "react";
 import { buttonClasses } from "@/components/ui/button";
 import { Camera, FileText, Loader2, Sparkles } from "lucide-react";
 import { mensagemFaltamFotosIa, iaFotosLiberada } from "@/lib/ai/fotos-prompt";
-import type { EstadoIaFotos } from "./tipos";
+import type { EstadoIaFotos, FalhaIaFotos } from "./tipos";
+import { FalhaIa } from "./etapa-fotos";
 
 export const ACEITA_FOTOS = "image/jpeg,image/png,image/webp";
 
@@ -18,6 +19,8 @@ export function CartaoIa(p: {
   enviando: { feitas: number; total: number } | null;
   erroEnvio: string | null;
   iaEstado: EstadoIaFotos;
+  iaFalha?: FalhaIaFotos | null;
+  onTentarDeNovo?: () => void;
   resumoIa: string;
   onFotos: (files: File[]) => void;
   onMatricula: () => void;
@@ -46,12 +49,14 @@ export function CartaoIa(p: {
       <span>
         Pronto: {p.resumoIa ? <>encontramos {p.resumoIa}.</> : <>preenchemos o que dá para ver nas fotos.</>}{" "}
         <button type="button" onClick={p.onVerPasso3} className="font-semibold underline underline-offset-2" data-testid="cartao-ia-ver-passo3">
-          Ver no passo 3
+          Ver nas Comodidades
         </button>
       </span>
     );
+  } else if (liberada && p.iaEstado === "erro" && p.iaFalha) {
+    status = <FalhaIa falha={p.iaFalha} onTentarDeNovo={p.onTentarDeNovo} />;
   } else if (liberada && p.iaEstado === "sem_sugestoes") {
-    status = "Fotos recebidas. Sem sugestões automáticas agora: você confere tudo no passo 3.";
+    status = "Fotos recebidas. A IA não encontrou o que sugerir: você confere tudo nas Comodidades.";
   } else if (liberada) {
     status = (
       <span className="flex items-center gap-2">
@@ -61,13 +66,13 @@ export function CartaoIa(p: {
   }
 
   return (
-    <section className="rounded-2xl border border-sage-200 bg-sage-50 p-4 sm:p-5" data-testid="cartao-ia" aria-labelledby="cartao-ia-titulo">
+    <section className="rounded-xl border border-sage-200 bg-sage-50 p-4 sm:p-4" data-testid="cartao-ia" aria-labelledby="cartao-ia-titulo">
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-forest" aria-hidden>
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <h3 id="cartao-ia-titulo" className="font-title text-lg font-bold text-ink">
+          <h3 id="cartao-ia-titulo" className="font-title text-lg font-semibold text-ink">
             Deixe a IA preencher o anúncio para você
           </h3>
           <p className="mt-1 text-sm text-muted">
@@ -81,7 +86,7 @@ export function CartaoIa(p: {
           type="button"
           onClick={() => input.current?.click()}
           disabled={!!p.enviando}
-          className={buttonClasses({ className: "w-full disabled:opacity-60" })}
+          className={buttonClasses({ variant: "secondary", className: "w-full disabled:opacity-60" })}
           data-testid="cartao-ia-fotos"
         >
           <Camera className="h-4 w-4" aria-hidden /> Enviar fotos

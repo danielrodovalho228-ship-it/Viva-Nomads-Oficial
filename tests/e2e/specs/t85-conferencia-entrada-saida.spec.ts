@@ -9,8 +9,9 @@ import {
   novaSenha,
   novoSufixo,
   pdf,
-  pngDeTeste,
 } from "../fixtures/laboratorio";
+import { jpegComGps } from "../fixtures/exif";
+import { metadadoNoDeposito } from "../fixtures/exif-deposito";
 
 /**
  * T85 — CONFERÊNCIA DE ENTRADA E SAÍDA (ordens 404cd213 e d3c60126; achado do Moacir no #466).
@@ -30,6 +31,8 @@ const inquilino = { email: `inq.conf.${sufixo}@lab.vivanomads.test`, nome: "Iara
 const terceiro = { email: `ter.conf.${sufixo}@lab.vivanomads.test`, nome: "Tiago Terceiro", role: "tenant" as const };
 const titulo = `Studio mobiliado da conferência ${sufixo}`;
 const ids: { dono?: string; inquilino?: string; terceiro?: string; imovel?: string; contrato?: string } = {};
+// Começo da spec (com folga para o relógio do Storage): o teste de EXIF só confere o que esta execução enviou.
+const INICIO = new Date(Date.now() - 60_000);
 const SALA = `Sala ${sufixo}`;
 const QUARTO = `Quarto ${sufixo}`;
 
@@ -45,7 +48,8 @@ async function adicionarItem(page: Page, tipo: "entrada" | "saida", comodo: stri
   await page.waitForLoadState("networkidle").catch(() => undefined);
   await form.getByLabel("Cômodo", { exact: true }).fill(comodo);
   await form.getByLabel("Itens e estado do cômodo").fill(descricao);
-  if (comFoto) await form.getByLabel("Foto do cômodo").setInputFiles({ name: "comodo.png", mimeType: "image/png", buffer: pngDeTeste(3) });
+  // Foto como sai do celular (EXIF e GPS): o cenário 6 confere que o depósito guarda sem metadado.
+  if (comFoto) await form.getByLabel("Foto do cômodo").setInputFiles({ name: "comodo.jpg", mimeType: "image/jpeg", buffer: await jpegComGps(3) });
   await form.getByRole("button", { name: "Adicionar item" }).click();
 }
 
@@ -201,5 +205,12 @@ test.describe("T85 — Conferência de entrada e saída: fotos, confirmar/contes
       await expect(page.getByText("Laudo independente")).toHaveCount(0);
     }
     await page.context().close();
+  });
+
+  // Estudo de segurança (22/10): foto do cômodo com EXIF/GPS revela o aparelho e a coordenada da casa.
+  test("6. EXIF/GPS: a foto do cômodo enviada com GPS fica guardada sem metadado no depósito 'conferencia'", async () => {
+    const r = await metadadoNoDeposito("conferencia", ids.dono!, INICIO);
+    expect(r.conferidas, "a foto do cômodo do cenário 1 deveria estar no depósito").toBeGreaterThan(0);
+    expect(r.problemas, "foto enviada com EXIF e GPS tem de ser guardada limpa").toEqual([]);
   });
 });

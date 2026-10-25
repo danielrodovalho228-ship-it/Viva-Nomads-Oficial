@@ -8,7 +8,7 @@ import {
   FileText,
   FileSignature,
   Receipt,
-  ClipboardCheck,
+  CalendarDays,
   Flame,
   ShieldCheck,
   Wrench,
@@ -16,6 +16,8 @@ import {
   ArrowRight,
   Lock,
   Sparkles,
+  MessageSquareText,
+  CalendarClock,
 } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { FOTOS_FERRAMENTAS } from "@/components/dashboard/capas";
@@ -101,10 +103,11 @@ const GRUPOS: Grupo[] = [
         icone: Receipt,
       },
       {
-        href: "/dashboard/contratos#conferencia",
-        titulo: "Conferência de entrada",
-        texto: "Registre o estado do imóvel na entrada e na saída do morador.",
-        icone: ClipboardCheck,
+        // Prompt 23: a Agenda entra na grade 2×2 (a conferência de entrada segue no menu, em Contratos).
+        href: "/dashboard/agenda",
+        titulo: "Agenda",
+        texto: "Visitas, entradas, saídas e datas bloqueadas de todos os imóveis num calendário só.",
+        icone: CalendarDays,
       },
     ],
   },
@@ -141,6 +144,24 @@ const GRUPOS: Grupo[] = [
   },
 ];
 
+/** Prompt 55-E2: ferramentas do dia a dia (fora da grade 3 × 4 com foto). */
+const OPERAR: { href: string; titulo: string; texto: string; acao: string; icone: React.ComponentType<{ className?: string }> }[] = [
+  {
+    href: "/dashboard/respostas-rapidas",
+    titulo: "Respostas rápidas",
+    texto: "Até 20 respostas salvas para usar na conversa com 1 toque. A mensagem do seu anúncio vem primeiro.",
+    acao: "Abrir respostas",
+    icone: MessageSquareText,
+  },
+  {
+    href: "/dashboard/contratos",
+    titulo: "Mensagens programadas",
+    texto: "Abra a estadia em Contratos. Em cada uma: 7 dias antes da entrada, no dia da entrada e no dia da saída. Nada sai entre 22h e 7h.",
+    acao: "Ver contratos",
+    icone: CalendarClock,
+  },
+];
+
 function CardFerramenta({ f }: { f: Ferramenta }) {
   const corpo = (
     <>
@@ -155,12 +176,12 @@ function CardFerramenta({ f }: { f: Ferramenta }) {
           <f.icone className="h-5 w-5" />
         </span>
         {f.status && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
             <Lock className="h-3 w-3" /> {f.status}
           </span>
         )}
       </div>
-      <h3 className="mt-3 line-clamp-2 min-h-[2.75rem] font-title font-bold text-ink">{f.titulo}</h3>
+      <h3 className="mt-3 line-clamp-2 min-h-[2.75rem] font-title font-semibold text-ink">{f.titulo}</h3>
       <p className="mt-1 flex-1 text-sm text-muted">{f.texto}</p>
       {f.href ? (
         <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
@@ -172,7 +193,7 @@ function CardFerramenta({ f }: { f: Ferramenta }) {
       )}
     </>
   );
-  const base = "flex h-full flex-col rounded-2xl border border-sage-200 bg-white p-5";
+  const base = "flex h-full flex-col rounded-xl border border-sage-200 bg-white p-4";
   return f.href ? (
     <Link
       href={f.href}
@@ -192,24 +213,23 @@ export default function FerramentasPage() {
   return (
     <div>
       <PageTitle
-        capa="ferramentas"
         title="Ferramentas"
         subtitle="Tudo o que ajuda você a analisar, fechar e proteger a locação — em um só lugar."
       />
 
-      <div className="space-y-10">
+      <div className="space-y-12">
         {GRUPOS.map((g) => {
           const foto = FOTOS_FERRAMENTAS[g.id];
           return (
             <section key={g.id} aria-labelledby={`grupo-${g.id}`} data-testid="ferramentas-grupo">
               <div className="mb-4">
-                <h2 id={`grupo-${g.id}`} className="font-title text-xl font-bold text-ink">
+                <h2 id={`grupo-${g.id}`} className="font-title text-xl font-semibold text-ink">
                   {g.titulo}
                 </h2>
                 <p className="text-sm text-muted">{g.texto}</p>
               </div>
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-                <div className="relative aspect-[16/7] overflow-hidden rounded-2xl bg-surface-2 lg:aspect-auto lg:min-h-full">
+                <div className="relative aspect-[16/7] overflow-hidden rounded-xl bg-surface-2 lg:aspect-auto lg:min-h-full">
                   <Image
                     src={foto.src}
                     alt={foto.alt}
@@ -220,18 +240,69 @@ export default function FerramentasPage() {
                     className="object-cover"
                   />
                 </div>
-                <div className="grid auto-rows-fr gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:auto-rows-fr sm:grid-cols-2">
                   {g.itens.map((f) => (
                     <CardFerramenta key={f.titulo} f={f} />
                   ))}
                 </div>
               </div>
+              {/* Prompt 54: desempenho de cada anúncio (o atalho leva a Meus imóveis → Desempenho). */}
+              {g.id === "analise" && (
+                <Link href="/dashboard/imoveis" className="mt-3 mr-4 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-forest underline underline-offset-4" data-testid="atalho-desempenho">
+                  Desempenho do anúncio
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
+              {/* Prompt 53: importar o calendário do Airbnb/Booking fica no calendário de cada imóvel (editor). */}
+              {g.id === "fechamento" && (
+                <Link href="/dashboard/imoveis" className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-forest underline underline-offset-4" data-testid="atalho-importar-calendario">
+                  Importar calendário do Airbnb ou Booking
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
+              {/* Prompt 39-B1: o informe anual dos recibos, ao lado do simulador. */}
+              {g.id === "analise" && (
+                <Link href="/dashboard/recibos#informe" className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-forest underline underline-offset-4" data-testid="atalho-informe-ir">
+                  Informe para o IR
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
             </section>
           );
         })}
 
+        {/* Prompt 55-E2: "Para operar" — o dia a dia das conversas e das estadias. */}
+        <section aria-labelledby="grupo-operar" data-testid="ferramentas-operar">
+          <div className="mb-4">
+            <h2 id="grupo-operar" className="font-title text-xl font-semibold text-ink">
+              Para operar
+            </h2>
+            <p className="text-sm text-muted">O dia a dia das conversas e das estadias, sem repetir a mesma resposta.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {OPERAR.map((f) => (
+              <Link
+                key={f.titulo}
+                href={f.href}
+                data-testid="ferramenta-operar"
+                className="group flex h-full flex-col rounded-xl border border-sage-200 bg-white p-4 transition-colors hover:border-sage hover:bg-surface-2"
+              >
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-sage-100 text-forest">
+                  <f.icone className="h-5 w-5" />
+                </span>
+                <h3 className="mt-3 font-title font-semibold text-ink">{f.titulo}</h3>
+                <p className="mt-1 flex-1 text-sm text-muted">{f.texto}</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
+                  {f.acao}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         <p className="flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-muted">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+          <Sparkles className="mt-1 h-4 w-4 shrink-0 text-sage" />
           Em todas as ferramentas, a Viva Nomads <strong>calcula, conecta e documenta</strong> — o
           dinheiro (valor mensal, caução, seguros) vai direto ao proprietário, à poupança da caução ou ao
           parceiro. A plataforma nunca retém valores.

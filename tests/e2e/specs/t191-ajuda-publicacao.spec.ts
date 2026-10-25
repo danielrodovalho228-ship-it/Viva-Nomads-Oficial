@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
+import { noPasso } from "../fixtures/cadastro";
 
 /**
  * T191 — ordem 65e999b2 (Próximo do FF 4/6, "Publicamos para você"): rota da fila fechada para quem não é admin
@@ -135,9 +136,10 @@ test.describe("T191 — o dono decide o rascunho (ordem 65e999b2, logado)", () =
     if (caminhosParaLimpar.length) await adm().storage.from(BUCKET).remove(caminhosParaLimpar);
   });
 
-  /** Abre o passo 1 do novo anúncio já hidratado e o formulário "Publicamos para você". */
+  /** Abre o Passo 1 do novo anúncio (onde fica o atalho "Prefere ajuda?" — E104) já hidratado e o formulário "Publicamos para você". */
   async function abrirPedido(page: import("@playwright/test").Page) {
-    await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+    await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
+    await noPasso(page, "tipo");
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await page.getByTestId("ajuda-publicar-abrir").click();
     await expect(page.getByTestId("ajuda-publicar")).toBeVisible({ timeout: 20_000 });
@@ -157,7 +159,7 @@ test.describe("T191 — o dono decide o rascunho (ordem 65e999b2, logado)", () =
         const { data } = await adm().from("pedidos_ajuda_publicacao").select("fotos, link_anuncio, texto_anuncio").eq("owner_id", dono.id);
         expect(data).toHaveLength(1);
         expect(data![0].fotos).toHaveLength(1);
-        expect(String((data![0].fotos as string[])[0])).toMatch(new RegExp(`^${dono.id}/[0-9a-f-]{36}\\.png$`));
+        expect(String((data![0].fotos as string[])[0])).toMatch(new RegExp(`^${dono.id}/[0-9a-f-]{36}\\.webp$`));
         expect(data![0].link_anuncio).toBeNull();
         expect(data![0].texto_anuncio).toBeNull();
         caminhosParaLimpar.push(...(data![0].fotos as string[]));

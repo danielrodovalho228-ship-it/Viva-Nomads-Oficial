@@ -13,7 +13,7 @@ test("t151 roda no projeto webkit-iphone do Playwright", () => {
   assert.match(bloco.slice(0, 300), /151-modo-app-iphone/);
 });
 
-test("t151 usa UA do app, mede tarefa longa e confere capa e carregando", () => {
+test("t151 usa UA do app, mede tarefa longa e confere o título sem capa e o carregando", () => {
   const src = readFileSync(join(raiz, "tests", "e2e", "specs", "t151-modo-app-iphone.spec.ts"), "utf8");
   assert.match(src, /VivaNomadsApp\/1\.0\.4 \(expo\)/);
   assert.match(src, /vn_app/);
@@ -29,12 +29,11 @@ test("t152 roda no projeto webkit-iphone do Playwright", () => {
   assert.match(bloco.slice(0, 300), /152-barra-fixa-imovel/);
 });
 
-// Ordem d62c283c: /dashboard/conta tem uma capa escondida (app-only); o spec t119
-// precisa pegar a capa VISÍVEL, não a primeira do DOM.
-test("t119 confere a capa visível, não a primeira do DOM", () => {
+// Prompt 42, item 2: as telas logadas não têm mais capa; t119 confere a AUSÊNCIA dela (e o título visível).
+test("t119 confere que as telas logadas abrem sem capa, com o h1 visível", () => {
   const src = readFileSync(join(raiz, "tests", "e2e", "specs", "t119-painel-capas.spec.ts"), "utf8");
-  assert.match(src, /painel-capa"\]:visible/);
-  assert.doesNotMatch(src, /getByTestId\("painel-capa"\)\.first\(\)/);
+  assert.match(src, /painel-capa"\]'\)\)\.toHaveCount\(0/);
+  assert.match(src, /locator\("main h1:visible"\)/);
 });
 
 // Ordem ec7988fe, item 3: no lab a conta de teste do proprietário não tem imóvel e a
@@ -45,3 +44,12 @@ test("t151 cria o próprio imóvel no laboratório e não pula a Disponibilidade
   assert.match(src, /NO_LABORATORIO/);
   assert.match(src, /apagarContas/);
 });
+
+// Ordem 75553f0a/laboratório verde (capa visível) → Prompt 42: t151 e t86 conferem que a capa NÃO existe.
+for (const arq of ["t151-modo-app-iphone", "t86-decisao-avatar-alt"]) {
+  test(`${arq} confere que a capa não aparece`, () => {
+    const src = readFileSync(join(raiz, "tests", "e2e", "specs", `${arq}.spec.ts`), "utf8");
+    assert.match(src, /painel-capa"\]'\)\)\.toHaveCount\(0/);
+    assert.doesNotMatch(src, /painel-capa"\]:visible/);
+  });
+}

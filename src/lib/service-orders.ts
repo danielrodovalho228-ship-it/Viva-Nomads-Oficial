@@ -25,6 +25,17 @@ export interface ServiceOrder {
   openedAt: string; // ISO
   firstResponseAt?: string;
   resolvedAt?: string;
+  // Prompt 59: prazo de solução (todas opcionais: a demonstração e as telas antigas seguem iguais).
+  propertyId?: string;
+  cidade?: string;
+  provisoriaEm?: string;
+  solucaoMarcadaEm?: string;
+  solucaoConfirmadaEm?: string;
+  reabertaEm?: string;
+  prioridadeOriginal?: SOPriority;
+  reclassificacaoPedidaEm?: string;
+  /** Quando o dono foi avisado de que a solução venceu (o morador vê "o proprietário foi avisado em …"). */
+  avisadoVencidoEm?: string;
 }
 
 export const SO_CATEGORIES: { id: SOCategory; label: string }[] = [

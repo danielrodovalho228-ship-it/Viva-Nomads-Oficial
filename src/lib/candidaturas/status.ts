@@ -26,7 +26,7 @@ export interface RotuloCandidatura {
 const ROTULOS: Record<SituacaoCandidatura, RotuloCandidatura> = {
   enviada: { chave: "enviada", label: "Enviada", tom: "neutro" },
   em_analise: { chave: "em_analise", label: "Em análise", tom: "andamento" },
-  aceita: { chave: "aceita", label: "Aceita 🎉", tom: "sucesso" },
+  aceita: { chave: "aceita", label: "Aceita", tom: "sucesso" },
   nao_seguiu: { chave: "nao_seguiu", label: "Não seguiu adiante", tom: "encerrado" },
 };
 

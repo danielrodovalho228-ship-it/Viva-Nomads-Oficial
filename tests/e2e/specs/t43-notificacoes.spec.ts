@@ -7,7 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  *  1. Push simulado: o app (Expo) avisa o site pelo evento `viva:push-token`; com o usuário logado o token
  *     é gravado em `push_tokens` (upsert pelo token, dono = sessão). Token malformado NÃO grava.
  *  2. Aviso por e-mail: mensagem do inquilino ao dono cai no LAB_OUTBOX (nada sai para a rede), sem telefone.
- *  3. Tela de Notificações da Conta (o "sininho" do menu): os avisos por e-mail e WhatsApp podem ser desligados.
+ *  3. Tela de Notificações da Conta (o "sininho" do menu): o aviso por e-mail pode ser desligado (WhatsApp saiu na ordem p30).
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -39,13 +39,17 @@ test.describe("T43 — Notificações", () => {
   test("push simulado: o token do aparelho é gravado para o usuário logado; token inválido não", async ({ browser }) => {
     test.setTimeout(90_000);
     const page = await entrar(browser, inq.email, senha);
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
-    await page.evaluate((token) => {
-      window.dispatchEvent(new CustomEvent("viva:push-token", { detail: { token: "lixo", platform: "android" } }));
-      window.dispatchEvent(new CustomEvent("viva:push-token", { detail: { token, platform: "android" } }));
-    }, TOKEN);
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    // O app reenvia o evento a cada carregamento; aqui ele é reenviado a cada volta, porque o ouvinte (PushApp) pode ainda não ter montado.
     await expect
-      .poll(async () => (await adm().from("push_tokens").select("user_id, platform").eq("token", TOKEN)).data?.[0]?.user_id ?? null, { timeout: 20_000 })
+      .poll(async () => {
+        await page.evaluate((token) => {
+          window.dispatchEvent(new CustomEvent("viva:push-token", { detail: { token: "lixo", platform: "android" } }));
+          window.dispatchEvent(new CustomEvent("viva:push-token", { detail: { token, platform: "android" } }));
+        }, TOKEN);
+        return (await adm().from("push_tokens").select("user_id, platform").eq("token", TOKEN)).data?.[0]?.user_id ?? null;
+      }, { timeout: 30_000, intervals: [1_000, 2_000, 3_000] })
       .toBe(ids.inq);
     const { data: lixo } = await adm().from("push_tokens").select("id").eq("token", "lixo");
     expect(lixo ?? []).toHaveLength(0);
@@ -56,7 +60,8 @@ test.describe("T43 — Notificações", () => {
     test.skip(!process.env.LAB_OUTBOX, "sem LAB_OUTBOX nesta execução");
     test.setTimeout(90_000);
     const page = await entrar(browser, inq.email, senha);
-    await page.goto("/dashboard/mensagens", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/mensagens", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await page.getByRole("button", { name: /Studio das notificações/ }).first().click();
     await page.getByPlaceholder("Escreva uma mensagem...").fill("Posso visitar amanhã? Meu número é 31 91234-5678.");
     await page.getByRole("button", { name: "Enviar" }).click();
@@ -71,11 +76,14 @@ test.describe("T43 — Notificações", () => {
   test("Conta › Notificações: desligar o aviso por e-mail grava no perfil", async ({ browser }) => {
     test.setTimeout(90_000);
     const page = await entrar(browser, dono.email, senha);
-    await page.goto("/dashboard/conta/notificacoes", { waitUntil: "networkidle" });
-    await expect(page.getByText("Avisos por WhatsApp")).toBeVisible();
-    const chave = page.getByRole("switch", { name: "Avisos por e-mail" });
+    await page.goto("/dashboard/conta/notificacoes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await expect(page.getByText("Avisos por WhatsApp")).toHaveCount(0); // saiu na ordem p30 item 8
+    // A6 (mockup perfil-06): canal "E-mail" + "Salvar preferências".
+    const chave = page.getByTestId("notif-canal-email");
     await expect(chave).toBeEnabled({ timeout: 15_000 });
     await chave.click();
+    await page.getByTestId("notif-salvar").click();
     await expect.poll(async () => (await adm().from("profiles").select("notif_email").eq("id", ids.dono!).single()).data?.notif_email, { timeout: 15_000 }).toBe(false);
     await page.context().close();
   });

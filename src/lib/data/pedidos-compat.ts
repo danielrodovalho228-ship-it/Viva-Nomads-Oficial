@@ -4,24 +4,22 @@
  *
  * A regra de compatibilidade é a função do banco `compatibilidade_pedidos`
  * (0064), chamada só pelo cliente de serviço. Aqui:
- *  • e-mail SÓ para o dono com imóvel compatível, dizendo qual e por quê;
- *  • 1 aviso por pedido por dono (único no banco); até 5 e-mails por dia por
- *    dono — o resto vai no resumo diário; respeita notif_email;
+ *  • aviso SÓ para o dono com imóvel compatível, dizendo qual e por quê;
+ *  • 1 aviso por pedido por dono (único no banco). Prompt 30: o sino (push e a lista de Notificações) é na hora;
+ *    o e-mail vai no resumo diário — no máximo 1 por dia por dono; respeita notif_email;
  *  • tudo registrado em pedido_avisos (números do admin).
  */
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notificacaoLigada } from "@/lib/notifications/preferencias";
+import { recebeAvisoComum } from "@/lib/notifications/preferencias";
 import { notify } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
 import { formatBRL, dataBR } from "@/lib/utils";
-import { motivoLabel } from "@/lib/pedidos/pedidos";
-import { contatoConfirmado } from "@/lib/pedidos/confirmacao";
+import { chegaAosDonos, faltaConfirmar, type ChaveSms, type SituacaoContato } from "@/lib/pedidos/confirmacao";
+import { lerChaveSms } from "@/lib/data/chave-sms";
 import {
-  EMAILS_PEDIDO_POR_DIA,
   imoveisParaTela,
   melhorPor,
-  porQueCombina,
   sugestaoAjuste,
   type ImovelCompativel,
   type ParCompat,
@@ -33,6 +31,7 @@ type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 interface PedidoResumo {
   id: string;
   inquilino_id: string;
+  criado_em: string;
   cidade: string;
   uf: string | null;
   data_inicio: string;
@@ -82,107 +81,63 @@ function linkResponder(pedidoId: string, imovelId: string): string {
   return `${SITE_URL}/dashboard/pedidos-cidade?pedido=${encodeURIComponent(pedidoId)}&imovel=${encodeURIComponent(imovelId)}`;
 }
 
-/** Bloco do e-mail ao dono: o pedido (sem nome nem contato) + por que combina. */
-function detalheCompativel(pedido: PedidoResumo, par: ParCompat): { html: string; text: string } {
-  const linhas: [string, string][] = [
-    ["Cidade", `${pedido.cidade}${pedido.uf ? `/${pedido.uf}` : ""}`],
-    ["Entrada", dataBR(pedido.data_inicio)],
-    ["Prazo", `${pedido.prazo_meses} ${pedido.prazo_meses === 1 ? "mês" : "meses"}`],
-    ["Ocupantes", String(pedido.qtd_ocupantes)],
-    ["Orçamento", `${formatBRL(pedido.orcamento_mensal)}/mês`],
-    ["Motivo", motivoLabel(pedido.motivo)],
-  ];
-  if (pedido.pets) linhas.push(["Pet", "sim"]);
-  if (pedido.criancas) linhas.push(["Crianças", "sim"]);
-  const porque = porQueCombina(par);
-  const url = linkResponder(pedido.id, par.imovel_id);
-  const html = `
-    <table role="presentation" style="margin:12px 0 0;border-collapse:collapse;color:#334155;font-size:14px;">
-      ${linhas
-        .map(
-          ([k, v]) =>
-            `<tr><td style="padding:2px 12px 2px 0;color:#64748b;">${textoEmail(k, 40)}</td><td style="padding:2px 0;font-weight:600;">${textoEmail(v, 80)}</td></tr>`
-        )
-        .join("")}
-    </table>
-    <p style="margin:16px 0 4px;color:#0f3d2e;font-weight:700;">Seu imóvel “${textoEmail(par.titulo, 120)}” combina:</p>
-    <ul style="margin:0;padding-left:18px;color:#334155;">${porque.map((m) => `<li>${textoEmail(m, 160)}</li>`).join("")}</ul>
-    <p style="margin:16px 0 0;"><a href="${url}" style="display:inline-block;background:#0f3d2e;color:#fff;padding:10px 18px;border-radius:999px;font-weight:700;text-decoration:none;">Responder com este imóvel</a></p>`;
-  const text = [
-    ...linhas.map(([k, v]) => `${k}: ${textoPlano(v, 80)}`),
-    "",
-    `Seu imóvel "${textoPlano(par.titulo, 120)}" combina:`,
-    ...porque.map((m) => `• ${m}`),
-    "",
-    `Responder com este imóvel: ${url}`,
-  ].join("\n");
-  return { html, text };
-}
-
 async function carregarPedido(admin: Admin, pedidoId: string): Promise<PedidoResumo | null> {
   const { data } = await admin
     .from("pedidos_moradia")
-    .select("id, inquilino_id, cidade, uf, data_inicio, prazo_meses, qtd_ocupantes, orcamento_mensal, motivo, pets, criancas")
+    .select("id, inquilino_id, criado_em, cidade, uf, data_inicio, prazo_meses, qtd_ocupantes, orcamento_mensal, motivo, pets, criancas")
     .eq("id", pedidoId)
     .maybeSingle();
   return (data as PedidoResumo | null) ?? null;
 }
 
-/**
- * O inquilino confirmou e-mail E telefone? Sem isso o pedido não chega aos donos (ordem 8dca1437, item 3;
- * o mural já esconde o pedido pela migração 0160). Falha fechada: na dúvida, não avisa.
- */
-export async function inquilinoConfirmouContato(admin: Admin, inquilinoId: string): Promise<boolean> {
+/** E-mail e telefone do inquilino (servidor). Falha fechada: na dúvida, nada confirmado. */
+export async function situacaoDoInquilino(admin: Admin, inquilinoId: string): Promise<SituacaoContato> {
   try {
     const [{ data: u }, { data: tv }] = await Promise.all([
       admin.auth.admin.getUserById(inquilinoId),
       admin.from("telefone_verificacao").select("verificado_em").eq("user_id", inquilinoId).maybeSingle(),
     ]);
-    return contatoConfirmado({
+    return {
       emailConfirmadoEm: u?.user?.email_confirmed_at,
       telefoneConfirmadoEm: u?.user?.phone_confirmed_at,
       telefoneVerificadoEm: (tv?.verificado_em as string | null) ?? null,
-    });
+    };
   } catch {
-    return false;
+    return { emailConfirmadoEm: null, telefoneConfirmadoEm: null, telefoneVerificadoEm: null };
   }
 }
 
+/** O pedido chega aos donos agora? A mesma regra do mural (pedido_visivel_para_donos, 0184), com a chave SMS_ATIVO. */
+async function pedidoChegaAosDonos(admin: Admin, pedido: PedidoResumo, sms: ChaveSms): Promise<boolean> {
+  return chegaAosDonos(await situacaoDoInquilino(admin, pedido.inquilino_id), sms, pedido.criado_em, new Date());
+}
+
 /**
- * Aviso ao DONO de um imóvel compatível (1 por pedido por dono). Decide o
- * canal: e-mail (até 5/dia), resumo diário (passou do limite) ou nenhum
- * (sem e-mail ou notificações desligadas). Registra em pedido_avisos.
+ * Aviso ao DONO de um imóvel compatível (1 por pedido por dono): o sino na hora e o e-mail no resumo diário (ou
+ * nenhum, sem e-mail ou com as notificações desligadas). Registra em pedido_avisos.
  */
-async function avisarDono(admin: Admin, pedido: PedidoResumo, par: ParCompat): Promise<"email" | "resumo" | "nenhum" | "ja_avisado"> {
+async function avisarDono(admin: Admin, pedido: PedidoResumo, par: ParCompat): Promise<"resumo" | "nenhum" | "ja_avisado"> {
   const { data: perfil } = await admin
     .from("profiles")
-    .select("email, full_name, notif_email")
+    .select("email, full_name, notif_email, pausada_em")
     .eq("id", par.dono_id)
     .maybeSingle();
 
-  let canal: "email" | "resumo" | "nenhum" = "email";
+  let canal: "resumo" | "nenhum" = "resumo";
   let motivoNaoEnvio: string | null = null;
   if (!perfil?.email) {
     canal = "nenhum";
     motivoNaoEnvio = "sem_email";
-  } else if (!notificacaoLigada(perfil.notif_email as boolean | null)) {
+  } else if (!recebeAvisoComum(perfil as { notif_email: boolean | null; pausada_em: string | null })) {
     canal = "nenhum";
     motivoNaoEnvio = "notificacoes_desligadas";
   } else {
-    const desde = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count } = await admin
-      .from("pedido_avisos")
-      .select("id", { count: "exact", head: true })
-      .eq("dono_id", par.dono_id)
-      .eq("canal", "email")
-      .gte("enviado_em", desde);
-    if ((count ?? 0) >= EMAILS_PEDIDO_POR_DIA) {
-      canal = "resumo";
-      motivoNaoEnvio = "limite_diario";
-    }
+    // Prompt 30: e-mail só no resumo diário (no máximo 1 por dia por dono); o sino é na hora (abaixo).
+    canal = "resumo";
+    motivoNaoEnvio = "resumo_diario";
   }
 
-  const { data: aviso, error } = await admin
+  const { error } = await admin
     .from("pedido_avisos")
     .insert({
       pedido_id: pedido.id,
@@ -191,29 +146,12 @@ async function avisarDono(admin: Admin, pedido: PedidoResumo, par: ParCompat): P
       nota: par.nota,
       canal,
       motivo_nao_envio: motivoNaoEnvio,
-    })
-    .select("id")
-    .single();
+    });
   if (error) return error.code === "23505" ? "ja_avisado" : "nenhum";
 
-  if (canal === "email" && perfil?.email) {
-    const d = detalheCompativel(pedido, par);
-    const r = await notify({
-      event: "pedido_compativel",
-      subject: `Pedido de moradia compatível com ${par.titulo}`,
-      email: perfil.email as string,
-      name: (perfil.full_name as string) ?? undefined,
-      userId: par.dono_id,
-      pushUrl: "/dashboard/pedidos-cidade",
-      detailsHtml: d.html,
-      detailsText: d.text,
-    });
-    if (r.email) {
-      await admin.from("pedido_avisos").update({ enviado_em: new Date().toISOString() }).eq("id", aviso.id);
-    } else {
-      await admin.from("pedido_avisos").update({ motivo_nao_envio: "falha_envio" }).eq("id", aviso.id);
-    }
-  }
+  // Sino na hora: push (quando o app está instalado) e a lista de Notificações (lida de pedido_avisos).
+  await notify({ event: "pedido_compativel", userId: par.dono_id, pushUrl: "/dashboard/pedidos-cidade" }).catch(() => null);
+
   return canal;
 }
 
@@ -222,20 +160,28 @@ async function avisarDono(admin: Admin, pedido: PedidoResumo, par: ParCompat): P
  * melhor imóvel de cada um) e devolve, para a tela do inquilino, quantos
  * imóveis combinam agora e — se nenhum — uma sugestão de ajuste.
  */
-export async function avisarCompativeisDoPedido(
-  pedidoId: string
-): Promise<{ compativeis: number; sugestao: string | null; imoveis: ImovelCompativel[]; chegaAosDonos: boolean }> {
+export async function avisarCompativeisDoPedido(pedidoId: string): Promise<{
+  compativeis: number;
+  sugestao: string | null;
+  imoveis: ImovelCompativel[];
+  chegaAosDonos: boolean;
+  falta: ("e-mail" | "telefone")[];
+  smsLigado: boolean;
+}> {
+  const vazio = { compativeis: 0, sugestao: null, imoveis: [], chegaAosDonos: false, falta: [], smsLigado: false };
   const admin = createAdminClient();
-  if (!admin) return { compativeis: 0, sugestao: null, imoveis: [], chegaAosDonos: false };
+  if (!admin) return vazio;
   const pedido = await carregarPedido(admin, pedidoId);
-  if (!pedido) return { compativeis: 0, sugestao: null, imoveis: [], chegaAosDonos: false };
+  if (!pedido) return vazio;
+  const sms = await lerChaveSms();
 
   const pares = await paresCompat(admin, { pedido: pedidoId });
   const compat = pares.filter((p) => p.situacao === "compativel");
   await admin.from("pedidos_moradia").update({ compativeis_ao_publicar: compat.length }).eq("id", pedidoId);
 
-  // Sem e-mail e telefone confirmados o pedido fica guardado e NÃO avisa ninguém.
-  const confirmado = await inquilinoConfirmouContato(admin, pedido.inquilino_id);
+  // Sem o que a chave exige (e-mail; com SMS_ATIVO, também o telefone) o pedido fica guardado e NÃO avisa ninguém.
+  const situacao = await situacaoDoInquilino(admin, pedido.inquilino_id);
+  const confirmado = chegaAosDonos(situacao, sms, pedido.criado_em, new Date());
   for (const par of confirmado ? melhorPor(compat, "dono_id").values() : []) {
     try {
       await avisarDono(admin, pedido, par);
@@ -248,7 +194,36 @@ export async function avisarCompativeisDoPedido(
     sugestao: compat.length === 0 ? sugestaoAjuste(pares) : null,
     imoveis: imoveisParaTela(compat),
     chegaAosDonos: confirmado,
+    falta: confirmado ? [] : faltaConfirmar(situacao, sms),
+    smsLigado: sms.ligada,
   };
+}
+
+/**
+ * Pedido ativo criado antes de existir o cálculo (compativeis_ao_publicar nulo) nunca avisou ninguém. Roda no
+ * disparo diário: recalcula uma vez cada um (a mesma função da publicação) e, havendo compatível, grava o aviso em
+ * pedido_avisos. Depois do primeiro cálculo a coluna deixa de ser nula, então não repete. Ordem cfeb4105.
+ */
+export async function recalcularPedidosSemCalculo(limite = 50): Promise<{ pedidos: number }> {
+  const admin = createAdminClient();
+  if (!admin) return { pedidos: 0 };
+  const { data } = await admin
+    .from("pedidos_moradia")
+    .select("id")
+    .eq("status", "ativo")
+    .is("compativeis_ao_publicar", null)
+    .order("criado_em", { ascending: true })
+    .limit(limite);
+  let pedidos = 0;
+  for (const p of (data ?? []) as { id: string }[]) {
+    try {
+      await avisarCompativeisDoPedido(p.id);
+      pedidos += 1;
+    } catch (e) {
+      console.error("[recalcularPedidosSemCalculo] falha:", e);
+    }
+  }
+  return { pedidos };
 }
 
 /**
@@ -260,19 +235,20 @@ export async function avisarPedidosDoImovel(imovelId: string): Promise<void> {
   const admin = createAdminClient();
   if (!admin) return;
   const pares = (await paresCompat(admin, { imovel: imovelId })).filter((p) => p.situacao === "compativel");
+  const sms = await lerChaveSms();
   for (const par of pares) {
     try {
       const pedido = await carregarPedido(admin, par.pedido_id);
       if (!pedido) continue;
-      if (!(await inquilinoConfirmouContato(admin, pedido.inquilino_id))) continue;
+      if (!(await pedidoChegaAosDonos(admin, pedido, sms))) continue;
       await avisarDono(admin, pedido, par);
       if (!(await consumirLimite(`pedido-imovel-novo:${pedido.id}`, 1, DIA))) continue;
       const { data: inq } = await admin
         .from("profiles")
-        .select("email, full_name, notif_email")
+        .select("email, full_name, notif_email, pausada_em")
         .eq("id", pedido.inquilino_id)
         .maybeSingle();
-      if (!inq?.email || inq.notif_email === false) continue;
+      if (!inq?.email || !recebeAvisoComum(inq as { notif_email: boolean | null; pausada_em: string | null })) continue;
       await notify({
         event: "pedido_imovel_novo",
         email: inq.email as string,
@@ -338,10 +314,10 @@ export async function enviarResumosDiarios(): Promise<{ donos: number; pedidos: 
     if (usados.length === 0) continue;
     const { data: perfil } = await admin
       .from("profiles")
-      .select("email, full_name, notif_email")
+      .select("email, full_name, notif_email, pausada_em")
       .eq("id", donoId)
       .maybeSingle();
-    if (!perfil?.email || perfil.notif_email === false) {
+    if (!perfil?.email || !recebeAvisoComum(perfil as { notif_email: boolean | null; pausada_em: string | null })) {
       await admin.from("pedido_avisos").update({ canal: "nenhum", motivo_nao_envio: "notificacoes_desligadas" }).in("id", usados);
       continue;
     }

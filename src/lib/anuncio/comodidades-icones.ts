@@ -1,7 +1,7 @@
 import {
   AirVent, Armchair, Bike, Building, Car, CookingPot, Dumbbell, Fan, Flame, Laptop, MonitorSmartphone,
   Refrigerator, Shirt, ShieldCheck, Sofa, Soup, Tv, UtensilsCrossed, VolumeX, Waves, WashingMachine,
-  Wifi, Camera, Microwave, Users, DoorOpen, Sun, Check, Lamp, Plug, type LucideIcon,
+  Wifi, Camera, Microwave, Users, DoorOpen, Sun, Check, Lamp, Plug, AlarmSmoke, FireExtinguisher, type LucideIcon,
 } from "lucide-react";
 import { AMENITY_KEY_BY_LABEL } from "../amenities.ts";
 
@@ -23,6 +23,7 @@ export const ICONE_POR_CHAVE: Record<string, LucideIcon> = {
   lava_loucas: UtensilsCrossed,
   enxoval: Shirt,
   cozinha_equipada: CookingPot,
+  tv: Tv,
   varanda: Sun,
   academia: Dumbbell,
   piscina: Waves,
@@ -33,6 +34,8 @@ export const ICONE_POR_CHAVE: Record<string, LucideIcon> = {
   lavanderia: WashingMachine,
   bicicletario: Bike,
   vaga_garagem: Car,
+  detector_fumaca: AlarmSmoke,
+  extintor: FireExtinguisher,
 };
 
 /** Ícone de texto livre (comodidades antigas, sem chave): palavra-chave → ícone. */
@@ -53,6 +56,8 @@ const POR_PALAVRA: [RegExp, LucideIcon][] = [
   [/arm[aá]rio|guarda-?roupa|sof[aá]|mobili/, Sofa],
   [/roupa de cama|enxoval|toalha/, Shirt],
   [/garagem|estacionamento|vaga/, Car],
+  [/detector de fuma|fuma[cç]a/, AlarmSmoke],
+  [/extintor/, FireExtinguisher],
   [/portaria|seguran|alarme|fechadura|cofre/, ShieldCheck],
   [/c[aâ]mera/, Camera],
   [/piscina/, Waves],
@@ -75,6 +80,6 @@ export function iconeDaComodidade(rotuloOuChave: string): LucideIcon {
   return Check;
 }
 
-/** Padrão visual único: mesmo tamanho e traço em todos os ícones de lista. */
-export const CLASSE_ICONE_LISTA = "h-5 w-5 shrink-0 text-sage";
+/** Padrão visual único (Prompt 47): 24 px e o mesmo traço em todos os ícones de lista e de fatos. */
+export const CLASSE_ICONE_LISTA = "h-6 w-6 shrink-0 text-sage";
 export const TRACO_ICONE_LISTA = 1.75;

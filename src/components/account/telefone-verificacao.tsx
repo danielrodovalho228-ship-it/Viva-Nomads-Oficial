@@ -88,10 +88,10 @@ export function TelefoneVerificacao() {
   return (
     <Panel title="Celular (SMS)" className="mt-6 scroll-mt-24" id="celular" data-testid="confianca-telefone">
       <div className="flex items-start gap-3">
-        <Smartphone className="mt-0.5 h-5 w-5 shrink-0 text-sage" aria-hidden />
+        <Smartphone className="mt-1 h-5 w-5 shrink-0 text-sage" aria-hidden />
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-ink">Verificação do celular</h3>
-          <p className="mt-0.5 text-sm text-muted">
+          <p className="mt-1 text-sm text-muted">
             Opcional. Verifique seu celular: perfis verificados passam mais confiança. O número nunca aparece no perfil;
             só o selo &quot;Telefone verificado&quot;.
           </p>
@@ -100,15 +100,15 @@ export function TelefoneVerificacao() {
             <div className="mt-4" data-testid="telefone-em-breve">
               <p className="text-sm font-medium text-ink">Verificação de telefone em breve</p>
               <div className="mt-2 flex max-w-sm items-center rounded-xl border border-sage-200 bg-surface-2 text-sm text-muted">
-                <span className="border-r border-sage-200 px-3 py-2.5">+55</span>
-                <input disabled aria-label="Celular (em breve)" placeholder="(34) 99999-0000" className="min-w-0 flex-1 bg-transparent px-3 py-2.5" />
+                <span className="border-r border-sage-200 px-3 py-3">+55</span>
+                <input disabled aria-label="Celular (em breve)" placeholder="(34) 99999-0000" className="min-w-0 flex-1 bg-transparent px-3 py-3" />
               </div>
             </div>
           )}
 
           {estado.disponivel && estado.verificado && !trocando && (
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <span data-testid="telefone-verificado" className="inline-flex items-center gap-1.5 rounded-full bg-sage-100 px-3 py-1 text-sm font-medium text-forest">
+              <span data-testid="telefone-verificado" className="inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1 text-sm font-medium text-forest">
                 <BadgeCheck className="h-4 w-4" aria-hidden /> Telefone verificado
               </span>
               <button type="button" onClick={() => setTrocando(true)} className="text-sm font-semibold text-forest underline underline-offset-2">
@@ -118,14 +118,15 @@ export function TelefoneVerificacao() {
           )}
 
           {mostrarForm && (
-            <div className="mt-4 grid gap-4">
+            <div className="mt-4 grid gap-4 [&>*]:min-w-0">
+              {/* min-w-0: a 360 px o campo "+55" empurrava a coluna 16 px para fora da tela (CONTA-A, t355). */}
               {trocando && <p className="text-sm text-muted">Ao pedir o código para o novo número, o selo some até você confirmar.</p>}
               <div>
-                <label htmlFor="telefone-numero" className="mb-1.5 block text-sm font-medium text-ink">
+                <label htmlFor="telefone-numero" className="mb-2 block text-sm font-medium text-ink">
                   Celular
                 </label>
                 <div className="flex max-w-sm items-center rounded-xl border border-sage-200 bg-white text-sm focus-within:border-sage">
-                  <span className="border-r border-sage-200 px-3 py-2.5 text-muted" aria-hidden>
+                  <span className="border-r border-sage-200 px-3 py-3 text-muted" aria-hidden>
                     +55
                   </span>
                   <input
@@ -135,13 +136,13 @@ export function TelefoneVerificacao() {
                     placeholder="(34) 99999-0000"
                     value={numero}
                     onChange={(e) => setNumero(mascaraCelular(e.target.value))}
-                    className="min-w-0 flex-1 rounded-r-xl px-3 py-2.5 outline-none"
+                    className="w-full min-w-0 flex-1 rounded-r-xl px-3 py-3 outline-none"
                   />
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 {!codigoPedido ? (
-                  <Button type="button" variant="primary" onClick={enviar} disabled={ocupado}>
+                  <Button type="button" variant="secondary" onClick={enviar} disabled={ocupado}>
                     {ocupado ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Enviar código
                   </Button>
                 ) : (
@@ -153,7 +154,7 @@ export function TelefoneVerificacao() {
 
               {codigoPedido && (
                 <div>
-                  <label htmlFor="telefone-codigo" className="mb-1.5 block text-sm font-medium text-ink">
+                  <label htmlFor="telefone-codigo" className="mb-2 block text-sm font-medium text-ink">
                     Código de 6 dígitos
                   </label>
                   <div className="flex max-w-sm gap-2">
@@ -164,13 +165,13 @@ export function TelefoneVerificacao() {
                       maxLength={6}
                       value={codigo}
                       onChange={(e) => setCodigo(limparCodigo(e.target.value))}
-                      className="w-36 rounded-xl border border-sage-200 px-3 py-2.5 text-center font-mono text-lg tracking-[0.3em] outline-none focus:border-sage"
+                      className="w-36 rounded-xl border border-sage-200 px-3 py-3 text-center font-mono text-lg tracking-[0.3em] outline-none focus:border-sage"
                     />
                     <Button type="button" variant="primary" onClick={confirmar} disabled={ocupado || codigo.length !== 6}>
                       Confirmar
                     </Button>
                   </div>
-                  {estado.simulado && <p className="mt-1.5 text-xs text-muted">Laboratório: o código simulado é {CODIGO_SIMULADO}.</p>}
+                  {estado.simulado && <p className="mt-2 text-xs text-muted">Laboratório: o código simulado é {CODIGO_SIMULADO}.</p>}
                 </div>
               )}
             </div>

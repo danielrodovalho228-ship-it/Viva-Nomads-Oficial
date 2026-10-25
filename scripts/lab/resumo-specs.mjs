@@ -17,11 +17,13 @@ const modoJson = args.includes("--json");
 const caminho = args.find((a) => !a.startsWith("--")) ?? "tests/laboratorio/saida/resultado.json";
 
 /**
- * Primeiros 300 caracteres da mensagem de erro da última tentativa, para diagnosticar sem abrir o GitHub.
+ * Primeiros 300 caracteres da mensagem de erro, para diagnosticar sem abrir o GitHub: da última tentativa
+ * (falhou) ou da 1ª que falhou (instável: a última passou e não tem erro).
  * Sem códigos de cor do terminal e sem sequências longas de letras/números (segredos TOTP, tokens): vão mascaradas.
  */
-export function trechoDoErro(results) {
-  const r = (results ?? []).at(-1);
+export function trechoDoErro(results, instavel = false) {
+  const lista = results ?? [];
+  const r = instavel ? (lista.find((x) => x?.error || x?.errors?.length) ?? lista[0]) : lista.at(-1);
   const bruto = String(r?.error?.message ?? r?.errors?.[0]?.message ?? "");
   const limpo = bruto.replace(/\u001b\[[0-9;]*m/g, "").replace(/[A-Za-z0-9_\-]{24,}/g, "***").replace(/\s+/g, " ").trim();
   return limpo.slice(0, 300);
@@ -38,7 +40,7 @@ export function coletar(suites, arquivoPai = "") {
         const falhaConhecida = t.expectedStatus === "failed" && t.status === "expected";
         const status = falhaConhecida ? "conhecida" : t.status === "expected" ? "passou" : t.status === "skipped" ? "pulou" : t.status === "flaky" ? "instavel" : "falhou";
         const item = { arquivo: basename(spec.file ?? arquivo), titulo: spec.title, status };
-        if (status === "falhou" || status === "instavel") item.erro = trechoDoErro(t.results);
+        if (status === "falhou" || status === "instavel") item.erro = trechoDoErro(t.results, status === "instavel");
         saida.push(item);
       }
     }

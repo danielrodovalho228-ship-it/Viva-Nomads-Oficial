@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
 
 /**
+ * L-43 (vigia, 24/10): a Conta e o atendimento não assentam em "networkidle"; espera até 10 s e segue para o elemento.
  * T25 — Tela do chamado: "Resumo e ações" sozinho ao abrir + sugestão já na
  * caixa Responder, com o caso do VN-000101 (proprietário perguntando sobre
  * Caução e seguros). No laboratório não há IA: resumo por regras e sugestão só
@@ -21,7 +22,8 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
     // Proprietário logado abre pelo "Falar com uma pessoa" do chat da /ajuda (como o VN-000101).
     const dono = await browser.newContext({ storageState: authFile("proprietario") });
     const p = await dono.newPage();
-    await p.goto("/ajuda", { waitUntil: "networkidle" });
+    await p.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
     await bloco.getByLabel("Pedido para a equipe").fill(`${PERGUNTA} (${Date.now()})`);
@@ -38,7 +40,8 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
 
     const ctx = await browser.newContext({ storageState: authFile("admin") });
     const page = await ctx.newPage();
-    await page.goto(`/admin/atendimento/${c!.id}`, { waitUntil: "networkidle" });
+    await page.goto(`/admin/atendimento/${c!.id}`, { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
 
     const card = page.getByTestId("resumo-acoes");
     await expect(card.getByTestId("resumo-texto")).toContainText("Caução", { timeout: 20_000 });
@@ -60,7 +63,8 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
     // O resumo ficou guardado: reabrir não gera outro.
     const contar = async () => ((await adm().from("chamado_mensagens").select("id").eq("chamado_id", c!.id).like("corpo", "[resumo-e-acoes]%")).data ?? []).length;
     expect(await contar()).toBe(1);
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(card.getByTestId("resumo-texto")).toBeVisible();
     expect(await contar()).toBe(1);
     // "Atualizar resumo" refaz.

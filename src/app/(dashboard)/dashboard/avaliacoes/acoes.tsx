@@ -51,7 +51,7 @@ export function AcoesAvaliacao({
       {aberto === null && (
         <div className="flex flex-wrap gap-2">
           {podeResponder && (
-            <Button type="button" data-testid="avaliacao-responder" onClick={() => abrir("resposta")}>
+            <Button variant="secondary" type="button" data-testid="avaliacao-responder" onClick={() => abrir("resposta")}>
               Responder
             </Button>
           )}

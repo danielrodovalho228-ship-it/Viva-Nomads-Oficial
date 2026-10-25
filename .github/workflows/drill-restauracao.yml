@@ -1,0 +1,74 @@
+# Resiliência 2 — teste de restauração semanal: baixa e decifra a cópia mais recente do Google Drive, restaura num
+# Postgres 17 limpo dentro do próprio job e confere migrações, linhas por tabela, 5 consultas-chave e 20 objetos do
+# Storage. Grava o resultado (com a duração da restauração, o RTO) em backups_execucoes. Cópia sem teste não é garantia.
+# Domingo 09:00 UTC (06:00 de Brasília), ou à mão (Run workflow). Mesmos segredos do Backup noturno.
+name: Teste de restauração
+
+on:
+  schedule:
+    - cron: "0 9 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-producao
+  cancel-in-progress: false
+
+jobs:
+  drill:
+    if: github.repository == 'danielrodovalho228-ship-it/Viva-Nomads-Oficial'
+    runs-on: ubuntu-24.04
+    environment: backup-producao
+    timeout-minutes: 60
+    services:
+      # Banco descartável, só existe durante o job (a senha não é segredo: ninguém de fora alcança).
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: drill
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+
+      - name: Ferramentas (rclone fixo e postgresql-client-17)
+        run: bash scripts/backup/instalar-ferramentas.sh
+
+      - name: Montar o rclone.conf temporário (600) com o remoto cifrado
+        env:
+          RCLONE_DRIVE_CONF: ${{ secrets.RCLONE_DRIVE_CONF }}
+          BACKUP_SENHA_1: ${{ secrets.BACKUP_SENHA_1 }}
+          BACKUP_SENHA_2: ${{ secrets.BACKUP_SENHA_2 }}
+          SUPABASE_S3_ACCESS_KEY_ID: ${{ secrets.SUPABASE_S3_ACCESS_KEY_ID }}
+          SUPABASE_S3_SECRET_ACCESS_KEY: ${{ secrets.SUPABASE_S3_SECRET_ACCESS_KEY }}
+        run: bash scripts/backup/montar-rclone.sh
+
+      - name: Restaurar e conferir
+        env:
+          DRILL_ADMIN_URL: postgresql://postgres:drill@localhost:5432/postgres
+          # Prompt 58: só leitura do livro de eliminações da produção, para reaplicar no restaurado.
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: bash scripts/drill/drill.sh
+
+      - name: Registrar no admin e alarmar
+        if: always()
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          AVISO_DANIEL_EMAIL: ${{ secrets.AVISO_DANIEL_EMAIL }}
+        run: bash scripts/backup/finalizar.sh drill
+
+      - name: Apagar o rclone.conf e os arquivos temporários
+        if: always()
+        run: bash scripts/backup/limpar.sh

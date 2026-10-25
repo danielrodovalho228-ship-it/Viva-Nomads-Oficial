@@ -30,19 +30,21 @@ test("sem dado real não há destaque (nada inventado)", () => {
 
 test("proximidade de saúde/educação cadastrada vira destaque, com o nome real", () => {
   const d = destaquesDoImovel(
-    com({ proximities: [{ category: "saude", name: "HC-UFU", note: "10 min a pé" }] }),
+    com({ proximities: [{ category: "saude", name: "HC-UFU", distanciaM: 820 }] }),
   );
   assert.equal(d.length, 1);
   assert.match(d[0].titulo, /HC-UFU/);
-  assert.equal(d[0].detalhe, "~10 min a pé");
+  assert.equal(d[0].detalhe, "a 800 m");
+  // PERTO-B: só texto livre antigo (sem distância calculada) não vira destaque.
+  assert.deepEqual(destaquesDoImovel(com({ proximities: [{ category: "saude", name: "HC-UFU", note: "10 min a pé" }] })), []);
 });
 
 test("máximo de 3 destaques, na ordem de prioridade", () => {
   const d = destaquesDoImovel(
     com({
       proximities: [
-        { category: "saude", name: "Hospital A" },
-        { category: "educacao", name: "Universidade B" },
+        { category: "saude", name: "Hospital A", distanciaM: 1200 },
+        { category: "educacao", name: "Universidade B", distanciaM: 900 },
       ],
       readyToLiveBadge: true,
       tagHomeOffice: true,
@@ -76,12 +78,17 @@ test("descrição curta não pede 'Mostrar mais'; longa pede", () => {
   assert.equal(descricaoPrecisaMostrarMais(undefined), false);
 });
 
-test("Bom saber: 3 linhas fixas, sem inventar regra", () => {
+test("Bom saber: 4 linhas fixas (a manutenção entra no bloco), sem inventar regra", () => {
   const l = linhasBomSaber(com({ maxGuests: 2, petsAllowed: false, checkinAfter: "14:00", checkoutBefore: "11:00" }));
-  assert.deepEqual(l.map((x) => x.chave), ["cancelamento", "regras", "seguranca"]);
-  assert.match(l[1].resumo, /14:00/);
-  assert.match(l[1].resumo, /2 pessoas/);
-  assert.match(l[1].resumo, /sem pets/i);
+  assert.deepEqual(l.map((x) => x.chave), ["cancelamento", "regras", "seguranca", "manutencao"]);
+  // E98-A: o compromisso de manutenção vem da mesma fonte do texto antigo, um prazo por linha.
+  assert.equal(l[3].titulo, "Manutenção");
+  assert.equal(l[3].resumo, "Urgente com solução provisória em até 24 h e definitiva em até 72 h");
+  assert.deepEqual(l[3].detalhe.slice(1), ["Comum em até 72 h", "Demais em até 7 dias"]);
+  // CAMPOS-1: o resumo fica curto (os 2 primeiros fatos); entrada e saída seguem no detalhe.
+  assert.equal(l[1].resumo, "Até 2 pessoas · sem pets");
+  assert.ok(l[1].detalhe.includes("Entrada a partir das 14:00"));
+  assert.ok(l[1].detalhe.includes("Saída até às 11:00"));
 });
 
 test("Segurança: proteções da Viva sempre; sem declaração, convida a perguntar pelo chat", () => {
@@ -144,7 +151,7 @@ test("ube-005: a internet aparece só como 'Internet fibra' (sem 'Internet boa')
   assert.match(frase, /^Internet fibra/);
   assert.doesNotMatch(frase, /Internet boa/);
   // Sem fibra declarada, a frase da categoria não muda (nada inventado).
-  assert.match(fraseInternetAnuncio("trabalho_remoto", ["Wi-Fi"]), /^Internet boa/);
+  assert.match(fraseInternetAnuncio("trabalho_remoto", ["Wi-Fi"]), /^Internet para trabalho remoto, informada pelo proprietário \(não medida\)/);
 });
 
 test("texto não promete cancelamento nem chama de temporada/art. 48", () => {

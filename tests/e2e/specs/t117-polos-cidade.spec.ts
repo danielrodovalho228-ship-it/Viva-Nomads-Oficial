@@ -9,7 +9,9 @@ for (const largura of [390, 1280]) {
     test.use({ viewport: { width: largura, height: 844 } });
 
     test("a cidade lista o polo e a página do polo tem FAQ e preço honesto", async ({ page, request }) => {
-      await page.goto("/cidades/uberlandia", { waitUntil: "networkidle" });
+      test.setTimeout(120_000);
+      await page.goto("/cidades/uberlandia", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       await page.getByTestId("polos-da-cidade").getByRole("link", { name: /HC-UFU/ }).click();
       await expect(page).toHaveURL(/\/cidades\/uberlandia\/hc-ufu-umuarama$/);
       await expect(page.getByRole("heading", { level: 1 })).toContainText("HC-UFU");

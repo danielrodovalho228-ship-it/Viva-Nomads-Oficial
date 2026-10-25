@@ -1,4 +1,4 @@
-import { Scale, Wrench } from "lucide-react";
+import { AlertTriangle, Scale, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Moldura jurídica das ordens de serviço (Bloco C — rodada 5). */
@@ -10,10 +10,10 @@ export function ServiceOrderNotice({ className }: { className?: string }) {
         className
       )}
     >
-      <Wrench className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+      <Wrench className="mt-1 h-4 w-4 shrink-0 text-blue-500" />
       <span>
         O Viva Nomads <strong className="text-ink">registra e notifica</strong> solicitações.
-        A execução e o prazo da manutenção são responsabilidade do proprietário e do inquilino,
+        A execução e o prazo da manutenção são responsabilidade do proprietário e do morador,
         conforme o contrato.
       </span>
     </p>
@@ -32,11 +32,11 @@ export function PlatformLegalNotice({ className }: { className?: string }) {
         className
       )}
     >
-      <Scale className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+      <Scale className="mt-1 h-4 w-4 shrink-0 text-sage" />
       <p>
         O Viva Nomads <strong className="text-forest">conecta e documenta</strong> —
         não é locador, fiador nem garantidor, e não responde pelo valor mensal. A decisão de aceitar
-        o inquilino é exclusivamente do proprietário.
+        o morador é exclusivamente do proprietário.
       </p>
     </div>
   );
@@ -51,10 +51,10 @@ export function OwnerDecisionNotice({ className }: { className?: string }) {
         className
       )}
     >
-      <span aria-hidden>⚠️</span>
+      <AlertTriangle className="mt-1 h-4 w-4 shrink-0" aria-hidden />
       <span>
-        Esta é uma análise <strong>informativa</strong>. A decisão de aceitar o inquilino é exclusivamente
-        do proprietário — a plataforma nunca aprova ou reprova o inquilino.
+        Esta é uma análise <strong>informativa</strong>. A decisão de aceitar o morador é exclusivamente
+        do proprietário — a plataforma nunca aprova ou reprova o morador.
       </span>
     </p>
   );

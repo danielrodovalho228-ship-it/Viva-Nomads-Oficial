@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Upload, X, Loader2, Star, AlertTriangle, Undo2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Upload, X, Loader2, Star, AlertTriangle, Undo2, Camera } from "lucide-react";
 import {
   uploadPropertyPhoto,
   removePropertyPhoto,
@@ -40,6 +40,8 @@ export function PhotoUploader({
   tratar = true,
   uploader = uploadPropertyPhoto,
   remover = removePropertyPhoto,
+  variante = "padrao",
+  imagemVazia,
 }: {
   photos: PhotoItem[];
   onChange: (photos: PhotoItem[]) => void;
@@ -48,7 +50,15 @@ export function PhotoUploader({
   tratar?: boolean;
   uploader?: (file: File, ownerId?: string) => Promise<UploadedPhoto>;
   remover?: (path: string | null) => Promise<void>;
+  /**
+   * Mockup cadastro-imovel-02: "cadastro" = foto principal larga com o selo "Foto principal", miniaturas em 3 colunas e
+   * o "+ Adicionar foto" tracejado com câmera (ao lado da principal no computador). A edição segue no "padrao".
+   */
+  variante?: "padrao" | "cadastro";
+  /** Ilustração dentro do "+ Adicionar foto" quando ainda não há foto (só no "cadastro"). */
+  imagemVazia?: string;
 }) {
+  const cad = variante === "cadastro";
   const ownerId = useAuthStore((s) => s.user?.id);
   const [uploading, setUploading] = useState(false);
   // Progresso do envio em lote ("3 de 12").
@@ -58,6 +68,11 @@ export function PhotoUploader({
   const [error, setError] = useState<string | null>(null);
   // Índice sendo arrastado (reordenar por drag — a 1ª posição é a capa).
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  // Prompt 22 (item 8): "Adicionar" é um BOTÃO que abre a escolha de arquivos, e a galeria aceita ARRASTAR E SOLTAR
+  // arquivos do computador (antes o soltar só reordenava as fotos, apesar do texto "arraste e solte").
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [soltando, setSoltando] = useState(false);
+  const temArquivos = (e: React.DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
 
   /** Reordena a galeria movendo `from` para a posição `to` (a[0] = capa). */
   function reorder(from: number, to: number) {
@@ -119,9 +134,28 @@ export function PhotoUploader({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div
+        className={cn("grid gap-3 rounded-xl", cad ? "grid-cols-3 lg:grid-cols-4" : "grid-cols-2 sm:grid-cols-3", soltando && "ring-2 ring-forest ring-offset-2")}
+        data-testid="fotos-galeria"
+        data-variante={variante}
+        onDragOver={(e) => {
+          if (!temArquivos(e)) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          setSoltando(true);
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setSoltando(false);
+        }}
+        onDrop={(e) => {
+          setSoltando(false);
+          if (!e.dataTransfer?.files?.length) return; // arrastar uma foto da galeria: só reordena (tratado no item)
+          e.preventDefault();
+          void handleFiles(e.dataTransfer.files);
+        }}
+      >
         {photos.map((p, i) => (
-          <div key={p.id} className={cn(i === 0 && "col-span-2")}>
+          <div key={p.id} className={cn(i === 0 && (cad ? "col-span-3" : "col-span-2"))} data-testid={cad ? (i === 0 ? "foto-principal" : "foto-miniatura") : undefined}>
           <div
             draggable
             onDragStart={() => setDragIndex(i)}
@@ -148,12 +182,12 @@ export function PhotoUploader({
                 return (
                   <div
                     key="repetida"
-                    className="absolute inset-x-1.5 bottom-1.5 flex items-center gap-1.5 rounded-lg bg-amber-50/95 p-1.5 text-[11px] leading-tight text-amber-900 shadow"
+                    className="absolute inset-x-1.5 bottom-1.5 flex items-center gap-2 rounded-lg bg-amber-50/95 p-2 text-[11px] leading-tight text-amber-900 "
                     data-testid="aviso-foto-repetida"
                   >
                     {parecida && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={parecida.url} alt="Foto parecida" className="h-8 w-10 shrink-0 rounded object-cover" data-testid="aviso-foto-repetida-miniatura" />
+                      <img src={parecida.url} alt="Foto parecida" className="h-8 w-10 shrink-0 rounded-lg object-cover" data-testid="aviso-foto-repetida-miniatura" />
                     )}
                     <span>
                       <strong>{a.mensagem}</strong> {parecida ? "Quase igual a esta foto." : a.dica}
@@ -162,13 +196,18 @@ export function PhotoUploader({
                 );
               })}
 
-            {i === 0 && (
-              <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-forest">
-                <Star className="h-3 w-3" /> Capa
-              </span>
-            )}
+            {i === 0 &&
+              (cad ? (
+                <span className="absolute left-3 top-3 rounded-lg bg-forest px-3 py-1 text-sm font-semibold text-white" data-testid="selo-foto-principal">
+                  Foto principal
+                </span>
+              ) : (
+                <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-champagne px-2 py-1 text-xs font-semibold text-forest">
+                  <Star className="h-3 w-3" /> Capa
+                </span>
+              ))}
             {p.demo && (
-              <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
+              <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-1 text-[10px] text-white">
                 preview local
               </span>
             )}
@@ -178,8 +217,9 @@ export function PhotoUploader({
                 <button
                   type="button"
                   onClick={() => makeCover(p)}
-                  title="Definir como capa"
-                  className="grid h-7 w-7 place-items-center rounded-full bg-white text-forest shadow"
+                  title={cad ? "Usar como foto principal" : "Definir como capa"}
+                  aria-label={cad ? "Usar como foto principal" : "Definir como capa"}
+                  className="grid h-7 w-7 place-items-center rounded-full bg-white text-forest "
                 >
                   <Star className="h-3.5 w-3.5" />
                 </button>
@@ -188,7 +228,8 @@ export function PhotoUploader({
                 type="button"
                 onClick={() => remove(p)}
                 title="Remover"
-                className="grid h-7 w-7 place-items-center rounded-full bg-white text-red-600 shadow"
+                aria-label="Remover foto"
+                className="grid h-7 w-7 place-items-center rounded-full bg-white text-red-600 "
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -198,7 +239,7 @@ export function PhotoUploader({
             <div className="mt-1 space-y-1 text-xs">
               {p.avisos?.filter((a) => a.codigo !== "repetida").map((a) => (
                 <p key={a.codigo} className="flex items-start gap-1 text-amber-800" data-testid={`aviso-foto-${a.codigo}`}>
-                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <AlertTriangle className="mt-1 h-3 w-3 shrink-0" />
                   <span><strong>{a.mensagem}</strong> {a.dica}</span>
                 </p>
               ))}
@@ -217,31 +258,58 @@ export function PhotoUploader({
         ))}
 
         {photos.length < max && (
-          <label
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
             className={cn(
-              "flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sage-200 text-sage transition-colors hover:border-sage",
+              "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-forest",
+              cad
+                ? cn(
+                    "border-2 border-apoio/60 bg-areia p-3 text-ink hover:border-forest",
+                    photos.length === 0 ? "col-span-3 min-h-48 lg:col-span-4" : "aspect-[4/3] lg:col-start-4 lg:row-start-1 lg:self-center"
+                  )
+                : "aspect-[4/3] border-sage-200 text-sage hover:border-sage",
               uploading && "pointer-events-none opacity-60"
             )}
+            data-testid="fotos-adicionar"
           >
+            {cad && photos.length === 0 && imagemVazia && !uploading && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imagemVazia} alt="" aria-hidden className="mb-1 h-24 w-auto" />
+            )}
             {uploading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
+            ) : cad ? (
+              <Camera className="h-8 w-8 text-muted" aria-hidden />
             ) : (
               <Upload className="h-5 w-5" />
             )}
-            <span className="text-xs">{uploading ? (progresso ? `Enviando ${Math.min(progresso.feitas + 1, progresso.total)} de ${progresso.total}…` : "Enviando...") : "Adicionar"}</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              className="hidden"
-              onChange={(e) => handleFiles(e.target.files)}
-            />
-          </label>
+            <span className={cad ? "text-center text-sm font-medium sm:text-base" : "text-xs"}>
+              {uploading ? (progresso ? `Enviando ${Math.min(progresso.feitas + 1, progresso.total)} de ${progresso.total}…` : "Enviando...") : cad ? "+ Adicionar foto" : "Adicionar"}
+            </span>
+            <span className="hidden text-[11px] text-muted sm:block">ou arraste as fotos para cá</span>
+          </button>
         )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          className="hidden"
+          data-testid="fotos-input"
+          onChange={(e) => {
+            const files = e.target.files;
+            void handleFiles(files).finally(() => {
+              // Escolher o MESMO arquivo de novo também dispara (antes ficava sem resposta).
+              if (inputRef.current) inputRef.current.value = "";
+            });
+          }}
+        />
       </div>
 
       <p className="mt-2 text-xs text-muted">
-        {photos.length}/{max} fotos · a primeira é a capa do anúncio (corte 4:3). Pode escolher
+        {photos.length}/{max} fotos · a primeira é {cad ? "a foto principal" : "a capa"} do anúncio (corte 4:3). Pode escolher
         várias de uma vez, na vertical ou na horizontal. Arraste para reordenar. JPG, PNG ou WebP até 8 MB.
       </p>
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}

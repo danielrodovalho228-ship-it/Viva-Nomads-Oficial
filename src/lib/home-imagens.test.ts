@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
-import { quantosDestaques, HOME_PROPRIETARIOS_FUNDO } from "./home-imagens.ts";
+import { quantosDestaques, HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO } from "./home-imagens.ts";
 
 test("H2: 4 destaques com 4 ou mais imóveis; 2 com menos; nunca ímpar", () => {
   assert.equal(quantosDestaques(10), 4);
@@ -11,9 +11,15 @@ test("H2: 4 destaques com 4 ou mais imóveis; 2 com menos; nunca ímpar", () => 
   assert.equal(quantosDestaques(0), 0);
 });
 
-test("H4: fundo dos proprietários com o nome combinado; marcado pronto só se o arquivo existe", () => {
+test("H1/H4: slots com os nomes combinados; marcados prontos só se o arquivo existe", () => {
+  assert.equal(HOME_PASSOS_IMAGENS.length, 4);
+  // t112 (ordem 0f204e06): os 4 passos, todos prontos e existentes, com fotos distintas entre si.
+  assert.equal(new Set(HOME_PASSOS_IMAGENS.map((i) => i.src)).size, 4);
+  assert.ok(HOME_PASSOS_IMAGENS.every((i) => i.pronta));
   assert.equal(HOME_PROPRIETARIOS_FUNDO.src, "/images/unicas/home-proprietarios-fundo.webp");
-  if (HOME_PROPRIETARIOS_FUNDO.pronta) assert.ok(existsSync(`public${HOME_PROPRIETARIOS_FUNDO.src}`));
+  for (const i of [...HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO]) {
+    if (i.pronta) assert.ok(existsSync(`public${i.src}`), `${i.src} marcado pronto mas não existe`);
+  }
 });
 
 const home = readFileSync(new URL("../app/(public)/page.tsx", import.meta.url), "utf8");
@@ -39,10 +45,17 @@ test("QA do Muse: nenhum \"Foto do passo em breve\" na home", () => {
   assert.ok(!home.includes("Foto do passo em breve"));
 });
 
-test("t112 (0f204e06): nenhum passo da home reaproveita foto de /como-funciona", () => {
-  const comoFunciona = readFileSync(new URL("../app/(public)/como-funciona/page.tsx", import.meta.url), "utf8");
-  const fotos = [...comoFunciona.matchAll(/(?:como-funciona-)?\d\d-[\w-]+\.webp/g)].map((m) => m[0]);
-  assert.ok(fotos.length >= 8);
-  for (const f of fotos) assert.ok(!home.includes(f), `${f} aparece na home e em /como-funciona`);
-  assert.doesNotMatch(home, /HOME_PASSOS_IMAGENS/);
+test("t112: nenhuma foto dos passos da home aparece em outra página pública", () => {
+  const paginas = ["como-funciona", "para-proprietarios", "parceiros", "empresas", "precos"].map((p) =>
+    readFileSync(new URL(`../app/(public)/${p}/page.tsx`, import.meta.url), "utf8")
+  );
+  const extras = ["../lib/parceiros-cartoes.ts", "../config/atalhos-home.ts", "../lib/media.ts"].map((f) => {
+    // media.ts: só conta o que as páginas públicas realmente usam; aqui basta o nome do arquivo literal.
+    return readFileSync(new URL(f, import.meta.url), "utf8");
+  });
+  for (const i of HOME_PASSOS_IMAGENS) {
+    const nome = i.src.split("/").pop()!;
+    for (const fonte of [...paginas, ...extras.slice(0, 2)])
+      assert.ok(!fonte.includes(nome), `${nome} repetida fora da home`);
+  }
 });

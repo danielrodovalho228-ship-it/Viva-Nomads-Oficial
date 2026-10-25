@@ -11,8 +11,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } 
  * disso vaza para o site.
  */
 
-const ABAS_INQUILINO = ["Buscar", "Favoritos", "Candidaturas", "Mensagens", "Conta"];
-const ABAS_PROPRIETARIO = ["Painel", "Imóveis", "Interessados", "Mensagens", "Conta"];
+// Prompt 41: barra por papel (5 itens); admin não tem barra.
+const ABAS_INQUILINO = ["Início", "Buscar", "Mensagens", "Estadias", "Perfil"];
+const ABAS_PROPRIETARIO = ["Início", "Anúncios", "Mensagens", "Ganhos", "Perfil"];
 
 function barraDoApp(page: Page) {
   return page.locator("nav.vn-tabbar");
@@ -37,9 +38,10 @@ test.describe("T14 — Modo app", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
     test("entrar no app: sem Google e com a dica para quem entrou com Google no site", async ({ page }) => {
-      await page.goto("/auth");
+      // Prompt 49: a dica fica em "Entrar com senha" e aponta a entrada por código (sem senha, mesmo e-mail).
+      await page.goto("/auth?senha=1");
       await esperarModoApp(page);
-      await expect(page.getByTestId("dica-google-app")).toContainText("Esqueci minha senha");
+      await expect(page.getByTestId("dica-google-app")).toContainText("Entrar com código por e-mail");
       await expect(page.getByRole("button", { name: /Continuar com Google/ })).toHaveCount(0);
     });
 
@@ -90,7 +92,7 @@ test.describe("T14 — Modo app", () => {
       test.skip(!hasAccount("inquilino") && !ids.id, "sem conta de teste do inquilino");
       if (ids.id) {
         await context.clearCookies();
-        await page.goto("/auth", { waitUntil: "networkidle" });
+        await page.goto("/auth?senha=1", { waitUntil: "networkidle" });
         await page.locator('input[name="email"], input[type="email"]').first().fill(conta.email);
         await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
         await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
@@ -114,11 +116,12 @@ test.describe("T14 — Modo app", () => {
   test.describe("admin", () => {
     test.use({ storageState: hasAccount("admin") ? authFile("admin") : { cookies: [], origins: [] } });
 
-    test("Admin a 390 px: toca Admin → painel → Caixa dos Sócios → Voltar ao painel", async ({ page }) => {
+    test("Admin a 390 px: sem barra de abas (Prompt 41) → painel → Caixa dos Sócios → Voltar ao painel", async ({ page }) => {
       test.skip(!hasAccount("admin"), "sem conta de teste do admin");
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await esperarModoApp(page);
-      await barraDoApp(page).getByRole("link", { name: "Admin", exact: true }).click();
+      await expect(barraDoApp(page)).toHaveCount(0);
+      await page.goto("/admin", { waitUntil: "domcontentloaded" });
       await expect(page).toHaveURL(/\/admin\/?$/);
       // No lab o primeiro toque pode cair antes da hidratação do painel: repete o toque até a rota mudar.
       await expect(async () => {
@@ -156,20 +159,15 @@ test.describe("T14 — Modo app", () => {
 
     test("Conta em lista e as 5 abas do proprietário", async ({ page }) => {
       test.skip(!hasAccount("proprietario"), "sem conta de teste do proprietário");
-      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+      // Prompt 43 (conta única): sem seletor de modo — abrir uma tela de dono põe a conta no contexto de proprietário,
+      // e a Conta (tela neutra) mantém o último contexto.
+      await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
       await esperarModoApp(page);
-      // Outro spec (T2) alterna o modo desta conta em paralelo: garante o modo.
-      // O seletor de dois lados da Conta (radio) substituiu o item "Usar como …".
-      const usarComoDono = page.getByRole("radio", { name: /Propriet/i, checked: false });
-      // Conta única (ordem a8c05cd0): não existe mais o seletor de modo no cabeçalho.
+      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("modo-chip")).toHaveCount(0);
-      if (await usarComoDono.isVisible()) {
-        await usarComoDono.click();
-        await expect(page).toHaveURL(/\/dashboard\/?$/);
-        await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-      }
+      await expect(page.getByRole("radio", { name: /Propriet|Inquilino/ })).toHaveCount(0);
       await conferirAbas(page, ABAS_PROPRIETARIO);
-      await expect(page.getByRole("link", { name: /^Perfil/ })).toBeVisible();
+      await expect(page.locator("main").getByRole("link", { name: /^Perfil/ })).toBeVisible();
       await expect(page.getByRole("button", { name: /^Sair/ })).toBeVisible();
       // Casca do site (menu lateral) escondida.
       await expect(page.locator("aside nav").first()).toBeHidden();

@@ -1,0 +1,164 @@
+name: Lab crítico (fluxos críticos)
+
+# Ordem d86d0678: em CADA PR e a cada merge na main roda um conjunto curto de fluxos críticos (login, publicar
+# anúncio, candidatura→contrato→assinatura, abrir chamado, upload de foto) e publica o status check "lab-critico".
+# A lista fica em tests/laboratorio/fluxos-criticos.json.
+# Portão de PR (decisão do Muse, 21/10): em PR roda também os specs que o próprio PR cria ou altera, e qualquer teste
+# que falhe — inclusive o que só passa no retry — deixa o job vermelho. A suíte completa roda na main e no noturno
+# (laboratorio.yml), não em PR. Mesmo ambiente do laboratório completo (Supabase local,
+# integrações simuladas, nada de segredo de produção). Para EXIGIR este check antes de mesclar, só o Daniel liga:
+# GitHub > Settings > Branches > regra da main > "Require status checks to pass" > marcar "lab-critico".
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab-critico-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lab-critico:
+    name: lab-critico
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SITE_URL: http://localhost:3123
+      INTEGRACOES_SIMULADAS: "on"
+      LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
+      # Resend falso (scripts/lab/resend-falso.mjs): confere o formato do e-mail e devolve um id; nada sai para a rede.
+      LAB_RESEND_URL: http://127.0.0.1:3999
+      # LinkedIn falso (scripts/lab/linkedin-falso.mjs, 63-B): OIDC mínimo com id_token RS256 de verdade; nada sai para a rede.
+      LAB_LINKEDIN_URL: http://127.0.0.1:3997
+      # Rotas falsas (scripts/lab/rotas-falso.mjs): tempos determinísticos no formato Mapbox/Google; nada sai para a rede.
+      LAB_ROTAS_URL: http://127.0.0.1:3998
+      TESTES_BASE_URL: http://localhost:3123
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Histórico até a base do PR, para listar os specs que o PR alterou.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Subir o Supabase local (todas as migrações)
+        # O runner às vezes chega com a porta 54322 ocupada ("address already in use",
+        # run 38179479994): não é falha de migração. Mostra quem ocupa a porta, limpa
+        # restos de containers e tenta de novo até 3 vezes.
+        run: |
+          for tentativa in 1 2 3; do
+            if supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit,realtime; then
+              exit 0
+            fi
+            echo "::warning::supabase start falhou (tentativa $tentativa/3). Portas em uso:"
+            (ss -ltnp 2>/dev/null | grep -E ':543(2[0-9])\b' || echo "nenhuma porta 5432x listada")
+            supabase stop --no-backup || true
+            docker rm -f $(docker ps -aq) 2>/dev/null || true
+            sleep $((tentativa * 5))
+          done
+          echo "::error::supabase start falhou 3 vezes"
+          exit 1
+
+      - name: Acertar com produção (role como texto + políticas extras)
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
+
+      - name: Conferir o banco (asserções de segurança)
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/conferir-banco.sql
+
+      - name: Chaves locais e senha da noite (mascaradas)
+        run: |
+          eval "$(supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
+          SENHA="$(openssl rand -hex 16)"
+          SOCIOS="lab-$(openssl rand -hex 8)"
+          echo "::add-mask::$ANON_KEY"; echo "::add-mask::$SERVICE_ROLE_KEY"; echo "::add-mask::$SENHA"; echo "::add-mask::$SOCIOS"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "LAB_SENHA=$SENHA"
+            echo "SOCIOS_ACCESS_CODE=$SOCIOS"
+          } >> "$GITHUB_ENV"
+
+      - name: Criar as personas e os imóveis de teste
+        run: node scripts/lab/seed-lab.mjs
+
+      - name: Criar a massa da varredura visual (t249)
+        # Contas @varredura.lab.vivanomads.test e tests/laboratorio/saida/varredura.json. Sem este passo a t249 ficava
+        # pulada em toda execução. Aqui no portão, se falhar, o job fica vermelho.
+        run: node scripts/lab/massa-varredura.mjs
+
+      - name: Build do site (modo simulado)
+        run: npm run build
+
+      - name: Subir o site em localhost:3123
+        run: |
+          node scripts/lab/resend-falso.mjs 3999 > tests/laboratorio/saida/resend-falso.log 2>&1 &
+          node scripts/lab/linkedin-falso.mjs 3997 > tests/laboratorio/saida/linkedin-falso.log 2>&1 &
+          node scripts/lab/rotas-falso.mjs 3998 > tests/laboratorio/saida/rotas-falso.log 2>&1 &
+          npx next start -p 3123 > tests/laboratorio/saida/servidor.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
+          curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
+
+      - name: Instalar Chromium do Playwright
+        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas. O timeout
+        # mata o npx, mas o apt-get filho fica segurando a trava do dpkg: antes de repetir, encerra o apt que sobrou,
+        # espera a trava soltar e conserta o dpkg (senão as tentativas seguintes morrem na hora).
+        timeout-minutes: 25
+        run: |
+          for i in 1 2 3; do
+            timeout 420 npx playwright install --with-deps chromium webkit && exit 0
+            echo "tentativa $i travou ou falhou"
+            sudo pkill -f '[a]pt-get|[d]pkg' || true
+            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
+            sudo dpkg --configure -a || true
+          done
+          exit 1
+
+      - name: Rodar os fluxos críticos
+        id: e2e
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs --alterados-desde "$BASE_SHA")
+          else
+            mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs)
+          fi
+          echo "Specs do portão: ${SPECS[*]}"
+          # O retry fica para o relatório mostrar as duas tentativas; passar só no retry também reprova.
+          npx playwright test "${SPECS[@]}" --reporter=list,json --workers=2 --retries=1 --fail-on-flaky-tests 2>&1 | tee tests/laboratorio/saida/e2e.txt
+          exit "${PIPESTATUS[0]}"
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+
+      - name: Resultado (cole no corpo do PR)
+        if: ${{ !cancelled() }}
+        run: |
+          {
+            echo "## lab-critico — ${{ github.sha }}"
+            grep -E "^\s+[0-9]+ (passed|failed|skipped|flaky)" tests/laboratorio/saida/e2e.txt || true
+            echo
+            node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar relatório e prints das falhas
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab-critico-${{ github.run_id }}
+          path: |
+            tests/e2e/.artifacts/
+            tests/laboratorio/saida/
+          retention-days: 7

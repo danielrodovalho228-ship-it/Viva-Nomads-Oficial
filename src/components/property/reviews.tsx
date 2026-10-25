@@ -1,6 +1,9 @@
 import { Star, MessageSquareQuote } from "lucide-react";
+import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { numBR } from "@/lib/utils";
 import type { Property, Review } from "@/lib/types";
+import { ComoFuncionamAvaliacoes } from "@/components/avaliacoes/como-funcionam-avaliacoes";
+import { linhaAutorAvaliacao } from "@/lib/avaliacoes-exibicao";
 
 /** "abr. 2026" a partir de uma data ISO. */
 const MONTHS = ["jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez."];
@@ -20,12 +23,15 @@ export function Reviews({ property }: { property: Property }) {
   if (reviews.length === 0)
     return (
       <section aria-labelledby="avaliacoes-title">
-        <h2 id="avaliacoes-title" className="font-title text-2xl font-bold text-ink">
-          Avaliações
-        </h2>
-        <div data-testid="avaliacoes-vazio" className="mt-5 flex flex-col items-center rounded-2xl border border-dashed border-sage-200 px-6 py-8 text-center">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <h2 id="avaliacoes-title" className="font-title text-2xl font-semibold text-ink">
+            Avaliações
+          </h2>
+          <ComoFuncionamAvaliacoes />
+        </div>
+        <div data-testid="avaliacoes-vazio" className="mt-4 flex flex-col items-center rounded-xl border border-dashed border-sage-200 px-6 py-8 text-center">
           <MessageSquareQuote className="h-8 w-8 text-sage" aria-hidden />
-          <p className="mt-3 font-title text-lg font-bold text-ink">Este imóvel ainda não tem avaliações</p>
+          <p className="mt-3 font-title text-lg font-semibold text-ink">Este imóvel ainda não tem avaliações</p>
           <p className="mt-1 max-w-sm text-sm text-muted">
             Só quem morou aqui pode avaliar — a avaliação é liberada ao fim da estadia, e as duas partes avaliam às
             cegas.
@@ -43,27 +49,37 @@ export function Reviews({ property }: { property: Property }) {
 
   return (
     <section aria-labelledby="avaliacoes-title">
-      <h2 id="avaliacoes-title" className="flex items-center gap-2 font-title text-2xl font-bold text-ink">
-        Avaliações
-        <span className="inline-flex items-center gap-1 text-base font-semibold text-forest">
-          <Star className="h-4 w-4 fill-champagne text-champagne" />
-          {numBR(avg, 1)} · {reviews.length}
-        </span>
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 id="avaliacoes-title" className="flex items-center gap-2 font-title text-2xl font-semibold text-ink">
+          Avaliações
+          <span className="inline-flex items-center gap-1 text-base font-semibold text-forest">
+            <Star className="h-4 w-4 fill-champagne text-champagne" />
+            {numBR(avg, 1)} · {reviews.length}
+          </span>
+        </h2>
+        <ComoFuncionamAvaliacoes />
+      </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {reviews.map((r, i) => {
           const date = reviewDate(r.date);
+          const autor = linhaAutorAvaliacao(r);
           return (
-            <div key={`${r.author}-${i}`} className="rounded-2xl border border-sage-200 p-4">
+            <div key={`${r.author}-${i}`} className="rounded-xl border border-sage-200 p-4" data-testid="avaliacao-real">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-ink">{r.author}</span>
                 <span className="inline-flex items-center gap-1 text-sm text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" /> {numBR(r.rating, 1)}
                 </span>
               </div>
+              {autor && (
+                <p className="text-xs text-muted" data-testid="avaliacao-autor">
+                  {autor}
+                </p>
+              )}
+              {r.linkedinConectado && <SeloLinkedin className="mt-1" />}
               {date && <p className="text-xs text-muted">{date}</p>}
-              <p className="mt-1.5 text-sm text-muted">{r.comment}</p>
+              <p className="mt-2 text-sm text-muted">{r.comment}</p>
               {r.reply && (
                 <div className="mt-3 rounded-xl bg-sage-50 p-3" data-testid="avaliacao-resposta">
                   <p className="text-xs font-semibold text-forest">Resposta do proprietário</p>

@@ -1,10 +1,14 @@
 "use client";
 
+import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
+import { estadoCaucao } from "@/lib/caucao-estado";
+import { CampoReais } from "@/components/ui/campo-reais";
 import { CampoData } from "@/components/ui/campo-data";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import {
   ShieldCheck,
   Check,
@@ -16,6 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ValorDiretoAoProprietario } from "@/components/contexto/cabecalho-contexto";
 import { Button } from "@/components/ui/button";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONTRACTS } from "@/lib/demo/seed";
@@ -39,6 +44,8 @@ import { STATUS_CONTRATO_ENCERRADO } from "@/lib/fiscal/devolucao";
 type Extras = Awaited<ReturnType<typeof documentosDosContratos>>;
 import { formatBRL, cn } from "@/lib/utils";
 import { ROTULO_ETAPA, type EtapaContrato } from "@/lib/contrato-etapas";
+import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
+import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 
 /** Texto imutável da regra de ouro (declaratório — nunca movimenta valores). */
 const REGRA_PAGAMENTO =
@@ -110,6 +117,12 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
             dataPagamento: c.inicio,
             confirmado: true,
             observacao: null,
+            rotulo: rotuloPagamentoBloco({
+              tipo: "aluguel",
+              valor: b0.valor,
+              bloco: { numero: b0.numeroBloco, meses: b0.meses, inicio: b0.inicio, fim: b0.fim },
+              valorMensal: c.valorMes,
+            }),
           },
         ]
       : [];
@@ -127,10 +140,18 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
       comissaoPercent: DEMO_COMISSAO_PCT,
       qtdOcupantes: 1 + (ci % 3),
       status: "ativo",
-      etapa: "em_vigencia", // demonstração: pagamento já confirmado no 1º bloco
+      // Demonstração: assinado e com o pagamento do 1º bloco confirmado — o estado sai da mesma fonte única.
+      ...(() => {
+        const estado = estadoDoContratoUnico(
+          { status: "ativo", assinado_proprietario_em: c.inicio, assinado_inquilino_em: c.inicio, pagamentos_bloco: [{ tipo: "aluguel", confirmado_pelo_inquilino: true }] },
+          "proprietario",
+        );
+        return { estado, etapa: estado.etapa ?? ("em_vigencia" as const) };
+      })(),
       criadoEm: c.inicio,
       blocos,
       pagamentos,
+      caucao: estadoCaucao({ blocos, pagamentos }),
     };
   });
 }
@@ -150,15 +171,16 @@ export function ContratosClient({
 
   return (
     <>
-      <PageTitle capa="contratos"
+      <PageTitle
         title="Contratos & blocos"
         subtitle="Acompanhe cada contrato, seus blocos e registre os recebimentos."
         action={demoOn ? <DemoBadge /> : undefined}
       />
+      <ValorDiretoAoProprietario className="-mt-2 mb-4 text-sm text-muted" />
 
       {/* Regra de ouro — sempre visível no topo. */}
       <div className="mb-6 flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-muted">
-        <Lock className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+        <Lock className="mt-1 h-4 w-4 shrink-0 text-sage" />
         <span>{REGRA_PAGAMENTO}</span>
       </div>
 
@@ -171,7 +193,6 @@ export function ContratosClient({
 
       {contratos.length === 0 ? (
         <EmptyState
-          illustration={<Image src="/media/empty-contratos.webp" alt="" width={176} height={176} className="h-44 w-44" />}
           title="Nenhum contrato ainda"
           text="Seu primeiro fechamento aparece aqui — o contrato, os blocos e o registro dos recebimentos."
           action={
@@ -181,7 +202,7 @@ export function ContratosClient({
           }
         />
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {contratos.map((c) => (
             <ContratoCard key={c.id} contrato={c} hojeISO={hojeISO} demo={demoOn} extra={demoOn ? undefined : extras[c.id]} />
           ))}
@@ -205,7 +226,7 @@ function ContratoCard({
   const pagosPorBloco = useMemo(() => {
     const m = new Map<string, number>();
     for (const p of contrato.pagamentos) {
-      if (p.tipo !== "aluguel") continue;
+      if (p.tipo !== "aluguel" || !p.blocoId) continue;
       m.set(p.blocoId, (m.get(p.blocoId) ?? 0) + p.valor);
     }
     return m;
@@ -213,12 +234,13 @@ function ContratoCard({
 
   const totalPeriodo = contrato.blocos.reduce((s, b) => s + b.valor, 0);
   const caucaoTotal = contrato.blocos.reduce((s, b) => s + b.caucao, 0);
+  const caucaoRegistrada = contrato.pagamentos.find((p) => p.tipo === "caucao") ?? null;
 
   return (
-    <Panel className="p-5">
+    <Panel className="p-4" id={`contrato-${contrato.id}`} data-testid="contrato-cartao" data-contrato={contrato.id}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-title text-lg font-bold text-ink">{contrato.propertyTitle}</h2>
+          <h2 className="font-title text-lg font-semibold text-ink">{contrato.propertyTitle}</h2>
           {!demo && <ProblemaComIsto tipo="contrato" id={contrato.id} className="mt-1" />}
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted">
             <span className="inline-flex items-center gap-1">
@@ -239,21 +261,11 @@ function ContratoCard({
           </div>
         </div>
         <span
-          className={cn(
-            "rounded-full px-2.5 py-1 text-xs font-medium",
-            contrato.status === "ativo" && contrato.etapa === "em_vigencia"
-              ? "bg-sage-100 text-forest"
-              : "bg-amber-50 text-amber-700"
-          )}
+          className={cn("rounded-full px-3 py-1 text-xs font-medium", tomDoSelo(contrato.estado))}
           data-testid="contrato-etapa"
+          data-chave={contrato.estado.chave}
         >
-          {contrato.status === "ativo"
-            ? ROTULO_ETAPA[contrato.etapa]
-            : contrato.status === "encerrado_sem_renovacao"
-              ? "Encerrado (sem renovação)"
-              : contrato.status === "concluido"
-                ? "Concluído"
-                : "Cancelado"}
+          {contrato.estado.selo}
         </span>
       </div>
 
@@ -266,16 +278,60 @@ function ContratoCard({
           {contrato.status === "ativo" && contrato.etapa === "aguardando_assinatura" ? "Ver e assinar contrato" : "Ver contrato"}
         </Link>
       )}
+      {/* Prompt 32: a página da estadia junta datas, checklist, ocupantes, valores, instruções e alterações. */}
+      {!demo && (
+        <Link href={HREF_ESTADIA(contrato.id)} className="ml-4 mt-3 inline-block text-sm font-medium text-forest underline" data-testid="contrato-abrir-estadia">
+          Abrir a página da estadia
+        </Link>
+      )}
 
-      {/* Comissão única (contrato-mãe) — % do valor total do contrato (aluguel × meses). */}
-      <p className="mt-3 rounded-lg bg-champagne/10 px-3 py-2 text-xs text-forest">
-        Comissão do contrato: <strong>{formatBRL(contrato.comissaoValor)}</strong>
-        {contrato.comissaoPercent > 0 && (
-          <> ({Math.round(contrato.comissaoPercent * 100)}% do valor total)</>
-        )}{" "}
-        — cobrada <strong>uma vez em cada contrato e em cada renovação</strong>, sobre o valor total do
-        período contratado; o valor mensal vai direto a você.
+      {/* Taxa de serviço (contrato-mãe) com a BASE REAL gravada no aceite (prompt 23): 1 mês nos contratos antigos,
+          valor mensal × meses nos novos, no rótulo único do prompt 27. Sem afirmar regra de renovação (aguarda a Dra. Beatriz). */}
+      <p className="mt-3 rounded-lg bg-champagne/10 px-3 py-2 text-xs text-forest" data-testid="contrato-taxa">
+        Taxa de serviço:{" "}
+        <span data-testid="contrato-taxa-base">
+          {rotuloBaseTaxa({
+            valor: contrato.comissaoValor,
+            percent: contrato.comissaoPercent,
+            aluguelMensal: contrato.aluguelMensal,
+            meses: Math.round(contrato.prazoTotalDias / DIAS_POR_MES),
+            aceiteEm: contrato.aceiteEm ?? null,
+          })}
+        </span>{" "}
+        — cobrada à parte, do proprietário; o valor mensal vai direto a você.
       </p>
+
+      {/* Caução do CONTRATO (complemento do #884): item próprio, fora dos cartões de bloco: a Caução nunca leva número de bloco. */}
+      {caucaoTotal > 0 && (
+        <div className="mt-4 rounded-xl border border-sage-200 p-4" data-testid="caucao-contrato">
+          <p className="text-sm font-medium text-ink" data-testid="caucao-contrato-rotulo">
+            Caução do contrato — {formatBRL(caucaoTotal)}
+          </p>
+          {/* L2-B item 13: o mesmo estado que a Garantias e a tela do inquilino mostram (estadoCaucao). */}
+          <p className="mt-1 text-xs text-muted" data-testid="caucao-contrato-estado" data-chave={contrato.caucao.chave}>
+            {contrato.caucao.rotulo}
+          </p>
+          {caucaoRegistrada ? (
+            <p className="mt-1 inline-flex items-center gap-2 text-xs text-forest" data-testid="caucao-contrato-status">
+              <Check className="h-3.5 w-3.5" />
+              {caucaoRegistrada.confirmado
+                ? "Recebimento registrado e confirmado pelo morador."
+                : "Recebimento registrado. Aguardando a confirmação do morador."}
+            </p>
+          ) : contrato.etapa === "aguardando_assinatura" ? (
+            <p className="mt-1 text-xs text-muted">O registro da Caução abre depois que as duas partes assinarem.</p>
+          ) : (
+            <RegistrarRecebimento
+              tipo="caucao"
+              blocoId={null}
+              contratoId={contrato.id}
+              valorSugerido={caucaoTotal}
+              hojeISO={hojeISO}
+              demo={demo}
+            />
+          )}
+        </div>
+      )}
 
       {/* Timeline dos blocos */}
       <div className="mt-4 space-y-3">
@@ -298,9 +354,6 @@ function ContratoCard({
         <span>
           Total do período: <strong className="text-ink">{formatBRL(totalPeriodo)}</strong>
         </span>
-        <span>
-          Caução (soma dos blocos): <strong className="text-ink">{formatBRL(caucaoTotal)}</strong>
-        </span>
       </div>
 
       {extra && (
@@ -312,7 +365,7 @@ function ContratoCard({
             acerto={extra.acerto}
             hojeISO={hojeISO}
           />
-          <ListaDocumentos documentos={extra.documentos} />
+          <ListaDocumentos documentos={extra.documentos} recibos={extra.recibos} />
         </>
       )}
 
@@ -321,8 +374,8 @@ function ContratoCard({
         contratoId={contrato.id}
         alvoId={contrato.tenantId}
         papelAutor="proprietario"
-        abrirLabel="Avaliar o inquilino"
-        titulo="Como foi a locação com este inquilino?"
+        abrirLabel="Avaliar o morador"
+        titulo="Como foi a locação com este morador?"
         placeholder="Comentário (opcional) — pontualidade, cuidado com o imóvel, comunicação…"
         demo={demo}
       />
@@ -361,7 +414,7 @@ function BlocoRow({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-xs font-bold text-white">
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-xs font-semibold text-white">
             {bloco.numeroBloco}
           </span>
           <div className="text-sm">
@@ -374,7 +427,7 @@ function BlocoRow({
             </p>
           </div>
         </div>
-        <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", meta.tone)}>
+        <span className={cn("rounded-full px-3 py-1 text-xs font-medium", meta.tone)}>
           {meta.label}
         </span>
       </div>
@@ -385,20 +438,8 @@ function BlocoRow({
           <p className="font-medium text-ink">{formatBRL(bloco.valor)}</p>
         </div>
         <div className="rounded-lg bg-surface-2 px-3 py-2">
-          <p className="text-muted">Caução (50%)</p>
-          <p className="font-medium text-ink">
-            {formatBRL(bloco.caucao)}{" "}
-            <span
-              className={cn(
-                "ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
-                bloco.caucaoStatus === "comprovada"
-                  ? "bg-green-50 text-green-900"
-                  : "bg-amber-50 text-amber-700"
-              )}
-            >
-              {bloco.caucaoStatus === "comprovada" ? "comprovada" : "pendente"}
-            </span>
-          </p>
+          <p className="text-muted">Valor mensal</p>
+          <p className="font-medium text-ink">{formatBRL(aluguelMensal)}</p>
         </div>
         <div className="rounded-lg bg-surface-2 px-3 py-2">
           <p className="text-muted">Recebido (declarado)</p>
@@ -418,21 +459,21 @@ function BlocoRow({
       {/* Registro declaratório de recebimento (só em blocos já iniciados). */}
       {bloco.status !== "agendado" ? (
         quitado ? (
-          <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-forest">
+          <p className="mt-3 inline-flex items-center gap-2 text-xs text-forest">
             <Check className="h-3.5 w-3.5" /> Valor do bloco registrado como recebido.
           </p>
         ) : (
           <RegistrarRecebimento
+            tipo="aluguel"
             blocoId={bloco.id}
             contratoId={contratoId}
             valorSugerido={restante > 0 ? restante : aluguelMensal}
-            caucaoSugerida={bloco.caucao}
             hojeISO={hojeISO}
             demo={demo}
           />
         )
       ) : (
-        <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted">
+        <p className="mt-3 inline-flex items-center gap-2 text-xs text-muted">
           <Clock className="h-3.5 w-3.5" /> Bloco agendado — o registro abre quando ele entra em
           vigência.
         </p>
@@ -441,23 +482,30 @@ function BlocoRow({
   );
 }
 
+/**
+ * Registro declaratório de um recebimento: o valor mensal de um BLOCO, ou a Caução do CONTRATO (sem bloco).
+ * Sem repetição (complemento do #884): o envio trava na hora do 1º clique (ref, antes do re-render), o botão fica
+ * desabilitado enquanto envia e o formulário fecha depois do sucesso. O banco tem o índice único de reserva.
+ */
 function RegistrarRecebimento({
+  tipo,
   blocoId,
   contratoId,
   valorSugerido,
-  caucaoSugerida,
   hojeISO,
   demo,
 }: {
-  blocoId: string;
+  tipo: "aluguel" | "caucao";
+  blocoId: string | null;
   contratoId: string;
   valorSugerido: number;
-  caucaoSugerida: number;
   hojeISO: string;
   demo: boolean;
 }) {
+  const router = useRouter();
+  const enviando = useRef(false);
   const [open, setOpen] = useState(false);
-  const [tipo, setTipo] = useState<"aluguel" | "caucao">("aluguel");
+  const [jaRegistrado, setJaRegistrado] = useState<string | null>(null);
   const [valor, setValor] = useState(String(valorSugerido));
   // Encargos pagos junto com o aluguel (vão para o recibo). Opcionais.
   const [condominio, setCondominio] = useState("");
@@ -471,10 +519,12 @@ function RegistrarRecebimento({
   const [erro, setErro] = useState<string | null>(null);
 
   async function salvar() {
+    if (enviando.current) return;
+    enviando.current = true;
     setSaving(true);
     setErro(null);
     const r = await marcarPagamentoRecebido({
-      blocoId,
+      blocoId: blocoId ?? "",
       contratoId,
       tipo,
       valor: Number(valor) || 0,
@@ -492,21 +542,29 @@ function RegistrarRecebimento({
     });
     setSaving(false);
     if (r.ok) {
+      setJaRegistrado(r.jaRegistrado ? (r.mensagem ?? "Este recebimento já foi registrado") : null);
+      setOpen(false);
       setDone(true);
+      // Registro que já existia: a mensagem fica na tela (recarregar trocaria o formulário pelo estado do bloco
+      // antes de a pessoa ler "Este recebimento já foi registrado").
+      if (!r.jaRegistrado) router.refresh();
     } else {
+      enviando.current = false;
       setErro(r.error ?? "Não foi possível registrar.");
     }
   }
 
   if (done) {
     return (
-      <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-forest">
+      <p className="mt-3 inline-flex items-center gap-2 text-xs text-forest" role="status" data-testid="recebimento-registrado">
         <Check className="h-3.5 w-3.5" />
-        {demo
+        {jaRegistrado
+          ? jaRegistrado
+          : demo
           ? "Registro de exemplo — em produção fica no histórico do contrato."
           : tipo === "caucao"
-            ? "Caução registrada. Quando o inquilino confirmar, sai o comprovante da caução."
-            : "Recebimento registrado. Quando o inquilino confirmar, sai o recibo em PDF para os dois."}
+            ? "Caução registrada. Quando o morador confirmar, sai o comprovante da caução."
+            : "Recebimento registrado. Quando o morador confirmar, o recibo em PDF fica disponível aqui e vai por e-mail para vocês dois."}
       </p>
     );
   }
@@ -516,44 +574,28 @@ function RegistrarRecebimento({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-sage-200 px-3 py-1.5 text-xs font-medium text-forest hover:bg-sage-100"
+        className="mt-3 inline-flex items-center gap-2 rounded-lg border border-sage-200 px-3 py-2 text-xs font-medium text-forest hover:bg-sage-100"
+        data-testid={tipo === "caucao" ? "registrar-caucao" : "registrar-recebimento"}
       >
-        <Plus className="h-3.5 w-3.5" /> Registrar recebimento
+        <Plus className="h-3.5 w-3.5" /> {tipo === "caucao" ? "Registrar recebimento da Caução" : "Registrar recebimento"}
       </button>
     );
   }
 
   return (
     <div className="mt-3 rounded-xl border border-sage-200 bg-white p-3">
-      <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-ink">
+      <p className="mb-2 flex items-center gap-2 text-xs font-medium text-ink">
         <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Registrar recebimento (você declara; a plataforma só registra)
       </p>
-      <div className="mb-2 inline-flex rounded-lg border border-sage-200 p-0.5 text-xs" role="group" aria-label="Tipo de recebimento">
-        {/* Sem caução no bloco (ex.: contrato com seguro-fiança) não há recebimento de caução: uma garantia só. */}
-        {(caucaoSugerida > 0 ? (["aluguel", "caucao"] as const) : (["aluguel"] as const)).map((t) => (
-          <button
-            key={t}
-            type="button"
-            aria-pressed={tipo === t}
-            onClick={() => {
-              setTipo(t);
-              setValor(String(t === "caucao" ? caucaoSugerida : valorSugerido));
-            }}
-            className={cn("rounded-md px-3 py-1 font-medium", tipo === t ? "bg-sage-100 text-forest" : "text-muted")}
-          >
-            {t === "aluguel" ? "Valor do bloco" : "Caução"}
-          </button>
-        ))}
-      </div>
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="text-xs text-muted">
-          {tipo === "caucao" ? "Valor da caução" : "Valor do bloco"}
-          <input
-            type="number"
-            min={0}
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+          {tipo === "caucao" ? "Valor da Caução" : "Valor do bloco"}
+          <CampoReais
+            semPrefixo
+            centavos
+            value={valor === "" ? null : Number(valor)}
+            onChange={(v) => setValor(v == null ? "" : String(v))}
+            className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
           />
         </label>
         <label className="text-xs text-muted">
@@ -561,7 +603,7 @@ function RegistrarRecebimento({
           <select
             value={forma}
             onChange={(e) => setForma(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+            className="mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-2 text-sm text-ink outline-none focus:border-sage"
           >
             {Object.entries(FORMA_LABEL).map(([k, v]) => (
               <option key={k} value={k}>
@@ -575,7 +617,7 @@ function RegistrarRecebimento({
           <CampoData
             value={data}
             onChange={(e) => setData(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+            className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
           />
         </label>
       </div>
@@ -590,13 +632,13 @@ function RegistrarRecebimento({
           ).map(([rotulo, v, set]) => (
             <label key={rotulo} className="text-xs text-muted">
               {rotulo}
-              <input
-                type="number"
-                min={0}
-                value={v}
-                onChange={(e) => set(e.target.value)}
+              <CampoReais
+                semPrefixo
+                centavos
+                value={v === "" ? null : Number(v)}
+                onChange={(n) => set(n == null ? "" : String(n))}
                 placeholder="0"
-                className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+                className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
               />
             </label>
           ))}
@@ -607,7 +649,7 @@ function RegistrarRecebimento({
         value={obs}
         onChange={(e) => setObs(e.target.value)}
         placeholder="Observação (opcional)"
-        className="mt-2 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+        className="mt-2 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
       />
       <p className="mt-2 text-[11px] text-muted">{REGRA_PAGAMENTO}</p>
       {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
@@ -615,7 +657,7 @@ function RegistrarRecebimento({
         <Button variant="ghost" size="sm" onClick={() => setOpen(false)} disabled={saving}>
           Cancelar
         </Button>
-        <Button variant="gold" size="sm" onClick={salvar} disabled={saving}>
+        <Button variant="gold" size="sm" onClick={salvar} disabled={saving} data-testid="confirmar-recebimento">
           {saving ? "Registrando…" : "Confirmar recebimento"}
         </Button>
       </div>

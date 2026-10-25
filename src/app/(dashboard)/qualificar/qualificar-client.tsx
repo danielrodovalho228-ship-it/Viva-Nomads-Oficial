@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -41,8 +41,9 @@ import {
 import { INTERNET_TIERS, INTERNET_META, type InternetTier } from "@/lib/internet";
 import { Button } from "@/components/ui/button";
 import { ReadyToLiveBadge, DocConferidaBadge } from "@/components/ui/badge";
-import { saveQualification, getMyDocumentStatus, resumoImovelDoDono, carregarQualificacao, type DocumentStatus } from "@/lib/data/actions";
+import { saveQualification, enviarDocumentoParaConferencia, getMyDocumentStatus, resumoImovelDoDono, carregarQualificacao, type DocumentStatus } from "@/lib/data/actions";
 import { cn, numBR } from "@/lib/utils";
+import { rotaVoltarAoAnuncio } from "@/lib/qualificar-link";
 
 const initialEligibility: EligibilityState = {
   furnished: false,
@@ -70,7 +71,22 @@ const initialQuality: QualityState = {
   cafe1km: false,
 };
 
-export default function QualificationChecklistPage() {
+/**
+ * Prompt 22: a mesma qualificação abre DENTRO do cadastro (painel lateral, `emPainel`), sem sair do anúncio. No
+ * painel o imóvel vem por `imovelIdInicial` (null = o próximo imóvel, ligado ao criar), "Salvar" avisa o cadastro
+ * (`onSalva`) e "Voltar ao cadastro" fecha o painel (`onFechar`). Na página /qualificar nada muda.
+ */
+export default function QualificationChecklistPage({
+  imovelIdInicial,
+  emPainel = false,
+  onSalva,
+  onFechar,
+}: {
+  imovelIdInicial?: string | null;
+  emPainel?: boolean;
+  onSalva?: (r: { elegivel: boolean; selo: boolean; tHome: boolean; tWork: boolean }) => void;
+  onFechar?: () => void;
+} = {}) {
   const router = useRouter();
   const [elig, setElig] = useState<EligibilityState>(initialEligibility);
   const [quality, setQuality] = useState<QualityState>(initialQuality);
@@ -79,6 +95,9 @@ export default function QualificationChecklistPage() {
   const [docHash, setDocHash] = useState<string | null>(null);
   const [docErro, setDocErro] = useState<string | null>(null);
   const [docBusy, setDocBusy] = useState(false);
+  // 35A: arquivo já no bucket mas a fila de conferência ainda não confirmou (a action falhou). A tela NÃO diz
+  // "Enviado" e oferece "Tentar de novo" com o mesmo arquivo (sem subir outra vez).
+  const [docSemFila, setDocSemFila] = useState<{ path: string; hash: string | null; nome: string } | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveErro, setSaveErro] = useState<string | null>(null);
@@ -94,13 +113,17 @@ export default function QualificationChecklistPage() {
   const [hasInteracted, setHasInteracted] = useState(false);
   const [imovel, setImovel] = useState<{ id: string; titulo: string; local: string; rascunho: boolean } | null>(null);
   const [imovelInvalido, setImovelInvalido] = useState(false);
+  // Id pedido (`?imovel=`/painel) enquanto o resumo ainda carrega: um envio rápido não pode cair "sem imóvel".
+  const imovelPedido = useRef<string | null>(null);
   useEffect(() => {
     let alive = true;
-    const id = new URLSearchParams(window.location.search).get("imovel");
+    const id = imovelIdInicial !== undefined ? imovelIdInicial : new URLSearchParams(window.location.search).get("imovel");
+    imovelPedido.current = id ?? null;
     (async () => {
       const resumo = id ? await resumoImovelDoDono(id).catch(() => null) : null;
       if (!alive) return;
       if (id && !resumo) setImovelInvalido(true);
+      imovelPedido.current = resumo?.id ?? null;
       setImovel(resumo);
       const [r, salvo] = await Promise.all([
         getMyDocumentStatus(resumo?.id ?? null).catch(() => null),
@@ -123,7 +146,7 @@ export default function QualificationChecklistPage() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [imovelIdInicial]);
   const eligible = isEligible(elig);
   const score = useMemo(() => readyToLiveScore(quality), [quality]);
   const baseBadge = score >= READY_TO_LIVE_THRESHOLD;
@@ -181,7 +204,7 @@ export default function QualificationChecklistPage() {
     // Requisitos completos + convenção respondida (sim / não sei) → reflete a moderação.
     let base: { tone: VeredictoTone; titulo: string; msg: string };
     if (docStatus === "approved")
-      base = { tone: "green", titulo: "APROVADO PARA PUBLICAR ✓", msg: "Documentação conferida. Seu anúncio pode ser publicado." };
+      base = { tone: "green", titulo: "APROVADO PARA PUBLICAR", msg: "Documentação conferida. Seu anúncio pode ser publicado." };
     else if (docStatus === "rejected")
       base = { tone: "red", titulo: "DOCUMENTAÇÃO RECUSADA", msg: `${docReason ? docReason + ". " : ""}Envie o documento novamente.` };
     else
@@ -213,6 +236,31 @@ export default function QualificationChecklistPage() {
     setQuality((s) => ({ ...s, [key]: !s[key] }));
   }
 
+  /** Põe o documento já enviado ao bucket na fila de conferência. Só depois da confirmação a tela diz "Enviado". */
+  async function enfileirarDocumento(d: { path: string; hash: string | null; nome: string }) {
+    setDocErro(null);
+    setDocBusy(true);
+    let r: Awaited<ReturnType<typeof enviarDocumentoParaConferencia>>;
+    try {
+      r = await enviarDocumentoParaConferencia(imovel?.id ?? imovelPedido.current, d.path, d.hash, elig.titularDocumento ?? null);
+    } catch {
+      r = { ok: false, error: "Não foi possível colocar o documento na fila de conferência agora. Tente de novo." };
+    }
+    setDocBusy(false);
+    if (!r.ok) {
+      setDocSemFila(d);
+      setDocErro(r.error ?? "Não foi possível colocar o documento na fila de conferência agora. Tente de novo.");
+      return;
+    }
+    setDocSemFila(null);
+    setDocName(d.nome);
+    setDocPath(d.path);
+    setDocHash(d.hash);
+    setDocStatus("pending");
+    setDocReason(null);
+    setElig((s) => ({ ...s, hasDocument: true }));
+  }
+
   async function save() {
     setSaving(true);
     setSaveErro(null);
@@ -224,7 +272,7 @@ export default function QualificationChecklistPage() {
     }
     let r: Awaited<ReturnType<typeof saveQualification>>;
     try {
-      r = await saveQualification(elig, quality, docPath, docHash, imovel?.id ?? null);
+      r = await saveQualification(elig, quality, docPath, docHash, imovel?.id ?? imovelPedido.current);
     } catch {
       r = { ok: false, error: "Não foi possível salvar a qualificação agora. Tente novamente." };
     }
@@ -236,6 +284,7 @@ export default function QualificationChecklistPage() {
       return;
     }
     setSaved(true);
+    onSalva?.({ elegivel: eligible, selo: baseBadge, tHome, tWork });
   }
 
   return (
@@ -243,8 +292,8 @@ export default function QualificationChecklistPage() {
       {/* Banner de topo (item 4): foto de interior SOB o gradiente da marca (lado
           esquerdo mais escuro), texto branco. Altura contida (~180px). */}
       <header
-        className="relative mb-8 flex flex-col justify-center overflow-hidden rounded-2xl p-6 text-white sm:p-8"
-        style={{ minHeight: 180 }}
+        className={cn("relative flex flex-col justify-center overflow-hidden rounded-xl text-white", emPainel ? "mb-4 p-4" : "mb-8 p-6 sm:p-8")}
+        style={{ minHeight: emPainel ? 120 : 180 }}
       >
         <Image
           src="/images/unicas/qualificar-banner-simulador.webp"
@@ -254,12 +303,12 @@ export default function QualificationChecklistPage() {
           sizes="100vw"
           className="pointer-events-none object-cover"
         />
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-night/90 via-forest/85 to-forest/60" />
+        <div aria-hidden className="absolute inset-0 bg-forest/85" />
         <div className="relative">
-          <p className="font-title text-xs font-bold uppercase tracking-wide text-white/80">
+          <p className="font-title text-xs font-semibold text-white/80">
             Antes de anunciar
           </p>
-          <h1 className="mt-1 font-title text-2xl font-bold sm:text-3xl">Qualificação do imóvel</h1>
+          <h1 className="mt-1 font-title text-2xl font-semibold sm:text-[28px]">Qualificação do imóvel</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">
             Duas etapas rápidas: primeiro confirmamos que seu imóvel está pronto e regular para
             locação mobiliada de média duração. Depois, você soma pontos para conquistar o selo{" "}
@@ -287,12 +336,12 @@ export default function QualificationChecklistPage() {
       )}
 
       {/* SEÇÃO 1 — REQUISITOS OBRIGATÓRIOS */}
-      <section className="rounded-2xl border border-sage-200 bg-white p-6 sm:p-8">
+      <section className="rounded-xl border border-sage-200 bg-white p-6 sm:p-8">
         <div className="flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-sm font-bold text-white">
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-sm font-semibold text-white">
             1
           </span>
-          <h2 className="font-title text-xl font-bold text-ink">Requisitos obrigatórios</h2>
+          <h2 className="font-title text-xl font-semibold text-ink">Requisitos obrigatórios</h2>
         </div>
         <p className="mt-2 text-sm text-muted">
           Se algum faltar, o imóvel não pode ser publicado.
@@ -314,14 +363,14 @@ export default function QualificationChecklistPage() {
 
           <label
             className={cn(
-              "flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors",
+              "flex cursor-pointer flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors",
               "focus-within:outline-none focus-within:ring-2 focus-within:ring-forest focus-within:ring-offset-2",
               docName
                 ? "border-sage bg-sage-100"
                 : "border-sage-200 bg-surface-2 hover:border-sage"
             )}
           >
-            <span className="flex items-center gap-3 text-sm">
+            <span className="flex min-w-0 items-center gap-3 text-sm">
               {docName ? (
                 <CheckCircle2 className="h-5 w-5 text-forest" />
               ) : (
@@ -329,7 +378,7 @@ export default function QualificationChecklistPage() {
               )}
               <span>
                 <span className="font-medium text-ink">
-                  Documentação do imóvel{docName ? " — enviada ✓" : ""}
+                  Documentação do imóvel{docName ? " — enviada" : ""}
                 </span>
                 <span className="block text-xs text-muted">
                   {docName ?? "Matrícula ou contrato de gestão (PDF, JPG ou PNG)"}
@@ -341,13 +390,13 @@ export default function QualificationChecklistPage() {
                   na revisão do anúncio). */}
               <span
                 className={cn(
-                  "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                  "rounded-full px-2 py-1 text-[11px] font-semibold",
                   docName ? "bg-sage-100 text-forest" : "bg-amber-100 text-amber-800"
                 )}
               >
-                {docName ? "Enviado" : "Pendente"}
+                {docName ? "Enviado para conferência" : docSemFila ? "Não enviado" : "Pendente"}
               </span>
-              <span className="rounded-full bg-forest px-3 py-1.5 text-xs font-medium text-white">
+              <span className="rounded-full bg-forest px-3 py-2 text-xs font-medium text-white">
                 {docBusy ? "Enviando…" : docName ? "Trocar" : "Enviar"}
               </span>
             </span>
@@ -383,10 +432,16 @@ export default function QualificationChecklistPage() {
                     setDocErro(data.error ?? "Não foi possível enviar o documento agora.");
                     return;
                   }
-                  setDocName(`${f.name} · ${numBR(f.size / 1024 / 1024, 1)} MB`);
-                  setDocPath(data.path ?? null);
-                  setDocHash(data.hash ?? null);
-                  setElig((s) => ({ ...s, hasDocument: true }));
+                  const nome = `${f.name} · ${numBR(f.size / 1024 / 1024, 1)} MB`;
+                  if (!data.path) {
+                    // Demonstração (sem Supabase): nada é gravado.
+                    setDocName(nome);
+                    setElig((s) => ({ ...s, hasDocument: true }));
+                    return;
+                  }
+                  // 35A: o documento entra na fila AGORA (não só no "Salvar"); a tela só diz "Enviado" depois.
+                  setDocBusy(false);
+                  await enfileirarDocumento({ path: data.path, hash: data.hash ?? null, nome });
                 } catch {
                   setDocErro("Não foi possível enviar o documento agora. Tente novamente.");
                 } finally {
@@ -395,7 +450,16 @@ export default function QualificationChecklistPage() {
               }}
             />
           </label>
-          {docErro && <p className="text-sm text-red-600">{docErro}</p>}
+          {docErro && (
+            <div role="alert" data-testid="doc-erro" className="flex flex-wrap items-center gap-3">
+              <p className="text-sm text-red-600">{docErro}</p>
+              {docSemFila && (
+                <Button type="button" size="sm" variant="outline" disabled={docBusy} onClick={() => enfileirarDocumento(docSemFila)}>
+                  {docBusy ? "Enviando…" : "Tentar de novo"}
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Pré-conferência: o nome do titular escrito no documento (a equipe compara com a conta). */}
           <label className="block">
@@ -437,8 +501,8 @@ export default function QualificationChecklistPage() {
 
           {/* Nota de tratamento de dados (LGPD) — o documento pode conter CPF e
               matrícula. TODO(juridico): Beatriz revisar a redação final. */}
-          <p className="flex items-start gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
-            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
+          <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+            <ShieldCheck className="mt-1 h-3.5 w-3.5 shrink-0 text-sage" />
             <span>
               Guardamos este documento em <strong className="text-ink">armazenamento privado</strong>,
               com <strong className="text-ink">acesso restrito</strong> a você e à nossa equipe de
@@ -449,7 +513,7 @@ export default function QualificationChecklistPage() {
           </p>
         </div>
 
-        <fieldset className="mt-5">
+        <fieldset className="mt-4">
           <legend className="text-sm font-medium text-ink">
             A convenção do condomínio permite locação mobiliada de média duração (30–180 dias)?
           </legend>
@@ -457,7 +521,7 @@ export default function QualificationChecklistPage() {
             <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-forest">
               <Info className="h-3.5 w-3.5" /> Como descobrir?
             </summary>
-            <p className="mt-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+            <p className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
               Pergunte ao síndico ou consulte a convenção — em geral está no capítulo de uso das
               unidades. Imóvel fora de condomínio: marque “Sim”.
             </p>
@@ -490,7 +554,7 @@ export default function QualificationChecklistPage() {
           </div>
           {condoBlocked && (
             <p className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
               Se a convenção proíbe estadias de 30 a 180 dias, o imóvel não pode ser anunciado.
             </p>
           )}
@@ -503,7 +567,7 @@ export default function QualificationChecklistPage() {
             <span className="tabular-nums text-muted">
               {reqDone}/{reqTotal} requisitos
               {pendenciaConvencao && (
-                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-800">
                   +1 pendência
                 </span>
               )}
@@ -533,7 +597,7 @@ export default function QualificationChecklistPage() {
             <div className={cn("mt-4 flex items-center gap-3 rounded-xl px-4 py-4", TONE.box)}>
               <VIcon className={cn("h-6 w-6 shrink-0", TONE.iconColor)} />
               <div>
-                <p className={cn("font-title font-bold", TONE.title)}>{v.titulo}</p>
+                <p className={cn("font-title font-semibold", TONE.title)}>{v.titulo}</p>
                 <p className="text-sm text-muted">{v.msg}</p>
                 {/* Selo da conferência do documento (não da propriedade). */}
                 {docStatus === "approved" && (
@@ -548,27 +612,27 @@ export default function QualificationChecklistPage() {
       </section>
 
       {/* SEÇÃO 2 — SELO PRONTO PARA MORAR */}
-      <section className="mt-6 rounded-2xl border border-sage-200 bg-white p-6 sm:p-8">
+      <section className="mt-6 rounded-xl border border-sage-200 bg-white p-6 sm:p-8">
         <div className="flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-sm font-bold text-white">
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-sm font-semibold text-white">
             2
           </span>
-          <h2 className="font-title text-xl font-bold text-ink">
+          <h2 className="font-title text-xl font-semibold text-ink">
             Selo Pronto para Morar{" "}
             <span className="text-base font-medium text-muted">(opcional, recomendado)</span>
           </h2>
         </div>
         <p className="mt-2 text-sm text-muted">
-          Quanto mais itens, mais completo seu anúncio aparece para os inquilinos.
+          Quanto mais itens, mais completo seu anúncio aparece para os moradores.
         </p>
 
         {/* Placar do selo — ESTÁTICO no fluxo (ancorado na seção). Nada de sticky:
             o placar não acompanha o scroll nem "flutua" sobre os itens. */}
-        <div className="mt-6 rounded-xl border border-sage-200 bg-white p-4 shadow-sm">
+        <div className="mt-6 rounded-xl border border-sage-200 bg-white p-4 ">
           <div className="flex items-end justify-between">
             <div className="flex items-center gap-2">
               <Award className={cn("h-5 w-5", baseBadge ? "text-champagne-600" : "text-sage")} />
-              <span className="font-title text-2xl font-bold text-forest">{score}</span>
+              <span className="font-title text-2xl font-semibold text-forest">{score}</span>
               <span className="text-sm text-muted">/ 100</span>
             </div>
             {baseBadge && <ReadyToLiveBadge />}
@@ -581,7 +645,7 @@ export default function QualificationChecklistPage() {
           </div>
           <p className="mt-3 text-sm text-muted">
             {baseBadge
-              ? "Parabéns! Seu imóvel ganhou o selo Pronto para Morar e será bem ranqueado. 🏅"
+              ? "Parabéns! Seu imóvel ganhou o selo Pronto para Morar e será bem ranqueado."
               : `Some ${READY_TO_LIVE_THRESHOLD - score} ponto(s) para conquistar o selo Pronto para Morar.`}
           </p>
         </div>
@@ -591,13 +655,13 @@ export default function QualificationChecklistPage() {
         <div className="relative mt-6 h-36 overflow-hidden rounded-xl sm:h-40">
           <Image
             src="/images/unicas/qualificar-hero.webp"
-            alt="Sala mobiliada pronta para receber inquilinos"
+            alt="Sala mobiliada pronta para receber moradores"
             fill
             loading="lazy"
             sizes="(max-width: 640px) 100vw, 768px"
             className="object-cover object-center"
           />
-          <span className="absolute bottom-3 left-3 rounded-full bg-night/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+          <span className="absolute bottom-3 left-3 rounded-full bg-night/70 px-3 py-2 text-xs font-medium text-white backdrop-blur-sm">
             Imóveis com o selo ganham destaque na busca
           </span>
         </div>
@@ -626,7 +690,7 @@ export default function QualificationChecklistPage() {
         </div>
 
         {/* Etiquetas */}
-        <h3 className="mt-8 font-title font-bold text-ink">Etiquetas de especialização</h3>
+        <h3 className="mt-8 font-title font-semibold text-ink">Etiquetas de especialização</h3>
         <p className="text-sm text-muted">Somam ao selo base e viram filtros na busca.</p>
 
         <TagBlock
@@ -653,7 +717,7 @@ export default function QualificationChecklistPage() {
       {saved && (
         <div className="mt-6 flex items-center gap-2 rounded-xl border border-sage bg-sage-100 px-4 py-3 text-sm font-medium text-forest">
           <CheckCircle2 className="h-5 w-5" />
-          Qualificação salva ✓ — selo e etiquetas registrados e prontos para o anúncio.
+          Qualificação salva — selo e etiquetas registrados e prontos para o anúncio.
         </div>
       )}
 
@@ -665,14 +729,13 @@ export default function QualificationChecklistPage() {
         {saved ? (
           <Button
             variant="accent"
-            onClick={() =>
-              router.push(rotaVoltarAoAnuncio(imovel))
-            }
+            onClick={() => (emPainel ? onFechar?.() : router.push(rotaVoltarAoAnuncio(imovel)))}
+            data-testid="qualificacao-voltar"
           >
-            {imovel ? "Voltar ao anúncio" : "Continuar para o anúncio"} <ArrowRight className="h-4 w-4" />
+            {emPainel ? "Voltar ao cadastro" : imovel ? "Voltar ao anúncio" : "Continuar para o anúncio"} <ArrowRight className="h-4 w-4" />
           </Button>
         ) : (
-          <Button disabled={!eligible || saving} onClick={save}>
+          <Button disabled={!eligible || saving} onClick={save} data-testid="qualificacao-salvar">
             {saving ? "Salvando..." : "Salvar qualificação"}
           </Button>
         )}
@@ -684,16 +747,6 @@ export default function QualificationChecklistPage() {
       )}
     </div>
   );
-}
-
-/**
- * Para onde "Voltar ao anúncio" leva: rascunho reabre pelo `?draft=` (retoma o
- * snapshot salvo — `?id=` abria o editor de anúncio publicado, vazio para um
- * rascunho); publicado, pela edição; sem imóvel, um anúncio novo.
- */
-function rotaVoltarAoAnuncio(imovel: { id: string; rascunho: boolean } | null): string {
-  if (!imovel) return "/dashboard/imoveis/novo";
-  return imovel.rascunho ? `/dashboard/imoveis/novo?draft=${imovel.id}` : `/dashboard/imoveis/novo?id=${imovel.id}`;
 }
 
 /** Ícone temático por item de etiqueta (upgrade visual dos cards). */
@@ -735,7 +788,7 @@ function CheckRow({
     >
       <span
         className={cn(
-          "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+          "grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
           checked ? "border-forest bg-forest text-white" : "border-sage-200 bg-white"
         )}
       >
@@ -773,7 +826,7 @@ function ScoreRow({
       <span className="flex items-center gap-3">
         <span
           className={cn(
-            "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+            "grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
             on ? "border-champagne bg-champagne text-night" : "border-sage-200 bg-white"
           )}
         >
@@ -811,7 +864,7 @@ function InternetTierRow({
         <span className="flex items-center gap-3">
           <span
             className={cn(
-              "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+              "grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
               on ? "border-champagne bg-champagne text-night" : "border-sage-200 bg-white"
             )}
           >
@@ -836,7 +889,7 @@ function InternetTierRow({
             </option>
           ))}
         </select>
-        <p className="mt-1.5 text-xs text-muted">{INTERNET_META[value].description}</p>
+        <p className="mt-2 text-xs text-muted">{INTERNET_META[value].description}</p>
       </div>
     </div>
   );
@@ -881,8 +934,8 @@ function TagBlock({
               {marcados}/{toggleaveis.length} marcados
             </span>
             {earned ? (
-              <span className="tag-earned-pop w-fit rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
-                Etiqueta conquistada ✓
+              <span className="tag-earned-pop w-fit rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
+                Etiqueta conquistada
               </span>
             ) : (
               <span className="text-xs text-muted">Marque todos os itens para ganhar esta etiqueta</span>
@@ -911,7 +964,7 @@ function TagBlock({
               >
                 <span
                   className={cn(
-                    "grid h-5 w-5 shrink-0 place-items-center rounded border",
+                    "grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
                     it.on ? "border-forest bg-forest text-white" : "border-sage-200 text-sage"
                   )}
                 >
@@ -923,7 +976,7 @@ function TagBlock({
           })}
         </div>
         <p className="mt-3 text-xs text-muted">
-          Vira filtro na busca — inquilinos que procuram isso encontram seu imóvel primeiro.
+          Vira filtro na busca — moradores que procuram isso encontram seu imóvel primeiro.
         </p>
       </div>
     </div>

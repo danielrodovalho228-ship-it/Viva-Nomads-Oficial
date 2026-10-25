@@ -93,6 +93,17 @@ test.describe("T49 APIs privadas sem login @seguranca", () => {
     });
   }
 
+  // Corpo inválido (id que não é UUID, corpo vazio): a sessão é checada ANTES de ler o corpo,
+  // então visitante recebe 401 e nunca 400 (ordem ba271cb5 / #472).
+  for (const rota of ["/api/comissao", "/api/contrato"]) {
+    for (const [nome, corpo] of [["id inválido", { leadId: "x" }], ["corpo vazio", {}]] as const) {
+      test(`POST ${rota} com ${nome} sem login é 401`, async ({ request }) => {
+        const r = await request.post(rota, { data: corpo });
+        expect(r.status(), `${rota} → ${r.status()}`).toBe(401);
+      });
+    }
+  }
+
   // As rotas de admin que só têm GET/DELETE: o método que existe também recusa visitante.
   for (const rota of ["/api/admin/aprovacoes", "/api/admin/agentes/memoria"]) {
     test(`GET ${rota} sem login é negado`, async ({ request }) => {
@@ -120,7 +131,7 @@ test.describe("T49 APIs privadas sem login @seguranca", () => {
   }
 
   test("cron e webhook sem segredo não executam", async ({ request }) => {
-    for (const rota of ["/api/cron/atendimento", "/api/cron/avisos-daniel", "/api/cron/resumo-pedidos"]) {
+    for (const rota of ["/api/cron/atendimento", "/api/cron/avisos-daniel", "/api/cron/resumo-pedidos", "/api/cron/prazos-conforto"]) {
       const r = await request.get(rota);
       // 503 = CRON_SECRET ausente no laboratório: recusa antes de rodar qualquer coisa.
       expect([401, 403, 405, 503], `${rota} → ${r.status()}`).toContain(r.status());

@@ -24,10 +24,10 @@ export default async function NotFound() {
         <Logo href="/" />
       </header>
 
-      <main className="container-page flex flex-1 flex-col items-center justify-center py-10 text-center">
+      <main className="container-page flex flex-1 flex-col items-center justify-center py-12 text-center">
         <NotFoundIllustration />
-        <p className="mt-8 font-title text-6xl font-bold text-ink">404</p>
-        <h1 className="mt-2 font-title text-2xl font-bold text-ink">Página não encontrada</h1>
+        <p className="mt-8 font-title text-2xl font-semibold text-ink">404</p>
+        <h1 className="mt-2 font-title text-2xl font-semibold text-ink">Página não encontrada</h1>
         <p className="mt-2 max-w-md text-muted">
           Não encontramos esta página. Já que você está aqui, veja estes imóveis disponíveis.
         </p>
@@ -41,8 +41,8 @@ export default async function NotFound() {
         </div>
 
         {featured.length > 0 && (
-          <section className="mt-14 w-full" aria-label="Imóveis em destaque">
-            <h2 className="mb-5 font-title text-lg font-bold text-ink">Imóveis em destaque</h2>
+          <section className="mt-12 w-full" aria-label="Imóveis em destaque">
+            <h2 className="mb-4 font-title text-lg font-semibold text-ink">Imóveis em destaque</h2>
             <div className="grid gap-6 text-left sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((p) => (
                 <PropertyCard key={p.id} property={p} />

@@ -17,10 +17,12 @@ const ids: { dono?: string; a?: string; b?: string; imovel?: string } = {};
 async function candidatar(page: import("@playwright/test").Page, imovel: string, recarregar = true): Promise<void> {
   // Recarregar apaga a escolha feita na tela (volta ao motivo do perfil): quem já escolheu passa recarregar=false.
   if (recarregar) await page.goto(`/imoveis/${imovel}`, { waitUntil: "networkidle" });
-  await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Enviar candidatura" }).click();
+  await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Solicitar", exact: true }).click();
   const passo = page.getByTestId("solicitacao-passo");
   await expect(passo).toBeVisible();
-  await passo.getByRole("button", { name: "Enviar solicitação" }).click();
+  await passo.getByRole("button", { name: "Continuar" }).click();
+  await passo.getByRole("button", { name: "Continuar" }).click();
+  await passo.getByRole("button", { name: "Enviar candidatura" }).click();
   await expect(page.getByText("Candidatura enviada").first()).toBeVisible({ timeout: 20_000 });
 }
 

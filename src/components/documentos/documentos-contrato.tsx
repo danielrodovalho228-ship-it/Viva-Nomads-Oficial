@@ -1,13 +1,14 @@
 "use client";
 
 import { CampoData } from "@/components/ui/campo-data";
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Download, FileText, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/lib/utils";
 import { dataBR } from "@/lib/fiscal/documento";
-import type { AcertoView, DocumentoView } from "@/lib/data/documentos-actions";
+import type { AcertoView, DocumentoView, ReciboView } from "@/lib/data/documentos-actions";
 import { registrarDevolucaoCaucao, responderDevolucaoCaucao } from "@/lib/data/documentos-actions";
 import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-actions";
 
@@ -17,20 +18,43 @@ import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-act
  * dinheiro: a plataforma registra, a outra parte confirma, e o PDF sai.
  */
 
-const input = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-1.5 text-sm text-ink outline-none focus:border-sage";
+const input = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-2 text-sm text-ink outline-none focus:border-sage";
 
-export function ListaDocumentos({ documentos }: { documentos: DocumentoView[] }) {
-  if (documentos.length === 0) return null;
+export function ListaDocumentos({ documentos, recibos = [] }: { documentos: DocumentoView[]; recibos?: ReciboView[] }) {
+  if (documentos.length === 0 && recibos.length === 0) return null;
   return (
     <div className="mt-4 border-t border-sage-200 pt-3" data-testid="documentos-contrato">
-      <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+      <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase text-muted">
         <FileText className="h-3.5 w-3.5" /> Documentos
       </p>
-      <ul className="space-y-1.5">
+      {recibos.length > 0 && (
+        <ul className="mb-2 space-y-2" data-testid="recibos-pagamentos">
+          {recibos.map((r) => (
+            <li key={r.pagamentoId} className="flex flex-wrap items-center justify-between gap-2 text-sm" data-testid="recibo-pagamento" data-emitido={r.documentoId ? "sim" : "nao"}>
+              <span className="min-w-0 text-ink">
+                {r.rotulo}
+                {r.numero && <span className="text-muted"> · {r.numero}</span>}
+                {r.anulado && <SeloAnulado motivo={r.anulado} />}
+              </span>
+              {r.documentoId ? (
+                <a href={`/api/documentos/${r.documentoId}`} className="inline-flex items-center gap-1 text-xs font-medium text-forest underline" data-testid="baixar-recibo">
+                  <Download className="h-3.5 w-3.5" /> Baixar recibo (PDF)
+                </a>
+              ) : (
+                <span className="text-xs text-muted" data-testid="recibo-em-preparacao">
+                  Recibo em preparação
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <ul className="space-y-2">
         {documentos.map((d) => (
           <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="min-w-0 text-ink">
               {d.rotulo} <span className="text-muted">· {d.numero} · {formatBRL(d.valor)}</span>
+              {d.anulado && <SeloAnulado motivo={d.anulado} />}
               {d.periodoInicio && (
                 <span className="block text-xs text-muted">
                   {dataBR(d.periodoInicio)} a {dataBR(d.periodoFim)}
@@ -47,11 +71,20 @@ export function ListaDocumentos({ documentos }: { documentos: DocumentoView[] })
   );
 }
 
+/** "Anulado: registro em duplicidade" — o documento existiu, o PDF continua acessível, mas não vale mais. */
+function SeloAnulado({ motivo }: { motivo: string }) {
+  return (
+    <span className="ml-2 rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-700" data-testid="selo-anulado">
+      Anulado: {motivo}
+    </span>
+  );
+}
+
 const STATUS_ACERTO: Record<string, string> = {
-  aguardando_confirmacao: "aguardando a confirmação do inquilino",
-  devolvida_integral: "devolução confirmada pelo inquilino",
-  desconto_confirmado: "devolução com descontos confirmada pelo inquilino",
-  desconto_contestado: "contestada pelo inquilino — fale pela Central de Ajuda",
+  aguardando_confirmacao: "aguardando a confirmação do morador",
+  devolvida_integral: "devolução confirmada pelo morador",
+  desconto_confirmado: "devolução com descontos confirmada pelo morador",
+  desconto_contestado: "contestada pelo morador — fale pela Central de Ajuda",
 };
 
 /** Proprietário: registra quanto devolveu da caução (depois do fim da locação). */
@@ -87,7 +120,7 @@ export function DevolucaoCaucaoDono({
   if (!aberto) {
     return (
       <div className="mt-3" data-testid="devolucao-caucao">
-        {acerto?.status === "desconto_contestado" && <p className="mb-2 text-xs text-amber-800">A devolução anterior foi contestada pelo inquilino.</p>}
+        {acerto?.status === "desconto_contestado" && <p className="mb-2 text-xs text-amber-800">A devolução anterior foi contestada pelo morador.</p>}
         <Button variant="outline" size="sm" onClick={() => setAberto(true)}>
           Registrar devolução da caução
         </Button>
@@ -96,13 +129,13 @@ export function DevolucaoCaucaoDono({
   }
   return (
     <div className="mt-3 rounded-xl border border-sage-200 bg-white p-3" data-testid="devolucao-caucao">
-      <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-ink">
-        <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Devolução da caução — você devolve direto ao inquilino; a plataforma só registra
+      <p className="mb-2 flex items-center gap-2 text-xs font-medium text-ink">
+        <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Devolução da caução — você devolve direto ao morador; a plataforma só registra
       </p>
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="text-xs text-muted">
           Valor devolvido (caução: {formatBRL(caucaoConfirmada)})
-          <input type="number" min={0} max={caucaoConfirmada} value={valor} onChange={(e) => setValor(e.target.value)} className={input} />
+          <CampoReais semPrefixo centavos value={valor === "" ? null : Number(valor)} onChange={(v) => setValor(v == null ? "" : String(v))} className={input} />
         </label>
         <label className="text-xs text-muted">
           Data
@@ -118,7 +151,7 @@ export function DevolucaoCaucaoDono({
           </select>
         </label>
       </div>
-      {Number(valor) < caucaoConfirmada && <p className="mt-2 text-[11px] text-amber-800">Com desconto, explique os motivos ao inquilino (com fotos da conferência) pela conversa antes de registrar.</p>}
+      {Number(valor) < caucaoConfirmada && <p className="mt-2 text-[11px] text-amber-800">Com desconto, explique os motivos ao morador (com fotos da conferência) pela conversa antes de registrar.</p>}
       {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
       <div className="mt-3 flex justify-end gap-2">
         <Button variant="ghost" size="sm" disabled={salvando} onClick={() => setAberto(false)}>
@@ -173,7 +206,7 @@ export function DevolucaoCaucaoInquilino({ acerto }: { acerto: AcertoView | null
       </p>
       {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
-        <Button size="sm" variant="gold" disabled={ocupado} onClick={() => responder("confirmar")}>
+        <Button size="sm" variant="secondary" disabled={ocupado} onClick={() => responder("confirmar")}>
           <Check className="h-4 w-4" /> Sim, recebi
         </Button>
         <Button size="sm" variant="outline" disabled={ocupado} onClick={() => responder("contestar")}>
@@ -196,16 +229,16 @@ export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[
   if (pendentes.length === 0) return null;
   return (
     <div className="mt-4 border-t border-sage-200 pt-3" data-testid="confirmar-pagamentos">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Pagamentos para confirmar</p>
+      <p className="mb-2 text-xs font-semibold uppercase text-muted">Pagamentos para confirmar</p>
       <ul className="space-y-2">
         {pendentes.map((p) => (
           <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="text-ink">
-              {p.tipo === "caucao" ? "Caução" : "Valor mensal"} de {formatBRL(p.valor)} em {dataBR(p.dataPagamento)}, por {FORMA[p.forma] ?? p.forma}
+              {p.rotulo} · pago em {dataBR(p.dataPagamento)}, por {FORMA[p.forma] ?? p.forma}
             </span>
             <Button
               size="sm"
-              variant="gold"
+              variant="secondary"
               disabled={ocupado === p.id}
               onClick={async () => {
                 setOcupado(p.id);
@@ -222,7 +255,7 @@ export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[
         ))}
       </ul>
       {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
-      <p className="mt-2 text-[11px] text-muted">Confirme só o que você realmente pagou. Ao confirmar, sai o recibo em PDF para você e para o proprietário.</p>
+      <p className="mt-2 text-[11px] text-muted">Confirme só o que você realmente pagou. Ao confirmar, o recibo em PDF fica disponível aqui e vai por e-mail para você e para o proprietário.</p>
     </div>
   );
 }

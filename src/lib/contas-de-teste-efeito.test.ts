@@ -57,7 +57,7 @@ test("rotas: conta de teste desvia ANTES de Asaas, ZapSign e CAF; decisão vem d
   const caf = ler("src/app/api/caf/verify/route.ts");
   assert.match(caf, /contaEhDeTeste\(/);
   assert.ok(caf.indexOf("contaEhDeTeste(") < caf.indexOf("await verifyTenant("));
-  assert.ok(caf.indexOf("contaEhDeTeste(") < caf.indexOf("consumirLimite("), "não gasta a cota de 90 dias da conta de teste");
+  assert.ok(caf.indexOf("contaEhDeTeste(") < caf.indexOf("consumirLimite("), "não gasta a cota de 12 meses da conta de teste");
   assert.match(caf, /MSG_VERIFICACAO_EM_BREVE/);
   assert.ok(!/body\.(isTeste|is_teste|teste)/.test(com + con + caf), "o navegador não decide");
 });
@@ -72,6 +72,6 @@ test("caixa de e-mails da própria conta de teste: rota só da sessão, só linh
   assert.match(r, /emails: null/);
   const secao = ler("src/components/account/caixa-emails-teste.tsx");
   assert.match(secao, /\/api\/conta\/caixa-teste/);
-  const conta = ler("src/app/(dashboard)/dashboard/conta/page.tsx");
+  const conta = ler("src/components/account/tela-ajuda.tsx");
   assert.match(conta, /<CaixaEmailsTeste/);
 });

@@ -6,7 +6,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, novaSenha,
 /**
  * T151 — MODO APP no iPhone (ordem ec7988fe). Roda no projeto `webkit-iphone`
  * (WebKit, iPhone 14) com o user-agent do app "VivaNomadsApp/1.0.4 (expo)" e o
- * cookie vn_app=1. Confere o painel e a Conta com a capa 3S e a tela
+ * cookie vn_app=1. Confere o painel e a Conta com o título (sem capa de foto, Prompt 42) e a tela
  * Anúncio → Disponibilidade: abre em menos de 2 s, sem tarefa longa (> 200 ms)
  * ao trocar de mês, sem elemento sobre as abas e com o "carregando" sumindo.
  */
@@ -31,11 +31,13 @@ test.describe("T151 — Modo app no iPhone (proprietário)", () => {
     await expect(page.locator("html")).toHaveAttribute("data-app", "1");
   }
 
-  test("/dashboard e /dashboard/conta mostram a capa 3S", async ({ page }) => {
+  test("/dashboard e /dashboard/conta abrem com o título, sem capa de foto (Prompt 42)", async ({ page }) => {
     await entrarNoApp(page, "/dashboard");
-    await expect(page.getByTestId("painel-capa").first()).toBeVisible();
+    await expect(page.locator("main h1:visible").first()).toBeVisible();
+    await expect(page.locator('[data-testid="painel-capa"]')).toHaveCount(0);
     await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("painel-capa").first()).toBeVisible();
+    await expect(page.locator("main h1:visible").first()).toBeVisible();
+    await expect(page.locator('[data-testid="painel-capa"]')).toHaveCount(0);
     const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(sobra).toBeLessThanOrEqual(0);
   });
@@ -116,7 +118,7 @@ test.describe("T151 — Disponibilidade no app com imóvel próprio (laboratóri
     test.setTimeout(120_000);
     const ctx = await browser.newContext({ ...devices["iPhone 13"], userAgent: UA_APP });
     const page = await ctx.newPage();
-    await page.goto("/auth", { waitUntil: "networkidle" });
+    await page.goto("/auth?senha=1", { waitUntil: "networkidle" });
     await page.locator('input[name="email"], input[type="email"]').first().fill(dono.email);
     await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
     await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

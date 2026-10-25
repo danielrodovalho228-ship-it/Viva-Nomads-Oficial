@@ -6,6 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { formatBRL, cn } from "@/lib/utils";
+import { urlDeNovaTentativaTile } from "@/lib/nova-tentativa";
 import { ATRIBUICAO_MAPA, RAIO_APROXIMADO_KM, TILES_CARTO, avisarMapaSemChave, borrarCoordenada as blur, motorDoMapa } from "@/lib/mapa-base";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -94,8 +95,8 @@ function PropertyMapbox({ markers, center, zoom = 13, approximate = false, class
       const el = document.createElement("div");
       el.className =
         m.kind === "workspace"
-          ? "rounded-full bg-white text-forest border border-sage px-2 py-1 text-xs font-semibold shadow"
-          : "rounded-full bg-forest text-white px-2.5 py-1 text-xs font-semibold shadow";
+          ? "rounded-full bg-white text-forest border border-sage px-2 py-1 text-xs font-semibold "
+          : "rounded-full bg-forest text-white px-3 py-1 text-xs font-semibold ";
       el.textContent = m.label ?? "";
       new mapboxgl.Marker({ element: el }).setLngLat([m.lng, m.lat]).addTo(map);
     });
@@ -103,8 +104,8 @@ function PropertyMapbox({ markers, center, zoom = 13, approximate = false, class
     return () => map.remove();
   }, [shownMarkers, first, zoom, approximate]);
 
-  if (!first) return <div className={cn("rounded-2xl border border-line bg-surface-2", className)} />;
-  return <div ref={containerRef} className={cn("overflow-hidden rounded-2xl", className)} />;
+  if (!first) return <div className={cn("rounded-xl border border-line bg-surface-2", className)} />;
+  return <div ref={containerRef} className={cn("overflow-hidden rounded-xl", className)} />;
 }
 
 /** Leaflet + CARTO (sem token Mapbox): área aproximada de ~500 m e lugares próximos. */
@@ -128,7 +129,18 @@ function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, c
     );
     // topleft: o canto direito é do botão "Ampliar mapa"
     L.control.zoom({ position: "topleft" }).addTo(map);
-    if (TILES_CARTO) L.tileLayer(TILES_CARTO, { maxZoom: 19, attribution: ATRIBUICAO_MAPA }).addTo(map);
+    if (TILES_CARTO) {
+      const camada = L.tileLayer(TILES_CARTO, { maxZoom: 19, attribution: ATRIBUICAO_MAPA }).addTo(map);
+      // Tile que falhou (rede oscilando) ganha uma nova tentativa, sem laço (ordem aad2b751).
+      camada.on("tileerror", (ev) => {
+        const tile = ev.tile as HTMLImageElement;
+        const tentativas = Number(tile.dataset.tentativas ?? "0");
+        const nova = urlDeNovaTentativaTile(tile.src, tentativas);
+        if (!nova) return;
+        tile.dataset.tentativas = String(tentativas + 1);
+        window.setTimeout(() => { tile.src = nova; }, 600);
+      });
+    }
     else avisarMapaSemChave();
 
     if (approximate) {
@@ -146,8 +158,8 @@ function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, c
       const el = document.createElement("div");
       el.className =
         (m.kind === "workspace"
-          ? "rounded-full border border-sage bg-white text-forest px-2 py-1 text-xs font-semibold shadow"
-          : "rounded-full bg-forest text-white px-2.5 py-1 text-xs font-semibold shadow") +
+          ? "rounded-full border border-sage bg-white text-forest px-2 py-1 text-xs font-semibold "
+          : "rounded-full bg-forest text-white px-3 py-1 text-xs font-semibold ") +
         " absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap";
       el.textContent = m.label ?? "";
       L.marker([m.lat, m.lng], { icon: L.divIcon({ className: "", iconSize: [0, 0], html: el }), interactive: false }).addTo(map);
@@ -162,13 +174,13 @@ function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, c
     };
   }, [shownMarkers, first, zoom, approximate]);
 
-  if (!first) return <div className={cn("rounded-2xl border border-line bg-surface-2", className)} />;
+  if (!first) return <div className={cn("rounded-xl border border-line bg-surface-2", className)} />;
   return (
     <div
       ref={containerRef}
       data-testid="mapa-imovel"
       data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"}
-      className={cn("z-0 overflow-hidden rounded-2xl bg-surface-2", className)}
+      className={cn("z-0 overflow-hidden rounded-xl bg-surface-2", className)}
     />
   );
 }

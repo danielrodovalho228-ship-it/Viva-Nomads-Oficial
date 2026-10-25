@@ -6,15 +6,25 @@
 
   Dois grupos que NUNCA se misturam:
     • obrigatórios — sem eles não publica (o banco também barra fotos e documento);
-    • opcionais    — só Selo Pronto para Morar e vídeo. Melhoram o anúncio,
+    • opcionais    — Selo Pronto para Morar, vídeo (e os pendentes que não barram: endereço
+                     dos lugares, refazer a prova do nível pela câmera). Melhoram o anúncio,
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
+import { mensagemLimitePublicar, situacaoComLimite } from "./pausa.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
+import { ETAPA } from "./etapas-ids.ts";
+import { videoDoAnuncio } from "../video-anuncio.ts";
+import { ROTULO_FALTA_TIPO_ENTRADA } from "./chegada-e-pedido.ts";
 
+import { ROTULO_FALTA_CHACARA } from "./chacara.ts";
+import { MOTIVO_SEM_INTERNET } from "./internet-imovel.ts";
+import { textoRefazerFoto } from "../niveis/prova-camera.ts";
 export const MIN_FOTOS = 8;
 export const MIN_DESCRICAO = 60;
+/** FILTROS-1 (E39): item do portão de publicar quando falta a velocidade da internet. */
+export const ROTULO_FALTA_INTERNET = "Velocidade da internet";
 
 export type StatusDocumento = "none" | "pending" | "approved" | "rejected";
 
@@ -38,8 +48,50 @@ export interface FatosAnuncio {
   limitePlanoOk: boolean | null;
   /** Quantos anúncios o plano permite no ar (para o texto da vaga); ausente = texto genérico. */
   limiteAnuncios?: number | null;
+  /** 64-B: quantos o dono tem publicados (para dizer quantos pausar); ausente = texto sem o número. */
+  ativosAnuncios?: number | null;
   /** Obrigatória: mínimo de MIN_DESCRICAO caracteres. */
   descricao: string;
+  /**
+   * Qualificação "Antes de anunciar" (prompt 22): no cadastro novo entra na MESMA lista, visível desde o passo 1 —
+   * antes era um segundo portão que só aparecia no fim. Ausente = não se aplica aqui (editor, lista de imóveis).
+   */
+  qualificacaoOk?: boolean;
+  /**
+   * Prompt 59: padrão mínimo de conforto — quantos itens da lista atual o dono ainda não confirmou. Ausente = não se
+   * aplica aqui (editor de anúncio já publicado, que não muda de status). Com falta, publicar é bloqueado.
+   */
+  confortoFaltam?: number;
+  /**
+   * 61-B: tipo de entrada informado. Só se aplica a anúncio NOVO (rascunho); ausente = não se aplica (o publicado sem
+   * ele segue no ar e ganha o aviso no painel).
+   */
+  tipoEntradaOk?: boolean;
+  /**
+   * FILTROS-1 (E39): velocidade da internet informada (Mbps), o dado que o chip "Wi-Fi" da busca lê. Só se aplica a
+   * anúncio que ainda vai publicar; ausente = não se aplica (o publicado sem ela segue no ar).
+   */
+  internetOk?: boolean;
+  /**
+   * PERTO-B: lugares adicionados à mão antes da 0238 só com a "Distância" em texto, sem o endereço do lugar. Ficam fora
+   * da página pública até o dono informar o endereço. Ausente = não se aplica aqui.
+   */
+  proximidadesSemEndereco?: number;
+  /**
+   * TIPO-CHACARA-B: o que falta dos campos do tipo chácara/sítio (acesso, tipo de internet, ponto no mapa). Ausente =
+   * não se aplica (outro tipo, ou o publicado sem eles segue no ar). Com falta, publicar é recusado.
+   */
+  chacaraFaltam?: string[];
+  /**
+   * E102-B: o dono respondeu "Não tem internet" (temInternet, internet-imovel.ts). Publicar é recusado pelo padrão
+   * mínimo, com o motivo da falta de internet — e a velocidade em branco não vira um segundo motivo. Ausente = tem.
+   */
+  semInternet?: boolean;
+  /**
+   * FOTO-NA-HORA-B: provas de nível anteriores à regra, ainda no prazo (rótulo do item e a data limite). Cada uma vira
+   * um item pendente "Refaça a foto de [item] pela câmera até [data]". Ausente = não se aplica.
+   */
+  provasParaRefazer?: { chave: string; rotulo: string; ate: string }[];
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -101,45 +153,81 @@ export const OBRIGATORIOS_ROTULOS = [
   "Documento do imóvel aprovado",
 ] as const;
 
-export function textoVagaNoPlano(limite?: number | null): string {
+/** Item condicional do padrão mínimo de conforto (Prompt 59). */
+export const ROTULO_FALTA_CONFORTO = "Padrão mínimo da Viva confirmado";
+
+/** Item da qualificação no portão único (prompt 22). */
+export const ROTULO_QUALIFICACAO = "Antes de anunciar (qualificação do imóvel)";
+
+export function textoVagaNoPlano(limite?: number | null, ativos?: number | null): string {
   const n = typeof limite === "number" && limite > 0 && Number.isFinite(limite) ? limite : null;
+  // 64-B: com os publicados conhecidos, a mesma conta do servidor (situacaoLimite) diz quantos pausar.
+  if (n !== null && typeof ativos === "number" && Number.isFinite(ativos)) return mensagemLimitePublicar(situacaoComLimite(n, ativos));
   const quanto = n === null ? "O seu plano já tem o máximo de anúncios no ar" : `Seu plano permite ${n} ${n === 1 ? "anúncio" : "anúncios"} no ar`;
   return `${quanto}. Para publicar este, pause outro ou mude de plano`;
 }
 
+/** PERTO-B: a pendência dos lugares por perto sem o endereço do lugar. */
+export const ROTULO_PROXIMIDADES_SEM_ENDERECO = "Endereço dos lugares por perto";
+
 export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   const obrigatorios: ItemProntidao[] = [
-    { key: "endereco", label: OBRIGATORIOS_ROTULOS[0], ok: f.enderecoOk, etapa: 0 },
-    { key: "detalhes", label: OBRIGATORIOS_ROTULOS[1], ok: f.detalhesOk, etapa: 2 },
-    { key: "periodo", label: OBRIGATORIOS_ROTULOS[2], ok: f.periodoOk, etapa: 3 },
-    { key: "fotos", label: OBRIGATORIOS_ROTULOS[3], ok: f.fotos >= MIN_FOTOS, etapa: 1, detalhe: f.fotos < MIN_FOTOS ? `tem ${f.fotos}` : undefined },
-    { key: "titulo", label: OBRIGATORIOS_ROTULOS[4], ok: f.titulo.trim().length >= 3, etapa: 2 },
+    { key: "endereco", label: OBRIGATORIOS_ROTULOS[0], ok: f.enderecoOk, etapa: ETAPA.endereco },
+    { key: "detalhes", label: OBRIGATORIOS_ROTULOS[1], ok: f.detalhesOk, etapa: ETAPA.detalhes },
+    { key: "periodo", label: OBRIGATORIOS_ROTULOS[2], ok: f.periodoOk, etapa: ETAPA.disponibilidade },
+    { key: "fotos", label: OBRIGATORIOS_ROTULOS[3], ok: f.fotos >= MIN_FOTOS, etapa: ETAPA.fotos, detalhe: f.fotos < MIN_FOTOS ? `tem ${f.fotos}` : undefined },
+    { key: "titulo", label: OBRIGATORIOS_ROTULOS[4], ok: f.titulo.trim().length >= 3, etapa: ETAPA.descricao },
     {
       key: "descricao",
       label: OBRIGATORIOS_ROTULOS[5],
       ok: f.descricao.trim().length >= MIN_DESCRICAO,
-      etapa: 2,
+      etapa: ETAPA.descricao,
       detalhe: f.descricao.trim().length < MIN_DESCRICAO ? `tem ${f.descricao.trim().length}` : undefined,
     },
-    { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: 3 },
-    { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: 3 },
-    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: 0, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
+    { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: ETAPA.preco },
+    { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: ETAPA.preco },
+    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: ETAPA.revisao, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
   ];
+  if (f.qualificacaoOk !== undefined) {
+    obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: ETAPA.tipo, detalhe: f.qualificacaoOk ? undefined : "leva poucos minutos" });
+  }
+  if (f.tipoEntradaOk === false) {
+    obrigatorios.push({ key: "tipo_entrada", label: ROTULO_FALTA_TIPO_ENTRADA, ok: false, etapa: ETAPA.regras, detalhe: "porteiro, chave, cofre ou fechadura com código" });
+  }
+  if (f.semInternet) {
+    obrigatorios.push({ key: "sem_internet", label: MOTIVO_SEM_INTERNET, ok: false, etapa: ETAPA.detalhes });
+  } else if (f.internetOk === false) {
+    obrigatorios.push({ key: "internet", label: ROTULO_FALTA_INTERNET, ok: false, etapa: ETAPA.comodidades, detalhe: "em Mbps, no bloco Pronto para trabalhar de casa" });
+  }
+  if (f.chacaraFaltam && f.chacaraFaltam.length > 0) {
+    obrigatorios.push({ key: "chacara", label: ROTULO_FALTA_CHACARA, ok: false, etapa: ETAPA.detalhes, detalhe: `falta ${f.chacaraFaltam.join(", ")}` });
+  }
   if (!f.sublocacaoOk) {
     const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;
-    obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: 0 });
+    obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: ETAPA.revisao });
   }
   if (!f.privacidadeOk) {
-    obrigatorios.push({ key: "privacidade", label: ROTULO_FALTA_PRIVACIDADE, ok: false, etapa: 2 });
+    obrigatorios.push({ key: "privacidade", label: ROTULO_FALTA_PRIVACIDADE, ok: false, etapa: ETAPA.comodidades });
+  }
+  if (f.confortoFaltam !== undefined && f.confortoFaltam > 0) {
+    const n = f.confortoFaltam;
+    obrigatorios.push({ key: "conforto", label: ROTULO_FALTA_CONFORTO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "falta 1 item" : `faltam ${n} itens` });
   }
   // A vaga só aparece quando é o único bloqueio que resta (ordem de8761b0, item 2).
   if (f.limitePlanoOk === false && obrigatorios.every((i) => i.ok)) {
-    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: 4, detalhe: textoVagaNoPlano(f.limiteAnuncios) });
+    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: ETAPA.revisao, detalhe: textoVagaNoPlano(f.limiteAnuncios, f.ativosAnuncios) });
   }
   const opcionais: ItemProntidao[] = [
-    { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: 0 },
-    { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: 1 },
+    { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: ETAPA.endereco },
+    { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: ETAPA.fotos },
   ];
+  if (f.proximidadesSemEndereco !== undefined && f.proximidadesSemEndereco > 0) {
+    const n = f.proximidadesSemEndereco;
+    opcionais.push({ key: "proximidades_endereco", label: ROTULO_PROXIMIDADES_SEM_ENDERECO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "1 lugar sem endereço não aparece no anúncio" : `${n} lugares sem endereço não aparecem no anúncio` });
+  }
+  for (const p of f.provasParaRefazer ?? []) {
+    opcionais.push({ key: `refazer_foto_${p.chave}`, label: textoRefazerFoto(p.rotulo, p.ate), ok: false, etapa: ETAPA.comodidades });
+  }
   const cumpridos = obrigatorios.filter((i) => i.ok).length;
   return {
     podePublicar: obrigatorios.every((i) => i.ok),
@@ -191,6 +279,24 @@ export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnunci
   return { itens, proximo: itens.find((i) => !i.ok) ?? null };
 }
 
+/** Âncoras do vídeo: a seção Vídeo do editor por seções e o bloco de vídeo do passo Fotos do assistente (65-B). */
+export const ANCORA_VIDEO_EDITOR = "secao-video";
+export const ANCORA_VIDEO_ASSISTENTE = "bloco-video";
+
+/**
+ * Para onde leva um item de "Para melhorar" (65-B). Hoje só o vídeo tem destino próprio: anúncio existente vai à seção
+ * Vídeo do editor por seções; rascunho no assistente vai ao bloco de vídeo do passo Fotos. null = sem link.
+ */
+export function hrefParaMelhorar(key: string, imovelId: string, noAssistente: boolean): string | null {
+  const id = encodeURIComponent(imovelId);
+  // FOTO-NA-HORA-B: refazer a prova pela câmera → a tela Nível, ruído e extras, já no item.
+  if (key.startsWith("refazer_foto_")) return `/dashboard/imoveis/${id}/nivel?fotografar=${encodeURIComponent(key.slice("refazer_foto_".length))}#nivel-itens`;
+  if (key !== "video") return null;
+  return noAssistente
+    ? `/dashboard/imoveis/novo?draft=${id}&etapa=${ETAPA.fotos}#${ANCORA_VIDEO_ASSISTENTE}`
+    : `/dashboard/imoveis/${id}/editar#${ANCORA_VIDEO_EDITOR}`;
+}
+
 /** Linha do banco (properties + fotos + documento) → fatos. */
 export interface LinhaAnuncio {
   title: string | null;
@@ -210,9 +316,11 @@ export interface LinhaAnuncio {
   description: string | null;
   ready_to_live_badge: boolean | null;
   video_url: string | null;
+  /** 0211: vídeo enviado como arquivo (65-B: conta para o fato "Vídeo" tanto quanto o link). */
+  video_arquivo?: string | null;
 }
 
-export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento, limitePlanoOk: boolean | null, limiteAnuncios?: number | null): FatosAnuncio {
+export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento, limitePlanoOk: boolean | null, limiteAnuncios?: number | null, ativosAnuncios?: number | null): FatosAnuncio {
   return {
     enderecoOk: !!(p.address?.trim() && p.city?.trim()),
     detalhesOk: (Number(p.bathrooms) || 0) >= 1 && (Number(p.area_m2) || 0) > 0,
@@ -228,9 +336,10 @@ export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDo
     documento,
     limitePlanoOk,
     limiteAnuncios,
+    ativosAnuncios,
     descricao: p.description ?? "",
     selo: !!p.ready_to_live_badge,
-    video: !!p.video_url,
+    video: videoDoAnuncio({ videoArquivo: p.video_arquivo, videoUrl: p.video_url }).tipo !== null,
   };
 }
 

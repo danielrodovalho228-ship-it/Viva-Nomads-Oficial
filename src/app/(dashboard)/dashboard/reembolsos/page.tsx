@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useMemo, useState } from "react";
 import {
   Plus,
@@ -36,7 +37,7 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
   return (
     <div className="flex items-center justify-between py-1">
       <span className="text-muted">{label}</span>
-      <span className={strong ? "font-title font-bold text-forest" : "font-medium text-ink"}>
+      <span className={strong ? "font-title font-semibold text-forest" : "font-medium text-ink"}>
         {value}
       </span>
     </div>
@@ -57,14 +58,14 @@ export default function ReembolsosPage() {
 function ReembolsoReal() {
   return (
     <div className="w-full">
-      <PageTitle capa="reembolsos"
+      <PageTitle
         title="Reembolso da caução"
         subtitle="O cálculo do reembolso abre quando uma locação é encerrada."
       />
       <EmptyState
         icon={FileCheck2}
         title="A devolução da caução fica no contrato"
-        text="Quando a locação termina, registre a devolução em Contratos & blocos. O inquilino confirma, e o termo de devolução em PDF vai para os dois. O pagamento é feito pelo locador; a plataforma nunca movimenta o valor."
+        text="Quando a locação termina, registre a devolução em Contratos & blocos. O morador confirma, e o termo de devolução em PDF vai para os dois. O pagamento é feito pelo locador; a plataforma nunca movimenta o valor."
         action={
           <ButtonLink href="/dashboard/contratos" variant="primary">
             Ver contratos e locações
@@ -115,7 +116,7 @@ function ReembolsoPreview() {
 
   return (
     <div>
-      <PageTitle capa="reembolsos"
+      <PageTitle
         title="Reembolso da caução"
         subtitle="A plataforma calcula, notifica e documenta. O pagamento é feito pelo locador — a plataforma nunca movimenta o valor."
       />
@@ -185,12 +186,13 @@ function ReembolsoPreview() {
                 placeholder="Motivo (ex.: reparo de parede)"
                 className="rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
               />
-              <input
-                type="number"
-                min={0}
-                value={valor || ""}
-                onChange={(e) => setValor(Number(e.target.value))}
-                placeholder="Valor"
+              <CampoReais
+                semPrefixo
+                centavos
+                value={valor || null}
+                onChange={(v) => setValor(v ?? 0)}
+                placeholder="Valor (R$)"
+                ariaLabel="Valor (R$)"
                 className="rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
               />
               <input
@@ -243,13 +245,13 @@ function ReembolsoPreview() {
           {status === "registrado" && (
             <Panel>
               <div className="flex items-center gap-2 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
-                <CheckCircle2 className="h-5 w-5" /> Exemplo registrado. Na conta real, o termo de devolução em PDF sai quando o inquilino confirma, em Contratos &amp; blocos.
+                <CheckCircle2 className="h-5 w-5" /> Exemplo registrado. Na conta real, o termo de devolução em PDF sai quando o morador confirma, em Contratos &amp; blocos.
               </div>
               <p className="mt-3 flex items-start gap-2 text-sm text-muted">
-                <Lock className="mt-0.5 h-4 w-4 shrink-0" />O pagamento de{" "}
+                <Lock className="mt-1 h-4 w-4 shrink-0" />O pagamento de{" "}
                 <strong className="text-ink">{formatBRL(valorDevolver)}</strong> é feito pelo{" "}
                 <strong className="text-ink">locador</strong>, da poupança da caução direto ao
-                inquilino. A plataforma <strong className="text-ink">não transfere valores</strong>{" "}
+                morador. A plataforma <strong className="text-ink">não transfere valores</strong>{" "}
                 — apenas marca o status e guarda a prova.
               </p>
             </Panel>
@@ -258,13 +260,13 @@ function ReembolsoPreview() {
 
         {/* Coluna lateral: avisos honestos */}
         <aside className="space-y-4">
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
             <p className="flex items-center gap-2 font-medium">
               <AlertTriangle className="h-4 w-4" /> Atenção ao prazo
             </p>
             <p className="mt-1">
               A devolução em atraso pode gerar, por lei, devolução em <strong>dobro</strong> ao
-              inquilino. A responsabilidade é do locador, não da plataforma.
+              morador. A responsabilidade é do locador, não da plataforma.
             </p>
           </div>
           <PlatformLegalNotice />

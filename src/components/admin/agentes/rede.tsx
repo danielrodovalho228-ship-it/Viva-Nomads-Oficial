@@ -1,5 +1,6 @@
 "use client";
 
+import { horaBRT } from "@/lib/datas-brasilia";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { iniciais, tempoRelativo, type Agente, type Ronda } from "@/lib/agentes/central";
 import { ATUALIZA_REDE_MS, ATUALIZA_REDE_S, COR_EVENTO, linhasAcesas, ROTULO_EVENTO, type EventoRede, type LinhaAcesa } from "@/lib/agentes/eventos";
@@ -315,21 +316,21 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#081028]/80" data-testid="rede-ao-vivo">
+    <div className="overflow-hidden rounded-xl border border-white/10 bg-[#081028]/80" data-testid="rede-ao-vivo">
       <div className="flex flex-wrap items-center gap-2 border-b border-white/10 p-3">
-        <button className="rounded-lg bg-[#005DFC] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#2C7BFF] disabled:opacity-50" onClick={() => ir(0)} disabled={!passos.length}>
+        <button className="rounded-lg bg-[#005DFC] px-3 py-2 text-sm font-semibold text-white hover:bg-[#2C7BFF] disabled:opacity-50" onClick={() => ir(0)} disabled={!passos.length}>
           {passo >= 0 ? "↺ Recomeçar" : "▶ Assistir ao briefing"}
         </button>
         {passo >= 0 && (
           <>
-            <button className="rounded-lg border border-white/15 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/5" onClick={() => ir(passo + 1)}>
+            <button className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-white hover:bg-white/5" onClick={() => ir(passo + 1)}>
               Próximo
             </button>
-            <button className="rounded-lg border border-white/15 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/5" onClick={() => ir(passos.length)}>
+            <button className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-white hover:bg-white/5" onClick={() => ir(passos.length)}>
               Parar
             </button>
-            <div className="h-1 min-w-20 flex-1 overflow-hidden rounded bg-white/10" aria-hidden>
-              <div className="h-full bg-gradient-to-r from-[#38BDF8] to-[#7FD321] transition-[width] duration-300" style={{ width: `${((passo + 1) / passos.length) * 100}%` }} />
+            <div className="h-1 min-w-20 flex-1 overflow-hidden rounded-lg bg-white/10" aria-hidden>
+              <div className="h-full bg-[#38BDF8] transition-[width] duration-300" style={{ width: `${((passo + 1) / passos.length) * 100}%` }} />
             </div>
           </>
         )}
@@ -343,7 +344,7 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
                 {String(passo + 1).padStart(2, "0")} / {passos.length}
               </span>
               <b style={{ color: atual.cor === "sem" ? "#38BDF8" : COR_RONDA_HEX[atual.cor] }}>{atual.titulo}</b>
-              <p className="mt-0.5 text-[#DCE3FA]">{atual.texto.slice(0, digitado)}</p>
+              <p className="mt-1 text-[#DCE3FA]">{atual.texto.slice(0, digitado)}</p>
             </div>
           )}
           {eventos !== null && linhas.length === 0 && !atual && (
@@ -354,12 +355,12 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
         </div>
         <LinhaDoTempo eventos={eventos} lidoEm={lidoEm} erro={erro} agora={agora} />
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 px-4 py-2.5 text-xs text-[#8C9AC4]">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 px-4 py-3 text-xs text-[#8C9AC4]">
         {(Object.keys(COR_EVENTO) as (keyof typeof COR_EVENTO)[])
           .filter((t) => t !== "retorno")
           .map((t) => (
             <span key={t}>
-              <i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_EVENTO[t] }} />
+              <i className="mr-2 inline-block h-0.5 w-4 align-middle" style={{ background: COR_EVENTO[t] }} />
               {t === "ordem" ? "ordem e retorno" : ROTULO_EVENTO[t]}
             </span>
           ))}
@@ -370,13 +371,13 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
   );
 }
 
-const horaBR = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+const horaBR = (iso: string) => `${horaBRT(iso)} BRT`;
 
 /** Linha do tempo dos eventos reais, do mais novo para o mais antigo. */
 function LinhaDoTempo({ eventos, lidoEm, erro, agora }: { eventos: EventoRede[] | null; lidoEm: string | null; erro: boolean; agora: Date | null }) {
   return (
     <aside className="flex max-h-[540px] min-w-0 flex-col border-t border-white/10 lg:border-l lg:border-t-0" data-testid="rede-linha-do-tempo">
-      <div className="flex items-baseline justify-between gap-2 border-b border-white/10 px-4 py-2.5">
+      <div className="flex items-baseline justify-between gap-2 border-b border-white/10 px-4 py-3">
         <b className="text-sm text-white">Últimas 24 h</b>
         <span className="font-mono text-[11px] text-[#8C9AC4]">{lidoEm ? `lido ${horaBR(lidoEm)} · a cada ${ATUALIZA_REDE_S} s` : "lendo…"}</span>
       </div>
@@ -386,8 +387,8 @@ function LinhaDoTempo({ eventos, lidoEm, erro, agora }: { eventos: EventoRede[] 
       ) : (
         <ol className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {(eventos ?? []).map((e, i) => (
-            <li key={`${e.em}-${i}`} className="flex gap-2.5 rounded-lg px-2 py-1.5 text-sm hover:bg-white/5" data-tipo={e.tipo}>
-              <span className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: COR_EVENTO[e.tipo] }} aria-hidden />
+            <li key={`${e.em}-${i}`} className="flex gap-3 rounded-lg px-2 py-2 text-sm hover:bg-white/5" data-tipo={e.tipo}>
+              <span className="mt-2 inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: COR_EVENTO[e.tipo] }} aria-hidden />
               <span className="min-w-0 flex-1">
                 <span className="block break-words text-[#DCE3FA]">
                   {e.link ? (

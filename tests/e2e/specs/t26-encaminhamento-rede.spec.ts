@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
 
 /**
+ * L-43 (vigia, 24/10): o painel não assenta em "networkidle" (t183, L-40); espera até 10 s e segue para o elemento.
+ * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T26 — AGENTES PROATIVOS: encaminhamento entre agentes (0087) e Rede ao vivo REAL.
  * As rondas entram pela mesma porta das rotinas (rpc registrar_ronda com a
  * service role). Disparo de rotina simulado no laboratório (LAB_OUTBOX).
@@ -42,7 +44,8 @@ test.describe("T26 — Encaminhamento entre agentes e Rede ao vivo real", () => 
 
     // Regra do Despachante (ordens 0f6b35b5/5a885ef5): ordem criada por AGENTE (criado_por nulo) não
     // dispara sozinha; fica "Aguardando ronda" até o Daniel aprovar na Central.
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Otávio/ }).click();
     const ordem = page.getByTestId("ordem").filter({ hasText: marca });
@@ -55,7 +58,8 @@ test.describe("T26 — Encaminhamento entre agentes e Rede ao vivo real", () => 
     expect(adminId, "conta admin de teste").toBeTruthy();
     const { error: eAval } = await adm().from("agentes_ordens").update({ criado_por: adminId }).eq("id", ordemId);
     expect(eAval).toBeNull();
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Otávio/ }).click();
     await expect(ordem).toHaveAttribute("data-estado", "enviada");
@@ -64,7 +68,8 @@ test.describe("T26 — Encaminhamento entre agentes e Rede ao vivo real", () => 
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) expect(fs.readFileSync(LAB_OUTBOX, "utf8")).toContain(`ordem ${ordemId} encaminhada por Bruno`);
 
     // Reabrir não dispara de novo.
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) expect(fs.readFileSync(LAB_OUTBOX, "utf8").split(`ordem ${ordemId} encaminhada`).length - 1).toBe(1);
 
     // O Otávio responde (fecha a ordem na ronda) → a resposta volta para o Bruno.
@@ -78,7 +83,8 @@ test.describe("T26 — Encaminhamento entre agentes e Rede ao vivo real", () => 
     expect(retorno![0].texto).toContain("Retorno de Otávio sobre o que você encaminhou");
     expect(retorno![0].texto).toContain("pull/998");
 
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Bruno/ }).click();
     const volta = page.getByTestId("ordem").filter({ hasText: `Conferi ${marca}` });
@@ -88,7 +94,8 @@ test.describe("T26 — Encaminhamento entre agentes e Rede ao vivo real", () => 
   test("achado P2 vira ordem mas NÃO dispara (fica para a próxima ronda)", async ({ page }) => {
     const marca = `t26-p2-${Date.now()}`;
     await ronda("helena", `[lab] ${marca}`, [{ prioridade: "P2", titulo: `Seguradora pediu CNPJ ${marca}`, para: "thiago" }]);
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Thiago/ }).click();
     const ordem = page.getByTestId("ordem").filter({ hasText: marca });
@@ -100,10 +107,11 @@ test.describe("T26 — Encaminhamento entre agentes e Rede ao vivo real", () => 
     test.setTimeout(90_000);
     const marca = `${Date.now()}`.slice(-5);
     await ronda("bruno", `[lab] rede ${marca}`, [{ prioridade: "P1", titulo: `rede ${marca}`, para: "otavio" }]);
-    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Rede ao vivo");
     const linha = page.getByTestId("rede-linha-do-tempo");
-    await expect(linha).toContainText(/lido \d\d:\d\d · a cada 15 s/);
+    await expect(linha).toContainText(/lido \d\d:\d\d(?: BRT)? · a cada 15 s/);
     await expect(linha.locator('li[data-tipo="encaminhamento"]').filter({ hasText: "Bruno → Otávio: 1 achado (P1)" }).first()).toBeVisible();
     await expect(linha.locator('li[data-tipo="ronda"]').filter({ hasText: "Bruno fez ronda com alerta: 1 achado (P1)" }).first()).toBeVisible();
     // Evento novo aparece SEM recarregar a página (atualização de 15 s).

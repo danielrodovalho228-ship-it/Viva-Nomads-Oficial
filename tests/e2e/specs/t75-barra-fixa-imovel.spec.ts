@@ -3,7 +3,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, novaSenha,
 
 /**
  * T75 — Barra fixa no celular na página do imóvel (ordem aa421902, UX1): valor por mês,
- * "Caução e taxas no detalhe" e "Enviar candidatura" visíveis sem rolar até o fim; some no
+ * "Caução e taxas no detalhe" e "Solicitar" (Prompt 41) visíveis sem rolar até o fim; some no
  * computador; no anúncio de exemplo aparece em demonstração.
  */
 const senha = novaSenha();
@@ -36,7 +36,7 @@ test.describe("T75 — Barra fixa do imóvel", () => {
         await expect(barra).toBeVisible();
         await expect(barra).toContainText(/R\$\s?2\.800/);
         await expect(barra).toContainText("Caução e taxas no detalhe");
-        await expect(barra.getByRole("button", { name: "Enviar candidatura" })).toBeVisible();
+        await expect(barra.getByRole("button", { name: "Solicitar", exact: true })).toBeVisible();
         const caixa = await barra.boundingBox();
         expect(caixa!.x).toBeGreaterThanOrEqual(0);
         expect(caixa!.x + caixa!.width).toBeLessThanOrEqual(largura + 1);
@@ -48,10 +48,13 @@ test.describe("T75 — Barra fixa do imóvel", () => {
     test("sem sessão, o botão leva ao login e volta para o anúncio (mesma ação do cartão)", async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 800 });
       await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
-      await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Enviar candidatura" }).click();
-      // Passo de confirmação (#671): só "Enviar solicitação" leva ao login.
-      await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Enviar solicitação" }).click();
-      await page.waitForURL(/\/auth\?redirect=\/imoveis\//, { timeout: 15_000 });
+      await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Solicitar", exact: true }).click();
+      // Passo de confirmação (#671): só o último "Enviar candidatura" (após Continuar) leva ao login.
+      await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Continuar" }).click();
+      await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Continuar" }).click();
+      await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Enviar candidatura" }).click();
+      // Prompt 49: a entrada diz o porquê (candidatura) e volta para o anúncio.
+      await page.waitForURL(/\/auth\?motivo=candidatura&redirect=%2Fimoveis%2F/, { timeout: 15_000 });
     });
 
     test("1280 px: a barra não aparece (o cartão sticky continua)", async ({ page }) => {

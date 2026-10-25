@@ -74,7 +74,7 @@ export function ImportarAnuncio({ onAplicar, abertoInicial = false }: { onAplica
           <p className="text-sm font-medium text-ink">Confira antes de aplicar</p>
           <dl className="mt-2 divide-y divide-sage-100 rounded-lg border border-sage-100 text-sm">
             {linhas.map(([rotulo, valor]) => (
-              <div key={rotulo} className="flex flex-col gap-0.5 px-3 py-2 sm:flex-row sm:justify-between sm:gap-4">
+              <div key={rotulo} className="flex flex-col gap-1 px-3 py-2 sm:flex-row sm:justify-between sm:gap-4">
                 <dt className="text-muted">{rotulo}</dt>
                 <dd className="text-ink sm:text-right">{valor || "—"}</dd>
               </div>

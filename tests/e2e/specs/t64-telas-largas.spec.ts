@@ -4,9 +4,10 @@ import { authFile } from "../fixtures/auth";
 
 /**
  * T64 — ordem bbced3fa (parte 2): a área logada usa a largura cheia, igual à Visão geral.
- * (1) a 1280 e 1920 px o conteúdo de cada rota tem a mesma largura da Visão geral (±24 px);
+ * (1) a 1280 e 1920 px o conteúdo de cada rota tem a mesma largura da Visão geral (±24 px) — menos o "Anunciar"
+ *     (novo), que na CADASTRO-MOLDURA troca a casca do painel pela moldura do assistente (sem a lateral);
  * (2) a 360 e 390 px nenhuma rota rola para o lado;
- * (3) "Anunciar" (novo) tem 2 colunas no computador (etapa + resumo) e 1 no celular.
+ * (3) "Anunciar" (novo) tem 2 colunas no computador (etapa + prévia do anúncio ao vivo) e 1 no celular.
  */
 const ROTAS = [
   "/dashboard",
@@ -29,28 +30,40 @@ async function abrir(page: Page, rota: string) {
   await page.locator("main").first().waitFor();
 }
 
-/** Largura do maior bloco direto dentro do <main> (o conteúdo da página). */
+/**
+ * Largura do maior bloco direto dentro do <main> (o conteúdo da página).
+ * Espera o conteúdo existir: /dashboard/locacoes do dono sem estadia redireciona para Contratos (prompt 28) e,
+ * com a página em streaming, o <main> do primeiro render ainda não tem filhos (lab 5d5f433e: 0px).
+ */
 async function larguraConteudo(page: Page): Promise<number> {
-  return page.evaluate(() => {
-    const main = document.querySelector("main");
-    if (!main) return 0;
-    return Math.round(Math.max(0, ...Array.from(main.children).map((c) => c.getBoundingClientRect().width)));
-  });
+  const medir = () =>
+    page.evaluate(() => {
+      const main = document.querySelector("main");
+      if (!main) return 0;
+      return Math.round(Math.max(0, ...Array.from(main.children).map((c) => c.getBoundingClientRect().width)));
+    });
+  await expect.poll(medir, { timeout: 15_000, message: "conteúdo do <main> não apareceu" }).toBeGreaterThan(0);
+  return medir();
 }
 
+// CADASTRO-MOLDURA: /dashboard/imoveis/novo não usa a casca do painel (moldura própria do assistente, ver t450).
+const ROTAS_COM_CASCA = ROTAS.slice(1).filter((r) => r !== "/dashboard/imoveis/novo");
+
+// Uma rota por teste: as 10 rotas em sequência estouravam os 135 s de um teste só quando o lab estava lento
+// (lab fe04ddf6: T64 1280 px por timeout). Cada teste mede a Visão geral e a própria rota, com prazo próprio.
 for (const largura of [1280, 1920]) {
-  test(`T64 — conteúdo em largura cheia a ${largura}px (±24 px da Visão geral)`, async ({ page }) => {
-    test.slow(); // 10 rotas em sequência: o prazo de 45 s de um teste só não cobre
-    await page.setViewportSize({ width: largura, height: 900 });
-    await abrir(page, "/dashboard");
-    const referencia = await larguraConteudo(page);
-    expect(referencia).toBeGreaterThan(largura * 0.6);
-    for (const rota of ROTAS.slice(1)) {
+  for (const rota of ROTAS_COM_CASCA) {
+    test(`T64 — ${rota} em largura cheia a ${largura}px (±24 px da Visão geral)`, async ({ page }) => {
+      test.slow();
+      await page.setViewportSize({ width: largura, height: 900 });
+      await abrir(page, "/dashboard");
+      const referencia = await larguraConteudo(page);
+      expect(referencia).toBeGreaterThan(largura * 0.6);
       await abrir(page, rota);
       const w = await larguraConteudo(page);
       expect(Math.abs(w - referencia), `${rota}: ${w}px contra ${referencia}px da Visão geral`).toBeLessThanOrEqual(24);
-    }
-  });
+    });
+  }
 }
 
 for (const largura of [360, 390]) {
@@ -65,11 +78,13 @@ for (const largura of [360, 390]) {
   });
 }
 
-test("T64 — novo anúncio: etapa à esquerda e resumo à direita a 1280px; uma coluna a 390px", async ({ page }) => {
+test("T64 — novo anúncio: etapa à esquerda e prévia à direita a 1280px; uma coluna a 390px", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await abrir(page, "/dashboard/imoveis/novo");
   const resumo = page.getByTestId("novo-resumo");
   await expect(resumo).toBeVisible();
+  // Assistente em 10 passos: a coluna da direita é a prévia do anúncio montando ao vivo.
+  await expect(resumo.getByTestId("previa-anuncio")).toBeVisible();
   const grade = page.getByTestId("novo-duas-colunas");
   const g = (await grade.boundingBox())!;
   const r = (await resumo.boundingBox())!;
@@ -78,8 +93,10 @@ test("T64 — novo anúncio: etapa à esquerda e resumo à direita a 1280px; uma
   expect(etapa.x + etapa.width).toBeLessThanOrEqual(r.x); // lado a lado, sem sobrepor
   await page.setViewportSize({ width: 390, height: 800 });
   await page.waitForTimeout(300);
+  // No celular a prévia sai (só aparece a partir de 1024 px, como no desenho): a etapa ocupa a largura toda.
+  await expect(resumo).toBeHidden();
   const g2 = (await grade.boundingBox())!;
-  const r2 = (await resumo.boundingBox())!;
-  expect(r2.y).toBeGreaterThan(g2.y + 100); // empilhado embaixo da etapa
-  expect(Math.abs(r2.x - g2.x)).toBeLessThanOrEqual(2);
+  const e2 = (await grade.locator("> div").first().boundingBox())!;
+  expect(Math.abs(e2.x - g2.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs(e2.width - g2.width)).toBeLessThanOrEqual(2);
 });

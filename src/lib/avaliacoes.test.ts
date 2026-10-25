@@ -51,3 +51,18 @@ test("10: papel oposto", () => {
   assert.equal(papelOposto("proprietario"), "inquilino");
   assert.equal(papelOposto("inquilino"), "proprietario");
 });
+
+test("Prompt 43: as duas partes, o prazo e 'Aguardando a outra parte'", async () => {
+  const { partesDaAvaliacao, prazoAvaliacao } = await import("./avaliacoes.ts");
+  assert.equal(prazoAvaliacao("2026-10-20T15:00:00Z"), "03/11/2026");
+  assert.equal(prazoAvaliacao(null), null);
+  assert.equal(prazoAvaliacao("x"), null);
+  const antes = partesDaAvaliacao(false, "03/11/2026");
+  assert.equal(antes.estado, "Falta a sua avaliação");
+  assert.deepEqual(antes.linhas.map((l) => l.quem), ["Sua avaliação", "Avaliação da outra parte"]);
+  assert.match(antes.linhas[0].estado, /até 03\/11\/2026/);
+  const depois = partesDaAvaliacao(true, null);
+  assert.equal(depois.estado, "Aguardando a outra parte");
+  assert.equal(depois.linhas[0].estado, "Enviada");
+  assert.doesNotMatch(JSON.stringify(depois), /já avaliou|enviou a dela/, "nunca revela o lado da outra parte");
+});

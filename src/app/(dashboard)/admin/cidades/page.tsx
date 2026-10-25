@@ -1,6 +1,9 @@
-import { CheckCircle2, MapPinned, PauseCircle, Users } from "lucide-react";
+import { dataBRT } from "@/lib/datas-brasilia";
+import { ButtonLink } from "@/components/ui/button";
+import { MapPinned, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { rankingInteresse, type LinhaInteresse } from "@/lib/cidades-liberadas/regras";
 import { listarCidades } from "@/lib/cidades-liberadas/servidor";
 import { CadastroCidadeForm, CidadeBotao } from "./forms";
@@ -9,7 +12,7 @@ export const metadata = { title: "Cidades liberadas — Admin" };
 
 /**
  * Admin → Cidades liberadas (ordem 335b4064): libera/pausa cidade e ranking de interesse (proprietários × inquilinos),
- * que serve para direcionar tráfego pago. Padrão das telas do admin: PageTitle + StatCard + Panel, cartões no celular e
+ * que serve para direcionar tráfego pago. Padrão das telas do admin: PageTitle + número-herói + lista + Panel, cartões no celular e
  * tabela no computador. O layout de /admin já barra quem não é admin; a RLS barra de novo no banco.
  */
 export default async function AdminCidadesPage() {
@@ -18,7 +21,7 @@ export default async function AdminCidadesPage() {
     return (
       <>
         <PageTitle title="Cidades liberadas" />
-        <EmptyState icon={MapPinned} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." />
+        <EmptyState icon={MapPinned} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
   }
@@ -29,26 +32,30 @@ export default async function AdminCidadesPage() {
   const lista = cidades ?? [];
   const ranking = rankingInteresse((interesses ?? []) as LinhaInteresse[]);
   const liberadas = lista.filter((c) => c.liberada).length;
-  const dataBR = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—");
+  const dataBR = (iso: string | null) => (iso ? dataBRT(iso) : "—");
 
   return (
     <>
       <PageTitle title="Cidades liberadas" subtitle="Só dá para publicar imóvel em cidade liberada. Quem busca ou pede moradia em outra cidade pode deixar o interesse." />
       {(cidades === null || error) && (
-        <p role="alert" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p role="alert" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Não foi possível ler todos os dados agora. Tente de novo em instantes.
         </p>
       )}
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Cidades liberadas" value={liberadas} icon={CheckCircle2} />
-        <StatCard label="Cidades pausadas" value={lista.length - liberadas} icon={PauseCircle} />
-        <StatCard label="Cidades com interesse" value={ranking.length} icon={MapPinned} href="#interesse" />
-        <StatCard label="Pessoas interessadas" value={ranking.reduce((n, c) => n + c.total, 0)} icon={Users} href="#interesse" />
+      <div className="mb-6">
+        <NumeroHeroi rotulo="Cidades liberadas" valor={liberadas} href="#lista" />
+        <ListaNumeros
+          itens={[
+            { rotulo: "Cidades pausadas", valor: lista.length - liberadas, href: "#lista" },
+            { rotulo: "Cidades com interesse", valor: ranking.length, href: "#interesse" },
+            { rotulo: "Pessoas interessadas", valor: ranking.reduce((n, c) => n + c.total, 0), href: "#interesse" },
+          ]}
+        />
       </div>
 
-      <Panel title="Cidades" className="mb-6">
+      <Panel title="Cidades" className="mb-6 scroll-mt-24" id="lista">
         {lista.length === 0 ? (
-          <EmptyState icon={MapPinned} title="Nenhuma cidade cadastrada" text="Cadastre abaixo a primeira cidade liberada." />
+          <EmptyState icon={MapPinned} title="Nenhuma cidade cadastrada" text="Cadastre abaixo a primeira cidade liberada." action={<ButtonLink href="#cadastrar-cidade" variant="secondary" size="sm">Cadastrar a primeira cidade</ButtonLink>} />
         ) : (
           <>
             <ul className="space-y-3 md:hidden" data-testid="cidades-cartoes">
@@ -70,7 +77,7 @@ export default async function AdminCidadesPage() {
                 <tbody>
                   {lista.map((c) => (
                     <tr key={`${c.uf}-${c.chave}`} className="border-t border-sage-100">
-                      <td className="py-2 font-medium text-ink">{c.cidade} – {c.uf}</td>
+                      <td className="py-2 font-semibold text-ink">{c.cidade} – {c.uf}</td>
                       <td>{c.liberada ? "Liberada" : "Pausada"}</td>
                       <td>{dataBR(c.liberada_em)}</td>
                       <td className="max-w-xs truncate text-muted">{c.observacao ?? "—"}</td>
@@ -84,17 +91,17 @@ export default async function AdminCidadesPage() {
         )}
       </Panel>
 
-      <Panel title="Cadastrar cidade" className="mb-6">
+      <Panel title="Cadastrar cidade" className="mb-6 scroll-mt-24" id="cadastrar-cidade">
         <CadastroCidadeForm />
       </Panel>
 
       <Panel title="Interesse por cidade" id="interesse">
         {ranking.length === 0 ? (
-          <EmptyState icon={Users} title="Ainda sem interesse registrado" text="Quando alguém buscar ou tentar publicar numa cidade fechada e pedir aviso, aparece aqui." />
+          <EmptyState icon={Users} title="Ainda sem interesse registrado" text="Quando alguém buscar ou tentar publicar numa cidade fechada e pedir aviso, aparece aqui." action={<ButtonLink href="/admin/cidades#lista" variant="secondary" size="sm">Ver as cidades liberadas</ButtonLink>} />
         ) : (
           <ol className="divide-y divide-sage-100" data-testid="ranking-interesse">
             {ranking.map((c, i) => (
-              <li key={`${c.uf}-${c.chave}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+              <li key={`${c.uf}-${c.chave}`} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
                 <span className="font-semibold text-ink">{i + 1}. {c.cidade} – {c.uf}</span>
                 <span className="text-muted">{c.proprietarios} proprietário(s) · {c.inquilinos} inquilino(s) · <strong className="text-ink">{c.total}</strong> no total</span>
               </li>

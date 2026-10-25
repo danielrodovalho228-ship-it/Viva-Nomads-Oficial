@@ -1,5 +1,8 @@
 "use client";
 
+import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
+import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,9 +20,15 @@ import {
   fraseMaisTempo,
   mesesParaFicarMaisTempo,
   MOTIVOS_RECUSA,
+  AJUDA_VALOR_CONTRAPROPOSTA,
+  TEXTO_ULTIMA_RODADA,
+  TEXTO_RODADAS_ESGOTADAS,
+  tetoDeRodadasAtingido,
+  ehUltimaRodada,
+  rotuloRodada,
   type Mudancas,
 } from "@/lib/propostas/regras";
-import { pctTexto } from "@/lib/cobranca/regra";
+import { rotuloTaxaServico } from "@/lib/cobranca/regra";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
 
 const quem = (a: "owner" | "tenant") => (a === "owner" ? "Proprietário" : "Interessado");
@@ -87,6 +96,8 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
 
   async function enviar(r: Parameters<typeof responderProposta>[1]) {
     setErro(null);
+    // O aviso de "tente a partir de…" é da tentativa anterior: some ao reenviar (complemento do prompt 27, parte B).
+    setAviso(null);
     setEnviando(true);
     const res = await responderProposta(p.id, r);
     setEnviando(false);
@@ -105,7 +116,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
   return (
     <>
       <PageTitle
-        title={`Proposta ${p.numero}`}
+        title={`Proposta ${p.registro?.numero ?? p.numero}`}
         subtitle={`${p.imovel.titulo} · ${p.papel === "owner" ? "Interessado" : "Proprietário"}: ${p.outraParte}`}
         action={
           <Button variant="secondary" size="sm" onClick={() => window.print()} data-testid="proposta-pdf">
@@ -114,19 +125,43 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
         }
       />
 
+      {/* Prompt 56 (D4): as duas partes pelo nome completo, sem CPF/CNPJ; e o caminho da conferência da versão vigente. */}
+      <p className="-mt-2 mb-4 text-sm text-muted" data-testid="proposta-partes">
+        Proprietário: <span className="font-medium text-ink">{p.partes.proprietario}</span> · Interessado:{" "}
+        <span className="font-medium text-ink">{p.partes.interessado}</span>
+        {p.outraParteLinkedin && <SeloLinkedin className="ml-2" />}
+      </p>
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="space-y-5">
+        <div className="space-y-4">
+          {/* Ficha do pet da candidatura: só para o dono (o servidor confere a candidatura). */}
+          {p.papel === "owner" && <FichaPetCandidatura alvo={{ leadId: p.leadId }} className="rounded-xl border border-sage-200 bg-white p-3" />}
           <Panel data-testid="proposta-atual">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold text-ink">
                 Versão {atual.versao} · {quem(atual.autor)}
               </p>
-              <StatusChip status={p.status} />
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-ink" data-testid="proposta-rodada">
+                  {rotuloRodada(atual.versao)}
+                </span>
+                <StatusChip status={p.status} />
+              </div>
             </div>
+            {ehUltimaRodada(atual.versao, estaAberta(p.status)) && (
+              <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-800" data-testid="proposta-ultima-rodada">
+                {TEXTO_ULTIMA_RODADA}
+              </p>
+            )}
+            {tetoDeRodadasAtingido(atual.versao, estaAberta(p.status)) && (
+              <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-800" data-testid="proposta-teto-rodadas">
+                {TEXTO_RODADAS_ESGOTADAS}
+              </p>
+            )}
             <Valores v={atual} />
             {atual.mensagem && <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink" data-testid="proposta-mensagem">“{atual.mensagem}”</p>}
             {estaAberta(p.status) && (
-              <p className="mt-3 flex items-center gap-1.5 text-[13px] text-muted">
+              <p className="mt-3 flex items-center gap-2 text-[13px] text-muted">
                 <Clock className="h-3.5 w-3.5" aria-hidden /> Válida até {dataBR(p.validaAte)}
                 {p.vistoEm && p.papel === "owner" ? ` · vista em ${dataBR(p.vistoEm)}` : ""}
               </p>
@@ -158,15 +193,15 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                   <X className="h-4 w-4" /> Recusar
                 </Button>
               </div>
-              {p.bloqueioContraproposta && p.papel === "tenant" && <p className="mt-2 text-[13px] text-muted">{p.bloqueioContraproposta}</p>}
+              {p.bloqueioContraproposta && p.bloqueioContraproposta !== TEXTO_RODADAS_ESGOTADAS && p.papel === "tenant" && <p className="mt-2 text-[13px] text-muted">{p.bloqueioContraproposta}</p>}
 
               {modo === "recusar" && (
                 <div className="mt-4 space-y-3" data-testid="form-recusa">
                   <fieldset>
-                    <legend className="mb-1.5 text-sm font-medium text-ink">Motivo</legend>
+                    <legend className="mb-2 text-sm font-medium text-ink">Motivo</legend>
                     <div className="flex flex-wrap gap-2">
                       {MOTIVOS_RECUSA.map((m) => (
-                        <label key={m.chave} className={cn("cursor-pointer rounded-full border px-3 py-1.5 text-sm", motivo === m.chave ? "border-forest bg-sage-100 text-forest" : "border-sage-200 text-ink")}>
+                        <label key={m.chave} className={cn("cursor-pointer rounded-full border px-3 py-2 text-sm", motivo === m.chave ? "border-forest bg-sage-100 text-forest" : "border-sage-200 text-ink")}>
                           <input type="radio" name="motivo" value={m.chave} className="sr-only" checked={motivo === m.chave} onChange={() => setMotivo(m.chave)} />
                           {m.rotulo}
                         </label>
@@ -185,22 +220,26 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                   <div className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
                     {libera("valor_mensal") && (
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-ink">Valor mensal (R$)</span>
-                        <input
-                          inputMode="decimal"
-                          className="input"
+                        <span className="mb-2 block text-sm font-medium text-ink">Valor mensal (R$)</span>
+                        <CampoReais
+                          semPrefixo
                           value={mud.valorBase ?? atual.termos.valorBase}
-                          onChange={(e) => {
+                          onChange={(v) => {
                             setAviso(null);
-                            setMud((m) => ({ ...m, valorBase: Number(e.target.value.replace(/[^\d.,]/g, "").replace(",", ".")) || 0 }));
+                            setMud((m) => ({ ...m, valorBase: v ?? 0 }));
                           }}
-                          data-testid="contra-valor"
+                          testid="contra-valor"
                         />
+                        {p.papel === "tenant" && (
+                          <span className="mt-1 block text-[12px] text-muted" data-testid="contra-valor-ajuda">
+                            {AJUDA_VALOR_CONTRAPROPOSTA}
+                          </span>
+                        )}
                       </label>
                     )}
                     {libera("meses") && (
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-ink">Meses</span>
+                        <span className="mb-2 block text-sm font-medium text-ink">Meses</span>
                         <select className="input" value={nova.meses} onChange={(e) => setMud((m) => ({ ...m, meses: Number(e.target.value) }))} data-testid="contra-meses">
                           {meses.map((m) => (
                             <option key={m} value={m}>
@@ -212,13 +251,13 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     )}
                     {libera("data_entrada") && (
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-ink">Data de entrada</span>
+                        <span className="mb-2 block text-sm font-medium text-ink">Data de entrada</span>
                         <CampoData className="input" min={hojeBR()} value={nova.dataEntrada} onChange={(e) => setMud((m) => ({ ...m, dataEntrada: e.target.value }))} data-testid="contra-data" />
                       </label>
                     )}
                     {libera("limpeza") && (
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-ink">Pacote de limpeza</span>
+                        <span className="mb-2 block text-sm font-medium text-ink">Pacote de limpeza</span>
                         <select className="input" value={nova.limpezasMes} onChange={(e) => setMud((m) => ({ ...m, limpezasMes: Number(e.target.value) }))} data-testid="contra-limpezas">
                           {[0, 1, 2, 3, 4].map((n) => (
                             <option key={n} value={n}>
@@ -230,8 +269,8 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     )}
                     {libera("taxa_pet") && (
                       <label className="block">
-                        <span className="mb-1.5 block text-sm font-medium text-ink">Taxa pet (R$/mês)</span>
-                        <input inputMode="decimal" className="input" value={mud.taxaPet ?? atual.termos.taxaPet} onChange={(e) => setMud((m) => ({ ...m, taxaPet: Number(e.target.value.replace(",", ".")) || 0 }))} />
+                        <span className="mb-2 block text-sm font-medium text-ink">Taxa pet (R$/mês)</span>
+                        <CampoReais semPrefixo centavos value={mud.taxaPet ?? atual.termos.taxaPet} onChange={(v) => setMud((m) => ({ ...m, taxaPet: v ?? 0 }))} testid="contra-taxa-pet" />
                       </label>
                     )}
                   </div>
@@ -239,7 +278,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     <button
                       type="button"
                       onClick={() => setMud((m) => ({ ...m, meses: maisTempo }))}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-forest px-3 py-1.5 text-sm font-medium text-forest hover:bg-sage-100"
+                      className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-2 text-sm font-medium text-forest hover:bg-sage-100"
                       data-testid="ficar-mais-tempo"
                     >
                       Vou ficar mais tempo <ArrowRight className="h-4 w-4" aria-hidden />
@@ -251,13 +290,13 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     </p>
                   )}
                   <label className="block">
-                    <span className="mb-1.5 block text-sm font-medium text-ink">Mensagem curta (opcional)</span>
+                    <span className="mb-2 block text-sm font-medium text-ink">Mensagem curta (opcional)</span>
                     <textarea rows={2} maxLength={500} className="input" value={mensagem} onChange={(e) => setMensagem(e.target.value)} data-testid="contra-mensagem" />
                   </label>
                   {mudou.length > 0 && (
                     <div className="rounded-lg border border-sage-200 p-3 text-sm" data-testid="resumo-mudancas">
                       <p className="mb-1 font-medium text-ink">O que muda</p>
-                      <ul className="space-y-0.5">
+                      <ul className="space-y-1">
                         {mudou.map((d) => (
                           <li key={d.campo}>
                             {d.rotulo}: <s className="text-muted">{d.antes}</s> → <strong>{d.depois}</strong>
@@ -277,7 +316,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                       {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Enviar contraproposta
                     </Button>
                     {aviso && (
-                      <Button variant="secondary" disabled={enviando} onClick={() => enviar({ acao: "contrapropor", mudancas: mud, mensagem: mensagem || undefined, mesmoAbaixoDoMinimo: true })}>
+                      <Button variant="secondary" disabled={enviando} onClick={() => enviar({ acao: "contrapropor", mudancas: mud, mensagem: mensagem || undefined, mesmoAbaixoDoMinimo: true })} data-testid="enviar-mesmo-assim">
                         Enviar mesmo assim
                       </Button>
                     )}
@@ -310,7 +349,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                       {formatBRL(v.totais.valorMensal)} × {v.termos.meses} = {formatBRL(v.totais.totalContrato)}
                     </p>
                     {v.mudou.length > 0 && (
-                      <ul className="mt-2 space-y-0.5 text-[13px]">
+                      <ul className="mt-2 space-y-1 text-[13px]">
                         {v.mudou.map((d) => (
                           <li key={d.campo} className="text-ink">
                             {d.rotulo}: <s className="text-muted">{d.antes}</s> → <strong className="text-forest">{d.depois}</strong>
@@ -330,9 +369,19 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
           {p.taxa && (
             <Panel title="Só você vê" data-testid="proposta-taxa">
               <p className="text-sm text-ink">
-                Taxa de serviço {pctTexto(p.taxa.pct)} sobre o valor total = <strong>{formatBRL(p.taxa.valor)}</strong>
-                {p.taxa.congelada ? " (congelada no aceite)" : ""}.
+                {rotuloTaxaServico(p.taxa.pct, p.taxa.valorMensal, p.taxa.meses, p.taxa.valor)}
+                {p.taxa.congelada ? " (congelada no aceite)" : " (fixada no envio; não sobe depois)"}. Consumo, limpeza e taxa pet não entram na base.
               </p>
+              {p.taxa.seAceitaHoje && (
+                <p className="mt-2 text-sm font-medium text-forest" data-testid="proposta-taxa-se-aceita-hoje">
+                  {p.taxa.seAceitaHoje}.
+                </p>
+              )}
+              {p.taxa.caiu && (
+                <p className="mt-2 text-sm font-medium text-forest" data-testid="proposta-taxa-caiu">
+                  {p.taxa.caiu}.
+                </p>
+              )}
             </Panel>
           )}
           {p.fechamentoUrl && (
@@ -346,6 +395,11 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
               Ver todos os orçamentos
             </Link>
           </p>
+          {p.registro && (
+            <p className="text-[12px] text-muted" data-testid="proposta-conferir">
+              {p.registro.conferir}
+            </p>
+          )}
         </aside>
       </div>
     </>

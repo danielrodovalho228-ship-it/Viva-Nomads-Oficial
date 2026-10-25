@@ -24,18 +24,33 @@ function arquivos(dir: string, out: string[] = []): string[] {
 test("primário único: primary, accent e gold usam a MESMA classe; outline = secondary", () => {
   assert.match(botao, /primary: PRIMARY,\s*accent: PRIMARY,\s*gold: PRIMARY,/);
   assert.match(botao, /secondary: SECONDARY,\s*outline: SECONDARY,/);
-  assert.match(botao, /const PRIMARY = "bg-blue-500 text-white/);
-  assert.match(botao, /const SECONDARY = "border border-blue-500 bg-white text-blue-500/);
+  // Prompt 40: primário = verde-marca com texto branco; secundário = contorno tinta, fundo branco.
+  assert.match(botao, /const PRIMARY = "bg-forest text-white/);
+  assert.match(botao, /const SECONDARY = "border border-ink bg-white text-ink/);
 });
 
-test("forma comum: cantos 8 px, semibold, sem quebra de linha, não encolhe, foco visível", () => {
+test("forma comum: cantos 8 px, semibold, sem quebra de linha, não encolhe, foco visível, sem sombra", () => {
   const base = botao.match(/const base =\s*"([^"]+)"/)?.[1] ?? "";
   for (const c of ["whitespace-nowrap", "shrink-0", "rounded-lg", "font-semibold", "focus-visible:ring-2", "disabled:opacity-50"]) {
     assert.ok(base.split(/\s+/).includes(c), `base sem ${c}`);
   }
   assert.match(botao, /sm: "h-10 /);
-  assert.match(botao, /md: "h-12 /);
-  assert.match(botao, /lg: "h-14 /);
+  // 52 px no celular e 56 px no computador (a partir de 1024 px).
+  assert.match(botao, /md: "h-13 [^"]*lg:h-14"/);
+  assert.match(botao, /lg: "h-13 [^"]*lg:h-14"/);
+  // Uma sombra só no app: a da variante flutuante.
+  const sombras = [...botao.matchAll(/\bshadow-[\w-]+/g)].map((m) => m[0]);
+  assert.deepEqual([...new Set(sombras)], ["shadow-flutuante"]);
+});
+
+test("Prompt 40: terciário sublinhado sem caixa, destrutivo vermelho, pill só em busca/chip/flutuante", () => {
+  assert.match(botao, /tertiary: `\$\{TEXTO\} text-ink/);
+  assert.match(botao, /destructive: `\$\{TEXTO\} text-red-600/);
+  assert.match(botao, /const TEXTO = "h-auto [^"]*underline/);
+  const comPill = [...botao.matchAll(/(\w+):\s*"([^"]*)"/g)].filter((m) => /\brounded-full\b/.test(m[2])).map((m) => m[1]);
+  assert.deepEqual(comPill, ["busca", "chip", "flutuante"]);
+  assert.match(botao, /aria-pressed:bg-ink aria-pressed:text-white/); // chip selecionado = tinta
+  assert.match(botao, /const PILL: ReadonlySet<Variant> = new Set\(\["busca", "chip", "flutuante"\]\)/);
 });
 
 test("nenhum botão feito à mão com o verde-marca/preto: todos via Button, ButtonLink ou buttonClasses", () => {
@@ -73,7 +88,7 @@ test("botões não recolorem o primário por className (só ações de excluir p
 test("header: logo não encolhe e tem distância fixa dos links; links e ações não quebram", () => {
   const nav = ler("components/layout/navbar.tsx");
   assert.match(nav, /<Logo className="shrink-0" \/>/);
-  assert.match(nav, /<nav className="flex h-18 w-full items-center gap-10 px-5/);
+  assert.match(nav, /<nav className="flex h-18 w-full items-center gap-8 px-4/);
   assert.match(nav, /data-testid="nav-acoes" className=\{cn\("hidden shrink-0/);
   assert.match(nav, /whitespace-nowrap text-sm font-medium/);
 });

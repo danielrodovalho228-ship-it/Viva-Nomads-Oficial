@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     ["Imóveis ativos (estimativa)", lead.imoveis ? String(lead.imoveis) : "—"],
   ];
   const r = await sendEmail({
+    interno: true,
     to: process.env.EMPRESAS_LEAD_EMAIL ?? SUPORTE_EMAIL,
     subject: "Lead — Plano Gestor (31+ imóveis)",
     html: `<h2>Novo contato sobre o Plano Gestor</h2><p>${campos.map(([k, x]) => `${escaparHtml(k)}: ${escaparHtml(x)}`).join("<br>")}</p>`,

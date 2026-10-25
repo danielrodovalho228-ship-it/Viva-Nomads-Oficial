@@ -11,6 +11,7 @@ import {
 } from "@/config/categorias-profissionais";
 import { contemContato, CONTATO_AVISO } from "@/lib/pedidos/pedidos";
 import { getMinhaCategoria, setMinhaCategoria } from "@/lib/data/perfil-actions";
+import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
 
 const SELECT_OUTRO = "__outro__";
 
@@ -67,14 +68,28 @@ export function CategoriaProfissional() {
     setSaving(true);
     const res = await setMinhaCategoria(value);
     setSaving(false);
-    if (res.ok) setOk(true);
+    if (res.ok) {
+      setOk(true);
+      // O medidor do perfil anda na hora (CONTA-A, C1).
+      window.dispatchEvent(new Event(PERFIL_ATUALIZADO));
+    }
     else setErro(res.error ?? "Não foi possível salvar.");
   }
+
+  // C6: sem "Carregando…" piscando — até a escolha salva chegar, um bloco do mesmo tamanho, sem texto.
+  if (loading)
+    return (
+      <div aria-busy="true" data-testid="profissao-carregando">
+        <span className="mb-2 block text-sm font-medium text-ink">Categoria profissional</span>
+        <div className="h-[46px] rounded-xl border border-sage-200 bg-surface-2" />
+        <div className="mt-4 h-13 w-40 rounded-lg bg-surface-2 lg:h-14" />
+      </div>
+    );
 
   return (
     <div>
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">Categoria profissional</span>
+        <span className="mb-2 block text-sm font-medium text-ink">Categoria profissional</span>
         <select
           value={sel}
           disabled={loading}
@@ -82,10 +97,10 @@ export function CategoriaProfissional() {
             setSel(e.target.value);
             setOk(false);
           }}
-          className="w-full rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+          className="w-full rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm outline-none focus:border-sage"
         >
           <option value="" disabled>
-            {loading ? "Carregando…" : "Selecione…"}
+            Selecione…
           </option>
           {CATEGORIAS_PROFISSIONAIS.map((g) => (
             <optgroup key={g.grupo} label={g.grupo}>
@@ -105,7 +120,7 @@ export function CategoriaProfissional() {
 
       {isOutro && (
         <label className="mt-3 block">
-          <span className="mb-1.5 block text-sm font-medium text-ink">Descreva (até {CATEGORIA_OUTRO_MAXLEN})</span>
+          <span className="mb-2 block text-sm font-medium text-ink">Descreva (até {CATEGORIA_OUTRO_MAXLEN})</span>
           <input
             value={outro}
             maxLength={CATEGORIA_OUTRO_MAXLEN}
@@ -114,25 +129,25 @@ export function CategoriaProfissional() {
               setOk(false);
             }}
             placeholder="Sua ocupação (sem telefone, e-mail ou apps)"
-            className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-sage ${
+            className={`w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-sage ${
               outroTemContato ? "border-red-300" : "border-sage-200"
             }`}
           />
           {outroTemContato && (
-            <span className="mt-1 flex items-start gap-1.5 text-xs text-red-600">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {CONTATO_AVISO}
+            <span className="mt-1 flex items-start gap-2 text-xs text-red-600">
+              <Info className="mt-1 h-3.5 w-3.5 shrink-0" /> {CONTATO_AVISO}
             </span>
           )}
         </label>
       )}
 
       <div className="mt-4 flex items-center gap-3">
-        <Button onClick={salvar} disabled={saving || loading || outroTemContato}>
+        <Button variant="secondary" onClick={salvar} disabled={saving || loading || outroTemContato}>
           {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-          {saving ? "Salvando…" : "Salvar perfil"}
+          {saving ? "Salvando…" : "Salvar profissão"}
         </Button>
         {ok && (
-          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-forest">
+          <span className="inline-flex items-center gap-2 text-sm font-medium text-forest">
             <Check className="h-4 w-4" /> Salvo.
           </span>
         )}

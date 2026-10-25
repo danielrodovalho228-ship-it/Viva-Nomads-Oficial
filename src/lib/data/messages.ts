@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { relacaoAceitaEntreServidor } from "@/lib/data/avatar-url";
 import { nomeNaConversa } from "@/lib/perfil/perfil-publico";
 import { contratoAssinadoEntrePartes, type ContratoParaAlerta } from "@/lib/seguranca/antigolpe";
 import { papelDaConversa, formatarPeriodo, type PapelConversa } from "@/lib/mensagens-filtros";
+import { guardContactInfo } from "@/lib/messages/contact-guard";
+import { urlMidiaParceiro } from "@/lib/data/parceiros-publico";
 
 export interface ChatMessage {
   id: string;
@@ -20,13 +23,19 @@ export interface Conversation {
   preview: string;
   otherId?: string;
   propertyId?: string;
-  /** Chips da caixa (UX6-b): como inquilino, como proprietário ou suporte. */
+  /** Chips da caixa (UX6-b, Prompt 32): como proprietário, como morador, parceiros ou falar com a Viva. */
   papel?: PapelConversa;
+  /** Contrato entre as duas partes desta conversa, no imóvel (link "Abrir a página da estadia"). */
+  contratoId?: string;
   /** Foto de capa do imóvel e período da estadia (quando há contrato). */
   foto?: string;
   periodo?: string;
   /** Contrato ASSINADO pelas duas partes desta conversa (o alerta antigolpe só vale antes disso). */
   contratoFechado?: boolean;
+  /** Conversa de pedido de serviço de parceiro (Prompt 31b): a resposta vai pela rota do pedido. */
+  pedidoParceiroId?: string;
+  /** 63-B: a outra parte tem o selo "LinkedIn conectado" (só o sim). */
+  linkedinConectado?: boolean;
   messages: ChatMessage[];
 }
 
@@ -61,6 +70,7 @@ interface MsgRow {
   body: string;
   created_at: string;
   proposta_id?: string | null;
+  parceiro_pedido_id?: string | null;
   property: { title: string | null; owner_id: string | null } | null;
 }
 
@@ -81,7 +91,7 @@ export async function listConversations(): Promise<Conversation[]> {
   const { data, error } = await supabase
     .from("messages")
     .select(
-      `id, conversation_id, sender_id, receiver_id, property_id, body, created_at, proposta_id,
+      `id, conversation_id, sender_id, receiver_id, property_id, body, created_at, proposta_id, parceiro_pedido_id,
        property:properties!messages_property_id_fkey ( title, owner_id )`
     )
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
@@ -101,13 +111,19 @@ export async function listConversations(): Promise<Conversation[]> {
         preview: "",
         otherId,
         propertyId: m.property_id ?? undefined,
-        papel: papelDaConversa({ propertyId: m.property_id ?? undefined, donoDoImovelId: m.property?.owner_id ?? undefined }, user.id),
+        papel: papelDaConversa(
+          { propertyId: m.property_id ?? undefined, donoDoImovelId: m.property?.owner_id ?? undefined, pedidoParceiroId: m.parceiro_pedido_id },
+          user.id
+        ),
+        ...(m.parceiro_pedido_id ? { pedidoParceiroId: m.parceiro_pedido_id, property: "Pedido de serviço" } : {}),
         messages: [],
       });
     }
     const conv = byConv.get(m.conversation_id)!;
-    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: m.body, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}) });
-    conv.preview = m.body;
+    // Mesmo filtro do envio: mensagem antiga com CPF/RG ou contato nunca aparece crua (nem na prévia da caixa).
+    const texto = guardContactInfo(m.body).text;
+    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: texto, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}) });
+    conv.preview = texto;
   }
 
   // Nome do outro lado (prompt 6, mesma regra do cartão do candidato): o proprietário vê
@@ -127,13 +143,16 @@ export async function listConversations(): Promise<Conversation[]> {
     if (admin) {
       const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", outros);
       for (const p of (perfis ?? []) as { id: string; full_name: string | null }[]) completo.set(p.id, p.full_name);
+      const comLinkedin = await linkedinConectados(outros, admin);
+      for (const c of conversas) if (c.otherId && comLinkedin.has(c.otherId)) c.linkedinConectado = true;
       const candidatos = [...new Set(conversas.filter((c) => c.papel === "proprietario" && c.otherId).map((c) => c.otherId!))];
       await Promise.all(candidatos.map(async (id) => aceito.set(id, await relacaoAceitaEntreServidor(user.id, id))));
     }
     for (const conv of conversas) {
       const id = conv.otherId ?? "";
       conv.name = nomeNaConversa({
-        papel: conv.papel ?? "suporte",
+        // Conversa de pedido de serviço (Parceiros): o nome curto da outra parte, como na conversa do morador.
+        papel: conv.papel === "parceiros" ? "inquilino" : (conv.papel ?? "suporte"),
         nomeCompleto: completo.get(id) ?? null,
         aceito: aceito.get(id) === true,
         primeiroNome: primeiro.get(id) ?? null,
@@ -146,30 +165,52 @@ export async function listConversations(): Promise<Conversation[]> {
 
 type Supa = NonNullable<Awaited<ReturnType<typeof createClient>>>;
 
-/** Foto de capa e período da estadia por imóvel. Best-effort: se falhar, a conversa fica sem eles. */
+/**
+ * Foto de capa (do imóvel; na conversa de pedido, a do parceiro), datas do contrato entre as DUAS partes da conversa
+ * ("13/11 – 15/02") e o id dele para o link da página da estadia. Best-effort: se falhar, a conversa fica sem eles.
+ */
 async function enriquecer(supabase: Supa, conversas: Conversation[], eu: string) {
   const ids = [...new Set(conversas.map((c) => c.propertyId).filter(Boolean))] as string[];
-  if (ids.length === 0) return;
+  const pedidos = [...new Set(conversas.map((c) => c.pedidoParceiroId).filter(Boolean))] as string[];
   try {
-    const [{ data: fotos }, { data: contratos }] = await Promise.all([
-      supabase.from("property_photos").select("property_id, url, sort_order").in("property_id", ids).order("sort_order"),
-      supabase.from("contratos").select("property_id, tenant_id, assinado_proprietario_em, assinado_inquilino_em, contrato_blocos(inicio, fim)").in("property_id", ids),
+    const [{ data: fotos }, { data: contratos }, { data: parceiros }] = await Promise.all([
+      ids.length
+        ? supabase.from("property_photos").select("property_id, url, sort_order").in("property_id", ids).order("sort_order")
+        : Promise.resolve({ data: [] }),
+      ids.length
+        ? supabase
+            .from("contratos")
+            .select("id, property_id, tenant_id, status, created_at, assinado_proprietario_em, assinado_inquilino_em, contrato_blocos(inicio, fim)")
+            .in("property_id", ids)
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] }),
+      pedidos.length
+        ? supabase.from("parceiro_pedidos").select("id, parceiro:parceiros(avatar_path)").in("id", pedidos)
+        : Promise.resolve({ data: [] }),
     ]);
     const capa = new Map<string, string>();
     for (const f of (fotos ?? []) as { property_id: string; url: string }[]) {
       if (!capa.has(f.property_id)) capa.set(f.property_id, f.url);
     }
-    const periodo = new Map<string, string>();
-    const lista = (contratos ?? []) as unknown as (ContratoParaAlerta & { contrato_blocos: { inicio: string; fim: string }[] | null })[];
-    for (const ct of lista) {
-      const bl = ct.contrato_blocos ?? [];
-      if (bl.length === 0 || periodo.has(ct.property_id)) continue;
-      periodo.set(ct.property_id, formatarPeriodo(bl.map((b) => b.inicio).sort()[0], bl.map((b) => b.fim).sort().at(-1)));
+    const fotoParceiro = new Map<string, string>();
+    for (const p of (parceiros ?? []) as unknown as { id: string; parceiro: { avatar_path: string | null } | null }[]) {
+      const url = urlMidiaParceiro(p.parceiro?.avatar_path ?? null);
+      if (url) fotoParceiro.set(p.id, url);
     }
+    type LinhaContrato = ContratoParaAlerta & { id: string; contrato_blocos: { inicio: string; fim: string }[] | null };
+    const lista = (contratos ?? []) as unknown as LinhaContrato[];
     for (const c of conversas) {
+      if (c.pedidoParceiroId) {
+        c.foto = fotoParceiro.get(c.pedidoParceiroId) ?? (c.propertyId ? capa.get(c.propertyId) : undefined);
+        continue;
+      }
       if (!c.propertyId) continue;
       c.foto = capa.get(c.propertyId);
-      c.periodo = periodo.get(c.propertyId) || undefined;
+      // O contrato desta conversa: no imóvel, com o morador sendo eu ou a outra parte (o mais recente).
+      const doPar = lista.find((ct) => ct.property_id === c.propertyId && (ct.tenant_id === eu || ct.tenant_id === c.otherId));
+      const bl = doPar?.contrato_blocos ?? [];
+      c.periodo = bl.length ? formatarPeriodo(bl.map((b) => b.inicio).sort()[0], bl.map((b) => b.fim).sort().at(-1)) || undefined : undefined;
+      if (doPar) c.contratoId = doPar.id;
       c.contratoFechado = contratoAssinadoEntrePartes(lista, { propertyId: c.propertyId, eu, outroId: c.otherId });
     }
   } catch {

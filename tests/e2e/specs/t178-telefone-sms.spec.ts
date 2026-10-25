@@ -27,7 +27,7 @@ const SAIDA = "tests/laboratorio/saida";
 
 async function abrirConfianca(page: Page, largura: number) {
   await page.setViewportSize({ width: largura, height: 900 });
-  await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+  await page.goto("/dashboard/conta/dados", { waitUntil: "networkidle" });
   const painel = page.getByTestId("confianca-telefone");
   await expect(painel).toBeVisible({ timeout: 20_000 });
   return painel;
@@ -138,8 +138,9 @@ test.describe("T178 — telefone verificado por SMS (modo simulado)", () => {
 
   test("Complete seu perfil: celular entra como item opcional (390)", async ({ browser }) => {
     const page = await entrar(browser, inq.email, senha);
+    // A1: o medidor "Complete seu perfil" fica na tela Perfil.
     await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
-    await expect(page.getByTestId("complete-perfil")).toContainText("Verifique seu celular: perfis verificados passam mais confiança");
+    await expect(page.getByTestId("complete-perfil")).toContainText("Celular verificado");
     await page.context().close();
   });
 

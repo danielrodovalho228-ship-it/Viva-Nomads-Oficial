@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { AVATARS_BUCKET, createAdminClient } from "@/lib/supabase/admin";
-import { ehAvatarDoUsuario } from "@/lib/avatar-image";
+import { avatarPath, ehAvatarDoUsuario } from "@/lib/avatar-image";
 import { podeVerAvatar } from "@/lib/avatar";
 import {
   signAvatarPath,
@@ -19,6 +19,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * Persiste o caminho da foto (após o upload no client) no perfil do próprio
  * usuário. Só aceita o caminho canônico DELE (`<uid>/avatar.webp`) e grava pelo
  * servidor — avatar_url saiu do grant de coluna (0062). No-op em demo.
+ * FOTO-PERFIL-B (E13): nada do navegador é confiado — o arquivo tem de existir na pasta da pessoa, e o avatar e a
+ * linha 'em_revisao' da fila são gravados na MESMA transação (foto_perfil_enviada, 0244). A foto já aparece.
  */
 export async function setMyAvatarPath(path: string): Promise<{ ok: boolean }> {
   const supabase = await createClient();
@@ -30,10 +32,9 @@ export async function setMyAvatarPath(path: string): Promise<{ ok: boolean }> {
   if (!ehAvatarDoUsuario(path, user.id)) return { ok: false };
   const admin = createAdminClient();
   if (!admin) return { ok: false };
-  const { error } = await admin
-    .from("profiles")
-    .update({ avatar_url: path, avatar_atualizado_em: new Date().toISOString() })
-    .eq("id", user.id);
+  const { data: arquivos } = await admin.storage.from(AVATARS_BUCKET).list(user.id, { search: "avatar.webp", limit: 5 });
+  if (!(arquivos ?? []).some((a) => a.name === "avatar.webp")) return { ok: false };
+  const { error } = await admin.rpc("foto_perfil_enviada", { p_user: user.id, p_caminho: avatarPath(user.id) });
   if (error) return { ok: false };
   revalidatePath("/dashboard/conta");
   return { ok: true };
@@ -56,6 +57,8 @@ export async function clearMyAvatar(): Promise<{ ok: boolean }> {
     .from("profiles")
     .update({ avatar_url: null, avatar_atualizado_em: new Date().toISOString() })
     .eq("id", user.id);
+  // Sem foto, não há o que revisar: a revisão aberta sai da fila (as já decididas ficam no histórico).
+  await createAdminClient()?.from("fotos_perfil_revisao").delete().eq("user_id", user.id).eq("status", "em_revisao");
   revalidatePath("/dashboard/conta");
   return { ok: true };
 }

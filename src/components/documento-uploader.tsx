@@ -55,7 +55,7 @@ export function DocumentoUploader({
           <FileText className="h-4 w-4 shrink-0 text-forest" />
           <span className="min-w-0 flex-1 truncate text-ink">{atual.name}</span>
           {atual.demo && <span className="text-xs text-amber-700">só pré-visualização</span>}
-          <button type="button" onClick={remover} className="rounded p-1 text-muted hover:text-red-600" aria-label="Remover documento">
+          <button type="button" onClick={remover} className="rounded-lg p-1 text-muted hover:text-red-600" aria-label="Remover documento">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -77,7 +77,7 @@ export function DocumentoUploader({
         </label>
       )}
       {erro && (
-        <p role="alert" className="mt-1.5 text-sm text-red-600">
+        <p role="alert" className="mt-2 text-sm text-red-600">
           {erro}
         </p>
       )}

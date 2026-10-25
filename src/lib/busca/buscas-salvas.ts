@@ -3,18 +3,38 @@
  * salva e o resumo legível que aparece em "Buscas salvas".
  */
 
+import { seguroDaUrlLegada } from "./painel-filtros.ts";
+import { comodidadesDaUrl } from "./filtro-comodidades.ts";
+
 /** Parâmetros da /buscar que definem a busca (o resto da URL é ignorado). */
 const CHAVES = [
   "local", "lat", "lng", "r", "preco", "orcamento", "quartos", "adultos", "criancas", "periodo",
   "tipo", "faixa", "entrada", "garantia", "pet", "mobiliado", "pronto", "homeoffice", "localizado",
-  "nota", "seguro", "gestor", "ordem",
+  "nota", "gestor", "ordem",
+  // Comodidades que ainda filtram (garagem, máquina de lavar); "wifi" e "cozinha" antigas saem (Adendo 3, E39).
+  "comod",
+  // Prompt 37: destino (cadastrado ou endereço com 3 casas e rótulo sem número), meio e "até N min".
+  "destino", "dlat", "dlng", "drot", "modo", "ate",
+  // Prompt 57 fase 2: internet medida (download mínimo) e "só com internet medida".
+  "internet", "medida",
+  // Prompt 55 B2: datas flexíveis.
+  "flex",
 ] as const;
 
 export const LIMITE_BUSCAS_SALVAS = 20;
 
-/** Normaliza a query string: só as chaves conhecidas, sem vazios, em ordem fixa (mesma busca = mesmo texto). */
+/**
+ * Normaliza a query string: só as chaves conhecidas, sem vazios, em ordem fixa (mesma busca = mesmo texto).
+ * Adendo 3 (E43): buscas salvas antes com `seguro=1` passam a valer como `garantia=seguro_fianca` (migração aqui, no
+ * parser: a busca salva continua alertando, com o mesmo critério do chip "Seguro-fiança").
+ */
 export function normalizarBusca(qs: string): string {
   const sp = new URLSearchParams(qs.startsWith("?") ? qs.slice(1) : qs);
+  const garantia = seguroDaUrlLegada(sp.get("garantia")?.trim(), sp.get("seguro"));
+  if (garantia) sp.set("garantia", garantia);
+  const comod = comodidadesDaUrl(sp.get("comod")).join(",");
+  if (comod) sp.set("comod", comod);
+  else sp.delete("comod");
   const out = new URLSearchParams();
   for (const k of CHAVES) {
     const v = sp.get(k)?.trim();
@@ -27,7 +47,7 @@ const PERIODO: Record<string, string> = { "60": "1–2 meses", "120": "3–4 mes
 const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
 
 /** Resumo legível: "Uberlândia · até R$ 3.500 · 2+ quartos · Pronto para Morar". */
-export function resumoDaBusca(qs: string): string {
+export function resumoDaBusca(qs: string, nomeDoDestino?: (slug: string) => string | undefined): string {
   const sp = new URLSearchParams(normalizarBusca(qs));
   const partes: string[] = [];
   partes.push(sp.get("local") || "Todas as cidades");
@@ -41,8 +61,18 @@ export function resumoDaBusca(qs: string): string {
   if (per) partes.push(per);
   const ent = sp.get("entrada");
   if (ent && /^\d{4}-\d{2}-\d{2}$/.test(ent)) partes.push(`entrada ${ent.slice(8, 10)}/${ent.slice(5, 7)}`);
+  if (ent && /^\d{4}-\d{2}-\d{2}$/.test(ent) && sp.get("flex") === "1") partes.push("datas flexíveis");
   if (sp.get("pronto") === "1") partes.push("Pronto para Morar");
   if (sp.get("pet") === "1") partes.push("aceita pet");
   if (sp.get("homeoffice") === "1") partes.push("trabalhar de casa");
+  const internet = Number(sp.get("internet"));
+  if (internet > 0) partes.push(`internet medida ${internet}+ Mbps`);
+  else if (sp.get("medida") === "1") partes.push("internet medida");
+  const destino = nomeDoDestino?.(sp.get("destino") ?? "") ?? sp.get("drot") ?? sp.get("destino")?.toUpperCase();
+  if (destino) {
+    const modo = { carro: "de carro", a_pe: "a pé", bicicleta: "de bicicleta", onibus: "de ônibus" }[sp.get("modo") ?? "carro"] ?? "de carro";
+    const ate = Number(sp.get("ate"));
+    partes.push(ate > 0 ? `até ${ate} min ${modo} até ${destino}` : `perto de ${destino}`);
+  }
   return partes.join(" · ").slice(0, 200);
 }

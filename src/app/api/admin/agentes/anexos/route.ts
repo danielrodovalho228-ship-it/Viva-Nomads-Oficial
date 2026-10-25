@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { BUCKET_ANEXOS, TAMANHO_MAXIMO_ANEXO } from "@/lib/agentes/anexos";
 import { abrirAnexo, enviarAnexo, type DepsAnexos } from "@/lib/agentes/anexos-servico";
+import { semMetadados } from "@/lib/foto-reconversao";
 
 /** Central v2 — anexos do chat. Só admin (403); arquivo no bucket privado, lido por URL assinada de 10 min. */
 async function depsReais(): Promise<DepsAnexos> {
@@ -20,7 +21,10 @@ async function depsReais(): Promise<DepsAnexos> {
     novoId: () => crypto.randomUUID(),
     async guardar(caminho, conteudo, mime) {
       if (!storage) return false;
-      const { error } = await storage.upload(caminho, conteudo, { contentType: mime, upsert: false });
+      // Prompt 58: imagem sem EXIF/GPS; o resto vai como veio.
+      const limpo = await semMetadados(conteudo, mime);
+      if (!limpo) return false;
+      const { error } = await storage.upload(caminho, limpo, { contentType: mime, upsert: false });
       return !error;
     },
     async assinar(caminho, segundos) {

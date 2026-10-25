@@ -51,7 +51,7 @@ const SUBPROCESSORS = [
 export default function PrivacyPage() {
   return (
     <div className="container-page max-w-3xl py-12 md:py-16">
-      <h1 className="font-title text-4xl font-bold text-ink">Política de Privacidade</h1>
+      <h1 className="font-title text-[28px] font-semibold text-ink">Política de Privacidade</h1>
       <p className="mt-3 text-muted">Última atualização: outubro de 2026 · LGPD (Lei 13.709/2018)</p>
 
       <div className="mt-8 space-y-8">
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
 
         {/* 5. Suboperadores — tabela única (com quem compartilhamos) */}
         <section>
-          <h2 className="font-title text-xl font-bold text-ink">
+          <h2 className="font-title text-xl font-semibold text-ink">
             5. Suboperadores (com quem compartilhamos seus dados)
           </h2>
           <p className="mt-2 leading-relaxed text-muted">
@@ -173,7 +173,7 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="font-title text-xl font-bold text-ink">{title}</h2>
+      <h2 className="font-title text-xl font-semibold text-ink">{title}</h2>
       <p className="mt-2 leading-relaxed text-muted">{children}</p>
     </section>
   );

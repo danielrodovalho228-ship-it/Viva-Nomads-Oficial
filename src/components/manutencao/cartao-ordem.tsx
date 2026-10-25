@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   EXEMPLOS_MANUTENCAO,
   PRAZO_MANUTENCAO_H,
@@ -15,23 +15,61 @@ import { SO_PRIORITY_META, SO_STATUS_META, categoryLabel, type ServiceOrder, typ
 import { prazoDaOrdem, proximosStatus, textoEvento, type EventoOrdem, type PapelOrdem } from "@/lib/manutencao-solicitacoes";
 import {
   detalheSolicitacao,
+  marcarSolucaoProvisoria,
   mudarStatusSolicitacao,
+  pedirReclassificacao,
   responderSolicitacao,
+  responderSolucaoMorador,
   type MensagemOrdem,
 } from "@/lib/data/manutencao-actions";
+import { CONFIRMACAO_MORADOR_H, estadoSolucao, moradorPodeResponder, type OrdemSolucao } from "@/lib/manutencao-solucao";
+import { hrefPedirServico } from "@/lib/estadia/acoes";
 import { cn } from "@/lib/utils";
 
 /** Prazo do proprietário (critério 2): "Responder até <data/hora de Brasília>" + situação. */
 export function PrazoOrdem({ o }: { o: ServiceOrder }) {
   const p = prazoDaOrdem(o, new Date());
   return (
-    <p data-testid="prazo-ordem" className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+    <p data-testid="prazo-ordem" className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
       <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
       <span>
         {p.texto} · prazo de {PRAZO_MANUTENCAO_H[o.priority]} h
       </span>
-      {p.estado === "respondida" && <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">Respondida</span>}
-      {p.estado === "vencido" && <span className="rounded-full bg-red-50 px-2 py-0.5 font-medium text-red-700">Prazo vencido</span>}
+      {p.estado === "respondida" && <span className="rounded-full bg-emerald-50 px-2 py-1 font-medium text-emerald-700">Respondida</span>}
+      {p.estado === "vencido" && <span className="rounded-full bg-red-50 px-2 py-1 font-medium text-red-700">Prazo vencido</span>}
+    </p>
+  );
+}
+
+const paraSolucao = (o: ServiceOrder): OrdemSolucao => ({
+  priority: o.priority,
+  openedAt: o.openedAt,
+  provisoriaEm: o.provisoriaEm,
+  solucaoMarcadaEm: o.solucaoMarcadaEm,
+  resolvedAt: o.resolvedAt,
+  solucaoConfirmadaEm: o.solucaoConfirmadaEm,
+  status: o.status,
+});
+
+/** Prompt 59-A: os 4 estados do prazo de solução, sempre visíveis no chamado (morador e dono). */
+export const ROTULO_SOLUCAO = { no_prazo: "No prazo", vencido: "Vencido", resolvido_no_prazo: "Resolvido no prazo", resolvido_fora: "Fora do prazo" } as const;
+const TOM_SOLUCAO = { no_prazo: "bg-sage-50 text-ink", vencido: "bg-red-50 text-red-700", resolvido_no_prazo: "bg-emerald-50 text-emerald-700", resolvido_fora: "bg-red-50 text-red-700" } as const;
+
+/** Prompt 59: prazo de SOLUÇÃO (horário de Brasília); no urgente, também a provisória. */
+export function SolucaoOrdem({ o }: { o: ServiceOrder }) {
+  const s = estadoSolucao(paraSolucao(o), new Date());
+  const chip = ROTULO_SOLUCAO[s.estado];
+  const texto = s.texto.charAt(0).toUpperCase() + s.texto.slice(1);
+  return (
+    <p data-testid="solucao-ordem" data-estado={s.estado} className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+      <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span>
+        {s.provisoria && <>Provisória até {dataHoraBrasilia(s.provisoria.ate)} · </>}
+        {texto}
+      </span>
+      <span className={cn("rounded-full px-2 py-1 font-medium", TOM_SOLUCAO[s.estado])} data-testid="solucao-estado">
+        {chip}
+      </span>
     </p>
   );
 }
@@ -41,13 +79,13 @@ export function SeletorPrioridade({ valor, onChange }: { valor: SOPriority; onCh
   const ordem: SOPriority[] = ["urgente", "media", "baixa"];
   return (
     <fieldset data-testid="seletor-prioridade">
-      <legend className="mb-1.5 block text-sm font-medium text-ink">Prioridade</legend>
+      <legend className="mb-2 block text-sm font-medium text-ink">Prioridade</legend>
       <div className="grid gap-2 sm:grid-cols-3">
         {ordem.map((p) => (
           <label
             key={p}
             className={cn(
-              "flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-sm",
+              "flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-3 text-sm",
               valor === p ? "border-forest bg-forest/5" : "border-sage-200"
             )}
           >
@@ -143,6 +181,17 @@ export function CartaoOrdem({
     setRecarga((n) => n + 1);
   }
 
+  /** Prompt 59: provisória, confirmação/reabertura do morador e pedido de reclassificação. */
+  async function rodarSolucao(fn: () => Promise<{ ok: true; ordem: ServiceOrder } | { ok: false; error: string }>) {
+    setErro(null);
+    setOcupado(true);
+    const r = await fn().catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
+    setOcupado(false);
+    if (!r.ok) return setErro(r.error);
+    onAtualizada({ ...o, ...r.ordem, tenantName: o.tenantName, property: o.property, avisadoVencidoEm: o.avisadoVencidoEm });
+    setRecarga((n) => n + 1);
+  }
+
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     if (!texto.trim()) return setErro("Escreva a mensagem.");
@@ -172,7 +221,7 @@ export function CartaoOrdem({
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={cn("rounded-full border px-2.5 py-0.5 text-xs font-semibold", SO_PRIORITY_META[o.priority].tone)}>
+            <span className={cn("rounded-full border px-3 py-1 text-xs font-semibold", SO_PRIORITY_META[o.priority].tone)}>
               {SO_PRIORITY_META[o.priority].label}
             </span>
             <span className="text-sm font-medium text-ink">{categoryLabel(o.category)}</span>
@@ -183,11 +232,26 @@ export function CartaoOrdem({
             {papel === "proprietario" && o.tenantName ? `${o.tenantName} · ` : ""}aberta em {dataHoraBrasilia(new Date(o.openedAt))}
           </p>
           <PrazoOrdem o={o} />
+          <SolucaoOrdem o={o} />
         </div>
-        <span data-testid="status-ordem" className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-medium", SO_STATUS_META[o.status].tone)}>
+        <span data-testid="status-ordem" className={cn("shrink-0 rounded-full px-3 py-1 text-xs font-medium", SO_STATUS_META[o.status].tone)}>
           {SO_STATUS_META[o.status].label}
         </span>
       </button>
+
+      {/* Prompt 59-A: prazo de solução vencido → o dono vê, sem abrir o cartão, o caminho para chamar um parceiro. */}
+      {papel === "proprietario" && !demo && o.propertyId && o.status !== "resolvido" && estadoSolucao(paraSolucao(o), new Date()).estado === "vencido" && (
+        <div className="mt-3">
+          <ButtonLink
+            href={`${hrefPedirServico("manutencao", { imovelId: o.propertyId, cidade: o.cidade ?? "" })}&descricao=${encodeURIComponent(o.description.slice(0, 500))}`}
+            variant="secondary"
+            size="sm"
+            data-testid="ordem-chamar-parceiro"
+          >
+            Chamar um parceiro de manutenção
+          </ButtonLink>
+        </div>
+      )}
 
       {aberto && (
         <div className="mt-3 grid gap-4 border-t border-sage-100 pt-3 lg:grid-cols-2" data-testid="solicitacao-detalhe">
@@ -196,7 +260,7 @@ export function CartaoOrdem({
             {historico === null ? (
               <p className="text-sm text-muted">{erro ?? "Carregando…"}</p>
             ) : (
-              <ol data-testid="historico-ordem" className="space-y-1.5 text-sm text-muted">
+              <ol data-testid="historico-ordem" className="space-y-2 text-sm text-muted">
                 {historico.map((ev, i) => (
                   <li key={i}>{textoEvento(ev)}</li>
                 ))}
@@ -205,12 +269,13 @@ export function CartaoOrdem({
             {acoes.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {acoes.map((a) => (
-                  <Button key={a} size="sm" variant={a === "resolvido" ? "outline" : "primary"} disabled={ocupado} onClick={() => void mudar(a)}>
+                  <Button key={a} size="sm" variant="secondary" disabled={ocupado} onClick={() => void mudar(a)}>
                     {ROTULO_ACAO[a]}
                   </Button>
                 ))}
               </div>
             )}
+            {!demo && <AcoesSolucao o={o} papel={papel} ocupado={ocupado} rodar={rodarSolucao} />}
           </section>
 
           <section>
@@ -234,7 +299,7 @@ export function CartaoOrdem({
                   maxLength={2000}
                   value={texto}
                   onChange={(e) => setTexto(e.target.value)}
-                  className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+                  className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
                 />
               </label>
               {erro && historico !== null && (
@@ -242,7 +307,7 @@ export function CartaoOrdem({
                   {erro}
                 </p>
               )}
-              <Button type="submit" size="sm" disabled={ocupado}>
+              <Button type="submit" size="sm" variant="secondary" disabled={ocupado}>
                 Enviar mensagem
               </Button>
             </form>
@@ -250,5 +315,81 @@ export function CartaoOrdem({
         </div>
       )}
     </Panel>
+  );
+}
+
+/** Prompt 59: ações do prazo de solução, pelo lado de quem vê. Nada de valor (D7). */
+function AcoesSolucao({
+  o,
+  papel,
+  ocupado,
+  rodar,
+}: {
+  o: ServiceOrder;
+  papel: PapelOrdem;
+  ocupado: boolean;
+  rodar: (fn: () => Promise<{ ok: true; ordem: ServiceOrder } | { ok: false; error: string }>) => void;
+}) {
+  const [pedindo, setPedindo] = useState(false);
+  const [motivo, setMotivo] = useState("");
+  const agora = new Date();
+  const sol = estadoSolucao(paraSolucao(o), agora);
+  const resolvida = o.status === "resolvido";
+  if (papel === "proprietario") {
+    return (
+      <div className="mt-3 space-y-2">
+        {o.priority === "urgente" && !resolvida && !o.provisoriaEm && (
+          <Button size="sm" variant="outline" disabled={ocupado} onClick={() => rodar(() => marcarSolucaoProvisoria(o.id))} data-testid="ordem-provisoria">
+            Solução provisória aplicada
+          </Button>
+        )}
+        {o.provisoriaEm && <p className="text-xs text-muted">Solução provisória marcada em {dataHoraBrasilia(new Date(o.provisoriaEm))}.</p>}
+
+        {!resolvida && !o.reclassificacaoPedidaEm && !pedindo && (
+          <button type="button" className="block text-xs font-medium text-muted underline" onClick={() => setPedindo(true)} data-testid="ordem-pedir-reclassificacao">
+            Pedir reclassificação da prioridade
+          </button>
+        )}
+        {pedindo && (
+          <div className="space-y-2">
+            <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={2} maxLength={500} placeholder="Por que a prioridade deve mudar" aria-label="Motivo da reclassificação" className="w-full rounded-xl border border-sage-200 px-3 py-2 text-sm" data-testid="ordem-motivo-reclassificacao" />
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" disabled={ocupado || motivo.trim().length < 5} onClick={() => rodar(() => pedirReclassificacao(o.id, motivo))} data-testid="ordem-enviar-reclassificacao">
+                Enviar pedido
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setPedindo(false)}>
+                Voltar
+              </Button>
+            </div>
+            <p className="text-xs text-muted">Quem muda a prioridade é o atendimento da Viva.</p>
+          </div>
+        )}
+        {o.reclassificacaoPedidaEm && !resolvida && <p className="text-xs text-muted">Pedido de reclassificação enviado. O atendimento da Viva decide.</p>}
+        {o.prioridadeOriginal && <p className="text-xs text-muted">Prioridade mudada pelo atendimento da Viva (era {ROTULO_URGENCIA_MANUTENCAO[o.prioridadeOriginal].toLowerCase()}).</p>}
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 space-y-2">
+      {moradorPodeResponder(paraSolucao(o), agora) && (
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="secondary" disabled={ocupado} onClick={() => rodar(() => responderSolucaoMorador(o.id, "confirmar"))} data-testid="ordem-confirmar-solucao">
+            Confirmar solução
+          </Button>
+          <Button size="sm" variant="outline" disabled={ocupado} onClick={() => rodar(() => responderSolucaoMorador(o.id, "reabrir"))} data-testid="ordem-reabrir">
+            Ainda não resolveu
+          </Button>
+          <p className="w-full text-xs text-muted" data-testid="ordem-responder-ate">
+            Responda até {dataHoraBrasilia(new Date(Date.parse(o.solucaoMarcadaEm!) + CONFIRMACAO_MORADOR_H * 3_600_000))} (horário de Brasília). Sem
+            resposta, vale a solução marcada pelo proprietário.
+          </p>
+        </div>
+      )}
+      {sol.estado === "vencido" && !resolvida && o.avisadoVencidoEm && (
+        <p className="text-xs text-muted" data-testid="ordem-dono-avisado">
+          O proprietário foi avisado em {dataHoraBrasilia(new Date(o.avisadoVencidoEm))} (horário de Brasília).
+        </p>
+      )}
+    </div>
   );
 }

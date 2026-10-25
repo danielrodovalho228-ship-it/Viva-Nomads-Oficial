@@ -1,26 +1,38 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { MarcaNavInterna } from "@/components/ui/voltar-celular";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, LogOut, Plus } from "lucide-react";
+import { ChevronLeft, Menu, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { FOTO_ATUALIZADA } from "@/components/account/foto-perfil";
 import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
 import { removerPushToken } from "@/lib/data/push-actions";
-import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
-import { contarAchadosP1 } from "@/lib/data/agentes-actions";
-import { useHasActiveLocacao } from "@/lib/use-active-locacao";
-import { useViewMode, identidadeUsuario } from "@/lib/roles";
+import { EVENTO_AVISO_ASSINATURA } from "@/components/contrato/aviso-assinatura";
+import {
+  CONTADORES_VAZIOS,
+  EVENTOS_CONTADORES,
+  INTERVALO_CONTADORES_MS,
+  ROTA_CONTADORES,
+  badgeDaEquipe,
+  normalizarContadores,
+  type ContadoresPainel,
+} from "@/lib/painel/contadores";
+import { useViewMode, identidadeUsuario, primeiroNomeExibicao } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
+import { MolduraAssistente, ehAssistenteCadastro } from "@/components/layout/moldura-assistente";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
-import { ANUNCIAR, menuDoPainel } from "@/config/menu-painel";
-import { imoveisAtivosDoDono, temImovelAnunciado } from "@/lib/data/menu-actions";
+import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
+import { PapelAtivo } from "@/components/layout/papel-ativo";
+import { papelDaBarra } from "@/lib/nav-mobile";
+import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -32,7 +44,8 @@ import { imoveisAtivosDoDono, temImovelAnunciado } from "@/lib/data/menu-actions
  *     layout — nunca 404, página em branco ou rota pública.
  *  O e2e `qa-full.mjs` verifica que nenhum item de menu renderiza fora da casca.
  *
- * O menu em si (cascata, conta única — ordem 9f3085d8) mora em config/menu-painel.ts.
+ * O menu em si (cascata, conta única — ordem 9f3085d8): os itens por papel em config/menu-por-papel.ts e a
+ * montagem em config/menu-painel.ts (Prompt 42, item 3).
  */
 
 /** Para onde o convite leva ao ativar o segundo papel. */
@@ -46,7 +59,6 @@ const OWNER_ONLY = [
   "/dashboard/leads",
   "/dashboard/orcamentos",
   "/dashboard/fechamento",
-  "/dashboard/contratos",
   "/dashboard/ferramentas",
   "/dashboard/reembolsos",
   "/dashboard/assinatura",
@@ -66,6 +78,13 @@ const TENANT_ONLY = [
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  // F13: o drawer fecha quando a rota muda (não no clique, que desmontava o Link antes de navegar).
+  const [pathnameDrawer, setPathnameDrawer] = useState(pathname);
+  if (pathnameDrawer !== pathname) {
+    setPathnameDrawer(pathname);
+    setOpen(false);
+  }
+
   const router = useRouter();
   const { signOut, setActiveMode } = useAuthStore();
   const { mode, isOwner, isTenant } = useViewMode();
@@ -81,6 +100,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // "usuário" do e-mail (parte antes do @) — identifica sem expor o e-mail
   // inteiro; só então cai no rótulo neutro. NUNCA o e-mail cru.
   const nomeSidebar = identidadeUsuario(displayUser);
+  // CONTA-A: o rosto do avatar só usa o nome do perfil; sem nome, a silhueta (nunca letras do e-mail).
+  const nomeAvatar = primeiroNomeExibicao(displayUser);
 
   // Minha própria foto de perfil (opcional) para o avatar do topo.
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
@@ -91,66 +112,69 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         if (alive) setMyPhoto(r.url);
       })
       .catch(() => {});
+    // CONTA-A: a foto nova (ou removida) aparece na hora no selo do cabeçalho.
+    const aoMudar = (e: Event) => setMyPhoto((e as CustomEvent<{ url: string | null }>).detail?.url ?? null);
+    window.addEventListener(FOTO_ATUALIZADA, aoMudar);
     return () => {
       alive = false;
+      window.removeEventListener(FOTO_ATUALIZADA, aoMudar);
     };
   }, [displayUser?.id]);
 
-  // Documentos aguardando conferência — badge no item "Documentos" do nav admin.
-  const [docsPendentes, setDocsPendentes] = useState(0);
-  useEffect(() => {
-    if (display.role !== "admin") return;
-    let alive = true;
-    countDocumentosPendentes()
-      .then((n) => {
-        if (alive) setDocsPendentes(n);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [display.role, pathname]);
-
-  // Achados P1 das rondas nas últimas 24h — badge do item "Agentes".
-  const [achadosP1, setAchadosP1] = useState(0);
-  useEffect(() => {
-    if (display.role !== "admin") return;
-    let alive = true;
-    contarAchadosP1()
-      .then((n) => {
-        if (alive) setAchadosP1(n);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [display.role, pathname]);
-
-  // Menu em cascata, conta única (ordem 9f3085d8): as seções de dono aparecem para
-  // quem já anunciou; "Solicitações" só com estadia ativa; Administração só para admin.
-  const estadiaAtiva = useHasActiveLocacao(true);
-  const [temImovel, setTemImovel] = useState(false);
-  const [imoveisAtivos, setImoveisAtivos] = useState(0);
+  // Prompt 42, item 5: os números e o contexto do menu vêm de UM GET (/api/painel/contadores) — não mais de ~8 server
+  // actions a cada troca de rota (POSTs que a navegação abortava e que disputavam a fila com as ações da tela). Lê ao
+  // montar, ao voltar o foco, a cada minuto com a aba visível, ao entrar/sair da área de imóveis (o 1º anúncio revela as
+  // seções de dono) e quando uma tela avisa (fila de documentos, assinatura do contrato, EVENTO_CONTADORES).
+  const [contadores, setContadores] = useState<ContadoresPainel>(CONTADORES_VAZIOS);
+  const [releitura, setReleitura] = useState(0);
   const naAreaDeImoveis = pathname.startsWith("/dashboard/imoveis");
   useEffect(() => {
-    let alive = true;
-    temImovelAnunciado()
-      .then((t) => {
-        if (alive) setTemImovel(t);
+    if (!displayUser?.id) return;
+    const controle = new AbortController();
+    fetch(ROTA_CONTADORES, { cache: "no-store", credentials: "same-origin", signal: controle.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (json) setContadores(normalizarContadores(json));
       })
       .catch(() => {});
-    imoveisAtivosDoDono()
-      .then((n) => {
-        if (alive) setImoveisAtivos(n);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
+    return () => controle.abort();
+  }, [displayUser?.id, naAreaDeImoveis, releitura]);
+  useEffect(() => {
+    // Foco e "aba visível" chegam juntos ao voltar para a aba: uma leitura só a cada 2 s por esse caminho.
+    let ultima = 0;
+    const ler = () => {
+      ultima = Date.now();
+      setReleitura((n) => n + 1);
     };
-    // Reavalia ao sair do cadastro de imóvel (o primeiro anúncio revela as seções de dono).
-  }, [displayUser?.id, naAreaDeImoveis]);
-  const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan, imoveisAtivos });
-  const badges = { "admin-documentos": docsPendentes, "admin-agentes": achadosP1 };
+    const aoMudar = ler;
+    const aoVoltar = () => {
+      if (document.visibilityState === "visible" && Date.now() - ultima > 2000) ler();
+    };
+    const eventos = [...EVENTOS_CONTADORES, EVENTO_AVISO_ASSINATURA];
+    for (const e of eventos) window.addEventListener(e, aoMudar);
+    window.addEventListener("focus", aoVoltar);
+    document.addEventListener("visibilitychange", aoVoltar);
+    const relogio = window.setInterval(aoVoltar, INTERVALO_CONTADORES_MS);
+    return () => {
+      for (const e of eventos) window.removeEventListener(e, aoMudar);
+      window.removeEventListener("focus", aoVoltar);
+      document.removeEventListener("visibilitychange", aoVoltar);
+      window.clearInterval(relogio);
+    };
+  }, []);
+  const {
+    contratosParaAssinar,
+    propostasAguardando,
+    documentosPendentes: docsPendentes,
+    aprovacoesPendentes,
+    temImovel,
+    imoveisAtivos,
+    parceiro,
+    estadiaAtiva,
+  } = contadores;
+
+  const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan, imoveisAtivos, parceiro });
+  const badges = { "admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando };
 
   // Guarda de rota por papel (B1). Ao abrir por URL/deep-link uma tela exclusiva
   // do OUTRO modo, a regra deixou de ser "sempre redireciona": se a conta TEM o
@@ -158,35 +182,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // abre — um link de proprietário nunca cai na visão de inquilino. Só quando a
   // conta não tem o papel é que volta para a Visão geral. Rotas compartilhadas
   // (mensagens, conta, indicações, solicitações, verificação) valem nos dois.
-  // Guarda de rota por papel. Distingue DUAS situações que caem no mesmo estado
-  // (modo X + rota exclusiva do outro modo), mas pedem respostas opostas:
-  //  • MUDOU O MODO (o usuário clicou no seletor estando numa rota do modo
-  //    antigo) → ele quer trocar de mundo: sai para a Visão geral (item 4 — sem
-  //    reverter a escolha, o que causava "2 cliques para pegar");
-  //  • MUDOU A ROTA (deep-link/URL para uma rota exclusiva no modo errado) → ele
-  //    quer aquela tela: TROCA o modo para o certo se a conta tem o papel (B1),
-  //    senão volta para a Visão geral.
-  const prevGuard = useRef({ mode, pathname });
+  // Guarda de rota por papel. Prompt 43 (conta única, sem seletor): o CONTEXTO da tela decide o papel. Rota
+  // exclusiva do outro modo → troca o modo para o da tela (e grava no perfil) quando a conta tem o papel; senão vai
+  // ao convite (destinoForaDoPapel). Nunca expulsa para o Início só porque o modo mudou (ex.: a leitura do perfil
+  // chegando depois da navegação).
   useEffect(() => {
-    const prev = prevGuard.current;
-    const modeChanged = prev.mode !== mode;
-    prevGuard.current = { mode, pathname };
-
     const exclusive = mode === "owner" ? TENANT_ONLY : OWNER_ONLY;
     const hits = exclusive.some((p) => pathname === p || pathname.startsWith(p + "/"));
     if (!hits) return;
-
-    if (modeChanged) {
-      router.replace("/dashboard");
-      return;
-    }
     const target: ViewMode = mode === "owner" ? "tenant" : "owner";
     const contaTemPapel = target === "owner" ? isOwner : isTenant;
     if (contaTemPapel) {
       setActiveMode(target);
       salvarModo(target).catch(() => {});
     } else {
-      router.replace("/dashboard");
+      router.replace(destinoForaDoPapel(pathname));
     }
   }, [pathname, mode, isOwner, isTenant, router, setActiveMode]);
 
@@ -226,8 +236,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
    * papel (ex.: quem nunca anunciou tocando em "Anunciar meu imóvel"): troca aqui antes.
    */
   async function aoNavegar(href: string, e: React.MouseEvent) {
-    setOpen(false);
     const rota = href.split("#")[0];
+    if (rota === pathname) setOpen(false);
     const de = (lista: string[]) => lista.some((p) => rota === p || rota.startsWith(p + "/"));
     const alvo: ViewMode | null = de(OWNER_ONLY) ? "owner" : de(TENANT_ONLY) ? "tenant" : null;
     if (!alvo || alvo === mode) return;
@@ -241,6 +251,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   // Conta única (ordem a8c05cd0): sem seletor Inquilino/Proprietário no cabeçalho.
   const chipModo = <DemoToggle />;
+  // Prompt 41: cabeçalho com foto pequena + papel ativo (o mesmo da barra inferior), sem faixa extra; leva ao Perfil.
+  const parceiroAprovado = useParceiroAprovado();
+  const preferenciaParceiro = usePreferenciaParceiro();
+  const papelAtivo = papelDaBarra({ admin: display.role === "admin", modo: mode === "owner" ? "owner" : "tenant", parceiroAprovado, preferenciaParceiro, pathname });
+  // Mockup perfil-01 (decisão de 24/10: nestas telas vale o desenho): o cabeçalho mostra a foto também na Conta.
+  // E55 (QA 24/10, reincidência): na tela Perfil a foto aparece só no herói editável e no espelho — as miniaturas de
+  // navegação (barra lateral e cabeçalho) viram iniciais ali. No computador o Perfil abre também em /dashboard/conta.
+  const naTelaPerfil = pathname === "/dashboard/conta/perfil" || pathname === "/dashboard/conta";
+  const fotoNav = naTelaPerfil ? null : myPhoto;
+  const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />;
 
   const sidebar = (
     <div className="flex h-full flex-col">
@@ -255,7 +275,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             href={ANUNCIAR.href!}
             onClick={(e) => aoNavegar(ANUNCIAR.href!, e)}
             data-testid="menu-anunciar"
-            className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-champagne px-3 py-2.5 text-sm font-semibold text-forest transition-colors hover:bg-white"
+            className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-champagne px-3 py-3 text-sm font-semibold text-forest transition-colors hover:bg-white"
           >
             <Plus className="h-4 w-4" />
             {ANUNCIAR.rotulo}
@@ -265,7 +285,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </nav>
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 px-3 py-2">
-          <Avatar name={nomeSidebar} size={36} mode={mode} photoUrl={myPhoto ?? undefined} />
+          {/* C7b: sem o selo do papel (a 36 px a lupa virava um rabisco "Q"); o papel já aparece no cabeçalho. */}
+          <span className="contents" data-testid="barra-avatar">
+            <Avatar name={nomeAvatar} size={36} photoUrl={fotoNav ?? undefined} />
+          </span>
           <div className="min-w-0 text-xs">
             {/* Item 4: nunca o e-mail cru — nome do perfil ou rótulo neutro. */}
             <p className="truncate font-medium text-white">{nomeSidebar}</p>
@@ -273,7 +296,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
         <button
           onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
         >
           <LogOut className="h-4.5 w-4.5" />
           Sair
@@ -281,6 +304,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   );
+
+  // CADASTRO-MOLDURA (E89): no assistente de cadastro, a casca do painel sai de cena (topo mínimo e rodapé do fluxo).
+  if (ehAssistenteCadastro(pathname)) return <MolduraAssistente>{children}</MolduraAssistente>;
 
   return (
     // App-shell: no desktop a altura trava na viewport e SÓ o conteúdo (main)
@@ -301,11 +327,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden print:overflow-visible">
         {/* Topbar mobile (logo + menu) */}
         {/* Modo app: cabeçalho curto (voltar + título), no lugar do topo do site. */}
-        <AppHeader direita={chipModo} />
+        <AppHeader direita={<>{papelChip}{chipModo}</>} />
 
         <div className="web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden">
           <Logo className="lg:hidden" />
           <div className="flex items-center gap-2">
+            {papelChip}
             {chipModo}
           <button
             className="grid h-10 w-10 place-items-center rounded-lg text-forest lg:hidden"
@@ -317,10 +344,28 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
+        {/* E73 (QA 24/10): no celular, nas telas da equipe (/admin), a navegação fica à vista — "Voltar ao site" e o menu da
+            equipe com nome — em vez de só o ícone do topo. No computador nada muda (a barra lateral já está aberta). */}
+        {pathname.startsWith("/admin") && (
+          <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 lg:hidden print:hidden" data-testid="admin-nav-celular">
+            <Link href="/" className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-forest" data-testid="admin-voltar-site">
+              <ChevronLeft className="h-5 w-5" aria-hidden /> Voltar ao site
+            </Link>
+            <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-line px-3 text-sm font-semibold text-ink" data-testid="admin-abrir-menu">
+              <Menu className="h-5 w-5" aria-hidden /> Menu da equipe
+            </button>
+          </nav>
+        )}
+
         {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
         <DemoBanner />
 
-        <main key={mode} className="mode-transition flex-1 p-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:p-8 lg:overflow-y-auto print:overflow-visible">
+        {/* Folga no fim (sm+: --folga-flutuante = 112 px) e scroll-padding no contêiner que rola (lg): o botão flutuante "Fale com a
+            Viva" (48 px, 24 px acima da borda) nunca fica por cima da última ação da tela (t241: "Salvar qualificação"
+            coberto a 1280 px depois que os botões passaram a 56 px no #953). */}
+        {/* E69: marca a navegação interna para o "voltar" das subtelas no celular. */}
+        <MarcaNavInterna />
+        <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />
@@ -329,7 +374,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Barra inferior do app (ciente do modo); esconde-se no desktop e nas
           telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
-      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: docsPendentes + achadosP1 }} />
+      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: badgeDaEquipe(contadores) }} />
     </div>
   );
 }

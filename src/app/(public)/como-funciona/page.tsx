@@ -1,4 +1,5 @@
 import { VideoInstitucional } from "@/components/institucional/video-institucional";
+import { PASSO_CONVERSE_TEXTO } from "@/config/conversa-chat";
 import type { Metadata } from "next";
 import {
   Search,
@@ -23,14 +24,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/como-funciona" },
   title: "Como funciona",
   description:
-    "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias no Viva Nomads — para inquilinos e para proprietários.",
+    "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias na Viva Nomads — para moradores e para proprietários.",
 };
 
 const IMG = "/images/como-funciona";
 
 const TENANT_STEPS = [
   { icon: Search, img: `${IMG}/01-busque.webp`, alt: "Profissional pesquisando imóveis mobiliados no notebook", title: "Busque", text: "Encontre imóveis mobiliados por cidade, período e orçamento." },
-  { icon: MessageSquare, img: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e combine os detalhes." },
+  { icon: MessageSquare, img: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", title: "Converse", text: PASSO_CONVERSE_TEXTO },
   { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, alt: "Verificação de identidade com documento", title: "Candidate-se", text: "Envie sua candidatura pela plataforma. A verificação de identidade chega em breve." },
   { icon: FileSignature, img: "/media/como-funciona-02-assine.webp", alt: "Homem assinando o contrato pelo celular", title: "Assine", text: "Assine o contrato digital com validade jurídica e receba as chaves." },
 ];
@@ -45,7 +46,7 @@ const OWNER_STEPS = [
 export default function HowItWorksPage() {
   return (
     <>
-      <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/como-funciona", nome: "Como funciona", descricao: "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias no Viva Nomads — para inquilinos e para proprietários." })} />
+      <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/como-funciona", nome: "Como funciona", descricao: "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias na Viva Nomads — para moradores e para proprietários." })} />
       <BannerTopo
         foto={PHOTOS.heroProfessional}
         alt="Pessoa chegando com a mala a um imóvel mobiliado"
@@ -57,7 +58,7 @@ export default function HowItWorksPage() {
           <p>
             Do anúncio ao contrato, com registro e segurança em cada passo — para{" "}
             <a href="#para-inquilinos" className="font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
-              inquilino
+              morador
             </a>{" "}
             e{" "}
             <a href="#para-proprietarios" className="font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
@@ -73,7 +74,7 @@ export default function HowItWorksPage() {
       {/* Vídeo institucional v3 no topo, antes dos passos (só toca no play). */}
       <VideoInstitucional />
 
-      <Steps id="para-inquilinos" title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para inquilinos" />
+      <Steps id="para-inquilinos" title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para moradores" />
 
       {/* Dois caminhos do inquilino: buscar (fluxo acima) ou publicar um pedido. */}
       <DoisCaminhos />
@@ -94,7 +95,7 @@ export default function HowItWorksPage() {
 
       <div className="border-t border-sage-200 bg-surface-2">
       <section className="container-page section-y text-center">
-        <h2 className="font-title text-3xl font-bold text-ink">Pronto para começar?</h2>
+        <h2 className="font-title text-2xl font-semibold text-ink">Pronto para começar?</h2>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <ButtonLink href="/buscar" variant="primary" size="lg">
             Buscar imóveis
@@ -117,20 +118,20 @@ export default function HowItWorksPage() {
 function GarantiasInquilino() {
   return (
     <section id="garantias" className="container-page section-y scroll-mt-24">
-      <h2 className="font-title text-3xl font-bold text-ink">Caução da locação</h2>
+      <h2 className="font-title text-2xl font-semibold text-ink">Caução da locação</h2>
       <p className="mt-3 max-w-2xl text-muted">
         Por lei, cada contrato usa <strong>uma</strong> garantia. Hoje a garantia é a
         Caução, com a mesma proteção para as duas partes — e nada fica com a plataforma.
       </p>
       <div className="mt-8 grid gap-6">
-        <div className="rounded-2xl border border-sage-200 bg-white p-6">
+        <div className="rounded-xl border border-sage-200 bg-white p-6">
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
             <ShieldCheck className="h-5 w-5" />
           </div>
-          <h3 className="mt-4 font-title text-lg font-bold text-ink">Caução (depósito devolvível)</h3>
-          <dl className="mt-3 space-y-2.5 text-sm">
+          <h3 className="mt-4 font-title text-lg font-semibold text-ink">Caução (depósito devolvível)</h3>
+          <dl className="mt-3 space-y-3 text-sm">
             <div>
-              <dt className="font-semibold text-ink">Para o inquilino</dt>
+              <dt className="font-semibold text-ink">Para o morador</dt>
               <dd className="text-muted">
                 Depósito <strong>devolvível</strong> ao fim da estadia, nos termos do contrato.
                 Sem mensalidade.
@@ -144,7 +145,7 @@ function GarantiasInquilino() {
               </dd>
             </div>
           </dl>
-          <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-forest">
+          <span className="mt-4 inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
             Disponível
           </span>
         </div>
@@ -161,7 +162,7 @@ function GarantiasInquilino() {
 function PrecoJusto() {
   return (
     <section id="preco-justo" className="container-page section-y scroll-mt-24">
-      <h2 className="font-title text-2xl font-bold text-ink">Selo “Preço justo”</h2>
+      <h2 className="font-title text-2xl font-semibold text-ink">Selo “Preço justo”</h2>
       <p className="mt-3 max-w-3xl text-ink">
         O selo aparece quando o valor mensal do imóvel na Viva fica abaixo do equivalente mensal que o próprio
         proprietário informou ter no Airbnb. Esse campo é opcional e declarado por quem anuncia; a Viva não
@@ -180,34 +181,34 @@ function PrecoJusto() {
 function DoisCaminhos() {
   return (
     <section className="container-page pb-4">
-      <h2 className="font-title text-2xl font-bold text-ink">Dois caminhos</h2>
+      <h2 className="font-title text-2xl font-semibold text-ink">Dois caminhos</h2>
       <p className="mt-2 max-w-2xl text-muted">
         Você escolhe como chegar ao imóvel: procurar por conta própria ou dizer o que precisa
         e deixar os proprietários virem até você.
       </p>
       <div className="mt-6 grid gap-6 md:grid-cols-2">
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
+        <div className="flex flex-col overflow-hidden rounded-xl border border-sage-200 bg-white">
           <StepImage src="/images/unicas/cf-buscar-imoveis.webp" alt="Imóvel mobiliado disponível para estadias de 30 a 180 dias" />
           <div className="flex flex-1 flex-col p-6">
-            <h3 className="font-title text-lg font-bold text-ink">Buscar imóveis</h3>
+            <h3 className="font-title text-lg font-semibold text-ink">Buscar imóveis</h3>
             <p className="mt-2 flex-1 text-sm text-muted">
               Explore os imóveis mobiliados por cidade, período e orçamento — é o passo a passo
               acima, do primeiro contato até a assinatura.
             </p>
-            <ButtonLink href="/buscar" variant="outline" className="mt-5 self-start">
+            <ButtonLink href="/buscar" variant="outline" className="mt-4 self-start">
               Buscar imóveis
             </ButtonLink>
           </div>
         </div>
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
+        <div className="flex flex-col overflow-hidden rounded-xl border border-sage-200 bg-white">
           <StepImage src="/images/como-funciona/02-converse.webp" alt="Proprietária respondendo a um pedido por vídeo" />
           <div className="flex flex-1 flex-col p-6">
-            <h3 className="font-title text-lg font-bold text-ink">Publicar um Pedido de Moradia</h3>
+            <h3 className="font-title text-lg font-semibold text-ink">Publicar um Pedido de Moradia</h3>
             <p className="mt-2 flex-1 text-sm text-muted">
               Diga o que você precisa e os proprietários da cidade respondem com os imóveis deles.
               Sua identidade só aparece para quem você aceitar.
             </p>
-            <ButtonLink href="/pedidos/novo" variant="primary" className="mt-5 self-start">
+            <ButtonLink href="/pedidos/novo" variant="primary" className="mt-4 self-start">
               Publicar pedido
             </ButtonLink>
           </div>
@@ -245,13 +246,13 @@ function DuranteDepois() {
   ];
   return (
     <section className="container-page pb-4">
-      <h2 className="font-title text-2xl font-bold text-ink">Durante e depois da estadia</h2>
+      <h2 className="font-title text-2xl font-semibold text-ink">Durante e depois da estadia</h2>
       <div className="mt-6 grid gap-6 sm:grid-cols-2">
         {itens.map((it) => (
-          <div key={it.title} className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
+          <div key={it.title} className="flex flex-col overflow-hidden rounded-xl border border-sage-200 bg-white">
             <StepImage src={it.img} alt={it.alt} />
-            <div className="flex flex-1 flex-col p-5">
-              <h3 className="font-title text-lg font-bold text-ink">{it.title}</h3>
+            <div className="flex flex-1 flex-col p-4">
+              <h3 className="font-title text-lg font-semibold text-ink">{it.title}</h3>
               <p className="mt-2 text-sm text-muted">{it.text}</p>
             </div>
           </div>
@@ -282,18 +283,18 @@ function ProtegidoPor() {
       img: "/images/como-funciona/08-feche.webp",
       alt: "Aperto de mãos fechando o contrato de locação",
       title: "Caução do contrato",
-      text: `${CAUCAO_FRASE} Combinada entre proprietário e inquilino. A Viva não é garantidora.`,
+      text: `${CAUCAO_FRASE} Combinada entre proprietário e morador. A Viva não é garantidora.`,
     },
   ];
   return (
-    <section className="container-page pb-14">
-      <h2 className="font-title text-2xl font-bold text-ink">Você fica protegido por</h2>
+    <section className="container-page pb-12">
+      <h2 className="font-title text-2xl font-semibold text-ink">Você fica protegido por</h2>
       <div className="mt-6 grid gap-6 sm:grid-cols-3">
         {itens.map((it) => (
-          <div key={it.title} className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
+          <div key={it.title} className="flex flex-col overflow-hidden rounded-xl border border-sage-200 bg-white">
             <StepImage src={it.img} alt={it.alt} />
-            <div className="flex flex-1 flex-col p-5">
-              <h3 className="font-title text-lg font-bold text-ink">{it.title}</h3>
+            <div className="flex flex-1 flex-col p-4">
+              <h3 className="font-title text-lg font-semibold text-ink">{it.title}</h3>
               <p className="mt-2 text-sm text-muted">{it.text}</p>
             </div>
           </div>
@@ -357,23 +358,23 @@ function Steps({
   id?: string;
 }) {
   const badgeClass =
-    tone === "owner" ? "bg-blue-50 text-blue-500" : "bg-champagne/15 text-champagne-600";
+    tone === "owner" ? "bg-blue-50 text-blue-500" : "bg-sage-100 text-forest";
   return (
     <section id={id} className="container-page section-y scroll-mt-24">
       {badge && (
-        <span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${badgeClass}`}>
+        <span className={`mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${badgeClass}`}>
           <span className="h-1.5 w-1.5 rounded-full bg-current" />
           {badge}
         </span>
       )}
-      <h2 className="font-title text-3xl font-bold text-ink">{title}</h2>
+      <h2 className="font-title text-2xl font-semibold text-ink">{title}</h2>
       <div className="mt-8 grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((s, i) => {
           const Icon = s.icon;
           return (
             <div
               key={s.title}
-              className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white"
+              className="flex flex-col overflow-hidden rounded-xl border border-sage-200 bg-white"
             >
               {/* Imagem ilustrativa no topo (3:2), cantos arredondados em cima */}
               <StepImage src={s.img} alt={s.alt} priority={eager} />
@@ -382,9 +383,9 @@ function Steps({
                   <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <span className="font-title text-3xl font-bold text-sage-200">{i + 1}</span>
+                  <span className="font-title text-2xl font-semibold text-sage-200">{i + 1}</span>
                 </div>
-                <h3 className="mt-4 font-title text-lg font-bold text-ink">{s.title}</h3>
+                <h3 className="mt-4 font-title text-lg font-semibold text-ink">{s.title}</h3>
                 <p className="mt-2 text-sm text-muted">{s.text}</p>
               </div>
             </div>

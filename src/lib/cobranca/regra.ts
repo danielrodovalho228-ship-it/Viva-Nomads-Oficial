@@ -171,12 +171,32 @@ export function taxaPublicaTexto(f: FaixaComissao): string {
   return f.gestor ? TAXA_NEGOCIADA_TEXTO : pctTexto(f.taxa);
 }
 
-/** Linha do painel do proprietário, ANTES de aceitar contrato/renovação (ordens 12eea681, 5faa3903 e b3c9d76e). */
+/** "R$ 3.200" (inteiro) / "R$ 259,20" (com centavos). */
+export function brlTaxa(v: number): string {
+  const inteiro = Math.abs(v - Math.round(v)) < 0.005;
+  return `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: inteiro ? 0 : 2, maximumFractionDigits: inteiro ? 0 : 2 })}`;
+}
+
+/**
+ * Rótulo ÚNICO da taxa de serviço (prompt 27, item 6), em todo lugar que mostra a taxa (proposta, orçamento,
+ * Fechamento, contrato, simuladores): "Taxa de serviço: 12% sobre o valor mensal × meses (R$ 3.200 × 4 = R$ 12.800)
+ * = R$ 1.536". A base é só o valor mensal × meses — nunca o "total do contrato", que inclui consumo, limpeza e pet.
+ * `valorGravado`: a taxa já gravada (congelada no aceite), quando houver; senão, calculada pela regra.
+ */
+export function rotuloTaxaServico(taxa: number, valorMensal: number, meses: number, valorGravado?: number | null): string {
+  const inicio = `Taxa de serviço: ${pctTexto(taxa)} sobre o valor mensal × meses`;
+  const v = Number.isFinite(valorMensal) && valorMensal > 0 ? valorMensal : 0;
+  const m = Number.isFinite(meses) && meses > 0 ? meses : 0;
+  if (!(v > 0 && m > 0)) return inicio;
+  const valor = valorGravado != null && Number.isFinite(valorGravado) ? valorGravado : comissaoSobreContrato(v, m, taxa);
+  return `${inicio} (${brlTaxa(v)} × ${numMeses(m)} = ${brlTaxa(Math.round(v * m * 100) / 100)}) = ${brlTaxa(valor)}`;
+}
+
+const numMeses = (m: number) => `${Math.round(m * 10) / 10}`.replace(".", ",");
+
+/** Linha do painel do proprietário, ANTES de aceitar contrato/renovação: o rótulo único (prompt 27). */
 export function textoTaxaPainel(taxa: number, valorMensal: number, meses: number): string {
-  const base = `Taxa de serviço: ${pctTexto(taxa)} do valor total do contrato`;
-  const valor = comissaoSobreContrato(valorMensal, meses, taxa);
-  if (valor <= 0) return base;
-  return `${base} = R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return rotuloTaxaServico(taxa, valorMensal, meses);
 }
 
 /**

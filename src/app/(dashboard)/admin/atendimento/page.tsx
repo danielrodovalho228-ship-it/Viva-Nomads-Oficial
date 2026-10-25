@@ -1,5 +1,6 @@
 import { filaAtendimento, listarMacros, metricasAtendimento } from "@/lib/data/atendimento-actions";
 import { AtendimentoClient } from "./atendimento-client";
+import { adminDaPagina } from "@/lib/data/admin-indicadores";
 
 export const metadata = { title: "Atendimento — Admin" };
 
@@ -23,12 +24,18 @@ export default async function AdminAtendimentoPage({
     responsavel: um("responsavel"),
     busca: um("q"),
     fechados: um("fechados") === "1",
+    semResposta: um("sem_resposta") === "1",
   };
-  const [fila, aprovacao, metricas, macros] = await Promise.all([
+  const admin = await adminDaPagina();
+  const [fila, aprovacao, metricas, macros, ultimo] = await Promise.all([
     aba === "fila" ? filaAtendimento(filtros) : Promise.resolve([]),
     filaAtendimento({ aprovacao: true }),
     aba === "metricas" ? metricasAtendimento(Number(um("dias")) || 30) : Promise.resolve(null),
     aba === "respostas" ? listarMacros() : Promise.resolve([]),
+    // Fila vazia (Prompt 48): a data do último chamado resolvido aparece no "Nada pendente".
+    admin
+      ? admin.from("chamados").select("resolvido_em").eq("simulacao", false).not("resolvido_em", "is", null).order("resolvido_em", { ascending: false }).limit(1).then((r) => r.data?.[0]?.resolvido_em ?? null, () => null)
+      : Promise.resolve(null),
   ]);
   return (
     <AtendimentoClient
@@ -40,6 +47,7 @@ export default async function AdminAtendimentoPage({
       filtros={filtros}
       semAcesso={fila === null}
       agoraISO={new Date().toISOString()}
+      ultimaDecisao={(ultimo as string | null) ?? null}
     />
   );
 }

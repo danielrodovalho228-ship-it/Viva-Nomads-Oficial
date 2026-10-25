@@ -32,14 +32,14 @@ export const GUIAS: Guia[] = [
         titulo: "O que entra e o que fica de fora",
         paragrafos: [
           "Diga no anúncio o que o valor mensal já inclui (condomínio, internet, contas) e o que é cobrado à parte. Quem não encontra isso claro costuma desistir ou perguntar de novo.",
-          "Taxa de limpeza e valor extra para pet também aparecem no anúncio. Combine-os antes de publicar, para o inquilino ver o total desde a primeira tela.",
+          "Taxa de limpeza e valor extra para pet também aparecem no anúncio. Combine-os antes de publicar, para o morador ver o total desde a primeira tela.",
         ],
       },
       {
         titulo: "Como a taxa da Viva entra na conta",
         paragrafos: [
           "Anunciar é grátis. A Viva cobra uma taxa sobre o valor total de cada contrato fechado e de cada renovação (valor mensal × meses), e a taxa cai conforme você tem mais imóveis. A tabela completa está em /precos.",
-          "Faça a conta com a taxa da sua faixa antes de definir o valor, para saber quanto realmente fica com você.",
+          "Faça a conta com a taxa da sua faixa antes de definir o valor, para saber o seu resultado depois da taxa.",
         ],
       },
       {
@@ -53,7 +53,7 @@ export const GUIAS: Guia[] = [
   {
     slug: "o-que-e-a-caucao",
     titulo: "O que é a Caução e como funciona",
-    descricao: "Entenda a Caução nos contratos da Viva Nomads: quanto pode ser, onde fica o dinheiro e quando volta para o inquilino.",
+    descricao: "Entenda a Caução nos contratos da Viva Nomads: quanto pode ser, onde fica o dinheiro e quando volta para o morador.",
     publico: "todos",
     secoes: [
       {
@@ -61,7 +61,7 @@ export const GUIAS: Guia[] = [
         paragrafos: [CAUCAO_FRASE],
       },
       {
-        titulo: "Para o inquilino",
+        titulo: "Para o morador",
         paragrafos: [
           "A Caução fica em uma poupança e volta para você no fim do contrato, depois da conferência de saída, se não houver pendência combinada entre as partes.",
           "A plataforma não recebe nem guarda esse dinheiro. Desconfie de qualquer pedido de pagamento fora do que está no contrato (veja /seguranca).",
@@ -116,7 +116,7 @@ export const GUIAS: Guia[] = [
       {
         titulo: "O que é",
         paragrafos: [
-          "É o registro do estado do imóvel e dos móveis no começo do contrato, com cômodos, itens e fotos. Ela é feita pelo proprietário e pelo inquilino, cada um do seu lado.",
+          "É o registro do estado do imóvel e dos móveis no começo do contrato, com cômodos, itens e fotos. Ela é feita pelo proprietário e pelo morador, cada um do seu lado.",
         ],
       },
       {
@@ -172,7 +172,7 @@ export const GUIAS: Guia[] = [
   {
     slug: "documentos-para-morar-em-imovel-mobiliado",
     titulo: "Documentos para morar em imóvel mobiliado",
-    descricao: "Quais informações e documentos o inquilino costuma precisar ter à mão para fechar um contrato de 30 a 180 dias.",
+    descricao: "Quais informações e documentos o morador costuma precisar ter à mão para fechar um contrato de 30 a 180 dias.",
     publico: "inquilinos",
     secoes: [
       {
@@ -182,7 +182,7 @@ export const GUIAS: Guia[] = [
         ],
       },
       {
-        titulo: "Documento do inquilino",
+        titulo: "Documento do morador",
         paragrafos: [
           "Tenha à mão um documento oficial com foto. Ele é enviado dentro da plataforma, e você acompanha a análise no seu painel. Não envie documento por mensagem nem por e-mail comum.",
         ],
@@ -196,6 +196,43 @@ export const GUIAS: Guia[] = [
       {
         titulo: "Se pedirem algo diferente",
         paragrafos: ["Se alguém pedir documento ou pagamento por fora da plataforma, pare e leia /seguranca."],
+      },
+    ],
+  },
+  {
+    // 65-B: linkado da seção Vídeo do editor e do bloco de vídeo do passo Fotos (GUIA_VIDEO_HREF).
+    slug: "como-por-um-video-no-anuncio",
+    titulo: "Como pôr um vídeo no anúncio",
+    descricao: "Onde enviar o vídeo do imóvel, os limites de tamanho e duração, como gravar pelo celular e como trocar ou remover.",
+    publico: "proprietarios",
+    secoes: [
+      {
+        titulo: "Onde fica",
+        paragrafos: [
+          "No anúncio já criado: em Meus imóveis, toque em Editar e abra a seção Vídeo, logo depois das Fotos.",
+          "No cadastro de um anúncio novo: no passo Fotos, no bloco Vídeo do imóvel, logo depois do envio das fotos. O vídeo é opcional e nunca impede publicar.",
+        ],
+      },
+      {
+        titulo: "Limites e formatos",
+        paragrafos: [
+          "Um vídeo por anúncio, de até 60 segundos e até 50 MB, em MP4 ou MOV (os formatos que o celular grava). Se passar disso, a tela avisa na hora e nada é gravado.",
+          "Se preferir, cole um link do YouTube ou do Vimeo. Com um vídeo enviado, o anúncio mostra o vídeo enviado; o link só aparece quando não há vídeo enviado.",
+        ],
+      },
+      {
+        titulo: "Como gravar",
+        paragrafos: [
+          "Grave pelo celular, na horizontal ou na vertical, andando devagar pelos ambientes: entrada, sala, cozinha, quartos, banheiro e o espaço de trabalho.",
+          "Mostre o imóvel por dentro, com luz natural. Não grave pessoas, documentos, a fachada com o número nem a vista que identifique o endereço exato.",
+        ],
+      },
+      {
+        titulo: "Trocar ou remover",
+        paragrafos: [
+          "Para trocar, toque em Trocar vídeo e escolha o novo: o anterior é apagado. Para tirar, toque em Remover; o vídeo sai do anúncio na hora.",
+          "Se a conexão cair no meio do envio, nada é gravado. Toque em Tentar de novo quando a internet voltar.",
+        ],
       },
     ],
   },

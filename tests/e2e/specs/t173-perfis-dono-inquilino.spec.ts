@@ -167,19 +167,25 @@ test.describe("T173 — perfis do proprietário e do inquilino", () => {
     const page = await entrar(browser, inq.email, senha);
     for (const largura of [390, 1280]) {
       await page.setViewportSize({ width: largura, height: 900 });
-      // Celular: subtela do app; computador: a página completa da Conta (site).
+      // A1: a tela Perfil (no computador também /dashboard/conta).
       await page.goto(largura === 390 ? "/dashboard/conta/perfil" : "/dashboard/conta", { waitUntil: "networkidle" });
       const bloco = page.getByTestId("complete-perfil");
       await expect(bloco).toBeVisible({ timeout: 20_000 });
       await expect(bloco.getByTestId("perfil-progresso")).toContainText("% completo");
       await page.locator("#perfil-bio").fill("me chama no 34 99999-8888");
-      await expect(bloco).toContainText("Tire telefone, e-mail, @ ou link da bio");
-      await expect(bloco.getByRole("button", { name: "Salvar perfil" })).toBeDisabled();
+      await expect(page.locator("#perfil-bio-ajuda")).toContainText("Tire telefone, e-mail, @ ou link da bio");
+      // A1 (perfil-01): "Salvar alterações" — preso no fim da tela no celular; no cartão no computador.
+      const salvar = page.getByTestId(largura < 1024 ? "perfil-salvar-celular" : "perfil-salvar");
+      await expect(salvar).toBeDisabled();
       await page.locator("#perfil-bio").fill("Pesquisadora, organizada e tranquila.");
-      await bloco.getByRole("button", { name: "Português" }).click();
-      await bloco.getByRole("button", { name: "Salvar perfil" }).click();
-      await expect(bloco.getByRole("status")).toHaveText("Perfil salvo.");
+      // Idiomas atrás do toggle (E56): liga e escolhe.
+      const idiomas = page.getByTestId("idiomas-toggle-bloco-toggle");
+      if ((await idiomas.getAttribute("aria-checked")) !== "true") await idiomas.click();
+      const pt = page.getByRole("group", { name: "Idiomas" }).getByRole("button", { name: "Português" });
+      if ((await pt.getAttribute("aria-pressed")) !== "true") await pt.click();
       await page.screenshot({ path: `${SAIDA}/t173-complete-perfil-${largura}.png`, fullPage: false });
+      await salvar.click();
+      await expect(page.getByTestId("perfil-salvar-msg")).toHaveText("Alterações salvas.");
     }
     const { data } = await adm().from("profiles").select("bio, idiomas").eq("id", ids.inq!).single();
     expect(data?.bio).toBe("Pesquisadora, organizada e tranquila.");

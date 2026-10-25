@@ -77,3 +77,56 @@ export const LOGIN_APPLE_ATIVO = process.env.NEXT_PUBLIC_LOGIN_APPLE_ATIVO === "
  * lançamento. Mostra o aviso nas páginas públicas (e trava a assinatura paga).
  */
 export const PRE_LANCAMENTO = process.env.NEXT_PUBLIC_PRE_LANCAMENTO !== "off";
+
+/**
+ * Pagamento de parceiros pela plataforma (Prompt 31b). OFF por padrão: o morador paga direto ao prestador. Liga com
+ * NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO="on" quando o pagamento pela plataforma existir; a nota do catálogo de
+ * serviços troca de texto pela chave (servicos-morador.ts, notaPagamentoServicos).
+ */
+export const PAGAMENTO_PARCEIROS_ATIVO = process.env.NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO === "on";
+
+/**
+ * Regras de encerramento de contrato (Prompt 32, item 7). OFF por padrão: "Encerrar contrato" registra o pedido para
+ * as duas partes e o admin, sem calcular multa nem devolução (a Viva conduz). Liga com
+ * NEXT_PUBLIC_ENCERRAMENTO_REGRAS_ATIVO="on" depois do parecer jurídico; o cálculo entra em
+ * src/lib/estadia/encerramento.ts (consequenciasDoEncerramento).
+ */
+export const ENCERRAMENTO_REGRAS_ATIVO = process.env.NEXT_PUBLIC_ENCERRAMENTO_REGRAS_ATIVO === "on";
+
+/**
+ * Avaliação do imóvel por avaliador credenciado (Prompt 62-B1). OFF por padrão: desligada, nada aparece para o dono nem
+ * para o morador; o credenciamento dos avaliadores e o /admin/avaliadores funcionam (para montar a rede antes do
+ * lançamento). Só liga com as 3 condições que o admin mostra: tabela de preço na cidade, 2+ avaliadores ativos e o parecer
+ * do item 14 da Dra. Beatriz (NEXT_PUBLIC_VISTORIA_PARECER_14="on" quando recebido).
+ */
+export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
+export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
+
+/**
+ * 63-B — "Conectar LinkedIn" (selo de confiança). OFF até o Daniel colar LINKEDIN_CLIENT_ID e LINKEDIN_CLIENT_SECRET na
+ * Vercel. Desligada, a Conta não mostra o Conectar e nenhum selo aparece. No laboratório o teste liga só no próprio
+ * navegador (cookie, ver src/lib/linkedin/chave.ts).
+ */
+export const LINKEDIN_CONECTAR_ATIVO = process.env.NEXT_PUBLIC_LINKEDIN_CONECTAR_ATIVO === "on";
+
+/**
+ * 63-B (decisão do Daniel, 23/10) — Instagram/Facebook/TikTok da própria pessoa. OFF: os campos não aparecem. Mesmo
+ * ligada, as redes de pessoas NUNCA aparecem para outro usuário (só a própria pessoa e a equipe).
+ */
+export const REDES_USUARIO_ATIVO = process.env.NEXT_PUBLIC_REDES_USUARIO_ATIVO === "on";
+
+/**
+ * Prompt 52 — triagem do morador (comprovante de vínculo + selo "Morador verificado" para o dono). OFF até o parecer do
+ * item 13 da Dra. Beatriz (texto de coleta, finalidade e prazo de guarda dos dados de vínculo/renda). Desligada, nenhuma
+ * tela nova aparece: nem o envio do morador, nem a fila do admin, nem o selo. Reteste: ligar SÓ no Preview da Vercel
+ * (NEXT_PUBLIC_TRIAGEM_VINCULO_ATIVA="on"). No laboratório o teste liga no próprio navegador (src/lib/triagem/chave.ts).
+ */
+export const TRIAGEM_VINCULO_ATIVA = process.env.NEXT_PUBLIC_TRIAGEM_VINCULO_ATIVA === "on";
+
+/**
+ * DETECTA-B — sugestões a partir das fotos da galeria (itens de Conforto/Premium e comodidades dos filtros). OFF até o
+ * Daniel ver o custo no PR. Desligada, nada é enviado ao modelo e a tela fica como hoje. Só o servidor lê a chave
+ * (DETECCAO_FOTOS_ATIVO="on"); usa a ANTHROPIC_API_KEY que já está em produção. No laboratório o teste liga só no
+ * próprio navegador (cookie, ver src/lib/fotos/deteccao-chave.ts).
+ */
+export const DETECCAO_FOTOS_ATIVO = process.env.DETECCAO_FOTOS_ATIVO === "on";

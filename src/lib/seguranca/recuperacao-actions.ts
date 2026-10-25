@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/notifications/email";
+import { emailCodigo2fa } from "@/lib/notifications/montar-email";
+import { SITE_URL } from "@/lib/site";
 import { precisaCodigoParaOperacaoSensivel, urlAtivar2fa } from "@/lib/admin/mfa";
 import {
   MSG_CODIGO_RECUPERACAO_INVALIDO,
@@ -77,12 +79,12 @@ export async function gerarCodigosRecuperacao(): Promise<Res<{ codigos: string[]
   const { data: fatores } = await s.supabase.auth.mfa.listFactors();
   if (!fatores?.totp?.length) return { ok: false, error: "Ative a verificação em duas etapas antes de gerar códigos." };
   const codigos = gerarCodigos();
-  const { error: e1 } = await admin.from("mfa_codigos_recuperacao").delete().eq("user_id", s.user.id);
-  if (e1) return { ok: false, error: ERRO_GERAL };
-  const { error: e2 } = await admin
-    .from("mfa_codigos_recuperacao")
-    .insert(codigos.map((c) => ({ user_id: s.user.id, codigo_hash: hashCodigo(s.user.id, c) })));
-  if (e2) return { ok: false, error: ERRO_GERAL };
+  // Numa transação no banco: ou o lote novo substitui o antigo, ou nada muda (nunca fica sem códigos).
+  const { error } = await admin.rpc("trocar_codigos_recuperacao", {
+    p_user_id: s.user.id,
+    p_hashes: codigos.map((c) => hashCodigo(s.user.id, c)),
+  });
+  if (error) return { ok: false, error: ERRO_GERAL };
   return { ok: true, codigos };
 }
 
@@ -111,15 +113,12 @@ export async function usarCodigoRecuperacao(bruto: string, destino: string): Pro
   const codigo = codigoRecuperacaoValido(bruto);
   let usou = false;
   if (codigo) {
-    // Atômico: só um pedido consegue marcar o código como usado.
-    const { data } = await admin
-      .from("mfa_codigos_recuperacao")
-      .update({ usado_em: new Date(agora).toISOString() })
-      .eq("user_id", s.user.id)
-      .eq("codigo_hash", hashCodigo(s.user.id, codigo))
-      .is("usado_em", null)
-      .select("id");
-    usou = (data?.length ?? 0) === 1;
+    // Atômico no banco (consumir_codigo_recuperacao): só um pedido consegue marcar o código como usado.
+    const { data, error } = await admin.rpc("consumir_codigo_recuperacao", {
+      p_user_id: s.user.id,
+      p_codigo_hash: hashCodigo(s.user.id, codigo),
+    });
+    usou = !error && data === true;
   }
   if (!usou) {
     await gravarLimite(admin, s.user.id, aposFalha(estado, agora));
@@ -145,12 +144,8 @@ export async function pedirCodigoRefazer(): Promise<Res> {
     refazer_hash: hashCodigoEmail(s.user.id, codigo),
     refazer_expira: new Date(agora + VALIDADE_CODIGO_EMAIL_MS).toISOString(),
   });
-  const r = await sendEmail({
-    to: s.user.email,
-    subject: "Seu código para refazer a verificação em duas etapas",
-    text: `Seu código: ${codigo}\nVale por 15 minutos. Se não foi você, ignore este e-mail e troque a senha.`,
-    html: `<p>Seu código para refazer a verificação em duas etapas: <strong style="font-size:20px;letter-spacing:4px">${codigo}</strong></p><p>Vale por 15 minutos. Se não foi você, ignore este e-mail e troque a senha.</p>`,
-  });
+  const m = emailCodigo2fa(SITE_URL, { codigo });
+  const r = await sendEmail({ to: s.user.email, subject: m.assunto, evento: "recuperacao_2fa", usuarioId: s.user.id, imagem: m.imagem, text: m.text, html: m.html });
   if (r.error) return { ok: false, error: "Não foi possível enviar o e-mail agora. Tente de novo." };
   return { ok: true };
 }

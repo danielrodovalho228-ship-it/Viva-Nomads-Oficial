@@ -42,7 +42,7 @@ export function PlanoGestorForm({ className }: { className?: string }) {
     }
   }
 
-  const inputCls = "h-12 w-full rounded-xl border border-line px-3.5 text-base outline-none focus:border-forest";
+  const inputCls = "h-12 w-full rounded-xl border border-line px-4 text-base outline-none focus:border-forest";
   return (
     <>
       <Button type="button" variant="secondary" size="lg" className={className} onClick={() => setAberto(true)} data-testid="plano-gestor-botao">
@@ -51,7 +51,7 @@ export function PlanoGestorForm({ className }: { className?: string }) {
       <BottomSheet open={aberto} onClose={() => setAberto(false)} title="Plano Gestor: 31 imóveis ou mais">
         {ok ? (
           <p className="flex items-start gap-2 text-sm text-ink" role="status" data-testid="plano-gestor-ok">
-            <Check className="mt-0.5 h-4 w-4 shrink-0 text-forest" aria-hidden /> Recebemos seu contato. Nosso time responde no e-mail informado.
+            <Check className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden /> Recebemos seu contato. Nosso time responde no e-mail informado.
           </p>
         ) : (
           <form onSubmit={enviar} className="grid gap-3" data-testid="plano-gestor-form">

@@ -1,21 +1,29 @@
 "use server";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { ASSUNTOS } from "@/lib/notifications/assuntos";
+import { blocoDados } from "@/lib/notifications/modelo-email";
+import { escaparHtml } from "@/lib/escapar-html";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
-import { nomeNaConversa } from "@/lib/perfil/perfil-publico";
+import { nomeNaProposta } from "@/lib/perfil/perfil-publico";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { temDocumento } from "@/lib/data/documento-servidor";
 import { MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { avisoAbaixoDoMinimo, normalizarNegociacao, descontoParaMeses, type Negociacao } from "@/lib/anuncio/negociacao";
-import { faixaPorImoveisAtivos, comissaoSobreContrato } from "@/lib/cobranca/regra";
+import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
+import { comissaoSobreContrato } from "@/lib/cobranca/regra";
+import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
+import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import {
+  aguardandoResposta,
   aplicarContraproposta,
   bloqueioContraproposta,
   calcularTotais,
@@ -28,8 +36,13 @@ import {
   mesesDoAnuncio,
   motivoRecusaValido,
   MOTIVOS_RECUSA,
+  STATUS_ABERTOS,
   mudancasProibidas,
-  taxaNoAceite,
+  taxaEfetivaDaProposta,
+  avisoTaxaCaiu,
+  textoSeAceitaHoje,
+  origemDaTaxaDaProposta,
+  textoTaxaCongeladaParaDono,
   validaAteDe,
   validarTermos,
   VALIDADES_DIAS,
@@ -42,6 +55,7 @@ import {
 } from "@/lib/propostas/regras";
 import {
   COLUNAS_PROPOSTA,
+  lerTaxaDaProposta,
   COLUNAS_VERSAO,
   expirarVencidas,
   linhaDaVersao,
@@ -50,6 +64,9 @@ import {
   type LinhaVersao,
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
+import { registrarDocumento } from "@/lib/fiscal/registro";
+import { linhaConferir, numeroExibido } from "@/lib/fiscal/prefixos";
+import { SITE_URL } from "@/lib/site";
 
 /*
   Propostas (prompt 17): proposta → contraproposta → aceite/recusa → fechamento. Tudo pelo SERVIDOR: a tela manda
@@ -75,6 +92,7 @@ async function sessao() {
 interface ImovelProposta {
   id: string;
   owner_id: string;
+  status?: string | null;
   title: string;
   monthly_price: number;
   min_period_days: number | null;
@@ -94,7 +112,7 @@ async function lerImovel(admin: Admin, propertyId: string): Promise<ImovelPropos
   const { data } = await admin
     .from("properties")
     .select(
-      "id, owner_id, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao",
+      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao",
     )
     .eq("id", propertyId)
     .maybeSingle();
@@ -127,15 +145,33 @@ function termosDoAnuncio(im: ImovelProposta, meses: number, dataEntrada: string,
   };
 }
 
-async function imoveisAtivos(admin: Admin, ownerId: string): Promise<number> {
-  const { count } = await admin.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active");
-  return count ?? 0;
-}
-
 async function nomeDe(admin: Admin, userId: string): Promise<string | null> {
   const { data } = await admin.from("profiles").select("full_name").eq("id", userId).maybeSingle();
   const n = (data?.full_name as string | undefined) ?? null;
   return n && !n.includes("@") ? n : null;
+}
+
+/**
+ * Registro da proposta (Prompt 56): cada versão enviada é o ORC no registro único — o mesmo número com a versão
+ * ("ORC-2026-0002 v2"), o hash do conteúdo daquela versão e o código de conferência. Sem PDF por enquanto. A falha
+ * fica no log e não desfaz o envio (a proposta já está gravada e avisada).
+ */
+async function registrarVersaoDaProposta(admin: Admin, p: Pick<LinhaProposta, "id" | "numero" | "owner_id" | "tenant_id">, versao: number, linha: object, autorId: string): Promise<void> {
+  try {
+    await registrarDocumento(admin, {
+      prefixo: "ORC",
+      tipo: "proposta",
+      ref: { tabela: "propostas", id: p.id },
+      partes: [p.owner_id, p.tenant_id],
+      emitidoPor: autorId,
+      numero: p.numero,
+      novaVersao: true,
+      versao,
+      conteudo: ({ numero, versao: v, codigo }) => JSON.stringify({ numero, versao: v, codigo, proposta: linha }),
+    });
+  } catch (e) {
+    console.error(`[propostas] registro de ${p.numero} v${versao}:`, e instanceof Error ? e.message : e);
+  }
 }
 
 /** Cartão da proposta na conversa + aviso no site/app/e-mail à outra parte. Best-effort: nunca quebra o fluxo. */
@@ -145,6 +181,10 @@ async function avisarOutraParte(
   de: Autor,
   texto: string,
   evento: NotificationEvent,
+  /** Só vai no e-mail quando o destino é o DONO (a taxa nunca chega ao morador — especificação da taxa, R8). */
+  detalhesSoDono?: string,
+  /** Prompt 44: valor mensal e validade para o texto do push ("Nova proposta de R$ 3.200 … responda até amanhã"). */
+  decisao?: { valorMensal: number; validaAte: string | null },
 ) {
   const remetente = de === "owner" ? p.owner_id : p.tenant_id;
   const destino = de === "owner" ? p.tenant_id : p.owner_id;
@@ -161,14 +201,26 @@ async function avisarOutraParte(
     /* o cartão é complemento; a proposta já está gravada */
   }
   try {
-    const { data: d } = await admin.from("profiles").select("email, full_name").eq("id", destino).maybeSingle();
+    const [{ data: d }, { data: im }] = await Promise.all([
+      admin.from("profiles").select("email, full_name").eq("id", destino).maybeSingle(),
+      decisao ? admin.from("properties").select("title").eq("id", p.property_id).maybeSingle() : Promise.resolve({ data: null }),
+    ]);
     await notify({
       event: evento,
+      // Quem recebe é parte da proposta (dono ou morador do lead): o valor pode ir no push.
+      decisao: decisao
+        ? { imovel: (im as { title?: string | null } | null)?.title ?? null, valor: decisao.valorMensal, prazo: decisao.validaAte, destinatarioEhParte: true }
+        : undefined,
       email: (d?.email as string | undefined) ?? undefined,
       name: (d?.full_name as string | undefined) ?? undefined,
       userId: destino,
       pushUrl: `/dashboard/propostas/${p.id}`,
-      subject: evento === "proposta_recebida" ? `Proposta ${p.numero}` : `Proposta ${p.numero} respondida`,
+      // O número da proposta vai no corpo, nunca no assunto (rota rápida dos e-mails, item 2).
+      subject: evento === "proposta_recebida" ? ASSUNTOS.propostaRecebida : ASSUNTOS.propostaRespondida,
+      detailsHtml:
+        blocoDados([{ rotulo: "Proposta", valor: escaparHtml(String(p.numero)) }]) +
+        (detalhesSoDono && destino === p.owner_id ? `<p>${escaparHtml(detalhesSoDono)}</p>` : ""),
+      detailsText: `Proposta ${p.numero}`,
     });
   } catch {
     /* notificação nunca quebra o fluxo */
@@ -212,7 +264,7 @@ export async function interessadosParaProposta(): Promise<InteressadoParaPropost
     const aceito = l.status === "accepted";
     out.push({
       leadId: l.id,
-      nome: nomeNaConversa({ papel: "proprietario", nomeCompleto: aceito ? await nomeDe(s.admin, l.tenant_id) : null, aceito }),
+      nome: nomeNaProposta({ quemVe: "owner", nomeCompleto: aceito ? await nomeDe(s.admin, l.tenant_id) : null, aceito }),
       imovel: { id: l.property_id, titulo: l.property?.title ?? "Imóvel" },
       aceito,
       temPropostaAberta: comAberta.has(l.id),
@@ -248,12 +300,12 @@ export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem |
   const aceito = lead.status === "accepted";
   return {
     leadId,
-    interessado: nomeNaConversa({ papel: "proprietario", nomeCompleto: aceito ? await nomeDe(s.admin, lead.tenant_id as string) : null, aceito }),
+    interessado: nomeNaProposta({ quemVe: "owner", nomeCompleto: aceito ? await nomeDe(s.admin, lead.tenant_id as string) : null, aceito }),
     imovel: { id: im.id, titulo: im.title },
     termos: termosDoAnuncio(im, Math.min(lim.mesesMax, Math.max(lim.mesesMin, 4)), entrada, neg),
     limites: lim,
     negociacao: neg,
-    taxa: faixaPorImoveisAtivos(await imoveisAtivos(s.admin, s.user.id)).taxa,
+    taxa: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,
   };
 }
 
@@ -291,6 +343,8 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
 
   const im = await lerImovel(s.admin, lead.property_id as string);
   if (!im || im.owner_id !== s.user.id) return { ok: false, error: "Imóvel não encontrado." };
+  // 64-B: anúncio pausado não recebe proposta nova (as candidaturas abertas continuam e seguem nas mensagens).
+  if (im.status === "paused") return { ok: false, error: "Este anúncio está pausado: reative para enviar uma proposta nova. As candidaturas abertas continuam nas mensagens." };
   const neg = normalizarNegociacao(im.negociacao);
   const meses = Math.round(num(e.meses));
   const termos: TermosProposta = {
@@ -327,6 +381,8 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
       versao_atual: 1,
       validade_dias: validade,
       valida_ate: validaAteDe(validade, new Date()),
+      // A faixa do dono AGORA: a taxa desta proposta nunca sobe depois do envio (complemento do prompt 27, parte B).
+      taxa_no_envio: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,
     })
     .select(COLUNAS_PROPOSTA)
     .single();
@@ -335,11 +391,13 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
     return { ok: false, error: "Não foi possível enviar a proposta." };
   }
   const mensagem = e.mensagem ? guardContactInfo(String(e.mensagem).slice(0, MENSAGEM_MAX)).text : null;
-  const { error: eV } = await s.admin.from("proposta_versoes").insert(linhaDaVersao(p.id as string, 1, "owner", termos, pessoas, mensagem));
+  const linhaV1 = linhaDaVersao(p.id as string, 1, "owner", termos, pessoas, mensagem);
+  const { error: eV } = await s.admin.from("proposta_versoes").insert(linhaV1);
   if (eV) {
     await s.admin.from("propostas").delete().eq("id", p.id);
     return { ok: false, error: "Não foi possível enviar a proposta." };
   }
+  await registrarVersaoDaProposta(s.admin, p as LinhaProposta, 1, linhaV1, s.user.id);
   const tot = calcularTotais(termos);
   await avisarOutraParte(
     s.admin,
@@ -347,6 +405,8 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
     "owner",
     `Proposta ${numero} enviada: ${brl(tot.valorMensal)}/mês × ${termos.meses} ${termos.meses === 1 ? "mês" : "meses"}, total do contrato ${brl(tot.totalContrato)}.`,
     "proposta_recebida",
+    undefined,
+    { valorMensal: tot.valorMensal, validaAte: (p as LinhaProposta).valida_ate ?? null },
   );
   return { ok: true, id: p.id as string, numero: numero as string };
 }
@@ -375,6 +435,12 @@ export interface PropostaView {
   leadId: string;
   imovel: { id: string; titulo: string };
   outraParte: string;
+  /** 63-B: na tela do dono, o interessado tem o selo "LinkedIn conectado" (só o sim). */
+  outraParteLinkedin: boolean;
+  /** As duas partes pelo nome completo, sem CPF/CNPJ (Prompt 56, D4). */
+  partes: { proprietario: string; interessado: string };
+  /** Registro da versão vigente (Prompt 56): número com a versão e a linha do /conferir. */
+  registro: { numero: string; conferir: string } | null;
   versaoAtual: number;
   validaAte: string;
   vistoEm: string | null;
@@ -389,7 +455,7 @@ export interface PropostaView {
   descontos: { mesesMin: number; pct: number }[];
   limites: { mesesMin: number; mesesMax: number };
   /** Só o proprietário vê a taxa de serviço. */
-  taxa: { pct: number; valor: number; congelada: boolean } | null;
+  taxa: { pct: number; valor: number; congelada: boolean; valorMensal: number; meses: number; seAceitaHoje: string | null; caiu: string | null } | null;
   fechamentoUrl: string | null;
 }
 
@@ -405,15 +471,39 @@ export interface PropostaResumo {
   meses: number;
   validaAte: string;
   versaoAtual: number;
+  /** Aberta e esperando a resposta desta pessoa (prompt 27). */
+  aguardandoVoce: boolean;
 }
 
+/** O outro lado da proposta pelo NOME COMPLETO (Prompt 56, D4); o interessado só depois do aceite da candidatura. */
 async function nomeOutraParte(admin: Admin, p: LinhaProposta, papel: Autor): Promise<string> {
   if (papel === "owner") {
     const { data: lead } = await admin.from("leads").select("status").eq("id", p.lead_id).maybeSingle();
     const aceito = lead?.status === "accepted";
-    return nomeNaConversa({ papel: "proprietario", nomeCompleto: aceito ? await nomeDe(admin, p.tenant_id) : null, aceito });
+    return nomeNaProposta({ quemVe: "owner", nomeCompleto: aceito ? await nomeDe(admin, p.tenant_id) : null, aceito });
   }
-  return nomeNaConversa({ papel: "inquilino", nomeCompleto: await nomeDe(admin, p.owner_id), aceito: true });
+  return nomeNaProposta({ quemVe: "tenant", nomeCompleto: await nomeDe(admin, p.owner_id), aceito: true });
+}
+
+/** As duas partes pelo nome completo (o interessado só depois do aceite da candidatura, para o proprietário). */
+async function partesDaProposta(admin: Admin, p: LinhaProposta, papel: Autor): Promise<PropostaView["partes"]> {
+  const outra = await nomeOutraParte(admin, p, papel);
+  const minha = nomeNaProposta({ quemVe: "tenant", nomeCompleto: await nomeDe(admin, papel === "owner" ? p.owner_id : p.tenant_id), aceito: true });
+  return papel === "owner" ? { proprietario: minha === "Proprietário" ? "Você" : minha, interessado: outra } : { proprietario: outra, interessado: minha === "Proprietário" ? "Você" : minha };
+}
+
+/** Número exibido ("ORC-2026-0002 v2") e a linha do /conferir da versão vigente da proposta, quando registrada. */
+async function registroDaProposta(admin: Admin, propostaId: string): Promise<PropostaView["registro"]> {
+  const { data } = await admin
+    .from("documentos_registro")
+    .select("numero, versao, codigo_verificacao")
+    .eq("ref_tabela", "propostas")
+    .eq("ref_id", propostaId)
+    .eq("status", "valido")
+    .order("versao", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data ? { numero: numeroExibido(data.numero as string, Number(data.versao)), conferir: linhaConferir(SITE_URL, data.codigo_verificacao as string) } : null;
 }
 
 /** Lista de Orçamentos: as propostas em que a pessoa é parte (dono ou interessado). */
@@ -448,9 +538,27 @@ export async function listarPropostas(): Promise<PropostaResumo[]> {
       meses: Number(v.meses),
       validaAte: p.valida_ate,
       versaoAtual: p.versao_atual,
+      aguardandoVoce: aguardandoResposta(p.status, v.autor, papel),
     });
   }
   return out;
+}
+
+/** Número do menu "Propostas" do inquilino: propostas abertas esperando a resposta dele (prompt 27). */
+export async function contarPropostasAguardando(): Promise<number> {
+  const s = await sessao();
+  if (!s) return 0;
+  const { data } = await s.supabase
+    .from("propostas")
+    .select("id, versao_atual, valida_ate, proposta_versoes(versao, autor)")
+    .eq("tenant_id", s.user.id)
+    .in("status", STATUS_ABERTOS as string[])
+    .gt("valida_ate", new Date().toISOString())
+    .limit(50);
+  return ((data ?? []) as { versao_atual: number; proposta_versoes: { versao: number; autor: Autor }[] | null }[]).filter((p) => {
+    const v = (p.proposta_versoes ?? []).find((x) => x.versao === p.versao_atual);
+    return !!v && daVez(v.autor) === "tenant";
+  }).length;
 }
 
 /** Detalhe da proposta (as duas partes). O interessado abrindo uma proposta "Enviada" a marca como "Vista". */
@@ -498,9 +606,21 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
   const aberta = estaAberta(p.status);
   let taxa: PropostaView["taxa"] = null;
   if (papel === "owner") {
-    const congelada = p.taxa_congelada != null;
-    const pct = congelada ? Number(p.taxa_congelada) : faixaPorImoveisAtivos(await imoveisAtivos(s.admin, s.user.id)).taxa;
-    taxa = { pct, valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct), congelada };
+    // Antes do aceite: a taxa DO ENVIO (com a base) e, se a faixa de hoje for menor, "Se aceita hoje: X%".
+    // Depois do aceite: a congelada e, se ela ficou abaixo da do envio, "Sua taxa caiu para X%…".
+    const tx = await lerTaxaDaProposta(s.admin, p.id);
+    const congelada = tx.taxa_congelada != null;
+    const hoje = congelada ? null : (await taxaDoDonoAgora(s.admin, s.user.id)).taxa;
+    const pct = congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? (hoje as number));
+    taxa = {
+      pct,
+      valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct),
+      congelada,
+      valorMensal: atual.totais.valorMensal,
+      meses: atual.termos.meses,
+      seAceitaHoje: !congelada && hoje != null ? textoSeAceitaHoje(tx.taxa_no_envio, hoje) : null,
+      caiu: congelada ? avisoTaxaCaiu(tx.taxa_no_envio, tx.taxa_congelada as number) : null,
+    };
   }
   return {
     id: p.id,
@@ -510,6 +630,9 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
     leadId: p.lead_id,
     imovel: { id: p.property_id, titulo: im?.title ?? "Imóvel" },
     outraParte: await nomeOutraParte(s.admin, p, papel),
+    outraParteLinkedin: papel === "owner" && (await linkedinConectados([p.tenant_id], s.admin)).has(p.tenant_id),
+    partes: await partesDaProposta(s.admin, p, papel),
+    registro: await registroDaProposta(s.admin, p.id),
     versaoAtual: p.versao_atual,
     validaAte: p.valida_ate,
     vistoEm: p.visto_em,
@@ -614,8 +737,10 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   const versao = p.versao_atual + 1;
   if (versao > MAX_VERSOES) return { ok: false, error: "Esta proposta já teve 3 rodadas: agora é aceitar ou recusar." };
   const mensagem = r.mensagem ? guardContactInfo(String(r.mensagem).slice(0, MENSAGEM_MAX)).text : null;
-  const { error: eV } = await s.admin.from("proposta_versoes").insert(linhaDaVersao(p.id, versao, papel, nova, v.pessoas, mensagem));
+  const linhaNova = linhaDaVersao(p.id, versao, papel, nova, v.pessoas, mensagem);
+  const { error: eV } = await s.admin.from("proposta_versoes").insert(linhaNova);
   if (eV) return { ok: false, error: eV.code === "23505" ? "A proposta mudou enquanto você respondia. Abra de novo." : "Não foi possível enviar a contraproposta." };
+  await registrarVersaoDaProposta(s.admin, p, versao, linhaNova, s.user.id);
   const agora = new Date();
   await s.admin
     .from("propostas")
@@ -628,6 +753,8 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
     papel,
     `Contraproposta ${p.numero} (versão ${versao}): ${brl(tot.valorMensal)}/mês × ${nova.meses} ${nova.meses === 1 ? "mês" : "meses"}, total ${brl(tot.totalContrato)}.${mensagem ? ` ${mensagem}` : ""}`,
     "proposta_recebida",
+    undefined,
+    { valorMensal: tot.valorMensal, validaAte: validaAteDe(p.validade_dias, agora) },
   );
   return { ok: true, versao };
 }
@@ -638,15 +765,23 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
  */
 async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Autor): Promise<Resultado<{ fechamentoUrl?: string | null }>> {
   const agora = new Date();
-  const taxa = taxaNoAceite(await imoveisAtivos(admin, p.owner_id), agora);
+  // A menor entre a taxa do envio e a do dono agora (faixa, queda de 30 dias, fixação do admin): nunca sobe depois
+  // de enviada (complemento do prompt 27, parte B; especificação da taxa, R5).
+  const tx = await lerTaxaDaProposta(admin, p.id);
+  const hoje = await taxaDoDonoAgora(admin, p.owner_id, agora);
+  const taxa = taxaEfetivaDaProposta(tx.taxa_no_envio, hoje.taxa);
+  const origem = origemDaTaxaDaProposta(tx.taxa_no_envio, hoje);
   const { data: lead } = await admin.from("leads").select("id, status").eq("id", p.lead_id).maybeSingle();
   if (!lead || !["new", "accepted"].includes(lead.status as string)) return { ok: false, error: "Esta candidatura não está mais em andamento." };
   if (lead.status === "new" && !(await temDocumento(admin, p.owner_id)))
     return { ok: false, error: papel === "owner" ? MSG_DOCUMENTO.aceitar : "O proprietário ainda precisa completar o cadastro. Tente mais tarde." };
+  // Disponibilidade por datas (0176): a entrada e os meses da versão aceita não podem cruzar outro contrato ativo.
+  const conflito = await conflitoNoImovel(admin, p.property_id, periodoDaEstadia(String(v.data_entrada).slice(0, 10), Number(v.meses)));
+  if (conflito) return { ok: false, error: conflito };
 
   const { data: ok } = await admin
     .from("propostas")
-    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, atualizada_em: agora.toISOString() })
+    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString() })
     .eq("id", p.id)
     .eq("versao_atual", v.versao)
     .in("status", ["enviada", "vista", "contraproposta"])
@@ -664,20 +799,47 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
         decided_by: p.owner_id,
         accepted_plan: await planoDoProprietario(admin as never, p.owner_id),
         accepted_commission_rate: taxa,
+        accepted_commission_origem: origem,
+        accepted_commission_faixa: hoje.faixaNoFechamento.taxa,
       })
       .eq("id", p.lead_id)
       .eq("status", "new");
   } else {
-    await admin.from("leads").update({ accepted_commission_rate: taxa }).eq("id", p.lead_id).eq("status", "accepted");
+    await admin
+      .from("leads")
+      .update({ accepted_commission_rate: taxa, accepted_commission_origem: origem, accepted_commission_faixa: hoje.faixaNoFechamento.taxa })
+      .eq("id", p.lead_id)
+      .eq("status", "accepted");
   }
   const tot = calcularTotais(termosDaLinha(v));
+  // Item 34: o dono recebe a taxa congelada com a base escrita; o morador, nunca.
+  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, Number(v.meses), tx.taxa_no_envio);
   await avisarOutraParte(
     admin,
     p,
     papel,
     `Proposta ${p.numero} aceita: ${brl(tot.valorMensal)}/mês × ${v.meses} ${Number(v.meses) === 1 ? "mês" : "meses"}, total ${brl(tot.totalContrato)}. Próximo passo: o fechamento.`,
     "proposta_respondida",
+    linhaTaxa,
   );
+  if (papel === "owner") {
+    // Quem aceitou foi o próprio dono: o aviso acima foi ao morador (sem taxa); o dono recebe o dele.
+    try {
+      const { data: d } = await admin.from("profiles").select("email, full_name").eq("id", p.owner_id).maybeSingle();
+      await notify({
+        event: "proposta_respondida",
+        email: (d?.email as string | undefined) ?? undefined,
+        name: (d?.full_name as string | undefined) ?? undefined,
+        userId: p.owner_id,
+        pushUrl: `/dashboard/propostas/${p.id}`,
+        subject: ASSUNTOS.propostaAceita,
+        detailsHtml: blocoDados([{ rotulo: "Proposta", valor: escaparHtml(String(p.numero)) }]) + `<p>${escaparHtml(linhaTaxa)}</p>`,
+        detailsText: `Proposta ${p.numero}`,
+      });
+    } catch {
+      /* notificação nunca quebra o fluxo */
+    }
+  }
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard/fechamento");
   return { ok: true, fechamentoUrl: papel === "owner" ? `/dashboard/fechamento?c=${p.lead_id}` : null };

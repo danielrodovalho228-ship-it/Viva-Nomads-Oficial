@@ -40,10 +40,10 @@ export function EmpresasForm() {
 
   if (ok) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-sage-200 bg-sage-50 p-6">
-        <Check className="mt-0.5 h-5 w-5 shrink-0 text-forest" />
+      <div className="flex items-start gap-3 rounded-xl border border-sage-200 bg-sage-50 p-6">
+        <Check className="mt-1 h-5 w-5 shrink-0 text-forest" />
         <div>
-          <p className="font-title font-bold text-ink">Recebemos seu contato.</p>
+          <p className="font-title font-semibold text-ink">Recebemos seu contato.</p>
           <p className="mt-1 text-sm text-muted">
             Nosso time responde no e-mail informado. Obrigado pelo interesse.
           </p>
@@ -53,10 +53,10 @@ export function EmpresasForm() {
   }
 
   const inputCls =
-    "w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage";
+    "w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage";
 
   return (
-    <form onSubmit={enviar} className="grid gap-4 rounded-2xl border border-sage-200 bg-white p-6">
+    <form onSubmit={enviar} className="grid gap-4 rounded-xl border border-sage-200 bg-white p-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-ink">Nome</span>

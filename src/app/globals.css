@@ -25,34 +25,60 @@
   --color-green-700: #4fa01e;
   --color-green-900: #2f6310;
 
-  /* ── Neutros frios ── */
+  /* ── Neutros (Prompt 40, Estudo 1): tinta, secundário, borda e divisor ── */
   --color-night: #0a0a0a; /* preto de marca */
-  --color-ink: #0f1722; /* texto principal */
-  --color-muted: #5b6573; /* texto secundário */
-  --color-line: #e2e7ee; /* bordas/divisores */
+  /* Adendo do Prompt 40: secundário #3F3F3F; o #6A6A6A (apoio) é só para miúdo e legenda, nunca corpo. */
+  --color-ink: #222222; /* tinta: texto principal */
+  --color-muted: #3f3f3f; /* secundário: texto corrido de apoio */
+  --color-apoio: #6a6a6a; /* apoio: só miúdo (≤ 14 px) e legenda */
+  --color-line: #dddddd; /* linha de borda 1 px (campos, chips, cartões de lista) */
+  --color-divisor: #ebebeb; /* divisor 1 px entre blocos e cinza do esqueleto */
   --color-surface: #ffffff;
-  --color-surface-2: #f5f7fa;
+  --color-surface-2: #f7f7f7; /* superfície */
+  --color-surface-3: #f2f2f2; /* superfície mais funda */
 
   /* ── Aliases semânticos (compat. com componentes existentes) ── */
+  /* Cor de marca ÚNICA (Prompt 40): o verde Viva, só no botão primário, no preço e no estado ativo. */
   --color-forest: #1c6b3a; /* primária (verde-marca, alinhado ao deck) */
   --color-forest-700: #123b26;
   --color-forest-600: #238049;
   --color-sage: #2e7d5b; /* secundária (verde médio) */
   --color-sage-100: #eef6ef;
   --color-sage-200: #dce9e0;
-  --color-champagne: #6cbe2a; /* CTA/selo */
+  --color-areia: #f7f2ea; /* CONTA-A: painel quente do espelho do perfil (neutro, não é cor de marca) */
+  --color-champagne: #6cbe2a; /* só selo (Pronto para Morar) — nunca texto nem botão */
   --color-champagne-600: #4fa01e;
 
   /* Fontes — Inter para tudo (Atualização 18), variando só o peso */
   --font-title: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  --radius-card: 18px;
+  /*
+    Prompt 40 (Estudo 1) — fonte única do padrão visual. A guarda é
+    src/lib/estilo/estilo-padrao.test.ts.
+    Raios: só três. 8 px nos controles (botões, campos) = rounded-control ou
+    rounded-lg; 12 px nas fotos e mídias = rounded-media ou rounded-xl; e pill
+    (rounded-full) na busca, nos chips e na ação flutuante.
+  */
+  --radius-control: 8px;
+  --radius-media: 12px;
+
+  /* Pesos: só 400 e 600. Quem ainda escreve font-bold/extrabold/black cai em 600. */
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 600;
+  --font-weight-black: 600;
+
+  /* Sombra: UMA no app inteiro, a do botão flutuante (shadow-flutuante). O resto sem sombra. */
+  --shadow-flutuante: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
   --background: #ffffff;
-  --foreground: #0f1722;
+  --foreground: #222222;
   /* Gradiente assinatura azul→verde (só em elementos de marca) */
   --gradient-brand: linear-gradient(135deg, #123b26 0%, #1c6b3a 45%, #6cbe2a 100%);
 }
@@ -72,6 +98,16 @@ body {
   (Não forçar overflow aqui — isso anulava o line-clamp dos títulos.)
 */
 @layer base {
+  /* Corpo 16/400 com linha 1,5 (adendo do Prompt 40). */
+  body {
+    line-height: 1.5;
+  }
+  /* Negrito do navegador é 700; o padrão é 600 (Prompt 40). */
+  b,
+  strong,
+  th {
+    font-weight: 600;
+  }
   h1, h2, h3, h4, h5 {
     font-family: var(--font-title);
     letter-spacing: -0.02em;
@@ -108,7 +144,7 @@ textarea:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--color-blue-500);
   outline-offset: 2px;
-  border-radius: 4px;
+  /* Sem border-radius aqui: o contorno segue o raio do próprio elemento (pill continua pill). */
 }
 
 /* Utilitários de marca */
@@ -138,13 +174,14 @@ textarea:focus-visible,
   /* Título fluido editorial — escala bem do mobile (375px) ao desktop.
      Mínimos menores evitam vazamento/scroll horizontal com palavras longas
      como "Uberlândia". Quebra de palavra protege casos extremos. */
+  /* Teto de tamanho (adendo do Prompt 40): 40 px só no h1 do hero (home e páginas de marketing); o resto, 28 px. */
   .display-xl {
-    font-size: clamp(2rem, 7vw, 5rem);
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
     overflow-wrap: break-word;
     word-break: break-word;
   }
   .display-lg {
-    font-size: clamp(1.75rem, 5.5vw, 3.5rem);
+    font-size: clamp(1.375rem, 4vw, 1.75rem);
     overflow-wrap: break-word;
     word-break: break-word;
   }
@@ -204,12 +241,12 @@ textarea:focus-visible,
 
   /* Destaque rápido (amarelo) ao mudar um valor — feedback do slider de ROI */
   .flash-value {
-    border-radius: 6px;
+    border-radius: 8px;
     animation: flash-bg 0.6s ease-out;
   }
   @keyframes flash-bg {
-    from { background-color: #fde68a; box-shadow: 0 0 0 4px #fde68a; }
-    to { background-color: transparent; box-shadow: 0 0 0 4px transparent; }
+    from { background-color: #fde68a; outline: 4px solid #fde68a; }
+    to { background-color: transparent; outline: 4px solid transparent; }
   }
 }
 
@@ -234,7 +271,6 @@ textarea:focus-visible,
   font-size: 0.875rem;
   font-weight: 600;
   color: #fff;
-  box-shadow: 0 10px 30px -10px rgba(11, 42, 102, 0.5);
   transition: transform 0.18s ease;
 }
 .skip-link:focus {
@@ -304,7 +340,20 @@ html[data-app] .vn-tabbar-spacer {
 }
 /* Altura da barra de abas do celular (mobile-tab-bar.tsx), usada pelos fixos de rodapé. */
 :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
   --altura-abas: 3.5rem;
+}
+/* CONTA-A: "Salvar e ver imóveis" preso no fim da tela do celular, acima da barra de abas; o "Fale com a Viva" sobe. */
+.vn-salvar-perfil {
+  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 1023px) {
+  body:has([data-testid="perfil-salvar-celular"]) {
+    --ajuda-bottom: 9rem;
+  }
 }
 /* Barra "Comparar" da busca (ordem 7ffea8c7): no celular fica ACIMA das abas (altura + safe-area + 12 px);
    no computador, 12 px do rodapé. O "Fale com a Viva" sobe acima dela e o fim da página ganha folga. */
@@ -322,12 +371,25 @@ html[data-app] .vn-barra-comparar {
 @media (max-width: 767px) {
   body:has([data-testid="barra-comparar"]) {
     --ajuda-bottom: 10rem;
+    --viva-piso: 10rem; /* piso também para o botão arrastado (posição inline) */
     padding-bottom: calc(var(--altura-abas) + 6rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+/* CADASTRO-MOLDURA: o rodapé do fluxo do assistente (sem barra de abas lá) encosta no fim da tela. E107: a barra de
+   fotos do celular saiu; as fotos moram só no Passo 2. */
+.vn-rodape-fluxo {
+  bottom: 0;
+}
+/* No computador, Voltar e o primário alinham com a coluna do conteúdo (a largura máxima da moldura, 72rem). */
+@media (min-width: 1280px) {
+  .vn-rodape-fluxo [data-rodape-linha] {
+    padding-inline: calc((100% - 72rem) / 2 + 2rem);
+  }
+}
+
 /* Barra fixa do imóvel (celular): fica logo acima da barra de abas. */
 .vn-barra-fixa {
-  bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
 }
 @media (min-width: 768px) {
   .vn-barra-fixa {
@@ -335,7 +397,7 @@ html[data-app] .vn-barra-comparar {
   }
 }
 html[data-app] .vn-barra-fixa {
-  bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
 }
 /* No app a barra inferior existe em qualquer largura: o conteúdo não fica por baixo dela. */
 html[data-app] .vn-main {
@@ -369,10 +431,18 @@ html[data-app] body {
 
 /* Botão "Ajuda" fixo: acima da barra inferior do celular; no desktop, no canto. */
 :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
   --ajuda-bottom: 5.25rem;
 }
 @media (min-width: 768px) {
   :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
     --ajuda-bottom: 1.5rem;
   }
 }
@@ -388,8 +458,21 @@ html[data-app] body {
     right: 1.5rem;
   }
 }
-body:has([data-testid="imovel-largura-total"]) {
-  --ajuda-bottom: 11rem;
+/* Página do imóvel (D-V): o "Fale com a Viva" fica logo acima da barra fixa de preço, qualquer que seja a altura dela
+   (--altura-barra-fixa é medida pela própria barra; 9.5rem só até a primeira medida). No celular a barra fica sobre as
+   abas; de 768 a 1023 px (site) ela encosta no fim da tela; no app as abas existem em qualquer largura. */
+body:has([data-testid="barra-fixa-imovel"]) {
+  --ajuda-bottom: calc(var(--altura-abas) + var(--altura-barra-fixa, 9.5rem) + 0.75rem);
+}
+@media (min-width: 768px) {
+  body:has([data-testid="barra-fixa-imovel"]) {
+    --ajuda-bottom: calc(var(--altura-barra-fixa, 9.5rem) + 0.75rem);
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  html[data-app] body:has([data-testid="barra-fixa-imovel"]) {
+    --ajuda-bottom: calc(var(--altura-abas) + var(--altura-barra-fixa, 9.5rem) + 0.75rem);
+  }
 }
 @media (min-width: 1024px) {
   body:has([data-testid="imovel-largura-total"]) {
@@ -400,19 +483,55 @@ body:has([data-testid="imovel-largura-total"]) {
     left: 1.5rem;
   }
 }
+/* CONTA-A C4 — no painel (site), a coluna reserva a faixa da direita onde mora o "Fale com a Viva" redondo (48 px a
+   1,5 rem da borda): o botão nunca senta sobre um cartão durante a rolagem. No app o botão não existe. */
+@media (min-width: 768px) {
+  html:not([data-app]) [data-painel-main] {
+    padding-right: 5rem;
+  }
+}
+/* E67a/E75 (padrão de fechamento, 24/10): as telas da Conta e o menu terminam limpas no computador, na linha
+   institucional — sem o vão depois do último cartão. A partir de 768 px o "Fale com a Viva" mora na faixa reservada da
+   direita (C4), então o fim não precisa da folga dele. No celular fica a folga do botão flutuante. */
+@media (min-width: 768px) {
+  html:not([data-app]) [data-painel-main]:has([data-conta-casca]),
+  html:not([data-app]) [data-painel-main]:has([data-testid="conta-menu"]) {
+    padding-bottom: 2rem;
+  }
+}
+/* A1 (mockups perfil-01..08): as telas da Conta sobre o fundo areia, com cartões brancos. */
+[data-painel-main]:has([data-conta-casca]:not(.hidden *)),
+[data-painel-main]:has([data-testid="conta-menu"]) {
+  background: var(--color-areia);
+}
+/* Rolagem até um elemento (âncora, foco, "rolar até o botão") para acima do botão flutuante da Viva, em qualquer
+   largura: o flutuante não cobre a ação principal da tela (t241, #953). */
+html:has([data-testid="fale-com-a-viva-raiz"]) {
+  scroll-padding-bottom: calc(var(--ajuda-bottom, 1.5rem) + 4.5rem);
+}
 /* F49: folga no fim da página no celular (site), só onde o botão existe (t16: telas de 100dvh como /app/boas-vindas não rolam) para o botão redondo da Viva nunca tampar o último botão/campo. */
 @media (max-width: 767px) {
   html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]) {
     padding-bottom: 4.5rem;
   }
+  /* Com o rodapé do site, a folga mora dentro dele (fundo escuro até o fim), não numa faixa branca abaixo. */
+  html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]):has(.vn-rodape) {
+    padding-bottom: 0;
+  }
+}
+/* D-V (QA do Muse, 22/10): no fim da rolagem, a última linha do rodapé fica ACIMA de tudo o que é fixo embaixo
+   (abas, barra de preço do imóvel, barra "Comparar", "Fale com a Viva"), em qualquer largura. O botão termina em
+   --ajuda-bottom + 3 rem (48 px); a folga soma mais 0,5 rem de respiro. */
+html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]) .vn-rodape {
+  padding-bottom: calc(var(--ajuda-bottom, 1.5rem) + 3.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Card do imóvel ancorado no pin do mapa da busca (ordem ca0e7dad): sem a
-   moldura padrão do Leaflet/Mapbox — o card já tem cantos e sombra. */
+   moldura padrão do Leaflet/Mapbox — o card já tem cantos e borda. */
 .vn-popup .leaflet-popup-content-wrapper,
 .vn-popup.mapboxgl-popup .mapboxgl-popup-content {
   padding: 0;
-  border-radius: 1rem;
+  border-radius: 12px;
   background: transparent;
   box-shadow: none;
 }
@@ -441,4 +560,54 @@ input[type="date"]::-webkit-date-and-time-value {
 }
 input[type="date"][data-vazio]:not(:focus)::-webkit-datetime-edit {
   color: transparent;
+}
+
+/* Prompt 41 — botão flutuante "cogumelo" (Ações desta estadia, src/components/estadia/acoes-estadia.tsx): no canto do
+   "Fale com a Viva", acima da barra de abas no celular; o "Fale com a Viva" sobe 4 rem para não ser coberto (também
+   quando foi arrastado: --viva-piso). No app a barra de abas existe em qualquer largura. */
+:root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
+  --cogumelo-bottom: 5.25rem;
+}
+@media (min-width: 768px) {
+  :root {
+  /* Grade de 4 px (Prompt 47): folgas de elemento fixo, fora da escala de espaço. */
+  --folga-flutuante: 7rem;
+  --folga-flutuante-celular: 6rem;
+  --folga-rodape-imovel: 16rem;
+    --cogumelo-bottom: 1.5rem;
+  }
+}
+html[data-app] {
+  --cogumelo-bottom: calc(var(--altura-abas) + 1.75rem);
+}
+.vn-cogumelo {
+  right: 1rem;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--cogumelo-bottom));
+}
+@media (min-width: 768px) {
+  .vn-cogumelo {
+    right: 1.5rem;
+  }
+}
+body:has([data-testid="cogumelo"]) {
+  --ajuda-bottom: calc(var(--cogumelo-bottom) + 4rem);
+  --viva-piso: calc(var(--cogumelo-bottom) + 4rem);
+}
+
+/* E75 no celular (no fim do arquivo para valer sobre a folga F49 do body): a Conta e o menu também terminam na linha institucional. Sobravam ~190 px depois dela (folga do botão
+   flutuante no main + a mesma folga no body + o espaçador da barra de abas). Fica o espaçador da barra e 3 rem: o
+   "Fale com a Viva" (à direita, acima das abas) para sobre a área vazia depois da linha, nunca sobre um cartão. */
+@media (max-width: 767px) {
+  html:not([data-app]) [data-painel-main]:has([data-conta-casca]:not(.hidden *)),
+  html:not([data-app]) [data-painel-main]:has([data-testid="conta-menu"]) {
+    padding-bottom: 3rem;
+  }
+  html:not([data-app]) body:has([data-conta-casca]:not(.hidden *)),
+  html:not([data-app]) body:has([data-testid="conta-menu"]) {
+    padding-bottom: 0;
+  }
 }

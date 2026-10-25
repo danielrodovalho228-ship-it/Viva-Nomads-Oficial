@@ -5,7 +5,7 @@ export function SeloExemplo({ className = "" }: { className?: string }) {
   return (
     <span
       data-testid="selo-exemplo"
-      className={`inline-flex shrink-0 items-center rounded-full bg-night/85 px-2.5 py-0.5 text-xs font-semibold text-white ${className}`}
+      className={`inline-flex shrink-0 items-center rounded-full bg-night/85 px-3 py-1 text-xs font-semibold text-white ${className}`}
     >
       {SELO_EXEMPLO}
     </span>

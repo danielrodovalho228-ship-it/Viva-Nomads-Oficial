@@ -40,17 +40,41 @@ test.describe("T19 — Visitante @criticos", () => {
     await chat.getByLabel("Sua mensagem para a Viva").fill("Como funciona a Caução?");
     await chat.getByRole("button", { name: "Enviar" }).click();
     // Com ou sem IA, sempre há resposta e o caminho para uma pessoa.
-    await expect(chat.locator("div.bg-white.shadow-sm").nth(1)).toBeVisible({ timeout: 30_000 });
+    await expect(chat.getByTestId("viva-chat-msg-viva").nth(1)).toBeVisible({ timeout: 30_000 });
     const numero = await abrirChamadoPeloChat(page, { nome: "Visitante Teste", email: "visitante.chat@lab.vivanomads.com.br" });
     await expect(page.getByTestId("chamado-aberto-chat")).toContainText(/confirmação para o seu e-mail/);
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
       const linhas = fs.readFileSync(LAB_OUTBOX, "utf8");
-      expect(linhas, "confirmação do chamado registrada (modo de teste)").toContain(`Recebemos seu chamado — ${numero}`);
+      expect(linhas, "confirmação do chamado registrada (modo de teste)").toContain(`Recebemos seu chamado (${numero}) · Viva Nomads`);
     }
   });
 
-  test("'pediram Pix por fora' = resposta fixa e chamado P1 na fila Antifraude", async ({ page, browser }) => {
+  test("resposta real da Viva: Caução até 3 vezes o valor mensal e 30 a 180 dias, sem blocos (ordem f581c899)", async ({ page }) => {
     await page.goto("/ajuda", { waitUntil: "networkidle" });
+    const bloco = page.getByTestId("viva-chat-bloco");
+    const perguntar = async (texto: string, n: number) => {
+      await bloco.getByLabel("Sua mensagem para a Viva").fill(texto);
+      await bloco.getByRole("button", { name: "Enviar" }).click();
+      const msg = bloco.getByTestId("viva-chat-msg-viva").nth(n);
+      await expect(msg).toBeVisible({ timeout: 45_000 });
+      return msg.innerText();
+    };
+    const caucao = await perguntar("Quanto é a Caução?", 1);
+    // Sem a chave da IA (laboratório/preview) a Viva avisa que está fora do ar: não há resposta real para provar.
+    test.skip(/fora do ar/i.test(caucao), "IA desligada neste ambiente: a prova roda onde a Viva responde de verdade.");
+    expect(caucao).toMatch(/3 vezes o valor mensal/i);
+    expect(caucao).not.toMatch(/50\s?%|conta vinculada|cada bloco/i);
+    const prazo = await perguntar("Por quanto tempo posso ficar?", 2);
+    expect(prazo).toMatch(/30 a 180 dias/);
+    expect(prazo).not.toMatch(/temporada|art\. ?48/i);
+  });
+
+  test("'pediram Pix por fora' = resposta fixa e chamado P1 na fila Antifraude", async ({ page, browser }) => {
+    // L-43 (vigia, 24/10): instável por tempo em 4 laboratórios completos de 24/10 (45 s estourados esperando a rede
+    // assentar na /ajuda e no atendimento do admin). Espera curta pela rede e o resto pelos elementos; teto de 90 s.
+    test.setTimeout(90_000);
+    await page.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = page.getByTestId("viva-chat-bloco");
     await bloco.getByLabel("Sua mensagem para a Viva").fill("O dono pediu pra eu pagar o Pix por fora, direto pra ele");
     await bloco.getByRole("button", { name: "Enviar" }).click();
@@ -59,12 +83,12 @@ test.describe("T19 — Visitante @criticos", () => {
 
     const ctx = await browser.newContext({ storageState: authFile("admin") });
     const adm = await ctx.newPage();
-    await adm.goto("/admin/atendimento?aba=fila&fila=antifraude", { waitUntil: "networkidle" });
+    await adm.goto("/admin/atendimento?aba=fila&fila=antifraude", { waitUntil: "domcontentloaded" });
     const linha = adm.locator("body");
-    await expect(linha).toContainText(numero);
+    await expect(linha).toContainText(numero, { timeout: 20_000 });
     await expect(linha).toContainText("Antifraude (Fernanda)");
-    await adm.goto(`/admin/atendimento?aba=fila&fila=antifraude&prioridade=p1`, { waitUntil: "networkidle" });
-    await expect(adm.locator("body")).toContainText(numero);
+    await adm.goto(`/admin/atendimento?aba=fila&fila=antifraude&prioridade=p1`, { waitUntil: "domcontentloaded" });
+    await expect(adm.locator("body")).toContainText(numero, { timeout: 20_000 });
     await ctx.close();
   });
 });

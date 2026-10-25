@@ -1,13 +1,16 @@
 "use client";
 
+import { urlEntrada } from "@/lib/auth/entrada";
 import { Suspense, useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Megaphone, ShieldCheck, Info, Loader2, Minus, Plus, Check, PawPrint, Baby } from "lucide-react";
+import { Megaphone, ShieldCheck, Info, Loader2, Minus, Plus, Check, PawPrint, Baby, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { CampoData } from "@/components/ui/campo-data";
-import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
+import { CampoReais } from "@/components/ui/campo-reais";
+import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
+import { BAIRROS_MAX, NECESSIDADES, PORTES_PET_PEDIDO, QUALQUER_BAIRRO, QUARTOS_OPCOES, dataPedidoBR, expiraEmPedido, limparBairro } from "@/lib/pedidos/campos";
 import { CHAVE_ULTIMA_BUSCA, CHAVE_ULTIMO_MOTIVO, ultimaBuscaParaPedido, ultimoMotivoParaPedido } from "@/lib/marcas/regra";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
@@ -16,23 +19,26 @@ import {
   buscarCidades,
   fraseContador,
   lerCidadeUf,
-  mascararMilhar,
   rotuloCidade,
   soDigitos,
 } from "@/lib/pedidos/formulario";
-import { criarPedido } from "@/lib/data/pedidos-actions";
+import { chaveSmsLigada, criarPedido, editarPedido, getMeuPedido } from "@/lib/data/pedidos-actions";
 import { contarImoveisQueCombinam } from "@/lib/data/pedido-contador-actions";
-import { AVISO_CONFIRMACAO, ROTA_CONFIRMAR_CONTATO } from "@/lib/pedidos/confirmacao";
+import { avisoConfirmacao, ROTA_CONFIRMAR_CONTATO, tituloFaltaConfirmar } from "@/lib/pedidos/confirmacao";
 import type { ResultadoContador } from "@/lib/pedidos/contador";
 import type { ImovelCompativel } from "@/lib/pedidos/compatibilidade";
 import { getMeusDados } from "@/lib/data/perfil-actions";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { useAuthStore } from "@/lib/store";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
+import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
+import { CHIPS_INTERNET } from "@/lib/busca/filtro-internet";
+import type { EstadoDestino } from "@/lib/busca/destino-busca";
+import type { ModoRota } from "@/lib/rotas/tempo";
 
 /** Um só estilo para todos os campos do formulário: 48 px de altura (prompt 12). */
 const CAMPO =
-  "h-12 w-full rounded-xl border border-line bg-white px-3.5 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
+  "h-12 w-full rounded-xl border border-line bg-white px-4 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
 
 const PASSOS = [
   "Publique o que precisa",
@@ -56,22 +62,22 @@ export default function NovoPedidoPage() {
         <div aria-hidden className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url(/media/pedido-lateral.webp)" }} />
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-t from-forest via-forest/80 to-forest/20 lg:bg-gradient-to-br lg:from-forest lg:via-forest/85 lg:to-forest/30"
+          className="absolute inset-0 bg-forest/80"
         />
-        <div className="relative z-10 p-5 sm:p-8 lg:max-w-md lg:p-10">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/20">
+        <div className="relative z-10 p-4 sm:p-8 lg:max-w-md lg:p-8">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/20">
             <Megaphone className="h-3.5 w-3.5" aria-hidden /> Pedido de moradia
           </span>
-          <h1 className="mt-3 font-title text-2xl font-bold leading-tight lg:mt-4 lg:text-[2.4rem]">Deixe os imóveis virem até você</h1>
+          <h1 className="mt-3 font-title text-2xl font-semibold leading-tight lg:mt-4 lg:text-[28px]">Deixe os imóveis virem até você</h1>
           <div className="hidden lg:block">
             <p className="mt-3 text-lg text-white/85">
               Em vez de procurar um a um, diga o que você precisa. Os proprietários da cidade veem seu pedido e respondem
               com os imóveis que combinam — de graça, pela plataforma.
             </p>
-            <ol className="mt-8 space-y-2.5 border-t border-white/15 pt-6" data-testid="pedido-passos">
+            <ol className="mt-8 space-y-3 border-t border-white/15 pt-6" data-testid="pedido-passos">
               {PASSOS.map((p, i) => (
                 <li key={p} className="flex items-center gap-3 text-sm text-white/90">
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-champagne text-xs font-bold text-night">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-champagne text-xs font-semibold text-night">
                     {i + 1}
                   </span>
                   {p}
@@ -82,15 +88,15 @@ export default function NovoPedidoPage() {
         </div>
       </aside>
 
-      <div className="min-w-0 px-4 pb-10 pt-6 sm:px-8 lg:pb-16 lg:pl-16 lg:pr-10 lg:pt-10">
+      <div className="min-w-0 px-4 pb-12 pt-6 sm:px-8 lg:pb-16 lg:pl-16 lg:pr-12 lg:pt-12">
         <div className="w-full max-w-[600px]">
           <Suspense fallback={<div className="min-h-[40rem]" aria-busy="true" />}>
             <PedidoForm />
           </Suspense>
 
-          <footer className="mt-10 border-t border-line pt-5 text-xs text-muted" data-testid="pedido-rodape-legal">
+          <footer className="mt-12 border-t border-line pt-4 text-xs text-muted" data-testid="pedido-rodape-legal">
             <p className="flex items-start gap-2">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden />
+              <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" aria-hidden />
               <span>
                 Toda a conversa acontece pela plataforma — é o que fica registrado. A Viva Nomads conecta e documenta; não
                 é locadora, fiadora nem intermediária de pagamento.{" "}
@@ -106,11 +112,17 @@ export default function NovoPedidoPage() {
   );
 }
 
-/** Título pequeno de cada grupo do formulário (ONDE E QUANDO, QUEM VAI MORAR, ORÇAMENTO E MOTIVO). */
+/** Título pequeno de cada grupo do formulário (ONDE E QUANDO, QUEM VAI MORAR, O IMÓVEL, VALOR E MOTIVO). */
+
+/** Pedido salvo guarda o id do destino; os chips usam o slug. */
+function slugDoDestinoEstado(slugOuId: string, destinos: { id: string; slug: string }[]): string {
+  return slugOuId.startsWith("id:") ? (destinos.find((d) => d.id === slugOuId.slice(3))?.slug ?? slugOuId) : slugOuId;
+}
+
 function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <fieldset className="min-w-0 space-y-4">
-      <legend className="mb-3 text-xs font-bold uppercase tracking-[0.08em] text-muted">{titulo}</legend>
+      <legend className="mb-3 text-xs font-semibold text-muted">{titulo}</legend>
       {children}
     </fieldset>
   );
@@ -118,7 +130,7 @@ function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode
 
 function Rotulo({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-ink">
+    <label htmlFor={htmlFor} className="mb-2 block text-sm font-medium text-ink">
       {children}
     </label>
   );
@@ -157,12 +169,39 @@ function PedidoForm() {
   const [apresentacao, setApresentacao] = useState("");
   const [pets, setPets] = useState(false);
   const [criancas, setCriancas] = useState(Number(sp.get("criancas") || 0) > 0);
+  // Prompt 37: onde vai trabalhar ou estudar (padrão: ?destino= da busca, senão o local de trabalho salvo na conta).
+  const destinoQ = sp.get("destino");
+  const [destinoEstado, setDestinoEstado] = useState<EstadoDestino>({
+    destino: destinoQ && /^[a-z0-9-]{2,60}$/.test(destinoQ) ? { slug: destinoQ } : null,
+    modo: "carro",
+    ate: 0,
+  });
+  const [destinosChips, setDestinosChips] = useState<(DestinoChip & { id: string })[]>([]);
+  const [modosRota, setModosRota] = useState<ModoRota[]>(["carro", "a_pe", "bicicleta"]);
+  // Prompt 30: bairros (até 3; nenhum = qualquer bairro), quartos mínimos, faixa de valor, necessidades e porte do pet.
+  const [bairros, setBairros] = useState<string[]>([]);
+  const [textoBairro, setTextoBairro] = useState("");
+  const [quartosMin, setQuartosMin] = useState<number | null>(null);
+  // Prompt 57 fase 2: "internet medida a partir de" (padrão: ?internet= da busca).
+  const [internetMin, setInternetMin] = useState<number | null>(() => {
+    const v = Number(sp.get("internet"));
+    return (CHIPS_INTERNET as readonly number[]).includes(v) ? v : null;
+  });
+  const [orcamentoMin, setOrcamentoMin] = useState("");
+  const [necessidades, setNecessidades] = useState<string[]>([]);
+  const [portePet, setPortePet] = useState<string>("");
+  // Editar (Prompt 30, item 4): /pedidos/novo?editar=<id> carrega o pedido e salva com editarPedido.
+  const editarId = sp.get("editar");
+  const [carregando, setCarregando] = useState(Boolean(editarId));
+  // Os textos acompanham a chave SMS_ATIVO (desligada: nunca pedimos o telefone para os donos verem).
+  const [smsLigado, setSmsLigado] = useState(false);
   // Depois de publicar: quantos imóveis combinam AGORA (regra do banco).
   const [resultado, setResultado] = useState<{
     compativeis: number;
     sugestao: string | null;
     imoveis: ImovelCompativel[];
     chegaAosDonos: boolean;
+    falta: ("e-mail" | "telefone")[];
   } | null>(null);
   // Contador ao vivo (ordem 8dca1437): a resposta guarda a chave dos campos que a geraram,
   // então só vale enquanto os campos não mudam (sem precisar zerar estado dentro do effect).
@@ -184,6 +223,87 @@ function PedidoForm() {
       /* localStorage bloqueado: segue sem pré-preencher */
     }
   }, [ocupQ]);
+
+  useEffect(() => {
+    let vivo = true;
+    chaveSmsLigada()
+      .then((l) => {
+        if (vivo) setSmsLigado(l);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!editarId) return;
+    let vivo = true;
+    getMeuPedido(editarId)
+      .then((p) => {
+        if (!vivo) return;
+        setCarregando(false);
+        if (!p) {
+          setErro("Este pedido não pode mais ser editado.");
+          return;
+        }
+        const c = String(p.cidade ?? "");
+        const u = String(p.uf ?? "");
+        setTextoCidade(rotuloCidade(c, u));
+        setCidadeUf(c && u ? { cidade: c, uf: u } : null);
+        setDataInicio(String(p.data_inicio ?? ""));
+        setPrazoMeses(Number(p.prazo_meses) || 1);
+        setOrcamento(soDigitos(String(Math.round(Number(p.orcamento_mensal) || 0))));
+        setOrcamentoMin(p.orcamento_min == null ? "" : soDigitos(String(Math.round(Number(p.orcamento_min)))));
+        setOcupantes(Number(p.qtd_ocupantes) || 1);
+        setMotivo(String(p.motivo ?? ""));
+        setApresentacao(String(p.apresentacao ?? ""));
+        setPets(p.pets === true);
+        setCriancas(p.criancas === true);
+        setPortePet(String(p.porte_pet ?? ""));
+        setBairros(((p.bairros as string[] | null) ?? []).slice(0, BAIRROS_MAX));
+        setQuartosMin(p.quartos_min == null ? null : Number(p.quartos_min));
+        setInternetMin(p.internet_min_mbps == null ? null : Number(p.internet_min_mbps));
+        setNecessidades((p.necessidades as string[] | null) ?? []);
+        const d = p.destino as { destino_id?: string; rotulo: string; lat: number; lng: number; modo_preferido?: ModoRota; ate?: number } | null;
+        if (d) setDestinoEstado({ destino: d.destino_id ? { slug: `id:${d.destino_id}` } : { lat: d.lat, lng: d.lng, rot: d.rotulo }, modo: d.modo_preferido ?? "carro", ate: d.ate ?? 0 });
+      })
+      .catch(() => {
+        if (vivo) setCarregando(false);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [editarId]);
+
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/destinos")
+      .then((r) => r.json())
+      .then((j: { destinos?: (DestinoChip & { id: string })[]; modos?: ModoRota[] }) => {
+        if (!vivo) return;
+        setDestinosChips(j.destinos ?? []);
+        if (j.modos?.length) setModosRota(j.modos);
+      })
+      .catch(() => undefined);
+    if (!editarId && !destinoQ)
+      fetch("/api/conta/local-trabalho")
+        .then((r) => (r.status === 200 ? r.json() : null))
+        .then((j: { estado?: EstadoDestino | null } | null) => {
+          if (vivo && j?.estado?.destino) setDestinoEstado(j.estado);
+        })
+        .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [editarId, destinoQ]);
+
+  function adicionarBairro() {
+    const b = limparBairro(textoBairro);
+    if (!b) return;
+    setBairros((atual) => (atual.length >= BAIRROS_MAX || atual.some((x) => x.toLowerCase() === b.toLowerCase()) ? atual : [...atual, b]));
+    setTextoBairro("");
+  }
 
   // Motivo salvo no perfil (Conta): entra só se nada preencheu o campo (URL, último pedido ou escolha da pessoa).
   const logado = Boolean(user);
@@ -253,22 +373,41 @@ function PedidoForm() {
         ...(orcamento ? { orcamento } : {}),
         adultos: String(ocupantes),
       }).toString()}`;
-      router.push(`/auth?codigo=1&redirect=${encodeURIComponent(volta)}`);
+      router.push(urlEntrada("pedido", volta));
       return;
     }
-    setEnviando(true);
-    const res = await criarPedido({
+    const dados = {
       cidade,
       uf: uf || undefined,
       dataInicio,
       prazoMeses,
       orcamentoMensal: Number(orcamento) || 0,
+      orcamentoMin: Number(orcamentoMin) || null,
       qtdOcupantes: ocupantes,
       motivo,
       apresentacao: apresentacao || undefined,
       pets,
       criancas,
-    });
+      portePet: pets && portePet ? portePet : null,
+      bairros: [...bairros, ...(limparBairro(textoBairro) && bairros.length < BAIRROS_MAX ? [limparBairro(textoBairro)] : [])],
+      quartosMin,
+      necessidades,
+      internetMinMbps: internetMin,
+      destino: !destinoEstado.destino
+        ? null
+        : "slug" in destinoEstado.destino
+          ? { destinoSlug: slugDoDestinoEstado(destinoEstado.destino.slug, destinosChips), modo: destinoEstado.modo, ate: destinoEstado.ate || undefined }
+          : { lat: destinoEstado.destino.lat, lng: destinoEstado.destino.lng, rotulo: destinoEstado.destino.rot, modo: destinoEstado.modo, ate: destinoEstado.ate || undefined },
+    };
+    setEnviando(true);
+    if (editarId) {
+      const r = await editarPedido(editarId, dados);
+      setEnviando(false);
+      if (r.ok) router.push("/dashboard/pedidos?editado=1");
+      else setErro(r.error ?? "Não foi possível salvar o pedido.");
+      return;
+    }
+    const res = await criarPedido(dados);
     setEnviando(false);
     if (res.ok) {
       registrarEvento("publicar_pedido", { cidade });
@@ -282,7 +421,9 @@ function PedidoForm() {
         sugestao: res.sugestao ?? null,
         imoveis: res.imoveis ?? [],
         chegaAosDonos: res.chegaAosDonos ?? false,
+        falta: res.falta ?? [],
       });
+      if (typeof res.smsLigado === "boolean") setSmsLigado(res.smsLigado);
     } else {
       setErro(res.error ?? "Não foi possível publicar o pedido.");
     }
@@ -292,10 +433,10 @@ function PedidoForm() {
     const n = resultado.compativeis;
     return (
       <div role="status" aria-live="polite">
-        <h2 className="font-title text-2xl font-bold text-ink">Pedido publicado</h2>
+        <h2 className="font-title text-2xl font-semibold text-ink">Pedido publicado</h2>
         {!resultado.chegaAosDonos && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900" data-testid="pedido-falta-confirmar">
-            <strong>Falta confirmar seu e-mail e telefone.</strong> {AVISO_CONFIRMACAO}{" "}
+            <strong>{tituloFaltaConfirmar(resultado.falta.length ? resultado.falta : ["e-mail"])}</strong> {avisoConfirmacao(smsLigado)}{" "}
             <Link href={ROTA_CONFIRMAR_CONTATO} className="font-medium underline">
               Confirmar agora
             </Link>
@@ -308,7 +449,7 @@ function PedidoForm() {
             </strong>{" "}
             {resultado.chegaAosDonos
               ? `— ${n === 1 ? "o proprietário foi avisado" : "os proprietários foram avisados"}. Quando alguém responder, você recebe um aviso; a conversa é pela plataforma.`
-              : "— os proprietários só são avisados depois que você confirmar e-mail e telefone."}
+              : `— os proprietários só são avisados depois que você confirmar ${smsLigado ? "e-mail e telefone" : "o seu e-mail"}.`}
           </p>
         ) : (
           <div className="mt-3 space-y-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -317,11 +458,11 @@ function PedidoForm() {
             </p>
             {resultado.sugestao && <p>{resultado.sugestao}</p>}
             <p>
-              Para ajustar, pause este pedido em{" "}
+              Para ajustar o valor, a data ou o prazo, edite o pedido em{" "}
               <Link href="/dashboard/pedidos" className="font-medium underline">
                 Meus pedidos
-              </Link>{" "}
-              e publique outro com o orçamento, a data ou o prazo ajustados.
+              </Link>
+              .
             </p>
           </div>
         )}
@@ -340,7 +481,7 @@ function PedidoForm() {
             ))}
           </ul>
         )}
-        <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
           <Link
             href={`/buscar?${new URLSearchParams({ local: cidade }).toString()}`}
             className="text-sm font-medium text-forest underline"
@@ -356,8 +497,11 @@ function PedidoForm() {
 
   return (
     <div data-testid="pedido-formulario">
-      <h2 className="font-title text-2xl font-bold text-ink md:text-[1.75rem]">Publique seu pedido</h2>
-      <p className="mt-1 text-sm text-muted">Os proprietários da cidade veem seu pedido e respondem pela plataforma.</p>
+      <h2 className="font-title text-2xl font-semibold text-ink md:text-[1.75rem]">{editarId ? "Editar seu pedido" : "Publique seu pedido"}</h2>
+      <p className="mt-1 text-sm text-muted">
+        {editarId ? "As mudanças valem na hora para os proprietários da cidade." : "Os proprietários da cidade veem seu pedido e respondem pela plataforma."}
+      </p>
+      {carregando && <p className="mt-4 text-sm text-muted" aria-busy="true">Carregando o pedido…</p>}
 
       <form onSubmit={submit} className="mt-6 space-y-8" noValidate>
         <Grupo titulo="Onde e quando">
@@ -400,11 +544,58 @@ function PedidoForm() {
             </div>
           </div>
           {dataInicio && (
-            <p className="text-[13px] text-muted">
-              Seu pedido expira em <strong className="text-ink">{calcExpiraEm(dataInicio, hojeBR())}</strong> (o menor
-              entre 15 dias após o início e 60 dias após publicar).
+            <p className="text-[13px] text-muted" data-testid="pedido-validade">
+              Seu pedido fica no ar até <strong className="text-ink">{dataPedidoBR(expiraEmPedido(dataInicio, new Date().toISOString()))}</strong>{" "}
+              (30 dias depois de publicar e nunca antes da data de entrada). Você renova com um clique.
             </p>
           )}
+          <div>
+            <Rotulo htmlFor="pedido-bairro">Bairros preferidos (até {BAIRROS_MAX})</Rotulo>
+            <div className="flex gap-2">
+              <input
+                id="pedido-bairro"
+                value={textoBairro}
+                onChange={(e) => setTextoBairro(e.target.value.slice(0, 60))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    adicionarBairro();
+                  }
+                }}
+                placeholder={bairros.length >= BAIRROS_MAX ? "Limite de 3 bairros" : "Ex.: Santa Mônica"}
+                disabled={bairros.length >= BAIRROS_MAX}
+                className={cn(CAMPO, "min-w-0 flex-1")}
+                data-testid="pedido-bairro"
+              />
+              <Button type="button" variant="ghost" className="h-12 shrink-0" onClick={adicionarBairro} disabled={!textoBairro.trim() || bairros.length >= BAIRROS_MAX} data-testid="pedido-bairro-adicionar">
+                Adicionar
+              </Button>
+            </div>
+            <ul className="mt-2 flex flex-wrap gap-2" data-testid="pedido-bairros">
+              {bairros.length === 0 ? (
+                <li className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">{QUALQUER_BAIRRO}</li>
+              ) : (
+                bairros.map((b) => (
+                  <li key={b} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
+                    {b}
+                    <button type="button" aria-label={`Tirar ${b}`} onClick={() => setBairros((a) => a.filter((x) => x !== b))} className="rounded-full p-1 hover:bg-white">
+                      <X className="h-3 w-3" aria-hidden />
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+        </Grupo>
+
+        <Grupo titulo="Trabalho ou estudo">
+          <CampoDestino
+            destinos={destinosChips.filter((d) => !cidade || d.cidade.toLowerCase() === cidade.toLowerCase())}
+            modos={modosRota}
+            valor={{ ...destinoEstado, destino: destinoEstado.destino && "slug" in destinoEstado.destino ? { slug: slugDoDestinoEstado(destinoEstado.destino.slug, destinosChips) } : destinoEstado.destino }}
+            onChange={setDestinoEstado}
+          />
+          <p className="mt-2 text-xs text-muted">Opcional. O proprietário vê só “perto do …” e quantos minutos o imóvel dele fica — nunca o endereço que você digitar.</p>
         </Grupo>
 
         <Grupo titulo="Quem vai morar">
@@ -449,31 +640,99 @@ function PedidoForm() {
               Vou com crianças
             </BotaoMarca>
           </div>
+          {pets && (
+            <div>
+              <Rotulo htmlFor="pedido-porte-pet">Porte do pet</Rotulo>
+              <select id="pedido-porte-pet" value={portePet} onChange={(e) => setPortePet(e.target.value)} className={cn(CAMPO, !portePet && "text-muted")} data-testid="pedido-porte-pet">
+                <option value="">Selecione</option>
+                {PORTES_PET_PEDIDO.map((p) => (
+                  <option key={p.valor} value={p.valor}>
+                    {p.rotulo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </Grupo>
 
-        <Grupo titulo="Orçamento e motivo">
+        <Grupo titulo="O imóvel">
+          <div>
+            <span className="mb-2 block text-sm font-medium text-ink" id="pedido-quartos-rotulo">Quartos (no mínimo)</span>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-labelledby="pedido-quartos-rotulo" data-testid="pedido-quartos">
+              {QUARTOS_OPCOES.map((q) => (
+                <BotaoMarca key={q.valor} ativo={quartosMin === q.valor} onClick={() => setQuartosMin((a) => (a === q.valor ? null : q.valor))} icone={Plus} testid={`pedido-quartos-${q.valor}`}>
+                  {q.rotulo}
+                </BotaoMarca>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium text-ink">Precisa de</span>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" data-testid="pedido-necessidades">
+              {NECESSIDADES.map((n) => (
+                <BotaoMarca
+                  key={n.valor}
+                  ativo={necessidades.includes(n.valor)}
+                  onClick={() => setNecessidades((a) => (a.includes(n.valor) ? a.filter((x) => x !== n.valor) : [...a, n.valor]))}
+                  icone={Plus}
+                  testid={`pedido-nec-${n.valor}`}
+                >
+                  {n.rotulo}
+                </BotaoMarca>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium text-ink" id="pedido-internet-rotulo">Internet medida a partir de (opcional)</span>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="pedido-internet-rotulo" data-testid="pedido-internet">
+              {CHIPS_INTERNET.map((v) => (
+                <BotaoMarca key={v} ativo={internetMin === v} onClick={() => setInternetMin((a) => (a === v ? null : v))} icone={Plus} testid={`pedido-internet-${v}`}>
+                  {v} Mbps
+                </BotaoMarca>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-muted">Só entram imóveis com a velocidade medida no local pelo proprietário.</p>
+          </div>
+        </Grupo>
+
+        <Grupo titulo="Valor e motivo">
           <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
             <div>
-              <Rotulo htmlFor="pedido-orcamento">Orçamento por mês</Rotulo>
+              <Rotulo htmlFor="pedido-orcamento-min">Valor mensal mínimo (opcional)</Rotulo>
               <div className="relative">
                 <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-muted" aria-hidden>
                   R$
                 </span>
-                <input
+                <CampoReais
+                  semPrefixo
+                  id="pedido-orcamento-min"
+                  value={orcamentoMin === "" ? null : Number(orcamentoMin)}
+                  onChange={(v) => setOrcamentoMin(v == null ? "" : String(Math.round(v)))}
+                  placeholder="2.000"
+                  className={cn(CAMPO, "pl-12")}
+                  testid="pedido-orcamento-min"
+                />
+              </div>
+            </div>
+            <div>
+              <Rotulo htmlFor="pedido-orcamento">Valor mensal máximo</Rotulo>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-muted" aria-hidden>
+                  R$
+                </span>
+                <CampoReais
+                  semPrefixo
                   id="pedido-orcamento"
-                  required
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={mascararMilhar(orcamento)}
-                  onChange={(e) => setOrcamento(soDigitos(e.target.value))}
+                  value={orcamento === "" ? null : Number(orcamento)}
+                  onChange={(v) => setOrcamento(v == null ? "" : String(Math.round(v)))}
                   placeholder="3.500"
-                  className={cn(CAMPO, "pl-10")}
-                  data-testid="pedido-orcamento"
+                  className={cn(CAMPO, "pl-12")}
+                  testid="pedido-orcamento"
                 />
               </div>
               <span className="mt-1 block text-[13px] text-muted">Valor mensal total que cabe no seu bolso.</span>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <Rotulo htmlFor="pedido-motivo">Motivo da estadia</Rotulo>
               <select
                 id="pedido-motivo"
@@ -502,15 +761,15 @@ function PedidoForm() {
               onChange={(e) => setApresentacao(e.target.value.slice(0, APRESENTACAO_MAX))}
               placeholder="Conte um pouco do seu perfil e do que procura. Não inclua telefone, e-mail ou apps de mensagem."
               className={cn(
-                "w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15",
+                "w-full rounded-xl border bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15",
                 contatoNoTexto ? "border-red-300" : "border-line",
               )}
             />
             <div className="mt-1 flex items-start justify-between gap-3 text-[13px]">
               <span className="min-w-0 text-red-600">
                 {contatoNoTexto && (
-                  <span className="flex items-start gap-1.5">
-                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden /> {CONTATO_AVISO}
+                  <span className="flex items-start gap-2">
+                    <Info className="mt-1 h-3.5 w-3.5 shrink-0" aria-hidden /> {CONTATO_AVISO}
                   </span>
                 )}
               </span>
@@ -548,13 +807,15 @@ function PedidoForm() {
               <>
                 <Loader2 className="h-4 w-4 animate-spin" /> Publicando…
               </>
+            ) : editarId ? (
+              "Salvar alterações"
             ) : (
               "Publicar pedido"
             )}
           </Button>
 
           <p className="text-[13px] text-muted" data-testid="pedido-aviso-confirmacao">
-            {AVISO_CONFIRMACAO}
+            {avisoConfirmacao(smsLigado)}
           </p>
 
           <AvisoAntigolpe variante="linha" antes={user ? null : "Ao publicar, você entra com um código enviado por e-mail."} />
@@ -667,7 +928,7 @@ function CampoCidade({
             setAberto(false);
           }
         }}
-        className={cn(CAMPO, escolhida && "pr-10")}
+        className={cn(CAMPO, escolhida && "pr-12")}
         data-testid="pedido-cidade"
         data-cidade-escolhida={escolhida ? "1" : undefined}
       />
@@ -677,7 +938,7 @@ function CampoCidade({
           id={listaId}
           role="listbox"
           aria-label="Cidades"
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-line bg-white py-1 shadow-xl"
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-line bg-white py-1 shadow-flutuante"
         >
           {sugestoes.map((c, i) => (
             <li
@@ -689,7 +950,7 @@ function CampoCidade({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => escolher(i)}
               onMouseEnter={() => setAtivo(i)}
-              className={cn("cursor-pointer px-3.5 py-2.5 text-sm text-ink", i === ativo && "bg-sage-100")}
+              className={cn("cursor-pointer px-4 py-3 text-sm text-ink", i === ativo && "bg-sage-100")}
             >
               {c.cidade} <span className="text-muted">– {c.uf}</span>
             </li>

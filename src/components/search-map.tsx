@@ -7,8 +7,9 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Property } from "@/lib/types";
-import { formatBRL, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { precoDeBusca } from "@/lib/busca/painel-filtros";
+import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
 
@@ -20,15 +21,16 @@ const esc = (s: string) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)
   );
 
+/*
+  Pino de preço do mapa (botão flutuante: shadow-flutuante). O realce troca SÓ cor, anel e camada, na hora:
+  sem escala nem transição (QA do #953 / t70). Com os pinos empilhados no mesmo ponto, o "scale-110" do
+  ativo e o "hover:scale-105" animado do vizinho mudavam a caixa sob o ponteiro: o pino de baixo crescia por
+  cima do alvo e nunca ficava estável.
+*/
 const PIN_BASE =
-  "cursor-pointer select-none whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold shadow transition-transform";
+  "cursor-pointer select-none whitespace-nowrap rounded-full px-2 py-1 text-xs font-semibold tabular-nums shadow-flutuante transition-none";
 const pinClass = (active: boolean) =>
-  cn(
-    PIN_BASE,
-    active
-      ? "z-20 scale-110 bg-night text-white ring-2 ring-champagne"
-      : "z-10 bg-white text-ink ring-1 ring-line hover:scale-105"
-  );
+  cn(PIN_BASE, active ? "z-20 bg-night text-white ring-2 ring-forest" : "z-10 bg-white text-ink ring-1 ring-line hover:ring-ink");
 
 // Cor primária de marca (forest) para o traçado do raio.
 const RADIUS_COLOR = "#123b26";
@@ -164,7 +166,7 @@ function SearchMapbox({
       el.className = pinClass(p.id === activeId || p.id === selectedId);
       el.dataset.testid = "pin-mapa";
       el.dataset.id = p.id;
-      el.textContent = formatBRL(precoDeBusca(p));
+      el.textContent = rotuloPreco({ mensal: precoDeBusca(p) }).valor;
       el.addEventListener("mouseenter", () => onHoverRef.current(p.id));
       el.addEventListener("mouseleave", () => onHoverRef.current(null));
       el.addEventListener("click", (e) => {
@@ -252,7 +254,7 @@ function SearchMapbox({
     if (focus) {
       const el = document.createElement("div");
       el.className =
-        "grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-night text-white shadow-lg ring-2 ring-champagne";
+        "grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-night text-white shadow-flutuante";
       el.setAttribute("aria-label", "Endereço buscado");
       el.innerHTML =
         '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg>';
@@ -304,7 +306,7 @@ function SearchMapbox({
 
   return (
     <>
-      <div ref={containerRef} data-testid="mapa-busca" className={cn("overflow-hidden rounded-2xl border border-line", className)} />
+      <div ref={containerRef} data-testid="mapa-busca" className={cn("overflow-hidden rounded-xl border border-line", className)} />
       {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={() => onSelect?.(null)} />, popupEl)}
     </>
   );
@@ -407,7 +409,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
       const icon = L.divIcon({
         className: "",
         iconSize: [0, 0],
-        html: `<div data-testid="pin-mapa" data-id="${esc(p.id)}" class="${pinClass(p.id === activeRef.current || p.id === selRef.current)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">${esc(formatBRL(precoDeBusca(p)))}</div>`,
+        html: `<div data-testid="pin-mapa" data-id="${esc(p.id)}" class="${pinClass(p.id === activeRef.current || p.id === selRef.current)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">${esc(rotuloPreco({ mensal: precoDeBusca(p) }).valor)}</div>`,
       });
       const marker = L.marker([p.lat, p.lng], { icon, title: p.title, riseOnHover: true }).addTo(map);
       const el = marker.getElement()!.firstElementChild as HTMLElement;
@@ -441,7 +443,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
       icon: L.divIcon({
         className: "",
         iconSize: [0, 0],
-        html: '<div aria-label="Endereço buscado" class="absolute left-0 top-0 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-night shadow-lg ring-2 ring-champagne"></div>',
+        html: '<div aria-label="Endereço buscado" class="absolute left-0 top-0 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-night shadow-flutuante"></div>',
       }),
     }).addTo(g);
     focusLayerRef.current = g;

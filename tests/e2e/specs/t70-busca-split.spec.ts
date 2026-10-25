@@ -10,6 +10,7 @@ import { test, expect, type Page } from "@playwright/test";
  *  3. Clique no pin abre o card ancorado no mapa (foto, título, cidade, preço/mês,
  *     quartos/banheiros), sem sair da página; o × fecha.
  *  4. Celular (390 px): layout atual, sem mapa.
+ * E82-A: os filtros são a linha única de pílulas (a mesma em toda largura), não mais a faixa da busca compacta.
  */
 async function abrir(page: Page, largura: number, altura = 900) {
   await page.setViewportSize({ width: largura, height: altura });
@@ -32,6 +33,8 @@ async function pinsLivres(page: Page): Promise<string[]> {
 }
 
 test.describe("T70 — busca split-screen no computador", () => {
+  // /buscar com mapa no servidor frio do laboratório passa de 45 s (lab 75f265dd: teste 2 estourou).
+  test.describe.configure({ timeout: 120_000 });
   test("1. proporções, 3 por linha, mapa fixo na altura da tela e filtros em uma linha", async ({ page }) => {
     await abrir(page, 1440);
     const lista = await page.getByTestId("busca-lista").boundingBox();
@@ -45,12 +48,9 @@ test.describe("T70 — busca split-screen no computador", () => {
     expect(pctMapa).toBeLessThanOrEqual(0.45);
     expect(Math.round(mapa!.x + mapa!.width), "mapa encosta na borda direita").toBe(1440);
 
-    // Ordem eac7e3a1: filtros completos abrem pela busca compacta do cabeçalho.
-    await page.getByTestId("busca-compacta").click();
-    const caixa = await page.getByTestId("filtros-caixa").boundingBox();
+    // E82-A: os filtros ficam na linha única de pílulas, sempre à vista sobre a lista.
+    const caixa = await page.getByTestId("linha-pilulas").boundingBox();
     expect(caixa!.height, "barra de filtros em uma linha").toBeLessThanOrEqual(64);
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("filtros-caixa")).toBeHidden();
 
     const cards = page.getByTestId("card-resultado");
     expect(await cards.count()).toBeGreaterThanOrEqual(3);
@@ -87,10 +87,13 @@ test.describe("T70 — busca split-screen no computador", () => {
     await cards.first().hover();
     await expect(page.locator(`[data-testid="pin-mapa"][data-id="${id}"]`)).toHaveAttribute("data-ativo", "1");
 
+    // Os pinos livres são medidos SEM realce: com o pino do card em destaque (na frente, camada +1000), a conta
+    // apontava um pino que voltava a ficar coberto assim que o mouse saía do card (lab do #953).
+    await page.mouse.move(5, 5);
+    await expect(page.locator('[data-testid="pin-mapa"][data-ativo="1"]')).toHaveCount(0);
     const livres = await pinsLivres(page);
     expect(livres.length).toBeGreaterThan(0);
     const idPin = livres[livres.length - 1];
-    await page.mouse.move(5, 5);
     await page.locator(`[data-testid="pin-mapa"][data-id="${idPin}"]`).hover();
     await expect(page.locator(`[data-testid="pin-mapa"][data-id="${idPin}"]`)).toHaveAttribute("data-ativo", "1");
     await expect(page.locator(`[data-testid="card-resultado"][data-id="${idPin}"]`)).toHaveAttribute("data-destaque", "1");
@@ -121,22 +124,21 @@ test.describe("T70 — busca split-screen no computador", () => {
     await expect(page).toHaveURL(new RegExp(`/imoveis/${id}`));
   });
 
-  test("4. celular 390 px: sem mapa, busca do celular de sempre", async ({ page }) => {
+  test("4. celular 390 px: sem mapa, a mesma linha de pílulas", async ({ page }) => {
     await abrir(page, 390, 844);
-    await expect(page.getByTestId("busca-celular")).toBeVisible();
+    // E82-A: sem bloco só do celular — a mesma linha de pílulas; o mapa só abre pela pílula "Mapa".
+    await expect(page.getByTestId("linha-pilulas")).toBeVisible();
     await expect(page.getByTestId("busca-mapa")).toBeHidden();
     await expect(page.getByTestId("mapa-busca")).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   });
 
   test("5. 1024 e 1280 px: tela dividida sem rolagem lateral e filtros numa linha", async ({ page }) => {
-    test.setTimeout(120_000); // duas cargas da /buscar com mapa no servidor frio do laboratório (45 s não bastava)
     for (const largura of [1024, 1280]) {
       await abrir(page, largura);
       await expect(page.getByTestId("busca-mapa")).toBeVisible();
-      await expect(page.getByTestId("busca-compacta")).toBeVisible();
-      await page.getByTestId("busca-compacta").click();
-      const caixa = await page.getByTestId("filtros-caixa").boundingBox();
+      await expect(page.getByTestId("linha-pilulas")).toBeVisible();
+      const caixa = await page.getByTestId("linha-pilulas").boundingBox();
       expect(caixa!.height, `filtros em uma linha a ${largura}px`).toBeLessThanOrEqual(64);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     }

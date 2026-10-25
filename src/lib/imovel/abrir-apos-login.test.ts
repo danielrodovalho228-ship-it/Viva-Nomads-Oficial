@@ -5,7 +5,7 @@ import { safeInternalPath } from "../safe-redirect.ts";
 
 test("visita sem login: vai ao /auth e volta ao mesmo imóvel com a janela aberta", () => {
   const url = urlLoginParaAbrir("abc-123", "video");
-  assert.equal(url, "/auth?redirect=%2Fimoveis%2Fabc-123%3Fabrir%3Dvideo");
+  assert.equal(url, "/auth?motivo=visita&redirect=%2Fimoveis%2Fabc-123%3Fabrir%3Dvideo");
   const destino = safeInternalPath(new URLSearchParams(url.split("?")[1]).get("redirect"));
   assert.equal(destino, "/imoveis/abc-123?abrir=video");
   assert.equal(alvoAbrir("?abrir=visita"), "visita");

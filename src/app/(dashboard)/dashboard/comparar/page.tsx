@@ -1,5 +1,8 @@
 "use client";
 
+import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { calcularTudoIncluido } from "@/lib/precos";
 import Link from "next/link";
 import { GitCompare, Check, Minus, Award } from "lucide-react";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
@@ -7,8 +10,9 @@ import { ButtonLink } from "@/components/ui/button";
 import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
 import { useFavoritesStore } from "@/lib/favorites-store";
 import { useProperties } from "@/lib/use-properties";
-import { formatBRL, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { Property } from "@/lib/types";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 export default function ComparePage() {
   const ids = useFavoritesStore((s) => s.ids);
@@ -18,7 +22,7 @@ export default function ComparePage() {
   if (items.length < 2) {
     return (
       <>
-        <PageTitle capa="comparar" title="Comparar imóveis" />
+        <PageTitle title="Comparar imóveis" />
         <FavoritosTabs />
         <EmptyState
           icon={GitCompare}
@@ -35,9 +39,14 @@ export default function ComparePage() {
   }
 
   const rows: { label: string; render: (p: Property) => React.ReactNode }[] = [
-    { label: "Preço/mês", render: (p) => <strong className="text-forest">{formatBRL(p.monthlyPrice)}</strong> },
+    {
+      label: "Preço",
+      render: (p) => (
+        <PrecoComContexto rotulo={rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })} />
+      ),
+    },
     { label: "Tipo", render: (p) => p.propertyType },
-    { label: "Bairro", render: (p) => `${p.neighborhood}, ${p.city}` },
+    { label: "Bairro", render: (p) => linhaLocalizacao(p.neighborhood, p.city, p.state) },
     { label: "Quartos", render: (p) => p.bedrooms },
     { label: "Banheiros", render: (p) => p.bathrooms },
     { label: "Área", render: (p) => `${p.areaM2} m²` },
@@ -67,7 +76,7 @@ export default function ComparePage() {
     {
       label: "Recursos de trabalho",
       render: (p) => (
-        <ul className="space-y-0.5 text-xs">
+        <ul className="space-y-1 text-xs">
           {p.workFeatures.slice(0, 3).map((f) => (
             <li key={f} className="flex items-center gap-1">
               <Check className="h-3 w-3 text-sage" /> {f}
@@ -80,19 +89,19 @@ export default function ComparePage() {
 
   return (
     <>
-      <PageTitle capa="comparar"
+      <PageTitle
         title="Comparar imóveis"
         subtitle={`${items.length} imóveis · compatibilidade com seu perfil de trabalho`}
       />
       <FavoritosTabs />
-      <div className="overflow-x-auto rounded-2xl border border-sage-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-sage-200 bg-white">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-sage-200">
               <th className="w-40 px-4 py-4" />
               {items.map((p) => (
                 <th key={p.id} className="px-4 py-4 text-left align-top">
-                  <Link href={`/imoveis/${p.id}`} className="font-title font-bold text-ink hover:text-forest">
+                  <Link href={`/imoveis/${p.id}`} className="font-title font-semibold text-ink hover:text-forest">
                     {p.title}
                   </Link>
                 </th>

@@ -120,8 +120,10 @@ test("robots: o layout raiz não declara 'index, follow' (vazava nas 404 com not
   assert.match(bloco, /"max-image-preview": "large"/);
 });
 
-test("h1: a Visão geral do inquilino tem título principal, como a do proprietário (varredura t48)", () => {
+test("h1: a Visão geral tem um título principal para todos os papéis (varredura t48)", () => {
   const src = ler("src/app/(dashboard)/dashboard/visao-geral-client.tsx");
-  const inquilino = src.slice(src.indexOf("function TenantDashboard"), src.indexOf("function DraftPendingCard"));
-  assert.match(inquilino, /<PageTitle title="Visão geral"/);
+  const inicio = src.slice(src.indexOf("export function VisaoGeral"), src.indexOf("function OwnerDashboard"));
+  // Prompt 42/43: o h1 são as decisões de hoje de todos os papéis ("Hoje você tem N decisões" / "Nada pede sua decisão hoje").
+  assert.match(inicio, /<PageTitle\s+title=\{tituloDecisoes\(decisoes\.length\)\}/);
+  assert.equal((src.match(/<PageTitle\b/g) ?? []).length, 1, "um h1 só na Visão geral");
 });

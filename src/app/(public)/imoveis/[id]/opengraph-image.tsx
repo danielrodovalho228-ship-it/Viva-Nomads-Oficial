@@ -2,8 +2,10 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { getProperty } from "@/lib/data/properties";
-import { formatBRL } from "@/lib/utils";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { calcularTudoIncluido } from "@/lib/precos";
 import { quartosTexto } from "@/lib/anuncio/plural";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 export const alt = "Imóvel no Viva Nomads";
 export const size = { width: 1200, height: 630 };
@@ -12,6 +14,8 @@ export const contentType = "image/png";
 export default async function OG({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const p = await getProperty(id);
+  // Prompt 47: o mesmo rótulo de preço do cartão (total do mês e do período).
+  const preco = p ? rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays) }) : null;
   const mark = await readFile(join(process.cwd(), "public/brand/novo/vn-mark-128.png"));
   const markSrc = `data:image/png;base64,${mark.toString("base64")}`;
 
@@ -68,7 +72,7 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
 
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 26 }}>
-            {p ? `${p.neighborhood}, ${p.city}` : "Imóvel mobiliado"}
+            {p ? linhaLocalizacao(p.neighborhood, p.city, p.state) || "Imóvel mobiliado" : "Imóvel mobiliado"}
           </div>
           <div style={{ color: "white", fontSize: 58, fontWeight: 800, lineHeight: 1.08, marginTop: 10, maxWidth: 1000 }}>
             {p?.title ?? "Imóvel mobiliado para estadia de 30 a 180 dias"}
@@ -77,10 +81,10 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
 
         <div style={{ display: "flex", alignItems: "flex-end", gap: 20 }}>
           <div style={{ color: "#6CBE2A", fontSize: 52, fontWeight: 800 }}>
-            {p ? `${formatBRL(p.monthlyPrice)}` : ""}
+            {preco ? preco.valor : ""}
           </div>
           <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 28, paddingBottom: 8 }}>
-            {p ? `/mês · ${quartosTexto(p.bedrooms)} · ${p.areaM2} m²` : ""}
+            {p && preco ? `/mês${preco.estadia ? ` · ${preco.estadia}` : ""} · ${quartosTexto(p.bedrooms)}` : ""}
           </div>
         </div>
       </div>

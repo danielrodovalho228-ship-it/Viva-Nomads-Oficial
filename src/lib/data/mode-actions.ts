@@ -21,9 +21,10 @@ export async function setPreferredMode(mode: ViewMode): Promise<{ ok: boolean }>
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false };
+  // PAPEL-B: o modo é o papel ativo de morador/proprietário (fonte única: profiles.papel_ativo).
   const { error } = await supabase
     .from("profiles")
-    .update({ preferred_mode: mode })
+    .update({ preferred_mode: mode, papel_ativo: mode === "owner" ? "proprietario" : "morador" })
     .eq("id", user.id);
   return { ok: !error };
 }

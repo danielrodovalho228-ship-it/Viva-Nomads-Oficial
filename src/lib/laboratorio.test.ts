@@ -73,7 +73,15 @@ test("workflow do laboratório: sem segredos, banco local, modo simulado", () =>
   assert.ok(passo, "passo Registrar no banco existe");
   assert.doesNotMatch(antes, /secrets\./);
   assert.deepEqual([...wf.matchAll(/secrets\.(\w+)/g)].map((m) => m[1]), ["SUPABASE_DB_URL"]);
-  assert.match(passo.split("- name:")[0], /github\.event_name != 'pull_request'/);
+  // Em PR só grava o do próprio repositório (fork não recebe segredo); o commit gravado é o da cabeça do PR (ordem 1424d64a).
+  const registrar = passo.split("- name:")[0];
+  assert.match(registrar, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
+  assert.match(registrar, /COMMIT_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
+  assert.match(registrar, /-v sha="\$COMMIT_SHA"/);
+  assert.doesNotMatch(registrar, /-v sha="\$GITHUB_SHA"/);
+  // Boletim por categoria (ordem 35527eb1): a cobertura por tipo entra na coluna por_categoria (migração 0173).
+  assert.match(registrar, /gerar-cobertura\.mjs --json/);
+  assert.match(registrar, /por_categoria/);
   assert.match(wf, /push:\s+branches: \[main\]/);
   assert.match(wf, /NEXT_PUBLIC_SUPABASE_URL: http:\/\/127\.0\.0\.1:54321/);
   assert.match(wf, /INTEGRACOES_SIMULADAS: "on"/);

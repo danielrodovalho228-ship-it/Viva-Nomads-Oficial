@@ -56,7 +56,7 @@ test("A — CAF ok e CPF do perfil igual ao da matrícula → conferido, sem fil
   const d = decidirMatricula(matricula(), entrada());
   assert.equal(d.resultado, "conferido");
   assert.equal(d.motivo, null);
-  assert.equal(d.mensagem, "Documentação conferida ✓");
+  assert.equal(d.mensagem, "Documentação conferida");
   assert.equal(statusDaMatricula(d.resultado), "approved");
   assert.equal(estadoTelaDaMatricula(d.resultado), "aprovado");
   assert.deepEqual(d.opcoes, []);
@@ -145,11 +145,13 @@ test("H — conta de teste: laudo simulado vale sem gastar CAF; numa conta real 
   assert.equal(decidirMatricula(matricula(), entrada({ caf: resumoDoLaudo(simulado, agora, true) })).resultado, "conferido");
 });
 
-test("laudo CAF: vencido (90 dias) não vale; risco alto não é ok; OCR com outro nome derruba o 'ok'", () => {
+test("laudo CAF: vencido (12 meses — decisão do Daniel, 18/10) não vale; risco alto não é ok; OCR com outro nome derruba o 'ok'", () => {
   const agora = new Date(`${HOJE}T12:00:00Z`);
   const real = { caf_result: { identity: true, liveness: true, document: true }, traffic_light: "green", valid_until: null, created_at: "2026-10-10T00:00:00Z" };
   assert.equal(resumoDoLaudo(real, agora, false).ok, true);
-  assert.equal(resumoDoLaudo({ ...real, created_at: "2026-06-01T00:00:00Z" }, agora, false).feita, false);
+  assert.equal(resumoDoLaudo({ ...real, created_at: "2026-06-01T00:00:00Z" }, agora, false).feita, true, "4 meses: ainda vale");
+  assert.equal(resumoDoLaudo({ ...real, created_at: "2025-09-01T00:00:00Z" }, agora, false).feita, false, "mais de 12 meses: vencido");
+  assert.equal(resumoDoLaudo({ ...real, valid_until: "2026-10-17T00:00:00Z" }, agora, false).feita, false, "valid_until vencido (ex.: trocou nome/CPF, 0164)");
   assert.equal(resumoDoLaudo({ ...real, traffic_light: "red" }, agora, false).ok, false);
   const ocrOutro = resumoDoLaudo({ ...real, caf_result: { ...real.caf_result, ocrConfere: false } }, agora, false);
   assert.equal(decidirMatricula(matricula(), entrada({ caf: ocrOutro })).resultado, "em_revisao");
@@ -256,4 +258,22 @@ test("decisão 1 — sem matrícula: IPTU + contrato de compra é aceito, mas fi
   // A matrícula aprovada não muda.
   const aprovado = { estado: "aprovado" as const, checklist: { titular: true, imovel: true, legivel: true, validade: true }, motivos: [] };
   assert.equal(semMatriculaVaiParaRevisao(aprovado, "matricula").estado, "aprovado");
+});
+
+import { decisaoComFalhaDeLeitura } from "./conferencia-matricula.ts";
+
+test("p22 — leitura que falhou vira 'em revisão' com o motivo certo (arquivo grande, ilegível, indisponível)", () => {
+  const base = decidirMatricula(null, entrada());
+  assert.equal(base.resultado, "em_revisao");
+  for (const [motivo, esperado, texto] of [
+    ["arquivo_grande", "falha_arquivo_grande", /grande demais/],
+    ["ilegivel", "falha_ilegivel", /ilegível/],
+    ["indisponivel", "falha_indisponivel", /indisponível agora — tente de novo/],
+  ] as const) {
+    const d = decisaoComFalhaDeLeitura(base, { motivo });
+    assert.equal(d.resultado, "em_revisao");
+    assert.equal(d.motivo, esperado);
+    assert.match(d.mensagem, texto);
+  }
+  assert.equal(decisaoComFalhaDeLeitura(base, undefined).motivo, "falha_leitura");
 });

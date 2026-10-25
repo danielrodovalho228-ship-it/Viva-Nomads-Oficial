@@ -15,13 +15,13 @@ export function PhotoPlaceholder({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-2 bg-sage-100 text-sage",
+        "flex flex-col items-center justify-center gap-2 bg-surface-2 text-muted",
         className
       )}
     >
       <ImageIcon className="h-6 w-6" aria-hidden />
       {label && (
-        <span className="px-3 text-center text-xs font-medium text-forest/70">{label}</span>
+        <span className="px-3 text-center text-xs font-medium text-muted">{label}</span>
       )}
     </div>
   );

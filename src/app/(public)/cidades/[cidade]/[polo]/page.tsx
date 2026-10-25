@@ -13,6 +13,7 @@ import { SITE_URL } from "@/lib/site";
 import { acharBairroCurado, bairrosDaGrade, imoveisDoBairro } from "@/lib/bairros";
 import { BairroPagina, metadadosDoBairro, type BairroDados } from "@/components/cidades/bairro-pagina";
 import { descricaoPolo } from "@/lib/seo/meta-descricao";
+import { destinosAtivos } from "@/lib/data/tempos";
 
 export const revalidate = 60;
 
@@ -77,6 +78,8 @@ export default async function PoloPage({ params }: Params) {
       ? Math.round(comMedia.reduce((s, g) => s + (g.media as number) * g.anuncios, 0) / comMedia.reduce((s, g) => s + g.anuncios, 0))
       : null;
   const faq = perguntasDoPolo(p, c.name, mediaGeral);
+  // Prompt 37: lista por TEMPO até cada destino ativo do polo (a página do polo continua sendo o guia do bairro).
+  const destinosDoPolo = p.destinos?.length ? (await destinosAtivos()).filter((d) => p.destinos!.includes(d.slug)) : [];
   const url = `${SITE_URL}/cidades/${cidade}/${polo}`;
 
   const dados = {
@@ -108,16 +111,16 @@ export default async function PoloPage({ params }: Params) {
             <Link href={`/cidades/${cidade}`} className="hover:text-champagne">{c.name}</Link> /{" "}
             <span className="text-white/80">{p.nome}</span>
           </nav>
-          <h1 className="mt-4 max-w-3xl font-title text-3xl font-bold md:text-5xl">
+          <h1 className="mt-4 max-w-3xl font-title text-[28px] font-semibold">
             Imóveis mobiliados {tituloDoPolo(p.nome)}
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-white/80">{p.intro}</p>
+          <p className="mt-4 max-w-2xl text-lg text-white/80">{p.intro}</p>
           <p className="mt-3 max-w-2xl text-sm text-white/70">{p.publico}</p>
         </div>
       </section>
 
       <section className="container-page section-y">
-        <h2 className="font-title text-2xl font-bold text-ink">
+        <h2 className="font-title text-2xl font-semibold text-ink">
           {imoveis.length === 0 ? "Em breve, imóveis nesta região" : `${imoveis.length} ${imoveis.length === 1 ? "anúncio" : "anúncios"} nesta região`}
         </h2>
         {imoveis.length > 0 ? (
@@ -127,7 +130,7 @@ export default async function PoloPage({ params }: Params) {
             ))}
           </div>
         ) : (
-          <div className="mt-8 rounded-2xl border border-dashed border-sage-200 p-8 text-center">
+          <div className="mt-8 rounded-xl border border-dashed border-sage-200 p-8 text-center">
             <p className="text-muted">Ainda não há imóveis publicados perto de {p.referencia}.</p>
             <ButtonLink href={`/cidades/${cidade}`} variant="outline" className="mt-4">
               Ver todos os imóveis em {c.name}
@@ -135,12 +138,24 @@ export default async function PoloPage({ params }: Params) {
           </div>
         )}
 
+        {destinosDoPolo.length > 0 && (
+          <ul className="mt-6 space-y-1 text-sm" data-testid="polo-perto-de">
+            {destinosDoPolo.map((d) => (
+              <li key={d.slug}>
+                <Link href={`/imoveis-perto-de/${d.slug}`} className="font-semibold text-forest underline">
+                  Em ordem de tempo até {d.artigo ? `${d.artigo} ` : ""}{d.nome}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+
         <div className="mt-12 max-w-3xl" data-testid="polo-precos">
-          <h2 className="font-title text-2xl font-bold text-ink">Valor médio por mês na região</h2>
+          <h2 className="font-title text-2xl font-semibold text-ink">Valor médio por mês na região</h2>
           {medias.length === 0 || reais.length === 0 ? (
             <p className="mt-2 text-sm text-muted">Dados insuficientes: a média aparece quando houver pelo menos 3 anúncios reais no mesmo grupo.</p>
           ) : (
-            <ul className="mt-4 divide-y divide-sage-200 rounded-2xl border border-sage-200">
+            <ul className="mt-4 divide-y divide-sage-200 rounded-xl border border-sage-200">
               {medias.map((g) => (
                 <li key={`${g.bairro}-${g.quartos}`} className="flex items-center justify-between gap-4 px-4 py-3">
                   <span className="text-ink">{g.bairro} <span className="text-muted">· {rotuloQuartos(g.quartos)}</span></span>
@@ -154,7 +169,7 @@ export default async function PoloPage({ params }: Params) {
         </div>
 
         <div className="mt-12 max-w-3xl" data-testid="polo-faq">
-          <h2 className="font-title text-2xl font-bold text-ink">Perguntas frequentes</h2>
+          <h2 className="font-title text-2xl font-semibold text-ink">Perguntas frequentes</h2>
           <dl className="mt-4 space-y-4">
             {faq.map((f) => (
               <div key={f.q}>

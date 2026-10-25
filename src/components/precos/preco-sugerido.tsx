@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TAXA_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
@@ -34,11 +35,11 @@ export function PrecoSugerido({ aluguel, onUsar, onAirbnbMensal }: { aluguel: nu
         <div className="mt-3 space-y-2">
           <label className="block text-sm text-ink">
             Quanto você cobraria no Airbnb por {MESES} meses (R$)
-            <input type="number" min={0} value={airbnb} onChange={(e) => { setAirbnb(e.target.value); onAirbnbMensal?.((Number(e.target.value) || 0) / MESES); }} className="input mt-1" placeholder="10300" />
+            <CampoReais semPrefixo value={airbnb === "" ? null : Number(airbnb)} onChange={(v) => { setAirbnb(v == null ? "" : String(v)); onAirbnbMensal?.((v ?? 0) / MESES); }} className="input mt-1" placeholder="10300" />
           </label>
           {sugerido !== null && (
             <>
-              <dl className="space-y-0.5 text-sm">
+              <dl className="space-y-1 text-sm">
                 <div className="flex justify-between"><dt>No Airbnb você recebe</dt><dd data-testid="recebe-airbnb">{brl(recebeAirbnb(total))}</dd></div>
                 <div className="flex justify-between"><dt>Na Viva, a {brl(sugerido)}/mês, você recebe</dt><dd data-testid="recebe-viva">{brl(recebeViva(sugerido, MESES, taxa))}</dd></div>
               </dl>

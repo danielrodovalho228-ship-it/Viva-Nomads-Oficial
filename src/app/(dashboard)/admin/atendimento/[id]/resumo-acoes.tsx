@@ -1,5 +1,6 @@
 "use client";
 
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { useEffect, useState } from "react";
 import { ListChecks, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,9 +65,9 @@ export function ResumoEAcoes({ chamadoId, quemEh, sla }: { chamadoId: string; qu
   }
 
   return (
-    <section className="mb-6 rounded-2xl border border-forest/20 bg-sage-100/60 p-5" data-testid="resumo-acoes">
+    <section className="mb-6 rounded-xl border border-forest/20 bg-sage-100/60 p-4" data-testid="resumo-acoes">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 font-title text-lg font-bold text-ink">
+        <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
           <Sparkles className="h-5 w-5 text-forest" /> Resumo e ações
         </h2>
         <Button size="sm" variant="outline" disabled={carregando} onClick={() => carregar(true)}>
@@ -82,19 +83,19 @@ export function ResumoEAcoes({ chamadoId, quemEh, sla }: { chamadoId: string; qu
           <div>
             <p className="text-sm leading-relaxed text-ink" data-testid="resumo-texto">{r.resumo}</p>
             <p className="mt-2 text-xs text-muted">
-              {r.origem === "ia" ? "Resumo da Viva (IA)" : "Resumo por regras (sem IA)"} · {new Date(r.geradoEm).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+              {r.origem === "ia" ? "Resumo da Viva (IA)" : "Resumo por regras (sem IA)"} · {dataHoraBRT(r.geradoEm, { tabela: true })}
             </p>
             <dl className="mt-3 space-y-1 text-sm">
               <div className="flex gap-2"><dt className="w-16 shrink-0 text-muted">Quem é</dt><dd className="text-ink" data-testid="resumo-quem">{quemEh}</dd></div>
               <div className="flex gap-2">
                 <dt className="w-16 shrink-0 text-muted">Prazo</dt>
-                <dd><span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", sla.cor)}>{sla.texto}</span> <span className="text-xs text-muted">{sla.risco}</span></dd>
+                <dd><span className={cn("rounded-full px-2 py-1 text-xs font-semibold", sla.cor)}>{sla.texto}</span> <span className="text-xs text-muted">{sla.risco}</span></dd>
               </div>
             </dl>
           </div>
           <div>
-            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted"><ListChecks className="h-4 w-4" /> O que você precisa fazer</p>
-            <ul className="mt-2 space-y-1.5" data-testid="resumo-acoes-lista">
+            <p className="flex items-center gap-2 text-xs font-semibold text-muted"><ListChecks className="h-4 w-4" /> O que você precisa fazer</p>
+            <ul className="mt-2 space-y-2" data-testid="resumo-acoes-lista">
               {r.acoes.map((a) => (
                 <li key={a.texto}>
                   <label className="flex items-start gap-2 text-sm text-ink">

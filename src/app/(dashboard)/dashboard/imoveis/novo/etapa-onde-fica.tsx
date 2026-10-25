@@ -7,16 +7,18 @@ import { AjudaPublicar } from "@/components/property/ajuda-publicar";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import { DocumentoUploader } from "@/components/documento-uploader";
 import { DocumentoVinculo, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
+import type { CampoEnderecoDoc, EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { EtapaIdentidade } from "@/components/anuncio/etapa-identidade";
 import type { PhotoItem } from "@/components/photo-uploader";
-import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, type Operacao } from "@/lib/anuncio/operacao";
-import { PROPERTY_TYPES } from "@/lib/amenities";
+import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, TIPOS_DOC_GESTAO, type Operacao } from "@/lib/anuncio/operacao";
 import { LocationDatalist } from "@/lib/locations";
 import { CITIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { mensagemCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
+import { digitadoPelaPessoa, type CampoEndereco } from "@/lib/cep/aplicar";
 import { Erro, Labeled, Toggle } from "./campos";
 import { BuscaEndereco } from "./busca-endereco";
+import { ResumoEndereco, enderecoCompletoParaResumo } from "./resumo-endereco";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
 
@@ -26,26 +28,16 @@ function cidadeLiberada(cidade: string): boolean {
   return CITIES.some((c) => n(c.name) === n(cidade));
 }
 
+/** E104: o Complemento serve a casa, chácara e apartamento — o exemplo não supõe o tipo do imóvel. */
+export const PLACEHOLDER_COMPLEMENTO = "Bloco, apartamento, casa ou referência";
+
 /**
- * Etapa 1 — Onde fica (prompt 10): tipo do imóvel, quem opera, CEP PRIMEIRO (com foco; ViaCEP e, se não achar,
- * BrasilAPI), número e complemento, aviso de cidade fora da lista e o documento do imóvel (prompt 11), conferido na
- * hora. Prompt 20: no topo, o cartão "Preencher com IA" (`topo`); o CEP sempre responde com uma mensagem (e, se não
- * existir, "buscar pelo endereço"); importar e pedir ajuda viram uma linha discreta no fim.
+ * Passo 3 — Endereço (mockup cadastro-imovel-03; E104): SÓ o endereço. CEP primeiro (com foco; ViaCEP e, se não achar,
+ * BrasilAPI; sempre responde com uma mensagem e, se não existir, "buscar pelo endereço"), rua e número, complemento,
+ * bairro e cidade, aviso de cidade fora da lista; com o endereço completo, a linha do endereço e o mapa do bairro.
+ * Quem opera, identidade, documento do imóvel e importar/ajuda NÃO moram aqui (ver AntesDePublicar e AtalhosCadastro).
  */
 export function EtapaOndeFica(p: {
-  /** Cartão "Preencher com IA" (prompt 20), no topo do passo. */
-  topo?: React.ReactNode;
-  aplicarImportado: (a: AnuncioOrganizado) => void;
-  propertyType: string;
-  setPropertyType: (v: string) => void;
-  tipoSugerido: boolean;
-  ownershipType: Operacao;
-  setOwnershipType: (v: Operacao) => void;
-  subleaseAuthorized: boolean;
-  setSubleaseAuthorized: (fn: (v: boolean) => boolean) => void;
-  subleaseDoc: PhotoItem[];
-  setSubleaseDoc: (d: PhotoItem[]) => void;
-  docOperacaoAnexado: boolean;
   cep: string;
   setCep: (v: string) => void;
   cepLoading: boolean;
@@ -54,6 +46,8 @@ export function EtapaOndeFica(p: {
   onEscolherEndereco: (o: OpcaoEndereco) => void;
   street: string;
   setStreet: (v: string) => void;
+  /** Prompt 22: a pessoa digitou neste campo (o CEP não troca mais). O autofill do navegador não marca. */
+  marcarDigitado: (c: CampoEndereco) => void;
   numero: string;
   setNumero: (v: string) => void;
   complemento: string;
@@ -65,30 +59,30 @@ export function EtapaOndeFica(p: {
   city: string;
   setCity: (v: string) => void;
   uf: string;
-  imovelId: string | null;
-  docEstado: EstadoDocumentoTela;
-  docMotivos: string[];
-  onDocumento: (estado: EstadoDocumentoTela, motivos: string[]) => void;
-  /** Prompt 19: a matrícula conferida preenche o anúncio. */
-  onMatricula?: (m: InfoMatricula) => void;
   daMatricula?: Set<string>;
   /** Endereço da matrícula quando é diferente do CEP: o dono escolhe qual vale. */
   enderecoMatricula?: PreenchimentoMatricula["endereco"] | null;
   onEnderecoMatricula?: (usar: boolean) => void;
   erros: Record<string, string>;
 }) {
-  const doc = exigeAutorizacao(p.ownershipType) ? DOC_AUTORIZACAO[p.ownershipType as "subleased" | "managed"] : null;
   const foraDaArea = !!p.city.trim() && !cidadeLiberada(p.city);
   // Erro de formato do CEP só ao sair do campo (nunca enquanto a pessoa digita).
   const [cepSaiu, setCepSaiu] = useState(false);
   const [buscaAberta, setBuscaAberta] = useState(false);
-  const [atalho, setAtalho] = useState<"importar" | "ajuda" | null>(null);
   const digitosCep = p.cep.replace(/\D/g, "").length;
   const r = p.cepResultado;
   const podeBuscarEndereco = r?.tipo === "nao_encontrado" || r?.tipo === "cidade";
+  const avisoPrivacidade = (
+    <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted" data-testid="endereco-privacidade">
+      <MapPin className="mt-1 h-3.5 w-3.5 shrink-0 text-sage" />
+      <span>
+        <strong className="text-ink">Rua e número NUNCA aparecem no anúncio público</strong>: mostramos só a região
+        aproximada (um círculo do bairro). O endereço completo é liberado apenas <strong className="text-ink">após o aceite</strong>.
+      </span>
+    </p>
+  );
   return (
     <div className="space-y-4" data-testid="etapa-onde-fica">
-      {p.topo}
       <Labeled label="CEP">
         <div className="relative">
           <input
@@ -98,11 +92,15 @@ export function EtapaOndeFica(p: {
               p.setCep(d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d);
             }}
             inputMode="numeric"
-            autoComplete="postal-code"
+            // Prompt 22: sem autofill no endereço — o Chrome preenchia o endereço SALVO (outra cidade) antes do ViaCEP.
+            autoComplete="off"
+            name="vn-cadastro-a1"
+            id="vn-cadastro-a1"
             maxLength={9}
             placeholder="00000-000"
             className="input"
             autoFocus
+            aria-invalid={!!p.erros.cep}
             onBlur={() => setCepSaiu(true)}
             onFocus={() => setCepSaiu(false)}
             data-testid="cadastro-cep"
@@ -114,15 +112,15 @@ export function EtapaOndeFica(p: {
             role="status"
             data-testid="cep-resultado"
             data-tipo={r.tipo}
-            className={cn("mt-1 flex items-start gap-1.5 text-xs", r.tipo === "rua" ? "text-forest" : "text-amber-900")}
+            className={cn("mt-1 flex items-start gap-2 text-xs", r.tipo === "rua" ? "text-forest" : "text-amber-900")}
           >
             {r.tipo === "rua" ? <CheckCircle2 className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden /> : <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />}
             <span>
               {r.tipo === "nao_encontrado" ? (
                 <>
-                  Não encontramos esse CEP. Confira os números ou{" "}
+                  Não encontramos esse CEP —{" "}
                   <button type="button" className="font-semibold underline" onClick={() => setBuscaAberta(true)} data-testid="cep-buscar-endereco">
-                    busque pelo endereço
+                    buscar pelo endereço
                   </button>
                 </>
               ) : (
@@ -145,6 +143,7 @@ export function EtapaOndeFica(p: {
         ) : (
           <span className="mt-1 block text-xs text-muted">Com o CEP, preenchemos rua, bairro e cidade.</span>
         )}
+        <Erro msg={p.erros.cep} />
       </Labeled>
       {buscaAberta && podeBuscarEndereco && (
         <BuscaEndereco
@@ -160,18 +159,40 @@ export function EtapaOndeFica(p: {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
         <Labeled label="Rua" daMatricula={p.daMatricula?.has("endereco")}>
-          <input value={p.street} onChange={(e) => p.setStreet(e.target.value)} className="input" placeholder="Rua ou avenida" data-testid="cadastro-rua" />
+          <input
+            value={p.street}
+            onChange={(e) => {
+              if (digitadoPelaPessoa(e.nativeEvent)) p.marcarDigitado("rua");
+              p.setStreet(e.target.value);
+            }}
+            autoComplete="off"
+            name="vn-cadastro-a2"
+            className="input"
+            placeholder="Rua ou avenida"
+            aria-invalid={!!p.erros.rua}
+            data-testid="cadastro-rua"
+          />
           <Erro msg={p.erros.rua} />
         </Labeled>
         <Labeled label="Número">
-          <input value={p.numero} onChange={(e) => p.setNumero(e.target.value.slice(0, 20))} className="input" placeholder="123" inputMode="text" data-testid="cadastro-numero" />
+          <input
+            value={p.numero}
+            onChange={(e) => p.setNumero(e.target.value.slice(0, 20))}
+            autoComplete="off"
+            name="vn-cadastro-a3"
+            className="input"
+            placeholder="123"
+            aria-invalid={!!p.erros.numero}
+            inputMode="text"
+            data-testid="cadastro-numero"
+          />
           <Erro msg={p.erros.numero} />
         </Labeled>
       </div>
       {p.enderecoMatricula && (
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status" data-testid="endereco-matricula-conflito">
           <p className="font-semibold">O endereço da matrícula é diferente do CEP — confira.</p>
-          <p className="mt-0.5 text-xs">
+          <p className="mt-1 text-xs">
             Na matrícula:{" "}
             {[p.enderecoMatricula.rua, p.enderecoMatricula.numero, p.enderecoMatricula.bairro, p.enderecoMatricula.cidade].filter(Boolean).join(", ")}
           </p>
@@ -186,15 +207,34 @@ export function EtapaOndeFica(p: {
         </div>
       )}
       <Labeled label="Complemento" ajuda="(opcional)" daMatricula={p.daMatricula?.has("complemento")}>
-        <input value={p.complemento} onChange={(e) => p.setComplemento(e.target.value.slice(0, 60))} className="input" placeholder="Apto 101, bloco B" data-testid="cadastro-complemento" />
+        <input
+          value={p.complemento}
+          onChange={(e) => p.setComplemento(e.target.value.slice(0, 60))}
+          autoComplete="off"
+          name="vn-cadastro-a4"
+          className="input"
+          placeholder={PLACEHOLDER_COMPLEMENTO}
+          data-testid="cadastro-complemento"
+        />
       </Labeled>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Labeled label="Bairro">
-          <input value={p.neighborhood} onChange={(e) => p.setNeighborhood(e.target.value)} list="novo-bairros" autoComplete="off" className="input" data-testid="cadastro-bairro" />
+          <input
+            value={p.neighborhood}
+            onChange={(e) => {
+              if (digitadoPelaPessoa(e.nativeEvent)) p.marcarDigitado("bairro");
+              p.setNeighborhood(e.target.value);
+            }}
+            list="novo-bairros"
+            autoComplete="off"
+            name="vn-cadastro-a5"
+            className="input"
+            data-testid="cadastro-bairro"
+          />
           <LocationDatalist id="novo-bairros" />
           <Erro msg={p.erros.bairro} />
           {p.bairroDoCep && (
-            <span className="mt-1 block rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-900" role="status">
+            <span className="mt-1 block rounded-lg bg-amber-50 px-2 py-2 text-xs text-amber-900" role="status">
               O CEP indica <strong>{p.bairroDoCep}</strong> — confirmar?{" "}
               <button
                 type="button"
@@ -214,14 +254,24 @@ export function EtapaOndeFica(p: {
           )}
         </Labeled>
         <Labeled label={`Cidade${p.uf ? ` (${p.uf})` : ""}`}>
-          <input value={p.city} onChange={(e) => p.setCity(e.target.value)} className="input" data-testid="cadastro-cidade" />
+          <input
+            value={p.city}
+            onChange={(e) => {
+              if (digitadoPelaPessoa(e.nativeEvent)) p.marcarDigitado("cidade");
+              p.setCity(e.target.value);
+            }}
+            autoComplete="off"
+            name="vn-cadastro-a6"
+            className="input"
+            data-testid="cadastro-cidade"
+          />
           <Erro msg={p.erros.cidade} />
         </Labeled>
       </div>
 
       {foraDaArea && (
         <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status" data-testid="aviso-cidade-fora">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
           <span>
             Por enquanto a Viva Nomads atende {CITIES.map((c) => c.name).join(", ")}. Você pode cadastrar e deixar o
             anúncio pronto: avisamos quando a sua cidade abrir.
@@ -229,26 +279,69 @@ export function EtapaOndeFica(p: {
         </p>
       )}
 
-      <p className="flex items-start gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
-        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
-        <span>
-          <strong className="text-ink">Rua e número NUNCA aparecem no anúncio público</strong>: mostramos só a região
-          aproximada (um círculo do bairro). O endereço completo é liberado apenas <strong className="text-ink">após o aceite</strong>.
-        </span>
-      </p>
+      {/* Mockup cadastro-imovel-03: com o endereço preenchido, a linha do endereço completo, o mapa do bairro, o aviso de
+          privacidade e as etiquetas do bairro e da cidade. Antes disso, só o aviso. */}
+      {enderecoCompletoParaResumo({ rua: p.street, numero: p.numero, bairro: p.neighborhood, cidade: p.city }) ? (
+        <ResumoEndereco
+          rua={p.street}
+          numero={p.numero}
+          complemento={p.complemento}
+          bairro={p.neighborhood}
+          cidade={p.city}
+          uf={p.uf}
+          aviso={avisoPrivacidade}
+        />
+      ) : (
+        avisoPrivacidade
+      )}
 
+    </div>
+  );
+}
+
+/**
+ * E104: o que o Passo 3 carregava e não é endereço — quem opera (e o documento da sublocação/gestão), a identidade
+ * (CAF) e o documento do imóvel (matrícula) — mora na Revisão (Passo 10), num cartão "Antes de publicar". As regras
+ * não mudam: a prontidão continua barrando a publicação sem eles (itens "sublocacao" e "documento", agora resolvidos na
+ * Revisão). A ordem da decisão do Daniel (18/10) segue: endereço (Passo 3) → identidade → matrícula.
+ */
+export function AntesDePublicar(p: {
+  ownershipType: Operacao;
+  setOwnershipType: (v: Operacao) => void;
+  subleaseAuthorized: boolean;
+  setSubleaseAuthorized: (fn: (v: boolean) => boolean) => void;
+  subleaseDoc: PhotoItem[];
+  setSubleaseDoc: (d: PhotoItem[]) => void;
+  docOperacaoAnexado: boolean;
+  subleaseDocTipo: string;
+  setSubleaseDocTipo: (t: string) => void;
+  cep: string;
+  street: string;
+  numero: string;
+  neighborhood: string;
+  city: string;
+  imovelId: string | null;
+  docEstado: EstadoDocumentoTela;
+  docMotivos: string[];
+  onDocumento: (estado: EstadoDocumentoTela, motivos: string[]) => void;
+  /** Prompt 19: a matrícula conferida preenche o anúncio. */
+  onMatricula?: (m: InfoMatricula) => void;
+  /** O que ainda falta na operação (declaração, tipo do documento ou o anexo); "" = nada. */
+  faltaOperacao: string;
+  /** L1-1: endereço já gravado do imóvel (rascunho retomado) — o "Enviar documento" não trava se ele estiver completo. */
+  enderecoSalvo?: EnderecoDoc | null;
+  /** L1-1: o toque em "Enviar documento" sem CEP/rua/número marca os campos que faltam. */
+  onFaltaDocumento?: (campos: CampoEnderecoDoc[]) => void;
+}) {
+  const doc = exigeAutorizacao(p.ownershipType) ? DOC_AUTORIZACAO[p.ownershipType as "subleased" | "managed"] : null;
+  return (
+    <section className="space-y-4 rounded-xl border border-line bg-white p-4 sm:p-6" data-testid="antes-de-publicar" aria-labelledby="antes-de-publicar-titulo">
+      <h2 id="antes-de-publicar-titulo" className="text-lg font-semibold text-ink">
+        Antes de publicar
+      </h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Labeled label="Tipo de imóvel" sugerido={p.tipoSugerido}>
-          <select value={p.propertyType} onChange={(e) => p.setPropertyType(e.target.value)} className="input">
-            {PROPERTY_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </Labeled>
         <div className="min-w-0">
-          <span className="mb-1.5 block text-sm font-medium text-ink">Quem opera este imóvel?</span>
+          <span className="mb-2 block text-sm font-medium text-ink">Quem opera este imóvel?</span>
           <div className="grid grid-cols-1 gap-2" role="radiogroup" aria-label="Quem opera este imóvel?">
             {OPERACOES.map(({ valor, rotulo }) => (
               <button
@@ -278,8 +371,25 @@ export function EtapaOndeFica(p: {
             label={doc.declaracao}
             hint="Declaração obrigatória. A equipe confere o documento antes de publicar."
           />
+          {p.ownershipType === "managed" && (
+            <fieldset className="space-y-2" data-testid="documento-operacao-tipo">
+              <legend className="mb-1 text-sm font-medium text-ink">O que você vai anexar?</legend>
+              {TIPOS_DOC_GESTAO.map((t) => (
+                <label key={t.valor} className="flex min-h-11 items-center gap-2 text-sm text-ink">
+                  <input
+                    type="radio"
+                    name="tipo-doc-operacao"
+                    value={t.valor}
+                    checked={p.subleaseDocTipo === t.valor}
+                    onChange={() => p.setSubleaseDocTipo(t.valor)}
+                  />
+                  {t.rotulo}
+                </label>
+              ))}
+            </fieldset>
+          )}
           <div>
-            <span className="mb-1.5 block text-sm font-medium text-ink">
+            <span className="mb-2 block text-sm font-medium text-ink">
               {doc.titulo} <span className="font-normal text-muted">(obrigatório para publicar)</span>
             </span>
             {p.docOperacaoAnexado && p.subleaseDoc.length === 0 && (
@@ -289,7 +399,7 @@ export function EtapaOndeFica(p: {
             )}
             <DocumentoUploader docs={p.subleaseDoc} onChange={p.setSubleaseDoc} rotulo="Anexar documento" />
           </div>
-          <Erro msg={p.erros.sublocacao} />
+          <Erro msg={p.faltaOperacao || undefined} />
         </div>
       )}
 
@@ -304,8 +414,22 @@ export function EtapaOndeFica(p: {
         motivos={p.docMotivos}
         onResultado={p.onDocumento}
         onMatricula={p.onMatricula}
+        enderecoSalvo={p.enderecoSalvo}
+        onFalta={p.onFaltaDocumento}
       />
 
+    </section>
+  );
+}
+
+/**
+ * E104: os atalhos de exceção (prompt 20) — importar o texto de um anúncio de outro site ou pedir ajuda à equipe —
+ * numa linha discreta no fim do Passo 1, o começo do cadastro (no Passo 3 só fica o endereço).
+ */
+export function AtalhosCadastro(p: { aplicarImportado: (a: AnuncioOrganizado) => void }) {
+  const [atalho, setAtalho] = useState<"importar" | "ajuda" | null>(null);
+  return (
+    <div className="space-y-4">
       {/* Prompt 20: atalhos de exceção numa linha discreta (o caminho principal é o cartão da IA lá em cima). */}
       <p className="text-xs text-muted" data-testid="atalhos-passo1">
         Já tem anúncio em outro site?{" "}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { PlatformLegalNotice } from "@/components/legal-notice";
 import { FILTROS_STATUS, type StatusProposta } from "@/lib/propostas/regras";
 import type { InteressadoParaProposta, PropostaResumo } from "@/lib/data/propostas-actions";
@@ -24,12 +24,11 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
   return (
     <>
       <PageTitle
-        capa="orcamentos"
         title="Orçamentos"
         subtitle={ehDono ? "Propostas para os seus interessados, com contraproposta e aceite pela plataforma." : "Propostas que você recebeu dos proprietários."}
         action={
           ehDono ? (
-            <Button onClick={() => setEscolhendo((v) => !v)} data-testid="nova-proposta">
+            <Button variant="secondary" onClick={() => setEscolhendo((v) => !v)} data-testid="nova-proposta">
               <Plus className="h-4 w-4" /> Nova proposta
             </Button>
           ) : undefined
@@ -37,7 +36,7 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
       />
 
       {escolhendo && (
-        <Panel title="Para qual interessado?" className="mb-5" data-testid="escolher-interessado">
+        <Panel title="Para qual interessado?" className="mb-4" data-testid="escolher-interessado">
           {livres.length === 0 ? (
             <p className="text-sm text-muted">
               Nenhum interessado sem proposta em andamento. Os interessados chegam em{" "}
@@ -55,7 +54,7 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
               }}
             >
               <label className="block min-w-0 flex-1">
-                <span className="mb-1.5 block text-sm font-medium text-ink">Interessado</span>
+                <span className="mb-2 block text-sm font-medium text-ink">Interessado</span>
                 <select value={escolhido} onChange={(e) => setEscolhido(e.target.value)} className="input" data-testid="interessado-select" required>
                   <option value="">Selecione</option>
                   {livres.map((i) => (
@@ -84,7 +83,7 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
               aria-selected={filtro === f.chave}
               onClick={() => setFiltro(f.chave)}
               className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                "rounded-full border px-3 py-2 text-xs font-medium transition-colors",
                 filtro === f.chave ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage",
               )}
             >
@@ -105,6 +104,17 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
                 : "Quando um proprietário enviar uma proposta, ela aparece aqui e na conversa."
               : "Escolha outro status acima."
           }
+          action={
+            propostas.length > 0 ? (
+              <Button variant="secondary" size="sm" onClick={() => setFiltro("todas")}>
+                Ver todas
+              </Button>
+            ) : (
+              <ButtonLink href={ehDono ? "/dashboard/leads" : "/buscar"} variant="secondary" size="sm">
+                {ehDono ? "Ver interessados" : "Buscar imóveis"}
+              </ButtonLink>
+            )
+          }
         />
       ) : (
         <>
@@ -112,7 +122,7 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
           <ul className="space-y-3 md:hidden" data-testid="lista-propostas">
             {visiveis.map((p) => (
               <li key={p.id}>
-                <Link href={`/dashboard/propostas/${p.id}`} className="block rounded-2xl border border-sage-200 bg-white p-4 hover:border-sage" data-testid="proposta-item">
+                <Link href={`/dashboard/propostas/${p.id}`} className="block rounded-xl border border-sage-200 bg-white p-4 hover:border-sage" data-testid="proposta-item">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-muted">
@@ -132,7 +142,7 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
             ))}
           </ul>
           {/* Computador: tabela. */}
-          <div className="hidden overflow-hidden rounded-2xl border border-sage-200 bg-white md:block">
+          <div className="hidden overflow-hidden rounded-xl border border-sage-200 bg-white md:block">
             <table className="w-full text-left text-sm" data-testid="tabela-propostas">
               <thead className="bg-surface-2 text-xs text-muted">
                 <tr>

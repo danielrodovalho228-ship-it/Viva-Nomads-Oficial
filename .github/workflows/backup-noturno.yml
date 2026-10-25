@@ -1,0 +1,63 @@
+# Resiliência 2 — cópia noturna CIFRADA do banco inteiro e de todos os arquivos do Storage para o Google Drive do
+# Daniel (pasta VivaNomads-Backup, escopo drive.file). Toda noite às 03:15 de Brasília, ou à mão (Run workflow).
+# Passo a passo de restauração: docs/RESTAURACAO.md. Desenho: docs/RESILIENCIA.md.
+# Segredos (ambiente backup-producao; nunca impressos): SUPABASE_DB_URL, RCLONE_DRIVE_CONF, BACKUP_SENHA_1,
+# BACKUP_SENHA_2, SUPABASE_S3_ACCESS_KEY_ID, SUPABASE_S3_SECRET_ACCESS_KEY e RESEND_API_KEY (alarme);
+# AVISO_DANIEL_EMAIL é opcional (só se ninguém tiver "recebe avisos do CEO" no banco).
+name: Backup noturno
+
+on:
+  schedule:
+    - cron: "15 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A cópia e o teste de restauração nunca rodam juntos; o seguinte espera (nunca cancela no meio).
+concurrency:
+  group: backup-producao
+  cancel-in-progress: false
+
+jobs:
+  copia:
+    # Forks não têm os segredos e nunca copiam nada.
+    if: github.repository == 'danielrodovalho228-ship-it/Viva-Nomads-Oficial'
+    runs-on: ubuntu-24.04
+    environment: backup-producao
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+
+      - name: Ferramentas (rclone fixo e postgresql-client-17)
+        run: bash scripts/backup/instalar-ferramentas.sh
+
+      - name: Montar o rclone.conf temporário (600) com o remoto cifrado
+        env:
+          RCLONE_DRIVE_CONF: ${{ secrets.RCLONE_DRIVE_CONF }}
+          BACKUP_SENHA_1: ${{ secrets.BACKUP_SENHA_1 }}
+          BACKUP_SENHA_2: ${{ secrets.BACKUP_SENHA_2 }}
+          SUPABASE_S3_ACCESS_KEY_ID: ${{ secrets.SUPABASE_S3_ACCESS_KEY_ID }}
+          SUPABASE_S3_SECRET_ACCESS_KEY: ${{ secrets.SUPABASE_S3_SECRET_ACCESS_KEY }}
+        run: bash scripts/backup/montar-rclone.sh
+
+      - name: Cópia (banco, arquivos, manifesto e retenção)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: bash scripts/backup/copia.sh
+
+      - name: Registrar no admin e alarmar
+        if: always()
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          AVISO_DANIEL_EMAIL: ${{ secrets.AVISO_DANIEL_EMAIL }}
+        run: bash scripts/backup/finalizar.sh copia
+
+      - name: Apagar o rclone.conf e os arquivos temporários
+        if: always()
+        run: bash scripts/backup/limpar.sh

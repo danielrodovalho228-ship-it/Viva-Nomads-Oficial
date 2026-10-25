@@ -18,11 +18,11 @@ export default async function SavedSearchesPage() {
 
   return (
     <>
-      <PageTitle capa="buscas"
+      <PageTitle
         title="Buscas salvas"
         subtitle="Receba avisos quando novos imóveis combinarem com seus filtros."
         action={
-          <ButtonLink href="/buscar" variant="gold">
+          <ButtonLink href="/buscar" variant="secondary">
             <Search className="h-4 w-4" /> Nova busca
           </ButtonLink>
         }

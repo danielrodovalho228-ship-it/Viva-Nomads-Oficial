@@ -29,7 +29,7 @@ function Exemplo({ src, ambiente, bom }: { src: string; ambiente: string; bom: b
           />
         )}
       </div>
-      <figcaption className={cn("flex items-center gap-1.5 px-3 py-2 text-sm font-semibold", bom ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800")}>
+      <figcaption className={cn("flex items-center gap-2 px-3 py-2 text-sm font-semibold", bom ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800")}>
         <Icone className="h-4 w-4" aria-hidden />
         {bom ? "Assim" : "Evite"}
       </figcaption>
@@ -43,7 +43,7 @@ export function GuiaFotos({ comCta = true }: { comCta?: boolean }) {
     <div className="space-y-6">
       {PARES_EXEMPLO.map((p) => (
         <section key={p.ambiente} aria-labelledby={`guia-${p.ambiente}`}>
-          <h3 id={`guia-${p.ambiente}`} className="mb-2 font-display text-lg font-bold text-ink">{p.ambiente}</h3>
+          <h3 id={`guia-${p.ambiente}`} className="mb-2 font-display text-lg font-semibold text-ink">{p.ambiente}</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <Exemplo src={p.ruim} ambiente={p.ambiente} bom={false} />
             <Exemplo src={p.bom} ambiente={p.ambiente} bom />
@@ -51,8 +51,8 @@ export function GuiaFotos({ comCta = true }: { comCta?: boolean }) {
         </section>
       ))}
       <section aria-labelledby="guia-dicas">
-        <h3 id="guia-dicas" className="mb-2 font-display text-lg font-bold text-ink">Dicas rápidas</h3>
-        <ol className="list-decimal space-y-1.5 pl-5 text-sm text-ink/80">
+        <h3 id="guia-dicas" className="mb-2 font-display text-lg font-semibold text-ink">Dicas rápidas</h3>
+        <ol className="list-decimal space-y-2 pl-4 text-sm text-ink/80">
           {DICAS_FOTO.map((d) => <li key={d}>{d}</li>)}
         </ol>
       </section>

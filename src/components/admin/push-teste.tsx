@@ -19,7 +19,7 @@ export function PushTeste() {
           })
         }
       >
-        {pend ? "Enviando…" : "Enviar push de teste"}
+        {pend ? "Enviando…" : "Enviar push de teste para mim"}
       </button>
       <p role="status" aria-live="polite" className="text-sm text-ink-soft">{msg}</p>
     </div>

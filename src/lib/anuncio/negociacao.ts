@@ -108,7 +108,10 @@ export interface LimitesPrivados {
 export function normalizarLimites(v: unknown): LimitesPrivados {
   const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
   const min = Number(o.valorMinimo);
-  const limp = Math.round(Number(o.limpezasMax));
+  // Vazio = SEM LIMITE (null). Antes, Number(null) = 0 gravava "nenhuma limpeza" para todo mundo (complemento do
+  // prompt 27, parte B); 0 só quando o dono escolhe "Nenhuma".
+  const vazio = o.limpezasMax === null || o.limpezasMax === undefined || o.limpezasMax === "";
+  const limp = vazio ? NaN : Math.round(Number(o.limpezasMax));
   return {
     valorMinimo: Number.isFinite(min) && min > 0 ? Math.round(min * 100) / 100 : null,
     limpezasMax: Number.isFinite(limp) && limp >= 0 && limp <= 8 ? limp : null,

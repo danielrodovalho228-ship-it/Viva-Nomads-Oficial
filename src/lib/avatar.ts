@@ -87,3 +87,11 @@ export function corAvatar(nome: string): string {
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
   return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
 }
+
+/**
+ * CONTA-A — o que o avatar mostra sem foto: as iniciais quando há nome; sem nome, a silhueta neutra (nunca "?").
+ */
+export function rostoDoAvatar(nome: string | null | undefined): { tipo: "iniciais"; texto: string } | { tipo: "silhueta" } {
+  const t = iniciais(nome ?? "");
+  return t === "?" ? { tipo: "silhueta" } : { tipo: "iniciais", texto: t };
+}

@@ -45,7 +45,7 @@ export function ConviteCidade({ texto, papel = "inquilino" }: { texto: string; p
 
   if (!alvo || !fechada) return null;
   return (
-    <div role="status" data-testid="convite-cidade" className="mt-4 flex max-w-md flex-col items-center gap-2 rounded-2xl border border-sage-200 bg-surface-2 p-4 text-center">
+    <div role="status" data-testid="convite-cidade" className="mt-4 flex max-w-md flex-col items-center gap-2 rounded-xl border border-sage-200 bg-surface-2 p-4 text-center">
       <MapPinned className="h-5 w-5 text-forest" aria-hidden />
       <p className="text-sm font-semibold text-ink">{mensagemCidadeNaoLiberada(cidade)}</p>
       {resp ? (
@@ -62,13 +62,13 @@ export function ConviteCidade({ texto, papel = "inquilino" }: { texto: string; p
               setResp({ ok: r.ok, texto: r.ok ? (r.mensagem ?? "Anotado!") : (r.erro ?? "Não foi possível registrar.") });
             })
           }
-          className="inline-flex min-h-11 items-center rounded-full bg-gold px-5 text-sm font-bold text-forest transition-colors hover:brightness-105 disabled:opacity-60"
+          className="inline-flex min-h-11 items-center rounded-full bg-gold px-4 text-sm font-semibold text-forest transition-colors hover:brightness-105 disabled:opacity-60"
           data-testid="convite-cidade-botao"
         >
           Avisem-me quando abrir
         </button>
       ) : (
-        <Link href="/auth" className="inline-flex min-h-11 items-center rounded-full bg-gold px-5 text-sm font-bold text-forest hover:brightness-105">
+        <Link href="/auth" className="inline-flex min-h-11 items-center rounded-full bg-gold px-4 text-sm font-semibold text-forest hover:brightness-105">
           Entrar para deixar meu interesse
         </Link>
       )}

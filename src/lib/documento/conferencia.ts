@@ -254,7 +254,7 @@ export function statusDoEstado(e: EstadoConferencia): "approved" | "rejected" | 
 
 /** Texto curto ao dono na etapa 1 e na revisão. */
 export function rotuloEstado(e: EstadoConferencia): string {
-  return e === "aprovado" ? "Documentação conferida ✓" : e === "corrija" ? "Corrija o documento" : "Em revisão";
+  return e === "aprovado" ? "Documentação conferida" : e === "corrija" ? "Corrija o documento" : "Em revisão";
 }
 
 /** CPF mascarado na tela: ***.123.456-** (só os dígitos do meio). */
@@ -271,7 +271,9 @@ export const LEITURA_OUTPUT_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
-    tipo: { type: ["string", "null"], enum: [...TIPOS_DOCUMENTO.map((t) => t.valor), null] },
+    // Prompt 25: `enum` com null junto de `type: [..., "null"]` é o suspeito nº 1 do 400 da saída estruturada;
+    // anyOf (texto da lista OU null) é a forma aceita.
+    tipo: { anyOf: [{ type: "string", enum: [...TIPOS_DOCUMENTO.map((t) => t.valor)] }, { type: "null" }] },
     titular: { type: ["string", "null"] },
     cpf_cnpj_parcial: { type: ["string", "null"] },
     endereco: {

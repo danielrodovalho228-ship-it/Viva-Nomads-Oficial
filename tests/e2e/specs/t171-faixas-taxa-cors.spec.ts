@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T169 — Faixas da taxa de parceria e CORS das páginas (ordens 39cc7c00 e a4a13765).
- * 1) /parceiros e /parceiros/fotografos mostram as 3 faixas (R$ 40 / 60 / 80) a 360 e 1280 px.
+ * T169 — Taxa de serviço dos parceiros e CORS das páginas (ordens 39cc7c00, a4a13765 e a regra nova do Prompt 29).
+ * 1) /parceiros e /parceiros/fotografos mostram a taxa única de 10% (sem as faixas R$ 40 / 60 / 80, que saíram)
+ *    a 360 e 1280 px.
  * 2) Páginas HTML e /api/comissao não respondem "Access-Control-Allow-Origin: *".
  */
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -18,18 +19,15 @@ const TAMANHOS = [
 
 for (const rota of ["/parceiros", "/parceiros/fotografos"]) {
   for (const t of TAMANHOS) {
-    test(`${rota} mostra as 3 faixas da taxa a ${t.nome}`, async ({ page }) => {
+    test(`${rota} mostra a taxa única de 10% a ${t.nome}`, async ({ page }) => {
       await page.setViewportSize({ width: t.width, height: t.height });
       await page.goto(rota);
-      const tabela = page.getByTestId("faixas-taxa-parceria");
-      await expect(tabela).toBeVisible();
-      await expect(tabela).toContainText("Até 20 fotos");
-      await expect(tabela).toContainText("R$ 40");
-      await expect(tabela).toContainText("21 a 40 fotos");
-      await expect(tabela).toContainText("R$ 60");
-      await expect(tabela).toContainText("Acima de 40 fotos");
-      await expect(tabela).toContainText("R$ 80");
-      await expect(tabela).toContainText("sem mensalidade e sem exclusividade");
+      const taxa = page.getByTestId("taxa-servico-parceiros");
+      await expect(taxa).toBeVisible();
+      await expect(taxa).toContainText("10% sobre o valor do serviço");
+      await expect(taxa).toContainText("todas as categorias");
+      await expect(taxa).toContainText("A Viva não guarda o seu dinheiro");
+      await expect(page.getByTestId("faixas-taxa-parceria")).toHaveCount(0);
       const estoura = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
       expect(estoura).toBe(false);
     });

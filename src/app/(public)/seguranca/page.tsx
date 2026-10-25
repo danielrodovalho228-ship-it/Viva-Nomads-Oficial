@@ -8,14 +8,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/seguranca" },
   title: "Sua segurança",
   description:
-    "Como a Viva Nomads protege proprietários e inquilinos de golpes na locação: conversa na plataforma, dinheiro direto ao proprietário e dossiê do inquilino.",
+    "Como a Viva Nomads protege proprietários e moradores de golpes: conversa na plataforma, dinheiro direto ao proprietário e dossiê do morador.",
 };
 
 const GOLPES = [
   {
-    golpe: "“Faça um PIX para reservar antes de visitar.”",
+    golpe: "“Faça um PIX para segurar o imóvel antes de visitar.”",
     protecao:
-      "A plataforma nunca pede pagamento para reservar e nunca movimenta o valor mensal — o dinheiro vai direto do inquilino para a conta do proprietário, já no fechamento oficial.",
+      "A plataforma nunca pede pagamento para segurar o imóvel e nunca movimenta o valor mensal — o dinheiro vai direto do morador para a conta do proprietário, já no fechamento oficial.",
     icon: Wallet,
   },
   {
@@ -25,9 +25,9 @@ const GOLPES = [
     icon: MessageSquareLock,
   },
   {
-    golpe: "Perfil falso / inquilino sem histórico.",
+    golpe: "Perfil falso / morador sem histórico.",
     protecao:
-      "A identidade só é revelada após o aceite — nome e foto, nunca contato. A verificação de identidade do inquilino chega em breve.",
+      "A identidade só é revelada após o aceite — nome e foto, nunca contato. A verificação de identidade do morador chega em breve.",
     icon: FileSearch,
   },
   {
@@ -40,8 +40,8 @@ const GOLPES = [
 
 function Faq({ q, children }: { q: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-sage-200 bg-white p-6">
-      <h3 className="font-title text-lg font-bold text-ink">{q}</h3>
+    <div className="rounded-xl border border-sage-200 bg-white p-6">
+      <h3 className="font-title text-lg font-semibold text-ink">{q}</h3>
       <div className="mt-2 space-y-2 text-sm text-muted">{children}</div>
     </div>
   );
@@ -54,24 +54,24 @@ export default function SegurancaPage() {
       <span className="inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
         <ShieldCheck className="h-3.5 w-3.5" /> Sua segurança
       </span>
-      <h1 className="mt-4 font-title text-4xl font-bold text-ink">
-        Alugar com segurança no Viva Nomads
+      <h1 className="mt-4 font-title text-[28px] font-semibold text-ink">
+        Morar com segurança na Viva Nomads
       </h1>
       <p className="mt-4 text-lg text-muted">
-        Locação atrai golpistas — quase sempre com pressa e pedido de dinheiro por fora. Veja os
+        Golpistas agem quase sempre com pressa e pedido de dinheiro por fora. Veja os
         golpes mais comuns e como a plataforma foi desenhada para proteger os dois lados.
       </p>
 
-      <section className="mt-10 grid gap-4">
+      <section className="mt-12 grid gap-4">
         {GOLPES.map((g) => {
           const Icon = g.icon;
           return (
-            <div key={g.golpe} className="rounded-2xl border border-sage-200 bg-white p-6">
+            <div key={g.golpe} className="rounded-xl border border-sage-200 bg-white p-6">
               <p className="flex items-start gap-2 font-medium text-ink">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> {g.golpe}
+                <AlertTriangle className="mt-1 h-4 w-4 shrink-0 text-amber-600" /> {g.golpe}
               </p>
               <p className="mt-2 flex items-start gap-2 text-sm text-muted">
-                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-forest" /> {g.protecao}
+                <Icon className="mt-1 h-4 w-4 shrink-0 text-forest" /> {g.protecao}
               </p>
             </div>
           );
@@ -79,12 +79,12 @@ export default function SegurancaPage() {
       </section>
 
       <section className="mt-12">
-        <h2 className="font-title text-2xl font-bold text-ink">Perguntas frequentes</h2>
-        <div className="mt-5 grid gap-4">
-          <Faq q="Como o Viva Nomads protege meu dinheiro?">
+        <h2 className="font-title text-2xl font-semibold text-ink">Perguntas frequentes</h2>
+        <div className="mt-4 grid gap-4">
+          <Faq q="Como a Viva Nomads protege meu dinheiro?">
             <p>
               A plataforma <strong className="text-ink">nunca movimenta o valor mensal</strong>: ele vai
-              direto do inquilino para a conta do proprietário. A taxa Viva é uma taxa única por
+              direto do morador para a conta do proprietário. A taxa de serviço da Viva é única por
               contrato, transparente no fechamento.
             </p>
           </Faq>
@@ -94,7 +94,7 @@ export default function SegurancaPage() {
               certo. O contato direto não é trocado — a negociação segue toda por aqui.
             </p>
           </Faq>
-          <Faq q="Vai haver verificação do inquilino?">
+          <Faq q="Vai haver verificação do morador?">
             <p>
               Em breve — ainda não está disponível. Hoje, a identidade completa só aparece após o
               aceite, e nunca o contato direto.

@@ -16,8 +16,19 @@ test("aviso de rascunho em andamento e seu botão Continuar têm data-testid", (
   assert.match(pagina, /data-testid="rascunho-continuar"/);
 });
 
-test("t115 não depende de a tela já ter carregado o aviso: espera o aviso OU o botão e abre a etapa 0", () => {
+test("t115 não depende de a tela já ter carregado o aviso: espera o aviso OU o botão e abre o Passo 1 (E104: o importar mora lá)", () => {
   assert.match(spec, /rascunho-continuar/);
-  assert.match(spec, /etapa=0/);
+  assert.match(spec, /etapa=tipo/);
   assert.doesNotMatch(spec, /isVisible\(\)\.catch/);
+});
+
+test("E50 + mockups cadastro-imovel-01..10: um H1 só (o título do passo); o cartão de retomar o rascunho e o 'Passo X de 10' ficam", () => {
+  const src = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
+  assert.equal(src.match(/<h1\b/g)?.length, 1);
+  assert.match(src, /<h1 className=\{cn\(TITULO_PASSO_CADASTRO, "mt-3"\)\} data-testid="passo-titulo">\s*\{meta\.title\}/);
+  assert.doesNotMatch(src, /data-testid="cadastro-apresentacao"/, "o banner com foto saiu: o desenho abre direto na pergunta do passo");
+  assert.match(src, /data-testid="rascunho-aviso"/);
+  // CADASTRO-MOLDURA: o "Passo X de 10" mora no rodapé do fluxo.
+  assert.match(src, /<RodapeAssistente\s+pos=\{pos\}\s+total=\{ORDEM_ETAPAS\.length\}/);
+  assert.match(src, /\{editingId \? "Editar anúncio" : "Anunciar imóvel"\}/);
 });

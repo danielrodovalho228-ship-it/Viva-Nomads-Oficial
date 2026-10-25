@@ -5,6 +5,7 @@
 */
 import { createHash } from "node:crypto";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
+import { dataBRT } from "./datas-brasilia.ts";
 import { limpezaDoResumo, linhaLimpezaResumo, type LimpezaEstadia } from "./anuncio/limpeza-estadia.ts";
 import { linhasRegrasPets, linhaValorPetCandidatura, normalizarRegrasPets, type RegrasPets } from "./anuncio/pets-regras.ts";
 
@@ -43,6 +44,27 @@ function dataDoResumo(iso: string): string | null {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
 }
 
+/**
+ * "Registrado em" do resumo (Prompt 35B ii): o dia de criação no calendário de BRASÍLIA — o mesmo da linha do tempo.
+ * Até então saía o dia em UTC (contrato criado às 22:48 de 18/10 em Brasília dizia "19/10/2026"). Data pura
+ * (AAAA-MM-DD) fica como está.
+ */
+function registradoEmDoResumo(criadoEm: string): string {
+  const soDia = dataDoResumo(criadoEm);
+  if (soDia) return soDia;
+  const brt = dataBRT(criadoEm);
+  return brt === "—" ? criadoEm : brt;
+}
+
+/** Dia em UTC (AAAA-MM-DD) — SÓ para reproduzir o texto que alguém já assinou; nunca para mostrar. */
+function diaUtcAssinado(criadoEm: string): string | null {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(criadoEm)) return criadoEm;
+  const d = new Date(criadoEm);
+  if (Number.isNaN(d.getTime())) return null;
+  const z = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${z(d.getUTCMonth() + 1)}-${z(d.getUTCDate())}`;
+}
+
 /** Total por mês do resumo: valor mensal + condomínio e contas fixas + limpeza paga. Só existe com limpeza paga. */
 export function totalMensalDoResumo(d: Pick<DadosResumo, "aluguelMensal" | "outrosCustosMes" | "limpezaEstadia" | "semTotalMes">): number | null {
   if (d.semTotalMes) return null;
@@ -69,7 +91,8 @@ export function resumoContrato(d: DadosResumo): string[] {
     ...(valorPet ? [valorPet] : []),
     ...(d.limpezaEstadia ? [linhaLimpezaResumo(d.limpezaEstadia)] : []),
     ...(total != null ? [`Total por mês: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`] : []),
-    `Registrado em: ${d.criadoEm}`,
+    // pt-BR (complemento do recibo, 19/10): era "2026-10-19". linhasParaHash aceita o texto antigo para a outra parte.
+    `Registrado em: ${registradoEmDoResumo(d.criadoEm)}`,
   ];
 }
 
@@ -115,10 +138,81 @@ export function hashResumo(linhas: string[]): string {
  * resumo depois que alguém já podia ter assinado sem ela; se a outra parte já assinou sem a linha,
  * esta assina o mesmo texto (sem a linha) para as duas partes terem o mesmo hash.
  */
-export function linhasParaHash(linhas: string[], hashDaOutraParte: string | null): string[] {
+export function linhasParaHash(linhas: string[], hashDaOutraParte: string | null, criadoEm?: string | null): string[] {
   if (!hashDaOutraParte || hashResumo(linhas) === hashDaOutraParte) return linhas;
-  const sem = linhas.filter((l) => !l.startsWith("Início da estadia:"));
-  return hashResumo(sem) === hashDaOutraParte ? sem : linhas;
+  return variantesDoResumo(linhas, criadoEm).find((v) => hashResumo(v) === hashDaOutraParte) ?? linhas;
+}
+
+/** Um texto do resumo que alguém pode ter assinado, com o que mudou em relação ao atual. */
+export interface VarianteResumo {
+  linhas: string[];
+  /** "atual" = data como hoje; "iso" = o mesmo dia em AAAA-MM-DD (até 19/10); "utc" = o dia em UTC (até o Prompt 35B). */
+  data: "atual" | "iso" | "utc";
+  /** Assinado antes de a linha "Início da estadia" (F37) entrar no resumo. */
+  semInicio: boolean;
+}
+
+/**
+ * Os textos do resumo que alguém pode ter assinado: o atual; "Registrado em" em ISO (até 19/10); "Registrado em"
+ * com o dia em UTC, em pt-BR e em ISO (até o Prompt 35B, que passou a usar o dia de Brasília); cada um com e
+ * sem a linha "Início da estadia" (F37). A ordem importa: o atual primeiro.
+ */
+export function variantesRotuladas(linhas: string[], criadoEm?: string | null): VarianteResumo[] {
+  const registrado = (texto: string) => linhas.map((l) => (l.startsWith("Registrado em: ") ? `Registrado em: ${texto}` : l));
+  const bases: { linhas: string[]; data: VarianteResumo["data"] }[] = [
+    { linhas, data: "atual" },
+    { linhas: linhas.map((l) => l.replace(/^Registrado em: (\d{2})\/(\d{2})\/(\d{4})$/, "Registrado em: $3-$2-$1")), data: "iso" },
+  ];
+  const utc = criadoEm ? diaUtcAssinado(criadoEm) : null;
+  if (utc) bases.push({ linhas: registrado(dataDoResumo(utc) ?? utc), data: "utc" }, { linhas: registrado(utc), data: "utc" });
+  const vistas = new Set<string>();
+  const out: VarianteResumo[] = [];
+  for (const b of bases) {
+    for (const [v, semInicio] of [[b.linhas, false], [b.linhas.filter((l) => !l.startsWith("Início da estadia:")), true]] as const) {
+      const chave = v.join("\n");
+      if (vistas.has(chave)) continue;
+      vistas.add(chave);
+      // Se a linha não existia, "sem ela" é o próprio texto: não conta como diferença.
+      out.push({ linhas: v, data: b.data, semInicio: semInicio && v.length !== b.linhas.length });
+    }
+  }
+  return out;
+}
+
+export function variantesDoResumo(linhas: string[], criadoEm?: string | null): string[][] {
+  return variantesRotuladas(linhas, criadoEm).map((v) => v.linhas);
+}
+
+/** O hash gravado na assinatura bate com o resumo atual (em qualquer variante já assinada)? */
+export function hashConfereComResumo(linhas: string[], hash: string, criadoEm?: string | null): boolean {
+  return compararHashComResumo(linhas, hash, criadoEm).estado !== "diferente";
+}
+
+export type EstadoHash = "igual" | "variante" | "diferente";
+export interface ComparacaoHash {
+  estado: EstadoHash;
+  /** Texto para o pacote de provas e para o admin. Nunca diz "igual" para dois hashes diferentes. */
+  texto: string;
+}
+
+export const TEXTO_HASH_IGUAL = "igual ao resumo atual";
+export const TEXTO_HASH_DIFERENTE = "diferente do resumo atual";
+
+function textoDaVariante(v: VarianteResumo): string {
+  const data = v.data === "utc" ? "data registrada no formato anterior (UTC)" : v.data === "iso" ? "data registrada no formato anterior" : "";
+  const inicio = v.semInicio ? "assinado antes de a linha “Início da estadia” entrar no resumo" : "";
+  if (data && !inicio) return `confere com o resumo atual — mesmo conteúdo, ${data}`;
+  return `confere com o resumo atual — ${[data, inicio].filter(Boolean).join(" e ")}`;
+}
+
+/**
+ * Três estados (Prompt 35B, QA do Muse): (1) o hash é o do resumo atual → "igual ao resumo atual"; (2) bate com um
+ * texto anterior do mesmo resumo → "confere com o resumo atual — …" dizendo o que mudou; (3) nenhum → "diferente".
+ */
+export function compararHashComResumo(linhas: string[], hash: string, criadoEm?: string | null): ComparacaoHash {
+  if (hashResumo(linhas) === hash) return { estado: "igual", texto: TEXTO_HASH_IGUAL };
+  const v = variantesRotuladas(linhas, criadoEm).find((x) => hashResumo(x.linhas) === hash);
+  return v ? { estado: "variante", texto: textoDaVariante(v) } : { estado: "diferente", texto: TEXTO_HASH_DIFERENTE };
 }
 
 export function motivoNaoPodeAssinar(c: {
@@ -134,22 +228,50 @@ export function motivoNaoPodeAssinar(c: {
   return null;
 }
 
-/** Texto do cartão: o que cada parte vê sobre as assinaturas. */
-export function avisoAssinatura(papel: PapelContrato, a: { proprietario: string | null; inquilino: string | null }): string {
-  const eu = papel === "inquilino" ? a.inquilino : a.proprietario;
-  const outro = papel === "inquilino" ? a.proprietario : a.inquilino;
-  if (eu && outro) return "As duas partes assinaram.";
-  const nomeOutro = papel === "inquilino" ? "proprietário" : "inquilino";
-  if (eu) return `Você já assinou — falta o ${nomeOutro} assinar.`;
-  if (outro) return `O ${nomeOutro} já assinou — falta você assinar.`;
-  return "Nenhuma assinatura ainda.";
+/** Quem assinou: nome curto (nunca contato nem documento) e o momento. Sem nome, o papel. */
+export interface AssinaturaParte {
+  nome?: string | null;
+  em: string | null;
+}
+
+/** "19/10/2026 às 14:32" no horário de Brasília. */
+export function dataHoraAssinatura(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const f = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+  const p = Object.fromEntries(f.formatToParts(d).map((x) => [x.type, x.value]));
+  return `${p.day}/${p.month}/${p.year} às ${p.hour}:${p.minute}`;
+}
+
+/**
+ * Linhas do cartão de assinaturas (#825; jornada de assinatura, 19/10): nome curto + papel + data e hora de cada
+ * assinatura e o que falta — "Ana S. (proprietário) assinou em 19/10/2026 às 14:32 · falta você". Depois das duas
+ * assinaturas, as duas linhas. As mesmas linhas vão no e-mail "As duas partes assinaram".
+ */
+export function linhasAssinatura(papel: PapelContrato, a: { proprietario: AssinaturaParte | string | null; inquilino: AssinaturaParte | string | null }): string[] {
+  const norm = (x: AssinaturaParte | string | null): AssinaturaParte => (typeof x === "string" || x === null ? { em: x } : x);
+  const dono = norm(a.proprietario);
+  const inq = norm(a.inquilino);
+  const linha = (x: AssinaturaParte, rotulo: "proprietário" | "inquilino") =>
+    `${x.nome?.trim() ? `${x.nome.trim()} (${rotulo})` : `O ${rotulo}`} assinou em ${dataHoraAssinatura(x.em as string)}`;
+  if (!dono.em && !inq.em) return ["Nenhuma assinatura ainda."];
+  const linhas: string[] = [];
+  if (dono.em) linhas.push(linha(dono, "proprietário"));
+  if (inq.em) linhas.push(linha(inq, "inquilino"));
+  if (dono.em && inq.em) return linhas;
+  const euAssinei = papel === "inquilino" ? !!inq.em : !!dono.em;
+  const falta = euAssinei ? `falta o ${papel === "inquilino" ? "proprietário" : "inquilino"}` : "falta você";
+  return [`${linhas[0]} · ${falta}`];
+}
+
+/** Texto do cartão: as linhas de linhasAssinatura, uma por linha. */
+export function avisoAssinatura(papel: PapelContrato, a: { proprietario: AssinaturaParte | string | null; inquilino: AssinaturaParte | string | null }): string {
+  return linhasAssinatura(papel, a).join("\n");
 }
 
 /** Assunto do aviso à OUTRA parte depois que alguém assina: se ela já tinha assinado, o contrato está completo. */
 export function assuntoAvisoOutraParte(outraJaAssinou: boolean): string {
-  return outraJaAssinou
-    ? "As duas partes assinaram o contrato"
-    : "O outro lado assinou o contrato — falta a sua assinatura";
+  return outraJaAssinou ? "Contrato assinado pelas duas partes" : "Falta a sua assinatura no contrato";
 }
 
 /** Mesma janela do servidor (migração 0089): contrato encerrado e até 14 dias depois. Nunca em contrato ativo. */

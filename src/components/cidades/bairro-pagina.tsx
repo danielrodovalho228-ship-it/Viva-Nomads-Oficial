@@ -84,8 +84,8 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
             <Link href={`/cidades/${cidade.slug}`} className="hover:text-champagne">{cidade.name}</Link> /{" "}
             <span className="text-white/80">{bairro.nome}</span>
           </nav>
-          <h1 className="mt-4 max-w-3xl font-title text-3xl font-bold md:text-5xl">Imóveis mobiliados em {bairro.nome}</h1>
-          <p className="mt-5 max-w-2xl text-lg text-white/80" data-testid="bairro-resumo">{resumoDoBairro(bairro.nome, cidade.name, total)}</p>
+          <h1 className="mt-4 max-w-3xl font-title text-[28px] font-semibold">Imóveis mobiliados em {bairro.nome}</h1>
+          <p className="mt-4 max-w-2xl text-lg text-white/80" data-testid="bairro-resumo">{resumoDoBairro(bairro.nome, cidade.name, total)}</p>
         </div>
       </section>
 
@@ -93,15 +93,15 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
         <div className="grid gap-8 lg:grid-cols-2">
           {centro && (
             <div data-testid="bairro-mapa">
-              <h2 className="font-title text-2xl font-bold text-ink">Área aproximada</h2>
+              <h2 className="font-title text-2xl font-semibold text-ink">Área aproximada</h2>
               <PropertyMap className="mt-4 aspect-[16/10] w-full" center={centro} markers={[]} approximate />
               <p className="mt-2 text-sm text-muted">Mapa da região. O endereço exato só é liberado depois do aceite.</p>
             </div>
           )}
           {distancias.length > 0 && (
             <div data-testid="bairro-distancias">
-              <h2 className="font-title text-2xl font-bold text-ink">Distâncias</h2>
-              <ul className="mt-4 divide-y divide-sage-200 rounded-2xl border border-sage-200">
+              <h2 className="font-title text-2xl font-semibold text-ink">Distâncias</h2>
+              <ul className="mt-4 divide-y divide-sage-200 rounded-xl border border-sage-200">
                 {distancias.map((d) => (
                   <li key={d.slug} className="flex items-center justify-between gap-4 px-4 py-3">
                     <span className="text-ink">{d.nome}</span>
@@ -114,7 +114,7 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
         </div>
 
         {total === 0 ? (
-          <div className="mt-12 rounded-2xl border border-dashed border-sage-200 p-8 text-center" data-testid="bairro-vazio">
+          <div className="mt-12 rounded-xl border border-dashed border-sage-200 p-8 text-center" data-testid="bairro-vazio">
             <p className="font-semibold text-ink">Ainda não há imóveis mobiliados publicados no {bairro.nome}</p>
             <p className="mx-auto mt-2 max-w-xl text-sm text-muted">
               Salve esta busca e avisamos quando o primeiro imóvel for publicado.
@@ -143,7 +143,7 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
           </div>
         ) : (
           <>
-            <h2 className="mt-12 font-title text-2xl font-bold text-ink">
+            <h2 className="mt-12 font-title text-2xl font-semibold text-ink">
               {total} {total === 1 ? "anúncio" : "anúncios"} em {bairro.nome}
             </h2>
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-testid="bairro-anuncios">
@@ -160,11 +160,11 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
         )}
 
         <div className="mt-12 max-w-3xl" data-testid="bairro-precos">
-          <h2 className="font-title text-2xl font-bold text-ink">Valor médio por mês no bairro</h2>
+          <h2 className="font-title text-2xl font-semibold text-ink">Valor médio por mês no bairro</h2>
           {comMedia.length === 0 ? (
             <p className="mt-2 text-sm text-muted">Dados insuficientes: a média aparece quando houver pelo menos 3 anúncios reais no mesmo grupo.</p>
           ) : (
-            <ul className="mt-4 divide-y divide-sage-200 rounded-2xl border border-sage-200">
+            <ul className="mt-4 divide-y divide-sage-200 rounded-xl border border-sage-200">
               {comMedia.map((g) => (
                 <li key={`${g.bairro}-${g.quartos}`} className="flex items-center justify-between gap-4 px-4 py-3">
                   <span className="text-ink"><span className="text-muted">{rotuloQuartos(g.quartos)}</span></span>
@@ -176,7 +176,7 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
         </div>
 
         <div className="mt-12 max-w-3xl" data-testid="bairro-faq">
-          <h2 className="font-title text-2xl font-bold text-ink">Perguntas frequentes</h2>
+          <h2 className="font-title text-2xl font-semibold text-ink">Perguntas frequentes</h2>
           <dl className="mt-4 space-y-4">
             {faq.map((f) => (
               <div key={f.q}>

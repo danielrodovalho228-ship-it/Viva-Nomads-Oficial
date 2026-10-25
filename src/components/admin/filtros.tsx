@@ -15,11 +15,14 @@ export function FiltrosAdmin({
   periodo,
   cidade,
   cidades,
+  manter,
 }: {
   base: string;
   periodo: Periodo;
   cidade: string | null;
   cidades: string[];
+  /** Outros filtros da página que o período e a cidade mantêm (ex.: o recorte Real · Teste · Todos). */
+  manter?: Record<string, string | null>;
 }) {
   const router = useRouter();
   const [de, setDe] = useState(periodo.inicio);
@@ -32,6 +35,7 @@ export function FiltrosAdmin({
       de: periodo.id === "custom" ? periodo.inicio : null,
       ate: periodo.id === "custom" ? periodo.fim : null,
       cidade,
+      ...manter,
       ...extra,
     };
     for (const [k, v] of Object.entries(valores)) if (v) p.set(k, v);
@@ -40,15 +44,15 @@ export function FiltrosAdmin({
   }
 
   return (
-    <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-sage-200 bg-white p-3 sm:flex-row sm:flex-wrap sm:items-end sm:p-4">
-      <div role="group" aria-label="Período" className="flex flex-wrap gap-1.5">
+    <div className="mb-6 flex flex-col gap-3 rounded-xl border border-sage-200 bg-white p-3 sm:flex-row sm:flex-wrap sm:items-end sm:p-4">
+      <div role="group" aria-label="Período" className="flex flex-wrap gap-2">
         {PERIODOS.filter((p) => p.id !== "custom").map((p) => (
           <Link
             key={p.id}
             href={url({ periodo: p.id, de: null, ate: null })}
             aria-current={periodo.id === p.id ? "true" : undefined}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-sm",
+              "rounded-lg px-3 py-2 text-sm",
               periodo.id === p.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest"
             )}
           >
@@ -65,16 +69,16 @@ export function FiltrosAdmin({
       >
         <label className="text-xs text-muted">
           De
-          <input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="mt-0.5 block rounded-lg border border-line px-2 py-1.5 text-sm text-ink" />
+          <input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="mt-1 block rounded-lg border border-line px-2 py-2 text-sm text-ink" />
         </label>
         <label className="text-xs text-muted">
           Até
-          <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="mt-0.5 block rounded-lg border border-line px-2 py-1.5 text-sm text-ink" />
+          <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="mt-1 block rounded-lg border border-line px-2 py-2 text-sm text-ink" />
         </label>
         <button
           type="submit"
           className={cn(
-            "rounded-lg px-3 py-1.5 text-sm",
+            "rounded-lg px-3 py-2 text-sm",
             periodo.id === "custom" ? "bg-forest text-white" : "border border-line text-ink hover:border-forest"
           )}
         >
@@ -86,7 +90,7 @@ export function FiltrosAdmin({
         <select
           value={cidade ?? ""}
           onChange={(e) => router.push(url({ cidade: e.target.value || null }))}
-          className="mt-0.5 block w-full rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink sm:w-48"
+          className="mt-1 block w-full rounded-lg border border-line bg-white px-2 py-2 text-sm text-ink sm:w-48"
         >
           <option value="">Todas as cidades</option>
           {cidade && !cidades.includes(cidade) && <option value={cidade}>{cidade}</option>}

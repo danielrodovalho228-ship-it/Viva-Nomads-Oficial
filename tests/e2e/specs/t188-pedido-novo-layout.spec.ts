@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /*
+  Rodada da vigia 24/10 (Pista C): confirmação no lab-crítico do L-57 corrigido no #1284 (campo "Outro local" com 48 px).
   T188 — /pedidos/novo no layout do prompt 12, a 390 e 1280 px, sem login.
   1280: imagem à esquerda (~45%) e formulário à direita começando até 120 px abaixo do header, sem cartão
         centralizado (sem sombra nem borda em volta do formulário); campos todos com 48 px.
@@ -48,9 +49,9 @@ test("1280px — imagem à esquerda, formulário no topo à direita, sem cartão
   expect(caixa.sombra).toBe("none");
   expect(caixa.borda).toBe("0px");
 
-  // Os três grupos, nessa ordem.
+  // Os grupos, nessa ordem (Prompt 30: "O imóvel" com quartos e necessidades; "Valor e motivo" com a faixa de valor).
   const grupos = await page.locator("form legend").allInnerTexts();
-  expect(grupos.map((g) => g.trim().toUpperCase())).toEqual(["ONDE E QUANDO", "QUEM VAI MORAR", "ORÇAMENTO E MOTIVO"]);
+  expect(grupos.map((g) => g.trim().toUpperCase())).toEqual(["ONDE E QUANDO", "TRABALHO OU ESTUDO", "QUEM VAI MORAR", "O IMÓVEL", "VALOR E MOTIVO"]);
 
   const alturas = await alturasDosCampos(page);
   expect(alturas.length).toBeGreaterThanOrEqual(7);
@@ -138,9 +139,10 @@ test("390px — faixa de 200 px, autocomplete de cidade, pessoas, R$, contador e
   await page.getByRole("button", { name: "Publicar pedido" }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: `${SAIDA}/t188-rodape-390.png`, fullPage: false });
 
-  // Publicar sem login → login por código, voltando para o pedido com o que foi preenchido.
+  // Publicar sem login → entrada única com o porquê (Prompt 49), voltando para o pedido com o que foi preenchido.
   await page.getByRole("button", { name: "Publicar pedido" }).click();
-  await page.waitForURL(/\/auth\?codigo=1&redirect=/, { timeout: 15_000 });
+  await page.waitForURL(/\/auth\?motivo=pedido&redirect=/, { timeout: 15_000 });
+  await expect(page.getByTestId("entrada-motivo")).toHaveText("Para enviar seu pedido, entre com seu e-mail.");
   const destino = new URL(page.url()).searchParams.get("redirect")!;
   expect(destino).toMatch(/^\/pedidos\/novo\?/);
   const volta = new URLSearchParams(destino.split("?")[1]);

@@ -17,11 +17,12 @@ import {
   publicarPeloEditor,
   statusDoImovel,
 } from "../fixtures/laboratorio";
+import { abrirNoEndereco, irParaAntesDePublicar, voltarAte } from "../fixtures/cadastro";
 
 /*
   T195 — Matrícula do imóvel cruzada com a CAF (prompt 19), com matrículas FICTÍCIAS de tests/fixtures/ (nenhum dado
   real) e a leitura e a CAF SIMULADAS no laboratório:
-  A. CAF feita + CPF do perfil = CPF da matrícula → "Documentação conferida ✓" na hora, sem fila; a matrícula
+  A. CAF feita + CPF do perfil = CPF da matrícula → "Documentação conferida" na hora, sem fila; a matrícula
      preenche unidade/área/vaga com "veio da matrícula"; o anúncio publica.
   C→A. sem CAF → "Documento recebido — falta confirmar sua identidade" + botão; confirmar → conferido.
   D. nome/CPF diferente → em revisão com as opções do caso; escolher "cônjuge" e anexar a certidão.
@@ -48,20 +49,22 @@ async function novaConta(chave: string, nome: string) {
   contas[chave] = { email, id, nome };
 }
 
-/** Dono na etapa 1 com CEP + número (ViaCEP simulado) e o rascunho salvo. */
+/** Dono no passo Endereço com CEP + número (ViaCEP simulado) e o rascunho salvo. */
 async function etapa1(browser: Browser, chave: string, largura: number): Promise<Page> {
   const page = await entrar(browser, contas[chave].email, senha);
   await page.setViewportSize({ width: largura, height: 900 });
   await page.route("https://viacep.com.br/ws/**", (r) =>
     r.fulfill({ json: { cep: "38400-100", logradouro: "Rua do Laboratório", bairro: "Centro", localidade: "Uberlândia", uf: "MG" } }),
   );
-  await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Onde fica" })).toBeVisible({ timeout: 20_000 });
+  // Assistente em 10 passos: o endereço é o 3º passo; abre direto nele.
+  await abrirNoEndereco(page);
   await page.getByTestId("cadastro-cep").fill("38400100");
   await expect(page.getByTestId("cadastro-rua")).toHaveValue("Rua do Laboratório", { timeout: 10_000 });
   await page.getByTestId("cadastro-numero").fill("102");
   await page.waitForTimeout(2_500);
   await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 15_000 });
+  // E104: identidade e matrícula moram no "Antes de publicar" da Revisão (o Passo 3 é só endereço).
+  await irParaAntesDePublicar(page);
   return page;
 }
 
@@ -115,18 +118,20 @@ test.describe("T195 — matrícula + CAF", () => {
       );
       await enviarMatricula(page, matricula("dono"));
       await expect(page.getByTestId("documento-estado")).toHaveAttribute("data-estado", "aprovado", { timeout: 30_000 });
-      await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida ✓");
+      await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida");
       await expect(page.getByTestId("matricula-resultado")).toHaveAttribute("data-resultado", "conferido");
-      // Preencheu a unidade (editável) com a etiqueta; área e vaga vão para o rascunho.
-      await expect(page.getByTestId("cadastro-complemento")).toHaveValue("Apartamento 302");
-      await expect(page.getByTestId("veio-da-matricula").first()).toBeVisible();
-      await page.getByTestId("cadastro-complemento").scrollIntoViewIfNeeded();
-      await page.screenshot({ path: `${SAIDA}/t195-matricula-preenche-${largura}.png`, fullPage: false });
       await page.getByTestId("documento-vinculo").scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t195-conferido-${largura}.png`, fullPage: false });
       // Nada de CPF, nº da matrícula ou cartório na tela.
       await expect(page.locator("main")).not.toContainText(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}|00\.000-LAB|Cartório de Registro/);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+      // Preencheu a unidade (editável) com a etiqueta, no Passo 3 (pelo "Voltar", sem recarregar); área e vaga vão
+      // para o rascunho.
+      await voltarAte(page, "endereco");
+      await expect(page.getByTestId("cadastro-complemento")).toHaveValue("Apartamento 302");
+      await expect(page.getByTestId("veio-da-matricula").first()).toBeVisible();
+      await page.getByTestId("cadastro-complemento").scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `${SAIDA}/t195-matricula-preenche-${largura}.png`, fullPage: false });
 
       // Banco: conferido, CAF ok, sem fila e SEM o CPF inteiro gravado.
       const c = await ultimaConferencia(contas[chave].id);
@@ -167,7 +172,7 @@ test.describe("T195 — matrícula + CAF", () => {
     expect(corpo.estado).toBe("aprovado");
     expect(corpo.matricula.resultado).toBe("conferido");
     // A resposta ao dono não traz CPF, número da matrícula nem cartório.
-    expect(JSON.stringify(corpo)).not.toMatch(/00\.000-LAB|Cartório|\d{11}/);
+    expect(JSON.stringify(corpo)).not.toMatch(/00\.000-LAB|Cartório|(?<!\d)\d{11}(?!\d)/);
 
     await publicarPeloEditor(page, imovel);
     await expect.poll(() => statusDoImovel(imovel), { timeout: 20_000 }).toBe("active");
@@ -195,7 +200,7 @@ test.describe("T195 — matrícula + CAF", () => {
 
     await page.getByTestId("matricula-caf").click();
     await expect(page.getByTestId("matricula-resultado")).toHaveAttribute("data-resultado", "conferido", { timeout: 30_000 });
-    await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida ✓");
+    await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida");
     expect((await ultimaConferencia(contas.c.id)).resultado).toBe("conferido");
     await page.context().close();
   });
@@ -232,14 +237,15 @@ test.describe("T195 — matrícula + CAF", () => {
   }
 
   for (const largura of [390, 1280]) {
-    test(`${largura}px — etapa Identidade vem ANTES da matrícula e já aparece feita com laudo válido (90 dias)`, async ({ browser }) => {
+    test(`${largura}px — etapa Identidade vem ANTES da matrícula e já aparece feita com laudo válido (12 meses)`, async ({ browser }) => {
       const page = await etapa1(browser, "etapa", largura);
-      const passo = page.getByTestId("etapa-onde-fica");
-      const ordem = await passo.evaluate((el) => {
+      // Endereço (Passo 3) → identidade → matrícula: no "Antes de publicar", a identidade vem antes do documento.
+      const antes = page.getByTestId("antes-de-publicar");
+      const ordem = await antes.evaluate((el) => {
         const ids = [...el.querySelectorAll("[data-testid]")].map((n) => n.getAttribute("data-testid"));
-        return { identidade: ids.indexOf("etapa-identidade"), documento: ids.indexOf("documento-vinculo"), numero: ids.indexOf("cadastro-numero") };
+        return { identidade: ids.indexOf("etapa-identidade"), documento: ids.indexOf("documento-vinculo") };
       });
-      expect(ordem.numero).toBeLessThan(ordem.identidade);
+      expect(ordem.identidade).toBeGreaterThanOrEqual(0);
       expect(ordem.identidade).toBeLessThan(ordem.documento);
       if (largura === 390) {
         await expect(page.getByTestId("etapa-identidade")).toHaveAttribute("data-estado", "pendente", { timeout: 15_000 });

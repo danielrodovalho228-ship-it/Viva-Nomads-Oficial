@@ -1,215 +1,289 @@
 import Link from "next/link";
-import { Camera, Handshake, Inbox, ClipboardList } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
-import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
-import { TIPOS_PARCEIRO } from "@/lib/parceiros/interesse";
-import { StatusInteresse } from "./status-interesse";
-import { buttonClasses } from "@/components/ui/button";
+import { SeloTeste } from "@/components/admin/selo-teste";
+import { Camera, Handshake } from "lucide-react";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
+import { PageTitle, Panel, EmptyState, FilaVazia } from "@/components/dashboard/primitives";
+import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
+import { buttonClasses, ButtonLink } from "@/components/ui/button";
+import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
+import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
+import { lerParceiroGeral, rotuloCategoria } from "@/lib/parceiros/regras";
+import { FORMULAS_CARTAO_PARCEIRO, numerosCartaoParceiro } from "@/lib/cartoes/compartilhar";
+import { FichaSolicitacao, LinhaAprovada, LinhaAtiva, ParceiroGeralForm, SuporteForm, type Ficha } from "./fichas";
 
 export const metadata = { title: "Parceiros — Admin" };
 
-const FILTROS = [
-  { valor: "novo", rotulo: "Novos" },
-  { valor: "contatado", rotulo: "Contatados" },
-  { valor: "arquivado", rotulo: "Arquivados" },
-  { valor: "todos", rotulo: "Todos" },
+const ABAS = [
+  { valor: "pendentes", rotulo: "Pendentes" },
+  { valor: "aprovadas", rotulo: "Aprovadas" },
+  { valor: "ativas", rotulo: "Ativas" },
+  { valor: "recusadas", rotulo: "Recusadas" },
 ] as const;
+type Aba = (typeof ABAS)[number]["valor"];
 
-const rotuloTipo = (t: string) => TIPOS_PARCEIRO.find((x) => x.valor === t)?.rotulo.split(" (")[0] ?? t;
-const dataBR = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+const ROTULO_PAPEL: Record<string, string> = { owner: "Proprietário", tenant: "Inquilino", admin: "Admin" };
 
 /**
- * Admin → Parceiros: central da rede de parceiros (números, interessados por tipo e status, atalho para fotógrafos).
- * Segue o padrão das telas do admin (PageTitle + StatCard + Panel, largura cheia da casca). O layout de /admin exige admin;
- * a RLS barra de novo no banco.
+ * Admin → Parceiros (Prompt 31a, item 3): pedidos de parceria em abas (Pendentes · Aprovadas · Ativas · Recusadas),
+ * ficha com checklist, aprovar (link de ativação por e-mail), recusar (motivo obrigatório), reenviar ativação e
+ * suspender. Tudo grava pelo servidor com admin + 2FA e entra no registro de moderação. O layout de /admin exige admin.
  */
-export default async function AdminParceirosPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function AdminParceirosPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const filtro = (FILTROS.some((f) => f.valor === sp.status) ? sp.status : "novo") as (typeof FILTROS)[number]["valor"];
-
-  const supabase = await createClient();
-  if (!supabase) {
+  const aba = (ABAS.some((a) => a.valor === sp.aba) ? sp.aba : "pendentes") as Aba;
+  const admin = createAdminClient();
+  if (!admin) {
     return (
       <>
         <PageTitle title="Parceiros" subtitle="Rede de parceiros da Viva." />
-        <EmptyState icon={Handshake} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." />
+        <EmptyState icon={Handshake} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
   }
 
-  let consulta = supabase
-    .from("parceiros_interesse")
-    .select("id, tipo, nome, cidade, uf, whatsapp, email, site, status, criado_em")
-    .order("criado_em", { ascending: false })
-    .limit(200);
-  if (filtro !== "todos") consulta = consulta.eq("status", filtro);
-
-  const [lista, todos, fotAprov, fotPend, pedAbertos, avisos] = await Promise.all([
-    consulta,
-    supabase.from("parceiros_interesse").select("tipo, status"),
-    supabase.from("fotografos").select("id", { count: "exact", head: true }).eq("aprovado", true),
-    supabase.from("fotografos").select("id", { count: "exact", head: true }).eq("aprovado", false),
-    supabase.from("fotografo_pedidos").select("id", { count: "exact", head: true }).in("status", ["enviado", "aceito"]),
-    // QA do Muse (0162): quem pediu aviso de fotógrafo parceiro, por cidade — onde recrutar primeiro.
-    supabase.from("interesse_fotografo_cidade").select("uf, chave, cidade").is("avisado_em", null).limit(2000),
+  const COLS = "id, user_id, email, nome, tipo_pessoa, documento, telefone, categorias, cidades, portfolio_url, descricao, dados_categoria, status, motivo_recusa, checklist, origem, token_expira_em, novo_link_pedido_em, decidido_em, criado_em";
+  const statusDaAba: Record<Aba, string[]> = { pendentes: ["pendente", "aguardando_email"], aprovadas: ["aprovada"], ativas: ["ativada"], recusadas: ["recusada"] };
+  const [sols, contagem, parceiros, geralLinha, avisos] = await Promise.all([
+    aba === "ativas" ? Promise.resolve({ data: [] as Record<string, unknown>[] }) : admin.from("parceiro_solicitacoes").select(COLS).in("status", statusDaAba[aba]).not("categorias", "cs", "{vistoria}").order("criado_em", { ascending: aba === "pendentes" }).limit(200),
+    // Correção 62-B3: o pedido do avaliador credenciado é decidido em /admin/avaliadores (sem duplicidade aqui).
+    admin.from("parceiro_solicitacoes").select("status").not("categorias", "cs", "{vistoria}"),
+    aba === "ativas" ? admin.from("parceiros").select("id, user_id, slug, nome_publico, categorias, cidades, status, publicado_em").order("criado_em", { ascending: false }).limit(300) : Promise.resolve({ data: [] as Record<string, unknown>[] }),
+    admin.from("chaves_plataforma").select("ligada, valor").eq("chave", "PARCEIRO_GERAL_FALLBACK").maybeSingle(),
+    admin.from("interesse_fotografo_cidade").select("user_id, uf, chave, cidade, categoria, criado_em").is("avisado_em", null).order("criado_em", { ascending: false }).limit(2000),
   ]);
+  // Fila vazia (Prompt 48): "Nada pendente" com a data da última decisão sobre um pedido de parceria.
+  const ultimaDecisaoParceria =
+    aba === "pendentes"
+      ? (((await admin.from("parceiro_solicitacoes").select("decidido_em").not("decidido_em", "is", null).order("decidido_em", { ascending: false }).limit(1)).data?.[0]?.decidido_em as string | null | undefined) ?? null)
+      : null;
+  const conta = (s: string[]) => (contagem.data ?? []).filter((r) => s.includes(r.status as string)).length;
+
+  // Cartão do parceiro (31c): cartões gerados e pedidos vindos de cartão; contas de teste fora dos totais.
+  const [cartoesP, pedidosP, donosP, testesP] = await Promise.all([
+    admin.from("cartoes_compartilhaveis").select("parceiro_id, usuario_id").eq("tipo", "partnercard").limit(5000),
+    admin.from("parceiro_pedidos").select("parceiro_id, cliente_id").eq("ref_tipo", "partnercard").limit(10000),
+    admin.from("parceiros").select("id, user_id").limit(5000),
+    admin.from("profiles").select("id").eq("is_teste", true).limit(5000),
+  ]);
+  const numCartao = numerosCartaoParceiro({
+    cartoes: (cartoesP.data ?? []) as { parceiro_id: string | null; usuario_id: string }[],
+    pedidos: (pedidosP.data ?? []) as { parceiro_id: string; cliente_id: string }[],
+    donoDoParceiro: new Map(((donosP.data ?? []) as { id: string; user_id: string }[]).map((p) => [p.id, p.user_id])),
+    contasTeste: new Set(((testesP.data ?? []) as { id: string }[]).map((p) => p.id)),
+  });
+  const { count: ativos } = await admin.from("parceiros").select("id", { count: "exact", head: true });
+
+  const lista = (sols.data ?? []) as Record<string, unknown>[];
+  const ids = [...new Set([...lista.map((s) => s.user_id as string | null), ...((parceiros.data ?? []) as Record<string, unknown>[]).map((p) => p.user_id as string)].filter((x): x is string => !!x))];
+  const avisosLinhas = (avisos.data ?? []) as { user_id: string; uf: string; chave: string; cidade: string; categoria: string; criado_em: string }[];
+  const todosIds = [...new Set([...ids, ...avisosLinhas.map((a) => a.user_id)])];
+  const [identidades, { data: perfis }] = await Promise.all([
+    estadosIdentidade(admin, ids),
+    todosIds.length ? admin.from("profiles").select("id, full_name, role, is_teste").in("id", todosIds) : Promise.resolve({ data: [] }),
+  ]);
+  const perfil = new Map(((perfis ?? []) as { id: string; full_name: string | null; role: string | null; is_teste: boolean | null }[]).map((p) => [p.id, p]));
+
+  const agora = new Date().getTime();
+  const fichas: Ficha[] = lista.map((s) => {
+    const uid = (s.user_id as string | null) ?? null;
+    const id = uid ? identidades.get(uid) : null;
+    return {
+      id: s.id as string,
+      nome: s.nome as string,
+      email: (s.email as string | null) ?? null,
+      tipoPessoa: (s.tipo_pessoa as string | null) ?? null,
+      documento: (s.documento as string | null) ?? null,
+      telefone: (s.telefone as string | null) ?? null,
+      categorias: (s.categorias as string[]) ?? [],
+      cidades: (s.cidades as string[]) ?? [],
+      portfolioUrl: (s.portfolio_url as string | null) ?? null,
+      descricao: (s.descricao as string | null) ?? null,
+      dadosCategoria: (s.dados_categoria as Record<string, string>) ?? {},
+      status: s.status as string,
+      motivoRecusa: (s.motivo_recusa as string | null) ?? null,
+      checklist: (s.checklist as Record<string, unknown>) ?? {},
+      origem: s.origem as string,
+      criadoEm: s.criado_em as string,
+      tokenExpiraEm: (s.token_expira_em as string | null) ?? null,
+      novoLinkPedidoEm: (s.novo_link_pedido_em as string | null) ?? null,
+      linkVencido: !s.token_expira_em || Date.parse(s.token_expira_em as string) <= agora,
+      identidade: id ? { estado: id.estado, texto: id.texto } : null,
+      teste: uid ? perfil.get(uid)?.is_teste === true : false,
+    };
+  });
+  const geral = lerParceiroGeral(geralLinha.data?.valor, geralLinha.data?.ligada === true);
+
   const avisosPorCidade = Object.values(
-    ((avisos.data ?? []) as { uf: string; chave: string; cidade: string }[]).reduce<Record<string, { cidade: string; uf: string; total: number }>>((acc, a) => {
-      const k = `${a.uf}|${a.chave}`;
-      acc[k] = { cidade: a.cidade, uf: a.uf, total: (acc[k]?.total ?? 0) + 1 };
+    avisosLinhas.reduce<Record<string, { cidade: string; uf: string; categoria: string; total: number }>>((acc, a) => {
+      const k = `${a.uf}|${a.chave}|${a.categoria}`;
+      acc[k] = { cidade: a.cidade, uf: a.uf, categoria: a.categoria, total: (acc[k]?.total ?? 0) + 1 };
       return acc;
     }, {}),
   ).sort((a, b) => b.total - a.total);
-
-  const erroLeitura = Boolean(lista.error || todos.error);
-  const interesses = lista.data ?? [];
-  const base = todos.data ?? [];
-  const novos = base.filter((r) => r.status === "novo").length;
-  const porTipo = TIPOS_PARCEIRO.map((t) => ({
-    ...t,
-    total: base.filter((r) => r.tipo === t.valor).length,
-    novos: base.filter((r) => r.tipo === t.valor && r.status === "novo").length,
-  }));
-  const n = (c: number | null) => (c ?? 0).toString();
 
   return (
     <>
       <PageTitle
         title="Parceiros"
-        subtitle="Interessados, fotógrafos e pedidos da rede de parceiros."
+        subtitle="Pedidos de parceria, páginas ativas e avisos por cidade."
         action={
-          <Link href="/admin/fotografos" className={buttonClasses({ size: "sm" })}>
-            <Camera className="h-4 w-4" /> Fotógrafos
-          </Link>
+          <span className="flex flex-wrap gap-2">
+            <Link href="/admin/parceiros/pedidos" className={buttonClasses({ variant: "secondary", size: "sm" })} data-testid="admin-parceiros-pedidos-link">
+              Pedidos de serviço
+            </Link>
+            <Link href="/admin/fotografos" className={buttonClasses({ variant: "secondary", size: "sm" })}>
+              <Camera className="h-4 w-4" /> Fotógrafos
+            </Link>
+          </span>
         }
       />
 
-      {erroLeitura && (
-        <p role="alert" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Não foi possível ler todos os dados agora. Tente de novo em instantes.
-        </p>
-      )}
+      <NumeroHeroi rotulo="Pedidos de parceria pendentes" valor={conta(["pendente", "aguardando_email"])} href="/admin/parceiros?aba=pendentes" />
+      <ListaNumeros
+        className="mb-6"
+        itens={[
+          { rotulo: "Aprovadas (sem ativar)", valor: conta(["aprovada"]), href: "/admin/parceiros?aba=aprovadas" },
+          { rotulo: "Parceiros ativos", valor: ativos ?? 0, href: "/admin/parceiros?aba=ativas" },
+          { rotulo: "Recusadas", valor: conta(["recusada"]), href: "/admin/parceiros?aba=recusadas" },
+        ]}
+      />
 
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Interessados novos" value={novos} icon={Inbox} href="/admin/parceiros?status=novo" />
-        <StatCard label="Fotógrafos aprovados" value={n(fotAprov.count)} icon={Camera} href="/admin/fotografos" />
-        <StatCard label="Fotógrafos em análise" value={n(fotPend.count)} icon={Handshake} href="/admin/fotografos" />
-        <StatCard label="Pedidos de foto abertos" value={n(pedAbertos.count)} icon={ClipboardList} href="/admin/fotografos#pedidos" />
-      </div>
+      <Panel title="Cartão do parceiro" className="mb-6">
+        <dl className="grid grid-cols-2 gap-3 text-sm" data-testid="admin-cartao-parceiro">
+          <div className="rounded-lg bg-surface-2 px-3 py-2">
+            <dt className="text-muted">Cartões gerados</dt>
+            <dd className="font-title text-2xl font-semibold text-ink" data-testid="admin-cartoes-gerados">
+              {numCartao.total.gerados}
+            </dd>
+          </div>
+          <div className="rounded-lg bg-surface-2 px-3 py-2">
+            <dt className="text-muted">Pedidos vindos de cartão</dt>
+            <dd className="font-title text-2xl font-semibold text-ink" data-testid="admin-pedidos-cartao">
+              {numCartao.total.pedidos}
+            </dd>
+          </div>
+        </dl>
+        <ul className="mt-3 space-y-1 text-xs text-muted" data-testid="admin-cartao-formula">
+          <li>{FORMULAS_CARTAO_PARCEIRO.gerados}</li>
+          <li>{FORMULAS_CARTAO_PARCEIRO.pedidos}</li>
+          <li>{FORMULAS_CARTAO_PARCEIRO.teste} Por parceiro (aba Ativas), os números aparecem na linha de cada um.</li>
+        </ul>
+      </Panel>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        <Panel title="Por tipo de parceria" className="lg:col-span-1">
-          <ul className="divide-y divide-sage-100">
-            {porTipo.map((t) => (
-              <li key={t.valor} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                <span className="min-w-0 truncate text-ink">{t.rotulo.split(" (")[0]}</span>
-                <span className="shrink-0 text-muted">
-                  <strong className="text-forest">{t.total}</strong>
-                  {t.novos > 0 && <span className="ml-2 rounded-full bg-lime-100 px-2 py-0.5 text-xs font-semibold text-forest">{t.novos} novo{t.novos > 1 ? "s" : ""}</span>}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-3 text-xs text-muted">Fotógrafos estão abertos. Serviços e seguros ficam em lista de espera por cidade.</p>
-        </Panel>
+      <nav aria-label="Situação dos pedidos" className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="admin-parceiros-abas">
+        {ABAS.map((a) => (
+          <Link
+            key={a.valor}
+            href={`/admin/parceiros?aba=${a.valor}`}
+            aria-current={aba === a.valor ? "page" : undefined}
+            className={`flex h-11 items-center justify-center rounded-lg border text-sm font-semibold ${aba === a.valor ? "border-ink bg-white text-forest" : "border-line bg-white text-ink"}`}
+            data-testid={`admin-parceiros-aba-${a.valor}`}
+          >
+            {a.rotulo}
+          </Link>
+        ))}
+      </nav>
 
-        <Panel title="Interessados" className="lg:col-span-2">
-          <nav aria-label="Filtrar por status" className="mb-4 flex flex-wrap gap-1.5">
-            {FILTROS.map((f) => (
-              <Link
-                key={f.valor}
-                href={`/admin/parceiros?status=${f.valor}`}
-                aria-current={filtro === f.valor ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-xl border px-4 text-sm font-medium ${
-                  filtro === f.valor ? "border-forest bg-forest text-white" : "border-sage-200 bg-white text-ink hover:border-sage"
-                }`}
-              >
-                {f.rotulo}
-              </Link>
-            ))}
-          </nav>
-
-          {interesses.length === 0 ? (
-            <EmptyState icon={Inbox} title="Nada por aqui" text="Nenhum interesse de parceria com esse status. Quem preencher “Quero ser parceiro” em /parceiros aparece aqui." />
+      <div className="space-y-4" data-testid={`admin-parceiros-lista-${aba}`}>
+        {aba === "ativas" ? (
+          ((parceiros.data ?? []) as Record<string, unknown>[]).length === 0 ? (
+            <EmptyState icon={Handshake} title="Nenhum parceiro ativo ainda" text="Quem tem a parceria aprovada e ativa a página aparece aqui." action={<ButtonLink href="/admin/parceiros?aba=pendentes" variant="secondary" size="sm">Ver pedidos de parceria</ButtonLink>} />
           ) : (
-            <>
-              {/* Celular e app: cartões */}
-              <ul className="space-y-3 md:hidden">
-                {interesses.map((p) => (
-                  <li key={p.id} className="rounded-xl border border-sage-200 p-3 text-sm">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-ink">{p.nome}</p>
-                        <p className="text-muted">{rotuloTipo(p.tipo)} · {p.cidade}/{p.uf}</p>
-                      </div>
-                      <span className="shrink-0 text-xs text-muted">{dataBR(p.criado_em)}</span>
-                    </div>
-                    <p className="mt-2 break-all text-ink">{p.whatsapp ?? p.email}</p>
-                    {p.site && (
-                      <a href={p.site} target="_blank" rel="noopener noreferrer nofollow" className="mt-1 inline-block text-forest underline">
-                        Ver portfólio/site
-                      </a>
-                    )}
-                    <div className="mt-3"><StatusInteresse id={p.id} status={p.status} /></div>
-                  </li>
+            <Panel>
+              <ul className="divide-y divide-line">
+                {((parceiros.data ?? []) as Record<string, unknown>[]).map((p) => (
+                  <LinhaAtiva
+                    key={p.id as string}
+                    p={{
+                      id: p.id as string,
+                      slug: p.slug as string,
+                      nome: p.nome_publico as string,
+                      categorias: ((p.categorias as string[]) ?? []).map(rotuloCategoria),
+                      cidades: (p.cidades as string[]) ?? [],
+                      status: p.status as string,
+                      teste: perfil.get(p.user_id as string)?.is_teste === true,
+                      identidade: identidades.get(p.user_id as string)?.texto ?? null,
+                      cartao: numCartao.porParceiro.get(p.id as string) ?? { gerados: 0, pedidos: 0 },
+                    }}
+                  />
                 ))}
               </ul>
-              {/* Computador: tabela */}
-              <div className="hidden overflow-x-auto md:block">
-                <table className="w-full text-left text-sm">
-                  <thead className="border-b border-sage-200 text-xs uppercase tracking-wide text-muted">
-                    <tr>
-                      <th className="py-2 pr-3 font-medium">Nome</th>
-                      <th className="py-2 pr-3 font-medium">Tipo</th>
-                      <th className="py-2 pr-3 font-medium">Cidade</th>
-                      <th className="py-2 pr-3 font-medium">Contato</th>
-                      <th className="py-2 pr-3 font-medium">Data</th>
-                      <th className="py-2 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-sage-100">
-                    {interesses.map((p) => (
-                      <tr key={p.id} className="align-middle">
-                        <td className="py-2.5 pr-3 font-semibold text-ink">
-                          {p.nome}
-                          {p.site && (
-                            <a href={p.site} target="_blank" rel="noopener noreferrer nofollow" className="ml-2 text-xs font-normal text-forest underline">site</a>
-                          )}
-                        </td>
-                        <td className="py-2.5 pr-3 text-muted">{rotuloTipo(p.tipo)}</td>
-                        <td className="py-2.5 pr-3 text-muted">{p.cidade}/{p.uf}</td>
-                        <td className="py-2.5 pr-3 break-all text-ink">{p.whatsapp ?? p.email}</td>
-                        <td className="py-2.5 pr-3 text-muted">{dataBR(p.criado_em)}</td>
-                        <td className="py-2.5"><StatusInteresse id={p.id} status={p.status} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+            </Panel>
+          )
+        ) : fichas.length === 0 && aba === "pendentes" ? (
+          <FilaVazia ultimaDecisao={ultimaDecisaoParceria} />
+        ) : fichas.length === 0 ? (
+          <EmptyState icon={Handshake} title="Nada por aqui" text="Nenhum pedido nesta situação." action={<ButtonLink href="/admin/parceiros?aba=pendentes" variant="secondary" size="sm">Ver os pendentes</ButtonLink>} />
+        ) : aba === "aprovadas" ? (
+          <Panel>
+            <ul className="divide-y divide-line">
+              {fichas.map((f) => (
+                <LinhaAprovada key={f.id} f={f} />
+              ))}
+            </ul>
+          </Panel>
+        ) : (
+          fichas.map((f) => <FichaSolicitacao key={f.id} f={f} />)
+        )}
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <Panel title="Abrir pedido por alguém (suporte)">
+          <SuporteForm />
+        </Panel>
+        <Panel title="Cartão do parceiro geral (busca vazia)">
+          <ParceiroGeralForm inicial={geral} />
         </Panel>
       </div>
-      <Panel title="Pedidos de aviso de fotógrafo por cidade" className="mt-6">
+
+      <Panel title="Chaves" className="mt-4">
+        <p className="text-sm text-ink" data-testid="chave-pagamento-parceiros">
+          PAGAMENTO_PARCEIROS_ATIVO: <strong>{PAGAMENTO_PARCEIROS_ATIVO ? "ligada" : "desligada"}</strong>. Fica na variável NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO da Vercel (só o Daniel liga, quando houver o provedor de
+          pagamento com divisão na origem). Desligada, as telas mostram &quot;Pagamento pela plataforma em breve.&quot;
+        </p>
+      </Panel>
+
+      <Panel title="Pedidos de aviso por cidade" className="mt-4">
         {avisosPorCidade.length === 0 ? (
           <p className="text-sm text-muted">Ninguém pediu aviso ainda.</p>
         ) : (
-          <ul className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2" data-testid="avisos-fotografo-cidade">
-            {avisosPorCidade.map((a) => (
-              <li key={`${a.uf}-${a.cidade}`} className="flex justify-between rounded-lg bg-surface-2 px-3 py-2">
-                <span>
-                  {a.cidade}/{a.uf}
-                </span>
-                <strong>{a.total}</strong>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2" data-testid="avisos-fotografo-cidade">
+              {avisosPorCidade.map((a) => (
+                <li key={`${a.uf}-${a.cidade}-${a.categoria}`} className="flex justify-between rounded-lg bg-surface-2 px-3 py-2">
+                  <span>
+                    {a.cidade}/{a.uf} · {rotuloCategoria(a.categoria)}
+                  </span>
+                  <strong>{a.total}</strong>
+                </li>
+              ))}
+            </ul>
+            <ul className="mt-4 divide-y divide-line text-sm" data-testid="avisos-fotografo-lista">
+              {avisosLinhas.map((a) => {
+                const q = perfil.get(a.user_id);
+                return (
+                  <li key={`${a.user_id}-${a.uf}-${a.chave}-${a.categoria}`} className="flex flex-wrap items-center justify-between gap-2 py-2" data-testid="aviso-fotografo-linha">
+                    <span className="min-w-0">
+                      <span className="font-semibold text-ink">
+                        {a.cidade}/{a.uf}
+                      </span>
+                      <span className="text-muted">
+                        {" "}
+                        · {rotuloCategoria(a.categoria)} · {ROTULO_PAPEL[q?.role ?? ""] ?? "—"} · {nomeCurto(q?.full_name ?? null) ?? "Conta removida"}
+                      </span>
+                      {q?.is_teste && <SeloTeste />}
+                    </span>
+                    <span className="text-xs text-muted">{dataHoraBRT(a.criado_em, { tabela: true })}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </Panel>
+      <p className="mt-4 text-xs text-muted">Atualizado em {dataBRT(new Date().toISOString())}.</p>
     </>
   );
 }

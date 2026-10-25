@@ -16,6 +16,8 @@ export const PROPERTY_TYPES: { value: string; label: string }[] = [
   { value: "casa_condominio", label: "Casa de condomínio" },
   { value: "flat", label: "Flat / apart-hotel" },
   { value: "quarto", label: "Quarto privativo" },
+  // TIPO-CHACARA-B (24/10): só chácara/sítio; fazenda e rancho ficam fora até o parecer jurídico.
+  { value: "chacara", label: "Chácara/Sítio" },
 ];
 
 const PROPERTY_TYPE_LABEL: Record<string, string> = Object.fromEntries(
@@ -37,7 +39,7 @@ export interface AmenityCatalogGroup {
   items: AmenityDef[];
 }
 
-/** Comodidades agrupadas (Trabalho, Conforto, Prédio). */
+/** Comodidades agrupadas (Trabalho, Conforto, Prédio, Segurança). */
 export const AMENITY_GROUPS: AmenityCatalogGroup[] = [
   {
     category: "trabalho",
@@ -65,6 +67,7 @@ export const AMENITY_GROUPS: AmenityCatalogGroup[] = [
       { key: "lava_loucas", label: "Lava-louças" },
       { key: "enxoval", label: "Roupa de cama e banho inclusas" },
       { key: "cozinha_equipada", label: "Cozinha equipada" },
+      { key: "tv", label: "TV" },
       { key: "varanda", label: "Varanda" },
     ],
   },
@@ -81,6 +84,15 @@ export const AMENITY_GROUPS: AmenityCatalogGroup[] = [
       { key: "lavanderia", label: "Lavanderia compartilhada" },
       { key: "bicicletario", label: "Bicicletário" },
       { key: "vaga_garagem", label: "Vaga de garagem" },
+    ],
+  },
+  {
+    // Prompt 43 (Anunciar em 6 passos, passo 4): as câmeras ficam na declaração de privacidade, ao lado deste grupo.
+    category: "seguranca",
+    label: "Segurança",
+    items: [
+      { key: "detector_fumaca", label: "Detector de fumaça" },
+      { key: "extintor", label: "Extintor de incêndio" },
     ],
   },
 ];

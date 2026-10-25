@@ -16,6 +16,13 @@ test("pega termos proibidos, com e sem acento", () => {
   assert.deepEqual(achadosNoTexto("Aluguel", { termos: false }), []);
 });
 
+test("pega as frases de marca proibidas (ordem 21708cca, parte D)", () => {
+  for (const t of ["Apartamentos mobiliados em Uberlândia", "apartamento mobiliado", "Aceito onde o Airbnb não é", "aceito onde o airbnb nao e"]) {
+    assert.equal(achadosNoTexto(t).length, 1, t);
+  }
+  assert.deepEqual(achadosNoTexto("Imóveis mobiliados para morar. Apartamentos mobiliados", { termos: false }), []);
+});
+
 test("pega status cru, data ISO, UUID e undefined/NaN", () => {
   assert.equal(achadosNoTexto("Situação: pendente_aceite").length, 1);
   assert.equal(achadosNoTexto("aguardando_assinatura e em_andamento").length, 2);

@@ -12,7 +12,7 @@ import { useAuthStore } from "@/lib/store";
 import { useFavoritesStore } from "@/lib/favorites-store";
 import { Avatar } from "@/components/ui/avatar";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
-import { identidadeUsuario } from "@/lib/roles";
+import { primeiroNomeExibicao } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 const PRINCIPAIS = PUBLIC_NAV.filter((i) => !i.mais);
@@ -42,18 +42,18 @@ function MenuMais() {
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
         aria-haspopup="true"
-        className="inline-flex items-center gap-1 whitespace-nowrap rounded-md text-sm font-medium text-ink/75 transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg text-sm font-medium text-ink/75 transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       >
         Mais <ChevronDown className={cn("h-4 w-4 transition-transform", aberto && "rotate-180")} aria-hidden />
       </button>
       {aberto && (
-        <div className="absolute left-1/2 top-full z-50 mt-3 w-52 -translate-x-1/2 rounded-xl border border-line bg-white p-1.5 shadow-lg">
+        <div className="absolute left-1/2 top-full z-50 mt-3 w-52 -translate-x-1/2 rounded-xl border border-line bg-white p-2 shadow-flutuante">
           {MAIS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setAberto(false)}
-              className="block whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium text-ink hover:bg-blue-50"
+              className="block whitespace-nowrap rounded-lg px-3 py-3 text-sm font-medium text-ink hover:bg-blue-50"
             >
               {item.label}
             </Link>
@@ -73,7 +73,7 @@ function LinkFavoritos({ className, onClick }: { className?: string; onClick?: (
       href="/favoritos"
       data-testid="link-favoritos"
       onClick={onClick}
-      className={cn("inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-blue-500", className)}
+      className={cn("inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-blue-500", className)}
     >
       <Heart className="h-4 w-4" aria-hidden />
       {/* a 1280 px o texto não cabe ao lado dos links (t69): só o coração; o texto volta a partir de 2xl */}
@@ -93,7 +93,7 @@ function MeuPainel({ nome, foto, onClick, className }: { nome: string; foto: str
       onClick={onClick}
       data-testid="nav-meu-painel"
       className={cn(
-        "inline-flex h-10 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg pl-1.5 pr-3.5 text-sm font-semibold text-blue-500 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+        "inline-flex h-10 shrink-0 items-center gap-3 whitespace-nowrap rounded-lg pl-2 pr-4 text-sm font-semibold text-blue-500 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
         className
       )}
     >
@@ -137,7 +137,8 @@ export function Navbar() {
       vivo = false;
     };
   }, [mounted, userId]);
-  const nome = identidadeUsuario(user);
+  // CONTA-A: só o nome do perfil vira rosto; sem nome, a silhueta.
+  const nome = primeiroNomeExibicao(user);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -151,11 +152,11 @@ export function Navbar() {
       className={cn(
         "sticky top-0 z-40 border-b transition-shadow",
         scrolled
-          ? "border-line bg-white/90 backdrop-blur-md shadow-sm"
+          ? "border-line bg-white/90 backdrop-blur-md shadow-flutuante"
           : "border-transparent bg-white"
       )}
     >
-      <nav className="flex h-18 w-full items-center gap-10 px-5 py-3 sm:px-8 xl:px-10 2xl:gap-14 2xl:px-12">
+      <nav className="flex h-18 w-full items-center gap-8 px-4 py-3 sm:px-8 2xl:gap-12 2xl:px-12">
         <Logo className="shrink-0" />
 
         {/* Ordem eac7e3a1: na /buscar, a busca compacta (estilo Airbnb) entra AQUI, na mesma
@@ -189,7 +190,7 @@ export function Navbar() {
         </div>
 
         <button
-          className={cn("ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-lg text-ink xl:hidden", naBusca && "lg:hidden")}
+          className={cn("ml-auto grid h-11 w-11 shrink-0 place-items-center rounded-lg text-ink xl:hidden", naBusca && "lg:hidden")}
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Fechar menu" : "Abrir menu"}
         >
@@ -199,7 +200,7 @@ export function Navbar() {
 
       {open && (
         <div className="border-t border-line bg-white xl:hidden">
-          <div className="flex flex-col gap-1 px-5 py-4 sm:px-8">
+          <div className="flex flex-col gap-1 px-4 py-4 sm:px-8">
             {PUBLIC_NAV.map((item) => (
               <Link
                 key={item.href}

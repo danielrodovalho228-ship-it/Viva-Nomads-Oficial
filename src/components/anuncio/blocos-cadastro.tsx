@@ -1,6 +1,7 @@
 "use client";
 
-import { Briefcase, Check, Loader2, MapPin, Percent, Plus, Trash2 } from "lucide-react";
+import { CampoReais } from "@/components/ui/campo-reais";
+import { Briefcase, Check, MapPin, Percent, Plus, Trash2 } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
 import { ManualProximities } from "@/components/property/manual-proximities";
@@ -12,86 +13,180 @@ import {
   MARCA_SUGERIDO,
 } from "@/lib/anuncio/sugestoes-cadastro";
 import { itensDisponiveis, MAX_FAIXAS, PCT_MAX, type Negociacao, type LimitesPrivados } from "@/lib/anuncio/negociacao";
+import { TEXTO_TETO_RODADAS } from "@/lib/propostas/regras";
 import { cn, formatBRL } from "@/lib/utils";
+import { MAX_POR_CATEGORIA_PAGINA, ORDEM_CATEGORIAS_PAGINA, textoDistancia } from "@/lib/anuncio/proximidades";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { SkeletonLinhas } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { MedirInternet } from "./medir-internet";
+import { SEM_INTERNET_NO_IMOVEL } from "@/lib/anuncio/internet-imovel";
 
 /* ── Proximidades automáticas (OSM) ───────────────────────────────────────── */
 
-export const chaveLugar = (l: { tipo: string; nome: string }) => `${l.tipo}|${l.nome}`;
+export const chaveLugar = (l: { tipo?: string | null; nome?: string; name?: string }) => `${l.tipo ?? ""}|${l.nome ?? l.name ?? ""}`;
+
+const ROTULO_CATEGORIA: Record<string, string> = { saude: "Saúde", educacao: "Educação", trabalho: "Trabalho", mercado: "Mercado", transporte: "Transporte" };
 
 /**
- * "O que tem por perto" (prompt 10): até 8 lugares achados pelo OpenStreetMap, TODOS marcados; o dono desmarca ou
- * adiciona outro à mão. Se o OSM falhar, aparece vazio com "Adicionar", sem travar a etapa.
+ * "O que tem por perto" (prompt 10; PERTO-B; tela do PERTO-A): até 3 lugares por categoria achados pelo OpenStreetMap,
+ * com a distância CALCULADA (sem minuto estimado), nas 5 categorias (Saúde, Educação, Trabalho, Mercado, Transporte).
+ * Cada lugar tem o interruptor "Mostrar" (desligado = "não mostrar" no anúncio) e "Está errado" (motivo curto que a
+ * equipe vê). Três estados, uma mensagem por vez: procurando, a lista por categoria, ou "não achamos" com "Adicionar
+ * um lugar". Sem endereço completo, o aviso de completar. Adicionar à mão só o que faltou, com o endereço do lugar.
  */
 export function ProximidadesAutomaticas({
   itens,
   carregando,
+  buscou,
   desmarcados,
   onAlternar,
   manuais,
   onManuais,
+  medir,
+  reportar,
 }: {
   itens: LugarProximo[] | null;
   carregando: boolean;
+  /** A busca já rodou para o endereço atual (com ou sem resultado). */
+  buscou: boolean;
   desmarcados: string[];
   onAlternar: (chave: string) => void;
   manuais: Proximity[];
   onManuais: (p: Proximity[]) => void;
+  medir: (endereco: string) => Promise<number | null>;
+  /** "Está errado": só com o anúncio já salvo (rascunho ou publicado). */
+  reportar: ((l: LugarProximo, motivo: string) => Promise<{ ok: boolean; erro?: string }>) | null;
 }) {
+  const temItens = !carregando && !!itens && itens.length > 0;
+  const [adicionando, setAdicionando] = useState(manuais.length > 0);
+  const estado = carregando ? "carregando" : temItens ? "achou" : buscou ? "vazio" : "aguardando";
   return (
-    <div className="rounded-xl border border-sage-200 p-4" data-testid="proximidades-osm">
-      <p className="flex items-center gap-1.5 text-sm font-bold text-forest">
+    <div className="rounded-xl border border-sage-200 p-4" data-testid="proximidades-osm" data-estado={estado}>
+      <p className="flex items-center gap-2 text-sm font-semibold text-forest">
         <MapPin className="h-4 w-4" aria-hidden /> O que tem por perto
       </p>
-      <p className="mb-3 text-xs text-muted">Achamos pelo endereço, num raio de 2 km. Desmarque o que não quiser mostrar.</p>
       {carregando && (
-        <p className="flex items-center gap-2 text-sm text-muted" data-testid="proximidades-carregando">
-          <Loader2 className="h-4 w-4 animate-spin" /> Procurando lugares perto do imóvel…
-        </p>
-      )}
-      {!carregando && itens && itens.length > 0 && (
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {itens.map((l) => {
-            const chave = chaveLugar(l);
-            const marcado = !desmarcados.includes(chave);
-            return (
-              <li key={chave}>
-                <button
-                  type="button"
-                  aria-pressed={marcado}
-                  onClick={() => onAlternar(chave)}
-                  data-testid="proximidade-item"
-                  className={cn(
-                    "flex w-full items-start gap-2 rounded-lg border px-3 py-2 text-left text-sm",
-                    marcado ? "border-forest bg-sage-100" : "border-sage-200 text-muted",
-                  )}
-                >
-                  <span className={cn("mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border", marcado ? "border-forest bg-forest text-white" : "border-sage-200")}>
-                    {marcado && <Check className="h-3 w-3" />}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium text-ink">{l.nome}</span>
-                    <span className="block text-xs text-muted">{l.tempo}</span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {!carregando && (!itens || itens.length === 0) && (
-        <p className="text-sm text-muted" data-testid="proximidades-vazio">
-          Não achamos lugares automaticamente. Adicione à mão os que importam.
-        </p>
-      )}
-      <details className="mt-3" open={!carregando && (!itens || itens.length === 0)}>
-        <summary className="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-forest">
-          <Plus className="h-4 w-4" aria-hidden /> Adicionar outro
-        </summary>
-        <div className="mt-3">
-          <ManualProximities value={manuais} onChange={onManuais} />
+        <div className="mt-2" data-testid="proximidades-carregando">
+          <p className="mb-2 text-sm text-muted">Procurando o que tem por perto do endereço…</p>
+          <SkeletonLinhas linhas={4} />
         </div>
-      </details>
+      )}
+      {temItens && (
+        <>
+          <p className="mb-3 text-xs text-muted" data-testid="proximidades-achamos">
+            Achamos pelo endereço, num raio de 2 km. Desligue &quot;Mostrar&quot; no que não quiser no anúncio.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {ORDEM_CATEGORIAS_PAGINA.map((c) => {
+              // O mais perto primeiro; até 3 por categoria.
+              const daCategoria = itens!.filter((l) => l.categoria === c).sort((x, y) => (x.distanciaM ?? Infinity) - (y.distanciaM ?? Infinity)).slice(0, MAX_POR_CATEGORIA_PAGINA);
+              return (
+                <section key={c} aria-label={ROTULO_CATEGORIA[c]} data-testid={`proximidades-cat-${c}`} data-qtd={daCategoria.length}>
+                  <h4 className="mb-2 text-sm font-semibold text-ink">{ROTULO_CATEGORIA[c]}</h4>
+                  {daCategoria.length === 0 ? (
+                    <p className="text-xs text-muted">Nada achado nesta categoria.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {daCategoria.map((l) => (
+                        <ItemProximidade key={chaveLugar(l)} lugar={l} marcado={!desmarcados.includes(chaveLugar(l))} onAlternar={() => onAlternar(chaveLugar(l))} reportar={reportar} />
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        </>
+      )}
+      {!carregando && !temItens && buscou && (
+        <p className="text-sm text-muted" data-testid="proximidades-vazio">
+          Não achamos lugares por perto deste endereço. Adicione os que importam para quem vai morar.
+        </p>
+      )}
+      {!carregando && !temItens && !buscou && (
+        <p className="text-sm text-muted" data-testid="proximidades-aguardando">
+          Os lugares por perto aparecem aqui quando o endereço estiver completo (CEP e rua).
+        </p>
+      )}
+      {!carregando && (buscou || temItens) && (
+        <div className="mt-3">
+          {adicionando ? (
+            <ManualProximities value={manuais} onChange={onManuais} medir={medir} />
+          ) : (
+            <Button type="button" variant="secondary" size="sm" onClick={() => setAdicionando(true)} data-testid="proximidades-adicionar">
+              <Plus className="h-4 w-4" aria-hidden /> Adicionar um lugar
+            </Button>
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+function ItemProximidade({
+  lugar: l,
+  marcado,
+  onAlternar,
+  reportar,
+}: {
+  lugar: LugarProximo;
+  marcado: boolean;
+  onAlternar: () => void;
+  reportar: ((l: LugarProximo, motivo: string) => Promise<{ ok: boolean; erro?: string }>) | null;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const [motivo, setMotivo] = useState("");
+  const [estado, setEstado] = useState<"" | "enviando" | "enviado" | string>("");
+  async function enviar() {
+    if (!reportar || motivo.trim().length < 3) return;
+    setEstado("enviando");
+    const r = await reportar(l, motivo.trim()).catch(() => ({ ok: false, erro: "Sem conexão. Tente de novo." }));
+    setEstado(r.ok ? "enviado" : (r.erro ?? "Não foi possível enviar agora."));
+  }
+  return (
+    <li className="rounded-lg border border-sage-200 px-3 py-2" data-testid="proximidade-item" data-mostrar={marcado ? "1" : "0"}>
+      <div className="flex items-start justify-between gap-3">
+        <span className={cn("min-w-0 text-sm", !marcado && "text-muted")}>
+          <span className={cn("block truncate font-medium", marcado ? "text-ink" : "text-muted")}>{l.nome}</span>
+          <span className="block text-xs text-muted" data-testid="proximidade-distancia">
+            {textoDistancia(l.distanciaM)}
+            {marcado ? "" : " · não aparece no anúncio"}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2 text-xs text-muted">
+          Mostrar
+          <Switch checked={marcado} onChange={onAlternar} label={`Mostrar ${l.nome} no anúncio`} testId="proximidade-mostrar" />
+        </span>
+      </div>
+      {reportar && (
+        <div className="mt-1">
+          {estado === "enviado" ? (
+            <p className="text-xs text-muted" data-testid="proximidade-reportada">Obrigado. A equipe vai conferir.</p>
+          ) : aberto ? (
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+              <input
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value.slice(0, 200))}
+                placeholder="O que está errado? (ex.: fechou)"
+                aria-label={`O que está errado em ${l.nome}`}
+                className="min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-sm"
+                data-testid="proximidade-errado-motivo"
+              />
+              <Button type="button" variant="secondary" size="sm" onClick={enviar} disabled={motivo.trim().length < 3 || estado === "enviando"} data-testid="proximidade-errado-enviar">
+                Enviar
+              </Button>
+              {estado && estado !== "enviando" && <p className="text-xs text-red-700" role="alert">{estado}</p>}
+            </div>
+          ) : (
+            <button type="button" onClick={() => setAberto(true)} className="inline-flex min-h-11 items-center text-xs text-muted underline underline-offset-2 hover:text-ink" data-testid="proximidade-errado">
+              Está errado
+            </button>
+          )}
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -107,12 +202,18 @@ export function ProntoParaTrabalhar({
   sugeridas,
   mbps,
   onMbps,
+  imovelId,
+  semInternet = false,
 }: {
   marcadas: Record<string, boolean>;
   onAlternar: (chave: string) => void;
   sugeridas: string[];
   mbps: string;
   onMbps: (v: string) => void;
+  /** Com o rascunho salvo, o dono mede a internet aqui mesmo (Prompt 57). */
+  imovelId?: string | null;
+  /** E102-B: o dono respondeu "Não tem internet" — a velocidade não é pedida. */
+  semInternet?: boolean;
 }) {
   const n = essenciaisMarcados(marcadas);
   const item = (it: { chave: string; rotulo: string }, essencial: boolean) => {
@@ -125,7 +226,7 @@ export function ProntoParaTrabalhar({
         onClick={() => onAlternar(it.chave)}
         data-testid={`trabalho-${it.chave}`}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium",
+          "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium",
           on ? "border-forest bg-forest text-white" : "border-sage-200 bg-white text-ink hover:border-sage",
         )}
       >
@@ -139,27 +240,32 @@ export function ProntoParaTrabalhar({
   return (
     <div className="rounded-xl border-2 border-forest/30 bg-sage-50 p-4" data-testid="pronto-trabalhar">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 font-title text-base font-bold text-forest">
+        <p className="flex items-center gap-2 font-title text-base font-semibold text-forest">
           <Briefcase className="h-4 w-4" aria-hidden /> Pronto para trabalhar de casa
         </p>
-        <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", n === ESSENCIAIS_TRABALHO.length ? "bg-forest text-white" : "bg-white text-forest")} data-testid="trabalho-contador">
+        <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", n === ESSENCIAIS_TRABALHO.length ? "bg-forest text-white" : "bg-white text-forest")} data-testid="trabalho-contador">
           {contadorEssenciais(marcadas)}
         </span>
       </div>
-      <p className="mt-0.5 text-xs text-muted">Profissionais procuram isso primeiro.</p>
+      <p className="mt-1 text-xs text-muted">Profissionais procuram isso primeiro.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {ESSENCIAIS_TRABALHO.map((it) => item(it, true))}
         {OPCIONAIS_TRABALHO.map((it) => item(it, false))}
       </div>
-      {marcadas.internet_fibra && (
+      {semInternet ? (
+        <p className="mt-3 text-sm font-medium text-ink" data-testid="sem-internet-imovel">
+          {SEM_INTERNET_NO_IMOVEL}
+        </p>
+      ) : marcadas.internet_fibra && (
         <label className="mt-3 block max-w-xs text-sm text-ink">
-          Velocidade da internet (opcional)
+          Velocidade da internet informada (opcional)
           <span className="mt-1 flex items-center gap-2">
             <input inputMode="numeric" value={mbps} onChange={(e) => onMbps(e.target.value.replace(/\D/g, "").slice(0, 5))} className="input" placeholder="500" aria-label="Velocidade da internet em Mbps" />
             <span className="text-xs text-muted">Mbps</span>
           </span>
         </label>
       )}
+      {!semInternet && marcadas.internet_fibra && imovelId && <MedirInternet imovelId={imovelId} origem="cadastro" />}
       <p className="mt-3 text-xs text-muted">
         Com os 4 essenciais, o anúncio pode ganhar a etiqueta “Para trabalhar de casa” na qualificação.
       </p>
@@ -194,6 +300,9 @@ export function BlocoNegociacao({
     <div className="rounded-xl border border-sage-200 p-4" data-testid="bloco-negociacao">
       <p className="text-sm font-semibold text-ink">Negociação</p>
       <p className="text-xs text-muted">Quem vai ficar mais tempo costuma pedir condições. Você decide o que dá para negociar.</p>
+      <p className="mt-1 text-xs text-muted" data-testid="negociacao-rodadas">
+        {TEXTO_TETO_RODADAS}
+      </p>
 
       <div className="mt-3 flex gap-2" role="radiogroup" aria-label="Aceito negociar?">
         {[
@@ -221,7 +330,7 @@ export function BlocoNegociacao({
       {valor.aceita && (
         <fieldset className="mt-3">
           <legend className="text-xs font-semibold text-muted">O que pode ser negociado</legend>
-          <div className="mt-1.5 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             {itens.map((i) => {
               const on = valor.itens.includes(i.chave);
               return (
@@ -230,7 +339,7 @@ export function BlocoNegociacao({
                   type="button"
                   aria-pressed={on}
                   onClick={() => onValor({ ...valor, itens: on ? valor.itens.filter((x) => x !== i.chave) : [...valor.itens, i.chave] })}
-                  className={cn("rounded-full border px-3 py-1.5 text-xs font-medium", on ? "border-forest bg-forest text-white" : "border-sage-200 text-ink")}
+                  className={cn("rounded-full border px-3 py-2 text-xs font-medium", on ? "border-forest bg-forest text-white" : "border-sage-200 text-ink")}
                   data-testid={`negociavel-${i.chave}`}
                 >
                   {i.rotulo}
@@ -255,7 +364,7 @@ export function BlocoNegociacao({
               <input type="number" min={1} max={PCT_MAX} value={f.pct} onChange={(e) => setFaixa(i, "pct", Number(e.target.value))} className="input w-20" aria-label={`Desconto da faixa ${i + 1}`} />
               <span>%</span>
               {valorMensal > 0 && f.pct > 0 && <span className="text-xs text-muted">→ {formatBRL(Math.round(valorMensal * (1 - f.pct / 100)))}/mês</span>}
-              <button type="button" onClick={() => onValor({ ...valor, descontos: faixas.filter((_, j) => j !== i) })} className="ml-auto rounded p-1 text-muted hover:text-red-600" aria-label="Remover faixa">
+              <button type="button" onClick={() => onValor({ ...valor, descontos: faixas.filter((_, j) => j !== i) })} className="ml-auto rounded-lg p-1 text-muted hover:text-red-600" aria-label="Remover faixa">
                 <Trash2 className="h-4 w-4" />
               </button>
             </li>
@@ -279,26 +388,31 @@ export function BlocoNegociacao({
           <div className="mt-2 grid gap-3 sm:grid-cols-2">
             <label className="block text-sm text-ink">
               Menor valor mensal que aceito (R$)
-              <input
-                type="number"
-                min={0}
-                value={limites.valorMinimo ?? ""}
-                onChange={(e) => onLimites({ ...limites, valorMinimo: Number(e.target.value) > 0 ? Number(e.target.value) : null })}
+              <CampoReais
+                semPrefixo
+                value={limites.valorMinimo}
+                onChange={(v) => onLimites({ ...limites, valorMinimo: v != null && v > 0 ? v : null })}
                 className="input mt-1"
-                placeholder="Ex.: 2900"
+                placeholder="Ex.: 2.900"
+                testid="limite-valor-minimo"
               />
             </label>
             <label className="block text-sm text-ink">
               Limpezas por mês que posso incluir
-              <input
-                type="number"
-                min={0}
-                max={8}
-                value={limites.limpezasMax ?? ""}
-                onChange={(e) => onLimites({ ...limites, limpezasMax: e.target.value === "" ? null : Math.max(0, Math.min(8, Math.round(Number(e.target.value)))) })}
+              <select
+                value={limites.limpezasMax == null ? "" : String(limites.limpezasMax)}
+                onChange={(e) => onLimites({ ...limites, limpezasMax: e.target.value === "" ? null : Number(e.target.value) })}
                 className="input mt-1"
-                placeholder="Ex.: 2"
-              />
+                data-testid="limite-limpezas"
+              >
+                <option value="">Sem limite</option>
+                <option value="0">Nenhuma</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <option key={n} value={n}>
+                    Até {n}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           <p className="mt-2 text-xs text-muted">

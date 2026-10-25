@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useMemo, useState } from "react";
 import { Calculator, TrendingDown, AlertTriangle, Building2, User } from "lucide-react";
 import { simulateTax, AVISO_IBS_CBS_LIBERADO, AVISO_IBS_CBS_PF } from "@/lib/tax";
@@ -29,58 +30,57 @@ export function TaxSimulator() {
   const aviso = avisoTeto(monthlyRent, MAX_RECEITA_CARTEIRA);
 
   return (
-    <div className="rounded-2xl border border-sage-200 bg-white p-6">
+    <div className="rounded-xl border border-sage-200 bg-white p-6">
       <div className="flex items-center gap-2">
         <Calculator className="h-5 w-5 text-forest" />
-        <h3 className="font-title text-lg font-bold text-ink">Simulador tributário PF × PJ</h3>
+        <h3 className="font-title text-lg font-semibold text-ink">Simulador tributário PF × PJ</h3>
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-ink">
+          <span className="mb-2 block text-sm font-medium text-ink">
             Receita mensal das locações (total)
           </span>
-          <input
-            type="number"
-            min={0}
-            value={monthlyRent || ""}
-            onChange={(e) => setMonthlyRent(Number(e.target.value))}
-            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+          <CampoReais
+            semPrefixo
+            centavos
+            value={monthlyRent || null}
+            onChange={(v) => setMonthlyRent(v ?? 0)}
+            className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
           />
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-ink">Nº de imóveis locados</span>
+          <span className="mb-2 block text-sm font-medium text-ink">Nº de imóveis locados</span>
           <input
             type="number"
             min={0}
             value={propertyCount || ""}
             onChange={(e) => setPropertyCount(Number(e.target.value))}
-            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+            className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
           />
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-ink">
+          <span className="mb-2 block text-sm font-medium text-ink">
             Despesas que você paga por mês (IPTU, condomínio, administração)
           </span>
-          <input
-            type="number"
-            min={0}
-            value={deducoes || ""}
-            onChange={(e) => setDeducoes(Number(e.target.value))}
-            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+          <CampoReais
+            semPrefixo
+            centavos
+            value={deducoes || null}
+            onChange={(v) => setDeducoes(v ?? 0)}
+            className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
           />
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-ink">
+          <span className="mb-2 block text-sm font-medium text-ink">
             Seus outros rendimentos por mês (salário, pró-labore)
           </span>
-          <input
-            type="number"
-            min={0}
-            value={outros || ""}
-            onChange={(e) => setOutros(Number(e.target.value))}
-            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
-            data-testid="tax-outros-rendimentos"
+          <CampoReais
+            semPrefixo
+            centavos
+            value={outros || null}
+            onChange={(v) => setOutros(v ?? 0)}
+            className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage" testid="tax-outros-rendimentos"
           />
           <span className="mt-1 block text-xs text-muted">A receita das locações soma a eles na tabela do imposto de renda.</span>
         </label>
@@ -88,7 +88,7 @@ export function TaxSimulator() {
       {aviso && <p className="mt-2 text-xs text-amber-700">{aviso}</p>}
 
       {/* Resultado */}
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Card
           active={r.recommendation === "pf"}
           icon={User}
@@ -126,7 +126,7 @@ export function TaxSimulator() {
       {/* IBS/CBS: só pela regra cumulativa e só depois da revisão do Sérgio (AVISO_IBS_CBS_LIBERADO). */}
       {AVISO_IBS_CBS_LIBERADO && r.ibsCbsAviso && (
         <p className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700" data-testid="tax-aviso-ibs-cbs">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
           <span>
             {AVISO_IBS_CBS_PF.texto} <span className="block text-amber-800/80">{AVISO_IBS_CBS_PF.fonte}</span>
           </span>
@@ -134,8 +134,8 @@ export function TaxSimulator() {
       )}
 
       {/* Ressalva obrigatória — visível, não é aconselhamento fiscal */}
-      <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
-        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+      <div className="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-amber-600" />
         <p className="text-xs leading-relaxed text-amber-800">
           <strong>Esta é uma simulação educativa com valores estimados.</strong> Não
           substitui orientação de um contador. Consulte um profissional antes de decidir.
@@ -149,7 +149,7 @@ export function TaxSimulator() {
         <summary className="cursor-pointer font-medium text-forest">
           O que significam as siglas?
         </summary>
-        <dl className="mt-2 space-y-1.5 text-muted">
+        <dl className="mt-2 space-y-2 text-muted">
           {[
             ["IBS", "Imposto sobre Bens e Serviços — novo imposto (estados/municípios) da Reforma Tributária."],
             ["CBS", "Contribuição sobre Bens e Serviços — novo tributo federal da Reforma Tributária."],
@@ -193,9 +193,9 @@ function Card({
     >
       <div className="flex items-center gap-2">
         <Icon className={cn("h-5 w-5", active ? "text-forest" : "text-sage")} />
-        <span className="font-title font-bold text-ink">{title}</span>
+        <span className="font-title font-semibold text-ink">{title}</span>
       </div>
-      <p className="mt-3 font-title text-2xl font-bold text-forest">{formatBRL(tax)}</p>
+      <p className="mt-3 font-title text-2xl font-semibold text-forest">{formatBRL(tax)}</p>
       <p className="text-xs text-muted">por ano · ~{numBR(rate * 100, 2)}% efetivo</p>
       <p className="mt-2 text-xs text-muted">{note}</p>
     </div>

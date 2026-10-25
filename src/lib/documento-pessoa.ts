@@ -38,6 +38,19 @@ export function cnpjValido(v: string | null | undefined): boolean {
   return dv(d.slice(0, 12)) === Number(d[12]) && dv(d.slice(0, 13)) === Number(d[13]);
 }
 
+/**
+ * CPF/CNPJ por extenso para documentos (recibo, comprovante, termo): "000.000.000-00" / "00.000.000/0000-00", a
+ * partir dos dígitos, venha como vier (complemento da jornada de assinatura, 19/10). Outro formato → como veio.
+ */
+export function formatarDocumento(v: string | null | undefined): string | null {
+  const bruto = String(v ?? "").trim();
+  if (!bruto) return null;
+  const d = soDigitos(bruto);
+  if (d.length === 11) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+  if (d.length === 14) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+  return bruto;
+}
+
 /** "***.456.789-**" — mostra só o miolo (padrão de mascaramento de CPF). */
 export function mascararCpf(v: string | null | undefined): string | null {
   const d = soDigitos(v);
@@ -123,7 +136,7 @@ export function motivoBloqueioAprovacao(p: PerfilDocumento | null | undefined): 
     : "O dono ainda não tem CPF válido. Peça para preencher em Conta → Documento antes de aprovar.";
 }
 
-export const LINK_DOCUMENTO = "/dashboard/conta/perfil#documento";
+export const LINK_DOCUMENTO = "/dashboard/conta/dados#documento";
 
 /** Mensagens das travas (aceitar candidatura, assinar plano, fechar contrato). */
 export const MSG_DOCUMENTO = {

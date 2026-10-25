@@ -23,7 +23,7 @@ test("autorização: declaração + arquivo NA PASTA DO DONO; nunca link externo
   const base = { owner_id: DONO, sublease_authorized: true };
   assert.ok(autorizacaoOk({ ownership_type: "own" }));
   assert.ok(autorizacaoOk({ ...base, ownership_type: "subleased", sublease_doc_url: `${DONO}/aut.pdf` }));
-  assert.ok(autorizacaoOk({ ...base, ownership_type: "managed", sublease_doc_url: `${DONO}/proc.pdf` }));
+  assert.ok(autorizacaoOk({ ...base, ownership_type: "managed", sublease_doc_tipo: "procuracao", sublease_doc_url: `${DONO}/proc.pdf` }));
   assert.ok(!autorizacaoOk({ ...base, ownership_type: "subleased", sublease_doc_url: null }));
   assert.ok(!autorizacaoOk({ ...base, sublease_authorized: false, ownership_type: "managed", sublease_doc_url: `${DONO}/proc.pdf` }));
   for (const c of ["outro/aut.pdf", "blob:http://x/1", "https://x.com/a.pdf", `${DONO}/../x/a.pdf`, `${DONO}/`])
@@ -95,7 +95,8 @@ test("pré-conferência: sublocado/administrado com autorização — titular di
 
 test("ligações: admin vê veredito e a autorização; service role só depois de confirmar admin; integrações em demo", () => {
   const adm = ler("lib/data/documentos-admin.ts");
-  assert.match(adm, /const adm = user && \(await ehAdmin\(supabase, user\.id\)\) \? createAdminClient\(\) : null;/);
+  // E28: o service role só sai do adminComServico(), depois do ehAdmin (papel + 2FA).
+  assert.match(adm, /if \(!user \|\| !\(await ehAdmin\(supabase, user\.id\)\)\) return null;\n  const adm = createAdminClient\(\);/);
   assert.match(adm, /\.neq\("owner_id", ownerId\); \/\/ o próprio dono re-salvando/);
   assert.match(adm, /preConferencia = preConferir\(\{/);
   const tela = ler("app/(dashboard)/admin/documentos/admin-documentos-client.tsx");

@@ -24,11 +24,14 @@ async function candidatar(page: Page, largura: number, pessoas: number) {
   await expect(seletor.locator("option")).toHaveCount(4);
   await seletor.selectOption(String(pessoas));
   await page.screenshot({ path: `${SAIDA}/t181-candidatura-${largura}.png`, fullPage: false });
-  const botao = largura < 768 ? page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Enviar candidatura" }) : cartao.getByRole("button", { name: "Enviar candidatura" });
+  // Prompt 41: abaixo de 1024 px o primário "Solicitar" mora na barra fixa; no computador, no cartão.
+  const botao = largura < 1024 ? page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Solicitar", exact: true }) : cartao.getByRole("button", { name: "Solicitar", exact: true });
   await botao.click();
   const passo = page.getByTestId("solicitacao-passo");
   await expect(passo).toBeVisible();
-  await passo.getByRole("button", { name: "Enviar solicitação" }).click();
+  await passo.getByRole("button", { name: "Continuar" }).click();
+  await passo.getByRole("button", { name: "Continuar" }).click();
+  await passo.getByRole("button", { name: "Enviar candidatura" }).click();
   await expect(page.getByText("Candidatura enviada").filter({ visible: true }).first()).toBeVisible({ timeout: 20_000 });
 }
 

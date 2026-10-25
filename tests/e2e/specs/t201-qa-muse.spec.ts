@@ -72,8 +72,12 @@ test.describe("T201 — QA do Muse", () => {
       test.skip(!NO_LABORATORIO, "grava no banco: só no laboratório");
       await page.setViewportSize({ width: 390, height: 900 });
       await page.goto("/parceiros/fotografos?cidade=Araguari", { waitUntil: "domcontentloaded" });
-      await page.getByTestId("aviso-fotografo-enviar").click();
-      await expect(page.getByTestId("aviso-fotografo-ok")).toContainText("Avisamos você quando houver fotógrafo parceiro em Araguari");
+      // toque antes da hidratação não dispara a ação (instável no lab): repete até o aviso aparecer (gravar é idempotente)
+      await expect(async () => {
+        const enviar = page.getByTestId("aviso-fotografo-enviar");
+        if (await enviar.isVisible()) await enviar.click();
+        await expect(page.getByTestId("aviso-fotografo-ok")).toContainText("Avisamos você quando houver fotógrafo parceiro em Araguari", { timeout: 5_000 });
+      }).toPass({ timeout: 40_000 });
       const { count } = await adm().from("interesse_fotografo_cidade").select("id", { count: "exact", head: true }).eq("chave", "araguari").eq("uf", "MG");
       expect(count).toBeGreaterThanOrEqual(1);
       await page.screenshot({ path: `${SAIDA}/t201-fotografos-avisado-390.png`, fullPage: false });
@@ -112,9 +116,11 @@ test.describe("T201 — QA do Muse", () => {
           // A sessão é conferida no carregamento: reclica até a navegação para o login acontecer.
           await expect(async () => {
             if (!/\/auth/.test(page.url())) await b.click({ timeout: 3_000 });
-            await expect(page).toHaveURL(/\/auth\?redirect=/, { timeout: 3_000 });
+            await expect(page).toHaveURL(/\/auth\?motivo=visita&redirect=/, { timeout: 3_000 });
           }).toPass({ timeout: 30_000 });
           expect(decodeURIComponent(page.url())).toContain(`/imoveis/${imovel}?abrir=${alvo}`);
+          // Prompt 49: a entrada padrão é por código; a conta de teste usa o link terciário "Entrar com senha".
+          await page.getByTestId("entrar-com-senha").click();
           await page.locator('input[name="email"], input[type="email"]').first().fill(email);
           await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
           await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();

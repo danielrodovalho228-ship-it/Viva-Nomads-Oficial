@@ -19,7 +19,7 @@ export function authFile(role: Role): string {
  */
 export async function loginAs(page: Page, role: Role): Promise<void> {
   const acc = account(role);
-  await page.goto("/auth", { waitUntil: "networkidle" });
+  await page.goto("/auth?senha=1", { waitUntil: "networkidle" });
   await page.locator('input[name="email"], input[type="email"]').first().fill(acc.email);
   await page.locator('input[name="password"], input[type="password"]').first().fill(acc.senha);
   // "Entrar" scopeado ao form: há também um botão "Entrar" no alternador

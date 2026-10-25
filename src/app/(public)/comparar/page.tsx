@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listProperties } from "@/lib/data/properties";
 import { hrefComparar, idsDeComparar, montarTabela, MIN_COMPARAR } from "@/lib/busca/comparar";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 export const revalidate = 60;
 
@@ -24,9 +25,9 @@ export default async function CompararPage({
 
   return (
     <div className="container-page py-6" data-testid="comparar">
-      <h1 className="font-title text-2xl font-bold text-ink">Comparar imóveis</h1>
+      <h1 className="font-title text-2xl font-semibold text-ink">Comparar imóveis</h1>
       {imoveis.length < MIN_COMPARAR ? (
-        <div className="mt-4 rounded-2xl border border-line bg-white p-5" data-testid="comparar-vazio">
+        <div className="mt-4 rounded-xl border border-line bg-white p-4" data-testid="comparar-vazio">
           <p className="text-ink">Escolha de 2 a 3 imóveis na busca para ver os dados lado a lado.</p>
           <Link href="/buscar" className="mt-3 inline-block font-semibold text-forest underline underline-offset-2">
             Voltar à busca
@@ -37,7 +38,7 @@ export default async function CompararPage({
           <p className="mt-1 text-sm text-muted">
             Rolando para o lado, a coluna dos nomes fica fixa. “—” significa que o anunciante não informou.
           </p>
-          <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-white" data-testid="comparar-rolagem">
+          <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-white" data-testid="comparar-rolagem">
             <table className="w-full border-collapse text-sm" data-testid="comparar-tabela">
               <thead>
                 <tr>
@@ -49,9 +50,8 @@ export default async function CompararPage({
                       <Link href={`/imoveis/${p.id}`} className="font-semibold text-forest underline underline-offset-2">
                         {p.title}
                       </Link>
-                      <div className="mt-0.5 text-xs font-normal text-muted">
-                        {p.neighborhood ? `${p.neighborhood}, ` : ""}
-                        {p.city}
+                      <div className="mt-1 text-xs font-normal text-muted">
+                        {linhaLocalizacao(p.neighborhood, p.city, p.state)}
                       </div>
                       <Link
                         href={hrefComparar(ids.filter((x) => x !== p.id))}

@@ -69,8 +69,9 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
       as.map((a) => (a as HTMLAnchorElement).getAttribute("href")!).filter(Boolean)
     );
     expect(hrefs.length).toBeGreaterThan(15);
-    // A busca é a página pública (fora da casca, de propósito); âncoras viram a própria tela.
-    for (const href of [...new Set(hrefs.map((h) => h.split("#")[0]))].filter((h) => h !== "/buscar")) {
+    // A busca e o formulário de pedido são páginas públicas (fora da casca, de propósito); âncoras viram a própria tela.
+    const PUBLICAS_FORA_DA_CASCA = ["/buscar", "/pedidos/novo"];
+    for (const href of [...new Set(hrefs.map((h) => h.split("#")[0]))].filter((h) => !PUBLICAS_FORA_DA_CASCA.includes(h))) {
       await page.goto(href, { waitUntil: "domcontentloaded" });
       await expect(page.locator("aside nav"), `casca ausente em ${href}`).toBeVisible();
     }

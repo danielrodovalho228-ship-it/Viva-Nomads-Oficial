@@ -3,49 +3,27 @@
   estilos inline). O logo é a imagem hospedada em /email-mark.png + o texto
   "VivaNomads" colorido (aparece mesmo com imagens bloqueadas).
 
-  Usados pela rota /api/test-email?all=1 para enviar um exemplo de cada modelo.
+  Embrulham os corpos puros de corpo-email.ts com o SITE_URL. A lista completa de e-mails (com dados fictícios)
+  mora em catalogo-emails.ts (rota /api/test-email?all=1 e prévia /dev/emails).
 */
 import { SITE_URL } from "@/lib/site";
-import { buildLeadNotification } from "@/lib/leads";
-import { botaoEmail, layoutEmail, rodapeTexto } from "./modelo-email";
+import { corpoBotao, corpoCodigo, corpoNotificacao, imagemEmail, textoNotificacao, type Hero } from "./corpo-email";
 
-function layout(inner: string, image?: { src: string; alt: string }, preheader?: string): string {
-  return layoutEmail(inner, { siteUrl: SITE_URL, image, preheader });
-}
-
-function button(url: string, label: string): string {
-  return botaoEmail(url, label);
-}
-
-type Hero = { src: string; alt: string };
+export { preheaderDe } from "./corpo-email";
 
 /** URL da imagem de assunto do e-mail (hospedada em public/media/email/). */
 export function emailImage(key: string, alt: string): Hero {
-  return { src: `${SITE_URL}/media/email/${key}.jpg`, alt };
+  return imagemEmail(SITE_URL, key, alt);
 }
 
 /** E-mail com título, texto e botão (CTA). */
 export function brandedEmail(o: { title: string; intro: string; button: string; url: string; outro?: string; image?: Hero }): string {
-  return layout(
-    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#123b26;">${o.title}</h1>
-     <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#374151;">${o.intro}</p>
-     ${button(o.url, o.button)}
-     ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`,
-    o.image
-  );
+  return corpoBotao(SITE_URL, o);
 }
 
 /** E-mail com código (OTP) em destaque, sem botão. */
 export function brandedCodeEmail(o: { title: string; intro: string; code: string; outro?: string; image?: Hero }): string {
-  return layout(
-    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#123b26;">${o.title}</h1>
-     <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#374151;">${o.intro}</p>
-     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr><td align="center" style="padding:18px;background:#f2fbe9;border:1px dashed #8FD63A;border-radius:12px;">
-       <span style="font-size:34px;font-weight:800;letter-spacing:8px;color:#123b26;">${o.code}</span>
-     </td></tr></table>
-     ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`,
-    o.image
-  );
+  return corpoCodigo(SITE_URL, o);
 }
 
 /**
@@ -62,183 +40,10 @@ export function brandedNotification(o: {
   outro?: string;
   image?: Hero;
 }): string {
-  const gapAfterIntro = o.detailsHtml || o.cta ? "18px" : "0";
-  return layout(
-    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#123b26;">${o.title}</h1>
-     <p style="margin:0 0 ${gapAfterIntro};font-size:15px;line-height:1.6;color:#374151;">${o.intro}</p>
-     ${o.detailsHtml ?? ""}
-     ${o.cta ? `<div style="margin-top:20px;">${button(o.cta.url, o.cta.label)}</div>` : ""}
-     ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`,
-    o.image
-  );
+  return corpoNotificacao(SITE_URL, o);
 }
 
 /** Versão TEXTO PURO (multipart) da notificação — mesma informação, sem HTML. */
-export function notificationText(o: {
-  title: string;
-  intro: string;
-  detailsText?: string;
-  cta?: { label: string; url: string };
-}): string {
-  return [
-    o.title,
-    "",
-    o.intro,
-    o.detailsText ? `\n${o.detailsText}` : "",
-    o.cta ? `\n${o.cta.label}: ${o.cta.url}` : "",
-    `\n${rodapeTexto(SITE_URL)}`,
-  ]
-    .filter((l) => l !== "")
-    .join("\n");
-}
-
-export interface SampleEmail {
-  key: string;
-  subject: string;
-  html: string;
-}
-
-/**
- * Exemplos dos e-mails TRANSACIONAIS reais (os que o notify() envia), com dados
- * fictícios — para revisão em /dev/emails e via /api/test-email?all=1. NÃO
- * expõem contato da outra parte (o de interessado usa buildLeadNotification).
- */
-export function notificationSamples(): SampleEmail[] {
-  const lead = buildLeadNotification("candidatura", "Studio no Centro", { name: "Ana Carvalho" });
-  return [
-    {
-      key: "novo-interessado",
-      subject: "Novo interessado no seu imóvel",
-      html: brandedNotification({
-        title: "Novo interessado no seu imóvel",
-        intro: "Olá Marcos, você recebeu um novo interessado no Viva Nomads.",
-        detailsHtml: lead.detailsHtml,
-        image: emailImage("novo-interessado", "Pessoa buscando imóveis no notebook"),
-      }),
-    },
-    {
-      key: "nova-mensagem",
-      subject: "Você tem uma nova mensagem no Viva Nomads",
-      html: brandedNotification({
-        title: "Você tem uma nova mensagem",
-        intro: "Olá Marcos, você recebeu uma nova mensagem no Viva Nomads.",
-        detailsHtml:
-          `<p style="margin:0 0 6px"><strong>Ana</strong> escreveu:</p>` +
-          `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">Oi! O imóvel ainda está disponível para setembro?</blockquote>` +
-          `<p style="margin:12px 0 0"><a href="${SITE_URL}/dashboard/mensagens" style="display:inline-block;background:#1c6b3a;color:#fff;padding:11px 20px;border-radius:999px;text-decoration:none;font-weight:600">Ler e responder</a></p>`,
-        image: emailImage("nova-mensagem", "Conversa pela plataforma"),
-      }),
-    },
-    {
-      key: "candidatura-recebida",
-      subject: "Candidatura recebida",
-      html: brandedNotification({
-        title: "Candidatura recebida",
-        intro: "Recebemos sua candidatura. O proprietário foi notificado.",
-        cta: { label: "Abrir no Viva Nomads", url: `${SITE_URL}/dashboard` },
-        image: emailImage("candidatura-recebida", "Verificação e documentos"),
-      }),
-    },
-    {
-      key: "pedido-resposta",
-      subject: "Um proprietário respondeu ao seu pedido",
-      html: brandedNotification({
-        title: "Um proprietário respondeu ao seu pedido",
-        intro:
-          "Olá Ana, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.",
-        cta: { label: "Ver a resposta", url: `${SITE_URL}/dashboard/pedidos` },
-        image: emailImage("pedido-resposta", "Acordo entre proprietário e inquilino"),
-      }),
-    },
-  ];
-}
-
-/** Um exemplo de cada modelo (com dados fictícios) para revisar o visual. */
-export function sampleEmails(): SampleEmail[] {
-  const url = `${SITE_URL}/auth/callback?code=exemplo`;
-  return [
-    {
-      key: "confirmar-cadastro",
-      subject: "Confirme seu e-mail · Viva Nomads",
-      html: brandedEmail({
-        title: "Confirme seu e-mail",
-        intro: "Falta só um passo para ativar sua conta no Viva Nomads. Clique no botão abaixo para confirmar seu e-mail e começar.",
-        button: "Confirmar e-mail",
-        url,
-        outro: "Por segurança, este link expira em algumas horas.",
-        image: emailImage("confirmar-cadastro", "Boas-vindas ao Viva Nomads"),
-      }),
-    },
-    {
-      key: "redefinir-senha",
-      subject: "Redefinir sua senha · Viva Nomads",
-      html: brandedEmail({
-        title: "Redefinir sua senha",
-        intro: "Recebemos um pedido para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha.",
-        button: "Criar nova senha",
-        url,
-        outro: "Se não foi você, ignore este e-mail — sua senha continua a mesma.",
-        image: emailImage("redefinir-senha", "Sua conta segura no Viva Nomads"),
-      }),
-    },
-    {
-      key: "link-de-acesso",
-      subject: "Seu link de acesso · Viva Nomads",
-      html: brandedEmail({
-        title: "Seu link de acesso",
-        intro: "Use o botão abaixo para entrar no Viva Nomads com segurança, sem precisar de senha.",
-        button: "Entrar agora",
-        url,
-        outro: "Este link é de uso único e expira em breve.",
-        image: emailImage("link-de-acesso", "Entrada no Viva Nomads"),
-      }),
-    },
-    {
-      key: "convite",
-      subject: "Você foi convidado · Viva Nomads",
-      html: brandedEmail({
-        title: "Você foi convidado para o Viva Nomads",
-        intro: "Você recebeu um convite para participar do Viva Nomads. Clique no botão abaixo para criar sua conta.",
-        button: "Aceitar convite",
-        url,
-        image: emailImage("convite", "Bem-vindo ao Viva Nomads"),
-      }),
-    },
-    {
-      key: "trocar-email",
-      subject: "Confirme seu novo e-mail · Viva Nomads",
-      html: brandedEmail({
-        title: "Confirme seu novo e-mail",
-        intro: "Para concluir a troca de endereço de e-mail da sua conta, confirme este novo e-mail clicando no botão abaixo.",
-        button: "Confirmar novo e-mail",
-        url,
-        outro: "Se você não pediu essa troca, ignore este e-mail.",
-        image: emailImage("trocar-email", "Atualização da sua conta"),
-      }),
-    },
-    {
-      key: "reautenticacao",
-      subject: "Seu código de verificação · Viva Nomads",
-      html: brandedCodeEmail({
-        title: "Confirme sua identidade",
-        intro: "Para concluir uma ação sensível na sua conta, use o código de verificação abaixo:",
-        code: "824519",
-        outro: "O código expira em alguns minutos. Nunca compartilhe este código com ninguém.",
-        image: emailImage("reautenticacao", "Verificação de segurança"),
-      }),
-    },
-    {
-      key: "transacional",
-      subject: "Novo interessado no seu imóvel · Viva Nomads",
-      html: brandedEmail({
-        title: "Você tem um novo interessado 🎉",
-        intro:
-          "Alguém demonstrou interesse no seu imóvel \"Studio premium no Centro\". Responda pela plataforma — o contato fica registrado e protegido.",
-        button: "Responder pela plataforma",
-        url: `${SITE_URL}/dashboard/mensagens`,
-        outro: "Exemplo de e-mail transacional do app (Resend). Não expõe contato da outra parte.",
-        image: emailImage("transacional", "Imóvel mobiliado para estadia"),
-      }),
-    },
-  ];
+export function notificationText(o: { title: string; intro: string; detailsText?: string; cta?: { label: string; url: string } }): string {
+  return textoNotificacao(SITE_URL, o);
 }

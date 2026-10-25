@@ -6,12 +6,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { consumirLimite } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
-import { BUCKET_CAIXA, ENVIOS_POR_HORA, IMAGEM_LEGIVEL, validarEnvio, type EnvioEntrada, type ExtracaoStatus } from "./caixa";
+import { AVISO_CAIXA_ILEGIVEL, BUCKET_CAIXA, ENVIOS_POR_HORA, IMAGEM_LEGIVEL, validarEnvio, validarReabertura, type EnvioEntrada, type ExtracaoStatus, type StatusCaixa } from "./caixa";
 import { textoDocx, textoXlsx } from "./office";
 
 export type ItemCaixa = {
   id: string;
   criado_em: string;
+  autor_id: string | null;
   autor_nome: string;
   tipo: "texto" | "audio" | "documento" | "imagem";
   texto: string | null;
@@ -19,9 +20,11 @@ export type ItemCaixa = {
   arquivo_url: string | null;
   texto_extraido: string | null;
   extracao_status: ExtracaoStatus;
-  status: "novo" | "em_andamento" | "feito" | "precisa_daniel";
+  status: StatusCaixa;
   resposta: string | null;
   respondido_em: string | null;
+  aceito_em: string | null;
+  reaberto_motivo: string | null;
 };
 
 const LEITURA_SISTEMA =
@@ -131,19 +134,19 @@ export async function enviarParaCaixa(entrada: EnvioEntrada): Promise<{ ok: bool
 }
 
 /** Lista os envios mais recentes com link temporário (10 min) para o arquivo. */
-export async function listarCaixa(): Promise<{ itens: ItemCaixa[]; aviso: string | null }> {
+export async function listarCaixa(): Promise<{ itens: ItemCaixa[]; aviso: string | null; uid: string | null }> {
   const s = await sessaoAdmin();
-  if (!s) return { itens: [], aviso: "Sem permissão ou sem conexão com o banco." };
+  if (!s) return { itens: [], aviso: "Sem permissão ou sem conexão com o banco.", uid: null };
   const { data, error } = await s.supabase
     .from("caixa_socios")
-    .select("id, criado_em, autor, tipo, texto, arquivo_path, arquivo_nome, texto_extraido, extracao_status, status, resposta, respondido_em, profiles(full_name)")
+    .select("id, criado_em, autor, tipo, texto, arquivo_path, arquivo_nome, texto_extraido, extracao_status, status, resposta, respondido_em, aceito_em, reaberto_motivo, autor_perfil:profiles!caixa_socios_autor_fkey(full_name)")
     .order("criado_em", { ascending: false })
     .limit(100);
   if (error) {
-    return {
-      itens: [],
-      aviso: /caixa_socios/.test(error.message) ? "A Caixa dos Sócios ainda não existe no banco (migração 0107 pendente)." : "Não foi possível ler a Caixa agora.",
-    };
+    // ADMIN-0: nada de deduzir a causa pelo texto do erro (a tabela existe; o defeito era o embed ambíguo, com duas
+    // FKs para profiles). Mensagem genérica na tela; o código do erro vai para o log.
+    console.error(`[caixa-socios] leitura falhou: ${error.code ?? "sem código"}`);
+    return { uid: s.uid, itens: [], aviso: AVISO_CAIXA_ILEGIVEL };
   }
   const caminhos = (data ?? []).map((r) => r.arquivo_path).filter((p): p is string => !!p);
   const urls = new Map<string, string>();
@@ -153,11 +156,13 @@ export async function listarCaixa(): Promise<{ itens: ItemCaixa[]; aviso: string
   }
   return {
     aviso: null,
+    uid: s.uid,
     itens: (data ?? []).map((r) => {
-      const perfil = r.profiles as unknown as { full_name: string | null } | null;
+      const perfil = r.autor_perfil as unknown as { full_name: string | null } | null;
       return {
         id: r.id,
         criado_em: r.criado_em,
+        autor_id: r.autor,
         autor_nome: perfil?.full_name?.split(" ")[0] ?? "Sócio",
         tipo: r.tipo,
         texto: r.texto,
@@ -168,6 +173,8 @@ export async function listarCaixa(): Promise<{ itens: ItemCaixa[]; aviso: string
         status: r.status,
         resposta: r.resposta,
         respondido_em: r.respondido_em,
+        aceito_em: r.aceito_em,
+        reaberto_motivo: r.reaberto_motivo,
       } as ItemCaixa;
     }),
   };
@@ -188,4 +195,35 @@ export async function relerArquivo(id: string): Promise<{ ok: boolean; erro?: st
   await s.supabase.from("caixa_socios").update({ extracao_status: x.status, texto_extraido: x.texto }).eq("id", id);
   revalidatePath("/admin/socios");
   return { ok: x.status === "ok", erro: x.status === "ok" ? undefined : "Ainda não foi possível ler este arquivo." };
+}
+
+/**
+ * Aceite do sócio (ordem 3c3d8a9e): só o AUTOR do pedido dá por feito ("Aceito") ou reabre dizendo o que falta.
+ * A condição vai no próprio UPDATE (autor = quem está logado e status = aguardando_aceite), e o gatilho do banco repete a regra.
+ */
+export async function responderAceite(id: string, decisao: "aceitar" | "reabrir", falta?: string): Promise<{ ok: boolean; erro?: string }> {
+  const s = await sessaoAdmin();
+  if (!s) return { ok: false, erro: "Sem permissão." };
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, erro: "Item inválido." };
+  const agora = new Date().toISOString();
+  let mudanca: Record<string, unknown>;
+  if (decisao === "aceitar") {
+    mudanca = { status: "feito", aceito_por: s.uid, aceito_em: agora };
+  } else {
+    const v = validarReabertura(falta);
+    if (!v.ok) return { ok: false, erro: v.erro };
+    mudanca = { status: "em_andamento", reaberto_motivo: v.falta, reaberto_em: agora, aceito_por: null, aceito_em: null };
+  }
+  const { data, error } = await s.supabase
+    .from("caixa_socios")
+    .update(mudanca)
+    .eq("id", id)
+    .eq("autor", s.uid)
+    .eq("status", "aguardando_aceite")
+    .select("id");
+  if (error) return { ok: false, erro: "Não foi possível registrar agora." };
+  if (!data?.length) return { ok: false, erro: "Só quem fez o pedido aceita ou reabre, e só enquanto aguarda o aceite." };
+  revalidatePath("/admin/socios");
+  revalidatePath("/admin");
+  return { ok: true };
 }

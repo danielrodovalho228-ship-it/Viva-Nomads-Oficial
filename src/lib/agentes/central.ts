@@ -59,6 +59,9 @@ export interface Ordem {
   prioridade?: string | null;
   /** Admin que criou a ordem na Central; nulo = ordem criada por agente (ronda), que nunca dispara sozinha. */
   criado_por?: string | null;
+  /** Aceite de quem pediu (0209): ordem criada por pessoa só é "feita" quando ela aceita. */
+  aceito_em?: string | null;
+  reaberto_motivo?: string | null;
 }
 
 export interface Conversa {
@@ -503,8 +506,21 @@ export function prometeAcao(resposta: string): boolean {
 }
 
 /** Estado da ordem na tela: enviada → em execução → concluída. */
-export type EstadoOrdem = "aguardando" | "enviada" | "falhou" | "em_execucao" | "concluida" | "cancelada";
-export function estadoDaOrdem(o: Pick<Ordem, "status" | "disparada_em" | "sessao_url" | "disparo_erro">): EstadoOrdem {
+export type EstadoOrdem = "aguardando" | "enviada" | "falhou" | "em_execucao" | "aguardando_aceite" | "concluida" | "cancelada";
+
+/**
+ * Ordem criada por uma pessoa (criado_por) e concluída pelo agente, ainda sem o aceite de quem pediu.
+ * `aceito_em === null` (coluna existe e está vazia); `undefined` = banco sem a 0209, onde ninguém espera aceite.
+ */
+export function aguardaAceiteOrdem(o: Pick<Ordem, "status" | "criado_por" | "aceito_em">): boolean {
+  return o.status === "concluida" && !!o.criado_por && o.aceito_em === null;
+}
+/** Só QUEM CRIOU a ordem aceita ou reabre, e só enquanto ela aguarda o aceite. */
+export function podeAceitarOrdem(o: Pick<Ordem, "status" | "criado_por" | "aceito_em">, uid: string | null | undefined): boolean {
+  return !!uid && o.criado_por === uid && aguardaAceiteOrdem(o);
+}
+export function estadoDaOrdem(o: Pick<Ordem, "status" | "disparada_em" | "sessao_url" | "disparo_erro" | "criado_por" | "aceito_em">): EstadoOrdem {
+  if (aguardaAceiteOrdem(o)) return "aguardando_aceite";
   if (o.status === "concluida") return "concluida";
   if (o.status === "cancelada") return "cancelada";
   if (o.status === "lida") return "em_execucao";
@@ -517,6 +533,7 @@ export const ROTULO_ESTADO: Record<EstadoOrdem, string> = {
   enviada: "Enviada",
   falhou: "Disparo falhou",
   em_execucao: "Em execução",
+  aguardando_aceite: "Aguardando aceite",
   concluida: "Concluída",
   cancelada: "Cancelada",
 };

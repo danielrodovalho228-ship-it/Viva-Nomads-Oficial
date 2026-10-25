@@ -61,7 +61,7 @@ test("deslocamento fica dentro de ~500 m e nunca devolve o ponto exato", () => {
 
 test("getProperty (página pública) aplica a aproximação no servidor; dono continua exato", () => {
   const src = readFileSync(new URL("./properties.ts", import.meta.url), "utf8");
-  const publico = src.slice(src.indexOf("export async function getProperty("), src.indexOf("export async function getPropertyForOwner"));
+  const publico = src.slice(src.indexOf("async function getPropertySemCache("), src.indexOf("export async function getPropertyForOwner"));
   assert.match(publico, /comCoordenadaAproximada\(rowToProperty/);
   const dono = src.slice(src.indexOf("export async function getPropertyForOwner"), src.indexOf("async function attachCoverPhotos"));
   assert.doesNotMatch(dono, /comCoordenadaAproximada/);

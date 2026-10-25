@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 // Laboratório de testes: o modo simulado (nada sai para a rede) NUNCA pode ir
 // para produção. Com a chave ligada num build de produção da Vercel, o build falha.
 const LABORATORIO = process.env.INTEGRACOES_SIMULADAS === "on";
+const APICE = "https://vivanomads.com.br";
+const WWW = { type: "host" as const, value: "www.vivanomads.com.br" };
 if (LABORATORIO && process.env.VERCEL_ENV === "production") {
   throw new Error("INTEGRACOES_SIMULADAS=on é só para o laboratório de testes — nunca em produção.");
 }
@@ -18,7 +20,9 @@ const nextConfig: NextConfig = {
   },
   images: {
     // AVIF/WebP: imagens bem menores que JPEG/PNG onde o navegador suporta.
-    formats: ["image/avif", "image/webp"],
+    // No laboratório só WebP: codificar AVIF de foto larga (1280–1920 px) em runner compartilhado leva dezenas
+    // de segundos e estoura t119/t48 a 1280/1440 px; a produção continua com AVIF.
+    formats: LABORATORIO ? ["image/webp"] : ["image/avif", "image/webp"],
     // Next 16 recusa (400) imagem em IP local; o laboratório guarda fotos no Supabase local (127.0.0.1).
     // Só no laboratório: o build de produção com a chave ligada já falha no topo deste arquivo.
     dangerouslyAllowLocalIP: LABORATORIO,
@@ -33,6 +37,11 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // www → ápice, MENOS /.well-known/*: Android (assetlinks) e Apple (AASA) não aceitam redirect nesse arquivo,
+      // então os dois hosts servem /.well-known direto (200). O redirect mora aqui, não no domínio da Vercel,
+      // porque o redirect de domínio da Vercel não tem exceção por caminho.
+      { source: "/", has: [WWW], destination: `${APICE}/`, permanent: true },
+      { source: "/:caminho((?!\\.well-known(?:/|$)).+)", has: [WWW], destination: `${APICE}/:caminho`, permanent: true },
       // UMA URL só para a home: "/" é a principal; "/home" (links antigos) faz
       // 301 para a raiz. Antes "/" redirecionava para "/home" e as duas ficavam
       // no sitemap/canonical — conteúdo duplicado.
@@ -59,6 +68,9 @@ const nextConfig: NextConfig = {
       // Só o redirect() da página, dentro do painel com loading.tsx, saía como 200 + navegação do
       // navegador, e o lab (t48) via um 404 de recurso nesse caminho.
       { source: "/dashboard/assinatura", destination: "/precos", permanent: false },
+      // Prompt 23: a agenda do proprietário mora em Ferramentas › Agenda; o endereço antigo dava 404.
+      { source: "/dashboard/calendario", destination: "/dashboard/agenda", permanent: false },
+      { source: "/dashboard/calendario/:resto*", destination: "/dashboard/agenda", permanent: false },
     ];
   },
   async rewrites() {

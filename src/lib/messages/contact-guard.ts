@@ -11,7 +11,30 @@
  * insert) e no cliente (eco otimista igual ao que o servidor grava).
  */
 
-const MASK = "🔒 [contato protegido]";
+const MASK = "[contato protegido]";
+const MASK_DOC = "[documento protegido]";
+
+/**
+ * Documentos (Prompt 32, item 3): CPF com ou sem máscara — só com dígito verificador válido, para não pegar números
+ * comuns (11 dígitos com DV inválido continuam no filtro de telefone) — e RG (máscara 12.345.678-9, prefixo de UF
+ * "MG-12.345.678" ou o rótulo "RG"). Dados de documento vão no campo Ocupantes da estadia, nunca no chat.
+ */
+const CPF_CANDIDATE_RE = /(?<![\d.-])\d{3}[.\s]?\d{3}[.\s]?\d{3}[-.\s]?\d{2}(?![\d-])/g;
+const RG_MASCARA_RE = /(?<![\w.])(?:[A-Z]{2}[-\s]?)?\d{1,2}\.\d{3}\.\d{3}(?:-[\dXx])?(?![\w.])/g;
+const RG_ROTULO_RE = /\b(?:RG|R\.G\.|identidade)\s*(?:n[ºo°]?\.?\s*)?[:\-]?\s*(?:[A-Z]{2}[-\s]?)?[\d.\-xX]{5,15}/gi;
+
+/** CPF válido (11 dígitos, não repetidos, DV certo). */
+export function cpfValido(digitos: string): boolean {
+  const d = digitos.replace(/\D/g, "");
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  const dv = (n: number) => {
+    let soma = 0;
+    for (let i = 0; i < n; i++) soma += Number(d[i]) * (n + 1 - i);
+    const r = (soma * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return dv(9) === Number(d[9]) && dv(10) === Number(d[10]);
+}
 
 /** E-mails. */
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]{2,}/g;
@@ -33,17 +56,27 @@ const SOCIAL_URL_RE = /(?:https?:\/\/)?(?:www\.)?(?:instagram|facebook|fb|tiktok
  *  o char anterior para não colidir com e-mails (já mascarados antes). */
 const HANDLE_RE = /(^|[^\w@])@([a-zA-Z0-9._]{2,30})/g;
 
+/** Ids (UUID) não são contato: trocados por marcador sem dígitos antes das regras e devolvidos no fim. */
+const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
 export interface GuardResult {
   /** Texto com os contatos mascarados. */
   text: string;
   /** true se algo foi mascarado (para exibir o aviso ao usuário). */
   masked: boolean;
+  /** true se havia CPF ou RG: o envio pelo chat é bloqueado (vai no campo Ocupantes da estadia). */
+  documento: boolean;
 }
 
 /** Mascara contatos diretos no texto da mensagem. */
 export function guardContactInfo(input: string): GuardResult {
   let masked = false;
-  let text = input;
+  let documento = false;
+  const ids: string[] = [];
+  let text = input.replace(UUID_RE, (id) => {
+    ids.push(id);
+    return String.fromCharCode(0xe000 + ids.length - 1);
+  });
 
   text = text.replace(MESSENGER_RE, () => {
     masked = true;
@@ -52,6 +85,20 @@ export function guardContactInfo(input: string): GuardResult {
   text = text.replace(EMAIL_RE, () => {
     masked = true;
     return MASK;
+  });
+  // Documentos antes do telefone: um CPF de 11 dígitos com DV válido não vira "telefone".
+  text = text.replace(RG_ROTULO_RE, () => {
+    documento = masked = true;
+    return MASK_DOC;
+  });
+  text = text.replace(CPF_CANDIDATE_RE, (m) => {
+    if (!cpfValido(m)) return m;
+    documento = masked = true;
+    return MASK_DOC;
+  });
+  text = text.replace(RG_MASCARA_RE, () => {
+    documento = masked = true;
+    return MASK_DOC;
   });
   text = text.replace(PHONE_CANDIDATE_RE, (m) => {
     const digits = m.replace(/\D/g, "");
@@ -71,9 +118,16 @@ export function guardContactInfo(input: string): GuardResult {
     return `${pre}${MASK}`;
   });
 
-  return { text, masked };
+  text = text.replace(/[\ue000-\uf8ff]/g, (c) => ids[c.charCodeAt(0) - 0xe000] ?? c);
+
+  return { text, masked, documento };
 }
 
 /** Aviso curto exibido quando algo foi mascarado. */
 export const GUARD_NOTICE =
   "Para sua segurança, telefones e e-mails são protegidos no chat. A negociação segue toda pela plataforma — o contato direto não é trocado.";
+
+/** Envio bloqueado quando a mensagem traz CPF ou RG (Prompt 32): o link leva ao campo Ocupantes da estadia. */
+export const DOCUMENTO_BLOQUEADO = "Para dados de documento, use o campo Ocupantes da estadia";
+/** Prompt 58: aviso fixo no rodapé de toda conversa. */
+export const AVISO_DOCUMENTOS = "Não envie documentos por aqui. Para dados de ocupantes, use a página da estadia.";

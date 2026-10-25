@@ -53,3 +53,24 @@ test("nenhum anúncio de exemplo traz vídeo inventado (regra: nenhuma imagem qu
   }
   assert.equal(exemplos.find((e) => e.id === "ube-001")?.videoUrl, undefined);
 });
+
+test("galeria: vídeo enviado como arquivo também vira a 1ª peça", () => {
+  assert.deepEqual(itensDaGaleria(["a"], undefined, true), [ITEM_VIDEO, "a"]);
+  assert.deepEqual(itensDaGaleria(["a"], undefined, false), ["a"]);
+});
+
+test("65-B: o vídeo como 2º item da galeria (depois da capa) e o índice da foto no lightbox", async () => {
+  const { itensDaGaleriaVideoDepoisDaCapa, fotoDoItem } = await import("./video-tour.ts");
+  const itens = itensDaGaleriaVideoDepoisDaCapa(["capa", "b", "c"], undefined, true);
+  assert.deepEqual(itens, ["capa", ITEM_VIDEO, "b", "c"]);
+  assert.deepEqual(itensDaGaleriaVideoDepoisDaCapa(["capa"], "https://youtu.be/dQw4w9WgXcQ"), ["capa", ITEM_VIDEO]);
+  assert.deepEqual(itensDaGaleriaVideoDepoisDaCapa(["capa", "b"], undefined, false), ["capa", "b"], "sem vídeo: nenhum item vazio");
+  assert.deepEqual(itensDaGaleriaVideoDepoisDaCapa([], undefined, true), [ITEM_VIDEO]);
+  assert.equal(fotoDoItem(itens, 0), 0);
+  assert.equal(fotoDoItem(itens, 1), null);
+  assert.equal(fotoDoItem(itens, 2), 1);
+  assert.equal(fotoDoItem(itens, 3), 2);
+  // Vídeo em 1º (lista antiga): mesma conta.
+  const antiga = itensDaGaleria(["a", "b"], undefined, true);
+  assert.equal(fotoDoItem(antiga, 1), 0);
+});

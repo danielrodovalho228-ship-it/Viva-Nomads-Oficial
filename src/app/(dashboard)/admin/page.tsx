@@ -1,15 +1,28 @@
 import { hojeBR } from "@/lib/utils";
 import { resolverPeriodo } from "@/lib/admin/visao-geral";
 import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
-import { PushTeste } from "@/components/admin/push-teste";
+import { CartaoPush } from "@/components/admin/cartao-push";
+import { PainelIaCadastro } from "@/components/admin/painel-ia-cadastro";
+import { ContadorDeteccao } from "@/components/admin/contador-deteccao";
+import { CartaoBackup } from "@/components/admin/cartao-backup";
+import { CartaoMapas } from "@/components/admin/cartao-mapas";
+import { CartaoEntradaEmail } from "@/components/admin/cartao-entrada-email";
 import { VisaoGeralClient } from "./visao-geral-client";
 import { AtalhosAdmin } from "./atalhos-admin";
+import { AvisoAtendimentoAdmin } from "@/components/admin/aviso-atendimento";
+import { DecisoesHoje } from "@/components/admin/numeros";
+import { decisoesDoAdmin } from "@/lib/data/admin-decisoes";
+import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { FaixaNumerosCelular } from "@/components/admin/faixa-numeros-celular";
+import { AlertaBackupCelular } from "@/components/admin/cartao-backup";
+import { faixaNumerosCelular } from "@/lib/admin/faixa-celular";
+import { showDemoProperties } from "@/lib/data/properties";
 
 /**
- * Visão geral do /admin (PR B): período (7/30/90 dias, ano, personalizado)
- * com variação contra o período anterior, filtro de cidade, blocos de
- * indicadores com a fórmula no "i", funil, "Precisa de você agora" e CSV.
- * O layout já exige admin; a leitura confere de novo (getVisaoGeral).
+ * Início do /admin na anatomia "decisões primeiro" (Prompt 46, D5): "Hoje você tem N decisões" (cada fila com o botão
+ * da decisão), depois UM número-herói e os números em listas com divisor fino — período (7/30/90 dias, ano,
+ * personalizado) com variação contra o anterior, filtro de cidade, fórmula no "i", funil e CSV. Todo número abre a
+ * lista que conta. O layout já exige admin; a leitura confere de novo (getVisaoGeral).
  */
 export default async function AdminPage({
   searchParams,
@@ -24,9 +37,10 @@ export default async function AdminPage({
   const periodo = resolverPeriodo({ periodo: um("periodo"), de: um("de"), ate: um("ate") }, hojeBR());
   const cidade = (um("cidade") ?? "").trim().slice(0, 80) || null;
 
-  const [resultado, cidades] = await Promise.all([
+  const [resultado, cidades, decisoes] = await Promise.all([
     getVisaoGeral(periodo.inicio, periodo.fim, cidade),
     cidadesComAnuncio(),
+    decisoesDoAdmin().catch(() => null),
   ]);
 
   const aviso = resultado.ok
@@ -41,16 +55,37 @@ export default async function AdminPage({
 
   return (
     <>
+      {/* E73: no celular, o alerta do backup (quando falha) e os números-chave vêm primeiro. */}
+      <AlertaBackupCelular />
+      {resultado.ok && <FaixaNumerosCelular itens={faixaNumerosCelular(resultado.dados.agora, resultado.dados.atual, cidade)} />}
+      <AvisoAtendimentoAdmin />
+      <DecisoesHoje decisoes={decisoes} />
       <VisaoGeralClient
         dados={resultado.ok ? resultado.dados : null}
         aviso={aviso}
         periodo={periodo}
         cidade={cidade}
         cidades={cidades}
+        demonstracao={{ total: SAMPLE_PROPERTIES.length, publicos: showDemoProperties() }}
       />
       <AtalhosAdmin />
       <div className="mt-6">
-        <PushTeste />
+        <PainelIaCadastro />
+      </div>
+      <div className="mt-6">
+        <ContadorDeteccao />
+      </div>
+      <div id="backup" className="mt-6 scroll-mt-24">
+        <CartaoBackup />
+      </div>
+      <div id="entrada-email" className="mt-6 scroll-mt-24">
+        <CartaoEntradaEmail />
+      </div>
+      <div className="mt-6">
+        <CartaoMapas />
+      </div>
+      <div id="push" className="mt-6 scroll-mt-24">
+        <CartaoPush />
       </div>
     </>
   );

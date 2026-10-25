@@ -1,3 +1,4 @@
+import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
 import Link from "next/link";
 import { loadPropertyForEdit } from "@/lib/data/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -24,8 +25,8 @@ export default async function EditarImovelPage({
 
   if (!property) {
     return (
-      <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center">
-        <h1 className="font-title text-lg font-bold text-ink">Imóvel não encontrado</h1>
+      <div className="rounded-xl border border-dashed border-line bg-white p-12 text-center">
+        <h1 className="font-title text-lg font-semibold text-ink">Imóvel não encontrado</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted">
           Este anúncio não existe ou não pertence à sua conta.
         </p>
@@ -42,13 +43,44 @@ export default async function EditarImovelPage({
   // Fatos do banco para a prontidão (documento, limite do plano, garantia, selo…);
   // o editor sobrepõe ao vivo os campos que a pessoa está mexendo.
   let fatos: FatosAnuncio | null = null;
+  // Rua, número e complemento (coluna restrita): o dono lê pela RPC de detalhes privados (complemento do prompt 23).
+  let enderecoExato = "";
+  // 64-B: o motivo da pausa (o selo do topo vira o menu de pausa do anúncio publicado ou pausado).
+  let pausaMotivo: string | null = null;
   const supabase = await createClient();
   if (supabase) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (user) fatos = (await fatosDosImoveis(supabase, user.id, [id])).get(id) ?? null;
+    if (user) {
+      fatos = (await fatosDosImoveis(supabase, user.id, [id])).get(id) ?? null;
+      if (property.status === "paused") {
+        const { data: m } = await supabase.from("properties").select("pausa_motivo").eq("id", id).maybeSingle();
+        pausaMotivo = (m as { pausa_motivo?: string | null } | null)?.pausa_motivo ?? null;
+      }
+      const { data: priv } = await supabase.rpc("property_private_details", { prop_id: id });
+      const linha = (Array.isArray(priv) ? priv[0] : priv) as { exact_address?: string | null } | null;
+      enderecoExato = linha?.exact_address ?? "";
+    }
   }
 
-  return <EditarImovelClient property={property} demo={demo} fatos={fatos} />;
+  return (
+    <>
+      {/* Prompt 38: o parceiro fixo do imóvel (limpeza, manutenção, lavanderia, fotografia). */}
+      {!demo && property.status !== "draft" && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-sm" data-testid="editor-estado">
+          <span className="text-muted">Estado do anúncio:</span>
+          <EstadoDoAnuncio id={id} status={property.status} motivo={pausaMotivo} />
+        </div>
+      )}
+      {!demo && (
+        <p className="mb-3 text-sm">
+          <Link href={`/dashboard/imoveis/${id}/parceiros`} className="text-ink underline underline-offset-4" data-testid="parceiros-imovel-editor">
+            Parceiros do imóvel
+          </Link>
+        </p>
+      )}
+      <EditarImovelClient property={property} demo={demo} fatos={fatos} enderecoExatoInicial={enderecoExato} />
+    </>
+  );
 }

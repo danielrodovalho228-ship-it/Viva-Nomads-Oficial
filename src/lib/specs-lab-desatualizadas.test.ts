@@ -2,17 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { CAPAS } from "../components/dashboard/capas.ts";
 
 // Ordem 75553f0a (laboratório verde): specs não fixam mais o que o produto mudou.
 const raiz = process.cwd();
 const spec = (nome: string) => readFileSync(join(raiz, "tests/e2e/specs", nome), "utf8");
 
-test("t86 confere o alt da capa do painel, que existe em CAPAS.imoveis", () => {
-  assert.match(CAPAS.imoveis.alt, /sala mobiliada/i);
-  assert.doesNotMatch(CAPAS.imoveis.alt, /apartamento mobiliado/i);
+test("t86: sem capa na Visão geral do dono (Prompt 42) e nenhum alt de 'apartamento mobiliado'", () => {
   const t86 = spec("t86-decisao-avatar-alt.spec.ts");
-  assert.match(t86, /painel-capa/);
+  assert.match(t86, /painel-capa"\]'\)\)\.toHaveCount\(0/);
+  assert.match(t86, /getByAltText\(\/apartamento mobiliado\/i\)\)\.toHaveCount\(0\)/);
   assert.doesNotMatch(t86, /getByAltText\("Sala de imóvel mobiliado preparada/);
 });
 
@@ -47,4 +45,29 @@ test("t61 não usa getByRole('alert') puro: o anunciador de rota do Next também
   const s = spec("t61-2fa-codigos-recuperacao.spec.ts");
   assert.doesNotMatch(s, /getByRole\("alert"\)/);
   assert.match(s, /locator\('p\[role="alert"\]'\)/);
+});
+
+test("t140 cobre 2560 px no elementFromPoint e o deslizar do lightbox a 390 px (ordem d1b76e6b, retorno 6814143d)", () => {
+  const s = spec("t140-galeria-lightbox.spec.ts");
+  assert.match(s, /\[1280, 1920, 2560\]/);
+  assert.match(s, /Input\.dispatchTouchEvent/);
+  assert.match(s, /hasTouch: true/);
+});
+
+test("t150 marca no máximo MAX_COMPARAR cartões: o 4º check não muda o estado (lab 3c9bd126)", () => {
+  const t150 = spec("t150-comparar-acima-abas.spec.ts");
+  assert.match(t150, /import \{ MAX_COMPARAR \} from/);
+  assert.match(t150, /Math\.min\(await marcas\.count\(\), MAX_COMPARAR\)/);
+  assert.doesNotMatch(t150, /Math\.min\(await marcas\.count\(\), \d+\)/);
+});
+
+test("t59 mede o último card do painel com poll, rolando ao fim a cada tentativa (instável no lab 3c9bd126)", () => {
+  const t59 = spec("t59-flutuante-nao-tampa.spec.ts");
+  assert.match(t59, /expect\s*\n?\s*\.poll\(cobre/);
+  assert.doesNotMatch(t59, /expect\(cobre, "o flutuante cobre o último card"\)/);
+});
+
+test("t172 repete o clique da gaveta até a janela abrir (clique antes da hidratação, instável no lab 3c9bd126)", () => {
+  const t172 = spec("t172-bom-saber-completo.spec.ts");
+  assert.match(t172, /\.toPass\(\{ timeout: 20_000 \}\)/);
 });

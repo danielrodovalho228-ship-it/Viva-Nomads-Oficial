@@ -52,6 +52,7 @@ async function abrirPeloFormulario(page: Page, assunto: string, pedido: string, 
 test.describe("T24 — Acolhimento e resposta sugerida", () => {
   test.skip(!noLaboratorio || !URL || !SERVICE, "Só no laboratório (banco local + service role).");
   test.describe.configure({ mode: "default" });
+  test.beforeEach(() => test.setTimeout(120_000)); // a IA responde depois de gravar o chamado: sob carga do lab passou de 20 s (instável)
   test.beforeEach(liberarLimiteChamados);
   const adm = () => createClient(URL!, SERVICE!, { auth: { persistSession: false } });
 
@@ -66,7 +67,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     const numero = await abrirPeloFormulario(await ctx.newPage(), "Contrato ou caução", `Minha caução ainda não foi devolvida depois da saída do imóvel. (${Date.now()})`, `t24.${Date.now()}@lab.vivanomads.com.br`);
     await ctx.close();
     // acolhimento (público) + resumo e ações + sugestão (internos)
-    await expect.poll(async () => (await mensagens(numero)).ms.filter((m) => m.autor === "ia").length, { timeout: 20_000 }).toBe(3);
+    await expect.poll(async () => (await mensagens(numero)).ms.filter((m) => m.autor === "ia").length, { timeout: 60_000 }).toBe(3);
     const { c, ms } = await mensagens(numero);
     expect(c.categoria, "a triagem pelo texto põe na fila da Caução").toBe("caucao");
     expect(c.responsavel_tipo).toBe("humano");
@@ -90,7 +91,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
       const assunto = pedido.includes("anúncio") ? "Meu anúncio não publica" : "Contrato ou caução";
       const numero = await abrirPeloFormulario(await ctx.newPage(), assunto, `${pedido} (${Date.now()})`, email);
       await ctx.close();
-      await expect.poll(async () => (await mensagens(numero)).ms.filter((m) => m.autor === "ia" && !m.interno).length, { timeout: 20_000 }).toBe(2);
+      await expect.poll(async () => (await mensagens(numero)).ms.filter((m) => m.autor === "ia" && !m.interno).length, { timeout: 60_000 }).toBe(2);
       const { ms } = await mensagens(numero);
       expect(ms.some((m) => m.interno && m.corpo.includes("Resposta sugerida:")), "sem nota de sugestão: já respondeu").toBe(false);
       const [acolhe, resposta] = ms.filter((m) => m.autor === "ia" && !m.interno);
@@ -102,7 +103,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
       expect(c!.responsavel_tipo).toBe("humano");
       const { data: ev } = await adm().from("chamado_eventos").select("acao").eq("chamado_id", c!.id).eq("acao", "respondido_viva");
       expect(ev).toHaveLength(1);
-      if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) await expect.poll(lerSaida, { timeout: 20_000 }).toContain(`Seu chamado foi respondido — ${numero}`);
+      if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) await expect.poll(lerSaida, { timeout: 20_000 }).toContain(`Seu chamado foi respondido (${numero}) · Viva Nomads`);
     }
   });
 
@@ -128,7 +129,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const numero = await abrirComoVisitante(await ctx.newPage(), `Sou proprietário e quero entender como funciona o Caução. (${Date.now()})`, email);
     await ctx.close();
-    await expect.poll(async () => (await mensagens(numero)).ms.some((m) => m.interno && m.corpo.includes("Resposta sugerida:")), { timeout: 20_000 }).toBe(true);
+    await expect.poll(async () => (await mensagens(numero)).ms.some((m) => m.interno && m.corpo.includes("Resposta sugerida:")), { timeout: 60_000 }).toBe(true);
     const { ms } = await mensagens(numero);
     const publicasIA = ms.filter((m) => m.autor === "ia" && !m.interno);
     expect(publicasIA, "só o acolhimento").toHaveLength(1);
@@ -154,7 +155,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     const vis = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const numero = await abrirComoVisitante(await vis.newPage(), `A devolução da caução está atrasada (${Date.now()})`, email);
     await vis.close();
-    await expect.poll(async () => (await mensagens(numero)).ms.some((m) => m.interno && m.autor === "ia" && m.corpo.includes("Resposta sugerida:")), { timeout: 20_000 }).toBe(true);
+    await expect.poll(async () => (await mensagens(numero)).ms.some((m) => m.interno && m.autor === "ia" && m.corpo.includes("Resposta sugerida:")), { timeout: 60_000 }).toBe(true);
     const { data: c } = await adm().from("chamados").select("id").eq("numero_publico", numero).single();
 
     const ctx = await browser.newContext({ storageState: authFile("admin") });
@@ -174,8 +175,8 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
       await expect.poll(lerSaida, { message: "aviso à equipe", timeout: 20_000 }).toContain(`— ${numero}: novo chamado`);
       const linhas = lerSaida();
-      expect(linhas).toContain(`Recebemos seu chamado — ${numero}`);
-      expect(linhas).toContain(`Seu chamado foi respondido — ${numero}`);
+      expect(linhas).toContain(`Recebemos seu chamado (${numero}) · Viva Nomads`);
+      expect(linhas).toContain(`Seu chamado foi respondido (${numero}) · Viva Nomads`);
     }
   });
 });

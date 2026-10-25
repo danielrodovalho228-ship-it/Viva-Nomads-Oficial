@@ -43,8 +43,8 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
 
   if (variante === "curto") {
     return (
-      <div className="rounded-2xl border border-sage-200 bg-white p-5 text-ink">
-        <p className="flex items-center gap-2 font-title text-lg font-bold">
+      <div className="rounded-xl border border-sage-200 bg-white p-4 text-ink">
+        <p className="flex items-center gap-2 font-title text-lg font-semibold">
           <Scale className="h-5 w-5 text-forest" aria-hidden /> Quanto você paga
         </p>
         <p className="mt-2 text-sm text-muted">
@@ -53,20 +53,20 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
         <div className="mt-3 grid grid-cols-1 gap-3 text-center sm:grid-cols-3" data-testid="comparativo-curto">
           <div className="rounded-xl bg-sage-100 p-3">
             <p className="text-xs text-muted">Viva Nomads (contrato de 3 meses)</p>
-            <p className="font-title text-2xl font-bold text-forest">{aprox(viva.pct ?? 0)}</p>
+            <p className="font-title text-2xl font-semibold text-forest">{aprox(viva.pct ?? 0)}</p>
             <p className="text-xs text-muted">do total, menor com mais imóveis</p>
           </div>
           {airbnb && (
             <div className="rounded-xl bg-surface-2 p-3">
               <p className="text-xs text-muted">Airbnb (taxa sobre o período)</p>
-              <p className="font-title text-2xl font-bold text-ink">{aprox(airbnb.pct ?? 0)}</p>
+              <p className="font-title text-2xl font-semibold text-ink">{aprox(airbnb.pct ?? 0)}</p>
               <p className="text-xs text-muted">do total pago</p>
             </div>
           )}
           {quintoandar && (
             <div className="rounded-xl bg-surface-2 p-3">
               <p className="text-xs text-muted">QuintoAndar (contrato de 30 meses)</p>
-              <p className="font-title text-2xl font-bold text-ink">{aprox(quintoandar.pct ?? 0)}</p>
+              <p className="font-title text-2xl font-semibold text-ink">{aprox(quintoandar.pct ?? 0)}</p>
               <p className="text-xs text-muted">do total pago, referência</p>
             </div>
           )}
@@ -85,22 +85,22 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
   // Percentual só com fonte e data; sem fonte, nada de número.
   const cartoes = cartoesCompare();
   return (
-    <section id="compare" className="rounded-2xl border border-line bg-white p-5 sm:p-8" aria-labelledby="compare-titulo">
-      <h2 id="compare-titulo" className="font-title text-2xl font-bold text-ink">
+    <section id="compare" className="rounded-xl border border-line bg-white p-4 sm:p-8" aria-labelledby="compare-titulo">
+      <h2 id="compare-titulo" className="font-title text-2xl font-semibold text-ink">
         Compare
       </h2>
       <p className="mt-1 text-sm text-muted">
         {`Contrato de ${COMPARE_MESES} meses a ${reaisInteiros(COMPARE_ALUGUEL)} por mês (${reaisInteiros(COMPARE_CONTRATO)} no total).`} Os percentuais são sobre o total pago pelo morador, no formato típico de cada empresa.
       </p>
-      <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="comparativo-linhas">
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="comparativo-linhas">
         {cartoes.map((l) => (
           <li
             key={l.id}
             data-compare={l.id}
-            className={l.id === "viva" ? "flex flex-col rounded-2xl border border-forest bg-sage-100 p-4" : "flex flex-col rounded-2xl border border-line bg-surface-2 p-4"}
+            className={l.id === "viva" ? "flex flex-col rounded-xl border border-forest bg-sage-100 p-4" : "flex flex-col rounded-xl border border-line bg-surface-2 p-4"}
           >
             <p className="text-sm font-semibold text-ink">{l.nome}</p>
-            <p className="mt-1 font-title text-2xl font-bold text-ink" data-testid="compare-numero">
+            <p className="mt-1 font-title text-2xl font-semibold text-ink" data-testid="compare-numero">
               {l.pct !== null ? aprox(l.pct) : l.id === "booking" ? "Varia por contrato" : "Sem taxa, mais trabalho"}
             </p>
             <p className="mt-1 flex-1 text-sm text-muted">{l.regra}</p>
@@ -112,11 +112,11 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
           </li>
         ))}
       </ul>
-      <h3 className="mt-8 font-title text-lg font-bold text-ink">O que a Viva entrega além do preço</h3>
+      <h3 className="mt-8 font-title text-lg font-semibold text-ink">O que a Viva entrega além do preço</h3>
       <ul className="mt-3 grid gap-2 sm:grid-cols-2" data-testid="diferenciais-viva">
         {DIFERENCIAIS_VIVA.map((d) => (
           <li key={d} className="flex items-start gap-2 text-sm text-ink">
-            <Check className="mt-0.5 h-4 w-4 shrink-0 text-forest" aria-hidden /> {d}
+            <Check className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden /> {d}
           </li>
         ))}
       </ul>
@@ -126,12 +126,12 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
 }
 
 /** Linha da etapa de preço do Anunciar: "Você paga R$ X uma vez." */
-export function LinhaComparativoAnuncio({ aluguel }: { aluguel: number }) {
-  if (!(aluguel > 0)) return null;
-  const valor = comissaoSobreContrato(aluguel, MESES_EXEMPLO, TAXA_COMISSAO_PADRAO);
+export function LinhaComparativoAnuncio({ aluguel, meses = MESES_EXEMPLO }: { aluguel: number; meses?: number }) {
+  if (!(aluguel > 0) || !(meses > 0)) return null;
+  const valor = comissaoSobreContrato(aluguel, meses, TAXA_COMISSAO_PADRAO);
   return (
     <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-ink" data-testid="linha-comparativo">
-      Num contrato de {MESES_EXEMPLO} meses neste valor mensal, a taxa é de <strong>{brl(valor)} uma vez</strong> (12% sobre o valor total do contrato para quem tem 1 ou 2 imóveis; menor com mais imóveis), só quando o contrato é fechado.{" "}
+      Num contrato de {meses} {meses === 1 ? "mês" : "meses"} neste valor mensal, a taxa de serviço é de <strong>{brl(valor)} uma vez</strong> ({pctTexto(TAXA_COMISSAO_PADRAO)} sobre o valor total do contrato para quem tem 1 ou 2 imóveis; menor com mais imóveis), só quando o contrato é fechado.{" "}
       <Link href="/precos" className="web-only font-medium text-forest underline">
         Ver preços
       </Link>

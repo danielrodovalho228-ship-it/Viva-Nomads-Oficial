@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
+ * L-43 (vigia, 24/10): a Conta e o atendimento não assentam em "networkidle"; espera até 10 s e segue para o elemento.
  * T53 — ordem dd8422ce (F26, F27, F28).
  *  F26: a Conta do inquilino mostra a seção "Documento (CPF)" (e o link #documento do Fechamento cai nela).
  *  F27: sem contrato ativo, Solicitações explica "manutenção abre a partir de um contrato ativo" + Central de Ajuda.
@@ -11,7 +12,8 @@ test.describe("T53 — Conta (documento) e Solicitações reais", () => {
   test.use({ storageState: authFile("inquilino") });
 
   test("F26: Conta do inquilino tem a seção Documento (CPF)", async ({ page }) => {
-    await page.goto("/dashboard/conta#documento", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/conta#documento", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const secao = page.locator("section#documento");
     await expect(secao).toBeVisible({ timeout: 15_000 });
     await expect(secao).toContainText(/Documento \(CPF\)|Documento da empresa/);
@@ -21,7 +23,8 @@ test.describe("T53 — Conta (documento) e Solicitações reais", () => {
   });
 
   test("F27/F28: Solicitações real não mostra exemplos e explica a regra do contrato ativo", async ({ page }) => {
-    await page.goto("/dashboard/solicitacoes", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/solicitacoes", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(page.getByText("Ana Carvalho")).toHaveCount(0);
     await expect(page.getByText("Apto Santa Mônica")).toHaveCount(0);
     const vazio = page.getByTestId("manutencao-sem-contrato");
@@ -31,7 +34,8 @@ test.describe("T53 — Conta (documento) e Solicitações reais", () => {
       await expect(vazio).toContainText("contrato ativo");
       await expect(vazio.getByRole("link", { name: /Central de Ajuda/ })).toHaveAttribute("href", "/ajuda");
     } else {
-      await page.reload({ waitUntil: "networkidle" });
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const antes = await cartoes.count();
       expect(await cartoes.count()).toBe(antes); // recarregar não perde chamado (vem do banco)
     }

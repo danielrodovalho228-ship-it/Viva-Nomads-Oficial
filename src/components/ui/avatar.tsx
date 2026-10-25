@@ -1,6 +1,6 @@
-import { Home, Search } from "lucide-react";
+import { Home, Search, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { iniciais, corAvatar } from "@/lib/avatar";
+import { corAvatar, rostoDoAvatar } from "@/lib/avatar";
 
 /** Modo do avatar — espelha o "mundo" ativo (proprietário/inquilino). */
 export type AvatarMode = "owner" | "tenant";
@@ -42,7 +42,8 @@ export function Avatar({
   badgeRing?: string;
   className?: string;
 }) {
-  const initials = iniciais(name);
+  // CONTA-A: sem nome e sem foto, a silhueta neutra no círculo da casa — nunca "?".
+  const rosto = rostoDoAvatar(name);
 
   const m = mode ? MODE_STYLE[mode] : null;
   const BadgeIcon = m?.icon;
@@ -62,14 +63,15 @@ export function Avatar({
   ) : (
     <span
       className={cn(
-        "inline-grid h-full w-full place-items-center rounded-full font-title font-bold text-white transition-[box-shadow] duration-300",
+        "inline-grid h-full w-full place-items-center rounded-full font-title font-semibold text-white transition-[box-shadow] duration-300",
         m && cn("ring-2 ring-offset-2 ring-offset-forest", m.ring),
         className
       )}
-      style={{ fontSize: size * 0.4, backgroundColor: corAvatar(name) }}
+      style={{ fontSize: size * 0.4, backgroundColor: rosto.tipo === "silhueta" ? "var(--color-forest)" : corAvatar(name) }}
+      data-rosto={rosto.tipo}
       aria-hidden
     >
-      {initials}
+      {rosto.tipo === "silhueta" ? <UserRound className="h-3/5 w-3/5" strokeWidth={1.75} /> : rosto.texto}
     </span>
   );
 

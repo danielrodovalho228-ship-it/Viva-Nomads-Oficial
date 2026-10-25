@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import { Lock, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { PRIMARIO_PORTA } from "@/lib/auth/porta-visual";
 import { PasswordInput } from "@/components/ui/password-input";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { useCelularNoNavegador, VoltarParaApp } from "@/components/app/voltar-para-app";
+import { SkeletonLinhas } from "@/components/ui/skeleton";
 
 type Phase = "checking" | "ready" | "invalid" | "done";
 
@@ -139,17 +141,17 @@ export default function ResetPasswordPage() {
         <Logo href="/" />
 
         {phase === "checking" && (
-          <div className="mt-12 flex items-center justify-center gap-2 text-muted">
-            <Loader2 className="h-5 w-5 animate-spin" /> Validando o link…
+          <div className="mt-12">
+            <SkeletonLinhas linhas={3} testid="reset-validando" />
           </div>
         )}
 
         {phase === "invalid" && (
-          <div className="mt-10 text-center">
+          <div className="mt-12 text-center">
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-amber-50">
               <AlertTriangle className="h-7 w-7 text-amber-600" />
             </div>
-            <h1 className="mt-4 font-title text-2xl font-bold text-ink">Link inválido ou expirado</h1>
+            <h1 className="mt-4 font-title text-2xl font-semibold text-ink">Link inválido ou expirado</h1>
             <p className="mt-2 text-sm text-muted">
               Este link de recuperação não é mais válido (pode ter expirado ou já ter sido usado).
               Peça um novo para redefinir sua senha.
@@ -161,11 +163,11 @@ export default function ResetPasswordPage() {
         )}
 
         {phase === "done" && (
-          <div className="mt-10 text-center">
+          <div className="mt-12 text-center">
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sage-100">
               <CheckCircle2 className="h-7 w-7 text-forest" />
             </div>
-            <h1 className="mt-4 font-title text-2xl font-bold text-ink">Pronto! Senha redefinida</h1>
+            <h1 className="mt-4 font-title text-2xl font-semibold text-ink">Pronto! Senha redefinida</h1>
             <p className="mt-2 text-sm text-muted">
               {celular ? "Você já pode entrar com a nova senha, no app ou no site." : "Tudo certo! Você já pode entrar com a nova senha. Redirecionando…"}
             </p>
@@ -182,7 +184,7 @@ export default function ResetPasswordPage() {
 
         {phase === "ready" && (
           <>
-            <h1 className="mt-10 font-title text-2xl font-bold text-ink">Criar nova senha</h1>
+            <h1 className="mt-12 font-title text-2xl font-semibold text-ink">Criar nova senha</h1>
             <p className="mt-2 text-sm text-muted">
               Escolha uma nova senha para sua conta. Mínimo de {MIN_PASSWORD} caracteres.
             </p>
@@ -220,7 +222,7 @@ export default function ResetPasswordPage() {
                 />
               )}
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className={`w-full ${PRIMARIO_PORTA}`} aria-busy={loading} disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Salvar nova senha
               </Button>

@@ -11,10 +11,25 @@ import {
   FileCheck,
   HandCoins,
   Sparkles,
-} from "lucide-react";
+  Receipt,
+  Building2,
+  Layers,
+  Clock,
+  Car, Trees } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { linhasRegrasPets } from "@/lib/anuncio/pets-regras";
 import { textoLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
+import { linhasRegrasCasa } from "@/lib/anuncio/regras-casa";
+import { linhasDetalhes, type ChaveGrupoDetalhe } from "@/lib/anuncio/detalhes-anuncio";
+
+const ICONE_DETALHE: Record<ChaveGrupoDetalhe | "chacara", React.ComponentType<{ className?: string }>> = {
+  chacara: Trees,
+  incluidoNoPreco: Receipt,
+  areasCondominio: Building2,
+  andar: Layers,
+  janela: Clock,
+  vaga: Car,
+};
 
 /**
  * Regras da estadia: duração, mobília, animais, fumante, hóspedes, check-in/out
@@ -45,25 +60,33 @@ export function StayRules({ property }: { property: Property }) {
     });
   if (property.limpezaEstadia)
     rows.push({ icon: Sparkles, label: "Limpeza durante a estadia", value: textoLimpezaEstadia(property.limpezaEstadia) });
-  if (property.smokingAllowed !== undefined)
+  // CAMPOS-1: o fumo estruturado (com "só na área externa") tem precedência sobre o sim/não antigo.
+  const fumo = linhasRegrasCasa(property.regrasCasa).find((l) => l.chave === "fumo");
+  if (fumo) rows.push({ icon: Cigarette, label: "Fumante", value: fumo.texto });
+  else if (property.smokingAllowed !== undefined)
     rows.push({ icon: Cigarette, label: "Fumante", value: property.smokingAllowed ? "Permitido fumar" : "Não é permitido fumar" });
   if (property.maxGuests !== undefined)
     rows.push({ icon: Users, label: "Moradores", value: `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` });
-  if (property.checkinAfter)
-    rows.push({ icon: LogIn, label: "Entrada", value: `A partir das ${property.checkinAfter}` });
-  if (property.checkoutBefore)
-    rows.push({ icon: LogOut, label: "Saída", value: `Até as ${property.checkoutBefore}` });
+  // CAMPOS-2: a janela de entrada/saída (quando ligada) tem precedência sobre os horários antigos.
+  const detalhes = linhasDetalhes(property.detalhesAnuncio, { tipo: property.propertyType, cidade: property.city });
+  if (!detalhes.some((d) => d.chave === "janela")) {
+    if (property.checkinAfter)
+      rows.push({ icon: LogIn, label: "Entrada", value: `A partir das ${property.checkinAfter}` });
+    if (property.checkoutBefore)
+      rows.push({ icon: LogOut, label: "Saída", value: `Até as ${property.checkoutBefore}` });
+  }
+  for (const d of detalhes) rows.push({ icon: ICONE_DETALHE[d.chave], label: d.rotulo, value: d.texto });
 
   return (
     <section id="regras-da-estadia" aria-labelledby="regras-title">
-      <h2 id="regras-title" className="font-title text-2xl font-bold text-ink">
+      <h2 id="regras-title" className="font-title text-2xl font-semibold text-ink">
         Regras da estadia
       </h2>
 
-      <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
         {rows.map((r) => (
           <li key={r.label} className="flex items-start gap-3 rounded-xl border border-sage-200 px-4 py-3">
-            <r.icon className="mt-0.5 h-5 w-5 shrink-0 text-sage" />
+            <r.icon className="mt-1 h-5 w-5 shrink-0 text-sage" />
             <span>
               <span className="block text-xs text-muted">{r.label}</span>
               <span className="block text-sm font-medium text-ink">{r.value}</span>
@@ -74,22 +97,22 @@ export function StayRules({ property }: { property: Property }) {
 
       {/* Caução e pagamento (diferencial brasileiro) */}
       <div className="mt-4 rounded-xl bg-sage-100/60 p-4">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-forest">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-forest">
           <ShieldCheck className="h-4 w-4 text-sage" /> Caução e pagamento
         </h3>
-        <ul className="mt-3 space-y-2.5 text-sm text-ink" data-testid="caucao-lista">
+        <ul className="mt-3 space-y-3 text-sm text-ink" data-testid="caucao-lista">
           <li className="flex items-start gap-3">
-            <Landmark className="mt-0.5 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
+            <Landmark className="mt-1 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
             Caução conforme contrato — registrada e documentada pela plataforma.
           </li>
           {property.acceptsInsurance && (
             <li className="flex items-start gap-3">
-              <FileCheck className="mt-0.5 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
+              <FileCheck className="mt-1 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
               Aceita Seguro-Fiança.
             </li>
           )}
           <li className="flex items-start gap-3 text-muted">
-            <HandCoins className="mt-0.5 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
+            <HandCoins className="mt-1 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
             <span>O pagamento do valor mensal é feito direto ao proprietário — a plataforma conecta,
             confere a documentação do imóvel e registra a negociação, mas nunca recebe o dinheiro.</span>
           </li>

@@ -1,7 +1,21 @@
+import { BlocoLimite } from "@/components/anuncio/bloco-limite";
+import { minhaSituacaoLimite } from "@/lib/data/actions";
 import { listMyProperties } from "@/lib/data/properties";
 import { createClient } from "@/lib/supabase/server";
 import { contarInteressados } from "@/lib/painel/kpi-interessados";
-import { VisaoGeral } from "./visao-geral-client";
+import { listarPropostas } from "@/lib/data/propostas-actions";
+import { listMinhasCandidaturas } from "@/lib/data/leads-actions";
+import { estadiasDaHome } from "@/lib/data/estadia";
+import { getLatestDraft } from "@/lib/data/actions";
+import { dadosDasDecisoes } from "@/lib/data/painel-decisoes";
+import { decisoesDoMorador, decisoesDoProprietario, type EstadiaParaDecisao } from "@/lib/painel/decisoes";
+import { checklistAnuncio } from "@/lib/anuncio/prontidao";
+import { fatosDaConta } from "@/lib/data/ativacao";
+import { checklistsDoInicio } from "@/lib/onboarding/ativacao";
+import { ativacoesDaSessao } from "@/lib/data/ativacao";
+import { VisaoGeral, type RascunhoPendente } from "./visao-geral-client";
+import { ContaPausada } from "@/components/account/sair-da-viva";
+import { AvisoStrikePainel } from "@/components/vistoria/aviso-strike-painel";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -23,15 +37,127 @@ async function interessadosDoDono(): Promise<{ atual: number; anterior: number }
   return contarInteressados((data ?? []).map((l: { created_at: string | null }) => l.created_at));
 }
 
+/** Cidade do perfil público (Prompt 31a: a seção "Serviços" abre a busca de parceiros já com ela). */
+async function cidadeDoPerfil(): Promise<string | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from("profiles").select("cidade").eq("id", user.id).maybeSingle();
+  return ((data?.cidade as string | null) ?? "").trim() || null;
+}
+
+/** Prompt 51 F1: a conta está pausada? (a pessoa lê o próprio perfil). */
+async function contaPausadaEm(): Promise<string | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from("profiles").select("pausada_em").eq("id", user.id).maybeSingle();
+  return (data?.pausada_em as string | null) ?? null;
+}
+
+/** Rascunho mais recente → card "Anúncio em andamento" (antes lido no navegador por server action). */
+function rascunhoDoDraft(d: Awaited<ReturnType<typeof getLatestDraft>>): RascunhoPendente | null {
+  if (!d) return null;
+  // Prontidão da fonte única (a mesma de Meus imóveis e do Publicar).
+  return {
+    id: d.id,
+    pct: d.prontidao?.pct ?? 0,
+    pronto: !!d.prontidao?.podePublicar,
+    faltam: d.prontidao?.faltam ?? [],
+    checklist: d.prontidao ? checklistAnuncio(d.prontidao, d.id) : null,
+    score: d.score,
+  };
+}
+
 /**
  * Visão geral. Os imóveis do proprietário vêm do SERVIDOR pela MESMA consulta
  * de "Meus imóveis" (listMyProperties) — sem o vazio enquanto o navegador
  * buscava a lista, que fazia a tela dizer "ainda não publicou" com imóvel
  * ativo (F31).
+ *
+ * Prompt 42, item 1: a tela abre com "Hoje você tem N decisões". Os dados vêm de uma leitura só, em paralelo; as
+ * regras são as de lib/painel/decisoes.ts (puras, testadas).
  */
 export default async function DashboardPage() {
-  const interessadosPromessa = interessadosDoDono();
-  const imoveisDono = await listMyProperties();
-  const interessados = await interessadosPromessa;
-  return <VisaoGeral imoveisDono={imoveisDono} interessados={interessados} />;
+  const agora = new Date();
+  const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados, candidaturas] = await Promise.all([
+    listMyProperties(),
+    cidadeDoPerfil(),
+    interessadosDoDono(),
+    listarPropostas().catch(() => []),
+    // Prompt 32: estadias em vigor (topo, decisões e ações da folha do 41).
+    estadiasDaHome(agora).catch(() => []),
+    getLatestDraft().catch(() => null),
+    dadosDasDecisoes(),
+    // E72: o cartão "Candidaturas" conta a MESMA lista de /dashboard/candidaturas (um número, uma fonte).
+    listMinhasCandidaturas().catch(() => []),
+  ]);
+  const pausadaEm = await contaPausadaEm();
+  // 64-B: o limite do plano (mesma conta da publicação), para quem já tem anúncio publicado.
+  const limite = imoveisDono.length ? await minhaSituacaoLimite().catch(() => null) : null;
+  const rascunho = rascunhoDoDraft(draft);
+  // Prompt 43: checklist de ativação de cada papel até a ativação (some sozinho).
+  const fatos = await fatosDaConta(draft).catch(() => null);
+  // Prompt 50: o checklist some na ativação do papel (data gravada em ativacoes; o que já aconteceu e falta gravar,
+  // grava agora — rede de segurança dos pontos de gravação).
+  const ativados = fatos ? await ativacoesDaSessao(fatos).catch(() => ({})) : {};
+  const checklists = fatos ? checklistsDoInicio(fatos, ativados) : [];
+  const estadiasDe = (papel: "proprietario" | "inquilino"): EstadiaParaDecisao[] =>
+    estadias.filter((e) => e.papel === papel).map((e) => ({ contratoId: e.contratoId, imovel: e.imovel, decisoes: e.decisoes }));
+
+  const decisoesDono = decisoesDoProprietario(
+    {
+      propostas,
+      contratos: dados.contratosDono,
+      visitas: dados.visitasDono,
+      manutencoes: dados.manutencoes,
+      estadias: estadiasDe("proprietario"),
+      candidaturas: dados.candidaturas,
+      confortoPrazos: dados.confortoPrazos,
+      pendenciasDono: dados.pendenciasDono,
+      fotosNivelRecusadas: dados.fotosNivelRecusadas,
+      quedasNivel: dados.quedasNivel,
+      rascunho: draft ? { id: draft.id, titulo: draft.title, prontidao: draft.prontidao } : null,
+    },
+    agora,
+  );
+  const decisoesMorador = decisoesDoMorador(
+    { propostas, contratos: dados.contratosMorador, visitas: dados.visitasMorador, estadias: estadiasDe("inquilino"), pendenciasMorador: dados.pendenciasMorador },
+    agora,
+  );
+
+  return (
+    <>
+      {/* Prompt 51 F1: conta pausada → "Reativar minha conta" em um toque, no topo do painel. */}
+      {pausadaEm && (
+        <div className="mb-4">
+          <ContaPausada />
+        </div>
+      )}
+      {/* Prompt 62-A, Parte 2: 3º passo da escada → os anúncios fora da busca, no topo do painel. */}
+      {imoveisDono.length > 0 && <AvisoStrikePainel />}
+      {limite && limite.ativos > 0 && (
+        <div className="mb-4">
+          <BlocoLimite situacao={limite} link />
+        </div>
+      )}
+      <VisaoGeral
+      imoveisDono={imoveisDono}
+      interessados={interessados}
+      decisoesDono={decisoesDono}
+      decisoesMorador={decisoesMorador}
+      rascunho={rascunho}
+      cidadePerfil={cidadePerfil}
+      estadias={estadias}
+      checklists={checklists}
+      totalCandidaturas={candidaturas.length}
+      />
+    </>
+  );
 }

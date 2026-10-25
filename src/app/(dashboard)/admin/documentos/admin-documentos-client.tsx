@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { avisarFilaDocumentosMudou } from "@/lib/admin/fila-evento";
+import { textoFilaDocumentos, FORMULA_FILA_DOCUMENTOS } from "@/lib/admin/indicadores";
+import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
 import {
   FileText,
   ExternalLink,
@@ -11,8 +15,8 @@ import {
   User,
   Home,
 } from "lucide-react";
-import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { PageTitle, Panel, EmptyState, FilaVazia } from "@/components/dashboard/primitives";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   moderarDocumento,
   reabrirConferencia,
@@ -41,17 +45,30 @@ export function AdminDocumentosClient({
   docs,
   auto = [],
   contadores = { automaticos: 0, corrija: 0, revisao: 0 },
+  filaAgora = null,
+  ultimaDecisao = null,
 }: {
   docs: DocumentoPendente[];
   auto?: ConferidoAutomatico[];
   contadores?: { automaticos: number; corrija: number; revisao: number };
+  /** "Na fila agora" (Prompt 29, item 9): documentos + matrículas — a mesma função da home e do selo da barra lateral. */
+  filaAgora?: { documentos: number; matriculas: number; total: number; maisAntigoEm: string | null } | null;
+  /** Quando a equipe decidiu o último documento — aparece na fila vazia. */
+  ultimaDecisao?: string | null;
 }) {
   const [fila, setFila] = useState(docs);
   const [aba, setAba] = useState<"revisao" | "automaticos">("revisao");
   const [autos, setAutos] = useState(auto);
 
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+
+  // Prompt 36, item 3b: tira o card, avisa o selo da barra lateral e atualiza os números do servidor ("na fila
+  // agora") dentro de uma transição — a fila (estado local) não é remontada.
   function sair(id: string) {
     setFila((f) => f.filter((d) => d.id !== id));
+    avisarFilaDocumentosMudou();
+    startTransition(() => router.refresh());
   }
 
   return (
@@ -61,20 +78,32 @@ export function AdminDocumentosClient({
         subtitle="A conferência automática aprova o que bate e devolve ao dono o que está claramente errado. Aqui ficam só os casos em revisão. Conferimos o documento, não atestamos a propriedade."
       />
 
-      {/* Contadores dos últimos 7 dias (prompt 11). Grade par: 4 caixas. */}
+      {/* Prompt 29, item 9: "Na fila agora" é a soma explicada (documentos + matrículas); os 7 dias são outra métrica. */}
+      {filaAgora && (
+        <div className="mb-4 rounded-xl border border-line bg-white p-3" data-testid="fila-agora">
+          <p className="font-title text-lg font-semibold text-ink">
+            <span data-testid="fila-agora-total">{filaAgora.total}</span> na fila agora{" "}
+            <span className="text-base font-semibold text-muted">({textoFilaDocumentos(filaAgora).replace(/^\d+ na fila \(|\)$/g, "")})</span>
+          </p>
+          <p className="text-xs text-muted">
+            {FORMULA_FILA_DOCUMENTOS}
+            {filaAgora.maisAntigoEm ? ` Mais antigo: ${dataHoraBRT(filaAgora.maisAntigoEm)}.` : ""}
+          </p>
+        </div>
+      )}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="conferencia-contadores">
         {[
           { rotulo: "Aprovados automaticamente", valor: contadores.automaticos },
           { rotulo: "Corrija (devolvidos ao dono)", valor: contadores.corrija },
           { rotulo: "Foram para revisão", valor: contadores.revisao },
-          { rotulo: "Na fila agora", valor: fila.length },
+          { rotulo: "Documentos de imóvel em revisão", valor: fila.length },
         ].map((c) => (
           <div key={c.rotulo} className="rounded-xl border border-sage-200 bg-white p-3">
-            <p className="font-title text-2xl font-bold text-forest">{c.valor}</p>
+            <p className="font-title text-2xl font-semibold text-forest">{c.valor}</p>
             <p className="text-xs text-muted">{c.rotulo}</p>
           </div>
         ))}
-        <p className="col-span-2 text-xs text-muted lg:col-span-4">Últimos 7 dias.</p>
+        <p className="col-span-2 text-xs text-muted lg:col-span-4">Aprovados, devolvidos e &quot;foram para revisão&quot;: últimos 7 dias. Em revisão: agora.</p>
       </div>
 
       <div className="mb-4 flex gap-2" role="tablist">
@@ -91,7 +120,7 @@ export function AdminDocumentosClient({
             aria-selected={aba === k}
             onClick={() => setAba(k)}
             className={cn(
-              "rounded-full px-3 py-1.5 text-sm font-medium",
+              "rounded-full px-3 py-2 text-sm font-semibold",
               aba === k ? "bg-forest text-white" : "bg-sage-100 text-forest hover:bg-sage-200",
             )}
           >
@@ -102,20 +131,19 @@ export function AdminDocumentosClient({
 
       {aba === "automaticos" ? (
         autos.length === 0 ? (
-          <EmptyState icon={ShieldCheck} title="Nenhum ainda" text="Os documentos aprovados pela conferência automática aparecem aqui para amostragem." />
+          <EmptyState icon={ShieldCheck} title="Nenhum ainda" text="Os documentos aprovados pela conferência automática aparecem aqui para amostragem." action={<Button variant="secondary" size="sm" onClick={() => setAba("revisao")}>Ver a fila de revisão</Button>} />
         ) : (
           <div className="space-y-4" data-testid="conferidos-automaticamente">
             {autos.map((a) => (
-              <AutoCard key={a.id} doc={a} onReaberto={() => setAutos((l) => l.filter((x) => x.id !== a.id))} />
+              <AutoCard key={a.id} doc={a} onReaberto={() => {
+                  setAutos((l) => l.filter((x) => x.id !== a.id));
+                  avisarFilaDocumentosMudou();
+                }} />
             ))}
           </div>
         )
       ) : fila.length === 0 ? (
-        <EmptyState
-          icon={ShieldCheck}
-          title="Nada na fila"
-          text="Não há documentos aguardando conferência no momento."
-        />
+        <FilaVazia ultimaDecisao={ultimaDecisao} />
       ) : (
         <div className="space-y-4">
           {fila.map((d) => (
@@ -135,10 +163,10 @@ function ConferenciaIaBox({ c, revisaoAte }: { c: ConferenciaResumo; revisaoAte?
   const [agora] = useState(() => Date.now());
   const vencido = !!revisaoAte && Date.parse(revisaoAte) < agora;
   return (
-    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="conferencia-ia">
+    <div className="mt-3 rounded-lg border border-line bg-white px-3 py-2 text-sm text-amber-900" data-testid="conferencia-ia">
       <p className="font-semibold">Conferência automática</p>
       {c.motivos.length > 0 && (
-        <ul className="mt-1 list-disc space-y-0.5 pl-5" data-testid="conferencia-ia-motivos">
+        <ul className="mt-1 list-disc space-y-1 pl-4" data-testid="conferencia-ia-motivos">
           {c.motivos.map((m) => (
             <li key={m}>{m}</li>
           ))}
@@ -152,7 +180,7 @@ function ConferenciaIaBox({ c, revisaoAte }: { c: ConferenciaResumo; revisaoAte?
       )}
       {revisaoAte && (
         <p className={cn("mt-1 text-xs font-semibold", vencido ? "text-red-700" : "text-amber-900")} data-testid="conferencia-prazo">
-          {vencido ? "Prazo de 48 h vencido" : `Prazo: até ${new Date(revisaoAte).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`}
+          {vencido ? "Prazo de 48 h vencido" : `Prazo: até ${dataHoraBRT(revisaoAte)}`}
         </p>
       )}
     </div>
@@ -165,15 +193,15 @@ function AutoCard({ doc, onReaberto }: { doc: ConferidoAutomatico; onReaberto: (
   return (
     <div data-testid="auto-card">
       <Panel>
-        <p className="font-medium text-ink">
+        <p className="font-semibold text-ink">
           {doc.ownerNome}
           <span className="font-normal text-muted"> · {doc.tituloImovel ?? "sem imóvel ligado ainda"}</span>
         </p>
-        <p className="text-xs text-muted">Aprovado em {doc.criadoEm ? new Date(doc.criadoEm).toLocaleDateString("pt-BR") : "—"}</p>
+        <p className="text-xs text-muted">Aprovado em {dataBRT(doc.criadoEm)}</p>
         {doc.conferencia && (
           <ul className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
             {CHECKLIST_CONFERENCIA.map((i) => (
-              <li key={i.key} className="flex items-center gap-1.5">
+              <li key={i.key} className="flex items-center gap-2">
                 {doc.conferencia?.checklist[i.key] ? <Check className="h-4 w-4 text-forest" /> : <X className="h-4 w-4 text-red-600" />}
                 {i.label}
               </li>
@@ -181,12 +209,12 @@ function AutoCard({ doc, onReaberto }: { doc: ConferidoAutomatico; onReaberto: (
           </ul>
         )}
         <details className="mt-2 text-xs">
-          <summary className="cursor-pointer font-medium text-forest">Ver o que a conferência leu</summary>
+          <summary className="cursor-pointer font-semibold text-forest">Ver o que a conferência leu</summary>
           <pre className="mt-1 overflow-x-auto rounded-lg bg-surface-2 p-2" data-testid="auto-card-json">{JSON.stringify(doc.conferencia, null, 2)}</pre>
         </details>
         <div className="mt-3 flex flex-wrap gap-2">
           {doc.docUrl && (
-            <a href={doc.docUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:underline">
+            <a href={doc.docUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-forest hover:underline">
               <ExternalLink className="h-4 w-4" /> Abrir documento
             </a>
           )}
@@ -244,7 +272,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
   }
 
   return (
-    <div data-testid="doc-card" data-imovel={doc.tituloImovel ?? ""}>
+    <div data-testid="doc-card" data-imovel={doc.tituloImovel ?? ""} data-sem-imovel={doc.semImovel ? "1" : undefined} data-dono={doc.ownerNomeCompleto ?? doc.ownerNome}>
     <Panel>
       {/* Cabeçalho: dono + data */}
       <div className="flex items-center gap-3">
@@ -252,15 +280,16 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
           <FileText className="h-5 w-5 text-forest" />
         </span>
         <div className="min-w-0">
-          <p className="font-medium text-ink">
+          <p className="font-semibold text-ink">
             {doc.ownerNome}
             <span className="font-normal text-muted">
               {" · "}
-              {doc.tituloImovel ?? "sem imóvel cadastrado ainda"}
+              {/* 35A: enviado no /qualificar antes de existir imóvel — liga ao próximo imóvel criado pelo dono. */}
+              {doc.semImovel ? "Documento sem imóvel ligado" : doc.tituloImovel ?? "sem imóvel cadastrado ainda"}
             </span>
           </p>
           <p className="text-xs text-muted">
-            Enviado {doc.criadoEm ? new Date(doc.criadoEm).toLocaleDateString("pt-BR") : "—"}
+            Enviado {doc.semImovel ? dataHoraBRT(doc.criadoEm) : dataBRT(doc.criadoEm)}
           </p>
         </div>
       </div>
@@ -269,8 +298,8 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
 
       {/* Alerta de arquivo reutilizado (anti-fraude) */}
       {doc.duplicado > 0 && (
-        <p className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+        <p className="mt-3 flex items-start gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-red-700">
+          <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
           <span>
             <strong>Arquivo idêntico já enviado por {doc.duplicado} outra(s) conta(s).</strong>{" "}
             Confira se não é reuso indevido de documento antes de aprovar.
@@ -306,7 +335,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
               href={doc.docUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-forest hover:underline"
+              className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-forest hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" /> Abrir em nova aba (tamanho real)
             </a>
@@ -315,31 +344,31 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
 
         {/* Comparação + checklist de conferência */}
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+          <p className="text-xs font-semibold uppercase text-muted">
             Confira contra o cadastro
           </p>
           <dl className="mt-2 space-y-2 text-sm">
             <div className="flex items-start gap-2">
-              <User className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+              <User className="mt-1 h-4 w-4 shrink-0 text-sage" />
               <div className="min-w-0">
                 <dt className="text-xs text-muted">Titular da conta</dt>
-                <dd className="font-medium text-ink">{doc.ownerNomeCompleto ?? doc.ownerNome}</dd>
+                <dd className="font-semibold text-ink">{doc.ownerNomeCompleto ?? doc.ownerNome}</dd>
               </div>
             </div>
             {doc.titularInformado && (
               <div className="flex items-start gap-2">
-                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+                <FileText className="mt-1 h-4 w-4 shrink-0 text-sage" />
                 <div className="min-w-0">
                   <dt className="text-xs text-muted">Titular informado pelo dono</dt>
-                  <dd className="font-medium text-ink">{doc.titularInformado}</dd>
+                  <dd className="font-semibold text-ink">{doc.titularInformado}</dd>
                 </div>
               </div>
             )}
             <div className="flex items-start gap-2">
-              <Home className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+              <Home className="mt-1 h-4 w-4 shrink-0 text-sage" />
               <div className="min-w-0">
-                <dt className="text-xs text-muted">Imóvel do cadastro</dt>
-                <dd className="font-medium text-ink">
+                <dt className="text-xs text-muted">{doc.semImovel ? "Imóvel mais recente do dono" : "Imóvel do cadastro"}</dt>
+                <dd className="font-semibold text-ink">
                   {doc.refImovel ?? "— (sem imóvel cadastrado ainda)"}
                 </dd>
               </div>
@@ -351,19 +380,19 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
               data-testid="pre-conferencia"
               className={cn(
                 "mt-4 rounded-lg border px-3 py-2 text-sm",
-                doc.preConferencia.pareceOk ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"
+                doc.preConferencia.pareceOk ? "border-line bg-white text-forest" : "border-line bg-white text-amber-900"
               )}
             >
-              <p className="text-xs font-semibold uppercase tracking-wide">Pré-conferência automática</p>
+              <p className="text-xs font-semibold uppercase">Pré-conferência automática</p>
               <p className="mt-1 font-semibold" data-testid="pre-conferencia-veredito">{doc.preConferencia.veredito}</p>
-              <ul className="mt-1.5 space-y-0.5 text-xs">
+              <ul className="mt-2 space-y-1 text-xs">
                 {doc.preConferencia.itens.map((i) => (
                   <li key={i.chave}>
-                    {i.estado === "ok" ? "✓" : i.estado === "atencao" ? "!" : "–"} {i.rotulo}: {i.detalhe}
+                    {i.estado === "ok" ? <Check className="mr-1 inline h-4 w-4 text-forest" aria-label="ok" /> : i.estado === "atencao" ? "!" : "–"} {i.rotulo}: {i.detalhe}
                   </li>
                 ))}
               </ul>
-              <p className="mt-1.5 text-[11px] opacity-80">Só uma ajuda. Quem aprova ou recusa é você.</p>
+              <p className="mt-2 text-[11px] opacity-80">Só uma ajuda. Quem aprova ou recusa é você.</p>
             </div>
           )}
           {doc.autorizacaoUrl && (
@@ -372,24 +401,24 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
               target="_blank"
               rel="noopener noreferrer"
               data-testid="abrir-autorizacao"
-              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-forest hover:underline"
+              className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-forest hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               {doc.operacao === "managed" ? "Abrir contrato de administração / procuração" : "Abrir autorização de sublocação"}
             </a>
           )}
 
-          <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted">
+          <p className="mt-4 text-xs font-semibold uppercase text-muted">
             Checklist de conferência
           </p>
-          <div className="mt-2 space-y-1.5">
+          <div className="mt-2 space-y-2">
             {CHECKLIST_CONFERENCIA.map((item) => (
               <label key={item.key} className="flex cursor-pointer items-start gap-2 text-sm text-ink">
                 <input
                   type="checkbox"
                   checked={!!marks[item.key]}
                   onChange={(e) => setMarks((m) => ({ ...m, [item.key]: e.target.checked }))}
-                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-sage-200 accent-forest"
+                  className="mt-1 h-4 w-4 shrink-0 rounded-lg border-sage-200 accent-forest"
                 />
                 <span>{item.label}</span>
               </label>
@@ -402,7 +431,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
 
       {rejeitando ? (
         <div className="mt-4 border-t border-sage-200 pt-4">
-          <label className="text-sm font-medium text-ink">Motivo da recusa</label>
+          <label className="text-sm font-semibold text-ink">Motivo da recusa</label>
           <select value={motivo} onChange={(e) => setMotivo(e.target.value)} className="input mt-2">
             <option value="">Selecione um motivo…</option>
             {MOTIVOS_RECUSA.map((m) => (
@@ -428,7 +457,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
             </Button>
             <Button
               size="sm"
-              className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+              variant="destructive"
               disabled={busy || !motivoFinal}
               onClick={recusar}
             >
@@ -439,7 +468,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
       ) : (
         <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-sage-200 pt-4">
           {doc.bloqueioAprovacao && (
-            <span className="mr-auto text-xs font-medium text-amber-700" data-testid="aprovar-bloqueado">
+            <span className="mr-auto text-xs font-semibold text-amber-700" data-testid="aprovar-bloqueado">
               {doc.bloqueioAprovacao}
             </span>
           )}
@@ -449,16 +478,15 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
             </span>
           )}
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
-            className={cn("border-red-200 text-red-600 hover:bg-red-50")}
             disabled={busy}
             onClick={() => setRejeitando(true)}
           >
             <X className="h-4 w-4" /> Recusar
           </Button>
           <Button
-            variant="primary"
+            variant="secondary"
             size="sm"
             disabled={busy || !podeAprovar || !!doc.bloqueioAprovacao}
             title={doc.bloqueioAprovacao ?? (podeAprovar ? undefined : "Conclua o checklist de conferência")}

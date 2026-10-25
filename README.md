@@ -10,7 +10,7 @@ não é QuintoAndar.
 ## Stack
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**
-- **Tailwind CSS v4** (design tokens da paleta NomadeDrive)
+- **Tailwind CSS v4** (design tokens da paleta da marca)
 - **Supabase** (Postgres + Auth + Storage) — `src/lib/supabase`, camada de dados em `src/lib/data`
 - **Asaas** — pagamento nativo BR: assinatura recorrente + PIX/boleto/cartão + split (`src/lib/payments`)
 - **Mapbox GL** — mapas de imóveis e espaços de trabalho (`src/components/property-map.tsx`)

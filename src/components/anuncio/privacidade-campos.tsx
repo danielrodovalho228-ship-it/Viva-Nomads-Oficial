@@ -35,7 +35,7 @@ export function PrivacidadeCampos({ valor, onChange }: { valor: Privacidade; onC
       >
         <span
           className={cn(
-            "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+            "mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
             valor.semCamerasInterior ? "border-forest bg-forest text-white" : "border-sage-200 bg-white"
           )}
         >
@@ -73,7 +73,7 @@ export function PrivacidadeCampos({ valor, onChange }: { valor: Privacidade; onC
       </div>
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-ink">Tipo de acesso ao imóvel</span>
+        <span className="mb-2 block text-sm font-medium text-ink">Tipo de acesso ao imóvel</span>
         <select
           value={valor.tipoAcesso ?? ""}
           onChange={(e) => {

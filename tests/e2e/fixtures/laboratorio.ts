@@ -1,7 +1,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { expect, type Browser, type Page } from "@playwright/test";
+import { CHAVES_CONFORTO, VERSAO_CONFORTO } from "../../../src/config/conforto-minimo";
 
 /**
  * Apoio dos specs do LABORATÓRIO (t34–t37): contas NOVAS por spec (não mexem nas
@@ -51,7 +52,9 @@ export async function confirmarContatoDaConta(email: string): Promise<void> {
 }
 
 export const novaSenha = (): string => randomBytes(12).toString("hex");
-export const novoSufixo = (): string => randomBytes(3).toString("hex");
+// Só letras (a–p, o hex com os dígitos trocados): sufixo só de dígitos somava com o número do título ("Studio Fila
+// 1280 482913" = 10 dígitos) e a regra de contato do banco (0057, 23514) recusava a massa como telefone (L-32, t237).
+export const novoSufixo = (): string => randomBytes(3).toString("hex").replace(/\d/g, (d) => "ghijklmnop"[Number(d)]);
 
 /** CPF válido aleatório (dígitos verificadores certos). */
 export function cpfAleatorio(): string {
@@ -151,7 +154,7 @@ const BASE_PUBLICA = "/storage/v1/object/public/property-photos";
 export async function criarImovelPronto(
   ownerId: string,
   titulo: string,
-  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string } = {}
+  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string; /** Prompt 59: sem o padrão mínimo de conforto confirmado (padrão do laboratório: os 10 itens confirmados) */ semConforto?: boolean; /** 61-B (#1155): sem o tipo de entrada, que passou a ser obrigatório para publicar anúncio novo (padrão do laboratório: "porteiro") */ semTipoEntrada?: boolean; /** FILTROS-1: sem a velocidade da internet (padrão: 300 Mbps) */ semInternet?: boolean } = {}
 ): Promise<string> {
   const { data, error } = await adm()
     .from("properties")
@@ -173,6 +176,9 @@ export async function criarImovelPronto(
       garantias_aceitas: ["caucao"],
       status: "draft",
       sem_cameras_interior: !opts.semDeclaracaoCameras,
+      tipo_entrada: opts.semTipoEntrada ? null : "porteiro",
+      // FILTROS-1 (E39): publicar exige a velocidade da internet (padrão do laboratório: 300 Mbps informados).
+      internet_mbps: opts.semInternet ? null : 300,
     })
     .select("id")
     .single();
@@ -206,6 +212,13 @@ export async function criarImovelPronto(
       .insert({ owner_id: ownerId, property_id: id, document_status: "approved", document_reviewed_at: new Date().toISOString() });
     if (eDoc) throw eDoc;
   }
+  if (!opts.semConforto) {
+    // Prompt 59: publicar exige os 10 itens do padrão mínimo confirmados pelo dono (o que a tela grava).
+    const { error: eConf } = await adm()
+      .from("conforto_declaracoes")
+      .upsert(CHAVES_CONFORTO.map((chave) => ({ property_id: id, chave, confirmado: true, confirmado_por: ownerId, confirmado_em: new Date().toISOString(), versao_lista: VERSAO_CONFORTO })), { onConflict: "property_id,chave" });
+    if (eConf) throw eConf;
+  }
   if (opts.ativo) {
     const { error: eAtivo } = await adm().from("properties").update({ status: "active" }).eq("id", id);
     if (eAtivo) throw eAtivo;
@@ -238,26 +251,79 @@ export async function contarAtivos(ownerId: string): Promise<number> {
   return count ?? 0;
 }
 
+/**
+ * Zera o contador de login POR IP (40 por 15 min). O laboratório inteiro sai do mesmo IP e passa disso
+ * (lab b5fb67f6: t55 recebeu 429 em vez de 401 e t82 não entrou). Só o laboratório chama.
+ */
+export async function liberarLimiteLoginIp(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "login:ip:%");
+}
+
+/**
+ * Zera o atraso progressivo do login SÓ deste e-mail (5 por minuto, src/lib/seguranca/limite-login.ts). Os specs
+ * entram com a mesma conta várias vezes em menos de um minuto (390 e 1280, um passo atrás do outro); sem isto o
+ * login recebe "Muitas tentativas" e o teste para na tela de entrar.
+ */
+export async function liberarLimiteLogin(email: string): Promise<void> {
+  const hash = createHash("sha256").update(`login:${email.trim().toLowerCase()}`).digest("hex").slice(0, 32);
+  await adm().from("limites_uso").delete().like("chave", `login:email:%:${hash}`);
+  // O limite por IP (40 a cada 15 min) também: no laboratório todos os logins saem do mesmo IP e uma rodada longa
+  // (16 suítes) passa disso. O t82 não depende dele (aceita a mensagem de "Muitas tentativas" como prova do fluxo).
+  await adm().from("limites_uso").delete().like("chave", "login:ip:%");
+}
+
+/**
+ * Prompt 49: o envio do código tem teto de 5 por hora por e-mail e por IP. No laboratório todos os specs saem do mesmo
+ * IP; antes de pedir código, os specs limpam as contagens de envio (só as do código).
+ */
+export async function liberarLimiteCodigo(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "codigo:%");
+}
+
 /** Login pela tela, em contexto próprio de 390 px (celular). */
 export async function entrar(browser: Browser, email: string, senha: string): Promise<Page> {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const page = await ctx.newPage();
+  return entrarNaPagina(await ctx.newPage(), email, senha);
+}
+
+/** O mesmo login de entrar(), numa página já aberta (ex.: o celular com câmera falsa de fixtures/camera.ts). */
+export async function entrarNaPagina(page: Page, email: string, senha: string): Promise<Page> {
+  await liberarLimiteLogin(email);
+  await liberarLimiteLoginIp();
   // networkidle sem teto pendurava até o fim do teste na 1ª carga fria (t168 a 390 px, lab 17/10): espera até 10 s e segue.
-  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+  await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-  await page.locator('input[name="email"], input[type="email"]').first().fill(email);
-  await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
-  await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-  await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+  // Um clique antes da hidratação vira envio nativo e recarrega /auth vazio (t262, t82, t204 no lab de 23/10):
+  // enquanto não sair de /auth, preenche o que estiver vazio e clica de novo.
+  const campoEmail = page.locator('input[name="email"], input[type="email"]').first();
+  const campoSenha = page.locator('input[name="password"], input[type="password"]').first();
+  await expect(async () => {
+    if (/\/dashboard/.test(new URL(page.url()).pathname)) return;
+    if ((await campoEmail.inputValue({ timeout: 5_000 })) !== email) await campoEmail.fill(email, { timeout: 5_000 });
+    if ((await campoSenha.inputValue({ timeout: 5_000 })) !== senha) await campoSenha.fill(senha, { timeout: 5_000 });
+    await page.locator("form").getByRole("button", { name: /^entrar$/i }).click({ timeout: 5_000 });
+    await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
+  }).toPass({ timeout: 50_000 });
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
   return page;
 }
 
 /** Abre o editor do imóvel e clica em Publicar (falha se o botão estiver travado). */
+/**
+ * L2-B item 23: a caixa do termo de IA só aparece para quem ainda não aceitou a versão atual (termo_ia_aceites, 0241).
+ * Quem já aceitou vê a linha "Você já aceitou o termo…". Marca a caixa quando ela está lá; senão confere a linha.
+ */
+export async function aceitarTermoIaSePreciso(page: Page): Promise<void> {
+  const caixa = page.getByTestId("aceite-ia").getByRole("checkbox");
+  const jaAceito = page.getByTestId("aceite-ia-ja-aceito");
+  await expect(caixa.or(jaAceito).first()).toBeVisible({ timeout: 20_000 });
+  if (await caixa.isVisible()) await caixa.check();
+}
+
 export async function publicarPeloEditor(page: Page, propertyId: string): Promise<void> {
   await page.goto(`/dashboard/imoveis/${propertyId}/editar`, { waitUntil: "domcontentloaded" });
   // O Publicar só habilita depois do aceite do termo de IA (editar-client.tsx): sem marcar, o clique esperava até estourar o tempo do teste.
-  await page.getByTestId("aceite-ia").getByRole("checkbox").check({ timeout: 20_000 });
+  await aceitarTermoIaSePreciso(page);
   const publicar = page.getByRole("button", { name: "Publicar", exact: true });
   await expect(publicar, "Publicar deveria estar habilitado: veja 'Falta para publicar' no editor").toBeEnabled({ timeout: 20_000 });
   await publicar.click();
@@ -329,11 +395,12 @@ export async function tornarContratoVigente(contratoId: string, donoId: string, 
   const hoje = new Date();
   const fim = new Date(hoje.getTime() + 59 * 86_400_000);
   const dia = (d: Date) => d.toISOString().slice(0, 10);
-  const { data: bloco, error: e2 } = await adm()
-    .from("contrato_blocos")
-    .insert({ contrato_id: contratoId, numero_bloco: 1, inicio: dia(hoje), fim: dia(fim), meses: 2, valor: aluguel * 2, caucao: aluguel, status: "ativo" })
-    .select("id")
-    .single();
+  // O contrato gerado pela tela já pode ter o bloco 1 (aguardando assinatura): reaproveita e põe em vigência.
+  const linhaBloco = { inicio: dia(hoje), fim: dia(fim), meses: 2, valor: aluguel * 2, caucao: aluguel, status: "ativo" };
+  const { data: existente } = await adm().from("contrato_blocos").select("id").eq("contrato_id", contratoId).eq("numero_bloco", 1).maybeSingle();
+  const { data: bloco, error: e2 } = existente
+    ? await adm().from("contrato_blocos").update(linhaBloco).eq("id", existente.id).select("id").single()
+    : await adm().from("contrato_blocos").insert({ contrato_id: contratoId, numero_bloco: 1, ...linhaBloco }).select("id").single();
   if (e2) throw e2;
   const { error: e3 } = await adm().from("pagamentos_bloco").insert({
     bloco_id: bloco.id,
@@ -346,4 +413,33 @@ export async function tornarContratoVigente(contratoId: string, donoId: string, 
     confirmado_em: agora,
   });
   if (e3) throw e3;
+}
+
+/**
+ * Um bloco do contrato ainda SEM pagamento de valor mensal (0182: um por bloco). Se todos já têm, cria o próximo
+ * bloco, já aceito pelas duas partes (renovação, 0065), logo depois do último.
+ */
+export async function blocoSemValorMensal(contratoId: string): Promise<string> {
+  const { data: blocos } = await adm().from("contrato_blocos").select("id, numero_bloco, fim, meses, valor, caucao").eq("contrato_id", contratoId).order("numero_bloco");
+  const { data: pgs } = await adm().from("pagamentos_bloco").select("bloco_id").eq("contrato_id", contratoId).eq("tipo", "aluguel").is("anulado_em", null);
+  const usados = new Set(((pgs ?? []) as { bloco_id: string | null }[]).map((p) => p.bloco_id));
+  const lista = (blocos ?? []) as { id: string; numero_bloco: number; fim: string; meses: number; valor: number; caucao: number }[];
+  const livre = lista.find((b) => !usados.has(b.id));
+  if (livre) return livre.id;
+  const ultimo = lista[lista.length - 1];
+  const ini = new Date(`${ultimo.fim}T12:00:00Z`);
+  ini.setUTCDate(ini.getUTCDate() + 1);
+  const fim = new Date(ini);
+  fim.setUTCDate(fim.getUTCDate() + 59);
+  const agora = new Date().toISOString();
+  const { data, error } = await adm()
+    .from("contrato_blocos")
+    .insert({
+      contrato_id: contratoId, numero_bloco: ultimo.numero_bloco + 1, inicio: ini.toISOString().slice(0, 10), fim: fim.toISOString().slice(0, 10),
+      meses: ultimo.meses, valor: ultimo.valor, caucao: 0, status: "ativo", aceite_proprietario_em: agora, aceite_inquilino_em: agora,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
 }

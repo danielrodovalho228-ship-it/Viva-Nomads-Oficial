@@ -72,7 +72,7 @@ export function DocumentosInquilino({ leadId, modo }: { leadId: string; modo: "i
   if (modo === "dono" && docs.length === 0) {
     return (
       <p className="text-sm text-muted" data-testid="docs-inquilino">
-        O inquilino ainda não enviou os documentos (identidade e comprovante de renda ou vínculo).
+        O morador ainda não enviou os documentos (identidade e comprovante de renda ou vínculo).
       </p>
     );
   }
@@ -80,7 +80,7 @@ export function DocumentosInquilino({ leadId, modo }: { leadId: string; modo: "i
   return (
     <div data-testid="docs-inquilino">
       <p className="text-sm font-semibold text-ink">
-        {modo === "inquilino" ? "Documentos para o contrato" : "Documentos do inquilino"}
+        {modo === "inquilino" ? "Documentos para o contrato" : "Documentos do morador"}
         {completos && (
           <span className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-emerald-700" data-testid="docs-inquilino-completos">
             <CheckCircle2 className="h-3.5 w-3.5" /> completos
@@ -107,7 +107,7 @@ export function DocumentosInquilino({ leadId, modo }: { leadId: string; modo: "i
                   <span className="text-xs text-muted">pendente</span>
                 )}
               </div>
-              {modo === "inquilino" && <p className="mt-0.5 text-xs text-muted">{d.ajuda}</p>}
+              {modo === "inquilino" && <p className="mt-1 text-xs text-muted">{d.ajuda}</p>}
               <div className="mt-2 flex flex-wrap gap-3">
                 {ok && (
                   <button type="button" onClick={() => abrir(d.tipo)} className="inline-flex items-center gap-1 text-xs font-medium text-forest hover:underline">

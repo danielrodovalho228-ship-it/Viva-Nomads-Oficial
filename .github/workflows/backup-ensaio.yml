@@ -1,0 +1,68 @@
+# Resiliência 2 — ENSAIO do pipeline de backup no PR, sem tocar no Drive real nem no banco real e SEM segredos:
+# Postgres 17 de teste + S3 de teste (rclone serve s3) no lugar do Storage do Supabase + remoto LOCAL do rclone no lugar do Google Drive,
+# com o crypt de verdade e senhas de teste geradas na hora. Roda a cópia, o teste de restauração e dois casos de
+# falha de propósito (dump corrompido, cifra adulterada). Script: scripts/backup/ensaio.sh.
+name: Ensaio do backup
+
+on:
+  pull_request:
+    paths:
+      - "scripts/backup/**"
+      - "scripts/drill/**"
+      - "src/lib/backup/**"
+      - "supabase/migrations/0191_backups_execucoes.sql"
+      - ".github/workflows/backup-noturno.yml"
+      - ".github/workflows/drill-restauracao.yml"
+      - ".github/workflows/backup-ensaio.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-ensaio-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ensaio:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ensaio
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+
+      - name: Ferramentas (rclone fixo e postgresql-client-17)
+        run: bash scripts/backup/instalar-ferramentas.sh
+
+      # S3 de teste: o próprio rclone (versão fixa e conferida pelo SHA-256 no passo anterior) com "serve s3".
+      # A imagem do MinIO saiu do Docker Hub (pull access denied) e o quay.io pede login (unauthorized).
+      - name: S3 de teste (rclone serve s3) e ensaio completo
+        env:
+          ENSAIO_PG_URL: postgresql://postgres:ensaio@localhost:5432/postgres
+          S3_ENDPOINT: http://127.0.0.1:9000
+          ENSAIO_DIR: ${{ runner.temp }}/ensaio-backup
+        run: |
+          ENSAIO_S3_CHAVE="ensaio$(openssl rand -hex 8)"
+          ENSAIO_S3_SEGREDO="$(openssl rand -hex 24)"
+          export ENSAIO_S3_CHAVE ENSAIO_S3_SEGREDO
+          S3_DADOS="${{ runner.temp }}/ensaio-s3"
+          mkdir -p "$S3_DADOS"
+          rclone serve s3 --auth-key "$ENSAIO_S3_CHAVE,$ENSAIO_S3_SEGREDO" --addr 127.0.0.1:9000 "$S3_DADOS" >"${{ runner.temp }}/ensaio-s3.log" 2>&1 &
+          # Sem credencial o servidor responde 4xx: basta ele responder.
+          for _ in $(seq 1 30); do curl -s -o /dev/null http://127.0.0.1:9000/ && break; sleep 1; done
+          bash scripts/backup/ensaio.sh

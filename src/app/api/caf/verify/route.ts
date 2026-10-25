@@ -2,17 +2,20 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyTenant, isCafConfigured } from "@/lib/integrations/caf";
-import { IntegracaoNaoConfigurada, emProducao } from "@/lib/integracoes";
+import { IntegracaoNaoConfigurada, emProducao, integracoesSimuladas } from "@/lib/integracoes";
 import { contaEhDeTeste, laudoSimuladoTeste, MSG_VERIFICACAO_EM_BREVE } from "@/lib/contas-de-teste";
-import { consumirLimite, DIA } from "@/lib/limites";
+import { consumirLimite } from "@/lib/limites";
+import { CAF_JANELA_CONSULTA_S, validadeDoLaudo } from "@/lib/caf/validade";
 import type { CafResult } from "@/lib/closing";
+import { cookies } from "next/headers";
+import { COOKIE_LAB_CAF, depoisDaTentativa, laudoReprovadoDeLaboratorio } from "@/lib/identidade/reprovacao-servidor";
 
 async function gravarSimulado(admin: NonNullable<ReturnType<typeof createAdminClient>>, userId: string, laudo: CafResult) {
   await admin.from("tenant_verifications").insert({
     tenant_id: userId,
     caf_result: { ...laudo, simulado: true },
     traffic_light: null,
-    valid_until: new Date(Date.now() + 90 * DIA * 1000).toISOString(),
+    valid_until: validadeDoLaudo(new Date()).toISOString(),
   });
 }
 
@@ -21,8 +24,9 @@ async function gravarSimulado(admin: NonNullable<ReturnType<typeof createAdminCl
  * conferência da matrícula; o inquilino, como antes). A5: cada consulta custa e envolve dado pessoal (LGPD) — então:
  *  - só da PRÓPRIA pessoa logada: nome e CPF vêm do perfil, nunca do pedido
  *    (antes dava para consultar o CPF de qualquer terceiro);
- *  - 1 consulta por pessoa a cada 90 dias;
- *  - o laudo fica gravado em tenant_verifications (válido por 90 dias) e é reaproveitado pela matrícula.
+ *  - 1 consulta por pessoa a cada 12 meses (decisão do Daniel, 18/10 — prompt 22);
+ *  - o laudo fica gravado em tenant_verifications (válido por 12 meses) e é reaproveitado pela matrícula;
+ *  - trocou o nome ou o CPF: o laudo deixa de valer e a cota é liberada (gatilho no banco, 0164).
  * Laudo SIMULADO (conta de teste ou laboratório) também é gravado, marcado `simulado` e sem semáforo (não aparece
  * para os donos nos pedidos): a conferência da matrícula só o aceita fora de uma conta real em produção.
  */
@@ -37,9 +41,12 @@ export async function POST() {
 
   // Conta de teste (is_teste): laudo SIMULADO, sem CPF, sem Certta/CAF e sem gastar a cota (ordem ee7d27b8).
   if (await contaEhDeTeste(admin, user.id)) {
-    const laudo = laudoSimuladoTeste();
+    // Só no laboratório: o cookie de teste força uma reprovação (exercita o motivo, a nova tentativa e a fila humana).
+    const reprovado = integracoesSimuladas() ? laudoReprovadoDeLaboratorio((await cookies()).get(COOKIE_LAB_CAF)?.value) : null;
+    const laudo: CafResult = reprovado ? { ...laudoSimuladoTeste(), ...reprovado, light: "red" } : laudoSimuladoTeste();
     await gravarSimulado(admin, user.id, laudo);
-    return NextResponse.json(laudo);
+    const reprovacao = await depoisDaTentativa(admin, user.id, laudo, { devolverCota: false }).catch(() => null);
+    return NextResponse.json({ ...laudo, reprovacao });
   }
 
   const { data: perfil } = await supabase
@@ -52,13 +59,13 @@ export async function POST() {
     return NextResponse.json({ error: "Cadastre seu CPF no perfil para verificar sua identidade." }, { status: 400 });
   }
 
-  // Sem a integração em produção: avisa ANTES de gastar a cota de 90 dias.
+  // Sem a integração em produção: avisa ANTES de gastar a cota de 12 meses.
   if (!isCafConfigured() && emProducao()) {
     return NextResponse.json({ error: MSG_VERIFICACAO_EM_BREVE }, { status: 503 });
   }
-  if (!(await consumirLimite(`caf:user:${user.id}`, 1, 90 * DIA))) {
+  if (!(await consumirLimite(`caf:user:${user.id}`, 1, CAF_JANELA_CONSULTA_S))) {
     return NextResponse.json(
-      { error: "Você já fez uma verificação nos últimos 90 dias (ou o serviço está indisponível)." },
+      { error: "Você já fez uma verificação nos últimos 12 meses (ou o serviço está indisponível). Se trocou o nome ou o CPF, a nova verificação fica liberada." },
       { status: 429 }
     );
   }
@@ -72,10 +79,13 @@ export async function POST() {
         tenant_id: user.id,
         caf_result: result,
         traffic_light: result.light,
-        valid_until: new Date(Date.now() + 90 * DIA * 1000).toISOString(),
+        valid_until: validadeDoLaudo(new Date()).toISOString(),
       });
     }
-    return NextResponse.json(result);
+    // Prompt 50: reprovou → motivo legível com o próximo passo; a 1ª reprovação devolve a cota (nova tentativa na
+    // hora); a 2ª vai para a análise de uma pessoa.
+    const reprovacao = await depoisDaTentativa(admin, user.id, result, { devolverCota: !result.demo }).catch(() => null);
+    return NextResponse.json({ ...result, reprovacao });
   } catch (err) {
     if (err instanceof IntegracaoNaoConfigurada) {
       return NextResponse.json({ error: MSG_VERIFICACAO_EM_BREVE }, { status: 503 });

@@ -1,5 +1,8 @@
 "use client";
 
+import { rotuloPreco } from "@/lib/cartao-preco";
+import { mensalDoFechamento } from "@/lib/precos";
+import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { CampoData } from "@/components/ui/campo-data";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import Link from "next/link";
@@ -49,6 +52,7 @@ import {
 } from "@/lib/caucao";
 import { textoTaxaPainel, pctTexto, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { registrarContrato } from "@/lib/data/actions";
+import { lerEstadoDoContrato, type EstadoContratoView } from "@/lib/data/contratos-actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
 import { resumoContrato } from "@/lib/contrato-blocos";
 import { faixaForDays, faixaLabel } from "@/lib/faixas";
@@ -61,6 +65,7 @@ import { hojeBR, dataBR, formatBRL, cn } from "@/lib/utils";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import { ocupantesIniciais } from "@/lib/candidaturas/ocupantes";
 import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
+import { passoDaRespostaContrato, quadroAntesDaEntrada } from "@/lib/fechamento-contrato";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
@@ -125,18 +130,32 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     [prazoMeses]
   );
   const VALOR_ESTADIA = resumo.valorTotalPeriodo;
+  // Prompt 47 (adendo): o total do período mostrado é o MESMO do cartão para a mesma duração (função única).
+  const PRECO_PERIODO = rotuloPreco({ mensal: mensalDoFechamento(PROPERTY_FULL, ACORDO?.valorMensal), meses: prazoMeses });
   const PLATFORM_COMMISSION = resumo.comissaoValor;
   const CAUCAO_50 = resumo.caucaoTotal; // total do período (soma dos blocos)
   const [verified, setVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cafResult, setCafResult] = useState<CafResult | null>(null);
   const [signUrl, setSignUrl] = useState<string | null>(null);
+  const [modoContrato, setModoContrato] = useState<"teste" | "real" | null>(null);
+  const [contratoId, setContratoId] = useState<string | null>(null);
+  // Prompt 28: estado REAL do contrato (lido do banco) e se ele já existia (gerado antes).
+  const [estadoContrato, setEstadoContrato] = useState<EstadoContratoView | null>(null);
+  const [contratoExistente, setContratoExistente] = useState(false);
+  const [gerando, setGerando] = useState(false);
   const [erroContrato, setErroContrato] = useState<string | null>(null);
   // Seleção ÚNICA de garantia: guardamos um único id. Selecionar outra substitui
   // a anterior — é impossível ter duas garantias no contrato (Lei 8.245, art. 37).
   // Caução é a opção PADRÃO (obrigatória): nenhum fechamento avança sem garantia,
   // e a caução cobre todas as faixas de prazo (1..180). O usuário pode trocar.
   const [guaranteeId, setGuaranteeId] = useState<string | null>("caucao");
+  // Quadro "antes da entrada" (prompt 24): 1º pagamento + Caução ao lado (some com seguro-fiança).
+  const quadroEntrada = quadroAntesDaEntrada({
+    primeiroPagamento: PROPERTY.monthlyRent + 280 + PREP_FEE,
+    caucao: CAUCAO_50,
+    garantia: garantiaDoContrato(guaranteeId),
+  });
   // "Sua proteção": o inquilino confirma que leu a comparação antes de seguir.
   const [cienteProtecao, setCienteProtecao] = useState(false);
   // Nº de pessoas que vão morar (Onda 1) — informado pelo inquilino, validado
@@ -145,7 +164,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // Prompt 8: abre com quantas pessoas a candidatura informou (preso à capacidade).
   const [qtdOcupantes, setQtdOcupantes] = useState(() => ocupantesIniciais(ctx.ocupantesSugerido, CAPACIDADE));
   const ocupantesExcede = qtdOcupantes > CAPACIDADE;
-  // Caução flexível: como o inquilino paga a caução (não trava o aluguel).
+  // Caução flexível: como o morador paga a caução (não trava o aluguel).
   // À vista → poupança da caução (art. 38, §2º); parcelado → emissor do cartão. Nunca a plataforma.
   const [caucaoForma, setCaucaoForma] = useState<FormaPagamentoCaucao>("avista");
   const [caucaoParcelas, setCaucaoParcelas] = useState(MAX_PARCELAS);
@@ -184,6 +203,20 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     // "Verificação pendente" e AVANÇA (a pendência fica visível ao proprietário no
     // resumo). Portão RÍGIDO (flag): sem verificação real, não avança.
     if (!demo) {
+      // Prompt 23 (item 3): conta de TESTE (o servidor decide) recebe o laudo SIMULADO, rotulado TESTE, e segue até a
+      // assinatura. Conta real: segue o portão abaixo ("pendente" até o parceiro abrir).
+      const st = (await fetch("/api/caf/status").then((r) => r.json()).catch(() => null)) as { teste?: boolean } | null;
+      if (st?.teste === true) {
+        const res = await fetch("/api/caf/verify", { method: "POST" }).catch(() => null);
+        const laudo = res?.ok ? ((await res.json().catch(() => null)) as CafResult | null) : null;
+        if (laudo?.light) {
+          setCafResult(laudo);
+          setVerifStatus("ok");
+          setVerified(true);
+          setVerifying(false);
+          return;
+        }
+      }
       setCafResult(null);
       setVerifStatus("pendente");
       setVerified(!KYC_PORTAO_RIGIDO);
@@ -207,7 +240,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     };
     // Só demonstração (admin, fora de produção): laudo de EXEMPLO local. Não
     // chama a verificação real — ela só vale para o CPF da própria pessoa (A5)
-    // e gastaria a cota de 90 dias de quem apresenta.
+    // e gastaria a cota de 12 meses de quem apresenta.
     setCafResult(demoLaudo);
     setVerifStatus("ok");
     setVerified(true);
@@ -230,12 +263,14 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   }
 
   async function generateContract() {
+    if (gerando) return;
     setErroContrato(null);
     // Exemplo de demonstração (admin): sem candidatura real, nada é enviado nem cobrado.
     if (demo || !ctx.leadId) {
       setGenerated(true);
       return;
     }
+    setGerando(true);
     try {
       const res = await fetch("/api/contrato", {
         method: "POST",
@@ -248,19 +283,22 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
           costSplit: split,
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; demo?: boolean; signUrl?: string };
-      // F40/F36: só vale como "enviado para assinatura" quando a assinatura digital de verdade
-      // aceitou o documento. Sem ela (503 sem chave, ou resposta simulada) a tela diz a verdade
-      // e NÃO avança, não cobra a taxa e não registra o contrato.
-      if (res.status === 503 || (res.ok && data.demo)) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string; modo?: string; signUrl?: string; existente?: boolean };
+      // Prompt 24: a rota diz o modo. Conta REAL sem assinatura digital ("inativa", 503): a tela diz a verdade, NÃO
+      // avança, não cobra e não registra — e o botão continua disponível. Conta de TESTE e conta real com assinatura
+      // seguem o caminho completo. Contrato já gerado volta com 200 (2º clique ou página recarregada não travam).
+      const passo = passoDaRespostaContrato(res.status, data);
+      if (passo === "inativa") {
         setErroContrato(MSG_ASSINATURA_INATIVA);
         return;
       }
-      if (!res.ok) {
+      if (passo !== "registrar") {
         setErroContrato(data.error ?? "Não foi possível gerar o contrato. Tente de novo.");
         return;
       }
-      setSignUrl(data.signUrl ?? null);
+      setModoContrato(data.modo === "teste" ? "teste" : "real");
+      setContratoExistente(data.existente === true);
+      setSignUrl(data.modo === "real" ? (data.signUrl ?? null) : null);
       // Registra o CONTRATO-MÃE + blocos (contrato fracionado v2). A comissão
       // fica no contrato-mãe (taxa × valor total, UMA vez); cada bloco carrega a
       // caução (50%). O servidor confere o documento das duas partes (F32).
@@ -281,6 +319,11 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         setErroContrato(reg.error ?? "Não foi possível registrar o contrato.");
         return;
       }
+      const idRegistrado = "id" in reg && typeof reg.id === "string" ? reg.id : null;
+      setContratoId(idRegistrado);
+      if ("existente" in reg && reg.existente === true) setContratoExistente(true);
+      // O Resumo mostra o estado do banco — nunca supõe "aguardando assinatura" (o contrato pode já estar assinado).
+      setEstadoContrato(idRegistrado ? await lerEstadoDoContrato(idRegistrado, "proprietario").catch(() => null) : null);
       // Depois do contrato registrado: a cobrança lê aluguel, meses e taxa do CONTRATO (ordem c54366b0).
       // Gera a cobrança da comissão — do PROPRIETÁRIO, à parte (o aluguel nunca
       // passa pela plataforma).
@@ -293,6 +336,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       setGenerated(true);
     } catch {
       setErroContrato("Não foi possível gerar o contrato. Tente de novo.");
+    } finally {
+      setGerando(false);
     }
   }
 
@@ -321,12 +366,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
   return (
     <div>
-      <PageTitle capa="fechamento"
+      <PageTitle
         title="Fechamento"
         subtitle={
           demo
             ? `Contrato ${contractNumber} · você está fechando uma candidatura`
-            : "Fluxo do fechamento — os dados do inquilino e a verificação entram quando a candidatura é aceita."
+            : "Fluxo do fechamento — os dados do morador e a verificação entram quando a candidatura é aceita."
         }
       />
       {demo && (
@@ -349,6 +394,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       {!demo && ctx.leadId && (
         <div className="mb-4 rounded-xl border border-sage-200 bg-white p-4">
           <DocumentosInquilino leadId={ctx.leadId} modo="dono" />
+          <FichaPetCandidatura alvo={{ leadId: ctx.leadId }} className="mt-3" />
         </div>
       )}
 
@@ -359,12 +405,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             <PropertyMiniCard property={PROPERTY_FULL} />
             {/* Identificação clara dos papéis (A6) */}
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm">
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700">
+              <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-700">
                 Inquilino: {tenant.name}
               </span>
               <span className="text-muted">{tenant.profile}</span>
               <ArrowRight className="h-4 w-4 text-muted" />
-              <span className="rounded-full bg-surface-2 px-2.5 py-1 font-medium text-ink">
+              <span className="rounded-full bg-surface-2 px-3 py-1 font-medium text-ink">
                 {PROPERTY.title}
               </span>
             </div>
@@ -385,7 +431,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               onClick={() => goToStep(i)}
               disabled={!reachable}
               className={cn(
-                "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm whitespace-nowrap transition-colors",
+                "flex items-center gap-2 rounded-full px-3 py-2 text-sm whitespace-nowrap transition-colors",
                 i === step
                   ? "bg-forest text-white"
                   : i < step
@@ -405,24 +451,24 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       <Panel>
         {/* ── 8.1 CANDIDATURA + VERIFICAÇÃO CAF ── */}
         {step === 0 && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Alinha expectativas desde o início: a decisão é do proprietário */}
             <OwnerDecisionNotice />
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Candidatura e verificação</h2>
+              <h2 className="font-title text-lg font-semibold text-ink">Candidatura e verificação</h2>
               <p className="mt-1 text-sm text-muted">
                 {tenant.name} · {tenant.profile}
               </p>
             </div>
 
             {verifStatus === "none" ? (
-              <div className="rounded-xl border border-sage-200 p-5 text-center">
+              <div className="rounded-xl border border-sage-200 p-4 text-center">
                 <ShieldCheck className="mx-auto h-10 w-10 text-sage" />
                 <p className="mt-3 text-sm text-muted">
                   Verificação de identidade: documento, foto (selfie) e análise antifraude, com
                   risco contextual. Cobre estrangeiros (CRNM/RNE).
                 </p>
-                <Button variant="gold" className="mt-4" onClick={runVerification} disabled={verifying}>
+                <Button variant="secondary" className="mt-4" onClick={runVerification} disabled={verifying}>
                   {verifying ? "Verificando..." : "Verificar identidade"}
                 </Button>
               </div>
@@ -430,8 +476,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <CafLaudo result={cafResult} />
             ) : (
               // Portão SUAVE (conta real): verificação indisponível → pendente.
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-                <p className="flex items-center gap-2 font-title font-bold text-amber-800">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="flex items-center gap-2 font-title font-semibold text-amber-800">
                   <Clock className="h-5 w-5" /> Verificação pendente
                 </p>
                 <p className="mt-2 text-sm text-amber-800/90">
@@ -527,8 +573,13 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               )}
               <p className="mt-3 text-xs text-muted">
                 {resumo.blocos.length} {resumo.blocos.length === 1 ? "bloco" : "blocos"} ·{" "}
-                {formatBRL(PROPERTY.monthlyRent)}/mês · total do período{" "}
-                <strong className="text-ink">{formatBRL(resumo.valorTotalPeriodo)}</strong>.
+                <span data-testid="fechamento-preco">
+                  {PRECO_PERIODO.mes} · total do período{" "}
+                  <strong className="text-ink" data-testid="fechamento-total-periodo" data-total={PRECO_PERIODO.total}>
+                    {formatBRL(PRECO_PERIODO.total)}
+                  </strong>
+                </span>
+                .
               </p>
             </div>
 
@@ -540,7 +591,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         {step === 1 && (
           <div className="space-y-4">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">
+              <h2 className="font-title text-lg font-semibold text-ink">
                 Escolha como garantir o aluguel
               </h2>
               <p className="mt-1 text-sm text-muted">
@@ -578,7 +629,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-title font-bold text-ink">
+                      <span className="font-title font-semibold text-ink">
                         {g.nome}
                         {g.parceiroNome && (
                           <span className="ml-2 text-xs font-normal text-muted">
@@ -595,10 +646,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                         {active && <Check className="h-3.5 w-3.5" />}
                       </span>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-semibold",
+                          "rounded-full px-2 py-1 text-xs font-semibold",
                           g.reembolsavel
                             ? "bg-green-50 text-green-900"
                             : "bg-blue-50 text-blue-700"
@@ -606,15 +657,15 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                       >
                         {g.reembolsavel ? "Reembolsável" : "Não reembolsável"}
                       </span>
-                      <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+                      <span className="rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold text-muted">
                         Pago pelo {g.quemPaga === "inquilino" ? "inquilino" : "proprietário"}
                       </span>
                       {selectable ? (
-                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-900">
+                        <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-900">
                           Disponível
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
                           <Clock className="h-3 w-3" /> Em breve
                         </span>
                       )}
@@ -635,7 +686,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
             {/* Regra de ouro — sempre visível na etapa de garantia. */}
             <p className="flex items-start gap-2 rounded-lg border border-sage-200 bg-surface-2 px-3 py-2 text-xs text-muted">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+              <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" />
               {REGRA_DE_OURO}
             </p>
 
@@ -654,21 +705,21 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <table className="w-full min-w-[380px] text-xs">
                     <thead>
                       <tr className="text-left text-muted">
-                        <th className="py-1.5 pr-2 font-medium">Bloco</th>
-                        <th className="py-1.5 pr-2 font-medium">Aluguel</th>
-                        <th className="py-1.5 pr-2 font-medium">Caução (50%)</th>
-                        <th className="py-1.5 font-medium">Desembolso</th>
+                        <th className="py-2 pr-2 font-medium">Bloco</th>
+                        <th className="py-2 pr-2 font-medium">Aluguel</th>
+                        <th className="py-2 pr-2 font-medium">Caução (50%)</th>
+                        <th className="py-2 font-medium">Desembolso</th>
                       </tr>
                     </thead>
                     <tbody>
                       {resumo.blocos.map((b) => (
                         <tr key={b.numero} className="border-t border-sage-200/60">
-                          <td className="py-1.5 pr-2 text-ink">
+                          <td className="py-2 pr-2 text-ink">
                             {b.numero} <span className="text-muted">({b.meses}m)</span>
                           </td>
-                          <td className="py-1.5 pr-2 text-ink">{formatBRL(b.valor)}</td>
-                          <td className="py-1.5 pr-2 text-ink">{formatBRL(b.caucao)}</td>
-                          <td className="py-1.5 font-medium text-forest">
+                          <td className="py-2 pr-2 text-ink">{formatBRL(b.valor)}</td>
+                          <td className="py-2 pr-2 text-ink">{formatBRL(b.caucao)}</td>
+                          <td className="py-2 font-medium text-forest">
                             {formatBRL(b.desembolso)}
                           </td>
                         </tr>
@@ -676,24 +727,24 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-sage-200 font-medium text-ink">
-                        <td className="py-1.5 pr-2">Total</td>
-                        <td className="py-1.5 pr-2">{formatBRL(VALOR_ESTADIA)}</td>
-                        <td className="py-1.5 pr-2">{formatBRL(CAUCAO_50)}</td>
-                        <td className="py-1.5">{formatBRL(VALOR_ESTADIA + CAUCAO_50)}</td>
+                        <td className="py-2 pr-2">Total</td>
+                        <td className="py-2 pr-2">{formatBRL(VALOR_ESTADIA)}</td>
+                        <td className="py-2 pr-2">{formatBRL(CAUCAO_50)}</td>
+                        <td className="py-2">{formatBRL(VALOR_ESTADIA + CAUCAO_50)}</td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
                 <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest">
-                  Para começar o inquilino paga só o <strong>1º bloco</strong>:{" "}
+                  Para começar o morador paga só o <strong>1º bloco</strong>:{" "}
                   {formatBRL(resumo.desembolsoPrimeiroBloco)} (aluguel + caução). Os próximos blocos
                   são contratados por renovação, sempre com o aceite das duas partes — nunca automática.
                 </p>
 
                 {/* Caução flexível: o inquilino escolhe como pagar. */}
                 <div>
-                  <p className="mb-1.5 font-medium text-ink">Como o inquilino vai pagar a caução?</p>
-                  <div className="flex rounded-full bg-surface-2 p-0.5 text-xs">
+                  <p className="mb-2 font-medium text-ink">Como o morador vai pagar a caução?</p>
+                  <div className="flex rounded-full bg-surface-2 p-1 text-xs">
                     {(
                       [
                         ["avista", "À vista (Pix/boleto)"],
@@ -706,7 +757,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                         aria-pressed={caucaoForma === forma}
                         onClick={() => setCaucaoForma(forma)}
                         className={cn(
-                          "flex-1 rounded-full px-3 py-1.5 font-medium transition-colors",
+                          "flex-1 rounded-full px-3 py-2 font-medium transition-colors",
                           caucaoForma === forma ? "bg-forest text-white" : "text-muted"
                         )}
                       >
@@ -756,13 +807,13 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 </p>
 
                 {/* Destino do dinheiro — nunca a plataforma. */}
-                <p className="flex items-start gap-1.5 text-muted">
-                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <p className="flex items-start gap-2 text-muted">
+                  <Lock className="mt-1 h-3.5 w-3.5 shrink-0" />
                   {caucaoForma === "avista" ? (
                     <>
                       O depósito vai para uma <strong>conta poupança</strong>, como manda o art. 38, §2º
                       da Lei 8.245/91 — a plataforma não tem acesso — e é devolvido ao fim, com
-                      os rendimentos a favor do inquilino.
+                      os rendimentos a favor do morador.
                     </>
                   ) : (
                     <>
@@ -771,7 +822,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     </>
                   )}{" "}
                   A plataforma registra e documenta — <strong>nunca recebe nem retém o valor</strong>.
-                  O inquilino anexa o comprovante e o status fica “caução comprovada”.
+                  O morador anexa o comprovante e o status fica “caução comprovada”.
                 </p>
               </div>
             )}
@@ -804,7 +855,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         {step === 2 && (
           <div className="space-y-4">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Serviços adicionais</h2>
+              <h2 className="font-title text-lg font-semibold text-ink">Serviços adicionais</h2>
               <p className="mt-1 text-sm text-muted">
                 Opcionais e <strong>combináveis</strong> — <strong>não são garantia</strong>. A
                 Viva não recebe esse valor: você contrata e paga direto ao prestador parceiro;{" "}
@@ -835,26 +886,26 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-title font-bold text-ink">{s.nome}</span>
+                      <span className="font-title font-semibold text-ink">{s.nome}</span>
                       <span
                         className={cn(
-                          "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+                          "grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
                           active ? "border-forest bg-forest text-white" : "border-sage-200"
                         )}
                       >
                         {active && <Check className="h-3.5 w-3.5" />}
                       </span>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-surface-2 px-2 py-1 text-xs font-semibold text-muted">
                         Pago pelo {s.quemPaga === "inquilino" ? "inquilino" : "proprietário"}
                       </span>
                       {selectable ? (
-                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-900">
+                        <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-900">
                           Disponível
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
                           <Clock className="h-3 w-3" /> Em breve
                         </span>
                       )}
@@ -883,7 +934,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Seguro patrimonial</h2>
+              <h2 className="font-title text-lg font-semibold text-ink">Seguro patrimonial</h2>
               <p className="mt-1 text-sm text-muted">
                 Cobre incêndio e danos ao imóvel. <strong>Opcional</strong> — recomendado, não
                 obrigatório.
@@ -898,7 +949,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   patrimonial === true ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
                 )}
               >
-                <p className="font-title font-bold text-ink">Adicionar com parceiro</p>
+                <p className="font-title font-semibold text-ink">Adicionar com parceiro</p>
                 <p className="mt-1 text-sm text-muted">Contratar seguro patrimonial via seguradora parceira.</p>
               </button>
               <button
@@ -909,7 +960,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   patrimonial === false ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
                 )}
               >
-                <p className="font-title font-bold text-ink">Seguir sem seguro patrimonial</p>
+                <p className="font-title font-semibold text-ink">Seguir sem seguro patrimonial</p>
                 <p className="mt-1 text-sm text-muted">Pode contratar depois, a qualquer momento.</p>
               </button>
             </div>
@@ -918,9 +969,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
         {/* ── 8.4 CONTRATO + RATEIO ── */}
         {step === 4 && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Contrato de locação de 30 a 180 dias</h2>
+              <h2 className="font-title text-lg font-semibold text-ink">Contrato de locação de 30 a 180 dias</h2>
               <p className="mt-1 text-sm text-muted">
                 Gerado e assinado digitalmente (validade jurídica · Lei 14.063/2020).
               </p>
@@ -930,19 +981,16 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             <div className="rounded-xl border border-sage-200 p-4 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-medium text-ink">{MODELO_CONTRATO.titulo}</p>
-                <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+                <span className="rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
                   Faixa {FAIXA_LABEL} · {FAIXA_RESUMO}
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted">
-                Selecionado automaticamente pelo prazo ({STAY_DAYS} dias).{" "}
-                {MODELO_CONTRATO.textoPendente && (
-                  <span className="text-amber-700">Aguardando texto jurídico da advogada.</span>
-                )}
+                Selecionado automaticamente pelo prazo ({STAY_DAYS} dias).
               </p>
               <div className="mt-3">
-                <p className="text-xs font-medium text-ink">Cláusulas a incluir (a redigir):</p>
-                <ul className="mt-1.5 grid gap-1">
+                <p className="text-xs font-medium text-ink">Cláusulas previstas:</p>
+                <ul className="mt-2 grid gap-1">
                   {CLAUSULAS_PLACEHOLDER.map((c) => (
                     <li key={c.key} className="flex gap-2 text-xs text-muted">
                       <span className="text-sage">•</span>
@@ -964,10 +1012,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 {COST_SPLIT_ITEMS.map((item) => (
                   <div
                     key={item.key}
-                    className="flex items-center justify-between rounded-xl border border-sage-200 px-4 py-2.5"
+                    className="flex items-center justify-between rounded-xl border border-sage-200 px-4 py-3"
                   >
                     <span className="text-sm text-ink">{item.label}</span>
-                    <div className="flex rounded-full bg-surface-2 p-0.5 text-xs">
+                    <div className="flex rounded-full bg-surface-2 p-1 text-xs">
                       {(["owner", "tenant"] as const).map((party) => (
                         <button
                           key={party}
@@ -1024,30 +1072,53 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
             {/* Total que o inquilino vê no 1º pagamento */}
             <div className="rounded-xl bg-blue-50 p-4 text-sm">
-              <p className="font-medium text-blue-900">O inquilino vê no 1º pagamento</p>
+              <p className="font-medium text-blue-900">O morador vê no 1º pagamento</p>
               <div className="mt-2 space-y-1">
                 <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
                 <Row label="Consumo estimado" value={`${formatBRL(280)}/mês`} />
                 <Row label="Preparação (única)" value={formatBRL(PREP_FEE)} />
-                <div className="flex items-center justify-between border-t border-blue-200 pt-1 font-bold text-blue-900">
-                  <span>Total do 1º pagamento</span>
-                  <span>{formatBRL(PROPERTY.monthlyRent + 280 + PREP_FEE)}</span>
+                <div className="flex items-center justify-between border-t border-blue-200 pt-1 font-semibold text-blue-900">
+                  <span>1º pagamento</span>
+                  <span data-testid="entrada-primeiro-pagamento">{formatBRL(quadroEntrada.primeiroPagamento)}</span>
                 </div>
+              </div>
+              {/* Prompt 24 (Daniel, 18/10): a Caução é garantia devolvível — fica FORA do 1º pagamento, mostrada ao lado.
+                  Com seguro-fiança (garantia única) a linha não aparece. */}
+              {quadroEntrada.caucao !== null && (
+                <div className="mt-3 space-y-1 border-t border-blue-200 pt-2" data-testid="entrada-caucao">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      Caução (50% antes da entrada) — devolvida no fim, conforme a conferência de saída
+                    </span>
+                    <span className="shrink-0">{formatBRL(quadroEntrada.caucao)}</span>
+                  </div>
+                </div>
+              )}
+              <div className="mt-2 flex items-start justify-between gap-3 font-semibold text-blue-900" data-testid="entrada-total">
+                <span className="min-w-0">
+                  Total antes da entrada
+                  {quadroEntrada.caucao !== null && (
+                    <span className="block text-xs font-normal">
+                      {formatBRL(quadroEntrada.primeiroPagamento)} + {formatBRL(quadroEntrada.caucao)}
+                    </span>
+                  )}
+                </span>
+                <span className="shrink-0">{formatBRL(quadroEntrada.totalAntesDaEntrada)}</span>
               </div>
             </div>
 
             {/* Taxa de serviço: cobrada do proprietário, à parte, mostrada ANTES de aceitar */}
             <div className="rounded-xl border border-champagne/40 bg-champagne/10 p-4 text-sm">
-              <p className="font-title font-bold text-forest" data-testid="taxa-servico-painel">
+              <p className="font-title font-semibold text-forest" data-testid="taxa-servico-painel">
                 {textoTaxaPainel(COMMISSION_RATE, PROPERTY.monthlyRent, prazoMeses)}
                 {aceiteBR ? ` (taxa travada em ${aceiteBR})` : ""}
               </p>
               <p className="mt-1 text-xs text-muted">
-                Cobrada de você <strong>sobre o valor total do contrato</strong> (valor mensal × meses), em
+                Cobrada de você <strong>sobre a base da taxa</strong> (valor mensal × meses), sem condomínio, consumo, limpeza ou pet, em
                 uma cobrança à parte, no fechamento. {TEXTO_RENOVACAO_COMISSAO} O valor mensal, de todos os
                 meses, vai do inquilino{" "}
                 <strong>direto para a sua conta</strong> — a plataforma nunca cobra nem repassa
-                esse valor. O inquilino não paga taxa da Viva.
+                esse valor. O morador não paga taxa da Viva.
               </p>
               <div className="mt-3 space-y-1">
                 <Row label={`Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${prazoMeses} ${prazoMeses === 1 ? "mês" : "meses"})`} value={formatBRL(resumo.valorTotalPeriodo)} />
@@ -1060,7 +1131,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
             {/* Enquanto o parecer jurídico não chega, todo contrato gerado leva esta marca. */}
             <p
-              className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-amber-800"
+              className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-center text-sm font-semibold uppercase text-amber-800"
               data-testid="marca-minuta"
             >
               {MARCA_MINUTA}
@@ -1069,8 +1140,34 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {generated ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
-                  <FileCheck2 className="h-5 w-5" /> {demo ? "Exemplo de demonstração — nada foi enviado." : "Contrato enviado para assinatura digital."}
+                  <FileCheck2 className="h-5 w-5" />{" "}
+                  {demo
+                    ? "Exemplo de demonstração — nada foi enviado."
+                    : estadoContrato && !estadoContrato.assinando
+                      ? `${modoContrato === "teste" ? "Contrato de TESTE" : "Contrato"}: ${estadoContrato.texto}.`
+                      : modoContrato === "teste"
+                        ? "Contrato de TESTE registrado — as duas partes assinam aqui na plataforma com o código recebido por e-mail."
+                        : "Contrato registrado — as duas partes assinam aqui na plataforma com o código recebido por e-mail."}
                 </div>
+                {!demo && estadoContrato && (
+                  <p className="text-sm text-ink" data-testid="fechamento-estado-contrato">
+                    Situação do contrato: <strong>{estadoContrato.texto}</strong>
+                  </p>
+                )}
+                {!demo && contratoExistente && estadoContrato && (
+                  <p className="text-xs text-muted" data-testid="fechamento-contrato-gerado-em">
+                    Este contrato foi gerado em {estadoContrato.criadoEm.slice(0, 10).split("-").reverse().join("/")}.
+                  </p>
+                )}
+                {contratoId && (
+                  <a
+                    href={`/dashboard/contratos/${contratoId}`}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-forest underline"
+                    data-testid="fechamento-abrir-contrato"
+                  >
+                    {estadoContrato && !estadoContrato.assinando ? "Ver contrato" : "Abrir o contrato para assinar"}
+                  </a>
+                )}
                 {signUrl && (
                   <a
                     href={signUrl}
@@ -1102,8 +1199,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     {erroContrato}
                   </p>
                 )}
-                <Button variant="gold" onClick={generateContract}>
-                  <FileSignature className="h-4 w-4" /> Gerar contrato para assinatura
+                <Button variant="gold" onClick={generateContract} disabled={gerando} data-testid="fechamento-gerar-contrato">
+                  <FileSignature className="h-4 w-4" /> {gerando ? "Gerando..." : "Gerar contrato para assinatura"}
                 </Button>
               </div>
             )}
@@ -1112,12 +1209,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
         {/* ── RESUMO FINAL ── */}
         {step === 5 && (
-          <div className="space-y-5 text-center">
+          <div className="space-y-4 text-center">
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sage-100">
               <Sparkles className="h-7 w-7 text-forest" />
             </div>
             <div>
-              <h2 className="font-title text-xl font-bold text-ink">Fechamento concluído</h2>
+              <h2 className="font-title text-xl font-semibold text-ink">Fechamento concluído</h2>
               <p className="mx-auto mt-2 max-w-md text-muted">
                 Verificação, garantia e contrato organizados. O pagamento do aluguel segue
                 direto ao proprietário.
@@ -1125,10 +1222,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             </div>
             <div className="rounded-xl bg-surface-2 p-4 text-left text-sm">
               <Row
-                label="Verificação do inquilino"
+                label="Verificação do morador"
                 value={
                   verifStatus === "ok" && cafResult
-                    ? `${TRAFFIC_LIGHT_META[cafResult.light].emoji} ${TRAFFIC_LIGHT_META[cafResult.light].label}`
+                    ? TRAFFIC_LIGHT_META[cafResult.light].label
                     : verifStatus === "pendente"
                       ? "⏳ Verificação pendente"
                       : "—"
@@ -1146,14 +1243,35 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 }
               />
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
-              <Row label="Contrato" value={generated ? (demo ? "Exemplo de demonstração" : "Enviado para assinatura") : "Pendente"} />
+              <Row
+                label="Contrato"
+                value={
+                  generated
+                    ? demo
+                      ? "Exemplo de demonstração"
+                      : `${modoContrato === "teste" ? "TESTE · " : ""}${estadoContrato?.texto ?? "Situação indisponível — abra o contrato"}`
+                    : "Pendente"
+                }
+              />
+              {!demo && generated && contratoId && (
+                <p className="text-right text-xs text-muted" data-testid="resumo-contrato">
+                  {contratoExistente && estadoContrato ? `Gerado em ${estadoContrato.criadoEm.slice(0, 10).split("-").reverse().join("/")} · ` : ""}
+                  <a href={`/dashboard/contratos/${contratoId}`} className="font-medium text-forest underline" data-testid="resumo-ver-contrato">
+                    Ver contrato
+                  </a>
+                  {" · "}
+                  <a href={`/dashboard/estadia/${contratoId}`} className="font-medium text-forest underline" data-testid="resumo-ver-estadia">
+                    Página da estadia
+                  </a>
+                </p>
+              )}
               <Row
                 label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
                 value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
               />
             </div>
             <p className="rounded-lg bg-sage-100 px-3 py-2 text-left text-sm text-forest">
-              ⭐ Ao fim da locação, você e o inquilino poderão se avaliar — construindo
+              Ao fim da locação, você e o morador poderão se avaliar — construindo
               reputação na plataforma.
             </p>
             <PlatformLegalNotice className="text-left" />
@@ -1190,10 +1308,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 function CafLaudo({ result }: { result: CafResult }) {
   const meta = TRAFFIC_LIGHT_META[result.light];
   return (
-    <div className={cn("rounded-xl p-5 ring-1", meta.tone, meta.ring)}>
+    <div className={cn("rounded-xl p-4 ring-1", meta.tone, meta.ring)}>
       <div className="flex items-center gap-2">
-        <span className="text-2xl">{meta.emoji}</span>
-        <span className="font-title text-lg font-bold">Verificação de identidade — {meta.label}</span>
+        <span className="font-title text-lg font-semibold">Verificação de identidade — {meta.label}</span>
       </div>
       <div className="mt-4 grid gap-2">
         <LaudoItem icon={Fingerprint} label="Identidade" ok={result.identity} />
@@ -1208,7 +1325,7 @@ function CafLaudo({ result }: { result: CafResult }) {
         ))}
       </ul>
       {result.coversForeigners && (
-        <p className="mt-3 inline-flex items-center gap-1.5 text-xs">
+        <p className="mt-3 inline-flex items-center gap-2 text-xs">
           <Globe2 className="h-3.5 w-3.5" /> Cobre estrangeiros (CRNM/RNE)
         </p>
       )}
@@ -1260,22 +1377,22 @@ export function SuaProtecao({
   onCiente: (v: boolean) => void;
 }) {
   const linhas: [string, string, string][] = [
-    ["Quanto o inquilino paga", `${formatBRL(caucao)} depositados na entrada (50% de cada bloco, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
-    ["Volta para o inquilino?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
+    ["Quanto o morador paga", `${formatBRL(caucao)} depositados na entrada (50% de cada bloco, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
+    ["Volta para o morador?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
     ["O que cobre para o proprietário", `Aluguel e danos até ${formatBRL(caucao)}`, "Aluguel e danos até o limite da apólice"],
-    ["Se o inquilino quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra do inquilino"],
+    ["Se o morador quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra do morador"],
   ];
   return (
     <div className="rounded-xl border border-sage-200 p-4 text-sm" data-testid="sua-protecao">
-      <p className="font-title text-base font-bold text-ink">Sua proteção</p>
+      <p className="font-title text-base font-semibold text-ink">Sua proteção</p>
       <p className="mt-1 text-xs text-muted">A lei permite uma garantia só. Compare antes de escolher:</p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[320px] text-xs">
           <thead>
             <tr className="text-left text-muted">
-              <th className="py-1.5 pr-2 font-medium" />
-              <th className="py-1.5 pr-2 font-semibold text-ink">Caução</th>
-              <th className="py-1.5 font-semibold text-ink">Seguro-fiança</th>
+              <th className="py-2 pr-2 font-medium" />
+              <th className="py-2 pr-2 font-semibold text-ink">Caução</th>
+              <th className="py-2 font-semibold text-ink">Seguro-fiança</th>
             </tr>
           </thead>
           <tbody>
@@ -1289,12 +1406,12 @@ export function SuaProtecao({
           </tbody>
         </table>
       </div>
-      <ul className="mt-3 space-y-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs font-medium text-ink">
-        <li>Em qualquer opção, o inquilino responde pelos danos que causar.</li>
+      <ul className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-2 text-xs font-medium text-ink">
+        <li>Em qualquer opção, o morador responde pelos danos que causar.</li>
         <li>Desgaste normal e defeitos são do proprietário.</li>
       </ul>
       <label className="mt-3 flex items-start gap-2 text-sm text-ink">
-        <input type="checkbox" className="mt-0.5" checked={ciente} onChange={(e) => onCiente(e.target.checked)} data-testid="ciente-protecao" />
+        <input type="checkbox" className="mt-1" checked={ciente} onChange={(e) => onCiente(e.target.checked)} data-testid="ciente-protecao" />
         <span>Li e entendi.</span>
       </label>
     </div>

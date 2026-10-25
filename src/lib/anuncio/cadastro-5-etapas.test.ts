@@ -9,9 +9,8 @@ import {
   consultaOverpass,
   distanciaMetros,
   escolherProximidades,
-  MAX_ITENS,
+  MAX_POR_CATEGORIA,
   paraProximity,
-  tempoEstimado,
 } from "../proximidades/osm.ts";
 import {
   avisoAbaixoDoMinimo,
@@ -27,21 +26,14 @@ import { capacidadeSugerida, consumoSugerido, contadorEssenciais, mbpsValido } f
 const ORIGEM = { lat: -18.9186, lng: -48.2772 };
 const perto = (dLat: number) => ({ lat: ORIGEM.lat + dLat, lon: ORIGEM.lng });
 
-test("tempo: a pé até 1 km, de carro acima", () => {
-  assert.equal(tempoEstimado(80), "1 min a pé");
-  assert.equal(tempoEstimado(800), "10 min a pé");
-  assert.equal(tempoEstimado(1000), "13 min a pé");
-  assert.equal(tempoEstimado(2100), "5 min de carro");
-});
-
 test("distância haversine razoável (0,001° de latitude ≈ 111 m)", () => {
   const d = distanciaMetros(ORIGEM, { lat: ORIGEM.lat + 0.001, lng: ORIGEM.lng });
   assert.ok(d >= 108 && d <= 114, String(d));
 });
 
-test("consultas: Overpass com os 7 tipos num raio de 2 km; Nominatim sem complemento", () => {
+test("consultas: Overpass com os 8 tipos (escola incluída) num raio de 2 km; Nominatim sem complemento", () => {
   const q = consultaOverpass(ORIGEM.lat, ORIGEM.lng);
-  for (const f of ["amenity\"=\"hospital", "shop\"=\"supermarket", "highway\"=\"bus_stop", "amenity\"=\"coworking_space"]) assert.ok(q.includes(f), f);
+  for (const f of ["amenity\"=\"hospital", "shop\"=\"supermarket", "highway\"=\"bus_stop", "amenity\"=\"coworking_space", "amenity\"=\"school"]) assert.ok(q.includes(f), f);
   assert.ok(q.includes("around:2000"));
   assert.equal(
     consultaNominatim({ rua: "Rua A", numero: "10", bairro: "Centro", cidade: "Uberlândia", uf: "MG", cep: "38400100" }),
@@ -49,7 +41,7 @@ test("consultas: Overpass com os 7 tipos num raio de 2 km; Nominatim sem complem
   );
 });
 
-test("escolhe até 8: o mais perto de cada tipo primeiro, sem nome fica de fora, fora do raio não entra", () => {
+test("PERTO-B: até 3 por categoria, os mais próximos primeiro; sem nome fica de fora, fora do raio não entra", () => {
   const elementos = [
     { ...perto(0.003), tags: { amenity: "pharmacy", name: "Farmácia Longe" } },
     { ...perto(0.001), tags: { amenity: "pharmacy", name: "Farmácia Perto" } },
@@ -65,14 +57,17 @@ test("escolhe até 8: o mais perto de cada tipo primeiro, sem nome fica de fora,
     { ...perto(0.05), tags: { amenity: "hospital", name: "Muito longe" } },
   ];
   const r = escolherProximidades({ elements: elementos }, ORIGEM);
-  assert.equal(r.length, MAX_ITENS);
+  // Saúde (3, mais perto primeiro), Educação, Trabalho, Mercado (3), Transporte.
   assert.deepEqual(
-    r.slice(0, 7).map((l) => l.nome),
-    ["Hospital X", "Universidade Y", "Mercado A", "Farmácia Perto", "Academia Z", "Parada de ônibus", "Cowork W"],
+    r.map((l) => l.nome),
+    ["Farmácia Perto", "Farmácia Longe", "Academia Z", "Universidade Y", "Cowork W", "Mercado A", "Mercado B", "Mercado C", "Parada de ônibus"],
   );
-  assert.equal(r[7].nome, "Mercado B");
+  assert.equal(MAX_POR_CATEGORIA, 3);
   assert.ok(!r.some((l) => l.nome === "Muito longe"));
-  assert.deepEqual(paraProximity(r[3]), { category: "saude", name: "Farmácia Perto", note: "1 min a pé" });
+  assert.ok(!r.some((l) => "tempo" in l), "nenhum minuto estimado sai da busca");
+  const f = paraProximity(r[0]);
+  assert.deepEqual({ ...f, distanciaM: undefined }, { category: "saude", name: "Farmácia Perto", tipo: "farmacia", origem: "osm", distanciaM: undefined });
+  assert.ok(f.distanciaM! > 100 && f.distanciaM! < 120);
   assert.deepEqual(escolherProximidades(null, ORIGEM), []);
 });
 
