@@ -185,9 +185,9 @@ export function itensDaConta(papel: PapelAbas | null, p: { temImovel: boolean; a
     itens.push({ id: "plano", rotulo: "Plano", href: "/dashboard/assinatura" });
     itens.push({ id: "modo-morador", rotulo: "Modo morador", href: "/dashboard", acao: "modo-morador" });
   } else if (p.temImovel) {
+    // Quem já anunciou troca de modo aqui. Morador puro não vê nada do dono (E167, QA 25/10: nem "Anunciar meu
+    // imóvel" nem Ferramentas) — a porta de anunciar é a do site público.
     itens.push({ id: "modo-proprietario", rotulo: "Modo proprietário", href: "/dashboard", acao: "modo-proprietario" });
-  } else {
-    itens.push({ id: "anunciar", rotulo: "Anunciar meu imóvel", href: "/dashboard/imoveis/novo" });
   }
   if (p.admin) itens.push({ id: "admin", rotulo: "Painel admin", href: "/admin" });
   itens.push({ id: "sair", rotulo: "Sair", href: "/", acao: "sair" });

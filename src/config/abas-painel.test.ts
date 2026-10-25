@@ -69,12 +69,13 @@ test("toda aba, subaba e item da Conta aponta para uma tela que existe (rotas an
   }
 });
 
-test("Conta (avatar): Ferramentas fora; troca de modo e Sair como ações; quem nunca anunciou vê 'Anunciar meu imóvel'", () => {
+test("Conta (avatar): Ferramentas fora; troca de modo e Sair como ações; morador puro sem nada do dono (E167)", () => {
   const dono = itensDaConta("proprietario", { temImovel: true, admin: false }).map((i) => i.rotulo);
   assert.ok(!dono.includes("Ferramentas"));
   assert.ok(dono.includes("Modo morador"));
   assert.ok(itensDaConta("morador", { temImovel: true, admin: false }).some((i) => i.acao === "modo-proprietario"));
-  assert.ok(itensDaConta("morador", { temImovel: false, admin: false }).some((i) => i.id === "anunciar"));
+  const puro = itensDaConta("morador", { temImovel: false, admin: false });
+  assert.ok(!puro.some((i) => /anunciar|ferramentas|propriet/i.test(`${i.id} ${i.rotulo}`)), puro.map((i) => i.rotulo).join(", "));
   for (const papel of PAPEIS) assert.equal(itensDaConta(papel, { temImovel: false, admin: false }).at(-1)?.acao, "sair");
   assert.ok(itensDaConta("morador", { temImovel: false, admin: true }).some((i) => i.href === "/admin"));
 });
