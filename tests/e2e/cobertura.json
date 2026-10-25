@@ -831,7 +831,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
-        "t416-varredura-bloco33"
+        "t416-varredura-bloco33",
+        "t461-prop5-contratos-sem-repeticao"
       ]
     },
     "/dashboard/imoveis": {
