@@ -8,7 +8,7 @@ export default async function LocacaoDetalhePage({ params }: { params: Promise<{
   const { id } = await params;
   return (
     <>
-      <ContratoDetalhe id={id} voltarHref="/dashboard/locacoes" voltarRotulo="Minhas locações" />
+      <ContratoDetalhe id={id} voltarHref="/dashboard/locacoes" voltarRotulo="Minhas estadias" />
       <ValorDiretoAoProprietario className="mt-4 text-sm text-muted" />
       <FalarComAViva />
     </>
