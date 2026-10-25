@@ -48,6 +48,8 @@ test("rodapé do fluxo: 'Passo N de 10' + barra, Voltar (passos 2–10) e um só
   assert.match(pagina, /<RodapeAssistente\s+pos=\{pos\}\s+total=\{ORDEM_ETAPAS\.length\}\s+onVoltar=\{pos > 0 \? voltarEtapa : null\}/);
   // E135: o Continuar reflete o passo (esmaecido quando falta algo) e continua dizendo o que falta ao clicar.
   assert.match(pagina, /pos < ULTIMA_ETAPA\s+\? \{\s+rotulo: "Continuar",\s+onClick: avancarEtapa,\s+testid: "cadastro-continuar",\s+seta: true,\s+[^}]*pendente: faltaNoPasso\.length > 0/);
+  // E133: no Passo 2 o "Continuar" fica desabilitado de verdade até o mínimo de fotos e sem aviso pendente.
+  assert.match(pagina, /pos < ULTIMA_ETAPA\s+\? \{\s+rotulo: "Continuar",\s+onClick: avancarEtapa,\s+testid: "cadastro-continuar",\s+seta: true,/);
   assert.match(pagina, /editingId \? "Salvar alterações" : "Publicar anúncio"/);
   assert.match(pagina, /testid: "publicar-anuncio"/);
   assert.match(rodape, /role="progressbar" aria-label="Progresso do cadastro"/);

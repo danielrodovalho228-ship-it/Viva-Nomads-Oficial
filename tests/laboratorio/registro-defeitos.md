@@ -74,6 +74,28 @@ Um registro por defeito novo achado na triagem contínua (Pista C). Defeito conh
 | L-68 | 25/10 | t442 · "3. fila (mais antiga primeiro) + contador no painel" (lido no código depois do ADMIN-4; a t442 é acima do teto do lab completo) | `/admin` · inicial do ADMIN-4 | A inicial nova do `/admin` (#1354) não mostra mais o contador "Fotos de perfil em revisão" nem o atalho de "Outras áreas": `atalhos-admin.tsx` não é usado em nenhuma tela, e a fila das fotos de perfil não entra em "Precisa da sua atenção" (`decisoes-admin.ts` não tem a chave). Sem o contador, a equipe só descobre foto esperando revisão abrindo o menu | Fila de moderação sem sinal no painel | A (#1354, ADMIN-4) | Aberto. Proposta: a fila das fotos de perfil como decisão ("N fotos de perfil para revisar" → `/admin/fotos-perfil`), como a de fotos de nível. A t442 · 3 segue pedindo o contador |
 | L-69 | 25/10 | t101 · "total da lista = número do cartão Usuários" (lab-crítico do #1361, run 40180024129: `lista=8`, `fonte=9+5`) | `/admin/usuarios` · topo e lista | A mesma página mostra "Usuários: 9 reais · 5 de teste" (`NumeroDaFonte` → `contarUsuarios`, que conta todos os perfis, com admin e anonimizados) logo acima de "Usuários (8)" (a lista: proprietários e inquilinos não anonimizados). É o Moacir #584 (o número não bate com a lista que ele abre) voltando dentro da própria página e na inicial do ADMIN-4, que usa a mesma função | Dois números diferentes para "Usuários" | A (#1354, ADMIN-4) → corrigido na B | **Corrigido (Pista B, L-69)**: `contarUsuarios` e a lista padrão usam a mesma regra (`PAPEIS_USUARIOS` em `src/lib/admin/usuarios-lista.ts`, sem anonimizados); a t101 perdeu o `test.fail` e prova lista = reais e, com "Mostrar contas de teste", reais + teste. Proposta original: `contarUsuarios` com o mesmo filtro da lista padrão (papéis owner/tenant, `anonymized_at` nulo), ou a lista padrão com todos e o número dizendo o que conta. A t101 tem `test.fail` com L-69; quem corrigir tira |
 
+## Levantamento do Daniel 25/10 — assistente de cadastro (E133–E146), em spec antes da correção (Pista C)
+
+Um spec por item; os vermelhos nascem com `test.fail` e o item (quem corrigir na Pista A tira o `test.fail` no mesmo
+PR). Confirmados no lab-crítico do #1367 (runs 40190394864, 40190996396, 40191654292; verde com os `test.fail` em 40192531202).
+
+| Item | Spec · caso | Hoje | O que o lab viu |
+|---|---|---|---|
+| E133 | t422 · 1 (3 fotos) | **vermelho** (`test.fail`) | O Continuar do Passo 2 leva ao Endereço com 3 fotos (`validarEtapa` só pede 1) |
+| E133 | t422 · 2 (8 fotos) | verde | Avança (controle) |
+| E133 | t422 · 3 ("não parece imóvel") | `fixme` | Sem veredito por foto no produto nem no simulador do laboratório (`ehImovel` é do conjunto) |
+| E135 | t423 · 1 (válidos) | verde | Avança para o Preço |
+| E135 | t423 · 2 (vazios) | **vermelho** (`test.fail`) | O Continuar não tem estado "não pronto" (sem `aria-disabled`); a descrição vazia não entra no que falta |
+| E136 | t424 · 1 (1280) | verde | dd/mm/aaaa, nenhum mês em inglês |
+| E136 | t424 · 2 (390, toque) | **vermelho** (`test.fail`) | O seletor nativo desenha no idioma do aparelho; nenhum dd/mm/aaaa da data escolhida na tela |
+| E137 | t425 · 1 (janela 10 dias, mínimo 30) | **vermelho** (`test.fail`) | Aceita e vai à Revisão, sem mensagem |
+| E137 | t425 · 2 (mesmo bloqueio 2×) | **vermelho** (`test.fail`) | 2 linhas na lista e no banco (`addBlock` grava de novo) |
+| E139/E140 | t426 · 1 (a mesma história) | verde — **corrigido no #1372** | Antes: "Você recebe do morador" R$ 12.000 em 4 meses, sem as contas. Depois do #1372 (run 40195729482): R$ 14.000 (R$ 3.500 × 4) e taxa R$ 1.440 (12% × valor mensal × meses, sem condomínio e contas, a leitura do E139) |
+| E139/E140 | t426 · 2 (mesmo período) | verde | O comparador do Preço sugerido acompanha os meses do simulador (#1372 tirou a linha do comparativo) |
+| E141 | t427 · 1 | verde | Essencial publica sem foto de prova |
+| E142 | t428 (390 e 1280) | **vermelho** (`test.fail`) | O bloco da detecção é desenhado fora da tela na chegada (viewport ratio 0) |
+| E146 | t429 (390 e 1280) | verde | O contador bate com os chips essenciais marcados |
+
 ## Lista priorizada para as pistas A e B
 
 Só defeito de produto confirmado, cada um com o teste do laboratório que o reproduz. Quem corrige troca o `test.fail` (quando houver) por teste normal no mesmo PR.

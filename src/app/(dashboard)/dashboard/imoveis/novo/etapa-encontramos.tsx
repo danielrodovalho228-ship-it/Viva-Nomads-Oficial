@@ -11,7 +11,7 @@ import { ProntoParaTrabalhar, ProximidadesAutomaticas } from "@/components/anunc
 import { avisosConsistenciaTitulo } from "@/lib/anuncio/titulo-bairro";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { cn } from "@/lib/utils";
-import { Erro, Labeled, Toggle } from "./campos";
+import { Erro, Labeled, LinhaNumero, Toggle } from "./campos";
 import type { CampoSugerido, EstadoIaFotos } from "./tipos";
 
 const CHAVES_BLOCO_TRABALHO = new Set<string>([...ESSENCIAIS_TRABALHO, ...OPCIONAIS_TRABALHO].map((i) => i.chave));
@@ -130,6 +130,7 @@ export function EtapaEncontramos(p: {
         </Labeled>
         <Labeled label="Descrição" sugerido={p.sugerido("descricao")}>
           <textarea rows={5} value={p.description} onChange={campo("descricao", p.setDescription)} className="input" placeholder="Descreva o imóvel…" data-testid="cadastro-descricao" />
+          <Erro msg={p.erros.descricao} />
         </Labeled>
       </div>
     );
@@ -138,25 +139,14 @@ export function EtapaEncontramos(p: {
   if (p.parte === "espaco") {
     return (
       <div className="space-y-4" data-testid="etapa-espaco">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*]:min-w-0">
-          <Labeled label="Quartos" sugerido={p.sugerido("quartos")}>
-            <input type="number" min={0} value={p.bedrooms} onChange={campo("quartos", p.setBedrooms)} className="input" data-testid="cadastro-quartos" />
-          </Labeled>
-          <Labeled label="Banheiros" sugerido={p.sugerido("banheiros")}>
-            <input type="number" min={0} value={p.bathrooms} onChange={campo("banheiros", p.setBathrooms)} className="input" data-testid="cadastro-banheiros" />
-            <Erro msg={p.erros.banheiros} />
-          </Labeled>
-          <Labeled label="Pessoas" sugerido={p.sugerido("capacidade")} ajuda="Quantas podem morar">
-            <input type="number" min={1} value={p.maxGuests} onChange={campo("capacidade", p.setMaxGuests)} className="input" placeholder="Ex.: 2" data-testid="cadastro-capacidade" />
-            <Erro msg={p.erros.capacidade} />
-          </Labeled>
-          <Labeled label="Área (m²)" daMatricula={p.daMatricula?.has("area")}>
-            <input type="number" min={0} value={p.areaM2} onChange={(e) => p.setAreaM2(e.target.value)} className="input" data-testid="cadastro-area" />
-            <Erro msg={p.erros.area} />
-          </Labeled>
-          <Labeled label="Vagas" daMatricula={p.daMatricula?.has("vagas")}>
-            <input type="number" min={0} value={p.parkingSpots} onChange={(e) => p.setParkingSpots(e.target.value)} className="input" />
-          </Labeled>
+        {/* E134: cartão de linhas iguais (mockup cadastro-imovel-04) — rótulo e dica à esquerda, contador à direita;
+            nenhuma dica desloca a caixa e não sobra buraco de grade ímpar. */}
+        <div className="divide-y divide-line rounded-xl border border-line bg-white px-4" data-testid="cartao-numeros">
+          <LinhaNumero label="Quartos" dica="Número de quartos" valor={p.bedrooms} onChange={(v) => { p.setBedrooms(v); p.tirarSugestao("quartos"); }} sugerido={p.sugerido("quartos")} testid="cadastro-quartos" />
+          <LinhaNumero label="Banheiros" dica="Número de banheiros" valor={p.bathrooms} onChange={(v) => { p.setBathrooms(v); p.tirarSugestao("banheiros"); }} sugerido={p.sugerido("banheiros")} testid="cadastro-banheiros" erro={p.erros.banheiros} />
+          <LinhaNumero label="Área" dica="Área total em m²" sufixo="m²" passo={5} valor={p.areaM2} onChange={p.setAreaM2} daMatricula={p.daMatricula?.has("area")} testid="cadastro-area" erro={p.erros.area} />
+          <LinhaNumero label="Pessoas" dica="Quantas podem morar" min={1} placeholder="2" valor={p.maxGuests} onChange={(v) => { p.setMaxGuests(v); p.tirarSugestao("capacidade"); }} sugerido={p.sugerido("capacidade")} testid="cadastro-capacidade" erro={p.erros.capacidade} />
+          <LinhaNumero label="Vagas" dica="Vagas de garagem" valor={p.parkingSpots} onChange={p.setParkingSpots} daMatricula={p.daMatricula?.has("vagas")} testid="cadastro-vagas" />
         </div>
       </div>
     );

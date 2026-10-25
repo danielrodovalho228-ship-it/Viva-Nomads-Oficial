@@ -13,6 +13,17 @@ export function semAnunciosDeTeste<T extends { title?: string | null }>(lista: T
   return lista.filter((p) => !ehAnuncioDeTeste(p.title));
 }
 
+/**
+ * E131 (vitrine): anúncio de CONTA DE TESTE (profiles.is_teste) também é anúncio de teste, mesmo sem a marca no título
+ * — a mesma regra do ranking (ranking/sinais: dono_is_teste || título). Antes, o "RETESTE" de uma conta de teste, sem
+ * a marca, contava como imóvel real: a regra do Prompt 30 (com imóvel real na busca, os exemplos saem) tirava os ~15
+ * exemplos e a /buscar mostrava "1 imóvel". `donosTeste` = ids das contas de teste entre os donos da lista.
+ */
+export function semAnunciosDeContaTeste<T extends { ownerId?: string | null }>(lista: T[], donosTeste: ReadonlySet<string>): T[] {
+  if (donosTeste.size === 0) return lista;
+  return lista.filter((p) => !(p.ownerId && donosTeste.has(p.ownerId)));
+}
+
 /*
   E93 — o anúncio de teste aberto pelo link: segue fora de todas as listagens e com noindex; quem NÃO é o dono nem
   admin vê a faixa e o "Solicitar" desativado com o mesmo texto; o dono e o admin veem a página normal, com uma faixa

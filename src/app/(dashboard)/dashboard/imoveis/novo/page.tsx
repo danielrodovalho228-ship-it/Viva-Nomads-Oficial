@@ -25,7 +25,7 @@ import {
   type DocumentStatus,
 } from "@/lib/data/actions";
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
-import { ANCORA_VIDEO_ASSISTENTE, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { videoDoAnuncio } from "@/lib/video-anuncio";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { itensFaltantes } from "@/lib/conforto/regras";
@@ -46,6 +46,7 @@ import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoD
 import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual } from "@/lib/anuncio/periodo-disponivel";
 import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
+import { estadoPassoFotos, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
@@ -99,6 +100,7 @@ import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
 import { PreviaAnuncio } from "./previa-anuncio";
+import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
 import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
@@ -246,6 +248,8 @@ export default function NewPropertyPage() {
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
   const [videoArquivo, setVideoArquivo] = useState("");
+  // E133 (c): triagem do vídeo enviado (quadros início/meio/fim) e a confirmação do dono, se sinalizado.
+  const [videoConteudo, setVideoConteudo] = useState<ConteudoFoto | null>(null);
   const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
   const [utilitiesEstimate, setUtilitiesEstimate] = useState(0);
   const [issuesInvoice, setIssuesInvoice] = useState(false);
@@ -298,6 +302,8 @@ export default function NewPropertyPage() {
           : "";
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
+  // E133: o Passo 2 só segue com o mínimo de fotos e sem foto/vídeo "não parece imóvel" sem tratar.
+  const passoFotos = estadoPassoFotos(photos, videoArquivo ? videoConteudo : null);
   const enderecoCompleto = [street.trim(), numero.trim()].filter(Boolean).join(", ");
 
   const garantiaOk = Object.values(garantias).some(Boolean);
@@ -377,14 +383,16 @@ export default function NewPropertyPage() {
       }
       if (!city.trim()) e.cidade = "Informe a cidade.";
     }
-    if (s === ETAPA.fotos && photos.length === 0)
-      e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
+    if (s === ETAPA.fotos && !passoFotos.podeContinuar) e.fotos = passoFotos.mensagem ?? "Confira as fotos para continuar.";
     if (s === ETAPA.detalhes) {
       if ((Number(bathrooms) || 0) < 1) e.banheiros = "Informe ao menos 1 banheiro.";
       if ((Number(areaM2) || 0) <= 0) e.area = "Informe a área do imóvel (m²).";
       if ((Number(maxGuests) || 0) < 1) e.capacidade = "Informe quantas pessoas podem morar no imóvel.";
     }
     if (s === ETAPA.descricao && title.trim().length < 3) e.titulo = "Dê um título ao anúncio (mín. 3 caracteres).";
+    // E135: a descrição também entra no que falta do Passo 7 (o mesmo mínimo que o publicar exige).
+    if (s === ETAPA.descricao && description.trim().length < MIN_DESCRICAO)
+      e.descricao = `Escreva a descrição do anúncio (mín. ${MIN_DESCRICAO} caracteres${description.trim() ? `; tem ${description.trim().length}` : ""}).`;
     if (s === ETAPA.preco) {
       if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o valor mensal.";
       if (!garantiaOk) e.garantia = "Escolha ao menos uma garantia.";
@@ -507,6 +515,11 @@ export default function NewPropertyPage() {
     }
     if (!asDraft && photoBlocked) {
       setPublishError(`Adicione pelo menos ${MIN_PHOTOS} fotos para publicar. Faltam ${photosMissing}.`);
+      return;
+    }
+    if (!asDraft && !passoFotos.podeContinuar) {
+      setPublishError(passoFotos.mensagem ?? "Confira as fotos para publicar.");
+      irPara(ETAPA.fotos);
       return;
     }
     if (!asDraft && subleaseBlocked) {
@@ -667,6 +680,7 @@ export default function NewPropertyPage() {
     if (s(d.cep)) setCep(d.cep as string);
     if (s(d.videoUrl)) setVideoUrl(d.videoUrl as string);
     if (s(d.videoArquivo)) setVideoArquivo(d.videoArquivo as string);
+    if (d.videoConteudo && typeof d.videoConteudo === "object") setVideoConteudo(d.videoConteudo as ConteudoFoto);
     if (s(d.internetMbps)) setInternetMbps(d.internetMbps as string);
     if (d.chacara && typeof d.chacara === "object") setChacara(d.chacara as ValorChacara);
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
@@ -866,7 +880,7 @@ export default function NewPropertyPage() {
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
-    street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, internetMbps,
+    street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
     privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
@@ -1396,12 +1410,20 @@ export default function NewPropertyPage() {
           (computador), a prévia do anúncio montando ao vivo. CADASTRO-MOLDURA: "Passo X de 10", a barra de progresso,
           Voltar e o primário moram no rodapé do fluxo (RodapeAssistente). */}
 
-      <div className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem]")} data-testid="novo-duas-colunas">
+      {/* E161: a grade da página do imóvel — conteúdo + coluna lateral do tamanho do cartão do anúncio (22rem/26rem). */}
+      <div
+        className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12")}
+        data-testid="novo-duas-colunas"
+      >
         {/* E104 (mockup cadastro-imovel-03): o Passo 3 é um cartão branco sobre o fundo areia da moldura. */}
         <div className={cn("min-w-0", step === ETAPA.endereco && "rounded-xl border border-line bg-white p-4 sm:p-8")} data-testid="novo-coluna-form">
           <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
             {editingId ? "Editar anúncio" : "Anunciar imóvel"} <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
           </span>
+          {/* E161: no celular (sem a prévia lateral) e na Revisão (sem coluna lateral), o anúncio no tamanho real fica aqui. */}
+          <div className={cn("mt-2", step !== ETAPA.revisao && "lg:hidden")} data-testid="previa-tamanho-real-passo">
+            <BotaoTamanhoReal imovel={previewProperty} />
+          </div>
           <h1 className={cn(TITULO_PASSO_CADASTRO, "mt-3")} data-testid="passo-titulo">
             {meta.title}
           </h1>
@@ -1492,7 +1514,7 @@ export default function NewPropertyPage() {
             )}
 
             {step === ETAPA.fotos && (
-              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
+              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} videoConteudo={videoConteudo} setVideoConteudo={setVideoConteudo} passoFotos={passoFotos} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
             )}
 
             {step === ETAPA.detalhes && (
@@ -1686,6 +1708,7 @@ export default function NewPropertyPage() {
             uf={uf}
             publicado={!!editingId}
           />
+          <BotaoTamanhoReal imovel={previewProperty} className="mt-2" />
         </aside>
         )}
       </div>
@@ -1708,6 +1731,8 @@ export default function NewPropertyPage() {
                 // E135: o botão reflete o passo — esmaecido (e com o motivo no title) quando falta algo.
                 pendente: faltaNoPasso.length > 0,
                 title: faltaNoPasso.length ? `Falta: ${faltaNoPasso.join(" ")}` : undefined,
+                // E133: no Passo 2, desabilitado de verdade (visual e clique) até o mínimo de fotos e sem aviso pendente.
+                ...(step === ETAPA.fotos && !passoFotos.podeContinuar ? { disabled: true, title: passoFotos.mensagem ?? undefined } : {}),
               }
             : {
                 rotulo: publishing ? "Salvando..." : editingId ? "Salvar alterações" : "Publicar anúncio",
