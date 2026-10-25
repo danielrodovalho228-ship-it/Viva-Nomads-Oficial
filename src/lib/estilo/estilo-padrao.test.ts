@@ -82,7 +82,6 @@ export const ALCANCE = [
   "app/(dashboard)/dashboard/estadia/[contratoId]/page.tsx",
   "app/(dashboard)/dashboard/fechamento/closing-flow.tsx",
   "app/(dashboard)/dashboard/imoveis/imoveis-client.tsx",
-  "app/(dashboard)/dashboard/imoveis/novo/barra-fotos.tsx",
   "app/(dashboard)/dashboard/imoveis/novo/busca-endereco.tsx",
   "app/(dashboard)/dashboard/imoveis/novo/cartao-ia.tsx",
   "app/(dashboard)/dashboard/imoveis/novo/page.tsx",
