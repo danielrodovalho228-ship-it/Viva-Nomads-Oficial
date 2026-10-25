@@ -196,3 +196,12 @@ export function encadearDatas(inicioISO: string, blocos: BlocoPlano[]): BlocoCom
     return { ...b, inicio, fim };
   });
 }
+
+/**
+ * PROP-3 (E115): o percentual da caução no TEXTO vem do valor real (caução ÷ valor do bloco), não de um "50%" fixo —
+ * o teto de 3 aluguéis pode deixar o bloco abaixo da regra. Sem valor, "—".
+ */
+export function percentualCaucao(caucao: number, valorBloco: number): string {
+  if (!(valorBloco > 0) || !(caucao >= 0)) return "—";
+  return `${Math.round((caucao / valorBloco) * 100)}%`;
+}

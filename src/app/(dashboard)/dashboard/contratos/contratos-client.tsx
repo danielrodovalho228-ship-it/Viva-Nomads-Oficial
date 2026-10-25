@@ -43,22 +43,14 @@ import { STATUS_CONTRATO_ENCERRADO } from "@/lib/fiscal/devolucao";
 
 type Extras = Awaited<ReturnType<typeof documentosDosContratos>>;
 import { formatBRL, cn } from "@/lib/utils";
-import { ROTULO_ETAPA, type EtapaContrato } from "@/lib/contrato-etapas";
+import { type EtapaContrato } from "@/lib/contrato-etapas";
+import { rotuloDoBloco } from "@/lib/bloco-status";
 import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 
 /** Texto imutável da regra de ouro (declaratório — nunca movimenta valores). */
 const REGRA_PAGAMENTO =
   "O pagamento é feito direto ao proprietário. A plataforma registra e documenta — não movimenta valores.";
-
-/** Rótulo + tom de cada estado do bloco. */
-const BLOCO_STATUS: Record<string, { label: string; tone: string }> = {
-  agendado: { label: "Agendado", tone: "bg-surface-2 text-muted" },
-  ativo: { label: "Em vigência", tone: "bg-sage-100 text-forest" },
-  renovado: { label: "Renovado", tone: "bg-blue-50 text-blue-700" },
-  encerrado: { label: "Encerrado", tone: "bg-surface-2 text-muted" },
-  encerrado_sem_renovacao: { label: "Encerrado (sem renovação)", tone: "bg-amber-50 text-amber-700" },
-};
 
 const FORMA_LABEL: Record<string, string> = {
   pix: "Pix",
@@ -68,11 +60,6 @@ const FORMA_LABEL: Record<string, string> = {
   outro: "Outro",
 };
 
-function statusMeta(status: string, etapa: EtapaContrato = "em_vigencia") {
-  // F33: bloco "ativo" sem assinatura/1º pagamento não pode aparecer como "Em vigência".
-  if (status === "ativo" && etapa !== "em_vigencia") return { label: ROTULO_ETAPA[etapa], tone: "bg-amber-50 text-amber-700" };
-  return BLOCO_STATUS[status] ?? { label: status, tone: "bg-surface-2 text-muted" };
-}
 
 /**
  * Constrói contratos de DEMONSTRAÇÃO (admin) a partir do seed, sintetizando os
@@ -340,6 +327,7 @@ function ContratoCard({
             key={b.id}
             bloco={b}
             etapa={contrato.etapa}
+            contratoAtivo={contrato.estado.ativo}
             contratoId={contrato.id}
             aluguelMensal={contrato.aluguelMensal}
             pago={pagosPorBloco.get(b.id) ?? 0}
@@ -386,6 +374,7 @@ function ContratoCard({
 function BlocoRow({
   bloco,
   etapa,
+  contratoAtivo,
   contratoId,
   aluguelMensal,
   pago,
@@ -394,14 +383,15 @@ function BlocoRow({
 }: {
   bloco: BlocoView;
   etapa: EtapaContrato;
+  contratoAtivo: boolean;
   contratoId: string;
   aluguelMensal: number;
   pago: number;
   hojeISO: string;
   demo: boolean;
 }) {
-  const meta = statusMeta(bloco.status, etapa);
-  const vigente = bloco.inicio <= hojeISO && bloco.fim >= hojeISO;
+  const meta = rotuloDoBloco(bloco.status, etapa, contratoAtivo);
+  const vigente = contratoAtivo && bloco.inicio <= hojeISO && bloco.fim >= hojeISO;
   const quitado = pago >= bloco.valor;
   const restante = Math.max(0, bloco.valor - pago);
 

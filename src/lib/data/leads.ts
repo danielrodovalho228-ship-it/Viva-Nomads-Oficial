@@ -12,6 +12,8 @@ import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 import { textoParaDono, type LinhaVinculo } from "@/lib/triagem/vinculo";
 import { donoVeFichaPet, resumoPetsCandidatura, type PetResumo } from "@/lib/anuncio/ficha-pet-dono";
+import { umPorPessoaEImovel } from "@/lib/painel/interessados-unicos";
+import { identidadeParaOutraParte } from "@/lib/identidade/estado";
 
 // Re-exporta os utilitários puros para compatibilidade com importações server-side.
 export { SAMPLE_LEADS, LIGHT_SHORT, leadScore, leadSummary } from "./lead-types";
@@ -60,7 +62,8 @@ export async function listLeads(): Promise<Lead[]> {
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];
-  const rows = data as unknown as LeadRow[];
+  // PROP-3 (E118): uma pessoa por imóvel (a candidatura mais recente).
+  const rows = umPorPessoaEImovel(data as unknown as LeadRow[]);
 
   // leads e tenant_verifications não têm FK entre si (o embed dava 400 e a
   // lista vinha vazia), e a RLS de tenant_verifications só deixa o admin ler.
@@ -203,9 +206,10 @@ export async function listLeads(): Promise<Lead[]> {
       reputacao: cartao.reputacao,
       property: r.property?.title ?? "Imóvel",
       category: categoriaLabelParaDono(t?.professional_category) || "—",
-      riskCategories: v?.risk_categories ?? ["Verificação pendente"],
+      riskCategories: v?.risk_categories ?? [],
       light: v?.traffic_light ?? "yellow",
-      verified: !!v?.traffic_light,
+      // PROP-3 (E118): verificada/pendente pela MESMA função do Fechamento (identidadeParaOutraParte).
+      verified: identidadeParaOutraParte(identidades.get(r.tenant_id)).verificada,
       identidade: identidades.get(r.tenant_id) ?? null,
       moradorVerificado: seloTriagem.get(r.tenant_id) ?? null,
       motivo: motivos.get(r.id),

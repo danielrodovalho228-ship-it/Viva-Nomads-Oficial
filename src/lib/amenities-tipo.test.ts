@@ -54,3 +54,12 @@ test("anúncio público de chácara com 'Elevador' salvo não exibe o item (text
   assert.deepEqual(rotulosQueValemParaTipo(salvos, "chacara"), [AMENITY_LABEL.piscina, "Quintal"]);
   assert.deepEqual(rotulosQueValemParaTipo(salvos, "apartamento"), salvos);
 });
+
+test("'Não tem' do anúncio: uma chácara não lista 'Elevador' (o tipo não comporta)", async () => {
+  const { comodidadesQueNaoTem } = await import("./anuncio/nao-tem.ts");
+  const base = { amenities: ["Piscina"], amenityGroups: [{ category: "edificio", items: ["Piscina"] }] };
+  const chacara = comodidadesQueNaoTem({ ...base, propertyType: "chacara" } as never);
+  const apto = comodidadesQueNaoTem({ ...base, propertyType: "apartamento" } as never);
+  assert.ok(!chacara.includes("Elevador"), chacara.join(", "));
+  assert.ok(apto.includes("Elevador"), apto.join(", "));
+});

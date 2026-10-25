@@ -66,8 +66,10 @@ test("#978 (t162): a home conta como a /buscar — com imóvel real no resultado
   ];
   // Antes: 3 (contava o exemplo); a /buscar?preco=2500 mostra 2 (só os reais).
   assert.equal(contarAtalho("/buscar?preco=2500", lista, (p) => ex(p.id)), 2);
-  // Só exemplos no resultado: aparecem (como na /buscar).
-  assert.equal(contarAtalho("/buscar?preco=2300", [lista[0], lista[3]], (p) => ex(p.id)), 1);
+  // E131: a regra é decidida sobre a busca, não sobre o recorte do atalho — com um real na busca, o exemplo não
+  // volta só porque o atalho deixou o real de fora (antes: 1). Sem nenhum real na busca, os exemplos aparecem.
+  assert.equal(contarAtalho("/buscar?preco=2300", [lista[0], lista[3]], (p) => ex(p.id)), 0);
+  assert.equal(contarAtalho("/buscar?preco=2300", [lista[0]], (p) => ex(p.id)), 1);
   // Capacidade conhecida abaixo de 1 morador não aparece na /buscar.
   assert.equal(contarAtalho("/buscar?preco=2500", [{ ...lista[1], maxGuests: 0 }]), 0);
   const vis = atalhosComContagem(ATALHOS_CATEGORIA, lista, (p) => ex(p.id));

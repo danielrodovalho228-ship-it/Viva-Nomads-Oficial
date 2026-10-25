@@ -1,35 +1,25 @@
-/* Roda: node --test src/lib/anunciar-barra-fotos.test.ts — Anunciar imóvel (celular): a barra "Fotos: N de 8 mínimas"
-   não cobre nenhum controle (QA do Daniel, 22/10). */
+/* Roda: node --test src/lib/anunciar-barra-fotos.test.ts — Anunciar imóvel (celular), E107 (QA do Muse): a faixa fixa
+   "Fotos: N de 8" saiu. Ela vazava para os passos 1 e 3–10 e, no Passo 2, repetia o contador da página. As fotos têm
+   uma fonte só: o Passo 2, com o contador e o envio dele. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { isFlowRoute } from "./nav-mobile.ts";
 
-const css = readFileSync(join("src", "app/globals.css"), "utf8");
-const barra = readFileSync(join("src", "app/(dashboard)/dashboard/imoveis/novo/barra-fotos.tsx"), "utf8");
+const ler = (p: string) => readFileSync(join("src", p), "utf8");
+const NOVO = "app/(dashboard)/dashboard/imoveis/novo";
 
-test("Anunciar é tela de fluxo (sem abas): a barra encosta no fim da tela, não 3,5 rem acima", () => {
-  assert.equal(isFlowRoute("/dashboard/imoveis/novo"), true);
-  assert.doesNotMatch(barra, /vn-barra-fixa/);
-  assert.match(barra, /vn-barra-fotos fixed inset-x-0/);
-  assert.match(css, /\.vn-barra-fotos\s*\{\s*bottom: 0;\s*padding-bottom: calc\(0\.5rem \+ env\(safe-area-inset-bottom, 0px\)\);/);
+test("E107: a barra fixa de fotos não existe mais (nem o componente, nem o uso, nem o CSS)", () => {
+  assert.equal(existsSync(join("src", NOVO, "barra-fotos.tsx")), false);
+  const pagina = ler(`${NOVO}/page.tsx`);
+  assert.doesNotMatch(pagina, /BarraFotos|barra-fotos|enviandoFotos|erroEnvioFotos/);
+  const css = ler("app/globals.css");
+  assert.doesNotMatch(css, /vn-barra-fotos|vn-respiro-barra-fotos|altura-barra-fotos|data-testid="barra-fotos"/);
+  assert.doesNotMatch(ler("components/layout/moldura-assistente.tsx"), /altura-barra-fotos/);
 });
 
-test("a barra mede a própria altura; respiro, rolagem até o campo e o 'Fale com a Viva' usam essa medida", () => {
-  assert.match(barra, /new ResizeObserver\(medir\)/);
-  assert.match(barra, /setProperty\("--altura-barra-fotos"/);
-  assert.match(barra, /removeProperty\("--altura-barra-fotos"\)/);
-  assert.match(barra, /className="vn-respiro-barra-fotos md:hidden"/);
-  assert.doesNotMatch(barra, /className="h-16 md:hidden"/);
-  assert.match(css, /\.vn-respiro-barra-fotos\s*\{\s*height: calc\(var\(--altura-barra-fotos, 4rem\) \+ 5rem\);/);
-  assert.match(css, /body:has\(\[data-testid="barra-fotos"\]\)\s*\{\s*--ajuda-bottom: calc\(var\(--altura-barra-fotos, 4rem\) \+ 0\.75rem\);\s*--viva-piso:/);
-  // :root (0,2,0) vence html:has(fale-com-a-viva-raiz) (0,1,1), que vem depois no arquivo.
-  assert.match(css, /:root:has\(\[data-testid="barra-fotos"\]\)\s*\{\s*scroll-padding-bottom: calc\(var\(--altura-barra-fotos, 4rem\) \+ 5rem\);/);
-});
-
-test("E88 (celular): a faixa 'Fotos: N de 8' só no passo Fotos — não vaza para o Passo 1 nem para os outros", () => {
-  const pagina = readFileSync(join("src", "app/(dashboard)/dashboard/imoveis/novo/page.tsx"), "utf8");
-  assert.match(pagina, /\{!editingId && step === ETAPA\.fotos && \(\s*<BarraFotos/);
-  assert.equal((pagina.match(/<BarraFotos/g) ?? []).length, 1);
+test("E107: as fotos moram só no Passo 2 (uma fonte do contador e do envio)", () => {
+  const pagina = ler(`${NOVO}/page.tsx`);
+  assert.equal((pagina.match(/<EtapaFotos\b/g) ?? []).length, 1);
+  assert.match(pagina, /\{step === ETAPA\.fotos && \(\s*<EtapaFotos /);
 });

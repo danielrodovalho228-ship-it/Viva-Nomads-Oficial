@@ -346,13 +346,11 @@ html[data-app] .vn-tabbar-spacer {
   --folga-rodape-imovel: 16rem;
   --altura-abas: 3.5rem;
 }
-/* CONTA-A: "Salvar e ver imóveis" preso no fim da tela do celular, acima da barra de abas; o "Fale com a Viva" sobe. */
-.vn-salvar-perfil {
-  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));
-}
-@media (max-width: 1023px) {
-  body:has([data-testid="perfil-salvar-celular"]) {
-    --ajuda-bottom: 9rem;
+/* E60: no celular o "Fale com a Viva" nunca desce até a barra de abas — nem na posição padrão nem depois de arrastado
+   (o piso da posição arrastada é o mesmo da padrão de cada tela). */
+@media (max-width: 767px) {
+  body {
+    --viva-piso: var(--ajuda-bottom, 5.25rem);
   }
 }
 /* Barra "Comparar" da busca (ordem 7ffea8c7): no celular fica ACIMA das abas (altura + safe-area + 12 px);
@@ -375,13 +373,10 @@ html[data-app] .vn-barra-comparar {
     padding-bottom: calc(var(--altura-abas) + 6rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
-/* Barra de fotos do Anunciar (celular, src/app/(dashboard)/dashboard/imoveis/novo/barra-fotos.tsx). A tela é de fluxo,
-   sem barra de abas: a barra encosta no fim da tela (antes ficava 3,5 rem acima, com o formulário passando por baixo).
-   --altura-barra-fotos é medida pela própria barra. O "Fale com a Viva" fica 0,75 rem acima dela; o fim da página ganha
-   respiro para a barra + o botão; a rolagem até um campo (foco, âncora) para acima dos dois. */
-/* CADASTRO-MOLDURA: o rodapé do fluxo do assistente (sem barra de abas lá; no celular, acima da barra das fotos). */
+/* CADASTRO-MOLDURA: o rodapé do fluxo do assistente (sem barra de abas lá) encosta no fim da tela. E107: a barra de
+   fotos do celular saiu; as fotos moram só no Passo 2. */
 .vn-rodape-fluxo {
-  bottom: var(--altura-barra-fotos, 0px);
+  bottom: 0;
 }
 /* No computador, Voltar e o primário alinham com a coluna do conteúdo (a largura máxima da moldura, 72rem). */
 @media (min-width: 1280px) {
@@ -390,23 +385,6 @@ html[data-app] .vn-barra-comparar {
   }
 }
 
-.vn-barra-fotos {
-  bottom: 0;
-  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
-}
-.vn-respiro-barra-fotos {
-  height: calc(var(--altura-barra-fotos, 4rem) + 5rem);
-}
-@media (max-width: 767px) {
-  body:has([data-testid="barra-fotos"]) {
-    --ajuda-bottom: calc(var(--altura-barra-fotos, 4rem) + 0.75rem);
-    --viva-piso: calc(var(--altura-barra-fotos, 4rem) + 0.75rem);
-  }
-  /* :root (e não html): vence a regra geral do "Fale com a Viva" mais abaixo. */
-  :root:has([data-testid="barra-fotos"]) {
-    scroll-padding-bottom: calc(var(--altura-barra-fotos, 4rem) + 5rem);
-  }
-}
 /* Barra fixa do imóvel (celular): fica logo acima da barra de abas. */
 .vn-barra-fixa {
   bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px));

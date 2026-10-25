@@ -108,3 +108,15 @@ test("reabrir exige o que falta", () => {
   assert.equal(validarReabertura(undefined).ok, false);
   assert.equal(validarReabertura("x".repeat(1001)).ok, false);
 });
+
+test("ADMIN-0: a lista pede o autor pela FK (há duas para profiles) e um erro nunca vira aviso de migração", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { AVISO_CAIXA_ILEGIVEL } = await import("./caixa.ts");
+  const src = readFileSync(new URL("./caixa-actions.ts", import.meta.url), "utf8");
+  const corpo = src.slice(src.indexOf("export async function listarCaixa"), src.indexOf("export async function", src.indexOf("export async function listarCaixa") + 10));
+  assert.match(corpo, /profiles!caixa_socios_autor_fkey\(full_name\)/, "embed explícito pela FK do autor");
+  assert.doesNotMatch(src, /[\s,"]profiles\(/, "nenhum embed de profiles sem o nome da FK no arquivo");
+  assert.doesNotMatch(corpo, /migra[çc][ãa]o/i, "o erro não é traduzido como migração pendente");
+  assert.match(corpo, /if \(error\) \{[\s\S]*?console\.error\([^)]*error\.code[\s\S]*?aviso: AVISO_CAIXA_ILEGIVEL/);
+  assert.equal(AVISO_CAIXA_ILEGIVEL, "Não foi possível ler a Caixa agora.");
+});

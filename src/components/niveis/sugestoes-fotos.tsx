@@ -20,7 +20,7 @@ import {
 const MAX_RODADAS = 8;
 
 /**
- * DETECTA-B — "Encontramos nas suas fotos": sugestões de itens de Conforto/Premium e de comodidades achados nas fotos
+ * DETECTA-B (tela da Detecção-A) — "Encontramos isto numa foto sua": sugestões de itens de Conforto/Premium e de comodidades achados nas fotos
  * da galeria. Nada conta antes de o dono confirmar. FOTO-NA-HORA-B: item de nível NÃO usa a foto da galeria (ela fica
  * só como referência); "Fotografar agora" confirma a sugestão ("Confirmada, falta a foto", não conta) e abre a câmera
  * do item — o item conta quando a foto feita na hora chega. Comodidade é marcada aqui pela tela (onComodidade) e
@@ -32,6 +32,8 @@ export function SugestoesDasFotos({
   tipoImovel,
   onComodidade,
   onSugeridas,
+  onComodidadesSugeridas,
+  onLigada,
   onNivelMudou,
 }: {
   propertyId: string | null;
@@ -41,20 +43,26 @@ export function SugestoesDasFotos({
   onComodidade: (chave: string) => void;
   /** Itens de nível com sugestão esperando confirmação (saem do "o que falta"). */
   onSugeridas?: (chaves: string[]) => void;
+  /** Detecção-A: comodidades achadas nas fotos e ainda não confirmadas (a grade mostra tracejadas, "Confirme"). */
+  onComodidadesSugeridas?: (chaves: string[]) => void;
+  /** Detecção-A: a chave está ligada e a análise respondeu (o alerta do topo só aparece assim). */
+  onLigada?: (ligada: boolean) => void;
   onNivelMudou?: () => void;
 }) {
   const [estado, setEstado] = useState<EstadoDeteccao | null>(null);
   const [analisando, setAnalisando] = useState(false);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
-  const avisar = useRef(onSugeridas);
+  const avisar = useRef({ onSugeridas, onComodidadesSugeridas, onLigada });
   useEffect(() => {
-    avisar.current = onSugeridas;
-  }, [onSugeridas]);
+    avisar.current = { onSugeridas, onComodidadesSugeridas, onLigada };
+  }, [onSugeridas, onComodidadesSugeridas, onLigada]);
 
   const aplicar = useCallback((e: EstadoDeteccao | null) => {
     setEstado(e);
-    avisar.current?.(e?.ligada ? e.sugestoes.filter((s) => s.tipo === "nivel").map((s) => s.chave) : []);
+    avisar.current.onSugeridas?.(e?.ligada ? e.sugestoes.filter((s) => s.tipo === "nivel").map((s) => s.chave) : []);
+    avisar.current.onComodidadesSugeridas?.(e?.ligada ? e.sugestoes.filter((s) => s.tipo === "comodidade").map((s) => s.chave) : []);
+    avisar.current.onLigada?.(!!e?.ligada);
   }, []);
 
   useEffect(() => {
@@ -70,7 +78,8 @@ export function SugestoesDasFotos({
           if (!e.ligada || e.limite || e.restantes === 0) break;
         }
       } catch {
-        // A análise é ajuda, não trava: falhou, o passo segue como hoje.
+        // A análise é ajuda, não trava: falhou, o bloco some e o passo segue como hoje.
+        if (vivo) aplicar(null);
       } finally {
         if (vivo) setAnalisando(false);
       }
@@ -110,7 +119,7 @@ export function SugestoesDasFotos({
 
   return (
     <section className="rounded-xl border border-sage-200 p-4" data-testid="deteccao-fotos">
-      <h3 className="text-base font-semibold text-ink">Encontramos nas suas fotos</h3>
+      <h3 className="text-base font-semibold text-ink">Encontramos isto numa foto sua</h3>
       <p className="mt-1 text-xs text-muted">Confirme o que está certo. Nada conta para o nível nem vira comodidade antes de você confirmar; item de nível só conta com a foto feita na hora.</p>
       {analisando && <Analisando />}
       {estado.comPessoa > 0 && (
@@ -155,7 +164,7 @@ export function SugestoesDasFotos({
                     }}
                   />
                   <Button size="sm" variant="secondary" disabled={!!ocupado} onClick={() => decidir(s.id, false)} data-testid={`deteccao-descartar-${s.chave}`}>
-                    Descartar
+                    Não é isso
                   </Button>
                 </span>
               </li>
@@ -173,7 +182,7 @@ export function SugestoesDasFotos({
                     Confirmar
                   </Button>
                   <Button size="sm" variant="secondary" disabled={!!ocupado} onClick={() => decidir(s.id, false)} data-testid={`deteccao-descartar-${s.chave}`}>
-                    Descartar
+                    Não é isso
                   </Button>
                 </span>
               </li>
@@ -192,9 +201,35 @@ export function SugestoesDasFotos({
 
 function Analisando() {
   return (
-    <div className="mt-2">
-      <span className="sr-only">Olhando as fotos da galeria…</span>
+    <div className="mt-2" data-testid="deteccao-olhando">
+      <p className="mb-2 text-sm text-muted" role="status">
+        Olhando suas fotos…
+      </p>
       <SkeletonLinhas linhas={2} testid="deteccao-analisando" />
+    </div>
+  );
+}
+
+/**
+ * Detecção-A (Entrega 3, só com a chave ligada): no topo do passo Comodidades, o que ainda falta foto para o próximo
+ * nível, com "Enviar foto", que leva à lista do nível (onde cada item tem o envio). Nada falta: não aparece.
+ */
+export function AlertaFaltaFoto({ itens }: { itens: readonly { chave: string; rotulo: string }[] }) {
+  if (itens.length === 0) return null;
+  const nomes = itens.map((i) => i.rotulo);
+  const texto = nomes.length === 1 ? nomes[0] : `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-line bg-white p-4 sm:flex-row sm:items-center sm:justify-between" role="status" data-testid="deteccao-falta">
+      <p className="text-sm text-ink">
+        <strong className="font-semibold">Falta foto de:</strong> {texto}.
+      </p>
+      <a
+        href="#nivel-cadastro-falta"
+        className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-line bg-white px-4 text-sm font-semibold text-forest"
+        data-testid="deteccao-falta-enviar"
+      >
+        Enviar foto
+      </a>
     </div>
   );
 }

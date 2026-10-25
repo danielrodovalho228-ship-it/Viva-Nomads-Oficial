@@ -40,8 +40,14 @@ test("mensagens do limite: publicar e reativar dizem o número exato; o painel t
   assert.deepEqual(linhasDoLimite(situacaoLimite("free", 1)), ["1 publicado — seu plano permite 1"]);
   assert.deepEqual(linhasDoLimite(situacaoLimite("free", 4)), [
     "4 publicados — seu plano permite 1",
-    "Os que já estavam publicados continuam. Para publicar outro, pause 4 anúncios ou mude de plano.",
+    "Os que já estavam publicados continuam. Para ficar dentro do plano, pause 3 anúncios ou mude de plano.",
   ]);
+});
+
+test("PROP-3 (E114): proprietario1 — 3 publicados no Gratuito (limite 1) → pause 2, não 3", () => {
+  const s = situacaoLimite("free", 3);
+  assert.equal(s.excedente, 2);
+  assert.match(linhasDoLimite(s)[1], /pause 2 anúncios/);
 });
 
 test("uma conta só: prontidão (telas) e servidor (limiteDePublicacao) dão o mesmo número", () => {

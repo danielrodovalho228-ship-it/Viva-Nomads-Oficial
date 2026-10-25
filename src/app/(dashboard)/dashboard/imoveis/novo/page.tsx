@@ -31,7 +31,7 @@ import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
-import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
+import { AlertaFaltaFoto, SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
@@ -89,12 +89,8 @@ import { PainelQualificacao } from "./painel-qualificacao";
 import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
 import { AntesDePublicar, AtalhosCadastro, EtapaOndeFica } from "./etapa-onde-fica";
-import { BarraFotos } from "./barra-fotos";
 import { buscarCep, formatarCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
 import { aplicarResultadoCep, type CampoEndereco } from "@/lib/cep/aplicar";
-import { enviarFotos } from "@/lib/fotos/enviar";
-import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
-import { uploadPropertyPhoto } from "@/lib/data/storage";
 import { EtapaFotos, FOTOS_REORGANIZAR } from "./etapa-fotos";
 import { EtapaEncontramos } from "./etapa-encontramos";
 import { EtapaPreco } from "./etapa-preco";
@@ -161,6 +157,10 @@ export default function NewPropertyPage() {
   const [iaAnalisadas, setIaAnalisadas] = useState<string[]>([]);
   const [sugeridos, setSugeridos] = useState<CampoSugerido[]>([]);
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
+  // Detecção-A (Entrega 3): chave ligada, comodidades achadas nas fotos e ainda não confirmadas, e o que falta foto.
+  const [deteccaoLigada, setDeteccaoLigada] = useState(false);
+  const [comodidadesDetectadas, setComodidadesDetectadas] = useState<string[]>([]);
+  const [faltaFoto, setFaltaFoto] = useState<{ chave: string; rotulo: string }[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
   const [aceitouIa, setAceitouIa] = useState(false);
   // L2-B item 23: aceite do termo gravado por dono no servidor (versão atual). Já aceitou: a caixa não aparece.
@@ -238,8 +238,6 @@ export default function NewPropertyPage() {
   // Prompt 20: toda busca de CEP vira uma mensagem (achou, só a cidade, não achou, sem rede).
   const [cepResultado, setCepResultado] = useState<ResultadoCep | null>(null);
   // Envio de fotos pelo cartão da IA (passo 1) e pela barra do celular — o mesmo envio da galeria do passo 2.
-  const [enviandoFotos, setEnviandoFotos] = useState<{ feitas: number; total: number } | null>(null);
-  const [erroEnvioFotos, setErroEnvioFotos] = useState<string | null>(null);
   const [bairroDoCep, setBairroDoCep] = useState<string | null>(null);
   // Prompt 22: campos de endereço que a PESSOA digitou (o autofill do navegador não entra aqui).
   const digitadosRef = useRef(new Set<CampoEndereco>());
@@ -1000,26 +998,6 @@ export default function NewPropertyPage() {
     setDaMatricula((atual) => new Set(atual).add("endereco"));
   }
 
-  /** Fotos pela barra do celular: sobem para a galeria do passo 2, com as mesmas regras. */
-  async function adicionarFotos(files: File[]) {
-    if (enviandoFotos) return;
-    setErroEnvioFotos(null);
-    try {
-      const r = await enviarFotos(files, {
-        atuais: photos,
-        max: MAX_FOTOS_POR_ANUNCIO,
-        ownerId: userId ?? undefined,
-        uploader: uploadPropertyPhoto,
-        aoProgresso: (feitas, total) => setEnviandoFotos({ feitas, total }),
-      });
-      if (r.novas.length) setPhotos((atuais) => [...atuais, ...r.novas]);
-      if (r.erro) setErroEnvioFotos(r.erro);
-    } finally {
-      setEnviandoFotos(null);
-    }
-  }
-
-
   // PERTO-B: a busca do "O que tem por perto" roda no cadastro novo E na edição, e de novo sempre que o endereço muda
   // (CEP, rua ou número). O servidor usa o cache por CEP; "não mostrar" (desmarcados) é mantido entre buscas.
   async function buscarPerto(corpo: Record<string, unknown>) {
@@ -1486,7 +1464,9 @@ export default function NewPropertyPage() {
 
             {step === ETAPA.comodidades && (
               <div className="space-y-6">
-                <EtapaEncontramos parte="comodidades" {...camposImovel} />
+                {/* Detecção-A: no topo, o que ainda falta foto (só com a chave da detecção ligada). */}
+                {deteccaoLigada && <AlertaFaltaFoto itens={faltaFoto} />}
+                <EtapaEncontramos parte="comodidades" {...camposImovel} comodidadesDetectadas={comodidadesDetectadas} />
                 {/* Prompt 59-A: o padrão mínimo da Viva é confirmado junto das comodidades. */}
                 <ChecklistConforto
                   marcados={conforto}
@@ -1502,10 +1482,12 @@ export default function NewPropertyPage() {
                   tipoImovel={propertyType}
                   onComodidade={(k) => setAmenityKeys((a) => ({ ...a, [k]: true }))}
                   onSugeridas={setSugeridasFotos}
+                  onComodidadesSugeridas={setComodidadesDetectadas}
+                  onLigada={setDeteccaoLigada}
                   onNivelMudou={() => setNivelVersao((v) => v + 1)}
                 />
                 {/* Adendo 59.1: o nível que o imóvel atinge agora e o que falta para o próximo, item a item, com foto. */}
-                <NivelNoCadastro propertyId={imovelId} conforto={conforto} sugeridas={sugeridasFotos} recarregar={nivelVersao} />
+                <NivelNoCadastro propertyId={imovelId} conforto={conforto} sugeridas={sugeridasFotos} recarregar={nivelVersao} onFaltaFoto={setFaltaFoto} />
               </div>
             )}
 
@@ -1665,19 +1647,8 @@ export default function NewPropertyPage() {
         )}
       </div>
 
-      {/* E88 (celular): a faixa "Fotos: N de 8" mora só no passo Fotos — nos outros passos ela vazava para baixo do
-          rodapé do fluxo (print do Daniel no Passo 1, 18:27). No computador ela nunca aparece (md:hidden). */}
-      {!editingId && step === ETAPA.fotos && (
-        <BarraFotos
-          total={photos.length}
-          minimo={MIN_PHOTOS}
-          enviando={enviandoFotos}
-          erro={erroEnvioFotos}
-          onFotos={(f) => void adicionarFotos(f)}
-          onOrganizar={() => irPara(ETAPA.fotos)}
-          noPassoFotos={step === ETAPA.fotos}
-        />
-      )}
+      {/* E107: a faixa fixa "Fotos: N de 8" do celular saiu. As fotos moram só no Passo 2, com o contador e o envio da
+          própria página (antes a faixa vazava para os outros passos e, no Passo 2, repetia o contador). */}
       {/* CADASTRO-MOLDURA: o rodapé do fluxo, igual nos passos 1 a 10 — "Passo N de 10" com a barra, "Voltar" (passos
           2–10) e um só primário: "Continuar"; no Passo 10, "Publicar anúncio" (o mesmo publish da revisão). */}
       <RodapeAssistente

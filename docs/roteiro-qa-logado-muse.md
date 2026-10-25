@@ -52,9 +52,10 @@ Sem "temporada", "vistoria" (é "conferência de entrada"), "aluguel/comissão/c
 garantia = "Caução"; sem endereço completo nem coordenada exata em página pública; "Plataforma em fase de testes.
 Lançamento oficial em 2027."; a plataforma nunca toca em dinheiro.
 
-## Pendências conhecidas (lidas no banco em 17/10, sem escrita)
-- proprietario1 tem 1 imóvel `active` ("[TESTE QA] Apto mobiliado 2 quartos – Santa Mônica") e 4 rascunhos.
-- Esse imóvel **não tem linha em `documents`** (nenhum documento aprovado) e `limpeza_estadia` está vazio.
-  O item 4 da ordem (documento aprovado + pacote de limpeza pago + segundo imóvel sem pacote) **depende de dado
-  em produção**, que agente não escreve: precisa do Daniel (ou migração aprovada por ele).
-- Fora o item 4, o roteiro roda até a assinatura sem efeito real.
+## Dados de teste (item 4) — migração 0245
+Lido no banco em 24/10 (só leitura): os dois imóveis do roteiro já têm 8 fotos e documento aprovado, mas estavam
+**pausados** e sem pacote de limpeza. A migração `0245_dados_qa_roteiro` (aplicada pela Action quando o Daniel mescla)
+coloca no ar, só para o dono `proprietario1` (is_teste):
+- **Apto mobiliado 2 quartos – Santa Mônica** (`ddf86c66`): publicado, com pacote de limpeza (2 por mês, R$ 180/mês);
+- **Apto mobiliado 2 quartos – Santa Mônica, Uberlândia** (`9f18c108`): publicado, **sem** pacote (contraste).
+Rollback: `supabase/producao/rollback/0245_rollback.sql`. Conferência: ver comentário no fim de `aplicar-0245.sql`.
