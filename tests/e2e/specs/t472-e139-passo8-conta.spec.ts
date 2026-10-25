@@ -11,6 +11,7 @@ import { TITULO_PASSO } from "../fixtures/cadastro";
    3. A taxa é explicada uma vez: sem a linha "Num contrato de…", sem a regra pública repetida, "só com contrato fechado" 1×.
    4. Comparador do Airbnb no MESMO período do simulador; trocar os meses troca o comparador; conta aberta dos dois lados;
       o sugerido é rotulado como equivalência e o botão diz o valor que vai entrar.
+   0. Sem valor mensal, a Revisão diz "Valor mensal ainda não definido." (não "R$ 150/mês no total").
   A 390 e 1280 px, com prints.
 */
 const senha = novaSenha();
@@ -41,6 +42,14 @@ test.describe("T472 — E139/E140/E151: o Passo 8 fecha a conta", () => {
     test(`a ${w} px: prévia, simulador e comparador com a mesma conta e o mesmo período`, async ({ browser }) => {
       const page = await entrar(browser, dono.email, senha);
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+      await abrirPreco(page);
+
+      // 0. Sem valor mensal, a Revisão não chama as contas de "total".
+      await page.getByRole("button", { name: "Valor fixo estimado" }).click();
+      await page.getByTestId("cadastro-consumo").fill("150");
+      await page.goto("/dashboard/imoveis/novo?etapa=revisao", { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("revisao-sem-valor").first()).toHaveText("Valor mensal ainda não definido.", { timeout: 30_000 });
+      await expect(page.getByTestId("revisao-total")).toHaveCount(0);
       await abrirPreco(page);
 
       await page.getByTestId("cadastro-preco").fill("3600");

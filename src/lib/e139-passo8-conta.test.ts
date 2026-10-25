@@ -74,3 +74,9 @@ test("E140: o comparador usa os meses recebidos (sem período fixo), conta abert
   assert.match(comp, /data-testid="conta-viva"/);
   assert.doesNotMatch(comp, /valor total do contrato/, "a taxa é explicada pela base certa: valor mensal × meses");
 });
+
+test("E139: a Revisão não mostra 'R$ X/mês no total' sem valor mensal (contas sozinhas não são o total)", () => {
+  const rev = semComentarios(ler("../app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx"));
+  assert.match(rev, /\{temValorMensal && total > 0 && \(/);
+  assert.match(rev, /Valor mensal ainda não definido\./);
+});
