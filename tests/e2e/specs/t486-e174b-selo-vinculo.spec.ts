@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
-import { NO_LABORATORIO, CHAVE_ANON, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T486 — E174-B: o selo "Vínculo profissional · <domínio>" (nunca o e-mail) nos contextos de confiança, para contas
@@ -77,18 +76,16 @@ test.describe("T486 — E174-B: selo do vínculo profissional nos contextos de c
     await p.screenshot({ path: `${SAIDA}/t486-conversa-390.png` });
     await p.context().close();
 
-    // Avaliação publicada da Ana (as duas partes avaliam → publica): o selo aparece com o autor, na página do imóvel.
+    // A avaliação publicada da Ana: o selo aparece com o autor, na página do imóvel.
     const base = { property_id: ids.imovel, tenant_id: ids.ana, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 60, aluguel_mensal: 3000, tamanho_bloco_meses: 2, comissao_percent: 0.08, comissao_valor: 240, qtd_ocupantes: 1, status: "concluido", garantia: "caucao" };
     const { data: ct, error } = await adm().from("contratos").insert({ ...base, encerrado_em: new Date(Date.now() - 24 * 3600_000).toISOString() }).select("id").single();
     if (error) throw error;
     ids.contrato = ct!.id as string;
-    const cliente = async (email: string) => {
-      const sb = createClient(URL_SUPABASE!, CHAVE_ANON!, { auth: { persistSession: false } });
-      await sb.auth.signInWithPassword({ email, password: senha });
-      return sb;
-    };
-    await (await cliente(ana.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada" });
-    await (await cliente(dono.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
+    // Avaliação já publicada (a mesma regra do servidor: estadia encerrada há menos de 14 dias).
+    const { error: eAv } = await adm()
+      .from("avaliacoes")
+      .insert({ contrato_id: ids.contrato, autor_id: ids.ana, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: `Imóvel muito bem cuidado ${sufixo}.`, status: "publicada", publicada_em: new Date().toISOString() });
+    if (eAv) throw eAv;
     const visitante = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await expect
       .poll(async () => {
