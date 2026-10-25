@@ -89,8 +89,6 @@ test.describe("T474 — E161: assistente na largura do anúncio", () => {
         return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('[data-testid="previa-tamanho-real"]') != null;
       });
       expect(rodapeCoberto, "o rodapé do assistente fica por baixo da prévia").toBe(true);
-        expect(rodapeCoberto, "o rodapé do assistente fica por baixo da prévia").toBe(true);
-      });
       expect(Math.abs((await largura(p, "previa-real-largura")) - imovel)).toBeLessThanOrEqual(1);
       // A galeria do computador (o mosaico); o carrossel do celular fica escondido nesta largura.
       const mosaico = real.getByTestId("galeria-mosaico");
