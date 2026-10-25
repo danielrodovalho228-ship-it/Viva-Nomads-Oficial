@@ -27,7 +27,9 @@ test("semAnunciosDeTeste tira só os de teste e mantém a ordem", () => {
 
 test("listProperties usa o filtro", () => {
   const src = readFileSync(new URL("./properties.ts", import.meta.url), "utf8");
-  assert.match(src, /semAnunciosDeTeste\(\(data as unknown as PropertyRow\[\]\)\.map\(rowToProperty\)\.map\(comCoordenadaAproximada\)\)/);
+  // E131: a marca do título e a conta de teste, nas linhas do banco, antes de mapear.
+  assert.match(src, /const semMarca = semAnunciosDeTeste\(linhas\);/);
+  assert.match(src, /const mapped = await semAnunciosDeTesteNaVitrine\(data as unknown as PropertyRow\[\]\);/);
 });
 
 test("E93: anúncio de teste pelo link — faixa e 'Solicitar' desativado para quem não é dono nem admin", () => {

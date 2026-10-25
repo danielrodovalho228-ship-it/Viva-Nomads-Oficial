@@ -32,7 +32,9 @@ test("caso negativo: a coordenada exata não sobrevive no resultado", () => {
 
 test("listProperties (fonte da /buscar) aplica o arredondamento no servidor", () => {
   const src = readFileSync(new URL("./properties.ts", import.meta.url), "utf8");
-  assert.match(src, /\.map\(rowToProperty\)\.map\(comCoordenadaAproximada\)\)/);
+  // E131: o mapeamento mora em semAnunciosDeTesteNaVitrine (filtra as linhas e então mapeia), usada pela /buscar.
+  assert.match(src, /return semConta\.map\(rowToProperty\)\.map\(comCoordenadaAproximada\);/);
+  assert.match(src, /const mapped = await semAnunciosDeTesteNaVitrine\(data as unknown as PropertyRow\[\]\);/);
 });
 
 // ---- Ordem 00552cd1: anúncio público e JSON-LD também sem coordenada exata ----
