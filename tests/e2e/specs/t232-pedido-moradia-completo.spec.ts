@@ -232,10 +232,13 @@ test.describe("T232 — pedido de moradia completo", () => {
     const admin = await ctx.newPage();
     const antes = (await lerSaida()).length;
     await admin.goto("/admin/pedidos", { waitUntil: "domcontentloaded" });
-    await expect(admin.getByTestId("chave-sms-estado")).toContainText("Desligada");
+    // ADMIN-3/4 (#1354): em Pedidos fica só o aviso de uma linha; a chave SMS_ATIVO mora em /admin/sistema.
+    await expect(admin.getByTestId("aviso-chave-sms")).toContainText("SMS desligado");
     await expect(admin.getByTestId("formulas-pedidos")).toContainText("Com compatível ao publicar =");
     await expect(admin.locator(`[data-testid="admin-pedido-linha"][data-pedido="${ids.pedido2}"]`)).toBeVisible();
     await nasDuasLarguras(admin, "admin-pedidos");
+    await admin.goto("/admin/sistema", { waitUntil: "domcontentloaded" });
+    await expect(admin.getByTestId("chave-sms-estado")).toContainText("Desligada");
     await admin.getByTestId("chave-sms-trocar").click();
     await admin.getByTestId("chave-sms-confirmar").click();
     await expect(admin.getByTestId("chave-sms-msg")).toContainText("Chave ligada", { timeout: 30_000 });
@@ -251,7 +254,7 @@ test.describe("T232 — pedido de moradia completo", () => {
     await expect(d.locator(`[data-testid="pedido-dono-cartao"][data-pedido="${ids.pedido3}"]`)).toHaveCount(0);
 
     // Desligar volta na hora.
-    await admin.goto("/admin/pedidos", { waitUntil: "domcontentloaded" });
+    await admin.goto("/admin/sistema", { waitUntil: "domcontentloaded" });
     await admin.getByTestId("chave-sms-trocar").click();
     await admin.getByTestId("chave-sms-confirmar").click();
     await expect(admin.getByTestId("chave-sms-msg")).toContainText("Chave desligada", { timeout: 30_000 });

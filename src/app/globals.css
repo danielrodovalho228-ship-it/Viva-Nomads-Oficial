@@ -45,7 +45,8 @@
   --color-sage: #2e7d5b; /* secundária (verde médio) */
   --color-sage-100: #eef6ef;
   --color-sage-200: #dce9e0;
-  --color-areia: #f7f2ea; /* CONTA-A: painel quente do espelho do perfil (neutro, não é cor de marca) */
+  /* E166 (Daniel, 25/10): o fundo bege/creme ("areia") saiu do site; o fundo é o clean do Início do
+     proprietário (surface-2), com cartões brancos de borda fina. */
   --color-champagne: #6cbe2a; /* só selo (Pronto para Morar) — nunca texto nem botão */
   --color-champagne-600: #4fa01e;
 
@@ -378,10 +379,11 @@ html[data-app] .vn-barra-comparar {
 .vn-rodape-fluxo {
   bottom: 0;
 }
-/* No computador, Voltar e o primário alinham com a coluna do conteúdo (a largura máxima da moldura, 72rem). */
-@media (min-width: 1280px) {
+/* No computador, Voltar e o primário alinham com a coluna do conteúdo: a régua da moldura, a mesma da página do
+   imóvel (E161: 1536 px = 96rem, com 2rem de margem). */
+@media (min-width: 640px) {
   .vn-rodape-fluxo [data-rodape-linha] {
-    padding-inline: calc((100% - 72rem) / 2 + 2rem);
+    padding-inline: max(2rem, calc((100% - 96rem) / 2 + 2rem));
   }
 }
 
@@ -484,7 +486,9 @@ body:has([data-testid="barra-fixa-imovel"]) {
 /* CONTA-A C4 — no painel (site), a coluna reserva a faixa da direita onde mora o "Fale com a Viva" redondo (48 px a
    1,5 rem da borda): o botão nunca senta sobre um cartão durante a rolagem. No app o botão não existe. */
 @media (min-width: 768px) {
-  html:not([data-app]) [data-painel-main] {
+  /* E161: o assistente de cadastro fica de fora — ele não tem o flutuante (moldura-assistente) e segue a régua da
+     página do imóvel, com a mesma margem dos dois lados. */
+  html:not([data-app]) [data-painel-main]:not([data-testid="assistente-largura"]) {
     padding-right: 5rem;
   }
 }
@@ -497,10 +501,10 @@ body:has([data-testid="barra-fixa-imovel"]) {
     padding-bottom: 2rem;
   }
 }
-/* A1 (mockups perfil-01..08): as telas da Conta sobre o fundo areia, com cartões brancos. */
+/* A1 (mockups perfil-01..08): as telas da Conta sobre o fundo clean (E166: antes, areia), com cartões brancos. */
 [data-painel-main]:has([data-conta-casca]:not(.hidden *)),
 [data-painel-main]:has([data-testid="conta-menu"]) {
-  background: var(--color-areia);
+  background: var(--color-surface-2);
 }
 /* Rolagem até um elemento (âncora, foco, "rolar até o botão") para acima do botão flutuante da Viva, em qualquer
    largura: o flutuante não cobre a ação principal da tela (t241, #953). */

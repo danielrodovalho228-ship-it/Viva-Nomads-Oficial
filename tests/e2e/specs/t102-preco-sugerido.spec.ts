@@ -52,11 +52,13 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     }
     // Falha alto (nada de skip silencioso): se o passo de preço não abrir, o lab precisa mostrar.
     await expect(bloco).toBeVisible({ timeout: 30000 });
+    // E140: o comparador usa o período do simulador; aqui, 2 meses (o exemplo de R$ 10.300).
+    await page.getByTestId("simulador-bolso").getByTestId("bolso-meses").fill("2");
     await bloco.getByRole("button", { name: /Comparar com o Airbnb/ }).click();
     await bloco.getByPlaceholder("10300").fill("10300");
     await expect(page.getByTestId("recebe-airbnb")).toContainText("8.652");
     await expect(bloco).toContainText("4.916");
-    await bloco.getByRole("button", { name: "Usar preço sugerido" }).click();
+    await bloco.getByRole("button", { name: /^Usar R\$\s?4\.916\/mês como valor mensal$/ }).click();
     await expect(page.getByTestId("cadastro-preco")).toHaveValue("4.916");
     const larguraDoc = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(larguraDoc).toBeLessThanOrEqual(0); // 390 px sem rolagem lateral

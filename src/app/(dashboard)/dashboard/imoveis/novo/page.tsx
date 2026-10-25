@@ -25,7 +25,7 @@ import {
   type DocumentStatus,
 } from "@/lib/data/actions";
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
-import { ANCORA_VIDEO_ASSISTENTE, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { videoDoAnuncio } from "@/lib/video-anuncio";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { itensFaltantes } from "@/lib/conforto/regras";
@@ -44,6 +44,9 @@ import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoDocValido } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS } from "@/lib/listing";
+import { erroJanelaDisponivel, errosComJanelaAtual } from "@/lib/anuncio/periodo-disponivel";
+import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
+import { estadoPassoFotos, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
@@ -97,6 +100,7 @@ import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
 import { PreviaAnuncio } from "./previa-anuncio";
+import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
 import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
@@ -244,6 +248,8 @@ export default function NewPropertyPage() {
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
   const [videoArquivo, setVideoArquivo] = useState("");
+  // E133 (c): triagem do vídeo enviado (quadros início/meio/fim) e a confirmação do dono, se sinalizado.
+  const [videoConteudo, setVideoConteudo] = useState<ConteudoFoto | null>(null);
   const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
   const [utilitiesEstimate, setUtilitiesEstimate] = useState(0);
   const [issuesInvoice, setIssuesInvoice] = useState(false);
@@ -266,7 +272,7 @@ export default function NewPropertyPage() {
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [erros, setErros] = useState<Record<string, string>>({});
+  const [errosGravados, setErros] = useState<Record<string, string>>({});
   const [publishError, setPublishError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
@@ -296,6 +302,8 @@ export default function NewPropertyPage() {
           : "";
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
+  // E133: o Passo 2 só segue com o mínimo de fotos e sem foto/vídeo "não parece imóvel" sem tratar.
+  const passoFotos = estadoPassoFotos(photos, videoArquivo ? videoConteudo : null);
   const enderecoCompleto = [street.trim(), numero.trim()].filter(Boolean).join(", ");
 
   const garantiaOk = Object.values(garantias).some(Boolean);
@@ -368,27 +376,49 @@ export default function NewPropertyPage() {
       if (!street.trim()) e.rua = "Informe a rua.";
       if (!numero.trim()) e.numero = "Informe o número (ou s/n).";
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
+      else {
+        // E147: "Minas Gerais" (ou outro estado, a sigla ou a própria cidade) não é bairro.
+        const problema = problemaDoBairro(neighborhood, city);
+        if (problema) e.bairro = problema;
+      }
       if (!city.trim()) e.cidade = "Informe a cidade.";
     }
-    if (s === ETAPA.fotos && photos.length === 0)
-      e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
+    if (s === ETAPA.fotos && !passoFotos.podeContinuar) e.fotos = passoFotos.mensagem ?? "Confira as fotos para continuar.";
     if (s === ETAPA.detalhes) {
       if ((Number(bathrooms) || 0) < 1) e.banheiros = "Informe ao menos 1 banheiro.";
       if ((Number(areaM2) || 0) <= 0) e.area = "Informe a área do imóvel (m²).";
       if ((Number(maxGuests) || 0) < 1) e.capacidade = "Informe quantas pessoas podem morar no imóvel.";
     }
     if (s === ETAPA.descricao && title.trim().length < 3) e.titulo = "Dê um título ao anúncio (mín. 3 caracteres).";
+    // E135: a descrição também entra no que falta do Passo 7 (o mesmo mínimo que o publicar exige).
+    if (s === ETAPA.descricao && description.trim().length < MIN_DESCRICAO)
+      e.descricao = `Escreva a descrição do anúncio (mín. ${MIN_DESCRICAO} caracteres${description.trim() ? `; tem ${description.trim().length}` : ""}).`;
     if (s === ETAPA.preco) {
       if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o valor mensal.";
       if (!garantiaOk) e.garantia = "Escolha ao menos uma garantia.";
     }
+    if (s === ETAPA.disponibilidade) {
+      // E137: a janela de datas precisa caber a duração mínima do anúncio.
+      const janela = erroJanelaDisponivel(availableFrom, availableUntil, minPeriod);
+      if (janela) e.janela = janela;
+    }
     return e;
   }
+
+  const faltaNoPasso = Object.values(validarEtapa(step));
+
+  // E137: corrigida a data, o erro da janela gravado pelo Continuar recusado acompanha (muda ou some).
+  const erros = errosComJanelaAtual(errosGravados, erroJanelaDisponivel(availableFrom, availableUntil, minPeriod));
 
   function avancarEtapa() {
     const e = validarEtapa(step);
     setErros(e);
-    if (Object.keys(e).length === 0) irPara(Math.min(ULTIMA_ETAPA, step + 1));
+    if (Object.keys(e).length === 0) {
+      irPara(Math.min(ULTIMA_ETAPA, step + 1));
+      return;
+    }
+    // E135: recusado → leva o olho até a lista do que falta.
+    setTimeout(() => document.querySelector('[data-testid="passo-erros"]')?.scrollIntoView({ block: "center", behavior: "smooth" }), 0);
   }
 
   function voltarEtapa() {
@@ -464,10 +494,10 @@ export default function NewPropertyPage() {
     if (!asDraft && !editingId && docStatus !== "approved") {
       setPublishError(
         docStatus === "rejected"
-          ? "O documento precisa ser corrigido: reenvie na etapa Onde fica para publicar."
+          ? "O documento precisa ser corrigido: envie outro no cartão “Antes de publicar”, aqui na Revisão."
           : docStatus === "pending"
             ? "Documentação em revisão. Você pode salvar como rascunho; a publicação libera depois da conferência."
-            : "Envie o documento do imóvel na etapa Onde fica para publicar."
+            : "Envie o documento do imóvel no cartão “Antes de publicar”, aqui na Revisão."
       );
       return;
     }
@@ -487,6 +517,11 @@ export default function NewPropertyPage() {
       setPublishError(`Adicione pelo menos ${MIN_PHOTOS} fotos para publicar. Faltam ${photosMissing}.`);
       return;
     }
+    if (!asDraft && !passoFotos.podeContinuar) {
+      setPublishError(passoFotos.mensagem ?? "Confira as fotos para publicar.");
+      irPara(ETAPA.fotos);
+      return;
+    }
     if (!asDraft && subleaseBlocked) {
       setPublishError(
         ownershipType === "managed"
@@ -497,6 +532,12 @@ export default function NewPropertyPage() {
     }
     const minDays = Number(minPeriod) || 30;
     const maxDays = Number(maxPeriod) || 0;
+    const janela = erroJanelaDisponivel(availableFrom, availableUntil, minPeriod);
+    if (!asDraft && janela) {
+      setPublishError(janela);
+      irPara(ETAPA.disponibilidade);
+      return;
+    }
     if (maxDays && maxDays < minDays) {
       setPublishError("A duração máxima não pode ser menor que a mínima. Ajuste os prazos.");
       return;
@@ -639,6 +680,7 @@ export default function NewPropertyPage() {
     if (s(d.cep)) setCep(d.cep as string);
     if (s(d.videoUrl)) setVideoUrl(d.videoUrl as string);
     if (s(d.videoArquivo)) setVideoArquivo(d.videoArquivo as string);
+    if (d.videoConteudo && typeof d.videoConteudo === "object") setVideoConteudo(d.videoConteudo as ConteudoFoto);
     if (s(d.internetMbps)) setInternetMbps(d.internetMbps as string);
     if (d.chacara && typeof d.chacara === "object") setChacara(d.chacara as ValorChacara);
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
@@ -838,7 +880,7 @@ export default function NewPropertyPage() {
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
-    street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, internetMbps,
+    street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
     privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
@@ -949,7 +991,8 @@ export default function NewPropertyPage() {
 
   function aplicarNoFormulario(a: ReturnType<typeof aplicarResultadoCep>) {
     if (a.rua !== undefined) setStreet(a.rua);
-    if (a.bairro !== undefined) setNeighborhood(a.bairro);
+    // E147: bairro que é o estado/UF/cidade nunca entra (o campo fica para a pessoa preencher).
+    if (a.bairro !== undefined) setNeighborhood(bairroAceitavel(a.bairro, a.cidade ?? city));
     if (a.cidade !== undefined) setCity(a.cidade);
     if (a.uf) setUf(a.uf);
     if (a.perguntarBairro) setBairroDoCep(a.perguntarBairro);
@@ -995,7 +1038,7 @@ export default function NewPropertyPage() {
     if (e.cep) setCep(formatarCep(e.cep));
     if (e.rua) setStreet(e.rua);
     if (e.numero) setNumero(e.numero.slice(0, 20));
-    if (e.bairro) setNeighborhood(e.bairro);
+    if (e.bairro && bairroAceitavel(e.bairro, e.cidade ?? city)) setNeighborhood(bairroAceitavel(e.bairro, e.cidade ?? city));
     if (e.cidade) setCity(e.cidade);
     if (e.uf) setUf(e.uf.slice(0, 2));
     setDaMatricula((atual) => new Set(atual).add("endereco"));
@@ -1367,12 +1410,20 @@ export default function NewPropertyPage() {
           (computador), a prévia do anúncio montando ao vivo. CADASTRO-MOLDURA: "Passo X de 10", a barra de progresso,
           Voltar e o primário moram no rodapé do fluxo (RodapeAssistente). */}
 
-      <div className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem]")} data-testid="novo-duas-colunas">
-        {/* E104 (mockup cadastro-imovel-03): o Passo 3 é um cartão branco sobre o fundo areia da moldura. */}
+      {/* E161: a grade da página do imóvel — conteúdo + coluna lateral do tamanho do cartão do anúncio (22rem/26rem). */}
+      <div
+        className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12")}
+        data-testid="novo-duas-colunas"
+      >
+        {/* E104 (mockup cadastro-imovel-03): o Passo 3 é um cartão branco sobre o fundo clean da moldura (E166; antes, areia). */}
         <div className={cn("min-w-0", step === ETAPA.endereco && "rounded-xl border border-line bg-white p-4 sm:p-8")} data-testid="novo-coluna-form">
           <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
             {editingId ? "Editar anúncio" : "Anunciar imóvel"} <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
           </span>
+          {/* E161: no celular (sem a prévia lateral) e na Revisão (sem coluna lateral), o anúncio no tamanho real fica aqui. */}
+          <div className={cn("mt-2", step !== ETAPA.revisao && "lg:hidden")} data-testid="previa-tamanho-real-passo">
+            <BotaoTamanhoReal imovel={previewProperty} />
+          </div>
           <h1 className={cn(TITULO_PASSO_CADASTRO, "mt-3")} data-testid="passo-titulo">
             {meta.title}
           </h1>
@@ -1388,6 +1439,17 @@ export default function NewPropertyPage() {
                 setQual({ baseBadge: r.selo, tHome: r.tHome, tWork: r.tWork });
               }}
             />
+          )}
+          {/* E135: "Continuar" recusado SEMPRE diz no próprio passo o que falta (nunca um clique mudo). */}
+          {Object.keys(erros).length > 0 && (
+            <div role="alert" className="mt-4 rounded-xl border border-red-300 bg-white p-3 text-sm text-red-700" data-testid="passo-erros">
+              <p className="font-semibold">Para continuar, falta:</p>
+              <ul className="mt-1 list-disc pl-4">
+                {Object.values(erros).map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+              </ul>
+            </div>
           )}
           <div className="mt-6">
             {step === ETAPA.tipo && (
@@ -1452,7 +1514,7 @@ export default function NewPropertyPage() {
             )}
 
             {step === ETAPA.fotos && (
-              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
+              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} videoConteudo={videoConteudo} setVideoConteudo={setVideoConteudo} passoFotos={passoFotos} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
             )}
 
             {step === ETAPA.detalhes && (
@@ -1646,6 +1708,7 @@ export default function NewPropertyPage() {
             uf={uf}
             publicado={!!editingId}
           />
+          <BotaoTamanhoReal imovel={previewProperty} className="mt-2" />
         </aside>
         )}
       </div>
@@ -1660,7 +1723,17 @@ export default function NewPropertyPage() {
         onVoltar={pos > 0 ? voltarEtapa : null}
         primario={
           pos < ULTIMA_ETAPA
-            ? { rotulo: "Continuar", onClick: avancarEtapa, testid: "cadastro-continuar", seta: true }
+            ? {
+                rotulo: "Continuar",
+                onClick: avancarEtapa,
+                testid: "cadastro-continuar",
+                seta: true,
+                // E135: o botão reflete o passo — esmaecido (e com o motivo no title) quando falta algo.
+                pendente: faltaNoPasso.length > 0,
+                title: faltaNoPasso.length ? `Falta: ${faltaNoPasso.join(" ")}` : undefined,
+                // E133: no Passo 2, desabilitado de verdade (visual e clique) até o mínimo de fotos e sem aviso pendente.
+                ...(step === ETAPA.fotos && !passoFotos.podeContinuar ? { disabled: true, title: passoFotos.mensagem ?? undefined } : {}),
+              }
             : {
                 rotulo: publishing ? "Salvando..." : editingId ? "Salvar alterações" : "Publicar anúncio",
                 onClick: () => publish(false),

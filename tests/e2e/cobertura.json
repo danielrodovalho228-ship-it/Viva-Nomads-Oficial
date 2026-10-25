@@ -103,7 +103,8 @@
         "t301-varredura-logada-bloco5",
         "t387-varredura-bloco22",
         "t419-varredura-bloco36",
-        "t466-admin5-agentes"
+        "t466-admin5-agentes",
+        "t420-varredura-bloco37"
       ]
     },
     "/admin/ajuda-publicacao": {
@@ -376,7 +377,8 @@
         "t300-entrada-sem-senha-49",
         "t306-varredura-bloco7",
         "t317-email-unico-49c1",
-        "t353-varredura-bloco18"
+        "t353-varredura-bloco18",
+        "t471-login-apple"
       ]
     },
     "/auth/pronto": {
@@ -451,7 +453,8 @@
         "t417-varredura-bloco34",
         "t453-buscar-descobribilidade",
         "t452-mais-filtros-sem-duplicar",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t475-e131-vitrine-conta-teste"
       ]
     },
     "/cidades": {
@@ -485,7 +488,8 @@
         "t117-polos-cidade",
         "t18-seo-a11y",
         "t20-p1-agentes",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t421-varredura-bloco38"
       ]
     },
     "/como-funciona": {
@@ -901,7 +905,8 @@
         "t400-chacara-sem-internet",
         "t410-niveis-medir-rascunho",
         "t415-varredura-bloco32",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t427-e141-essencial-sem-prova"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -950,7 +955,19 @@
         "t415-varredura-bloco32",
         "t456-comodidades-tipo-e111a",
         "t457-revisao-documento-e112",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t472-e139-passo8-conta",
+        "t422-e133-fotos-minimo",
+        "t423-e135-titulo-descricao",
+        "t424-e136-datas-ptbr",
+        "t425-e137-janela-e-bloqueio",
+        "t426-e139-e140-historia-do-preco",
+        "t428-e142-deteccao-sem-rolar",
+        "t429-e146-contador-essenciais",
+        "t469-e134-passo4-alinhado",
+        "t474-e161-largura-assistente",
+        "t473-e135-passo7-avanca",
+        "t476-e136-e147-passos-3-9"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1309,7 +1326,8 @@
       ],
       "specs": [
         "t105-guias",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t421-varredura-bloco38"
       ]
     },
     "/imoveis/[id]": {
@@ -1589,7 +1607,8 @@
       "specs": [
         "t18-seo-a11y",
         "t68-comissao-valor-total",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t421-varredura-bloco38"
       ]
     },
     "/tributario": {
@@ -1917,7 +1936,8 @@
         "t281-minimizacao",
         "t301-varredura-logada-bloco5",
         "t419-varredura-bloco36",
-        "t467-admin6-rotas"
+        "t467-admin6-rotas",
+        "t420-varredura-bloco37"
       ]
     },
     "/admin/conforto": {
@@ -2073,7 +2093,8 @@
       "specs": [
         "t316-sair-da-viva-51",
         "t319-varredura-bloco10",
-        "t467-admin6-rotas"
+        "t467-admin6-rotas",
+        "t420-varredura-bloco37"
       ]
     },
     "/dashboard/imoveis/[id]/desempenho": {
@@ -2116,7 +2137,8 @@
         "t316-sair-da-viva-51",
         "t332-merges-1170-1172",
         "t365-conta-a1-casca-perfil",
-        "t375-conta-a8-ajuda"
+        "t375-conta-a8-ajuda",
+        "t421-varredura-bloco38"
       ]
     },
     "/dashboard/conta/avaliacoes": {
@@ -2139,6 +2161,14 @@
       "specs": [
         "t397-foto-na-hora",
         "t407-varredura-bloco26"
+      ]
+    },
+    "/dashboard/qa/emails": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t470-qa-leitor-caixas"
       ]
     }
   },
@@ -2200,6 +2230,14 @@
         "admin"
       ],
       "specs": []
+    },
+    "/api/fotos/conferir": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
+      ]
     },
     "/api/ai/fotos": {
       "personas": [
@@ -2582,7 +2620,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t471-login-apple"
+      ]
     },
     "/auth/confirm": {
       "personas": [
@@ -5891,6 +5931,30 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t315-telas-avaliacao-dono-62a"
+      ]
+    },
+    "src/lib/data/video-link-actions.ts#conferirLinkVideo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
+      ]
+    },
+    "src/lib/data/video-link-actions.ts#listarLinksDeVideoPendentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
+      ]
+    },
+    "src/lib/data/video-link-actions.ts#decidirLinkDeVideo": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t468-e133-fotos-conteudo"
       ]
     },
     "src/lib/vistoria/actions.ts#agendarVisita": {

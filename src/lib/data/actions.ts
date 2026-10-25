@@ -1,7 +1,9 @@
 "use server";
 
+import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
+import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
-import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
+import { MSG_DISPONIVEL_ATE_ANTES, erroJanelaDisponivel, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { gravarMarca } from "@/lib/marcas/servidor";
 import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
 import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascunho-dono";
@@ -384,7 +386,8 @@ export async function resumoImovelDoDono(
   return {
     id: data.id as string,
     titulo: (data.title as string) || "Imóvel sem título",
-    local: [data.address, data.city].filter(Boolean).join(", "),
+    // E147: "Minas Gerais" gravado como bairro (rascunhos antigos) não aparece como se fosse o bairro.
+    local: [bairroAceitavel(data.address as string | null, data.city as string | null), data.city].filter(Boolean).join(", "),
     rascunho: data.status === "draft",
   };
 }
@@ -722,6 +725,12 @@ export async function carregarLimitesNegociacao(id: string): Promise<{ valorMini
 export async function createProperty(entrada: PropertyInput): Promise<ActionResult> {
   // TIPO-CHACARA-B: o ponto marcado pelo dono vale no lugar da geocodificação do endereço.
   const input = aplicarPontoChacara(entrada);
+  // E147: o bairro nunca é o estado, a sigla ou a cidade.
+  const bairroRuim = problemaDoBairro(input.neighborhood, input.city);
+  if (bairroRuim) return { ok: false, error: bairroRuim };
+  // E137: janela de datas menor que a duração mínima = imóvel impossível de alugar.
+  const janelaCurta = erroJanelaDisponivel(input.availableFrom, input.availableUntil, input.minPeriodDays);
+  if (janelaCurta) return { ok: false, error: janelaCurta };
   // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
@@ -769,6 +778,13 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
     if (limite) return { ok: false, error: limite };
   }
 
+  // E133 (d): link de vídeo só da plataforma, existente e incorporável (oEmbed). Fica pendente da equipe para aparecer.
+  const linkVideo = input.videoUrl?.trim() || null;
+  if (linkVideo) {
+    const v = await verificarLinkVideo(linkVideo);
+    if (!v.ok) return { ok: false, error: v.erro };
+  }
+
   const { data, error } = await supabase
     .from("properties")
     .insert({
@@ -805,7 +821,7 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
       accepts_insurance: input.acceptsInsurance ?? false,
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
-      video_url: input.videoUrl?.trim() || null,
+      video_url: linkVideo,
       ...colunaVideoArquivo(input.videoArquivo, user.id),
     })
     .select("id")
@@ -974,6 +990,12 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   if (!periodoDisponivelValido(input.availableFrom, input.availableUntil)) {
     return { ok: false, error: MSG_DISPONIVEL_ATE_ANTES };
   }
+  // E147: o bairro nunca é o estado, a sigla ou a cidade.
+  const bairroRuim = problemaDoBairro(input.neighborhood, input.city);
+  if (bairroRuim) return { ok: false, error: bairroRuim };
+  // E137: janela de datas menor que a duração mínima = imóvel impossível de alugar.
+  const janelaCurta = erroJanelaDisponivel(input.availableFrom, input.availableUntil, input.minPeriodDays);
+  if (janelaCurta) return { ok: false, error: janelaCurta };
   // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
@@ -1019,7 +1041,14 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
 
   // Status ANTES da edição: só a PUBLICAÇÃO (rascunho/pausado → ativo) avisa
   // os pedidos compatíveis — editar um anúncio já ativo não reenvia avisos.
-  const { data: antes } = await supabase.from("properties").select("status, owner_id").eq("id", id).maybeSingle();
+  const { data: antes } = await supabase.from("properties").select("status, owner_id, video_url").eq("id", id).maybeSingle();
+
+  // E133 (d): link de vídeo NOVO (ou trocado) só da plataforma, existente e incorporável; o já gravado não é refeito.
+  const linkVideo = input.videoUrl?.trim() || null;
+  if (linkVideo && linkVideo !== (antes as { video_url?: string | null } | null)?.video_url) {
+    const v = await verificarLinkVideo(linkVideo);
+    if (!v.ok) return { ok: false, error: v.erro };
+  }
 
   // Fotos ANTES do status: o banco só deixa publicar com 8 fotos gravadas em
   // property_photos (0009). Antes elas eram regravadas DEPOIS da mudança para
@@ -1062,7 +1091,7 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
       accepts_insurance: input.acceptsInsurance ?? false,
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
-      video_url: input.videoUrl?.trim() || null,
+      video_url: linkVideo,
       ...colunaVideoArquivo(input.videoArquivo, user.id),
     })
     .eq("id", id)

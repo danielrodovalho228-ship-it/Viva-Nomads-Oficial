@@ -12,7 +12,8 @@ test("cadastro novo (prompt 10, Q8/Q9): UM seletor de data — o calendário nat
   const campos = ler("src/app/(dashboard)/dashboard/imoveis/novo/campos.tsx");
   const preco = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx");
   assert.match(campos, /type="date"/);
-  assert.match(campos, />\s*dd\/mm\/aaaa\s*</);
+  // E136: por cima do campo nativo, SEMPRE a data em pt-BR (ou o exemplo dd/mm/aaaa) — nunca "Oct 25, 2026".
+  assert.match(campos, /\{value \? isoParaBr\(value\) : "dd\/mm\/aaaa"\}/);
   assert.match(campos, /min-w-0 max-w-full appearance-none/);
   assert.doesNotMatch(preco, /DateFieldBR|inputMode="numeric"/);
   assert.equal((preco.match(/<CampoDataUnico/g) ?? []).length, 2);

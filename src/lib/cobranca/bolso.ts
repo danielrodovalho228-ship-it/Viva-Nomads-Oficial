@@ -1,4 +1,5 @@
-import { comissaoSobreContrato, faixaPorImoveisAtivos, pctTexto } from "./regra.ts";
+import { brlTaxa, comissaoSobreContrato, faixaPorImoveisAtivos, pctTexto } from "./regra.ts";
+import { parcelasDoMes, type ContaPeriodo } from "../precos.ts";
 
 /*
   "O que vai para o seu bolso" (ordem 6696611c, tela 10). Só monta a conta; a fórmula é a ÚNICA de regra.ts
@@ -42,6 +43,25 @@ export interface BlocoBolso {
   rotulo: string;
   valor: string;
   detalhe: string | null;
+}
+
+/**
+ * E139 — os 2 fatos no Passo 8 do cadastro, pela conta do período (contaDoPeriodo): o morador paga o total do mês
+ * COM condomínio e contas × meses, direto ao dono; a taxa é sobre o valor mensal × meses, com a conta aberta.
+ * Exemplo do E139 (3.600 + 350 + 150, 4 meses, 12%): R$ 16.400 e R$ 1.728 (R$ 3.600 × 4 = R$ 14.400).
+ * A frase "só com contrato fechado" fica só na NOTA_BOLSO (E151: cada explicação uma vez).
+ */
+export function blocosBolsoPeriodo(c: ContaPeriodo): [BlocoBolso, BlocoBolso] {
+  const mesmoMes = c.mes.total === c.mes.aluguel;
+  const porMes = mesmoMes ? `${brlTaxa(c.mes.aluguel)}/mês` : `${brlTaxa(c.mes.total)}/mês (${parcelasDoMes(c.mes).replace(/ /g, " ")})`;
+  return [
+    { rotulo: "Você recebe do morador", valor: brlTaxa(c.totalMorador), detalhe: `${porMes} × ${c.meses}, direto a você` },
+    {
+      rotulo: "Taxa de serviço da Viva",
+      valor: brlTaxa(c.valorTaxa),
+      detalhe: `${pctTexto(c.taxa)} sobre o valor mensal × meses (${brlTaxa(c.mes.aluguel)} × ${c.meses} = ${brlTaxa(c.baseTaxa)})${mesmoMes ? "" : ". Condomínio e contas não entram na taxa"}`,
+    },
+  ];
 }
 
 /**

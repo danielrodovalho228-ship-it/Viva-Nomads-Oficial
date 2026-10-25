@@ -8,10 +8,10 @@ import { ESSENCIAIS_TRABALHO, OPCIONAIS_TRABALHO } from "@/lib/anuncio/sugestoes
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import type { Privacidade } from "@/lib/anuncio/privacidade";
 import { ProntoParaTrabalhar, ProximidadesAutomaticas } from "@/components/anuncio/blocos-cadastro";
-import { avisoTituloBairro } from "@/lib/anuncio/titulo-bairro";
+import { avisosConsistenciaTitulo } from "@/lib/anuncio/titulo-bairro";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { cn } from "@/lib/utils";
-import { Erro, Labeled, Toggle } from "./campos";
+import { Erro, Labeled, LinhaNumero, Toggle } from "./campos";
 import type { CampoSugerido, EstadoIaFotos } from "./tipos";
 
 const CHAVES_BLOCO_TRABALHO = new Set<string>([...ESSENCIAIS_TRABALHO, ...OPCIONAIS_TRABALHO].map((i) => i.chave));
@@ -126,10 +126,11 @@ export function EtapaEncontramos(p: {
         <Labeled label="Título do anúncio" sugerido={p.sugerido("titulo")}>
           <input value={p.title} onChange={campo("titulo", p.setTitle)} maxLength={80} placeholder="Ex.: Studio mobiliado no Centro" className="input" data-testid="cadastro-titulo" />
           <Erro msg={p.erros.titulo} />
-          <AvisoBairro titulo={p.title} bairro={p.neighborhood} />
+          <AvisoBairro titulo={p.title} bairro={p.neighborhood} tipo={p.propertyType} quartos={p.bedrooms} />
         </Labeled>
         <Labeled label="Descrição" sugerido={p.sugerido("descricao")}>
           <textarea rows={5} value={p.description} onChange={campo("descricao", p.setDescription)} className="input" placeholder="Descreva o imóvel…" data-testid="cadastro-descricao" />
+          <Erro msg={p.erros.descricao} />
         </Labeled>
       </div>
     );
@@ -138,25 +139,14 @@ export function EtapaEncontramos(p: {
   if (p.parte === "espaco") {
     return (
       <div className="space-y-4" data-testid="etapa-espaco">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*]:min-w-0">
-          <Labeled label="Quartos" sugerido={p.sugerido("quartos")}>
-            <input type="number" min={0} value={p.bedrooms} onChange={campo("quartos", p.setBedrooms)} className="input" data-testid="cadastro-quartos" />
-          </Labeled>
-          <Labeled label="Banheiros" sugerido={p.sugerido("banheiros")}>
-            <input type="number" min={0} value={p.bathrooms} onChange={campo("banheiros", p.setBathrooms)} className="input" data-testid="cadastro-banheiros" />
-            <Erro msg={p.erros.banheiros} />
-          </Labeled>
-          <Labeled label="Pessoas" sugerido={p.sugerido("capacidade")} ajuda="Quantas podem morar">
-            <input type="number" min={1} value={p.maxGuests} onChange={campo("capacidade", p.setMaxGuests)} className="input" placeholder="Ex.: 2" data-testid="cadastro-capacidade" />
-            <Erro msg={p.erros.capacidade} />
-          </Labeled>
-          <Labeled label="Área (m²)" daMatricula={p.daMatricula?.has("area")}>
-            <input type="number" min={0} value={p.areaM2} onChange={(e) => p.setAreaM2(e.target.value)} className="input" data-testid="cadastro-area" />
-            <Erro msg={p.erros.area} />
-          </Labeled>
-          <Labeled label="Vagas" daMatricula={p.daMatricula?.has("vagas")}>
-            <input type="number" min={0} value={p.parkingSpots} onChange={(e) => p.setParkingSpots(e.target.value)} className="input" />
-          </Labeled>
+        {/* E134: cartão de linhas iguais (mockup cadastro-imovel-04) — rótulo e dica à esquerda, contador à direita;
+            nenhuma dica desloca a caixa e não sobra buraco de grade ímpar. */}
+        <div className="divide-y divide-line rounded-xl border border-line bg-white px-4" data-testid="cartao-numeros">
+          <LinhaNumero label="Quartos" dica="Número de quartos" valor={p.bedrooms} onChange={(v) => { p.setBedrooms(v); p.tirarSugestao("quartos"); }} sugerido={p.sugerido("quartos")} testid="cadastro-quartos" />
+          <LinhaNumero label="Banheiros" dica="Número de banheiros" valor={p.bathrooms} onChange={(v) => { p.setBathrooms(v); p.tirarSugestao("banheiros"); }} sugerido={p.sugerido("banheiros")} testid="cadastro-banheiros" erro={p.erros.banheiros} />
+          <LinhaNumero label="Área" dica="Área total em m²" sufixo="m²" passo={5} valor={p.areaM2} onChange={p.setAreaM2} daMatricula={p.daMatricula?.has("area")} testid="cadastro-area" erro={p.erros.area} />
+          <LinhaNumero label="Pessoas" dica="Quantas podem morar" min={1} placeholder="2" valor={p.maxGuests} onChange={(v) => { p.setMaxGuests(v); p.tirarSugestao("capacidade"); }} sugerido={p.sugerido("capacidade")} testid="cadastro-capacidade" erro={p.erros.capacidade} />
+          <LinhaNumero label="Vagas" dica="Vagas de garagem" valor={p.parkingSpots} onChange={p.setParkingSpots} daMatricula={p.daMatricula?.has("vagas")} testid="cadastro-vagas" />
         </div>
       </div>
     );
@@ -262,9 +252,16 @@ function GrupoComodidades(p: {
   );
 }
 
-function AvisoBairro({ titulo, bairro }: { titulo: string; bairro: string }) {
-  const aviso = avisoTituloBairro(titulo, bairro);
-  return aviso ? (
-    <p role="status" className="mt-1 text-xs text-amber-700" data-testid="aviso-titulo-bairro">{aviso}</p>
+/** F17 + E150: o título confere com o bairro, o tipo e os quartos do anúncio (aviso que pode manter, nunca trava). */
+function AvisoBairro({ titulo, bairro, tipo, quartos }: { titulo: string; bairro: string; tipo?: string; quartos?: string }) {
+  const avisos = avisosConsistenciaTitulo(titulo, { bairro, tipo, quartos });
+  return avisos.length ? (
+    <div role="status" className="mt-1 space-y-1 text-xs text-amber-700" data-testid="aviso-titulo-consistencia">
+      {avisos.map((a) => (
+        <p key={a} data-testid={a.startsWith("O título cita") ? "aviso-titulo-bairro" : undefined}>
+          {a}
+        </p>
+      ))}
+    </div>
   ) : null;
 }

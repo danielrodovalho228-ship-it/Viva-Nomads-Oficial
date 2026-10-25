@@ -24,6 +24,15 @@ const ftyp = () => caixa("ftyp", Buffer.concat([Buffer.from("isom"), u32(0), Buf
 /** MP4 mínimo (ftyp + moov/mvhd) com a duração pedida: o navegador e o servidor leem a duração do próprio arquivo. */
 const mp4DeSegundos = (s: number) => Buffer.concat([ftyp(), caixa("moov", caixa("mvhd", Buffer.concat([Buffer.alloc(12), u32(1000), u32(s * 1000), Buffer.alloc(80)])))]);
 
+/** E133 (c): o MP4 de teste tem quadros sintéticos (chapados) e é sinalizado; na edição ele só vai para o anúncio quando o dono confirma. */
+async function confirmarVideoDoImovel(p: import("@playwright/test").Page) {
+  const secao = (pg: import("@playwright/test").Page) => pg.getByTestId("secao-video");
+  await expect(secao(p).getByTestId("aviso-video-nao-imovel")).toBeVisible({ timeout: 60_000 });
+  await secao(p).getByTestId("video-nao-imovel-confirmar").click();
+  await secao(p).getByTestId("video-nao-imovel-confirmar-confirmar").click();
+  await expect(secao(p).getByTestId("video-conteudo-confirmado")).toBeVisible();
+}
+
 test.describe("T321 — vídeo do anúncio alcançável pelo dono (65-B)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
@@ -69,10 +78,20 @@ test.describe("T321 — vídeo do anúncio alcançável pelo dono (65-B)", () =>
     await expect(secao(p).getByTestId("video-ajuda")).toHaveAttribute("href", "/guias/como-por-um-video-no-anuncio");
 
     await secao(p).getByTestId("video-input").setInputFiles(join(VIDEOS, "casa-10s.mp4"));
+    await confirmarVideoDoImovel(p);
     await expect(secao(p).getByTestId("video-enviado")).toHaveText("Vídeo enviado (00:10)", { timeout: 60_000 });
     await expect.poll(() => caminhoNoBanco(ids.imovel), { timeout: 20_000 }).toMatch(/-10s\.mp4$/);
+    // A gravação do vídeo recarrega a página do editor: se a seção fechou, abre de novo antes de salvar.
+    if ((await secao(p).getAttribute("data-aberta")) !== "true") await secao(p).getByRole("button").first().click();
     await secao(p).getByRole("button", { name: "Salvar seção" }).click();
-    await expect(secao(p)).toContainText("Alterações salvas.", { timeout: 20_000 });
+    // A gravação recarrega o editor: ou a mensagem aparece, ou a seção fecha já mostrando o vídeo no cabeçalho. A prova
+    // de que ficou gravado é a do recarregar, logo abaixo.
+    await expect
+      .poll(async () => {
+        const t = (await secao(p).textContent()) ?? "";
+        return t.includes("Alterações salvas.") || ((await secao(p).getAttribute("data-aberta")) === "false" && t.includes("Vídeo enviado (00:10)"));
+      }, { timeout: 20_000 })
+      .toBe(true);
     await p.screenshot({ path: `${SAIDA}/t321-secao-video-1280.png`, fullPage: true });
 
     await p.reload({ waitUntil: "domcontentloaded" });
@@ -165,6 +184,7 @@ test.describe("T321 — vídeo do anúncio alcançável pelo dono (65-B)", () =>
     await p.screenshot({ path: `${SAIDA}/t321-queda-de-rede-1280.png`, fullPage: true });
     await p.unroute(`**/storage/v1/object/${BUCKET}/**`);
     await secao(p).getByTestId("video-tentar-de-novo").click();
+    await confirmarVideoDoImovel(p);
     await expect(secao(p).getByTestId("video-enviado")).toHaveText("Vídeo enviado (00:10)", { timeout: 60_000 });
     await expect.poll(() => caminhoNoBanco(ids.imovel), { timeout: 20_000 }).toMatch(/-10s\.mp4$/);
     await p.context().close();

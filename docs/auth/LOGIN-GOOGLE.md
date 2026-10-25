@@ -62,6 +62,6 @@ Vercel → projeto → Settings → Environment Variables → `NEXT_PUBLIC_LOGIN
 - **Volta:** `/auth/app-callback` confere o `state` e devolve ao app por
   `vivanomads://auth/callback?code=...&state=...`. O app entrega o `code` ao WebView, que abre
   `/auth/callback?code=...` (o verificador PKCE está no WebView; por isso a rota não troca o código).
-- **Apple:** botão escondido atrás de `NEXT_PUBLIC_LOGIN_APPLE_ATIVO=on` (ativar o provedor Apple no Supabase antes).
+- **Apple:** botão escondido atrás de `NEXT_PUBLIC_LOGIN_APPLE_ATIVO=on` (ativar o provedor Apple no Supabase antes). Passo a passo para ligar: `docs/auth/LOGIN-APPLE.md`.
 - Segredo do `state`: `LOGIN_APP_SEGREDO` (opcional); sem ele usa `PONTE_APP_SEGREDO`, depois a service role.
 - Lado nativo (openAuthSessionAsync + entrega do code) fica com o Moacir no App.tsx.

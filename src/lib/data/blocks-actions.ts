@@ -64,6 +64,17 @@ export async function addBlock(
   if (!inicio || !fim || fim < inicio)
     return { ok: false, error: "Intervalo de datas inválido." };
 
+  // E137: idempotente — o mesmo período já bloqueado (toque duplo, dois envios) devolve o bloqueio que existe.
+  const { data: igual } = await supabase
+    .from("property_blocks")
+    .select("id")
+    .eq("property_id", propertyId)
+    .eq("inicio", inicio)
+    .eq("fim", fim)
+    .limit(1)
+    .maybeSingle();
+  if (igual?.id) return { ok: true, id: String(igual.id) };
+
   const { data, error } = await supabase
     .from("property_blocks")
     .insert({ property_id: propertyId, inicio, fim })

@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BlockCalendar } from "@/components/property/block-calendar";
+import { erroJanelaDisponivel } from "@/lib/anuncio/periodo-disponivel";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
 import { SELO_NF_UI } from "@/lib/flags";
-import { TEXTO_REGRA_CURTO } from "@/lib/cobranca/regra";
-import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos";
+import { TAXA_COMISSAO_PADRAO } from "@/lib/cobranca/regra";
+import { taxaDoMeuNovoAnuncio } from "@/lib/preco-justo-actions";
 import { SimuladorBolso } from "@/components/precos/simulador-bolso";
 import { PrecoSugerido } from "@/components/precos/preco-sugerido";
 import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import type { LimitesPrivados, Negociacao } from "@/lib/anuncio/negociacao";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
-import { calcularTudoIncluido } from "@/lib/precos";
+import { calcularTudoIncluido, parcelasDoMes, type CamposTotalMes } from "@/lib/precos";
 import { MESES_EXEMPLO } from "@/config/planos";
 import { CampoDataUnico, Erro, Labeled, MarcaSugerido, Toggle } from "./campos";
 import type { CampoSugerido } from "./tipos";
@@ -67,8 +68,17 @@ export function EtapaPreco(p: {
   // E110: um horizonte só no Passo 8 — o exemplo do texto acompanha os meses do simulador.
   const [mesesExemplo, setMesesExemplo] = useState(MESES_EXEMPLO);
   const condo = Number(p.condoFee) || 0;
-  const consumoFixo = p.utilitiesMode === "fixed" ? p.utilitiesEstimate || 0 : 0;
-  const totalAnuncio = calcularTudoIncluido({ monthlyPrice: aluguel, condoFee: condo, utilitiesMode: p.utilitiesMode, utilitiesEstimate: p.utilitiesEstimate }).total;
+  // E139: o Passo 8 inteiro sai da mesma conta (calcularTudoIncluido → contaDoPeriodo) e da mesma taxa (a da faixa do dono).
+  const campos = { monthlyPrice: aluguel, condoFee: condo, utilitiesMode: p.utilitiesMode, utilitiesEstimate: p.utilitiesEstimate } as CamposTotalMes;
+  const mes = calcularTudoIncluido(campos);
+  const [taxa, setTaxa] = useState(TAXA_COMISSAO_PADRAO);
+  useEffect(() => {
+    let vivo = true;
+    taxaDoMeuNovoAnuncio().then((t) => vivo && setTaxa(t)).catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
   const garantiaOk = Object.values(p.garantias).some(Boolean);
   const vePreco = p.parte !== "disponibilidade";
   const veDisponibilidade = p.parte !== "preco";
@@ -93,16 +103,10 @@ export function EtapaPreco(p: {
                   Sugestão para imóveis parecidos na região ({formatBRL(p.precoRegiao.valor)}). Você pode mudar.
                 </span>
               )}
-              {/* L2-A item 24: a linha do anúncio sai do mesmo cálculo da busca e do cartão (calcularTudoIncluido). */}
-              {aluguel > 0 && (
-                <span className="mt-1 block text-xs text-ink" data-testid="cadastro-tudo-incluido">
-                  No anúncio: <strong className="font-semibold">{formatBRL(totalAnuncio)}/mês tudo incluído</strong>
-                </span>
-              )}
               <Erro msg={p.erros.preco} />
             </Labeled>
             <Labeled label="Condomínio (R$/mês)">
-              <CampoReais semPrefixo centavos value={p.condoFee === "" ? null : Number(p.condoFee)} onChange={(v) => p.setCondoFee(v == null ? "" : String(v))} placeholder="0" />
+              <CampoReais semPrefixo centavos value={p.condoFee === "" ? null : Number(p.condoFee)} onChange={(v) => p.setCondoFee(v == null ? "" : String(v))} placeholder="0" testid="cadastro-condominio" />
               <span className="mt-1 block text-xs text-muted">{condo > 0 ? `${formatBRL(condo)}/mês` : "Deixe 0 se não houver."}</span>
             </Labeled>
           </div>
@@ -154,22 +158,27 @@ export function EtapaPreco(p: {
 
           {aluguel > 0 && (
             <div className="rounded-xl border border-sage-200 bg-sage-100/50 p-4">
-              <p className="text-xs font-semibold text-muted">Prévia — o morador vê</p>
-              <p className="mt-1 font-title text-2xl font-semibold text-forest">
-                {formatBRL(aluguel + condo + consumoFixo)}
+              <p className="text-xs font-semibold text-muted">Prévia — o morador vê no anúncio</p>
+              {/* L2-A item 24 e E139: o mesmo cálculo da busca e do cartão (calcularTudoIncluido), com a conta aberta. */}
+              <p className="mt-1 font-title text-2xl font-semibold text-forest" data-testid="cadastro-tudo-incluido">
+                {formatBRL(mes.total)}
                 <span className="text-sm font-normal text-muted">/mês tudo incluído</span>
               </p>
+              {mes.temExtras && (
+                <p className="mt-1 text-xs text-ink" data-testid="previa-conta">
+                  {parcelasDoMes(mes)}
+                </p>
+              )}
               <p className="mt-2 flex items-start gap-2 text-xs text-muted">
                 <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-sage" />
-                <span>
-                  <strong className="text-ink">Você recebe o valor mensal direto na sua conta.</strong> {TEXTO_REGRA_CURTO}
-                </span>
+                <span>O morador paga direto a você.</span>
               </p>
             </div>
           )}
-          <LinhaComparativoAnuncio aluguel={aluguel} meses={mesesExemplo} />
-          <SimuladorBolso compacto valorMensal={aluguel} mesesIniciais={mesesExemplo} onMeses={setMesesExemplo} />
-          <PrecoSugerido aluguel={aluguel} onUsar={(v) => p.setMonthlyPrice(String(v))} onAirbnbMensal={(v) => p.setAirbnbMensal(v ? String(v) : "")} />
+          {/* E139/E140/E151: um período só (os meses do simulador) para a taxa e para o comparador; a taxa é explicada
+              uma vez, no simulador. */}
+          <SimuladorBolso compacto valorMensal={aluguel} mesesIniciais={mesesExemplo} onMeses={setMesesExemplo} campos={campos} taxa={taxa} />
+          <PrecoSugerido aluguel={aluguel} meses={mesesExemplo} taxa={taxa} onUsar={(v) => p.setMonthlyPrice(String(v))} onAirbnbMensal={(v) => p.setAirbnbMensal(v ? String(v) : "")} />
 
         </>
       )}
@@ -204,6 +213,15 @@ export function EtapaPreco(p: {
               </Labeled>
             </div>
             <span className="mt-2 block text-xs text-muted">Estadias de 30 a 180 dias são o usual.</span>
+            {/* E137: a janela de datas precisa caber a duração mínima (aviso já ao escolher, e o Continuar recusa). */}
+            {(() => {
+              const msg = erroJanelaDisponivel(p.availableFrom, p.availableUntil, p.minPeriod);
+              return msg ? (
+                <p role="alert" className="mt-2 text-sm font-semibold text-red-700" data-testid="janela-curta">
+                  {msg}
+                </p>
+              ) : null;
+            })()}
           </div>
 
           {/* E44: o calendário do imóvel já no cadastro — a mesma grade do editor (bloquear, importar e exportar .ics). */}

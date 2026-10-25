@@ -120,6 +120,12 @@ export const ROTAS_COM_PARAMETRO: Record<string, readonly string[]> = {
   "/dashboard/conta/[secao]": ["/dashboard/conta/perfil", "/dashboard/conta/notificacoes", "/dashboard/conta/ajuda"],
 };
 
+/**
+ * Telas que NENHUMA persona da varredura abre (404 de propósito para quem não tem a marca): ficam fora do t183 e têm
+ * spec próprio. /dashboard/qa/emails só abre para conta de teste com qa_leitor (QA-CAIXA-B, t470).
+ */
+export const TELAS_RESTRITAS: readonly string[] = ["/dashboard/qa/emails"];
+
 /** Telas que cada persona visita (o admin também abre o painel comum). */
 export function telasDaPersona(persona: "inquilino" | "proprietario" | "admin"): string[] {
   const comParametro = Object.values(ROTAS_COM_PARAMETRO).flat();
@@ -148,7 +154,7 @@ export function telasDoDisco(raiz = process.cwd()): string[] {
 /** `faltando`: tela no disco que não está na lista; `sobrando`: tela da lista que não existe mais no disco. */
 export function telasForaDaLista(raiz = process.cwd()): { faltando: string[]; sobrando: string[] } {
   const disco = telasDoDisco(raiz);
-  const conhecidas = new Set<string>([...TELAS_PAINEL, ...TELAS_ADMIN, ...Object.keys(ROTAS_COM_PARAMETRO)]);
+  const conhecidas = new Set<string>([...TELAS_PAINEL, ...TELAS_ADMIN, ...Object.keys(ROTAS_COM_PARAMETRO), ...TELAS_RESTRITAS]);
   const noDisco = new Set(disco);
   return {
     faltando: disco.filter((r) => !conhecidas.has(r)),

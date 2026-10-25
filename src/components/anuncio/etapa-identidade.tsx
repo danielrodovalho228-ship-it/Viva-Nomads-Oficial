@@ -53,7 +53,8 @@ export function EtapaIdentidade({ onConfirmada }: { onConfirmada?: () => void })
         Confirme sua identidade
       </p>
       <p className="mt-1 text-xs text-muted">
-        É o que permite conferir a matrícula na hora: comparamos o CPF do seu cadastro com o do proprietário. {TEXTO_VALIDADE_CAF}
+        {/* E151: quem anuncia É o proprietário — o CPF dele é comparado com o do DOCUMENTO do imóvel (matrícula). */}
+        É o que permite conferir a matrícula: comparamos o CPF do seu cadastro com o CPF que consta no documento do imóvel. {TEXTO_VALIDADE_CAF}
       </p>
       {estado === "carregando" && (
         <div className="mt-3">
@@ -76,7 +77,8 @@ export function EtapaIdentidade({ onConfirmada }: { onConfirmada?: () => void })
       )}
       {estado === "em_breve" && (
         <p className="mt-3 text-sm text-ink" data-testid="identidade-em-breve">
-          {id?.texto}. Você pode seguir o cadastro; a equipe confere a matrícula em até 48 horas.
+          {/* E152: o caminho de hoje, sem promessa de função futura. */}
+          Você pode seguir o cadastro: a equipe da Viva confere a matrícula em até 48 horas.
         </p>
       )}
       {estado === "pendente" && id?.estado === "vencida" && (
@@ -85,7 +87,7 @@ export function EtapaIdentidade({ onConfirmada }: { onConfirmada?: () => void })
         </p>
       )}
       {estado === "pendente" && (
-        <button type="button" onClick={() => void confirmar()} disabled={enviando} className={buttonClasses({ className: "mt-3 w-full sm:w-auto disabled:opacity-60" })} data-testid="identidade-confirmar">
+        <button type="button" onClick={() => void confirmar()} disabled={enviando} className={buttonClasses({ className: "mt-3 h-auto min-h-11 w-full whitespace-normal py-3 leading-snug sm:w-auto disabled:opacity-60" })} data-testid="identidade-confirmar">
           {enviando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />} {id?.acao?.texto ?? "Confirmar minha identidade"}
         </button>
       )}

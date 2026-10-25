@@ -21,6 +21,6 @@ export const PRIMARIO_PORTA =
 export const VEU_TOPO_PORTA = "inline-flex rounded-full bg-night/55 px-4 py-2";
 export const VEU_BASE_PORTA = "max-w-md rounded-xl bg-night/65 p-6";
 
-/** Lado do formulário: fundo areia (quente) com o formulário num cartão branco, em vez do branco vazio. */
-export const FUNDO_FORMULARIO_PORTA = "bg-areia";
+/** Lado do formulário: fundo clean (E166; antes, areia) com o formulário num cartão branco, em vez do branco vazio. */
+export const FUNDO_FORMULARIO_PORTA = "bg-surface-2";
 export const CARTAO_FORMULARIO_PORTA = "rounded-xl border border-line bg-white p-6 sm:p-8";

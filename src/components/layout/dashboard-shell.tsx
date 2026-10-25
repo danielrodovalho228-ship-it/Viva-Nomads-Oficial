@@ -36,6 +36,7 @@ import { papelDaBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
 import { SubabasDono, TopoDono } from "@/components/layout/topo-dono";
 import { cn } from "@/lib/utils";
+import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -128,7 +129,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // actions a cada troca de rota (POSTs que a navegação abortava e que disputavam a fila com as ações da tela). Lê ao
   // montar, ao voltar o foco, a cada minuto com a aba visível, ao entrar/sair da área de imóveis (o 1º anúncio revela as
   // seções de dono) e quando uma tela avisa (fila de documentos, assinatura do contrato, EVENTO_CONTADORES).
-  const [contadores, setContadores] = useState<ContadoresPainel>(CONTADORES_VAZIOS);
+  // PROP-0: o contexto do menu chega do servidor (layout) na 1ª pintura; sem ele, vazio como antes.
+  const contadoresIniciais = useContadoresIniciais();
+  const [contadores, setContadores] = useState<ContadoresPainel>(contadoresIniciais ?? CONTADORES_VAZIOS);
   const [releitura, setReleitura] = useState(0);
   const naAreaDeImoveis = pathname.startsWith("/dashboard/imoveis");
   useEffect(() => {

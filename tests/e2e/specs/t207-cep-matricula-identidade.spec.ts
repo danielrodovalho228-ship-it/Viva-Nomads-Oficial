@@ -127,7 +127,8 @@ test.describe("T207 — CEP fantasma, matrícula 400 e validade da identidade (p
         erro_resumo: "output_config.format.schema: mensagem de teste do laboratório",
       });
       await page.setViewportSize({ width: 1280, height: 900 });
-      await page.goto("/admin", { waitUntil: "domcontentloaded" });
+      // ADMIN-3/4 (#1354): o painel da IA do cadastro mora em /admin/sistema.
+      await page.goto("/admin/sistema", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("painel-ia-erro-resumo")).toContainText("mensagem de teste do laboratório", { timeout: 30_000 });
       await page.getByTestId("testar-leitura-arquivo").setInputFiles({
         name: "matricula-ficticia.pdf",
