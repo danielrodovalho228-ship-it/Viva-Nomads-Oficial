@@ -64,6 +64,7 @@ import {
   type LinhaVersao,
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
+import { precoDaProposta } from "@/lib/precos";
 import { registrarDocumento } from "@/lib/fiscal/registro";
 import { linhaConferir, numeroExibido } from "@/lib/fiscal/prefixos";
 import { SITE_URL } from "@/lib/site";
@@ -468,6 +469,9 @@ export interface PropostaResumo {
   outraParte: string;
   totalContrato: number;
   valorMensal: number;
+  /** PROP-2: "Total por mês (com contas)" e a conta aberta do total do contrato (fonte única). */
+  totalPorMes: number;
+  conta: string | null;
   meses: number;
   validaAte: string;
   versaoAtual: number;
@@ -526,6 +530,7 @@ export async function listarPropostas(): Promise<PropostaResumo[]> {
     const papel: Autor = p.owner_id === s.user.id ? "owner" : "tenant";
     const v = versoes.find((x) => x.proposta_id === p.id && x.versao === p.versao_atual);
     if (!v) continue;
+    const preco = precoDaProposta({ ...termosDaLinha(v), valorMensal: Number(v.valor_mensal) });
     out.push({
       id: p.id,
       numero: p.numero,
@@ -535,6 +540,8 @@ export async function listarPropostas(): Promise<PropostaResumo[]> {
       outraParte: await nomeOutraParte(s.admin, p, papel),
       totalContrato: Number(v.total_contrato),
       valorMensal: Number(v.valor_mensal),
+      totalPorMes: preco.totalPorMes,
+      conta: preco.conta,
       meses: Number(v.meses),
       validaAte: p.valida_ate,
       versaoAtual: p.versao_atual,

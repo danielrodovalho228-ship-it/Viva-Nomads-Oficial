@@ -31,7 +31,7 @@ import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
-import { AlertaFaltaFoto, SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
+import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
@@ -161,10 +161,8 @@ export default function NewPropertyPage() {
   const [iaAnalisadas, setIaAnalisadas] = useState<string[]>([]);
   const [sugeridos, setSugeridos] = useState<CampoSugerido[]>([]);
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
-  // Detecção-A (Entrega 3): chave ligada, comodidades achadas nas fotos e ainda não confirmadas, e o que falta foto.
-  const [deteccaoLigada, setDeteccaoLigada] = useState(false);
+  // Detecção-A (Entrega 3): comodidades achadas nas fotos e ainda não confirmadas.
   const [comodidadesDetectadas, setComodidadesDetectadas] = useState<string[]>([]);
-  const [faltaFoto, setFaltaFoto] = useState<{ chave: string; rotulo: string }[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
   const [aceitouIa, setAceitouIa] = useState(false);
   // L2-B item 23: aceite do termo gravado por dono no servidor (versão atual). Já aceitou: a caixa não aparece.
@@ -223,6 +221,9 @@ export default function NewPropertyPage() {
   // PERTO-B: a busca já rodou para o endereço atual (uma mensagem só na tela: lista, "não achamos" ou "complete o endereço").
   const [proxBuscou, setProxBuscou] = useState(false);
   const proxBuscadoRef = useRef<string | null>(null);
+  // E145: de onde veio a última resposta (osm, cache, sem_lugares, sem_ponto, limite, erro…) — o estado honesto da tela.
+  const [proxFonte, setProxFonte] = useState<string | null>(null);
+  const proxUltimaBuscaRef = useRef<Record<string, unknown> | null>(null);
   const [googlePlaces, setGooglePlaces] = useState<CuratedPlace[]>([]);
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
   const [monthlyPrice, setMonthlyPrice] = useState("");
@@ -696,7 +697,8 @@ export default function NewPropertyPage() {
     if (d.amenityKeys && typeof d.amenityKeys === "object") setAmenityKeys(d.amenityKeys as Record<string, boolean>);
     if (Array.isArray(d.googlePlaces)) setGooglePlaces(d.googlePlaces as CuratedPlace[]);
     if (Array.isArray(d.manualProximities)) setManualProximities(d.manualProximities as Proximity[]);
-    if (Array.isArray(d.proxOsm)) {
+    // E145: só a lista com lugares conta como "já buscou"; uma lista vazia guardada (busca que falhou) roda de novo ao entrar.
+    if (Array.isArray(d.proxOsm) && d.proxOsm.length > 0) {
       setProxOsm(d.proxOsm as LugarProximo[]);
       setProxBuscou(true);
       proxBuscadoRef.current = chaveBuscaPerto(d.cep, d.street, d.numero);
@@ -1050,13 +1052,16 @@ export default function NewPropertyPage() {
   // PERTO-B: a busca do "O que tem por perto" roda no cadastro novo E na edição, e de novo sempre que o endereço muda
   // (CEP, rua ou número). O servidor usa o cache por CEP; "não mostrar" (desmarcados) é mantido entre buscas.
   async function buscarPerto(corpo: Record<string, unknown>) {
+    proxUltimaBuscaRef.current = corpo;
     setProxCarregando(true);
     try {
       const res = await fetch("/api/proximidades", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
-      const data = (await res.json().catch(() => ({}))) as { itens?: LugarProximo[] };
+      const data = (await res.json().catch(() => ({}))) as { itens?: LugarProximo[]; fonte?: string };
       if (Array.isArray(data.itens) && (data.itens.length > 0 || !proxOsm?.length)) setProxOsm(data.itens);
+      setProxFonte(res.ok ? (data.fonte ?? null) : "erro");
     } catch {
       /* sem rede: fica o que já havia */
+      setProxFonte("erro");
     } finally {
       setProxBuscou(true);
       setProxCarregando(false);
@@ -1155,6 +1160,7 @@ export default function NewPropertyPage() {
     setProxOsm(null);
     setProxDesmarcados([]);
     setProxBuscou(false);
+    setProxFonte(null);
     proxBuscadoRef.current = null;
     setIaAnalisadas([]);
     setSugeridos([]);
@@ -1322,6 +1328,10 @@ export default function NewPropertyPage() {
     proxOsm,
     proxCarregando,
     proxBuscou,
+    proxFonte,
+    tentarPerto: () => {
+      if (proxUltimaBuscaRef.current) void buscarPerto(proxUltimaBuscaRef.current);
+    },
     medirLugar,
     reportarLugar: imovelId ? (l: LugarProximo, motivo: string) => reportarProximidade(imovelId, l.nome, l.tipo, motivo) : null,
     proxDesmarcados,
@@ -1418,7 +1428,7 @@ export default function NewPropertyPage() {
         className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12")}
         data-testid="novo-duas-colunas"
       >
-        {/* E104 (mockup cadastro-imovel-03): o Passo 3 é um cartão branco sobre o fundo areia da moldura. */}
+        {/* E104 (mockup cadastro-imovel-03): o Passo 3 é um cartão branco sobre o fundo clean da moldura (E166; antes, areia). */}
         <div className={cn("min-w-0", step === ETAPA.endereco && "rounded-xl border border-line bg-white p-4 sm:p-8")} data-testid="novo-coluna-form">
           <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
             {editingId ? "Editar anúncio" : "Anunciar imóvel"} <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
@@ -1532,8 +1542,18 @@ export default function NewPropertyPage() {
 
             {step === ETAPA.comodidades && (
               <div className="space-y-6">
-                {/* Detecção-A: no topo, o que ainda falta foto (só com a chave da detecção ligada). */}
-                {deteccaoLigada && <AlertaFaltaFoto itens={faltaFoto} />}
+                {/* E142: "Encontramos isto numa foto sua" no topo do passo — a análise começa ao entrar ("Olhando suas
+                    fotos…") e o resultado aparece sem rolar. E141: o "Falta foto de" do topo saiu; a cobrança das fotos
+                    é uma só, no bloco do nível (opcional). */}
+                <SugestoesDasFotos
+                  propertyId={imovelId}
+                  comodidadesMarcadas={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
+                  tipoImovel={propertyType}
+                  onComodidade={(k) => setAmenityKeys((a) => ({ ...a, [k]: true }))}
+                  onSugeridas={setSugeridasFotos}
+                  onComodidadesSugeridas={setComodidadesDetectadas}
+                  onNivelMudou={() => setNivelVersao((v) => v + 1)}
+                />
                 <EtapaEncontramos parte="comodidades" {...camposImovel} comodidadesDetectadas={comodidadesDetectadas} />
                 {/* Prompt 59-A: o padrão mínimo da Viva é confirmado junto das comodidades. */}
                 <ChecklistConforto
@@ -1543,19 +1563,8 @@ export default function NewPropertyPage() {
                   salvamento={conf.salvamento}
                   onTentarDeNovo={conf.tentarDeNovo}
                 />
-                {/* DETECTA-B: o que as fotos da galeria mostram, como sugestão (só conta depois de confirmar). */}
-                <SugestoesDasFotos
-                  propertyId={imovelId}
-                  comodidadesMarcadas={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
-                  tipoImovel={propertyType}
-                  onComodidade={(k) => setAmenityKeys((a) => ({ ...a, [k]: true }))}
-                  onSugeridas={setSugeridasFotos}
-                  onComodidadesSugeridas={setComodidadesDetectadas}
-                  onLigada={setDeteccaoLigada}
-                  onNivelMudou={() => setNivelVersao((v) => v + 1)}
-                />
                 {/* Adendo 59.1: o nível que o imóvel atinge agora e o que falta para o próximo, item a item, com foto. */}
-                <NivelNoCadastro propertyId={imovelId} conforto={conforto} sugeridas={sugeridasFotos} recarregar={nivelVersao} onFaltaFoto={setFaltaFoto} />
+                <NivelNoCadastro propertyId={imovelId} conforto={conforto} sugeridas={sugeridasFotos} recarregar={nivelVersao} />
               </div>
             )}
 

@@ -3,6 +3,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 import { hojeBR } from "../../../src/lib/utils";
 import { addDiasISO } from "../../../src/lib/contrato-blocos";
 
+/** E136: no computador o campo de data mostra dd/mm/aaaa (o calendário é o do site, em pt-BR). */
+const dataBR = (iso: string) => iso.split("-").reverse().join("/");
+
 /**
  * T89 — Fechamento: "Data de início da estadia" (ordem 02d4c903 / c4530769, F37).
  * Campo obrigatório na etapa 1, sem data passada, e a data aparece no resumo; a 390 px.
@@ -38,8 +41,8 @@ test.describe("T89 — data de início no Fechamento", () => {
     await pagina.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "networkidle" });
     const campo = pagina.getByTestId("inicio-estadia");
     await expect(campo).toBeVisible({ timeout: 15_000 });
-    await expect(campo).toHaveValue(hoje);
-    await expect(campo).toHaveAttribute("min", hoje);
+    await expect(campo).toHaveValue(dataBR(hoje));
+    // E136: no computador o campo é dd/mm/aaaa com o calendário do site; o mínimo vale no calendário e na validação.
 
     await campo.fill(addDiasISO(hoje, -3));
     await expect(pagina.getByTestId("inicio-estadia-erro")).toContainText(/passado/i);
@@ -80,12 +83,12 @@ test.describe("T89 — data de início no Fechamento", () => {
     expect(error).toBeNull();
     const pagina = await entrar(browser, dono.email, senha);
     await pagina.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "networkidle" });
-    await expect(pagina.getByTestId("inicio-estadia")).toHaveValue(desejada, { timeout: 15_000 });
+    await expect(pagina.getByTestId("inicio-estadia")).toHaveValue(dataBR(desejada), { timeout: 15_000 });
 
     // Data guardada que já passou não vira data inválida no Fechamento: abre em hoje.
     await adm().from("leads").update({ inicio_desejado: addDiasISO(hoje, -5) }).eq("id", ids.lead!);
     await pagina.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "networkidle" });
-    await expect(pagina.getByTestId("inicio-estadia")).toHaveValue(hoje, { timeout: 15_000 });
+    await expect(pagina.getByTestId("inicio-estadia")).toHaveValue(dataBR(hoje), { timeout: 15_000 });
     await pagina.context().close();
   });
 

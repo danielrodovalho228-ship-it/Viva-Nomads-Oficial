@@ -203,6 +203,9 @@ test("59.1: foto de nível recusada vira decisão do dono, com o motivo e o link
   const d = decisoesDoProprietario({ fotosNivelRecusadas: [{ propertyId: "p1", imovel: "Studio Centro", chave: "ar_sala", motivo: "Não mostra o item." }] }, new Date("2026-10-23T12:00:00Z"));
   const f = d.find((x) => x.id === "foto-nivel-p1-ar_sala")!;
   assert.equal(f.texto, 'Envie outra foto de "Ar-condicionado na sala" em Studio Centro');
-  assert.equal(f.href, "/dashboard/imoveis/p1/nivel");
+  // E143: publicado (sem status = já saiu do cadastro) → a seção do nível na edição; rascunho → Passo 5 do cadastro.
+  assert.equal(f.href, "/dashboard/imoveis/p1/editar#secao-nivel");
   assert.equal(f.prazoTexto, "Recusada: Não mostra o item.");
+  const r = decisoesDoProprietario({ fotosNivelRecusadas: [{ propertyId: "p2", imovel: "Casa", chave: "ar_sala", motivo: null, status: "draft" }] }, new Date("2026-10-23T12:00:00Z"));
+  assert.equal(r.find((x) => x.id === "foto-nivel-p2-ar_sala")!.href, "/dashboard/imoveis/novo?draft=p2&etapa=comodidades#nivel-cadastro");
 });

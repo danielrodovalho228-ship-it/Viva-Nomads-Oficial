@@ -74,7 +74,7 @@ test("E104: o Passo 3 é SÓ endereço — sem IA, quem opera, identidade, docum
 test("E104: cartão branco sobre o fundo areia; nome do bairro fora do zoom do mapa; complemento sem supor apartamento", () => {
   const pagina = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
   assert.match(pagina, /step === ETAPA\.endereco && "rounded-xl border border-line bg-white p-4 sm:p-8"/);
-  assert.match(ler("components/layout/moldura-assistente.tsx"), /flex min-h-screen w-full flex-col bg-areia/);
+  assert.match(ler("components/layout/moldura-assistente.tsx"), /flex min-h-screen w-full flex-col bg-surface-2/);
   // O zoom do Leaflet fica no canto de cima à ESQUERDA: a etiqueta do bairro vai para a direita.
   assert.match(resumo, /absolute right-3 top-3[^"]*" data-testid="mapa-bairro-nome"/);
   assert.doesNotMatch(resumo, /absolute left-3 top-3/);

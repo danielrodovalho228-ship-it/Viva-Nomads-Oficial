@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { destinoNivel } from "@/lib/niveis/destino-nivel";
 import { ArrowLeft } from "lucide-react";
 import { painelDesempenho } from "@/lib/data/desempenho-anuncio";
 import { TEXTO_SEM_COMPARACAO, FORMULAS, textoVariacao } from "@/lib/anuncio/desempenho";
@@ -75,7 +76,7 @@ export default async function DesempenhoDoAnuncioPage({ params }: { params: Prom
                     <li key={i}>{i}</li>
                   ))}
                 </ul>
-                <Link href={`/dashboard/imoveis/${p.id}/nivel`} className="mt-1 inline-block text-sm font-medium text-forest underline">
+                <Link href={destinoNivel(p.id, p.status)} className="mt-1 inline-block text-sm font-medium text-forest underline">
                   Abrir o nível do imóvel
                 </Link>
               </div>

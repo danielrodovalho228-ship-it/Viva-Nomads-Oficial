@@ -22,7 +22,7 @@ export const TEXTO_RASCUNHO_SALVO = "Seu rascunho fica salvo.";
  */
 export function MolduraAssistente({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen w-full flex-col bg-areia" data-testid="moldura-assistente">
+    <div className="flex min-h-screen w-full flex-col bg-surface-2" data-testid="moldura-assistente">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-line bg-white px-4 sm:px-8 print:hidden">
         <Logo href={null} className="min-w-0 shrink" />
         <nav aria-label="Assistente" className="flex items-center gap-1 sm:gap-2">
