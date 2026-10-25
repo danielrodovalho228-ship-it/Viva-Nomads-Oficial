@@ -462,8 +462,7 @@
       "specs": [
         "t18-seo-a11y",
         "t20-p1-agentes",
-        "t311-marco-principal-unico",
-        "t421-varredura-bloco38"
+        "t311-marco-principal-unico"
       ]
     },
     "/cidades/[cidade]": {
