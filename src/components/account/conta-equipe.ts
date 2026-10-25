@@ -5,7 +5,8 @@
 */
 /** Painel /admin (números e atalhos), acima de "Equipe e aprovações" na barra verde do admin. */
 export const ROTA_ADMIN = "/admin";
-export const ROTA_EQUIPE = "/admin/agentes#aprovacoes";
+// ADMIN-2: Aprovações é aba da Central de Agentes (o antigo #aprovacoes abre a mesma aba).
+export const ROTA_EQUIPE = "/admin/agentes?aba=aprovacoes";
 
 export function mostraEquipe(role: string | null | undefined): boolean {
   return role === "admin";

@@ -66,7 +66,7 @@ export const ALCANCE = [
   "app/(dashboard)/admin/ajuda-publicacao/ajuda-publicacao-client.tsx",
   "app/(dashboard)/admin/atendimento/[id]/chamado-client.tsx",
   "app/(dashboard)/admin/atendimento/atendimento-client.tsx",
-  "app/(dashboard)/admin/avaliacoes/forms.tsx",
+  "components/admin/decidir-revisao-avaliacao.tsx",
   "app/(dashboard)/admin/dados-de-teste/nova-jornada.tsx",
   "app/(dashboard)/admin/dados-de-teste/semear-carteira.tsx",
   "app/(dashboard)/admin/documentos/admin-documentos-client.tsx",

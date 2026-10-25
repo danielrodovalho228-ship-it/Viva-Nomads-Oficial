@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { carregarCentral, chamadosEmVermelho, postarRetornosDoMoacir } from "@/lib/data/agentes-actions";
 import { dispararEncaminhamentosDaSessao } from "@/lib/agentes/servidor";
 import { CentralAgentes } from "./central-client";
+import { abaDaUrl } from "@/lib/admin/agentes-abas";
 import { adminDaPagina, contadoresAgentes } from "@/lib/data/admin-indicadores";
 import { AGENTES_DEFINICOES } from "@/lib/admin/indicadores";
 import { tituloDoAdmin } from "@/config/menu-admin";
@@ -26,7 +27,8 @@ const unbounded = localFont({ variable: "--font-display-agentes", src: [
   ], display: "swap" });
 
 /** Central de Agentes (admin). O layout de /admin já exige papel admin. */
-export default async function AgentesPage() {
+export default async function AgentesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = await searchParams;
   // Achado P0/P1 encaminhado a outro agente (0087) dispara a rotina dele na hora.
   await dispararEncaminhamentosDaSessao().catch(() => null);
   // Execuções que o Moacir disparou e já terminaram viram mensagem na conversa dele.
@@ -53,7 +55,7 @@ export default async function AgentesPage() {
           ))}
         </ul>
       )}
-      <CentralAgentes dados={dados} vermelhos={vermelhos} />
+      <CentralAgentes dados={dados} vermelhos={vermelhos} abaInicial={abaDaUrl(typeof sp.aba === "string" ? sp.aba : null)} />
     </div>
   );
 }

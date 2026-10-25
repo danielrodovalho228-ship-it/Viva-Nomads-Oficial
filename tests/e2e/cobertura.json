@@ -241,7 +241,8 @@
         "t241-contas-teste-36",
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t462-admin2-fusoes"
       ]
     },
     "/admin/pedidos": {

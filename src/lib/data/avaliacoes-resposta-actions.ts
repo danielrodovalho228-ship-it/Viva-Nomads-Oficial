@@ -57,7 +57,7 @@ export async function pedirRevisaoAvaliacao(avaliacaoId: string, motivo: string,
     if (error.code === "42501") return { ok: false, error: "Só a pessoa avaliada pede revisão." };
     return { ok: false, error: erroBancoPT(error, "Não foi possível enviar o pedido.") };
   }
-  revalidatePath("/admin/avaliacoes");
+  revalidatePath("/admin/pendencias");
   revalidatePath("/dashboard/avaliacoes");
   return { ok: true };
 }
@@ -98,6 +98,6 @@ export async function decidirRevisaoAvaliacao(contestacaoId: string, decisao: st
       .eq("id", c.avaliacao_id as string);
     if (e2) return { ok: false, error: "Decisão gravada, mas a avaliação não saiu do ar. Tente de novo." };
   }
-  revalidatePath("/admin/avaliacoes");
+  revalidatePath("/admin/pendencias");
   return { ok: true };
 }

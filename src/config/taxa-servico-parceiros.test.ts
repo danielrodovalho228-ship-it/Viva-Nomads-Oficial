@@ -24,13 +24,13 @@ test("texto único: 10% para todas as categorias, 90/10 na origem, a Viva não g
 });
 
 test("admin usa o texto único; as páginas públicas usam as regras claras (Prompt 31a), sempre com a chave de pagamento", () => {
-  assert.match(ler("src/app/(dashboard)/admin/fotografos/page.tsx"), /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
+  assert.match(ler("src/app/(dashboard)/admin/parceiros/page.tsx"), /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
   for (const p of ["src/app/(public)/parceiros/page.tsx", "src/app/(public)/parceiros/fotografos/page.tsx"]) {
     assert.match(ler(p), /<RegrasParceiros pagamentoAtivo=\{PAGAMENTO_PARCEIROS_ATIVO\}/, p);
   }
   assert.equal(existsSync("src/config/taxa-parceria.ts"), false);
   assert.equal(existsSync("src/components/parceiros/faixas-taxa.tsx"), false);
-  const admin = ler("src/app/(dashboard)/admin/fotografos/page.tsx");
+  const admin = ler("src/app/(dashboard)/admin/parceiros/page.tsx");
   assert.doesNotMatch(admin, /taxa_valor|TaxaForm|salvarTaxaParceria|config_parceria/);
 });
 
