@@ -89,8 +89,9 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
 
   const contagem = contarPorFiltro(conversations);
   const visiveis = filtrarConversas(conversations, filtro);
-  // A conversa aberta acompanha o chip: se ela saiu do filtro, abre a primeira que sobrou.
-  const active = visiveis.find((c) => c.id === activeId) ?? visiveis[0] ?? conversations[0];
+  // A conversa aberta acompanha o chip: se ela saiu do filtro, abre a primeira que sobrou. E168: filtro sem conversa =
+  // painel da direita vazio (nunca a conversa de outro filtro).
+  const active = visiveis.find((c) => c.id === activeId) ?? visiveis[0];
 
   // Prompt 44: com a conversa aberta (e a aba visível), a próxima mensagem dela não vira push no celular. Renova a cada
   // 5 min enquanto ela fica na tela (a regra do push olha os últimos 10 min).
@@ -157,7 +158,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     }
   }
 
-  if (!active) {
+  if (conversations.length === 0) {
     return (
       <>
         <PageTitle title="Mensagens" />
@@ -227,7 +228,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               onClick={() => openConversation(c.id)}
               className={cn(
                 "flex w-full items-center gap-3 border-b border-sage-200 px-4 py-3 text-left transition-colors",
-                active.id === c.id ? "bg-blue-50 md:bg-blue-50" : "hover:bg-surface-2"
+                active?.id === c.id ? "bg-blue-50 md:bg-blue-50" : "hover:bg-surface-2"
               )}
             >
               {c.foto ? (
@@ -249,6 +250,12 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
         </aside>
 
         {/* Chat — no mobile some quando se está vendo a lista */}
+        {!active ? (
+          <section className="hidden flex-col items-center justify-center gap-2 p-8 text-center md:col-span-2 md:flex" data-testid="mensagens-detalhe-vazio">
+            <p className="font-semibold text-ink">Nenhuma conversa aberta</p>
+            <p className="max-w-sm text-sm text-muted">Não há conversa neste filtro. Escolha outro filtro para ver as suas conversas.</p>
+          </section>
+        ) : (
         <section
           className={cn(
             "flex flex-col md:col-span-2 md:flex",
@@ -413,6 +420,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             </button>
           </form>
         </section>
+        )}
       </div>
     </>
   );
