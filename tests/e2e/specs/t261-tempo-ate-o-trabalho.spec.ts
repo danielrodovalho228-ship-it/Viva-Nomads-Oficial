@@ -205,7 +205,11 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
     try {
       await page.goto(`/buscar?dlat=${HC.lat + 0.03}&dlng=${HC.lng + 0.03}&drot=Rua+Sem+Rota&modo=carro&ate=20`, { waitUntil: "domcontentloaded" });
       // E82-A: o aviso mora no painel da pílula Local (com o "Perto de…"); fecha antes de ler os cartões.
-      await page.getByTestId("pilula-local").click();
+      // O clique antes da hidratação da barra não abre o painel (lab completo de 59b8652d): tenta de novo até abrir.
+      await expect(async () => {
+        if (!(await page.getByTestId("painel-pilula-local").isVisible())) await page.getByTestId("pilula-local").click();
+        await expect(page.getByTestId("painel-pilula-local")).toBeVisible({ timeout: 2_000 });
+      }).toPass({ timeout: 20_000 });
       await expect(page.getByTestId("painel-pilula-local").getByTestId("tempo-indisponivel")).toBeVisible({ timeout: 20_000 });
       await page.getByTestId("painel-pilula-fechar").click();
       const lista = await temposNaTela(page, { rota: false });
