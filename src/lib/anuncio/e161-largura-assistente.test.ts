@@ -44,3 +44,9 @@ test("E161: o rodapé do fluxo alinha com a régua de 1536 px (96rem), não com 
   assert.match(css, /\.vn-rodape-fluxo \[data-rodape-linha\] \{\s*padding-inline: max\(2rem, calc\(\(100% - 96rem\) \/ 2 \+ 2rem\)\);/);
   assert.doesNotMatch(css, /100% - 72rem/);
 });
+
+test("E161: a faixa da direita do flutuante (CONTA-A C4) não vale no assistente, que não tem o flutuante", () => {
+  const css = ler("src/app/globals.css");
+  assert.match(css, /html:not\(\[data-app\]\) \[data-painel-main\]:not\(\[data-testid="assistente-largura"\]\) \{\s*padding-right: 5rem;/);
+  assert.match(MOLDURA, /data-painel-main[^>]*data-testid="assistente-largura"/);
+});

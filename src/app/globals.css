@@ -485,7 +485,9 @@ body:has([data-testid="barra-fixa-imovel"]) {
 /* CONTA-A C4 — no painel (site), a coluna reserva a faixa da direita onde mora o "Fale com a Viva" redondo (48 px a
    1,5 rem da borda): o botão nunca senta sobre um cartão durante a rolagem. No app o botão não existe. */
 @media (min-width: 768px) {
-  html:not([data-app]) [data-painel-main] {
+  /* E161: o assistente de cadastro fica de fora — ele não tem o flutuante (moldura-assistente) e segue a régua da
+     página do imóvel, com a mesma margem dos dois lados. */
+  html:not([data-app]) [data-painel-main]:not([data-testid="assistente-largura"]) {
     padding-right: 5rem;
   }
 }
