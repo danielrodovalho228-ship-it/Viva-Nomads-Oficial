@@ -143,3 +143,10 @@ test("PROP-0: o layout do painel resolve o contexto do menu no servidor e entreg
   assert.match(p, /createContext<ContadoresPainel \| null>\(null\)/);
   assert.match(p, /export function useContadoresIniciais\(\): ContadoresPainel \| null/);
 });
+
+test("PROP-0 (casca): o estado do menu nasce do valor do servidor e o efeito de releitura fica igual", () => {
+  const s = ler(SHELL);
+  assert.match(s, /import \{ useContadoresIniciais \} from "@\/components\/painel\/contadores-iniciais";/);
+  assert.match(s, /const contadoresIniciais = useContadoresIniciais\(\);\n\s+const \[contadores, setContadores\] = useState<ContadoresPainel>\(contadoresIniciais \?\? CONTADORES_VAZIOS\);/);
+  assert.doesNotMatch(s, /useState<ContadoresPainel>\(CONTADORES_VAZIOS\)/);
+});
