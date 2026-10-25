@@ -122,7 +122,8 @@ export function sanearSugestao(
     typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= max ? v : undefined;
   // Texto fora do limite ou com palavra fora do vocabulário da Viva é DESCARTADO (o dono escreve).
   const texto = (v: unknown, max: number) => {
-    if (typeof v !== "string") return undefined;
+    // A palavra proibida é conferida no texto CRU: o limparSaida já troca o vocabulário (E148-A), e aqui a regra é descartar.
+    if (typeof v !== "string" || temPalavraProibida(v)) return undefined;
     const t = limparSaida(v);
     if (!t || t.length > max || contemContato(t) || temPalavraProibida(t)) return undefined;
     return t;
