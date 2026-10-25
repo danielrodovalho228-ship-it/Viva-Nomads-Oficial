@@ -34,7 +34,8 @@ import { BARRA_ADMIN, MINHA_CONTA_ADMIN } from "@/config/menu-admin";
 import { PapelAtivo } from "@/components/layout/papel-ativo";
 import { papelDaBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
-import { SubabasDono, TopoDono } from "@/components/layout/topo-dono";
+import { MenuConta, Sino, SubabasPainel, TopoPainel, prefixoPapel } from "@/components/layout/topo-dono";
+import { abasDoPapelPainel, itensDaConta, type ItemConta } from "@/config/abas-painel";
 import { cn } from "@/lib/utils";
 import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
 
@@ -183,12 +184,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // ADMIN-1: em /admin* a barra mostra SÓ o admin (grupos da barra-alvo), com "Minha conta →" no rodapé; em
   // /dashboard* o admin vê as áreas de usuário e um item "Painel admin".
   const naAreaAdmin = pathname.startsWith("/admin");
-  // PROP-1: no computador, o modo dono não tem barra lateral — abas no topo, sino, "Conta ▾" e subabas. Fora do
-  // /admin (a barra do admin é o ADMIN-1). No celular nada muda.
-  const donoNoTopo = mode === "owner" && !pathname.startsWith("/admin");
-  async function irParaModoMorador() {
-    setActiveMode("tenant");
-    await salvarModo("tenant").catch(() => {});
+  async function irParaModo(alvo: ViewMode) {
+    setActiveMode(alvo);
+    await salvarModo(alvo).catch(() => {});
     router.push("/dashboard");
   }
   const badges = { "admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando };
@@ -279,6 +277,24 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const fotoNav = naTelaPerfil ? null : myPhoto;
   const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />;
 
+  // MENUS-5 / MORADOR-NAV: fora do /admin, TODO papel navega pelas abas da fonte única (config/abas-painel.ts) — no
+  // computador, abas no topo + sino + "Conta ▾" (sem barra lateral); no celular, a barra de baixo + o avatar do topo,
+  // que abre a mesma Conta. Nada do dono no modo morador e vice-versa (E167). A barra lateral fica só no /admin.
+  const papelTopo = naAreaAdmin ? null : papelAtivo;
+  const comContrato = estadiaAtiva || contratosParaAssinar > 0;
+  const abasTopo = abasDoPapelPainel(papelTopo, { comContrato });
+  const itensConta = itensDaConta(papelTopo, { temImovel, admin: display.role === "admin" });
+  const aoAcaoConta = (acao: NonNullable<ItemConta["acao"]>) => {
+    if (acao === "sair") handleSignOut();
+    else void irParaModo(acao === "modo-morador" ? "tenant" : "owner");
+  };
+  const contaCelular = papelTopo ? (
+    <div className="flex items-center gap-1">
+      <Sino px={`${prefixoPapel(papelTopo)}-celular`} />
+      <MenuConta px={prefixoPapel(papelTopo)} nome={nomeAvatar} foto={fotoNav} itens={itensConta} onAcao={aoAcaoConta} compacto />
+    </div>
+  ) : null;
+
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/10 px-4">
@@ -336,10 +352,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // fluxo normal (rolagem da página inteira).
     <div className="flex min-h-screen w-full bg-surface-2 lg:h-screen lg:overflow-hidden print:h-auto print:overflow-visible">
       {/* Sidebar desktop — fixa (altura da viewport). */}
-      <aside className={cn("web-only hidden w-64 shrink-0 bg-forest lg:block lg:h-screen print:hidden", donoNoTopo && "lg:hidden")} data-testid="barra-lateral">{sidebar}</aside>
+      {!papelTopo && <aside className="web-only hidden w-64 shrink-0 bg-forest lg:block lg:h-screen print:hidden" data-testid="barra-lateral">{sidebar}</aside>}
 
       {/* Drawer mobile */}
-      {open && (
+      {open && !papelTopo && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
           <aside className="absolute left-0 top-0 h-full w-64 bg-forest">{sidebar}</aside>
@@ -349,23 +365,26 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden print:overflow-visible">
         {/* Topbar mobile (logo + menu) */}
         {/* Modo app: cabeçalho curto (voltar + título), no lugar do topo do site. */}
-        <AppHeader direita={<>{papelChip}{chipModo}</>} />
+        <AppHeader direita={<>{contaCelular ?? papelChip}{chipModo}</>} />
 
-        {donoNoTopo && (
-          <TopoDono pathname={pathname} nome={nomeAvatar} foto={fotoNav} admin={display.role === "admin"} onModoMorador={() => void irParaModoMorador()} onSair={handleSignOut} />
+        {papelTopo && (
+          <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} itensConta={itensConta} onAcao={aoAcaoConta} />
         )}
-        <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", donoNoTopo && "lg:hidden")}>
+        <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", papelTopo && "lg:hidden")} data-testid="topo-celular">
           <Logo className="lg:hidden" />
           <div className="flex items-center gap-2">
-            {papelChip}
+            {contaCelular ?? papelChip}
             {chipModo}
-          <button
-            className="grid h-10 w-10 place-items-center rounded-lg text-forest lg:hidden"
-            onClick={() => setOpen(true)}
-            aria-label="Abrir menu"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
+            {/* Só na área da equipe: o menu lateral (no resto, a barra de baixo e a Conta no avatar — MENUS-5). */}
+            {!papelTopo && (
+              <button
+                className="grid h-10 w-10 place-items-center rounded-lg text-forest lg:hidden"
+                onClick={() => setOpen(true)}
+                aria-label="Abrir menu"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -391,11 +410,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* E69: marca a navegação interna para o "voltar" das subtelas no celular. */}
         <MarcaNavInterna />
         <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
-          {donoNoTopo && (
-            <div className="hidden lg:block">
-              <SubabasDono pathname={pathname} />
-            </div>
-          )}
+          {papelTopo && <SubabasPainel papel={papelTopo} abas={abasTopo} pathname={pathname} />}
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />
@@ -404,7 +419,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Barra inferior do app (ciente do modo); esconde-se no desktop e nas
           telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
-      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: badgeDaEquipe(contadores) }} />
+      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: badgeDaEquipe(contadores) }} comContrato={comContrato} />
     </div>
   );
 }

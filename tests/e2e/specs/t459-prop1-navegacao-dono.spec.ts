@@ -46,7 +46,7 @@ test.describe("T459 — PROP-1: navegação do dono", () => {
 
     await topo.getByTestId("conta-dono").click();
     const menu = page.getByTestId("menu-conta-dono");
-    await expect(menu.getByRole("menuitem")).toHaveText(["Perfil e dados", "Verificação", "Pagamentos e recebimentos", "Notificações", "Avaliações recebidas", "Plano", "Ferramentas", "Modo morador", "Sair"]);
+    await expect(menu.getByRole("menuitem")).toHaveText(["Perfil e dados", "Verificação", "Pagamentos e recebimentos", "Notificações", "Avaliações recebidas", "Plano", "Modo morador", "Sair"]); // MENUS-5: Ferramentas saíram da Conta
     await page.screenshot({ path: `${SAIDA}/t459-conta-1280.png` });
     await page.keyboard.press("Escape");
     await expect(menu).toHaveCount(0);
@@ -66,13 +66,16 @@ test.describe("T459 — PROP-1: navegação do dono", () => {
     await page.context().close();
   });
 
-  test("3. celular: sem o topo do dono; a barra de abas do NAV-A continua", async ({ browser }) => {
+  test("3. celular: sem o topo do computador; a barra de baixo com as MESMAS 5 abas (MENUS-5); subabas à vista", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.locator("nav[data-papel]").filter({ visible: true })).toHaveCount(1, { timeout: 30_000 });
     await expect(page.getByTestId("topo-dono")).toBeHidden();
-    await expect(page.getByTestId("subabas-dono").filter({ visible: true })).toHaveCount(0);
+    await expect(page.locator("nav[data-papel]").filter({ visible: true }).locator("a")).toHaveText(["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"]);
+    // MENUS-5: no celular as subabas também aparecem (é o caminho para Caução, Recibos, Propostas…).
+    await page.goto("/dashboard/garantias", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("subabas-dono").filter({ visible: true })).toHaveCount(1, { timeout: 30_000 });
     await page.screenshot({ path: `${SAIDA}/t459-inicio-390.png` });
     await page.context().close();
   });

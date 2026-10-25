@@ -23,7 +23,9 @@ test.describe("T318 — papel ativo com fonte única (PAPEL-B)", () => {
   const ids: Record<string, string> = {};
 
   const gravado = async () => (await adm().from("profiles").select("papel_ativo").eq("id", ids.conta).single()).data?.papel_ativo ?? null;
-  const selo = (p: Page) => p.locator('[data-testid="papel-ativo"]').filter({ visible: true }).first();
+  // MENUS-5: o selo do papel saiu do topo (a Conta abre no avatar); o papel ativo aparece na navegação do papel —
+  // o topo do computador e a barra de baixo do celular levam data-papel.
+  const selo = (p: Page) => p.locator('header[data-papel], nav[data-papel]').filter({ visible: true }).first();
 
   async function abrir(browser: Browser, largura: number): Promise<Page> {
     const p = await entrar(browser, conta.email, senha);
