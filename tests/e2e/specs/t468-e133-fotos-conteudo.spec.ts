@@ -141,8 +141,9 @@ test.describe("T468 — E133: fotos, vídeo e link que não mostram o imóvel", 
     await adm().from("properties").update({ video_url: url }).eq("id", ids.comLink);
     const visitante = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
     await visitante.goto(`/imoveis/${ids.comLink}`, { waitUntil: "domcontentloaded" });
-    await expect(visitante.getByTestId("galeria-tile-0")).toBeVisible({ timeout: 30_000 });
-    await expect(visitante.locator('[data-item="video"]')).toHaveCount(0);
+    const mosaico = visitante.getByTestId("galeria-mosaico");
+    await expect(mosaico.getByTestId("galeria-tile-0")).toBeVisible({ timeout: 30_000 });
+    await expect(mosaico.locator('[data-item="video"]')).toHaveCount(0);
 
     // O admin vê o link pendente em Imóveis e aprova; a página passa a mostrar o vídeo.
     const a = await (await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } })).newPage();
@@ -154,7 +155,7 @@ test.describe("T468 — E133: fotos, vídeo e link que não mostram o imóvel", 
     await expect(linha).toHaveCount(0, { timeout: 20_000 });
     await a.context().close();
     await visitante.reload({ waitUntil: "domcontentloaded" });
-    await expect(visitante.locator('[data-item="video"]')).toHaveCount(1, { timeout: 30_000 });
+    await expect(visitante.getByTestId("galeria-mosaico").locator('[data-item="video"]')).toHaveCount(1, { timeout: 30_000 });
     await visitante.context().close();
   });
 });

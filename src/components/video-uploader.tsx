@@ -25,6 +25,7 @@ export function VideoUploader({
   onVideoUrlChange,
   conteudo,
   onConteudo,
+  segurarAteConferir = false,
 }: {
   path: string;
   onChange: (path: string) => void;
@@ -33,6 +34,11 @@ export function VideoUploader({
   /** E133 (c): a triagem dos quadros do vídeo enviado (início, meio, fim) e a confirmação do dono, se sinalizado. */
   conteudo?: ConteudoFoto | null;
   onConteudo?: (c: ConteudoFoto | null, caminho: string) => void;
+  /**
+   * Edição de anúncio publicado (o vídeo vai para o anúncio ao gravar): o vídeo novo só é entregue (`onChange`) depois
+   * da triagem; sinalizado, fica aqui esperando o dono confirmar ou descartar — nunca aparece no anúncio antes.
+   */
+  segurarAteConferir?: boolean;
 }) {
   const ownerId = useAuthStore((s) => s.user?.id);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +51,8 @@ export function VideoUploader({
   const [linkConferido, setLinkConferido] = useState<{ url: string; ok: boolean; erro?: string } | null>(null);
   const [conferindoLink, setConferindoLink] = useState(false);
   const [conferindoVideo, setConferindoVideo] = useState(false);
+  // Vídeo enviado e sinalizado que ainda não foi entregue (só com segurarAteConferir).
+  const [segurado, setSegurado] = useState<{ caminho: string; conteudo: ConteudoFoto } | null>(null);
   const linkAtual = (videoUrl ?? "").trim();
   useEffect(() => {
     if (!linkAtual || erroFormato || !onVideoUrlChange) return;
@@ -72,12 +80,26 @@ export function VideoUploader({
     try {
       const novo = await enviarVideoAnuncio(file, ownerId);
       const antigo = path;
-      onChange(novo);
-      // E133 (c): início, meio e fim do vídeo passam pela mesma conferência das fotos.
-      if (onConteudo) {
+      if (segurarAteConferir && onConteudo) {
+        // E133 (c), edição: confere ANTES de entregar; sinalizado fica segurado até o dono decidir.
         setConferindoVideo(true);
-        onConteudo(await conferirVideo(file).catch(() => null), novo);
+        const c = await conferirVideo(file).catch(() => null);
         setConferindoVideo(false);
+        if (conteudoPendente(c)) {
+          if (segurado) await removerVideoAnuncio(segurado.caminho);
+          setSegurado({ caminho: novo, conteudo: c! });
+          return;
+        }
+        onChange(novo);
+        onConteudo(c, novo);
+      } else {
+        onChange(novo);
+        // E133 (c): início, meio e fim do vídeo passam pela mesma conferência das fotos.
+        if (onConteudo) {
+          setConferindoVideo(true);
+          onConteudo(await conferirVideo(file).catch(() => null), novo);
+          setConferindoVideo(false);
+        }
       }
       if (antigo) await removerVideoAnuncio(antigo); // troca: o anterior sai do bucket
     } catch (e) {
@@ -136,7 +158,49 @@ export function VideoUploader({
             Conferindo se o vídeo mostra o imóvel…
           </p>
         )}
-        {path && conteudoPendente(conteudo) && (
+        {segurado && (
+          <div role="alert" className="mt-3 rounded-lg border border-red-600 bg-red-50 p-3 text-sm text-red-800" data-testid="aviso-video-nao-imovel">
+            <p className="flex items-start gap-2">
+              <AlertTriangle className="mt-1 h-4 w-4 shrink-0" aria-hidden />
+              <span>
+                <strong>{AVISO_VIDEO_NAO_IMOVEL}.</strong> {segurado.conteudo.motivo ? ROTULO_MOTIVO[segurado.conteudo.motivo] : ""} Ele só vai para o anúncio se
+                você confirmar.
+              </span>
+            </p>
+            <span className="mt-2 flex flex-wrap items-start gap-2">
+              <ConfirmarNaPagina
+                aviso="Confirmo que este vídeo mostra o imóvel anunciado."
+                confirmar="Confirmo, é do imóvel"
+                onConfirmar={async () => {
+                  const s2 = segurado;
+                  setSegurado(null);
+                  const antigo = path;
+                  onChange(s2.caminho);
+                  onConteudo?.(confirmarConteudo(s2.conteudo), s2.caminho);
+                  if (antigo) await removerVideoAnuncio(antigo);
+                }}
+                size="sm"
+                variant="ghost"
+                testid="video-nao-imovel-confirmar"
+              >
+                É do imóvel
+              </ConfirmarNaPagina>
+              <button
+                type="button"
+                className="min-h-11 font-semibold text-red-700 underline underline-offset-4"
+                onClick={async () => {
+                  const s2 = segurado;
+                  setSegurado(null);
+                  await removerVideoAnuncio(s2.caminho);
+                }}
+                data-testid="video-nao-imovel-descartar"
+              >
+                Descartar este vídeo
+              </button>
+            </span>
+          </div>
+        )}
+        {!segurado && path && conteudoPendente(conteudo) && (
           <div role="alert" className="mt-3 rounded-lg border border-red-600 bg-red-50 p-3 text-sm text-red-800" data-testid="aviso-video-nao-imovel">
             <p className="flex items-start gap-2">
               <AlertTriangle className="mt-1 h-4 w-4 shrink-0" aria-hidden />

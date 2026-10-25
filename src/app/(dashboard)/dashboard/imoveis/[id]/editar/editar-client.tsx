@@ -354,17 +354,6 @@ export function EditarImovelClient({
     } else setErro(r.error ?? "Não foi possível gravar o vídeo.");
   }
 
-  /**
-   * E133 (c): na edição o vídeo é gravado ao enviar; se a triagem sinalizar, ele sai do anúncio (coluna limpa, o arquivo
-   * fica) até o dono remover ou confirmar — a confirmação grava de novo.
-   */
-  async function mudarConteudoDoVideo(c: ConteudoFoto | null, caminho: string) {
-    setVideoConteudo(c);
-    if (demo || !caminho) return;
-    if (conteudoPendente(c)) await gravarVideoArquivo(property.id, "").catch(() => null);
-    else if (c?.naoImovel && c.confirmadaEm) await gravarVideoArquivo(property.id, caminho).catch(() => null);
-  }
-
   async function publish() {
     if (!comp.podePublicar || !aceitouIa) return;
     setPublishing(true);
@@ -527,7 +516,7 @@ export function EditarImovelClient({
           saved={savedSection === "video"}
           onSave={() => saveSection("video")}
         >
-          <VideoUploader path={videoArquivo} onChange={(p) => void mudarVideoArquivo(p)} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} conteudo={videoConteudo} onConteudo={(c, caminho) => void mudarConteudoDoVideo(c, caminho)} />
+          <VideoUploader path={videoArquivo} onChange={(p) => void mudarVideoArquivo(p)} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} conteudo={videoConteudo} onConteudo={(c) => setVideoConteudo(c)} segurarAteConferir />
         </Section>
 
         {/* Endereço exato (complemento do prompt 23): sem ele, a visita presencial confirmada não mostra rua e número. */}
