@@ -16,10 +16,10 @@ import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
 import { faixaDocumentoAprovado, hrefParaMelhorar, type Prontidao } from "@/lib/anuncio/prontidao";
-import { cn } from "@/lib/utils";
+import { cn, formatBRL } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
-import { calcularTudoIncluido } from "@/lib/precos";
+import { precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
@@ -206,10 +206,15 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                     </div>
                   )}
                   <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
-                    <PrecoComContexto
-                      rotulo={rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
-                      destaque="lg"
-                    />
+                    <div>
+                      <p className="text-xs text-muted" data-testid="anuncio-preco-rotulo">
+                        {ROTULO_TOTAL_MES} · {ROTULO_MENSAL} {formatBRL(precoDoImovel(p).mensal)}
+                      </p>
+                      <PrecoComContexto
+                        rotulo={rotuloPreco({ mensal: precoDoImovel(p).totalPorMes, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
+                        destaque="lg"
+                      />
+                    </div>
                     {/* Itens fictícios não têm página/edição real — sem links. */}
                     {!demoItem && (
                       <div className="flex flex-wrap gap-2">

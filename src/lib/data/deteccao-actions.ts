@@ -16,6 +16,8 @@ import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { deteccaoAtiva } from "@/lib/fotos/deteccao-chave";
 import { detectarNaFoto } from "@/lib/fotos/deteccao-modelo";
 import { analisarFotosNovas } from "@/lib/fotos/deteccao-fluxo";
+import { medirTela, pareceTela } from "@/lib/fotos/conteudo";
+import sharp from "sharp";
 import {
   LIMITE_FOTOS_DIA_ANUNCIO,
   LIMITE_FOTOS_DIA_DONO,
@@ -74,6 +76,16 @@ type Dono = NonNullable<Awaited<ReturnType<typeof donoDoAnuncio>>>;
 async function galeria(c: Dono, propertyId: string): Promise<string[]> {
   const { data } = await c.admin.from("property_photos").select("url").eq("property_id", propertyId).order("sort_order");
   return ((data ?? []) as { url: string }[]).map((f) => caminhoDaGaleria(f.url, c.uid)).filter((x): x is string => !!x);
+}
+
+/** E142: a mesma medida local de "tela" do Passo 2 (pixels chapados + poucas cores), sem rede. Falhou: não é tela. */
+async function fotoPareceTela(bytes: Uint8Array): Promise<boolean> {
+  try {
+    const { data, info } = await sharp(Buffer.from(bytes), { limitInputPixels: 20_000_000 }).resize(256, 256, { fit: "inside" }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    return pareceTela(medirTela(data, info.width, info.height));
+  } catch {
+    return false;
+  }
 }
 
 async function sha256(bytes: Uint8Array): Promise<string> {
@@ -137,6 +149,8 @@ export async function analisarFotosDoAnuncio(propertyId: string): Promise<Estado
         return data ? new Uint8Array(await data.arrayBuffer()) : null;
       },
       hash: sha256,
+      // Laboratório: os "bytes" são o caminho (não há imagem para medir).
+      pareceTela: simulado ? undefined : fotoPareceTela,
       limite: async () =>
         (await consumirLimite(`deteccao:anuncio:${propertyId}`, LIMITE_FOTOS_DIA_ANUNCIO, DIA)) &&
         (await consumirLimite(`deteccao:dono:${c.uid}`, LIMITE_FOTOS_DIA_DONO, DIA)),

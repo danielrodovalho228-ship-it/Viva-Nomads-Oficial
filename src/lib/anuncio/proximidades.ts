@@ -103,3 +103,8 @@ export function servicosPorPerto(visiveis: ItemPerto[]): { tipo: TipoServico; ro
   }
   return out;
 }
+
+/** E145: a busca automática não respondeu (endereço sem ponto, limite do dia, falha de rede) — não é "não há lugares". */
+export function buscaNaoRespondeu(fonte: string | null | undefined): boolean {
+  return fonte === "sem_ponto" || fonte === "limite" || fonte === "erro";
+}

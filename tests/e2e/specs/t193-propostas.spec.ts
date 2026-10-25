@@ -146,6 +146,8 @@ test.describe("T193 — propostas", () => {
       const acordo = dono.getByTestId("fechamento-proposta");
       await expect(acordo).toContainText("3.008", { timeout: 20_000 });
       await expect(acordo).toContainText("18.048");
+      // PROP-2: a conta aberta da proposta (sem extras neste imóvel: 6 × R$ 3.008).
+      await expect(dono.getByTestId("fechamento-proposta-conta")).toContainText(/6 × R\$\s3\.008 = R\$\s18\.048/);
       await dono.screenshot({ path: `${SAIDA}/t193-6-fechamento-${largura}.png`, fullPage: false });
       // Taxa congelada no aceite (1 imóvel ativo = 12%) e candidatura aceita.
       const { data: p } = await adm().from("propostas").select("status, taxa_congelada").eq("id", id).single();

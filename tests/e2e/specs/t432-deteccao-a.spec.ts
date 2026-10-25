@@ -70,7 +70,7 @@ test.describe("T432 — Detecção-A: a tela das sugestões das fotos", () => {
   });
 
   for (const w of LARGURAS) {
-    test(`2. a ${w} px: sugestão com "Confirmar"/"Não é isso", comodidade tracejada e o alerta do que falta`, async ({ browser }) => {
+    test(`2. a ${w} px: sugestão com "Confirmar"/"Não é isso", comodidade tracejada, detecção no topo e uma cobrança só`, async ({ browser }) => {
       const page = await entrar(browser, dono.email, senha);
       await ligarNoLaboratorio(page);
       await largura(page, w);
@@ -85,20 +85,17 @@ test.describe("T432 — Detecção-A: a tela das sugestões das fotos", () => {
       await expect(chip).toHaveAttribute("aria-pressed", "false");
       await expect(chip.getByTestId("comodidade-confirme-maquina_lavar")).toHaveText("Confirme");
       expect(await chip.evaluate((el) => getComputedStyle(el).borderStyle)).toBe("dashed");
-      const alerta = page.getByTestId("deteccao-falta");
-      await expect(alerta).toBeVisible();
-      await expect(alerta).toContainText("Falta foto de:");
-      await expect(page.getByTestId("deteccao-falta-enviar")).toHaveAttribute("href", "#nivel-cadastro-falta");
-      // O alerta vem antes da grade de comodidades.
-      const [a, g] = await Promise.all([alerta.boundingBox(), page.getByTestId("etapa-encontramos").boundingBox()]);
-      expect(a!.y).toBeLessThan(g!.y);
+      // E141: sem o "Falta foto de" no topo — a cobrança das fotos é uma só, no bloco do nível (opcional).
+      // E142: a detecção vem antes da grade de comodidades.
+      await expect(page.getByTestId("deteccao-falta")).toHaveCount(0);
+      await expect(page.getByTestId("nivel-cadastro-falta")).toBeVisible();
+      const [b, g] = await Promise.all([bloco.boundingBox(), page.getByTestId("etapa-encontramos").boundingBox()]);
+      expect(b!.y).toBeLessThan(g!.y);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: `tests/laboratorio/saida/t432-deteccao-topo-${w}.png` });
       await bloco.scrollIntoViewIfNeeded();
       await bloco.screenshot({ path: `tests/laboratorio/saida/t432-deteccao-bloco-${w}.png` });
-      await page.getByTestId("deteccao-falta-enviar").click();
-      await expect(page.getByTestId("nivel-cadastro-falta")).toBeInViewport();
       await page.context().close();
     });
   }

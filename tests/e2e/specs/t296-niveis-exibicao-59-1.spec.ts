@@ -197,7 +197,8 @@ test.describe("T296 — Adendo 59.1, Parte A: níveis na tela", () => {
       await expect(bloco.getByTestId("nivel-cadastro-agora")).toHaveAttribute("data-nivel", "essencial", { timeout: 30_000 });
       await expect(bloco.getByTestId("nivel-cadastro-agora")).toContainText("Agora: Essencial");
       await expect(bloco.getByTestId("nivel-cadastro-falta")).toHaveAttribute("data-proximo", "conforto");
-      await expect(bloco).toContainText("Para chegar a Conforto");
+      // E141: subir de nível é opcional (antes, "Para chegar a Conforto").
+      await expect(bloco).toContainText("Subir para Conforto · opcional");
       await expect(bloco.getByTestId("nivel-cadastro-item-ar_quarto_principal")).toContainText("Ar-condicionado no quarto principal");
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(page);

@@ -163,10 +163,22 @@ export function caminhoInterno(url: string): string {
 
 // ── Arquivos de verificação de domínio ──────────────────────────────────────
 
-/** apple-app-site-association: inclui só as telas do app e exclui auth. */
+/**
+ * Ramos que o iPhone NUNCA entrega ao app (ficam fora do arquivo da Apple), embora continuem na lista do app:
+ *  • /admin e /admin/*: o app sempre manda o admin para o navegador; com o caminho no arquivo, o link de admin
+ *    tocado no iPhone abriria o app só para voltar ao navegador;
+ *  • /auth e /auth/*: entrar é fluxo de navegador (o login com Google não funciona em visualização embutida) e o
+ *    link de e-mail de login tem de abrir direto no navegador.
+ * Só o arquivo da Apple muda: o Android (intentFilters), o aviso do app e a faixa "Abrir no app" seguem ROTAS_APP.
+ */
+export const FORA_DO_AASA = ["/admin", "/auth"] as const;
+
+const foraDoAasa = (caminho: string) => FORA_DO_AASA.some((f) => caminho === f || caminho.startsWith(`${f}/`));
+
+/** apple-app-site-association: inclui só as telas do app e exclui auth (e nada de FORA_DO_AASA). */
 export function aasa(appIds: string[]): unknown {
   const exclusoes = ROTAS_AUTH.flatMap((r) => [{ "/": r.caminho, exclude: true }, { "/": `${r.caminho}/*`, exclude: true }]);
-  const inclusoes = ROTAS_APP.flatMap((r) => (r.abaixo ? [{ "/": r.caminho }, { "/": `${r.caminho}/*` }] : [{ "/": r.caminho }]));
+  const inclusoes = ROTAS_APP.filter((r) => !foraDoAasa(r.caminho)).flatMap((r) => (r.abaixo ? [{ "/": r.caminho }, { "/": `${r.caminho}/*` }] : [{ "/": r.caminho }]));
   return {
     applinks: { details: [{ appIDs: appIds, components: [...exclusoes, ...inclusoes] }] },
     webcredentials: { apps: appIds },

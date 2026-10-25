@@ -15,7 +15,7 @@ import {
 import { itensDisponiveis, MAX_FAIXAS, PCT_MAX, type Negociacao, type LimitesPrivados } from "@/lib/anuncio/negociacao";
 import { TEXTO_TETO_RODADAS } from "@/lib/propostas/regras";
 import { cn, formatBRL } from "@/lib/utils";
-import { MAX_POR_CATEGORIA_PAGINA, ORDEM_CATEGORIAS_PAGINA, textoDistancia } from "@/lib/anuncio/proximidades";
+import { MAX_POR_CATEGORIA_PAGINA, ORDEM_CATEGORIAS_PAGINA, buscaNaoRespondeu, textoDistancia } from "@/lib/anuncio/proximidades";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
@@ -35,11 +35,15 @@ const ROTULO_CATEGORIA: Record<string, string> = { saude: "Saúde", educacao: "E
  * Cada lugar tem o interruptor "Mostrar" (desligado = "não mostrar" no anúncio) e "Está errado" (motivo curto que a
  * equipe vê). Três estados, uma mensagem por vez: procurando, a lista por categoria, ou "não achamos" com "Adicionar
  * um lugar". Sem endereço completo, o aviso de completar. Adicionar à mão só o que faltou, com o endereço do lugar.
+ * E145: a busca é automática (raio de 2 km) e a tela diz a verdade sobre ela — "não respondeu agora" (provedor fora,
+ * limite do dia, sem rede) é diferente de "não há lugares"; o manual é um complemento discreto, nunca o caminho principal.
  */
 export function ProximidadesAutomaticas({
   itens,
   carregando,
   buscou,
+  fonte = null,
+  onTentarDeNovo,
   desmarcados,
   onAlternar,
   manuais,
@@ -51,6 +55,9 @@ export function ProximidadesAutomaticas({
   carregando: boolean;
   /** A busca já rodou para o endereço atual (com ou sem resultado). */
   buscou: boolean;
+  /** E145: de onde veio a última resposta (sem_ponto, limite e erro = a busca não respondeu). */
+  fonte?: string | null;
+  onTentarDeNovo?: () => void;
   desmarcados: string[];
   onAlternar: (chave: string) => void;
   manuais: Proximity[];
@@ -61,7 +68,8 @@ export function ProximidadesAutomaticas({
 }) {
   const temItens = !carregando && !!itens && itens.length > 0;
   const [adicionando, setAdicionando] = useState(manuais.length > 0);
-  const estado = carregando ? "carregando" : temItens ? "achou" : buscou ? "vazio" : "aguardando";
+  const naoRespondeu = buscaNaoRespondeu(fonte);
+  const estado = carregando ? "carregando" : temItens ? "achou" : buscou ? (naoRespondeu ? "indisponivel" : "vazio") : "aguardando";
   return (
     <div className="rounded-xl border border-sage-200 p-4" data-testid="proximidades-osm" data-estado={estado}>
       <p className="flex items-center gap-2 text-sm font-semibold text-forest">
@@ -100,9 +108,19 @@ export function ProximidadesAutomaticas({
           </div>
         </>
       )}
-      {!carregando && !temItens && buscou && (
+      {!carregando && !temItens && buscou && naoRespondeu && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between" data-testid="proximidades-indisponivel">
+          <p className="text-sm text-muted">A busca automática não respondeu agora. Os lugares num raio de 2 km aparecem aqui assim que ela voltar.</p>
+          {onTentarDeNovo && (
+            <Button type="button" variant="secondary" size="sm" onClick={onTentarDeNovo} data-testid="proximidades-tentar">
+              Tentar de novo
+            </Button>
+          )}
+        </div>
+      )}
+      {!carregando && !temItens && buscou && !naoRespondeu && (
         <p className="text-sm text-muted" data-testid="proximidades-vazio">
-          Não achamos lugares por perto deste endereço. Adicione os que importam para quem vai morar.
+          Não achamos lugares por perto deste endereço, num raio de 2 km.
         </p>
       )}
       {!carregando && !temItens && !buscou && (
@@ -115,9 +133,11 @@ export function ProximidadesAutomaticas({
           {adicionando ? (
             <ManualProximities value={manuais} onChange={onManuais} medir={medir} />
           ) : (
-            <Button type="button" variant="secondary" size="sm" onClick={() => setAdicionando(true)} data-testid="proximidades-adicionar">
-              <Plus className="h-4 w-4" aria-hidden /> Adicionar um lugar
-            </Button>
+            // E145: complemento discreto — um link, não um botão que disputa com a busca automática.
+            <button type="button" onClick={() => setAdicionando(true)} className="inline-flex min-h-11 items-center gap-1 text-sm text-muted underline underline-offset-2 hover:text-ink" data-testid="proximidades-adicionar">
+              <Plus className="h-4 w-4" aria-hidden />
+              Adicionar um lugar
+            </button>
           )}
         </div>
       )}
@@ -248,8 +268,13 @@ export function ProntoParaTrabalhar({
         </span>
       </div>
       <p className="mt-1 text-xs text-muted">Profissionais procuram isso primeiro.</p>
-      <div className="mt-3 flex flex-wrap gap-2">
+      {/* E146: essenciais e opcionais em linhas separadas — o contador conta só a primeira, chip a chip. */}
+      <p className="mt-3 text-xs font-semibold text-ink">Essenciais · contam para a etiqueta</p>
+      <div className="mt-2 flex flex-wrap gap-2" data-testid="trabalho-essenciais">
         {ESSENCIAIS_TRABALHO.map((it) => item(it, true))}
+      </div>
+      <p className="mt-3 text-xs font-semibold text-ink">Opcionais · não contam</p>
+      <div className="mt-2 flex flex-wrap gap-2" data-testid="trabalho-opcionais">
         {OPCIONAIS_TRABALHO.map((it) => item(it, false))}
       </div>
       {semInternet ? (
