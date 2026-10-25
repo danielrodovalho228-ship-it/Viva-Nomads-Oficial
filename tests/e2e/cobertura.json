@@ -20,7 +20,8 @@
         "t343-nivel-busca-sem-beco",
         "t352-varredura-bloco17",
         "t368-varredura-bloco20",
-        "t483-menu-mais-fecha"
+        "t483-menu-mais-fecha",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/acesso-socios": {
@@ -312,7 +313,8 @@
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
         "t438-vocab-a",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/alerta-busca/desligar": {
@@ -380,7 +382,8 @@
         "t317-email-unico-49c1",
         "t353-varredura-bloco18",
         "t471-login-apple",
-        "t522-login-google-sem-apple"
+        "t522-login-google-sem-apple",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/auth/pronto": {
@@ -457,7 +460,8 @@
         "t452-mais-filtros-sem-duplicar",
         "t419-varredura-bloco36",
         "t475-e131-vitrine-conta-teste",
-        "t479-e136b-calendario-pt-br"
+        "t479-e136b-calendario-pt-br",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/cidades": {
@@ -467,7 +471,8 @@
       "specs": [
         "t18-seo-a11y",
         "t20-p1-agentes",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/cidades/[cidade]": {
@@ -508,7 +513,8 @@
         "t201-qa-muse",
         "t311-marco-principal-unico",
         "t354-varredura-bloco19",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/comparar": {
@@ -604,7 +610,9 @@
         "t459-prop1-navegacao-dono",
         "t418-varredura-bloco35",
         "t464-prop6-inicio-dono",
-        "t480-menus5-morador-nav"
+        "t480-menus5-morador-nav",
+        "t540-e167-morador-sem-blocos-de-dono",
+        "t542-menus5-e85-estrutura"
       ]
     },
     "/dashboard/assinatura": {
@@ -717,7 +725,8 @@
         "t392-varredura-bloco24",
         "t403-nav-a",
         "t402-conta-leva2",
-        "t482-e170-caixas-vazias"
+        "t482-e170-caixas-vazias",
+        "t542-menus5-e85-estrutura"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -981,7 +990,9 @@
         "t523-e133-limite-7-8-troca",
         "t524-passo8-conta-meses",
         "t525-e161-rascunho-cheio",
-        "t481-e132a-qualificacao"
+        "t481-e132a-qualificacao",
+        "t544-e136-popup-calendario-ptbr",
+        "t484-e148a-titulo-descricao"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1066,7 +1077,8 @@
         "t315-telas-avaliacao-dono-62a",
         "t329-varredura-bloco11",
         "t351-telas-linkedin-63a",
-        "t379-55e2-filtro-contato-um-toque"
+        "t379-55e2-filtro-contato-um-toque",
+        "t541-e168-painel-acompanha-filtro"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1284,7 +1296,8 @@
         "t72-paginas-institucionais",
         "t311-marco-principal-unico",
         "t325-fotos-ilustrativas-empresas",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/excluir-conta": {
@@ -1331,7 +1344,8 @@
       "specs": [
         "t105-guias",
         "t311-marco-principal-unico",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/guias/[slug]": {
@@ -1433,7 +1447,8 @@
         "t354-varredura-bloco19",
         "t368-varredura-bloco20",
         "t438-vocab-a",
-        "t414-varredura-bloco31"
+        "t414-varredura-bloco31",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/parceiros": {
@@ -1447,7 +1462,8 @@
         "t231-admin-numeros-com-lista",
         "t236-parceiros-ciclo",
         "t311-marco-principal-unico",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/parceiros/avaliadores": {
@@ -1504,7 +1520,8 @@
         "t311-marco-principal-unico",
         "t310-vao-fim-de-pagina",
         "t368-varredura-bloco20",
-        "t479-e136b-calendario-pt-br"
+        "t479-e136b-calendario-pt-br",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/precos": {
@@ -1526,7 +1543,8 @@
         "t359-precos-taxa-e51-e54",
         "t338-varredura-bloco15",
         "t368-varredura-bloco20",
-        "t414-varredura-bloco31"
+        "t414-varredura-bloco31",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/privacidade": {
@@ -1535,7 +1553,8 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/proprietario/[id]": {
@@ -1592,7 +1611,8 @@
       "specs": [
         "t18-seo-a11y",
         "t311-marco-principal-unico",
-        "t438-vocab-a"
+        "t438-vocab-a",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/simulacao": {
@@ -1624,7 +1644,8 @@
         "t18-seo-a11y",
         "t68-comissao-valor-total",
         "t311-marco-principal-unico",
-        "t421-varredura-bloco38"
+        "t421-varredura-bloco38",
+        "t543-e166-fundo-clean-publico"
       ]
     },
     "/tributario": {
