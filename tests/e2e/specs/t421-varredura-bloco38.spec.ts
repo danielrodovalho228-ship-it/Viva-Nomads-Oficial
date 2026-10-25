@@ -9,7 +9,8 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   T421 — VARREDURA DA PÁGINA INTEIRA, BLOCO 38 (Pista C, 25/10). O protocolo do bloco 21 (t385): seis classes, página toda
   rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400 e o clique no primário com resposta
   visível em até 3 s. Sem merge de tela depois do bloco 37 (#1361–#1363 só mexeram em teste), o bloco segue a fila das
-  páginas do cobertura.json que nenhuma varredura de página inteira cobria: polo, guias, termos e a exclusão de conta (sem o clique: o primário apaga a conta). "Imóveis perto de" fica fora: o destino do laboratório
+  páginas do cobertura.json que nenhuma varredura de página inteira cobria: polo, guias, termos e a exclusão de conta
+  (sem o clique: o primário apaga a conta). "Imóveis perto de" fica fora: o destino do laboratório
   nasce inativo (404) e só a t261 o liga, com o ponto; /cidades é só o 308 para /cidades/uberlandia (já varrida).
   Só no laboratório.
 */
