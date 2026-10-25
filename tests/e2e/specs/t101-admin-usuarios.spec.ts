@@ -42,6 +42,10 @@ test.describe("T101 — Admin: lista de usuários", () => {
   // Usuários fica no topo da própria lista (numero-fonte-usuarios, a mesma função da inicial) e o cartão Fundadores
   // saiu; a lista dos fundadores segue com o total no título.
   test("total da lista = número do cartão Usuários", async ({ page }) => {
+    // L-69 (Pista A, ADMIN-4): o número do topo conta todos os perfis (admin e anonimizado incluídos) e a lista só
+    // proprietários e inquilinos ativos — "Usuários: 9 reais · 5 de teste" sobre "Usuários (8)" no laboratório.
+    // Quem corrigir tira este test.fail.
+    test.fail(true, "L-69: número do topo de /admin/usuarios ≠ total da lista");
     await page.goto("/admin/usuarios", { waitUntil: "domcontentloaded" });
     const fonte = page.getByTestId("numero-fonte-usuarios");
     await expect(fonte).toBeVisible({ timeout: 30_000 });
