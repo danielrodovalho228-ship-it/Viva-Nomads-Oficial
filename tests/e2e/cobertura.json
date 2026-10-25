@@ -1871,6 +1871,14 @@
         "t388-varredura-bloco23"
       ]
     },
+    "/admin/sistema": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t463-admin3-sistema"
+      ]
+    },
     "/admin/retencao": {
       "personas": [
         "admin"

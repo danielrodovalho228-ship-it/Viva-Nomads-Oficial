@@ -12,7 +12,8 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { lerParceiroGeral, rotuloCategoria } from "@/lib/parceiros/regras";
 import { FORMULAS_CARTAO_PARCEIRO, numerosCartaoParceiro } from "@/lib/cartoes/compartilhar";
-import { FichaSolicitacao, LinhaAprovada, LinhaAtiva, ParceiroGeralForm, SuporteForm, type Ficha } from "./fichas";
+import { FichaSolicitacao, LinhaAprovada, LinhaAtiva, SuporteForm, type Ficha } from "./fichas";
+import { HREF_SISTEMA } from "@/config/chaves-ambiente";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { TIPOS_PARCEIRO, contarPorTipo, doTipo, hrefParceiros, tipoDoParam } from "@/lib/admin/parceiros-tipo";
 
@@ -250,25 +251,21 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
         )}
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Panel title="Abrir pedido por alguém (suporte)">
-          <SuporteForm />
-        </Panel>
-        <Panel title="Cartão do parceiro geral (busca vazia)">
-          <ParceiroGeralForm inicial={geral} />
-        </Panel>
-      </div>
+      <Panel title="Abrir pedido por alguém (suporte)" className="mt-6">
+        <SuporteForm />
+      </Panel>
 
       <Panel title="Taxa de serviço dos parceiros" className="mt-4">
         <p className="text-sm text-muted" data-testid="texto-taxa-parceria">{textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
       </Panel>
 
-      <Panel title="Chaves" className="mt-4">
-        <p className="text-sm text-ink" data-testid="chave-pagamento-parceiros">
-          PAGAMENTO_PARCEIROS_ATIVO: <strong>{PAGAMENTO_PARCEIROS_ATIVO ? "ligada" : "desligada"}</strong>. Fica na variável NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO da Vercel (só o Daniel liga, quando houver o provedor de
-          pagamento com divisão na origem). Desligada, as telas mostram &quot;Pagamento pela plataforma em breve.&quot;
-        </p>
-      </Panel>
+      {/* ADMIN-3: as chaves moram em Sistema; aqui, só o estado em uma linha. */}
+      <p className="mt-4 text-sm text-muted" data-testid="aviso-chaves-parceiros">
+        Pagamento de parceiros pela plataforma {PAGAMENTO_PARCEIROS_ATIVO ? "ligado" : "desligado"} · cartão do parceiro geral {geral.ligado ? "ligado" : "desligado"} ·{" "}
+        <Link href={`${HREF_SISTEMA}#chaves`} className="font-semibold text-forest underline">
+          alterar em Sistema
+        </Link>
+      </p>
 
       <Panel title="Pedidos de aviso por cidade" className="mt-4">
         {avisosPorCidade.length === 0 ? (
