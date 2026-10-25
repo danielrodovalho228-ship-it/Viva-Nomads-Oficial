@@ -5,18 +5,13 @@ import {
   FILTROS_PAINEL_VAZIOS,
   OPCOES_ESTADIA,
   OPCOES_PORTE_PET,
-  OPCOES_PRECO,
   OPCOES_QUARTOS,
-  OPCOES_TIPO,
   rotuloMostrar,
   type FiltrosPainel,
 } from "@/lib/busca/painel-filtros";
 import { COMODIDADES_FILTRAVEIS } from "@/lib/busca/filtro-comodidades";
 import { TEXTO_GARANTIA_MINIMA } from "@/lib/busca/garantia-minima";
 import { rotuloVerNaoMedidos } from "@/lib/busca/filtro-internet";
-import { ROTULO_DATAS_FLEXIVEIS } from "@/lib/busca/datas-flexiveis";
-import { NIVEIS, ROTULO_NIVEL, type Nivel } from "@/config/niveis";
-import { TEXTO_SEM_NIVEIS, grupoNivel } from "@/lib/busca/filtro-nivel";
 import {
   TEXTO_SEM_INTERNET_MEDIDA,
   faixasInternet,
@@ -44,7 +39,12 @@ import { Chip } from "@/components/ui/chip";
  *   - chip de opção = pill (<Chip>, variante "chip");
  *   - campo (número, seleção, data) = 8 px (rounded-lg);
  *   - botão "Mostrar N imóveis" = 8 px (primário de buttonClasses);
- *   - "Limpar tudo" = texto (terciário, sublinhado, sem caixa).
+ *   - "Limpar tudo" = botão de contorno (secundário), ao lado do "Mostrar N imóveis" (E105: como texto, o Daniel não
+ *     achou).
+ *
+ * E105 (regra E50, cada conteúdo num lugar só): Preço, Tipo, Nível e a data (com "datas flexíveis") têm pílula na linha
+ * de cima e moram SÓ lá; a folha fica com o que não tem pílula — Quartos, Estadia, Do seu jeito, Internet, Contrato e
+ * Comodidades. O rascunho continua carregando os filtros das pílulas (a contagem e o "Mostrar N" respeitam todos).
  */
 export function FolhaFiltros({
   inicial,
@@ -75,9 +75,6 @@ export function FolhaFiltros({
   const [rascunho, setRascunho] = useState<FiltrosPainel>(inicial);
   const n = contar(rascunho);
   const extras = contarNaoMedidos ? contarNaoMedidos(rascunho) : 0;
-  // NIVEL-BUSCA-A: contagem ao vivo de cada nível; opção em 0 desabilitada, as três em 0 tiram o grupo.
-  const porNivel = Object.fromEntries(NIVEIS.map((v) => [v, contar({ ...rascunho, nivelMin: v })])) as Record<Nivel, number>;
-  const nivel = grupoNivel(porNivel, rascunho.nivelMin ?? "");
   // Adendo 3 (E40): a seção só existe com medição na busca; aí as três faixas, cada uma com a contagem.
   const internetVisivel = secaoInternetVisivel(medicoes);
   const faixas = faixasInternet(medicoes);
@@ -94,12 +91,12 @@ export function FolhaFiltros({
       lateral
       testId="painel-filtros"
       footer={
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={() => setRascunho(FILTROS_PAINEL_VAZIOS)}
             data-testid="limpar-tudo"
-            className={buttonClasses({ variant: "tertiary" })}
+            className={buttonClasses({ variant: "secondary", className: "shrink-0 px-4 sm:px-6" })}
           >
             Limpar tudo
           </button>
@@ -123,13 +120,6 @@ export function FolhaFiltros({
     >
       <div className="space-y-6">
         {topo}
-        <Grupo titulo="Preço por mês">
-          {OPCOES_PRECO.map((o) => (
-            <ChipFaceta key={o.valor} f={facetaUnica(contar, rascunho, "maxPrice", o.valor)} ativo={rascunho.maxPrice === o.valor} onClick={() => alterna("maxPrice", o.valor)} testId={`faceta-preco-${o.valor}`}>
-              {o.rotulo}
-            </ChipFaceta>
-          ))}
-        </Grupo>
         <Grupo titulo="Quartos">
           {OPCOES_QUARTOS.map((o) => (
             <ChipFaceta key={o.valor} f={facetaUnica(contar, rascunho, "minBedrooms", o.valor)} ativo={rascunho.minBedrooms === o.valor} onClick={() => alterna("minBedrooms", o.valor)} testId={`faceta-quartos-${o.valor}`}>
@@ -140,21 +130,6 @@ export function FolhaFiltros({
         <Grupo titulo="Estadia" testId="painel-estadia">
           {OPCOES_ESTADIA.map((o) => (
             <ChipFaceta key={o.valor} f={facetaUnica(contar, rascunho, "periodo", o.valor)} ativo={rascunho.periodo === o.valor} onClick={() => alterna("periodo", o.valor)} testId={`faceta-estadia-${o.valor}`}>
-              {o.rotulo}
-            </ChipFaceta>
-          ))}
-        </Grupo>
-        {/* Prompt 55 B2: a data vem da busca; aqui só a flexibilidade (a contagem acima já a considera). */}
-        {rascunho.entrada && (
-          <Grupo titulo={`Entrada em ${rascunho.entrada.split("-").reverse().join("/")}`} testId="painel-datas">
-            <ChipFaceta f={facetaInterruptor(contar, rascunho, "datasFlexiveis")} ativo={rascunho.datasFlexiveis} onClick={() => muda("datasFlexiveis", !rascunho.datasFlexiveis)} testId="faceta-datas-flexiveis">
-              {ROTULO_DATAS_FLEXIVEIS}
-            </ChipFaceta>
-          </Grupo>
-        )}
-        <Grupo titulo="Tipo de imóvel" testId="painel-tipo">
-          {OPCOES_TIPO.map((o) => (
-            <ChipFaceta key={o.valor} f={facetaUnica(contar, rascunho, "tipo", o.valor)} ativo={rascunho.tipo === o.valor} onClick={() => alterna("tipo", o.valor)} testId={`faceta-tipo-${o.valor}`}>
               {o.rotulo}
             </ChipFaceta>
           ))}
@@ -193,28 +168,6 @@ export function FolhaFiltros({
               Só com internet medida
             </ChipFaceta>
           </Grupo>
-        )}
-        {/* Adendo 59.1: "a partir de" — Conforto mostra Conforto e Premium. A contagem de cada chip é ao vivo, com os
-            outros filtros do rascunho. Nível não muda a ordem da lista. */}
-        {nivel.visivel ? (
-          <Grupo titulo="Nível a partir de" testId="painel-nivel">
-            {NIVEIS.map((v) => (
-              <Chip
-                key={v}
-                ativo={rascunho.nivelMin === v}
-                disabled={nivel.desabilitado[v]}
-                onClick={() => muda("nivelMin", rascunho.nivelMin === v ? "" : v)}
-                data-testid={`filtro-nivel-${v}`}
-                className="disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {ROTULO_NIVEL[v]} <span className="tabular-nums text-muted" data-testid={`filtro-nivel-${v}-n`}>· {porNivel[v]}</span>
-              </Chip>
-            ))}
-          </Grupo>
-        ) : (
-          <p className="text-sm text-muted" data-testid="painel-nivel-vazio">
-            {TEXTO_SEM_NIVEIS}
-          </p>
         )}
         {/* E40 (Adendo 3): sem nenhuma medição na busca, a seção some (e o filtro da URL é ignorado na /buscar). */}
         {internetVisivel ? (

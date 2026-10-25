@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpDown, Award, CalendarDays, Home, Map as IconeMapa, MapPin, SlidersHorizontal, Wallet } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
-import { OPCOES_ESTADIA, OPCOES_PRECO, OPCOES_TIPO, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { OPCOES_PRECO, OPCOES_TIPO, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { ROTULO_PILULA, valorDaPilula, type IdPilula } from "@/lib/busca/pilulas";
 import { facetaUnica } from "@/lib/busca/facetas";
 import { NIVEIS, ROTULO_NIVEL, type Nivel } from "@/config/niveis";
-import { grupoNivel } from "@/lib/busca/filtro-nivel";
+import { TEXTO_SEM_NIVEIS, grupoNivel } from "@/lib/busca/filtro-nivel";
 import { ROTULO_DATAS_FLEXIVEIS } from "@/lib/busca/datas-flexiveis";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +60,7 @@ export function BarraPilulas(p: {
   const f = p.filtros;
   const rotuloOrdem = p.opcoesOrdem.find(([v]) => v === p.ordem)?.[1] ?? null;
   const valor = (id: IdPilula) => valorDaPilula(id, f, { local: p.local, perto: p.perto, ordem: p.ordem === "relevance" ? null : rotuloOrdem });
-  const alterna = <K extends "maxPrice" | "periodo" | "tipo">(k: K, v: FiltrosPainel[K], vazio: FiltrosPainel[K]) => p.aplicar({ ...f, [k]: f[k] === v ? vazio : v });
+  const alterna = <K extends "maxPrice" | "tipo">(k: K, v: FiltrosPainel[K], vazio: FiltrosPainel[K]) => p.aplicar({ ...f, [k]: f[k] === v ? vazio : v });
   const porNivel = Object.fromEntries(NIVEIS.map((v) => [v, p.contar({ ...f, nivelMin: v })])) as Record<Nivel, number>;
   const nivel = grupoNivel(porNivel, f.nivelMin ?? "");
 
@@ -84,9 +84,14 @@ export function BarraPilulas(p: {
     );
   };
   const opcao = (key: string, ativo: boolean, n: number | null, desabilitado: boolean, onClick: () => void, rotulo: string, testId: string) => (
-    <Chip key={key} ativo={ativo} disabled={desabilitado} onClick={onClick} data-testid={testId} className="disabled:cursor-not-allowed disabled:opacity-50">
+    <Chip key={key} ativo={ativo} disabled={desabilitado} onClick={onClick} data-testid={testId} data-n={n ?? undefined} className="disabled:cursor-not-allowed disabled:opacity-50">
       {rotulo}
-      {n !== null && <span aria-hidden="true" className="tabular-nums opacity-70"> · {n}</span>}
+      {n !== null && (
+        <span aria-hidden="true" className="tabular-nums opacity-70" data-testid={`${testId}-n`}>
+          {" "}
+          · {n}
+        </span>
+      )}
     </Chip>
   );
 
@@ -125,19 +130,11 @@ export function BarraPilulas(p: {
               </label>
               {f.entrada && (
                 <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
-                  <input type="checkbox" className="h-5 w-5 accent-forest" checked={f.datasFlexiveis} onChange={(e) => p.aplicar({ ...f, datasFlexiveis: e.target.checked })} />
+                  <input type="checkbox" className="h-5 w-5 accent-forest" checked={f.datasFlexiveis} onChange={(e) => p.aplicar({ ...f, datasFlexiveis: e.target.checked })} data-testid="pilula-datas-flexiveis" />
                   {ROTULO_DATAS_FLEXIVEIS}
                 </label>
               )}
-              <fieldset>
-                <legend className="mb-2 text-sm font-semibold text-ink">Período da estadia</legend>
-                <div className="flex flex-wrap gap-2">
-                  {OPCOES_ESTADIA.map((o) => {
-                    const fc = facetaUnica(p.contar, f, "periodo", o.valor);
-                    return opcao(String(o.valor), f.periodo === o.valor, fc.n, fc.desabilitado, () => alterna("periodo", o.valor, 0), o.rotulo, `pilula-datas-${o.valor}`);
-                  })}
-                </div>
-              </fieldset>
+              {/* E105: o período da estadia mora só na folha "Mais filtros" (seção Estadia) — um lugar só. */}
               {p.painelMoradores}
             </div>
           )}
@@ -158,13 +155,19 @@ export function BarraPilulas(p: {
               })}
             </div>
           )}
-          {aberto === "nivel" && (
-            <div className="flex flex-wrap gap-2">
-              {NIVEIS.map((v) =>
-                opcao(v, f.nivelMin === v, porNivel[v], nivel.desabilitado[v], () => p.aplicar({ ...f, nivelMin: f.nivelMin === v ? "" : v }), v === "premium" ? ROTULO_NIVEL[v] : `${ROTULO_NIVEL[v]} ou acima`, `pilula-nivel-${v}`),
-              )}
-            </div>
-          )}
+          {/* E105: o nível mora só aqui (saiu da folha "Mais filtros"); sem nenhum nível na busca, a mesma frase de antes. */}
+          {aberto === "nivel" &&
+            (nivel.visivel ? (
+              <div className="flex flex-wrap gap-2">
+                {NIVEIS.map((v) =>
+                  opcao(v, f.nivelMin === v, porNivel[v], nivel.desabilitado[v], () => p.aplicar({ ...f, nivelMin: f.nivelMin === v ? "" : v }), v === "premium" ? ROTULO_NIVEL[v] : `${ROTULO_NIVEL[v]} ou acima`, `pilula-nivel-${v}`),
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted" data-testid="painel-nivel-vazio">
+                {TEXTO_SEM_NIVEIS}
+              </p>
+            ))}
           {aberto === "ordenar" && (
             <div className="flex flex-col gap-1" role="radiogroup" aria-label="Ordenar resultados">
               {p.opcoesOrdem.map(([v, r]) => (
