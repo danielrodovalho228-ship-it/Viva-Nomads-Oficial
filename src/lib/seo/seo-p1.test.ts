@@ -125,5 +125,7 @@ test("h1: a Visão geral tem um título principal para todos os papéis (varredu
   const inicio = src.slice(src.indexOf("export function VisaoGeral"), src.indexOf("function OwnerDashboard"));
   // Prompt 42/43: o h1 são as decisões de hoje de todos os papéis ("Hoje você tem N decisões" / "Nada pede sua decisão hoje").
   assert.match(inicio, /<PageTitle\s+title=\{tituloDecisoes\(decisoes\.length\)\}/);
-  assert.equal((src.match(/<PageTitle\b/g) ?? []).length, 1, "um h1 só na Visão geral");
+  // E167: o Início só do morador (modo morador) tem o próprio título; cada ramo desenha UM h1 (só um ramo aparece).
+  assert.match(inicio, /<PageTitle\s+title=\{tituloDecisoes\(doMorador\.length\)\}/);
+  assert.equal((src.match(/<PageTitle\b/g) ?? []).length, 2, "um h1 por ramo da Visão geral");
 });

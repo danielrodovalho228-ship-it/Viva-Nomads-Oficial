@@ -8,18 +8,17 @@ import {
   Wallet,
   ClipboardList,
   CalendarDays,
-  UserRound,
+  Users,
+  FileSignature,
 } from "lucide-react";
+import { abasDoPapelPainel, type AbaPainel, type ContextoAbas, type IconeAba } from "../config/abas-painel.ts";
 
 /**
- * Abas da BARRA INFERIOR (Prompt 41, item 2): 5 itens por PAPEL, a mesma lista no site (celular) e no app.
- * Três papéis pela mesma conta (conta única; a troca fica no Perfil): morador, proprietário e parceiro — este
- * só com a parceria aprovada. Admin não tem barra (fica fora do app).
- * Cada aba aponta para uma rota que JÁ existe com essa função (nenhuma tela nova):
- *  - morador:      Início /dashboard · Buscar /buscar · Mensagens · Estadias /dashboard/locacoes · Perfil /dashboard/conta
- *  - proprietário: Início · Anúncios /dashboard/imoveis · Mensagens · Ganhos /dashboard/contratos · Perfil
- *    ("Ganhos" = os recebimentos registrados em Contratos & blocos; rótulo "pago direto na sua conta")
- *  - parceiro:     Início · Pedidos · Agenda · Ganhos (as seções do painel /dashboard/parceiro) · Perfil
+ * Abas da BARRA INFERIOR. MENUS-5: saem da MESMA lista das abas do topo do computador (config/abas-painel.ts) —
+ * rótulos e hrefs idênticos nos dois. No máximo 5 por papel; a aba "Perfil" saiu (a Conta abre no avatar do topo).
+ *  - morador:      Início · Buscar · Pedidos · Mensagens · Minha estadia (só com contrato)
+ *  - proprietário: Início · Anúncios · Interessados · Contratos · Mensagens
+ *  - parceiro:     Início · Pedidos · Agenda · Ganhos · Mensagens
  */
 export interface MobileTab {
   href: string;
@@ -33,9 +32,9 @@ export interface MobileTab {
   badge?: "mensagens" | "interessados" | "equipe";
   /** Rótulo curto quando a barra tem mais de 5 abas (ex.: admin com "Equipe"), para não encavalar. */
   curto?: string;
-  /** Prefixo que também deixa a aba ativa (ex.: /admin para a aba Equipe). */
-  ativoEm?: string;
-  /** Nome acessível mais completo que o rótulo (ex.: "Ganhos: pago direto na sua conta"). */
+  /** Prefixos que também deixam a aba ativa (ex.: as subabas). */
+  ativoEm?: readonly string[];
+  /** Nome acessível mais completo que o rótulo. */
   descricao?: string;
 }
 
@@ -51,34 +50,41 @@ export const ROTULO_PAPEL: Record<PapelBarra, string> = {
 /** "Ganhos" do proprietário: o valor mensal vai direto do morador para o dono (a Viva não segura dinheiro). */
 export const ROTULO_GANHOS_DONO = "pago direto na sua conta";
 
-const INICIO: MobileTab = { href: "/dashboard", label: "Início", icon: House, authRequired: true, hrefSemLogin: "/" };
-const MENSAGENS: MobileTab = { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, authRequired: true, badge: "mensagens" };
-const PERFIL: MobileTab = { href: "/dashboard/conta", label: "Perfil", icon: UserRound, authRequired: true };
+const ICONES: Record<IconeAba, MobileTab["icon"]> = {
+  inicio: House,
+  buscar: Search,
+  pedidos: ClipboardList,
+  mensagens: MessageSquare,
+  estadia: KeyRound,
+  anuncios: Building2,
+  interessados: Users,
+  contratos: FileSignature,
+  agenda: CalendarDays,
+  ganhos: Wallet,
+};
 
-export const MORADOR_TABS: MobileTab[] = [
-  INICIO,
-  { href: "/buscar", label: "Buscar", icon: Search },
-  MENSAGENS,
-  { href: "/dashboard/locacoes", label: "Estadias", icon: KeyRound, authRequired: true },
-  PERFIL,
-];
+/** Aba do topo → aba da barra de baixo (mesmo rótulo e href; as subabas também acendem a aba). */
+function paraBarra(a: AbaPainel): MobileTab {
+  return {
+    href: a.href,
+    label: a.rotulo,
+    icon: ICONES[a.icone],
+    authRequired: a.authRequired,
+    hrefSemLogin: a.hrefSemLogin,
+    badge: a.badge,
+    descricao: a.descricao,
+    ativoEm: [...(a.ativoEm ?? []), ...(a.subabas ?? []).flatMap((s) => [s.href, ...(s.ativoEm ?? [])])].filter((h) => h !== a.href),
+  };
+}
 
-export const PROPRIETARIO_TABS: MobileTab[] = [
-  INICIO,
-  { href: "/dashboard/imoveis", label: "Anúncios", icon: Building2, authRequired: true },
-  MENSAGENS,
-  { href: "/dashboard/contratos", label: "Ganhos", icon: Wallet, authRequired: true, descricao: `Ganhos: ${ROTULO_GANHOS_DONO}` },
-  PERFIL,
-];
+/** As abas da barra do papel (com contrato, o morador ganha "Minha estadia"). */
+export function abasDaBarra(papel: PapelBarra, ctx?: ContextoAbas): MobileTab[] {
+  return abasDoPapelPainel(papel, ctx).map(paraBarra);
+}
 
-/** Parceiro aprovado: as três abas do meio são as seções do painel do parceiro (âncoras em /dashboard/parceiro). */
-export const PARCEIRO_TABS: MobileTab[] = [
-  INICIO,
-  { href: "/dashboard/parceiro#pedidos", label: "Pedidos", icon: ClipboardList, authRequired: true, ativoEm: "/dashboard/servicos/pedidos" },
-  { href: "/dashboard/parceiro#agenda", label: "Agenda", icon: CalendarDays, authRequired: true },
-  { href: "/dashboard/parceiro#ganhos", label: "Ganhos", icon: Wallet, authRequired: true },
-  PERFIL,
-];
+export const MORADOR_TABS: MobileTab[] = abasDaBarra("morador", { comContrato: true });
+export const PROPRIETARIO_TABS: MobileTab[] = abasDaBarra("proprietario");
+export const PARCEIRO_TABS: MobileTab[] = abasDaBarra("parceiro");
 
 export const ABAS_POR_PAPEL: Record<PapelBarra, MobileTab[]> = {
   morador: MORADOR_TABS,
@@ -102,8 +108,8 @@ export function papelDaBarra(p: {
 }
 
 /** Abas do papel (admin: nenhuma). */
-export function abasDoPapel(papel: PapelBarra | null): MobileTab[] {
-  return papel ? ABAS_POR_PAPEL[papel] : [];
+export function abasDoPapel(papel: PapelBarra | null, ctx?: ContextoAbas): MobileTab[] {
+  return papel ? abasDaBarra(papel, ctx) : [];
 }
 
 /** Títulos das telas no cabeçalho curto do app. */
