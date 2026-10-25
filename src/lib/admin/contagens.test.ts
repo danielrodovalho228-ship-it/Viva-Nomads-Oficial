@@ -47,6 +47,12 @@ test("cada número da inicial = o número da página de destino (a MESMA funçã
   // A regra das contas de teste é uma só: idsContasTeste (profiles.is_teste).
   assert.match(dados, /import \{ idsContasTeste \} from "@\/lib\/data\/admin-indicadores"/);
   assert.match(dados, /export async function contarUsuarios[\s\S]*?is_teste/);
+  // L-69: o número do topo de /admin/usuarios e a lista padrão usam a MESMA regra (PAPEIS_USUARIOS, sem anonimizados).
+  const contar = dados.slice(dados.indexOf("export async function contarUsuarios"), dados.indexOf("export async function contarEmailsTeste"));
+  assert.match(contar, /\.is\("anonymized_at", null\)\.in\("role", \[\.\.\.PAPEIS_USUARIOS\]\)/, "contarUsuarios usa a regra da lista");
+  const lista = ler("app/(dashboard)/admin/usuarios/page.tsx");
+  assert.match(lista, /\.is\("anonymized_at", null\)\.in\("role", f\.papel \? \[f\.papel\] : \[\.\.\.PAPEIS_USUARIOS\]\)/, "a lista padrão usa a mesma regra");
+  assert.ok(!/\["owner", "tenant"\]/.test(lista), "a lista não repete os papéis à mão");
 });
 
 test("a inicial: rodapé, saúde e no máximo ~6 leituras em paralelo", () => {

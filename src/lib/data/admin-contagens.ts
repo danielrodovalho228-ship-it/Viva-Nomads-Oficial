@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { idsContasTeste } from "@/lib/data/admin-indicadores";
 import { tipoImovel } from "@/lib/admin/indicadores";
 import { contarRealETeste, type Contagem } from "@/lib/admin/contagens";
+import { PAPEIS_USUARIOS } from "@/lib/admin/usuarios-lista";
 
 type Admin = SupabaseClient;
 type Teste = Set<string>;
@@ -44,9 +45,9 @@ export async function contarChamadosAbertos(admin: Admin, teste?: Teste): Promis
   return contarRealETeste((data ?? []) as { usuario_id: string | null }[], (c) => t.has(c.usuario_id ?? ""));
 }
 
-/** Usuários: perfis não anonimizados, separados em reais e de teste. */
+/** Usuários: proprietários e inquilinos não anonimizados (a regra da lista, PAPEIS_USUARIOS — L-69), em reais e de teste. */
 export async function contarUsuarios(admin: Admin): Promise<Contagem> {
-  const { data } = await admin.from("profiles").select("is_teste").limit(10000);
+  const { data } = await admin.from("profiles").select("is_teste").is("anonymized_at", null).in("role", [...PAPEIS_USUARIOS]).limit(10000);
   return contarRealETeste((data ?? []) as { is_teste: boolean | null }[], (p) => p.is_teste === true);
 }
 
