@@ -38,7 +38,8 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
   /** Sem networkidle (o painel mantém conexões abertas): espera um pouco o aviso de rascunho
    * e, se ele aparecer, começa outro; se não aparecer, segue com o editor em branco. */
   async function comecarOutroSeHouver(page: Page) {
-    await page.locator('input[type="file"]').first().waitFor({ state: "attached", timeout: 20_000 });
+    // E104 (#1319): o Passo 1 não tem mais a barra de fotos (nem o campo de arquivo); o editor pronto é o título do passo.
+    await page.getByTestId("passo-titulo").waitFor({ state: "visible", timeout: 20_000 });
     const comecarOutro = page.getByRole("button", { name: "Começar outro" });
     try {
       await comecarOutro.waitFor({ state: "visible", timeout: 4_000 });
