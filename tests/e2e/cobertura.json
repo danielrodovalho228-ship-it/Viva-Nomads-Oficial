@@ -971,6 +971,7 @@
         "t476-e136-e147-passos-3-9",
         "t477-e141-passo5-comodidades",
         "t479-e136b-calendario-pt-br",
+        "t478-e164-previa-foto-principal",
         "t530-e135-um-campo-vazio",
         "t531-e136-datas-ptbr-revisao",
         "t532-e137-janela-24-e-duplo-clique",
@@ -6084,6 +6085,20 @@
       "specs": [
         "t305-laudo-avaliacao-62b2"
       ]
+    },
+    "src/lib/vinculo/actions.ts#pedirVinculo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/vinculo/actions.ts#confirmarVinculo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     },
     "src/lib/vistoria/laudo-actions.ts#contestarLaudo": {
       "personas": [
