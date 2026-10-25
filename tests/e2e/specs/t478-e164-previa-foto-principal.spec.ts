@@ -60,7 +60,7 @@ async function confereTamanhoReal(p: Page, esperada: string | null, estado: stri
 
 test.describe("T478 — E164: a prévia nunca mostra a foto sinalizada pendente como principal", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
-  test.describe.configure({ mode: "serial", timeout: 240_000 });
+  test.describe.configure({ mode: "serial", timeout: 420_000 }); // cada envio espera a conferência da foto (até 60 s)
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
