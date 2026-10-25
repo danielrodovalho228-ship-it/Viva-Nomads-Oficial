@@ -46,7 +46,7 @@ test.describe("T476 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
     await p.getByTestId("cadastro-continuar").click();
     await noPasso(p, "endereco");
     await expect(p.getByTestId("passo-erros")).toContainText("“Minas Gerais” é um estado, não um bairro. Informe o bairro do imóvel.");
-    await p.screenshot({ path: `${SAIDA}/t476-bairro-estado-390.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t476-bairro-estado-390.png` });
     await p.context().close();
   });
 
@@ -72,7 +72,7 @@ test.describe("T476 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
     await p.getByTestId("cadastro-continuar").tap();
     await noPasso(p, "disponibilidade");
     await expect(p.getByTestId("passo-erros")).toContainText("menos que a duração mínima de 30 dias");
-    await p.screenshot({ path: `${SAIDA}/t476-janela-curta-390.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t476-janela-curta-390.png` });
 
     // E138: o calendário (aparece com o rascunho salvo): um bloqueio, e o dia bloqueado não se bloqueia de novo.
     const grade = p.getByTestId("calendario-dono-grade");
@@ -88,13 +88,15 @@ test.describe("T476 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
     await expect(p.getByTestId("dia-bloqueado-opcoes")).toBeVisible();
     await expect(p.getByRole("button", { name: "Bloquear período" })).toBeDisabled();
     await expect(p.getByTestId("bloqueio-item")).toHaveCount(1);
-    await p.screenshot({ path: `${SAIDA}/t476-dia-bloqueado-390.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t476-dia-bloqueado-390.png` });
     await p.getByTestId("calendario-desbloquear").tap();
     await p.getByTestId("calendario-desbloquear-confirmar").tap();
     await expect(p.getByTestId("bloqueio-item")).toHaveCount(0, { timeout: 15_000 });
 
     // Com 30 dias a janela cabe e o Continuar avança.
-    // O campo segue sendo o seletor nativo de data (aparelho de toque) depois de mexer no calendário.
+    // O campo segue sendo o seletor nativo de data (aparelho de toque) depois de mexer no calendário. Os prints desta
+    // spec são da tela visível: o print de página inteira faz o Chromium emulado responder (pointer: coarse) = falso
+    // dali em diante, e o site passa a se comportar como no computador (medido na sonda de 25/10).
     await expect(p.getByTestId("disponivel-ate")).toHaveAttribute("type", "date");
     await p.getByTestId("disponivel-ate").fill(dia(32));
     // Primeiro o valor (o texto pt-BR do campo), depois o aviso: separa "não entrou" de "não recalculou".
