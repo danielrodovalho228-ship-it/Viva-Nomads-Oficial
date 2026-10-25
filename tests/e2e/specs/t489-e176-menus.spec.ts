@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T489 — E176-IMPL (especificação aprovada em docs/e176-menus-spec.md; mockups aprovados pelo Daniel em 25/10):
@@ -31,8 +31,11 @@ test.describe("T489 — E176-IMPL: menus conforme a especificação aprovada", (
     ids.morador = await criarConta(morador, senha);
     await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.morador]);
     ids.imovel = await criarImovelPronto(ids.dono, `Studio menus t489 ${sufixo}`, { ativo: true });
+    // O fechamento só existe a partir de uma candidatura aceita (sem ela, a tela é a guarda "Ver interessados").
+    ids.lead = await criarLead(ids.dono, ids.morador, ids.imovel, true);
   });
   test.afterAll(async () => {
+    await adm().from("leads").delete().eq("owner_id", ids.dono ?? "");
     await apagarContas([ids.dono, ids.morador]);
   });
 
@@ -80,7 +83,7 @@ test.describe("T489 — E176-IMPL: menus conforme a especificação aprovada", (
     await expect(p.getByTestId("menu-conta-dono").getByRole("menuitem")).toHaveText(["Minha conta", "Modo morador", "Ajuda", "Sair"]);
     await p.screenshot({ path: `${SAIDA}/t489-avatar-dono-1280.png` });
     await p.keyboard.press("Escape");
-    await p.goto("/dashboard/fechamento", { waitUntil: "domcontentloaded" });
+    await p.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("voltar-lista")).toHaveText(/Interessados/, { timeout: 30_000 });
     await expect(p.getByTestId("voltar-lista")).toHaveAttribute("href", "/dashboard/leads");
     await expect(p.getByRole("button", { name: /^Voltar$/ })).toHaveCount(0);
