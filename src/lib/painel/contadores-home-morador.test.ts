@@ -20,3 +20,9 @@ test("Favoritos e Buscas salvas contam as MESMAS listas das telas de destino (nu
   assert.match(pagina, /totalBuscasSalvas=\{buscasSalvas\.length\}/);
   assert.match(ler("app/(dashboard)/dashboard/buscas/page.tsx"), /listarBuscasSalvas/);
 });
+
+test("E181: a lista de favoritos da conta chega ao aparelho no login (o contador e a lista leem a mesma fonte)", () => {
+  const mescla = readFileSync("src/lib/convidado/mesclar.ts", "utf8");
+  assert.match(mescla, /const carregarConta = fav\.owner === userId && contaCarregada !== userId;/);
+  assert.match(mescla, /if \(pendentes\.length \|\| carregarConta\)/);
+});
