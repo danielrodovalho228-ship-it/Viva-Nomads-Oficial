@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Download, FileText } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink, Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { brl, dataBR } from "@/lib/fiscal/documento";
 import { recibosDaPessoa } from "@/lib/data/recibos";
 import { AVISO_FIXO, ROTULO_RECIBO, ehMes, filtrarRecibos, informeAnual, mesesComDocumento, resumoCarneLeao, rotuloMes } from "@/lib/recibos/regras";
 import { hojeBR } from "@/lib/utils";
+import { ROTULO_VER_CONTRATO, hrefContratoDono } from "@/lib/contratos/area-dono";
 
 export const metadata: Metadata = { title: "Recibos e notas" };
 
@@ -95,6 +97,12 @@ export default async function RecibosPage({ searchParams }: { searchParams: Prom
                     <a href={`/api/documentos/${r.id}`} className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-forest underline underline-offset-4" data-testid="recibo-baixar">
                       <Download className="h-4 w-4" aria-hidden /> PDF
                     </a>
+                    {/* PROP-5: o recibo leva ao contrato; o cartão do contrato não se repete aqui. */}
+                    {r.contratoId && (
+                      <Link href={hrefContratoDono(r.contratoId)} className="inline-flex min-h-11 items-center text-sm font-medium text-forest underline underline-offset-4" data-testid="recibo-ver-contrato">
+                        {ROTULO_VER_CONTRATO}
+                      </Link>
+                    )}
                   </span>
                 </li>
               ))}

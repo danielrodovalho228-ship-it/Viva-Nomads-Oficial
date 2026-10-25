@@ -175,7 +175,7 @@ export function EtapaRevisar(p: {
   return (
     <div className="space-y-6" data-testid="etapa-revisar">
       {/* Estado do documento (prompt 11): aparece quando ainda segura a publicação; conferido, some (a lista já diz). */}
-      {!p.editingId && <DocumentoEstado estado={p.docEstado} motivos={p.docMotivos} onEnviar={() => document.querySelector('[data-testid="antes-de-publicar"]')?.scrollIntoView({ behavior: "smooth", block: "start" })} />}
+      {!p.editingId && <DocumentoEstado estado={p.docEstado} motivos={p.docMotivos} onEnviar={abrirEnvioDoDocumento} />}
 
       {/* Um "Publicar anúncio" só. Celular: cartão, lista, aceite e botão. Computador: lista à esquerda; cartão e botão à
           direita; o aceite embaixo, na largura toda. */}
@@ -236,6 +236,17 @@ export function EtapaRevisar(p: {
   );
 }
 
+/** E112: o envio do documento mora no cartão "Antes de publicar", nesta mesma Revisão (desde o E104 o Passo 3 é só
+ *  endereço). O botão diz isso e abre o envio ali: desce até o cartão e toca no "Enviar documento" dele, que abre a
+ *  escolha do arquivo (ou, se faltar CEP, rua ou número, leva ao Passo 3 com o foco no campo). */
+export const ROTULO_ENVIAR_DOCUMENTO = "Enviar o documento agora";
+export const ROTULO_REENVIAR_DOCUMENTO = "Enviar outro documento agora";
+function abrirEnvioDoDocumento() {
+  const caixa = document.querySelector<HTMLElement>('[data-testid="documento-vinculo"]');
+  caixa?.scrollIntoView({ behavior: "smooth", block: "center" });
+  document.querySelector<HTMLButtonElement>('[data-testid="documento-enviar"]')?.click();
+}
+
 function DocumentoEstado({ estado, motivos, onEnviar }: { estado: EstadoDocumentoTela; motivos: string[]; onEnviar: () => void }) {
   return (
     <div
@@ -261,16 +272,16 @@ function DocumentoEstado({ estado, motivos, onEnviar }: { estado: EstadoDocument
         {estado === "corrija" && (
           <>
             <strong>Corrija o documento.</strong> {motivos.join(" ")}{" "}
-            <button type="button" className="font-medium underline" onClick={onEnviar}>
-              Reenviar no passo Endereço
+            <button type="button" className="inline-flex min-h-11 items-center font-medium underline" onClick={onEnviar} data-testid="revisar-documento-enviar">
+              {ROTULO_REENVIAR_DOCUMENTO}
             </button>
           </>
         )}
         {estado === "nenhum" && (
           <>
             <strong>Documento do imóvel ainda não enviado.</strong>{" "}
-            <button type="button" className="font-medium underline" onClick={onEnviar}>
-              Enviar no passo Endereço
+            <button type="button" className="inline-flex min-h-11 items-center font-medium underline" onClick={onEnviar} data-testid="revisar-documento-enviar">
+              {ROTULO_ENVIAR_DOCUMENTO}
             </button>
           </>
         )}
