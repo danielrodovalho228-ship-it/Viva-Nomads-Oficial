@@ -35,8 +35,8 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
       {linhas.length === 0 ? (
         <EmptyState
           icon={ShieldCheck}
-          title="Nenhuma caução ainda"
-          text="Quando você fechar um contrato com caução, cada bloco aparece aqui com o status."
+          title="Nenhuma caução dos seus imóveis ainda"
+          text="Quando você fechar um contrato com caução num imóvel seu, cada bloco aparece aqui com o status. A caução das suas estadias como morador fica no modo morador."
           action={
             <Link href="/dashboard/contratos" className="text-sm font-medium text-forest underline">
               Ver contratos
