@@ -143,7 +143,7 @@ export async function AlertaBackupCelular({ agora = new Date() }: { agora?: Date
       <div className="min-w-0">
         <p className="font-semibold">Backup com problema</p>
         {motivo && <p className="mt-1 text-sm">{motivo}</p>}
-        <Link href="#backup" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-2" data-testid="alerta-backup-ver">
+        <Link href="/admin/sistema#backup" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-2" data-testid="alerta-backup-ver">
           Ver o backup
         </Link>
       </div>

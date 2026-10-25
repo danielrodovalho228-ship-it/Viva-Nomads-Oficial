@@ -34,11 +34,10 @@ test("hrefUsuarios monta a URL do cartão e rotulo descreve o filtro", () => {
   assert.equal(rotuloFiltroUsuarios({ papel: null, fundador: false, desde: null, ate: null, cadastro: null, q: null, comAnuncio: false, teste: false }), "Todos os usuários");
 });
 
-test("números Usuários e Fundadores da visão geral abrem a lista", async () => {
+test("ADMIN-4: a página Usuários mostra 'N reais · M de teste' pela função única", async () => {
   const { readFileSync } = await import("node:fs");
-  const src = readFileSync(new URL("../../app/(dashboard)/admin/visao-geral-client.tsx", import.meta.url), "utf8");
-  assert.match(src, /rotulo: "Usuários"[^\n]*href: hrefUsuarios\(\{\}\)/);
-  assert.match(src, /rotulo: "Fundadores"[^\n]*href: hrefUsuarios\(\{ fundador: true \}\)/);
+  const src = readFileSync(new URL("../../app/(dashboard)/admin/usuarios/page.tsx", import.meta.url), "utf8");
+  assert.match(src, /<NumeroDaFonte chave="usuarios" \/>/);
 });
 
 test("cadastro completo = nome + e-mail confirmado + documento + foto (a mesma regra da Conta; telefone não entra)", () => {

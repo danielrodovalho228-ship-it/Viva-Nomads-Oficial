@@ -57,7 +57,7 @@ for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
       const linhaBox = (await page.getByTestId("linha-pilulas").boundingBox())!;
       expect((await painel.boundingBox())!.y).toBeGreaterThanOrEqual(linhaBox.y + linhaBox.height);
       await page.screenshot({ path: `tests/laboratorio/saida/t436-painel-preco-${largura}.png` });
-      const opcao = painel.locator('[data-testid^="pilula-preco-"]:not([disabled])').last();
+      const opcao = painel.locator('button[data-testid^="pilula-preco-"]:not([disabled])').last(); // E105: o "· N" da opção também tem testid
       const rotulo = (await opcao.innerText()).split("·")[0].trim();
       await opcao.click();
       await expect(page.getByTestId("pilula-preco")).toHaveAttribute("data-valor", rotulo);

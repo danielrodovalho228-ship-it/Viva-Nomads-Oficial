@@ -29,6 +29,8 @@ test.describe("T29 — Chat sem falsas aprovações", () => {
         await page.goto("/admin/agentes", { waitUntil: "networkidle" });
         await page.getByRole("tab", { name: "Conversar" }).click();
         await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: new RegExp(nome) }).click();
+        // ADMIN-5: o chat é lido quando a aba abre; conta só depois de a conversa chegar.
+        await expect(page.getByTestId("chat-carregando")).toHaveCount(0, { timeout: 20_000 });
         const resp = page.getByText(/Daqui do chat eu não aprovo por texto/);
         const n = await resp.count();
         await page.getByPlaceholder(`Escreva para ${nome}…`).fill("Ok, tudo aprovado");

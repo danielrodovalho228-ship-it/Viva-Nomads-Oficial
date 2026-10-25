@@ -48,14 +48,14 @@ test("0136: tabela com RLS (só admin lê, ninguém grava pela API) + aplicar id
   assert.match(ler("supabase/producao/rollback/0136_rollback.sql"), /drop table if exists public\.emails_teste/);
 });
 
-test("a tela /admin/emails-teste existe, fora da barra (ADMIN-1, com o porquê) e nos atalhos do admin", () => {
-  const p = ler("src/app/(dashboard)/admin/emails-teste/page.tsx");
-  assert.match(p, /PageTitle/);
+test("os e-mails de teste são a aba E-mails de Dados de teste (ADMIN-2); /admin/emails-teste redireciona; atalho do admin", () => {
   // A lista (cartões no celular, tabela no computador) é a mesma do leitor de QA (QA-CAIXA-B).
-  assert.match(p, /<ListaEmailsTeste/);
+  assert.match(ler("src/components/admin/emails-teste-lista.tsx"), /<ListaEmailsTeste/);
   const lista = ler("src/components/admin/lista-emails-teste.tsx");
   assert.match(lista, /md:hidden/);
   assert.match(lista, /hidden md:block/);
+  assert.match(ler("src/app/(dashboard)/admin/dados-de-teste/page.tsx"), /<EmailsTesteLista \/>/);
+  assert.match(ler("src/app/(dashboard)/admin/emails-teste/page.tsx"), /redirect\(HREF_EMAILS_TESTE\)/);
   assert.match(ler("src/config/menu-admin.ts"), /"\/admin\/emails-teste": "/);
-  assert.match(ler("src/app/(dashboard)/admin/atalhos-admin.tsx"), /\/admin\/emails-teste/);
+  assert.match(ler("src/app/(dashboard)/admin/atalhos-admin.tsx"), /\/admin\/dados-de-teste\?aba=emails/);
 });

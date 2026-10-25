@@ -6,9 +6,8 @@ import { ExternalLink } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
-import { checklistCompleto, ITENS_CHECKLIST, MOTIVOS_RECUSA_PARCERIA, rotuloCategoria, type ParceiroGeral } from "@/lib/parceiros/regras";
+import { checklistCompleto, ITENS_CHECKLIST, MOTIVOS_RECUSA_PARCERIA, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarDocumento } from "@/lib/documento-pessoa";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import {
@@ -25,7 +24,6 @@ import {
 import {
   aprovarSolicitacao,
   criarSolicitacaoSuporte,
-  definirParceiroGeral,
   recusarSolicitacao,
   reenviarAtivacao,
   salvarChecklistParceria,
@@ -326,27 +324,6 @@ export function SuporteForm() {
       <input aria-label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome" className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
       <Button size="sm" variant="secondary" disabled={pendente} onClick={() => rodar(() => criarSolicitacaoSuporte({ email, nome }), "Convite enviado.", (r) => r.ok && (setEmail(""), setNome("")))}>
         Abrir pedido e enviar convite
-      </Button>
-      {aviso}
-    </div>
-  );
-}
-
-export function ParceiroGeralForm({ inicial }: { inicial: ParceiroGeral }) {
-  const { rodar, pendente, aviso } = useAcao();
-  const [g, setG] = useState(inicial);
-  return (
-    <div className="space-y-2" data-testid="parceiro-geral-admin">
-      <p className="text-sm text-muted">Aparece só quando a busca não acha ninguém. Sem logo de terceiros. Desligado por padrão.</p>
-      <input aria-label="Nome" value={g.nome} onChange={(e) => setG({ ...g, nome: e.target.value })} placeholder="Nome do parceiro geral" className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
-      <input aria-label="Cidade" value={g.cidade} onChange={(e) => setG({ ...g, cidade: e.target.value })} placeholder="Cidade" className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
-      <textarea aria-label="Descrição" rows={2} value={g.descricao} onChange={(e) => setG({ ...g, descricao: e.target.value })} placeholder="Descrição" className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
-      <label className="flex items-center gap-3 text-sm text-ink">
-        <Switch checked={g.ligado} onChange={(v) => setG({ ...g, ligado: v })} label="Mostrar o cartão na busca vazia" />
-        Mostrar o cartão na busca vazia
-      </label>
-      <Button size="sm" variant="secondary" disabled={pendente} onClick={() => rodar(() => definirParceiroGeral({ ligada: g.ligado, nome: g.nome, cidade: g.cidade, descricao: g.descricao }), "Salvo.")} data-testid="parceiro-geral-salvar">
-        Salvar cartão
       </Button>
       {aviso}
     </div>

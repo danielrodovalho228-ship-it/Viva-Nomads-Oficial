@@ -7,10 +7,13 @@ import { centralDePendencias } from "@/lib/data/central-pendencias";
 import { FILTROS_CENTRAL, ehFiltroCentral, hrefCentral, idadeHoras, textoPrazo, type FiltroCentral, type LinhaCentral } from "@/lib/admin/central-pendencias";
 import { haQuantoTempo } from "@/lib/admin/decisoes-admin";
 import { DecidirContestacao } from "@/components/admin/decidir-contestacao";
+import { DecidirRevisaoAvaliacao } from "@/components/admin/decidir-revisao-avaliacao";
 import { AnalisarFotoNivel } from "@/components/admin/analisar-foto-nivel";
 import { RodarPrazos } from "@/components/conforto/rodar-prazos";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
+import { DecisoesHoje } from "@/components/admin/numeros";
+import { decisoesDoAdmin } from "@/lib/data/admin-decisoes";
 
 export const metadata = { title: tituloDoAdmin("/admin/pendencias"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -35,7 +38,11 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
   const filtro = ehFiltroCentral(sp.filtro) ? sp.filtro : null;
   const admin = createAdminClient();
   const agora = new Date();
-  const central = admin ? await centralDePendencias(admin, agora, filtro).catch(() => null) : null;
+  // ADMIN-4: as filas de operação (antes na inicial) abrem a página; a inicial mostra as 5 primeiras delas.
+  const [central, decisoes] = await Promise.all([
+    admin ? centralDePendencias(admin, agora, filtro).catch(() => null) : null,
+    filtro ? null : decisoesDoAdmin(agora).catch(() => null),
+  ]);
   return (
     <div data-testid="central-pendencias">
       <PageTitle
@@ -47,6 +54,7 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
           </Link>
         }
       />
+      {!filtro && <DecisoesHoje decisoes={decisoes} nivel="h2" />}
       {!central && (
         <p role="alert" className="mb-4 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Não foi possível ler as pendências agora. Tente de novo em instantes.
@@ -149,6 +157,7 @@ function Linha({ l, agora }: { l: LinhaCentral; agora: Date }) {
         </Link>
       </p>
       {l.filtro === "conforto_contestacoes" && l.ref?.pendencia && <DecidirContestacao id={l.ref.pendencia} />}
+      {l.filtro === "avaliacoes_contestadas" && l.ref?.revisao && <DecidirRevisaoAvaliacao id={l.ref.revisao} />}
       {l.filtro === "fotos_nivel" && l.ref?.imovel && l.ref?.chave && (
         <div className="flex flex-wrap items-center gap-3" data-testid="foto-nivel-linha" data-chave={l.ref.chave}>
           {l.ref.foto && (

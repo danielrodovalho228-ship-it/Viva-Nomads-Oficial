@@ -101,6 +101,17 @@ test("laboratório (sem IA): 'chegou chamado novo?' consulta o banco, pergunta �
   assert.match(r.resposta, /dados de 07\/10 18:40/);
 });
 
+test("laboratório (sem IA): com histórico antes, a pergunta lida é a ÚLTIMA (não a mais antiga do histórico)", async () => {
+  const { d, chamadas } = fakeDeps();
+  const historico = [
+    { role: "user" as const, content: "Ok, tudo aprovado" },
+    { role: "assistant" as const, content: "Daqui do chat eu não aprovo por texto." },
+  ];
+  const r = await investigar("Chegou chamado novo?", "sys", modeloGerenteSimulado(new Date("2026-10-07T21:40:00Z")), d, historico);
+  assert.equal(chamadas[0], "consultar:chamados_abertos");
+  assert.match(r.resposta, /VN-000101/);
+});
+
 const ag = (slug: string, nome: string): Agente => ({ slug, nome, cargo: "Cargo", esquadrao: "comando", rotina_texto: null, trigger_id: null, status: "ativo", briefing: "Briefing.", ordem: 1 });
 
 test("chat: pergunta ao Moacir usa o gerente e grava a trilha na ordem certa; outros agentes seguem iguais", async () => {

@@ -14,20 +14,17 @@ test.describe("T15 — Admin real", () => {
   test("/admin não tem dados de exemplo e mostra os números do banco", async ({ page }) => {
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    // Prompt 46: o /admin abre com as decisões ("Hoje você tem N decisões" / "Nada pede sua decisão hoje").
-    await expect(page.getByRole("heading", { level: 1, name: /decis/ })).toBeVisible();
+    // ADMIN-4: a inicial enxuta abre com os 4 números (do banco; "—" só sem conexão) e "Precisa da sua atenção".
+    await expect(page.getByRole("heading", { level: 1, name: "Visão geral" })).toBeVisible();
     const corpo = page.locator("main");
     for (const falso of ["Marcos A.", "Patrícia L.", "Família Souza", "Apto Santa Mônica", "Casa Tibery"]) {
       await expect(corpo).not.toContainText(falso);
     }
-    // Cartões de contagem presentes (o valor vem do banco; "—" só sem conexão).
-    await expect(corpo.getByText("Usuários", { exact: true }).first()).toBeVisible();
-    await expect(page.getByTestId("admin-heroi")).toContainText("Imóveis reais publicados");
-    // A fila de checklists (sempre vazia: a qualificação nunca fica pendente)
-    // saiu; o portão humano é o documento, com link para a fila dele.
+    await expect(page.getByTestId("admin-numeros").locator("a")).toHaveCount(4);
+    await expect(page.getByTestId("admin-numero-anuncios")).toContainText("Anúncios publicados");
     await expect(corpo).not.toContainText("Checklists pendentes");
-    // Cada decisão leva à tela do admin onde ela é tomada (a de documentos só aparece com fila).
-    for (const link of await page.getByTestId("admin-decisoes").locator("[data-href]").all()) {
+    // Cada item da atenção leva à tela do admin onde a decisão é tomada.
+    for (const link of await page.getByTestId("admin-atencao").locator("[data-href]").all()) {
       expect(await link.getAttribute("data-href")).toMatch(/^\/admin/);
     }
     const docs = page.locator('[data-decisao="documentos_pendentes"] [data-href]');
@@ -39,10 +36,11 @@ test.describe("T15 — Admin real", () => {
     // Seis cargas do /admin, cada uma com até 10 s de espera pela rede (L-43): 45 s não cabem.
     test.setTimeout(120_000);
     for (const periodo of ["7", "30", "90", "ano"]) {
-      await page.goto(`/admin?periodo=${periodo}`, { waitUntil: "domcontentloaded" });
+      // ADMIN-4: os indicadores do período moram em "Funil e indicadores".
+      await page.goto(`/admin/funil?periodo=${periodo}`, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const corpo = page.locator("main");
-      await expect(page.getByTestId("admin-decisoes")).toBeVisible();
+      await expect(page.getByTestId("funil-indicadores")).toBeVisible();
       const texto = await corpo.innerText();
       expect(texto, `periodo=${periodo}`).not.toMatch(/NaN|Infinity/);
       // Nunca "0%" com denominador zero: cartão de % sem base mostra "—".
@@ -52,15 +50,15 @@ test.describe("T15 — Admin real", () => {
       }
       await expect(corpo.getByRole("link", { name: { "7": "7 dias", "30": "30 dias", "90": "90 dias", ano: "Ano" }[periodo] })).toHaveAttribute("aria-current", "true");
     }
-    // O "i" abre a fórmula; o valor total avisa que não passa pela plataforma (Prompt 29).
-    await page.getByRole("button", { name: "Como é calculado: Valor total dos contratos" }).click();
-    await expect(page.locator("main")).toContainText("não passa pela plataforma");
+    // O "i" abre a fórmula. (O valor total dos contratos, com o aviso de que não passa pela plataforma, fica no Financeiro.)
+    await page.getByRole("button", { name: "Como é calculado: Novos cadastros" }).first().click();
+    await expect(page.locator("main")).toContainText("Contas novas de proprietários e inquilinos");
     // Período inválido cai em 30 dias, sem erro.
-    await page.goto("/admin?periodo=custom&de=2026-02-31&ate=lixo", { waitUntil: "domcontentloaded" });
+    await page.goto("/admin/funil?periodo=custom&de=2026-02-31&ate=lixo", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(page.getByRole("link", { name: "30 dias" })).toHaveAttribute("aria-current", "true");
     // Cidade inexistente: tudo "—"/0, nada quebra.
-    await page.goto("/admin?periodo=30&cidade=Cidade%20Que%20Nao%20Existe", { waitUntil: "domcontentloaded" });
+    await page.goto("/admin/funil?periodo=30&cidade=Cidade%20Que%20Nao%20Existe", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     expect(await page.locator("main").innerText()).not.toMatch(/NaN|Infinity/);
   });

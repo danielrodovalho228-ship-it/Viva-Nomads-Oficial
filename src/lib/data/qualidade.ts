@@ -100,7 +100,7 @@ export interface PainelQualidade {
   totalSemana: number;
   pctRevertidas: number | null;
   baseRevertidas: number;
-  quebradores: { chave: string; rotulo: string; sinal: string; href: string | null; n: number | null }[];
+  quebradores: { chave: string; rotulo: string; sinal: string; href: string | null; n: number | null; faltaParaMedir: string | null }[];
   correcoes: Correcao[];
   denuncias: Denuncia[];
   comContexto: SaidaComContexto[];
@@ -154,7 +154,7 @@ export async function painelQualidade(agora = new Date()): Promise<PainelQualida
     totalSemana: naSemana.length,
     pctRevertidas: pctRevertidas(registradas),
     baseRevertidas: registradas.filter((s) => s.ajudaOferecida).length,
-    quebradores: QUEBRADORES.map((q) => ({ chave: q.chave, rotulo: q.rotulo, sinal: q.sinal, href: q.href, n: q.semMedicao ? null : (contagem[q.chave] ?? null) })),
+    quebradores: QUEBRADORES.map((q) => ({ chave: q.chave, rotulo: q.rotulo, sinal: q.sinal, href: q.href, n: q.semMedicao ? null : (contagem[q.chave] ?? null), faltaParaMedir: q.faltaParaMedir ?? null })),
     correcoes: ((correcoes.data ?? []) as { id: string; papel: PapelSaida; motivo: string; ocorrencias: number; dono: string | null; prazo: string | null; criada_em: string; fechada_em: string | null; ligacao: string | null }[]).map((c) => ({
       id: c.id,
       papel: c.papel,

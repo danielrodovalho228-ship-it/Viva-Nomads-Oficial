@@ -397,15 +397,17 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
       if (largura === 390) {
         await expect(page.getByTestId("parceiro-geral")).toHaveCount(0); // desligado por padrão
         const a = await admin(browser, 1280);
-        await a.goto("/admin/parceiros", { waitUntil: "domcontentloaded" });
+        // ADMIN-4 (#1354): as chaves moram em /admin/sistema; ligar o cartão pede a confirmação na página.
+        await a.goto("/admin/sistema", { waitUntil: "domcontentloaded" });
         const g = a.getByTestId("parceiro-geral-admin");
         await g.getByLabel("Nome").fill("AquiResolve");
         await g.getByLabel("Cidade").fill("Uberlândia");
         await g.getByLabel("Descrição").fill("Pequenos reparos e serviços gerais para imóveis mobiliados.");
         await g.getByRole("switch").click();
         await g.getByTestId("parceiro-geral-salvar").click();
+        await g.getByTestId("parceiro-geral-salvar-confirmar").click();
         await expect(g.getByTestId("admin-parceria-msg")).toHaveText("Salvo.", { timeout: 15_000 });
-        await expect(a.getByTestId("chave-pagamento-parceiros")).toContainText("desligada");
+        await expect(a.locator('[data-testid="chave-ambiente"][data-nome="PAGAMENTO_PARCEIROS_ATIVO"]')).toContainText("Desligada");
         await a.context().close();
       }
       await page.goto(url, { waitUntil: "domcontentloaded" });
@@ -419,6 +421,15 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
   test("portas: etapa de fotos do anúncio e a seção Serviços do painel levam à busca", async ({ browser }) => {
     const page = await abrir(browser, dono.email, 390);
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    // PROP-6 (#1349): no modo dono o Início é o do mockup; a seção Serviços passou para /dashboard/servicos, e a porta
+    // do Início é o "Pedir um serviço" do bloco "Peça na Viva".
+    const pedirServico = page.getByTestId("inicio-dono-servico");
+    await page.getByTestId("painel-servicos-parceiros").or(pedirServico).first().waitFor({ state: "visible", timeout: 20_000 });
+    if (await pedirServico.isVisible()) {
+      await expect(pedirServico).toHaveAttribute("href", "/dashboard/servicos");
+      await pedirServico.click();
+      await expect(page).toHaveURL(/\/dashboard\/servicos$/, { timeout: 20_000 });
+    }
     const servicos = page.getByTestId("painel-servicos-parceiros");
     await expect(servicos).toBeVisible({ timeout: 20_000 });
     await expect(servicos.getByTestId("servicos-fotografia")).toHaveAttribute("href", /\/parceiros\/buscar\?categoria=fotografia/);

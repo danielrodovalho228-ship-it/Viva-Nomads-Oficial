@@ -16,9 +16,11 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
     test(`F15 — selo de "Agentes" no menu conta aprovações, não achados P1 (${largura} px)`, async ({ page }, info) => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/admin", { waitUntil: "domcontentloaded" });
-      if (largura < 1024) await page.getByRole("button", { name: "Abrir menu" }).click();
-      const menu = page.getByRole("navigation", { name: "Menu do painel" });
-      const agentes = menu.getByRole("link", { name: /^Agentes/ }).first();
+      // ADMIN-1: no celular a barra abre em "Menu da equipe"; a Central de Agentes mora no grupo "Equipe" (recolhido).
+      if (largura < 1024) await page.getByTestId("admin-abrir-menu").click();
+      const menu = page.getByTestId("menu-cascata").filter({ visible: true });
+      const agentes = menu.locator('a[href="/admin/agentes"]').first();
+      if (!(await agentes.isVisible())) await menu.locator("li[data-menu-grupo] > button").filter({ hasText: "Equipe" }).first().click();
       await expect(agentes).toBeVisible({ timeout: 20_000 });
       const selo = agentes.locator('[aria-label$="aguardando"]');
       await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
@@ -29,24 +31,21 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
       await page.screenshot({ path: info.outputPath(`f15-${largura}.png`), fullPage: false });
     });
 
-    test(`F16 — "Atendimento: chamados abertos" da home bate com a fila de /admin/atendimento (${largura} px)`, async ({ page }, info) => {
+    test(`F16 — "Chamados abertos" da home bate com /admin/atendimento (${largura} px)`, async ({ page }, info) => {
+      // ADMIN-4: o número da inicial e o da página de destino vêm da MESMA função (contarChamadosAbertos).
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/admin", { waitUntil: "domcontentloaded" });
-      const cartao = page.getByTestId("home-agora").locator('[data-agora="Atendimento: chamados abertos"] [data-href]');
+      const cartao = page.getByTestId("admin-numero-chamados");
       await expect(cartao).toBeVisible({ timeout: 20_000 });
-      await expect(cartao).toHaveAttribute("href", /\/admin\/atendimento\?aba=fila/);
-      const n = Number((await cartao.innerText()).match(/\d[\d.]*/g)?.pop()?.replace(/\./g, "") ?? NaN);
-      expect(Number.isNaN(n)).toBe(false);
-      // A home termina de carregar os números no cliente; clica só com a página parada (a 390 px a lista ainda cresce).
-      await page.waitForLoadState("networkidle");
-      await cartao.scrollIntoViewIfNeeded();
+      await expect(cartao).toHaveAttribute("href", "/admin/atendimento");
+      const reais = await cartao.getAttribute("data-reais");
+      const teste = await cartao.getAttribute("data-teste");
+      await page.waitForLoadState("networkidle").catch(() => {});
       await cartao.click();
       await expect(page).toHaveURL(/\/admin\/atendimento/, { timeout: 30_000 });
-      // Prompt 48: a navegação mostra o esqueleto do admin antes dos dados; conta as linhas só depois que ele sai.
-      await expect(page.getByTestId("skeleton-admin")).toHaveCount(0, { timeout: 30_000 });
-      const linhas = await page.getByTestId("chamado-linha").count();
-      if (n === 0) expect(linhas).toBe(0);
-      else expect(linhas).toBeGreaterThan(0); // 0 na home com chamado aberto na fila era o F16
+      const fonte = page.getByTestId("numero-fonte-chamados");
+      await expect(fonte).toHaveAttribute("data-reais", reais!, { timeout: 30_000 });
+      await expect(fonte).toHaveAttribute("data-teste", teste!);
       await page.screenshot({ path: info.outputPath(`f16-${largura}.png`), fullPage: false });
     });
 
@@ -59,7 +58,7 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
         await expect(itens.first()).toBeVisible({ timeout: 20_000 });
         return (await itens.allInnerTexts()).map((t) => Number(t.replace(/\D/g, "")));
       };
-      await page.goto("/admin?periodo=90", { waitUntil: "domcontentloaded" });
+      await page.goto("/admin/funil?periodo=90", { waitUntil: "domcontentloaded" });
       const cidades = await page.locator('select:has(option:text-is("Todas as cidades")) option').evaluateAll((os) =>
         (os as HTMLOptionElement[]).map((o) => o.value).filter(Boolean),
       );
@@ -67,10 +66,10 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
       // L-44: outras specs criam dados enquanto esta lê (lab completo 40 → 75). Só compara quando o funil sem cidade
       // ficou igual antes e depois das leituras por cidade; se mudou no meio, lê tudo de novo.
       await expect(async () => {
-        const sem = await valores("/admin?periodo=90");
+        const sem = await valores("/admin/funil?periodo=90");
         const porCidade: [string, number[]][] = [];
-        for (const cidade of cidades.slice(0, 3)) porCidade.push([cidade, await valores(`/admin?periodo=90&cidade=${encodeURIComponent(cidade)}`)]);
-        expect(await valores("/admin?periodo=90"), "o funil sem cidade mudou durante a leitura").toEqual(sem);
+        for (const cidade of cidades.slice(0, 3)) porCidade.push([cidade, await valores(`/admin/funil?periodo=90&cidade=${encodeURIComponent(cidade)}`)]);
+        expect(await valores("/admin/funil?periodo=90"), "o funil sem cidade mudou durante a leitura").toEqual(sem);
         for (const [cidade, com] of porCidade) {
           expect(com.length).toBe(sem.length);
           com.forEach((v, i) => expect(v, `etapa ${i} em ${cidade}`).toBeLessThanOrEqual(sem[i]));

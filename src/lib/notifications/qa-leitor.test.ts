@@ -99,7 +99,7 @@ test("a mesma lista em /admin/emails-teste e em /dashboard/qa/emails, sempre mas
   assert.doesNotMatch(lista, /linhas\.map\(\(l\)/, "a tela só desenha as linhas mascaradas");
   assert.match(lista, /data-testid="emails-teste-cartoes"/);
   assert.match(lista, /data-testid="emails-teste-tabela"/);
-  assert.match(ler("src/app/(dashboard)/admin/emails-teste/page.tsx"), /<ListaEmailsTeste/);
+  assert.match(ler("src/components/admin/emails-teste-lista.tsx"), /<ListaEmailsTeste/);
 });
 
 test("2FA do admin intocado: ADMIN_2FA_OBRIGATORIA e is_admin() fora deste item", () => {

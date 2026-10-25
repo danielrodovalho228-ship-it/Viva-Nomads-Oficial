@@ -10,10 +10,8 @@ export const ROTULO_PILULA: Record<IdPilula, string> = { datas: "Datas", local: 
 
 /** O valor de cada pílula quando ativa ("Até R$ 3.500", "Conforto+", "Perto de HC-UFU"); null = rótulo neutro. */
 export function valorDaPilula(id: IdPilula, f: FiltrosPainel, extra: { local?: string; perto?: string | null; ordem?: string | null }): string | null {
-  if (id === "datas") {
-    const partes = [f.entrada ? `Entrada ${f.entrada.split("-").reverse().slice(0, 2).join("/")}` : "", OPCOES_ESTADIA.find((o) => o.valor === f.periodo)?.rotulo ?? ""].filter(Boolean);
-    return partes.length ? partes.join(" · ") : null;
-  }
+  // E105: o período da estadia mora só no "Mais filtros"; a pílula Datas mostra só a entrada.
+  if (id === "datas") return f.entrada ? `Entrada ${f.entrada.split("-").reverse().slice(0, 2).join("/")}` : null;
   if (id === "local") return extra.perto ? `Perto de ${extra.perto}` : extra.local?.trim() || null;
   if (id === "tipo") return OPCOES_TIPO.find((o) => o.valor === f.tipo)?.rotulo ?? null;
   if (id === "preco") return OPCOES_PRECO.find((o) => o.valor === f.maxPrice)?.rotulo ?? (f.maxPrice ? `Até R$ ${f.maxPrice.toLocaleString("pt-BR")}` : null);

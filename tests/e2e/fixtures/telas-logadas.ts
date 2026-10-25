@@ -75,6 +75,7 @@ export const TELAS_ADMIN = [
   "/admin/conforto",
   "/admin/pendencias",
   "/admin/retencao",
+  "/admin/sistema",
   "/admin/dados-de-teste",
   "/admin/pedidos",
   "/admin/socios",
@@ -121,7 +122,7 @@ export const ROTAS_COM_PARAMETRO: Record<string, readonly string[]> = {
 
 /**
  * Telas que NENHUMA persona da varredura abre (404 de propósito para quem não tem a marca): ficam fora do t183 e têm
- * spec próprio. /dashboard/qa/emails só abre para conta de teste com qa_leitor (QA-CAIXA-B, t462).
+ * spec próprio. /dashboard/qa/emails só abre para conta de teste com qa_leitor (QA-CAIXA-B, t470).
  */
 export const TELAS_RESTRITAS: readonly string[] = ["/dashboard/qa/emails"];
 
