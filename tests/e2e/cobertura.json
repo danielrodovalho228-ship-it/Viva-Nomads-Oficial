@@ -377,7 +377,8 @@
         "t300-entrada-sem-senha-49",
         "t306-varredura-bloco7",
         "t317-email-unico-49c1",
-        "t353-varredura-bloco18"
+        "t353-varredura-bloco18",
+        "t471-login-apple"
       ]
     },
     "/auth/pronto": {
@@ -2589,7 +2590,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t471-login-apple"
+      ]
     },
     "/auth/confirm": {
       "personas": [
