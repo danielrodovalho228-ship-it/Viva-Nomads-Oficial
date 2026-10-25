@@ -719,7 +719,8 @@
         "t407-varredura-bloco26",
         "t439-e101-deteccao-espelho",
         "t408-varredura-bloco27",
-        "t405-perfil-e60-e62"
+        "t405-perfil-e60-e62",
+        "t415-varredura-bloco32"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -868,7 +869,8 @@
         "t433-l2a-itens-9-24",
         "t407-varredura-bloco26",
         "t400-chacara-sem-internet",
-        "t410-niveis-medir-rascunho"
+        "t410-niveis-medir-rascunho",
+        "t415-varredura-bloco32"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -913,7 +915,8 @@
         "t413-varredura-bloco30",
         "t455-cadastro-textos-e108",
         "t414-varredura-bloco31",
-        "t432-deteccao-a"
+        "t432-deteccao-a",
+        "t415-varredura-bloco32"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1915,7 +1918,8 @@
         "t407-varredura-bloco26",
         "t439-e101-deteccao-espelho",
         "t410-niveis-medir-rascunho",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t415-varredura-bloco32"
       ]
     },
     "/dashboard/recibos": {
