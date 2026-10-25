@@ -34,10 +34,22 @@ Development sem a chave. Ligar em produção é decisão do Daniel.
    - C (D+5, sem vínculo): nenhum pedido; "Saída em 5 dias: quer agendar a limpeza?" ao dono.
    - D (D+5, confirmar): pedido com `aguardando_dono=true`, sem envio; "Confirme o pedido de serviço do imóvel" ao dono.
    - Moradores: "Precisa de ajuda com a mudança?" (D-7 da saída). 2ª rodada: 0 pedidos e 0 e-mails novos.
-2. **Leitura por dentro** (2ª versão do `t443`): o teste agora imprime e confere o corpo de cada e-mail (texto e
-   destino do botão) e as 2 mensagens que o pedido abre no chat da parceira — boas-vindas + "Limpeza depois da saída
-   do morador: entre DD/MM às 13:00 e DD/MM às 11:00." + "Serviço: Limpeza completa (a partir de R$ 250,00 por
-   serviço)." Os e-mails do disparo não levam valor. O caminho D-5 não gera PDF.
+2. **Leitura por dentro** (lab-critico run 40145804487, ref 2f7639db+e9485917, 25/10 00:30 UTC; hoje = 24/10 em
+   Brasília, janela até 29/10). Artefatos reais do LAB_OUTBOX e da tabela `messages`:
+   - Parceira (Lia): "Novo pedido de orçamento · Viva Nomads" — "Olá Lia, você recebeu um pedido de orçamento pela
+     Viva Nomads. Veja o que a pessoa precisa e responda pelas mensagens da plataforma." Botão "Ver o pedido" →
+     `/dashboard/servicos/pedidos/<id do pedido A>` (a página do próprio pedido, não o painel genérico).
+   - Chat do pedido A (dono → parceira), 2 mensagens: boas-vindas ("Aqui vocês combinam tudo. Contato pessoal só pela
+     plataforma…") e "Limpeza depois da saída do morador: entre 29/10 às 13:00 e 31/10 às 11:00. / Serviço: Limpeza
+     completa (a partir de R$ 250,00 por serviço)." — bate com a janela gravada (16:00Z → 14:00Z) e o serviço do vínculo.
+   - Dono no modo confirmar (D): "Confirme o pedido de serviço do imóvel" — "…Confira o valor-base e confirme com 1
+     toque." Botão "Confirmar o pedido" → `/dashboard/servicos/pedidos/<id do pedido D>`.
+   - Dono sem limpeza (C, saída em 29/10): "Saída em 5 dias: quer agendar a limpeza?" — "o morador sai em 5 dias e o
+     imóvel não tem limpeza fixa…" Botão "Buscar limpeza" → `/parceiros/buscar?categoria=limpeza`.
+   - **Caso E** (saída em 26/10, faltam 2 dias, sem limpeza): nenhum pedido; o dono recebe o MESMO texto "o morador
+     sai em 5 dias" — o achado de vocabulário confirmado em artefato real.
+   - Moradores A–E: "Precisa de ajuda com a mudança?". Nenhum e-mail do disparo leva valor (R$). O caminho D-5 não
+     gera PDF.
 3. **Produção (só leitura):** 0 vínculos ativos de limpeza, 0 pedidos automáticos, 2 contratos ativos assinados
    (is_teste), fora da janela. Nenhum dado criado.
 

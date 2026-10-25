@@ -168,10 +168,11 @@ test.describe("T443 — disparo automático da limpeza em D-5 (Prompt 38)", () =
     const corpo = (quem: keyof typeof contas, assunto: RegExp) => String(emails.find((e) => e.para === contas[quem].email && assunto.test(String(e.assunto)))?.corpo ?? "");
     const cParceira = corpo("limpa", /^Novo pedido de orçamento/);
     expect(cParceira).toContain("você recebeu um pedido de orçamento pela Viva Nomads");
-    expect(cParceira).toMatch(/Ver o pedido \(https?:\/\/[^)]*\/dashboard\/parceiro/);
+    // O botão leva à página do PRÓPRIO pedido (não ao painel genérico do modelo).
+    expect(cParceira).toContain(`Ver o pedido (${new URL(`/dashboard/servicos/pedidos/${pA[0].id}`, String(cParceira.match(/https?:\/\/[^/\s)]+/)?.[0])).href})`);
     const cConfirmar = corpo("donoA", /^Confirme o pedido de serviço do imóvel/);
     expect(cConfirmar).toContain("confirme com 1 toque");
-    expect(cConfirmar).toMatch(/Confirmar o pedido \(https?:\/\/[^)]*\/dashboard\/servicos/);
+    expect(cConfirmar).toContain(`Confirmar o pedido (${new URL(`/dashboard/servicos/pedidos/${pD[0].id}`, String(cConfirmar.match(/https?:\/\/[^/\s)]+/)?.[0])).href})`);
     const cSemParceiro = corpo("donoC", /^Saída em 5 dias/);
     expect(cSemParceiro).toContain("o imóvel não tem limpeza fixa");
     expect(cSemParceiro).toMatch(/Buscar limpeza \(https?:\/\/[^)]*\/parceiros\/buscar\?categoria=limpeza/);
