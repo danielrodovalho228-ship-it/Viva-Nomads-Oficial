@@ -21,7 +21,7 @@ import {
 
 // MENUS-5: as mesmas abas do topo do computador (config/abas-painel.ts); "Perfil" saiu (a Conta abre no avatar).
 const ROTULOS: Record<PapelBarra, string[]> = {
-  morador: ["Início", "Buscar", "Pedidos", "Mensagens", "Minha estadia"],
+  morador: ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"],
   proprietario: ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"],
   parceiro: ["Início", "Pedidos", "Agenda", "Ganhos", "Mensagens"],
 };

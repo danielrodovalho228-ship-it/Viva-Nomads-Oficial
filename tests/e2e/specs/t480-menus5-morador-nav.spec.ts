@@ -14,7 +14,7 @@ const morador = { email: `morador.t480.${sufixo}@lab.vivanomads.test`, nome: "Ma
 const semContrato = { email: `semcontrato.t480.${sufixo}@lab.vivanomads.test`, nome: "Sérgio Simples", role: "tenant" as const };
 const ids: Record<string, string> = {};
 
-const MORADOR_5 = ["Início", "Buscar", "Pedidos", "Mensagens", "Minha estadia"];
+const MORADOR_5 = ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"];
 const MORADOR_4 = ["Início", "Buscar", "Pedidos", "Mensagens"];
 const DONO_5 = ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"];
 
@@ -90,12 +90,12 @@ test.describe("T480 — MENUS-5: abas por papel, Conta no avatar, morador sem na
       await p.setViewportSize({ width: w, height: 844 });
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await expect.poll(() => rotulosDaBarra(p), { timeout: 30_000 }).toEqual(MORADOR_5);
-      // "Minha estadia" cabe sem cortar (senão os DOIS lugares usam "Estadia").
+      // "Estadia" cabe sem cortar (o "Minha estadia" cortava a 390/360 px — MENUS-5, item 4).
       const cortado = await barraDeBaixo(p)
-        .locator("a", { hasText: "Minha estadia" })
+        .locator("a", { hasText: "Estadia" })
         .locator("span.truncate")
         .evaluate((el) => el.scrollWidth > el.clientWidth);
-      expect(cortado, `"Minha estadia" cortado a ${w} px`).toBe(false);
+      expect(cortado, `"Estadia" cortado a ${w} px`).toBe(false);
       const avatar = p.getByTestId("topo-celular").getByTestId("conta-morador-celular");
       const caixa = (await avatar.boundingBox())!;
       expect(caixa.width).toBeGreaterThanOrEqual(44);

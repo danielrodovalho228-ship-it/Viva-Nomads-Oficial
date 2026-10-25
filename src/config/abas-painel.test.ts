@@ -17,7 +17,7 @@ const existe = (href: string) => {
 
 test("no máximo 5 destinos por papel, com e sem contrato", () => {
   for (const papel of PAPEIS) for (const comContrato of [true, false]) assert.ok(abasDoPapelPainel(papel, { comContrato }).length <= 5, papel);
-  assert.deepEqual(abasDoPapelPainel("morador", { comContrato: true }).map((a) => a.rotulo), ["Início", "Buscar", "Pedidos", "Mensagens", "Minha estadia"]);
+  assert.deepEqual(abasDoPapelPainel("morador", { comContrato: true }).map((a) => a.rotulo), ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"]);
   assert.deepEqual(abasDoPapelPainel("morador", { comContrato: false }).map((a) => a.rotulo), ["Início", "Buscar", "Pedidos", "Mensagens"]);
   assert.deepEqual(abasDoPapelPainel("proprietario").map((a) => a.rotulo), ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"]);
 });
@@ -47,8 +47,8 @@ test("a aba certa acende nas subrotas", () => {
   assert.equal(abaAtivaPainel(m, "/dashboard/buscas")?.rotulo, "Buscar");
   assert.equal(abaAtivaPainel(m, "/dashboard/candidaturas")?.rotulo, "Pedidos");
   assert.equal(abaAtivaPainel(m, "/dashboard/propostas/123")?.rotulo, "Pedidos");
-  assert.equal(abaAtivaPainel(m, "/dashboard/solicitacoes")?.rotulo, "Minha estadia");
-  assert.equal(abaAtivaPainel(m, "/dashboard/estadia/abc")?.rotulo, "Minha estadia");
+  assert.equal(abaAtivaPainel(m, "/dashboard/solicitacoes")?.rotulo, "Estadia");
+  assert.equal(abaAtivaPainel(m, "/dashboard/estadia/abc")?.rotulo, "Estadia");
   assert.equal(subabaAtivaPainel(m, "/dashboard/contratos/abc")?.rotulo, "Contrato");
   assert.equal(abaAtivaPainel(m, "/dashboard")?.rotulo, "Início");
   const d = abasDoPapelPainel("proprietario");

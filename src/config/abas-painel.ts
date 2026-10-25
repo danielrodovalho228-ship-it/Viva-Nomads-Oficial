@@ -4,7 +4,7 @@
  * sino ou Conta (avatar). PURA (testada em abas-painel.test.ts); quem desenha é o TopoPainel (computador) e a
  * MobileTabBar (celular). O admin fora (trilha ADMIN: config/menu-admin.ts).
  *
- *  • Morador (MORADOR-NAV): Início · Buscar · Pedidos · Mensagens · Minha estadia (só com contrato). Sem contrato, 4.
+ *  • Morador (MORADOR-NAV): Início · Buscar · Pedidos · Mensagens · Estadia (só com contrato). Sem contrato, 4.
  *  • Proprietário (PROP-1): Início · Anúncios · Interessados · Contratos · Mensagens — igual no celular.
  *  • Parceiro: Início · Pedidos · Agenda · Ganhos · Mensagens (as seções do painel do parceiro, até o PARCEIRO-A).
  */
@@ -42,8 +42,11 @@ export interface ContextoAbas {
 const INICIO: AbaPainel = { id: "inicio", rotulo: "Início", href: "/dashboard", icone: "inicio", authRequired: true, hrefSemLogin: "/" };
 const MENSAGENS: AbaPainel = { id: "mensagens", rotulo: "Mensagens", href: "/dashboard/mensagens", icone: "mensagens", authRequired: true, badge: "mensagens" };
 
-/** "Minha estadia": no celular, se o rótulo não couber a 360 px, os DOIS lugares usam "Estadia" (fonte única). */
-export const ROTULO_ESTADIA = "Minha estadia";
+/**
+ * MENUS-5, item 4: "Minha estadia" não coube na barra de baixo a 390/360 px (laboratório menus-a: o rótulo cortava),
+ * então os DOIS lugares (topo e barra) usam "Estadia" — fonte única. A tela continua com o título "Minha estadia".
+ */
+export const ROTULO_ESTADIA = "Estadia";
 
 export const ABAS_MORADOR: readonly AbaPainel[] = [
   INICIO,
