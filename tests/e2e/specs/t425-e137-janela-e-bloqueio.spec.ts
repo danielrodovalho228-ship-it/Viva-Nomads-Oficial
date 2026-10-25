@@ -58,7 +58,9 @@ test.describe("T425 — E137: janela menor que a duração mínima e bloqueio re
     await bloquear.click();
     // Depois de gravar, a seleção limpa e o botão volta a ficar travado (ou aparece o erro do servidor).
     await expect(bloquear).toBeDisabled({ timeout: 20_000 });
-    // 2ª vez: o dia bloqueado abre as opções do dia; nada a bloquear de novo.
+    // 2ª vez: o dia bloqueado abre as opções do dia; nada a bloquear de novo. Antes, o bloqueio já na lista (a grade só
+    // pinta o dia como bloqueado depois de recarregar a lista; tocar antes seleciona o dia como início).
+    await expect(etapa.locator(`[data-testid="bloqueio-item"][data-inicio="${INI}"]`).first()).toBeVisible({ timeout: 20_000 });
     await etapa.locator(`button[data-dia="${INI}"]`).click();
     await expect(etapa.getByTestId("dia-bloqueado-opcoes")).toBeVisible();
     await expect(bloquear).toBeDisabled();
