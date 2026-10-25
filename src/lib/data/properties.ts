@@ -10,7 +10,7 @@ import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { primeiroPerfilPublico, type PerfilPublicoDono } from "@/lib/data/perfil-publico-dono";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { signAvatarPath } from "@/lib/data/avatar-url";
-import { semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
+import { semAnunciosDeContaTeste, semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
 import { ROTULOS_FILTRAVEIS, chavesFiltroDe } from "@/lib/busca/filtro-comodidades";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
@@ -86,6 +86,8 @@ export const PROPERTY_PUBLIC_COLUMNS =
 
 interface PropertyRow {
   id: string;
+  /** Só para o filtro de conta de teste (E131) — não vai para o Property público. */
+  owner_id?: string | null;
   title: string;
   description: string | null;
   property_type: string | null;
@@ -343,6 +345,38 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
   };
 }
 
+/**
+ * E131: ids das CONTAS DE TESTE entre os donos da lista (só os ids — nenhum outro dado do perfil sai daqui). A chave
+ * pública não lê profiles; a leitura é no servidor, com a chave de serviço, como as outras deste arquivo. Falha = nenhum
+ * id (a lista segue só com a regra do título, como antes).
+ */
+async function donosDeTeste(linhas: PropertyRow[]): Promise<Set<string>> {
+  const donos = [...new Set(linhas.map((r) => r.owner_id).filter((id): id is string => !!id))];
+  if (donos.length === 0) return new Set();
+  try {
+    const admin = createAdminClient();
+    if (!admin) return new Set();
+    const { data, error } = await admin.from("profiles").select("id").in("id", donos).eq("is_teste", true);
+    if (error || !data) return new Set();
+    return new Set((data as { id: string }[]).map((r) => r.id));
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * Fora da vitrine pública: anúncio com a marca de teste no título E anúncio de conta de teste (E93 + E131). Filtra as
+ * LINHAS do banco (o owner_id não vai para o Property que chega ao navegador).
+ */
+async function semAnunciosDeTesteNaVitrine(linhas: PropertyRow[]): Promise<Property[]> {
+  const semMarca = semAnunciosDeTeste(linhas);
+  const semConta = semAnunciosDeContaTeste(
+    semMarca.map((r) => ({ ...r, ownerId: r.owner_id ?? null })),
+    await donosDeTeste(semMarca),
+  );
+  return semConta.map(rowToProperty).map(comCoordenadaAproximada);
+}
+
 export async function listProperties(): Promise<Property[]> {
   const supabase = createPublicClient();
   // Modo demonstração (sem Supabase): dados de exemplo.
@@ -366,7 +400,8 @@ export async function listProperties(): Promise<Property[]> {
     if (error) console.error("[listProperties] Supabase error:", error.code, error.message);
     // Imóveis reais + anúncios demo (enquanto o flag estiver ligado), sem 500.
     if (error || !data) return withDemos([]);
-    const mapped = semAnunciosDeTeste((data as unknown as PropertyRow[]).map(rowToProperty).map(comCoordenadaAproximada)); // anúncio de teste do QA nunca aparece ao visitante
+    // Anúncio de teste do QA (marca no título ou conta de teste — E131) nunca aparece ao visitante.
+    const mapped = await semAnunciosDeTesteNaVitrine(data as unknown as PropertyRow[]);
     await attachCoverPhotos(supabase, mapped); // capa real para os cards (best-effort)
     await attachReviewAggregates(supabase, mapped); // nota/contagem REAL (fonte única)
     await attachComodidadesFiltro(supabase, mapped); // Wi-Fi/cozinha/garagem/lavar, para os filtros da busca (best-effort)
@@ -395,7 +430,7 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
       .eq("status", "active")
       .order("created_at", { ascending: false });
     if (error || !data) return [];
-    const mapped = semAnunciosDeTeste((data as unknown as PropertyRow[]).map(rowToProperty).map(comCoordenadaAproximada));
+    const mapped = await semAnunciosDeTesteNaVitrine(data as unknown as PropertyRow[]);
     await attachCoverPhotos(supabase, mapped);
     await attachReviewAggregates(supabase, mapped);
     return mapped;
