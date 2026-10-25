@@ -46,8 +46,8 @@ export function MolduraAssistente({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
       <DemoBanner />
-      {/* O rodapé do fluxo fica preso no fim da tela: o foco e a rolagem até um campo param acima dele (e da barra das fotos). */}
-      <style>{`html{scroll-padding-bottom:calc(var(--altura-barra-fotos,0px) + 8rem)}`}</style>
+      {/* O rodapé do fluxo fica preso no fim da tela: o foco e a rolagem até um campo param acima dele. */}
+      <style>{`html{scroll-padding-bottom:8rem}`}</style>
       <main data-painel-main className="mx-auto w-full max-w-6xl min-w-0 flex-1 px-4 pt-6 sm:px-8">
         {children}
       </main>

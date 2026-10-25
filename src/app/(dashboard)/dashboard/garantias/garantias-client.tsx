@@ -9,6 +9,7 @@ import { DEMO_CONTRACTS } from "@/lib/demo/seed";
 import type { ContratoView } from "@/lib/data/contratos-actions";
 import { formatBRL } from "@/lib/utils";
 import { estadoCaucao, type EstadoCaucao } from "@/lib/caucao-estado";
+import { PERC_CAUCAO_BLOCO } from "@/lib/contrato-blocos";
 
 interface LinhaCaucao {
   id: string;
@@ -52,7 +53,7 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
             <li className="flex items-start gap-2">
               <PiggyBank className="mt-1 h-4 w-4 shrink-0 text-forest" />
               <span>
-                <strong>50% do bloco</strong> (contrato por blocos de até 90 dias), <strong>devolvível</strong> ao
+                <strong>até {Math.round(PERC_CAUCAO_BLOCO * 100)}% de cada bloco</strong> (contrato por blocos de até 90 dias), <strong>devolvível</strong> ao
                 fim da estadia — em conta poupança, até 3 vezes o valor mensal.
               </span>
             </li>

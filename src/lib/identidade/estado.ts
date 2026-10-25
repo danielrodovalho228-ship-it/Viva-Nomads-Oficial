@@ -60,3 +60,12 @@ export function estadoIdentidadeDe(laudoGravado: LaudoCafGravado | null, simulav
   if (simulavel) return { estado: "simulavel", texto: TEXTO_SIMULAVEL, validoAte: null, vencidaEm: null, acao: { texto: TEXTO_SIMULAVEL, href: "/dashboard/verificacao" } };
   return { estado: "em_breve", texto: TEXTO_EM_BREVE, validoAte: null, vencidaEm: null, acao: null };
 }
+
+/**
+ * PROP-3 (E118): o que a OUTRA PARTE vê (o dono em Interessados e no Fechamento) — UMA função para as duas telas.
+ * Só dois estados: verificada (laudo válido) ou pendente. Os textos "para mim" (simulado, em breve, confirmar de novo)
+ * nunca aparecem como status de outra pessoa.
+ */
+export function identidadeParaOutraParte(e: EstadoIdentidade | null | undefined): { verificada: boolean; rotulo: string } {
+  return e?.estado === "confirmada" ? { verificada: true, rotulo: "Identidade verificada" } : { verificada: false, rotulo: "Identidade pendente" };
+}

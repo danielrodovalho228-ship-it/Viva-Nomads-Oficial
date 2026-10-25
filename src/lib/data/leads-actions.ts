@@ -22,6 +22,8 @@ import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
 import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
+import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
+import type { EstadoIdentidade } from "@/lib/identidade/estado";
 
 interface ActionResult {
   ok: boolean;
@@ -266,6 +268,8 @@ export interface FechamentoContexto {
   proposta?: { id: string; numero: string; valorMensal: number; meses: number; dataEntrada: string } | null;
   /** Prompt 8: quantas pessoas vão morar, da candidatura (o Fechamento abre com o número). */
   ocupantesSugerido?: number | null;
+  /** PROP-3 (E118): identidade do INQUILINO, pela mesma fonte de Interessados (estadosIdentidade). */
+  identidadeInquilino?: EstadoIdentidade | null;
 }
 
 export async function getFechamentoContext(
@@ -301,6 +305,7 @@ export async function getFechamentoContext(
   let inicioDesejado: string | null = null;
   let proposta: FechamentoContexto["proposta"] = null;
   let ocupantesSugerido: number | null = null;
+  let identidadeInquilino: EstadoIdentidade | null = null;
   // Plano e taxa congelados no aceite: só pelo servidor, depois de conferir que a candidatura é deste dono (0177).
   let taxaLead: TaxaDoLead | null = null;
   try {
@@ -323,6 +328,7 @@ export async function getFechamentoContext(
         .eq("id", lead.tenant_id)
         .maybeSingle();
       if (t?.full_name && !String(t.full_name).includes("@")) tenantName = t.full_name;
+      identidadeInquilino = (await estadosIdentidade(admin, [lead.tenant_id as string])).get(lead.tenant_id as string) ?? null;
     }
   } catch {
     /* mantém o neutro */
@@ -348,5 +354,6 @@ export async function getFechamentoContext(
     inicioSugerido: inicioSugerido(proposta?.dataEntrada ?? inicioDesejado, hojeBR()),
     proposta,
     ocupantesSugerido,
+    identidadeInquilino,
   };
 }

@@ -99,10 +99,45 @@ test("progresso que anda: degraus, tela do Perfil e o medidor releem quando o pe
   assert.match(ler("src/components/account/conta-secoes.tsx"), /window\.dispatchEvent\(new Event\(PERFIL_ATUALIZADO\)\)/);
 });
 
-test("espelho e celular (perfil-01): pílula verde do título, 'Salvar alterações' preso só no celular", () => {
+test("espelho e celular (perfil-01): pílula verde do título; E61: no celular o 'Salvar alterações' vem logo depois do conteúdo", () => {
   const tela = ler("src/components/account/perfil-tela.tsx");
-  assert.match(tela, /vn-salvar-perfil sticky[^"]*lg:hidden/);
+  // E61 (print do Daniel, 24/10): sem faixa presa — o botão fica na ordem da página, sem vão morto antes ou depois.
+  assert.doesNotMatch(tela, /vn-salvar-perfil|sticky/);
+  assert.doesNotMatch(ler("src/app/globals.css"), /vn-salvar-perfil|perfil-salvar-celular/);
+  assert.match(tela, /<div className="lg:hidden" data-testid="perfil-salvar-celular-faixa">/);
   assert.match(tela, /data-testid="perfil-salvar"/);
   assert.doesNotMatch(tela, /Salvar e ver imóveis/);
   assert.match(ler("src/components/account/espelho-perfil.tsx"), /bg-forest/);
+});
+
+test("E62: o medidor lista só o que falta; a 100% é um estado de sucesso curto, sem a linha 'Cadastro completo: sim'", async () => {
+  const tela = ler("src/components/account/perfil-tela.tsx");
+  assert.doesNotMatch(tela, /Cadastro completo:|nada faltando/);
+  assert.match(tela, /Perfil completo/);
+  assert.match(tela, /const faltam = p\.itens\.filter\(\(i\) => !i\.feito\)/);
+  assert.doesNotMatch(tela, /i\.feito \? <Check/, "a lista não mostra mais os itens já feitos");
+  const { LINHA_PERFIL_COMPLETO } = await import("./perfil-publico.ts");
+  assert.ok(LINHA_PERFIL_COMPLETO.length > 0 && LINHA_PERFIL_COMPLETO.length <= 80, "uma linha");
+});
+
+test("E60: no celular o 'Fale com a Viva' não monta sobre a barra de abas (piso) e sai da tela Perfil", () => {
+  const css = ler("src/app/globals.css");
+  assert.match(css, /@media \(max-width: 767px\) \{\s*body \{\s*--viva-piso: var\(--ajuda-bottom, 5\.25rem\);/);
+  const chat = ler("src/components/ajuda/viva-chat.tsx");
+  const linha = chat.split("\n").find((l) => l.includes("const ESCONDER")) ?? "";
+  assert.match(linha, /"\/dashboard\/conta\/perfil"/);
+});
+
+test("extras do E62: cada falta leva ao lugar dela e o Salvar mostra 'há alterações' × 'tudo salvo'", async () => {
+  const { destinoDaFalta, ESTADO_SALVAR } = await import("./perfil-publico.ts");
+  assert.deepEqual(destinoDaFalta("bio"), { tipo: "campo", alvo: "perfil-bio" });
+  assert.deepEqual(destinoDaFalta("foto"), { tipo: "campo", alvo: "topo-foto" });
+  assert.deepEqual(destinoDaFalta("documento"), { tipo: "rota", href: "/dashboard/conta/dados#documento" });
+  assert.deepEqual(destinoDaFalta("telefone"), { tipo: "rota", href: "/dashboard/conta/dados#celular" });
+  assert.deepEqual(destinoDaFalta("desconhecida"), { tipo: "rota", href: "/dashboard/conta/dados" });
+  assert.equal(ESTADO_SALVAR.alterado, "Há alterações para salvar");
+  assert.equal(ESTADO_SALVAR.salvo, "Tudo salvo");
+  const tela = ler("src/components/account/perfil-tela.tsx");
+  assert.match(tela, /data-testid=\{`perfil-falta-\$\{i\.chave\}`\}/);
+  assert.equal((tela.match(/<EstadoSalvar alterado=\{alterado\} \/>/g) ?? []).length, 2, "junto do botão no computador e no celular");
 });
