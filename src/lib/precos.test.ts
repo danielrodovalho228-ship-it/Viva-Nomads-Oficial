@@ -121,3 +121,34 @@ test("pacote incluído (valor 0): linha diz incluída e soma 0", () => {
   assert.equal(l.incluida, true);
   assert.match(l.rotulo, /incluída no valor mensal/);
 });
+
+// PROP-2: casos reais conferidos em produção (proposta_versoes): mensal 3.200 / 3.300 / 2.500 × 4, consumo 200, limpeza 450.
+test("PROP-2: a proposta real — 3.200 + consumo 200 = 3.400/mês; 4 × 3.400 + preparação 450 = 14.050, com a conta aberta", async () => {
+  const { precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_MES, ROTULO_TOTAL_CONTRATO } = await import("./precos.ts");
+  const { calcularTotais } = await import("./propostas/regras.ts");
+  const base = { meses: 4, condominio: 0, consumo: 200, limpezasMes: 0, valorLimpeza: 0, taxaPet: 0, limpezaUnica: 450 };
+  for (const [mensal, mes, contrato] of [[3200, 3400, 14050], [3300, 3500, 14450], [2500, 2700, 11250]] as const) {
+    const r = precoDaProposta({ ...base, valorMensal: mensal });
+    assert.equal(r.mensal, mensal);
+    assert.equal(r.totalPorMes, mes);
+    assert.equal(r.totalContrato, contrato);
+    assert.deepEqual(r.parcelasMes, [{ rotulo: ROTULO_MENSAL, valor: mensal }, { rotulo: "Consumo estimado", valor: 200 }]);
+    // Bate com o cálculo que grava a versão (os totais nunca divergem da proposta).
+    const t = calcularTotais({ valorBase: mensal, descontoPct: 0, descontoValor: 0, motivoDesconto: null, descontoEstadiaPct: 0, dataEntrada: "2026-11-01", ...base });
+    assert.equal(r.totalPorMes, t.totalMensal);
+    assert.equal(r.totalContrato, t.totalContrato);
+  }
+  const conta = precoDaProposta({ ...base, valorMensal: 3200 }).conta!.replace(/ /g, " ");
+  assert.equal(conta, "4 × R$ 3.400 + limpeza de preparação R$ 450 = R$ 14.050");
+  assert.equal(ROTULO_TOTAL_MES, "Total por mês (com contas)");
+  assert.equal(ROTULO_TOTAL_CONTRATO, "Total do contrato");
+});
+
+test("PROP-2: imóvel com pacote de limpeza — 3.200 + 200 + 180 = 3.580/mês (o número do anúncio, com rótulo em cada parcela)", async () => {
+  const { precoDoImovel } = await import("./precos.ts");
+  const r = precoDoImovel(imovel({ monthlyPrice: 3200, utilitiesEstimate: 200, limpezaEstadia: { porMes: 2, valorMes: 180, inclui: "x" }, prepFee: 450 }), 4);
+  assert.equal(r.totalPorMes, 3580);
+  assert.deepEqual(r.parcelasMes.map((p) => p.rotulo), ["Mensal", "Água, luz e gás (estimativa)", "Limpeza durante a estadia"]);
+  assert.equal(r.totalContrato, 4 * 3580 + 450);
+  assert.equal(precoDoImovel(imovel({ monthlyPrice: 3200 })).totalContrato, null, "sem duração, sem total do contrato");
+});

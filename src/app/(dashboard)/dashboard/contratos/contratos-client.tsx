@@ -43,6 +43,7 @@ import { STATUS_CONTRATO_ENCERRADO } from "@/lib/fiscal/devolucao";
 
 type Extras = Awaited<ReturnType<typeof documentosDosContratos>>;
 import { formatBRL, cn } from "@/lib/utils";
+import { ROTULO_MENSAL } from "@/lib/precos";
 import { ROTULO_ETAPA, type EtapaContrato } from "@/lib/contrato-etapas";
 import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
@@ -244,7 +245,7 @@ function ContratoCard({
           {!demo && <ProblemaComIsto tipo="contrato" id={contrato.id} className="mt-1" />}
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted">
             <span className="inline-flex items-center gap-1">
-              <CircleDollarSign className="h-3.5 w-3.5" /> {formatBRL(contrato.aluguelMensal)}/mês
+              <CircleDollarSign className="h-3.5 w-3.5" /> {ROTULO_MENSAL} {formatBRL(contrato.aluguelMensal)}
             </span>
             <span className="inline-flex items-center gap-1">
               <CalendarDays className="h-3.5 w-3.5" /> {contrato.blocos.length}{" "}
@@ -438,7 +439,7 @@ function BlocoRow({
           <p className="font-medium text-ink">{formatBRL(bloco.valor)}</p>
         </div>
         <div className="rounded-lg bg-surface-2 px-3 py-2">
-          <p className="text-muted">Valor mensal</p>
+          <p className="text-muted">{ROTULO_MENSAL}</p>
           <p className="font-medium text-ink">{formatBRL(aluguelMensal)}</p>
         </div>
         <div className="rounded-lg bg-surface-2 px-3 py-2">

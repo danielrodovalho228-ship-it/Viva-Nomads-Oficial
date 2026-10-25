@@ -686,5 +686,11 @@ export async function listMyProperties(): Promise<Property[]> {
   const lista = (data as unknown as PropertyRow[]).map(rowToProperty);
   // As fotos vêm de property_photos (sem isso o card ficava sem capa).
   await attachCoverPhotos(supabase, lista);
+  // PROP-2: o pacote de limpeza entra no total do mês (sem ele, o Anúncios mostrava menos que a página do imóvel).
+  if (lista.length) {
+    const { data: limpezas } = await supabase.from("properties").select("id, limpeza_estadia").in("id", lista.map((p) => p.id));
+    const porId = new Map(((limpezas ?? []) as { id: string; limpeza_estadia: unknown }[]).map((l) => [l.id, l.limpeza_estadia]));
+    for (const p of lista) p.limpezaEstadia = normalizarLimpezaEstadia(porId.get(p.id)) ?? undefined;
+  }
   return lista;
 }
