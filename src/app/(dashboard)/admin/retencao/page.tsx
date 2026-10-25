@@ -4,7 +4,7 @@ import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives"
 import { ButtonLink } from "@/components/ui/button";
 import { AvisoAdmin, ListaNumeros, NumeroHeroi, SeloEstado } from "@/components/admin/numeros";
 import { INVENTARIO } from "@/config/retencao";
-import { eliminaDeVerdade, textoPrazo } from "@/lib/minimizacao/regras";
+import { eliminaDeVerdade, motivoSimulado, textoPrazo } from "@/lib/minimizacao/regras";
 import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
 import { resumoDaSemana, rotuloMotivo, type LinhaLivro } from "@/lib/minimizacao/painel";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
@@ -23,6 +23,12 @@ interface Simulado {
   base: string;
 }
 
+const POR_ID = new Map(INVENTARIO.map((i) => [i.id, i]));
+/** Por que esta linha do relatório não apagou: o motivo do inventário; sem item (ou item que apaga), "nada venceu". */
+const motivoDaLinha = (id: string) => {
+  const item = POR_ID.get(id);
+  return (item && motivoSimulado(item)) ?? "apaga de verdade; nesta rodada não havia nada vencido";
+};
 const n = (v: number | null) => (v === null ? "—" : v.toLocaleString("pt-BR"));
 
 /**
@@ -106,7 +112,11 @@ export default async function AdminRetencaoPage() {
               <tbody className="divide-y divide-sage-200">
                 {linhas.map((l) => (
                   <tr key={l.item} data-item={l.item}>
-                    <td className="py-2 pr-3 text-ink">{l.item}</td>
+                    <td className="py-2 pr-3 text-ink">
+                      {l.item}
+                      {/* ADMIN-6: "simulado" só onde a eliminação é simulada, com o porquê em uma linha. */}
+                      {!l.real && <span className="block text-xs text-muted" data-testid="retencao-motivo-simulado">{motivoDaLinha(l.item)}</span>}
+                    </td>
                     <td className="py-2 pr-3">{n(l.guardados)}</td>
                     <td className="py-2 pr-3 font-semibold">{n(l.vencidos)}</td>
                     <td className="py-2 pr-3">{n(l.vencidos_teste)}</td>
@@ -165,7 +175,15 @@ export default async function AdminRetencaoPage() {
                   <td className="py-2 pr-3 text-xs">{i.finalidade}</td>
                   <td className="py-2 pr-3 text-xs">{textoPrazo(i)}</td>
                   <td className="py-2 pr-3 text-xs">{i.fica ?? "—"}</td>
-                  <td className="py-2 text-xs">{eliminaDeVerdade(i) ? "1 · apaga" : `${i.fase} · simulado`}</td>
+                  <td className="py-2 text-xs" data-testid="inventario-modo" data-real={eliminaDeVerdade(i) ? "1" : "0"}>
+                    {eliminaDeVerdade(i) ? (
+                      "Apaga de verdade"
+                    ) : (
+                      <>
+                        Simulado <span className="block text-muted">{motivoSimulado(i)}</span>
+                      </>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

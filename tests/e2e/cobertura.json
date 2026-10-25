@@ -1890,7 +1890,8 @@
       ],
       "specs": [
         "t281-minimizacao",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t467-admin6-rotas"
       ]
     },
     "/admin/conforto": {
@@ -2042,7 +2043,8 @@
       ],
       "specs": [
         "t316-sair-da-viva-51",
-        "t319-varredura-bloco10"
+        "t319-varredura-bloco10",
+        "t467-admin6-rotas"
       ]
     },
     "/dashboard/imoveis/[id]/desempenho": {
