@@ -45,7 +45,8 @@
   --color-sage: #2e7d5b; /* secundária (verde médio) */
   --color-sage-100: #eef6ef;
   --color-sage-200: #dce9e0;
-  --color-areia: #f7f2ea; /* CONTA-A: painel quente do espelho do perfil (neutro, não é cor de marca) */
+  /* E166 (Daniel, 25/10): o fundo bege/creme ("areia") saiu do site; o fundo é o clean do Início do
+     proprietário (surface-2), com cartões brancos de borda fina. */
   --color-champagne: #6cbe2a; /* só selo (Pronto para Morar) — nunca texto nem botão */
   --color-champagne-600: #4fa01e;
 
@@ -500,10 +501,10 @@ body:has([data-testid="barra-fixa-imovel"]) {
     padding-bottom: 2rem;
   }
 }
-/* A1 (mockups perfil-01..08): as telas da Conta sobre o fundo areia, com cartões brancos. */
+/* A1 (mockups perfil-01..08): as telas da Conta sobre o fundo clean (E166: antes, areia), com cartões brancos. */
 [data-painel-main]:has([data-conta-casca]:not(.hidden *)),
 [data-painel-main]:has([data-testid="conta-menu"]) {
-  background: var(--color-areia);
+  background: var(--color-surface-2);
 }
 /* Rolagem até um elemento (âncora, foco, "rolar até o botão") para acima do botão flutuante da Viva, em qualquer
    largura: o flutuante não cobre a ação principal da tela (t241, #953). */
