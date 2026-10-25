@@ -767,7 +767,8 @@
         "t405-perfil-e60-e62",
         "t415-varredura-bloco32",
         "t549-varredura-bloco39",
-        "t552-por-que-na-cidade"
+        "t552-por-que-na-cidade",
+        "t553-varredura-bloco41"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1007,7 +1008,8 @@
         "t548-e132a-declaracoes-persistem",
         "t549-varredura-bloco39",
         "t550-e179-conforto-respostas-completas",
-        "t551-varredura-bloco40"
+        "t551-varredura-bloco40",
+        "t553-varredura-bloco41"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1041,7 +1043,8 @@
         "t338-varredura-bloco15",
         "t416-varredura-bloco33",
         "t486-e174b-selo-vinculo",
-        "t552-por-que-na-cidade"
+        "t552-por-que-na-cidade",
+        "t553-varredura-bloco41"
       ]
     },
     "/dashboard/locacoes": {
@@ -1096,7 +1099,8 @@
         "t351-telas-linkedin-63a",
         "t379-55e2-filtro-contato-um-toque",
         "t541-e168-painel-acompanha-filtro",
-        "t486-e174b-selo-vinculo"
+        "t486-e174b-selo-vinculo",
+        "t553-varredura-bloco41"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1594,7 +1598,8 @@
         "t338-varredura-bloco15",
         "t442-foto-perfil-revisao",
         "t408-varredura-bloco27",
-        "t486-e174b-selo-vinculo"
+        "t486-e174b-selo-vinculo",
+        "t553-varredura-bloco41"
       ]
     },
     "/qualificar": {
@@ -1704,7 +1709,8 @@
       ],
       "specs": [
         "t212-ferramentas-proprietario",
-        "t298-varredura-logada-bloco4"
+        "t298-varredura-logada-bloco4",
+        "t553-varredura-bloco41"
       ]
     },
     "/dashboard/servicos": {
