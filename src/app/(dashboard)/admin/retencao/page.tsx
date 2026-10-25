@@ -7,8 +7,9 @@ import { INVENTARIO } from "@/config/retencao";
 import { eliminaDeVerdade, textoPrazo } from "@/lib/minimizacao/regras";
 import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
 import { resumoDaSemana, rotuloMotivo, type LinhaLivro } from "@/lib/minimizacao/painel";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Dados e retenção — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/retencao"), robots: { index: false, follow: false } };
 
 interface Simulado {
   dia: string;
@@ -33,7 +34,7 @@ export default async function AdminRetencaoPage() {
   if (!admin) {
     return (
       <>
-        <PageTitle title="Dados e retenção" />
+        <PageTitle title={rotuloDoAdmin("/admin/retencao")} />
         <EmptyState icon={ShieldCheck} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       </>
     );
@@ -53,7 +54,7 @@ export default async function AdminRetencaoPage() {
 
   return (
     <>
-      <PageTitle title="Dados e retenção" subtitle="O que a Viva guarda, para quê e até quando. Guardamos o veredito, não o material." />
+      <PageTitle title={rotuloDoAdmin("/admin/retencao")} subtitle="O que a Viva guarda, para quê e até quando. Guardamos o veredito, não o material." />
       {erroLivro && (
         <AvisoAdmin tom="atencao" className="mb-6">
           Não foi possível ler o livro de eliminações agora. Tente de novo em instantes.

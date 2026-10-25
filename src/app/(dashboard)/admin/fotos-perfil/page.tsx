@@ -4,8 +4,9 @@ import { ButtonLink } from "@/components/ui/button";
 import { filaFotosPerfil } from "@/lib/data/fotos-perfil-actions";
 import { REGRA_FOTO_PERFIL } from "@/lib/perfil/foto-revisao";
 import { FilaFotosCliente } from "./fila-fotos-cliente";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Fotos de perfil — Admin" };
+export const metadata = { title: tituloDoAdmin("/admin/fotos-perfil") };
 export const dynamic = "force-dynamic";
 
 /**
@@ -17,7 +18,7 @@ export default async function AdminFotosPerfilPage() {
   const fila = await filaFotosPerfil();
   return (
     <>
-      <PageTitle title="Fotos de perfil" subtitle={REGRA_FOTO_PERFIL} />
+      <PageTitle title={rotuloDoAdmin("/admin/fotos-perfil")} subtitle={REGRA_FOTO_PERFIL} />
       {fila === null ? (
         <EmptyState icon={UserRound} title="Sem acesso à fila" text="Entre com a verificação em duas etapas para revisar as fotos." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       ) : fila.length === 0 ? (

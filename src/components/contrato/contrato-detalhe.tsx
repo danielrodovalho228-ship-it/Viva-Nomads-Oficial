@@ -114,7 +114,7 @@ export async function ContratoDetalhe({
           </div>
         </Panel>
       )}
-      <LinhaDoTempoEstadia etapas={c.linhaDoTempo} />
+      <LinhaDoTempoEstadia etapas={c.linhaDoTempo} hrefConferencia={conferencia ? "#conferencia" : undefined} />
       {(c.assinadoProprietarioEm || c.assinadoInquilinoEm) && (
         <Panel className="mt-4 p-4">
           <h2 className="font-title text-base font-semibold text-ink">Pacote de provas</h2>
@@ -131,7 +131,8 @@ export async function ContratoDetalhe({
         </Panel>
       )}
       {conferencia && (
-        <Panel className="mt-4 p-4">
+        // PROP-5: a conferência mora aqui, dentro do contrato (o atalho /dashboard/contratos#conferencia chega nesta seção).
+        <Panel id="conferencia" className="mt-4 scroll-mt-24 p-4" data-testid="contrato-conferencia">
           <h2 className="font-title text-base font-semibold text-ink">Conferência de entrada e saída</h2>
           <p className="mt-1 text-sm text-muted">Fotos e itens por cômodo, confirmados ou contestados pelas duas partes. É a base para conversar sobre a Caução.</p>
           {mostrarChecklistCameras({ papel: c.papel, status: c.status }) && (

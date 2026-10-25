@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { mudarStatusAjudaPublicacao, type PedidoAjuda } from "@/lib/data/ajuda-publicacao-actions";
 import { proximosStatus, ROTULO_STATUS, type StatusAjuda } from "@/lib/ajuda-publicacao/ajuda";
+import { rotuloDoAdmin } from "@/config/menu-admin";
 
 const TOM: Record<StatusAjuda, string> = {
   recebido: "border border-line bg-white text-amber-800",
@@ -46,7 +47,7 @@ export function AjudaPublicacaoClient({ fila }: { fila: PedidoAjuda[] }) {
   return (
     <>
       <PageTitle
-        title="Publicamos para você"
+        title={rotuloDoAdmin("/admin/ajuda-publicacao")}
         subtitle="Pedidos de donos que querem ajuda para montar o anúncio. O dono aprova o rascunho antes de publicar."
       />
       <NumeroHeroi rotulo="Pedidos recebidos" valor={contar("recebido")} href="#lista" />

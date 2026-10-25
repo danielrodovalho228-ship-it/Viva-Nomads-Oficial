@@ -72,73 +72,9 @@ export function temPapel(papel: PapelMenu, ctx: ContextoMenu): boolean {
   return ctx.admin;
 }
 
-const ADMIN: ItemDoPapel[] = [
-  {
-    id: "admin",
-    rotulo: "Administração",
-    icone: "admin",
-    filhos: [
-      // NAV-A: "Painel Admin" e "Equipe e aprovações" saíram da Conta e moram só aqui, na barra de trabalho.
-      { id: "admin-painel", rotulo: "Painel Admin", icone: "admin", href: "/admin" },
-      { id: "admin-equipe", rotulo: "Equipe e aprovações", icone: "agentes", href: "/admin/agentes#aprovacoes" },
-      {
-        id: "admin-cadastros",
-        rotulo: "Cadastros",
-        icone: "imoveis",
-        filhos: [
-          { id: "admin-imoveis", rotulo: "Imóveis", icone: "imoveis", href: "/admin/imoveis" },
-          { id: "admin-contratos", rotulo: "Contratos", icone: "contratos", href: "/admin/contratos" },
-          { id: "admin-usuarios", rotulo: "Usuários", icone: "conta", href: "/admin/usuarios" },
-        ],
-      },
-      {
-        id: "admin-operacao",
-        rotulo: "Operação",
-        icone: "operacao",
-        filhos: [
-          { id: "admin-pendencias", rotulo: "Central de pendências", icone: "solicitacoes", href: "/admin/pendencias" },
-          { id: "admin-pedidos", rotulo: "Moderar pedidos", icone: "pedidos", href: "/admin/pedidos" },
-          { id: "admin-ajuda-publicacao", rotulo: "Publicamos para você", icone: "documentos", href: "/admin/ajuda-publicacao" },
-          { id: "admin-documentos", rotulo: "Documentos", icone: "documentos", href: "/admin/documentos" },
-          { id: "admin-atendimento", rotulo: "Atendimento", icone: "atendimento", href: "/admin/atendimento" },
-          { id: "admin-solicitacoes", rotulo: "Solicitações de manutenção", icone: "solicitacoes", href: "/admin/solicitacoes" },
-          { id: "admin-servicos", rotulo: "Serviços do morador", icone: "solicitacoes", href: "/admin/servicos" },
-        ],
-      },
-      {
-        id: "admin-rede",
-        rotulo: "Rede",
-        icone: "rede",
-        filhos: [
-          { id: "admin-parceiros", rotulo: "Parceiros", icone: "parceiros", href: "/admin/parceiros" },
-          { id: "admin-fotografos", rotulo: "Fotógrafos", icone: "fotografos", href: "/admin/fotografos" },
-          // Prompt 62-B1: credenciamento, tabela de preço, fila e auditoria da avaliação do imóvel (funciona com a chave desligada).
-          { id: "admin-avaliadores", rotulo: "Avaliações do imóvel", icone: "parceiros", href: "/admin/avaliadores" },
-        ],
-      },
-      {
-        id: "admin-dinheiro",
-        rotulo: "Dinheiro",
-        icone: "dinheiro",
-        filhos: [
-          { id: "admin-financeiro", rotulo: "Financeiro", icone: "financeiro", href: "/admin/financeiro" },
-          { id: "admin-socios", rotulo: "Caixa dos Sócios", icone: "socios", href: "/admin/socios" },
-        ],
-      },
-      {
-        id: "admin-ferramentas",
-        rotulo: "Ferramentas",
-        icone: "ferramentas",
-        filhos: [
-          { id: "admin-dados-teste", rotulo: "Dados de teste", icone: "ferramentas", href: "/admin/dados-de-teste" },
-          { id: "admin-emails-teste", rotulo: "E-mails de teste", icone: "ferramentas", href: "/admin/emails-teste" },
-        ],
-      },
-      { id: "admin-marketing", rotulo: "Marketing", icone: "marketing", href: "/admin/marketing" },
-      { id: "admin-agentes", rotulo: "Agentes", icone: "agentes", href: "/admin/agentes" },
-    ],
-  },
-];
+// ADMIN-1: em /dashboard* o admin vê as áreas de usuário e UM item que leva ao painel; a barra do admin (só em /admin*)
+// mora em config/menu-admin.ts.
+const ADMIN: ItemDoPapel[] = [{ id: "admin", rotulo: "Painel admin", icone: "admin", href: "/admin" }];
 
 const MORADOR: ItemDoPapel[] = [
   {

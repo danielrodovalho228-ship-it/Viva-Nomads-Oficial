@@ -18,6 +18,7 @@ import { ContaPausada } from "@/components/account/sair-da-viva";
 import { AvisoStrikePainel } from "@/components/vistoria/aviso-strike-painel";
 import { visualizacoesDoDono } from "@/lib/data/desempenho-anuncio";
 import { listConversations } from "@/lib/data/messages";
+import { alertaDoTopo, blocoPrincipalDono } from "@/lib/painel/inicio-dono";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -63,6 +64,15 @@ async function contaPausadaEm(): Promise<string | null> {
   return (data?.pausada_em as string | null) ?? null;
 }
 
+/** PROP-6: a capa do rascunho (1ª foto, a capa do cadastro); sem foto, null (nenhuma imagem inventada). */
+async function capaDoRascunho(id: string | null): Promise<string | null> {
+  if (!id) return null;
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const { data } = await supabase.from("property_photos").select("url").eq("property_id", id).order("sort_order", { ascending: true }).limit(1).maybeSingle();
+  return (data?.url as string | undefined) ?? null;
+}
+
 /** Rascunho mais recente → card "Anúncio em andamento" (antes lido no navegador por server action). */
 function rascunhoDoDraft(d: Awaited<ReturnType<typeof getLatestDraft>>): RascunhoPendente | null {
   if (!d) return null;
@@ -103,7 +113,7 @@ export default async function DashboardPage() {
     visualizacoesDoDono(agora).catch(() => null),
     listConversations().catch(() => []),
   ]);
-  const pausadaEm = await contaPausadaEm();
+  const [pausadaEm, capaRascunho] = await Promise.all([contaPausadaEm(), capaDoRascunho(draft?.id ?? null)]);
   // 64-B: o limite do plano (mesma conta da publicação), para quem já tem anúncio publicado.
   const limite = imoveisDono.length ? await minhaSituacaoLimite().catch(() => null) : null;
   const rascunho = rascunhoDoDraft(draft);
@@ -137,6 +147,18 @@ export default async function DashboardPage() {
     agora,
   );
 
+  // PROP-6: o Início do dono (modo dono) — faixa com a pendência mais urgente e o bloco principal, das mesmas regras.
+  const capaAnuncio = imoveisDono.find((i) => i.photos?.[0])?.photos[0] ?? null;
+  const inicioDono = {
+    alerta: alertaDoTopo(decisoesDono),
+    bloco: blocoPrincipalDono({
+      rascunho: rascunho ? { id: rascunho.id, pct: rascunho.pct, pronto: rascunho.pronto, itens: rascunho.checklist?.itens ?? [], foto: capaRascunho } : null,
+      decisoes: decisoesDono,
+      temAnuncio: imoveisDono.length > 0,
+      fotoAnuncio: capaAnuncio,
+    }),
+  };
+
   return (
     <>
       {/* Prompt 51 F1: conta pausada → "Reativar minha conta" em um toque, no topo do painel. */}
@@ -164,6 +186,7 @@ export default async function DashboardPage() {
       totalCandidaturas={candidaturas.length}
       visualizacoes={visualizacoes}
       totalConversas={conversas.length}
+      inicioDono={inicioDono}
       />
     </>
   );

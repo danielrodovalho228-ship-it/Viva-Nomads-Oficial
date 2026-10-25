@@ -6,12 +6,13 @@ import { cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
 import { getFinanceiro } from "@/lib/data/admin-financeiro";
 import { FinanceiroClient } from "./financeiro-client";
 import { adminDaPagina, cobrancasTaxa, contratosReais, imovelDosLeads, intervaloBRT, taxasVencidas } from "@/lib/data/admin-indicadores";
+import { tituloDoAdmin } from "@/config/menu-admin";
 
 /** Aviso enquanto a 0183 não está no banco: diz o que falta e o que já segue o recorte (complemento do #897). */
 const TEXTO_FINANCEIRO_SEM_0183 =
   "Assinaturas, MRR, recebido, marketing e os gráficos mensais aparecem quando a migração 0183 for aplicada (automática no merge). Contratos, taxa de serviço e take rate já seguem o recorte Real · Teste · Todos.";
 
-export const metadata = { title: "Financeiro — Admin" };
+export const metadata = { title: tituloDoAdmin("/admin/financeiro") };
 
 /** /admin/financeiro (PR C). O layout já exige admin; a leitura confere de novo. */
 export default async function AdminFinanceiroPage({

@@ -14,8 +14,9 @@ import { dataBRT } from "@/lib/datas-brasilia";
 import { cadastroCompleto, faltaNoCadastro, filtrosUsuarios, hrefUsuarios, rotuloFiltroUsuarios, type DadosCadastro } from "@/lib/admin/usuarios-lista";
 import { Users } from "lucide-react";
 import { BotaoContaTeste } from "./conta-teste";
+import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
-export const metadata = { title: "Usuários — Admin", robots: { index: false, follow: false } };
+export const metadata = { title: tituloDoAdmin("/admin/usuarios"), robots: { index: false, follow: false } };
 
 const LIMITE = 200;
 const PAPEL: Record<string, string> = { owner: "Proprietário", tenant: "Inquilino", admin: "Admin" };
@@ -107,7 +108,7 @@ export default async function AdminUsuariosPage({
   return (
     <>
       <PageTitle
-        title="Usuários"
+        title={rotuloDoAdmin("/admin/usuarios")}
         subtitle={rotuloFiltroUsuarios(f)}
         action={
           <Link href="/admin" className="text-sm text-forest underline">

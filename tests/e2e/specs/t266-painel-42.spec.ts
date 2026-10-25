@@ -213,9 +213,25 @@ test.describe("T266 — Painel do Prompt 42", () => {
         ["tributacao", "/dashboard/tributacao"],
         ["contratos-lista", "/dashboard/contratos"],
       ];
+      // PROP-1 (#1337): no computador o dono navega pelo topo — "Conta ▾" › Ferramentas, os cartões da tela de
+      // ferramentas e a aba Contratos; no celular, pela gaveta de sempre.
+      const topoDono = page.getByTestId("topo-dono");
       for (const [id, rota] of rotas) {
-        if (largura === 390) await page.getByRole("button", { name: "Abrir menu" }).click();
-        await page.locator(`nav[aria-label="Menu do painel"] a[data-menu-id="${id}"]:visible`).first().click();
+        if (largura !== 390 && (await topoDono.isVisible())) {
+          if (id === "contratos-lista") {
+            await page.getByTestId("aba-dono-contratos").click();
+          } else {
+            await page.getByTestId("conta-dono").click();
+            await page.getByTestId("conta-dono-ferramentas").click();
+            if (id !== "ferramentas-todas") {
+              await expect(page).toHaveURL(/\/dashboard\/ferramentas$/, { timeout: 20_000 });
+              await page.locator(`main a[href="${rota}"]`).first().click();
+            }
+          }
+        } else {
+          if (largura === 390) await page.getByRole("button", { name: "Abrir menu" }).click();
+          await page.locator(`nav[aria-label="Menu do painel"] a[data-menu-id="${id}"]:visible`).first().click();
+        }
         await expect(page).toHaveURL(new RegExp(`${rota.replace(/\//g, "\\/")}$`), { timeout: 20_000 });
         await expect(page.locator("main h1:visible").first()).toBeVisible({ timeout: 20_000 });
       }
