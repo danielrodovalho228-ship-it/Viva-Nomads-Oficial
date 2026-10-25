@@ -12,6 +12,7 @@ import { MedirNoImovel } from "@/components/niveis/medir-no-imovel";
 import { BlocoOpcional } from "@/components/anuncio/bloco-opcional";
 import { Extras, Ruido } from "@/components/niveis/ruido-extras";
 import { nivelDoMeuImovel, type NivelDoImovelTela } from "@/lib/data/nivel-actions";
+import { ANCORA_NIVEL_CADASTRO } from "@/lib/niveis/destino-nivel";
 import { criterioDoItemNoCadastro, TEXTO_ESSENCIAL_DECLARADO, TEXTO_SUBIR_NIVEL } from "@/lib/niveis/cadastro-passo5";
 
 /**
@@ -64,6 +65,11 @@ export function NivelNoCadastro({
     };
   }, [propertyId, recarregar]);
 
+  // E143: quem chega por um aviso ou pelo painel (…#nivel-cadastro) vê o bloco assim que ele carrega.
+  useEffect(() => {
+    if (carregou && window.location.hash === `#${ANCORA_NIVEL_CADASTRO}`) document.getElementById(ANCORA_NIVEL_CADASTRO)?.scrollIntoView({ block: "start" });
+  }, [carregou]);
+
   if (!propertyId) {
     return (
       <p className="rounded-xl border border-line bg-white p-4 text-sm text-muted" data-testid="nivel-cadastro-sem-rascunho">
@@ -97,7 +103,7 @@ export function NivelNoCadastro({
   const anteriores = base.itens.filter((i) => i.declarado && provaAntigaNoPrazo(i, agora) && i.refazerAte);
 
   return (
-    <section className="rounded-xl border border-sage-200 p-4" data-testid="nivel-cadastro" data-nivel={nivel}>
+    <section id={ANCORA_NIVEL_CADASTRO} className="scroll-mt-24 rounded-xl border border-sage-200 p-4" data-testid="nivel-cadastro" data-nivel={nivel}>
       <h3 className="text-base font-semibold text-ink">Nível do anúncio</h3>
       <p className="mt-1 text-sm text-ink" data-testid="nivel-cadastro-agora" data-nivel={nivel}>
         {nivel === "em_adequacao" ? (

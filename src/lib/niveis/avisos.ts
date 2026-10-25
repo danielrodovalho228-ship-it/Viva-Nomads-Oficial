@@ -7,11 +7,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
+import { destinoNivel } from "@/lib/niveis/destino-nivel";
 
 type Db = SupabaseClient;
 
 async function avisarDono(db: Db, propertyId: string, texto: (titulo: string) => string, cta: string, event: "conforto_pendencia" | "nivel_prova_vencida" = "conforto_pendencia"): Promise<void> {
-  const { data: p } = await db.from("properties").select("owner_id, title").eq("id", propertyId).maybeSingle();
+  const { data: p } = await db.from("properties").select("owner_id, title, status").eq("id", propertyId).maybeSingle();
   if (!p?.owner_id) return;
   const { data: perfil } = await db.from("profiles").select("email, full_name, notif_email").eq("id", p.owner_id).maybeSingle();
   if (!perfil?.email || !notificacaoLigada(perfil.notif_email as boolean | null)) return;
@@ -21,7 +22,8 @@ async function avisarDono(db: Db, propertyId: string, texto: (titulo: string) =>
     email: perfil.email as string,
     name: (perfil.full_name as string) ?? undefined,
     userId: p.owner_id as string,
-    pushUrl: `/dashboard/imoveis/${propertyId}/nivel`,
+    // E143: rascunho → Passo 5 do assistente; publicado → a seção do nível na edição.
+    pushUrl: destinoNivel(propertyId, p.status as string | null),
     body: (n) => `Olá${n ? " " + n : ""}, ${texto(titulo)}`,
     ctaLabel: cta,
   }).catch(() => null);

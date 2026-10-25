@@ -8,7 +8,7 @@
 import type { ItemQueFalta } from "./exibicao.ts";
 
 export const TEXTO_ESSENCIAL_DECLARADO =
-  "O Essencial é o que você declara no padrão mínimo acima: publica sem foto nenhuma.";
+  "O Essencial é o que você declara no padrão mínimo: publica sem foto nenhuma.";
 
 export const TEXTO_SUBIR_NIVEL = "Você pode publicar agora e fotografar depois. Cada item com foto sobe o anúncio de nível.";
 

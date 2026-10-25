@@ -12,12 +12,14 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    4. E145: a busca não respondeu → "não respondeu agora" + "Tentar de novo" (que busca de novo e mostra os lugares);
       o manual é um link discreto. Um rascunho com a lista vazia guardada busca de novo ao entrar.
    5. E146: essenciais e opcionais em linhas separadas; o contador bate com os essenciais marcados.
+   6. E143 (decisão do Muse): anúncio publicado → a seção "Nível do anúncio" da edição (#secao-nivel abre sozinha, com
+      Ruído e Extras); a captura no celular continua na página antiga, com "Voltar …" para o destino de cada caso.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t477.${sufixo}@lab.vivanomads.test`, nome: "Clara Comodidades", role: "owner" as const };
-const ids: { dono?: string; rascunho?: string } = {};
+const ids: { dono?: string; rascunho?: string; ativo?: string } = {};
 const LUGAR = { tipo: "farmacia", categoria: "saude", nome: "Farmácia do Centro (lab)", distanciaM: 220, lat: -18.91, lng: -48.27 };
 
 async function abrir(browser: Browser, w: number, responder?: (r: Route) => Promise<void>): Promise<Page> {
@@ -51,6 +53,7 @@ test.describe("T477 — Passo 5: comodidades, nível opcional, por perto", () =>
       amenityKeys: { home_office: true, mesa_trabalho: true, cadeira_ergonomica: true, ambiente_silencioso: true, iluminacao_boa: true },
     };
     await adm().from("properties").update({ draft_data: d }).eq("id", ids.rascunho);
+    ids.ativo = await criarImovelPronto(ids.dono, `Studio publicado ${sufixo}`, { ativo: true });
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
@@ -67,7 +70,7 @@ test.describe("T477 — Passo 5: comodidades, nível opcional, por perto", () =>
 
       // 1. E141 — uma cobrança só, e o Essencial declarado.
       await expect(p.getByTestId("deteccao-falta")).toHaveCount(0);
-      await expect(p.getByTestId("nivel-cadastro-declarado")).toHaveText("O Essencial é o que você declara no padrão mínimo acima: publica sem foto nenhuma.");
+      await expect(p.getByTestId("nivel-cadastro-declarado")).toHaveText("O Essencial é o que você declara no padrão mínimo: publica sem foto nenhuma.");
       const subir = p.getByTestId("nivel-cadastro-subir");
       if (await subir.count()) await expect(subir).toContainText("opcional");
       // E151 — o subtítulo do item de internet medida não repete o título.
@@ -138,4 +141,29 @@ test.describe("T477 — Passo 5: comodidades, nível opcional, por perto", () =>
     await expect(p.getByTestId(`${id}-botao`)).toBeVisible();
     await p.context().close();
   });
+
+  for (const w of [390, 1280] as const) {
+    test(`6. a ${w} px: publicado → nível na edição; captura com o caminho de volta`, async ({ browser }) => {
+      const p = await entrar(browser, dono.email, senha);
+      await p.setViewportSize({ width: w, height: w === 1280 ? 900 : 844 });
+      await p.goto(`/dashboard/imoveis/${ids.ativo}/editar#secao-nivel`, { waitUntil: "domcontentloaded" });
+      const secao = p.getByTestId("secao-nivel");
+      await expect(secao).toHaveAttribute("data-aberta", "true", { timeout: 30_000 });
+      await expect(secao.getByTestId("nivel-cadastro-agora")).toBeVisible({ timeout: 30_000 });
+      await expect(secao.getByTestId("bloco-nivel-ruido")).toBeVisible();
+      await expect(secao.getByTestId("bloco-nivel-extras")).toBeVisible();
+      await expect(secao.getByRole("button", { name: "Salvar seção" })).toHaveCount(0);
+      await semRolagemLateral(p);
+      await secao.scrollIntoViewIfNeeded();
+      await p.screenshot({ path: `${SAIDA}/t477-edicao-nivel-${w}.png` });
+
+      // A captura (o destino do QR) continua na página antiga e volta ao lugar de cada caso.
+      await p.goto(`/dashboard/imoveis/${ids.ativo}/nivel?fotografar=cozinha_microondas#nivel-itens`, { waitUntil: "domcontentloaded" });
+      await expect(p.getByTestId("nivel-captura-voltar")).toHaveAttribute("href", `/dashboard/imoveis/${ids.ativo}/editar#secao-nivel`, { timeout: 30_000 });
+      await expect(p.getByTestId("nivel-captura-voltar")).toHaveText("Voltar à edição do anúncio");
+      await p.goto(`/dashboard/imoveis/${ids.rascunho}/nivel?fotografar=cozinha_microondas#nivel-itens`, { waitUntil: "domcontentloaded" });
+      await expect(p.getByTestId("nivel-captura-voltar")).toHaveAttribute("href", `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=comodidades#nivel-cadastro`, { timeout: 30_000 });
+      await p.context().close();
+    });
+  }
 });
