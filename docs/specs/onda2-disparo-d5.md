@@ -107,3 +107,38 @@ Development sem a chave. Ligar em produção é decisão do Daniel.
   (`src/lib/inicio-estadia.ts`), então uma saída em 31/10 exigiria início ≤ 01/10; (2) não existe parceiro de limpeza
   em produção (0 solicitações com `limpeza`; vínculos só de fotografia, nenhum ativo). Só por dado gravado em
   produção — decisão do Muse/Daniel (script revisado em PR ou gravação autorizada).
+
+## Reconciliação: 20 registros × 14 e-mails (rodada de 25/10, 13:00 UTC)
+
+São duas contas diferentes. `automacoes_envios` grava **um registro por pessoa avisada** (de qualquer conta). A caixa
+de teste (`emails_teste`) só guarda e-mails a **contas is_teste**, e cada passo do cron decide se grava registro.
+
+| Registros em `automacoes_envios` (20) | Para quem | Na caixa de teste? |
+|---|---|---|
+| 8 `anuncio_incompleto` | donos de teste | sim: 8 ("Faltam N passos para publicar…") |
+| 3 `anuncio_incompleto` | 2 donos reais + 1 admin | não (conta não é de teste) |
+| 2 `proposta_vencendo` | moradores de teste | sim: 2 ("Sua proposta vence em menos de 24 horas") |
+| 2 `documento_orfao` | donos de teste | não aparece e-mail desse tipo na caixa |
+| 2 `documento_orfao` | admin | não (conta não é de teste) |
+| 3 `parceiro_sem_resposta` | equipe admin (sem perfil de teste) | não |
+
+Caixa de teste no mesmo minuto: **14 = 8 + 2 + 4**. Os 4 "Documento aprovado: …" (Santa Mônica, Conforto, Essencial,
+Premium) vêm de outro passo da mesma rodada, **que não grava em `automacoes_envios`**. Nenhum é de limpeza: nada do D-5.
+
+## Ressalva do `.catch` e plano B do diagnóstico
+
+O cron chama `automacaoDaEstadia(...).catch(() => zeros)` e a rota não guarda as contagens: erro dentro da regra do D-5
+e "não havia estadia na janela" dão o **mesmo** 0. Por isso a prova de 26/10 é pelo **EFEITO**, não pelo log:
+
+- **Prova:** com a 0247 aplicada (estadia `d5d50247-…c001`, saída 31/10, vínculo de limpeza ativo/automático), depois
+  da rodada de 26/10 às 13:00 UTC tem de existir em Admin › Parceiros › Pedidos, filtro "Gerados automaticamente", **uma
+  ordem "Limpeza na saída"** do anúncio [TESTE QA NÍVEL] Premium para o parceiro "[TESTE QA] Limpeza D-5", enviada (não
+  aguardando o dono), com a janela 31/10 13:00 → 02/11 11:00 (Brasília); e na caixa de teste o "Novo pedido de orçamento"
+  para o parceiro (proprietario3cnpj@) e "Precisa de ajuda com a mudança?" para a Ana.
+- **Plano B (estadia na janela e nenhuma ordem):** a próxima hipótese é **erro silencioso dentro da regra do D-5**. Passos:
+  1) conferir que a estadia estava mesmo na janela (`contratos`/`contrato_blocos` ativos e assinados; saída 31/10);
+  2) conferir o vínculo (`imovel_parceiros` ativo, `limpeza`, `automatico`) e o parceiro (`parceiros.status = publicado`
+     — `criarPedidoAutomatico` devolve null sem aviso se não estiver);
+  3) procurar `[automação]` nos logs de runtime da Vercel do minuto 13:00 (os `console.error` da regra); 4) rodar o
+  mesmo passo na hora pelo botão "Rodar a automação de hoje" (mesma função) e ver se a ordem nasce; 5) se não nascer
+  e não houver log, tirar o `.catch` silencioso num PR (registrar o erro antes de devolver zero).
