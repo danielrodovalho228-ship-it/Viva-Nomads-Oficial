@@ -6,9 +6,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   T432 — Detecção-A (Entrega 3, chave DETECCAO_FOTOS_ATIVO; no laboratório o cookie vn_lab_deteccao liga só neste
   navegador). Mesma galeria da t389 (micro-ondas + máquina de lavar na 1ª foto; pessoa na 2ª). 390 e 1280, com prints.
    1. Desligada: nem o alerta do topo, nem o bloco, nem comodidade tracejada.
-   2. Ligada: "Encontramos isto numa foto sua" com "Usar esta foto" e "Não é isso"; a máquina de lavar achada aparece
+   2. Ligada: "Encontramos isto numa foto sua" com "Confirmar" e "Não é isso" (FOTO-NA-HORA: nunca "Usar esta foto"); a máquina de lavar achada aparece
       tracejada na grade, com "Confirme"; no topo, o alerta do que falta foto com "Enviar foto", que leva à lista do nível.
-   3. "Usar esta foto" na máquina de lavar: a comodidade fica marcada e deixa de ser tracejada.
+   3. "Confirmar" na máquina de lavar: a comodidade fica marcada e deixa de ser tracejada.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -70,7 +70,7 @@ test.describe("T432 — Detecção-A: a tela das sugestões das fotos", () => {
   });
 
   for (const w of LARGURAS) {
-    test(`2. a ${w} px: sugestão com "Usar esta foto"/"Não é isso", comodidade tracejada e o alerta do que falta`, async ({ browser }) => {
+    test(`2. a ${w} px: sugestão com "Confirmar"/"Não é isso", comodidade tracejada e o alerta do que falta`, async ({ browser }) => {
       const page = await entrar(browser, dono.email, senha);
       await ligarNoLaboratorio(page);
       await largura(page, w);
@@ -78,7 +78,7 @@ test.describe("T432 — Detecção-A: a tela das sugestões das fotos", () => {
       const bloco = page.getByTestId("deteccao-fotos");
       await expect(bloco.getByTestId("deteccao-sugestao-maquina_lavar")).toBeVisible({ timeout: 30_000 });
       await expect(bloco.locator("h3")).toHaveText("Encontramos isto numa foto sua");
-      await expect(page.getByTestId("deteccao-confirmar-maquina_lavar")).toHaveText("Usar esta foto");
+      await expect(page.getByTestId("deteccao-confirmar-maquina_lavar")).toHaveText("Confirmar");
       await expect(page.getByTestId("deteccao-descartar-maquina_lavar")).toHaveText("Não é isso");
       const chip = page.locator('[data-comodidade="maquina_lavar"]').first();
       await expect(chip).toHaveAttribute("data-detectada", "1");
@@ -103,7 +103,7 @@ test.describe("T432 — Detecção-A: a tela das sugestões das fotos", () => {
     });
   }
 
-  test("3. 'Usar esta foto' na comodidade: fica marcada e deixa de ser tracejada", async ({ browser }) => {
+  test("3. 'Confirmar' na comodidade: fica marcada e deixa de ser tracejada", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await ligarNoLaboratorio(page);
     await largura(page, 1280);

@@ -127,7 +127,6 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minu
   if (on("mobiliado") && !p.furnished) return false;
   if (on("localizado") && !p.tagWorkLocated) return false;
   if (on("nota") && !p.issuesInvoice) return false;
-  if (on("seguro") && !p.acceptsInsurance) return false;
   if (on("gestor") && !(p.ownershipType && p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   return true;
 }
@@ -135,6 +134,7 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minu
 // ── Link de desligar (sem login), assinado por HMAC — só no servidor ──────────
 
 import crypto from "node:crypto";
+import { linhaLocalizacao } from "../localizacao.ts";
 
 /** Assinatura do link "Desligar este alerta" (um por busca; não expira, só desliga). */
 export function assinarDesligarAlerta(buscaId: string, segredo: string): string {
@@ -155,6 +155,8 @@ export interface ImovelNoAlerta {
   title: string;
   city: string;
   neighborhood: string;
+  /** UF (pode faltar: a linha de localização junta só o que existe). */
+  state?: string;
   monthlyPrice: number;
   bedrooms: number;
   /** Total do mês (condomínio e contas fixas incluídos); sem ele, o valor mensal. */
@@ -178,7 +180,7 @@ export function assuntoDoAlerta(n: number): string {
 
 /** Linha de cada imóvel: "Studio no Centro · Uberlândia · R$ 2.400/mês · 1 quarto" (sem endereço, sem dono). */
 export function linhaDoImovel(i: ImovelNoAlerta): string {
-  const regiao = [i.neighborhood, i.city].filter(Boolean).join(", ");
+  const regiao = linhaLocalizacao(i.neighborhood, i.city, i.state);
   const q = i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : "";
   return `${i.title}${regiao ? ` — ${regiao}` : ""} · ${precoNoAlerta(i)}${q}`;
 }
@@ -202,7 +204,7 @@ export function montarAlerta(o: {
         .map(
           (i) => `<li style="margin:0 0 12px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:12px;">
         <div style="font-weight:700;color:#0f3d2e;">${esc(i.title)}</div>
-        <div style="color:#475569;font-size:14px;margin-top:2px;">${esc([i.neighborhood, i.city].filter(Boolean).join(", "))} · ${esc(precoNoAlerta(i))}${i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : ""}</div>
+        <div style="color:#475569;font-size:14px;margin-top:2px;">${esc(linhaLocalizacao(i.neighborhood, i.city, i.state))} · ${esc(precoNoAlerta(i))}${i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : ""}</div>
         <a href="${link(i)}" style="display:inline-block;margin-top:10px;background:#1c6b3a;color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;text-decoration:none;">Ver imóvel</a>
       </li>`
         )

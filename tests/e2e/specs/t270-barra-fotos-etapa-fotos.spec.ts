@@ -4,12 +4,13 @@ import { noPasso } from "../fixtures/cadastro";
 
 /**
  * T270 — QA do Muse (22/10) sobre o #1025, a 390 px, NA ETAPA DE FOTOS do Anunciar, com rascunhos de 0, 1 e 8 fotos
- * (os mesmos estados de d9117ea9, ea673772 e d68220a3 em produção, que a sessão do laboratório não alcança):
- *   1. rolando a página inteira, nada que passa sob a barra "Fotos: N de 8" fica sem como aparecer inteiro
+ * (os mesmos estados de d9117ea9, ea673772 e d68220a3 em produção, que a sessão do laboratório não alcança).
+ * E107: a faixa fixa "Fotos: N de 8" saiu; o que fica fixo embaixo é o rodapé do fluxo. O contador é o da página.
+ *   1. rolando a página inteira, nada que passa sob o rodapé fica sem como aparecer inteiro
  *      (régua do Muse, 21/10: controle ou texto sob algo fixo só é defeito se a rolagem não o revela);
- *   2. no fim da rolagem, o último elemento aparece por completo, com respiro (≥ 16 px) acima da barra e do
+ *   2. no fim da rolagem, o último elemento aparece por completo, com respiro (≥ 16 px) acima do rodapé e do
  *      "Fale com a Viva";
- *   3. o toque em "Adicionar" da barra abre a escolha de arquivos.
+ *   3. o toque em "+ Adicionar foto" da página abre a escolha de arquivos.
  * A t269 (Pista A) cobre a 1ª etapa de um rascunho vazio; esta cobre a etapa de Fotos.
  */
 const senha = novaSenha();
@@ -34,7 +35,7 @@ async function medir(page: Page): Promise<Medida> {
   return page.evaluate(async () => {
     const esperar = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     const fixos = () =>
-      ['[data-testid="barra-fotos"]', '[data-testid="fale-com-a-viva"]']
+      ['[data-testid="assistente-rodape"]', '[data-testid="fale-com-a-viva"]']
         .map((s) => document.querySelector<HTMLElement>(s))
         .filter((el): el is HTMLElement => !!el && el.getBoundingClientRect().height > 0 && getComputedStyle(el).visibility !== "hidden")
         .map((el) => el.getBoundingClientRect());
@@ -42,7 +43,9 @@ async function medir(page: Page): Promise<Medida> {
     const SEL = "button, input:not([type=hidden]), select, textarea, a[href], label, h1, h2, h3, h4, p, li, img";
     const nome = (el: Element) => `${el.tagName.toLowerCase()} "${(el.getAttribute("aria-label") ?? el.textContent ?? el.getAttribute("alt") ?? "").trim().replace(/\s+/g, " ").slice(0, 40)}"`;
     const itens = Array.from(main.querySelectorAll<HTMLElement>(SEL)).filter((el) => {
-      if (el.closest('[data-testid="barra-fotos"], [data-testid="fale-com-a-viva-raiz"], [aria-hidden="true"]')) return false;
+      if (el.closest('[data-testid="assistente-rodape"], [data-testid="fale-com-a-viva-raiz"], [aria-hidden="true"]')) return false;
+      // Conteúdo de <details> fechado não aparece, mas o Chromium ainda devolve a geometria dele: fica de fora.
+      if (el.closest("details:not([open]) > :not(summary)")) return false;
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
       return r.height > 0 && r.width > 0 && cs.visibility !== "hidden" && cs.display !== "none";
@@ -87,7 +90,7 @@ async function medir(page: Page): Promise<Medida> {
   });
 }
 
-test.describe("T270 — barra de fotos na etapa de Fotos a 390 px (QA do Muse, #1025)", () => {
+test.describe("T270 — etapa de Fotos a 390 px sem a faixa fixa (QA do Muse, #1025; E107)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (cria conta e rascunhos).");
   test.describe.configure({ mode: "serial" });
 
@@ -123,28 +126,27 @@ test.describe("T270 — barra de fotos na etapa de Fotos a 390 px (QA do Muse, #
       await page.goto(`/dashboard/imoveis/novo?draft=${rascunhos[n]}&etapa=fotos`, { waitUntil: "domcontentloaded" });
       await noPasso(page, "fotos", 25_000);
 
-      const barra = page.getByTestId("barra-fotos");
-      await expect(barra).toBeVisible();
-      await expect(page.getByTestId("barra-fotos-contador")).toContainText(n >= 8 ? `Fotos: ${n} enviadas` : `Fotos: ${n} de 8`, { timeout: 15_000 });
+      await expect(page.getByTestId("barra-fotos")).toHaveCount(0);
+      await expect(page.getByTestId("fotos-contagem")).toContainText(`${n} / 8 fotos`, { timeout: 15_000 });
       await page.waitForTimeout(500); // galeria e "Fale com a Viva" assentam
 
       const m = await medir(page);
       await page.screenshot({ path: `${SAIDA}/t270-fim-${n}-de-8-390.png` });
 
       // 3. Toque em "Adicionar": abre a escolha de arquivos em até 3 s.
-      const [escolha] = await Promise.all([page.waitForEvent("filechooser", { timeout: 3_000 }), page.getByTestId("barra-fotos-adicionar").tap()]);
+      const [escolha] = await Promise.all([page.waitForEvent("filechooser", { timeout: 3_000 }), page.getByTestId("fotos-adicionar").tap()]);
       const abriu = !!escolha && escolha.isMultiple();
 
       // Evidência no log do lab (o artefato nem sempre abre para quem lê).
       console.log(
-        `T270 ${n}/8 fotos @390: topo da barra ${m.topoFixo}px; passaram sob a barra ao rolar ${m.sobABarra.length}; ` +
+        `T270 ${n}/8 fotos @390: topo do rodapé ${m.topoFixo}px; passaram sob o rodapé ao rolar ${m.sobABarra.length}; ` +
           `sem como aparecer inteiro ${m.naoRevelados.length}${m.naoRevelados.length ? ` (${m.naoRevelados.join("; ")})` : ""}; ` +
           `último elemento ${m.ultimo?.nome ?? "?"} com ${m.ultimo?.folga ?? "?"}px de folga; Adicionar abriu a escolha de arquivos: ${abriu ? "sim" : "não"}`,
       );
 
-      expect(m.naoRevelados, "1. o que passa sob a barra precisa aparecer inteiro em algum ponto da rolagem").toEqual([]);
-      expect(m.ultimo?.folga ?? -1, `2. respiro do último elemento (${m.ultimo?.nome}) acima da barra`).toBeGreaterThanOrEqual(RESPIRO);
-      expect(abriu, "3. o toque em Adicionar abre a escolha de arquivos (várias fotos)").toBe(true);
+      expect(m.naoRevelados, "1. o que passa sob o rodapé precisa aparecer inteiro em algum ponto da rolagem").toEqual([]);
+      expect(m.ultimo?.folga ?? -1, `2. respiro do último elemento (${m.ultimo?.nome}) acima do rodapé`).toBeGreaterThanOrEqual(RESPIRO);
+      expect(abriu, "3. o toque em + Adicionar foto abre a escolha de arquivos (várias fotos)").toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
       await ctx.close();
     });

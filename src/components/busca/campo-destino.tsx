@@ -1,12 +1,12 @@
 "use client";
 
-import { Briefcase, X } from "lucide-react";
+import { Briefcase, Pencil, X } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { ATE_OPCOES, ROTULO_MODO, type ModoRota } from "@/lib/rotas/tempo";
 import type { DestinoBusca, EstadoDestino } from "@/lib/busca/destino-busca";
-import { MSG_NAO_ACHAMOS, ROTULO_NAO_ACHEI } from "@/lib/destinos/pessoal";
-import { apagarLocal, buscarOutroLocal, meusLocais, pedirLocalNaoAchado, usarLocal, type LocalPessoal } from "@/lib/destinos/pessoal-actions";
+import { AVISO_SEM_NUMERO, MSG_NAO_ACHAMOS, NOME_LOCAL_MAX, ROTULO_NAO_ACHEI, ROTULO_NOME_LOCAL } from "@/lib/destinos/pessoal";
+import { apagarLocal, buscarOutroLocal, meusLocais, pedirLocalNaoAchado, renomearLocal, usarLocal, type LocalPessoal } from "@/lib/destinos/pessoal-actions";
 import { useEffect, useState } from "react";
 
 export interface DestinoChip {
@@ -25,6 +25,8 @@ export interface DestinoChip {
  * DESTINO-PESSOAL-B: "Outro local" — o servidor acha o endereço (OSM; Mapbox com token). Logada, a pessoa vê os locais
  * que já usou ("Seus locais", só dela); sem login, o local vai só na URL. Não achou: "Não achamos este endereço." e
  * "Não achei meu local" (nome do lugar + cidade) para a equipe cadastrar.
+ * E94: ao buscar, a pessoa pode dar um nome ao local ("Como chamar este lugar", opcional); o nome aparece no lugar do
+ * rótulo limpo e pode ser trocado depois no lápis de "Seus locais".
  */
 export function CampoDestino({
   destinos,
@@ -45,6 +47,7 @@ export function CampoDestino({
   const { destino, modo, ate } = valor;
   const [locais, setLocais] = useState<LocalPessoal[]>([]);
   const [erroLocal, setErroLocal] = useState<string | null>(null);
+  const [editando, setEditando] = useState<{ id: string; nome: string; salvando: boolean } | null>(null);
   useEffect(() => {
     let vivo = true;
     meusLocais()
@@ -78,7 +81,7 @@ export function CampoDestino({
           <p className="text-xs font-semibold text-muted">Seus locais</p>
           <div className="mt-1 flex flex-wrap gap-2">
             {locais.map((l) => {
-              const ativo = !!digitado && digitado.lat.toFixed(2) === l.lat.toFixed(2) && digitado.lng.toFixed(2) === l.lng.toFixed(2);
+              const ativo = !!digitado && digitado.lat.toFixed(3) === l.lat.toFixed(3) && digitado.lng.toFixed(3) === l.lng.toFixed(3);
               return (
                 <span key={l.id} className="inline-flex items-center gap-1" data-testid="destino-pessoal-item">
                   <Chip
@@ -92,6 +95,19 @@ export function CampoDestino({
                   >
                     {l.rotulo}
                   </Chip>
+                  <button
+                    type="button"
+                    aria-label={`Dar nome ao local ${l.rotulo}`}
+                    title="Dar nome a este local"
+                    data-testid="destino-pessoal-renomear"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"
+                    onClick={() => {
+                      setErroLocal(null);
+                      setEditando({ id: l.id, nome: l.rotulo, salvando: false });
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" aria-hidden />
+                  </button>
                   {/* E81: apagar o local guardado vale na hora; se era o destino ativo, a busca volta para qualquer lugar. */}
                   <button
                     type="button"
@@ -117,6 +133,47 @@ export function CampoDestino({
               );
             })}
           </div>
+          {editando && (
+            <form
+              className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end"
+              data-testid="destino-pessoal-nome-form"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (editando.salvando) return;
+                setEditando({ ...editando, salvando: true });
+                const r = await renomearLocal(editando.id, editando.nome).catch(() => ({ ok: false as const, erro: "Não foi possível salvar o nome agora." }));
+                if (!r.ok) {
+                  setErroLocal(r.erro);
+                  return setEditando((x) => (x ? { ...x, salvando: false } : x));
+                }
+                setLocais((ls) => ls.map((x) => (x.id === editando.id ? { ...x, rotulo: r.rotulo } : x)));
+                if (digitado) {
+                  const l = locais.find((x) => x.id === editando.id);
+                  if (l && l.lat.toFixed(3) === digitado.lat.toFixed(3) && l.lng.toFixed(3) === digitado.lng.toFixed(3)) escolher({ ...digitado, rot: r.rotulo });
+                }
+                setEditando(null);
+              }}
+            >
+              <label className="block min-w-0 flex-1 text-sm text-ink">
+                {ROTULO_NOME_LOCAL}
+                <input
+                  value={editando.nome}
+                  onChange={(e) => setEditando({ ...editando, nome: e.target.value })}
+                  maxLength={NOME_LOCAL_MAX}
+                  className="mt-1 h-10 w-full rounded-lg border border-line bg-white px-3 text-base outline-none focus:border-ink"
+                  data-testid="destino-pessoal-nome"
+                />
+              </label>
+              <span className="flex gap-2">
+                <Button type="submit" size="sm" disabled={editando.salvando} data-testid="destino-pessoal-nome-salvar">
+                  {editando.salvando ? "Salvando…" : "Salvar nome"}
+                </Button>
+                <Button type="button" size="sm" variant="secondary" onClick={() => setEditando(null)}>
+                  Cancelar
+                </Button>
+              </span>
+            </form>
+          )}
           {erroLocal && (
             <p role="alert" className="mt-1 text-sm text-red-700" data-testid="destino-pessoal-erro">
               {erroLocal}
@@ -159,7 +216,7 @@ export function CampoDestino({
               onChange={(e) => onChange({ destino, modo, ate: Number(e.target.value) })}
               aria-label="Tempo máximo até o trabalho"
               data-testid="destino-ate"
-              className="h-10 rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-ink"
+              className="h-12 rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none focus:border-ink"
             >
               <option value="0">qualquer tempo</option>
               {ATE_OPCOES.map((n) => (
@@ -178,6 +235,7 @@ export function CampoDestino({
 /** "Outro local": o servidor acha o endereço; não achou, oferece o pedido "Não achei meu local". */
 function OutroLocal({ cidade, uf, onAchou }: { cidade: string; uf: string; onAchou: (r: { ponto: { lat: number; lng: number }; rotulo: string; guardado: boolean }) => void }) {
   const [texto, setTexto] = useState("");
+  const [nome, setNome] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [naoAchou, setNaoAchou] = useState(false);
@@ -188,9 +246,10 @@ function OutroLocal({ cidade, uf, onAchou }: { cidade: string; uf: string; onAch
     setErro(null);
     setNaoAchou(false);
     try {
-      const r = await buscarOutroLocal(texto, cidade, uf);
+      const r = await buscarOutroLocal(texto, cidade, uf, nome);
       if (r.ok) {
         setTexto("");
+        setNome("");
         onAchou(r);
       } else {
         setErro(r.naoAchou ? MSG_NAO_ACHAMOS : r.erro);
@@ -217,7 +276,7 @@ function OutroLocal({ cidade, uf, onAchou }: { cidade: string; uf: string; onAch
   return (
     <div data-testid="outro-local">
       <form
-        className="flex flex-col gap-2 sm:flex-row"
+        className="flex flex-col gap-2 sm:flex-row sm:flex-wrap"
         onSubmit={(e) => {
           e.preventDefault();
           if (!buscando) void buscar();
@@ -238,6 +297,20 @@ function OutroLocal({ cidade, uf, onAchou }: { cidade: string; uf: string; onAch
         <Button type="submit" size="sm" variant="secondary" disabled={buscando || texto.trim().length < 3} data-testid="outro-local-buscar">
           {buscando ? "Buscando…" : "Buscar"}
         </Button>
+        <label className="block w-full text-sm text-ink">
+          {ROTULO_NOME_LOCAL} <span className="text-muted">(opcional)</span>
+          <input
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            maxLength={NOME_LOCAL_MAX}
+            placeholder="Ex.: Trabalho, Cargill"
+            className="mt-1 h-12 w-full rounded-lg border border-line bg-white px-3 text-base text-ink outline-none focus:border-ink"
+            data-testid="outro-local-nome"
+          />
+          <span className="mt-1 block text-xs text-muted" data-testid="outro-local-privacidade">
+            {AVISO_SEM_NUMERO}
+          </span>
+        </label>
       </form>
       {erro && (
         <p role="alert" className="mt-2 text-sm text-red-700" data-testid="outro-local-erro">

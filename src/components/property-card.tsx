@@ -11,6 +11,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { ROTULO_SELO_UNICO, seloDoCartao, type SeloUnico } from "@/lib/card-selos";
 import { MarcaImovel } from "@/components/property/marca-imovel";
 import { FotosCartao, SetasFotos } from "@/components/property/fotos-cartao";
+import { linhaLocalizacao } from "@/lib/localizacao";
 
 const ehFoto = (src: unknown): src is string => typeof src === "string" && (/^https?:\/\//.test(src) || src.startsWith("/"));
 
@@ -68,7 +69,7 @@ export function PropertyCard({
         <div className="flex items-start justify-between gap-2">
           {/* Bairro (com a cidade) + nota. Cartão 16/600. */}
           <h3 className="min-w-0 truncate font-title text-base font-semibold leading-snug text-ink" data-testid="cartao-local">
-            {property.neighborhood}, {property.city}
+            {linhaLocalizacao(property.neighborhood, property.city, property.state)}
           </h3>
           {exemplo ? (
             // Anúncio de exemplo: nunca mostra nota (seria fictícia) — e fica marcado.

@@ -13,6 +13,7 @@ import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
 import { checklistCompleto, expiraToken, ITENS_CHECKLIST, lerParceiroGeral } from "./regras";
 import { gerarToken, hashToken } from "./token";
+import { MOTIVO_NOTA_NAO_EMITIDA } from "./fiscal";
 
 export type StatusInteresse = "novo" | "contatado" | "arquivado";
 const STATUS_VALIDOS: readonly StatusInteresse[] = ["novo", "contatado", "arquivado"];
@@ -165,6 +166,44 @@ export async function suspenderParceiro(parceiroId: string, motivo: string): Pro
   if (error) return { ok: false, erro: "Não foi possível suspender agora." };
   await logModeracao(a.supabase, a.user.id, "parceiro_suspenso", "parceiro", parceiroId, texto);
   revalidar();
+  return { ok: true, valor: null };
+}
+
+/**
+ * FISCAL-PARCEIRO-B: denúncia "Não emitiu a nota fiscal declarada" julgada PROCEDENTE no chamado. Tira o selo
+ * (emite_nota = false), registra o motivo e avisa o parceiro (e-mail + push pela matriz) — uma vez só: repetir não
+ * avisa de novo. Só vale para chamado dessa categoria ligado a um parceiro PJ que declarou emitir nota.
+ */
+export async function denunciaNotaProcedente(chamadoId: string): Promise<Res> {
+  if (!ehUuid(chamadoId)) return { ok: false, erro: "Registro inválido." };
+  const a = await exigirAdminParceria();
+  if (!a) return { ok: false, erro: "Sem permissão." };
+  const { data: ch } = await a.admin.from("chamados").select("id, categoria, contexto_tipo, contexto_id").eq("id", chamadoId).maybeSingle();
+  if (!ch || ch.categoria !== "nota_parceiro" || ch.contexto_tipo !== "parceiro" || !ch.contexto_id) return { ok: false, erro: "Este chamado não é uma denúncia de nota fiscal de parceiro." };
+  const { data: p } = await a.admin.from("parceiros").select("id, user_id, tipo_pessoa, emite_nota, nota_selo_removido_em").eq("id", ch.contexto_id).maybeSingle();
+  if (!p) return { ok: false, erro: "Parceiro não encontrado." };
+  if (p.nota_selo_removido_em) return { ok: true, valor: null };
+  if (p.tipo_pessoa !== "pj" || p.emite_nota !== true) return { ok: false, erro: "Este parceiro não declara emitir nota fiscal: não há selo para tirar." };
+  const agora = new Date().toISOString();
+  const { data: feito, error } = await a.admin
+    .from("parceiros")
+    .update({ emite_nota: false, nota_selo_removido_em: agora, nota_selo_motivo: MOTIVO_NOTA_NAO_EMITIDA, atualizado_em: agora })
+    .eq("id", p.id)
+    .is("nota_selo_removido_em", null)
+    .select("id");
+  if (error) return { ok: false, erro: "Não foi possível tirar o selo agora." };
+  if (!feito?.length) return { ok: true, valor: null };
+  await a.admin.from("chamado_eventos").insert({ chamado_id: chamadoId, ator_tipo: "admin", ator_id: a.user.id, acao: "denuncia_procedente", para: "selo_nota_removido", detalhe: MOTIVO_NOTA_NAO_EMITIDA });
+  await logModeracao(a.supabase, a.user.id, "parceiro_selo_nota_removido", "parceiro", p.id as string, MOTIVO_NOTA_NAO_EMITIDA);
+  try {
+    const { data: d } = await a.admin.from("profiles").select("email, full_name, notif_email").eq("id", p.user_id).maybeSingle();
+    const dest = d as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
+    await notify({ event: "parceiro_selo_nota_removido", email: dest?.notif_email === false ? undefined : (dest?.email ?? undefined), name: dest?.full_name ?? undefined, userId: p.user_id as string, pushUrl: "/dashboard/parceiro" });
+  } catch {
+    /* o aviso é complemento: o selo já saiu */
+  }
+  revalidatePath(`/admin/atendimento/${chamadoId}`);
+  revalidatePath("/parceiros/buscar");
   return { ok: true, valor: null };
 }
 

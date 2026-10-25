@@ -20,14 +20,9 @@ const busca = (bairro: string, q = "") => `/buscar?local=${encodeURIComponent(ba
 const cards = (page: Page) => page.getByTestId("grade-resultados").getByTestId("card-resultado");
 const SAIDA = "tests/laboratorio/saida";
 
-/** Abre a folha de filtros: no celular pelo botão redondo; no computador pela busca compacta → "Mais filtros" (como no t244). */
+/** Abre a folha de filtros. E82-A: a pílula "Mais filtros" da linha única, em toda largura (como no t244). */
 async function abrirFolha(page: Page) {
-  if ((page.viewportSize()?.width ?? 0) < 1024) {
-    await page.getByTestId("abrir-filtros").click();
-  } else {
-    if ((await page.getByTestId("filtros-barra").getAttribute("data-aberto")) !== "1") await page.getByTestId("busca-compacta").click();
-    await page.getByTestId("mais-filtros").click();
-  }
+  await page.getByTestId("pilula-mais").click();
   const folha = page.getByRole("dialog", { name: "Filtros" });
   await expect(folha).toBeVisible();
   return folha;

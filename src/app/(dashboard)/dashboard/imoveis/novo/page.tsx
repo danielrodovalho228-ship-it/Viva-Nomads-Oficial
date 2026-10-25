@@ -2,14 +2,12 @@
 
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { linkQualificacao } from "@/lib/qualificar-link";
 import {
   ClipboardCheck,
   Check,
   ArrowRight,
-  ArrowLeft,
   XCircle,
 } from "lucide-react";
 import {
@@ -29,13 +27,14 @@ import {
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import { ANCORA_VIDEO_ASSISTENTE, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { videoDoAnuncio } from "@/lib/video-anuncio";
-import { ERRO_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
+import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
 import { AlertaFaltaFoto, SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
+import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
@@ -89,22 +88,16 @@ import { tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
 import { PainelQualificacao } from "./painel-qualificacao";
 import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
-import { EtapaOndeFica } from "./etapa-onde-fica";
-import { CartaoIa } from "./cartao-ia";
-import { BarraFotos } from "./barra-fotos";
+import { AntesDePublicar, AtalhosCadastro, EtapaOndeFica } from "./etapa-onde-fica";
 import { buscarCep, formatarCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
 import { aplicarResultadoCep, type CampoEndereco } from "@/lib/cep/aplicar";
-import { enviarFotos } from "@/lib/fotos/enviar";
-import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
-import { uploadPropertyPhoto } from "@/lib/data/storage";
-import { resumoDaSugestao } from "@/lib/anuncio/resumo-ia";
-import { EtapaFotos } from "./etapa-fotos";
+import { EtapaFotos, FOTOS_REORGANIZAR } from "./etapa-fotos";
 import { EtapaEncontramos } from "./etapa-encontramos";
 import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
 import { PreviaAnuncio } from "./previa-anuncio";
-import { CabecalhoPassos } from "./cabecalho-passos";
+import { RodapeAssistente } from "./rodape-assistente";
 import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
 
@@ -192,6 +185,7 @@ export default function NewPropertyPage() {
   // TIPO-CHACARA-B: acesso, tipo de internet e o ponto marcado pelo dono (só do tipo chácara/sítio).
   const [chacara, setChacara] = useState<ValorChacara>({});
   const [chacaraPontoGravado, setChacaraPontoGravado] = useState(false);
+  const semInternet = !temInternet(tipoInternetDoAnuncio(propertyType, { chacara }));
   const [description, setDescription] = useState("");
   // Mudou o título ou a descrição depois do aceite: o aceite deixa de valer (caixa desmarcada) e o aviso aparece.
   const textoMudouDepoisDoAceite = aceitouIa && aceiteTexto !== null && impressaoDoTexto(title, description) !== aceiteTexto;
@@ -244,9 +238,6 @@ export default function NewPropertyPage() {
   // Prompt 20: toda busca de CEP vira uma mensagem (achou, só a cidade, não achou, sem rede).
   const [cepResultado, setCepResultado] = useState<ResultadoCep | null>(null);
   // Envio de fotos pelo cartão da IA (passo 1) e pela barra do celular — o mesmo envio da galeria do passo 2.
-  const [enviandoFotos, setEnviandoFotos] = useState<{ feitas: number; total: number } | null>(null);
-  const [erroEnvioFotos, setErroEnvioFotos] = useState<string | null>(null);
-  const [resumoIa, setResumoIa] = useState("");
   const [bairroDoCep, setBairroDoCep] = useState<string | null>(null);
   // Prompt 22: campos de endereço que a PESSOA digitou (o autofill do navegador não entra aqui).
   const digitadosRef = useRef(new Set<CampoEndereco>());
@@ -293,6 +284,16 @@ export default function NewPropertyPage() {
 
   const docOperacaoOk = docOperacaoAnexado || subleaseDoc.some((d) => !!d.path && !d.demo);
   const subleaseBlocked = exigeAutorizacao(ownershipType) && (!subleaseAuthorized || !docOperacaoOk || !tipoDocValido(ownershipType, subleaseDocTipo));
+  // E104: o que falta na operação, dito na hora no "Antes de publicar" da Revisão (antes, só ao tentar sair do Passo 3).
+  const faltaOperacao = !exigeAutorizacao(ownershipType)
+    ? ""
+    : !subleaseAuthorized
+      ? "Marque a declaração para publicar."
+      : !tipoDocValido(ownershipType, subleaseDocTipo)
+        ? "Escolha o que você está anexando: contrato de administração ou procuração."
+        : !docOperacaoOk
+          ? `Anexe: ${DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].titulo.toLowerCase()}.`
+          : "";
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
   const enderecoCompleto = [street.trim(), numero.trim()].filter(Boolean).join(", ");
@@ -327,6 +328,8 @@ export default function NewPropertyPage() {
     proximidadesSemEndereco: manualProximities.filter(manualSemEndereco).length,
     // TIPO-CHACARA-B: chácara/sítio só publica com acesso, tipo de internet e o ponto no mapa.
     chacaraFaltam: ehChacara(propertyType) ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado }) : undefined,
+    // E102-B: "Não tem internet" barra pelo padrão mínimo (e a velocidade nem é pedida).
+    semInternet: semInternet || undefined,
   });
   /** "Resolver" de um item do portão: vai à etapa; a qualificação abre ali mesmo. */
   function resolverItem(item: ItemProntidao) {
@@ -358,11 +361,7 @@ export default function NewPropertyPage() {
   function validarEtapa(s: number): Record<string, string> {
     const e: Record<string, string> = {};
     if (s === ETAPA.endereco) {
-      if (exigeAutorizacao(ownershipType)) {
-        if (!subleaseAuthorized) e.sublocacao = "Marque a declaração para continuar.";
-        else if (!tipoDocValido(ownershipType, subleaseDocTipo)) e.sublocacao = "Escolha o que você está anexando: contrato de administração ou procuração.";
-        else if (!docOperacaoOk) e.sublocacao = `Anexe: ${DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].titulo.toLowerCase()}.`;
-      }
+      // E104: quem opera e o documento da operação ficaram na Revisão; a prontidão ("sublocacao") segura a publicação.
       if (!street.trim()) e.rua = "Informe a rua.";
       if (!numero.trim()) e.numero = "Informe o número (ou s/n).";
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
@@ -999,32 +998,6 @@ export default function NewPropertyPage() {
     setDaMatricula((atual) => new Set(atual).add("endereco"));
   }
 
-  /** Fotos pelo cartão da IA (passo 1) e pela barra do celular: sobem para a galeria do passo 2, com as mesmas regras. */
-  async function adicionarFotos(files: File[]) {
-    if (enviandoFotos) return;
-    setErroEnvioFotos(null);
-    try {
-      const r = await enviarFotos(files, {
-        atuais: photos,
-        max: MAX_FOTOS_POR_ANUNCIO,
-        ownerId: userId ?? undefined,
-        uploader: uploadPropertyPhoto,
-        aoProgresso: (feitas, total) => setEnviandoFotos({ feitas, total }),
-      });
-      if (r.novas.length) setPhotos((atuais) => [...atuais, ...r.novas]);
-      if (r.erro) setErroEnvioFotos(r.erro);
-    } finally {
-      setEnviandoFotos(null);
-    }
-  }
-
-  /** "Enviar matrícula": o mesmo leitor de documento do imóvel (prompt 11), logo abaixo no passo 1. */
-  function enviarMatricula() {
-    const bloco = document.querySelector<HTMLElement>('[data-testid="documento-vinculo"]');
-    bloco?.scrollIntoView({ behavior: "smooth", block: "center" });
-    bloco?.querySelector<HTMLInputElement>('input[type="file"]')?.click();
-  }
-
   // PERTO-B: a busca do "O que tem por perto" roda no cadastro novo E na edição, e de novo sempre que o endereço muda
   // (CEP, rua ou número). O servidor usa o cache por CEP; "não mostrar" (desmarcados) é mantido entre buscas.
   async function buscarPerto(corpo: Record<string, unknown>) {
@@ -1069,9 +1042,10 @@ export default function NewPropertyPage() {
     return typeof data.distanciaM === "number" ? data.distanciaM : null;
   }
 
-  // Preço sugerido para imóveis parecidos na região (mediana de anúncios reais; sem dados, nada).
+  // Preço sugerido para imóveis parecidos na região (mediana de anúncios reais; sem dados, nada). Pede nos Detalhes e
+  // de novo no Preço: quem avança antes de a resposta chegar não perde a sugestão (corrida vista no laboratório do E104).
   useEffect(() => {
-    if (step !== 3 || !city.trim()) return;
+    if ((step !== ETAPA.detalhes && step !== ETAPA.preco) || !city.trim()) return;
     let alive = true;
     precoDaRegiao({ cidade: city, bairro: neighborhood, quartos: Number(bedrooms) || 0 })
       .then((r) => {
@@ -1141,7 +1115,6 @@ export default function NewPropertyPage() {
   }
 
   function aplicarSugestao(d: SugestaoFotos, analisadas: string[]) {
-    setResumoIa(resumoDaSugestao(d));
     const marcados: CampoSugerido[] = [];
     if (d.tipo && PROPERTY_TYPES.some((t) => t.value === d.tipo) && propertyType === "apartamento" && d.tipo !== propertyType) {
       setPropertyType(d.tipo);
@@ -1292,6 +1265,7 @@ export default function NewPropertyPage() {
     comodidadesSugeridas,
     internetMbps,
     setInternetMbps,
+    semInternet,
     imovelId: draftServerId ?? editingId,
     proxOsm,
     proxCarregando,
@@ -1383,12 +1357,13 @@ export default function NewPropertyPage() {
         </div>
       )}
 
-      {/* Mockups cadastro-imovel-01..10: no topo, a barra de progresso e "Passo X de 10"; à esquerda, o título do passo
-          (o H1 da tela), o formulário e "Continuar"; à direita (computador), a prévia do anúncio montando ao vivo. */}
-      <CabecalhoPassos pos={pos} total={ORDEM_ETAPAS.length} />
+      {/* Mockups cadastro-imovel-01..10: à esquerda, o título do passo (o H1 da tela) e o formulário; à direita
+          (computador), a prévia do anúncio montando ao vivo. CADASTRO-MOLDURA: "Passo X de 10", a barra de progresso,
+          Voltar e o primário moram no rodapé do fluxo (RodapeAssistente). */}
 
       <div className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem]")} data-testid="novo-duas-colunas">
-        <div className="min-w-0">
+        {/* E104 (mockup cadastro-imovel-03): o Passo 3 é um cartão branco sobre o fundo areia da moldura. */}
+        <div className={cn("min-w-0", step === ETAPA.endereco && "rounded-xl border border-line bg-white p-4 sm:p-8")} data-testid="novo-coluna-form">
           <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
             {editingId ? "Editar anúncio" : "Anunciar imóvel"} <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
           </span>
@@ -1426,43 +1401,15 @@ export default function NewPropertyPage() {
                       </Button>
                     </div>
                   ))}
+                {/* E104: importar de outro site / pedir ajuda — no começo do cadastro (saíram do Passo 3). */}
+                {!editingId && <AtalhosCadastro aplicarImportado={aplicarImportado} />}
               </div>
             )}
 
             {step === ETAPA.endereco && (
               <EtapaOndeFica
-                topo={
-                  <CartaoIa
-                    totalFotos={photos.length}
-                    enviando={enviandoFotos}
-                    erroEnvio={erroEnvioFotos}
-                    iaEstado={iaEstado}
-                    iaFalha={iaFalha}
-                    onTentarDeNovo={tentarIaDeNovo}
-                    resumoIa={resumoIa}
-                    onFotos={(f) => void adicionarFotos(f)}
-                    onMatricula={enviarMatricula}
-                    onVerPasso3={() => irPara(ETAPA.comodidades)}
-                  />
-                }
                 cepResultado={cepResultado}
                 onEscolherEndereco={escolherEndereco}
-                aplicarImportado={aplicarImportado}
-                ownershipType={ownershipType}
-                setOwnershipType={setOwnershipType}
-                subleaseAuthorized={subleaseAuthorized}
-                setSubleaseAuthorized={setSubleaseAuthorized}
-                subleaseDoc={subleaseDoc}
-                setSubleaseDoc={(d) => {
-                  setSubleaseDoc(d);
-                  if (d.length) setErros(({ sublocacao: _resolvido, ...resto }) => resto);
-                }}
-                docOperacaoAnexado={docOperacaoAnexado}
-                subleaseDocTipo={subleaseDocTipo}
-                setSubleaseDocTipo={(t) => {
-                  setSubleaseDocTipo(t);
-                  setErros(({ sublocacao: _resolvido, ...resto }) => resto);
-                }}
                 cep={cep}
                 setCep={(v) => {
                   setCep(v);
@@ -1491,21 +1438,10 @@ export default function NewPropertyPage() {
                 city={city}
                 setCity={setCity}
                 uf={uf}
-                imovelId={imovelId}
-                docEstado={docEstado}
-                docMotivos={docMotivos}
-                onDocumento={(e, m) => {
-                  setDocEstado(e);
-                  setDocMotivos(m);
-                  setDocStatus(e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none");
-                }}
-                onMatricula={aplicarMatricula}
                 daMatricula={daMatricula}
                 enderecoMatricula={enderecoMatricula}
                 onEnderecoMatricula={usarEnderecoMatricula}
                 erros={erros}
-                enderecoSalvo={enderecoSalvo}
-                onFaltaDocumento={(campos) => setErros((e) => ({ ...e, ...Object.fromEntries(campos.map((c) => [c, ERRO_CAMPO_ENDERECO[c]])) }))}
               />
             )}
 
@@ -1600,6 +1536,56 @@ export default function NewPropertyPage() {
               />
             )}
 
+            {/* E104: quem opera, identidade e documento do imóvel saem do Passo 3 (só endereço) e ficam aqui, antes de
+                publicar — a prontidão continua barrando a publicação sem eles. */}
+            {step === ETAPA.revisao && (
+              <div className="mb-6">
+                <AntesDePublicar
+                  ownershipType={ownershipType}
+                  setOwnershipType={setOwnershipType}
+                  subleaseAuthorized={subleaseAuthorized}
+                  setSubleaseAuthorized={setSubleaseAuthorized}
+                  subleaseDoc={subleaseDoc}
+                  setSubleaseDoc={(d) => {
+                    setSubleaseDoc(d);
+                    if (d.length) setErros(({ sublocacao: _resolvido, ...resto }) => resto);
+                  }}
+                  docOperacaoAnexado={docOperacaoAnexado}
+                  subleaseDocTipo={subleaseDocTipo}
+                  setSubleaseDocTipo={(t) => {
+                    setSubleaseDocTipo(t);
+                    setErros(({ sublocacao: _resolvido, ...resto }) => resto);
+                  }}
+                  imovelId={imovelId}
+                  docEstado={docEstado}
+                  docMotivos={docMotivos}
+                  onDocumento={(e, m) => {
+                    setDocEstado(e);
+                    setDocMotivos(m);
+                    setDocStatus(e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none");
+                  }}
+                  onMatricula={aplicarMatricula}
+                  enderecoSalvo={enderecoSalvo}
+                  onFaltaDocumento={(campos) => {
+                    setErros((e) => ({ ...e, ...Object.fromEntries(campos.map((c) => [c, ERRO_CAMPO_ENDERECO[c]])) }));
+                    // E104: os campos do endereço moram no Passo 3 — leva até lá e põe o foco no primeiro que falta.
+                    if (!campos.length) return;
+                    irPara(ETAPA.endereco);
+                    setTimeout(() => {
+                      const campo = document.querySelector<HTMLInputElement>(`[data-testid="${TESTID_CAMPO_ENDERECO[campos[0]]}"]`);
+                      campo?.scrollIntoView({ block: "center" });
+                      campo?.focus({ preventScroll: true });
+                    }, 400);
+                  }}
+                  cep={cep}
+                  street={street}
+                  numero={numero}
+                  neighborhood={neighborhood}
+                  city={city}
+                  faltaOperacao={faltaOperacao}
+                />
+              </div>
+            )}
             {step === ETAPA.revisao && (
               <EtapaRevisar
                 previewProperty={previewProperty}
@@ -1618,7 +1604,6 @@ export default function NewPropertyPage() {
                 publishing={publishing}
                 publish={publish}
                 irPara={irPara}
-                etapaEndereco={ETAPA.endereco}
                 aceitouIa={aceiteValido}
                 setAceitouIa={marcarAceite}
                 avisoAceite={termoJaAceito ? null : textoMudouDepoisDoAceite ? AVISO_TEXTO_MUDOU : avisoAceite}
@@ -1626,37 +1611,16 @@ export default function NewPropertyPage() {
                 conforto={conforto}
                 publishError={publishError}
                 podePublicar={podePublicar}
+                chacara={ehChacara(propertyType) ? { acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado } : null}
               />
             )}
 
-            {pos < ULTIMA_ETAPA && (
-              <div className="mt-8">
-                <Button size="lg" className="w-full" onClick={avancarEtapa} data-testid="cadastro-continuar">
-                  Continuar <ArrowRight className="h-4 w-4" />
-                </Button>
-                {pos > 0 && (
-                  <p className="mt-3 text-center">
-                    <button type="button" onClick={voltarEtapa} className="inline-flex min-h-11 items-center gap-1 text-sm text-ink underline underline-offset-4 hover:text-forest" data-testid="cadastro-voltar">
-                      <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar para o passo anterior
-                    </button>
-                  </p>
-                )}
-              </div>
-            )}
-            {pos === ULTIMA_ETAPA && (
-              <p className="mt-6 text-center">
-                <button type="button" onClick={voltarEtapa} className="inline-flex min-h-11 items-center gap-1 text-sm text-ink underline underline-offset-4 hover:text-forest" data-testid="cadastro-voltar">
-                  <ArrowLeft className="h-4 w-4" aria-hidden /> Voltar para o passo anterior
-                </button>
+            {step === ETAPA.fotos && (
+              <p className="mt-6 text-center text-sm text-muted" data-testid="fotos-reorganizar">
+                {FOTOS_REORGANIZAR}
               </p>
             )}
           </div>
-
-          <p className="mt-4 text-center text-sm text-muted">
-            <Link href="/dashboard/imoveis" className="inline-flex min-h-11 items-center hover:text-forest">
-              Cancelar e voltar
-            </Link>
-          </p>
         </div>
 
         {/* Passo 10 (mockup cadastro-imovel-10): o cartão do anúncio fica dentro da revisão; a prévia lateral sai. */}
@@ -1679,17 +1643,26 @@ export default function NewPropertyPage() {
         )}
       </div>
 
-      {/* Prompt 20: fotos sempre à vista no celular, em todos os passos (abre a escolha de arquivos). */}
-      {!editingId && (
-        <BarraFotos
-          total={photos.length}
-          minimo={MIN_PHOTOS}
-          enviando={enviandoFotos}
-          onFotos={(f) => void adicionarFotos(f)}
-          onOrganizar={() => irPara(ETAPA.fotos)}
-          noPassoFotos={step === ETAPA.fotos}
-        />
-      )}
+      {/* E107: a faixa fixa "Fotos: N de 8" do celular saiu. As fotos moram só no Passo 2, com o contador e o envio da
+          própria página (antes a faixa vazava para os outros passos e, no Passo 2, repetia o contador). */}
+      {/* CADASTRO-MOLDURA: o rodapé do fluxo, igual nos passos 1 a 10 — "Passo N de 10" com a barra, "Voltar" (passos
+          2–10) e um só primário: "Continuar"; no Passo 10, "Publicar anúncio" (o mesmo publish da revisão). */}
+      <RodapeAssistente
+        pos={pos}
+        total={ORDEM_ETAPAS.length}
+        onVoltar={pos > 0 ? voltarEtapa : null}
+        primario={
+          pos < ULTIMA_ETAPA
+            ? { rotulo: "Continuar", onClick: avancarEtapa, testid: "cadastro-continuar", seta: true }
+            : {
+                rotulo: publishing ? "Salvando..." : editingId ? "Salvar alterações" : "Publicar anúncio",
+                onClick: () => publish(false),
+                disabled: publishing || !podePublicar,
+                title: podePublicar ? undefined : "Resolva os itens pendentes da lista",
+                testid: "publicar-anuncio",
+              }
+        }
+      />
       <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid var(--color-sage-200);background:#fff;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-sage)}`}</style>
     </div>
   );

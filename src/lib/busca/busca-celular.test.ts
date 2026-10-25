@@ -58,14 +58,13 @@ test("busca usa UMA regra para a lista e para a contagem do painel", () => {
   // As 5 regras saíram do filtro antigo (sem duplicar).
   assert.doesNotMatch(s, /if \(petsOnly && !p\.petsAllowed\) return false/);
   assert.doesNotMatch(s, /if \(maxPrice && p\.monthlyPrice > maxPrice\) return false/);
-  // Celular: topo com busca + botão de filtros; filtros antigos só do tablet para cima.
-  assert.match(s, /className="container-page mt-4 sm:hidden" data-testid="busca-celular"/);
-  assert.match(s, /data-testid="abrir-filtros"/);
-  assert.match(s, /placeholder="Cidade, bairro ou endereço"/);
-  assert.match(s, /"container-page hidden sm:block lg:order-1"/);
-  // Computador (ordem eac7e3a1): busca compacta no cabeçalho abre o painel de filtros.
-  assert.match(s, /createPortal\(\s*<div[^>]*>\s*<BuscaCompacta/);
-  assert.match(s, /data-testid="busca-compacta"/);
+  // E82-A: UMA linha de controles para celular e computador (sem bloco só do celular nem busca compacta no cabeçalho).
+  assert.equal((s.match(/<BarraPilulas/g) ?? []).length, 1);
+  assert.doesNotMatch(s, /data-testid="busca-celular"|BuscaCompacta|createPortal/);
+  // O destino vive no painel da pílula Local; "Salvar busca" fica só na linha da contagem (e no vazio, como alerta).
+  assert.match(s, /painelLocal=\{[\s\S]*?<LocationSearch[\s\S]*?<CampoDestino[\s\S]*?\}\s*painelMoradores=/);
+  const linha = s.slice(s.indexOf('data-testid="linha-contagem"'), s.indexOf('data-testid="abrir-descrever"'));
+  assert.match(linha, /<SalvarBusca versao=\{versaoBusca\} \/>/);
 });
 
 test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () => {
@@ -87,7 +86,7 @@ test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e dispo
   // Plural único (ordem dd15064d, D7b) pela síntese do cartão (src/lib/cartao-sintese.ts, quartosTexto/banheirosTexto).
   assert.match(c, /const sintese = itensSintese\(property\);/);
   assert.match(ler("lib/cartao-sintese.ts"), /quartosTexto\(p\.bedrooms\)[\s\S]*banheirosTexto\(p\.bathrooms\)/);
-  assert.match(c, /\{property\.neighborhood\}, \{property\.city\}/);
+  assert.match(c, /\{linhaLocalizacao\(property\.neighborhood, property\.city, property\.state\)\}/); // E101
   // Custo total do mês em destaque (ordem 1a555bfa), no formato do QA: "R$ X/mês · R$ Y em N meses".
   assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/);
   const hoje = new Date("2026-10-14T12:00:00Z");

@@ -4,7 +4,8 @@ import { authFile } from "../fixtures/auth";
 
 /**
  * T64 — ordem bbced3fa (parte 2): a área logada usa a largura cheia, igual à Visão geral.
- * (1) a 1280 e 1920 px o conteúdo de cada rota tem a mesma largura da Visão geral (±24 px);
+ * (1) a 1280 e 1920 px o conteúdo de cada rota tem a mesma largura da Visão geral (±24 px) — menos o "Anunciar"
+ *     (novo), que na CADASTRO-MOLDURA troca a casca do painel pela moldura do assistente (sem a lateral);
  * (2) a 360 e 390 px nenhuma rota rola para o lado;
  * (3) "Anunciar" (novo) tem 2 colunas no computador (etapa + prévia do anúncio ao vivo) e 1 no celular.
  */
@@ -45,10 +46,13 @@ async function larguraConteudo(page: Page): Promise<number> {
   return medir();
 }
 
+// CADASTRO-MOLDURA: /dashboard/imoveis/novo não usa a casca do painel (moldura própria do assistente, ver t450).
+const ROTAS_COM_CASCA = ROTAS.slice(1).filter((r) => r !== "/dashboard/imoveis/novo");
+
 // Uma rota por teste: as 10 rotas em sequência estouravam os 135 s de um teste só quando o lab estava lento
 // (lab fe04ddf6: T64 1280 px por timeout). Cada teste mede a Visão geral e a própria rota, com prazo próprio.
 for (const largura of [1280, 1920]) {
-  for (const rota of ROTAS.slice(1)) {
+  for (const rota of ROTAS_COM_CASCA) {
     test(`T64 — ${rota} em largura cheia a ${largura}px (±24 px da Visão geral)`, async ({ page }) => {
       test.slow();
       await page.setViewportSize({ width: largura, height: 900 });

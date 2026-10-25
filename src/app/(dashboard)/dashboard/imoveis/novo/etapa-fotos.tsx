@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect } from "react";
-import { AlertTriangle, Loader2, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertTriangle, Info, Loader2, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { GuiaFotos } from "@/components/fotos/guia-fotos";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { VideoUploader } from "@/components/video-uploader";
@@ -14,6 +13,12 @@ import { cn } from "@/lib/utils";
 import { ANCORA_VIDEO_ASSISTENTE } from "@/lib/anuncio/prontidao";
 import { Erro } from "./campos";
 import type { EstadoIaFotos, FalhaIaFotos } from "./tipos";
+
+/** Mockup cadastro-imovel-02: a dica embaixo da galeria. */
+export const DICA_FOTOS = "Dica: use fotos com boa iluminação e ambiente organizado.";
+
+/** Mockup cadastro-imovel-02: a frase embaixo do "Continuar" neste passo. */
+export const FOTOS_REORGANIZAR = "Você pode reorganizar as fotos depois de enviar.";
 
 /** Busca de fotógrafos da cidade do imóvel; com o rascunho salvo, o imóvel vai junto até o "Solicitar orçamento". */
 function linkFotografos(cep: string, imovelId?: string | null): string {
@@ -68,7 +73,17 @@ export function EtapaFotos({
   const bloqueado = photos.length < MIN_PHOTOS;
   return (
     <div data-testid="etapa-fotos">
-      <div className="rounded-xl border border-sage-200 p-4">
+      {/* Mockup cadastro-imovel-02: a galeria logo abaixo do título (foto principal larga, miniaturas e o "+ Adicionar
+          foto" tracejado), a dica de luz e, depois, a contagem e o resto do passo. */}
+      <PhotoUploader photos={photos} onChange={setPhotos} max={MAX_FOTOS_POR_ANUNCIO} variante="cadastro" imagemVazia={PHOTOS.cadastro.uploadEmpty} />
+      <Erro msg={erroFotos} />
+
+      <p className="mt-4 flex items-start gap-2 text-sm text-muted" data-testid="fotos-dica">
+        <Info className="mt-1 h-4 w-4 shrink-0 text-muted" aria-hidden />
+        {DICA_FOTOS}
+      </p>
+
+      <div className="mt-4 rounded-xl border border-sage-200 p-4" data-testid="fotos-contagem">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-ink">
             {photos.length} / {MIN_PHOTOS} fotos
@@ -91,7 +106,17 @@ export function EtapaFotos({
       <details className="mt-3 rounded-xl border border-sage-200 p-3">
         <summary className="cursor-pointer text-sm font-medium text-forest underline">Ver dicas de foto</summary>
         <div className="mt-3">
-          <GuiaFotos comCta={false} />
+          <p className="text-sm text-muted">Ambientes que valem uma foto:</p>
+          <div className="mt-2 flex flex-wrap gap-2" data-testid="fotos-ambientes">
+            {SUGGESTED_ROOMS.map((r) => (
+              <span key={r} className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
+                {r}
+              </span>
+            ))}
+          </div>
+          <div className="mt-3">
+            <GuiaFotos comCta={false} />
+          </div>
         </div>
       </details>
 
@@ -102,26 +127,6 @@ export function EtapaFotos({
         <a href={linkFotografos(cep, imovelId)} target="_blank" rel="noopener" className="mt-1 inline-block font-medium text-forest underline">
           Ver fotógrafos na cidade do imóvel
         </a>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {SUGGESTED_ROOMS.map((r) => (
-          <span key={r} className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">
-            {r}
-          </span>
-        ))}
-      </div>
-
-      {photos.length === 0 && (
-        <div className="mt-4 flex flex-col items-center rounded-xl border border-dashed border-sage-200 bg-surface-2 p-4 text-center">
-          <Image src={PHOTOS.cadastro.uploadEmpty} alt="Fotografe os ambientes do imóvel" width={400} height={300} className="h-32 w-auto" />
-          <p className="mt-2 text-sm font-medium text-ink">Adicione as fotos dos ambientes</p>
-          <p className="text-xs text-muted">Arraste e solte no computador, ou toque para escolher no celular.</p>
-        </div>
-      )}
-
-      <div className="mt-4">
-        <PhotoUploader photos={photos} onChange={setPhotos} max={MAX_FOTOS_POR_ANUNCIO} />
-        <Erro msg={erroFotos} />
       </div>
 
       {/* 65-B: o vídeo num bloco próprio, logo depois das fotos e antes da caixa da IA. Nunca bloqueia avançar. */}

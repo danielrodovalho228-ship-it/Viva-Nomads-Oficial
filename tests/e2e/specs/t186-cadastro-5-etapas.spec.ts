@@ -10,7 +10,7 @@ import { continuarAte, noPasso } from "../fixtures/cadastro";
   SIMULADOS (nada sai para a rede):
   1. Tipo: "Apartamento" marcado por padrão.
   2. Fotos: 8 fotos; a IA analisa sozinha ao terminar.
-  3. Endereço: o CEP vem com foco e preenche rua, bairro e cidade; o documento fictício é conferido → ✓.
+  3. Endereço: o CEP vem com foco e preenche rua, bairro e cidade (E104: só endereço).
   4. Detalhes: quartos e banheiros já vêm da IA (as fotos agora vêm antes); pessoas e área.
   5. Comodidades: comodidades pré-marcadas; "Pronto para trabalhar de casa" com o contador; grupo Segurança;
      declaração das câmeras; proximidades do OSM marcadas; padrão mínimo de conforto.
@@ -19,7 +19,7 @@ import { continuarAte, noPasso } from "../fixtures/cadastro";
   8. Preço: valor mensal com o preço sugerido da região (mediana de 3 anúncios reais); Negociação com desconto e
      limite privado.
   9. Disponibilidade: datas; campos dentro do cartão.
-  10. Revise e publique: documento conferido; publica. O anúncio mostra o que o dono confirmou, e o limite privado
+  10. Revise e publique: identidade e documento no "Antes de publicar" (E104), conferido na hora; publica. O anúncio mostra o que o dono confirmou, e o limite privado
      não aparece.
   Laboratório: o Supabase local é http e a regra do editor só aceita fotos https na pasta do dono; por isso as fotos
   do rascunho são trocadas pelas de teste (como em criarImovelPronto) antes de publicar.
@@ -153,15 +153,9 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       await page.getByTestId("cadastro-numero").fill("102");
       await esperarSalvo(page); // o rascunho existe: o documento fica ligado a ele
 
-      // Endereço → identidade → matrícula (decisão do Daniel, 18/10): sem matrícula o documento vai para a equipe.
-      const identidade = page.getByTestId("etapa-identidade");
-      await expect(identidade).toHaveAttribute("data-estado", "pendente", { timeout: 15_000 });
-      await identidade.getByTestId("identidade-confirmar").click();
-      await expect(identidade.getByTestId("identidade-confirmada")).toBeVisible({ timeout: 20_000 });
-      const docEnviar = page.getByTestId("documento-vinculo").locator('input[type="file"]').first();
-      await docEnviar.setInputFiles({ name: "matricula-ficticia.pdf", mimeType: "application/pdf", buffer: matriculaLab() });
-      await expect(page.getByTestId("documento-estado")).toHaveAttribute("data-estado", "aprovado", { timeout: 30_000 });
-      await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida");
+      // E104: o Passo 3 é só endereço (identidade e documento ficam no "Antes de publicar" da Revisão).
+      await expect(page.getByTestId("etapa-identidade")).toHaveCount(0);
+      await expect(page.getByTestId("documento-vinculo")).toHaveCount(0);
       await camposDentroDoCartao(page, "etapa-onde-fica");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t186-3-endereco-${largura}.png`, fullPage: true });
@@ -197,8 +191,8 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       // Proximidades do OSM (simuladas): todas marcadas.
       const prox = page.getByTestId("proximidade-item");
       await expect(prox).toHaveCount(8, { timeout: 20_000 }); // PERTO-B: escola entrou (8 tipos)
-      for (const p of await prox.all()) await expect(p).toHaveAttribute("aria-pressed", "true");
-      await prox.filter({ hasText: "Academia" }).click(); // desmarca uma
+      for (const p of await prox.all()) await expect(p).toHaveAttribute("data-mostrar", "1");
+      await prox.filter({ hasText: "Academia" }).getByTestId("proximidade-mostrar").click(); // PERTO-A: desliga "Mostrar" em uma
       // Nenhuma imagem decorativa no meio do formulário.
       await expect(page.getByTestId("etapa-encontramos").locator("img")).toHaveCount(0);
       // Segurança e imóvel: o grupo Segurança e a declaração das câmeras no mesmo bloco.
@@ -288,15 +282,26 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
 
       // ── Passo 10: Revise e publique ─────────────────────────────────────
       await noPasso(page, "revisao");
+      // Endereço (Passo 3) → identidade → matrícula (decisão do Daniel, 18/10), no cartão "Antes de publicar" (E104).
+      const antes = page.getByTestId("antes-de-publicar");
+      await expect(antes).toBeVisible();
+      const identidade = antes.getByTestId("etapa-identidade");
+      await expect(identidade).toHaveAttribute("data-estado", "pendente", { timeout: 15_000 });
+      await identidade.getByTestId("identidade-confirmar").click();
+      await expect(identidade.getByTestId("identidade-confirmada")).toBeVisible({ timeout: 20_000 });
+      await antes.getByTestId("documento-vinculo").locator('input[type="file"]').first().setInputFiles({ name: "matricula-ficticia.pdf", mimeType: "application/pdf", buffer: matriculaLab() });
+      await expect(page.getByTestId("documento-estado")).toHaveAttribute("data-estado", "aprovado", { timeout: 30_000 });
+      await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida");
       await expect(page.getByTestId("revisar-documento")).toHaveAttribute("data-estado", "aprovado");
       // Mockup cadastro-imovel-10: o cartão do anúncio (com o total do mês e o desconto) e a lista de conferência.
       await expect(page.getByTestId("revisao-cartao")).toContainText("6% de desconto a partir de 6 meses");
       await expect(page.getByTestId("revisao-total")).toContainText("/mês no total");
       await expect(page.getByTestId("lista-conferencia")).toBeVisible();
       await page.screenshot({ path: `${SAIDA}/t186-10-revisao-${largura}.png`, fullPage: true });
+      // CADASTRO-MOLDURA: sem botão de salvar — o rascunho salva sozinho e o "Sair" do topo volta a Meus imóveis.
       await esperarSalvo(page);
-      await page.getByRole("button", { name: "Salvar como rascunho" }).click();
-      await page.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
+      await page.getByTestId("assistente-sair").click();
+      await page.waitForURL(/\/dashboard\/imoveis\?saiu=assistente$/, { timeout: 30_000 });
 
       // Laboratório: fotos https de teste no rascunho (a regra do editor só aceita https na pasta do dono).
       const { data: rasc } = await adm().from("properties").select("id, draft_data").eq("owner_id", donoId).eq("status", "draft").single();

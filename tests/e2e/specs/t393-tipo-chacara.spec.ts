@@ -19,12 +19,8 @@ const PONTO = { lat: -18.95, lng: -48.4 };
 async function abrirFolha(page: Page, url: string) {
   await expect(async () => {
     await page.goto(url, { waitUntil: "domcontentloaded" });
-    const celular = page.getByTestId("abrir-filtros").filter({ visible: true });
-    if (await celular.count()) await celular.first().click({ timeout: 5_000 });
-    else {
-      if (!(await page.getByTestId("mais-filtros").isVisible())) await page.getByTestId("busca-compacta").click({ timeout: 5_000 });
-      await page.getByTestId("mais-filtros").click({ timeout: 5_000 });
-    }
+    // E82-A: a pílula "Mais filtros" da linha única, em toda largura.
+    await page.getByTestId("pilula-mais").click({ timeout: 5_000 });
     await expect(page.getByTestId("painel-filtros")).toBeVisible({ timeout: 5_000 });
   }).toPass({ timeout: 60_000 });
   return page.getByTestId("painel-filtros");

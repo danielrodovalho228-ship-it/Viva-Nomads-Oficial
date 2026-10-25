@@ -20,6 +20,9 @@ import {
   pontoValido,
   rotuloDoLocal,
   validarNaoAchei,
+  validarNomeLocal,
+  AVISO_SEM_NUMERO,
+  ROTULO_NOME_LOCAL,
 } from "./pessoal.ts";
 import { rotuloReta } from "../rotas/tempo.ts";
 
@@ -66,7 +69,7 @@ test("ponto guardado com 3 casas; fora do Brasil é inválido", () => {
 });
 
 test("rótulo do local sem número de casa nem CEP; consulta com cidade e estado", () => {
-  assert.equal(rotuloDoLocal("Rua Tal, 123 - Centro, 38400-100"), "Rua Tal, Centro");
+  assert.equal(rotuloDoLocal("Rua Tal, 123 - Centro, 38400-100"), "Rua Tal — Centro");
   assert.equal(rotuloDoLocal("  "), "Meu local");
   assert.deepEqual(consultaDoLocal(" Hospital <b>X</b> ", "Uberlândia", "mg"), { endereco: "Hospital bX/b", cidade: "Uberlândia", uf: "MG" });
   assert.equal(consultaDoLocal("ab", "Uberlândia", "MG"), null);
@@ -126,4 +129,24 @@ test("E81: o local guardado tem como ser apagado; apagado o ativo, a busca volta
   assert.match(campo, /setLocais\(antes\)/);
   const acoes = ler("src/lib/destinos/pessoal-actions.ts");
   assert.match(acoes, /from\("destinos_pessoais"\)\.delete\(\)\.eq\("id", id\)\.eq\("user_id", uid\)/);
+});
+
+test("E94: nome do local opcional; aparece no lugar do rótulo limpo; sem número da casa", () => {
+  assert.equal(ROTULO_NOME_LOCAL, "Como chamar este lugar");
+  assert.equal(AVISO_SEM_NUMERO, "Guardamos o lugar sem o número da casa, por privacidade.");
+  assert.deepEqual(validarNomeLocal(""), { ok: true, nome: null });
+  assert.deepEqual(validarNomeLocal("  Trabalho  "), { ok: true, nome: "Trabalho" });
+  assert.deepEqual(validarNomeLocal("Cargill <b>"), { ok: true, nome: "Cargill b" });
+  assert.equal(validarNomeLocal("X").ok, false);
+  assert.equal(validarNomeLocal("Rua Goiás 1331").ok, false, "número da casa não entra no nome");
+  assert.equal(validarNomeLocal("a".repeat(41)).ok, false);
+  const acoes = ler("src/lib/destinos/pessoal-actions.ts");
+  assert.match(acoes, /let rotulo = n\.nome \?\? rotuloDoLocal\(q\.endereco\);/);
+  assert.match(acoes, /if \(ja && !n\.nome\) rotulo = ja\.rotulo as string;/, "sem nome novo, o local guardado mantém o nome");
+  // Renomear pelo cliente da pessoa (grant de rótulo e uso da 0240), nunca pelo admin.
+  assert.match(acoes, /export async function renomearLocal[\s\S]{0,600}supabase\.from\("destinos_pessoais"\)\.update\(\{ rotulo: n\.nome \}\)\.eq\("id", id\)\.eq\("user_id", uid\)/);
+  assert.match(ler("supabase/migrations/0240_destinos_pessoais.sql"), /grant update \(rotulo, usado_em\) on public\.destinos_pessoais to authenticated;/);
+  const tela = ler("src/components/busca/campo-destino.tsx");
+  assert.match(tela, /data-testid="outro-local-nome"/);
+  assert.match(tela, /\{AVISO_SEM_NUMERO\}/);
 });

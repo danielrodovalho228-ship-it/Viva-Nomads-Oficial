@@ -10,6 +10,7 @@ import { test, expect, type Page } from "@playwright/test";
  *  3. Clique no pin abre o card ancorado no mapa (foto, título, cidade, preço/mês,
  *     quartos/banheiros), sem sair da página; o × fecha.
  *  4. Celular (390 px): layout atual, sem mapa.
+ * E82-A: os filtros são a linha única de pílulas (a mesma em toda largura), não mais a faixa da busca compacta.
  */
 async function abrir(page: Page, largura: number, altura = 900) {
   await page.setViewportSize({ width: largura, height: altura });
@@ -47,12 +48,9 @@ test.describe("T70 — busca split-screen no computador", () => {
     expect(pctMapa).toBeLessThanOrEqual(0.45);
     expect(Math.round(mapa!.x + mapa!.width), "mapa encosta na borda direita").toBe(1440);
 
-    // Ordem eac7e3a1: filtros completos abrem pela busca compacta do cabeçalho.
-    await page.getByTestId("busca-compacta").click();
-    const caixa = await page.getByTestId("filtros-caixa").boundingBox();
+    // E82-A: os filtros ficam na linha única de pílulas, sempre à vista sobre a lista.
+    const caixa = await page.getByTestId("linha-pilulas").boundingBox();
     expect(caixa!.height, "barra de filtros em uma linha").toBeLessThanOrEqual(64);
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("filtros-caixa")).toBeHidden();
 
     const cards = page.getByTestId("card-resultado");
     expect(await cards.count()).toBeGreaterThanOrEqual(3);
@@ -126,9 +124,10 @@ test.describe("T70 — busca split-screen no computador", () => {
     await expect(page).toHaveURL(new RegExp(`/imoveis/${id}`));
   });
 
-  test("4. celular 390 px: sem mapa, busca do celular de sempre", async ({ page }) => {
+  test("4. celular 390 px: sem mapa, a mesma linha de pílulas", async ({ page }) => {
     await abrir(page, 390, 844);
-    await expect(page.getByTestId("busca-celular")).toBeVisible();
+    // E82-A: sem bloco só do celular — a mesma linha de pílulas; o mapa só abre pela pílula "Mapa".
+    await expect(page.getByTestId("linha-pilulas")).toBeVisible();
     await expect(page.getByTestId("busca-mapa")).toBeHidden();
     await expect(page.getByTestId("mapa-busca")).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
@@ -138,9 +137,8 @@ test.describe("T70 — busca split-screen no computador", () => {
     for (const largura of [1024, 1280]) {
       await abrir(page, largura);
       await expect(page.getByTestId("busca-mapa")).toBeVisible();
-      await expect(page.getByTestId("busca-compacta")).toBeVisible();
-      await page.getByTestId("busca-compacta").click();
-      const caixa = await page.getByTestId("filtros-caixa").boundingBox();
+      await expect(page.getByTestId("linha-pilulas")).toBeVisible();
+      const caixa = await page.getByTestId("linha-pilulas").boundingBox();
       expect(caixa!.height, `filtros em uma linha a ${largura}px`).toBeLessThanOrEqual(64);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     }

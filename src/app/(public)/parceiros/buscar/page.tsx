@@ -8,6 +8,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { CartaoParceiro } from "@/components/parceiros/cartao-parceiro";
 import { BuscaVazia } from "@/components/parceiros/busca-vazia";
 import { buscarParceiros, lerParceiroGeralServidor } from "@/lib/data/parceiros-publico";
+import { ROTULO_FILTRO_NOTA } from "@/lib/parceiros/fiscal";
 import { CATEGORIAS_CATALOGO, categoriaValida, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarCep } from "@/lib/fotografos/regras";
 import { MUNICIPIOS } from "@/lib/municipios";
@@ -21,10 +22,11 @@ export const metadata: Metadata = {
 const UFS = Object.keys(MUNICIPIOS).sort();
 const campo = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-3 py-2 text-base text-ink";
 
-export default async function BuscarParceirosPage({ searchParams }: { searchParams: Promise<{ categoria?: string; cidade?: string; uf?: string; cep?: string; avisar?: string; imovel?: string; descricao?: string }> }) {
+export default async function BuscarParceirosPage({ searchParams }: { searchParams: Promise<{ categoria?: string; cidade?: string; uf?: string; cep?: string; avisar?: string; imovel?: string; descricao?: string; nota?: string }> }) {
   const sp = await searchParams;
   const categoria = sp.categoria && categoriaValida(sp.categoria) ? sp.categoria : "";
-  const r = await buscarParceiros({ categoria, cidade: sp.cidade, uf: sp.uf, cep: sp.cep });
+  const soNota = sp.nota === "1";
+  const r = await buscarParceiros({ categoria, cidade: sp.cidade, uf: sp.uf, cep: sp.cep, soNota });
   const supabase = await createClient();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   const geral = r.lista.length ? null : await lerParceiroGeralServidor();
@@ -76,6 +78,11 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
           <label htmlFor="bp-cep" className="block text-sm font-medium text-ink">ou CEP</label>
           <input id="bp-cep" name="cep" inputMode="numeric" autoComplete="postal-code" defaultValue={r.cep ? formatarCep(r.cep) : ""} placeholder="00000-000" className={campo} />
         </div>
+        {/* FISCAL-PARCEIRO-B: só parceiros PJ que declararam emitir nota de serviço (com a contagem da busca). */}
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm text-ink sm:col-span-2 lg:col-span-5 lg:order-last" data-testid="busca-parceiros-nota" data-qtd={r.comNota}>
+          <input type="checkbox" name="nota" value="1" defaultChecked={soNota} data-testid="busca-parceiros-nota-check" />
+          {ROTULO_FILTRO_NOTA} ({r.comNota})
+        </label>
         <button type="submit" className={buttonClasses({ size: "md", className: "w-full sm:col-span-2 lg:col-span-1 lg:w-auto" })} data-testid="busca-parceiros-buscar">
           <Search className="h-4 w-4" aria-hidden /> Buscar
         </button>

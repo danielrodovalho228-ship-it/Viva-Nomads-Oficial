@@ -3,7 +3,10 @@ import { ArrowLeft } from "lucide-react";
 import { nivelDoMeuImovel } from "@/lib/data/nivel-actions";
 import { AREAS, ROTULO_AREA, ROTULO_NIVEL, ROTULO_PONTO, rotuloItem, type NivelOuAdequacao } from "@/config/niveis";
 import { FormNivel } from "./form-nivel";
+import { SugestoesNoNivel } from "./sugestoes-no-nivel";
+import { comodidadesDoMeuImovel } from "@/lib/data/comodidade-sugerida-actions";
 import { BlocoAvaliacaoDono } from "@/components/vistoria/bloco-avaliacao-dono";
+import { MedirNoNivel } from "./medir-no-nivel";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +16,13 @@ const rotulo = (n: NivelOuAdequacao) => (n === "em_adequacao" ? "Em adequação"
  * Adendo 59.1 — nível do imóvel (Essencial / Conforto / Premium), ruído e extras. O nível é o da área mais fraca;
  * Conforto e Premium só contam com a foto de cada item. Nível não é selo e não muda a taxa nem a posição na busca.
  */
-export default async function NivelDoImovelPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function NivelDoImovelPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ fotografar?: string; medir?: string }> }) {
   const { id } = await params;
-  const dados = await nivelDoMeuImovel(id);
+  // FOTO-NA-HORA-B: o link do celular (e o item pendente da prontidão) chega com ?fotografar=<item> e abre a câmera dele.
+  const { fotografar, medir } = await searchParams;
+  // NIVEIS-MEDIR-B: o link do celular da medição chega com ?medir=<ponto>; sem ele, o quarto principal vem primeiro.
+  const pontoMedir = medir === "trabalho" ? "trabalho" : "quarto_principal";
+  const [dados, comodidades] = await Promise.all([nivelDoMeuImovel(id), comodidadesDoMeuImovel(id)]);
   return (
     <div>
       <Link href="/dashboard/imoveis" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
@@ -23,7 +30,7 @@ export default async function NivelDoImovelPage({ params }: { params: Promise<{ 
       </Link>
       <h1 className="mt-3 font-title text-2xl font-semibold text-ink">Nível, ruído e extras</h1>
       <p className="mt-1 max-w-2xl text-sm text-muted">
-        O nível é o da área mais fraca. Conforto e Premium contam com uma foto de cada item. O Essencial é o{" "}
+        O nível é o da área mais fraca. Conforto e Premium contam com uma foto de cada item, feita na hora. O Essencial é o{" "}
         <Link href={`/dashboard/imoveis/${id}/conforto`} className="text-forest underline">
           padrão mínimo
         </Link>
@@ -62,10 +69,16 @@ export default async function NivelDoImovelPage({ params }: { params: Promise<{ 
               Internet medida:{" "}
               {dados.medidas.length
                 ? dados.medidas.map((m) => `${ROTULO_PONTO[m.ponto]} ${Math.round(m.downloadMbps)}/${Math.round(m.uploadMbps)} Mbps`).join(" · ")
-                : "nenhuma medição válida por ponto. Meça no quarto principal e no ponto de trabalho pela edição do anúncio."}
+                : "nenhuma medição válida por ponto. Meça no quarto principal e no ponto de trabalho, aqui embaixo, no imóvel."}
             </p>
           </section>
-          <FormNivel propertyId={id} dados={dados} />
+          {/* NIVEIS-MEDIR-B: mede antes ou depois de publicar, com as mesmas validações; o nível recalcula na hora. */}
+          <section data-testid="nivel-medir">
+            <MedirNoNivel propertyId={id} ponto={pontoMedir} />
+          </section>
+          {/* E101: o que as fotos sugerem fica acima dos itens de prova. */}
+          <SugestoesNoNivel propertyId={id} comodidades={comodidades} />
+          <FormNivel propertyId={id} dados={dados} fotografar={typeof fotografar === "string" ? fotografar : null} />
           {/* Prompt 62-B1/62-A: avaliação por avaliador credenciado (só com VISTORIA_ATIVA; a rota por foto acima continua grátis). */}
           <BlocoAvaliacaoDono propertyId={id} />
         </div>

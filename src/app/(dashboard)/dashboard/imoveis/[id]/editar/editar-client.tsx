@@ -7,6 +7,7 @@ import { OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
 import { DetalhesAnuncioCampos, estadosDetalhes, formDeDetalhes, payloadDeDetalhes, type DetalhesForm } from "@/components/anuncio/detalhes-anuncio-campos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
+import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
 import { UBERLANDIA_CENTER } from "@/lib/integrations/geocoding";
 import { completudeBlocos, textoCompletude } from "@/lib/anuncio/bloco-opcional";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
@@ -68,7 +69,7 @@ const isPhotoUrl = (s?: string) =>
 /** Micro-texto por categoria de comodidade (por que preencher). */
 const AMENITY_HINT: Record<string, string> = {
   trabalho: "O que faz o nômade digital escolher o seu imóvel — aparece nos filtros de trabalho.",
-  conforto: "Itens do dia a dia que o inquilino procura e filtra na busca.",
+  conforto: "Itens do dia a dia que o morador procura e filtra na busca.",
   predio: "Comodidades do prédio/condomínio contam pontos e passam confiança.",
 };
 
@@ -193,6 +194,8 @@ export function EditarImovelClient({
           ehChacara(property.propertyType) && property.status !== "active"
             ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || !!chacaraGravada?.pontoMarcado })
             : undefined,
+        // E102-B: a mesma regra do servidor ("Não tem internet" fora do ar não publica).
+        semInternet: property.status !== "active" && !temInternet(tipoInternetDoAnuncio(property.propertyType, { chacara })) ? true : undefined,
       }),
     [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, videoArquivo, videoUrl, chegada.tipoEntrada, chacara, chacaraGravada?.pontoMarcado]
   );
@@ -410,7 +413,7 @@ export function EditarImovelClient({
                       <span key={o.key}>
                         {i > 0 && " · "}
                         {href ? (
-                          <a href={`#${ANCORA_VIDEO_EDITOR}`} className="font-medium text-forest underline" data-testid={`melhorar-${o.key}`}>
+                          <a href={o.key === "video" ? `#${ANCORA_VIDEO_EDITOR}` : href} className="font-medium text-forest underline" data-testid={`melhorar-${o.key}`}>
                             {o.label}
                           </a>
                         ) : (
@@ -505,7 +508,7 @@ export function EditarImovelClient({
         <Section
           icon={MapPin}
           title="Endereço exato"
-          summary={enderecoExato.trim() ? "Preenchido · só aparece para visita confirmada e inquilino aceito" : "Falta a rua e o número"}
+          summary={enderecoExato.trim() ? "Preenchido · só aparece para visita confirmada e morador aceito" : "Falta a rua e o número"}
           saving={savingSection === "endereco"}
           saved={savedSection === "endereco"}
           onSave={() => saveSection("endereco")}

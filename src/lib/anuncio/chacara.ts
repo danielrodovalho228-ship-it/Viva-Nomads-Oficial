@@ -23,6 +23,8 @@ export const INTERNETS_CHACARA = [
   { valor: "radio", rotulo: "Rádio" },
   { valor: "satelite", rotulo: "Satélite" },
   { valor: "movel", rotulo: "Internet móvel (4G/5G)" },
+  // E102-B: resposta válida (salva o rascunho), mas não publica — temInternet (internet-imovel.ts) decide.
+  { valor: "nao_tem", rotulo: "Não tem internet" },
 ] as const;
 export type AcessoChacara = (typeof ACESSOS_CHACARA)[number]["valor"];
 export type InternetChacara = (typeof INTERNETS_CHACARA)[number]["valor"];
@@ -96,6 +98,21 @@ export function faltaChacara(d: DadosChacara | undefined): string[] {
   return falta;
 }
 
+/**
+ * E102-A: as linhas do bloco "Dados da chácara/sítio" na Revisão (Passo 10) — o que foi PREENCHIDO, não só o que falta:
+ * "Acesso: Asfalto", "Internet: Fibra" e "Ponto marcado no mapa" com o sinal de feito (ou "Falta marcar o ponto"). O
+ * sinal é um ícone na tela, não um caractere (a guarda de emoji da interface vale para "✓").
+ */
+export function linhasChacaraRevisao(d: DadosChacara | undefined): { chave: "acesso" | "internet" | "ponto"; texto: string; ok: boolean }[] {
+  const acesso = ACESSOS_CHACARA.find((a) => a.valor === d?.acesso)?.rotulo;
+  const internet = INTERNETS_CHACARA.find((a) => a.valor === d?.internet)?.rotulo;
+  return [
+    { chave: "acesso", texto: acesso ? `Acesso: ${acesso}` : "Acesso: falta informar", ok: !!acesso },
+    { chave: "internet", texto: internet ? `Internet: ${internet}` : "Internet: falta informar", ok: !!internet },
+    { chave: "ponto", texto: d?.pontoMarcado ? "Ponto marcado no mapa" : "Falta marcar o ponto", ok: !!d?.pontoMarcado },
+  ];
+}
+
 /** Distância em linha reta do ponto marcado até o centro da cidade (km, 1 casa). */
 export function distanciaCidade(ponto: PontoMarcado, centroCidade: PontoMarcado): number {
   return Math.round(distanciaKm(ponto, centroCidade) * 10) / 10;
@@ -110,7 +127,8 @@ export function linhaChacara(d: DadosChacara | undefined, cidade?: string | null
   const acesso = ACESSOS_CHACARA.find((a) => a.valor === d.acesso)?.rotulo;
   if (acesso) partes.push(`Acesso: ${acesso.toLowerCase()}`);
   const internet = INTERNETS_CHACARA.find((a) => a.valor === d.internet)?.rotulo;
-  if (internet) partes.push(`internet: ${internet === "Internet móvel (4G/5G)" ? "móvel (4G/5G)" : internet.toLowerCase()}`);
+  if (d.internet === "nao_tem") partes.push("sem internet");
+  else if (internet) partes.push(`internet: ${internet === "Internet móvel (4G/5G)" ? "móvel (4G/5G)" : internet.toLowerCase()}`);
   if (d.distanciaCidadeKm !== undefined && cidade) partes.push(`~${kmFalado(d.distanciaCidadeKm)} do centro de ${cidade} em linha reta`);
   if (!partes.length) return null;
   const t = partes.join(" · ");

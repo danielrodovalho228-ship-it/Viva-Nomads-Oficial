@@ -18,7 +18,7 @@ test("anúncio vazio: score 0 e dicas clicáveis (etapa) para tudo", () => {
   const r = calc(vazio);
   assert.equal(r.score, 0);
   assert.ok(r.dicas.length >= 15);
-  assert.ok(r.dicas.every((d) => Number.isInteger(d.etapa) && d.etapa >= 0 && d.etapa <= 8));
+  assert.ok(r.dicas.every((d) => Number.isInteger(d.etapa) && d.etapa >= 0 && d.etapa <= 9)); // E104: documento e sublocação se resolvem na Revisão (9)
 });
 
 test("parcial: obrigatórios feitos, qualidade em branco = 70", () => {

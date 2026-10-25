@@ -82,7 +82,6 @@ export const ALCANCE = [
   "app/(dashboard)/dashboard/estadia/[contratoId]/page.tsx",
   "app/(dashboard)/dashboard/fechamento/closing-flow.tsx",
   "app/(dashboard)/dashboard/imoveis/imoveis-client.tsx",
-  "app/(dashboard)/dashboard/imoveis/novo/barra-fotos.tsx",
   "app/(dashboard)/dashboard/imoveis/novo/busca-endereco.tsx",
   "app/(dashboard)/dashboard/imoveis/novo/cartao-ia.tsx",
   "app/(dashboard)/dashboard/imoveis/novo/page.tsx",
@@ -230,7 +229,8 @@ test("adendo: números tabulares no preço, na contagem do botão e no título d
   assert.match(ler("components/property-card.tsx"), /<p className="tabular-nums" data-testid="cartao-total-mes">/);
   assert.match(ler("components/property-card.tsx"), /tabular-nums text-muted" data-testid="cartao-disponivel"/);
   assert.match(ler("components/busca/painel-filtros-celular.tsx"), /px-4 tabular-nums sm:flex-none/);
-  assert.match(ler("app/(public)/buscar/page.tsx"), /font-semibold tabular-nums text-ink/);
+  // E82-A: o h1 da busca é a linha da contagem, dentro do SearchClient.
+  assert.match(ler("app/(public)/buscar/search-client.tsx"), /font-semibold tabular-nums text-ink" data-testid="titulo-busca"/);
 });
 
 test("tokens: uma cor de marca, neutros, três raios, uma sombra e pesos 400/600 (globals.css)", () => {
@@ -269,13 +269,14 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
   varrer("");
   assert.deepEqual(usos.sort(), [
     "app/(dashboard)/admin/agentes/central-client.tsx", // menu suspenso e botão flutuante da Central (Prompt 45)
+    "app/(dashboard)/dashboard/imoveis/novo/etapa-tipo.tsx", // setas de rolagem sobre as bordas da linha de tipos (01-b/E87)
     "app/(dashboard)/dashboard/imoveis/novo/painel-qualificacao.tsx", // gaveta lateral sobre a página (Prompt 45)
-    "app/(public)/buscar/search-client.tsx", // faixa de filtros presa sob o cabeçalho e o seletor de moradores
     "app/(public)/pedidos/novo/page.tsx", // menu suspenso de sugestões (Prompt 45)
     "components/admin/motivo-dialog.tsx", // diálogo sobre a página (Prompt 45)
     "components/ajuda/viva-chat.tsx", // botão flutuante e a janela do chat
     "components/app/links-do-app.tsx", // diálogo sobre a página (Prompt 45)
     "components/busca/barra-comparar.tsx", // barra flutuante do Comparar
+    "components/busca/barra-pilulas.tsx", // painel pequeno de cada pílula da busca (E82-A)
     "components/busca/card-pin-mapa.tsx", // cartão aberto sobre o mapa
     "components/city-autocomplete.tsx", // menu suspenso de sugestões
     "components/estadia/acoes-estadia.tsx", // botão flutuante "cogumelo" (Prompt 41)
@@ -445,9 +446,11 @@ test("folha de filtros: chip de opção = pill; campo e botão = 8 px; Limpar tu
   assert.match(folha, /className=\{buttonClasses\(\{ variant: "tertiary" \}\)\}/);
   // Campos da faixa de filtros da /buscar (seleção, data, moradores, raio): 8 px.
   const busca = ler("app/(public)/buscar/search-client.tsx");
-  assert.match(busca, /className="h-10 min-w-0 rounded-lg border border-line bg-white px-4 text-sm/); // <Select>
-  assert.match(busca, /<label className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border/); // data
-  assert.match(busca, /"inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border px-4/); // moradores
+  // E82-A: a linha de pílulas (chips = pill) e, nos painéis, campos de 8 px (data e raio).
+  const pilulas = ler("components/busca/barra-pilulas.tsx");
+  assert.match(pilulas, /<Chip/);
+  assert.match(pilulas, /type="date"[\s\S]{0,400}rounded-lg border border-line/); // data
+  assert.match(busca, /aria-label="Raio de busca" className="h-11 rounded-lg border border-line/); // raio
 });
 
 test('/buscar: o campo "Descreva o lugar ideal" é pill como a busca do cabeçalho', () => {

@@ -55,6 +55,8 @@ export function EtapaEncontramos(p: {
   comodidadesDetectadas?: string[];
   internetMbps: string;
   setInternetMbps: (v: string) => void;
+  /** E102-B: "Não tem internet" — o campo de velocidade não é pedido. */
+  semInternet?: boolean;
   /** Id do rascunho já salvo (a medição da internet precisa do imóvel gravado). */
   imovelId?: string | null;
   proxOsm: LugarProximo[] | null;
@@ -99,7 +101,7 @@ export function EtapaEncontramos(p: {
   if (p.parte === "regras") {
     return (
       <div className="space-y-2" data-testid="etapa-regras-casa">
-        <p className="text-sm font-semibold text-ink">Regras da casa</p>
+        {/* E110: "Regras da casa" já é o título do passo (H1); não se repete aqui. */}
         <Toggle
           checked={p.furnished}
           onChange={() => {
@@ -170,6 +172,7 @@ export function EtapaEncontramos(p: {
         mbps={p.internetMbps}
         onMbps={p.setInternetMbps}
         imovelId={p.imovelId}
+        semInternet={p.semInternet}
       />
       {p.qualTHome && <p className="text-xs text-forest">Da qualificação: etiqueta “Para trabalhar de casa” ativa.</p>}
 

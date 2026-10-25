@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PROPERTY_TYPES, propertyTypeLabel } from "../amenities.ts";
 import { OPCOES_TIPO, tipoCanonico } from "../busca/painel-filtros.ts";
-import { OUTROS_TIPOS } from "./assistente-telas.ts";
+import { TIPOS_ASSISTENTE } from "./assistente-telas.ts";
 import { prontidaoAnuncio, type FatosAnuncio } from "./prontidao.ts";
 import { linhasDetalhes, normalizarDetalhes } from "./detalhes-anuncio.ts";
 import {
@@ -27,7 +27,7 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 test("o tipo aparece no cadastro, no tipoCanonico da busca, no filtro e na URL; fazenda e rancho não", () => {
   assert.ok(PROPERTY_TYPES.some((t) => t.value === "chacara" && t.label === "Chácara/Sítio"));
   assert.equal(propertyTypeLabel("chacara"), "Chácara/Sítio");
-  assert.ok((OUTROS_TIPOS as readonly string[]).includes("chacara"), "cadastro (passo Tipo)");
+  assert.ok(TIPOS_ASSISTENTE.some((t) => t.valor === "chacara" && t.rotulo === "Chácara/Sítio"), "cadastro (passo Tipo)");
   assert.ok(OPCOES_TIPO.some((o) => o.valor === "chacara" && o.rotulo === "Chácara/Sítio"), "filtro Tipo de imóvel");
   assert.equal(tipoCanonico("Chácara/Sítio"), "chacara");
   assert.equal(tipoCanonico("chacara"), "chacara");
@@ -113,4 +113,22 @@ test("cadastro: linha fixa e os campos só neste tipo", () => {
   assert.match(novo, /ehChacara\(propertyType\) && \(\s*<CamposChacara/);
   const editar = ler("src/app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx");
   assert.match(editar, /ehChacara\(property\.propertyType\) && \(\s*<CamposChacara/);
+});
+
+test("E102-A: a Revisão mostra os dados preenchidos da chácara/sítio, não só o que falta", async () => {
+  const { linhasChacaraRevisao } = await import("./chacara.ts");
+  assert.deepEqual(
+    linhasChacaraRevisao({ acesso: "asfalto", internet: "fibra", pontoMarcado: true }).map((l) => l.texto),
+    ["Acesso: Asfalto", "Internet: Fibra", "Ponto marcado no mapa"],
+  );
+  assert.deepEqual(
+    linhasChacaraRevisao({ internet: "radio" }).map((l) => [l.texto, l.ok]),
+    [["Acesso: falta informar", false], ["Internet: Rádio", true], ["Falta marcar o ponto", false]],
+  );
+  const revisar = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
+  assert.match(revisar, /data-testid="revisao-chacara"/);
+  assert.match(revisar, /linhasChacaraRevisao\(p\.chacara\)/);
+  assert.match(revisar, /l\.ok && <Check /, "o sinal de feito é um ícone");
+  const pagina = ler("src/app/(dashboard)/dashboard/imoveis/novo/page.tsx");
+  assert.match(pagina, /chacara=\{ehChacara\(propertyType\) \? \{ acesso: chacara\.acesso, internet: chacara\.internet, pontoMarcado: !!chacara\.ponto \|\| chacaraPontoGravado \} : null\}/);
 });

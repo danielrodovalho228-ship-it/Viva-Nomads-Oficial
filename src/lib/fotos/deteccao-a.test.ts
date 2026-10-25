@@ -8,11 +8,11 @@ import { readFileSync } from "node:fs";
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 const SUG = ler("components/niveis/sugestoes-fotos.tsx");
 
-test("'Encontramos isto numa foto sua' com 'Usar esta foto' e 'Não é isso'", () => {
+test("'Encontramos isto numa foto sua' com 'Não é isso'; comodidade 'Confirmar' (FOTO-NA-HORA: nunca 'Usar esta foto')", () => {
   assert.match(SUG, />Encontramos isto numa foto sua</);
-  assert.match(SUG, /Usar esta foto/);
   assert.match(SUG, /Não é isso/);
-  assert.doesNotMatch(SUG, />\s*Confirmar\s*</);
+  assert.doesNotMatch(SUG, /Usar esta foto|Descartar/);
+  assert.match(SUG, /<ProvaNaHora/);
 });
 
 test("'Olhando suas fotos…' à vista enquanto analisa; com erro, o bloco some (estado nulo)", () => {

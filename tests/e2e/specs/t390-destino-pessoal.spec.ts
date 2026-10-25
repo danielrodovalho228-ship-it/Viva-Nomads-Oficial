@@ -22,6 +22,13 @@ const LUGAR = `Clínica Lab ${sufixo}`;
 const CINCO = { lat: -18.905, lng: -48.272 };
 const QUATRO = { lat: -18.951, lng: -48.301 };
 
+/** E82-A: o campo "Perto de…" mora no painel da pílula Local. */
+async function abrirLocal(page: Page) {
+  await page.getByTestId("pilula-local").click();
+  await expect(page.getByTestId("painel-pilula-local")).toBeVisible();
+  return page.getByTestId("painel-pilula-local").getByTestId("campo-destino");
+}
+
 const semRolagemLateral = async (page: Page) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 
@@ -43,12 +50,13 @@ test.describe("T390 — DESTINO-PESSOAL-B: Outro local pessoal", () => {
     const page = await ctx.newPage();
     const antes = (await adm().from("destinos_pessoais").select("id", { count: "exact", head: true })).count ?? 0;
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    const campo = page.getByTestId("campo-destino");
+    const campo = await abrirLocal(page);
     await campo.getByTestId("outro-local-texto").fill(`Hospital do Lab ${sufixo}, 123`);
     await campo.getByTestId("outro-local-buscar").click();
     await expect(campo.getByTestId("destino-digitado")).toContainText("Hospital do Lab", { timeout: 20_000 });
     await expect(campo.getByTestId("destino-digitado")).not.toContainText("123");
-    await expect(page).toHaveURL(/dlat=-?\d+\.\d{2}&dlng=-?\d+\.\d{2}/);
+    // E94: o ponto vai com 3 casas (~110 m), a mesma precisão guardada para quem está logado.
+    await expect(page).toHaveURL(/dlat=-?\d+\.\d{3}&dlng=-?\d+\.\d{3}/);
     expect((await adm().from("destinos_pessoais").select("id", { count: "exact", head: true })).count ?? 0).toBe(antes);
     await semRolagemLateral(page);
     await page.screenshot({ path: "tests/laboratorio/saida/t390-1-outro-local-390.png", fullPage: true });
@@ -59,7 +67,7 @@ test.describe("T390 — DESTINO-PESSOAL-B: Outro local pessoal", () => {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const page = await ctx.newPage();
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    const campo = page.getByTestId("campo-destino");
+    const campo = await abrirLocal(page);
     await campo.getByTestId("outro-local-texto").fill("Rua Inexistente 999");
     await campo.getByTestId("outro-local-buscar").click();
     await expect(campo.getByTestId("outro-local-erro")).toHaveText("Não achamos este endereço.", { timeout: 20_000 });
@@ -78,12 +86,13 @@ test.describe("T390 — DESTINO-PESSOAL-B: Outro local pessoal", () => {
   test("3. logada: o local fica só com ela e volta como 'Seus locais'", async ({ browser }) => {
     const page = await entrar(browser, contas[0].email, senha);
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    const campo = page.getByTestId("campo-destino");
+    const campo = await abrirLocal(page);
     await campo.getByTestId("outro-local-texto").fill(`Trabalho da Pessoa ${sufixo}`);
     await campo.getByTestId("outro-local-buscar").click();
     await expect(campo.getByTestId("destino-digitado")).toBeVisible({ timeout: 20_000 });
     await expect.poll(async () => (await adm().from("destinos_pessoais").select("rotulo").eq("user_id", ids[0])).data?.length ?? 0, { timeout: 20_000 }).toBe(1);
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+    await abrirLocal(page);
     await expect(page.getByTestId("destinos-pessoais").getByTestId("destino-pessoal")).toContainText(`Trabalho da Pessoa ${sufixo}`, { timeout: 20_000 });
     await page.getByTestId("destino-pessoal").first().click();
     await expect(page).toHaveURL(/dlat=/);
@@ -93,6 +102,7 @@ test.describe("T390 — DESTINO-PESSOAL-B: Outro local pessoal", () => {
     await expect(page).not.toHaveURL(/dlat=/);
     await expect.poll(async () => (await adm().from("destinos_pessoais").select("id").eq("user_id", ids[0])).data?.length ?? -1, { timeout: 20_000 }).toBe(0);
     await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(await abrirLocal(page)).toBeVisible();
     await expect(page.getByTestId("destinos-pessoais")).toHaveCount(0);
     await page.context().close();
   });

@@ -4,7 +4,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 /**
  * T386 — Assistente de cadastro em 10 passos, entrega 01 (mockup cadastro-imovel-01, Entrega 3 do CONTA-A).
  *   1. Topo "Passo 1 de 10" com a barra; um H1 só, "Qual é o tipo do seu imóvel?"; cartões Casa, Apartamento e Quarto
- *      (Apartamento marcado por padrão) com a foto carregando de verdade; "Outros tipos" com os demais do catálogo.
+ *      (Apartamento marcado por padrão) com a foto carregando de verdade; 01-b: os demais do catálogo na mesma linha.
  *      No computador, a "Visualização do anúncio · Ao vivo" ao lado. Sem rolagem lateral, e nada fixo cobrindo o
  *      "Continuar". 390 e 1280, com prints.
  *   2. Escolher o tipo marca o cartão e a prévia muda na hora; "Continuar" leva ao passo 2 (Fotos) e "Voltar" volta

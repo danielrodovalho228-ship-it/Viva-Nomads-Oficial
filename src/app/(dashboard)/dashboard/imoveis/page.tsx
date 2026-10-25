@@ -10,13 +10,16 @@ import { minhaSituacaoLimite } from "@/lib/data/actions";
 import { BlocoLimite } from "@/components/anuncio/bloco-limite";
 import { avisoTipoEntradaNoPainel } from "@/lib/anuncio/chegada-e-pedido";
 import Link from "next/link";
+import { TEXTO_RASCUNHO_SALVO } from "@/components/layout/moldura-assistente";
 
 /**
  * "Meus imóveis": o servidor busca a lista REAL do proprietário e a prontidão de
  * cada anúncio (fonte única: lib/anuncio/prontidao); a renderização fica no
  * client (imoveis-client), que suporta o modo demonstração do admin.
  */
-export default async function MyPropertiesPage() {
+export default async function MyPropertiesPage({ searchParams }: { searchParams: Promise<{ saiu?: string }> }) {
+  // CADASTRO-MOLDURA: o "Sair" do assistente chega aqui com ?saiu=assistente e a linha do rascunho salvo.
+  const saiuDoAssistente = (await searchParams).saiu === "assistente";
   // A lista e o usuário não dependem um do outro: busca os dois juntos (ordem 0f66a754, item 4).
   const [properties, supabase, ajudas] = await Promise.all([listMyProperties(), createClient(), meusPedidosDeAjuda()]);
   const prontidao: Record<string, Prontidao> = {};
@@ -45,6 +48,11 @@ export default async function MyPropertiesPage() {
   }
   return (
     <>
+      {saiuDoAssistente && (
+        <p role="status" className="mb-4 rounded-xl border border-sage-200 bg-sage-50 px-4 py-3 text-sm text-forest" data-testid="rascunho-fica-salvo">
+          {TEXTO_RASCUNHO_SALVO}
+        </p>
+      )}
       {ajudas.length > 0 && (
         <section className="mb-4 rounded-xl border border-sage-200 bg-sage-50 p-4 text-sm text-forest" data-testid="ajuda-andamento">
           <h2 className="font-medium text-ink">Publicamos para você</h2>
