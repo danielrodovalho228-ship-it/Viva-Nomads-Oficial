@@ -1,4 +1,5 @@
 import type { AmenityCategory, AmenityGroup, Property } from "../types.ts";
+import { rotulosQueValemParaTipo } from "../amenities.ts";
 
 /** Quantas comodidades aparecem na página (número par, para a grade de 2 colunas não deixar vão); o resto fica em "Ver todas as N comodidades". */
 export const LIMITE_PRINCIPAIS = 6;
@@ -15,7 +16,7 @@ export type ComodidadesAgrupadas = {
   precisaVerTodas: boolean;
 };
 
-/** Agrupa por categoria (ordem fixa), sem itens em branco nem repetidos. Só dado cadastrado: nada é inventado. */
+/** Agrupa por categoria (ordem fixa), sem itens em branco nem repetidos nem fora do tipo do imóvel. Só dado cadastrado: nada é inventado. */
 export function agruparComodidades(property: Property): ComodidadesAgrupadas {
   const origem: AmenityGroup[] =
     property.amenityGroups && property.amenityGroups.length > 0
@@ -27,7 +28,8 @@ export function agruparComodidades(property: Property): ComodidadesAgrupadas {
   const grupos: AmenityGroup[] = [];
   for (const g of origem) {
     const items: string[] = [];
-    for (const bruto of g.items) {
+    // E111-A: o que o tipo do imóvel não mostra (ex.: "Elevador" salvo numa chácara) não aparece no anúncio.
+    for (const bruto of rotulosQueValemParaTipo(g.items, property.propertyType)) {
       const item = bruto.trim();
       const chave = item.toLowerCase();
       if (!item || vistos.has(chave)) continue;

@@ -432,7 +432,10 @@
         "t436-busca-clean-e82",
         "t412-varredura-bloco29",
         "t408-varredura-bloco27",
-        "t413-varredura-bloco30"
+        "t413-varredura-bloco30",
+        "t458-buscar-base-unica-e131",
+        "t454-salvar-busca-avisar-me",
+        "t417-varredura-bloco34"
       ]
     },
     "/cidades": {
@@ -573,7 +576,9 @@
         "t352-varredura-bloco17",
         "t387-varredura-bloco22",
         "t403-nav-a",
-        "t411-varredura-bloco28"
+        "t411-varredura-bloco28",
+        "t416-varredura-bloco33",
+        "t459-prop1-navegacao-dono"
       ]
     },
     "/dashboard/assinatura": {
@@ -755,7 +760,8 @@
         "t224-taxa-fora-da-api",
         "t220-recibo-assinatura",
         "t221-contrato-estado-periodo",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -802,7 +808,8 @@
         "t209-jornada-dois-lados",
         "t216-taxa-matriz",
         "t224-taxa-fora-da-api",
-        "t221-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/ferramentas": {
@@ -825,7 +832,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t302-varredura-logada-bloco6"
+        "t302-varredura-logada-bloco6",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/imoveis": {
@@ -917,6 +925,7 @@
         "t414-varredura-bloco31",
         "t432-deteccao-a",
         "t415-varredura-bloco32",
+        "t456-comodidades-tipo-e111a",
         "t457-revisao-documento-e112"
       ]
     },
@@ -948,7 +957,8 @@
         "t213-jornada-teste-confirmacao",
         "t298-varredura-logada-bloco4",
         "t351-telas-linkedin-63a",
-        "t338-varredura-bloco15"
+        "t338-varredura-bloco15",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/locacoes": {
@@ -1054,7 +1064,8 @@
         "t11-travessias",
         "t183-telas-logadas-390",
         "t232-pedido-moradia-completo",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1067,7 +1078,8 @@
         "t11-travessias",
         "t183-telas-logadas-390",
         "t232-pedido-moradia-completo",
-        "t298-varredura-logada-bloco4"
+        "t298-varredura-logada-bloco4",
+        "t416-varredura-bloco33"
       ]
     },
     "/dashboard/propostas/[id]": {

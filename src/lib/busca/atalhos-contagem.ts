@@ -6,7 +6,7 @@
 */
 import { comodidadesDaUrl } from "./filtro-comodidades.ts";
 import { FILTROS_PAINEL_VAZIOS, passaNoPainel } from "./painel-filtros.ts";
-import { semExemplosQuandoHaReal } from "./exemplos-e-pedido.ts";
+import { baseDaBusca, contarNaBase } from "./exemplos-e-pedido.ts";
 
 type ImovelContavel = Parameters<typeof passaNoPainel>[0] & { neighborhood: string; city: string; maxGuests?: number | null };
 /** Como a /buscar decide se um imóvel é de exemplo (a home passa `(p) => isExemplo(p.id)`). */
@@ -15,8 +15,9 @@ type AtalhoBase = { href: string };
 
 /**
  * Quantos imóveis a /buscar mostraria ao abrir este atalho — a MESMA sequência da /buscar: filtro de base
- * (local; capacidade para 1 morador), passaNoPainel e, por fim, "com imóvel real no resultado, os exemplos
- * saem" (Prompt 30). Sem esse último passo a home contava os exemplos que a /buscar esconde (t162, #978).
+ * (local; capacidade para 1 morador), a regra "com imóvel real na busca, os exemplos saem" (Prompt 30) decidida
+ * sobre essa base (E131: uma vez, como a /buscar) e só então passaNoPainel. Sem a regra, a home contava os exemplos
+ * que a /buscar esconde (t162, #978).
  */
 export function contarAtalho<T extends ImovelContavel>(href: string, imoveis: T[], ehExemplo: EhExemplo<T> = () => false): number {
   const sp = new URL(href, "https://x").searchParams;
@@ -31,13 +32,12 @@ export function contarAtalho<T extends ImovelContavel>(href: string, imoveis: T[
     homeOfficeOnly: sp.get("homeoffice") === "1",
     comodidades: comodidadesDaUrl(sp.get("comod")),
   };
-  const lista = imoveis.filter((p) => {
+  const base = imoveis.filter((p) => {
     if (local && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(local)) return false;
     // A /buscar abre com 1 morador: imóvel com capacidade conhecida menor que isso não aparece lá.
-    if (p.maxGuests != null && p.maxGuests < 1) return false;
-    return passaNoPainel(p, filtros);
+    return !(p.maxGuests != null && p.maxGuests < 1);
   });
-  return semExemplosQuandoHaReal(lista, ehExemplo).length;
+  return contarNaBase(baseDaBusca(base, ehExemplo), (p) => passaNoPainel(p, filtros));
 }
 
 /** Atalhos com contagem real; os que dariam 0 imóveis ficam de fora. */

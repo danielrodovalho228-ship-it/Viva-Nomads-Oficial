@@ -47,6 +47,8 @@ export interface ContextoMenu {
    * ordem: nenhuma seção some ou aparece por causa dele.
    */
   papelAtivo?: "morador" | "proprietario" | "parceiro" | null;
+  /** PROP-1: o modo em uso. No modo dono, os itens do lado morador (Minha moradia) não aparecem. */
+  modo?: "owner" | "tenant";
 }
 
 export type PapelMenu = "todos" | "morador" | "proprietario" | "parceiro" | "admin";
@@ -198,7 +200,7 @@ const PROPRIETARIO: ItemDoPapel[] = [
     filhos: [
       { id: "contratos-lista", rotulo: "Contratos & blocos", icone: "contratos", href: "/dashboard/contratos" },
       { id: "garantias", rotulo: "Caução e garantias", icone: "garantias", href: "/dashboard/garantias" },
-      { id: "conferencia", rotulo: "Conferência de entrada", icone: "conferencia", href: "/dashboard/contratos#conferencia" },
+      // PROP-1: "Conferência de entrada" saiu do menu (o PROP-5 a leva para dentro de cada contrato).
       // Prompt 39-B1: "Recibos e notas" — subitem da área de Ganhos do dono (no celular, bloco da aba Ganhos).
       { id: "recibos", rotulo: "Recibos e notas", icone: "documentos", href: "/dashboard/recibos" },
     ],
