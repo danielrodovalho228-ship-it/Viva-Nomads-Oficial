@@ -971,13 +971,13 @@
         "t476-e136-e147-passos-3-9",
         "t477-e141-passo5-comodidades",
         "t479-e136b-calendario-pt-br",
-        "t483-e135-um-campo-vazio",
-        "t484-e136-datas-ptbr-revisao",
-        "t485-e137-janela-24-e-duplo-clique",
-        "t486-e138-desbloquear-no-dia",
-        "t487-e147-bairro-santa-monica",
-        "t488-e153-documento-um-lugar",
-        "t489-e164-previa-sem-foto-sinalizada"
+        "t530-e135-um-campo-vazio",
+        "t531-e136-datas-ptbr-revisao",
+        "t532-e137-janela-24-e-duplo-clique",
+        "t533-e138-desbloquear-no-dia",
+        "t534-e147-bairro-santa-monica",
+        "t535-e153-documento-um-lugar",
+        "t536-e164-previa-sem-foto-sinalizada"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1567,7 +1567,7 @@
         "t237-correcoes-35a",
         "t241-contas-teste-36",
         "t312-varredura-bloco9",
-        "t488-e153-documento-um-lugar"
+        "t535-e153-documento-um-lugar"
       ]
     },
     "/roi": {
@@ -1701,7 +1701,7 @@
         "t271-admin-visual",
         "t388-varredura-bloco23",
         "t419-varredura-bloco36",
-        "t490-e165-admin-contrato-assinaturas"
+        "t537-e165-admin-contrato-assinaturas"
       ]
     },
     "/admin/solicitacoes": {
@@ -1802,7 +1802,7 @@
         "t240-conferencia-provas-admin",
         "t271-admin-visual",
         "t329-varredura-bloco11",
-        "t490-e165-admin-contrato-assinaturas"
+        "t537-e165-admin-contrato-assinaturas"
       ]
     },
     "/dashboard/servicos/pedidos/[id]": {

@@ -4,7 +4,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo, tornarContratoVigente } from "../fixtures/laboratorio";
 
 /*
-  T490 — E165, guarda permanente da Pista C: a lista e o DETALHE de contratos do admin dizem o mesmo sobre as
+  T537 — E165, guarda permanente da Pista C: a lista e o DETALHE de contratos do admin dizem o mesmo sobre as
   assinaturas. Contrato de teste com as duas assinaturas registradas (como o laboratório e os dados de teste fazem:
   contratos.assinado_proprietario_em e assinado_inquilino_em, tornarContratoVigente):
    - a lista (/admin/contratos) diz "Assinado pelas duas partes";
@@ -13,18 +13,18 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t490.${sufixo}@lab.vivanomads.test`, nome: "Caio Contrato", role: "owner" as const };
-const inquilino = { email: `inq.t490.${sufixo}@lab.vivanomads.test`, nome: "Iris Inquilina", role: "tenant" as const };
+const dono = { email: `dono.t537.${sufixo}@lab.vivanomads.test`, nome: "Caio Contrato", role: "owner" as const };
+const inquilino = { email: `inq.t537.${sufixo}@lab.vivanomads.test`, nome: "Iris Inquilina", role: "tenant" as const };
 const ids: Record<string, string> = {};
 
-test.describe("T490 — E165: assinaturas na lista e no detalhe do admin", () => {
+test.describe("T537 — E165: assinaturas na lista e no detalhe do admin", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.inquilino = await criarConta(inquilino, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Studio contrato t490 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Studio contrato t537 ${sufixo}`, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.inquilino, ids.imovel, true);
     const { data, error } = await adm()
       .from("contratos")
@@ -73,8 +73,8 @@ test.describe("T490 — E165: assinaturas na lista e no detalhe do admin", () =>
     const assinaturas = page.getByTestId("admin-contrato-assinaturas");
     await expect(assinaturas).toBeVisible({ timeout: 30_000 });
     const noDetalhe = (await assinaturas.innerText()).trim();
-    await page.screenshot({ path: "tests/laboratorio/saida/t490-detalhe-1280.png", fullPage: true });
-    console.log(`t490 lista="${naLista}" detalhe="${noDetalhe.replace(/\s+/g, " ")}"`);
+    await page.screenshot({ path: "tests/laboratorio/saida/t537-detalhe-1280.png", fullPage: true });
+    console.log(`t537 lista="${naLista}" detalhe="${noDetalhe.replace(/\s+/g, " ")}"`);
     expect(noDetalhe, `lista: "${naLista}" × detalhe: "${noDetalhe}"`).not.toContain("Nenhuma assinatura ainda.");
     await expect(assinaturas).toContainText("Proprietário assinou");
     await expect(assinaturas).toContainText("Inquilino assinou");

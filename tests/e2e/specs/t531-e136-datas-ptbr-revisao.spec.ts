@@ -5,14 +5,14 @@ import { abrirPasso, emDiasBR, isoParaBR, prepararRascunho } from "../fixtures/r
 import { diasLivres, marcarPeriodo } from "../fixtures/calendario-dono";
 
 /*
-  T484 — E136 (#1379), guarda permanente da Pista C: a t424 olha o Passo 9 logo depois de digitar a data. Aqui, com o
+  T531 — E136 (#1379), guarda permanente da Pista C: a t424 olha o Passo 9 logo depois de digitar a data. Aqui, com o
   navegador em INGLÊS (en-US), a tela inteira depois de escolher as datas E de bloquear um período (a linha do
   bloqueio também mostra datas), e de novo na Revisão (Passo 10): nenhum mês em inglês ("Oct 25", "Nov", "October"…).
   1280 px (mouse) e 390 px num iPhone (toque, o seletor nativo).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t484.${sufixo}@lab.vivanomads.test`, nome: "Olga Outubro", role: "owner" as const };
+const dono = { email: `dono.t531.${sufixo}@lab.vivanomads.test`, nome: "Olga Outubro", role: "owner" as const };
 const ids: { dono?: string; r1280?: string; r390?: string } = {};
 const MES_EM_INGLES = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|January|February|March|April|June|July|August|September|October|November|December)\b/;
 
@@ -21,14 +21,14 @@ async function preencherData(page: Page, testid: string, iso: string) {
   await campo.fill((await campo.getAttribute("type")) === "date" ? iso : isoParaBR(iso));
 }
 
-test.describe("T484 — E136: datas em pt-BR no Passo 9 e na Revisão, navegador em inglês", () => {
+test.describe("T531 — E136: datas em pt-BR no Passo 9 e na Revisão, navegador em inglês", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
-    ids.r1280 = await prepararRascunho(ids.dono, `Studio t484 a ${sufixo}`, { minPeriod: "30" });
-    ids.r390 = await prepararRascunho(ids.dono, `Studio t484 b ${sufixo}`, { minPeriod: "30" });
+    ids.r1280 = await prepararRascunho(ids.dono, `Studio t531 a ${sufixo}`, { minPeriod: "30" });
+    ids.r390 = await prepararRascunho(ids.dono, `Studio t531 b ${sufixo}`, { minPeriod: "30" });
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
@@ -62,14 +62,14 @@ test.describe("T484 — E136: datas em pt-BR no Passo 9 e na Revisão, navegador
 
       const textoPasso = await etapa.innerText();
       expect(textoPasso.match(MES_EM_INGLES)?.[0] ?? null, "mês em inglês no Passo 9").toBeNull();
-      await page.screenshot({ path: `tests/laboratorio/saida/t484-passo9-${w}.png` });
+      await page.screenshot({ path: `tests/laboratorio/saida/t531-passo9-${w}.png` });
 
       // Revisão: o resumo da disponibilidade.
       await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       await noPasso(page, "revisao", 30_000);
       const textoRevisao = await page.locator("main").innerText();
       expect(textoRevisao.match(MES_EM_INGLES)?.[0] ?? null, "mês em inglês na Revisão").toBeNull();
-      await page.screenshot({ path: `tests/laboratorio/saida/t484-revisao-${w}.png` });
+      await page.screenshot({ path: `tests/laboratorio/saida/t531-revisao-${w}.png` });
       await page.context().close();
     });
   }

@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 import { abrirNoEndereco, noPasso } from "../fixtures/cadastro";
 
 /*
-  T487 — E147 (#1379), guarda permanente da Pista C: o caminho do CEP (a t476 da Pista A só digita "Minas Gerais").
+  T534 — E147 (#1379), guarda permanente da Pista C: o caminho do CEP (a t476 da Pista A só digita "Minas Gerais").
   CEP de Uberlândia com as consultas de CEP simuladas (ViaCEP e BrasilAPI, como na t195):
    1. o CEP devolve bairro "Santa Mônica": o campo e o rascunho gravado (draft_data.neighborhood) ficam "Santa Mônica",
       nunca "Minas Gerais"; e o valor continua lá depois de ir ao Passo 4 e voltar, e depois de recarregar;
@@ -13,7 +13,7 @@ import { abrirNoEndereco, noPasso } from "../fixtures/cadastro";
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t487.${sufixo}@lab.vivanomads.test`, nome: "Mônica Bairro", role: "owner" as const };
+const dono = { email: `dono.t534.${sufixo}@lab.vivanomads.test`, nome: "Mônica Bairro", role: "owner" as const };
 const ids: Record<string, string> = {};
 
 async function simularCep(page: Page, bairro: string) {
@@ -30,7 +30,7 @@ async function rascunhoGravado(): Promise<Record<string, unknown> | null> {
   return (data?.draft_data as Record<string, unknown> | null) ?? null;
 }
 
-test.describe("T487 — E147: bairro Santa Mônica pelo CEP, nunca o estado", () => {
+test.describe("T534 — E147: bairro Santa Mônica pelo CEP, nunca o estado", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
 
@@ -68,7 +68,7 @@ test.describe("T487 — E147: bairro Santa Mônica pelo CEP, nunca o estado", ()
       await noPasso(page, "endereco", 30_000);
       await expect(page.getByTestId("cadastro-bairro")).toHaveValue("Santa Mônica", { timeout: 15_000 });
       expect((await rascunhoGravado())?.neighborhood).not.toBe("Minas Gerais");
-      await page.screenshot({ path: `tests/laboratorio/saida/t487-santa-monica-${w}.png` });
+      await page.screenshot({ path: `tests/laboratorio/saida/t534-santa-monica-${w}.png` });
       await page.context().close();
     });
   }

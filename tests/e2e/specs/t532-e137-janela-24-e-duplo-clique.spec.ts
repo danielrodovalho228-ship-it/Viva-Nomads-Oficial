@@ -5,7 +5,7 @@ import { abrirPasso, emDiasBR, isoParaBR, prepararRascunho } from "../fixtures/r
 import { diasLivres, marcarPeriodo } from "../fixtures/calendario-dono";
 
 /*
-  T485 — E137 (#1379), guarda permanente da Pista C, no computador (a t476 da Pista A faz os 24 dias a 390 no toque;
+  T532 — E137 (#1379), guarda permanente da Pista C, no computador (a t476 da Pista A faz os 24 dias a 390 no toque;
   a t425 bloqueia o mesmo período em dois cliques separados):
    1. janela de 24 dias com mínimo de 30, a 1280: aviso "são 24 dias — menos que a duração mínima de 30 dias" e o
       Continuar não avança;
@@ -14,16 +14,16 @@ import { diasLivres, marcarPeriodo } from "../fixtures/calendario-dono";
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t485.${sufixo}@lab.vivanomads.test`, nome: "Jana Janela", role: "owner" as const };
+const dono = { email: `dono.t532.${sufixo}@lab.vivanomads.test`, nome: "Jana Janela", role: "owner" as const };
 const ids: { dono?: string; rascunho?: string } = {};
 
-test.describe("T485 — E137: 24 dias no computador e bloqueio com clique duplo", () => {
+test.describe("T532 — E137: 24 dias no computador e bloqueio com clique duplo", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
-    ids.rascunho = await prepararRascunho(ids.dono, `Studio t485 ${sufixo}`, { minPeriod: "30" });
+    ids.rascunho = await prepararRascunho(ids.dono, `Studio t532 ${sufixo}`, { minPeriod: "30" });
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
@@ -37,7 +37,7 @@ test.describe("T485 — E137: 24 dias no computador e bloqueio com clique duplo"
     await page.getByTestId("cadastro-continuar").click();
     await noPasso(page, "disponibilidade");
     await expect(page.getByTestId("passo-erros")).toContainText("menos que a duração mínima de 30 dias");
-    await page.screenshot({ path: "tests/laboratorio/saida/t485-janela-24-1280.png" });
+    await page.screenshot({ path: "tests/laboratorio/saida/t532-janela-24-1280.png" });
     await page.context().close();
   });
 

@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 import { FOTOS_TESTE_MINIMO, noPasso } from "../fixtures/cadastro";
 
 /*
-  T489 — E164, guarda permanente da Pista C: a "Visualização do anúncio" (prévia lateral do computador, 1280 px) não
+  T536 — E164, guarda permanente da Pista C: a "Visualização do anúncio" (prévia lateral do computador, 1280 px) não
   mostra como foto principal uma foto sinalizada "não parece ser do imóvel" e NÃO confirmada.
    1. Só o print no Passo 2 (sinalizado, sem confirmar): a prévia não usa a imagem dele.
    2. Print primeiro e as 8 fotos do imóvel depois: a prévia mostra a mesma foto do selo "Foto principal" (do imóvel),
@@ -14,7 +14,7 @@ import { FOTOS_TESTE_MINIMO, noPasso } from "../fixtures/cadastro";
 const PRINT = "docs/capturas/e44/exportar-1280.png";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t489.${sufixo}@lab.vivanomads.test`, nome: "Vera Visualização", role: "owner" as const };
+const dono = { email: `dono.t536.${sufixo}@lab.vivanomads.test`, nome: "Vera Visualização", role: "owner" as const };
 const ids: Record<string, string> = {};
 
 const enviar = (p: Page, arquivos: string | string[]) => p.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles(arquivos);
@@ -31,7 +31,7 @@ async function abrirPassoFotos(p: Page) {
   await noPasso(p, "fotos");
 }
 
-test.describe("T489 — E164: a prévia não usa a foto sinalizada sem confirmação", () => {
+test.describe("T536 — E164: a prévia não usa a foto sinalizada sem confirmação", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
@@ -44,9 +44,7 @@ test.describe("T489 — E164: a prévia não usa a foto sinalizada sem confirma�
   });
 
   test("1. só o print, sem confirmar: a prévia não mostra o print como foto principal", async ({ browser }) => {
-    // E164 (Pista A): a prévia usa photos[0] sem olhar a sinalização (page.tsx, PreviaAnuncio foto={photos[0]?.url});
-    // lab-crítico 40207606596: o src da prévia é o mesmo do print sinalizado. Quem corrigir tira este test.fail.
-    test.fail(true, "E164: a Visualização do anúncio mostra a foto sinalizada e não confirmada como principal");
+    // E164: corrigido no #1390 (antes, 40207606596: a prévia mostrava o print sinalizado como principal).
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
     await abrirPassoFotos(p);
@@ -57,7 +55,7 @@ test.describe("T489 — E164: a prévia não usa a foto sinalizada sem confirma�
     await expect(resumo.getByTestId("previa-anuncio")).toBeVisible();
     await p.waitForTimeout(500);
     const previa = (await resumo.getByTestId("previa-foto").count()) ? await srcPrevia(p) : null;
-    await p.screenshot({ path: "tests/laboratorio/saida/t489-so-print-1280.png" });
+    await p.screenshot({ path: "tests/laboratorio/saida/t536-so-print-1280.png" });
     expect(previa, "a prévia usa a foto sinalizada e não confirmada").not.toBe(sinalizada);
     await p.context().close();
   });
@@ -74,7 +72,7 @@ test.describe("T489 — E164: a prévia não usa a foto sinalizada sem confirma�
     const principal = await p.getByTestId("foto-principal").locator("img").first().getAttribute("src");
     expect(principal).not.toBe(sinalizada);
     await expect.poll(() => srcPrevia(p), { timeout: 10_000 }).toBe(principal);
-    await p.screenshot({ path: "tests/laboratorio/saida/t489-principal-do-imovel-1280.png" });
+    await p.screenshot({ path: "tests/laboratorio/saida/t536-principal-do-imovel-1280.png" });
 
     await p.getByTestId("foto-nao-imovel-confirmar").click();
     await p.getByTestId("foto-nao-imovel-confirmar-confirmar").click();
