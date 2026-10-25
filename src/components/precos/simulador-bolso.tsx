@@ -3,13 +3,16 @@
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import Link from "next/link";
-import { blocosBolso, calcularBolso, NOTA_BOLSO } from "@/lib/cobranca/bolso";
+import { blocosBolso, blocosBolsoPeriodo, calcularBolso, NOTA_BOLSO } from "@/lib/cobranca/bolso";
+import { contaDoPeriodo, type CamposTotalMes } from "@/lib/precos";
 import { formatBRL, cn } from "@/lib/utils";
 import { SUPORTE_EMAIL } from "@/lib/site";
 
 /**
  * "O que vai para o seu bolso" (ordem 6696611c, tela 10). A conta sai de calcularBolso → comissaoSobreContrato.
  * Em /precos o dono digita tudo; no cadastro do anúncio `valorMensal` e `meses` vêm do passo de preço.
+ * E139: no cadastro, com `campos` e `taxa`, a conta é a do período (contaDoPeriodo): o morador paga o total do mês com
+ * condomínio e contas × meses, e a taxa é a da faixa do dono, sem o campo "Imóveis seus na Viva".
  */
 export function SimuladorBolso(p: {
   valorMensal?: number;
@@ -18,6 +21,9 @@ export function SimuladorBolso(p: {
   onMeses?: (meses: number) => void;
   compacto?: boolean;
   className?: string;
+  /** E139: os campos do mês (valor mensal, condomínio, contas) e a taxa da faixa do dono. */
+  campos?: CamposTotalMes;
+  taxa?: number;
 }) {
   const doCadastro = p.valorMensal !== undefined;
   const [valorDigitado, setValorDigitado] = useState(3000);
@@ -25,6 +31,7 @@ export function SimuladorBolso(p: {
   const [imoveis, setImoveis] = useState("1");
   const valor = doCadastro ? p.valorMensal! : valorDigitado;
   const b = calcularBolso(valor, Number(meses), Number(imoveis));
+  const conta = doCadastro && p.campos && p.taxa !== undefined ? contaDoPeriodo(p.campos, Number(meses), p.taxa) : undefined;
 
   return (
     <section
@@ -36,7 +43,7 @@ export function SimuladorBolso(p: {
       <h2 id="bolso-titulo" className="font-title text-xl font-semibold text-ink sm:text-2xl">
         O que vai para o seu bolso
       </h2>
-      <div className={cn("mt-4 grid gap-3", doCadastro ? "grid-cols-2" : "sm:grid-cols-3")}>
+      <div className={cn("mt-4 grid gap-3", conta !== undefined ? "grid-cols-1 sm:grid-cols-2" : doCadastro ? "grid-cols-2" : "sm:grid-cols-3")}>
         {!doCadastro && (
           <label className="text-sm font-medium text-ink">
             Valor mensal (R$)
@@ -63,6 +70,7 @@ export function SimuladorBolso(p: {
             data-testid="bolso-meses"
           />
         </label>
+        {conta === undefined && (
         <label className="text-sm font-medium text-ink">
           Imóveis seus na Viva
           <input
@@ -73,11 +81,20 @@ export function SimuladorBolso(p: {
             data-testid="bolso-imoveis"
           />
         </label>
+        )}
       </div>
 
-      <div className="mt-4" aria-live="polite" data-testid="bolso-resultado" data-estado={b.estado}>
-        {b.estado === "invalido" ? (
-          <p className="text-sm text-muted">Informe valor mensal, meses e quantos imóveis você tem para ver a conta.</p>
+      <div className="mt-4" aria-live="polite" data-testid="bolso-resultado" data-estado={conta === undefined ? b.estado : conta ? "ok" : "invalido"}>
+        {conta ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {blocosBolsoPeriodo(conta).map((f, i) => (
+              <Fato key={f.rotulo} {...f} testid={i === 0 ? "bolso-recebe" : "bolso-taxa"} />
+            ))}
+          </div>
+        ) : b.estado === "invalido" || conta === null ? (
+          <p className="text-sm text-muted">
+            {conta === null ? "Informe o valor mensal e os meses para ver a conta." : "Informe valor mensal, meses e quantos imóveis você tem para ver a conta."}
+          </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {b.estado === "gestor" ? (
