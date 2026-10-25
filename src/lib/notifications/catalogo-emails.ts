@@ -7,7 +7,7 @@
 import { assuntoChamado, assuntoManutencao, ASSUNTOS } from "./assuntos.ts";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email.ts";
 import { blocoDados } from "./modelo-email.ts";
-import { emailCodigo2fa, emailCodigoAssinatura, emailDocumentoFiscal, emailExclusaoConta, emailParceriaAprovada, montarNotificacao, type EmailMontado } from "./montar-email.ts";
+import { emailCodigo2fa, emailCodigoVinculo, emailCodigoAssinatura, emailDocumentoFiscal, emailExclusaoConta, emailParceriaAprovada, montarNotificacao, type EmailMontado } from "./montar-email.ts";
 import { REMETENTE } from "./remetente.ts";
 import { templatesSupabase } from "./templates-supabase.ts";
 import { emailDecisaoDocumento, linhasDoAviso } from "../documento/aviso-decisao.ts";
@@ -79,6 +79,7 @@ export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
   // 4. Enviados direto (sem notify).
   lista.push(doApp("codigo:assinatura", emailCodigoAssinatura(siteUrl, { imovel: "Studio mobiliado no Centro", codigo: "824519" })));
   lista.push(doApp("codigo:2fa", emailCodigo2fa(siteUrl, { codigo: "824519" })));
+  lista.push(doApp("codigo:vinculo", emailCodigoVinculo(siteUrl, { codigo: "824519" })));
   lista.push(doApp("conta:exclusao", emailExclusaoConta(siteUrl, { url: `${siteUrl}/excluir-conta/confirmar?token=exemplo` })));
   lista.push(doApp("parceria:aprovada", emailParceriaAprovada(siteUrl, { url: `${siteUrl}/parceiros/ativar?t=exemplo`, nome: "Marina Souza" })));
   const fiscal = { numero: "REC-2026-000004", contratoRef: "VN-CT-2026-0007", conferirUrl: `${siteUrl}/conferir/ABCD1234`, papel: "locatario" as const };
