@@ -21,6 +21,11 @@ export interface AnuncioBrief {
   comodidades?: string[];
   faixas?: string[];
   temHomeOffice?: boolean;
+  /** E148-A: velocidade (Mbps) e tipo da internet informados no cadastro. */
+  internetMbps?: number;
+  internetTipo?: string;
+  /** E148-A: o nível COMPROVADO pelo motor dos níveis (nunca o "estimado" da Qualificação). O servidor preenche. */
+  nivel?: "Essencial" | "Conforto" | "Premium";
 }
 
 /** Entrada CRUA e não confiável (JSON do cliente). Tratada por allowlist —
@@ -65,6 +70,9 @@ export function montarBrief(input: AnuncioBriefInput): AnuncioBrief {
     comodidades: comodidades?.length ? comodidades : undefined,
     faixas: faixas?.length ? faixas : undefined,
     temHomeOffice: b(input.temHomeOffice),
+    internetMbps: n(input.internetMbps),
+    internetTipo: s(input.internetTipo),
+    // O nível nunca vem do cliente: a rota lê o comprovado no servidor e acrescenta.
   };
 }
 
@@ -80,6 +88,9 @@ export const IA_SYSTEM_PROMPT = [
   "- Não faça promessas absolutas nem use superlativos vazios ('o melhor', 'imperdível').",
   "- Título: no máximo ~60 caracteres, sem emoji.",
   "- Descrição: 2 a 4 frases, no máximo ~600 caracteres.",
+  "VOCABULÁRIO DA VIVA (obrigatório): diga \"imóvel mobiliado\", \"morador\", \"estadias de 30 a 180 dias\" e, se precisar falar do custo da plataforma, \"taxa de serviço\".",
+  "- NUNCA use as palavras \"aluguel\", \"temporada\", \"inquilino\" nem \"comissão\".",
+  "- Se o nível do imóvel vier nos dados, ele já foi comprovado: pode citá-lo (ex.: \"nível Conforto\"). Sem ele, não fale de nível.",
 ].join("\n");
 
 /** Schema de saída estruturada (JSON) — só título e descrição. */
@@ -104,9 +115,42 @@ export function contemContato(texto: string): boolean {
   return [RE_EMAIL, RE_URL, RE_TEL].some((re) => new RegExp(re.source, re.flags.replace("g", "")).test(texto));
 }
 
-/** Remove qualquer contato que escape para o texto gerado (best-effort). */
+/**
+ * E148-A: palavras fora do vocabulário da Viva que escapem do modelo viram as da casa (ou saem). A primeira letra
+ * maiúscula é mantida.
+ */
+const TROCAS_VOCABULARIO: [RegExp, string][] = [
+  [/\b(de|para) temporada\b/gi, "$1 30 a 180 dias"],
+  [/\bo aluguel\b/gi, "a estadia"],
+  [/\bdo aluguel\b/gi, "da estadia"],
+  [/\bno aluguel\b/gi, "na estadia"],
+  [/\bos aluguéis\b/gi, "as estadias"],
+  [/\baluguéis\b/gi, "estadias"],
+  [/\baluguel\b/gi, "estadia"],
+  [/\btemporadas\b/gi, "estadias"],
+  [/\btemporada\b/gi, "estadia"],
+  [/\binquilinas\b/gi, "moradoras"],
+  [/\binquilina\b/gi, "moradora"],
+  [/\binquilinos\b/gi, "moradores"],
+  [/\binquilino\b/gi, "morador"],
+  [/\bcomissões\b/gi, "taxas de serviço"],
+  [/\bcomissão\b/gi, "taxa de serviço"],
+];
+export const PALAVRAS_PROIBIDAS = /\b(alugu[eé]l|alugu[eé]is|temporadas?|inquilin[oa]s?|comiss[ãa]o|comiss[õo]es)\b/i;
+
+export function ajustarVocabulario(texto: string): string {
+  let out = texto;
+  for (const [re, troca] of TROCAS_VOCABULARIO)
+    out = out.replace(re, (achado, ...grupos) => {
+      const novo = typeof grupos[0] === "string" && troca.includes("$1") ? troca.replace("$1", grupos[0]) : troca;
+      return achado[0] === achado[0].toUpperCase() && achado[0] !== achado[0].toLowerCase() ? novo[0].toUpperCase() + novo.slice(1) : novo;
+    });
+  return out;
+}
+
+/** Remove qualquer contato que escape para o texto gerado (best-effort) e ajusta o vocabulário (E148-A). */
 export function limparSaida(texto: string): string {
-  return texto
+  return ajustarVocabulario(texto)
     .replace(RE_EMAIL, "")
     .replace(RE_URL, "")
     .replace(RE_TEL, "")
