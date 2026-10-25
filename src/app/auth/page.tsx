@@ -20,6 +20,8 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 import { LoginPorCodigo } from "@/components/auth/login-por-codigo";
+import { BotaoApple } from "@/components/auth/botao-apple";
+import { provedoresSociais } from "@/lib/auth/provedores-sociais";
 import { chaveFalhas, exigeCaptchaPorFalhas, lerFalhas, segundosRestantes } from "@/lib/seguranca/tentativas-login";
 import { destinoDepoisDaEntrada, motivoDaEntrada } from "@/lib/auth/entrada";
 import { CARTAO_FORMULARIO_PORTA, FUNDO_FORMULARIO_PORTA, PRIMARIO_PORTA, VEU_BASE_PORTA, VEU_TOPO_PORTA } from "@/lib/auth/porta-visual";
@@ -38,7 +40,7 @@ export default function AuthPage() {
   const startSession = useAuthStore((s) => s.startSession);
   const [mode, setMode] = useState<Mode>("entrada");
   // Dentro do app: o login social NÃO roda no WebView (o Google bloqueia); abre no navegador do
-  // sistema via postMessage (handleSocial) e, no iPhone, vem junto com "Continuar com Apple".
+  // sistema via postMessage (handleSocial) e, no iPhone, vem junto com "Continuar com a Apple" (LOGIN-APPLE).
   const noApp = useIsNative();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -413,15 +415,15 @@ export default function AuthPage() {
                     <span className="h-px flex-1 bg-sage-200" />
                   </div>
                   <div className="space-y-3">
-                    {LOGIN_GOOGLE_ATIVO && (
-                      <Button variant="outline" className="w-full" type="button" disabled={loading} onClick={() => handleSocial("google")}>
-                        <Globe className="h-4 w-4" /> Continuar com Google
-                      </Button>
-                    )}
-                    {LOGIN_APPLE_ATIVO && (
-                      <Button variant="outline" className="w-full" type="button" disabled={loading} onClick={() => handleSocial("apple")}>
-                        <Globe className="h-4 w-4" /> Continuar com Apple
-                      </Button>
+                    {/* LOGIN-APPLE: a Apple vem primeiro e só com LOGIN_APPLE_ATIVO; com a flag desligada, só o Google, como antes. */}
+                    {provedoresSociais({ google: LOGIN_GOOGLE_ATIVO, apple: LOGIN_APPLE_ATIVO }).map((p) =>
+                      p === "apple" ? (
+                        <BotaoApple key={p} disabled={loading} onClick={() => handleSocial("apple")} />
+                      ) : (
+                        <Button key={p} variant="outline" className="w-full" type="button" disabled={loading} onClick={() => handleSocial("google")}>
+                          <Globe className="h-4 w-4" /> Continuar com Google
+                        </Button>
+                      )
                     )}
                   </div>
                 </>

@@ -115,10 +115,10 @@ test("(e) /decisao já exige o acesso dos sócios (porta única no proxy)", () =
 test("E110: Passo 8 com um horizonte só — o exemplo da taxa acompanha os meses do simulador; sem seguro-fiança 'Em breve'", () => {
   const preco = ler("app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx");
   assert.match(preco, /useState\(MESES_EXEMPLO\)/);
-  assert.match(preco, /<LinhaComparativoAnuncio aluguel=\{aluguel\} meses=\{mesesExemplo\} \/>/);
-  assert.match(preco, /<SimuladorBolso compacto valorMensal=\{aluguel\} mesesIniciais=\{mesesExemplo\} onMeses=\{setMesesExemplo\} \/>/);
+  // E139/E140: o simulador e o comparador do Airbnb usam os mesmos meses (mesesExemplo).
+  assert.match(preco, /<SimuladorBolso compacto valorMensal=\{aluguel\} mesesIniciais=\{mesesExemplo\} onMeses=\{setMesesExemplo\} campos=\{campos\} taxa=\{taxa\} \/>/);
+  assert.match(preco, /<PrecoSugerido aluguel=\{aluguel\} meses=\{mesesExemplo\} taxa=\{taxa\}/);
   assert.match(ler("components/precos/simulador-bolso.tsx"), /p\.onMeses\?\.\(/);
-  assert.match(ler("components/precos/comparativo-precos.tsx"), /Num contrato de \{meses\} \{meses === 1 \? "mês" : "meses"\}/);
   assert.doesNotMatch(ler("lib/faixas.ts").replace(/\/\*[\s\S]*?\*\//g, ""), /key: "seguro_fianca", label: "Seguro-fiança", disabled/);
 });
 

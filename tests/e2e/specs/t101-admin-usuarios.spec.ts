@@ -42,10 +42,8 @@ test.describe("T101 — Admin: lista de usuários", () => {
   // Usuários fica no topo da própria lista (numero-fonte-usuarios, a mesma função da inicial) e o cartão Fundadores
   // saiu; a lista dos fundadores segue com o total no título.
   test("total da lista = número do cartão Usuários", async ({ page }) => {
-    // L-69 (Pista A, ADMIN-4): o número do topo conta todos os perfis (admin e anonimizado incluídos) e a lista só
-    // proprietários e inquilinos ativos — "Usuários: 9 reais · 5 de teste" sobre "Usuários (8)" no laboratório.
-    // Quem corrigir tira este test.fail.
-    test.fail(true, "L-69: número do topo de /admin/usuarios ≠ total da lista");
+    // L-69 (corrigido na Pista B): o número do topo (contarUsuarios) e a lista padrão contam pela mesma regra,
+    // PAPEIS_USUARIOS sem anonimizados; antes o topo contava todos os perfis ("9 reais · 5 de teste" sobre "Usuários (8)").
     await page.goto("/admin/usuarios", { waitUntil: "domcontentloaded" });
     const fonte = page.getByTestId("numero-fonte-usuarios");
     await expect(fonte).toBeVisible({ timeout: 30_000 });
@@ -54,7 +52,11 @@ test.describe("T101 — Admin: lista de usuários", () => {
     const reais = Number(await fonte.getAttribute("data-reais"));
     const teste = Number(await fonte.getAttribute("data-teste"));
     console.log(`T101|usuarios|lista=${naLista}|fonte=${reais}+${teste}`);
-    expect([reais, reais + teste], `lista "Usuários (${naLista})" contra "${await fonte.innerText()}"`).toContain(naLista);
+    // A lista padrão esconde as contas de teste: o total dela = os reais do topo; com "Mostrar contas de teste" = reais + teste.
+    expect(naLista, `lista "Usuários (${naLista})" contra "${await fonte.innerText()}"`).toBe(reais);
+    await page.goto("/admin/usuarios?teste=sim", { waitUntil: "domcontentloaded" });
+    const comTeste = await page.getByTestId("admin-usuarios-lista").getByRole("heading").first().innerText();
+    expect(Number(comTeste.match(/\(([\d.]+)\)/)?.[1].replace(/\./g, "")), "com contas de teste = reais + teste").toBe(reais + teste);
   });
 
   test("total da lista = número do cartão Fundadores", async ({ page }) => {

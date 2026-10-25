@@ -60,6 +60,8 @@ export function EtapaRevisar(p: {
 }) {
   const conf = conferenciaAssistente(p.prontidao);
   const total = calcularTotalMensal(p.previewProperty).total;
+  // E139: sem valor mensal não há total — condomínio ou contas sozinhos não viram "R$ X/mês no total".
+  const temValorMensal = (p.previewProperty.monthlyPrice ?? 0) > 0;
   const linha = linhaRevisao(p.previewProperty.bedrooms, p.previewProperty.bathrooms, p.previewProperty.areaM2);
   const desconto = fraseDescontoCard(p.negociacao.descontos);
   const tudoCerto = conf.itens.every((i) => i.ok);
@@ -85,7 +87,12 @@ export function EtapaRevisar(p: {
           {linha}
         </p>
       )}
-      {total > 0 && (
+      {!temValorMensal && (
+        <p className="mt-3 text-sm text-muted" data-testid="revisao-sem-valor">
+          Valor mensal ainda não definido.
+        </p>
+      )}
+      {temValorMensal && total > 0 && (
         <>
           <p className="mt-3 font-title text-2xl font-semibold text-forest" data-testid="revisao-total">
             {formatBRL(total)}/mês no total
