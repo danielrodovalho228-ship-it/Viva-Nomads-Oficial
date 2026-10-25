@@ -26,7 +26,10 @@ const teste = { email: `teste.t229.${sufixo}@lab.vivanomads.test`, nome: `Tobias
 const ids: Record<string, string | undefined> = {};
 const hoje = new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10); // dia de Brasília
 const de = new Date(Date.now() - (40 + Math.floor(Math.random() * 300)) * 86_400_000).toISOString().slice(0, 10);
-const HOME = `/admin?periodo=custom&de=${de}&ate=${hoje}&cidade=${encodeURIComponent(CIDADE)}`;
+// ADMIN-4 (#1354): os cartões de indicadores saíram da inicial do /admin e moram em /admin/funil (mesmos filtros de
+// período e cidade); a lista de decisões ("Hoje você tem N decisões") mora em /admin/pendencias.
+const HOME = `/admin/funil?periodo=custom&de=${de}&ate=${hoje}&cidade=${encodeURIComponent(CIDADE)}`;
+const PENDENCIAS = "/admin/pendencias";
 
 test.describe("T229 — admin conversa com tudo", () => {
   test.describe.configure({ mode: "serial", timeout: 240_000 });
@@ -144,7 +147,7 @@ test.describe("T229 — admin conversa com tudo", () => {
       // A fila de documentos é global e as outras specs do laboratório mexem nela em paralelo: a home lida
       // minutos antes pode divergir com razão. Compara a home relida com a página logo em seguida, com nova tentativa.
       await expect(async () => {
-        await page.goto(HOME, { waitUntil: "domcontentloaded" });
+        await page.goto(PENDENCIAS, { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("admin-decisoes")).toBeVisible({ timeout: 10_000 });
         const linha = page.locator('[data-precisa="documentos_pendentes"] [data-href]').first();
         const naHome = (await linha.count()) ? Number(await linha.getAttribute("data-valor")) : 0;
@@ -164,25 +167,15 @@ test.describe("T229 — admin conversa com tudo", () => {
 
     test(`${largura}px — agora: imóveis reais, demonstração e teste; agentes com nome`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await page.goto(HOME, { waitUntil: "domcontentloaded" });
-      const agora = page.getByTestId("home-agora");
-      // Prompt 46: "Imóveis reais publicados" é o número-herói; o resto de "Agora" é lista com divisor fino.
-      const valorDe = async (rotulo: string) => {
-        const link = agora.locator(`[data-agora^="${rotulo}"] [data-href]`);
-        return { valor: n((await link.innerText()).trim()), href: await link.getAttribute("href") };
-      };
-      const heroi = page.getByTestId("admin-heroi").locator("[data-href]");
-      const reais = { valor: n((await heroi.innerText()).trim()), href: await heroi.getAttribute("href") };
-      expect(reais.valor).toBe(1);
-      await page.goto(reais.href!, { waitUntil: "domcontentloaded" });
+      // ADMIN-4 (#1354): o bloco "Agora" e o número-herói saíram da inicial; o número "Anúncios publicados" da inicial
+      // contra a página de destino é da t465. Aqui ficam os destinos, isolados pela cidade única do spec.
+      const cidade = encodeURIComponent(CIDADE);
+      await page.goto(`/admin/imoveis?tipo=real&cidade=${cidade}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText("1");
       await expect(page.getByTestId("imovel-tipo").first()).toHaveText("Real");
       await expect(page.getByTestId("imovel-publico").first()).toHaveText("sim");
 
-      await page.goto(HOME, { waitUntil: "domcontentloaded" });
-      const testes = await valorDe("Anúncios de teste");
-      expect(testes.valor).toBe(1);
-      await page.goto(testes.href!, { waitUntil: "domcontentloaded" });
+      await page.goto(`/admin/imoveis?tipo=teste&cidade=${cidade}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText("1");
       const linhaTeste = page.getByTestId("imovel-linha").first();
       await expect(linhaTeste).toHaveAttribute("data-tipo", "teste");
@@ -195,11 +188,9 @@ test.describe("T229 — admin conversa com tudo", () => {
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t229-imoveis-${largura}.png`, fullPage: true });
 
-      // Agentes: "Aguardando o seu OK" igual na home e na página.
-      await page.goto(HOME, { waitUntil: "domcontentloaded" });
-      const ok = await page.locator("dl div", { hasText: /Equipe — aguardando o seu ok/i }).locator("[data-valor]").first().innerText();
+      // Agentes: a Central mostra "Aguardando o seu OK" com número e os contadores das ordens.
       await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("agentes-aguardandoOk").locator("[data-valor]")).toHaveText(ok.trim());
+      await expect(page.getByTestId("agentes-aguardandoOk").locator("[data-valor]")).toHaveText(/^\d+$/);
       await expect(page.getByTestId("agentes-contadores")).toContainText("Ordens lidas não concluídas");
     });
 

@@ -83,7 +83,7 @@ test.describe("T331 — 44-B2: preferências por categoria e diagnóstico do pus
     test.use({ storageState: authFile("admin") });
 
     async function numeros(page: Page) {
-      await page.goto("/admin", { waitUntil: "domcontentloaded" });
+      await page.goto("/admin/sistema", { waitUntil: "domcontentloaded" }); // ADMIN-3/4 (#1354): o cartão do push mora em Sistema
       const cartao = page.getByTestId("cartao-push");
       await expect(cartao).toBeVisible({ timeout: 30_000 });
       const n = async (id: string) => Number((await page.getByTestId(id).locator("dd").first().innerText()).trim());
@@ -125,7 +125,7 @@ test.describe("T331 — 44-B2: preferências por categoria e diagnóstico do pus
 
       for (const largura of [390, 1280]) {
         await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-        await page.goto("/admin", { waitUntil: "domcontentloaded" });
+        await page.goto("/admin/sistema", { waitUntil: "domcontentloaded" }); // ADMIN-3/4 (#1354): o cartão do push mora em Sistema
         await expect(page.getByTestId("cartao-push")).toBeVisible({ timeout: 30_000 });
         await semRolagemLateral(page);
         await page.getByTestId("cartao-push").screenshot({ path: `tests/laboratorio/saida/t331-cartao-push-${largura}.png` });
