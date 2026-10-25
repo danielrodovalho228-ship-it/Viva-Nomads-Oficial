@@ -8,8 +8,8 @@ import { abrirCadastroNovo, irParaAntesDePublicar, noPasso, subirFotosMinimas } 
   T554 — E149-A (#1403), guarda permanente da Pista C, no que a t485 da Pista A não cobre: o "Documento enviado no início"
   fica no RASCUNHO (d97a8727) e o Passo 10 não pede o documento de novo, nem depois de recarregar:
    1. matrícula enviada no Passo 1 → `draft_data.documentoNoInicio` = true no banco;
-   2. no Passo 10, "Documento enviado no início · …" e NENHUM pedido do documento (`documento-vinculo`, o
-      que a t485 vê sem a matrícula no início) no "Antes de publicar";
+   2. no Passo 10, "Documento enviado no início · …" e o quadro do documento mostra o documento já enviado (botão
+      "Enviar outro documento", não o "Enviar documento" do estado vazio);
    3. recarregar o Passo 10 (página nova, só o rascunho do servidor) mantém os dois.
   A 390 e 1280 px.
 */
@@ -80,9 +80,11 @@ test.describe("T554 — E149-A: o documento enviado no início fica no rascunho 
         }
         const bloco = page.getByTestId("antes-de-publicar");
         await expect(bloco.getByTestId("documento-do-inicio"), `linha do início (${rodada})`).toHaveText(/^Documento enviado no início · (em análise|aprovado|precisa de correção)$/, { timeout: 20_000 });
-        const envios = await bloco.getByTestId("documento-vinculo").count();
-        console.log(`t554 ${largura} ${rodada}: pedidos do documento (documento-vinculo) no Antes de publicar = ${envios}`);
-        expect(envios, `o Passo 10 pede o documento de novo (${rodada})`).toBe(0);
+        // O quadro do documento fica sempre no Passo 10; com o documento do início, ele mostra esse documento e só
+        // oferece trocar ("Enviar outro documento"). "Enviar documento" (estado "nenhum") seria pedir de novo.
+        const botao = bloco.getByTestId("documento-vinculo").getByTestId("documento-enviar");
+        console.log(`t554 ${largura} ${rodada}: botão do documento = "${(await botao.innerText()).trim()}"`);
+        await expect(botao, `o Passo 10 pede o documento de novo (${rodada})`).toHaveText(/Enviar outro documento/);
       }
       await antes.getByTestId("documento-do-inicio").scrollIntoViewIfNeeded();
       await page.screenshot({ path: `tests/laboratorio/saida/t554-passo10-recarregado-${largura}.png` });
