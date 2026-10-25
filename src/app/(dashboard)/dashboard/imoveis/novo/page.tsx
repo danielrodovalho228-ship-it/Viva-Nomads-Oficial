@@ -35,6 +35,7 @@ import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
+import { camposQueRecebem, donoEscreveu, pedeSugestaoAoEntrar, textoDoModelo } from "@/lib/anuncio/texto-sugerido";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
@@ -47,7 +48,7 @@ import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual } from "@/lib/anuncio/periodo-disponivel";
 import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosDaPrevia, type ConteudoFoto } from "@/lib/fotos/conteudo";
-import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo } from "@/lib/amenities";
+import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
 import type { Property, Proximity } from "@/lib/types";
@@ -164,6 +165,11 @@ export default function NewPropertyPage() {
   // Detecção-A (Entrega 3): comodidades achadas nas fotos e ainda não confirmadas.
   const [comodidadesDetectadas, setComodidadesDetectadas] = useState<string[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
+  // E148-A: a sugestão de título e descrição do Passo 7 (IA, ou o modelo fixo quando a IA não responde).
+  const [sugestaoTexto, setSugestaoTexto] = useState<{ titulo: string; descricao: string } | null>(null);
+  const [estadoSugestao, setEstadoSugestao] = useState<"ocioso" | "carregando" | "ia" | "modelo">("ocioso");
+  const [avisoSugestao, setAvisoSugestao] = useState<string | null>(null);
+  const sugestaoPedidaPara = useRef<string | null>(null);
   const [aceitouIa, setAceitouIa] = useState(false);
   // L2-B item 23: aceite do termo gravado por dono no servidor (versão atual). Já aceitou: a caixa não aparece.
   const [termoJaAceito, setTermoJaAceito] = useState<{ aceitoEm: string } | null>(null);
@@ -432,6 +438,70 @@ export default function NewPropertyPage() {
   }, [editId]);
 
   const imovelId = editId ?? draftParam ?? draftServerId;
+
+  // E148-A — título e descrição sugeridos no Passo 7. O texto atual mora num ref para a resposta (que chega depois)
+  // nunca sobrescrever o que o dono digitou enquanto esperava.
+  const textoAtual = useRef({ titulo: title, descricao: description });
+  textoAtual.current = { titulo: title, descricao: description };
+  async function pedirSugestao(trocarTudo: boolean) {
+    setEstadoSugestao("carregando");
+    setAvisoSugestao(null);
+    const comodidades = Object.keys(AMENITY_LABEL).filter((k) => amenityKeys[k]).map((k) => AMENITY_LABEL[k]);
+    const dados = {
+      tipo: propertyType,
+      quartos: Number(bedrooms) || undefined,
+      banheiros: Number(bathrooms) || undefined,
+      areaM2: Number(areaM2) || undefined,
+      bairro: neighborhood.trim() || undefined,
+      cidade: city.trim() || undefined,
+      internetMbps: Number(internetMbps) || undefined,
+      semInternet,
+      comodidades,
+    };
+    let texto: { titulo: string; descricao: string } | null = null;
+    let origem: "ia" | "modelo" = "modelo";
+    try {
+      const r = await fetch("/api/ai/anuncio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...dados,
+          vagas: Number(parkingSpots) || undefined,
+          mobiliado: furnished,
+          aceitaPet: petsOk,
+          internetTipo: tipoInternetDoAnuncio(propertyType, { chacara }) ?? undefined,
+          imovelId: imovelId ?? undefined,
+        }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { titulo?: string; descricao?: string; error?: string };
+      if (r.ok && j.titulo && j.descricao) {
+        texto = { titulo: j.titulo, descricao: j.descricao };
+        origem = "ia";
+      } else if (r.status === 429) setAvisoSugestao("Você usou as sugestões de hoje. Usamos um texto pronto com os dados do cadastro.");
+    } catch {
+      /* sem rede: o modelo fixo abaixo */
+    }
+    // Sem IA (desligada, 503, limite ou erro), o passo nunca fica vazio: o modelo fixo monta com o que já foi informado.
+    if (!texto) texto = textoDoModelo(dados);
+    const recebe = trocarTudo ? { titulo: true, descricao: true } : camposQueRecebem(textoAtual.current, sugestaoTexto);
+    if (recebe.titulo) setTitle(texto.titulo);
+    if (recebe.descricao) setDescription(texto.descricao);
+    setSugestaoTexto(texto);
+    setEstadoSugestao(origem);
+    // A sugestão da IA conta para o aceite do texto gerado por IA (o modelo fixo não é IA).
+    if (origem === "ia") {
+      if (recebe.descricao) setDescricaoGeradaPorIa(true);
+      setTextoIaOriginal(texto);
+    }
+  }
+  useEffect(() => {
+    if (step !== ETAPA.descricao || editId || approved !== true) return;
+    const chave = imovelId ?? "novo";
+    if (sugestaoPedidaPara.current === chave || !pedeSugestaoAoEntrar(title, description)) return;
+    sugestaoPedidaPara.current = chave;
+    void pedirSugestao(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, editId, approved, imovelId]);
   useEffect(() => {
     let alive = true;
     getMyDocumentStatus(imovelId)
@@ -1338,6 +1408,13 @@ export default function NewPropertyPage() {
     setProxDesmarcados,
     manualProximities,
     setManualProximities,
+    sugestaoTexto: {
+      estado: estadoSugestao,
+      aviso: avisoSugestao,
+      ehSugestao: !!sugestaoTexto && (title === sugestaoTexto.titulo || description === sugestaoTexto.descricao),
+      donoEscreveu: donoEscreveu({ titulo: title, descricao: description }, sugestaoTexto),
+      gerarDeNovo: () => void pedirSugestao(true),
+    },
     title,
     setTitle,
     description,
