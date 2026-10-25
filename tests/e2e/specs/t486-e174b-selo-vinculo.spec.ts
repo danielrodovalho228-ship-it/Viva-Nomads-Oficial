@@ -35,6 +35,16 @@ test.describe("T486 — E174-B: selo do vínculo profissional nos contextos de c
     await gravarMensagem(ids.ana, ids.dono, ids.imovel, "Olá! Tenho interesse no imóvel.", conversationId(ids.ana, ids.dono, ids.imovel));
     await vinculo(ids.ana, DOMINIO_ANA, true);
     await vinculo(ids.dono, DOMINIO_DONO, true);
+    // Avaliação publicada da Ana, antes de qualquer visita ao imóvel (a página guarda cache por 60 s).
+    const base = { property_id: ids.imovel, tenant_id: ids.ana, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 60, aluguel_mensal: 3000, tamanho_bloco_meses: 2, comissao_percent: 0.08, comissao_valor: 240, qtd_ocupantes: 1, status: "concluido", garantia: "caucao" };
+    const { data: ct, error } = await adm().from("contratos").insert({ ...base, encerrado_em: new Date(Date.now() - 24 * 3600_000).toISOString() }).select("id").single();
+    if (error) throw error;
+    ids.contrato = ct!.id as string;
+    // Avaliação já publicada (a mesma regra do servidor: estadia encerrada há menos de 14 dias).
+    const { error: eAv } = await adm()
+      .from("avaliacoes")
+      .insert({ contrato_id: ids.contrato, autor_id: ids.ana, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: `Imóvel muito bem cuidado ${sufixo}.`, status: "publicada", publicada_em: new Date().toISOString() });
+    if (eAv) throw eAv;
   });
 
   test.afterAll(async () => {
@@ -76,16 +86,7 @@ test.describe("T486 — E174-B: selo do vínculo profissional nos contextos de c
     await p.screenshot({ path: `${SAIDA}/t486-conversa-390.png` });
     await p.context().close();
 
-    // A avaliação publicada da Ana: o selo aparece com o autor, na página do imóvel.
-    const base = { property_id: ids.imovel, tenant_id: ids.ana, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 60, aluguel_mensal: 3000, tamanho_bloco_meses: 2, comissao_percent: 0.08, comissao_valor: 240, qtd_ocupantes: 1, status: "concluido", garantia: "caucao" };
-    const { data: ct, error } = await adm().from("contratos").insert({ ...base, encerrado_em: new Date(Date.now() - 24 * 3600_000).toISOString() }).select("id").single();
-    if (error) throw error;
-    ids.contrato = ct!.id as string;
-    // Avaliação já publicada (a mesma regra do servidor: estadia encerrada há menos de 14 dias).
-    const { error: eAv } = await adm()
-      .from("avaliacoes")
-      .insert({ contrato_id: ids.contrato, autor_id: ids.ana, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: `Imóvel muito bem cuidado ${sufixo}.`, status: "publicada", publicada_em: new Date().toISOString() });
-    if (eAv) throw eAv;
+    // A avaliação publicada da Ana (semeada antes de qualquer visita: a página do imóvel guarda cache por 60 s).
     const visitante = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await expect
       .poll(async () => {
