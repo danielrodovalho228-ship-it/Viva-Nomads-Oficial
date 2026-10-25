@@ -23,7 +23,10 @@ test.describe("T291 — Aceite nas ordens dos agentes", () => {
     const id = ordem!.id as string;
     try {
       const abrir = async () => {
-        await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+        // L-43: o /admin mantém conexões abertas (o "networkidle" levou 39 s no laboratório): espera curta pela rede e o resto
+        // pelos elementos, como o t27.
+        await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         await page.getByRole("tab", { name: "Conversar" }).click();
         await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Renato/ }).click();
         await expect(page.getByTestId("chat-carregando")).toHaveCount(0, { timeout: 20_000 });
