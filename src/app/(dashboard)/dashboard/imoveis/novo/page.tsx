@@ -340,6 +340,9 @@ export default function NewPropertyPage() {
     if (item.key === "conforto") setTimeout(() => document.querySelector('[data-testid="conforto-checklist"]')?.scrollIntoView({ block: "center" }), 50);
     // 65-B: "Para melhorar: Vídeo do imóvel" leva ao bloco de vídeo do passo Fotos.
     if (item.key === "video") setTimeout(() => document.getElementById(ANCORA_VIDEO_ASSISTENTE)?.scrollIntoView({ block: "start" }), 400);
+    // E112: documento e quem opera moram no "Antes de publicar" desta mesma Revisão — "Resolver" desce até lá.
+    if (item.key === "documento" || item.key === "sublocacao")
+      setTimeout(() => document.querySelector(item.key === "documento" ? '[data-testid="documento-vinculo"]' : '[data-testid="antes-de-publicar"]')?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
   // "Importar anúncio" (t115): preenche o que veio do texto colado e leva direto à etapa 3, com tudo preenchido.
   function aplicarImportado(a: AnuncioOrganizado) {
