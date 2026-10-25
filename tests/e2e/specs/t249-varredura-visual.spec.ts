@@ -178,14 +178,14 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
 
   test("D-V3 — 'Enviar documento' do rascunho real responde e aponta o campo que falta", async ({ browser }) => {
     test.skip(!temContaVarredura("DONO17"), "sem a conta DONO17");
-    // L1-1: corrigido. O botão fica no passo Endereço do assistente (o editor por seções não tem documento); o
-    // rascunho da massa só tem o bairro, então o toque diz o que falta e leva ao 1º campo.
+    // L1-1: corrigido. E104 (#1319): o botão mora no cartão "Antes de publicar" da Revisão; o rascunho da massa só tem
+    // o bairro, então o toque leva ao Passo 3 (endereço) com o foco e a marca no 1º campo que falta.
     const { context, page } = await abrirComoConta(browser, "DONO17", "390");
-    await abrirRota(page, `/dashboard/imoveis/novo?draft=${MASSA!.rascunho1}&etapa=endereco`);
-    const botao = page.getByRole("button", { name: /enviar documento/i });
+    await abrirRota(page, `/dashboard/imoveis/novo?draft=${MASSA!.rascunho1}&etapa=revisao`);
+    const botao = page.getByTestId("documento-enviar");
     await expect(botao).toBeVisible({ timeout: 20_000 });
     expect(await cliqueResponde(page, botao, "Enviar documento")).toEqual([]);
-    await expect(page.getByTestId("documento-falta")).toHaveText("Falta: CEP, rua e número");
+    await expect(page.getByTestId("passo-texto")).toHaveText("Passo 3 de 10", { timeout: 15_000 });
     await expect(page.getByTestId("cadastro-cep")).toBeFocused();
     await expect(page.getByTestId("cadastro-cep")).toHaveAttribute("aria-invalid", "true");
     await context.close();
