@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { desconectarLinkedin, meuLinkedin, type MeuLinkedin } from "@/lib/linkedin/actions";
 import { ROTA_CONECTAR, TEXTO_DESCONECTAR, TEXTO_OPCIONAL, TEXTO_O_QUE_E, retornoLinkedin } from "@/lib/linkedin/textos";
 import { getTelefoneEstado } from "@/lib/data/telefone-actions";
+import { VinculoProfissional } from "./vinculo-profissional";
 import { CategoriaProfissional } from "./categoria-profissional";
 import { cn } from "@/lib/utils";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
@@ -344,6 +345,7 @@ export function ConfiancaLista() {
             )}
           </li>
         ))}
+        <VinculoProfissional />
       </ul>
     </Panel>
   );

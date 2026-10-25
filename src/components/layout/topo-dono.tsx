@@ -6,40 +6,48 @@ import { Bell, ChevronDown } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { ABAS_DONO, CONTA_DONO, HREF_SINO_DONO, abaAtivaDono, subabaAtivaDono, type ItemContaDono } from "@/config/nav-dono";
+import { HREF_SINO, abaAtivaPainel, subabaAtivaPainel, type AbaPainel, type ItemConta, type PapelAbas } from "@/config/abas-painel";
 
 /**
- * PROP-1 — topo do dono no computador (mockup painel-proprietario-desktop): logo, as cinco abas, o sino e "Conta ▾".
- * Só no computador (lg+) e só no modo dono; no celular seguem a barra de abas e o menu do NAV-A.
+ * Topo do painel no computador. PROP-1 (dono, mockup painel-proprietario-desktop) e MENUS-5/MORADOR-NAV (morador e
+ * parceiro): logo, as abas do papel (fonte única config/abas-painel.ts, as mesmas da barra de baixo do celular), o
+ * sino e "Conta ▾". Sem barra lateral. Só no computador (lg+); no celular, a barra de baixo e o avatar do topo.
  */
-export function TopoDono(p: {
+
+/** Prefixo dos test ids por papel (o do dono segue "dono", como no PROP-1). */
+export const prefixoPapel = (papel: PapelAbas) => (papel === "proprietario" ? "dono" : papel);
+
+const AREA: Record<PapelAbas, string> = { proprietario: "Áreas do proprietário", morador: "Áreas do morador", parceiro: "Áreas do parceiro" };
+
+export function TopoPainel(p: {
+  papel: PapelAbas;
+  abas: readonly AbaPainel[];
   pathname: string;
   nome: string;
   foto: string | null;
   notificacoes?: number;
-  /** Admin: um item "Painel admin" no fim do menu da Conta (a barra do admin é o ADMIN-1). */
-  admin?: boolean;
-  onModoMorador: () => void;
-  onSair: () => void;
+  itensConta: readonly ItemConta[];
+  onAcao: (acao: NonNullable<ItemConta["acao"]>) => void;
 }) {
-  const ativa = abaAtivaDono(p.pathname);
+  const ativa = abaAtivaPainel(p.abas, p.pathname);
+  const px = prefixoPapel(p.papel);
   return (
-    <header className="web-only hidden border-b border-line bg-white lg:block print:hidden" data-testid="topo-dono">
+    <header className="web-only hidden border-b border-line bg-white lg:block print:hidden" data-testid={`topo-${px}`} data-papel={p.papel}>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-8">
         <Link href="/dashboard" aria-label="Início do painel" className="shrink-0">
           <Logo />
         </Link>
-        <nav aria-label="Áreas do proprietário" className="flex h-full min-w-0 flex-1 items-stretch gap-6" data-testid="abas-dono">
-          {ABAS_DONO.map((a) => {
+        <nav aria-label={AREA[p.papel]} className="flex h-full min-w-0 flex-1 items-stretch gap-6" data-testid={`abas-${px}`}>
+          {p.abas.map((a) => {
             const on = ativa?.id === a.id;
             return (
               <Link
                 key={a.id}
                 href={a.href}
                 aria-current={on ? "page" : undefined}
-                data-testid={`aba-dono-${a.id}`}
+                data-testid={`aba-${px}-${a.id}`}
                 className={cn(
-                  "inline-flex items-center border-b-2 text-sm font-semibold transition-colors",
+                  "inline-flex items-center whitespace-nowrap border-b-2 text-sm font-semibold transition-colors",
                   on ? "border-forest text-forest" : "border-transparent text-ink hover:text-forest"
                 )}
               >
@@ -49,23 +57,40 @@ export function TopoDono(p: {
           })}
         </nav>
         <div className="flex shrink-0 items-center gap-2">
-          <Link
-            href={HREF_SINO_DONO}
-            aria-label={p.notificacoes ? `Notificações: ${p.notificacoes} novas` : "Notificações"}
-            className="relative grid h-11 w-11 place-items-center rounded-lg text-ink hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest"
-            data-testid="sino-dono"
-          >
-            <Bell className="h-5 w-5" aria-hidden />
-            {!!p.notificacoes && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-600" aria-hidden />}
-          </Link>
-          <MenuConta {...p} />
+          <Sino px={px} notificacoes={p.notificacoes} />
+          <MenuConta px={px} nome={p.nome} foto={p.foto} itens={p.itensConta} onAcao={p.onAcao} />
         </div>
       </div>
     </header>
   );
 }
 
-function MenuConta(p: { nome: string; foto: string | null; admin?: boolean; onModoMorador: () => void; onSair: () => void }) {
+export function Sino({ px, notificacoes }: { px: string; notificacoes?: number }) {
+  return (
+    <Link
+      href={HREF_SINO}
+      aria-label={notificacoes ? `Notificações: ${notificacoes} novas` : "Notificações"}
+      className="relative grid h-11 w-11 place-items-center rounded-lg text-ink hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest"
+      data-testid={`sino-${px}`}
+    >
+      <Bell className="h-5 w-5" aria-hidden />
+      {!!notificacoes && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-600" aria-hidden />}
+    </Link>
+  );
+}
+
+/**
+ * O menu da Conta: no computador, "avatar + Conta ▾"; no celular (`compacto`), só o avatar (área de toque de 44 px),
+ * com o MESMO conteúdo (MENUS-5, item 4).
+ */
+export function MenuConta(p: {
+  px: string;
+  nome: string;
+  foto: string | null;
+  itens: readonly ItemConta[];
+  onAcao: (acao: NonNullable<ItemConta["acao"]>) => void;
+  compacto?: boolean;
+}) {
   const [aberto, setAberto] = useState(false);
   const caixa = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -83,7 +108,7 @@ function MenuConta(p: { nome: string; foto: string | null; admin?: boolean; onMo
       document.removeEventListener("keydown", esc);
     };
   }, [aberto]);
-  const itens: ItemContaDono[] = p.admin ? [...CONTA_DONO.slice(0, -1), { id: "admin", rotulo: "Painel admin", href: "/admin" }, CONTA_DONO[CONTA_DONO.length - 1]] : [...CONTA_DONO];
+  const id = p.compacto ? `conta-${p.px}-celular` : `conta-${p.px}`;
   const classeItem = "flex min-h-11 w-full items-center px-4 text-left text-sm text-ink hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none";
   return (
     <div className="relative" ref={caixa}>
@@ -91,34 +116,41 @@ function MenuConta(p: { nome: string; foto: string | null; admin?: boolean; onMo
         type="button"
         aria-haspopup="menu"
         aria-expanded={aberto}
+        aria-label={p.compacto ? "Abrir a Conta" : undefined}
         onClick={() => setAberto((v) => !v)}
-        className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-ink hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest"
-        data-testid="conta-dono"
+        className={cn(
+          "inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-ink hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest",
+          p.compacto ? "min-w-11 justify-center" : "px-2"
+        )}
+        data-testid={id}
       >
-        <Avatar name={p.nome} size={28} photoUrl={p.foto ?? undefined} />
-        Conta
-        <ChevronDown className="h-4 w-4" aria-hidden />
+        <Avatar name={p.nome} size={p.compacto ? 32 : 28} photoUrl={p.foto ?? undefined} />
+        {!p.compacto && (
+          <>
+            Conta
+            <ChevronDown className="h-4 w-4" aria-hidden />
+          </>
+        )}
       </button>
       {aberto && (
-        <div role="menu" className="absolute right-0 top-full z-40 mt-2 w-64 overflow-hidden rounded-xl border border-line bg-white py-1 shadow-flutuante" data-testid="menu-conta-dono">
-          {itens.map((i) =>
+        <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-line bg-white py-1 shadow-flutuante" data-testid={`menu-${id}`}>
+          {p.itens.map((i) =>
             i.acao ? (
               <button
                 key={i.id}
                 type="button"
                 role="menuitem"
                 className={cn(classeItem, i.acao === "sair" && "border-t border-line")}
-                data-testid={`conta-dono-${i.id}`}
+                data-testid={`${id}-${i.id}`}
                 onClick={() => {
                   setAberto(false);
-                  if (i.acao === "modo-morador") p.onModoMorador();
-                  else p.onSair();
+                  p.onAcao(i.acao!);
                 }}
               >
                 {i.rotulo}
               </button>
             ) : (
-              <Link key={i.id} href={i.href} role="menuitem" className={classeItem} data-testid={`conta-dono-${i.id}`} onClick={() => setAberto(false)}>
+              <Link key={i.id} href={i.href} role="menuitem" className={classeItem} data-testid={`${id}-${i.id}`} onClick={() => setAberto(false)}>
                 {i.rotulo}
               </Link>
             )
@@ -129,13 +161,14 @@ function MenuConta(p: { nome: string; foto: string | null; admin?: boolean; onMo
   );
 }
 
-/** Subabas da aba ativa (Interessados e Contratos), num componente só. Sem subabas: nada. */
-export function SubabasDono({ pathname }: { pathname: string }) {
-  const aba = abaAtivaDono(pathname);
+/** Subabas da aba ativa, num componente só (computador e celular). Sem subabas: nada. */
+export function SubabasPainel({ papel, abas, pathname }: { papel: PapelAbas; abas: readonly AbaPainel[]; pathname: string }) {
+  const aba = abaAtivaPainel(abas, pathname);
   if (!aba?.subabas?.length) return null;
-  const ativa = subabaAtivaDono(pathname);
+  const ativa = subabaAtivaPainel(abas, pathname);
+  const px = prefixoPapel(papel);
   return (
-    <nav aria-label={`Seções de ${aba.rotulo}`} className="mb-6 flex gap-2 overflow-x-auto border-b border-line" data-testid="subabas-dono" data-aba={aba.id}>
+    <nav aria-label={`Seções de ${aba.rotulo}`} className="-mx-4 mb-6 flex gap-2 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0" data-testid={`subabas-${px}`} data-aba={aba.id}>
       {aba.subabas.map((s) => {
         const on = ativa?.id === s.id;
         return (
@@ -143,9 +176,9 @@ export function SubabasDono({ pathname }: { pathname: string }) {
             key={s.id}
             href={s.href}
             aria-current={on ? "page" : undefined}
-            data-testid={`subaba-dono-${s.id}`}
+            data-testid={`subaba-${px}-${s.id}`}
             className={cn(
-              "inline-flex min-h-11 shrink-0 items-center border-b-2 px-3 text-sm font-semibold transition-colors",
+              "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 text-sm font-semibold transition-colors",
               on ? "border-forest text-forest" : "border-transparent text-muted hover:text-ink"
             )}
           >

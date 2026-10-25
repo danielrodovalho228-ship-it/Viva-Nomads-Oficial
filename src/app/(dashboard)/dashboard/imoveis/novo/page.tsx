@@ -51,7 +51,7 @@ import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoD
 import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual } from "@/lib/anuncio/periodo-disponivel";
 import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
-import { estadoPassoFotos, type ConteudoFoto } from "@/lib/fotos/conteudo";
+import { estadoPassoFotos, fotosDaPrevia, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
@@ -492,6 +492,9 @@ export default function NewPropertyPage() {
     ...manualProximities,
   ];
 
+  // E164: a prévia (cartão, tamanho real e revisão) só mostra foto elegível — a sinalizada sem confirmação nunca é a
+  // principal; sem nenhuma elegível, a prévia fica sem foto.
+  const fotosPrevia = fotosDaPrevia(photos).map((p) => p.url);
   const previewProperty = {
     id: "preview",
     title: title.trim() || "Sem título ainda",
@@ -507,7 +510,7 @@ export default function NewPropertyPage() {
     condoFee: Number(condoFee) || 0,
     utilitiesMode,
     utilitiesEstimate,
-    photos: photos.map((p) => p.url),
+    photos: fotosPrevia,
     readyToLiveBadge: qual.baseBadge,
     tagHomeOffice: qual.tHome,
     tagWorkLocated: qual.tWork,
@@ -1771,7 +1774,7 @@ export default function NewPropertyPage() {
                 titulo={title}
                 tipo={propertyType}
                 bairro={neighborhood}
-                fotos={photos.map((p) => p.url)}
+                fotos={fotosPrevia}
                 negociacao={negociacao}
                 prontidao={prontidao}
                 completude={completude}
@@ -1806,7 +1809,7 @@ export default function NewPropertyPage() {
         {step !== ETAPA.revisao && (
         <aside className="hidden lg:sticky lg:top-4 lg:block" data-testid="novo-resumo" aria-label="Visualização do anúncio">
           <PreviaAnuncio
-            foto={photos[0]?.url ?? null}
+            foto={fotosPrevia[0] ?? null}
             titulo={title}
             tipo={propertyType}
             quartos={Number(bedrooms) || 0}

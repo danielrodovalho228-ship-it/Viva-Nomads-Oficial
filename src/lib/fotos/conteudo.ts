@@ -41,6 +41,15 @@ export function podeSerPrincipal(c: ConteudoFoto | null | undefined): boolean {
   return !conteudoPendente(c);
 }
 
+/**
+ * E164: as fotos que a PRÉVIA do anúncio mostra (cartão "Visualização do anúncio", tamanho real e revisão). A foto
+ * sinalizada e ainda não confirmada fica de fora — ela não pode ser a principal nem ir ao anúncio até o dono trocar ou
+ * confirmar ("É do imóvel"). Sem nenhuma elegível, a prévia fica sem foto. Confirmada, volta na posição dela.
+ */
+export function fotosDaPrevia<T extends { conteudo?: ConteudoFoto | null }>(fotos: readonly T[]): T[] {
+  return fotos.filter((f) => podeSerPrincipal(f.conteudo));
+}
+
 /** Confirmação expressa do dono ("É do imóvel"), com a data. */
 export function confirmarConteudo(c: ConteudoFoto, agora: Date = new Date()): ConteudoFoto {
   return { ...c, confirmadaEm: agora.toISOString() };

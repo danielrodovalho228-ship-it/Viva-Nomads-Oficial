@@ -54,6 +54,7 @@ export function problemasDoAssunto(assunto: string): string[] {
 export const ASSUNTOS = {
   codigoAssinatura: "Seu código para assinar o contrato",
   codigo2fa: "Seu código de segurança",
+  codigoVinculo: "Seu código do vínculo profissional",
   exclusaoConta: "Confirme a exclusão da sua conta",
   parceriaAprovada: "Sua parceria foi aprovada: ative sua página",
   recibo: "Seu recibo de pagamento",

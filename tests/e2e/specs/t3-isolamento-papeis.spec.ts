@@ -12,21 +12,9 @@ import { authFile } from "../fixtures/auth";
  * na ordem, e cada item, com todos os grupos abertos, abrindo DENTRO da casca.
  */
 
-const OWNER_MENU = [
-  "Visão geral",
-  "Minha moradia",
-  "Mensagens",
-  "Meus imóveis",
-  "Contratos e garantias",
-  "Ferramentas",
-  "Minha conta",
-];
-
-/** Abre todos os grupos do menu em cascata (inclusive subgrupos). */
-async function abrirTudo(page: import("@playwright/test").Page) {
-  const fechados = page.locator('aside nav button[aria-expanded="false"]');
-  for (let i = 0; i < 20 && (await fechados.count()) > 0; i++) await fechados.first().click();
-}
+// MENUS-5: o dono navega pelas abas do topo (fonte única config/abas-painel.ts), sem barra lateral.
+const PUBLICAS_FORA_DA_CASCA = ["/buscar", "/pedidos/novo"];
+const OWNER_MENU = ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"];
 
 const PAGINAS_INTERNAS = ["/simulacao", "/roi", "/socios", "/decisao", "/modelodenegocio"];
 
@@ -35,8 +23,11 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
 
   test("itens Admin/Moderar ausentes do DOM e rota /admin bloqueada", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(page.locator("aside nav")).toBeVisible(); // o menu carregou (sem isso, "não contém" passaria no vazio)
-    await expect(page.locator("aside nav")).not.toContainText(/Admin|Moderar/);
+    const topo = page.getByTestId("topo-dono");
+    await expect(topo).toBeVisible(); // o menu carregou (sem isso, "não contém" passaria no vazio)
+    await expect(topo).not.toContainText(/Admin|Moderar/);
+    await page.getByTestId("conta-dono").click();
+    await expect(page.getByTestId("menu-conta-dono")).not.toContainText(/Admin|Moderar/);
     // Não-admin recebe 404 de verdade (a área de admin não revela que existe): sem redirect, a URL fica em /admin.
     const resposta = await page.goto("/admin", { waitUntil: "domcontentloaded" });
     expect(resposta?.status()).toBe(404);
@@ -53,27 +44,27 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
     }
   });
 
-  test("menu do proprietário: grupos da cascata, na ordem", async ({ page }) => {
+  test("menu do proprietário: as abas do topo, na ordem (MENUS-5)", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(page.locator('aside nav [data-testid="menu-cascata"]')).toBeVisible();
-    const grupos = page.locator('aside nav [data-testid="menu-cascata"] > li > :is(a, button)');
-    await expect.poll(async () => (await grupos.allInnerTexts()).map((t) => t.trim())).toEqual(OWNER_MENU);
+    await expect(page.getByTestId("abas-dono").locator("a")).toHaveText(OWNER_MENU, { timeout: 30_000 });
   });
 
-  test("cada item do menu abre dentro da casca (sidebar presente)", async ({ page }) => {
-    test.setTimeout(240_000); // ~25 telas no menu em cascata
+  test("cada aba e subaba abre dentro da casca (topo presente)", async ({ page }) => {
+    test.setTimeout(240_000);
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(page.locator('aside nav [data-testid="menu-cascata"]')).toBeVisible();
-    await abrirTudo(page);
-    const hrefs = await page.locator("aside nav a").evaluateAll((as) =>
-      as.map((a) => (a as HTMLAnchorElement).getAttribute("href")!).filter(Boolean)
-    );
-    expect(hrefs.length).toBeGreaterThan(15);
-    // A busca e o formulário de pedido são páginas públicas (fora da casca, de propósito); âncoras viram a própria tela.
-    const PUBLICAS_FORA_DA_CASCA = ["/buscar", "/pedidos/novo"];
-    for (const href of [...new Set(hrefs.map((h) => h.split("#")[0]))].filter((h) => !PUBLICAS_FORA_DA_CASCA.includes(h))) {
+    const abas = page.getByTestId("abas-dono").locator("a");
+    await expect(abas).toHaveCount(5, { timeout: 30_000 });
+    const hrefs = new Set<string>(await abas.evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute("href")!)));
+    for (const aba of [...hrefs]) {
+      await page.goto(aba, { waitUntil: "domcontentloaded" });
+      const sub = page.getByTestId("subabas-dono").locator("a");
+      if (await sub.count()) for (const h of await sub.evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute("href")!))) hrefs.add(h);
+    }
+    expect(hrefs.size).toBeGreaterThanOrEqual(7); // MENUS-5: 5 abas + subabas
+    // Páginas públicas (fora da casca), como /buscar e /pedidos/novo, não contam.
+    for (const href of [...hrefs].filter((h) => !PUBLICAS_FORA_DA_CASCA.includes(h))) {
       await page.goto(href, { waitUntil: "domcontentloaded" });
-      await expect(page.locator("aside nav"), `casca ausente em ${href}`).toBeVisible();
+      await expect(page.getByTestId("topo-dono"), `casca ausente em ${href}`).toBeVisible();
     }
   });
 });
