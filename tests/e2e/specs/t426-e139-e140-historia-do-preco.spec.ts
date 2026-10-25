@@ -8,8 +8,8 @@ import { abrirPasso, prepararRascunho, reais } from "../fixtures/rascunho-cadast
    1. a prévia "tudo incluído", o "Você recebe do morador" e a taxa contam a MESMA história: o que o morador paga é o
       total do mês com as contas × meses, e a taxa é sobre o valor do contrato (valor mensal × meses — condomínio e
       contas não entram na taxa, como no exemplo do próprio E139 e na regra do #1372);
-   2. o comparativo e o simulador usam o MESMO período (mudar os meses do simulador muda o do comparativo) e a mesma
-      taxa.
+   2. o comparador e o simulador usam o MESMO período (mudar os meses do simulador muda o do comparador). Desde o
+      #1372 o comparador é o "Comparar com o Airbnb" do Preço sugerido (a linha do comparativo saiu).
   Só no laboratório.
 */
 const senha = novaSenha();
@@ -18,16 +18,14 @@ const dono = { email: `dono.t426.${sufixo}@lab.vivanomads.test`, nome: "Paula Pr
 const ids: { dono?: string; rascunho?: string } = {};
 
 async function lerTela(page: Page) {
-  const etapa = page.getByTestId("etapa-preco");
-  const previa = etapa.getByText("Prévia — o morador vê").locator("xpath=..");
+  const previa = page.getByTestId("cadastro-tudo-incluido");
   await expect(previa).toBeVisible({ timeout: 20_000 });
   const total = reais(await previa.innerText());
   const meses = Number(await page.getByTestId("bolso-meses").inputValue());
   const recebe = reais(await page.getByTestId("bolso-recebe").innerText());
   const taxa = reais(await page.getByTestId("bolso-taxa").innerText());
   const pct = Number((await page.getByTestId("bolso-taxa-detalhe").innerText()).match(/(\d+(?:,\d+)?)%/)?.[1].replace(",", "."));
-  const comparativo = await page.getByTestId("linha-comparativo").innerText();
-  return { total, meses, recebe, taxa, pct, comparativo };
+  return { total, meses, recebe, taxa, pct };
 }
 
 test.describe("T426 — E139/E140: Passo 8, a prévia, o 'você recebe' e a taxa", () => {
@@ -59,15 +57,18 @@ test.describe("T426 — E139/E140: Passo 8, a prévia, o 'você recebe' e a taxa
     await page.context().close();
   });
 
-  test("2. o comparativo e o simulador usam o mesmo período e a mesma taxa", async ({ browser }) => {
+  test("2. o comparador e o simulador usam o mesmo período", async ({ browser }) => {
     const page = await abrirPasso(browser, { email: dono.email, senha }, ids.rascunho!, "preco");
     const antes = await lerTela(page);
-    expect(antes.comparativo).toContain(`${antes.meses} meses`);
+    const comp = page.getByTestId("preco-sugerido");
+    await comp.getByRole("button", { name: /Comparar com o Airbnb/ }).click();
+    await expect(comp).toContainText(`pelos mesmos ${antes.meses} meses`);
     await page.getByTestId("bolso-meses").fill("6");
-    await expect(page.getByTestId("linha-comparativo")).toContainText("Num contrato de 6 meses");
+    await expect(comp).toContainText("pelos mesmos 6 meses");
     const depois = await lerTela(page);
     expect(depois.meses).toBe(6);
-    expect(reais(depois.comparativo.split("taxa de serviço é de")[1] ?? ""), "a taxa do comparativo = a do simulador").toBe(depois.taxa);
+    expect(depois.taxa, "a taxa do simulador acompanha os 6 meses").toBeCloseTo((depois.pct / 100) * 3000 * 6, 0);
     await page.context().close();
   });
+
 });
