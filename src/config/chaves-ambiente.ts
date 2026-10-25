@@ -20,7 +20,7 @@ export const CHAVES_AMBIENTE: readonly ChaveAmbiente[] = [
   { nome: "KYC_PORTAO_RIGIDO", rotulo: "Verificação obrigatória no Fechamento", variavel: "NEXT_PUBLIC_KYC_PORTAO_RIGIDO" },
   { nome: "GERACAO_IA_ATIVA", rotulo: "Título e descrição do anúncio por IA", variavel: "NEXT_PUBLIC_GERACAO_IA" },
   { nome: "LOGIN_GOOGLE_ATIVO", rotulo: "Entrar com Google", variavel: "NEXT_PUBLIC_LOGIN_GOOGLE_ATIVO" },
-  { nome: "LOGIN_APPLE_ATIVO", rotulo: "Continuar com Apple", variavel: "NEXT_PUBLIC_LOGIN_APPLE_ATIVO" },
+  { nome: "LOGIN_APPLE_ATIVO", rotulo: "Continuar com a Apple", variavel: "NEXT_PUBLIC_LOGIN_APPLE_ATIVO" },
   { nome: "PAGAMENTO_PARCEIROS_ATIVO", rotulo: "Pagamento de parceiros pela plataforma", variavel: "NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO" },
   { nome: "ENCERRAMENTO_REGRAS_ATIVO", rotulo: "Regras de encerramento de contrato", variavel: "NEXT_PUBLIC_ENCERRAMENTO_REGRAS_ATIVO" },
   { nome: "VISTORIA_ATIVA", rotulo: "Avaliação do imóvel por avaliador credenciado", variavel: "NEXT_PUBLIC_VISTORIA_ATIVA" },
