@@ -50,6 +50,10 @@ Development sem a chave. Ligar em produção é decisão do Daniel.
      sai em 5 dias" — o achado de vocabulário confirmado em artefato real.
    - Moradores A–E: "Precisa de ajuda com a mudança?". Nenhum e-mail do disparo leva valor (R$). O caminho D-5 não
      gera PDF.
+   - **Resultado final:** lab-critico run 40147601017 (head 1c86b358, 25/10 00:58 UTC): `t443` ✓ inteiro — pedidos
+     A–E, corpos dos e-mails com o link exato de cada pedido, chat do pedido A (janela + valor), caso E e 2ª rodada
+     ("Feito: 0 pedido(s)… · e-mails do cenário na rodada 2: 0"). As falhas restantes do run (t245 visual ×31, t296,
+     t393, t59 Q4, t8-rascunho ×6) vêm da main nova (cadastro/visual da Pista A), fora deste PR.
 3. **Produção (só leitura):** 0 vínculos ativos de limpeza, 0 pedidos automáticos, 2 contratos ativos assinados
    (is_teste), fora da janela. Nenhum dado criado.
 
