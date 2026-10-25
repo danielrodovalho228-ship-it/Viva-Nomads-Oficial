@@ -30,7 +30,7 @@ import {
 } from "@/lib/propostas/regras";
 import { rotuloTaxaServico } from "@/lib/cobranca/regra";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
-import { precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
+import { precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, primeiroPagamentoDoPreco } from "@/lib/precos";
 
 /** PROP-2: o preço da versão pela fonte única (rótulos e conta aberta). */
 const precoDaVersao = (v: VersaoView) => precoDaProposta({ ...v.termos, valorMensal: v.totais.valorMensal });
@@ -70,6 +70,10 @@ function Valores({ v }: { v: VersaoView }) {
       <div className="mt-2 border-t border-sage-200 pt-2">
         <Linha rotulo={ROTULO_TOTAL_MES} valor={formatBRL(preco.totalPorMes)} forte />
         <Linha rotulo={ROTULO_TOTAL_CONTRATO} valor={formatBRL(preco.totalContrato ?? 0)} forte />
+        {/* E178: o 1º pagamento explícito (o 1º mês com tudo + a limpeza de preparação), a mesma conta do Fechamento. */}
+        <div data-testid="proposta-primeiro-pagamento">
+          <Linha rotulo="1º pagamento" valor={formatBRL(primeiroPagamentoDoPreco(preco))} forte />
+        </div>
         {preco.conta && (
           <p className="mt-1 text-right text-xs text-muted" data-testid="proposta-conta">
             {preco.conta}
