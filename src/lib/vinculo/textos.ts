@@ -12,3 +12,19 @@ export const TEXTO_OPCIONAL_VINCULO = "Opcional";
 export function detalheVinculo(dominio: string): string {
   return `${SELO_VINCULO} · ${dominio}`;
 }
+
+/*
+  E174-B — o selo nos contextos de confiança (perfil público, candidatura, mensagens, avaliações): "Vínculo profissional ·
+  <domínio>". Só o domínio confirmado, nunca o e-mail. Nas listas de selos (strings), sai pelo componente único.
+*/
+export const PREFIXO_SELO_VINCULO = "Vínculo profissional · ";
+const DOMINIO_VALIDO = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/;
+
+/** O texto do selo, ou null quando o domínio não tem a forma de um domínio (nunca um e-mail). */
+export function seloVinculoPublico(dominio: string | null | undefined): string | null {
+  const d = (dominio ?? "").trim().toLowerCase();
+  return DOMINIO_VALIDO.test(d) ? `${PREFIXO_SELO_VINCULO}${d}` : null;
+}
+
+export const ehSeloVinculo = (s: string) => s.startsWith(PREFIXO_SELO_VINCULO);
+export const dominioDoSelo = (s: string) => (ehSeloVinculo(s) ? s.slice(PREFIXO_SELO_VINCULO.length) : null);

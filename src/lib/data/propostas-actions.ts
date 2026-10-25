@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { linkedinConectados } from "@/lib/linkedin/servidor";
+import { vinculosConfirmados } from "@/lib/vinculo/servidor";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -438,6 +439,8 @@ export interface PropostaView {
   outraParte: string;
   /** 63-B: na tela do dono, o interessado tem o selo "LinkedIn conectado" (só o sim). */
   outraParteLinkedin: boolean;
+  /** E174-B: na tela do dono, o domínio do vínculo profissional confirmado do interessado (só o domínio). */
+  outraParteVinculo: string | null;
   /** As duas partes pelo nome completo, sem CPF/CNPJ (Prompt 56, D4). */
   partes: { proprietario: string; interessado: string };
   /** Registro da versão vigente (Prompt 56): número com a versão e a linha do /conferir. */
@@ -638,6 +641,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
     imovel: { id: p.property_id, titulo: im?.title ?? "Imóvel" },
     outraParte: await nomeOutraParte(s.admin, p, papel),
     outraParteLinkedin: papel === "owner" && (await linkedinConectados([p.tenant_id], s.admin)).has(p.tenant_id),
+    outraParteVinculo: papel === "owner" ? ((await vinculosConfirmados([p.tenant_id], s.admin)).get(p.tenant_id) ?? null) : null,
     partes: await partesDaProposta(s.admin, p, papel),
     registro: await registroDaProposta(s.admin, p.id),
     versaoAtual: p.versao_atual,

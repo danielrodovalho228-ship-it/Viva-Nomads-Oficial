@@ -14,6 +14,8 @@ import { proprietarioExemploPorId } from "@/config/exemplo-proprietarios";
 import { PerfilExemplo } from "./perfil-exemplo";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { ehSeloLinkedin } from "@/lib/linkedin/textos";
+import { SeloVinculo } from "@/components/confianca/selo-vinculo";
+import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 
 type Params = { params: Promise<{ id: string }> };
@@ -84,6 +86,8 @@ export default async function ProprietarioPage({ params }: Params) {
               {p.selos.map((s) =>
                 ehSeloLinkedin(s) ? (
                   <SeloLinkedin key={s} formato="pilula" />
+                ) : ehSeloVinculo(s) ? (
+                  <SeloVinculo key={s} dominio={dominioDoSelo(s)} formato="pilula" />
                 ) : (
                   <span key={s} className="inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-forest">
                     <BadgeCheck className="h-4 w-4" aria-hidden /> {s}
