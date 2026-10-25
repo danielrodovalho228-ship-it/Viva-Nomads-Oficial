@@ -37,10 +37,20 @@ test.describe("T460 — ADMIN-1: barra do admin", () => {
 
     await page.getByTestId("admin-minha-conta").filter({ visible: true }).click();
     await expect(page).toHaveURL(/\/dashboard\/?$/, { timeout: 30_000 });
-    const menuUsuario = page.getByTestId("menu-cascata").filter({ visible: true });
-    await expect(menuUsuario.locator('a[href="/admin"]')).toHaveCount(1, { timeout: 30_000 });
-    await expect(menuUsuario.locator('a[href="/admin"] span.flex-1')).toHaveText("Painel admin");
-    expect(await menuUsuario.locator('a[href^="/admin/"]').count()).toBe(0);
+    // PROP-1: no modo dono a navegação do computador é o topo ("Conta ▾"); no modo morador, a barra.
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    const topoDono = page.getByTestId("topo-dono");
+    if (await topoDono.isVisible()) {
+      await topoDono.getByTestId("conta-dono").click();
+      const conta = topoDono.getByTestId("menu-conta-dono");
+      await expect(conta.locator('a[href="/admin"]')).toHaveText("Painel admin");
+      expect(await topoDono.locator('a[href^="/admin/"]').count()).toBe(0);
+    } else {
+      const menuUsuario = page.getByTestId("menu-cascata").filter({ visible: true });
+      await expect(menuUsuario.locator('a[href="/admin"]')).toHaveCount(1, { timeout: 30_000 });
+      await expect(menuUsuario.locator('a[href="/admin"] span.flex-1')).toHaveText("Painel admin");
+      expect(await menuUsuario.locator('a[href^="/admin/"]').count()).toBe(0);
+    }
     await page.screenshot({ path: `${SAIDA}/t460-dashboard-admin-1280.png` });
     await page.context().close();
   });
