@@ -19,6 +19,7 @@ import { AvisoStrikePainel } from "@/components/vistoria/aviso-strike-painel";
 import { visualizacoesDoDono } from "@/lib/data/desempenho-anuncio";
 import { listConversations } from "@/lib/data/messages";
 import { alertaDoTopo, blocoPrincipalDono } from "@/lib/painel/inicio-dono";
+import { listarBuscasSalvas } from "@/lib/data/buscas-salvas-actions";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -98,7 +99,7 @@ function rascunhoDoDraft(d: Awaited<ReturnType<typeof getLatestDraft>>): Rascunh
  */
 export default async function DashboardPage() {
   const agora = new Date();
-  const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados, candidaturas, visualizacoes, conversas] = await Promise.all([
+  const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados, candidaturas, visualizacoes, conversas, buscasSalvas] = await Promise.all([
     listMyProperties(),
     cidadeDoPerfil(),
     interessadosDoDono(),
@@ -112,6 +113,8 @@ export default async function DashboardPage() {
     // PROP-3 (E113): Visualizações e Mensagens da MESMA função das páginas de destino (Desempenho e Mensagens).
     visualizacoesDoDono(agora).catch(() => null),
     listConversations().catch(() => []),
+    // E181: "Buscas salvas" conta a MESMA lista de /dashboard/buscas (um número, uma fonte).
+    listarBuscasSalvas().catch(() => []),
   ]);
   const [pausadaEm, capaRascunho] = await Promise.all([contaPausadaEm(), capaDoRascunho(draft?.id ?? null)]);
   // 64-B: o limite do plano (mesma conta da publicação), para quem já tem anúncio publicado.
@@ -186,6 +189,7 @@ export default async function DashboardPage() {
       totalCandidaturas={candidaturas.length}
       visualizacoes={visualizacoes}
       totalConversas={conversas.length}
+      totalBuscasSalvas={buscasSalvas.length}
       inicioDono={inicioDono}
       />
     </>
