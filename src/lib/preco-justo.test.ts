@@ -42,10 +42,10 @@ test("entrada inválida não quebra: devolve null / zero", () => {
 test("o passo de preço do cadastro mostra o PrecoSugerido (opcional) e o botão usa o preço sugerido", async () => {
   const { readFileSync } = await import("node:fs");
   const pagina = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx", "utf8");
-  assert.match(pagina, /<PrecoSugerido aluguel=\{aluguel\} onUsar=/);
+  assert.match(pagina, /<PrecoSugerido aluguel=\{aluguel\} meses=\{mesesExemplo\} taxa=\{taxa\} onUsar=/);
   assert.match(pagina, /const aluguel = Number\(p\.monthlyPrice\) \|\| 0;/);
   const comp = readFileSync("src/components/precos/preco-sugerido.tsx", "utf8");
-  assert.match(comp, /Usar preço sugerido/);
+  assert.match(comp, /Usar \{brlTaxa\(sugerido\)\}\/mês como valor mensal/);
   assert.doesNotMatch(comp, /\b(comissão|corretagem)\b/i);
 });
 

@@ -13,6 +13,8 @@ import { showDemoProperties } from "@/lib/data/properties";
 import { TIER_META, type QualityTier } from "@/lib/listing";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { PausarImovel } from "./pausar";
+import { LinksDeVideoPendentes } from "./links-de-video";
+import { listarLinksDeVideoPendentes } from "@/lib/data/video-link-actions";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
 export const metadata = { title: tituloDoAdmin("/admin/imoveis"), robots: { index: false, follow: false } };
@@ -41,7 +43,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
   const demos = showDemoProperties();
 
   const admin = await adminDaPagina();
-  const doBanco = admin ? await imoveisDoBanco(admin) : [];
+  const [doBanco, linksVideo] = await Promise.all([admin ? imoveisDoBanco(admin) : Promise.resolve([]), listarLinksDeVideoPendentes().catch(() => [])]);
   const exemplos: ImovelLinhaAdmin[] = SAMPLE_PROPERTIES.map((e) => ({
     id: e.id,
     titulo: e.title,
@@ -85,6 +87,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
         }
       />
       <NumeroDaFonte chave="anuncios" />
+      <LinksDeVideoPendentes links={linksVideo} />
       <form action="/admin/imoveis" method="get" className="mb-4 flex flex-wrap items-end gap-2" role="search">
         {p && <input type="hidden" name="de" value={p.inicio} />}
         {p && <input type="hidden" name="ate" value={p.fim} />}

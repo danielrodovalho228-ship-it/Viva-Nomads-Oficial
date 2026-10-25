@@ -4,7 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cadastroCompleto, faltaNoCadastro, itensCadastro, filtrosUsuarios, hrefUsuarios, rotuloFiltroUsuarios, termoBusca } from "./usuarios-lista.ts";
+import { PAPEIS_USUARIOS, contaComoUsuario, cadastroCompleto, faltaNoCadastro, itensCadastro, filtrosUsuarios, hrefUsuarios, rotuloFiltroUsuarios, termoBusca } from "./usuarios-lista.ts";
 
 test("sem parâmetro: todos os usuários (donos e inquilinos)", () => {
   assert.deepEqual(filtrosUsuarios({}), { papel: null, fundador: false, desde: null, ate: null, cadastro: null, q: null, comAnuncio: false, teste: false });
@@ -92,4 +92,13 @@ test("Fundadores usa o mesmo critério do cartão: qualquer perfil com fundador,
   const src = readFileSync(new URL("../../app/(dashboard)/admin/usuarios/page.tsx", import.meta.url), "utf8");
   assert.match(src, /if \(f\.fundador\) q = q\.eq\("fundador", true\)/);
   assert.match(src, /if \(!f\.fundador\)/);
+});
+
+test("L-69: usuário = proprietário ou inquilino não anonimizado (admin e anonimizado ficam fora)", () => {
+  assert.deepEqual([...PAPEIS_USUARIOS], ["owner", "tenant"]);
+  assert.equal(contaComoUsuario({ role: "owner", anonymized_at: null }), true);
+  assert.equal(contaComoUsuario({ role: "tenant", anonymized_at: null }), true);
+  assert.equal(contaComoUsuario({ role: "admin", anonymized_at: null }), false);
+  assert.equal(contaComoUsuario({ role: "tenant", anonymized_at: "2026-10-01T00:00:00Z" }), false);
+  assert.equal(contaComoUsuario({ role: null, anonymized_at: null }), false);
 });
