@@ -1,5 +1,6 @@
 import { Star, MessageSquareQuote } from "lucide-react";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
+import { SeloVinculo } from "@/components/confianca/selo-vinculo";
 import { numBR } from "@/lib/utils";
 import type { Property, Review } from "@/lib/types";
 import { ComoFuncionamAvaliacoes } from "@/components/avaliacoes/como-funcionam-avaliacoes";
@@ -78,6 +79,7 @@ export function Reviews({ property }: { property: Property }) {
                 </p>
               )}
               {r.linkedinConectado && <SeloLinkedin className="mt-1" />}
+              {r.vinculoDominio && <SeloVinculo dominio={r.vinculoDominio} className="mt-1" />}
               {date && <p className="text-xs text-muted">{date}</p>}
               <p className="mt-2 text-sm text-muted">{r.comment}</p>
               {r.reply && (

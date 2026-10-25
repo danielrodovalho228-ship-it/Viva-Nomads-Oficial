@@ -334,6 +334,8 @@ export function AntesDePublicar(p: {
   enderecoSalvo?: EnderecoDoc | null;
   /** L1-1: o toque em "Enviar documento" sem CEP/rua/número marca os campos que faltam. */
   onFaltaDocumento?: (campos: CampoEnderecoDoc[]) => void;
+  /** E149-A: o documento já foi enviado no começo do cadastro ("Documento enviado no início · em análise"). */
+  linhaDocumentoInicio?: string | null;
   /** E132-A: as declarações de um toque (IPTU, água/luz/gás e, em condomínio, a convenção). */
   declaracoes: DeclaracoesPasso10;
   setDeclaracoes: (d: DeclaracoesPasso10) => void;
@@ -412,6 +414,11 @@ export function AntesDePublicar(p: {
       {/* Ordem (decisão do Daniel, 18/10): endereço → identidade (CAF) → matrícula. Com laudo válido a etapa já vem feita. */}
       <EtapaIdentidade />
 
+      {p.linhaDocumentoInicio && (
+        <p className="text-sm font-medium text-ink" data-testid="documento-do-inicio">
+          {p.linhaDocumentoInicio}
+        </p>
+      )}
       <DocumentoVinculo
         imovelId={p.imovelId}
         endereco={{ cep: p.cep, rua: p.street, numero: p.numero, bairro: p.neighborhood, cidade: p.city }}
@@ -433,16 +440,26 @@ export function AntesDePublicar(p: {
  * E104: os atalhos de exceção (prompt 20) — importar o texto de um anúncio de outro site ou pedir ajuda à equipe —
  * numa linha discreta no fim do Passo 1, o começo do cadastro (no Passo 3 só fica o endereço).
  */
-export function AtalhosCadastro(p: { aplicarImportado: (a: AnuncioOrganizado) => void }) {
+export function AtalhosCadastro(p: { aplicarImportado: (a: AnuncioOrganizado) => void; /** E149-A */ onComecePelaMatricula?: () => void }) {
   const [atalho, setAtalho] = useState<"importar" | "ajuda" | null>(null);
   return (
     <div className="space-y-4">
       {/* Prompt 20: atalhos de exceção numa linha discreta (o caminho principal é o cartão da IA lá em cima). */}
       {/* E132-A, item 6: UMA linha de texto, só no cadastro novo (links, não botões cheios). */}
-      <p className="text-sm text-muted" data-testid="atalhos-passo1">
+      <p className="text-sm leading-relaxed text-muted" data-testid="atalhos-passo1">
+        {/* E149-A: a matrícula no início — o mesmo documento do Passo 10, lido agora para preencher o cadastro. */}
+        {p.onComecePelaMatricula && (
+          <>
+            Tem a matrícula à mão?{" "}
+            <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={p.onComecePelaMatricula} data-testid="matricula-inicio-abrir">
+              Comece por ela
+            </button>
+            {" · "}
+          </>
+        )}
         Já anuncia em outro site?{" "}
         <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setAtalho("importar")} data-testid="importar-abrir">
-          Importar o anúncio
+          Importar
         </button>
         {" · "}Prefere ajuda?{" "}
         <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setAtalho("ajuda")} data-testid="ajuda-publicar-abrir">

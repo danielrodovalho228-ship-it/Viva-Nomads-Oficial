@@ -994,6 +994,7 @@
         "t544-e136-popup-calendario-ptbr",
         "t484-e148a-titulo-descricao",
         "t488-e179-conforto-sem-repetidos",
+        "t485-e149a-matricula-no-inicio",
         "t530-e135-um-campo-vazio",
         "t531-e136-datas-ptbr-revisao",
         "t532-e137-janela-24-e-duplo-clique",
@@ -1032,7 +1033,8 @@
         "t298-varredura-logada-bloco4",
         "t351-telas-linkedin-63a",
         "t338-varredura-bloco15",
-        "t416-varredura-bloco33"
+        "t416-varredura-bloco33",
+        "t486-e174b-selo-vinculo"
       ]
     },
     "/dashboard/locacoes": {
@@ -1086,7 +1088,8 @@
         "t329-varredura-bloco11",
         "t351-telas-linkedin-63a",
         "t379-55e2-filtro-contato-um-toque",
-        "t541-e168-painel-acompanha-filtro"
+        "t541-e168-painel-acompanha-filtro",
+        "t486-e174b-selo-vinculo"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1167,7 +1170,8 @@
       "specs": [
         "t193-propostas",
         "t212-ferramentas-proprietario",
-        "t216-taxa-matriz"
+        "t216-taxa-matriz",
+        "t487-e178-primeiro-pagamento"
       ]
     },
     "/dashboard/reembolsos": {
@@ -1582,7 +1586,8 @@
         "t355-conta-a-perfil-espelho",
         "t338-varredura-bloco15",
         "t442-foto-perfil-revisao",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t486-e174b-selo-vinculo"
       ]
     },
     "/qualificar": {
@@ -6635,6 +6640,20 @@
       "specs": [
         "t442-foto-perfil-revisao"
       ]
+    },
+    "src/lib/data/perfil-actions.ts#getMeuPorQueNaCidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#setMeuPorQueNaCidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     }
   }
 }
