@@ -54,8 +54,12 @@ test.describe("T454 — Salvar busca: o aviso por e-mail dito na hora", () => {
       const nao = aviso.getByTestId("salvar-busca-nao-avisar");
       await expect(nao).toHaveText("Não me avisar");
       expect((await nao.boundingBox())!.height, "toque de 44 px").toBeGreaterThanOrEqual(44);
+      // Foco pelo teclado (o anel é de :focus-visible, que o clique do mouse não liga): Tab sai e Shift+Tab volta.
       await nao.focus();
-      expect(await nao.evaluate((el) => getComputedStyle(el).boxShadow), "foco visível").not.toBe("none");
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Shift+Tab");
+      await expect(nao).toBeFocused();
+      expect(await nao.evaluate((el) => el.matches(":focus-visible") && getComputedStyle(el).boxShadow !== "none"), "foco visível").toBe(true);
       await page.screenshot({ path: `${SAIDA}/t454-1-avisar-${largura}.png`, fullPage: false });
       await nao.click();
       await expect(aviso).toHaveAttribute("data-tipo", "sem_aviso", { timeout: 15_000 });
