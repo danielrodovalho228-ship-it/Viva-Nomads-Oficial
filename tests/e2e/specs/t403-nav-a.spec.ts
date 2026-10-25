@@ -7,7 +7,8 @@ import { NO_LABORATORIO, apagarContas, criarAdmin, criarConta, criarImovelPronto
  *      Privacidade, Notificações, Pagamentos, Ajuda — e Sair. Nada de Ferramentas, Painel Admin, Equipe, avisos,
  *      Verificação ou Indicações ali (nem para o admin).
  *   2. A barra verde de morador, dono e admin (todos os grupos abertos): Verificação, Ferramentas e Notificações para
- *      todos; para o admin, Painel Admin e Equipe e aprovações. Cada destino aparece uma vez só na barra.
+ *      todos; para o admin, só "Painel admin" (ADMIN-1). Cada destino aparece uma vez só. PROP-1: no computador, o modo
+ *      dono troca a barra pelo topo (abas, sino e "Conta ▾"); a mesma conta vale no topo.
  */
 const SAIDA = "tests/laboratorio/saida";
 const CONTA = ["Perfil", "Como você usa a Viva", "Avaliações", "Dados", "Privacidade", "Notificações", "Pagamentos", "Ajuda"];
@@ -57,6 +58,19 @@ test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () 
     return barra;
   }
   const quantas = (barra: Locator, href: string) => barra.locator(`a[href="${href}"]`).count();
+  /**
+   * PROP-1: no computador, quem está no modo dono não tem barra lateral — a navegação é o topo (abas, sino e "Conta ▾").
+   * Devolve o topo com o menu da Conta aberto; senão, a barra aberta.
+   */
+  async function navegacao(p: Page, w: number): Promise<Locator> {
+    const topo = p.getByTestId("topo-dono");
+    if (w === 1280 && (await topo.isVisible())) {
+      await topo.getByTestId("conta-dono").click();
+      await topo.getByTestId("menu-conta-dono").waitFor({ timeout: 15_000 });
+      return topo;
+    }
+    return barraAberta(p, w);
+  }
 
   for (const w of [390, 1280]) {
     test(`1. a ${w} px: a Conta só tem a pessoa (também para o admin)`, async ({ browser }) => {
@@ -77,7 +91,7 @@ test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () 
     test(`2. a ${w} px: a barra verde de morador, dono e admin`, async ({ browser }) => {
       for (const [quem, email] of [["morador", morador.email], ["dono", dono.email], ["admin", admin.email]] as const) {
         const p = await abrir(browser, email, w, "/dashboard");
-        const barra = await barraAberta(p, w);
+        const barra = await navegacao(p, w);
         for (const href of ["/dashboard/verificacao", "/dashboard/ferramentas", "/dashboard/notificacoes"]) {
           expect(await quantas(barra, href), `${quem}: ${href}`).toBe(1);
         }
