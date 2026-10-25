@@ -13,11 +13,10 @@ function arquivos(dir: string): string[] {
   });
 }
 
-test("/qualificar sem ?imovel= redireciona (servidor): rascunho → lista, senão cadastro pelas Fotos", () => {
+test("/qualificar sem ?imovel= redireciona (servidor) para o cadastro novo (E132-A)", () => {
   const page = readFileSync(join(raiz, "app/(dashboard)/qualificar/page.tsx"), "utf8");
   assert.doesNotMatch(page, /"use client"/);
-  assert.match(page, /if \(!id\) \{/);
-  assert.match(page, /redirect\(destinoQualificarSemImovel\(temRascunho\)\)/);
+  assert.match(page, /if \(!id\) redirect\(destinoQualificarSemImovel\(\)\)/);
   assert.match(page, /searchParams/);
 });
 
@@ -35,4 +34,9 @@ test("estado vazio de Meus imóveis começa pelas fotos", () => {
   assert.match(src, /Comece pelas fotos do seu imóvel/);
   assert.match(src, /Cadastrar imóvel/);
   assert.doesNotMatch(src, /Qualificar imóvel/);
+});
+
+test("E132-A: o redirect de /qualificar sem ?imovel também mora no next.config (a casca do painel engolia o da página)", () => {
+  const cfg = readFileSync(join(process.cwd(), "next.config.ts"), "utf8");
+  assert.match(cfg, /source: "\/qualificar", missing: \[\{ type: "query" as const, key: "imovel" \}\], destination: "\/dashboard\/imoveis\/novo"/);
 });

@@ -16,6 +16,7 @@ import {
   loadPropertyForEdit,
   getMyDocumentStatus,
   carregarQualificacao,
+  saveQualification,
   saveDraftData,
   loadDraftData,
   enderecoGravadoDoImovel,
@@ -37,6 +38,10 @@ import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacar
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
+import { confirmarConforto } from "@/lib/data/conforto-actions";
+import { COMODIDADES_DA_QUALIFICACAO, aplicarRespostas, estadoDoRascunho, type EstadoQualificacao, type Respostas } from "@/lib/anuncio/qualificacao-conforto";
+import { Qualificacao } from "./qualificacao";
+import { HREF_SAIR_ASSISTENTE } from "@/components/layout/moldura-assistente";
 import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
 import { UBERLANDIA_CENTER, geocodeForSave } from "@/lib/integrations/geocoding";
 import { Button } from "@/components/ui/button";
@@ -47,13 +52,14 @@ import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual } from "@/lib/anuncio/periodo-disponivel";
 import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosDaPrevia, type ConteudoFoto } from "@/lib/fotos/conteudo";
-import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo } from "@/lib/amenities";
+import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
 import type { Property, Proximity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
-import { qualificadoDoServidor } from "@/lib/anuncio/qualificacao-rascunho";
+import { isEligible } from "@/lib/qualification";
+import { DECLARACOES_VAZIAS, QUALIDADE_INICIAL, declaracoesDoRascunho, declaracoesRespondidas, elegibilidadeDoCadastro, type DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento, registrarEventoUmaVez } from "@/lib/eventos/registrar";
 import { TERMO_IA_VERSAO, camposDaIa, precisaAceitarTermo } from "@/lib/anuncio/termo-ia";
@@ -88,7 +94,6 @@ import { chaveLugar } from "@/components/anuncio/blocos-cadastro";
 import type { CampoSugerido, EstadoIaFotos, FalhaIaFotos } from "./tipos";
 import { ChegadaEPedidoCampos, formDeChegada, formDeRascunho, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
 import { tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
-import { PainelQualificacao } from "./painel-qualificacao";
 import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
 import { AntesDePublicar, AtalhosCadastro, EtapaOndeFica } from "./etapa-onde-fica";
@@ -131,10 +136,11 @@ export default function NewPropertyPage() {
   // T1: o rascunho local é POR USUÁRIO — nunca abre o de outra conta.
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const [approved, setApproved] = useState<boolean | null>(null);
-  // Qualificação "Antes de anunciar": só BARRA A PUBLICAÇÃO (rascunho sempre pode).
-  const [qualificado, setQualificado] = useState(true);
-  // Prompt 22: a qualificação abre num painel lateral, sem sair do cadastro.
-  const [painelQualificacao, setPainelQualificacao] = useState(false);
+  // E132-A, Parte C: os requisitos legais viram declarações de um toque no "Antes de publicar" (Passo 10); o resto
+  // da elegibilidade sai do próprio cadastro. Só BARRAM A PUBLICAÇÃO (rascunho sempre pode).
+  const [declaracoes, setDeclaracoes] = useState<DeclaracoesPasso10>(DECLARACOES_VAZIAS);
+  // As notas de qualidade da qualificação antiga do imóvel (se houver), para regravar sem perder nada.
+  const qualidadeAnterior = useRef(QUALIDADE_INICIAL);
   // Documento do imóvel (prompt 11): conferido na etapa 1. Só "approved" libera Publicar (0120).
   const [docStatus, setDocStatus] = useState<DocumentStatus>("approved");
   const [docEstado, setDocEstado] = useState<EstadoDocumentoTela>("nenhum");
@@ -214,6 +220,10 @@ export default function NewPropertyPage() {
   const [sugeridasFotos, setSugeridasFotos] = useState<string[]>([]);
   const [nivelVersao, setNivelVersao] = useState(0);
   const [internetMbps, setInternetMbps] = useState("");
+  // E132-A: a Qualificação (5 telas do essencial) antes do Passo 1 do cadastro NOVO; o estado vai no rascunho.
+  const [qualConf, setQualConf] = useState<EstadoQualificacao>({ status: "pendente", respostas: {} });
+  const [telaQual, setTelaQual] = useState(0);
+  const [abrindoCadastro, setAbrindoCadastro] = useState(false);
   // Proximidades: as do OSM (todas marcadas; o dono desmarca) + as manuais ("Adicionar outro").
   const [proxOsm, setProxOsm] = useState<LugarProximo[] | null>(null);
   const [proxCarregando, setProxCarregando] = useState(false);
@@ -301,6 +311,15 @@ export default function NewPropertyPage() {
         : !docOperacaoOk
           ? `Anexe: ${DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].titulo.toLowerCase()}.`
           : "";
+  const elegibilidade = elegibilidadeDoCadastro({
+    mobiliado: furnished,
+    minimoDias: Number(minPeriod) || 30,
+    operacaoDeclarada: !faltaOperacao,
+    documentoEnviado: docStatus !== "none",
+    emCondominio: tipoEmCondominio(propertyType),
+    declaracoes,
+  });
+  const qualificado = isEligible(elegibilidade);
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
   // E133: o Passo 2 só segue com o mínimo de fotos e sem foto/vídeo "não parece imóvel" sem tratar.
@@ -342,12 +361,13 @@ export default function NewPropertyPage() {
   });
   /** "Resolver" de um item do portão: vai à etapa; a qualificação abre ali mesmo. */
   function resolverItem(item: ItemProntidao) {
-    if (item.key === "qualificacao") setPainelQualificacao(true);
-    else irPara(item.etapa);
+    irPara(item.etapa);
     if (item.key === "conforto") setTimeout(() => document.querySelector('[data-testid="conforto-checklist"]')?.scrollIntoView({ block: "center" }), 50);
     // 65-B: "Para melhorar: Vídeo do imóvel" leva ao bloco de vídeo do passo Fotos.
     if (item.key === "video") setTimeout(() => document.getElementById(ANCORA_VIDEO_ASSISTENTE)?.scrollIntoView({ block: "start" }), 400);
     // E112: documento e quem opera moram no "Antes de publicar" desta mesma Revisão — "Resolver" desce até lá.
+    if (item.key === "qualificacao")
+      setTimeout(() => document.querySelector('[data-testid="declaracoes-passo10"]')?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
     if (item.key === "documento" || item.key === "sublocacao")
       setTimeout(() => document.querySelector(item.key === "documento" ? '[data-testid="documento-vinculo"]' : '[data-testid="antes-de-publicar"]')?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
@@ -450,13 +470,16 @@ export default function NewPropertyPage() {
   useEffect(() => {
     if (!draftParam || editId) return;
     let alive = true;
+    // E132-A: rascunho com a qualificação antiga respondida — as declarações abrem com o que já foi dito.
     carregarQualificacao(draftParam)
       .then((q) => {
-        if (alive) setQualificado(qualificadoDoServidor(q));
+        if (!alive || !q) return;
+        qualidadeAnterior.current = { ...QUALIDADE_INICIAL, ...q.quality };
+        setDeclaracoes((d) =>
+          declaracoesRespondidas(d) ? d : { iptuOk: q.elig.iptuOk, habitavel: q.elig.habitable, convencao: q.elig.condoAllows }
+        );
       })
-      .catch(() => {
-        if (alive) setQualificado(false);
-      });
+      .catch(() => {});
     return () => {
       alive = false;
     };
@@ -506,9 +529,12 @@ export default function NewPropertyPage() {
       return;
     }
     if (!asDraft && !editingId && !qualificado) {
-      setPublishError("Falta a qualificação (checklist \"Antes de anunciar\"). Você pode salvar como rascunho e concluí-la para publicar.");
+      setPublishError("Faltam as declarações do cartão “Antes de publicar”. Você pode salvar como rascunho e responder depois.");
       return;
     }
+    // E132-A: a elegibilidade derivada do cadastro grava na qualificação do imóvel (sem imóvel ainda: fica à espera e
+    // o createProperty liga ao imóvel criado). Sem documento aqui: ele já entrou na fila no envio.
+    if (!asDraft && !editingId) await saveQualification(elegibilidade, qualidadeAnterior.current, null, null, imovelId).catch(() => null);
     if (!asDraft) {
       const falta = completude.find((c) => !c.ok);
       if (falta) {
@@ -722,6 +748,14 @@ export default function NewPropertyPage() {
       const q = d.qual as Record<string, unknown>;
       setQual({ baseBadge: !!q.baseBadge, tHome: !!q.tHome, tWork: !!q.tWork });
     }
+    // E132-A: rascunho sem o registro da Qualificação (anterior a ela) não volta para as 5 telas.
+    setQualConf(estadoDoRascunho(d.qualificacaoConforto) ?? { status: "pulada", respostas: {} });
+    // Rascunho sem declaração respondida (anterior ao E132-A ou ainda em branco): não apaga o que veio da qualificação
+    // antiga do servidor (as duas leituras chegam em qualquer ordem).
+    {
+      const salvas = declaracoesDoRascunho(d.declaracoesPasso10);
+      if (declaracoesRespondidas(salvas)) setDeclaracoes(salvas);
+    }
     // Rascunho das ordens antigas (7 etapas) abre na primeira etapa ainda incompleta.
     setStep(etapaDoRascunho(d));
     setEtapaMax(posMaxDoRascunho(d));
@@ -756,7 +790,6 @@ export default function NewPropertyPage() {
     const raw = sessionStorage.getItem("vivanomads-qualification");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setApproved(true);
-    setQualificado(raw ? JSON.parse(raw).eligible === true : false);
     try {
       if (raw) {
         const q = JSON.parse(raw);
@@ -892,6 +925,8 @@ export default function NewPropertyPage() {
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
     iaAnalisadas, sugeridos, comodidadesSugeridas,
     qual,
+    qualificacaoConforto: qualConf,
+    declaracoesPasso10: declaracoes,
     aceiteIa: aceiteParaRascunho(aceiteValido, title, description),
     photos: photos.filter((p) => p.url && !p.url.startsWith("blob:")),
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
@@ -1127,6 +1162,9 @@ export default function NewPropertyPage() {
 
   function comecarOutro() {
     setDraftBannerDismissed(true);
+    setQualConf({ status: "pendente", respostas: {} });
+    setDeclaracoes(DECLARACOES_VAZIAS);
+    setTelaQual(0);
     try {
       localStorage.removeItem(DRAFT_KEY_LEGADO);
       if (userId) localStorage.removeItem(draftKey(userId));
@@ -1293,7 +1331,92 @@ export default function NewPropertyPage() {
     };
   }, []);
 
+  // E132-A — a Qualificação: só no cadastro NOVO (nunca na edição nem num rascunho já aberto), antes do Passo 1. Um
+  // link que já diz o passo (?etapa=, ex.: "Resolver" de uma pendência) vai direto a ele.
+  const mostrarQualificacao =
+    approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente" && (!existingDraft || draftBannerDismissed);
+
+  /** Responder: as MESMAS confirmações de conforto e comodidades do Passo 5 (fonte única), e a velocidade da internet. */
+  function responderQualificacao(id: string, valor: string | boolean) {
+    const respostas: Respostas = { ...qualConf.respostas, [id]: valor };
+    setQualConf((q) => ({ ...q, respostas }));
+    const r = aplicarRespostas(respostas);
+    conf.alterar(r.conforto);
+    setAmenityKeys((atual) => {
+      const novo = { ...atual };
+      for (const k of COMODIDADES_DA_QUALIFICACAO) delete novo[k];
+      for (const k of r.comodidades) novo[k] = true;
+      return novo;
+    });
+    if (id === "internet") setInternetMbps(r.internetMbps ?? "");
+  }
+
+  /**
+   * Decisão do Muse (25/10): "Salvar e sair" / "Começar o cadastro" antes de existir rascunho criam o rascunho NA HORA,
+   * só com as respostas (Meus imóveis mostra "Rascunho de anúncio"). Nada se perde.
+   */
+  async function rascunhoDaQualificacao(status: EstadoQualificacao["status"]): Promise<string | null> {
+    const estado: EstadoQualificacao = { status, respostas: qualConf.respostas };
+    setQualConf(estado);
+    const { conforto } = aplicarRespostas(qualConf.respostas);
+    // O rascunho pode já existir (o autosave o criou durante as respostas): as confirmações vão para ele do mesmo jeito.
+    if (draftIdRef.current) {
+      if (conforto.length) await confirmarConforto(draftIdRef.current, conforto).catch(() => {});
+      return draftIdRef.current;
+    }
+    const dados = { ...JSON.parse(draftJson), qualificacaoConforto: estado };
+    try {
+      const res = await saveDraftData({ id: null, title, city, monthlyPrice: 0, neighborhood, bathrooms: 0, areaM2: 0, description, data: dados });
+      if (!res.ok || !res.id) return null;
+      draftIdRef.current = res.id;
+      // As confirmações gravam ANTES de a tela sair da Qualificação: quem abre o Passo 5 em seguida já as encontra.
+      if (conforto.length) await confirmarConforto(res.id, conforto).catch(() => {});
+      setDraftServerId(res.id);
+      window.history.replaceState(null, "", `/dashboard/imoveis/novo?draft=${res.id}`);
+      return res.id;
+    } catch {
+      return null;
+    }
+  }
+
+  async function comecarCadastro(etapa: number) {
+    setAbrindoCadastro(true);
+    await rascunhoDaQualificacao("respondida");
+    setAbrindoCadastro(false);
+    setStep(etapa);
+    setEtapaMax((m) => Math.max(m, etapa));
+    if (etapa === ETAPA.comodidades) setTimeout(() => document.querySelector('[data-testid="conforto-checklist"]')?.scrollIntoView({ block: "center" }), 300);
+    else window.scrollTo({ top: 0 });
+  }
+
   if (approved === null) return null;
+
+  if (mostrarQualificacao) {
+    return (
+      <Qualificacao
+        tela={telaQual}
+        respostas={qualConf.respostas}
+        onResponder={responderQualificacao}
+        onTela={(t) => {
+          setTelaQual(t);
+          window.scrollTo({ top: 0 });
+        }}
+        onResponderDepois={() => {
+          // "Responder depois" leva direto ao Passo 1; as respostas dadas ficam (e vão com o rascunho).
+          setQualConf((q) => ({ ...q, status: "pulada" }));
+          setStep(ETAPA.tipo);
+          window.scrollTo({ top: 0 });
+        }}
+        onComecar={() => void comecarCadastro(ETAPA.tipo)}
+        onVerNoCadastro={() => void comecarCadastro(ETAPA.comodidades)}
+        onSalvarESair={async () => {
+          if (Object.keys(qualConf.respostas).length) await rascunhoDaQualificacao("pendente");
+          router.push(HREF_SAIR_ASSISTENTE);
+        }}
+        ocupado={abrindoCadastro}
+      />
+    );
+  }
 
   // Campos do imóvel, repartidos pelos passos 2, 4 e 5 (Prompt 43).
   const camposImovel = {
@@ -1443,16 +1566,6 @@ export default function NewPropertyPage() {
           <p className="mt-2 text-base text-muted" data-testid="passo-subtitulo">
             {meta.subtitle}
           </p>
-          {painelQualificacao && (
-            <PainelQualificacao
-              imovelId={imovelId}
-              onFechar={() => setPainelQualificacao(false)}
-              onSalva={(r) => {
-                setQualificado(r.elegivel);
-                setQual({ baseBadge: r.selo, tHome: r.tHome, tWork: r.tWork });
-              }}
-            />
-          )}
           {/* E135: "Continuar" recusado SEMPRE diz no próprio passo o que falta (nunca um clique mudo). */}
           {Object.keys(erros).length > 0 && (
             <div role="alert" className="mt-4 rounded-xl border border-red-300 bg-white p-3 text-sm text-red-700" data-testid="passo-erros">
@@ -1468,21 +1581,6 @@ export default function NewPropertyPage() {
             {step === ETAPA.tipo && (
               <div className="space-y-6">
                 <EtapaTipo tipo={propertyType} onTipo={camposImovel.setPropertyType} sugerido={camposImovel.tipoSugerido} />
-                {/* "Antes de anunciar" (qualificação do imóvel), quando pendente, entra neste passo (mapa da Pista B). */}
-                {completude
-                  .filter((i) => i.key === "qualificacao" && !i.ok)
-                  .map((i) => (
-                    <div key={i.key} className="flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between" data-testid="tipo-qualificacao">
-                      <p className="text-sm text-ink">
-                        <span className="font-semibold">{i.label}</span>
-                        {i.detalhe ? ` · ${i.detalhe}` : ""}
-                      </p>
-                      <Button variant="secondary" size="sm" onClick={() => resolverItem(i)}>
-                        Responder agora
-                      </Button>
-                    </div>
-                  ))}
-                {/* E104: importar de outro site / pedir ajuda — no começo do cadastro (saíram do Passo 3). */}
                 {!editingId && <AtalhosCadastro aplicarImportado={aplicarImportado} />}
               </div>
             )}
@@ -1647,6 +1745,9 @@ export default function NewPropertyPage() {
                   }}
                   onMatricula={aplicarMatricula}
                   enderecoSalvo={enderecoSalvo}
+                  declaracoes={declaracoes}
+                  setDeclaracoes={setDeclaracoes}
+                  emCondominio={tipoEmCondominio(propertyType)}
                   onFaltaDocumento={(campos) => {
                     setErros((e) => ({ ...e, ...Object.fromEntries(campos.map((c) => [c, ERRO_CAMPO_ENDERECO[c]])) }));
                     // E104: os campos do endereço moram no Passo 3 — leva até lá e põe o foco no primeiro que falta.
