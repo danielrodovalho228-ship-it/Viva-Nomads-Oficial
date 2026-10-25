@@ -121,3 +121,22 @@ test("E133 — a tela usa as regras: Continuar desabilitado no Passo 2, uploader
   assert.match(ler("app/(public)/imoveis/[id]/page.tsx"), /linkDeVideoAprovado\(property\.id, property\.videoUrl\)/);
   assert.match(ler("lib/data/actions.ts"), /verificarLinkVideo\(linkVideo\)/);
 });
+
+// E164 (QA ao vivo do Muse, 25/10): a prévia do anúncio nunca mostra a foto sinalizada pendente como principal.
+import { fotosDaPrevia } from "./conteudo.ts";
+test("E164 — a prévia só mostra foto elegível; a sinalizada pendente fica de fora, a confirmada volta", () => {
+  const print = { url: "print", conteudo: { naoImovel: true, motivo: "print" as const } };
+  const boa = { url: "sala", conteudo: { naoImovel: false, motivo: null } };
+  const confirmada = { url: "print2", conteudo: { naoImovel: true, motivo: "print" as const, confirmadaEm: "2026-10-25T10:00:00Z" } };
+  assert.deepEqual(fotosDaPrevia([print]).map((f) => f.url), [], "só a sinalizada: a prévia fica sem foto");
+  assert.deepEqual(fotosDaPrevia([print, boa]).map((f) => f.url), ["sala"], "pendente: a 1ª elegível é a principal");
+  assert.deepEqual(fotosDaPrevia([confirmada, boa]).map((f) => f.url), ["print2", "sala"], "confirmada: volta na posição dela");
+  const antiga: { url: string; conteudo?: null } = { url: "antiga" };
+  assert.deepEqual(fotosDaPrevia([antiga]).map((f) => f.url), ["antiga"], "foto sem conferência (antiga) aparece");
+  const pagina = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/page.tsx", import.meta.url), "utf8");
+  assert.match(pagina, /const fotosPrevia = fotosDaPrevia\(photos\)\.map\(\(p\) => p\.url\);/);
+  assert.match(pagina, /foto=\{fotosPrevia\[0\] \?\? null\}/);
+  assert.match(pagina, /photos: fotosPrevia,/);
+  assert.match(pagina, /fotos=\{fotosPrevia\}/);
+  assert.doesNotMatch(pagina, /foto=\{photos\[0\]/);
+});
