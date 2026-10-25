@@ -5,9 +5,10 @@ import { abrirPasso, continuarFicaEm, prepararRascunho } from "../fixtures/rascu
 
 /*
   T422 — E133 (levantamento do Daniel, 25/10; correção na Pista A). Passo 2, Fotos:
-   1. abaixo de 8 fotos o "Continuar" não avança e diz que o mínimo é 8;
-   2. com 8 fotos o "Continuar" avança para o Endereço (controle);
-   3. a foto marcada como "não parece imóvel" não vira a foto principal — sem como reproduzir hoje (ver o fixme).
+   1. abaixo de 8 fotos o "Continuar" não avança (desabilitado) e a contagem diz quantas faltam para as 8;
+   2. com 8 fotos o "Continuar" avança para o Endereço (controle).
+  A foto marcada como "não parece imóvel" que não vira a principal é da t468 · 2 (Pista A, #1373, com a marca por
+  foto que o produto ganhou ali): este spec não repete.
   Só no laboratório.
 */
 const senha = novaSenha();
@@ -29,15 +30,16 @@ test.describe("T422 — E133: mínimo de 8 fotos no Passo 2", () => {
   });
 
   test("1. com 3 fotos, o Continuar não avança e diz que o mínimo é 8", async ({ browser }) => {
-    // E133 (Pista A): hoje o Passo 2 só exige 1 foto para avançar (validarEtapa em imoveis/novo/page.tsx); com 3 fotos
-    // o Continuar leva ao Endereço (lab-crítico do #1367, run 40190394864). Quem corrigir tira este test.fail.
-    test.fail(true, "E133: com menos de 8 fotos o Continuar do Passo 2 avança");
+    // E133 corrigido no #1373 (Pista A): antes, com 3 fotos, o Continuar levava ao Endereço (run 40190394864).
     const page = await abrirPasso(browser, { email: dono.email, senha }, ids.com3!, "fotos");
-    await expect(page.getByTestId("fotos-contagem")).toContainText("3 / 8 fotos", { timeout: 20_000 });
-    await page.getByTestId("cadastro-continuar").click();
+    const contagem = page.getByTestId("fotos-contagem");
+    await expect(contagem).toContainText("3 / 8 fotos", { timeout: 20_000 });
+    await expect(contagem).toContainText("Faltam 5 fotos");
+    const continuar = page.getByTestId("cadastro-continuar");
+    await expect(continuar, "abaixo de 8 fotos o Continuar fica desabilitado").toBeDisabled();
+    await continuar.click({ force: true });
     await page.waitForTimeout(500);
     await noPasso(page, "fotos");
-    await expect(page.getByTestId("etapa-fotos").getByRole("alert").filter({ hasText: /8/ })).toBeVisible();
     await page.context().close();
   });
 
@@ -46,12 +48,5 @@ test.describe("T422 — E133: mínimo de 8 fotos no Passo 2", () => {
     await expect(page.getByTestId("fotos-contagem")).toContainText("8 / 8 fotos", { timeout: 20_000 });
     await continuarFicaEm(page, "endereco");
     await page.context().close();
-  });
-
-  test("3. a foto marcada como 'não parece imóvel' não vira a principal", async () => {
-    // Não dá para reproduzir no laboratório hoje: o produto não tem veredito "não parece imóvel" POR FOTO (a análise
-    // das fotos responde `ehImovel` para o conjunto, em src/lib/ai/fotos-prompt.ts) e o laboratório devolve sempre a
-    // mesma resposta fixa (SUGESTAO_LAB_BRUTA). Quando a Pista A criar a marca por foto, este caso ganha o corpo.
-    test.fixme(true, "E133 · 2: sem marca 'não parece imóvel' por foto no produto nem no simulador do laboratório");
   });
 });
