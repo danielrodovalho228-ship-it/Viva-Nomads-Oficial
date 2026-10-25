@@ -51,11 +51,11 @@ test.describe("T67 — Busca no celular", () => {
 
     await expect(painel).toHaveCount(0);
     await expect(page.getByTestId("titulo-busca")).toContainText(`${n} ${n === 1 ? "imóvel" : "imóveis"}`);
-    // E82-A: o preço vira o valor da pílula "Preço"; os quartos contam no "(N)" de "Mais filtros".
-    await expect(page.getByTestId("pilula-preco")).toHaveAttribute("data-valor", "Até R$ 5.000");
+    // E105: o preço não está mais nesta folha (só na pílula "Preço"); os quartos contam no "(N)" de "Mais filtros".
+    await expect(page.getByTestId("pilula-preco")).toHaveAttribute("data-valor", "");
     await expect(page.getByTestId("pilula-mais")).toContainText("(1)");
     await expect(page).toHaveURL(/quartos=2/);
-    await expect(page).toHaveURL(/preco=5000/);
+    await expect(page).not.toHaveURL(/preco=/);
 
     // Cards: foto, preço por mês, quartos/banheiros e bairro.
     const cartoes = page.locator('a[href^="/imoveis/"]');
