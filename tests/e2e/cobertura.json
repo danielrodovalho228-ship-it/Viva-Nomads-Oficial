@@ -992,7 +992,8 @@
         "t525-e161-rascunho-cheio",
         "t481-e132a-qualificacao",
         "t544-e136-popup-calendario-ptbr",
-        "t484-e148a-titulo-descricao"
+        "t484-e148a-titulo-descricao",
+        "t485-e149a-matricula-no-inicio"
       ]
     },
     "/dashboard/indicacoes": {
