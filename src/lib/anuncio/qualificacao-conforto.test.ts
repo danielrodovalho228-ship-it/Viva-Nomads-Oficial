@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CHAVES_CONFORTO } from "../../config/conforto-minimo.ts";
-import { TELAS_QUALIFICACAO, aplicarRespostas, chavesCobertas, estadoDoRascunho, faltamDoEssencial, nivelDoResultado, tituloResultado } from "./qualificacao-conforto.ts";
+import { TELAS_QUALIFICACAO, aplicarRespostas, chavesCobertas, estadoDoRascunho, faltamDoEssencial, jaTemDoConforto, nivelDoResultado, tituloResultado } from "./qualificacao-conforto.ts";
 
 const TUDO = {
   cama: true, apoio: true, ventilacao: "ventilacao", cozinha: "fogao", roupa: "todos", agua: true, lavanderia: "predio",
@@ -56,4 +56,21 @@ test("estado no rascunho: só formatos válidos", () => {
   assert.equal(estadoDoRascunho(null), null);
   assert.equal(estadoDoRascunho({ status: "x" }), null);
   assert.deepEqual(estadoDoRascunho({ status: "pulada", respostas: { cama: true, lixo: 3 } }), { status: "pulada", respostas: { cama: true } });
+});
+
+test("E179: 'Para subir a Conforto' não pede o que as respostas já mostram que o imóvel tem", () => {
+  const comMicro = { ...TUDO, cozinha: "micro" };
+  const subir = nivelDoResultado(aplicarRespostas(comMicro).conforto, comMicro).paraSubir;
+  assert.ok(!subir.includes("Micro-ondas"), "a cozinha já tem micro-ondas");
+  assert.ok(subir.includes("Mesa de jantar para todos"), "o resto da cozinha continua");
+  // Sem micro-ondas na resposta, o item continua na lista.
+  assert.ok(nivelDoResultado(aplicarRespostas(TUDO).conforto, TUDO).paraSubir.includes("Micro-ondas"));
+  // Ar em todos os quartos e máquina no imóvel também saem; a escala da cozinha "completa" inclui o micro-ondas.
+  const tudoMais = { ...TUDO, cozinha: "completa", ventilacao: "ar", lavanderia: "imovel" };
+  assert.deepEqual(jaTemDoConforto(tudoMais).sort(), ["ar_quarto_principal", "cozinha_microondas", "lavadora_no_imovel"]);
+  const resto = nivelDoResultado(aplicarRespostas(tudoMais).conforto, tudoMais).paraSubir;
+  for (const r of ["Micro-ondas", "Ar-condicionado no quarto principal", "Máquina de lavar no imóvel"]) assert.ok(!resto.includes(r), r);
+  assert.ok(resto.includes("Mesa e cadeira de trabalho"));
+  // Nada respondido: nada sai.
+  assert.deepEqual(jaTemDoConforto({}), []);
 });
