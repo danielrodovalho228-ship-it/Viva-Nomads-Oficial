@@ -110,4 +110,3 @@ test.describe("T469 — E134: Passo 4 alinhado", () => {
     });
   }
 });
-

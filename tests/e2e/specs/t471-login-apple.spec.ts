@@ -56,4 +56,3 @@ test.describe("T471 — Login com Apple atrás da flag", () => {
     expect(new URL(pedido!.searchParams.get("redirect_to") ?? "").pathname).toBe("/auth/callback");
   });
 });
-

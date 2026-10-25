@@ -159,4 +159,3 @@ test.describe("T468 — E133: fotos, vídeo e link que não mostram o imóvel", 
     await visitante.context().close();
   });
 });
-
