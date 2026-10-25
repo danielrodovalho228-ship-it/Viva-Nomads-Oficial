@@ -5,6 +5,8 @@
  * mascarado e um corte de tamanho: nada de HTML, links com token ou e-mail completo.
  */
 
+import { REMETENTE_EMAIL, REMETENTE_INTERNO_PADRAO } from "./remetente.ts";
+
 export const CORPO_MAX = 6000;
 export const ASSUNTO_MAX = 200;
 /** Quantos e-mails a tela mostra (os mais novos). */
@@ -106,4 +108,71 @@ export async function guardarNaCaixaTeste(admin: ClienteCaixaTeste, p: EmailPara
   } catch {
     return false;
   }
+}
+
+/** Endereços da própria plataforma (remetentes públicos): ficam legíveis para o QA conferir de quem saiu. */
+const ENDERECOS_DA_PLATAFORMA = new Set([REMETENTE_EMAIL, REMETENTE_INTERNO_PADRAO.replace(/^.*<|>$/g, "")].map((e) => e.toLowerCase()));
+const EMAIL_NO_TEXTO_RE = /[a-z0-9._%+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+/gi;
+
+/** Todo e-mail dentro do texto vira "a•••@dominio" (menos o remetente da plataforma): a tela nunca mostra endereço completo. */
+export function mascararEmailsNoTexto(texto: string): string {
+  return texto.replace(EMAIL_NO_TEXTO_RE, (e) => (ENDERECOS_DA_PLATAFORMA.has(e.toLowerCase()) ? e : mascararDestinatario(e)));
+}
+
+/** Quem abre /dashboard/qa/emails: conta de teste COM a marca de leitor de QA (só o servidor liga; migração 0246). */
+export function podeLerCaixasQa(perfil: { qa_leitor?: boolean | null; is_teste?: boolean | null } | null | undefined): boolean {
+  return perfil?.qa_leitor === true && perfil?.is_teste === true;
+}
+
+/** A área do leitor de QA (/dashboard/qa/…): o proxy devolve 404 DE VERDADE a quem não pode (a página sozinha sairia 200). */
+export function rotaLeitorQa(pathname: string): boolean {
+  return pathname === "/dashboard/qa" || pathname.startsWith("/dashboard/qa/");
+}
+
+export interface LinhaEmailTeste {
+  id: string;
+  criado_em: string;
+  evento: string;
+  assunto: string;
+  corpo: string;
+  destinatario_mascarado: string;
+}
+
+/** A linha como a tela mostra: e-mails mascarados e links com token removidos de novo (defesa em profundidade). */
+export function linhaParaTela<T extends LinhaEmailTeste>(l: T): T {
+  const limpa = (s: string) => mascararEmailsNoTexto(semLinksComToken(s));
+  return { ...l, assunto: limpa(l.assunto), corpo: limpa(l.corpo), destinatario_mascarado: mascararEmailsNoTexto(l.destinatario_mascarado) };
+}
+
+export interface OpcoesFiltroQa {
+  contas: { id: string; rotulo: string }[];
+  eventos: string[];
+}
+
+/** Opções dos filtros a partir das próprias linhas (sem ler outra tabela): conta pelo destinatário mascarado. */
+export function opcoesFiltroQa(linhas: { usuario_id: string | null; destinatario_mascarado: string; evento: string }[]): OpcoesFiltroQa {
+  const contas = new Map<string, Set<string>>();
+  const eventos = new Set<string>();
+  for (const l of linhas) {
+    if (l.evento) eventos.add(l.evento);
+    if (!l.usuario_id) continue;
+    const r = contas.get(l.usuario_id) ?? new Set<string>();
+    r.add(mascararEmailsNoTexto(l.destinatario_mascarado));
+    contas.set(l.usuario_id, r);
+  }
+  return {
+    contas: [...contas].map(([id, r]) => ({ id, rotulo: `${[...r].sort().join(" / ")} · ${id.slice(0, 8)}` })).sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR")),
+    eventos: [...eventos].sort((a, b) => a.localeCompare(b, "pt-BR")),
+  };
+}
+
+/** Filtro da URL (?conta=&evento=): só vale um id de conta que existe nas opções e um evento conhecido; o resto é ignorado. */
+export function filtroQaDaUrl(sp: { conta?: string | string[]; evento?: string | string[] }, opcoes: OpcoesFiltroQa): { conta: string | null; evento: string | null } {
+  const um = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+  const conta = um(sp.conta);
+  const evento = um(sp.evento);
+  return {
+    conta: UUID_RE.test(conta) && opcoes.contas.some((c) => c.id === conta) ? conta : null,
+    evento: opcoes.eventos.includes(evento) ? evento : null,
+  };
 }
