@@ -199,12 +199,8 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
       await t.screenshot({ path: `${SAIDA}/t212-lista-propostas-${largura}.png`, fullPage: true });
       await abrir(t, "/dashboard/notificacoes");
       await expect(t.getByTestId("aviso-proposta").first()).toContainText("Você recebeu uma proposta");
-      // O número no menu "Propostas".
-      if (largura === 1280) {
-        const menu = t.locator("aside, nav").filter({ hasText: "Minha moradia" }).first();
-        await menu.getByRole("button", { name: "Minha moradia" }).click().catch(() => {});
-        await expect(menu.getByRole("link", { name: /^Propostas/ })).toContainText("1", { timeout: 20_000 });
-      }
+      // MENUS-5 (25/10) tirou a barra lateral "Minha moradia": o aviso acima (Notificações) e a lista de Propostas são o
+      // caminho do morador até a proposta.
       // O cartão da proposta na conversa.
       await abrir(t, "/dashboard/mensagens");
       // No celular a tela abre na lista: tocar na conversa do anúncio.
