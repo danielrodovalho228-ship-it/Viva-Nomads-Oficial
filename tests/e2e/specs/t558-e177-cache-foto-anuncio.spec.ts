@@ -3,7 +3,7 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm } from "../fixtures/laboratorio";
 
 /*
-  T545 — E177 (#1397), guarda permanente da Pista C: o unitário confere o código da rota; aqui é o que o armazenamento
+  T558 — E177 (#1397), guarda permanente da Pista C: o unitário confere o código da rota; aqui é o que o armazenamento
   SERVE. Duas fotos verdadeiras enviadas por /api/upload/foto (proprietário logado):
    - cada uma ganha um endereço próprio (UUID .webp) — nunca o mesmo endereço para fotos diferentes;
    - o endereço público responde 200 com Cache-Control de 1 ano (max-age=31536000) e image/webp.
@@ -12,7 +12,7 @@ import { NO_LABORATORIO, adm } from "../fixtures/laboratorio";
 const BUCKET = "property-photos";
 const caminhos: string[] = [];
 
-test.describe("T545 — E177: a foto do anúncio servida com cache de 1 ano e endereço único", () => {
+test.describe("T558 — E177: a foto do anúncio servida com cache de 1 ano e endereço único", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (armazenamento local).");
   test.use({ storageState: authFile("proprietario") });
 
@@ -41,7 +41,7 @@ test.describe("T545 — E177: a foto do anúncio servida com cache de 1 ano e en
       const r = await request.get(url);
       expect(r.status(), url).toBe(200);
       const cabecalhos = r.headers();
-      console.log(`t545 ${url.split("/").pop()}: cache-control="${cabecalhos["cache-control"]}" content-type="${cabecalhos["content-type"]}"`);
+      console.log(`t558 ${url.split("/").pop()}: cache-control="${cabecalhos["cache-control"]}" content-type="${cabecalhos["content-type"]}"`);
       expect(cabecalhos["cache-control"] ?? "", "Cache-Control do endereço público").toMatch(/max-age=31536000\b/);
       expect(cabecalhos["content-type"] ?? "").toContain("image/webp");
     }
