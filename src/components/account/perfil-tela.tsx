@@ -12,6 +12,7 @@ import { BlocoOpcional } from "@/components/ui/bloco-opcional";
 import { EspelhoPorPapel } from "@/components/account/espelho-papel";
 import { PetsFicha } from "@/components/account/pets-ficha";
 import { CategoriaProfissional } from "@/components/account/categoria-profissional";
+import { PorQueNaCidade } from "@/components/account/por-que-na-cidade";
 import { TituloSecaoLateral } from "@/components/account/casca-conta";
 import { EnviarFoto, FOTO_ATUALIZADA, PERFIL_ATUALIZADO, avisarFotoAtualizada, useMinhaFoto } from "@/components/account/foto-perfil";
 import { getMeuPerfilPublico, getMeusDados, salvarMeuPerfilPublico, salvarMeusDados, setMinhaCategoria, type MeuPerfilPublico } from "@/lib/data/perfil-actions";
@@ -235,6 +236,7 @@ export function PerfilTela() {
             >
               <CategoriaProfissional />
             </BlocoOpcional>
+            <PorQueNaCidade />
           </Panel>
         )}
 
