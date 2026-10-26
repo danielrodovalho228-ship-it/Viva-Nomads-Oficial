@@ -519,7 +519,8 @@
         "t311-marco-principal-unico",
         "t354-varredura-bloco19",
         "t368-varredura-bloco20",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t559-varredura-bloco43"
       ]
     },
     "/comparar": {
@@ -618,7 +619,8 @@
         "t480-menus5-morador-nav",
         "t540-e167-morador-sem-blocos-de-dono",
         "t542-menus5-e85-estrutura",
-        "t549-varredura-bloco39"
+        "t549-varredura-bloco39",
+        "t559-varredura-bloco43"
       ]
     },
     "/dashboard/assinatura": {
@@ -1017,7 +1019,8 @@
         "t549-varredura-bloco39",
         "t550-e179-conforto-respostas-completas",
         "t551-varredura-bloco40",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t559-varredura-bloco43"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1136,7 +1139,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t193-propostas",
-        "t298-varredura-logada-bloco4"
+        "t298-varredura-logada-bloco4",
+        "t559-varredura-bloco43"
       ]
     },
     "/dashboard/orcamentos/nova": {
@@ -1164,7 +1168,8 @@
         "t183-telas-logadas-390",
         "t232-pedido-moradia-completo",
         "t329-varredura-bloco11",
-        "t416-varredura-bloco33"
+        "t416-varredura-bloco33",
+        "t559-varredura-bloco43"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1329,7 +1334,8 @@
         "t311-marco-principal-unico",
         "t325-fotos-ilustrativas-empresas",
         "t368-varredura-bloco20",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t559-varredura-bloco43"
       ]
     },
     "/excluir-conta": {
@@ -1481,7 +1487,8 @@
         "t368-varredura-bloco20",
         "t438-vocab-a",
         "t414-varredura-bloco31",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t559-varredura-bloco43"
       ]
     },
     "/parceiros": {
@@ -1496,7 +1503,8 @@
         "t236-parceiros-ciclo",
         "t311-marco-principal-unico",
         "t408-varredura-bloco27",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t559-varredura-bloco43"
       ]
     },
     "/parceiros/avaliadores": {
@@ -1723,7 +1731,8 @@
       "specs": [
         "t212-ferramentas-proprietario",
         "t298-varredura-logada-bloco4",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t559-varredura-bloco43"
       ]
     },
     "/dashboard/servicos": {
