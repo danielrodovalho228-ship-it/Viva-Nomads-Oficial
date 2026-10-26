@@ -27,7 +27,8 @@ const TELAS: Tela[] = [
   { conta: "VISITANTE", papel: "visitante", nome: "Como funciona (E166, fundo clean)", rota: () => "/como-funciona" },
   { conta: "VISITANTE", papel: "visitante", nome: "Para proprietários (E166, fundo clean)", rota: () => "/para-proprietarios" },
   { conta: "VISITANTE", papel: "visitante", nome: "Empresas (E166, fundo clean)", rota: () => "/empresas" },
-  { conta: "VISITANTE", papel: "visitante", nome: "Parceiros (E166, fundo clean)", rota: () => "/parceiros" },
+  // Sem clique, como no bloco 27 (t408): o primário de /parceiros abre o pedido de parceria (efeito fora da tela).
+  { conta: "VISITANTE", papel: "visitante", nome: "Parceiros (E166, fundo clean)", rota: () => "/parceiros", clicar: false },
   { conta: "INQUILINA", papel: "morador", nome: "Aba Pedidos (MENUS-5)", rota: () => "/dashboard/pedidos" },
   { conta: "INQUILINA", papel: "morador", nome: "Pedidos › Propostas (MENUS-5)", rota: () => "/dashboard/propostas" },
   { conta: "DONO17", papel: "proprietário", nome: "Início do dono, abas (MENUS-5)", rota: () => "/dashboard" },
