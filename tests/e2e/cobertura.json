@@ -726,7 +726,8 @@
         "t403-nav-a",
         "t402-conta-leva2",
         "t482-e170-caixas-vazias",
-        "t542-menus5-e85-estrutura"
+        "t542-menus5-e85-estrutura",
+        "t551-e192-por-que-na-cidade"
       ]
     },
     "/dashboard/conta/[secao]": {
