@@ -1055,7 +1055,8 @@
         "t213-jornada-teste-confirmacao",
         "t224-taxa-fora-da-api",
         "t220-recibo-assinatura",
-        "t221-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t491-e182-estadias-com-nome"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1815,7 +1816,8 @@
         "t253-orcamento-na-pagina-do-parceiro",
         "t311-marco-principal-unico",
         "t368-varredura-bloco20",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t545-e187-rotas-categoria-parceiros"
       ]
     },
     "/parceiros/ativar": {
