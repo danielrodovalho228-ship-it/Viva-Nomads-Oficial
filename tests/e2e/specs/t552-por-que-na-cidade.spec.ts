@@ -5,10 +5,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   T552 — "Por que estou na cidade" (#1405, ordem 9950ef15, item 3), guarda permanente da Pista C. O #1405 não trouxe
   spec de tela; aqui:
    1. controle: na Conta › Perfil do morador, o bloco "Perfil profissional" aparece (a tela carregou no modo morador);
-   2. o cartão do período, empresa e frase (data-testid "por-que-na-cidade") aparece nessa tela. FALHA HOJE (L-70): o
-      #1405 montou o cartão dentro de `PerfilProfissional` (conta-blocos.tsx), que nenhuma página monta desde o A1
-      CONTA-A (6f5b9c97, 24/10: a Perfil passou a usar `CategoriaProfissional` direto em perfil-tela.tsx). O cartão
-      não aparece em tela nenhuma. Quando a Pista A montar, o test.fail vira "passou inesperadamente" e sai daqui;
+   2. o cartão do período, empresa e frase (data-testid "por-que-na-cidade") aparece nessa tela, com o que está
+      gravado. Foi o L-70: o #1405 montou o cartão em `PerfilProfissional` (conta-blocos.tsx), que nenhuma página
+      monta desde o A1 CONTA-A (6f5b9c97); o #1413 (045843b7) montou o cartão em perfil-tela.tsx;
    3. o proprietário NÃO lê o período, a empresa nem a frase antes do aceite: candidatura nova em /dashboard/leads,
       com os campos gravados no perfil da candidata;
    4. depois do aceite (#1407), outro proprietário, com a candidatura da mesma moradora ACEITA, lê na candidatura
@@ -65,7 +64,6 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
     });
 
     test(`2. a ${w} px: o cartão "Por que estou na cidade" aparece na Perfil com o que está gravado`, async ({ browser }) => {
-      test.fail(true, "L-70: o #1405 montou o cartão em PerfilProfissional (conta-blocos.tsx), que nenhuma página monta desde 6f5b9c97");
       const page = await entrar(browser, ana.email, senha);
       await abrirPerfil(page, w);
       // O bloco opcional pode vir desligado: liga antes de procurar o cartão.
