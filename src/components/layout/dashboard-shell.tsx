@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MarcaNavInterna } from "@/components/ui/voltar-celular";
 import { usePathname, useRouter } from "next/navigation";
@@ -185,16 +185,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // /dashboard* o admin vê as áreas de usuário e um item "Painel admin".
   const naAreaAdmin = pathname.startsWith("/admin");
   /**
-   * E190 (QA 25/10): a troca pedida pela pessoa (menu da Conta) vale de primeira. Antes, numa tela só do outro papel
-   * (Favoritos, Estadias…), a guarda de rota abaixo via a tela "errada" para o modo novo e devolvia o modo antigo
-   * antes de a navegação ao Início acontecer — o 1º toque só recarregava a home do morador.
+   * E190 (QA 25/10): a troca pedida pela pessoa (menu da Conta) vale de primeira. Antes, trocar o modo NA TELA ATUAL
+   * fazia a guarda de rota e o SincronizarPapel (que acertam o papel pela área da página) verem uma tela do outro
+   * papel — ex.: Favoritos no "Modo proprietário" — e gravarem o papel antigo de volta: o 1º toque só recarregava a
+   * home do morador. Agora a escolha é gravada no perfil (com a anotação local da troca pendente) e o Início abre numa
+   * navegação nova, que já nasce no modo escolhido.
    */
-  const trocaPedida = useRef<ViewMode | null>(null);
   async function irParaModo(alvo: ViewMode) {
-    trocaPedida.current = alvo;
-    setActiveMode(alvo);
     await salvarModo(alvo).catch(() => {});
-    router.push("/dashboard");
+    window.location.assign("/dashboard");
   }
   const badges = { "admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando };
 
@@ -211,11 +210,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const exclusive = mode === "owner" ? TENANT_ONLY : OWNER_ONLY;
     const hits = exclusive.some((p) => pathname === p || pathname.startsWith(p + "/"));
-    // E190: troca explícita em curso — a navegação ao Início já vai sair desta tela; a guarda não a desfaz.
-    if (trocaPedida.current === mode) {
-      if (!hits) trocaPedida.current = null;
-      return;
-    }
     if (!hits) return;
     const target: ViewMode = mode === "owner" ? "tenant" : "owner";
     const contaTemPapel = target === "owner" ? isOwner : isTenant;
