@@ -9,9 +9,10 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   T557 — VARREDURA DA PÁGINA INTEIRA, BLOCO 42 (Pista C, 25/10). O protocolo do bloco 21 (t385): seis classes, página toda
   rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400 e o clique no primário com resposta
   visível em até 3 s. Este bloco passa pelas rotas que nenhuma varredura de página inteira abriu até aqui
-  (cobertura.json sem spec de varredura): Cidades, Uberlândia, Privacidade, Segurança e Minhas locações do morador.
-  /avaliadores, /dashboard/assinatura e /pedidos ficaram de fora: redirecionam (para /parceiros/avaliadores, /precos e
-  /dashboard/pedidos-cidade), e os destinos já têm varredura (t319; t338, t368, t414; t298, t416). Só no laboratório.
+  (cobertura.json sem spec de varredura): Uberlândia, Privacidade, Segurança e Minhas locações do morador.
+  /cidades, /avaliadores, /dashboard/assinatura e /pedidos ficaram de fora: redirecionam (para /cidades/uberlandia —
+  uma cidade só no ar —, /parceiros/avaliadores, /precos e /dashboard/pedidos-cidade), e os destinos têm varredura
+  (este bloco; t319; t338, t368, t414; t298, t416). Só no laboratório.
 */
 type Conta = ChaveConta | "ADMIN" | "VISITANTE";
 interface Tela {
@@ -24,7 +25,6 @@ interface Tela {
 }
 
 const TELAS: Tela[] = [
-  { conta: "VISITANTE", papel: "visitante", nome: "Cidades", rota: () => "/cidades" },
   { conta: "VISITANTE", papel: "visitante", nome: "Cidade: Uberlândia", rota: () => "/cidades/uberlandia" },
   { conta: "VISITANTE", papel: "visitante", nome: "Privacidade", rota: () => "/privacidade" },
   { conta: "VISITANTE", papel: "visitante", nome: "Segurança", rota: () => "/seguranca" },
