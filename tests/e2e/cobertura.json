@@ -631,8 +631,7 @@
         "t35-troca-de-plano",
         "t38-varios-imoveis-por-dono",
         "t39-app-ida-e-volta",
-        "t183-telas-logadas-390",
-        "t557-varredura-bloco42"
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/avaliacoes": {
@@ -1534,8 +1533,7 @@
         "t15-admin-real",
         "t18-seo-a11y",
         "t5-pedido-moradia",
-        "t310-vao-fim-de-pagina",
-        "t557-varredura-bloco42"
+        "t310-vao-fim-de-pagina"
       ]
     },
     "/pedidos/novo": {
@@ -2135,8 +2133,7 @@
         "publico"
       ],
       "specs": [
-        "t314-entrada-avaliador-62b3",
-        "t557-varredura-bloco42"
+        "t314-entrada-avaliador-62b3"
       ]
     },
     "/avaliadores/[numero]": {

@@ -9,8 +9,9 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   T557 — VARREDURA DA PÁGINA INTEIRA, BLOCO 42 (Pista C, 25/10). O protocolo do bloco 21 (t385): seis classes, página toda
   rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400 e o clique no primário com resposta
   visível em até 3 s. Este bloco passa pelas rotas que nenhuma varredura de página inteira abriu até aqui
-  (cobertura.json sem spec de varredura): Cidades, Uberlândia, Privacidade, Segurança, Avaliadores, Assinatura do
-  dono, Minhas locações e Pedidos do morador. Só no laboratório.
+  (cobertura.json sem spec de varredura): Cidades, Uberlândia, Privacidade, Segurança e Minhas locações do morador.
+  /avaliadores, /dashboard/assinatura e /pedidos ficaram de fora: redirecionam (para /parceiros/avaliadores, /precos e
+  /dashboard/pedidos-cidade), e os destinos já têm varredura (t319; t338, t368, t414; t298, t416). Só no laboratório.
 */
 type Conta = ChaveConta | "ADMIN" | "VISITANTE";
 interface Tela {
@@ -27,10 +28,7 @@ const TELAS: Tela[] = [
   { conta: "VISITANTE", papel: "visitante", nome: "Cidade: Uberlândia", rota: () => "/cidades/uberlandia" },
   { conta: "VISITANTE", papel: "visitante", nome: "Privacidade", rota: () => "/privacidade" },
   { conta: "VISITANTE", papel: "visitante", nome: "Segurança", rota: () => "/seguranca" },
-  { conta: "VISITANTE", papel: "visitante", nome: "Avaliadores", rota: () => "/avaliadores" },
-  { conta: "DONO17", papel: "proprietário", nome: "Assinatura (plano)", rota: () => "/dashboard/assinatura", clicar: false },
   { conta: "INQUILINA", papel: "morador", nome: "Minhas locações", rota: () => "/dashboard/locacoes" },
-  { conta: "INQUILINA", papel: "morador", nome: "Pedidos de moradia", rota: () => "/pedidos" },
 ];
 
 /**
@@ -52,7 +50,7 @@ const SAIDA = "tests/laboratorio/saida/varredura-bloco42";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 const CLIQUE = "clique no botão primário sem resposta visível em 3 s";
 
-test.describe("T557 — varredura da página inteira, bloco 42 (rotas nunca varridas: cidades, institucionais, assinatura, locações e pedidos) (390 e 1280 px)", () => {
+test.describe("T557 — varredura da página inteira, bloco 42 (rotas nunca varridas: cidades, institucionais e locações) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (contas da massa da varredura)");
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
