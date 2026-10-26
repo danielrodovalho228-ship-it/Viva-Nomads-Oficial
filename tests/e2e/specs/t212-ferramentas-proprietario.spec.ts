@@ -193,7 +193,8 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
       await t.screenshot({ path: `${SAIDA}/t212-visao-geral-proposta-${largura}.png` });
       await abrir(t, "/dashboard/propostas");
       const item = t.getByTestId("proposta-inquilino").first();
-      await expect(item).toContainText("R$ 3.200/mês × 4 meses", { timeout: 25_000 });
+      // E189: a lista mostra a mesma conta aberta da tabela e do detalhe (o total inclui o condomínio de R$ 300).
+      await expect(item.getByTestId("proposta-inquilino-conta")).toHaveText(/^4 × R\$\s?[\d.]+(,\d{2})?( \+ .+)? = R\$\s?[\d.]+(,\d{2})?$/, { timeout: 25_000 });
       await expect(t.getByTestId("proposta-inquilino-validade").first()).toContainText(/vence em \d+ dias · aguardando a sua resposta/);
       await t.screenshot({ path: `${SAIDA}/t212-lista-propostas-${largura}.png`, fullPage: true });
       await abrir(t, "/dashboard/notificacoes");
