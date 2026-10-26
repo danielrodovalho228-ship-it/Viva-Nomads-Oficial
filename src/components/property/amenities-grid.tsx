@@ -32,8 +32,12 @@ export function AmenitiesGrid({ property }: { property: Property }) {
   const [aberto, setAberto] = useState(false);
   const agrupadas = agruparComodidades(property);
   if (agrupadas.total === 0) return null;
-  const principais = comodidadesPrincipais(agrupadas);
   const naoTem = comodidadesQueNaoTem(property);
+  // E191 (QA 25/10): com "Tem" × "Não tem" lado a lado, o "Tem" é a lista COMPLETA — a mesma do diálogo de
+  // comodidades (antes, só as 6 primeiras: a 7ª, "Vaga de garagem", sumia do resumo). Sem o "Não tem", seguem as 6
+  // principais. "Ver todas as N comodidades" continua abrindo a mesma lista, agrupada por categoria.
+  const comTemNaoTem = naoTem.length > 0;
+  const principais = comTemNaoTem ? agrupadas.grupos.flatMap((g) => g.items) : comodidadesPrincipais(agrupadas);
 
   return (
     <section aria-labelledby="comodidades-title" data-testid="comodidades">
