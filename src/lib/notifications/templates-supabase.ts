@@ -80,8 +80,9 @@ export function templatesSupabase(): TemplateSupabase[] {
       `Use o código abaixo para entrar no Viva Nomads. Ele vale por ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez.`,
       "Se não foi você, ignore este e-mail. Nunca passe este código a ninguém — a Viva Nomads não pede código por WhatsApp ou SMS."),
     comCodigo("reautenticacao.html", "Reauthentication", "Seu código de verificação · Viva Nomads", "reautenticacao", "Verificação de segurança", "Confirme sua identidade",
-      `Para concluir uma ação sensível na sua conta, use o código de verificação abaixo. Ele vale por ${TEXTO_VALIDADE_CODIGO}.`,
-      "Se não foi você, ignore este e-mail e considere trocar sua senha. Nunca compartilhe este código."),
+      // E206: mesma redação de validade e a mesma linha antifraude dos outros códigos.
+      `Para concluir uma ação sensível na sua conta, use o código de verificação abaixo. Ele vale por ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez.`,
+      "Se não foi você, ignore este e-mail e troque a senha. Nunca passe este código a ninguém — a Viva Nomads não pede código por WhatsApp ou SMS."),
   ];
 }
 

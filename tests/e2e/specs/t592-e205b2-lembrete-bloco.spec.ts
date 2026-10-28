@@ -124,7 +124,10 @@ test.describe("T592 — E205-B2: lembrete do bloco renovado ainda não pago", ()
     expect(corpo).toContain("O pagamento é direto ao proprietário; os dados estão na página da estadia.");
     expect(corpo).toContain("Ver a estadia");
     expect(corpo).toContain(`/dashboard/estadia/${ids.A}`);
-    expect(corpo).not.toMatch(/venc|atras|aluguel|pix|ag[êe]ncia|conta corrente/i);
+    // Só a mensagem (antes do rodapé padrão, que traz a linha antigolpe "nunca pede Pix…").
+    const mensagem = corpo.slice(0, corpo.indexOf("— Viva Nomads"));
+    expect(mensagem.length, "o rodapé padrão está lá").toBeGreaterThan(0);
+    expect(mensagem).not.toMatch(/venc|atras|aluguel|pix|ag[êe]ncia|conta corrente/i);
     expect(await caixa(ids.beto), "B: já pago").toHaveLength(0);
     expect(await caixa(ids.caio), "C: sem o aceite do morador").toHaveLength(0);
     expect(await caixa(ids.duda), "D: bloco 1 fica de fora").toHaveLength(0);
