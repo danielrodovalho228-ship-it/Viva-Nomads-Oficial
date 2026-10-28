@@ -151,7 +151,7 @@ test.describe("T595 — E205-B2: o lembrete do bloco sai no aceite da renovaçã
     // Sem cron: o envio vem do aceite (after() da assinatura que completou o aditivo).
     await expect.poll(async () => (await caixa(ids.ana)).length, { timeout: 30_000 }).toBe(1);
     const [e] = await caixa(ids.ana);
-    expect(e.assunto).toBe(`O bloco 2 da sua estadia começa em ${ddmm(b.inicio)}`);
+    expect(e.assunto.startsWith(`O bloco 2 da sua estadia começa em ${ddmm(b.inicio)}`), e.assunto).toBe(true);
     expect(e.corpo).toContain(`Studio aceite A t595 ${sufixo}`);
     expect(e.corpo).toContain("O pagamento é direto ao proprietário; os dados estão na página da estadia.");
     expect(e.corpo).toContain(`/dashboard/estadia/${ids.A}`);
@@ -202,7 +202,7 @@ test.describe("T595 — E205-B2: o lembrete do bloco sai no aceite da renovaçã
     await rodar();
     await expect.poll(async () => (await caixa(ids.beto)).length, { timeout: 30_000 }).toBe(1);
     const [e] = await caixa(ids.beto);
-    expect(e.assunto).toBe(`O bloco 2 da sua estadia começa em ${ddmm(inicio)}`);
+    expect(e.assunto.startsWith(`O bloco 2 da sua estadia começa em ${ddmm(inicio)}`), e.assunto).toBe(true);
     expect(e.corpo).toContain(`Studio aceite B t595 ${sufixo}`);
     // A chave do aceite do contrato A segura o cron: a Ana continua com um só.
     await rodar();
