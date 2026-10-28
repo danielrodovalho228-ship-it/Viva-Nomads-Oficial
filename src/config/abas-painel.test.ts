@@ -65,7 +65,8 @@ test("toda aba, subaba e item da Conta aponta para uma tela que existe (rotas an
   for (const papel of PAPEIS) {
     for (const a of abasDoPapelPainel(papel, { comContrato: true })) {
       assert.ok(existe(a.href), a.href);
-      for (const s of a.subabas ?? []) assert.ok(existe(s.href), s.href);
+      // E211: a subaba "Visitas" do dono abre a lista com ?de=dono (a tela é a mesma rota).
+      for (const s of a.subabas ?? []) assert.ok(existe(s.href.split("?")[0]), s.href);
     }
     for (const i of itensDaConta(papel, { temImovel: true, admin: true }).filter((i) => !i.acao)) assert.ok(existe(i.href), i.href);
   }

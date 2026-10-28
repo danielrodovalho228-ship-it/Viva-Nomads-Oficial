@@ -110,6 +110,8 @@ export const ABAS_PROPRIETARIO: readonly AbaPainel[] = [
       { id: "propostas", rotulo: "Propostas", href: "/dashboard/orcamentos", ativoEm: ["/dashboard/propostas"] },
       { id: "fechamento", rotulo: "Fechamento", href: "/dashboard/fechamento" },
       { id: "pedidos-cidade", rotulo: "Pedidos na cidade", href: "/dashboard/pedidos-cidade" },
+      // E211: as visitas recebidas nos imóveis do dono (e o detalhe de cada uma).
+      { id: "visitas", rotulo: "Visitas", href: "/dashboard/visitas?de=dono", ativoEm: ["/dashboard/visitas"] },
     ],
   },
   {
