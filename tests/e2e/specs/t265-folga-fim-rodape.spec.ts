@@ -175,11 +175,12 @@ test.describe("T265 — menu superior e barra inferior a 390 px", () => {
   test.describe("visitante", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
     for (const rota of ["/", "/buscar", "/imoveis/ube-001", "/cidades/uberlandia"]) {
-      test(`${rota}: cabeçalho e barra de 5 itens visíveis`, async ({ page }) => {
+      test(`${rota}: cabeçalho e barra de 4 itens visíveis (visitante = morador sem contrato)`, async ({ page }) => {
         await page.goto(rota, { waitUntil: "domcontentloaded" });
         await expect(page.locator("[data-logo]").filter({ visible: true }).first()).toBeVisible();
         await expect(barraInferior(page)).toBeVisible({ timeout: 15_000 });
-        await expect(barraInferior(page).getByRole("link")).toHaveCount(5);
+        // MENUS-5: Início · Buscar · Pedidos · Mensagens (a 5ª, "Estadia", só com contrato).
+        await expect(barraInferior(page).getByRole("link")).toHaveCount(4);
       });
     }
   });
@@ -225,15 +226,16 @@ test.describe("T265 — proprietário novo (laboratório)", () => {
   test.afterAll(async () => {
     await apagarContas([id]);
   });
-  test("390 px: nada a decidir, um único primário 'Cadastrar meu imóvel' e a barra do proprietário aparece", async ({ browser }) => {
+  test("390 px: Início do dono novo, um único primário 'Anunciar meu imóvel' e a barra do proprietário aparece", async ({ browser }) => {
     test.setTimeout(120_000);
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { level: 1, name: "Nada pede sua decisão hoje" })).toBeVisible({ timeout: 20_000 });
+    // PROP-6: o h1 do Início é só para leitor de tela; o título visível é o do bloco principal.
+    await expect(page.getByRole("heading", { level: 2, name: "Anuncie seu primeiro imóvel" })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("passos-proprietario")).toHaveCount(0);
     const primarios = page.locator('main [data-cta="primary"]:visible');
     await expect(primarios).toHaveCount(1);
-    await expect(primarios.first()).toHaveText(/Cadastrar meu imóvel/);
+    await expect(primarios.first()).toHaveText(/Anunciar meu imóvel/);
     await expect(page.locator('nav[aria-label="Navegação principal"]')).toBeVisible();
     await page.screenshot({ path: "tests/laboratorio/saida/t265-dono-novo-390.png", fullPage: true });
     await page.context().close();

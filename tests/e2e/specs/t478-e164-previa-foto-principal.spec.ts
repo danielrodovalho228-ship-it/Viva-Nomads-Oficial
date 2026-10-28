@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { FOTOS_TESTE_MINIMO, noPasso } from "../fixtures/cadastro";
+import { FOTOS_TESTE_MINIMO, abrirCadastroNovo, noPasso } from "../fixtures/cadastro";
 
 /*
   T478 — E164 (QA ao vivo do Muse, 25/10): no Passo 2, a "Visualização do anúncio" mostrava a foto sinalizada e NÃO
@@ -77,11 +77,8 @@ test.describe("T478 — E164: a prévia nunca mostra a foto sinalizada pendente 
   test("a 1280 px: pendente, confirmada e trocada — selo e prévia concordam", async ({ browser }) => {
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
-    await p.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-    const aviso = p.getByTestId("rascunho-aviso");
-    await expect(p.getByTestId("passo-titulo").or(aviso).first()).toBeVisible({ timeout: 30_000 });
-    if (await aviso.isVisible()) await aviso.getByRole("button", { name: "Começar outro" }).click();
-    await noPasso(p, "tipo");
+    // E132-A (#1396): o cadastro novo abre a Qualificação antes do Passo 1 — "Responder depois" leva ao Tipo.
+    await abrirCadastroNovo(p);
     await p.getByTestId("cadastro-continuar").click();
     await noPasso(p, "fotos");
 
@@ -116,11 +113,8 @@ test.describe("T478 — E164: a prévia nunca mostra a foto sinalizada pendente 
   test("a 1280 px: trocada — remover a sinalizada deixa prévia e principal iguais", async ({ browser }) => {
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
-    await p.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-    const aviso = p.getByTestId("rascunho-aviso");
-    await expect(p.getByTestId("passo-titulo").or(aviso).first()).toBeVisible({ timeout: 30_000 });
-    if (await aviso.isVisible()) await aviso.getByRole("button", { name: "Começar outro" }).click();
-    await noPasso(p, "tipo");
+    // E132-A (#1396): o cadastro novo abre a Qualificação antes do Passo 1 — "Responder depois" leva ao Tipo.
+    await abrirCadastroNovo(p);
     await p.getByTestId("cadastro-continuar").click();
     await noPasso(p, "fotos");
     await enviar(p, [PRINT, FOTOS_TESTE_MINIMO[0]]);

@@ -159,7 +159,8 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
     await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
     await noPasso(page, "tipo");
     const atalhos = page.getByTestId("atalhos-passo1");
-    await expect(atalhos).toContainText("Já tem anúncio em outro site?");
+    // E132-A (e16892b0) encurtou o texto: "Já anuncia em outro site? Importar".
+    await expect(atalhos).toContainText("Já anuncia em outro site?");
     await expect(atalhos).toContainText("Prefere ajuda?");
     await atalhos.getByTestId("importar-abrir").click();
     await expect(page.getByTestId("importar-aviso")).toBeVisible();
