@@ -1560,16 +1560,20 @@ export default function NewPropertyPage() {
         }}
         onResponderDepois={() => {
           // "Responder depois" leva direto ao Passo 1; as respostas dadas ficam (e vão com o rascunho).
+          // E208: a escolha "Começar outro × Continuar o outro" mora só na entrada; dentro do anúncio novo, só o estado dele.
+          setDraftBannerDismissed(true);
           setQualDoRascunho(false);
           setQualConf((q) => ({ ...q, status: "pulada" }));
           setStep(ETAPA.tipo);
           window.scrollTo({ top: 0 });
         }}
         onComecar={() => {
+          setDraftBannerDismissed(true);
           setQualDoRascunho(false);
           void comecarCadastro(ETAPA.tipo);
         }}
         onVerNoCadastro={() => {
+          setDraftBannerDismissed(true);
           setQualDoRascunho(false);
           void comecarCadastro(ETAPA.comodidades);
         }}
@@ -1656,7 +1660,8 @@ export default function NewPropertyPage() {
 
   return (
     <div className="w-full">
-      {saveStatus !== "idle" && (
+      {/* E208: o estado do rascunho NOVO ("Anúncio novo" até o 1º salvamento; depois "Salvo às …"). */}
+      {(saveStatus !== "idle" || (!editingId && !draftServerId && !avisoRascunho)) && (
         <div className="mb-2 flex justify-end">
           <span
             data-testid="estado-salvamento"
@@ -1674,6 +1679,8 @@ export default function NewPropertyPage() {
               <>
                 <XCircle className="h-3.5 w-3.5" /> {saveErro ? `Não foi possível salvar: ${saveErro}` : "Sem conexão — não salvo"}
               </>
+            ) : saveStatus === "idle" ? (
+              "Anúncio novo"
             ) : (
               "Salvando…"
             )}
