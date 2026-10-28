@@ -75,7 +75,8 @@
         "t465-admin4-inicial",
         "t419-varredura-bloco36",
         "t546-e175-parcerias-uma-linha",
-        "t549-varredura-bloco39"
+        "t549-varredura-bloco39",
+        "t588-varredura-bloco46"
       ]
     },
     "/admin/2fa/refazer": {
@@ -465,7 +466,8 @@
         "t475-e131-vitrine-conta-teste",
         "t479-e136b-calendario-pt-br",
         "t543-e166-fundo-clean-publico",
-        "t489-e176-menus"
+        "t489-e176-menus",
+        "t588-varredura-bloco46"
       ]
     },
     "/cidades": {
@@ -784,7 +786,8 @@
         "t415-varredura-bloco32",
         "t549-varredura-bloco39",
         "t553-varredura-bloco41",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t588-varredura-bloco46"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -799,7 +802,8 @@
         "t297-varredura-logada-bloco3",
         "t354-varredura-bloco19",
         "t391-conta-conformidade",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t588-varredura-bloco46"
       ]
     },
     "/dashboard/contratos": {
@@ -1041,7 +1045,8 @@
         "t565-e194-qualificacao-moldura",
         "t564-e193-qualificacao-cartoes",
         "t571-e180-qualificacao-primeiro",
-        "t573-e195-cadastro-clean"
+        "t573-e195-cadastro-clean",
+        "t588-varredura-bloco46"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1134,7 +1139,8 @@
         "t379-55e2-filtro-contato-um-toque",
         "t541-e168-painel-acompanha-filtro",
         "t486-e174b-selo-vinculo",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t588-varredura-bloco46"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1486,7 +1492,8 @@
         "t408-varredura-bloco27",
         "t551-varredura-bloco40",
         "t563-e191-tem-completo",
-        "t574-e207-voltar-resultados"
+        "t574-e207-voltar-resultados",
+        "t588-varredura-bloco46"
       ]
     },
     "/modelodenegocio": {
@@ -1905,7 +1912,8 @@
         "t240-conferencia-provas-admin",
         "t271-admin-visual",
         "t329-varredura-bloco11",
-        "t537-e165-admin-contrato-assinaturas"
+        "t537-e165-admin-contrato-assinaturas",
+        "t588-varredura-bloco46"
       ]
     },
     "/dashboard/servicos/pedidos/[id]": {
