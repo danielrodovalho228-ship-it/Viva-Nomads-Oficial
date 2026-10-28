@@ -729,7 +729,7 @@ export function PropertyDetail({
       {/* E207: sem migalhas visíveis (o BreadcrumbList segue nos dados estruturados, com a cidade). "← Voltar aos
           resultados" só para quem veio da /buscar, de volta à mesma busca com os filtros. */}
       {voltarBusca && (
-        <Link href={voltarBusca} className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-ink hover:text-forest" data-testid="voltar-resultados">
+        <Link href={voltarBusca} className="relative mb-8 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-ink hover:text-forest md:mb-3" data-testid="voltar-resultados">
           <span aria-hidden>←</span> {ROTULO_VOLTAR_BUSCA}
         </Link>
       )}

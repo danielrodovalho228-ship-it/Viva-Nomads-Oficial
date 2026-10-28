@@ -24,6 +24,13 @@ for (const largura of [1280, 390] as const) {
       await expect(voltar).toHaveText(/Voltar aos resultados/, { timeout: 20_000 });
       await expect(voltar).toHaveAttribute("href", busca.pathname + busca.search);
       await expect(page.getByRole("navigation", { name: "Trilha de navegação" })).toHaveCount(0);
+      // O link não fica por baixo da galeria (no celular ela vai de borda a borda).
+      await expect(voltar).toBeInViewport({ ratio: 1 });
+      const tocavel = await voltar.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return document.elementFromPoint(r.left + 10, r.top + r.height / 2)?.closest('[data-testid="voltar-resultados"]') !== null;
+      });
+      expect(tocavel).toBe(true);
       await page.screenshot({ path: `${SAIDA}/t574-veio-da-busca-${largura}.png` });
       await voltar.click();
       await page.waitForURL((u) => u.pathname === "/buscar" && u.search === busca.search, { timeout: 30_000 });
