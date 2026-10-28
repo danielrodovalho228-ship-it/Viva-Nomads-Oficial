@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 /**
  * T160 — /favoritos (ordem 56a3a15c, D16), pública, 390 e 1280 px, sem login.
- * Favoritar 2 → /favoritos mostra 2 → desfavoritar 1 → mostra 1; sem 404; link "Favoritos" no cabeçalho/aba.
+ * Favoritar 2 → /favoritos mostra 2 → desfavoritar 1 → mostra 1; sem 404. O topo público (E176) não tem link Favoritos.
  */
 for (const largura of [390, 1280]) {
   test.describe(`T160 — Favoritos (${largura} px)`, () => {
@@ -42,17 +42,14 @@ for (const largura of [390, 1280]) {
       await expect(removers2).toHaveCount(antes - 1);
     });
 
-    test("link Favoritos aparece e leva à página (sem 404)", async ({ page }) => {
+    test("o topo público não tem link Favoritos (E176, PUBLICO-A); a página abre pelo endereço, sem 404", async ({ page }) => {
       await page.goto("/buscar", { waitUntil: "networkidle" });
-      if (largura === 390) {
-        // No celular a aba/menu: abre o menu do cabeçalho se a aba inferior não existir.
-        const aba = page.getByRole("link", { name: /Favoritos/ }).first();
-        if (!(await aba.isVisible())) await page.getByRole("button", { name: "Abrir menu" }).click();
-      }
-      const link = page.getByRole("link", { name: /Favoritos/ }).first();
-      await expect(link).toBeVisible();
-      await link.click();
-      await expect(page).toHaveURL(/\/favoritos$/);
+      // PUBLICO-A: o topo é Imóveis · Anunciar · Empresas; no celular os mesmos links ficam no menu do cabeçalho.
+      if (largura === 390) await page.getByRole("button", { name: "Abrir menu" }).click();
+      const lista = largura === 390 ? page.getByTestId("nav-menu-lista") : page.getByTestId("topo-publico").getByTestId("nav-links");
+      await expect(lista.getByRole("link", { name: /Favoritos/ })).toHaveCount(0);
+      const resp = await page.goto("/favoritos", { waitUntil: "networkidle" });
+      expect(resp?.status()).toBe(200);
       await expect(page.getByTestId("favoritos")).toBeVisible();
     });
   });
