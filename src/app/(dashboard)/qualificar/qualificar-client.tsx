@@ -308,7 +308,8 @@ export default function QualificationChecklistPage({
           <p className="font-title text-xs font-semibold text-white/80">
             Antes de anunciar
           </p>
-          <h1 className="mt-1 font-title text-2xl font-semibold sm:text-[28px]">Qualificação do imóvel</h1>
+          {/* E196: "Qualificação" é só o assistente de 5 telas; esta página tem nome próprio. */}
+          <h1 className="mt-1 font-title text-2xl font-semibold sm:text-[28px]">Requisitos e selo</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">
             Duas etapas rápidas: primeiro confirmamos que seu imóvel está pronto e regular para
             locação mobiliada de média duração. Depois, você soma pontos para conquistar o selo{" "}

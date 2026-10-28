@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 
 /*
   T248 — ordem d5b4f72f (F8): "Antes de anunciar" leva ao checklist DAQUELE imóvel e volta ao anúncio.
-  1. Dono com rascunho abre Meus imóveis e clica em "Qualificação" → /qualificar?imovel=<id> (checklist do imóvel).
+  1. Dono com rascunho abre Meus imóveis e clica em "Requisitos e selo" (E196) → /qualificar?imovel=<id> (checklist do imóvel).
   2. O dono abre em modo Proprietário (a casca não o redireciona para fora de /qualificar).
   3. "Voltar ao anúncio" reabre o rascunho (?draft=<id>), não um anúncio novo nem a lista. O botão só existe DEPOIS de
      salvar a qualificação (requisitos, documento e convenção), então o spec percorre esse caminho (lab 0c89bd6a:
@@ -37,10 +37,11 @@ test.describe("T248 — Antes de anunciar: ida ao checklist do imóvel e volta a
 
     const page = await entrar(browser, email, senha);
     await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-    await page.getByRole("link", { name: "Qualificação", exact: true }).first().click();
+    // E196: a página longa (requisitos e selo) tem nome próprio no cartão do rascunho.
+    await page.getByTestId("rascunho-requisitos-selo").first().click();
     await page.waitForURL(/\/qualificar\?imovel=/, { timeout: 30_000 });
     expect(new URL(page.url()).searchParams.get("imovel")).toBe(imovel);
-    await expect(page.getByRole("heading", { name: "Qualificação do imóvel" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Requisitos e selo" })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText("Antes de anunciar").first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     await page.screenshot({ path: "tests/laboratorio/saida/t248-qualificar-390.png", fullPage: false });
