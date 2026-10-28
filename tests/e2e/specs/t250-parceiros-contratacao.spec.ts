@@ -199,7 +199,8 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     const recebido = await emailDoEvento(ids.dono!, "parceiro_orcamento_recebido");
     expect(recebido).toContain("Valor: R$ 350");
     expect(recebido).toContain(`Imóvel: ${imovel}`);
-    expect(recebido).not.toContain("Você recebe");
+    // O dono nunca vê o líquido do parceiro ("Você recebe: R$ …"); o título "Você recebeu um orçamento" (E204) vale.
+    expect(recebido).not.toContain("Você recebe:");
     const aceito = await emailDoEvento(ids.foto!, "parceiro_orcamento_aceito");
     expect(aceito).toContain("Valor: R$ 350");
     expect(aceito).toContain("Você recebe: R$ 315");
