@@ -18,7 +18,9 @@ const SAIDA = "tests/laboratorio/saida";
 // E166: o fundo da Conta é o clean do Início do proprietário (antes, areia #f7f2ea).
 const AREIA = "rgb(247, 247, 247)";
 // NAV-A (24/10): "Como você usa a Viva" (papeis) logo depois do Perfil.
-const ORDEM = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "notificacoes", "pagamentos", "ajuda"];
+// E176 (parte 2): "Segurança e verificações" ganhou item próprio; "Notificações" é a página única do sino.
+const ORDEM = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "seguranca", "notificacoes", "pagamentos", "ajuda"];
+const hrefSecao = (s: string) => (s === "notificacoes" ? "/dashboard/notificacoes" : `/dashboard/conta/${s}`);
 
 test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -65,7 +67,7 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     const menu = p.getByTestId("conta-menu-lateral");
     await expect(menu).toBeVisible();
     const hrefs = await menu.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
-    expect(hrefs).toEqual(ORDEM.map((s) => `/dashboard/conta/${s}`));
+    expect(hrefs).toEqual(ORDEM.map(hrefSecao));
     const ativo = p.getByTestId("conta-menu-perfil");
     await expect(ativo).toHaveAttribute("aria-current", "page");
     await expect(ativo).toHaveCSS("background-color", "rgb(28, 107, 58)");

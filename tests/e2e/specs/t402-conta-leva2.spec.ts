@@ -153,14 +153,14 @@ test.describe("T402 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
     await p.context().close();
   });
 
-  test("E69 + E76. a 1280 px: sem voltar; a Verificação da barra vai direto para /dashboard/verificacao", async ({ browser }) => {
+  test("E69 + E176. a 1280 px: sem voltar; 'Segurança e verificações' é item próprio do menu da Conta", async ({ browser }) => {
     const p = await abrir(browser, 1280, "/dashboard/conta/dados");
     await expect(p.getByTestId("conta-voltar")).toBeHidden();
-    const item = p.locator('aside a[href="/dashboard/verificacao"], nav a[href="/dashboard/verificacao"]').filter({ visible: true }).first();
-    if (!(await item.isVisible())) await p.getByRole("button", { name: /Minha conta/ }).first().click();
+    const item = p.getByTestId("conta-menu-seguranca");
     await expect(item).toBeVisible();
     await item.click();
-    await p.waitForURL((u) => u.pathname === "/dashboard/verificacao");
+    await p.waitForURL((u) => u.pathname === "/dashboard/conta/seguranca");
+    await expect(p.getByTestId("conta-menu-seguranca")).toHaveAttribute("aria-current", "page");
     await p.context().close();
   });
 });

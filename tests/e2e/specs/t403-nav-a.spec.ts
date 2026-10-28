@@ -78,9 +78,9 @@ test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () 
       for (const [quem, email] of [["morador", morador.email], ["dono", dono.email], ["admin", admin.email]] as const) {
         const p = await abrir(browser, email, w, "/dashboard");
         const barra = await navegacao(p, w);
-        for (const href of ["/dashboard/verificacao", "/dashboard/notificacoes"]) {
-          expect(await quantas(barra, href), `${quem}: ${href}`).toBe(1);
-        }
+        // E176: o avatar é curto (Minha conta · Modo · Ajuda · Sair); as verificações moram na Conta ("Segurança e
+        // verificações"). Na navegação fica o sino, que leva às Notificações (página única).
+        expect(await quantas(barra, "/dashboard/notificacoes"), `${quem}: /dashboard/notificacoes`).toBe(1);
         // MENUS-5, item 3: as Ferramentas saíram da Conta (o dono as acha no Início).
         expect(await quantas(barra, "/dashboard/ferramentas"), `${quem}: sem Ferramentas na navegação`).toBe(0);
         const doAdmin = [await quantas(barra, "/admin"), await quantas(barra, "/admin/agentes#aprovacoes")];

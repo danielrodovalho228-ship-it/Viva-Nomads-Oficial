@@ -2,13 +2,13 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /*
-  T547 — E176-IMPL parte 2 (mesma especificação aprovada): "Notificações" é uma página só (a do sino, na casca da
+  T568 — E176-IMPL parte 2 (mesma especificação aprovada): "Notificações" é uma página só (a do sino, na casca da
   Conta: preferências do perfil-06 em cima e os avisos embaixo; /dashboard/conta/notificacoes redireciona);
   "Segurança e verificações" é item próprio da Conta; as filhas da Conta têm "← <seção>" no topo, em toda largura.
 */
 const SAIDA = "tests/laboratorio/saida";
 
-test.describe("T547 — E176 parte 2: Conta", () => {
+test.describe("T568 — E176 parte 2: Conta", () => {
   test.use({ storageState: authFile("inquilino") });
 
   for (const w of [1280, 390] as const) {
@@ -20,7 +20,7 @@ test.describe("T547 — E176 parte 2: Conta", () => {
       await expect(page.getByTestId("notif-salvar")).toBeVisible({ timeout: 30_000 });
       await expect(page.getByTestId("notificacoes-avisos")).toBeVisible();
       if (w === 1280) await expect(page.getByTestId("conta-menu-notificacoes")).toHaveAttribute("aria-current", "page");
-      await page.screenshot({ path: `${SAIDA}/t547-notificacoes-${w}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t568-notificacoes-${w}.png`, fullPage: true });
 
       await page.goto("/dashboard/conta/seguranca", { waitUntil: "domcontentloaded" });
       await expect(page.locator("h1:visible")).toHaveText("Segurança e verificações", { timeout: 30_000 });
@@ -28,13 +28,13 @@ test.describe("T547 — E176 parte 2: Conta", () => {
         await expect(page.getByTestId("conta-menu-seguranca")).toHaveAttribute("aria-current", "page");
         await expect(page.getByTestId("conta-menu-privacidade")).not.toHaveAttribute("aria-current", "page");
       }
-      await page.screenshot({ path: `${SAIDA}/t547-seguranca-${w}.png` });
+      await page.screenshot({ path: `${SAIDA}/t568-seguranca-${w}.png` });
 
       await page.goto("/dashboard/conta/excluir", { waitUntil: "domcontentloaded" });
       const voltar = page.getByTestId("voltar-lista");
       await expect(voltar).toBeVisible({ timeout: 30_000 });
       await expect(voltar).toHaveText("← Privacidade");
-      await page.screenshot({ path: `${SAIDA}/t547-excluir-${w}.png` });
+      await page.screenshot({ path: `${SAIDA}/t568-excluir-${w}.png` });
       await voltar.click();
       await expect(page).toHaveURL(/\/dashboard\/conta\/privacidade$/);
     });
@@ -45,7 +45,7 @@ test.describe("T547 — E176 parte 2: Conta", () => {
     await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
     await expect(page.getByTestId("conta-menu").getByRole("link", { name: /Segurança e verificações/ })).toHaveAttribute("href", "/dashboard/conta/seguranca");
     await expect(page.getByTestId("conta-menu").getByRole("link", { name: /Notificações/ })).toHaveAttribute("href", "/dashboard/notificacoes");
-    await page.screenshot({ path: `${SAIDA}/t547-menu-conta-390.png`, fullPage: true });
+    await page.screenshot({ path: `${SAIDA}/t568-menu-conta-390.png`, fullPage: true });
     await page.goto("/dashboard/conta/perfil-publico", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("voltar-lista")).toHaveText("← Perfil", { timeout: 30_000 });
     await expect(page.getByTestId("voltar-lista")).toHaveAttribute("href", "/dashboard/conta/perfil");
