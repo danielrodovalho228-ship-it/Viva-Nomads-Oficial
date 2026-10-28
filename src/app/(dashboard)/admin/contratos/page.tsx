@@ -149,7 +149,7 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
                     <span className="text-xs text-muted">criado em {dataBRT(c.criadoEm)}</span>
                   </div>
                   <p className="mt-1 text-muted">
-                    Proprietário: {nomes.get(c.ownerId) ?? "—"} · Inquilino: {nomes.get(c.tenantId) ?? "—"} · {STATUS[c.status] ?? c.status} ·{" "}
+                    Proprietário: {nomes.get(c.ownerId) ?? "—"} · Inquilino: {nomes.get(c.tenantId) ?? "—"} · <span data-testid="contrato-selo">{c.selo}</span> ·{" "}
                     <span data-testid="contrato-assinatura">{faltaAssinar(c)}</span>
                   </p>
                   <p className="mt-1 text-ink">
