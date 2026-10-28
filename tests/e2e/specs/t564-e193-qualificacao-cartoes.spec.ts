@@ -53,7 +53,7 @@ test.describe("T564 — E193: um padrão só de cartões na qualificação", () 
           await expect(p.getByTestId("qualificacao-opcao-cama-sim")).toHaveAttribute("aria-pressed", "false");
           await expect(p.getByTestId("qualificacao-opcao-cama-nao")).toHaveAttribute("aria-pressed", "true");
         }
-        if (n === 5) await expect(p.getByTestId("qualificacao-sem-internet")).toHaveAttribute("data-cartao-qualificacao", "");
+        if (n === 5) await expect(p.getByTestId("qualificacao-sem-internet")).toHaveAttribute("data-cartao-qualificacao", "true");
         await p.screenshot({ path: `${SAIDA}/t564-tela${n}-${largura}.png`, fullPage: true });
         await p.getByTestId("qualificacao-continuar").click();
       }
