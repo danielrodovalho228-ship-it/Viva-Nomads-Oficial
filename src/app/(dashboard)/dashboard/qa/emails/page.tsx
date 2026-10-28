@@ -1,9 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ListaEmailsTeste } from "@/components/admin/lista-emails-teste";
-import { filtroQaDaUrl, LISTA_MAX, opcoesFiltroQa, podeLerCaixasQa, type LinhaEmailTeste } from "@/lib/notifications/caixa-teste";
+import { destinoLeitorQa, filtroQaDaUrl, LISTA_MAX, opcoesFiltroQa, type LinhaEmailTeste } from "@/lib/notifications/caixa-teste";
 
 export const metadata = { title: "E-mails das contas de teste" };
 export const dynamic = "force-dynamic";
@@ -23,8 +23,11 @@ export default async function QaEmailsPage({ searchParams }: { searchParams: Pro
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) notFound();
-  const { data: perfil } = await supabase.from("profiles").select("qa_leitor, is_teste").eq("id", user.id).maybeSingle();
-  if (!podeLerCaixasQa(perfil)) notFound();
+  const { data: perfil } = await supabase.from("profiles").select("qa_leitor, is_teste, role").eq("id", user.id).maybeSingle();
+  // E199: o admin vai para a lista dele (aba E-mails de /admin/dados-de-teste); quem não é leitor de QA recebe 404.
+  const destino = destinoLeitorQa(perfil);
+  if (destino.tipo === "admin") redirect(destino.href);
+  if (destino.tipo !== "abre") notFound();
 
   const { data: leves } = await supabase.from("emails_teste").select("usuario_id, destinatario_mascarado, evento").order("criado_em", { ascending: false }).limit(OPCOES_MAX);
   const opcoes = opcoesFiltroQa((leves ?? []) as { usuario_id: string | null; destinatario_mascarado: string; evento: string }[]);

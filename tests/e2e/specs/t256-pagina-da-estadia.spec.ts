@@ -174,21 +174,20 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     await m.context().close();
   });
 
-  test("home do painel: o card 'Suas estadias' leva à estadia e a lista de decisões pede o que cada um decide (Prompt 42)", async ({ browser }) => {
+  test("home do painel: a pendência da estadia leva à estadia (dono: faixa do Início) e a lista de decisões do morador pede o que ele decide (Prompt 42)", async ({ browser }) => {
     test.setTimeout(90_000);
     const d = await abrir(browser, dono.email, 390);
     await d.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    const cartaoDono = d.locator(`[data-testid="home-estadia"][data-contrato="${ids.contrato}"]`);
-    await expect(cartaoDono).toBeVisible();
-    // Prompt 42: a decisão da estadia é uma linha de "Hoje você tem N decisões", com o link da própria decisão.
-    const decisaoDono = d.locator(`[data-testid="decisao"][data-decisao="estadia-${ids.contrato}-preencher_instrucoes"]`);
-    await expect(decisaoDono).toBeVisible();
-    await expect(decisaoDono).toHaveAttribute("href", `/dashboard/estadia/${ids.contrato}#instrucoes`);
-    await expect(cartaoDono.getByTestId("home-estadia-acoes")).toContainText("Propor alteração de datas");
+    // PROP-6: o Início do dono é a faixa da pendência mais urgente + o bloco "Próximo passo"; a decisão da estadia
+    // (preencher as instruções de chegada) é essa pendência, com o link da própria decisão.
+    const alertaDono = d.getByTestId("inicio-dono-alerta");
+    await expect(alertaDono).toBeVisible();
+    await expect(alertaDono).toHaveAttribute("href", `/dashboard/estadia/${ids.contrato}#instrucoes`);
+    await expect(d.getByTestId("inicio-dono-botao")).toHaveAttribute("href", `/dashboard/estadia/${ids.contrato}#instrucoes`);
     await semRolagemLateral(d);
-    await cartaoDono.getByRole("link", { name: /Studio da estadia/ }).click();
-    await expect(d).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}$`));
+    await alertaDono.click();
+    await expect(d).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}(#instrucoes)?$`));
     await d.context().close();
     const m = await abrir(browser, morador.email, 390);
     await m.goto("/dashboard", { waitUntil: "domcontentloaded" });

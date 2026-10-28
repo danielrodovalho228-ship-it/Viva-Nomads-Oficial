@@ -66,6 +66,16 @@ import {
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
 import { precoDaProposta } from "@/lib/precos";
+
+/**
+ * E189 (QA 25/10): a conta aberta do total do contrato é UMA só — a mesma da tabela e do detalhe (precoDaProposta:
+ * "4 × R$ 2.700 + preparação R$ 450 = R$ 11.250"). Antes, a mensagem e a lista diziam "R$ 2.500/mês × 4, total
+ * R$ 11.250", que não fecha a conta (o total inclui condomínio, contas e a preparação).
+ */
+function contaDaProposta(termos: TermosProposta): string {
+  const tot = calcularTotais(termos);
+  return precoDaProposta({ ...termos, valorMensal: tot.valorMensal }).conta ?? brl(tot.totalContrato);
+}
 import { registrarDocumento } from "@/lib/fiscal/registro";
 import { linhaConferir, numeroExibido } from "@/lib/fiscal/prefixos";
 import { SITE_URL } from "@/lib/site";
@@ -405,7 +415,7 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
     s.admin,
     p as LinhaProposta,
     "owner",
-    `Proposta ${numero} enviada: ${brl(tot.valorMensal)}/mês × ${termos.meses} ${termos.meses === 1 ? "mês" : "meses"}, total do contrato ${brl(tot.totalContrato)}.`,
+    `Proposta ${numero} enviada. Total do contrato: ${contaDaProposta(termos)}.`,
     "proposta_recebida",
     undefined,
     { valorMensal: tot.valorMensal, validaAte: (p as LinhaProposta).valida_ate ?? null },
@@ -762,7 +772,7 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
     s.admin,
     p,
     papel,
-    `Contraproposta ${p.numero} (versão ${versao}): ${brl(tot.valorMensal)}/mês × ${nova.meses} ${nova.meses === 1 ? "mês" : "meses"}, total ${brl(tot.totalContrato)}.${mensagem ? ` ${mensagem}` : ""}`,
+    `Contraproposta ${p.numero} (versão ${versao}). Total do contrato: ${contaDaProposta(nova)}.${mensagem ? ` ${mensagem}` : ""}`,
     "proposta_recebida",
     undefined,
     { valorMensal: tot.valorMensal, validaAte: validaAteDe(p.validade_dias, agora) },
@@ -829,7 +839,7 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
     admin,
     p,
     papel,
-    `Proposta ${p.numero} aceita: ${brl(tot.valorMensal)}/mês × ${v.meses} ${Number(v.meses) === 1 ? "mês" : "meses"}, total ${brl(tot.totalContrato)}. Próximo passo: o fechamento.`,
+    `Proposta ${p.numero} aceita. Total do contrato: ${contaDaProposta(termosDaLinha(v))}. Próximo passo: o fechamento.`,
     "proposta_respondida",
     linhaTaxa,
   );

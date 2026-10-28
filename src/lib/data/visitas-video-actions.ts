@@ -232,7 +232,7 @@ export async function listMinhasVisitas(): Promise<MinhaVisita[]> {
   const confirmadas = linhas.filter((v) => mostraEnderecoDaVisita(v, agora)).map((v) => v.propertyId);
   const enderecos = new Map<string, EnderecoVisita>();
   if (confirmadas.length) {
-    const { data: props } = await admin.from("properties").select("id, exact_address, address, city, state").in("id", confirmadas); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
+    const { data: props } = await admin.from("properties").select("id, exact_address, address, city, state, draft_data").in("id", confirmadas); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
     for (const p of props ?? []) {
       const e = enderecoDaVisita(p);
       if (e) enderecos.set(p.id as string, e);
@@ -294,7 +294,7 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
     // Presencial confirmada pelo dono: o e-mail do MORADOR leva o endereço exato e "Abrir no mapa".
     let endereco: EnderecoVisita | null = null;
     if (quem === "dono" && modalidade === "presencial") {
-      const { data: p } = await admin.from("properties").select("exact_address, address, city, state").eq("id", v.property_id).maybeSingle(); // consistency-ignore: complemento do prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
+      const { data: p } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", v.property_id).maybeSingle(); // consistency-ignore: complemento do prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
       endereco = p ? enderecoDaVisita(p) : null;
     }
     avisarVisita(admin, outro, "visita_confirmada", `Visita ${tipo} confirmada para ${formatarHorarioBrasilia(campos.horario_confirmado)}.`, endereco);
@@ -346,7 +346,7 @@ export async function visitaDaConversa(propertyId: string, outroId: string): Pro
   const v = mapear(r, (m) => (papel === "dono" ? motivoParaDono(m) : m && isMotivo(m) ? motivoLabel(m) : ""));
   let e: EnderecoVisita | null = null;
   if (papel === "morador" && mostraEnderecoDaVisita(v, new Date())) {
-    const { data: p } = await admin.from("properties").select("exact_address, address, city, state").eq("id", propertyId).maybeSingle(); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
+    const { data: p } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", propertyId).maybeSingle(); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
     e = p ? enderecoDaVisita(p) : null;
   }
   return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, papel };

@@ -53,7 +53,7 @@ test("rodapé do fluxo: 'Passo N de 10' + barra, Voltar (passos 2–10) e um só
   assert.match(pagina, /editingId \? "Salvar alterações" : "Publicar anúncio"/);
   assert.match(pagina, /testid: "publicar-anuncio"/);
   assert.match(rodape, /role="progressbar" aria-label="Progresso do cadastro"/);
-  assert.match(rodape, /\{textoPasso\(p\.pos, p\.total\)\}/);
+  assert.match(rodape, /\{p\.texto \?\? textoPasso\(p\.pos, p\.total\)\}/);
   assert.equal((rodape.match(/<Button\b/g) ?? []).length, 1, "um primário só");
   assert.match(rodape, /vn-rodape-fluxo fixed inset-x-0/, "fixo na largura toda");
   assert.match(ler("app/globals.css"), /\.vn-rodape-fluxo \{\s*bottom: 0;/, "encosta no fim da tela (E107: sem barra de fotos)");

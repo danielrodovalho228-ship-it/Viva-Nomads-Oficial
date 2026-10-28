@@ -1446,8 +1446,10 @@ export default function NewPropertyPage() {
 
   // E132-A — a Qualificação: só no cadastro NOVO (nunca na edição nem num rascunho já aberto), antes do Passo 1. Um
   // link que já diz o passo (?etapa=, ex.: "Resolver" de uma pendência) vai direto a ele.
+  // E180 (decisão do Daniel: qualificação primeiro): "Novo anúncio" abre nela MESMO com outro anúncio em andamento — o
+  // aviso de retomar fica dentro da Qualificação, em vez de pular para o Passo 1 e esconder a Qualificação.
   const mostrarQualificacao =
-    approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente" && (!existingDraft || draftBannerDismissed);
+    approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente";
 
   /** Responder: as MESMAS confirmações de conforto e comodidades do Passo 5 (fonte única), e a velocidade da internet. */
   function responderQualificacao(id: string, valor: string | boolean) {
@@ -1502,11 +1504,49 @@ export default function NewPropertyPage() {
     else window.scrollTo({ top: 0 });
   }
 
+  // Bug 12 (L2) + E180: o aviso "anúncio em andamento" — dentro da Qualificação de um anúncio novo e no Passo 1.
+  const avisoRascunho =
+    !editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed ? (
+      <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
+            <ClipboardCheck className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="font-title text-sm font-semibold text-ink">
+              Você tem um anúncio em andamento
+              {existingDraft.pct > 0 ? ` (${existingDraft.pct}% completo)` : ""}
+            </p>
+            <p className="text-xs text-muted">
+              {mostrarQualificacao ? "Este é um anúncio novo e começa pela qualificação." : "Retome de onde parou — seus dados foram salvos automaticamente."}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="outline" size="sm" onClick={comecarOutro}>
+            Começar outro
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            data-testid="rascunho-continuar"
+            onClick={() => {
+              setDraftBannerDismissed(true);
+              router.push(`/dashboard/imoveis/novo?draft=${existingDraft.id}`);
+            }}
+          >
+            {mostrarQualificacao ? "Continuar o outro" : "Continuar"} <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    ) : null;
+
   if (approved === null) return null;
 
   if (mostrarQualificacao) {
     return (
       <Qualificacao
+        aviso={avisoRascunho}
         tela={telaQual}
         respostas={qualConf.respostas}
         onResponder={responderQualificacao}
@@ -1629,38 +1669,7 @@ export default function NewPropertyPage() {
           </span>
         </div>
       )}
-      {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
-        <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
-              <ClipboardCheck className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="font-title text-sm font-semibold text-ink">
-                Você tem um anúncio em andamento
-                {existingDraft.pct > 0 ? ` (${existingDraft.pct}% completo)` : ""}
-              </p>
-              <p className="text-xs text-muted">Retome de onde parou — seus dados foram salvos automaticamente.</p>
-            </div>
-          </div>
-          <div className="flex shrink-0 gap-2">
-            <Button variant="outline" size="sm" onClick={comecarOutro}>
-              Começar outro
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              data-testid="rascunho-continuar"
-              onClick={() => {
-                setDraftBannerDismissed(true);
-                router.push(`/dashboard/imoveis/novo?draft=${existingDraft.id}`);
-              }}
-            >
-              Continuar <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      {avisoRascunho}
 
       {/* Mockups cadastro-imovel-01..10: à esquerda, o título do passo (o H1 da tela) e o formulário; à direita
           (computador), a prévia do anúncio montando ao vivo. CADASTRO-MOLDURA: "Passo X de 10", a barra de progresso,

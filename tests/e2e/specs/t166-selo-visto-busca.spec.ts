@@ -22,7 +22,7 @@ test.describe("T166 — Selo Visto na busca", () => {
   test.skip(!temEnv, "Sem URL/chaves do Supabase ou conta de teste do inquilino.");
 
   let userId = "";
-  let imovelId = "";
+  let imovelIds: string[] = [];
 
   test.beforeAll(async () => {
     const adm = createClient(URL!, SERVICE!, { auth: { persistSession: false } });
@@ -31,16 +31,22 @@ test.describe("T166 — Selo Visto na busca", () => {
     const { data, error } = await sb.auth.signInWithPassword({ email: a.email, password: a.senha });
     if (error) throw new Error(`Login da conta de teste falhou: ${error.message}`);
     userId = data.user!.id;
-    const { data: imovel } = await adm.from("properties").select("id").eq("status", "active").order("created_at", { ascending: false }).limit(1).single();
-    imovelId = imovel!.id;
-    const ok = await adm.from("imovel_marcas").upsert({ user_id: userId, imovel_id: imovelId, visto_em: new Date().toISOString() }, { onConflict: "user_id,imovel_id" });
+    // Marca vários imóveis ativos: o mais novo nem sempre está na primeira página da /buscar (lab fc96d3c4).
+    const { data: imoveis } = await adm.from("properties").select("id").eq("status", "active").order("created_at", { ascending: false }).limit(60);
+    imovelIds = (imoveis ?? []).map((i) => i.id);
+    if (!imovelIds.length) throw new Error("Nenhum imóvel ativo para marcar como visto.");
+    const agora = new Date().toISOString();
+    const ok = await adm.from("imovel_marcas").upsert(
+      imovelIds.map((id) => ({ user_id: userId, imovel_id: id, visto_em: agora })),
+      { onConflict: "user_id,imovel_id" },
+    );
     if (ok.error) throw new Error(ok.error.message);
   });
 
   test.afterAll(async () => {
-    if (!userId || !imovelId) return;
+    if (!userId || !imovelIds.length) return;
     const adm = createClient(URL!, SERVICE!, { auth: { persistSession: false } });
-    await adm.from("imovel_marcas").delete().eq("user_id", userId).eq("imovel_id", imovelId);
+    await adm.from("imovel_marcas").delete().eq("user_id", userId).in("imovel_id", imovelIds);
   });
 
   for (const t of TAMANHOS) {

@@ -16,6 +16,16 @@ export function mostraEnderecoDaVisita(
   return Number.isFinite(t) && agora.getTime() <= t + FOLGA_ENDERECO_MS;
 }
 
+/**
+ * E184: a visita confirmada cujo horário já passou (com a mesma folga) não é mais "Confirmada": sai o botão de
+ * cancelar e a etiqueta diz que o horário passou. Só a tela muda; o status gravado continua o mesmo.
+ */
+export function visitaJaPassou(v: { status: string; horarioConfirmado: string | null }, agora: Date): boolean {
+  if (v.status !== "confirmado" || !v.horarioConfirmado) return false;
+  const t = Date.parse(v.horarioConfirmado);
+  return Number.isFinite(t) && agora.getTime() > t + FOLGA_ENDERECO_MS;
+}
+
 export interface EnderecoVisita {
   /** "Rua Modesta Maria, 120, apto 302 · Saraiva · Uberlândia" */
   texto: string;
@@ -24,8 +34,17 @@ export interface EnderecoVisita {
 }
 
 /** Monta o endereço a partir do imóvel (rua/número/complemento ficam em exact_address; o bairro em address). */
-export function enderecoDaVisita(p: { exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null }): EnderecoVisita | null {
-  const exato = (p.exact_address ?? "").trim();
+export function enderecoDaVisita(p: {
+  exact_address?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  draft_data?: Record<string, unknown> | null;
+}): EnderecoVisita | null {
+  // E184: anúncio sem a linha exata gravada usa rua, número e complemento do cadastro (o mesmo que a internet usa).
+  const d = p.draft_data ?? {};
+  const txt = (x: unknown) => (typeof x === "string" ? x : "");
+  const exato = (p.exact_address ?? "").trim() || linhaEnderecoExato(txt(d.street), txt(d.numero), txt(d.complemento));
   if (!exato) return null;
   const partes = [exato, (p.address ?? "").trim(), (p.city ?? "").trim()].filter(Boolean);
   const texto = partes.join(" · ");
@@ -36,4 +55,23 @@ export function enderecoDaVisita(p: { exact_address?: string | null; address?: s
 /** Rua, número e complemento do cadastro numa linha só (o que vai para exact_address). */
 export function linhaEnderecoExato(rua: string, numero: string, complemento: string): string {
   return [rua.trim(), numero.trim(), complemento.trim()].filter(Boolean).join(", ").slice(0, 300);
+}
+
+/*
+  Visita PEDIDA cujos horários propostos já passaram todos: aparece como "Expirada". Nada é cancelado sozinho (decisão
+  do coordenador): o status gravado segue "pedido"; o dono ainda pode propor outro horário ou recusar, e o morador
+  pode cancelar. Só a tela muda.
+*/
+export const ROTULO_EXPIRADA = "Expirada";
+
+/** Horários do pedido que ainda não passaram (os únicos que o dono pode confirmar — o servidor recusa os passados). */
+export function horariosAindaValidos(horarios: readonly string[], agora: Date): string[] {
+  return horarios.filter((h) => {
+    const t = Date.parse(h);
+    return Number.isFinite(t) && t > agora.getTime();
+  });
+}
+
+export function visitaExpirada(v: { status: string; horarios: readonly string[] }, agora: Date): boolean {
+  return v.status === "pedido" && v.horarios.length > 0 && horariosAindaValidos(v.horarios, agora).length === 0;
 }

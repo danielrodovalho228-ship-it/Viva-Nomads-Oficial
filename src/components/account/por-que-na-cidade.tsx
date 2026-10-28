@@ -81,7 +81,8 @@ export function PorQueNaCidade() {
         </label>
       </div>
       <div className="mt-4 flex items-center gap-3">
-        <Button type="submit" disabled={salvando || carregando}>
+        {/* E192-B: o "Salvar alterações" do Perfil é o primário da tela; este bloco salva com um secundário (um primário por tela). */}
+        <Button type="submit" variant="secondary" disabled={salvando || carregando} data-testid="cidade-salvar">
           {salvando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Salvar
         </Button>
         {ok && <span role="status" className="text-sm text-forest">Salvo.</span>}

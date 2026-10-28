@@ -822,7 +822,8 @@
         "t352-varredura-bloco17",
         "t416-varredura-bloco33",
         "t418-varredura-bloco35",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t567-e188-contratos-do-papel"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -1035,7 +1036,10 @@
         "t550-e179-conforto-respostas-completas",
         "t551-varredura-bloco40",
         "t553-varredura-bloco41",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t565-e194-qualificacao-moldura",
+        "t564-e193-qualificacao-cartoes",
+        "t571-e180-qualificacao-primeiro"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1321,7 +1325,8 @@
         "t211-complemento-23",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
-        "t489-e176-menus"
+        "t489-e176-menus",
+        "t566-e184-visitas-passadas"
       ]
     },
     "/decisao": {
