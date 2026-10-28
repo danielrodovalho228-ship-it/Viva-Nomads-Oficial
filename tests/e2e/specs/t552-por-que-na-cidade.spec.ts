@@ -119,9 +119,9 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
       const page = await entrar(browser, anaDono.email, senha);
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
-      // Modo dono de fato: o bloco "Perfil profissional" (só do modo morador) não está na tela.
-      await expect(page.locator("main")).toContainText("Idiomas que você fala", { timeout: 30_000 });
-      await expect(page.locator("main")).not.toContainText("Perfil profissional");
+      // Modo dono de fato: o espelho do perfil é o do dono ("…o morador te vê no seu anúncio"). Depois do #1417 o
+      // painel do morador (com o cartão) aparece também nesse modo para quem tem cadastro de morador.
+      await expect(page.locator("main")).toContainText("É assim que o morador te vê no seu anúncio", { timeout: 30_000 });
       const cartao = page.getByTestId("por-que-na-cidade");
       await expect(cartao).toBeVisible({ timeout: 15_000 });
       await expect(cartao.getByTestId("cidade-empresa")).toHaveValue(EMPRESA);
