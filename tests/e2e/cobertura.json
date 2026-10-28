@@ -1122,7 +1122,8 @@
         "t541-e168-painel-acompanha-filtro",
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
-        "t584-e189-conta-unica-proposta"
+        "t584-e189-conta-unica-proposta",
+        "t585-e200-conversa-sem-mensagem"
       ]
     },
     "/dashboard/notificacoes": {
