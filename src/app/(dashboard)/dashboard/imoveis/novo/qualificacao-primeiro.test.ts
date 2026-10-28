@@ -16,3 +16,12 @@ test("o aviso de retomar mora dentro da Qualificação, com 'Continuar o outro'"
   assert.match(pagina, /mostrarQualificacao \? "Continuar o outro" : "Continuar"/);
   assert.match(qual, /\{p\.aviso && <div className="mt-4">\{p\.aviso\}<\/div>\}/);
 });
+
+test("E208: sair da Qualificação fecha a faixa do rascunho antigo; o fluxo mostra o estado do novo", () => {
+  const q = pagina.slice(pagina.indexOf("<Qualificacao"), pagina.indexOf("ocupado={abrindoCadastro}"));
+  for (const h of ["onResponderDepois", "onComecar", "onVerNoCadastro"]) {
+    const corpo = q.slice(q.indexOf(h), q.indexOf("}}", q.indexOf(h)));
+    assert.match(corpo, /setDraftBannerDismissed\(true\)/, h);
+  }
+  assert.match(pagina, /saveStatus === "idle" \? \(\s*"Anúncio novo"/);
+});

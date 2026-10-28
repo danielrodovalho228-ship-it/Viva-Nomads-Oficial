@@ -67,6 +67,11 @@ export type NotificationEvent =
   | "visita_confirmada" // horário confirmado → a outra parte
   | "visita_remarcada" // proprietário propôs outro horário → morador
   | "visita_cancelada" // cancelada ou recusada (com motivo) → a outra parte
+  | "visita_expirada" // E205-B: todos os horários passaram sem confirmação → o pedido vira "cancelado" (motivo "expirou") → as duas partes
+  | "visita_vespera" // E205-B: ~24 h antes da visita confirmada (ou na hora, se confirmada com menos de 24 h) → as duas partes
+  | "proposta_aceita" // E205-B: aceite → dono ("Preparar o contrato") e morador (linha do tempo)
+  | "proposta_recusada" // E205-B: recusa → a outra parte (motivo, quando houver)
+  | "boas_vindas" // E205-B: uma vez, na primeira entrada (tela de intenção) → a própria pessoa
   // Candidatura e contrato (prompt 23): nunca e-mail de "recusada"
   | "anuncio_compartilhar" // contrato assinado pelas duas partes → proprietário: o cartão do anúncio para compartilhar (push)
   | "candidatura_nova" // candidatura recebida → proprietário (contrato pronto/assinado: contract_status, prompt 24)
@@ -188,6 +193,11 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   visita_cancelada: { subject: "Visita cancelada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi cancelada. Veja os detalhes pela plataforma.`, cta: "Ver detalhes", path: "/dashboard/visitas" },
   candidatura_nova: { subject: "Nova candidatura no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma candidatura para o seu imóvel. Veja o pedido e responda pela plataforma.`, cta: "Ver a candidatura", path: "/dashboard/leads" },
   proposta_vencendo: { subject: "Sua proposta vence em menos de 24 horas", body: (n) => `Olá${n ? " " + n : ""}, uma proposta aguardando a sua resposta vence em menos de 24 horas. Responda pela plataforma.`, cta: "Ver a proposta", path: "/dashboard/propostas" },
+  visita_expirada: { subject: "Pedido de visita expirou", body: (n) => `Olá${n ? " " + n : ""}, o pedido de visita expirou sem resposta.`, cta: "Ver as visitas", path: "/dashboard/visitas" },
+  visita_vespera: { subject: "Sua visita é amanhã", body: (n) => `Olá${n ? " " + n : ""}, a visita é amanhã ou nas próximas horas. O horário é de Brasília.`, cta: "Ver a visita", path: "/dashboard/visitas" },
+  proposta_aceita: { subject: "Proposta aceita", body: (n) => `Olá${n ? " " + n : ""}, a proposta foi aceita.`, cta: "Ver os próximos passos", path: "/dashboard/orcamentos" },
+  proposta_recusada: { subject: "A proposta foi recusada", body: (n) => `Olá${n ? " " + n : ""}, a proposta foi recusada.`, cta: "Ver a proposta", path: "/dashboard/orcamentos" },
+  boas_vindas: { subject: "Boas-vindas ao Viva Nomads", body: (n) => `Olá${n ? " " + n : ""}, a sua conta no Viva Nomads está pronta.`, cta: "Começar a buscar", path: "/buscar" },
   proposta_respondida: { subject: "Sua proposta foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a sua proposta teve resposta no Viva Nomads.`, cta: "Ver a resposta", path: "/dashboard/orcamentos" },
   anuncio_compartilhar: { subject: "Seu anúncio está no ar: compartilhe o cartão", body: (n) => `Olá${n ? " " + n : ""}, o cartão do seu anúncio está pronto, com um QR que leva direto ao imóvel. Compartilhe no WhatsApp em um toque.`, cta: "Ver o cartão", path: "/dashboard/imoveis" },
   parceria_recebida: { subject: "Recebemos o seu pedido de parceria", body: (n) => `Olá${n ? " " + n : ""}, recebemos o seu pedido para ser parceiro da Viva Nomads. A equipe analisa os dados e responde por e-mail. Você pode acompanhar pela sua conta.`, cta: "Acompanhar o pedido", path: "/dashboard/parceiro" },

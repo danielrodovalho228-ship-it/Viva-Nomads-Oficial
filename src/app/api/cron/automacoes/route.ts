@@ -36,6 +36,7 @@ import { rodadaSimulada } from "@/lib/minimizacao/regras";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { avisosDeRemedicao } from "@/lib/internet-medida-servidor";
 import { lembretesDoFunil } from "@/lib/lembretes/servidor";
+import { expirarVisitasVencidas, vesperasDasVisitas } from "@/lib/visitas/avisos-servidor";
 import { acaoDoPasso, emSilencio, linhaOutrosRascunhos, rascunhosPorDono, textoRascunho } from "@/lib/lembretes/regras";
 import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { checklistAnuncio, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
@@ -303,10 +304,14 @@ export async function GET(request: Request) {
   // Prompt 50: verificação parada 24 h (aviso com a causa), parceiro sem resposta em 1 dia útil e chamado fora da
   // promessa (alertas à equipe). Uma vez cada; nunca no silêncio 22h–7h. Na simulação, só conta.
   const lembretes50 = await lembretesDoFunil(admin, agora, simular).catch(() => null);
+  // E205-B (d): pedidos de visita com todos os horários vencidos → "cancelado" (motivo "expirou") + e-mail aos dois;
+  // véspera das visitas confirmadas nas próximas 24 h. `simular`: só conta.
+  const visitasExpiradas = await expirarVisitasVencidas(admin, agora, { simular }).catch(() => 0);
+  const visitasVespera = await vesperasDasVisitas(admin, agora, simular).catch(() => 0);
   // Minimização (Prompt 58): a rotina única de eliminação. Fase 1 apaga de verdade só com ELIMINACAO_ATIVA=1 (ou no
   // laboratório); fora disso, o relatório "o que seria apagado hoje" sai sem apagar nada.
   const eliminacao = await rodarEliminacao(admin, agora, rodadaSimulada({ pedidoSimular: simular, laboratorio: integracoesSimuladas(), chaveAtiva: process.env.ELIMINACAO_ATIVA })).catch(() => ({ eliminados: 0, simulados: 0, falhas: 1 }));
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos, ...automatico, ...internet, lembretes50, eliminacao });
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos, ...automatico, ...internet, lembretes50, visitasExpiradas, visitasVespera, eliminacao });
 }
 
 /** Retenção dos ocupantes (90 dias depois do fim) e aditivos vencidos. `simular`: só conta, não apaga nem muda nada. */

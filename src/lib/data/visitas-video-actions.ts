@@ -12,6 +12,7 @@ import { notify } from "@/lib/notifications";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
 import { enderecoDaVisita, mostraEnderecoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
+import { avisarVisitaCancelada, expirarVisitasVencidas, vesperaDaVisitaSeFor } from "@/lib/visitas/avisos-servidor";
 import {
   ehModalidade,
   ehStatusVisita,
@@ -193,6 +194,17 @@ function mapear(r: Linha, rotulo: (m: string | null) => string): VisitaDono {
   };
 }
 
+/**
+ * E205-B: a regra da visita expirada também roda quando a pessoa abre as visitas (além do cron), depois da resposta:
+ * a tela já mostra "Expirada" pela regra pura; o status e os e-mails acompanham logo em seguida.
+ */
+function expirarDepois(usuarioId: string) {
+  after(async () => {
+    const admin = createAdminClient();
+    if (admin) await expirarVisitasVencidas(admin, new Date(), { usuarioId }).catch(() => 0);
+  });
+}
+
 /** Pedidos dos imóveis do proprietário logado (RLS + filtro; tenant_id nem é legível). */
 export async function listVisitasDono(): Promise<VisitaDono[]> {
   const supabase = await createClient();
@@ -201,6 +213,7 @@ export async function listVisitasDono(): Promise<VisitaDono[]> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
+  expirarDepois(user.id);
   const { data } = await supabase
     .from("visitas_video")
     .select(COLUNAS)
@@ -220,6 +233,7 @@ export async function listMinhasVisitas(): Promise<MinhaVisita[]> {
   if (!user) return [];
   const admin = createAdminClient();
   if (!admin) return [];
+  expirarDepois(user.id);
   const { data } = await admin
     .from("visitas_video")
     .select(COLUNAS)
@@ -298,6 +312,8 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
       endereco = p ? enderecoDaVisita(p) : null;
     }
     avisarVisita(admin, outro, "visita_confirmada", `Visita ${tipo} confirmada para ${formatarHorarioBrasilia(campos.horario_confirmado)}.`, endereco);
+    // E205-B: confirmada com menos de 24 h de antecedência → a véspera sai na hora (a chave segura o cron).
+    after(() => vesperaDaVisitaSeFor(admin, v.id as string, new Date()).catch(() => 0));
   } else if (campos.status === "remarcar" && campos.horario_proposto) {
     const { data: imovel } = await admin.from("properties").select("title").eq("id", v.property_id).maybeSingle();
     avisarVisita(admin, outro, "visita_remarcada", `O proprietário propôs outro horário para a visita ${tipo}: ${formatarHorarioBrasilia(campos.horario_proposto)}. Aceite ou cancele em Visitas.`, null, {
@@ -306,7 +322,8 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
       destinatarioEhParte: true,
     });
   } else if (campos.status === "cancelado") {
-    avisarVisita(admin, outro, "visita_cancelada", `A visita ${tipo} foi cancelada${campos.motivo_recusa ? `. Motivo: ${campos.motivo_recusa}` : ""}.`);
+    // E205-B: quem cancelou, o motivo e o horário; ao morador, "Pedir outro horário".
+    after(() => avisarVisitaCancelada(admin, v.id as string, quem));
   }
   // Sem isto a tela voltava com o status antigo: a resposta da ação chegava depois do router.refresh() do
   // navegador e trazia a árvore antiga (t168: gravava "confirmado" e continuava "Pedido enviado").

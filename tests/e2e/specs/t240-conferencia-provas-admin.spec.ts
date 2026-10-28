@@ -295,6 +295,11 @@ test.describe("T240 — conferência de entrada (F1–F3), pacote de provas (F4)
       await expect(page.getByTestId("admin-conferencia-prazo")).toContainText(prazoEsperado(ids.inicio!).texto);
       await expect(page.getByTestId("admin-pagamento-anulado")).toHaveCount(1);
       await expect(page.getByTestId("admin-contrato-taxa")).toContainText("Taxa de serviço:");
+      // E198: a saída explícita no cabeçalho (a data do último bloco).
+      const { data: ultimo } = await adm().from("contrato_blocos").select("fim").eq("contrato_id", ids.contrato).order("numero_bloco", { ascending: false }).limit(1).single();
+      const [a, m, d] = String(ultimo!.fim).slice(0, 10).split("-");
+      await expect(page.getByTestId("admin-contrato-saida")).toContainText(`Saída: ${d}/${m}/${a}`);
+      await expect(page.getByTestId("admin-contrato-entrada")).toContainText("Entrada: ");
       await expect(page.getByRole("img", { name: `Foto: ${SALA}` })).toBeVisible();
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t240-admin-contrato-${largura}.png`, fullPage: true });
