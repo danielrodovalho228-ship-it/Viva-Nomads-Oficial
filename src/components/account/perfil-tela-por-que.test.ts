@@ -20,3 +20,9 @@ test("E192: o painel do morador vale para quem tem cadastro de morador em qualqu
   assert.match(TELA, /const mostraPainelMorador = mode === "tenant" \|\| cadastroMorador;/);
   assert.doesNotMatch(TELA, /\{mode === "tenant" && \(\s*<Panel/);
 });
+
+test("E192-B: um primário por tela — o 'Salvar' do Por que na cidade é secundário (o primário é o 'Salvar alterações')", () => {
+  const BLOCO = readFileSync(new URL("./por-que-na-cidade.tsx", import.meta.url), "utf8");
+  assert.match(BLOCO, /<Button type="submit" variant="secondary"[^>]*data-testid="cidade-salvar">/);
+  assert.match(TELA, /Salvar alterações/);
+});

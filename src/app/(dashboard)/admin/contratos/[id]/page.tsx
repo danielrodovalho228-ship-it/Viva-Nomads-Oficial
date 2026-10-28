@@ -12,6 +12,7 @@ import { linhasAditivos } from "@/lib/contrato-provas";
 import { refContratoVN } from "@/lib/fiscal/fila-falhas";
 import { fmtReais } from "@/lib/admin/visao-geral";
 import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
+import { TEXTO_SEM_HASH } from "@/lib/admin/assinaturas-admin";
 
 export const metadata = { title: "Contrato — Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -76,10 +77,18 @@ export default async function AdminContratoPage({ params }: { params: Promise<{ 
             {c.assinaturas.map((a) => (
               <li key={a.papel} className="break-words">
                 {PARTE[a.papel]} assinou em {dataHoraBRT(a.em)}
-                <span className="block break-all text-xs text-muted">Hash do resumo assinado: {a.hash}</span>
-                <span data-estado-hash={a.comparacao.estado} className={a.comparacao.estado === "diferente" ? "text-red-700" : "text-forest"}>
-                  {a.comparacao.texto}
-                </span>
+                {a.hash && a.comparacao ? (
+                  <>
+                    <span className="block break-all text-xs text-muted">Hash do resumo assinado: {a.hash}</span>
+                    <span data-estado-hash={a.comparacao.estado} className={a.comparacao.estado === "diferente" ? "text-red-700" : "text-forest"}>
+                      {a.comparacao.texto}
+                    </span>
+                  </>
+                ) : (
+                  <span className="block text-xs text-amber-800" data-testid="admin-assinatura-sem-hash">
+                    {TEXTO_SEM_HASH}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
