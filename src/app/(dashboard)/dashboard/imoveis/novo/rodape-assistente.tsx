@@ -2,7 +2,6 @@
 
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { progressoPasso, textoPasso } from "@/lib/anuncio/assistente-telas";
 
 export interface PrimarioRodape {
@@ -67,7 +66,9 @@ export function RodapeAssistente(p: {
             // E135: "não pronto" sem aria-disabled — o clique continua valendo e diz o que falta (aria-disabled faria o botão
             // parecer desligado e o toque seria ignorado por quem segue o atributo). O motivo vai no title e na caixa.
             data-pendente={p.primario.pendente ? "1" : undefined}
-            className={cn("shrink-0 sm:min-w-40", p.primario.disabled && "cursor-not-allowed opacity-60", p.primario.pendente && !p.primario.disabled && "opacity-60")}
+            // E195: o mesmo primário da Qualificação — "não pronto" fica verde cheio (o clique diz o que falta), sem o
+            // verde-claro de antes; travado de verdade usa o estado desabilitado padrão do botão (o mesmo do /qualificar).
+            className="shrink-0 sm:min-w-40"
             data-testid={p.primario.testid}
           >
             {p.primario.rotulo} {p.primario.seta && <ArrowRight className="h-4 w-4" />}

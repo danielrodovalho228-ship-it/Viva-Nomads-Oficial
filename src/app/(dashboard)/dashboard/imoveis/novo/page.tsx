@@ -1510,9 +1510,10 @@ export default function NewPropertyPage() {
   // Bug 12 (L2) + E180: o aviso "anúncio em andamento" — dentro da Qualificação de um anúncio novo e no Passo 1.
   const avisoRascunho =
     !editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed ? (
-      <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+      // E195/E166: cartão clean (branco, borda fina), como os do assistente — sem o fundo tingido.
+      <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-line bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
+          <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-forest">
             <ClipboardCheck className="h-5 w-5" />
           </span>
           <div>
