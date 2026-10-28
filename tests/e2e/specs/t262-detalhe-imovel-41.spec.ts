@@ -219,7 +219,7 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
         ]);
         expect(lista.slice(4)).toEqual(lista.length === 5 ? [{ nome: "Estadia", href: "/dashboard/locacoes" }] : []);
       }).toPass({ timeout: 20_000 });
-      await expect(page.getByTestId("conta-morador-celular")).toBeVisible();
+      await expect(page.getByTestId("topo-celular").getByTestId("conta-morador-celular")).toBeVisible();
       const sombra = await page.locator('nav[aria-label="Navegação principal"]').evaluate((el) => getComputedStyle(el).boxShadow);
       expect(sombraVisivel(sombra)).toBe(SOMBRA_FLUTUANTE);
       expect(await semRolagem(page)).toBeLessThanOrEqual(0);
@@ -236,7 +236,7 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       }).toPass({ timeout: 20_000 });
       const contratos = page.locator('nav[aria-label="Navegação principal"]').getByRole("link", { name: "Contratos" });
       await expect(contratos).toHaveAttribute("href", "/dashboard/contratos");
-      await expect(page.getByTestId("conta-dono-celular")).toBeVisible();
+      await expect(page.getByTestId("topo-celular").getByTestId("conta-dono-celular")).toBeVisible();
     });
   });
 
@@ -293,7 +293,7 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
         ]);
       }).toPass({ timeout: 25_000 });
       for (const id of ["pedidos", "agenda", "ganhos"]) await expect(page.locator(`#${id}`)).toHaveCount(1);
-      await expect(page.getByTestId("conta-parceiro-celular")).toBeVisible();
+      await expect(page.getByTestId("topo-celular").getByTestId("conta-parceiro-celular")).toBeVisible();
       // Fora do painel do parceiro (sem a preferência ligada no Perfil), a barra volta ao modo da conta.
       await page.goto("/dashboard/favoritos", { waitUntil: "domcontentloaded" });
       await expect(async () => expect((await abas(page)).map((a) => a.nome).slice(0, 4)).toEqual(NOMES_MORADOR)).toPass({ timeout: 20_000 });
