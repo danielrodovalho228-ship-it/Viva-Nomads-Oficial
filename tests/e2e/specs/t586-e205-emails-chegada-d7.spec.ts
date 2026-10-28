@@ -11,10 +11,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
        A. assinado pelas duas partes + 1º pagamento registrado + entrada daqui a 7 dias → o morador recebe, UMA vez;
        B. assinado, SEM o 1º pagamento → ninguém recebe;
        C. 1º pagamento registrado, SEM a assinatura do morador → ninguém recebe;
-     o e-mail traz o imóvel, a data da entrada e o caminho das instruções (página da estadia, #instrucoes).
+     o e-mail traz o caminho das instruções (página da estadia, #instrucoes); o imóvel e a data no HTML: test.fail (2b, 4b).
    - "Lembrete: a entrada no imóvel está chegando" (checkin_lembrete, /api/cron/checkin-lembretes) no D-2:
        D. assinado + pago + entrada daqui a 2 dias → dono e morador recebem, com a data, UMA vez;
-       E. assinado, SEM o 1º pagamento, entrada daqui a 2 dias → só registrado (a rotina não olha o pagamento: achado).
+       E. assinado, SEM o 1º pagamento, entrada daqui a 2 dias → não deveria sair (test.fail: a rotina não olha o pagamento).
   O laboratório não tem CRON_SECRET (nem AUTOMACOES_ATIVO): o teste sobe um 2º servidor do MESMO build, na porta 3124,
   com um segredo só dele e as automações ligadas — mesmo banco local, mesmas integrações simuladas, mesmo LAB_OUTBOX.
   Os textos completos dos e-mails vão para tests/laboratorio/saida/t586-emails.json e para o log.
@@ -127,7 +127,7 @@ test.describe("T586 — E205: os e-mails de chegada (D-7 e D-2) saem só nas con
     console.log(`t586 checkin-lembretes: ${JSON.stringify(respostaCheckin)}`);
   });
 
-  test("2. D-7 completo (assinado + pago): a Ana recebe 'instruções liberadas' com o imóvel, a data e o caminho das instruções", async () => {
+  test("2. D-7 completo (assinado + pago): a Ana recebe 'instruções liberadas' com o caminho das instruções", async () => {
     await expect.poll(async () => (await comAssunto(ana.email, LIBERADAS)).length, { timeout: 30_000, message: "e-mail da Ana" }).toBe(1);
     const [e] = await comAssunto(ana.email, LIBERADAS);
     const corpo = String(e.corpo ?? "");
@@ -135,14 +135,23 @@ test.describe("T586 — E205: os e-mails de chegada (D-7 e D-2) saem só nas con
     expect(String(e.assunto)).toContain(LIBERADAS);
     expect(corpo, "saudação pelo primeiro nome").toContain("Olá Ana");
     expect(corpo).toContain("Como entrar, o Wi-Fi e as regras do prédio já estão na página da estadia.");
-    expect(corpo, "o imóvel").toContain(titulo("A"));
-    expect(corpo, "a data da entrada").toContain(`Entrada em ${br(emDias(7))}.`);
     expect(corpo, "o botão leva às instruções da estadia").toContain(`/dashboard/estadia/${ids.A}#instrucoes`);
     // Só o morador: o dono não recebe este aviso.
     expect(await comAssunto(dono.email, LIBERADAS), "o dono não recebe o aviso do morador").toHaveLength(0);
     // O evento da liberação fica no histórico do contrato.
     const { data: ev } = await adm().from("contrato_eventos").select("tipo, dados").eq("contrato_id", ids.A).eq("tipo", "instrucoes_liberadas");
     expect(ev, "contrato_eventos.instrucoes_liberadas").toHaveLength(1);
+  });
+
+  test("2b. o e-mail do D-7 traz o imóvel e a data da entrada no corpo que a pessoa vê (HTML)", async () => {
+    // ACHADO E205 (registrado, não corrigido — a Pista C não toca produção): a rotina passa o imóvel e a data só em
+    // detailsText, que vai para a parte em TEXTO PURO; o HTML (montar-email.ts → corpoNotificacao) usa só detailsHtml.
+    // Quando o HTML trouxer "<imóvel> Entrada em dd/mm/aaaa.", este caso passa e o test.fail é retirado.
+    test.fail(true, "E205: o HTML do e-mail não traz o imóvel nem a data (só a parte em texto puro)");
+    const [e] = await comAssunto(ana.email, LIBERADAS);
+    const corpo = String(e?.corpo ?? "");
+    expect(corpo, "o imóvel").toContain(titulo("A"));
+    expect(corpo, "a data da entrada").toContain(`Entrada em ${br(emDias(7))}.`);
   });
 
   test("3. D-7 sem o 1º pagamento (B) e sem a assinatura do morador (C): ninguém recebe", async () => {
@@ -163,20 +172,26 @@ test.describe("T586 — E205: os e-mails de chegada (D-7 e D-2) saem só nas con
     for (const e of [m, doDono[0]]) {
       const corpo = String(e.corpo ?? "");
       expect(corpo).toContain("a entrada no imóvel do seu contrato está chegando");
-      expect(corpo, "a data da entrada").toContain(`A entrada no imóvel é em ${br(emDias(2))}.`);
       expect(corpo, "o botão leva ao contrato").toContain(`/dashboard/contratos/${ids.D}`);
     }
     const { data: ck } = await adm().from("contratos_checkin").select("lembrete_48h_em").eq("contrato_id", ids.D).single();
     expect(ck?.lembrete_48h_em, "contratos_checkin.lembrete_48h_em marcado").toBeTruthy();
   });
 
-  test("5. D-2 assinado SEM o 1º pagamento (E): registra o que a rotina faz (achado, não trava)", async () => {
+  test("4b. o lembrete do D-2 traz a data da entrada no corpo que a pessoa vê (HTML)", async () => {
+    // Mesmo ACHADO do 2b: "A entrada no imóvel é em dd/mm/aaaa." vai só em detailsText (texto puro).
+    test.fail(true, "E205: o HTML do lembrete não traz a data da entrada (só a parte em texto puro)");
+    const [m] = await comAssunto(duda.email, LEMBRETE);
+    expect(String(m?.corpo ?? ""), "a data da entrada").toContain(`A entrada no imóvel é em ${br(emDias(2))}.`);
+  });
+
+  test("5. D-2 assinado SEM o 1º pagamento (E): o lembrete de entrada não sai", async () => {
+    // ACHADO E205: /api/cron/checkin-lembretes só olha as duas assinaturas, não o 1º pagamento — o lembrete manda
+    // "Confira o horário e as instruções de entrada", que seguem travadas sem o pagamento. Sai para o dono e o morador.
+    test.fail(true, "E205: o lembrete do D-2 sai para contrato sem o 1º pagamento");
     const daEva = await comAssunto(eva.email, LEMBRETE);
-    const registro = daEva.length
-      ? `ACHADO E205: o lembrete de entrada (checkin_lembrete) SAIU para o contrato sem o 1º pagamento (${ids.E}); ele manda "Confira o horário e as instruções de entrada", que ainda estão travadas sem o pagamento.`
-      : "Contrato sem o 1º pagamento não recebeu o lembrete de entrada.";
-    console.log(`t586 ${registro}`);
-    test.info().annotations.push({ type: "achado", description: registro });
+    if (daEva[0]) console.log(`t586 E-MAIL checkin_lembrete SEM pagamento (contrato E)\n  para: ${daEva[0].para}\n  assunto: ${daEva[0].assunto}\n  corpo: ${daEva[0].corpo}`);
+    expect(daEva, "contrato sem o 1º pagamento").toHaveLength(0);
   });
 
   test("6. rodar de novo não repete nenhum e-mail (uma vez por pessoa)", async () => {
