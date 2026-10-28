@@ -11,7 +11,9 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   real de cada imagem, 390 e 1280 px, HTTP abaixo de 400 e o clique no primário com resposta visível em até 3 s.
   Os merges depois do bloco 47 (#1461, #1462) não mudaram tela; o bloco 48 segue a ordem e varre as páginas que
   nenhuma varredura visitou ainda (cobertura.json): /cidades, /avaliadores e o perfil público de um avaliador,
-  /imoveis-perto-de/<destino>, Ganhos e Assinatura do dono e /pedidos (varre-se o destino, /dashboard/pedidos-cidade).
+  /imoveis-perto-de/<destino>, Ganhos e Assinatura do dono e /pedidos. Regra dos redirecionamentos (bloco 42): varre-se
+  o DESTINO — /cidades → /cidades/uberlandia, /avaliadores → /parceiros/avaliadores, /dashboard/assinatura → /precos
+  (dono sem plano pago), /pedidos → /dashboard/pedidos-cidade.
   O avaliador e o destino vêm do banco do laboratório; sem nenhum, o caso é pulado com o motivo. Só no laboratório.
 */
 type Conta = ChaveConta | "ADMIN" | "VISITANTE";
@@ -31,12 +33,12 @@ let destino = "";
 let avaliador = "";
 
 const TELAS: Tela[] = [
-  { conta: "VISITANTE", papel: "visitante", nome: "Cidades", rota: () => "/cidades" },
-  { conta: "VISITANTE", papel: "visitante", nome: "Avaliadores", rota: () => "/avaliadores" },
+  { conta: "VISITANTE", papel: "visitante", nome: "Cidades (destino de /cidades)", rota: () => "/cidades/uberlandia" },
+  { conta: "VISITANTE", papel: "visitante", nome: "Avaliadores (destino de /avaliadores)", rota: () => "/parceiros/avaliadores" },
   { conta: "VISITANTE", papel: "visitante", nome: "Perfil público do avaliador", rota: () => `/avaliadores/${avaliador}`, pular: () => (avaliador ? null : "o laboratório não tem avaliador público (avaliadores_publicos vazio)") },
   { conta: "VISITANTE", papel: "visitante", nome: "Imóveis perto de um destino", rota: () => `/imoveis-perto-de/${destino}`, pular: () => (destino ? null : "o laboratório não tem destino ativo") },
   { conta: "DONO17", papel: "proprietário", nome: "Ganhos", rota: () => "/dashboard/ganhos" },
-  { conta: "DONO17", papel: "proprietário", nome: "Assinatura", rota: () => "/dashboard/assinatura", clicar: false },
+  { conta: "DONO17", papel: "proprietário", nome: "Planos (destino de /dashboard/assinatura para o dono sem plano pago)", rota: () => "/precos", clicar: false },
   { conta: "INQUILINA", papel: "morador", nome: "Pedidos da cidade (destino de /pedidos)", rota: () => "/dashboard/pedidos-cidade" },
 ];
 

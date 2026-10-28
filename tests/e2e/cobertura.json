@@ -1553,7 +1553,8 @@
       ],
       "specs": [
         "t314-entrada-avaliador-62b3",
-        "t319-varredura-bloco10"
+        "t319-varredura-bloco10",
+        "t591-varredura-bloco48"
       ]
     },
     "/parceiros/fotografos": {
@@ -1627,7 +1628,8 @@
         "t338-varredura-bloco15",
         "t368-varredura-bloco20",
         "t414-varredura-bloco31",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t591-varredura-bloco48"
       ]
     },
     "/privacidade": {
