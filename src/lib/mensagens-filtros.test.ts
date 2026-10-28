@@ -76,7 +76,8 @@ test("ligação: a lista de conversas traz papel, foto e período e a tela tem o
 // E168 (QA ao vivo do Muse, 25/10): filtro sem conversa → painel vazio, nunca a conversa de outro filtro.
 test("E168 — a conversa aberta sai só do filtro (sem cair na 1ª conversa de todas)", () => {
   const tela = readFileSync(new URL("../app/(dashboard)/dashboard/mensagens/messages-client.tsx", import.meta.url), "utf8");
-  assert.match(tela, /const active = visiveis\.find\(\(c\) => c\.id === activeId\) \?\? visiveis\[0\];/);
+  // E200: com a conversa pedida fora da lista (naoEncontrada), nenhuma abre; fora disso, a regra do E168 segue.
+  assert.match(tela, /const active = naoEncontrada \? undefined : \(visiveis\.find\(\(c\) => c\.id === activeId\) \?\? visiveis\[0\]\);/);
   assert.doesNotMatch(tela, /\?\? conversations\[0\]/);
   assert.match(tela, /data-testid="mensagens-detalhe-vazio"/);
   assert.match(tela, /if \(conversations\.length === 0\) \{/, "\"Nenhuma conversa ainda\" só quando não há conversa nenhuma");
