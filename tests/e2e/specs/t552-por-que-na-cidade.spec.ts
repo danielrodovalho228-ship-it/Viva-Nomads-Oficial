@@ -28,8 +28,9 @@ const FRASE = `Residência de seis meses na cidade ${sufixo}`;
 
 async function abrirPerfil(page: Page, w: number) {
   await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
-  // O modo vem da tela anterior (L-10): passa pelo início do morador antes da Conta.
-  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  // O modo vem da tela anterior e fica na conta (L-10): passa por uma tela SÓ de morador antes da Conta — /dashboard é
+  // neutro e mantinha o modo dono que os casos 5–6 deixam.
+  await page.goto("/dashboard/pedidos", { waitUntil: "domcontentloaded" });
   await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
   await expect(page.locator("main")).toContainText("Perfil profissional", { timeout: 30_000 });
 }
