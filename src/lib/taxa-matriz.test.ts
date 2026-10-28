@@ -320,7 +320,7 @@ test("34. aviso ao dono no aceite: a congelada com a base; o morador nunca receb
   assert.match(acoes, /const linhaTaxa = textoTaxaCongeladaParaDono\(taxa, tot\.valorMensal, Number\(v\.meses\), tx\.taxa_no_envio\);/);
   assert.match(acoes, /if \(papel === "owner"\) \{[\s\S]{0,900}userId: p\.owner_id,/);
   // A mensagem da conversa (que o morador lê) não leva a taxa.
-  const mensagem = /`Proposta \$\{p\.numero\} aceita:[^`]*`/.exec(acoes)![0];
+  const mensagem = /`Proposta \$\{p\.numero\} aceita\.[^`]*`/.exec(acoes)![0];
   assert.doesNotMatch(mensagem, /taxa|comiss/i);
 });
 
