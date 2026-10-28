@@ -1678,7 +1678,7 @@ export async function renovarBloco(
         name: destino.full_name ?? undefined,
         pushUrl: "/dashboard/contratos",
         detailsText: aguardando
-          ? `${quem} quer renovar a locação: bloco ${numero} (${dataBR(inicio)} a ${dataBR(fim)}). A renovação só vale com o seu aceite — abra Contratos no painel.`
+          ? `${quem} quer renovar a estadia: bloco ${numero} (${dataBR(inicio)} a ${dataBR(fim)}). A renovação só vale com o seu aceite — abra Contratos no painel.`
           : `Renovação confirmada pelas duas partes: bloco ${numero} (${dataBR(inicio)} a ${dataBR(fim)}).`,
       });
     }

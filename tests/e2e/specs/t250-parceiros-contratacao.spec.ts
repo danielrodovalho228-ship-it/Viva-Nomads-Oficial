@@ -25,6 +25,22 @@ const fotografo = { email: `foto.t250.${sufixo}@lab.vivanomads.test`, nome: "Fab
 const limpeza = { email: `limpa.t250.${sufixo}@lab.vivanomads.test`, nome: "Lia Limpeza", role: "owner" as const };
 // Começo da spec (com folga para o relógio do Storage): o teste de EXIF só confere o que esta execução enviou.
 const INICIO = new Date(Date.now() - 60_000);
+async function marcarTeste(contas: string[], teste: boolean) {
+  const { error } = await adm().from("profiles").update({ is_teste: teste }).in("id", contas);
+  if (error) throw error;
+}
+
+/** E204: o último e-mail do evento na caixa de QA (emails_teste) da conta. */
+async function emailDoEvento(usuarioId: string, evento: string): Promise<string> {
+  for (let i = 0; i < 30; i++) {
+    const { data } = await adm().from("emails_teste").select("corpo").eq("usuario_id", usuarioId).eq("evento", evento).order("criado_em", { ascending: false }).limit(1);
+    const corpo = String(data?.[0]?.corpo ?? "");
+    if (corpo) return corpo;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  throw new Error(`sem e-mail ${evento} na caixa de teste`);
+}
+
 const ids: { dono?: string; morador?: string; foto?: string; limpa?: string; parceiroFoto?: string; parceiroLimpa?: string; imovel?: string; pedido?: string; contrato?: string } = {};
 
 function semDialogo(page: Page) {
@@ -138,6 +154,8 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     await d.getByTestId("solicitar-orcamento-mais-horario").click();
     await d.getByTestId("solicitar-orcamento-horario-1").fill(amanha(15));
     await d.screenshot({ path: `${SAIDA}/t250-formulario-1280.png` });
+    // E204: dono e fotógrafo viram contas de teste só durante os 3 avisos, para os e-mails caírem na caixa de QA.
+    await marcarTeste([ids.dono!, ids.foto!], true);
     await d.getByTestId("solicitar-orcamento-enviar").click();
     await expect(d).toHaveURL(/\/dashboard\/servicos\/pedidos\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     ids.pedido = d.url().split("/").pop()!;
@@ -167,6 +185,25 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     await d.getByTestId("pedido-aceitar").click();
     await expect(d.getByTestId("pedido-status")).toHaveText("Orçamento aceito", { timeout: 20_000 });
     expect(await pedidoDoBanco(ids.pedido)).toMatchObject({ status: "aceito", valor_combinado: 350, valor_taxa: 35, valor_parceiro: 315, taxa_percent: 0.1 });
+
+    // E204: os 3 e-mails dizem serviço, imóvel e data; o orçamento recebido e o aceito dizem o valor; o pedido novo
+    // aponta para o pedido (não para "as mensagens").
+    const imovel = `Studio T250 ${sufixo}`;
+    const novo = await emailDoEvento(ids.foto!, "parceiro_pedido_novo");
+    expect(novo).toContain(`para ${imovel}`);
+    expect(novo).toContain(`Imóvel: ${imovel}`);
+    expect(novo).toMatch(/Data sugerida|Datas sugeridas/);
+    expect(novo).toContain(`/dashboard/servicos/pedidos/${ids.pedido}`);
+    expect(novo).not.toMatch(/mensagens da plataforma/);
+    expect(novo).not.toContain("Rua das Flores"); // o endereço exato só depois do aceite
+    const recebido = await emailDoEvento(ids.dono!, "parceiro_orcamento_recebido");
+    expect(recebido).toContain("Valor: R$ 350");
+    expect(recebido).toContain(`Imóvel: ${imovel}`);
+    expect(recebido).not.toContain("Você recebe");
+    const aceito = await emailDoEvento(ids.foto!, "parceiro_orcamento_aceito");
+    expect(aceito).toContain("Valor: R$ 350");
+    expect(aceito).toContain("Você recebe: R$ 315");
+    await marcarTeste([ids.dono!, ids.foto!], false);
 
     // 4) Parceiro confirma um dos horários; agora vê o endereço.
     await p.reload({ waitUntil: "domcontentloaded" });

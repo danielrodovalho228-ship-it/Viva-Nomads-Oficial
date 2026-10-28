@@ -12,6 +12,9 @@ import { emailCodigo2fa, emailCodigoVinculo, emailCodigoAssinatura, emailDocumen
 import { REMETENTE } from "./remetente.ts";
 import { templatesSupabase } from "./templates-supabase.ts";
 import { emailDecisaoDocumento, linhasDoAviso } from "../documento/aviso-decisao.ts";
+import { aberturaDoPedido, linhasDoPedido, type EventoPedido, type PedidoParaEmail } from "../parceiros/email-pedido.ts";
+import { textoResposta } from "../automacao/textos-vinculo.ts";
+import { escaparHtml } from "../escapar-html.ts";
 
 export interface EmailDoCatalogo extends EmailMontado {
   chave: string;
@@ -38,14 +41,45 @@ function exemploSupabase(html: string, site: string): string {
     .replace(/\{\{ \.NewEmail \}\}/g, "novo@exemplo.com");
 }
 
+/** E204: o pedido de exemplo dos e-mails de orçamento (o mesmo formato que o servidor monta do banco). */
+const PEDIDO_EXEMPLO: PedidoParaEmail = {
+  codigo: "VN-SV-1SJGWI6O",
+  servico: "Limpeza pós-saída",
+  imovel: { titulo: "Apto Santa Mônica", bairro: "Santa Mônica", cidade: "Uberlândia" },
+  horarios: ["2026-11-04T13:00:00.000Z", "2026-11-05T17:00:00.000Z"],
+  valorCombinado: 180,
+  valorParceiro: 162,
+};
+
+/** E204: eventos cujo e-mail real sai com dados (o catálogo mostra o que sai, não o texto-base). */
+function comDados(siteUrl: string, ev: NotificationEvent, nome: { nomeHtml: string; nomeTexto: string }): EmailMontado | null {
+  if (ev === "parceiro_pedido_novo" || ev === "parceiro_orcamento_recebido" || ev === "parceiro_orcamento_aceito") {
+    const linhas = linhasDoPedido(ev as EventoPedido, PEDIDO_EXEMPLO);
+    return montarNotificacao({
+      siteUrl,
+      event: ev,
+      ...nome,
+      pushUrl: "/dashboard/servicos/pedidos/2c3d4e5f-0000-4000-8000-000000000001",
+      body: (n) => aberturaDoPedido(ev as EventoPedido, PEDIDO_EXEMPLO, n),
+      detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
+      detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
+    });
+  }
+  if (ev === "vinculo_parceiro_resposta") {
+    const t = textoResposta({ categoria: "limpeza", tituloImovel: "Apto Santa Mônica", cidade: "Uberlândia", nomeDono: "Marcos", nomeParceiro: "Limpa Já Serviços" }, true);
+    return montarNotificacao({ siteUrl, event: ev, ...nome, subject: t.subject, body: t.body });
+  }
+  return null;
+}
+
 export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
   const nome = { nomeHtml: "Marcos", nomeTexto: "Marcos" };
   const lista: EmailDoCatalogo[] = [];
 
-  // 1. Todos os eventos do notify, com o texto padrão.
+  // 1. Todos os eventos do notify, com o texto padrão (ou com os dados, quando o real sai com eles).
   for (const ev of Object.keys(TEMPLATES) as NotificationEvent[]) {
     if (EVENTOS_SO_EQUIPE.includes(ev)) continue;
-    lista.push(doApp(ev, montarNotificacao({ siteUrl, event: ev, ...nome })));
+    lista.push(doApp(ev, comDados(siteUrl, ev, nome) ?? montarNotificacao({ siteUrl, event: ev, ...nome })));
   }
 
   // 2. Os que saem com assunto próprio.

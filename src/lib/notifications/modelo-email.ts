@@ -5,7 +5,7 @@
   HTML e-mail-safe: tabelas + estilo inline; modo escuro por @media
   (prefers-color-scheme) e color-scheme.
 */
-import { rodapeAntigolpeHtml } from "./aviso-antigolpe.ts";
+import { AVISO_ANTIGOLPE, rodapeAntigolpeHtml } from "./aviso-antigolpe.ts";
 import { REDES_OFICIAIS } from "../../config/redes.ts";
 
 export type ImagemEmail = { src: string; alt: string };
@@ -117,6 +117,8 @@ export function rodapeTexto(siteUrl: string): string {
     "— Viva Nomads · imóveis mobiliados para estadias de 30 a 180 dias",
     `Precisa de ajuda? Central de Ajuda: ${siteUrl}/ajuda`,
     `Gerenciar avisos: ${siteUrl}/dashboard/notificacoes`,
+    // E206: a linha antifraude do HTML também no texto puro.
+    `${AVISO_ANTIGOLPE} Dicas de segurança: ${siteUrl}/seguranca`,
     "Plataforma em fase de testes. Lançamento oficial em 2027.",
   ].join("\n");
 }
