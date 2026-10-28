@@ -622,7 +622,9 @@
         "t549-varredura-bloco39",
         "t559-varredura-bloco43",
         "t489-e176-menus",
-        "t562-e190-modo-um-toque"
+        "t562-e190-modo-um-toque",
+        "t582-varredura-bloco45",
+        "t583-e181-contadores-exatos"
       ]
     },
     "/dashboard/assinatura": {
@@ -662,7 +664,8 @@
         "t125-alerta-busca-salva",
         "t71-busca-topo",
         "t183-telas-logadas-390",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t583-e181-contadores-exatos"
       ]
     },
     "/dashboard/candidaturas": {
@@ -823,7 +826,8 @@
         "t416-varredura-bloco33",
         "t418-varredura-bloco35",
         "t560-varredura-bloco44",
-        "t567-e188-contratos-do-papel"
+        "t567-e188-contratos-do-papel",
+        "t582-varredura-bloco45"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -847,7 +851,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t286-esqueletos-vazios-48",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t583-e181-contadores-exatos"
       ]
     },
     "/dashboard/fechamento": {
@@ -900,7 +905,8 @@
         "t302-varredura-logada-bloco6",
         "t416-varredura-bloco33",
         "t461-prop5-contratos-sem-repeticao",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t582-varredura-bloco45"
       ]
     },
     "/dashboard/imoveis": {
@@ -1134,7 +1140,9 @@
         "t379-55e2-filtro-contato-um-toque",
         "t541-e168-painel-acompanha-filtro",
         "t486-e174b-selo-vinculo",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t584-e189-conta-unica-proposta",
+        "t587-e200-conversa-sem-mensagem"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1177,7 +1185,8 @@
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t584-e189-conta-unica-proposta"
       ]
     },
     "/dashboard/pedidos": {
@@ -1219,7 +1228,8 @@
         "t193-propostas",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t487-e178-primeiro-pagamento"
+        "t487-e178-primeiro-pagamento",
+        "t584-e189-conta-unica-proposta"
       ]
     },
     "/dashboard/reembolsos": {
@@ -1328,7 +1338,9 @@
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
         "t489-e176-menus",
-        "t566-e184-visitas-passadas"
+        "t566-e184-visitas-passadas",
+        "t581-visita-expirada",
+        "t582-varredura-bloco45"
       ]
     },
     "/dashboard/visitas/[id]": {
@@ -1769,7 +1781,9 @@
         "t212-ferramentas-proprietario",
         "t298-varredura-logada-bloco4",
         "t553-varredura-bloco41",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t582-varredura-bloco45",
+        "t584-e189-conta-unica-proposta"
       ]
     },
     "/dashboard/servicos": {
@@ -1811,7 +1825,9 @@
         "t271-admin-visual",
         "t388-varredura-bloco23",
         "t419-varredura-bloco36",
-        "t537-e165-admin-contrato-assinaturas"
+        "t537-e165-admin-contrato-assinaturas",
+        "t580-e197-assinaturas-sem-hash",
+        "t582-varredura-bloco45"
       ]
     },
     "/admin/solicitacoes": {
@@ -1914,7 +1930,8 @@
         "t240-conferencia-provas-admin",
         "t271-admin-visual",
         "t329-varredura-bloco11",
-        "t537-e165-admin-contrato-assinaturas"
+        "t537-e165-admin-contrato-assinaturas",
+        "t580-e197-assinaturas-sem-hash"
       ]
     },
     "/dashboard/servicos/pedidos/[id]": {
