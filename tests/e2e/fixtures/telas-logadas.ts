@@ -100,6 +100,7 @@ export const ROTAS_COM_PARAMETRO: Record<string, readonly string[]> = {
   "/admin/contratos/[id]": [],
   "/admin/parceiros/pedidos/[id]": [],
   "/dashboard/contratos/[id]": [],
+  "/dashboard/visitas/[id]": [],
   "/dashboard/estadia/[contratoId]": [],
   "/dashboard/estadia/[contratoId]/alteracao": [],
   "/dashboard/estadia/[contratoId]/confirmada": [],

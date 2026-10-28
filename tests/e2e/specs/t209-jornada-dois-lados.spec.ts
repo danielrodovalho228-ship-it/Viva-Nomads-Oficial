@@ -329,7 +329,8 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
     // Clicar no item leva à visita.
     await d.getByTestId("agenda-vista-lista").click();
     await d.locator('[data-testid="agenda-item"][data-tipo="visita"] a').first().click();
-    await expect(d).toHaveURL(/\/dashboard\/visitas#visita-/);
+    await expect(d).toHaveURL(/\/dashboard\/visitas\/[0-9a-f-]{36}$/); // E211: o detalhe da visita
+    await expect(d.getByTestId("visita-detalhe")).toHaveAttribute("data-papel", "dono");
     // Endereço antigo.
     await d.goto("/dashboard/calendario", { waitUntil: "domcontentloaded" });
     await expect(d).toHaveURL(/\/dashboard\/agenda$/);

@@ -12,7 +12,7 @@ test("abas do topo (snapshot): Início · Anúncios · Interessados · Contratos
     ABAS_DONO.map((a) => [a.rotulo, a.href]),
     [["Início", "/dashboard"], ["Anúncios", "/dashboard/imoveis"], ["Interessados", "/dashboard/leads"], ["Contratos", "/dashboard/contratos"], ["Mensagens", "/dashboard/mensagens"]],
   );
-  assert.deepEqual(ABAS_DONO.find((a) => a.id === "interessados")!.subabas!.map((s) => s.rotulo), ["Interessados", "Propostas", "Fechamento", "Pedidos na cidade"]);
+  assert.deepEqual(ABAS_DONO.find((a) => a.id === "interessados")!.subabas!.map((s) => s.rotulo), ["Interessados", "Propostas", "Fechamento", "Pedidos na cidade", "Visitas"]);
   assert.deepEqual(ABAS_DONO.find((a) => a.id === "contratos")!.subabas!.map((s) => s.rotulo), ["Contratos", "Ganhos", "Caução", "Recibos e notas"]);
   assert.equal(GANHOS_DISPONIVEL, true, "E176: Contratos ganha a subaba Ganhos");
 });
@@ -23,7 +23,7 @@ test("menu Conta ▾ (snapshot), com Modo morador e Sair como ações; MENUS-5: 
 });
 
 test("toda aba, subaba e item da Conta aponta para uma tela que existe (rotas antigas seguem abrindo)", () => {
-  const hrefs = [...ABAS_DONO.flatMap((a) => [a.href, ...(a.subabas ?? []).map((s) => s.href)]), ...CONTA_DONO.filter((i) => !i.acao).map((i) => i.href)];
+  const hrefs = [...ABAS_DONO.flatMap((a) => [a.href, ...(a.subabas ?? []).map((s) => s.href.split("?")[0])]), ...CONTA_DONO.filter((i) => !i.acao).map((i) => i.href)];
   for (const h of hrefs) {
     const conta = h.startsWith("/dashboard/conta/") ? "src/app/(dashboard)/dashboard/conta/[secao]/page.tsx" : h === "/ajuda" ? "src/app/(public)/ajuda/page.tsx" : rota(h);
     assert.ok(existsSync(conta), `${h} → ${conta}`);

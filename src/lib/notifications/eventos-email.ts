@@ -57,6 +57,7 @@ export type NotificationEvent =
   | "verificacao_analise_humana" // Prompt 50: 2ª reprovação automática da verificação → equipe (fila de documentos)
   | "saida_lembrete" // saída em 3 dias → proprietário e inquilino
   | "avaliacao_pedido" // 1 dia após a saída → proprietário e inquilino
+  | "bloco_inicio_lembrete" // E205-B2: bloco renovado (2 em diante) começa em até 3 dias sem pagamento registrado → morador
   | "renovacao_aviso" // 15 dias antes do fim do bloco → proprietário e inquilino
   // Propostas (prompt 17)
   | "proposta_recebida" // proposta ou contraproposta nova → a outra parte
@@ -185,6 +186,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   verificacao_analise_humana: { subject: "Verificação de identidade para análise de uma pessoa", body: () => "Uma verificação de identidade foi reprovada duas vezes pela checagem automática e espera a análise da equipe, com o motivo.", cta: "Abrir a fila de documentos", path: "/admin/documentos" },
   saida_lembrete: { subject: "Lembrete: a saída está chegando", body: (n) => `Olá${n ? " " + n : ""}, a saída do imóvel do seu contrato é em 3 dias. Combine a conferência de saída pela plataforma.`, cta: "Ver conferência de saída", path: "/dashboard/contratos" },
   avaliacao_pedido: { subject: "Como foi a estadia? Deixe sua avaliação", body: (n) => `Olá${n ? " " + n : ""}, a estadia terminou. Sua avaliação leva 2 minutos e ajuda os próximos moradores e proprietários.`, cta: "Avaliar a estadia", path: "/dashboard/contratos" },
+  bloco_inicio_lembrete: { subject: "O próximo bloco da sua estadia está começando", body: (n) => `Olá${n ? " " + n : ""}, o próximo bloco da sua estadia está começando. O pagamento é direto ao proprietário; os dados estão na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
   renovacao_aviso: { subject: "Seu período termina em 15 dias: quer renovar?", body: (n) => `Olá${n ? " " + n : ""}, o bloco do seu contrato termina em 15 dias. Se quiserem seguir, combinem a renovação pela plataforma.`, cta: "Ver o contrato", path: "/dashboard/contratos" },
   proposta_recebida: { subject: "Você recebeu uma proposta", body: (n) => `Olá${n ? " " + n : ""}, há uma proposta nova para você no Viva Nomads. Confira os valores e responda pela plataforma.`, cta: "Ver a proposta", path: "/dashboard/orcamentos" },
   visita_pedida: { subject: "Pedido de visita no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, um interessado pediu uma visita ao seu imóvel. Confirme um horário, proponha outro ou recuse pela plataforma.`, cta: "Responder o pedido", path: "/dashboard/visitas?de=dono" },
