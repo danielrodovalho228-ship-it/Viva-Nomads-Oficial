@@ -36,7 +36,7 @@ import { rodadaSimulada } from "@/lib/minimizacao/regras";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { avisosDeRemedicao } from "@/lib/internet-medida-servidor";
 import { lembretesDoFunil } from "@/lib/lembretes/servidor";
-import { emSilencio, textoRascunho } from "@/lib/lembretes/regras";
+import { acaoDoPasso, emSilencio, linhaOutrosRascunhos, rascunhosPorDono, textoRascunho } from "@/lib/lembretes/regras";
 import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { checklistAnuncio, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
@@ -75,21 +75,41 @@ export async function GET(request: Request) {
     .eq("status", "draft")
     .gte("created_at", `${dia(-30)}T00:00:00Z`)
     .limit(500);
-  for (const p of emSilencio(new Date()) ? [] : (rascunhos ?? [])) {
-    const dias = avisoAnuncioIncompleto(p.created_at as string, hoje);
-    if (!dias || !p.owner_id) continue;
-    const fatos = (await fatosDosImoveis(admin, p.owner_id as string, [p.id as string]).catch(() => new Map())).get(p.id as string);
-    const lista = fatos ? checklistAnuncio(prontidaoAnuncio(fatos), p.id as string) : null;
+  // E203: no máximo 1 e-mail de rascunho por dono por dia. Rascunhos já avisados (chave de envio) saem antes; dos que
+  // sobram, o mais recente vai no assunto e no botão e os outros entram na linha "Você também tem…" (e ficam marcados).
+  const candidatos = (emSilencio(new Date()) ? [] : (rascunhos ?? []))
+    .filter((p) => p.owner_id && avisoAnuncioIncompleto(p.created_at as string, hoje))
+    .map((p) => ({ id: p.id as string, ownerId: p.owner_id as string, titulo: (p.title as string) || "", criadoEm: p.created_at as string, chave: chaveEnvio("anuncio_incompleto", p.id as string, p.owner_id as string, "3") }));
+  // Chave do dia por dono: uma 2ª rodada no mesmo dia (manual + agendada) não manda outro e-mail de rascunho.
+  const chaveDoDia = (ownerId: string) => chaveEnvio("anuncio_incompleto", `dia-${hoje}`, ownerId);
+  const jaAvisados = new Set<string>();
+  if (candidatos.length) {
+    const chaves = [...candidatos.map((c) => c.chave), ...new Set(candidatos.map((c) => chaveDoDia(c.ownerId)))];
+    const { data: envs } = await admin.from("automacoes_envios").select("chave").in("chave", chaves);
+    for (const e of envs ?? []) jaAvisados.add(e.chave as string);
+  }
+  const pendentes = candidatos.filter((c) => !jaAvisados.has(c.chave) && !jaAvisados.has(chaveDoDia(c.ownerId)));
+  for (const { principal, outros } of rascunhosPorDono(pendentes)) {
+    const dias = 3;
+    const fatos = (await fatosDosImoveis(admin, principal.ownerId, [principal.id]).catch(() => new Map())).get(principal.id);
+    const lista = fatos ? checklistAnuncio(prontidaoAnuncio(fatos), principal.id) : null;
     const faltam = (lista?.itens ?? []).filter((i) => !i.ok);
+    const outrosTexto = linhaOutrosRascunhos(outros.map((o) => o.titulo));
     alvos.push({
       tipo: "anuncio_incompleto",
-      usuarioId: p.owner_id as string,
-      refId: p.id as string,
+      usuarioId: principal.ownerId,
+      refId: principal.id,
       variante: String(dias),
-      url: lista?.proximo?.href ?? `/dashboard/imoveis/novo?draft=${encodeURIComponent(p.id as string)}`,
-      subject: faltam.length ? textoRascunho(faltam.length, (p.title as string) || "") : undefined,
-      ctaLabel: lista?.proximo ? `Continuar: ${lista.proximo.label}` : undefined,
-      detalhe: detalheAutomacao("anuncio_incompleto", { imovel: (p.title as string) || undefined, dias, faltam: faltam.map((i) => i.label) }),
+      url: lista?.proximo?.href ?? `/dashboard/imoveis/novo?draft=${encodeURIComponent(principal.id)}`,
+      subject: faltam.length ? textoRascunho(faltam.length, principal.titulo) : undefined,
+      // O botão nomeia o PRÓXIMO passo como ação ("Preencher o endereço"), não o rótulo do item.
+      ctaLabel: lista?.proximo ? acaoDoPasso(lista.proximo) : undefined,
+      detalhe: [detalheAutomacao("anuncio_incompleto", { imovel: principal.titulo || undefined, dias, faltam: faltam.map((i) => acaoDoPasso(i)) }), outrosTexto].filter(Boolean).join(" "),
+      // Os outros rascunhos do mesmo dono já foram citados: marcados como avisados (não viram e-mail próprio amanhã).
+      depois: async () =>
+        admin
+          .from("automacoes_envios")
+          .insert([{ chave: chaveDoDia(principal.ownerId), tipo: "anuncio_incompleto", usuario_id: principal.ownerId }, ...outros.map((o) => ({ chave: o.chave, tipo: "anuncio_incompleto", usuario_id: o.ownerId }))]),
     });
   }
 
