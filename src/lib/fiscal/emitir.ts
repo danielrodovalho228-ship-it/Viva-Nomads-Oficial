@@ -11,6 +11,7 @@ import { registrarDocumento } from "@/lib/fiscal/registro";
 import type { Prefixo } from "@/lib/fiscal/prefixos";
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
+import { motivoDeRegistroAnulado } from "@/lib/fiscal/fila-falhas";
 
 /**
  * Emissão dos documentos da plataforma (SÓ servidor): recibo de aluguel,
@@ -314,6 +315,12 @@ async function registrarResultado(admin: Admin, origem: { pagamentoId?: string; 
     const falhaEnvio = r.ok && r.envio ? motivoFalhaEnvio(r.envio) : null;
     if (r.ok && !falhaEnvio) {
       await admin.from("documentos_falhas").update({ resolvido_em: new Date().toISOString(), documento_id: r.id }).eq(coluna, id).is("resolvido_em", null);
+      return;
+    }
+    // Registro anulado depois de uma tentativa que falhou: a refeita da fila acha "anulado" e antes reabria a falha
+    // (tentativas + 1) para sempre. Anulado não volta para "Documentos com falha": fecha a linha aberta (t230).
+    if (!r.ok && motivoDeRegistroAnulado(r.motivo)) {
+      await admin.from("documentos_falhas").update({ resolvido_em: new Date().toISOString() }).eq(coluna, id).is("resolvido_em", null);
       return;
     }
     const motivo = (r.ok ? (falhaEnvio as string) : r.motivo).slice(0, 300);

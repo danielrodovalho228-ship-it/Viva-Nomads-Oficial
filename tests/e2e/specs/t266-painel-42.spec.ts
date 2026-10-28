@@ -3,9 +3,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 
 /**
  * T266 — Prompt 42 (painel), a 390 e 1280 px, no laboratório:
- *  1. Visão geral do proprietário abre com "Hoje você tem N decisões" — sem "Bem-vindo" nem funil de passos; cada linha
- *     é um link para a tela da decisão (contraproposta → /dashboard/propostas/<id>, contrato → /dashboard/contratos/<id>,
- *     candidatura nova → /dashboard/leads);
+ *  1. Início do proprietário (PROP-6): sem "Bem-vindo" nem funil de passos; a pendência mais urgente (contraproposta,
+ *     por prazo) vira a faixa de alerta e o bloco "Próximo passo", ambos levando a /dashboard/propostas/<id>;
  *  2. proprietário novo (sem imóvel): Início "Anuncie seu primeiro imóvel" e um único primário, "Anunciar meu imóvel";
  *  3. Conta sem capa de foto (título em texto);
  *  4. Ferramentas tem o simulador PF × PJ (/dashboard/tributacao);
@@ -105,44 +104,36 @@ test.describe("T266 — Painel do Prompt 42", () => {
   });
 
   for (const largura of LARGURAS) {
-    test(`${largura}px — Visão geral do dono: "Hoje você tem N decisões", linhas que levam à tela da decisão`, async ({ browser }) => {
+    test(`${largura}px — Início do dono: a pendência mais urgente na faixa e no bloco "Próximo passo", levando à tela da decisão`, async ({ browser }) => {
       test.setTimeout(120_000);
       const page = await abrir(browser, dono.email, largura);
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      const h1 = page.getByRole("heading", { level: 1 });
-      await expect(h1).toHaveText(/^Hoje você tem \d+ decis(ão|ões)$/, { timeout: 25_000 });
+      // PROP-6: o Início do dono tem h1 sr-only ("Início"); as decisões viraram UMA faixa de alerta + o bloco principal.
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Início", { timeout: 25_000 });
+      await expect(page.getByTestId("inicio-dono")).toBeVisible();
       await expect(page.locator("main")).not.toContainText("Bem-vindo");
       await expect(page.getByTestId("passos-proprietario")).toHaveCount(0);
       await expect(page.locator('[data-testid="painel-capa"]')).toHaveCount(0);
 
-      const linhas = page.getByTestId("decisao");
-      const n = Number((await h1.textContent())!.match(/\d+/)![0]);
-      await expect(linhas).toHaveCount(n);
+      // Prazo primeiro: a contraproposta (vence em dias) é a mais urgente, antes do contrato (sem prazo) e da candidatura.
+      const alerta = page.getByTestId("inicio-dono-alerta");
+      await expect(alerta).toContainText(/Contraproposta de R\$\s?3\.000 por mês para/);
+      await expect(alerta).toContainText(TITULO);
+      await expect(alerta).toContainText(/vence em \d+ dias/);
+      await expect(alerta).toHaveAttribute("href", `/dashboard/propostas/${ids.proposta}`);
 
-      const proposta = page.locator(`[data-testid="decisao"][data-decisao="proposta-${ids.proposta}"]`);
-      await expect(proposta).toContainText(/Contraproposta de R\$\s?3\.000 por mês para/);
-      await expect(proposta).toContainText(TITULO);
-      await expect(proposta.getByTestId("decisao-prazo")).toContainText(/vence em \d+ dias/);
-      await expect(proposta).toHaveAttribute("href", `/dashboard/propostas/${ids.proposta}`);
+      const principal = page.getByTestId("inicio-dono-principal");
+      await expect(principal).toHaveAttribute("data-tipo", "decisao");
+      await expect(principal).toContainText("Próximo passo");
+      await expect(principal.getByTestId("inicio-dono-botao")).toHaveAttribute("href", `/dashboard/propostas/${ids.proposta}`);
 
-      const contrato = page.locator(`[data-testid="decisao"][data-decisao="contrato-${ids.contrato}"]`);
-      await expect(contrato).toHaveText(new RegExp(`Contrato de ${TITULO} aguarda sua assinatura`));
-      await expect(contrato).toHaveAttribute("href", `/dashboard/contratos/${ids.contrato}`);
-
-      const candidatura = page.locator(`[data-testid="decisao"][data-decisao="candidatura-${ids.imovel}"]`);
-      await expect(candidatura).toContainText(`Nova candidatura para ${TITULO}`);
-      await expect(candidatura).toHaveAttribute("href", "/dashboard/leads");
-
-      // Prazo primeiro: a contraproposta (vence em dias) vem antes do contrato (sem prazo).
-      const ordem = await linhas.evaluateAll((els) => els.map((e) => e.getAttribute("data-decisao")));
-      expect(ordem.indexOf(`proposta-${ids.proposta}`)).toBeLessThan(ordem.indexOf(`contrato-${ids.contrato}`));
-
-      // Nada se decide aqui: a linha leva à tela da decisão.
-      expect(await primarios(page)).toHaveLength(0);
+      // Um único primário na tela (o "Resolver agora"); a lista de decisões não existe mais no Início do dono.
+      await expect(page.getByTestId("decisao")).toHaveCount(0);
+      expect(await primarios(page)).toHaveLength(1);
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t266-dono-decisoes-${largura}.png`, fullPage: true });
-      await contrato.click();
-      await expect(page).toHaveURL(new RegExp(`/dashboard/contratos/${ids.contrato}$`));
+      await principal.getByTestId("inicio-dono-botao").click();
+      await expect(page).toHaveURL(new RegExp(`/dashboard/propostas/${ids.proposta}$`));
       await page.context().close();
     });
 

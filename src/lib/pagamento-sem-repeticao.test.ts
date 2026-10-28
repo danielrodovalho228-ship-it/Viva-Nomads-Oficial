@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { numeroPublicoContrato } from "./contrato-ref.ts";
 import { rotuloPagamentoBloco } from "./pagamento-bloco.ts";
-import { refContratoVN } from "./fiscal/fila-falhas.ts";
+import { refContratoVN, motivoDeRegistroAnulado } from "./fiscal/fila-falhas.ts";
 
 const ler = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
 const migracao = ler("../../supabase/migrations/0182_pagamento_sem_repeticao.sql");
@@ -80,4 +80,13 @@ test("item 3: limpeza só de contas de teste, anula (nunca apaga) e o documento 
   const lista = ler("../components/documentos/documentos-contrato.tsx");
   assert.match(lista, /Anulado: \{motivo\}/);
   assert.match(lista, /href=\{`\/api\/documentos\/\$\{d\.id\}`\}/, "o PDF continua acessível");
+});
+
+test("t230: registro anulado não reabre a falha na fila (a refeita acha 'anulado' e fecha a linha aberta)", () => {
+  assert.equal(motivoDeRegistroAnulado("pagamento anulado"), true);
+  assert.equal(motivoDeRegistroAnulado("documento anulado"), true);
+  assert.equal(motivoDeRegistroAnulado("sem servidor"), false);
+  assert.equal(motivoDeRegistroAnulado(null), false);
+  const emitir = ler("./fiscal/emitir.ts");
+  assert.match(emitir, /if \(!r\.ok && motivoDeRegistroAnulado\(r\.motivo\)\) \{\s+await admin\.from\("documentos_falhas"\)\.update\(\{ resolvido_em/);
 });
