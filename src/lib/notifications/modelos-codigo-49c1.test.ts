@@ -68,3 +68,15 @@ test("o corpo enviado ao Supabase leva os 2 modelos de código com o mesmo HTML 
     assert.equal(corpo[`mailer_templates_${CAMPO_DO_MODELO[t.modelo]}_content`], t.html);
   }
 });
+
+test("E206: todo e-mail de código (Supabase) tem a validade com o número real, 'só funciona uma vez' e a linha antifraude", async () => {
+  const { templatesSupabase } = await import("./templates-supabase.ts");
+  const { TEXTO_VALIDADE_CODIGO } = await import("../seguranca/codigo-acesso.ts");
+  const codigos = templatesSupabase().filter((t) => t.html.includes("{{ .Token }}"));
+  assert.deepEqual(codigos.map((t) => t.arquivo).sort(), ["codigo-de-acesso.html", "confirmar-cadastro.html", "reautenticacao.html"]);
+  for (const t of codigos) {
+    assert.ok(t.html.includes(`Ele vale por ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez.`), `${t.arquivo}: validade`);
+    assert.ok(t.html.includes("Nunca passe este código a ninguém — a Viva Nomads não pede código por WhatsApp ou SMS."), `${t.arquivo}: antifraude`);
+    assert.doesNotMatch(t.html, /poucos minutos|alguns minutos|Nunca compartilhe/);
+  }
+});

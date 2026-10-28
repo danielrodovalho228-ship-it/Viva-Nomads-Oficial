@@ -93,7 +93,8 @@ export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
       modalidade: v.modalidade === "presencial" ? "presencial" : "video",
       status: v.status,
       pessoa: pessoa(v.tenant_id, v.property_id),
-      href: `/dashboard/visitas#visita-${v.id}`,
+      // E211: o detalhe da visita (a lista /dashboard/visitas é a do morador; o dono abre ?de=dono).
+      href: `/dashboard/visitas/${v.id}`,
     });
   }
   for (const c of (contratos ?? []) as { id: string; property_id: string; tenant_id: string; contrato_blocos: { inicio: string; fim: string }[] | null }[]) {

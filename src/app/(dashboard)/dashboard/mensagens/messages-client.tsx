@@ -473,7 +473,7 @@ function VisitaNaConversa({ propertyId, outroId }: { propertyId: string; outroId
     <div data-conversa-visita-caixa={chave} hidden={!visita}>
       {visita && (
         <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita" data-imovel={propertyId} data-visita={visita.id}>
-          <CartaoVisita key={`${chave}-${visita.id}-${visita.status}`} v={v as Omit<NonNullable<typeof visita>, "papel">} papel={papel} compacto onMudou={() => setVersao((n) => n + 1)} />
+          <CartaoVisita key={`${chave}-${visita.id}-${visita.status}`} v={v as Omit<NonNullable<typeof visita>, "papel">} papel={papel} compacto hrefDetalhe={`/dashboard/visitas/${visita.id}`} onMudou={() => setVersao((n) => n + 1)} />
         </div>
       )}
     </div>

@@ -93,6 +93,7 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   checkin_lembrete: "contrato",
   saida_lembrete: "contrato",
   renovacao_aviso: "contrato",
+  bloco_inicio_lembrete: "contrato",
   anuncio_incompleto: "transacional",
   verificacao_parada: "transacional",
   parceiro_sem_resposta: "atendimento",
