@@ -1,10 +1,12 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { noPasso } from "../fixtures/cadastro";
 
 /*
   T564 — E193 (print do Daniel, 25/10): a qualificação usa UM padrão de controle — o cartão grande tocável. Nenhum
   interruptor (switch) nem chip nas 5 telas: sim/não ("Sim, tem" / "Não tem"), as opções com ícone e o "Não tem
-  internet" são o mesmo cartão (data-cartao-qualificacao), no computador e no celular.
+  internet" são o mesmo cartão (data-cartao-qualificacao), no computador e no celular. No Passo 5, as comodidades
+  também (antes, chips): cartão de borda dupla, verde e com o visto quando marcado.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -29,6 +31,7 @@ test.describe("T564 — E193: um padrão só de cartões na qualificação", () 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.dono);
+    ids.rascunho = await criarImovelPronto(ids.dono, `Imóvel cartões ${sufixo}`);
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
@@ -57,6 +60,30 @@ test.describe("T564 — E193: um padrão só de cartões na qualificação", () 
         await p.screenshot({ path: `${SAIDA}/t564-tela${n}-${largura}.png`, fullPage: true });
         await p.getByTestId("qualificacao-continuar").click();
       }
+      await p.context().close();
+    });
+  }
+
+  for (const largura of [1280, 390] as const) {
+    test(`${largura} px — Passo 5: comodidades no mesmo cartão, sem chips`, async ({ browser }) => {
+      const p = await entrar(browser, dono.email, senha);
+      await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
+      await noPasso(p, "comodidades", 30_000);
+      const etapa = p.getByTestId("etapa-encontramos");
+      const itens = etapa.locator("button[data-comodidade]");
+      expect(await itens.count()).toBeGreaterThan(0);
+      expect(await etapa.locator("button[data-comodidade][data-cartao-assistente]").count()).toBe(await itens.count());
+      const primeiro = itens.first();
+      const antes = await primeiro.getAttribute("aria-pressed");
+      await primeiro.click();
+      await expect(primeiro).toHaveAttribute("aria-pressed", antes === "true" ? "false" : "true");
+      // Cartão, não pílula: cantos de cartão e borda dupla.
+      const raio = await primeiro.evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius));
+      expect(raio).toBeLessThan(20);
+      expect(await primeiro.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe("2px");
+      await primeiro.scrollIntoViewIfNeeded();
+      await p.screenshot({ path: `${SAIDA}/t564-passo5-${largura}.png` });
       await p.context().close();
     });
   }
