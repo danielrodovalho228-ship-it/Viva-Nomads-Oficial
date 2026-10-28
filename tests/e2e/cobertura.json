@@ -2300,6 +2300,14 @@
         "t470-qa-leitor-caixas",
         "t521-qa-caixa-sem-token"
       ]
+    },
+    "/qa/entrar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t596-qa-login-direto"
+      ]
     }
   },
   "rotas": {
@@ -3020,6 +3028,14 @@
       "specs": [
         "t397-foto-na-hora",
         "t410-niveis-medir-rascunho"
+      ]
+    },
+    "/api/qa/entrar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t596-qa-login-direto"
       ]
     }
   },
