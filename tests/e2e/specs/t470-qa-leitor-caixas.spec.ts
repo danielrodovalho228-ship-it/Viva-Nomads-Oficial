@@ -7,7 +7,8 @@ import { adm, apagarContas, CHAVE_ANON, criarConta, entrar, NO_LABORATORIO, nova
  * - conta comum e conta de teste SEM qa_leitor: /dashboard/qa/emails = 404 e a RLS devolve 0 linhas de emails_teste;
  * - conta de teste COM qa_leitor: lê todas as linhas de emails_teste e NADA a mais de outra tabela (mesmas contagens
  *   com e sem a marca); filtro por conta e por evento; nenhum e-mail completo na tela (só mascarado);
- * - ninguém se marca sozinho: o update do próprio perfil não liga qa_leitor (migração 0246).
+ * - ninguém se marca sozinho: o update do próprio perfil não liga qa_leitor (migração 0246);
+ * - E199 (opção b): conta ADMIN sem a marca é redirecionada para a aba E-mails de /admin/dados-de-teste (não 404).
  */
 const sufixo = novoSufixo();
 const senha = novaSenha();
@@ -15,6 +16,7 @@ const comum = { email: `qa470-comum-${sufixo}@lab.vivanomads.test`, nome: "Comum
 const semFlag = { email: `qa470-teste-${sufixo}@lab.vivanomads.test`, nome: "Teste T470", role: "tenant" as const };
 const leitor = { email: `qa470-leitor-${sufixo}@lab.vivanomads.test`, nome: "Leitor T470", role: "owner" as const };
 const alvo = { email: `qa470-alvo-${sufixo}@lab.vivanomads.test`, nome: "Alvo T470", role: "tenant" as const };
+const admin = { email: `qa470-admin-${sufixo}@lab.vivanomads.test`, nome: "Admin T470", role: "owner" as const }; // vira admin no beforeAll (chave de serviço)
 const ids: Record<string, string | undefined> = {};
 const EVENTO_A = `lab470_a_${sufixo}`;
 const EVENTO_B = `lab470_b_${sufixo}`;
@@ -52,6 +54,8 @@ test.describe("T470 — QA-CAIXA-B: leitor de QA das caixas de teste", () => {
     ids.semFlag = await criarConta(semFlag, senha);
     ids.leitor = await criarConta(leitor, senha);
     ids.alvo = await criarConta(alvo, senha);
+    ids.admin = await criarConta(admin, senha);
+    await adm().from("profiles").update({ is_teste: false, qa_leitor: false, role: "admin" }).eq("id", ids.admin!);
     // Contas do domínio do laboratório já nascem is_teste? Garante pela chave de serviço (o que a migração faria).
     await adm().from("profiles").update({ is_teste: false, qa_leitor: false }).eq("id", ids.comum!);
     await adm().from("profiles").update({ is_teste: true, qa_leitor: false }).eq("id", ids.semFlag!);
@@ -67,7 +71,7 @@ test.describe("T470 — QA-CAIXA-B: leitor de QA das caixas de teste", () => {
   test.afterAll(async () => {
     if (!NO_LABORATORIO) return;
     await adm().from("emails_teste").delete().in("evento", [EVENTO_A, EVENTO_B]);
-    await apagarContas([ids.comum, ids.semFlag, ids.leitor, ids.alvo]);
+    await apagarContas([ids.comum, ids.semFlag, ids.leitor, ids.alvo, ids.admin]);
   });
 
   test("1. conta comum e conta de teste sem a marca: 404 e RLS vazio", async ({ browser }) => {
@@ -83,6 +87,20 @@ test.describe("T470 — QA-CAIXA-B: leitor de QA das caixas de teste", () => {
       expect(error, c.email).toBeNull();
       expect(data ?? [], c.email).toHaveLength(0);
     }
+  });
+
+  test("1b. E199: admin sem a marca vai para a aba E-mails do admin (redirect, não 404)", async ({ browser }) => {
+    test.skip(!NO_LABORATORIO, "Precisa do banco do laboratório.");
+    const p = await abrir(browser, admin.email);
+    const r = await p.goto("/dashboard/qa/emails", { waitUntil: "domcontentloaded" });
+    // A cadeia de redirecionamentos passa por /admin/dados-de-teste?aba=emails (depois, o portão de 2FA do admin pode agir).
+    const cadeia: string[] = [];
+    for (let req = r?.request() ?? null; req; req = req.redirectedFrom()) cadeia.push(new URL(req.url()).pathname + new URL(req.url()).search);
+    expect(cadeia, cadeia.join(" ← ")).toContain("/admin/dados-de-teste?aba=emails");
+    expect(r?.status()).not.toBe(404);
+    expect(new URL(p.url()).pathname.startsWith("/dashboard/qa")).toBe(false);
+    await expect(p.getByTestId("qa-emails")).toHaveCount(0);
+    await p.context().close();
   });
 
   test("2. ninguém se marca sozinho: o update do próprio perfil não liga qa_leitor", async () => {

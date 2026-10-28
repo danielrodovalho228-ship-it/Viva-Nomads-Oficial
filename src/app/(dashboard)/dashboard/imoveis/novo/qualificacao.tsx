@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AirVent, AlertCircle, BedDouble, Building, Check, CheckCircle2, CookingPot, Fan, Microwave, Refrigerator, Shirt, WashingMachine, X } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { itemConforto } from "@/config/conforto-minimo";
 import {
   SEM_INTERNET_QUALIFICACAO,
@@ -19,6 +17,8 @@ import {
   type Respostas,
 } from "@/lib/anuncio/qualificacao-conforto";
 import { cn } from "@/lib/utils";
+import { progressoQualificacao, textoQualificacao } from "@/lib/anuncio/assistente-telas";
+import { RodapeAssistente } from "./rodape-assistente";
 
 const ICONES: Record<IconeOpcao, React.ComponentType<{ className?: string }>> = {
   ar: AirVent,
@@ -68,32 +68,45 @@ export function Qualificacao(p: {
     link.addEventListener("click", aoClicar, { capture: true });
     return () => link.removeEventListener("click", aoClicar, { capture: true });
   }, []);
-  const progresso = resultado ? 100 : Math.round(((p.tela + 1) / TOTAL_TELAS) * 100);
+  // E194 (print do Daniel, 25/10): a Qualificação não é "outro cadastro" — mora na moldura do assistente: o mesmo selo
+  // "Anunciar imóvel" do topo dos passos e o mesmo rodapé fixo (botão primário + barra contínua até o Passo 1).
+  const telaAtual = resultado ? TOTAL_TELAS : p.tela + 1;
   return (
-    <section className="w-full pb-16" data-testid="qualificacao" data-tela={resultado ? "resultado" : p.tela + 1}>
-      <p className="text-center text-sm font-medium text-ink sm:text-base" data-testid="qualificacao-progresso">
+    <section className="w-full" data-testid="qualificacao" data-tela={resultado ? "resultado" : p.tela + 1}>
+      <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
+        Anunciar imóvel <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
+      </span>
+      <p className="mt-3 text-sm font-medium text-muted" data-testid="qualificacao-progresso">
         {resultado ? "Qualificação · pronta" : `Qualificação · ${p.tela + 1} de ${TOTAL_TELAS}`}
       </p>
-      <div className="mx-auto mt-2 h-2 w-full max-w-md overflow-hidden rounded-full bg-sage-100" aria-hidden>
-        <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${progresso}%` }} />
-      </div>
       {resultado ? (
-        <Resultado respostas={p.respostas} onComecar={p.onComecar} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} ocupado={p.ocupado} />
+        <Resultado respostas={p.respostas} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} />
       ) : (
         <Tela
           indice={p.tela}
           respostas={p.respostas}
           onResponder={p.onResponder}
-          onContinuar={() => p.onTela(p.tela + 1)}
           onResponderDepois={p.onResponderDepois}
           ocupado={p.ocupado}
         />
       )}
+      <RodapeAssistente
+        pos={0}
+        total={10}
+        texto={resultado ? "Qualificação pronta · a seguir, o Passo 1" : textoQualificacao(telaAtual, TOTAL_TELAS)}
+        pct={progressoQualificacao(resultado ? TOTAL_TELAS : p.tela, TOTAL_TELAS)}
+        onVoltar={!resultado && p.tela > 0 ? () => p.onTela(p.tela - 1) : null}
+        primario={
+          resultado
+            ? { rotulo: p.ocupado ? "Abrindo o cadastro…" : "Começar o cadastro", onClick: p.onComecar, disabled: p.ocupado, testid: "qualificacao-comecar", seta: true }
+            : { rotulo: "Continuar", onClick: () => p.onTela(p.tela + 1), testid: "qualificacao-continuar", seta: true }
+        }
+      />
     </section>
   );
 }
 
-function Tela(p: { indice: number; respostas: Respostas; onResponder: (id: string, v: string | boolean) => void; onContinuar: () => void; onResponderDepois: () => void; ocupado?: boolean }) {
+function Tela(p: { indice: number; respostas: Respostas; onResponder: (id: string, v: string | boolean) => void; onResponderDepois: () => void; ocupado?: boolean }) {
   const tela = TELAS_QUALIFICACAO[p.indice];
   return (
     <>
@@ -109,13 +122,10 @@ function Tela(p: { indice: number; respostas: Respostas; onResponder: (id: strin
           <PerguntaQ key={q.id} q={q} valor={p.respostas[q.id]} onResponder={(v) => p.onResponder(q.id, v)} />
         ))}
       </div>
-      <div className="mt-8 flex flex-col-reverse items-center gap-3 sm:flex-row sm:justify-center sm:gap-8">
+      <div className="mt-8 flex justify-center">
         <button type="button" onClick={p.onResponderDepois} disabled={p.ocupado} className="min-h-11 px-2 text-sm font-medium text-ink underline underline-offset-4" data-testid="qualificacao-depois">
           Responder depois
         </button>
-        <Button size="lg" onClick={p.onContinuar} className="w-full sm:w-auto" data-testid="qualificacao-continuar">
-          Continuar
-        </Button>
       </div>
     </>
   );
@@ -133,28 +143,69 @@ function OQueConta({ chave }: { chave: Pergunta["chave"] }) {
   );
 }
 
+/**
+ * E193 (print do Daniel, 25/10): UM padrão de controle no assistente inteiro — o cartão grande tocável dos mockups da
+ * qualificação. Antes, a mesma tela misturava cartões com interruptor (toggle), cartões de opção com ícone e um chip
+ * ("Não tem internet"). Agora sim/não, opções e "Não tem internet" são o mesmo cartão (celular e computador).
+ */
+function CartaoOpcao(p: { on: boolean; onClick: () => void; icone: React.ComponentType<{ className?: string }>; rotulo: string; grande?: boolean; testId: string }) {
+  const Icone = p.icone;
+  return (
+    <button
+      type="button"
+      aria-pressed={p.on}
+      onClick={p.onClick}
+      className={cn(
+        "relative flex min-h-14 w-full items-center gap-4 rounded-xl border-2 bg-white p-4 text-left text-base text-ink transition-colors",
+        p.grande && "sm:min-h-44 sm:flex-col sm:justify-center sm:text-center",
+        p.on ? "border-forest bg-sage-100" : "border-line hover:border-sage"
+      )}
+      data-testid={p.testId}
+      data-cartao-qualificacao
+    >
+      <Icone className={cn("h-8 w-8 shrink-0", p.on ? "text-forest" : "text-muted", p.grande && "sm:h-14 sm:w-14")} aria-hidden />
+      <span className="min-w-0 flex-1">{p.rotulo}</span>
+      {p.on && <Check className="h-5 w-5 shrink-0 rounded-full bg-forest p-1 text-white sm:absolute sm:right-3 sm:top-3" aria-hidden />}
+    </button>
+  );
+}
+
+function Enunciado({ q, htmlFor }: { q: Pergunta; htmlFor?: string }) {
+  return (
+    <>
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="block text-base font-medium text-ink sm:text-center">
+          {q.rotulo}
+        </label>
+      ) : (
+        <legend className="text-base font-medium text-ink sm:mx-auto sm:text-center">{q.rotulo}</legend>
+      )}
+      <span className="sm:text-center">
+        <OQueConta chave={q.chave} />
+      </span>
+    </>
+  );
+}
+
 function PerguntaQ({ q, valor, onResponder }: { q: Pergunta; valor: string | boolean | undefined; onResponder: (v: string | boolean) => void }) {
   if (q.tipo === "toggle") {
     return (
-      <div className="flex items-start justify-between gap-4 rounded-xl border border-line bg-white p-4" data-testid={`qualificacao-pergunta-${q.id}`}>
-        <span className="min-w-0">
-          <span className="block text-base font-medium text-ink">{q.rotulo}</span>
-          <OQueConta chave={q.chave} />
-        </span>
-        <Switch checked={valor === true} onChange={(v) => onResponder(v)} label={q.rotulo} testId={`qualificacao-toggle-${q.id}`} />
-      </div>
+      <fieldset data-testid={`qualificacao-pergunta-${q.id}`}>
+        <Enunciado q={q} />
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <CartaoOpcao on={valor === true} onClick={() => onResponder(true)} icone={CheckCircle2} rotulo="Sim, tem" testId={`qualificacao-opcao-${q.id}-sim`} />
+          <CartaoOpcao on={valor === false} onClick={() => onResponder(false)} icone={X} rotulo="Não tem" testId={`qualificacao-opcao-${q.id}-nao`} />
+        </div>
+      </fieldset>
     );
   }
   if (q.tipo === "internet") {
     const sem = valor === SEM_INTERNET_QUALIFICACAO;
     return (
-      <div className="rounded-xl border border-line bg-white p-4" data-testid="qualificacao-pergunta-internet">
-        <label className="block text-base font-medium text-ink" htmlFor="qualificacao-mbps">
-          {q.rotulo}
-        </label>
-        <OQueConta chave={q.chave} />
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-2">
+      <div data-testid="qualificacao-pergunta-internet">
+        <Enunciado q={q} htmlFor="qualificacao-mbps" />
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <span className={cn("flex min-h-14 items-center gap-3 rounded-xl border-2 bg-white p-4", !sem && typeof valor === "string" && valor ? "border-forest bg-sage-100" : "border-line")}>
             <input
               id="qualificacao-mbps"
               inputMode="numeric"
@@ -164,17 +215,9 @@ function PerguntaQ({ q, valor, onResponder }: { q: Pergunta; valor: string | boo
               className="input h-11 w-32"
               data-testid="qualificacao-mbps"
             />
-            <span className="text-sm text-muted">Mbps</span>
+            <span className="text-base text-ink">Mbps</span>
           </span>
-          <button
-            type="button"
-            aria-pressed={sem}
-            onClick={() => onResponder(sem ? "" : SEM_INTERNET_QUALIFICACAO)}
-            className={cn("min-h-11 rounded-lg border px-4 text-sm font-medium", sem ? "border-forest bg-sage-100 text-forest" : "border-line bg-white text-ink")}
-            data-testid="qualificacao-sem-internet"
-          >
-            Não tem internet
-          </button>
+          <CartaoOpcao on={sem} onClick={() => onResponder(sem ? "" : SEM_INTERNET_QUALIFICACAO)} icone={X} rotulo="Não tem internet" testId="qualificacao-sem-internet" />
         </div>
       </div>
     );
@@ -182,39 +225,25 @@ function PerguntaQ({ q, valor, onResponder }: { q: Pergunta; valor: string | boo
   const grandes = q.opcoes.length === 3 && q.opcoes.every((o) => o.icone !== "nao");
   return (
     <fieldset data-testid={`qualificacao-pergunta-${q.id}`}>
-      <legend className="text-base font-medium text-ink sm:mx-auto sm:text-center">{q.rotulo}</legend>
-      <span className="sm:text-center">
-        <OQueConta chave={q.chave} />
-      </span>
+      <Enunciado q={q} />
       <div className={cn("mt-3 grid gap-3", grandes ? "sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-3")}>
-        {q.opcoes.map((o) => {
-          const on = valor === o.id;
-          const Icone = ICONES[o.icone];
-          return (
-            <button
-              key={o.id}
-              type="button"
-              aria-pressed={on}
-              onClick={() => onResponder(o.id)}
-              className={cn(
-                "relative flex min-h-14 items-center gap-4 rounded-xl border-2 bg-white p-4 text-left text-base text-ink transition-colors",
-                grandes && "sm:min-h-44 sm:flex-col sm:justify-center sm:text-center",
-                on ? "border-forest bg-sage-100" : "border-line hover:border-sage"
-              )}
-              data-testid={`qualificacao-opcao-${q.id}-${o.id}`}
-            >
-              <Icone className={cn("h-8 w-8 shrink-0", on ? "text-forest" : "text-muted", grandes && "sm:h-14 sm:w-14")} aria-hidden />
-              <span className="min-w-0 flex-1">{o.rotulo}</span>
-              {on && <Check className="h-5 w-5 shrink-0 rounded-full bg-forest p-1 text-white sm:absolute sm:right-3 sm:top-3" aria-hidden />}
-            </button>
-          );
-        })}
+        {q.opcoes.map((o) => (
+          <CartaoOpcao
+            key={o.id}
+            on={valor === o.id}
+            onClick={() => onResponder(o.id)}
+            icone={ICONES[o.icone]}
+            rotulo={o.rotulo}
+            grande={grandes}
+            testId={`qualificacao-opcao-${q.id}-${o.id}`}
+          />
+        ))}
       </div>
     </fieldset>
   );
 }
 
-function Resultado({ respostas, onComecar, onVer, onResponderDeNovo, ocupado }: { respostas: Respostas; onComecar: () => void; onVer: () => void; onResponderDeNovo: () => void; ocupado?: boolean }) {
+function Resultado({ respostas, onVer, onResponderDeNovo }: { respostas: Respostas; onVer: () => void; onResponderDeNovo: () => void }) {
   const { conforto } = aplicarRespostas(respostas);
   const faltam = faltamDoEssencial(conforto);
   const { titulo, subtitulo } = tituloResultado(faltam.length);
@@ -257,9 +286,6 @@ function Resultado({ respostas, onComecar, onVer, onResponderDeNovo, ocupado }: 
         </ul>
       </div>
       <div className="flex flex-col items-center gap-3 pt-2">
-        <Button size="lg" onClick={onComecar} disabled={ocupado} className="w-full sm:w-auto" data-testid="qualificacao-comecar">
-          {ocupado ? "Abrindo o cadastro…" : "Começar o cadastro"}
-        </Button>
         <button type="button" onClick={onResponderDeNovo} className="min-h-11 px-2 text-sm font-medium text-ink underline underline-offset-4" data-testid="qualificacao-de-novo">
           Responder de novo
         </button>
