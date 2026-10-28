@@ -1,7 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { enviarBoasVindas } from "@/lib/notifications/boas-vindas-servidor";
 import { normalizarIntencoes, type Intencao } from "@/lib/auth/entrada";
 
 /**
@@ -40,6 +43,14 @@ export async function salvarMinhaIntencao(bruto: unknown, modo: "owner" | "tenan
   if (primeiroAcesso && (modo === "owner" || modo === "tenant")) {
     await supabase.from("profiles").update({ preferred_mode: modo, papel_ativo: modo === "owner" ? "proprietario" : "morador" }).eq("id", user.id);
     papelAplicado = modo;
+  }
+  // E205-B (a): a primeira entrada manda as boas-vindas (uma vez por conta; a chave de envio segura repetições).
+  if (primeiroAcesso) {
+    const uid = user.id;
+    after(async () => {
+      const admin = createAdminClient();
+      if (admin) await enviarBoasVindas(admin, uid, intencao, modo);
+    });
   }
   revalidatePath("/dashboard/conta");
   return { ok: true, papelAplicado };
