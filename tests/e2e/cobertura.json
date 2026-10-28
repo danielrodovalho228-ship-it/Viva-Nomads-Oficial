@@ -811,7 +811,8 @@
         "t352-varredura-bloco17",
         "t416-varredura-bloco33",
         "t418-varredura-bloco35",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t567-e188-contratos-do-papel"
       ]
     },
     "/dashboard/contratos/[id]": {
