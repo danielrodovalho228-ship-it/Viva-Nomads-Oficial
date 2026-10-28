@@ -7,7 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    - o detalhe da proposta (data-testid "proposta-conta"), visto pelo dono a 1280;
    - a lista de propostas do morador ("proposta-inquilino-conta") a 390 e 1280;
    - a mensagem da conversa ("Proposta N enviada. Total do contrato: <conta>.").
-  Imóvel com condomínio (a conta tem a parcela "+ …"), R$ 3.000 × 3 meses.
+  Imóvel com condomínio de R$ 350 (entra no mensal da conta), R$ 3.000 × 3 meses.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -56,7 +56,8 @@ test.describe("T584 — E189: a conta da proposta é a mesma no detalhe, na list
     await expect(noDetalhe).toBeVisible({ timeout: 20_000 });
     conta = (await noDetalhe.innerText()).replace(/\s+/g, " ").trim();
     console.log(`t584 conta no detalhe: "${conta}"`);
-    expect(conta, "a conta aberta tem a multiplicação, a parcela do condomínio e o total").toMatch(/^3 × R\$\s?[\d.]+(,\d{2})? \+ .+ = R\$\s?[\d.]+(,\d{2})?$/);
+    // O condomínio entra no mensal da conta ("3 × R$ 3.350 = R$ 10.050"); extras de uma vez entram como "+ …".
+    expect(conta, "a conta aberta tem a multiplicação e o total").toMatch(/^3 × R\$\s?[\d.]+(,\d{2})?( \+ .+)? = R\$\s?[\d.]+(,\d{2})?$/);
     await p.screenshot({ path: "tests/laboratorio/saida/t584-detalhe-1280.png" });
     await p.context().close();
   });

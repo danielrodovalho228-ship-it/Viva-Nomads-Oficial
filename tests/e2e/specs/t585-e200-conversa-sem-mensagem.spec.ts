@@ -62,7 +62,11 @@ test.describe("T585 — E200: a conversa do contrato sem mensagem abre vazia, nu
         await p.goto(link, { waitUntil: "domcontentloaded" });
         await expect(p.getByTestId("conversa-nova-vazia")).toHaveText(VAZIA, { timeout: 30_000 });
         await expect(p.getByTestId("mensagens-conversa-nao-encontrada")).toHaveCount(0);
-        await expect(p.locator("main")).not.toContainText(MSG_BETO);
+        // A conversa aberta é a do contrato da Ana — nunca a do Beto. A mensagem do Beto pode aparecer só como prévia na
+        // lista de conversas do dono (no máximo uma vez), nunca dentro da conversa aberta.
+        await expect(p.getByTestId("conversa-contexto")).toContainText(`Contrato da Ana t585 ${sufixo}`);
+        await expect(p.getByTestId("conversa-contexto")).not.toContainText(`Conversa do Beto t585 ${sufixo}`);
+        expect(await p.locator("main").getByText(MSG_BETO).count(), "a mensagem do Beto dentro da conversa aberta").toBeLessThanOrEqual(1);
         await p.screenshot({ path: `tests/laboratorio/saida/t585-${quem.toLowerCase()}-${w}.png` });
         await p.context().close();
       });

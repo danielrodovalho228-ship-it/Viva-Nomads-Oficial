@@ -53,7 +53,7 @@ test.describe("T583 — E181: contadores da home do morador = o tamanho exato da
       await p.screenshot({ path: `tests/laboratorio/saida/t583-home-${w}.png` });
 
       await p.goto("/dashboard/favoritos", { waitUntil: "domcontentloaded" });
-      await expect(p.getByTestId("favoritos-grade").getByTestId("cartao-imovel")).toHaveCount(3, { timeout: 30_000 });
+      await expect(p.locator("main").getByTestId("cartao-imovel")).toHaveCount(3, { timeout: 30_000 });
       await p.goto("/dashboard/buscas", { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("buscas-salvas").getByTestId("alerta-busca-botao")).toHaveCount(2, { timeout: 30_000 });
       await p.context().close();
