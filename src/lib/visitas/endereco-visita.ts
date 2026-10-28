@@ -56,3 +56,22 @@ export function enderecoDaVisita(p: {
 export function linhaEnderecoExato(rua: string, numero: string, complemento: string): string {
   return [rua.trim(), numero.trim(), complemento.trim()].filter(Boolean).join(", ").slice(0, 300);
 }
+
+/*
+  Visita PEDIDA cujos horários propostos já passaram todos: aparece como "Expirada". Nada é cancelado sozinho (decisão
+  do coordenador): o status gravado segue "pedido"; o dono ainda pode propor outro horário ou recusar, e o morador
+  pode cancelar. Só a tela muda.
+*/
+export const ROTULO_EXPIRADA = "Expirada";
+
+/** Horários do pedido que ainda não passaram (os únicos que o dono pode confirmar — o servidor recusa os passados). */
+export function horariosAindaValidos(horarios: readonly string[], agora: Date): string[] {
+  return horarios.filter((h) => {
+    const t = Date.parse(h);
+    return Number.isFinite(t) && t > agora.getTime();
+  });
+}
+
+export function visitaExpirada(v: { status: string; horarios: readonly string[] }, agora: Date): boolean {
+  return v.status === "pedido" && v.horarios.length > 0 && horariosAindaValidos(v.horarios, agora).length === 0;
+}
