@@ -185,10 +185,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // ADMIN-1: em /admin* a barra mostra SÓ o admin (grupos da barra-alvo), com "Minha conta →" no rodapé; em
   // /dashboard* o admin vê as áreas de usuário e um item "Painel admin".
   const naAreaAdmin = pathname.startsWith("/admin");
+  /**
+   * E190 (QA 25/10): a troca pedida pela pessoa (menu da Conta) vale de primeira. Antes, trocar o modo NA TELA ATUAL
+   * fazia a guarda de rota e o SincronizarPapel (que acertam o papel pela área da página) verem uma tela do outro
+   * papel — ex.: Favoritos no "Modo proprietário" — e gravarem o papel antigo de volta: o 1º toque só recarregava a
+   * home do morador. Agora a escolha é gravada no perfil (com a anotação local da troca pendente) e o Início abre numa
+   * navegação nova, que já nasce no modo escolhido.
+   */
   async function irParaModo(alvo: ViewMode) {
-    setActiveMode(alvo);
     await salvarModo(alvo).catch(() => {});
-    router.push("/dashboard");
+    window.location.assign("/dashboard");
   }
   const badges = { "admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando };
 
