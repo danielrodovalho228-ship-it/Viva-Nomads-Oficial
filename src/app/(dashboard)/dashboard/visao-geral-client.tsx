@@ -51,6 +51,8 @@ import type { EstadiaNaHome } from "@/lib/data/estadia";
 import { useViewMode } from "@/lib/roles";
 import { InicioDono } from "@/components/painel/inicio-dono";
 import type { BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
+import { useFavoritos } from "@/lib/use-favoritos";
+import { totalFavoritos } from "@/lib/painel/contadores-morador";
 
 /** Card de pendência "Anúncio em andamento" — o rascunho mais recente, lido no servidor (page.tsx). */
 export type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist: ChecklistAnuncio | null; score?: ScoreAnuncio | null };
@@ -67,6 +69,7 @@ export function VisaoGeral({
   totalCandidaturas = 0,
   visualizacoes = null,
   totalConversas = 0,
+  totalBuscasSalvas = 0,
   inicioDono = null,
 }: {
   imoveisDono: Property[];
@@ -87,6 +90,8 @@ export function VisaoGeral({
   visualizacoes?: number | null;
   /** PROP-3 (E113): quantas conversas a pessoa tem — o tamanho da lista de /dashboard/mensagens. */
   totalConversas?: number;
+  /** E181: quantas buscas salvas a pessoa tem — o tamanho da lista de /dashboard/buscas (listarBuscasSalvas). */
+  totalBuscasSalvas?: number;
   /** PROP-6: o Início do dono (faixa + bloco principal), montado no servidor; aparece no modo dono. */
   inicioDono?: { alerta: Decisao | null; bloco: BlocoPrincipalDono } | null;
 }) {
@@ -126,7 +131,7 @@ export function VisaoGeral({
         <ConviteFotoPerfil className="mb-6" />
         <CartaoEstadias estadias={estadias} />
         <section aria-label="Morador" data-testid="inicio-morador">
-          <TenantDashboard name={firstName} cidade={cidadePerfil} totalCandidaturas={totalCandidaturas} totalConversas={totalConversas} ehDono={false} />
+          <TenantDashboard name={firstName} cidade={cidadePerfil} totalCandidaturas={totalCandidaturas} totalConversas={totalConversas} totalBuscasSalvas={totalBuscasSalvas} ehDono={false} />
         </section>
       </div>
     );
@@ -172,7 +177,7 @@ export function VisaoGeral({
         <h2 id="papel-morador" className="mb-3 font-title text-lg font-semibold text-ink">
           Como morador
         </h2>
-        <TenantDashboard name={firstName} cidade={ehDono ? null : cidadePerfil} totalCandidaturas={totalCandidaturas} totalConversas={totalConversas} ehDono={ehDono} />
+        <TenantDashboard name={firstName} cidade={ehDono ? null : cidadePerfil} totalCandidaturas={totalCandidaturas} totalConversas={totalConversas} totalBuscasSalvas={totalBuscasSalvas} ehDono={ehDono} />
       </section>
     </>
   );
@@ -495,17 +500,21 @@ function TenantDashboard({
   cidade,
   totalCandidaturas,
   totalConversas,
+  totalBuscasSalvas,
   ehDono,
 }: {
   name: string;
   cidade: string | null;
   totalCandidaturas: number;
   totalConversas: number;
+  totalBuscasSalvas: number;
   /** PROP-3 (E113): "Buscas salvas" é de morador — sai do Início de quem é dono. */
   ehDono: boolean;
 }) {
   const demo = useDashDemo();
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
+  // E181: Favoritos conta a MESMA lista de /dashboard/favoritos.
+  const favoritos = useFavoritos();
   void name;
   return (
     <>
@@ -513,8 +522,8 @@ function TenantDashboard({
           é o lar do acompanhamento (envio → resposta) — sem novo item no menu. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <StatCard label="Candidaturas" value={demo ? "2" : String(totalCandidaturas)} icon={FileSignature} href="/dashboard/candidaturas" />
-        <StatCard label="Favoritos" value={demo ? "3" : "0"} icon={Heart} href="/dashboard/favoritos" />
-        {!ehDono && <StatCard label="Buscas salvas" value={demo ? "2" : "0"} icon={Search} href="/dashboard/buscas" />}
+        <StatCard label="Favoritos" value={demo ? "3" : String(totalFavoritos(favoritos))} icon={Heart} href="/dashboard/favoritos" />
+        {!ehDono && <StatCard label="Buscas salvas" value={demo ? "2" : String(totalBuscasSalvas)} icon={Search} href="/dashboard/buscas" />}
         {/* Dono: as Mensagens já estão no bloco de proprietário (o mesmo número). */}
         {!ehDono && <StatCard label="Mensagens" value={demo ? "1" : String(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />}
       </div>
