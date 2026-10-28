@@ -30,7 +30,13 @@ for (const largura of [1280, 390] as const) {
     });
 
     test("chegando direto: sem migalhas e sem voltar; BreadcrumbList nos dados estruturados", async ({ page }) => {
-      await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
+      // Um anúncio REAL do laboratório (os de exemplo "ube-*" não emitem dados estruturados, de propósito).
+      await page.goto("/buscar", { waitUntil: "networkidle" });
+      const real = page.locator('main a[href^="/imoveis/"]:not([href*="ube-"])').first();
+      await expect(real).toBeVisible({ timeout: 30_000 });
+      const href = (await real.getAttribute("href"))!.split("?")[0];
+      // Chegar direto = abrir o endereço (sem clicar na busca): nada é gravado para o voltar.
+      await page.goto(href, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
       await expect(page.getByTestId("voltar-resultados")).toHaveCount(0);
       await expect(page.getByRole("navigation", { name: "Trilha de navegação" })).toHaveCount(0);
