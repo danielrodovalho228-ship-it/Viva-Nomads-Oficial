@@ -52,7 +52,7 @@ test.describe("T81 — quem nunca anunciou", () => {
     await expect(page.getByRole("navigation", { name: "Navegação principal" }).locator("a").first()).toHaveText("Início", { timeout: 30_000 });
     await expect(page.getByRole("button", { name: "Abrir menu" })).toHaveCount(0);
     await page.getByTestId("topo-celular").getByTestId("conta-morador-celular").click();
-    await expect(page.getByTestId("menu-conta-morador-celular")).toContainText("Perfil e dados");
+    await expect(page.getByTestId("menu-conta-morador-celular")).toContainText("Minha conta");
     await page.screenshot({ path: "tests/laboratorio/saida/t79-menu-390.png" });
   });
 });

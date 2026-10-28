@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { ButtonLink } from "@/components/ui/button";
 import { carregarEstadia } from "@/lib/data/estadia";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { AlteracaoTela } from "./alteracao-tela";
+import { VoltarLista } from "@/components/ui/voltar-lista";
 
 export const metadata: Metadata = { title: "Propor alteração", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -24,6 +24,7 @@ export default async function AlteracaoPage({ params }: { params: Promise<{ cont
   const podePropor = e.status === "ativo" && e.assinadoPelasDuas && !aberto && e.topo.fase !== "encerrada";
   return (
     <div className="space-y-4" data-testid="pagina-alteracao">
+      <VoltarLista href={HREF_ESTADIA(e.id)} rotulo="Minha estadia" />
       <PageTitle title="Propor alteração" subtitle={`${e.imovel.titulo} · Contrato ${e.numero}`} />
       <Panel>
         <p className="text-sm text-ink">
@@ -47,9 +48,6 @@ export default async function AlteracaoPage({ params }: { params: Promise<{ cont
             : "A alteração vale para contrato assinado pelas duas partes e em vigor."}
         </p>
       )}
-      <ButtonLink href={HREF_ESTADIA(e.id)} variant="tertiary" size="sm">
-        Voltar para a estadia
-      </ButtonLink>
     </div>
   );
 }

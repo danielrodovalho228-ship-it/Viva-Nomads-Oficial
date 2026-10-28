@@ -29,7 +29,7 @@ const TELAS: Tela[] = [
   { conta: "DONO17", papel: "proprietário", rota: () => "/dashboard/ferramentas", nome: "Ferramentas" },
   { conta: "DONO0", papel: "proprietário", rota: (m) => `/dashboard/imoveis/novo?draft=${m.rascunho0}`, nome: "Cadastro com 0 fotos" },
   { conta: "INQUILINA", papel: "morador", rota: () => "/dashboard", nome: "Painel" },
-  { conta: "INQUILINA", papel: "morador", rota: () => "/dashboard/locacoes", nome: "Minhas locações" },
+  { conta: "INQUILINA", papel: "morador", rota: () => "/dashboard/locacoes", nome: "Minhas estadias" },
   { conta: "INQUILINA", papel: "morador", rota: (m) => `/dashboard/locacoes/${m.contrato}`, nome: "Locação (contrato completo)" },
   { conta: "INQUILINA", papel: "morador", rota: (m) => `/dashboard/estadia/${m.contrato}`, nome: "Estadia" },
   { conta: "INQUILINA", papel: "morador", rota: () => "/dashboard/favoritos", nome: "Favoritos" },

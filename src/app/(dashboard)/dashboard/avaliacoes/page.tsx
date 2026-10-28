@@ -10,7 +10,7 @@ import { numBR } from "@/lib/utils";
 import { AcoesAvaliacao } from "./acoes";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Avaliações recebidas" };
+export const metadata = { title: "Avaliações" };
 
 /**
  * Avaliações PUBLICADAS sobre mim (RLS: só as minhas). Responder e pedir revisão ficam aqui. PERFIL-B (mockup
@@ -29,7 +29,7 @@ export default async function AvaliacoesRecebidasPage({ searchParams }: { search
   return (
     <div className="w-full" data-testid="avaliacoes-recebidas">
       <PageTitle
-        title="Avaliações recebidas"
+        title="Avaliações"
         subtitle="Responda em público ou peça revisão quando houver ofensa, dado pessoal ou fato falso."
       />
       {res.avaliacoes.length > 0 && (

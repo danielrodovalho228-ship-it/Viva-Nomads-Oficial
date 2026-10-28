@@ -1,5 +1,7 @@
 /*
-  Visita PEDIDA com todos os horários já passados aparece como "Expirada" — sem cancelar sozinha (decisão do coordenador).
+  Visita PEDIDA com todos os horários já passados aparece como "Expirada". A tela nunca cancela sozinha; E205-B (msg 65
+  do coordenador): o cron e a abertura da lista gravam "cancelado" com o motivo "expirou" e avisam os dois lados — o
+  cartão continua dizendo "Expirada".
   Roda: node --test src/lib/visitas/visita-expirada.test.ts
 */
 import { test } from "node:test";
@@ -26,7 +28,7 @@ test("o dono só vê para confirmar os horários que ainda não passaram", () =>
   assert.deepEqual(horariosAindaValidos(["2026-10-28T15:00:00Z", "lixo"], agora), []);
 });
 
-test("cartão: etiqueta Expirada e aviso; nada se cancela sozinho; dono propõe outro horário, sem confirmar o que passou", () => {
+test("cartão: etiqueta Expirada e aviso; a tela não cancela sozinha; dono propõe outro horário, sem confirmar o que passou", () => {
   const tela = readFileSync(new URL("../../components/visitas/cartao-visita.tsx", import.meta.url), "utf8");
   assert.match(tela, /expirada \? ROTULO_EXPIRADA/);
   assert.match(tela, /data-testid="visita-expirada-aviso"/);
@@ -36,4 +38,11 @@ test("cartão: etiqueta Expirada e aviso; nada se cancela sozinho; dono propõe 
   assert.doesNotMatch(tela, /expirada[^\n]*rodar\(\{ acao: "cancelar"/);
   const acoes = readFileSync(new URL("../data/visitas-video-actions.ts", import.meta.url), "utf8");
   assert.doesNotMatch(acoes, /visitaExpirada/);
+});
+
+test("E205-B: cancelado com o motivo \"expirou\" segue Expirada no cartão, sem a linha Motivo", () => {
+  const tela = readFileSync(new URL("../../components/visitas/cartao-visita.tsx", import.meta.url), "utf8");
+  assert.match(tela, /expiradaGravada = status === "cancelado" && v\.motivoRecusa === MOTIVO_EXPIROU/);
+  assert.match(tela, /v\.motivoRecusa && !expiradaGravada/);
+  assert.match(tela, /O pedido expirou sem resposta\. Peça outros horários\./);
 });

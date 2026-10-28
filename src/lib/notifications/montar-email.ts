@@ -7,9 +7,12 @@ import { ASSUNTOS, comMarca } from "./assuntos.ts";
 import { corpoCodigo, corpoNotificacao, imagemEmail, textoNotificacao } from "./corpo-email.ts";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email.ts";
 import { imagemDoEvento } from "./imagens-email.ts";
-import { blocoDados } from "./modelo-email.ts";
+import { blocoDados, rodapeTexto } from "./modelo-email.ts";
 import { textoEmail } from "./texto-seguro.ts";
 import { escaparHtml } from "../escapar-html.ts";
+import { VALIDADE_CODIGO_ASSINATURA_MS } from "../contrato-codigo.ts";
+import { VALIDADE_CODIGO_EMAIL_MS } from "../seguranca/codigos-recuperacao.ts";
+import { VALIDADE_CODIGO_MIN as VALIDADE_VINCULO_MIN } from "../vinculo/codigo.ts";
 
 export interface EmailMontado {
   evento: string;
@@ -69,6 +72,18 @@ export function montarNotificacao(p: {
   };
 }
 
+/*
+  E206: os e-mails de código falam igual ao "código de acesso": a validade com o número real (da mesma constante que o
+  servidor usa para vencer o código), "só funciona uma vez", a linha antifraude e o rodapé padrão completo no texto puro.
+*/
+export const validadeDoCodigo = (min: number) => `Ele vale por ${min} minutos e só funciona uma vez.`;
+export const ANTIFRAUDE_CODIGO = "Nunca passe este código a ninguém — a Viva Nomads não pede código por WhatsApp ou SMS.";
+const minutos = (ms: number) => Math.round(ms / 60_000);
+
+function textoCodigo(siteUrl: string, o: { linha: string; codigo: string; min: number; seNaoFoi: string }): string {
+  return [`${o.linha}: ${o.codigo}`, validadeDoCodigo(o.min), `${o.seNaoFoi} ${ANTIFRAUDE_CODIGO}`, "", rodapeTexto(siteUrl)].join("\n");
+}
+
 /** Código de 6 dígitos para assinar o contrato. */
 export function emailCodigoAssinatura(siteUrl: string, o: { imovel: string; codigo: string }): EmailMontado {
   const img = imagemDoEvento("contract_signature_code");
@@ -78,12 +93,12 @@ export function emailCodigoAssinatura(siteUrl: string, o: { imovel: string; codi
     titulo: ASSUNTOS.codigoAssinatura,
     html: corpoCodigo(siteUrl, {
       title: ASSUNTOS.codigoAssinatura,
-      intro: `Use o código abaixo para assinar o contrato de <strong>${textoEmail(o.imovel, 80)}</strong>. Ele vale por 15 minutos e só pode ser usado uma vez.`,
+      intro: `Use o código abaixo para assinar o contrato de <strong>${textoEmail(o.imovel, 80)}</strong>. ${validadeDoCodigo(minutos(VALIDADE_CODIGO_ASSINATURA_MS))}`,
       code: o.codigo,
-      outro: "Se não foi você, ignore este e-mail e troque a senha. Nunca passe este código a ninguém.",
+      outro: `Se não foi você, ignore este e-mail e troque a senha. ${ANTIFRAUDE_CODIGO}`,
       image: imagemEmail(siteUrl, img.arquivo, img.alt),
     }),
-    text: `Seu código para assinar o contrato de "${o.imovel.replace(/[<>&]/g, "")}": ${o.codigo}\nVale por 15 minutos e só pode ser usado uma vez. Se não foi você, ignore este e-mail e troque a senha.`,
+    text: textoCodigo(siteUrl, { linha: `Seu código para assinar o contrato de "${o.imovel.replace(/[<>&]/g, "")}"`, codigo: o.codigo, min: minutos(VALIDADE_CODIGO_ASSINATURA_MS), seNaoFoi: "Se não foi você, ignore este e-mail e troque a senha." }),
     imagem: `${img.arquivo}.jpg`,
     botao: null,
   };
@@ -98,12 +113,12 @@ export function emailCodigo2fa(siteUrl: string, o: { codigo: string }): EmailMon
     titulo: ASSUNTOS.codigo2fa,
     html: corpoCodigo(siteUrl, {
       title: ASSUNTOS.codigo2fa,
-      intro: "Use o código abaixo para refazer a verificação em duas etapas da sua conta. Ele vale por 15 minutos.",
+      intro: `Use o código abaixo para refazer a verificação em duas etapas da sua conta. ${validadeDoCodigo(minutos(VALIDADE_CODIGO_EMAIL_MS))}`,
       code: o.codigo,
-      outro: "Se não foi você, ignore este e-mail e troque a senha. Nunca passe este código a ninguém.",
+      outro: `Se não foi você, ignore este e-mail e troque a senha. ${ANTIFRAUDE_CODIGO}`,
       image: imagemEmail(siteUrl, img.arquivo, img.alt),
     }),
-    text: `Seu código para refazer a verificação em duas etapas: ${o.codigo}\nVale por 15 minutos. Se não foi você, ignore este e-mail e troque a senha.`,
+    text: textoCodigo(siteUrl, { linha: "Seu código para refazer a verificação em duas etapas", codigo: o.codigo, min: minutos(VALIDADE_CODIGO_EMAIL_MS), seNaoFoi: "Se não foi você, ignore este e-mail e troque a senha." }),
     imagem: `${img.arquivo}.jpg`,
     botao: null,
   };
@@ -118,12 +133,12 @@ export function emailCodigoVinculo(siteUrl: string, o: { codigo: string }): Emai
     titulo: ASSUNTOS.codigoVinculo,
     html: corpoCodigo(siteUrl, {
       title: ASSUNTOS.codigoVinculo,
-      intro: "Use o código abaixo para confirmar o seu e-mail profissional no Viva Nomads. Ele vale por 15 minutos.",
+      intro: `Use o código abaixo para confirmar o seu e-mail profissional no Viva Nomads. ${validadeDoCodigo(VALIDADE_VINCULO_MIN)}`,
       code: o.codigo,
-      outro: "Se não foi você, ignore este e-mail. Nunca passe este código a ninguém.",
+      outro: `Se não foi você, ignore este e-mail. ${ANTIFRAUDE_CODIGO}`,
       image: imagemEmail(siteUrl, img.arquivo, img.alt),
     }),
-    text: `Seu código para confirmar o e-mail profissional: ${o.codigo}\nVale por 15 minutos. Se não foi você, ignore este e-mail.`,
+    text: textoCodigo(siteUrl, { linha: "Seu código para confirmar o e-mail profissional", codigo: o.codigo, min: VALIDADE_VINCULO_MIN, seNaoFoi: "Se não foi você, ignore este e-mail." }),
     imagem: `${img.arquivo}.jpg`,
     botao: null,
   };

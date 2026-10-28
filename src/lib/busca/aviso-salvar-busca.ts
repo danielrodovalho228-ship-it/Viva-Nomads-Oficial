@@ -18,7 +18,7 @@ export const AVISO_CONVIDADO = "Busca guardada neste aparelho. Entre com seu e-m
 export const AVISO_REMOVIDA = "Busca removida.";
 export const ROTULO_NAO_AVISAR = "Não me avisar";
 export const ROTULO_LIGAR_NOTIFICACOES = "Ligar em Notificações";
-export const HREF_NOTIFICACOES = "/dashboard/conta/notificacoes";
+export const HREF_NOTIFICACOES = "/dashboard/notificacoes";
 
 /** Depois de salvar logado: com o e-mail ligado, o aviso da busca já está ativo; desligado, a frase diz isso. */
 export function avisoAoSalvar(r: { id: string | null; avisoEmail: boolean }): AvisoSalvarBusca {

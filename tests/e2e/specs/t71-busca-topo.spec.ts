@@ -4,7 +4,7 @@ import { adm } from "../fixtures/laboratorio";
 
 /**
  * T71 — ordem d15ef6bf: topo da /buscar no padrão Airbnb/Furnished Finder.
- *  1. Cabeçalho limpo na /buscar (sem os links do meio): logo + ações.
+ *  1. E176 (PUBLICO-A): o cabeçalho NÃO some na /buscar — logo, links e conta ficam (como no Furnished Finder).
  *  2. Barra de filtros no topo, em destaque; título fixo abaixo (E82-A: a linha de pílulas, alinhada à lista).
  *  3. Contagem "N imóveis em <cidade>" + "Salvar busca" (coração) ao lado.
  *  4. Visitante que toca em Salvar busca vai para o login e volta para a busca.
@@ -23,9 +23,9 @@ test.describe("T71 — topo da /buscar", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "networkidle" });
     const header = page.locator("header").first();
-    await expect(header.getByTestId("nav-links")).toBeHidden();
-    await expect(header.getByRole("link", { name: "Para empresas" })).toBeHidden();
-    await expect(header.getByRole("link", { name: "Entrar para anunciar" })).toBeVisible();
+    await expect(header.getByTestId("nav-links")).toBeVisible();
+    await expect(header.getByRole("link", { name: "Empresas" })).toBeVisible();
+    await expect(header.getByTestId("nav-entrar")).toBeVisible();
 
     const hBox = (await header.boundingBox())!;
     // E82-A: sem busca compacta no cabeçalho — a linha de pílulas logo abaixo dele, numa linha só.

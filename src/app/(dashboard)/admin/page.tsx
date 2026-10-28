@@ -2,10 +2,10 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { AlertaBackupCelular } from "@/components/admin/cartao-backup";
 import { AvisoAtendimentoAdmin } from "@/components/admin/aviso-atendimento";
 import { adminDaPagina, idsContasTeste } from "@/lib/data/admin-indicadores";
 import { atividadeRecente, numerosDaInicial } from "@/lib/data/admin-contagens";
+import { interesseEspacoTrabalho } from "@/lib/data/admin-espaco-trabalho";
 import { decisoesDoAdmin } from "@/lib/data/admin-decisoes";
 import { ROTULOS_NUMEROS, RODAPE_CONTAGENS, primeirosSemDuplicata, textoRealTeste } from "@/lib/admin/contagens";
 import { haQuantoTempo } from "@/lib/admin/decisoes-admin";
@@ -15,6 +15,13 @@ import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
 export const metadata = { title: tituloDoAdmin("/admin"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
+
+/** E176 (D3): o alerta do backup mora SÓ em "Precisa da sua atenção" — nunca fica de fora do corte das 5 primeiras. */
+function comBackup<T extends { chave: string }>(primeiras: T[], todas: readonly T[]): T[] {
+  const backup = todas.find((l) => l.chave === "backup");
+  if (!backup || primeiras.some((l) => l.chave === "backup")) return primeiras;
+  return [backup, ...primeiras].slice(0, 5);
+}
 
 /**
  * ADMIN-4 — inicial enxuta do /admin (mockup admin-visao-geral): 4 números (cada um da MESMA função da página de
@@ -26,20 +33,20 @@ export default async function AdminPage() {
   const admin = (await adminDaPagina()) ? createAdminClient() : null;
   const agora = new Date();
   const teste = admin ? await idsContasTeste(admin).catch(() => new Set<string>()) : new Set<string>();
-  const [numeros, decisoes, atividade] = await Promise.all([
+  const [numeros, decisoes, atividade, espaco] = await Promise.all([
     admin ? numerosDaInicial(admin, teste).catch(() => null) : null,
     admin ? decisoesDoAdmin(agora).catch(() => null) : null,
     admin ? atividadeRecente(admin, teste).catch(() => []) : [],
+    admin ? interesseEspacoTrabalho(admin).catch(() => null) : null,
   ]);
   // As filas de Pendências (a mesma leitura do topo de /admin/pendencias), as 5 primeiras; duas filas que levam ao mesmo
   // lugar contam uma vez só.
-  const atencao = decisoes ? primeirosSemDuplicata(decisoes.linhas, (l) => l.href) : [];
+  const atencao = decisoes ? comBackup(primeirosSemDuplicata(decisoes.linhas, (l) => l.href), decisoes.linhas) : [];
   // Saúde: os alertas de sistema da MESMA leitura das filas (hoje, o backup), o mesmo número da linha "alertas de backup".
   const alertas = decisoes?.linhas.find((l) => l.chave === "backup")?.n ?? 0;
 
   return (
     <div data-testid="admin-inicial">
-      <AlertaBackupCelular />
       <AvisoAtendimentoAdmin />
       <PageTitle title={rotuloDoAdmin("/admin")} subtitle="O que está no ar agora e o que precisa de você." />
 
@@ -48,7 +55,7 @@ export default async function AdminPage() {
           const c = numeros?.[k] ?? null;
           return (
             <li key={k}>
-              <Link href={ROTULOS_NUMEROS[k].href} className="block min-h-11 rounded-lg border border-line bg-white p-4 hover:border-ink" data-testid={`admin-numero-${k}`} data-reais={c?.reais ?? ""} data-teste={c?.teste ?? ""}>
+              <Link href={ROTULOS_NUMEROS[k].href} className="block h-full min-h-11 rounded-lg border border-line bg-white p-4 hover:border-ink" data-testid={`admin-numero-${k}`} data-reais={c?.reais ?? ""} data-teste={c?.teste ?? ""}>
                 <span className="block text-sm text-muted">{ROTULOS_NUMEROS[k].rotulo}</span>
                 <span className="mt-1 block font-title text-2xl font-semibold text-ink tabular-nums sm:text-[28px]">{c ? c.reais : "—"}</span>
                 {c && c.teste > 0 && <span className="block text-xs text-muted">{textoRealTeste(c)}</span>}
@@ -103,14 +110,23 @@ export default async function AdminPage() {
         </Panel>
       </div>
 
+      {espaco && (
+        <Panel title="Interesse em espaço de trabalho" className="mt-6" data-testid="admin-espaco-trabalho">
+          <ul className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-4">
+            {([["oferecem", "Têm sala ou consultório"], ["procuram", "Procuram espaço fora de casa"], ["coworking", "Querem coworking"], ["responderam", "Responderam"]] as const).map(([k, rotulo]) => (
+              <li key={k} data-testid={`admin-espaco-${k}`} data-reais={espaco[k].reais} data-teste={espaco[k].teste}>
+                <span className="block text-muted">{rotulo}</span>
+                <span className="mt-1 block font-title text-2xl font-semibold text-ink tabular-nums">{espaco[k].reais}</span>
+                {espaco[k].teste > 0 && <span className="block text-xs text-muted">+ {espaco[k].teste} de teste</span>}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+
       <p className="mt-6 text-sm" data-testid="admin-saude" data-alertas={alertas}>
-        {alertas === 0 ? (
-          <span className="text-forest">Tudo funcionando</span>
-        ) : (
-          <Link href="/admin/sistema#backup" className="font-semibold text-red-700 underline">
-            {alertas} {alertas === 1 ? "alerta" : "alertas"} → Sistema
-          </Link>
-        )}
+        {/* E176 (D3): o alerta do backup aparece UMA vez, dentro de "Precisa da sua atenção"; aqui só o estado geral. */}
+        {alertas === 0 ? <span className="text-forest">Tudo funcionando</span> : <span className="text-ink">Há alertas em “Precisa da sua atenção”.</span>}
       </p>
       <p className="mt-2 text-xs text-muted" data-testid="admin-rodape">
         {RODAPE_CONTAGENS}

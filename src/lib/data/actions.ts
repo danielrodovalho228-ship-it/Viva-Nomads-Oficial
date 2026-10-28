@@ -31,6 +31,9 @@ import {
 import { findNearbyWorkspaces } from "@/lib/integrations/places";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
+import { escaparHtml } from "@/lib/escapar-html";
+import { blocoDados } from "@/lib/notifications/modelo-email";
+import { aberturaContratoPronto, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
 import { donoPodeReativar, mensagemLimitePublicar, mensagemLimiteReativar, situacaoLimite, textoDaPausa, type EmAndamento, type SituacaoLimite } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
@@ -1503,13 +1506,24 @@ export async function registrarContrato(
   const contratoNovoId = contrato!.id as string;
   after(async () => {
     try {
-      const { data: pessoa } = await admin.auth.admin.getUserById(lead.tenant_id as string);
+      const [{ data: pessoa }, { data: im }] = await Promise.all([
+        admin.auth.admin.getUserById(lead.tenant_id as string),
+        admin.from("properties").select("title, address, city").eq("id", lead.property_id as string).maybeSingle(),
+      ]);
+      // E202: o e-mail do contrato pronto diz o imóvel, o período, o valor mensal e o total (não só "Há uma atualização").
+      const i = (im ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
+      const imovelEmail = { titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
+      const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel });
       await notify({
         event: "contract_status",
         email: pessoa?.user?.email ?? undefined,
         userId: lead.tenant_id as string,
         pushUrl: `/dashboard/locacoes/${contratoNovoId}`,
         subject: ASSUNTOS.contratoPronto,
+        body: (nome?: string) => aberturaContratoPronto({ nome, imovel: imovelEmail }),
+        detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) + `<p>${escaparHtml(PROXIMO_PASSO_CONTRATO_PRONTO)}</p>`,
+        detailsText: [...linhas.map((l) => `${l.rotulo}: ${l.valor}`), PROXIMO_PASSO_CONTRATO_PRONTO].join("\n"),
+        ctaLabel: "Ler e assinar o contrato",
       });
     } catch {
       /* aviso é best-effort: o contrato já está registrado */
@@ -1664,7 +1678,7 @@ export async function renovarBloco(
         name: destino.full_name ?? undefined,
         pushUrl: "/dashboard/contratos",
         detailsText: aguardando
-          ? `${quem} quer renovar a locação: bloco ${numero} (${dataBR(inicio)} a ${dataBR(fim)}). A renovação só vale com o seu aceite — abra Contratos no painel.`
+          ? `${quem} quer renovar a estadia: bloco ${numero} (${dataBR(inicio)} a ${dataBR(fim)}). A renovação só vale com o seu aceite — abra Contratos no painel.`
           : `Renovação confirmada pelas duas partes: bloco ${numero} (${dataBR(inicio)} a ${dataBR(fim)}).`,
       });
     }

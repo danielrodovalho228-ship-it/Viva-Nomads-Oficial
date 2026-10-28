@@ -78,7 +78,7 @@ test.describe("T454 — Salvar busca: o aviso por e-mail dito na hora", () => {
       await expect(aviso).toContainText("Busca salva. Seus avisos por e-mail estão desligados.");
       const ligar = aviso.getByTestId("salvar-busca-ligar-notificacoes");
       await expect(ligar).toHaveText("Ligar em Notificações");
-      await expect(ligar).toHaveAttribute("href", "/dashboard/conta/notificacoes");
+      await expect(ligar).toHaveAttribute("href", "/dashboard/notificacoes");
       expect((await ligar.boundingBox())!.height).toBeGreaterThanOrEqual(44);
       await page.screenshot({ path: `${SAIDA}/t454-2-desligado-${largura}.png`, fullPage: false });
       await page.context().close();

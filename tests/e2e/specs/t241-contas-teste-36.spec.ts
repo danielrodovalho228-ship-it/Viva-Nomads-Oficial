@@ -196,7 +196,7 @@ test.describe("T241 — contas de teste pelo admin, titular, selo da fila e chec
     semDialogo(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/qualificar?imovel=${imoveis.titular}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: "Qualificação do imóvel" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("heading", { name: "Requisitos e selo" })).toBeVisible({ timeout: 20_000 });
     const campo = page.getByLabel("Nome do titular no documento");
     await campo.fill("Helena Prado Titular");
     await page.getByLabel(/Enviar documentação do imóvel/).setInputFiles({ name: "matricula.pdf", mimeType: "application/pdf", buffer: pdf() });

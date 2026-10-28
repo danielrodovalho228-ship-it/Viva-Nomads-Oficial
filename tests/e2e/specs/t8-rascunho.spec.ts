@@ -161,8 +161,10 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await page.waitForTimeout(3_000); // passa o debounce do autosave
     await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo$/);
     await expect(page.getByText(/Você tem um anúncio em andamento/i)).toBeVisible();
-    // "Continuar" retoma o rascunho detectado.
-    await page.getByRole("button", { name: "Continuar", exact: true }).first().click();
+    // E180: "Novo anúncio" abre na Qualificação, com o aviso dentro dela; "Continuar o outro" retoma o rascunho detectado.
+    await expect(page.getByTestId("qualificacao")).toBeVisible();
+    await expect(page.getByTestId("qualificacao").getByTestId("rascunho-aviso")).toBeVisible();
+    await page.getByTestId("rascunho-continuar").click();
     await expect(page).toHaveURL(new RegExp(`\\?draft=${id}`));
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
   });

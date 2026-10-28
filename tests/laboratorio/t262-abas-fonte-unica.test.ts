@@ -21,8 +21,9 @@ test("t262: as abas esperadas por papel são as da fonte única", () => {
   assert.deepEqual(lista("NOMES_PARCEIRO"), nomes("parceiro"));
 });
 
-test("t262: morador com contrato ganha 'Estadia' no fim; a spec trata os dois casos", () => {
-  assert.deepEqual(nomes("morador", true), [...lista("NOMES_MORADOR"), "Estadia"]);
+test("t262 + E176 (D1): a 'Estadia' do morador aparece com ou sem contrato", () => {
+  assert.deepEqual(nomes("morador", true), lista("NOMES_MORADOR"));
+  assert.deepEqual(nomes("morador", false), lista("NOMES_MORADOR"));
   assert.match(spec, /nome: "Estadia", href: "\/dashboard\/locacoes"/);
 });
 

@@ -16,8 +16,9 @@ test("t262: o avatar da Conta é procurado dentro do topo do celular (o desktop 
 
 test("t265: a barra do visitante tem tantas abas quanto o morador sem contrato", () => {
   const n = abasDoPapelPainel("morador", { comContrato: false }).length;
-  assert.equal(n, 4);
-  assert.match(ler("t265-folga-fim-rodape.spec.ts"), /getByRole\("link"\)\)\.toHaveCount\(4\);\s*\n\s*\}\);\s*\n\s*\}\n\s*\}\);/);
+  // E176 (D1): a "Estadia" do morador aparece sempre — 5 abas, com ou sem contrato.
+  assert.equal(n, 5);
+  assert.match(ler("t265-folga-fim-rodape.spec.ts"), /getByRole\("link"\)\)\.toHaveCount\(5\);\s*\n\s*\}\);\s*\n\s*\}\n\s*\}\);/);
 });
 
 test("t265/t266: o Início do dono novo é 'Anuncie seu primeiro imóvel' com o primário 'Anunciar meu imóvel'", () => {

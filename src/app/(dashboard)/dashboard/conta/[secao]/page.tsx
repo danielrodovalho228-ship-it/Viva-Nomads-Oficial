@@ -1,7 +1,8 @@
 "use client";
 
 import { use } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { VoltarLista } from "@/components/ui/voltar-lista";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { CascaConta } from "@/components/account/casca-conta";
 import { TelaAjuda } from "@/components/account/tela-ajuda";
@@ -10,7 +11,6 @@ import { PerfilTela } from "@/components/account/perfil-tela";
 import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { DadosPessoais, DocumentoPessoa } from "@/components/account/conta-secoes";
-import { TelaNotificacoes } from "@/components/account/tela-notificacoes";
 import { TelaPrivacidade } from "@/components/account/tela-privacidade";
 import { SeuPerfilPublico } from "@/components/account/seu-perfil-publico";
 import { PagamentosConta } from "@/components/account/pagamentos-conta";
@@ -29,6 +29,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
   if (bruta === "perfil-publico")
     return (
       <div className="w-full">
+        <VoltarLista href="/dashboard/conta/perfil" rotulo="Perfil" />
         <PageTitle title="Seu perfil público" subtitle="O que os outros veem de você." />
         <SeuPerfilPublico />
       </div>
@@ -74,12 +75,8 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
         </CascaConta>
       );
     case "notificacoes":
-      return (
-        // Mockup perfil-06: sem subtítulo; o título e os dois cartões.
-        <CascaConta ativo="notificacoes">
-          <TelaNotificacoes />
-        </CascaConta>
-      );
+      // E176 (parte 2): Notificações é uma página só (/dashboard/notificacoes). O redirect do next.config chega antes.
+      redirect("/dashboard/notificacoes");
     case "pagamentos":
       return (
         <CascaConta ativo="pagamentos">

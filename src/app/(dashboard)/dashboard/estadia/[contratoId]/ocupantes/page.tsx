@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { ButtonLink } from "@/components/ui/button";
 import { carregarEstadia } from "@/lib/data/estadia";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { AVISO_OCUPANTES } from "@/lib/estadia/ocupantes";
 import { OcupantesTela } from "./ocupantes-tela";
+import { VoltarLista } from "@/components/ui/voltar-lista";
 
 export const metadata: Metadata = { title: "Ocupantes da estadia", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -20,6 +20,7 @@ export default async function OcupantesPage({ params }: { params: Promise<{ cont
   if (!e) notFound();
   return (
     <div className="space-y-4" data-testid="pagina-ocupantes">
+      <VoltarLista href={HREF_ESTADIA(e.id)} rotulo="Minha estadia" />
       <PageTitle title="Ocupantes" subtitle={`${e.imovel.titulo} · Contrato ${e.numero}`} />
       <Panel>
         <p className="text-sm text-ink" data-testid="ocupantes-aviso">{AVISO_OCUPANTES}</p>
@@ -34,9 +35,6 @@ export default async function OcupantesPage({ params }: { params: Promise<{ cont
         podeEditar={e.podeEditarOcupantes}
         motivoBloqueio={e.papel === "proprietario" ? "Quem preenche é o morador. Você vê a lista e baixa para a portaria." : !e.assinadoPelasDuas ? "Os ocupantes são preenchidos depois da assinatura das duas partes." : null}
       />
-      <ButtonLink href={HREF_ESTADIA(e.id)} variant="tertiary" size="sm">
-        Voltar para a estadia
-      </ButtonLink>
     </div>
   );
 }

@@ -4,6 +4,10 @@ import { conversationId } from "@/lib/messages/conversation-id";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { CHAVE_CONVERSA_PEDIDO, type BloqueioAgenda, type JanelaAgenda } from "./pedido";
+import { blocoDados } from "@/lib/notifications/modelo-email";
+import { escaparHtml } from "@/lib/escapar-html";
+import { rotuloCategoria } from "./regras";
+import { aberturaDoPedido, linhasDoPedido, type EventoPedido, type PedidoParaEmail } from "./email-pedido";
 
 /*
   Peças do 31b usadas pelas ações (pedido-actions) e pelo servidor do 38 (cron e eventos da estadia, sem sessão).
@@ -39,6 +43,40 @@ export async function mensagem(admin: Admin, p: { id: string; cliente_id: string
   return !error;
 }
 
+const EVENTOS_COM_DADOS = new Set<NotificationEvent>(["parceiro_pedido_novo", "parceiro_orcamento_recebido", "parceiro_orcamento_aceito"]);
+
+/** E204: o pedido como o e-mail precisa (serviço, imóvel, data/janela, valor). null se não achar. */
+async function pedidoParaEmail(admin: Admin, pedidoId: string): Promise<PedidoParaEmail | null> {
+  const { data } = await admin
+    .from("parceiro_pedidos")
+    .select("codigo, categoria, horarios_propostos, horario_confirmado, janela_inicio, janela_fim, valor_combinado, valor_parceiro, parceiro_servicos(titulo), properties(title, address, city)")
+    .eq("id", pedidoId)
+    .maybeSingle();
+  if (!data) return null;
+  const d = data as unknown as {
+    codigo: string;
+    categoria: string;
+    horarios_propostos: string[] | null;
+    horario_confirmado: string | null;
+    janela_inicio: string | null;
+    janela_fim: string | null;
+    valor_combinado: number | string | null;
+    valor_parceiro: number | string | null;
+    parceiro_servicos: { titulo: string | null } | null;
+    properties: { title: string | null; address: string | null; city: string | null } | null;
+  };
+  return {
+    codigo: d.codigo,
+    servico: d.parceiro_servicos?.titulo || rotuloCategoria(d.categoria),
+    imovel: d.properties ? { titulo: d.properties.title, bairro: d.properties.address, cidade: d.properties.city } : null,
+    janela: d.janela_inicio && d.janela_fim ? { inicio: d.janela_inicio, fim: d.janela_fim } : null,
+    horarios: d.horarios_propostos,
+    horarioConfirmado: d.horario_confirmado,
+    valorCombinado: d.valor_combinado == null ? null : Number(d.valor_combinado),
+    valorParceiro: d.valor_parceiro == null ? null : Number(d.valor_parceiro),
+  };
+}
+
 /** Aviso por e-mail e push (best-effort: nunca derruba a ação). */
 export async function avisar(
   admin: Admin,
@@ -50,6 +88,9 @@ export async function avisar(
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
+    // E204: pedido novo, orçamento recebido e orçamento aceito dizem o serviço, o imóvel, a data e o valor.
+    const ped = !opcoes.texto && EVENTOS_COM_DADOS.has(ev) ? await pedidoParaEmail(admin, pedidoId).catch(() => null) : null;
+    const linhas = ped ? linhasDoPedido(ev as EventoPedido, ped) : null;
     await notify({
       event: ev,
       email: d?.notif_email === false ? undefined : (d?.email ?? undefined),
@@ -58,6 +99,13 @@ export async function avisar(
       pushUrl: opcoes.url ?? rota(pedidoId),
       semPush: opcoes.semPush,
       ...(opcoes.texto ? { body: (nome?: string) => `Olá${nome ? " " + nome : ""}, ${opcoes.texto}` } : {}),
+      ...(ped && linhas
+        ? {
+            body: (nome?: string) => aberturaDoPedido(ev as EventoPedido, ped, nome),
+            detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
+            detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
+          }
+        : {}),
     });
   } catch {
     /* aviso é complemento */

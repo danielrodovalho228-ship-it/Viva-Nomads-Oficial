@@ -9,7 +9,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
  *      tudo volta depois de recarregar. Gravar a preferência não envia nada.
  */
 const SAIDA = "tests/laboratorio/saida";
-const ROTA = "/dashboard/conta/notificacoes";
+// E176 (parte 2): Notificações é a página única do sino (/dashboard/conta/notificacoes redireciona para cá).
+const ROTA = "/dashboard/notificacoes";
 
 test.describe("T371 — CONTA-A A6: Notificações (perfil-06)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");

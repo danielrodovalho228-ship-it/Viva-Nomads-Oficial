@@ -34,7 +34,7 @@ test("1. logado com avisos por e-mail ligados: 'Vamos te avisar…' + 'Não me a
 test("2. logado com os avisos por e-mail desligados: a frase diz isso + 'Ligar em Notificações'", () => {
   assert.deepEqual(avisoAoSalvar({ id: ID, avisoEmail: false }), { tipo: "email_desligado" });
   assert.equal(AVISO_EMAIL_DESLIGADO, "Busca salva. Seus avisos por e-mail estão desligados.");
-  assert.equal(HREF_NOTIFICACOES, "/dashboard/conta/notificacoes");
+  assert.equal(HREF_NOTIFICACOES, "/dashboard/notificacoes");
   assert.match(comp, /aviso\.tipo === "email_desligado" && \(\s*<Link\s+href=\{HREF_NOTIFICACOES\}[\s\S]*?min-h-11[\s\S]*?\{ROTULO_LIGAR_NOTIFICACOES\}/);
   // A preferência é a mesma que o envio do alerta respeita (profiles.notif_email) — nenhuma chave nova.
   assert.match(acoes, /select\("notif_email"\)[\s\S]*?avisoEmail: notificacaoLigada\(/);

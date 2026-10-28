@@ -1,7 +1,6 @@
 import "server-only";
-import Link from "next/link";
 import { cache } from "react";
-import { AlertTriangle, DatabaseBackup } from "lucide-react";
+import { DatabaseBackup } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { estadoBackup, duracaoLegivel, type EstadoParte, type LinhaBackup } from "@/lib/backup/cartao";
@@ -125,28 +124,3 @@ export async function CartaoBackup({ agora = new Date() }: { agora?: Date }) {
   );
 }
 
-/**
- * E73 (QA 24/10): no celular o cartão do backup fica lá embaixo da página; quando a cópia ou o teste falha, o alerta
- * sobe para o topo do /admin, com o motivo em português simples e o atalho para o cartão. Verde: não aparece.
- * No computador não aparece (a estrutura da tela lá não muda; o cartão já ganha a borda e o selo vermelhos).
- * Peso de alerta sem fundo colorido (regra do admin): borda grossa vermelha, ícone, texto vermelho e role="alert".
- */
-export async function AlertaBackupCelular({ agora = new Date() }: { agora?: Date }) {
-  const linhas = await lerUmaVez().catch(() => null);
-  if (linhas === null || linhas === "sem_tabela") return null;
-  const e = estadoBackup(linhas, agora);
-  if (!e.vermelho) return null;
-  const motivo = e.copia.porque ?? e.drill.porque;
-  return (
-    <div role="alert" className="mb-6 flex items-start gap-3 rounded-xl border-2 border-red-700 bg-white p-4 text-red-900 lg:hidden" data-testid="alerta-backup">
-      <AlertTriangle className="mt-1 h-5 w-5 shrink-0" aria-hidden />
-      <div className="min-w-0">
-        <p className="font-semibold">Backup com problema</p>
-        {motivo && <p className="mt-1 text-sm">{motivo}</p>}
-        <Link href="/admin/sistema#backup" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-2" data-testid="alerta-backup-ver">
-          Ver o backup
-        </Link>
-      </div>
-    </div>
-  );
-}

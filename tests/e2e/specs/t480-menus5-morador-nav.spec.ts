@@ -15,7 +15,6 @@ const semContrato = { email: `semcontrato.t480.${sufixo}@lab.vivanomads.test`, n
 const ids: Record<string, string> = {};
 
 const MORADOR_5 = ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"];
-const MORADOR_4 = ["Início", "Buscar", "Pedidos", "Mensagens"];
 const DONO_5 = ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"];
 
 const barraDeBaixo = (p: Page) => p.getByRole("navigation", { name: "Navegação principal" });
@@ -71,7 +70,8 @@ test.describe("T480 — MENUS-5: abas por papel, Conta no avatar, morador sem na
     await p.getByTestId("conta-morador").click();
     const menu = p.getByTestId("menu-conta-morador");
     await expect(menu).toBeVisible();
-    await expect(menu).toContainText("Perfil e dados");
+    // E176 (D2): atalho curto — Minha conta · Modo · Ajuda · Sair.
+    await expect(menu).toContainText("Minha conta");
     await expect(menu).not.toContainText("Ferramentas");
     await expect(menu.getByRole("menuitem").last()).toHaveText("Sair");
     await p.screenshot({ path: `${SAIDA}/t480-morador-conta-1280.png` });
@@ -105,21 +105,21 @@ test.describe("T480 — MENUS-5: abas por papel, Conta no avatar, morador sem na
       await avatar.click();
       const menu = p.getByTestId("menu-conta-morador-celular");
       await expect(menu).toBeVisible();
-      await expect(menu).toContainText("Perfil e dados");
-      await expect(menu).toContainText("Notificações");
+      await expect(menu).toContainText("Minha conta");
+      await expect(menu).toContainText("Ajuda");
       await p.screenshot({ path: `${SAIDA}/t480-morador-conta-${w}.png` });
       await p.context().close();
     });
   }
 
-  test("morador sem contrato: 4 abas no topo e na barra de baixo", async ({ browser }) => {
+  test("morador sem contrato: as mesmas 5 abas — a Estadia aparece sempre (E176 D1)", async ({ browser }) => {
     const p = await entrar(browser, semContrato.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(p.getByTestId("abas-morador").locator("a")).toHaveText(MORADOR_4, { timeout: 30_000 });
+    await expect(p.getByTestId("abas-morador").locator("a")).toHaveText(MORADOR_5, { timeout: 30_000 });
     await p.screenshot({ path: `${SAIDA}/t480-sem-contrato-1280.png` });
     await p.setViewportSize({ width: 390, height: 844 });
-    await expect.poll(() => rotulosDaBarra(p), { timeout: 30_000 }).toEqual(MORADOR_4);
+    await expect.poll(() => rotulosDaBarra(p), { timeout: 30_000 }).toEqual(MORADOR_5);
     await p.screenshot({ path: `${SAIDA}/t480-sem-contrato-390.png` });
     await p.context().close();
   });

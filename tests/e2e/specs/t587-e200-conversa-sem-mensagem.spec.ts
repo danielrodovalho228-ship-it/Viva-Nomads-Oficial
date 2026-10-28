@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T585 — E200 (#1431), guarda permanente da Pista C: o #1431 trouxe só testes de regra. Na tela, com o link
+  T587 — E200 (#1431), guarda permanente da Pista C: o #1431 trouxe só testes de regra. Na tela, com o link
   /dashboard/mensagens?conversa=<id> do contrato da Ana (sem nenhuma mensagem entre ela e o dono):
    1. o dono — que tem OUTRA conversa, com mensagens, com o Beto — abre a conversa da Ana VAZIA ("Nenhuma mensagem
       ainda. Escreva a primeira.") e nunca a do Beto;
@@ -14,18 +14,18 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t585.${sufixo}@lab.vivanomads.test`, nome: "Dario Conversa", role: "owner" as const };
-const ana = { email: `ana.t585.${sufixo}@lab.vivanomads.test`, nome: "Ana Contrato", role: "tenant" as const };
-const beto = { email: `beto.t585.${sufixo}@lab.vivanomads.test`, nome: "Beto Conversa", role: "tenant" as const };
-const clara = { email: `clara.t585.${sufixo}@lab.vivanomads.test`, nome: "Clara Fora", role: "tenant" as const };
+const dono = { email: `dono.t587.${sufixo}@lab.vivanomads.test`, nome: "Dario Conversa", role: "owner" as const };
+const ana = { email: `ana.t587.${sufixo}@lab.vivanomads.test`, nome: "Ana Contrato", role: "tenant" as const };
+const beto = { email: `beto.t587.${sufixo}@lab.vivanomads.test`, nome: "Beto Conversa", role: "tenant" as const };
+const clara = { email: `clara.t587.${sufixo}@lab.vivanomads.test`, nome: "Clara Fora", role: "tenant" as const };
 const ids: Record<string, string> = {};
-const MSG_BETO = `Olá, tenho interesse — mensagem do Beto t585 ${sufixo}`;
-const MSG_CLARA = `Oi, é a Clara — t585 ${sufixo}`;
+const MSG_BETO = `Olá, tenho interesse — mensagem do Beto t587 ${sufixo}`;
+const MSG_CLARA = `Oi, é a Clara — t587 ${sufixo}`;
 const VAZIA = "Nenhuma mensagem ainda. Escreva a primeira.";
 const NAO_ENCONTRADA = "Esta conversa não está na sua lista. Escolha uma conversa abaixo.";
 let link = "";
 
-test.describe("T585 — E200: a conversa do contrato sem mensagem abre vazia, nunca a de outra pessoa", () => {
+test.describe("T587 — E200: a conversa do contrato sem mensagem abre vazia, nunca a de outra pessoa", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
 
@@ -34,8 +34,8 @@ test.describe("T585 — E200: a conversa do contrato sem mensagem abre vazia, nu
     ids.ana = await criarConta(ana, senha);
     ids.beto = await criarConta(beto, senha);
     ids.clara = await criarConta(clara, senha);
-    ids.imovelAna = await criarImovelPronto(ids.dono, `Contrato da Ana t585 ${sufixo}`, { ativo: true });
-    ids.imovelBeto = await criarImovelPronto(ids.dono, `Conversa do Beto t585 ${sufixo}`, { ativo: true });
+    ids.imovelAna = await criarImovelPronto(ids.dono, `Contrato da Ana t587 ${sufixo}`, { ativo: true });
+    ids.imovelBeto = await criarImovelPronto(ids.dono, `Conversa do Beto t587 ${sufixo}`, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.ana, ids.imovelAna, true);
     const { data, error } = await adm()
       .from("contratos")
@@ -68,10 +68,10 @@ test.describe("T585 — E200: a conversa do contrato sem mensagem abre vazia, nu
         await expect(p.getByTestId("mensagens-conversa-nao-encontrada")).toHaveCount(0);
         // A conversa aberta é a do contrato da Ana — nunca a do Beto. A mensagem do Beto pode aparecer só como prévia na
         // lista de conversas do dono (no máximo uma vez), nunca dentro da conversa aberta.
-        await expect(p.getByTestId("conversa-contexto")).toContainText(`Contrato da Ana t585 ${sufixo}`);
-        await expect(p.getByTestId("conversa-contexto")).not.toContainText(`Conversa do Beto t585 ${sufixo}`);
+        await expect(p.getByTestId("conversa-contexto")).toContainText(`Contrato da Ana t587 ${sufixo}`);
+        await expect(p.getByTestId("conversa-contexto")).not.toContainText(`Conversa do Beto t587 ${sufixo}`);
         expect(await p.locator("main").getByText(MSG_BETO).count(), "a mensagem do Beto dentro da conversa aberta").toBeLessThanOrEqual(1);
-        await p.screenshot({ path: `tests/laboratorio/saida/t585-${quem.toLowerCase()}-${w}.png` });
+        await p.screenshot({ path: `tests/laboratorio/saida/t587-${quem.toLowerCase()}-${w}.png` });
         await p.context().close();
       });
     }
@@ -85,8 +85,8 @@ test.describe("T585 — E200: a conversa do contrato sem mensagem abre vazia, nu
       // Nenhuma conversa abre sozinha — nem a da Ana, nem a da própria Clara (a 1ª da lista dela).
       await expect(p.getByTestId("conversa-contexto")).toHaveCount(0);
       await expect(p.locator("main")).not.toContainText(MSG_BETO);
-      await expect(p.locator("main")).not.toContainText(`Contrato da Ana t585 ${sufixo}`);
-      await p.screenshot({ path: `tests/laboratorio/saida/t585-fora-${w}.png` });
+      await expect(p.locator("main")).not.toContainText(`Contrato da Ana t587 ${sufixo}`);
+      await p.screenshot({ path: `tests/laboratorio/saida/t587-fora-${w}.png` });
       await p.context().close();
     });
   }

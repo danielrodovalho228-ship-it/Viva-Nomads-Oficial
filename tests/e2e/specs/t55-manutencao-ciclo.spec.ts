@@ -192,7 +192,8 @@ test.describe("T55 — Ordem de manutenção: prazo, dois lados, histórico e r�
     expect(r?.status()).toBe(200);
     await expect(page.getByRole("heading", { name: "Notificações", level: 1 })).toBeVisible();
     await expect(page.getByTestId("avisos-manutencao")).toContainText("Inquilino mudou para Resolvida");
-    await expect(page.getByRole("switch", { name: "Avisos por e-mail" })).toBeChecked({ timeout: 15_000 });
+    // E176 (parte 2): Notificações é a página única — o canal "E-mail" do cartão Canais (perfil-06), ligado por padrão.
+    await expect(page.getByRole("switch", { name: "E-mail" })).toBeChecked({ timeout: 15_000 });
     await semRolagemLateral(page, 360);
     await page.context().close();
   });

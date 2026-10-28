@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   Check,
   ArrowRight,
-  ArrowLeft,
   Fingerprint,
   ScanFace,
   FileCheck2,
@@ -68,6 +67,7 @@ import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { passoDaRespostaContrato, quadroAntesDaEntrada } from "@/lib/fechamento-contrato";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
+import { VoltarLista } from "@/components/ui/voltar-lista";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
 
@@ -191,9 +191,6 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
   function next() {
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
-  }
-  function back() {
-    setStep((s) => Math.max(0, s - 1));
   }
 
   // Liga/desliga um serviço (combináveis). Só serviços selecionáveis entram.
@@ -373,6 +370,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
   return (
     <div>
+      <VoltarLista href="/dashboard/leads" rotulo="Interessados" />
       <PageTitle
         title="Fechamento"
         subtitle={
@@ -1317,10 +1315,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 <Info className="h-4 w-4 shrink-0" /> {pendingReason}
               </p>
             )}
-            <div className="flex justify-between">
-              <Button variant="ghost" onClick={back} disabled={step === 0}>
-                <ArrowLeft className="h-4 w-4" /> Voltar
-              </Button>
+            {/* E176: o voltar do Fechamento é o link "← Interessados" no topo; os passos já feitos reabrem pela barra de etapas. */}
+            <div className="flex justify-end">
               <Button onClick={next} disabled={!canAdvance}>
                 Continuar <ArrowRight className="h-4 w-4" />
               </Button>

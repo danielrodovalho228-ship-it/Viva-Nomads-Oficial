@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { ButtonLink } from "@/components/ui/button";
 import { carregarEstadia } from "@/lib/data/estadia";
 import { programadasDaEstadia } from "@/lib/data/respostas-actions";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { ProgramadasTela } from "./programadas-tela";
+import { VoltarLista } from "@/components/ui/voltar-lista";
 
 export const metadata: Metadata = { title: "Mensagens programadas", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -20,6 +20,7 @@ export default async function MensagensProgramadasPage({ params }: { params: Pro
   if (!e || !painel) notFound();
   return (
     <div className="space-y-4" data-testid="pagina-programadas">
+      <VoltarLista href={HREF_ESTADIA(contratoId)} rotulo="Minha estadia" />
       <PageTitle title="Mensagens programadas" subtitle={`${e.imovel.titulo} · Contrato ${e.numero}`} />
       <Panel>
         <p className="text-sm text-ink">
@@ -36,9 +37,6 @@ export default async function MensagensProgramadasPage({ params }: { params: Pro
         </Panel>
       ) : null}
       <ProgramadasTela painel={painel} />
-      <ButtonLink href={HREF_ESTADIA(contratoId)} variant="secondary" size="sm">
-        Voltar para a estadia
-      </ButtonLink>
     </div>
   );
 }

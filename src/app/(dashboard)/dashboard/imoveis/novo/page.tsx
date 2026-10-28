@@ -304,6 +304,8 @@ export default function NewPropertyPage() {
   const conf = useConfortoSalvo(editId ?? draftParam ?? draftServerId);
   const conforto = conf.marcados;
   const etapaParam = etapaDaUrl(searchParams.get("etapa"));
+  // E196: "Qualificação" do cartão do rascunho (Meus imóveis) reabre as 5 telas DAQUELE rascunho (?qualificacao=1).
+  const [qualDoRascunho, setQualDoRascunho] = useState(() => searchParams.get("qualificacao") === "1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -1446,8 +1448,11 @@ export default function NewPropertyPage() {
 
   // E132-A — a Qualificação: só no cadastro NOVO (nunca na edição nem num rascunho já aberto), antes do Passo 1. Um
   // link que já diz o passo (?etapa=, ex.: "Resolver" de uma pendência) vai direto a ele.
+  // E180 (decisão do Daniel: qualificação primeiro): "Novo anúncio" abre nela MESMO com outro anúncio em andamento — o
+  // aviso de retomar fica dentro da Qualificação, em vez de pular para o Passo 1 e esconder a Qualificação.
   const mostrarQualificacao =
-    approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente" && (!existingDraft || draftBannerDismissed);
+    (approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente") ||
+    (approved === true && !editId && qualDoRascunho && !!draftParam && draftServerId === draftParam);
 
   /** Responder: as MESMAS confirmações de conforto e comodidades do Passo 5 (fonte única), e a velocidade da internet. */
   function responderQualificacao(id: string, valor: string | boolean) {
@@ -1502,11 +1507,50 @@ export default function NewPropertyPage() {
     else window.scrollTo({ top: 0 });
   }
 
+  // Bug 12 (L2) + E180: o aviso "anúncio em andamento" — dentro da Qualificação de um anúncio novo e no Passo 1.
+  const avisoRascunho =
+    !editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed ? (
+      // E195/E166: cartão clean (branco, borda fina), como os do assistente — sem o fundo tingido.
+      <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-line bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-forest">
+            <ClipboardCheck className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="font-title text-sm font-semibold text-ink">
+              Você tem um anúncio em andamento
+              {existingDraft.pct > 0 ? ` (${existingDraft.pct}% completo)` : ""}
+            </p>
+            <p className="text-xs text-muted">
+              {mostrarQualificacao ? "Este é um anúncio novo e começa pela qualificação." : "Retome de onde parou — seus dados foram salvos automaticamente."}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="outline" size="sm" onClick={comecarOutro}>
+            Começar outro
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            data-testid="rascunho-continuar"
+            onClick={() => {
+              setDraftBannerDismissed(true);
+              router.push(`/dashboard/imoveis/novo?draft=${existingDraft.id}`);
+            }}
+          >
+            {mostrarQualificacao ? "Continuar o outro" : "Continuar"} <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    ) : null;
+
   if (approved === null) return null;
 
   if (mostrarQualificacao) {
     return (
       <Qualificacao
+        aviso={avisoRascunho}
         tela={telaQual}
         respostas={qualConf.respostas}
         onResponder={responderQualificacao}
@@ -1516,12 +1560,23 @@ export default function NewPropertyPage() {
         }}
         onResponderDepois={() => {
           // "Responder depois" leva direto ao Passo 1; as respostas dadas ficam (e vão com o rascunho).
+          // E208: a escolha "Começar outro × Continuar o outro" mora só na entrada; dentro do anúncio novo, só o estado dele.
+          setDraftBannerDismissed(true);
+          setQualDoRascunho(false);
           setQualConf((q) => ({ ...q, status: "pulada" }));
           setStep(ETAPA.tipo);
           window.scrollTo({ top: 0 });
         }}
-        onComecar={() => void comecarCadastro(ETAPA.tipo)}
-        onVerNoCadastro={() => void comecarCadastro(ETAPA.comodidades)}
+        onComecar={() => {
+          setDraftBannerDismissed(true);
+          setQualDoRascunho(false);
+          void comecarCadastro(ETAPA.tipo);
+        }}
+        onVerNoCadastro={() => {
+          setDraftBannerDismissed(true);
+          setQualDoRascunho(false);
+          void comecarCadastro(ETAPA.comodidades);
+        }}
         onSalvarESair={async () => {
           if (Object.keys(qualConf.respostas).length) await rascunhoDaQualificacao("pendente");
           router.push(HREF_SAIR_ASSISTENTE);
@@ -1605,7 +1660,8 @@ export default function NewPropertyPage() {
 
   return (
     <div className="w-full">
-      {saveStatus !== "idle" && (
+      {/* E208: o estado do rascunho NOVO ("Anúncio novo" até o 1º salvamento; depois "Salvo às …"). */}
+      {(saveStatus !== "idle" || (!editingId && !draftServerId && !avisoRascunho)) && (
         <div className="mb-2 flex justify-end">
           <span
             data-testid="estado-salvamento"
@@ -1623,44 +1679,15 @@ export default function NewPropertyPage() {
               <>
                 <XCircle className="h-3.5 w-3.5" /> {saveErro ? `Não foi possível salvar: ${saveErro}` : "Sem conexão — não salvo"}
               </>
+            ) : saveStatus === "idle" ? (
+              "Anúncio novo"
             ) : (
               "Salvando…"
             )}
           </span>
         </div>
       )}
-      {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
-        <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <span className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
-              <ClipboardCheck className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="font-title text-sm font-semibold text-ink">
-                Você tem um anúncio em andamento
-                {existingDraft.pct > 0 ? ` (${existingDraft.pct}% completo)` : ""}
-              </p>
-              <p className="text-xs text-muted">Retome de onde parou — seus dados foram salvos automaticamente.</p>
-            </div>
-          </div>
-          <div className="flex shrink-0 gap-2">
-            <Button variant="outline" size="sm" onClick={comecarOutro}>
-              Começar outro
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              data-testid="rascunho-continuar"
-              onClick={() => {
-                setDraftBannerDismissed(true);
-                router.push(`/dashboard/imoveis/novo?draft=${existingDraft.id}`);
-              }}
-            >
-              Continuar <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      {avisoRascunho}
 
       {/* Mockups cadastro-imovel-01..10: à esquerda, o título do passo (o H1 da tela) e o formulário; à direita
           (computador), a prévia do anúncio montando ao vivo. CADASTRO-MOLDURA: "Passo X de 10", a barra de progresso,

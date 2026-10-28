@@ -107,6 +107,7 @@ test("p23 — e-mails: visita pedida/confirmada/remarcada/cancelada, candidatura
   const leads = ler("./data/leads-actions.ts");
   const recusar = leads.slice(leads.indexOf("export async function recusarCandidatura"), leads.indexOf("export async function recusarCandidatura") + 2500);
   assert.doesNotMatch(recusar.slice(0, recusar.indexOf("\n}\n")), /notify\(|sendEmail\(/);
-  const visitas = ler("./data/visitas-video-actions.ts");
+  // E205-B: a cancelada saiu para os avisos de visita (quem cancelou, motivo, horário).
+  const visitas = ler("./data/visitas-video-actions.ts") + ler("./visitas/avisos-servidor.ts");
   for (const e of ["visita_pedida", "visita_confirmada", "visita_remarcada", "visita_cancelada"]) assert.match(visitas, new RegExp(`"${e}"`), e);
 });

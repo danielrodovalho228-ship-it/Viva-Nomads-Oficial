@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronRight, CircleHelp, CreditCard, FileText, LogOut, Shield, Star, UserRound, Users } from "lucide-react";
+import { Bell, ChevronRight, CircleHelp, CreditCard, FileText, LogOut, Shield, ShieldCheck, Star, UserRound, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SECOES_CONTA, type ItemSecao } from "@/lib/conta/secoes";
 import { useSair } from "./use-sair";
@@ -13,6 +13,7 @@ const ICONES_SECAO: Record<ItemSecao["icone"], React.ComponentType<{ className?:
   Users,
   FileText,
   Shield,
+  ShieldCheck,
   Bell,
   CreditCard,
   CircleHelp,

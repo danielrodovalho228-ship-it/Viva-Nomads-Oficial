@@ -6,11 +6,27 @@
 */
 import { assuntoChamado, assuntoManutencao, ASSUNTOS } from "./assuntos.ts";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email.ts";
+import { aberturaAssinatura, aberturaContratoPronto, aberturaProposta, linhasContrato, linhasProposta, proximoPassoAssinatura, proximoPassoProposta, PROXIMO_PASSO_CONTRATO_PRONTO, type Desfecho } from "./dados-negociacao.ts";
 import { blocoDados } from "./modelo-email.ts";
 import { emailCodigo2fa, emailCodigoVinculo, emailCodigoAssinatura, emailDocumentoFiscal, emailExclusaoConta, emailParceriaAprovada, montarNotificacao, type EmailMontado } from "./montar-email.ts";
 import { REMETENTE } from "./remetente.ts";
 import { templatesSupabase } from "./templates-supabase.ts";
 import { emailDecisaoDocumento, linhasDoAviso } from "../documento/aviso-decisao.ts";
+import {
+  TEXTO_EXPIRADA_DONO,
+  TEXTO_EXPIRADA_MORADOR,
+  boasVindas,
+  detalhes,
+  propostaAceitaDono,
+  propostaAceitaMorador,
+  propostaRecusada,
+  vesperaTexto,
+  visitaCancelada,
+  type EmailPassos,
+} from "./emails-e205b.ts";
+import { aberturaDoPedido, linhasDoPedido, type EventoPedido, type PedidoParaEmail } from "../parceiros/email-pedido.ts";
+import { textoResposta } from "../automacao/textos-vinculo.ts";
+import { escaparHtml } from "../escapar-html.ts";
 
 export interface EmailDoCatalogo extends EmailMontado {
   chave: string;
@@ -37,14 +53,45 @@ function exemploSupabase(html: string, site: string): string {
     .replace(/\{\{ \.NewEmail \}\}/g, "novo@exemplo.com");
 }
 
+/** E204: o pedido de exemplo dos e-mails de orçamento (o mesmo formato que o servidor monta do banco). */
+const PEDIDO_EXEMPLO: PedidoParaEmail = {
+  codigo: "VN-SV-1SJGWI6O",
+  servico: "Limpeza pós-saída",
+  imovel: { titulo: "Apto Santa Mônica", bairro: "Santa Mônica", cidade: "Uberlândia" },
+  horarios: ["2026-11-04T13:00:00.000Z", "2026-11-05T17:00:00.000Z"],
+  valorCombinado: 180,
+  valorParceiro: 162,
+};
+
+/** E204: eventos cujo e-mail real sai com dados (o catálogo mostra o que sai, não o texto-base). */
+function comDados(siteUrl: string, ev: NotificationEvent, nome: { nomeHtml: string; nomeTexto: string }): EmailMontado | null {
+  if (ev === "parceiro_pedido_novo" || ev === "parceiro_orcamento_recebido" || ev === "parceiro_orcamento_aceito") {
+    const linhas = linhasDoPedido(ev as EventoPedido, PEDIDO_EXEMPLO);
+    return montarNotificacao({
+      siteUrl,
+      event: ev,
+      ...nome,
+      pushUrl: "/dashboard/servicos/pedidos/2c3d4e5f-0000-4000-8000-000000000001",
+      body: (n) => aberturaDoPedido(ev as EventoPedido, PEDIDO_EXEMPLO, n),
+      detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
+      detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
+    });
+  }
+  if (ev === "vinculo_parceiro_resposta") {
+    const t = textoResposta({ categoria: "limpeza", tituloImovel: "Apto Santa Mônica", cidade: "Uberlândia", nomeDono: "Marcos", nomeParceiro: "Limpa Já Serviços" }, true);
+    return montarNotificacao({ siteUrl, event: ev, ...nome, subject: t.subject, body: t.body });
+  }
+  return null;
+}
+
 export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
   const nome = { nomeHtml: "Marcos", nomeTexto: "Marcos" };
   const lista: EmailDoCatalogo[] = [];
 
-  // 1. Todos os eventos do notify, com o texto padrão.
+  // 1. Todos os eventos do notify, com o texto padrão (ou com os dados, quando o real sai com eles).
   for (const ev of Object.keys(TEMPLATES) as NotificationEvent[]) {
     if (EVENTOS_SO_EQUIPE.includes(ev)) continue;
-    lista.push(doApp(ev, montarNotificacao({ siteUrl, event: ev, ...nome })));
+    lista.push(doApp(ev, comDados(siteUrl, ev, nome) ?? montarNotificacao({ siteUrl, event: ev, ...nome })));
   }
 
   // 2. Os que saem com assunto próprio.
@@ -53,12 +100,66 @@ export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
   }
   lista.push(doApp("manutencao:urgente", montarNotificacao({ siteUrl, event: "manutencao_nova", ...nome, subject: assuntoManutencao({ urgente: true, lembrete: false }), pushUrl: "/dashboard/solicitacoes" })));
   lista.push(doApp("manutencao:lembrete", montarNotificacao({ siteUrl, event: "manutencao_nova", ...nome, subject: assuntoManutencao({ urgente: false, lembrete: true }), pushUrl: "/dashboard/solicitacoes" })));
-  const proposta = blocoDados([{ rotulo: "Proposta", valor: "ORC-2026-0001" }]);
-  lista.push(doApp("proposta:recebida", montarNotificacao({ siteUrl, event: "proposta_recebida", ...nome, subject: ASSUNTOS.propostaRecebida, detailsHtml: proposta, pushUrl: `/dashboard/propostas/${PROP}` })));
-  lista.push(doApp("proposta:aceita", montarNotificacao({ siteUrl, event: "proposta_respondida", ...nome, subject: ASSUNTOS.propostaAceita, detailsHtml: proposta, pushUrl: `/dashboard/propostas/${PROP}` })));
-  lista.push(doApp("contrato:pronto", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoPronto })));
-  lista.push(doApp("contrato:falta-voce", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoFaltaVoce })));
-  lista.push(doApp("contrato:assinado", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoAssinado })));
+  // E202: proposta e contrato com os dados da negociação (imóvel, período, valores, prazo) e o próximo passo.
+  const IM = { titulo: "Apto Santa Mônica", bairro: "Santa Mônica", cidade: "Uberlândia" };
+  const quadro = (l: { rotulo: string; valor: string }[], passo: string) => blocoDados(l) + `<p>${passo}</p>`;
+  const lp = (prazo: string | null) =>
+    linhasProposta({ numero: "ORC-2026-0001", imovel: IM, entrada: "2026-11-01", saida: "2027-02-28", meses: 4, valorMensal: 2700, contaTotal: "4 × R$ 2.700 + preparação R$ 450 = R$ 11.250", responderAte: prazo });
+  const prop = (chave: string, ev: "proposta_recebida" | "proposta_respondida", assunto: string, d: Desfecho, papel: "owner" | "tenant") =>
+    lista.push(
+      doApp(
+        chave,
+        montarNotificacao({
+          siteUrl,
+          event: ev,
+          ...nome,
+          subject: assunto,
+          body: (n) => aberturaProposta(d, { nome: n, imovel: IM, novoValorMensal: 2700, motivo: d === "recusada" ? "Datas não servem" : null }),
+          detailsHtml: quadro(lp(d === "nova" || d === "contraproposta" ? "2026-10-30T18:00:00Z" : null), proximoPassoProposta(d, papel)),
+          pushUrl: `/dashboard/propostas/${PROP}`,
+        }),
+      ),
+    );
+  prop("proposta:recebida", "proposta_recebida", ASSUNTOS.propostaRecebida, "nova", "tenant");
+  prop("proposta:contraproposta", "proposta_recebida", ASSUNTOS.propostaRecebida, "contraproposta", "owner");
+  // E205-B (b)(c): aceite = dois e-mails (dono e morador); recusa = "{Primeiro nome} recusou a proposta", por lado.
+  const comPassos = (chave: string, ev: NotificationEvent, e: EmailPassos, antes = "") => {
+    const d = detalhes({ titulo: e.titulo, passos: e.passos, rodape: e.rodape });
+    lista.push(doApp(chave, montarNotificacao({ siteUrl, event: ev, ...nome, subject: e.assunto, body: e.abertura, ctaLabel: e.cta, pushUrl: e.url, detailsHtml: antes + d.html, detailsText: d.texto })));
+  };
+  const quadroDe = (d: Desfecho, papel: "owner" | "tenant") => quadro(lp(null), proximoPassoProposta(d, papel));
+  comPassos("proposta:aceita", "proposta_aceita", propostaAceitaDono({ nomeMorador: "Ana Souza", leadId: PROP }), quadroDe("aceita", "owner"));
+  comPassos("proposta:aceita:morador", "proposta_aceita", propostaAceitaMorador({ dataEntrada: "2026-11-01", propostaId: PROP }), quadroDe("aceita", "tenant"));
+  const recusa = (chave: string, quem: "owner" | "tenant", nomeQuem: string) => {
+    const e = propostaRecusada({ quemRecusou: quem, nomeDeQuemRecusou: nomeQuem, motivo: "Datas", texto: "Preciso entrar só em dezembro", propostaId: PROP, cidade: "Uberlândia" });
+    comPassos(chave, "proposta_recusada", e, quadroDe("recusada", quem === "tenant" ? "owner" : "tenant"));
+  };
+  recusa("proposta:recusada", "tenant", "Ana Souza");
+  recusa("proposta:recusada:morador", "owner", "Carlos Lima");
+  // E205-B (a): boas-vindas, uma por perfil.
+  comPassos("boas_vindas:morador", "boas_vindas", boasVindas("morador"));
+  comPassos("boas_vindas:proprietario", "boas_vindas", boasVindas("proprietario"));
+  // E205-B (d): visitas — cancelada (por lado), expirada (por lado) e véspera (presencial morador/dono, vídeo).
+  const HORA = "qui., 05/11 às 10:00 (horário de Brasília)";
+  const comLinhas = (chave: string, ev: NotificationEvent, t: { abertura: (n?: string) => string; linhas: { rotulo: string; valor: string }[]; cta: string; url: string }) => {
+    const externo = /^https:\/\//.test(t.url) ? { label: t.cta, url: t.url } : null;
+    const d = detalhes({ linhas: t.linhas, externo });
+    lista.push(doApp(chave, montarNotificacao({ siteUrl, event: ev, ...nome, body: t.abertura, ctaLabel: externo ? undefined : t.cta, pushUrl: externo ? "/dashboard/visitas" : t.url, detailsHtml: d.html, detailsText: d.texto })));
+  };
+  comLinhas("visita:cancelada:morador", "visita_cancelada", visitaCancelada({ quemCancelou: "dono", nomeDeQuemCancelou: "Carlos Lima", motivo: "O imóvel foi alugado", horario: HORA, tipo: "presencial", imovel: IM.titulo, propertyId: PROP, paraMorador: true }));
+  comLinhas("visita:cancelada:dono", "visita_cancelada", visitaCancelada({ quemCancelou: "morador", nomeDeQuemCancelou: "Ana Souza", motivo: null, horario: HORA, tipo: "por vídeo", imovel: IM.titulo, propertyId: PROP, paraMorador: false }));
+  const expirada = (chave: string, texto: string, cta: string, url: string) =>
+    comLinhas(chave, "visita_expirada", { abertura: (n) => `Olá${n ? " " + n : ""}, ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`, linhas: [{ rotulo: "Imóvel", valor: IM.titulo }, { rotulo: "Horários propostos", valor: HORA }], cta, url });
+  expirada("visita:expirada:morador", TEXTO_EXPIRADA_MORADOR, "Pedir outros horários", `/imoveis/${PROP}`);
+  expirada("visita:expirada:dono", TEXTO_EXPIRADA_DONO, "Ver as visitas", "/dashboard/visitas?de=dono");
+  const END = { texto: "Rua Modesta Maria, 120, apto 302 · Santa Mônica · Uberlândia", mapa: "https://www.google.com/maps/search/?api=1&query=Rua%20Modesta%20Maria%2C%20120" };
+  comLinhas("visita:vespera:presencial-morador", "visita_vespera", vesperaTexto({ modalidade: "presencial", paraMorador: true, horario: HORA, imovel: IM.titulo, endereco: END }));
+  comLinhas("visita:vespera:presencial-dono", "visita_vespera", vesperaTexto({ modalidade: "presencial", paraMorador: false, horario: HORA, imovel: IM.titulo, nomeMorador: "Ana Souza" }));
+  comLinhas("visita:vespera:video", "visita_vespera", vesperaTexto({ modalidade: "video", paraMorador: true, horario: HORA, imovel: IM.titulo, linkChamada: "https://meet.google.com/abc-defg-hij" }));
+  const lc = linhasContrato({ imovel: IM, inicio: "2026-11-01", fim: "2027-02-28", meses: 4, valorMensal: 2700 });
+  lista.push(doApp("contrato:pronto", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoPronto, body: (n) => aberturaContratoPronto({ nome: n, imovel: IM }), detailsHtml: quadro(lc, PROXIMO_PASSO_CONTRATO_PRONTO), ctaLabel: "Ler e assinar o contrato" })));
+  lista.push(doApp("contrato:falta-voce", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoFaltaVoce, body: (n) => aberturaAssinatura({ nome: n, imovel: IM, asDuas: false, quemAssinou: "tenant" }), detailsHtml: quadro(lc, proximoPassoAssinatura(false, "owner")) })));
+  lista.push(doApp("contrato:assinado", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoAssinado, body: (n) => aberturaAssinatura({ nome: n, imovel: IM, asDuas: true, quemAssinou: "owner" }), detailsHtml: quadro(lc, proximoPassoAssinatura(true, "tenant")) })));
 
   // 3. Decisão de documento (item 3b): um documento só e o resultado agrupado.
   const decisao = (chave: string, linhas: ReturnType<typeof linhasDoAviso>, pronto: boolean) => {

@@ -8,27 +8,24 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
-test("(a) nas telas /admin, no celular: 'Voltar ao site' (/) e 'Menu da equipe' à vista; some no computador", () => {
+test("(a) E176 (D3): no celular, '‹ Voltar ao site' à vista e UM caminho de menu — o hambúrguer do topo (sem 'Menu da equipe')", () => {
   const shell = ler("components/layout/dashboard-shell.tsx");
   const bloco = shell.slice(shell.indexOf('pathname.startsWith("/admin") && ('), shell.indexOf("Aviso fixo do modo demonstração"));
   assert.match(bloco, /data-testid="admin-nav-celular"/);
   assert.match(bloco, /lg:hidden/);
   assert.match(bloco, /href="\/" [^>]*data-testid="admin-voltar-site"[\s\S]*?Voltar ao site/);
-  assert.match(bloco, /onClick=\{\(\) => setOpen\(true\)\}[\s\S]*?Menu da equipe/);
+  assert.doesNotMatch(shell, /Menu da equipe/);
+  assert.match(shell, /aria-label="Abrir menu"\s+data-testid=\{naAreaAdmin \? "admin-abrir-menu" : undefined\}/);
 });
 
-test("(b) backup vermelho: alerta no topo só no celular (role=alert, borda grossa, motivo e atalho); verde não aparece", () => {
-  const c = ler("components/admin/cartao-backup.tsx");
-  const alerta = c.slice(c.indexOf("export async function AlertaBackupCelular"));
-  assert.match(alerta, /if \(!e\.vermelho\) return null;/);
-  assert.match(alerta, /role="alert"[^>]*border-2 border-red-700[^>]*lg:hidden/);
-  // ADMIN-3: o cartão do backup mora em /admin/sistema.
-  assert.match(alerta, /href="\/admin\/sistema#backup"/);
-  // O selo "Atenção" ganha borda grossa; o fundo continua branco (regra do admin).
-  assert.match(c, /"border-2 border-red-700 bg-white text-red-800"/);
+test("(b) E176 (D3): o alerta do backup aparece UMA vez, dentro de 'Precisa da sua atenção' (sem a faixa vermelha duplicada)", () => {
   const pagina = ler("app/(dashboard)/admin/page.tsx");
-  // ADMIN-4: o alerta vem antes dos 4 números da inicial.
-  assert.ok(pagina.indexOf("<AlertaBackupCelular />") < pagina.indexOf('data-testid="admin-numeros"'));
+  assert.doesNotMatch(pagina, /AlertaBackupCelular/);
+  assert.doesNotMatch(ler("components/admin/cartao-backup.tsx"), /AlertaBackupCelular/);
+  // O backup nunca fica de fora do corte das 5 primeiras linhas da atenção.
+  assert.match(pagina, /comBackup\(primeirosSemDuplicata\(/);
+  // A linha de saúde não repete o alerta com link próprio.
+  assert.doesNotMatch(pagina, /alertas"\} → Sistema/);
   assert.match(ler("app/(dashboard)/admin/sistema/page.tsx"), /<div id="backup"/);
 });
 
