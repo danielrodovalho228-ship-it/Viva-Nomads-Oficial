@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    2. pede o vínculo com o e-mail corporativo → o código de 6 dígitos chega na caixa de teste (emails_teste,
       evento vinculo_codigo; a caixa é por usuario_id, então serve para o endereço corporativo de uma conta is_teste);
    3. digita um código ERRADO → "Código incorreto…", conta 1 das 5 tentativas;
-   4. digita o código certo → "Vínculo profissional · <domínio>" na linha, gravado com confirmado_em;
+   4. digita o código certo → "Vínculo profissional confirmado · <domínio>" na própria linha, gravado com confirmado_em;
    5. o selo aparece no perfil público do proprietário com SÓ o domínio, nunca o e-mail.
   O endereço: lab.vivanomads.com.br (domínio nosso, aceito pela regra — ela recusa só provedores gratuitos); no
   laboratório nada sai para a rede (integrações simuladas, Resend falso). Código de 15 min, até 5 tentativas.
@@ -19,6 +19,8 @@ const sufixo = novoSufixo();
 const dono = { email: `dono.t595.${sufixo}@lab.vivanomads.test`, nome: "Vera Vinculo", role: "owner" as const };
 const DOMINIO = "lab.vivanomads.com.br";
 const CORPORATIVO = `vera.t595.${sufixo}@${DOMINIO}`;
+// Dois textos por desenho (E174-B): na tela da própria pessoa, "confirmado"; nos lugares públicos, o selo curto.
+const DETALHE = `Vínculo profissional confirmado · ${DOMINIO}`;
 const SELO = `Vínculo profissional · ${DOMINIO}`;
 const RECUSADO = "Use o e-mail da sua empresa, hospital ou universidade. E-mails como Gmail e Hotmail não servem para este selo.";
 const ERRADO = "Código incorreto. Confira o e-mail e tente de novo.";
@@ -99,7 +101,7 @@ test.describe("T595 — E174: vínculo profissional pela tela (pedir → código
     await campo.fill(codigo);
     await p.getByRole("button", { name: "Confirmar código" }).click();
     await expect(p.getByTestId("confianca-vinculo")).toHaveAttribute("data-situacao", "ok", { timeout: 20_000 });
-    await expect(p.getByTestId("vinculo-detalhe")).toHaveText(SELO);
+    await expect(p.getByTestId("vinculo-detalhe")).toHaveText(DETALHE);
     await expect(p.getByTestId("vinculo-erro")).toHaveCount(0);
     const { data: fim } = await adm().from("vinculo_profissional").select("dominio, confirmado_em").eq("user_id", ids.dono).single();
     expect(fim?.dominio).toBe(DOMINIO);
@@ -127,7 +129,7 @@ test.describe("T595 — E174: vínculo profissional pela tela (pedir → código
     const dono1280 = await entrar(browser, dono.email, senha);
     await dono1280.setViewportSize({ width: 1280, height: 900 });
     await dono1280.goto("/dashboard/conta/seguranca", { waitUntil: "domcontentloaded" });
-    await expect(dono1280.getByTestId("vinculo-detalhe")).toHaveText(SELO, { timeout: 30_000 });
+    await expect(dono1280.getByTestId("vinculo-detalhe")).toHaveText(DETALHE, { timeout: 30_000 });
     await dono1280.context().close();
   });
 });
