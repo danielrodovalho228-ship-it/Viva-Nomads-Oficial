@@ -48,6 +48,16 @@ export function dataHoraBR(iso: string | null | undefined): string {
 
 const meses = (n: number) => `${n} ${n === 1 ? "mês" : "meses"}`;
 
+/**
+ * E210: "DD/MM/AAAA a DD/MM/AAAA (N meses)" com as datas reais. Sem as duas datas, nunca "a " vazio: só os meses
+ * (o contrato sem blocos não tem período gravado — em produção, todo contrato tem blocos).
+ */
+export function textoPeriodo(inicio: string | null | undefined, fim: string | null | undefined, n: number): string {
+  const de = dataBR(inicio);
+  const ate = dataBR(fim);
+  return de && ate ? `${de} a ${ate} (${meses(n)})` : meses(n);
+}
+
 /** Linhas do quadro de dados de uma proposta (nova, contraproposta ou respondida). */
 export function linhasProposta(o: {
   numero: string;
@@ -63,7 +73,7 @@ export function linhasProposta(o: {
 }): LinhaDado[] {
   const linhas: LinhaDado[] = [
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
-    { rotulo: "Período", valor: `${dataBR(o.entrada)} a ${dataBR(o.saida)} (${meses(o.meses)})` },
+    { rotulo: "Período", valor: textoPeriodo(o.entrada, o.saida, o.meses) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
     { rotulo: "Total do contrato", valor: o.contaTotal },
   ];
@@ -77,7 +87,7 @@ export function linhasProposta(o: {
 export function linhasContrato(o: { imovel: ImovelDoEmail; inicio: string; fim: string; meses: number; valorMensal: number }): LinhaDado[] {
   return [
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
-    { rotulo: "Período", valor: `${dataBR(o.inicio)} a ${dataBR(o.fim)} (${meses(o.meses)})` },
+    { rotulo: "Período", valor: textoPeriodo(o.inicio, o.fim, o.meses) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
     { rotulo: "Total do contrato", valor: `${o.meses} × ${brl(o.valorMensal)} = ${brl(o.valorMensal * o.meses)}` },
   ];
