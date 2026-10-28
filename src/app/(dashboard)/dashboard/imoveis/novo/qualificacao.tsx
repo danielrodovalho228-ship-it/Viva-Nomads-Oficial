@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AirVent, AlertCircle, BedDouble, Building, Check, CheckCircle2, CookingPot, Fan, Microwave, Refrigerator, Shirt, WashingMachine, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { itemConforto } from "@/config/conforto-minimo";
 import {
   SEM_INTERNET_QUALIFICACAO,
@@ -19,6 +18,8 @@ import {
   type Respostas,
 } from "@/lib/anuncio/qualificacao-conforto";
 import { cn } from "@/lib/utils";
+import { progressoQualificacao, textoQualificacao } from "@/lib/anuncio/assistente-telas";
+import { RodapeAssistente } from "./rodape-assistente";
 
 const ICONES: Record<IconeOpcao, React.ComponentType<{ className?: string }>> = {
   ar: AirVent,
@@ -68,32 +69,45 @@ export function Qualificacao(p: {
     link.addEventListener("click", aoClicar, { capture: true });
     return () => link.removeEventListener("click", aoClicar, { capture: true });
   }, []);
-  const progresso = resultado ? 100 : Math.round(((p.tela + 1) / TOTAL_TELAS) * 100);
+  // E194 (print do Daniel, 25/10): a Qualificação não é "outro cadastro" — mora na moldura do assistente: o mesmo selo
+  // "Anunciar imóvel" do topo dos passos e o mesmo rodapé fixo (botão primário + barra contínua até o Passo 1).
+  const telaAtual = resultado ? TOTAL_TELAS : p.tela + 1;
   return (
-    <section className="w-full pb-16" data-testid="qualificacao" data-tela={resultado ? "resultado" : p.tela + 1}>
-      <p className="text-center text-sm font-medium text-ink sm:text-base" data-testid="qualificacao-progresso">
+    <section className="w-full" data-testid="qualificacao" data-tela={resultado ? "resultado" : p.tela + 1}>
+      <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
+        Anunciar imóvel <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
+      </span>
+      <p className="mt-3 text-sm font-medium text-muted" data-testid="qualificacao-progresso">
         {resultado ? "Qualificação · pronta" : `Qualificação · ${p.tela + 1} de ${TOTAL_TELAS}`}
       </p>
-      <div className="mx-auto mt-2 h-2 w-full max-w-md overflow-hidden rounded-full bg-sage-100" aria-hidden>
-        <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${progresso}%` }} />
-      </div>
       {resultado ? (
-        <Resultado respostas={p.respostas} onComecar={p.onComecar} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} ocupado={p.ocupado} />
+        <Resultado respostas={p.respostas} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} />
       ) : (
         <Tela
           indice={p.tela}
           respostas={p.respostas}
           onResponder={p.onResponder}
-          onContinuar={() => p.onTela(p.tela + 1)}
           onResponderDepois={p.onResponderDepois}
           ocupado={p.ocupado}
         />
       )}
+      <RodapeAssistente
+        pos={0}
+        total={10}
+        texto={resultado ? "Qualificação pronta · a seguir, o Passo 1" : textoQualificacao(telaAtual, TOTAL_TELAS)}
+        pct={progressoQualificacao(resultado ? TOTAL_TELAS : p.tela, TOTAL_TELAS)}
+        onVoltar={!resultado && p.tela > 0 ? () => p.onTela(p.tela - 1) : null}
+        primario={
+          resultado
+            ? { rotulo: p.ocupado ? "Abrindo o cadastro…" : "Começar o cadastro", onClick: p.onComecar, disabled: p.ocupado, testid: "qualificacao-comecar", seta: true }
+            : { rotulo: "Continuar", onClick: () => p.onTela(p.tela + 1), testid: "qualificacao-continuar", seta: true }
+        }
+      />
     </section>
   );
 }
 
-function Tela(p: { indice: number; respostas: Respostas; onResponder: (id: string, v: string | boolean) => void; onContinuar: () => void; onResponderDepois: () => void; ocupado?: boolean }) {
+function Tela(p: { indice: number; respostas: Respostas; onResponder: (id: string, v: string | boolean) => void; onResponderDepois: () => void; ocupado?: boolean }) {
   const tela = TELAS_QUALIFICACAO[p.indice];
   return (
     <>
@@ -109,13 +123,10 @@ function Tela(p: { indice: number; respostas: Respostas; onResponder: (id: strin
           <PerguntaQ key={q.id} q={q} valor={p.respostas[q.id]} onResponder={(v) => p.onResponder(q.id, v)} />
         ))}
       </div>
-      <div className="mt-8 flex flex-col-reverse items-center gap-3 sm:flex-row sm:justify-center sm:gap-8">
+      <div className="mt-8 flex justify-center">
         <button type="button" onClick={p.onResponderDepois} disabled={p.ocupado} className="min-h-11 px-2 text-sm font-medium text-ink underline underline-offset-4" data-testid="qualificacao-depois">
           Responder depois
         </button>
-        <Button size="lg" onClick={p.onContinuar} className="w-full sm:w-auto" data-testid="qualificacao-continuar">
-          Continuar
-        </Button>
       </div>
     </>
   );
@@ -214,7 +225,7 @@ function PerguntaQ({ q, valor, onResponder }: { q: Pergunta; valor: string | boo
   );
 }
 
-function Resultado({ respostas, onComecar, onVer, onResponderDeNovo, ocupado }: { respostas: Respostas; onComecar: () => void; onVer: () => void; onResponderDeNovo: () => void; ocupado?: boolean }) {
+function Resultado({ respostas, onVer, onResponderDeNovo }: { respostas: Respostas; onVer: () => void; onResponderDeNovo: () => void }) {
   const { conforto } = aplicarRespostas(respostas);
   const faltam = faltamDoEssencial(conforto);
   const { titulo, subtitulo } = tituloResultado(faltam.length);
@@ -257,9 +268,6 @@ function Resultado({ respostas, onComecar, onVer, onResponderDeNovo, ocupado }: 
         </ul>
       </div>
       <div className="flex flex-col items-center gap-3 pt-2">
-        <Button size="lg" onClick={onComecar} disabled={ocupado} className="w-full sm:w-auto" data-testid="qualificacao-comecar">
-          {ocupado ? "Abrindo o cadastro…" : "Começar o cadastro"}
-        </Button>
         <button type="button" onClick={onResponderDeNovo} className="min-h-11 px-2 text-sm font-medium text-ink underline underline-offset-4" data-testid="qualificacao-de-novo">
           Responder de novo
         </button>
