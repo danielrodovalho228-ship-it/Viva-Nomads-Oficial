@@ -11,7 +11,7 @@ import { after } from "next/server";
 import { notify } from "@/lib/notifications";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
-import { enderecoDaVisita, mostraEnderecoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
+import { enderecoDaVisita, mostraEnderecoDaVisita, regiaoDaVisita, statusDaVisitaNaTela, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
 import {
   ehModalidade,
   ehStatusVisita,
@@ -156,6 +156,8 @@ export interface MinhaVisita extends Omit<VisitaDono, "motivo"> {
   endereco: string | null;
   /** Link "Abrir no mapa" do endereço exato (mesma regra). */
   enderecoMapa: string | null;
+  /** E184: presencial confirmada sem endereço exato no cadastro → a região (bairro · cidade), ou null. */
+  regiao?: string | null;
 }
 
 type Linha = {
@@ -184,7 +186,8 @@ function mapear(r: Linha, rotulo: (m: string | null) => string): VisitaDono {
     modalidade: ehModalidade(r.modalidade) ? r.modalidade : "video",
     horarios: r.horarios ?? [],
     motivo: rotulo(r.motivo),
-    status: ehStatusVisita(r.status) ? r.status : "pedido",
+    // E184: confirmada com o horário já passado aparece como "Feita" (sem ações nem endereço).
+    status: statusDaVisitaNaTela({ status: ehStatusVisita(r.status) ? r.status : "pedido", horarioConfirmado: r.horario_confirmado }, new Date()),
     horarioConfirmado: r.horario_confirmado,
     horarioProposto: r.horario_proposto,
     motivoRecusa: r.motivo_recusa,
@@ -231,16 +234,20 @@ export async function listMinhasVisitas(): Promise<MinhaVisita[]> {
   const agora = new Date();
   const confirmadas = linhas.filter((v) => mostraEnderecoDaVisita(v, agora)).map((v) => v.propertyId);
   const enderecos = new Map<string, EnderecoVisita>();
+  const regioes = new Map<string, string>();
   if (confirmadas.length) {
     const { data: props } = await admin.from("properties").select("id, exact_address, address, city, state").in("id", confirmadas); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
     for (const p of props ?? []) {
       const e = enderecoDaVisita(p);
       if (e) enderecos.set(p.id as string, e);
+      const r = regiaoDaVisita(p);
+      if (r) regioes.set(p.id as string, r);
     }
   }
   return linhas.map((v) => {
-    const e = mostraEnderecoDaVisita(v, agora) ? enderecos.get(v.propertyId) : undefined;
-    return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null };
+    const mostra = mostraEnderecoDaVisita(v, agora);
+    const e = mostra ? enderecos.get(v.propertyId) : undefined;
+    return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, regiao: mostra && !e ? (regioes.get(v.propertyId) ?? null) : null };
   });
 }
 
@@ -345,9 +352,11 @@ export async function visitaDaConversa(propertyId: string, outroId: string): Pro
   const papel = r.owner_id === user.id ? "dono" : "morador";
   const v = mapear(r, (m) => (papel === "dono" ? motivoParaDono(m) : m && isMotivo(m) ? motivoLabel(m) : ""));
   let e: EnderecoVisita | null = null;
+  let regiao: string | null = null;
   if (papel === "morador" && mostraEnderecoDaVisita(v, new Date())) {
     const { data: p } = await admin.from("properties").select("exact_address, address, city, state").eq("id", propertyId).maybeSingle(); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
     e = p ? enderecoDaVisita(p) : null;
+    regiao = p && !e ? regiaoDaVisita(p) : null;
   }
-  return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, papel };
+  return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, regiao, papel };
 }

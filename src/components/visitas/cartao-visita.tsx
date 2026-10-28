@@ -18,6 +18,7 @@ import {
   type ModalidadeVisita,
   type StatusVisita,
 } from "@/lib/visitas-video";
+import { textoEnderecoPendente } from "@/lib/visitas/endereco-visita";
 import { cn } from "@/lib/utils";
 
 const TOM: Record<StatusVisita, string> = {
@@ -42,6 +43,8 @@ export interface VisitaNaTela {
   /** Só para o morador, na presencial confirmada. */
   endereco?: string | null;
   enderecoMapa?: string | null;
+  /** E184: presencial confirmada sem endereço exato no cadastro → a região (bairro · cidade). */
+  regiao?: string | null;
 }
 
 /**
@@ -129,6 +132,10 @@ export function CartaoVisita({
               </a>
             )}
           </div>
+        ) : v.status === "confirmado" ? (
+          <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="visita-endereco-pendente">
+            {textoEnderecoPendente(v.regiao ?? null)}
+          </p>
         ) : (
           <p className="mt-2 text-xs text-muted" data-testid="visita-endereco-oculto">
             O endereço exato aparece aqui quando a visita for confirmada.

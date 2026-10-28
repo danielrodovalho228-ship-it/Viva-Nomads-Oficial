@@ -37,3 +37,25 @@ export function enderecoDaVisita(p: { exact_address?: string | null; address?: s
 export function linhaEnderecoExato(rua: string, numero: string, complemento: string): string {
   return [rua.trim(), numero.trim(), complemento.trim()].filter(Boolean).join(", ").slice(0, 300);
 }
+
+/*
+  E184 — o estado da visita na TELA segue a data. Uma visita confirmada cujo horário já passou (com a mesma folga do
+  endereço) aparece como "Feita": sem "Confirmada", sem "Cancelar pedido" e sem endereço. O banco não muda (sem
+  migração); o dono ainda pode registrar o desfecho onde já registrava.
+*/
+export function statusDaVisitaNaTela<S extends string>(v: { status: S; horarioConfirmado: string | null }, agora: Date): S | "feito" {
+  if (v.status !== "confirmado" || !v.horarioConfirmado) return v.status;
+  const t = Date.parse(v.horarioConfirmado);
+  return Number.isFinite(t) && agora.getTime() > t + FOLGA_ENDERECO_MS ? "feito" : v.status;
+}
+
+/** Região do imóvel (bairro · cidade), para a visita confirmada cujo endereço exato ainda não foi cadastrado. */
+export function regiaoDaVisita(p: { address?: string | null; city?: string | null }): string | null {
+  const partes = [(p.address ?? "").trim(), (p.city ?? "").trim()].filter(Boolean);
+  return partes.length ? partes.join(" · ") : null;
+}
+
+/** Texto da visita presencial confirmada sem endereço exato no cadastro (nunca "aparece quando for confirmada"). */
+export function textoEnderecoPendente(regiao: string | null): string {
+  return `${regiao ? `Região: ${regiao}. ` : ""}O proprietário ainda não cadastrou o número. Peça o endereço pela conversa.`;
+}

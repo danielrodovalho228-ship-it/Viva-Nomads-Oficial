@@ -174,6 +174,9 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
     await expect(a.getByTestId("cartao-visita").first()).toBeVisible({ timeout: 25_000 });
     await expect(a.getByTestId("visita-endereco")).toHaveCount(0);
     expect(await a.content()).not.toContain("Modesta Maria");
+    // E184: visita passada não fica "Confirmada" nem oferece "Cancelar pedido".
+    await expect(a.getByTestId("visita-status").first()).toHaveText("Feita");
+    await expect(a.getByTestId("visita-cancelar-morador")).toHaveCount(0);
     await a.context().close();
   });
 
