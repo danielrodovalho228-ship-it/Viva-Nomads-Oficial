@@ -1967,7 +1967,8 @@
         "t262-detalhe-imovel-41",
         "t263-visual-41",
         "t304-airbnb-exibicao-61a",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t595-e205b2-lembrete-no-aceite"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -1976,7 +1977,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t595-e205b2-lembrete-no-aceite"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -2539,7 +2541,8 @@
       ],
       "specs": [
         "t128-cron-automacoes",
-        "t592-e205b2-lembrete-bloco"
+        "t592-e205b2-lembrete-bloco",
+        "t595-e205b2-lembrete-no-aceite"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -5620,7 +5623,8 @@
         "proprietario"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite"
       ]
     },
     "src/lib/data/estadia-actions.ts#atualizarPedidoEncerramento": {
@@ -5643,7 +5647,8 @@
         "proprietario"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite"
       ]
     },
     "src/lib/data/estadia-actions.ts#pedirEncerramento": {
@@ -5659,7 +5664,8 @@
         "inquilino"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite"
       ]
     },
     "src/lib/data/estadia-actions.ts#removerOcupante": {
@@ -5673,7 +5679,8 @@
         "proprietario"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite"
       ]
     },
     "src/lib/data/estadia-actions.ts#salvarInstrucoes": {
