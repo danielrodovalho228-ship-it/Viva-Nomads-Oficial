@@ -8,7 +8,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    1. o dono — que tem OUTRA conversa, com mensagens, com o Beto — abre a conversa da Ana VAZIA ("Nenhuma mensagem
       ainda. Escreva a primeira.") e nunca a do Beto;
    2. a Ana abre a mesma conversa vazia;
-   3. a Clara, que não é parte do contrato, vê "Esta conversa não está na sua lista…" e nenhuma conversa abre sozinha.
+   3. a Clara, que não é parte do contrato (e tem uma conversa sua, sobre outro imóvel), vê "Esta conversa não está na
+      sua lista…" e nenhuma conversa abre sozinha — nem a da Ana, nem a dela.
   A 1280 e 390 px.
 */
 const senha = novaSenha();
@@ -19,6 +20,7 @@ const beto = { email: `beto.t585.${sufixo}@lab.vivanomads.test`, nome: "Beto Con
 const clara = { email: `clara.t585.${sufixo}@lab.vivanomads.test`, nome: "Clara Fora", role: "tenant" as const };
 const ids: Record<string, string> = {};
 const MSG_BETO = `Olá, tenho interesse — mensagem do Beto t585 ${sufixo}`;
+const MSG_CLARA = `Oi, é a Clara — t585 ${sufixo}`;
 const VAZIA = "Nenhuma mensagem ainda. Escreva a primeira.";
 const NAO_ENCONTRADA = "Esta conversa não está na sua lista. Escolha uma conversa abaixo.";
 let link = "";
@@ -44,6 +46,8 @@ test.describe("T585 — E200: a conversa do contrato sem mensagem abre vazia, nu
     ids.contrato = data.id as string;
     // A outra conversa do dono, a primeira da lista dele.
     await gravarMensagem(ids.beto, ids.dono, ids.imovelBeto, MSG_BETO, conversationId(ids.beto, ids.dono, ids.imovelBeto));
+    // A Clara tem uma conversa SUA (sobre outro imóvel): a lista dela não está vazia e nenhuma conversa pode abrir sozinha.
+    await gravarMensagem(ids.clara, ids.dono, ids.imovelBeto, MSG_CLARA, conversationId(ids.clara, ids.dono, ids.imovelBeto));
     link = `/dashboard/mensagens?conversa=${conversationId(ids.ana, ids.dono, ids.imovelAna)}`;
     const { count } = await adm().from("messages").select("id", { count: "exact", head: true }).eq("property_id", ids.imovelAna);
     if (count) throw new Error("o cenário é SEM mensagem no contrato da Ana");
@@ -78,6 +82,8 @@ test.describe("T585 — E200: a conversa do contrato sem mensagem abre vazia, nu
       await p.goto(link, { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("mensagens-conversa-nao-encontrada")).toHaveText(NAO_ENCONTRADA, { timeout: 30_000 });
       await expect(p.getByTestId("conversa-nova-vazia")).toHaveCount(0);
+      // Nenhuma conversa abre sozinha — nem a da Ana, nem a da própria Clara (a 1ª da lista dela).
+      await expect(p.getByTestId("conversa-contexto")).toHaveCount(0);
       await expect(p.locator("main")).not.toContainText(MSG_BETO);
       await expect(p.locator("main")).not.toContainText(`Contrato da Ana t585 ${sufixo}`);
       await p.screenshot({ path: `tests/laboratorio/saida/t585-fora-${w}.png` });
