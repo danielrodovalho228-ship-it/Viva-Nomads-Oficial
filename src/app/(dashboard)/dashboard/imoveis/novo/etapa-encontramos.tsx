@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
 import { comodidadeValeParaTipo, comodidadesDoTipo, type GrupoDoTipo } from "@/lib/amenities";
@@ -278,7 +278,8 @@ function GrupoComodidades(p: {
   return (
     <div data-grupo={p.grupo.category}>
       <p className="text-sm font-semibold text-forest">{p.titulo}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
+      {/* E193: o mesmo cartão grande tocável da qualificação (antes, chips) — celular 2 por linha, computador 3. */}
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {itens.map((it) => {
           const on = !!p.marcadas[it.key];
           const sug = on && p.sugeridas.includes(it.key);
@@ -294,18 +295,26 @@ function GrupoComodidades(p: {
               data-sugerido={sug ? "1" : undefined}
               data-detectada={detectada ? "1" : undefined}
               data-comodidade={it.key}
+              data-cartao-assistente
               className={cn(
-                "inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors",
-                on ? "border-forest bg-forest text-white" : detectada ? "border-dashed border-forest bg-white text-forest" : "border-line bg-white text-ink hover:border-ink"
+                "flex min-h-14 w-full items-center gap-3 rounded-xl border-2 p-3 text-left text-sm text-ink transition-colors",
+                on ? "border-forest bg-sage-100" : detectada ? "border-dashed border-forest bg-white text-forest" : "border-line bg-white hover:border-sage"
               )}
             >
-              {sug ? <Sparkles className="h-4 w-4" aria-label="Sugerido · confira" /> : <Icone className="h-4 w-4" aria-hidden />}
-              {it.label}
-              {detectada && (
-                <span className="font-medium underline underline-offset-2" data-testid={`comodidade-confirme-${it.key}`}>
-                  Confirme
-                </span>
+              {sug ? (
+                <Sparkles className="h-6 w-6 shrink-0 text-forest" aria-label="Sugerido · confira" />
+              ) : (
+                <Icone className={cn("h-6 w-6 shrink-0", on || detectada ? "text-forest" : "text-muted")} aria-hidden />
               )}
+              <span className="min-w-0 flex-1">
+                {it.label}
+                {detectada && (
+                  <span className="block font-medium underline underline-offset-2" data-testid={`comodidade-confirme-${it.key}`}>
+                    Confirme
+                  </span>
+                )}
+              </span>
+              {on && <Check className="h-5 w-5 shrink-0 rounded-full bg-forest p-1 text-white" aria-hidden />}
             </button>
           );
         })}

@@ -1,10 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { AVISO_CAUCAO_DE_MORADOR, AVISO_CONTRATOS_DE_MORADOR } from "../../../src/lib/contratos/area-dono";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T567 — E188: a conta que é dona (sem contrato como dona) e moradora (com contrato em outro imóvel). No modo
-  proprietário, "Contratos" mostra só o lado do dono (o vazio do dono sem nenhuma lista de morador embaixo) e um atalho
-  para o modo morador; a Caução diz "Nenhuma caução dos seus imóveis ainda". No modo morador, o contrato de morador aparece.
+  proprietário, "Contratos" mostra só o lado do dono (o vazio do dono sem nenhuma lista de morador embaixo) e o aviso de
+  onde ficam os contratos de morador; a Caução vazia diz onde fica a caução de morador. No modo morador, o contrato de
+  morador aparece. Comportamento do #1424; este teste é a cobertura E2E (390 e 1280).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -41,20 +43,27 @@ test.describe("T567 — E188: Contratos e Caução só com os dados do papel", (
       await expect(p.getByText("Nenhum contrato ainda")).toBeVisible();
       await expect(p.getByTestId("contrato-inquilino")).toHaveCount(0);
       await expect(p.getByTestId("secao-contratos-inquilino")).toHaveCount(0);
-      await expect(p.getByTestId("contratos-atalho-morador")).toBeVisible();
+      await expect(p.getByTestId("contratos-aviso-morador")).toHaveText(AVISO_CONTRATOS_DE_MORADOR);
       await p.screenshot({ path: `${SAIDA}/t567-contratos-dono-${largura}.png`, fullPage: true });
 
       await p.goto("/dashboard/garantias", { waitUntil: "domcontentloaded" });
-      await expect(p.getByText("Nenhuma caução dos seus imóveis ainda")).toBeVisible({ timeout: 30_000 });
+      await expect(p.getByText("Nenhuma caução ainda")).toBeVisible({ timeout: 30_000 });
+      await expect(p.getByText(AVISO_CAUCAO_DE_MORADOR)).toBeVisible();
       await p.screenshot({ path: `${SAIDA}/t567-caucao-dono-${largura}.png`, fullPage: true });
 
-      await p.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-      await p.getByTestId("contratos-atalho-morador").getByRole("button").click();
-      await expect(p.getByTestId("contratos-modo-morador")).toBeVisible({ timeout: 30_000 });
-      await expect(p.getByTestId("contrato-inquilino")).toHaveCount(1);
-      await expect(p.getByText("Nenhum contrato ainda")).toHaveCount(0);
-      await p.screenshot({ path: `${SAIDA}/t567-contratos-morador-${largura}.png`, fullPage: true });
       await p.context().close();
+
+      // Modo morador (o mesmo que a troca de modo grava): o contrato de morador aparece, sem o vazio do dono.
+      await adm().from("profiles").update({ preferred_mode: "tenant", papel_ativo: "morador" }).eq("id", ids.ambos);
+      const m = await entrar(browser, ambos.email, senha);
+      await m.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      await m.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+      await expect(m.getByTestId("contratos-modo-morador")).toBeVisible({ timeout: 30_000 });
+      await expect(m.getByTestId("contrato-inquilino")).toHaveCount(1);
+      await expect(m.getByText("Nenhum contrato ainda")).toHaveCount(0);
+      await m.screenshot({ path: `${SAIDA}/t567-contratos-morador-${largura}.png`, fullPage: true });
+      await m.context().close();
+      await adm().from("profiles").update({ preferred_mode: "owner", papel_ativo: "proprietario" }).eq("id", ids.ambos);
     });
   }
 });

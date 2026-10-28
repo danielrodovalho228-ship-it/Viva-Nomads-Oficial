@@ -1024,7 +1024,9 @@
         "t550-e179-conforto-respostas-completas",
         "t551-varredura-bloco40",
         "t553-varredura-bloco41",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t565-e194-qualificacao-moldura",
+        "t564-e193-qualificacao-cartoes"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1307,7 +1309,8 @@
         "t209-jornada-dois-lados",
         "t211-complemento-23",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t566-e184-visitas-passadas"
       ]
     },
     "/decisao": {

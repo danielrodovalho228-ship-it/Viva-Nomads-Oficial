@@ -41,8 +41,9 @@ export default async function PropostasPage() {
                     <div className="min-w-0">
                       <p className="text-xs text-muted">{p.numero}</p>
                       <p className="truncate font-medium text-ink">{p.imovel}</p>
-                      <p className="text-sm text-ink">
-                        {formatBRL(p.valorMensal)}/mês × {p.meses} {p.meses === 1 ? "mês" : "meses"}
+                      {/* E189: a mesma conta aberta da tabela e do detalhe (o total inclui condomínio, contas e a preparação). */}
+                      <p className="text-sm text-ink" data-testid="proposta-inquilino-conta">
+                        {p.conta ?? `${formatBRL(p.totalContrato)} no total`}
                       </p>
                     </div>
                     <StatusChip status={p.status} />
