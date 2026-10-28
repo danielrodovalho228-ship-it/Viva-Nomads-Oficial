@@ -138,5 +138,5 @@ test("t168: a tela troca a etiqueta na hora com o status da ação, sem esperar 
   // O cartão da visita (Visitas e conversa) aplica o status na hora.
   const cartao = readFileSync("src/components/visitas/cartao-visita.tsx", "utf8");
   assert.match(cartao, /onStatus\?\.\(statusAposAcao\(acao\.acao\)\)/);
-  assert.match(cartao, /data-testid="visita-status"[^>]*>\s*\{passou \? HORARIO_PASSOU : STATUS_VISITA_ROTULO\[status\]\}/);
+  assert.match(cartao, /data-testid="visita-status"[^>]*>\s*\{passou \? HORARIO_PASSOU : expirada \? ROTULO_EXPIRADA : STATUS_VISITA_ROTULO\[status\]\}/);
 });
