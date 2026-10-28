@@ -69,6 +69,7 @@ test.describe("T593 — E211: detalhe da visita para o proprietário", () => {
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
 
       await p.goto("/dashboard/agenda", { waitUntil: "domcontentloaded" });
+      await p.getByTestId("agenda-vista-lista").click({ timeout: 30_000 });
       await expect(p.locator(`a[href="/dashboard/visitas/${ids.presencial}"]`).first()).toBeAttached({ timeout: 30_000 });
       await expect(p.locator('a[href^="/dashboard/visitas#"]')).toHaveCount(0);
 
