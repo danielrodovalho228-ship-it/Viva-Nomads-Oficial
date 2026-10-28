@@ -476,7 +476,8 @@
         "t18-seo-a11y",
         "t20-p1-agentes",
         "t311-marco-principal-unico",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t591-varredura-bloco48"
       ]
     },
     "/cidades/[cidade]": {
@@ -635,7 +636,8 @@
         "t35-troca-de-plano",
         "t38-varios-imoveis-por-dono",
         "t39-app-ida-e-volta",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/avaliacoes": {
@@ -686,7 +688,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t489-e176-menus"
+        "t489-e176-menus",
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/carteira": {
@@ -1206,7 +1209,8 @@
         "t183-telas-logadas-390",
         "t232-pedido-moradia-completo",
         "t298-varredura-logada-bloco4",
-        "t416-varredura-bloco33"
+        "t416-varredura-bloco33",
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/propostas/[id]": {
@@ -1579,7 +1583,8 @@
         "t15-admin-real",
         "t18-seo-a11y",
         "t5-pedido-moradia",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t591-varredura-bloco48"
       ]
     },
     "/pedidos/novo": {
@@ -2032,7 +2037,8 @@
       ],
       "specs": [
         "t261-tempo-ate-o-trabalho",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/imoveis/[id]/parceiros": {
@@ -2182,7 +2188,8 @@
         "publico"
       ],
       "specs": [
-        "t314-entrada-avaliador-62b3"
+        "t314-entrada-avaliador-62b3",
+        "t591-varredura-bloco48"
       ]
     },
     "/avaliadores/[numero]": {
@@ -2191,7 +2198,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t341-credenciamento-avaliador-62a"
+        "t341-credenciamento-avaliador-62a",
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/parceiro/avaliacao/[pedido]": {
