@@ -799,7 +799,8 @@
         "t297-varredura-logada-bloco3",
         "t354-varredura-bloco19",
         "t391-conta-conformidade",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t595-e174-vinculo-pela-tela"
       ]
     },
     "/dashboard/contratos": {
@@ -1655,7 +1656,8 @@
         "t442-foto-perfil-revisao",
         "t408-varredura-bloco27",
         "t486-e174b-selo-vinculo",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t595-e174-vinculo-pela-tela"
       ]
     },
     "/qualificar": {
@@ -6214,14 +6216,18 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t595-e174-vinculo-pela-tela"
+      ]
     },
     "src/lib/vinculo/actions.ts#confirmarVinculo": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t595-e174-vinculo-pela-tela"
+      ]
     },
     "src/lib/vinculo/actions.ts#meuVinculo": {
       "personas": [
