@@ -37,6 +37,11 @@ const CAMPO = "w-full rounded-lg border border-line bg-white px-4 py-3 text-base
 export function PerfilTela() {
   const foto = useMinhaFoto();
   const { mode } = useViewMode();
+  // E192 (reteste 26/10): o painel do morador (Perfil profissional + "Por que estou na cidade") vale para quem tem
+  // cadastro de morador, EM QUALQUER MODO. Antes ele só existia no modo morador: a conta morador que também anuncia
+  // (modo proprietário salvo) nunca via o cartão do #1413. O dono só LÊ esses campos depois do aceite (#1407).
+  const cadastroMorador = useAuthStore((s) => s.user?.role === "tenant");
+  const mostraPainelMorador = mode === "tenant" || cadastroMorador;
   // E55: o espelho segue o papel em uso (a mesma fonte da barra: o modo da conta).
   const papelEspelho = mode === "owner" ? "proprietario" : "morador";
   const [p, setP] = useState<MeuPerfilPublico | null | undefined>(undefined);
@@ -218,8 +223,8 @@ export function PerfilTela() {
 
         <PetsFicha />
 
-        {mode === "tenant" && (
-          <Panel>
+        {mostraPainelMorador && (
+          <Panel data-testid="perfil-painel-morador">
             <BlocoOpcional
               titulo="Perfil profissional"
               pergunta={tProf.pergunta}
