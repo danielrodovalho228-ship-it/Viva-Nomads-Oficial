@@ -53,3 +53,54 @@ export function chamadoForaDaPromessa(c: { criadoEm: string; primeiraRespostaEm:
 }
 
 export { ROTULO_ESTADO_CHAMADO, estadoDoChamado, type EstadoChamado } from "../atendimento/estado-chamado.ts";
+
+/*
+  E203 — lote das 08:00 (auditoria de e-mails 28/10). A conta real do Daniel recebeu 3 e-mails idênticos "Faltam N
+  passos para publicar Studio com 2 quartos vem morar aqui": eram 3 RASCUNHOS diferentes com o mesmo título (a chave
+  de envio por rascunho funcionou). Regra: no máximo 1 e-mail de rascunho por dono por dia — o rascunho mais recente
+  vai no assunto e no botão; os demais entram numa linha "Você também tem…" e ficam marcados como avisados.
+  O botão nomeia o PRÓXIMO passo como ação ("Preencher o endereço"), nunca o rótulo do item ("Endereço preenchido",
+  que soa como já feito).
+*/
+const ACAO_DO_PASSO: Record<string, string> = {
+  endereco: "Preencher o endereço",
+  detalhes: "Informar banheiros e área",
+  periodo: "Definir o período mínimo",
+  fotos: "Enviar as fotos",
+  titulo: "Escrever o título",
+  descricao: "Escrever a descrição",
+  preco: "Definir o preço mensal",
+  garantia: "Escolher a garantia",
+  documento: "Enviar o documento do imóvel",
+  qualificacao: "Responder as declarações do imóvel",
+  tipo_entrada: "Dizer como se entra no imóvel",
+  internet: "Informar a velocidade da internet",
+  sem_internet: "Informar a internet do imóvel",
+  chacara: "Completar os dados da chácara",
+  privacidade: "Confirmar a privacidade",
+  conforto: "Confirmar o padrão mínimo",
+  sublocacao: "Enviar a autorização",
+  limite: "Liberar uma vaga no plano",
+};
+
+/** O próximo passo como AÇÃO (botão e lista do e-mail). Item sem verbo conhecido: "Completar: <rótulo>". */
+export function acaoDoPasso(item: { key: string; label: string }): string {
+  return ACAO_DO_PASSO[item.key] ?? `Completar: ${item.label}`;
+}
+
+/** Um rascunho por dono: o mais recente é o principal; os outros vão listados no mesmo e-mail. */
+export function rascunhosPorDono<T extends { ownerId: string; criadoEm: string }>(lista: readonly T[]): { principal: T; outros: T[] }[] {
+  const por = new Map<string, T[]>();
+  for (const r of lista) por.set(r.ownerId, [...(por.get(r.ownerId) ?? []), r]);
+  return [...por.values()].map((rs) => {
+    const ord = [...rs].sort((a, b) => (a.criadoEm < b.criadoEm ? 1 : a.criadoEm > b.criadoEm ? -1 : 0));
+    return { principal: ord[0], outros: ord.slice(1) };
+  });
+}
+
+/** "Você também tem 2 rascunhos parados: Studio …; Apto …." (sem outros, vazio). */
+export function linhaOutrosRascunhos(titulos: readonly string[]): string {
+  if (!titulos.length) return "";
+  const lista = titulos.map((t) => t.trim() || "Rascunho de anúncio").join("; ");
+  return titulos.length === 1 ? `Você também tem 1 rascunho parado: ${lista}.` : `Você também tem ${titulos.length} rascunhos parados: ${lista}.`;
+}
