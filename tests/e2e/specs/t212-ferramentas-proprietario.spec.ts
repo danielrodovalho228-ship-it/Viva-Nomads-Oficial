@@ -198,11 +198,13 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
       await t.screenshot({ path: `${SAIDA}/t212-lista-propostas-${largura}.png`, fullPage: true });
       await abrir(t, "/dashboard/notificacoes");
       await expect(t.getByTestId("aviso-proposta").first()).toContainText("Você recebeu uma proposta");
-      // O número no menu "Propostas".
+      // MENUS-5 (#1392): sem menu lateral; a proposta se acha pelas abas, Pedidos › Propostas (subaba sem contador:
+      // no modelo de abas só Mensagens e Interessados têm número).
       if (largura === 1280) {
-        const menu = t.locator("aside, nav").filter({ hasText: "Minha moradia" }).first();
-        await menu.getByRole("button", { name: "Minha moradia" }).click().catch(() => {});
-        await expect(menu.getByRole("link", { name: /^Propostas/ })).toContainText("1", { timeout: 20_000 });
+        await t.getByTestId("aba-morador-pedidos").click();
+        await t.getByTestId("subaba-morador-propostas").click();
+        await expect(t).toHaveURL(/\/dashboard\/propostas$/, { timeout: 20_000 });
+        await expect(t.getByTestId("proposta-inquilino").first()).toContainText("R$ 3.200/mês × 4 meses", { timeout: 25_000 });
       }
       // O cartão da proposta na conversa.
       await abrir(t, "/dashboard/mensagens");
