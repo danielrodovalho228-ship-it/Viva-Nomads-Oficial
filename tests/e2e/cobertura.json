@@ -2539,7 +2539,8 @@
       ],
       "specs": [
         "t128-cron-automacoes",
-        "t592-e205b2-lembrete-bloco"
+        "t592-e205b2-lembrete-bloco",
+        "t586-e205-emails-chegada-d7"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -2552,7 +2553,9 @@
       "personas": [
         "sistema"
       ],
-      "specs": []
+      "specs": [
+        "t586-e205-emails-chegada-d7"
+      ]
     },
     "/api/cron/linkedin": {
       "personas": [
