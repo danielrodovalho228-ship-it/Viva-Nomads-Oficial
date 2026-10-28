@@ -1338,6 +1338,15 @@
         "t566-e184-visitas-passadas"
       ]
     },
+    "/dashboard/visitas/[id]": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t593-e211-visita-do-dono"
+      ]
+    },
     "/decisao": {
       "personas": [
         "socio"
@@ -4916,6 +4925,15 @@
       ],
       "specs": [
         "t209-jornada-dois-lados"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#visitaDetalhe": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t593-e211-visita-do-dono"
       ]
     },
     "src/lib/data/propostas-actions.ts#contarPropostasAguardando": {
