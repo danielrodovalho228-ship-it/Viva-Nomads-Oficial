@@ -2,26 +2,26 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T548 — E188: a conta que é dona (sem contrato como dona) e moradora (com contrato em outro imóvel). No modo
+  T567 — E188: a conta que é dona (sem contrato como dona) e moradora (com contrato em outro imóvel). No modo
   proprietário, "Contratos" mostra só o lado do dono (o vazio do dono sem nenhuma lista de morador embaixo) e um atalho
   para o modo morador; a Caução diz "Nenhuma caução dos seus imóveis ainda". No modo morador, o contrato de morador aparece.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const ambos = { email: `ambos.t548.${sufixo}@lab.vivanomads.test`, nome: "Bia Dois Papeis", role: "owner" as const };
-const outro = { email: `outro.t548.${sufixo}@lab.vivanomads.test`, nome: "Caio Outro Dono", role: "owner" as const };
+const ambos = { email: `ambos.t567.${sufixo}@lab.vivanomads.test`, nome: "Bia Dois Papeis", role: "owner" as const };
+const outro = { email: `outro.t567.${sufixo}@lab.vivanomads.test`, nome: "Caio Outro Dono", role: "owner" as const };
 const ids: Record<string, string> = {};
 
-test.describe("T548 — E188: Contratos e Caução só com os dados do papel", () => {
+test.describe("T567 — E188: Contratos e Caução só com os dados do papel", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
 
   test.beforeAll(async () => {
     ids.ambos = await criarConta(ambos, senha);
     ids.outro = await criarConta(outro, senha);
-    ids.meuImovel = await criarImovelPronto(ids.ambos, `Meu anúncio t548 ${sufixo}`, { ativo: true });
-    ids.imovelDoOutro = await criarImovelPronto(ids.outro, `Estadia t548 ${sufixo}`, { ativo: true });
+    ids.meuImovel = await criarImovelPronto(ids.ambos, `Meu anúncio t567 ${sufixo}`, { ativo: true });
+    ids.imovelDoOutro = await criarImovelPronto(ids.outro, `Estadia t567 ${sufixo}`, { ativo: true });
     const base = { property_id: ids.imovelDoOutro, tenant_id: ids.ambos, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 90, aluguel_mensal: 3000, tamanho_bloco_meses: 3, comissao_percent: 0.08, comissao_valor: 720, qtd_ocupantes: 1, status: "ativo", garantia: "caucao" };
     const { data, error } = await adm().from("contratos").insert(base).select("id").single();
     if (error) throw error;
@@ -42,18 +42,18 @@ test.describe("T548 — E188: Contratos e Caução só com os dados do papel", (
       await expect(p.getByTestId("contrato-inquilino")).toHaveCount(0);
       await expect(p.getByTestId("secao-contratos-inquilino")).toHaveCount(0);
       await expect(p.getByTestId("contratos-atalho-morador")).toBeVisible();
-      await p.screenshot({ path: `${SAIDA}/t548-contratos-dono-${largura}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t567-contratos-dono-${largura}.png`, fullPage: true });
 
       await p.goto("/dashboard/garantias", { waitUntil: "domcontentloaded" });
       await expect(p.getByText("Nenhuma caução dos seus imóveis ainda")).toBeVisible({ timeout: 30_000 });
-      await p.screenshot({ path: `${SAIDA}/t548-caucao-dono-${largura}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t567-caucao-dono-${largura}.png`, fullPage: true });
 
       await p.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
       await p.getByTestId("contratos-atalho-morador").getByRole("button").click();
       await expect(p.getByTestId("contratos-modo-morador")).toBeVisible({ timeout: 30_000 });
       await expect(p.getByTestId("contrato-inquilino")).toHaveCount(1);
       await expect(p.getByText("Nenhum contrato ainda")).toHaveCount(0);
-      await p.screenshot({ path: `${SAIDA}/t548-contratos-morador-${largura}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t567-contratos-morador-${largura}.png`, fullPage: true });
       await p.context().close();
     });
   }
