@@ -20,6 +20,7 @@ const morador = { email: `morador.t489.${sufixo}@lab.vivanomads.test`, nome: "Ma
 const ids: Record<string, string> = {};
 const MORADOR_5 = ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"];
 
+// A troca de modo salva e recarrega o painel (E190): a leitura da barra no meio da recarga volta vazia e o poll tenta de novo.
 const barra = (p: Page) => p.getByRole("navigation", { name: "Navegação principal" });
 
 test.describe("T489 — E176-IMPL: menus conforme a especificação aprovada", () => {
@@ -49,7 +50,7 @@ test.describe("T489 — E176-IMPL: menus conforme a especificação aprovada", (
         await p.getByTestId("conta-morador").click();
         await expect(p.getByTestId("menu-conta-morador").getByRole("menuitem")).toHaveText(["Minha conta", "Ajuda", "Sair"]);
       } else {
-        await expect.poll(async () => (await barra(p).locator("a").allInnerTexts()).map((t) => t.trim()), { timeout: 30_000 }).toEqual(MORADOR_5);
+        await expect.poll(async () => (await barra(p).locator("a").allInnerTexts().catch(() => [] as string[])).map((t) => t.trim()), { timeout: 30_000 }).toEqual(MORADOR_5);
         await p.getByTestId("topo-celular").getByTestId("conta-morador-celular").click();
         await expect(p.getByTestId("menu-conta-morador-celular").getByRole("menuitem")).toHaveText(["Minha conta", "Ajuda", "Sair"]);
       }
@@ -97,7 +98,7 @@ test.describe("T489 — E176-IMPL: menus conforme a especificação aprovada", (
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await p.getByTestId("topo-celular").getByTestId("conta-dono-celular").click({ timeout: 30_000 });
     await p.getByTestId("menu-conta-dono-celular").getByRole("menuitem", { name: "Modo morador" }).click();
-    await expect.poll(async () => (await barra(p).locator("a").allInnerTexts()).map((t) => t.trim()), { timeout: 30_000 }).toEqual(MORADOR_5);
+    await expect.poll(async () => (await barra(p).locator("a").allInnerTexts().catch(() => [] as string[])).map((t) => t.trim()), { timeout: 30_000 }).toEqual(MORADOR_5);
     await p.goto("/buscar", { waitUntil: "networkidle" });
     // O cabeçalho público fica na /buscar (logo, links e conta).
     await expect(p.getByTestId("topo-publico")).toBeVisible({ timeout: 30_000 });
@@ -107,7 +108,7 @@ test.describe("T489 — E176-IMPL: menus conforme a especificação aprovada", (
       await p.getByTestId("nav-menu-lista").getByTestId("nav-meu-painel").click({ timeout: 3_000 });
       await expect(p).toHaveURL(/\/dashboard$/, { timeout: 5_000 });
     }).toPass({ timeout: 40_000 });
-    await expect.poll(async () => (await barra(p).locator("a").allInnerTexts()).map((t) => t.trim()), { timeout: 30_000 }).toEqual(MORADOR_5);
+    await expect.poll(async () => (await barra(p).locator("a").allInnerTexts().catch(() => [] as string[])).map((t) => t.trim()), { timeout: 30_000 }).toEqual(MORADOR_5);
     await p.screenshot({ path: `${SAIDA}/t489-papel-persiste-390.png` });
     await p.context().close();
   });
