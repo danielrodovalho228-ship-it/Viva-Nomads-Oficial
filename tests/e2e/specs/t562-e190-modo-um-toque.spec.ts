@@ -17,7 +17,7 @@ test.describe("T562 — E190: Modo proprietário em 1 toque", () => {
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Modos t549 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Modos t562 ${sufixo}`, { ativo: true });
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
