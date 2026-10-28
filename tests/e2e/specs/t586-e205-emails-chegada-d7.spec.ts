@@ -11,10 +11,11 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
        A. assinado pelas duas partes + 1º pagamento registrado + entrada daqui a 7 dias → o morador recebe, UMA vez;
        B. assinado, SEM o 1º pagamento → ninguém recebe;
        C. 1º pagamento registrado, SEM a assinatura do morador → ninguém recebe;
-     o e-mail traz o caminho das instruções (página da estadia, #instrucoes); o imóvel e a data no HTML: test.fail (2b, 4b).
+     o e-mail traz o imóvel, a data e as instruções de chegada no corpo (E209, #1454) e o link para #instrucoes.
    - "Lembrete: a entrada no imóvel está chegando" (checkin_lembrete, /api/cron/checkin-lembretes) no D-2:
-       D. assinado + pago + entrada daqui a 2 dias → dono e morador recebem, com a data, UMA vez;
-       E. assinado, SEM o 1º pagamento, entrada daqui a 2 dias → não deveria sair (test.fail: a rotina não olha o pagamento).
+       D. assinado + pago + entrada daqui a 2 dias → dono e morador recebem, com o imóvel e a data, UMA vez; as
+          instruções só no e-mail do morador;
+       E. assinado, SEM o 1º pagamento, entrada daqui a 2 dias → ninguém recebe (E209).
   O laboratório não tem CRON_SECRET (nem AUTOMACOES_ATIVO): o teste sobe um 2º servidor do MESMO build, na porta 3124,
   com um segredo só dele e as automações ligadas — mesmo banco local, mesmas integrações simuladas, mesmo LAB_OUTBOX.
   Os textos completos dos e-mails vão para tests/laboratorio/saida/t586-emails.json e para o log.
@@ -33,6 +34,8 @@ const duda = conta("duda", "Duda Dois Dias", "tenant"); // D
 const eva = conta("eva", "Eva Dois Dias Sem Pagamento", "tenant"); // E
 const ids: Record<string, string> = {};
 const titulo = (l: string) => `Studio chegada ${l} t586 ${sufixo}`;
+/** Instruções do dono nos imóveis A e D (E209: vão no corpo do e-mail do morador). */
+const INSTRUCOES = { como_entrar: "Chave na portaria, apto 12.", wifi_rede: "CasaViva", wifi_senha: "nomade2026" };
 
 /** Hoje no calendário de Brasília (AAAA-MM-DD) e daqui a n dias. */
 const hojeBRT = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
@@ -45,6 +48,10 @@ let respostaCheckin: Record<string, unknown> = {};
 
 async function contrato(o: { letra: string; inquilino: string; entraEm: number; assinado: "duas" | "so_dono"; pago: boolean }): Promise<string> {
   const imovel = await criarImovelPronto(ids.dono, titulo(o.letra), { ativo: true });
+  if (o.letra === "A" || o.letra === "D") {
+    const { error: ei } = await adm().from("imovel_instrucoes_chegada").insert({ property_id: imovel, ...INSTRUCOES });
+    if (ei) throw ei;
+  }
   const lead = await criarLead(ids.dono, o.inquilino, imovel, true);
   const agora = new Date().toISOString();
   const { data, error } = await adm()
@@ -143,15 +150,15 @@ test.describe("T586 — E205: os e-mails de chegada (D-7 e D-2) saem só nas con
     expect(ev, "contrato_eventos.instrucoes_liberadas").toHaveLength(1);
   });
 
-  test("2b. o e-mail do D-7 traz o imóvel e a data da entrada no corpo que a pessoa vê (HTML)", async () => {
-    // ACHADO E205 (registrado, não corrigido — a Pista C não toca produção): a rotina passa o imóvel e a data só em
-    // detailsText, que vai para a parte em TEXTO PURO; o HTML (montar-email.ts → corpoNotificacao) usa só detailsHtml.
-    // Quando o HTML trouxer "<imóvel> Entrada em dd/mm/aaaa.", este caso passa e o test.fail é retirado.
-    test.fail(true, "E205: o HTML do e-mail não traz o imóvel nem a data (só a parte em texto puro)");
+  test("2b. o e-mail do D-7 traz o imóvel, a data e as instruções de chegada no corpo (E209)", async () => {
     const [e] = await comAssunto(ana.email, LIBERADAS);
     const corpo = String(e?.corpo ?? "");
     expect(corpo, "o imóvel").toContain(titulo("A"));
     expect(corpo, "a data da entrada").toContain(`Entrada em ${br(emDias(7))}.`);
+    expect(corpo).toContain("Instruções de chegada");
+    expect(corpo, "como entrar").toContain(INSTRUCOES.como_entrar);
+    expect(corpo, "Wi-Fi").toContain(INSTRUCOES.wifi_rede);
+    expect(corpo, "senha do Wi-Fi").toContain(INSTRUCOES.wifi_senha);
   });
 
   test("3. D-7 sem o 1º pagamento (B) e sem a assinatura do morador (C): ninguém recebe", async () => {
@@ -178,20 +185,23 @@ test.describe("T586 — E205: os e-mails de chegada (D-7 e D-2) saem só nas con
     expect(ck?.lembrete_48h_em, "contratos_checkin.lembrete_48h_em marcado").toBeTruthy();
   });
 
-  test("4b. o lembrete do D-2 traz a data da entrada no corpo que a pessoa vê (HTML)", async () => {
-    // Mesmo ACHADO do 2b: "A entrada no imóvel é em dd/mm/aaaa." vai só em detailsText (texto puro).
-    test.fail(true, "E205: o HTML do lembrete não traz a data da entrada (só a parte em texto puro)");
+  test("4b. o lembrete do D-2 traz o imóvel e a data; as instruções só no e-mail do morador (E209)", async () => {
     const [m] = await comAssunto(duda.email, LEMBRETE);
-    expect(String(m?.corpo ?? ""), "a data da entrada").toContain(`A entrada no imóvel é em ${br(emDias(2))}.`);
+    const [d] = (await comAssunto(dono.email, LEMBRETE)).filter((l) => String(l.corpo ?? "").includes(`/dashboard/contratos/${ids.D}`));
+    for (const e of [m, d]) {
+      const corpo = String(e?.corpo ?? "");
+      expect(corpo, "o imóvel").toContain(titulo("D"));
+      expect(corpo, "a data da entrada").toContain(`A entrada no imóvel é em ${br(emDias(2))}.`);
+    }
+    expect(String(m?.corpo ?? ""), "morador: as instruções").toContain(INSTRUCOES.como_entrar);
+    expect(String(d?.corpo ?? ""), "dono: sem as instruções").not.toContain(INSTRUCOES.wifi_senha);
   });
 
-  test("5. D-2 assinado SEM o 1º pagamento (E): o lembrete de entrada não sai", async () => {
-    // ACHADO E205: /api/cron/checkin-lembretes só olha as duas assinaturas, não o 1º pagamento — o lembrete manda
-    // "Confira o horário e as instruções de entrada", que seguem travadas sem o pagamento. Sai para o dono e o morador.
-    test.fail(true, "E205: o lembrete do D-2 sai para contrato sem o 1º pagamento");
+  test("5. D-2 assinado SEM o 1º pagamento (E): o lembrete de entrada não sai (E209)", async () => {
     const daEva = await comAssunto(eva.email, LEMBRETE);
     if (daEva[0]) console.log(`t586 E-MAIL checkin_lembrete SEM pagamento (contrato E)\n  para: ${daEva[0].para}\n  assunto: ${daEva[0].assunto}\n  corpo: ${daEva[0].corpo}`);
     expect(daEva, "contrato sem o 1º pagamento").toHaveLength(0);
+    expect((await comAssunto(dono.email, LEMBRETE)).filter((l) => String(l.corpo ?? "").includes(`/dashboard/contratos/${ids.E}`)), "nem o dono").toHaveLength(0);
   });
 
   test("6. rodar de novo não repete nenhum e-mail (uma vez por pessoa)", async () => {
