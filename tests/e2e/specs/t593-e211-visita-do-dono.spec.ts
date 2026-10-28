@@ -47,11 +47,13 @@ test.describe("T593 — E211: detalhe da visita para o proprietário", () => {
     ids.outro = await criarConta(outro, senha);
     ids.imovel = await criarImovelPronto(ids.dono, `Casa visitas t593 ${sufixo}`, { ativo: true });
     ids.pedidaImovel = await criarImovelPronto(ids.dono, `Casa pedida t593 ${sufixo}`, { ativo: true });
-    await adm().from("properties").update({ exact_address: RUA }).in("id", [ids.imovel, ids.pedidaImovel]);
+    // Uma visita aberta por morador, imóvel e tipo (visitas_video_um_aberto_modalidade): a futura por vídeo vai em outro imóvel.
+    ids.videoImovel = await criarImovelPronto(ids.dono, `Casa vídeo t593 ${sufixo}`, { ativo: true });
+    await adm().from("properties").update({ exact_address: RUA }).in("id", [ids.imovel, ids.pedidaImovel, ids.videoImovel]);
     await criarLead(ids.dono, ids.mor, ids.imovel, true);
     ids.presencial = await visita(ids.imovel, new Date(Date.now() + 2 * 24 * H), "presencial");
     ids.videoPassada = await visita(ids.imovel, new Date(Date.now() - 2 * 24 * H), "video");
-    ids.videoFutura = await visita(ids.imovel, new Date(Date.now() + 3 * 24 * H), "video");
+    ids.videoFutura = await visita(ids.videoImovel, new Date(Date.now() + 3 * 24 * H), "video");
     ids.pedida = await visita(ids.pedidaImovel, new Date(Date.now() + 4 * 24 * H), "presencial", "pedido");
   });
 
