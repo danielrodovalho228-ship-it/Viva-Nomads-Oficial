@@ -34,6 +34,8 @@ import { nomeCurto } from "@/lib/perfil/perfil-publico";
 import { estadoDoContratoUnico, seloParaEquipe, type EstadoContrato } from "@/lib/contrato-estado";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { escaparHtml } from "@/lib/escapar-html";
+import { blocoDados } from "@/lib/notifications/modelo-email";
+import { aberturaAssinatura, linhasContrato, proximoPassoAssinatura } from "@/lib/notifications/dados-negociacao";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 import { periodoDosBlocos } from "@/lib/contrato-blocos";
 import { prazoConferenciaEntrada, prazoConferenciaSaida } from "@/lib/conferencia";
@@ -88,7 +90,7 @@ interface LinhaContrato {
   created_at: string;
   assinado_proprietario_em: string | null;
   assinado_inquilino_em: string | null;
-  properties: { title?: string; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null; pets_regras?: unknown } | null;
+  properties: { title?: string; address?: string | null; city?: string | null; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null; pets_regras?: unknown } | null;
   pets_regras_congeladas?: unknown;
   property_id?: string;
   /** Pacote de limpeza do anúncio agora (0144; só vale antes da 1ª assinatura). */
@@ -102,7 +104,7 @@ interface LinhaContrato {
 }
 
 const COLUNAS =
-  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino)";
+  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, address, city, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino)";
 
 function objetoOuVazio(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -504,6 +506,22 @@ export async function assinarContrato(input: {
           })
         : null;
       const detalhes = linhas ? `<p>${linhas.map(escaparHtml).join("<br>")}</p>` : undefined;
+      // E202: imóvel (título + bairro/cidade), período e valores no corpo, e o próximo passo de quem recebe.
+      const props = (c.properties ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
+      const imovelEmail = { titulo: props.title ?? null, bairro: props.address ?? null, cidade: props.city ?? null };
+      const { inicio, fim } = periodoDosBlocos(c.contrato_blocos ?? []);
+      const mesesContrato = Math.max(1, Math.round(Number(c.prazo_total_dias ?? 0) / 30));
+      const quadro = linhasContrato({ imovel: imovelEmail, inicio: inicio ?? "", fim: fim ?? "", meses: mesesContrato, valorMensal: Number(c.aluguel_mensal ?? 0) });
+      const papelDe = (id: string): "owner" | "tenant" => (id === c.tenant_id ? "tenant" : "owner");
+      const quemAssinou: "owner" | "tenant" = visao.papel === "inquilino" ? "tenant" : "owner";
+      const corpo = (para: string) => ({
+        body: (nome?: string) => aberturaAssinatura({ nome, imovel: imovelEmail, asDuas: outraJaAssinou, quemAssinou }),
+        detailsHtml:
+          blocoDados(quadro.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) +
+          (detalhes ?? "") +
+          `<p>${escaparHtml(proximoPassoAssinatura(outraJaAssinou, papelDe(para)))}</p>`,
+        detailsText: [...quadro.map((l) => `${l.rotulo}: ${l.valor}`), ...(linhas ?? []), proximoPassoAssinatura(outraJaAssinou, papelDe(para))].join("\n"),
+      });
       const { data: pessoa } = await admin.auth.admin.getUserById(outroId);
       await notify({
         event: "contract_status",
@@ -513,7 +531,7 @@ export async function assinarContrato(input: {
         // Prompt 61-A: com as duas assinaturas, o aviso de quem assinou antes abre a tela "Estadia confirmada".
         pushUrl: outraJaAssinou ? HREF_CONFIRMADA(c.id) : visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
         subject: assuntoAvisoOutraParte(outraJaAssinou),
-        detailsHtml: detalhes,
+        ...corpo(outroId),
       });
       // Prompt 24: com as duas assinaturas, quem assinou por último também recebe o "contrato assinado" (os dois lados).
       if (outraJaAssinou) {
@@ -523,7 +541,9 @@ export async function assinarContrato(input: {
           userId: user.id,
           pushUrl: HREF_CONFIRMADA(c.id),
           subject: assuntoAvisoOutraParte(true),
-          detailsHtml: detalhes,
+          body: (nome?: string) => aberturaAssinatura({ nome, imovel: imovelEmail, asDuas: true, quemAssinou }),
+          detailsHtml: corpo(user.id).detailsHtml,
+          detailsText: corpo(user.id).detailsText,
         });
         // Cartões compartilháveis (T2): com o contrato assinado, o dono recebe (push) o cartão do anúncio publicado.
         const ownerId = String(c.properties?.owner_id ?? "");

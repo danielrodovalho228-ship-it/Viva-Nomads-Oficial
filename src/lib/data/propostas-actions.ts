@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { blocoDados } from "@/lib/notifications/modelo-email";
+import { aberturaProposta, linhasProposta, proximoPassoProposta, type Desfecho } from "@/lib/notifications/dados-negociacao";
 import { escaparHtml } from "@/lib/escapar-html";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
@@ -75,6 +76,36 @@ import { precoDaProposta } from "@/lib/precos";
 function contaDaProposta(termos: TermosProposta): string {
   const tot = calcularTotais(termos);
   return precoDaProposta({ ...termos, valorMensal: tot.valorMensal }).conta ?? brl(tot.totalContrato);
+}
+
+/**
+ * E202: o corpo do e-mail de proposta — abertura com o desfecho e o imóvel, quadro com período, valor mensal, total
+ * (a mesma conta aberta da tela), prazo de resposta e número, e o próximo passo de quem recebe.
+ */
+function dadosDoEmailDaProposta(
+  numero: string,
+  imovel: { titulo: string | null; bairro: string | null; cidade: string | null },
+  c: { desfecho: Desfecho; termos: TermosProposta; responderAte?: string | null; motivo?: string | null },
+  quemRecebe: "owner" | "tenant",
+) {
+  const tot = calcularTotais(c.termos);
+  const periodo = periodoDaEstadia(String(c.termos.dataEntrada).slice(0, 10), Number(c.termos.meses));
+  const linhas = linhasProposta({
+    numero: String(numero),
+    imovel,
+    entrada: periodo.inicio,
+    saida: periodo.fim,
+    meses: Math.round(Number(c.termos.meses)),
+    valorMensal: tot.valorMensal,
+    contaTotal: contaDaProposta(c.termos),
+    responderAte: c.desfecho === "nova" || c.desfecho === "contraproposta" ? c.responderAte : null,
+  });
+  const passo = proximoPassoProposta(c.desfecho, quemRecebe);
+  return {
+    abertura: (nome?: string) => aberturaProposta(c.desfecho, { nome, imovel, novoValorMensal: tot.valorMensal, motivo: c.motivo }),
+    html: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) + `<p>${escaparHtml(passo)}</p>`,
+    texto: [...linhas.map((l) => `${l.rotulo}: ${l.valor}`), passo].join("\n"),
+  };
 }
 import { registrarDocumento } from "@/lib/fiscal/registro";
 import { linhaConferir, numeroExibido } from "@/lib/fiscal/prefixos";
@@ -197,6 +228,8 @@ async function avisarOutraParte(
   detalhesSoDono?: string,
   /** Prompt 44: valor mensal e validade para o texto do push ("Nova proposta de R$ 3.200 … responda até amanhã"). */
   decisao?: { valorMensal: number; validaAte: string | null },
+  /** E202: o desfecho e os termos da versão — o e-mail diz imóvel, período, valores, prazo e o próximo passo. */
+  contexto?: { desfecho: Desfecho; termos: TermosProposta; responderAte?: string | null; motivo?: string | null },
 ) {
   const remetente = de === "owner" ? p.owner_id : p.tenant_id;
   const destino = de === "owner" ? p.tenant_id : p.owner_id;
@@ -215,8 +248,11 @@ async function avisarOutraParte(
   try {
     const [{ data: d }, { data: im }] = await Promise.all([
       admin.from("profiles").select("email, full_name").eq("id", destino).maybeSingle(),
-      decisao ? admin.from("properties").select("title").eq("id", p.property_id).maybeSingle() : Promise.resolve({ data: null }),
+      admin.from("properties").select("title, address, city").eq("id", p.property_id).maybeSingle(),
     ]);
+    const imovel = { titulo: (im as { title?: string | null } | null)?.title ?? null, bairro: (im as { address?: string | null } | null)?.address ?? null, cidade: (im as { city?: string | null } | null)?.city ?? null };
+    const papelDestino = destino === p.owner_id ? "owner" : "tenant";
+    const dados = contexto ? dadosDoEmailDaProposta(p.numero, imovel, contexto, papelDestino) : null;
     await notify({
       event: evento,
       // Quem recebe é parte da proposta (dono ou morador do lead): o valor pode ir no push.
@@ -229,10 +265,11 @@ async function avisarOutraParte(
       pushUrl: `/dashboard/propostas/${p.id}`,
       // O número da proposta vai no corpo, nunca no assunto (rota rápida dos e-mails, item 2).
       subject: evento === "proposta_recebida" ? ASSUNTOS.propostaRecebida : ASSUNTOS.propostaRespondida,
+      ...(dados ? { body: (nome?: string) => dados.abertura(nome) } : {}),
       detailsHtml:
-        blocoDados([{ rotulo: "Proposta", valor: escaparHtml(String(p.numero)) }]) +
+        (dados ? dados.html : blocoDados([{ rotulo: "Proposta", valor: escaparHtml(String(p.numero)) }])) +
         (detalhesSoDono && destino === p.owner_id ? `<p>${escaparHtml(detalhesSoDono)}</p>` : ""),
-      detailsText: `Proposta ${p.numero}`,
+      detailsText: dados ? dados.texto : `Proposta ${p.numero}`,
     });
   } catch {
     /* notificação nunca quebra o fluxo */
@@ -419,6 +456,7 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
     "proposta_recebida",
     undefined,
     { valorMensal: tot.valorMensal, validaAte: (p as LinhaProposta).valida_ate ?? null },
+    { desfecho: "nova", termos, responderAte: (p as LinhaProposta).valida_ate ?? null },
   );
   return { ok: true, id: p.id as string, numero: numero as string };
 }
@@ -714,7 +752,11 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
       .maybeSingle();
     if (!ok) return { ok: false, error: "A proposta mudou enquanto você respondia. Abra de novo." };
     const motivo = MOTIVOS_RECUSA.find((m) => m.chave === r.motivo)!.rotulo;
-    await avisarOutraParte(s.admin, p, papel, `Proposta ${p.numero} recusada. Motivo: ${motivo}.${texto ? ` ${texto}` : ""}`, "proposta_respondida");
+    await avisarOutraParte(s.admin, p, papel, `Proposta ${p.numero} recusada. Motivo: ${motivo}.${texto ? ` ${texto}` : ""}`, "proposta_respondida", undefined, undefined, {
+      desfecho: "recusada",
+      termos: termosDaLinha(v),
+      motivo,
+    });
     return { ok: true };
   }
 
@@ -776,6 +818,7 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
     "proposta_recebida",
     undefined,
     { valorMensal: tot.valorMensal, validaAte: validaAteDe(p.validade_dias, agora) },
+    { desfecho: "contraproposta", termos: nova, responderAte: validaAteDe(p.validade_dias, agora) },
   );
   return { ok: true, versao };
 }
@@ -842,11 +885,18 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
     `Proposta ${p.numero} aceita. Total do contrato: ${contaDaProposta(termosDaLinha(v))}. Próximo passo: o fechamento.`,
     "proposta_respondida",
     linhaTaxa,
+    undefined,
+    { desfecho: "aceita", termos: termosDaLinha(v) },
   );
   if (papel === "owner") {
     // Quem aceitou foi o próprio dono: o aviso acima foi ao morador (sem taxa); o dono recebe o dele.
     try {
-      const { data: d } = await admin.from("profiles").select("email, full_name").eq("id", p.owner_id).maybeSingle();
+      const [{ data: d }, { data: im }] = await Promise.all([
+        admin.from("profiles").select("email, full_name").eq("id", p.owner_id).maybeSingle(),
+        admin.from("properties").select("title, address, city").eq("id", p.property_id).maybeSingle(),
+      ]);
+      const i = (im ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
+      const dados = dadosDoEmailDaProposta(p.numero, { titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null }, { desfecho: "aceita", termos: termosDaLinha(v) }, "owner");
       await notify({
         event: "proposta_respondida",
         email: (d?.email as string | undefined) ?? undefined,
@@ -854,8 +904,9 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
         userId: p.owner_id,
         pushUrl: `/dashboard/propostas/${p.id}`,
         subject: ASSUNTOS.propostaAceita,
-        detailsHtml: blocoDados([{ rotulo: "Proposta", valor: escaparHtml(String(p.numero)) }]) + `<p>${escaparHtml(linhaTaxa)}</p>`,
-        detailsText: `Proposta ${p.numero}`,
+        body: (nome?: string) => dados.abertura(nome),
+        detailsHtml: dados.html + `<p>${escaparHtml(linhaTaxa)}</p>`,
+        detailsText: `${dados.texto}\n${linhaTaxa}`,
       });
     } catch {
       /* notificação nunca quebra o fluxo */

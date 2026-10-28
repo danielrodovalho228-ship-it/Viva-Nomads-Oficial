@@ -321,4 +321,30 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
     expect(data?.assinado_proprietario_em, "assinatura do dono gravada pelo servidor").not.toBeNull();
     await page.context().close();
   });
+
+  test("E202: os e-mails de assinatura trazem o imóvel, o período, o valor mensal e o próximo passo", async () => {
+    test.setTimeout(60_000);
+    // Os avisos saem depois da resposta (after): espera os dois chegarem à caixa de teste.
+    async function corpo(usuarioId: string, re: RegExp): Promise<string> {
+      for (let i = 0; i < 30; i++) {
+        const { data } = await adm().from("emails_teste").select("corpo").eq("usuario_id", usuarioId).eq("evento", "contract_status").order("criado_em", { ascending: false });
+        const achou = (data ?? []).map((d) => String(d.corpo ?? "")).find((c) => re.test(c));
+        if (achou) return achou;
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      throw new Error(`e-mail de contrato com ${re} não chegou à caixa de ${usuarioId}`);
+    }
+    const titulo = `Assinatura tela ${sufixo}`;
+    // O dono recebeu "o morador assinou … falta a sua assinatura" (1ª assinatura).
+    const doDono = await corpo(ids.dono!, /Falta a sua assinatura/);
+    expect(doDono).toContain(titulo);
+    expect(doDono).toMatch(/Período: \d{2}\/\d{2}\/\d{4} a \d{2}\/\d{2}\/\d{4}/);
+    expect(doDono).toMatch(/Valor mensal: R\$ /);
+    expect(doDono).toContain("Próximo passo: assine pela plataforma");
+    // O morador recebeu "assinado pelas duas partes" com o próximo passo dele (Caução e 1º pagamento).
+    const doMorador = await corpo(ids.inq!, /assinado pelas duas partes/);
+    expect(doMorador).toContain(titulo);
+    expect(doMorador).toContain("pague a Caução e o 1º pagamento direto ao proprietário");
+    expect(doMorador).not.toContain("Há uma atualização no seu contrato");
+  });
 });
