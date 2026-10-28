@@ -6,6 +6,7 @@ import { estadoConferencia, estadoConferenciaLista, type EstadoConferencia, type
 import { mesesDoContrato } from "@/lib/admin/indicadores";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import { assinaturasDoAdmin, type AssinaturaAdmin } from "@/lib/admin/assinaturas-admin";
+import { periodoDaEstadia, textoEntrada, textoSaida } from "@/lib/estadia/estadia";
 
 /*
   Admin › contrato, só leitura (Prompt 35B, F5). A checagem de admin (ehAdmin, com AAL2) vem PRIMEIRO, dentro de
@@ -40,6 +41,8 @@ export interface ContratoAdminView {
   totais: ReturnType<typeof totaisPagamentos>;
   taxa: string;
   prazoEntradaEm: string | null;
+  /** E198: "Entrada: 01/10/2026" e "Saída: 31/10/2026" pelos blocos do contrato (a mesma fonte da página da estadia). */
+  periodo: { entrada: string; saida: string };
   conferencias: ConferenciaAdmin[];
   /** A mesma montagem do pacote das partes (#901); a rota do admin acrescenta "Gerado pela equipe…". */
   provas: DadosProvas;
@@ -52,7 +55,7 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
   if (!admin) return null;
 
   const [{ data: extra }, { data: ass }, { data: pags }, { data: confs }, { data: aditivos }] = await Promise.all([
-    admin.from("contratos").select("property_id, assinado_proprietario_em, assinado_inquilino_em, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, leads(accepted_at)").eq("id", contratoId).maybeSingle(),
+    admin.from("contratos").select("property_id, assinado_proprietario_em, assinado_inquilino_em, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, leads(accepted_at), properties(checkin_after, checkout_before), contrato_blocos(inicio, fim)").eq("id", contratoId).maybeSingle(),
     admin.from("contrato_assinaturas").select(COLUNAS_PROVAS.assinaturas).eq("contrato_id", contratoId),
     admin.from("pagamentos_bloco").select(COLUNAS_PROVAS.pagamentos).eq("contrato_id", contratoId).order("data_pagamento"),
     admin.from("conferencias").select(COLUNAS_PROVAS.conferencias).eq("contrato_id", contratoId),
@@ -123,7 +126,8 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
       }),
   );
 
-  const x = (extra ?? {}) as { property_id?: string; assinado_proprietario_em?: string | null; assinado_inquilino_em?: string | null; aluguel_mensal?: number | string | null; prazo_total_dias?: number | null; comissao_valor?: number | null; comissao_percent?: number | null; leads?: { accepted_at?: string | null } | null };
+  const x = (extra ?? {}) as { property_id?: string; assinado_proprietario_em?: string | null; assinado_inquilino_em?: string | null; aluguel_mensal?: number | string | null; prazo_total_dias?: number | null; comissao_valor?: number | null; comissao_percent?: number | null; leads?: { accepted_at?: string | null } | null; properties?: { checkin_after?: string | null; checkout_before?: string | null } | null; contrato_blocos?: { inicio?: string | null; fim?: string | null }[] | null };
+  const periodo = periodoDaEstadia(x.contrato_blocos ?? [], x.properties ?? null);
   const aluguelMensal = Number(x.aluguel_mensal ?? 0);
   const hashAtual = hashResumo(v.resumo);
   return {
@@ -150,6 +154,7 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
       aceiteEm: x.leads?.accepted_at ?? null,
     }),
     prazoEntradaEm: v.prazoConferenciaEm,
+    periodo: { entrada: textoEntrada(periodo), saida: textoSaida(periodo) },
     conferencias,
     provas,
   };

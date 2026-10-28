@@ -56,6 +56,10 @@ export default async function AdminContratoPage({ params }: { params: Promise<{ 
             {c.selo}
           </span>
         </div>
+        {/* E198: a saída explícita no detalhe (antes só o resumo assinado, sem a data de saída). */}
+        <p className="mt-2 text-sm text-ink" data-testid="admin-contrato-periodo">
+          <span data-testid="admin-contrato-entrada">{c.periodo.entrada}</span> · <strong data-testid="admin-contrato-saida">{c.periodo.saida}</strong>
+        </p>
         <p className="mt-1 text-xs text-muted">Registrado em {dataHoraBRT(c.criadoEm)}</p>
         <a href={`/api/admin/contratos/${c.id}/provas`} data-testid="admin-baixar-provas" className={buttonClasses({ variant: "outline", size: "sm", className: "mt-3 w-full sm:w-auto" })}>
           <Download className="h-4 w-4" /> Baixar pacote de provas
