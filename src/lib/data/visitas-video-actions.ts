@@ -11,7 +11,8 @@ import { after } from "next/server";
 import { notify } from "@/lib/notifications";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
-import { enderecoDaVisita, mostraEnderecoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
+import { enderecoDaVisita, mostraEnderecoDaVisita, regiaoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
+import { primeiroNome } from "@/lib/calendario-estadias";
 import { avisarVisitaCancelada, expirarVisitasVencidas, vesperaDaVisitaSeFor } from "@/lib/visitas/avisos-servidor";
 import {
   ehModalidade,
@@ -206,7 +207,7 @@ function expirarDepois(usuarioId: string) {
 }
 
 /** Pedidos dos imóveis do proprietário logado (RLS + filtro; tenant_id nem é legível). */
-export async function listVisitasDono(): Promise<VisitaDono[]> {
+export async function listVisitasDono(): Promise<(VisitaDono & { endereco: string | null; enderecoMapa: string | null; regiao: string | null })[]> {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
@@ -220,7 +221,20 @@ export async function listVisitasDono(): Promise<VisitaDono[]> {
     .eq("owner_id", user.id)
     .order("criado_em", { ascending: false })
     .limit(100);
-  return ((data ?? []) as unknown as Linha[]).map((r) => mapear(r, (m) => motivoParaDono(m)));
+  const linhas = ((data ?? []) as unknown as Linha[]).map((r) => mapear(r, (m) => motivoParaDono(m)));
+  // E211: o dono também vê o endereço exato do PRÓPRIO imóvel na presencial confirmada (a mesma regra de
+  // endereco-visita.ts); antes da confirmação e depois que passou, só a região (bairro · cidade).
+  const admin = createAdminClient();
+  if (!admin || linhas.length === 0) return linhas.map((v) => ({ ...v, endereco: null, enderecoMapa: null, regiao: null }));
+  const ids = [...new Set(linhas.map((v) => v.propertyId))];
+  const { data: props } = await admin.from("properties").select("id, exact_address, address, city, state, draft_data").in("id", ids).eq("owner_id", user.id); // consistency-ignore: E211 — o endereço exato do imóvel do PRÓPRIO dono, na presencial confirmada
+  const porId = new Map(((props ?? []) as { id: string; exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; draft_data?: Record<string, unknown> | null }[]).map((p) => [p.id, p]));
+  const agora = new Date();
+  return linhas.map((v) => {
+    const p = porId.get(v.propertyId);
+    const e = p && mostraEnderecoDaVisita(v, agora) ? enderecoDaVisita(p) : null;
+    return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, regiao: p ? regiaoDaVisita(p) : null };
+  });
 }
 
 /** Pedidos do morador logado. tenant_id não é legível pela sessão, então o servidor filtra com o id da sessão. */
@@ -362,9 +376,56 @@ export async function visitaDaConversa(propertyId: string, outroId: string): Pro
   const papel = r.owner_id === user.id ? "dono" : "morador";
   const v = mapear(r, (m) => (papel === "dono" ? motivoParaDono(m) : m && isMotivo(m) ? motivoLabel(m) : ""));
   let e: EnderecoVisita | null = null;
-  if (papel === "morador" && mostraEnderecoDaVisita(v, new Date())) {
+  // E211: o dono também (o imóvel é dele); a regra de tempo e de status é a mesma.
+  if (mostraEnderecoDaVisita(v, new Date())) {
     const { data: p } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", propertyId).maybeSingle(); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
     e = p ? enderecoDaVisita(p) : null;
   }
   return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, papel };
+}
+
+export interface VisitaDetalhe extends MinhaVisita {
+  papel: "dono" | "morador";
+  /** Bairro e cidade do imóvel (sempre; o endereço exato segue a regra). */
+  regiao: string | null;
+  /** Para o dono: o 1º nome de quem vem, só depois do aceite (candidatura aceita ou contrato), como na Agenda. */
+  pessoa: string | null;
+}
+
+/**
+ * E211: o detalhe de UMA visita, para as duas partes (dono e morador daquela visita; outra pessoa: null → 404). O
+ * endereço exato segue endereco-visita.ts (presencial, confirmada, até 3 h depois do horário); o 1º nome do morador
+ * só aparece para o dono depois do aceite.
+ */
+export async function visitaDetalhe(id: string): Promise<VisitaDetalhe | null> {
+  if (!UUID.test(String(id))) return null;
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("visitas_video").select(`${COLUNAS}, owner_id, tenant_id`).eq("id", id).maybeSingle();
+  if (!data) return null;
+  const r = data as unknown as Linha & { owner_id: string; tenant_id: string };
+  const papel = r.owner_id === user.id ? "dono" : r.tenant_id === user.id ? "morador" : null;
+  if (!papel) return null;
+  const v = mapear(r, (m) => (papel === "dono" ? motivoParaDono(m) : m && isMotivo(m) ? motivoLabel(m) : ""));
+  const { data: p } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", r.property_id).maybeSingle(); // consistency-ignore: E211 — endereço exato só às partes da visita presencial CONFIRMADA (regra de endereco-visita.ts)
+  const e = p && mostraEnderecoDaVisita(v, new Date()) ? enderecoDaVisita(p) : null;
+  let pessoa: string | null = null;
+  if (papel === "dono") {
+    const [{ data: lead }, { data: contrato }] = await Promise.all([
+      admin.from("leads").select("id").eq("owner_id", user.id).eq("tenant_id", r.tenant_id).eq("property_id", r.property_id).eq("status", "accepted").limit(1).maybeSingle(),
+      admin.from("contratos").select("id").eq("tenant_id", r.tenant_id).eq("property_id", r.property_id).limit(1).maybeSingle(),
+    ]);
+    if (lead || contrato) {
+      const { data: perfil } = await admin.from("profiles").select("full_name").eq("id", r.tenant_id).maybeSingle();
+      const nome = primeiroNome((perfil as { full_name?: string | null } | null)?.full_name ?? null);
+      pessoa = nome === "Inquilino" ? null : nome;
+    }
+  }
+  return { ...v, papel, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, regiao: p ? regiaoDaVisita(p) : null, pessoa };
 }

@@ -82,10 +82,12 @@ test("p23 — recusar exige motivo (3 a 200 caracteres); o morador cancela sem e
   assert.ok(mudancaDeStatus("pedido", "morador", { acao: "cancelar" }, agora, { modalidade: "presencial" }).ok);
 });
 
-test("p23 — endereço exato só para o morador e só com a presencial CONFIRMADA; sem WhatsApp no pedido", () => {
+test("p23 — endereço exato só às partes da visita e só com a presencial CONFIRMADA; sem WhatsApp no pedido", () => {
   const acoes = ler("./data/visitas-video-actions.ts");
-  // Complemento do 23: a regra mora em mostraEnderecoDaVisita (presencial, confirmada e ainda não passada).
-  assert.match(acoes, /papel === "morador" && mostraEnderecoDaVisita\(v, new Date\(\)\)/);
+  // Complemento do 23: a regra mora em mostraEnderecoDaVisita (presencial, confirmada e ainda não passada). E211: o
+  // dono também vê o endereço do próprio imóvel, pela mesma regra; terceiros não abrem a visita.
+  assert.match(acoes, /if \(mostraEnderecoDaVisita\(v, new Date\(\)\)\) \{/);
+  assert.match(acoes, /const papel = r\.owner_id === user\.id \? "dono" : r\.tenant_id === user\.id \? "morador" : null;\n  if \(!papel\) return null;/);
   const cartao = ler("../components/visitas/cartao-visita.tsx");
   assert.match(cartao, /data-testid="visita-endereco-oculto"/);
   const pedido = ler("../components/property/visita-video.tsx");

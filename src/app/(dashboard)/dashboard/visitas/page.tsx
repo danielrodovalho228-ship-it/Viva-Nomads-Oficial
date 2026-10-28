@@ -56,7 +56,7 @@ export default async function VisitasPage({ searchParams }: { searchParams: Prom
           <div className="grid gap-3 lg:grid-cols-2">
             {visitas.map((v) => (
               <Panel key={v.id}>
-                <CartaoVisita v={v} papel={dono ? "dono" : "morador"} />
+                <CartaoVisita v={v} papel={dono ? "dono" : "morador"} hrefDetalhe={`/dashboard/visitas/${v.id}`} />
               </Panel>
             ))}
           </div>
