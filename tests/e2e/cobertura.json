@@ -773,7 +773,8 @@
         "t415-varredura-bloco32",
         "t549-varredura-bloco39",
         "t553-varredura-bloco41",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t552-por-que-na-cidade"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1025,7 +1026,8 @@
         "t553-varredura-bloco41",
         "t559-varredura-bloco43",
         "t565-e194-qualificacao-moldura",
-        "t564-e193-qualificacao-cartoes"
+        "t564-e193-qualificacao-cartoes",
+        "t554-e149a-documento-inicio-persiste"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1059,7 +1061,9 @@
         "t338-varredura-bloco15",
         "t416-varredura-bloco33",
         "t486-e174b-selo-vinculo",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t552-por-que-na-cidade",
+        "t555-e174b-selo-vinculo-1280"
       ]
     },
     "/dashboard/locacoes": {
@@ -1117,7 +1121,8 @@
         "t379-55e2-filtro-contato-um-toque",
         "t541-e168-painel-acompanha-filtro",
         "t486-e174b-selo-vinculo",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t555-e174b-selo-vinculo-1280"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1159,7 +1164,8 @@
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t556-e178-primeiro-pagamento-sem-extras"
       ]
     },
     "/dashboard/pedidos": {
@@ -1201,7 +1207,8 @@
         "t193-propostas",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t487-e178-primeiro-pagamento"
+        "t487-e178-primeiro-pagamento",
+        "t556-e178-primeiro-pagamento-sem-extras"
       ]
     },
     "/dashboard/reembolsos": {
