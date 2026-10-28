@@ -64,7 +64,8 @@ test("1. toda tela lê o estado da fonte única: detalhe, listas dos dois lados,
   assert.match(detalhe, /\{c\.estado\.selo\}/);
   assert.match(detalhe, /data-testid="contrato-selo"/);
   assert.match(ler("./data/contrato-assinar-actions.ts"), /estado: estadoDoContratoUnico\(c, papel\)/);
-  assert.match(ler("./data/contrato-assinar-actions.ts"), /pagamentos_bloco\(tipo, confirmado_pelo_inquilino\)/);
+  // E197: o detalhe lê as mesmas colunas do estado (com anulado_em), como COLUNAS_ESTADO_CONTRATO.
+  assert.match(ler("./data/contrato-assinar-actions.ts"), /pagamentos_bloco\(tipo, confirmado_pelo_inquilino, anulado_em\)/);
   const acoes = ler("./data/contratos-actions.ts");
   assert.equal((acoes.match(/estadoDaLinha\(c, "(proprietario|inquilino)"\)/g) ?? []).length, 3, "dono, inquilino e locações");
   assert.match(acoes, /estadoDaLinha\(data as Record<string, unknown>, papel\)/, "Resumo do fechamento");

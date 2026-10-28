@@ -30,3 +30,32 @@ test("o detalhe usa as duas fontes; o pacote de provas segue só com os registro
   const tela = ler("src/app/(dashboard)/admin/contratos/[id]/page.tsx");
   assert.match(tela, /data-testid="admin-assinatura-sem-hash"/);
 });
+
+test("E197 lista × detalhe no MESMO contrato (VN-CT-D5D50247: as duas datas, sem hash, sem pagamento): assinaturas e selo iguais", async () => {
+  const { seloParaEquipe } = await import("../contrato-estado.ts");
+  const { faltaAssinar } = await import("./indicadores.ts");
+  const linha = { status: "ativo", assinado_proprietario_em: "2026-10-25T15:17:28Z", assinado_inquilino_em: "2026-10-25T15:30:00Z", pagamentos_bloco: [] };
+  // Lista: a linha de assinatura e o selo pela fonte única.
+  assert.equal(faltaAssinar({ assinadoDono: true, assinadoInquilino: true }), "Assinado pelas duas partes");
+  const seloLista = seloParaEquipe(linha);
+  // Detalhe: as duas assinaturas (das datas do contrato) e o MESMO selo.
+  const ass = assinaturasDoAdmin([], { proprietario: linha.assinado_proprietario_em, inquilino: linha.assinado_inquilino_em });
+  assert.equal(ass.length, 2, "nunca 'Nenhuma assinatura ainda.' com as duas datas");
+  assert.equal(seloLista, "Aguardando 1º pagamento", "assinado pelas duas e sem pagamento: o próximo passo é o 1º pagamento");
+  // Pagamento anulado não conta (nem na lista nem no detalhe: as duas leem anulado_em).
+  assert.equal(seloParaEquipe({ ...linha, pagamentos_bloco: [{ tipo: "aluguel", confirmado_pelo_inquilino: true, anulado_em: "2026-10-26T10:00:00Z" }] }), "Aguardando 1º pagamento");
+  assert.equal(seloParaEquipe({ ...linha, pagamentos_bloco: [{ tipo: "aluguel", confirmado_pelo_inquilino: true, anulado_em: null }] }), "Em vigência");
+});
+
+test("GUARDA E197: lista e detalhe leem as mesmas colunas de estado e o mesmo selo (um fato, uma fonte)", () => {
+  const detalhe = ler("src/lib/data/contrato-assinar-actions.ts");
+  const lista = ler("src/lib/data/admin-indicadores.ts");
+  const pagina = ler("src/app/(dashboard)/admin/contratos/page.tsx");
+  for (const [nome, fonte] of [["detalhe", detalhe], ["lista", lista]] as const) {
+    assert.match(fonte, /pagamentos_bloco\(tipo, confirmado_pelo_inquilino, anulado_em\)/, `${nome}: lê anulado_em`);
+    assert.match(fonte, /seloParaEquipe\(/, `${nome}: selo pela fonte única`);
+  }
+  assert.match(pagina, /data-testid="contrato-selo">\{c\.selo\}/, "a lista mostra o selo único, não o status cru");
+  assert.doesNotMatch(pagina, /\{STATUS\[c\.status\] \?\? c\.status\}/);
+  assert.match(ler("src/lib/data/contrato-admin.ts"), /assinaturasDoAdmin\(/);
+});

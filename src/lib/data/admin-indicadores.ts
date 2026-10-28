@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { chaveCidade } from "@/lib/cidades";
+import { seloParaEquipe, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import {
   EVENTOS_HOME,
   resumoCandidaturas,
@@ -49,6 +50,8 @@ export interface ContratoLinhaAdmin extends ContratoParaAgregado {
   tenantId: string;
   assinadoDono: boolean;
   assinadoInquilino: boolean;
+  /** E197: o selo da equipe pela fonte única (o mesmo do detalhe do contrato). */
+  selo: string;
   /** Conta de teste ou anúncio [TESTE…] (só aparece com o filtro "teste"). */
   teste: boolean;
   /** Data do aceite da candidatura (a taxa foi gravada nesse dia) — para o rótulo único rotuloBaseTaxa. */
@@ -71,7 +74,7 @@ export async function contratosReais(
   const k = cidade ? chaveCidade(cidade) : null;
   let q = admin
     .from("contratos")
-    .select("id, created_at, status, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, assinado_proprietario_em, assinado_inquilino_em, lead_id, owner_plan, properties!inner(owner_id, title, city), leads(accepted_at)")
+    .select("id, created_at, status, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, assinado_proprietario_em, assinado_inquilino_em, lead_id, owner_plan, properties!inner(owner_id, title, city), leads(accepted_at), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)")
     .order("created_at", { ascending: false })
     .limit(2000);
   if (periodo) q = q.gte("created_at", periodo.ini).lt("created_at", periodo.fim);
@@ -92,6 +95,7 @@ export async function contratosReais(
     owner_plan: string | null;
     properties: { owner_id: string; title: string | null; city: string | null };
     leads: { accepted_at: string | null } | null;
+    pagamentos_bloco: LinhaEstadoContrato["pagamentos_bloco"];
   }[])
     .map((c) => ({ ...c, ehTeste: teste.has(c.tenant_id) || teste.has(c.properties.owner_id) || MARCA_TESTE.test(c.properties.title ?? "") }))
     .filter((c) => (tipo === "todos" ? true : tipo === "teste" ? c.ehTeste : !c.ehTeste))
@@ -111,6 +115,7 @@ export async function contratosReais(
       tenantId: c.tenant_id,
       assinadoDono: !!c.assinado_proprietario_em,
       assinadoInquilino: !!c.assinado_inquilino_em,
+      selo: seloParaEquipe(c),
       aluguelMensal: c.aluguel_mensal === null ? null : Number(c.aluguel_mensal),
       prazoDias: c.prazo_total_dias === null ? null : Number(c.prazo_total_dias),
       taxaValor: c.comissao_valor === null ? null : Number(c.comissao_valor),
