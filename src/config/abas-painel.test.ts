@@ -10,6 +10,7 @@ const PAPEIS: PapelAbas[] = ["morador", "proprietario", "parceiro"];
 const existe = (href: string) => {
   const rota = href.split("#")[0];
   if (rota === "/buscar") return existsSync("src/app/(public)/buscar/page.tsx");
+  if (rota === "/ajuda") return existsSync("src/app/(public)/ajuda/page.tsx");
   if (rota.startsWith("/dashboard/conta/")) return existsSync("src/app/(dashboard)/dashboard/conta/[secao]/page.tsx");
   if (rota === "/admin") return existsSync("src/app/(dashboard)/admin/page.tsx");
   return existsSync(`src/app/(dashboard)${rota}/page.tsx`);
@@ -18,7 +19,8 @@ const existe = (href: string) => {
 test("no máximo 5 destinos por papel, com e sem contrato", () => {
   for (const papel of PAPEIS) for (const comContrato of [true, false]) assert.ok(abasDoPapelPainel(papel, { comContrato }).length <= 5, papel);
   assert.deepEqual(abasDoPapelPainel("morador", { comContrato: true }).map((a) => a.rotulo), ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"]);
-  assert.deepEqual(abasDoPapelPainel("morador", { comContrato: false }).map((a) => a.rotulo), ["Início", "Buscar", "Pedidos", "Mensagens"]);
+  // E176 (D1): a Estadia aparece sempre, mesmo sem estadia ativa (a tela mostra o estado vazio).
+  assert.deepEqual(abasDoPapelPainel("morador", { comContrato: false }).map((a) => a.rotulo), ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"]);
   assert.deepEqual(abasDoPapelPainel("proprietario").map((a) => a.rotulo), ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"]);
 });
 
@@ -77,5 +79,10 @@ test("Conta (avatar): Ferramentas fora; troca de modo e Sair como ações; morad
   const puro = itensDaConta("morador", { temImovel: false, admin: false });
   assert.ok(!puro.some((i) => /anunciar|ferramentas|propriet/i.test(`${i.id} ${i.rotulo}`)), puro.map((i) => i.rotulo).join(", "));
   for (const papel of PAPEIS) assert.equal(itensDaConta(papel, { temImovel: false, admin: false }).at(-1)?.acao, "sair");
+  // E176 (D2): 4 itens só — Minha conta · Modo <outro papel> · Ajuda · Sair (o admin chega ao /admin pela própria barra).
+  assert.deepEqual(itensDaConta("proprietario", { temImovel: true, admin: false }).map((i) => i.rotulo), ["Minha conta", "Modo morador", "Ajuda", "Sair"]);
+  assert.deepEqual(itensDaConta("morador", { temImovel: true, admin: false }).map((i) => i.rotulo), ["Minha conta", "Modo proprietário", "Ajuda", "Sair"]);
+  // Conta da equipe: o "Painel admin" é a única porta do painel para o /admin (não aparece para morador nem dono).
   assert.ok(itensDaConta("morador", { temImovel: false, admin: true }).some((i) => i.href === "/admin"));
+  assert.equal(itensDaConta("morador", { temImovel: false }).filter((i) => i.acao === "sair").length, 1);
 });

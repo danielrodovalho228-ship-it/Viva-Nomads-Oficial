@@ -16,6 +16,7 @@ export const TELAS_PAINEL = [
   "/dashboard/candidaturas",
   "/dashboard/carteira",
   "/dashboard/comparar",
+  "/dashboard/ganhos",
   "/dashboard/conta",
   "/dashboard/conta/seguranca",
   "/dashboard/conta/excluir",

@@ -42,7 +42,7 @@ test.describe("T465 — ADMIN-4: inicial enxuta do admin", () => {
       expect(new Set(chaves).size, "nenhum destino repetido na atenção").toBe(chaves.length);
       await expect(page.getByTestId("admin-atencao-todas")).toHaveText(/^Ver todas \(\d+\)/);
       await expect(page.getByTestId("admin-atividade")).toBeVisible();
-      await expect(page.getByTestId("admin-saude")).toHaveText(/^(Tudo funcionando|\d+ alertas? → Sistema)$/);
+      await expect(page.getByTestId("admin-saude")).toHaveText(/^(Tudo funcionando|Há alertas em “Precisa da sua atenção”\.)$/);
       await expect(page.getByTestId("admin-rodape")).toHaveText("Contas de teste não entram nestas contagens.");
       const corpo = page.locator("main");
       for (const fora of ["Áreas do admin", "Receita", "Crescimento", "Liquidez", "decisões"]) await expect(corpo, fora).not.toContainText(fora);

@@ -136,14 +136,14 @@ test.describe("T213 — Nova jornada de teste com confirmação na página (aden
   }
 
   for (const largura of [390, 1280]) {
-    test(`4. ${largura} — Locações: o proprietário cai em Contratos & blocos; o inquilino continua com Locações`, async ({ browser }) => {
+    test(`4. ${largura} — Estadias: o proprietário sem estadia vê a lista vazia (sem troca de papel); o inquilino continua com a lista`, async ({ browser }) => {
       test.setTimeout(150_000);
-      // O dono desta suíte tem imóvel e nenhuma estadia como inquilino.
+      // O dono desta suíte tem imóvel e nenhuma estadia como inquilino. E176 (papel persiste): /dashboard/locacoes não
+      // joga mais para os Contratos do dono — mostra o estado vazio da lista de estadias.
       const d = await entrar(browser, dono.email, senha);
       await d.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      // O redirecionamento é do servidor e a 1ª carga fria de /contratos passou de 20 s no lab (19/10, 1280 px): teto maior na navegação e na URL final.
       await d.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded", timeout: 60_000 });
-      await expect(d).toHaveURL(/\/dashboard\/contratos$/, { timeout: 60_000 });
+      await expect(d).toHaveURL(/\/dashboard\/(locacoes|contratos)$/, { timeout: 60_000 });
       await expect(d.locator("main")).not.toContainText("avaliar o proprietário ao final da estadia");
       if (largura === 1280) await expect(d.getByRole("link", { name: /^Locações$/ })).toHaveCount(0);
       await d.context().close();
@@ -152,7 +152,7 @@ test.describe("T213 — Nova jornada de teste com confirmação na página (aden
       await t.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await abrir(t, "/dashboard/locacoes");
       expect(new URL(t.url()).pathname).toBe("/dashboard/locacoes");
-      await expect(t.getByRole("heading", { name: "Minhas locações" })).toBeVisible();
+      await expect(t.getByRole("heading", { name: "Minhas estadias" })).toBeVisible();
       await semRolagemLateral(t);
       await t.context().close();
     });

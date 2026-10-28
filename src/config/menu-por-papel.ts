@@ -175,8 +175,8 @@ const FERRAMENTAS_E_CONTA: ItemDoPapel[] = [
     rotulo: "Minha conta",
     icone: "conta",
     filhos: [
-      { id: "conta-dados", rotulo: "Perfil e dados", icone: "conta", href: "/dashboard/conta" },
-      { id: "avaliacoes", rotulo: "Avaliações recebidas", icone: "conta", href: "/dashboard/avaliacoes" },
+      { id: "conta-dados", rotulo: "Perfil", icone: "conta", href: "/dashboard/conta" },
+      { id: "avaliacoes", rotulo: "Avaliações", icone: "conta", href: "/dashboard/avaliacoes" },
       { id: "verificacao", rotulo: "Verificação", icone: "verificacao", href: "/dashboard/verificacao" },
     ],
   },

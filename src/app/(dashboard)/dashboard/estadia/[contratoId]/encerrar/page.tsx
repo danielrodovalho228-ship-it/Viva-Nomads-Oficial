@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageTitle } from "@/components/dashboard/primitives";
-import { ButtonLink } from "@/components/ui/button";
 import { carregarEstadia } from "@/lib/data/estadia";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { EncerrarTela } from "./encerrar-tela";
+import { VoltarLista } from "@/components/ui/voltar-lista";
 
 export const metadata: Metadata = { title: "Encerrar contrato", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -22,6 +22,7 @@ export default async function EncerrarPage({ params }: { params: Promise<{ contr
   if (!e) notFound();
   return (
     <div className="space-y-4" data-testid="pagina-encerrar">
+      <VoltarLista href={HREF_ESTADIA(e.id)} rotulo="Minha estadia" />
       <PageTitle title="Encerrar contrato" subtitle={`${e.imovel.titulo} · Contrato ${e.numero}`} />
       {e.status !== "ativo" ? (
         <p className="text-sm text-muted">Este contrato já está encerrado.</p>
@@ -30,9 +31,6 @@ export default async function EncerrarPage({ params }: { params: Promise<{ contr
       ) : (
         <EncerrarTela contratoId={e.id} />
       )}
-      <ButtonLink href={HREF_ESTADIA(e.id)} variant="tertiary" size="sm">
-        Voltar para a estadia
-      </ButtonLink>
     </div>
   );
 }

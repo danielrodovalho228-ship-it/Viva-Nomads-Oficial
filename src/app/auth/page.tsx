@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Globe, Loader2, CheckCircle2, Eye, EyeOff, ArrowLeft } from "lucide-react";
@@ -387,6 +388,10 @@ export default function AuthPage() {
           <div className="mb-6 flex justify-center lg:hidden">
             <Logo href="/" />
           </div>
+          {/* E176 (PUBLICO-A): a porta tem saída rotulada — volta ao site (além do logo clicável). */}
+          <Link href="/" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-forest hover:underline" data-testid="auth-voltar-site">
+            <span aria-hidden>‹</span> Voltar ao site
+          </Link>
           <div className={CARTAO_FORMULARIO_PORTA} data-testid="porta-cartao">
 
           {mode === "entrada" ? (

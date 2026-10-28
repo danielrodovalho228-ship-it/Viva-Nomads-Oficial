@@ -527,6 +527,13 @@ html:has([data-testid="fale-com-a-viva-raiz"]) {
 html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]) .vn-rodape {
   padding-bottom: calc(var(--ajuda-bottom, 1.5rem) + 3.5rem + env(safe-area-inset-bottom, 0px));
 }
+/* Onde o "Fale com a Viva" não aparece (/buscar e outras do ESCONDER), a folga acima vinha zero e a barra de abas do
+   celular cobria a última linha do rodapé ("A plataforma conecta…"). A folga passa a ser a da própria barra. */
+@media (max-width: 767px) {
+  html:not([data-app]) body:has(nav[aria-label="Navegação principal"]):not(:has([data-testid="fale-com-a-viva-raiz"])) .vn-rodape {
+    padding-bottom: calc(var(--altura-abas) + 1rem + env(safe-area-inset-bottom, 0px));
+  }
+}
 
 /* Card do imóvel ancorado no pin do mapa da busca (ordem ca0e7dad): sem a
    moldura padrão do Leaflet/Mapbox — o card já tem cantos e borda. */

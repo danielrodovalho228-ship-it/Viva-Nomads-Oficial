@@ -60,6 +60,7 @@ const OWNER_ONLY = [
   "/qualificar",
   "/dashboard/imoveis",
   "/dashboard/carteira",
+  "/dashboard/ganhos",
   "/dashboard/viabilidade",
   "/dashboard/leads",
   "/dashboard/orcamentos",
@@ -322,9 +323,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         )}
         <MenuCascata itens={naAreaAdmin ? [...BARRA_ADMIN] : menu} pathname={pathname} badges={badges} aoNavegar={aoNavegar} />
         {naAreaAdmin && (
-          <Link href={MINHA_CONTA_ADMIN.href} className="mt-3 flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white" data-testid="admin-minha-conta">
+          // Troca de documento (não pelo roteador): uma Server Action pendente do /admin devolvia a URL para a tela
+          // anterior depois de abrir a Conta (mesma causa descrita em dashboard/conta/page.tsx).
+          <a href={MINHA_CONTA_ADMIN.href} className="mt-3 flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white" data-testid="admin-minha-conta">
             {MINHA_CONTA_ADMIN.rotulo}
-          </Link>
+          </a>
         )}
       </nav>
       <div className="border-t border-white/10 p-3">
@@ -387,6 +390,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 className="grid h-10 w-10 place-items-center rounded-lg text-forest lg:hidden"
                 onClick={() => setOpen(true)}
                 aria-label="Abrir menu"
+                data-testid={naAreaAdmin ? "admin-abrir-menu" : undefined}
               >
                 <Menu className="h-6 w-6" />
               </button>
@@ -394,16 +398,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* E73 (QA 24/10): no celular, nas telas da equipe (/admin), a navegação fica à vista — "Voltar ao site" e o menu da
-            equipe com nome — em vez de só o ícone do topo. No computador nada muda (a barra lateral já está aberta). */}
+        {/* E73 (QA 24/10): no celular, nas telas da equipe (/admin), "‹ Voltar ao site" fica à vista. E176 (D3): a navegação
+            da equipe tem UM caminho só — o hambúrguer do topo abre a gaveta (saiu o segundo botão de menu). No computador
+            nada muda (a barra lateral já está aberta). */}
         {pathname.startsWith("/admin") && (
           <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 lg:hidden print:hidden" data-testid="admin-nav-celular">
             <Link href="/" className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-forest" data-testid="admin-voltar-site">
               <ChevronLeft className="h-5 w-5" aria-hidden /> Voltar ao site
             </Link>
-            <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-line px-3 text-sm font-semibold text-ink" data-testid="admin-abrir-menu">
-              <Menu className="h-5 w-5" aria-hidden /> Menu da equipe
-            </button>
           </nav>
         )}
 

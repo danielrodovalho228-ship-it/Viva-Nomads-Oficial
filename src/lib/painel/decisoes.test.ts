@@ -86,7 +86,7 @@ test("visita: o dono decide o pedido; o morador decide o horário remarcado", ()
   assert.equal(dono[0].texto, "Pedido de visita por vídeo para Studio Centro");
   assert.equal(dono[0].prazo, emH(10), "o 1º horário futuro é o prazo");
   assert.match(dono[0].prazoTexto!, /^1º horário: /);
-  assert.equal(dono[0].href, "/dashboard/visitas");
+  assert.equal(dono[0].href, "/dashboard/visitas?de=dono");
   const morador = decisoesDoMorador(d, agora);
   assert.equal(morador.length, 1);
   assert.equal(morador[0].texto, "Novo horário para a visita em Casa Jardim");
@@ -167,7 +167,7 @@ test("todo link aponta para a tela da decisão dentro do painel (nunca decide na
     agora,
   );
   assert.equal(todas.length, 5);
-  for (const x of todas) assert.match(x.href, /^\/dashboard\/(propostas|contratos|visitas|solicitacoes|leads)(\/|$)/, x.href);
+  for (const x of todas) assert.match(x.href, /^\/dashboard\/(propostas|contratos|visitas|solicitacoes|leads)(\/|\?|$)/, x.href);
 });
 
 test("a Visão geral monta as decisões no servidor e o navegador não chama server action para o rascunho", () => {

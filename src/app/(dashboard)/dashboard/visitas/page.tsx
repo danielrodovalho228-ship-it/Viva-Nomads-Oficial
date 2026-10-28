@@ -17,59 +17,50 @@ export const dynamic = "force-dynamic";
 /**
  * Visitas (prompt 23): por vídeo e PRESENCIAIS, no mesmo lugar e no mesmo fluxo — pedida, confirmada, remarcar,
  * cancelada —, sempre no horário de Brasília. Nada de WhatsApp nem contato direto.
+ * E176 (papel persiste): UM lado por vez. A aba "Visitas" do morador (Pedidos) mostra só as visitas que ele pediu;
+ * os pedidos recebidos nos imóveis do dono abrem por `?de=dono` (decisões do Início do dono e o e-mail do pedido).
  */
-export default async function VisitasPage() {
-  const [recebidos, meus] = await Promise.all([listVisitasDono(), listMinhasVisitas()]);
-  const vazio = recebidos.length === 0 && meus.length === 0;
+export default async function VisitasPage({ searchParams }: { searchParams: Promise<{ de?: string }> }) {
+  const dono = (await searchParams).de === "dono";
+  const visitas = dono ? await listVisitasDono() : await listMinhasVisitas();
   return (
     <>
       <PageTitle
-        title="Visitas"
-        subtitle={`Por vídeo ou presenciais, combinadas aqui na plataforma (${ROTULO_FUSO}). Nome e contato do interessado só aparecem depois do aceite.`}
+        title={dono ? "Visitas nos meus imóveis" : "Visitas"}
+        subtitle={
+          dono
+            ? `Por vídeo ou presenciais, combinadas aqui na plataforma (${ROTULO_FUSO}). Nome e contato do interessado só aparecem depois do aceite.`
+            : `Por vídeo ou presenciais, combinadas aqui na plataforma (${ROTULO_FUSO}).`
+        }
       />
-      <ValorDiretoAoProprietario className="-mt-2 mb-4 text-sm text-muted" />
-      {vazio ? (
+      {dono && <ValorDiretoAoProprietario className="-mt-2 mb-4 text-sm text-muted" />}
+      {visitas.length === 0 ? (
         <EmptyState
           icon={CalendarCheck}
           title="Nenhuma visita ainda"
-          text="Na página de um imóvel, toque em “Agendar visita” ou “Visita por vídeo”, escolha até 3 horários e acompanhe a resposta aqui."
+          text={
+            dono
+              ? "Quando um interessado pedir uma visita a um dos seus imóveis, o pedido aparece aqui para você confirmar um horário."
+              : "Na página de um imóvel, toque em “Agendar visita” ou “Visita por vídeo”, escolha até 3 horários e acompanhe a resposta aqui."
+          }
           action={
-            <ButtonLink href="/buscar" variant="primary">
-              Explorar imóveis
-            </ButtonLink>
+            dono ? undefined : (
+              <ButtonLink href="/buscar" variant="primary">
+                Explorar imóveis
+              </ButtonLink>
+            )
           }
         />
       ) : (
-        <div className="grid gap-6">
-          {recebidos.length > 0 && (
-            <section aria-labelledby="visitas-recebidas" data-testid="visitas-recebidas">
-              <h2 id="visitas-recebidas" className="mb-3 font-title text-lg font-semibold text-ink">
-                Pedidos nos meus imóveis
-              </h2>
-              <div className="grid gap-3 lg:grid-cols-2">
-                {recebidos.map((v) => (
-                  <Panel key={v.id}>
-                    <CartaoVisita v={v} papel="dono" />
-                  </Panel>
-                ))}
-              </div>
-            </section>
-          )}
-          {meus.length > 0 && (
-            <section aria-labelledby="visitas-minhas" data-testid="visitas-minhas">
-              <h2 id="visitas-minhas" className="mb-3 font-title text-lg font-semibold text-ink">
-                Meus pedidos
-              </h2>
-              <div className="grid gap-3 lg:grid-cols-2">
-                {meus.map((v) => (
-                  <Panel key={v.id}>
-                    <CartaoVisita v={v} papel="morador" />
-                  </Panel>
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
+        <section aria-label={dono ? "Pedidos nos meus imóveis" : "Meus pedidos de visita"} data-testid={dono ? "visitas-recebidas" : "visitas-minhas"}>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {visitas.map((v) => (
+              <Panel key={v.id}>
+                <CartaoVisita v={v} papel={dono ? "dono" : "morador"} />
+              </Panel>
+            ))}
+          </div>
+        </section>
       )}
     </>
   );

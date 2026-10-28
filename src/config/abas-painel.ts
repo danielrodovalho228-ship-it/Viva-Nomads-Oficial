@@ -4,7 +4,7 @@
  * sino ou Conta (avatar). PURA (testada em abas-painel.test.ts); quem desenha é o TopoPainel (computador) e a
  * MobileTabBar (celular). O admin fora (trilha ADMIN: config/menu-admin.ts).
  *
- *  • Morador (MORADOR-NAV): Início · Buscar · Pedidos · Mensagens · Estadia (só com contrato). Sem contrato, 4.
+ *  • Morador (MORADOR-NAV + E176 D1): Início · Buscar · Pedidos · Mensagens · Estadia — Estadia SEMPRE visível.
  *  • Proprietário (PROP-1): Início · Anúncios · Interessados · Contratos · Mensagens — igual no celular.
  *  • Parceiro: Início · Pedidos · Agenda · Ganhos · Mensagens (as seções do painel do parceiro, até o PARCEIRO-A).
  */
@@ -91,8 +91,8 @@ export const ABAS_MORADOR: readonly AbaPainel[] = [
   },
 ];
 
-/** /dashboard/ganhos nasce no PROP-4; até lá a subaba "Ganhos" de Contratos não aparece. */
-export const GANHOS_DISPONIVEL = false;
+/** E176 (D1): Contratos ganha a subaba "Ganhos" (/dashboard/ganhos). */
+export const GANHOS_DISPONIVEL = true;
 
 export const ABAS_PROPRIETARIO: readonly AbaPainel[] = [
   INICIO,
@@ -142,7 +142,10 @@ const BASE: Record<PapelAbas, readonly AbaPainel[]> = { morador: ABAS_MORADOR, p
 /** As abas do papel neste contexto (no máximo 5). Sem papel (admin nas telas /admin): nenhuma. */
 export function abasDoPapelPainel(papel: PapelAbas | null, ctx: ContextoAbas = { comContrato: false }): readonly AbaPainel[] {
   if (!papel) return [];
-  return BASE[papel].filter((a) => a.id !== "estadia" || papel !== "morador" || ctx.comContrato);
+  // E176 (D1): a aba "Estadia" do morador aparece SEMPRE (sem estadia, a tela mostra o estado vazio com o caminho para
+  // buscar). `ctx` fica para quem ainda passa o contexto.
+  void ctx;
+  return BASE[papel];
 }
 
 function acende(item: ItemAba, pathname: string): boolean {
@@ -170,28 +173,28 @@ export interface ItemConta extends ItemAba {
   acao?: "modo-morador" | "modo-proprietario" | "sair";
 }
 
-const CONTA_COMUM: readonly ItemConta[] = [
-  { id: "perfil", rotulo: "Perfil e dados", href: "/dashboard/conta" },
-  { id: "verificacao", rotulo: "Verificação", href: "/dashboard/verificacao" },
-  { id: "pagamentos", rotulo: "Pagamentos e recebimentos", href: "/dashboard/conta/pagamentos" },
-  { id: "notificacoes", rotulo: "Notificações", href: "/dashboard/conta/notificacoes" },
-  { id: "avaliacoes", rotulo: "Avaliações recebidas", href: "/dashboard/avaliacoes" },
-];
+/**
+ * E176 (mockups aprovados do menu): o avatar é um ATALHO CURTO — Minha conta · Modo <outro papel> · Ajuda · Sair. Perfil,
+ * verificação, pagamentos, notificações, avaliações e plano moram dentro da Conta (um nome só para cada tela, E85).
+ */
+const MINHA_CONTA: ItemConta = { id: "conta", rotulo: "Minha conta", href: "/dashboard/conta" };
+const AJUDA: ItemConta = { id: "ajuda", rotulo: "Ajuda", href: "/ajuda" };
 
 /**
  * O menu da Conta por papel (o mesmo no "Conta ▾" do computador e no avatar do celular). MENUS-5, item 3: as
  * Ferramentas saem daqui (viram os cartões do Início do dono com "Todas as ferramentas").
  */
-export function itensDaConta(papel: PapelAbas | null, p: { temImovel: boolean; admin: boolean }): ItemConta[] {
-  const itens: ItemConta[] = [...CONTA_COMUM];
+export function itensDaConta(papel: PapelAbas | null, p: { temImovel: boolean; admin?: boolean }): ItemConta[] {
+  const itens: ItemConta[] = [MINHA_CONTA];
   if (papel === "proprietario") {
-    itens.push({ id: "plano", rotulo: "Plano", href: "/dashboard/assinatura" });
     itens.push({ id: "modo-morador", rotulo: "Modo morador", href: "/dashboard", acao: "modo-morador" });
   } else if (p.temImovel) {
     // Quem já anunciou troca de modo aqui. Morador puro não vê nada do dono (E167, QA 25/10: nem "Anunciar meu
     // imóvel" nem Ferramentas) — a porta de anunciar é a do site público.
     itens.push({ id: "modo-proprietario", rotulo: "Modo proprietário", href: "/dashboard", acao: "modo-proprietario" });
   }
+  itens.push(AJUDA);
+  // Só contas da equipe (fora dos 4 itens de morador/dono): é a única porta do painel para o /admin.
   if (p.admin) itens.push({ id: "admin", rotulo: "Painel admin", href: "/admin" });
   itens.push({ id: "sair", rotulo: "Sair", href: "/", acao: "sair" });
   return itens;

@@ -18,7 +18,8 @@ const ajuda = LINHAS_AJUDA.map((l) => l.href);
 const menuConta = readFileSync(new URL("../components/account/conta-menu.tsx", import.meta.url), "utf8");
 
 // Os destinos do grupo de baixo da Conta antiga (antes do NAV-A), cada um com o lugar novo.
-const SAIRAM_PARA_BARRA = ["/dashboard/notificacoes", "/dashboard/verificacao", "/dashboard/ferramentas", "/dashboard/indicacoes", "/admin"];
+// E176 (parte 2): Notificações voltou para a Conta como página única (a do sino) — não está mais nesta lista.
+const SAIRAM_PARA_BARRA = ["/dashboard/verificacao", "/dashboard/ferramentas", "/dashboard/indicacoes", "/admin"];
 // ADMIN-1: "Equipe e aprovações" (/admin/agentes#aprovacoes) saiu da barra; vira aba no ADMIN-2.
 const SAIRAM_PARA_AJUDA = ["/termos", "/privacidade"];
 
@@ -45,7 +46,7 @@ test("ADMIN-1: a seção do papel admin em /dashboard é só 'Painel admin' ('Eq
 test("a Conta: Perfil, Como você usa a Viva, Avaliações, Dados, Privacidade, Notificações, Pagamentos, Ajuda — e Sair", () => {
   assert.deepEqual(
     SECOES_CONTA.map((s) => s.rotuloMenu ?? s.rotulo),
-    ["Perfil", "Como você usa a Viva", "Avaliações", "Dados", "Privacidade", "Notificações", "Pagamentos", "Ajuda"],
+    ["Perfil", "Como você usa a Viva", "Avaliações", "Dados", "Privacidade", "Segurança e verificações", "Notificações", "Pagamentos", "Ajuda"],
   );
   assert.match(menuConta, /itens: \[\{ onClick: sair, label: "Sair"/);
   for (const fora of ["Seus avisos", "Ferramentas", "Painel Admin", "Equipe e aprovações", "Indicações", "Verificação"]) {

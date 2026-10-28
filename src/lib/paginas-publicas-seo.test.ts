@@ -34,9 +34,8 @@ test("#36: /cidades existe e redireciona 308; title de /precos é descritivo (<=
   assert.ok(m![1].length <= 60, `title com ${m![1].length} caracteres`);
 });
 
-test("#37: botões que levam a /qualificar dizem que vão entrar antes (visitante)", () => {
-  const nav = ler("components/layout/navbar.tsx");
-  assert.match(nav, /Entrar para anunciar/);
+test("#37: o rodapé diz que anunciar pede login; no topo, 'Anunciar' tem um nome só (E176)", () => {
+  assert.match(ler("lib/constants.ts"), /\{ href: "\/dashboard\/imoveis\/novo", label: "Anunciar" \}/);
   const foot = ler("components/layout/footer.tsx");
   assert.match(foot, /Anunciar imóvel \(com login\)/);
 });
@@ -51,6 +50,7 @@ test("botões de Novo anúncio (logado) abrem direto o cadastro pelas Fotos, nã
   assert.match(painel, new RegExp(`href="${novo}" variant="primary"[^>]*>\\s*Cadastrar meu imóvel`));
   const nav = ler("components/layout/navbar.tsx");
   assert.ok(!/href="\/qualificar" variant="accent"/.test(nav));
-  assert.equal((nav.match(/href="\/dashboard\/imoveis\/novo"/g) ?? []).length, 2);
+  // E176: o "Anunciar" do topo sai do PUBLIC_NAV (um nome só), direto para o cadastro.
   assert.ok(!nav.includes("/qualificar"));
+  assert.ok(!ler("lib/constants.ts").includes('"/qualificar"'));
 });

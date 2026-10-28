@@ -189,7 +189,7 @@ for (const largura of LARGURAS) {
 
 // MENUS-5 (#1392): as abas saem de src/config/abas-painel.ts (fonte única; o teste tests/laboratorio/t262-abas-fonte-unica
 // confere estas listas com ela). O Perfil saiu da barra: a Conta abre no avatar do topo (conta-<papel>-celular).
-const NOMES_MORADOR = ["Início", "Buscar", "Pedidos", "Mensagens"]; // sem contrato; com contrato entra "Estadia" no fim
+const NOMES_MORADOR = ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"]; // E176 (D1): "Estadia" sempre, com ou sem contrato
 const NOMES_PROPRIETARIO = ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"];
 const NOMES_PARCEIRO = ["Início", "Pedidos", "Agenda", "Ganhos", "Mensagens"];
 
@@ -205,19 +205,19 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
   test.describe("morador", () => {
     test.skip(!hasAccount("inquilino"), "sem a conta do inquilino");
     test.use({ storageState: authFile("inquilino") });
-    test("Início · Buscar · Pedidos · Mensagens (+ Estadia com contrato); a Conta no avatar do topo", async ({ page }) => {
+    test("Início · Buscar · Pedidos · Mensagens · Estadia (sempre, E176); a Conta no avatar do topo", async ({ page }) => {
       // Rota só do morador: a casca acerta o modo (outra spec pode ter trocado o modo da conta).
       await page.goto("/dashboard/favoritos", { waitUntil: "domcontentloaded" });
       await expect(async () => {
         const lista = await abas(page);
-        // "Estadia" só aparece com contrato (a conta de teste pode ou não ter um): as 4 primeiras são fixas.
-        expect(lista.slice(0, 4)).toEqual([
+        // E176 (D1): as 5 abas do morador sempre — "Estadia" aparece mesmo sem contrato (estado vazio com caminho para buscar).
+        expect(lista).toEqual([
           { nome: "Início", href: "/dashboard" },
           { nome: "Buscar", href: "/buscar" },
           { nome: "Pedidos", href: "/dashboard/pedidos" },
           { nome: "Mensagens", href: "/dashboard/mensagens" },
+          { nome: "Estadia", href: "/dashboard/locacoes" },
         ]);
-        expect(lista.slice(4)).toEqual(lista.length === 5 ? [{ nome: "Estadia", href: "/dashboard/locacoes" }] : []);
       }).toPass({ timeout: 20_000 });
       await expect(page.getByTestId("topo-celular").getByTestId("conta-morador-celular")).toBeVisible();
       const sombra = await page.locator('nav[aria-label="Navegação principal"]').evaluate((el) => getComputedStyle(el).boxShadow);
@@ -296,7 +296,7 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       await expect(page.getByTestId("topo-celular").getByTestId("conta-parceiro-celular")).toBeVisible();
       // Fora do painel do parceiro (sem a preferência ligada no Perfil), a barra volta ao modo da conta.
       await page.goto("/dashboard/favoritos", { waitUntil: "domcontentloaded" });
-      await expect(async () => expect((await abas(page)).map((a) => a.nome).slice(0, 4)).toEqual(NOMES_MORADOR)).toPass({ timeout: 20_000 });
+      await expect(async () => expect((await abas(page)).map((a) => a.nome)).toEqual(NOMES_MORADOR)).toPass({ timeout: 20_000 });
       await page.context().close();
     });
 

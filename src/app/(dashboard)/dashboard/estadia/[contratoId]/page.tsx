@@ -25,6 +25,7 @@ import { montarLinhaDoTempo } from "@/lib/estadia-linha-tempo";
 import { HREF_CONFIRMADA } from "@/lib/estadia/confirmacao";
 import { aditivoEmTela } from "@/lib/estadia/aditivo-em-tela";
 import { localDaEstadia } from "@/lib/data/estadia-local";
+import { VoltarLista } from "@/components/ui/voltar-lista";
 
 export const metadata: Metadata = {
   title: "Estadia",
@@ -84,6 +85,8 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
 
   return (
     <div data-testid="pagina-estadia" data-papel={e.papel} className="space-y-4">
+      {/* E176: "← <lista>" no topo — o morador volta às estadias; o dono, aos contratos. */}
+      {e.papel === "proprietario" ? <VoltarLista href="/dashboard/contratos" rotulo="Contratos" /> : <VoltarLista href="/dashboard/locacoes" rotulo="Minhas estadias" />}
       <PageTitle title={e.imovel.titulo} subtitle={`Contrato ${e.numero}`} />
 
       <Panel className="flex flex-col gap-4 sm:flex-row sm:items-center" data-testid="estadia-topo">

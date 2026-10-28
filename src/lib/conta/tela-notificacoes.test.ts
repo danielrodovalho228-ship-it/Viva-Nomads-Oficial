@@ -42,6 +42,7 @@ test("a tela grava as duas preferências num só 'Salvar preferências' e não l
   // Só grava preferência: nada de envio, número oficial ou chave de SMS.
   assert.doesNotMatch(acoes, /enviar|sendWhats|SMS_ATIVO|fetch\(/i);
   assert.match(acoes, /updateUser\(\{ data: \{ notif_push: c\.push \} \}\)/);
-  const pagina = ler("src/app/(dashboard)/dashboard/conta/[secao]/page.tsx");
+  // E176 (parte 2): a página única de Notificações (a do sino) mostra o mockup perfil-06 na casca da Conta.
+  const pagina = ler("src/app/(dashboard)/dashboard/notificacoes/page.tsx");
   assert.match(pagina, /<CascaConta ativo="notificacoes">\s*<TelaNotificacoes \/>/);
 });

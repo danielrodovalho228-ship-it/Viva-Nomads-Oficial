@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
-import { ArrowLeft } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { getContratoParaAssinar } from "@/lib/data/contrato-assinar-actions";
 import { conferenciasDoContrato } from "@/lib/data/conferencia-actions";
@@ -20,6 +19,7 @@ import { PendenciasConforto } from "@/components/conforto/pendencias-conforto";
 import { pendenciasDoContrato } from "@/lib/data/conforto-actions";
 import { meuCartaoPostal } from "@/lib/data/cartoes-actions";
 import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
+import { VoltarLista } from "@/components/ui/voltar-lista";
 
 /**
  * Detalhe do contrato para as DUAS partes (ordens 0fd301f0 e f375fdc1): o inquilino chega por
@@ -58,9 +58,7 @@ export async function ContratoDetalhe({
   const postal = c.papel === "inquilino" ? await meuCartaoPostal(c.id) : null;
   return (
     <>
-      <Link href={voltarHref} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
-        <ArrowLeft className="h-4 w-4" /> {voltarRotulo}
-      </Link>
+      <VoltarLista href={voltarHref} rotulo={voltarRotulo} />
       <PageTitle title={c.imovel} />
       <p className="-mt-2 mb-2">
         {/* Prompt 32: a página da estadia junta o que estava espalhado em Contratos, Locações e Fechamento. */}

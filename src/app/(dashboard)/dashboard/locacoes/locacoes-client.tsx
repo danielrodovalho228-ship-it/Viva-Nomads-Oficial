@@ -59,16 +59,16 @@ export function LocacoesClient({
   return (
     <>
       <PageTitle
-        title="Minhas locações"
-        subtitle="Suas estadias e a avaliação do proprietário."
+        title="Minhas estadias"
+        subtitle="Suas estadias, em andamento e encerradas, e a avaliação do proprietário."
         action={demoOn ? <DemoBadge /> : undefined}
       />
 
       {locacoes.length === 0 ? (
         <EmptyState
           icon={Home}
-          title="Você ainda não tem locações"
-          text="Quando você fechar uma locação, ela aparece aqui — e você poderá avaliar o proprietário ao final da estadia."
+          title="Você ainda não tem estadias"
+          text="Quando você fechar uma estadia, ela aparece aqui, e você poderá avaliar o proprietário ao final. Comece buscando um imóvel mobiliado."
           action={
             <Link href="/buscar">
               <Button variant="gold">Buscar imóveis</Button>

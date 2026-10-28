@@ -120,7 +120,7 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
     await a.context().close();
 
     const d = await entrar(browser, dono.email, senha);
-    await abrir(d, "/dashboard/visitas");
+    await abrir(d, "/dashboard/visitas?de=dono");
     const va = await visitaDe(ids.inqA!);
     await d.locator(`#visita-${va!.id}`).getByTestId("visita-confirmar").click();
     await expect.poll(async () => (await visitaDe(ids.inqA!))?.status, { timeout: 25_000 }).toBe("confirmado");

@@ -20,7 +20,6 @@
         "t343-nivel-busca-sem-beco",
         "t352-varredura-bloco17",
         "t368-varredura-bloco20",
-        "t483-menu-mais-fecha",
         "t543-e166-fundo-clean-publico"
       ]
     },
@@ -386,7 +385,8 @@
         "t353-varredura-bloco18",
         "t471-login-apple",
         "t522-login-google-sem-apple",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t489-e176-menus"
       ]
     },
     "/auth/pronto": {
@@ -464,7 +464,8 @@
         "t419-varredura-bloco36",
         "t475-e131-vitrine-conta-teste",
         "t479-e136b-calendario-pt-br",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t489-e176-menus"
       ]
     },
     "/cidades": {
@@ -620,6 +621,7 @@
         "t542-menus5-e85-estrutura",
         "t549-varredura-bloco39",
         "t559-varredura-bloco43",
+        "t489-e176-menus",
         "t562-e190-modo-um-toque"
       ]
     },
@@ -676,6 +678,15 @@
         "t213-jornada-teste-confirmacao",
         "t297-varredura-logada-bloco3",
         "t336-varredura-bloco14"
+      ]
+    },
+    "/dashboard/ganhos": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t183-telas-logadas-390",
+        "t489-e176-menus"
       ]
     },
     "/dashboard/carteira": {
@@ -860,7 +871,8 @@
         "t216-taxa-matriz",
         "t224-taxa-fora-da-api",
         "t221-contrato-estado-periodo",
-        "t416-varredura-bloco33"
+        "t416-varredura-bloco33",
+        "t489-e176-menus"
       ]
     },
     "/dashboard/ferramentas": {
@@ -1082,7 +1094,8 @@
         "t220-recibo-assinatura",
         "t221-contrato-estado-periodo",
         "t491-e182-estadias-com-nome",
-        "t557-varredura-bloco42"
+        "t557-varredura-bloco42",
+        "t489-e176-menus"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1136,7 +1149,8 @@
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t568-e176-parte2-conta"
       ]
     },
     "/dashboard/orcamentos": {
@@ -1313,6 +1327,7 @@
         "t211-complemento-23",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
+        "t489-e176-menus",
         "t566-e184-visitas-passadas"
       ]
     },

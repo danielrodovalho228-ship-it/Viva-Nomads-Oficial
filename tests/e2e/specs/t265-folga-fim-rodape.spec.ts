@@ -175,12 +175,12 @@ test.describe("T265 — menu superior e barra inferior a 390 px", () => {
   test.describe("visitante", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
     for (const rota of ["/", "/buscar", "/imoveis/ube-001", "/cidades/uberlandia"]) {
-      test(`${rota}: cabeçalho e barra de 4 itens visíveis (visitante = morador sem contrato)`, async ({ page }) => {
+      test(`${rota}: cabeçalho e barra de 5 itens visíveis (visitante = morador sem contrato)`, async ({ page }) => {
         await page.goto(rota, { waitUntil: "domcontentloaded" });
         await expect(page.locator("[data-logo]").filter({ visible: true }).first()).toBeVisible();
         await expect(barraInferior(page)).toBeVisible({ timeout: 15_000 });
-        // MENUS-5: Início · Buscar · Pedidos · Mensagens (a 5ª, "Estadia", só com contrato).
-        await expect(barraInferior(page).getByRole("link")).toHaveCount(4);
+        // E176 (D1): Início · Buscar · Pedidos · Mensagens · Estadia — a "Estadia" aparece sempre.
+        await expect(barraInferior(page).getByRole("link")).toHaveCount(5);
       });
     }
   });

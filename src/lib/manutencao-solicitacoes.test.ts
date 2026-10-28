@@ -155,9 +155,9 @@ test("critério 5: notificações ligadas por padrão e /dashboard/notificacoes 
   assert.match(ler("lib/data/pedidos-actions.ts"), /email: notificacaoLigada\(data\?\.notif_email\)/);
   assert.match(ler("lib/atendimento/servidor.ts"), /notificacaoLigada\(dono\.notif_email/);
   const pagina = ler("app/(dashboard)/dashboard/notificacoes/page.tsx");
-  assert.match(pagina, /<PageTitle/);
+  // E176 (parte 2): a página única — preferências (perfil-06) na casca da Conta e os avisos embaixo.
+  assert.match(pagina, /<CascaConta ativo="notificacoes">\s*<TelaNotificacoes \/>/);
   assert.match(pagina, /<StatCard/);
-  assert.match(pagina, /<NotificationsPanel \/>/);
   // NAV-A: os avisos moram na barra verde (Mensagens → Notificações), não na Conta.
   assert.match(ler("config/menu-por-papel.ts"), /href: "\/dashboard\/notificacoes"/);
   const sql = raiz("supabase/migrations/0109_manutencao_historico.sql");
