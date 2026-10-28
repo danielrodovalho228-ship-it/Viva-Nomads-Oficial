@@ -67,3 +67,25 @@ test("telas: Caução e Recibos não repetem o cartão do contrato e cada linha 
   const lista = ler("src/app/(dashboard)/dashboard/contratos/contratos-client.tsx");
   assert.match(lista, /conferenciaPendente/);
 });
+
+test("E188: o modo dono mostra só o lado do dono; sem imóvel ou no modo morador, o lado do morador", async () => {
+  const { ladoContratos } = await import("./area-dono.ts");
+  assert.equal(ladoContratos("owner", true), "dono");
+  assert.equal(ladoContratos("owner", false), "morador");
+  assert.equal(ladoContratos("tenant", true), "morador");
+});
+
+test("E188: no modo dono a página de Contratos não renderiza a lista do morador nem a Caução lê contratos de morador", () => {
+  const ler = (rel: string) => readFileSync(new URL(`../../../${rel}`, import.meta.url), "utf8");
+  const porModo = ler("src/app/(dashboard)/dashboard/contratos/contratos-por-modo.tsx");
+  assert.match(porModo, /ladoContratos\(mode, Boolean\(dono\)\)/);
+  // O bloco do dono não inclui {inquilino}: só o aviso de texto, sem os contratos do outro papel.
+  const blocoDono = porModo.slice(porModo.indexOf('data-testid="contratos-modo-dono"'));
+  assert.doesNotMatch(blocoDono, /\{inquilino\}/);
+  // A Caução do dono lê só getMeusContratos (imóveis da pessoa); do morador, só a contagem para o aviso.
+  const caucao = ler("src/app/(dashboard)/dashboard/garantias/page.tsx");
+  assert.match(caucao, /getMeusContratos\(\)/);
+  assert.match(caucao, /temContratoDeMorador=\{doInquilino\.length > 0\}/);
+  // As consultas do dono seguem presas ao dono do imóvel (owner_id → property_id).
+  assert.match(ler("src/lib/data/properties.ts"), /\.eq\("owner_id", user\.id\)/);
+});

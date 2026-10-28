@@ -89,3 +89,18 @@ export function contratoComConferenciaPendente(
   }
   return null;
 }
+
+/*
+  E188 — cada papel vê só os próprios contratos. No modo dono, Contratos e Caução mostram SÓ o que vem dos imóveis da
+  pessoa (o vazio aparece só quando essa lista está vazia); os contratos em que ela é moradora ficam no modo morador.
+*/
+export type LadoContratos = "dono" | "morador";
+
+/** Qual lado /dashboard/contratos mostra: o do dono só no modo dono e para quem tem imóvel; senão, o do morador. */
+export function ladoContratos(modo: string, temLadoDono: boolean): LadoContratos {
+  return modo === "owner" && temLadoDono ? "dono" : "morador";
+}
+
+/** Aviso no modo dono para quem também é morador: os dados do outro papel não entram aqui. */
+export const AVISO_CONTRATOS_DE_MORADOR = "Seus contratos como morador ficam no modo morador.";
+export const AVISO_CAUCAO_DE_MORADOR = "A caução que você paga como morador fica em Contratos, no modo morador.";
