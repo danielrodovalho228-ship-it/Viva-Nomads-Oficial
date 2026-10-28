@@ -19,8 +19,8 @@ async function responderTudo(p: Page, largura: number) {
     await expect(p.getByTestId("qualificacao-progresso")).toHaveText(`Qualificação · ${n} de 5`);
   };
   await tela(1);
-  await p.getByTestId("qualificacao-toggle-cama").click();
-  await p.getByTestId("qualificacao-toggle-apoio").click();
+  await p.getByTestId("qualificacao-opcao-cama-sim").click();
+  await p.getByTestId("qualificacao-opcao-apoio-sim").click();
   await p.getByTestId("qualificacao-opcao-ventilacao-ar").click();
   await p.screenshot({ path: `${SAIDA}/t481-tela1-${largura}.png`, fullPage: true });
   await p.getByTestId("qualificacao-continuar").click();
@@ -30,12 +30,12 @@ async function responderTudo(p: Page, largura: number) {
   await p.screenshot({ path: `${SAIDA}/t481-tela2-${largura}.png`, fullPage: true });
   await p.getByTestId("qualificacao-continuar").click();
   await tela(3);
-  await p.getByTestId("qualificacao-toggle-agua").click();
+  await p.getByTestId("qualificacao-opcao-agua-sim").click();
   await p.getByTestId("qualificacao-opcao-lavanderia-imovel").click();
   await p.screenshot({ path: `${SAIDA}/t481-tela3-${largura}.png`, fullPage: true });
   await p.getByTestId("qualificacao-continuar").click();
   await tela(4);
-  for (const t of ["luz", "fechadura", "limpa", "mobilia"]) await p.getByTestId(`qualificacao-toggle-${t}`).click();
+  for (const t of ["luz", "fechadura", "limpa", "mobilia"]) await p.getByTestId(`qualificacao-opcao-${t}-sim`).click();
   await p.screenshot({ path: `${SAIDA}/t481-tela4-${largura}.png`, fullPage: true });
   await p.getByTestId("qualificacao-continuar").click();
   await tela(5);
