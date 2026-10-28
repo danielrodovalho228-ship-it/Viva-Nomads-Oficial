@@ -37,6 +37,7 @@ import { rodadaSimulada } from "@/lib/minimizacao/regras";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { avisosDeRemedicao } from "@/lib/internet-medida-servidor";
 import { lembretesDoFunil } from "@/lib/lembretes/servidor";
+import { lembretesDeBloco } from "@/lib/estadia/lembrete-bloco-servidor";
 import { expirarVisitasVencidas, vesperasDasVisitas } from "@/lib/visitas/avisos-servidor";
 import { acaoDoPasso, emSilencio, linhaOutrosRascunhos, rascunhosPorDono, textoRascunho } from "@/lib/lembretes/regras";
 import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
@@ -337,6 +338,8 @@ export async function GET(request: Request) {
   // Prompt 50: verificação parada 24 h (aviso com a causa), parceiro sem resposta em 1 dia útil e chamado fora da
   // promessa (alertas à equipe). Uma vez cada; nunca no silêncio 22h–7h. Na simulação, só conta.
   const lembretes50 = await lembretesDoFunil(admin, agora, simular).catch(() => null);
+  // E205-B2: bloco renovado (2 em diante) que começa em até 3 dias sem pagamento registrado → lembrete ao morador.
+  const lembretesBloco = await lembretesDeBloco(admin, agora, simular).catch(() => 0);
   // E205-B (d): pedidos de visita com todos os horários vencidos → "cancelado" (motivo "expirou") + e-mail aos dois;
   // véspera das visitas confirmadas nas próximas 24 h. `simular`: só conta.
   const visitasExpiradas = await expirarVisitasVencidas(admin, agora, { simular }).catch(() => 0);
