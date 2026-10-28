@@ -50,6 +50,8 @@ export function Qualificacao(p: {
   /** "Sair" do topo do assistente durante a Qualificação = salvar e sair (o rascunho nasce na hora). */
   onSalvarESair: () => Promise<void>;
   ocupado?: boolean;
+  /** E180: o aviso "Você tem um anúncio em andamento" (Continuar o outro), logo abaixo do progresso. */
+  aviso?: React.ReactNode;
 }) {
   const resultado = p.tela >= TOTAL_TELAS;
   // O "Sair" do topo (moldura do assistente) aqui salva as respostas antes de sair (decisão do Muse, 25/10).
@@ -79,6 +81,7 @@ export function Qualificacao(p: {
       <p className="mt-3 text-sm font-medium text-muted" data-testid="qualificacao-progresso">
         {resultado ? "Qualificação · pronta" : `Qualificação · ${p.tela + 1} de ${TOTAL_TELAS}`}
       </p>
+      {p.aviso && <div className="mt-4">{p.aviso}</div>}
       {resultado ? (
         <Resultado respostas={p.respostas} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} />
       ) : (
