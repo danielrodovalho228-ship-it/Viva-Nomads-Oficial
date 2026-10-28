@@ -82,7 +82,7 @@ export function InicioDono({ alerta, bloco }: { alerta: Decisao | null; bloco: B
           <p className="mt-1 text-sm text-muted">{PECA_NA_VIVA.texto}</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <ButtonLink href={PECA_NA_VIVA.principal.href} data-testid="inicio-dono-pedido">
+          <ButtonLink href={PECA_NA_VIVA.principal.href} variant="outline" data-testid="inicio-dono-pedido">
             {PECA_NA_VIVA.principal.rotulo}
           </ButtonLink>
           <ButtonLink href={PECA_NA_VIVA.secundario.href} variant="outline" data-testid="inicio-dono-servico">

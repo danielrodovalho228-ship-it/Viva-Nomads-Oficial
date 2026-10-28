@@ -2,16 +2,16 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T549 — E190: quem é dono e está no modo morador numa tela só de morador (Favoritos) troca para "Modo proprietário"
+  T562 — E190: quem é dono e está no modo morador numa tela só de morador (Favoritos) troca para "Modo proprietário"
   com UM toque no menu da Conta: cai no Início do proprietário, sem voltar ao morador.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t549.${sufixo}@lab.vivanomads.test`, nome: "Rui Dois Modos", role: "owner" as const };
+const dono = { email: `dono.t562.${sufixo}@lab.vivanomads.test`, nome: "Rui Dois Modos", role: "owner" as const };
 const ids: Record<string, string> = {};
 
-test.describe("T549 — E190: Modo proprietário em 1 toque", () => {
+test.describe("T562 — E190: Modo proprietário em 1 toque", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
 
@@ -40,7 +40,7 @@ test.describe("T549 — E190: Modo proprietário em 1 toque", () => {
       // E continua proprietário (a guarda não desfaz a troca).
       await p.waitForTimeout(2_000);
       await expect(abasDono.locator("a").filter({ hasText: "Anúncios" })).toHaveCount(1);
-      await p.screenshot({ path: `${SAIDA}/t549-modo-proprietario-${largura}.png` });
+      await p.screenshot({ path: `${SAIDA}/t562-modo-proprietario-${largura}.png` });
       await p.context().close();
     });
   }
