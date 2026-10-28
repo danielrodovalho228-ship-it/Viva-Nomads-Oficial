@@ -44,6 +44,7 @@ import { MOTIVOS, isMotivo } from "@/lib/pedidos/pedidos";
 import { marcarVisto } from "@/lib/marcas/actions";
 import { useMarcasStore } from "@/lib/marcas/store";
 import { CHAVE_ULTIMA_BUSCA, ultimaBuscaParaPedido } from "@/lib/marcas/regra";
+import { CHAVE_VOLTAR_BUSCA, ROTULO_VOLTAR_BUSCA, destinoVoltarBusca } from "@/lib/imovel/voltar-busca";
 import type { LeadKind } from "@/lib/leads";
 import { PriceCard } from "@/components/property/price-card";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
@@ -280,11 +281,16 @@ export function PropertyDetail({
     await handleLead("candidatura", msg.texto || undefined);
   }
 
-  const citySlug = property.city
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/\s+/g, "-");
+  // E207: "← Voltar aos resultados" só quando este imóvel foi aberto pela /buscar (nesta aba).
+  const [voltarBusca, setVoltarBusca] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVoltarBusca(destinoVoltarBusca(window.sessionStorage.getItem(CHAVE_VOLTAR_BUSCA), property.id));
+    } catch {
+      /* armazenamento bloqueado: sem o voltar */
+    }
+  }, [property.id]);
 
   // Confirmação da candidatura (não é fechamento): o proprietário recebeu o
   // perfil; o acompanhamento segue em Mensagens. Nudge de verificação — nunca
@@ -720,19 +726,13 @@ export function PropertyDetail({
         onSolicitar={abrirSolicitacao}
         onAgendarVisita={() => (semLogin ? irParaLogin("visita") : setSinalVisita((n) => n + 1))}
       />
-      {/* Breadcrumb (navegação + SEO); no celular a galeria abre a tela de borda a borda. */}
-      <nav
-        aria-label="Trilha de navegação"
-        className="mb-4 hidden flex-wrap items-center gap-2 text-sm text-muted md:flex"
-      >
-        <Link href="/" className="hover:text-forest">Início</Link>
-        <span aria-hidden>›</span>
-        <Link href="/buscar" className="hover:text-forest">Buscar imóveis</Link>
-        <span aria-hidden>›</span>
-        <Link href={`/cidades/${citySlug}`} className="hover:text-forest">{property.city}</Link>
-        <span aria-hidden>›</span>
-        <span className="line-clamp-1 text-ink">{property.title}</span>
-      </nav>
+      {/* E207: sem migalhas visíveis (o BreadcrumbList segue nos dados estruturados, com a cidade). "← Voltar aos
+          resultados" só para quem veio da /buscar, de volta à mesma busca com os filtros. */}
+      {voltarBusca && (
+        <Link href={voltarBusca} className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-ink hover:text-forest" data-testid="voltar-resultados">
+          <span aria-hidden>←</span> {ROTULO_VOLTAR_BUSCA}
+        </Link>
+      )}
 
       {/* Galeria: tela cheia no celular ("1/12", coração e compartilhar); mosaico de 5 no computador. */}
       <PropertyGallery

@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CHAVE_ULTIMA_BUSCA, serializarUltimaBusca } from "@/lib/marcas/regra";
+import { CHAVE_VOLTAR_BUSCA, registroVoltarBusca } from "@/lib/imovel/voltar-busca";
 import { ChevronDown, ArrowRight, Megaphone } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
@@ -302,6 +303,23 @@ export function SearchClient({
     return () => {
       vivo = false;
     };
+  }, []);
+
+  // E207: ao abrir um imóvel daqui (cartão, pino do mapa…), guarda qual foi e a URL desta busca (com os filtros): o
+  // detalhe mostra "← Voltar aos resultados" só para esse imóvel.
+  useEffect(() => {
+    const aoClicar = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest?.('a[href^="/imoveis/"]') as HTMLAnchorElement | null;
+      if (!a) return;
+      const reg = registroVoltarBusca(a.getAttribute("href") ?? "", window.location.pathname + window.location.search);
+      try {
+        if (reg) window.sessionStorage.setItem(CHAVE_VOLTAR_BUSCA, reg);
+      } catch {
+        /* armazenamento bloqueado: o detalhe segue sem o voltar */
+      }
+    };
+    document.addEventListener("click", aoClicar, true);
+    return () => document.removeEventListener("click", aoClicar, true);
   }, []);
 
   // Pedido pré-preenchido (ordem 8302024d): guarda no aparelho a data de entrada e o período da última
