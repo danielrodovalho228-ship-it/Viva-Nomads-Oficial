@@ -1,10 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getContratoParaEquipe } from "@/lib/data/contrato-assinar-actions";
 import { COLUNAS_PROVAS, montarDadosProvas, nomeDoLaudo, totaisPagamentos, type DadosProvas, type PagamentoProva } from "@/lib/contrato-provas";
-import { compararHashComResumo, hashResumo, type ComparacaoHash } from "@/lib/contrato-assinar";
+import { compararHashComResumo, hashResumo } from "@/lib/contrato-assinar";
 import { estadoConferencia, estadoConferenciaLista, type EstadoConferencia, type EstadoConferenciaLista, type ParteConferencia, type RespostaConferencia, type TipoConferencia } from "@/lib/conferencia";
 import { mesesDoContrato } from "@/lib/admin/indicadores";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
+import { assinaturasDoAdmin, type AssinaturaAdmin } from "@/lib/admin/assinaturas-admin";
 
 /*
   Admin › contrato, só leitura (Prompt 35B, F5). A checagem de admin (ehAdmin, com AAL2) vem PRIMEIRO, dentro de
@@ -33,7 +34,8 @@ export interface ContratoAdminView {
   criadoEm: string;
   resumo: string[];
   hashAtual: string;
-  assinaturas: { papel: ParteConferencia; em: string; hash: string; comparacao: ComparacaoHash }[];
+  /** E197: registros com hash + as datas do contrato sem registro (hash null). */
+  assinaturas: AssinaturaAdmin[];
   pagamentos: PagamentoProva[];
   totais: ReturnType<typeof totaisPagamentos>;
   taxa: string;
@@ -50,7 +52,7 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
   if (!admin) return null;
 
   const [{ data: extra }, { data: ass }, { data: pags }, { data: confs }, { data: aditivos }] = await Promise.all([
-    admin.from("contratos").select("property_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, leads(accepted_at)").eq("id", contratoId).maybeSingle(),
+    admin.from("contratos").select("property_id, assinado_proprietario_em, assinado_inquilino_em, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, leads(accepted_at)").eq("id", contratoId).maybeSingle(),
     admin.from("contrato_assinaturas").select(COLUNAS_PROVAS.assinaturas).eq("contrato_id", contratoId),
     admin.from("pagamentos_bloco").select(COLUNAS_PROVAS.pagamentos).eq("contrato_id", contratoId).order("data_pagamento"),
     admin.from("conferencias").select(COLUNAS_PROVAS.conferencias).eq("contrato_id", contratoId),
@@ -121,7 +123,7 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
       }),
   );
 
-  const x = (extra ?? {}) as { property_id?: string; aluguel_mensal?: number | string | null; prazo_total_dias?: number | null; comissao_valor?: number | null; comissao_percent?: number | null; leads?: { accepted_at?: string | null } | null };
+  const x = (extra ?? {}) as { property_id?: string; assinado_proprietario_em?: string | null; assinado_inquilino_em?: string | null; aluguel_mensal?: number | string | null; prazo_total_dias?: number | null; comissao_valor?: number | null; comissao_percent?: number | null; leads?: { accepted_at?: string | null } | null };
   const aluguelMensal = Number(x.aluguel_mensal ?? 0);
   const hashAtual = hashResumo(v.resumo);
   return {
@@ -133,9 +135,11 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
     criadoEm: base.criadoEm,
     resumo: v.resumo,
     hashAtual,
-    assinaturas: provas.assinaturas
-      .map((a) => ({ ...a, comparacao: compararHashComResumo(v.resumo, a.hash, base.criadoEm) }))
-      .sort((a, b) => (a.em < b.em ? -1 : 1)),
+    // E197: a lista lê as datas do contrato; o detalhe junta essas datas aos registros com hash.
+    assinaturas: assinaturasDoAdmin(
+      provas.assinaturas.map((a) => ({ ...a, comparacao: compararHashComResumo(v.resumo, a.hash, base.criadoEm) })),
+      { proprietario: x.assinado_proprietario_em ?? null, inquilino: x.assinado_inquilino_em ?? null },
+    ),
     pagamentos: provas.pagamentos,
     totais: totaisPagamentos(provas.pagamentos),
     taxa: rotuloBaseTaxa({
