@@ -95,7 +95,7 @@ test.describe("T489 — E176-IMPL: menus conforme a especificação aprovada", (
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 390, height: 844 });
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await p.getByTestId("conta-dono-celular").click({ timeout: 30_000 });
+    await p.getByTestId("topo-celular").getByTestId("conta-dono-celular").click({ timeout: 30_000 });
     await p.getByTestId("menu-conta-dono-celular").getByRole("menuitem", { name: "Modo morador" }).click();
     await expect.poll(async () => (await barra(p).locator("a").allInnerTexts()).map((t) => t.trim()), { timeout: 30_000 }).toEqual(MORADOR_5);
     await p.goto("/buscar", { waitUntil: "domcontentloaded" });
