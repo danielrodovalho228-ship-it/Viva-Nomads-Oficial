@@ -12,7 +12,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
       com os campos gravados no perfil da candidata;
    4. depois do aceite (#1407), outro proprietário, com a candidatura da mesma moradora ACEITA, lê na candidatura
       "Na cidade de 01/11/2026 a 30/04/2027", "Empresa ou instituição: …" e a frase entre aspas;
-   5. controle: a mesma moradora em modo dono (abriu uma tela de dono antes) vê a Perfil no modo dono;
+   5. controle: uma moradora com os mesmos dados, em modo dono (abriu uma tela de dono antes), vê a Perfil no modo
+      dono (conta própria: o modo dono fica gravado na conta e vazava para os casos 1–4);
    6. nesse modo o cartão também aparece. FALHA HOJE (E192, Pista A corrigindo): o cartão está dentro do bloco
       `mode === "tenant"` de perfil-tela.tsx. Quando a correção mergear, o test.fail vira "passou inesperadamente" e sai.
   A 390 e 1280 px.
@@ -21,6 +22,8 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const ana = { email: `ana.t552.${sufixo}@lab.vivanomads.test`, nome: "Ana Cidade", role: "tenant" as const };
 const dono = { email: `dono.t552.${sufixo}@lab.vivanomads.test`, nome: "Davi Cidade", role: "owner" as const };
+/** Moradora só dos casos 5–6: o modo dono fica gravado na conta (L-10) e não pode vazar para os casos 1–4. */
+const anaDono = { email: `ana2.t552.${sufixo}@lab.vivanomads.test`, nome: "Ana Modo Dono", role: "tenant" as const };
 const donoAceito = { email: `dono2.t552.${sufixo}@lab.vivanomads.test`, nome: "Dora Aceite", role: "owner" as const };
 const ids: Record<string, string> = {};
 const EMPRESA = `Hospital Laboratório ${sufixo}`;
@@ -28,9 +31,8 @@ const FRASE = `Residência de seis meses na cidade ${sufixo}`;
 
 async function abrirPerfil(page: Page, w: number) {
   await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
-  // O modo vem da tela anterior e fica na conta (L-10): passa por uma tela SÓ de morador antes da Conta — /dashboard é
-  // neutro e mantinha o modo dono que os casos 5–6 deixam.
-  await page.goto("/dashboard/pedidos", { waitUntil: "domcontentloaded" });
+  // O modo vem da tela anterior (L-10): passa pelo início do morador antes da Conta.
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
   await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
   await expect(page.locator("main")).toContainText("Perfil profissional", { timeout: 30_000 });
 }
@@ -54,6 +56,12 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
       .update({ cidade_periodo_inicio: "2026-11-01", cidade_periodo_fim: "2027-04-30", cidade_empresa: EMPRESA, cidade_frase: FRASE })
       .eq("id", ids.ana);
     if (error) throw error;
+    ids.anaDono = await criarConta(anaDono, senha);
+    const { error: e2 } = await adm()
+      .from("profiles")
+      .update({ cidade_periodo_inicio: "2026-11-01", cidade_periodo_fim: "2027-04-30", cidade_empresa: EMPRESA, cidade_frase: FRASE })
+      .eq("id", ids.anaDono);
+    if (e2) throw e2;
     ids.imovel = await criarImovelPronto(ids.dono, `Cidade t552 ${sufixo}`, { ativo: true });
     await criarLead(ids.dono, ids.ana, ids.imovel);
     ids.donoAceito = await criarConta(donoAceito, senha);
@@ -62,7 +70,7 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
   });
   test.afterAll(async () => {
     await adm().from("leads").delete().in("owner_id", [ids.dono, ids.donoAceito].filter(Boolean));
-    await apagarContas([ids.ana, ids.dono, ids.donoAceito]);
+    await apagarContas([ids.ana, ids.anaDono, ids.dono, ids.donoAceito]);
   });
 
   for (const w of [390, 1280] as const) {
@@ -114,7 +122,7 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
       await page.context().close();
     });
     test(`5. a ${w} px: controle — a mesma moradora em modo dono abre a Perfil no modo dono`, async ({ browser }) => {
-      const page = await entrar(browser, ana.email, senha);
+      const page = await entrar(browser, anaDono.email, senha);
       await abrirPerfilModoDono(page, w);
       // Modo dono: o bloco "Perfil profissional" (só morador) some; a tela carregou (Idiomas é dos dois modos).
       await expect(page.locator("main")).toContainText("Idiomas que você fala", { timeout: 30_000 });
@@ -126,7 +134,7 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
 
     test(`6. a ${w} px: o cartão "Por que estou na cidade" aparece também na Perfil em modo dono (E192)`, async ({ browser }) => {
       test.fail(true, "E192 (Pista A, em correção): o #1413 montou o cartão dentro do bloco `mode === \"tenant\"` de perfil-tela.tsx; em modo dono a moradora não vê o cartão (reteste ao vivo da Pista A em 26/10)");
-      const page = await entrar(browser, ana.email, senha);
+      const page = await entrar(browser, anaDono.email, senha);
       await abrirPerfilModoDono(page, w);
       await expect(page.locator("main")).toContainText("Idiomas que você fala", { timeout: 30_000 });
       const cartao = page.getByTestId("por-que-na-cidade");
