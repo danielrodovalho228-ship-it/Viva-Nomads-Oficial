@@ -12,17 +12,15 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
       com os campos gravados no perfil da candidata;
    4. depois do aceite (#1407), outro proprietário, com a candidatura da mesma moradora ACEITA, lê na candidatura
       "Na cidade de 01/11/2026 a 30/04/2027", "Empresa ou instituição: …" e a frase entre aspas;
-   5. controle: uma moradora com os mesmos dados, em modo dono (abriu uma tela de dono antes), vê a Perfil no modo
-      dono (conta própria: o modo dono fica gravado na conta e vazava para os casos 1–4);
-   6. nesse modo o cartão também aparece. FALHA HOJE (E192, Pista A corrigindo): o cartão está dentro do bloco
-      `mode === "tenant"` de perfil-tela.tsx. Quando a correção mergear, o test.fail vira "passou inesperadamente" e sai.
-  A 390 e 1280 px.
+   5. a moradora com imóvel anunciado e o MODO PROPRIETÁRIO salvo (como a inquilino1 de produção) também vê o cartão,
+      com o que está gravado, na Perfil em modo dono. Foi o E192 (reteste ao vivo de 26/10), corrigido no #1417; a t561
+      da Pista A cobre a gravação.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const ana = { email: `ana.t552.${sufixo}@lab.vivanomads.test`, nome: "Ana Cidade", role: "tenant" as const };
 const dono = { email: `dono.t552.${sufixo}@lab.vivanomads.test`, nome: "Davi Cidade", role: "owner" as const };
-/** Moradora só dos casos 5–6: o modo dono fica gravado na conta (L-10) e não pode vazar para os casos 1–4. */
+/** Moradora só do caso 5 (com imóvel e modo dono salvo): o modo dono fica na conta e não pode vazar para os casos 1–4. */
 const anaDono = { email: `ana2.t552.${sufixo}@lab.vivanomads.test`, nome: "Ana Modo Dono", role: "tenant" as const };
 const donoAceito = { email: `dono2.t552.${sufixo}@lab.vivanomads.test`, nome: "Dora Aceite", role: "owner" as const };
 const ids: Record<string, string> = {};
@@ -35,15 +33,6 @@ async function abrirPerfil(page: Page, w: number) {
   await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
   await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
   await expect(page.locator("main")).toContainText("Perfil profissional", { timeout: 30_000 });
-}
-
-/** Modo dono: abrir uma tela de dono troca o modo (lib/roles.ts, prompt 43); depois a Conta › Perfil. */
-async function abrirPerfilModoDono(page: Page, w: number) {
-  await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
-  await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-  // A troca de modo acontece no cliente: espera as abas do dono antes de sair da tela.
-  await expect(page.getByTestId("abas-dono")).toBeVisible({ timeout: 30_000 });
-  await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
 }
 
 test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo antes do aceite", () => {
@@ -64,6 +53,9 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
       .update({ cidade_periodo_inicio: "2026-11-01", cidade_periodo_fim: "2027-04-30", cidade_empresa: EMPRESA, cidade_frase: FRASE })
       .eq("id", ids.anaDono);
     if (e2) throw e2;
+    // Como a inquilino1 de produção (E192): cadastro de morador, com um imóvel anunciado e o MODO PROPRIETÁRIO salvo.
+    ids.imovelAnaDono = await criarImovelPronto(ids.anaDono, `Anúncio da Ana t552 ${sufixo}`, { ativo: true });
+    await adm().from("profiles").update({ preferred_mode: "owner", papel_ativo: "proprietario" }).eq("id", ids.anaDono);
     ids.imovel = await criarImovelPronto(ids.dono, `Cidade t552 ${sufixo}`, { ativo: true });
     await criarLead(ids.dono, ids.ana, ids.imovel);
     ids.donoAceito = await criarConta(donoAceito, senha);
@@ -123,25 +115,19 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
       await page.screenshot({ path: `tests/laboratorio/saida/t552-leads-aceito-${w}.png` });
       await page.context().close();
     });
-    test(`5. a ${w} px: controle — uma moradora em modo dono abre a Perfil no modo dono`, async ({ browser }) => {
+    test(`5. a ${w} px: moradora com imóvel, em modo dono (como a inquilino1): o cartão aparece com o que está gravado`, async ({ browser }) => {
       const page = await entrar(browser, anaDono.email, senha);
-      await abrirPerfilModoDono(page, w);
-      // Modo dono: o bloco "Perfil profissional" (só morador) some; a tela carregou (Idiomas é dos dois modos).
+      await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+      await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
+      // Modo dono de fato: o bloco "Perfil profissional" (só do modo morador) não está na tela.
       await expect(page.locator("main")).toContainText("Idiomas que você fala", { timeout: 30_000 });
       await expect(page.locator("main")).not.toContainText("Perfil profissional");
-      console.log(`t552 ${w} modo dono: cartões "por-que-na-cidade" = ${await page.getByTestId("por-que-na-cidade").count()}`);
-      await page.screenshot({ path: `tests/laboratorio/saida/t552-perfil-modo-dono-${w}.png`, fullPage: true });
-      await page.context().close();
-    });
-
-    test(`6. a ${w} px: o cartão "Por que estou na cidade" aparece também na Perfil em modo dono (E192)`, async ({ browser }) => {
-      test.fail(true, "E192 (Pista A, em correção): o #1413 montou o cartão dentro do bloco `mode === \"tenant\"` de perfil-tela.tsx; em modo dono a moradora não vê o cartão (reteste ao vivo da Pista A em 26/10)");
-      const page = await entrar(browser, anaDono.email, senha);
-      await abrirPerfilModoDono(page, w);
-      await expect(page.locator("main")).toContainText("Idiomas que você fala", { timeout: 30_000 });
       const cartao = page.getByTestId("por-que-na-cidade");
       await expect(cartao).toBeVisible({ timeout: 15_000 });
       await expect(cartao.getByTestId("cidade-empresa")).toHaveValue(EMPRESA);
+      await expect(cartao.getByTestId("cidade-frase")).toHaveValue(FRASE);
+      await cartao.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `tests/laboratorio/saida/t552-perfil-modo-dono-${w}.png` });
       await page.context().close();
     });
   }
